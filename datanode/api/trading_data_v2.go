@@ -23,6 +23,7 @@ import (
 
 	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/protos/vega"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
@@ -47,6 +48,7 @@ type tradingDataServiceV2 struct {
 	v2.UnimplementedTradingDataServiceServer
 	config                    Config
 	log                       *logging.Logger
+	eventService              EventService
 	orderService              *service.Order
 	networkLimitsService      *service.NetworkLimits
 	marketDataService         *service.MarketData
@@ -77,6 +79,7 @@ type tradingDataServiceV2 struct {
 	networkParameterService   *service.NetworkParameter
 	checkpointService         *service.Checkpoint
 	stakeLinkingService       *service.StakeLinking
+	ledgerService             *service.Ledger
 }
 
 func (t *tradingDataServiceV2) ListAccounts(ctx context.Context, req *v2.ListAccountsRequest) (*v2.ListAccountsResponse, error) {
@@ -1021,6 +1024,34 @@ func (t *tradingDataServiceV2) ListPositions(ctx context.Context, in *v2.ListPos
 	return resp, nil
 }
 
+// Subscribe to a stream of Positions.
+func (t *tradingDataServiceV2) ObservePositions(req *v2.ObservePositionsRequest, srv v2.TradingDataService_ObservePositionsServer) error {
+	// Wrap context from the request into cancellable. We can close internal chan on error.
+	ctx, cancel := context.WithCancel(srv.Context())
+	defer cancel()
+
+	var partyID, marketID string
+	if req.PartyId != nil {
+		partyID = *req.PartyId
+	}
+
+	if req.MarketId != nil {
+		marketID = *req.MarketId
+	}
+
+	positionsChan, ref := t.positionService.Observe(ctx, t.config.StreamRetries, partyID, marketID)
+
+	if t.log.GetLevel() == logging.DebugLevel {
+		t.log.Debug("Positions subscriber - new rpc stream", logging.Uint64("ref", ref))
+	}
+
+	return observe(ctx, t.log, "Position", positionsChan, ref, func(position entities.Position) error {
+		return srv.Send(&v2.ObservePositionsResponse{
+			Position: position.ToProto(),
+		})
+	})
+}
+
 // List Parties using a cursor based pagination model.
 func (t *tradingDataServiceV2) ListParties(ctx context.Context, in *v2.ListPartiesRequest) (*v2.ListPartiesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListPartiesV2")()
@@ -1080,6 +1111,35 @@ func (t *tradingDataServiceV2) ListMarginLevels(ctx context.Context, in *v2.List
 	return resp, nil
 }
 
+// Subscribe to a stream of Margin Levels.
+func (t *tradingDataServiceV2) ObserveMarginLevels(req *v2.ObserveMarginLevelsRequest, srv v2.TradingDataService_ObserveMarginLevelsServer) error {
+	// Wrap context from the request into cancellable. We can close internal chan on error.
+	ctx, cancel := context.WithCancel(srv.Context())
+	defer cancel()
+
+	var marketID string
+	if req.MarketId != nil {
+		marketID = *req.MarketId
+	}
+
+	marginLevelsChan, ref := t.riskService.ObserveMarginLevels(ctx, t.config.StreamRetries, req.PartyId, marketID)
+
+	if t.log.GetLevel() == logging.DebugLevel {
+		t.log.Debug("Margin levels subscriber - new rpc stream", logging.Uint64("ref", ref))
+	}
+
+	return observe(ctx, t.log, "MarginLevel", marginLevelsChan, ref, func(ml entities.MarginLevels) error {
+		protoMl, err := ml.ToProto(t.accountService)
+		if err != nil {
+			return apiError(codes.Internal, err)
+		}
+
+		return srv.Send(&v2.ObserveMarginLevelsResponse{
+			MarginLevels: protoMl,
+		})
+	})
+}
+
 // List rewards.
 func (t *tradingDataServiceV2) ListRewards(ctx context.Context, in *v2.ListRewardsRequest) (*v2.ListRewardsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListRewardsV2")()
@@ -1089,7 +1149,7 @@ func (t *tradingDataServiceV2) ListRewards(ctx context.Context, in *v2.ListRewar
 		return nil, apiError(codes.InvalidArgument, err)
 	}
 
-	rewards, pageInfo, err := t.rewardService.GetByCursor(ctx, &in.PartyId, &in.AssetId, pagination)
+	rewards, pageInfo, err := t.rewardService.GetByCursor(ctx, &in.PartyId, in.AssetId, pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -1112,7 +1172,7 @@ func (t *tradingDataServiceV2) ListRewards(ctx context.Context, in *v2.ListRewar
 func (t *tradingDataServiceV2) ListRewardSummaries(ctx context.Context, in *v2.ListRewardSummariesRequest) (*v2.ListRewardSummariesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListRewardSummariesV2")()
 
-	summaries, err := t.rewardService.GetSummaries(ctx, &in.PartyId, &in.AssetId)
+	summaries, err := t.rewardService.GetSummaries(ctx, in.PartyId, in.AssetId)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -1125,6 +1185,30 @@ func (t *tradingDataServiceV2) ListRewardSummaries(ctx context.Context, in *v2.L
 
 	resp := v2.ListRewardSummariesResponse{Summaries: summaryProtos}
 	return &resp, nil
+}
+
+// subscribe to rewards.
+func (t *tradingDataServiceV2) ObserveRewards(req *v2.ObserveRewardsRequest, srv v2.TradingDataService_ObserveRewardsServer) error {
+	ctx, cfunc := context.WithCancel(srv.Context())
+	defer cfunc()
+	if t.log.GetLevel() == logging.DebugLevel {
+		t.log.Debug("starting streaming reward updates")
+	}
+	var assetID, partyID string
+	if req.AssetId != nil {
+		assetID = *req.AssetId
+	}
+
+	if req.PartyId != nil {
+		partyID = *req.PartyId
+	}
+	ch, ref := t.rewardService.Observe(ctx, t.config.StreamRetries, assetID, partyID)
+
+	return observe(ctx, t.log, "Reward", ch, ref, func(reward entities.Reward) error {
+		return srv.Send(&v2.ObserveRewardsResponse{
+			Reward: reward.ToProto(),
+		})
+	})
 }
 
 // -- Deposits --.
@@ -1621,6 +1705,27 @@ func (t *tradingDataServiceV2) ListOrderVersions(ctx context.Context, in *v2.Lis
 	return resp, nil
 }
 
+// Subscribe to a stream of Orders.
+func (t *tradingDataServiceV2) ObserveOrders(req *v2.ObserveOrdersRequest, srv v2.TradingDataService_ObserveOrdersServer) error {
+	// Wrap context from the request into cancellable. We can close internal chan on error.
+	ctx, cancel := context.WithCancel(srv.Context())
+	defer cancel()
+
+	ordersChan, ref := t.orderService.ObserveOrders(ctx, t.config.StreamRetries, req.MarketId, req.PartyId)
+
+	if t.log.GetLevel() == logging.DebugLevel {
+		t.log.Debug("Orders subscriber - new rpc stream", logging.Uint64("ref", ref))
+	}
+
+	return observeBatch(ctx, t.log, "Order", ordersChan, ref, func(orders []entities.Order) error {
+		out := make([]*vega.Order, 0, len(orders))
+		for _, v := range orders {
+			out = append(out, v.ToProto())
+		}
+		return srv.Send(&v2.ObserveOrdersResponse{Orders: out})
+	})
+}
+
 func (t *tradingDataServiceV2) ListDelegations(ctx context.Context, in *v2.ListDelegationsRequest) (*v2.ListDelegationsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListDelegationsV2")()
 
@@ -1660,6 +1765,33 @@ func (t *tradingDataServiceV2) ListDelegations(ctx context.Context, in *v2.ListD
 	}
 
 	return resp, nil
+}
+
+// subscribe to delegation events.
+func (t *tradingDataServiceV2) ObserveDelegations(req *v2.ObserveDelegationsRequest, srv v2.TradingDataService_ObserveDelegationsServer) error {
+	ctx, cfunc := context.WithCancel(srv.Context())
+	defer cfunc()
+	if t.log.GetLevel() == logging.DebugLevel {
+		t.log.Debug("starting streaming delegation updates")
+	}
+
+	var partyID, nodeID string
+
+	if req.PartyId != nil {
+		partyID = *req.PartyId
+	}
+
+	if req.NodeId != nil {
+		nodeID = *req.NodeId
+	}
+
+	ch, ref := t.delegationService.Observe(ctx, t.config.StreamRetries, partyID, nodeID)
+
+	return observe(ctx, t.log, "Delegations", ch, ref, func(delegation entities.Delegation) error {
+		return srv.Send(&v2.ObserveDelegationsResponse{
+			Delegation: delegation.ToProto(),
+		})
+	})
 }
 
 func (t *tradingDataServiceV2) marketExistsForId(ctx context.Context, marketID string) bool {
@@ -2053,4 +2185,131 @@ func (t *tradingDataServiceV2) GetRiskFactors(ctx context.Context, req *v2.GetRi
 	return &v2.GetRiskFactorsResponse{
 		RiskFactor: rfs.ToProto(),
 	}, nil
+}
+
+func (t *tradingDataServiceV2) ObserveGovernance(req *v2.ObserveGovernanceRequest, stream v2.TradingDataService_ObserveGovernanceServer) error {
+	ctx, cfunc := context.WithCancel(stream.Context())
+	defer cfunc()
+	if t.log.GetLevel() == logging.DebugLevel {
+		t.log.Debug("starting streaming governance updates")
+	}
+	ch, ref := t.governanceService.ObserveProposals(ctx, t.config.StreamRetries, req.PartyId)
+
+	return observe(ctx, t.log, "Governance", ch, ref, func(proposal entities.Proposal) error {
+		gd, err := t.proposalToGovernanceData(ctx, proposal)
+		if err != nil {
+			return err
+		}
+		return stream.Send(&v2.ObserveGovernanceResponse{
+			Data: gd,
+		})
+	})
+}
+
+func (t *tradingDataServiceV2) proposalToGovernanceData(ctx context.Context, proposal entities.Proposal) (*vega.GovernanceData, error) {
+	yesVotes, err := t.governanceService.GetYesVotesForProposal(ctx, proposal.ID.String())
+	if err != nil {
+		return nil, err
+	}
+	protoYesVotes := voteListToProto(yesVotes)
+
+	noVotes, err := t.governanceService.GetNoVotesForProposal(ctx, proposal.ID.String())
+	if err != nil {
+		return nil, err
+	}
+	protoNoVotes := voteListToProto(noVotes)
+
+	gd := vega.GovernanceData{
+		Proposal: proposal.ToProto(),
+		Yes:      protoYesVotes,
+		No:       protoNoVotes,
+	}
+	return &gd, nil
+}
+
+func (t *tradingDataServiceV2) ObserveVotes(req *v2.ObserveVotesRequest, stream v2.TradingDataService_ObserveVotesServer) error {
+	if req.PartyId != nil && *req.PartyId != "" {
+		return t.observePartyVotes(*req.PartyId, stream)
+	}
+
+	if req.ProposalId != nil && *req.ProposalId != "" {
+		return t.observeProposalVotes(*req.ProposalId, stream)
+	}
+
+	return errors.New("invalid request, party ID or proposal ID required")
+}
+
+func (t *tradingDataServiceV2) observePartyVotes(partyID string, stream v2.TradingDataService_ObserveVotesServer) error {
+	ctx, cfunc := context.WithCancel(stream.Context())
+	defer cfunc()
+	if t.log.GetLevel() == logging.DebugLevel {
+		t.log.Debug("starting streaming party votes")
+	}
+	ch, ref := t.governanceService.ObservePartyVotes(ctx, t.config.StreamRetries, partyID)
+
+	return observe(ctx, t.log, "PartyVote", ch, ref, func(vote entities.Vote) error {
+		return stream.Send(&v2.ObserveVotesResponse{
+			Vote: vote.ToProto(),
+		})
+	})
+}
+
+func (t *tradingDataServiceV2) observeProposalVotes(proposalID string, stream v2.TradingDataService_ObserveVotesServer) error {
+	ctx, cfunc := context.WithCancel(stream.Context())
+	defer cfunc()
+	if t.log.GetLevel() == logging.DebugLevel {
+		t.log.Debug("starting streaming proposal votes")
+	}
+	ch, ref := t.governanceService.ObserveProposalVotes(ctx, t.config.StreamRetries, proposalID)
+
+	return observe(ctx, t.log, "ProposalVote", ch, ref, func(p entities.Vote) error {
+		return stream.Send(&v2.ObserveVotesResponse{
+			Vote: p.ToProto(),
+		})
+	})
+}
+
+type tradingDataEventBusServerV2 struct {
+	stream v2.TradingDataService_ObserveEventBusServer
+}
+
+func (t tradingDataEventBusServerV2) RecvMsg(m interface{}) error {
+	return t.stream.RecvMsg(m)
+}
+
+func (t tradingDataEventBusServerV2) Context() context.Context {
+	return t.stream.Context()
+}
+
+func (t tradingDataEventBusServerV2) Send(data []*eventspb.BusEvent) error {
+	resp := &v2.ObserveEventBusResponse{
+		Events: data,
+	}
+	return t.stream.Send(resp)
+}
+
+func (t *tradingDataServiceV2) ObserveEventBus(stream v2.TradingDataService_ObserveEventBusServer) error {
+	server := tradingDataEventBusServerV2{stream}
+	eventService := t.eventService
+
+	return observeEventBus(t.log, t.config, server, eventService)
+}
+
+// Subscribe to a stream of Transfer Responses.
+func (t *tradingDataServiceV2) ObserveTransferResponses(_ *v2.ObserveTransferResponsesRequest, srv v2.TradingDataService_ObserveTransferResponsesServer) error {
+	// Wrap context from the request into cancellable. We can close internal chan in error.
+	ctx, cancel := context.WithCancel(srv.Context())
+	defer cancel()
+
+	transferResponsesChan, ref := t.ledgerService.Observe(ctx, t.config.StreamRetries)
+
+	if t.log.GetLevel() == logging.DebugLevel {
+		t.log.Debug("TransferResponses subscriber - new rpc stream", logging.Uint64("ref", ref))
+	}
+
+	return observe(ctx, t.log, "TransferResponse", transferResponsesChan, ref, func(tr *vega.TransferResponse) error {
+		return srv.Send(&v2.ObserveTransferResponsesResponse{
+			Response: tr,
+		})
+	})
 }
