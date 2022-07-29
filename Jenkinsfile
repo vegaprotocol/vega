@@ -308,7 +308,7 @@ pipeline {
         //
         stage('Publish') {
             environment {
-                DOCKER_PUBLISH = "${ isPRBuild() ? '' : '--publish' }"
+                DOCKER_PUBLISH = "${ isPRBuild() ? ' ' : '--publish' }"
                 DOCKER_BUILD_ARCH = "${ isPRBuild() ? 'linux/amd64' : 'linux/arm64,linux/amd64' }"
                 DOCKER_IMAGE_TAG = "${ env.TAG_NAME ? env.TAG_NAME : env.BRANCH_NAME }"
             }
@@ -328,6 +328,7 @@ pipeline {
                         stage('docker build') {
                             steps {
                                 dir('vega') {
+                                    sh 'printenv'
                                     sh label: 'build and publish multi-arch docker image', script: """#!/bin/bash -e
                                         docker buildx build \
                                             --builder ${BUILDX_BUILDER_NAME} \
