@@ -1,5 +1,6 @@
 /* groovylint-disable DuplicateStringLiteral, LineLength, NestedBlockDepth */
 @Library('vega-shared-library@one-repo') _
+// TODO remove the one-repo
 
 /* properties of scmVars (example):
     - GIT_BRANCH:PR-40-head
@@ -19,7 +20,7 @@ pipeline {
     options {
         skipDefaultCheckout true
         timestamps()
-        timeout(time: 60, unit: 'MINUTES')
+        timeout(time: isPRBuild() ? 30 : 90, unit: 'MINUTES')
     }
     parameters {
         string( name: 'PROTOS_BRANCH', defaultValue: 'develop',
@@ -38,8 +39,7 @@ pipeline {
     environment {
         CGO_ENABLED = 0
         GO111MODULE = 'on'
-        DOCKER_IMAGE_TAG_LOCAL = "v-${ env.JOB_BASE_NAME.replaceAll('[^A-Za-z0-9\\._]','-') }-${BUILD_NUMBER}-${EXECUTOR_NUMBER}"
-        DOCKER_IMAGE_VEGA_CORE_LOCAL = "ghcr.io/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_LOCAL}"
+        BUILD_UID="${BUILD_NUMBER}-${EXECUTOR_NUMBER}"
     }
 
     stages {
@@ -305,168 +305,232 @@ pipeline {
         //
 
         //
-        // Begin DOCKER
+        // Begin PUBLISH
         //
-        stage('Publish docker images') {
-            matrix {
-                axes {
-                    axis {
-                        name 'APP'
-                        values 'vega', 'data-node', 'vegawallet'
+        stage('Publish') {
+            environment {
+                DOCKER_PUBLISH = "${ isPRBuild() ? '' : '--publish' }"
+                DOCKER_BUILD_ARCH = "${ isPRBuild() ? 'linux/amd64' : 'linux/arm64,linux/amd64' }"
+                DOCKER_IMAGE_TAG = "${ env.TAG_NAME ? env.TAG_NAME : env.BRANCH_NAME }"
+            }
+            parallel {
+                stage('vega docker image') {
+                    environment {
+                        BUILDX_BUILDER_NAME="vega-${BUILD_UID}"
+                    }
+                    stages {
+                        stage('Create builder') {
+                            steps {
+                                sh label: 'create buildx builder', script: """#!/bin/bash -e
+                                    docker buildx create --name ${BUILDX_BUILDER_NAME}
+                                """
+                            }
+                        }
+                        stage('docker build') {
+                            steps {
+                                dir('vega') {
+                                    sh label: 'build and publish multi-arch docker image', script: """#!/bin/bash -e
+                                        docker buildx build \
+                                            --builder ${BUILDX_BUILDER_NAME} \
+                                            --platform=${BUILD_ARCH} \
+                                            -f docker/vega.dockerfile \
+                                            -t ghcr.io/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG} \
+                                            ${DOCKER_PUBLISH} \
+                                            .
+                                    """
+                                }
+                            }
+                            post {
+                                always {
+                                    sh label: 'destroy buildx builder', script: """#!/bin/bash -e
+                                        docker buildx rm --force ${BUILDX_BUILDER_NAME}
+                                    """
+                                }
+                            }
+                        }
                     }
                 }
-                stages {
-                    stage('Create builder') {
-                        steps {
-                            sh label: 'create buildx builder', script: """#!/bin/bash -e
-                                docker buildx create --name ${APP}-${DOCKER_IMAGE_TAG_LOCAL}
-                            """
+                stage('data-node docker image') {
+                    environment {
+                        BUILDX_BUILDER_NAME="data-node-${BUILD_UID}"
+                    }
+                    stages {
+                        stage('Create builder') {
+                            steps {
+                                sh label: 'create buildx builder', script: """#!/bin/bash -e
+                                    docker buildx create --name ${BUILDX_BUILDER_NAME}
+                                """
+                            }
+                        }
+                        stage('docker build') {
+                            steps {
+                                dir('vega') {
+                                    sh label: 'build and publish multi-arch docker image', script: """#!/bin/bash -e
+                                        docker buildx build \
+                                            --builder ${BUILDX_BUILDER_NAME} \
+                                            --platform=${BUILD_ARCH} \
+                                            -f docker/data-node.dockerfile \
+                                            -t ghcr.io/vegaprotocol/vega/data-node:${DOCKER_IMAGE_TAG} \
+                                            ${DOCKER_PUBLISH} \
+                                            .
+                                    """
+                                }
+                            }
+                            post {
+                                always {
+                                    sh label: 'destroy buildx builder', script: """#!/bin/bash -e
+                                        docker buildx rm --force ${BUILDX_BUILDER_NAME}
+                                    """
+                                }
+                            }
                         }
                     }
-                    stage('docker build') {
-                        steps {
-                            dir('vega') {
-                                // TODO: add --push to publish images
-                                sh label: 'build and publish multi-arch docker image', script: """#!/bin/bash -e
-                                    docker buildx build \
-                                        --builder ${APP}-${DOCKER_IMAGE_TAG_LOCAL} \
-                                        --platform=linux/arm64,linux/amd64 \
-                                        -f docker/${APP}.dockerfile \
-                                        -t ${APP}:${DOCKER_IMAGE_TAG_LOCAL} \
-                                        .
+                }
+                stage('vegawallet docker image') {
+                    environment {
+                        BUILDX_BUILDER_NAME="vegawallet-${BUILD_UID}"
+                    }
+                    stages {
+                        stage('Create builder') {
+                            steps {
+                                sh label: 'create buildx builder', script: """#!/bin/bash -e
+                                    docker buildx create --name ${BUILDX_BUILDER_NAME}
                                 """
                             }
                         }
-                        post {
-                            always {
-                                sh label: 'destroy buildx builder', script: """#!/bin/bash -e
-                                    docker buildx rm --force ${APP}-${DOCKER_IMAGE_TAG_LOCAL}
-                                """
+                        stage('docker build') {
+                            steps {
+                                dir('vega') {
+                                    sh label: 'build and publish multi-arch docker image', script: """#!/bin/bash -e
+                                        docker buildx build \
+                                            --builder ${BUILDX_BUILDER_NAME} \
+                                            --platform=${BUILD_ARCH} \
+                                            -f docker/vegawallet.dockerfile \
+                                            -t ghcr.io/vegaprotocol/vega/vegawallet:${DOCKER_IMAGE_TAG} \
+                                            ${DOCKER_PUBLISH} \
+                                            .
+                                    """
+                                }
+                            }
+                            post {
+                                always {
+                                    sh label: 'destroy buildx builder', script: """#!/bin/bash -e
+                                        docker buildx rm --force ${BUILDX_BUILDER_NAME}
+                                    """
+                                }
                             }
                         }
+                    }
+                }
+
+
+                stage('development binary for vegacapsule') {
+                    when {
+                        branch 'develop'
+                    }
+                    environment {
+                        AWS_REGION = 'eu-west-2'
+                    }
+
+                    steps {
+                        dir('build-linux-amd64') {
+                            script {
+                                vegaS3Ops = usernamePassword(
+                                    credentialsId: 'vegacapsule-s3-operations',
+                                    passwordVariable: 'AWS_ACCESS_KEY_ID',
+                                    usernameVariable: 'AWS_SECRET_ACCESS_KEY'
+                                )
+                                bucketName = string(
+                                    credentialsId: 'vegacapsule-s3-bucket-name',
+                                    variable: 'VEGACAPSULE_S3_BUCKET_NAME'
+                                )
+                                withCredentials([vegaS3Ops, bucketName]) {
+                                    try {
+                                        sh label: 'Upload vega binary to S3', script: '''
+                                            aws s3 cp ./vega s3://''' + env.VEGACAPSULE_S3_BUCKET_NAME + '''/bin/vega-linux-amd64-''' + versionHash + '''
+                                        '''
+                                    } catch(err) {
+                                        print(err)
+                                    }
+                                    try {
+                                        sh label: 'Upload data-node binary to S3', script: '''
+                                            aws s3 cp ./data-node s3://''' + env.VEGACAPSULE_S3_BUCKET_NAME + '''/bin/data-node-linux-amd64-''' + versionHash + '''
+                                        '''
+                                    } catch(err) {
+                                        print(err)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+
+                stage('release to GitHub') {
+                    when {
+                        buildingTag()
+                    }
+                    environment {
+                        RELEASE_URL = "https://github.com/vegaprotocol/vega/releases/tag/${TAG_NAME}"
+                    }
+                    options { retry(3) }
+                    steps {
+                        sh label: 'copy artefacts to publish to one directory', script: '''#!/bin/bash -e
+                            mkdir release
+                            # linux
+                            cp ./build-linux-amd64/vega ./release/vega-linux-amd64
+                            cp ./build-linux-amd64/data-node ./release/data-node-linux-amd64
+                            cp ./build-linux-arm64/vega ./release/vega-linux-arm64
+                            cp ./build-linux-arm64/data-node ./release/data-node-linux-arm64
+                            # MacOS
+                            cp ./build-darwin-amd64/vega ./release/vega-macos-amd64
+                            cp ./build-darwin-amd64/data-node ./release/data-node-macos-amd64
+                            cp ./build-darwin-arm64/vega ./release/vega-macos-arm64
+                            cp ./build-darwin-arm64/data-node ./release/data-node-macos-arm64
+                            # Windows
+                            cp ./build-windows-amd64/vega ./release/vega-windows-amd64
+                            cp ./build-windows-amd64/data-node ./release/data-node-windows-amd64
+                        '''
+                        dir('release') {
+                            script {
+                                withGHCLI('credentialsId': 'github-vega-ci-bot-artifacts') {
+                                    sh label: 'Upload artifacts', script: '''#!/bin/bash -e
+                                        [[ $TAG_NAME =~ '-pre' ]] && prerelease='--prerelease' || prerelease=''
+
+                                        gh release view $TAG_NAME && gh release upload $TAG_NAME ./* \
+                                            || gh release create $TAG_NAME $prerelease ./*
+                                    '''
+                                }
+                            }
+                        }
+                        slackSend(
+                            channel: "#tradingcore-notify",
+                            color: "good",
+                            message: ":rocket: Vega Core » Published new version to GitHub <${RELEASE_URL}|${TAG_NAME}>",
+                        )
                     }
                 }
             }
         }
         //
-        // End DOCKER
+        // End PUBLISH
         //
 
-
-        // stage('Publish') {
-        //     parallel {
-
-        //         stage('docker image') {
-        //             when {
-        //                 anyOf {
-        //                     buildingTag()
-        //                     branch 'develop'
-        //                     // changeRequest() // uncomment only for testing
-        //                 }
-        //             }
-        //             environment {
-        //                 DOCKER_IMAGE_TAG_VERSIONED = "${ env.TAG_NAME ? env.TAG_NAME : env.BRANCH_NAME }"
-        //                 DOCKER_IMAGE_VEGA_CORE_VERSIONED = "ghcr.io/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_VERSIONED}"
-        //                 DOCKER_IMAGE_TAG_ALIAS = "${ env.TAG_NAME ? 'latest' : 'edge' }"
-        //                 DOCKER_IMAGE_VEGA_CORE_ALIAS = "ghcr.io/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_ALIAS}"
-        //             }
-        //             options { retry(3) }
-        //             steps {
-        //                 dir('vega') {
-        //                     sh label: 'Tag new images', script: '''#!/bin/bash -e
-        //                         docker image tag "${DOCKER_IMAGE_VEGA_CORE_LOCAL}" "${DOCKER_IMAGE_VEGA_CORE_VERSIONED}"
-        //                         docker image tag "${DOCKER_IMAGE_VEGA_CORE_LOCAL}" "${DOCKER_IMAGE_VEGA_CORE_ALIAS}"
-        //                     '''
-
-        //                     withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://ghcr.io"]) {
-        //                         sh label: 'Push docker images', script: '''
-        //                             docker push "${DOCKER_IMAGE_VEGA_CORE_VERSIONED}"
-        //                             docker push "${DOCKER_IMAGE_VEGA_CORE_ALIAS}"
-        //                         '''
-        //                     }
-        //                     slackSend(
-        //                         channel: "#tradingcore-notify",
-        //                         color: "good",
-        //                         message: ":docker: Vega Core » Published new docker image `${DOCKER_IMAGE_VEGA_CORE_VERSIONED}` aka `${DOCKER_IMAGE_VEGA_CORE_ALIAS}`",
-        //                     )
-        //                 }
-        //             }
-        //         }
-
-        //         stage('development binary for vegacapsule') {
-        //             when {
-        //                 branch 'develop'
-        //             }
-        //             environment {
-        //                 AWS_REGION = 'eu-west-2'
-        //             }
-
-        //             steps {
-        //                 dir('vega') {
-        //                     script {
-        //                         vegaS3Ops = usernamePassword(
-        //                             credentialsId: 'vegacapsule-s3-operations',
-        //                             passwordVariable: 'AWS_ACCESS_KEY_ID',
-        //                             usernameVariable: 'AWS_SECRET_ACCESS_KEY'
-        //                         )
-        //                         bucketName = string(
-        //                             credentialsId: 'vegacapsule-s3-bucket-name',
-        //                             variable: 'VEGACAPSULE_S3_BUCKET_NAME'
-        //                         )
-        //                         withCredentials([vegaS3Ops, bucketName]) {
-        //                             try {
-        //                                 sh label: 'Upload vega binary to S3', script: '''
-        //                                     aws s3 cp ./cmd/vega/vega-linux-amd64 s3://''' + env.VEGACAPSULE_S3_BUCKET_NAME + '''/bin/vega-linux-amd64-''' + versionHash + '''
-        //                                 '''
-        //                             } catch(err) {
-        //                                 print(err)
-        //                             }
-        //                         }
-        //                     }
-        //                 }
-        //             }
-        //         }
-
-        //         stage('release to GitHub') {
-        //             when {
-        //                 buildingTag()
-        //             }
-        //             environment {
-        //                 RELEASE_URL = "https://github.com/vegaprotocol/vega/releases/tag/${TAG_NAME}"
-        //             }
-        //             options { retry(3) }
-        //             steps {
-        //                 dir('vega') {
-        //                     script {
-        //                         withGHCLI('credentialsId': 'github-vega-ci-bot-artifacts') {
-        //                             sh label: 'Upload artifacts', script: '''#!/bin/bash -e
-        //                                 [[ $TAG_NAME =~ '-pre' ]] && prerelease='--prerelease' || prerelease=''
-
-        //                                 gh release view $TAG_NAME && gh release upload $TAG_NAME ./cmd/vega/vega-* \
-        //                                     || gh release create $TAG_NAME $prerelease ./cmd/vega/vega-*
-        //                             '''
-        //                         }
-        //                     }
-        //                     slackSend(
-        //                         channel: "#tradingcore-notify",
-        //                         color: "good",
-        //                         message: ":rocket: Vega Core » Published new version to GitHub <${RELEASE_URL}|${TAG_NAME}>",
-        //                     )
-        //                 }
-        //             }
-        //         }
-
-        //         stage('Deploy to Devnet') {
-        //             when {
-        //                 branch 'develop'
-        //             }
-        //             steps {
-        //                 devnetDeploy vegaCore: commitHash,
-        //                     wait: false
-        //             }
-        //         }
-        //     }
-        // }
+        //
+        // Begin DEVNET deploy
+        //
+        stage('Deploy to Devnet') {
+            when {
+                branch 'develop'
+            }
+            steps {
+                devnetDeploy vegaCore: commitHash,
+                    wait: false
+            }
+        }
+        //
+        // End DEVNET deploy
+        //
 
     }
     post {
