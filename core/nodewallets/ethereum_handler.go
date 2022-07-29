@@ -16,7 +16,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"code.vegaprotocol.io/shared/paths"
+	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/core/nodewallets/eth"
 	"code.vegaprotocol.io/vega/core/nodewallets/eth/clef"
 	"code.vegaprotocol.io/vega/core/nodewallets/eth/keystore"

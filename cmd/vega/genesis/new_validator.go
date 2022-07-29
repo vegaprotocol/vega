@@ -18,7 +18,7 @@ import (
 	"fmt"
 
 	vgjson "code.vegaprotocol.io/shared/libs/json"
-	"code.vegaprotocol.io/shared/paths"
+	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	vgtm "code.vegaprotocol.io/vega/core/tendermint"
 	"code.vegaprotocol.io/vega/core/validators"

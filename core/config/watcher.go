@@ -20,7 +20,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"code.vegaprotocol.io/shared/paths"
+	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/fsnotify/fsnotify"
 )

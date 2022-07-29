@@ -22,7 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/service"
 
 	vgfs "code.vegaprotocol.io/shared/libs/fs"
-	"code.vegaprotocol.io/shared/paths"
+	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/datanode/api"
 	"code.vegaprotocol.io/vega/datanode/broker"
 	"code.vegaprotocol.io/vega/datanode/config/encoding"

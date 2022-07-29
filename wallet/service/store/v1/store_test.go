@@ -7,7 +7,7 @@ import (
 
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	vgtest "code.vegaprotocol.io/shared/libs/test"
-	"code.vegaprotocol.io/shared/paths"
+	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/wallet/service"
 	v1 "code.vegaprotocol.io/vega/wallet/service/store/v1"
 	"github.com/stretchr/testify/assert"

@@ -16,7 +16,7 @@ import (
 	"context"
 	"errors"
 
-	"code.vegaprotocol.io/shared/paths"
+	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/cmd/vega/node"
 	"code.vegaprotocol.io/vega/core/config"
 	"code.vegaprotocol.io/vega/logging"

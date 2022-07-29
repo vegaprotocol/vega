@@ -8,7 +8,7 @@ import (
 	"sort"
 
 	vgfs "code.vegaprotocol.io/shared/libs/fs"
-	"code.vegaprotocol.io/shared/paths"
+	"code.vegaprotocol.io/vega/paths"
 
 	"code.vegaprotocol.io/vega/wallet/network"
 )

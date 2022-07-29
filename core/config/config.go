@@ -19,7 +19,7 @@ import (
 	"os"
 
 	vgfs "code.vegaprotocol.io/shared/libs/fs"
-	"code.vegaprotocol.io/shared/paths"
+	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/core/admin"
 	"code.vegaprotocol.io/vega/core/api"
 	"code.vegaprotocol.io/vega/core/assets"

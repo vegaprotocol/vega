@@ -12,7 +12,7 @@ import (
 
 	vgterm "code.vegaprotocol.io/shared/libs/term"
 	vglog "code.vegaprotocol.io/shared/libs/zap"
-	"code.vegaprotocol.io/shared/paths"
+	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"

@@ -19,7 +19,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"code.vegaprotocol.io/shared/paths"
+	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/core/config"
 	"code.vegaprotocol.io/vega/core/faucet"
 	"code.vegaprotocol.io/vega/logging"

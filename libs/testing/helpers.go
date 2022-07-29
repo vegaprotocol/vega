@@ -17,7 +17,7 @@ import (
 	"path/filepath"
 
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
-	"code.vegaprotocol.io/shared/paths"
+	"code.vegaprotocol.io/vega/paths"
 )
 
 func NewVegaPaths() (paths.Paths, func()) {

@@ -27,7 +27,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/api"
 
 	vegaprotoapi "code.vegaprotocol.io/protos/vega/api/v1"
-	"code.vegaprotocol.io/shared/paths"
+	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/datanode/broker"
 	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/datanode/gateway/server"

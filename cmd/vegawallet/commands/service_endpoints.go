@@ -8,7 +8,7 @@ import (
 
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 
-	"code.vegaprotocol.io/shared/paths"
+	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
 	netstore "code.vegaprotocol.io/vega/wallet/network/store/v1"

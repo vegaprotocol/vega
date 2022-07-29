@@ -19,7 +19,7 @@ import (
 	"path/filepath"
 
 	vgfs "code.vegaprotocol.io/shared/libs/fs"
-	"code.vegaprotocol.io/shared/paths"
+	"code.vegaprotocol.io/vega/paths"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 )
 

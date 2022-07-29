@@ -22,7 +22,7 @@ import (
 	"time"
 
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
-	"code.vegaprotocol.io/shared/paths"
+	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/core/broker/mocks"
 	dmocks "code.vegaprotocol.io/vega/core/delegation/mocks"
 	"code.vegaprotocol.io/vega/core/integration/stubs"

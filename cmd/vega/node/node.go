@@ -21,7 +21,7 @@ import (
 	"syscall"
 
 	apipb "code.vegaprotocol.io/protos/vega/api/v1"
-	"code.vegaprotocol.io/shared/paths"
+	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/core/admin"
 	"code.vegaprotocol.io/vega/core/api"
 	"code.vegaprotocol.io/vega/core/api/rest"

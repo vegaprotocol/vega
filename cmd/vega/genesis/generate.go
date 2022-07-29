@@ -17,7 +17,7 @@ import (
 	"fmt"
 
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
-	"code.vegaprotocol.io/shared/paths"
+	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/core/genesis"
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	vgtm "code.vegaprotocol.io/vega/core/tendermint"
