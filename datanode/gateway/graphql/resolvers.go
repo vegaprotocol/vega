@@ -1160,12 +1160,7 @@ func (r *myPartyResolver) Rewards(
 	return resp.Rewards, err
 }
 
-func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *types.Party, asset *string, pagination *v2.Pagination) (*v2.RewardsConnection, error) {
-	var assetID string
-	if asset != nil {
-		assetID = *asset
-	}
-
+func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *types.Party, assetID *string, pagination *v2.Pagination) (*v2.RewardsConnection, error) {
 	req := v2.ListRewardsRequest{
 		PartyId:    party.Id,
 		AssetId:    assetID,
