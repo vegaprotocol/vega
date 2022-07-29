@@ -85,7 +85,7 @@ type Subscription {
 
     "Subscribe to price level market depth updates"
     marketsDepthUpdate(
-      "ID of the market you want to receive market depth pricelevel updates for"
+      "ID of the market you want to receive market depth price level updates for"
       marketIds: [ID!]!
     ): [ObservableMarketDepthUpdate!]!
 
@@ -158,7 +158,7 @@ type MarginLevels {
   maintenanceLevel: String!
   "if the margin is between maintenance and search, the network will initiate a collateral search (unsigned integer)"
   searchLevel: String!
-  "this is the minimal margin required for a party to place a new order on the network (unsigned integer)"
+  "this is the minimum margin required for a party to place a new order on the network (unsigned integer)"
   initialLevel: String!
 
   """
@@ -599,7 +599,7 @@ type Query {
   "Current network limits"
   networkLimits: NetworkLimits
 
-  "get market data history for a specific market. If no dates are given, the latest snapshot will be returned. If only the start date is provided all history from the given date will be provided, and if only the end date is provided, all history from the start up to and including the end date will be provided."
+  "get market data history for a specific market. If no dates are given, the latest snapshot will be returned. If only the start date is provided, all history from the given date will be provided, and if only the end date is provided, all history from the start up to and including the end date will be provided."
   getMarketDataHistoryByID(
     id: String!
     """
@@ -724,10 +724,10 @@ enum DispatchMetric {
 }
 
 type DispatchStrategy {
-  "What to contribution is measured"
+  "Defines the data that will be used to compare markets so as to distribute rewards appropriately"
   dispatchMetric: DispatchMetric!
 
-  "The asset to use for measuring contibution to the metric"
+  "The asset to use for measuring contribution to the metric"
   dispatchMetricAssetId: ID!
 
   "Scope the dispatch to this market only under the metric asset"
@@ -982,13 +982,13 @@ type Asset {
   "The total supply of the market"
   totalSupply: String!
 
-  "The precision of the asset"
+  "The precision of the asset. Should match the decimal precision of the asset on its native chain, e.g: for ERC20 assets, it is often 18"
   decimals: Int!
 
   "The minimum economically meaningful amount in the asset"
   quantum: String!
 
-  "The origin source of the asset (e.g: an erc20 asset)"
+  "The origin source of the asset (e.g: an ERC20 asset)"
   source: AssetSource!
 
   "The status of the asset in the Vega network"
@@ -1019,12 +1019,12 @@ type ERC20 {
   contractAddress: String!
   """
   The lifetime limits deposit per address
-  Note: this is a temporary measure for restricted mainnet
+  Note: this is a temporary measure for alpha mainnet
   """
   lifetimeLimit: String!
   """
   The maximum allowed per withdrawal
-  Note: this is a temporary measure for restricted mainnet
+  Note: this is a temporary measure for alpha mainnet
   """
   withdrawThreshold: String!
 }
@@ -1355,7 +1355,7 @@ type OracleData {
   """
   RFC3339Nano formatted date and time for when the data was broadcast to the markets
   with a matching oracle spec.
-  It has no value when the oracle date did not match any oracle spec.
+  It has no value when the oracle date does not match any oracle spec.
   """
   broadcastAt:  String!
 }
@@ -1370,7 +1370,7 @@ type Property {
 
 union Product = Future
 
-"Describe something that can be traded on Vega"
+"Describes something that can be traded on Vega"
 type Instrument {
   "Uniquely identify an instrument across all instruments available on Vega (string)"
   id: String!
@@ -1400,7 +1400,7 @@ type ScalingFactors {
   "the scaling factor that determines the optimal margin level"
   initialMargin: Float!
 
-  "The scaling factor that determines the overflow margin level"
+  "the scaling factor that determines the overflow margin level"
   collateralRelease: Float!
 }
 
@@ -1542,7 +1542,8 @@ type Market {
   """
   positionDecimalPlaces indicates the number of decimal places that an integer must be shifted in order to get a correct size (uint64).
   i.e. 0 means there are no fractional orders for the market, and order sizes are always whole sizes.
-  2 means sizes given as 10^2 * desired size, e.g. a desired size of 1.23 is represented as 123 in this market.
+  2 means sizes given as 10^2 * desired size, e.g. a desired size of 1.23 is represented as 123 in this market. 
+  This sets how big the smallest order / position on the market can be.
   """
   positionDecimalPlaces: Int!
 
@@ -1585,7 +1586,7 @@ type Market {
 
   "Get account for a party or market"
   accounts(
-    "Id of the party to get the margin account for"
+    "ID of the party to get the margin account for"
     partyId: ID
   ): [Account!]
 
@@ -1973,18 +1974,18 @@ enum StakeLinkingType {
 "The status of the stake linking"
 enum StakeLinkingStatus {
   """
-  The stake linking is pending in the vega network, this means that
-  the vega network have seen a StakeLinking, but is still to confirm
+  The stake linking is pending in the Vega network. This means that
+  the Vega network have seen a StakeLinking, but is still to confirm
   it's valid on the ethereum chain, and accepted by all nodes of the network
   """
   Pending
   "The stake linking has been accepted and processed fully (balance updated) by the network"
   Accepted
-  "The vega network have rejected this stake linking"
+  "The Vega network has rejected this stake linking"
   Rejected
 }
 
-"A Stake linking represent the intend from a party to deposit / remove stake on their account"
+"A Stake linking represent the intent from a party to deposit / remove stake on their account"
 type StakeLinking {
   id: ID!
   "Type of linking: link|unlink"
@@ -1997,7 +1998,7 @@ type StakeLinking {
   amount: String!
   "The status of the linking"
   status: StakeLinkingStatus!
-  "The time at which the stake linking was full processed by the vega network, null until defined"
+  "The time at which the stake linking was fully processed by the Vega network, null until defined"
   finalizedAt: String
   "The transaction hash (ethereum) which initiated the link/unlink"
   txHash: String!
@@ -2154,10 +2155,10 @@ type Trade {
   "The fee paid by the seller side of the trade"
   sellerFee: TradeFee!
 
-  "The batch in witch the buyer order was submitted (applies only for Auctions modes)"
+  "The batch in which the buyer order was submitted (applies only for auction modes)"
   buyerAuctionBatch: Int
 
-  "The batch in witch the seller order was submitted (applies only for Auctions modes)"
+  "The batch in which the seller order was submitted (applies only for auction modes)"
   sellerAuctionBatch: Int
 }
 
@@ -2166,10 +2167,10 @@ type TradeFee {
   "The maker fee, aggressive party to the other party (the one who had an order in the book)"
   makerFee: String!
 
-  "The infrastructure fee, a fee paid to the node runner to maintain the vega network"
+  "The infrastructure fee, a fee paid to the validators to maintain the Vega network"
   infrastructureFee: String!
 
-  "The fee paid to the market makers to provide liquidity in the market"
+  "The fee paid to the liquidity providers to commit liquidity to the market"
   liquidityFee: String!
 }
 
@@ -2288,7 +2289,7 @@ enum DepositStatus {
   Open
   "The deposit have been cancelled by the network, either because it expired, or something went wrong with the foreign chain"
   Cancelled
-  "The deposit was finalied, it was first valid, the foreign chain has executed it and the network updated all accounts"
+  "The deposit was finalised, it was first valid, the foreign chain has executed it and the network updated all accounts"
   Finalized
 }
 
@@ -2684,9 +2685,9 @@ enum AccountType {
   Bond
   "External - an account use to refer to external account"
   External
-  "GlobalReward - an global account for the reward pool"
+  "GlobalReward - a global account for the reward pool"
   GlobalReward
-  "PendingTransfers - an global account for the pending transfers pool"
+  "PendingTransfers - a global account for the pending transfers pool"
   PendingTransfers
   "RewardTakerPaidFees - an account holding rewards for taker paid fees"
   RewardTakerPaidFees
@@ -2748,7 +2749,7 @@ type InstrumentConfiguration {
 type NewMarket {
   "New market instrument configuration"
   instrument: InstrumentConfiguration!
-  "Decimal places used for the new market"
+  "Decimal places used for the new market, sets the smallest price increment on the book"
   decimalPlaces: Int!
   "New market risk configuration"
   riskParameters: RiskModel!
@@ -2760,7 +2761,7 @@ type NewMarket {
 
 "A commitment of liquidity to be made by the party which proposes a market"
 type NewMarketCommitment {
-  "Specified as a unit-less number that represents the amount of settlement asset of the market"
+  "Specified as a unit-less number that represents the amount of the settlement asset of the market"
   commitmentAmount: String!
   """
   Nominated liquidity fee factor, which is an input to the calculation of
@@ -2828,7 +2829,7 @@ type NewAsset {
   "The precision of the asset"
   decimals: Int!
 
-  "The min stake to become an lp for any market using this asset for settlement"
+  "The minimum stake to become a liquidity provider for any market using this asset for settlement"
   minLpStake: String!
 
   "the source of the new Asset"
@@ -2869,7 +2870,7 @@ type ProposalRationale {
   """
   Description to show a short title / something in case the link goes offline.
   This is to be between 0 and 1024 unicode characters.
-  This is mandatory for all proposal.
+  This is mandatory for all proposals.
   """
   description: String!
   """
@@ -2916,7 +2917,7 @@ enum ProposalType {
   NetworkParameters
   "Proposal to add a new asset"
   NewAsset
-  "Proposal to create a new free form proposal"
+  "Proposal to create a new freeform proposal"
   NewFreeForm
 }
 
@@ -2945,9 +2946,9 @@ enum ProposalState {
 }
 
 type Proposal {
-  "Proposal ID that is filled by VEGA once proposal reaches the network"
+  "Proposal ID that is filled by Vega once proposal reaches the network"
   id: ID
-  "A UUID reference to aid tracking proposals on VEGA"
+  "A UUID reference to aid tracking proposals on Vega"
   reference: String!
   "Party that prepared the proposal"
   party: Party!
@@ -3308,9 +3309,9 @@ type LiquidityProvision {
   commitmentAmount: String!
   "nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers."
   fee: String!
-  "a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec."
+  "a set of liquidity sell orders to meet the liquidity provision obligation."
   sells: [LiquidityOrderReference!]!
-  "a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec."
+  "a set of liquidity buy orders to meet the liquidity provision obligation."
   buys: [LiquidityOrderReference!]!
   "The version of this LiquidityProvision"
   version: String!
@@ -3362,7 +3363,7 @@ type RewardSummary {
   ): RewardsConnection
 }
 
-"RewardPerAssetDetail is depricated, use RewardSummmary instead "
+"RewardPerAssetDetail is deprecated, use RewardSummmary instead "
 type RewardPerAssetDetail {
   "Asset in which the reward was paid"
   asset: Asset!
