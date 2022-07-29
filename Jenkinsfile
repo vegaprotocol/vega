@@ -1,5 +1,5 @@
 /* groovylint-disable DuplicateStringLiteral, LineLength, NestedBlockDepth */
-@Library('vega-shared-library') _
+@Library('vega-shared-library@one-repo') _
 
 /* properties of scmVars (example):
     - GIT_BRANCH:PR-40-head
@@ -19,13 +19,15 @@ pipeline {
     options {
         skipDefaultCheckout true
         timestamps()
-        timeout(time: 45, unit: 'MINUTES')
+        timeout(time: 60, unit: 'MINUTES')
     }
     parameters {
         string( name: 'PROTOS_BRANCH', defaultValue: 'develop',
                 description: 'Git branch, tag or hash of the vegaprotocol/protos repository')
         string( name: 'SYSTEM_TESTS_BRANCH', defaultValue: 'develop',
                 description: 'Git branch, tag or hash of the vegaprotocol/system-tests repository')
+        string( name: 'VEGACAPSULE_BRANCH', defaultValue: '',
+                description: 'Git branch, tag or hash of the vegaprotocol/vegacapsule repository')
         string( name: 'VEGATOOLS_BRANCH', defaultValue: 'develop',
                 description: 'Git branch, tag or hash of the vegaprotocol/vegatools repository')
         string( name: 'DEVOPS_INFRA_BRANCH', defaultValue: 'master',
@@ -156,9 +158,156 @@ pipeline {
         //
 
         //
+        // Begin LINTERS
+        //
+        stage('Linters') {
+            parallel {
+                stage('linters') {
+                    steps {
+                        dir('vega') {
+                            sh '''#!/bin/bash -e
+                                golangci-lint run -v --config .golangci.toml
+                            '''
+                        }
+                    }
+                }
+                stage('shellcheck') {
+                    options { retry(3) }
+                    steps {
+                        dir('vega') {
+                            sh "git ls-files '*.sh'"
+                            sh "git ls-files '*.sh' | xargs shellcheck"
+                        }
+                    }
+                }
+                stage('yamllint') {
+                    options { retry(3) }
+                    steps {
+                        dir('vega') {
+                            sh "git ls-files '*.yml' '*.yaml'"
+                            sh "git ls-files '*.yml' '*.yaml' | xargs yamllint -s -d '{extends: default, rules: {line-length: {max: 160}}}'"
+                        }
+                    }
+                }
+                stage('json format') {
+                    options { retry(3) }
+                    steps {
+                        dir('vega') {
+                            sh "git ls-files '*.json'"
+                            sh "for f in \$(git ls-files '*.json'); do echo \"check \$f\"; jq empty \"\$f\"; done"
+                        }
+                    }
+                }
+                stage('markdown spellcheck') {
+                    environment {
+                        FORCE_COLOR = '1'
+                    }
+                    options { retry(3) }
+                    steps {
+                        dir('vega') {
+                            ansiColor('xterm') {
+                                sh 'mdspell --en-gb --ignore-acronyms --ignore-numbers --no-suggestions --report "*.md" "docs/**/*.md"'
+                            }
+                        }
+                    }
+                }
+                stage('approbation') {
+                    when {
+                        anyOf {
+                            branch 'develop'
+                            branch 'main'
+                            branch 'master'
+                        }
+                    }
+                    steps {
+                        script {
+                            runApprobation ignoreFailure: !isPRBuild(),
+                                vegaVersion: commitHash
+                        }
+                    }
+                }
+            }
+        }
+        //
+        // End LINTERS
+        //
+
+        //
+        // Begin TESTS
+        //
+        stage('Tests') {
+            parallel {
+                stage('unit tests') {
+                    options { retry(3) }
+                    steps {
+                        dir('vega') {
+                            sh 'go test -v ./... 2>&1 | tee unit-test-results.txt && cat unit-test-results.txt | go-junit-report > vega-unit-test-report.xml'
+                            junit checksName: 'Unit Tests', testResults: 'vega-unit-test-report.xml'
+                        }
+                    }
+                }
+                stage('unit tests with race') {
+                    environment {
+                        CGO_ENABLED = 1
+                    }
+                    options { retry(3) }
+                    steps {
+                        dir('vega') {
+                            sh 'go test -v -race ./... 2>&1 | tee unit-test-race-results.txt && cat unit-test-race-results.txt | go-junit-report > vega-unit-test-race-report.xml'
+                            junit checksName: 'Unit Tests with Race', testResults: 'vega-unit-test-race-report.xml'
+                        }
+                    }
+                }
+                stage('vega/integration tests') {
+                    options { retry(3) }
+                    steps {
+                        dir('vega/core/integration') {
+                            sh 'godog build -o integration.test && ./integration.test --format=junit:vega-integration-report.xml'
+                            junit checksName: 'Integration Tests', testResults: 'vega-integration-report.xml'
+                        }
+                    }
+                }
+                stage('System Tests Network Smoke') {
+                    steps {
+                        script {
+                            systemTestsCapsule ignoreFailure: !isPRBuild(),
+                                timeout: 30,
+                                vegaVersion: commitHash,
+                                protos: params.PROTOS_BRANCH,
+                                systemTests: params.SYSTEM_TESTS_BRANCH,
+                                vegacapsule: params.VEGACAPSULE_BRANCH,
+                                vegatools: params.VEGATOOLS_BRANCH,
+                                devopsInfra: params.DEVOPS_INFRA_BRANCH,
+                                devopsScripts: params.DEVOPSSCRIPTS_BRANCH,
+                                testMark: "network_infra_smoke"
+                        }
+                    }
+                }
+                stage('Capsule System Tests') {
+                    steps {
+                        script {
+                            systemTestsCapsule ignoreFailure: !isPRBuild(),
+                                timeout: 30,
+                                vegaVersion: commitHash,
+                                protos: params.PROTOS_BRANCH,
+                                systemTests: params.SYSTEM_TESTS_BRANCH,
+                                vegacapsule: params.VEGACAPSULE_BRANCH,
+                                vegatools: params.VEGATOOLS_BRANCH,
+                                devopsInfra: params.DEVOPS_INFRA_BRANCH,
+                                devopsScripts: params.DEVOPSSCRIPTS_BRANCH
+                        }
+                    }
+                }
+            }
+        }
+        //
+        // End TESTS
+        //
+
+        //
         // Begin DOCKER
         //
-        stage('Build docker image') {
+        stage('Publish docker images') {
             matrix {
                 axes {
                     axis {
@@ -202,137 +351,6 @@ pipeline {
         //
         // End DOCKER
         //
-
-        // stage('Linters') {
-        //     parallel {
-        //         stage('linters') {
-        //             steps {
-        //                 dir('vega') {
-        //                     sh '''#!/bin/bash -e
-        //                         golangci-lint run -v --config .golangci.toml
-        //                     '''
-        //                 }
-        //             }
-        //         }
-        //         stage('shellcheck') {
-        //             options { retry(3) }
-        //             steps {
-        //                 dir('vega') {
-        //                     sh "git ls-files '*.sh'"
-        //                     sh "git ls-files '*.sh' | xargs shellcheck"
-        //                 }
-        //             }
-        //         }
-        //         stage('yamllint') {
-        //             options { retry(3) }
-        //             steps {
-        //                 dir('vega') {
-        //                     sh "git ls-files '*.yml' '*.yaml'"
-        //                     sh "git ls-files '*.yml' '*.yaml' | xargs yamllint -s -d '{extends: default, rules: {line-length: {max: 160}}}'"
-        //                 }
-        //             }
-        //         }
-        //         stage('json format') {
-        //             options { retry(3) }
-        //             steps {
-        //                 dir('vega') {
-        //                     sh "git ls-files '*.json'"
-        //                     sh "for f in \$(git ls-files '*.json'); do echo \"check \$f\"; jq empty \"\$f\"; done"
-        //                 }
-        //             }
-        //         }
-        //         stage('markdown spellcheck') {
-        //             environment {
-        //                 FORCE_COLOR = '1'
-        //             }
-        //             options { retry(3) }
-        //             steps {
-        //                 dir('vega') {
-        //                     ansiColor('xterm') {
-        //                         sh 'mdspell --en-gb --ignore-acronyms --ignore-numbers --no-suggestions --report "*.md" "docs/**/*.md"'
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //         stage('approbation') {
-        //             when {
-        //                 anyOf {
-        //                     branch 'develop'
-        //                     branch 'main'
-        //                     branch 'master'
-        //                 }
-        //             }
-        //             steps {
-        //                 script {
-        //                     runApprobation ignoreFailure: !isPRBuild(),
-        //                         vegaCore: commitHash
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
-
-        // stage('Tests') {
-        //     parallel {
-        //         stage('unit tests') {
-        //             options { retry(3) }
-        //             steps {
-        //                 dir('vega') {
-        //                     sh 'go test -v ./... 2>&1 | tee unit-test-results.txt && cat unit-test-results.txt | go-junit-report > vega-unit-test-report.xml'
-        //                     junit checksName: 'Unit Tests', testResults: 'vega-unit-test-report.xml'
-        //                 }
-        //             }
-        //         }
-        //         stage('unit tests with race') {
-        //             environment {
-        //                 CGO_ENABLED = 1
-        //             }
-        //             options { retry(3) }
-        //             steps {
-        //                 dir('vega') {
-        //                     sh 'go test -v -race ./... 2>&1 | tee unit-test-race-results.txt && cat unit-test-race-results.txt | go-junit-report > vega-unit-test-race-report.xml'
-        //                     junit checksName: 'Unit Tests with Race', testResults: 'vega-unit-test-race-report.xml'
-        //                 }
-        //             }
-        //         }
-        //         stage('vega/integration tests') {
-        //             options { retry(3) }
-        //             steps {
-        //                 dir('vega/core/integration') {
-        //                     sh 'godog build -o integration.test && ./integration.test --format=junit:vega-integration-report.xml'
-        //                     junit checksName: 'Integration Tests', testResults: 'vega-integration-report.xml'
-        //                 }
-        //             }
-        //         }
-        //         stage('System Tests Network Smoke') {
-        //             steps {
-        //                 script {
-        //                     systemTestsCapsule ignoreFailure: !isPRBuild(),
-        //                         vegaCore: commitHash,
-        //                         dataNode: params.DATA_NODE_BRANCH,
-        //                         vegatools: params.VEGATOOLS_BRANCH,
-        //                         systemTests: params.SYSTEM_TESTS_BRANCH,
-        //                         protos: params.PROTOS_BRANCH,
-        //                         testMark: "network_infra_smoke"
-        //                 }
-        //             }
-        //         }
-        //         stage('Capsule System Tests') {
-        //                 steps {
-        //                     script {
-        //                         systemTestsCapsule vegaCore: commitHash,
-        //                             dataNode: params.DATA_NODE_BRANCH,
-        //                             devopsInfra: params.DEVOPS_INFRA_BRANCH,
-        //                             vegatools: params.VEGATOOLS_BRANCH,
-        //                             systemTests: params.SYSTEM_TESTS_BRANCH,
-        //                             protos: params.PROTOS_BRANCH,
-        //                             ignoreFailure: !isPRBuild()
-
-        //                     }
-        //                 }
-        //         }
-        //     }
-        // }
 
 
         // stage('Publish') {
