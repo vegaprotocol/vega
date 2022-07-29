@@ -17,8 +17,8 @@ import (
 	"os"
 	"path/filepath"
 
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
-	"code.vegaprotocol.io/shared/paths"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
+	"code.vegaprotocol.io/vega/paths"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/proto"
 )

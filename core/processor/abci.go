@@ -25,8 +25,8 @@ import (
 
 	"code.vegaprotocol.io/protos/commands"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	vgfs "code.vegaprotocol.io/shared/libs/fs"
-	"code.vegaprotocol.io/shared/paths"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
+	"code.vegaprotocol.io/vega/paths"
 
 	"code.vegaprotocol.io/vega/core/api"
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
@@ -41,6 +41,7 @@ import (
 	"code.vegaprotocol.io/vega/core/vegatime"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	signatures "code.vegaprotocol.io/vega/libs/crypto/signature"
 	"code.vegaprotocol.io/vega/logging"
 
 	tmtypes "github.com/tendermint/tendermint/abci/types"
@@ -941,7 +942,7 @@ func (app *App) DeliverValidatorHeartbeat(ctx context.Context, tx abci.Tx) error
 		return err
 	}
 
-	return app.top.ProcessValidatorHeartbeat(ctx, an, vgcrypto.VerifyVegaSignature, vgcrypto.VerifyEthereumSignature)
+	return app.top.ProcessValidatorHeartbeat(ctx, an, signatures.VerifyVegaSignature, signatures.VerifyEthereumSignature)
 }
 
 func (app *App) DeliverTransferFunds(ctx context.Context, tx abci.Tx, id string) error {
