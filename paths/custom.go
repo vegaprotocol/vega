@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	vgfs "code.vegaprotocol.io/shared/libs/fs"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
 )
 
 // When opting for a custom Vega home, the all files are located under the

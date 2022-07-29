@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	vgfs "code.vegaprotocol.io/shared/libs/fs"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	cmd "code.vegaprotocol.io/vega/cmd/vegawallet/commands"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

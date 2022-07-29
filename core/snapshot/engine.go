@@ -25,7 +25,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
-	vgfs "code.vegaprotocol.io/shared/libs/fs"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/core/metrics"
 	"code.vegaprotocol.io/vega/core/types"

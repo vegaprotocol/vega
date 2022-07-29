@@ -25,7 +25,7 @@ import (
 	"time"
 
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
-	vgfs "code.vegaprotocol.io/shared/libs/fs"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/core/blockchain"
 	"code.vegaprotocol.io/vega/logging"

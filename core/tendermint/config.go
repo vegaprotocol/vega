@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"os"
 
-	vgfs "code.vegaprotocol.io/shared/libs/fs"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/core/genesis"
 	tmconfig "github.com/tendermint/tendermint/config"
 	tmcrypto "github.com/tendermint/tendermint/crypto"

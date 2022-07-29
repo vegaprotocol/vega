@@ -9,7 +9,7 @@ import (
 	"sort"
 
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
-	vgfs "code.vegaprotocol.io/shared/libs/fs"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 )
 

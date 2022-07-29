@@ -22,7 +22,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	vgfs "code.vegaprotocol.io/shared/libs/fs"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/core/genesis"
 	vgtm "code.vegaprotocol.io/vega/core/tendermint"
 	"code.vegaprotocol.io/vega/core/types"
