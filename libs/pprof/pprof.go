@@ -25,8 +25,8 @@ import (
 	"runtime/pprof"
 	"time"
 
-	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/core/config/encoding"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/logging"
 )
 

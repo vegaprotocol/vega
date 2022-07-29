@@ -18,9 +18,9 @@ import (
 	"path/filepath"
 	"sync"
 
-	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/core/crypto"
 	"code.vegaprotocol.io/vega/core/nodewallets/registry"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 )

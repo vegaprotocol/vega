@@ -22,10 +22,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/core/genesis"
 	vgtm "code.vegaprotocol.io/vega/core/tendermint"
 	"code.vegaprotocol.io/vega/core/types"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/jessevdk/go-flags"
 	tmjson "github.com/tendermint/tendermint/libs/json"

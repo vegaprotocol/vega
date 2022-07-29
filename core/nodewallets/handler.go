@@ -17,9 +17,9 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/core/nodewallets/registry"
 	"code.vegaprotocol.io/vega/core/nodewallets/vega"
+	"code.vegaprotocol.io/vega/paths"
 )
 
 var (

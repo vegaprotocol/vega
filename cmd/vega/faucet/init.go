@@ -15,11 +15,11 @@ package faucet
 import (
 	"fmt"
 
-	vgjson "code.vegaprotocol.io/vega/libs/json"
-	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/core/config"
 	"code.vegaprotocol.io/vega/core/faucet"
+	vgjson "code.vegaprotocol.io/vega/libs/json"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/paths"
 )
 
 type faucetInit struct {

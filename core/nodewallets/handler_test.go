@@ -18,10 +18,10 @@ package nodewallets_test
 import (
 	"testing"
 
-	vgrand "code.vegaprotocol.io/vega/libs/rand"
-	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/core/nodewallets"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	vgtesting "code.vegaprotocol.io/vega/libs/testing"
+	"code.vegaprotocol.io/vega/paths"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

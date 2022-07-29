@@ -17,11 +17,11 @@ import (
 	"os"
 	"time"
 
-	vgfs "code.vegaprotocol.io/vega/libs/fs"
-	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/core/config/encoding"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	vghttp "code.vegaprotocol.io/vega/libs/http"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/paths"
 )
 
 const (

@@ -21,8 +21,6 @@ import (
 	"time"
 
 	checkpointpb "code.vegaprotocol.io/protos/vega/checkpoint/v1"
-	vgrand "code.vegaprotocol.io/vega/libs/rand"
-	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/core/assets"
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/checkpoint"
@@ -35,8 +33,10 @@ import (
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/proto"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	vgtesting "code.vegaprotocol.io/vega/libs/testing"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/paths"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )

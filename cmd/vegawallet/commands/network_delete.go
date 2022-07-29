@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"io"
 
-	vgterm "code.vegaprotocol.io/vega/libs/term"
-	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
+	vgterm "code.vegaprotocol.io/vega/libs/term"
+	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/wallet/network"
 	netstore "code.vegaprotocol.io/vega/wallet/network/store/v1"
 

@@ -17,13 +17,13 @@ import (
 	"errors"
 	"fmt"
 
-	vgfs "code.vegaprotocol.io/vega/libs/fs"
-	vgjson "code.vegaprotocol.io/vega/libs/json"
-	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/core/config"
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	vgfmt "code.vegaprotocol.io/vega/libs/fmt"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
+	vgjson "code.vegaprotocol.io/vega/libs/json"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/paths"
 
 	"github.com/jessevdk/go-flags"
 	tmconfig "github.com/tendermint/tendermint/config"

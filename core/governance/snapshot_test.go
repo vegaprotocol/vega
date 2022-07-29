@@ -20,9 +20,9 @@ import (
 	"time"
 
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
-	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/proto"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

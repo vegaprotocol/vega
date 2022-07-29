@@ -18,9 +18,9 @@ import (
 	"time"
 
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
-	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"github.com/jackc/pgx/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

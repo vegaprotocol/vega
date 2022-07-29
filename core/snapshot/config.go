@@ -16,10 +16,10 @@ import (
 	"errors"
 	"os"
 
-	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/core/config/encoding"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/paths"
 )
 
 const (

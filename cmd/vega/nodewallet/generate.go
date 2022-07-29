@@ -15,12 +15,12 @@ package nodewallet
 import (
 	"fmt"
 
-	vgjson "code.vegaprotocol.io/vega/libs/json"
-	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/core/config"
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	vgfmt "code.vegaprotocol.io/vega/libs/fmt"
+	vgjson "code.vegaprotocol.io/vega/libs/json"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/paths"
 
 	"github.com/jessevdk/go-flags"
 )

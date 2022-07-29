@@ -21,7 +21,6 @@ import (
 	"syscall"
 
 	apipb "code.vegaprotocol.io/protos/vega/api/v1"
-	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/core/admin"
 	"code.vegaprotocol.io/vega/core/api"
 	"code.vegaprotocol.io/vega/core/api/rest"
@@ -37,6 +36,7 @@ import (
 	"code.vegaprotocol.io/vega/core/stats"
 	"code.vegaprotocol.io/vega/libs/pprof"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/version"
 
 	"github.com/blang/semver"

@@ -8,9 +8,9 @@ import (
 
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 
-	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
+	"code.vegaprotocol.io/vega/paths"
 	netstore "code.vegaprotocol.io/vega/wallet/network/store/v1"
 
 	"github.com/spf13/cobra"

@@ -16,13 +16,13 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	vgrand "code.vegaprotocol.io/vega/libs/rand"
-	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/core/genesis"
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	vgtm "code.vegaprotocol.io/vega/core/tendermint"
 	"code.vegaprotocol.io/vega/core/validators"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/paths"
 
 	"github.com/jessevdk/go-flags"
 	tmtime "github.com/tendermint/tendermint/libs/time"

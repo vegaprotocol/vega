@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"io"
 
-	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/paths"
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 	"github.com/jackc/pgx/v4/stdlib"
 	"github.com/pkg/errors"

@@ -16,9 +16,9 @@ import (
 	"context"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
 	"code.vegaprotocol.io/vega/datanode/service"
+	"code.vegaprotocol.io/vega/paths"
 
 	vegaprotoapi "code.vegaprotocol.io/protos/vega/api/v1"
 	"code.vegaprotocol.io/vega/datanode/broker"

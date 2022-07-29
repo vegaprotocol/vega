@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	cmd "code.vegaprotocol.io/vega/cmd/vegawallet/commands"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
