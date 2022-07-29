@@ -76,7 +76,7 @@ proto: ## build proto definitions
 	@./script/generate.sh
 
 .PHONY: proto_json
-proto: ## build proto definitions
+proto_json: ## build proto definitions
 	@./script/generate_json.sh
 
 .PHONY: proto_check
