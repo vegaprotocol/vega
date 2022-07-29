@@ -16,8 +16,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/core/crypto"
 	"code.vegaprotocol.io/vega/core/oracles"
+	"code.vegaprotocol.io/vega/libs/crypto"
 )
 
 // JSONAdaptor is an oracle Adaptor for simple oracle data broadcasting.

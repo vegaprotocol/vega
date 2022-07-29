@@ -30,7 +30,6 @@ import (
 
 	"code.vegaprotocol.io/vega/core/api"
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
-	"code.vegaprotocol.io/vega/core/crypto"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/genesis"
 	"code.vegaprotocol.io/vega/core/processor/ratelimit"
@@ -40,6 +39,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types/statevar"
 	"code.vegaprotocol.io/vega/core/vegatime"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	signatures "code.vegaprotocol.io/vega/libs/crypto/signature"
 	"code.vegaprotocol.io/vega/logging"
