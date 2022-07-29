@@ -14,7 +14,7 @@ package models
 
 import (
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 )
 
 // Simple represents a dummy risk model with fixed risk params.

@@ -21,7 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/banking"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -197,7 +197,7 @@ func testOneOffTransferInvalidTransfers(t *testing.T) {
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 		baseCpy = transferBase
 		transfer.OneOff.TransferBase = &baseCpy
-		transfer.OneOff.Amount = num.Zero()
+		transfer.OneOff.Amount = num.UintZero()
 		assert.EqualError(t,
 			e.TransferFunds(ctx, &transfer),
 			types.ErrCannotTransferZeroFunds.Error(),

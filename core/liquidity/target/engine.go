@@ -17,7 +17,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 )
 
 var (
@@ -28,8 +28,8 @@ var (
 )
 
 var (
-	exp    = num.Zero().Exp(num.NewUint(10), num.NewUint(5))
-	exp2   = num.Zero().Exp(num.NewUint(10), num.NewUint(10))
+	exp    = num.UintZero().Exp(num.NewUint(10), num.NewUint(5))
+	exp2   = num.UintZero().Exp(num.NewUint(10), num.NewUint(10))
 	expDec = num.DecimalFromUint(exp)
 )
 
@@ -131,7 +131,7 @@ func (e *Engine) GetTargetStake(rf types.RiskFactor, now time.Time, markPrice *n
 	factorUint, _ := num.UintFromDecimal(factor.Mul(expDec))
 
 	value, _ := num.UintFromDecimal(markPrice.ToDecimal().Mul(num.DecimalFromInt64(int64(e.max.OI))).Div(e.positionFactor))
-	return num.Zero().Div(num.Zero().Mul(value, factorUint.Mul(factorUint, e.sFactor)), exp2), changed
+	return num.UintZero().Div(num.UintZero().Mul(value, factorUint.Mul(factorUint, e.sFactor)), exp2), changed
 }
 
 // GetTheoreticalTargetStake returns target stake based current time, risk factors
@@ -155,7 +155,7 @@ func (e *Engine) GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, m
 
 	factorUint, _ := num.UintFromDecimal(factor.Mul(expDec))
 	value, _ := num.UintFromDecimal(markPrice.ToDecimal().Mul(num.DecimalFromInt64(int64(maxOI))).Div(e.positionFactor))
-	return num.Zero().Div(num.Zero().Mul(value, factorUint.Mul(factorUint, e.sFactor)), exp2), changed
+	return num.UintZero().Div(num.UintZero().Mul(value, factorUint.Mul(factorUint, e.sFactor)), exp2), changed
 }
 
 func (e *Engine) UpdateParameters(parameters types.TargetStakeParameters) {

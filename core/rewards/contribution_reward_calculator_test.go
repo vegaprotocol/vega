@@ -17,12 +17,12 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"github.com/stretchr/testify/require"
 )
 
 func TestCalculateRewardsByContribution(t *testing.T) {
-	require.Nil(t, calculateRewardsByContribution("1", "ETH", "FROM_ACCOUNT", types.AccountTypeMakerFeeReward, num.Zero(), []*types.PartyContibutionScore{{Party: "party1", Score: num.DecimalFromFloat(0.2)}, {Party: "party2", Score: num.DecimalFromFloat(0.8)}}, time.Now()))
+	require.Nil(t, calculateRewardsByContribution("1", "ETH", "FROM_ACCOUNT", types.AccountTypeMakerFeeReward, num.UintZero(), []*types.PartyContibutionScore{{Party: "party1", Score: num.DecimalFromFloat(0.2)}, {Party: "party2", Score: num.DecimalFromFloat(0.8)}}, time.Now()))
 	require.Nil(t, calculateRewardsByContribution("1", "ETH", "FROM_ACCOUNT", types.AccountTypeMakerFeeReward, num.NewUint(1000), []*types.PartyContibutionScore{}, time.Now()))
 
 	po := calculateRewardsByContribution("1", "ETH", "FROM_ACCOUNT", types.AccountTypeMakerFeeReward, num.NewUint(1000), []*types.PartyContibutionScore{{Party: "party1", Score: num.DecimalFromFloat(0.2)}, {Party: "party2", Score: num.DecimalFromFloat(0.8)}}, time.Now())

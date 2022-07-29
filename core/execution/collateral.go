@@ -18,7 +18,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -161,7 +161,7 @@ func (m *Market) bondSlashing(ctx context.Context, closed ...events.Margin) ([]*
 				Asset:  asset,
 			},
 			Type:      types.TransferTypeBondSlashing,
-			MinAmount: num.Zero(),
+			MinAmount: num.UintZero(),
 		})
 		if err != nil {
 			return nil, err

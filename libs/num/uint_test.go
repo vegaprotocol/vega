@@ -17,7 +17,7 @@ import (
 	"math/big"
 	"testing"
 
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -185,9 +185,9 @@ func TestDeltaI(t *testing.T) {
 	n1 := num.NewUint(10)
 	n2 := num.NewUint(25)
 
-	r1 := num.Zero().DeltaI(n1.Clone(), n2.Clone())
+	r1 := num.UintZero().DeltaI(n1.Clone(), n2.Clone())
 	assert.Equal(t, "-15", r1.String())
 
-	r2 := num.Zero().DeltaI(n2.Clone(), n1.Clone())
+	r2 := num.UintZero().DeltaI(n2.Clone(), n1.Clone())
 	assert.Equal(t, "15", r2.String())
 }

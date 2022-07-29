@@ -22,7 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/core/assets/erc20"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -188,7 +188,7 @@ func (e *Engine) WithdrawERC20(
 		w.Status = types.WithdrawalStatusRejected
 		e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 		return ErrWrongAssetUsedForERC20Withdraw
-	} else if threshold := a.Type().Details.GetERC20().WithdrawThreshold; threshold != nil && threshold.NEQ(num.Zero()) {
+	} else if threshold := a.Type().Details.GetERC20().WithdrawThreshold; threshold != nil && threshold.NEQ(num.UintZero()) {
 		// a delay will be applied on this withdrawal
 		if threshold.LT(amount) {
 			e.log.Debug("withdraw threshold breached, delay will be applied",

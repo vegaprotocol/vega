@@ -19,7 +19,7 @@ import (
 	v1 "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/core/snapshot"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 
 	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/cosmos/iavl"
@@ -41,12 +41,12 @@ func getDummyData() *types.Chunk {
 						Details: &types.AssetDetails{
 							Name:        "asset",
 							Symbol:      "AST",
-							TotalSupply: num.Zero(),
+							TotalSupply: num.UintZero(),
 							Decimals:    0,
 							Quantum:     num.DecimalZero(),
 							Source: &types.AssetDetailsBuiltinAsset{
 								BuiltinAsset: &types.BuiltinAsset{
-									MaxFaucetAmountMint: num.Zero(),
+									MaxFaucetAmountMint: num.UintZero(),
 								},
 							},
 						},
@@ -63,12 +63,12 @@ func getDummyData() *types.Chunk {
 						Details: &types.AssetDetails{
 							Name:        "asset2",
 							Symbol:      "AS2",
-							TotalSupply: num.Zero(),
+							TotalSupply: num.UintZero(),
 							Decimals:    0,
 							Quantum:     num.DecimalZero(),
 							Source: &types.AssetDetailsBuiltinAsset{
 								BuiltinAsset: &types.BuiltinAsset{
-									MaxFaucetAmountMint: num.Zero(),
+									MaxFaucetAmountMint: num.UintZero(),
 								},
 							},
 						},
@@ -85,7 +85,7 @@ func getDummyData() *types.Chunk {
 						Withdrawal: &types.Withdrawal{
 							ID:      "RW1",
 							PartyID: "p1",
-							Amount:  num.Zero(),
+							Amount:  num.UintZero(),
 							Asset:   "AST",
 							Status:  0,
 							Ref:     "rw1",
@@ -154,7 +154,7 @@ func getDummyData() *types.Chunk {
 					{
 						ID:       "",
 						Owner:    "party1",
-						Balance:  num.Zero(),
+						Balance:  num.UintZero(),
 						Asset:    "AST",
 						MarketID: "",
 						Type:     types.AccountTypeGeneral,
@@ -171,12 +171,12 @@ func getDummyData() *types.Chunk {
 						Details: &types.AssetDetails{
 							Name:        "asset",
 							Symbol:      "AST",
-							TotalSupply: num.Zero(),
+							TotalSupply: num.UintZero(),
 							Decimals:    0,
 							Quantum:     num.DecimalZero(),
 							Source: &types.AssetDetailsBuiltinAsset{
 								BuiltinAsset: &types.BuiltinAsset{
-									MaxFaucetAmountMint: num.Zero(),
+									MaxFaucetAmountMint: num.UintZero(),
 								},
 							},
 						},
@@ -362,8 +362,8 @@ func getDummyData() *types.Chunk {
 						Buy:     0,
 						Sell:    0,
 						Price:   num.NewUint(10),
-						VwBuy:   num.Zero(),
-						VwSell:  num.Zero(),
+						VwBuy:   num.UintZero(),
+						VwSell:  num.UintZero(),
 					},
 					{
 						PartyID: "party2",
@@ -371,8 +371,8 @@ func getDummyData() *types.Chunk {
 						Buy:     0,
 						Sell:    0,
 						Price:   num.NewUint(10),
-						VwBuy:   num.Zero(),
-						VwSell:  num.Zero(),
+						VwBuy:   num.UintZero(),
+						VwSell:  num.UintZero(),
 					},
 				},
 			},
@@ -538,7 +538,7 @@ func getDummyData() *types.Chunk {
 	}, &types.Payload{
 		Data: &types.PayloadVoteSpamPolicy{
 			VoteSpamPolicy: &types.VoteSpamPolicy{
-				MinVotingTokensFactor: num.Zero(),
+				MinVotingTokensFactor: num.UintZero(),
 			},
 		},
 	}, &types.Payload{
@@ -641,7 +641,7 @@ func TestPayloadConversion(t *testing.T) {
 		Data: &types.PayloadMatchingBook{
 			MatchingBook: &types.MatchingBook{
 				MarketID:        "key",
-				LastTradedPrice: num.Zero(),
+				LastTradedPrice: num.UintZero(),
 			},
 		},
 	}, &types.Payload{
@@ -725,7 +725,7 @@ func TestPayloadConversion(t *testing.T) {
 	}, &types.Payload{
 		Data: &types.PayloadVoteSpamPolicy{
 			VoteSpamPolicy: &types.VoteSpamPolicy{
-				MinVotingTokensFactor: num.Zero(),
+				MinVotingTokensFactor: num.UintZero(),
 			},
 		},
 	}, &types.Payload{

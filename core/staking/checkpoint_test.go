@@ -21,7 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/core/staking"
 	"code.vegaprotocol.io/vega/core/staking/mocks"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 

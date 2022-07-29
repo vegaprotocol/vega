@@ -14,7 +14,7 @@ package matching
 
 import (
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 )
 
 type BookCache struct {
@@ -26,7 +26,7 @@ type BookCache struct {
 func NewBookCache() BookCache {
 	return BookCache{
 		indicativePrice: cachedUint{
-			value: num.Zero(),
+			value: num.UintZero(),
 		},
 	}
 }

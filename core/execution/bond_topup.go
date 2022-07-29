@@ -17,7 +17,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -41,7 +41,7 @@ func (m *Market) checkBondBalance(ctx context.Context) {
 		if err != nil || gen.Balance.IsZero() {
 			continue
 		}
-		bondShort := num.Zero().Sub(lp.CommitmentAmount, bondAcc.Balance)
+		bondShort := num.UintZero().Sub(lp.CommitmentAmount, bondAcc.Balance)
 		// Min clones
 		amt := num.Min(bondShort, gen.Balance)
 		t := &types.Transfer{

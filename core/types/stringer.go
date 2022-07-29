@@ -16,7 +16,7 @@ import (
 	"reflect"
 	"strconv"
 
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 )
 
 type Stringer interface {

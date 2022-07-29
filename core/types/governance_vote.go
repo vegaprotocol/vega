@@ -17,7 +17,7 @@ import (
 
 	vegapb "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 )
 
 type VoteValue = vegapb.Vote_Value

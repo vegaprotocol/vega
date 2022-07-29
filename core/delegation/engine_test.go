@@ -28,9 +28,9 @@ import (
 	snp "code.vegaprotocol.io/vega/core/snapshot"
 	"code.vegaprotocol.io/vega/core/stats"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
 	"code.vegaprotocol.io/vega/core/validators"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
@@ -988,7 +988,7 @@ func testPreprocessForRewardingWithForceUndelegateSingleValidator(t *testing.T) 
 	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart]["party1"] = num.NewUint(2)
 	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart]["party2"] = num.NewUint(0)
 	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(2)
-	testEngine.stakingAccounts.partyToStake["party2"] = num.Zero()
+	testEngine.stakingAccounts.partyToStake["party2"] = num.UintZero()
 	testEngine.engine.onEpochEvent(context.Background(), types.Epoch{StartTime: epochStart, Seq: 1})
 	testEngine.engine.ProcessEpochDelegations(context.Background(), types.Epoch{StartTime: epochStart, EndTime: epochEnd, Seq: 1})
 
@@ -1437,8 +1437,8 @@ func testGetValidatorsEmpty(t *testing.T) {
 
 	for i, v := range validators {
 		require.Equal(t, "node"+strconv.Itoa(i+1), v.NodeID)
-		require.Equal(t, num.Zero(), v.SelfStake)
-		require.Equal(t, num.Zero(), v.StakeByDelegators)
+		require.Equal(t, num.UintZero(), v.SelfStake)
+		require.Equal(t, num.UintZero(), v.StakeByDelegators)
 	}
 }
 
@@ -1570,7 +1570,7 @@ func testUndelegateNowAllWithPendingOnly(t *testing.T) {
 	testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(10))
 	testEngine.engine.Delegate(context.Background(), "party1", "node2", num.NewUint(10))
 
-	err := testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", num.Zero())
+	err := testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", num.UintZero())
 	require.Nil(t, err)
 	nextEpoch := testEngine.engine.nextPartyDelegationState
 
@@ -1586,7 +1586,7 @@ func testUndelegateNowAllWithCommittedOnly(t *testing.T) {
 	setupDefaultDelegationState(testEngine, 12, 7)
 
 	// undelegate now all for party1 node1
-	err := testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", num.Zero())
+	err := testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", num.UintZero())
 	require.Nil(t, err)
 
 	require.Equal(t, num.NewUint(4), testEngine.engine.partyDelegationState["party1"].totalDelegated)
@@ -1597,7 +1597,7 @@ func testUndelegateNowAllWithCommittedOnly(t *testing.T) {
 	require.Equal(t, num.NewUint(4), testEngine.engine.nextPartyDelegationState["party1"].nodeToAmount["node2"])
 
 	// undelegate now all for party1 node2
-	err = testEngine.engine.UndelegateNow(context.Background(), "party1", "node2", num.Zero())
+	err = testEngine.engine.UndelegateNow(context.Background(), "party1", "node2", num.UintZero())
 	require.Nil(t, err)
 	require.Equal(t, 1, len(testEngine.engine.partyDelegationState))
 	require.Equal(t, 1, len(testEngine.engine.nextPartyDelegationState))
@@ -1613,7 +1613,7 @@ func testUndelegateNowAll(t *testing.T) {
 	require.Nil(t, err)
 
 	// undelegate now all for party1 node1 both committed and pending state should update
-	err = testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", num.Zero())
+	err = testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", num.UintZero())
 	require.Nil(t, err)
 
 	require.Equal(t, num.NewUint(4), testEngine.engine.partyDelegationState["party1"].totalDelegated)
@@ -1624,7 +1624,7 @@ func testUndelegateNowAll(t *testing.T) {
 	require.Equal(t, num.NewUint(4), testEngine.engine.nextPartyDelegationState["party1"].nodeToAmount["node2"])
 
 	// undelegate now all for party1 node2
-	err = testEngine.engine.UndelegateNow(context.Background(), "party1", "node2", num.Zero())
+	err = testEngine.engine.UndelegateNow(context.Background(), "party1", "node2", num.UintZero())
 	require.Nil(t, err)
 	require.Equal(t, 1, len(testEngine.engine.partyDelegationState))
 	require.Equal(t, 1, len(testEngine.engine.nextPartyDelegationState))

@@ -22,7 +22,7 @@ import (
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -265,7 +265,7 @@ func TestPartialFillMargins(t *testing.T) {
 		Party:       party3,
 		MarketID:    tm.market.GetID(),
 		Size:        1,
-		Price:       num.Zero(),
+		Price:       num.UintZero(),
 		Remaining:   1,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party3-buy-order",
