@@ -12,7 +12,7 @@
 
 package types
 
-import "code.vegaprotocol.io/vega/core/types/num"
+import "code.vegaprotocol.io/vega/libs/num"
 
 type ScoreData struct {
 	RawValScores      map[string]num.Decimal

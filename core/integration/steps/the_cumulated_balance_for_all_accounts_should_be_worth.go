@@ -16,13 +16,13 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/core/integration/stubs"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 )
 
 func TheCumulatedBalanceForAllAccountsShouldBeWorth(broker *stubs.BrokerStub, rawAmount string) error {
 	amount, _ := num.UintFromString(rawAmount, 10)
 
-	cumulatedBalance := num.Zero()
+	cumulatedBalance := num.UintZero()
 	accounts := broker.GetAccounts()
 	for _, v := range accounts {
 		// remove vote token

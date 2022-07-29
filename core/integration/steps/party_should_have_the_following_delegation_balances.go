@@ -15,7 +15,7 @@ package steps
 import (
 	"fmt"
 
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"github.com/cucumber/godog"
 
 	"code.vegaprotocol.io/vega/core/integration/stubs"
@@ -41,7 +41,7 @@ func PartiesShouldHaveTheFollowingDelegationBalances(
 	for _, r := range parseDelegationBalanceTable(table) {
 		row := delegationBalanceRow{row: r}
 
-		actualBalance := num.Zero().String()
+		actualBalance := num.UintZero().String()
 		partyDelegations, ok := validatorToAmount[row.Party()]
 		if ok {
 			if _, ok = partyDelegations[row.NodeID()]; ok {

@@ -22,10 +22,10 @@ import (
 	pbtypes "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
-	"code.vegaprotocol.io/vega/core/types/num"
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
 	"code.vegaprotocol.io/vega/datanode/service"
 	"code.vegaprotocol.io/vega/datanode/vegatime"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"

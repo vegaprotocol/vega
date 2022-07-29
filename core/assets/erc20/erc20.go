@@ -31,8 +31,8 @@ import (
 	"code.vegaprotocol.io/vega/core/metrics"
 	ethnw "code.vegaprotocol.io/vega/core/nodewallets/eth"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
 	vgerrors "code.vegaprotocol.io/vega/libs/errors"
+	"code.vegaprotocol.io/vega/libs/num"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethcommon "github.com/ethereum/go-ethereum/common"

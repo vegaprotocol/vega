@@ -19,7 +19,7 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/matching"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 )
 
 type PeggedOrders struct {
@@ -81,8 +81,8 @@ func (p *PeggedOrders) GetState() []*types.Order {
 func (p *PeggedOrders) Park(o *types.Order) {
 	o.UpdatedAt = p.timeService.GetTimeNow().UnixNano()
 	o.Status = types.OrderStatusParked
-	o.Price = num.Zero()
-	o.OriginalPrice = num.Zero()
+	o.Price = num.UintZero()
+	o.OriginalPrice = num.UintZero()
 
 	p.ordersChanged = true
 }

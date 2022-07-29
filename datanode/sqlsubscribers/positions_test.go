@@ -20,10 +20,10 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/core/events"
-	"code.vegaprotocol.io/vega/core/types/num"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlsubscribers"
 	"code.vegaprotocol.io/vega/datanode/sqlsubscribers/mocks"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/golang/mock/gomock"
@@ -111,7 +111,7 @@ func TestPositionSpecSuite(t *testing.T) {
 			}, 1, num.DecimalFromFloat(1)),
 			expect: expect{
 				OpenVolume:        0,
-				AverageEntryPrice: num.Zero(),
+				AverageEntryPrice: num.UintZero(),
 				UnrealisedPNL:     num.NewDecimalFromFloat(0),
 				RealisedPNL:       num.NewDecimalFromFloat(5000),
 			},
@@ -187,7 +187,7 @@ func TestPositionSpecSuite(t *testing.T) {
 			}, 1, num.DecimalFromFloat(1)),
 			expect: expect{
 				OpenVolume:        0,
-				AverageEntryPrice: num.Zero(),
+				AverageEntryPrice: num.UintZero(),
 				UnrealisedPNL:     num.NewDecimalFromFloat(0),
 				RealisedPNL:       num.NewDecimalFromFloat(-5000),
 			},
@@ -256,7 +256,7 @@ func TestPositionSpecSuite(t *testing.T) {
 			}, 1, num.DecimalFromFloat(1)),
 			expect: expect{
 				OpenVolume:        0,
-				AverageEntryPrice: num.Zero(),
+				AverageEntryPrice: num.UintZero(),
 				UnrealisedPNL:     num.NewDecimalFromFloat(0),
 				RealisedPNL:       num.NewDecimalFromFloat(8750),
 			},
@@ -279,7 +279,7 @@ func TestPositionSpecSuite(t *testing.T) {
 			}, 1, num.DecimalFromFloat(1)),
 			expect: expect{
 				OpenVolume:        0,
-				AverageEntryPrice: num.Zero(),
+				AverageEntryPrice: num.UintZero(),
 				UnrealisedPNL:     num.NewDecimalFromFloat(0),
 				RealisedPNL:       num.NewDecimalFromFloat(8750),
 			},
@@ -302,7 +302,7 @@ func TestPositionSpecSuite(t *testing.T) {
 			}, 1, num.DecimalFromFloat(1)),
 			expect: expect{
 				OpenVolume:        0,
-				AverageEntryPrice: num.Zero(),
+				AverageEntryPrice: num.UintZero(),
 				UnrealisedPNL:     num.NewDecimalFromFloat(0),
 				RealisedPNL:       num.NewDecimalFromFloat(-2500),
 			},
@@ -325,7 +325,7 @@ func TestPositionSpecSuite(t *testing.T) {
 			}, 1, num.DecimalFromFloat(1)),
 			expect: expect{
 				OpenVolume:        0,
-				AverageEntryPrice: num.Zero(),
+				AverageEntryPrice: num.UintZero(),
 				UnrealisedPNL:     num.NewDecimalFromFloat(0),
 				RealisedPNL:       num.NewDecimalFromFloat(3750),
 			},
@@ -447,7 +447,7 @@ func TestPositionSpecSuite(t *testing.T) {
 			}, 1, num.DecimalFromFloat(1)),
 			expect: expect{
 				OpenVolume:        0,
-				AverageEntryPrice: num.Zero(),
+				AverageEntryPrice: num.UintZero(),
 				UnrealisedPNL:     num.NewDecimalFromFloat(0),
 				RealisedPNL:       num.NewDecimalFromFloat(-116),
 			},

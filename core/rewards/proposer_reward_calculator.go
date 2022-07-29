@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 )
 
 // calculateRewardForProposers calculates the reward given to proposers of markets that crossed the trading threshold for the first time.
@@ -32,7 +32,7 @@ func calculateRewardForProposers(epochSeq, asset, accountID string, rewardType t
 		timestamp:     timestamp.Unix(),
 		partyToAmount: map[string]*num.Uint{},
 	}
-	total := num.Zero()
+	total := num.UintZero()
 	rewardBalance := balance.ToDecimal()
 	proposerBonus := rewardBalance.Div(num.DecimalFromInt64(int64(len(proposers))))
 	for _, p := range proposers {

@@ -17,13 +17,13 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"github.com/stretchr/testify/require"
 )
 
 func TestProposerBonusCalculator(t *testing.T) {
 	now := time.Now()
-	require.Nil(t, calculateRewardForProposers("1", "asset", "123456", types.AccountTypeMarketProposerReward, num.Zero(), []string{"mememe"}, now))
+	require.Nil(t, calculateRewardForProposers("1", "asset", "123456", types.AccountTypeMarketProposerReward, num.UintZero(), []string{"mememe"}, now))
 	require.Nil(t, calculateRewardForProposers("1", "asset", "123456", types.AccountTypeMarketProposerReward, num.NewUint(10000), []string{}, now))
 
 	po := calculateRewardForProposers("1", "asset", "123456", types.AccountTypeMarketProposerReward, num.NewUint(9000), []string{"p1", "p2", "p3"}, now)

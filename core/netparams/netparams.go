@@ -21,7 +21,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -340,11 +340,11 @@ func (s *Store) GetUint(key string) (*num.Uint, error) {
 	defer s.mu.RUnlock()
 	svalue, ok := s.store[key]
 	if !ok {
-		return num.Zero(), ErrUnknownKey
+		return num.UintZero(), ErrUnknownKey
 	}
 	v, err := svalue.ToUint()
 	if err != nil {
-		return num.Zero(), err
+		return num.UintZero(), err
 	}
 	return v.Clone(), nil
 }

@@ -23,7 +23,7 @@ import (
 	vegapb "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -98,7 +98,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 		tpl.New(types.Order{
 			Size:        20,
 			Remaining:   20,
-			Price:       num.Zero().Sub(num.NewUint(5000), partyB.pegOffset), // 4000
+			Price:       num.UintZero().Sub(num.NewUint(5000), partyB.pegOffset), // 4000
 			Side:        types.SideSell,
 			Party:       "party-1",
 			TimeInForce: types.OrderTimeInForceGFA,

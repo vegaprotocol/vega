@@ -20,7 +20,7 @@ import (
 
 	proto "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 )
 
 type (
@@ -101,7 +101,7 @@ func (o OrderSubmission) IntoProto() *commandspb.OrderSubmission {
 }
 
 func NewOrderSubmissionFromProto(p *commandspb.OrderSubmission) (*OrderSubmission, error) {
-	price := num.Zero()
+	price := num.UintZero()
 	if len(p.Price) > 0 {
 		var overflowed bool
 		price, overflowed = num.UintFromString(p.Price, 10)
@@ -170,7 +170,7 @@ type WithdrawSubmission struct {
 }
 
 func NewWithdrawSubmissionFromProto(p *commandspb.WithdrawSubmission) (*WithdrawSubmission, error) {
-	amount := num.Zero()
+	amount := num.UintZero()
 	if len(p.Amount) > 0 {
 		var overflowed bool
 		amount, overflowed = num.UintFromString(p.Amount, 10)

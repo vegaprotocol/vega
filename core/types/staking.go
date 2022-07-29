@@ -20,8 +20,8 @@ import (
 
 	vgproto "code.vegaprotocol.io/protos/vega"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
-	"code.vegaprotocol.io/vega/core/types/num"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/num"
 )
 
 type StakeLinkingType = eventspb.StakeLinking_Type
@@ -62,7 +62,7 @@ func (s *StakeTotalSupply) String() string {
 }
 
 func StakeTotalSupplyFromProto(s *vgproto.StakeTotalSupply) (*StakeTotalSupply, error) {
-	totalSupply := num.Zero()
+	totalSupply := num.UintZero()
 	if len(s.TotalSupply) > 0 {
 		var overflowed bool
 		totalSupply, overflowed = num.UintFromString(s.TotalSupply, 10)
@@ -170,7 +170,7 @@ func StakeDepositedFromProto(
 	blockNumber, logIndex uint64,
 	txID, id string,
 ) (*StakeDeposited, error) {
-	amount := num.Zero()
+	amount := num.UintZero()
 	if len(s.Amount) > 0 {
 		var overflowed bool
 		amount, overflowed = num.UintFromString(s.Amount, 10)
@@ -236,7 +236,7 @@ func StakeRemovedFromProto(
 	blockNumber, logIndex uint64,
 	txID, id string,
 ) (*StakeRemoved, error) {
-	amount := num.Zero()
+	amount := num.UintZero()
 	if len(s.Amount) > 0 {
 		var overflowed bool
 		amount, overflowed = num.UintFromString(s.Amount, 10)

@@ -19,8 +19,8 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/core/statevar"
-	"code.vegaprotocol.io/vega/core/types/num"
 	types "code.vegaprotocol.io/vega/core/types/statevar"
+	"code.vegaprotocol.io/vega/libs/num"
 	"github.com/stretchr/testify/require"
 )
 

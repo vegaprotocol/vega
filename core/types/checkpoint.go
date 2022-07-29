@@ -17,8 +17,8 @@ import (
 	"errors"
 
 	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
-	"code.vegaprotocol.io/vega/core/types/num"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/num"
 
 	"code.vegaprotocol.io/vega/libs/proto"
 )

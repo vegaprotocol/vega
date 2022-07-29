@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 )
 
 // calculateRewardsByContribution calculates the reward based on the fee contribution (whether paid or received) of the parties in the asset.
@@ -28,7 +28,7 @@ func calculateRewardsByContribution(epochSeq, asset, accountID string, rewardTyp
 		timestamp:     timestamp.Unix(),
 		partyToAmount: map[string]*num.Uint{},
 	}
-	total := num.Zero()
+	total := num.UintZero()
 	rewardBalance := balance.ToDecimal()
 	for _, p := range participation {
 		partyReward, _ := num.UintFromDecimal(rewardBalance.Mul(p.Score))

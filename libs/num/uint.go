@@ -41,11 +41,11 @@ func NewUint(val uint64) *Uint {
 	return &Uint{*uint256.NewInt(val)}
 }
 
-func One() *Uint {
+func UintOne() *Uint {
 	return one.Clone()
 }
 
-func Zero() *Uint {
+func UintZero() *Uint {
 	return zero.Clone()
 }
 
