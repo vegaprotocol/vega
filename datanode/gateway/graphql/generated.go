@@ -7988,57 +7988,57 @@ type PeggedOrder {
   offset: String!
 }
 
-"Subscriptions allow a caller to receive new information as it is available from the VEGA platform."
+"Subscriptions allow a caller to receive new information as it is available from the Vega network."
 type Subscription {
   "Subscribe to the candles updates"
   candles(
-    "ID of the market we want to listen candles for"
+    "ID of the market to listen to for candles"
     marketId: ID!
-    "Interval of the candles we want to listen for"
+    "Interval of the candles to listen for"
     interval: Interval!
   ): Candle!
 
   "Subscribe to orders updates"
   orders(
-    "ID of the market from which we want orders updates"
+    "ID of the market from which you want orders updates"
     marketId: ID
-    "ID of the party from which we want orders updates"
+    "ID of the party from which you want orders updates"
     partyId: ID
   ): [Order!]
 
   "Subscribe to the trades updates"
   trades(
-    "ID of the market from which we want trades updates"
+    "ID of the market from which you want trades updates"
     marketId: ID
-    "ID of the party from which we want trades updates"
+    "ID of the party from which you want trades updates"
     partyId: ID
   ): [Trade!]
 
   "Subscribe to the positions updates"
   positions(
-    "ID of the party from we want updates for"
+    "ID of the party from you want updates for"
     partyId: ID
-    "ID of the market from which we want position updates"
+    "ID of the market from which you want position updates"
     marketId: ID
   ): Position!
 
   "Subscribe to the market depths update"
   marketDepth(
-    "ID of the market we want to receive market depth updates for"
+    "ID of the market to receive market depth updates for"
     marketId: ID!
   ): MarketDepth! @deprecated(reason: "Use marketsDepth instead")
 
   "Subscribe to price level market depth updates"
   marketDepthUpdate(
-    "ID of the market we want to receive market depth pricelevel updates for"
+    "ID of the market to receive market depth price level updates for"
     marketId: ID!
   ): MarketDepthUpdate! @deprecated(reason: "Use marketsDepthUpdate instead")
 
   "Subscribe to the accounts updates"
   accounts(
-    "ID of the market from which we want accounts updates"
+    "ID of the market from which to receive accounts updates for"
     marketId: ID
-    "ID of the party from which we want accounts updates"
+    "ID of the party from which to receive accounts updates for"
     partyId: ID
     "Asset code"
     asset: String
@@ -8048,47 +8048,47 @@ type Subscription {
 
   "Subscribe to the mark price changes"
   marketData(
-    "id of the market we want to subscribe to the market data changes"
+    "ID of the market you want to subscribe to the market data changes"
     marketId: ID
   ): MarketData! @deprecated(reason: "Use marketsData instead")
 
   "Subscribe to the market depths update"
     marketsDepth(
-      "ID of the market we want to receive market depth updates for"
+      "ID of the market you want to receive market depth updates for"
       marketIds: [ID!]!
     ): [ObservableMarketDepth!]!
 
     "Subscribe to price level market depth updates"
     marketsDepthUpdate(
-      "ID of the market we want to receive market depth pricelevel updates for"
+      "ID of the market you want to receive market depth price level updates for"
       marketIds: [ID!]!
     ): [ObservableMarketDepthUpdate!]!
 
   "Subscribe to the mark price changes"
     marketsData(
-      "id of the market we want to subscribe to the market data changes"
+      "ID of the market for which you want to subscribe to the market data changes"
       marketIds: [ID!]!
     ): [ObservableMarketData!]!
 
   "Subscribe to the margin changes"
   margins(
-    "id of the party we want to subscribe for margin updates"
+    "ID of the party you want to subscribe to for margin updates"
     partyId: ID!
-    "market we want to listen to margin updates (nil if we want updates for all markets)"
+    "ID of the market you want to listen to for margin updates (nil if you want updates for all markets)"
     marketId: ID
   ): MarginLevels!
 
   "Subscribe to proposals. Leave out all arguments to receive all proposals"
   proposals(
-    "Optional party id whose proposals are to be streamed"
+    "Optional party ID whose proposals are to be streamed"
     partyId: ID
   ): Proposal!
 
-  "Subscribe to votes, either by proposal id or party id"
+  "Subscribe to votes, either by proposal ID or party ID"
   votes(
-    "Optional proposal id which votes are to be streamed"
+    "Optional proposal ID which votes are to be streamed"
     proposalId: ID
-    "Optional party id whose votes are to be streamed"
+    "Optional party ID whose votes are to be streamed"
     partyId: ID
   ): ProposalVote!
 
@@ -8127,13 +8127,13 @@ type MarginLevels {
   market: Market!
   "asset for the current margins"
   asset: Asset!
-  "id of the party for this margin"
+  "ID of the party for this margin"
   party: Party!
-  "minimal margin for the position to be maintained in the network (unsigned int actually)"
+  "minimal margin for the position to be maintained in the network (unsigned integer)"
   maintenanceLevel: String!
-  "if the margin is between maintenance and search, the network will initiate a collateral search (unsigned int actually)"
+  "if the margin is between maintenance and search, the network will initiate a collateral search (unsigned integer)"
   searchLevel: String!
-  "this is the minimal margin required for a party to place a new order on the network (unsigned int actually)"
+  "this is the minimum margin required for a party to place a new order on the network (unsigned integer)"
   initialLevel: String!
 
   """
@@ -8148,9 +8148,9 @@ type MarginLevels {
 
 "Live data of a Market"
 type MarketData {
-  "market id of the associated mark price"
+  "market ID of the associated mark price"
   market: Market!
-  "the mark price (actually an unsigned int)"
+  "the mark price (an unsigned integer)"
   markPrice: String!
   "the highest price level on an order book for buy orders."
   bestBidPrice: String!
@@ -8184,7 +8184,7 @@ type MarketData {
   indicativePrice: String!
   "indicative volume if the auction ended now, 0 if not in auction mode"
   indicativeVolume: String!
-  "what state the market is in (auction, continuous etc)"
+  "what state the market is in (auction, continuous, etc)"
   marketTradingMode: MarketTradingMode!
   "what triggered an auction (if an auction was started)"
   trigger: AuctionTrigger!
@@ -8194,9 +8194,9 @@ type MarketData {
   targetStake: String
   "the supplied stake for the market"
   suppliedStake: String
-  "The liquidity commitments for a given market"
+  "the liquidity commitments for a given market"
   commitments: MarketDataCommitments!
-  "A list of valid price ranges per associated trigger"
+  "a list of valid price ranges per associated trigger"
   priceMonitoringBounds: [PriceMonitoringBounds!]
   "the market value proxy"
   marketValueProxy: String!
@@ -8206,9 +8206,9 @@ type MarketData {
 
 "Live data of a Market"
 type ObservableMarketData {
-  "market id of the associated mark price"
+  "market ID of the associated mark price"
   marketId: String!
-  "the mark price (actually an unsigned int)"
+  "the mark price (an unsigned integer)"
   markPrice: String!
   "the highest price level on an order book for buy orders."
   bestBidPrice: String!
@@ -8222,17 +8222,17 @@ type ObservableMarketData {
   bestStaticBidPrice: String!
   "the aggregated volume being offered at the best static bid price, excluding pegged orders"
   bestStaticBidVolume: String!
-  "the lowest price level on an order book for offer orders not including pegged orders."
+  "the lowest price level on an order book for offer orders not including pegged orders"
   bestStaticOfferPrice: String!
-  "the aggregated volume being offered at the best static offer price, excluding pegged orders."
+  "the aggregated volume being offered at the best static offer price, excluding pegged orders"
   bestStaticOfferVolume: String!
-  "the arithmetic average of the best bid price and best offer price."
+  "the arithmetic average of the best bid price and best offer price"
   midPrice: String!
   "the arithmetic average of the best static bid price and best static offer price"
   staticMidPrice: String!
   "RFC3339Nano time at which this market price was relevant"
   timestamp: String!
-  "the sum of the size of all positions greater than 0."
+  "the sum of the size of all positions greater than 0"
   openInterest: String!
   "RFC3339Nano time at which the auction will stop (null if not in auction mode)"
   auctionEnd: String
@@ -8276,31 +8276,31 @@ type MarketTimestamps {
 
 "The equity like share of liquidity fee for each liquidity provider"
 type LiquidityProviderFeeShare {
-  "The liquidity provider party id"
+  "The liquidity provider party ID"
   party: Party!
-  "The share own by this liquidity provider (float)"
+  "The share owned by this liquidity provider (float)"
   equityLikeShare: String!
-  "the average entry valuation of the liquidity provider for the market"
+  "The average entry valuation of the liquidity provider for the market"
   averageEntryValuation: String!
 }
 
 "The equity like share of liquidity fee for each liquidity provider"
 type ObservableLiquidityProviderFeeShare {
-  "The liquidity provider party id"
+  "The liquidity provider party ID"
   partyId: String!
-  "The share own by this liquidity provider (float)"
+  "The share owned by this liquidity provider (float)"
   equityLikeShare: String!
-  "the average entry valuation of the liquidity provider for the market"
+  "The average entry valuation of the liquidity provider for the market"
   averageEntryValuation: String!
 }
 
 
 
-"The MM commitments for this market"
+"The liquidity commitments for this market"
 type MarketDataCommitments {
-  "a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec."
+  "a set of liquidity sell orders to meet the liquidity provision obligation."
   sells: [LiquidityOrderReference!]
-  "a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec."
+  "a set of liquidity buy orders to meet the liquidity provision obligation."
   buys: [LiquidityOrderReference!]
 }
 
@@ -8327,10 +8327,10 @@ type Query {
     pagination: Pagination
   ): MarketConnection!
 
-  "An instrument that is trading on the VEGA network"
+  "An instrument that is trading on the Vega network"
   market("Optional ID of a market" id: ID!): Market
 
-  "One or more entities that are trading on the VEGA network"
+  "One or more entities that are trading on the Vega network"
   parties("Optional ID of a party" id: ID): [Party!]
 
   partiesConnection(
@@ -8340,7 +8340,7 @@ type Query {
     pagination: Pagination
   ): PartyConnection!
 
-  "An entity that is trading on the VEGA network"
+  "An entity that is trading on the Vega network"
   party("ID of a party" id: ID!): Party
 
   "The last block process by the blockchain"
@@ -8389,7 +8389,7 @@ type Query {
     pagination: Pagination
   ): OracleDataConnection!
 
-  "An order in the VEGA network found by orderID"
+  "An order in the Vega network found by orderID"
   orderByID(
     "ID for an order"
     orderId: ID!
@@ -8419,16 +8419,16 @@ type Query {
     pagination: Pagination
   ): OrderConnection!
 
-  "An order in the VEGA network found by referenceID"
+  "An order in the Vega network found by referenceID"
   orderByReference("Reference for an order" reference: String!): Order!
 
-  "All governance proposals in the VEGA network"
+  "All governance proposals in the Vega network"
   proposals(
     "Returns only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
   ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
 
-  "All governance proposals in the VEGA network"
+  "All governance proposals in the Vega network"
   proposalsConnection(
     "Optional type of proposal to retrieve data for"
     proposalType: ProposalType
@@ -8438,11 +8438,11 @@ type Query {
     pagination: Pagination
   ): ProposalsConnection!
 
-  "A governance proposal located by either its id or reference. If both are set, id is used."
+  "A governance proposal located by either its ID or reference. If both are set, ID is used."
   proposal(
-    "Optionally, locate proposal by its id"
+    "Optionally, locate proposal by its ID"
     id: ID
-    "Optionally, locate proposal by its reference. If id is set, this parameter is ignored."
+    "Optionally, locate proposal by its reference. If ID is set, this parameter is ignored."
     reference: String
   ): Proposal!
 
@@ -8472,7 +8472,7 @@ type Query {
     inState: ProposalState
   ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
 
-  "Governance proposals that allows creation of free form proposals in Vega"
+  "Freeform governance proposals, which can be voted on but do not change the behaviour of the system, and can be used to gauge community sentiment in Vega"
   newFreeformProposals(
     "Returns only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
@@ -8484,10 +8484,10 @@ type Query {
   "An asset which is used in the vega network"
   asset("Id of the asset" assetId: ID!): Asset
 
-  "The list of all assets in use in the vega network"
+  "The list of all assets in use in the Vega network"
   assets: [Asset!] @deprecated(reason: "Use assetsConnection instead")
 
-  "The list of all assets in use in the vega network or the specified asset if id is provided"
+  "The list of all assets in use in the Vega network or the specified asset if ID is provided"
   assetsConnection(id: ID, pagination: Pagination): AssetsConnection!
 
   "return an estimation of the potential cost for a new order"
@@ -8510,16 +8510,16 @@ type Query {
     type: OrderType!
   ): OrderEstimate!
 
-  "find a withdrawal using its id"
+  "find a withdrawal using its ID"
   withdrawal("id of the withdrawal" id: ID!): Withdrawal
 
-  "find an erc20 withdrawal approval using its withdrawal id"
+  "find an erc20 withdrawal approval using its withdrawal ID"
   erc20WithdrawalApproval(
-    "id of the withdrawal"
+    "ID of the withdrawal"
     withdrawalId: ID!
   ): Erc20WithdrawalApproval
 
-  "find a deposit using its id"
+  "find a deposit using its ID"
   deposit("id of the Deposit" id: ID!): Deposit
 
   "return the full list of network parameters"
@@ -8540,10 +8540,10 @@ type Query {
   "query for historic key rotations"
   keyRotations(id: String): [KeyRotation!]
 
-  "get data for a specific epoch, if id omitted it gets the current epoch. If the string is 'next', fetch the next epoch"
+  "get data for a specific epoch, if ID omitted it gets the current epoch. If the string is 'next', fetch the next epoch"
   epoch(id: String): Epoch!
 
-  "get a list of all transfers for a pubkey"
+  "get a list of all transfers for a public key"
   transfers(
     "the pubkey to look for"
     pubkey: String!
@@ -8553,17 +8553,17 @@ type Query {
     isTo: Boolean
   ): [Transfer!] @deprecated(reason: "Use transfersConnection instead")
 
-  "get a list of all transfers for a pubkey"
+  "get a list of all transfers for a public key"
   transfersConnection(
-    "the pubkey to look for"
+    "the public key to look for"
     pubkey: String
-    "direction of the transfer with respect to the pubkey"
+    "direction of the transfer with respect to the public key"
     direction: TransferDirection!
     "Pagination information"
     pagination: Pagination
   ): TransferConnection!
 
-  "get statistics about the vega node"
+  "get statistics about the Vega node"
   statistics: Statistics!
 
   historicBalances(
@@ -8574,7 +8574,7 @@ type Query {
   "Current network limits"
   networkLimits: NetworkLimits
 
-  "get market data history for a specific market. If no dates are given, the latest snapshot will be returned. If only the start date is provided all history from the given date will be provided, and if only the end date is provided, all history from the start upto and including the end date will be provided."
+  "get market data history for a specific market. If no dates are given, the latest snapshot will be returned. If only the start date is provided, all history from the given date will be provided, and if only the end date is provided, all history from the start up to and including the end date will be provided."
   getMarketDataHistoryByID(
     id: String!
     """
@@ -8597,7 +8597,7 @@ type Query {
     last: Int): [MarketData] @deprecated(reason: "Use getMarketDataHistoryConnectionByID instead")
 
 
-  "get market data history for a specific market. If no dates are given, the latest snapshot will be returned. If only the start date is provided all history from the given date will be provided, and if only the end date is provided, all history from the start upto and including the end date will be provided. Pagination is provided using a cursor based pagination model"
+  "get market data history for a specific market. If no dates are given, the latest snapshot will be returned. If only the start date is provided all history from the given date will be provided, and if only the end date is provided, all history from the start up to and including the end date will be provided. Pagination is provided using a cursor based pagination model"
   getMarketDataHistoryConnectionByID(
     id: String!
     """
@@ -8619,16 +8619,16 @@ type Query {
 enum TransferStatus {
   "Indicate a transfer still being processed"
   Pending
-  "Indicate of an transfer accepted by the vega network"
+  "Indicate of an transfer accepted by the Vega network"
   Done
-  "Indicate of an transfer rejected by the vega network"
+  "Indicate of an transfer rejected by the Vega network"
   Rejected
   """
-  Indicate of a transfer stopped by the vega network
+  Indicate of a transfer stopped by the Vega network
   e.g: no funds left to cover the transfer
   """
   Stopped
-  "Indicate of a transfer cancel by the user"
+  "Indication of a transfer cancelled by the user"
   Cancelled
 }
 
@@ -8640,7 +8640,7 @@ type Transfer {
   "The public key of the sender in this transfer"
   from: String!
 
-  "The account type from which funds have been sent from"
+  "The account type from which funds have been sent"
   fromAccountType: AccountType!
 
   "The public key of the received of the funds"
@@ -8679,7 +8679,7 @@ type OneOffTransfer {
 type RecurringTransfer {
   "The epoch at which this recurring transfer will start"
   startEpoch: Int!
-  "An optional epoch at whihc this transfer will stop"
+  "An optional epoch at which this transfer will stop"
   endEpoch: Int
   "The factor of the initial amount to be distributed"
   factor: String!
@@ -8699,13 +8699,13 @@ enum DispatchMetric {
 }
 
 type DispatchStrategy {
-  "What to contribution is measured"
+  "Defines the data that will be used to compare markets so as to distribute rewards appropriately"
   dispatchMetric: DispatchMetric!
 
-  "The asset to use for measuring contibution to the metric"
+  "The asset to use for measuring contribution to the metric"
   dispatchMetricAssetId: ID!
 
-  "Scope the dispatch to this markets only under the metric asset"
+  "Scope the dispatch to this market only under the metric asset"
   marketIdsInScope: [ID!]
 }
 
@@ -8758,9 +8758,9 @@ type Epoch {
   validatorsConnection(pagination: Pagination): NodesConnection!
 
   delegations(
-    # Optional party id to filter on
+    # Optional party ID to filter on
     partyId: String
-    # Optional node id to filter on
+    # Optional node ID to filter on
     nodeId: String
     "Pagination skip"
     skip: Int
@@ -8770,9 +8770,9 @@ type Epoch {
     last: Int): [Delegation!]! @deprecated(reason: "Use delegationsConnection instead")
 
   delegationsConnection(
-    # Optional party id to filter on
+    # Optional party ID to filter on
     partyId: String
-    # Optional node id to filter on
+    # Optional node ID to filter on
     nodeId: String
     "Pagination information"
    pagination: Pagination
@@ -8821,10 +8821,10 @@ type EpochData {
 }
 
 type Node {
-  "The node url eg n01.vega.xyz"
+  "The node URL eg n01.vega.xyz"
   id: String!
 
-  "Pubkey of the node operator"
+  "Public key of the node operator"
   pubkey: String!
 
   "Public key of Tendermint"
@@ -8833,13 +8833,13 @@ type Node {
   "Ethereum public key of the node"
   ethereumAdddress: String!
 
-  "URL where I can find out more info on the node. Will this be possible?"
+  "URL from which you can get more info about the node."
   infoUrl: String!
 
   "Country code for the location of the node"
   location: String!
 
-  "The amount the node has put up themselves"
+  "The amount of stake the node has put up themselves"
   stakedByOperator: String!
 
   "The amount of stake that has been delegated by token holders"
@@ -8906,7 +8906,7 @@ type RewardScore {
 type RankingScore {
   "The current validation status of the validator"
   status: String!
-  "The former validation status of teh validator"
+  "The former validation status of the validator"
   previousStatus: String!
   "The ranking score of the validator"
   rankingScore: String!
@@ -8914,7 +8914,7 @@ type RankingScore {
   stakeScore: String!
   "The performance score of the validator"
   performanceScore: String!
-  "The tendermint voting power of the validator (uint32)"
+  "The Tendermint voting power of the validator (uint32)"
   votingPower: String!
 }
 
@@ -8939,13 +8939,13 @@ enum AssetStatus {
   Rejected
   "Asset is pending listing on the ethereum bridge"
   PendingListing
-  "Asset can be used on the vega network"
+  "Asset can be used on the Vega network"
   Enabled
 }
 
-"Represents an asset in vega"
+"Represents an asset in Vega"
 type Asset {
-  "The id of the asset"
+  "The ID of the asset"
   id: ID!
 
   "The full name of the asset (e.g: Great British Pound)"
@@ -8957,16 +8957,16 @@ type Asset {
   "The total supply of the market"
   totalSupply: String!
 
-  "The precision of the asset"
+  "The precision of the asset. Should match the decimal precision of the asset on its native chain, e.g: for ERC20 assets, it is often 18"
   decimals: Int!
 
   "The minimum economically meaningful amount in the asset"
   quantum: String!
 
-  "The origin source of the asset (e.g: an erc20 asset)"
+  "The origin source of the asset (e.g: an ERC20 asset)"
   source: AssetSource!
 
-  "The status of the asset in the vega network"
+  "The status of the asset in the Vega network"
   status: AssetStatus!
 
   "The infrastructure fee account for this asset"
@@ -8990,21 +8990,21 @@ union AssetSource = BuiltinAsset | ERC20
 
 "An asset originated from an Ethereum ERC20 Token"
 type ERC20 {
-  "The address of the erc20 contract"
+  "The address of the ERC20 contract"
   contractAddress: String!
   """
   The lifetime limits deposit per address
-  Note: this is a temporary measure for restricted mainnet
+  Note: this is a temporary measure for alpha mainnet
   """
   lifetimeLimit: String!
   """
-  The maximum allowed per withdraw
-  Note: this is a temporary measure for restricted mainnet
+  The maximum allowed per withdrawal
+  Note: this is a temporary measure for alpha mainnet
   """
   withdrawThreshold: String!
 }
 
-"A vega builtin asset, mostly for testing purpose"
+"A Vega builtin asset, mostly for testing purpose"
 type BuiltinAsset {
   "Maximum amount that can be requested by a party through the built-in asset faucet at a time"
   maxFaucetAmountMint: String!
@@ -9042,7 +9042,7 @@ type Statistics {
   "Number of items in the backlog"
   backlogLength: String!
 
-  "Total number of peers on the vega network"
+  "Total number of peers on the Vega network"
   totalPeers: String!
 
   "RFC3339Nano genesis time of the chain"
@@ -9057,7 +9057,7 @@ type Statistics {
   "RFC3339Nano current time of the chain (decided through consensus)"
   vegaTime: String!
 
-  "Status of the vega application connection with the chain"
+  "Status of the Vega application connection with the chain"
   status: String!
 
   "Number of transaction processed per block"
@@ -9093,10 +9093,10 @@ type Statistics {
   "Total number of trades"
   totalTrades: String!
 
-  "Version commit hash of the vega node"
+  "Version commit hash of the Vega node"
   appVersionHash: String!
 
-  "Version of the vega node (semver)"
+  "Version of the Vega node (semver)"
   appVersion: String!
 
   "Version of the chain (semver)"
@@ -9105,7 +9105,7 @@ type Statistics {
   "Duration of the last block, in nanoseconds"
   blockDuration: String!
 
-  "Current chain id"
+  "Current chain ID"
   chainId: String!
 }
 
@@ -9151,7 +9151,7 @@ type LogNormalRiskModel {
   params: LogNormalModelParams!
 }
 
-"A type of simple/dummy risk model where we can specify the risk factor long and short in params"
+"A type of simple/dummy risk model where you can specify the risk factor long and short in params"
 type SimpleRiskModel {
   "Params for the simple risk model"
   params: SimpleRiskModelParams!
@@ -9208,7 +9208,7 @@ An oracle spec describe the oracle data that a product (or a risk model)
 wants to get from the oracle engine.
 """
 type OracleSpec {
-  "id is a hash generated from the OracleSpec data."
+  "ID is a hash generated from the OracleSpec data."
   id: String!
   "RFC3339Nano creation date time"
   createdAt: String!
@@ -9286,7 +9286,7 @@ enum PropertyKeyType {
 }
 
 """
-Condition describes the condition that must be validated by the
+Condition describes the condition that must be validated by the oracle engine
 """
 type Condition {
   "comparator is the type of comparison to make on the value."
@@ -9330,7 +9330,7 @@ type OracleData {
   """
   RFC3339Nano formatted date and time for when the data was broadcast to the markets
   with a matching oracle spec.
-  It has no value when the oracle date did not match any oracle spec.
+  It has no value when the oracle date does not match any oracle spec.
   """
   broadcastAt:  String!
 }
@@ -9345,7 +9345,7 @@ type Property {
 
 union Product = Future
 
-"Describe something that can be traded on Vega"
+"Describes something that can be traded on Vega"
 type Instrument {
   "Uniquely identify an instrument across all instruments available on Vega (string)"
   id: String!
@@ -9375,13 +9375,13 @@ type ScalingFactors {
   "the scaling factor that determines the optimal margin level"
   initialMargin: Float!
 
-  "The scaling factor that determines the overflow margin level"
+  "the scaling factor that determines the overflow margin level"
   collateralRelease: Float!
 }
 
 "A tradable instrument is a combination of an instrument and a risk model"
 type TradableInstrument {
-  "An instance of or reference to a fully specified instrument."
+  "An instance of, or reference to, a fully specified instrument."
   instrument: Instrument!
 
   "A reference to a risk model that is valid for the instrument"
@@ -9412,9 +9412,9 @@ An auction duration is used to configure 3 auction periods:
 1. ` + "`" + `duration > 0` + "`" + `, ` + "`" + `volume == 0` + "`" + `:
 The auction will last for at least N seconds.
 2. ` + "`" + `duration == 0` + "`" + `, ` + "`" + `volume > 0` + "`" + `:
-The auction will end once we can close with given traded volume.
+The auction will end once the given volume will match at uncrossing.
 3. ` + "`" + `duration > 0` + "`" + `, ` + "`" + `volume > 0` + "`" + `:
-The auction will take at least N seconds, but can end sooner if we can trade a certain volume.
+The auction will take at least N seconds, but can end sooner if the market can trade a certain volume.
 """
 type AuctionDuration {
   "Duration of the auction in seconds"
@@ -9441,7 +9441,7 @@ type PriceMonitoringTrigger {
   probability: Float!
   """
   Price monitoring auction extension duration in seconds should the price
-  breach it's theoretical level over the specified horizon at the specified
+  breach its theoretical level over the specified horizon at the specified
   probability level (> 0)
   """
   auctionExtensionSecs: Int!
@@ -9493,12 +9493,12 @@ type Market {
   "Fees related data"
   fees: Fees!
 
-  "An instance of or reference to a tradable instrument."
+  "An instance of, or reference to, a tradable instrument."
   tradableInstrument: TradableInstrument!
 
   """
   decimalPlaces indicates the number of decimal places that an integer must be shifted by in order to get a correct
-  number denominated in the currency of the Market. (uint64)
+  number denominated in the currency of the market. (uint64)
 
   Examples:
   Currency     Balance  decimalPlaces  Real Balance
@@ -9515,9 +9515,10 @@ type Market {
   decimalPlaces: Int!
 
   """
-  positionDecimalPlaces indicated the number of decimal places that an integer must be shifted in order to get a correct size (uint64).
+  positionDecimalPlaces indicates the number of decimal places that an integer must be shifted in order to get a correct size (uint64).
   i.e. 0 means there are no fractional orders for the market, and order sizes are always whole sizes.
-  2 means sizes given as 10^2 * desired size, e.g. a desired size of 1.23 is represented as 123 in this market.
+  2 means sizes given as 10^2 * desired size, e.g. a desired size of 1.23 is represented as 123 in this market. 
+  This sets how big the smallest order / position on the market can be.
   """
   positionDecimalPlaces: Int!
 
@@ -9539,7 +9540,7 @@ type Market {
   "Current state of the market"
   state: MarketState!
 
-  "The proposal which initiated this market"
+  "The proposal that initiated this market"
   proposal: Proposal
 
   "Orders on a market"
@@ -9560,7 +9561,7 @@ type Market {
 
   "Get account for a party or market"
   accounts(
-    "Id of the party to get the margin account for"
+    "ID of the party to get the margin account for"
     partyId: ID
   ): [Account!]
 
@@ -9582,7 +9583,7 @@ type Market {
     maxDepth: Int
   ): MarketDepth!
 
-  "Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by params"
+  "Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by parameters"
   candles(
     "RFC3339Nano encoded time from when to get candles"
     since: String!
@@ -9590,7 +9591,7 @@ type Market {
     interval: Interval!
   ): [Candle] @deprecated(reason: "Use the 'candlesConnection' field instead")
 
-  "Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by params using cursor based pagination"
+  "Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by parameters using cursor based pagination"
   candlesConnection(
     "RFC3339Nano encoded time to get candles from"
     since: String!
@@ -9605,15 +9606,15 @@ type Market {
   "marketData for the given market"
   data: MarketData
 
-  "The list of the liquidity provision commitment for this market"
+  "The list of the liquidity provision commitments for this market"
   liquidityProvisions(
-    "An optional party id"
+    "An optional party ID"
     party: String
   ): [LiquidityProvision!] @deprecated(reason: "Use liquidityProvisionsConnection instead")
 
-  "The list of the liquidity provision commitment for this market"
+  "The list of the liquidity provision commitments for this market"
    liquidityProvisionsConnection(
-     "An optional party id"
+     "An optional party ID"
      party: String
      "Pagination information"
      pagination: Pagination
@@ -9669,7 +9670,7 @@ type ObservableMarketDepth {
 }
 
 type MarketDepthTrade {
-  "id of the trade for the given market (if available)"
+  "ID of the trade for the given market (if available)"
   id: String!
 
   "Price of the trade"
@@ -9784,7 +9785,7 @@ type Party {
 
   "Trades relating to a party (specifically where party is either buyer OR seller)"
   trades(
-    "ID of the market we want to get trades for"
+    "ID of the market you want to get trades for"
     marketId: ID
     "Pagination skip"
     skip: Int
@@ -9828,7 +9829,7 @@ type Party {
 
   proposals(
     "Select only proposals in the specified state. Leave out to get all proposals"
-    inState: ProposalState
+    inState: ProposalState 
   ): [Proposal] @deprecated(reason: "Use proposalsConnection instead")
 
   "All governance proposals in the VEGA network"
@@ -9948,18 +9949,18 @@ enum StakeLinkingType {
 "The status of the stake linking"
 enum StakeLinkingStatus {
   """
-  The stake linking is pending in the vega network, this means that
-  the vega network have seen a StakeLinking, but is still to confirm
+  The stake linking is pending in the Vega network. This means that
+  the Vega network have seen a StakeLinking, but is still to confirm
   it's valid on the ethereum chain, and accepted by all nodes of the network
   """
   Pending
   "The stake linking has been accepted and processed fully (balance updated) by the network"
   Accepted
-  "The vega network have rejected this stake linking"
+  "The Vega network has rejected this stake linking"
   Rejected
 }
 
-"A Stake linking represent the intend from a party to deposit / remove stake on their account"
+"A Stake linking represent the intent from a party to deposit / remove stake on their account"
 type StakeLinking {
   id: ID!
   "Type of linking: link|unlink"
@@ -9972,7 +9973,7 @@ type StakeLinking {
   amount: String!
   "The status of the linking"
   status: StakeLinkingStatus!
-  "The time at which the stake linking was full processed by the vega network, null until defined"
+  "The time at which the stake linking was fully processed by the Vega network, null until defined"
   finalizedAt: String
   "The transaction hash (ethereum) which initiated the link/unlink"
   txHash: String!
@@ -10129,10 +10130,10 @@ type Trade {
   "The fee paid by the seller side of the trade"
   sellerFee: TradeFee!
 
-  "The batch in witch the buyer order was submitted (applies only for Auctions modes)"
+  "The batch in which the buyer order was submitted (applies only for auction modes)"
   buyerAuctionBatch: Int
 
-  "The batch in witch the seller order was submitted (applies only for Auctions modes)"
+  "The batch in which the seller order was submitted (applies only for auction modes)"
   sellerAuctionBatch: Int
 }
 
@@ -10141,10 +10142,10 @@ type TradeFee {
   "The maker fee, aggressive party to the other party (the one who had an order in the book)"
   makerFee: String!
 
-  "The infrastructure fee, a fee paid to the node runner to maintain the vega network"
+  "The infrastructure fee, a fee paid to the validators to maintain the Vega network"
   infrastructureFee: String!
 
-  "The fee paid to the market makers to provide liquidity in the market"
+  "The fee paid to the liquidity providers to commit liquidity to the market"
   liquidityFee: String!
 }
 
@@ -10195,9 +10196,9 @@ type Erc20WithdrawalApproval {
 
 "The details of a withdrawal processed by vega"
 type Withdrawal {
-  "The Vega internal id of the withdrawal"
+  "The Vega internal ID of the withdrawal"
   id: ID!
-  "The PartyID initiating the withdrawal"
+  "The PartyID (public key) initiating the withdrawal"
   party: Party!
   "The amount to be withdrawn"
   amount: String!
@@ -10263,31 +10264,31 @@ enum DepositStatus {
   Open
   "The deposit have been cancelled by the network, either because it expired, or something went wrong with the foreign chain"
   Cancelled
-  "The deposit was finalized, it was first valid, the foreign chain has executed it and the network updated all accounts"
+  "The deposit was finalised, it was first valid, the foreign chain has executed it and the network updated all accounts"
   Finalized
 }
 
 "Valid order types, these determine what happens when an order is added to the book"
 enum OrderTimeInForce {
-  "The order either trades completely (remainingSize == 0 after adding) or not at all, does not remain on the book if it doesn't trade"
+  "Fill or Kill: The order either trades completely (remainingSize == 0 after adding) or not at all, does not remain on the book if it doesn't trade"
   FOK
 
-  "The order trades any amount and as much as possible but does not remain on the book (whether it trades or not)"
+  "Immediate or Cancel: The order trades any amount and as much as possible but does not remain on the book (whether it trades or not)"
   IOC
 
-  "This order trades any amount and as much as possible and remains on the book until it either trades completely or is cancelled"
+  "Good 'til Cancelled: This order trades any amount and as much as possible and remains on the book until it either trades completely or is cancelled"
   GTC
 
   """
-  This order type trades any amount and as much as possible and remains on the book until they either trade completely, are cancelled, or expires at a set time
+  Good 'til Time: This order type trades any amount and as much as possible and remains on the book until they either trade completely, are cancelled, or expires at a set time
   NOTE: this may in future be multiple types or have sub types for orders that provide different ways of specifying expiry
   """
   GTT
 
-  "This order is only accepted during an auction period"
+  "Good for Auction: This order is only accepted during an auction period"
   GFA
 
-  "This order is only accepted during normal trading (that can be continuous trading or frequent batched auctions)"
+  "Good for Normal: This order is only accepted during normal trading (continuous trading or frequent batched auctions)"
   GFN
 }
 
@@ -10589,7 +10590,7 @@ enum MarketState {
   Settled
 }
 
-"What market trading mode are we in"
+"What market trading mode is the market in"
 enum MarketTradingMode {
   "Continuous trading where orders are processed and potentially matched on arrival"
   Continuous
@@ -10637,7 +10638,7 @@ enum Interval {
   I1D
 }
 
-"The various account types we have (used by collateral)"
+"The various account types in Vega (used by collateral)"
 enum AccountType {
   "Insurance pool account - only for 'system' party"
   Insurance
@@ -10645,7 +10646,7 @@ enum AccountType {
   GlobalInsurance
   "Settlement - only for 'system' party"
   Settlement
-  "Margin - The leverage account for parties"
+  "Margin - The leverage account for parties, contains funds set aside for the margin needed to support a party's open positions. Each party will have a margin account for each market they have traded in. The required initial margin is allocated to each market from the general account, and it cannot be withdrawn or used as margin on another market until it's released back into the general account. The protocol uses an internal accounting system to segregate funds held as margin from other funds to ensure they are never lost or 'double spent'"
   Margin
   "General account - the account containing 'unused' collateral for parties"
   General
@@ -10655,19 +10656,19 @@ enum AccountType {
   FeeLiquidity
   "Market maker fee account - holds fees paid to the passive side when a trade matches"
   FeeMaker
-  "Bond - an account use to maintain MM commitments"
+  "Bond - an account use to maintain liquidity commitments"
   Bond
   "External - an account use to refer to external account"
   External
-  "GlobalReward - an global account for the reward pool"
+  "GlobalReward - a global account for the reward pool"
   GlobalReward
-  "PendingTransfers - an global account for the pending transfers pool"
+  "PendingTransfers - a global account for the pending transfers pool"
   PendingTransfers
   "RewardTakerPaidFees - an account holding rewards for taker paid fees"
   RewardTakerPaidFees
   "RewardMakerReceivedFees - an account holding rewards for maker received fees"
   RewardMakerReceivedFees
-  "RewardLpReceivedFees - an account holding rewards for LP received fees"
+  "RewardLpReceivedFees - an account holding rewards for a liquidity provider's received fees"
   RewardLpReceivedFees
   "RewardMarketProposers - an account holding rewards for market proposers"
   RewardMarketProposers
@@ -10723,7 +10724,7 @@ type InstrumentConfiguration {
 type NewMarket {
   "New market instrument configuration"
   instrument: InstrumentConfiguration!
-  "Decimal places used for the new market"
+  "Decimal places used for the new market, sets the smallest price increment on the book"
   decimalPlaces: Int!
   "New market risk configuration"
   riskParameters: RiskModel!
@@ -10735,7 +10736,7 @@ type NewMarket {
 
 "A commitment of liquidity to be made by the party which proposes a market"
 type NewMarketCommitment {
-  "Specified as a unit-less number that represents the amount of settlement asset of the market"
+  "Specified as a unit-less number that represents the amount of the settlement asset of the market"
   commitmentAmount: String!
   """
   Nominated liquidity fee factor, which is an input to the calculation of
@@ -10803,7 +10804,7 @@ type NewAsset {
   "The precision of the asset"
   decimals: Int!
 
-  "The min stake to become an lp for any market using this asset for settlement"
+  "The minimum stake to become a liquidity provider for any market using this asset for settlement"
   minLpStake: String!
 
   "the source of the new Asset"
@@ -10844,7 +10845,7 @@ type ProposalRationale {
   """
   Description to show a short title / something in case the link goes offline.
   This is to be between 0 and 1024 unicode characters.
-  This is mandatory for all proposal.
+  This is mandatory for all proposals.
   """
   description: String!
   """
@@ -10891,7 +10892,7 @@ enum ProposalType {
   NetworkParameters
   "Proposal to add a new asset"
   NewAsset
-  "Proposal to create a new free form proposal"
+  "Proposal to create a new freeform proposal"
   NewFreeForm
 }
 
@@ -10920,9 +10921,9 @@ enum ProposalState {
 }
 
 type Proposal {
-  "Proposal ID that is filled by VEGA once proposal reaches the network"
+  "Proposal ID that is filled by Vega once proposal reaches the network"
   id: ID
-  "A UUID reference to aid tracking proposals on VEGA"
+  "A UUID reference to aid tracking proposals on Vega"
   reference: String!
   "Party that prepared the proposal"
   party: Party!
@@ -11283,9 +11284,9 @@ type LiquidityProvision {
   commitmentAmount: String!
   "nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers."
   fee: String!
-  "a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec."
+  "a set of liquidity sell orders to meet the liquidity provision obligation."
   sells: [LiquidityOrderReference!]!
-  "a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec."
+  "a set of liquidity buy orders to meet the liquidity provision obligation."
   buys: [LiquidityOrderReference!]!
   "The version of this LiquidityProvision"
   version: String!
@@ -11337,7 +11338,7 @@ type RewardSummary {
   ): RewardsConnection
 }
 
-"RewardPerAssetDetail is depricated, use RewardSummmary instead "
+"RewardPerAssetDetail is deprecated, use RewardSummmary instead "
 type RewardPerAssetDetail {
   "Asset in which the reward was paid"
   asset: Asset!
@@ -11376,7 +11377,7 @@ enum AccountField {
   AccountType
 }
 
-"Information about whether proposals are enabled, if we are still bootstrapping etc.."
+"Information about whether proposals are enabled, if the markets are still bootstrapping etc.."
 type NetworkLimits {
   "Are market proposals allowed at this point in time"
   canProposeMarket: Boolean!

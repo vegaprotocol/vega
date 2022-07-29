@@ -53,9 +53,9 @@ type WithdrawalDetails interface {
 // 1. `duration > 0`, `volume == 0`:
 // The auction will last for at least N seconds.
 // 2. `duration == 0`, `volume > 0`:
-// The auction will end once we can close with given traded volume.
+// The auction will end once the given volume will match at uncrossing.
 // 3. `duration > 0`, `volume > 0`:
-// The auction will take at least N seconds, but can end sooner if we can trade a certain volume.
+// The auction will take at least N seconds, but can end sooner if the market can trade a certain volume.
 type AuctionDuration struct {
 	// Duration of the auction in seconds
 	DurationSecs int `json:"durationSecs"`
@@ -63,7 +63,7 @@ type AuctionDuration struct {
 	Volume int `json:"volume"`
 }
 
-// A vega builtin asset, mostly for testing purpose
+// A Vega builtin asset, mostly for testing purpose
 type BuiltinAsset struct {
 	// Maximum amount that can be requested by a party through the built-in asset faucet at a time
 	MaxFaucetAmountMint string `json:"maxFaucetAmountMint"`
@@ -97,23 +97,23 @@ type DiscreteTrading struct {
 }
 
 type DispatchStrategy struct {
-	// What to contribution is measured
+	// Defines the data that will be used to compare markets so as to distribute rewards appropriately
 	DispatchMetric DispatchMetric `json:"dispatchMetric"`
-	// The asset to use for measuring contibution to the metric
+	// The asset to use for measuring contribution to the metric
 	DispatchMetricAssetID string `json:"dispatchMetricAssetId"`
-	// Scope the dispatch to this markets only under the metric asset
+	// Scope the dispatch to this market only under the metric asset
 	MarketIdsInScope []string `json:"marketIdsInScope"`
 }
 
 // An asset originated from an Ethereum ERC20 Token
 type Erc20 struct {
-	// The address of the erc20 contract
+	// The address of the ERC20 contract
 	ContractAddress string `json:"contractAddress"`
 	// The lifetime limits deposit per address
-	// Note: this is a temporary measure for restricted mainnet
+	// Note: this is a temporary measure for alpha mainnet
 	LifetimeLimit string `json:"lifetimeLimit"`
-	// The maximum allowed per withdraw
-	// Note: this is a temporary measure for restricted mainnet
+	// The maximum allowed per withdrawal
+	// Note: this is a temporary measure for alpha mainnet
 	WithdrawThreshold string `json:"withdrawThreshold"`
 }
 
@@ -190,11 +190,11 @@ type LiquidityMonitoringParameters struct {
 
 // The equity like share of liquidity fee for each liquidity provider
 type LiquidityProviderFeeShare struct {
-	// The liquidity provider party id
+	// The liquidity provider party ID
 	Party *vega.Party `json:"party"`
-	// The share own by this liquidity provider (float)
+	// The share owned by this liquidity provider (float)
 	EquityLikeShare string `json:"equityLikeShare"`
-	// the average entry valuation of the liquidity provider for the market
+	// The average entry valuation of the liquidity provider for the market
 	AverageEntryValuation string `json:"averageEntryValuation"`
 }
 
@@ -209,16 +209,16 @@ type LossSocialization struct {
 
 func (LossSocialization) IsEvent() {}
 
-// The MM commitments for this market
+// The liquidity commitments for this market
 type MarketDataCommitments struct {
-	// a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec.
+	// a set of liquidity sell orders to meet the liquidity provision obligation.
 	Sells []*vega.LiquidityOrderReference `json:"sells"`
-	// a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec.
+	// a set of liquidity buy orders to meet the liquidity provision obligation.
 	Buys []*vega.LiquidityOrderReference `json:"buys"`
 }
 
 type MarketDepthTrade struct {
-	// id of the trade for the given market (if available)
+	// ID of the trade for the given market (if available)
 	ID string `json:"id"`
 	// Price of the trade
 	Price string `json:"price"`
@@ -246,11 +246,11 @@ func (MarketTick) IsEvent() {}
 
 // The equity like share of liquidity fee for each liquidity provider
 type ObservableLiquidityProviderFeeShare struct {
-	// The liquidity provider party id
+	// The liquidity provider party ID
 	PartyID string `json:"partyId"`
-	// The share own by this liquidity provider (float)
+	// The share owned by this liquidity provider (float)
 	EquityLikeShare string `json:"equityLikeShare"`
-	// the average entry valuation of the liquidity provider for the market
+	// The average entry valuation of the liquidity provider for the market
 	AverageEntryValuation string `json:"averageEntryValuation"`
 }
 
@@ -318,7 +318,7 @@ type PriceMonitoringTrigger struct {
 	// Price monitoring probability level p. (>0 and < 1)
 	Probability float64 `json:"probability"`
 	// Price monitoring auction extension duration in seconds should the price
-	// breach it's theoretical level over the specified horizon at the specified
+	// breach its theoretical level over the specified horizon at the specified
 	// probability level (> 0)
 	AuctionExtensionSecs int `json:"auctionExtensionSecs"`
 }
@@ -405,9 +405,9 @@ func (TimeUpdate) IsEvent() {}
 type TradeFee struct {
 	// The maker fee, aggressive party to the other party (the one who had an order in the book)
 	MakerFee string `json:"makerFee"`
-	// The infrastructure fee, a fee paid to the node runner to maintain the vega network
+	// The infrastructure fee, a fee paid to the validators to maintain the Vega network
 	InfrastructureFee string `json:"infrastructureFee"`
-	// The fee paid to the market makers to provide liquidity in the market
+	// The fee paid to the liquidity providers to commit liquidity to the market
 	LiquidityFee string `json:"liquidityFee"`
 }
 
@@ -457,7 +457,7 @@ const (
 	AssetStatusRejected AssetStatus = "Rejected"
 	// Asset is pending listing on the ethereum bridge
 	AssetStatusPendingListing AssetStatus = "PendingListing"
-	// Asset can be used on the vega network
+	// Asset can be used on the Vega network
 	AssetStatusEnabled AssetStatus = "Enabled"
 )
 
@@ -727,7 +727,7 @@ const (
 	DepositStatusOpen DepositStatus = "Open"
 	// The deposit have been cancelled by the network, either because it expired, or something went wrong with the foreign chain
 	DepositStatusCancelled DepositStatus = "Cancelled"
-	// The deposit was finalized, it was first valid, the foreign chain has executed it and the network updated all accounts
+	// The deposit was finalised, it was first valid, the foreign chain has executed it and the network updated all accounts
 	DepositStatusFinalized DepositStatus = "Finalized"
 )
 
@@ -992,7 +992,7 @@ func (e MarketState) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-// What market trading mode are we in
+// What market trading mode is the market in
 type MarketTradingMode string
 
 const (
@@ -1417,18 +1417,18 @@ func (e OrderStatus) MarshalGQL(w io.Writer) {
 type OrderTimeInForce string
 
 const (
-	// The order either trades completely (remainingSize == 0 after adding) or not at all, does not remain on the book if it doesn't trade
+	// Fill or Kill: The order either trades completely (remainingSize == 0 after adding) or not at all, does not remain on the book if it doesn't trade
 	OrderTimeInForceFok OrderTimeInForce = "FOK"
-	// The order trades any amount and as much as possible but does not remain on the book (whether it trades or not)
+	// Immediate or Cancel: The order trades any amount and as much as possible but does not remain on the book (whether it trades or not)
 	OrderTimeInForceIoc OrderTimeInForce = "IOC"
-	// This order trades any amount and as much as possible and remains on the book until it either trades completely or is cancelled
+	// Good 'til Cancelled: This order trades any amount and as much as possible and remains on the book until it either trades completely or is cancelled
 	OrderTimeInForceGtc OrderTimeInForce = "GTC"
-	// This order type trades any amount and as much as possible and remains on the book until they either trade completely, are cancelled, or expires at a set time
+	// Good 'til Time: This order type trades any amount and as much as possible and remains on the book until they either trade completely, are cancelled, or expires at a set time
 	// NOTE: this may in future be multiple types or have sub types for orders that provide different ways of specifying expiry
 	OrderTimeInForceGtt OrderTimeInForce = "GTT"
-	// This order is only accepted during an auction period
+	// Good for Auction: This order is only accepted during an auction period
 	OrderTimeInForceGfa OrderTimeInForce = "GFA"
-	// This order is only accepted during normal trading (that can be continuous trading or frequent batched auctions)
+	// Good for Normal: This order is only accepted during normal trading (continuous trading or frequent batched auctions)
 	OrderTimeInForceGfn OrderTimeInForce = "GFN"
 )
 
@@ -1845,7 +1845,7 @@ const (
 	ProposalTypeNetworkParameters ProposalType = "NetworkParameters"
 	// Proposal to add a new asset
 	ProposalTypeNewAsset ProposalType = "NewAsset"
-	// Proposal to create a new free form proposal
+	// Proposal to create a new freeform proposal
 	ProposalTypeNewFreeForm ProposalType = "NewFreeForm"
 )
 
@@ -1934,13 +1934,13 @@ func (e Side) MarshalGQL(w io.Writer) {
 type StakeLinkingStatus string
 
 const (
-	// The stake linking is pending in the vega network, this means that
-	// the vega network have seen a StakeLinking, but is still to confirm
+	// The stake linking is pending in the Vega network. This means that
+	// the Vega network have seen a StakeLinking, but is still to confirm
 	// it's valid on the ethereum chain, and accepted by all nodes of the network
 	StakeLinkingStatusPending StakeLinkingStatus = "Pending"
 	// The stake linking has been accepted and processed fully (balance updated) by the network
 	StakeLinkingStatusAccepted StakeLinkingStatus = "Accepted"
-	// The vega network have rejected this stake linking
+	// The Vega network has rejected this stake linking
 	StakeLinkingStatusRejected StakeLinkingStatus = "Rejected"
 )
 
@@ -2118,14 +2118,14 @@ type TransferStatus string
 const (
 	// Indicate a transfer still being processed
 	TransferStatusPending TransferStatus = "Pending"
-	// Indicate of an transfer accepted by the vega network
+	// Indicate of an transfer accepted by the Vega network
 	TransferStatusDone TransferStatus = "Done"
-	// Indicate of an transfer rejected by the vega network
+	// Indicate of an transfer rejected by the Vega network
 	TransferStatusRejected TransferStatus = "Rejected"
-	// Indicate of a transfer stopped by the vega network
+	// Indicate of a transfer stopped by the Vega network
 	// e.g: no funds left to cover the transfer
 	TransferStatusStopped TransferStatus = "Stopped"
-	// Indicate of a transfer cancel by the user
+	// Indication of a transfer cancelled by the user
 	TransferStatusCancelled TransferStatus = "Cancelled"
 )
 
