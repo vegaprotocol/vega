@@ -13,16 +13,14 @@
 package steps
 
 import (
-	"fmt"
-
 	"code.vegaprotocol.io/vega/core/integration/stubs"
+	"code.vegaprotocol.io/vega/logging"
 )
 
-func TotalOfEventsShouldBeEmitted(broker *stubs.BrokerStub, eventCounter int) error {
-	allEventCount := len(broker.GetAllEvents())
-	if allEventCount == eventCounter {
-		return nil
+func DebugAllEvents(broker *stubs.BrokerStub, log *logging.Logger) {
+	log.Info("DUMPING EVENTS")
+	data := broker.GetAllEvents()
+	for _, a := range data {
+		log.Info(a.Type().String())
 	}
-
-	return fmt.Errorf("expecting %d events generated, found %d", eventCounter, allEventCount)
 }

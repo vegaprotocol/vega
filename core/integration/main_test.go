@@ -371,6 +371,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^debug market data for "([^"]*)"$`, func(mkt string) error {
 		return steps.DebugMarketData(execsetup.executionEngine, execsetup.log, mkt)
 	})
+	s.Step(`^debug all events$`, func() error {
+		steps.DebugAllEvents(execsetup.broker, execsetup.log)
+		return nil
+	})
 	s.Step(`^debug auction events$`, func() error {
 		steps.DebugAuctionEvents(execsetup.broker, execsetup.log)
 		return nil
@@ -407,10 +411,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		steps.ClearTransferResponseEvents(execsetup.broker)
 		return nil
 	})
-	s.Step(`^the following events should be emitted"$`, func(table *godog.Table) error {
+	s.Step(`^the following events should be emitted:$`, func(table *godog.Table) error {
 		return steps.TheFollowingEventsShouldBeEmitted(execsetup.broker, table)
 	})
-	s.Step(`^a total of "([0-9]+)" events should be emitted"$`, func(eventCounter int) error {
+	s.Step(`^a total of "([0-9]+)" events should be emitted$`, func(eventCounter int) error {
 		return steps.TotalOfEventsShouldBeEmitted(execsetup.broker, eventCounter)
 	})
 
