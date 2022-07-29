@@ -20,9 +20,9 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/assets/erc20"
-	vcrypto "code.vegaprotocol.io/vega/core/crypto"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/types/num"
+	vcrypto "code.vegaprotocol.io/vega/libs/crypto"
 
 	ethnw "code.vegaprotocol.io/vega/core/nodewallets/eth"
 	"code.vegaprotocol.io/vega/core/nodewallets/registry"

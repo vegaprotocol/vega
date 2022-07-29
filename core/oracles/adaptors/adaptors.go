@@ -16,9 +16,9 @@ import (
 	"errors"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	"code.vegaprotocol.io/vega/core/crypto"
 	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/oracles/validation"
+	"code.vegaprotocol.io/vega/libs/crypto"
 )
 
 // ErrUnknownOracleSource is used when the input data is originated from an

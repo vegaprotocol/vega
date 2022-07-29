@@ -7,7 +7,7 @@ package mocks
 import (
 	reflect "reflect"
 
-	crypto "code.vegaprotocol.io/vega/core/crypto"
+	crypto "code.vegaprotocol.io/vega/libs/crypto"
 	gomock "github.com/golang/mock/gomock"
 )
 

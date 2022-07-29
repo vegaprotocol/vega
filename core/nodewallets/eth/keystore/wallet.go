@@ -18,8 +18,8 @@ import (
 	"path/filepath"
 	"sync"
 
-	"code.vegaprotocol.io/vega/core/crypto"
 	"code.vegaprotocol.io/vega/core/nodewallets/registry"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
