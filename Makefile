@@ -75,6 +75,10 @@ clean: ## Remove previous build
 proto: ## build proto definitions
 	@./script/generate.sh
 
+.PHONY: proto_json
+proto: ## build proto definitions
+	@./script/generate_json.sh
+
 .PHONY: proto_check
 proto_check: ## proto: Check committed files match just-generated files
 	@make proto_clean 1>/dev/null

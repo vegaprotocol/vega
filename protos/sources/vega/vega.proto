@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 package vega;
-option go_package = "code.vegaprotocol.io/protos/vega";
+option go_package = "code.vegaprotocol.io/vega/protos";
 
 import "vega/markets.proto";
 
@@ -100,17 +100,17 @@ message Order {
   enum TimeInForce {
     // Default value for TimeInForce, can be valid for an amend
     TIME_IN_FORCE_UNSPECIFIED = 0;
-    // Good until cancelled, the order trades any amount and as much as possible 
+    // Good until cancelled, the order trades any amount and as much as possible
     // and remains on the book until it either trades completely or is cancelled
     TIME_IN_FORCE_GTC = 1;
     // Good until specified time, this order type trades any amount and as much as possible
-    // and remains on the book until it either trades completely, is cancelled, or expires at a set time 
+    // and remains on the book until it either trades completely, is cancelled, or expires at a set time
     // NOTE: this may in future be multiple types or have sub types for orders that provide different ways of specifying expiry
     TIME_IN_FORCE_GTT = 2;
-    // Immediate or cancel, the order trades any amount and as much as possible 
+    // Immediate or cancel, the order trades any amount and as much as possible
     // but does not remain on the book (whether it trades or not)
     TIME_IN_FORCE_IOC = 3;
-    // Fill or kill, The order either trades completely (remainingSize == 0 after adding) 
+    // Fill or kill, The order either trades completely (remainingSize == 0 after adding)
     // or not at all, does not remain on the book if it doesn't trade
     TIME_IN_FORCE_FOK = 4;
     // Good for auction, this order is only accepted during an auction period
@@ -614,12 +614,12 @@ enum AccountType {
   ACCOUNT_TYPE_INSURANCE = 1;
   // Settlement accounts exist only during settlement or mark-to-market
   ACCOUNT_TYPE_SETTLEMENT = 2;
-  // Margin accounts contain funds set aside for the margin needed to support a party's open positions. 
-  // Each party will have a margin account for each market they have traded in. 
+  // Margin accounts contain funds set aside for the margin needed to support a party's open positions.
+  // Each party will have a margin account for each market they have traded in.
   // The required initial margin is allocated to each market from your general account.
-  // Collateral in the margin account can't be withdrawn or used as margin on another market until 
+  // Collateral in the margin account can't be withdrawn or used as margin on another market until
   // it is released back to the general account.
-  // The Vega protocol uses an internal accounting system to segregate funds held as 
+  // The Vega protocol uses an internal accounting system to segregate funds held as
   // margin from other funds to ensure they are never lost or 'double spent'
   //
   // Margin account funds will vary as margin requirements on positions change
