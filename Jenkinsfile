@@ -1,6 +1,5 @@
 /* groovylint-disable DuplicateStringLiteral, LineLength, NestedBlockDepth */
-@Library('vega-shared-library@one-repo') _
-// TODO remove the one-repo
+@Library('vega-shared-library') _
 
 /* properties of scmVars (example):
     - GIT_BRANCH:PR-40-head
@@ -20,7 +19,7 @@ pipeline {
     options {
         skipDefaultCheckout true
         timestamps()
-        timeout(time: isPRBuild() ? 30 : 90, unit: 'MINUTES')
+        timeout(time: isPRBuild() ? 50 : 120, unit: 'MINUTES')
     }
     parameters {
         string( name: 'PROTOS_BRANCH', defaultValue: 'develop',
@@ -534,25 +533,18 @@ pipeline {
 
     }
     post {
-        // success {
-        //     retry(3) {
-        //         script {
-        //             slack.slackSendCISuccess name: 'Vega Core CI', channel: '#tradingcore-notify'
-        //         }
-        //     }
-        // }
-        // unsuccessful {
-        //     retry(3) {
-        //         script {
-        //             slack.slackSendCIFailure name: 'Vega Core CI', channel: '#tradingcore-notify'
-        //         }
-        //     }
-        // }
-        cleanup {
+        success {
             retry(3) {
-                sh label: 'Clean docker images', script: '''#!/bin/bash -e
-                    [ -z "$(docker images -q "${DOCKER_IMAGE_VEGA_CORE_LOCAL}")" ] || docker rmi "${DOCKER_IMAGE_VEGA_CORE_LOCAL}"
-                '''
+                script {
+                    slack.slackSendCISuccess name: 'Vega Core CI', channel: '#tradingcore-notify'
+                }
+            }
+        }
+        unsuccessful {
+            retry(3) {
+                script {
+                    slack.slackSendCIFailure name: 'Vega Core CI', channel: '#tradingcore-notify'
+                }
             }
         }
     }
