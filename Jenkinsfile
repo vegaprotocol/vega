@@ -158,13 +158,6 @@ pipeline {
         //
         // Begin DOCKER
         //
-        stage('Setup docker buildx') {
-            steps {
-                sh '''#!/bin/bash -e
-                    docker buildx create --use
-                '''
-            }
-        }
         stage('Build docker image') {
             matrix {
                 axes {
@@ -174,18 +167,33 @@ pipeline {
                     }
                 }
                 stages {
+                    stage('Create builder') {
+                        steps {
+                            sh """#!/bin/bash -e
+                                docker buildx create --name ${APP}-${DOCKER_IMAGE_TAG_LOCAL}
+                            """
+                        }
+                    }
                     stage('docker build') {
                         steps {
                             dir('vega') {
                                 // TODO: add --push to publish images
                                 sh """#!/bin/bash -e
                                     docker buildx build \
+                                        --builder ${APP}-${DOCKER_IMAGE_TAG_LOCAL} \
                                         --platform=linux/arm64,linux/amd64 \
                                         -f docker/${APP}.dockerfile \
                                         -t ${APP}:${DOCKER_IMAGE_TAG_LOCAL} \
                                         .
                                 """
                             }
+                        }
+                    }
+                    post {
+                        steps {
+                            sh """#!/bin/bash -e
+                                docker buildx rm --force ${APP}-${DOCKER_IMAGE_TAG_LOCAL}
+                            """
                         }
                     }
                 }
