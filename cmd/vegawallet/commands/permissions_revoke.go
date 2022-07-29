@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	vgterm "code.vegaprotocol.io/shared/libs/term"
+	vgterm "code.vegaprotocol.io/vega/libs/term"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"

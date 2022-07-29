@@ -10,7 +10,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	vgterm "code.vegaprotocol.io/shared/libs/term"
+	vgterm "code.vegaprotocol.io/vega/libs/term"
 	vglog "code.vegaprotocol.io/shared/libs/zap"
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
