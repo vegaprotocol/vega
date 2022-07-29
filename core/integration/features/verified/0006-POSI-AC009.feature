@@ -10,6 +10,7 @@ Feature: test AC 0006-POSI-009, 006-POSI-027
       | market.auction.minimumDuration | 1     |
 
   Scenario:  Open long position, trades occur closing the long position and opening a short position (0006-POSI-009; 006-POSI-027)
+  Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount |
       | party1 | ETH   | 10000  |
       | party2 | ETH   | 10000  |
