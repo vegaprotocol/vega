@@ -169,7 +169,7 @@ pipeline {
                 stages {
                     stage('Create builder') {
                         steps {
-                            sh """#!/bin/bash -e
+                            sh label: 'create buildx builder', script: """#!/bin/bash -e
                                 docker buildx create --name ${APP}-${DOCKER_IMAGE_TAG_LOCAL}
                             """
                         }
@@ -178,7 +178,7 @@ pipeline {
                         steps {
                             dir('vega') {
                                 // TODO: add --push to publish images
-                                sh """#!/bin/bash -e
+                                sh label: 'build and publish multi-arch docker image', script: """#!/bin/bash -e
                                     docker buildx build \
                                         --builder ${APP}-${DOCKER_IMAGE_TAG_LOCAL} \
                                         --platform=linux/arm64,linux/amd64 \
@@ -188,12 +188,12 @@ pipeline {
                                 """
                             }
                         }
-                    }
-                    post {
-                        steps {
-                            sh """#!/bin/bash -e
-                                docker buildx rm --force ${APP}-${DOCKER_IMAGE_TAG_LOCAL}
-                            """
+                        post {
+                            steps {
+                                sh label: 'destroy buildx builder', script: """#!/bin/bash -e
+                                    docker buildx rm --force ${APP}-${DOCKER_IMAGE_TAG_LOCAL}
+                                """
+                            }
                         }
                     }
                 }
