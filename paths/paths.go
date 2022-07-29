@@ -2,10 +2,8 @@ package paths
 
 import "path/filepath"
 
-var (
-	// VegaHome is the name of the Vega folder for every type of file structure.
-	VegaHome = "vega"
-)
+// VegaHome is the name of the Vega folder for every type of file structure.
+var VegaHome = "vega"
 
 // File structure for cache
 //
@@ -32,11 +30,9 @@ func JoinCachePathStr(p CachePath, elem ...string) string {
 	return filepath.Join(append([]string{string(p)}, elem...)...)
 }
 
-var (
-	// DataNodeCacheHome is the folder containing the cache used by the
-	// data-node.
-	DataNodeCacheHome = CachePath("data-node")
-)
+// DataNodeCacheHome is the folder containing the cache used by the
+// data-node.
+var DataNodeCacheHome = CachePath("data-node")
 
 // File structure for configuration
 //
@@ -279,7 +275,7 @@ var (
 	// of to the node.
 	SnapshotStateHome = StatePath(filepath.Join(NodeStateHome.String(), "snapshots"))
 
-	// SnapshotDBStateFile is the DB file for GoLevelDB used in snapshots
+	// SnapshotDBStateFile is the DB file for GoLevelDB used in snapshots.
 	SnapshotDBStateFile = StatePath(filepath.Join(SnapshotStateHome.String(), "ldb"))
 
 	// WalletCLIStateHome is the folder containing the state of the wallet CLI.

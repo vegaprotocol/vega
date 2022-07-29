@@ -15,7 +15,7 @@ func EnsureDir(path string) error {
 	_, err := os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return os.MkdirAll(path, os.ModeDir|0700)
+			return os.MkdirAll(path, os.ModeDir|0o700)
 		}
 		return err
 	}
@@ -65,7 +65,7 @@ func ReadFile(path string) ([]byte, error) {
 }
 
 func WriteFile(path string, content []byte) error {
-	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
+	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o600)
 	if err != nil {
 		return fmt.Errorf("couldn't create file: %w", err)
 	}

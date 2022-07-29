@@ -7,7 +7,7 @@ import (
 	"github.com/blang/semver/v4"
 )
 
-// ReleasesGetter return the list of releases as semantic version strings
+// ReleasesGetter return the list of releases as semantic version strings.
 type ReleasesGetter func() ([]*Version, error)
 
 // IsUnreleased tells if the version in parameter is an unreleased version or
@@ -77,7 +77,7 @@ func shouldUpdate(latestVersion *Version, newVersion *Version) bool {
 // In semantic versioning, we don't compare the `build` annotation, so verifying
 // equality between 0.9.0-pre1 and 0.9.0-pre1+dev results in comparing:
 //     0.9.0-pre1 <> 0.9.0-pre1
-// So if it's equal, it means we have a
+// So if it's equal, it means we have a.
 func nonDevelopmentVersionAvailable(latestVersion *Version, comparedVersion *Version) bool {
 	return comparedVersion.Version.EQ(*latestVersion.Version)
 }
