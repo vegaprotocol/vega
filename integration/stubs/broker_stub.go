@@ -361,7 +361,8 @@ func (b *BrokerStub) GetTradeEvents() []events.Trade {
 }
 
 func (b *BrokerStub) GetAccountEvents() []events.Acc {
-	batch := b.GetBatch(events.AccountEvent)
+	// Use imm batch so that it's not affected by calling the step which clears all events
+	batch := b.GetImmBatch(events.AccountEvent)
 	if len(batch) == 0 {
 		return nil
 	}
