@@ -1,0 +1,134 @@
+syntax = "proto3";
+
+package vega.api.v1;
+option go_package = "code.vegaprotocol.io/protos/vega/api/v1";
+
+import "vega/assets.proto";
+import "vega/governance.proto";
+import "vega/markets.proto";
+import "vega/vega.proto";
+import "vega/events/v1/events.proto";
+
+service CoreStateService {
+  rpc ListAccounts(ListAccountsRequest) returns (ListAccountsResponse);
+  rpc ListAssets(ListAssetsRequest) returns (ListAssetsResponse);
+  rpc ListNetworkParameters(ListNetworkParametersRequest) returns (ListNetworkParametersResponse);
+  rpc ListNetworkLimits(ListNetworkLimitsRequest) returns (ListNetworkLimitsResponse);
+  rpc ListParties(ListPartiesRequest) returns (ListPartiesResponse);
+  rpc ListValidators(ListValidatorsRequest) returns (ListValidatorsResponse);
+  rpc ListMarkets(ListMarketsRequest) returns (ListMarketsResponse);
+  rpc ListProposals(ListProposalsRequest) returns (ListProposalsResponse);
+  rpc ListMarketsData(ListMarketsDataRequest) returns (ListMarketsDataResponse);
+  rpc ListVotes(ListVotesRequest) returns (ListVotesResponse);
+  rpc ListPartiesStake(ListPartiesStakeRequest) returns (ListPartiesStakeResponse);
+  rpc ListDelegations(ListDelegationsRequest) returns (ListDelegationsResponse);
+}
+
+message Account {
+  string party = 1;
+  string market = 2;
+  string balance = 3;
+  string asset = 5;
+  string type = 6;
+}
+
+message ListAccountsRequest {
+  string party = 1;
+  string market = 2;
+}
+
+message ListAccountsResponse {
+  repeated Account accounts = 1;
+}
+
+message ListAssetsRequest {
+  string asset = 1; // optional ID
+}
+
+message ListAssetsResponse {
+  repeated vega.Asset assets = 1;
+}
+
+message ListNetworkParametersRequest {
+  string network_parameter_key = 1; // optional parameter key
+}
+
+message ListNetworkParametersResponse {
+  repeated vega.NetworkParameter network_parameters = 1;
+}
+
+message ListNetworkLimitsRequest {}
+
+message ListNetworkLimitsResponse {
+  vega.NetworkLimits network_limits = 1;
+}
+
+message ListPartiesRequest {}
+
+message ListPartiesResponse {
+  repeated vega.Party parties = 1;
+}
+
+message ListValidatorsRequest {}
+
+message ListValidatorsResponse {
+  repeated vega.events.v1.ValidatorUpdate validators = 1;
+}
+
+message ListMarketsRequest {
+  string market = 1;
+}
+
+message ListMarketsResponse {
+  repeated vega.Market markets = 1;
+}
+
+message ListProposalsRequest {
+  string proposal = 1; // optional ID
+  string proposer = 2; // optional party
+}
+
+message ListProposalsResponse {
+  repeated vega.Proposal proposals = 1;
+}
+
+message ListMarketsDataRequest {
+  string market = 1;
+}
+
+message ListMarketsDataResponse {
+  repeated vega.MarketData markets_data = 1;
+}
+
+message ListVotesRequest {
+  string proposal = 1;
+  string party = 2;
+}
+
+message ListVotesResponse {
+  repeated vega.Vote votes = 1;
+}
+
+message PartyStake {
+  string party = 1;
+  string current_stake_available = 2;
+  repeated vega.events.v1.StakeLinking stake_linkings = 3;
+}
+
+message ListPartiesStakeRequest {
+  string party = 1;
+}
+
+message ListPartiesStakeResponse {
+  repeated PartyStake parties_stake = 1;
+}
+
+message ListDelegationsRequest {
+  string party = 1;
+  string node = 2;
+  string epoch_seq = 3;
+}
+
+message ListDelegationsResponse{
+  repeated vega.Delegation delegations = 1;
+}

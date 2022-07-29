@@ -1,0 +1,195 @@
+syntax = "proto3";
+
+package vega.checkpoint.v1;
+option go_package = "code.vegaprotocol.io/protos/vega/checkpoint/v1";
+
+import "vega/vega.proto";
+import "vega/assets.proto";
+import "vega/governance.proto";
+import "vega/events/v1/events.proto";
+
+// CheckpointState is the entire checkpoint serialised (basically serialised the Checkpoint message + hash)
+message CheckpointState {
+  bytes hash = 1;
+  bytes state = 2;
+}
+
+// Checkpoint aggregates the various engine snapshots
+message Checkpoint {
+  bytes governance = 1;
+  bytes assets = 2;
+  bytes collateral = 3;
+  bytes network_parameters = 4;
+  bytes delegation = 5;
+  bytes epoch = 6; // will just be an epoch event
+  bytes block = 7;
+  bytes rewards = 8;
+  bytes banking = 9;
+  bytes validators = 10;
+  bytes staking = 11;
+  bytes multisig_control = 12;
+  bytes market_tracker = 13;
+}
+
+// AssetEntrty is a single (enabled) asset
+message AssetEntry {
+  string id = 1;
+  vega.AssetDetails asset_details = 2;
+}
+
+// Assets contains all the enabled assets as AssetEntries
+message Assets {
+  repeated AssetEntry assets = 1;
+}
+
+// AssetBalance represents the total balance of a given asset for a party
+message AssetBalance {
+  string party = 1;
+  string asset = 2;
+  string balance = 3;
+}
+
+// Collateral contains the balances per party
+message Collateral {
+  repeated AssetBalance balances = 1;
+}
+
+// NetParams contains all network parameters
+message NetParams {
+  repeated vega.NetworkParameter params = 1;
+}
+
+// Proposals will contain all accepted proposals
+message Proposals {
+  repeated vega.Proposal proposals = 1;
+}
+
+// Delegated amounts for party/node
+// undelegate and epoch seq are only relevant for pending entries
+message DelegateEntry {
+  string party = 1;
+  string node = 2;
+  string amount = 3;
+  bool undelegate = 4;
+  uint64 epoch_seq = 5;
+}
+
+// Delegate contains all entries for a checkpoint
+message Delegate {
+  repeated DelegateEntry active = 1;
+  repeated DelegateEntry pending = 2;
+  repeated string auto_delegation = 3;
+}
+
+// Block message contains data related to block at which the checkpoint
+// was created (ie block height)
+message Block {
+  int64 height = 1;
+}
+
+message Rewards {
+  repeated RewardPayout rewards = 1;
+}
+
+message RewardPayout {
+  int64 payout_time = 1;
+  repeated PendingRewardPayout rewards_payout = 2;
+}
+
+message PendingRewardPayout {
+  string from_account = 1;
+  string asset = 2;
+  repeated PartyAmount party_amount = 3;
+  string total_reward = 4;
+  string epoch_seq = 5;
+  int64 timestamp = 6;
+}
+
+message PartyAmount {
+  string party = 1;
+  string amount = 2;
+}
+
+message PendingKeyRotation {
+  // Relative target block height is: target block height - current block height.
+  // Useful for cross blockchain compatibility.
+  uint64 relative_target_block_height = 1;
+  string node_id = 2;
+  string new_pub_key = 3;
+  uint32 new_pub_key_index = 4;
+}
+
+message PendingEthereumKeyRotation {
+  // Relative target block height is: target block height - current block height.
+  // Useful for cross blockchain compatibility.
+  uint64 relative_target_block_height = 1;
+  string node_id = 2;
+  string new_address = 3;
+}
+
+message ScheduledTransfer {
+  vega.Transfer transfer = 1;
+  vega.AccountType account_type = 2;
+  string reference = 3;
+  vega.events.v1.Transfer oneoff_transfer = 4;
+}
+
+message ScheduledTransferAtTime {
+  int64 deliver_on = 1;
+  repeated ScheduledTransfer transfers = 2;
+}
+
+message RecurringTransfers {
+  repeated vega.events.v1.Transfer recurring_transfers = 1;
+}
+
+message Banking {
+  repeated ScheduledTransferAtTime transfers_at_time = 1;
+  RecurringTransfers recurring_transfers = 2;
+}
+
+message Validators {
+  repeated ValidatorState validator_state = 1;
+  repeated PendingKeyRotation pending_key_rotations = 2;
+  repeated PendingEthereumKeyRotation pending_ethereum_key_rotations = 3;
+}
+
+message ValidatorState {
+  vega.events.v1.ValidatorUpdate validator_update = 1;
+  int32 status = 2;
+  uint64 eth_events_forwarded = 3;
+  int64 validator_power = 4;
+  vega.RankingScore ranking_score = 5;
+}
+
+message Staking {
+  repeated vega.events.v1.StakeLinking accepted = 1;
+  uint64 last_block_seen = 2;
+}
+
+message MultisigControl {
+  repeated vega.events.v1.ERC20MultiSigSignerEvent signers = 1;
+  vega.events.v1.ERC20MultiSigThresholdSetEvent threshold_set = 2;
+  uint64 last_block_seen = 3;
+}
+
+message MarketTracker {
+  repeated MarketActivityTracker market_activity = 1;
+}
+
+message MarketActivityTracker {
+  string market = 1;
+  string asset = 2;
+  repeated PartyFees maker_fees = 3;
+  repeated PartyFees taker_fees = 4;
+  repeated PartyFees lp_fees = 5;
+  string proposer = 6;
+  bool bonus_paid = 7;
+  string value_traded = 8;
+  bool ready_to_delete = 9;
+}
+
+message PartyFees {
+  string party = 1;
+  string fee = 2;
+}

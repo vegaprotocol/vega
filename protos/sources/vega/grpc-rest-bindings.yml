@@ -1,0 +1,61 @@
+---
+type: google.api.Service
+config_version: 3
+
+name: api.v1.trading
+title: Vega Trading API
+
+apis:
+  - name: CoreService
+  - name: CoreStateService
+
+http:
+  rules:
+    # transaction
+    - selector: vega.api.v1.CoreService.SubmitTransaction
+      post: '/transaction'
+      body: "*"
+    - selector: vega.api.v1.CoreService.CheckTransaction
+      post: '/transaction/check'
+      body: "*"
+    - selector: vega.api.v1.CoreService.SubmitRawTransaction
+      post: '/transaction/raw'
+      body: "*"
+    - selector: vega.api.v1.CoreService.CheckRawTransaction
+      post: '/transaction/raw/check'
+      body: "*"
+
+
+    # Miscellaneous
+    - selector: vega.api.v1.CoreService.Statistics
+      get: '/statistics'
+    - selector: vega.api.v1.CoreService.LastBlockHeight
+      get: '/blockchain/height'
+    - selector: vega.api.v1.CoreService.GetVegaTime
+      get: '/time'
+
+    # Core APIs
+    - selector: vega.api.v1.CoreStateService.ListNetworkParameters
+      get: '/network/parameters'
+    - selector: vega.api.v1.CoreStateService.ListNetworkLimits
+      get: '/network/limits'
+    - selector: vega.api.v1.CoreStateService.ListAccounts
+      get: '/accounts'
+    - selector: vega.api.v1.CoreStateService.ListAssets
+      get: '/assets'
+    - selector: vega.api.v1.CoreStateService.ListParties
+      get: '/parties'
+    - selector: vega.api.v1.CoreStateService.ListPartiesStake
+      get: '/parties/stake'
+    - selector: vega.api.v1.CoreStateService.ListValidators
+      get: '/validators'
+    - selector: vega.api.v1.CoreStateService.ListProposals
+      get: '/proposals'
+    - selector: vega.api.v1.CoreStateService.ListVotes
+      get: '/votes'
+    - selector: vega.api.v1.CoreStateService.ListMarkets
+      get: '/markets'
+    - selector: vega.api.v1.CoreStateService.ListMarketsData
+      get: '/markets/data'
+    - selector: vega.api.v1.CoreStateService.ListDelegations
+      get: '/delegations'

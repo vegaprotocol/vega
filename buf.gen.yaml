@@ -1,0 +1,22 @@
+version: v1
+plugins:
+  - name: go
+    out: .
+    opt: paths=source_relative
+  - name: go-grpc
+    out: .
+    opt: paths=source_relative
+  - name: grpc-gateway
+    out: .
+    opt:
+      - logtostderr=true
+      - grpc_api_configuration=protos/sources/data-node/grpc-rest-bindings.yml
+      - paths=source_relative
+    strategy: all
+  - name: grpc-gateway
+    out: .
+    opt:
+      - logtostderr=true
+      - grpc_api_configuration=protos/sources/vega/grpc-rest-bindings.yml
+      - paths=source_relative
+    strategy: all

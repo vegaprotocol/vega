@@ -1,0 +1,707 @@
+syntax = "proto3";
+
+package vega.events.v1;
+option go_package = "code.vegaprotocol.io/protos/vega/events/v1";
+
+import "vega/markets.proto";
+import "vega/assets.proto";
+import "vega/governance.proto";
+import "vega/vega.proto";
+import "vega/oracles/v1/spec.proto";
+import "vega/oracles/v1/data.proto";
+import "vega/commands/v1/commands.proto";
+import "vega/commands/v1/oracles.proto";
+import "vega/commands/v1/validator_commands.proto";
+
+message ERC20MultiSigSignerAdded {
+  // The identifier of the signature bundle
+  string signature_id = 1;
+  // The vega node ID of the node to be added
+  string validator_id = 2;
+  // the time at which this happened
+  int64 timestamp = 3;
+ // The ethereum address of the new signer
+  string new_signer = 4;
+  // The address of the submitter of the transaction
+  string submitter = 5;
+  // The nonce used.
+  string nonce = 6;
+  // The epoch that the node was added for
+  string epoch_seq = 7;
+}
+
+message ERC20MulistSigSignerRemovedSubmitter {
+  // The ID of this signature bundle
+  string signature_id = 1;
+  // The address of the submitter of the transaction
+  string submitter = 2;
+}
+
+message ERC20MultiSigSignerRemoved {
+  // A list containing all the IDs of bundle generated
+  // There should be one bundle generated for every validators
+  // in the validator set
+  repeated ERC20MulistSigSignerRemovedSubmitter signature_submitters = 1;
+  // The vega node ID of the node which is to be removed
+  string validator_id = 2;
+  // the time at which this happened
+  int64 timestamp = 3;
+  // The ethereum address of the signer to be removed
+  string old_signer = 4;
+  // The nonce used.
+  string nonce = 5;
+  // The epoch that the node was removed for
+  string epoch_seq = 6;
+}
+
+message Transfer {
+  enum Status {
+    // Default value
+    STATUS_UNSPECIFIED = 0;
+    // Indicate a transfer still being processed
+    STATUS_PENDING = 1;
+    // Indicate of an transfer accepted by the vega network
+    STATUS_DONE = 2;
+    // Indicate of an transfer rejected by the vega network
+    STATUS_REJECTED = 3;
+    // Indicate of a transfer stopped by the vega network
+    // e.g: no funds left to cover the transfer
+    STATUS_STOPPED = 4;
+    // Indicate of a transfer cancel by the user
+    STATUS_CANCELLED = 5;
+  }
+
+  string id = 1;
+  string from = 2;
+  vega.AccountType from_account_type = 3;
+  string to = 4;
+  vega.AccountType to_account_type = 5;
+  string asset = 6;
+  string amount = 7;
+  string reference = 8;
+  Status status = 9;
+  int64 timestamp = 10;
+
+  oneof kind {
+    OneOffTransfer one_off = 101;
+    RecurringTransfer recurring = 102;
+  }
+}
+
+message OneOffTransfer {
+  int64 deliver_on = 1;
+}
+
+message RecurringTransfer {
+  uint64 start_epoch = 1;
+  optional uint64 end_epoch = 2;
+  string factor = 3;
+  DispatchStrategy dispatch_strategy = 4;
+}
+
+// StakeLinking - an event notifying of stake being deposited or removed for a given party
+// These events are emitted for every Staking deposit or removed accepted by the network
+message StakeLinking {
+  enum Type {
+    // Default value
+    TYPE_UNSPECIFIED = 0;
+    // Indicate of a stake deposit instruction
+    TYPE_LINK = 1;
+    // Indicate of a stake remove instruction
+    TYPE_UNLINK = 2;
+  }
+
+  enum Status {
+    // Default value
+    STATUS_UNSPECIFIED = 0;
+    // Indicate an event waiting for confirmation from the vega network
+    STATUS_PENDING = 1;
+    // Indicate of an event accepted by the vega network
+    STATUS_ACCEPTED = 2;
+    // Indaicate of an event rejected by the vega network
+    STATUS_REJECTED = 3;
+  }
+
+  // The internal ID for this staking event
+  string id = 1;
+  // The type of event
+  Type type = 2;
+  // The timestamps at which the event was emitted by ethereum
+  int64 ts = 3;
+  // The party to whom the event is directed at.
+  string party = 4;
+  // The amount of stake deposited or removed
+  string amount = 5;
+  // The status of the event
+  Status status = 6;
+  // The time at which the vega network finalized the state of the event
+  int64 finalized_at = 7;
+  // The hash of the transaction from which the events happen
+  string tx_hash = 8;
+  // The block when the event happened
+  uint64 block_height = 9;
+  // The block time
+  int64 block_time = 10;
+  // The log index
+  uint64 log_index = 11;
+  // the ethereum address from which the stake link was iniated
+  string ethereum_address = 12;
+}
+
+message ERC20MultiSigSignerEvent {
+  enum Type {
+    TYPE_UNSPECIFIED = 0;
+    TYPE_ADDED = 1;
+    TYPE_REMOVED = 2;
+  }
+
+  string id = 1;
+  Type type = 2;
+  string signer = 3;
+  string nonce = 4;
+  int64 block_time = 5;
+  string tx_hash = 6;
+  uint64 log_index = 7;
+  uint64 block_number = 8;
+}
+
+message ERC20MultiSigThresholdSetEvent {
+  string id = 1;
+  uint32 new_threshold = 2;
+  string nonce = 3;
+  int64 block_time = 4;
+  string tx_hash = 5;
+  uint64 log_index = 6;
+  uint64 block_number = 7;
+}
+
+message CheckpointEvent {
+  string hash = 1;
+  string block_hash = 2;
+  uint64 block_height = 3;
+}
+
+message StreamStartEvent {
+  string chain_id = 1;
+}
+
+message RewardPayoutEvent {
+  string party = 1;
+  string epoch_seq = 2;
+  string asset = 3;
+  string amount = 4;
+  string percent_of_total_reward = 5;
+  int64  timestamp = 6;
+  string reward_type = 7;
+  string market = 8;
+}
+
+//ValidatorScoreEvent is the score a validator gets for a given epoch
+message ValidatorScoreEvent {
+  string node_id = 1;
+  string epoch_seq = 2;
+  string validator_score = 3;
+  string normalised_score = 4;
+  string validator_performance = 5;
+  string raw_validator_score = 6;
+  string validator_status = 7;
+  string multisig_score = 8;
+}
+
+//DelegationBalanceEvent - updates on the delegation balance of a party to a node in the current epoch in effect
+message DelegationBalanceEvent {
+  string party = 1;
+  string node_id = 2;
+  string amount = 3;
+  string epoch_seq = 4;
+}
+
+// MarketEvent - the common denominator for all market events
+// interface has a method to return a string for logging
+message MarketEvent {
+  // Market identifier for the event
+  string market_id = 1;
+  // Payload is a unique information string
+  string payload = 2;
+}
+
+message TxErrorEvent {
+  // this was the old restore checkpoint command
+  reserved 110;
+
+  // Unique party identifier for the related party
+  string party_id = 1;
+  // An error message describing what went wrong
+  string err_msg = 2;
+  // The transaction that failed
+  oneof transaction {
+    commands.v1.OrderSubmission order_submission = 101;
+    commands.v1.OrderAmendment order_amendment = 102;
+    commands.v1.OrderCancellation order_cancellation = 103;
+    commands.v1.ProposalSubmission proposal = 104;
+    commands.v1.VoteSubmission vote_submission = 105;
+    commands.v1.LiquidityProvisionSubmission liquidity_provision_submission = 106;
+    commands.v1.WithdrawSubmission withdraw_submission = 107;
+    commands.v1.DelegateSubmission delegate_submission = 108;
+    commands.v1.UndelegateSubmission undelegate_submission = 109;
+    commands.v1.LiquidityProvisionCancellation liquidity_provision_cancellation = 111;
+    commands.v1.LiquidityProvisionAmendment liquidity_provision_amendment = 112;
+    commands.v1.Transfer transfer = 113;
+    commands.v1.CancelTransfer cancel_transfer = 114;
+    commands.v1.AnnounceNode announce_node = 115;
+    commands.v1.OracleDataSubmission oracle_data_submission = 116;
+    commands.v1.ProtocolUpgradeProposal protocol_upgrade_proposal = 117;
+  }
+}
+
+// A time update event contains the latest time update from Vega blockchain and indicates the start of a new block
+message TimeUpdate {
+  // Timestamp containing latest update from Vega blockchain aka Vega-time
+  int64 timestamp = 1;
+}
+
+// Epoch details
+message EpochEvent {
+  // Sequence number that increases by one each epoch
+  uint64 seq = 1;
+  // Action tells us what action is taking place
+  vega.EpochAction action = 2;
+  // What time did this epoch start
+  int64  start_time = 3;
+  // What time should this epoch end
+  int64  expire_time = 4;
+  // What time did it actually end
+  int64  end_time = 5;
+}
+
+// A transfer responses event contains a collection of transfer information
+message TransferResponses {
+  // One or more entries containing internal transfer information
+  repeated TransferResponse responses = 1;
+}
+
+// A position resolution event contains information on distressed trades
+message PositionResolution {
+  // Market identifier for the event
+  string market_id = 1;
+  // Number of distressed traders
+  int64 distressed = 2;
+  // Number of close outs
+  int64 closed = 3;
+  // Mark price as a string representing a scaled price
+  string mark_price = 4;
+}
+
+// A loss socialization event contains details on the amount of wins unable to be distributed
+message LossSocialization {
+  // Market identifier for the event
+  string market_id = 1;
+  // Party identifier (public key) for the event
+  string party_id = 2;
+  // Amount distributed
+  string amount = 3;
+}
+
+// A trade settlement is part of the settle position event
+message TradeSettlement {
+  // Size of trade settlement
+  int64 size = 1;
+  // Price of settlement as string
+  string price = 2;
+}
+
+// A settle position event contains position settlement information for a party
+message SettlePosition {
+  // Market identifier for the event
+  string market_id = 1;
+  // Party identifier (public key) for the event
+  string party_id = 2;
+  // Price of settlement as a string
+  string price = 3;
+  // A collection of 1 or more trade settlements
+  repeated TradeSettlement trade_settlements = 4;
+  // Position factor - 10 ^ number of position decimal places
+  string position_factor = 5;
+}
+
+// A position state event contains the current position state for a single party in a single market
+message PositionStateEvent {
+  // Party identifier for this position update
+  string party_id = 1;
+  // Market identifier for this position update
+  string market_id = 2;
+  // Current position
+  int64 size = 3;
+  // Potential orders
+  int64 potential_buys = 4;
+  int64 potential_sells = 5;
+  // Volume weighted prices
+  string vw_buy_price = 6;
+  string vw_sell_price = 7;
+}
+
+// A settle distressed event contains information on distressed trading parties who are closed out
+message SettleDistressed {
+  // Note: Any PositionResolution event (market level) will most likely be followed by a number of these events
+
+  // Market identifier for the event
+  string market_id = 1;
+  // Party identifier (public key) for the event
+  string party_id = 2;
+  // Margin value as an integer, for example `123456` is a correctly
+  // formatted price of `1.23456` assuming market configured to 5 decimal places
+  string margin = 3;
+  // Price as an integer, for example `123456` is a correctly
+  // formatted price of `1.23456` assuming market configured to 5 decimal places
+  string price = 4;
+}
+
+// A market ticket event contains the time value for when a particular market was last processed on Vega
+message MarketTick {
+  // Market identifier for the event
+  string id = 1;
+  // Timestamp containing latest update from Vega blockchain aka Vega-time
+  int64 time = 2;
+}
+
+// An auction event indicating a change in auction state, for example starting or ending an auction
+message AuctionEvent {
+  // Market identifier for the event
+  string market_id = 1;
+  // True if the event indicates an auction opening and False otherwise
+  bool opening_auction = 2;
+  // True if the event indicates leaving auction mode and False otherwise
+  bool leave = 3;
+  // Timestamp containing the start time for an auction
+  int64 start = 4;
+  // Timestamp containing the end time for an auction
+  int64 end = 5;
+  // the reason this market is/was in auction
+  AuctionTrigger trigger = 6;
+  // If an auction was ongoing, but was extended for whatever reason, this field will
+  // be set to the trigger type indicating which component extended the auction
+  AuctionTrigger extension_trigger = 7;
+}
+
+// A validator update event contains information about validator node
+message ValidatorUpdate {
+  // Node id of the node
+  string node_id = 1;
+  // Vega public key of validator node
+  string vega_pub_key = 2;
+  // Ethereum public key of validator node
+  string ethereum_address = 3;
+  // Public key of Tendermint
+  string tm_pub_key = 4;
+  // URL with more info on the node
+  string info_url = 5;
+  // Country code (ISO 3166-1 alpha-2) for the location of the node
+  string country = 6;
+  // Name of the validator
+  string name = 7;
+  // AvatarURL of the validator
+  string avatar_url = 8;
+  // Vega public key derivation index
+  uint32 vega_pub_key_index = 9;
+  // Flag indicating if the validator has been added to or removed from vega
+  bool added = 10;
+  // The epoch from which the validator was added or removed
+  uint64 from_epoch = 11;
+}
+
+// An event that explains the status of the validator for the coming epoch
+message ValidatorRankingEvent {
+  string node_id = 1;
+  // stake based score - no anti-whaling
+  string stake_score = 2;
+  // performance base score
+  string performance_score = 3;
+  // final score
+  string ranking_score = 4;
+  // the status of the validator in the previous epoch
+  string previous_status = 5;
+  // the status of the validator in the next epoch
+  string next_status = 6;
+  // the epoch seq for which the status is valid
+  string epoch_seq = 7;
+  // tendermint voting power of the validator
+  uint32 tm_voting_power = 8;
+}
+
+
+// A key rotation events contains information about Vega key rotation
+message KeyRotation {
+  // Node id of the node
+  string node_id = 1;
+  // Old Vega public key of validator node
+  string old_pub_key = 2;
+  // New Vega public key of validator node
+  string new_pub_key = 3;
+  // Height of the block where key rotation took effect
+  uint64 block_height = 4;
+}
+
+// An Ethereum key rotation events contains information about Ethereum key rotation
+message EthereumKeyRotation {
+  // Node id of the node
+  string node_id = 1;
+  // Old Ethereum address of validator node
+  string old_address= 2;
+  // New Ethereum address of validator node
+  string new_address = 3;
+  // Height of the block where key rotation took effect
+  uint64 block_height = 4;
+}
+
+enum ProtocolUpgradeProposalStatus {
+  PROTOCOL_UPGRADE_PROPOSAL_STATUS_UNSPECIFIED = 0;
+  // The proposal is pending
+  PROTOCOL_UPGRADE_PROPOSAL_STATUS_PENDING = 1;
+  // The proposal is approved
+  PROTOCOL_UPGRADE_PROPOSAL_STATUS_APPROVED = 2;
+  // The proposal is rejected
+  PROTOCOL_UPGRADE_PROPOSAL_STATUS_REJECTED = 3;
+}
+
+message ProtocolUpgradeEvent {
+   // The block height at which to perform the upgrade
+   uint64 upgrade_block_height = 1;
+   // the release tag for the vega binary
+   string vega_release_tag = 2;
+   // the release tag for the data-node binary
+   string data_node_release_tag = 3;
+   // tendermint validators that have agreed to the upgrade
+  repeated string approvers = 4;
+  // the status of the proposal
+  ProtocolUpgradeProposalStatus status = 5;
+}
+
+//StateVarEvent - updates on state changes in state variable consensus
+message StateVar {
+  string id = 1;
+  string event_id = 2;
+  string state = 3;
+}
+
+// An (event) bus event type is used to specify a type of event
+// It has 2 styles of event:
+// Single values (e.g. BUS_EVENT_TYPE_ORDER) where they represent one data item
+// Group values (e.g. BUS_EVENT_TYPE_AUCTION) where they represent a group of data items
+enum BusEventType {
+  // Default value, always invalid
+  BUS_EVENT_TYPE_UNSPECIFIED = 0;
+  // Events of ALL event types, used when filtering stream from event bus
+  BUS_EVENT_TYPE_ALL = 1;
+  // Event for blockchain time updates
+  BUS_EVENT_TYPE_TIME_UPDATE = 2;
+  // Event for when a transfer happens internally, contains the transfer information
+  BUS_EVENT_TYPE_TRANSFER_RESPONSES = 3;
+  // Event indicating position resolution has occurred
+  BUS_EVENT_TYPE_POSITION_RESOLUTION = 4;
+  // Event for order updates, both new and existing orders
+  BUS_EVENT_TYPE_ORDER = 5;
+  // Event for account updates
+  BUS_EVENT_TYPE_ACCOUNT = 6;
+  // Event for party updates
+  BUS_EVENT_TYPE_PARTY = 7;
+  // Event indicating a new trade has occurred
+  BUS_EVENT_TYPE_TRADE = 8;
+  // Event indicating margin levels have changed for a party
+  BUS_EVENT_TYPE_MARGIN_LEVELS = 9;
+  // Event for proposal updates (for governance)
+  BUS_EVENT_TYPE_PROPOSAL = 10;
+  // Event indicating a new vote has occurred (for governance)
+  BUS_EVENT_TYPE_VOTE = 11;
+  // Event for market data updates
+  BUS_EVENT_TYPE_MARKET_DATA = 12;
+  // Event for a new signature for a Vega node
+  BUS_EVENT_TYPE_NODE_SIGNATURE = 13;
+  // Event indicating loss socialisation occurred for a party
+  BUS_EVENT_TYPE_LOSS_SOCIALIZATION = 14;
+  // Event for when a position is being settled
+  BUS_EVENT_TYPE_SETTLE_POSITION = 15;
+  // Event for when a position is distressed
+  BUS_EVENT_TYPE_SETTLE_DISTRESSED = 16;
+  // Event indicating a new market was created
+  BUS_EVENT_TYPE_MARKET_CREATED = 17;
+  // Event for when an asset is added to Vega
+  BUS_EVENT_TYPE_ASSET = 18;
+  // Event indicating a market tick event
+  BUS_EVENT_TYPE_MARKET_TICK = 19;
+  // Event for when a withdrawal occurs
+  BUS_EVENT_TYPE_WITHDRAWAL = 20;
+  // Event for when a deposit occurs
+  BUS_EVENT_TYPE_DEPOSIT = 21;
+  // Event indicating a change in auction state, for example starting or ending an auction
+  BUS_EVENT_TYPE_AUCTION = 22;
+  // Event indicating a risk factor has been updated
+  BUS_EVENT_TYPE_RISK_FACTOR = 23;
+  // Event indicating a network parameter has been added or updated
+  BUS_EVENT_TYPE_NETWORK_PARAMETER = 24;
+  // Event indicating a liquidity provision has been created or updated
+  BUS_EVENT_TYPE_LIQUIDITY_PROVISION = 25;
+  // Event indicating a new market was created
+  BUS_EVENT_TYPE_MARKET_UPDATED = 26;
+  // Event indicating an oracle spec has been created or updated
+  BUS_EVENT_TYPE_ORACLE_SPEC = 27;
+  // Event indicating that an oracle data has been broadcast
+  BUS_EVENT_TYPE_ORACLE_DATA = 28;
+  // Event indicating that an delegation balance of a party to a node for current epoch has changed
+  BUS_EVENT_TYPE_DELEGATION_BALANCE = 29;
+  // Event indicating the validator score for the given epoch
+  BUS_EVENT_TYPE_VALIDATOR_SCORE = 30;
+  // Event indicating the start or end of an epoch
+  BUS_EVENT_TYPE_EPOCH_UPDATE = 31;
+  // Event indicating that validator node has been updated
+  BUS_EVENT_TYPE_VALIDATOR_UPDATE = 32;
+  // Event indicating a new staking event have been processed by the network
+  BUS_EVENT_TYPE_STAKE_LINKING = 33;
+  // Event indicating the payout of a reward has been initiated
+  BUS_EVENT_TYPE_REWARD_PAYOUT_EVENT = 34;
+  // Event indicating a new checkpoint was created
+  BUS_EVENT_TYPE_CHECKPOINT = 35;
+  // Event indicating stream is starting
+  BUS_EVENT_TYPE_STREAM_START = 36;
+  // Event indicating key rotation took place
+  BUS_EVENT_TYPE_KEY_ROTATION = 37;
+  // Event indicating state transitions in state variable consensus
+  BUS_EVENT_TYPE_STATE_VAR = 38;
+  // Event indicating network limits set or updated
+  BUS_EVENT_TYPE_NETWORK_LIMITS = 39;
+  // Event indicating a update for a transfert
+  BUS_EVENT_TYPE_TRANSFER = 40;
+  // Event indicating the ranking of validator and their status in vega
+  BUS_EVENT_TYPE_VALIDATOR_RANKING = 41;
+  // Event indicating a new multi sig signer event have been processed
+  BUS_EVENT_TYPE_ERC20_MULTI_SIG_SIGNER_EVENT = 42;
+  // Event indicating the erc20 multi sig threshold have been updated
+  BUS_EVENT_TYPE_ERC20_MULTI_SIG_SET_THRESHOLD = 43;
+  // Event indicating a new signer has been added to the erc20 multisig
+  BUS_EVENT_TYPE_ERC20_MULTI_SIG_SIGNER_ADDED = 44;
+  // Event indicating a signer has been removed from the erc20 multisig
+  BUS_EVENT_TYPE_ERC20_MULTI_SIG_SIGNER_REMOVED = 45;
+  // Event indicting that a party's position has changed
+  BUS_EVENT_TYPE_POSITION_STATE = 46;
+  // Event indicating Ethereum key rotation took place
+  BUS_EVENT_TYPE_ETHEREUM_KEY_ROTATION = 47;
+  // Event indicating protocol upgrade proposal updates
+  BUS_EVENT_TYPE_PROTOCOL_UPGRADE_PROPOSAL = 48;
+
+  // Event indicating a market related event, for example when a market opens
+  BUS_EVENT_TYPE_MARKET = 101;
+  // Event used to report failed transactions back to a user, this is excluded from the ALL type
+  BUS_EVENT_TYPE_TX_ERROR = 201;
+}
+
+// A bus event is a container for event bus events emitted by Vega
+message BusEvent {
+  // A unique event identifier for the message
+  string id = 1;
+  // The batch (or block) of transactions that the events relate to
+  string block = 2;
+  // The type of bus event (one of the list below)
+  BusEventType type = 3;
+  oneof event {
+    // Time update events - See [TimeUpdate](#vega.TimeUpdate)
+    TimeUpdate time_update = 101;
+    // Transfer responses update events - See [TransferResponses](#vega.TransferResponses)
+    TransferResponses transfer_responses = 102;
+    // Position resolution events - See [PositionResolution](#vega.PositionResolution)
+    PositionResolution position_resolution = 103;
+    // Order events
+    Order order = 104;
+    // Account events
+    Account account = 105;
+    // Party events
+    Party party = 106;
+    // Trade events
+    Trade trade = 107;
+    // Margin level update events
+    MarginLevels margin_levels = 108;
+    // Proposal events (for governance)
+    Proposal proposal = 109;
+    // Vote events (for governance)
+    Vote vote = 110;
+    // Market data events
+    MarketData market_data = 111;
+    // Node signature events
+    vega.commands.v1.NodeSignature node_signature = 112;
+    // Loss socialization events - See [LossSocialization](#vega.LossSocialization)
+    LossSocialization loss_socialization = 113;
+    // Position settlement events - See [SettlePosition](#vega.SettlePosition)
+    SettlePosition settle_position = 114;
+    // Position distressed events - See [SettleDistressed](#vega.SettleDistressed)
+    SettleDistressed settle_distressed = 115;
+    // Market created events
+    Market market_created = 116;
+    // Asset events
+    Asset asset = 117;
+    // Market tick events - See [MarketTick](#vega.MarketTick)
+    MarketTick market_tick = 118;
+    // Withdrawal events
+    Withdrawal withdrawal = 119;
+    // Deposit events
+    Deposit deposit = 120;
+    // Auction events - See [AuctionEvent](#vega.AuctionEvent)
+    AuctionEvent auction = 121;
+    // Risk factor events
+    RiskFactor risk_factor = 122;
+    // Network parameter events
+    NetworkParameter network_parameter = 123;
+    // LiquidityProvision  events
+    LiquidityProvision liquidity_provision = 124;
+    // Market created events
+    Market market_updated = 125;
+    // OracleSpec events
+    oracles.v1.OracleSpec oracle_spec = 126;
+    // OracleData events
+    oracles.v1.OracleData oracle_data = 127;
+    // Delegation balance events
+    DelegationBalanceEvent delegation_balance = 129;
+    // Validator score calculated
+    ValidatorScoreEvent validator_score = 130;
+    // Epoch update events - See [Epoch](#vega.Epoch)
+    EpochEvent epoch_event = 131;
+    // Validator update events
+    ValidatorUpdate validator_update = 132;
+    // Staking event
+    StakeLinking stake_linking = 133;
+    // Reward payout event
+    RewardPayoutEvent reward_payout = 134;
+    // Checkpoint was created
+    CheckpointEvent checkpoint = 135;
+    // Key rotation took place
+    KeyRotation key_rotation = 136;
+    // State variable consensus state transition update
+    StateVar state_var = 137;
+    // Network limits events
+    NetworkLimits network_limits = 138;
+    // Transfer event
+    Transfer transfer = 139;
+    // Ranking event
+    ValidatorRankingEvent ranking_event = 140;
+    // ERC20 multi sig signer event
+    ERC20MultiSigSignerEvent erc20_multisig_signer_event = 141;
+    // ERC20 multi sig set threshold event
+    ERC20MultiSigThresholdSetEvent erc20_multisig_set_threshold_event = 142;
+    // ERC20 multi sig signer added
+    ERC20MultiSigSignerAdded erc20_multisig_signer_added = 143;
+    // ERC20 multi sig signer removed
+    ERC20MultiSigSignerRemoved erc20_multisig_signer_removed = 144;
+    // Position status for a party in a market
+    PositionStateEvent position_state_event = 145;
+    // Ethereum key rotation took place
+    EthereumKeyRotation ethereum_key_rotation = 146;
+    // Protocol upgrade proposal updates
+    ProtocolUpgradeEvent protocol_upgrade_event = 147;
+
+    // Market tick events - See [MarketEvent](#vega.MarketEvent)
+    MarketEvent market = 1001;
+    // Transaction error events, not included in the ALL event type
+    TxErrorEvent tx_err_event = 2001;
+  }
+  // Version of bus event
+  uint32 version = 4;
+  string chain_id = 5;
+  string tx_hash = 6;
+}

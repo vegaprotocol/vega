@@ -1,0 +1,98 @@
+syntax = "proto3";
+
+package vega;
+option go_package = "code.vegaprotocol.io/protos/vega";
+
+// The Vega representation of an external asset
+message Asset {
+  enum Status {
+    // Default value, always invalid
+    STATUS_UNSPECIFIED = 0;
+    // Asset is proposed and under vote
+    STATUS_PROPOSED = 1;
+    // Asset has been rejected from governance
+    STATUS_REJECTED = 2;
+    // Asset is pending listing from the bridge
+    STATUS_PENDING_LISTING = 3;
+    // Asset is fully usable in the network
+    STATUS_ENABLED = 4;
+  }
+
+  // Internal identifier of the asset
+  string id = 1;
+  // The definition of the external source for this asset
+  AssetDetails details = 2;
+  // Status of the asset
+  Status status = 3;
+}
+
+// The Vega representation of an external asset
+message AssetDetails {
+  // Name of the asset (e.g: Great British Pound)
+  string name = 1;
+  // Symbol of the asset (e.g: GBP)
+  string symbol = 2;
+  // Total circulating supply for the asset
+  string total_supply = 3;
+  // Number of decimal / precision handled by this asset
+  uint64 decimals = 4;
+  // The minimum economically meaningful amount in the asset
+  string quantum = 5;
+
+  // The source
+  oneof source {
+    // A built-in asset
+    BuiltinAsset builtin_asset = 101;
+    // An Ethereum ERC20 asset
+    ERC20 erc20 = 102;
+  }
+}
+
+// A Vega internal asset
+message BuiltinAsset {
+  // Maximum amount that can be requested by a party through the built-in asset faucet at a time
+  string max_faucet_amount_mint = 1;
+}
+
+// An ERC20 token based asset, living on the ethereum network
+message ERC20 {
+  // The address of the contract for the token, on the ethereum network
+  string contract_address = 1;
+  // The lifetime limits deposit per address
+  // note: this is a temporary measure for restricted mainnet
+  string lifetime_limit = 2;
+  // The maximum allowed per withdraw
+  // note: this is a temporary measure for restricted mainnet
+  string withdraw_threshold = 3;
+}
+
+// The changes to apply on an existing asset.
+message AssetDetailsUpdate {
+  // Name of the asset (e.g: Great British Pound)
+  string name = 1;
+  // Symbol of the asset (e.g: GBP)
+  string symbol = 2;
+  // Total circulating supply for the asset
+  string total_supply = 3;
+  // Number of decimal / precision handled by this asset
+  uint64 decimals = 4;
+  // The minimum economically meaningful amount in the asset
+  string quantum = 5;
+
+  // The source
+  oneof source {
+    // An Ethereum ERC20 asset
+    ERC20Update erc20 = 101;
+  }
+}
+
+message ERC20Update {
+  // The lifetime limits deposit per address.
+  // This is will be interpreted against the asset decimals.
+  // note: this is a temporary measure for restricted mainnet
+  string lifetime_limit = 1;
+  // The maximum allowed per withdraw.
+  // This is will be interpreted against the asset decimals.
+  // note: this is a temporary measure for restricted mainnet
+  string withdraw_threshold = 2;
+}
