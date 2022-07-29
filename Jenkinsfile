@@ -189,7 +189,7 @@ pipeline {
                             }
                         }
                         post {
-                            steps {
+                            always {
                                 sh label: 'destroy buildx builder', script: """#!/bin/bash -e
                                     docker buildx rm --force ${APP}-${DOCKER_IMAGE_TAG_LOCAL}
                                 """
