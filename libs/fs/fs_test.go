@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
-	vgtest "code.vegaprotocol.io/shared/libs/test"
+	vgtest "code.vegaprotocol.io/vega/libs/test"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
-	vgtest "code.vegaprotocol.io/shared/libs/test"
+	vgtest "code.vegaprotocol.io/vega/libs/test"
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/wallet/service"
 	v1 "code.vegaprotocol.io/vega/wallet/service/store/v1"

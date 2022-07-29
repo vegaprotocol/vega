@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	vgtest "code.vegaprotocol.io/shared/libs/test"
+	vgtest "code.vegaprotocol.io/vega/libs/test"
 	"code.vegaprotocol.io/vega/paths"
 
 	"github.com/stretchr/testify/assert"
