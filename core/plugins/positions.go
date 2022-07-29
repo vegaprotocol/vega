@@ -19,7 +19,7 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/subscribers"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 
 	"github.com/pkg/errors"
 )
@@ -139,7 +139,7 @@ func (p *Positions) updateSettleDestressed(e SDE) {
 	calc.RealisedPnlFP = calc.RealisedPnlFP.Add(calc.UnrealisedPnlFP)
 	calc.OpenVolume = 0
 	calc.UnrealisedPnl = num.DecimalZero()
-	calc.AverageEntryPrice = num.Zero()
+	calc.AverageEntryPrice = num.UintZero()
 	// realised P&L includes whatever we had in margin account at this point
 	dMargin := num.DecimalFromUint(margin)
 	calc.RealisedPnl = calc.RealisedPnl.Sub(dMargin)

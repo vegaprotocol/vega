@@ -18,8 +18,8 @@ import (
 	"sort"
 
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/pkg/errors"
@@ -81,7 +81,7 @@ func (s *OrderBookSide) addOrder(o *types.Order) {
 // returns an error if the book is empty.
 func (s *OrderBookSide) BestPriceAndVolume() (*num.Uint, uint64, error) {
 	if len(s.levels) <= 0 {
-		return num.Zero(), 0, errors.New("no orders on the book")
+		return num.UintZero(), 0, errors.New("no orders on the book")
 	}
 	last := len(s.levels) - 1
 	return s.levels[last].price.Clone(), s.levels[last].volume, nil
@@ -92,7 +92,7 @@ func (s *OrderBookSide) BestPriceAndVolume() (*num.Uint, uint64, error) {
 // returns an error if the book is empty.
 func (s *OrderBookSide) BestStaticPrice() (*num.Uint, error) {
 	if len(s.levels) <= 0 {
-		return num.Zero(), errors.New("no orders on the book")
+		return num.UintZero(), errors.New("no orders on the book")
 	}
 
 	for i := len(s.levels) - 1; i >= 0; i-- {
@@ -103,18 +103,18 @@ func (s *OrderBookSide) BestStaticPrice() (*num.Uint, error) {
 			}
 		}
 	}
-	return num.Zero(), errors.New("no non pegged orders found on the book")
+	return num.UintZero(), errors.New("no non pegged orders found on the book")
 }
 
 // BestStaticPriceAndVolume returns the top of book price for non pegged orders
 // returns an error if the book is empty.
 func (s *OrderBookSide) BestStaticPriceAndVolume() (*num.Uint, uint64, error) {
 	if len(s.levels) <= 0 {
-		return num.Zero(), 0, errors.New("no orders on the book")
+		return num.UintZero(), 0, errors.New("no orders on the book")
 	}
 
 	var (
-		bestPrice  = num.Zero()
+		bestPrice  = num.UintZero()
 		bestVolume uint64
 	)
 	for i := len(s.levels) - 1; i >= 0; i-- {
@@ -126,11 +126,11 @@ func (s *OrderBookSide) BestStaticPriceAndVolume() (*num.Uint, uint64, error) {
 			}
 		}
 		// If we found a price, return it
-		if bestPrice.GT(num.Zero()) {
+		if bestPrice.GT(num.UintZero()) {
 			return bestPrice.Clone(), bestVolume, nil
 		}
 	}
-	return num.Zero(), 0, errors.New("no non pegged orders found on the book")
+	return num.UintZero(), 0, errors.New("no non pegged orders found on the book")
 }
 
 func (s *OrderBookSide) amendOrder(orderAmend *types.Order) (uint64, error) {
@@ -483,7 +483,7 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*type
 	var (
 		trades            []*types.Trade
 		impactedOrders    []*types.Order
-		lastTradedPrice   = num.Zero()
+		lastTradedPrice   = num.UintZero()
 		totalVolumeToFill uint64
 		checkPrice        func(*num.Uint) bool
 	)
@@ -572,12 +572,12 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*type
 	}
 
 	if agg.Type == types.OrderTypeNetwork {
-		totalPrice := num.Zero()
+		totalPrice := num.UintZero()
 		for _, t := range trades {
 			// totalPrice += t.Price * t.Size
 			totalPrice.Add(
 				totalPrice,
-				num.Zero().Mul(t.Price, num.NewUint(t.Size)),
+				num.UintZero().Mul(t.Price, num.NewUint(t.Size)),
 			)
 		}
 		// now we are done with uncrossing,

@@ -21,7 +21,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/plugins"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -127,7 +127,7 @@ func TestDistressedPartyUpdate(t *testing.T) {
 	assert.Equal(t, "-300", pp[0].RealisedPnl.String())
 	assert.Equal(t, "-600", pp[0].UnrealisedPnl.String())
 	// now assume this party is distressed, and we've taken all their funds
-	sde := events.NewSettleDistressed(position.ctx, "party1", market, num.Zero(), num.NewUint(100), 1)
+	sde := events.NewSettleDistressed(position.ctx, "party1", market, num.UintZero(), num.NewUint(100), 1)
 	position.Push(sde)
 	pp, err = position.GetPositionsByMarket(market)
 	assert.NoError(t, err)

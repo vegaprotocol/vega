@@ -10,7 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/core/collateral/mocks"
 	"code.vegaprotocol.io/vega/core/config/encoding"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/golang/mock/gomock"
@@ -39,7 +39,7 @@ func checkpointTestEngine(t *testing.T) *collateral.Engine {
 			Quantum:     num.DecimalZero(),
 			Source: &types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{
-					MaxFaucetAmountMint: num.Zero(),
+					MaxFaucetAmountMint: num.UintZero(),
 				},
 			},
 		},

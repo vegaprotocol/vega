@@ -15,12 +15,12 @@ package risk
 import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 )
 
 var (
-	exp    = num.Zero().Exp(num.NewUint(10), num.NewUint(5))
+	exp    = num.UintZero().Exp(num.NewUint(10), num.NewUint(5))
 	expDec = num.DecimalFromUint(exp)
 )
 
@@ -46,18 +46,18 @@ func newMarginLevels(maintenance num.Decimal, scalingFactors *scalingFactorsUint
 	umaintenance, _ := num.UintFromDecimal(maintenance.Ceil())
 	return &types.MarginLevels{
 		MaintenanceMargin:      umaintenance,
-		SearchLevel:            num.Zero().Div(num.Zero().Mul(scalingFactors.search, umaintenance), exp),
-		InitialMargin:          num.Zero().Div(num.Zero().Mul(scalingFactors.initial, umaintenance), exp),
-		CollateralReleaseLevel: num.Zero().Div(num.Zero().Mul(scalingFactors.release, umaintenance), exp),
+		SearchLevel:            num.UintZero().Div(num.UintZero().Mul(scalingFactors.search, umaintenance), exp),
+		InitialMargin:          num.UintZero().Div(num.UintZero().Mul(scalingFactors.initial, umaintenance), exp),
+		CollateralReleaseLevel: num.UintZero().Div(num.UintZero().Mul(scalingFactors.release, umaintenance), exp),
 	}
 }
 
 func addMarginLevels(ml *types.MarginLevels, maintenance num.Decimal, scalingFactors *scalingFactorsUint) {
 	mtl, _ := num.UintFromDecimal(maintenance.Ceil())
 	ml.MaintenanceMargin.AddSum(mtl)
-	ml.SearchLevel.AddSum(num.Zero().Div(num.Zero().Mul(scalingFactors.search, mtl), exp))
-	ml.InitialMargin.AddSum(num.Zero().Div(num.Zero().Mul(scalingFactors.initial, mtl), exp))
-	ml.CollateralReleaseLevel.AddSum(num.Zero().Div(num.Zero().Mul(scalingFactors.release, mtl), exp))
+	ml.SearchLevel.AddSum(num.UintZero().Div(num.UintZero().Mul(scalingFactors.search, mtl), exp))
+	ml.InitialMargin.AddSum(num.UintZero().Div(num.UintZero().Mul(scalingFactors.initial, mtl), exp))
+	ml.CollateralReleaseLevel.AddSum(num.UintZero().Div(num.UintZero().Mul(scalingFactors.release, mtl), exp))
 }
 
 func (e *Engine) calculateAuctionMargins(m events.Margin, markPrice *num.Uint, rf types.RiskFactor) *types.MarginLevels {
@@ -109,7 +109,7 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 	if riskiestLng.IsPositive() {
 		var (
 			slippageVolume  = num.MaxD(openVolume, num.DecimalZero())
-			slippagePerUnit = num.Zero()
+			slippagePerUnit = num.UintZero()
 			negSlippage     bool
 		)
 		if slippageVolume.IsPositive() {
@@ -127,7 +127,7 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 						logging.Error(err))
 				}
 			}
-			slippagePerUnit, negSlippage = num.Zero().Delta(markPrice, exitPrice)
+			slippagePerUnit, negSlippage = num.UintZero().Delta(markPrice, exitPrice)
 		}
 
 		bDec := num.DecimalFromInt64(m.Buy()).Div(e.positionFactor)
@@ -150,7 +150,7 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 	if riskiestSht.IsNegative() {
 		var (
 			slippageVolume  = num.MinD(openVolume, num.DecimalZero())
-			slippagePerUnit = num.Zero()
+			slippagePerUnit = num.UintZero()
 		)
 		// slippageVolume would be negative we abs it in the next phase
 		if slippageVolume.IsNegative() {
@@ -170,7 +170,7 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 				}
 			}
 			// exitPrice - markPrice == -1*(markPrice - exitPrice)
-			slippagePerUnit, _ = num.Zero().Delta(exitPrice, markPrice) // we don't care about neg/pos, we're using Abs() anyway
+			slippagePerUnit, _ = num.UintZero().Delta(exitPrice, markPrice) // we don't care about neg/pos, we're using Abs() anyway
 			// slippagePerUnit = -1 * (markPrice - int64(exitPrice))
 		}
 
@@ -191,9 +191,9 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 	}
 
 	return &types.MarginLevels{
-		MaintenanceMargin:      num.Zero(),
-		SearchLevel:            num.Zero(),
-		InitialMargin:          num.Zero(),
-		CollateralReleaseLevel: num.Zero(),
+		MaintenanceMargin:      num.UintZero(),
+		SearchLevel:            num.UintZero(),
+		InitialMargin:          num.UintZero(),
+		CollateralReleaseLevel: num.UintZero(),
 	}
 }

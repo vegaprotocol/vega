@@ -23,8 +23,8 @@ import (
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
-	"code.vegaprotocol.io/vega/core/types/num"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/num"
 )
 
 type Snapshot struct {
@@ -3375,7 +3375,7 @@ func PayloadStakeVerifierRemovedFromProto(svd *snapshot.Payload_StakeVerifierRem
 			ID:              pr.Id,
 			VegaPubKey:      pr.VegaPublicKey,
 			BlockTime:       pr.BlockTime,
-			Amount:          num.Zero(),
+			Amount:          num.UintZero(),
 		}
 
 		if len(pr.Amount) > 0 {
@@ -3439,7 +3439,7 @@ func PayloadStakeVerifierDepositedFromProto(svd *snapshot.Payload_StakeVerifierD
 			ID:              pd.Id,
 			VegaPubKey:      pd.VegaPublicKey,
 			BlockTime:       pd.BlockTime,
-			Amount:          num.Zero(),
+			Amount:          num.UintZero(),
 		}
 
 		if len(pd.Amount) > 0 {

@@ -16,7 +16,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -86,7 +86,7 @@ func TestOrderBookInvalid_ZeroPrice(t *testing.T) {
 		MarketID:    market,
 		Party:       "A",
 		Side:        types.SideBuy,
-		Price:       num.Zero(),
+		Price:       num.UintZero(),
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.OrderTimeInForceGTC,

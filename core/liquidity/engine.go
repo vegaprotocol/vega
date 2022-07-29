@@ -23,8 +23,8 @@ import (
 	"code.vegaprotocol.io/vega/core/liquidity/supplied"
 	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
 	"code.vegaprotocol.io/vega/core/types/statevar"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -134,7 +134,7 @@ func NewEngine(config Config,
 		timeService: timeService,
 		broker:      broker,
 		// tick size to be used by the supplied engine should actually be in asset decimal
-		suppliedEngine: supplied.NewEngine(riskModel, priceMonitor, asset, marketID, stateVarEngine, num.Zero().Mul(tickSize, priceFactor), log, positionFactor),
+		suppliedEngine: supplied.NewEngine(riskModel, priceMonitor, asset, marketID, stateVarEngine, num.UintZero().Mul(tickSize, priceFactor), log, positionFactor),
 
 		// parameters
 		stakeToObligationFactor: num.DecimalFromInt64(1),
@@ -568,7 +568,7 @@ func (e *Engine) Update(
 
 // CalculateSuppliedStake returns the sum of commitment amounts from all the liquidity providers.
 func (e *Engine) CalculateSuppliedStake() *num.Uint {
-	ss := num.Zero()
+	ss := num.UintZero()
 	for _, v := range e.provisions.ProvisionsPerParty {
 		ss.AddSum(v.CommitmentAmount)
 	}

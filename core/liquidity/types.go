@@ -16,7 +16,7 @@ import (
 	"sort"
 
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 )
 
 type ToCancel struct {
@@ -55,7 +55,7 @@ func (l LiquidityProvisions) feeForTarget(t *num.Uint) num.Decimal {
 		return num.DecimalZero()
 	}
 
-	n := num.Zero()
+	n := num.UintZero()
 	for _, i := range l {
 		n.AddSum(i.CommitmentAmount)
 		if n.GTE(t) {
@@ -171,7 +171,7 @@ func (l ProvisionsPerParty) FeeForTarget(v *num.Uint) num.Decimal {
 // TotalStake returns the sum of all CommitmentAmount, which corresponds to the
 // total stake of a market.
 func (l ProvisionsPerParty) TotalStake() *num.Uint {
-	n := num.Zero()
+	n := num.UintZero()
 	for _, p := range l {
 		n.AddSum(p.CommitmentAmount)
 	}

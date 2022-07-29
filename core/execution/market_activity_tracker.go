@@ -19,7 +19,7 @@ import (
 	"code.vegaprotocol.io/protos/vega"
 	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -91,13 +91,13 @@ func (m *MarketActivityTracker) MarketProposed(asset, marketID, proposer string)
 		proposer:       proposer,
 		proposersPaid:  false,
 		readyToDelete:  false,
-		valueTraded:    num.Zero(),
+		valueTraded:    num.UintZero(),
 		makerFees:      map[string]*num.Uint{},
 		takerFees:      map[string]*num.Uint{},
 		lpFees:         map[string]*num.Uint{},
-		totalMakerFees: num.Zero(),
-		totalTakerFees: num.Zero(),
-		totalLPFees:    num.Zero(),
+		totalMakerFees: num.UintZero(),
+		totalTakerFees: num.UintZero(),
+		totalLPFees:    num.UintZero(),
 	}
 	m.ss.changed = true
 }
@@ -229,17 +229,17 @@ func (mat *MarketActivityTracker) clearFeeActivity() {
 			continue
 		}
 		mt.lpFees = map[string]*num.Uint{}
-		mt.totalLPFees = num.Zero()
+		mt.totalLPFees = num.UintZero()
 		mt.makerFees = map[string]*num.Uint{}
-		mt.totalMakerFees = num.Zero()
+		mt.totalMakerFees = num.UintZero()
 		mt.takerFees = map[string]*num.Uint{}
-		mt.totalTakerFees = num.Zero()
+		mt.totalTakerFees = num.UintZero()
 	}
 }
 
 // GetMarketScores calculates the aggregate share of the asset/market in contribution to the metric out of either all the markets of the asset or the subset specified.
 func (mat *MarketActivityTracker) GetMarketScores(asset string, markets []string, dispatchMetric vega.DispatchMetric) []*types.MarketContributionScore {
-	totalFees := num.Zero()
+	totalFees := num.UintZero()
 
 	// consider only markets in scope, if passed then only use those, if not passed use all the asset's markets which contributed to the metric
 	marketsInScope := markets
@@ -371,6 +371,6 @@ func (mt *marketTracker) totalFees(metric vega.DispatchMetric) *num.Uint {
 	case vega.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED:
 		return mt.totalLPFees
 	default:
-		return num.Zero()
+		return num.UintZero()
 	}
 }

@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 
 	v1 "code.vegaprotocol.io/protos/vega/events/v1"
-	num "code.vegaprotocol.io/vega/core/types/num"
+	num "code.vegaprotocol.io/vega/libs/num"
 	gomock "github.com/golang/mock/gomock"
 )
 

@@ -18,7 +18,7 @@ import (
 	"strings"
 
 	vegapb "code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 )
 
 var ErrInvalidCommitmentAmount = errors.New("invalid commitment amount")
@@ -540,7 +540,7 @@ func (n NewMarketCommitment) DeepClone() *NewMarketCommitment {
 	if n.CommitmentAmount != nil {
 		cpy.CommitmentAmount = n.CommitmentAmount.Clone()
 	} else {
-		cpy.CommitmentAmount = num.Zero()
+		cpy.CommitmentAmount = num.UintZero()
 	}
 	for _, s := range n.Sells {
 		cpy.Sells = append(cpy.Sells, s.DeepClone())

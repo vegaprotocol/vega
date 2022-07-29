@@ -17,7 +17,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -57,14 +57,14 @@ func (s *simpleDistributor) Run(ctx context.Context) []events.Event {
 	}
 
 	var (
-		total  = num.Zero()
+		total  = num.UintZero()
 		evts   = make([]events.Event, 0, len(s.requests))
 		evt    *events.LossSoc
 		netReq *request
 	)
 	for _, v := range s.requests {
 		total.AddSum(v.amt)
-		loss, _ := num.Zero().Delta(v.amt, v.request.Amount.Amount)
+		loss, _ := num.UintZero().Delta(v.amt, v.request.Amount.Amount)
 		v.request.Amount.Amount = v.amt.Clone()
 		if v.request.Owner == types.NetworkParty {
 			v := v
