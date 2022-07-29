@@ -42,6 +42,42 @@ func TheMarketDataShouldBe(engine Execution, mID string, data *godog.Table) erro
 	if err != nil {
 		return err
 	}
+
+	// strictly parse first row to catch any columns that aren't expected
+	StrictParseTable(data, []string{}, []string{
+		"market",
+		"best bid price",
+		"best bid volume",
+		"best offer price",
+		"best offer volume",
+		"best static bid price",
+		"best static bid volume",
+		"best static offer price",
+		"best static offer volume",
+		"mid price",
+		"static mid price",
+		"mark price",
+		"timestamp",
+		"open interest",
+		"indicative price",
+		"indicative volume",
+		"auction start",
+		"auction end",
+		"trading mode",
+		"auction trigger",
+		"extension trigger",
+		"target stake",
+		"supplied stake",
+		"horizon",
+		"ref price",
+		"min bound",
+		"max bound",
+		"market value proxy",
+		"average entry valuation",
+		"party",
+		"equity share",
+	})
+
 	// create a copy (deep copy), override the values we've gotten with those from the table so we can compare the objects
 	expect := mappedMD(actual)
 	// special fields first, these need to be compared manually
