@@ -86,7 +86,6 @@ pipeline {
         // Begin COMPILE
         //
         stage('Compile') {
-            failFast true
             matrix {
                 axes {
                     axis {
