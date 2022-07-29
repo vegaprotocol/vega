@@ -22,8 +22,8 @@ import (
 	"sync"
 	"time"
 
-	vgcrypto "code.vegaprotocol.io/vega/core/libs/crypto"
 	"code.vegaprotocol.io/vega/core/types"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethcommon "github.com/ethereum/go-ethereum/common"

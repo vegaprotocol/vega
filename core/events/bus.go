@@ -19,7 +19,7 @@ import (
 	"strings"
 
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
-	vgcontext "code.vegaprotocol.io/vega/core/libs/context"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 
 	"github.com/pkg/errors"
 )

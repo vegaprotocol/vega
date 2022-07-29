@@ -19,9 +19,9 @@ import (
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	vgrand "code.vegaprotocol.io/shared/libs/rand"
-	vgtesting "code.vegaprotocol.io/vega/core/libs/testing"
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	"code.vegaprotocol.io/vega/core/validators"
+	vgtesting "code.vegaprotocol.io/vega/libs/testing"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/require"
 )

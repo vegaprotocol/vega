@@ -18,7 +18,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/idgeneration"
-	"code.vegaprotocol.io/vega/core/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/crypto"
 
 	proto "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"

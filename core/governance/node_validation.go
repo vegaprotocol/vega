@@ -20,8 +20,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	vgcrypto "code.vegaprotocol.io/vega/core/libs/crypto"
 	"code.vegaprotocol.io/vega/core/types"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 )
 

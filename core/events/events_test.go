@@ -18,8 +18,8 @@ import (
 
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/core/events"
-	vgcontext "code.vegaprotocol.io/vega/core/libs/context"
 	"code.vegaprotocol.io/vega/core/types/num"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 
 	"github.com/stretchr/testify/assert"
 

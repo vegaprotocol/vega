@@ -17,9 +17,9 @@ import (
 	"strings"
 	"time"
 
-	vgcontext "code.vegaprotocol.io/vega/core/libs/context"
-	vghttp "code.vegaprotocol.io/vega/core/libs/http"
 	"code.vegaprotocol.io/vega/core/metrics"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
+	vghttp "code.vegaprotocol.io/vega/libs/http"
 	"code.vegaprotocol.io/vega/logging"
 )
 

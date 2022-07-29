@@ -17,8 +17,8 @@ import (
 	"testing"
 	"time"
 
-	vegacontext "code.vegaprotocol.io/vega/core/libs/context"
-	vgcrypto "code.vegaprotocol.io/vega/core/libs/crypto"
+	vegacontext "code.vegaprotocol.io/vega/libs/context"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 
 	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/core/events"

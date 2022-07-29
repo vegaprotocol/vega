@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"time"
 
-	vegactx "code.vegaprotocol.io/vega/core/libs/context"
 	"code.vegaprotocol.io/vega/core/types"
+	vegactx "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/logging"
 )
 

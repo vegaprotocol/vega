@@ -25,10 +25,10 @@ import (
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/crypto"
 	"code.vegaprotocol.io/vega/core/events"
-	vgtesting "code.vegaprotocol.io/vega/core/libs/testing"
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	"code.vegaprotocol.io/vega/core/validators"
 	"code.vegaprotocol.io/vega/core/validators/mocks"
+	vgtesting "code.vegaprotocol.io/vega/libs/testing"
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/golang/mock/gomock"

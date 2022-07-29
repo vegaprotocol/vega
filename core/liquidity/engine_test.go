@@ -18,7 +18,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/idgeneration"
-	"code.vegaprotocol.io/vega/core/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/crypto"
 
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 

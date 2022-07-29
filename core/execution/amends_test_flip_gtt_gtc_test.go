@@ -17,8 +17,8 @@ import (
 	"testing"
 	"time"
 
-	vgcrypto "code.vegaprotocol.io/vega/core/libs/crypto"
 	"code.vegaprotocol.io/vega/core/types"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

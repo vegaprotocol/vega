@@ -23,12 +23,12 @@ import (
 	"time"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	"code.vegaprotocol.io/vega/core/libs/crypto"
 	"code.vegaprotocol.io/vega/core/metrics"
 	"code.vegaprotocol.io/vega/core/txn"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 
-	vgproto "code.vegaprotocol.io/vega/core/libs/proto"
+	vgproto "code.vegaprotocol.io/vega/libs/proto"
 	"github.com/cenkalti/backoff"
 	"github.com/golang/protobuf/proto"
 )

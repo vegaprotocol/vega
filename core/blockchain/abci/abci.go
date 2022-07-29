@@ -16,7 +16,7 @@ import (
 	"encoding/hex"
 	"errors"
 
-	vgcontext "code.vegaprotocol.io/vega/core/libs/context"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 
 	"github.com/tendermint/tendermint/abci/types"
 )

@@ -25,10 +25,10 @@ import (
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
-	vegactx "code.vegaprotocol.io/vega/core/libs/context"
 	"code.vegaprotocol.io/vega/core/types"
+	vegactx "code.vegaprotocol.io/vega/libs/context"
 
-	"code.vegaprotocol.io/vega/core/libs/proto"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
