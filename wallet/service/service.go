@@ -15,7 +15,7 @@ import (
 	api "code.vegaprotocol.io/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	walletpb "code.vegaprotocol.io/protos/vega/wallet/v1"
-	vgcrypto "code.vegaprotocol.io/shared/libs/crypto"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/version"
 	wcommands "code.vegaprotocol.io/vega/wallet/commands"

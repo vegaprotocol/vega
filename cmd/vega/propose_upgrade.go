@@ -18,7 +18,7 @@ import (
 	"fmt"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	vgcrypto "code.vegaprotocol.io/shared/libs/crypto"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/core/config"
 	"code.vegaprotocol.io/vega/core/txn"

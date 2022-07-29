@@ -18,7 +18,7 @@ import (
 	"time"
 
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
-	vgcrypto "code.vegaprotocol.io/shared/libs/crypto"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"github.com/jackc/pgx/v4"

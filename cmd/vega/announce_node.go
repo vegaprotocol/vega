@@ -22,7 +22,7 @@ import (
 
 	api "code.vegaprotocol.io/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	vgcrypto "code.vegaprotocol.io/shared/libs/crypto"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	vgjson "code.vegaprotocol.io/shared/libs/json"
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/core/blockchain"
