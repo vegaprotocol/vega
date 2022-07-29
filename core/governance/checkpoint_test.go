@@ -20,7 +20,7 @@ import (
 
 	vegapb "code.vegaprotocol.io/protos/vega"
 	checkpointpb "code.vegaprotocol.io/protos/vega/checkpoint/v1"
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/assets/builtin"
 	"code.vegaprotocol.io/vega/core/governance"

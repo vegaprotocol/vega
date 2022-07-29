@@ -23,7 +23,7 @@ import (
 	types "code.vegaprotocol.io/protos/vega"
 	api "code.vegaprotocol.io/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/core/types/num"
 	vghttp "code.vegaprotocol.io/vega/libs/http"

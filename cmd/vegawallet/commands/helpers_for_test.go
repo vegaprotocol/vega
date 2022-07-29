@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	vgfs "code.vegaprotocol.io/shared/libs/fs"
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 )
 
 func NewTempDir(t *testing.T) string {

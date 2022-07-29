@@ -17,7 +17,7 @@ import (
 	"testing"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/core/blockchain"
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	"code.vegaprotocol.io/vega/core/nodewallets/mocks"

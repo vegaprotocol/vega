@@ -20,7 +20,7 @@ import (
 	"time"
 
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/golang/mock/gomock"

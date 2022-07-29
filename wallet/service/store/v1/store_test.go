@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	vgtest "code.vegaprotocol.io/shared/libs/test"
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/wallet/service"

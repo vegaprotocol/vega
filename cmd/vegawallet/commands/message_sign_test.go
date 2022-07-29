@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"testing"
 
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	cmd "code.vegaprotocol.io/vega/cmd/vegawallet/commands"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/wallet/wallet"

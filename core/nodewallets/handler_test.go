@@ -18,7 +18,7 @@ package nodewallets_test
 import (
 	"testing"
 
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	vgtesting "code.vegaprotocol.io/vega/libs/testing"

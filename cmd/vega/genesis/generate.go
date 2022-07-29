@@ -16,7 +16,7 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/core/genesis"
 	"code.vegaprotocol.io/vega/core/nodewallets"

@@ -3,7 +3,7 @@ package assets_test
 import (
 	"testing"
 
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/core/assets"
 	erc20mocks "code.vegaprotocol.io/vega/core/assets/erc20/mocks"
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"

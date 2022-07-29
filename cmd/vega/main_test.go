@@ -21,7 +21,7 @@ import (
 	"strings"
 	"testing"
 
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"github.com/stretchr/testify/require"
 )
 

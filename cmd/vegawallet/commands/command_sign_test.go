@@ -7,7 +7,7 @@ import (
 	"code.vegaprotocol.io/protos/vega"
 	v1 "code.vegaprotocol.io/protos/vega/commands/v1"
 	walletpb "code.vegaprotocol.io/protos/vega/wallet/v1"
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	cmd "code.vegaprotocol.io/vega/cmd/vegawallet/commands"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	wcommands "code.vegaprotocol.io/vega/wallet/wallet"

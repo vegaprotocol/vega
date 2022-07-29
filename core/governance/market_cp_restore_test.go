@@ -21,7 +21,7 @@ import (
 	"time"
 
 	checkpointpb "code.vegaprotocol.io/protos/vega/checkpoint/v1"
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/core/assets"
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"

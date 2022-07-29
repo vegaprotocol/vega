@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	vgfs "code.vegaprotocol.io/shared/libs/fs"
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 )
 
 const testRecoveryPhrase = "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render"

@@ -6,7 +6,7 @@ import (
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	walletpb "code.vegaprotocol.io/protos/vega/wallet/v1"
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 	"github.com/stretchr/testify/require"
