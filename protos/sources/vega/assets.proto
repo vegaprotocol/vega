@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 package vega;
-option go_package = "code.vegaprotocol.io/protos/vega";
+option go_package = "code.vegaprotocol.io/vega/protos/vega";
 
 // The Vega representation of an external asset
 message Asset {

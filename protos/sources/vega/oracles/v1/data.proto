@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package oracles.v1;
 
-option go_package = "code.vegaprotocol.io/protos/vega/oracles/v1";
+option go_package = "code.vegaprotocol.io/vega/protos/vega/oracles/v1";
 
 // OracleData describes valid oracle data that has been received by the node.
 // It represents both matched and unmatched oracle data.

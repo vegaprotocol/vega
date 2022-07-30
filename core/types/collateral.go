@@ -15,8 +15,8 @@ package types
 import (
 	"fmt"
 
-	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/libs/num"
+	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type Account struct {

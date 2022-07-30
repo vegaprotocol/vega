@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package oracles.v1;
 
-option go_package = "code.vegaprotocol.io/protos/vega/oracles/v1";
+option go_package = "code.vegaprotocol.io/vega/protos/vega/oracles/v1";
 
 // An oracle spec describe the oracle data that a product (or a risk model)
 // wants to get from the oracle engine.

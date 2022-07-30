@@ -17,9 +17,9 @@ import (
 	"encoding/hex"
 	"sort"
 
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
-	snappb "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/core/types"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+	snappb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 	"github.com/golang/protobuf/proto"
 )
 

@@ -23,7 +23,6 @@ import (
 	"strings"
 	"time"
 
-	typespb "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/core/assets/common"
 	"code.vegaprotocol.io/vega/core/bridges"
 	"code.vegaprotocol.io/vega/core/contracts/erc20"
@@ -33,6 +32,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	vgerrors "code.vegaprotocol.io/vega/libs/errors"
 	"code.vegaprotocol.io/vega/libs/num"
+	typespb "code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethcommon "github.com/ethereum/go-ethereum/common"

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package vega.api.v1;
 
-option go_package = "code.vegaprotocol.io/protos/vega/api/v1";
+option go_package = "code.vegaprotocol.io/vega/protos/vega/api/v1";
 
 import "vega/vega.proto";
 import "vega/events/v1/events.proto";

@@ -18,8 +18,8 @@ import (
 	"errors"
 	"fmt"
 
-	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
 	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/cosmos/iavl"

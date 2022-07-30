@@ -2,4 +2,4 @@ version: v1
 plugins:
   - name: openapiv2
     out: swagger
-    opt: logtostderr=true,grpc_api_configuration=sources/vega/grpc-rest-bindings.yml
+    opt: logtostderr=true,grpc_api_configuration=protos/sources/vega/grpc-rest-bindings.yml

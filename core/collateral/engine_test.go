@@ -18,7 +18,6 @@ import (
 	"strconv"
 	"testing"
 
-	ptypes "code.vegaprotocol.io/protos/vega"
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/collateral"
 	"code.vegaprotocol.io/vega/core/collateral/mocks"
@@ -27,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	ptypes "code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"

@@ -8,9 +8,9 @@ import (
 	context "context"
 	reflect "reflect"
 
-	vega "code.vegaprotocol.io/protos/vega"
 	types "code.vegaprotocol.io/vega/core/types"
 	num "code.vegaprotocol.io/vega/libs/num"
+	vega "code.vegaprotocol.io/vega/protos/vega"
 	gomock "github.com/golang/mock/gomock"
 )
 

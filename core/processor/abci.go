@@ -23,10 +23,10 @@ import (
 	"strings"
 	"time"
 
-	"code.vegaprotocol.io/protos/commands"
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	"code.vegaprotocol.io/vega/commands"
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/paths"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
 	"code.vegaprotocol.io/vega/core/api"
 	"code.vegaprotocol.io/vega/core/blockchain/abci"

@@ -7,10 +7,10 @@
 package v1
 
 import (
-	vega "code.vegaprotocol.io/protos/vega"
-	v11 "code.vegaprotocol.io/protos/vega/commands/v1"
-	v1 "code.vegaprotocol.io/protos/vega/events/v1"
-	v12 "code.vegaprotocol.io/protos/vega/oracles/v1"
+	vega "code.vegaprotocol.io/vega/protos/vega"
+	v11 "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	v1 "code.vegaprotocol.io/vega/protos/vega/events/v1"
+	v12 "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"

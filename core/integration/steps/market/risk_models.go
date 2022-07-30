@@ -18,8 +18,8 @@ import (
 
 	"github.com/jinzhu/copier"
 
-	vegapb "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/core/integration/steps/market/defaults"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
 var (

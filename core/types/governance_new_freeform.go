@@ -15,7 +15,7 @@ package types
 import (
 	"fmt"
 
-	vegapb "code.vegaprotocol.io/protos/vega"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type ProposalTermsNewFreeform struct {

@@ -17,11 +17,11 @@ import (
 	"fmt"
 	"sync"
 
-	proto "code.vegaprotocol.io/protos/vega"
-	types "code.vegaprotocol.io/protos/vega"
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/core/broker"
 	"code.vegaprotocol.io/vega/core/events"
+	proto "code.vegaprotocol.io/vega/protos/vega"
+	types "code.vegaprotocol.io/vega/protos/vega"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
 type AssetParty struct {

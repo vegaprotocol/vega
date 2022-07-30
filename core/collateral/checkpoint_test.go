@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/collateral"
 	"code.vegaprotocol.io/vega/core/collateral/mocks"
@@ -13,6 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
+	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )

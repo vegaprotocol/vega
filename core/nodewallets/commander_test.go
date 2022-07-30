@@ -16,7 +16,6 @@ import (
 	"context"
 	"testing"
 
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/core/blockchain"
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	"code.vegaprotocol.io/vega/core/nodewallets/mocks"
@@ -25,6 +24,7 @@ import (
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	vgtesting "code.vegaprotocol.io/vega/libs/testing"
 	"code.vegaprotocol.io/vega/logging"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	"github.com/stretchr/testify/require"
 
 	"github.com/golang/mock/gomock"

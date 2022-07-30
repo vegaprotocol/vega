@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	walletpb "code.vegaprotocol.io/protos/vega/wallet/v1"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
 	"code.vegaprotocol.io/vega/wallet/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

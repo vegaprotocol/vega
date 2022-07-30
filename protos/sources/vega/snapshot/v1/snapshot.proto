@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 package vega.snapshot.v1;
-option go_package = "code.vegaprotocol.io/protos/vega/snapshot/v1";
+option go_package = "code.vegaprotocol.io/vega/protos/vega/snapshot/v1";
 
 import "vega/vega.proto";
 import "vega/markets.proto";

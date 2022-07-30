@@ -16,7 +16,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	types "code.vegaprotocol.io/protos/vega"
+	types "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type AssetDetails struct {

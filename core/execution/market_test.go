@@ -24,9 +24,6 @@ import (
 
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 
-	proto "code.vegaprotocol.io/protos/vega"
-	vegapb "code.vegaprotocol.io/protos/vega"
-	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/collateral"
 	"code.vegaprotocol.io/vega/core/events"
@@ -43,6 +40,9 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	proto "code.vegaprotocol.io/vega/protos/vega"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
+	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

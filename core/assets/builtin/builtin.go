@@ -15,9 +15,9 @@ package builtin
 import (
 	"fmt"
 
-	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/core/assets/common"
 	"code.vegaprotocol.io/vega/core/types"
+	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type Builtin struct {

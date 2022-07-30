@@ -27,5 +27,11 @@ function gen_docs() {
   protos/sources/data-node/api/**/*.proto
 }
 
+function gen_swagger() {
+	buf generate --path=./protos/sources/vega/api --template=./protos/sources/vega/api/v1/buf.gen.yaml # generate swagger
+	buf generate --path=./protos/sources/data-node/api/v1 --template=./protos/sources/data-node/api/v1/buf.gen.yaml # generate swagger
+}
+
+gen_swagger
 gen_json
 gen_docs

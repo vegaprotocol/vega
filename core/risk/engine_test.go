@@ -18,7 +18,6 @@ import (
 	"testing"
 	"time"
 
-	proto "code.vegaprotocol.io/protos/vega"
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/config"
 	"code.vegaprotocol.io/vega/core/events"
@@ -29,6 +28,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types/statevar"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	proto "code.vegaprotocol.io/vega/protos/vega"
 	"github.com/stretchr/testify/require"
 
 	"github.com/golang/mock/gomock"

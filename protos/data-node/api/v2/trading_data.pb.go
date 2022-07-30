@@ -7,9 +7,9 @@
 package v2
 
 import (
-	vega "code.vegaprotocol.io/protos/vega"
-	v1 "code.vegaprotocol.io/protos/vega/events/v1"
-	v11 "code.vegaprotocol.io/protos/vega/oracles/v1"
+	vega "code.vegaprotocol.io/vega/protos/vega"
+	v1 "code.vegaprotocol.io/vega/protos/vega/events/v1"
+	v11 "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"

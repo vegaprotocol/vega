@@ -4,9 +4,10 @@ import (
 	"errors"
 	"fmt"
 
-	"code.vegaprotocol.io/protos/commands"
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	walletpb "code.vegaprotocol.io/protos/vega/wallet/v1"
+	"code.vegaprotocol.io/vega/commands"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
+
 	"github.com/golang/protobuf/proto"
 )
 

@@ -17,9 +17,9 @@ import (
 	"fmt"
 	"strings"
 
-	proto "code.vegaprotocol.io/protos/vega"
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/libs/num"
+	proto "code.vegaprotocol.io/vega/protos/vega"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
 
 type LiquidityProvisionStatus = proto.LiquidityProvision_Status
