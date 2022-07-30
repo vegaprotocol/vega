@@ -802,6 +802,7 @@ func testUpdateFutureMarketChangeSubmissionMissingSingleOracleSpecFails(t *testi
 }
 
 func testUpdateFutureMarketChangeSubmissionWithoutEitherOracleSpecFails(t *testing.T, oracleSpecName string) {
+	t.Helper()
 	future := &types.UpdateFutureProduct{}
 	if oracleSpecName == "oracle_spec_for_settlement_price" {
 		future.OracleSpecForTradingTermination = &oraclespb.OracleSpecConfiguration{}
@@ -1494,6 +1495,7 @@ func testUpdateFutureMarketChangeSubmissionWithOracleSpecBindingSucceeds(t *test
 }
 
 func testUpdateFutureMarketChangeSubmissionMissingOracleBindingPropertyFails(t *testing.T, property string) {
+	t.Helper()
 	var binding *types.OracleSpecToFutureBinding
 	if property == "settlement_price_property" {
 		binding = &types.OracleSpecToFutureBinding{
@@ -1540,6 +1542,7 @@ func testUpdateFutureMarketChangeSubmissionWithNoMismatchBetweenFilterAndBinding
 }
 
 func testUpdateFutureMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingForSpecSucceeds(t *testing.T, binding *types.OracleSpecToFutureBinding, bindingName string, bindingKey string) {
+	t.Helper()
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateMarket{
@@ -1573,6 +1576,7 @@ func testUpdateFutureMarketChangeSubmissionWithNoMismatchBetweenFilterAndBinding
 }
 
 func testUpdateFutureMarketChangeSubmissionWithMismatchBetweenFilterAndBindingForSpecFails(t *testing.T, binding *types.OracleSpecToFutureBinding, bindingName string) {
+	t.Helper()
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateMarket{

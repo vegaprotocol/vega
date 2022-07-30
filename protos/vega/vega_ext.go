@@ -58,7 +58,7 @@ func (o *Order) IsExpireable() bool {
 // IsFinished returns true if an order
 // is in any state different to ACTIVE and PARKED
 // Basically any order which is never gonna
-// trade anymore
+// trade anymore.
 func (o *Order) IsFinished() bool {
 	return o.Status != Order_STATUS_ACTIVE && o.Status != Order_STATUS_PARKED
 }

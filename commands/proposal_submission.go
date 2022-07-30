@@ -994,7 +994,6 @@ func checkShape(orders []*types.LiquidityOrder, side types.Side) Errors {
 				errs.AddForProperty(fmt.Sprintf("proposal_submission.terms.change.new_asset.liquidity_commitment.%s.offset.%d", humanizedSide, i), ErrMustBePositive)
 			}
 		}
-
 	}
 
 	return errs

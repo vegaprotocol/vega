@@ -127,7 +127,7 @@ func testAmendOrderInvalidExpiryFail(t *testing.T) {
 
 /*
  * Sending an old expiry date is OK and should not be rejected here.
- * The validation should take place inside the core
+ * The validation should take place inside the core.
  */
 func testAmendOrderPastExpiry(t *testing.T) {
 	arg := &commandspb.OrderAmendment{

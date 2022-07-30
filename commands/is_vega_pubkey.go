@@ -19,5 +19,5 @@ func IsVegaPubkey(pk string) bool {
 		len    = len(pk)
 		_, err = hex.DecodeString(pk)
 	)
-	return len == 64 && err == nil
+	return len == vegaPubkeyLen && err == nil
 }

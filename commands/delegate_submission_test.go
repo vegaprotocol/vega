@@ -9,9 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-/**********************************************************************************/
-/*                                   DELEGATION                                   */
-/**********************************************************************************/
+// DELEGATION
+
 func TestSubmittingNoDelegateCommandFails(t *testing.T) {
 	err := checkDelegateSubmission(nil)
 
@@ -46,9 +45,8 @@ func checkDelegateSubmission(cmd *commandspb.DelegateSubmission) commands.Errors
 	return e
 }
 
-/**********************************************************************************/
-/*                                  UNDELEGATION                                  */
-/**********************************************************************************/
+// UNDELEGATION
+
 func TestSubmittingNoUndelegateCommandFails(t *testing.T) {
 	err := checkUndelegateSubmission(nil)
 

@@ -90,7 +90,6 @@ func checkLiquidityProvisionShape(
 	if len(orders) <= 0 && !isAmendment {
 		errs.AddForProperty(shapeSideField, errors.New("empty shape"))
 		return errs
-
 	}
 
 	zero := big.NewInt(0)
