@@ -1,3 +1,4 @@
+---
 version: v1
 
 lint:
@@ -6,11 +7,6 @@ lint:
   except:
     - PACKAGE_DIRECTORY_MATCH
     - PACKAGE_VERSION_SUFFIX
-  ignore_only:
-    ENUM_VALUE_PREFIX:
-      - vega/tm/replay.proto
-    ENUM_ZERO_VALUE_SUFFIX:
-      - vega/tm/replay.proto
 breaking:
   use:
     - FILE
