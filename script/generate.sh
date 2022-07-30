@@ -2,7 +2,7 @@
 
 function gen_code() {
 	buf generate
-	if [ $? -ne 0 ]; then
+	if buf generate; then
 		exit $?
 	fi
 }

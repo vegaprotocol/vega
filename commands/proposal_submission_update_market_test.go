@@ -794,7 +794,6 @@ func testUpdateFutureMarketChangeSubmissionWithoutOracleSpecFails(t *testing.T) 
 
 	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_price"), commands.ErrIsRequired)
 	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_trading_termination"), commands.ErrIsRequired)
-
 }
 
 func testUpdateFutureMarketChangeSubmissionMissingSingleOracleSpecFails(t *testing.T) {
@@ -1495,7 +1494,6 @@ func testUpdateFutureMarketChangeSubmissionWithOracleSpecBindingSucceeds(t *test
 }
 
 func testUpdateFutureMarketChangeSubmissionMissingOracleBindingPropertyFails(t *testing.T, property string) {
-
 	var binding *types.OracleSpecToFutureBinding
 	if property == "settlement_price_property" {
 		binding = &types.OracleSpecToFutureBinding{
@@ -2033,6 +2031,7 @@ func testUpdateLogNormalRiskParametersChangeSubmissionInvalidMu(t *testing.T) {
 	err := checkProposalSubmission(cNaN)
 	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.risk_parameters.log_normal.params.mu"), commands.ErrIsNotValidNumber)
 }
+
 func testUpdateLogNormalRiskParametersChangeSubmissionInvalidR(t *testing.T) {
 	cNaN := &commandspb.ProposalSubmission{
 		Terms: &types.ProposalTerms{
@@ -2058,6 +2057,7 @@ func testUpdateLogNormalRiskParametersChangeSubmissionInvalidR(t *testing.T) {
 	err := checkProposalSubmission(cNaN)
 	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.risk_parameters.log_normal.params.r"), commands.ErrIsNotValidNumber)
 }
+
 func testUpdateLogNormalRiskParametersChangeSubmissionInvalidSigma(t *testing.T) {
 	cNaN := &commandspb.ProposalSubmission{
 		Terms: &types.ProposalTerms{

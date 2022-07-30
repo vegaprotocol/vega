@@ -13,7 +13,7 @@ func CheckWithdrawSubmission(cmd *commandspb.WithdrawSubmission) error {
 }
 
 func checkWithdrawSubmission(cmd *commandspb.WithdrawSubmission) Errors {
-	var errs = NewErrors()
+	errs := NewErrors()
 
 	if cmd == nil {
 		return errs.FinalAddForProperty("withdraw_submission", ErrIsRequired)
@@ -43,7 +43,7 @@ func checkWithdrawSubmission(cmd *commandspb.WithdrawSubmission) Errors {
 }
 
 func checkWithdrawExt(wext *types.WithdrawExt) Errors {
-	var errs = NewErrors()
+	errs := NewErrors()
 	switch v := wext.Ext.(type) {
 	case *types.WithdrawExt_Erc20:
 		if len(v.Erc20.ReceiverAddress) <= 0 {

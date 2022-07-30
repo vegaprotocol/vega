@@ -18,7 +18,7 @@ func TestNilLiquidityProvisionSubmissionFails(t *testing.T) {
 }
 
 func TestLiquidityProvisionSubmission(t *testing.T) {
-	var cases = []struct {
+	cases := []struct {
 		lp        commandspb.LiquidityProvisionSubmission
 		errString string
 	}{

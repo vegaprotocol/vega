@@ -1073,7 +1073,6 @@ func testNewFutureMarketChangeSubmissionWithoutOracleSpecFails(t *testing.T) {
 	fmt.Println(err)
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_for_settlement_price"), commands.ErrIsRequired)
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_for_trading_termination"), commands.ErrIsRequired)
-
 }
 
 func testNewFutureMarketChangeSubmissionMissingSingleOracleSpecFails(t *testing.T) {
@@ -1774,7 +1773,6 @@ func testNewFutureMarketChangeSubmissionWithOracleSpecBindingSucceeds(t *testing
 }
 
 func testNewFutureMarketChangeSubmissionMissingOracleBindingPropertyFails(t *testing.T, property string) {
-
 	var binding *types.OracleSpecToFutureBinding
 	if property == "settlement_price_property" {
 		binding = &types.OracleSpecToFutureBinding{
@@ -2312,6 +2310,7 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidMu(t *testing.T) {
 	err := checkProposalSubmission(cNaN)
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.mu"), commands.ErrIsNotValidNumber)
 }
+
 func testNewLogNormalRiskParametersChangeSubmissionInvalidR(t *testing.T) {
 	cNaN := &commandspb.ProposalSubmission{
 		Terms: &types.ProposalTerms{
@@ -2337,6 +2336,7 @@ func testNewLogNormalRiskParametersChangeSubmissionInvalidR(t *testing.T) {
 	err := checkProposalSubmission(cNaN)
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.r"), commands.ErrIsNotValidNumber)
 }
+
 func testNewLogNormalRiskParametersChangeSubmissionInvalidSigma(t *testing.T) {
 	cNaN := &commandspb.ProposalSubmission{
 		Terms: &types.ProposalTerms{
@@ -2654,7 +2654,8 @@ func testNewMarketSubmissionWithBuySideAndRightOrderReferenceSucceeds(t *testing
 		{
 			msg:   "with MID",
 			value: types.PeggedReference_PEGGED_REFERENCE_MID,
-		}, {
+		},
+		{
 			msg:   "with BEST_BID",
 			value: types.PeggedReference_PEGGED_REFERENCE_BEST_BID,
 		},
@@ -2722,7 +2723,8 @@ func testNewMarketSubmissionWithSellSideAndRightOrderReferenceSucceeds(t *testin
 		{
 			msg:   "with MID",
 			value: types.PeggedReference_PEGGED_REFERENCE_MID,
-		}, {
+		},
+		{
 			msg:   "with BEST_BID",
 			value: types.PeggedReference_PEGGED_REFERENCE_BEST_BID,
 		},

@@ -48,6 +48,7 @@ func StringPtr(s string) *string {
 func Int64Ptr(i int64) *int64 {
 	return &i
 }
+
 func Uint64Ptr(u uint64) *uint64 {
 	return &u
 }

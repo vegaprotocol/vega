@@ -15,7 +15,7 @@ func TestNilValidatorHeartbeatFails(t *testing.T) {
 }
 
 func TestValidatorHeartbeat(t *testing.T) {
-	var cases = []struct {
+	cases := []struct {
 		vh        commandspb.ValidatorHeartbeat
 		errString string
 	}{
@@ -88,7 +88,6 @@ func TestValidatorHeartbeat(t *testing.T) {
 		}
 		assert.EqualError(t, err, c.errString)
 	}
-
 }
 
 func checkValidatorHeartbeat(cmd *commandspb.ValidatorHeartbeat) commands.Errors {

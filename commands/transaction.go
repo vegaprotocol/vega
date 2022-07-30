@@ -10,9 +10,7 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-var (
-	ErrShouldBeHexEncoded = errors.New("should be hex encoded")
-)
+var ErrShouldBeHexEncoded = errors.New("should be hex encoded")
 
 func NewTransaction(pubKey string, data []byte, signature *commandspb.Signature) *commandspb.Transaction {
 	return &commandspb.Transaction{

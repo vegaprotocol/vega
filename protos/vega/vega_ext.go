@@ -76,5 +76,4 @@ func (t *Trade) SetIDs(aggressive, passive *Order, idx int) {
 	}
 	t.SellOrder = aggressive.Id
 	t.BuyOrder = passive.Id
-
 }

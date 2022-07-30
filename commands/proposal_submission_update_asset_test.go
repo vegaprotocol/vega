@@ -30,6 +30,7 @@ func TestCheckProposalSubmissionForUpdateAsset(t *testing.T) {
 	t.Run("Submitting an ERC20 asset update with invalid withdrawal threshold fails", testUpdateERC20AssetChangeSubmissionWithInvalidWithdrawalThresholdFails)
 	t.Run("Submitting an ERC20 asset update with valid withdrawal threshold succeeds", testUpdateERC20AssetChangeSubmissionWithValidWithdrawalThresholdSucceeds)
 }
+
 func TestUpdateAssetSubmissionWithoutUpdateAssetFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &types.ProposalTerms{

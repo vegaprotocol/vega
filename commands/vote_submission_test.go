@@ -17,7 +17,7 @@ func TestSubmittingNilVoteFails(t *testing.T) {
 }
 
 func TestVoteSubmission(t *testing.T) {
-	var cases = []struct {
+	cases := []struct {
 		vote      commandspb.VoteSubmission
 		errString string
 	}{

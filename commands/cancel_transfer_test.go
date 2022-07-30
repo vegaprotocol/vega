@@ -15,7 +15,7 @@ func TestNilCancelTransferFails(t *testing.T) {
 }
 
 func TestCancelTransfer(t *testing.T) {
-	var cases = []struct {
+	cases := []struct {
 		ctransfer commandspb.CancelTransfer
 		errString string
 	}{
@@ -38,7 +38,6 @@ func TestCancelTransfer(t *testing.T) {
 		}
 		assert.EqualError(t, err, c.errString)
 	}
-
 }
 
 func checkCancelTransfer(cmd *commandspb.CancelTransfer) commands.Errors {

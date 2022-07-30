@@ -244,7 +244,6 @@ func checkERC20AssetSource(s *types.AssetDetails_Erc20) Errors {
 	if len(asset.LifetimeLimit) == 0 {
 		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.source.erc20.lifetime_limit", ErrIsRequired)
 	} else {
-
 		if lifetimeLimit, ok := big.NewInt(0).SetString(asset.LifetimeLimit, 10); !ok {
 			errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.source.erc20.lifetime_limit", ErrIsNotValidNumber)
 		} else {
@@ -432,7 +431,6 @@ func checkPriceMonitoring(parameters *types.PriceMonitoringParameters, parentPro
 		}
 
 		probability, err := strconv.ParseFloat(trigger.Probability, 64)
-
 		if err != nil {
 			errs.AddForProperty(fmt.Sprintf("%s.price_monitoring_parameters.triggers.%d.probability", parentProperty, i),
 				errors.New("must be numeric and be between 0 (exclusive) and 1 (exclusive)"),

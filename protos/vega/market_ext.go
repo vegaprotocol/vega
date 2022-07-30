@@ -38,7 +38,6 @@ func (p *PriceMonitoringTrigger) Validate() error {
 	}
 
 	probability, err := strconv.ParseFloat(p.Probability, 64)
-
 	if err != nil {
 		return fmt.Errorf("invalid field Triggers.Probability: value '%v' must be numeric and between 0 and 1", p.Probability)
 	}

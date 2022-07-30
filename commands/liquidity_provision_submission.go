@@ -26,7 +26,7 @@ func CheckLiquidityProvisionSubmission(cmd *commandspb.LiquidityProvisionSubmiss
 }
 
 func checkLiquidityProvisionSubmission(cmd *commandspb.LiquidityProvisionSubmission) Errors {
-	var errs = NewErrors()
+	errs := NewErrors()
 
 	if cmd == nil {
 		return errs.FinalAddForProperty("liquidity_provision_submission", ErrIsRequired)
@@ -52,7 +52,6 @@ func checkLiquidityProvisionSubmission(cmd *commandspb.LiquidityProvisionSubmiss
 			errs.AddForProperty("liquidity_provision_submission.commitment_amount", ErrNotAValidInteger)
 		} else if commitment.Cmp(big.NewInt(0)) <= 0 {
 			return errs.FinalAddForProperty("liquidity_provision_submission.commitment_amount", ErrIsNotValidNumber)
-
 		}
 	} else {
 		errs.AddForProperty("liquidity_provision_submission.commitment_amount", ErrIsRequired)

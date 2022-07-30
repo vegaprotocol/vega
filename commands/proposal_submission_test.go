@@ -220,7 +220,6 @@ func testProposalSubmissionWithValidationTimestampAtClosingTimestampFails(t *tes
 	assert.Contains(t, err.Get("proposal_submission.terms.validation_timestamp"),
 		errors.New("cannot be after or equal to closing time"),
 	)
-
 }
 
 func testProposalSubmissionWithValidationTimestampBeforeClosingTimestampSucceeds(t *testing.T) {

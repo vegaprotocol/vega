@@ -16,7 +16,7 @@ func TestNilTransferFundsFails(t *testing.T) {
 }
 
 func TestTransferFunds(t *testing.T) {
-	var cases = []struct {
+	cases := []struct {
 		transfer  commandspb.Transfer
 		errString string
 	}{
@@ -276,7 +276,6 @@ func TestTransferFunds(t *testing.T) {
 		}
 		assert.EqualError(t, err, c.errString)
 	}
-
 }
 
 func checkTransfer(cmd *commandspb.Transfer) commands.Errors {

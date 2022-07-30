@@ -229,6 +229,7 @@ type PayloadFloatingPointConsensus struct {
 type PayloadMarketActivityTracker struct {
 	MarketActivityData *snapshot.MarketTracker
 }
+
 type Witness struct {
 	NeedResendResources []string
 	Resources           []*Resource

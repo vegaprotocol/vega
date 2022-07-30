@@ -221,6 +221,7 @@ func (p ProposalTerms_NewMarket) DeepClone() *ProposalTerms_NewMarket {
 	}
 	return &p
 }
+
 func (n NewAsset) DeepClone() *NewAsset {
 	if n.Changes != nil {
 		n.Changes = n.Changes.DeepClone()

@@ -12,7 +12,6 @@ import (
 func TestCheckProposalSubmissionForNewFreeform(t *testing.T) {
 	t.Run("Submitting a new freeform change without new freeform fails", testNewFreeformChangeSubmissionWithoutNewFreeformFails)
 	t.Run("Submitting a new freeform proposal without rational URL and hash fails", testNewFreeformProposalSubmissionWithoutRationalURLandHashFails)
-
 }
 
 func testNewFreeformChangeSubmissionWithoutNewFreeformFails(t *testing.T) {

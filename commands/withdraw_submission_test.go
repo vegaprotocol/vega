@@ -17,7 +17,7 @@ func TestNilWithdrawSubmissionFails(t *testing.T) {
 }
 
 func TestWithdrawSubmission(t *testing.T) {
-	var cases = []struct {
+	cases := []struct {
 		withdraw  commandspb.WithdrawSubmission
 		errString string
 	}{
