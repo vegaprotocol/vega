@@ -16,11 +16,11 @@ import (
 	"context"
 	"errors"
 
-	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
-	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
-	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/datanode/vegatime"
 	"code.vegaprotocol.io/vega/logging"
+	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	types "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type myMarketResolver VegaResolverRoot

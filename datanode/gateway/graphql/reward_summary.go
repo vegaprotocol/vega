@@ -16,8 +16,8 @@ import (
 	"context"
 	"fmt"
 
-	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
-	"code.vegaprotocol.io/protos/vega"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	"code.vegaprotocol.io/vega/protos/vega"
 )
 
 type rewardSummaryResolver VegaResolverRoot

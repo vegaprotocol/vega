@@ -16,8 +16,8 @@ import (
 	"context"
 	"strconv"
 
-	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/libs/num"
+	types "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type proposalResolver VegaResolverRoot

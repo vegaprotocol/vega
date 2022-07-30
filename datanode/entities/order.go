@@ -20,9 +20,9 @@ import (
 	"strconv"
 	"time"
 
-	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
-	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/core/types"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	"code.vegaprotocol.io/vega/protos/vega"
 )
 
 type OrderID struct{ ID }

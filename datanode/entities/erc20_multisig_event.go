@@ -17,7 +17,7 @@ import (
 	"strconv"
 	"time"
 
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
 type ERC20MultiSigSignerEventType string

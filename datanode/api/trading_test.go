@@ -32,9 +32,9 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/golang/protobuf/proto"
 
-	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
-	vegaprotoapi "code.vegaprotocol.io/protos/vega/api/v1"
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
+	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"

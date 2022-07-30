@@ -13,7 +13,7 @@
 package entities
 
 import (
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
 
 type NodeSignatureID struct{ ID }

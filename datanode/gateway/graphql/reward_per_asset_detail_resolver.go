@@ -17,7 +17,7 @@ import (
 	"context"
 	"math"
 
-	"code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/protos/vega"
 )
 
 type rewardPerAssetDetailResolver VegaResolverRoot

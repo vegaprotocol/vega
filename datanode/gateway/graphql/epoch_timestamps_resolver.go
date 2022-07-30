@@ -16,8 +16,8 @@ import (
 	"context"
 	"time"
 
-	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/datanode/vegatime"
+	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type epochTimestampsResolver VegaResolverRoot
