@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"time"
 
-	"code.vegaprotocol.io/protos/commands"
+	"code.vegaprotocol.io/vega/commands"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	api "code.vegaprotocol.io/vega/protos/vega/api/v1"

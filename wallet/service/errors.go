@@ -3,7 +3,7 @@ package service
 import (
 	"errors"
 
-	"code.vegaprotocol.io/protos/commands"
+	"code.vegaprotocol.io/vega/commands"
 )
 
 var (

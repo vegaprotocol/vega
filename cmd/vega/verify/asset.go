@@ -15,7 +15,7 @@ package verify
 import (
 	"time"
 
-	types "code.vegaprotocol.io/protos/vega"
+	types "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type AssetCmd struct{}

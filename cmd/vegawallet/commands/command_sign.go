@@ -5,10 +5,10 @@ import (
 	"io"
 	"os"
 
-	walletpb "code.vegaprotocol.io/protos/vega/wallet/v1"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
+	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
 	wcommands "code.vegaprotocol.io/vega/wallet/commands"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"code.vegaprotocol.io/vega/wallet/wallets"
