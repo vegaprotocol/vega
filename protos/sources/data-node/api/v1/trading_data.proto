@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "code.vegaprotocol.io/protos/data-node/api/v1";
+option go_package = "code.vegaprotocol.io/vega/protos/data-node/api/v1";
 
 import "vega/vega.proto";
 import "vega/markets.proto";

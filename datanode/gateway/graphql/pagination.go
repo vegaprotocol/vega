@@ -13,7 +13,7 @@
 package gql
 
 import (
-	"code.vegaprotocol.io/protos/commands"
+	"code.vegaprotocol.io/vega/commands"
 	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 )
 

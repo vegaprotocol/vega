@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "code.vegaprotocol.io/protos/data-node/api/v2";
+option go_package = "code.vegaprotocol.io/vega/protos/data-node/api/v2";
 
 import "vega/vega.proto";
 import "vega/governance.proto";
@@ -1477,4 +1477,3 @@ message ObserveTransferResponsesRequest {}
 message ObserveTransferResponsesResponse {
     vega.TransferResponse response = 1;
 }
-
