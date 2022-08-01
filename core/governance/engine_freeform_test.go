@@ -93,6 +93,7 @@ func testFreeformProposalDoesNotWaitToEnact(t *testing.T) {
 	// expect
 	eng.expectPassedProposalEvent(t, proposal.ID)
 	eng.expectTotalGovernanceTokenFromVoteEvents(t, "1", "7")
+	eng.expectGetMarketState(t, proposal.ID)
 
 	// when the proposal is closed, it is enacted immediately
 	toBeEnacted, _ := eng.OnTick(context.Background(), afterClosing)

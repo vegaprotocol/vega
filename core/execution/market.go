@@ -774,6 +774,59 @@ func (m *Market) updateMarketValueProxy() {
 	m.stateChanged = true
 }
 
+func (m *Market) removeOrders(ctx context.Context) {
+	// remove all order from the book
+	// and send events with the stopped status
+	orders := append(m.matching.Settled(), m.peggedOrders.Settled()...)
+	orderEvents := make([]events.Event, 0, len(orders))
+	for _, v := range orders {
+		orderEvents = append(orderEvents, events.NewOrderEvent(ctx, v))
+	}
+
+	m.broker.SendBatch(orderEvents)
+}
+
+func (m *Market) cleanMarketWithState(ctx context.Context, mktState types.MarketState) error {
+	asset, _ := m.mkt.GetAsset()
+	parties := make([]string, 0, len(m.parties))
+	for k := range m.parties {
+		parties = append(parties, k)
+	}
+
+	sort.Strings(parties)
+	clearMarketTransfers, err := m.collateral.ClearMarket(ctx, m.GetID(), asset, parties)
+	if err != nil {
+		m.log.Error("Clear market error",
+			logging.MarketID(m.GetID()),
+			logging.Error(err))
+		return err
+	}
+
+	// unregister state-variables
+	m.stateVarEngine.UnregisterStateVariable(asset, m.mkt.ID)
+
+	m.broker.Send(events.NewTransferResponse(ctx, clearMarketTransfers))
+	m.mkt.State = mktState
+	m.mkt.TradingMode = types.MarketTradingModeNoTrading
+	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+
+	return nil
+}
+
+func (m *Market) closeCancelledMarket(ctx context.Context, t time.Time) error {
+	m.tradableInstrument.Instrument.Unsubscribe(ctx)
+
+	err := m.cleanMarketWithState(ctx, types.MarketStateCancelled)
+	if err != nil {
+		return err
+	}
+
+	m.closed = true
+	m.stateChanged = true
+
+	return m.Reject(ctx)
+}
+
 func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 	// market is closed, final settlement
 	// call settlement and stuff
@@ -799,38 +852,12 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 	// this will be next block
 	m.broker.Send(events.NewTransferResponse(ctx, transfers))
 
-	asset, _ := m.mkt.GetAsset()
-	parties := make([]string, 0, len(m.parties))
-	for k := range m.parties {
-		parties = append(parties, k)
-	}
-
-	sort.Strings(parties)
-	clearMarketTransfers, err := m.collateral.ClearMarket(ctx, m.GetID(), asset, parties)
+	err = m.cleanMarketWithState(ctx, types.MarketStateSettled)
 	if err != nil {
-		m.log.Error("Clear market error",
-			logging.MarketID(m.GetID()),
-			logging.Error(err))
 		return err
 	}
 
-	// unregister state-variables
-	m.stateVarEngine.UnregisterStateVariable(asset, m.mkt.ID)
-
-	m.broker.Send(events.NewTransferResponse(ctx, clearMarketTransfers))
-	m.mkt.State = types.MarketStateSettled
-	m.mkt.TradingMode = types.MarketTradingModeNoTrading
-	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-
-	// remove all order from the book
-	// and send events with the stopped status
-	orders := append(m.matching.Settled(), m.peggedOrders.Settled()...)
-	orderEvents := make([]events.Event, 0, len(orders))
-	for _, v := range orders {
-		orderEvents = append(orderEvents, events.NewOrderEvent(ctx, v))
-	}
-
-	m.broker.SendBatch(orderEvents)
+	m.removeOrders(ctx)
 
 	m.stateChanged = true
 	return nil
@@ -3163,16 +3190,34 @@ func (m *Market) commandLiquidityAuction(ctx context.Context) {
 func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.mkt.State = types.MarketStateTradingTerminated
-	m.mkt.TradingMode = types.MarketTradingModeNoTrading
-	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-	m.stateChanged = true
 
-	if m.settlementPriceInMarket == nil {
-		m.log.Debug("no settlement price", logging.MarketID(m.GetID()))
+	if m.mkt.State != types.MarketStateProposed && m.mkt.State != types.MarketStatePending {
+		m.mkt.State = types.MarketStateTradingTerminated
+		m.mkt.TradingMode = types.MarketTradingModeNoTrading
+		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+		m.stateChanged = true
+
+		if m.settlementPriceInMarket == nil {
+			m.log.Debug("no settlement price", logging.MarketID(m.GetID()))
+			return
+		}
+		m.settlementPriceWithLock(ctx)
+	} else {
+		for party := range m.parties {
+			_, err := m.CancelAllOrders(ctx, party)
+			if err != nil {
+				m.log.Debug("could not cancel orders for party", logging.PartyID(party), logging.Error(err))
+			}
+		}
+		err := m.closeCancelledMarket(ctx, m.timeService.GetTimeNow())
+		if err != nil {
+			m.log.Debug("could not close market", logging.MarketID(m.GetID()))
+			return
+		}
+
+		m.log.Debug("market must not terminated before its enactment time", logging.MarketID(m.GetID()))
 		return
 	}
-	m.settlementPriceWithLock(ctx)
 }
 
 func (m *Market) settlementPrice(ctx context.Context, settlementPrice *num.Uint) {
@@ -3184,7 +3229,7 @@ func (m *Market) settlementPrice(ctx context.Context, settlementPrice *num.Uint)
 	m.settlementPriceWithLock(ctx)
 }
 
-// NB this musy be called with the lock already acquired.
+// NB this must be called with the lock already acquired.
 func (m *Market) settlementPriceWithLock(ctx context.Context) {
 	if m.closed {
 		return

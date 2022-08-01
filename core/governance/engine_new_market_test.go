@@ -46,7 +46,7 @@ func testSubmittingProposalForNewMarketSucceeds(t *testing.T) {
 
 	// given
 	party := eng.newValidParty("a-valid-party", 123456789)
-	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow())
+	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow(), nil, nil)
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -69,7 +69,7 @@ func testSubmittingDuplicatedProposalForNewMarketFails(t *testing.T) {
 
 	// given
 	party := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(party, eng.tsvc.GetTimeNow())
+	proposal := eng.newProposalForNewMarket(party, eng.tsvc.GetTimeNow(), nil, nil)
 
 	// setup
 	eng.ensureTokenBalanceForParty(t, party, 1000)
@@ -115,7 +115,7 @@ func testSubmittingProposalForNewMarketWithBadRiskParameterFails(t *testing.T) {
 	party := eng.newValidParty("a-valid-party", 1)
 	eng.ensureAllAssetEnabled(t)
 
-	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow())
+	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow(), nil, nil)
 	proposal.Terms.GetNewMarket().Changes.RiskParameters = &types.NewMarketConfigurationLogNormal{
 		LogNormal: &types.LogNormalRiskModel{
 			Params: nil, // it's nil by zero value, but eh, let's show that's what we test
@@ -138,7 +138,7 @@ func testSubmittingProposalForNewMarketWithoutValidCommitmentFails(t *testing.T)
 	defer eng.ctrl.Finish()
 
 	party := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(party, eng.tsvc.GetTimeNow())
+	proposal := eng.newProposalForNewMarket(party, eng.tsvc.GetTimeNow(), nil, nil)
 
 	eng.ensureAllAssetEnabled(t)
 
@@ -220,7 +220,7 @@ func testRejectingProposalForNewMarketSucceeds(t *testing.T) {
 
 	// given
 	party := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(party, eng.tsvc.GetTimeNow())
+	proposal := eng.newProposalForNewMarket(party, eng.tsvc.GetTimeNow(), nil, nil)
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -259,7 +259,7 @@ func testVotingForNewMarketProposalSucceeds(t *testing.T) {
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow())
+	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow(), nil, nil)
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -296,7 +296,7 @@ func testVotingWithMajorityOfYesMakesNewMarketProposalPassed(t *testing.T) {
 
 	// when
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow())
+	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow(), nil, nil)
 
 	// setup
 	eng.ensureStakingAssetTotalSupply(t, 9)
@@ -336,6 +336,7 @@ func testVotingWithMajorityOfYesMakesNewMarketProposalPassed(t *testing.T) {
 	// expect
 	eng.expectPassedProposalEvent(t, proposal.ID)
 	eng.expectTotalGovernanceTokenFromVoteEvents(t, "1", "7")
+	eng.expectGetMarketState(t, proposal.ID)
 
 	// when
 	eng.OnTick(context.Background(), afterClosing)
@@ -375,7 +376,7 @@ func testVotingWithMajorityOfNoMakesNewMarketProposalDeclined(t *testing.T) {
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow())
+	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow(), nil, nil)
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -427,6 +428,7 @@ func testVotingWithMajorityOfNoMakesNewMarketProposalDeclined(t *testing.T) {
 	// expect
 	eng.expectDeclinedProposalEvent(t, proposal.ID, types.ProposalErrorMajorityThresholdNotReached)
 	eng.expectTotalGovernanceTokenFromVoteEvents(t, "1", "100")
+	eng.expectGetMarketState(t, proposal.ID)
 
 	// when
 	_, voteClosed := eng.OnTick(context.Background(), afterClosing)
@@ -453,7 +455,7 @@ func testVotingWithInsufficientParticipationMakesNewMarketProposalDeclined(t *te
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow())
+	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow(), nil, nil)
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -493,7 +495,7 @@ func testVotingWithInsufficientParticipationMakesNewMarketProposalDeclined(t *te
 	// expect
 	eng.expectDeclinedProposalEvent(t, proposal.ID, types.ProposalErrorParticipationThresholdNotReached)
 	eng.expectTotalGovernanceTokenFromVoteEvents(t, "1", "100")
-
+	eng.expectGetMarketState(t, proposal.ID)
 	// when
 	_, voteClosed := eng.OnTick(context.Background(), afterClosing)
 

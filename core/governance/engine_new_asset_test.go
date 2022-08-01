@@ -141,6 +141,7 @@ func testVotingDuringValidationOfProposalForNewAssetSucceeds(t *testing.T) {
 
 	// expect
 	eng.expectOpenProposalEvent(t, proposer, proposal.ID)
+	eng.expectGetMarketState(t, proposal.ID)
 
 	// when
 	eng.OnTick(context.Background(), afterValidation)

@@ -45,7 +45,11 @@ func testCheckpointSuccess(t *testing.T) {
 	proposer := eng.newValidParty("proposer", 1)
 	voter1 := eng.newValidPartyTimes("voter-1", 7, 2)
 	voter2 := eng.newValidPartyTimes("voter2", 1, 0)
-	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow())
+
+	now := eng.tsvc.GetTimeNow()
+	termTimeAfterEnact := now.Add(4 * 48 * time.Hour).Add(1 * time.Second)
+	filter, binding := produceTimeTriggeredOracleSpec(termTimeAfterEnact)
+	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow(), filter, binding)
 	ctx := context.Background()
 
 	// setup
@@ -80,6 +84,7 @@ func testCheckpointSuccess(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, data)
 
+	eng.expectGetMarketState(t, proposal.ID)
 	// when
 	eng.OnTick(ctx, afterClosing)
 

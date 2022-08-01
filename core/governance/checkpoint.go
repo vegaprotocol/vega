@@ -29,6 +29,11 @@ import (
 	"code.vegaprotocol.io/vega/libs/proto"
 )
 
+type enactmentTime struct {
+	current         int64
+	shouldNotVerify bool
+}
+
 func (e *Engine) Name() types.CheckpointName {
 	return types.GovernanceCheckpoint
 }
@@ -73,11 +78,14 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 
 		switch prop.Terms.Change.GetTermType() {
 		case types.ProposalTermsTypeNewMarket:
+			enct := &enactmentTime{}
 			// if the proposal is for a new market we want to restore it such that it will be in opening auction
 			if p.Terms.EnactmentTimestamp <= now.Unix() {
 				prop.Terms.EnactmentTimestamp = now.Add(duration).Unix()
+				enct.shouldNotVerify = true
 			}
-			toSubmit, err := e.intoToSubmit(ctx, prop)
+			enct.current = prop.Terms.EnactmentTimestamp
+			toSubmit, err := e.intoToSubmit(ctx, prop, enct)
 			if err != nil {
 				e.log.Panic("Failed to convert proposal into market")
 			}
