@@ -20,6 +20,7 @@ import (
 	"path"
 	"sync"
 	"syscall"
+	"time"
 
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/visor/config"
@@ -98,6 +99,8 @@ func (r *BinariesRunner) Run(ctx context.Context, binaries []config.BinaryConfig
 				return fmt.Errorf("failed to execute binary %s %v: %w", binPath, bin.Args, err)
 			}
 
+			fmt.Println("after wait is done")
+
 			return nil
 		})
 	}
@@ -119,7 +122,12 @@ func (r *BinariesRunner) signal(signal syscall.Signal) error {
 	defer r.mut.RUnlock()
 
 	var err error
-	for _, c := range r.running {
+	for binName, c := range r.running {
+		r.log.Info("Signaling process",
+			logging.String("binaryName", binName),
+			logging.String("signal", signal.String()),
+		)
+
 		err = c.Process.Signal(signal)
 		if err != nil {
 			r.log.Error("Failed to signal running binary",
@@ -133,7 +141,26 @@ func (r *BinariesRunner) signal(signal syscall.Signal) error {
 }
 
 func (r *BinariesRunner) Stop() error {
-	return r.signal(syscall.SIGTERM)
+	if err := r.signal(syscall.SIGTERM); err != nil {
+		return err
+	}
+
+	timeout := time.After(time.Second * 15)
+	ticker := time.NewTicker(time.Second / 10)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-timeout:
+			return fmt.Errorf("failed to gratefully shut down processes: timed out")
+		case <-ticker.C:
+			r.mut.RLock()
+			if len(r.running) == 0 {
+				return nil
+			}
+			r.mut.RUnlock()
+		}
+	}
 }
 
 func (r *BinariesRunner) Kill() error {

@@ -171,7 +171,7 @@ func (e *Engine) UpgradeProposal(ctx context.Context, pk string, upgradeBlockHei
 		}
 	}
 
-	e.log.Debug("Succesfully added protocol upgrade proposal",
+	e.log.Debug("Successfully added protocol upgrade proposal",
 		logging.String("validatorPubKey", pk),
 		logging.Uint64("upgradeBlockHeight", upgradeBlockHeight),
 		logging.String("vegaReleaseTag", vegaReleaseTag),
