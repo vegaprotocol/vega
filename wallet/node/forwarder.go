@@ -5,8 +5,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	api "code.vegaprotocol.io/protos/vega/api/v1"
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	api "code.vegaprotocol.io/vega/protos/vega/api/v1"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/wallet/network"
 
 	"github.com/cenkalti/backoff/v4"

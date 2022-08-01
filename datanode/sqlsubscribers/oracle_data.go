@@ -15,10 +15,10 @@ package sqlsubscribers
 import (
 	"context"
 
-	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/logging"
+	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 	"github.com/pkg/errors"
 )
 

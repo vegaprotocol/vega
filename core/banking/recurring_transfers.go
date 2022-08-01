@@ -18,11 +18,11 @@ import (
 	"fmt"
 	"sort"
 
-	vegapb "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
 var (

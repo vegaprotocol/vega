@@ -16,7 +16,6 @@ import (
 	"context"
 	"time"
 
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/governance"
@@ -24,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
 	"github.com/pkg/errors"
 	abcitypes "github.com/tendermint/tendermint/abci/types"

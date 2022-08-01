@@ -16,9 +16,9 @@ import (
 	"strconv"
 	"time"
 
-	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
-	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
 type Checkpoint struct {

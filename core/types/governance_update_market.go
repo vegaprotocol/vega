@@ -15,8 +15,8 @@ package types
 import (
 	"fmt"
 
-	vegapb "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/libs/num"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type ProposalTermsUpdateMarket struct {

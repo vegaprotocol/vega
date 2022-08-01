@@ -15,8 +15,8 @@ package entities
 import (
 	"time"
 
-	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
 type KeyRotation struct {

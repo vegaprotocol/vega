@@ -9,7 +9,7 @@ import (
 	reflect "reflect"
 	time "time"
 
-	vega "code.vegaprotocol.io/protos/vega"
+	vega "code.vegaprotocol.io/vega/protos/vega"
 	gomock "github.com/golang/mock/gomock"
 )
 

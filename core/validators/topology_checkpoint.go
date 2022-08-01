@@ -18,9 +18,9 @@ import (
 	"sort"
 	"time"
 
-	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/core/types"
+	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"code.vegaprotocol.io/vega/libs/proto"
 	tmtypes "github.com/tendermint/tendermint/abci/types"

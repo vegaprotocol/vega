@@ -15,7 +15,7 @@ package types
 import (
 	"fmt"
 
-	proto "code.vegaprotocol.io/protos/vega"
+	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type NetworkParameter struct {

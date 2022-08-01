@@ -8,7 +8,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	gomock "github.com/golang/mock/gomock"
 	grpc "google.golang.org/grpc"
 )

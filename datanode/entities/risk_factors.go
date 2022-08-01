@@ -16,7 +16,7 @@ import (
 	"fmt"
 	"time"
 
-	"code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/shopspring/decimal"
 )

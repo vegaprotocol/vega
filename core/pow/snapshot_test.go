@@ -18,8 +18,6 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/protos/vega"
-	snapshotpb "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 	"code.vegaprotocol.io/vega/core/snapshot"
 	"code.vegaprotocol.io/vega/core/stats"
@@ -29,6 +27,8 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
+	"code.vegaprotocol.io/vega/protos/vega"
+	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
 )

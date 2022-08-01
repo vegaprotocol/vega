@@ -15,7 +15,7 @@ package entities
 import (
 	"time"
 
-	"code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/protos/vega"
 )
 
 type NetworkLimits struct {

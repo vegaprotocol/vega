@@ -19,7 +19,7 @@ import (
 	"code.vegaprotocol.io/vega/core/examples/nullchain/config"
 	"code.vegaprotocol.io/vega/core/types"
 
-	"code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/protos/vega"
 )
 
 var ErrMarketCreationFailed = errors.New("market creation failed")

@@ -15,7 +15,7 @@ package events
 import (
 	"context"
 
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
 // StateVar is an event for tracking consensus in floating point state variables.

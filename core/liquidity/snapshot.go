@@ -17,14 +17,14 @@ import (
 	"sort"
 	"strconv"
 
-	typespb "code.vegaprotocol.io/protos/vega"
-	snapshotpb "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
+	typespb "code.vegaprotocol.io/vega/protos/vega"
+	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/orderbook_mock.go -package mocks code.vegaprotocol.io/vega/core/liquidity OrderBook

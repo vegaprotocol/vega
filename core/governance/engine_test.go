@@ -20,7 +20,6 @@ import (
 	"testing"
 	"time"
 
-	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/assets/builtin"
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
@@ -32,6 +31,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/logging"
+	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

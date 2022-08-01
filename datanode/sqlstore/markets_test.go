@@ -17,10 +17,10 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/protos/vega"
-	v1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/protos/vega"
+	v1 "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgx/v4"
 	"github.com/stretchr/testify/assert"

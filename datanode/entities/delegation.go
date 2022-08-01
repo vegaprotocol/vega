@@ -17,9 +17,9 @@ import (
 	"strconv"
 	"time"
 
-	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
-	"code.vegaprotocol.io/protos/vega"
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	"code.vegaprotocol.io/vega/protos/vega"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"github.com/shopspring/decimal"
 )
 

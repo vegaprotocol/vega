@@ -12,7 +12,7 @@ build/
 bin/
 *.exe
 vegawallet
-vega
+#vega
 cmd/vegawallet/vegawallet*
 cmd/vegabenchmark/vegabenchmark*
 cmd/examples/nullchain/nullchain*

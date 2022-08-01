@@ -16,9 +16,9 @@ import (
 	"context"
 	"sync"
 
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/subscribers"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
 type validatorUpdateE interface {

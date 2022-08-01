@@ -15,7 +15,7 @@ package entities
 import (
 	"encoding/base64"
 
-	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"github.com/pkg/errors"
 )
 

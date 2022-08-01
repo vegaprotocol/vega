@@ -18,9 +18,9 @@ import (
 	"net"
 	"strings"
 
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/logging"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/golang/protobuf/proto"

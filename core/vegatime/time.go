@@ -15,7 +15,7 @@ package vegatime
 import (
 	"time"
 
-	types "code.vegaprotocol.io/protos/vega"
+	types "code.vegaprotocol.io/vega/protos/vega"
 )
 
 // Unix create a new time from sec and nsec in UTC timezone.

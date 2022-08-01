@@ -15,10 +15,10 @@ package gql
 import (
 	"context"
 
-	dnapiproto "code.vegaprotocol.io/protos/data-node/api/v1"
-	vgproto "code.vegaprotocol.io/protos/vega"
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/datanode/vegatime"
+	dnapiproto "code.vegaprotocol.io/vega/protos/data-node/api/v1"
+	vgproto "code.vegaprotocol.io/vega/protos/vega"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
 type stakeLinkingResolver VegaResolverRoot

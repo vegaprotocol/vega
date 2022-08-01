@@ -18,8 +18,6 @@ import (
 	"testing"
 	"time"
 
-	vgproto "code.vegaprotocol.io/protos/vega"
-	snapshotpb "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/core/execution"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 	snp "code.vegaprotocol.io/vega/core/snapshot"
@@ -30,6 +28,8 @@ import (
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
+	vgproto "code.vegaprotocol.io/vega/protos/vega"
+	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 	"github.com/stretchr/testify/require"
 )
 

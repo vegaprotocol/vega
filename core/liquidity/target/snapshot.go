@@ -16,10 +16,10 @@ import (
 	"context"
 	"time"
 
-	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
+	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
 
 func newTimestampedOISnapshotFromProto(s *snapshot.TimestampedOpenInterest) timestampedOI {

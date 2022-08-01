@@ -17,13 +17,13 @@ import (
 	"errors"
 	"testing"
 
-	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
-	types "code.vegaprotocol.io/protos/vega"
-	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	gql "code.vegaprotocol.io/vega/datanode/gateway/graphql"
 	"code.vegaprotocol.io/vega/datanode/gateway/graphql/mocks"
 	"code.vegaprotocol.io/vega/logging"
+	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
+	types "code.vegaprotocol.io/vega/protos/vega"
+	oraclesv1 "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 	"google.golang.org/grpc"
 
 	"github.com/golang/mock/gomock"
