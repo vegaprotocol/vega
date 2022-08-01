@@ -693,6 +693,12 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 		app.log.Panic("Failed to create snapshot",
 			logging.Error(err))
 	}
+
+	// if there is an approved protocol upgrade proposal and the current block height is later than the proposal's block height then take a snapshot and wait to be killed by the process manager
+	if app.protocolUpgradeService.TimeForUpgrade() {
+		app.protocolUpgradeService.SetReadyForUpgrade()
+	}
+
 	t1 := time.Now()
 	if len(snapHash) > 0 {
 		app.log.Info("#### snapshot took ", logging.Float64("time", t1.Sub(t0).Seconds()))

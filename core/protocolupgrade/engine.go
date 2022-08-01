@@ -105,6 +105,14 @@ func (e *Engine) OnRequiredMajorityChanged(_ context.Context, requiredMajority n
 func (e *Engine) UpgradeProposal(ctx context.Context, pk string, upgradeBlockHeight uint64, vegaReleaseTag string) error {
 	e.lock.RLock()
 	defer e.lock.RUnlock()
+
+	e.log.Debug("Adding protocol upgrade proposal",
+		logging.String("validatorPubKey", pk),
+		logging.Uint64("upgradeBlockHeight", upgradeBlockHeight),
+		logging.String("vegaReleaseTag", vegaReleaseTag),
+		logging.String("dataNodeReleaseTag", dataNodeReleaseTag),
+	)
+
 	if !e.topology.IsTendermintValidator(pk) {
 		// not a tendermint validator, so we don't care about their intention
 		return nil
@@ -162,6 +170,14 @@ func (e *Engine) UpgradeProposal(ctx context.Context, pk string, upgradeBlockHei
 			delete(e.events, activeID)
 		}
 	}
+
+	e.log.Debug("Succesfully added protocol upgrade proposal",
+		logging.String("validatorPubKey", pk),
+		logging.Uint64("upgradeBlockHeight", upgradeBlockHeight),
+		logging.String("vegaReleaseTag", vegaReleaseTag),
+		logging.String("dataNodeReleaseTag", dataNodeReleaseTag),
+	)
+
 	return nil
 }
 
@@ -177,7 +193,7 @@ func (e *Engine) sendAndKeepEvent(ctx context.Context, ID string, activeProposal
 func (e *Engine) TimeForUpgrade() bool {
 	e.lock.RLock()
 	defer e.lock.RUnlock()
-	return e.upgradeStatus.AcceptedReleaseInfo != nil && e.currentBlockHeight == e.upgradeStatus.AcceptedReleaseInfo.UpgradeBlockHeight
+	return e.upgradeStatus.AcceptedReleaseInfo != nil && e.currentBlockHeight-e.upgradeStatus.AcceptedReleaseInfo.UpgradeBlockHeight == 1
 }
 
 func (e *Engine) isAccepted(p *protocolUpgradeProposal) bool {
