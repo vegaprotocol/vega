@@ -72,11 +72,11 @@ type BuiltinAsset struct {
 func (BuiltinAsset) IsAssetSource() {}
 
 type BusEvent struct {
-	// the id for this event
+	// the ID for this event
 	EventID string `json:"eventId"`
 	// the block hash
 	Block string `json:"block"`
-	// the type of event we're dealing with
+	// the type of event
 	Type BusEventType `json:"type"`
 	// the payload - the wrapped event
 	Event Event `json:"event"`
@@ -166,11 +166,11 @@ type EthereumEvent struct {
 func (EthereumEvent) IsOracle() {}
 
 type LedgerEntry struct {
-	// account from which the asset was taken
+	// Account from which the asset was taken
 	FromAccount string `json:"fromAccount"`
-	// account to which the balance was transferred
+	// Account to which the balance was transferred
 	ToAccount string `json:"toAccount"`
-	// the amount transferred
+	// The amount transferred
 	Amount string `json:"amount"`
 	// The transfer reference
 	Reference string `json:"reference"`
@@ -275,13 +275,13 @@ type OrderEstimate struct {
 }
 
 type PositionResolution struct {
-	// the market ID where position resolution happened
+	// The market ID where position resolution happened
 	MarketID string `json:"marketId"`
-	// number of distressed parties on market
+	// Number of distressed parties on market
 	Distressed int `json:"distressed"`
-	// number of parties closed out
+	// Number of parties closed out
 	Closed int `json:"closed"`
-	// the mark price at which parties were distressed/closed out
+	// The mark price at which parties were distressed/closed out
 	MarkPrice string `json:"markPrice"`
 }
 
@@ -326,7 +326,7 @@ type PriceMonitoringTrigger struct {
 type ProposalVote struct {
 	// Cast vote
 	Vote *vega.Vote `json:"vote"`
-	// Proposal casting the vote on
+	// Proposal the vote is cast on
 	ProposalID string `json:"proposalId"`
 }
 
@@ -343,13 +343,13 @@ type ProposalVoteEdge struct {
 }
 
 type ProposalVoteSide struct {
-	// All votes casted for this side
+	// All votes cast for this side
 	Votes []*vega.Vote `json:"votes"`
-	// Total number of votes casted for this side
+	// Total number of votes cast for this side
 	TotalNumber string `json:"totalNumber"`
-	// Total weight of governance token from the votes casted for this side
+	// Total weight of governance token from the votes cast for this side
 	TotalWeight string `json:"totalWeight"`
-	// Total tokens of governance token from the votes casted for this side
+	// Total number of governance tokens from the votes cast for this side
 	TotalTokens string `json:"totalTokens"`
 }
 
@@ -363,11 +363,11 @@ type ProposalVotes struct {
 type SettleDistressed struct {
 	// the market in which a position was closed out
 	MarketID string `json:"marketId"`
-	// the party who closed out
+	// the party that was closed out
 	PartyID string `json:"partyId"`
 	// the margin taken from distressed party
 	Margin string `json:"margin"`
-	// the price at which position was closed out
+	// the price at which the position was closed out
 	Price string `json:"price"`
 }
 
@@ -403,11 +403,11 @@ func (TimeUpdate) IsEvent() {}
 
 // The fee paid by the party when a trade occurs
 type TradeFee struct {
-	// The maker fee, aggressive party to the other party (the one who had an order in the book)
+	// The maker fee, paid by the aggressive party to the other party (the one who had an order in the book)
 	MakerFee string `json:"makerFee"`
 	// The infrastructure fee, a fee paid to the validators to maintain the Vega network
 	InfrastructureFee string `json:"infrastructureFee"`
-	// The fee paid to the liquidity providers to commit liquidity to the market
+	// The fee paid to the liquidity providers that committed liquidity to the market
 	LiquidityFee string `json:"liquidityFee"`
 }
 
@@ -430,14 +430,14 @@ type TransferBalance struct {
 }
 
 type TransferResponse struct {
-	// the ledger entries and balances resulting from a transfer request
+	// The ledger entries and balances resulting from a transfer request
 	Transfers []*LedgerEntry `json:"transfers"`
-	// the balances of accounts involved in the transfer
+	// The balances of accounts involved in the transfer
 	Balances []*TransferBalance `json:"balances"`
 }
 
 type TransferResponses struct {
-	// a group of transfer responses - events from core
+	// A group of transfer responses - events from core
 	Responses []*TransferResponse `json:"responses"`
 }
 
@@ -502,7 +502,7 @@ type AuctionTrigger string
 const (
 	// Invalid trigger (or no auction)
 	AuctionTriggerUnspecified AuctionTrigger = "Unspecified"
-	// Auction because market is trading FBA
+	// Auction because market has a frequent batch auction trading mode
 	AuctionTriggerBatch AuctionTrigger = "Batch"
 	// Opening auction
 	AuctionTriggerOpening AuctionTrigger = "Opening"
@@ -574,7 +574,7 @@ const (
 	BusEventTypeVote BusEventType = "Vote"
 	// Market data has been updated
 	BusEventTypeMarketData BusEventType = "MarketData"
-	// Validator nodes signatures for an event
+	// Validator node signatures for an event
 	BusEventTypeNodeSignature BusEventType = "NodeSignature"
 	// A position has been closed without sufficient insurance pool balance to cover it
 	BusEventTypeLossSocialization BusEventType = "LossSocialization"
@@ -727,7 +727,7 @@ const (
 	DepositStatusOpen DepositStatus = "Open"
 	// The deposit have been cancelled by the network, either because it expired, or something went wrong with the foreign chain
 	DepositStatusCancelled DepositStatus = "Cancelled"
-	// The deposit was finalised, it was first valid, the foreign chain has executed it and the network updated all accounts
+	// The deposit was finalised, it was valid, the foreign chain has executed it and the network updated all accounts
 	DepositStatusFinalized DepositStatus = "Finalized"
 )
 
@@ -811,7 +811,7 @@ func (e DispatchMetric) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-// The interval for trade candles when subscribing via VEGA graphql, default is I15M
+// The interval for trade candles when subscribing via Vega GraphQL, default is I15M
 type Interval string
 
 const (
@@ -875,14 +875,14 @@ const (
 	LiquidityProvisionStatusActive LiquidityProvisionStatus = "Active"
 	// A liquidity provision stopped by the network
 	LiquidityProvisionStatusStopped LiquidityProvisionStatus = "Stopped"
-	// A Cancelled Liquidity provision
+	// A cancelled liquidity provision
 	LiquidityProvisionStatusCancelled LiquidityProvisionStatus = "Cancelled"
-	// A liquidity provision was invalid and got rejected
+	// Liquidity provision was invalid and got rejected
 	LiquidityProvisionStatusRejected LiquidityProvisionStatus = "Rejected"
-	// The liquidity provision is valid and accepted by network, but orders aren't deployed
+	// The liquidity provision is valid and accepted by the network, but orders aren't deployed
 	LiquidityProvisionStatusUndeployed LiquidityProvisionStatus = "Undeployed"
-	// The liquidity provision is valid and accepted by network, but orders aren't deployed.
-	// but have never been deployed. I when it's possible to deploy them for the first time
+	// The liquidity provision is valid and accepted by the network, but orders aren't deployed and
+	// have never been deployed. If when it's possible to deploy them for the first time the
 	// margin check fails, then they will be cancelled without any penalties.
 	LiquidityProvisionStatusPending LiquidityProvisionStatus = "Pending"
 )
@@ -929,7 +929,7 @@ func (e LiquidityProvisionStatus) MarshalGQL(w io.Writer) {
 type MarketState string
 
 const (
-	// The Governance proposal valid and accepted
+	// The governance proposal valid and accepted
 	MarketStateProposed MarketState = "Proposed"
 	// Outcome of governance votes is to reject the market
 	MarketStateRejected MarketState = "Rejected"
@@ -1051,7 +1051,7 @@ type NodeSignatureKind string
 const (
 	// A signature for proposing a new asset into the network
 	NodeSignatureKindAssetNew NodeSignatureKind = "AssetNew"
-	// A signature for allowing a withdrawal of funds
+	// A signature for allowing funds withdrawal
 	NodeSignatureKindAssetWithdrawal NodeSignatureKind = "AssetWithdrawal"
 )
 
@@ -1181,9 +1181,9 @@ func (e OracleSpecStatus) MarshalGQL(w io.Writer) {
 type OrderRejectionReason string
 
 const (
-	// Market id is invalid
+	// Market ID is invalid
 	OrderRejectionReasonInvalidMarketID OrderRejectionReason = "InvalidMarketId"
-	// Order id is invalid
+	// Order ID is invalid
 	OrderRejectionReasonInvalidOrderID OrderRejectionReason = "InvalidOrderId"
 	// Order is out of sequence
 	OrderRejectionReasonOrderOutOfSequence OrderRejectionReason = "OrderOutOfSequence"
@@ -1199,15 +1199,15 @@ const (
 	OrderRejectionReasonInvalidOrderReference OrderRejectionReason = "InvalidOrderReference"
 	// Edit is not allowed
 	OrderRejectionReasonEditNotAllowed OrderRejectionReason = "EditNotAllowed"
-	// Order amend fail
+	// Amending the order failed
 	OrderRejectionReasonOrderAmendFailure OrderRejectionReason = "OrderAmendFailure"
 	// Order does not exist
 	OrderRejectionReasonOrderNotFound OrderRejectionReason = "OrderNotFound"
-	// Party id is invalid
+	// Party ID is invalid
 	OrderRejectionReasonInvalidPartyID OrderRejectionReason = "InvalidPartyId"
 	// Market is closed
 	OrderRejectionReasonMarketClosed OrderRejectionReason = "MarketClosed"
-	// Margin check failed
+	// Margin check failed - not enough available margin
 	OrderRejectionReasonMarginCheckFailed OrderRejectionReason = "MarginCheckFailed"
 	// Order missing general account
 	OrderRejectionReasonMissingGeneralAccount OrderRejectionReason = "MissingGeneralAccount"
@@ -1219,37 +1219,37 @@ const (
 	OrderRejectionReasonInvalidPersistence OrderRejectionReason = "InvalidPersistence"
 	// Invalid type
 	OrderRejectionReasonInvalidType OrderRejectionReason = "InvalidType"
-	// Self trading
+	// Order cannot be filled because it would require self trading
 	OrderRejectionReasonSelfTrading OrderRejectionReason = "SelfTrading"
 	// Insufficient funds to pay fees
 	OrderRejectionReasonInsufficientFundsToPayFees OrderRejectionReason = "InsufficientFundsToPayFees"
 	// Invalid Time In Force
 	OrderRejectionReasonInvalidTimeInForce OrderRejectionReason = "InvalidTimeInForce"
-	// Attempt to amend order to GTT without ExpiryAt
+	// Attempt to amend order to Good til Time without expiry time
 	OrderRejectionReasonAmendToGTTWithoutExpiryAt OrderRejectionReason = "AmendToGTTWithoutExpiryAt"
-	// Attempt to amend ExpiryAt to a value before CreatedAt
+	// Attempt to amend expiry time to a value before time order was created
 	OrderRejectionReasonExpiryAtBeforeCreatedAt OrderRejectionReason = "ExpiryAtBeforeCreatedAt"
-	// Attempt to amend to GTC without an ExpiryAt value
+	// Attempt to amend to Good till Cancelled without an expiry time
 	OrderRejectionReasonGTCWithExpiryAtNotValid OrderRejectionReason = "GTCWithExpiryAtNotValid"
-	// Amending to FOK or IOC is invalid
+	// Amending to Fill or Kill, or Immediate or Cancel is invalid
 	OrderRejectionReasonCannotAmendToFOKOrIoc OrderRejectionReason = "CannotAmendToFOKOrIOC"
-	// Amending to GFA or GFN is invalid
+	// Amending to Good for Auction or Good for Normal is invalid
 	OrderRejectionReasonCannotAmendToGFAOrGfn OrderRejectionReason = "CannotAmendToGFAOrGFN"
-	// Amending from GFA or GFN is invalid
+	// Amending from Good for Auction or Good for Normal is invalid
 	OrderRejectionReasonCannotAmendFromGFAOrGfn OrderRejectionReason = "CannotAmendFromGFAOrGFN"
-	// Invalid Market Type
+	// Invalid market type
 	OrderRejectionReasonInvalidMarketType OrderRejectionReason = "InvalidMarketType"
-	// Good for normal order received during an auction
+	// Good for Normal order received during an auction
 	OrderRejectionReasonGFNOrderDuringAuction OrderRejectionReason = "GFNOrderDuringAuction"
-	// Good for auction order received during continuous trading
+	// Good for Auction order received during continuous trading
 	OrderRejectionReasonGFAOrderDuringContinuousTrading OrderRejectionReason = "GFAOrderDuringContinuousTrading"
-	// IOC orders are not allowed during auction
+	// Immediate or Cancel orders are not allowed during auction
 	OrderRejectionReasonIOCOrderDuringAuction OrderRejectionReason = "IOCOrderDuringAuction"
-	// FOK orders are not allowed during auction
+	// Fill or Kill orders are not allowed during auction
 	OrderRejectionReasonFOKOrderDuringAuction OrderRejectionReason = "FOKOrderDuringAuction"
-	// Pegged orders must be LIMIT orders
+	// Pegged orders must be limit orders
 	OrderRejectionReasonPeggedOrderMustBeLimitOrder OrderRejectionReason = "PeggedOrderMustBeLimitOrder"
-	// Pegged orders can only have TIF GTC or GTT
+	// Pegged orders can only have a time in force of Good til Cancelled or Good til Time
 	OrderRejectionReasonPeggedOrderMustBeGTTOrGtc OrderRejectionReason = "PeggedOrderMustBeGTTOrGTC"
 	// Pegged order must have a reference price
 	OrderRejectionReasonPeggedOrderWithoutReferencePrice OrderRejectionReason = "PeggedOrderWithoutReferencePrice"
@@ -1363,13 +1363,13 @@ const (
 	OrderStatusCancelled OrderStatus = "Cancelled"
 	// This order was of type IOC or FOK and could not be processed by the matching engine due to lack of liquidity.
 	OrderStatusStopped OrderStatus = "Stopped"
-	// This order is fully filled with remaining equals zero.
+	// This order is fully filled with remaining equalling zero.
 	OrderStatusFilled OrderStatus = "Filled"
-	// This order was rejected while being processed in the core.
+	// This order was rejected while being processed.
 	OrderStatusRejected OrderStatus = "Rejected"
 	// This order was partially filled.
 	OrderStatusPartiallyFilled OrderStatus = "PartiallyFilled"
-	// This order has been removed from the order book and applies to pegged orders only
+	// This order has been removed from the order book because the market is in auction, the reference price doesn't exist, or the order needs to be repriced and can't. Applies to pegged orders only
 	OrderStatusParked OrderStatus = "Parked"
 )
 
@@ -1473,9 +1473,9 @@ func (e OrderTimeInForce) MarshalGQL(w io.Writer) {
 type OrderType string
 
 const (
-	// the default order type
+	// An order to buy or sell at the market's current best available price
 	OrderTypeMarket OrderType = "Market"
-	// mentioned in ticket, but as yet unused order type
+	// Order that uses a pre-specified price to buy or sell
 	OrderTypeLimit OrderType = "Limit"
 	// Used for distressed parties, an order placed by the network to close out distressed parties
 	// similar to Market order, only no party is attached to the order.
@@ -1633,7 +1633,7 @@ const (
 	ProposalRejectionReasonEnactTimeTooSoon ProposalRejectionReason = "EnactTimeTooSoon"
 	// The specified enactment time is too late based on network parameters
 	ProposalRejectionReasonEnactTimeTooLate ProposalRejectionReason = "EnactTimeTooLate"
-	// The proposer for this proposal has insufficient token
+	// The proposer for this proposal has insufficient tokens
 	ProposalRejectionReasonInsufficientTokens ProposalRejectionReason = "InsufficientTokens"
 	// The instrument quote name and base name were the same
 	ProposalRejectionReasonInvalidInstrumentSecurity ProposalRejectionReason = "InvalidInstrumentSecurity"
@@ -1673,17 +1673,17 @@ const (
 	ProposalRejectionReasonOpeningAuctionDurationTooLarge ProposalRejectionReason = "OpeningAuctionDurationTooLarge"
 	// Market proposal is missing a liquidity commitment
 	ProposalRejectionReasonMarketMissingLiquidityCommitment ProposalRejectionReason = "MarketMissingLiquidityCommitment"
-	// Market proposal market could not be instantiate in execution
+	// Market could not be created
 	ProposalRejectionReasonCouldNotInstantiateMarket ProposalRejectionReason = "CouldNotInstantiateMarket"
 	// Market proposal market contained invalid product definition
 	ProposalRejectionReasonInvalidFutureProduct ProposalRejectionReason = "InvalidFutureProduct"
 	// Market proposal is missing commitment amount
 	ProposalRejectionReasonMissingCommitmentAmount ProposalRejectionReason = "MissingCommitmentAmount"
-	// Market proposal have invalid fee amount
+	// Market proposal has invalid fee amount
 	ProposalRejectionReasonInvalidFeeAmount ProposalRejectionReason = "InvalidFeeAmount"
-	// Market proposal have one or more invalid shape
+	// Market proposal has one or more invalid liquidity shapes
 	ProposalRejectionReasonInvalidShape ProposalRejectionReason = "InvalidShape"
-	// Market proposal use an invalid risk parameter
+	// Market proposal uses an invalid risk parameter
 	ProposalRejectionReasonInvalidRiskParameter ProposalRejectionReason = "InvalidRiskParameter"
 	// Proposal declined because the majority threshold was not reached
 	ProposalRejectionReasonMajorityThresholdNotReached ProposalRejectionReason = "MajorityThresholdNotReached"
@@ -1697,7 +1697,7 @@ const (
 	ProposalRejectionReasonTooManyMarketDecimalPlaces ProposalRejectionReason = "TooManyMarketDecimalPlaces"
 	// The market is invalid
 	ProposalRejectionReasonInvalidMarket ProposalRejectionReason = "InvalidMarket"
-	// The proposal is rejected because the party do not have enough equity like share in the market
+	// The proposal is rejected because the party does not have enough equity like share in the market
 	ProposalRejectionReasonInsufficientEquityLikeShare ProposalRejectionReason = "InsufficientEquityLikeShare"
 )
 
@@ -1890,7 +1890,7 @@ func (e ProposalType) MarshalGQL(w io.Writer) {
 type Side string
 
 const (
-	// The Placer of the order is aiming to buy
+	// The placer of the order is aiming to buy
 	SideBuy Side = "Buy"
 	// The placer of the order is aiming to sell
 	SideSell Side = "Sell"
@@ -1935,8 +1935,8 @@ type StakeLinkingStatus string
 
 const (
 	// The stake linking is pending in the Vega network. This means that
-	// the Vega network have seen a StakeLinking, but is still to confirm
-	// it's valid on the ethereum chain, and accepted by all nodes of the network
+	// the Vega network have seen a stake linking, but is still to confirm
+	// it's valid on the ethereum chain and accepted by all nodes of the network
 	StakeLinkingStatusPending StakeLinkingStatus = "Pending"
 	// The stake linking has been accepted and processed fully (balance updated) by the network
 	StakeLinkingStatusAccepted StakeLinkingStatus = "Accepted"
@@ -1983,9 +1983,9 @@ func (e StakeLinkingStatus) MarshalGQL(w io.Writer) {
 type StakeLinkingType string
 
 const (
-	// The stake is being linked (deposited) to a vega stake account
+	// The stake is being linked (deposited) to a Vega stake account
 	StakeLinkingTypeLink StakeLinkingType = "Link"
-	// The stake is being unlined (removed) from a vega stake account
+	// The stake is being unlinked (removed) from a Vega stake account
 	StakeLinkingTypeUnlink StakeLinkingType = "Unlink"
 )
 
@@ -2116,13 +2116,13 @@ func (e TransferDirection) MarshalGQL(w io.Writer) {
 type TransferStatus string
 
 const (
-	// Indicate a transfer still being processed
+	// Indicates a transfer still being processed
 	TransferStatusPending TransferStatus = "Pending"
-	// Indicate of an transfer accepted by the Vega network
+	// Indicates a transfer accepted by the Vega network
 	TransferStatusDone TransferStatus = "Done"
-	// Indicate of an transfer rejected by the Vega network
+	// Indicates a transfer rejected by the Vega network
 	TransferStatusRejected TransferStatus = "Rejected"
-	// Indicate of a transfer stopped by the Vega network
+	// Indicates a transfer stopped by the Vega network
 	// e.g: no funds left to cover the transfer
 	TransferStatusStopped TransferStatus = "Stopped"
 	// Indication of a transfer cancelled by the user
@@ -2217,7 +2217,7 @@ const (
 	WithdrawalStatusOpen WithdrawalStatus = "Open"
 	// The withdrawal have been cancelled by the network, either because it expired, or something went wrong with the foreign chain
 	WithdrawalStatusRejected WithdrawalStatus = "Rejected"
-	// The withdrawal was finalized, it was first valid, the foreign chain have executed it and the network updated all accounts
+	// The withdrawal was finalised, it was valid, the foreign chain has executed it and the network updated all accounts
 	WithdrawalStatusFinalized WithdrawalStatus = "Finalized"
 )
 

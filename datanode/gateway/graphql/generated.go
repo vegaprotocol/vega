@@ -8617,14 +8617,14 @@ type Query {
 }
 
 enum TransferStatus {
-  "Indicate a transfer still being processed"
+  "Indicates a transfer still being processed"
   Pending
-  "Indicate of an transfer accepted by the Vega network"
+  "Indicates a transfer accepted by the Vega network"
   Done
-  "Indicate of an transfer rejected by the Vega network"
+  "Indicates a transfer rejected by the Vega network"
   Rejected
   """
-  Indicate of a transfer stopped by the Vega network
+  Indicates a transfer stopped by the Vega network
   e.g: no funds left to cover the transfer
   """
   Stopped
@@ -8634,7 +8634,7 @@ enum TransferStatus {
 
 "A user initiated transfer"
 type Transfer {
-  "Identified of this transfer"
+  "ID of this transfer"
   id: ID!
 
   "The public key of the sender in this transfer"
@@ -8643,10 +8643,10 @@ type Transfer {
   "The account type from which funds have been sent"
   fromAccountType: AccountType!
 
-  "The public key of the received of the funds"
+  "The public key of the recipient the funds"
   to: String!
 
-  "The account type which has received the funds"
+  "The account type that has received the funds"
   toAccountType: AccountType!
 
   "The asset"
@@ -8669,9 +8669,9 @@ type Transfer {
 
 union TransferKind = OneOffTransfer | RecurringTransfer
 
-"The specific details for a one off transfer"
+"The specific details for a one-off transfer"
 type OneOffTransfer {
-  "An optional time at which the transfer should be delivered"
+  "An optional time when the transfer should be delivered"
   deliverOn: String
 }
 
@@ -8740,7 +8740,7 @@ type KeyRotation {
   oldPubKey: String!
   "New public key rotated to"
   newPubKey: String!
-  "Block height of where the rotation took place"
+  "Block height when the rotation took place"
   blockHeight: String!
 }
 
@@ -8748,7 +8748,7 @@ type Epoch {
   "Presumably this is an integer or something. If there's no such thing, disregard"
   id: String!
 
-  "Timestamps for start/end etc"
+  "Timestamps for start and end of epochs"
   timestamps: EpochTimestamps!
 
   "Validators that participated in this epoch"
@@ -8827,7 +8827,7 @@ type Node {
   "Public key of the node operator"
   pubkey: String!
 
-  "Public key of Tendermint"
+  "Tendermint public key of the node"
   tmPubkey: String!
 
   "Ethereum public key of the node"
@@ -8884,7 +8884,7 @@ type Node {
   # The name of the node
   name: String!
 
-  # An url to an avatar
+  # The URL of an avatar
   avatarUrl: String
 }
 
@@ -8922,7 +8922,7 @@ type Delegation {
   "Amount delegated"
   amount: String!
 
-  "Party which is delegating"
+  "Party that is delegating"
   party: Party!
 
   "URL of node you are delegating to"
@@ -9012,7 +9012,7 @@ type BuiltinAsset {
 
 "Represents a signature for the approval of a resource from a validator"
 type NodeSignature {
-  "The id of the resource being signed for"
+  "The ID of the resource being signed for"
   id: ID!
 
   "The signature, as base64 encoding"
@@ -9027,7 +9027,7 @@ enum NodeSignatureKind {
   "A signature for proposing a new asset into the network"
   AssetNew
 
-  "A signature for allowing a withdrawal of funds"
+  "A signature for allowing funds withdrawal"
   AssetWithdrawal
 }
 
@@ -9125,11 +9125,11 @@ type DiscreteTrading {
 
 "Parameters for the log normal risk model"
 type LogNormalModelParams {
-  "mu parameter"
+  "mu parameter, annualised growth rate of the underlying asset"
   mu: Float!
   "r parameter"
   r: Float!
-  "sigma parameter"
+  "sigma parameter, annualised volatility of the underlying asset, must be a strictly non-negative real number"
   sigma: Float!
 }
 
@@ -9143,11 +9143,11 @@ type SimpleRiskModelParams {
 
 "A type of risk model for futures trading"
 type LogNormalRiskModel {
-  "Lambda parameter of the risk model"
+  "Lambda parameter of the risk model, probability confidence level used in expected shortfall calculation when obtaining the maintenance margin level, must be strictly greater than 0 and strictly smaller than 1"
   riskAversionParameter: Float!
-  "Tau parameter of the risk model"
+  "Tau parameter of the risk model, projection horizon measured as a year fraction used in the expected shortfall calculation to obtain the maintenance margin, must be a strictly non-negative real number"
   tau: Float!
-  "Params for the log normal risk model"
+  "Parameters for the log normal risk model"
   params: LogNormalModelParams!
 }
 
@@ -9245,7 +9245,7 @@ enum OracleSpecStatus {
 }
 
 """
-Filter describes the conditions under which an oracle data is considered of
+Filter describes the conditions under which oracle data is considered of
 interest or not.
 """
 type Filter {
@@ -9632,7 +9632,7 @@ Market Depth is a measure of the number of open buy and sell orders for a securi
 The depth of market measure provides an indication of the liquidity and depth for the instrument.
 """
 type MarketDepth {
-  "Market id"
+  "Market ID"
   market: Market!
 
   "Buy side price levels (if available)"
@@ -9653,7 +9653,7 @@ Market Depth is a measure of the number of open buy and sell orders for a securi
 The depth of market measure provides an indication of the liquidity and depth for the instrument.
 """
 type ObservableMarketDepth {
-  "Market id"
+  "Market ID"
   marketId: String!
 
   "Buy side price levels (if available)"
@@ -9801,7 +9801,7 @@ type Party {
   accounts(
     "Market ID - specify what market accounts for the party to return"
     marketId: ID
-    "Asset (USD, EUR etc)"
+    "Asset (ETH, DAI etc)"
     asset: String
     "Filter accounts by type (General account, margin account, etc...)"
     type: AccountType
@@ -9815,13 +9815,13 @@ type Party {
 
   "marginLevels"
   margins(
-    "market id off the margin to get, nil if all markets"
+    "market ID off the margin to get, nil if all markets"
     marketId: ID
   ): [MarginLevels!] @deprecated(reason: "Use marginsConnection instead")
 
-  "Margin level for a market"
+  "Margin levels for a market"
   marginsConnection(
-    "market id off the margin to get, nil if all markets"
+    "market ID for the requested margin levels, nil if all markets"
     marketId: ID
     "Pagination information"
     pagination: Pagination
@@ -9868,7 +9868,7 @@ type Party {
 
    "The list of the liquidity provision commitment for this party"
      liquidityProvisionsConnection(
-       "An optional market id"
+       "An optional market ID"
        market: String
        "An optional reference"
        reference: String
@@ -9897,7 +9897,7 @@ type Party {
   "The staking information for this Party"
   stake: PartyStake!
 
-  "return individual reward information"
+  "Return individual reward information"
   rewards(
     "An optional asset"
     asset: String
@@ -9910,15 +9910,15 @@ type Party {
   ): [Reward] @deprecated(reason: "Use rewardsConnection instead")
 
   rewardsConnection(
-    "An optional asset"
+    "An asset (optional)"
     asset: String
     "Cursor pagination information"
     pagination: Pagination
   ): RewardsConnection
 
-  "return net reward information"
+  "Return net reward information"
   rewardSummaries(
-    "An optional asset"
+    "An asset (optional)"
     asset: String
   ): [RewardSummary]
 
@@ -9940,9 +9940,9 @@ type PartyStake {
 
 "The type of stake linking"
 enum StakeLinkingType {
-  "The stake is being linked (deposited) to a vega stake account"
+  "The stake is being linked (deposited) to a Vega stake account"
   Link
-  "The stake is being unlined (removed) from a vega stake account"
+  "The stake is being unlinked (removed) from a Vega stake account"
   Unlink
 }
 
@@ -9950,8 +9950,8 @@ enum StakeLinkingType {
 enum StakeLinkingStatus {
   """
   The stake linking is pending in the Vega network. This means that
-  the Vega network have seen a StakeLinking, but is still to confirm
-  it's valid on the ethereum chain, and accepted by all nodes of the network
+  the Vega network have seen a stake linking, but is still to confirm
+  it's valid on the ethereum chain and accepted by all nodes of the network
   """
   Pending
   "The stake linking has been accepted and processed fully (balance updated) by the network"
@@ -9960,7 +9960,7 @@ enum StakeLinkingStatus {
   Rejected
 }
 
-"A Stake linking represent the intent from a party to deposit / remove stake on their account"
+"A stake linking represent the intent from a party to deposit / remove stake on their account"
 type StakeLinking {
   id: ID!
   "Type of linking: link|unlink"
@@ -10004,17 +10004,17 @@ type Position {
   "Average entry price for this position"
   averageEntryPrice: String!
 
-  "margins of the party for the given position"
+  "Margins of the party for the given position"
   margins: [MarginLevels!]
 
-  "margins of the party for the given position"
+  "Margins of the party for the given position"
   marginsConnection(pagination: Pagination): MarginConnection!
 
   "RFC3339Nano time the position was updated"
   updatedAt: String
 }
 
-"An order in Vega, if active it will be on the OrderBook for the market"
+"An order in Vega, if active it will be on the order book for the market"
 type Order {
   "Hash of the order data"
   id: ID!
@@ -10139,13 +10139,13 @@ type Trade {
 
 "The fee paid by the party when a trade occurs"
 type TradeFee {
-  "The maker fee, aggressive party to the other party (the one who had an order in the book)"
+  "The maker fee, paid by the aggressive party to the other party (the one who had an order in the book)"
   makerFee: String!
 
   "The infrastructure fee, a fee paid to the validators to maintain the Vega network"
   infrastructureFee: String!
 
-  "The fee paid to the liquidity providers to commit liquidity to the market"
+  "The fee paid to the liquidity providers that committed liquidity to the market"
   liquidityFee: String!
 }
 
@@ -10194,7 +10194,7 @@ type Erc20WithdrawalApproval {
   creation: String!
 }
 
-"The details of a withdrawal processed by vega"
+"The details of a withdrawal processed by Vega"
 type Withdrawal {
   "The Vega internal ID of the withdrawal"
   id: ID!
@@ -10212,7 +10212,7 @@ type Withdrawal {
   expiry: String!
   "RFC3339Nano time at which the withdrawal was created"
   createdTimestamp: String!
-  "RFC3339Nano time at which the withdrawal was finalized"
+  "RFC3339Nano time at which the withdrawal was finalised"
   withdrawnTimestamp: String
   "Hash of the transaction on the foreign chain"
   txHash: String
@@ -10234,13 +10234,13 @@ enum WithdrawalStatus {
   Open
   "The withdrawal have been cancelled by the network, either because it expired, or something went wrong with the foreign chain"
   Rejected
-  "The withdrawal was finalized, it was first valid, the foreign chain have executed it and the network updated all accounts"
+  "The withdrawal was finalised, it was valid, the foreign chain has executed it and the network updated all accounts"
   Finalized
 }
 
-"The details of a deposit processed by vega"
+"The details of a deposit processed by Vega"
 type Deposit {
-  "The Vega internal id of the deposit"
+  "The Vega internal ID of the deposit"
   id: ID!
   "The PartyID initiating the deposit"
   party: Party!
@@ -10252,7 +10252,7 @@ type Deposit {
   status: DepositStatus!
   "RFC3339Nano time at which the deposit was created"
   createdTimestamp: String!
-  "RFC3339Nano time at which the deposit was finalized"
+  "RFC3339Nano time at which the deposit was finalised"
   creditedTimestamp: String
   "Hash of the transaction on the foreign chain"
   txHash: String
@@ -10264,7 +10264,7 @@ enum DepositStatus {
   Open
   "The deposit have been cancelled by the network, either because it expired, or something went wrong with the foreign chain"
   Cancelled
-  "The deposit was finalised, it was first valid, the foreign chain has executed it and the network updated all accounts"
+  "The deposit was finalised, it was valid, the foreign chain has executed it and the network updated all accounts"
   Finalized
 }
 
@@ -10319,16 +10319,16 @@ enum OrderStatus {
   "This order was of type IOC or FOK and could not be processed by the matching engine due to lack of liquidity."
   Stopped
 
-  "This order is fully filled with remaining equals zero."
+  "This order is fully filled with remaining equalling zero."
   Filled
 
-  "This order was rejected while being processed in the core."
+  "This order was rejected while being processed."
   Rejected
 
   "This order was partially filled."
   PartiallyFilled
 
-  "This order has been removed from the order book and applies to pegged orders only"
+  "This order has been removed from the order book because the market is in auction, the reference price doesn't exist, or the order needs to be repriced and can't. Applies to pegged orders only"
   Parked
 }
 
@@ -10342,7 +10342,7 @@ enum ProposalRejectionReason {
   EnactTimeTooSoon
   "The specified enactment time is too late based on network parameters"
   EnactTimeTooLate
-  "The proposer for this proposal has insufficient token"
+  "The proposer for this proposal has insufficient tokens"
   InsufficientTokens
   "The instrument quote name and base name were the same"
   InvalidInstrumentSecurity
@@ -10382,17 +10382,17 @@ enum ProposalRejectionReason {
   OpeningAuctionDurationTooLarge
   "Market proposal is missing a liquidity commitment"
   MarketMissingLiquidityCommitment
-  "Market proposal market could not be instantiate in execution"
+  "Market could not be created"
   CouldNotInstantiateMarket
   "Market proposal market contained invalid product definition"
   InvalidFutureProduct
   "Market proposal is missing commitment amount"
   MissingCommitmentAmount
-  "Market proposal have invalid fee amount"
+  "Market proposal has invalid fee amount"
   InvalidFeeAmount
-  "Market proposal have one or more invalid shape"
+  "Market proposal has one or more invalid liquidity shapes"
   InvalidShape
-  "Market proposal use an invalid risk parameter"
+  "Market proposal uses an invalid risk parameter"
   InvalidRiskParameter
   "Proposal declined because the majority threshold was not reached"
   MajorityThresholdNotReached
@@ -10406,16 +10406,16 @@ enum ProposalRejectionReason {
   TooManyMarketDecimalPlaces
   "The market is invalid"
   InvalidMarket
-  "The proposal is rejected because the party do not have enough equity like share in the market"
+  "The proposal is rejected because the party does not have enough equity like share in the market"
   InsufficientEquityLikeShare
 }
 
 "Reason for the order being rejected by the core node"
 enum OrderRejectionReason {
-  "Market id is invalid"
+  "Market ID is invalid"
   InvalidMarketId
 
-  "Order id is invalid"
+  "Order ID is invalid"
   InvalidOrderId
 
   "Order is out of sequence"
@@ -10439,19 +10439,19 @@ enum OrderRejectionReason {
   "Edit is not allowed"
   EditNotAllowed
 
-  "Order amend fail"
+  "Amending the order failed"
   OrderAmendFailure
 
   "Order does not exist"
   OrderNotFound
 
-  "Party id is invalid"
+  "Party ID is invalid"
   InvalidPartyId
 
   "Market is closed"
   MarketClosed
 
-  "Margin check failed"
+  "Margin check failed - not enough available margin"
   MarginCheckFailed
 
   "Order missing general account"
@@ -10469,7 +10469,7 @@ enum OrderRejectionReason {
   "Invalid type"
   InvalidType
 
-  "Self trading"
+  "Order cannot be filled because it would require self trading"
   SelfTrading
 
   "Insufficient funds to pay fees"
@@ -10478,43 +10478,43 @@ enum OrderRejectionReason {
   "Invalid Time In Force"
   InvalidTimeInForce
 
-  "Attempt to amend order to GTT without ExpiryAt"
+  "Attempt to amend order to Good til Time without expiry time"
   AmendToGTTWithoutExpiryAt
 
-  "Attempt to amend ExpiryAt to a value before CreatedAt"
+  "Attempt to amend expiry time to a value before time order was created"
   ExpiryAtBeforeCreatedAt
 
-  "Attempt to amend to GTC without an ExpiryAt value"
+  "Attempt to amend to Good till Cancelled without an expiry time"
   GTCWithExpiryAtNotValid
 
-  "Amending to FOK or IOC is invalid"
+  "Amending to Fill or Kill, or Immediate or Cancel is invalid"
   CannotAmendToFOKOrIOC
 
-  "Amending to GFA or GFN is invalid"
+  "Amending to Good for Auction or Good for Normal is invalid"
   CannotAmendToGFAOrGFN
 
-  "Amending from GFA or GFN is invalid"
+  "Amending from Good for Auction or Good for Normal is invalid"
   CannotAmendFromGFAOrGFN
 
-  "Invalid Market Type"
+  "Invalid market type"
   InvalidMarketType
 
-  "Good for normal order received during an auction"
+  "Good for Normal order received during an auction"
   GFNOrderDuringAuction
 
-  "Good for auction order received during continuous trading"
+  "Good for Auction order received during continuous trading"
   GFAOrderDuringContinuousTrading
 
-  "IOC orders are not allowed during auction"
+  "Immediate or Cancel orders are not allowed during auction"
   IOCOrderDuringAuction
 
-  "FOK orders are not allowed during auction"
+  "Fill or Kill orders are not allowed during auction"
   FOKOrderDuringAuction
 
-  "Pegged orders must be LIMIT orders"
+  "Pegged orders must be limit orders"
   PeggedOrderMustBeLimitOrder
 
-  "Pegged orders can only have TIF GTC or GTT"
+  "Pegged orders can only have a time in force of Good til Cancelled or Good til Time"
   PeggedOrderMustBeGTTOrGTC
 
   "Pegged order must have a reference price"
@@ -10549,10 +10549,10 @@ enum OrderRejectionReason {
 }
 
 enum OrderType {
-  "the default order type"
+  "An order to buy or sell at the market's current best available price"
   Market
 
-  "mentioned in ticket, but as yet unused order type"
+  "Order that uses a pre-specified price to buy or sell"
   Limit
 
   """
@@ -10564,7 +10564,7 @@ enum OrderType {
 
 "The current state of a market"
 enum MarketState {
-  "The Governance proposal valid and accepted"
+  "The governance proposal valid and accepted"
   Proposed
   "Outcome of governance votes is to reject the market"
   Rejected
@@ -10610,14 +10610,14 @@ enum MarketTradingMode {
 
 "Whether the placer of an order is aiming to buy or sell on the market"
 enum Side {
-  "The Placer of the order is aiming to buy"
+  "The placer of the order is aiming to buy"
   Buy
 
   "The placer of the order is aiming to sell"
   Sell
 }
 
-"The interval for trade candles when subscribing via VEGA graphql, default is I15M"
+"The interval for trade candles when subscribing via Vega GraphQL, default is I15M"
 enum Interval {
   "1 minute interval"
   I1M
@@ -10646,7 +10646,14 @@ enum AccountType {
   GlobalInsurance
   "Settlement - only for 'system' party"
   Settlement
-  "Margin - The leverage account for parties, contains funds set aside for the margin needed to support a party's open positions. Each party will have a margin account for each market they have traded in. The required initial margin is allocated to each market from the general account, and it cannot be withdrawn or used as margin on another market until it's released back into the general account. The protocol uses an internal accounting system to segregate funds held as margin from other funds to ensure they are never lost or 'double spent'"
+  """
+  Margin - The leverage account for parties, contains funds set aside for the margin needed to support 
+  a party's open positions. Each party will have a margin account for each market they have traded in. 
+  The required initial margin is allocated to each market from the general account, and it cannot be withdrawn 
+  or used as margin on another market until it's released back into the general account. 
+  The protocol uses an internal accounting system to segregate funds held as margin from other funds 
+  to ensure they are never lost or 'double spent'
+  """
   Margin
   "General account - the account containing 'unused' collateral for parties"
   General
@@ -10700,7 +10707,7 @@ oracle engine.
 """
 type OracleSpecConfiguration {
   """
-  pubKeys is the list of authorized public keys that signed the data for this
+  pubKeys is the list of authorised public keys that signed the data for this
   oracle. All the public keys in the oracle data should be contained in these
   public keys.
   """
@@ -10734,13 +10741,13 @@ type NewMarket {
   commitment: NewMarketCommitment
 }
 
-"A commitment of liquidity to be made by the party which proposes a market"
+"A commitment of liquidity to be made by the party that proposes a market"
 type NewMarketCommitment {
   "Specified as a unit-less number that represents the amount of the settlement asset of the market"
   commitmentAmount: String!
   """
   Nominated liquidity fee factor, which is an input to the calculation of
-  taker fees on the market, as per setting fees and rewarding liquidity provider
+  maker fees on the market, as per setting fees and rewarding liquidity provider
   """
   fee: String!
   "A set of liquidity sell orders to meet the liquidity provision obligation"
@@ -10807,7 +10814,7 @@ type NewAsset {
   "The minimum stake to become a liquidity provider for any market using this asset for settlement"
   minLpStake: String!
 
-  "the source of the new Asset"
+  "The source of the new asset"
   source: AssetSource!
 }
 
@@ -10951,13 +10958,13 @@ type ProposalVotes {
 }
 
 type ProposalVoteSide {
-  "All votes casted for this side"
+  "All votes cast for this side"
   votes: [Vote!]
-  "Total number of votes casted for this side"
+  "Total number of votes cast for this side"
   totalNumber: String!
-  "Total weight of governance token from the votes casted for this side"
+  "Total weight of governance token from the votes cast for this side"
   totalWeight: String!
-  "Total tokens of governance token from the votes casted for this side"
+  "Total number of governance tokens from the votes cast for this side"
   totalTokens: String!
 }
 
@@ -10981,7 +10988,7 @@ type Vote {
   "The ID of the proposal this vote applies to"
   proposalId: ID!
 
-  "Total number of governance token for the party that casted the vote"
+  "Total number of governance tokens for the party that cast the vote"
   governanceTokenBalance: String!
 
   "The weight of this vote based on the total of governance token"
@@ -10991,7 +10998,7 @@ type Vote {
 type ProposalVote {
   "Cast vote"
   vote: Vote!
-  "Proposal casting the vote on"
+  "Proposal the vote is cast on"
   proposalId: ID!
 }
 
@@ -11015,11 +11022,11 @@ type TransferBalance {
 }
 
 type LedgerEntry {
-  "account from which the asset was taken"
+  "Account from which the asset was taken"
   fromAccount: String!
-  "account to which the balance was transferred"
+  "Account to which the balance was transferred"
   toAccount: String!
-  "the amount transferred"
+  "The amount transferred"
   amount: String!
   "The transfer reference"
   reference: String!
@@ -11030,25 +11037,25 @@ type LedgerEntry {
 }
 
 type TransferResponse {
-  "the ledger entries and balances resulting from a transfer request"
+  "The ledger entries and balances resulting from a transfer request"
   transfers: [LedgerEntry!]
-  "the balances of accounts involved in the transfer"
+  "The balances of accounts involved in the transfer"
   balances: [TransferBalance!]
 }
 
 type TransferResponses {
-  "a group of transfer responses - events from core"
+  "A group of transfer responses - events from core"
   responses: [TransferResponse!]
 }
 
 type PositionResolution {
-  "the market ID where position resolution happened"
+  "The market ID where position resolution happened"
   marketId: ID!
-  "number of distressed parties on market"
+  "Number of distressed parties on market"
   distressed: Int!
-  "number of parties closed out"
+  "Number of parties closed out"
   closed: Int!
-  "the mark price at which parties were distressed/closed out"
+  "The mark price at which parties were distressed/closed out"
   markPrice: String!
 }
 
@@ -11082,11 +11089,11 @@ type SettlePosition {
 type SettleDistressed {
   "the market in which a position was closed out"
   marketId: ID!
-  "the party who closed out"
+  "the party that was closed out"
   partyId: ID!
   "the margin taken from distressed party"
   margin: String!
-  "the price at which position was closed out"
+  "the price at which the position was closed out"
   price: String!
 }
 
@@ -11098,11 +11105,11 @@ type MarketTick {
 }
 
 type AuctionEvent {
-  "the market ID"
+  "The ID of the market that went into auction"
   marketId: ID!
-  "event fired because of auction end"
+  "Event fired because of auction end"
   leave: Boolean!
-  "event related to opening auction"
+  "Event related to opening auction"
   openingAuction: Boolean!
   "RFC3339Nano start time of auction"
   auctionStart: String!
@@ -11117,7 +11124,7 @@ type AuctionEvent {
 enum AuctionTrigger {
   "Invalid trigger (or no auction)"
   Unspecified
-  "Auction because market is trading FBA"
+  "Auction because market has a frequent batch auction trading mode"
   Batch
   "Opening auction"
   Opening
@@ -11150,7 +11157,7 @@ enum BusEventType {
   Vote
   "Market data has been updated"
   MarketData
-  "Validator nodes signatures for an event"
+  "Validator node signatures for an event"
   NodeSignature
   "A position has been closed without sufficient insurance pool balance to cover it"
   LossSocialization
@@ -11211,11 +11218,11 @@ union Event =
   | LiquidityProvision
 
 type BusEvent {
-  "the id for this event"
+  "the ID for this event"
   eventId: ID!
   "the block hash"
   block: String!
-  "the type of event we're dealing with"
+  "the type of event"
   type: BusEventType!
   "the payload - the wrapped event"
   event: Event!
@@ -11247,22 +11254,22 @@ enum LiquidityProvisionStatus {
   Active
   "A liquidity provision stopped by the network"
   Stopped
-  "A Cancelled Liquidity provision"
+  "A cancelled liquidity provision"
   Cancelled
-  "A liquidity provision was invalid and got rejected"
+  "Liquidity provision was invalid and got rejected"
   Rejected
-  "The liquidity provision is valid and accepted by network, but orders aren't deployed"
+  "The liquidity provision is valid and accepted by the network, but orders aren't deployed"
   Undeployed
   """
-  The liquidity provision is valid and accepted by network, but orders aren't deployed.
-  but have never been deployed. I when it's possible to deploy them for the first time
+  The liquidity provision is valid and accepted by the network, but orders aren't deployed and
+  have never been deployed. If when it's possible to deploy them for the first time the
   margin check fails, then they will be cancelled without any penalties.
   """
   Pending
 }
 
 type LiquidityOrderReference {
-  "The id of the pegged order generated to fulfill this commitment"
+  "The ID of the pegged order generated to fulfill this commitment"
   order: Order
   "The liquidity order"
   liquidityOrder: LiquidityOrder!
@@ -11278,11 +11285,11 @@ type LiquidityProvision {
   createdAt: String!
   "RFC3339Nano time of when the liquidity provision was updated"
   updatedAt: String
-  "Market identifier for the order"
+  "Market ID for the order"
   market: Market!
   "Specified as a unit-less number that represents the amount of settlement asset of the market."
   commitmentAmount: String!
-  "nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers."
+  "Nominated liquidity fee factor, which is an input to the calculation of maker fees on the market, as per setting fees and rewarding liquidity providers."
   fee: String!
   "a set of liquidity sell orders to meet the liquidity provision obligation."
   sells: [LiquidityOrderReference!]!
