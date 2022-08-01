@@ -22,8 +22,6 @@ pipeline {
         timeout(time: isPRBuild() ? 50 : 120, unit: 'MINUTES')
     }
     parameters {
-        string( name: 'PROTOS_BRANCH', defaultValue: 'develop',
-                description: 'Git branch, tag or hash of the vegaprotocol/protos repository')
         string( name: 'SYSTEM_TESTS_BRANCH', defaultValue: 'develop',
                 description: 'Git branch, tag or hash of the vegaprotocol/system-tests repository')
         string( name: 'VEGACAPSULE_BRANCH', defaultValue: '',
@@ -41,10 +39,11 @@ pipeline {
         BUILD_UID="${BUILD_NUMBER}-${EXECUTOR_NUMBER}"
         DOCKER_CONFIG="${env.WORKSPACE}/docker-home"
         DOCKER_BUILD_ARCH = "${ isPRBuild() ? 'linux/amd64' : 'linux/arm64,linux/amd64' }"
-        DOCKER_IMAGE_TAG = "${ env.TAG_NAME ? env.TAG_NAME : env.BRANCH_NAME }"
+        DOCKER_IMAGE_TAG = "${ env.TAG_NAME ? 'latest' : env.BRANCH_NAME }"
         DOCKER_VEGA_BUILDER_NAME="vega-${BUILD_UID}"
         DOCKER_DATANODE_BUILDER_NAME="data-node-${BUILD_UID}"
         DOCKER_VEGAWALLET_BUILDER_NAME="vegawallet-${BUILD_UID}"
+        DOCKER_BUILD_CACHE="${env.WORKSPACE}/docker-cache"
     }
 
     stages {
@@ -249,15 +248,18 @@ pipeline {
                 stage('create docker builders') {
                     steps {
                         sh label: 'vega builder', script: """#!/bin/bash -e
-                            docker buildx create --name ${DOCKER_VEGA_BUILDER_NAME}
+                            docker buildx create --bootstrap --name ${DOCKER_VEGA_BUILDER_NAME}
                         """
                         sh label: 'data-node builder', script: """#!/bin/bash -e
-                            docker buildx create --name ${DOCKER_DATANODE_BUILDER_NAME}
+                            docker buildx create --bootstrap --name ${DOCKER_DATANODE_BUILDER_NAME}
                         """
                         sh label: 'vegawallet builder', script: """#!/bin/bash -e
-                            docker buildx create --name ${DOCKER_VEGAWALLET_BUILDER_NAME}
+                            docker buildx create --bootstrap --name ${DOCKER_VEGAWALLET_BUILDER_NAME}
                         """
                         sh 'docker buildx ls'
+                        sh label: 'create cache directory for docker buildx', script: """#!/bin/bash -e
+                            mkdir -p '${DOCKER_BUILD_CACHE}'
+                        """
                     }
                 }  // docker builders
             }
@@ -270,6 +272,9 @@ pipeline {
         // Begin TESTS
         //
         stage('Tests') {
+            environment {
+                DOCKER_IMAGE_TAG_VERSION = "${ env.TAG_NAME ?: versionHash }"
+            }
             parallel {
                 stage('unit tests') {
                     options { retry(3) }
@@ -307,7 +312,6 @@ pipeline {
                             systemTestsCapsule ignoreFailure: !isPRBuild(),
                                 timeout: 30,
                                 vegaVersion: commitHash,
-                                protos: params.PROTOS_BRANCH,
                                 systemTests: params.SYSTEM_TESTS_BRANCH,
                                 vegacapsule: params.VEGACAPSULE_BRANCH,
                                 vegatools: params.VEGATOOLS_BRANCH,
@@ -323,7 +327,6 @@ pipeline {
                             systemTestsCapsule ignoreFailure: !isPRBuild(),
                                 timeout: 30,
                                 vegaVersion: commitHash,
-                                protos: params.PROTOS_BRANCH,
                                 systemTests: params.SYSTEM_TESTS_BRANCH,
                                 vegacapsule: params.VEGACAPSULE_BRANCH,
                                 vegatools: params.VEGATOOLS_BRANCH,
@@ -345,7 +348,9 @@ pipeline {
                                     --builder ${DOCKER_VEGA_BUILDER_NAME} \
                                     --platform=${DOCKER_BUILD_ARCH} \
                                     -f docker/vega.dockerfile \
+                                    -t ghcr.io/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_VERSION} \
                                     -t ghcr.io/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG} \
+                                    --cache-to type=local,mode=max,dest='${DOCKER_BUILD_CACHE}' \
                                     .
                             """
                         }
@@ -360,7 +365,9 @@ pipeline {
                                     --builder ${DOCKER_DATANODE_BUILDER_NAME} \
                                     --platform=${DOCKER_BUILD_ARCH} \
                                     -f docker/data-node.dockerfile \
+                                    -t ghcr.io/vegaprotocol/vega/data-node:${DOCKER_IMAGE_TAG_VERSION} \
                                     -t ghcr.io/vegaprotocol/vega/data-node:${DOCKER_IMAGE_TAG} \
+                                    --cache-to type=local,mode=max,dest='${DOCKER_BUILD_CACHE}' \
                                     .
                             """
                         }
@@ -375,7 +382,9 @@ pipeline {
                                     --builder ${DOCKER_VEGAWALLET_BUILDER_NAME} \
                                     --platform=${DOCKER_BUILD_ARCH} \
                                     -f docker/vegawallet.dockerfile \
+                                    -t ghcr.io/vegaprotocol/vega/vegawallet:${DOCKER_IMAGE_TAG_VERSION} \
                                     -t ghcr.io/vegaprotocol/vega/vegawallet:${DOCKER_IMAGE_TAG} \
+                                    --cache-to type=local,mode=max,dest='${DOCKER_BUILD_CACHE}' \
                                     .
                             """
                         }
@@ -391,6 +400,9 @@ pipeline {
         // Begin PUBLISH
         //
         stage('Publish') {
+            environment {
+                DOCKER_IMAGE_TAG_VERSION = "${ env.TAG_NAME ?: versionHash }"
+            }
             parallel {
                 stage('vega docker image') {
                     when {
@@ -400,6 +412,7 @@ pipeline {
                             // changeRequest() // uncomment only for testing
                         }
                     }
+                    options { retry(3) }
                     steps {
                         dir('vega') {
                             sh label: 'publish vega docker image', script: """#!/bin/bash -e
@@ -408,6 +421,8 @@ pipeline {
                                     --platform=${DOCKER_BUILD_ARCH} \
                                     -f docker/vega.dockerfile \
                                     -t ghcr.io/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG} \
+                                    -t ghcr.io/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_VERSION} \
+                                    --cache-from type=local,src='${DOCKER_BUILD_CACHE}' \
                                     --push \
                                     .
                             """
@@ -429,6 +444,7 @@ pipeline {
                             // changeRequest() // uncomment only for testing
                         }
                     }
+                    options { retry(3) }
                     steps {
                         dir('vega') {
                             sh label: 'publish data-node docker image', script: """#!/bin/bash -e
@@ -437,6 +453,8 @@ pipeline {
                                     --platform=${DOCKER_BUILD_ARCH} \
                                     -f docker/data-node.dockerfile \
                                     -t ghcr.io/vegaprotocol/vega/data-node:${DOCKER_IMAGE_TAG} \
+                                    -t ghcr.io/vegaprotocol/vega/data-node:${DOCKER_IMAGE_TAG_VERSION} \
+                                    --cache-from type=local,src='${DOCKER_BUILD_CACHE}' \
                                     --push \
                                     .
                             """
@@ -458,6 +476,7 @@ pipeline {
                             // changeRequest() // uncomment only for testing
                         }
                     }
+                    options { retry(3) }
                     steps {
                         dir('vega') {
                             sh label: 'publish vegawallet docker image', script: """#!/bin/bash -e
@@ -465,7 +484,9 @@ pipeline {
                                     --builder ${DOCKER_VEGAWALLET_BUILDER_NAME} \
                                     --platform=${DOCKER_BUILD_ARCH} \
                                     -f docker/vegawallet.dockerfile \
-                                    -t ghcr.io/vegaprotocol/vega/vegawalleet:${DOCKER_IMAGE_TAG} \
+                                    -t ghcr.io/vegaprotocol/vega/vegawallet:${DOCKER_IMAGE_TAG} \
+                                    -t ghcr.io/vegaprotocol/vega/vegawallet:${DOCKER_IMAGE_TAG_VERSION} \
+                                    --cache-from type=local,src='${DOCKER_BUILD_CACHE}' \
                                     --push \
                                     .
                             """
@@ -487,7 +508,6 @@ pipeline {
                     environment {
                         AWS_REGION = 'eu-west-2'
                     }
-
                     steps {
                         dir('build-linux-amd64') {
                             script {
@@ -580,7 +600,7 @@ pipeline {
                 branch 'develop'
             }
             steps {
-                devnetDeploy vegaVersion: commitHash,
+                devnetDeploy vegaVersion: versionHash,
                     wait: false
             }
         }
@@ -627,6 +647,7 @@ pipeline {
                     docker logout ghcr.io
                 '''
             }
+            cleanWs()
         }
     }
 }
