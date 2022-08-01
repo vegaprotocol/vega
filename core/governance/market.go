@@ -17,12 +17,12 @@ import (
 	"fmt"
 	"time"
 
-	proto "code.vegaprotocol.io/protos/vega"
-	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
+	proto "code.vegaprotocol.io/vega/protos/vega"
+	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 )
 
 var (

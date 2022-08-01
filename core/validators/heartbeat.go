@@ -20,10 +20,10 @@ import (
 	"sort"
 	"time"
 
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/core/txn"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/logging"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
 	"github.com/cenkalti/backoff"
 	ecrypto "github.com/ethereum/go-ethereum/crypto"

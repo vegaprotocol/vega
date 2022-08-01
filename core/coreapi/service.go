@@ -17,10 +17,10 @@ import (
 	"errors"
 	"sync"
 
-	apipb "code.vegaprotocol.io/protos/vega/api/v1"
 	"code.vegaprotocol.io/vega/core/broker"
 	"code.vegaprotocol.io/vega/core/coreapi/services"
 	"code.vegaprotocol.io/vega/logging"
+	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
 )
 
 var ErrServiceDisabled = errors.New("service disabled")

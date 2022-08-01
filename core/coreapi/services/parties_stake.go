@@ -17,12 +17,12 @@ import (
 	"sort"
 	"sync"
 
-	coreapipb "code.vegaprotocol.io/protos/vega/api/v1"
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/subscribers"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	coreapipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
 type StakeLinkingEvent interface {

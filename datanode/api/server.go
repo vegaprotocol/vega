@@ -30,10 +30,10 @@ import (
 	"github.com/fullstorydev/grpcui/standalone"
 	"golang.org/x/sync/errgroup"
 
-	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
-	protoapi2 "code.vegaprotocol.io/protos/data-node/api/v2"
-	vegaprotoapi "code.vegaprotocol.io/protos/vega/api/v1"
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
+	protoapi2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"

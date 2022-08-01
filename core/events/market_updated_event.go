@@ -16,8 +16,8 @@ import (
 	"context"
 	"fmt"
 
-	proto "code.vegaprotocol.io/protos/vega"
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	proto "code.vegaprotocol.io/vega/protos/vega"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"code.vegaprotocol.io/vega/core/types"
 )

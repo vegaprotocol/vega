@@ -18,7 +18,7 @@ import (
 
 	vgreflect "code.vegaprotocol.io/vega/libs/reflect"
 
-	proto "code.vegaprotocol.io/protos/vega"
+	proto "code.vegaprotocol.io/vega/protos/vega"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 )
 

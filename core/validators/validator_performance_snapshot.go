@@ -15,7 +15,7 @@ package validators
 import (
 	"sort"
 
-	v1 "code.vegaprotocol.io/protos/vega/snapshot/v1"
+	v1 "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
 
 func (vp *validatorPerformance) Deserialize(proto *v1.ValidatorPerformance) {

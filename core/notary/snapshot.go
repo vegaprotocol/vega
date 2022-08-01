@@ -18,9 +18,9 @@ import (
 	"sort"
 	"strings"
 
-	v1 "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
+	v1 "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
 	"code.vegaprotocol.io/vega/libs/proto"
 )

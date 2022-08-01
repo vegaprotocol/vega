@@ -17,9 +17,9 @@ import (
 	"context"
 	"testing"
 
-	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
+	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 
-	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
+	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
 	"code.vegaprotocol.io/vega/core/assets"
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"

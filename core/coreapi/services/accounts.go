@@ -16,10 +16,10 @@ import (
 	"context"
 	"sync"
 
-	vegapb "code.vegaprotocol.io/protos/vega"
-	coreapipb "code.vegaprotocol.io/protos/vega/api/v1"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/subscribers"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
+	coreapipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
 )
 
 type accountE interface {

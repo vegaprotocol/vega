@@ -20,11 +20,11 @@ import (
 	"sync"
 	"testing"
 
-	types "code.vegaprotocol.io/protos/vega"
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/subscribers"
 	dtypes "code.vegaprotocol.io/vega/core/types"
+	types "code.vegaprotocol.io/vega/protos/vega"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/stretchr/testify/assert"
 )

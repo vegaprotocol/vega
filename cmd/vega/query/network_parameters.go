@@ -16,7 +16,7 @@ import (
 	"errors"
 	"fmt"
 
-	apipb "code.vegaprotocol.io/protos/vega/api/v1"
+	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
 
 	"github.com/golang/protobuf/jsonpb"
 )

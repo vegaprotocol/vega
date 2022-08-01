@@ -18,9 +18,9 @@ import (
 	"strings"
 	"time"
 
-	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/logging"
+	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 )
 
 // Broker interface. Do not need to mock (use package broker/mock).

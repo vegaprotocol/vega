@@ -8,8 +8,8 @@ import (
 	context "context"
 	reflect "reflect"
 
-	v1 "code.vegaprotocol.io/protos/vega/api/v1"
-	v10 "code.vegaprotocol.io/protos/vega/commands/v1"
+	v1 "code.vegaprotocol.io/vega/protos/vega/api/v1"
+	v10 "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	gomock "github.com/golang/mock/gomock"
 )
 

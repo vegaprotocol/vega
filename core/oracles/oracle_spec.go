@@ -18,9 +18,9 @@ import (
 	"strconv"
 	"strings"
 
-	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
+	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 )
 
 var (

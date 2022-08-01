@@ -19,13 +19,13 @@ import (
 	"math/big"
 	"strings"
 
-	vgproto "code.vegaprotocol.io/protos/vega"
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	bridge "code.vegaprotocol.io/vega/core/contracts/erc20_bridge_logic_restricted"
 	multisig "code.vegaprotocol.io/vega/core/contracts/multisig_control"
 	"code.vegaprotocol.io/vega/core/staking"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
+	vgproto "code.vegaprotocol.io/vega/protos/vega"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
 	"github.com/cenkalti/backoff"
 	eth "github.com/ethereum/go-ethereum"

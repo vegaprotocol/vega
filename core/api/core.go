@@ -21,10 +21,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	ptypes "code.vegaprotocol.io/protos/vega"
-	protoapi "code.vegaprotocol.io/protos/vega/api/v1"
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/evtforward"
 	"code.vegaprotocol.io/vega/core/metrics"
@@ -33,6 +29,10 @@ import (
 	"code.vegaprotocol.io/vega/core/vegatime"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
+	ptypes "code.vegaprotocol.io/vega/protos/vega"
+	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/wallet/crypto"
 
 	"github.com/pkg/errors"

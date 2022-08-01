@@ -3,7 +3,7 @@ package mocks
 import (
 	"time"
 
-	v1 "code.vegaprotocol.io/protos/vega/wallet/v1"
+	v1 "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
 	"code.vegaprotocol.io/vega/wallet/service"
 )
 

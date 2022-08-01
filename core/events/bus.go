@@ -18,8 +18,8 @@ import (
 	"strconv"
 	"strings"
 
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/pkg/errors"
 )

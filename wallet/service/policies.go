@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	v1 "code.vegaprotocol.io/protos/vega/wallet/v1"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	v1 "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
 )
 
 type ConsentConfirmation struct {

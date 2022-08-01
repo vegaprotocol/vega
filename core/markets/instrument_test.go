@@ -22,9 +22,9 @@ import (
 	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/logging"
 
-	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/core/products"
 	"code.vegaprotocol.io/vega/core/types"
+	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

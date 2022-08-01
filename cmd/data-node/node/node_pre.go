@@ -20,7 +20,6 @@ import (
 	"code.vegaprotocol.io/vega/datanode/service"
 	"code.vegaprotocol.io/vega/paths"
 
-	vegaprotoapi "code.vegaprotocol.io/protos/vega/api/v1"
 	"code.vegaprotocol.io/vega/datanode/broker"
 	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/datanode/pprof"
@@ -28,6 +27,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlsubscribers"
 	"code.vegaprotocol.io/vega/datanode/subscribers"
 	"code.vegaprotocol.io/vega/logging"
+	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 
 	"google.golang.org/grpc"
 )

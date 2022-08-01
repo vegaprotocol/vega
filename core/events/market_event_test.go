@@ -16,11 +16,11 @@ import (
 	"context"
 	"testing"
 
-	vegapb "code.vegaprotocol.io/protos/vega"
-	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
+	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 	"github.com/stretchr/testify/assert"
 )
 

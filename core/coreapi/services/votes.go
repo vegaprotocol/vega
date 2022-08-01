@@ -17,9 +17,9 @@ import (
 	"errors"
 	"sync"
 
-	vegapb "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/subscribers"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
 var ErrMissingProposalOrPartyFilter = errors.New("missing proposal or party filter")

@@ -15,10 +15,10 @@ package entities
 import (
 	"fmt"
 
-	"code.vegaprotocol.io/protos/vega"
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
-	v1 "code.vegaprotocol.io/protos/vega/oracles/v1"
+	"code.vegaprotocol.io/vega/protos/vega"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+	v1 "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 	"github.com/jackc/pgtype"
 )
 

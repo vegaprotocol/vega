@@ -16,7 +16,7 @@ import (
 	"context"
 	"time"
 
-	api "code.vegaprotocol.io/protos/vega/api/v1"
+	api "code.vegaprotocol.io/vega/protos/vega/api/v1"
 
 	"google.golang.org/grpc"
 )

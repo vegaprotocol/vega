@@ -15,8 +15,8 @@ package types_test
 import (
 	"testing"
 
-	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/core/types"
+	proto "code.vegaprotocol.io/vega/protos/vega"
 	"github.com/stretchr/testify/require"
 )
 

@@ -15,8 +15,8 @@ package types
 import (
 	"fmt"
 
-	vegapb "code.vegaprotocol.io/protos/vega"
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
 
 type GovernanceData = vegapb.GovernanceData

@@ -19,7 +19,7 @@ import (
 	"testing"
 	"time"
 
-	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
+	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
 	"code.vegaprotocol.io/vega/core/liquidity/target"
 	"code.vegaprotocol.io/vega/core/types"

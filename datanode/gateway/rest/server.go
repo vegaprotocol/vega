@@ -19,11 +19,11 @@ import (
 	"net/http"
 	"strconv"
 
-	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
-	protoapiv2 "code.vegaprotocol.io/protos/data-node/api/v2"
-	vegaprotoapi "code.vegaprotocol.io/protos/vega/api/v1"
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	"code.vegaprotocol.io/vega/logging"
+	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
+	protoapiv2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/rs/cors"
