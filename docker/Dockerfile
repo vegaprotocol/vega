@@ -7,5 +7,7 @@ EXPOSE 3002/tcp 3003/tcp 3004/tcp 26658/tcp 40000/tcp
 COPY --from=dlv /usr/local/bin/dlv /usr/local/bin/
 COPY --from=geth /usr/local/bin/geth /usr/local/bin/
 RUN chmod 1777 /tmp
-RUN apt update && DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends ca-certificates
+RUN apt update \
+    && DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 ADD bin/* /usr/local/bin/
