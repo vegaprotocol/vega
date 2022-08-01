@@ -38,6 +38,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5609](https://github.com/vegaprotocol/vega/issues/5609) - Set event forwarder last seen height after snapshot restore
 - [5629](https://github.com/vegaprotocol/vega/issues/5629) - Fixes for loading voting power from checkpoint with non genesis validators
 - [5626](https://github.com/vegaprotocol/vega/issues/5626) - Update `protos`, remove optional types
+- [5665](https://github.com/vegaprotocol/vega/issues/5665) - Binary version hash always contain `-modified` suffix
 
 ## 0.53.0
 
