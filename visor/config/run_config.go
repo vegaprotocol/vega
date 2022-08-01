@@ -15,7 +15,7 @@ package config
 import (
 	"fmt"
 
-	"code.vegaprotocol.io/shared/paths"
+	"code.vegaprotocol.io/vega/paths"
 )
 
 type BinaryConfig struct {

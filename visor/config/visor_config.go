@@ -19,8 +19,8 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/paths"
 	"github.com/fsnotify/fsnotify"
 	"golang.org/x/sync/errgroup"
 )
