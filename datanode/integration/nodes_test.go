@@ -16,7 +16,7 @@ import "testing"
 
 func TestNodes(t *testing.T) {
 	queries := map[string]string{
-		"Nodes": "{ nodes { id, pubkey, tmPubkey, ethereumAdddress, infoUrl, location, name, avatarUrl, status, stakedByOperator, stakedByDelegates, stakedTotal, pendingStake, delegations { party { id }, epoch, amount }, rewardScore { validatorStatus, validatorScore }, rankingScore { previousStatus, status, votingPower, performanceScore, stakeScore, rankingScore }, epochData { total, offline, online } } }",
+		"Nodes": "{ nodes { id, pubkey, tmPubkey, ethereumAddress, infoUrl, location, name, avatarUrl, status, stakedByOperator, stakedByDelegates, stakedTotal, pendingStake, delegations { party { id }, epoch, amount }, rewardScore { validatorStatus, validatorScore }, rankingScore { previousStatus, status, votingPower, performanceScore, stakeScore, rankingScore }, epochData { total, offline, online } } }",
 	}
 
 	for name, query := range queries {

@@ -1187,7 +1187,7 @@ message Node {
   // Public key of Tendermint
   string tm_pub_key = 3;
   // Ethereum public key of the node
-  string ethereum_adddress = 4;
+  string ethereum_address = 4;
   // URL where I can find out more info on the node
   string info_url = 5;
   // Country code for the location of the node

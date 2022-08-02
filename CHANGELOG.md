@@ -41,6 +41,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5626](https://github.com/vegaprotocol/vega/issues/5626) - Update `protos`, remove optional types
 - [5665](https://github.com/vegaprotocol/vega/issues/5665) - Binary version hash always contain `-modified` suffix
 - [5633](https://github.com/vegaprotocol/vega/issues/5633) - Allow `minProposerEquityLikeShare` to accept 0
+- [5672](https://github.com/vegaprotocol/vega/issues/5672) - Typo fixed in datanode `ethereum` address
 
 ## 0.53.0
 

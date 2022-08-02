@@ -856,7 +856,7 @@ type Node {
   tmPubkey: String!
 
   "Ethereum public key of the node"
-  ethereumAdddress: String!
+  ethereumAddress: String!
 
   "URL from which you can get more info about the node."
   infoUrl: String!

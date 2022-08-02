@@ -334,7 +334,7 @@ type Node struct {
 	Id                HexString
 	Pubkey            string
 	TmPubkey          string
-	EthereumAdddress  string
+	EthereumAddress   string
 	InfoUrl           string
 	Location          string
 	StakedByOperator  string

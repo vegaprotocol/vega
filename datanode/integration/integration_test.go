@@ -170,7 +170,7 @@ func compareResponses(t *testing.T, oldResp, newResp interface{}) {
 		return input
 	})
 	normaliseEthereumAddress := cmp.Transformer("normaliseEthereumAddress", func(input Node) Node {
-		input.EthereumAdddress = strings.ToLower(input.EthereumAdddress)
+		input.EthereumAddress = strings.ToLower(input.EthereumAddress)
 		return input
 	})
 
