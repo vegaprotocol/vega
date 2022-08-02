@@ -33,9 +33,10 @@ const (
 )
 
 type VisorConfigFile struct {
-	UpgradeFolder        string `toml:"nextUpgradeFolder"`
-	MaxNumberOfRestarts  int    `toml:"maxNumberOfRestarts"`
-	RestartsDelaySeconds int    `toml:"restartsDelaySeconds"`
+	UpgradeFolder            string `toml:"nextUpgradeFolder"`
+	MaxNumberOfRestarts      int    `toml:"maxNumberOfRestarts"`
+	RestartsDelaySeconds     int    `toml:"restartsDelaySeconds"`
+	StopSignalTimeoutSeconds int    `toml:"stopSignalTimeoutSeconds"`
 }
 
 func parseAndValidateVisorConfigFile(path string) (*VisorConfigFile, error) {
@@ -65,9 +66,10 @@ func DefaultVisorConfig(log *logging.Logger, homePath string) *VisorConfig {
 		homePath:   homePath,
 		configPath: path.Join(homePath, configFileName),
 		data: &VisorConfigFile{
-			UpgradeFolder:        "upgrade",
-			MaxNumberOfRestarts:  3,
-			RestartsDelaySeconds: 5,
+			UpgradeFolder:            "upgrade",
+			MaxNumberOfRestarts:      3,
+			RestartsDelaySeconds:     5,
+			StopSignalTimeoutSeconds: 15,
 		},
 	}
 }
@@ -190,6 +192,13 @@ func (pc *VisorConfig) RestartsDelaySeconds() int {
 	defer pc.mut.RUnlock()
 
 	return pc.data.RestartsDelaySeconds
+}
+
+func (pc *VisorConfig) StopSignalTimeoutSeconds() int {
+	pc.mut.RLock()
+	defer pc.mut.RUnlock()
+
+	return pc.data.StopSignalTimeoutSeconds
 }
 
 func (pc *VisorConfig) WriteToFile() error {

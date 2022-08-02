@@ -30,17 +30,19 @@ import (
 )
 
 type BinariesRunner struct {
-	mut        sync.RWMutex
-	running    map[string]*exec.Cmd
-	binsFolder string
-	log        *logging.Logger
+	mut         sync.RWMutex
+	running     map[string]*exec.Cmd
+	binsFolder  string
+	log         *logging.Logger
+	stopTimeout time.Duration
 }
 
-func NewBinariesRunner(log *logging.Logger, binsFolder string) *BinariesRunner {
+func NewBinariesRunner(log *logging.Logger, binsFolder string, stopTimeout time.Duration) *BinariesRunner {
 	return &BinariesRunner{
-		binsFolder: binsFolder,
-		running:    map[string]*exec.Cmd{},
-		log:        log,
+		binsFolder:  binsFolder,
+		running:     map[string]*exec.Cmd{},
+		log:         log,
+		stopTimeout: stopTimeout,
 	}
 }
 
@@ -71,7 +73,13 @@ func (r *BinariesRunner) Run(ctx context.Context, binaries []config.BinaryConfig
 			// Ensures that if one binary failes all of them are killed
 			go func() {
 				<-ctx.Done()
+
 				if cmd.Process == nil {
+					return
+				}
+
+				// Process has already exited - no need to kill it
+				if cmd.ProcessState != nil {
 					return
 				}
 
@@ -143,7 +151,10 @@ func (r *BinariesRunner) Stop() error {
 		return err
 	}
 
-	timeout := time.After(time.Second * 15)
+	r.mut.RLock()
+	timeout := time.After(r.stopTimeout)
+	r.mut.RUnlock()
+
 	ticker := time.NewTicker(time.Second / 10)
 	defer ticker.Stop()
 

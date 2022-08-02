@@ -81,7 +81,6 @@ func (r *Visor) watchForConfigUpdates(ctx context.Context) {
 	for {
 		r.log.Debug("starting config file watcher")
 		if err := r.conf.WatchForUpdate(ctx); err != nil {
-			// TODO - notify the run thread that this has failed
 			r.log.Error("config file watcher has failed", logging.Error(err))
 		}
 	}
@@ -136,7 +135,7 @@ func (r *Visor) Run(ctx context.Context) error {
 		restartsDelay := time.Second * time.Duration(r.conf.RestartsDelaySeconds())
 
 		r.log.Info("Starting binaries")
-		binRunner := NewBinariesRunner(r.log, r.conf.CurrentFolder())
+		binRunner := NewBinariesRunner(r.log, r.conf.CurrentFolder(), time.Second*time.Duration(r.conf.StopSignalTimeoutSeconds()))
 		binErrs := binRunner.Run(ctx, runConf.Binaries)
 
 		upgradeTicker.Reset(upgradeApiCallTickerDuration)

@@ -184,9 +184,14 @@ func testMultiProposalApproved(t *testing.T) {
 	e.BeginBlock(context.Background(), 55)
 	require.Equal(t, 9, len(evts))
 
+<<<<<<< HEAD
 	e.BeginBlock(context.Background(), 90)
 	e.Cleanup(context.Background())
 	require.Equal(t, 10, len(evts))
+=======
+	require.Equal(t, 11, len(evts))
+	e.BeginBlock(context.Background(), 91)
+>>>>>>> b19a89e35 (feat: fix protocol upgrade core, improve visor)
 	require.True(t, e.TimeForUpgrade())
 
 	require.Equal(t, eventspb.ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_APPROVED, evts[9].StreamMessage().GetProtocolUpgradeEvent().Status)
