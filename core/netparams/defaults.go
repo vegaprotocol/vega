@@ -90,7 +90,7 @@ func defaultNetParams() map[string]value {
 		GovernanceProposalUpdateMarketMinVoterBalance:            NewUint(UintGTE(num.UintZero())).Mutable(true).MustUpdate("0"),
 		GovernanceProposalUpdateMarketRequiredParticipationLP:    NewDecimal(DecimalGTE(num.DecimalZero()), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.00001"),
 		GovernanceProposalUpdateMarketRequiredMajorityLP:         NewDecimal(DecimalGTE(num.MustDecimalFromString("0.5")), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.66"),
-		GovernanceProposalUpdateMarketMinProposerEquityLikeShare: NewDecimal(DecimalGTE(num.MustDecimalFromString("0.01")), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.66"),
+		GovernanceProposalUpdateMarketMinProposerEquityLikeShare: NewDecimal(DecimalGTE(num.MustDecimalFromString("0")), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.66"),
 
 		// governance UpdateNetParam proposal
 		GovernanceProposalUpdateNetParamMinClose:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("48h0m0s"),
