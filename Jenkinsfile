@@ -132,6 +132,15 @@ pipeline {
                 }
                 stages {
                     stage('Build') {
+                        when {
+                            anyOf {
+                                expression { not { isPRBuild() } }
+                                allOf {
+                                    environment name: 'GOOS', value: 'linux'
+                                    environment name: 'GOARCH', value: 'amd64'
+                                }
+                            }
+                        }
                         environment {
                             GOOS         = "${GOOS}"
                             GOARCH       = "${GOARCH}"
