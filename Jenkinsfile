@@ -130,6 +130,15 @@ pipeline {
                         }
                     }
                 }
+                when {
+                    anyOf {
+                        expression { !isPRBuild() }
+                        allOf {
+                            environment name: 'GOOS', value: 'linux'
+                            environment name: 'GOARCH', value: 'amd64'
+                        }
+                    }
+                }
                 stages {
                     stage('Build') {
                         environment {
