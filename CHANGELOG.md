@@ -40,6 +40,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5629](https://github.com/vegaprotocol/vega/issues/5629) - Fixes for loading voting power from checkpoint with non genesis validators
 - [5626](https://github.com/vegaprotocol/vega/issues/5626) - Update `protos`, remove optional types
 - [5665](https://github.com/vegaprotocol/vega/issues/5665) - Binary version hash always contain `-modified` suffix
+- [5633](https://github.com/vegaprotocol/vega/issues/5633) - Allow `minProposerEquityLikeShare` to accept 0
 
 ## 0.53.0
 
