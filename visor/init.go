@@ -58,7 +58,7 @@ func Init(log *logging.Logger, homeFolder string) error {
 }
 
 func initDefaultFolder(folderPath, name string) error {
-	if err := os.MkdirAll(folderPath, 0755); err != nil {
+	if err := os.MkdirAll(folderPath, 0o755); err != nil {
 		return fmt.Errorf("failed to create %q folder: %w", name, err)
 	}
 
