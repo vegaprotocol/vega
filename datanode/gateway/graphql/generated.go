@@ -653,7 +653,7 @@ type ComplexityRoot struct {
 		Delegations           func(childComplexity int, partyID *string, skip *int, first *int, last *int) int
 		DelegationsConnection func(childComplexity int, partyID *string, pagination *v2.Pagination) int
 		EpochData             func(childComplexity int) int
-		EthereumAdddress      func(childComplexity int) int
+		EthereumAddress       func(childComplexity int) int
 		Id                    func(childComplexity int) int
 		InfoUrl               func(childComplexity int) int
 		Location              func(childComplexity int) int
@@ -4243,12 +4243,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Node.EpochData(childComplexity), true
 
-	case "Node.ethereumAdddress":
-		if e.complexity.Node.EthereumAdddress == nil {
+	case "Node.ethereumAddress":
+		if e.complexity.Node.EthereumAddress == nil {
 			break
 		}
 
-		return e.complexity.Node.EthereumAdddress(childComplexity), true
+		return e.complexity.Node.EthereumAddress(childComplexity), true
 
 	case "Node.id":
 		if e.complexity.Node.Id == nil {
@@ -8831,7 +8831,7 @@ type Node {
   tmPubkey: String!
 
   "Ethereum public key of the node"
-  ethereumAdddress: String!
+  ethereumAddress: String!
 
   "URL from which you can get more info about the node."
   infoUrl: String!
@@ -25014,7 +25014,7 @@ func (ec *executionContext) _Node_tmPubkey(ctx context.Context, field graphql.Co
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Node_ethereumAdddress(ctx context.Context, field graphql.CollectedField, obj *vega.Node) (ret graphql.Marshaler) {
+func (ec *executionContext) _Node_ethereumAddress(ctx context.Context, field graphql.CollectedField, obj *vega.Node) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -25032,7 +25032,7 @@ func (ec *executionContext) _Node_ethereumAdddress(ctx context.Context, field gr
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.EthereumAdddress, nil
+		return obj.EthereumAddress, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -49033,9 +49033,9 @@ func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "ethereumAdddress":
+		case "ethereumAddress":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Node_ethereumAdddress(ctx, field, obj)
+				return ec._Node_ethereumAddress(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
