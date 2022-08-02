@@ -99,8 +99,6 @@ func (r *BinariesRunner) Run(ctx context.Context, binaries []config.BinaryConfig
 				return fmt.Errorf("failed to execute binary %s %v: %w", binPath, bin.Args, err)
 			}
 
-			fmt.Println("after wait is done")
-
 			return nil
 		})
 	}
