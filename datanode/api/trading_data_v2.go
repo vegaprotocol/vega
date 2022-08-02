@@ -683,7 +683,7 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerRemovedBundles(ctx context.
 		p = entities.OffsetPaginationFromProto(req.Pagination)
 	}
 
-	res, err := t.multiSigService.GetRemovedEvents(ctx, nodeID, strings.TrimPrefix(submitter, "0x"), epochID, p)
+	res, err := t.multiSigService.GetRemovedEvents(ctx, nodeID, submitter, epochID, p)
 	if err != nil {
 		c := codes.Internal
 		if errors.Is(err, entities.ErrInvalidID) {
