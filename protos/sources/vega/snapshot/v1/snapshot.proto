@@ -407,7 +407,7 @@ message Market {
   vega.Market market = 1;
   PriceMonitor price_monitor = 2;
   AuctionState auction_state = 3;
-  repeated vega.Order pegged_orders = 4;
+  PeggedOrders pegged_orders = 4;
   repeated vega.Order expiring_orders = 5;
   string last_best_bid = 6;
   string last_best_ask = 7;
@@ -422,6 +422,16 @@ message Market {
   bool risk_factor_consensus_reached = 16;
   FeeSplitter fee_splitter = 17;
   string settlement_price = 18;
+}
+
+message OrderPartyPair {
+  string order = 1;
+  string party = 2;
+}
+
+message PeggedOrders {
+  repeated OrderPartyPair order_parties = 1;
+  repeated vega.Order parked_orders = 2;
 }
 
 message ExecutionMarkets {
@@ -762,7 +772,7 @@ message TransactionsAtHeight {
 }
 
 message ProtocolUpgradeProposals {
-  repeated vega.events.v1.ProtocolUpgradeEvent active_proposals = 1;  
+  repeated vega.events.v1.ProtocolUpgradeEvent active_proposals = 1;
   AcceptedProtocolUpgradeProposal accepted_proposal = 2;
 }
 
@@ -774,5 +784,3 @@ message AcceptedProtocolUpgradeProposal {
     // the release tag for the data-node binary
     string data_node_release_tag = 3;
 }
-
-

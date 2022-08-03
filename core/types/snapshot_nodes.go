@@ -302,7 +302,7 @@ type ExecMarket struct {
 	Market                     *Market
 	PriceMonitor               *PriceMonitor
 	AuctionState               *AuctionState
-	PeggedOrders               []*Order
+	PeggedOrders               *PeggedOrdersState
 	ExpiringOrders             []*Order
 	LastBestBid                *num.Uint
 	LastBestAsk                *num.Uint
@@ -365,6 +365,11 @@ type PriceRange struct {
 type KeyDecimalPair struct {
 	Key int64
 	Val num.Decimal
+}
+
+type PeggedOrdersState struct {
+	Orders map[string]string
+	Parked []*Order
 }
 
 type AuctionState struct {
@@ -2466,6 +2471,48 @@ func (e EquityShareLP) IntoProto() *snapshot.EquityShareLP {
 	}
 }
 
+func PeggedOrdersStateFromProto(s *snapshot.PeggedOrders) *PeggedOrdersState {
+	po := &PeggedOrdersState{
+		Orders: make(map[string]string, len(s.OrderParties)),
+		Parked: make([]*Order, 0, len(s.ParkedOrders)),
+	}
+
+	for _, v := range s.OrderParties {
+		po.Orders[v.Order] = v.Party
+	}
+
+	for _, v := range s.ParkedOrders {
+		o, _ := OrderFromProto(v)
+		po.Parked = append(po.Parked, o)
+	}
+	return po
+}
+
+func (s PeggedOrdersState) IntoProto() *snapshot.PeggedOrders {
+	po := &snapshot.PeggedOrders{
+		OrderParties: make([]*snapshot.OrderPartyPair, len(s.Orders)),
+		ParkedOrders: make([]*vega.Order, 0, len(s.Parked)),
+	}
+
+	for k, v := range s.Orders {
+		po.OrderParties = append(po.OrderParties, &snapshot.OrderPartyPair{
+			Order: k,
+			Party: v,
+		})
+	}
+	sort.Slice(po.OrderParties, func(i, j int) bool {
+		return po.OrderParties[i].Order < po.OrderParties[j].Order
+	})
+
+	for _, v := range s.Parked {
+		po.ParkedOrders = append(po.ParkedOrders, v.IntoProto())
+	}
+	sort.Slice(po.ParkedOrders, func(i, j int) bool {
+		return po.ParkedOrders[i].Id < po.ParkedOrders[j].Id
+	})
+	return po
+}
+
 func AuctionStateFromProto(as *snapshot.AuctionState) *AuctionState {
 	var end *AuctionDuration
 	if as.End != nil {
@@ -2767,7 +2814,7 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 		Market:                     MarketFromProto(em.Market),
 		PriceMonitor:               PriceMonitorFromProto(em.PriceMonitor),
 		AuctionState:               AuctionStateFromProto(em.AuctionState),
-		PeggedOrders:               make([]*Order, 0, len(em.PeggedOrders)),
+		PeggedOrders:               PeggedOrdersStateFromProto(em.PeggedOrders),
 		ExpiringOrders:             make([]*Order, 0, len(em.ExpiringOrders)),
 		LastEquityShareDistributed: em.LastEquityShareDistributed,
 		EquityShare:                EquityShareFromProto(em.EquityShare),
@@ -2782,10 +2829,6 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 		RiskFactorConsensusReached: em.RiskFactorConsensusReached,
 		FeeSplitter:                FeeSplitterFromProto(em.FeeSplitter),
 		SettlementPrice:            sp,
-	}
-	for _, o := range em.PeggedOrders {
-		or, _ := OrderFromProto(o)
-		ret.PeggedOrders = append(ret.PeggedOrders, or)
 	}
 	for _, o := range em.ExpiringOrders {
 		or, _ := OrderFromProto(o)
@@ -2804,7 +2847,7 @@ func (e ExecMarket) IntoProto() *snapshot.Market {
 		Market:                     e.Market.IntoProto(),
 		PriceMonitor:               e.PriceMonitor.IntoProto(),
 		AuctionState:               e.AuctionState.IntoProto(),
-		PeggedOrders:               make([]*vega.Order, 0, len(e.PeggedOrders)),
+		PeggedOrders:               e.PeggedOrders.IntoProto(),
 		ExpiringOrders:             make([]*vega.Order, 0, len(e.ExpiringOrders)),
 		LastEquityShareDistributed: e.LastEquityShareDistributed,
 		EquityShare:                e.EquityShare.IntoProto(),
@@ -2819,9 +2862,6 @@ func (e ExecMarket) IntoProto() *snapshot.Market {
 		RiskFactorConsensusReached: e.RiskFactorConsensusReached,
 		FeeSplitter:                e.FeeSplitter.IntoProto(),
 		SettlementPrice:            sp,
-	}
-	for _, o := range e.PeggedOrders {
-		ret.PeggedOrders = append(ret.PeggedOrders, o.IntoProto())
 	}
 	for _, o := range e.ExpiringOrders {
 		ret.ExpiringOrders = append(ret.ExpiringOrders, o.IntoProto())

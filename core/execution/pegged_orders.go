@@ -18,7 +18,6 @@ import (
 	"sort"
 
 	"code.vegaprotocol.io/vega/core/events"
-	"code.vegaprotocol.io/vega/core/matching"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
@@ -47,48 +46,39 @@ func NewPeggedOrders(log *logging.Logger, ts TimeService) *PeggedOrders {
 	}
 }
 
-func NewPeggedOrdersFromSnapshot(orders []*types.Order, tm TimeService) *PeggedOrders {
-	return &PeggedOrders{
-		timeService: tm,
-		//orders:      orders,
+func NewPeggedOrdersFromSnapshot(
+	log *logging.Logger,
+	ts TimeService,
+	state *types.PeggedOrdersState,
+) *PeggedOrders {
+	p := NewPeggedOrders(log, ts)
+	p.orders = state.Orders
+	p.parked = state.Parked
+	for _, v := range p.parked {
+		p.isParked[v.ID] = struct{}{}
 	}
-}
-
-// ReconcileWithOrderBook ensures that any pegged orders that are on the book point to the same
-// underlying value.
-func (p *PeggedOrders) ReconcileWithOrderBook(orderbook *matching.CachedOrderBook) error {
-	// newPeggedOrders := make([]*types.Order, 0, len(p.orders))
-	// for _, o := range p.orders {
-	// 	if o.Status == types.OrderStatusParked {
-	// 		newPeggedOrders = append(newPeggedOrders, o)
-	// 		continue
-	// 	}
-
-	// 	order, err := orderbook.GetOrderByID(o.ID)
-	// 	if err != nil {
-	// 		return err // if its not parked it should be on the book
-	// 	}
-	// 	newPeggedOrders = append(newPeggedOrders, order)
-	// }
-	// p.orders = newPeggedOrders
-	// return nil
-	return nil
+	return p
 }
 
 func (p *PeggedOrders) Changed() bool {
 	return p.ordersChanged
 }
 
-func (p *PeggedOrders) GetState() []*types.Order {
-	// ordersCopy := make([]*types.Order, 0, len(p.orders))
-	// for _, o := range p.orders {
-	// 	ordersCopy = append(ordersCopy, o.Clone())
-	// }
+func (p *PeggedOrders) GetState() *types.PeggedOrdersState {
+	ordersCopy := make(map[string]string, len(p.orders))
+	for k, v := range p.orders {
+		ordersCopy[k] = v
+	}
 
-	// p.ordersChanged = false
+	parkedCopy := make([]*types.Order, 0, len(p.parked))
+	for _, v := range p.parked {
+		parkedCopy = append(parkedCopy, v.Clone())
+	}
 
-	// return ordersCopy
-	return nil
+	return &types.PeggedOrdersState{
+		Orders: ordersCopy,
+		Parked: parkedCopy,
+	}
 }
 
 func (p *PeggedOrders) IsParked(id string) bool {
@@ -258,10 +248,6 @@ func (p *PeggedOrders) GetIDs() []string {
 	sort.Strings(ids)
 	return ids
 }
-
-// func (p PeggedOrders) GetAll() []*types.Order {
-// 	return p.parked
-// }
 
 func (p *PeggedOrders) GetAllParkedForParty(party string) (orders []*types.Order) {
 	defer func() { p.hasDups() }()

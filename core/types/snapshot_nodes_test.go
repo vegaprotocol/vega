@@ -436,6 +436,7 @@ func getDummyData() *types.Chunk {
 								},
 							},
 						},
+						PeggedOrders: &types.PeggedOrdersState{},
 						PriceMonitor: &types.PriceMonitor{},
 						AuctionState: &types.AuctionState{
 							Mode:        types.MarketTradingModeContinuous,
