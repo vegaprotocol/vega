@@ -14,6 +14,7 @@ package sqlstore_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -58,7 +59,7 @@ func testAddSignatures(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 0, rowCount)
 
-	ns := getTestNodeSignature(t, "deadbeef")
+	ns := getTestNodeSignature(t, "deadbeef", "iamsig")
 	err = ws.Add(context.Background(), ns)
 	require.NoError(t, err)
 
@@ -74,10 +75,10 @@ func testAddMultipleSignatures(t *testing.T) {
 
 	ws, _ := setupNotaryStoreTests(t, ctx)
 
-	nodeSig1 := getTestNodeSignature(t, "deadbeef")
-	nodeSig2 := getTestNodeSignature(t, "deadbeef")         // this will have a different sig
-	nodeSig3 := getTestNodeSignature(t, "deadbeef")         // this will be a dupe of ns2
-	nodeSig4 := getTestNodeSignature(t, "deadbeefdeadbeef") // this will have a different sig and id
+	nodeSig1 := getTestNodeSignature(t, "deadbeef", "iamsig")
+	nodeSig2 := getTestNodeSignature(t, "deadbeef", "iamsig")         // this will have a different sig
+	nodeSig3 := getTestNodeSignature(t, "deadbeef", "iamsig")         // this will be a dupe of ns2
+	nodeSig4 := getTestNodeSignature(t, "deadbeefdeadbeef", "iamsig") // this will have a different sig and id
 
 	nodeSig2.Sig = []byte("iamdifferentsig")
 	nodeSig4.Sig = []byte("iamdifferentsigagain")
@@ -94,21 +95,21 @@ func testAddMultipleSignatures(t *testing.T) {
 	err = ws.Add(context.Background(), nodeSig4)
 	require.NoError(t, err)
 
-	res, err := ws.GetByResourceID(ctx, "deadbeef")
+	res, _, err := ws.GetByResourceID(ctx, "deadbeef", entities.CursorPagination{})
 	require.NoError(t, err)
 	require.Len(t, res, 2)
 
-	res, err = ws.GetByResourceID(ctx, "deadbeefdeadbeef")
+	res, _, err = ws.GetByResourceID(ctx, "deadbeefdeadbeef", entities.CursorPagination{})
 	require.NoError(t, err)
 	require.Len(t, res, 1)
 }
 
-func getTestNodeSignature(t *testing.T, id string) *entities.NodeSignature {
+func getTestNodeSignature(t *testing.T, id string, sig string) *entities.NodeSignature {
 	t.Helper()
 	ns, err := entities.NodeSignatureFromProto(
 		&v1.NodeSignature{
 			Id:   id,
-			Sig:  []byte("iamsig"),
+			Sig:  []byte(sig),
 			Kind: v1.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL,
 		},
 	)
@@ -123,7 +124,257 @@ func testNoResource(t *testing.T) {
 
 	ws, _ := setupNotaryStoreTests(t, ctx)
 
-	res, err := ws.GetByResourceID(ctx, "deadbeefdeadbeef")
+	res, _, err := ws.GetByResourceID(ctx, "deadbeefdeadbeef", entities.CursorPagination{})
 	require.NoError(t, err)
 	require.Len(t, res, 0)
+}
+
+func TestNodeSignaturePagination(t *testing.T) {
+	t.Run("should return all node signatures if no pagination is specified", testNodeSignaturePaginationNoPagination)
+	t.Run("should return first page of node signatures if first pagination is specified", testNodeSignaturePaginationFirst)
+	t.Run("should return last page of node signatures if last pagination is specified", testNodeSignaturePaginationLast)
+	t.Run("should return specified page of node signatures if first and after pagination is specified", testNodeSignaturePaginationFirstAfter)
+	t.Run("should return specified page of node signatures if last and before pagination is specified", testNodeSignaturePaginationLastBefore)
+
+	t.Run("should return all node signatures if no pagination is specified - newest first", testNodeSignaturePaginationNoPaginationNewestFirst)
+	t.Run("should return first page of node signatures if first pagination is specified - newest first", testNodeSignaturePaginationFirstNewestFirst)
+	t.Run("should return last page of node signatures if last pagination is specified - newest first", testNodeSignaturePaginationLastNewestFirst)
+	t.Run("should return specified page of node signatures if first and after pagination is specified - newest first", testNodeSignaturePaginationFirstAfterNewestFirst)
+	t.Run("should return specified page of node signatures if last and before pagination is specified - newest first", testNodeSignaturePaginationLastBeforeNewestFirst)
+}
+
+func testNodeSignaturePaginationNoPagination(t *testing.T) {
+	defer DeleteEverything()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := ns.GetByResourceID(ctx, "deadbeef", pagination)
+	require.NoError(t, err)
+	want := sigs
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     want[0].Cursor().Encode(),
+		EndCursor:       want[9].Cursor().Encode(),
+	}, pageInfo)
+}
+
+func testNodeSignaturePaginationFirst(t *testing.T) {
+	defer DeleteEverything()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
+	first := int32(3)
+	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := ns.GetByResourceID(ctx, "deadbeef", pagination)
+	require.NoError(t, err)
+	want := sigs[:3]
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: false,
+		StartCursor:     want[0].Cursor().Encode(),
+		EndCursor:       want[2].Cursor().Encode(),
+	}, pageInfo)
+}
+
+func testNodeSignaturePaginationLast(t *testing.T) {
+	defer DeleteEverything()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
+	last := int32(3)
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := ns.GetByResourceID(ctx, "deadbeef", pagination)
+	require.NoError(t, err)
+	want := sigs[7:]
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: true,
+		StartCursor:     want[0].Cursor().Encode(),
+		EndCursor:       want[2].Cursor().Encode(),
+	}, pageInfo)
+}
+
+func testNodeSignaturePaginationFirstAfter(t *testing.T) {
+	defer DeleteEverything()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
+	first := int32(3)
+	after := sigs[2].Cursor().Encode()
+	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := ns.GetByResourceID(ctx, "deadbeef", pagination)
+	require.NoError(t, err)
+	want := sigs[3:6]
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor:     want[0].Cursor().Encode(),
+		EndCursor:       want[2].Cursor().Encode(),
+	}, pageInfo)
+}
+
+func testNodeSignaturePaginationLastBefore(t *testing.T) {
+	defer DeleteEverything()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
+	last := int32(3)
+	before := sigs[7].Cursor().Encode()
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
+	require.NoError(t, err)
+
+	got, pageInfo, err := ns.GetByResourceID(ctx, "deadbeef", pagination)
+	require.NoError(t, err)
+	want := sigs[4:7]
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor:     want[0].Cursor().Encode(),
+		EndCursor:       want[2].Cursor().Encode(),
+	}, pageInfo)
+}
+
+func testNodeSignaturePaginationNoPaginationNewestFirst(t *testing.T) {
+	defer DeleteEverything()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
+	require.NoError(t, err)
+
+	got, pageInfo, err := ns.GetByResourceID(ctx, "deadbeef", pagination)
+	require.NoError(t, err)
+	want := entities.ReverseSlice(sigs)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     want[0].Cursor().Encode(),
+		EndCursor:       want[9].Cursor().Encode(),
+	}, pageInfo)
+}
+
+func testNodeSignaturePaginationFirstNewestFirst(t *testing.T) {
+	defer DeleteEverything()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
+	first := int32(3)
+	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
+	require.NoError(t, err)
+
+	got, pageInfo, err := ns.GetByResourceID(ctx, "deadbeef", pagination)
+	require.NoError(t, err)
+	want := entities.ReverseSlice(sigs)[:3]
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: false,
+		StartCursor:     want[0].Cursor().Encode(),
+		EndCursor:       want[2].Cursor().Encode(),
+	}, pageInfo)
+}
+
+func testNodeSignaturePaginationLastNewestFirst(t *testing.T) {
+	defer DeleteEverything()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
+	last := int32(3)
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
+	require.NoError(t, err)
+
+	got, pageInfo, err := ns.GetByResourceID(ctx, "deadbeef", pagination)
+	require.NoError(t, err)
+	want := entities.ReverseSlice(sigs)[7:]
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: true,
+		StartCursor:     want[0].Cursor().Encode(),
+		EndCursor:       want[2].Cursor().Encode(),
+	}, pageInfo)
+}
+
+func testNodeSignaturePaginationFirstAfterNewestFirst(t *testing.T) {
+	defer DeleteEverything()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
+	first := int32(3)
+	after := sigs[7].Cursor().Encode()
+	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
+	require.NoError(t, err)
+
+	got, pageInfo, err := ns.GetByResourceID(ctx, "deadbeef", pagination)
+	require.NoError(t, err)
+	want := entities.ReverseSlice(sigs)[3:6]
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor:     want[0].Cursor().Encode(),
+		EndCursor:       want[2].Cursor().Encode(),
+	}, pageInfo)
+}
+
+func testNodeSignaturePaginationLastBeforeNewestFirst(t *testing.T) {
+	defer DeleteEverything()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
+	last := int32(3)
+	before := sigs[2].Cursor().Encode()
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
+	require.NoError(t, err)
+
+	got, pageInfo, err := ns.GetByResourceID(ctx, "deadbeef", pagination)
+	require.NoError(t, err)
+	want := entities.ReverseSlice(sigs)[4:7]
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor:     want[0].Cursor().Encode(),
+		EndCursor:       want[2].Cursor().Encode(),
+	}, pageInfo)
+}
+
+func setupNodeSignaturePaginationTest(t *testing.T, ctx context.Context) (*sqlstore.Notary, []entities.NodeSignature) {
+	ns := sqlstore.NewNotary(connectionSource)
+	signatures := make([]entities.NodeSignature, 10)
+
+	for i := 0; i < 10; i++ {
+		signature := getTestNodeSignature(t, "deadbeef", fmt.Sprintf("sig%02d", i+1))
+		signatures[i] = *signature
+		err := ns.Add(ctx, signature)
+		require.NoError(t, err)
+	}
+
+	return ns, signatures
 }

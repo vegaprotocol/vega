@@ -9,6 +9,7 @@ import "vega/assets.proto";
 import "vega/oracles/v1/data.proto";
 import "vega/oracles/v1/spec.proto";
 import "vega/events/v1/events.proto";
+import "vega/commands/v1/validator_commands.proto";
 
 package datanode.api.v2;
 
@@ -121,6 +122,7 @@ service TradingDataService {
 
     // -- Parties --
     // Get Parties using a cursor based pagination model
+    rpc GetParty(GetPartyRequest) returns (GetPartyResponse);
     rpc ListParties(ListPartiesRequest) returns (ListPartiesResponse);
 
     // -- Margin Levels --
@@ -156,6 +158,7 @@ service TradingDataService {
 
     // -- Governance --
     // List proposals using a cursor based pagination model
+    rpc GetGovernanceData(GetGovernanceDataRequest) returns (GetGovernanceDataResponse);
     rpc ListGovernanceData(ListGovernanceDataRequest) returns (ListGovernanceDataResponse);
     rpc ObserveGovernance(ObserveGovernanceRequest) returns (stream ObserveGovernanceResponse);
 
@@ -172,6 +175,8 @@ service TradingDataService {
     rpc GetNode(GetNodeRequest) returns (GetNodeResponse);
     // List information about the nodes on the network
     rpc ListNodes(ListNodesRequest) returns (ListNodesResponse);
+    // List an aggregate of signatures from all the nodes of the network
+    rpc ListNodeSignatures(ListNodeSignaturesRequest) returns (ListNodeSignaturesResponse);
 
     // -- Epochs --
     // Get data for a specific epoch, if id omitted it gets the current epoch
@@ -202,6 +207,14 @@ service TradingDataService {
     // -- Transfer Responses --
     // Subscribe to a stream of Transfer Responses
     rpc ObserveTransferResponses(ObserveTransferResponsesRequest) returns (stream ObserveTransferResponsesResponse);
+
+    // -- Key Rotations --
+    rpc ListKeyRotations(ListKeyRotationsRequest) returns (ListKeyRotationsResponse);
+
+    // -- Vega Time --
+
+    // Get Time
+    rpc GetVegaTime(GetVegaTimeRequest) returns (GetVegaTimeResponse);
 }
 
 // -- Pagination --
@@ -730,13 +743,28 @@ message GetERC20MultiSigSignerAddedBundlesRequest {
     string epoch_seq = 2;
 
     // Pagination controls
-    OffsetPagination pagination = 3;
+    Pagination pagination = 3;
 }
 
 message GetERC20MultiSigSignerAddedBundlesResponse {
 
     // list of bundles for that validator, it may have been added multiple times if removed in between
-    repeated ERC20MultiSigSignerAddedBundle bundles = 1;
+    ERC20MultiSigSignerAddedConnection bundles = 1;
+}
+
+message ERC20MultiSigSignerAddedEdge {
+    vega.events.v1.ERC20MultiSigSignerAdded node = 1;
+    string cursor = 2;
+}
+
+message ERC20MultiSigSignerAddedBundleEdge {
+    ERC20MultiSigSignerAddedBundle node = 1;
+    string cursor = 2;
+}
+
+message ERC20MultiSigSignerAddedConnection {
+    repeated ERC20MultiSigSignerAddedBundleEdge edges = 1;
+    PageInfo page_info = 2;
 }
 
 message ERC20MultiSigSignerAddedBundle {
@@ -772,12 +800,27 @@ message GetERC20MultiSigSignerRemovedBundlesRequest {
     string epoch_seq = 3;
 
     // Pagination controls
-    OffsetPagination pagination = 4;
+    Pagination pagination = 4;
 }
 
 message GetERC20MultiSigSignerRemovedBundlesResponse {
     // list of signer bundles for that validator
-    repeated ERC20MultiSigSignerRemovedBundle bundles = 1;
+    ERC20MultiSigSignerRemovedConnection bundles = 1;
+}
+
+message ERC20MultiSigSignerRemovedEdge {
+    vega.events.v1.ERC20MultiSigSignerRemoved node = 1;
+    string cursor = 2;
+}
+
+message ERC20MultiSigSignerRemovedBundleEdge {
+    ERC20MultiSigSignerRemovedBundle node = 1;
+    string cursor = 2;
+}
+
+message ERC20MultiSigSignerRemovedConnection {
+    repeated ERC20MultiSigSignerRemovedBundleEdge edges = 1;
+    PageInfo page_info = 2;
 }
 
 message ERC20MultiSigSignerRemovedBundle {
@@ -992,6 +1035,14 @@ message MarketConnection {
 }
 
 // -- Parties --
+message GetPartyRequest {
+    string party_id = 1;
+}
+
+message GetPartyResponse {
+    vega.Party party = 1;
+}
+
 message ListPartiesRequest {
     string party_id = 1;
     Pagination pagination = 2;
@@ -1221,6 +1272,15 @@ message LiquidityProvisionsConnection {
     PageInfo page_info = 2;
 }
 
+// -- Governance Data --
+message GetGovernanceDataRequest {
+    string proposal_id = 1;
+}
+
+message GetGovernanceDataResponse {
+    vega.GovernanceData data = 1;
+}
+
 message ListGovernanceDataRequest {
     enum Type {
         TYPE_UNSPECIFIED = 0;
@@ -1329,6 +1389,29 @@ message NodeEdge {
 
 message NodesConnection {
     repeated NodeEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
+// Request to specify the identifier of the resource to retrieve aggregated signatures for
+message ListNodeSignaturesRequest {
+    // Resource identifier, required field
+    string id = 1;
+    optional Pagination pagination = 2;
+}
+
+// Response to specify the identifier of the resource to retrieve aggregated signatures for
+message ListNodeSignaturesResponse {
+    NodeSignaturesConnection signatures = 1;
+}
+
+message NodeSignatureEdge {
+    vega.commands.v1.NodeSignature node = 1;
+    string cursor = 2;
+}
+
+message NodeSignaturesConnection {
+    // A list of 0 or more signatures
+    repeated NodeSignatureEdge edges = 1;
     PageInfo page_info = 2;
 }
 
@@ -1477,3 +1560,45 @@ message ObserveTransferResponsesRequest {}
 message ObserveTransferResponsesResponse {
     vega.TransferResponse response = 1;
 }
+
+// -- Key Rotations --
+
+message KeyRotation {
+    string node_id = 1;
+    string old_pub_key = 2;
+    string new_pub_key = 3;
+    uint64 block_height = 4;
+}
+
+// Request to list all key rotations
+message ListKeyRotationsRequest {
+    optional string node_id = 1;
+    optional Pagination pagination = 2;
+}
+
+// Response with all key rotations
+message ListKeyRotationsResponse {
+    KeyRotationConnection rotations = 1;
+}
+
+message KeyRotationEdge {
+    KeyRotation node = 1;
+    string cursor = 2;
+}
+
+message KeyRotationConnection {
+    repeated KeyRotationEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
+// -- Vega Time --
+// Request for the current time of the vega network
+message GetVegaTimeRequest {}
+
+// Response for the current consensus coordinated time on the Vega network, referred to as "VegaTime"
+message GetVegaTimeResponse {
+    // Timestamp representation of current VegaTime as represented in
+    // Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2020-01-31T12:30:59.111222333Z`
+    int64 timestamp = 1;
+}
+

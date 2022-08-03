@@ -14,7 +14,6 @@ package sqlstore_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -70,7 +69,6 @@ func TestParty(t *testing.T) {
 	// Check we get the right error if we ask for a non-existent party
 	_, err = ps.GetByID(ctx, "beef")
 	assert.ErrorIs(t, err, sqlstore.ErrPartyNotFound)
-	fmt.Println("yay")
 }
 
 func setupPartyTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.Parties, sqlstore.Config, func(t *testing.T)) {

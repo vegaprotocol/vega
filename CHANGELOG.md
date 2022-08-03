@@ -29,7 +29,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5660](https://github.com/vegaprotocol/vega/issues/5660) - Migrate subscription `apis` from `datanode v1 api` to `datanode v2 api`
 - [5636](https://github.com/vegaprotocol/vega/issues/5636) - Assure no false positives in cucumber steps
 - [5011](https://github.com/vegaprotocol/vega/issues/5011) - Import the `protos` repo in the vega repo
-
+- [5685](https://github.com/vegaprotocol/vega/issues/5685) - Migrated `apis` from `datanode v1` to `datanode v2`
 ### 🐛 Fixes
 - [5571](https://github.com/vegaprotocol/vega/issues/5571) - Restore pending assets status correctly after snapshot restore
 - [5572](https://github.com/vegaprotocol/vega/issues/5572) - Add validation on `IDs` and public keys
