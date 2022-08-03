@@ -636,16 +636,20 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationCon
 }
 
 // RemoveOrder takes the order off the order book.
-func (b *OrderBook) RemoveOrder(order *types.Order) error {
-	order, err := b.DeleteOrder(order)
+func (b *OrderBook) RemoveOrder(id string) (*types.Order, error) {
+	order, err := b.GetOrderByID(id)
 	if err != nil {
-		return err
+		return nil, err
+	}
+	order, err = b.DeleteOrder(order)
+	if err != nil {
+		return nil, err
 	}
 
 	// Important to mark the order as parked (and no longer active)
 	order.Status = types.OrderStatusParked
 
-	return nil
+	return order, nil
 }
 
 // AmendOrder amends an order which is an active order on the book.

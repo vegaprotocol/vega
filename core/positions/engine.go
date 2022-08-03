@@ -17,6 +17,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"os"
 	"sync"
 
 	"code.vegaprotocol.io/vega/core/events"
@@ -132,8 +133,12 @@ func (e *Engine) RegisterOrder(ctx context.Context, order *types.Order) *MarketP
 		// append the pointer to the slice as well
 		e.positionsCpy = append(e.positionsCpy, pos)
 	}
+	appendPosition("register order pre    ", pos)
+	appendOrder("register order order  ", order)
+
 	pos.RegisterOrder(order)
 	e.broker.Send(events.NewPositionStateEvent(ctx, pos, order.MarketID))
+	appendPosition("register order        ", pos)
 	return pos
 }
 
@@ -145,8 +150,11 @@ func (e *Engine) UnregisterOrder(ctx context.Context, order *types.Order) *Marke
 		e.log.Panic("could not find position in engine when unregistering order",
 			logging.Order(*order))
 	}
+	appendPosition("unregister order pre  ", pos)
+	appendOrder("unregister order order ", order)
 	pos.UnregisterOrder(e.log, order)
 	e.broker.Send(events.NewPositionStateEvent(ctx, pos, order.MarketID))
+	appendPosition("unregister order      ", pos)
 	return pos
 }
 
@@ -159,8 +167,13 @@ func (e *Engine) AmendOrder(ctx context.Context, originalOrder, newOrder *types.
 			logging.Order(*originalOrder),
 			logging.Order(*newOrder))
 	}
+
+	appendPosition("amend order pre       ", pos)
+	appendOrder("amend order orig      ", originalOrder)
+	appendOrder("amend order new       ", newOrder)
 	pos.AmendOrder(e.log, originalOrder, newOrder)
 	e.broker.Send(events.NewPositionStateEvent(ctx, pos, originalOrder.MarketID))
+	appendPosition("amend order           ", pos)
 	return pos
 }
 
@@ -211,6 +224,8 @@ func (e *Engine) UpdateNetwork(ctx context.Context, trade *types.Trade) []events
 		size = -size
 	}
 	pos.size += size
+
+	appendPosition("update network        ", pos)
 
 	e.broker.Send(events.NewPositionStateEvent(ctx, pos, trade.MarketID))
 	cpy := pos.Clone()
@@ -268,6 +283,9 @@ func (e *Engine) Update(ctx context.Context, trade *types.Trade) []events.Market
 		},
 	)
 
+	appendPositionTrade("trade buyer           ", buyer, trade.BuyOrder)
+	appendPositionTrade("trade seller          ", seller, trade.SellOrder)
+
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("Positions Updated for trade",
 			logging.Trade(*trade),
@@ -287,6 +305,7 @@ func (e *Engine) RemoveDistressed(parties []events.MarketPosition) []events.Mark
 		party := party.Party()
 		if current, ok := e.positions[party]; ok {
 			ret = append(ret, current)
+			appendPosition("remove distressed", current)
 		}
 		// remove from the map
 		delete(e.positions, party)
@@ -408,4 +427,40 @@ func I64MaxAbs(vals ...int64) int64 {
 		}
 	}
 	return r
+}
+
+func appendPosition(typ string, pos *MarketPosition) {
+	f, err := os.OpenFile("/Users/jeremy/works/vega/vega-market-sim/positions.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	if _, err = fmt.Fprintf(f, "%v: %v\n", typ, pos.String()); err != nil {
+		panic(err)
+	}
+}
+
+func appendPositionTrade(typ string, pos *MarketPosition, ord string) {
+	f, err := os.OpenFile("/Users/jeremy/works/vega/vega-market-sim/positions.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	if _, err = fmt.Fprintf(f, "%v: %v - %v\n", typ, pos.String(), ord); err != nil {
+		panic(err)
+	}
+}
+
+func appendOrder(typ string, o *types.Order) {
+	f, err := os.OpenFile("/Users/jeremy/works/vega/vega-market-sim/positions.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	if _, err = fmt.Fprintf(f, "%v: %p - %v - %d - %s - %s - %s\n", typ, o, o.ID, o.Remaining, o.Side, o.Party, o.Status); err != nil {
+		panic(err)
+	}
 }

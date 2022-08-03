@@ -69,7 +69,35 @@ func (b *CachedOrderBook) CancelAllOrders(
 	return b.OrderBook.CancelAllOrders(party)
 }
 
-func (b *CachedOrderBook) maybeInvalidateDuringAuction(order *types.Order) {
+func (b *CachedOrderBook) maybeInvalidateDuringAuction(orderID string) {
+	bestBid, errBestBid := b.GetBestBidPrice()
+	bestAsk, errBestAsk := b.GetBestBidPrice()
+	// if any of side have not best price, let's invalidate
+	if errBestBid != nil || errBestAsk != nil {
+		b.cache.Invalidate()
+		return
+	}
+
+	order, ok := b.ordersByID[orderID]
+	if !ok {
+		b.log.Panic("could not find order in order book", logging.OrderID(orderID))
+	}
+
+	// only invalidate cache if it gets in the
+	// uncrossing range
+	switch order.Side {
+	case types.SideBuy:
+		if order.Price.GTE(bestAsk) {
+			b.cache.Invalidate()
+		}
+	case types.SideSell:
+		if order.Price.LTE(bestBid) {
+			b.cache.Invalidate()
+		}
+	}
+}
+
+func (b *CachedOrderBook) maybeInvalidateDuringAuctionNewOrder(order *types.Order) {
 	bestBid, errBestBid := b.GetBestBidPrice()
 	bestAsk, errBestAsk := b.GetBestBidPrice()
 	// if any of side have not best price, let's invalidate
@@ -96,12 +124,12 @@ func (b *CachedOrderBook) CancelOrder(order *types.Order) (*types.OrderCancellat
 	if !b.InAuction() {
 		b.cache.Invalidate()
 	} else {
-		b.maybeInvalidateDuringAuction(order)
+		b.maybeInvalidateDuringAuction(order.ID)
 	}
 	return b.OrderBook.CancelOrder(order)
 }
 
-func (b *CachedOrderBook) RemoveOrder(order *types.Order) error {
+func (b *CachedOrderBook) RemoveOrder(order string) (*types.Order, error) {
 	if !b.InAuction() {
 		b.cache.Invalidate()
 	} else {
@@ -116,7 +144,7 @@ func (b *CachedOrderBook) AmendOrder(
 	if !b.InAuction() {
 		b.cache.Invalidate()
 	} else {
-		b.maybeInvalidateDuringAuction(amendedOrder)
+		b.maybeInvalidateDuringAuction(amendedOrder.ID)
 	}
 	return b.OrderBook.AmendOrder(originalOrder, amendedOrder)
 }
@@ -125,7 +153,7 @@ func (b *CachedOrderBook) ReplaceOrder(rm, rpl *types.Order) (*types.OrderConfir
 	if !b.InAuction() {
 		b.cache.Invalidate()
 	} else {
-		b.maybeInvalidateDuringAuction(rpl)
+		b.maybeInvalidateDuringAuction(rpl.ID)
 	}
 	return b.OrderBook.ReplaceOrder(rm, rpl)
 }
@@ -136,7 +164,7 @@ func (b *CachedOrderBook) SubmitOrder(
 	if !b.InAuction() {
 		b.cache.Invalidate()
 	} else {
-		b.maybeInvalidateDuringAuction(order)
+		b.maybeInvalidateDuringAuctionNewOrder(order)
 	}
 	return b.OrderBook.SubmitOrder(order)
 }
@@ -147,7 +175,7 @@ func (b *CachedOrderBook) DeleteOrder(
 	if !b.InAuction() {
 		b.cache.Invalidate()
 	} else {
-		b.maybeInvalidateDuringAuction(order)
+		b.maybeInvalidateDuringAuction(order.ID)
 	}
 	return b.OrderBook.DeleteOrder(order)
 }

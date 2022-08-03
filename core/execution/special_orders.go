@@ -16,6 +16,7 @@ package execution
 
 import (
 	"context"
+	"fmt"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/liquidity"
@@ -32,7 +33,19 @@ func (m *Market) repricePeggedOrders(
 	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "repricePeggedOrders")
 
 	// Go through all the pegged orders and remove from the order book
-	for _, order := range m.peggedOrders.orders {
+	for _, oid := range m.peggedOrders.GetIDs() {
+		var (
+			order *types.Order
+			err   error
+		)
+		if m.peggedOrders.IsParked(oid) {
+			order = m.peggedOrders.GetParkedByID(oid)
+		} else {
+			order, err = m.matching.GetOrderByID(oid)
+			if err != nil {
+				m.log.Panic("if order is not parked, it should be on the book", logging.OrderID(oid))
+			}
+		}
 		if OrderReferenceCheck(*order).HasMoved(changes) {
 			// First if the order isn't parked, then
 			// we will just remove if from the orderbook
@@ -46,8 +59,15 @@ func (m *Market) repricePeggedOrders(
 						logging.Error(err))
 				}
 
+				fmt.Printf("1: %p - %v\n", order, order.String())
+				fmt.Printf("2: %p - %v\n", cancellation.Order, cancellation.Order.String())
+
 				// Remove it from the party position
+				// _ = m.position.UnregisterOrder(ctx, cancellation.Order)
 				_ = m.position.UnregisterOrder(ctx, order)
+			} else {
+				// unpark before it's reparked next eventually
+				m.peggedOrders.Unpark(order)
 			}
 
 			if price, err := m.getNewPeggedPrice(order); err != nil {
@@ -131,7 +151,11 @@ func (m *Market) repriceAllSpecialOrders(
 	var parked, toSubmit []*types.Order
 	if changes != 0 {
 		parked, toSubmit = m.repricePeggedOrders(ctx, changes)
+		for _, topark := range parked {
+			m.peggedOrders.Park(topark)
+		}
 	}
+
 	// just checking if we need to take all lp of the book too
 	// normal lp updates would be fine without taking order from the
 	// book as no prices would be conlficting
