@@ -44,6 +44,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5672](https://github.com/vegaprotocol/vega/issues/5672) - Typo fixed in datanode `ethereum` address
 - [5683](https://github.com/vegaprotocol/vega/issues/5683) - Made market mandatory in `GraphQL` for order
 - [5677](https://github.com/vegaprotocol/vega/issues/5677) - Fixed trading mode status
+- [5663](https://github.com/vegaprotocol/vega/issues/5663) - Fixed panic with unregistering positions
 
 ## 0.53.0
 
