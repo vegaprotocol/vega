@@ -2490,7 +2490,7 @@ func PeggedOrdersStateFromProto(s *snapshot.PeggedOrders) *PeggedOrdersState {
 
 func (s PeggedOrdersState) IntoProto() *snapshot.PeggedOrders {
 	po := &snapshot.PeggedOrders{
-		OrderParties: make([]*snapshot.OrderPartyPair, len(s.Orders)),
+		OrderParties: make([]*snapshot.OrderPartyPair, 0, len(s.Orders)),
 		ParkedOrders: make([]*vega.Order, 0, len(s.Parked)),
 	}
 
