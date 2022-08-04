@@ -32,8 +32,6 @@ type PeggedOrders struct {
 	// parked list
 	parked   []*types.Order
 	isParked map[string]struct{}
-
-	ordersChanged bool
 }
 
 func NewPeggedOrders(log *logging.Logger, ts TimeService) *PeggedOrders {
@@ -61,7 +59,7 @@ func NewPeggedOrdersFromSnapshot(
 }
 
 func (p *PeggedOrders) Changed() bool {
-	return p.ordersChanged
+	return true
 }
 
 func (p *PeggedOrders) GetState() *types.PeggedOrdersState {
@@ -94,13 +92,11 @@ func (p *PeggedOrders) Park(o *types.Order) {
 	o.Price = num.UintZero()
 	o.OriginalPrice = num.UintZero()
 	p.park(o)
-	p.ordersChanged = true
 }
 
 func (p *PeggedOrders) park(o *types.Order) {
 	p.parked = append(p.parked, o)
 	p.isParked[o.ID] = struct{}{}
-	p.ordersChanged = true
 	p.hasDups()
 }
 
@@ -113,7 +109,6 @@ func (p *PeggedOrders) Unpark(o *types.Order) {
 			copy(p.parked[i:], p.parked[i+1:])
 			p.parked[len(p.parked)-1] = nil
 			p.parked = p.parked[:len(p.parked)-1]
-			p.ordersChanged = true
 			delete(p.isParked, o.ID)
 			return
 		}
@@ -143,7 +138,6 @@ func (p *PeggedOrders) hasDups() {
 func (p *PeggedOrders) Add(o *types.Order) {
 	appendOrder("add peg", o)
 	p.orders[o.ID] = o.Party
-	p.ordersChanged = true
 	p.hasDups()
 }
 
@@ -164,7 +158,6 @@ func (p *PeggedOrders) AmendParked(amended *types.Order) {
 		if o.ID == amended.ID {
 			appendOrder("amend pegf", o)
 			p.parked[i] = amended
-			p.ordersChanged = true
 			return
 		}
 	}
@@ -193,7 +186,6 @@ func (p *PeggedOrders) RemoveAllForParty(
 			o.Status = status
 			orders = append(orders, o)
 			evts = append(evts, events.NewOrderEvent(ctx, o))
-			p.ordersChanged = true
 			delete(p.isParked, o.ID)
 			continue
 		}
@@ -219,8 +211,8 @@ func (p *PeggedOrders) RemoveAllParkedForParty(
 			o.Status = status
 			orders = append(orders, o)
 			evts = append(evts, events.NewOrderEvent(ctx, o))
-			p.ordersChanged = true
 			delete(p.isParked, o.ID)
+			delete(p.orders, o.ID)
 			continue
 		}
 		// here we insert back in the slice

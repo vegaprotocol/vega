@@ -1798,6 +1798,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 	// and remove the orders from the positions engine
 	evts := []events.Event{}
 	for _, o := range rmorders {
+		fmt.Printf("REMOVING ORDER: %v\n", o.ID)
 		if o.IsExpireable() {
 			m.expiringOrders.RemoveOrder(o.ExpiresAt, o.ID)
 		}
@@ -1812,6 +1813,17 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 	// add the orders remove from the book to the orders
 	// to be sent to the liquidity engine
 	orderUpdates = append(orderUpdates, rmorders...)
+
+	fmt.Printf("\n\nORDER UPDATE: \n")
+	for _, v := range orderUpdates {
+		fmt.Printf("ORDER UPDATE: %v\n", v.String())
+	}
+
+	fmt.Printf("\n\nPARKED: \n")
+	for _, v := range m.peggedOrders.parked {
+		fmt.Printf("ORDER PARKED: %v\n", v.String())
+	}
+	fmt.Printf("IS PARKED: %v\n", m.peggedOrders.isParked)
 
 	// now we also remove ALL parked order for the different parties
 	for _, v := range distressedPos {
@@ -1861,6 +1873,14 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 			}
 		}
 	}
+
+	fmt.Printf("\n\nPARKED 2: \n")
+	for _, v := range m.peggedOrders.parked {
+		fmt.Printf("ORDER PARKED 2: %v\n", v.String())
+	}
+	fmt.Printf("IS PARKED 2: %v\n", m.peggedOrders.isParked)
+
+	m.matching.PrintSide(types.SideBuy)
 
 	// if no position are meant to be closed, just return now.
 	if len(closed) <= 0 {

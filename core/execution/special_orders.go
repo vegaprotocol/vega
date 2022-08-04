@@ -123,8 +123,6 @@ func (m *Market) reSubmitPeggedOrders(
 			return
 		}
 
-		fmt.Printf("SUBMITTED ORDER: %v - %v\n", conf.Order.String(), err)
-
 		if err == nil {
 			updatedOrders = append(updatedOrders, conf.Order)
 		}
