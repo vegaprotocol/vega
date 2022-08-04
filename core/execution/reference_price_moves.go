@@ -14,7 +14,6 @@ package execution
 
 import (
 	"context"
-	"fmt"
 
 	"code.vegaprotocol.io/vega/core/types"
 )
@@ -74,11 +73,6 @@ func (m *Market) checkForReferenceMoves(
 
 	// now we can start all special order repricing...
 	orderUpdates = m.repriceAllSpecialOrders(ctx, changes, orderUpdates)
-
-	fmt.Printf("\n\norder Updates\n")
-	for _, v := range orderUpdates {
-		fmt.Printf("%v\n", v.String())
-	}
 
 	// Update the last price values
 	// no need to clone the prices, they're not used in calculations anywhere in this function

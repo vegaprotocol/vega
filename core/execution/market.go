@@ -19,7 +19,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"os"
 	"sort"
 	"sync"
 	"time"
@@ -296,18 +295,6 @@ func SetMarketID(marketcfg *types.Market, seq uint64) error {
 	d = d[:20]
 	marketcfg.ID = hex.EncodeToString(d)
 	return nil
-}
-
-func appendOrder(typ string, o *types.Order) {
-	f, err := os.OpenFile("/Users/jeremy/works/vega/vega-market-sim/orders.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
-	if err != nil {
-		panic(err)
-	}
-	defer f.Close()
-
-	if _, err = fmt.Fprintf(f, "%v: %p - %v - %d - %s - %s - %s\n", typ, o, o.ID, o.Remaining, o.Side, o.Party, o.Status); err != nil {
-		panic(err)
-	}
 }
 
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
@@ -927,7 +914,6 @@ func (m *Market) parkAllPeggedOrders(ctx context.Context) []*types.Order {
 	toParkIDs := m.peggedOrders.GetAllActiveOrders()
 	parked := make([]*types.Order, 0, len(toParkIDs))
 	for _, order := range toParkIDs {
-		fmt.Printf("to park: %v\n", order)
 		parked = append(parked, m.parkOrder(ctx, order))
 	}
 	return parked
@@ -1062,30 +1048,10 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 			updatedOrders, uncrossedOrder.PassiveOrdersAffected...)
 	}
 
-	for _, v := range updatedOrders {
-		fmt.Printf("%v\n", v.String())
-	}
-
-	fmt.Printf("\n\nPARKED\n")
-	for _, v := range m.peggedOrders.parked {
-		fmt.Printf("%v\n", v.String())
-	}
-
-	m.matching.PrintSide(types.SideSell)
-
 	// Send an event bus update
 	m.broker.Send(endEvt)
 	m.checkForReferenceMoves(ctx, updatedOrders, true)
-
-	fmt.Printf("\n\nPARKED 2\n")
-	for _, v := range m.peggedOrders.parked {
-		fmt.Printf("%v\n", v.String())
-	}
 	m.checkLiquidity(ctx, nil, true)
-	fmt.Printf("\n\nPARKED 3\n")
-	for _, v := range m.peggedOrders.parked {
-		fmt.Printf("%v\n", v.String())
-	}
 	m.commandLiquidityAuction(ctx)
 	m.updateLiquidityFee(ctx)
 	m.OnAuctionEnded()
@@ -1304,13 +1270,10 @@ func (m *Market) SubmitOrder(
 	}
 
 	order.ID = m.idgen.NextID()
-	appendOrder("submit", order)
 	conf, orderUpdates, err := m.submitOrder(ctx, order)
 	if err != nil {
 		return nil, err
 	}
-
-	appendOrder("after submit", conf.Order)
 
 	allUpdatedOrders := append(
 		[]*types.Order{conf.Order}, conf.PassiveOrdersAffected...)
@@ -1632,11 +1595,6 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 		}
 	}
 
-	appendOrder("conf", conf.Order)
-	for _, v := range conf.PassiveOrdersAffected {
-		appendOrder("conf passive", v)
-	}
-
 	m.handleConfirmationPassiveOrders(ctx, conf)
 	end := m.as.CanLeave()
 
@@ -1798,7 +1756,6 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 	// and remove the orders from the positions engine
 	evts := []events.Event{}
 	for _, o := range rmorders {
-		fmt.Printf("REMOVING ORDER: %v\n", o.ID)
 		if o.IsExpireable() {
 			m.expiringOrders.RemoveOrder(o.ExpiresAt, o.ID)
 		}
@@ -1813,17 +1770,6 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 	// add the orders remove from the book to the orders
 	// to be sent to the liquidity engine
 	orderUpdates = append(orderUpdates, rmorders...)
-
-	fmt.Printf("\n\nORDER UPDATE: \n")
-	for _, v := range orderUpdates {
-		fmt.Printf("ORDER UPDATE: %v\n", v.String())
-	}
-
-	fmt.Printf("\n\nPARKED: \n")
-	for _, v := range m.peggedOrders.parked {
-		fmt.Printf("ORDER PARKED: %v\n", v.String())
-	}
-	fmt.Printf("IS PARKED: %v\n", m.peggedOrders.isParked)
 
 	// now we also remove ALL parked order for the different parties
 	for _, v := range distressedPos {
@@ -1873,14 +1819,6 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 			}
 		}
 	}
-
-	fmt.Printf("\n\nPARKED 2: \n")
-	for _, v := range m.peggedOrders.parked {
-		fmt.Printf("ORDER PARKED 2: %v\n", v.String())
-	}
-	fmt.Printf("IS PARKED 2: %v\n", m.peggedOrders.isParked)
-
-	m.matching.PrintSide(types.SideBuy)
 
 	// if no position are meant to be closed, just return now.
 	if len(closed) <= 0 {
@@ -2685,7 +2623,7 @@ func (m *Market) amendOrder(
 					return nil, orderUpdts, err
 				}
 				// Update pegged order with new amended version
-				//FIXME: THIS SHOULD BE UNCESSARY
+				// FIXME: THIS SHOULD BE UNCESSARY
 				// m.peggedOrders.Amend(amendedOrder)
 				return orderConf, orderUpdts, err
 			}
@@ -2972,7 +2910,7 @@ func (m *Market) orderAmendInPlace(originalOrder, amendOrder *types.Order) (*typ
 		return nil, err
 	}
 
-	//FIXME: this should be unecessary as not parked at this point
+	// FIXME: this should be unnecessary as not parked at this point
 	// order is successfully submitted, update the pegged list
 	// if amendOrder.PeggedOrder != nil {
 	// 	m.peggedOrders.Amend(amendOrder)

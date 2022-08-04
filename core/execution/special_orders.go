@@ -16,7 +16,6 @@ package execution
 
 import (
 	"context"
-	"fmt"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/liquidity"
@@ -34,7 +33,6 @@ func (m *Market) repricePeggedOrders(
 
 	// Go through all the pegged orders and remove from the order book
 	for _, oid := range m.peggedOrders.GetIDs() {
-		fmt.Printf("PEGID: %v\n", oid)
 		var (
 			order *types.Order
 			err   error
@@ -59,9 +57,6 @@ func (m *Market) repricePeggedOrders(
 						logging.Order(*order),
 						logging.Error(err))
 				}
-
-				fmt.Printf("1: %p - %v\n", order, order.String())
-				fmt.Printf("2: %p - %v\n", cancellation.Order, cancellation.Order.String())
 
 				// Remove it from the party position
 				// _ = m.position.UnregisterOrder(ctx, cancellation.Order)
@@ -152,16 +147,6 @@ func (m *Market) repriceAllSpecialOrders(
 		for _, topark := range parked {
 			m.peggedOrders.Park(topark)
 		}
-	}
-
-	fmt.Printf("TO PARK 1:\n")
-	for _, v := range parked {
-		fmt.Printf("TOPARK: %v\n", v.String())
-	}
-
-	fmt.Printf("TO SUBMIT 1: \n")
-	for _, v := range toSubmit {
-		fmt.Printf("TOSUBMIT: %v\n", v.String())
 	}
 
 	// just checking if we need to take all lp of the book too

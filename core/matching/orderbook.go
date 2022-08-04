@@ -13,7 +13,6 @@
 package matching
 
 import (
-	"fmt"
 	"sort"
 	"sync"
 	"time"
@@ -1039,14 +1038,4 @@ func (b *OrderBook) Settled() []*types.Order {
 	b.sell.cleanup()
 
 	return orders
-}
-
-func (b *OrderBook) PrintSide(s types.Side) {
-	fmt.Printf("\n\n BookSide: %v\n", s.String())
-	side := b.getSide(s)
-	for _, v := range side.levels {
-		for _, o := range v.orders {
-			fmt.Printf("%v\n", o.String())
-		}
-	}
 }

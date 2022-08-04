@@ -14,7 +14,6 @@ package execution
 
 import (
 	"context"
-	"fmt"
 	"sort"
 
 	"code.vegaprotocol.io/vega/core/events"
@@ -85,26 +84,18 @@ func (p *PeggedOrders) IsParked(id string) bool {
 }
 
 func (p *PeggedOrders) Park(o *types.Order) {
-	fmt.Printf("PARKING: %v\n", o.ID)
-	appendOrder("park", o)
 	o.UpdatedAt = p.timeService.GetTimeNow().UnixNano()
 	o.Status = types.OrderStatusParked
 	o.Price = num.UintZero()
 	o.OriginalPrice = num.UintZero()
-	p.park(o)
-}
 
-func (p *PeggedOrders) park(o *types.Order) {
 	p.parked = append(p.parked, o)
 	p.isParked[o.ID] = struct{}{}
-	p.hasDups()
 }
 
 func (p *PeggedOrders) Unpark(o *types.Order) {
-	fmt.Printf("UNPARKING: %v\n", o.ID)
 	for i, po := range p.parked {
 		if po.ID == o.ID {
-			appendOrder("rm pegf", po)
 			// Remove item from slice
 			copy(p.parked[i:], p.parked[i+1:])
 			p.parked[len(p.parked)-1] = nil
@@ -124,27 +115,12 @@ func (p *PeggedOrders) GetParkedByID(id string) *types.Order {
 	return nil
 }
 
-func (p *PeggedOrders) hasDups() {
-	orders := map[string]struct{}{}
-	for _, v := range p.parked {
-		if _, ok := orders[v.ID]; ok {
-			panic(fmt.Sprintf("duplicate order: %v", v.ID))
-		}
-		orders[v.ID] = struct{}{}
-	}
-
-}
-
 func (p *PeggedOrders) Add(o *types.Order) {
-	appendOrder("add peg", o)
 	p.orders[o.ID] = o.Party
-	p.hasDups()
 }
 
-// Remove from the parked list AND the list of pegged orders
+// Remove from the parked list AND the list of pegged orders.
 func (p *PeggedOrders) Remove(o *types.Order) {
-	defer func() { p.hasDups() }()
-	appendOrder("rm peg", o)
 	// delete from the list
 	delete(p.orders, o.ID)
 	// remove if parked
@@ -152,11 +128,8 @@ func (p *PeggedOrders) Remove(o *types.Order) {
 }
 
 func (p *PeggedOrders) AmendParked(amended *types.Order) {
-	defer func() { p.hasDups() }()
-	appendOrder("amend peg", amended)
 	for i, o := range p.parked {
 		if o.ID == amended.ID {
-			appendOrder("amend pegf", o)
 			p.parked[i] = amended
 			return
 		}
@@ -168,7 +141,6 @@ func (p *PeggedOrders) AmendParked(amended *types.Order) {
 func (p *PeggedOrders) RemoveAllForParty(
 	ctx context.Context, party string, status types.OrderStatus,
 ) (orders []*types.Order, evts []events.Event) {
-	defer func() { p.hasDups() }()
 	n := 0
 	now := p.timeService.GetTimeNow().UnixNano()
 
@@ -201,7 +173,6 @@ func (p *PeggedOrders) RemoveAllForParty(
 func (p *PeggedOrders) RemoveAllParkedForParty(
 	ctx context.Context, party string, status types.OrderStatus,
 ) (orders []*types.Order, evts []events.Event) {
-	defer func() { p.hasDups() }()
 	n := 0
 	now := p.timeService.GetTimeNow().UnixNano()
 
@@ -224,24 +195,17 @@ func (p *PeggedOrders) RemoveAllParkedForParty(
 }
 
 func (p *PeggedOrders) GetAllActiveOrders() (orders []string) {
-	defer func() { p.hasDups() }()
-	for k, _ := range p.orders {
-		fmt.Printf("order: %v\n", k)
+	for k := range p.orders {
 		if _, parked := p.isParked[k]; !parked {
 			orders = append(orders, k)
 		}
-	}
-
-	fmt.Printf("PARK: %#v\n", p.isParked)
-	for _, v := range p.parked {
-		fmt.Printf("%v\n", v.String())
 	}
 	return
 }
 
 func (p *PeggedOrders) GetIDs() []string {
 	ids := make([]string, 0, len(p.orders))
-	for k, _ := range p.orders {
+	for k := range p.orders {
 		ids = append(ids, k)
 	}
 
@@ -250,7 +214,6 @@ func (p *PeggedOrders) GetIDs() []string {
 }
 
 func (p *PeggedOrders) GetAllParkedForParty(party string) (orders []*types.Order) {
-	defer func() { p.hasDups() }()
 	for _, order := range p.parked {
 		if order.Party == party {
 			orders = append(orders, order)
@@ -271,7 +234,7 @@ func (p *PeggedOrders) GetAllForParty(
 	}
 
 	// now iterate over the whole list and get non parked
-	for k, _ := range p.orders {
+	for k := range p.orders {
 		if _, ok := parkedIDs[k]; !ok {
 			live = append(live, k)
 		}
@@ -283,7 +246,6 @@ func (p *PeggedOrders) GetAllForParty(
 }
 
 func (p *PeggedOrders) Settled() []*types.Order {
-	defer func() { p.hasDups() }()
 	// now we can remove the pegged orders too
 	peggedOrders := make([]*types.Order, 0, len(p.parked))
 	for _, v := range p.parked {
