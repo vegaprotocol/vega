@@ -87,6 +87,7 @@ func (p *PeggedOrders) IsParked(id string) bool {
 }
 
 func (p *PeggedOrders) Park(o *types.Order) {
+	fmt.Printf("PARKING: %v\n", o.ID)
 	appendOrder("park", o)
 	o.UpdatedAt = p.timeService.GetTimeNow().UnixNano()
 	o.Status = types.OrderStatusParked
@@ -104,6 +105,7 @@ func (p *PeggedOrders) park(o *types.Order) {
 }
 
 func (p *PeggedOrders) Unpark(o *types.Order) {
+	fmt.Printf("UNPARKING: %v\n", o.ID)
 	for i, po := range p.parked {
 		if po.ID == o.ID {
 			appendOrder("rm pegf", po)
@@ -232,9 +234,15 @@ func (p *PeggedOrders) RemoveAllParkedForParty(
 func (p *PeggedOrders) GetAllActiveOrders() (orders []string) {
 	defer func() { p.hasDups() }()
 	for k, _ := range p.orders {
+		fmt.Printf("order: %v\n", k)
 		if _, parked := p.isParked[k]; !parked {
 			orders = append(orders, k)
 		}
+	}
+
+	fmt.Printf("PARK: %#v\n", p.isParked)
+	for _, v := range p.parked {
+		fmt.Printf("%v\n", v.String())
 	}
 	return
 }

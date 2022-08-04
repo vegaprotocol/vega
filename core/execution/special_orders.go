@@ -34,6 +34,7 @@ func (m *Market) repricePeggedOrders(
 
 	// Go through all the pegged orders and remove from the order book
 	for _, oid := range m.peggedOrders.GetIDs() {
+		fmt.Printf("PEGID: %v\n", oid)
 		var (
 			order *types.Order
 			err   error
@@ -71,16 +72,13 @@ func (m *Market) repricePeggedOrders(
 			}
 
 			if price, err := m.getNewPeggedPrice(order); err != nil {
-				// Failed to reprice, if we are parked we do nothing,
-				// if not parked we need to park
-				if order.Status != types.OrderStatusParked {
-					order.UpdatedAt = m.timeService.GetTimeNow().UnixNano()
-					order.Status = types.OrderStatusParked
-					order.Price = num.UintZero()
-					order.OriginalPrice = nil
-					m.broker.Send(events.NewOrderEvent(ctx, order))
-					parked = append(parked, order)
-				}
+				// Failed to reprice, we need to park again
+				order.UpdatedAt = m.timeService.GetTimeNow().UnixNano()
+				order.Status = types.OrderStatusParked
+				order.Price = num.UintZero()
+				order.OriginalPrice = nil
+				m.broker.Send(events.NewOrderEvent(ctx, order))
+				parked = append(parked, order)
 			} else {
 				// Repriced so all good make sure status is correct
 				order.Price = price.Clone()
@@ -125,6 +123,8 @@ func (m *Market) reSubmitPeggedOrders(
 			return
 		}
 
+		fmt.Printf("SUBMITTED ORDER: %v - %v\n", conf.Order.String(), err)
+
 		if err == nil {
 			updatedOrders = append(updatedOrders, conf.Order)
 		}
@@ -154,6 +154,16 @@ func (m *Market) repriceAllSpecialOrders(
 		for _, topark := range parked {
 			m.peggedOrders.Park(topark)
 		}
+	}
+
+	fmt.Printf("TO PARK 1:\n")
+	for _, v := range parked {
+		fmt.Printf("TOPARK: %v\n", v.String())
+	}
+
+	fmt.Printf("TO SUBMIT 1: \n")
+	for _, v := range toSubmit {
+		fmt.Printf("TOSUBMIT: %v\n", v.String())
 	}
 
 	// just checking if we need to take all lp of the book too

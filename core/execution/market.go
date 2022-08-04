@@ -927,6 +927,7 @@ func (m *Market) parkAllPeggedOrders(ctx context.Context) []*types.Order {
 	toParkIDs := m.peggedOrders.GetAllActiveOrders()
 	parked := make([]*types.Order, 0, len(toParkIDs))
 	for _, order := range toParkIDs {
+		fmt.Printf("to park: %v\n", order)
 		parked = append(parked, m.parkOrder(ctx, order))
 	}
 	return parked
@@ -1061,10 +1062,30 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 			updatedOrders, uncrossedOrder.PassiveOrdersAffected...)
 	}
 
+	for _, v := range updatedOrders {
+		fmt.Printf("%v\n", v.String())
+	}
+
+	fmt.Printf("\n\nPARKED\n")
+	for _, v := range m.peggedOrders.parked {
+		fmt.Printf("%v\n", v.String())
+	}
+
+	m.matching.PrintSide(types.SideSell)
+
 	// Send an event bus update
 	m.broker.Send(endEvt)
 	m.checkForReferenceMoves(ctx, updatedOrders, true)
+
+	fmt.Printf("\n\nPARKED 2\n")
+	for _, v := range m.peggedOrders.parked {
+		fmt.Printf("%v\n", v.String())
+	}
 	m.checkLiquidity(ctx, nil, true)
+	fmt.Printf("\n\nPARKED 3\n")
+	for _, v := range m.peggedOrders.parked {
+		fmt.Printf("%v\n", v.String())
+	}
 	m.commandLiquidityAuction(ctx)
 	m.updateLiquidityFee(ctx)
 	m.OnAuctionEnded()
