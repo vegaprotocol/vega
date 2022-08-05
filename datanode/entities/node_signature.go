@@ -13,6 +13,10 @@
 package entities
 
 import (
+	"encoding/json"
+	"fmt"
+
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
 
@@ -40,4 +44,42 @@ func (w NodeSignature) ToProto() *commandspb.NodeSignature {
 		Sig:  w.Sig,
 		Kind: commandspb.NodeSignatureKind(w.Kind),
 	}
+}
+
+func (w NodeSignature) Cursor() *Cursor {
+	cursor := NodeSignatureCursor{
+		ID:  w.ResourceID.String(),
+		Sig: w.Sig,
+	}
+	return NewCursor(cursor.String())
+}
+
+func (w NodeSignature) ToProtoEdge(_ ...any) (*v2.NodeSignatureEdge, error) {
+	return &v2.NodeSignatureEdge{
+		Node:   w.ToProto(),
+		Cursor: w.Cursor().Encode(),
+	}, nil
+}
+
+type NodeSignatureCursor struct {
+	ID  string `json:"id"`
+	Sig []byte `json:"sig"`
+}
+
+func (c NodeSignatureCursor) String() string {
+	bs, err := json.Marshal(c)
+	// Should never error, so panic if it does
+	if err != nil {
+		panic(fmt.Errorf("could not marshal node signature cursor: %w", err))
+	}
+
+	return string(bs)
+}
+
+func (c *NodeSignatureCursor) Parse(cursorString string) error {
+	if cursorString == "" {
+		return nil
+	}
+
+	return json.Unmarshal([]byte(cursorString), c)
 }

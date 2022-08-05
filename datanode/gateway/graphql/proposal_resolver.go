@@ -56,7 +56,7 @@ func (r *proposalResolver) Party(ctx context.Context, data *types.GovernanceData
 	if data == nil || data.Proposal == nil {
 		return nil, ErrInvalidProposal
 	}
-	p, err := getParty(ctx, r.log, r.tradingDataClient, data.Proposal.PartyId)
+	p, err := getParty(ctx, r.log, r.tradingDataClientV2, data.Proposal.PartyId)
 	if p == nil && err == nil {
 		// the api could return an nil party in some cases
 		// e.g: when a party does not exists in the stores

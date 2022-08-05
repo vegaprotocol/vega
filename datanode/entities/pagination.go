@@ -103,8 +103,8 @@ func NewCursorPagination(first *int32, after *string, last *int32, before *strin
 }
 
 func CursorPaginationFromProto(cp *v2.Pagination) (CursorPagination, error) {
-	if cp == nil {
-		return CursorPagination{}, nil
+	if cp == nil || (cp.Last == nil && cp.First == nil && cp.NewestFirst == nil) {
+		return DefaultCursorPagination(true), nil
 	}
 
 	var after, before Cursor
@@ -153,6 +153,16 @@ func CursorPaginationFromProto(cp *v2.Pagination) (CursorPagination, error) {
 	}
 
 	return pagination, nil
+}
+
+func DefaultCursorPagination(newestFirst bool) CursorPagination {
+	limit := int32(1000)
+	return CursorPagination{
+		Forward: &offset{
+			Limit: &limit,
+		},
+		NewestFirst: newestFirst,
+	}
 }
 
 type offset struct {

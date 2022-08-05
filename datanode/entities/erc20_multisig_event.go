@@ -13,10 +13,12 @@
 package entities
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
 
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
@@ -40,6 +42,15 @@ type ERC20MultiSigSignerEvent struct {
 	VegaTime     time.Time
 	EpochID      int64
 	Event        ERC20MultiSigSignerEventType
+}
+
+func (e ERC20MultiSigSignerEvent) Cursor() *Cursor {
+	ec := ERC20MultiSigSignerEventCursor{
+		VegaTime: e.VegaTime,
+		ID:       e.ID.String(),
+	}
+
+	return NewCursor(ec.String())
 }
 
 func ERC20MultiSigSignerEventFromAddedProto(e *eventspb.ERC20MultiSigSignerAdded) (*ERC20MultiSigSignerEvent, error) {
@@ -81,4 +92,89 @@ func ERC20MultiSigSignerEventFromRemovedProto(e *eventspb.ERC20MultiSigSignerRem
 	}
 
 	return ents, nil
+}
+
+type ERC20MultiSigSignerEventCursor struct {
+	VegaTime time.Time `json:"vega_time"`
+	ID       string    `json:"id"`
+}
+
+func (c ERC20MultiSigSignerEventCursor) String() string {
+	bs, err := json.Marshal(c)
+	// This should never fail so we should panic if it does
+	if err != nil {
+		panic(fmt.Errorf("failed to convert"))
+	}
+	return string(bs)
+}
+
+func (c *ERC20MultiSigSignerEventCursor) Parse(cursorString string) error {
+	if cursorString == "" {
+		return nil
+	}
+
+	return json.Unmarshal([]byte(cursorString), c)
+}
+
+type ERC20MultiSigSignerAddedEvent struct {
+	ERC20MultiSigSignerEvent
+}
+
+func (e ERC20MultiSigSignerAddedEvent) Cursor() *Cursor {
+	ec := ERC20MultiSigSignerEventCursor{
+		VegaTime: e.VegaTime,
+		ID:       e.ID.String(),
+	}
+
+	return NewCursor(ec.String())
+}
+
+func (e ERC20MultiSigSignerAddedEvent) ToProto() *eventspb.ERC20MultiSigSignerAdded {
+	return &eventspb.ERC20MultiSigSignerAdded{
+		SignatureId: e.ID.String(),
+		ValidatorId: e.ValidatorID.String(),
+		Timestamp:   e.VegaTime.UnixNano(),
+		NewSigner:   e.SignerChange.String(),
+		Submitter:   e.Submitter.String(),
+		Nonce:       e.Nonce,
+		EpochSeq:    strconv.FormatInt(e.EpochID, 10),
+	}
+}
+
+func (e ERC20MultiSigSignerAddedEvent) ToProtoEdge(_ ...any) (*v2.ERC20MultiSigSignerAddedEdge, error) {
+	return &v2.ERC20MultiSigSignerAddedEdge{
+		Node:   e.ToProto(),
+		Cursor: e.Cursor().Encode(),
+	}, nil
+}
+
+type ERC20MultiSigSignerRemovedEvent struct {
+	ERC20MultiSigSignerEvent
+}
+
+func (e ERC20MultiSigSignerRemovedEvent) Cursor() *Cursor {
+	ec := ERC20MultiSigSignerEventCursor{
+		VegaTime: e.VegaTime,
+		ID:       e.ID.String(),
+	}
+
+	return NewCursor(ec.String())
+}
+
+func (e ERC20MultiSigSignerRemovedEvent) ToProto() *eventspb.ERC20MultiSigSignerRemoved {
+	return &eventspb.ERC20MultiSigSignerRemoved{
+		SignatureSubmitters: nil,
+		ValidatorId:         e.ValidatorID.String(),
+		Timestamp:           e.VegaTime.UnixNano(),
+		OldSigner:           e.SignerChange.String(),
+		Nonce:               e.Nonce,
+		EpochSeq:            strconv.FormatInt(e.EpochID, 10),
+	}
+}
+
+func (e ERC20MultiSigSignerRemovedEvent) ToProtoEdge(_ ...any) (*v2.ERC20MultiSigSignerRemovedEdge, error) {
+	return &v2.ERC20MultiSigSignerRemovedEdge{
+		Node:   e.ToProto(),
+		Cursor: e.Cursor().Encode(),
+	}, nil
 }

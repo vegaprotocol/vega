@@ -343,7 +343,7 @@ input AccountFilter {
 "Queries allow a caller to read data and filter data via GraphQL."
 type Query {
   "One or more instruments that are trading on the VEGA network"
-  markets("ID of the market" id: ID): [Market!]
+  markets("ID of the market" id: ID): [Market!] @deprecated(reason: "Use marketsConnection instead")
 
   marketsConnection(
     "Optional ID of a market"
@@ -356,7 +356,7 @@ type Query {
   market("Optional ID of a market" id: ID!): Market
 
   "One or more entities that are trading on the Vega network"
-  parties("Optional ID of a party" id: ID): [Party!]
+  parties("Optional ID of a party" id: ID): [Party!] @deprecated(reason: "Use partiesConnection instead.")
 
   partiesConnection(
     "Optional ID of a party to retrieve"
@@ -504,7 +504,10 @@ type Query {
   ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
 
   "Return a list of aggregated node signature for a given resource ID"
-  nodeSignatures(resourceId: ID!): [NodeSignature!]
+  nodeSignatures(resourceId: ID!): [NodeSignature!] @deprecated(reason: "Use nodeSignaturesConnection instead")
+
+  "Return a list of aggregated node signature for a given resource ID"
+  nodeSignaturesConnection(resourceId: ID!, pagination: Pagination): NodeSignaturesConnection!
 
   "An asset which is used in the vega network"
   asset("Id of the asset" assetId: ID!): Asset
@@ -548,7 +551,9 @@ type Query {
   deposit("id of the Deposit" id: ID!): Deposit
 
   "return the full list of network parameters"
-  networkParameters: [NetworkParameter!]
+  networkParameters: [NetworkParameter!] @deprecated(reason: "Use networkParametersConnection instead")
+
+  networkParametersConnection(pagination: Pagination): NetworkParametersConnection!
 
   "returns information about nodes"
   nodeData: NodeData
@@ -563,7 +568,10 @@ type Query {
   node("required id of node" id: String!): Node
 
   "query for historic key rotations"
-  keyRotations(id: String): [KeyRotation!]
+  keyRotations(id: String): [KeyRotation!] @deprecated(reason: "use keyRotationsConnection instead")
+
+  "query for historic key rotations"
+  keyRotationsConnection(id: String, pagination: Pagination): KeyRotationConnection!
 
   "get data for a specific epoch, if ID omitted it gets the current epoch. If the string is 'next', fetch the next epoch"
   epoch(id: String): Epoch!
@@ -1588,7 +1596,15 @@ type Market {
   accounts(
     "ID of the party to get the margin account for"
     partyId: ID
-  ): [Account!]
+  ): [Account!] @deprecated(reason: "Use the accountsConnection instead")
+
+  "Get account for a party or market"
+  accountsConnection(
+    "ID of the party to get the margin account for"
+    partyId: ID
+    "Pagination information"
+    pagination: Pagination
+  ): AccountsConnection!
 
   "Trades on a market"
   trades(
@@ -1830,7 +1846,19 @@ type Party {
     asset: String
     "Filter accounts by type (General account, margin account, etc...)"
     type: AccountType
-  ): [Account!]
+  ): [Account!] @deprecated(reason: "Use accountsConnection instead")
+
+  "Collateral accounts relating to a party"
+  accountsConnection(
+    "Market ID - specify what market accounts for the party to return"
+    marketId: ID
+    "Asset (ETH, DAI etc)"
+    asset: String
+    "Filter accounts by type (General account, margin account, etc...)"
+    type: AccountType
+    "Cursor pagination information"
+    pagination: Pagination
+  ): AccountsConnection!
 
   "Trading positions relating to a party"
   positions: [Position!] @deprecated(reason: "Use the 'positionsConnection' field instead")
@@ -1867,7 +1895,7 @@ type Party {
     pagination: Pagination
   ): ProposalsConnection!
 
-  votes: [ProposalVote]
+  votes: [ProposalVote] @deprecated(reason: "Use votesConnection instead")
 
   votesConnection(pagination: Pagination): ProposalVoteConnection!
 
@@ -1920,7 +1948,10 @@ type Party {
   ): DelegationsConnection!
 
   "The staking information for this Party"
-  stake: PartyStake!
+  stake: PartyStake! @deprecated(reason: "Use stakingSummary instead")
+
+  "The staking information for this Party"
+  stakingSummary(pagination: Pagination): StakingSummary!
 
   "Return individual reward information"
   rewards(
@@ -1961,6 +1992,18 @@ type PartyStake {
   currentStakeAvailable: String!
   "The list of all stake link/unlink for the party"
   linkings: [StakeLinking!]
+}
+
+"""
+All staking information related to a Party.
+Contains the current recognised balance by the network and
+all the StakeLink/Unlink seen by the network
+"""
+type StakingSummary {
+  "The stake currently available for the party"
+  currentStakeAvailable: String!
+  "The list of all stake link/unlink for the party"
+  linkings(pagination: Pagination): StakesConnection!
 }
 
 "The type of stake linking"
@@ -2030,7 +2073,7 @@ type Position {
   averageEntryPrice: String!
 
   "Margins of the party for the given position"
-  margins: [MarginLevels!]
+  margins: [MarginLevels!] @deprecated(reason: "Use marginsConnection instead")
 
   "Margins of the party for the given position"
   marginsConnection(pagination: Pagination): MarginConnection!
@@ -3742,6 +3785,90 @@ type NodeEdge {
 type NodesConnection {
   "List of nodes available for the connection"
   edges: [NodeEdge]
+  "Page information for the connection"
+  pageInfo: PageInfo!
+}
+
+type NetworkParameterEdge {
+  "The network parameter"
+  node: NetworkParameter!
+  "Cursor identifying the network parameter"
+  cursor: String!
+}
+
+type NetworkParametersConnection {
+  "List of network parameters available for the connection"
+  edges: [NetworkParameterEdge]
+  "Page information for the connection"
+  pageInfo: PageInfo!
+}
+
+type NodeSignatureEdge {
+  "The node signature"
+  node: NodeSignature!
+  "Cursor identifying the node signature"
+  cursor: String!
+}
+
+type NodeSignaturesConnection {
+  "List of node signatures available for the connection"
+  edges: [NodeSignatureEdge]
+  "Page information for the connection"
+  pageInfo: PageInfo!
+}
+
+type KeyRotationEdge {
+  "The key rotation"
+  node: KeyRotation!
+  "Cursor identifying the key rotation"
+  cursor: String!
+}
+
+type KeyRotationConnection {
+  "List of key rotations available for the connection"
+  edges: [KeyRotationEdge]
+  "Page information for the connection"
+  pageInfo: PageInfo!
+}
+
+type RewardSummaryEdge {
+  "The reward summary"
+  node: RewardSummary!
+  "Cursor identifying the reward summary"
+  cursor: String!
+}
+
+type RewardSummaryConnection {
+  "List of reward summaries available for the connection"
+  edges: [RewardSummaryEdge]
+  "Page information for the connection"
+  pageInfo: PageInfo!
+}
+
+type StakeLinkingEdge {
+  "The stake linking"
+  node: StakeLinking!
+  "Cursor identifying the stake linking"
+  cursor: String!
+}
+
+type StakesConnection {
+  "List of stake links available for the connection"
+  edges: [StakeLinkingEdge]
+  "Page information for the connection"
+  pageInfo: PageInfo!
+}
+
+type AccountEdge {
+  "The account"
+  node: Account!
+  "Cursor identifying the account"
+  cursor: String!
+}
+
+type AccountsConnection {
+  "List of accounts available for the connection"
+  edges: [AccountEdge]
   "Page information for the connection"
   pageInfo: PageInfo!
 }

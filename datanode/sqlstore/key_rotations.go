@@ -14,9 +14,11 @@ package sqlstore
 
 import (
 	"context"
+	"fmt"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -35,7 +37,7 @@ func (store *KeyRotations) Upsert(ctx context.Context, kr *entities.KeyRotation)
 	_, err := store.pool.Exec(ctx, `
 		INSERT INTO key_rotations(node_id, old_pub_key, new_pub_key, block_height, vega_time)
 		VALUES ($1, $2, $3, $4, $5)
-		ON CONFLICT DO UPDATE
+		ON CONFLICT (node_id, vega_time) DO UPDATE SET
 			old_pub_key = EXCLUDED.old_pub_key,
 			new_pub_key = EXCLUDED.new_pub_key,
 			block_height = EXCLUDED.block_height
@@ -46,20 +48,62 @@ func (store *KeyRotations) Upsert(ctx context.Context, kr *entities.KeyRotation)
 	return err
 }
 
-func (store *KeyRotations) GetAllPubKeyRotations(ctx context.Context) ([]entities.KeyRotation, error) {
-	defer metrics.StartSQLQuery("KeyRotations", "GetByID")()
+func (store *KeyRotations) GetAllPubKeyRotations(ctx context.Context, pagination entities.CursorPagination) ([]entities.KeyRotation, entities.PageInfo, error) {
+	defer metrics.StartSQLQuery("KeyRotations", "GetAll")()
+	var pageInfo entities.PageInfo
 	keyRotations := []entities.KeyRotation{}
-	err := pgxscan.Select(ctx, store.pool, &keyRotations, `SELECT * FROM key_rotations ORDER BY vega_time, node_id desc`)
 
-	return keyRotations, err
+	sorting, cmp, cursor := extractPaginationInfo(pagination)
+
+	kc := &entities.KeyRotationCursor{}
+	if err := kc.Parse(cursor); err != nil {
+		return nil, pageInfo, fmt.Errorf("could not parse key rotation cursor: %w", err)
+	}
+
+	cursorParams := []CursorQueryParameter{
+		NewCursorQueryParameter("vega_time", sorting, cmp, kc.VegaTime),
+		NewCursorQueryParameter("node_id", sorting, cmp, entities.NodeID(kc.NodeID)),
+	}
+
+	var args []interface{}
+	query := `SELECT * FROM key_rotations`
+	query, args = orderAndPaginateWithCursor(query, pagination, cursorParams, args...)
+
+	if err := pgxscan.Select(ctx, store.pool, &keyRotations, query, args...); err != nil {
+		return nil, pageInfo, fmt.Errorf("failed to retrieve key rotations: %w", err)
+	}
+
+	keyRotations, pageInfo = entities.PageEntities[*v2.KeyRotationEdge](keyRotations, pagination)
+
+	return keyRotations, pageInfo, nil
 }
 
-func (store *KeyRotations) GetPubKeyRotationsPerNode(ctx context.Context, nodeId string) ([]entities.KeyRotation, error) {
+func (store *KeyRotations) GetPubKeyRotationsPerNode(ctx context.Context, nodeId string, pagination entities.CursorPagination) ([]entities.KeyRotation, entities.PageInfo, error) {
 	defer metrics.StartSQLQuery("KeyRotations", "GetPubKeyRotationsPerNode")()
+	var pageInfo entities.PageInfo
 	id := entities.NodeID(nodeId)
-
 	keyRotations := []entities.KeyRotation{}
-	err := pgxscan.Select(ctx, store.pool, &keyRotations, `SELECT * FROM key_rotations where node_id = $1 ORDER BY vega_time, node_id desc`, id)
 
-	return keyRotations, err
+	sorting, cmp, cursor := extractPaginationInfo(pagination)
+
+	kc := &entities.KeyRotationCursor{}
+	if err := kc.Parse(cursor); err != nil {
+		return nil, pageInfo, fmt.Errorf("could not parse key rotation cursor: %w", err)
+	}
+
+	cursorParams := []CursorQueryParameter{
+		NewCursorQueryParameter("vega_time", sorting, cmp, kc.VegaTime),
+	}
+
+	var args []interface{}
+	query := fmt.Sprintf(`SELECT * FROM key_rotations WHERE node_id = %s`, nextBindVar(&args, id))
+	query, args = orderAndPaginateWithCursor(query, pagination, cursorParams, args...)
+
+	if err := pgxscan.Select(ctx, store.pool, &keyRotations, query, args...); err != nil {
+		return nil, pageInfo, fmt.Errorf("failed to retrieve key rotations: %w", err)
+	}
+
+	keyRotations, pageInfo = entities.PageEntities[*v2.KeyRotationEdge](keyRotations, pagination)
+
+	return keyRotations, pageInfo, nil
 }

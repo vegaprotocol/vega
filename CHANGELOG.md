@@ -31,6 +31,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5011](https://github.com/vegaprotocol/vega/issues/5011) - Import the `protos` repo in the vega repo
 - [5774](https://github.com/vegaprotocol/vega/issues/5774) - Use `generics` for `ID` types
 
+- [5685](https://github.com/vegaprotocol/vega/issues/5685) - Migrated `apis` from `datanode v1` to `datanode v2`
 ### 🐛 Fixes
 - [5571](https://github.com/vegaprotocol/vega/issues/5571) - Restore pending assets status correctly after snapshot restore
 - [5572](https://github.com/vegaprotocol/vega/issues/5572) - Add validation on `IDs` and public keys

@@ -88,6 +88,8 @@ type TradingDataServiceClient interface {
 	GetERC20SetAssetLimitsBundle(ctx context.Context, in *GetERC20SetAssetLimitsBundleRequest, opts ...grpc.CallOption) (*GetERC20SetAssetLimitsBundleResponse, error)
 	GetERC20WithdrawalApproval(ctx context.Context, in *GetERC20WithdrawalApprovalRequest, opts ...grpc.CallOption) (*GetERC20WithdrawalApprovalResponse, error)
 	// -- Trades --
+	// Get latest Trade
+	GetLastTrade(ctx context.Context, in *GetLastTradeRequest, opts ...grpc.CallOption) (*GetLastTradeResponse, error)
 	// Get a list of all trades, optionally filtered by party/market/order using a cursor based pagination model
 	ListTrades(ctx context.Context, in *ListTradesRequest, opts ...grpc.CallOption) (*ListTradesResponse, error)
 	// Subscribe to a stream of Trades, optionally filtered by party/market
@@ -101,9 +103,11 @@ type TradingDataServiceClient interface {
 	ListOracleData(ctx context.Context, in *ListOracleDataRequest, opts ...grpc.CallOption) (*ListOracleDataResponse, error)
 	// -- Markets --
 	// Get all markets using a cursor based pagination model
+	GetMarket(ctx context.Context, in *GetMarketRequest, opts ...grpc.CallOption) (*GetMarketResponse, error)
 	ListMarkets(ctx context.Context, in *ListMarketsRequest, opts ...grpc.CallOption) (*ListMarketsResponse, error)
 	// -- Parties --
 	// Get Parties using a cursor based pagination model
+	GetParty(ctx context.Context, in *GetPartyRequest, opts ...grpc.CallOption) (*GetPartyResponse, error)
 	ListParties(ctx context.Context, in *ListPartiesRequest, opts ...grpc.CallOption) (*ListPartiesResponse, error)
 	// -- Margin Levels --
 	// Get Margin Levels using a cursor based pagination model
@@ -132,6 +136,7 @@ type TradingDataServiceClient interface {
 	ListLiquidityProvisions(ctx context.Context, in *ListLiquidityProvisionsRequest, opts ...grpc.CallOption) (*ListLiquidityProvisionsResponse, error)
 	// -- Governance --
 	// List proposals using a cursor based pagination model
+	GetGovernanceData(ctx context.Context, in *GetGovernanceDataRequest, opts ...grpc.CallOption) (*GetGovernanceDataResponse, error)
 	ListGovernanceData(ctx context.Context, in *ListGovernanceDataRequest, opts ...grpc.CallOption) (*ListGovernanceDataResponse, error)
 	ObserveGovernance(ctx context.Context, in *ObserveGovernanceRequest, opts ...grpc.CallOption) (TradingDataService_ObserveGovernanceClient, error)
 	// -- Delegation --
@@ -146,6 +151,8 @@ type TradingDataServiceClient interface {
 	GetNode(ctx context.Context, in *GetNodeRequest, opts ...grpc.CallOption) (*GetNodeResponse, error)
 	// List information about the nodes on the network
 	ListNodes(ctx context.Context, in *ListNodesRequest, opts ...grpc.CallOption) (*ListNodesResponse, error)
+	// List an aggregate of signatures from all the nodes of the network
+	ListNodeSignatures(ctx context.Context, in *ListNodeSignaturesRequest, opts ...grpc.CallOption) (*ListNodeSignaturesResponse, error)
 	// -- Epochs --
 	// Get data for a specific epoch, if id omitted it gets the current epoch
 	GetEpoch(ctx context.Context, in *GetEpochRequest, opts ...grpc.CallOption) (*GetEpochResponse, error)
@@ -168,6 +175,10 @@ type TradingDataServiceClient interface {
 	// -- Transfer Responses --
 	// Subscribe to a stream of Transfer Responses
 	ObserveTransferResponses(ctx context.Context, in *ObserveTransferResponsesRequest, opts ...grpc.CallOption) (TradingDataService_ObserveTransferResponsesClient, error)
+	// -- Key Rotations --
+	ListKeyRotations(ctx context.Context, in *ListKeyRotationsRequest, opts ...grpc.CallOption) (*ListKeyRotationsResponse, error)
+	// Get Time
+	GetVegaTime(ctx context.Context, in *GetVegaTimeRequest, opts ...grpc.CallOption) (*GetVegaTimeResponse, error)
 }
 
 type tradingDataServiceClient struct {
@@ -623,6 +634,15 @@ func (c *tradingDataServiceClient) GetERC20WithdrawalApproval(ctx context.Contex
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) GetLastTrade(ctx context.Context, in *GetLastTradeRequest, opts ...grpc.CallOption) (*GetLastTradeResponse, error) {
+	out := new(GetLastTradeResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetLastTrade", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) ListTrades(ctx context.Context, in *ListTradesRequest, opts ...grpc.CallOption) (*ListTradesResponse, error) {
 	out := new(ListTradesResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListTrades", in, out, opts...)
@@ -691,9 +711,27 @@ func (c *tradingDataServiceClient) ListOracleData(ctx context.Context, in *ListO
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) GetMarket(ctx context.Context, in *GetMarketRequest, opts ...grpc.CallOption) (*GetMarketResponse, error) {
+	out := new(GetMarketResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetMarket", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) ListMarkets(ctx context.Context, in *ListMarketsRequest, opts ...grpc.CallOption) (*ListMarketsResponse, error) {
 	out := new(ListMarketsResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListMarkets", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataServiceClient) GetParty(ctx context.Context, in *GetPartyRequest, opts ...grpc.CallOption) (*GetPartyResponse, error) {
+	out := new(GetPartyResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetParty", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -863,6 +901,15 @@ func (c *tradingDataServiceClient) ListLiquidityProvisions(ctx context.Context, 
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) GetGovernanceData(ctx context.Context, in *GetGovernanceDataRequest, opts ...grpc.CallOption) (*GetGovernanceDataResponse, error) {
+	out := new(GetGovernanceDataResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetGovernanceData", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) ListGovernanceData(ctx context.Context, in *ListGovernanceDataRequest, opts ...grpc.CallOption) (*ListGovernanceDataResponse, error) {
 	out := new(ListGovernanceDataResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListGovernanceData", in, out, opts...)
@@ -966,6 +1013,15 @@ func (c *tradingDataServiceClient) GetNode(ctx context.Context, in *GetNodeReque
 func (c *tradingDataServiceClient) ListNodes(ctx context.Context, in *ListNodesRequest, opts ...grpc.CallOption) (*ListNodesResponse, error) {
 	out := new(ListNodesResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListNodes", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataServiceClient) ListNodeSignatures(ctx context.Context, in *ListNodeSignaturesRequest, opts ...grpc.CallOption) (*ListNodeSignaturesResponse, error) {
+	out := new(ListNodeSignaturesResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListNodeSignatures", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1098,6 +1154,24 @@ func (x *tradingDataServiceObserveTransferResponsesClient) Recv() (*ObserveTrans
 	return m, nil
 }
 
+func (c *tradingDataServiceClient) ListKeyRotations(ctx context.Context, in *ListKeyRotationsRequest, opts ...grpc.CallOption) (*ListKeyRotationsResponse, error) {
+	out := new(ListKeyRotationsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListKeyRotations", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataServiceClient) GetVegaTime(ctx context.Context, in *GetVegaTimeRequest, opts ...grpc.CallOption) (*GetVegaTimeResponse, error) {
+	out := new(GetVegaTimeResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetVegaTime", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TradingDataServiceServer is the server API for TradingDataService service.
 // All implementations must embed UnimplementedTradingDataServiceServer
 // for forward compatibility
@@ -1168,6 +1242,8 @@ type TradingDataServiceServer interface {
 	GetERC20SetAssetLimitsBundle(context.Context, *GetERC20SetAssetLimitsBundleRequest) (*GetERC20SetAssetLimitsBundleResponse, error)
 	GetERC20WithdrawalApproval(context.Context, *GetERC20WithdrawalApprovalRequest) (*GetERC20WithdrawalApprovalResponse, error)
 	// -- Trades --
+	// Get latest Trade
+	GetLastTrade(context.Context, *GetLastTradeRequest) (*GetLastTradeResponse, error)
 	// Get a list of all trades, optionally filtered by party/market/order using a cursor based pagination model
 	ListTrades(context.Context, *ListTradesRequest) (*ListTradesResponse, error)
 	// Subscribe to a stream of Trades, optionally filtered by party/market
@@ -1181,9 +1257,11 @@ type TradingDataServiceServer interface {
 	ListOracleData(context.Context, *ListOracleDataRequest) (*ListOracleDataResponse, error)
 	// -- Markets --
 	// Get all markets using a cursor based pagination model
+	GetMarket(context.Context, *GetMarketRequest) (*GetMarketResponse, error)
 	ListMarkets(context.Context, *ListMarketsRequest) (*ListMarketsResponse, error)
 	// -- Parties --
 	// Get Parties using a cursor based pagination model
+	GetParty(context.Context, *GetPartyRequest) (*GetPartyResponse, error)
 	ListParties(context.Context, *ListPartiesRequest) (*ListPartiesResponse, error)
 	// -- Margin Levels --
 	// Get Margin Levels using a cursor based pagination model
@@ -1212,6 +1290,7 @@ type TradingDataServiceServer interface {
 	ListLiquidityProvisions(context.Context, *ListLiquidityProvisionsRequest) (*ListLiquidityProvisionsResponse, error)
 	// -- Governance --
 	// List proposals using a cursor based pagination model
+	GetGovernanceData(context.Context, *GetGovernanceDataRequest) (*GetGovernanceDataResponse, error)
 	ListGovernanceData(context.Context, *ListGovernanceDataRequest) (*ListGovernanceDataResponse, error)
 	ObserveGovernance(*ObserveGovernanceRequest, TradingDataService_ObserveGovernanceServer) error
 	// -- Delegation --
@@ -1226,6 +1305,8 @@ type TradingDataServiceServer interface {
 	GetNode(context.Context, *GetNodeRequest) (*GetNodeResponse, error)
 	// List information about the nodes on the network
 	ListNodes(context.Context, *ListNodesRequest) (*ListNodesResponse, error)
+	// List an aggregate of signatures from all the nodes of the network
+	ListNodeSignatures(context.Context, *ListNodeSignaturesRequest) (*ListNodeSignaturesResponse, error)
 	// -- Epochs --
 	// Get data for a specific epoch, if id omitted it gets the current epoch
 	GetEpoch(context.Context, *GetEpochRequest) (*GetEpochResponse, error)
@@ -1248,6 +1329,10 @@ type TradingDataServiceServer interface {
 	// -- Transfer Responses --
 	// Subscribe to a stream of Transfer Responses
 	ObserveTransferResponses(*ObserveTransferResponsesRequest, TradingDataService_ObserveTransferResponsesServer) error
+	// -- Key Rotations --
+	ListKeyRotations(context.Context, *ListKeyRotationsRequest) (*ListKeyRotationsResponse, error)
+	// Get Time
+	GetVegaTime(context.Context, *GetVegaTimeRequest) (*GetVegaTimeResponse, error)
 	mustEmbedUnimplementedTradingDataServiceServer()
 }
 
@@ -1342,6 +1427,9 @@ func (UnimplementedTradingDataServiceServer) GetERC20SetAssetLimitsBundle(contex
 func (UnimplementedTradingDataServiceServer) GetERC20WithdrawalApproval(context.Context, *GetERC20WithdrawalApprovalRequest) (*GetERC20WithdrawalApprovalResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetERC20WithdrawalApproval not implemented")
 }
+func (UnimplementedTradingDataServiceServer) GetLastTrade(context.Context, *GetLastTradeRequest) (*GetLastTradeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetLastTrade not implemented")
+}
 func (UnimplementedTradingDataServiceServer) ListTrades(context.Context, *ListTradesRequest) (*ListTradesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListTrades not implemented")
 }
@@ -1357,8 +1445,14 @@ func (UnimplementedTradingDataServiceServer) ListOracleSpecs(context.Context, *L
 func (UnimplementedTradingDataServiceServer) ListOracleData(context.Context, *ListOracleDataRequest) (*ListOracleDataResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListOracleData not implemented")
 }
+func (UnimplementedTradingDataServiceServer) GetMarket(context.Context, *GetMarketRequest) (*GetMarketResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetMarket not implemented")
+}
 func (UnimplementedTradingDataServiceServer) ListMarkets(context.Context, *ListMarketsRequest) (*ListMarketsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListMarkets not implemented")
+}
+func (UnimplementedTradingDataServiceServer) GetParty(context.Context, *GetPartyRequest) (*GetPartyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetParty not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ListParties(context.Context, *ListPartiesRequest) (*ListPartiesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListParties not implemented")
@@ -1399,6 +1493,9 @@ func (UnimplementedTradingDataServiceServer) ListAssets(context.Context, *ListAs
 func (UnimplementedTradingDataServiceServer) ListLiquidityProvisions(context.Context, *ListLiquidityProvisionsRequest) (*ListLiquidityProvisionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListLiquidityProvisions not implemented")
 }
+func (UnimplementedTradingDataServiceServer) GetGovernanceData(context.Context, *GetGovernanceDataRequest) (*GetGovernanceDataResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetGovernanceData not implemented")
+}
 func (UnimplementedTradingDataServiceServer) ListGovernanceData(context.Context, *ListGovernanceDataRequest) (*ListGovernanceDataResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListGovernanceData not implemented")
 }
@@ -1419,6 +1516,9 @@ func (UnimplementedTradingDataServiceServer) GetNode(context.Context, *GetNodeRe
 }
 func (UnimplementedTradingDataServiceServer) ListNodes(context.Context, *ListNodesRequest) (*ListNodesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListNodes not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ListNodeSignatures(context.Context, *ListNodeSignaturesRequest) (*ListNodeSignaturesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListNodeSignatures not implemented")
 }
 func (UnimplementedTradingDataServiceServer) GetEpoch(context.Context, *GetEpochRequest) (*GetEpochResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetEpoch not implemented")
@@ -1446,6 +1546,12 @@ func (UnimplementedTradingDataServiceServer) ObserveEventBus(TradingDataService_
 }
 func (UnimplementedTradingDataServiceServer) ObserveTransferResponses(*ObserveTransferResponsesRequest, TradingDataService_ObserveTransferResponsesServer) error {
 	return status.Errorf(codes.Unimplemented, "method ObserveTransferResponses not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ListKeyRotations(context.Context, *ListKeyRotationsRequest) (*ListKeyRotationsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListKeyRotations not implemented")
+}
+func (UnimplementedTradingDataServiceServer) GetVegaTime(context.Context, *GetVegaTimeRequest) (*GetVegaTimeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetVegaTime not implemented")
 }
 func (UnimplementedTradingDataServiceServer) mustEmbedUnimplementedTradingDataServiceServer() {}
 
@@ -2006,6 +2112,24 @@ func _TradingDataService_GetERC20WithdrawalApproval_Handler(srv interface{}, ctx
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_GetLastTrade_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLastTradeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).GetLastTrade(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/GetLastTrade",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).GetLastTrade(ctx, req.(*GetLastTradeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_ListTrades_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListTradesRequest)
 	if err := dec(in); err != nil {
@@ -2099,6 +2223,24 @@ func _TradingDataService_ListOracleData_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_GetMarket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMarketRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).GetMarket(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/GetMarket",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).GetMarket(ctx, req.(*GetMarketRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_ListMarkets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListMarketsRequest)
 	if err := dec(in); err != nil {
@@ -2113,6 +2255,24 @@ func _TradingDataService_ListMarkets_Handler(srv interface{}, ctx context.Contex
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TradingDataServiceServer).ListMarkets(ctx, req.(*ListMarketsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_GetParty_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPartyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).GetParty(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/GetParty",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).GetParty(ctx, req.(*GetPartyRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2357,6 +2517,24 @@ func _TradingDataService_ListLiquidityProvisions_Handler(srv interface{}, ctx co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_GetGovernanceData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetGovernanceDataRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).GetGovernanceData(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/GetGovernanceData",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).GetGovernanceData(ctx, req.(*GetGovernanceDataRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_ListGovernanceData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListGovernanceDataRequest)
 	if err := dec(in); err != nil {
@@ -2485,6 +2663,24 @@ func _TradingDataService_ListNodes_Handler(srv interface{}, ctx context.Context,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TradingDataServiceServer).ListNodes(ctx, req.(*ListNodesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_ListNodeSignatures_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListNodeSignaturesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListNodeSignatures(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListNodeSignatures",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListNodeSignatures(ctx, req.(*ListNodeSignaturesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2662,6 +2858,42 @@ func (x *tradingDataServiceObserveTransferResponsesServer) Send(m *ObserveTransf
 	return x.ServerStream.SendMsg(m)
 }
 
+func _TradingDataService_ListKeyRotations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListKeyRotationsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListKeyRotations(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListKeyRotations",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListKeyRotations(ctx, req.(*ListKeyRotationsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_GetVegaTime_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetVegaTimeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).GetVegaTime(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/GetVegaTime",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).GetVegaTime(ctx, req.(*GetVegaTimeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TradingDataService_ServiceDesc is the grpc.ServiceDesc for TradingDataService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -2754,6 +2986,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TradingDataService_GetERC20WithdrawalApproval_Handler,
 		},
 		{
+			MethodName: "GetLastTrade",
+			Handler:    _TradingDataService_GetLastTrade_Handler,
+		},
+		{
 			MethodName: "ListTrades",
 			Handler:    _TradingDataService_ListTrades_Handler,
 		},
@@ -2770,8 +3006,16 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TradingDataService_ListOracleData_Handler,
 		},
 		{
+			MethodName: "GetMarket",
+			Handler:    _TradingDataService_GetMarket_Handler,
+		},
+		{
 			MethodName: "ListMarkets",
 			Handler:    _TradingDataService_ListMarkets_Handler,
+		},
+		{
+			MethodName: "GetParty",
+			Handler:    _TradingDataService_GetParty_Handler,
 		},
 		{
 			MethodName: "ListParties",
@@ -2818,6 +3062,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TradingDataService_ListLiquidityProvisions_Handler,
 		},
 		{
+			MethodName: "GetGovernanceData",
+			Handler:    _TradingDataService_GetGovernanceData_Handler,
+		},
+		{
 			MethodName: "ListGovernanceData",
 			Handler:    _TradingDataService_ListGovernanceData_Handler,
 		},
@@ -2836,6 +3084,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListNodes",
 			Handler:    _TradingDataService_ListNodes_Handler,
+		},
+		{
+			MethodName: "ListNodeSignatures",
+			Handler:    _TradingDataService_ListNodeSignatures_Handler,
 		},
 		{
 			MethodName: "GetEpoch",
@@ -2864,6 +3116,14 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetRiskFactors",
 			Handler:    _TradingDataService_GetRiskFactors_Handler,
+		},
+		{
+			MethodName: "ListKeyRotations",
+			Handler:    _TradingDataService_ListKeyRotations_Handler,
+		},
+		{
+			MethodName: "GetVegaTime",
+			Handler:    _TradingDataService_GetVegaTime_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
