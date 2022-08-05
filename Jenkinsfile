@@ -288,7 +288,9 @@ pipeline {
                             options { retry(3) }
                             steps {
                                 dir('vega') {
-                                    sh 'buf lint'
+                                    sh '''#!/bin/bash -e
+                                        buf lint
+                                    '''
                                 }
                             }
                             post {
@@ -307,7 +309,9 @@ pipeline {
                             options { retry(3) }
                             steps {
                                 dir('vega') {
-                                    sh 'make proto_check'
+                                    sh '''#!/bin/bash -e
+                                        make proto_check
+                                    '''
                                 }
                             }
                             post {
