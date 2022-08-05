@@ -270,3 +270,5 @@ http:
       get: "/api/v2/vega/keys/rotations"
     - selector: datanode.api.v2.TradingDataService.GetVegaTime
       get: "/api/v2/vega/time"
+    - selector: datanode.api.v2.TradingDataService.GetNetworkParameter
+      get: '/api/v2/network/parameters/{key}'
