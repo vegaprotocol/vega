@@ -14,10 +14,12 @@ package sqlstore
 
 import (
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
+	"github.com/georgysavva/scany/dbscan"
 )
 
 // A handy little helper function for building queries. Appends 'value'
@@ -154,4 +156,48 @@ func extractPaginationInfo(pagination entities.CursorPagination) (Sorting, Compa
 	}
 
 	return sort, cmp, value
+}
+
+// StructValueForColumn replicates some of the unexported functionality from Scanny. You pass a
+// struct (or pointer to a struct), and a column name. It converts the struct field names into
+// database column names in a similar way to scanny and if one matches colName, that field value
+// is returned. For example
+//
+// type Foo struct {
+// 	Thingy        int `db:"wotsit"`
+// 	SomethingElse int
+// }
+//
+// 	val, err := StructValueForColumn(foo, "wotsit")             -> 1
+//	val, err := StructValueForColumn(&foo, "something_else")    -> 2
+//
+// NB - not all functionality of scanny is supported (but could be added if needed)
+//   - we don't support embedded structs
+//   - assumes the 'dbTag' is the default 'db'
+//
+func StructValueForColumn(obj any, colName string) (interface{}, error) {
+	structType := reflect.TypeOf(obj)
+	structValue := reflect.ValueOf(obj)
+
+	if structType.Kind() == reflect.Pointer {
+		structType = structType.Elem()
+		structValue = structValue.Elem()
+	}
+
+	if structType.Kind() != reflect.Struct {
+		return nil, fmt.Errorf("obj must be struct")
+	}
+
+	for i := 0; i < structType.NumField(); i++ {
+		field := structType.Field(i)
+		thisColName := field.Tag.Get("db")
+		if thisColName == "" {
+			thisColName = dbscan.SnakeCaseMapper(field.Name)
+		}
+		if thisColName == colName {
+			fieldValue := structValue.Field(i)
+			return fieldValue.Interface(), nil
+		}
+	}
+	return nil, fmt.Errorf("no field matching column name %s", colName)
 }
