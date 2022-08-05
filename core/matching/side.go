@@ -169,7 +169,7 @@ func (s *OrderBookSide) amendOrder(orderAmend *types.Order) (uint64, error) {
 	}
 
 	reduceBy := oldOrder.Remaining - orderAmend.Size
-	s.levels[priceLevelIndex].orders[orderIndex] = orderAmend.Clone()
+	s.levels[priceLevelIndex].orders[orderIndex] = orderAmend
 	s.levels[priceLevelIndex].reduceVolume(reduceBy)
 	return reduceBy, nil
 }

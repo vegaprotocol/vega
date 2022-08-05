@@ -132,6 +132,7 @@ func (e *Engine) RegisterOrder(ctx context.Context, order *types.Order) *MarketP
 		// append the pointer to the slice as well
 		e.positionsCpy = append(e.positionsCpy, pos)
 	}
+
 	pos.RegisterOrder(order)
 	e.broker.Send(events.NewPositionStateEvent(ctx, pos, order.MarketID))
 	return pos
@@ -159,6 +160,7 @@ func (e *Engine) AmendOrder(ctx context.Context, originalOrder, newOrder *types.
 			logging.Order(*originalOrder),
 			logging.Order(*newOrder))
 	}
+
 	pos.AmendOrder(e.log, originalOrder, newOrder)
 	e.broker.Send(events.NewPositionStateEvent(ctx, pos, originalOrder.MarketID))
 	return pos
