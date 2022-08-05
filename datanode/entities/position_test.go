@@ -30,7 +30,7 @@ func TestMultipleTradesOfSameSize(t *testing.T) {
 	ctx := context.Background()
 	market := "market-id"
 	party := "party1"
-	position := entities.NewEmptyPosition(entities.NewMarketID(market), entities.NewPartyID(party))
+	position := entities.NewEmptyPosition(entities.MarketID(market), entities.PartyID(party))
 	ps := events.NewSettlePositionEvent(ctx, party, market, num.NewUint(1000), []events.TradeSettlement{
 		tradeStub{
 			size:  -1,
@@ -51,7 +51,7 @@ func TestMultipleTradesAndLossSocializationPartyNoOpenVolume(t *testing.T) {
 	ctx := context.Background()
 	market := "market-id"
 	party := "party1"
-	position := entities.NewEmptyPosition(entities.NewMarketID(market), entities.NewPartyID(party))
+	position := entities.NewEmptyPosition(entities.MarketID(market), entities.PartyID(party))
 
 	ps := events.NewSettlePositionEvent(ctx, party, market, num.NewUint(1000), []events.TradeSettlement{
 		tradeStub{
@@ -79,7 +79,7 @@ func TestDistressedPartyUpdate(t *testing.T) {
 	ctx := context.Background()
 	market := "market-id"
 	party := "party1"
-	position := entities.NewEmptyPosition(entities.NewMarketID(market), entities.NewPartyID(party))
+	position := entities.NewEmptyPosition(entities.MarketID(market), entities.PartyID(party))
 
 	ps := events.NewSettlePositionEvent(ctx, party, market, num.NewUint(1000), []events.TradeSettlement{
 		tradeStub{
@@ -115,7 +115,7 @@ func TestMultipleTradesAndLossSocializationPartyWithOpenVolume(t *testing.T) {
 	ctx := context.Background()
 	market := "market-id"
 	party := "party1"
-	position := entities.NewEmptyPosition(entities.NewMarketID(market), entities.NewPartyID(party))
+	position := entities.NewEmptyPosition(entities.MarketID(market), entities.PartyID(party))
 
 	ps := events.NewSettlePositionEvent(ctx, party, market, num.NewUint(1000), []events.TradeSettlement{
 		tradeStub{

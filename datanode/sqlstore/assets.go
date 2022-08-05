@@ -93,7 +93,7 @@ func (as *Assets) GetByID(ctx context.Context, id string) (entities.Asset, error
 	defer metrics.StartSQLQuery("Assets", "GetByID")()
 	err := pgxscan.Get(ctx, as.Connection, &a,
 		getAssetQuery()+` WHERE id=$1`,
-		entities.NewAssetID(id))
+		entities.AssetID(id))
 
 	if err == nil {
 		as.cache[id] = a
@@ -118,7 +118,7 @@ func (as *Assets) GetAllWithCursorPagination(ctx context.Context, pagination ent
 	sorting, cmp, cursor := extractPaginationInfo(pagination)
 
 	cursorParams := []CursorQueryParameter{
-		NewCursorQueryParameter("id", sorting, cmp, entities.NewAssetID(cursor)),
+		NewCursorQueryParameter("id", sorting, cmp, entities.AssetID(cursor)),
 	}
 
 	query := getAssetQuery()

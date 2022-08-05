@@ -915,9 +915,9 @@ func (t *tradingDataServiceV2) ListTrades(ctx context.Context, in *v2.ListTrades
 	}
 
 	trades, pageInfo, err := t.tradeService.List(ctx,
-		entities.NewMarketID(in.GetMarketId()),
-		entities.NewPartyID(in.GetPartyId()),
-		entities.NewOrderID(in.GetOrderId()),
+		entities.MarketID(in.GetMarketId()),
+		entities.PartyID(in.GetPartyId()),
+		entities.OrderID(in.GetOrderId()),
 		pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
@@ -1002,7 +1002,7 @@ func (t *tradingDataServiceV2) ListPositions(ctx context.Context, in *v2.ListPos
 		return nil, apiError(codes.InvalidArgument, err)
 	}
 
-	positions, pageInfo, err := t.positionService.GetByPartyConnection(ctx, entities.NewPartyID(in.PartyId), entities.NewMarketID(in.MarketId), pagination)
+	positions, pageInfo, err := t.positionService.GetByPartyConnection(ctx, entities.PartyID(in.PartyId), entities.MarketID(in.MarketId), pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -1489,11 +1489,11 @@ func (t *tradingDataServiceV2) ListLiquidityProvisions(ctx context.Context, req 
 	var reference string
 
 	if req.PartyId != nil {
-		partyID = entities.NewPartyID(*req.PartyId)
+		partyID = entities.PartyID(*req.PartyId)
 	}
 
 	if req.MarketId != nil {
-		marketID = entities.NewMarketID(*req.MarketId)
+		marketID = entities.MarketID(*req.MarketId)
 	}
 
 	if req.Reference != nil {
@@ -1611,11 +1611,11 @@ func (t *tradingDataServiceV2) ListTransfers(ctx context.Context, req *v2.ListTr
 	} else {
 		switch req.Direction {
 		case v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_FROM:
-			transfers, pageInfo, err = t.transfersService.GetTransfersFromParty(ctx, entities.NewPartyID(*req.Pubkey), pagination)
+			transfers, pageInfo, err = t.transfersService.GetTransfersFromParty(ctx, entities.PartyID(*req.Pubkey), pagination)
 		case v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_TO:
-			transfers, pageInfo, err = t.transfersService.GetTransfersToParty(ctx, entities.NewPartyID(*req.Pubkey), pagination)
+			transfers, pageInfo, err = t.transfersService.GetTransfersToParty(ctx, entities.PartyID(*req.Pubkey), pagination)
 		case v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_TO_OR_FROM:
-			transfers, pageInfo, err = t.transfersService.GetTransfersToOrFromParty(ctx, entities.NewPartyID(*req.Pubkey), pagination)
+			transfers, pageInfo, err = t.transfersService.GetTransfersToOrFromParty(ctx, entities.PartyID(*req.Pubkey), pagination)
 		default:
 			return nil, apiError(codes.InvalidArgument, fmt.Errorf("transfer direction not supported:%v", req.Direction))
 		}
@@ -2141,7 +2141,7 @@ func (t *tradingDataServiceV2) GetStake(ctx context.Context, req *v2.GetStakeReq
 
 	var pagination entities.CursorPagination
 
-	partyID := entities.NewPartyID(req.Party)
+	partyID := entities.PartyID(req.Party)
 
 	if req != nil && req.Pagination != nil {
 		var err error

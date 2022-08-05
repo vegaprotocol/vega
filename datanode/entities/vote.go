@@ -63,8 +63,8 @@ func VoteFromProto(pv *vega.Vote) (Vote, error) {
 	}
 
 	v := Vote{
-		PartyID:                     NewPartyID(pv.PartyId),
-		ProposalID:                  NewProposalID(pv.ProposalId),
+		PartyID:                     PartyID(pv.PartyId),
+		ProposalID:                  ProposalID(pv.ProposalId),
 		Value:                       VoteValue(pv.Value),
 		TotalGovernanceTokenBalance: totalGovernanceTokenBalance,
 		TotalGovernanceTokenWeight:  totalGovernanceTokenWeight,

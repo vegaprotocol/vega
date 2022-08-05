@@ -28,16 +28,16 @@ func AccountFilterFromProto(pbFilter *v2.AccountFilter) (AccountFilter, error) {
 	filter := AccountFilter{}
 	if pbFilter != nil {
 		if pbFilter.AssetId != "" {
-			filter.AssetID = NewAssetID(pbFilter.AssetId)
+			filter.AssetID = AssetID(pbFilter.AssetId)
 		}
 		for _, partyID := range pbFilter.PartyIds {
-			filter.PartyIDs = append(filter.PartyIDs, NewPartyID(partyID))
+			filter.PartyIDs = append(filter.PartyIDs, PartyID(partyID))
 		}
 
 		filter.AccountTypes = append(filter.AccountTypes, pbFilter.AccountTypes...)
 
 		for _, marketID := range pbFilter.MarketIds {
-			filter.MarketIDs = append(filter.MarketIDs, NewMarketID(marketID))
+			filter.MarketIDs = append(filter.MarketIDs, MarketID(marketID))
 		}
 	}
 	return filter, nil

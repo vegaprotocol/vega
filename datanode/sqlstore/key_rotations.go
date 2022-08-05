@@ -56,7 +56,7 @@ func (store *KeyRotations) GetAllPubKeyRotations(ctx context.Context) ([]entitie
 
 func (store *KeyRotations) GetPubKeyRotationsPerNode(ctx context.Context, nodeId string) ([]entities.KeyRotation, error) {
 	defer metrics.StartSQLQuery("KeyRotations", "GetPubKeyRotationsPerNode")()
-	id := entities.NewNodeID(nodeId)
+	id := entities.NodeID(nodeId)
 
 	keyRotations := []entities.KeyRotation{}
 	err := pgxscan.Select(ctx, store.pool, &keyRotations, `SELECT * FROM key_rotations where node_id = $1 ORDER BY vega_time, node_id desc`, id)

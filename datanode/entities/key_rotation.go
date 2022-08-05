@@ -29,7 +29,7 @@ type KeyRotation struct {
 
 func KeyRotationFromProto(kr *eventspb.KeyRotation, vegaTime time.Time) (*KeyRotation, error) {
 	return &KeyRotation{
-		NodeID:      NewNodeID(kr.NodeId),
+		NodeID:      NodeID(kr.NodeId),
 		OldPubKey:   VegaPublicKey(kr.OldPubKey),
 		NewPubKey:   VegaPublicKey(kr.NewPubKey),
 		BlockHeight: kr.BlockHeight,

@@ -62,7 +62,7 @@ func (od *OracleData) GetOracleDataBySpecID(ctx context.Context, id string, pagi
 func getOracleDataBySpecIDOffsetPagination(ctx context.Context, conn Connection, id string, pagination entities.OffsetPagination) (
 	[]entities.OracleData, entities.PageInfo, error,
 ) {
-	specID := entities.NewSpecID(id)
+	specID := entities.SpecID(id)
 	var bindVars []interface{}
 	var pageInfo entities.PageInfo
 
@@ -85,7 +85,7 @@ func getOracleDataBySpecIDCursorPagination(ctx context.Context, conn Connection,
 	var pageInfo entities.PageInfo
 	var bindVars []interface{}
 
-	specID := entities.NewSpecID(id)
+	specID := entities.SpecID(id)
 	query := fmt.Sprintf(`select %s
 	from oracle_data where %s = ANY(matched_spec_ids)`, sqlOracleDataColumns, nextBindVar(&bindVars, specID))
 

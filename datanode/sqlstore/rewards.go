@@ -78,8 +78,8 @@ func (rs *Rewards) GetByCursor(ctx context.Context,
 		}
 	}
 	cursorParams := []CursorQueryParameter{
-		NewCursorQueryParameter("party_id", sorting, cmp, entities.NewPartyID(rc.PartyID)),
-		NewCursorQueryParameter("asset_id", sorting, cmp, entities.NewAssetID(rc.AssetID)),
+		NewCursorQueryParameter("party_id", sorting, cmp, entities.PartyID(rc.PartyID)),
+		NewCursorQueryParameter("asset_id", sorting, cmp, entities.AssetID(rc.AssetID)),
 		NewCursorQueryParameter("epoch_id", sorting, cmp, rc.EpochID),
 	}
 
@@ -153,7 +153,7 @@ func (rs *Rewards) GetSummaries(ctx context.Context,
 func addRewardWhereClause(queryPtr *string, args *[]interface{}, partyIDHex, assetIDHex *string) error {
 	query := *queryPtr
 	if partyIDHex != nil && *partyIDHex != "" {
-		partyID := entities.NewPartyID(*partyIDHex)
+		partyID := entities.PartyID(*partyIDHex)
 		query = fmt.Sprintf("%s WHERE party_id=%s", query, nextBindVar(args, partyID))
 	}
 
@@ -163,7 +163,7 @@ func addRewardWhereClause(queryPtr *string, args *[]interface{}, partyIDHex, ass
 			clause = "AND"
 		}
 
-		assetID := entities.ID(*assetIDHex)
+		assetID := entities.AssetID(*assetIDHex)
 		query = fmt.Sprintf("%s %s asset_id=%s", query, clause, nextBindVar(args, assetID))
 	}
 	*queryPtr = query

@@ -27,7 +27,7 @@ type OracleSpecConfiguration struct {
 	Filters []*OracleSpecFilter
 }
 
-func NewSpecID(pubKeys []string, filters []*oraclespb.Filter) string {
+func SpecID(pubKeys []string, filters []*oraclespb.Filter) string {
 	buf := []byte{}
 	for _, filter := range filters {
 		s := filter.Key.Name + filter.Key.Type.String()
@@ -66,7 +66,7 @@ func (c *OracleSpecConfiguration) DeepClone() *OracleSpecConfiguration {
 
 func (c OracleSpecConfiguration) ToOracleSpec() *OracleSpec {
 	return &OracleSpec{
-		ID:      NewSpecID(c.PubKeys, OracleSpecFilters(c.Filters).IntoProto()),
+		ID:      SpecID(c.PubKeys, OracleSpecFilters(c.Filters).IntoProto()),
 		PubKeys: c.PubKeys,
 		Filters: c.Filters,
 	}

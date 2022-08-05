@@ -137,7 +137,7 @@ func (ts *Trades) List(ctx context.Context,
 
 func (ts *Trades) GetByMarket(ctx context.Context, market string, p entities.OffsetPagination) ([]entities.Trade, error) {
 	query := `SELECT * from trades WHERE market_id=$1`
-	args := []interface{}{entities.NewMarketID(market)}
+	args := []interface{}{entities.MarketID(market)}
 	defer metrics.StartSQLQuery("Trades", "GetByMarket")()
 	trades, err := ts.queryTrades(ctx, query, args, &p)
 	if err != nil {
@@ -148,7 +148,7 @@ func (ts *Trades) GetByMarket(ctx context.Context, market string, p entities.Off
 }
 
 func (ts *Trades) GetByParty(ctx context.Context, party string, market *string, pagination entities.OffsetPagination) ([]entities.Trade, error) {
-	args := []interface{}{entities.NewPartyID(party)}
+	args := []interface{}{entities.PartyID(party)}
 	query := `SELECT * from trades WHERE buyer=$1 or seller=$1`
 
 	defer metrics.StartSQLQuery("Trades", "GetByParty")()
@@ -156,7 +156,7 @@ func (ts *Trades) GetByParty(ctx context.Context, party string, market *string, 
 }
 
 func (ts *Trades) GetByOrderID(ctx context.Context, order string, market *string, pagination entities.OffsetPagination) ([]entities.Trade, error) {
-	args := []interface{}{entities.NewOrderID(order)}
+	args := []interface{}{entities.OrderID(order)}
 	query := `SELECT * from trades WHERE buy_order=$1 or sell_order=$1`
 
 	defer metrics.StartSQLQuery("Trades", "GetByOrderID")()
@@ -165,7 +165,7 @@ func (ts *Trades) GetByOrderID(ctx context.Context, order string, market *string
 
 func (ts *Trades) queryTradesWithMarketFilter(ctx context.Context, query string, args []interface{}, market *string, p entities.OffsetPagination) ([]entities.Trade, error) {
 	if market != nil && *market != "" {
-		marketID := nextBindVar(&args, entities.NewMarketID(*market))
+		marketID := nextBindVar(&args, entities.MarketID(*market))
 		query += ` AND market_id=` + marketID
 	}
 
@@ -181,7 +181,7 @@ func (ts *Trades) queryTradesWithMarketFilterAndCursorPagination(ctx context.Con
 	market *string, cursor entities.CursorPagination,
 ) ([]entities.Trade, entities.PageInfo, error) {
 	if market != nil && *market != "" {
-		marketID := nextBindVar(&args, entities.NewMarketID(*market))
+		marketID := nextBindVar(&args, entities.MarketID(*market))
 		query += ` AND market_id=` + marketID
 	}
 

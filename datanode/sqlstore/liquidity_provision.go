@@ -56,7 +56,7 @@ func (lp *LiquidityProvision) Get(ctx context.Context, partyID entities.PartyID,
 	reference string,
 	pagination entities.Pagination,
 ) ([]entities.LiquidityProvision, entities.PageInfo, error) {
-	if len(partyID.ID) == 0 && len(marketID.ID) == 0 {
+	if len(partyID) == 0 && len(marketID) == 0 {
 		return nil, entities.PageInfo{}, errors.New("market or party filters are required")
 	}
 
@@ -87,7 +87,7 @@ func (lp *LiquidityProvision) getWithCursorPagination(ctx context.Context, party
 	}
 
 	builders := []CursorQueryParameter{
-		NewCursorQueryParameter("id", sorting, cmp, entities.NewLiquidityProvisionID(lc.ID)),
+		NewCursorQueryParameter("id", sorting, cmp, entities.LiquidityProvisionID(lc.ID)),
 		NewCursorQueryParameter("vega_time", sorting, cmp, lc.VegaTime),
 	}
 
@@ -131,11 +131,11 @@ from current_liquidity_provisions`, sqlOracleLiquidityProvisionColumns)
 
 	where := ""
 
-	if partyID.ID != "" {
+	if partyID != "" {
 		where = fmt.Sprintf("%s party_id=%s", where, nextBindVar(&bindVars, partyID))
 	}
 
-	if marketID.ID != "" {
+	if marketID != "" {
 		if len(where) > 0 {
 			where = where + " and "
 		}

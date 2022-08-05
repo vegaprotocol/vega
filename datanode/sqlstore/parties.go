@@ -46,7 +46,7 @@ func (ps *Parties) Initialise() {
 	defer metrics.StartSQLQuery("Parties", "Initialise")()
 	_, err := ps.Connection.Exec(context.Background(),
 		`INSERT INTO parties(id) VALUES ($1) ON CONFLICT (id) DO NOTHING`,
-		entities.NewPartyID("network"))
+		entities.PartyID("network"))
 	if err != nil {
 		panic(fmt.Errorf("Unable to add built-in network party: %w", err))
 	}
@@ -69,7 +69,7 @@ func (ps *Parties) GetByID(ctx context.Context, id string) (entities.Party, erro
 	err := pgxscan.Get(ctx, ps.Connection, &a,
 		`SELECT id, vega_time
 		 FROM parties WHERE id=$1`,
-		entities.NewPartyID(id))
+		entities.PartyID(id))
 
 	if pgxscan.NotFound(err) {
 		return a, fmt.Errorf("'%v': %w", id, ErrPartyNotFound)

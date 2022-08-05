@@ -59,7 +59,7 @@ func (rf *RiskFactors) GetMarketRiskFactors(ctx context.Context, marketID string
 
 	query := fmt.Sprintf(`select %s
 		from risk_factors
-		where market_id = %s`, sqlRiskFactorColumns, nextBindVar(&bindVars, entities.NewMarketID(marketID)))
+		where market_id = %s`, sqlRiskFactorColumns, nextBindVar(&bindVars, entities.MarketID(marketID)))
 
 	err := pgxscan.Get(ctx, rf.Connection, &riskFactor, query, bindVars...)
 
