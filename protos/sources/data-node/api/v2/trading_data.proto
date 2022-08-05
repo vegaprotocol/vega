@@ -64,7 +64,6 @@ service TradingDataService {
 
     rpc ObserveMarketsData(ObserveMarketsDataRequest) returns (stream ObserveMarketsDataResponse);
 
-
     // Get Market Data History for a Market ID between given dates using a cursor based pagination model
     rpc GetMarketDataHistoryByID(GetMarketDataHistoryByIDRequest) returns (GetMarketDataHistoryByIDResponse);
 
@@ -102,6 +101,9 @@ service TradingDataService {
     rpc GetERC20WithdrawalApproval(GetERC20WithdrawalApprovalRequest) returns (GetERC20WithdrawalApprovalResponse);
 
     // -- Trades --
+    // Get latest Trade
+    rpc GetLastTrade(GetLastTradeRequest) returns (GetLastTradeResponse);
+
     // Get a list of all trades, optionally filtered by party/market/order using a cursor based pagination model
     rpc ListTrades(ListTradesRequest) returns (ListTradesResponse);
 
@@ -118,6 +120,7 @@ service TradingDataService {
 
     // -- Markets --
     // Get all markets using a cursor based pagination model
+    rpc GetMarket(GetMarketRequest) returns (GetMarketResponse);
     rpc ListMarkets(ListMarketsRequest) returns (ListMarketsResponse);
 
     // -- Parties --
@@ -261,12 +264,10 @@ message ListAccountsResponse {
 }
 
 message AccountsConnection {
-    // Total number of accounts matching the supplied filter
-    int64 total_count = 1;
     // The accounts & cursors
-    repeated AccountEdge edges = 2;
+    repeated AccountEdge edges = 1;
     // Information for fetching further pages
-    PageInfo page_info = 3;
+    PageInfo page_info = 2;
 }
 
 message AccountEdge {
@@ -914,6 +915,19 @@ message GetERC20WithdrawalApprovalResponse {
 }
 
 // -- Trades --
+
+// Request for the latest trade that occurred on Vega for a given market
+message GetLastTradeRequest {
+    // Market identifier, required field
+    string market_id = 1;
+}
+
+// Response for the latest trade that occurred on Vega for a given market
+message GetLastTradeResponse {
+    // A trade, if found
+    vega.Trade trade = 1;
+}
+
 message ListTradesRequest {
     optional string market_id = 1;
     optional string order_id = 2;
@@ -1015,8 +1029,15 @@ message OracleDataConnection {
 }
 
 // -- Markets --
-message ListMarketsRequest {
+message GetMarketRequest {
     string market_id = 1;
+}
+
+message GetMarketResponse {
+    vega.Market market = 1;
+}
+
+message ListMarketsRequest {
     optional Pagination pagination = 2;
 }
 
@@ -1131,6 +1152,7 @@ message RewardsConnection {
 message ListRewardSummariesRequest {
     optional string party_id = 1;
     optional string asset_id = 2;
+    optional Pagination pagination = 3;
 }
 
 // The return message with reward details in for a single party
@@ -1274,7 +1296,8 @@ message LiquidityProvisionsConnection {
 
 // -- Governance Data --
 message GetGovernanceDataRequest {
-    string proposal_id = 1;
+    optional string proposal_id = 1;
+    optional string reference = 2;
 }
 
 message GetGovernanceDataResponse {
@@ -1502,7 +1525,7 @@ message CheckpointsConnection {
 }
 
 message GetStakeRequest {
-    string party = 1;
+    string party_id = 1;
     optional Pagination pagination = 2;
 }
 
@@ -1563,13 +1586,6 @@ message ObserveTransferResponsesResponse {
 
 // -- Key Rotations --
 
-message KeyRotation {
-    string node_id = 1;
-    string old_pub_key = 2;
-    string new_pub_key = 3;
-    uint64 block_height = 4;
-}
-
 // Request to list all key rotations
 message ListKeyRotationsRequest {
     optional string node_id = 1;
@@ -1582,7 +1598,7 @@ message ListKeyRotationsResponse {
 }
 
 message KeyRotationEdge {
-    KeyRotation node = 1;
+    vega.events.v1.KeyRotation node = 1;
     string cursor = 2;
 }
 

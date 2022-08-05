@@ -217,6 +217,26 @@ func convertIntervalToProto(x Interval) (types.Interval, error) {
 	}
 }
 
+func convertDataNodeIntervalToProto(interval string) (types.Interval, error) {
+	switch interval {
+	case "1 minute":
+		return types.Interval_INTERVAL_I1M, nil
+	case "5 minutes":
+		return types.Interval_INTERVAL_I5M, nil
+	case "15 minutes":
+		return types.Interval_INTERVAL_I15M, nil
+	case "1 hour":
+		return types.Interval_INTERVAL_I1H, nil
+	case "6 hours":
+		return types.Interval_INTERVAL_I6H, nil
+	case "1 day":
+		return types.Interval_INTERVAL_I1D, nil
+	default:
+		err := fmt.Errorf("failed to convert Interval from GraphQL to Proto: %v", interval)
+		return types.Interval_INTERVAL_UNSPECIFIED, err
+	}
+}
+
 // convertIntervalFromProto converts a Proto enum to a GraphQL enum.
 func convertIntervalFromProto(x types.Interval) (Interval, error) {
 	switch x {

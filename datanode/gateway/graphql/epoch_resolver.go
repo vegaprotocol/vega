@@ -29,6 +29,7 @@ func (r *epochResolver) ID(ctx context.Context, obj *proto.Epoch) (string, error
 	return id, nil
 }
 
+// Deprecated: Use DelegationsConnection instead.
 func (r *epochResolver) Delegations(
 	ctx context.Context,
 	obj *proto.Epoch,

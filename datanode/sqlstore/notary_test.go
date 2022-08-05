@@ -366,6 +366,7 @@ func testNodeSignaturePaginationLastBeforeNewestFirst(t *testing.T) {
 }
 
 func setupNodeSignaturePaginationTest(t *testing.T, ctx context.Context) (*sqlstore.Notary, []entities.NodeSignature) {
+	t.Helper()
 	ns := sqlstore.NewNotary(connectionSource)
 	signatures := make([]entities.NodeSignature, 10)
 

@@ -704,21 +704,20 @@ func setupERC20MultiSigEventStorePaginationTests(t *testing.T, ctx context.Conte
 	validator := "fc677151d0c93726"
 	submitter := generateEthereumAddress()
 
-	addedEvents := make([]entities.ERC20MultiSigSignerEvent, 10)
+	events := make([]entities.ERC20MultiSigSignerEvent, 20)
 	for i := 0; i < 10; i++ {
 		e := getTestSignerEvent(t, fmt.Sprintf("deadbeef%02d", i+1), validator, submitter, fmt.Sprintf("%d", i+1), true)
 		err := es.Add(ctx, e)
 		require.NoError(t, err)
-		addedEvents[i] = *e
+		events[i] = *e
 	}
 
-	removedEvents := make([]entities.ERC20MultiSigSignerEvent, 10)
 	for i := 0; i < 10; i++ {
 		e := getTestSignerEvent(t, fmt.Sprintf("deadbeef%02d", 10+i+1), validator, submitter, fmt.Sprintf("%d", 10+i+1), false)
 		err := es.Add(ctx, e)
 		require.NoError(t, err)
-		removedEvents[i] = *e
+		events[10+i] = *e
 	}
 
-	return es, append(addedEvents, removedEvents...), submitter
+	return es, events, submitter
 }

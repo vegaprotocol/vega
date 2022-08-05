@@ -245,7 +245,6 @@ func testKeyRotationPaginationFirstAndAfterNewestFirst(t *testing.T) {
 		StartCursor:     want[0].Cursor().Encode(),
 		EndCursor:       want[2].Cursor().Encode(),
 	}, pageInfo)
-
 }
 
 func testKeyRotationPaginationLastAndBeforeNewestFirst(t *testing.T) {

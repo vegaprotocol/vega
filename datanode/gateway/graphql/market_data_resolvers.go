@@ -8,7 +8,6 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/vegatime"
 	"code.vegaprotocol.io/vega/logging"
-	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	"google.golang.org/grpc"
@@ -127,10 +126,10 @@ func (r *myMarketDataResolver) Timestamp(_ context.Context, m *types.MarketData)
 
 func (r *myMarketDataResolver) Commitments(ctx context.Context, m *types.MarketData) (*MarketDataCommitments, error) {
 	// get all the commitments for the given market
-	req := protoapi.LiquidityProvisionsRequest{
-		Market: m.Market,
+	req := v2.ListLiquidityProvisionsRequest{
+		MarketId: &m.Market,
 	}
-	res, err := r.tradingDataClient.LiquidityProvisions(ctx, &req)
+	res, err := r.tradingDataClientV2.ListLiquidityProvisions(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
@@ -140,9 +139,9 @@ func (r *myMarketDataResolver) Commitments(ctx context.Context, m *types.MarketD
 	sells := []*types.LiquidityOrderReference{}
 	buys := []*types.LiquidityOrderReference{}
 
-	for _, v := range res.LiquidityProvisions {
-		sells = append(sells, v.Sells...)
-		buys = append(buys, v.Buys...)
+	for _, v := range res.LiquidityProvisions.Edges {
+		sells = append(sells, v.Node.Sells...)
+		buys = append(buys, v.Node.Buys...)
 	}
 
 	return &MarketDataCommitments{
@@ -323,8 +322,8 @@ func (r *myMarketDepthResolver) LastTrade(ctx context.Context, md *types.MarketD
 		return nil, errors.New("invalid market depth")
 	}
 
-	req := protoapi.LastTradeRequest{MarketId: md.MarketId}
-	res, err := r.tradingDataClient.LastTrade(ctx, &req)
+	req := v2.GetLastTradeRequest{MarketId: md.MarketId}
+	res, err := r.tradingDataClientV2.GetLastTrade(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
@@ -347,8 +346,8 @@ func (r *myObservableMarketDepthResolver) LastTrade(ctx context.Context, md *typ
 		return nil, errors.New("invalid market depth")
 	}
 
-	req := protoapi.LastTradeRequest{MarketId: md.MarketId}
-	res, err := r.tradingDataClient.LastTrade(ctx, &req)
+	req := v2.GetLastTradeRequest{MarketId: md.MarketId}
+	res, err := r.tradingDataClientV2.GetLastTrade(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
@@ -406,17 +405,20 @@ func (r *mySubscriptionResolver) MarketsDepth(ctx context.Context, marketIds []s
 }
 
 func (r *mySubscriptionResolver) MarketDepth(ctx context.Context, market string) (<-chan *types.MarketDepth, error) {
-	req := &protoapi.MarketDepthSubscribeRequest{
-		MarketId: market,
+	req := &v2.ObserveMarketsDepthRequest{
+		MarketIds: []string{market},
 	}
-	stream, err := r.tradingDataClient.MarketDepthSubscribe(ctx, req)
+	stream, err := r.tradingDataClientV2.ObserveMarketsDepth(ctx, req)
 	if err != nil {
 		return nil, customErrorFromStatus(err)
 	}
 
-	return grpcStreamToGraphQlChannel[*protoapi.MarketDepthSubscribeResponse, *types.MarketDepth](r.log, "marketdepth", stream,
-		func(md *protoapi.MarketDepthSubscribeResponse) *types.MarketDepth {
-			return md.MarketDepth
+	return grpcStreamToGraphQlChannel[*v2.ObserveMarketsDepthResponse, *types.MarketDepth](r.log, "marketdepth", stream,
+		func(md *v2.ObserveMarketsDepthResponse) *types.MarketDepth {
+			if len(md.MarketDepth) > 0 {
+				return md.MarketDepth[0]
+			}
+			return nil
 		}), nil
 }
 
@@ -436,17 +438,20 @@ func (r *mySubscriptionResolver) MarketsDepthUpdate(ctx context.Context, marketI
 }
 
 func (r *mySubscriptionResolver) MarketDepthUpdate(ctx context.Context, market string) (<-chan *types.MarketDepthUpdate, error) {
-	req := &protoapi.MarketDepthUpdatesSubscribeRequest{
-		MarketId: market,
+	req := &v2.ObserveMarketsDepthUpdatesRequest{
+		MarketIds: []string{market},
 	}
-	stream, err := r.tradingDataClient.MarketDepthUpdatesSubscribe(ctx, req)
+	stream, err := r.tradingDataClientV2.ObserveMarketsDepthUpdates(ctx, req)
 	if err != nil {
 		return nil, customErrorFromStatus(err)
 	}
 
-	return grpcStreamToGraphQlChannel[*protoapi.MarketDepthUpdatesSubscribeResponse, *types.MarketDepthUpdate](r.log, "marketDepthUpdate", stream,
-		func(md *protoapi.MarketDepthUpdatesSubscribeResponse) *types.MarketDepthUpdate {
-			return md.Update
+	return grpcStreamToGraphQlChannel[*v2.ObserveMarketsDepthUpdatesResponse, *types.MarketDepthUpdate](r.log, "marketDepthUpdate", stream,
+		func(md *v2.ObserveMarketsDepthUpdatesResponse) *types.MarketDepthUpdate {
+			if len(md.Update) > 0 {
+				return md.Update[0]
+			}
+			return nil
 		}), nil
 }
 
@@ -466,21 +471,24 @@ func (r *mySubscriptionResolver) MarketsData(ctx context.Context, marketIds []st
 }
 
 func (r *mySubscriptionResolver) MarketData(ctx context.Context, marketID *string) (<-chan *types.MarketData, error) {
-	var marketIds string
+	var marketIds []string
 	if marketID != nil {
-		marketIds = *marketID
+		marketIds = append(marketIds, *marketID)
 	}
-	req := &protoapi.MarketsDataSubscribeRequest{
-		MarketId: marketIds,
+	req := &v2.ObserveMarketsDataRequest{
+		MarketIds: marketIds,
 	}
-	stream, err := r.tradingDataClient.MarketsDataSubscribe(ctx, req)
+	stream, err := r.tradingDataClientV2.ObserveMarketsData(ctx, req)
 	if err != nil {
 		return nil, customErrorFromStatus(err)
 	}
 
-	return grpcStreamToGraphQlChannel[*protoapi.MarketsDataSubscribeResponse, *types.MarketData](r.log, "marketdata", stream,
-		func(md *protoapi.MarketsDataSubscribeResponse) *types.MarketData {
-			return md.MarketData
+	return grpcStreamToGraphQlChannel[*v2.ObserveMarketsDataResponse, *types.MarketData](r.log, "marketdata", stream,
+		func(md *v2.ObserveMarketsDataResponse) *types.MarketData {
+			if len(md.MarketData) > 0 {
+				return md.MarketData[0]
+			}
+			return nil
 		}), nil
 }
 

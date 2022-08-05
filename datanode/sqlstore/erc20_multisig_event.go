@@ -56,7 +56,8 @@ func (m *ERC20MultiSigSignerEvent) Add(ctx context.Context, e *entities.ERC20Mul
 }
 
 func (m *ERC20MultiSigSignerEvent) GetAddedEvents(ctx context.Context, validatorID string, epochID *int64, pagination entities.CursorPagination) (
-	[]entities.ERC20MultiSigSignerEvent, entities.PageInfo, error) {
+	[]entities.ERC20MultiSigSignerEvent, entities.PageInfo, error,
+) {
 	var pageInfo entities.PageInfo
 	out := []entities.ERC20MultiSigSignerAddedEvent{}
 	sorting, cmp, cursor := extractPaginationInfo(pagination)

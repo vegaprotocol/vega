@@ -88,6 +88,8 @@ type TradingDataServiceClient interface {
 	GetERC20SetAssetLimitsBundle(ctx context.Context, in *GetERC20SetAssetLimitsBundleRequest, opts ...grpc.CallOption) (*GetERC20SetAssetLimitsBundleResponse, error)
 	GetERC20WithdrawalApproval(ctx context.Context, in *GetERC20WithdrawalApprovalRequest, opts ...grpc.CallOption) (*GetERC20WithdrawalApprovalResponse, error)
 	// -- Trades --
+	// Get latest Trade
+	GetLastTrade(ctx context.Context, in *GetLastTradeRequest, opts ...grpc.CallOption) (*GetLastTradeResponse, error)
 	// Get a list of all trades, optionally filtered by party/market/order using a cursor based pagination model
 	ListTrades(ctx context.Context, in *ListTradesRequest, opts ...grpc.CallOption) (*ListTradesResponse, error)
 	// Subscribe to a stream of Trades, optionally filtered by party/market
@@ -101,6 +103,7 @@ type TradingDataServiceClient interface {
 	ListOracleData(ctx context.Context, in *ListOracleDataRequest, opts ...grpc.CallOption) (*ListOracleDataResponse, error)
 	// -- Markets --
 	// Get all markets using a cursor based pagination model
+	GetMarket(ctx context.Context, in *GetMarketRequest, opts ...grpc.CallOption) (*GetMarketResponse, error)
 	ListMarkets(ctx context.Context, in *ListMarketsRequest, opts ...grpc.CallOption) (*ListMarketsResponse, error)
 	// -- Parties --
 	// Get Parties using a cursor based pagination model
@@ -631,6 +634,15 @@ func (c *tradingDataServiceClient) GetERC20WithdrawalApproval(ctx context.Contex
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) GetLastTrade(ctx context.Context, in *GetLastTradeRequest, opts ...grpc.CallOption) (*GetLastTradeResponse, error) {
+	out := new(GetLastTradeResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetLastTrade", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) ListTrades(ctx context.Context, in *ListTradesRequest, opts ...grpc.CallOption) (*ListTradesResponse, error) {
 	out := new(ListTradesResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListTrades", in, out, opts...)
@@ -693,6 +705,15 @@ func (c *tradingDataServiceClient) ListOracleSpecs(ctx context.Context, in *List
 func (c *tradingDataServiceClient) ListOracleData(ctx context.Context, in *ListOracleDataRequest, opts ...grpc.CallOption) (*ListOracleDataResponse, error) {
 	out := new(ListOracleDataResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListOracleData", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataServiceClient) GetMarket(ctx context.Context, in *GetMarketRequest, opts ...grpc.CallOption) (*GetMarketResponse, error) {
+	out := new(GetMarketResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetMarket", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1221,6 +1242,8 @@ type TradingDataServiceServer interface {
 	GetERC20SetAssetLimitsBundle(context.Context, *GetERC20SetAssetLimitsBundleRequest) (*GetERC20SetAssetLimitsBundleResponse, error)
 	GetERC20WithdrawalApproval(context.Context, *GetERC20WithdrawalApprovalRequest) (*GetERC20WithdrawalApprovalResponse, error)
 	// -- Trades --
+	// Get latest Trade
+	GetLastTrade(context.Context, *GetLastTradeRequest) (*GetLastTradeResponse, error)
 	// Get a list of all trades, optionally filtered by party/market/order using a cursor based pagination model
 	ListTrades(context.Context, *ListTradesRequest) (*ListTradesResponse, error)
 	// Subscribe to a stream of Trades, optionally filtered by party/market
@@ -1234,6 +1257,7 @@ type TradingDataServiceServer interface {
 	ListOracleData(context.Context, *ListOracleDataRequest) (*ListOracleDataResponse, error)
 	// -- Markets --
 	// Get all markets using a cursor based pagination model
+	GetMarket(context.Context, *GetMarketRequest) (*GetMarketResponse, error)
 	ListMarkets(context.Context, *ListMarketsRequest) (*ListMarketsResponse, error)
 	// -- Parties --
 	// Get Parties using a cursor based pagination model
@@ -1403,6 +1427,9 @@ func (UnimplementedTradingDataServiceServer) GetERC20SetAssetLimitsBundle(contex
 func (UnimplementedTradingDataServiceServer) GetERC20WithdrawalApproval(context.Context, *GetERC20WithdrawalApprovalRequest) (*GetERC20WithdrawalApprovalResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetERC20WithdrawalApproval not implemented")
 }
+func (UnimplementedTradingDataServiceServer) GetLastTrade(context.Context, *GetLastTradeRequest) (*GetLastTradeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetLastTrade not implemented")
+}
 func (UnimplementedTradingDataServiceServer) ListTrades(context.Context, *ListTradesRequest) (*ListTradesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListTrades not implemented")
 }
@@ -1417,6 +1444,9 @@ func (UnimplementedTradingDataServiceServer) ListOracleSpecs(context.Context, *L
 }
 func (UnimplementedTradingDataServiceServer) ListOracleData(context.Context, *ListOracleDataRequest) (*ListOracleDataResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListOracleData not implemented")
+}
+func (UnimplementedTradingDataServiceServer) GetMarket(context.Context, *GetMarketRequest) (*GetMarketResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetMarket not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ListMarkets(context.Context, *ListMarketsRequest) (*ListMarketsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListMarkets not implemented")
@@ -2082,6 +2112,24 @@ func _TradingDataService_GetERC20WithdrawalApproval_Handler(srv interface{}, ctx
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_GetLastTrade_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLastTradeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).GetLastTrade(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/GetLastTrade",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).GetLastTrade(ctx, req.(*GetLastTradeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_ListTrades_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListTradesRequest)
 	if err := dec(in); err != nil {
@@ -2171,6 +2219,24 @@ func _TradingDataService_ListOracleData_Handler(srv interface{}, ctx context.Con
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TradingDataServiceServer).ListOracleData(ctx, req.(*ListOracleDataRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_GetMarket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMarketRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).GetMarket(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/GetMarket",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).GetMarket(ctx, req.(*GetMarketRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2920,6 +2986,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TradingDataService_GetERC20WithdrawalApproval_Handler,
 		},
 		{
+			MethodName: "GetLastTrade",
+			Handler:    _TradingDataService_GetLastTrade_Handler,
+		},
+		{
 			MethodName: "ListTrades",
 			Handler:    _TradingDataService_ListTrades_Handler,
 		},
@@ -2934,6 +3004,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListOracleData",
 			Handler:    _TradingDataService_ListOracleData_Handler,
+		},
+		{
+			MethodName: "GetMarket",
+			Handler:    _TradingDataService_GetMarket_Handler,
 		},
 		{
 			MethodName: "ListMarkets",

@@ -934,6 +934,35 @@ func (t *tradingDataServiceV2) GetERC20WithdrawalApproval(ctx context.Context, r
 	}, nil
 }
 
+// Get latest Trade.
+func (t *tradingDataServiceV2) GetLastTrade(ctx context.Context, req *v2.GetLastTradeRequest) (*v2.GetLastTradeResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetLastTradeV2")()
+
+	if len(req.MarketId) <= 0 {
+		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingMarketID)
+	}
+
+	p := entities.OffsetPagination{
+		Skip:       0,
+		Limit:      1,
+		Descending: true,
+	}
+
+	trades, err := t.tradeService.GetByMarket(ctx, req.MarketId, p)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrTradeServiceGetByMarket, err)
+	}
+
+	protoTrades := tradesToProto(trades)
+
+	if len(protoTrades) > 0 && protoTrades[0] != nil {
+		return &v2.GetLastTradeResponse{Trade: protoTrades[0]}, nil
+	}
+	// No trades found on the market yet (and no errors)
+	// this can happen at the beginning of a new market
+	return &v2.GetLastTradeResponse{}, nil
+}
+
 // Get trades by using a cursor based pagination model.
 func (t *tradingDataServiceV2) ListTrades(ctx context.Context, in *v2.ListTradesRequest) (*v2.ListTradesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListTradesV2")()
@@ -999,7 +1028,7 @@ func (t *tradingDataServiceV2) ListMarkets(ctx context.Context, in *v2.ListMarke
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, err)
 	}
-	markets, pageInfo, err := t.marketsService.GetAllPaged(ctx, in.MarketId, pagination)
+	markets, pageInfo, err := t.marketsService.GetAllPaged(ctx, "", pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -1577,7 +1606,18 @@ func (t *tradingDataServiceV2) ListLiquidityProvisions(ctx context.Context, req 
 func (t *tradingDataServiceV2) GetGovernanceData(ctx context.Context, req *v2.GetGovernanceDataRequest) (*v2.GetGovernanceDataResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetGovernanceData")
 
-	proposal, err := t.governanceService.GetProposalByID(ctx, req.ProposalId)
+	var (
+		proposal entities.Proposal
+		err      error
+	)
+	if req.ProposalId != nil {
+		proposal, err = t.governanceService.GetProposalByID(ctx, *req.ProposalId)
+	} else if req.Reference != nil {
+		proposal, err = t.governanceService.GetProposalByReference(ctx, *req.Reference)
+	} else {
+		return nil, apiError(codes.InvalidArgument, fmt.Errorf("proposal id or reference required"))
+	}
+
 	if errors.Is(err, sqlstore.ErrProposalNotFound) {
 		return nil, apiError(codes.NotFound, ErrMissingProposalID, err)
 	} else if err != nil {
@@ -1590,7 +1630,6 @@ func (t *tradingDataServiceV2) GetGovernanceData(ctx context.Context, req *v2.Ge
 	}
 
 	return &v2.GetGovernanceDataResponse{Data: gd}, nil
-
 }
 
 func (t *tradingDataServiceV2) ListGovernanceData(ctx context.Context, req *v2.ListGovernanceDataRequest) (*v2.ListGovernanceDataResponse, error) {
@@ -1695,7 +1734,7 @@ func (t *tradingDataServiceV2) ListTransfers(ctx context.Context, req *v2.ListTr
 		return nil, apiError(codes.Internal, err)
 	}
 
-	edges, err := makeEdges[*v2.TransferEdge](transfers)
+	edges, err := makeEdges[*v2.TransferEdge](transfers, t.accountService)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -2241,13 +2280,13 @@ func (t *tradingDataServiceV2) ListCheckpoints(ctx context.Context, req *v2.List
 }
 
 func (t *tradingDataServiceV2) GetStake(ctx context.Context, req *v2.GetStakeRequest) (*v2.GetStakeResponse, error) {
-	if req == nil || len(req.Party) <= 0 {
+	if req == nil || len(req.PartyId) <= 0 {
 		return nil, apiError(codes.InvalidArgument, errors.New("missing party id"))
 	}
 
 	var pagination entities.CursorPagination
 
-	partyID := entities.NewPartyID(req.Party)
+	partyID := entities.NewPartyID(req.PartyId)
 
 	if req != nil && req.Pagination != nil {
 		var err error
@@ -2420,7 +2459,7 @@ func (t *tradingDataServiceV2) ObserveTransferResponses(_ *v2.ObserveTransferRes
 	})
 }
 
-// -- Key Rotations --
+// -- Key Rotations --.
 func (t *tradingDataServiceV2) ListKeyRotations(ctx context.Context, req *v2.ListKeyRotationsRequest) (*v2.ListKeyRotationsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListKeyRotations")()
 	var (
@@ -2473,7 +2512,7 @@ func makeKeyRotationResponse(rotations []entities.KeyRotation, pageInfo entities
 	}, nil
 }
 
-// Get Time
+// Get Time.
 func (t *tradingDataServiceV2) GetVegaTime(ctx context.Context, req *v2.GetVegaTimeRequest) (*v2.GetVegaTimeResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetVegaTimeV2")()
 	b, err := t.blockService.GetLastBlock(ctx)

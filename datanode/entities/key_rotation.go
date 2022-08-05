@@ -40,8 +40,8 @@ func KeyRotationFromProto(kr *eventspb.KeyRotation, vegaTime time.Time) (*KeyRot
 	}, nil
 }
 
-func (kr *KeyRotation) ToProto() *v2.KeyRotation {
-	return &v2.KeyRotation{
+func (kr *KeyRotation) ToProto() *eventspb.KeyRotation {
+	return &eventspb.KeyRotation{
 		NodeId:      kr.NodeID.String(),
 		OldPubKey:   kr.OldPubKey.String(),
 		NewPubKey:   kr.NewPubKey.String(),
@@ -81,7 +81,6 @@ type KeyRotationCursor struct {
 
 func (c KeyRotationCursor) String() string {
 	bs, err := json.Marshal(c)
-
 	// This should never fail so if it does, we should panic
 	if err != nil {
 		panic(fmt.Errorf("could not marshal key rotation cursor: %w", err))

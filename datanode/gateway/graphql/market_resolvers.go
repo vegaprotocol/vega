@@ -25,6 +25,7 @@ import (
 
 type myMarketResolver VegaResolverRoot
 
+// Deprecated: Use LiquidityProvisionsConnection instead.
 func (r *myMarketResolver) LiquidityProvisions(
 	ctx context.Context,
 	market *types.Market,
@@ -80,10 +81,10 @@ func (r *myMarketResolver) LiquidityProvisionsConnection(
 }
 
 func (r *myMarketResolver) Data(ctx context.Context, market *types.Market) (*types.MarketData, error) {
-	req := protoapi.MarketDataByIDRequest{
+	req := v2.GetLatestMarketDataRequest{
 		MarketId: market.Id,
 	}
-	res, err := r.tradingDataClient.MarketDataByID(ctx, &req)
+	res, err := r.tradingDataClientV2.GetLatestMarketData(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
@@ -91,6 +92,7 @@ func (r *myMarketResolver) Data(ctx context.Context, market *types.Market) (*typ
 	return res.MarketData, nil
 }
 
+// Deprecated: Use OrdersConnection instead.
 func (r *myMarketResolver) Orders(ctx context.Context, market *types.Market,
 	skip, first, last *int,
 ) ([]*types.Order, error) {
@@ -122,6 +124,7 @@ func (r *myMarketResolver) OrdersConnection(ctx context.Context, market *types.M
 	return res.Orders, nil
 }
 
+// Deprecated: Use TradesConnection instead.
 func (r *myMarketResolver) Trades(ctx context.Context, market *types.Market,
 	skip, first, last *int,
 ) ([]*types.Trade, error) {
@@ -157,17 +160,18 @@ func (r *myMarketResolver) Depth(ctx context.Context, market *types.Market, maxD
 		return nil, errors.New("market missing or empty")
 	}
 
-	req := protoapi.MarketDepthRequest{MarketId: market.Id}
+	req := v2.GetLatestMarketDepthRequest{MarketId: market.Id}
 	if maxDepth != nil {
 		if *maxDepth <= 0 {
 			return nil, errors.New("invalid maxDepth, must be a positive number")
 		}
-		req.MaxDepth = uint64(*maxDepth)
+		reqDepth := uint64(*maxDepth)
+		req.MaxDepth = &reqDepth
 	}
 
 	// Look for market depth for the given market (will validate market internally)
 	// Note: Market depth is also known as OrderBook depth within the matching-engine
-	res, err := r.tradingDataClient.MarketDepth(ctx, &req)
+	res, err := r.tradingDataClientV2.GetLatestMarketDepth(ctx, &req)
 	if err != nil {
 		r.log.Error("trading data client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
@@ -181,6 +185,7 @@ func (r *myMarketResolver) Depth(ctx context.Context, market *types.Market, maxD
 	}, nil
 }
 
+// Deprecated: Use CandlesConnection instead.
 func (r *myMarketResolver) Candles(ctx context.Context, market *types.Market,
 	sinceRaw string, interval Interval,
 ) ([]*types.Candle, error) {
@@ -215,6 +220,7 @@ func (r *myMarketResolver) Candles(ctx context.Context, market *types.Market,
 // Accounts ...
 // if partyID specified get margin account for the given market
 // if nil return the insurance pool & Fee Liquidty accounts for the market.
+// Deprecated: use AccountsConnection instead.
 func (r *myMarketResolver) Accounts(ctx context.Context, market *types.Market, partyID *string) ([]*types.Account, error) {
 	filter := v2.AccountFilter{MarketIds: []string{market.Id}}
 	ptyID := ""
@@ -251,6 +257,35 @@ func (r *myMarketResolver) Accounts(ctx context.Context, market *types.Market, p
 		accounts[i] = edge.Account
 	}
 	return accounts, nil
+}
+
+func (r *myMarketResolver) AccountsConnection(ctx context.Context, market *types.Market, partyID *string, pagination *v2.Pagination) (*v2.AccountsConnection, error) {
+	filter := v2.AccountFilter{MarketIds: []string{market.Id}}
+	ptyID := ""
+
+	if partyID != nil {
+		// get margin account for a party
+		ptyID = *partyID
+		filter.PartyIds = []string{ptyID}
+		filter.AccountTypes = []types.AccountType{types.AccountType_ACCOUNT_TYPE_MARGIN}
+	} else {
+		filter.AccountTypes = []types.AccountType{
+			types.AccountType_ACCOUNT_TYPE_INSURANCE,
+			types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY,
+		}
+	}
+
+	req := v2.ListAccountsRequest{Filter: &filter, Pagination: pagination}
+
+	res, err := r.tradingDataClientV2.ListAccounts(ctx, &req)
+	if err != nil {
+		r.log.Error("unable to get market accounts",
+			logging.Error(err),
+			logging.String("market-id", market.Id),
+			logging.String("party-id", ptyID))
+		return nil, customErrorFromStatus(err)
+	}
+	return res.Accounts, nil
 }
 
 func (r *myMarketResolver) DecimalPlaces(ctx context.Context, obj *types.Market) (int, error) {
@@ -295,8 +330,8 @@ func (r *myMarketResolver) State(ctx context.Context, obj *types.Market) (Market
 }
 
 func (r *myMarketResolver) Proposal(ctx context.Context, obj *types.Market) (*types.GovernanceData, error) {
-	resp, err := r.tradingDataClient.GetProposalByID(ctx, &protoapi.GetProposalByIDRequest{
-		ProposalId: obj.Id,
+	resp, err := r.tradingDataClientV2.GetGovernanceData(ctx, &v2.GetGovernanceDataRequest{
+		ProposalId: &obj.Id,
 	})
 	// it's possible to not find a proposal as of now.
 	// some market are loaded at startup, without
@@ -308,7 +343,7 @@ func (r *myMarketResolver) Proposal(ctx context.Context, obj *types.Market) (*ty
 }
 
 func (r *myMarketResolver) RiskFactors(ctx context.Context, obj *types.Market) (*types.RiskFactor, error) {
-	rf, err := r.tradingDataClient.GetRiskFactors(ctx, &protoapi.GetRiskFactorsRequest{
+	rf, err := r.tradingDataClientV2.GetRiskFactors(ctx, &v2.GetRiskFactorsRequest{
 		MarketId: obj.Id,
 	})
 	if err != nil {
