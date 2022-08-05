@@ -274,7 +274,7 @@ pipeline {
                                     sh label: 'protoc', script: """#!/bin/bash -e
                                         PB_REL="https://github.com/protocolbuffers/protobuf/releases"
                                         curl -LO \$PB_REL/download/v${env.PROTOC_VERSION}/protoc-${env.PROTOC_VERSION}-linux-x86_64.zip
-                                        unzip protoc-${env.PROTOC_VERSION}-linux-x86_64.zip -d "${PROTOC_HOME}"
+                                        unzip -o protoc-${env.PROTOC_VERSION}-linux-x86_64.zip -d "${PROTOC_HOME}"
                                     """
                                     sh './script/gettools.sh'
                                     sh 'protoc --version'
