@@ -30,6 +30,8 @@ proto/*-re
 proto/**.orig
 *.pb.go-re
 gomock_reflect_*
+protos/generated/
+protos/swagger/
 
 # Exclude other random
 data/
