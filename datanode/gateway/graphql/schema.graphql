@@ -555,7 +555,7 @@ type Query {
 
   networkParametersConnection(pagination: Pagination): NetworkParametersConnection!
 
-  "return a single network parameters"
+  "return a single network parameter"
   networkParameter(
     "key of the network parameter"
     key: String!
