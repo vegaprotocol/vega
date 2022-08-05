@@ -168,6 +168,14 @@ func (store *Node) UpdatePublicKey(ctx context.Context, kr *entities.KeyRotation
 	return err
 }
 
+func (store *Node) UpdateEthereumAddress(ctx context.Context, kr entities.EthereumKeyRotation) error {
+	defer metrics.StartSQLQuery("Node", "UpdateEthereumPublicKey")()
+
+	_, err := store.pool.Exec(ctx, `UPDATE nodes SET ethereum_address = $1 WHERE id = $2`, kr.NewAddress, kr.NodeID)
+
+	return err
+}
+
 func (store *Node) GetNodeData(ctx context.Context) (entities.NodeData, error) {
 	defer metrics.StartSQLQuery("Node", "GetNodeData")()
 	query := `

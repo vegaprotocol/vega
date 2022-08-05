@@ -50,6 +50,20 @@ func (mr *MockNodeStoreMockRecorder) AddNodeAnnoucedEvent(arg0, arg1, arg2, arg3
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNodeAnnoucedEvent", reflect.TypeOf((*MockNodeStore)(nil).AddNodeAnnoucedEvent), arg0, arg1, arg2, arg3)
 }
 
+// UpdateEthereumAddress mocks base method.
+func (m *MockNodeStore) UpdateEthereumAddress(arg0 context.Context, arg1 entities.EthereumKeyRotation) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateEthereumAddress", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateEthereumAddress indicates an expected call of UpdateEthereumAddress.
+func (mr *MockNodeStoreMockRecorder) UpdateEthereumAddress(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateEthereumAddress", reflect.TypeOf((*MockNodeStore)(nil).UpdateEthereumAddress), arg0, arg1)
+}
+
 // UpdatePublicKey mocks base method.
 func (m *MockNodeStore) UpdatePublicKey(arg0 context.Context, arg1 *entities.KeyRotation) error {
 	m.ctrl.T.Helper()

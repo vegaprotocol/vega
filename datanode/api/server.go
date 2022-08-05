@@ -54,41 +54,42 @@ type GRPCServer struct {
 	srv                   *grpc.Server
 	vegaCoreServiceClient CoreServiceClient
 
-	eventService              *subscribers.Service
-	coreProxySvc              *coreProxyService
-	tradingDataService        protoapi.TradingDataServiceServer
-	orderService              *service.Order
-	candleService             *candlesv2.Svc
-	networkLimitsService      *service.NetworkLimits
-	marketDataService         *service.MarketData
-	tradeService              *service.Trade
-	assetService              *service.Asset
-	accountService            *service.Account
-	rewardService             *service.Reward
-	marketsService            *service.Markets
-	delegationService         *service.Delegation
-	epochService              *service.Epoch
-	depositService            *service.Deposit
-	withdrawalService         *service.Withdrawal
-	governanceService         *service.Governance
-	riskFactorService         *service.RiskFactor
-	riskService               *service.Risk
-	networkParameterService   *service.NetworkParameter
-	blockService              *service.Block
-	partyService              *service.Party
-	checkpointService         *service.Checkpoint
-	oracleSpecService         *service.OracleSpec
-	oracleDataService         *service.OracleData
-	liquidityProvisionService *service.LiquidityProvision
-	positionService           *service.Position
-	transferService           *service.Transfer
-	stakeLinkingService       *service.StakeLinking
-	notaryService             *service.Notary
-	multiSigService           *service.MultiSig
-	keyRotationService        *service.KeyRotations
-	nodeService               *service.Node
-	marketDepthService        *service.MarketDepth
-	ledgerService             *service.Ledger
+	eventService               *subscribers.Service
+	coreProxySvc               *coreProxyService
+	tradingDataService         protoapi.TradingDataServiceServer
+	orderService               *service.Order
+	candleService              *candlesv2.Svc
+	networkLimitsService       *service.NetworkLimits
+	marketDataService          *service.MarketData
+	tradeService               *service.Trade
+	assetService               *service.Asset
+	accountService             *service.Account
+	rewardService              *service.Reward
+	marketsService             *service.Markets
+	delegationService          *service.Delegation
+	epochService               *service.Epoch
+	depositService             *service.Deposit
+	withdrawalService          *service.Withdrawal
+	governanceService          *service.Governance
+	riskFactorService          *service.RiskFactor
+	riskService                *service.Risk
+	networkParameterService    *service.NetworkParameter
+	blockService               *service.Block
+	partyService               *service.Party
+	checkpointService          *service.Checkpoint
+	oracleSpecService          *service.OracleSpec
+	oracleDataService          *service.OracleData
+	liquidityProvisionService  *service.LiquidityProvision
+	positionService            *service.Position
+	transferService            *service.Transfer
+	stakeLinkingService        *service.StakeLinking
+	notaryService              *service.Notary
+	multiSigService            *service.MultiSig
+	keyRotationService         *service.KeyRotations
+	ethereumKeyRotationService *service.EthereumKeyRotation
+	nodeService                *service.Node
+	marketDepthService         *service.MarketDepth
+	ledgerService              *service.Ledger
 
 	eventObserver *eventObserver
 
@@ -132,6 +133,7 @@ func NewGRPCServer(
 	notaryService *service.Notary,
 	multiSigService *service.MultiSig,
 	keyRotationService *service.KeyRotations,
+	ethereumKeyRotationService *service.EthereumKeyRotation,
 	nodeService *service.Node,
 	marketDepthService *service.MarketDepth,
 	ledgerService *service.Ledger,
@@ -142,42 +144,43 @@ func NewGRPCServer(
 	ctx, cfunc := context.WithCancel(context.Background())
 
 	return &GRPCServer{
-		log:                       log,
-		Config:                    config,
-		vegaCoreServiceClient:     coreServiceClient,
-		eventService:              eventService,
-		orderService:              orderService,
-		networkLimitsService:      networkLimitsService,
-		tradeService:              tradeService,
-		assetService:              assetService,
-		accountService:            accountService,
-		rewardService:             rewardService,
-		marketsService:            marketsService,
-		delegationService:         delegationService,
-		epochService:              epochService,
-		depositService:            depositService,
-		withdrawalService:         withdrawalService,
-		multiSigService:           multiSigService,
-		governanceService:         governanceService,
-		riskFactorService:         riskFactorService,
-		networkParameterService:   networkParameterService,
-		blockService:              blockService,
-		checkpointService:         checkpointService,
-		partyService:              partyService,
-		candleService:             candleService,
-		oracleSpecService:         oracleSpecService,
-		oracleDataService:         oracleDataService,
-		liquidityProvisionService: liquidityProvisionService,
-		positionService:           positionService,
-		transferService:           transferService,
-		stakeLinkingService:       stakeLinkingService,
-		notaryService:             notaryService,
-		keyRotationService:        keyRotationService,
-		nodeService:               nodeService,
-		marketDepthService:        marketDepthService,
-		riskService:               riskService,
-		marketDataService:         marketDataService,
-		ledgerService:             ledgerService,
+		log:                        log,
+		Config:                     config,
+		vegaCoreServiceClient:      coreServiceClient,
+		eventService:               eventService,
+		orderService:               orderService,
+		networkLimitsService:       networkLimitsService,
+		tradeService:               tradeService,
+		assetService:               assetService,
+		accountService:             accountService,
+		rewardService:              rewardService,
+		marketsService:             marketsService,
+		delegationService:          delegationService,
+		epochService:               epochService,
+		depositService:             depositService,
+		withdrawalService:          withdrawalService,
+		multiSigService:            multiSigService,
+		governanceService:          governanceService,
+		riskFactorService:          riskFactorService,
+		networkParameterService:    networkParameterService,
+		blockService:               blockService,
+		checkpointService:          checkpointService,
+		partyService:               partyService,
+		candleService:              candleService,
+		oracleSpecService:          oracleSpecService,
+		oracleDataService:          oracleDataService,
+		liquidityProvisionService:  liquidityProvisionService,
+		positionService:            positionService,
+		transferService:            transferService,
+		stakeLinkingService:        stakeLinkingService,
+		notaryService:              notaryService,
+		keyRotationService:         keyRotationService,
+		ethereumKeyRotationService: ethereumKeyRotationService,
+		nodeService:                nodeService,
+		marketDepthService:         marketDepthService,
+		riskService:                riskService,
+		marketDataService:          marketDataService,
+		ledgerService:              ledgerService,
 
 		eventObserver: &eventObserver{
 			log:          log,
@@ -330,40 +333,41 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 	protoapi.RegisterTradingDataServiceServer(g.srv, g.tradingDataService)
 
 	tradingDataSvcV2 := &tradingDataServiceV2{
-		config:                    g.Config,
-		log:                       g.log,
-		orderService:              g.orderService,
-		networkLimitsService:      g.networkLimitsService,
-		marketDataService:         g.marketDataService,
-		tradeService:              g.tradeService,
-		multiSigService:           g.multiSigService,
-		notaryService:             g.notaryService,
-		assetService:              g.assetService,
-		candleService:             g.candleService,
-		marketsService:            g.marketsService,
-		partyService:              g.partyService,
-		riskService:               g.riskService,
-		positionService:           g.positionService,
-		accountService:            g.accountService,
-		rewardService:             g.rewardService,
-		depositService:            g.depositService,
-		withdrawalService:         g.withdrawalService,
-		oracleSpecService:         g.oracleSpecService,
-		oracleDataService:         g.oracleDataService,
-		liquidityProvisionService: g.liquidityProvisionService,
-		governanceService:         g.governanceService,
-		transfersService:          g.transferService,
-		delegationService:         g.delegationService,
-		marketService:             g.marketsService,
-		marketDepthService:        g.marketDepthService,
-		nodeService:               g.nodeService,
-		epochService:              g.epochService,
-		riskFactorService:         g.riskFactorService,
-		networkParameterService:   g.networkParameterService,
-		checkpointService:         g.checkpointService,
-		stakeLinkingService:       g.stakeLinkingService,
-		eventService:              g.eventService,
-		ledgerService:             g.ledgerService,
+		config:                     g.Config,
+		log:                        g.log,
+		orderService:               g.orderService,
+		networkLimitsService:       g.networkLimitsService,
+		marketDataService:          g.marketDataService,
+		tradeService:               g.tradeService,
+		multiSigService:            g.multiSigService,
+		notaryService:              g.notaryService,
+		assetService:               g.assetService,
+		candleService:              g.candleService,
+		marketsService:             g.marketsService,
+		partyService:               g.partyService,
+		riskService:                g.riskService,
+		positionService:            g.positionService,
+		accountService:             g.accountService,
+		rewardService:              g.rewardService,
+		depositService:             g.depositService,
+		withdrawalService:          g.withdrawalService,
+		oracleSpecService:          g.oracleSpecService,
+		oracleDataService:          g.oracleDataService,
+		liquidityProvisionService:  g.liquidityProvisionService,
+		governanceService:          g.governanceService,
+		transfersService:           g.transferService,
+		delegationService:          g.delegationService,
+		marketService:              g.marketsService,
+		marketDepthService:         g.marketDepthService,
+		nodeService:                g.nodeService,
+		epochService:               g.epochService,
+		riskFactorService:          g.riskFactorService,
+		networkParameterService:    g.networkParameterService,
+		checkpointService:          g.checkpointService,
+		stakeLinkingService:        g.stakeLinkingService,
+		eventService:               g.eventService,
+		ledgerService:              g.ledgerService,
+		ethereumKeyRotationService: g.ethereumKeyRotationService,
 	}
 
 	protoapi2.RegisterTradingDataServiceServer(g.srv, tradingDataSvcV2)
