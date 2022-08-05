@@ -6,15 +6,15 @@ function gen_json() {
 	mkdir -p ./protos/generated/json/data-node/api/v1
 	mkdir -p ./protos/generated/json/data-node/api/v2
 
-	protoc --jsonschema_out=./protos/generated/json/vega --proto_path=./protos/sources protos/sources/vega/*.proto
-	protoc --jsonschema_out=./protos/generated/json/data-node/api/v1 --proto_path=./protos/sources protos/sources/data-node/api/v1/*.proto
-	protoc --jsonschema_out=./protos/generated/json/data-node/api/v2 --proto_path=./protos/sources protos/sources/data-node/api/v2/*.proto
+	protoc --experimental_allow_proto3_optional --jsonschema_out=./protos/generated/json/vega --proto_path=./protos/sources protos/sources/vega/*.proto
+	protoc --experimental_allow_proto3_optional --jsonschema_out=./protos/generated/json/data-node/api/v1 --proto_path=./protos/sources protos/sources/data-node/api/v1/*.proto
+	protoc --experimental_allow_proto3_optional --jsonschema_out=./protos/generated/json/data-node/api/v2 --proto_path=./protos/sources protos/sources/data-node/api/v2/*.proto
 }
 
 function gen_docs() {
   mkdir -p generated
 
-  protoc --doc_out=./protos/generated --doc_opt=json,proto.json --proto_path=protos/sources/ \
+  protoc --experimental_allow_proto3_optional --doc_out=./protos/generated --doc_opt=json,proto.json --proto_path=protos/sources/ \
   protos/sources/vega/*.proto \
   protos/sources/vega/oracles/**/*.proto \
   protos/sources/vega/commands/**/*.proto \
