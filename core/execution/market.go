@@ -668,10 +668,6 @@ func (m *Market) PostRestore(ctx context.Context) error {
 
 	m.liquidity.ReconcileWithOrderBook(m.matching)
 
-	// if err := m.peggedOrders.ReconcileWithOrderBook(m.matching); err != nil {
-	// return err
-	// }
-
 	pps := m.position.Parties()
 	peggedOrder := m.peggedOrders.parked
 	parties := make(map[string]struct{}, len(pps)+len(peggedOrder))
@@ -2616,7 +2612,7 @@ func (m *Market) amendOrder(
 			// We got a new valid price, if we are parked we need to unpark
 			if amendedOrder.Status == types.OrderStatusParked {
 				// we were parked, need to unpark
-				m.peggedOrders.Unpark(amendedOrder)
+				m.peggedOrders.Unpark(amendedOrder.ID)
 				orderConf, orderUpdts, err := m.submitValidatedOrder(ctx, amendedOrder)
 				if err != nil {
 					// If we cannot submit a new order then the amend has failed, return the error
@@ -2884,7 +2880,7 @@ func (m *Market) orderCancelReplace(
 
 	// pegged order might have been parked
 	if m.peggedOrders.IsParked(newOrder.ID) {
-		m.peggedOrders.Unpark(newOrder)
+		m.peggedOrders.Unpark(newOrder.ID)
 	}
 	// order submitted successfully, update the pegged list
 	// if newOrder.PeggedOrder != nil {
@@ -3058,7 +3054,7 @@ func (m *Market) getStaticMidPrice(side types.Side) (*num.Uint, error) {
 func (m *Market) removePeggedOrder(order *types.Order) {
 	// remove if order was expiring
 	m.expiringOrders.RemoveOrder(order.ExpiresAt, order.ID)
-	m.peggedOrders.Remove(order)
+	m.peggedOrders.Remove(order.ID)
 }
 
 // getOrderBy looks for the order in the order book and in the list

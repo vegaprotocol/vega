@@ -425,7 +425,7 @@ message Market {
 }
 
 message OrderPartyPair {
-  string order = 1;
+  string order_id = 1;
   string party = 2;
 }
 

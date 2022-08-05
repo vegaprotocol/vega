@@ -63,7 +63,7 @@ func (m *Market) repricePeggedOrders(
 				_ = m.position.UnregisterOrder(ctx, order)
 			} else {
 				// unpark before it's reparked next eventually
-				m.peggedOrders.Unpark(order)
+				m.peggedOrders.Unpark(order.ID)
 			}
 
 			if price, err := m.getNewPeggedPrice(order); err != nil {

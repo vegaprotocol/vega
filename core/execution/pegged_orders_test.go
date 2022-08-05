@@ -108,7 +108,7 @@ func testPeggedOrdersSnapshot(t *testing.T) {
 	)
 
 	// Test remove
-	p.Remove(testOrders[3])
+	p.Remove(testOrders[3].ID)
 	// testOrders = testOrders[:3]
 	a.Equal("", p.GetState().Orders[testOrders[3].ID])
 	a.Equal(

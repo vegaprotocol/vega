@@ -2478,7 +2478,7 @@ func PeggedOrdersStateFromProto(s *snapshot.PeggedOrders) *PeggedOrdersState {
 	}
 
 	for _, v := range s.OrderParties {
-		po.Orders[v.Order] = v.Party
+		po.Orders[v.OrderId] = v.Party
 	}
 
 	for _, v := range s.ParkedOrders {
@@ -2496,12 +2496,12 @@ func (s PeggedOrdersState) IntoProto() *snapshot.PeggedOrders {
 
 	for k, v := range s.Orders {
 		po.OrderParties = append(po.OrderParties, &snapshot.OrderPartyPair{
-			Order: k,
-			Party: v,
+			OrderId: k,
+			Party:   v,
 		})
 	}
 	sort.Slice(po.OrderParties, func(i, j int) bool {
-		return po.OrderParties[i].Order < po.OrderParties[j].Order
+		return po.OrderParties[i].OrderId < po.OrderParties[j].OrderId
 	})
 
 	for _, v := range s.Parked {
