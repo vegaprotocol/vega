@@ -150,7 +150,7 @@ func (g *GraphServer) Start() error {
 
 	if g.GraphQLPlaygroundEnabled {
 		g.log.Warn("graphql playground enabled, this is not a recommended setting for production")
-		handlr.Handle("/", corz.Handler(playground.Handler("VEGA", "/query")))
+		handlr.Handle("/", corz.Handler(playground.Handler("VEGA", g.GraphQL.Endpoint)))
 	}
 	options := []handler.Option{
 		handler.WebsocketKeepAliveDuration(10 * time.Second),
@@ -166,7 +166,11 @@ func (g *GraphServer) Start() error {
 	if g.GraphQL.ComplexityLimit > 0 {
 		options = append(options, handler.ComplexityLimit(g.GraphQL.ComplexityLimit))
 	}
+	// FIXME(jeremy): to be removed once everyone has move to the new endpoint
 	handlr.Handle("/query", gateway.RemoteAddrMiddleware(g.log, corz.Handler(
+		handler.GraphQL(NewExecutableSchema(config), options...),
+	)))
+	handlr.Handle(g.GraphQL.Endpoint, gateway.RemoteAddrMiddleware(g.log, corz.Handler(
 		handler.GraphQL(NewExecutableSchema(config), options...),
 	)))
 
