@@ -123,7 +123,7 @@ func (s *StakeLinking) getStakeWithCursorPagination(ctx context.Context, partyID
 
 	cursorParams := []CursorQueryParameter{
 		NewCursorQueryParameter("vega_time", sorting, cmp, sc.VegaTime),
-		NewCursorQueryParameter("id", sorting, cmp, entities.NewStakeLinkingID(sc.ID)),
+		NewCursorQueryParameter("id", sorting, cmp, entities.StakeLinkingID(sc.ID)),
 	}
 
 	query, bindVars = orderAndPaginateWithCursor(query, pagination, cursorParams, bindVars...)

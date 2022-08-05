@@ -75,7 +75,7 @@ func (os *Orders) GetAll(ctx context.Context) ([]entities.Order, error) {
 func (os *Orders) GetOrder(ctx context.Context, orderIdStr string, version *int32) (entities.Order, error) {
 	var err error
 	order := entities.Order{}
-	orderId := entities.NewOrderID(orderIdStr)
+	orderId := entities.OrderID(orderIdStr)
 
 	defer metrics.StartSQLQuery("Orders", "GetByOrderID")()
 	if version != nil && *version > 0 {
@@ -91,7 +91,7 @@ func (os *Orders) GetOrder(ctx context.Context, orderIdStr string, version *int3
 // GetByMarket returns the last update of the all the orders in a particular market.
 func (os *Orders) GetByMarket(ctx context.Context, marketIdStr string, p entities.OffsetPagination) ([]entities.Order, error) {
 	defer metrics.StartSQLQuery("Orders", "GetByMarket")()
-	marketId := entities.NewMarketID(marketIdStr)
+	marketId := entities.MarketID(marketIdStr)
 
 	query := fmt.Sprintf(`SELECT %s from orders_current WHERE market_id=$1`, sqlOrderColumns)
 	args := []interface{}{marketId}
@@ -101,7 +101,7 @@ func (os *Orders) GetByMarket(ctx context.Context, marketIdStr string, p entitie
 // GetByParty returns the last update of the all the orders in a particular party.
 func (os *Orders) GetByParty(ctx context.Context, partyIdStr string, p entities.OffsetPagination) ([]entities.Order, error) {
 	defer metrics.StartSQLQuery("Orders", "GetByParty")()
-	partyId := entities.NewPartyID(partyIdStr)
+	partyId := entities.PartyID(partyIdStr)
 
 	query := fmt.Sprintf(`SELECT %s from orders_current WHERE party_id=$1`, sqlOrderColumns)
 	args := []interface{}{partyId}
@@ -126,7 +126,7 @@ func (os *Orders) GetByReferencePaged(ctx context.Context, reference string, p e
 func (os *Orders) GetAllVersionsByOrderID(ctx context.Context, id string, p entities.OffsetPagination) ([]entities.Order, error) {
 	defer metrics.StartSQLQuery("Orders", "GetAllVersionsByOrderID")()
 	query := fmt.Sprintf(`SELECT %s from orders_current_versions WHERE id=$1`, sqlOrderColumns)
-	args := []interface{}{entities.NewOrderID(id)}
+	args := []interface{}{entities.OrderID(id)}
 	return os.queryOrders(ctx, query, args, &p)
 }
 
@@ -211,11 +211,11 @@ func paginateOrderQuery(query string, args []interface{}, p entities.OffsetPagin
 func (os *Orders) ListOrders(ctx context.Context, party *string, market *string, reference *string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
 	var filters []filter
 	if party != nil {
-		filters = append(filters, filter{"party_id", entities.NewPartyID(*party)})
+		filters = append(filters, filter{"party_id", entities.PartyID(*party)})
 	}
 
 	if market != nil {
-		filters = append(filters, filter{"market_id", entities.NewMarketID(*market)})
+		filters = append(filters, filter{"market_id", entities.MarketID(*market)})
 	}
 
 	if reference != nil {
@@ -234,7 +234,7 @@ func (os *Orders) ListOrderVersions(ctx context.Context, orderIDStr string, p en
 	if orderIDStr == "" {
 		return nil, entities.PageInfo{}, errors.New("orderID is required")
 	}
-	orderID := entities.NewOrderID(orderIDStr)
+	orderID := entities.OrderID(orderIDStr)
 	query := fmt.Sprintf(`SELECT %s from orders_current_versions WHERE id=$1`, sqlOrderColumns)
 	defer metrics.StartSQLQuery("Orders", "GetByOrderIDPaged")()
 

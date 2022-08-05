@@ -62,7 +62,7 @@ func (store *KeyRotations) GetAllPubKeyRotations(ctx context.Context, pagination
 
 	cursorParams := []CursorQueryParameter{
 		NewCursorQueryParameter("vega_time", sorting, cmp, kc.VegaTime),
-		NewCursorQueryParameter("node_id", sorting, cmp, entities.NewNodeID(kc.NodeID)),
+		NewCursorQueryParameter("node_id", sorting, cmp, entities.NodeID(kc.NodeID)),
 	}
 
 	var args []interface{}
@@ -81,7 +81,7 @@ func (store *KeyRotations) GetAllPubKeyRotations(ctx context.Context, pagination
 func (store *KeyRotations) GetPubKeyRotationsPerNode(ctx context.Context, nodeId string, pagination entities.CursorPagination) ([]entities.KeyRotation, entities.PageInfo, error) {
 	defer metrics.StartSQLQuery("KeyRotations", "GetPubKeyRotationsPerNode")()
 	var pageInfo entities.PageInfo
-	id := entities.NewNodeID(nodeId)
+	id := entities.NodeID(nodeId)
 	keyRotations := []entities.KeyRotation{}
 
 	sorting, cmp, cursor := extractPaginationInfo(pagination)

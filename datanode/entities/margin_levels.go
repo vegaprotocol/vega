@@ -74,9 +74,9 @@ func MarginLevelsFromProto(ctx context.Context, margin *vega.MarginLevels, accou
 func GetAccountFromMarginLevel(ctx context.Context, margin *vega.MarginLevels, accountSource AccountSource, vegaTime time.Time) (Account, error) {
 	marginAccount := Account{
 		ID:       0,
-		PartyID:  NewPartyID(margin.PartyId),
-		AssetID:  NewAssetID(margin.Asset),
-		MarketID: NewMarketID(margin.MarketId),
+		PartyID:  PartyID(margin.PartyId),
+		AssetID:  AssetID(margin.Asset),
+		MarketID: MarketID(margin.MarketId),
 		Type:     vega.AccountType_ACCOUNT_TYPE_MARGIN,
 		VegaTime: vegaTime,
 	}

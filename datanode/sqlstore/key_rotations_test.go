@@ -522,7 +522,7 @@ func setKeyRotationStoreTest(t *testing.T, ctx context.Context) (*sqlstore.KeyRo
 			block := addTestBlockForTime(t, bs, blockTime)
 
 			kr := entities.KeyRotation{
-				NodeID:      entities.NewNodeID(fmt.Sprintf("deadbeef%02d", i+1)),
+				NodeID:      entities.NodeID(fmt.Sprintf("deadbeef%02d", i+1)),
 				OldPubKey:   entities.VegaPublicKey(fmt.Sprintf("cafed00d%02d", j+1)),
 				NewPubKey:   entities.VegaPublicKey(fmt.Sprintf("cafed00d%02d", j+2)),
 				BlockHeight: uint64((i * 10) + j + 1),

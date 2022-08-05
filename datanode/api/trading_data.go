@@ -195,14 +195,14 @@ func (t *tradingDataService) PositionsByParty(ctx context.Context, request *prot
 	if request.MarketId == "" && request.PartyId == "" {
 		positions, err = t.positionService.GetAll(ctx)
 	} else if request.MarketId == "" {
-		positions, err = t.positionService.GetByParty(ctx, entities.NewPartyID(request.PartyId))
+		positions, err = t.positionService.GetByParty(ctx, entities.PartyID(request.PartyId))
 	} else if request.PartyId == "" {
-		positions, err = t.positionService.GetByMarket(ctx, entities.NewMarketID(request.MarketId))
+		positions, err = t.positionService.GetByMarket(ctx, entities.MarketID(request.MarketId))
 	} else {
 		positions = make([]entities.Position, 1)
 		positions[0], err = t.positionService.GetByMarketAndParty(ctx,
-			entities.NewMarketID(request.MarketId),
-			entities.NewPartyID(request.PartyId))
+			entities.MarketID(request.MarketId),
+			entities.PartyID(request.PartyId))
 
 		// Don't error if there's no position for this party/market
 		if errors.Is(err, sqlstore.ErrPositionNotFound) {
@@ -342,14 +342,14 @@ func (t *tradingDataService) Transfers(ctx context.Context, req *protoapi.Transf
 		}
 	} else if req.IsFrom || req.IsTo {
 		if req.IsFrom {
-			transfers, _, err = t.transferService.GetTransfersFromParty(ctx, entities.PartyID{ID: entities.ID(req.Pubkey)}, entities.CursorPagination{})
+			transfers, _, err = t.transferService.GetTransfersFromParty(ctx, entities.PartyID(req.Pubkey), entities.CursorPagination{})
 			if err != nil {
 				return nil, apiError(codes.Internal, err)
 			}
 		}
 
 		if req.IsTo {
-			transfers, _, err = t.transferService.GetTransfersToParty(ctx, entities.PartyID{ID: entities.ID(req.Pubkey)}, entities.CursorPagination{})
+			transfers, _, err = t.transferService.GetTransfersToParty(ctx, entities.PartyID(req.Pubkey), entities.CursorPagination{})
 			if err != nil {
 				return nil, apiError(codes.Internal, err)
 			}
@@ -1447,7 +1447,7 @@ func accountBalancesToProtoAccountList(accounts []entities.AccountBalance) []*ve
 }
 
 func toAccountsFilterAsset(assetID string) entities.AssetID {
-	return entities.NewAssetID(assetID)
+	return entities.AssetID(assetID)
 }
 
 func toAccountsFilterParties(partyIDs ...string) []entities.PartyID {
@@ -1456,7 +1456,7 @@ func toAccountsFilterParties(partyIDs ...string) []entities.PartyID {
 		if idStr == "" {
 			continue
 		}
-		parties = append(parties, entities.NewPartyID(idStr))
+		parties = append(parties, entities.PartyID(idStr))
 	}
 
 	return parties
@@ -1468,7 +1468,7 @@ func toAccountsFilterMarkets(marketIDs ...string) []entities.MarketID {
 		if idStr == "" {
 			continue
 		}
-		market := entities.NewMarketID(idStr)
+		market := entities.MarketID(idStr)
 		markets = append(markets, market)
 	}
 
@@ -2090,8 +2090,8 @@ func (t *tradingDataService) ListOracleData(ctx context.Context, _ *protoapi.Lis
 func (t *tradingDataService) LiquidityProvisions(ctx context.Context, req *protoapi.LiquidityProvisionsRequest) (*protoapi.LiquidityProvisionsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("LiquidityProvisions")()
 
-	partyID := entities.NewPartyID(req.Party)
-	marketID := entities.NewMarketID(req.Market)
+	partyID := entities.PartyID(req.Party)
+	marketID := entities.MarketID(req.Market)
 
 	lps, _, err := t.liquidityProvisionService.Get(ctx, partyID, marketID, "", entities.OffsetPagination{})
 	if err != nil {
@@ -2112,7 +2112,7 @@ func (t *tradingDataService) PartyStake(ctx context.Context, req *protoapi.Party
 		return nil, apiError(codes.InvalidArgument, errors.New("missing party id"))
 	}
 
-	partyID := entities.NewPartyID(req.Party)
+	partyID := entities.PartyID(req.Party)
 
 	stake, stakeLinkings, _, err := t.stakeLinkingService.GetStake(ctx, partyID, entities.OffsetPagination{})
 	if err != nil {

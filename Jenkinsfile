@@ -237,6 +237,7 @@ pipeline {
                                 sh 'mdspell --en-gb --ignore-acronyms --ignore-numbers --no-suggestions --report "*.md" "docs/**/*.md"'
                             }
                         }
+                        sh 'printenv'
                     }
                 }
                 stage('approbation') {
@@ -251,6 +252,79 @@ pipeline {
                         script {
                             runApprobation ignoreFailure: !isPRBuild(),
                                 vegaVersion: commitHash
+                        }
+                    }
+                }
+                stage('protos') {
+                    environment {
+                        GOPATH = "${env.WORKSPACE}/GOPATH"
+                        GOBIN = "${env.GOPATH}/bin"
+                        PROTOC_HOME = "${env.WORKSPACE}/PROTOC_HOME"
+                        PATH = "${env.PROTOC_HOME}/bin:${env.GOBIN}:${env.PATH}"
+                        PROTOC_VERSION = "3.19.4"
+                    }
+                    stages {
+                        stage('Install dependencies') {
+                            // We are using specific tools versions
+                            // Please use exactly the same versions when modifying protos
+                            options { retry(3) }
+                            steps {
+                                dir('vega') {
+                                    sh 'printenv'
+                                    sh label: 'protoc', script: """#!/bin/bash -e
+                                        PB_REL="https://github.com/protocolbuffers/protobuf/releases"
+                                        curl -LO \$PB_REL/download/v${env.PROTOC_VERSION}/protoc-${env.PROTOC_VERSION}-linux-x86_64.zip
+                                        unzip -o protoc-${env.PROTOC_VERSION}-linux-x86_64.zip -d "${PROTOC_HOME}"
+                                    """
+                                    sh './script/gettools.sh'
+                                    sh 'protoc --version'
+                                    sh 'which protoc'
+                                    sh 'buf --version'
+                                    sh 'which buf'
+                                }
+                            }
+                        }
+                        stage('buf lint') {
+                            options { retry(3) }
+                            steps {
+                                dir('vega') {
+                                    sh '''#!/bin/bash -e
+                                        buf lint
+                                    '''
+                                }
+                            }
+                            post {
+                                failure {
+                                    sh 'printenv'
+                                    echo "params=${params}"
+                                    sh 'protoc --version'
+                                    sh 'which protoc'
+                                    sh 'buf --version'
+                                    sh 'which buf'
+                                    sh 'git diff'
+                                }
+                            }
+                        }
+                        stage('proto check') {
+                            options { retry(3) }
+                            steps {
+                                dir('vega') {
+                                    sh '''#!/bin/bash -e
+                                        make proto_check
+                                    '''
+                                }
+                            }
+                            post {
+                                failure {
+                                    sh 'printenv'
+                                    echo "params=${params}"
+                                    sh 'protoc --version'
+                                    sh 'which protoc'
+                                    sh 'buf --version'
+                                    sh 'which buf'
+                                    sh 'git diff'
+                                }
+                            }
                         }
                     }
                 }

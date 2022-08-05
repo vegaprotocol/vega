@@ -63,7 +63,7 @@ func (n *Notary) GetByResourceID(ctx context.Context, id string, pagination enti
 	}
 
 	cursorParams := []CursorQueryParameter{
-		NewCursorQueryParameter("resource_id", sorting, EQ, entities.NewNodeSignatureID(id)),
+		NewCursorQueryParameter("resource_id", sorting, EQ, entities.NodeSignatureID(id)),
 		NewCursorQueryParameter("sig", sorting, cmp, nc.Sig),
 	}
 

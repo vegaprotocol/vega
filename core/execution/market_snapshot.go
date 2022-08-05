@@ -139,7 +139,7 @@ func NewMarketFromSnapshot(
 		feeSplitter:                NewFeeSplitterFromSnapshot(em.FeeSplitter, now),
 		as:                         as,
 		pMonitor:                   pMonitor,
-		peggedOrders:               NewPeggedOrdersFromSnapshot(em.PeggedOrders, timeService),
+		peggedOrders:               NewPeggedOrdersFromSnapshot(log, timeService, em.PeggedOrders),
 		expiringOrders:             NewExpiringOrdersFromState(em.ExpiringOrders),
 		equityShares:               NewEquitySharesFromSnapshot(em.EquityShare),
 		lastBestBidPrice:           em.LastBestBid.Clone(),

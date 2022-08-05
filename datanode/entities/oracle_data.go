@@ -52,7 +52,7 @@ func OracleDataFromProto(data *oraclespb.OracleData, vegaTime time.Time) (*Oracl
 	}
 
 	for _, specID := range data.MatchedSpecIds {
-		id := NewSpecID(specID)
+		id := SpecID(specID)
 		idBytes, err := id.Bytes()
 		if err != nil {
 			return nil, fmt.Errorf("cannot decode spec ID: %w", err)

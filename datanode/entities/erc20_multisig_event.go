@@ -29,11 +29,9 @@ const (
 	ERC20MultiSigSignerEventTypeRemoved ERC20MultiSigSignerEventType = "SIGNER_REMOVED"
 )
 
-type ERC20MultiSigSignerEventID struct{ ID }
+type _ERC20MultiSigSignerEvent struct{}
 
-func NewERC20MultiSigSignerEventID(id string) ERC20MultiSigSignerEventID {
-	return ERC20MultiSigSignerEventID{ID: ID(id)}
-}
+type ERC20MultiSigSignerEventID = ID[_ERC20MultiSigSignerEvent]
 
 type ERC20MultiSigSignerEvent struct {
 	ID           ERC20MultiSigSignerEventID
@@ -61,8 +59,8 @@ func ERC20MultiSigSignerEventFromAddedProto(e *eventspb.ERC20MultiSigSignerAdded
 		return &ERC20MultiSigSignerEvent{}, fmt.Errorf("parsing epoch '%v': %w", e.EpochSeq, err)
 	}
 	return &ERC20MultiSigSignerEvent{
-		ID:           NewERC20MultiSigSignerEventID(e.SignatureId),
-		ValidatorID:  NewNodeID(e.ValidatorId),
+		ID:           ERC20MultiSigSignerEventID(e.SignatureId),
+		ValidatorID:  NodeID(e.ValidatorId),
 		SignerChange: EthereumAddress(e.NewSigner),
 		Submitter:    EthereumAddress(e.Submitter),
 		Nonce:        e.Nonce,
@@ -81,10 +79,10 @@ func ERC20MultiSigSignerEventFromRemovedProto(e *eventspb.ERC20MultiSigSignerRem
 	}
 	for _, s := range e.SignatureSubmitters {
 		ents = append(ents, &ERC20MultiSigSignerEvent{
-			ID:           NewERC20MultiSigSignerEventID(s.SignatureId),
+			ID:           ERC20MultiSigSignerEventID(s.SignatureId),
 			Submitter:    EthereumAddress(s.Submitter),
 			SignerChange: EthereumAddress(e.OldSigner),
-			ValidatorID:  NewNodeID(e.ValidatorId),
+			ValidatorID:  NodeID(e.ValidatorId),
 			Nonce:        e.Nonce,
 			VegaTime:     time.Unix(0, e.Timestamp),
 			EpochID:      epochID,

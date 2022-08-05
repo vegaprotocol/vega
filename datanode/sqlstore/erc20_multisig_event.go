@@ -69,12 +69,12 @@ func (m *ERC20MultiSigSignerEvent) GetAddedEvents(ctx context.Context, validator
 
 	cursorParams := []CursorQueryParameter{
 		NewCursorQueryParameter("vega_time", sorting, cmp, ec.VegaTime),
-		NewCursorQueryParameter("id", sorting, cmp, entities.NewERC20MultiSigSignerEventID(ec.ID)),
+		NewCursorQueryParameter("id", sorting, cmp, entities.ERC20MultiSigSignerEventID(ec.ID)),
 	}
 
 	var args []interface{}
 	query := fmt.Sprintf(`SELECT * FROM erc20_multisig_signer_events WHERE validator_id=%s AND event=%s`,
-		nextBindVar(&args, entities.NewNodeID(validatorID)),
+		nextBindVar(&args, entities.NodeID(validatorID)),
 		nextBindVar(&args, entities.ERC20MultiSigSignerEventTypeAdded),
 	)
 
@@ -119,12 +119,12 @@ func (m *ERC20MultiSigSignerEvent) GetRemovedEvents(ctx context.Context, validat
 
 	cursorParams := []CursorQueryParameter{
 		NewCursorQueryParameter("vega_time", sorting, cmp, ec.VegaTime),
-		NewCursorQueryParameter("id", sorting, cmp, entities.NewERC20MultiSigSignerEventID(ec.ID)),
+		NewCursorQueryParameter("id", sorting, cmp, entities.ERC20MultiSigSignerEventID(ec.ID)),
 	}
 
 	var args []interface{}
 	query := fmt.Sprintf(`SELECT * FROM erc20_multisig_signer_events WHERE validator_id=%s AND submitter=%s AND event=%s`,
-		nextBindVar(&args, entities.NewNodeID(validatorID)),
+		nextBindVar(&args, entities.NodeID(validatorID)),
 		nextBindVar(&args, entities.EthereumAddress(submitter)),
 		nextBindVar(&args, entities.ERC20MultiSigSignerEventTypeRemoved),
 	)

@@ -4206,7 +4206,7 @@ type Market struct {
 	Market                     *vega.Market  `protobuf:"bytes,1,opt,name=market,proto3" json:"market,omitempty"`
 	PriceMonitor               *PriceMonitor `protobuf:"bytes,2,opt,name=price_monitor,json=priceMonitor,proto3" json:"price_monitor,omitempty"`
 	AuctionState               *AuctionState `protobuf:"bytes,3,opt,name=auction_state,json=auctionState,proto3" json:"auction_state,omitempty"`
-	PeggedOrders               []*vega.Order `protobuf:"bytes,4,rep,name=pegged_orders,json=peggedOrders,proto3" json:"pegged_orders,omitempty"`
+	PeggedOrders               *PeggedOrders `protobuf:"bytes,4,opt,name=pegged_orders,json=peggedOrders,proto3" json:"pegged_orders,omitempty"`
 	ExpiringOrders             []*vega.Order `protobuf:"bytes,5,rep,name=expiring_orders,json=expiringOrders,proto3" json:"expiring_orders,omitempty"`
 	LastBestBid                string        `protobuf:"bytes,6,opt,name=last_best_bid,json=lastBestBid,proto3" json:"last_best_bid,omitempty"`
 	LastBestAsk                string        `protobuf:"bytes,7,opt,name=last_best_ask,json=lastBestAsk,proto3" json:"last_best_ask,omitempty"`
@@ -4276,7 +4276,7 @@ func (x *Market) GetAuctionState() *AuctionState {
 	return nil
 }
 
-func (x *Market) GetPeggedOrders() []*vega.Order {
+func (x *Market) GetPeggedOrders() *PeggedOrders {
 	if x != nil {
 		return x.PeggedOrders
 	}
@@ -4381,6 +4381,116 @@ func (x *Market) GetSettlementPrice() string {
 	return ""
 }
 
+type OrderPartyPair struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	OrderId string `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	Party   string `protobuf:"bytes,2,opt,name=party,proto3" json:"party,omitempty"`
+}
+
+func (x *OrderPartyPair) Reset() {
+	*x = OrderPartyPair{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[57]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *OrderPartyPair) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OrderPartyPair) ProtoMessage() {}
+
+func (x *OrderPartyPair) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[57]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OrderPartyPair.ProtoReflect.Descriptor instead.
+func (*OrderPartyPair) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{57}
+}
+
+func (x *OrderPartyPair) GetOrderId() string {
+	if x != nil {
+		return x.OrderId
+	}
+	return ""
+}
+
+func (x *OrderPartyPair) GetParty() string {
+	if x != nil {
+		return x.Party
+	}
+	return ""
+}
+
+type PeggedOrders struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	OrderParties []*OrderPartyPair `protobuf:"bytes,1,rep,name=order_parties,json=orderParties,proto3" json:"order_parties,omitempty"`
+	ParkedOrders []*vega.Order     `protobuf:"bytes,2,rep,name=parked_orders,json=parkedOrders,proto3" json:"parked_orders,omitempty"`
+}
+
+func (x *PeggedOrders) Reset() {
+	*x = PeggedOrders{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[58]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *PeggedOrders) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PeggedOrders) ProtoMessage() {}
+
+func (x *PeggedOrders) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[58]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PeggedOrders.ProtoReflect.Descriptor instead.
+func (*PeggedOrders) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{58}
+}
+
+func (x *PeggedOrders) GetOrderParties() []*OrderPartyPair {
+	if x != nil {
+		return x.OrderParties
+	}
+	return nil
+}
+
+func (x *PeggedOrders) GetParkedOrders() []*vega.Order {
+	if x != nil {
+		return x.ParkedOrders
+	}
+	return nil
+}
+
 type ExecutionMarkets struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4392,7 +4502,7 @@ type ExecutionMarkets struct {
 func (x *ExecutionMarkets) Reset() {
 	*x = ExecutionMarkets{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[57]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[59]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4405,7 +4515,7 @@ func (x *ExecutionMarkets) String() string {
 func (*ExecutionMarkets) ProtoMessage() {}
 
 func (x *ExecutionMarkets) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[57]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[59]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4418,7 +4528,7 @@ func (x *ExecutionMarkets) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecutionMarkets.ProtoReflect.Descriptor instead.
 func (*ExecutionMarkets) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{57}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{59}
 }
 
 func (x *ExecutionMarkets) GetMarkets() []*Market {
@@ -4445,7 +4555,7 @@ type Position struct {
 func (x *Position) Reset() {
 	*x = Position{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[58]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[60]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4458,7 +4568,7 @@ func (x *Position) String() string {
 func (*Position) ProtoMessage() {}
 
 func (x *Position) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[58]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[60]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4471,7 +4581,7 @@ func (x *Position) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Position.ProtoReflect.Descriptor instead.
 func (*Position) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{58}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{60}
 }
 
 func (x *Position) GetPartyId() string {
@@ -4535,7 +4645,7 @@ type MarketPositions struct {
 func (x *MarketPositions) Reset() {
 	*x = MarketPositions{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[59]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[61]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4548,7 +4658,7 @@ func (x *MarketPositions) String() string {
 func (*MarketPositions) ProtoMessage() {}
 
 func (x *MarketPositions) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[59]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[61]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4561,7 +4671,7 @@ func (x *MarketPositions) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MarketPositions.ProtoReflect.Descriptor instead.
 func (*MarketPositions) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{59}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{61}
 }
 
 func (x *MarketPositions) GetMarketId() string {
@@ -4592,7 +4702,7 @@ type AppState struct {
 func (x *AppState) Reset() {
 	*x = AppState{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[60]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[62]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4605,7 +4715,7 @@ func (x *AppState) String() string {
 func (*AppState) ProtoMessage() {}
 
 func (x *AppState) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[60]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[62]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4618,7 +4728,7 @@ func (x *AppState) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AppState.ProtoReflect.Descriptor instead.
 func (*AppState) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{60}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{62}
 }
 
 func (x *AppState) GetHeight() uint64 {
@@ -4670,7 +4780,7 @@ type EpochState struct {
 func (x *EpochState) Reset() {
 	*x = EpochState{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[61]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[63]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4683,7 +4793,7 @@ func (x *EpochState) String() string {
 func (*EpochState) ProtoMessage() {}
 
 func (x *EpochState) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[61]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[63]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4696,7 +4806,7 @@ func (x *EpochState) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EpochState.ProtoReflect.Descriptor instead.
 func (*EpochState) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{61}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{63}
 }
 
 func (x *EpochState) GetSeq() uint64 {
@@ -4745,7 +4855,7 @@ type RewardsPendingPayouts struct {
 func (x *RewardsPendingPayouts) Reset() {
 	*x = RewardsPendingPayouts{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[62]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[64]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4758,7 +4868,7 @@ func (x *RewardsPendingPayouts) String() string {
 func (*RewardsPendingPayouts) ProtoMessage() {}
 
 func (x *RewardsPendingPayouts) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[62]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[64]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4771,7 +4881,7 @@ func (x *RewardsPendingPayouts) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RewardsPendingPayouts.ProtoReflect.Descriptor instead.
 func (*RewardsPendingPayouts) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{62}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{64}
 }
 
 func (x *RewardsPendingPayouts) GetScheduledRewardsPayout() []*ScheduledRewardsPayout {
@@ -4793,7 +4903,7 @@ type ScheduledRewardsPayout struct {
 func (x *ScheduledRewardsPayout) Reset() {
 	*x = ScheduledRewardsPayout{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[63]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[65]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4806,7 +4916,7 @@ func (x *ScheduledRewardsPayout) String() string {
 func (*ScheduledRewardsPayout) ProtoMessage() {}
 
 func (x *ScheduledRewardsPayout) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[63]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[65]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4819,7 +4929,7 @@ func (x *ScheduledRewardsPayout) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ScheduledRewardsPayout.ProtoReflect.Descriptor instead.
 func (*ScheduledRewardsPayout) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{63}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{65}
 }
 
 func (x *ScheduledRewardsPayout) GetPayoutTime() int64 {
@@ -4852,7 +4962,7 @@ type RewardsPayout struct {
 func (x *RewardsPayout) Reset() {
 	*x = RewardsPayout{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[64]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[66]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4865,7 +4975,7 @@ func (x *RewardsPayout) String() string {
 func (*RewardsPayout) ProtoMessage() {}
 
 func (x *RewardsPayout) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[64]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[66]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4878,7 +4988,7 @@ func (x *RewardsPayout) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RewardsPayout.ProtoReflect.Descriptor instead.
 func (*RewardsPayout) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{64}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{66}
 }
 
 func (x *RewardsPayout) GetFromAccount() string {
@@ -4935,7 +5045,7 @@ type RewardsPartyAmount struct {
 func (x *RewardsPartyAmount) Reset() {
 	*x = RewardsPartyAmount{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[65]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[67]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4948,7 +5058,7 @@ func (x *RewardsPartyAmount) String() string {
 func (*RewardsPartyAmount) ProtoMessage() {}
 
 func (x *RewardsPartyAmount) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[65]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[67]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4961,7 +5071,7 @@ func (x *RewardsPartyAmount) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RewardsPartyAmount.ProtoReflect.Descriptor instead.
 func (*RewardsPartyAmount) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{65}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{67}
 }
 
 func (x *RewardsPartyAmount) GetParty() string {
@@ -5002,7 +5112,7 @@ type LimitState struct {
 func (x *LimitState) Reset() {
 	*x = LimitState{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[66]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[68]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5015,7 +5125,7 @@ func (x *LimitState) String() string {
 func (*LimitState) ProtoMessage() {}
 
 func (x *LimitState) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[66]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[68]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5028,7 +5138,7 @@ func (x *LimitState) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LimitState.ProtoReflect.Descriptor instead.
 func (*LimitState) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{66}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{68}
 }
 
 func (x *LimitState) GetBlockCount() uint32 {
@@ -5105,7 +5215,7 @@ type VoteSpamPolicy struct {
 func (x *VoteSpamPolicy) Reset() {
 	*x = VoteSpamPolicy{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[67]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[69]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5118,7 +5228,7 @@ func (x *VoteSpamPolicy) String() string {
 func (*VoteSpamPolicy) ProtoMessage() {}
 
 func (x *VoteSpamPolicy) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[67]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[69]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5131,7 +5241,7 @@ func (x *VoteSpamPolicy) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VoteSpamPolicy.ProtoReflect.Descriptor instead.
 func (*VoteSpamPolicy) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{67}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{69}
 }
 
 func (x *VoteSpamPolicy) GetPartyToVote() []*PartyProposalVoteCount {
@@ -5203,7 +5313,7 @@ type PartyProposalVoteCount struct {
 func (x *PartyProposalVoteCount) Reset() {
 	*x = PartyProposalVoteCount{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[68]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[70]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5216,7 +5326,7 @@ func (x *PartyProposalVoteCount) String() string {
 func (*PartyProposalVoteCount) ProtoMessage() {}
 
 func (x *PartyProposalVoteCount) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[68]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[70]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5229,7 +5339,7 @@ func (x *PartyProposalVoteCount) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PartyProposalVoteCount.ProtoReflect.Descriptor instead.
 func (*PartyProposalVoteCount) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{68}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{70}
 }
 
 func (x *PartyProposalVoteCount) GetParty() string {
@@ -5265,7 +5375,7 @@ type BannedParty struct {
 func (x *BannedParty) Reset() {
 	*x = BannedParty{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[69]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[71]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5278,7 +5388,7 @@ func (x *BannedParty) String() string {
 func (*BannedParty) ProtoMessage() {}
 
 func (x *BannedParty) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[69]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[71]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5291,7 +5401,7 @@ func (x *BannedParty) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BannedParty.ProtoReflect.Descriptor instead.
 func (*BannedParty) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{69}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{71}
 }
 
 func (x *BannedParty) GetParty() string {
@@ -5320,7 +5430,7 @@ type PartyTokenBalance struct {
 func (x *PartyTokenBalance) Reset() {
 	*x = PartyTokenBalance{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[70]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[72]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5333,7 +5443,7 @@ func (x *PartyTokenBalance) String() string {
 func (*PartyTokenBalance) ProtoMessage() {}
 
 func (x *PartyTokenBalance) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[70]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[72]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5346,7 +5456,7 @@ func (x *PartyTokenBalance) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PartyTokenBalance.ProtoReflect.Descriptor instead.
 func (*PartyTokenBalance) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{70}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{72}
 }
 
 func (x *PartyTokenBalance) GetParty() string {
@@ -5375,7 +5485,7 @@ type BlockRejectStats struct {
 func (x *BlockRejectStats) Reset() {
 	*x = BlockRejectStats{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[71]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[73]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5388,7 +5498,7 @@ func (x *BlockRejectStats) String() string {
 func (*BlockRejectStats) ProtoMessage() {}
 
 func (x *BlockRejectStats) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[71]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[73]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5401,7 +5511,7 @@ func (x *BlockRejectStats) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BlockRejectStats.ProtoReflect.Descriptor instead.
 func (*BlockRejectStats) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{71}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{73}
 }
 
 func (x *BlockRejectStats) GetRejected() uint64 {
@@ -5430,7 +5540,7 @@ type SpamPartyTransactionCount struct {
 func (x *SpamPartyTransactionCount) Reset() {
 	*x = SpamPartyTransactionCount{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[72]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[74]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5443,7 +5553,7 @@ func (x *SpamPartyTransactionCount) String() string {
 func (*SpamPartyTransactionCount) ProtoMessage() {}
 
 func (x *SpamPartyTransactionCount) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[72]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[74]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5456,7 +5566,7 @@ func (x *SpamPartyTransactionCount) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SpamPartyTransactionCount.ProtoReflect.Descriptor instead.
 func (*SpamPartyTransactionCount) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{72}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{74}
 }
 
 func (x *SpamPartyTransactionCount) GetParty() string {
@@ -5488,7 +5598,7 @@ type SimpleSpamPolicy struct {
 func (x *SimpleSpamPolicy) Reset() {
 	*x = SimpleSpamPolicy{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[73]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[75]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5501,7 +5611,7 @@ func (x *SimpleSpamPolicy) String() string {
 func (*SimpleSpamPolicy) ProtoMessage() {}
 
 func (x *SimpleSpamPolicy) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[73]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[75]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5514,7 +5624,7 @@ func (x *SimpleSpamPolicy) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SimpleSpamPolicy.ProtoReflect.Descriptor instead.
 func (*SimpleSpamPolicy) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{73}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{75}
 }
 
 func (x *SimpleSpamPolicy) GetPolicyName() string {
@@ -5566,7 +5676,7 @@ type NotarySigs struct {
 func (x *NotarySigs) Reset() {
 	*x = NotarySigs{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[74]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[76]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5579,7 +5689,7 @@ func (x *NotarySigs) String() string {
 func (*NotarySigs) ProtoMessage() {}
 
 func (x *NotarySigs) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[74]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[76]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5592,7 +5702,7 @@ func (x *NotarySigs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NotarySigs.ProtoReflect.Descriptor instead.
 func (*NotarySigs) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{74}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{76}
 }
 
 func (x *NotarySigs) GetId() string {
@@ -5634,7 +5744,7 @@ type Notary struct {
 func (x *Notary) Reset() {
 	*x = Notary{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[75]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[77]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5647,7 +5757,7 @@ func (x *Notary) String() string {
 func (*Notary) ProtoMessage() {}
 
 func (x *Notary) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[75]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[77]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5660,7 +5770,7 @@ func (x *Notary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Notary.ProtoReflect.Descriptor instead.
 func (*Notary) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{75}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{77}
 }
 
 func (x *Notary) GetNotarySigs() []*NotarySigs {
@@ -5683,7 +5793,7 @@ type ReplayProtection struct {
 func (x *ReplayProtection) Reset() {
 	*x = ReplayProtection{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[76]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[78]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5696,7 +5806,7 @@ func (x *ReplayProtection) String() string {
 func (*ReplayProtection) ProtoMessage() {}
 
 func (x *ReplayProtection) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[76]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[78]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5709,7 +5819,7 @@ func (x *ReplayProtection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReplayProtection.ProtoReflect.Descriptor instead.
 func (*ReplayProtection) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{76}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{78}
 }
 
 func (x *ReplayProtection) GetTransactions() []*TransactionAtHeight {
@@ -5745,7 +5855,7 @@ type TransactionAtHeight struct {
 func (x *TransactionAtHeight) Reset() {
 	*x = TransactionAtHeight{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[77]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[79]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5758,7 +5868,7 @@ func (x *TransactionAtHeight) String() string {
 func (*TransactionAtHeight) ProtoMessage() {}
 
 func (x *TransactionAtHeight) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[77]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[79]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5771,7 +5881,7 @@ func (x *TransactionAtHeight) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TransactionAtHeight.ProtoReflect.Descriptor instead.
 func (*TransactionAtHeight) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{77}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{79}
 }
 
 func (x *TransactionAtHeight) GetTx() string {
@@ -5801,7 +5911,7 @@ type FutureState struct {
 func (x *FutureState) Reset() {
 	*x = FutureState{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[78]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[80]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5814,7 +5924,7 @@ func (x *FutureState) String() string {
 func (*FutureState) ProtoMessage() {}
 
 func (x *FutureState) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[78]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[80]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5827,7 +5937,7 @@ func (x *FutureState) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FutureState.ProtoReflect.Descriptor instead.
 func (*FutureState) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{78}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{80}
 }
 
 func (x *FutureState) GetMarketId() string {
@@ -5862,7 +5972,7 @@ type StakeVerifierDeposited struct {
 func (x *StakeVerifierDeposited) Reset() {
 	*x = StakeVerifierDeposited{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[79]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[81]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5875,7 +5985,7 @@ func (x *StakeVerifierDeposited) String() string {
 func (*StakeVerifierDeposited) ProtoMessage() {}
 
 func (x *StakeVerifierDeposited) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[79]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[81]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5888,7 +5998,7 @@ func (x *StakeVerifierDeposited) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StakeVerifierDeposited.ProtoReflect.Descriptor instead.
 func (*StakeVerifierDeposited) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{79}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{81}
 }
 
 func (x *StakeVerifierDeposited) GetPendingDeposited() []*StakeVerifierPending {
@@ -5909,7 +6019,7 @@ type StakeVerifierRemoved struct {
 func (x *StakeVerifierRemoved) Reset() {
 	*x = StakeVerifierRemoved{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[80]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[82]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5922,7 +6032,7 @@ func (x *StakeVerifierRemoved) String() string {
 func (*StakeVerifierRemoved) ProtoMessage() {}
 
 func (x *StakeVerifierRemoved) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[80]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[82]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5935,7 +6045,7 @@ func (x *StakeVerifierRemoved) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StakeVerifierRemoved.ProtoReflect.Descriptor instead.
 func (*StakeVerifierRemoved) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{80}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{82}
 }
 
 func (x *StakeVerifierRemoved) GetPendingRemoved() []*StakeVerifierPending {
@@ -5963,7 +6073,7 @@ type StakeVerifierPending struct {
 func (x *StakeVerifierPending) Reset() {
 	*x = StakeVerifierPending{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[81]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[83]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5976,7 +6086,7 @@ func (x *StakeVerifierPending) String() string {
 func (*StakeVerifierPending) ProtoMessage() {}
 
 func (x *StakeVerifierPending) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[81]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[83]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5989,7 +6099,7 @@ func (x *StakeVerifierPending) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StakeVerifierPending.ProtoReflect.Descriptor instead.
 func (*StakeVerifierPending) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{81}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{83}
 }
 
 func (x *StakeVerifierPending) GetEthereumAddress() string {
@@ -6062,7 +6172,7 @@ type PendingKeyRotation struct {
 func (x *PendingKeyRotation) Reset() {
 	*x = PendingKeyRotation{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[82]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[84]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6075,7 +6185,7 @@ func (x *PendingKeyRotation) String() string {
 func (*PendingKeyRotation) ProtoMessage() {}
 
 func (x *PendingKeyRotation) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[82]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[84]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6088,7 +6198,7 @@ func (x *PendingKeyRotation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PendingKeyRotation.ProtoReflect.Descriptor instead.
 func (*PendingKeyRotation) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{82}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{84}
 }
 
 func (x *PendingKeyRotation) GetBlockHeight() uint64 {
@@ -6132,7 +6242,7 @@ type PendingEthereumKeyRotation struct {
 func (x *PendingEthereumKeyRotation) Reset() {
 	*x = PendingEthereumKeyRotation{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[83]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[85]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6145,7 +6255,7 @@ func (x *PendingEthereumKeyRotation) String() string {
 func (*PendingEthereumKeyRotation) ProtoMessage() {}
 
 func (x *PendingEthereumKeyRotation) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[83]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[85]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6158,7 +6268,7 @@ func (x *PendingEthereumKeyRotation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PendingEthereumKeyRotation.ProtoReflect.Descriptor instead.
 func (*PendingEthereumKeyRotation) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{83}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{85}
 }
 
 func (x *PendingEthereumKeyRotation) GetBlockHeight() uint64 {
@@ -6197,7 +6307,7 @@ type Topology struct {
 func (x *Topology) Reset() {
 	*x = Topology{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[84]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[86]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6210,7 +6320,7 @@ func (x *Topology) String() string {
 func (*Topology) ProtoMessage() {}
 
 func (x *Topology) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[84]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[86]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6223,7 +6333,7 @@ func (x *Topology) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Topology.ProtoReflect.Descriptor instead.
 func (*Topology) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{84}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{86}
 }
 
 func (x *Topology) GetValidatorData() []*ValidatorState {
@@ -6280,7 +6390,7 @@ type ValidatorState struct {
 func (x *ValidatorState) Reset() {
 	*x = ValidatorState{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[85]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[87]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6293,7 +6403,7 @@ func (x *ValidatorState) String() string {
 func (*ValidatorState) ProtoMessage() {}
 
 func (x *ValidatorState) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[85]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[87]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6306,7 +6416,7 @@ func (x *ValidatorState) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ValidatorState.ProtoReflect.Descriptor instead.
 func (*ValidatorState) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{85}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{87}
 }
 
 func (x *ValidatorState) GetValidatorUpdate() *v12.ValidatorUpdate {
@@ -6386,7 +6496,7 @@ type HeartbeatTracker struct {
 func (x *HeartbeatTracker) Reset() {
 	*x = HeartbeatTracker{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[86]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[88]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6399,7 +6509,7 @@ func (x *HeartbeatTracker) String() string {
 func (*HeartbeatTracker) ProtoMessage() {}
 
 func (x *HeartbeatTracker) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[86]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[88]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6412,7 +6522,7 @@ func (x *HeartbeatTracker) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HeartbeatTracker.ProtoReflect.Descriptor instead.
 func (*HeartbeatTracker) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{86}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{88}
 }
 
 func (x *HeartbeatTracker) GetExpectedNextHash() string {
@@ -6460,7 +6570,7 @@ type PerformanceStats struct {
 func (x *PerformanceStats) Reset() {
 	*x = PerformanceStats{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[87]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[89]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6473,7 +6583,7 @@ func (x *PerformanceStats) String() string {
 func (*PerformanceStats) ProtoMessage() {}
 
 func (x *PerformanceStats) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[87]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[89]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6486,7 +6596,7 @@ func (x *PerformanceStats) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PerformanceStats.ProtoReflect.Descriptor instead.
 func (*PerformanceStats) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{87}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{89}
 }
 
 func (x *PerformanceStats) GetValidatorAddress() string {
@@ -6549,7 +6659,7 @@ type ValidatorPerformance struct {
 func (x *ValidatorPerformance) Reset() {
 	*x = ValidatorPerformance{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[88]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[90]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6562,7 +6672,7 @@ func (x *ValidatorPerformance) String() string {
 func (*ValidatorPerformance) ProtoMessage() {}
 
 func (x *ValidatorPerformance) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[88]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[90]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6575,7 +6685,7 @@ func (x *ValidatorPerformance) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ValidatorPerformance.ProtoReflect.Descriptor instead.
 func (*ValidatorPerformance) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{88}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{90}
 }
 
 func (x *ValidatorPerformance) GetValidatorPerfStats() []*PerformanceStats {
@@ -6600,7 +6710,7 @@ type LiquidityParameters struct {
 func (x *LiquidityParameters) Reset() {
 	*x = LiquidityParameters{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[89]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[91]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6613,7 +6723,7 @@ func (x *LiquidityParameters) String() string {
 func (*LiquidityParameters) ProtoMessage() {}
 
 func (x *LiquidityParameters) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[89]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[91]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6626,7 +6736,7 @@ func (x *LiquidityParameters) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LiquidityParameters.ProtoReflect.Descriptor instead.
 func (*LiquidityParameters) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{89}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{91}
 }
 
 func (x *LiquidityParameters) GetMaxFee() string {
@@ -6670,7 +6780,7 @@ type LiquidityPendingProvisions struct {
 func (x *LiquidityPendingProvisions) Reset() {
 	*x = LiquidityPendingProvisions{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[90]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[92]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6683,7 +6793,7 @@ func (x *LiquidityPendingProvisions) String() string {
 func (*LiquidityPendingProvisions) ProtoMessage() {}
 
 func (x *LiquidityPendingProvisions) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[90]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[92]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6696,7 +6806,7 @@ func (x *LiquidityPendingProvisions) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LiquidityPendingProvisions.ProtoReflect.Descriptor instead.
 func (*LiquidityPendingProvisions) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{90}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{92}
 }
 
 func (x *LiquidityPendingProvisions) GetPendingProvisions() []string {
@@ -6726,7 +6836,7 @@ type LiquidityPartiesLiquidityOrders struct {
 func (x *LiquidityPartiesLiquidityOrders) Reset() {
 	*x = LiquidityPartiesLiquidityOrders{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[91]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[93]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6739,7 +6849,7 @@ func (x *LiquidityPartiesLiquidityOrders) String() string {
 func (*LiquidityPartiesLiquidityOrders) ProtoMessage() {}
 
 func (x *LiquidityPartiesLiquidityOrders) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[91]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[93]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6752,7 +6862,7 @@ func (x *LiquidityPartiesLiquidityOrders) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LiquidityPartiesLiquidityOrders.ProtoReflect.Descriptor instead.
 func (*LiquidityPartiesLiquidityOrders) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{91}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{93}
 }
 
 func (x *LiquidityPartiesLiquidityOrders) GetPartyOrders() []*PartyOrders {
@@ -6781,7 +6891,7 @@ type PartyOrders struct {
 func (x *PartyOrders) Reset() {
 	*x = PartyOrders{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[92]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[94]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6794,7 +6904,7 @@ func (x *PartyOrders) String() string {
 func (*PartyOrders) ProtoMessage() {}
 
 func (x *PartyOrders) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[92]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[94]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6807,7 +6917,7 @@ func (x *PartyOrders) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PartyOrders.ProtoReflect.Descriptor instead.
 func (*PartyOrders) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{92}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{94}
 }
 
 func (x *PartyOrders) GetParty() string {
@@ -6837,7 +6947,7 @@ type LiquidityPartiesOrders struct {
 func (x *LiquidityPartiesOrders) Reset() {
 	*x = LiquidityPartiesOrders{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[93]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[95]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6850,7 +6960,7 @@ func (x *LiquidityPartiesOrders) String() string {
 func (*LiquidityPartiesOrders) ProtoMessage() {}
 
 func (x *LiquidityPartiesOrders) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[93]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[95]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6863,7 +6973,7 @@ func (x *LiquidityPartiesOrders) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LiquidityPartiesOrders.ProtoReflect.Descriptor instead.
 func (*LiquidityPartiesOrders) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{93}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{95}
 }
 
 func (x *LiquidityPartiesOrders) GetPartyOrders() []*PartyOrders {
@@ -6893,7 +7003,7 @@ type LiquidityProvisions struct {
 func (x *LiquidityProvisions) Reset() {
 	*x = LiquidityProvisions{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[94]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[96]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6906,7 +7016,7 @@ func (x *LiquidityProvisions) String() string {
 func (*LiquidityProvisions) ProtoMessage() {}
 
 func (x *LiquidityProvisions) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[94]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[96]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6919,7 +7029,7 @@ func (x *LiquidityProvisions) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LiquidityProvisions.ProtoReflect.Descriptor instead.
 func (*LiquidityProvisions) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{94}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{96}
 }
 
 func (x *LiquidityProvisions) GetLiquidityProvisions() []*vega.LiquidityProvision {
@@ -6949,7 +7059,7 @@ type FloatingPointConsensus struct {
 func (x *FloatingPointConsensus) Reset() {
 	*x = FloatingPointConsensus{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[95]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[97]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6962,7 +7072,7 @@ func (x *FloatingPointConsensus) String() string {
 func (*FloatingPointConsensus) ProtoMessage() {}
 
 func (x *FloatingPointConsensus) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[95]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[97]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6975,7 +7085,7 @@ func (x *FloatingPointConsensus) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FloatingPointConsensus.ProtoReflect.Descriptor instead.
 func (*FloatingPointConsensus) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{95}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{97}
 }
 
 func (x *FloatingPointConsensus) GetNextTimeTrigger() []*NextTimeTrigger {
@@ -7007,7 +7117,7 @@ type StateVarInternalState struct {
 func (x *StateVarInternalState) Reset() {
 	*x = StateVarInternalState{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[96]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[98]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7020,7 +7130,7 @@ func (x *StateVarInternalState) String() string {
 func (*StateVarInternalState) ProtoMessage() {}
 
 func (x *StateVarInternalState) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[96]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[98]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7033,7 +7143,7 @@ func (x *StateVarInternalState) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StateVarInternalState.ProtoReflect.Descriptor instead.
 func (*StateVarInternalState) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{96}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{98}
 }
 
 func (x *StateVarInternalState) GetId() string {
@@ -7083,7 +7193,7 @@ type FloatingPointValidatorResult struct {
 func (x *FloatingPointValidatorResult) Reset() {
 	*x = FloatingPointValidatorResult{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[97]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[99]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7096,7 +7206,7 @@ func (x *FloatingPointValidatorResult) String() string {
 func (*FloatingPointValidatorResult) ProtoMessage() {}
 
 func (x *FloatingPointValidatorResult) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[97]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[99]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7109,7 +7219,7 @@ func (x *FloatingPointValidatorResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FloatingPointValidatorResult.ProtoReflect.Descriptor instead.
 func (*FloatingPointValidatorResult) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{97}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{99}
 }
 
 func (x *FloatingPointValidatorResult) GetId() string {
@@ -7140,7 +7250,7 @@ type NextTimeTrigger struct {
 func (x *NextTimeTrigger) Reset() {
 	*x = NextTimeTrigger{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[98]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[100]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7153,7 +7263,7 @@ func (x *NextTimeTrigger) String() string {
 func (*NextTimeTrigger) ProtoMessage() {}
 
 func (x *NextTimeTrigger) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[98]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[100]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7166,7 +7276,7 @@ func (x *NextTimeTrigger) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NextTimeTrigger.ProtoReflect.Descriptor instead.
 func (*NextTimeTrigger) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{98}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{100}
 }
 
 func (x *NextTimeTrigger) GetAsset() string {
@@ -7208,7 +7318,7 @@ type MarketTracker struct {
 func (x *MarketTracker) Reset() {
 	*x = MarketTracker{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[99]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[101]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7221,7 +7331,7 @@ func (x *MarketTracker) String() string {
 func (*MarketTracker) ProtoMessage() {}
 
 func (x *MarketTracker) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[99]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[101]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7234,7 +7344,7 @@ func (x *MarketTracker) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MarketTracker.ProtoReflect.Descriptor instead.
 func (*MarketTracker) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{99}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{101}
 }
 
 func (x *MarketTracker) GetMarketActivity() []*v11.MarketActivityTracker {
@@ -7256,7 +7366,7 @@ type SignerEventsPerAddress struct {
 func (x *SignerEventsPerAddress) Reset() {
 	*x = SignerEventsPerAddress{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[100]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[102]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7269,7 +7379,7 @@ func (x *SignerEventsPerAddress) String() string {
 func (*SignerEventsPerAddress) ProtoMessage() {}
 
 func (x *SignerEventsPerAddress) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[100]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[102]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7282,7 +7392,7 @@ func (x *SignerEventsPerAddress) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SignerEventsPerAddress.ProtoReflect.Descriptor instead.
 func (*SignerEventsPerAddress) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{100}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{102}
 }
 
 func (x *SignerEventsPerAddress) GetAddress() string {
@@ -7313,7 +7423,7 @@ type ERC20MultiSigTopologyVerified struct {
 func (x *ERC20MultiSigTopologyVerified) Reset() {
 	*x = ERC20MultiSigTopologyVerified{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[101]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[103]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7326,7 +7436,7 @@ func (x *ERC20MultiSigTopologyVerified) String() string {
 func (*ERC20MultiSigTopologyVerified) ProtoMessage() {}
 
 func (x *ERC20MultiSigTopologyVerified) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[101]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[103]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7339,7 +7449,7 @@ func (x *ERC20MultiSigTopologyVerified) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ERC20MultiSigTopologyVerified.ProtoReflect.Descriptor instead.
 func (*ERC20MultiSigTopologyVerified) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{101}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{103}
 }
 
 func (x *ERC20MultiSigTopologyVerified) GetSigners() []string {
@@ -7384,7 +7494,7 @@ type ERC20MultiSigTopologyPending struct {
 func (x *ERC20MultiSigTopologyPending) Reset() {
 	*x = ERC20MultiSigTopologyPending{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[102]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[104]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7397,7 +7507,7 @@ func (x *ERC20MultiSigTopologyPending) String() string {
 func (*ERC20MultiSigTopologyPending) ProtoMessage() {}
 
 func (x *ERC20MultiSigTopologyPending) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[102]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[104]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7410,7 +7520,7 @@ func (x *ERC20MultiSigTopologyPending) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ERC20MultiSigTopologyPending.ProtoReflect.Descriptor instead.
 func (*ERC20MultiSigTopologyPending) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{102}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{104}
 }
 
 func (x *ERC20MultiSigTopologyPending) GetPendingSigners() []*v12.ERC20MultiSigSignerEvent {
@@ -7457,7 +7567,7 @@ type ProofOfWork struct {
 func (x *ProofOfWork) Reset() {
 	*x = ProofOfWork{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[103]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[105]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7470,7 +7580,7 @@ func (x *ProofOfWork) String() string {
 func (*ProofOfWork) ProtoMessage() {}
 
 func (x *ProofOfWork) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[103]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[105]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7483,7 +7593,7 @@ func (x *ProofOfWork) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProofOfWork.ProtoReflect.Descriptor instead.
 func (*ProofOfWork) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{103}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{105}
 }
 
 func (x *ProofOfWork) GetBlockHeight() []uint64 {
@@ -7545,7 +7655,7 @@ type ProofOfWorkParams struct {
 func (x *ProofOfWorkParams) Reset() {
 	*x = ProofOfWorkParams{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[104]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[106]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7558,7 +7668,7 @@ func (x *ProofOfWorkParams) String() string {
 func (*ProofOfWorkParams) ProtoMessage() {}
 
 func (x *ProofOfWorkParams) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[104]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[106]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7571,7 +7681,7 @@ func (x *ProofOfWorkParams) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProofOfWorkParams.ProtoReflect.Descriptor instead.
 func (*ProofOfWorkParams) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{104}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{106}
 }
 
 func (x *ProofOfWorkParams) GetSpamPowNumberOfPastBlocks() uint64 {
@@ -7635,7 +7745,7 @@ type TransactionsAtHeight struct {
 func (x *TransactionsAtHeight) Reset() {
 	*x = TransactionsAtHeight{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[105]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[107]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7648,7 +7758,7 @@ func (x *TransactionsAtHeight) String() string {
 func (*TransactionsAtHeight) ProtoMessage() {}
 
 func (x *TransactionsAtHeight) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[105]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[107]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7661,7 +7771,7 @@ func (x *TransactionsAtHeight) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TransactionsAtHeight.ProtoReflect.Descriptor instead.
 func (*TransactionsAtHeight) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{105}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{107}
 }
 
 func (x *TransactionsAtHeight) GetHeight() uint64 {
@@ -7690,7 +7800,7 @@ type ProtocolUpgradeProposals struct {
 func (x *ProtocolUpgradeProposals) Reset() {
 	*x = ProtocolUpgradeProposals{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[106]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[108]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7703,7 +7813,7 @@ func (x *ProtocolUpgradeProposals) String() string {
 func (*ProtocolUpgradeProposals) ProtoMessage() {}
 
 func (x *ProtocolUpgradeProposals) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[106]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[108]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7716,7 +7826,7 @@ func (x *ProtocolUpgradeProposals) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProtocolUpgradeProposals.ProtoReflect.Descriptor instead.
 func (*ProtocolUpgradeProposals) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{106}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{108}
 }
 
 func (x *ProtocolUpgradeProposals) GetActiveProposals() []*v12.ProtocolUpgradeEvent {
@@ -7749,7 +7859,7 @@ type AcceptedProtocolUpgradeProposal struct {
 func (x *AcceptedProtocolUpgradeProposal) Reset() {
 	*x = AcceptedProtocolUpgradeProposal{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[107]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[109]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7762,7 +7872,7 @@ func (x *AcceptedProtocolUpgradeProposal) String() string {
 func (*AcceptedProtocolUpgradeProposal) ProtoMessage() {}
 
 func (x *AcceptedProtocolUpgradeProposal) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[107]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[109]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7775,7 +7885,7 @@ func (x *AcceptedProtocolUpgradeProposal) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AcceptedProtocolUpgradeProposal.ProtoReflect.Descriptor instead.
 func (*AcceptedProtocolUpgradeProposal) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{107}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{109}
 }
 
 func (x *AcceptedProtocolUpgradeProposal) GetUpgradeBlockHeight() uint64 {
@@ -8516,7 +8626,7 @@ var file_vega_snapshot_v1_snapshot_proto_rawDesc = []byte{
 	0x72, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x0f, 0x74, 0x69, 0x6d, 0x65, 0x57, 0x69,
 	0x6e, 0x64, 0x6f, 0x77, 0x53, 0x74, 0x61, 0x72, 0x74, 0x12, 0x1f, 0x0a, 0x0b, 0x74, 0x72, 0x61,
 	0x64, 0x65, 0x5f, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a,
-	0x74, 0x72, 0x61, 0x64, 0x65, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x22, 0x9c, 0x07, 0x0a, 0x06, 0x4d,
+	0x74, 0x72, 0x61, 0x64, 0x65, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x22, 0xaf, 0x07, 0x0a, 0x06, 0x4d,
 	0x61, 0x72, 0x6b, 0x65, 0x74, 0x12, 0x24, 0x0a, 0x06, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x18,
 	0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0c, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x4d, 0x61, 0x72,
 	0x6b, 0x65, 0x74, 0x52, 0x06, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x12, 0x43, 0x0a, 0x0d, 0x70,
@@ -8528,53 +8638,67 @@ var file_vega_snapshot_v1_snapshot_proto_rawDesc = []byte{
 	0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1e, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x73,
 	0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x75, 0x63, 0x74, 0x69,
 	0x6f, 0x6e, 0x53, 0x74, 0x61, 0x74, 0x65, 0x52, 0x0c, 0x61, 0x75, 0x63, 0x74, 0x69, 0x6f, 0x6e,
-	0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x30, 0x0a, 0x0d, 0x70, 0x65, 0x67, 0x67, 0x65, 0x64, 0x5f,
-	0x6f, 0x72, 0x64, 0x65, 0x72, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0b, 0x2e, 0x76,
-	0x65, 0x67, 0x61, 0x2e, 0x4f, 0x72, 0x64, 0x65, 0x72, 0x52, 0x0c, 0x70, 0x65, 0x67, 0x67, 0x65,
-	0x64, 0x4f, 0x72, 0x64, 0x65, 0x72, 0x73, 0x12, 0x34, 0x0a, 0x0f, 0x65, 0x78, 0x70, 0x69, 0x72,
-	0x69, 0x6e, 0x67, 0x5f, 0x6f, 0x72, 0x64, 0x65, 0x72, 0x73, 0x18, 0x05, 0x20, 0x03, 0x28, 0x0b,
-	0x32, 0x0b, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x4f, 0x72, 0x64, 0x65, 0x72, 0x52, 0x0e, 0x65,
-	0x78, 0x70, 0x69, 0x72, 0x69, 0x6e, 0x67, 0x4f, 0x72, 0x64, 0x65, 0x72, 0x73, 0x12, 0x22, 0x0a,
-	0x0d, 0x6c, 0x61, 0x73, 0x74, 0x5f, 0x62, 0x65, 0x73, 0x74, 0x5f, 0x62, 0x69, 0x64, 0x18, 0x06,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x6c, 0x61, 0x73, 0x74, 0x42, 0x65, 0x73, 0x74, 0x42, 0x69,
-	0x64, 0x12, 0x22, 0x0a, 0x0d, 0x6c, 0x61, 0x73, 0x74, 0x5f, 0x62, 0x65, 0x73, 0x74, 0x5f, 0x61,
-	0x73, 0x6b, 0x18, 0x07, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x6c, 0x61, 0x73, 0x74, 0x42, 0x65,
-	0x73, 0x74, 0x41, 0x73, 0x6b, 0x12, 0x20, 0x0a, 0x0c, 0x6c, 0x61, 0x73, 0x74, 0x5f, 0x6d, 0x69,
-	0x64, 0x5f, 0x62, 0x69, 0x64, 0x18, 0x08, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x6c, 0x61, 0x73,
-	0x74, 0x4d, 0x69, 0x64, 0x42, 0x69, 0x64, 0x12, 0x20, 0x0a, 0x0c, 0x6c, 0x61, 0x73, 0x74, 0x5f,
-	0x6d, 0x69, 0x64, 0x5f, 0x61, 0x73, 0x6b, 0x18, 0x09, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x6c,
-	0x61, 0x73, 0x74, 0x4d, 0x69, 0x64, 0x41, 0x73, 0x6b, 0x12, 0x35, 0x0a, 0x17, 0x6c, 0x61, 0x73,
-	0x74, 0x5f, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x5f, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x5f, 0x70,
-	0x72, 0x6f, 0x78, 0x79, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x09, 0x52, 0x14, 0x6c, 0x61, 0x73, 0x74,
-	0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x50, 0x72, 0x6f, 0x78, 0x79,
-	0x12, 0x41, 0x0a, 0x1d, 0x6c, 0x61, 0x73, 0x74, 0x5f, 0x65, 0x71, 0x75, 0x69, 0x74, 0x79, 0x5f,
-	0x73, 0x68, 0x61, 0x72, 0x65, 0x5f, 0x64, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65,
-	0x64, 0x18, 0x0b, 0x20, 0x01, 0x28, 0x03, 0x52, 0x1a, 0x6c, 0x61, 0x73, 0x74, 0x45, 0x71, 0x75,
-	0x69, 0x74, 0x79, 0x53, 0x68, 0x61, 0x72, 0x65, 0x44, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62, 0x75,
-	0x74, 0x65, 0x64, 0x12, 0x40, 0x0a, 0x0c, 0x65, 0x71, 0x75, 0x69, 0x74, 0x79, 0x5f, 0x73, 0x68,
-	0x61, 0x72, 0x65, 0x18, 0x0c, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x76, 0x65, 0x67, 0x61,
-	0x2e, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x71, 0x75,
-	0x69, 0x74, 0x79, 0x53, 0x68, 0x61, 0x72, 0x65, 0x52, 0x0b, 0x65, 0x71, 0x75, 0x69, 0x74, 0x79,
-	0x53, 0x68, 0x61, 0x72, 0x65, 0x12, 0x2c, 0x0a, 0x12, 0x63, 0x75, 0x72, 0x72, 0x65, 0x6e, 0x74,
-	0x5f, 0x6d, 0x61, 0x72, 0x6b, 0x5f, 0x70, 0x72, 0x69, 0x63, 0x65, 0x18, 0x0d, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x10, 0x63, 0x75, 0x72, 0x72, 0x65, 0x6e, 0x74, 0x4d, 0x61, 0x72, 0x6b, 0x50, 0x72,
-	0x69, 0x63, 0x65, 0x12, 0x2a, 0x0a, 0x11, 0x72, 0x69, 0x73, 0x6b, 0x5f, 0x66, 0x61, 0x63, 0x74,
-	0x6f, 0x72, 0x5f, 0x73, 0x68, 0x6f, 0x72, 0x74, 0x18, 0x0e, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0f,
-	0x72, 0x69, 0x73, 0x6b, 0x46, 0x61, 0x63, 0x74, 0x6f, 0x72, 0x53, 0x68, 0x6f, 0x72, 0x74, 0x12,
-	0x28, 0x0a, 0x10, 0x72, 0x69, 0x73, 0x6b, 0x5f, 0x66, 0x61, 0x63, 0x74, 0x6f, 0x72, 0x5f, 0x6c,
-	0x6f, 0x6e, 0x67, 0x18, 0x0f, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0e, 0x72, 0x69, 0x73, 0x6b, 0x46,
-	0x61, 0x63, 0x74, 0x6f, 0x72, 0x4c, 0x6f, 0x6e, 0x67, 0x12, 0x41, 0x0a, 0x1d, 0x72, 0x69, 0x73,
-	0x6b, 0x5f, 0x66, 0x61, 0x63, 0x74, 0x6f, 0x72, 0x5f, 0x63, 0x6f, 0x6e, 0x73, 0x65, 0x6e, 0x73,
-	0x75, 0x73, 0x5f, 0x72, 0x65, 0x61, 0x63, 0x68, 0x65, 0x64, 0x18, 0x10, 0x20, 0x01, 0x28, 0x08,
-	0x52, 0x1a, 0x72, 0x69, 0x73, 0x6b, 0x46, 0x61, 0x63, 0x74, 0x6f, 0x72, 0x43, 0x6f, 0x6e, 0x73,
-	0x65, 0x6e, 0x73, 0x75, 0x73, 0x52, 0x65, 0x61, 0x63, 0x68, 0x65, 0x64, 0x12, 0x40, 0x0a, 0x0c,
-	0x66, 0x65, 0x65, 0x5f, 0x73, 0x70, 0x6c, 0x69, 0x74, 0x74, 0x65, 0x72, 0x18, 0x11, 0x20, 0x01,
-	0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68,
-	0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x46, 0x65, 0x65, 0x53, 0x70, 0x6c, 0x69, 0x74, 0x74, 0x65,
-	0x72, 0x52, 0x0b, 0x66, 0x65, 0x65, 0x53, 0x70, 0x6c, 0x69, 0x74, 0x74, 0x65, 0x72, 0x12, 0x29,
-	0x0a, 0x10, 0x73, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x5f, 0x70, 0x72, 0x69,
-	0x63, 0x65, 0x18, 0x12, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0f, 0x73, 0x65, 0x74, 0x74, 0x6c, 0x65,
-	0x6d, 0x65, 0x6e, 0x74, 0x50, 0x72, 0x69, 0x63, 0x65, 0x22, 0x46, 0x0a, 0x10, 0x45, 0x78, 0x65,
+	0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x43, 0x0a, 0x0d, 0x70, 0x65, 0x67, 0x67, 0x65, 0x64, 0x5f,
+	0x6f, 0x72, 0x64, 0x65, 0x72, 0x73, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1e, 0x2e, 0x76,
+	0x65, 0x67, 0x61, 0x2e, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e,
+	0x50, 0x65, 0x67, 0x67, 0x65, 0x64, 0x4f, 0x72, 0x64, 0x65, 0x72, 0x73, 0x52, 0x0c, 0x70, 0x65,
+	0x67, 0x67, 0x65, 0x64, 0x4f, 0x72, 0x64, 0x65, 0x72, 0x73, 0x12, 0x34, 0x0a, 0x0f, 0x65, 0x78,
+	0x70, 0x69, 0x72, 0x69, 0x6e, 0x67, 0x5f, 0x6f, 0x72, 0x64, 0x65, 0x72, 0x73, 0x18, 0x05, 0x20,
+	0x03, 0x28, 0x0b, 0x32, 0x0b, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x4f, 0x72, 0x64, 0x65, 0x72,
+	0x52, 0x0e, 0x65, 0x78, 0x70, 0x69, 0x72, 0x69, 0x6e, 0x67, 0x4f, 0x72, 0x64, 0x65, 0x72, 0x73,
+	0x12, 0x22, 0x0a, 0x0d, 0x6c, 0x61, 0x73, 0x74, 0x5f, 0x62, 0x65, 0x73, 0x74, 0x5f, 0x62, 0x69,
+	0x64, 0x18, 0x06, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x6c, 0x61, 0x73, 0x74, 0x42, 0x65, 0x73,
+	0x74, 0x42, 0x69, 0x64, 0x12, 0x22, 0x0a, 0x0d, 0x6c, 0x61, 0x73, 0x74, 0x5f, 0x62, 0x65, 0x73,
+	0x74, 0x5f, 0x61, 0x73, 0x6b, 0x18, 0x07, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x6c, 0x61, 0x73,
+	0x74, 0x42, 0x65, 0x73, 0x74, 0x41, 0x73, 0x6b, 0x12, 0x20, 0x0a, 0x0c, 0x6c, 0x61, 0x73, 0x74,
+	0x5f, 0x6d, 0x69, 0x64, 0x5f, 0x62, 0x69, 0x64, 0x18, 0x08, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a,
+	0x6c, 0x61, 0x73, 0x74, 0x4d, 0x69, 0x64, 0x42, 0x69, 0x64, 0x12, 0x20, 0x0a, 0x0c, 0x6c, 0x61,
+	0x73, 0x74, 0x5f, 0x6d, 0x69, 0x64, 0x5f, 0x61, 0x73, 0x6b, 0x18, 0x09, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x0a, 0x6c, 0x61, 0x73, 0x74, 0x4d, 0x69, 0x64, 0x41, 0x73, 0x6b, 0x12, 0x35, 0x0a, 0x17,
+	0x6c, 0x61, 0x73, 0x74, 0x5f, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x5f, 0x76, 0x61, 0x6c, 0x75,
+	0x65, 0x5f, 0x70, 0x72, 0x6f, 0x78, 0x79, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x09, 0x52, 0x14, 0x6c,
+	0x61, 0x73, 0x74, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x50, 0x72,
+	0x6f, 0x78, 0x79, 0x12, 0x41, 0x0a, 0x1d, 0x6c, 0x61, 0x73, 0x74, 0x5f, 0x65, 0x71, 0x75, 0x69,
+	0x74, 0x79, 0x5f, 0x73, 0x68, 0x61, 0x72, 0x65, 0x5f, 0x64, 0x69, 0x73, 0x74, 0x72, 0x69, 0x62,
+	0x75, 0x74, 0x65, 0x64, 0x18, 0x0b, 0x20, 0x01, 0x28, 0x03, 0x52, 0x1a, 0x6c, 0x61, 0x73, 0x74,
+	0x45, 0x71, 0x75, 0x69, 0x74, 0x79, 0x53, 0x68, 0x61, 0x72, 0x65, 0x44, 0x69, 0x73, 0x74, 0x72,
+	0x69, 0x62, 0x75, 0x74, 0x65, 0x64, 0x12, 0x40, 0x0a, 0x0c, 0x65, 0x71, 0x75, 0x69, 0x74, 0x79,
+	0x5f, 0x73, 0x68, 0x61, 0x72, 0x65, 0x18, 0x0c, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x76,
+	0x65, 0x67, 0x61, 0x2e, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e,
+	0x45, 0x71, 0x75, 0x69, 0x74, 0x79, 0x53, 0x68, 0x61, 0x72, 0x65, 0x52, 0x0b, 0x65, 0x71, 0x75,
+	0x69, 0x74, 0x79, 0x53, 0x68, 0x61, 0x72, 0x65, 0x12, 0x2c, 0x0a, 0x12, 0x63, 0x75, 0x72, 0x72,
+	0x65, 0x6e, 0x74, 0x5f, 0x6d, 0x61, 0x72, 0x6b, 0x5f, 0x70, 0x72, 0x69, 0x63, 0x65, 0x18, 0x0d,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x10, 0x63, 0x75, 0x72, 0x72, 0x65, 0x6e, 0x74, 0x4d, 0x61, 0x72,
+	0x6b, 0x50, 0x72, 0x69, 0x63, 0x65, 0x12, 0x2a, 0x0a, 0x11, 0x72, 0x69, 0x73, 0x6b, 0x5f, 0x66,
+	0x61, 0x63, 0x74, 0x6f, 0x72, 0x5f, 0x73, 0x68, 0x6f, 0x72, 0x74, 0x18, 0x0e, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x0f, 0x72, 0x69, 0x73, 0x6b, 0x46, 0x61, 0x63, 0x74, 0x6f, 0x72, 0x53, 0x68, 0x6f,
+	0x72, 0x74, 0x12, 0x28, 0x0a, 0x10, 0x72, 0x69, 0x73, 0x6b, 0x5f, 0x66, 0x61, 0x63, 0x74, 0x6f,
+	0x72, 0x5f, 0x6c, 0x6f, 0x6e, 0x67, 0x18, 0x0f, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0e, 0x72, 0x69,
+	0x73, 0x6b, 0x46, 0x61, 0x63, 0x74, 0x6f, 0x72, 0x4c, 0x6f, 0x6e, 0x67, 0x12, 0x41, 0x0a, 0x1d,
+	0x72, 0x69, 0x73, 0x6b, 0x5f, 0x66, 0x61, 0x63, 0x74, 0x6f, 0x72, 0x5f, 0x63, 0x6f, 0x6e, 0x73,
+	0x65, 0x6e, 0x73, 0x75, 0x73, 0x5f, 0x72, 0x65, 0x61, 0x63, 0x68, 0x65, 0x64, 0x18, 0x10, 0x20,
+	0x01, 0x28, 0x08, 0x52, 0x1a, 0x72, 0x69, 0x73, 0x6b, 0x46, 0x61, 0x63, 0x74, 0x6f, 0x72, 0x43,
+	0x6f, 0x6e, 0x73, 0x65, 0x6e, 0x73, 0x75, 0x73, 0x52, 0x65, 0x61, 0x63, 0x68, 0x65, 0x64, 0x12,
+	0x40, 0x0a, 0x0c, 0x66, 0x65, 0x65, 0x5f, 0x73, 0x70, 0x6c, 0x69, 0x74, 0x74, 0x65, 0x72, 0x18,
+	0x11, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x73, 0x6e, 0x61,
+	0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x46, 0x65, 0x65, 0x53, 0x70, 0x6c, 0x69,
+	0x74, 0x74, 0x65, 0x72, 0x52, 0x0b, 0x66, 0x65, 0x65, 0x53, 0x70, 0x6c, 0x69, 0x74, 0x74, 0x65,
+	0x72, 0x12, 0x29, 0x0a, 0x10, 0x73, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x5f,
+	0x70, 0x72, 0x69, 0x63, 0x65, 0x18, 0x12, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0f, 0x73, 0x65, 0x74,
+	0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x50, 0x72, 0x69, 0x63, 0x65, 0x22, 0x41, 0x0a, 0x0e,
+	0x4f, 0x72, 0x64, 0x65, 0x72, 0x50, 0x61, 0x72, 0x74, 0x79, 0x50, 0x61, 0x69, 0x72, 0x12, 0x19,
+	0x0a, 0x08, 0x6f, 0x72, 0x64, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x07, 0x6f, 0x72, 0x64, 0x65, 0x72, 0x49, 0x64, 0x12, 0x14, 0x0a, 0x05, 0x70, 0x61, 0x72,
+	0x74, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x70, 0x61, 0x72, 0x74, 0x79, 0x22,
+	0x87, 0x01, 0x0a, 0x0c, 0x50, 0x65, 0x67, 0x67, 0x65, 0x64, 0x4f, 0x72, 0x64, 0x65, 0x72, 0x73,
+	0x12, 0x45, 0x0a, 0x0d, 0x6f, 0x72, 0x64, 0x65, 0x72, 0x5f, 0x70, 0x61, 0x72, 0x74, 0x69, 0x65,
+	0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x73,
+	0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4f, 0x72, 0x64, 0x65, 0x72,
+	0x50, 0x61, 0x72, 0x74, 0x79, 0x50, 0x61, 0x69, 0x72, 0x52, 0x0c, 0x6f, 0x72, 0x64, 0x65, 0x72,
+	0x50, 0x61, 0x72, 0x74, 0x69, 0x65, 0x73, 0x12, 0x30, 0x0a, 0x0d, 0x70, 0x61, 0x72, 0x6b, 0x65,
+	0x64, 0x5f, 0x6f, 0x72, 0x64, 0x65, 0x72, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0b,
+	0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x4f, 0x72, 0x64, 0x65, 0x72, 0x52, 0x0c, 0x70, 0x61, 0x72,
+	0x6b, 0x65, 0x64, 0x4f, 0x72, 0x64, 0x65, 0x72, 0x73, 0x22, 0x46, 0x0a, 0x10, 0x45, 0x78, 0x65,
 	0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x73, 0x12, 0x32, 0x0a,
 	0x07, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x18,
 	0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76,
@@ -9168,7 +9292,7 @@ func file_vega_snapshot_v1_snapshot_proto_rawDescGZIP() []byte {
 }
 
 var file_vega_snapshot_v1_snapshot_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_vega_snapshot_v1_snapshot_proto_msgTypes = make([]protoimpl.MessageInfo, 108)
+var file_vega_snapshot_v1_snapshot_proto_msgTypes = make([]protoimpl.MessageInfo, 110)
 var file_vega_snapshot_v1_snapshot_proto_goTypes = []interface{}{
 	(Format)(0),                                // 0: vega.snapshot.v1.Format
 	(*Snapshot)(nil),                           // 1: vega.snapshot.v1.Snapshot
@@ -9228,87 +9352,89 @@ var file_vega_snapshot_v1_snapshot_proto_goTypes = []interface{}{
 	(*EquityShare)(nil),                        // 55: vega.snapshot.v1.EquityShare
 	(*FeeSplitter)(nil),                        // 56: vega.snapshot.v1.FeeSplitter
 	(*Market)(nil),                             // 57: vega.snapshot.v1.Market
-	(*ExecutionMarkets)(nil),                   // 58: vega.snapshot.v1.ExecutionMarkets
-	(*Position)(nil),                           // 59: vega.snapshot.v1.Position
-	(*MarketPositions)(nil),                    // 60: vega.snapshot.v1.MarketPositions
-	(*AppState)(nil),                           // 61: vega.snapshot.v1.AppState
-	(*EpochState)(nil),                         // 62: vega.snapshot.v1.EpochState
-	(*RewardsPendingPayouts)(nil),              // 63: vega.snapshot.v1.RewardsPendingPayouts
-	(*ScheduledRewardsPayout)(nil),             // 64: vega.snapshot.v1.ScheduledRewardsPayout
-	(*RewardsPayout)(nil),                      // 65: vega.snapshot.v1.RewardsPayout
-	(*RewardsPartyAmount)(nil),                 // 66: vega.snapshot.v1.RewardsPartyAmount
-	(*LimitState)(nil),                         // 67: vega.snapshot.v1.LimitState
-	(*VoteSpamPolicy)(nil),                     // 68: vega.snapshot.v1.VoteSpamPolicy
-	(*PartyProposalVoteCount)(nil),             // 69: vega.snapshot.v1.PartyProposalVoteCount
-	(*BannedParty)(nil),                        // 70: vega.snapshot.v1.BannedParty
-	(*PartyTokenBalance)(nil),                  // 71: vega.snapshot.v1.PartyTokenBalance
-	(*BlockRejectStats)(nil),                   // 72: vega.snapshot.v1.BlockRejectStats
-	(*SpamPartyTransactionCount)(nil),          // 73: vega.snapshot.v1.SpamPartyTransactionCount
-	(*SimpleSpamPolicy)(nil),                   // 74: vega.snapshot.v1.SimpleSpamPolicy
-	(*NotarySigs)(nil),                         // 75: vega.snapshot.v1.NotarySigs
-	(*Notary)(nil),                             // 76: vega.snapshot.v1.Notary
-	(*ReplayProtection)(nil),                   // 77: vega.snapshot.v1.ReplayProtection
-	(*TransactionAtHeight)(nil),                // 78: vega.snapshot.v1.TransactionAtHeight
-	(*FutureState)(nil),                        // 79: vega.snapshot.v1.FutureState
-	(*StakeVerifierDeposited)(nil),             // 80: vega.snapshot.v1.StakeVerifierDeposited
-	(*StakeVerifierRemoved)(nil),               // 81: vega.snapshot.v1.StakeVerifierRemoved
-	(*StakeVerifierPending)(nil),               // 82: vega.snapshot.v1.StakeVerifierPending
-	(*PendingKeyRotation)(nil),                 // 83: vega.snapshot.v1.PendingKeyRotation
-	(*PendingEthereumKeyRotation)(nil),         // 84: vega.snapshot.v1.PendingEthereumKeyRotation
-	(*Topology)(nil),                           // 85: vega.snapshot.v1.Topology
-	(*ValidatorState)(nil),                     // 86: vega.snapshot.v1.ValidatorState
-	(*HeartbeatTracker)(nil),                   // 87: vega.snapshot.v1.HeartbeatTracker
-	(*PerformanceStats)(nil),                   // 88: vega.snapshot.v1.PerformanceStats
-	(*ValidatorPerformance)(nil),               // 89: vega.snapshot.v1.ValidatorPerformance
-	(*LiquidityParameters)(nil),                // 90: vega.snapshot.v1.LiquidityParameters
-	(*LiquidityPendingProvisions)(nil),         // 91: vega.snapshot.v1.LiquidityPendingProvisions
-	(*LiquidityPartiesLiquidityOrders)(nil),    // 92: vega.snapshot.v1.LiquidityPartiesLiquidityOrders
-	(*PartyOrders)(nil),                        // 93: vega.snapshot.v1.PartyOrders
-	(*LiquidityPartiesOrders)(nil),             // 94: vega.snapshot.v1.LiquidityPartiesOrders
-	(*LiquidityProvisions)(nil),                // 95: vega.snapshot.v1.LiquidityProvisions
-	(*FloatingPointConsensus)(nil),             // 96: vega.snapshot.v1.FloatingPointConsensus
-	(*StateVarInternalState)(nil),              // 97: vega.snapshot.v1.StateVarInternalState
-	(*FloatingPointValidatorResult)(nil),       // 98: vega.snapshot.v1.FloatingPointValidatorResult
-	(*NextTimeTrigger)(nil),                    // 99: vega.snapshot.v1.NextTimeTrigger
-	(*MarketTracker)(nil),                      // 100: vega.snapshot.v1.MarketTracker
-	(*SignerEventsPerAddress)(nil),             // 101: vega.snapshot.v1.SignerEventsPerAddress
-	(*ERC20MultiSigTopologyVerified)(nil),      // 102: vega.snapshot.v1.ERC20MultiSigTopologyVerified
-	(*ERC20MultiSigTopologyPending)(nil),       // 103: vega.snapshot.v1.ERC20MultiSigTopologyPending
-	(*ProofOfWork)(nil),                        // 104: vega.snapshot.v1.ProofOfWork
-	(*ProofOfWorkParams)(nil),                  // 105: vega.snapshot.v1.ProofOfWorkParams
-	(*TransactionsAtHeight)(nil),               // 106: vega.snapshot.v1.TransactionsAtHeight
-	(*ProtocolUpgradeProposals)(nil),           // 107: vega.snapshot.v1.ProtocolUpgradeProposals
-	(*AcceptedProtocolUpgradeProposal)(nil),    // 108: vega.snapshot.v1.AcceptedProtocolUpgradeProposal
-	(*v1.ChainEvent)(nil),                      // 109: vega.commands.v1.ChainEvent
-	(*vega.Account)(nil),                       // 110: vega.Account
-	(*vega.Asset)(nil),                         // 111: vega.Asset
-	(*vega.Withdrawal)(nil),                    // 112: vega.Withdrawal
-	(*vega.Deposit)(nil),                       // 113: vega.Deposit
-	(*vega.BuiltinAssetDeposit)(nil),           // 114: vega.BuiltinAssetDeposit
-	(*vega.ERC20Deposit)(nil),                  // 115: vega.ERC20Deposit
-	(*vega.ERC20AssetList)(nil),                // 116: vega.ERC20AssetList
-	(*vega.ERC20AssetLimitsUpdated)(nil),       // 117: vega.ERC20AssetLimitsUpdated
-	(*v11.RecurringTransfers)(nil),             // 118: vega.checkpoint.v1.RecurringTransfers
-	(*v11.ScheduledTransferAtTime)(nil),        // 119: vega.checkpoint.v1.ScheduledTransferAtTime
-	(*vega.Delegation)(nil),                    // 120: vega.Delegation
-	(*vega.Proposal)(nil),                      // 121: vega.Proposal
-	(*vega.Vote)(nil),                          // 122: vega.Vote
-	(*v12.StakeLinking)(nil),                   // 123: vega.events.v1.StakeLinking
-	(*vega.Order)(nil),                         // 124: vega.Order
-	(*vega.NetworkParameter)(nil),              // 125: vega.NetworkParameter
-	(*vega.PriceMonitoringTrigger)(nil),        // 126: vega.PriceMonitoringTrigger
-	(vega.Market_TradingMode)(0),               // 127: vega.Market.TradingMode
-	(vega.AuctionTrigger)(0),                   // 128: vega.AuctionTrigger
-	(*vega.AuctionDuration)(nil),               // 129: vega.AuctionDuration
-	(*vega.Market)(nil),                        // 130: vega.Market
-	(*v12.ValidatorUpdate)(nil),                // 131: vega.events.v1.ValidatorUpdate
-	(*vega.RankingScore)(nil),                  // 132: vega.RankingScore
-	(*vega.LiquidityProvision)(nil),            // 133: vega.LiquidityProvision
-	(*vega.KeyValueBundle)(nil),                // 134: vega.KeyValueBundle
-	(*v11.MarketActivityTracker)(nil),          // 135: vega.checkpoint.v1.MarketActivityTracker
-	(*v12.ERC20MultiSigSignerEvent)(nil),       // 136: vega.events.v1.ERC20MultiSigSignerEvent
-	(*v12.ERC20MultiSigThresholdSetEvent)(nil), // 137: vega.events.v1.ERC20MultiSigThresholdSetEvent
-	(*v12.ProtocolUpgradeEvent)(nil),           // 138: vega.events.v1.ProtocolUpgradeEvent
+	(*OrderPartyPair)(nil),                     // 58: vega.snapshot.v1.OrderPartyPair
+	(*PeggedOrders)(nil),                       // 59: vega.snapshot.v1.PeggedOrders
+	(*ExecutionMarkets)(nil),                   // 60: vega.snapshot.v1.ExecutionMarkets
+	(*Position)(nil),                           // 61: vega.snapshot.v1.Position
+	(*MarketPositions)(nil),                    // 62: vega.snapshot.v1.MarketPositions
+	(*AppState)(nil),                           // 63: vega.snapshot.v1.AppState
+	(*EpochState)(nil),                         // 64: vega.snapshot.v1.EpochState
+	(*RewardsPendingPayouts)(nil),              // 65: vega.snapshot.v1.RewardsPendingPayouts
+	(*ScheduledRewardsPayout)(nil),             // 66: vega.snapshot.v1.ScheduledRewardsPayout
+	(*RewardsPayout)(nil),                      // 67: vega.snapshot.v1.RewardsPayout
+	(*RewardsPartyAmount)(nil),                 // 68: vega.snapshot.v1.RewardsPartyAmount
+	(*LimitState)(nil),                         // 69: vega.snapshot.v1.LimitState
+	(*VoteSpamPolicy)(nil),                     // 70: vega.snapshot.v1.VoteSpamPolicy
+	(*PartyProposalVoteCount)(nil),             // 71: vega.snapshot.v1.PartyProposalVoteCount
+	(*BannedParty)(nil),                        // 72: vega.snapshot.v1.BannedParty
+	(*PartyTokenBalance)(nil),                  // 73: vega.snapshot.v1.PartyTokenBalance
+	(*BlockRejectStats)(nil),                   // 74: vega.snapshot.v1.BlockRejectStats
+	(*SpamPartyTransactionCount)(nil),          // 75: vega.snapshot.v1.SpamPartyTransactionCount
+	(*SimpleSpamPolicy)(nil),                   // 76: vega.snapshot.v1.SimpleSpamPolicy
+	(*NotarySigs)(nil),                         // 77: vega.snapshot.v1.NotarySigs
+	(*Notary)(nil),                             // 78: vega.snapshot.v1.Notary
+	(*ReplayProtection)(nil),                   // 79: vega.snapshot.v1.ReplayProtection
+	(*TransactionAtHeight)(nil),                // 80: vega.snapshot.v1.TransactionAtHeight
+	(*FutureState)(nil),                        // 81: vega.snapshot.v1.FutureState
+	(*StakeVerifierDeposited)(nil),             // 82: vega.snapshot.v1.StakeVerifierDeposited
+	(*StakeVerifierRemoved)(nil),               // 83: vega.snapshot.v1.StakeVerifierRemoved
+	(*StakeVerifierPending)(nil),               // 84: vega.snapshot.v1.StakeVerifierPending
+	(*PendingKeyRotation)(nil),                 // 85: vega.snapshot.v1.PendingKeyRotation
+	(*PendingEthereumKeyRotation)(nil),         // 86: vega.snapshot.v1.PendingEthereumKeyRotation
+	(*Topology)(nil),                           // 87: vega.snapshot.v1.Topology
+	(*ValidatorState)(nil),                     // 88: vega.snapshot.v1.ValidatorState
+	(*HeartbeatTracker)(nil),                   // 89: vega.snapshot.v1.HeartbeatTracker
+	(*PerformanceStats)(nil),                   // 90: vega.snapshot.v1.PerformanceStats
+	(*ValidatorPerformance)(nil),               // 91: vega.snapshot.v1.ValidatorPerformance
+	(*LiquidityParameters)(nil),                // 92: vega.snapshot.v1.LiquidityParameters
+	(*LiquidityPendingProvisions)(nil),         // 93: vega.snapshot.v1.LiquidityPendingProvisions
+	(*LiquidityPartiesLiquidityOrders)(nil),    // 94: vega.snapshot.v1.LiquidityPartiesLiquidityOrders
+	(*PartyOrders)(nil),                        // 95: vega.snapshot.v1.PartyOrders
+	(*LiquidityPartiesOrders)(nil),             // 96: vega.snapshot.v1.LiquidityPartiesOrders
+	(*LiquidityProvisions)(nil),                // 97: vega.snapshot.v1.LiquidityProvisions
+	(*FloatingPointConsensus)(nil),             // 98: vega.snapshot.v1.FloatingPointConsensus
+	(*StateVarInternalState)(nil),              // 99: vega.snapshot.v1.StateVarInternalState
+	(*FloatingPointValidatorResult)(nil),       // 100: vega.snapshot.v1.FloatingPointValidatorResult
+	(*NextTimeTrigger)(nil),                    // 101: vega.snapshot.v1.NextTimeTrigger
+	(*MarketTracker)(nil),                      // 102: vega.snapshot.v1.MarketTracker
+	(*SignerEventsPerAddress)(nil),             // 103: vega.snapshot.v1.SignerEventsPerAddress
+	(*ERC20MultiSigTopologyVerified)(nil),      // 104: vega.snapshot.v1.ERC20MultiSigTopologyVerified
+	(*ERC20MultiSigTopologyPending)(nil),       // 105: vega.snapshot.v1.ERC20MultiSigTopologyPending
+	(*ProofOfWork)(nil),                        // 106: vega.snapshot.v1.ProofOfWork
+	(*ProofOfWorkParams)(nil),                  // 107: vega.snapshot.v1.ProofOfWorkParams
+	(*TransactionsAtHeight)(nil),               // 108: vega.snapshot.v1.TransactionsAtHeight
+	(*ProtocolUpgradeProposals)(nil),           // 109: vega.snapshot.v1.ProtocolUpgradeProposals
+	(*AcceptedProtocolUpgradeProposal)(nil),    // 110: vega.snapshot.v1.AcceptedProtocolUpgradeProposal
+	(*v1.ChainEvent)(nil),                      // 111: vega.commands.v1.ChainEvent
+	(*vega.Account)(nil),                       // 112: vega.Account
+	(*vega.Asset)(nil),                         // 113: vega.Asset
+	(*vega.Withdrawal)(nil),                    // 114: vega.Withdrawal
+	(*vega.Deposit)(nil),                       // 115: vega.Deposit
+	(*vega.BuiltinAssetDeposit)(nil),           // 116: vega.BuiltinAssetDeposit
+	(*vega.ERC20Deposit)(nil),                  // 117: vega.ERC20Deposit
+	(*vega.ERC20AssetList)(nil),                // 118: vega.ERC20AssetList
+	(*vega.ERC20AssetLimitsUpdated)(nil),       // 119: vega.ERC20AssetLimitsUpdated
+	(*v11.RecurringTransfers)(nil),             // 120: vega.checkpoint.v1.RecurringTransfers
+	(*v11.ScheduledTransferAtTime)(nil),        // 121: vega.checkpoint.v1.ScheduledTransferAtTime
+	(*vega.Delegation)(nil),                    // 122: vega.Delegation
+	(*vega.Proposal)(nil),                      // 123: vega.Proposal
+	(*vega.Vote)(nil),                          // 124: vega.Vote
+	(*v12.StakeLinking)(nil),                   // 125: vega.events.v1.StakeLinking
+	(*vega.Order)(nil),                         // 126: vega.Order
+	(*vega.NetworkParameter)(nil),              // 127: vega.NetworkParameter
+	(*vega.PriceMonitoringTrigger)(nil),        // 128: vega.PriceMonitoringTrigger
+	(vega.Market_TradingMode)(0),               // 129: vega.Market.TradingMode
+	(vega.AuctionTrigger)(0),                   // 130: vega.AuctionTrigger
+	(*vega.AuctionDuration)(nil),               // 131: vega.AuctionDuration
+	(*vega.Market)(nil),                        // 132: vega.Market
+	(*v12.ValidatorUpdate)(nil),                // 133: vega.events.v1.ValidatorUpdate
+	(*vega.RankingScore)(nil),                  // 134: vega.RankingScore
+	(*vega.LiquidityProvision)(nil),            // 135: vega.LiquidityProvision
+	(*vega.KeyValueBundle)(nil),                // 136: vega.KeyValueBundle
+	(*v11.MarketActivityTracker)(nil),          // 137: vega.checkpoint.v1.MarketActivityTracker
+	(*v12.ERC20MultiSigSignerEvent)(nil),       // 138: vega.events.v1.ERC20MultiSigSignerEvent
+	(*v12.ERC20MultiSigThresholdSetEvent)(nil), // 139: vega.events.v1.ERC20MultiSigThresholdSetEvent
+	(*v12.ProtocolUpgradeEvent)(nil),           // 140: vega.events.v1.ProtocolUpgradeEvent
 }
 var file_vega_snapshot_v1_snapshot_proto_depIdxs = []int32{
 	0,   // 0: vega.snapshot.v1.Snapshot.format:type_name -> vega.snapshot.v1.Format
@@ -9331,41 +9457,41 @@ var file_vega_snapshot_v1_snapshot_proto_depIdxs = []int32{
 	41,  // 17: vega.snapshot.v1.Payload.staking_accounts:type_name -> vega.snapshot.v1.StakingAccounts
 	42,  // 18: vega.snapshot.v1.Payload.matching_book:type_name -> vega.snapshot.v1.MatchingBook
 	43,  // 19: vega.snapshot.v1.Payload.network_parameters:type_name -> vega.snapshot.v1.NetParams
-	58,  // 20: vega.snapshot.v1.Payload.execution_markets:type_name -> vega.snapshot.v1.ExecutionMarkets
-	60,  // 21: vega.snapshot.v1.Payload.market_positions:type_name -> vega.snapshot.v1.MarketPositions
-	61,  // 22: vega.snapshot.v1.Payload.app_state:type_name -> vega.snapshot.v1.AppState
-	62,  // 23: vega.snapshot.v1.Payload.epoch:type_name -> vega.snapshot.v1.EpochState
-	63,  // 24: vega.snapshot.v1.Payload.rewards_pending_payouts:type_name -> vega.snapshot.v1.RewardsPendingPayouts
+	60,  // 20: vega.snapshot.v1.Payload.execution_markets:type_name -> vega.snapshot.v1.ExecutionMarkets
+	62,  // 21: vega.snapshot.v1.Payload.market_positions:type_name -> vega.snapshot.v1.MarketPositions
+	63,  // 22: vega.snapshot.v1.Payload.app_state:type_name -> vega.snapshot.v1.AppState
+	64,  // 23: vega.snapshot.v1.Payload.epoch:type_name -> vega.snapshot.v1.EpochState
+	65,  // 24: vega.snapshot.v1.Payload.rewards_pending_payouts:type_name -> vega.snapshot.v1.RewardsPendingPayouts
 	39,  // 25: vega.snapshot.v1.Payload.governance_node:type_name -> vega.snapshot.v1.GovernanceNode
-	67,  // 26: vega.snapshot.v1.Payload.limit_state:type_name -> vega.snapshot.v1.LimitState
-	68,  // 27: vega.snapshot.v1.Payload.vote_spam_policy:type_name -> vega.snapshot.v1.VoteSpamPolicy
-	74,  // 28: vega.snapshot.v1.Payload.simple_spam_policy:type_name -> vega.snapshot.v1.SimpleSpamPolicy
-	76,  // 29: vega.snapshot.v1.Payload.notary:type_name -> vega.snapshot.v1.Notary
-	77,  // 30: vega.snapshot.v1.Payload.replay_protection:type_name -> vega.snapshot.v1.ReplayProtection
-	79,  // 31: vega.snapshot.v1.Payload.future_state:type_name -> vega.snapshot.v1.FutureState
+	69,  // 26: vega.snapshot.v1.Payload.limit_state:type_name -> vega.snapshot.v1.LimitState
+	70,  // 27: vega.snapshot.v1.Payload.vote_spam_policy:type_name -> vega.snapshot.v1.VoteSpamPolicy
+	76,  // 28: vega.snapshot.v1.Payload.simple_spam_policy:type_name -> vega.snapshot.v1.SimpleSpamPolicy
+	78,  // 29: vega.snapshot.v1.Payload.notary:type_name -> vega.snapshot.v1.Notary
+	79,  // 30: vega.snapshot.v1.Payload.replay_protection:type_name -> vega.snapshot.v1.ReplayProtection
+	81,  // 31: vega.snapshot.v1.Payload.future_state:type_name -> vega.snapshot.v1.FutureState
 	15,  // 32: vega.snapshot.v1.Payload.event_forwarder:type_name -> vega.snapshot.v1.EventForwarder
-	80,  // 33: vega.snapshot.v1.Payload.stake_verifier_deposited:type_name -> vega.snapshot.v1.StakeVerifierDeposited
-	81,  // 34: vega.snapshot.v1.Payload.stake_verifier_removed:type_name -> vega.snapshot.v1.StakeVerifierRemoved
+	82,  // 33: vega.snapshot.v1.Payload.stake_verifier_deposited:type_name -> vega.snapshot.v1.StakeVerifierDeposited
+	83,  // 34: vega.snapshot.v1.Payload.stake_verifier_removed:type_name -> vega.snapshot.v1.StakeVerifierRemoved
 	13,  // 35: vega.snapshot.v1.Payload.witness:type_name -> vega.snapshot.v1.Witness
 	32,  // 36: vega.snapshot.v1.Payload.delegation_last_reconciliation_time:type_name -> vega.snapshot.v1.DelegationLastReconciliationTime
-	85,  // 37: vega.snapshot.v1.Payload.topology:type_name -> vega.snapshot.v1.Topology
+	87,  // 37: vega.snapshot.v1.Payload.topology:type_name -> vega.snapshot.v1.Topology
 	10,  // 38: vega.snapshot.v1.Payload.oracle_data:type_name -> vega.snapshot.v1.OracleDataBatch
-	90,  // 39: vega.snapshot.v1.Payload.liquidity_parameters:type_name -> vega.snapshot.v1.LiquidityParameters
-	91,  // 40: vega.snapshot.v1.Payload.liquidity_pending_provisions:type_name -> vega.snapshot.v1.LiquidityPendingProvisions
-	92,  // 41: vega.snapshot.v1.Payload.liquidity_parties_liquidity_orders:type_name -> vega.snapshot.v1.LiquidityPartiesLiquidityOrders
-	94,  // 42: vega.snapshot.v1.Payload.liquidity_parties_orders:type_name -> vega.snapshot.v1.LiquidityPartiesOrders
-	95,  // 43: vega.snapshot.v1.Payload.liquidity_provisions:type_name -> vega.snapshot.v1.LiquidityProvisions
+	92,  // 39: vega.snapshot.v1.Payload.liquidity_parameters:type_name -> vega.snapshot.v1.LiquidityParameters
+	93,  // 40: vega.snapshot.v1.Payload.liquidity_pending_provisions:type_name -> vega.snapshot.v1.LiquidityPendingProvisions
+	94,  // 41: vega.snapshot.v1.Payload.liquidity_parties_liquidity_orders:type_name -> vega.snapshot.v1.LiquidityPartiesLiquidityOrders
+	96,  // 42: vega.snapshot.v1.Payload.liquidity_parties_orders:type_name -> vega.snapshot.v1.LiquidityPartiesOrders
+	97,  // 43: vega.snapshot.v1.Payload.liquidity_provisions:type_name -> vega.snapshot.v1.LiquidityProvisions
 	9,   // 44: vega.snapshot.v1.Payload.liquidity_supplied:type_name -> vega.snapshot.v1.LiquiditySupplied
 	7,   // 45: vega.snapshot.v1.Payload.liquidity_target:type_name -> vega.snapshot.v1.LiquidityTarget
-	96,  // 46: vega.snapshot.v1.Payload.floating_point_consensus:type_name -> vega.snapshot.v1.FloatingPointConsensus
-	100, // 47: vega.snapshot.v1.Payload.market_tracker:type_name -> vega.snapshot.v1.MarketTracker
+	98,  // 46: vega.snapshot.v1.Payload.floating_point_consensus:type_name -> vega.snapshot.v1.FloatingPointConsensus
+	102, // 47: vega.snapshot.v1.Payload.market_tracker:type_name -> vega.snapshot.v1.MarketTracker
 	29,  // 48: vega.snapshot.v1.Payload.banking_recurring_transfers:type_name -> vega.snapshot.v1.BankingRecurringTransfers
 	30,  // 49: vega.snapshot.v1.Payload.banking_scheduled_transfers:type_name -> vega.snapshot.v1.BankingScheduledTransfers
-	102, // 50: vega.snapshot.v1.Payload.erc20_multisig_topology_verified:type_name -> vega.snapshot.v1.ERC20MultiSigTopologyVerified
-	103, // 51: vega.snapshot.v1.Payload.erc20_multisig_topology_pending:type_name -> vega.snapshot.v1.ERC20MultiSigTopologyPending
-	104, // 52: vega.snapshot.v1.Payload.proof_of_work:type_name -> vega.snapshot.v1.ProofOfWork
+	104, // 50: vega.snapshot.v1.Payload.erc20_multisig_topology_verified:type_name -> vega.snapshot.v1.ERC20MultiSigTopologyVerified
+	105, // 51: vega.snapshot.v1.Payload.erc20_multisig_topology_pending:type_name -> vega.snapshot.v1.ERC20MultiSigTopologyPending
+	106, // 52: vega.snapshot.v1.Payload.proof_of_work:type_name -> vega.snapshot.v1.ProofOfWork
 	20,  // 53: vega.snapshot.v1.Payload.pending_asset_updates:type_name -> vega.snapshot.v1.PendingAssetUpdates
-	107, // 54: vega.snapshot.v1.Payload.protocol_upgrade_proposals:type_name -> vega.snapshot.v1.ProtocolUpgradeProposals
+	109, // 54: vega.snapshot.v1.Payload.protocol_upgrade_proposals:type_name -> vega.snapshot.v1.ProtocolUpgradeProposals
 	6,   // 55: vega.snapshot.v1.LiquidityTarget.previous_open_interests:type_name -> vega.snapshot.v1.TimestampedOpenInterest
 	6,   // 56: vega.snapshot.v1.LiquidityTarget.max_open_interests:type_name -> vega.snapshot.v1.TimestampedOpenInterest
 	8,   // 57: vega.snapshot.v1.LiquiditySupplied.bid_cache:type_name -> vega.snapshot.v1.LiquidityPriceProbabilityPair
@@ -9373,40 +9499,40 @@ var file_vega_snapshot_v1_snapshot_proto_depIdxs = []int32{
 	11,  // 59: vega.snapshot.v1.OracleDataBatch.oracle_data:type_name -> vega.snapshot.v1.OracleData
 	12,  // 60: vega.snapshot.v1.OracleData.data:type_name -> vega.snapshot.v1.OracleDataPair
 	14,  // 61: vega.snapshot.v1.Witness.resources:type_name -> vega.snapshot.v1.Resource
-	109, // 62: vega.snapshot.v1.EventForwarder.acked_events:type_name -> vega.commands.v1.ChainEvent
-	110, // 63: vega.snapshot.v1.CollateralAccounts.accounts:type_name -> vega.Account
-	111, // 64: vega.snapshot.v1.CollateralAssets.assets:type_name -> vega.Asset
-	111, // 65: vega.snapshot.v1.ActiveAssets.assets:type_name -> vega.Asset
-	111, // 66: vega.snapshot.v1.PendingAssets.assets:type_name -> vega.Asset
-	111, // 67: vega.snapshot.v1.PendingAssetUpdates.assets:type_name -> vega.Asset
-	112, // 68: vega.snapshot.v1.Withdrawal.withdrawal:type_name -> vega.Withdrawal
-	113, // 69: vega.snapshot.v1.Deposit.deposit:type_name -> vega.Deposit
-	114, // 70: vega.snapshot.v1.AssetAction.builtin_deposit:type_name -> vega.BuiltinAssetDeposit
-	115, // 71: vega.snapshot.v1.AssetAction.erc20_deposit:type_name -> vega.ERC20Deposit
-	116, // 72: vega.snapshot.v1.AssetAction.asset_list:type_name -> vega.ERC20AssetList
-	117, // 73: vega.snapshot.v1.AssetAction.erc20_asset_limits_updated:type_name -> vega.ERC20AssetLimitsUpdated
+	111, // 62: vega.snapshot.v1.EventForwarder.acked_events:type_name -> vega.commands.v1.ChainEvent
+	112, // 63: vega.snapshot.v1.CollateralAccounts.accounts:type_name -> vega.Account
+	113, // 64: vega.snapshot.v1.CollateralAssets.assets:type_name -> vega.Asset
+	113, // 65: vega.snapshot.v1.ActiveAssets.assets:type_name -> vega.Asset
+	113, // 66: vega.snapshot.v1.PendingAssets.assets:type_name -> vega.Asset
+	113, // 67: vega.snapshot.v1.PendingAssetUpdates.assets:type_name -> vega.Asset
+	114, // 68: vega.snapshot.v1.Withdrawal.withdrawal:type_name -> vega.Withdrawal
+	115, // 69: vega.snapshot.v1.Deposit.deposit:type_name -> vega.Deposit
+	116, // 70: vega.snapshot.v1.AssetAction.builtin_deposit:type_name -> vega.BuiltinAssetDeposit
+	117, // 71: vega.snapshot.v1.AssetAction.erc20_deposit:type_name -> vega.ERC20Deposit
+	118, // 72: vega.snapshot.v1.AssetAction.asset_list:type_name -> vega.ERC20AssetList
+	119, // 73: vega.snapshot.v1.AssetAction.erc20_asset_limits_updated:type_name -> vega.ERC20AssetLimitsUpdated
 	21,  // 74: vega.snapshot.v1.BankingWithdrawals.withdrawals:type_name -> vega.snapshot.v1.Withdrawal
 	22,  // 75: vega.snapshot.v1.BankingDeposits.deposit:type_name -> vega.snapshot.v1.Deposit
 	23,  // 76: vega.snapshot.v1.BankingSeen.refs:type_name -> vega.snapshot.v1.TxRef
 	24,  // 77: vega.snapshot.v1.BankingAssetActions.asset_action:type_name -> vega.snapshot.v1.AssetAction
-	118, // 78: vega.snapshot.v1.BankingRecurringTransfers.recurring_tranfers:type_name -> vega.checkpoint.v1.RecurringTransfers
-	119, // 79: vega.snapshot.v1.BankingScheduledTransfers.transfers_at_time:type_name -> vega.checkpoint.v1.ScheduledTransferAtTime
-	120, // 80: vega.snapshot.v1.DelegationActive.delegations:type_name -> vega.Delegation
-	120, // 81: vega.snapshot.v1.DelegationPending.delegations:type_name -> vega.Delegation
-	120, // 82: vega.snapshot.v1.DelegationPending.undelegation:type_name -> vega.Delegation
-	121, // 83: vega.snapshot.v1.ProposalData.proposal:type_name -> vega.Proposal
-	122, // 84: vega.snapshot.v1.ProposalData.yes:type_name -> vega.Vote
-	122, // 85: vega.snapshot.v1.ProposalData.no:type_name -> vega.Vote
-	122, // 86: vega.snapshot.v1.ProposalData.invalid:type_name -> vega.Vote
+	120, // 78: vega.snapshot.v1.BankingRecurringTransfers.recurring_tranfers:type_name -> vega.checkpoint.v1.RecurringTransfers
+	121, // 79: vega.snapshot.v1.BankingScheduledTransfers.transfers_at_time:type_name -> vega.checkpoint.v1.ScheduledTransferAtTime
+	122, // 80: vega.snapshot.v1.DelegationActive.delegations:type_name -> vega.Delegation
+	122, // 81: vega.snapshot.v1.DelegationPending.delegations:type_name -> vega.Delegation
+	122, // 82: vega.snapshot.v1.DelegationPending.undelegation:type_name -> vega.Delegation
+	123, // 83: vega.snapshot.v1.ProposalData.proposal:type_name -> vega.Proposal
+	124, // 84: vega.snapshot.v1.ProposalData.yes:type_name -> vega.Vote
+	124, // 85: vega.snapshot.v1.ProposalData.no:type_name -> vega.Vote
+	124, // 86: vega.snapshot.v1.ProposalData.invalid:type_name -> vega.Vote
 	36,  // 87: vega.snapshot.v1.GovernanceEnacted.proposals:type_name -> vega.snapshot.v1.ProposalData
 	36,  // 88: vega.snapshot.v1.GovernanceActive.proposals:type_name -> vega.snapshot.v1.ProposalData
-	121, // 89: vega.snapshot.v1.GovernanceNode.proposals:type_name -> vega.Proposal
-	123, // 90: vega.snapshot.v1.StakingAccount.events:type_name -> vega.events.v1.StakeLinking
+	123, // 89: vega.snapshot.v1.GovernanceNode.proposals:type_name -> vega.Proposal
+	125, // 90: vega.snapshot.v1.StakingAccount.events:type_name -> vega.events.v1.StakeLinking
 	40,  // 91: vega.snapshot.v1.StakingAccounts.accounts:type_name -> vega.snapshot.v1.StakingAccount
-	124, // 92: vega.snapshot.v1.MatchingBook.buy:type_name -> vega.Order
-	124, // 93: vega.snapshot.v1.MatchingBook.sell:type_name -> vega.Order
-	125, // 94: vega.snapshot.v1.NetParams.params:type_name -> vega.NetworkParameter
-	126, // 95: vega.snapshot.v1.PriceBound.trigger:type_name -> vega.PriceMonitoringTrigger
+	126, // 92: vega.snapshot.v1.MatchingBook.buy:type_name -> vega.Order
+	126, // 93: vega.snapshot.v1.MatchingBook.sell:type_name -> vega.Order
+	127, // 94: vega.snapshot.v1.NetParams.params:type_name -> vega.NetworkParameter
+	128, // 95: vega.snapshot.v1.PriceBound.trigger:type_name -> vega.PriceMonitoringTrigger
 	48,  // 96: vega.snapshot.v1.PriceRangeCache.bound:type_name -> vega.snapshot.v1.PriceBound
 	47,  // 97: vega.snapshot.v1.PriceRangeCache.range:type_name -> vega.snapshot.v1.PriceRange
 	44,  // 98: vega.snapshot.v1.PriceMonitor.fp_horizons:type_name -> vega.snapshot.v1.DecimalMap
@@ -9415,68 +9541,70 @@ var file_vega_snapshot_v1_snapshot_proto_depIdxs = []int32{
 	44,  // 101: vega.snapshot.v1.PriceMonitor.ref_price_cache:type_name -> vega.snapshot.v1.DecimalMap
 	50,  // 102: vega.snapshot.v1.PriceMonitor.prices_now:type_name -> vega.snapshot.v1.CurrentPrice
 	51,  // 103: vega.snapshot.v1.PriceMonitor.prices_past:type_name -> vega.snapshot.v1.PastPrice
-	127, // 104: vega.snapshot.v1.AuctionState.mode:type_name -> vega.Market.TradingMode
-	127, // 105: vega.snapshot.v1.AuctionState.default_mode:type_name -> vega.Market.TradingMode
-	128, // 106: vega.snapshot.v1.AuctionState.trigger:type_name -> vega.AuctionTrigger
-	129, // 107: vega.snapshot.v1.AuctionState.end:type_name -> vega.AuctionDuration
-	128, // 108: vega.snapshot.v1.AuctionState.extension:type_name -> vega.AuctionTrigger
+	129, // 104: vega.snapshot.v1.AuctionState.mode:type_name -> vega.Market.TradingMode
+	129, // 105: vega.snapshot.v1.AuctionState.default_mode:type_name -> vega.Market.TradingMode
+	130, // 106: vega.snapshot.v1.AuctionState.trigger:type_name -> vega.AuctionTrigger
+	131, // 107: vega.snapshot.v1.AuctionState.end:type_name -> vega.AuctionDuration
+	130, // 108: vega.snapshot.v1.AuctionState.extension:type_name -> vega.AuctionTrigger
 	54,  // 109: vega.snapshot.v1.EquityShare.lps:type_name -> vega.snapshot.v1.EquityShareLP
-	130, // 110: vega.snapshot.v1.Market.market:type_name -> vega.Market
+	132, // 110: vega.snapshot.v1.Market.market:type_name -> vega.Market
 	52,  // 111: vega.snapshot.v1.Market.price_monitor:type_name -> vega.snapshot.v1.PriceMonitor
 	53,  // 112: vega.snapshot.v1.Market.auction_state:type_name -> vega.snapshot.v1.AuctionState
-	124, // 113: vega.snapshot.v1.Market.pegged_orders:type_name -> vega.Order
-	124, // 114: vega.snapshot.v1.Market.expiring_orders:type_name -> vega.Order
+	59,  // 113: vega.snapshot.v1.Market.pegged_orders:type_name -> vega.snapshot.v1.PeggedOrders
+	126, // 114: vega.snapshot.v1.Market.expiring_orders:type_name -> vega.Order
 	55,  // 115: vega.snapshot.v1.Market.equity_share:type_name -> vega.snapshot.v1.EquityShare
 	56,  // 116: vega.snapshot.v1.Market.fee_splitter:type_name -> vega.snapshot.v1.FeeSplitter
-	57,  // 117: vega.snapshot.v1.ExecutionMarkets.markets:type_name -> vega.snapshot.v1.Market
-	59,  // 118: vega.snapshot.v1.MarketPositions.positions:type_name -> vega.snapshot.v1.Position
-	64,  // 119: vega.snapshot.v1.RewardsPendingPayouts.scheduled_rewards_payout:type_name -> vega.snapshot.v1.ScheduledRewardsPayout
-	65,  // 120: vega.snapshot.v1.ScheduledRewardsPayout.rewards_payout:type_name -> vega.snapshot.v1.RewardsPayout
-	66,  // 121: vega.snapshot.v1.RewardsPayout.reward_party_amount:type_name -> vega.snapshot.v1.RewardsPartyAmount
-	69,  // 122: vega.snapshot.v1.VoteSpamPolicy.party_to_vote:type_name -> vega.snapshot.v1.PartyProposalVoteCount
-	70,  // 123: vega.snapshot.v1.VoteSpamPolicy.banned_parties:type_name -> vega.snapshot.v1.BannedParty
-	71,  // 124: vega.snapshot.v1.VoteSpamPolicy.token_balance:type_name -> vega.snapshot.v1.PartyTokenBalance
-	72,  // 125: vega.snapshot.v1.VoteSpamPolicy.recent_blocks_reject_stats:type_name -> vega.snapshot.v1.BlockRejectStats
-	73,  // 126: vega.snapshot.v1.SimpleSpamPolicy.party_to_count:type_name -> vega.snapshot.v1.SpamPartyTransactionCount
-	70,  // 127: vega.snapshot.v1.SimpleSpamPolicy.banned_parties:type_name -> vega.snapshot.v1.BannedParty
-	71,  // 128: vega.snapshot.v1.SimpleSpamPolicy.token_balance:type_name -> vega.snapshot.v1.PartyTokenBalance
-	75,  // 129: vega.snapshot.v1.Notary.notary_sigs:type_name -> vega.snapshot.v1.NotarySigs
-	78,  // 130: vega.snapshot.v1.ReplayProtection.transactions:type_name -> vega.snapshot.v1.TransactionAtHeight
-	82,  // 131: vega.snapshot.v1.StakeVerifierDeposited.pending_deposited:type_name -> vega.snapshot.v1.StakeVerifierPending
-	82,  // 132: vega.snapshot.v1.StakeVerifierRemoved.pending_removed:type_name -> vega.snapshot.v1.StakeVerifierPending
-	86,  // 133: vega.snapshot.v1.Topology.validator_data:type_name -> vega.snapshot.v1.ValidatorState
-	83,  // 134: vega.snapshot.v1.Topology.pending_pub_key_rotations:type_name -> vega.snapshot.v1.PendingKeyRotation
-	89,  // 135: vega.snapshot.v1.Topology.validator_performance:type_name -> vega.snapshot.v1.ValidatorPerformance
-	84,  // 136: vega.snapshot.v1.Topology.pending_ethereum_key_rotations:type_name -> vega.snapshot.v1.PendingEthereumKeyRotation
-	131, // 137: vega.snapshot.v1.ValidatorState.validator_update:type_name -> vega.events.v1.ValidatorUpdate
-	87,  // 138: vega.snapshot.v1.ValidatorState.heartbeat_tracker:type_name -> vega.snapshot.v1.HeartbeatTracker
-	132, // 139: vega.snapshot.v1.ValidatorState.ranking_score:type_name -> vega.RankingScore
-	88,  // 140: vega.snapshot.v1.ValidatorPerformance.validator_perf_stats:type_name -> vega.snapshot.v1.PerformanceStats
-	93,  // 141: vega.snapshot.v1.LiquidityPartiesLiquidityOrders.party_orders:type_name -> vega.snapshot.v1.PartyOrders
-	124, // 142: vega.snapshot.v1.PartyOrders.orders:type_name -> vega.Order
-	93,  // 143: vega.snapshot.v1.LiquidityPartiesOrders.party_orders:type_name -> vega.snapshot.v1.PartyOrders
-	133, // 144: vega.snapshot.v1.LiquidityProvisions.liquidity_provisions:type_name -> vega.LiquidityProvision
-	99,  // 145: vega.snapshot.v1.FloatingPointConsensus.next_time_trigger:type_name -> vega.snapshot.v1.NextTimeTrigger
-	97,  // 146: vega.snapshot.v1.FloatingPointConsensus.state_variables:type_name -> vega.snapshot.v1.StateVarInternalState
-	98,  // 147: vega.snapshot.v1.StateVarInternalState.validators_results:type_name -> vega.snapshot.v1.FloatingPointValidatorResult
-	134, // 148: vega.snapshot.v1.FloatingPointValidatorResult.bundle:type_name -> vega.KeyValueBundle
-	135, // 149: vega.snapshot.v1.MarketTracker.market_activity:type_name -> vega.checkpoint.v1.MarketActivityTracker
-	136, // 150: vega.snapshot.v1.SignerEventsPerAddress.events:type_name -> vega.events.v1.ERC20MultiSigSignerEvent
-	101, // 151: vega.snapshot.v1.ERC20MultiSigTopologyVerified.events_per_address:type_name -> vega.snapshot.v1.SignerEventsPerAddress
-	137, // 152: vega.snapshot.v1.ERC20MultiSigTopologyVerified.threshold:type_name -> vega.events.v1.ERC20MultiSigThresholdSetEvent
-	136, // 153: vega.snapshot.v1.ERC20MultiSigTopologyPending.pending_signers:type_name -> vega.events.v1.ERC20MultiSigSignerEvent
-	137, // 154: vega.snapshot.v1.ERC20MultiSigTopologyPending.pending_threshold_set:type_name -> vega.events.v1.ERC20MultiSigThresholdSetEvent
-	106, // 155: vega.snapshot.v1.ProofOfWork.tx_at_height:type_name -> vega.snapshot.v1.TransactionsAtHeight
-	106, // 156: vega.snapshot.v1.ProofOfWork.tid_at_height:type_name -> vega.snapshot.v1.TransactionsAtHeight
-	70,  // 157: vega.snapshot.v1.ProofOfWork.banned:type_name -> vega.snapshot.v1.BannedParty
-	105, // 158: vega.snapshot.v1.ProofOfWork.pow_params:type_name -> vega.snapshot.v1.ProofOfWorkParams
-	138, // 159: vega.snapshot.v1.ProtocolUpgradeProposals.active_proposals:type_name -> vega.events.v1.ProtocolUpgradeEvent
-	108, // 160: vega.snapshot.v1.ProtocolUpgradeProposals.accepted_proposal:type_name -> vega.snapshot.v1.AcceptedProtocolUpgradeProposal
-	161, // [161:161] is the sub-list for method output_type
-	161, // [161:161] is the sub-list for method input_type
-	161, // [161:161] is the sub-list for extension type_name
-	161, // [161:161] is the sub-list for extension extendee
-	0,   // [0:161] is the sub-list for field type_name
+	58,  // 117: vega.snapshot.v1.PeggedOrders.order_parties:type_name -> vega.snapshot.v1.OrderPartyPair
+	126, // 118: vega.snapshot.v1.PeggedOrders.parked_orders:type_name -> vega.Order
+	57,  // 119: vega.snapshot.v1.ExecutionMarkets.markets:type_name -> vega.snapshot.v1.Market
+	61,  // 120: vega.snapshot.v1.MarketPositions.positions:type_name -> vega.snapshot.v1.Position
+	66,  // 121: vega.snapshot.v1.RewardsPendingPayouts.scheduled_rewards_payout:type_name -> vega.snapshot.v1.ScheduledRewardsPayout
+	67,  // 122: vega.snapshot.v1.ScheduledRewardsPayout.rewards_payout:type_name -> vega.snapshot.v1.RewardsPayout
+	68,  // 123: vega.snapshot.v1.RewardsPayout.reward_party_amount:type_name -> vega.snapshot.v1.RewardsPartyAmount
+	71,  // 124: vega.snapshot.v1.VoteSpamPolicy.party_to_vote:type_name -> vega.snapshot.v1.PartyProposalVoteCount
+	72,  // 125: vega.snapshot.v1.VoteSpamPolicy.banned_parties:type_name -> vega.snapshot.v1.BannedParty
+	73,  // 126: vega.snapshot.v1.VoteSpamPolicy.token_balance:type_name -> vega.snapshot.v1.PartyTokenBalance
+	74,  // 127: vega.snapshot.v1.VoteSpamPolicy.recent_blocks_reject_stats:type_name -> vega.snapshot.v1.BlockRejectStats
+	75,  // 128: vega.snapshot.v1.SimpleSpamPolicy.party_to_count:type_name -> vega.snapshot.v1.SpamPartyTransactionCount
+	72,  // 129: vega.snapshot.v1.SimpleSpamPolicy.banned_parties:type_name -> vega.snapshot.v1.BannedParty
+	73,  // 130: vega.snapshot.v1.SimpleSpamPolicy.token_balance:type_name -> vega.snapshot.v1.PartyTokenBalance
+	77,  // 131: vega.snapshot.v1.Notary.notary_sigs:type_name -> vega.snapshot.v1.NotarySigs
+	80,  // 132: vega.snapshot.v1.ReplayProtection.transactions:type_name -> vega.snapshot.v1.TransactionAtHeight
+	84,  // 133: vega.snapshot.v1.StakeVerifierDeposited.pending_deposited:type_name -> vega.snapshot.v1.StakeVerifierPending
+	84,  // 134: vega.snapshot.v1.StakeVerifierRemoved.pending_removed:type_name -> vega.snapshot.v1.StakeVerifierPending
+	88,  // 135: vega.snapshot.v1.Topology.validator_data:type_name -> vega.snapshot.v1.ValidatorState
+	85,  // 136: vega.snapshot.v1.Topology.pending_pub_key_rotations:type_name -> vega.snapshot.v1.PendingKeyRotation
+	91,  // 137: vega.snapshot.v1.Topology.validator_performance:type_name -> vega.snapshot.v1.ValidatorPerformance
+	86,  // 138: vega.snapshot.v1.Topology.pending_ethereum_key_rotations:type_name -> vega.snapshot.v1.PendingEthereumKeyRotation
+	133, // 139: vega.snapshot.v1.ValidatorState.validator_update:type_name -> vega.events.v1.ValidatorUpdate
+	89,  // 140: vega.snapshot.v1.ValidatorState.heartbeat_tracker:type_name -> vega.snapshot.v1.HeartbeatTracker
+	134, // 141: vega.snapshot.v1.ValidatorState.ranking_score:type_name -> vega.RankingScore
+	90,  // 142: vega.snapshot.v1.ValidatorPerformance.validator_perf_stats:type_name -> vega.snapshot.v1.PerformanceStats
+	95,  // 143: vega.snapshot.v1.LiquidityPartiesLiquidityOrders.party_orders:type_name -> vega.snapshot.v1.PartyOrders
+	126, // 144: vega.snapshot.v1.PartyOrders.orders:type_name -> vega.Order
+	95,  // 145: vega.snapshot.v1.LiquidityPartiesOrders.party_orders:type_name -> vega.snapshot.v1.PartyOrders
+	135, // 146: vega.snapshot.v1.LiquidityProvisions.liquidity_provisions:type_name -> vega.LiquidityProvision
+	101, // 147: vega.snapshot.v1.FloatingPointConsensus.next_time_trigger:type_name -> vega.snapshot.v1.NextTimeTrigger
+	99,  // 148: vega.snapshot.v1.FloatingPointConsensus.state_variables:type_name -> vega.snapshot.v1.StateVarInternalState
+	100, // 149: vega.snapshot.v1.StateVarInternalState.validators_results:type_name -> vega.snapshot.v1.FloatingPointValidatorResult
+	136, // 150: vega.snapshot.v1.FloatingPointValidatorResult.bundle:type_name -> vega.KeyValueBundle
+	137, // 151: vega.snapshot.v1.MarketTracker.market_activity:type_name -> vega.checkpoint.v1.MarketActivityTracker
+	138, // 152: vega.snapshot.v1.SignerEventsPerAddress.events:type_name -> vega.events.v1.ERC20MultiSigSignerEvent
+	103, // 153: vega.snapshot.v1.ERC20MultiSigTopologyVerified.events_per_address:type_name -> vega.snapshot.v1.SignerEventsPerAddress
+	139, // 154: vega.snapshot.v1.ERC20MultiSigTopologyVerified.threshold:type_name -> vega.events.v1.ERC20MultiSigThresholdSetEvent
+	138, // 155: vega.snapshot.v1.ERC20MultiSigTopologyPending.pending_signers:type_name -> vega.events.v1.ERC20MultiSigSignerEvent
+	139, // 156: vega.snapshot.v1.ERC20MultiSigTopologyPending.pending_threshold_set:type_name -> vega.events.v1.ERC20MultiSigThresholdSetEvent
+	108, // 157: vega.snapshot.v1.ProofOfWork.tx_at_height:type_name -> vega.snapshot.v1.TransactionsAtHeight
+	108, // 158: vega.snapshot.v1.ProofOfWork.tid_at_height:type_name -> vega.snapshot.v1.TransactionsAtHeight
+	72,  // 159: vega.snapshot.v1.ProofOfWork.banned:type_name -> vega.snapshot.v1.BannedParty
+	107, // 160: vega.snapshot.v1.ProofOfWork.pow_params:type_name -> vega.snapshot.v1.ProofOfWorkParams
+	140, // 161: vega.snapshot.v1.ProtocolUpgradeProposals.active_proposals:type_name -> vega.events.v1.ProtocolUpgradeEvent
+	110, // 162: vega.snapshot.v1.ProtocolUpgradeProposals.accepted_proposal:type_name -> vega.snapshot.v1.AcceptedProtocolUpgradeProposal
+	163, // [163:163] is the sub-list for method output_type
+	163, // [163:163] is the sub-list for method input_type
+	163, // [163:163] is the sub-list for extension type_name
+	163, // [163:163] is the sub-list for extension extendee
+	0,   // [0:163] is the sub-list for field type_name
 }
 
 func init() { file_vega_snapshot_v1_snapshot_proto_init() }
@@ -10170,7 +10298,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[57].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ExecutionMarkets); i {
+			switch v := v.(*OrderPartyPair); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10182,7 +10310,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[58].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Position); i {
+			switch v := v.(*PeggedOrders); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10194,7 +10322,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[59].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MarketPositions); i {
+			switch v := v.(*ExecutionMarkets); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10206,7 +10334,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[60].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AppState); i {
+			switch v := v.(*Position); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10218,7 +10346,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[61].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EpochState); i {
+			switch v := v.(*MarketPositions); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10230,7 +10358,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[62].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RewardsPendingPayouts); i {
+			switch v := v.(*AppState); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10242,7 +10370,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[63].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ScheduledRewardsPayout); i {
+			switch v := v.(*EpochState); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10254,7 +10382,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[64].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RewardsPayout); i {
+			switch v := v.(*RewardsPendingPayouts); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10266,7 +10394,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[65].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RewardsPartyAmount); i {
+			switch v := v.(*ScheduledRewardsPayout); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10278,7 +10406,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[66].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*LimitState); i {
+			switch v := v.(*RewardsPayout); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10290,7 +10418,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[67].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*VoteSpamPolicy); i {
+			switch v := v.(*RewardsPartyAmount); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10302,7 +10430,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[68].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PartyProposalVoteCount); i {
+			switch v := v.(*LimitState); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10314,7 +10442,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[69].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BannedParty); i {
+			switch v := v.(*VoteSpamPolicy); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10326,7 +10454,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[70].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PartyTokenBalance); i {
+			switch v := v.(*PartyProposalVoteCount); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10338,7 +10466,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[71].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BlockRejectStats); i {
+			switch v := v.(*BannedParty); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10350,7 +10478,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[72].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SpamPartyTransactionCount); i {
+			switch v := v.(*PartyTokenBalance); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10362,7 +10490,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[73].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SimpleSpamPolicy); i {
+			switch v := v.(*BlockRejectStats); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10374,7 +10502,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[74].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*NotarySigs); i {
+			switch v := v.(*SpamPartyTransactionCount); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10386,7 +10514,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[75].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Notary); i {
+			switch v := v.(*SimpleSpamPolicy); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10398,7 +10526,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[76].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ReplayProtection); i {
+			switch v := v.(*NotarySigs); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10410,7 +10538,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[77].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TransactionAtHeight); i {
+			switch v := v.(*Notary); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10422,7 +10550,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[78].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*FutureState); i {
+			switch v := v.(*ReplayProtection); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10434,7 +10562,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[79].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*StakeVerifierDeposited); i {
+			switch v := v.(*TransactionAtHeight); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10446,7 +10574,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[80].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*StakeVerifierRemoved); i {
+			switch v := v.(*FutureState); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10458,7 +10586,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[81].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*StakeVerifierPending); i {
+			switch v := v.(*StakeVerifierDeposited); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10470,7 +10598,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[82].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PendingKeyRotation); i {
+			switch v := v.(*StakeVerifierRemoved); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10482,7 +10610,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[83].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PendingEthereumKeyRotation); i {
+			switch v := v.(*StakeVerifierPending); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10494,7 +10622,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[84].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Topology); i {
+			switch v := v.(*PendingKeyRotation); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10506,7 +10634,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[85].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ValidatorState); i {
+			switch v := v.(*PendingEthereumKeyRotation); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10518,7 +10646,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[86].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*HeartbeatTracker); i {
+			switch v := v.(*Topology); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10530,7 +10658,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[87].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PerformanceStats); i {
+			switch v := v.(*ValidatorState); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10542,7 +10670,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[88].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ValidatorPerformance); i {
+			switch v := v.(*HeartbeatTracker); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10554,7 +10682,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[89].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*LiquidityParameters); i {
+			switch v := v.(*PerformanceStats); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10566,7 +10694,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[90].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*LiquidityPendingProvisions); i {
+			switch v := v.(*ValidatorPerformance); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10578,7 +10706,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[91].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*LiquidityPartiesLiquidityOrders); i {
+			switch v := v.(*LiquidityParameters); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10590,7 +10718,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[92].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PartyOrders); i {
+			switch v := v.(*LiquidityPendingProvisions); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10602,7 +10730,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[93].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*LiquidityPartiesOrders); i {
+			switch v := v.(*LiquidityPartiesLiquidityOrders); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10614,7 +10742,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[94].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*LiquidityProvisions); i {
+			switch v := v.(*PartyOrders); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10626,7 +10754,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[95].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*FloatingPointConsensus); i {
+			switch v := v.(*LiquidityPartiesOrders); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10638,7 +10766,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[96].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*StateVarInternalState); i {
+			switch v := v.(*LiquidityProvisions); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10650,7 +10778,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[97].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*FloatingPointValidatorResult); i {
+			switch v := v.(*FloatingPointConsensus); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10662,7 +10790,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[98].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*NextTimeTrigger); i {
+			switch v := v.(*StateVarInternalState); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10674,7 +10802,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[99].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MarketTracker); i {
+			switch v := v.(*FloatingPointValidatorResult); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10686,7 +10814,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[100].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SignerEventsPerAddress); i {
+			switch v := v.(*NextTimeTrigger); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10698,7 +10826,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[101].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ERC20MultiSigTopologyVerified); i {
+			switch v := v.(*MarketTracker); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10710,7 +10838,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[102].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ERC20MultiSigTopologyPending); i {
+			switch v := v.(*SignerEventsPerAddress); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10722,7 +10850,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[103].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ProofOfWork); i {
+			switch v := v.(*ERC20MultiSigTopologyVerified); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10734,7 +10862,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[104].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ProofOfWorkParams); i {
+			switch v := v.(*ERC20MultiSigTopologyPending); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10746,7 +10874,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[105].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TransactionsAtHeight); i {
+			switch v := v.(*ProofOfWork); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10758,7 +10886,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[106].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ProtocolUpgradeProposals); i {
+			switch v := v.(*ProofOfWorkParams); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10770,6 +10898,30 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[107].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*TransactionsAtHeight); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_snapshot_v1_snapshot_proto_msgTypes[108].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ProtocolUpgradeProposals); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_snapshot_v1_snapshot_proto_msgTypes[109].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*AcceptedProtocolUpgradeProposal); i {
 			case 0:
 				return &v.state
@@ -10842,7 +10994,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_vega_snapshot_v1_snapshot_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   108,
+			NumMessages:   110,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

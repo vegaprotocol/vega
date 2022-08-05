@@ -259,7 +259,7 @@ func createOracleSpecPaginationTestData(t *testing.T, ctx context.Context, bs *s
 		pubKey, err := hex.DecodeString(generateID())
 		require.NoError(t, err)
 		spec := entities.OracleSpec{
-			ID:         entities.NewSpecID(fmt.Sprintf("deadbeef%02d", i+1)),
+			ID:         entities.SpecID(fmt.Sprintf("deadbeef%02d", i+1)),
 			CreatedAt:  time.Now().Truncate(time.Microsecond),
 			UpdatedAt:  time.Now().Truncate(time.Microsecond),
 			PublicKeys: entities.PublicKeys{pubKey},
