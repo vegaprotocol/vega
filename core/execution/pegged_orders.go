@@ -258,6 +258,8 @@ func (p *PeggedOrders) Settled() []*types.Order {
 	})
 
 	p.parked = nil
+	p.isParked = map[string]struct{}{}
+	p.orders = map[string]string{}
 
 	return peggedOrders
 }
