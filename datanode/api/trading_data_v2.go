@@ -2070,7 +2070,7 @@ func (t *tradingDataServiceV2) estimateMargin(ctx context.Context, order *vega.O
 }
 
 func (t *tradingDataServiceV2) ListNetworkParameters(ctx context.Context, req *v2.ListNetworkParametersRequest) (*v2.ListNetworkParametersResponse, error) {
-	defer metrics.StartAPIRequestAndTimeGRPC("NetworkParametersV2")()
+	defer metrics.StartAPIRequestAndTimeGRPC("ListNetworkParametersV2")()
 	var pagination entities.CursorPagination
 	var err error
 	if req != nil {
@@ -2099,6 +2099,26 @@ func (t *tradingDataServiceV2) ListNetworkParameters(ctx context.Context, req *v
 	}
 
 	return resp, nil
+}
+
+func (t *tradingDataServiceV2) GetNetworkParameter(ctx context.Context, req *v2.GetNetworkParameterRequest) (*v2.GetNetworkParameterResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetNetworkParameter")()
+	nps, _, err := t.networkParameterService.GetAll(ctx, entities.CursorPagination{})
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	var np *vega.NetworkParameter
+	for _, v := range nps {
+		if req.Key == v.Key {
+			np = v.ToProto()
+			break
+		}
+	}
+
+	return &v2.GetNetworkParameterResponse{
+		NetworkParameter: np,
+	}, nil
 }
 
 func (t *tradingDataServiceV2) ListCheckpoints(ctx context.Context, req *v2.ListCheckpointsRequest) (*v2.ListCheckpointsResponse, error) {

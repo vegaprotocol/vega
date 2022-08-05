@@ -167,6 +167,9 @@ http:
     - selector: datanode.api.v1.TradingDataService.Transfers
       get: "/transfers"
 
-    # Transfers
+    # Info
     - selector: datanode.api.v2.TradingDataService.Info
       get: "/api/v2/info"
+
+    - selector: datanode.api.v2.TradingDataService.GetNetworkParameter
+      get: '/api/v2/network/parameters/{key}'

@@ -184,6 +184,7 @@ service TradingDataService {
     // -- Network Parameters --
     // Get the network parameters
     rpc ListNetworkParameters(ListNetworkParametersRequest) returns (ListNetworkParametersResponse);
+    rpc GetNetworkParameter(GetNetworkParameterRequest) returns (GetNetworkParameterResponse);
 
     // -- Checkpoints --
     rpc ListCheckpoints(ListCheckpointsRequest) returns (ListCheckpointsResponse);
@@ -1378,6 +1379,18 @@ message ListNetworkParametersRequest {
 // A response containing all of the vega network parameters
 message ListNetworkParametersResponse {
     NetworkParameterConnection network_parameters = 1;
+}
+
+// A message requesting a single network parameter
+message GetNetworkParameterRequest {
+  // The key identifying the network parameter
+  string key = 1;
+}
+
+// A reponse containing a network parameter
+message GetNetworkParameterResponse {
+  // The network parameter key and value
+  vega.NetworkParameter network_parameter = 1;
 }
 
 message NetworkParameterEdge {

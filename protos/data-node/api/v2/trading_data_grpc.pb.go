@@ -155,6 +155,7 @@ type TradingDataServiceClient interface {
 	// -- Network Parameters --
 	// Get the network parameters
 	ListNetworkParameters(ctx context.Context, in *ListNetworkParametersRequest, opts ...grpc.CallOption) (*ListNetworkParametersResponse, error)
+	GetNetworkParameter(ctx context.Context, in *GetNetworkParameterRequest, opts ...grpc.CallOption) (*GetNetworkParameterResponse, error)
 	// -- Checkpoints --
 	ListCheckpoints(ctx context.Context, in *ListCheckpointsRequest, opts ...grpc.CallOption) (*ListCheckpointsResponse, error)
 	// -- Stake --
@@ -1008,6 +1009,15 @@ func (c *tradingDataServiceClient) ListNetworkParameters(ctx context.Context, in
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) GetNetworkParameter(ctx context.Context, in *GetNetworkParameterRequest, opts ...grpc.CallOption) (*GetNetworkParameterResponse, error) {
+	out := new(GetNetworkParameterResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetNetworkParameter", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) ListCheckpoints(ctx context.Context, in *ListCheckpointsRequest, opts ...grpc.CallOption) (*ListCheckpointsResponse, error) {
 	out := new(ListCheckpointsResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListCheckpoints", in, out, opts...)
@@ -1235,6 +1245,7 @@ type TradingDataServiceServer interface {
 	// -- Network Parameters --
 	// Get the network parameters
 	ListNetworkParameters(context.Context, *ListNetworkParametersRequest) (*ListNetworkParametersResponse, error)
+	GetNetworkParameter(context.Context, *GetNetworkParameterRequest) (*GetNetworkParameterResponse, error)
 	// -- Checkpoints --
 	ListCheckpoints(context.Context, *ListCheckpointsRequest) (*ListCheckpointsResponse, error)
 	// -- Stake --
@@ -1431,6 +1442,9 @@ func (UnimplementedTradingDataServiceServer) EstimateMargin(context.Context, *Es
 }
 func (UnimplementedTradingDataServiceServer) ListNetworkParameters(context.Context, *ListNetworkParametersRequest) (*ListNetworkParametersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListNetworkParameters not implemented")
+}
+func (UnimplementedTradingDataServiceServer) GetNetworkParameter(context.Context, *GetNetworkParameterRequest) (*GetNetworkParameterResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetNetworkParameter not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ListCheckpoints(context.Context, *ListCheckpointsRequest) (*ListCheckpointsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListCheckpoints not implemented")
@@ -2561,6 +2575,24 @@ func _TradingDataService_ListNetworkParameters_Handler(srv interface{}, ctx cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_GetNetworkParameter_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetNetworkParameterRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).GetNetworkParameter(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/GetNetworkParameter",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).GetNetworkParameter(ctx, req.(*GetNetworkParameterRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_ListCheckpoints_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListCheckpointsRequest)
 	if err := dec(in); err != nil {
@@ -2852,6 +2884,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListNetworkParameters",
 			Handler:    _TradingDataService_ListNetworkParameters_Handler,
+		},
+		{
+			MethodName: "GetNetworkParameter",
+			Handler:    _TradingDataService_GetNetworkParameter_Handler,
 		},
 		{
 			MethodName: "ListCheckpoints",
