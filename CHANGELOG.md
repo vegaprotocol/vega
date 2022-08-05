@@ -30,6 +30,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5636](https://github.com/vegaprotocol/vega/issues/5636) - Assure no false positives in cucumber steps
 - [5011](https://github.com/vegaprotocol/vega/issues/5011) - Import the `protos` repo in the vega repo
 - [5776](https://github.com/vegaprotocol/vega/issues/5776) - Add endpoint to get a single network parameter
+- [5713](https://github.com/vegaprotocol/vega/issues/5713) - Format `graphql` schema
 
 ### 🐛 Fixes
 - [5571](https://github.com/vegaprotocol/vega/issues/5571) - Restore pending assets status correctly after snapshot restore

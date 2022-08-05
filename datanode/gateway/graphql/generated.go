@@ -8067,22 +8067,22 @@ type Subscription {
   ): MarketData! @deprecated(reason: "Use marketsData instead")
 
   "Subscribe to the market depths update"
-    marketsDepth(
-      "ID of the market you want to receive market depth updates for"
-      marketIds: [ID!]!
-    ): [ObservableMarketDepth!]!
+  marketsDepth(
+    "ID of the market you want to receive market depth updates for"
+    marketIds: [ID!]!
+  ): [ObservableMarketDepth!]!
 
-    "Subscribe to price level market depth updates"
-    marketsDepthUpdate(
-      "ID of the market you want to receive market depth price level updates for"
-      marketIds: [ID!]!
-    ): [ObservableMarketDepthUpdate!]!
+  "Subscribe to price level market depth updates"
+  marketsDepthUpdate(
+    "ID of the market you want to receive market depth price level updates for"
+    marketIds: [ID!]!
+  ): [ObservableMarketDepthUpdate!]!
 
   "Subscribe to the mark price changes"
-    marketsData(
-      "ID of the market for which you want to subscribe to the market data changes"
-      marketIds: [ID!]!
-    ): [ObservableMarketData!]!
+  marketsData(
+    "ID of the market for which you want to subscribe to the market data changes"
+    marketIds: [ID!]!
+  ): [ObservableMarketData!]!
 
   "Subscribe to the margin changes"
   margins(
@@ -8274,8 +8274,6 @@ type ObservableMarketData {
   liquidityProviderFeeShare: [ObservableLiquidityProviderFeeShare!]
 }
 
-
-
 "timestamps for when the market changes state"
 type MarketTimestamps {
   "Time when the market is first proposed"
@@ -8307,8 +8305,6 @@ type ObservableLiquidityProviderFeeShare {
   "The average entry valuation of the liquidity provider for the market"
   averageEntryValuation: String!
 }
-
-
 
 "The liquidity commitments for this market"
 type MarketDataCommitments {
@@ -8361,11 +8357,8 @@ type Query {
   lastBlockHeight: String!
 
   "All registered oracle specs"
-  oracleSpecs(
-    "Pagination"
-    pagination: OffsetPagination
-  ): [OracleSpec!] @deprecated(reason: "Use oracleSpecsConnection instead")
-
+  oracleSpecs("Pagination" pagination: OffsetPagination): [OracleSpec!]
+    @deprecated(reason: "Use oracleSpecsConnection instead")
 
   "All registered oracle specs"
   oracleSpecsConnection(
@@ -8392,10 +8385,8 @@ type Query {
   ): OracleDataConnection!
 
   "All registered oracle specs"
-  oracleData(
-    "Pagination"
-    pagination: OffsetPagination
-  ): [OracleData!] @deprecated(reason: "Use oracleDataConnection instead")
+  oracleData("Pagination" pagination: OffsetPagination): [OracleData!]
+    @deprecated(reason: "Use oracleDataConnection instead")
 
   "All registered oracle specs"
   oracleDataConnection(
@@ -8587,9 +8578,9 @@ type Query {
   statistics: Statistics!
 
   historicBalances(
-    filter: AccountFilter,
-    groupBy: [AccountField])
-  : [AggregatedBalance!]!
+    filter: AccountFilter
+    groupBy: [AccountField]
+  ): [AggregatedBalance!]!
 
   "Current network limits"
   networkLimits: NetworkLimits
@@ -8614,8 +8605,9 @@ type Query {
     "Pagination first element"
     first: Int
     "Pagination last element"
-    last: Int): [MarketData] @deprecated(reason: "Use getMarketDataHistoryConnectionByID instead")
-
+    last: Int
+  ): [MarketData]
+    @deprecated(reason: "Use getMarketDataHistoryConnectionByID instead")
 
   "get market data history for a specific market. If no dates are given, the latest snapshot will be returned. If only the start date is provided all history from the given date will be provided, and if only the end date is provided, all history from the start up to and including the end date will be provided. Pagination is provided using a cursor based pagination model"
   getMarketDataHistoryConnectionByID(
@@ -8633,7 +8625,8 @@ type Query {
     """
     end: Int
     "Optional Pagination"
-    pagination: Pagination): MarketDataConnection!
+    pagination: Pagination
+  ): MarketDataConnection!
 }
 
 enum TransferStatus {
@@ -8708,7 +8701,6 @@ type RecurringTransfer {
 }
 
 enum DispatchMetric {
-
   MarketTradingValue
 
   MakerFeesReceived
@@ -8787,7 +8779,8 @@ type Epoch {
     "Pagination first element"
     first: Int
     "Pagination last element"
-    last: Int): [Delegation!]! @deprecated(reason: "Use delegationsConnection instead")
+    last: Int
+  ): [Delegation!]! @deprecated(reason: "Use delegationsConnection instead")
 
   delegationsConnection(
     # Optional party ID to filter on
@@ -8795,7 +8788,7 @@ type Epoch {
     # Optional node ID to filter on
     nodeId: String
     "Pagination information"
-   pagination: Pagination
+    pagination: Pagination
   ): DelegationsConnection!
 }
 
@@ -8883,16 +8876,18 @@ type Node {
   status: NodeStatus!
 
   # All delegation for a node by a given party if specified, or all delegations.
-  delegations(partyId: String,
+  delegations(
+    partyId: String
     "Pagination skip"
     skip: Int
     "Pagination first element"
     first: Int
     "Pagination last element"
-    last: Int): [Delegation!] @deprecated(reason: "Use delegationsConnection instead")
+    last: Int
+  ): [Delegation!] @deprecated(reason: "Use delegationsConnection instead")
 
   delegationsConnection(
-    partyId: String,
+    partyId: String
     pagination: Pagination
   ): DelegationsConnection!
 
@@ -9352,7 +9347,7 @@ type OracleData {
   with a matching oracle spec.
   It has no value when the oracle date does not match any oracle spec.
   """
-  broadcastAt:  String!
+  broadcastAt: String!
 }
 
 "A property associates a name to a value"
@@ -9593,7 +9588,10 @@ type Market {
     first: Int
     "Pagination last element"
     last: Int
-  ): [Trade!] @deprecated(reason: "Use tradesConnection for cursor based pagination instead")
+  ): [Trade!]
+    @deprecated(
+      reason: "Use tradesConnection for cursor based pagination instead"
+    )
 
   tradesConnection(pagination: Pagination): TradeConnection!
 
@@ -9630,14 +9628,15 @@ type Market {
   liquidityProvisions(
     "An optional party ID"
     party: String
-  ): [LiquidityProvision!] @deprecated(reason: "Use liquidityProvisionsConnection instead")
+  ): [LiquidityProvision!]
+    @deprecated(reason: "Use liquidityProvisionsConnection instead")
 
   "The list of the liquidity provision commitments for this market"
-   liquidityProvisionsConnection(
-     "An optional party ID"
-     party: String
-     "Pagination information"
-     pagination: Pagination
+  liquidityProvisionsConnection(
+    "An optional party ID"
+    party: String
+    "Pagination information"
+    pagination: Pagination
   ): LiquidityProvisionsConnection!
 
   "timestamps for state changes in the market"
@@ -9742,7 +9741,6 @@ type ObservableMarketDepthUpdate {
   previousSequenceNumber: String!
 }
 
-
 "Represents a price on either the buy or sell side and all the orders at that price"
 type PriceLevel {
   "The price of all the orders at this level (uint64)"
@@ -9813,7 +9811,10 @@ type Party {
     first: Int
     "Pagination last element"
     last: Int
-  ): [Trade!] @deprecated(reason: "Use tradesConnection for cursor based pagination instead")
+  ): [Trade!]
+    @deprecated(
+      reason: "Use tradesConnection for cursor based pagination instead"
+    )
 
   tradesConnection(marketId: ID, pagination: Pagination): TradeConnection!
 
@@ -9828,7 +9829,8 @@ type Party {
   ): [Account!]
 
   "Trading positions relating to a party"
-  positions: [Position!] @deprecated(reason: "Use the 'positionsConnection' field instead")
+  positions: [Position!]
+    @deprecated(reason: "Use the 'positionsConnection' field instead")
 
   "Trading positions relating to a party"
   positionsConnection(market: ID, pagination: Pagination): PositionConnection!
@@ -9867,7 +9869,8 @@ type Party {
   votesConnection(pagination: Pagination): ProposalVoteConnection!
 
   "The list of all withdrawals initiated by the party"
-  withdrawals: [Withdrawal!] @deprecated(reason: "Use withdrawalsConnection instead")
+  withdrawals: [Withdrawal!]
+    @deprecated(reason: "Use withdrawalsConnection instead")
 
   "The list of all withdrawals initiated by the party"
   withdrawalsConnection(pagination: Pagination): WithdrawalsConnection!
@@ -9884,17 +9887,18 @@ type Party {
     market: String
     "An optional reference"
     reference: String
-  ): [LiquidityProvision!] @deprecated(reason: "Use liquidityProvisionsConnection instead")
+  ): [LiquidityProvision!]
+    @deprecated(reason: "Use liquidityProvisionsConnection instead")
 
-   "The list of the liquidity provision commitment for this party"
-     liquidityProvisionsConnection(
-       "An optional market ID"
-       market: String
-       "An optional reference"
-       reference: String
-       "Pagination information"
-       pagination: Pagination
-    ): LiquidityProvisionsConnection!
+  "The list of the liquidity provision commitment for this party"
+  liquidityProvisionsConnection(
+    "An optional market ID"
+    market: String
+    "An optional reference"
+    reference: String
+    "Pagination information"
+    pagination: Pagination
+  ): LiquidityProvisionsConnection!
 
   # All delegations for a party to a given node if node is specified, or all delegations if not
   delegations(
@@ -9905,7 +9909,8 @@ type Party {
     "Pagination first element"
     first: Int
     "Pagination last element"
-    last: Int): [Delegation!] @deprecated(reason: "Use delegationsConnection instead")
+    last: Int
+  ): [Delegation!] @deprecated(reason: "Use delegationsConnection instead")
 
   delegationsConnection(
     "Optional node"
@@ -9937,13 +9942,11 @@ type Party {
   ): RewardsConnection
 
   "Return net reward information"
-  rewardSummaries(
-    "An asset (optional)"
-    asset: String
-  ): [RewardSummary]
+  rewardSummaries("An asset (optional)" asset: String): [RewardSummary]
 
   "return reward information"
-  rewardDetails: [RewardPerAssetDetail] @deprecated(reason: "Use rewardSummaries or rewards instead.")
+  rewardDetails: [RewardPerAssetDetail]
+    @deprecated(reason: "Use rewardSummaries or rewards instead.")
 }
 
 """
@@ -10807,7 +10810,9 @@ type UpdateFutureProduct {
   oracleSpecBinding: OracleSpecToFutureBinding!
 }
 
-union UpdateMarketRiskParameters = UpdateMarketSimpleRiskModel | UpdateMarketLogNormalRiskModel
+union UpdateMarketRiskParameters =
+    UpdateMarketSimpleRiskModel
+  | UpdateMarketLogNormalRiskModel
 
 type UpdateMarketSimpleRiskModel {
   simple: SimpleRiskModelParams
@@ -10861,7 +10866,7 @@ type NetworkParameter {
 }
 
 union ProposalChange =
-  NewMarket
+    NewMarket
   | UpdateMarket
   | UpdateNetworkParameter
   | NewAsset
@@ -11211,7 +11216,7 @@ enum BusEventType {
 
 "union type for wrapped events in stream PROPOSAL is mapped to governance data, something to keep in mind"
 union Event =
-  TimeUpdate
+    TimeUpdate
   | MarketEvent
   | TransferResponses
   | PositionResolution
@@ -11349,13 +11354,14 @@ type RewardSummary {
   "Total quantity of rewards awarded in this asset"
   amount: String!
   "List of individual reward payouts, ordered by epoch"
-  rewards (
+  rewards(
     "Pagination skip"
     skip: Int
     "Pagination first element"
     first: Int
     "Pagination last element"
-    last: Int): [Reward] @deprecated(reason: "Use rewardsConnection instead")
+    last: Int
+  ): [Reward] @deprecated(reason: "Use rewardsConnection instead")
   "List of individual reward payouts, ordered by epoch"
   rewardsConnection(
     "An optional asset"
@@ -11640,10 +11646,10 @@ type AssetEdge {
 }
 
 type AssetsConnection {
-    "The assets"
-    edges: [AssetEdge]
-    "The pagination information"
-    pageInfo: PageInfo
+  "The assets"
+  edges: [AssetEdge]
+  "The pagination information"
+  pageInfo: PageInfo
 }
 
 type OracleSpecEdge {
@@ -11654,10 +11660,10 @@ type OracleSpecEdge {
 }
 
 type OracleSpecsConnection {
-    "The oracle specs"
-    edges: [OracleSpecEdge]
-    "The pagination information"
-    pageInfo: PageInfo!
+  "The oracle specs"
+  edges: [OracleSpecEdge]
+  "The pagination information"
+  pageInfo: PageInfo!
 }
 
 type OracleDataEdge {
@@ -11668,10 +11674,10 @@ type OracleDataEdge {
 }
 
 type OracleDataConnection {
-    "The oracle data"
-    edges: [OracleDataEdge]
-    "The pagination information"
-    pageInfo: PageInfo!
+  "The oracle data"
+  edges: [OracleDataEdge]
+  "The pagination information"
+  pageInfo: PageInfo!
 }
 
 type LiquidityProvisionsEdge {
@@ -11680,8 +11686,8 @@ type LiquidityProvisionsEdge {
 }
 
 type LiquidityProvisionsConnection {
-    edges: [LiquidityProvisionsEdge]
-    pageInfo: PageInfo!
+  edges: [LiquidityProvisionsEdge]
+  pageInfo: PageInfo!
 }
 
 type TransferEdge {
@@ -11690,8 +11696,8 @@ type TransferEdge {
 }
 
 type TransferConnection {
-    edges: [TransferEdge]
-    pageInfo: PageInfo!
+  edges: [TransferEdge]
+  pageInfo: PageInfo!
 }
 
 enum TransferDirection {
@@ -11708,10 +11714,10 @@ type ProposalEdge {
 }
 
 type ProposalsConnection {
-    "List of proposals available for the connection"
-    edges: [ProposalEdge]
-    "Page information for the connection"
-    pageInfo: PageInfo!
+  "List of proposals available for the connection"
+  edges: [ProposalEdge]
+  "Page information for the connection"
+  pageInfo: PageInfo!
 }
 type DelegationEdge {
   "The delegation information"
