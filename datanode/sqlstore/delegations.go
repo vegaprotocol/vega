@@ -71,12 +71,12 @@ func (ds *Delegations) Get(ctx context.Context,
 	conditions := []string{}
 
 	if partyIDHex != nil {
-		partyID := entities.NewPartyID(*partyIDHex)
+		partyID := entities.PartyID(*partyIDHex)
 		conditions = append(conditions, fmt.Sprintf("party_id=%s", nextBindVar(&args, partyID)))
 	}
 
 	if nodeIDHex != nil {
-		nodeID := entities.NewNodeID(*nodeIDHex)
+		nodeID := entities.NodeID(*nodeIDHex)
 		conditions = append(conditions, fmt.Sprintf("node_id=%s", nextBindVar(&args, nodeID)))
 	}
 

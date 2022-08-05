@@ -72,7 +72,7 @@ func (ps *Proposals) GetByID(ctx context.Context, id string) (entities.Proposal,
 	defer metrics.StartSQLQuery("Proposals", "GetByID")()
 	var p entities.Proposal
 	query := `SELECT * FROM proposals_current WHERE id=$1`
-	err := pgxscan.Get(ctx, ps.Connection, &p, query, entities.NewProposalID(id))
+	err := pgxscan.Get(ctx, ps.Connection, &p, query, entities.ProposalID(id))
 	if pgxscan.NotFound(err) {
 		return p, fmt.Errorf("'%v': %w", id, ErrProposalNotFound)
 	}
@@ -120,7 +120,7 @@ func getOpenStateProposalsQuery(inState *entities.ProposalState, conditions []st
 	if pc.State == entities.ProposalStateOpen {
 		cursorParams = append(cursorParams,
 			NewCursorQueryParameter("vega_time", sorting, cmp, pc.VegaTime),
-			NewCursorQueryParameter("id", sorting, cmp, entities.NewProposalID(pc.ID)),
+			NewCursorQueryParameter("id", sorting, cmp, entities.ProposalID(pc.ID)),
 		)
 	} else {
 		cursorParams = append(cursorParams,
@@ -226,7 +226,7 @@ func (ps *Proposals) Get(ctx context.Context,
 	var conditions []string
 
 	if partyIDStr != nil {
-		partyID := entities.NewPartyID(*partyIDStr)
+		partyID := entities.PartyID(*partyIDStr)
 		conditions = append(conditions, fmt.Sprintf("party_id=%s", nextBindVar(&args, partyID)))
 	}
 

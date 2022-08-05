@@ -41,9 +41,9 @@ func (a Account) String() string {
 
 func AccountFromProto(va *vega.Account) (Account, error) {
 	account := Account{
-		PartyID:  NewPartyID(va.Owner),
-		AssetID:  NewAssetID(va.Asset),
-		MarketID: NewMarketID(va.MarketId),
+		PartyID:  PartyID(va.Owner),
+		AssetID:  AssetID(va.Asset),
+		MarketID: MarketID(va.MarketId),
 		Type:     va.Type,
 	}
 	return account, nil
@@ -62,12 +62,12 @@ func AccountFromAccountID(id string) (Account, error) {
 	// Market ID is first, '!' indicates no market
 	if id[offset] == noMarketByte {
 		offset++
-		a.MarketID = NewMarketID(noMarketStr)
+		a.MarketID = MarketID(noMarketStr)
 	} else {
 		if len(id) < 64 {
 			return Account{}, fmt.Errorf("account id too short: %v", id)
 		}
-		a.MarketID = NewMarketID(id[0:64])
+		a.MarketID = MarketID(id[0:64])
 		if err := a.MarketID.Error(); err != nil {
 			return Account{}, fmt.Errorf("account id: %w", err)
 		}
@@ -76,14 +76,14 @@ func AccountFromAccountID(id string) (Account, error) {
 
 	// Party ID is next, '*' indicates system owner
 	if id[offset] == systemOwnerByte {
-		a.PartyID = NewPartyID(systemOwnerStr)
+		a.PartyID = PartyID(systemOwnerStr)
 		offset++
 	} else {
 		if len(id) < offset+64 {
 			return Account{}, fmt.Errorf("party id to short %v", id)
 		}
 
-		a.PartyID = NewPartyID(id[offset : offset+64])
+		a.PartyID = PartyID(id[offset : offset+64])
 		if err := a.PartyID.Error(); err != nil {
 			return Account{}, fmt.Errorf("party id: %w", err)
 		}
@@ -95,7 +95,7 @@ func AccountFromAccountID(id string) (Account, error) {
 		return Account{}, fmt.Errorf("account id too short %v", id)
 	}
 
-	a.AssetID = NewAssetID(id[offset : len(id)-1])
+	a.AssetID = AssetID(id[offset : len(id)-1])
 	if err := a.AssetID.Error(); err != nil {
 		return Account{}, fmt.Errorf("party id: %w", err)
 	}

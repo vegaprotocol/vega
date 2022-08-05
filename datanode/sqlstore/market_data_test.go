@@ -99,7 +99,7 @@ func shouldInsertAValidMarketDataRecord(t *testing.T) {
 	block := addTestBlock(t, bs)
 
 	err = md.Add(&entities.MarketData{
-		Market:            entities.NewMarketID("deadbeef"),
+		Market:            entities.MarketID("deadbeef"),
 		MarketTradingMode: "TRADING_MODE_MONITORING_AUCTION",
 		AuctionTrigger:    "AUCTION_TRIGGER_LIQUIDITY",
 		ExtensionTrigger:  "AUCTION_TRIGGER_UNSPECIFIED",
@@ -133,7 +133,7 @@ func getLatestMarketData(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
-	marketID := entities.NewMarketID("8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8")
+	marketID := entities.MarketID("8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8")
 
 	want := entities.MarketData{
 		MarkPrice:             mustParseDecimal(t, "999992587"),
@@ -845,7 +845,7 @@ func csvToMarketData(t *testing.T, line []string, seqNum int) *entities.MarketDa
 		BestStaticOfferVolume:      mustParseInt64(t, line[csvColumnBestStaticOfferVolume]),
 		MidPrice:                   mustParseDecimal(t, line[csvColumnMidPrice]),
 		StaticMidPrice:             mustParseDecimal(t, line[csvColumnStaticMidPrice]),
-		Market:                     entities.NewMarketID(line[csvColumnMarket]),
+		Market:                     entities.MarketID(line[csvColumnMarket]),
 		OpenInterest:               mustParseInt64(t, line[csvColumnOpenInterest]),
 		AuctionEnd:                 mustParseInt64(t, line[csvColumnAuctionEnd]),
 		AuctionStart:               mustParseInt64(t, line[csvColumnAuctionStart]),

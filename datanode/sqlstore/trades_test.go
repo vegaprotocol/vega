@@ -336,122 +336,122 @@ func populateTestTrades(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, 
 	trades := []entities.Trade{
 		{
 			SeqNum:    1,
-			ID:        entities.NewTradeID("02a16077"),
-			MarketID:  entities.NewMarketID("deadbeef"),
+			ID:        entities.TradeID("02a16077"),
+			MarketID:  entities.MarketID("deadbeef"),
 			Price:     decimal.NewFromFloat(1.0),
 			Size:      1,
-			Buyer:     entities.NewPartyID("dabbad00"),
-			Seller:    entities.NewPartyID("facefeed"),
-			BuyOrder:  entities.NewOrderID("02a16077"),
-			SellOrder: entities.NewOrderID("fb1528a5"),
+			Buyer:     entities.PartyID("dabbad00"),
+			Seller:    entities.PartyID("facefeed"),
+			BuyOrder:  entities.OrderID("02a16077"),
+			SellOrder: entities.OrderID("fb1528a5"),
 			Type:      entities.TradeTypeDefault,
 		},
 		{
 			SeqNum:    2,
-			ID:        entities.NewTradeID("44eea1bc"),
-			MarketID:  entities.NewMarketID("deadbeef"),
+			ID:        entities.TradeID("44eea1bc"),
+			MarketID:  entities.MarketID("deadbeef"),
 			Price:     decimal.NewFromFloat(2.0),
 			Size:      2,
-			Buyer:     entities.NewPartyID("dabbad00"),
-			Seller:    entities.NewPartyID("facefeed"),
-			BuyOrder:  entities.NewOrderID("44eea1bc"),
-			SellOrder: entities.NewOrderID("da8d1803"),
+			Buyer:     entities.PartyID("dabbad00"),
+			Seller:    entities.PartyID("facefeed"),
+			BuyOrder:  entities.OrderID("44eea1bc"),
+			SellOrder: entities.OrderID("da8d1803"),
 			Type:      entities.TradeTypeDefault,
 		},
 		{
 			SeqNum:    3,
-			ID:        entities.NewTradeID("65be62cd"),
-			MarketID:  entities.NewMarketID("deadbeef"),
+			ID:        entities.TradeID("65be62cd"),
+			MarketID:  entities.MarketID("deadbeef"),
 			Price:     decimal.NewFromFloat(3.0),
 			Size:      3,
-			Buyer:     entities.NewPartyID("dabbad00"),
-			Seller:    entities.NewPartyID("facefeed"),
-			BuyOrder:  entities.NewOrderID("65be62cd"),
-			SellOrder: entities.NewOrderID("c8744329"),
+			Buyer:     entities.PartyID("dabbad00"),
+			Seller:    entities.PartyID("facefeed"),
+			BuyOrder:  entities.OrderID("65be62cd"),
+			SellOrder: entities.OrderID("c8744329"),
 			Type:      entities.TradeTypeDefault,
 		},
 		{
 			SeqNum:    4,
-			ID:        entities.NewTradeID("7a797e0e"),
-			MarketID:  entities.NewMarketID("deadbeef"),
+			ID:        entities.TradeID("7a797e0e"),
+			MarketID:  entities.MarketID("deadbeef"),
 			Price:     decimal.NewFromFloat(4.0),
 			Size:      4,
-			Buyer:     entities.NewPartyID("dabbad00"),
-			Seller:    entities.NewPartyID("facefeed"),
-			BuyOrder:  entities.NewOrderID("7a797e0e"),
-			SellOrder: entities.NewOrderID("c612300d"),
+			Buyer:     entities.PartyID("dabbad00"),
+			Seller:    entities.PartyID("facefeed"),
+			BuyOrder:  entities.OrderID("7a797e0e"),
+			SellOrder: entities.OrderID("c612300d"),
 			Type:      entities.TradeTypeDefault,
 		},
 		{
 			SeqNum:    5,
-			ID:        entities.NewTradeID("7bb2356e"),
-			MarketID:  entities.NewMarketID("cafed00d"),
+			ID:        entities.TradeID("7bb2356e"),
+			MarketID:  entities.MarketID("cafed00d"),
 			Price:     decimal.NewFromFloat(5.0),
 			Size:      5,
-			Buyer:     entities.NewPartyID("dabbad00"),
-			Seller:    entities.NewPartyID("facefeed"),
-			BuyOrder:  entities.NewOrderID("7bb2356e"),
-			SellOrder: entities.NewOrderID("b7c84b8e"),
+			Buyer:     entities.PartyID("dabbad00"),
+			Seller:    entities.PartyID("facefeed"),
+			BuyOrder:  entities.OrderID("7bb2356e"),
+			SellOrder: entities.OrderID("b7c84b8e"),
 			Type:      entities.TradeTypeDefault,
 		},
 		{
 			SeqNum:    6,
-			ID:        entities.NewTradeID("b7c84b8e"),
-			MarketID:  entities.NewMarketID("cafed00d"),
+			ID:        entities.TradeID("b7c84b8e"),
+			MarketID:  entities.MarketID("cafed00d"),
 			Price:     decimal.NewFromFloat(6.0),
 			Size:      6,
-			Buyer:     entities.NewPartyID("d0d0caca"),
-			Seller:    entities.NewPartyID("decafbad"),
-			BuyOrder:  entities.NewOrderID("b7c84b8e"),
-			SellOrder: entities.NewOrderID("7bb2356e"),
+			Buyer:     entities.PartyID("d0d0caca"),
+			Seller:    entities.PartyID("decafbad"),
+			BuyOrder:  entities.OrderID("b7c84b8e"),
+			SellOrder: entities.OrderID("7bb2356e"),
 			Type:      entities.TradeTypeDefault,
 		},
 		{
 			SeqNum:    7,
-			ID:        entities.NewTradeID("c612300d"),
-			MarketID:  entities.NewMarketID("cafed00d"),
+			ID:        entities.TradeID("c612300d"),
+			MarketID:  entities.MarketID("cafed00d"),
 			Price:     decimal.NewFromFloat(7.0),
 			Size:      7,
-			Buyer:     entities.NewPartyID("d0d0caca"),
-			Seller:    entities.NewPartyID("decafbad"),
-			BuyOrder:  entities.NewOrderID("c612300d"),
-			SellOrder: entities.NewOrderID("7a797e0e"),
+			Buyer:     entities.PartyID("d0d0caca"),
+			Seller:    entities.PartyID("decafbad"),
+			BuyOrder:  entities.OrderID("c612300d"),
+			SellOrder: entities.OrderID("7a797e0e"),
 			Type:      entities.TradeTypeDefault,
 		},
 		{
 			SeqNum:    8,
-			ID:        entities.NewTradeID("c8744329"),
-			MarketID:  entities.NewMarketID("cafed00d"),
+			ID:        entities.TradeID("c8744329"),
+			MarketID:  entities.MarketID("cafed00d"),
 			Price:     decimal.NewFromFloat(8.0),
 			Size:      8,
-			Buyer:     entities.NewPartyID("d0d0caca"),
-			Seller:    entities.NewPartyID("decafbad"),
-			BuyOrder:  entities.NewOrderID("c8744329"),
-			SellOrder: entities.NewOrderID("65be62cd"),
+			Buyer:     entities.PartyID("d0d0caca"),
+			Seller:    entities.PartyID("decafbad"),
+			BuyOrder:  entities.OrderID("c8744329"),
+			SellOrder: entities.OrderID("65be62cd"),
 			Type:      entities.TradeTypeDefault,
 		},
 		{
 			SeqNum:    9,
-			ID:        entities.NewTradeID("da8d1803"),
-			MarketID:  entities.NewMarketID("deadbaad"),
+			ID:        entities.TradeID("da8d1803"),
+			MarketID:  entities.MarketID("deadbaad"),
 			Price:     decimal.NewFromFloat(9.0),
 			Size:      9,
-			Buyer:     entities.NewPartyID("baadf00d"),
-			Seller:    entities.NewPartyID("0d15ea5e"),
-			BuyOrder:  entities.NewOrderID("da8d1803"),
-			SellOrder: entities.NewOrderID("44eea1bc"),
+			Buyer:     entities.PartyID("baadf00d"),
+			Seller:    entities.PartyID("0d15ea5e"),
+			BuyOrder:  entities.OrderID("da8d1803"),
+			SellOrder: entities.OrderID("44eea1bc"),
 			Type:      entities.TradeTypeDefault,
 		},
 		{
 			SeqNum:    10,
-			ID:        entities.NewTradeID("fb1528a5"),
-			MarketID:  entities.NewMarketID("deadbaad"),
+			ID:        entities.TradeID("fb1528a5"),
+			MarketID:  entities.MarketID("deadbaad"),
 			Price:     decimal.NewFromFloat(10.0),
 			Size:      10,
-			Buyer:     entities.NewPartyID("baadf00d"),
-			Seller:    entities.NewPartyID("0d15ea5e"),
-			BuyOrder:  entities.NewOrderID("fb1528a5"),
-			SellOrder: entities.NewOrderID("02a16077"),
+			Buyer:     entities.PartyID("baadf00d"),
+			Seller:    entities.PartyID("0d15ea5e"),
+			BuyOrder:  entities.OrderID("fb1528a5"),
+			SellOrder: entities.OrderID("02a16077"),
 			Type:      entities.TradeTypeDefault,
 		},
 	}
@@ -483,8 +483,8 @@ func testTradesCursorPaginationByMarketNoCursor(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
 
-	marketID := entities.NewMarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID{}, entities.OrderID{}, pagination)
+	marketID := entities.MarketID("deadbeef")
+	got, pageInfo, err := ts.List(ctx, marketID, "", "", pagination)
 	require.NoError(t, err)
 
 	assert.Len(t, got, 4)
@@ -510,8 +510,8 @@ func testTradesCursorPaginationByPartyNoMarketNoCursor(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
 
-	partyID := entities.NewPartyID("dabbad00")
-	got, pageInfo, err := ts.List(ctx, entities.MarketID{}, partyID, entities.OrderID{}, pagination)
+	partyID := entities.PartyID("dabbad00")
+	got, pageInfo, err := ts.List(ctx, entities.MarketID(""), partyID, entities.OrderID(""), pagination)
 	require.NoError(t, err)
 	assert.Len(t, got, 5)
 
@@ -537,9 +537,9 @@ func testTradesCursorPaginationByPartyAndMarketNoCursor(t *testing.T) {
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
-	partyID := entities.NewPartyID("dabbad00")
-	marketID := entities.NewMarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID{}, pagination)
+	partyID := entities.PartyID("dabbad00")
+	marketID := entities.MarketID("deadbeef")
+	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID(""), pagination)
 	require.NoError(t, err)
 	assert.Len(t, got, 4)
 	assert.Equal(t, "02a16077", got[0].ID.String())
@@ -564,8 +564,8 @@ func testTradesCursorPaginationByMarketWithCursorFirst(t *testing.T) {
 	first := int32(2)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	require.NoError(t, err)
-	marketID := entities.NewMarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID{}, entities.OrderID{}, pagination)
+	marketID := entities.MarketID("deadbeef")
+	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID(""), entities.OrderID(""), pagination)
 	require.NoError(t, err)
 
 	assert.Len(t, got, 2)
@@ -591,8 +591,8 @@ func testTradesCursorPaginationByPartyWithCursorNoMarketFirst(t *testing.T) {
 	first := int32(2)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	require.NoError(t, err)
-	partyID := entities.NewPartyID("dabbad00")
-	got, pageInfo, err := ts.List(ctx, entities.MarketID{}, partyID, entities.OrderID{}, pagination)
+	partyID := entities.PartyID("dabbad00")
+	got, pageInfo, err := ts.List(ctx, entities.MarketID(""), partyID, entities.OrderID(""), pagination)
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	assert.Equal(t, "02a16077", got[0].ID.String())
@@ -617,9 +617,9 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorFirst(t *testing.T) {
 	first := int32(2)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	require.NoError(t, err)
-	partyID := entities.NewPartyID("dabbad00")
-	marketID := entities.NewMarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID{}, pagination)
+	partyID := entities.PartyID("dabbad00")
+	marketID := entities.MarketID("deadbeef")
+	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID(""), pagination)
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	assert.Equal(t, "02a16077", got[0].ID.String())
@@ -644,8 +644,8 @@ func testTradesCursorPaginationByMarketWithCursorLast(t *testing.T) {
 	last := int32(2)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	require.NoError(t, err)
-	marketID := entities.NewMarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID{}, entities.OrderID{}, pagination)
+	marketID := entities.MarketID("deadbeef")
+	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID(""), entities.OrderID(""), pagination)
 	require.NoError(t, err)
 
 	assert.Len(t, got, 2)
@@ -671,8 +671,8 @@ func testTradesCursorPaginationByPartyWithCursorNoMarketLast(t *testing.T) {
 	last := int32(2)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	require.NoError(t, err)
-	partyID := entities.NewPartyID("dabbad00")
-	got, pageInfo, err := ts.List(ctx, entities.MarketID{}, partyID, entities.OrderID{}, pagination)
+	partyID := entities.PartyID("dabbad00")
+	got, pageInfo, err := ts.List(ctx, entities.MarketID(""), partyID, entities.OrderID(""), pagination)
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	assert.Equal(t, "7a797e0e", got[0].ID.String())
@@ -697,9 +697,9 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorLast(t *testing.T) {
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	require.NoError(t, err)
-	partyID := entities.NewPartyID("dabbad00")
-	marketID := entities.NewMarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID{}, pagination)
+	partyID := entities.PartyID("dabbad00")
+	marketID := entities.MarketID("deadbeef")
+	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID(""), pagination)
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	assert.Equal(t, "65be62cd", got[0].ID.String())
@@ -725,8 +725,8 @@ func testTradesCursorPaginationByMarketWithCursorForward(t *testing.T) {
 	after := entities.NewCursor(blockTimes["02a16077"].Format(time.RFC3339Nano)).Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	require.NoError(t, err)
-	marketID := entities.NewMarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID{}, entities.OrderID{}, pagination)
+	marketID := entities.MarketID("deadbeef")
+	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID(""), entities.OrderID(""), pagination)
 	require.NoError(t, err)
 
 	assert.Len(t, got, 2)
@@ -753,8 +753,8 @@ func testTradesCursorPaginationByPartyWithCursorNoMarketForward(t *testing.T) {
 	after := entities.NewCursor(blockTimes["44eea1bc"].Format(time.RFC3339Nano)).Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	require.NoError(t, err)
-	partyID := entities.NewPartyID("dabbad00")
-	got, pageInfo, err := ts.List(ctx, entities.MarketID{}, partyID, entities.OrderID{}, pagination)
+	partyID := entities.PartyID("dabbad00")
+	got, pageInfo, err := ts.List(ctx, entities.MarketID(""), partyID, entities.OrderID(""), pagination)
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	assert.Equal(t, "65be62cd", got[0].ID.String())
@@ -780,9 +780,9 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorForward(t *testing.T) {
 	after := entities.NewCursor(blockTimes["02a16077"].Format(time.RFC3339Nano)).Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	require.NoError(t, err)
-	partyID := entities.NewPartyID("dabbad00")
-	marketID := entities.NewMarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID{}, pagination)
+	partyID := entities.PartyID("dabbad00")
+	marketID := entities.MarketID("deadbeef")
+	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID(""), pagination)
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	assert.Equal(t, "44eea1bc", got[0].ID.String())
@@ -808,8 +808,8 @@ func testTradesCursorPaginationByMarketWithCursorBackward(t *testing.T) {
 	before := entities.NewCursor(blockTimes["7a797e0e"].Format(time.RFC3339Nano)).Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 	require.NoError(t, err)
-	marketID := entities.NewMarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID{}, entities.OrderID{}, pagination)
+	marketID := entities.MarketID("deadbeef")
+	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID(""), entities.OrderID(""), pagination)
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	assert.Equal(t, "44eea1bc", got[0].ID.String())
@@ -835,8 +835,8 @@ func testTradesCursorPaginationByPartyWithCursorNoMarketBackward(t *testing.T) {
 	before := entities.NewCursor(blockTimes["7bb2356e"].Format(time.RFC3339Nano)).Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 	require.NoError(t, err)
-	partyID := entities.NewPartyID("dabbad00")
-	got, pageInfo, err := ts.List(ctx, entities.MarketID{}, partyID, entities.OrderID{}, pagination)
+	partyID := entities.PartyID("dabbad00")
+	got, pageInfo, err := ts.List(ctx, entities.MarketID(""), partyID, entities.OrderID(""), pagination)
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	assert.Equal(t, "65be62cd", got[0].ID.String())
@@ -862,9 +862,9 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorBackward(t *testing.T) 
 	before := entities.NewCursor(blockTimes["7a797e0e"].Format(time.RFC3339Nano)).Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 	require.NoError(t, err)
-	partyID := entities.NewPartyID("dabbad00")
-	marketID := entities.NewMarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID{}, pagination)
+	partyID := entities.PartyID("dabbad00")
+	marketID := entities.MarketID("deadbeef")
+	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID(""), pagination)
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	assert.Equal(t, "44eea1bc", got[0].ID.String())
@@ -890,8 +890,8 @@ func testTradesCursorPaginationByMarketNoCursorNewestFirst(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	require.NoError(t, err)
 
-	marketID := entities.NewMarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID{}, entities.OrderID{}, pagination)
+	marketID := entities.MarketID("deadbeef")
+	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID(""), entities.OrderID(""), pagination)
 	require.NoError(t, err)
 
 	assert.Len(t, got, 4)
@@ -917,8 +917,8 @@ func testTradesCursorPaginationByPartyNoMarketNoCursorNewestFirst(t *testing.T) 
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	require.NoError(t, err)
 
-	partyID := entities.NewPartyID("dabbad00")
-	got, pageInfo, err := ts.List(ctx, entities.MarketID{}, partyID, entities.OrderID{}, pagination)
+	partyID := entities.PartyID("dabbad00")
+	got, pageInfo, err := ts.List(ctx, entities.MarketID(""), partyID, entities.OrderID(""), pagination)
 	require.NoError(t, err)
 	assert.Len(t, got, 5)
 
@@ -944,9 +944,9 @@ func testTradesCursorPaginationByPartyAndMarketNoCursorNewestFirst(t *testing.T)
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	require.NoError(t, err)
-	partyID := entities.NewPartyID("dabbad00")
-	marketID := entities.NewMarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID{}, pagination)
+	partyID := entities.PartyID("dabbad00")
+	marketID := entities.MarketID("deadbeef")
+	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID(""), pagination)
 	require.NoError(t, err)
 	assert.Len(t, got, 4)
 	assert.Equal(t, "7a797e0e", got[0].ID.String())
@@ -971,8 +971,8 @@ func testTradesCursorPaginationByMarketWithCursorFirstNewestFirst(t *testing.T) 
 	first := int32(2)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
 	require.NoError(t, err)
-	marketID := entities.NewMarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID{}, entities.OrderID{}, pagination)
+	marketID := entities.MarketID("deadbeef")
+	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID(""), entities.OrderID(""), pagination)
 	require.NoError(t, err)
 
 	assert.Len(t, got, 2)
@@ -998,8 +998,8 @@ func testTradesCursorPaginationByPartyWithCursorNoMarketFirstNewestFirst(t *test
 	first := int32(2)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
 	require.NoError(t, err)
-	partyID := entities.NewPartyID("dabbad00")
-	got, pageInfo, err := ts.List(ctx, entities.MarketID{}, partyID, entities.OrderID{}, pagination)
+	partyID := entities.PartyID("dabbad00")
+	got, pageInfo, err := ts.List(ctx, entities.MarketID(""), partyID, entities.OrderID(""), pagination)
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	assert.Equal(t, "7bb2356e", got[0].ID.String())
@@ -1024,9 +1024,9 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorFirstNewestFirst(t *tes
 	populateTestTrades(ctx, t, bs, ts, blockTimes)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
 	require.NoError(t, err)
-	partyID := entities.NewPartyID("dabbad00")
-	marketID := entities.NewMarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID{}, pagination)
+	partyID := entities.PartyID("dabbad00")
+	marketID := entities.MarketID("deadbeef")
+	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID(""), pagination)
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	assert.Equal(t, "7a797e0e", got[0].ID.String())
@@ -1051,8 +1051,8 @@ func testTradesCursorPaginationByMarketWithCursorLastNewestFirst(t *testing.T) {
 	last := int32(2)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
 	require.NoError(t, err)
-	marketID := entities.NewMarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID{}, entities.OrderID{}, pagination)
+	marketID := entities.MarketID("deadbeef")
+	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID(""), entities.OrderID(""), pagination)
 	require.NoError(t, err)
 
 	assert.Len(t, got, 2)
@@ -1078,8 +1078,8 @@ func testTradesCursorPaginationByPartyWithCursorNoMarketLastNewestFirst(t *testi
 	last := int32(2)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
 	require.NoError(t, err)
-	partyID := entities.NewPartyID("dabbad00")
-	got, pageInfo, err := ts.List(ctx, entities.MarketID{}, partyID, entities.OrderID{}, pagination)
+	partyID := entities.PartyID("dabbad00")
+	got, pageInfo, err := ts.List(ctx, entities.MarketID(""), partyID, entities.OrderID(""), pagination)
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	assert.Equal(t, "44eea1bc", got[0].ID.String())
@@ -1104,9 +1104,9 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorLastNewestFirst(t *test
 	last := int32(2)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
 	require.NoError(t, err)
-	partyID := entities.NewPartyID("dabbad00")
-	marketID := entities.NewMarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID{}, pagination)
+	partyID := entities.PartyID("dabbad00")
+	marketID := entities.MarketID("deadbeef")
+	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID(""), pagination)
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	assert.Equal(t, "44eea1bc", got[0].ID.String())
@@ -1132,8 +1132,8 @@ func testTradesCursorPaginationByMarketWithCursorForwardNewestFirst(t *testing.T
 	after := entities.NewCursor(blockTimes["7a797e0e"].Format(time.RFC3339Nano)).Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
 	require.NoError(t, err)
-	marketID := entities.NewMarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID{}, entities.OrderID{}, pagination)
+	marketID := entities.MarketID("deadbeef")
+	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID(""), entities.OrderID(""), pagination)
 	require.NoError(t, err)
 
 	assert.Len(t, got, 2)
@@ -1160,8 +1160,8 @@ func testTradesCursorPaginationByPartyWithCursorNoMarketForwardNewestFirst(t *te
 	after := entities.NewCursor(blockTimes["7a797e0e"].Format(time.RFC3339Nano)).Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
 	require.NoError(t, err)
-	partyID := entities.NewPartyID("dabbad00")
-	got, pageInfo, err := ts.List(ctx, entities.MarketID{}, partyID, entities.OrderID{}, pagination)
+	partyID := entities.PartyID("dabbad00")
+	got, pageInfo, err := ts.List(ctx, entities.MarketID(""), partyID, entities.OrderID(""), pagination)
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	assert.Equal(t, "65be62cd", got[0].ID.String())
@@ -1187,9 +1187,9 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorForwardNewestFirst(t *t
 	after := entities.NewCursor(blockTimes["7a797e0e"].Format(time.RFC3339Nano)).Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
 	require.NoError(t, err)
-	partyID := entities.NewPartyID("dabbad00")
-	marketID := entities.NewMarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID{}, pagination)
+	partyID := entities.PartyID("dabbad00")
+	marketID := entities.MarketID("deadbeef")
+	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID(""), pagination)
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	assert.Equal(t, "65be62cd", got[0].ID.String())
@@ -1215,8 +1215,8 @@ func testTradesCursorPaginationByMarketWithCursorBackwardNewestFirst(t *testing.
 	before := entities.NewCursor(blockTimes["02a16077"].Format(time.RFC3339Nano)).Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
 	require.NoError(t, err)
-	marketID := entities.NewMarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID{}, entities.OrderID{}, pagination)
+	marketID := entities.MarketID("deadbeef")
+	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID(""), entities.OrderID(""), pagination)
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	assert.Equal(t, "65be62cd", got[0].ID.String())
@@ -1242,8 +1242,8 @@ func testTradesCursorPaginationByPartyWithCursorNoMarketBackwardNewestFirst(t *t
 	before := entities.NewCursor(blockTimes["44eea1bc"].Format(time.RFC3339Nano)).Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
 	require.NoError(t, err)
-	partyID := entities.NewPartyID("dabbad00")
-	got, pageInfo, err := ts.List(ctx, entities.MarketID{}, partyID, entities.OrderID{}, pagination)
+	partyID := entities.PartyID("dabbad00")
+	got, pageInfo, err := ts.List(ctx, entities.MarketID(""), partyID, entities.OrderID(""), pagination)
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	assert.Equal(t, "7a797e0e", got[0].ID.String())
@@ -1269,9 +1269,9 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorBackwardNewestFirst(t *
 	before := entities.NewCursor(blockTimes["02a16077"].Format(time.RFC3339Nano)).Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
 	require.NoError(t, err)
-	partyID := entities.NewPartyID("dabbad00")
-	marketID := entities.NewMarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID{}, pagination)
+	partyID := entities.PartyID("dabbad00")
+	marketID := entities.MarketID("deadbeef")
+	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID(""), pagination)
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	assert.Equal(t, "65be62cd", got[0].ID.String())

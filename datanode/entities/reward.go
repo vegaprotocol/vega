@@ -90,13 +90,13 @@ func RewardFromProto(pr eventspb.RewardPayoutEvent, vegaTime time.Time) (Reward,
 	}
 
 	reward := Reward{
-		PartyID:        NewPartyID(pr.Party),
-		AssetID:        NewAssetID(pr.Asset),
+		PartyID:        PartyID(pr.Party),
+		AssetID:        AssetID(pr.Asset),
 		EpochID:        epochID,
 		Amount:         amount,
 		PercentOfTotal: percentOfTotal,
 		Timestamp:      NanosToPostgresTimestamp(pr.Timestamp),
-		MarketID:       NewMarketID(pr.Market),
+		MarketID:       MarketID(pr.Market),
 		RewardType:     pr.RewardType,
 		VegaTime:       vegaTime,
 	}

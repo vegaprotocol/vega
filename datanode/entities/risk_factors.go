@@ -41,7 +41,7 @@ func RiskFactorFromProto(factor *vega.RiskFactor, vegaTime time.Time) (*RiskFact
 	}
 
 	return &RiskFactor{
-		MarketID: NewMarketID(factor.Market),
+		MarketID: MarketID(factor.Market),
 		Short:    short,
 		Long:     long,
 		VegaTime: vegaTime,

@@ -24,15 +24,9 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
-type LiquidityProvisionID struct {
-	ID
-}
+type _LiquidityProvision struct{}
 
-func NewLiquidityProvisionID(id string) LiquidityProvisionID {
-	return LiquidityProvisionID{
-		ID: ID(id),
-	}
-}
+type LiquidityProvisionID = ID[_LiquidityProvision]
 
 type LiquidityOrderReference struct {
 	*vega.LiquidityOrderReference
@@ -67,9 +61,9 @@ type LiquidityProvision struct {
 }
 
 func LiquidityProvisionFromProto(lpProto *vega.LiquidityProvision, vegaTime time.Time) (LiquidityProvision, error) {
-	lpID := NewLiquidityProvisionID(lpProto.Id)
-	partyID := NewPartyID(lpProto.PartyId)
-	marketID := NewMarketID(lpProto.MarketId)
+	lpID := LiquidityProvisionID(lpProto.Id)
+	partyID := PartyID(lpProto.PartyId)
+	marketID := MarketID(lpProto.MarketId)
 
 	commitmentAmount, err := decimal.NewFromString(lpProto.CommitmentAmount)
 	if err != nil {

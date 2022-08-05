@@ -53,6 +53,6 @@ func (n *Notary) GetByResourceID(ctx context.Context, id string) ([]entities.Nod
 	defer metrics.StartSQLQuery("Notary", "GetByResourceID")()
 	ns := []entities.NodeSignature{}
 	query := `SELECT resource_id, sig, kind FROM node_signatures WHERE resource_id=$1`
-	err := pgxscan.Select(ctx, n.Connection, &ns, query, entities.NewNodeSignatureID(id))
+	err := pgxscan.Select(ctx, n.Connection, &ns, query, entities.NodeSignatureID(id))
 	return ns, err
 }

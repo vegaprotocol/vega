@@ -88,7 +88,7 @@ func (m *MarketData) GetMarketDataByID(ctx context.Context, marketID string) (en
 	m.cacheLock.RLock()
 	defer m.cacheLock.RUnlock()
 
-	data, ok := m.cache[entities.NewMarketID(marketID)]
+	data, ok := m.cache[entities.MarketID(marketID)]
 	if !ok {
 		return entities.MarketData{}, fmt.Errorf("no market data for market: %v", marketID)
 	}

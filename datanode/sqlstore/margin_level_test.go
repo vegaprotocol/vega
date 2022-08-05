@@ -81,7 +81,7 @@ func setupMarginLevelTests(t *testing.T, ctx context.Context) (*testBlockSource,
 	assets := sqlstore.NewAssets(connectionSource)
 
 	testAsset := entities.Asset{
-		ID:            entities.AssetID{ID: entities.ID(testAssetId)},
+		ID:            testAssetId,
 		Name:          "testAssetName",
 		Symbol:        "tan",
 		TotalSupply:   decimal.NewFromInt(20),

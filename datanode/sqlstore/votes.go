@@ -79,7 +79,7 @@ func (vs *Votes) GetByParty(ctx context.Context, partyIDStr string) ([]entities.
 
 func (vs *Votes) GetByPartyConnection(ctx context.Context, partyIDStr string, pagination entities.CursorPagination) ([]entities.Vote, entities.PageInfo, error) {
 	args := make([]interface{}, 0)
-	query := fmt.Sprintf(`select * from votes_current where party_id=%s`, nextBindVar(&args, entities.NewPartyID(partyIDStr)))
+	query := fmt.Sprintf(`select * from votes_current where party_id=%s`, nextBindVar(&args, entities.PartyID(partyIDStr)))
 
 	var votes []entities.Vote
 	var pageInfo entities.PageInfo
@@ -113,12 +113,12 @@ func (vs *Votes) Get(ctx context.Context,
 	conditions := []string{}
 
 	if proposalIDStr != nil {
-		proposalID := entities.NewProposalID(*proposalIDStr)
+		proposalID := entities.ProposalID(*proposalIDStr)
 		conditions = append(conditions, fmt.Sprintf("proposal_id=%s", nextBindVar(&args, proposalID)))
 	}
 
 	if partyIDStr != nil {
-		partyID := entities.NewPartyID(*partyIDStr)
+		partyID := entities.PartyID(*partyIDStr)
 		conditions = append(conditions, fmt.Sprintf("party_id=%s", nextBindVar(&args, partyID)))
 	}
 

@@ -110,7 +110,7 @@ func (as *Asset) addAsset(ctx context.Context, va vega.Asset, vegaTime time.Time
 	decimals := int(va.Details.Decimals)
 
 	asset := entities.Asset{
-		ID:                entities.NewAssetID(va.Id),
+		ID:                entities.AssetID(va.Id),
 		Name:              va.Details.Name,
 		Symbol:            va.Details.Symbol,
 		TotalSupply:       totalSupply,

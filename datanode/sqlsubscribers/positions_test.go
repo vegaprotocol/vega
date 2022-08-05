@@ -459,7 +459,7 @@ func TestPositionSpecSuite(t *testing.T) {
 			ps := tc.pos
 			sub, store := getSubscriberAndStore(t)
 			sub.Push(context.Background(), ps)
-			pp, err := store.GetByMarket(ctx, entities.NewMarketID(market))
+			pp, err := store.GetByMarket(ctx, entities.MarketID(market))
 			assert.NoError(t, err)
 			assert.NotZero(t, len(pp))
 			// average entry price should be 1k
