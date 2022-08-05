@@ -2507,9 +2507,6 @@ func (s PeggedOrdersState) IntoProto() *snapshot.PeggedOrders {
 	for _, v := range s.Parked {
 		po.ParkedOrders = append(po.ParkedOrders, v.IntoProto())
 	}
-	sort.Slice(po.ParkedOrders, func(i, j int) bool {
-		return po.ParkedOrders[i].Id < po.ParkedOrders[j].Id
-	})
 	return po
 }
 
