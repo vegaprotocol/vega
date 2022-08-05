@@ -550,6 +550,12 @@ type Query {
   "return the full list of network parameters"
   networkParameters: [NetworkParameter!]
 
+  "return a single network parameters"
+  networkParameter(
+    "key of the network parameter"
+    key: String!
+  ): NetworkParameter
+
   "returns information about nodes"
   nodeData: NodeData
 
@@ -1542,7 +1548,7 @@ type Market {
   """
   positionDecimalPlaces indicates the number of decimal places that an integer must be shifted in order to get a correct size (uint64).
   i.e. 0 means there are no fractional orders for the market, and order sizes are always whole sizes.
-  2 means sizes given as 10^2 * desired size, e.g. a desired size of 1.23 is represented as 123 in this market. 
+  2 means sizes given as 10^2 * desired size, e.g. a desired size of 1.23 is represented as 123 in this market.
   This sets how big the smallest order / position on the market can be.
   """
   positionDecimalPlaces: Int!
@@ -1854,7 +1860,7 @@ type Party {
 
   proposals(
     "Select only proposals in the specified state. Leave out to get all proposals"
-    inState: ProposalState 
+    inState: ProposalState
   ): [Proposal] @deprecated(reason: "Use proposalsConnection instead")
 
   "All governance proposals in the VEGA network"
@@ -2672,11 +2678,11 @@ enum AccountType {
   "Settlement - only for 'system' party"
   Settlement
   """
-  Margin - The leverage account for parties, contains funds set aside for the margin needed to support 
-  a party's open positions. Each party will have a margin account for each market they have traded in. 
-  The required initial margin is allocated to each market from the general account, and it cannot be withdrawn 
-  or used as margin on another market until it's released back into the general account. 
-  The protocol uses an internal accounting system to segregate funds held as margin from other funds 
+  Margin - The leverage account for parties, contains funds set aside for the margin needed to support
+  a party's open positions. Each party will have a margin account for each market they have traded in.
+  The required initial margin is allocated to each market from the general account, and it cannot be withdrawn
+  or used as margin on another market until it's released back into the general account.
+  The protocol uses an internal accounting system to segregate funds held as margin from other funds
   to ensure they are never lost or 'double spent'
   """
   Margin
