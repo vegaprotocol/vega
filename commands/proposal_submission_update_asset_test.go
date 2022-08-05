@@ -19,8 +19,6 @@ func TestCheckProposalSubmissionForUpdateAsset(t *testing.T) {
 	t.Run("Submitting an asset update with name succeeds", testUpdateAssetSubmissionWithNameSucceeds)
 	t.Run("Submitting an asset update without symbol fails", testUpdateAssetSubmissionWithoutSymbolFails)
 	t.Run("Submitting an asset update with symbol succeeds", testUpdateAssetSubmissionWithSymbolSucceeds)
-	t.Run("Submitting an asset update without decimal fails", testUpdateAssetSubmissionWithoutDecimalsFails)
-	t.Run("Submitting an asset update with decimal succeeds", testUpdateAssetSubmissionWithDecimalsSucceeds)
 	t.Run("Submitting an asset update without total supply fails", testUpdateAssetSubmissionWithoutTotalSupplyFails)
 	t.Run("Submitting an asset update with total supply succeeds", testUpdateAssetSubmissionWithTotalSupplySucceeds)
 	t.Run("Submitting an asset update with not-a-number total supply fails", testUpdateAssetSubmissionWithNaNTotalSupplyFails)
@@ -157,38 +155,6 @@ func testUpdateAssetSubmissionWithSymbolSucceeds(t *testing.T) {
 	})
 
 	assert.Empty(t, err.Get("proposal_submission.terms.change.update_asset.changes.symbol"))
-}
-
-func testUpdateAssetSubmissionWithoutDecimalsFails(t *testing.T) {
-	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_UpdateAsset{
-				UpdateAsset: &types.UpdateAsset{
-					Changes: &types.AssetDetailsUpdate{
-						Decimals: 0,
-					},
-				},
-			},
-		},
-	})
-
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_asset.changes.decimals"), commands.ErrIsRequired)
-}
-
-func testUpdateAssetSubmissionWithDecimalsSucceeds(t *testing.T) {
-	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_UpdateAsset{
-				UpdateAsset: &types.UpdateAsset{
-					Changes: &types.AssetDetailsUpdate{
-						Decimals: RandomPositiveU64(),
-					},
-				},
-			},
-		},
-	})
-
-	assert.Empty(t, err.Get("proposal_submission.terms.change.update_asset.changes.decimals"))
 }
 
 func testUpdateAssetSubmissionWithoutTotalSupplyFails(t *testing.T) {
