@@ -436,6 +436,8 @@ func convertProposalTypeToProto(x ProposalType) v2.ListGovernanceDataRequest_Typ
 		return v2.ListGovernanceDataRequest_TYPE_NETWORK_PARAMETERS
 	case ProposalTypeNewAsset:
 		return v2.ListGovernanceDataRequest_TYPE_NEW_ASSET
+	case ProposalTypeUpdateAsset:
+		return v2.ListGovernanceDataRequest_TYPE_UPDATE_ASSET
 	case ProposalTypeNewFreeForm:
 		return v2.ListGovernanceDataRequest_TYPE_NEW_FREE_FORM
 	default:

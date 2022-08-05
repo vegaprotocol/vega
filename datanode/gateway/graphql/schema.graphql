@@ -1022,7 +1022,7 @@ type Asset {
 union AssetSource = BuiltinAsset | ERC20
 
 "One of the possible asset sources for update assets proposals"
-union AssetSource = UpdateERC20
+union UpdateAssetSource = UpdateERC20
 
 "An asset originated from an Ethereum ERC20 Token"
 type ERC20 {
