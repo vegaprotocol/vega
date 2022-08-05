@@ -269,23 +269,27 @@ pipeline {
                             // Please use exactly the same versions when modifying protos
                             options { retry(3) }
                             steps {
-                                sh 'printenv'
-                                sh label: 'protoc', script: """#!/bin/bash -e
-                                    PB_REL="https://github.com/protocolbuffers/protobuf/releases"
-                                    curl -LO \$PB_REL/download/v${env.PROTOC_VERSION}/protoc-${env.PROTOC_VERSION}-linux-x86_64.zip
-                                    unzip protoc-${env.PROTOC_VERSION}-linux-x86_64.zip -d "${PROTOC_HOME}"
-                                """
-                                sh './script/gettools.sh'
-                                sh 'protoc --version'
-                                sh 'which protoc'
-                                sh 'buf --version'
-                                sh 'which buf'
+                                dir('vega') {
+                                    sh 'printenv'
+                                    sh label: 'protoc', script: """#!/bin/bash -e
+                                        PB_REL="https://github.com/protocolbuffers/protobuf/releases"
+                                        curl -LO \$PB_REL/download/v${env.PROTOC_VERSION}/protoc-${env.PROTOC_VERSION}-linux-x86_64.zip
+                                        unzip protoc-${env.PROTOC_VERSION}-linux-x86_64.zip -d "${PROTOC_HOME}"
+                                    """
+                                    sh './script/gettools.sh'
+                                    sh 'protoc --version'
+                                    sh 'which protoc'
+                                    sh 'buf --version'
+                                    sh 'which buf'
+                                }
                             }
                         }
                         stage('buf lint') {
                             options { retry(3) }
                             steps {
-                                sh 'buf lint'
+                                dir('vega') {
+                                    sh 'buf lint'
+                                }
                             }
                             post {
                                 failure {
@@ -302,7 +306,9 @@ pipeline {
                         stage('proto check') {
                             options { retry(3) }
                             steps {
-                                sh 'make proto_check'
+                                dir('vega') {
+                                    sh 'make proto_check'
+                                }
                             }
                             post {
                                 failure {
