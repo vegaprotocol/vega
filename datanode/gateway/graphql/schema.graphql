@@ -1021,10 +1021,27 @@ type Asset {
 "One of the possible asset sources"
 union AssetSource = BuiltinAsset | ERC20
 
+"One of the possible asset sources for update assets proposals"
+union AssetSource = UpdateERC20
+
 "An asset originated from an Ethereum ERC20 Token"
 type ERC20 {
   "The address of the ERC20 contract"
   contractAddress: String!
+  """
+  The lifetime limits deposit per address
+  Note: this is a temporary measure for alpha mainnet
+  """
+  lifetimeLimit: String!
+  """
+  The maximum allowed per withdrawal
+  Note: this is a temporary measure for alpha mainnet
+  """
+  withdrawThreshold: String!
+}
+
+"An asset originated from an Ethereum ERC20 Token"
+type UpdateERC20 {
   """
   The lifetime limits deposit per address
   Note: this is a temporary measure for alpha mainnet
@@ -1550,7 +1567,7 @@ type Market {
   """
   positionDecimalPlaces indicates the number of decimal places that an integer must be shifted in order to get a correct size (uint64).
   i.e. 0 means there are no fractional orders for the market, and order sizes are always whole sizes.
-  2 means sizes given as 10^2 * desired size, e.g. a desired size of 1.23 is represented as 123 in this market. 
+  2 means sizes given as 10^2 * desired size, e.g. a desired size of 1.23 is represented as 123 in this market.
   This sets how big the smallest order / position on the market can be.
   """
   positionDecimalPlaces: Int!
@@ -1882,7 +1899,7 @@ type Party {
 
   proposals(
     "Select only proposals in the specified state. Leave out to get all proposals"
-    inState: ProposalState 
+    inState: ProposalState
   ): [Proposal] @deprecated(reason: "Use proposalsConnection instead")
 
   "All governance proposals in the VEGA network"
@@ -2715,11 +2732,11 @@ enum AccountType {
   "Settlement - only for 'system' party"
   Settlement
   """
-  Margin - The leverage account for parties, contains funds set aside for the margin needed to support 
-  a party's open positions. Each party will have a margin account for each market they have traded in. 
-  The required initial margin is allocated to each market from the general account, and it cannot be withdrawn 
-  or used as margin on another market until it's released back into the general account. 
-  The protocol uses an internal accounting system to segregate funds held as margin from other funds 
+  Margin - The leverage account for parties, contains funds set aside for the margin needed to support
+  a party's open positions. Each party will have a margin account for each market they have traded in.
+  The required initial margin is allocated to each market from the general account, and it cannot be withdrawn
+  or used as margin on another market until it's released back into the general account.
+  The protocol uses an internal accounting system to segregate funds held as margin from other funds
   to ensure they are never lost or 'double spent'
   """
   Margin
@@ -2886,6 +2903,24 @@ type NewAsset {
   source: AssetSource!
 }
 
+"A new asset proposal change"
+type UpdateAsset {
+  "The full name of the asset (e.g: Great British Pound)"
+  name: String!
+
+  "The symbol of the asset (e.g: GBP)"
+  symbol: String!
+
+  "The total supply of the market"
+  totalSupply: String!
+
+  "The minimum stake to become a liquidity provider for any market using this asset for settlement"
+  minLpStake: String!
+
+  "The source of the updated asset"
+  source: UpdateAssetSource!
+}
+
 """
 A new freeform proposal change. It has no properties on purpose. Use proposal
 rationale, instead.
@@ -2913,6 +2948,7 @@ union ProposalChange =
   | UpdateMarket
   | UpdateNetworkParameter
   | NewAsset
+  | UpdateAsset
   | NewFreeform
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 
@@ -2967,6 +3003,8 @@ enum ProposalType {
   NetworkParameters
   "Proposal to add a new asset"
   NewAsset
+  "Proposal to update an existing asset"
+  UpdateAsset
   "Proposal to create a new freeform proposal"
   NewFreeForm
 }
