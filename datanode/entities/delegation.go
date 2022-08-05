@@ -70,8 +70,8 @@ func DelegationFromProto(pd *vega.Delegation) (Delegation, error) {
 	}
 
 	delegation := Delegation{
-		PartyID: NewPartyID(pd.Party),
-		NodeID:  NewNodeID(pd.NodeId),
+		PartyID: PartyID(pd.Party),
+		NodeID:  NodeID(pd.NodeId),
 		EpochID: epochID,
 		Amount:  amount,
 	}
@@ -92,8 +92,8 @@ func DelegationFromEventProto(pd *eventspb.DelegationBalanceEvent) (Delegation, 
 	}
 
 	delegation := Delegation{
-		PartyID: NewPartyID(pd.Party),
-		NodeID:  NewNodeID(pd.NodeId),
+		PartyID: PartyID(pd.Party),
+		NodeID:  NodeID(pd.NodeId),
 		EpochID: epochID,
 		Amount:  amount,
 	}

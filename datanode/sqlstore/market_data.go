@@ -96,7 +96,7 @@ func (md *MarketData) GetMarketDataByID(ctx context.Context, marketID string) (e
 	query := "select * from market_data_snapshot where market = $1"
 
 	defer metrics.StartSQLQuery("MarketData", "GetMarketDataByID")()
-	err := pgxscan.Get(ctx, md.Connection, &marketData, query, entities.NewMarketID(marketID))
+	err := pgxscan.Get(ctx, md.Connection, &marketData, query, entities.MarketID(marketID))
 
 	return marketData, err
 }
@@ -150,7 +150,7 @@ func (md *MarketData) GetToDateByID(ctx context.Context, marketID string, end ti
 
 func (md *MarketData) getBetweenDatesByIDOffset(ctx context.Context, marketID string, start, end *time.Time, pagination entities.OffsetPagination) ([]entities.MarketData, entities.PageInfo, error) {
 	defer metrics.StartSQLQuery("MarketData", "getBetweenDatesByID")()
-	market := entities.NewMarketID(marketID)
+	market := entities.MarketID(marketID)
 
 	selectStatement := `select * from market_data`
 
@@ -183,7 +183,7 @@ func (md *MarketData) getBetweenDatesByIDOffset(ctx context.Context, marketID st
 
 func (md *MarketData) getBetweenDatesByID(ctx context.Context, marketID string, start, end *time.Time, pagination entities.CursorPagination) ([]entities.MarketData, entities.PageInfo, error) {
 	defer metrics.StartSQLQuery("MarketData", "getBetweenDatesByID")()
-	market := entities.NewMarketID(marketID)
+	market := entities.MarketID(marketID)
 
 	selectStatement := `select * from market_data`
 	sorting, cmp, cursor := extractPaginationInfo(pagination)

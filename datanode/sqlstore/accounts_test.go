@@ -34,7 +34,7 @@ func addTestAccount(t *testing.T,
 	account := entities.Account{
 		PartyID:  party.ID,
 		AssetID:  asset.ID,
-		MarketID: entities.NewMarketID(generateID()),
+		MarketID: entities.MarketID(generateID()),
 		Type:     1,
 		VegaTime: block.VegaTime,
 	}
@@ -113,7 +113,7 @@ func TestAccount(t *testing.T) {
 
 	t.Run("query by asset + invalid market", func(t *testing.T) {
 		// Query by asset + invalid market, should have 0 accounts
-		filter := entities.AccountFilter{AssetID: asset.ID, MarketIDs: []entities.MarketID{entities.NewMarketID("ffff")}}
+		filter := entities.AccountFilter{AssetID: asset.ID, MarketIDs: []entities.MarketID{entities.MarketID("ffff")}}
 		accs, err := accountStore.Query(filter)
 		require.NoError(t, err)
 		assert.Len(t, accs, 0)

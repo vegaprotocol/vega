@@ -107,7 +107,7 @@ func (ps *Positions) GetByPartyConnection(ctx context.Context, partyID entities.
 	if marketID.String() == "" {
 		where = fmt.Sprintf(" where party_id=%s", nextBindVar(&args, partyID))
 		cursorParams = append(cursorParams, NewCursorQueryParameter("market_id", sorting, cmp,
-			entities.NewMarketID(positionCursor.MarketID)))
+			entities.MarketID(positionCursor.MarketID)))
 	} else {
 		where = fmt.Sprintf(" where party_id=%s and market_id=%s", nextBindVar(&args, partyID), nextBindVar(&args, marketID))
 	}

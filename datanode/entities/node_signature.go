@@ -16,11 +16,9 @@ import (
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
 
-type NodeSignatureID struct{ ID }
+type _NodeSignature struct{}
 
-func NewNodeSignatureID(id string) NodeSignatureID {
-	return NodeSignatureID{ID: ID(id)}
-}
+type NodeSignatureID = ID[_NodeSignature]
 
 type NodeSignature struct {
 	ResourceID NodeSignatureID
@@ -30,7 +28,7 @@ type NodeSignature struct {
 
 func NodeSignatureFromProto(ns *commandspb.NodeSignature) (*NodeSignature, error) {
 	return &NodeSignature{
-		ResourceID: NewNodeSignatureID(ns.Id),
+		ResourceID: NodeSignatureID(ns.Id),
 		Sig:        ns.Sig,
 		Kind:       NodeSignatureKind(ns.Kind),
 	}, nil

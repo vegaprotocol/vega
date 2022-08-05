@@ -23,11 +23,9 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
-type NodeID struct{ ID }
+type _Node struct{}
 
-func NewNodeID(id string) NodeID {
-	return NodeID{ID: ID(id)}
-}
+type NodeID = ID[_Node]
 
 type Node struct {
 	ID                NodeID
@@ -104,7 +102,7 @@ type NodeData struct {
 
 func NodeFromValidatorUpdateEvent(evt eventspb.ValidatorUpdate, vegaTime time.Time) (Node, ValidatorUpdateAux, error) {
 	return Node{
-			ID:              NewNodeID(evt.NodeId),
+			ID:              NodeID(evt.NodeId),
 			PubKey:          VegaPublicKey(evt.VegaPubKey),
 			TmPubKey:        TendermintPublicKey(evt.TmPubKey),
 			EthereumAddress: EthereumAddress(evt.EthereumAddress),
@@ -178,7 +176,7 @@ func RankingScoreFromRankingEvent(evt eventspb.ValidatorRankingEvent, vegaTime t
 			VegaTime:         vegaTime,
 			EpochSeq:         epochSeq,
 		}, RankingScoreAux{
-			NodeId:   NewNodeID(evt.NodeId),
+			NodeId:   NodeID(evt.NodeId),
 			EpochSeq: epochSeq,
 		}, nil
 }
@@ -235,7 +233,7 @@ func RewardScoreFromScoreEvent(evt eventspb.ValidatorScoreEvent, vegaTime time.T
 			VegaTime:            vegaTime,
 			EpochSeq:            epochSeq,
 		}, RewardScoreAux{
-			NodeId:   NewNodeID(evt.NodeId),
+			NodeId:   NodeID(evt.NodeId),
 			EpochSeq: epochSeq,
 		}, nil
 }
@@ -286,7 +284,7 @@ func NodeFromProto(node *vega.Node, vegaTime time.Time) (Node, error) {
 	}
 
 	return Node{
-		ID:                NewNodeID(node.Id),
+		ID:                NodeID(node.Id),
 		PubKey:            VegaPublicKey(node.PubKey),
 		TmPubKey:          TendermintPublicKey(node.TmPubKey),
 		EthereumAddress:   EthereumAddress(node.EthereumAddress),

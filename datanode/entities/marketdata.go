@@ -194,7 +194,7 @@ func MarketDataFromProto(data *types.MarketData) (*MarketData, error) {
 		BestStaticOfferVolume:      bestStaticOfferVolume,
 		MidPrice:                   mid,
 		StaticMidPrice:             staticMid,
-		Market:                     NewMarketID(data.Market),
+		Market:                     MarketID(data.Market),
 		OpenInterest:               openInterest,
 		AuctionEnd:                 data.AuctionEnd,
 		AuctionStart:               data.AuctionStart,

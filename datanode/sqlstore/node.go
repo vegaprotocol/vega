@@ -333,7 +333,7 @@ func (store *Node) GetNodes(ctx context.Context, epochSeq uint64, pagination ent
 	sorting, cmp, cursor := extractPaginationInfo(pagination)
 
 	cursorParams := []CursorQueryParameter{
-		NewCursorQueryParameter("id", sorting, cmp, entities.NewNodeID(cursor)),
+		NewCursorQueryParameter("id", sorting, cmp, entities.NodeID(cursor)),
 	}
 
 	query, args = orderAndPaginateWithCursor(query, pagination, cursorParams, args...)
@@ -351,7 +351,7 @@ func (store *Node) GetNodeByID(ctx context.Context, nodeId string, epochSeq uint
 	defer metrics.StartSQLQuery("Node", "GetNodeById")()
 
 	var node entities.Node
-	id := entities.NewNodeID(nodeId)
+	id := entities.NodeID(nodeId)
 
 	query := `WITH
 	current_delegations AS (

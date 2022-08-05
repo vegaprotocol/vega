@@ -31,7 +31,7 @@ func addTestProposal(t *testing.T, ps *sqlstore.Proposals, id string, party enti
 	t.Helper()
 	terms := entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{}}
 	p := entities.Proposal{
-		ID:           entities.NewProposalID(id),
+		ID:           entities.ProposalID(id),
 		PartyID:      party.ID,
 		Reference:    reference,
 		Terms:        terms,

@@ -145,8 +145,8 @@ func testGetLPByReferenceAndParty(t *testing.T) {
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from liquidity_provisions").Scan(&rowCount))
 	assert.Equal(t, 3, rowCount)
 
-	partyID := entities.NewPartyID("deadbaad")
-	marketID := entities.NewMarketID("")
+	partyID := entities.PartyID("deadbaad")
+	marketID := entities.MarketID("")
 	got, _, err := lp.Get(ctx, partyID, marketID, "TEST1", entities.OffsetPagination{})
 	require.NoError(t, err)
 	assert.Equal(t, 1, len(got))
@@ -188,8 +188,8 @@ func testGetLPByPartyOnly(t *testing.T) {
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from liquidity_provisions").Scan(&rowCount))
 	assert.Equal(t, 3, rowCount)
 
-	partyID := entities.NewPartyID("deadbaad")
-	marketID := entities.NewMarketID("")
+	partyID := entities.PartyID("deadbaad")
+	marketID := entities.MarketID("")
 	got, _, err := lp.Get(ctx, partyID, marketID, "", entities.OffsetPagination{})
 	require.NoError(t, err)
 	assert.Equal(t, len(want), len(got))
@@ -235,8 +235,8 @@ func testGetLPByPartyAndMarket(t *testing.T) {
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from liquidity_provisions").Scan(&rowCount))
 	assert.Equal(t, 3, rowCount)
 
-	partyID := entities.NewPartyID("DEADBAAD")
-	marketID := entities.NewMarketID(wantMarketID)
+	partyID := entities.PartyID("DEADBAAD")
+	marketID := entities.MarketID(wantMarketID)
 	got, _, err := lp.Get(ctx, partyID, marketID, "", entities.OffsetPagination{})
 	require.NoError(t, err)
 	assert.Equal(t, len(want), len(got))
@@ -249,8 +249,8 @@ func testGetLPNoPartyAndMarketErrors(t *testing.T) {
 	defer cancel()
 
 	_, lp, _ := setupLPTests(t, ctx)
-	partyID := entities.NewPartyID("")
-	marketID := entities.NewMarketID("")
+	partyID := entities.PartyID("")
+	marketID := entities.MarketID("")
 	_, _, err := lp.Get(ctx, partyID, marketID, "", entities.OffsetPagination{})
 	assert.Error(t, err)
 }
@@ -291,8 +291,8 @@ func testGetLPNoPartyWithMarket(t *testing.T) {
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from liquidity_provisions").Scan(&rowCount))
 	assert.Equal(t, 3, rowCount)
-	partyID := entities.NewPartyID("")
-	marketID := entities.NewMarketID(wantMarketID)
+	partyID := entities.PartyID("")
+	marketID := entities.MarketID(wantMarketID)
 	got, _, err := lp.Get(ctx, partyID, marketID, "", entities.OffsetPagination{})
 	require.NoError(t, err)
 	assert.Equal(t, len(want), len(got))
@@ -354,7 +354,7 @@ func testLiquidityProvisionPaginationNoPagination(t *testing.T) {
 
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
-	got, pageInfo, err := lpStore.Get(timeoutCtx, entities.PartyID{ID: "deadbaad"}, entities.MarketID{ID: ""}, "", pagination)
+	got, pageInfo, err := lpStore.Get(timeoutCtx, entities.PartyID("deadbaad"), entities.MarketID(""), "", pagination)
 
 	require.NoError(t, err)
 	assert.Equal(t, testLps, got)
@@ -379,7 +379,7 @@ func testLiquidityProvisionPaginationFirst(t *testing.T) {
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	require.NoError(t, err)
-	got, pageInfo, err := lpStore.Get(timeoutCtx, entities.PartyID{ID: "deadbaad"}, entities.MarketID{ID: ""}, "", pagination)
+	got, pageInfo, err := lpStore.Get(timeoutCtx, entities.PartyID("deadbaad"), entities.MarketID(""), "", pagination)
 
 	require.NoError(t, err)
 	want := testLps[:3]
@@ -405,7 +405,7 @@ func testLiquidityProvisionPaginationLast(t *testing.T) {
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	require.NoError(t, err)
-	got, pageInfo, err := lpStore.Get(timeoutCtx, entities.PartyID{ID: "deadbaad"}, entities.MarketID{ID: ""}, "", pagination)
+	got, pageInfo, err := lpStore.Get(timeoutCtx, entities.PartyID("deadbaad"), entities.MarketID(""), "", pagination)
 
 	require.NoError(t, err)
 	want := testLps[7:]
@@ -435,7 +435,7 @@ func testLiquidityProvisionPaginationFirstAfter(t *testing.T) {
 	}.String()).Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	require.NoError(t, err)
-	got, pageInfo, err := lpStore.Get(timeoutCtx, entities.PartyID{ID: "deadbaad"}, entities.MarketID{ID: ""}, "", pagination)
+	got, pageInfo, err := lpStore.Get(timeoutCtx, entities.PartyID("deadbaad"), entities.MarketID(""), "", pagination)
 
 	require.NoError(t, err)
 	want := testLps[3:6]
@@ -465,7 +465,7 @@ func testLiquidityProvisionPaginationLastBefore(t *testing.T) {
 	}.String()).Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 	require.NoError(t, err)
-	got, pageInfo, err := lsStore.Get(timeoutCtx, entities.PartyID{ID: "deadbaad"}, entities.MarketID{ID: ""}, "", pagination)
+	got, pageInfo, err := lsStore.Get(timeoutCtx, entities.PartyID("deadbaad"), entities.MarketID(""), "", pagination)
 
 	require.NoError(t, err)
 	want := testLps[4:7]

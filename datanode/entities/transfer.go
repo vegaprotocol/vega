@@ -29,11 +29,9 @@ type AccountSource interface {
 	GetByID(id int64) (Account, error)
 }
 
-type TransferID struct{ ID }
+type _Transfer struct{}
 
-func NewTransferID(id string) TransferID {
-	return TransferID{ID: ID(id)}
-}
+type TransferID = ID[_Transfer]
 
 type Transfer struct {
 	ID                  TransferID
@@ -113,8 +111,8 @@ func (t *Transfer) ToProto(accountSource AccountSource) (*eventspb.Transfer, err
 func TransferFromProto(ctx context.Context, t *eventspb.Transfer, vegaTime time.Time, accountSource AccountSource) (*Transfer, error) {
 	fromAcc := Account{
 		ID:       0,
-		PartyID:  PartyID{ID(t.From)},
-		AssetID:  AssetID{ID(t.Asset)},
+		PartyID:  PartyID(t.From),
+		AssetID:  AssetID(t.Asset),
 		Type:     t.FromAccountType,
 		VegaTime: vegaTime,
 	}
@@ -126,8 +124,8 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, vegaTime time.
 
 	toAcc := Account{
 		ID:       0,
-		PartyID:  PartyID{ID: ID(t.To)},
-		AssetID:  AssetID{ID: ID(t.Asset)},
+		PartyID:  PartyID(t.To),
+		AssetID:  AssetID(t.Asset),
 		Type:     t.ToAccountType,
 		VegaTime: vegaTime,
 	}
@@ -144,12 +142,12 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, vegaTime time.
 	}
 
 	transfer := Transfer{
-		ID:            NewTransferID(t.Id),
+		ID:            TransferID(t.Id),
 		VegaTime:      vegaTime,
 		FromAccountId: fromAcc.ID,
 		ToAccountId:   toAcc.ID,
 		Amount:        amount,
-		AssetId:       NewAssetID(t.Asset),
+		AssetId:       AssetID(t.Asset),
 		Reference:     t.Reference,
 		Status:        TransferStatus(t.Status),
 		TransferType:  0,
