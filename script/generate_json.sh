@@ -1,7 +1,14 @@
 #!/bin/bash
 
+# go to the repo root directory
+cd "$(dirname "$0")/.."
+
+function clean() {
+  rm -rf protos/generated
+  rm -rf protos/swagger
+}
+
 function gen_json() {
-	rm -rf protos/generated
 	mkdir -p protos/generated/json/vega
 	mkdir -p ./protos/generated/json/data-node/api/v1
 	mkdir -p ./protos/generated/json/data-node/api/v2
@@ -12,7 +19,7 @@ function gen_json() {
 }
 
 function gen_docs() {
-  mkdir -p generated
+  mkdir -p ./protos/generated
 
   protoc --experimental_allow_proto3_optional --doc_out=./protos/generated --doc_opt=json,proto.json --proto_path=protos/sources/ \
   protos/sources/vega/*.proto \
@@ -28,10 +35,11 @@ function gen_docs() {
 }
 
 function gen_swagger() {
-	buf generate --path=./protos/sources/vega/api --template=./protos/sources/vega/api/v1/buf.gen.yaml # generate swagger
-	buf generate --path=./protos/sources/data-node/api/v1 --template=./protos/sources/data-node/api/v1/buf.gen.yaml # generate swagger
+	buf generate --path=./protos/sources/vega/api --template=./protos/sources/vega/api/v1/buf.gen.yaml --output ./protos # generate swagger
+	buf generate --path=./protos/sources/data-node/api/v1 --template=./protos/sources/data-node/api/v1/buf.gen.yaml --output ./protos # generate swagger
 }
 
+clean
 gen_swagger
 gen_json
 gen_docs
