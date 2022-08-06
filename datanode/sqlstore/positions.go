@@ -52,10 +52,14 @@ func (ps *Positions) Add(ctx context.Context, p entities.Position) error {
 }
 
 func (ps *Positions) GetByMarketAndParty(ctx context.Context,
-	marketID string,
-	partyID string,
+	marketIDRaw string,
+	partyIDRaw string,
 ) (entities.Position, error) {
-	position := entities.Position{}
+	var (
+		position = entities.Position{}
+		marketID = entities.MarketID(marketIDRaw)
+		partyID  = entities.PartyID(partyIDRaw)
+	)
 
 	defer metrics.StartSQLQuery("Positions", "GetByMarketAndParty")()
 	err := pgxscan.Get(ctx, ps.Connection, &position,
@@ -63,7 +67,7 @@ func (ps *Positions) GetByMarketAndParty(ctx context.Context,
 		marketID, partyID)
 
 	if pgxscan.NotFound(err) {
-		return position, fmt.Errorf("'%v/%v': %w", entities.MarketID(marketID), entities.PartyID(partyID), ErrPositionNotFound)
+		return position, fmt.Errorf("'%v/%v': %w", marketID, partyID, ErrPositionNotFound)
 	}
 
 	return position, err
@@ -87,7 +91,7 @@ func (ps *Positions) GetByParty(ctx context.Context, partyID string) ([]entities
 	return positions, err
 }
 
-func (ps *Positions) GetByPartyConnection(ctx context.Context, partyIDRaw string, marketID string, pagination entities.CursorPagination) ([]entities.Position, entities.PageInfo, error) {
+func (ps *Positions) GetByPartyConnection(ctx context.Context, partyIDRaw string, marketIDRaw string, pagination entities.CursorPagination) ([]entities.Position, entities.PageInfo, error) {
 	var (
 		args                 []interface{}
 		pageInfo             entities.PageInfo
@@ -95,6 +99,7 @@ func (ps *Positions) GetByPartyConnection(ctx context.Context, partyIDRaw string
 		where                string
 		sorting, cmp, cursor = extractPaginationInfo(pagination)
 		partyID              = entities.PartyID(partyIDRaw)
+		marketID             = entities.MarketID(marketIDRaw)
 	)
 
 	positionCursor := &entities.PositionCursor{}
