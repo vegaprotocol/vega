@@ -5,7 +5,6 @@
 package mocks
 
 import (
-	big "math/big"
 	reflect "reflect"
 
 	types "code.vegaprotocol.io/vega/core/types"
@@ -33,6 +32,20 @@ func NewMockERC20BridgeView(ctrl *gomock.Controller) *MockERC20BridgeView {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockERC20BridgeView) EXPECT() *MockERC20BridgeViewMockRecorder {
 	return m.recorder
+}
+
+// FindAssetLimitsUpdated mocks base method.
+func (m *MockERC20BridgeView) FindAssetLimitsUpdated(arg0 *types.ERC20AssetLimitsUpdated, arg1, arg2 uint64, arg3 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindAssetLimitsUpdated", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// FindAssetLimitsUpdated indicates an expected call of FindAssetLimitsUpdated.
+func (mr *MockERC20BridgeViewMockRecorder) FindAssetLimitsUpdated(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAssetLimitsUpdated", reflect.TypeOf((*MockERC20BridgeView)(nil).FindAssetLimitsUpdated), arg0, arg1, arg2, arg3)
 }
 
 // FindAssetList mocks base method.
@@ -89,21 +102,4 @@ func (m *MockERC20BridgeView) FindDeposit(arg0 *types.ERC20Deposit, arg1, arg2 u
 func (mr *MockERC20BridgeViewMockRecorder) FindDeposit(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindDeposit", reflect.TypeOf((*MockERC20BridgeView)(nil).FindDeposit), arg0, arg1, arg2, arg3)
-}
-
-// FindWithdrawal mocks base method.
-func (m *MockERC20BridgeView) FindWithdrawal(arg0 *types.ERC20Withdrawal, arg1, arg2 uint64, arg3 string) (*big.Int, string, uint, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindWithdrawal", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(*big.Int)
-	ret1, _ := ret[1].(string)
-	ret2, _ := ret[2].(uint)
-	ret3, _ := ret[3].(error)
-	return ret0, ret1, ret2, ret3
-}
-
-// FindWithdrawal indicates an expected call of FindWithdrawal.
-func (mr *MockERC20BridgeViewMockRecorder) FindWithdrawal(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindWithdrawal", reflect.TypeOf((*MockERC20BridgeView)(nil).FindWithdrawal), arg0, arg1, arg2, arg3)
 }

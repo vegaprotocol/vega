@@ -38,7 +38,7 @@ type ERC20BridgeView interface {
 	FindBridgeStopped(al *types.ERC20EventBridgeStopped, blockNumber, logIndex uint64) error
 	FindBridgeResumed(al *types.ERC20EventBridgeResumed, blockNumber, logIndex uint64) error
 	FindDeposit(d *types.ERC20Deposit, blockNumber, logIndex uint64, ethAssetAddress string) error
-	FindWithdrawal(w *types.ERC20Withdrawal, blockNumber, logIndex uint64, ethAssetAddress string) (*big.Int, string, uint, error)
+	FindAssetLimitsUpdated(update *types.ERC20AssetLimitsUpdated, blockNumber uint64, logIndex uint64, ethAssetAddress string) error
 }
 
 func (e *Engine) EnableERC20(
@@ -59,9 +59,10 @@ func (e *Engine) EnableERC20(
 		state:       pendingState,
 		erc20AL:     al,
 		asset:       asset,
-		blockNumber: blockNumber,
-		txIndex:     txIndex,
-		hash:        txHash,
+		blockHeight: blockNumber,
+		logIndex:    txIndex,
+		txHash:      txHash,
+		bridgeView:  e.bridgeView,
 	}
 	e.assetActs[aa.id] = aa
 	e.bss.changedAssetActions = true
@@ -87,9 +88,10 @@ func (e *Engine) UpdateERC20(
 		state:                   pendingState,
 		erc20AssetLimitsUpdated: event,
 		asset:                   asset,
-		blockNumber:             blockNumber,
-		txIndex:                 txIndex,
-		hash:                    txHash,
+		blockHeight:             blockNumber,
+		logIndex:                txIndex,
+		txHash:                  txHash,
+		bridgeView:              e.bridgeView,
 	}
 	e.assetActs[aa.id] = aa
 	return e.witness.StartCheck(aa, e.onCheckDone, e.timeService.GetTimeNow().Add(defaultValidationDuration))
@@ -126,9 +128,10 @@ func (e *Engine) DepositERC20(
 		state:       pendingState,
 		erc20D:      d,
 		asset:       asset,
-		blockNumber: blockNumber,
-		txIndex:     txIndex,
-		hash:        txHash,
+		blockHeight: blockNumber,
+		logIndex:    txIndex,
+		txHash:      txHash,
+		bridgeView:  e.bridgeView,
 	}
 	e.assetActs[aa.id] = aa
 	e.deposits[dep.ID] = dep

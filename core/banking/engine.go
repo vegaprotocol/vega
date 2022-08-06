@@ -360,10 +360,10 @@ func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
 	case aa.IsERC20AssetLimitsUpdated():
 		return e.finalizeAssetLimitsUpdated(ctx, aa.erc20AssetLimitsUpdated.VegaAssetID)
 	case aa.IsERC20BridgeStopped():
-		e.bridgeState.NewBridgeStopped(aa.blockNumber, aa.txIndex)
+		e.bridgeState.NewBridgeStopped(aa.blockHeight, aa.logIndex)
 		return nil
 	case aa.IsERC20BridgeResumed():
-		e.bridgeState.NewBridgeResumed(aa.blockNumber, aa.txIndex)
+		e.bridgeState.NewBridgeResumed(aa.blockHeight, aa.logIndex)
 		return nil
 	default:
 		return ErrUnknownAssetAction

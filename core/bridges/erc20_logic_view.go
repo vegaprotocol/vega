@@ -14,6 +14,7 @@ import (
 	bridgecontract "code.vegaprotocol.io/vega/core/contracts/erc20_bridge_logic_restricted"
 	"code.vegaprotocol.io/vega/core/metrics"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
@@ -21,11 +22,12 @@ import (
 )
 
 var (
-	ErrUnableToFindERC20AssetList     = errors.New("unable to find erc20 asset list event")
-	ErrUnableToFindERC20BridgeStopped = errors.New("unable to find erc20 bridge stopped event")
-	ErrUnableToFindERC20BridgeResumed = errors.New("unable to find erc20 bridge resumed event")
-	ErrUnableToFindERC20Deposit       = errors.New("unable to find erc20 asset deposit")
-	ErrUnableToFindERC20Withdrawal    = errors.New("unabled to find erc20 asset withdrawal")
+	ErrUnableToFindERC20AssetList          = errors.New("unable to find erc20 asset list event")
+	ErrUnableToFindERC20BridgeStopped      = errors.New("unable to find erc20 bridge stopped event")
+	ErrUnableToFindERC20BridgeResumed      = errors.New("unable to find erc20 bridge resumed event")
+	ErrUnableToFindERC20Deposit            = errors.New("unable to find erc20 asset deposit")
+	ErrUnableToFindERC20Withdrawal         = errors.New("unabled to find erc20 asset withdrawal")
+	ErrUnableToFindERC20AssetLimitsUpdated = errors.New("unable to find erc20 asset limits update event")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_client_mock.go -package mocks code.vegaprotocol.io/vega/core/bridges ETHClient
@@ -347,6 +349,63 @@ func (e *ERC20LogicView) FindWithdrawal(
 	}
 
 	return nonce, event.Raw.TxHash.Hex(), event.Raw.Index, nil
+}
+
+func (e *ERC20LogicView) FindAssetLimitsUpdated(
+	update *types.ERC20AssetLimitsUpdated,
+	blockNumber uint64, logIndex uint64,
+	ethAssetAddress string,
+) error {
+	bf, err := bridgecontract.NewErc20BridgeLogicRestrictedFilterer(
+		e.clt.CollateralBridgeAddress(), e.clt)
+	if err != nil {
+		return err
+	}
+
+	resp := "ok"
+	defer func() {
+		metrics.EthCallInc("find_asset_limits_updated", update.VegaAssetID, resp)
+	}()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	iter, err := bf.FilterAssetLimitsUpdated(
+		&bind.FilterOpts{
+			Start:   blockNumber - 1,
+			Context: ctx,
+		},
+		[]ethcommon.Address{ethcommon.HexToAddress(ethAssetAddress)},
+	)
+	if err != nil {
+		resp = getMaybeHTTPStatus(err)
+		return err
+	}
+	defer iter.Close()
+
+	var event *bridgecontract.Erc20BridgeLogicRestrictedAssetLimitsUpdated
+
+	for iter.Next() {
+		eventLifetimeLimit, _ := num.UintFromBig(iter.Event.LifetimeLimit)
+		eventWithdrawThreshold, _ := num.UintFromBig(iter.Event.WithdrawThreshold)
+		if update.LifetimeLimits.EQ(eventLifetimeLimit) &&
+			update.WithdrawThreshold.EQ(eventWithdrawThreshold) &&
+			iter.Event.Raw.BlockNumber == blockNumber &&
+			uint64(iter.Event.Raw.Index) == logIndex {
+			event = iter.Event
+			break
+		}
+	}
+
+	if event == nil {
+		return ErrUnableToFindERC20AssetLimitsUpdated
+	}
+
+	// now ensure we have enough confirmations
+	if err := e.ethConfs.Check(event.Raw.BlockNumber); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func getMaybeHTTPStatus(err error) string {

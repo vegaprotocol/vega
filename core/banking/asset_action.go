@@ -29,9 +29,9 @@ type assetAction struct {
 	asset *assets.Asset
 
 	// erc20 specifics
-	blockNumber uint64
-	txIndex     uint64
-	hash        string
+	blockHeight uint64
+	logIndex    uint64
+	txHash      string
 
 	// all deposit related types
 	builtinD *types.BuiltinAssetDeposit
@@ -134,43 +134,46 @@ func (t *assetAction) checkBuiltinAssetDeposit() error {
 
 func (t *assetAction) checkERC20BridgeStopped() error {
 	return t.bridgeView.FindBridgeStopped(
-		t.erc20BridgeStopped, t.blockNumber, t.txIndex)
+		t.erc20BridgeStopped, t.blockHeight, t.logIndex)
 }
 
 func (t *assetAction) checkERC20BridgeResumed() error {
 	return t.bridgeView.FindBridgeResumed(
-		t.erc20BridgeResumed, t.blockNumber, t.txIndex)
+		t.erc20BridgeResumed, t.blockHeight, t.logIndex)
 }
 
 func (t *assetAction) checkERC20Deposit() error {
 	asset, _ := t.asset.ERC20()
-	return asset.ValidateDeposit(t.erc20D, t.blockNumber, t.txIndex)
+	return t.bridgeView.FindDeposit(
+		t.erc20D, t.blockHeight, t.logIndex, asset.Address(),
+	)
 }
 
 func (t *assetAction) checkERC20AssetList() error {
-	asset, _ := t.asset.ERC20()
-	return asset.ValidateAssetList(t.erc20AL, t.blockNumber, t.txIndex)
+	return t.bridgeView.FindAssetList(t.erc20AL, t.blockHeight, t.logIndex)
 }
 
 func (t *assetAction) checkERC20AssetLimitsUpdated() error {
 	asset, _ := t.asset.ERC20()
-	return asset.ValidateAssetLimitsUpdated(t.erc20AssetLimitsUpdated, t.blockNumber, t.txIndex)
+	return t.bridgeView.FindAssetLimitsUpdated(
+		t.erc20AssetLimitsUpdated, t.blockHeight, t.logIndex, asset.Address(),
+	)
 }
 
 func (t *assetAction) getRef() snapshot.TxRef {
 	switch {
 	case t.IsBuiltinAssetDeposit():
-		return snapshot.TxRef{Asset: string(common.Builtin), BlockNr: 0, Hash: t.hash, LogIndex: 0}
+		return snapshot.TxRef{Asset: string(common.Builtin), BlockNr: 0, Hash: t.txHash, LogIndex: 0}
 	case t.IsERC20Deposit():
-		return snapshot.TxRef{Asset: string(common.ERC20), BlockNr: t.blockNumber, Hash: t.hash, LogIndex: t.txIndex}
+		return snapshot.TxRef{Asset: string(common.ERC20), BlockNr: t.blockHeight, Hash: t.txHash, LogIndex: t.logIndex}
 	case t.IsERC20AssetList():
-		return snapshot.TxRef{Asset: string(common.ERC20), BlockNr: t.blockNumber, Hash: t.hash, LogIndex: t.txIndex}
+		return snapshot.TxRef{Asset: string(common.ERC20), BlockNr: t.blockHeight, Hash: t.txHash, LogIndex: t.logIndex}
 	case t.IsERC20AssetLimitsUpdated():
-		return snapshot.TxRef{Asset: string(common.ERC20), BlockNr: t.blockNumber, Hash: t.hash, LogIndex: t.txIndex}
+		return snapshot.TxRef{Asset: string(common.ERC20), BlockNr: t.blockHeight, Hash: t.txHash, LogIndex: t.logIndex}
 	case t.IsERC20BridgeStopped():
-		return snapshot.TxRef{Asset: string(common.ERC20), BlockNr: t.blockNumber, Hash: t.hash, LogIndex: t.txIndex}
+		return snapshot.TxRef{Asset: string(common.ERC20), BlockNr: t.blockHeight, Hash: t.txHash, LogIndex: t.logIndex}
 	case t.IsERC20BridgeResumed():
-		return snapshot.TxRef{Asset: string(common.ERC20), BlockNr: t.blockNumber, Hash: t.hash, LogIndex: t.txIndex}
+		return snapshot.TxRef{Asset: string(common.ERC20), BlockNr: t.blockHeight, Hash: t.txHash, LogIndex: t.logIndex}
 	default:
 		return snapshot.TxRef{} // this is basically unreachable
 	}

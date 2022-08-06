@@ -17,9 +17,9 @@ func (e *Engine) BridgeStopped(
 		id:                 id,
 		state:              pendingState,
 		erc20BridgeStopped: &types.ERC20EventBridgeStopped{BridgeStopped: stopped},
-		blockNumber:        block,
-		txIndex:            logIndex,
-		hash:               ethTxHash,
+		blockHeight:        block,
+		logIndex:           logIndex,
+		txHash:             ethTxHash,
 		bridgeView:         e.bridgeView,
 	}
 	e.assetActs[aa.id] = aa
@@ -38,9 +38,9 @@ func (e *Engine) BridgeResumed(
 		id:                 id,
 		state:              pendingState,
 		erc20BridgeResumed: &types.ERC20EventBridgeResumed{BridgeResumed: resumed},
-		blockNumber:        block,
-		txIndex:            logIndex,
-		hash:               ethTxHash,
+		blockHeight:        block,
+		logIndex:           logIndex,
+		txHash:             ethTxHash,
 		bridgeView:         e.bridgeView,
 	}
 	e.assetActs[aa.id] = aa
