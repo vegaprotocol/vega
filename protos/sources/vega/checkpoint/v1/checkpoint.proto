@@ -151,8 +151,8 @@ message Banking {
 
 message BridgeState {
   bool active = 1;
-  uint64 blockHeight = 2;
-  uint64 logIndex = 3;
+  uint64 block_height = 2;
+  uint64 log_index = 3;
 }
 
 message Validators {
