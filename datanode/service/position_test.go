@@ -51,11 +51,11 @@ func TestPositionAdd(t *testing.T) {
 
 	// We don't expect a call to the store's GetByMarketAndParty() method as it should be cached
 	// testPosition3 has the same market/party as testPosition1 so should replace it
-	fetched, err := svc.GetByMarketAndParty(ctx, market1ID, party1ID)
+	fetched, err := svc.GetByMarketAndParty(ctx, market1ID.String(), party1ID.String())
 	assert.NoError(t, err)
 	assert.Equal(t, testPosition3, fetched)
 
-	fetched, err = svc.GetByMarketAndParty(ctx, market2ID, party2ID)
+	fetched, err = svc.GetByMarketAndParty(ctx, market2ID.String(), party2ID.String())
 	assert.NoError(t, err)
 	assert.Equal(t, testPosition2, fetched)
 }
@@ -67,17 +67,17 @@ func TestCache(t *testing.T) {
 
 	// Simulate store with one position in it
 	store := mocks.NewMockPositionStore(ctrl)
-	store.EXPECT().GetByMarketAndParty(ctx, market1ID, party1ID).Return(testPosition1, nil)
+	store.EXPECT().GetByMarketAndParty(ctx, market1ID.String(), party1ID.String()).Return(testPosition1, nil)
 
 	svc := service.NewPosition(store, logging.NewTestLogger())
 
 	// First time should call through to the store
-	fetched, err := svc.GetByMarketAndParty(ctx, market1ID, party1ID)
+	fetched, err := svc.GetByMarketAndParty(ctx, market1ID.String(), party1ID.String())
 	assert.NoError(t, err)
 	assert.Equal(t, testPosition1, fetched)
 
 	// Second time should use cache (we only EXPECT one call above)
-	fetched, err = svc.GetByMarketAndParty(ctx, market1ID, party1ID)
+	fetched, err = svc.GetByMarketAndParty(ctx, market1ID.String(), party1ID.String())
 	assert.NoError(t, err)
 	assert.Equal(t, testPosition1, fetched)
 }
@@ -90,7 +90,7 @@ func TestCacheError(t *testing.T) {
 
 	// Simulate store with no positions in it
 	store := mocks.NewMockPositionStore(ctrl)
-	store.EXPECT().GetByMarketAndParty(ctx, market1ID, party1ID).Return(
+	store.EXPECT().GetByMarketAndParty(ctx, market1ID.String(), party1ID.String()).Return(
 		entities.Position{},
 		notFoundErr,
 	)
@@ -98,12 +98,12 @@ func TestCacheError(t *testing.T) {
 	svc := service.NewPosition(store, logging.NewTestLogger())
 
 	// First time should call through to the store and return error
-	fetched, err := svc.GetByMarketAndParty(ctx, market1ID, party1ID)
+	fetched, err := svc.GetByMarketAndParty(ctx, market1ID.String(), party1ID.String())
 	assert.ErrorIs(t, notFoundErr, err)
 	assert.Equal(t, entities.Position{}, fetched)
 
 	// Second time should use cache but still get same error
-	fetched, err = svc.GetByMarketAndParty(ctx, market1ID, party1ID)
+	fetched, err = svc.GetByMarketAndParty(ctx, market1ID.String(), party1ID.String())
 	assert.ErrorIs(t, notFoundErr, err)
 	assert.Equal(t, entities.Position{}, fetched)
 }
