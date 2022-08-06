@@ -11,17 +11,20 @@ import (
 	"strings"
 	"time"
 
+	erc20contract "code.vegaprotocol.io/vega/core/contracts/erc20"
 	bridgecontract "code.vegaprotocol.io/vega/core/contracts/erc20_bridge_logic_restricted"
 	"code.vegaprotocol.io/vega/core/metrics"
 	"code.vegaprotocol.io/vega/core/types"
+	vgerrors "code.vegaprotocol.io/vega/libs/errors"
 	"code.vegaprotocol.io/vega/libs/num"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
 var (
+	ErrNotAnERC20Asset                     = errors.New("not an erc20 asset")
 	ErrUnableToFindERC20AssetList          = errors.New("unable to find erc20 asset list event")
 	ErrUnableToFindERC20BridgeStopped      = errors.New("unable to find erc20 bridge stopped event")
 	ErrUnableToFindERC20BridgeResumed      = errors.New("unable to find erc20 bridge resumed event")
@@ -32,7 +35,7 @@ var (
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_client_mock.go -package mocks code.vegaprotocol.io/vega/core/bridges ETHClient
 type ETHClient interface {
-	bind.ContractFilterer
+	bind.ContractBackend
 	HeaderByNumber(context.Context, *big.Int) (*ethtypes.Header, error)
 	CollateralBridgeAddress() ethcommon.Address
 	CurrentHeight(context.Context) (uint64, error)
@@ -59,6 +62,56 @@ func NewERC20LogicView(
 		clt:      clt,
 		ethConfs: ethConfs,
 	}
+}
+
+// FindAsset will try to find an asset and validate it's details on ethereum
+func (e *ERC20LogicView) FindAsset(
+	asset *types.AssetDetails,
+) error {
+	source := asset.GetERC20()
+	if source == nil {
+		return ErrNotAnERC20Asset
+	}
+
+	t, err := erc20contract.NewErc20(ethcommon.HexToAddress(source.ContractAddress), e.clt)
+	if err != nil {
+		return err
+	}
+
+	validationErrs := vgerrors.NewCumulatedErrors()
+
+	if name, err := t.Name(&bind.CallOpts{}); err != nil {
+		validationErrs.Add(fmt.Errorf("couldn't get name: %w", err))
+	} else if name != asset.Name {
+		validationErrs.Add(fmt.Errorf("invalid name, expected(%s), got(%s)", asset.Name, name))
+	}
+
+	if symbol, err := t.Symbol(&bind.CallOpts{}); err != nil {
+		validationErrs.Add(fmt.Errorf("couldn't get symbol: %w", err))
+	} else if symbol != asset.Symbol {
+		validationErrs.Add(fmt.Errorf("invalid symbol, expected(%s), got(%s)", asset.Symbol, symbol))
+	}
+
+	if decimals, err := t.Decimals(&bind.CallOpts{}); err != nil {
+		validationErrs.Add(fmt.Errorf("couldn't get decimals: %w", err))
+	} else if uint64(decimals) != asset.Decimals {
+		validationErrs.Add(fmt.Errorf("invalid decimals, expected(%d), got(%d)", asset.Decimals, decimals))
+	}
+
+	// FIXME: We do not check the total supply for now.
+	// It's for normal asset never really used, and will also vary
+	// if new coins are minted...
+	// if totalSupply, err := t.TotalSupply(&bind.CallOpts{}); err != nil {
+	// 	carryErr = fmt.Errorf("couldn't get totalSupply %v: %w", err, carryErr)
+	// } else if totalSupply.String() != b.asset.Details.TotalSupply {
+	// 	carryErr = maybeError(carryErr, "invalid symbol, expected(%s), got(%s)", b.asset.Details.TotalSupply, totalSupply)
+	// }
+
+	if validationErrs.HasAny() {
+		return validationErrs
+	}
+
+	return nil
 }
 
 // FindAssetList will look at the ethereum logs and try to find the

@@ -107,3 +107,17 @@ func (mr *MockAssetsMockRecorder) SetRejected(arg0, arg1 interface{}) *gomock.Ca
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetRejected", reflect.TypeOf((*MockAssets)(nil).SetRejected), arg0, arg1)
 }
+
+// ValidateAsset mocks base method.
+func (m *MockAssets) ValidateAsset(arg0 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ValidateAsset", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ValidateAsset indicates an expected call of ValidateAsset.
+func (mr *MockAssetsMockRecorder) ValidateAsset(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateAsset", reflect.TypeOf((*MockAssets)(nil).ValidateAsset), arg0)
+}

@@ -5,6 +5,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/assets"
 	erc20mocks "code.vegaprotocol.io/vega/core/assets/erc20/mocks"
+	"code.vegaprotocol.io/vega/core/assets/mocks"
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	nweth "code.vegaprotocol.io/vega/core/nodewallets/eth"
@@ -19,8 +20,9 @@ import (
 
 type testService struct {
 	*assets.Service
-	broker *bmocks.MockBrokerI
-	ctrl   *gomock.Controller
+	broker     *bmocks.MockBrokerI
+	bridgeView *mocks.MockERC20BridgeView
+	ctrl       *gomock.Controller
 }
 
 func TestAssets(t *testing.T) {
@@ -63,14 +65,16 @@ func getTestService(t *testing.T) *testService {
 	ctrl := gomock.NewController(t)
 	ethClient := erc20mocks.NewMockETHClient(ctrl)
 	broker := bmocks.NewMockBrokerI(ctrl)
+	bridgeView := mocks.NewMockERC20BridgeView(ctrl)
 	nodeWallets := &nodewallets.NodeWallets{
 		Vega:     &nwvega.Wallet{},
 		Ethereum: &nweth.Wallet{},
 	}
-	service := assets.New(logger, conf, nodeWallets, ethClient, broker, true)
+	service := assets.New(logger, conf, nodeWallets, ethClient, broker, bridgeView, true)
 	return &testService{
-		Service: service,
-		broker:  broker,
-		ctrl:    ctrl,
+		Service:    service,
+		broker:     broker,
+		ctrl:       ctrl,
+		bridgeView: bridgeView,
 	}
 }

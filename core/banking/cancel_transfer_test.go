@@ -177,6 +177,5 @@ func (m *mockAsset) SetEnabled()        {}
 
 func (m *mockAsset) GetAssetClass() common.AssetClass { return common.ERC20 }
 func (m *mockAsset) IsValid() bool                    { return true }
-func (m *mockAsset) Validate() error                  { return nil }
-func (m *mockAsset) SetValidNonValidator()            {}
+func (m *mockAsset) SetValid()                        {}
 func (m *mockAsset) String() string                   { return "" }
