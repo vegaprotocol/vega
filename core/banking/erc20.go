@@ -27,9 +27,19 @@ import (
 )
 
 var (
-	ErrInvalidWithdrawalReferenceNonce = errors.New("invalid withdrawal reference nonce")
-	ErrAssetAlreadyBeingListed         = errors.New("asset already being listed")
+	ErrInvalidWithdrawalReferenceNonce       = errors.New("invalid withdrawal reference nonce")
+	ErrAssetAlreadyBeingListed               = errors.New("asset already being listed")
+	ErrWithdrawalDisabledWhenBridgeIsStopped = errors.New("withdrawal issuance is disabled when the erc20 is stopped")
 )
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/erc20_bridge_view_mock.go -package mocks code.vegaprotocol.io/vega/core/banking ERC20BridgeView
+type ERC20BridgeView interface {
+	FindAssetList(al *types.ERC20AssetList, blockNumber, logIndex uint64) error
+	FindBridgeStopped(al *types.ERC20EventBridgeStopped, blockNumber, logIndex uint64) error
+	FindBridgeResumed(al *types.ERC20EventBridgeResumed, blockNumber, logIndex uint64) error
+	FindDeposit(d *types.ERC20Deposit, blockNumber, logIndex uint64, ethAssetAddress string) error
+	FindWithdrawal(w *types.ERC20Withdrawal, blockNumber, logIndex uint64, ethAssetAddress string) (*big.Int, string, uint, error)
+}
 
 func (e *Engine) EnableERC20(
 	_ context.Context,
@@ -163,6 +173,10 @@ func (e *Engine) WithdrawERC20(
 	amount *num.Uint,
 	ext *types.Erc20WithdrawExt,
 ) error {
+	if e.bridgeState.IsStopped() {
+		return ErrWithdrawalDisabledWhenBridgeIsStopped
+	}
+
 	wext := &types.WithdrawExt{
 		Ext: &types.WithdrawExtErc20{
 			Erc20: ext,

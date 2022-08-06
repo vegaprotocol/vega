@@ -98,6 +98,10 @@ message ERC20Event {
     ERC20Withdrawal withdrawal = 1004;
     // Update an ERC20 asset
     ERC20AssetLimitsUpdated asset_limits_updated = 1005;
+    // Bridge operations has been stopped
+    bool bridge_stopped = 1006;
+    // Bridge operations has been resumed
+    bool bridge_resumed = 1007;
   }
 }
 

@@ -21,6 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/core/blockchain"
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
 	"code.vegaprotocol.io/vega/core/blockchain/nullchain"
+	"code.vegaprotocol.io/vega/core/bridges"
 	"code.vegaprotocol.io/vega/core/broker"
 	"code.vegaprotocol.io/vega/core/checkpoint"
 	ethclient "code.vegaprotocol.io/vega/core/client/eth"
@@ -113,6 +114,8 @@ type allServices struct {
 	stakeVerifier         *staking.StakeVerifier
 	stakeCheckpoint       *staking.Checkpoint
 	erc20MultiSigTopology *erc20multisig.Topology
+
+	erc20BridgeView *bridges.ERC20LogicView
 
 	commander *nodewallets.Commander
 }
@@ -233,7 +236,9 @@ func newServices(
 	// TODO(): this is not pretty
 	svcs.topology.SetNotary(svcs.notary)
 
-	svcs.banking = banking.New(svcs.log, svcs.conf.Banking, svcs.collateral, svcs.witness, svcs.timeService, svcs.assets, svcs.notary, svcs.broker, svcs.topology, svcs.epochService, svcs.marketActivityTracker)
+	svcs.erc20BridgeView = bridges.NewERC20LogicView(ethClient, ethConfirmations)
+
+	svcs.banking = banking.New(svcs.log, svcs.conf.Banking, svcs.collateral, svcs.witness, svcs.timeService, svcs.assets, svcs.notary, svcs.broker, svcs.topology, svcs.epochService, svcs.marketActivityTracker, svcs.erc20BridgeView)
 	svcs.rewards = rewards.New(svcs.log, svcs.conf.Rewards, svcs.broker, svcs.delegation, svcs.epochService, svcs.collateral, svcs.timeService, svcs.marketActivityTracker, svcs.topology)
 
 	svcs.registerTimeServiceCallbacks()
