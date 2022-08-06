@@ -9,6 +9,7 @@ import "vega/assets.proto";
 import "vega/oracles/v1/data.proto";
 import "vega/oracles/v1/spec.proto";
 import "vega/events/v1/events.proto";
+import "vega/commands/v1/validator_commands.proto";
 
 package datanode.api.v2;
 
@@ -63,7 +64,6 @@ service TradingDataService {
 
     rpc ObserveMarketsData(ObserveMarketsDataRequest) returns (stream ObserveMarketsDataResponse);
 
-
     // Get Market Data History for a Market ID between given dates using a cursor based pagination model
     rpc GetMarketDataHistoryByID(GetMarketDataHistoryByIDRequest) returns (GetMarketDataHistoryByIDResponse);
 
@@ -101,6 +101,9 @@ service TradingDataService {
     rpc GetERC20WithdrawalApproval(GetERC20WithdrawalApprovalRequest) returns (GetERC20WithdrawalApprovalResponse);
 
     // -- Trades --
+    // Get latest Trade
+    rpc GetLastTrade(GetLastTradeRequest) returns (GetLastTradeResponse);
+
     // Get a list of all trades, optionally filtered by party/market/order using a cursor based pagination model
     rpc ListTrades(ListTradesRequest) returns (ListTradesResponse);
 
@@ -117,10 +120,12 @@ service TradingDataService {
 
     // -- Markets --
     // Get all markets using a cursor based pagination model
+    rpc GetMarket(GetMarketRequest) returns (GetMarketResponse);
     rpc ListMarkets(ListMarketsRequest) returns (ListMarketsResponse);
 
     // -- Parties --
     // Get Parties using a cursor based pagination model
+    rpc GetParty(GetPartyRequest) returns (GetPartyResponse);
     rpc ListParties(ListPartiesRequest) returns (ListPartiesResponse);
 
     // -- Margin Levels --
@@ -156,6 +161,7 @@ service TradingDataService {
 
     // -- Governance --
     // List proposals using a cursor based pagination model
+    rpc GetGovernanceData(GetGovernanceDataRequest) returns (GetGovernanceDataResponse);
     rpc ListGovernanceData(ListGovernanceDataRequest) returns (ListGovernanceDataResponse);
     rpc ObserveGovernance(ObserveGovernanceRequest) returns (stream ObserveGovernanceResponse);
 
@@ -172,6 +178,8 @@ service TradingDataService {
     rpc GetNode(GetNodeRequest) returns (GetNodeResponse);
     // List information about the nodes on the network
     rpc ListNodes(ListNodesRequest) returns (ListNodesResponse);
+    // List an aggregate of signatures from all the nodes of the network
+    rpc ListNodeSignatures(ListNodeSignaturesRequest) returns (ListNodeSignaturesResponse);
 
     // -- Epochs --
     // Get data for a specific epoch, if id omitted it gets the current epoch
@@ -202,6 +210,14 @@ service TradingDataService {
     // -- Transfer Responses --
     // Subscribe to a stream of Transfer Responses
     rpc ObserveTransferResponses(ObserveTransferResponsesRequest) returns (stream ObserveTransferResponsesResponse);
+
+    // -- Key Rotations --
+    rpc ListKeyRotations(ListKeyRotationsRequest) returns (ListKeyRotationsResponse);
+
+    // -- Vega Time --
+
+    // Get Time
+    rpc GetVegaTime(GetVegaTimeRequest) returns (GetVegaTimeResponse);
 }
 
 // -- Pagination --
@@ -248,12 +264,10 @@ message ListAccountsResponse {
 }
 
 message AccountsConnection {
-    // Total number of accounts matching the supplied filter
-    int64 total_count = 1;
     // The accounts & cursors
-    repeated AccountEdge edges = 2;
+    repeated AccountEdge edges = 1;
     // Information for fetching further pages
-    PageInfo page_info = 3;
+    PageInfo page_info = 2;
 }
 
 message AccountEdge {
@@ -730,13 +744,28 @@ message GetERC20MultiSigSignerAddedBundlesRequest {
     string epoch_seq = 2;
 
     // Pagination controls
-    OffsetPagination pagination = 3;
+    Pagination pagination = 3;
 }
 
 message GetERC20MultiSigSignerAddedBundlesResponse {
 
     // list of bundles for that validator, it may have been added multiple times if removed in between
-    repeated ERC20MultiSigSignerAddedBundle bundles = 1;
+    ERC20MultiSigSignerAddedConnection bundles = 1;
+}
+
+message ERC20MultiSigSignerAddedEdge {
+    vega.events.v1.ERC20MultiSigSignerAdded node = 1;
+    string cursor = 2;
+}
+
+message ERC20MultiSigSignerAddedBundleEdge {
+    ERC20MultiSigSignerAddedBundle node = 1;
+    string cursor = 2;
+}
+
+message ERC20MultiSigSignerAddedConnection {
+    repeated ERC20MultiSigSignerAddedBundleEdge edges = 1;
+    PageInfo page_info = 2;
 }
 
 message ERC20MultiSigSignerAddedBundle {
@@ -772,12 +801,27 @@ message GetERC20MultiSigSignerRemovedBundlesRequest {
     string epoch_seq = 3;
 
     // Pagination controls
-    OffsetPagination pagination = 4;
+    Pagination pagination = 4;
 }
 
 message GetERC20MultiSigSignerRemovedBundlesResponse {
     // list of signer bundles for that validator
-    repeated ERC20MultiSigSignerRemovedBundle bundles = 1;
+    ERC20MultiSigSignerRemovedConnection bundles = 1;
+}
+
+message ERC20MultiSigSignerRemovedEdge {
+    vega.events.v1.ERC20MultiSigSignerRemoved node = 1;
+    string cursor = 2;
+}
+
+message ERC20MultiSigSignerRemovedBundleEdge {
+    ERC20MultiSigSignerRemovedBundle node = 1;
+    string cursor = 2;
+}
+
+message ERC20MultiSigSignerRemovedConnection {
+    repeated ERC20MultiSigSignerRemovedBundleEdge edges = 1;
+    PageInfo page_info = 2;
 }
 
 message ERC20MultiSigSignerRemovedBundle {
@@ -871,6 +915,19 @@ message GetERC20WithdrawalApprovalResponse {
 }
 
 // -- Trades --
+
+// Request for the latest trade that occurred on Vega for a given market
+message GetLastTradeRequest {
+    // Market identifier, required field
+    string market_id = 1;
+}
+
+// Response for the latest trade that occurred on Vega for a given market
+message GetLastTradeResponse {
+    // A trade, if found
+    vega.Trade trade = 1;
+}
+
 message ListTradesRequest {
     optional string market_id = 1;
     optional string order_id = 2;
@@ -972,8 +1029,15 @@ message OracleDataConnection {
 }
 
 // -- Markets --
-message ListMarketsRequest {
+message GetMarketRequest {
     string market_id = 1;
+}
+
+message GetMarketResponse {
+    vega.Market market = 1;
+}
+
+message ListMarketsRequest {
     optional Pagination pagination = 2;
 }
 
@@ -992,6 +1056,14 @@ message MarketConnection {
 }
 
 // -- Parties --
+message GetPartyRequest {
+    string party_id = 1;
+}
+
+message GetPartyResponse {
+    vega.Party party = 1;
+}
+
 message ListPartiesRequest {
     string party_id = 1;
     Pagination pagination = 2;
@@ -1080,6 +1152,7 @@ message RewardsConnection {
 message ListRewardSummariesRequest {
     optional string party_id = 1;
     optional string asset_id = 2;
+    optional Pagination pagination = 3;
 }
 
 // The return message with reward details in for a single party
@@ -1221,6 +1294,16 @@ message LiquidityProvisionsConnection {
     PageInfo page_info = 2;
 }
 
+// -- Governance Data --
+message GetGovernanceDataRequest {
+    optional string proposal_id = 1;
+    optional string reference = 2;
+}
+
+message GetGovernanceDataResponse {
+    vega.GovernanceData data = 1;
+}
+
 message ListGovernanceDataRequest {
     enum Type {
         TYPE_UNSPECIFIED = 0;
@@ -1332,6 +1415,29 @@ message NodesConnection {
     PageInfo page_info = 2;
 }
 
+// Request to specify the identifier of the resource to retrieve aggregated signatures for
+message ListNodeSignaturesRequest {
+    // Resource identifier, required field
+    string id = 1;
+    optional Pagination pagination = 2;
+}
+
+// Response to specify the identifier of the resource to retrieve aggregated signatures for
+message ListNodeSignaturesResponse {
+    NodeSignaturesConnection signatures = 1;
+}
+
+message NodeSignatureEdge {
+    vega.commands.v1.NodeSignature node = 1;
+    string cursor = 2;
+}
+
+message NodeSignaturesConnection {
+    // A list of 0 or more signatures
+    repeated NodeSignatureEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
 // -- Epochs --
 message GetEpochRequest {
    optional uint64 id = 1;
@@ -1419,7 +1525,7 @@ message CheckpointsConnection {
 }
 
 message GetStakeRequest {
-    string party = 1;
+    string party_id = 1;
     optional Pagination pagination = 2;
 }
 
@@ -1477,3 +1583,38 @@ message ObserveTransferResponsesRequest {}
 message ObserveTransferResponsesResponse {
     vega.TransferResponse response = 1;
 }
+
+// -- Key Rotations --
+
+// Request to list all key rotations
+message ListKeyRotationsRequest {
+    optional string node_id = 1;
+    optional Pagination pagination = 2;
+}
+
+// Response with all key rotations
+message ListKeyRotationsResponse {
+    KeyRotationConnection rotations = 1;
+}
+
+message KeyRotationEdge {
+    vega.events.v1.KeyRotation node = 1;
+    string cursor = 2;
+}
+
+message KeyRotationConnection {
+    repeated KeyRotationEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
+// -- Vega Time --
+// Request for the current time of the vega network
+message GetVegaTimeRequest {}
+
+// Response for the current consensus coordinated time on the Vega network, referred to as "VegaTime"
+message GetVegaTimeResponse {
+    // Timestamp representation of current VegaTime as represented in
+    // Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2020-01-31T12:30:59.111222333Z`
+    int64 timestamp = 1;
+}
+

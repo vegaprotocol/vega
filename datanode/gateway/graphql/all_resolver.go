@@ -17,19 +17,21 @@ import (
 
 	"code.vegaprotocol.io/vega/logging"
 	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type allResolver struct {
-	log *logging.Logger
-	clt TradingDataServiceClient
+	log  *logging.Logger
+	clt  TradingDataServiceClient
+	clt2 TradingDataServiceClientV2
 }
 
 func (r *allResolver) getEpochByID(ctx context.Context, id uint64) (*types.Epoch, error) {
-	req := &protoapi.GetEpochRequest{
-		Id: id,
+	req := &v2.GetEpochRequest{
+		Id: &id,
 	}
-	resp, err := r.clt.GetEpoch(ctx, req)
+	resp, err := r.clt2.GetEpoch(ctx, req)
 	return resp.Epoch, err
 }
 
@@ -39,11 +41,11 @@ func (r *allResolver) getOrderByID(ctx context.Context, id string, version *int)
 		r.log.Error("tradingCore client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
 	}
-	orderReq := &protoapi.OrderByIDRequest{
+	orderReq := &v2.GetOrderRequest{
 		OrderId: id,
-		Version: v,
+		Version: &v,
 	}
-	order, err := r.clt.OrderByID(ctx, orderReq)
+	order, err := r.clt2.GetOrder(ctx, orderReq)
 	if err != nil {
 		return nil, err
 	}
@@ -88,8 +90,8 @@ func (r allResolver) allAssets(ctx context.Context) ([]*types.Asset, error) {
 }
 
 func (r *allResolver) getMarketByID(ctx context.Context, id string) (*types.Market, error) {
-	req := protoapi.MarketByIDRequest{MarketId: id}
-	res, err := r.clt.MarketByID(ctx, &req)
+	req := v2.GetMarketRequest{MarketId: id}
+	res, err := r.clt2.GetMarket(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
