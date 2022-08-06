@@ -78,7 +78,6 @@ func (e *Engine) loadBridgeState(state *checkpoint.BridgeState) {
 			logIndex: state.LogIndex,
 		}
 	}
-
 }
 
 func (e *Engine) loadScheduledTransfers(
