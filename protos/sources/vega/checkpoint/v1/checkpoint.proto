@@ -146,6 +146,13 @@ message RecurringTransfers {
 message Banking {
   repeated ScheduledTransferAtTime transfers_at_time = 1;
   RecurringTransfers recurring_transfers = 2;
+  BridgeState bridge_state = 3;
+}
+
+message BridgeState {
+  bool active = 1;
+  uint64 blockHeight = 2;
+  uint64 logIndex = 3;
 }
 
 message Validators {
