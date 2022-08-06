@@ -13,8 +13,6 @@
 package stubs
 
 import (
-	"math/big"
-
 	"code.vegaprotocol.io/vega/core/types"
 )
 
@@ -40,6 +38,6 @@ func (*BridgeViewStub) FindDeposit(d *types.ERC20Deposit, blockNumber, logIndex 
 	return nil
 }
 
-func (*BridgeViewStub) FindWithdrawal(w *types.ERC20Withdrawal, blockNumber, logIndex uint64, ethAssetAddress string) (*big.Int, string, uint, error) {
-	return nil, "", 0, nil
+func (*BridgeViewStub) FindAssetLimitsUpdated(w *types.ERC20AssetLimitsUpdated, blockNumber, logIndex uint64, ethAssetAddress string) error {
+	return nil
 }
