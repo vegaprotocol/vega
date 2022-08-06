@@ -31,6 +31,7 @@ var (
 	assetActionsKey       = (&types.PayloadBankingAssetActions{}).Key()
 	recurringTransfersKey = (&types.PayloadBankingRecurringTransfers{}).Key()
 	scheduledTransfersKey = (&types.PayloadBankingScheduledTransfers{}).Key()
+	bridgeStateKey        = (&types.PayloadBankingBridgeState{}).Key()
 
 	hashKeys = []string{
 		withdrawalsKey,
@@ -39,6 +40,7 @@ var (
 		assetActionsKey,
 		recurringTransfersKey,
 		scheduledTransfersKey,
+		bridgeStateKey,
 	}
 )
 
@@ -49,12 +51,14 @@ type bankingSnapshotState struct {
 	changedAssetActions          bool
 	changedRecurringTransfers    bool
 	changedScheduledTransfers    bool
+	changedBridgeState           bool
 	serialisedWithdrawals        []byte
 	serialisedDeposits           []byte
 	serialisedSeen               []byte
 	serialisedAssetActions       []byte
 	serialisedRecurringTransfers []byte
 	serialisedScheduledTransfers []byte
+	serialisedBridgeState        []byte
 }
 
 func (e *Engine) Namespace() types.SnapshotNamespace {
@@ -67,6 +71,20 @@ func (e *Engine) Keys() []string {
 
 func (e *Engine) Stopped() bool {
 	return false
+}
+
+func (e *Engine) serialiseBridgeState() ([]byte, error) {
+	payload := types.Payload{
+		Data: &types.PayloadBankingBridgeState{
+			BankingBridgeState: &types.BankingBridgeState{
+				Active:      e.bridgeState.active,
+				BlockHeight: e.bridgeState.block,
+				LogIndex:    e.bridgeState.logIndex,
+			},
+		},
+	}
+
+	return proto.Marshal(payload.IntoProto())
 }
 
 func (e *Engine) serialiseRecurringTransfers() ([]byte, error) {
@@ -223,6 +241,8 @@ func (e *Engine) serialise(k string) ([]byte, error) {
 		return e.serialiseK(k, e.serialiseRecurringTransfers, &e.bss.serialisedRecurringTransfers, &e.bss.changedRecurringTransfers)
 	case scheduledTransfersKey:
 		return e.serialiseK(k, e.serialiseScheduledTransfers, &e.bss.serialisedScheduledTransfers, &e.bss.changedScheduledTransfers)
+	case bridgeStateKey:
+		return e.serialiseK(k, e.serialiseBridgeState, &e.bss.serialisedBridgeState, &e.bss.changedBridgeState)
 	default:
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
@@ -271,6 +291,8 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 		return nil, e.restoreRecurringTransfers(ctx, pl.BankingRecurringTransfers, p)
 	case *types.PayloadBankingScheduledTransfers:
 		return nil, e.restoreScheduledTransfers(ctx, pl.BankingScheduledTransfers, p)
+	case *types.PayloadBankingBridgeState:
+		return nil, e.restoreBridgeState(ctx, pl.BankingBridgeState, p)
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
@@ -296,6 +318,22 @@ func (e *Engine) restoreScheduledTransfers(ctx context.Context, transfers []*che
 	}
 	e.bss.changedScheduledTransfers = false
 	e.bss.serialisedScheduledTransfers, err = proto.Marshal(p.IntoProto())
+	return err
+}
+
+func (e *Engine) restoreBridgeState(ctx context.Context, state *types.BankingBridgeState, p *types.Payload) error {
+	var err error
+
+	if state != nil {
+		e.bridgeState = &bridgeState{
+			active:   state.Active,
+			block:    state.BlockHeight,
+			logIndex: state.LogIndex,
+		}
+	}
+
+	e.bss.changedBridgeState = false
+	e.bss.serialisedBridgeState, err = proto.Marshal(p.IntoProto())
 	return err
 }
 

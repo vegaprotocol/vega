@@ -114,6 +114,7 @@ message Payload {
     ProofOfWork proof_of_work = 53;
     PendingAssetUpdates pending_asset_updates = 54;
     ProtocolUpgradeProposals protocol_upgrade_proposals = 55;
+    BankingBridgeState banking_bridge_state = 56;
   }
 }
 
@@ -248,6 +249,10 @@ message BankingRecurringTransfers {
 
 message BankingScheduledTransfers {
   repeated vega.checkpoint.v1.ScheduledTransferAtTime transfers_at_time = 1;
+}
+
+message BankingBridgeState {
+  vega.checkpoint.v1.BridgeState bridge_state = 1;
 }
 
 message Checkpoint {

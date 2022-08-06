@@ -207,6 +207,7 @@ func New(
 			changedAssetActions:       true,
 			changedRecurringTransfers: true,
 			changedScheduledTransfers: true,
+			changedBridgeState:        true,
 		},
 		scheduledTransfers:         map[time.Time][]scheduledTransfer{},
 		recurringTransfers:         map[string]*types.RecurringTransfer{},
