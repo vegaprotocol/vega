@@ -88,6 +88,8 @@ models:
         resolver: true
       accounts:
         resolver: true
+      accountsConnection:
+        resolver: true
       orderByReference:
         resolver: true
       liquidityProvisions:
@@ -104,6 +106,8 @@ models:
       positions:
         resolver: true
       accounts:
+        resolver: true
+      accountsConnection:
         resolver: true
       margins:
         resolver: true
@@ -208,7 +212,7 @@ models:
   PartyStake:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v1.PartyStakeResponse
   KeyRotation:
-    model: code.vegaprotocol.io/vega/protos/data-node/api/v1.KeyRotation
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.KeyRotation
   Transfer:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.Transfer
   OneOffTransfer:
@@ -324,3 +328,23 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.NodeEdge
   NodesConnection:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.NodesConnection
+  NetworkParameterEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.NetworkParameterEdge
+  NetworkParametersConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.NetworkParameterConnection
+  NodeSignatureEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.NodeSignatureEdge
+  NodeSignaturesConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.NodeSignaturesConnection
+  KeyRotationEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.KeyRotationEdge
+  KeyRotationConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.KeyRotationConnection
+  StakeLinkingEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.StakeLinkingEdge
+  StakesConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.StakesConnection
+  AccountEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AccountEdge
+  AccountsConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AccountsConnection

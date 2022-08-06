@@ -16,11 +16,11 @@ import (
 	"context"
 	"strconv"
 
-	v12 "code.vegaprotocol.io/vega/protos/data-node/api/v1"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
 type keyRotationResolver VegaResolverRoot
 
-func (r *keyRotationResolver) BlockHeight(ctx context.Context, obj *v12.KeyRotation) (string, error) {
+func (r *keyRotationResolver) BlockHeight(ctx context.Context, obj *eventspb.KeyRotation) (string, error) {
 	return strconv.FormatUint(obj.BlockHeight, 10), nil
 }

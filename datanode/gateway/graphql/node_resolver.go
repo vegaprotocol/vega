@@ -27,6 +27,7 @@ func (r *nodeResolver) Status(ctx context.Context, obj *proto.Node) (NodeStatus,
 	return nodeStatusFromProto(obj.Status)
 }
 
+// Deprecated: Use DelegationsConnection instead.
 func (r *nodeResolver) Delegations(
 	ctx context.Context,
 	obj *proto.Node,

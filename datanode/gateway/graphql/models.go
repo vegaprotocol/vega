@@ -360,6 +360,20 @@ type ProposalVotes struct {
 	No *ProposalVoteSide `json:"no"`
 }
 
+type RewardSummaryConnection struct {
+	// List of reward summaries available for the connection
+	Edges []*RewardSummaryEdge `json:"edges"`
+	// Page information for the connection
+	PageInfo *v2.PageInfo `json:"pageInfo"`
+}
+
+type RewardSummaryEdge struct {
+	// The reward summary
+	Node *vega.RewardSummary `json:"node"`
+	// Cursor identifying the reward summary
+	Cursor string `json:"cursor"`
+}
+
 type SettleDistressed struct {
 	// the market in which a position was closed out
 	MarketID string `json:"marketId"`
@@ -385,6 +399,16 @@ type SettlePosition struct {
 }
 
 func (SettlePosition) IsEvent() {}
+
+// All staking information related to a Party.
+// Contains the current recognised balance by the network and
+// all the StakeLink/Unlink seen by the network
+type StakingSummary struct {
+	// The stake currently available for the party
+	CurrentStakeAvailable string `json:"currentStakeAvailable"`
+	// The list of all stake link/unlink for the party
+	Linkings *v2.StakesConnection `json:"linkings"`
+}
 
 // TargetStakeParameters contains parameters used in target stake calculation
 type TargetStakeParameters struct {

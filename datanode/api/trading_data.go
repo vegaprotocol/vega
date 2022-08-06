@@ -1956,7 +1956,7 @@ func (t *tradingDataService) ERC20WithdrawalApproval(ctx context.Context, req *p
 	}
 
 	// get the signatures from  notaryService
-	signatures, err := t.notaryService.GetByResourceID(ctx, req.WithdrawalId)
+	signatures, _, err := t.notaryService.GetByResourceID(ctx, req.WithdrawalId, entities.CursorPagination{})
 	if err != nil {
 		return nil, apiError(codes.NotFound, err)
 	}
@@ -2005,7 +2005,7 @@ func (t *tradingDataService) GetNodeSignaturesAggregate(ctx context.Context,
 		return nil, apiError(codes.InvalidArgument, errors.New("missing ID"))
 	}
 
-	sigs, err := t.notaryService.GetByResourceID(ctx, req.Id)
+	sigs, _, err := t.notaryService.GetByResourceID(ctx, req.Id, entities.CursorPagination{})
 	if err != nil {
 		return nil, apiError(codes.NotFound, err)
 	}
@@ -2132,14 +2132,14 @@ func (t *tradingDataService) PartyStake(ctx context.Context, req *protoapi.Party
 func (t *tradingDataService) GetKeyRotations(ctx context.Context, req *protoapi.GetKeyRotationsRequest) (*protoapi.GetKeyRotationsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetKeyRotations")()
 
-	rotations, err := t.keyRotationService.GetAllPubKeyRotations(ctx)
+	rotations, _, err := t.keyRotationService.GetAllPubKeyRotations(ctx, entities.CursorPagination{})
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
 
 	protoRotations := make([]*protoapi.KeyRotation, len(rotations))
 	for i, v := range rotations {
-		protoRotations[i] = v.ToProto()
+		protoRotations[i] = v.ToProtoV1()
 	}
 
 	return &protoapi.GetKeyRotationsResponse{
@@ -2154,14 +2154,14 @@ func (t *tradingDataService) GetKeyRotationsByNode(ctx context.Context, req *pro
 		return nil, apiError(codes.InvalidArgument, errors.New("missing node ID parameter"))
 	}
 
-	rotations, err := t.keyRotationService.GetPubKeyRotationsPerNode(ctx, req.GetNodeId())
+	rotations, _, err := t.keyRotationService.GetPubKeyRotationsPerNode(ctx, req.GetNodeId(), entities.CursorPagination{})
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
 
 	protoRotations := make([]*protoapi.KeyRotation, len(rotations))
 	for i, v := range rotations {
-		protoRotations[i] = v.ToProto()
+		protoRotations[i] = v.ToProtoV1()
 	}
 
 	return &protoapi.GetKeyRotationsByNodeResponse{

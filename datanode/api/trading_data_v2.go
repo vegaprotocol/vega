@@ -25,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/datanode/service"
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/vegatime"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
@@ -80,6 +81,8 @@ type tradingDataServiceV2 struct {
 	checkpointService         *service.Checkpoint
 	stakeLinkingService       *service.StakeLinking
 	ledgerService             *service.Ledger
+	keyRotationService        *service.KeyRotations
+	blockService              *service.Block
 }
 
 func (t *tradingDataServiceV2) ListAccounts(ctx context.Context, req *v2.ListAccountsRequest) (*v2.ListAccountsResponse, error) {
@@ -607,12 +610,16 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerAddedBundles(ctx context.Co
 		epochID = &e
 	}
 
-	p := defaultPaginationV2
+	p := entities.CursorPagination{}
+	var err error
 	if req.Pagination != nil {
-		p = entities.OffsetPaginationFromProto(req.Pagination)
+		p, err = entities.CursorPaginationFromProto(req.Pagination)
+		if err != nil {
+			return nil, apiError(codes.InvalidArgument, fmt.Errorf("invalid pagination: %w", err))
+		}
 	}
 
-	res, err := t.multiSigService.GetAddedEvents(ctx, nodeID, epochID, p)
+	res, pageInfo, err := t.multiSigService.GetAddedEvents(ctx, nodeID, epochID, p)
 	if err != nil {
 		c := codes.Internal
 		if errors.Is(err, entities.ErrInvalidID) {
@@ -622,9 +629,10 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerAddedBundles(ctx context.Co
 	}
 
 	// find bundle for this nodeID, might be multiple if its added, then removed then added again??
-	bundles := []*v2.ERC20MultiSigSignerAddedBundle{}
+	edges := []*v2.ERC20MultiSigSignerAddedBundleEdge{}
 	for _, b := range res {
-		signatures, err := t.notaryService.GetByResourceID(ctx, b.ID.String())
+		// it doesn't really make sense to paginate this, so we'll just pass it an empty pagination object and get all available results
+		signatures, _, err := t.notaryService.GetByResourceID(ctx, b.ID.String(), entities.CursorPagination{})
 		if err != nil {
 			return nil, apiError(codes.Internal, err)
 		}
@@ -634,20 +642,28 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerAddedBundles(ctx context.Co
 			pack = fmt.Sprintf("%v%v", pack, hex.EncodeToString(v.Sig))
 		}
 
-		bundles = append(bundles,
-			&v2.ERC20MultiSigSignerAddedBundle{
-				NewSigner:  b.SignerChange.String(),
-				Submitter:  b.Submitter.String(),
-				Nonce:      b.Nonce,
-				Timestamp:  b.VegaTime.UnixNano(),
-				Signatures: pack,
-				EpochSeq:   strconv.FormatInt(b.EpochID, 10),
+		edges = append(edges,
+			&v2.ERC20MultiSigSignerAddedBundleEdge{
+				Node: &v2.ERC20MultiSigSignerAddedBundle{
+					NewSigner:  b.SignerChange.String(),
+					Submitter:  b.Submitter.String(),
+					Nonce:      b.Nonce,
+					Timestamp:  b.VegaTime.UnixNano(),
+					Signatures: pack,
+					EpochSeq:   strconv.FormatInt(b.EpochID, 10),
+				},
+				Cursor: b.Cursor().Encode(),
 			},
 		)
 	}
 
+	connection := &v2.ERC20MultiSigSignerAddedConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
+	}
+
 	return &v2.GetERC20MultiSigSignerAddedBundlesResponse{
-		Bundles: bundles,
+		Bundles: connection,
 	}, nil
 }
 
@@ -678,12 +694,16 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerRemovedBundles(ctx context.
 		epochID = &e
 	}
 
-	p := defaultPaginationV2
+	p := entities.CursorPagination{}
+	var err error
 	if req.Pagination != nil {
-		p = entities.OffsetPaginationFromProto(req.Pagination)
+		p, err = entities.CursorPaginationFromProto(req.Pagination)
+		if err != nil {
+			return nil, apiError(codes.InvalidArgument, fmt.Errorf("invalid pagination: %w", err))
+		}
 	}
 
-	res, err := t.multiSigService.GetRemovedEvents(ctx, nodeID, submitter, epochID, p)
+	res, pageInfo, err := t.multiSigService.GetRemovedEvents(ctx, nodeID, submitter, epochID, p)
 	if err != nil {
 		c := codes.Internal
 		if errors.Is(err, entities.ErrInvalidID) {
@@ -693,9 +713,9 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerRemovedBundles(ctx context.
 	}
 
 	// find bundle for this nodeID, might be multiple if its added, then removed then added again??
-	bundles := []*v2.ERC20MultiSigSignerRemovedBundle{}
+	edges := []*v2.ERC20MultiSigSignerRemovedBundleEdge{}
 	for _, b := range res {
-		signatures, err := t.notaryService.GetByResourceID(ctx, b.ID.String())
+		signatures, _, err := t.notaryService.GetByResourceID(ctx, b.ID.String(), entities.CursorPagination{})
 		if err != nil {
 			return nil, apiError(codes.Internal, err)
 		}
@@ -705,18 +725,26 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerRemovedBundles(ctx context.
 			pack = fmt.Sprintf("%v%v", pack, hex.EncodeToString(v.Sig))
 		}
 
-		bundles = append(bundles, &v2.ERC20MultiSigSignerRemovedBundle{
-			OldSigner:  b.SignerChange.String(),
-			Submitter:  b.Submitter.String(),
-			Nonce:      b.Nonce,
-			Timestamp:  b.VegaTime.UnixNano(),
-			Signatures: pack,
-			EpochSeq:   strconv.FormatInt(b.EpochID, 10),
+		edges = append(edges, &v2.ERC20MultiSigSignerRemovedBundleEdge{
+			Node: &v2.ERC20MultiSigSignerRemovedBundle{
+				OldSigner:  b.SignerChange.String(),
+				Submitter:  b.Submitter.String(),
+				Nonce:      b.Nonce,
+				Timestamp:  b.VegaTime.UnixNano(),
+				Signatures: pack,
+				EpochSeq:   strconv.FormatInt(b.EpochID, 10),
+			},
+			Cursor: b.Cursor().Encode(),
 		})
 	}
 
+	connection := &v2.ERC20MultiSigSignerRemovedConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
+	}
+
 	return &v2.GetERC20MultiSigSignerRemovedBundlesResponse{
-		Bundles: bundles,
+		Bundles: connection,
 	}, nil
 }
 
@@ -748,7 +776,7 @@ func (t *tradingDataServiceV2) GetERC20SetAssetLimitsBundle(ctx context.Context,
 	}
 
 	// then we get the signature and pack them altogether
-	signatures, err := t.notaryService.GetByResourceID(ctx, req.ProposalId)
+	signatures, _, err := t.notaryService.GetByResourceID(ctx, req.ProposalId, entities.CursorPagination{})
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -817,7 +845,7 @@ func (t *tradingDataServiceV2) GetERC20ListAssetBundle(ctx context.Context, req 
 	}
 
 	// then we get the signature and pack them altogether
-	signatures, err := t.notaryService.GetByResourceID(ctx, req.AssetId)
+	signatures, _, err := t.notaryService.GetByResourceID(ctx, req.AssetId, entities.CursorPagination{})
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -865,7 +893,7 @@ func (t *tradingDataServiceV2) GetERC20WithdrawalApproval(ctx context.Context, r
 	}
 
 	// get the signatures from  notaryService
-	signatures, err := t.notaryService.GetByResourceID(ctx, req.WithdrawalId)
+	signatures, _, err := t.notaryService.GetByResourceID(ctx, req.WithdrawalId, entities.CursorPagination{})
 	if err != nil {
 		return nil, apiError(codes.NotFound, err)
 	}
@@ -904,6 +932,35 @@ func (t *tradingDataServiceV2) GetERC20WithdrawalApproval(ctx context.Context, r
 		// timestamps is unix nano, contract needs unix. So load if first, and cut nanos
 		Creation: w.CreatedTimestamp.Unix(),
 	}, nil
+}
+
+// Get latest Trade.
+func (t *tradingDataServiceV2) GetLastTrade(ctx context.Context, req *v2.GetLastTradeRequest) (*v2.GetLastTradeResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetLastTradeV2")()
+
+	if len(req.MarketId) <= 0 {
+		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingMarketID)
+	}
+
+	p := entities.OffsetPagination{
+		Skip:       0,
+		Limit:      1,
+		Descending: true,
+	}
+
+	trades, err := t.tradeService.GetByMarket(ctx, req.MarketId, p)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrTradeServiceGetByMarket, err)
+	}
+
+	protoTrades := tradesToProto(trades)
+
+	if len(protoTrades) > 0 && protoTrades[0] != nil {
+		return &v2.GetLastTradeResponse{Trade: protoTrades[0]}, nil
+	}
+	// No trades found on the market yet (and no errors)
+	// this can happen at the beginning of a new market
+	return &v2.GetLastTradeResponse{}, nil
 }
 
 // Get trades by using a cursor based pagination model.
@@ -971,7 +1028,7 @@ func (t *tradingDataServiceV2) ListMarkets(ctx context.Context, in *v2.ListMarke
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, err)
 	}
-	markets, pageInfo, err := t.marketsService.GetAllPaged(ctx, in.MarketId, pagination)
+	markets, pageInfo, err := t.marketsService.GetAllPaged(ctx, "", pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -1050,6 +1107,29 @@ func (t *tradingDataServiceV2) ObservePositions(req *v2.ObservePositionsRequest,
 			Position: position.ToProto(),
 		})
 	})
+}
+
+func (t *tradingDataServiceV2) GetParty(ctx context.Context, req *v2.GetPartyRequest) (*v2.GetPartyResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetParty")()
+	out := v2.GetPartyResponse{}
+
+	party, err := t.partyService.GetByID(ctx, req.PartyId)
+
+	if errors.Is(err, sqlstore.ErrPartyNotFound) {
+		return &out, nil
+	}
+
+	if errors.Is(err, sqlstore.ErrInvalidPartyID) {
+		return &out, apiError(codes.InvalidArgument, ErrPartyServiceGetByID, err)
+	}
+
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrPartyServiceGetByID, err)
+	}
+
+	return &v2.GetPartyResponse{
+		Party: party.ToProto(),
+	}, nil
 }
 
 // List Parties using a cursor based pagination model.
@@ -1523,6 +1603,35 @@ func (t *tradingDataServiceV2) ListLiquidityProvisions(ctx context.Context, req 
 	return &v2.ListLiquidityProvisionsResponse{LiquidityProvisions: liquidityProvisionConnection}, nil
 }
 
+func (t *tradingDataServiceV2) GetGovernanceData(ctx context.Context, req *v2.GetGovernanceDataRequest) (*v2.GetGovernanceDataResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetGovernanceData")
+
+	var (
+		proposal entities.Proposal
+		err      error
+	)
+	if req.ProposalId != nil {
+		proposal, err = t.governanceService.GetProposalByID(ctx, *req.ProposalId)
+	} else if req.Reference != nil {
+		proposal, err = t.governanceService.GetProposalByReference(ctx, *req.Reference)
+	} else {
+		return nil, apiError(codes.InvalidArgument, fmt.Errorf("proposal id or reference required"))
+	}
+
+	if errors.Is(err, sqlstore.ErrProposalNotFound) {
+		return nil, apiError(codes.NotFound, ErrMissingProposalID, err)
+	} else if err != nil {
+		return nil, apiError(codes.Internal, ErrNotMapped, err)
+	}
+
+	gd, err := t.proposalToGovernanceData(ctx, proposal)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrNotMapped, err)
+	}
+
+	return &v2.GetGovernanceDataResponse{Data: gd}, nil
+}
+
 func (t *tradingDataServiceV2) ListGovernanceData(ctx context.Context, req *v2.ListGovernanceDataRequest) (*v2.ListGovernanceDataResponse, error) {
 	var state *entities.ProposalState
 	var proposalType *entities.ProposalType
@@ -1625,7 +1734,7 @@ func (t *tradingDataServiceV2) ListTransfers(ctx context.Context, req *v2.ListTr
 		return nil, apiError(codes.Internal, err)
 	}
 
-	edges, err := makeEdges[*v2.TransferEdge](transfers)
+	edges, err := makeEdges[*v2.TransferEdge](transfers, t.accountService)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -1884,6 +1993,44 @@ func (t *tradingDataServiceV2) ListNodes(ctx context.Context, req *v2.ListNodesR
 	return resp, nil
 }
 
+func (t *tradingDataServiceV2) ListNodeSignatures(ctx context.Context, req *v2.ListNodeSignaturesRequest) (*v2.ListNodeSignaturesResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListNodeSignatures")()
+	if req != nil || len(req.Id) <= 0 {
+		return nil, apiError(codes.InvalidArgument, errors.New("missing ID"))
+	}
+
+	var pagination entities.CursorPagination
+	var err error
+
+	if req != nil {
+		pagination, err = entities.CursorPaginationFromProto(req.Pagination)
+		if err != nil {
+			return nil, apiError(codes.Internal, fmt.Errorf("invalid pagination: %w", err))
+		}
+	}
+
+	sigs, pageInfo, err := t.notaryService.GetByResourceID(ctx, req.Id, pagination)
+	if err != nil {
+		return nil, apiError(codes.NotFound, err)
+	}
+
+	edges, err := makeEdges[*v2.NodeSignatureEdge](sigs)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	nodeSignatureConnection := &v2.NodeSignaturesConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
+	}
+
+	resp := &v2.ListNodeSignaturesResponse{
+		Signatures: nodeSignatureConnection,
+	}
+
+	return resp, nil
+}
+
 // GetEpoch retrieves data for a specific epoch, if id omitted it gets the current epoch.
 func (t *tradingDataServiceV2) GetEpoch(ctx context.Context, req *v2.GetEpochRequest) (*v2.GetEpochResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetEpochV2")()
@@ -2094,11 +2241,9 @@ func (t *tradingDataServiceV2) ListNetworkParameters(ctx context.Context, req *v
 		PageInfo: pageInfo.ToProto(),
 	}
 
-	resp := &v2.ListNetworkParametersResponse{
+	return &v2.ListNetworkParametersResponse{
 		NetworkParameters: networkParametersConnection,
-	}
-
-	return resp, nil
+	}, nil
 }
 
 func (t *tradingDataServiceV2) ListCheckpoints(ctx context.Context, req *v2.ListCheckpointsRequest) (*v2.ListCheckpointsResponse, error) {
@@ -2135,13 +2280,13 @@ func (t *tradingDataServiceV2) ListCheckpoints(ctx context.Context, req *v2.List
 }
 
 func (t *tradingDataServiceV2) GetStake(ctx context.Context, req *v2.GetStakeRequest) (*v2.GetStakeResponse, error) {
-	if req == nil || len(req.Party) <= 0 {
+	if req == nil || len(req.PartyId) <= 0 {
 		return nil, apiError(codes.InvalidArgument, errors.New("missing party id"))
 	}
 
 	var pagination entities.CursorPagination
 
-	partyID := entities.PartyID(req.Party)
+	partyID := entities.PartyID(req.PartyId)
 
 	if req != nil && req.Pagination != nil {
 		var err error
@@ -2312,4 +2457,70 @@ func (t *tradingDataServiceV2) ObserveTransferResponses(_ *v2.ObserveTransferRes
 			Response: tr,
 		})
 	})
+}
+
+// -- Key Rotations --.
+func (t *tradingDataServiceV2) ListKeyRotations(ctx context.Context, req *v2.ListKeyRotationsRequest) (*v2.ListKeyRotationsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListKeyRotations")()
+	var (
+		pagination entities.CursorPagination
+		err        error
+	)
+
+	if req != nil {
+		pagination, err = entities.CursorPaginationFromProto(req.Pagination)
+		if err != nil {
+			return nil, fmt.Errorf("invalid pagination: %w", err)
+		}
+	}
+	if req.NodeId == nil || *req.NodeId == "" {
+		return t.getAllKeyRotations(ctx, pagination)
+	}
+
+	return t.getNodeKeyRotations(ctx, *req.NodeId, pagination)
+}
+
+func (t *tradingDataServiceV2) getAllKeyRotations(ctx context.Context, pagination entities.CursorPagination) (*v2.ListKeyRotationsResponse, error) {
+	rotations, pageInfo, err := t.keyRotationService.GetAllPubKeyRotations(ctx, pagination)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+	return makeKeyRotationResponse(rotations, pageInfo)
+}
+
+func (t *tradingDataServiceV2) getNodeKeyRotations(ctx context.Context, nodeID string, pagination entities.CursorPagination) (*v2.ListKeyRotationsResponse, error) {
+	rotations, pageInfo, err := t.keyRotationService.GetPubKeyRotationsPerNode(ctx, nodeID, pagination)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+	return makeKeyRotationResponse(rotations, pageInfo)
+}
+
+func makeKeyRotationResponse(rotations []entities.KeyRotation, pageInfo entities.PageInfo) (*v2.ListKeyRotationsResponse, error) {
+	edges, err := makeEdges[*v2.KeyRotationEdge](rotations)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	keyRotationConnection := &v2.KeyRotationConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
+	}
+
+	return &v2.ListKeyRotationsResponse{
+		Rotations: keyRotationConnection,
+	}, nil
+}
+
+// Get Time.
+func (t *tradingDataServiceV2) GetVegaTime(ctx context.Context, req *v2.GetVegaTimeRequest) (*v2.GetVegaTimeResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetVegaTimeV2")()
+	b, err := t.blockService.GetLastBlock(ctx)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrTimeServiceGetTimeNow, err)
+	}
+
+	return &v2.GetVegaTimeResponse{
+		Timestamp: b.VegaTime.UnixNano(),
+	}, nil
 }
