@@ -222,6 +222,8 @@ message AssetAction {
   vega.ERC20Deposit erc20_deposit = 8;
   vega.ERC20AssetList asset_list = 9;
   vega.ERC20AssetLimitsUpdated erc20_asset_limits_updated = 10;
+  bool erc20_bridge_stopped = 11;
+  bool erc20_bridge_resumed = 12;
 }
 
 message BankingWithdrawals {

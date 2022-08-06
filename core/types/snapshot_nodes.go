@@ -473,6 +473,8 @@ type AssetAction struct {
 	Erc20D                  *ERC20Deposit
 	Erc20AL                 *ERC20AssetList
 	ERC20AssetLimitsUpdated *ERC20AssetLimitsUpdated
+	BridgeStopped           bool
+	BridgeResume            bool
 }
 
 type CPState struct {
@@ -1993,12 +1995,14 @@ func (a *BankingAssetActions) IntoProto() *snapshot.BankingAssetActions {
 
 func (aa *AssetAction) IntoProto() *snapshot.AssetAction {
 	ret := &snapshot.AssetAction{
-		Id:          aa.ID,
-		State:       aa.State,
-		Asset:       aa.Asset,
-		BlockNumber: aa.BlockNumber,
-		TxIndex:     aa.TxIndex,
-		Hash:        aa.Hash,
+		Id:                 aa.ID,
+		State:              aa.State,
+		Asset:              aa.Asset,
+		BlockNumber:        aa.BlockNumber,
+		TxIndex:            aa.TxIndex,
+		Hash:               aa.Hash,
+		Erc20BridgeStopped: aa.BridgeStopped,
+		Erc20BridgeResumed: aa.BridgeResume,
 	}
 	if aa.BuiltinD != nil {
 		ret.BuiltinDeposit = aa.BuiltinD.IntoProto()
@@ -2025,12 +2029,14 @@ func BankingAssetActionsFromProto(aa *snapshot.BankingAssetActions) *BankingAsse
 
 func AssetActionFromProto(a *snapshot.AssetAction) *AssetAction {
 	aa := &AssetAction{
-		ID:          a.Id,
-		State:       a.State,
-		Asset:       a.Asset,
-		BlockNumber: a.BlockNumber,
-		TxIndex:     a.TxIndex,
-		Hash:        a.Hash,
+		ID:            a.Id,
+		State:         a.State,
+		Asset:         a.Asset,
+		BlockNumber:   a.BlockNumber,
+		TxIndex:       a.TxIndex,
+		Hash:          a.Hash,
+		BridgeStopped: a.Erc20BridgeResumed,
+		BridgeResume:  a.Erc20BridgeResumed,
 	}
 
 	if a.Erc20Deposit != nil {

@@ -17,6 +17,7 @@ import (
 	"math/big"
 	"sort"
 
+	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
@@ -91,17 +92,35 @@ func (e *Engine) serialiseScheduledTransfers() ([]byte, error) {
 func (e *Engine) serialiseAssetActions() ([]byte, error) {
 	aa := make([]*types.AssetAction, 0, len(e.assetActs))
 	for _, v := range e.assetActs {
+		// this is optional as bridge action don't have one
+		var assetID string
+		if v.asset != nil {
+			assetID = v.asset.ToAssetType().ID
+		}
+
+		var bridgeStopped bool
+		if v.erc20BridgeStopped != nil {
+			bridgeStopped = true
+		}
+
+		var bridgeResumed bool
+		if v.erc20BridgeResumed != nil {
+			bridgeResumed = true
+		}
+
 		aa = append(aa, &types.AssetAction{
 			ID:                      v.id,
 			State:                   v.state,
 			BlockNumber:             v.blockHeight,
-			Asset:                   v.asset.ToAssetType().ID,
+			Asset:                   assetID,
 			TxIndex:                 v.logIndex,
 			Hash:                    v.txHash,
 			BuiltinD:                v.builtinD,
 			Erc20AL:                 v.erc20AL,
 			Erc20D:                  v.erc20D,
 			ERC20AssetLimitsUpdated: v.erc20AssetLimitsUpdated,
+			BridgeStopped:           bridgeStopped,
+			BridgeResume:            bridgeResumed,
 		})
 	}
 
@@ -325,9 +344,26 @@ func (e *Engine) restoreSeen(ctx context.Context, seen *types.BankingSeen, p *ty
 func (e *Engine) restoreAssetActions(ctx context.Context, aa *types.BankingAssetActions, p *types.Payload) error {
 	var err error
 	for _, v := range aa.AssetAction {
-		asset, err := e.assets.Get(v.Asset)
-		if err != nil {
-			e.log.Panic("trying to restore an assetAction with no asset", logging.String("asset", v.Asset))
+		var (
+			asset         *assets.Asset
+			bridgeStopped *types.ERC20EventBridgeStopped
+			bridgeResumed *types.ERC20EventBridgeResumed
+		)
+		// only others action than bridge stop and resume
+		// have an actual asset associated
+		if !v.BridgeResume && !v.BridgeStopped {
+			asset, err = e.assets.Get(v.Asset)
+			if err != nil {
+				e.log.Panic("trying to restore an assetAction with no asset", logging.String("asset", v.Asset))
+			}
+		}
+
+		if v.BridgeStopped {
+			bridgeStopped = &types.ERC20EventBridgeStopped{BridgeStopped: true}
+		}
+
+		if v.BridgeResume {
+			bridgeResumed = &types.ERC20EventBridgeResumed{BridgeResumed: true}
 		}
 
 		aa := &assetAction{
@@ -341,6 +377,10 @@ func (e *Engine) restoreAssetActions(ctx context.Context, aa *types.BankingAsset
 			erc20AL:                 v.Erc20AL,
 			erc20D:                  v.Erc20D,
 			erc20AssetLimitsUpdated: v.ERC20AssetLimitsUpdated,
+			erc20BridgeStopped:      bridgeStopped,
+			erc20BridgeResumed:      bridgeResumed,
+			// this is needed every time now
+			bridgeView: e.bridgeView,
 		}
 		e.assetActs[v.ID] = aa
 		if err := e.witness.RestoreResource(aa, e.onCheckDone); err != nil {
