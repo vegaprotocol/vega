@@ -346,7 +346,7 @@ func (s *Service) Get(assetID string) (*Asset, error) {
 
 // ValidateAssetNonValidator is only to be used by non-validators
 // at startup when loading genesis file. We just assume assets are
-// valid
+// valid.
 func (s *Service) ValidateAssetNonValidator(assetID string) error {
 	// get the asset to validate from the assets pool
 	asset, err := s.Get(assetID)

@@ -64,7 +64,7 @@ func NewERC20LogicView(
 	}
 }
 
-// FindAsset will try to find an asset and validate it's details on ethereum
+// FindAsset will try to find an asset and validate it's details on ethereum.
 func (e *ERC20LogicView) FindAsset(
 	asset *types.AssetDetails,
 ) error {
