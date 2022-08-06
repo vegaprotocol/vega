@@ -51,8 +51,8 @@ type settleDistressed interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/positions_mock.go -package mocks code.vegaprotocol.io/vega/datanode/sqlsubscribers PositionStore
 type PositionStore interface {
 	Add(context.Context, entities.Position) error
-	GetByMarket(ctx context.Context, marketID entities.MarketID) ([]entities.Position, error)
-	GetByMarketAndParty(ctx context.Context, marketID entities.MarketID, partyID entities.PartyID) (entities.Position, error)
+	GetByMarket(ctx context.Context, marketID string) ([]entities.Position, error)
+	GetByMarketAndParty(ctx context.Context, marketID string, partyID string) (entities.Position, error)
 	Flush(ctx context.Context) error
 }
 
@@ -128,7 +128,7 @@ func (ps *Position) getPosition(ctx context.Context, e positionEventBase) entiti
 	mID := entities.MarketID(e.MarketID())
 	pID := entities.PartyID(e.PartyID())
 
-	position, err := ps.store.GetByMarketAndParty(ctx, mID, pID)
+	position, err := ps.store.GetByMarketAndParty(ctx, mID.String(), pID.String())
 	if errors.Is(err, sqlstore.ErrPositionNotFound) {
 		return entities.NewEmptyPosition(mID, pID)
 	}

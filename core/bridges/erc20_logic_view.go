@@ -60,7 +60,7 @@ func NewERC20LogicView(
 }
 
 // FindAssetList will look at the ethereum logs and try to find the
-// given transaction
+// given transaction.
 func (e *ERC20LogicView) FindAssetList(
 	al *types.ERC20AssetList,
 	blockNumber,
@@ -119,7 +119,7 @@ func (e *ERC20LogicView) FindAssetList(
 }
 
 // FindBridgeStopped will look at the ethereum logs and try to find the
-// given transaction
+// given transaction.
 func (e *ERC20LogicView) FindBridgeStopped(
 	al *types.ERC20EventBridgeStopped,
 	blockNumber,
@@ -174,7 +174,7 @@ func (e *ERC20LogicView) FindBridgeStopped(
 }
 
 // FindBridgeResumed will look at the ethereum logs and try to find the
-// given transaction
+// given transaction.
 func (e *ERC20LogicView) FindBridgeResumed(
 	al *types.ERC20EventBridgeResumed,
 	blockNumber,

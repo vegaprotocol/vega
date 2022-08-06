@@ -197,12 +197,13 @@ func (t *tradingDataService) PositionsByParty(ctx context.Context, request *prot
 	} else if request.MarketId == "" {
 		positions, err = t.positionService.GetByParty(ctx, entities.PartyID(request.PartyId))
 	} else if request.PartyId == "" {
-		positions, err = t.positionService.GetByMarket(ctx, entities.MarketID(request.MarketId))
+		positions, err = t.positionService.GetByMarket(ctx, request.MarketId)
 	} else {
 		positions = make([]entities.Position, 1)
 		positions[0], err = t.positionService.GetByMarketAndParty(ctx,
-			entities.MarketID(request.MarketId),
-			entities.PartyID(request.PartyId))
+			request.MarketId,
+			request.PartyId,
+		)
 
 		// Don't error if there's no position for this party/market
 		if errors.Is(err, sqlstore.ErrPositionNotFound) {

@@ -64,7 +64,7 @@ func (mr *MockPositionStoreMockRecorder) Flush(arg0 interface{}) *gomock.Call {
 }
 
 // GetByMarket mocks base method.
-func (m *MockPositionStore) GetByMarket(arg0 context.Context, arg1 entities.MarketID) ([]entities.Position, error) {
+func (m *MockPositionStore) GetByMarket(arg0 context.Context, arg1 string) ([]entities.Position, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByMarket", arg0, arg1)
 	ret0, _ := ret[0].([]entities.Position)
@@ -79,7 +79,7 @@ func (mr *MockPositionStoreMockRecorder) GetByMarket(arg0, arg1 interface{}) *go
 }
 
 // GetByMarketAndParty mocks base method.
-func (m *MockPositionStore) GetByMarketAndParty(arg0 context.Context, arg1 entities.MarketID, arg2 entities.PartyID) (entities.Position, error) {
+func (m *MockPositionStore) GetByMarketAndParty(arg0 context.Context, arg1, arg2 string) (entities.Position, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByMarketAndParty", arg0, arg1, arg2)
 	ret0, _ := ret[0].(entities.Position)

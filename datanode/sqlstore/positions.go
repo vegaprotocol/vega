@@ -20,6 +20,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -51,8 +52,8 @@ func (ps *Positions) Add(ctx context.Context, p entities.Position) error {
 }
 
 func (ps *Positions) GetByMarketAndParty(ctx context.Context,
-	marketID entities.MarketID,
-	partyID entities.PartyID,
+	marketID string,
+	partyID string,
 ) (entities.Position, error) {
 	position := entities.Position{}
 
@@ -68,7 +69,7 @@ func (ps *Positions) GetByMarketAndParty(ctx context.Context,
 	return position, err
 }
 
-func (ps *Positions) GetByMarket(ctx context.Context, marketID entities.MarketID) ([]entities.Position, error) {
+func (ps *Positions) GetByMarket(ctx context.Context, marketID string) ([]entities.Position, error) {
 	defer metrics.StartSQLQuery("Positions", "GetByMarket")()
 	positions := []entities.Position{}
 	err := pgxscan.Select(ctx, ps.Connection, &positions,
@@ -77,7 +78,7 @@ func (ps *Positions) GetByMarket(ctx context.Context, marketID entities.MarketID
 	return positions, err
 }
 
-func (ps *Positions) GetByParty(ctx context.Context, partyID entities.PartyID) ([]entities.Position, error) {
+func (ps *Positions) GetByParty(ctx context.Context, partyID string) ([]entities.Position, error) {
 	defer metrics.StartSQLQuery("Positions", "GetByParty")()
 	positions := []entities.Position{}
 	err := pgxscan.Select(ctx, ps.Connection, &positions,
@@ -86,7 +87,7 @@ func (ps *Positions) GetByParty(ctx context.Context, partyID entities.PartyID) (
 	return positions, err
 }
 
-func (ps *Positions) GetByPartyConnection(ctx context.Context, partyID entities.PartyID, marketID entities.MarketID, pagination entities.CursorPagination) ([]entities.Position, entities.PageInfo, error) {
+func (ps *Positions) GetByPartyConnection(ctx context.Context, partyID string, marketID string, pagination entities.CursorPagination) ([]entities.Position, entities.PageInfo, error) {
 	var args []interface{}
 	var pageInfo entities.PageInfo
 
@@ -104,7 +105,7 @@ func (ps *Positions) GetByPartyConnection(ctx context.Context, partyID entities.
 		NewCursorQueryParameter("vega_time", sorting, cmp, positionCursor.VegaTime),
 	}
 
-	if marketID.String() == "" {
+	if marketID == "" {
 		where = fmt.Sprintf(" where party_id=%s", nextBindVar(&args, partyID))
 		cursorParams = append(cursorParams, NewCursorQueryParameter("market_id", sorting, cmp,
 			entities.MarketID(positionCursor.MarketID)))
