@@ -1816,7 +1816,7 @@ type ProposalResolver interface {
 }
 type ProposalTermsResolver interface {
 	ClosingDatetime(ctx context.Context, obj *vega.ProposalTerms) (string, error)
-	EnactmentDatetime(ctx context.Context, obj *vega.ProposalTerms) (string, error)
+	EnactmentDatetime(ctx context.Context, obj *vega.ProposalTerms) (*string, error)
 	Change(ctx context.Context, obj *vega.ProposalTerms) (ProposalChange, error)
 }
 type QueryResolver interface {
@@ -9865,7 +9865,7 @@ type Market {
   """
   positionDecimalPlaces indicates the number of decimal places that an integer must be shifted in order to get a correct size (uint64).
   i.e. 0 means there are no fractional orders for the market, and order sizes are always whole sizes.
-  2 means sizes given as 10^2 * desired size, e.g. a desired size of 1.23 is represented as 123 in this market. 
+  2 means sizes given as 10^2 * desired size, e.g. a desired size of 1.23 is represented as 123 in this market.
   This sets how big the smallest order / position on the market can be.
   """
   positionDecimalPlaces: Int!
@@ -10197,7 +10197,7 @@ type Party {
 
   proposals(
     "Select only proposals in the specified state. Leave out to get all proposals"
-    inState: ProposalState 
+    inState: ProposalState
   ): [Proposal] @deprecated(reason: "Use proposalsConnection instead")
 
   "All governance proposals in the VEGA network"
@@ -11030,11 +11030,11 @@ enum AccountType {
   "Settlement - only for 'system' party"
   Settlement
   """
-  Margin - The leverage account for parties, contains funds set aside for the margin needed to support 
-  a party's open positions. Each party will have a margin account for each market they have traded in. 
-  The required initial margin is allocated to each market from the general account, and it cannot be withdrawn 
-  or used as margin on another market until it's released back into the general account. 
-  The protocol uses an internal accounting system to segregate funds held as margin from other funds 
+  Margin - The leverage account for parties, contains funds set aside for the margin needed to support
+  a party's open positions. Each party will have a margin account for each market they have traded in.
+  The required initial margin is allocated to each market from the general account, and it cannot be withdrawn
+  or used as margin on another market until it's released back into the general account.
+  The protocol uses an internal accounting system to segregate funds held as margin from other funds
   to ensure they are never lost or 'double spent'
   """
   Margin
@@ -11263,8 +11263,9 @@ type ProposalTerms {
   """
   RFC3339Nano time and date when this proposal is executed (if passed). Note that it has to be after closing date time.
   Constrained by "minEnactInSeconds" and "maxEnactInSeconds" network parameters.
+  Note: Optional as free form proposals do not require it.
   """
-  enactmentDatetime: String!
+  enactmentDatetime: String
 
   "Actual change being introduced by the proposal - action the proposal triggers if passed and enacted."
   change: ProposalChange!
@@ -12186,7 +12187,8 @@ type AccountsConnection {
   edges: [AccountEdge]
   "Page information for the connection"
   pageInfo: PageInfo!
-}`, BuiltIn: false},
+}
+`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
@@ -33522,14 +33524,11 @@ func (ec *executionContext) _ProposalTerms_enactmentDatetime(ctx context.Context
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ProposalTerms_change(ctx context.Context, field graphql.CollectedField, obj *vega.ProposalTerms) (ret graphql.Marshaler) {
@@ -54899,9 +54898,6 @@ func (ec *executionContext) _ProposalTerms(ctx context.Context, sel ast.Selectio
 					}
 				}()
 				res = ec._ProposalTerms_enactmentDatetime(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			}
 
