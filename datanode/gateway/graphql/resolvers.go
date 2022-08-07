@@ -416,11 +416,17 @@ func (r *myQueryResolver) Transfers(
 	return response.Transfers, nil
 }
 
-func (r *myQueryResolver) TransfersConnection(ctx context.Context, pubkey *string, direction TransferDirection,
+func (r *myQueryResolver) TransfersConnection(ctx context.Context, pubkey *string, direction *TransferDirection,
 	pagination *v2.Pagination,
 ) (*v2.TransferConnection, error) {
+	// if direction is nil just default to ToOrFrom
+	if direction == nil {
+		d := TransferDirectionToOrFrom
+		direction = &d
+	}
+
 	var transferDirection v2.TransferDirection
-	switch direction {
+	switch *direction {
 	case TransferDirectionFrom:
 		transferDirection = v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_FROM
 	case TransferDirectionTo:

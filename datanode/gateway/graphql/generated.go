@@ -1129,7 +1129,7 @@ type ComplexityRoot struct {
 		ProposalsConnection                func(childComplexity int, proposalType *v2.ListGovernanceDataRequest_Type, inState *vega.Proposal_State, pagination *v2.Pagination) int
 		Statistics                         func(childComplexity int) int
 		Transfers                          func(childComplexity int, pubkey string, isFrom *bool, isTo *bool) int
-		TransfersConnection                func(childComplexity int, pubkey *string, direction TransferDirection, pagination *v2.Pagination) int
+		TransfersConnection                func(childComplexity int, partyID *string, direction *TransferDirection, pagination *v2.Pagination) int
 		UpdateMarketProposals              func(childComplexity int, marketID *string, inState *vega.Proposal_State) int
 		Withdrawal                         func(childComplexity int, id string) int
 	}
@@ -1868,7 +1868,7 @@ type QueryResolver interface {
 	EthereumKeyRotations(ctx context.Context, nodeID *string) (*v2.EthereumKeyRotationsConnection, error)
 	Epoch(ctx context.Context, id *string) (*vega.Epoch, error)
 	Transfers(ctx context.Context, pubkey string, isFrom *bool, isTo *bool) ([]*v1.Transfer, error)
-	TransfersConnection(ctx context.Context, pubkey *string, direction TransferDirection, pagination *v2.Pagination) (*v2.TransferConnection, error)
+	TransfersConnection(ctx context.Context, partyID *string, direction *TransferDirection, pagination *v2.Pagination) (*v2.TransferConnection, error)
 	Statistics(ctx context.Context) (*v14.Statistics, error)
 	HistoricBalances(ctx context.Context, filter *v2.AccountFilter, groupBy []*v2.AccountField) ([]*v2.AggregatedBalance, error)
 	NetworkLimits(ctx context.Context) (*vega.NetworkLimits, error)
@@ -6757,7 +6757,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.TransfersConnection(childComplexity, args["pubkey"].(*string), args["direction"].(TransferDirection), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Query.TransfersConnection(childComplexity, args["partyId"].(*string), args["direction"].(*TransferDirection), args["pagination"].(*v2.Pagination)), true
 
 	case "Query.updateMarketProposals":
 		if e.complexity.Query.UpdateMarketProposals == nil {
@@ -9028,9 +9028,9 @@ type Query {
   "get a list of all transfers for a public key"
   transfersConnection(
     "the public key to look for"
-    pubkey: String
+    partyId: String
     "direction of the transfer with respect to the public key"
-    direction: TransferDirection!
+    direction: TransferDirection
     "Pagination information"
     pagination: Pagination
   ): TransferConnection!
@@ -14332,18 +14332,18 @@ func (ec *executionContext) field_Query_transfersConnection_args(ctx context.Con
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
-	if tmp, ok := rawArgs["pubkey"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pubkey"))
+	if tmp, ok := rawArgs["partyId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyId"))
 		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["pubkey"] = arg0
-	var arg1 TransferDirection
+	args["partyId"] = arg0
+	var arg1 *TransferDirection
 	if tmp, ok := rawArgs["direction"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("direction"))
-		arg1, err = ec.unmarshalNTransferDirection2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferDirection(ctx, tmp)
+		arg1, err = ec.unmarshalOTransferDirection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferDirection(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -36365,7 +36365,7 @@ func (ec *executionContext) _Query_transfersConnection(ctx context.Context, fiel
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().TransfersConnection(rctx, args["pubkey"].(*string), args["direction"].(TransferDirection), args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Query().TransfersConnection(rctx, args["partyId"].(*string), args["direction"].(*TransferDirection), args["pagination"].(*v2.Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -63614,16 +63614,6 @@ func (ec *executionContext) marshalNTransferConnection2ᚖcodeᚗvegaprotocolᚗ
 	return ec._TransferConnection(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNTransferDirection2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferDirection(ctx context.Context, v interface{}) (TransferDirection, error) {
-	var res TransferDirection
-	err := res.UnmarshalGQL(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNTransferDirection2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferDirection(ctx context.Context, sel ast.SelectionSet, v TransferDirection) graphql.Marshaler {
-	return v
-}
-
 func (ec *executionContext) marshalNTransferKind2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferKind(ctx context.Context, sel ast.SelectionSet, v TransferKind) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -67691,6 +67681,22 @@ func (ec *executionContext) marshalOTransferBalance2ᚕᚖcodeᚗvegaprotocolᚗ
 	}
 
 	return ret
+}
+
+func (ec *executionContext) unmarshalOTransferDirection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferDirection(ctx context.Context, v interface{}) (*TransferDirection, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(TransferDirection)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOTransferDirection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferDirection(ctx context.Context, sel ast.SelectionSet, v *TransferDirection) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) marshalOTransferEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTransferEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.TransferEdge) graphql.Marshaler {
