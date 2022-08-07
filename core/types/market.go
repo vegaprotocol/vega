@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"strings"
 
-	proto "code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
+	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type LiquidityProviderFeeShares []*LiquidityProviderFeeShare
@@ -647,7 +647,7 @@ func MarketFromProto(mkt *proto.Market) *Market {
 
 // tick size as implied by the decimal places for the market.
 func (m Market) TickSize() *num.Uint {
-	return num.Zero().Exp(num.NewUint(10), num.NewUint(m.DecimalPlaces))
+	return num.UintZero().Exp(num.NewUint(10), num.NewUint(m.DecimalPlaces))
 }
 
 func (m Market) IntoProto() *proto.Market {

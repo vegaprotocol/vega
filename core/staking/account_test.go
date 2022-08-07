@@ -18,7 +18,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/staking"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -210,7 +210,7 @@ func testEventSorting(t *testing.T) {
 
 func testGetZeroBalanceWithNoEvent(t *testing.T) {
 	acc := staking.NewStakingAccount(testParty)
-	assert.Equal(t, num.Zero(), acc.GetAvailableBalance())
+	assert.Equal(t, num.UintZero(), acc.GetAvailableBalance())
 }
 
 func testEventErrorValidation(t *testing.T) {
@@ -256,7 +256,7 @@ func testEventErrorValidation(t *testing.T) {
 				Type:   types.StakeLinkingTypeDeposited,
 				TS:     100,
 				Party:  testParty,
-				Amount: num.Zero(),
+				Amount: num.UintZero(),
 			},
 			expect: staking.ErrInvalidAmount,
 		},

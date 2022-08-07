@@ -22,7 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/core/metrics"
 	"code.vegaprotocol.io/vega/core/products"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -216,7 +216,7 @@ func (e *Engine) winSocialisationUpdate(transfer *mtmTransfer, amt *num.Uint) {
 			Type:  types.TransferTypeMTMWin,
 			Owner: transfer.Party(),
 			Amount: &types.FinancialAmount{
-				Amount: num.Zero(),
+				Amount: num.UintZero(),
 				Asset:  e.product.GetAsset(),
 			},
 		}
@@ -239,8 +239,8 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 		zeroShares   = []*mtmTransfer{} // all zero shares for equal distribution if possible
 		zeroAmts     = false
 		mtmDec       = num.NewDecimalFromFloat(0)
-		lossTotal    = num.Zero()
-		winTotal     = num.Zero()
+		lossTotal    = num.UintZero()
+		winTotal     = num.UintZero()
 		lossTotalDec = num.NewDecimalFromFloat(0)
 		winTotalDec  = num.NewDecimalFromFloat(0)
 	)
@@ -341,7 +341,7 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 	}
 	// no need for this lock anymore
 	e.mu.Unlock()
-	delta := num.Zero().Sub(lossTotal, winTotal)
+	delta := num.UintZero().Sub(lossTotal, winTotal)
 	if !delta.IsZero() {
 		if zeroAmts {
 			// there are more transfers from losses than we pay out to wins, but some winning parties have zero transfers
@@ -492,7 +492,7 @@ func (e *Engine) transferCap(evts []events.MarketPosition) int {
 // given that the new trades price will equal new mark price,  the sum(trades) bit will probably == 0 for nicenet
 // the size here is the _new_ position size, the price is the OLD price!!
 func calcMTM(markPrice, price *num.Uint, size int64, trades []*pos, positionFactor num.Decimal) (*num.Uint, num.Decimal, bool) {
-	delta, sign := num.Zero().Delta(markPrice, price)
+	delta, sign := num.UintZero().Delta(markPrice, price)
 	// this shouldn't be possible I don't think, but just in case
 	if size < 0 {
 		size = -size
@@ -501,7 +501,7 @@ func calcMTM(markPrice, price *num.Uint, size int64, trades []*pos, positionFact
 	}
 	mtmShare := delta.Mul(delta, num.NewUint(uint64(size)))
 	for _, c := range trades {
-		delta, neg := num.Zero().Delta(markPrice, c.price)
+		delta, neg := num.UintZero().Delta(markPrice, c.price)
 		size := num.NewUint(uint64(c.size))
 		if c.size < 0 {
 			size = size.SetUint64(uint64(-c.size))

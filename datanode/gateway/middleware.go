@@ -18,8 +18,8 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/datanode/contextutil"
-	vhttp "code.vegaprotocol.io/vega/datanode/http"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	vhttp "code.vegaprotocol.io/vega/libs/http"
 	"code.vegaprotocol.io/vega/logging"
 )
 

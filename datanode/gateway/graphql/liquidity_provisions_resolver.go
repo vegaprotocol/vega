@@ -4,8 +4,8 @@ import (
 	"context"
 	"strconv"
 
-	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/datanode/vegatime"
+	types "code.vegaprotocol.io/vega/protos/vega"
 )
 
 // LiquidityProvision resolver

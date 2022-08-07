@@ -19,12 +19,12 @@ import (
 	"strings"
 	"sync"
 
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
-	"code.vegaprotocol.io/vega/core/libs/proto"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
 
 type blockRejectInfo struct {
@@ -181,7 +181,7 @@ func (vsp *VoteSpamPolicy) Deserialise(p *types.Payload) error {
 	vsp.lastIncreaseBlock = pl.LastIncreaseBlock
 	vsp.currentBlockIndex = pl.CurrentBlockIndex
 	vsp.minVotingTokensFactor = pl.MinVotingTokensFactor
-	vsp.effectiveMinTokens = num.Zero().Mul(vsp.minVotingTokens, vsp.minVotingTokensFactor)
+	vsp.effectiveMinTokens = num.UintZero().Mul(vsp.minVotingTokens, vsp.minVotingTokensFactor)
 
 	return nil
 }
@@ -193,7 +193,7 @@ func (vsp *VoteSpamPolicy) UpdateUintParam(name string, value *num.Uint) error {
 		vsp.minVotingTokens = value.Clone()
 		// NB: this means that if during the epoch the min tokens changes externally
 		// and we already have a factor on it, the factor will be applied on the new value for the duration of the epoch
-		vsp.effectiveMinTokens = num.Zero().Mul(vsp.minVotingTokens, vsp.minVotingTokensFactor)
+		vsp.effectiveMinTokens = num.UintZero().Mul(vsp.minVotingTokens, vsp.minVotingTokensFactor)
 	} else {
 		return errors.New("unknown parameter for vote spam policy")
 	}
@@ -293,12 +293,12 @@ func (vsp *VoteSpamPolicy) EndOfBlock(blockHeight uint64) {
 	}
 
 	// check if we need to increase the limits, i.e. if we're below the max and we've not increased in the last n blocks
-	if (vsp.lastIncreaseBlock == 0 || blockHeight > vsp.lastIncreaseBlock+numberOfBlocksForIncreaseCheck) && num.Zero().Mul(vsp.minVotingTokens, vsp.minVotingTokensFactor).LT(maxMinVotingTokens) {
+	if (vsp.lastIncreaseBlock == 0 || blockHeight > vsp.lastIncreaseBlock+numberOfBlocksForIncreaseCheck) && num.UintZero().Mul(vsp.minVotingTokens, vsp.minVotingTokensFactor).LT(maxMinVotingTokens) {
 		average := vsp.calcRejectAverage()
 		if average > rejectRatioForIncrease {
 			vsp.lastIncreaseBlock = blockHeight
-			vsp.minVotingTokensFactor = num.Zero().Mul(vsp.minVotingTokensFactor, increaseFactor)
-			vsp.effectiveMinTokens = num.Zero().Mul(vsp.minVotingTokensFactor, vsp.minVotingTokens)
+			vsp.minVotingTokensFactor = num.UintZero().Mul(vsp.minVotingTokensFactor, increaseFactor)
+			vsp.effectiveMinTokens = num.UintZero().Mul(vsp.minVotingTokensFactor, vsp.minVotingTokens)
 		}
 	}
 }

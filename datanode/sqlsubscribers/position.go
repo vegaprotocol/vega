@@ -17,9 +17,9 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/vega/core/events"
-	"code.vegaprotocol.io/vega/core/types/num"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/pkg/errors"
 )
@@ -125,8 +125,8 @@ func (ps *Position) handleSettleDestressed(ctx context.Context, event settleDist
 }
 
 func (ps *Position) getPosition(ctx context.Context, e positionEventBase) entities.Position {
-	mID := entities.NewMarketID(e.MarketID())
-	pID := entities.NewPartyID(e.PartyID())
+	mID := entities.MarketID(e.MarketID())
+	pID := entities.PartyID(e.PartyID())
 
 	position, err := ps.store.GetByMarketAndParty(ctx, mID, pID)
 	if errors.Is(err, sqlstore.ErrPositionNotFound) {

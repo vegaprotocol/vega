@@ -26,7 +26,12 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5608](https://github.com/vegaprotocol/vega/issues/5608) - Ignore stale price monitoring trigger when market is already in auction
 - [5639](https://github.com/vegaprotocol/vega/issues/5639) - Move all core code in the core directory
 - [5613](https://github.com/vegaprotocol/vega/issues/5613) - Import the `datanode` in the vega repo
+- [5660](https://github.com/vegaprotocol/vega/issues/5660) - Migrate subscription `apis` from `datanode v1 api` to `datanode v2 api`
+- [5636](https://github.com/vegaprotocol/vega/issues/5636) - Assure no false positives in cucumber steps
+- [5011](https://github.com/vegaprotocol/vega/issues/5011) - Import the `protos` repo in the vega repo
+- [5774](https://github.com/vegaprotocol/vega/issues/5774) - Use `generics` for `ID` types
 
+- [5685](https://github.com/vegaprotocol/vega/issues/5685) - Migrated `apis` from `datanode v1` to `datanode v2`
 ### 🐛 Fixes
 - [5571](https://github.com/vegaprotocol/vega/issues/5571) - Restore pending assets status correctly after snapshot restore
 - [5572](https://github.com/vegaprotocol/vega/issues/5572) - Add validation on `IDs` and public keys
@@ -34,8 +39,16 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5279](https://github.com/vegaprotocol/vega/issues/5279) - Fix loading of proposals from checkpoint
 - [5598](https://github.com/vegaprotocol/vega/issues/5598) - Remove `currentTime` from topology engine to ease snapshot restoration
 - [5609](https://github.com/vegaprotocol/vega/issues/5609) - Set event forwarder last seen height after snapshot restore
+- [5782](https://github.com/vegaprotocol/vega/issues/5782) - `Pagination` with a cursor was returning incorrect results
 - [5629](https://github.com/vegaprotocol/vega/issues/5629) - Fixes for loading voting power from checkpoint with non genesis validators
 - [5626](https://github.com/vegaprotocol/vega/issues/5626) - Update `protos`, remove optional types
+- [5665](https://github.com/vegaprotocol/vega/issues/5665) - Binary version hash always contain `-modified` suffix
+- [5633](https://github.com/vegaprotocol/vega/issues/5633) - Allow `minProposerEquityLikeShare` to accept 0
+- [5672](https://github.com/vegaprotocol/vega/issues/5672) - Typo fixed in datanode `ethereum` address
+- [5683](https://github.com/vegaprotocol/vega/issues/5683) - Made market mandatory in `GraphQL` for order
+- [5677](https://github.com/vegaprotocol/vega/issues/5677) - Fixed trading mode status
+- [5663](https://github.com/vegaprotocol/vega/issues/5663) - Fixed panic with de-registering positions
+- [5767](https://github.com/vegaprotocol/vega/issues/5767) - Fix typo in command validation
 
 ## 0.53.0
 

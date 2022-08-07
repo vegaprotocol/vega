@@ -19,7 +19,7 @@ import (
 	"code.vegaprotocol.io/vega/core/liquidity/target"
 	"code.vegaprotocol.io/vega/core/liquidity/target/mocks"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/golang/mock/gomock"
@@ -63,7 +63,7 @@ func TestGetTargetStake_NoRecordedOpenInterest(t *testing.T) {
 
 	targetStake, _ := engine.GetTargetStake(rf, now, num.NewUint(123))
 
-	require.Equal(t, num.Zero(), targetStake)
+	require.Equal(t, num.UintZero(), targetStake)
 }
 
 func TestGetTargetStake_VerifyFormula(t *testing.T) {

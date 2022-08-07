@@ -18,9 +18,9 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/protos/vega"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
@@ -31,7 +31,7 @@ func addTestProposal(t *testing.T, ps *sqlstore.Proposals, id string, party enti
 	t.Helper()
 	terms := entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{}}
 	p := entities.Proposal{
-		ID:           entities.NewProposalID(id),
+		ID:           entities.ProposalID(id),
 		PartyID:      party.ID,
 		Reference:    reference,
 		Terms:        terms,

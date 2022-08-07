@@ -20,16 +20,14 @@ import (
 	"strconv"
 	"time"
 
-	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
-	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/core/types"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	"code.vegaprotocol.io/vega/protos/vega"
 )
 
-type OrderID struct{ ID }
+type _Order struct{}
 
-func NewOrderID(id string) OrderID {
-	return OrderID{ID: ID(id)}
-}
+type OrderID = ID[_Order]
 
 type Order struct {
 	ID              OrderID
@@ -139,9 +137,9 @@ func OrderFromProto(po *vega.Order, seqNum uint64) (Order, error) {
 	}
 
 	o := Order{
-		ID:              NewOrderID(po.Id),
-		MarketID:        NewMarketID(po.MarketId),
-		PartyID:         NewPartyID(po.PartyId),
+		ID:              OrderID(po.Id),
+		MarketID:        MarketID(po.MarketId),
+		PartyID:         PartyID(po.PartyId),
 		Side:            po.Side,
 		Price:           price,
 		Size:            size,

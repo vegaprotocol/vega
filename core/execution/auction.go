@@ -80,6 +80,8 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 		m.leaveAuction(ctx, now)
 		// the market is now in a ACTIVE state
 		m.mkt.State = types.MarketStateActive
+		m.mkt.TradingMode = types.MarketTradingModeContinuous
+
 		// the market is now properly open, so set the timestamp to when the opening auction actually ended
 		m.mkt.MarketTimestamps.Open = now.UnixNano()
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))

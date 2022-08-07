@@ -17,9 +17,9 @@ import (
 	"fmt"
 	"sync"
 
-	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -90,7 +90,7 @@ where id = $1
 order by id, vega_time desc
 `, sqlMarketsColumns)
 	defer metrics.StartSQLQuery("Markets", "GetByID")()
-	err := pgxscan.Get(ctx, m.Connection, &market, query, entities.NewMarketID(marketID))
+	err := pgxscan.Get(ctx, m.Connection, &market, query, entities.MarketID(marketID))
 
 	if err == nil {
 		m.cache[marketID] = market

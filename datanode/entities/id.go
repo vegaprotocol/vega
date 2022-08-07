@@ -22,7 +22,7 @@ import (
 
 var ErrInvalidID = errors.New("not a valid hex ID (or well known exception)")
 
-type ID string
+type ID[T any] string
 
 var wellKnownIds = map[string]string{
 	"VOTE":         "00",
@@ -56,7 +56,7 @@ var wellKnownIdsReversed = map[string]string{
 	"0c": "fUSDC",
 }
 
-func (id *ID) Bytes() ([]byte, error) {
+func (id *ID[T]) Bytes() ([]byte, error) {
 	strID := id.String()
 	sub, ok := wellKnownIds[strID]
 	if ok {
@@ -70,16 +70,16 @@ func (id *ID) Bytes() ([]byte, error) {
 	return bytes, nil
 }
 
-func (id *ID) Error() error {
+func (id *ID[T]) Error() error {
 	_, err := id.Bytes()
 	return err
 }
 
-func (id *ID) String() string {
+func (id *ID[T]) String() string {
 	return string(*id)
 }
 
-func (id ID) EncodeBinary(ci *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+func (id ID[T]) EncodeBinary(ci *pgtype.ConnInfo, buf []byte) ([]byte, error) {
 	bytes, err := id.Bytes()
 	if err != nil {
 		return buf, err
@@ -87,23 +87,13 @@ func (id ID) EncodeBinary(ci *pgtype.ConnInfo, buf []byte) ([]byte, error) {
 	return append(buf, bytes...), nil
 }
 
-func (id *ID) DecodeBinary(ci *pgtype.ConnInfo, src []byte) error {
+func (id *ID[T]) DecodeBinary(ci *pgtype.ConnInfo, src []byte) error {
 	strID := hex.EncodeToString(src)
 
 	sub, ok := wellKnownIdsReversed[strID]
 	if ok {
 		strID = sub
 	}
-	*id = ID(strID)
-	return nil
-}
-
-func (id *ID) UnmarshalJSON(src []byte) error {
-	// Unmarshal ID from pg JSONB which is already a JSON string
-	if n := len(src); n > 1 && src[0] == '"' && src[n-1] == '"' {
-		*id = ID(string(src[1 : n-1]))
-		return nil
-	}
-
+	*id = ID[T](strID)
 	return nil
 }

@@ -18,10 +18,10 @@ import (
 	"errors"
 	"fmt"
 
-	vegapb "code.vegaprotocol.io/protos/vega"
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	"code.vegaprotocol.io/vega/core/libs/crypto"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/num"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
 
 type (
@@ -316,7 +316,7 @@ type BuiltinAssetDeposit struct {
 }
 
 func NewBuiltinAssetDepositFromProto(p *vegapb.BuiltinAssetDeposit) (*BuiltinAssetDeposit, error) {
-	amount := num.Zero()
+	amount := num.UintZero()
 	if len(p.Amount) > 0 {
 		var overflowed bool
 		amount, overflowed = num.UintFromString(p.Amount, 10)
@@ -362,7 +362,7 @@ type BuiltinAssetWithdrawal struct {
 }
 
 func NewBuiltinAssetWithdrawalFromProto(p *vegapb.BuiltinAssetWithdrawal) (*BuiltinAssetWithdrawal, error) {
-	amount := num.Zero()
+	amount := num.UintZero()
 	if len(p.Amount) > 0 {
 		var overflowed bool
 		amount, overflowed = num.UintFromString(p.Amount, 10)

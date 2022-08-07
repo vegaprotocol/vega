@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
-	vgtest "code.vegaprotocol.io/shared/libs/test"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
+	vgtest "code.vegaprotocol.io/vega/libs/test"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	storev1 "code.vegaprotocol.io/vega/wallet/wallet/store/v1"
 

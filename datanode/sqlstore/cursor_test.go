@@ -10,14 +10,66 @@
 // of this software will be governed by version 3 or later of the GNU General
 // Public License.
 
-package sqlstore
+package sqlstore_test
 
 import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+func TestCursorPredicate(t *testing.T) {
+	type Cursor struct {
+		Foo int
+		Bar int `db:"baz"`
+	}
+	cursor := Cursor{Foo: 1, Bar: 2}
+
+	testCases := []struct {
+		name              string
+		ordering          sqlstore.TableOrdering
+		expectedPredicate string
+		expectedArgs      []interface{}
+	}{
+		{
+			name: "Single",
+			ordering: sqlstore.TableOrdering{
+				sqlstore.NewColumnOrdering("foo", sqlstore.ASC),
+			},
+			expectedPredicate: "(foo >= $1)",
+			expectedArgs:      []any{1},
+		},
+		{
+			name: "Reversed",
+			ordering: sqlstore.TableOrdering{
+				sqlstore.NewColumnOrdering("foo", sqlstore.DESC),
+			},
+			expectedPredicate: "(foo <= $1)",
+			expectedArgs:      []any{1},
+		},
+		{
+			name: "Composite",
+			ordering: sqlstore.TableOrdering{
+				sqlstore.NewColumnOrdering("foo", sqlstore.ASC),
+				sqlstore.NewColumnOrdering("baz", sqlstore.DESC),
+			},
+			expectedPredicate: "(foo > $1) OR (foo = $1 AND baz <= $2)",
+			expectedArgs:      []any{1, 2},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(tt *testing.T) {
+			predicate, args, err := sqlstore.CursorPredicate(nil, cursor, tc.ordering)
+			require.NoError(t, err)
+			assert.Equal(t, tc.expectedPredicate, predicate)
+			assert.Equal(t, tc.expectedArgs, args)
+		})
+	}
+}
 
 func TestCursor_Where(t *testing.T) {
 	type args struct {
@@ -27,17 +79,17 @@ func TestCursor_Where(t *testing.T) {
 
 	testCases := []struct {
 		name      string
-		cursor    CursorQueryParameter
+		cursor    sqlstore.CursorQueryParameter
 		args      args
 		wantWhere string
 		wantArgs  []interface{}
 	}{
 		{
 			name: "Equal",
-			cursor: CursorQueryParameter{
+			cursor: sqlstore.CursorQueryParameter{
 				ColumnName: "vega_time",
-				Sort:       ASC,
-				Cmp:        EQ,
+				Sort:       sqlstore.ASC,
+				Cmp:        sqlstore.EQ,
 				Value:      time.Date(2022, 5, 9, 9, 0, 0, 0, time.UTC),
 			},
 			args: args{
@@ -48,10 +100,10 @@ func TestCursor_Where(t *testing.T) {
 		},
 		{
 			name: "Less than or equal",
-			cursor: CursorQueryParameter{
+			cursor: sqlstore.CursorQueryParameter{
 				ColumnName: "vega_time",
-				Sort:       ASC,
-				Cmp:        LE,
+				Sort:       sqlstore.ASC,
+				Cmp:        sqlstore.LE,
 				Value:      time.Date(2022, 5, 9, 9, 0, 0, 0, time.UTC),
 			},
 			args: args{
@@ -62,10 +114,10 @@ func TestCursor_Where(t *testing.T) {
 		},
 		{
 			name: "Greater than or equal",
-			cursor: CursorQueryParameter{
+			cursor: sqlstore.CursorQueryParameter{
 				ColumnName: "vega_time",
-				Sort:       ASC,
-				Cmp:        GE,
+				Sort:       sqlstore.ASC,
+				Cmp:        sqlstore.GE,
 				Value:      time.Date(2022, 5, 9, 9, 0, 0, 0, time.UTC),
 			},
 			args: args{
@@ -88,23 +140,23 @@ func TestCursor_Where(t *testing.T) {
 func TestCursor_OrderBy(t *testing.T) {
 	testCases := []struct {
 		name      string
-		cursor    CursorQueryParameter
+		cursor    sqlstore.CursorQueryParameter
 		wantOrder string
 	}{
 		{
 			name: "Ascending",
-			cursor: CursorQueryParameter{
+			cursor: sqlstore.CursorQueryParameter{
 				ColumnName: "vega_time",
-				Sort:       ASC,
+				Sort:       sqlstore.ASC,
 				Value:      time.Date(2022, 5, 9, 9, 0, 0, 0, time.UTC),
 			},
 			wantOrder: "vega_time ASC",
 		},
 		{
 			name: "Descending",
-			cursor: CursorQueryParameter{
+			cursor: sqlstore.CursorQueryParameter{
 				ColumnName: "vega_time",
-				Sort:       DESC,
+				Sort:       sqlstore.DESC,
 				Value:      time.Date(2022, 5, 9, 9, 0, 0, 0, time.UTC),
 			},
 			wantOrder: "vega_time DESC",
@@ -122,17 +174,17 @@ func TestCursor_OrderBy(t *testing.T) {
 func TestCursors_Where(t *testing.T) {
 	testCases := []struct {
 		name      string
-		cursors   CursorQueryParameters
+		cursors   sqlstore.CursorQueryParameters
 		wantWhere string
 		wantArgs  []interface{}
 	}{
 		{
 			name: "One cursor",
-			cursors: CursorQueryParameters{
-				CursorQueryParameter{
+			cursors: sqlstore.CursorQueryParameters{
+				sqlstore.CursorQueryParameter{
 					ColumnName: "vega_time",
-					Sort:       ASC,
-					Cmp:        EQ,
+					Sort:       sqlstore.ASC,
+					Cmp:        sqlstore.EQ,
 					Value:      time.Date(2022, 5, 9, 9, 0, 0, 0, time.UTC),
 				},
 			},
@@ -141,17 +193,17 @@ func TestCursors_Where(t *testing.T) {
 		},
 		{
 			name: "Two cursors",
-			cursors: CursorQueryParameters{
-				CursorQueryParameter{
+			cursors: sqlstore.CursorQueryParameters{
+				sqlstore.CursorQueryParameter{
 					ColumnName: "vega_time",
-					Sort:       ASC,
-					Cmp:        EQ,
+					Sort:       sqlstore.ASC,
+					Cmp:        sqlstore.EQ,
 					Value:      time.Date(2022, 5, 9, 9, 0, 0, 0, time.UTC),
 				},
 				{
 					ColumnName: "seq_num",
-					Sort:       ASC,
-					Cmp:        GE,
+					Sort:       sqlstore.ASC,
+					Cmp:        sqlstore.GE,
 					Value:      1,
 				},
 			},
@@ -172,16 +224,16 @@ func TestCursors_Where(t *testing.T) {
 func TestCursors_OrderBy(t *testing.T) {
 	testCases := []struct {
 		name      string
-		cursors   CursorQueryParameters
+		cursors   sqlstore.CursorQueryParameters
 		wantOrder string
 	}{
 		{
 			name: "One cursor",
-			cursors: CursorQueryParameters{
-				CursorQueryParameter{
+			cursors: sqlstore.CursorQueryParameters{
+				sqlstore.CursorQueryParameter{
 					ColumnName: "vega_time",
-					Sort:       ASC,
-					Cmp:        EQ,
+					Sort:       sqlstore.ASC,
+					Cmp:        sqlstore.EQ,
 					Value:      time.Date(2022, 5, 9, 9, 0, 0, 0, time.UTC),
 				},
 			},
@@ -189,17 +241,17 @@ func TestCursors_OrderBy(t *testing.T) {
 		},
 		{
 			name: "Two cursors",
-			cursors: CursorQueryParameters{
+			cursors: sqlstore.CursorQueryParameters{
 				{
 					ColumnName: "vega_time",
-					Sort:       ASC,
-					Cmp:        EQ,
+					Sort:       sqlstore.ASC,
+					Cmp:        sqlstore.EQ,
 					Value:      time.Date(2022, 5, 9, 9, 0, 0, 0, time.UTC),
 				},
 				{
 					ColumnName: "seq_num",
-					Sort:       ASC,
-					Cmp:        GE,
+					Sort:       sqlstore.ASC,
+					Cmp:        sqlstore.GE,
 					Value:      1,
 				},
 			},

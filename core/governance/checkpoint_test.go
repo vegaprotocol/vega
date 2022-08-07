@@ -18,14 +18,14 @@ import (
 	"testing"
 	"time"
 
-	vegapb "code.vegaprotocol.io/protos/vega"
-	checkpointpb "code.vegaprotocol.io/protos/vega/checkpoint/v1"
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/assets/builtin"
 	"code.vegaprotocol.io/vega/core/governance"
-	"code.vegaprotocol.io/vega/core/libs/proto"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/proto"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
+	checkpointpb "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

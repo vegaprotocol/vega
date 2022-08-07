@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
-	vgtest "code.vegaprotocol.io/shared/libs/test"
-	"code.vegaprotocol.io/shared/paths"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
+	vgtest "code.vegaprotocol.io/vega/libs/test"
+	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/wallet/network"
 	v1 "code.vegaprotocol.io/vega/wallet/network/store/v1"
 	"github.com/stretchr/testify/assert"

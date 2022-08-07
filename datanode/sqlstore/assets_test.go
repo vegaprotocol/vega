@@ -40,7 +40,7 @@ func addTestAsset(t *testing.T, as *sqlstore.Assets, block entities.Block, idPre
 	}
 
 	asset := entities.Asset{
-		ID:                entities.NewAssetID(assetID),
+		ID:                entities.AssetID(assetID),
 		Name:              fmt.Sprint("my test asset", testAssetCount),
 		Symbol:            fmt.Sprint("TEST", testAssetCount),
 		TotalSupply:       totalSupply,

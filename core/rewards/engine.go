@@ -18,12 +18,12 @@ import (
 	"sort"
 	"time"
 
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 
-	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
+	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
 var (
@@ -230,7 +230,7 @@ func (e *Engine) splitDelegationByStatus(delegation []*types.ValidatorData, tmSc
 }
 
 func calcTotalDelegation(d []*types.ValidatorData) num.Decimal {
-	total := num.Zero()
+	total := num.UintZero()
 	for _, vd := range d {
 		total.AddSum(num.Sum(vd.SelfStake, vd.StakeByDelegators))
 	}
@@ -325,7 +325,7 @@ func (e *Engine) calculateRewardTypeForAsset(epochSeq, asset, market string, rew
 		}
 		return nil
 	case types.AccountTypeFeesInfrastructure: // given to delegator based on stake
-		return calculateRewardsByStake(epochSeq, account.Asset, account.ID, account.Balance.Clone(), validatorNormalisedScores, validatorData, e.global.delegatorShare, num.Zero(), e.global.minValStakeUInt, e.rng, e.log)
+		return calculateRewardsByStake(epochSeq, account.Asset, account.ID, account.Balance.Clone(), validatorNormalisedScores, validatorData, e.global.delegatorShare, num.UintZero(), e.global.minValStakeUInt, e.rng, e.log)
 	case types.AccountTypeMakerFeeReward: // given to receivers of maker fee in the asset based on their total received fee proportion
 		return calculateRewardsByContribution(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.marketActivityTracker.GetFeePartyScores(account.MarketID, types.TransferTypeMakerFeeReceive), timestamp)
 	case types.AccountTypeTakerFeeReward: // given to payers of fee in the asset based on their total paid fee proportion

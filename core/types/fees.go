@@ -15,8 +15,8 @@ package types
 import (
 	"fmt"
 
-	proto "code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
+	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type FeeFactors struct {
@@ -136,8 +136,8 @@ func (f *Fee) String() string {
 // NewFee returns a new fee object, with all fields initialised.
 func NewFee() *Fee {
 	return &Fee{
-		MakerFee:          num.Zero(),
-		InfrastructureFee: num.Zero(),
-		LiquidityFee:      num.Zero(),
+		MakerFee:          num.UintZero(),
+		InfrastructureFee: num.UintZero(),
+		LiquidityFee:      num.UintZero(),
 	}
 }

@@ -16,9 +16,9 @@ import (
 	"context"
 	"fmt"
 
-	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -81,7 +81,7 @@ func (w *Withdrawals) GetByID(ctx context.Context, withdrawalID string) (entitie
 		where id = $1
 		order by id, vega_time desc`
 
-	err := pgxscan.Get(ctx, w.Connection, &withdrawal, query, entities.NewWithdrawalID(withdrawalID))
+	err := pgxscan.Get(ctx, w.Connection, &withdrawal, query, entities.WithdrawalID(withdrawalID))
 	return withdrawal, err
 }
 
@@ -106,7 +106,7 @@ func (w *Withdrawals) getByPartyOffset(ctx context.Context, partyID string, open
 	var args []interface{}
 
 	query := fmt.Sprintf("%s WHERE party_id = %s ORDER BY id, vega_time DESC",
-		getWithdrawalsByPartyQuery(), nextBindVar(&args, entities.NewPartyID(partyID)))
+		getWithdrawalsByPartyQuery(), nextBindVar(&args, entities.PartyID(partyID)))
 	query, args = orderAndPaginateQuery(query, nil, pagination, args...)
 
 	defer metrics.StartSQLQuery("Withdrawals", "GetByParty")()
@@ -131,9 +131,9 @@ func (w *Withdrawals) getByPartyCursor(ctx context.Context, partyID string, open
 	}
 
 	cursorParams := []CursorQueryParameter{
-		NewCursorQueryParameter("party_id", sorting, "=", entities.NewPartyID(partyID)),
+		NewCursorQueryParameter("party_id", sorting, "=", entities.PartyID(partyID)),
 		NewCursorQueryParameter("vega_time", sorting, cmp, wc.VegaTime),
-		NewCursorQueryParameter("id", sorting, cmp, entities.NewWithdrawalID(wc.ID)),
+		NewCursorQueryParameter("id", sorting, cmp, entities.WithdrawalID(wc.ID)),
 	}
 
 	var args []interface{}

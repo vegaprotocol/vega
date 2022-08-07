@@ -15,8 +15,8 @@ package entities_test
 import (
 	"testing"
 
-	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/datanode/entities"
+	types "code.vegaprotocol.io/vega/protos/vega"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 )

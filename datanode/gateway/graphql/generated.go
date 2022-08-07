@@ -12,14 +12,14 @@ import (
 	"sync"
 	"sync/atomic"
 
-	v12 "code.vegaprotocol.io/protos/data-node/api/v1"
-	"code.vegaprotocol.io/protos/data-node/api/v2"
-	"code.vegaprotocol.io/protos/vega"
-	v14 "code.vegaprotocol.io/protos/vega/api/v1"
-	v13 "code.vegaprotocol.io/protos/vega/commands/v1"
-	"code.vegaprotocol.io/protos/vega/events/v1"
-	v11 "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers"
+	v13 "code.vegaprotocol.io/vega/protos/data-node/api/v1"
+	"code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	"code.vegaprotocol.io/vega/protos/vega"
+	v14 "code.vegaprotocol.io/vega/protos/vega/api/v1"
+	v12 "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	"code.vegaprotocol.io/vega/protos/vega/events/v1"
+	v11 "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
 	gqlparser "github.com/vektah/gqlparser/v2"
@@ -45,6 +45,7 @@ type Config struct {
 
 type ResolverRoot interface {
 	Account() AccountResolver
+	AccountEdge() AccountEdgeResolver
 	Asset() AssetResolver
 	AuctionEvent() AuctionEventResolver
 	Candle() CandleResolver
@@ -118,6 +119,16 @@ type ComplexityRoot struct {
 		Balance func(childComplexity int) int
 		Market  func(childComplexity int) int
 		Type    func(childComplexity int) int
+	}
+
+	AccountEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
+	AccountsConnection struct {
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
 	}
 
 	AggregatedBalance struct {
@@ -381,6 +392,16 @@ type ComplexityRoot struct {
 		OldPubKey   func(childComplexity int) int
 	}
 
+	KeyRotationConnection struct {
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
+	}
+
+	KeyRotationEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
 	LedgerEntry struct {
 		Amount      func(childComplexity int) int
 		FromAccount func(childComplexity int) int
@@ -482,6 +503,7 @@ type ComplexityRoot struct {
 
 	Market struct {
 		Accounts                      func(childComplexity int, partyID *string) int
+		AccountsConnection            func(childComplexity int, partyID *string, pagination *v2.Pagination) int
 		Candles                       func(childComplexity int, since string, interval Interval) int
 		CandlesConnection             func(childComplexity int, since string, to *string, interval Interval, pagination *v2.Pagination) int
 		Data                          func(childComplexity int) int
@@ -619,6 +641,16 @@ type ComplexityRoot struct {
 		Value func(childComplexity int) int
 	}
 
+	NetworkParameterEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
+	NetworkParametersConnection struct {
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
+	}
+
 	NewAsset struct {
 		Decimals    func(childComplexity int) int
 		MinLpStake  func(childComplexity int) int
@@ -653,7 +685,7 @@ type ComplexityRoot struct {
 		Delegations           func(childComplexity int, partyID *string, skip *int, first *int, last *int) int
 		DelegationsConnection func(childComplexity int, partyID *string, pagination *v2.Pagination) int
 		EpochData             func(childComplexity int) int
-		EthereumAdddress      func(childComplexity int) int
+		EthereumAddress       func(childComplexity int) int
 		Id                    func(childComplexity int) int
 		InfoUrl               func(childComplexity int) int
 		Location              func(childComplexity int) int
@@ -686,6 +718,16 @@ type ComplexityRoot struct {
 		Id        func(childComplexity int) int
 		Kind      func(childComplexity int) int
 		Signature func(childComplexity int) int
+	}
+
+	NodeSignatureEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
+	NodeSignaturesConnection struct {
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
 	}
 
 	NodesConnection struct {
@@ -844,6 +886,7 @@ type ComplexityRoot struct {
 
 	Party struct {
 		Accounts                      func(childComplexity int, marketID *string, asset *string, typeArg *vega.AccountType) int
+		AccountsConnection            func(childComplexity int, marketID *string, asset *string, typeArg *vega.AccountType, pagination *v2.Pagination) int
 		Delegations                   func(childComplexity int, nodeID *string, skip *int, first *int, last *int) int
 		DelegationsConnection         func(childComplexity int, nodeID *string, pagination *v2.Pagination) int
 		Deposits                      func(childComplexity int) int
@@ -864,6 +907,7 @@ type ComplexityRoot struct {
 		Rewards                       func(childComplexity int, asset *string, skip *int, first *int, last *int) int
 		RewardsConnection             func(childComplexity int, asset *string, pagination *v2.Pagination) int
 		Stake                         func(childComplexity int) int
+		StakingSummary                func(childComplexity int, pagination *v2.Pagination) int
 		Trades                        func(childComplexity int, marketID *string, skip *int, first *int, last *int) int
 		TradesConnection              func(childComplexity int, marketID *string, pagination *v2.Pagination) int
 		Votes                         func(childComplexity int) int
@@ -1032,12 +1076,14 @@ type ComplexityRoot struct {
 		GetMarketDataHistoryConnectionByID func(childComplexity int, id string, start *int, end *int, pagination *v2.Pagination) int
 		HistoricBalances                   func(childComplexity int, filter *v2.AccountFilter, groupBy []*v2.AccountField) int
 		KeyRotations                       func(childComplexity int, id *string) int
+		KeyRotationsConnection             func(childComplexity int, id *string, pagination *v2.Pagination) int
 		LastBlockHeight                    func(childComplexity int) int
 		Market                             func(childComplexity int, id string) int
 		Markets                            func(childComplexity int, id *string) int
 		MarketsConnection                  func(childComplexity int, id *string, pagination *v2.Pagination) int
 		NetworkLimits                      func(childComplexity int) int
 		NetworkParameters                  func(childComplexity int) int
+		NetworkParametersConnection        func(childComplexity int, pagination *v2.Pagination) int
 		NetworkParametersProposals         func(childComplexity int, inState *ProposalState) int
 		NewAssetProposals                  func(childComplexity int, inState *ProposalState) int
 		NewFreeformProposals               func(childComplexity int, inState *ProposalState) int
@@ -1045,6 +1091,7 @@ type ComplexityRoot struct {
 		Node                               func(childComplexity int, id string) int
 		NodeData                           func(childComplexity int) int
 		NodeSignatures                     func(childComplexity int, resourceID string) int
+		NodeSignaturesConnection           func(childComplexity int, resourceID string, pagination *v2.Pagination) int
 		Nodes                              func(childComplexity int) int
 		NodesConnection                    func(childComplexity int, pagination *v2.Pagination) int
 		OracleData                         func(childComplexity int, pagination *OffsetPagination) int
@@ -1126,6 +1173,16 @@ type ComplexityRoot struct {
 		RewardsConnection func(childComplexity int, asset *string, pagination *v2.Pagination) int
 	}
 
+	RewardSummaryConnection struct {
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
+	}
+
+	RewardSummaryEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
 	RewardsConnection struct {
 		Edges    func(childComplexity int) int
 		PageInfo func(childComplexity int) int
@@ -1175,6 +1232,21 @@ type ComplexityRoot struct {
 		Timestamp   func(childComplexity int) int
 		TxHash      func(childComplexity int) int
 		Type        func(childComplexity int) int
+	}
+
+	StakeLinkingEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
+	StakesConnection struct {
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
+	}
+
+	StakingSummary struct {
+		CurrentStakeAvailable func(childComplexity int) int
+		Linkings              func(childComplexity int, pagination *v2.Pagination) int
 	}
 
 	Statistics struct {
@@ -1407,6 +1479,9 @@ type AccountResolver interface {
 
 	Market(ctx context.Context, obj *vega.Account) (*vega.Market, error)
 }
+type AccountEdgeResolver interface {
+	Node(ctx context.Context, obj *v2.AccountEdge) (*vega.Account, error)
+}
 type AssetResolver interface {
 	Name(ctx context.Context, obj *vega.Asset) (string, error)
 	Symbol(ctx context.Context, obj *vega.Asset) (string, error)
@@ -1481,7 +1556,7 @@ type InstrumentConfigurationResolver interface {
 	FutureProduct(ctx context.Context, obj *vega.InstrumentConfiguration) (*vega.FutureProduct, error)
 }
 type KeyRotationResolver interface {
-	BlockHeight(ctx context.Context, obj *v12.KeyRotation) (string, error)
+	BlockHeight(ctx context.Context, obj *v1.KeyRotation) (string, error)
 }
 type LiquidityOrderResolver interface {
 	Reference(ctx context.Context, obj *vega.LiquidityOrder) (PeggedReference, error)
@@ -1522,6 +1597,7 @@ type MarketResolver interface {
 	Orders(ctx context.Context, obj *vega.Market, skip *int, first *int, last *int) ([]*vega.Order, error)
 	OrdersConnection(ctx context.Context, obj *vega.Market, pagination *v2.Pagination) (*v2.OrderConnection, error)
 	Accounts(ctx context.Context, obj *vega.Market, partyID *string) ([]*vega.Account, error)
+	AccountsConnection(ctx context.Context, obj *vega.Market, partyID *string, pagination *v2.Pagination) (*v2.AccountsConnection, error)
 	Trades(ctx context.Context, obj *vega.Market, skip *int, first *int, last *int) ([]*vega.Trade, error)
 	TradesConnection(ctx context.Context, obj *vega.Market, pagination *v2.Pagination) (*v2.TradeConnection, error)
 	Depth(ctx context.Context, obj *vega.Market, maxDepth *int) (*vega.MarketDepth, error)
@@ -1604,8 +1680,8 @@ type NodeDataResolver interface {
 	Uptime(ctx context.Context, obj *vega.NodeData) (float64, error)
 }
 type NodeSignatureResolver interface {
-	Signature(ctx context.Context, obj *v13.NodeSignature) (*string, error)
-	Kind(ctx context.Context, obj *v13.NodeSignature) (*NodeSignatureKind, error)
+	Signature(ctx context.Context, obj *v12.NodeSignature) (*string, error)
+	Kind(ctx context.Context, obj *v12.NodeSignature) (*NodeSignatureKind, error)
 }
 type ObservableMarketDataResolver interface {
 	MarketID(ctx context.Context, obj *vega.MarketData) (string, error)
@@ -1680,6 +1756,7 @@ type PartyResolver interface {
 	Trades(ctx context.Context, obj *vega.Party, marketID *string, skip *int, first *int, last *int) ([]*vega.Trade, error)
 	TradesConnection(ctx context.Context, obj *vega.Party, marketID *string, pagination *v2.Pagination) (*v2.TradeConnection, error)
 	Accounts(ctx context.Context, obj *vega.Party, marketID *string, asset *string, typeArg *vega.AccountType) ([]*vega.Account, error)
+	AccountsConnection(ctx context.Context, obj *vega.Party, marketID *string, asset *string, typeArg *vega.AccountType, pagination *v2.Pagination) (*v2.AccountsConnection, error)
 	Positions(ctx context.Context, obj *vega.Party) ([]*vega.Position, error)
 	PositionsConnection(ctx context.Context, obj *vega.Party, market *string, pagination *v2.Pagination) (*v2.PositionConnection, error)
 	Margins(ctx context.Context, obj *vega.Party, marketID *string) ([]*vega.MarginLevels, error)
@@ -1696,14 +1773,15 @@ type PartyResolver interface {
 	LiquidityProvisionsConnection(ctx context.Context, obj *vega.Party, market *string, reference *string, pagination *v2.Pagination) (*v2.LiquidityProvisionsConnection, error)
 	Delegations(ctx context.Context, obj *vega.Party, nodeID *string, skip *int, first *int, last *int) ([]*vega.Delegation, error)
 	DelegationsConnection(ctx context.Context, obj *vega.Party, nodeID *string, pagination *v2.Pagination) (*v2.DelegationsConnection, error)
-	Stake(ctx context.Context, obj *vega.Party) (*v12.PartyStakeResponse, error)
+	Stake(ctx context.Context, obj *vega.Party) (*v13.PartyStakeResponse, error)
+	StakingSummary(ctx context.Context, obj *vega.Party, pagination *v2.Pagination) (*StakingSummary, error)
 	Rewards(ctx context.Context, obj *vega.Party, asset *string, skip *int, first *int, last *int) ([]*vega.Reward, error)
 	RewardsConnection(ctx context.Context, obj *vega.Party, asset *string, pagination *v2.Pagination) (*v2.RewardsConnection, error)
 	RewardSummaries(ctx context.Context, obj *vega.Party, asset *string) ([]*vega.RewardSummary, error)
 	RewardDetails(ctx context.Context, obj *vega.Party) ([]*vega.RewardSummary, error)
 }
 type PartyStakeResolver interface {
-	Linkings(ctx context.Context, obj *v12.PartyStakeResponse) ([]*v1.StakeLinking, error)
+	Linkings(ctx context.Context, obj *v13.PartyStakeResponse) ([]*v1.StakeLinking, error)
 }
 type PeggedOrderResolver interface {
 	Reference(ctx context.Context, obj *vega.PeggedOrder) (PeggedReference, error)
@@ -1768,7 +1846,8 @@ type QueryResolver interface {
 	NetworkParametersProposals(ctx context.Context, inState *ProposalState) ([]*vega.GovernanceData, error)
 	NewAssetProposals(ctx context.Context, inState *ProposalState) ([]*vega.GovernanceData, error)
 	NewFreeformProposals(ctx context.Context, inState *ProposalState) ([]*vega.GovernanceData, error)
-	NodeSignatures(ctx context.Context, resourceID string) ([]*v13.NodeSignature, error)
+	NodeSignatures(ctx context.Context, resourceID string) ([]*v12.NodeSignature, error)
+	NodeSignaturesConnection(ctx context.Context, resourceID string, pagination *v2.Pagination) (*v2.NodeSignaturesConnection, error)
 	Asset(ctx context.Context, assetID string) (*vega.Asset, error)
 	Assets(ctx context.Context) ([]*vega.Asset, error)
 	AssetsConnection(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.AssetsConnection, error)
@@ -1777,11 +1856,13 @@ type QueryResolver interface {
 	Erc20WithdrawalApproval(ctx context.Context, withdrawalID string) (*Erc20WithdrawalApproval, error)
 	Deposit(ctx context.Context, id string) (*vega.Deposit, error)
 	NetworkParameters(ctx context.Context) ([]*vega.NetworkParameter, error)
+	NetworkParametersConnection(ctx context.Context, pagination *v2.Pagination) (*v2.NetworkParameterConnection, error)
 	NodeData(ctx context.Context) (*vega.NodeData, error)
 	Nodes(ctx context.Context) ([]*vega.Node, error)
 	NodesConnection(ctx context.Context, pagination *v2.Pagination) (*v2.NodesConnection, error)
 	Node(ctx context.Context, id string) (*vega.Node, error)
-	KeyRotations(ctx context.Context, id *string) ([]*v12.KeyRotation, error)
+	KeyRotations(ctx context.Context, id *string) ([]*v1.KeyRotation, error)
+	KeyRotationsConnection(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.KeyRotationConnection, error)
 	Epoch(ctx context.Context, id *string) (*vega.Epoch, error)
 	Transfers(ctx context.Context, pubkey string, isFrom *bool, isTo *bool) ([]*v1.Transfer, error)
 	TransfersConnection(ctx context.Context, pubkey *string, direction TransferDirection, pagination *v2.Pagination) (*v2.TransferConnection, error)
@@ -1976,6 +2057,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Account.Type(childComplexity), true
+
+	case "AccountEdge.cursor":
+		if e.complexity.AccountEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.AccountEdge.Cursor(childComplexity), true
+
+	case "AccountEdge.node":
+		if e.complexity.AccountEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.AccountEdge.Node(childComplexity), true
+
+	case "AccountsConnection.edges":
+		if e.complexity.AccountsConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.AccountsConnection.Edges(childComplexity), true
+
+	case "AccountsConnection.pageInfo":
+		if e.complexity.AccountsConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.AccountsConnection.PageInfo(childComplexity), true
 
 	case "AggregatedBalance.accountId":
 		if e.complexity.AggregatedBalance.AccountId == nil {
@@ -3000,6 +3109,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.KeyRotation.OldPubKey(childComplexity), true
 
+	case "KeyRotationConnection.edges":
+		if e.complexity.KeyRotationConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.KeyRotationConnection.Edges(childComplexity), true
+
+	case "KeyRotationConnection.pageInfo":
+		if e.complexity.KeyRotationConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.KeyRotationConnection.PageInfo(childComplexity), true
+
+	case "KeyRotationEdge.cursor":
+		if e.complexity.KeyRotationEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.KeyRotationEdge.Cursor(childComplexity), true
+
+	case "KeyRotationEdge.node":
+		if e.complexity.KeyRotationEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.KeyRotationEdge.Node(childComplexity), true
+
 	case "LedgerEntry.amount":
 		if e.complexity.LedgerEntry.Amount == nil {
 			break
@@ -3389,6 +3526,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Market.Accounts(childComplexity, args["partyId"].(*string)), true
+
+	case "Market.accountsConnection":
+		if e.complexity.Market.AccountsConnection == nil {
+			break
+		}
+
+		args, err := ec.field_Market_accountsConnection_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Market.AccountsConnection(childComplexity, args["partyId"].(*string), args["pagination"].(*v2.Pagination)), true
 
 	case "Market.candles":
 		if e.complexity.Market.Candles == nil {
@@ -4086,6 +4235,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.NetworkParameter.Value(childComplexity), true
 
+	case "NetworkParameterEdge.cursor":
+		if e.complexity.NetworkParameterEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.NetworkParameterEdge.Cursor(childComplexity), true
+
+	case "NetworkParameterEdge.node":
+		if e.complexity.NetworkParameterEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.NetworkParameterEdge.Node(childComplexity), true
+
+	case "NetworkParametersConnection.edges":
+		if e.complexity.NetworkParametersConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.NetworkParametersConnection.Edges(childComplexity), true
+
+	case "NetworkParametersConnection.pageInfo":
+		if e.complexity.NetworkParametersConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.NetworkParametersConnection.PageInfo(childComplexity), true
+
 	case "NewAsset.decimals":
 		if e.complexity.NewAsset.Decimals == nil {
 			break
@@ -4243,12 +4420,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Node.EpochData(childComplexity), true
 
-	case "Node.ethereumAdddress":
-		if e.complexity.Node.EthereumAdddress == nil {
+	case "Node.ethereumAddress":
+		if e.complexity.Node.EthereumAddress == nil {
 			break
 		}
 
-		return e.complexity.Node.EthereumAdddress(childComplexity), true
+		return e.complexity.Node.EthereumAddress(childComplexity), true
 
 	case "Node.id":
 		if e.complexity.Node.Id == nil {
@@ -4410,6 +4587,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.NodeSignature.Signature(childComplexity), true
+
+	case "NodeSignatureEdge.cursor":
+		if e.complexity.NodeSignatureEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.NodeSignatureEdge.Cursor(childComplexity), true
+
+	case "NodeSignatureEdge.node":
+		if e.complexity.NodeSignatureEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.NodeSignatureEdge.Node(childComplexity), true
+
+	case "NodeSignaturesConnection.edges":
+		if e.complexity.NodeSignaturesConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.NodeSignaturesConnection.Edges(childComplexity), true
+
+	case "NodeSignaturesConnection.pageInfo":
+		if e.complexity.NodeSignaturesConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.NodeSignaturesConnection.PageInfo(childComplexity), true
 
 	case "NodesConnection.edges":
 		if e.complexity.NodesConnection.Edges == nil {
@@ -5112,6 +5317,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Party.Accounts(childComplexity, args["marketId"].(*string), args["asset"].(*string), args["type"].(*vega.AccountType)), true
 
+	case "Party.accountsConnection":
+		if e.complexity.Party.AccountsConnection == nil {
+			break
+		}
+
+		args, err := ec.field_Party_accountsConnection_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Party.AccountsConnection(childComplexity, args["marketId"].(*string), args["asset"].(*string), args["type"].(*vega.AccountType), args["pagination"].(*v2.Pagination)), true
+
 	case "Party.delegations":
 		if e.complexity.Party.Delegations == nil {
 			break
@@ -5326,6 +5543,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Party.Stake(childComplexity), true
+
+	case "Party.stakingSummary":
+		if e.complexity.Party.StakingSummary == nil {
+			break
+		}
+
+		args, err := ec.field_Party_stakingSummary_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Party.StakingSummary(childComplexity, args["pagination"].(*v2.Pagination)), true
 
 	case "Party.trades":
 		if e.complexity.Party.Trades == nil {
@@ -6032,6 +6261,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.KeyRotations(childComplexity, args["id"].(*string)), true
 
+	case "Query.keyRotationsConnection":
+		if e.complexity.Query.KeyRotationsConnection == nil {
+			break
+		}
+
+		args, err := ec.field_Query_keyRotationsConnection_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.KeyRotationsConnection(childComplexity, args["id"].(*string), args["pagination"].(*v2.Pagination)), true
+
 	case "Query.lastBlockHeight":
 		if e.complexity.Query.LastBlockHeight == nil {
 			break
@@ -6088,6 +6329,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.NetworkParameters(childComplexity), true
+
+	case "Query.networkParametersConnection":
+		if e.complexity.Query.NetworkParametersConnection == nil {
+			break
+		}
+
+		args, err := ec.field_Query_networkParametersConnection_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.NetworkParametersConnection(childComplexity, args["pagination"].(*v2.Pagination)), true
 
 	case "Query.networkParametersProposals":
 		if e.complexity.Query.NetworkParametersProposals == nil {
@@ -6167,6 +6420,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.NodeSignatures(childComplexity, args["resourceId"].(string)), true
+
+	case "Query.nodeSignaturesConnection":
+		if e.complexity.Query.NodeSignaturesConnection == nil {
+			break
+		}
+
+		args, err := ec.field_Query_nodeSignaturesConnection_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.NodeSignaturesConnection(childComplexity, args["resourceId"].(string), args["pagination"].(*v2.Pagination)), true
 
 	case "Query.nodes":
 		if e.complexity.Query.Nodes == nil {
@@ -6694,6 +6959,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RewardSummary.RewardsConnection(childComplexity, args["asset"].(*string), args["pagination"].(*v2.Pagination)), true
 
+	case "RewardSummaryConnection.edges":
+		if e.complexity.RewardSummaryConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.RewardSummaryConnection.Edges(childComplexity), true
+
+	case "RewardSummaryConnection.pageInfo":
+		if e.complexity.RewardSummaryConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.RewardSummaryConnection.PageInfo(childComplexity), true
+
+	case "RewardSummaryEdge.cursor":
+		if e.complexity.RewardSummaryEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.RewardSummaryEdge.Cursor(childComplexity), true
+
+	case "RewardSummaryEdge.node":
+		if e.complexity.RewardSummaryEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.RewardSummaryEdge.Node(childComplexity), true
+
 	case "RewardsConnection.edges":
 		if e.complexity.RewardsConnection.Edges == nil {
 			break
@@ -6882,6 +7175,53 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.StakeLinking.Type(childComplexity), true
+
+	case "StakeLinkingEdge.cursor":
+		if e.complexity.StakeLinkingEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.StakeLinkingEdge.Cursor(childComplexity), true
+
+	case "StakeLinkingEdge.node":
+		if e.complexity.StakeLinkingEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.StakeLinkingEdge.Node(childComplexity), true
+
+	case "StakesConnection.edges":
+		if e.complexity.StakesConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.StakesConnection.Edges(childComplexity), true
+
+	case "StakesConnection.pageInfo":
+		if e.complexity.StakesConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.StakesConnection.PageInfo(childComplexity), true
+
+	case "StakingSummary.currentStakeAvailable":
+		if e.complexity.StakingSummary.CurrentStakeAvailable == nil {
+			break
+		}
+
+		return e.complexity.StakingSummary.CurrentStakeAvailable(childComplexity), true
+
+	case "StakingSummary.linkings":
+		if e.complexity.StakingSummary.Linkings == nil {
+			break
+		}
+
+		args, err := ec.field_StakingSummary_linkings_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.StakingSummary.Linkings(childComplexity, args["pagination"].(*v2.Pagination)), true
 
 	case "Statistics.appVersion":
 		if e.complexity.Statistics.AppVersion == nil {
@@ -7988,57 +8328,57 @@ type PeggedOrder {
   offset: String!
 }
 
-"Subscriptions allow a caller to receive new information as it is available from the VEGA platform."
+"Subscriptions allow a caller to receive new information as it is available from the Vega network."
 type Subscription {
   "Subscribe to the candles updates"
   candles(
-    "ID of the market we want to listen candles for"
+    "ID of the market to listen to for candles"
     marketId: ID!
-    "Interval of the candles we want to listen for"
+    "Interval of the candles to listen for"
     interval: Interval!
   ): Candle!
 
   "Subscribe to orders updates"
   orders(
-    "ID of the market from which we want orders updates"
+    "ID of the market from which you want orders updates"
     marketId: ID
-    "ID of the party from which we want orders updates"
+    "ID of the party from which you want orders updates"
     partyId: ID
   ): [Order!]
 
   "Subscribe to the trades updates"
   trades(
-    "ID of the market from which we want trades updates"
+    "ID of the market from which you want trades updates"
     marketId: ID
-    "ID of the party from which we want trades updates"
+    "ID of the party from which you want trades updates"
     partyId: ID
   ): [Trade!]
 
   "Subscribe to the positions updates"
   positions(
-    "ID of the party from we want updates for"
+    "ID of the party from you want updates for"
     partyId: ID
-    "ID of the market from which we want position updates"
+    "ID of the market from which you want position updates"
     marketId: ID
   ): Position!
 
   "Subscribe to the market depths update"
   marketDepth(
-    "ID of the market we want to receive market depth updates for"
+    "ID of the market to receive market depth updates for"
     marketId: ID!
   ): MarketDepth! @deprecated(reason: "Use marketsDepth instead")
 
   "Subscribe to price level market depth updates"
   marketDepthUpdate(
-    "ID of the market we want to receive market depth pricelevel updates for"
+    "ID of the market to receive market depth price level updates for"
     marketId: ID!
   ): MarketDepthUpdate! @deprecated(reason: "Use marketsDepthUpdate instead")
 
   "Subscribe to the accounts updates"
   accounts(
-    "ID of the market from which we want accounts updates"
+    "ID of the market from which to receive accounts updates for"
     marketId: ID
-    "ID of the party from which we want accounts updates"
+    "ID of the party from which to receive accounts updates for"
     partyId: ID
     "Asset code"
     asset: String
@@ -8048,47 +8388,47 @@ type Subscription {
 
   "Subscribe to the mark price changes"
   marketData(
-    "id of the market we want to subscribe to the market data changes"
+    "ID of the market you want to subscribe to the market data changes"
     marketId: ID
   ): MarketData! @deprecated(reason: "Use marketsData instead")
 
   "Subscribe to the market depths update"
     marketsDepth(
-      "ID of the market we want to receive market depth updates for"
+      "ID of the market you want to receive market depth updates for"
       marketIds: [ID!]!
     ): [ObservableMarketDepth!]!
 
     "Subscribe to price level market depth updates"
     marketsDepthUpdate(
-      "ID of the market we want to receive market depth pricelevel updates for"
+      "ID of the market you want to receive market depth price level updates for"
       marketIds: [ID!]!
     ): [ObservableMarketDepthUpdate!]!
 
   "Subscribe to the mark price changes"
     marketsData(
-      "id of the market we want to subscribe to the market data changes"
+      "ID of the market for which you want to subscribe to the market data changes"
       marketIds: [ID!]!
     ): [ObservableMarketData!]!
 
   "Subscribe to the margin changes"
   margins(
-    "id of the party we want to subscribe for margin updates"
+    "ID of the party you want to subscribe to for margin updates"
     partyId: ID!
-    "market we want to listen to margin updates (nil if we want updates for all markets)"
+    "ID of the market you want to listen to for margin updates (nil if you want updates for all markets)"
     marketId: ID
   ): MarginLevels!
 
   "Subscribe to proposals. Leave out all arguments to receive all proposals"
   proposals(
-    "Optional party id whose proposals are to be streamed"
+    "Optional party ID whose proposals are to be streamed"
     partyId: ID
   ): Proposal!
 
-  "Subscribe to votes, either by proposal id or party id"
+  "Subscribe to votes, either by proposal ID or party ID"
   votes(
-    "Optional proposal id which votes are to be streamed"
+    "Optional proposal ID which votes are to be streamed"
     proposalId: ID
-    "Optional party id whose votes are to be streamed"
+    "Optional party ID whose votes are to be streamed"
     partyId: ID
   ): ProposalVote!
 
@@ -8127,13 +8467,13 @@ type MarginLevels {
   market: Market!
   "asset for the current margins"
   asset: Asset!
-  "id of the party for this margin"
+  "ID of the party for this margin"
   party: Party!
-  "minimal margin for the position to be maintained in the network (unsigned int actually)"
+  "minimal margin for the position to be maintained in the network (unsigned integer)"
   maintenanceLevel: String!
-  "if the margin is between maintenance and search, the network will initiate a collateral search (unsigned int actually)"
+  "if the margin is between maintenance and search, the network will initiate a collateral search (unsigned integer)"
   searchLevel: String!
-  "this is the minimal margin required for a party to place a new order on the network (unsigned int actually)"
+  "this is the minimum margin required for a party to place a new order on the network (unsigned integer)"
   initialLevel: String!
 
   """
@@ -8148,9 +8488,9 @@ type MarginLevels {
 
 "Live data of a Market"
 type MarketData {
-  "market id of the associated mark price"
+  "market ID of the associated mark price"
   market: Market!
-  "the mark price (actually an unsigned int)"
+  "the mark price (an unsigned integer)"
   markPrice: String!
   "the highest price level on an order book for buy orders."
   bestBidPrice: String!
@@ -8184,7 +8524,7 @@ type MarketData {
   indicativePrice: String!
   "indicative volume if the auction ended now, 0 if not in auction mode"
   indicativeVolume: String!
-  "what state the market is in (auction, continuous etc)"
+  "what state the market is in (auction, continuous, etc)"
   marketTradingMode: MarketTradingMode!
   "what triggered an auction (if an auction was started)"
   trigger: AuctionTrigger!
@@ -8194,9 +8534,9 @@ type MarketData {
   targetStake: String
   "the supplied stake for the market"
   suppliedStake: String
-  "The liquidity commitments for a given market"
+  "the liquidity commitments for a given market"
   commitments: MarketDataCommitments!
-  "A list of valid price ranges per associated trigger"
+  "a list of valid price ranges per associated trigger"
   priceMonitoringBounds: [PriceMonitoringBounds!]
   "the market value proxy"
   marketValueProxy: String!
@@ -8206,9 +8546,9 @@ type MarketData {
 
 "Live data of a Market"
 type ObservableMarketData {
-  "market id of the associated mark price"
+  "market ID of the associated mark price"
   marketId: String!
-  "the mark price (actually an unsigned int)"
+  "the mark price (an unsigned integer)"
   markPrice: String!
   "the highest price level on an order book for buy orders."
   bestBidPrice: String!
@@ -8222,17 +8562,17 @@ type ObservableMarketData {
   bestStaticBidPrice: String!
   "the aggregated volume being offered at the best static bid price, excluding pegged orders"
   bestStaticBidVolume: String!
-  "the lowest price level on an order book for offer orders not including pegged orders."
+  "the lowest price level on an order book for offer orders not including pegged orders"
   bestStaticOfferPrice: String!
-  "the aggregated volume being offered at the best static offer price, excluding pegged orders."
+  "the aggregated volume being offered at the best static offer price, excluding pegged orders"
   bestStaticOfferVolume: String!
-  "the arithmetic average of the best bid price and best offer price."
+  "the arithmetic average of the best bid price and best offer price"
   midPrice: String!
   "the arithmetic average of the best static bid price and best static offer price"
   staticMidPrice: String!
   "RFC3339Nano time at which this market price was relevant"
   timestamp: String!
-  "the sum of the size of all positions greater than 0."
+  "the sum of the size of all positions greater than 0"
   openInterest: String!
   "RFC3339Nano time at which the auction will stop (null if not in auction mode)"
   auctionEnd: String
@@ -8276,31 +8616,31 @@ type MarketTimestamps {
 
 "The equity like share of liquidity fee for each liquidity provider"
 type LiquidityProviderFeeShare {
-  "The liquidity provider party id"
+  "The liquidity provider party ID"
   party: Party!
-  "The share own by this liquidity provider (float)"
+  "The share owned by this liquidity provider (float)"
   equityLikeShare: String!
-  "the average entry valuation of the liquidity provider for the market"
+  "The average entry valuation of the liquidity provider for the market"
   averageEntryValuation: String!
 }
 
 "The equity like share of liquidity fee for each liquidity provider"
 type ObservableLiquidityProviderFeeShare {
-  "The liquidity provider party id"
+  "The liquidity provider party ID"
   partyId: String!
-  "The share own by this liquidity provider (float)"
+  "The share owned by this liquidity provider (float)"
   equityLikeShare: String!
-  "the average entry valuation of the liquidity provider for the market"
+  "The average entry valuation of the liquidity provider for the market"
   averageEntryValuation: String!
 }
 
 
 
-"The MM commitments for this market"
+"The liquidity commitments for this market"
 type MarketDataCommitments {
-  "a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec."
+  "a set of liquidity sell orders to meet the liquidity provision obligation."
   sells: [LiquidityOrderReference!]
-  "a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec."
+  "a set of liquidity buy orders to meet the liquidity provision obligation."
   buys: [LiquidityOrderReference!]
 }
 
@@ -8318,7 +8658,7 @@ input AccountFilter {
 "Queries allow a caller to read data and filter data via GraphQL."
 type Query {
   "One or more instruments that are trading on the VEGA network"
-  markets("ID of the market" id: ID): [Market!]
+  markets("ID of the market" id: ID): [Market!] @deprecated(reason: "Use marketsConnection instead")
 
   marketsConnection(
     "Optional ID of a market"
@@ -8327,11 +8667,11 @@ type Query {
     pagination: Pagination
   ): MarketConnection!
 
-  "An instrument that is trading on the VEGA network"
+  "An instrument that is trading on the Vega network"
   market("Optional ID of a market" id: ID!): Market
 
-  "One or more entities that are trading on the VEGA network"
-  parties("Optional ID of a party" id: ID): [Party!]
+  "One or more entities that are trading on the Vega network"
+  parties("Optional ID of a party" id: ID): [Party!] @deprecated(reason: "Use partiesConnection instead.")
 
   partiesConnection(
     "Optional ID of a party to retrieve"
@@ -8340,7 +8680,7 @@ type Query {
     pagination: Pagination
   ): PartyConnection!
 
-  "An entity that is trading on the VEGA network"
+  "An entity that is trading on the Vega network"
   party("ID of a party" id: ID!): Party
 
   "The last block process by the blockchain"
@@ -8389,7 +8729,7 @@ type Query {
     pagination: Pagination
   ): OracleDataConnection!
 
-  "An order in the VEGA network found by orderID"
+  "An order in the Vega network found by orderID"
   orderByID(
     "ID for an order"
     orderId: ID!
@@ -8419,16 +8759,16 @@ type Query {
     pagination: Pagination
   ): OrderConnection!
 
-  "An order in the VEGA network found by referenceID"
+  "An order in the Vega network found by referenceID"
   orderByReference("Reference for an order" reference: String!): Order!
 
-  "All governance proposals in the VEGA network"
+  "All governance proposals in the Vega network"
   proposals(
     "Returns only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
   ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
 
-  "All governance proposals in the VEGA network"
+  "All governance proposals in the Vega network"
   proposalsConnection(
     "Optional type of proposal to retrieve data for"
     proposalType: ProposalType
@@ -8438,11 +8778,11 @@ type Query {
     pagination: Pagination
   ): ProposalsConnection!
 
-  "A governance proposal located by either its id or reference. If both are set, id is used."
+  "A governance proposal located by either its ID or reference. If both are set, ID is used."
   proposal(
-    "Optionally, locate proposal by its id"
+    "Optionally, locate proposal by its ID"
     id: ID
-    "Optionally, locate proposal by its reference. If id is set, this parameter is ignored."
+    "Optionally, locate proposal by its reference. If ID is set, this parameter is ignored."
     reference: String
   ): Proposal!
 
@@ -8472,22 +8812,25 @@ type Query {
     inState: ProposalState
   ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
 
-  "Governance proposals that allows creation of free form proposals in Vega"
+  "Freeform governance proposals, which can be voted on but do not change the behaviour of the system, and can be used to gauge community sentiment in Vega"
   newFreeformProposals(
     "Returns only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
   ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
 
   "Return a list of aggregated node signature for a given resource ID"
-  nodeSignatures(resourceId: ID!): [NodeSignature!]
+  nodeSignatures(resourceId: ID!): [NodeSignature!] @deprecated(reason: "Use nodeSignaturesConnection instead")
+
+  "Return a list of aggregated node signature for a given resource ID"
+  nodeSignaturesConnection(resourceId: ID!, pagination: Pagination): NodeSignaturesConnection!
 
   "An asset which is used in the vega network"
   asset("Id of the asset" assetId: ID!): Asset
 
-  "The list of all assets in use in the vega network"
+  "The list of all assets in use in the Vega network"
   assets: [Asset!] @deprecated(reason: "Use assetsConnection instead")
 
-  "The list of all assets in use in the vega network or the specified asset if id is provided"
+  "The list of all assets in use in the Vega network or the specified asset if ID is provided"
   assetsConnection(id: ID, pagination: Pagination): AssetsConnection!
 
   "return an estimation of the potential cost for a new order"
@@ -8510,20 +8853,22 @@ type Query {
     type: OrderType!
   ): OrderEstimate!
 
-  "find a withdrawal using its id"
+  "find a withdrawal using its ID"
   withdrawal("id of the withdrawal" id: ID!): Withdrawal
 
-  "find an erc20 withdrawal approval using its withdrawal id"
+  "find an erc20 withdrawal approval using its withdrawal ID"
   erc20WithdrawalApproval(
-    "id of the withdrawal"
+    "ID of the withdrawal"
     withdrawalId: ID!
   ): Erc20WithdrawalApproval
 
-  "find a deposit using its id"
+  "find a deposit using its ID"
   deposit("id of the Deposit" id: ID!): Deposit
 
   "return the full list of network parameters"
-  networkParameters: [NetworkParameter!]
+  networkParameters: [NetworkParameter!] @deprecated(reason: "Use networkParametersConnection instead")
+
+  networkParametersConnection(pagination: Pagination): NetworkParametersConnection!
 
   "returns information about nodes"
   nodeData: NodeData
@@ -8538,12 +8883,15 @@ type Query {
   node("required id of node" id: String!): Node
 
   "query for historic key rotations"
-  keyRotations(id: String): [KeyRotation!]
+  keyRotations(id: String): [KeyRotation!] @deprecated(reason: "use keyRotationsConnection instead")
 
-  "get data for a specific epoch, if id omitted it gets the current epoch. If the string is 'next', fetch the next epoch"
+  "query for historic key rotations"
+  keyRotationsConnection(id: String, pagination: Pagination): KeyRotationConnection!
+
+  "get data for a specific epoch, if ID omitted it gets the current epoch. If the string is 'next', fetch the next epoch"
   epoch(id: String): Epoch!
 
-  "get a list of all transfers for a pubkey"
+  "get a list of all transfers for a public key"
   transfers(
     "the pubkey to look for"
     pubkey: String!
@@ -8553,17 +8901,17 @@ type Query {
     isTo: Boolean
   ): [Transfer!] @deprecated(reason: "Use transfersConnection instead")
 
-  "get a list of all transfers for a pubkey"
+  "get a list of all transfers for a public key"
   transfersConnection(
-    "the pubkey to look for"
+    "the public key to look for"
     pubkey: String
-    "direction of the transfer with respect to the pubkey"
+    "direction of the transfer with respect to the public key"
     direction: TransferDirection!
     "Pagination information"
     pagination: Pagination
   ): TransferConnection!
 
-  "get statistics about the vega node"
+  "get statistics about the Vega node"
   statistics: Statistics!
 
   historicBalances(
@@ -8574,7 +8922,7 @@ type Query {
   "Current network limits"
   networkLimits: NetworkLimits
 
-  "get market data history for a specific market. If no dates are given, the latest snapshot will be returned. If only the start date is provided all history from the given date will be provided, and if only the end date is provided, all history from the start upto and including the end date will be provided."
+  "get market data history for a specific market. If no dates are given, the latest snapshot will be returned. If only the start date is provided, all history from the given date will be provided, and if only the end date is provided, all history from the start up to and including the end date will be provided."
   getMarketDataHistoryByID(
     id: String!
     """
@@ -8597,7 +8945,7 @@ type Query {
     last: Int): [MarketData] @deprecated(reason: "Use getMarketDataHistoryConnectionByID instead")
 
 
-  "get market data history for a specific market. If no dates are given, the latest snapshot will be returned. If only the start date is provided all history from the given date will be provided, and if only the end date is provided, all history from the start upto and including the end date will be provided. Pagination is provided using a cursor based pagination model"
+  "get market data history for a specific market. If no dates are given, the latest snapshot will be returned. If only the start date is provided all history from the given date will be provided, and if only the end date is provided, all history from the start up to and including the end date will be provided. Pagination is provided using a cursor based pagination model"
   getMarketDataHistoryConnectionByID(
     id: String!
     """
@@ -8617,36 +8965,36 @@ type Query {
 }
 
 enum TransferStatus {
-  "Indicate a transfer still being processed"
+  "Indicates a transfer still being processed"
   Pending
-  "Indicate of an transfer accepted by the vega network"
+  "Indicates a transfer accepted by the Vega network"
   Done
-  "Indicate of an transfer rejected by the vega network"
+  "Indicates a transfer rejected by the Vega network"
   Rejected
   """
-  Indicate of a transfer stopped by the vega network
+  Indicates a transfer stopped by the Vega network
   e.g: no funds left to cover the transfer
   """
   Stopped
-  "Indicate of a transfer cancel by the user"
+  "Indication of a transfer cancelled by the user"
   Cancelled
 }
 
 "A user initiated transfer"
 type Transfer {
-  "Identified of this transfer"
+  "ID of this transfer"
   id: ID!
 
   "The public key of the sender in this transfer"
   from: String!
 
-  "The account type from which funds have been sent from"
+  "The account type from which funds have been sent"
   fromAccountType: AccountType!
 
-  "The public key of the received of the funds"
+  "The public key of the recipient of the funds"
   to: String!
 
-  "The account type which has received the funds"
+  "The account type that has received the funds"
   toAccountType: AccountType!
 
   "The asset"
@@ -8669,9 +9017,9 @@ type Transfer {
 
 union TransferKind = OneOffTransfer | RecurringTransfer
 
-"The specific details for a one off transfer"
+"The specific details for a one-off transfer"
 type OneOffTransfer {
-  "An optional time at which the transfer should be delivered"
+  "An optional time when the transfer should be delivered"
   deliverOn: String
 }
 
@@ -8679,7 +9027,7 @@ type OneOffTransfer {
 type RecurringTransfer {
   "The epoch at which this recurring transfer will start"
   startEpoch: Int!
-  "An optional epoch at whihc this transfer will stop"
+  "An optional epoch at which this transfer will stop"
   endEpoch: Int
   "The factor of the initial amount to be distributed"
   factor: String!
@@ -8699,13 +9047,13 @@ enum DispatchMetric {
 }
 
 type DispatchStrategy {
-  "What to contribution is measured"
+  "Defines the data that will be used to compare markets so as to distribute rewards appropriately"
   dispatchMetric: DispatchMetric!
 
-  "The asset to use for measuring contibution to the metric"
+  "The asset to use for measuring contribution to the metric"
   dispatchMetricAssetId: ID!
 
-  "Scope the dispatch to this markets only under the metric asset"
+  "Scope the dispatch to this market only under the metric asset"
   marketIdsInScope: [ID!]
 }
 
@@ -8740,7 +9088,7 @@ type KeyRotation {
   oldPubKey: String!
   "New public key rotated to"
   newPubKey: String!
-  "Block height of where the rotation took place"
+  "Block height when the rotation took place"
   blockHeight: String!
 }
 
@@ -8748,7 +9096,7 @@ type Epoch {
   "Presumably this is an integer or something. If there's no such thing, disregard"
   id: String!
 
-  "Timestamps for start/end etc"
+  "Timestamps for start and end of epochs"
   timestamps: EpochTimestamps!
 
   "Validators that participated in this epoch"
@@ -8758,9 +9106,9 @@ type Epoch {
   validatorsConnection(pagination: Pagination): NodesConnection!
 
   delegations(
-    # Optional party id to filter on
+    # Optional party ID to filter on
     partyId: String
-    # Optional node id to filter on
+    # Optional node ID to filter on
     nodeId: String
     "Pagination skip"
     skip: Int
@@ -8770,9 +9118,9 @@ type Epoch {
     last: Int): [Delegation!]! @deprecated(reason: "Use delegationsConnection instead")
 
   delegationsConnection(
-    # Optional party id to filter on
+    # Optional party ID to filter on
     partyId: String
-    # Optional node id to filter on
+    # Optional node ID to filter on
     nodeId: String
     "Pagination information"
    pagination: Pagination
@@ -8821,25 +9169,25 @@ type EpochData {
 }
 
 type Node {
-  "The node url eg n01.vega.xyz"
+  "The node URL eg n01.vega.xyz"
   id: String!
 
-  "Pubkey of the node operator"
+  "Public key of the node operator"
   pubkey: String!
 
-  "Public key of Tendermint"
+  "Tendermint public key of the node"
   tmPubkey: String!
 
   "Ethereum public key of the node"
-  ethereumAdddress: String!
+  ethereumAddress: String!
 
-  "URL where I can find out more info on the node. Will this be possible?"
+  "URL from which you can get more info about the node."
   infoUrl: String!
 
   "Country code for the location of the node"
   location: String!
 
-  "The amount the node has put up themselves"
+  "The amount of stake the node has put up themselves"
   stakedByOperator: String!
 
   "The amount of stake that has been delegated by token holders"
@@ -8884,7 +9232,7 @@ type Node {
   # The name of the node
   name: String!
 
-  # An url to an avatar
+  # The URL of an avatar
   avatarUrl: String
 }
 
@@ -8906,7 +9254,7 @@ type RewardScore {
 type RankingScore {
   "The current validation status of the validator"
   status: String!
-  "The former validation status of teh validator"
+  "The former validation status of the validator"
   previousStatus: String!
   "The ranking score of the validator"
   rankingScore: String!
@@ -8914,7 +9262,7 @@ type RankingScore {
   stakeScore: String!
   "The performance score of the validator"
   performanceScore: String!
-  "The tendermint voting power of the validator (uint32)"
+  "The Tendermint voting power of the validator (uint32)"
   votingPower: String!
 }
 
@@ -8922,7 +9270,7 @@ type Delegation {
   "Amount delegated"
   amount: String!
 
-  "Party which is delegating"
+  "Party that is delegating"
   party: Party!
 
   "URL of node you are delegating to"
@@ -8939,13 +9287,13 @@ enum AssetStatus {
   Rejected
   "Asset is pending listing on the ethereum bridge"
   PendingListing
-  "Asset can be used on the vega network"
+  "Asset can be used on the Vega network"
   Enabled
 }
 
-"Represents an asset in vega"
+"Represents an asset in Vega"
 type Asset {
-  "The id of the asset"
+  "The ID of the asset"
   id: ID!
 
   "The full name of the asset (e.g: Great British Pound)"
@@ -8957,16 +9305,16 @@ type Asset {
   "The total supply of the market"
   totalSupply: String!
 
-  "The precision of the asset"
+  "The precision of the asset. Should match the decimal precision of the asset on its native chain, e.g: for ERC20 assets, it is often 18"
   decimals: Int!
 
   "The minimum economically meaningful amount in the asset"
   quantum: String!
 
-  "The origin source of the asset (e.g: an erc20 asset)"
+  "The origin source of the asset (e.g: an ERC20 asset)"
   source: AssetSource!
 
-  "The status of the asset in the vega network"
+  "The status of the asset in the Vega network"
   status: AssetStatus!
 
   "The infrastructure fee account for this asset"
@@ -8990,21 +9338,21 @@ union AssetSource = BuiltinAsset | ERC20
 
 "An asset originated from an Ethereum ERC20 Token"
 type ERC20 {
-  "The address of the erc20 contract"
+  "The address of the ERC20 contract"
   contractAddress: String!
   """
   The lifetime limits deposit per address
-  Note: this is a temporary measure for restricted mainnet
+  Note: this is a temporary measure for alpha mainnet
   """
   lifetimeLimit: String!
   """
-  The maximum allowed per withdraw
-  Note: this is a temporary measure for restricted mainnet
+  The maximum allowed per withdrawal
+  Note: this is a temporary measure for alpha mainnet
   """
   withdrawThreshold: String!
 }
 
-"A vega builtin asset, mostly for testing purpose"
+"A Vega builtin asset, mostly for testing purpose"
 type BuiltinAsset {
   "Maximum amount that can be requested by a party through the built-in asset faucet at a time"
   maxFaucetAmountMint: String!
@@ -9012,7 +9360,7 @@ type BuiltinAsset {
 
 "Represents a signature for the approval of a resource from a validator"
 type NodeSignature {
-  "The id of the resource being signed for"
+  "The ID of the resource being signed for"
   id: ID!
 
   "The signature, as base64 encoding"
@@ -9027,7 +9375,7 @@ enum NodeSignatureKind {
   "A signature for proposing a new asset into the network"
   AssetNew
 
-  "A signature for allowing a withdrawal of funds"
+  "A signature for allowing funds withdrawal"
   AssetWithdrawal
 }
 
@@ -9042,7 +9390,7 @@ type Statistics {
   "Number of items in the backlog"
   backlogLength: String!
 
-  "Total number of peers on the vega network"
+  "Total number of peers on the Vega network"
   totalPeers: String!
 
   "RFC3339Nano genesis time of the chain"
@@ -9057,7 +9405,7 @@ type Statistics {
   "RFC3339Nano current time of the chain (decided through consensus)"
   vegaTime: String!
 
-  "Status of the vega application connection with the chain"
+  "Status of the Vega application connection with the chain"
   status: String!
 
   "Number of transaction processed per block"
@@ -9093,10 +9441,10 @@ type Statistics {
   "Total number of trades"
   totalTrades: String!
 
-  "Version commit hash of the vega node"
+  "Version commit hash of the Vega node"
   appVersionHash: String!
 
-  "Version of the vega node (semver)"
+  "Version of the Vega node (semver)"
   appVersion: String!
 
   "Version of the chain (semver)"
@@ -9105,7 +9453,7 @@ type Statistics {
   "Duration of the last block, in nanoseconds"
   blockDuration: String!
 
-  "Current chain id"
+  "Current chain ID"
   chainId: String!
 }
 
@@ -9125,11 +9473,11 @@ type DiscreteTrading {
 
 "Parameters for the log normal risk model"
 type LogNormalModelParams {
-  "mu parameter"
+  "mu parameter, annualised growth rate of the underlying asset"
   mu: Float!
   "r parameter"
   r: Float!
-  "sigma parameter"
+  "sigma parameter, annualised volatility of the underlying asset, must be a strictly non-negative real number"
   sigma: Float!
 }
 
@@ -9143,15 +9491,15 @@ type SimpleRiskModelParams {
 
 "A type of risk model for futures trading"
 type LogNormalRiskModel {
-  "Lambda parameter of the risk model"
+  "Lambda parameter of the risk model, probability confidence level used in expected shortfall calculation when obtaining the maintenance margin level, must be strictly greater than 0 and strictly smaller than 1"
   riskAversionParameter: Float!
-  "Tau parameter of the risk model"
+  "Tau parameter of the risk model, projection horizon measured as a year fraction used in the expected shortfall calculation to obtain the maintenance margin, must be a strictly non-negative real number"
   tau: Float!
-  "Params for the log normal risk model"
+  "Parameters for the log normal risk model"
   params: LogNormalModelParams!
 }
 
-"A type of simple/dummy risk model where we can specify the risk factor long and short in params"
+"A type of simple/dummy risk model where you can specify the risk factor long and short in params"
 type SimpleRiskModel {
   "Params for the simple risk model"
   params: SimpleRiskModelParams!
@@ -9208,7 +9556,7 @@ An oracle spec describe the oracle data that a product (or a risk model)
 wants to get from the oracle engine.
 """
 type OracleSpec {
-  "id is a hash generated from the OracleSpec data."
+  "ID is a hash generated from the OracleSpec data."
   id: String!
   "RFC3339Nano creation date time"
   createdAt: String!
@@ -9245,7 +9593,7 @@ enum OracleSpecStatus {
 }
 
 """
-Filter describes the conditions under which an oracle data is considered of
+Filter describes the conditions under which oracle data is considered of
 interest or not.
 """
 type Filter {
@@ -9286,7 +9634,7 @@ enum PropertyKeyType {
 }
 
 """
-Condition describes the condition that must be validated by the
+Condition describes the condition that must be validated by the oracle engine
 """
 type Condition {
   "comparator is the type of comparison to make on the value."
@@ -9330,7 +9678,7 @@ type OracleData {
   """
   RFC3339Nano formatted date and time for when the data was broadcast to the markets
   with a matching oracle spec.
-  It has no value when the oracle date did not match any oracle spec.
+  It has no value when the oracle date does not match any oracle spec.
   """
   broadcastAt:  String!
 }
@@ -9345,7 +9693,7 @@ type Property {
 
 union Product = Future
 
-"Describe something that can be traded on Vega"
+"Describes something that can be traded on Vega"
 type Instrument {
   "Uniquely identify an instrument across all instruments available on Vega (string)"
   id: String!
@@ -9375,13 +9723,13 @@ type ScalingFactors {
   "the scaling factor that determines the optimal margin level"
   initialMargin: Float!
 
-  "The scaling factor that determines the overflow margin level"
+  "the scaling factor that determines the overflow margin level"
   collateralRelease: Float!
 }
 
 "A tradable instrument is a combination of an instrument and a risk model"
 type TradableInstrument {
-  "An instance of or reference to a fully specified instrument."
+  "An instance of, or reference to, a fully specified instrument."
   instrument: Instrument!
 
   "A reference to a risk model that is valid for the instrument"
@@ -9412,9 +9760,9 @@ An auction duration is used to configure 3 auction periods:
 1. ` + "`" + `duration > 0` + "`" + `, ` + "`" + `volume == 0` + "`" + `:
 The auction will last for at least N seconds.
 2. ` + "`" + `duration == 0` + "`" + `, ` + "`" + `volume > 0` + "`" + `:
-The auction will end once we can close with given traded volume.
+The auction will end once the given volume will match at uncrossing.
 3. ` + "`" + `duration > 0` + "`" + `, ` + "`" + `volume > 0` + "`" + `:
-The auction will take at least N seconds, but can end sooner if we can trade a certain volume.
+The auction will take at least N seconds, but can end sooner if the market can trade a certain volume.
 """
 type AuctionDuration {
   "Duration of the auction in seconds"
@@ -9441,7 +9789,7 @@ type PriceMonitoringTrigger {
   probability: Float!
   """
   Price monitoring auction extension duration in seconds should the price
-  breach it's theoretical level over the specified horizon at the specified
+  breach its theoretical level over the specified horizon at the specified
   probability level (> 0)
   """
   auctionExtensionSecs: Int!
@@ -9493,12 +9841,12 @@ type Market {
   "Fees related data"
   fees: Fees!
 
-  "An instance of or reference to a tradable instrument."
+  "An instance of, or reference to, a tradable instrument."
   tradableInstrument: TradableInstrument!
 
   """
   decimalPlaces indicates the number of decimal places that an integer must be shifted by in order to get a correct
-  number denominated in the currency of the Market. (uint64)
+  number denominated in the currency of the market. (uint64)
 
   Examples:
   Currency     Balance  decimalPlaces  Real Balance
@@ -9515,9 +9863,10 @@ type Market {
   decimalPlaces: Int!
 
   """
-  positionDecimalPlaces indicated the number of decimal places that an integer must be shifted in order to get a correct size (uint64).
+  positionDecimalPlaces indicates the number of decimal places that an integer must be shifted in order to get a correct size (uint64).
   i.e. 0 means there are no fractional orders for the market, and order sizes are always whole sizes.
-  2 means sizes given as 10^2 * desired size, e.g. a desired size of 1.23 is represented as 123 in this market.
+  2 means sizes given as 10^2 * desired size, e.g. a desired size of 1.23 is represented as 123 in this market. 
+  This sets how big the smallest order / position on the market can be.
   """
   positionDecimalPlaces: Int!
 
@@ -9539,7 +9888,7 @@ type Market {
   "Current state of the market"
   state: MarketState!
 
-  "The proposal which initiated this market"
+  "The proposal that initiated this market"
   proposal: Proposal
 
   "Orders on a market"
@@ -9560,9 +9909,17 @@ type Market {
 
   "Get account for a party or market"
   accounts(
-    "Id of the party to get the margin account for"
+    "ID of the party to get the margin account for"
     partyId: ID
-  ): [Account!]
+  ): [Account!] @deprecated(reason: "Use the accountsConnection instead")
+
+  "Get account for a party or market"
+  accountsConnection(
+    "ID of the party to get the margin account for"
+    partyId: ID
+    "Pagination information"
+    pagination: Pagination
+  ): AccountsConnection!
 
   "Trades on a market"
   trades(
@@ -9582,7 +9939,7 @@ type Market {
     maxDepth: Int
   ): MarketDepth!
 
-  "Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by params"
+  "Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by parameters"
   candles(
     "RFC3339Nano encoded time from when to get candles"
     since: String!
@@ -9590,7 +9947,7 @@ type Market {
     interval: Interval!
   ): [Candle] @deprecated(reason: "Use the 'candlesConnection' field instead")
 
-  "Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by params using cursor based pagination"
+  "Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by parameters using cursor based pagination"
   candlesConnection(
     "RFC3339Nano encoded time to get candles from"
     since: String!
@@ -9605,15 +9962,15 @@ type Market {
   "marketData for the given market"
   data: MarketData
 
-  "The list of the liquidity provision commitment for this market"
+  "The list of the liquidity provision commitments for this market"
   liquidityProvisions(
-    "An optional party id"
+    "An optional party ID"
     party: String
   ): [LiquidityProvision!] @deprecated(reason: "Use liquidityProvisionsConnection instead")
 
-  "The list of the liquidity provision commitment for this market"
+  "The list of the liquidity provision commitments for this market"
    liquidityProvisionsConnection(
-     "An optional party id"
+     "An optional party ID"
      party: String
      "Pagination information"
      pagination: Pagination
@@ -9631,7 +9988,7 @@ Market Depth is a measure of the number of open buy and sell orders for a securi
 The depth of market measure provides an indication of the liquidity and depth for the instrument.
 """
 type MarketDepth {
-  "Market id"
+  "Market ID"
   market: Market!
 
   "Buy side price levels (if available)"
@@ -9652,7 +10009,7 @@ Market Depth is a measure of the number of open buy and sell orders for a securi
 The depth of market measure provides an indication of the liquidity and depth for the instrument.
 """
 type ObservableMarketDepth {
-  "Market id"
+  "Market ID"
   marketId: String!
 
   "Buy side price levels (if available)"
@@ -9669,7 +10026,7 @@ type ObservableMarketDepth {
 }
 
 type MarketDepthTrade {
-  "id of the trade for the given market (if available)"
+  "ID of the trade for the given market (if available)"
   id: String!
 
   "Price of the trade"
@@ -9784,7 +10141,7 @@ type Party {
 
   "Trades relating to a party (specifically where party is either buyer OR seller)"
   trades(
-    "ID of the market we want to get trades for"
+    "ID of the market you want to get trades for"
     marketId: ID
     "Pagination skip"
     skip: Int
@@ -9800,11 +10157,23 @@ type Party {
   accounts(
     "Market ID - specify what market accounts for the party to return"
     marketId: ID
-    "Asset (USD, EUR etc)"
+    "Asset (ETH, DAI etc)"
     asset: String
     "Filter accounts by type (General account, margin account, etc...)"
     type: AccountType
-  ): [Account!]
+  ): [Account!] @deprecated(reason: "Use accountsConnection instead")
+
+  "Collateral accounts relating to a party"
+  accountsConnection(
+    "Market ID - specify what market accounts for the party to return"
+    marketId: ID
+    "Asset (ETH, DAI etc)"
+    asset: String
+    "Filter accounts by type (General account, margin account, etc...)"
+    type: AccountType
+    "Cursor pagination information"
+    pagination: Pagination
+  ): AccountsConnection!
 
   "Trading positions relating to a party"
   positions: [Position!] @deprecated(reason: "Use the 'positionsConnection' field instead")
@@ -9814,13 +10183,13 @@ type Party {
 
   "marginLevels"
   margins(
-    "market id off the margin to get, nil if all markets"
+    "market ID off the margin to get, nil if all markets"
     marketId: ID
   ): [MarginLevels!] @deprecated(reason: "Use marginsConnection instead")
 
-  "Margin level for a market"
+  "Margin levels for a market"
   marginsConnection(
-    "market id off the margin to get, nil if all markets"
+    "market ID for the requested margin levels, nil if all markets"
     marketId: ID
     "Pagination information"
     pagination: Pagination
@@ -9828,7 +10197,7 @@ type Party {
 
   proposals(
     "Select only proposals in the specified state. Leave out to get all proposals"
-    inState: ProposalState
+    inState: ProposalState 
   ): [Proposal] @deprecated(reason: "Use proposalsConnection instead")
 
   "All governance proposals in the VEGA network"
@@ -9841,7 +10210,7 @@ type Party {
     pagination: Pagination
   ): ProposalsConnection!
 
-  votes: [ProposalVote]
+  votes: [ProposalVote] @deprecated(reason: "Use votesConnection instead")
 
   votesConnection(pagination: Pagination): ProposalVoteConnection!
 
@@ -9867,7 +10236,7 @@ type Party {
 
    "The list of the liquidity provision commitment for this party"
      liquidityProvisionsConnection(
-       "An optional market id"
+       "An optional market ID"
        market: String
        "An optional reference"
        reference: String
@@ -9894,9 +10263,12 @@ type Party {
   ): DelegationsConnection!
 
   "The staking information for this Party"
-  stake: PartyStake!
+  stake: PartyStake! @deprecated(reason: "Use stakingSummary instead")
 
-  "return individual reward information"
+  "The staking information for this Party"
+  stakingSummary(pagination: Pagination): StakingSummary!
+
+  "Return individual reward information"
   rewards(
     "An optional asset"
     asset: String
@@ -9909,15 +10281,15 @@ type Party {
   ): [Reward] @deprecated(reason: "Use rewardsConnection instead")
 
   rewardsConnection(
-    "An optional asset"
+    "An asset (optional)"
     asset: String
     "Cursor pagination information"
     pagination: Pagination
   ): RewardsConnection
 
-  "return net reward information"
+  "Return net reward information"
   rewardSummaries(
-    "An optional asset"
+    "An asset (optional)"
     asset: String
   ): [RewardSummary]
 
@@ -9937,29 +10309,41 @@ type PartyStake {
   linkings: [StakeLinking!]
 }
 
+"""
+All staking information related to a Party.
+Contains the current recognised balance by the network and
+all the StakeLink/Unlink seen by the network
+"""
+type StakingSummary {
+  "The stake currently available for the party"
+  currentStakeAvailable: String!
+  "The list of all stake link/unlink for the party"
+  linkings(pagination: Pagination): StakesConnection!
+}
+
 "The type of stake linking"
 enum StakeLinkingType {
-  "The stake is being linked (deposited) to a vega stake account"
+  "The stake is being linked (deposited) to a Vega stake account"
   Link
-  "The stake is being unlined (removed) from a vega stake account"
+  "The stake is being unlinked (removed) from a Vega stake account"
   Unlink
 }
 
 "The status of the stake linking"
 enum StakeLinkingStatus {
   """
-  The stake linking is pending in the vega network, this means that
-  the vega network have seen a StakeLinking, but is still to confirm
-  it's valid on the ethereum chain, and accepted by all nodes of the network
+  The stake linking is pending in the Vega network. This means that
+  the Vega network have seen a stake linking, but is still to confirm
+  it's valid on the ethereum chain and accepted by all nodes of the network
   """
   Pending
   "The stake linking has been accepted and processed fully (balance updated) by the network"
   Accepted
-  "The vega network have rejected this stake linking"
+  "The Vega network has rejected this stake linking"
   Rejected
 }
 
-"A Stake linking represent the intend from a party to deposit / remove stake on their account"
+"A stake linking represent the intent from a party to deposit / remove stake on their account"
 type StakeLinking {
   id: ID!
   "Type of linking: link|unlink"
@@ -9972,7 +10356,7 @@ type StakeLinking {
   amount: String!
   "The status of the linking"
   status: StakeLinkingStatus!
-  "The time at which the stake linking was full processed by the vega network, null until defined"
+  "The time at which the stake linking was fully processed by the Vega network, null until defined"
   finalizedAt: String
   "The transaction hash (ethereum) which initiated the link/unlink"
   txHash: String!
@@ -10003,17 +10387,17 @@ type Position {
   "Average entry price for this position"
   averageEntryPrice: String!
 
-  "margins of the party for the given position"
-  margins: [MarginLevels!]
+  "Margins of the party for the given position"
+  margins: [MarginLevels!] @deprecated(reason: "Use marginsConnection instead")
 
-  "margins of the party for the given position"
+  "Margins of the party for the given position"
   marginsConnection(pagination: Pagination): MarginConnection!
 
   "RFC3339Nano time the position was updated"
   updatedAt: String
 }
 
-"An order in Vega, if active it will be on the OrderBook for the market"
+"An order in Vega, if active it will be on the order book for the market"
 type Order {
   "Hash of the order data"
   id: ID!
@@ -10028,7 +10412,7 @@ type Order {
   side: Side!
 
   "The market the order is trading on (probably stored internally as a hash of the market details)"
-  market: Market
+  market: Market!
 
   "Total number of contracts that may be bought or sold (immutable) (uint64)"
   size: String!
@@ -10129,22 +10513,22 @@ type Trade {
   "The fee paid by the seller side of the trade"
   sellerFee: TradeFee!
 
-  "The batch in witch the buyer order was submitted (applies only for Auctions modes)"
+  "The batch in which the buyer order was submitted (applies only for auction modes)"
   buyerAuctionBatch: Int
 
-  "The batch in witch the seller order was submitted (applies only for Auctions modes)"
+  "The batch in which the seller order was submitted (applies only for auction modes)"
   sellerAuctionBatch: Int
 }
 
 "The fee paid by the party when a trade occurs"
 type TradeFee {
-  "The maker fee, aggressive party to the other party (the one who had an order in the book)"
+  "The maker fee, paid by the aggressive party to the other party (the one who had an order in the book)"
   makerFee: String!
 
-  "The infrastructure fee, a fee paid to the node runner to maintain the vega network"
+  "The infrastructure fee, a fee paid to the validators to maintain the Vega network"
   infrastructureFee: String!
 
-  "The fee paid to the market makers to provide liquidity in the market"
+  "The fee paid to the liquidity providers that committed liquidity to the market"
   liquidityFee: String!
 }
 
@@ -10193,11 +10577,11 @@ type Erc20WithdrawalApproval {
   creation: String!
 }
 
-"The details of a withdrawal processed by vega"
+"The details of a withdrawal processed by Vega"
 type Withdrawal {
-  "The Vega internal id of the withdrawal"
+  "The Vega internal ID of the withdrawal"
   id: ID!
-  "The PartyID initiating the withdrawal"
+  "The PartyID (public key) initiating the withdrawal"
   party: Party!
   "The amount to be withdrawn"
   amount: String!
@@ -10211,7 +10595,7 @@ type Withdrawal {
   expiry: String!
   "RFC3339Nano time at which the withdrawal was created"
   createdTimestamp: String!
-  "RFC3339Nano time at which the withdrawal was finalized"
+  "RFC3339Nano time at which the withdrawal was finalised"
   withdrawnTimestamp: String
   "Hash of the transaction on the foreign chain"
   txHash: String
@@ -10233,13 +10617,13 @@ enum WithdrawalStatus {
   Open
   "The withdrawal have been cancelled by the network, either because it expired, or something went wrong with the foreign chain"
   Rejected
-  "The withdrawal was finalized, it was first valid, the foreign chain have executed it and the network updated all accounts"
+  "The withdrawal was finalised, it was valid, the foreign chain has executed it and the network updated all accounts"
   Finalized
 }
 
-"The details of a deposit processed by vega"
+"The details of a deposit processed by Vega"
 type Deposit {
-  "The Vega internal id of the deposit"
+  "The Vega internal ID of the deposit"
   id: ID!
   "The PartyID initiating the deposit"
   party: Party!
@@ -10251,7 +10635,7 @@ type Deposit {
   status: DepositStatus!
   "RFC3339Nano time at which the deposit was created"
   createdTimestamp: String!
-  "RFC3339Nano time at which the deposit was finalized"
+  "RFC3339Nano time at which the deposit was finalised"
   creditedTimestamp: String
   "Hash of the transaction on the foreign chain"
   txHash: String
@@ -10263,31 +10647,31 @@ enum DepositStatus {
   Open
   "The deposit have been cancelled by the network, either because it expired, or something went wrong with the foreign chain"
   Cancelled
-  "The deposit was finalized, it was first valid, the foreign chain has executed it and the network updated all accounts"
+  "The deposit was finalised, it was valid, the foreign chain has executed it and the network updated all accounts"
   Finalized
 }
 
 "Valid order types, these determine what happens when an order is added to the book"
 enum OrderTimeInForce {
-  "The order either trades completely (remainingSize == 0 after adding) or not at all, does not remain on the book if it doesn't trade"
+  "Fill or Kill: The order either trades completely (remainingSize == 0 after adding) or not at all, does not remain on the book if it doesn't trade"
   FOK
 
-  "The order trades any amount and as much as possible but does not remain on the book (whether it trades or not)"
+  "Immediate or Cancel: The order trades any amount and as much as possible but does not remain on the book (whether it trades or not)"
   IOC
 
-  "This order trades any amount and as much as possible and remains on the book until it either trades completely or is cancelled"
+  "Good 'til Cancelled: This order trades any amount and as much as possible and remains on the book until it either trades completely or is cancelled"
   GTC
 
   """
-  This order type trades any amount and as much as possible and remains on the book until they either trade completely, are cancelled, or expires at a set time
+  Good 'til Time: This order type trades any amount and as much as possible and remains on the book until they either trade completely, are cancelled, or expires at a set time
   NOTE: this may in future be multiple types or have sub types for orders that provide different ways of specifying expiry
   """
   GTT
 
-  "This order is only accepted during an auction period"
+  "Good for Auction: This order is only accepted during an auction period"
   GFA
 
-  "This order is only accepted during normal trading (that can be continuous trading or frequent batched auctions)"
+  "Good for Normal: This order is only accepted during normal trading (continuous trading or frequent batched auctions)"
   GFN
 }
 
@@ -10318,16 +10702,16 @@ enum OrderStatus {
   "This order was of type IOC or FOK and could not be processed by the matching engine due to lack of liquidity."
   Stopped
 
-  "This order is fully filled with remaining equals zero."
+  "This order is fully filled with remaining equalling zero."
   Filled
 
-  "This order was rejected while being processed in the core."
+  "This order was rejected while being processed."
   Rejected
 
   "This order was partially filled."
   PartiallyFilled
 
-  "This order has been removed from the order book and applies to pegged orders only"
+  "This order has been removed from the order book because the market is in auction, the reference price doesn't exist, or the order needs to be repriced and can't. Applies to pegged orders only"
   Parked
 }
 
@@ -10341,7 +10725,7 @@ enum ProposalRejectionReason {
   EnactTimeTooSoon
   "The specified enactment time is too late based on network parameters"
   EnactTimeTooLate
-  "The proposer for this proposal has insufficient token"
+  "The proposer for this proposal has insufficient tokens"
   InsufficientTokens
   "The instrument quote name and base name were the same"
   InvalidInstrumentSecurity
@@ -10381,17 +10765,17 @@ enum ProposalRejectionReason {
   OpeningAuctionDurationTooLarge
   "Market proposal is missing a liquidity commitment"
   MarketMissingLiquidityCommitment
-  "Market proposal market could not be instantiate in execution"
+  "Market could not be created"
   CouldNotInstantiateMarket
   "Market proposal market contained invalid product definition"
   InvalidFutureProduct
   "Market proposal is missing commitment amount"
   MissingCommitmentAmount
-  "Market proposal have invalid fee amount"
+  "Market proposal has invalid fee amount"
   InvalidFeeAmount
-  "Market proposal have one or more invalid shape"
+  "Market proposal has one or more invalid liquidity shapes"
   InvalidShape
-  "Market proposal use an invalid risk parameter"
+  "Market proposal uses an invalid risk parameter"
   InvalidRiskParameter
   "Proposal declined because the majority threshold was not reached"
   MajorityThresholdNotReached
@@ -10405,16 +10789,16 @@ enum ProposalRejectionReason {
   TooManyMarketDecimalPlaces
   "The market is invalid"
   InvalidMarket
-  "The proposal is rejected because the party do not have enough equity like share in the market"
+  "The proposal is rejected because the party does not have enough equity like share in the market"
   InsufficientEquityLikeShare
 }
 
 "Reason for the order being rejected by the core node"
 enum OrderRejectionReason {
-  "Market id is invalid"
+  "Market ID is invalid"
   InvalidMarketId
 
-  "Order id is invalid"
+  "Order ID is invalid"
   InvalidOrderId
 
   "Order is out of sequence"
@@ -10438,19 +10822,19 @@ enum OrderRejectionReason {
   "Edit is not allowed"
   EditNotAllowed
 
-  "Order amend fail"
+  "Amending the order failed"
   OrderAmendFailure
 
   "Order does not exist"
   OrderNotFound
 
-  "Party id is invalid"
+  "Party ID is invalid"
   InvalidPartyId
 
   "Market is closed"
   MarketClosed
 
-  "Margin check failed"
+  "Margin check failed - not enough available margin"
   MarginCheckFailed
 
   "Order missing general account"
@@ -10468,7 +10852,7 @@ enum OrderRejectionReason {
   "Invalid type"
   InvalidType
 
-  "Self trading"
+  "Order cannot be filled because it would require self trading"
   SelfTrading
 
   "Insufficient funds to pay fees"
@@ -10477,43 +10861,43 @@ enum OrderRejectionReason {
   "Invalid Time In Force"
   InvalidTimeInForce
 
-  "Attempt to amend order to GTT without ExpiryAt"
+  "Attempt to amend order to Good til Time without expiry time"
   AmendToGTTWithoutExpiryAt
 
-  "Attempt to amend ExpiryAt to a value before CreatedAt"
+  "Attempt to amend expiry time to a value before time order was created"
   ExpiryAtBeforeCreatedAt
 
-  "Attempt to amend to GTC without an ExpiryAt value"
+  "Attempt to amend to Good till Cancelled without an expiry time"
   GTCWithExpiryAtNotValid
 
-  "Amending to FOK or IOC is invalid"
+  "Amending to Fill or Kill, or Immediate or Cancel is invalid"
   CannotAmendToFOKOrIOC
 
-  "Amending to GFA or GFN is invalid"
+  "Amending to Good for Auction or Good for Normal is invalid"
   CannotAmendToGFAOrGFN
 
-  "Amending from GFA or GFN is invalid"
+  "Amending from Good for Auction or Good for Normal is invalid"
   CannotAmendFromGFAOrGFN
 
-  "Invalid Market Type"
+  "Invalid market type"
   InvalidMarketType
 
-  "Good for normal order received during an auction"
+  "Good for Normal order received during an auction"
   GFNOrderDuringAuction
 
-  "Good for auction order received during continuous trading"
+  "Good for Auction order received during continuous trading"
   GFAOrderDuringContinuousTrading
 
-  "IOC orders are not allowed during auction"
+  "Immediate or Cancel orders are not allowed during auction"
   IOCOrderDuringAuction
 
-  "FOK orders are not allowed during auction"
+  "Fill or Kill orders are not allowed during auction"
   FOKOrderDuringAuction
 
-  "Pegged orders must be LIMIT orders"
+  "Pegged orders must be limit orders"
   PeggedOrderMustBeLimitOrder
 
-  "Pegged orders can only have TIF GTC or GTT"
+  "Pegged orders can only have a time in force of Good til Cancelled or Good til Time"
   PeggedOrderMustBeGTTOrGTC
 
   "Pegged order must have a reference price"
@@ -10548,10 +10932,10 @@ enum OrderRejectionReason {
 }
 
 enum OrderType {
-  "the default order type"
+  "An order to buy or sell at the market's current best available price"
   Market
 
-  "mentioned in ticket, but as yet unused order type"
+  "Order that uses a pre-specified price to buy or sell"
   Limit
 
   """
@@ -10563,7 +10947,7 @@ enum OrderType {
 
 "The current state of a market"
 enum MarketState {
-  "The Governance proposal valid and accepted"
+  "The governance proposal valid and accepted"
   Proposed
   "Outcome of governance votes is to reject the market"
   Rejected
@@ -10589,7 +10973,7 @@ enum MarketState {
   Settled
 }
 
-"What market trading mode are we in"
+"What market trading mode is the market in"
 enum MarketTradingMode {
   "Continuous trading where orders are processed and potentially matched on arrival"
   Continuous
@@ -10609,14 +10993,14 @@ enum MarketTradingMode {
 
 "Whether the placer of an order is aiming to buy or sell on the market"
 enum Side {
-  "The Placer of the order is aiming to buy"
+  "The placer of the order is aiming to buy"
   Buy
 
   "The placer of the order is aiming to sell"
   Sell
 }
 
-"The interval for trade candles when subscribing via VEGA graphql, default is I15M"
+"The interval for trade candles when subscribing via Vega GraphQL, default is I15M"
 enum Interval {
   "1 minute interval"
   I1M
@@ -10637,7 +11021,7 @@ enum Interval {
   I1D
 }
 
-"The various account types we have (used by collateral)"
+"The various account types in Vega (used by collateral)"
 enum AccountType {
   "Insurance pool account - only for 'system' party"
   Insurance
@@ -10645,7 +11029,14 @@ enum AccountType {
   GlobalInsurance
   "Settlement - only for 'system' party"
   Settlement
-  "Margin - The leverage account for parties"
+  """
+  Margin - The leverage account for parties, contains funds set aside for the margin needed to support 
+  a party's open positions. Each party will have a margin account for each market they have traded in. 
+  The required initial margin is allocated to each market from the general account, and it cannot be withdrawn 
+  or used as margin on another market until it's released back into the general account. 
+  The protocol uses an internal accounting system to segregate funds held as margin from other funds 
+  to ensure they are never lost or 'double spent'
+  """
   Margin
   "General account - the account containing 'unused' collateral for parties"
   General
@@ -10655,19 +11046,19 @@ enum AccountType {
   FeeLiquidity
   "Market maker fee account - holds fees paid to the passive side when a trade matches"
   FeeMaker
-  "Bond - an account use to maintain MM commitments"
+  "Bond - an account use to maintain liquidity commitments"
   Bond
   "External - an account use to refer to external account"
   External
-  "GlobalReward - an global account for the reward pool"
+  "GlobalReward - a global account for the reward pool"
   GlobalReward
-  "PendingTransfers - an global account for the pending transfers pool"
+  "PendingTransfers - a global account for the pending transfers pool"
   PendingTransfers
   "RewardTakerPaidFees - an account holding rewards for taker paid fees"
   RewardTakerPaidFees
   "RewardMakerReceivedFees - an account holding rewards for maker received fees"
   RewardMakerReceivedFees
-  "RewardLpReceivedFees - an account holding rewards for LP received fees"
+  "RewardLpReceivedFees - an account holding rewards for a liquidity provider's received fees"
   RewardLpReceivedFees
   "RewardMarketProposers - an account holding rewards for market proposers"
   RewardMarketProposers
@@ -10699,7 +11090,7 @@ oracle engine.
 """
 type OracleSpecConfiguration {
   """
-  pubKeys is the list of authorized public keys that signed the data for this
+  pubKeys is the list of authorised public keys that signed the data for this
   oracle. All the public keys in the oracle data should be contained in these
   public keys.
   """
@@ -10723,7 +11114,7 @@ type InstrumentConfiguration {
 type NewMarket {
   "New market instrument configuration"
   instrument: InstrumentConfiguration!
-  "Decimal places used for the new market"
+  "Decimal places used for the new market, sets the smallest price increment on the book"
   decimalPlaces: Int!
   "New market risk configuration"
   riskParameters: RiskModel!
@@ -10733,13 +11124,13 @@ type NewMarket {
   commitment: NewMarketCommitment
 }
 
-"A commitment of liquidity to be made by the party which proposes a market"
+"A commitment of liquidity to be made by the party that proposes a market"
 type NewMarketCommitment {
-  "Specified as a unit-less number that represents the amount of settlement asset of the market"
+  "Specified as a unit-less number that represents the amount of the settlement asset of the market"
   commitmentAmount: String!
   """
   Nominated liquidity fee factor, which is an input to the calculation of
-  taker fees on the market, as per setting fees and rewarding liquidity provider
+  maker fees on the market, as per setting fees and rewarding liquidity provider
   """
   fee: String!
   "A set of liquidity sell orders to meet the liquidity provision obligation"
@@ -10803,10 +11194,10 @@ type NewAsset {
   "The precision of the asset"
   decimals: Int!
 
-  "The min stake to become an lp for any market using this asset for settlement"
+  "The minimum stake to become a liquidity provider for any market using this asset for settlement"
   minLpStake: String!
 
-  "the source of the new Asset"
+  "The source of the new asset"
   source: AssetSource!
 }
 
@@ -10844,7 +11235,7 @@ type ProposalRationale {
   """
   Description to show a short title / something in case the link goes offline.
   This is to be between 0 and 1024 unicode characters.
-  This is mandatory for all proposal.
+  This is mandatory for all proposals.
   """
   description: String!
   """
@@ -10891,7 +11282,7 @@ enum ProposalType {
   NetworkParameters
   "Proposal to add a new asset"
   NewAsset
-  "Proposal to create a new free form proposal"
+  "Proposal to create a new freeform proposal"
   NewFreeForm
 }
 
@@ -10920,9 +11311,9 @@ enum ProposalState {
 }
 
 type Proposal {
-  "Proposal ID that is filled by VEGA once proposal reaches the network"
+  "Proposal ID that is filled by Vega once proposal reaches the network"
   id: ID
-  "A UUID reference to aid tracking proposals on VEGA"
+  "A UUID reference to aid tracking proposals on Vega"
   reference: String!
   "Party that prepared the proposal"
   party: Party!
@@ -10950,13 +11341,13 @@ type ProposalVotes {
 }
 
 type ProposalVoteSide {
-  "All votes casted for this side"
+  "All votes cast for this side"
   votes: [Vote!]
-  "Total number of votes casted for this side"
+  "Total number of votes cast for this side"
   totalNumber: String!
-  "Total weight of governance token from the votes casted for this side"
+  "Total weight of governance token from the votes cast for this side"
   totalWeight: String!
-  "Total tokens of governance token from the votes casted for this side"
+  "Total number of governance tokens from the votes cast for this side"
   totalTokens: String!
 }
 
@@ -10980,7 +11371,7 @@ type Vote {
   "The ID of the proposal this vote applies to"
   proposalId: ID!
 
-  "Total number of governance token for the party that casted the vote"
+  "Total number of governance tokens for the party that cast the vote"
   governanceTokenBalance: String!
 
   "The weight of this vote based on the total of governance token"
@@ -10990,7 +11381,7 @@ type Vote {
 type ProposalVote {
   "Cast vote"
   vote: Vote!
-  "Proposal casting the vote on"
+  "Proposal the vote is cast on"
   proposalId: ID!
 }
 
@@ -11014,11 +11405,11 @@ type TransferBalance {
 }
 
 type LedgerEntry {
-  "account from which the asset was taken"
+  "Account from which the asset was taken"
   fromAccount: String!
-  "account to which the balance was transferred"
+  "Account to which the balance was transferred"
   toAccount: String!
-  "the amount transferred"
+  "The amount transferred"
   amount: String!
   "The transfer reference"
   reference: String!
@@ -11029,25 +11420,25 @@ type LedgerEntry {
 }
 
 type TransferResponse {
-  "the ledger entries and balances resulting from a transfer request"
+  "The ledger entries and balances resulting from a transfer request"
   transfers: [LedgerEntry!]
-  "the balances of accounts involved in the transfer"
+  "The balances of accounts involved in the transfer"
   balances: [TransferBalance!]
 }
 
 type TransferResponses {
-  "a group of transfer responses - events from core"
+  "A group of transfer responses - events from core"
   responses: [TransferResponse!]
 }
 
 type PositionResolution {
-  "the market ID where position resolution happened"
+  "The market ID where position resolution happened"
   marketId: ID!
-  "number of distressed parties on market"
+  "Number of distressed parties on market"
   distressed: Int!
-  "number of parties closed out"
+  "Number of parties closed out"
   closed: Int!
-  "the mark price at which parties were distressed/closed out"
+  "The mark price at which parties were distressed/closed out"
   markPrice: String!
 }
 
@@ -11081,11 +11472,11 @@ type SettlePosition {
 type SettleDistressed {
   "the market in which a position was closed out"
   marketId: ID!
-  "the party who closed out"
+  "the party that was closed out"
   partyId: ID!
   "the margin taken from distressed party"
   margin: String!
-  "the price at which position was closed out"
+  "the price at which the position was closed out"
   price: String!
 }
 
@@ -11097,11 +11488,11 @@ type MarketTick {
 }
 
 type AuctionEvent {
-  "the market ID"
+  "The ID of the market that went into auction"
   marketId: ID!
-  "event fired because of auction end"
+  "Event fired because of auction end"
   leave: Boolean!
-  "event related to opening auction"
+  "Event related to opening auction"
   openingAuction: Boolean!
   "RFC3339Nano start time of auction"
   auctionStart: String!
@@ -11116,7 +11507,7 @@ type AuctionEvent {
 enum AuctionTrigger {
   "Invalid trigger (or no auction)"
   Unspecified
-  "Auction because market is trading FBA"
+  "Auction because market has a frequent batch auction trading mode"
   Batch
   "Opening auction"
   Opening
@@ -11149,7 +11540,7 @@ enum BusEventType {
   Vote
   "Market data has been updated"
   MarketData
-  "Validator nodes signatures for an event"
+  "Validator node signatures for an event"
   NodeSignature
   "A position has been closed without sufficient insurance pool balance to cover it"
   LossSocialization
@@ -11210,11 +11601,11 @@ union Event =
   | LiquidityProvision
 
 type BusEvent {
-  "the id for this event"
+  "the ID for this event"
   eventId: ID!
   "the block hash"
   block: String!
-  "the type of event we're dealing with"
+  "the type of event"
   type: BusEventType!
   "the payload - the wrapped event"
   event: Event!
@@ -11246,22 +11637,22 @@ enum LiquidityProvisionStatus {
   Active
   "A liquidity provision stopped by the network"
   Stopped
-  "A Cancelled Liquidity provision"
+  "A cancelled liquidity provision"
   Cancelled
-  "A liquidity provision was invalid and got rejected"
+  "Liquidity provision was invalid and got rejected"
   Rejected
-  "The liquidity provision is valid and accepted by network, but orders aren't deployed"
+  "The liquidity provision is valid and accepted by the network, but orders aren't deployed"
   Undeployed
   """
-  The liquidity provision is valid and accepted by network, but orders aren't deployed.
-  but have never been deployed. I when it's possible to deploy them for the first time
+  The liquidity provision is valid and accepted by the network, but orders aren't deployed and
+  have never been deployed. If when it's possible to deploy them for the first time the
   margin check fails, then they will be cancelled without any penalties.
   """
   Pending
 }
 
 type LiquidityOrderReference {
-  "The id of the pegged order generated to fulfill this commitment"
+  "The ID of the pegged order generated to fulfill this commitment"
   order: Order
   "The liquidity order"
   liquidityOrder: LiquidityOrder!
@@ -11277,15 +11668,15 @@ type LiquidityProvision {
   createdAt: String!
   "RFC3339Nano time of when the liquidity provision was updated"
   updatedAt: String
-  "Market identifier for the order"
+  "Market ID for the order"
   market: Market!
   "Specified as a unit-less number that represents the amount of settlement asset of the market."
   commitmentAmount: String!
-  "nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers."
+  "Nominated liquidity fee factor, which is an input to the calculation of maker fees on the market, as per setting fees and rewarding liquidity providers."
   fee: String!
-  "a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec."
+  "a set of liquidity sell orders to meet the liquidity provision obligation."
   sells: [LiquidityOrderReference!]!
-  "a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec."
+  "a set of liquidity buy orders to meet the liquidity provision obligation."
   buys: [LiquidityOrderReference!]!
   "The version of this LiquidityProvision"
   version: String!
@@ -11337,7 +11728,7 @@ type RewardSummary {
   ): RewardsConnection
 }
 
-"RewardPerAssetDetail is depricated, use RewardSummmary instead "
+"RewardPerAssetDetail is deprecated, use RewardSummmary instead "
 type RewardPerAssetDetail {
   "Asset in which the reward was paid"
   asset: Asset!
@@ -11376,7 +11767,7 @@ enum AccountField {
   AccountType
 }
 
-"Information about whether proposals are enabled, if we are still bootstrapping etc.."
+"Information about whether proposals are enabled, if the markets are still bootstrapping etc.."
 type NetworkLimits {
   "Are market proposals allowed at this point in time"
   canProposeMarket: Boolean!
@@ -11712,7 +12103,90 @@ type NodesConnection {
   "Page information for the connection"
   pageInfo: PageInfo!
 }
-`, BuiltIn: false},
+
+type NetworkParameterEdge {
+  "The network parameter"
+  node: NetworkParameter!
+  "Cursor identifying the network parameter"
+  cursor: String!
+}
+
+type NetworkParametersConnection {
+  "List of network parameters available for the connection"
+  edges: [NetworkParameterEdge]
+  "Page information for the connection"
+  pageInfo: PageInfo!
+}
+
+type NodeSignatureEdge {
+  "The node signature"
+  node: NodeSignature!
+  "Cursor identifying the node signature"
+  cursor: String!
+}
+
+type NodeSignaturesConnection {
+  "List of node signatures available for the connection"
+  edges: [NodeSignatureEdge]
+  "Page information for the connection"
+  pageInfo: PageInfo!
+}
+
+type KeyRotationEdge {
+  "The key rotation"
+  node: KeyRotation!
+  "Cursor identifying the key rotation"
+  cursor: String!
+}
+
+type KeyRotationConnection {
+  "List of key rotations available for the connection"
+  edges: [KeyRotationEdge]
+  "Page information for the connection"
+  pageInfo: PageInfo!
+}
+
+type RewardSummaryEdge {
+  "The reward summary"
+  node: RewardSummary!
+  "Cursor identifying the reward summary"
+  cursor: String!
+}
+
+type RewardSummaryConnection {
+  "List of reward summaries available for the connection"
+  edges: [RewardSummaryEdge]
+  "Page information for the connection"
+  pageInfo: PageInfo!
+}
+
+type StakeLinkingEdge {
+  "The stake linking"
+  node: StakeLinking!
+  "Cursor identifying the stake linking"
+  cursor: String!
+}
+
+type StakesConnection {
+  "List of stake links available for the connection"
+  edges: [StakeLinkingEdge]
+  "Page information for the connection"
+  pageInfo: PageInfo!
+}
+
+type AccountEdge {
+  "The account"
+  node: Account!
+  "Cursor identifying the account"
+  cursor: String!
+}
+
+type AccountsConnection {
+  "List of accounts available for the connection"
+  edges: [AccountEdge]
+  "Page information for the connection"
+  pageInfo: PageInfo!
+}`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
@@ -11744,7 +12218,7 @@ func (ec *executionContext) field_Epoch_delegationsConnection_args(ctx context.C
 	var arg2 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg2, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		arg2, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -11810,12 +12284,36 @@ func (ec *executionContext) field_Epoch_validatorsConnection_args(ctx context.Co
 	var arg0 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
 	args["pagination"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Market_accountsConnection_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["partyId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyId"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["partyId"] = arg0
+	var arg1 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg1
 	return args, nil
 }
 
@@ -11867,7 +12365,7 @@ func (ec *executionContext) field_Market_candlesConnection_args(ctx context.Cont
 	var arg3 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg3, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		arg3, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -11930,7 +12428,7 @@ func (ec *executionContext) field_Market_liquidityProvisionsConnection_args(ctx 
 	var arg1 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -11960,7 +12458,7 @@ func (ec *executionContext) field_Market_ordersConnection_args(ctx context.Conte
 	var arg0 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -12008,7 +12506,7 @@ func (ec *executionContext) field_Market_tradesConnection_args(ctx context.Conte
 	var arg0 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -12065,7 +12563,7 @@ func (ec *executionContext) field_Node_delegationsConnection_args(ctx context.Co
 	var arg1 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -12122,7 +12620,7 @@ func (ec *executionContext) field_OracleSpec_dataConnection_args(ctx context.Con
 	var arg0 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -12137,12 +12635,54 @@ func (ec *executionContext) field_Order_tradesConnection_args(ctx context.Contex
 	var arg0 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
 	args["pagination"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Party_accountsConnection_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["marketId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("marketId"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["marketId"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["asset"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("asset"))
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["asset"] = arg1
+	var arg2 *vega.AccountType
+	if tmp, ok := rawArgs["type"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
+		arg2, err = ec.unmarshalOAccountType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountType(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["type"] = arg2
+	var arg3 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg3, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg3
 	return args, nil
 }
 
@@ -12170,7 +12710,7 @@ func (ec *executionContext) field_Party_accounts_args(ctx context.Context, rawAr
 	var arg2 *vega.AccountType
 	if tmp, ok := rawArgs["type"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
-		arg2, err = ec.unmarshalOAccountType2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccountType(ctx, tmp)
+		arg2, err = ec.unmarshalOAccountType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountType(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -12194,7 +12734,7 @@ func (ec *executionContext) field_Party_delegationsConnection_args(ctx context.C
 	var arg1 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -12251,7 +12791,7 @@ func (ec *executionContext) field_Party_depositsConnection_args(ctx context.Cont
 	var arg0 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -12284,7 +12824,7 @@ func (ec *executionContext) field_Party_liquidityProvisionsConnection_args(ctx c
 	var arg2 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg2, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		arg2, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -12332,7 +12872,7 @@ func (ec *executionContext) field_Party_marginsConnection_args(ctx context.Conte
 	var arg1 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -12362,7 +12902,7 @@ func (ec *executionContext) field_Party_ordersConnection_args(ctx context.Contex
 	var arg0 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -12419,7 +12959,7 @@ func (ec *executionContext) field_Party_positionsConnection_args(ctx context.Con
 	var arg1 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -12452,7 +12992,7 @@ func (ec *executionContext) field_Party_proposalsConnection_args(ctx context.Con
 	var arg2 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg2, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		arg2, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -12506,7 +13046,7 @@ func (ec *executionContext) field_Party_rewardsConnection_args(ctx context.Conte
 	var arg1 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -12557,6 +13097,21 @@ func (ec *executionContext) field_Party_rewards_args(ctx context.Context, rawArg
 	return args, nil
 }
 
+func (ec *executionContext) field_Party_stakingSummary_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Party_tradesConnection_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -12572,7 +13127,7 @@ func (ec *executionContext) field_Party_tradesConnection_args(ctx context.Contex
 	var arg1 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -12629,7 +13184,7 @@ func (ec *executionContext) field_Party_votesConnection_args(ctx context.Context
 	var arg0 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -12644,7 +13199,7 @@ func (ec *executionContext) field_Party_withdrawalsConnection_args(ctx context.C
 	var arg0 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -12659,7 +13214,7 @@ func (ec *executionContext) field_Position_marginsConnection_args(ctx context.Co
 	var arg0 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -12713,7 +13268,7 @@ func (ec *executionContext) field_Query_assetsConnection_args(ctx context.Contex
 	var arg1 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -12938,7 +13493,7 @@ func (ec *executionContext) field_Query_getMarketDataHistoryConnectionByID_args(
 	var arg3 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg3, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		arg3, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -12953,7 +13508,7 @@ func (ec *executionContext) field_Query_historicBalances_args(ctx context.Contex
 	var arg0 *v2.AccountFilter
 	if tmp, ok := rawArgs["filter"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
-		arg0, err = ec.unmarshalOAccountFilter2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountFilter(ctx, tmp)
+		arg0, err = ec.unmarshalOAccountFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountFilter(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -12962,12 +13517,36 @@ func (ec *executionContext) field_Query_historicBalances_args(ctx context.Contex
 	var arg1 []*v2.AccountField
 	if tmp, ok := rawArgs["groupBy"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("groupBy"))
-		arg1, err = ec.unmarshalOAccountField2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountField(ctx, tmp)
+		arg1, err = ec.unmarshalOAccountField2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountField(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
 	args["groupBy"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_keyRotationsConnection_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	var arg1 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg1
 	return args, nil
 }
 
@@ -13016,7 +13595,7 @@ func (ec *executionContext) field_Query_marketsConnection_args(ctx context.Conte
 	var arg1 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -13037,6 +13616,21 @@ func (ec *executionContext) field_Query_markets_args(ctx context.Context, rawArg
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_networkParametersConnection_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg0
 	return args, nil
 }
 
@@ -13100,6 +13694,30 @@ func (ec *executionContext) field_Query_newMarketProposals_args(ctx context.Cont
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_nodeSignaturesConnection_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["resourceId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("resourceId"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["resourceId"] = arg0
+	var arg1 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_nodeSignatures_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -13136,7 +13754,7 @@ func (ec *executionContext) field_Query_nodesConnection_args(ctx context.Context
 	var arg0 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -13160,7 +13778,7 @@ func (ec *executionContext) field_Query_oracleDataBySpecConnection_args(ctx cont
 	var arg1 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -13199,7 +13817,7 @@ func (ec *executionContext) field_Query_oracleDataConnection_args(ctx context.Co
 	var arg0 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -13244,7 +13862,7 @@ func (ec *executionContext) field_Query_oracleSpecsConnection_args(ctx context.C
 	var arg0 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -13322,7 +13940,7 @@ func (ec *executionContext) field_Query_orderVersionsConnection_args(ctx context
 	var arg1 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -13388,7 +14006,7 @@ func (ec *executionContext) field_Query_partiesConnection_args(ctx context.Conte
 	var arg1 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -13475,7 +14093,7 @@ func (ec *executionContext) field_Query_proposalsConnection_args(ctx context.Con
 	var arg2 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg2, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		arg2, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -13523,7 +14141,7 @@ func (ec *executionContext) field_Query_transfersConnection_args(ctx context.Con
 	var arg2 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg2, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		arg2, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -13619,7 +14237,7 @@ func (ec *executionContext) field_RewardSummary_rewardsConnection_args(ctx conte
 	var arg1 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -13661,6 +14279,21 @@ func (ec *executionContext) field_RewardSummary_rewards_args(ctx context.Context
 	return args, nil
 }
 
+func (ec *executionContext) field_StakingSummary_linkings_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Subscription_accounts_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -13694,7 +14327,7 @@ func (ec *executionContext) field_Subscription_accounts_args(ctx context.Context
 	var arg3 *vega.AccountType
 	if tmp, ok := rawArgs["type"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
-		arg3, err = ec.unmarshalOAccountType2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccountType(ctx, tmp)
+		arg3, err = ec.unmarshalOAccountType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountType(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -14147,7 +14780,7 @@ func (ec *executionContext) _Account_asset(ctx context.Context, field graphql.Co
 	}
 	res := resTmp.(*vega.Asset)
 	fc.Result = res
-	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Account_type(ctx context.Context, field graphql.CollectedField, obj *vega.Account) (ret graphql.Marshaler) {
@@ -14182,7 +14815,7 @@ func (ec *executionContext) _Account_type(ctx context.Context, field graphql.Col
 	}
 	res := resTmp.(vega.AccountType)
 	fc.Result = res
-	return ec.marshalNAccountType2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccountType(ctx, field.Selections, res)
+	return ec.marshalNAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Account_market(ctx context.Context, field graphql.CollectedField, obj *vega.Account) (ret graphql.Marshaler) {
@@ -14214,7 +14847,144 @@ func (ec *executionContext) _Account_market(ctx context.Context, field graphql.C
 	}
 	res := resTmp.(*vega.Market)
 	fc.Result = res
-	return ec.marshalOMarket2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarket(ctx, field.Selections, res)
+	return ec.marshalOMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarket(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AccountEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.AccountEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AccountEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.AccountEdge().Node(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.Account)
+	fc.Result = res
+	return ec.marshalNAccount2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccount(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AccountEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.AccountEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AccountEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AccountsConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.AccountsConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AccountsConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*v2.AccountEdge)
+	fc.Result = res
+	return ec.marshalOAccountEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountEdge(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AccountsConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.AccountsConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AccountsConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.PageInfo)
+	fc.Result = res
+	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _AggregatedBalance_timestamp(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedBalance) (ret graphql.Marshaler) {
@@ -14444,7 +15214,7 @@ func (ec *executionContext) _AggregatedBalance_accountType(ctx context.Context, 
 	}
 	res := resTmp.(vega.AccountType)
 	fc.Result = res
-	return ec.marshalOAccountType2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccountType(ctx, field.Selections, res)
+	return ec.marshalOAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Asset_id(ctx context.Context, field graphql.CollectedField, obj *vega.Asset) (ret graphql.Marshaler) {
@@ -14759,7 +15529,7 @@ func (ec *executionContext) _Asset_infrastructureFeeAccount(ctx context.Context,
 	}
 	res := resTmp.(*vega.Account)
 	fc.Result = res
-	return ec.marshalNAccount2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccount(ctx, field.Selections, res)
+	return ec.marshalNAccount2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccount(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Asset_globalRewardPoolAccount(ctx context.Context, field graphql.CollectedField, obj *vega.Asset) (ret graphql.Marshaler) {
@@ -14791,7 +15561,7 @@ func (ec *executionContext) _Asset_globalRewardPoolAccount(ctx context.Context, 
 	}
 	res := resTmp.(*vega.Account)
 	fc.Result = res
-	return ec.marshalOAccount2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccount(ctx, field.Selections, res)
+	return ec.marshalOAccount2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccount(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Asset_takerFeeRewardAccount(ctx context.Context, field graphql.CollectedField, obj *vega.Asset) (ret graphql.Marshaler) {
@@ -14823,7 +15593,7 @@ func (ec *executionContext) _Asset_takerFeeRewardAccount(ctx context.Context, fi
 	}
 	res := resTmp.(*vega.Account)
 	fc.Result = res
-	return ec.marshalOAccount2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccount(ctx, field.Selections, res)
+	return ec.marshalOAccount2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccount(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Asset_makerFeeRewardAccount(ctx context.Context, field graphql.CollectedField, obj *vega.Asset) (ret graphql.Marshaler) {
@@ -14855,7 +15625,7 @@ func (ec *executionContext) _Asset_makerFeeRewardAccount(ctx context.Context, fi
 	}
 	res := resTmp.(*vega.Account)
 	fc.Result = res
-	return ec.marshalOAccount2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccount(ctx, field.Selections, res)
+	return ec.marshalOAccount2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccount(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Asset_lpFeeRewardAccount(ctx context.Context, field graphql.CollectedField, obj *vega.Asset) (ret graphql.Marshaler) {
@@ -14887,7 +15657,7 @@ func (ec *executionContext) _Asset_lpFeeRewardAccount(ctx context.Context, field
 	}
 	res := resTmp.(*vega.Account)
 	fc.Result = res
-	return ec.marshalOAccount2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccount(ctx, field.Selections, res)
+	return ec.marshalOAccount2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccount(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Asset_marketProposerRewardAccount(ctx context.Context, field graphql.CollectedField, obj *vega.Asset) (ret graphql.Marshaler) {
@@ -14919,7 +15689,7 @@ func (ec *executionContext) _Asset_marketProposerRewardAccount(ctx context.Conte
 	}
 	res := resTmp.(*vega.Account)
 	fc.Result = res
-	return ec.marshalOAccount2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccount(ctx, field.Selections, res)
+	return ec.marshalOAccount2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccount(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _AssetEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.AssetEdge) (ret graphql.Marshaler) {
@@ -14954,7 +15724,7 @@ func (ec *executionContext) _AssetEdge_node(ctx context.Context, field graphql.C
 	}
 	res := resTmp.(*vega.Asset)
 	fc.Result = res
-	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _AssetEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.AssetEdge) (ret graphql.Marshaler) {
@@ -15021,7 +15791,7 @@ func (ec *executionContext) _AssetsConnection_edges(ctx context.Context, field g
 	}
 	res := resTmp.([]*v2.AssetEdge)
 	fc.Result = res
-	return ec.marshalOAssetEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAssetEdge(ctx, field.Selections, res)
+	return ec.marshalOAssetEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAssetEdge(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _AssetsConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.AssetsConnection) (ret graphql.Marshaler) {
@@ -15053,7 +15823,7 @@ func (ec *executionContext) _AssetsConnection_pageInfo(ctx context.Context, fiel
 	}
 	res := resTmp.(*v2.PageInfo)
 	fc.Result = res
-	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _AuctionDuration_durationSecs(ctx context.Context, field graphql.CollectedField, obj *AuctionDuration) (ret graphql.Marshaler) {
@@ -15852,7 +16622,7 @@ func (ec *executionContext) _CandleDataConnection_edges(ctx context.Context, fie
 	}
 	res := resTmp.([]*v2.CandleEdge)
 	fc.Result = res
-	return ec.marshalOCandleEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐCandleEdge(ctx, field.Selections, res)
+	return ec.marshalOCandleEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐCandleEdge(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _CandleDataConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.CandleDataConnection) (ret graphql.Marshaler) {
@@ -15884,7 +16654,7 @@ func (ec *executionContext) _CandleDataConnection_pageInfo(ctx context.Context, 
 	}
 	res := resTmp.(*v2.PageInfo)
 	fc.Result = res
-	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _CandleEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.CandleEdge) (ret graphql.Marshaler) {
@@ -15919,7 +16689,7 @@ func (ec *executionContext) _CandleEdge_node(ctx context.Context, field graphql.
 	}
 	res := resTmp.(*v2.Candle)
 	fc.Result = res
-	return ec.marshalNCandleNode2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐCandle(ctx, field.Selections, res)
+	return ec.marshalNCandleNode2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐCandle(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _CandleEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.CandleEdge) (ret graphql.Marshaler) {
@@ -16371,7 +17141,7 @@ func (ec *executionContext) _Delegation_party(ctx context.Context, field graphql
 	}
 	res := resTmp.(*vega.Party)
 	fc.Result = res
-	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
+	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Delegation_node(ctx context.Context, field graphql.CollectedField, obj *vega.Delegation) (ret graphql.Marshaler) {
@@ -16406,7 +17176,7 @@ func (ec *executionContext) _Delegation_node(ctx context.Context, field graphql.
 	}
 	res := resTmp.(*vega.Node)
 	fc.Result = res
-	return ec.marshalNNode2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐNode(ctx, field.Selections, res)
+	return ec.marshalNNode2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐNode(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Delegation_epoch(ctx context.Context, field graphql.CollectedField, obj *vega.Delegation) (ret graphql.Marshaler) {
@@ -16476,7 +17246,7 @@ func (ec *executionContext) _DelegationEdge_node(ctx context.Context, field grap
 	}
 	res := resTmp.(*vega.Delegation)
 	fc.Result = res
-	return ec.marshalNDelegation2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐDelegation(ctx, field.Selections, res)
+	return ec.marshalNDelegation2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDelegation(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DelegationEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.DelegationEdge) (ret graphql.Marshaler) {
@@ -16543,7 +17313,7 @@ func (ec *executionContext) _DelegationsConnection_edges(ctx context.Context, fi
 	}
 	res := resTmp.([]*v2.DelegationEdge)
 	fc.Result = res
-	return ec.marshalODelegationEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDelegationEdge(ctx, field.Selections, res)
+	return ec.marshalODelegationEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDelegationEdge(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DelegationsConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.DelegationsConnection) (ret graphql.Marshaler) {
@@ -16578,7 +17348,7 @@ func (ec *executionContext) _DelegationsConnection_pageInfo(ctx context.Context,
 	}
 	res := resTmp.(*v2.PageInfo)
 	fc.Result = res
-	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Deposit_id(ctx context.Context, field graphql.CollectedField, obj *vega.Deposit) (ret graphql.Marshaler) {
@@ -16648,7 +17418,7 @@ func (ec *executionContext) _Deposit_party(ctx context.Context, field graphql.Co
 	}
 	res := resTmp.(*vega.Party)
 	fc.Result = res
-	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
+	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Deposit_amount(ctx context.Context, field graphql.CollectedField, obj *vega.Deposit) (ret graphql.Marshaler) {
@@ -16718,7 +17488,7 @@ func (ec *executionContext) _Deposit_asset(ctx context.Context, field graphql.Co
 	}
 	res := resTmp.(*vega.Asset)
 	fc.Result = res
-	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Deposit_status(ctx context.Context, field graphql.CollectedField, obj *vega.Deposit) (ret graphql.Marshaler) {
@@ -16887,7 +17657,7 @@ func (ec *executionContext) _DepositEdge_node(ctx context.Context, field graphql
 	}
 	res := resTmp.(*vega.Deposit)
 	fc.Result = res
-	return ec.marshalNDeposit2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐDeposit(ctx, field.Selections, res)
+	return ec.marshalNDeposit2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDeposit(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DepositEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.DepositEdge) (ret graphql.Marshaler) {
@@ -16954,7 +17724,7 @@ func (ec *executionContext) _DepositsConnection_edges(ctx context.Context, field
 	}
 	res := resTmp.([]*v2.DepositEdge)
 	fc.Result = res
-	return ec.marshalODepositEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDepositEdge(ctx, field.Selections, res)
+	return ec.marshalODepositEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDepositEdge(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DepositsConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.DepositsConnection) (ret graphql.Marshaler) {
@@ -16986,7 +17756,7 @@ func (ec *executionContext) _DepositsConnection_pageInfo(ctx context.Context, fi
 	}
 	res := resTmp.(*v2.PageInfo)
 	fc.Result = res
-	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DiscreteTrading_duration(ctx context.Context, field graphql.CollectedField, obj *DiscreteTrading) (ret graphql.Marshaler) {
@@ -17333,7 +18103,7 @@ func (ec *executionContext) _Epoch_timestamps(ctx context.Context, field graphql
 	}
 	res := resTmp.(*vega.EpochTimestamps)
 	fc.Result = res
-	return ec.marshalNEpochTimestamps2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐEpochTimestamps(ctx, field.Selections, res)
+	return ec.marshalNEpochTimestamps2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐEpochTimestamps(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Epoch_validators(ctx context.Context, field graphql.CollectedField, obj *vega.Epoch) (ret graphql.Marshaler) {
@@ -17368,7 +18138,7 @@ func (ec *executionContext) _Epoch_validators(ctx context.Context, field graphql
 	}
 	res := resTmp.([]*vega.Node)
 	fc.Result = res
-	return ec.marshalNNode2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐNodeᚄ(ctx, field.Selections, res)
+	return ec.marshalNNode2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐNodeᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Epoch_validatorsConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Epoch) (ret graphql.Marshaler) {
@@ -17410,7 +18180,7 @@ func (ec *executionContext) _Epoch_validatorsConnection(ctx context.Context, fie
 	}
 	res := resTmp.(*v2.NodesConnection)
 	fc.Result = res
-	return ec.marshalNNodesConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodesConnection(ctx, field.Selections, res)
+	return ec.marshalNNodesConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodesConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Epoch_delegations(ctx context.Context, field graphql.CollectedField, obj *vega.Epoch) (ret graphql.Marshaler) {
@@ -17452,7 +18222,7 @@ func (ec *executionContext) _Epoch_delegations(ctx context.Context, field graphq
 	}
 	res := resTmp.([]*vega.Delegation)
 	fc.Result = res
-	return ec.marshalNDelegation2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐDelegationᚄ(ctx, field.Selections, res)
+	return ec.marshalNDelegation2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDelegationᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Epoch_delegationsConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Epoch) (ret graphql.Marshaler) {
@@ -17494,7 +18264,7 @@ func (ec *executionContext) _Epoch_delegationsConnection(ctx context.Context, fi
 	}
 	res := resTmp.(*v2.DelegationsConnection)
 	fc.Result = res
-	return ec.marshalNDelegationsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDelegationsConnection(ctx, field.Selections, res)
+	return ec.marshalNDelegationsConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDelegationsConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _EpochData_total(ctx context.Context, field graphql.CollectedField, obj *vega.EpochData) (ret graphql.Marshaler) {
@@ -17631,7 +18401,7 @@ func (ec *executionContext) _EpochParticipation_epoch(ctx context.Context, field
 	}
 	res := resTmp.(*vega.Epoch)
 	fc.Result = res
-	return ec.marshalOEpoch2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐEpoch(ctx, field.Selections, res)
+	return ec.marshalOEpoch2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐEpoch(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _EpochParticipation_offline(ctx context.Context, field graphql.CollectedField, obj *EpochParticipation) (ret graphql.Marshaler) {
@@ -18313,7 +19083,7 @@ func (ec *executionContext) _Fees_factors(ctx context.Context, field graphql.Col
 	}
 	res := resTmp.(*vega.FeeFactors)
 	fc.Result = res
-	return ec.marshalNFeeFactors2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐFeeFactors(ctx, field.Selections, res)
+	return ec.marshalNFeeFactors2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐFeeFactors(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Filter_key(ctx context.Context, field graphql.CollectedField, obj *v11.Filter) (ret graphql.Marshaler) {
@@ -18348,7 +19118,7 @@ func (ec *executionContext) _Filter_key(ctx context.Context, field graphql.Colle
 	}
 	res := resTmp.(*v11.PropertyKey)
 	fc.Result = res
-	return ec.marshalNPropertyKey2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐPropertyKey(ctx, field.Selections, res)
+	return ec.marshalNPropertyKey2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐPropertyKey(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Filter_conditions(ctx context.Context, field graphql.CollectedField, obj *v11.Filter) (ret graphql.Marshaler) {
@@ -18380,7 +19150,7 @@ func (ec *executionContext) _Filter_conditions(ctx context.Context, field graphq
 	}
 	res := resTmp.([]*v11.Condition)
 	fc.Result = res
-	return ec.marshalOCondition2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐConditionᚄ(ctx, field.Selections, res)
+	return ec.marshalOCondition2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐConditionᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Future_settlementAsset(ctx context.Context, field graphql.CollectedField, obj *vega.Future) (ret graphql.Marshaler) {
@@ -18415,7 +19185,7 @@ func (ec *executionContext) _Future_settlementAsset(ctx context.Context, field g
 	}
 	res := resTmp.(*vega.Asset)
 	fc.Result = res
-	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Future_quoteName(ctx context.Context, field graphql.CollectedField, obj *vega.Future) (ret graphql.Marshaler) {
@@ -18485,7 +19255,7 @@ func (ec *executionContext) _Future_oracleSpecForSettlementPrice(ctx context.Con
 	}
 	res := resTmp.(*v11.OracleSpec)
 	fc.Result = res
-	return ec.marshalNOracleSpec2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpec(ctx, field.Selections, res)
+	return ec.marshalNOracleSpec2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpec(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Future_oracleSpecForTradingTermination(ctx context.Context, field graphql.CollectedField, obj *vega.Future) (ret graphql.Marshaler) {
@@ -18520,7 +19290,7 @@ func (ec *executionContext) _Future_oracleSpecForTradingTermination(ctx context.
 	}
 	res := resTmp.(*v11.OracleSpec)
 	fc.Result = res
-	return ec.marshalNOracleSpec2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpec(ctx, field.Selections, res)
+	return ec.marshalNOracleSpec2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpec(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Future_oracleSpecBinding(ctx context.Context, field graphql.CollectedField, obj *vega.Future) (ret graphql.Marshaler) {
@@ -18555,7 +19325,7 @@ func (ec *executionContext) _Future_oracleSpecBinding(ctx context.Context, field
 	}
 	res := resTmp.(*vega.OracleSpecToFutureBinding)
 	fc.Result = res
-	return ec.marshalNOracleSpecToFutureBinding2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐOracleSpecToFutureBinding(ctx, field.Selections, res)
+	return ec.marshalNOracleSpecToFutureBinding2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOracleSpecToFutureBinding(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FutureProduct_settlementAsset(ctx context.Context, field graphql.CollectedField, obj *vega.FutureProduct) (ret graphql.Marshaler) {
@@ -18590,7 +19360,7 @@ func (ec *executionContext) _FutureProduct_settlementAsset(ctx context.Context, 
 	}
 	res := resTmp.(*vega.Asset)
 	fc.Result = res
-	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FutureProduct_quoteName(ctx context.Context, field graphql.CollectedField, obj *vega.FutureProduct) (ret graphql.Marshaler) {
@@ -18660,7 +19430,7 @@ func (ec *executionContext) _FutureProduct_oracleSpecForSettlementPrice(ctx cont
 	}
 	res := resTmp.(*v11.OracleSpecConfiguration)
 	fc.Result = res
-	return ec.marshalNOracleSpecConfiguration2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpecConfiguration(ctx, field.Selections, res)
+	return ec.marshalNOracleSpecConfiguration2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpecConfiguration(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FutureProduct_oracleSpecForTradingTermination(ctx context.Context, field graphql.CollectedField, obj *vega.FutureProduct) (ret graphql.Marshaler) {
@@ -18695,7 +19465,7 @@ func (ec *executionContext) _FutureProduct_oracleSpecForTradingTermination(ctx c
 	}
 	res := resTmp.(*v11.OracleSpecConfiguration)
 	fc.Result = res
-	return ec.marshalNOracleSpecConfiguration2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpecConfiguration(ctx, field.Selections, res)
+	return ec.marshalNOracleSpecConfiguration2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpecConfiguration(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FutureProduct_oracleSpecBinding(ctx context.Context, field graphql.CollectedField, obj *vega.FutureProduct) (ret graphql.Marshaler) {
@@ -18730,7 +19500,7 @@ func (ec *executionContext) _FutureProduct_oracleSpecBinding(ctx context.Context
 	}
 	res := resTmp.(*vega.OracleSpecToFutureBinding)
 	fc.Result = res
-	return ec.marshalNOracleSpecToFutureBinding2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐOracleSpecToFutureBinding(ctx, field.Selections, res)
+	return ec.marshalNOracleSpecToFutureBinding2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOracleSpecToFutureBinding(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Instrument_id(ctx context.Context, field graphql.CollectedField, obj *vega.Instrument) (ret graphql.Marshaler) {
@@ -18870,7 +19640,7 @@ func (ec *executionContext) _Instrument_metadata(ctx context.Context, field grap
 	}
 	res := resTmp.(*vega.InstrumentMetadata)
 	fc.Result = res
-	return ec.marshalNInstrumentMetadata2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐInstrumentMetadata(ctx, field.Selections, res)
+	return ec.marshalNInstrumentMetadata2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐInstrumentMetadata(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Instrument_product(ctx context.Context, field graphql.CollectedField, obj *vega.Instrument) (ret graphql.Marshaler) {
@@ -19007,7 +19777,7 @@ func (ec *executionContext) _InstrumentConfiguration_futureProduct(ctx context.C
 	}
 	res := resTmp.(*vega.FutureProduct)
 	fc.Result = res
-	return ec.marshalOFutureProduct2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐFutureProduct(ctx, field.Selections, res)
+	return ec.marshalOFutureProduct2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐFutureProduct(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _InstrumentMetadata_tags(ctx context.Context, field graphql.CollectedField, obj *vega.InstrumentMetadata) (ret graphql.Marshaler) {
@@ -19042,7 +19812,7 @@ func (ec *executionContext) _InstrumentMetadata_tags(ctx context.Context, field 
 	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _KeyRotation_nodeId(ctx context.Context, field graphql.CollectedField, obj *v12.KeyRotation) (ret graphql.Marshaler) {
+func (ec *executionContext) _KeyRotation_nodeId(ctx context.Context, field graphql.CollectedField, obj *v1.KeyRotation) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -19077,7 +19847,7 @@ func (ec *executionContext) _KeyRotation_nodeId(ctx context.Context, field graph
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _KeyRotation_oldPubKey(ctx context.Context, field graphql.CollectedField, obj *v12.KeyRotation) (ret graphql.Marshaler) {
+func (ec *executionContext) _KeyRotation_oldPubKey(ctx context.Context, field graphql.CollectedField, obj *v1.KeyRotation) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -19112,7 +19882,7 @@ func (ec *executionContext) _KeyRotation_oldPubKey(ctx context.Context, field gr
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _KeyRotation_newPubKey(ctx context.Context, field graphql.CollectedField, obj *v12.KeyRotation) (ret graphql.Marshaler) {
+func (ec *executionContext) _KeyRotation_newPubKey(ctx context.Context, field graphql.CollectedField, obj *v1.KeyRotation) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -19147,7 +19917,7 @@ func (ec *executionContext) _KeyRotation_newPubKey(ctx context.Context, field gr
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _KeyRotation_blockHeight(ctx context.Context, field graphql.CollectedField, obj *v12.KeyRotation) (ret graphql.Marshaler) {
+func (ec *executionContext) _KeyRotation_blockHeight(ctx context.Context, field graphql.CollectedField, obj *v1.KeyRotation) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -19166,6 +19936,143 @@ func (ec *executionContext) _KeyRotation_blockHeight(ctx context.Context, field 
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.KeyRotation().BlockHeight(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _KeyRotationConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.KeyRotationConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "KeyRotationConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*v2.KeyRotationEdge)
+	fc.Result = res
+	return ec.marshalOKeyRotationEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐKeyRotationEdge(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _KeyRotationConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.KeyRotationConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "KeyRotationConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.PageInfo)
+	fc.Result = res
+	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _KeyRotationEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.KeyRotationEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "KeyRotationEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v1.KeyRotation)
+	fc.Result = res
+	return ec.marshalNKeyRotation2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐKeyRotation(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _KeyRotationEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.KeyRotationEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "KeyRotationEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -19596,7 +20503,7 @@ func (ec *executionContext) _LiquidityOrderReference_order(ctx context.Context, 
 	}
 	res := resTmp.(*vega.Order)
 	fc.Result = res
-	return ec.marshalOOrder2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐOrder(ctx, field.Selections, res)
+	return ec.marshalOOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _LiquidityOrderReference_liquidityOrder(ctx context.Context, field graphql.CollectedField, obj *vega.LiquidityOrderReference) (ret graphql.Marshaler) {
@@ -19631,7 +20538,7 @@ func (ec *executionContext) _LiquidityOrderReference_liquidityOrder(ctx context.
 	}
 	res := resTmp.(*vega.LiquidityOrder)
 	fc.Result = res
-	return ec.marshalNLiquidityOrder2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLiquidityOrder(ctx, field.Selections, res)
+	return ec.marshalNLiquidityOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityOrder(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _LiquidityProviderFeeShare_party(ctx context.Context, field graphql.CollectedField, obj *LiquidityProviderFeeShare) (ret graphql.Marshaler) {
@@ -19666,7 +20573,7 @@ func (ec *executionContext) _LiquidityProviderFeeShare_party(ctx context.Context
 	}
 	res := resTmp.(*vega.Party)
 	fc.Result = res
-	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
+	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _LiquidityProviderFeeShare_equityLikeShare(ctx context.Context, field graphql.CollectedField, obj *LiquidityProviderFeeShare) (ret graphql.Marshaler) {
@@ -19803,7 +20710,7 @@ func (ec *executionContext) _LiquidityProvision_party(ctx context.Context, field
 	}
 	res := resTmp.(*vega.Party)
 	fc.Result = res
-	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
+	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _LiquidityProvision_createdAt(ctx context.Context, field graphql.CollectedField, obj *vega.LiquidityProvision) (ret graphql.Marshaler) {
@@ -19905,7 +20812,7 @@ func (ec *executionContext) _LiquidityProvision_market(ctx context.Context, fiel
 	}
 	res := resTmp.(*vega.Market)
 	fc.Result = res
-	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarket(ctx, field.Selections, res)
+	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarket(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _LiquidityProvision_commitmentAmount(ctx context.Context, field graphql.CollectedField, obj *vega.LiquidityProvision) (ret graphql.Marshaler) {
@@ -20010,7 +20917,7 @@ func (ec *executionContext) _LiquidityProvision_sells(ctx context.Context, field
 	}
 	res := resTmp.([]*vega.LiquidityOrderReference)
 	fc.Result = res
-	return ec.marshalNLiquidityOrderReference2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLiquidityOrderReferenceᚄ(ctx, field.Selections, res)
+	return ec.marshalNLiquidityOrderReference2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityOrderReferenceᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _LiquidityProvision_buys(ctx context.Context, field graphql.CollectedField, obj *vega.LiquidityProvision) (ret graphql.Marshaler) {
@@ -20045,7 +20952,7 @@ func (ec *executionContext) _LiquidityProvision_buys(ctx context.Context, field 
 	}
 	res := resTmp.([]*vega.LiquidityOrderReference)
 	fc.Result = res
-	return ec.marshalNLiquidityOrderReference2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLiquidityOrderReferenceᚄ(ctx, field.Selections, res)
+	return ec.marshalNLiquidityOrderReference2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityOrderReferenceᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _LiquidityProvision_version(ctx context.Context, field graphql.CollectedField, obj *vega.LiquidityProvision) (ret graphql.Marshaler) {
@@ -20179,7 +21086,7 @@ func (ec *executionContext) _LiquidityProvisionsConnection_edges(ctx context.Con
 	}
 	res := resTmp.([]*v2.LiquidityProvisionsEdge)
 	fc.Result = res
-	return ec.marshalOLiquidityProvisionsEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLiquidityProvisionsEdge(ctx, field.Selections, res)
+	return ec.marshalOLiquidityProvisionsEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLiquidityProvisionsEdge(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _LiquidityProvisionsConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.LiquidityProvisionsConnection) (ret graphql.Marshaler) {
@@ -20214,7 +21121,7 @@ func (ec *executionContext) _LiquidityProvisionsConnection_pageInfo(ctx context.
 	}
 	res := resTmp.(*v2.PageInfo)
 	fc.Result = res
-	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _LiquidityProvisionsEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.LiquidityProvisionsEdge) (ret graphql.Marshaler) {
@@ -20249,7 +21156,7 @@ func (ec *executionContext) _LiquidityProvisionsEdge_node(ctx context.Context, f
 	}
 	res := resTmp.(*vega.LiquidityProvision)
 	fc.Result = res
-	return ec.marshalNLiquidityProvision2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLiquidityProvision(ctx, field.Selections, res)
+	return ec.marshalNLiquidityProvision2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityProvision(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _LiquidityProvisionsEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.LiquidityProvisionsEdge) (ret graphql.Marshaler) {
@@ -20494,7 +21401,7 @@ func (ec *executionContext) _LogNormalRiskModel_params(ctx context.Context, fiel
 	}
 	res := resTmp.(*vega.LogNormalModelParams)
 	fc.Result = res
-	return ec.marshalNLogNormalModelParams2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLogNormalModelParams(ctx, field.Selections, res)
+	return ec.marshalNLogNormalModelParams2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLogNormalModelParams(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _LossSocialization_marketId(ctx context.Context, field graphql.CollectedField, obj *LossSocialization) (ret graphql.Marshaler) {
@@ -20634,7 +21541,7 @@ func (ec *executionContext) _MarginCalculator_scalingFactors(ctx context.Context
 	}
 	res := resTmp.(*vega.ScalingFactors)
 	fc.Result = res
-	return ec.marshalNScalingFactors2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐScalingFactors(ctx, field.Selections, res)
+	return ec.marshalNScalingFactors2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐScalingFactors(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarginConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.MarginConnection) (ret graphql.Marshaler) {
@@ -20666,7 +21573,7 @@ func (ec *executionContext) _MarginConnection_edges(ctx context.Context, field g
 	}
 	res := resTmp.([]*v2.MarginEdge)
 	fc.Result = res
-	return ec.marshalOMarginEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarginEdgeᚄ(ctx, field.Selections, res)
+	return ec.marshalOMarginEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarginEdgeᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarginConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.MarginConnection) (ret graphql.Marshaler) {
@@ -20698,7 +21605,7 @@ func (ec *executionContext) _MarginConnection_pageInfo(ctx context.Context, fiel
 	}
 	res := resTmp.(*v2.PageInfo)
 	fc.Result = res
-	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarginEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.MarginEdge) (ret graphql.Marshaler) {
@@ -20733,7 +21640,7 @@ func (ec *executionContext) _MarginEdge_node(ctx context.Context, field graphql.
 	}
 	res := resTmp.(*vega.MarginLevels)
 	fc.Result = res
-	return ec.marshalNMarginLevels2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarginLevels(ctx, field.Selections, res)
+	return ec.marshalNMarginLevels2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarginLevels(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarginEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.MarginEdge) (ret graphql.Marshaler) {
@@ -20800,7 +21707,7 @@ func (ec *executionContext) _MarginLevels_market(ctx context.Context, field grap
 	}
 	res := resTmp.(*vega.Market)
 	fc.Result = res
-	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarket(ctx, field.Selections, res)
+	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarket(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarginLevels_asset(ctx context.Context, field graphql.CollectedField, obj *vega.MarginLevels) (ret graphql.Marshaler) {
@@ -20835,7 +21742,7 @@ func (ec *executionContext) _MarginLevels_asset(ctx context.Context, field graph
 	}
 	res := resTmp.(*vega.Asset)
 	fc.Result = res
-	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarginLevels_party(ctx context.Context, field graphql.CollectedField, obj *vega.MarginLevels) (ret graphql.Marshaler) {
@@ -20870,7 +21777,7 @@ func (ec *executionContext) _MarginLevels_party(ctx context.Context, field graph
 	}
 	res := resTmp.(*vega.Party)
 	fc.Result = res
-	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
+	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarginLevels_maintenanceLevel(ctx context.Context, field graphql.CollectedField, obj *vega.MarginLevels) (ret graphql.Marshaler) {
@@ -21150,7 +22057,7 @@ func (ec *executionContext) _Market_fees(ctx context.Context, field graphql.Coll
 	}
 	res := resTmp.(*vega.Fees)
 	fc.Result = res
-	return ec.marshalNFees2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐFees(ctx, field.Selections, res)
+	return ec.marshalNFees2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐFees(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Market_tradableInstrument(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
@@ -21185,7 +22092,7 @@ func (ec *executionContext) _Market_tradableInstrument(ctx context.Context, fiel
 	}
 	res := resTmp.(*vega.TradableInstrument)
 	fc.Result = res
-	return ec.marshalNTradableInstrument2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐTradableInstrument(ctx, field.Selections, res)
+	return ec.marshalNTradableInstrument2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTradableInstrument(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Market_decimalPlaces(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
@@ -21462,7 +22369,7 @@ func (ec *executionContext) _Market_proposal(ctx context.Context, field graphql.
 	}
 	res := resTmp.(*vega.GovernanceData)
 	fc.Result = res
-	return ec.marshalOProposal2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐGovernanceData(ctx, field.Selections, res)
+	return ec.marshalOProposal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐGovernanceData(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Market_orders(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
@@ -21501,7 +22408,7 @@ func (ec *executionContext) _Market_orders(ctx context.Context, field graphql.Co
 	}
 	res := resTmp.([]*vega.Order)
 	fc.Result = res
-	return ec.marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐOrderᚄ(ctx, field.Selections, res)
+	return ec.marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrderᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Market_ordersConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
@@ -21543,7 +22450,7 @@ func (ec *executionContext) _Market_ordersConnection(ctx context.Context, field 
 	}
 	res := resTmp.(*v2.OrderConnection)
 	fc.Result = res
-	return ec.marshalNOrderConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderConnection(ctx, field.Selections, res)
+	return ec.marshalNOrderConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Market_accounts(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
@@ -21582,7 +22489,49 @@ func (ec *executionContext) _Market_accounts(ctx context.Context, field graphql.
 	}
 	res := resTmp.([]*vega.Account)
 	fc.Result = res
-	return ec.marshalOAccount2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccountᚄ(ctx, field.Selections, res)
+	return ec.marshalOAccount2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Market_accountsConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Market",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Market_accountsConnection_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Market().AccountsConnection(rctx, obj, args["partyId"].(*string), args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.AccountsConnection)
+	fc.Result = res
+	return ec.marshalNAccountsConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountsConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Market_trades(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
@@ -21621,7 +22570,7 @@ func (ec *executionContext) _Market_trades(ctx context.Context, field graphql.Co
 	}
 	res := resTmp.([]*vega.Trade)
 	fc.Result = res
-	return ec.marshalOTrade2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐTradeᚄ(ctx, field.Selections, res)
+	return ec.marshalOTrade2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTradeᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Market_tradesConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
@@ -21663,7 +22612,7 @@ func (ec *executionContext) _Market_tradesConnection(ctx context.Context, field 
 	}
 	res := resTmp.(*v2.TradeConnection)
 	fc.Result = res
-	return ec.marshalNTradeConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTradeConnection(ctx, field.Selections, res)
+	return ec.marshalNTradeConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTradeConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Market_depth(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
@@ -21705,7 +22654,7 @@ func (ec *executionContext) _Market_depth(ctx context.Context, field graphql.Col
 	}
 	res := resTmp.(*vega.MarketDepth)
 	fc.Result = res
-	return ec.marshalNMarketDepth2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketDepth(ctx, field.Selections, res)
+	return ec.marshalNMarketDepth2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketDepth(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Market_candles(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
@@ -21744,7 +22693,7 @@ func (ec *executionContext) _Market_candles(ctx context.Context, field graphql.C
 	}
 	res := resTmp.([]*vega.Candle)
 	fc.Result = res
-	return ec.marshalOCandle2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐCandle(ctx, field.Selections, res)
+	return ec.marshalOCandle2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐCandle(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Market_candlesConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
@@ -21786,7 +22735,7 @@ func (ec *executionContext) _Market_candlesConnection(ctx context.Context, field
 	}
 	res := resTmp.(*v2.CandleDataConnection)
 	fc.Result = res
-	return ec.marshalNCandleDataConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐCandleDataConnection(ctx, field.Selections, res)
+	return ec.marshalNCandleDataConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐCandleDataConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Market_data(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
@@ -21818,7 +22767,7 @@ func (ec *executionContext) _Market_data(ctx context.Context, field graphql.Coll
 	}
 	res := resTmp.(*vega.MarketData)
 	fc.Result = res
-	return ec.marshalOMarketData2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketData(ctx, field.Selections, res)
+	return ec.marshalOMarketData2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketData(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Market_liquidityProvisions(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
@@ -21857,7 +22806,7 @@ func (ec *executionContext) _Market_liquidityProvisions(ctx context.Context, fie
 	}
 	res := resTmp.([]*vega.LiquidityProvision)
 	fc.Result = res
-	return ec.marshalOLiquidityProvision2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLiquidityProvisionᚄ(ctx, field.Selections, res)
+	return ec.marshalOLiquidityProvision2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityProvisionᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Market_liquidityProvisionsConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
@@ -21899,7 +22848,7 @@ func (ec *executionContext) _Market_liquidityProvisionsConnection(ctx context.Co
 	}
 	res := resTmp.(*v2.LiquidityProvisionsConnection)
 	fc.Result = res
-	return ec.marshalNLiquidityProvisionsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLiquidityProvisionsConnection(ctx, field.Selections, res)
+	return ec.marshalNLiquidityProvisionsConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLiquidityProvisionsConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Market_marketTimestamps(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
@@ -21934,7 +22883,7 @@ func (ec *executionContext) _Market_marketTimestamps(ctx context.Context, field 
 	}
 	res := resTmp.(*vega.MarketTimestamps)
 	fc.Result = res
-	return ec.marshalNMarketTimestamps2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketTimestamps(ctx, field.Selections, res)
+	return ec.marshalNMarketTimestamps2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketTimestamps(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Market_riskFactors(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
@@ -21966,7 +22915,7 @@ func (ec *executionContext) _Market_riskFactors(ctx context.Context, field graph
 	}
 	res := resTmp.(*vega.RiskFactor)
 	fc.Result = res
-	return ec.marshalORiskFactor2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐRiskFactor(ctx, field.Selections, res)
+	return ec.marshalORiskFactor2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐRiskFactor(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.MarketConnection) (ret graphql.Marshaler) {
@@ -22001,7 +22950,7 @@ func (ec *executionContext) _MarketConnection_edges(ctx context.Context, field g
 	}
 	res := resTmp.([]*v2.MarketEdge)
 	fc.Result = res
-	return ec.marshalNMarketEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketEdgeᚄ(ctx, field.Selections, res)
+	return ec.marshalNMarketEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketEdgeᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.MarketConnection) (ret graphql.Marshaler) {
@@ -22036,7 +22985,7 @@ func (ec *executionContext) _MarketConnection_pageInfo(ctx context.Context, fiel
 	}
 	res := resTmp.(*v2.PageInfo)
 	fc.Result = res
-	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketData_market(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
@@ -22071,7 +23020,7 @@ func (ec *executionContext) _MarketData_market(ctx context.Context, field graphq
 	}
 	res := resTmp.(*vega.Market)
 	fc.Result = res
-	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarket(ctx, field.Selections, res)
+	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarket(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketData_markPrice(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
@@ -22995,7 +23944,7 @@ func (ec *executionContext) _MarketDataCommitments_sells(ctx context.Context, fi
 	}
 	res := resTmp.([]*vega.LiquidityOrderReference)
 	fc.Result = res
-	return ec.marshalOLiquidityOrderReference2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLiquidityOrderReferenceᚄ(ctx, field.Selections, res)
+	return ec.marshalOLiquidityOrderReference2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityOrderReferenceᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketDataCommitments_buys(ctx context.Context, field graphql.CollectedField, obj *MarketDataCommitments) (ret graphql.Marshaler) {
@@ -23027,7 +23976,7 @@ func (ec *executionContext) _MarketDataCommitments_buys(ctx context.Context, fie
 	}
 	res := resTmp.([]*vega.LiquidityOrderReference)
 	fc.Result = res
-	return ec.marshalOLiquidityOrderReference2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLiquidityOrderReferenceᚄ(ctx, field.Selections, res)
+	return ec.marshalOLiquidityOrderReference2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityOrderReferenceᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketDataConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.MarketDataConnection) (ret graphql.Marshaler) {
@@ -23059,7 +24008,7 @@ func (ec *executionContext) _MarketDataConnection_edges(ctx context.Context, fie
 	}
 	res := resTmp.([]*v2.MarketDataEdge)
 	fc.Result = res
-	return ec.marshalOMarketDataEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketDataEdge(ctx, field.Selections, res)
+	return ec.marshalOMarketDataEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketDataEdge(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketDataConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.MarketDataConnection) (ret graphql.Marshaler) {
@@ -23091,7 +24040,7 @@ func (ec *executionContext) _MarketDataConnection_pageInfo(ctx context.Context, 
 	}
 	res := resTmp.(*v2.PageInfo)
 	fc.Result = res
-	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketDataEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.MarketDataEdge) (ret graphql.Marshaler) {
@@ -23126,7 +24075,7 @@ func (ec *executionContext) _MarketDataEdge_node(ctx context.Context, field grap
 	}
 	res := resTmp.(*vega.MarketData)
 	fc.Result = res
-	return ec.marshalNMarketData2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketData(ctx, field.Selections, res)
+	return ec.marshalNMarketData2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketData(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketDataEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.MarketDataEdge) (ret graphql.Marshaler) {
@@ -23193,7 +24142,7 @@ func (ec *executionContext) _MarketDepth_market(ctx context.Context, field graph
 	}
 	res := resTmp.(*vega.Market)
 	fc.Result = res
-	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarket(ctx, field.Selections, res)
+	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarket(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketDepth_buy(ctx context.Context, field graphql.CollectedField, obj *vega.MarketDepth) (ret graphql.Marshaler) {
@@ -23225,7 +24174,7 @@ func (ec *executionContext) _MarketDepth_buy(ctx context.Context, field graphql.
 	}
 	res := resTmp.([]*vega.PriceLevel)
 	fc.Result = res
-	return ec.marshalOPriceLevel2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐPriceLevelᚄ(ctx, field.Selections, res)
+	return ec.marshalOPriceLevel2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPriceLevelᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketDepth_sell(ctx context.Context, field graphql.CollectedField, obj *vega.MarketDepth) (ret graphql.Marshaler) {
@@ -23257,7 +24206,7 @@ func (ec *executionContext) _MarketDepth_sell(ctx context.Context, field graphql
 	}
 	res := resTmp.([]*vega.PriceLevel)
 	fc.Result = res
-	return ec.marshalOPriceLevel2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐPriceLevelᚄ(ctx, field.Selections, res)
+	return ec.marshalOPriceLevel2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPriceLevelᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketDepth_lastTrade(ctx context.Context, field graphql.CollectedField, obj *vega.MarketDepth) (ret graphql.Marshaler) {
@@ -23289,7 +24238,7 @@ func (ec *executionContext) _MarketDepth_lastTrade(ctx context.Context, field gr
 	}
 	res := resTmp.(*vega.Trade)
 	fc.Result = res
-	return ec.marshalOTrade2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐTrade(ctx, field.Selections, res)
+	return ec.marshalOTrade2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTrade(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketDepth_sequenceNumber(ctx context.Context, field graphql.CollectedField, obj *vega.MarketDepth) (ret graphql.Marshaler) {
@@ -23464,7 +24413,7 @@ func (ec *executionContext) _MarketDepthUpdate_market(ctx context.Context, field
 	}
 	res := resTmp.(*vega.Market)
 	fc.Result = res
-	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarket(ctx, field.Selections, res)
+	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarket(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketDepthUpdate_buy(ctx context.Context, field graphql.CollectedField, obj *vega.MarketDepthUpdate) (ret graphql.Marshaler) {
@@ -23496,7 +24445,7 @@ func (ec *executionContext) _MarketDepthUpdate_buy(ctx context.Context, field gr
 	}
 	res := resTmp.([]*vega.PriceLevel)
 	fc.Result = res
-	return ec.marshalOPriceLevel2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐPriceLevelᚄ(ctx, field.Selections, res)
+	return ec.marshalOPriceLevel2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPriceLevelᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketDepthUpdate_sell(ctx context.Context, field graphql.CollectedField, obj *vega.MarketDepthUpdate) (ret graphql.Marshaler) {
@@ -23528,7 +24477,7 @@ func (ec *executionContext) _MarketDepthUpdate_sell(ctx context.Context, field g
 	}
 	res := resTmp.([]*vega.PriceLevel)
 	fc.Result = res
-	return ec.marshalOPriceLevel2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐPriceLevelᚄ(ctx, field.Selections, res)
+	return ec.marshalOPriceLevel2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPriceLevelᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketDepthUpdate_sequenceNumber(ctx context.Context, field graphql.CollectedField, obj *vega.MarketDepthUpdate) (ret graphql.Marshaler) {
@@ -23633,7 +24582,7 @@ func (ec *executionContext) _MarketEdge_node(ctx context.Context, field graphql.
 	}
 	res := resTmp.(*vega.Market)
 	fc.Result = res
-	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarket(ctx, field.Selections, res)
+	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarket(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.MarketEdge) (ret graphql.Marshaler) {
@@ -24324,6 +25273,143 @@ func (ec *executionContext) _NetworkParameter_value(ctx context.Context, field g
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _NetworkParameterEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.NetworkParameterEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "NetworkParameterEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.NetworkParameter)
+	fc.Result = res
+	return ec.marshalNNetworkParameter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐNetworkParameter(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NetworkParameterEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.NetworkParameterEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "NetworkParameterEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NetworkParametersConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.NetworkParameterConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "NetworkParametersConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*v2.NetworkParameterEdge)
+	fc.Result = res
+	return ec.marshalONetworkParameterEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNetworkParameterEdge(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NetworkParametersConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.NetworkParameterConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "NetworkParametersConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.PageInfo)
+	fc.Result = res
+	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _NewAsset_name(ctx context.Context, field graphql.CollectedField, obj *vega.NewAsset) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -24598,7 +25684,7 @@ func (ec *executionContext) _NewMarket_instrument(ctx context.Context, field gra
 	}
 	res := resTmp.(*vega.InstrumentConfiguration)
 	fc.Result = res
-	return ec.marshalNInstrumentConfiguration2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐInstrumentConfiguration(ctx, field.Selections, res)
+	return ec.marshalNInstrumentConfiguration2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐInstrumentConfiguration(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _NewMarket_decimalPlaces(ctx context.Context, field graphql.CollectedField, obj *vega.NewMarket) (ret graphql.Marshaler) {
@@ -24732,7 +25818,7 @@ func (ec *executionContext) _NewMarket_commitment(ctx context.Context, field gra
 	}
 	res := resTmp.(*vega.NewMarketCommitment)
 	fc.Result = res
-	return ec.marshalONewMarketCommitment2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐNewMarketCommitment(ctx, field.Selections, res)
+	return ec.marshalONewMarketCommitment2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐNewMarketCommitment(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _NewMarketCommitment_commitmentAmount(ctx context.Context, field graphql.CollectedField, obj *vega.NewMarketCommitment) (ret graphql.Marshaler) {
@@ -24834,7 +25920,7 @@ func (ec *executionContext) _NewMarketCommitment_sells(ctx context.Context, fiel
 	}
 	res := resTmp.([]*vega.LiquidityOrder)
 	fc.Result = res
-	return ec.marshalOLiquidityOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLiquidityOrderᚄ(ctx, field.Selections, res)
+	return ec.marshalOLiquidityOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityOrderᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _NewMarketCommitment_buys(ctx context.Context, field graphql.CollectedField, obj *vega.NewMarketCommitment) (ret graphql.Marshaler) {
@@ -24866,7 +25952,7 @@ func (ec *executionContext) _NewMarketCommitment_buys(ctx context.Context, field
 	}
 	res := resTmp.([]*vega.LiquidityOrder)
 	fc.Result = res
-	return ec.marshalOLiquidityOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLiquidityOrderᚄ(ctx, field.Selections, res)
+	return ec.marshalOLiquidityOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityOrderᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _NewMarketCommitment_reference(ctx context.Context, field graphql.CollectedField, obj *vega.NewMarketCommitment) (ret graphql.Marshaler) {
@@ -25006,7 +26092,7 @@ func (ec *executionContext) _Node_tmPubkey(ctx context.Context, field graphql.Co
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Node_ethereumAdddress(ctx context.Context, field graphql.CollectedField, obj *vega.Node) (ret graphql.Marshaler) {
+func (ec *executionContext) _Node_ethereumAddress(ctx context.Context, field graphql.CollectedField, obj *vega.Node) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -25024,7 +26110,7 @@ func (ec *executionContext) _Node_ethereumAdddress(ctx context.Context, field gr
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.EthereumAdddress, nil
+		return obj.EthereumAddress, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -25280,7 +26366,7 @@ func (ec *executionContext) _Node_epochData(ctx context.Context, field graphql.C
 	}
 	res := resTmp.(*vega.EpochData)
 	fc.Result = res
-	return ec.marshalOEpochData2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐEpochData(ctx, field.Selections, res)
+	return ec.marshalOEpochData2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐEpochData(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Node_status(ctx context.Context, field graphql.CollectedField, obj *vega.Node) (ret graphql.Marshaler) {
@@ -25354,7 +26440,7 @@ func (ec *executionContext) _Node_delegations(ctx context.Context, field graphql
 	}
 	res := resTmp.([]*vega.Delegation)
 	fc.Result = res
-	return ec.marshalODelegation2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐDelegationᚄ(ctx, field.Selections, res)
+	return ec.marshalODelegation2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDelegationᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Node_delegationsConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Node) (ret graphql.Marshaler) {
@@ -25396,7 +26482,7 @@ func (ec *executionContext) _Node_delegationsConnection(ctx context.Context, fie
 	}
 	res := resTmp.(*v2.DelegationsConnection)
 	fc.Result = res
-	return ec.marshalNDelegationsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDelegationsConnection(ctx, field.Selections, res)
+	return ec.marshalNDelegationsConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDelegationsConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Node_rewardScore(ctx context.Context, field graphql.CollectedField, obj *vega.Node) (ret graphql.Marshaler) {
@@ -25428,7 +26514,7 @@ func (ec *executionContext) _Node_rewardScore(ctx context.Context, field graphql
 	}
 	res := resTmp.(*vega.RewardScore)
 	fc.Result = res
-	return ec.marshalORewardScore2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐRewardScore(ctx, field.Selections, res)
+	return ec.marshalORewardScore2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐRewardScore(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Node_rankingScore(ctx context.Context, field graphql.CollectedField, obj *vega.Node) (ret graphql.Marshaler) {
@@ -25463,7 +26549,7 @@ func (ec *executionContext) _Node_rankingScore(ctx context.Context, field graphq
 	}
 	res := resTmp.(*vega.RankingScore)
 	fc.Result = res
-	return ec.marshalNRankingScore2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐRankingScore(ctx, field.Selections, res)
+	return ec.marshalNRankingScore2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐRankingScore(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Node_name(ctx context.Context, field graphql.CollectedField, obj *vega.Node) (ret graphql.Marshaler) {
@@ -25740,7 +26826,7 @@ func (ec *executionContext) _NodeEdge_node(ctx context.Context, field graphql.Co
 	}
 	res := resTmp.(*vega.Node)
 	fc.Result = res
-	return ec.marshalNNode2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐNode(ctx, field.Selections, res)
+	return ec.marshalNNode2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐNode(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _NodeEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.NodeEdge) (ret graphql.Marshaler) {
@@ -25778,7 +26864,7 @@ func (ec *executionContext) _NodeEdge_cursor(ctx context.Context, field graphql.
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _NodeSignature_id(ctx context.Context, field graphql.CollectedField, obj *v13.NodeSignature) (ret graphql.Marshaler) {
+func (ec *executionContext) _NodeSignature_id(ctx context.Context, field graphql.CollectedField, obj *v12.NodeSignature) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -25813,7 +26899,7 @@ func (ec *executionContext) _NodeSignature_id(ctx context.Context, field graphql
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _NodeSignature_signature(ctx context.Context, field graphql.CollectedField, obj *v13.NodeSignature) (ret graphql.Marshaler) {
+func (ec *executionContext) _NodeSignature_signature(ctx context.Context, field graphql.CollectedField, obj *v12.NodeSignature) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -25845,7 +26931,7 @@ func (ec *executionContext) _NodeSignature_signature(ctx context.Context, field 
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _NodeSignature_kind(ctx context.Context, field graphql.CollectedField, obj *v13.NodeSignature) (ret graphql.Marshaler) {
+func (ec *executionContext) _NodeSignature_kind(ctx context.Context, field graphql.CollectedField, obj *v12.NodeSignature) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -25877,6 +26963,143 @@ func (ec *executionContext) _NodeSignature_kind(ctx context.Context, field graph
 	return ec.marshalONodeSignatureKind2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐNodeSignatureKind(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _NodeSignatureEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.NodeSignatureEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "NodeSignatureEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v12.NodeSignature)
+	fc.Result = res
+	return ec.marshalNNodeSignature2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋcommandsᚋv1ᚐNodeSignature(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NodeSignatureEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.NodeSignatureEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "NodeSignatureEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NodeSignaturesConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.NodeSignaturesConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "NodeSignaturesConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*v2.NodeSignatureEdge)
+	fc.Result = res
+	return ec.marshalONodeSignatureEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodeSignatureEdge(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NodeSignaturesConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.NodeSignaturesConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "NodeSignaturesConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.PageInfo)
+	fc.Result = res
+	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _NodesConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.NodesConnection) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -25906,7 +27129,7 @@ func (ec *executionContext) _NodesConnection_edges(ctx context.Context, field gr
 	}
 	res := resTmp.([]*v2.NodeEdge)
 	fc.Result = res
-	return ec.marshalONodeEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodeEdge(ctx, field.Selections, res)
+	return ec.marshalONodeEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodeEdge(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _NodesConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.NodesConnection) (ret graphql.Marshaler) {
@@ -25941,7 +27164,7 @@ func (ec *executionContext) _NodesConnection_pageInfo(ctx context.Context, field
 	}
 	res := resTmp.(*v2.PageInfo)
 	fc.Result = res
-	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ObservableLiquidityProviderFeeShare_partyId(ctx context.Context, field graphql.CollectedField, obj *ObservableLiquidityProviderFeeShare) (ret graphql.Marshaler) {
@@ -27005,7 +28228,7 @@ func (ec *executionContext) _ObservableMarketDepth_buy(ctx context.Context, fiel
 	}
 	res := resTmp.([]*vega.PriceLevel)
 	fc.Result = res
-	return ec.marshalOPriceLevel2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐPriceLevelᚄ(ctx, field.Selections, res)
+	return ec.marshalOPriceLevel2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPriceLevelᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ObservableMarketDepth_sell(ctx context.Context, field graphql.CollectedField, obj *vega.MarketDepth) (ret graphql.Marshaler) {
@@ -27037,7 +28260,7 @@ func (ec *executionContext) _ObservableMarketDepth_sell(ctx context.Context, fie
 	}
 	res := resTmp.([]*vega.PriceLevel)
 	fc.Result = res
-	return ec.marshalOPriceLevel2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐPriceLevelᚄ(ctx, field.Selections, res)
+	return ec.marshalOPriceLevel2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPriceLevelᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ObservableMarketDepth_lastTrade(ctx context.Context, field graphql.CollectedField, obj *vega.MarketDepth) (ret graphql.Marshaler) {
@@ -27174,7 +28397,7 @@ func (ec *executionContext) _ObservableMarketDepthUpdate_buy(ctx context.Context
 	}
 	res := resTmp.([]*vega.PriceLevel)
 	fc.Result = res
-	return ec.marshalOPriceLevel2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐPriceLevelᚄ(ctx, field.Selections, res)
+	return ec.marshalOPriceLevel2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPriceLevelᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ObservableMarketDepthUpdate_sell(ctx context.Context, field graphql.CollectedField, obj *vega.MarketDepthUpdate) (ret graphql.Marshaler) {
@@ -27206,7 +28429,7 @@ func (ec *executionContext) _ObservableMarketDepthUpdate_sell(ctx context.Contex
 	}
 	res := resTmp.([]*vega.PriceLevel)
 	fc.Result = res
-	return ec.marshalOPriceLevel2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐPriceLevelᚄ(ctx, field.Selections, res)
+	return ec.marshalOPriceLevel2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPriceLevelᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ObservableMarketDepthUpdate_sequenceNumber(ctx context.Context, field graphql.CollectedField, obj *vega.MarketDepthUpdate) (ret graphql.Marshaler) {
@@ -27372,7 +28595,7 @@ func (ec *executionContext) _OracleData_data(ctx context.Context, field graphql.
 	}
 	res := resTmp.([]*v11.Property)
 	fc.Result = res
-	return ec.marshalOProperty2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐPropertyᚄ(ctx, field.Selections, res)
+	return ec.marshalOProperty2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐPropertyᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OracleData_matchedSpecIds(ctx context.Context, field graphql.CollectedField, obj *v11.OracleData) (ret graphql.Marshaler) {
@@ -27471,7 +28694,7 @@ func (ec *executionContext) _OracleDataConnection_edges(ctx context.Context, fie
 	}
 	res := resTmp.([]*v2.OracleDataEdge)
 	fc.Result = res
-	return ec.marshalOOracleDataEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOracleDataEdge(ctx, field.Selections, res)
+	return ec.marshalOOracleDataEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOracleDataEdge(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OracleDataConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.OracleDataConnection) (ret graphql.Marshaler) {
@@ -27506,7 +28729,7 @@ func (ec *executionContext) _OracleDataConnection_pageInfo(ctx context.Context, 
 	}
 	res := resTmp.(*v2.PageInfo)
 	fc.Result = res
-	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OracleDataEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.OracleDataEdge) (ret graphql.Marshaler) {
@@ -27541,7 +28764,7 @@ func (ec *executionContext) _OracleDataEdge_node(ctx context.Context, field grap
 	}
 	res := resTmp.(*v11.OracleData)
 	fc.Result = res
-	return ec.marshalNOracleData2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleData(ctx, field.Selections, res)
+	return ec.marshalNOracleData2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleData(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OracleDataEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.OracleDataEdge) (ret graphql.Marshaler) {
@@ -27742,7 +28965,7 @@ func (ec *executionContext) _OracleSpec_filters(ctx context.Context, field graph
 	}
 	res := resTmp.([]*v11.Filter)
 	fc.Result = res
-	return ec.marshalOFilter2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐFilterᚄ(ctx, field.Selections, res)
+	return ec.marshalOFilter2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐFilterᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OracleSpec_status(ctx context.Context, field graphql.CollectedField, obj *v11.OracleSpec) (ret graphql.Marshaler) {
@@ -27812,7 +29035,7 @@ func (ec *executionContext) _OracleSpec_data(ctx context.Context, field graphql.
 	}
 	res := resTmp.([]*v11.OracleData)
 	fc.Result = res
-	return ec.marshalNOracleData2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleDataᚄ(ctx, field.Selections, res)
+	return ec.marshalNOracleData2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleDataᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OracleSpec_dataConnection(ctx context.Context, field graphql.CollectedField, obj *v11.OracleSpec) (ret graphql.Marshaler) {
@@ -27854,7 +29077,7 @@ func (ec *executionContext) _OracleSpec_dataConnection(ctx context.Context, fiel
 	}
 	res := resTmp.(*v2.OracleDataConnection)
 	fc.Result = res
-	return ec.marshalNOracleDataConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOracleDataConnection(ctx, field.Selections, res)
+	return ec.marshalNOracleDataConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOracleDataConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OracleSpecConfiguration_pubKeys(ctx context.Context, field graphql.CollectedField, obj *v11.OracleSpecConfiguration) (ret graphql.Marshaler) {
@@ -27918,7 +29141,7 @@ func (ec *executionContext) _OracleSpecConfiguration_filters(ctx context.Context
 	}
 	res := resTmp.([]*v11.Filter)
 	fc.Result = res
-	return ec.marshalOFilter2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐFilterᚄ(ctx, field.Selections, res)
+	return ec.marshalOFilter2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐFilterᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OracleSpecEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.OracleSpecEdge) (ret graphql.Marshaler) {
@@ -27953,7 +29176,7 @@ func (ec *executionContext) _OracleSpecEdge_node(ctx context.Context, field grap
 	}
 	res := resTmp.(*v11.OracleSpec)
 	fc.Result = res
-	return ec.marshalNOracleSpec2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpec(ctx, field.Selections, res)
+	return ec.marshalNOracleSpec2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpec(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OracleSpecEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.OracleSpecEdge) (ret graphql.Marshaler) {
@@ -28090,7 +29313,7 @@ func (ec *executionContext) _OracleSpecsConnection_edges(ctx context.Context, fi
 	}
 	res := resTmp.([]*v2.OracleSpecEdge)
 	fc.Result = res
-	return ec.marshalOOracleSpecEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOracleSpecEdge(ctx, field.Selections, res)
+	return ec.marshalOOracleSpecEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOracleSpecEdge(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OracleSpecsConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.OracleSpecsConnection) (ret graphql.Marshaler) {
@@ -28125,7 +29348,7 @@ func (ec *executionContext) _OracleSpecsConnection_pageInfo(ctx context.Context,
 	}
 	res := resTmp.(*v2.PageInfo)
 	fc.Result = res
-	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Order_id(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
@@ -28293,11 +29516,14 @@ func (ec *executionContext) _Order_market(ctx context.Context, field graphql.Col
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*vega.Market)
 	fc.Result = res
-	return ec.marshalOMarket2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarket(ctx, field.Selections, res)
+	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarket(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Order_size(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
@@ -28402,7 +29628,7 @@ func (ec *executionContext) _Order_party(ctx context.Context, field graphql.Coll
 	}
 	res := resTmp.(*vega.Party)
 	fc.Result = res
-	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
+	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Order_createdAt(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
@@ -28571,7 +29797,7 @@ func (ec *executionContext) _Order_trades(ctx context.Context, field graphql.Col
 	}
 	res := resTmp.([]*vega.Trade)
 	fc.Result = res
-	return ec.marshalOTrade2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐTradeᚄ(ctx, field.Selections, res)
+	return ec.marshalOTrade2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTradeᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Order_tradesConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
@@ -28613,7 +29839,7 @@ func (ec *executionContext) _Order_tradesConnection(ctx context.Context, field g
 	}
 	res := resTmp.(*v2.TradeConnection)
 	fc.Result = res
-	return ec.marshalNTradeConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTradeConnection(ctx, field.Selections, res)
+	return ec.marshalNTradeConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTradeConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Order_type(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
@@ -28776,7 +30002,7 @@ func (ec *executionContext) _Order_peggedOrder(ctx context.Context, field graphq
 	}
 	res := resTmp.(*vega.PeggedOrder)
 	fc.Result = res
-	return ec.marshalOPeggedOrder2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐPeggedOrder(ctx, field.Selections, res)
+	return ec.marshalOPeggedOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPeggedOrder(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Order_liquidityProvision(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
@@ -28808,7 +30034,7 @@ func (ec *executionContext) _Order_liquidityProvision(ctx context.Context, field
 	}
 	res := resTmp.(*vega.LiquidityProvision)
 	fc.Result = res
-	return ec.marshalOLiquidityProvision2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLiquidityProvision(ctx, field.Selections, res)
+	return ec.marshalOLiquidityProvision2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityProvision(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OrderConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.OrderConnection) (ret graphql.Marshaler) {
@@ -28840,7 +30066,7 @@ func (ec *executionContext) _OrderConnection_edges(ctx context.Context, field gr
 	}
 	res := resTmp.([]*v2.OrderEdge)
 	fc.Result = res
-	return ec.marshalOOrderEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderEdgeᚄ(ctx, field.Selections, res)
+	return ec.marshalOOrderEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderEdgeᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OrderConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.OrderConnection) (ret graphql.Marshaler) {
@@ -28872,7 +30098,7 @@ func (ec *executionContext) _OrderConnection_pageInfo(ctx context.Context, field
 	}
 	res := resTmp.(*v2.PageInfo)
 	fc.Result = res
-	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OrderEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.OrderEdge) (ret graphql.Marshaler) {
@@ -28907,7 +30133,7 @@ func (ec *executionContext) _OrderEdge_node(ctx context.Context, field graphql.C
 	}
 	res := resTmp.(*vega.Order)
 	fc.Result = res
-	return ec.marshalNOrder2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐOrder(ctx, field.Selections, res)
+	return ec.marshalNOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OrderEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.OrderEdge) (ret graphql.Marshaler) {
@@ -29044,7 +30270,7 @@ func (ec *executionContext) _OrderEstimate_marginLevels(ctx context.Context, fie
 	}
 	res := resTmp.(*vega.MarginLevels)
 	fc.Result = res
-	return ec.marshalNMarginLevels2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarginLevels(ctx, field.Selections, res)
+	return ec.marshalNMarginLevels2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarginLevels(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PageInfo_hasNextPage(ctx context.Context, field graphql.CollectedField, obj *v2.PageInfo) (ret graphql.Marshaler) {
@@ -29258,7 +30484,7 @@ func (ec *executionContext) _Party_orders(ctx context.Context, field graphql.Col
 	}
 	res := resTmp.([]*vega.Order)
 	fc.Result = res
-	return ec.marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐOrderᚄ(ctx, field.Selections, res)
+	return ec.marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrderᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_ordersConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
@@ -29300,7 +30526,7 @@ func (ec *executionContext) _Party_ordersConnection(ctx context.Context, field g
 	}
 	res := resTmp.(*v2.OrderConnection)
 	fc.Result = res
-	return ec.marshalNOrderConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderConnection(ctx, field.Selections, res)
+	return ec.marshalNOrderConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_trades(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
@@ -29339,7 +30565,7 @@ func (ec *executionContext) _Party_trades(ctx context.Context, field graphql.Col
 	}
 	res := resTmp.([]*vega.Trade)
 	fc.Result = res
-	return ec.marshalOTrade2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐTradeᚄ(ctx, field.Selections, res)
+	return ec.marshalOTrade2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTradeᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_tradesConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
@@ -29381,7 +30607,7 @@ func (ec *executionContext) _Party_tradesConnection(ctx context.Context, field g
 	}
 	res := resTmp.(*v2.TradeConnection)
 	fc.Result = res
-	return ec.marshalNTradeConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTradeConnection(ctx, field.Selections, res)
+	return ec.marshalNTradeConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTradeConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_accounts(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
@@ -29420,7 +30646,49 @@ func (ec *executionContext) _Party_accounts(ctx context.Context, field graphql.C
 	}
 	res := resTmp.([]*vega.Account)
 	fc.Result = res
-	return ec.marshalOAccount2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccountᚄ(ctx, field.Selections, res)
+	return ec.marshalOAccount2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Party_accountsConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Party",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Party_accountsConnection_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Party().AccountsConnection(rctx, obj, args["marketId"].(*string), args["asset"].(*string), args["type"].(*vega.AccountType), args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.AccountsConnection)
+	fc.Result = res
+	return ec.marshalNAccountsConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountsConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_positions(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
@@ -29452,7 +30720,7 @@ func (ec *executionContext) _Party_positions(ctx context.Context, field graphql.
 	}
 	res := resTmp.([]*vega.Position)
 	fc.Result = res
-	return ec.marshalOPosition2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐPositionᚄ(ctx, field.Selections, res)
+	return ec.marshalOPosition2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPositionᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_positionsConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
@@ -29494,7 +30762,7 @@ func (ec *executionContext) _Party_positionsConnection(ctx context.Context, fiel
 	}
 	res := resTmp.(*v2.PositionConnection)
 	fc.Result = res
-	return ec.marshalNPositionConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPositionConnection(ctx, field.Selections, res)
+	return ec.marshalNPositionConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPositionConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_margins(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
@@ -29533,7 +30801,7 @@ func (ec *executionContext) _Party_margins(ctx context.Context, field graphql.Co
 	}
 	res := resTmp.([]*vega.MarginLevels)
 	fc.Result = res
-	return ec.marshalOMarginLevels2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarginLevelsᚄ(ctx, field.Selections, res)
+	return ec.marshalOMarginLevels2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarginLevelsᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_marginsConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
@@ -29575,7 +30843,7 @@ func (ec *executionContext) _Party_marginsConnection(ctx context.Context, field 
 	}
 	res := resTmp.(*v2.MarginConnection)
 	fc.Result = res
-	return ec.marshalNMarginConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarginConnection(ctx, field.Selections, res)
+	return ec.marshalNMarginConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarginConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_proposals(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
@@ -29614,7 +30882,7 @@ func (ec *executionContext) _Party_proposals(ctx context.Context, field graphql.
 	}
 	res := resTmp.([]*vega.GovernanceData)
 	fc.Result = res
-	return ec.marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐGovernanceData(ctx, field.Selections, res)
+	return ec.marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐGovernanceData(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_proposalsConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
@@ -29656,7 +30924,7 @@ func (ec *executionContext) _Party_proposalsConnection(ctx context.Context, fiel
 	}
 	res := resTmp.(*v2.GovernanceDataConnection)
 	fc.Result = res
-	return ec.marshalNProposalsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐGovernanceDataConnection(ctx, field.Selections, res)
+	return ec.marshalNProposalsConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐGovernanceDataConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_votes(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
@@ -29762,7 +31030,7 @@ func (ec *executionContext) _Party_withdrawals(ctx context.Context, field graphq
 	}
 	res := resTmp.([]*vega.Withdrawal)
 	fc.Result = res
-	return ec.marshalOWithdrawal2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐWithdrawalᚄ(ctx, field.Selections, res)
+	return ec.marshalOWithdrawal2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐWithdrawalᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_withdrawalsConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
@@ -29804,7 +31072,7 @@ func (ec *executionContext) _Party_withdrawalsConnection(ctx context.Context, fi
 	}
 	res := resTmp.(*v2.WithdrawalsConnection)
 	fc.Result = res
-	return ec.marshalNWithdrawalsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐWithdrawalsConnection(ctx, field.Selections, res)
+	return ec.marshalNWithdrawalsConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐWithdrawalsConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_deposits(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
@@ -29836,7 +31104,7 @@ func (ec *executionContext) _Party_deposits(ctx context.Context, field graphql.C
 	}
 	res := resTmp.([]*vega.Deposit)
 	fc.Result = res
-	return ec.marshalODeposit2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐDepositᚄ(ctx, field.Selections, res)
+	return ec.marshalODeposit2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDepositᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_depositsConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
@@ -29878,7 +31146,7 @@ func (ec *executionContext) _Party_depositsConnection(ctx context.Context, field
 	}
 	res := resTmp.(*v2.DepositsConnection)
 	fc.Result = res
-	return ec.marshalNDepositsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDepositsConnection(ctx, field.Selections, res)
+	return ec.marshalNDepositsConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDepositsConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_liquidityProvisions(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
@@ -29917,7 +31185,7 @@ func (ec *executionContext) _Party_liquidityProvisions(ctx context.Context, fiel
 	}
 	res := resTmp.([]*vega.LiquidityProvision)
 	fc.Result = res
-	return ec.marshalOLiquidityProvision2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLiquidityProvisionᚄ(ctx, field.Selections, res)
+	return ec.marshalOLiquidityProvision2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityProvisionᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_liquidityProvisionsConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
@@ -29959,7 +31227,7 @@ func (ec *executionContext) _Party_liquidityProvisionsConnection(ctx context.Con
 	}
 	res := resTmp.(*v2.LiquidityProvisionsConnection)
 	fc.Result = res
-	return ec.marshalNLiquidityProvisionsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLiquidityProvisionsConnection(ctx, field.Selections, res)
+	return ec.marshalNLiquidityProvisionsConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLiquidityProvisionsConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_delegations(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
@@ -29998,7 +31266,7 @@ func (ec *executionContext) _Party_delegations(ctx context.Context, field graphq
 	}
 	res := resTmp.([]*vega.Delegation)
 	fc.Result = res
-	return ec.marshalODelegation2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐDelegationᚄ(ctx, field.Selections, res)
+	return ec.marshalODelegation2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDelegationᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_delegationsConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
@@ -30040,7 +31308,7 @@ func (ec *executionContext) _Party_delegationsConnection(ctx context.Context, fi
 	}
 	res := resTmp.(*v2.DelegationsConnection)
 	fc.Result = res
-	return ec.marshalNDelegationsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDelegationsConnection(ctx, field.Selections, res)
+	return ec.marshalNDelegationsConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDelegationsConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_stake(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
@@ -30073,9 +31341,51 @@ func (ec *executionContext) _Party_stake(ctx context.Context, field graphql.Coll
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*v12.PartyStakeResponse)
+	res := resTmp.(*v13.PartyStakeResponse)
 	fc.Result = res
-	return ec.marshalNPartyStake2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv1ᚐPartyStakeResponse(ctx, field.Selections, res)
+	return ec.marshalNPartyStake2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv1ᚐPartyStakeResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Party_stakingSummary(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Party",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Party_stakingSummary_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Party().StakingSummary(rctx, obj, args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*StakingSummary)
+	fc.Result = res
+	return ec.marshalNStakingSummary2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐStakingSummary(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_rewards(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
@@ -30114,7 +31424,7 @@ func (ec *executionContext) _Party_rewards(ctx context.Context, field graphql.Co
 	}
 	res := resTmp.([]*vega.Reward)
 	fc.Result = res
-	return ec.marshalOReward2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐReward(ctx, field.Selections, res)
+	return ec.marshalOReward2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐReward(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_rewardsConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
@@ -30153,7 +31463,7 @@ func (ec *executionContext) _Party_rewardsConnection(ctx context.Context, field 
 	}
 	res := resTmp.(*v2.RewardsConnection)
 	fc.Result = res
-	return ec.marshalORewardsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐRewardsConnection(ctx, field.Selections, res)
+	return ec.marshalORewardsConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐRewardsConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_rewardSummaries(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
@@ -30192,7 +31502,7 @@ func (ec *executionContext) _Party_rewardSummaries(ctx context.Context, field gr
 	}
 	res := resTmp.([]*vega.RewardSummary)
 	fc.Result = res
-	return ec.marshalORewardSummary2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐRewardSummary(ctx, field.Selections, res)
+	return ec.marshalORewardSummary2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐRewardSummary(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_rewardDetails(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
@@ -30224,7 +31534,7 @@ func (ec *executionContext) _Party_rewardDetails(ctx context.Context, field grap
 	}
 	res := resTmp.([]*vega.RewardSummary)
 	fc.Result = res
-	return ec.marshalORewardPerAssetDetail2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐRewardSummary(ctx, field.Selections, res)
+	return ec.marshalORewardPerAssetDetail2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐRewardSummary(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PartyConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.PartyConnection) (ret graphql.Marshaler) {
@@ -30259,7 +31569,7 @@ func (ec *executionContext) _PartyConnection_edges(ctx context.Context, field gr
 	}
 	res := resTmp.([]*v2.PartyEdge)
 	fc.Result = res
-	return ec.marshalNPartyEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPartyEdgeᚄ(ctx, field.Selections, res)
+	return ec.marshalNPartyEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPartyEdgeᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PartyConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.PartyConnection) (ret graphql.Marshaler) {
@@ -30294,7 +31604,7 @@ func (ec *executionContext) _PartyConnection_pageInfo(ctx context.Context, field
 	}
 	res := resTmp.(*v2.PageInfo)
 	fc.Result = res
-	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PartyEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.PartyEdge) (ret graphql.Marshaler) {
@@ -30329,7 +31639,7 @@ func (ec *executionContext) _PartyEdge_node(ctx context.Context, field graphql.C
 	}
 	res := resTmp.(*vega.Party)
 	fc.Result = res
-	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
+	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PartyEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.PartyEdge) (ret graphql.Marshaler) {
@@ -30367,7 +31677,7 @@ func (ec *executionContext) _PartyEdge_cursor(ctx context.Context, field graphql
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PartyStake_currentStakeAvailable(ctx context.Context, field graphql.CollectedField, obj *v12.PartyStakeResponse) (ret graphql.Marshaler) {
+func (ec *executionContext) _PartyStake_currentStakeAvailable(ctx context.Context, field graphql.CollectedField, obj *v13.PartyStakeResponse) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -30402,7 +31712,7 @@ func (ec *executionContext) _PartyStake_currentStakeAvailable(ctx context.Contex
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PartyStake_linkings(ctx context.Context, field graphql.CollectedField, obj *v12.PartyStakeResponse) (ret graphql.Marshaler) {
+func (ec *executionContext) _PartyStake_linkings(ctx context.Context, field graphql.CollectedField, obj *v13.PartyStakeResponse) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -30431,7 +31741,7 @@ func (ec *executionContext) _PartyStake_linkings(ctx context.Context, field grap
 	}
 	res := resTmp.([]*v1.StakeLinking)
 	fc.Result = res
-	return ec.marshalOStakeLinking2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋeventsᚋv1ᚐStakeLinkingᚄ(ctx, field.Selections, res)
+	return ec.marshalOStakeLinking2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐStakeLinkingᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PeggedOrder_reference(ctx context.Context, field graphql.CollectedField, obj *vega.PeggedOrder) (ret graphql.Marshaler) {
@@ -30536,7 +31846,7 @@ func (ec *executionContext) _Position_market(ctx context.Context, field graphql.
 	}
 	res := resTmp.(*vega.Market)
 	fc.Result = res
-	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarket(ctx, field.Selections, res)
+	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarket(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Position_party(ctx context.Context, field graphql.CollectedField, obj *vega.Position) (ret graphql.Marshaler) {
@@ -30571,7 +31881,7 @@ func (ec *executionContext) _Position_party(ctx context.Context, field graphql.C
 	}
 	res := resTmp.(*vega.Party)
 	fc.Result = res
-	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
+	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Position_openVolume(ctx context.Context, field graphql.CollectedField, obj *vega.Position) (ret graphql.Marshaler) {
@@ -30743,7 +32053,7 @@ func (ec *executionContext) _Position_margins(ctx context.Context, field graphql
 	}
 	res := resTmp.([]*vega.MarginLevels)
 	fc.Result = res
-	return ec.marshalOMarginLevels2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarginLevelsᚄ(ctx, field.Selections, res)
+	return ec.marshalOMarginLevels2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarginLevelsᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Position_marginsConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Position) (ret graphql.Marshaler) {
@@ -30785,7 +32095,7 @@ func (ec *executionContext) _Position_marginsConnection(ctx context.Context, fie
 	}
 	res := resTmp.(*v2.MarginConnection)
 	fc.Result = res
-	return ec.marshalNMarginConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarginConnection(ctx, field.Selections, res)
+	return ec.marshalNMarginConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarginConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Position_updatedAt(ctx context.Context, field graphql.CollectedField, obj *vega.Position) (ret graphql.Marshaler) {
@@ -30849,7 +32159,7 @@ func (ec *executionContext) _PositionConnection_edges(ctx context.Context, field
 	}
 	res := resTmp.([]*v2.PositionEdge)
 	fc.Result = res
-	return ec.marshalOPositionEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPositionEdgeᚄ(ctx, field.Selections, res)
+	return ec.marshalOPositionEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPositionEdgeᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PositionConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.PositionConnection) (ret graphql.Marshaler) {
@@ -30881,7 +32191,7 @@ func (ec *executionContext) _PositionConnection_pageInfo(ctx context.Context, fi
 	}
 	res := resTmp.(*v2.PageInfo)
 	fc.Result = res
-	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PositionEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.PositionEdge) (ret graphql.Marshaler) {
@@ -30916,7 +32226,7 @@ func (ec *executionContext) _PositionEdge_node(ctx context.Context, field graphq
 	}
 	res := resTmp.(*vega.Position)
 	fc.Result = res
-	return ec.marshalNPosition2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐPosition(ctx, field.Selections, res)
+	return ec.marshalNPosition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPosition(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PositionEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.PositionEdge) (ret graphql.Marshaler) {
@@ -31741,7 +33051,7 @@ func (ec *executionContext) _Proposal_party(ctx context.Context, field graphql.C
 	}
 	res := resTmp.(*vega.Party)
 	fc.Result = res
-	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
+	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Proposal_state(ctx context.Context, field graphql.CollectedField, obj *vega.GovernanceData) (ret graphql.Marshaler) {
@@ -31846,7 +33156,7 @@ func (ec *executionContext) _Proposal_rationale(ctx context.Context, field graph
 	}
 	res := resTmp.(*vega.ProposalRationale)
 	fc.Result = res
-	return ec.marshalNProposalRationale2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐProposalRationale(ctx, field.Selections, res)
+	return ec.marshalNProposalRationale2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐProposalRationale(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Proposal_terms(ctx context.Context, field graphql.CollectedField, obj *vega.GovernanceData) (ret graphql.Marshaler) {
@@ -31881,7 +33191,7 @@ func (ec *executionContext) _Proposal_terms(ctx context.Context, field graphql.C
 	}
 	res := resTmp.(*vega.ProposalTerms)
 	fc.Result = res
-	return ec.marshalNProposalTerms2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐProposalTerms(ctx, field.Selections, res)
+	return ec.marshalNProposalTerms2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐProposalTerms(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Proposal_votes(ctx context.Context, field graphql.CollectedField, obj *vega.GovernanceData) (ret graphql.Marshaler) {
@@ -32015,7 +33325,7 @@ func (ec *executionContext) _ProposalEdge_node(ctx context.Context, field graphq
 	}
 	res := resTmp.(*vega.GovernanceData)
 	fc.Result = res
-	return ec.marshalNProposal2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐGovernanceData(ctx, field.Selections, res)
+	return ec.marshalNProposal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐGovernanceData(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ProposalEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.GovernanceDataEdge) (ret graphql.Marshaler) {
@@ -32289,7 +33599,7 @@ func (ec *executionContext) _ProposalVote_vote(ctx context.Context, field graphq
 	}
 	res := resTmp.(*vega.Vote)
 	fc.Result = res
-	return ec.marshalNVote2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐVote(ctx, field.Selections, res)
+	return ec.marshalNVote2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐVote(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ProposalVote_proposalId(ctx context.Context, field graphql.CollectedField, obj *ProposalVote) (ret graphql.Marshaler) {
@@ -32388,7 +33698,7 @@ func (ec *executionContext) _ProposalVoteConnection_pageInfo(ctx context.Context
 	}
 	res := resTmp.(*v2.PageInfo)
 	fc.Result = res
-	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ProposalVoteEdge_node(ctx context.Context, field graphql.CollectedField, obj *ProposalVoteEdge) (ret graphql.Marshaler) {
@@ -32487,7 +33797,7 @@ func (ec *executionContext) _ProposalVoteSide_votes(ctx context.Context, field g
 	}
 	res := resTmp.([]*vega.Vote)
 	fc.Result = res
-	return ec.marshalOVote2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐVoteᚄ(ctx, field.Selections, res)
+	return ec.marshalOVote2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐVoteᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ProposalVoteSide_totalNumber(ctx context.Context, field graphql.CollectedField, obj *ProposalVoteSide) (ret graphql.Marshaler) {
@@ -32694,7 +34004,7 @@ func (ec *executionContext) _ProposalsConnection_edges(ctx context.Context, fiel
 	}
 	res := resTmp.([]*v2.GovernanceDataEdge)
 	fc.Result = res
-	return ec.marshalOProposalEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐGovernanceDataEdge(ctx, field.Selections, res)
+	return ec.marshalOProposalEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐGovernanceDataEdge(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ProposalsConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.GovernanceDataConnection) (ret graphql.Marshaler) {
@@ -32729,7 +34039,7 @@ func (ec *executionContext) _ProposalsConnection_pageInfo(ctx context.Context, f
 	}
 	res := resTmp.(*v2.PageInfo)
 	fc.Result = res
-	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_markets(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -32768,7 +34078,7 @@ func (ec *executionContext) _Query_markets(ctx context.Context, field graphql.Co
 	}
 	res := resTmp.([]*vega.Market)
 	fc.Result = res
-	return ec.marshalOMarket2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketᚄ(ctx, field.Selections, res)
+	return ec.marshalOMarket2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_marketsConnection(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -32810,7 +34120,7 @@ func (ec *executionContext) _Query_marketsConnection(ctx context.Context, field 
 	}
 	res := resTmp.(*v2.MarketConnection)
 	fc.Result = res
-	return ec.marshalNMarketConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketConnection(ctx, field.Selections, res)
+	return ec.marshalNMarketConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_market(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -32849,7 +34159,7 @@ func (ec *executionContext) _Query_market(ctx context.Context, field graphql.Col
 	}
 	res := resTmp.(*vega.Market)
 	fc.Result = res
-	return ec.marshalOMarket2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarket(ctx, field.Selections, res)
+	return ec.marshalOMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarket(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_parties(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -32888,7 +34198,7 @@ func (ec *executionContext) _Query_parties(ctx context.Context, field graphql.Co
 	}
 	res := resTmp.([]*vega.Party)
 	fc.Result = res
-	return ec.marshalOParty2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐPartyᚄ(ctx, field.Selections, res)
+	return ec.marshalOParty2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPartyᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_partiesConnection(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -32930,7 +34240,7 @@ func (ec *executionContext) _Query_partiesConnection(ctx context.Context, field 
 	}
 	res := resTmp.(*v2.PartyConnection)
 	fc.Result = res
-	return ec.marshalNPartyConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPartyConnection(ctx, field.Selections, res)
+	return ec.marshalNPartyConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPartyConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_party(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -32969,7 +34279,7 @@ func (ec *executionContext) _Query_party(ctx context.Context, field graphql.Coll
 	}
 	res := resTmp.(*vega.Party)
 	fc.Result = res
-	return ec.marshalOParty2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
+	return ec.marshalOParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_lastBlockHeight(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -33043,7 +34353,7 @@ func (ec *executionContext) _Query_oracleSpecs(ctx context.Context, field graphq
 	}
 	res := resTmp.([]*v11.OracleSpec)
 	fc.Result = res
-	return ec.marshalOOracleSpec2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpecᚄ(ctx, field.Selections, res)
+	return ec.marshalOOracleSpec2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpecᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_oracleSpecsConnection(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -33085,7 +34395,7 @@ func (ec *executionContext) _Query_oracleSpecsConnection(ctx context.Context, fi
 	}
 	res := resTmp.(*v2.OracleSpecsConnection)
 	fc.Result = res
-	return ec.marshalNOracleSpecsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOracleSpecsConnection(ctx, field.Selections, res)
+	return ec.marshalNOracleSpecsConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOracleSpecsConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_oracleSpec(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -33124,7 +34434,7 @@ func (ec *executionContext) _Query_oracleSpec(ctx context.Context, field graphql
 	}
 	res := resTmp.(*v11.OracleSpec)
 	fc.Result = res
-	return ec.marshalOOracleSpec2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpec(ctx, field.Selections, res)
+	return ec.marshalOOracleSpec2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpec(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_oracleDataBySpec(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -33163,7 +34473,7 @@ func (ec *executionContext) _Query_oracleDataBySpec(ctx context.Context, field g
 	}
 	res := resTmp.([]*v11.OracleData)
 	fc.Result = res
-	return ec.marshalOOracleData2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleDataᚄ(ctx, field.Selections, res)
+	return ec.marshalOOracleData2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleDataᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_oracleDataBySpecConnection(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -33205,7 +34515,7 @@ func (ec *executionContext) _Query_oracleDataBySpecConnection(ctx context.Contex
 	}
 	res := resTmp.(*v2.OracleDataConnection)
 	fc.Result = res
-	return ec.marshalNOracleDataConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOracleDataConnection(ctx, field.Selections, res)
+	return ec.marshalNOracleDataConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOracleDataConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_oracleData(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -33244,7 +34554,7 @@ func (ec *executionContext) _Query_oracleData(ctx context.Context, field graphql
 	}
 	res := resTmp.([]*v11.OracleData)
 	fc.Result = res
-	return ec.marshalOOracleData2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleDataᚄ(ctx, field.Selections, res)
+	return ec.marshalOOracleData2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleDataᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_oracleDataConnection(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -33286,7 +34596,7 @@ func (ec *executionContext) _Query_oracleDataConnection(ctx context.Context, fie
 	}
 	res := resTmp.(*v2.OracleDataConnection)
 	fc.Result = res
-	return ec.marshalNOracleDataConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOracleDataConnection(ctx, field.Selections, res)
+	return ec.marshalNOracleDataConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOracleDataConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_orderByID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -33328,7 +34638,7 @@ func (ec *executionContext) _Query_orderByID(ctx context.Context, field graphql.
 	}
 	res := resTmp.(*vega.Order)
 	fc.Result = res
-	return ec.marshalNOrder2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐOrder(ctx, field.Selections, res)
+	return ec.marshalNOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_orderVersions(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -33367,7 +34677,7 @@ func (ec *executionContext) _Query_orderVersions(ctx context.Context, field grap
 	}
 	res := resTmp.([]*vega.Order)
 	fc.Result = res
-	return ec.marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐOrderᚄ(ctx, field.Selections, res)
+	return ec.marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrderᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_orderVersionsConnection(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -33409,7 +34719,7 @@ func (ec *executionContext) _Query_orderVersionsConnection(ctx context.Context, 
 	}
 	res := resTmp.(*v2.OrderConnection)
 	fc.Result = res
-	return ec.marshalNOrderConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderConnection(ctx, field.Selections, res)
+	return ec.marshalNOrderConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_orderByReference(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -33451,7 +34761,7 @@ func (ec *executionContext) _Query_orderByReference(ctx context.Context, field g
 	}
 	res := resTmp.(*vega.Order)
 	fc.Result = res
-	return ec.marshalNOrder2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐOrder(ctx, field.Selections, res)
+	return ec.marshalNOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_proposals(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -33490,7 +34800,7 @@ func (ec *executionContext) _Query_proposals(ctx context.Context, field graphql.
 	}
 	res := resTmp.([]*vega.GovernanceData)
 	fc.Result = res
-	return ec.marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐGovernanceDataᚄ(ctx, field.Selections, res)
+	return ec.marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐGovernanceDataᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_proposalsConnection(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -33532,7 +34842,7 @@ func (ec *executionContext) _Query_proposalsConnection(ctx context.Context, fiel
 	}
 	res := resTmp.(*v2.GovernanceDataConnection)
 	fc.Result = res
-	return ec.marshalNProposalsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐGovernanceDataConnection(ctx, field.Selections, res)
+	return ec.marshalNProposalsConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐGovernanceDataConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_proposal(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -33574,7 +34884,7 @@ func (ec *executionContext) _Query_proposal(ctx context.Context, field graphql.C
 	}
 	res := resTmp.(*vega.GovernanceData)
 	fc.Result = res
-	return ec.marshalNProposal2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐGovernanceData(ctx, field.Selections, res)
+	return ec.marshalNProposal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐGovernanceData(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_newMarketProposals(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -33613,7 +34923,7 @@ func (ec *executionContext) _Query_newMarketProposals(ctx context.Context, field
 	}
 	res := resTmp.([]*vega.GovernanceData)
 	fc.Result = res
-	return ec.marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐGovernanceDataᚄ(ctx, field.Selections, res)
+	return ec.marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐGovernanceDataᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_updateMarketProposals(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -33652,7 +34962,7 @@ func (ec *executionContext) _Query_updateMarketProposals(ctx context.Context, fi
 	}
 	res := resTmp.([]*vega.GovernanceData)
 	fc.Result = res
-	return ec.marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐGovernanceDataᚄ(ctx, field.Selections, res)
+	return ec.marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐGovernanceDataᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_networkParametersProposals(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -33691,7 +35001,7 @@ func (ec *executionContext) _Query_networkParametersProposals(ctx context.Contex
 	}
 	res := resTmp.([]*vega.GovernanceData)
 	fc.Result = res
-	return ec.marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐGovernanceDataᚄ(ctx, field.Selections, res)
+	return ec.marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐGovernanceDataᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_newAssetProposals(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -33730,7 +35040,7 @@ func (ec *executionContext) _Query_newAssetProposals(ctx context.Context, field 
 	}
 	res := resTmp.([]*vega.GovernanceData)
 	fc.Result = res
-	return ec.marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐGovernanceDataᚄ(ctx, field.Selections, res)
+	return ec.marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐGovernanceDataᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_newFreeformProposals(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -33769,7 +35079,7 @@ func (ec *executionContext) _Query_newFreeformProposals(ctx context.Context, fie
 	}
 	res := resTmp.([]*vega.GovernanceData)
 	fc.Result = res
-	return ec.marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐGovernanceDataᚄ(ctx, field.Selections, res)
+	return ec.marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐGovernanceDataᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_nodeSignatures(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -33806,9 +35116,51 @@ func (ec *executionContext) _Query_nodeSignatures(ctx context.Context, field gra
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*v13.NodeSignature)
+	res := resTmp.([]*v12.NodeSignature)
 	fc.Result = res
-	return ec.marshalONodeSignature2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋcommandsᚋv1ᚐNodeSignatureᚄ(ctx, field.Selections, res)
+	return ec.marshalONodeSignature2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋcommandsᚋv1ᚐNodeSignatureᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_nodeSignaturesConnection(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_nodeSignaturesConnection_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().NodeSignaturesConnection(rctx, args["resourceId"].(string), args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.NodeSignaturesConnection)
+	fc.Result = res
+	return ec.marshalNNodeSignaturesConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodeSignaturesConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_asset(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -33847,7 +35199,7 @@ func (ec *executionContext) _Query_asset(ctx context.Context, field graphql.Coll
 	}
 	res := resTmp.(*vega.Asset)
 	fc.Result = res
-	return ec.marshalOAsset2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
+	return ec.marshalOAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_assets(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -33879,7 +35231,7 @@ func (ec *executionContext) _Query_assets(ctx context.Context, field graphql.Col
 	}
 	res := resTmp.([]*vega.Asset)
 	fc.Result = res
-	return ec.marshalOAsset2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAssetᚄ(ctx, field.Selections, res)
+	return ec.marshalOAsset2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAssetᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_assetsConnection(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -33921,7 +35273,7 @@ func (ec *executionContext) _Query_assetsConnection(ctx context.Context, field g
 	}
 	res := resTmp.(*v2.AssetsConnection)
 	fc.Result = res
-	return ec.marshalNAssetsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAssetsConnection(ctx, field.Selections, res)
+	return ec.marshalNAssetsConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAssetsConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_estimateOrder(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -34002,7 +35354,7 @@ func (ec *executionContext) _Query_withdrawal(ctx context.Context, field graphql
 	}
 	res := resTmp.(*vega.Withdrawal)
 	fc.Result = res
-	return ec.marshalOWithdrawal2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐWithdrawal(ctx, field.Selections, res)
+	return ec.marshalOWithdrawal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐWithdrawal(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_erc20WithdrawalApproval(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -34080,7 +35432,7 @@ func (ec *executionContext) _Query_deposit(ctx context.Context, field graphql.Co
 	}
 	res := resTmp.(*vega.Deposit)
 	fc.Result = res
-	return ec.marshalODeposit2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐDeposit(ctx, field.Selections, res)
+	return ec.marshalODeposit2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDeposit(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_networkParameters(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -34112,7 +35464,49 @@ func (ec *executionContext) _Query_networkParameters(ctx context.Context, field 
 	}
 	res := resTmp.([]*vega.NetworkParameter)
 	fc.Result = res
-	return ec.marshalONetworkParameter2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐNetworkParameterᚄ(ctx, field.Selections, res)
+	return ec.marshalONetworkParameter2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐNetworkParameterᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_networkParametersConnection(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_networkParametersConnection_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().NetworkParametersConnection(rctx, args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.NetworkParameterConnection)
+	fc.Result = res
+	return ec.marshalNNetworkParametersConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNetworkParameterConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_nodeData(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -34144,7 +35538,7 @@ func (ec *executionContext) _Query_nodeData(ctx context.Context, field graphql.C
 	}
 	res := resTmp.(*vega.NodeData)
 	fc.Result = res
-	return ec.marshalONodeData2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐNodeData(ctx, field.Selections, res)
+	return ec.marshalONodeData2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐNodeData(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_nodes(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -34176,7 +35570,7 @@ func (ec *executionContext) _Query_nodes(ctx context.Context, field graphql.Coll
 	}
 	res := resTmp.([]*vega.Node)
 	fc.Result = res
-	return ec.marshalONode2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐNodeᚄ(ctx, field.Selections, res)
+	return ec.marshalONode2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐNodeᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_nodesConnection(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -34218,7 +35612,7 @@ func (ec *executionContext) _Query_nodesConnection(ctx context.Context, field gr
 	}
 	res := resTmp.(*v2.NodesConnection)
 	fc.Result = res
-	return ec.marshalNNodesConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodesConnection(ctx, field.Selections, res)
+	return ec.marshalNNodesConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodesConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_node(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -34257,7 +35651,7 @@ func (ec *executionContext) _Query_node(ctx context.Context, field graphql.Colle
 	}
 	res := resTmp.(*vega.Node)
 	fc.Result = res
-	return ec.marshalONode2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐNode(ctx, field.Selections, res)
+	return ec.marshalONode2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐNode(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_keyRotations(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -34294,9 +35688,51 @@ func (ec *executionContext) _Query_keyRotations(ctx context.Context, field graph
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*v12.KeyRotation)
+	res := resTmp.([]*v1.KeyRotation)
 	fc.Result = res
-	return ec.marshalOKeyRotation2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv1ᚐKeyRotationᚄ(ctx, field.Selections, res)
+	return ec.marshalOKeyRotation2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐKeyRotationᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_keyRotationsConnection(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_keyRotationsConnection_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().KeyRotationsConnection(rctx, args["id"].(*string), args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.KeyRotationConnection)
+	fc.Result = res
+	return ec.marshalNKeyRotationConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐKeyRotationConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_epoch(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -34338,7 +35774,7 @@ func (ec *executionContext) _Query_epoch(ctx context.Context, field graphql.Coll
 	}
 	res := resTmp.(*vega.Epoch)
 	fc.Result = res
-	return ec.marshalNEpoch2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐEpoch(ctx, field.Selections, res)
+	return ec.marshalNEpoch2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐEpoch(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_transfers(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -34377,7 +35813,7 @@ func (ec *executionContext) _Query_transfers(ctx context.Context, field graphql.
 	}
 	res := resTmp.([]*v1.Transfer)
 	fc.Result = res
-	return ec.marshalOTransfer2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋeventsᚋv1ᚐTransferᚄ(ctx, field.Selections, res)
+	return ec.marshalOTransfer2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐTransferᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_transfersConnection(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -34419,7 +35855,7 @@ func (ec *executionContext) _Query_transfersConnection(ctx context.Context, fiel
 	}
 	res := resTmp.(*v2.TransferConnection)
 	fc.Result = res
-	return ec.marshalNTransferConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTransferConnection(ctx, field.Selections, res)
+	return ec.marshalNTransferConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTransferConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_statistics(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -34454,7 +35890,7 @@ func (ec *executionContext) _Query_statistics(ctx context.Context, field graphql
 	}
 	res := resTmp.(*v14.Statistics)
 	fc.Result = res
-	return ec.marshalNStatistics2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋapiᚋv1ᚐStatistics(ctx, field.Selections, res)
+	return ec.marshalNStatistics2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋapiᚋv1ᚐStatistics(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_historicBalances(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -34496,7 +35932,7 @@ func (ec *executionContext) _Query_historicBalances(ctx context.Context, field g
 	}
 	res := resTmp.([]*v2.AggregatedBalance)
 	fc.Result = res
-	return ec.marshalNAggregatedBalance2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAggregatedBalanceᚄ(ctx, field.Selections, res)
+	return ec.marshalNAggregatedBalance2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAggregatedBalanceᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_networkLimits(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -34528,7 +35964,7 @@ func (ec *executionContext) _Query_networkLimits(ctx context.Context, field grap
 	}
 	res := resTmp.(*vega.NetworkLimits)
 	fc.Result = res
-	return ec.marshalONetworkLimits2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐNetworkLimits(ctx, field.Selections, res)
+	return ec.marshalONetworkLimits2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐNetworkLimits(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_getMarketDataHistoryByID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -34567,7 +36003,7 @@ func (ec *executionContext) _Query_getMarketDataHistoryByID(ctx context.Context,
 	}
 	res := resTmp.([]*vega.MarketData)
 	fc.Result = res
-	return ec.marshalOMarketData2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketData(ctx, field.Selections, res)
+	return ec.marshalOMarketData2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketData(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_getMarketDataHistoryConnectionByID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -34609,7 +36045,7 @@ func (ec *executionContext) _Query_getMarketDataHistoryConnectionByID(ctx contex
 	}
 	res := resTmp.(*v2.MarketDataConnection)
 	fc.Result = res
-	return ec.marshalNMarketDataConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketDataConnection(ctx, field.Selections, res)
+	return ec.marshalNMarketDataConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketDataConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -35059,7 +36495,7 @@ func (ec *executionContext) _Reward_asset(ctx context.Context, field graphql.Col
 	}
 	res := resTmp.(*vega.Asset)
 	fc.Result = res
-	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Reward_marketID(ctx context.Context, field graphql.CollectedField, obj *vega.Reward) (ret graphql.Marshaler) {
@@ -35129,7 +36565,7 @@ func (ec *executionContext) _Reward_rewardType(ctx context.Context, field graphq
 	}
 	res := resTmp.(vega.AccountType)
 	fc.Result = res
-	return ec.marshalNAccountType2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccountType(ctx, field.Selections, res)
+	return ec.marshalNAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Reward_party(ctx context.Context, field graphql.CollectedField, obj *vega.Reward) (ret graphql.Marshaler) {
@@ -35164,7 +36600,7 @@ func (ec *executionContext) _Reward_party(ctx context.Context, field graphql.Col
 	}
 	res := resTmp.(*vega.Party)
 	fc.Result = res
-	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
+	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Reward_epoch(ctx context.Context, field graphql.CollectedField, obj *vega.Reward) (ret graphql.Marshaler) {
@@ -35199,7 +36635,7 @@ func (ec *executionContext) _Reward_epoch(ctx context.Context, field graphql.Col
 	}
 	res := resTmp.(*vega.Epoch)
 	fc.Result = res
-	return ec.marshalNEpoch2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐEpoch(ctx, field.Selections, res)
+	return ec.marshalNEpoch2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐEpoch(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Reward_amount(ctx context.Context, field graphql.CollectedField, obj *vega.Reward) (ret graphql.Marshaler) {
@@ -35339,7 +36775,7 @@ func (ec *executionContext) _RewardEdge_node(ctx context.Context, field graphql.
 	}
 	res := resTmp.(*vega.Reward)
 	fc.Result = res
-	return ec.marshalNReward2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐReward(ctx, field.Selections, res)
+	return ec.marshalNReward2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐReward(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RewardEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.RewardEdge) (ret graphql.Marshaler) {
@@ -35409,7 +36845,7 @@ func (ec *executionContext) _RewardPerAssetDetail_asset(ctx context.Context, fie
 	}
 	res := resTmp.(*vega.Asset)
 	fc.Result = res
-	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RewardPerAssetDetail_assetId(ctx context.Context, field graphql.CollectedField, obj *vega.RewardSummary) (ret graphql.Marshaler) {
@@ -35476,7 +36912,7 @@ func (ec *executionContext) _RewardPerAssetDetail_rewards(ctx context.Context, f
 	}
 	res := resTmp.([]*vega.Reward)
 	fc.Result = res
-	return ec.marshalOReward2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐReward(ctx, field.Selections, res)
+	return ec.marshalOReward2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐReward(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RewardPerAssetDetail_totalAmount(ctx context.Context, field graphql.CollectedField, obj *vega.RewardSummary) (ret graphql.Marshaler) {
@@ -35756,7 +37192,7 @@ func (ec *executionContext) _RewardSummary_asset(ctx context.Context, field grap
 	}
 	res := resTmp.(*vega.Asset)
 	fc.Result = res
-	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RewardSummary_amount(ctx context.Context, field graphql.CollectedField, obj *vega.RewardSummary) (ret graphql.Marshaler) {
@@ -35830,7 +37266,7 @@ func (ec *executionContext) _RewardSummary_rewards(ctx context.Context, field gr
 	}
 	res := resTmp.([]*vega.Reward)
 	fc.Result = res
-	return ec.marshalOReward2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐReward(ctx, field.Selections, res)
+	return ec.marshalOReward2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐReward(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RewardSummary_rewardsConnection(ctx context.Context, field graphql.CollectedField, obj *vega.RewardSummary) (ret graphql.Marshaler) {
@@ -35869,7 +37305,144 @@ func (ec *executionContext) _RewardSummary_rewardsConnection(ctx context.Context
 	}
 	res := resTmp.(*v2.RewardsConnection)
 	fc.Result = res
-	return ec.marshalORewardsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐRewardsConnection(ctx, field.Selections, res)
+	return ec.marshalORewardsConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐRewardsConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RewardSummaryConnection_edges(ctx context.Context, field graphql.CollectedField, obj *RewardSummaryConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RewardSummaryConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*RewardSummaryEdge)
+	fc.Result = res
+	return ec.marshalORewardSummaryEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐRewardSummaryEdge(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RewardSummaryConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *RewardSummaryConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RewardSummaryConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.PageInfo)
+	fc.Result = res
+	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RewardSummaryEdge_node(ctx context.Context, field graphql.CollectedField, obj *RewardSummaryEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RewardSummaryEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.RewardSummary)
+	fc.Result = res
+	return ec.marshalNRewardSummary2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐRewardSummary(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RewardSummaryEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *RewardSummaryEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RewardSummaryEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RewardsConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.RewardsConnection) (ret graphql.Marshaler) {
@@ -35901,7 +37474,7 @@ func (ec *executionContext) _RewardsConnection_edges(ctx context.Context, field 
 	}
 	res := resTmp.([]*v2.RewardEdge)
 	fc.Result = res
-	return ec.marshalORewardEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐRewardEdge(ctx, field.Selections, res)
+	return ec.marshalORewardEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐRewardEdge(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RewardsConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.RewardsConnection) (ret graphql.Marshaler) {
@@ -35933,7 +37506,7 @@ func (ec *executionContext) _RewardsConnection_pageInfo(ctx context.Context, fie
 	}
 	res := resTmp.(*v2.PageInfo)
 	fc.Result = res
-	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RiskFactor_market(ctx context.Context, field graphql.CollectedField, obj *vega.RiskFactor) (ret graphql.Marshaler) {
@@ -36455,7 +38028,7 @@ func (ec *executionContext) _SimpleRiskModel_params(ctx context.Context, field g
 	}
 	res := resTmp.(*vega.SimpleModelParams)
 	fc.Result = res
-	return ec.marshalNSimpleRiskModelParams2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐSimpleModelParams(ctx, field.Selections, res)
+	return ec.marshalNSimpleRiskModelParams2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐSimpleModelParams(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _SimpleRiskModelParams_factorLong(ctx context.Context, field graphql.CollectedField, obj *vega.SimpleModelParams) (ret graphql.Marshaler) {
@@ -36665,7 +38238,7 @@ func (ec *executionContext) _StakeLinking_party(ctx context.Context, field graph
 	}
 	res := resTmp.(*vega.Party)
 	fc.Result = res
-	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
+	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _StakeLinking_amount(ctx context.Context, field graphql.CollectedField, obj *v1.StakeLinking) (ret graphql.Marshaler) {
@@ -36803,6 +38376,220 @@ func (ec *executionContext) _StakeLinking_txHash(ctx context.Context, field grap
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _StakeLinkingEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.StakeLinkingEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "StakeLinkingEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v1.StakeLinking)
+	fc.Result = res
+	return ec.marshalNStakeLinking2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐStakeLinking(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _StakeLinkingEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.StakeLinkingEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "StakeLinkingEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _StakesConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.StakesConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "StakesConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*v2.StakeLinkingEdge)
+	fc.Result = res
+	return ec.marshalOStakeLinkingEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐStakeLinkingEdge(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _StakesConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.StakesConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "StakesConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.PageInfo)
+	fc.Result = res
+	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _StakingSummary_currentStakeAvailable(ctx context.Context, field graphql.CollectedField, obj *StakingSummary) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "StakingSummary",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CurrentStakeAvailable, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _StakingSummary_linkings(ctx context.Context, field graphql.CollectedField, obj *StakingSummary) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "StakingSummary",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_StakingSummary_linkings_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Linkings, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.StakesConnection)
+	fc.Result = res
+	return ec.marshalNStakesConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐStakesConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Statistics_blockHeight(ctx context.Context, field graphql.CollectedField, obj *v14.Statistics) (ret graphql.Marshaler) {
@@ -37726,7 +39513,7 @@ func (ec *executionContext) _Subscription_candles(ctx context.Context, field gra
 			w.Write([]byte{'{'})
 			graphql.MarshalString(field.Alias).MarshalGQL(w)
 			w.Write([]byte{':'})
-			ec.marshalNCandle2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐCandle(ctx, field.Selections, res).MarshalGQL(w)
+			ec.marshalNCandle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐCandle(ctx, field.Selections, res).MarshalGQL(w)
 			w.Write([]byte{'}'})
 		})
 	}
@@ -37775,7 +39562,7 @@ func (ec *executionContext) _Subscription_orders(ctx context.Context, field grap
 			w.Write([]byte{'{'})
 			graphql.MarshalString(field.Alias).MarshalGQL(w)
 			w.Write([]byte{':'})
-			ec.marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐOrderᚄ(ctx, field.Selections, res).MarshalGQL(w)
+			ec.marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrderᚄ(ctx, field.Selections, res).MarshalGQL(w)
 			w.Write([]byte{'}'})
 		})
 	}
@@ -37824,7 +39611,7 @@ func (ec *executionContext) _Subscription_trades(ctx context.Context, field grap
 			w.Write([]byte{'{'})
 			graphql.MarshalString(field.Alias).MarshalGQL(w)
 			w.Write([]byte{':'})
-			ec.marshalOTrade2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐTradeᚄ(ctx, field.Selections, res).MarshalGQL(w)
+			ec.marshalOTrade2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTradeᚄ(ctx, field.Selections, res).MarshalGQL(w)
 			w.Write([]byte{'}'})
 		})
 	}
@@ -37876,7 +39663,7 @@ func (ec *executionContext) _Subscription_positions(ctx context.Context, field g
 			w.Write([]byte{'{'})
 			graphql.MarshalString(field.Alias).MarshalGQL(w)
 			w.Write([]byte{':'})
-			ec.marshalNPosition2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐPosition(ctx, field.Selections, res).MarshalGQL(w)
+			ec.marshalNPosition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPosition(ctx, field.Selections, res).MarshalGQL(w)
 			w.Write([]byte{'}'})
 		})
 	}
@@ -37928,7 +39715,7 @@ func (ec *executionContext) _Subscription_marketDepth(ctx context.Context, field
 			w.Write([]byte{'{'})
 			graphql.MarshalString(field.Alias).MarshalGQL(w)
 			w.Write([]byte{':'})
-			ec.marshalNMarketDepth2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketDepth(ctx, field.Selections, res).MarshalGQL(w)
+			ec.marshalNMarketDepth2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketDepth(ctx, field.Selections, res).MarshalGQL(w)
 			w.Write([]byte{'}'})
 		})
 	}
@@ -37980,7 +39767,7 @@ func (ec *executionContext) _Subscription_marketDepthUpdate(ctx context.Context,
 			w.Write([]byte{'{'})
 			graphql.MarshalString(field.Alias).MarshalGQL(w)
 			w.Write([]byte{':'})
-			ec.marshalNMarketDepthUpdate2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketDepthUpdate(ctx, field.Selections, res).MarshalGQL(w)
+			ec.marshalNMarketDepthUpdate2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketDepthUpdate(ctx, field.Selections, res).MarshalGQL(w)
 			w.Write([]byte{'}'})
 		})
 	}
@@ -38032,7 +39819,7 @@ func (ec *executionContext) _Subscription_accounts(ctx context.Context, field gr
 			w.Write([]byte{'{'})
 			graphql.MarshalString(field.Alias).MarshalGQL(w)
 			w.Write([]byte{':'})
-			ec.marshalNAccount2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccount(ctx, field.Selections, res).MarshalGQL(w)
+			ec.marshalNAccount2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccount(ctx, field.Selections, res).MarshalGQL(w)
 			w.Write([]byte{'}'})
 		})
 	}
@@ -38084,7 +39871,7 @@ func (ec *executionContext) _Subscription_marketData(ctx context.Context, field 
 			w.Write([]byte{'{'})
 			graphql.MarshalString(field.Alias).MarshalGQL(w)
 			w.Write([]byte{':'})
-			ec.marshalNMarketData2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketData(ctx, field.Selections, res).MarshalGQL(w)
+			ec.marshalNMarketData2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketData(ctx, field.Selections, res).MarshalGQL(w)
 			w.Write([]byte{'}'})
 		})
 	}
@@ -38136,7 +39923,7 @@ func (ec *executionContext) _Subscription_marketsDepth(ctx context.Context, fiel
 			w.Write([]byte{'{'})
 			graphql.MarshalString(field.Alias).MarshalGQL(w)
 			w.Write([]byte{':'})
-			ec.marshalNObservableMarketDepth2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketDepthᚄ(ctx, field.Selections, res).MarshalGQL(w)
+			ec.marshalNObservableMarketDepth2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketDepthᚄ(ctx, field.Selections, res).MarshalGQL(w)
 			w.Write([]byte{'}'})
 		})
 	}
@@ -38188,7 +39975,7 @@ func (ec *executionContext) _Subscription_marketsDepthUpdate(ctx context.Context
 			w.Write([]byte{'{'})
 			graphql.MarshalString(field.Alias).MarshalGQL(w)
 			w.Write([]byte{':'})
-			ec.marshalNObservableMarketDepthUpdate2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketDepthUpdateᚄ(ctx, field.Selections, res).MarshalGQL(w)
+			ec.marshalNObservableMarketDepthUpdate2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketDepthUpdateᚄ(ctx, field.Selections, res).MarshalGQL(w)
 			w.Write([]byte{'}'})
 		})
 	}
@@ -38240,7 +40027,7 @@ func (ec *executionContext) _Subscription_marketsData(ctx context.Context, field
 			w.Write([]byte{'{'})
 			graphql.MarshalString(field.Alias).MarshalGQL(w)
 			w.Write([]byte{':'})
-			ec.marshalNObservableMarketData2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketDataᚄ(ctx, field.Selections, res).MarshalGQL(w)
+			ec.marshalNObservableMarketData2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketDataᚄ(ctx, field.Selections, res).MarshalGQL(w)
 			w.Write([]byte{'}'})
 		})
 	}
@@ -38292,7 +40079,7 @@ func (ec *executionContext) _Subscription_margins(ctx context.Context, field gra
 			w.Write([]byte{'{'})
 			graphql.MarshalString(field.Alias).MarshalGQL(w)
 			w.Write([]byte{':'})
-			ec.marshalNMarginLevels2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarginLevels(ctx, field.Selections, res).MarshalGQL(w)
+			ec.marshalNMarginLevels2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarginLevels(ctx, field.Selections, res).MarshalGQL(w)
 			w.Write([]byte{'}'})
 		})
 	}
@@ -38344,7 +40131,7 @@ func (ec *executionContext) _Subscription_proposals(ctx context.Context, field g
 			w.Write([]byte{'{'})
 			graphql.MarshalString(field.Alias).MarshalGQL(w)
 			w.Write([]byte{':'})
-			ec.marshalNProposal2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐGovernanceData(ctx, field.Selections, res).MarshalGQL(w)
+			ec.marshalNProposal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐGovernanceData(ctx, field.Selections, res).MarshalGQL(w)
 			w.Write([]byte{'}'})
 		})
 	}
@@ -38497,7 +40284,7 @@ func (ec *executionContext) _Subscription_delegations(ctx context.Context, field
 			w.Write([]byte{'{'})
 			graphql.MarshalString(field.Alias).MarshalGQL(w)
 			w.Write([]byte{':'})
-			ec.marshalNDelegation2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐDelegation(ctx, field.Selections, res).MarshalGQL(w)
+			ec.marshalNDelegation2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDelegation(ctx, field.Selections, res).MarshalGQL(w)
 			w.Write([]byte{'}'})
 		})
 	}
@@ -38549,7 +40336,7 @@ func (ec *executionContext) _Subscription_rewards(ctx context.Context, field gra
 			w.Write([]byte{'{'})
 			graphql.MarshalString(field.Alias).MarshalGQL(w)
 			w.Write([]byte{':'})
-			ec.marshalNReward2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐReward(ctx, field.Selections, res).MarshalGQL(w)
+			ec.marshalNReward2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐReward(ctx, field.Selections, res).MarshalGQL(w)
 			w.Write([]byte{'}'})
 		})
 	}
@@ -38692,7 +40479,7 @@ func (ec *executionContext) _TradableInstrument_instrument(ctx context.Context, 
 	}
 	res := resTmp.(*vega.Instrument)
 	fc.Result = res
-	return ec.marshalNInstrument2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐInstrument(ctx, field.Selections, res)
+	return ec.marshalNInstrument2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐInstrument(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _TradableInstrument_riskModel(ctx context.Context, field graphql.CollectedField, obj *vega.TradableInstrument) (ret graphql.Marshaler) {
@@ -38759,7 +40546,7 @@ func (ec *executionContext) _TradableInstrument_marginCalculator(ctx context.Con
 	}
 	res := resTmp.(*vega.MarginCalculator)
 	fc.Result = res
-	return ec.marshalOMarginCalculator2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarginCalculator(ctx, field.Selections, res)
+	return ec.marshalOMarginCalculator2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarginCalculator(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Trade_id(ctx context.Context, field graphql.CollectedField, obj *vega.Trade) (ret graphql.Marshaler) {
@@ -38829,7 +40616,7 @@ func (ec *executionContext) _Trade_market(ctx context.Context, field graphql.Col
 	}
 	res := resTmp.(*vega.Market)
 	fc.Result = res
-	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarket(ctx, field.Selections, res)
+	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarket(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Trade_buyOrder(ctx context.Context, field graphql.CollectedField, obj *vega.Trade) (ret graphql.Marshaler) {
@@ -38934,7 +40721,7 @@ func (ec *executionContext) _Trade_buyer(ctx context.Context, field graphql.Coll
 	}
 	res := resTmp.(*vega.Party)
 	fc.Result = res
-	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
+	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Trade_seller(ctx context.Context, field graphql.CollectedField, obj *vega.Trade) (ret graphql.Marshaler) {
@@ -38969,7 +40756,7 @@ func (ec *executionContext) _Trade_seller(ctx context.Context, field graphql.Col
 	}
 	res := resTmp.(*vega.Party)
 	fc.Result = res
-	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
+	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Trade_aggressor(ctx context.Context, field graphql.CollectedField, obj *vega.Trade) (ret graphql.Marshaler) {
@@ -39313,7 +41100,7 @@ func (ec *executionContext) _TradeConnection_edges(ctx context.Context, field gr
 	}
 	res := resTmp.([]*v2.TradeEdge)
 	fc.Result = res
-	return ec.marshalNTradeEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTradeEdgeᚄ(ctx, field.Selections, res)
+	return ec.marshalNTradeEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTradeEdgeᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _TradeConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.TradeConnection) (ret graphql.Marshaler) {
@@ -39348,7 +41135,7 @@ func (ec *executionContext) _TradeConnection_pageInfo(ctx context.Context, field
 	}
 	res := resTmp.(*v2.PageInfo)
 	fc.Result = res
-	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _TradeEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.TradeEdge) (ret graphql.Marshaler) {
@@ -39383,7 +41170,7 @@ func (ec *executionContext) _TradeEdge_node(ctx context.Context, field graphql.C
 	}
 	res := resTmp.(*vega.Trade)
 	fc.Result = res
-	return ec.marshalNTrade2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐTrade(ctx, field.Selections, res)
+	return ec.marshalNTrade2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTrade(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _TradeEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.TradeEdge) (ret graphql.Marshaler) {
@@ -39733,7 +41520,7 @@ func (ec *executionContext) _Transfer_fromAccountType(ctx context.Context, field
 	}
 	res := resTmp.(vega.AccountType)
 	fc.Result = res
-	return ec.marshalNAccountType2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccountType(ctx, field.Selections, res)
+	return ec.marshalNAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Transfer_to(ctx context.Context, field graphql.CollectedField, obj *v1.Transfer) (ret graphql.Marshaler) {
@@ -39803,7 +41590,7 @@ func (ec *executionContext) _Transfer_toAccountType(ctx context.Context, field g
 	}
 	res := resTmp.(vega.AccountType)
 	fc.Result = res
-	return ec.marshalNAccountType2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccountType(ctx, field.Selections, res)
+	return ec.marshalNAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Transfer_asset(ctx context.Context, field graphql.CollectedField, obj *v1.Transfer) (ret graphql.Marshaler) {
@@ -39835,7 +41622,7 @@ func (ec *executionContext) _Transfer_asset(ctx context.Context, field graphql.C
 	}
 	res := resTmp.(*vega.Asset)
 	fc.Result = res
-	return ec.marshalOAsset2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
+	return ec.marshalOAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Transfer_amount(ctx context.Context, field graphql.CollectedField, obj *v1.Transfer) (ret graphql.Marshaler) {
@@ -40042,7 +41829,7 @@ func (ec *executionContext) _TransferBalance_account(ctx context.Context, field 
 	}
 	res := resTmp.(*vega.Account)
 	fc.Result = res
-	return ec.marshalNAccount2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccount(ctx, field.Selections, res)
+	return ec.marshalNAccount2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccount(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _TransferBalance_balance(ctx context.Context, field graphql.CollectedField, obj *TransferBalance) (ret graphql.Marshaler) {
@@ -40109,7 +41896,7 @@ func (ec *executionContext) _TransferConnection_edges(ctx context.Context, field
 	}
 	res := resTmp.([]*v2.TransferEdge)
 	fc.Result = res
-	return ec.marshalOTransferEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTransferEdge(ctx, field.Selections, res)
+	return ec.marshalOTransferEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTransferEdge(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _TransferConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.TransferConnection) (ret graphql.Marshaler) {
@@ -40144,7 +41931,7 @@ func (ec *executionContext) _TransferConnection_pageInfo(ctx context.Context, fi
 	}
 	res := resTmp.(*v2.PageInfo)
 	fc.Result = res
-	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _TransferEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.TransferEdge) (ret graphql.Marshaler) {
@@ -40179,7 +41966,7 @@ func (ec *executionContext) _TransferEdge_node(ctx context.Context, field graphq
 	}
 	res := resTmp.(*v1.Transfer)
 	fc.Result = res
-	return ec.marshalNTransfer2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋeventsᚋv1ᚐTransfer(ctx, field.Selections, res)
+	return ec.marshalNTransfer2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐTransfer(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _TransferEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.TransferEdge) (ret graphql.Marshaler) {
@@ -40380,7 +42167,7 @@ func (ec *executionContext) _UpdateFutureProduct_oracleSpecForSettlementPrice(ct
 	}
 	res := resTmp.(*v11.OracleSpecConfiguration)
 	fc.Result = res
-	return ec.marshalNOracleSpecConfiguration2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpecConfiguration(ctx, field.Selections, res)
+	return ec.marshalNOracleSpecConfiguration2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpecConfiguration(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _UpdateFutureProduct_oracleSpecForTradingTermination(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateFutureProduct) (ret graphql.Marshaler) {
@@ -40415,7 +42202,7 @@ func (ec *executionContext) _UpdateFutureProduct_oracleSpecForTradingTermination
 	}
 	res := resTmp.(*v11.OracleSpecConfiguration)
 	fc.Result = res
-	return ec.marshalNOracleSpecConfiguration2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpecConfiguration(ctx, field.Selections, res)
+	return ec.marshalNOracleSpecConfiguration2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpecConfiguration(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _UpdateFutureProduct_oracleSpecBinding(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateFutureProduct) (ret graphql.Marshaler) {
@@ -40450,7 +42237,7 @@ func (ec *executionContext) _UpdateFutureProduct_oracleSpecBinding(ctx context.C
 	}
 	res := resTmp.(*vega.OracleSpecToFutureBinding)
 	fc.Result = res
-	return ec.marshalNOracleSpecToFutureBinding2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐOracleSpecToFutureBinding(ctx, field.Selections, res)
+	return ec.marshalNOracleSpecToFutureBinding2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOracleSpecToFutureBinding(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _UpdateInstrumentConfiguration_code(ctx context.Context, field graphql.CollectedField, obj *UpdateInstrumentConfiguration) (ret graphql.Marshaler) {
@@ -40520,7 +42307,7 @@ func (ec *executionContext) _UpdateInstrumentConfiguration_product(ctx context.C
 	}
 	res := resTmp.(*vega.UpdateFutureProduct)
 	fc.Result = res
-	return ec.marshalNUpdateFutureProduct2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐUpdateFutureProduct(ctx, field.Selections, res)
+	return ec.marshalNUpdateFutureProduct2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐUpdateFutureProduct(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _UpdateMarket_marketId(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateMarket) (ret graphql.Marshaler) {
@@ -40590,7 +42377,7 @@ func (ec *executionContext) _UpdateMarket_updateMarketConfiguration(ctx context.
 	}
 	res := resTmp.(*vega.UpdateMarketConfiguration)
 	fc.Result = res
-	return ec.marshalNUpdateMarketConfiguration2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐUpdateMarketConfiguration(ctx, field.Selections, res)
+	return ec.marshalNUpdateMarketConfiguration2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐUpdateMarketConfiguration(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _UpdateMarketConfiguration_instrument(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateMarketConfiguration) (ret graphql.Marshaler) {
@@ -40794,7 +42581,7 @@ func (ec *executionContext) _UpdateMarketLogNormalRiskModel_logNormal(ctx contex
 	}
 	res := resTmp.(*vega.LogNormalRiskModel)
 	fc.Result = res
-	return ec.marshalOLogNormalRiskModel2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLogNormalRiskModel(ctx, field.Selections, res)
+	return ec.marshalOLogNormalRiskModel2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLogNormalRiskModel(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _UpdateMarketSimpleRiskModel_simple(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateMarketConfiguration_Simple) (ret graphql.Marshaler) {
@@ -40826,7 +42613,7 @@ func (ec *executionContext) _UpdateMarketSimpleRiskModel_simple(ctx context.Cont
 	}
 	res := resTmp.(*vega.SimpleModelParams)
 	fc.Result = res
-	return ec.marshalOSimpleRiskModelParams2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐSimpleModelParams(ctx, field.Selections, res)
+	return ec.marshalOSimpleRiskModelParams2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐSimpleModelParams(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _UpdateNetworkParameter_networkParameter(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateNetworkParameter) (ret graphql.Marshaler) {
@@ -40861,7 +42648,7 @@ func (ec *executionContext) _UpdateNetworkParameter_networkParameter(ctx context
 	}
 	res := resTmp.(*vega.NetworkParameter)
 	fc.Result = res
-	return ec.marshalNNetworkParameter2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐNetworkParameter(ctx, field.Selections, res)
+	return ec.marshalNNetworkParameter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐNetworkParameter(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Vote_value(ctx context.Context, field graphql.CollectedField, obj *vega.Vote) (ret graphql.Marshaler) {
@@ -40931,7 +42718,7 @@ func (ec *executionContext) _Vote_party(ctx context.Context, field graphql.Colle
 	}
 	res := resTmp.(*vega.Party)
 	fc.Result = res
-	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
+	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Vote_datetime(ctx context.Context, field graphql.CollectedField, obj *vega.Vote) (ret graphql.Marshaler) {
@@ -41103,7 +42890,7 @@ func (ec *executionContext) _VoteConnection_edges(ctx context.Context, field gra
 	}
 	res := resTmp.([]*v2.VoteEdge)
 	fc.Result = res
-	return ec.marshalOVoteEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐVoteEdgeᚄ(ctx, field.Selections, res)
+	return ec.marshalOVoteEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐVoteEdgeᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _VoteConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.VoteConnection) (ret graphql.Marshaler) {
@@ -41135,7 +42922,7 @@ func (ec *executionContext) _VoteConnection_pageInfo(ctx context.Context, field 
 	}
 	res := resTmp.(*v2.PageInfo)
 	fc.Result = res
-	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _VoteEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.VoteEdge) (ret graphql.Marshaler) {
@@ -41170,7 +42957,7 @@ func (ec *executionContext) _VoteEdge_node(ctx context.Context, field graphql.Co
 	}
 	res := resTmp.(*vega.Vote)
 	fc.Result = res
-	return ec.marshalNVote2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐVote(ctx, field.Selections, res)
+	return ec.marshalNVote2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐVote(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _VoteEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.VoteEdge) (ret graphql.Marshaler) {
@@ -41272,7 +43059,7 @@ func (ec *executionContext) _Withdrawal_party(ctx context.Context, field graphql
 	}
 	res := resTmp.(*vega.Party)
 	fc.Result = res
-	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
+	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Withdrawal_amount(ctx context.Context, field graphql.CollectedField, obj *vega.Withdrawal) (ret graphql.Marshaler) {
@@ -41342,7 +43129,7 @@ func (ec *executionContext) _Withdrawal_asset(ctx context.Context, field graphql
 	}
 	res := resTmp.(*vega.Asset)
 	fc.Result = res
-	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Withdrawal_status(ctx context.Context, field graphql.CollectedField, obj *vega.Withdrawal) (ret graphql.Marshaler) {
@@ -41613,7 +43400,7 @@ func (ec *executionContext) _WithdrawalEdge_node(ctx context.Context, field grap
 	}
 	res := resTmp.(*vega.Withdrawal)
 	fc.Result = res
-	return ec.marshalNWithdrawal2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐWithdrawal(ctx, field.Selections, res)
+	return ec.marshalNWithdrawal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐWithdrawal(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _WithdrawalEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.WithdrawalEdge) (ret graphql.Marshaler) {
@@ -41680,7 +43467,7 @@ func (ec *executionContext) _WithdrawalsConnection_edges(ctx context.Context, fi
 	}
 	res := resTmp.([]*v2.WithdrawalEdge)
 	fc.Result = res
-	return ec.marshalOWithdrawalEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐWithdrawalEdge(ctx, field.Selections, res)
+	return ec.marshalOWithdrawalEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐWithdrawalEdge(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _WithdrawalsConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.WithdrawalsConnection) (ret graphql.Marshaler) {
@@ -41712,7 +43499,7 @@ func (ec *executionContext) _WithdrawalsConnection_pageInfo(ctx context.Context,
 	}
 	res := resTmp.(*v2.PageInfo)
 	fc.Result = res
-	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -42874,7 +44661,7 @@ func (ec *executionContext) unmarshalInputAccountFilter(ctx context.Context, obj
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("accountTypes"))
-			it.AccountTypes, err = ec.unmarshalOAccountType2ᚕcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccountTypeᚄ(ctx, v)
+			it.AccountTypes, err = ec.unmarshalOAccountType2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountTypeᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -43085,9 +44872,9 @@ func (ec *executionContext) _Event(ctx context.Context, sel ast.SelectionSet, ob
 			return graphql.Null
 		}
 		return ec._MarketData(ctx, sel, obj)
-	case v13.NodeSignature:
+	case v12.NodeSignature:
 		return ec._NodeSignature(ctx, sel, &obj)
-	case *v13.NodeSignature:
+	case *v12.NodeSignature:
 		if obj == nil {
 			return graphql.Null
 		}
@@ -43413,6 +45200,95 @@ func (ec *executionContext) _Account(ctx context.Context, sel ast.SelectionSet, 
 				return innerFunc(ctx)
 
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var accountEdgeImplementors = []string{"AccountEdge"}
+
+func (ec *executionContext) _AccountEdge(ctx context.Context, sel ast.SelectionSet, obj *v2.AccountEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, accountEdgeImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AccountEdge")
+		case "node":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._AccountEdge_node(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "cursor":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._AccountEdge_cursor(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var accountsConnectionImplementors = []string{"AccountsConnection"}
+
+func (ec *executionContext) _AccountsConnection(ctx context.Context, sel ast.SelectionSet, obj *v2.AccountsConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, accountsConnectionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AccountsConnection")
+		case "edges":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._AccountsConnection_edges(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "pageInfo":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._AccountsConnection_pageInfo(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -45948,7 +47824,7 @@ func (ec *executionContext) _InstrumentMetadata(ctx context.Context, sel ast.Sel
 
 var keyRotationImplementors = []string{"KeyRotation"}
 
-func (ec *executionContext) _KeyRotation(ctx context.Context, sel ast.SelectionSet, obj *v12.KeyRotation) graphql.Marshaler {
+func (ec *executionContext) _KeyRotation(ctx context.Context, sel ast.SelectionSet, obj *v1.KeyRotation) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, keyRotationImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -46006,6 +47882,85 @@ func (ec *executionContext) _KeyRotation(ctx context.Context, sel ast.SelectionS
 				return innerFunc(ctx)
 
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var keyRotationConnectionImplementors = []string{"KeyRotationConnection"}
+
+func (ec *executionContext) _KeyRotationConnection(ctx context.Context, sel ast.SelectionSet, obj *v2.KeyRotationConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, keyRotationConnectionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("KeyRotationConnection")
+		case "edges":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._KeyRotationConnection_edges(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "pageInfo":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._KeyRotationConnection_pageInfo(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var keyRotationEdgeImplementors = []string{"KeyRotationEdge"}
+
+func (ec *executionContext) _KeyRotationEdge(ctx context.Context, sel ast.SelectionSet, obj *v2.KeyRotationEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, keyRotationEdgeImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("KeyRotationEdge")
+		case "node":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._KeyRotationEdge_node(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cursor":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._KeyRotationEdge_cursor(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -47252,6 +49207,26 @@ func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, o
 					}
 				}()
 				res = ec._Market_accounts(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "accountsConnection":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Market_accountsConnection(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			}
 
@@ -48629,6 +50604,85 @@ func (ec *executionContext) _NetworkParameter(ctx context.Context, sel ast.Selec
 	return out
 }
 
+var networkParameterEdgeImplementors = []string{"NetworkParameterEdge"}
+
+func (ec *executionContext) _NetworkParameterEdge(ctx context.Context, sel ast.SelectionSet, obj *v2.NetworkParameterEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, networkParameterEdgeImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("NetworkParameterEdge")
+		case "node":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._NetworkParameterEdge_node(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cursor":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._NetworkParameterEdge_cursor(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var networkParametersConnectionImplementors = []string{"NetworkParametersConnection"}
+
+func (ec *executionContext) _NetworkParametersConnection(ctx context.Context, sel ast.SelectionSet, obj *v2.NetworkParameterConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, networkParametersConnectionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("NetworkParametersConnection")
+		case "edges":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._NetworkParametersConnection_edges(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "pageInfo":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._NetworkParametersConnection_pageInfo(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var newAssetImplementors = []string{"NewAsset", "ProposalChange"}
 
 func (ec *executionContext) _NewAsset(ctx context.Context, sel ast.SelectionSet, obj *vega.NewAsset) graphql.Marshaler {
@@ -49025,9 +51079,9 @@ func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "ethereumAdddress":
+		case "ethereumAddress":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Node_ethereumAdddress(ctx, field, obj)
+				return ec._Node_ethereumAddress(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -49318,7 +51372,7 @@ func (ec *executionContext) _NodeEdge(ctx context.Context, sel ast.SelectionSet,
 
 var nodeSignatureImplementors = []string{"NodeSignature", "Event"}
 
-func (ec *executionContext) _NodeSignature(ctx context.Context, sel ast.SelectionSet, obj *v13.NodeSignature) graphql.Marshaler {
+func (ec *executionContext) _NodeSignature(ctx context.Context, sel ast.SelectionSet, obj *v12.NodeSignature) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, nodeSignatureImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -49370,6 +51424,85 @@ func (ec *executionContext) _NodeSignature(ctx context.Context, sel ast.Selectio
 				return innerFunc(ctx)
 
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var nodeSignatureEdgeImplementors = []string{"NodeSignatureEdge"}
+
+func (ec *executionContext) _NodeSignatureEdge(ctx context.Context, sel ast.SelectionSet, obj *v2.NodeSignatureEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, nodeSignatureEdgeImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("NodeSignatureEdge")
+		case "node":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._NodeSignatureEdge_node(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cursor":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._NodeSignatureEdge_cursor(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var nodeSignaturesConnectionImplementors = []string{"NodeSignaturesConnection"}
+
+func (ec *executionContext) _NodeSignaturesConnection(ctx context.Context, sel ast.SelectionSet, obj *v2.NodeSignaturesConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, nodeSignaturesConnectionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("NodeSignaturesConnection")
+		case "edges":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._NodeSignaturesConnection_edges(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "pageInfo":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._NodeSignaturesConnection_pageInfo(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -50609,6 +52742,9 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 					}
 				}()
 				res = ec._Order_market(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			}
 
@@ -51182,6 +53318,26 @@ func (ec *executionContext) _Party(ctx context.Context, sel ast.SelectionSet, ob
 				return innerFunc(ctx)
 
 			})
+		case "accountsConnection":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Party_accountsConnection(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "positions":
 			field := field
 
@@ -51498,6 +53654,26 @@ func (ec *executionContext) _Party(ctx context.Context, sel ast.SelectionSet, ob
 				return innerFunc(ctx)
 
 			})
+		case "stakingSummary":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Party_stakingSummary(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "rewards":
 			field := field
 
@@ -51661,7 +53837,7 @@ func (ec *executionContext) _PartyEdge(ctx context.Context, sel ast.SelectionSet
 
 var partyStakeImplementors = []string{"PartyStake"}
 
-func (ec *executionContext) _PartyStake(ctx context.Context, sel ast.SelectionSet, obj *v12.PartyStakeResponse) graphql.Marshaler {
+func (ec *executionContext) _PartyStake(ctx context.Context, sel ast.SelectionSet, obj *v13.PartyStakeResponse) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, partyStakeImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -53607,6 +55783,29 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
+		case "nodeSignaturesConnection":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_nodeSignaturesConnection(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
 		case "asset":
 			field := field
 
@@ -53773,6 +55972,29 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
+		case "networkParametersConnection":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_networkParametersConnection(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
 		case "nodeData":
 			field := field
 
@@ -53866,6 +56088,29 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_keyRotations(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "keyRotationsConnection":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_keyRotationsConnection(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			}
 
@@ -54728,6 +56973,85 @@ func (ec *executionContext) _RewardSummary(ctx context.Context, sel ast.Selectio
 	return out
 }
 
+var rewardSummaryConnectionImplementors = []string{"RewardSummaryConnection"}
+
+func (ec *executionContext) _RewardSummaryConnection(ctx context.Context, sel ast.SelectionSet, obj *RewardSummaryConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, rewardSummaryConnectionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RewardSummaryConnection")
+		case "edges":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._RewardSummaryConnection_edges(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "pageInfo":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._RewardSummaryConnection_pageInfo(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var rewardSummaryEdgeImplementors = []string{"RewardSummaryEdge"}
+
+func (ec *executionContext) _RewardSummaryEdge(ctx context.Context, sel ast.SelectionSet, obj *RewardSummaryEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, rewardSummaryEdgeImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RewardSummaryEdge")
+		case "node":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._RewardSummaryEdge_node(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cursor":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._RewardSummaryEdge_cursor(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var rewardsConnectionImplementors = []string{"RewardsConnection"}
 
 func (ec *executionContext) _RewardsConnection(ctx context.Context, sel ast.SelectionSet, obj *v2.RewardsConnection) graphql.Marshaler {
@@ -55192,6 +57516,126 @@ func (ec *executionContext) _StakeLinking(ctx context.Context, sel ast.Selection
 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var stakeLinkingEdgeImplementors = []string{"StakeLinkingEdge"}
+
+func (ec *executionContext) _StakeLinkingEdge(ctx context.Context, sel ast.SelectionSet, obj *v2.StakeLinkingEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, stakeLinkingEdgeImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("StakeLinkingEdge")
+		case "node":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._StakeLinkingEdge_node(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cursor":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._StakeLinkingEdge_cursor(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var stakesConnectionImplementors = []string{"StakesConnection"}
+
+func (ec *executionContext) _StakesConnection(ctx context.Context, sel ast.SelectionSet, obj *v2.StakesConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, stakesConnectionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("StakesConnection")
+		case "edges":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._StakesConnection_edges(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "pageInfo":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._StakesConnection_pageInfo(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var stakingSummaryImplementors = []string{"StakingSummary"}
+
+func (ec *executionContext) _StakingSummary(ctx context.Context, sel ast.SelectionSet, obj *StakingSummary) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, stakingSummaryImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("StakingSummary")
+		case "currentStakeAvailable":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._StakingSummary_currentStakeAvailable(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "linkings":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._StakingSummary_linkings(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -57894,11 +60338,11 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 
 // region    ***************************** type.gotpl *****************************
 
-func (ec *executionContext) marshalNAccount2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccount(ctx context.Context, sel ast.SelectionSet, v vega.Account) graphql.Marshaler {
+func (ec *executionContext) marshalNAccount2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccount(ctx context.Context, sel ast.SelectionSet, v vega.Account) graphql.Marshaler {
 	return ec._Account(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNAccount2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccount(ctx context.Context, sel ast.SelectionSet, v *vega.Account) graphql.Marshaler {
+func (ec *executionContext) marshalNAccount2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccount(ctx context.Context, sel ast.SelectionSet, v *vega.Account) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -57908,12 +60352,12 @@ func (ec *executionContext) marshalNAccount2ᚖcodeᚗvegaprotocolᚗioᚋprotos
 	return ec._Account(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNAccountType2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccountType(ctx context.Context, v interface{}) (vega.AccountType, error) {
+func (ec *executionContext) unmarshalNAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountType(ctx context.Context, v interface{}) (vega.AccountType, error) {
 	res, err := marshallers.UnmarshalAccountType(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNAccountType2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccountType(ctx context.Context, sel ast.SelectionSet, v vega.AccountType) graphql.Marshaler {
+func (ec *executionContext) marshalNAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountType(ctx context.Context, sel ast.SelectionSet, v vega.AccountType) graphql.Marshaler {
 	res := marshallers.MarshalAccountType(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -57923,7 +60367,21 @@ func (ec *executionContext) marshalNAccountType2codeᚗvegaprotocolᚗioᚋproto
 	return graphql.WrapContextMarshaler(ctx, res)
 }
 
-func (ec *executionContext) marshalNAggregatedBalance2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAggregatedBalanceᚄ(ctx context.Context, sel ast.SelectionSet, v []*v2.AggregatedBalance) graphql.Marshaler {
+func (ec *executionContext) marshalNAccountsConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountsConnection(ctx context.Context, sel ast.SelectionSet, v v2.AccountsConnection) graphql.Marshaler {
+	return ec._AccountsConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNAccountsConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountsConnection(ctx context.Context, sel ast.SelectionSet, v *v2.AccountsConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._AccountsConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNAggregatedBalance2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAggregatedBalanceᚄ(ctx context.Context, sel ast.SelectionSet, v []*v2.AggregatedBalance) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -57947,7 +60405,7 @@ func (ec *executionContext) marshalNAggregatedBalance2ᚕᚖcodeᚗvegaprotocol�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNAggregatedBalance2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAggregatedBalance(ctx, sel, v[i])
+			ret[i] = ec.marshalNAggregatedBalance2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAggregatedBalance(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -57967,7 +60425,7 @@ func (ec *executionContext) marshalNAggregatedBalance2ᚕᚖcodeᚗvegaprotocol�
 	return ret
 }
 
-func (ec *executionContext) marshalNAggregatedBalance2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAggregatedBalance(ctx context.Context, sel ast.SelectionSet, v *v2.AggregatedBalance) graphql.Marshaler {
+func (ec *executionContext) marshalNAggregatedBalance2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAggregatedBalance(ctx context.Context, sel ast.SelectionSet, v *v2.AggregatedBalance) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -57977,11 +60435,11 @@ func (ec *executionContext) marshalNAggregatedBalance2ᚖcodeᚗvegaprotocolᚗi
 	return ec._AggregatedBalance(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNAsset2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAsset(ctx context.Context, sel ast.SelectionSet, v vega.Asset) graphql.Marshaler {
+func (ec *executionContext) marshalNAsset2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAsset(ctx context.Context, sel ast.SelectionSet, v vega.Asset) graphql.Marshaler {
 	return ec._Asset(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAsset(ctx context.Context, sel ast.SelectionSet, v *vega.Asset) graphql.Marshaler {
+func (ec *executionContext) marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAsset(ctx context.Context, sel ast.SelectionSet, v *vega.Asset) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -58011,11 +60469,11 @@ func (ec *executionContext) marshalNAssetStatus2codeᚗvegaprotocolᚗioᚋvega�
 	return v
 }
 
-func (ec *executionContext) marshalNAssetsConnection2codeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAssetsConnection(ctx context.Context, sel ast.SelectionSet, v v2.AssetsConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNAssetsConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAssetsConnection(ctx context.Context, sel ast.SelectionSet, v v2.AssetsConnection) graphql.Marshaler {
 	return ec._AssetsConnection(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNAssetsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAssetsConnection(ctx context.Context, sel ast.SelectionSet, v *v2.AssetsConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNAssetsConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAssetsConnection(ctx context.Context, sel ast.SelectionSet, v *v2.AssetsConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -58145,11 +60603,11 @@ func (ec *executionContext) marshalNBusEventType2ᚕcodeᚗvegaprotocolᚗioᚋv
 	return ret
 }
 
-func (ec *executionContext) marshalNCandle2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐCandle(ctx context.Context, sel ast.SelectionSet, v vega.Candle) graphql.Marshaler {
+func (ec *executionContext) marshalNCandle2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐCandle(ctx context.Context, sel ast.SelectionSet, v vega.Candle) graphql.Marshaler {
 	return ec._Candle(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNCandle2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐCandle(ctx context.Context, sel ast.SelectionSet, v *vega.Candle) graphql.Marshaler {
+func (ec *executionContext) marshalNCandle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐCandle(ctx context.Context, sel ast.SelectionSet, v *vega.Candle) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -58159,11 +60617,11 @@ func (ec *executionContext) marshalNCandle2ᚖcodeᚗvegaprotocolᚗioᚋprotos�
 	return ec._Candle(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNCandleDataConnection2codeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐCandleDataConnection(ctx context.Context, sel ast.SelectionSet, v v2.CandleDataConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNCandleDataConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐCandleDataConnection(ctx context.Context, sel ast.SelectionSet, v v2.CandleDataConnection) graphql.Marshaler {
 	return ec._CandleDataConnection(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNCandleDataConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐCandleDataConnection(ctx context.Context, sel ast.SelectionSet, v *v2.CandleDataConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNCandleDataConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐCandleDataConnection(ctx context.Context, sel ast.SelectionSet, v *v2.CandleDataConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -58173,7 +60631,7 @@ func (ec *executionContext) marshalNCandleDataConnection2ᚖcodeᚗvegaprotocol�
 	return ec._CandleDataConnection(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNCandleNode2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐCandle(ctx context.Context, sel ast.SelectionSet, v *v2.Candle) graphql.Marshaler {
+func (ec *executionContext) marshalNCandleNode2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐCandle(ctx context.Context, sel ast.SelectionSet, v *v2.Candle) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -58183,7 +60641,7 @@ func (ec *executionContext) marshalNCandleNode2ᚖcodeᚗvegaprotocolᚗioᚋpro
 	return ec._CandleNode(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNCondition2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐCondition(ctx context.Context, sel ast.SelectionSet, v *v11.Condition) graphql.Marshaler {
+func (ec *executionContext) marshalNCondition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐCondition(ctx context.Context, sel ast.SelectionSet, v *v11.Condition) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -58203,11 +60661,11 @@ func (ec *executionContext) marshalNConditionOperator2codeᚗvegaprotocolᚗio�
 	return v
 }
 
-func (ec *executionContext) marshalNDelegation2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐDelegation(ctx context.Context, sel ast.SelectionSet, v vega.Delegation) graphql.Marshaler {
+func (ec *executionContext) marshalNDelegation2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDelegation(ctx context.Context, sel ast.SelectionSet, v vega.Delegation) graphql.Marshaler {
 	return ec._Delegation(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNDelegation2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐDelegationᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Delegation) graphql.Marshaler {
+func (ec *executionContext) marshalNDelegation2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDelegationᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Delegation) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -58231,7 +60689,7 @@ func (ec *executionContext) marshalNDelegation2ᚕᚖcodeᚗvegaprotocolᚗioᚋ
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNDelegation2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐDelegation(ctx, sel, v[i])
+			ret[i] = ec.marshalNDelegation2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDelegation(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -58251,7 +60709,7 @@ func (ec *executionContext) marshalNDelegation2ᚕᚖcodeᚗvegaprotocolᚗioᚋ
 	return ret
 }
 
-func (ec *executionContext) marshalNDelegation2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐDelegation(ctx context.Context, sel ast.SelectionSet, v *vega.Delegation) graphql.Marshaler {
+func (ec *executionContext) marshalNDelegation2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDelegation(ctx context.Context, sel ast.SelectionSet, v *vega.Delegation) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -58261,11 +60719,11 @@ func (ec *executionContext) marshalNDelegation2ᚖcodeᚗvegaprotocolᚗioᚋpro
 	return ec._Delegation(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNDelegationsConnection2codeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDelegationsConnection(ctx context.Context, sel ast.SelectionSet, v v2.DelegationsConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNDelegationsConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDelegationsConnection(ctx context.Context, sel ast.SelectionSet, v v2.DelegationsConnection) graphql.Marshaler {
 	return ec._DelegationsConnection(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNDelegationsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDelegationsConnection(ctx context.Context, sel ast.SelectionSet, v *v2.DelegationsConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNDelegationsConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDelegationsConnection(ctx context.Context, sel ast.SelectionSet, v *v2.DelegationsConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -58275,7 +60733,7 @@ func (ec *executionContext) marshalNDelegationsConnection2ᚖcodeᚗvegaprotocol
 	return ec._DelegationsConnection(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNDeposit2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐDeposit(ctx context.Context, sel ast.SelectionSet, v *vega.Deposit) graphql.Marshaler {
+func (ec *executionContext) marshalNDeposit2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDeposit(ctx context.Context, sel ast.SelectionSet, v *vega.Deposit) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -58295,11 +60753,11 @@ func (ec *executionContext) marshalNDepositStatus2codeᚗvegaprotocolᚗioᚋveg
 	return v
 }
 
-func (ec *executionContext) marshalNDepositsConnection2codeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDepositsConnection(ctx context.Context, sel ast.SelectionSet, v v2.DepositsConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNDepositsConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDepositsConnection(ctx context.Context, sel ast.SelectionSet, v v2.DepositsConnection) graphql.Marshaler {
 	return ec._DepositsConnection(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNDepositsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDepositsConnection(ctx context.Context, sel ast.SelectionSet, v *v2.DepositsConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNDepositsConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDepositsConnection(ctx context.Context, sel ast.SelectionSet, v *v2.DepositsConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -58319,11 +60777,11 @@ func (ec *executionContext) marshalNDispatchMetric2codeᚗvegaprotocolᚗioᚋve
 	return v
 }
 
-func (ec *executionContext) marshalNEpoch2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐEpoch(ctx context.Context, sel ast.SelectionSet, v vega.Epoch) graphql.Marshaler {
+func (ec *executionContext) marshalNEpoch2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐEpoch(ctx context.Context, sel ast.SelectionSet, v vega.Epoch) graphql.Marshaler {
 	return ec._Epoch(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNEpoch2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐEpoch(ctx context.Context, sel ast.SelectionSet, v *vega.Epoch) graphql.Marshaler {
+func (ec *executionContext) marshalNEpoch2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐEpoch(ctx context.Context, sel ast.SelectionSet, v *vega.Epoch) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -58333,7 +60791,7 @@ func (ec *executionContext) marshalNEpoch2ᚖcodeᚗvegaprotocolᚗioᚋprotos�
 	return ec._Epoch(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNEpochTimestamps2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐEpochTimestamps(ctx context.Context, sel ast.SelectionSet, v *vega.EpochTimestamps) graphql.Marshaler {
+func (ec *executionContext) marshalNEpochTimestamps2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐEpochTimestamps(ctx context.Context, sel ast.SelectionSet, v *vega.EpochTimestamps) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -58353,7 +60811,7 @@ func (ec *executionContext) marshalNEvent2codeᚗvegaprotocolᚗioᚋvegaᚋdata
 	return ec._Event(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNFeeFactors2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐFeeFactors(ctx context.Context, sel ast.SelectionSet, v *vega.FeeFactors) graphql.Marshaler {
+func (ec *executionContext) marshalNFeeFactors2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐFeeFactors(ctx context.Context, sel ast.SelectionSet, v *vega.FeeFactors) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -58363,7 +60821,7 @@ func (ec *executionContext) marshalNFeeFactors2ᚖcodeᚗvegaprotocolᚗioᚋpro
 	return ec._FeeFactors(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNFees2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐFees(ctx context.Context, sel ast.SelectionSet, v *vega.Fees) graphql.Marshaler {
+func (ec *executionContext) marshalNFees2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐFees(ctx context.Context, sel ast.SelectionSet, v *vega.Fees) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -58373,7 +60831,7 @@ func (ec *executionContext) marshalNFees2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋ
 	return ec._Fees(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNFilter2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐFilter(ctx context.Context, sel ast.SelectionSet, v *v11.Filter) graphql.Marshaler {
+func (ec *executionContext) marshalNFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐFilter(ctx context.Context, sel ast.SelectionSet, v *v11.Filter) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -58445,7 +60903,7 @@ func (ec *executionContext) marshalNID2ᚕstringᚄ(ctx context.Context, sel ast
 	return ret
 }
 
-func (ec *executionContext) marshalNInstrument2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐInstrument(ctx context.Context, sel ast.SelectionSet, v *vega.Instrument) graphql.Marshaler {
+func (ec *executionContext) marshalNInstrument2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐInstrument(ctx context.Context, sel ast.SelectionSet, v *vega.Instrument) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -58455,11 +60913,11 @@ func (ec *executionContext) marshalNInstrument2ᚖcodeᚗvegaprotocolᚗioᚋpro
 	return ec._Instrument(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNInstrumentConfiguration2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐInstrumentConfiguration(ctx context.Context, sel ast.SelectionSet, v vega.InstrumentConfiguration) graphql.Marshaler {
+func (ec *executionContext) marshalNInstrumentConfiguration2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐInstrumentConfiguration(ctx context.Context, sel ast.SelectionSet, v vega.InstrumentConfiguration) graphql.Marshaler {
 	return ec._InstrumentConfiguration(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNInstrumentConfiguration2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐInstrumentConfiguration(ctx context.Context, sel ast.SelectionSet, v *vega.InstrumentConfiguration) graphql.Marshaler {
+func (ec *executionContext) marshalNInstrumentConfiguration2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐInstrumentConfiguration(ctx context.Context, sel ast.SelectionSet, v *vega.InstrumentConfiguration) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -58469,7 +60927,7 @@ func (ec *executionContext) marshalNInstrumentConfiguration2ᚖcodeᚗvegaprotoc
 	return ec._InstrumentConfiguration(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNInstrumentMetadata2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐInstrumentMetadata(ctx context.Context, sel ast.SelectionSet, v *vega.InstrumentMetadata) graphql.Marshaler {
+func (ec *executionContext) marshalNInstrumentMetadata2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐInstrumentMetadata(ctx context.Context, sel ast.SelectionSet, v *vega.InstrumentMetadata) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -58534,7 +60992,7 @@ func (ec *executionContext) marshalNInterval2codeᚗvegaprotocolᚗioᚋvegaᚋd
 	return v
 }
 
-func (ec *executionContext) marshalNKeyRotation2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv1ᚐKeyRotation(ctx context.Context, sel ast.SelectionSet, v *v12.KeyRotation) graphql.Marshaler {
+func (ec *executionContext) marshalNKeyRotation2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐKeyRotation(ctx context.Context, sel ast.SelectionSet, v *v1.KeyRotation) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -58542,6 +61000,20 @@ func (ec *executionContext) marshalNKeyRotation2ᚖcodeᚗvegaprotocolᚗioᚋpr
 		return graphql.Null
 	}
 	return ec._KeyRotation(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNKeyRotationConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐKeyRotationConnection(ctx context.Context, sel ast.SelectionSet, v v2.KeyRotationConnection) graphql.Marshaler {
+	return ec._KeyRotationConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNKeyRotationConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐKeyRotationConnection(ctx context.Context, sel ast.SelectionSet, v *v2.KeyRotationConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._KeyRotationConnection(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNLedgerEntry2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐLedgerEntry(ctx context.Context, sel ast.SelectionSet, v *LedgerEntry) graphql.Marshaler {
@@ -58568,7 +61040,7 @@ func (ec *executionContext) marshalNLiquidityMonitoringParameters2ᚖcodeᚗvega
 	return ec._LiquidityMonitoringParameters(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNLiquidityOrder2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLiquidityOrder(ctx context.Context, sel ast.SelectionSet, v *vega.LiquidityOrder) graphql.Marshaler {
+func (ec *executionContext) marshalNLiquidityOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityOrder(ctx context.Context, sel ast.SelectionSet, v *vega.LiquidityOrder) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -58578,7 +61050,7 @@ func (ec *executionContext) marshalNLiquidityOrder2ᚖcodeᚗvegaprotocolᚗio�
 	return ec._LiquidityOrder(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNLiquidityOrderReference2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLiquidityOrderReferenceᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.LiquidityOrderReference) graphql.Marshaler {
+func (ec *executionContext) marshalNLiquidityOrderReference2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityOrderReferenceᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.LiquidityOrderReference) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -58602,7 +61074,7 @@ func (ec *executionContext) marshalNLiquidityOrderReference2ᚕᚖcodeᚗvegapro
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNLiquidityOrderReference2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLiquidityOrderReference(ctx, sel, v[i])
+			ret[i] = ec.marshalNLiquidityOrderReference2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityOrderReference(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -58622,7 +61094,7 @@ func (ec *executionContext) marshalNLiquidityOrderReference2ᚕᚖcodeᚗvegapro
 	return ret
 }
 
-func (ec *executionContext) marshalNLiquidityOrderReference2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLiquidityOrderReference(ctx context.Context, sel ast.SelectionSet, v *vega.LiquidityOrderReference) graphql.Marshaler {
+func (ec *executionContext) marshalNLiquidityOrderReference2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityOrderReference(ctx context.Context, sel ast.SelectionSet, v *vega.LiquidityOrderReference) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -58642,7 +61114,7 @@ func (ec *executionContext) marshalNLiquidityProviderFeeShare2ᚖcodeᚗvegaprot
 	return ec._LiquidityProviderFeeShare(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNLiquidityProvision2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLiquidityProvision(ctx context.Context, sel ast.SelectionSet, v *vega.LiquidityProvision) graphql.Marshaler {
+func (ec *executionContext) marshalNLiquidityProvision2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityProvision(ctx context.Context, sel ast.SelectionSet, v *vega.LiquidityProvision) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -58662,11 +61134,11 @@ func (ec *executionContext) marshalNLiquidityProvisionStatus2codeᚗvegaprotocol
 	return v
 }
 
-func (ec *executionContext) marshalNLiquidityProvisionsConnection2codeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLiquidityProvisionsConnection(ctx context.Context, sel ast.SelectionSet, v v2.LiquidityProvisionsConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNLiquidityProvisionsConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLiquidityProvisionsConnection(ctx context.Context, sel ast.SelectionSet, v v2.LiquidityProvisionsConnection) graphql.Marshaler {
 	return ec._LiquidityProvisionsConnection(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNLiquidityProvisionsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLiquidityProvisionsConnection(ctx context.Context, sel ast.SelectionSet, v *v2.LiquidityProvisionsConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNLiquidityProvisionsConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLiquidityProvisionsConnection(ctx context.Context, sel ast.SelectionSet, v *v2.LiquidityProvisionsConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -58676,7 +61148,7 @@ func (ec *executionContext) marshalNLiquidityProvisionsConnection2ᚖcodeᚗvega
 	return ec._LiquidityProvisionsConnection(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNLogNormalModelParams2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLogNormalModelParams(ctx context.Context, sel ast.SelectionSet, v *vega.LogNormalModelParams) graphql.Marshaler {
+func (ec *executionContext) marshalNLogNormalModelParams2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLogNormalModelParams(ctx context.Context, sel ast.SelectionSet, v *vega.LogNormalModelParams) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -58686,11 +61158,11 @@ func (ec *executionContext) marshalNLogNormalModelParams2ᚖcodeᚗvegaprotocol�
 	return ec._LogNormalModelParams(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNMarginConnection2codeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarginConnection(ctx context.Context, sel ast.SelectionSet, v v2.MarginConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNMarginConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarginConnection(ctx context.Context, sel ast.SelectionSet, v v2.MarginConnection) graphql.Marshaler {
 	return ec._MarginConnection(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNMarginConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarginConnection(ctx context.Context, sel ast.SelectionSet, v *v2.MarginConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNMarginConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarginConnection(ctx context.Context, sel ast.SelectionSet, v *v2.MarginConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -58700,7 +61172,7 @@ func (ec *executionContext) marshalNMarginConnection2ᚖcodeᚗvegaprotocolᚗio
 	return ec._MarginConnection(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNMarginEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarginEdge(ctx context.Context, sel ast.SelectionSet, v *v2.MarginEdge) graphql.Marshaler {
+func (ec *executionContext) marshalNMarginEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarginEdge(ctx context.Context, sel ast.SelectionSet, v *v2.MarginEdge) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -58710,11 +61182,11 @@ func (ec *executionContext) marshalNMarginEdge2ᚖcodeᚗvegaprotocolᚗioᚋpro
 	return ec._MarginEdge(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNMarginLevels2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarginLevels(ctx context.Context, sel ast.SelectionSet, v vega.MarginLevels) graphql.Marshaler {
+func (ec *executionContext) marshalNMarginLevels2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarginLevels(ctx context.Context, sel ast.SelectionSet, v vega.MarginLevels) graphql.Marshaler {
 	return ec._MarginLevels(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNMarginLevels2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarginLevels(ctx context.Context, sel ast.SelectionSet, v *vega.MarginLevels) graphql.Marshaler {
+func (ec *executionContext) marshalNMarginLevels2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarginLevels(ctx context.Context, sel ast.SelectionSet, v *vega.MarginLevels) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -58724,11 +61196,11 @@ func (ec *executionContext) marshalNMarginLevels2ᚖcodeᚗvegaprotocolᚗioᚋp
 	return ec._MarginLevels(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNMarket2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarket(ctx context.Context, sel ast.SelectionSet, v vega.Market) graphql.Marshaler {
+func (ec *executionContext) marshalNMarket2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarket(ctx context.Context, sel ast.SelectionSet, v vega.Market) graphql.Marshaler {
 	return ec._Market(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarket(ctx context.Context, sel ast.SelectionSet, v *vega.Market) graphql.Marshaler {
+func (ec *executionContext) marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarket(ctx context.Context, sel ast.SelectionSet, v *vega.Market) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -58738,11 +61210,11 @@ func (ec *executionContext) marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋprotos�
 	return ec._Market(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNMarketConnection2codeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketConnection(ctx context.Context, sel ast.SelectionSet, v v2.MarketConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNMarketConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketConnection(ctx context.Context, sel ast.SelectionSet, v v2.MarketConnection) graphql.Marshaler {
 	return ec._MarketConnection(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNMarketConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketConnection(ctx context.Context, sel ast.SelectionSet, v *v2.MarketConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNMarketConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketConnection(ctx context.Context, sel ast.SelectionSet, v *v2.MarketConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -58752,11 +61224,11 @@ func (ec *executionContext) marshalNMarketConnection2ᚖcodeᚗvegaprotocolᚗio
 	return ec._MarketConnection(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNMarketData2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketData(ctx context.Context, sel ast.SelectionSet, v vega.MarketData) graphql.Marshaler {
+func (ec *executionContext) marshalNMarketData2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketData(ctx context.Context, sel ast.SelectionSet, v vega.MarketData) graphql.Marshaler {
 	return ec._MarketData(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNMarketData2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketData(ctx context.Context, sel ast.SelectionSet, v *vega.MarketData) graphql.Marshaler {
+func (ec *executionContext) marshalNMarketData2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketData(ctx context.Context, sel ast.SelectionSet, v *vega.MarketData) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -58780,11 +61252,11 @@ func (ec *executionContext) marshalNMarketDataCommitments2ᚖcodeᚗvegaprotocol
 	return ec._MarketDataCommitments(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNMarketDataConnection2codeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketDataConnection(ctx context.Context, sel ast.SelectionSet, v v2.MarketDataConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNMarketDataConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketDataConnection(ctx context.Context, sel ast.SelectionSet, v v2.MarketDataConnection) graphql.Marshaler {
 	return ec._MarketDataConnection(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNMarketDataConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketDataConnection(ctx context.Context, sel ast.SelectionSet, v *v2.MarketDataConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNMarketDataConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketDataConnection(ctx context.Context, sel ast.SelectionSet, v *v2.MarketDataConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -58794,11 +61266,11 @@ func (ec *executionContext) marshalNMarketDataConnection2ᚖcodeᚗvegaprotocol�
 	return ec._MarketDataConnection(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNMarketDepth2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketDepth(ctx context.Context, sel ast.SelectionSet, v vega.MarketDepth) graphql.Marshaler {
+func (ec *executionContext) marshalNMarketDepth2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketDepth(ctx context.Context, sel ast.SelectionSet, v vega.MarketDepth) graphql.Marshaler {
 	return ec._MarketDepth(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNMarketDepth2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketDepth(ctx context.Context, sel ast.SelectionSet, v *vega.MarketDepth) graphql.Marshaler {
+func (ec *executionContext) marshalNMarketDepth2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketDepth(ctx context.Context, sel ast.SelectionSet, v *vega.MarketDepth) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -58822,11 +61294,11 @@ func (ec *executionContext) marshalNMarketDepthTrade2ᚖcodeᚗvegaprotocolᚗio
 	return ec._MarketDepthTrade(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNMarketDepthUpdate2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketDepthUpdate(ctx context.Context, sel ast.SelectionSet, v vega.MarketDepthUpdate) graphql.Marshaler {
+func (ec *executionContext) marshalNMarketDepthUpdate2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketDepthUpdate(ctx context.Context, sel ast.SelectionSet, v vega.MarketDepthUpdate) graphql.Marshaler {
 	return ec._MarketDepthUpdate(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNMarketDepthUpdate2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketDepthUpdate(ctx context.Context, sel ast.SelectionSet, v *vega.MarketDepthUpdate) graphql.Marshaler {
+func (ec *executionContext) marshalNMarketDepthUpdate2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketDepthUpdate(ctx context.Context, sel ast.SelectionSet, v *vega.MarketDepthUpdate) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -58836,7 +61308,7 @@ func (ec *executionContext) marshalNMarketDepthUpdate2ᚖcodeᚗvegaprotocolᚗi
 	return ec._MarketDepthUpdate(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNMarketEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*v2.MarketEdge) graphql.Marshaler {
+func (ec *executionContext) marshalNMarketEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*v2.MarketEdge) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -58860,7 +61332,7 @@ func (ec *executionContext) marshalNMarketEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋ
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNMarketEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketEdge(ctx, sel, v[i])
+			ret[i] = ec.marshalNMarketEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketEdge(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -58880,7 +61352,7 @@ func (ec *executionContext) marshalNMarketEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋ
 	return ret
 }
 
-func (ec *executionContext) marshalNMarketEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketEdge(ctx context.Context, sel ast.SelectionSet, v *v2.MarketEdge) graphql.Marshaler {
+func (ec *executionContext) marshalNMarketEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketEdge(ctx context.Context, sel ast.SelectionSet, v *v2.MarketEdge) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -58900,7 +61372,7 @@ func (ec *executionContext) marshalNMarketState2codeᚗvegaprotocolᚗioᚋvega�
 	return v
 }
 
-func (ec *executionContext) marshalNMarketTimestamps2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketTimestamps(ctx context.Context, sel ast.SelectionSet, v *vega.MarketTimestamps) graphql.Marshaler {
+func (ec *executionContext) marshalNMarketTimestamps2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketTimestamps(ctx context.Context, sel ast.SelectionSet, v *vega.MarketTimestamps) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -58920,11 +61392,11 @@ func (ec *executionContext) marshalNMarketTradingMode2codeᚗvegaprotocolᚗio�
 	return v
 }
 
-func (ec *executionContext) marshalNNetworkParameter2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐNetworkParameter(ctx context.Context, sel ast.SelectionSet, v vega.NetworkParameter) graphql.Marshaler {
+func (ec *executionContext) marshalNNetworkParameter2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐNetworkParameter(ctx context.Context, sel ast.SelectionSet, v vega.NetworkParameter) graphql.Marshaler {
 	return ec._NetworkParameter(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNNetworkParameter2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐNetworkParameter(ctx context.Context, sel ast.SelectionSet, v *vega.NetworkParameter) graphql.Marshaler {
+func (ec *executionContext) marshalNNetworkParameter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐNetworkParameter(ctx context.Context, sel ast.SelectionSet, v *vega.NetworkParameter) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -58934,11 +61406,25 @@ func (ec *executionContext) marshalNNetworkParameter2ᚖcodeᚗvegaprotocolᚗio
 	return ec._NetworkParameter(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNNode2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐNode(ctx context.Context, sel ast.SelectionSet, v vega.Node) graphql.Marshaler {
+func (ec *executionContext) marshalNNetworkParametersConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNetworkParameterConnection(ctx context.Context, sel ast.SelectionSet, v v2.NetworkParameterConnection) graphql.Marshaler {
+	return ec._NetworkParametersConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNNetworkParametersConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNetworkParameterConnection(ctx context.Context, sel ast.SelectionSet, v *v2.NetworkParameterConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._NetworkParametersConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNNode2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐNode(ctx context.Context, sel ast.SelectionSet, v vega.Node) graphql.Marshaler {
 	return ec._Node(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNNode2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐNodeᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Node) graphql.Marshaler {
+func (ec *executionContext) marshalNNode2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐNodeᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Node) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -58962,7 +61448,7 @@ func (ec *executionContext) marshalNNode2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotos
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNNode2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐNode(ctx, sel, v[i])
+			ret[i] = ec.marshalNNode2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐNode(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -58982,7 +61468,7 @@ func (ec *executionContext) marshalNNode2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotos
 	return ret
 }
 
-func (ec *executionContext) marshalNNode2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐNode(ctx context.Context, sel ast.SelectionSet, v *vega.Node) graphql.Marshaler {
+func (ec *executionContext) marshalNNode2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐNode(ctx context.Context, sel ast.SelectionSet, v *vega.Node) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -58992,7 +61478,7 @@ func (ec *executionContext) marshalNNode2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋ
 	return ec._Node(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNNodeSignature2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋcommandsᚋv1ᚐNodeSignature(ctx context.Context, sel ast.SelectionSet, v *v13.NodeSignature) graphql.Marshaler {
+func (ec *executionContext) marshalNNodeSignature2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋcommandsᚋv1ᚐNodeSignature(ctx context.Context, sel ast.SelectionSet, v *v12.NodeSignature) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59000,6 +61486,20 @@ func (ec *executionContext) marshalNNodeSignature2ᚖcodeᚗvegaprotocolᚗioᚋ
 		return graphql.Null
 	}
 	return ec._NodeSignature(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNNodeSignaturesConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodeSignaturesConnection(ctx context.Context, sel ast.SelectionSet, v v2.NodeSignaturesConnection) graphql.Marshaler {
+	return ec._NodeSignaturesConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNNodeSignaturesConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodeSignaturesConnection(ctx context.Context, sel ast.SelectionSet, v *v2.NodeSignaturesConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._NodeSignaturesConnection(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNNodeStatus2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐNodeStatus(ctx context.Context, v interface{}) (NodeStatus, error) {
@@ -59012,11 +61512,11 @@ func (ec *executionContext) marshalNNodeStatus2codeᚗvegaprotocolᚗioᚋvega�
 	return v
 }
 
-func (ec *executionContext) marshalNNodesConnection2codeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodesConnection(ctx context.Context, sel ast.SelectionSet, v v2.NodesConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNNodesConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodesConnection(ctx context.Context, sel ast.SelectionSet, v v2.NodesConnection) graphql.Marshaler {
 	return ec._NodesConnection(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNNodesConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodesConnection(ctx context.Context, sel ast.SelectionSet, v *v2.NodesConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNNodesConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodesConnection(ctx context.Context, sel ast.SelectionSet, v *v2.NodesConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59036,7 +61536,7 @@ func (ec *executionContext) marshalNObservableLiquidityProviderFeeShare2ᚖcode�
 	return ec._ObservableLiquidityProviderFeeShare(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNObservableMarketData2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketDataᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.MarketData) graphql.Marshaler {
+func (ec *executionContext) marshalNObservableMarketData2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketDataᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.MarketData) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -59060,7 +61560,7 @@ func (ec *executionContext) marshalNObservableMarketData2ᚕᚖcodeᚗvegaprotoc
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNObservableMarketData2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketData(ctx, sel, v[i])
+			ret[i] = ec.marshalNObservableMarketData2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketData(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -59080,7 +61580,7 @@ func (ec *executionContext) marshalNObservableMarketData2ᚕᚖcodeᚗvegaprotoc
 	return ret
 }
 
-func (ec *executionContext) marshalNObservableMarketData2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketData(ctx context.Context, sel ast.SelectionSet, v *vega.MarketData) graphql.Marshaler {
+func (ec *executionContext) marshalNObservableMarketData2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketData(ctx context.Context, sel ast.SelectionSet, v *vega.MarketData) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59090,7 +61590,7 @@ func (ec *executionContext) marshalNObservableMarketData2ᚖcodeᚗvegaprotocol�
 	return ec._ObservableMarketData(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNObservableMarketDepth2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketDepthᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.MarketDepth) graphql.Marshaler {
+func (ec *executionContext) marshalNObservableMarketDepth2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketDepthᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.MarketDepth) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -59114,7 +61614,7 @@ func (ec *executionContext) marshalNObservableMarketDepth2ᚕᚖcodeᚗvegaproto
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNObservableMarketDepth2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketDepth(ctx, sel, v[i])
+			ret[i] = ec.marshalNObservableMarketDepth2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketDepth(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -59134,7 +61634,7 @@ func (ec *executionContext) marshalNObservableMarketDepth2ᚕᚖcodeᚗvegaproto
 	return ret
 }
 
-func (ec *executionContext) marshalNObservableMarketDepth2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketDepth(ctx context.Context, sel ast.SelectionSet, v *vega.MarketDepth) graphql.Marshaler {
+func (ec *executionContext) marshalNObservableMarketDepth2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketDepth(ctx context.Context, sel ast.SelectionSet, v *vega.MarketDepth) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59144,7 +61644,7 @@ func (ec *executionContext) marshalNObservableMarketDepth2ᚖcodeᚗvegaprotocol
 	return ec._ObservableMarketDepth(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNObservableMarketDepthUpdate2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketDepthUpdateᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.MarketDepthUpdate) graphql.Marshaler {
+func (ec *executionContext) marshalNObservableMarketDepthUpdate2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketDepthUpdateᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.MarketDepthUpdate) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -59168,7 +61668,7 @@ func (ec *executionContext) marshalNObservableMarketDepthUpdate2ᚕᚖcodeᚗveg
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNObservableMarketDepthUpdate2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketDepthUpdate(ctx, sel, v[i])
+			ret[i] = ec.marshalNObservableMarketDepthUpdate2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketDepthUpdate(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -59188,7 +61688,7 @@ func (ec *executionContext) marshalNObservableMarketDepthUpdate2ᚕᚖcodeᚗveg
 	return ret
 }
 
-func (ec *executionContext) marshalNObservableMarketDepthUpdate2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketDepthUpdate(ctx context.Context, sel ast.SelectionSet, v *vega.MarketDepthUpdate) graphql.Marshaler {
+func (ec *executionContext) marshalNObservableMarketDepthUpdate2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketDepthUpdate(ctx context.Context, sel ast.SelectionSet, v *vega.MarketDepthUpdate) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59198,7 +61698,7 @@ func (ec *executionContext) marshalNObservableMarketDepthUpdate2ᚖcodeᚗvegapr
 	return ec._ObservableMarketDepthUpdate(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNOracleData2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleDataᚄ(ctx context.Context, sel ast.SelectionSet, v []*v11.OracleData) graphql.Marshaler {
+func (ec *executionContext) marshalNOracleData2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleDataᚄ(ctx context.Context, sel ast.SelectionSet, v []*v11.OracleData) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -59222,7 +61722,7 @@ func (ec *executionContext) marshalNOracleData2ᚕᚖcodeᚗvegaprotocolᚗioᚋ
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNOracleData2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleData(ctx, sel, v[i])
+			ret[i] = ec.marshalNOracleData2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleData(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -59242,7 +61742,7 @@ func (ec *executionContext) marshalNOracleData2ᚕᚖcodeᚗvegaprotocolᚗioᚋ
 	return ret
 }
 
-func (ec *executionContext) marshalNOracleData2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleData(ctx context.Context, sel ast.SelectionSet, v *v11.OracleData) graphql.Marshaler {
+func (ec *executionContext) marshalNOracleData2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleData(ctx context.Context, sel ast.SelectionSet, v *v11.OracleData) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59252,11 +61752,11 @@ func (ec *executionContext) marshalNOracleData2ᚖcodeᚗvegaprotocolᚗioᚋpro
 	return ec._OracleData(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNOracleDataConnection2codeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOracleDataConnection(ctx context.Context, sel ast.SelectionSet, v v2.OracleDataConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNOracleDataConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOracleDataConnection(ctx context.Context, sel ast.SelectionSet, v v2.OracleDataConnection) graphql.Marshaler {
 	return ec._OracleDataConnection(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNOracleDataConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOracleDataConnection(ctx context.Context, sel ast.SelectionSet, v *v2.OracleDataConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNOracleDataConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOracleDataConnection(ctx context.Context, sel ast.SelectionSet, v *v2.OracleDataConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59266,7 +61766,7 @@ func (ec *executionContext) marshalNOracleDataConnection2ᚖcodeᚗvegaprotocol�
 	return ec._OracleDataConnection(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNOracleSpec2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpec(ctx context.Context, sel ast.SelectionSet, v *v11.OracleSpec) graphql.Marshaler {
+func (ec *executionContext) marshalNOracleSpec2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpec(ctx context.Context, sel ast.SelectionSet, v *v11.OracleSpec) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59276,7 +61776,7 @@ func (ec *executionContext) marshalNOracleSpec2ᚖcodeᚗvegaprotocolᚗioᚋpro
 	return ec._OracleSpec(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNOracleSpecConfiguration2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpecConfiguration(ctx context.Context, sel ast.SelectionSet, v *v11.OracleSpecConfiguration) graphql.Marshaler {
+func (ec *executionContext) marshalNOracleSpecConfiguration2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpecConfiguration(ctx context.Context, sel ast.SelectionSet, v *v11.OracleSpecConfiguration) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59296,7 +61796,7 @@ func (ec *executionContext) marshalNOracleSpecStatus2codeᚗvegaprotocolᚗioᚋ
 	return v
 }
 
-func (ec *executionContext) marshalNOracleSpecToFutureBinding2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐOracleSpecToFutureBinding(ctx context.Context, sel ast.SelectionSet, v *vega.OracleSpecToFutureBinding) graphql.Marshaler {
+func (ec *executionContext) marshalNOracleSpecToFutureBinding2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOracleSpecToFutureBinding(ctx context.Context, sel ast.SelectionSet, v *vega.OracleSpecToFutureBinding) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59306,11 +61806,11 @@ func (ec *executionContext) marshalNOracleSpecToFutureBinding2ᚖcodeᚗvegaprot
 	return ec._OracleSpecToFutureBinding(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNOracleSpecsConnection2codeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOracleSpecsConnection(ctx context.Context, sel ast.SelectionSet, v v2.OracleSpecsConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNOracleSpecsConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOracleSpecsConnection(ctx context.Context, sel ast.SelectionSet, v v2.OracleSpecsConnection) graphql.Marshaler {
 	return ec._OracleSpecsConnection(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNOracleSpecsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOracleSpecsConnection(ctx context.Context, sel ast.SelectionSet, v *v2.OracleSpecsConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNOracleSpecsConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOracleSpecsConnection(ctx context.Context, sel ast.SelectionSet, v *v2.OracleSpecsConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59320,11 +61820,11 @@ func (ec *executionContext) marshalNOracleSpecsConnection2ᚖcodeᚗvegaprotocol
 	return ec._OracleSpecsConnection(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNOrder2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐOrder(ctx context.Context, sel ast.SelectionSet, v vega.Order) graphql.Marshaler {
+func (ec *executionContext) marshalNOrder2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder(ctx context.Context, sel ast.SelectionSet, v vega.Order) graphql.Marshaler {
 	return ec._Order(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNOrder2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐOrder(ctx context.Context, sel ast.SelectionSet, v *vega.Order) graphql.Marshaler {
+func (ec *executionContext) marshalNOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder(ctx context.Context, sel ast.SelectionSet, v *vega.Order) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59334,11 +61834,11 @@ func (ec *executionContext) marshalNOrder2ᚖcodeᚗvegaprotocolᚗioᚋprotos�
 	return ec._Order(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNOrderConnection2codeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderConnection(ctx context.Context, sel ast.SelectionSet, v v2.OrderConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNOrderConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderConnection(ctx context.Context, sel ast.SelectionSet, v v2.OrderConnection) graphql.Marshaler {
 	return ec._OrderConnection(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNOrderConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderConnection(ctx context.Context, sel ast.SelectionSet, v *v2.OrderConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNOrderConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderConnection(ctx context.Context, sel ast.SelectionSet, v *v2.OrderConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59348,7 +61848,7 @@ func (ec *executionContext) marshalNOrderConnection2ᚖcodeᚗvegaprotocolᚗio�
 	return ec._OrderConnection(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNOrderEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderEdge(ctx context.Context, sel ast.SelectionSet, v *v2.OrderEdge) graphql.Marshaler {
+func (ec *executionContext) marshalNOrderEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderEdge(ctx context.Context, sel ast.SelectionSet, v *v2.OrderEdge) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59402,7 +61902,7 @@ func (ec *executionContext) marshalNOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋ
 	return v
 }
 
-func (ec *executionContext) marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v *v2.PageInfo) graphql.Marshaler {
+func (ec *executionContext) marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v *v2.PageInfo) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59412,11 +61912,11 @@ func (ec *executionContext) marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋproto
 	return ec._PageInfo(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNParty2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐParty(ctx context.Context, sel ast.SelectionSet, v vega.Party) graphql.Marshaler {
+func (ec *executionContext) marshalNParty2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐParty(ctx context.Context, sel ast.SelectionSet, v vega.Party) graphql.Marshaler {
 	return ec._Party(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐParty(ctx context.Context, sel ast.SelectionSet, v *vega.Party) graphql.Marshaler {
+func (ec *executionContext) marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐParty(ctx context.Context, sel ast.SelectionSet, v *vega.Party) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59426,11 +61926,11 @@ func (ec *executionContext) marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋprotos�
 	return ec._Party(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNPartyConnection2codeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPartyConnection(ctx context.Context, sel ast.SelectionSet, v v2.PartyConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNPartyConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPartyConnection(ctx context.Context, sel ast.SelectionSet, v v2.PartyConnection) graphql.Marshaler {
 	return ec._PartyConnection(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNPartyConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPartyConnection(ctx context.Context, sel ast.SelectionSet, v *v2.PartyConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNPartyConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPartyConnection(ctx context.Context, sel ast.SelectionSet, v *v2.PartyConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59440,7 +61940,7 @@ func (ec *executionContext) marshalNPartyConnection2ᚖcodeᚗvegaprotocolᚗio�
 	return ec._PartyConnection(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNPartyEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPartyEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*v2.PartyEdge) graphql.Marshaler {
+func (ec *executionContext) marshalNPartyEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPartyEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*v2.PartyEdge) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -59464,7 +61964,7 @@ func (ec *executionContext) marshalNPartyEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋp
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNPartyEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPartyEdge(ctx, sel, v[i])
+			ret[i] = ec.marshalNPartyEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPartyEdge(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -59484,7 +61984,7 @@ func (ec *executionContext) marshalNPartyEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋp
 	return ret
 }
 
-func (ec *executionContext) marshalNPartyEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPartyEdge(ctx context.Context, sel ast.SelectionSet, v *v2.PartyEdge) graphql.Marshaler {
+func (ec *executionContext) marshalNPartyEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPartyEdge(ctx context.Context, sel ast.SelectionSet, v *v2.PartyEdge) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59494,11 +61994,11 @@ func (ec *executionContext) marshalNPartyEdge2ᚖcodeᚗvegaprotocolᚗioᚋprot
 	return ec._PartyEdge(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNPartyStake2codeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv1ᚐPartyStakeResponse(ctx context.Context, sel ast.SelectionSet, v v12.PartyStakeResponse) graphql.Marshaler {
+func (ec *executionContext) marshalNPartyStake2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv1ᚐPartyStakeResponse(ctx context.Context, sel ast.SelectionSet, v v13.PartyStakeResponse) graphql.Marshaler {
 	return ec._PartyStake(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNPartyStake2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv1ᚐPartyStakeResponse(ctx context.Context, sel ast.SelectionSet, v *v12.PartyStakeResponse) graphql.Marshaler {
+func (ec *executionContext) marshalNPartyStake2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv1ᚐPartyStakeResponse(ctx context.Context, sel ast.SelectionSet, v *v13.PartyStakeResponse) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59518,11 +62018,11 @@ func (ec *executionContext) marshalNPeggedReference2codeᚗvegaprotocolᚗioᚋv
 	return v
 }
 
-func (ec *executionContext) marshalNPosition2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐPosition(ctx context.Context, sel ast.SelectionSet, v vega.Position) graphql.Marshaler {
+func (ec *executionContext) marshalNPosition2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPosition(ctx context.Context, sel ast.SelectionSet, v vega.Position) graphql.Marshaler {
 	return ec._Position(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNPosition2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐPosition(ctx context.Context, sel ast.SelectionSet, v *vega.Position) graphql.Marshaler {
+func (ec *executionContext) marshalNPosition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPosition(ctx context.Context, sel ast.SelectionSet, v *vega.Position) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59532,11 +62032,11 @@ func (ec *executionContext) marshalNPosition2ᚖcodeᚗvegaprotocolᚗioᚋproto
 	return ec._Position(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNPositionConnection2codeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPositionConnection(ctx context.Context, sel ast.SelectionSet, v v2.PositionConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNPositionConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPositionConnection(ctx context.Context, sel ast.SelectionSet, v v2.PositionConnection) graphql.Marshaler {
 	return ec._PositionConnection(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNPositionConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPositionConnection(ctx context.Context, sel ast.SelectionSet, v *v2.PositionConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNPositionConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPositionConnection(ctx context.Context, sel ast.SelectionSet, v *v2.PositionConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59546,7 +62046,7 @@ func (ec *executionContext) marshalNPositionConnection2ᚖcodeᚗvegaprotocolᚗ
 	return ec._PositionConnection(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNPositionEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPositionEdge(ctx context.Context, sel ast.SelectionSet, v *v2.PositionEdge) graphql.Marshaler {
+func (ec *executionContext) marshalNPositionEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPositionEdge(ctx context.Context, sel ast.SelectionSet, v *v2.PositionEdge) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59556,7 +62056,7 @@ func (ec *executionContext) marshalNPositionEdge2ᚖcodeᚗvegaprotocolᚗioᚋp
 	return ec._PositionEdge(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNPriceLevel2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐPriceLevel(ctx context.Context, sel ast.SelectionSet, v *vega.PriceLevel) graphql.Marshaler {
+func (ec *executionContext) marshalNPriceLevel2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPriceLevel(ctx context.Context, sel ast.SelectionSet, v *vega.PriceLevel) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59624,7 +62124,7 @@ func (ec *executionContext) marshalNProduct2codeᚗvegaprotocolᚗioᚋvegaᚋda
 	return ec._Product(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNProperty2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐProperty(ctx context.Context, sel ast.SelectionSet, v *v11.Property) graphql.Marshaler {
+func (ec *executionContext) marshalNProperty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐProperty(ctx context.Context, sel ast.SelectionSet, v *v11.Property) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59634,7 +62134,7 @@ func (ec *executionContext) marshalNProperty2ᚖcodeᚗvegaprotocolᚗioᚋproto
 	return ec._Property(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNPropertyKey2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐPropertyKey(ctx context.Context, sel ast.SelectionSet, v *v11.PropertyKey) graphql.Marshaler {
+func (ec *executionContext) marshalNPropertyKey2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐPropertyKey(ctx context.Context, sel ast.SelectionSet, v *v11.PropertyKey) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59654,11 +62154,11 @@ func (ec *executionContext) marshalNPropertyKeyType2codeᚗvegaprotocolᚗioᚋv
 	return v
 }
 
-func (ec *executionContext) marshalNProposal2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐGovernanceData(ctx context.Context, sel ast.SelectionSet, v vega.GovernanceData) graphql.Marshaler {
+func (ec *executionContext) marshalNProposal2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐGovernanceData(ctx context.Context, sel ast.SelectionSet, v vega.GovernanceData) graphql.Marshaler {
 	return ec._Proposal(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNProposal2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐGovernanceData(ctx context.Context, sel ast.SelectionSet, v *vega.GovernanceData) graphql.Marshaler {
+func (ec *executionContext) marshalNProposal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐGovernanceData(ctx context.Context, sel ast.SelectionSet, v *vega.GovernanceData) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59678,11 +62178,11 @@ func (ec *executionContext) marshalNProposalChange2codeᚗvegaprotocolᚗioᚋve
 	return ec._ProposalChange(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNProposalRationale2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐProposalRationale(ctx context.Context, sel ast.SelectionSet, v vega.ProposalRationale) graphql.Marshaler {
+func (ec *executionContext) marshalNProposalRationale2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐProposalRationale(ctx context.Context, sel ast.SelectionSet, v vega.ProposalRationale) graphql.Marshaler {
 	return ec._ProposalRationale(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNProposalRationale2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐProposalRationale(ctx context.Context, sel ast.SelectionSet, v *vega.ProposalRationale) graphql.Marshaler {
+func (ec *executionContext) marshalNProposalRationale2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐProposalRationale(ctx context.Context, sel ast.SelectionSet, v *vega.ProposalRationale) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59702,11 +62202,11 @@ func (ec *executionContext) marshalNProposalState2codeᚗvegaprotocolᚗioᚋveg
 	return v
 }
 
-func (ec *executionContext) marshalNProposalTerms2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐProposalTerms(ctx context.Context, sel ast.SelectionSet, v vega.ProposalTerms) graphql.Marshaler {
+func (ec *executionContext) marshalNProposalTerms2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐProposalTerms(ctx context.Context, sel ast.SelectionSet, v vega.ProposalTerms) graphql.Marshaler {
 	return ec._ProposalTerms(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNProposalTerms2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐProposalTerms(ctx context.Context, sel ast.SelectionSet, v *vega.ProposalTerms) graphql.Marshaler {
+func (ec *executionContext) marshalNProposalTerms2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐProposalTerms(ctx context.Context, sel ast.SelectionSet, v *vega.ProposalTerms) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59778,11 +62278,11 @@ func (ec *executionContext) marshalNProposalVotes2ᚖcodeᚗvegaprotocolᚗioᚋ
 	return ec._ProposalVotes(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNProposalsConnection2codeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐGovernanceDataConnection(ctx context.Context, sel ast.SelectionSet, v v2.GovernanceDataConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNProposalsConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐGovernanceDataConnection(ctx context.Context, sel ast.SelectionSet, v v2.GovernanceDataConnection) graphql.Marshaler {
 	return ec._ProposalsConnection(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNProposalsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐGovernanceDataConnection(ctx context.Context, sel ast.SelectionSet, v *v2.GovernanceDataConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNProposalsConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐGovernanceDataConnection(ctx context.Context, sel ast.SelectionSet, v *v2.GovernanceDataConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59792,7 +62292,7 @@ func (ec *executionContext) marshalNProposalsConnection2ᚖcodeᚗvegaprotocol�
 	return ec._ProposalsConnection(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNRankingScore2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐRankingScore(ctx context.Context, sel ast.SelectionSet, v *vega.RankingScore) graphql.Marshaler {
+func (ec *executionContext) marshalNRankingScore2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐRankingScore(ctx context.Context, sel ast.SelectionSet, v *vega.RankingScore) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59802,11 +62302,11 @@ func (ec *executionContext) marshalNRankingScore2ᚖcodeᚗvegaprotocolᚗioᚋp
 	return ec._RankingScore(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNReward2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐReward(ctx context.Context, sel ast.SelectionSet, v vega.Reward) graphql.Marshaler {
+func (ec *executionContext) marshalNReward2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐReward(ctx context.Context, sel ast.SelectionSet, v vega.Reward) graphql.Marshaler {
 	return ec._Reward(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNReward2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐReward(ctx context.Context, sel ast.SelectionSet, v *vega.Reward) graphql.Marshaler {
+func (ec *executionContext) marshalNReward2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐReward(ctx context.Context, sel ast.SelectionSet, v *vega.Reward) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59814,6 +62314,16 @@ func (ec *executionContext) marshalNReward2ᚖcodeᚗvegaprotocolᚗioᚋprotos�
 		return graphql.Null
 	}
 	return ec._Reward(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNRewardSummary2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐRewardSummary(ctx context.Context, sel ast.SelectionSet, v *vega.RewardSummary) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._RewardSummary(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNRiskModel2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐRiskModel(ctx context.Context, sel ast.SelectionSet, v RiskModel) graphql.Marshaler {
@@ -59826,7 +62336,7 @@ func (ec *executionContext) marshalNRiskModel2codeᚗvegaprotocolᚗioᚋvegaᚋ
 	return ec._RiskModel(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNScalingFactors2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐScalingFactors(ctx context.Context, sel ast.SelectionSet, v *vega.ScalingFactors) graphql.Marshaler {
+func (ec *executionContext) marshalNScalingFactors2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐScalingFactors(ctx context.Context, sel ast.SelectionSet, v *vega.ScalingFactors) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59846,7 +62356,7 @@ func (ec *executionContext) marshalNSide2codeᚗvegaprotocolᚗioᚋvegaᚋdatan
 	return v
 }
 
-func (ec *executionContext) marshalNSimpleRiskModelParams2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐSimpleModelParams(ctx context.Context, sel ast.SelectionSet, v *vega.SimpleModelParams) graphql.Marshaler {
+func (ec *executionContext) marshalNSimpleRiskModelParams2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐSimpleModelParams(ctx context.Context, sel ast.SelectionSet, v *vega.SimpleModelParams) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59856,7 +62366,7 @@ func (ec *executionContext) marshalNSimpleRiskModelParams2ᚖcodeᚗvegaprotocol
 	return ec._SimpleRiskModelParams(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNStakeLinking2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋeventsᚋv1ᚐStakeLinking(ctx context.Context, sel ast.SelectionSet, v *v1.StakeLinking) graphql.Marshaler {
+func (ec *executionContext) marshalNStakeLinking2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐStakeLinking(ctx context.Context, sel ast.SelectionSet, v *v1.StakeLinking) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59886,11 +62396,35 @@ func (ec *executionContext) marshalNStakeLinkingType2codeᚗvegaprotocolᚗioᚋ
 	return v
 }
 
-func (ec *executionContext) marshalNStatistics2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋapiᚋv1ᚐStatistics(ctx context.Context, sel ast.SelectionSet, v v14.Statistics) graphql.Marshaler {
+func (ec *executionContext) marshalNStakesConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐStakesConnection(ctx context.Context, sel ast.SelectionSet, v *v2.StakesConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._StakesConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNStakingSummary2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐStakingSummary(ctx context.Context, sel ast.SelectionSet, v StakingSummary) graphql.Marshaler {
+	return ec._StakingSummary(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNStakingSummary2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐStakingSummary(ctx context.Context, sel ast.SelectionSet, v *StakingSummary) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._StakingSummary(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNStatistics2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋapiᚋv1ᚐStatistics(ctx context.Context, sel ast.SelectionSet, v v14.Statistics) graphql.Marshaler {
 	return ec._Statistics(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNStatistics2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋapiᚋv1ᚐStatistics(ctx context.Context, sel ast.SelectionSet, v *v14.Statistics) graphql.Marshaler {
+func (ec *executionContext) marshalNStatistics2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋapiᚋv1ᚐStatistics(ctx context.Context, sel ast.SelectionSet, v *v14.Statistics) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59940,7 +62474,7 @@ func (ec *executionContext) marshalNTimestamp2int64(ctx context.Context, sel ast
 	return res
 }
 
-func (ec *executionContext) marshalNTradableInstrument2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐTradableInstrument(ctx context.Context, sel ast.SelectionSet, v *vega.TradableInstrument) graphql.Marshaler {
+func (ec *executionContext) marshalNTradableInstrument2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTradableInstrument(ctx context.Context, sel ast.SelectionSet, v *vega.TradableInstrument) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59950,7 +62484,7 @@ func (ec *executionContext) marshalNTradableInstrument2ᚖcodeᚗvegaprotocolᚗ
 	return ec._TradableInstrument(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNTrade2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐTrade(ctx context.Context, sel ast.SelectionSet, v *vega.Trade) graphql.Marshaler {
+func (ec *executionContext) marshalNTrade2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTrade(ctx context.Context, sel ast.SelectionSet, v *vega.Trade) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59960,11 +62494,11 @@ func (ec *executionContext) marshalNTrade2ᚖcodeᚗvegaprotocolᚗioᚋprotos�
 	return ec._Trade(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNTradeConnection2codeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTradeConnection(ctx context.Context, sel ast.SelectionSet, v v2.TradeConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNTradeConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTradeConnection(ctx context.Context, sel ast.SelectionSet, v v2.TradeConnection) graphql.Marshaler {
 	return ec._TradeConnection(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNTradeConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTradeConnection(ctx context.Context, sel ast.SelectionSet, v *v2.TradeConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNTradeConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTradeConnection(ctx context.Context, sel ast.SelectionSet, v *v2.TradeConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -59974,7 +62508,7 @@ func (ec *executionContext) marshalNTradeConnection2ᚖcodeᚗvegaprotocolᚗio�
 	return ec._TradeConnection(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNTradeEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTradeEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*v2.TradeEdge) graphql.Marshaler {
+func (ec *executionContext) marshalNTradeEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTradeEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*v2.TradeEdge) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -59998,7 +62532,7 @@ func (ec *executionContext) marshalNTradeEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋp
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNTradeEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTradeEdge(ctx, sel, v[i])
+			ret[i] = ec.marshalNTradeEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTradeEdge(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -60018,7 +62552,7 @@ func (ec *executionContext) marshalNTradeEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋp
 	return ret
 }
 
-func (ec *executionContext) marshalNTradeEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTradeEdge(ctx context.Context, sel ast.SelectionSet, v *v2.TradeEdge) graphql.Marshaler {
+func (ec *executionContext) marshalNTradeEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTradeEdge(ctx context.Context, sel ast.SelectionSet, v *v2.TradeEdge) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -60062,7 +62596,7 @@ func (ec *executionContext) marshalNTradeType2codeᚗvegaprotocolᚗioᚋvegaᚋ
 	return v
 }
 
-func (ec *executionContext) marshalNTransfer2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋeventsᚋv1ᚐTransfer(ctx context.Context, sel ast.SelectionSet, v *v1.Transfer) graphql.Marshaler {
+func (ec *executionContext) marshalNTransfer2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐTransfer(ctx context.Context, sel ast.SelectionSet, v *v1.Transfer) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -60082,11 +62616,11 @@ func (ec *executionContext) marshalNTransferBalance2ᚖcodeᚗvegaprotocolᚗio�
 	return ec._TransferBalance(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNTransferConnection2codeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTransferConnection(ctx context.Context, sel ast.SelectionSet, v v2.TransferConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNTransferConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTransferConnection(ctx context.Context, sel ast.SelectionSet, v v2.TransferConnection) graphql.Marshaler {
 	return ec._TransferConnection(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNTransferConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTransferConnection(ctx context.Context, sel ast.SelectionSet, v *v2.TransferConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNTransferConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTransferConnection(ctx context.Context, sel ast.SelectionSet, v *v2.TransferConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -60136,7 +62670,7 @@ func (ec *executionContext) marshalNTransferStatus2codeᚗvegaprotocolᚗioᚋve
 	return v
 }
 
-func (ec *executionContext) marshalNUpdateFutureProduct2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐUpdateFutureProduct(ctx context.Context, sel ast.SelectionSet, v *vega.UpdateFutureProduct) graphql.Marshaler {
+func (ec *executionContext) marshalNUpdateFutureProduct2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐUpdateFutureProduct(ctx context.Context, sel ast.SelectionSet, v *vega.UpdateFutureProduct) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -60160,11 +62694,11 @@ func (ec *executionContext) marshalNUpdateInstrumentConfiguration2ᚖcodeᚗvega
 	return ec._UpdateInstrumentConfiguration(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNUpdateMarketConfiguration2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐUpdateMarketConfiguration(ctx context.Context, sel ast.SelectionSet, v vega.UpdateMarketConfiguration) graphql.Marshaler {
+func (ec *executionContext) marshalNUpdateMarketConfiguration2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐUpdateMarketConfiguration(ctx context.Context, sel ast.SelectionSet, v vega.UpdateMarketConfiguration) graphql.Marshaler {
 	return ec._UpdateMarketConfiguration(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNUpdateMarketConfiguration2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐUpdateMarketConfiguration(ctx context.Context, sel ast.SelectionSet, v *vega.UpdateMarketConfiguration) graphql.Marshaler {
+func (ec *executionContext) marshalNUpdateMarketConfiguration2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐUpdateMarketConfiguration(ctx context.Context, sel ast.SelectionSet, v *vega.UpdateMarketConfiguration) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -60184,7 +62718,7 @@ func (ec *executionContext) marshalNUpdateMarketRiskParameters2codeᚗvegaprotoc
 	return ec._UpdateMarketRiskParameters(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNVote2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐVote(ctx context.Context, sel ast.SelectionSet, v *vega.Vote) graphql.Marshaler {
+func (ec *executionContext) marshalNVote2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐVote(ctx context.Context, sel ast.SelectionSet, v *vega.Vote) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -60194,7 +62728,7 @@ func (ec *executionContext) marshalNVote2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋ
 	return ec._Vote(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNVoteEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐVoteEdge(ctx context.Context, sel ast.SelectionSet, v *v2.VoteEdge) graphql.Marshaler {
+func (ec *executionContext) marshalNVoteEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐVoteEdge(ctx context.Context, sel ast.SelectionSet, v *v2.VoteEdge) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -60214,7 +62748,7 @@ func (ec *executionContext) marshalNVoteValue2codeᚗvegaprotocolᚗioᚋvegaᚋ
 	return v
 }
 
-func (ec *executionContext) marshalNWithdrawal2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐWithdrawal(ctx context.Context, sel ast.SelectionSet, v *vega.Withdrawal) graphql.Marshaler {
+func (ec *executionContext) marshalNWithdrawal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐWithdrawal(ctx context.Context, sel ast.SelectionSet, v *vega.Withdrawal) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -60234,11 +62768,11 @@ func (ec *executionContext) marshalNWithdrawalStatus2codeᚗvegaprotocolᚗioᚋ
 	return v
 }
 
-func (ec *executionContext) marshalNWithdrawalsConnection2codeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐWithdrawalsConnection(ctx context.Context, sel ast.SelectionSet, v v2.WithdrawalsConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNWithdrawalsConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐWithdrawalsConnection(ctx context.Context, sel ast.SelectionSet, v v2.WithdrawalsConnection) graphql.Marshaler {
 	return ec._WithdrawalsConnection(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNWithdrawalsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐWithdrawalsConnection(ctx context.Context, sel ast.SelectionSet, v *v2.WithdrawalsConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNWithdrawalsConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐWithdrawalsConnection(ctx context.Context, sel ast.SelectionSet, v *v2.WithdrawalsConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -60501,7 +63035,7 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 	return res
 }
 
-func (ec *executionContext) marshalOAccount2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccountᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Account) graphql.Marshaler {
+func (ec *executionContext) marshalOAccount2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Account) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -60528,7 +63062,7 @@ func (ec *executionContext) marshalOAccount2ᚕᚖcodeᚗvegaprotocolᚗioᚋpro
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNAccount2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccount(ctx, sel, v[i])
+			ret[i] = ec.marshalNAccount2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccount(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -60548,14 +63082,62 @@ func (ec *executionContext) marshalOAccount2ᚕᚖcodeᚗvegaprotocolᚗioᚋpro
 	return ret
 }
 
-func (ec *executionContext) marshalOAccount2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccount(ctx context.Context, sel ast.SelectionSet, v *vega.Account) graphql.Marshaler {
+func (ec *executionContext) marshalOAccount2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccount(ctx context.Context, sel ast.SelectionSet, v *vega.Account) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Account(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOAccountField2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountField(ctx context.Context, v interface{}) ([]*v2.AccountField, error) {
+func (ec *executionContext) marshalOAccountEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.AccountEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOAccountEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOAccountEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountEdge(ctx context.Context, sel ast.SelectionSet, v *v2.AccountEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._AccountEdge(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOAccountField2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountField(ctx context.Context, v interface{}) ([]*v2.AccountField, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -60567,7 +63149,7 @@ func (ec *executionContext) unmarshalOAccountField2ᚕᚖcodeᚗvegaprotocolᚗi
 	res := make([]*v2.AccountField, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalOAccountField2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountField(ctx, vSlice[i])
+		res[i], err = ec.unmarshalOAccountField2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountField(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -60575,7 +63157,7 @@ func (ec *executionContext) unmarshalOAccountField2ᚕᚖcodeᚗvegaprotocolᚗi
 	return res, nil
 }
 
-func (ec *executionContext) marshalOAccountField2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountField(ctx context.Context, sel ast.SelectionSet, v []*v2.AccountField) graphql.Marshaler {
+func (ec *executionContext) marshalOAccountField2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountField(ctx context.Context, sel ast.SelectionSet, v []*v2.AccountField) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -60602,7 +63184,7 @@ func (ec *executionContext) marshalOAccountField2ᚕᚖcodeᚗvegaprotocolᚗio�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOAccountField2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountField(ctx, sel, v[i])
+			ret[i] = ec.marshalOAccountField2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountField(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -60616,7 +63198,7 @@ func (ec *executionContext) marshalOAccountField2ᚕᚖcodeᚗvegaprotocolᚗio�
 	return ret
 }
 
-func (ec *executionContext) unmarshalOAccountField2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountField(ctx context.Context, v interface{}) (*v2.AccountField, error) {
+func (ec *executionContext) unmarshalOAccountField2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountField(ctx context.Context, v interface{}) (*v2.AccountField, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -60624,7 +63206,7 @@ func (ec *executionContext) unmarshalOAccountField2ᚖcodeᚗvegaprotocolᚗio�
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOAccountField2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountField(ctx context.Context, sel ast.SelectionSet, v *v2.AccountField) graphql.Marshaler {
+func (ec *executionContext) marshalOAccountField2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountField(ctx context.Context, sel ast.SelectionSet, v *v2.AccountField) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -60632,7 +63214,7 @@ func (ec *executionContext) marshalOAccountField2ᚖcodeᚗvegaprotocolᚗioᚋp
 	return res
 }
 
-func (ec *executionContext) unmarshalOAccountFilter2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountFilter(ctx context.Context, v interface{}) (*v2.AccountFilter, error) {
+func (ec *executionContext) unmarshalOAccountFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountFilter(ctx context.Context, v interface{}) (*v2.AccountFilter, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -60640,17 +63222,17 @@ func (ec *executionContext) unmarshalOAccountFilter2ᚖcodeᚗvegaprotocolᚗio�
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalOAccountType2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccountType(ctx context.Context, v interface{}) (vega.AccountType, error) {
+func (ec *executionContext) unmarshalOAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountType(ctx context.Context, v interface{}) (vega.AccountType, error) {
 	res, err := marshallers.UnmarshalAccountType(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOAccountType2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccountType(ctx context.Context, sel ast.SelectionSet, v vega.AccountType) graphql.Marshaler {
+func (ec *executionContext) marshalOAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountType(ctx context.Context, sel ast.SelectionSet, v vega.AccountType) graphql.Marshaler {
 	res := marshallers.MarshalAccountType(v)
 	return graphql.WrapContextMarshaler(ctx, res)
 }
 
-func (ec *executionContext) unmarshalOAccountType2ᚕcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccountTypeᚄ(ctx context.Context, v interface{}) ([]vega.AccountType, error) {
+func (ec *executionContext) unmarshalOAccountType2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountTypeᚄ(ctx context.Context, v interface{}) ([]vega.AccountType, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -60662,7 +63244,7 @@ func (ec *executionContext) unmarshalOAccountType2ᚕcodeᚗvegaprotocolᚗioᚋ
 	res := make([]vega.AccountType, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNAccountType2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccountType(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountType(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -60670,7 +63252,7 @@ func (ec *executionContext) unmarshalOAccountType2ᚕcodeᚗvegaprotocolᚗioᚋ
 	return res, nil
 }
 
-func (ec *executionContext) marshalOAccountType2ᚕcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccountTypeᚄ(ctx context.Context, sel ast.SelectionSet, v []vega.AccountType) graphql.Marshaler {
+func (ec *executionContext) marshalOAccountType2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountTypeᚄ(ctx context.Context, sel ast.SelectionSet, v []vega.AccountType) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -60697,7 +63279,7 @@ func (ec *executionContext) marshalOAccountType2ᚕcodeᚗvegaprotocolᚗioᚋpr
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNAccountType2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccountType(ctx, sel, v[i])
+			ret[i] = ec.marshalNAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountType(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -60717,7 +63299,7 @@ func (ec *executionContext) marshalOAccountType2ᚕcodeᚗvegaprotocolᚗioᚋpr
 	return ret
 }
 
-func (ec *executionContext) unmarshalOAccountType2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccountType(ctx context.Context, v interface{}) (*vega.AccountType, error) {
+func (ec *executionContext) unmarshalOAccountType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountType(ctx context.Context, v interface{}) (*vega.AccountType, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -60725,7 +63307,7 @@ func (ec *executionContext) unmarshalOAccountType2ᚖcodeᚗvegaprotocolᚗioᚋ
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOAccountType2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccountType(ctx context.Context, sel ast.SelectionSet, v *vega.AccountType) graphql.Marshaler {
+func (ec *executionContext) marshalOAccountType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountType(ctx context.Context, sel ast.SelectionSet, v *vega.AccountType) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -60733,7 +63315,7 @@ func (ec *executionContext) marshalOAccountType2ᚖcodeᚗvegaprotocolᚗioᚋpr
 	return graphql.WrapContextMarshaler(ctx, res)
 }
 
-func (ec *executionContext) marshalOAsset2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAssetᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Asset) graphql.Marshaler {
+func (ec *executionContext) marshalOAsset2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAssetᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Asset) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -60760,7 +63342,7 @@ func (ec *executionContext) marshalOAsset2ᚕᚖcodeᚗvegaprotocolᚗioᚋproto
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAsset(ctx, sel, v[i])
+			ret[i] = ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAsset(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -60780,14 +63362,14 @@ func (ec *executionContext) marshalOAsset2ᚕᚖcodeᚗvegaprotocolᚗioᚋproto
 	return ret
 }
 
-func (ec *executionContext) marshalOAsset2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAsset(ctx context.Context, sel ast.SelectionSet, v *vega.Asset) graphql.Marshaler {
+func (ec *executionContext) marshalOAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAsset(ctx context.Context, sel ast.SelectionSet, v *vega.Asset) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Asset(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOAssetEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAssetEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.AssetEdge) graphql.Marshaler {
+func (ec *executionContext) marshalOAssetEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAssetEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.AssetEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -60814,7 +63396,7 @@ func (ec *executionContext) marshalOAssetEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋp
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOAssetEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAssetEdge(ctx, sel, v[i])
+			ret[i] = ec.marshalOAssetEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAssetEdge(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -60828,7 +63410,7 @@ func (ec *executionContext) marshalOAssetEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋp
 	return ret
 }
 
-func (ec *executionContext) marshalOAssetEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAssetEdge(ctx context.Context, sel ast.SelectionSet, v *v2.AssetEdge) graphql.Marshaler {
+func (ec *executionContext) marshalOAssetEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAssetEdge(ctx context.Context, sel ast.SelectionSet, v *v2.AssetEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -60924,7 +63506,7 @@ func (ec *executionContext) marshalOBusEvent2ᚕᚖcodeᚗvegaprotocolᚗioᚋve
 	return ret
 }
 
-func (ec *executionContext) marshalOCandle2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐCandle(ctx context.Context, sel ast.SelectionSet, v []*vega.Candle) graphql.Marshaler {
+func (ec *executionContext) marshalOCandle2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐCandle(ctx context.Context, sel ast.SelectionSet, v []*vega.Candle) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -60951,7 +63533,7 @@ func (ec *executionContext) marshalOCandle2ᚕᚖcodeᚗvegaprotocolᚗioᚋprot
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOCandle2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐCandle(ctx, sel, v[i])
+			ret[i] = ec.marshalOCandle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐCandle(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -60965,14 +63547,14 @@ func (ec *executionContext) marshalOCandle2ᚕᚖcodeᚗvegaprotocolᚗioᚋprot
 	return ret
 }
 
-func (ec *executionContext) marshalOCandle2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐCandle(ctx context.Context, sel ast.SelectionSet, v *vega.Candle) graphql.Marshaler {
+func (ec *executionContext) marshalOCandle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐCandle(ctx context.Context, sel ast.SelectionSet, v *vega.Candle) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Candle(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOCandleEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐCandleEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.CandleEdge) graphql.Marshaler {
+func (ec *executionContext) marshalOCandleEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐCandleEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.CandleEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -60999,7 +63581,7 @@ func (ec *executionContext) marshalOCandleEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋ
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOCandleEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐCandleEdge(ctx, sel, v[i])
+			ret[i] = ec.marshalOCandleEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐCandleEdge(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -61013,14 +63595,14 @@ func (ec *executionContext) marshalOCandleEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋ
 	return ret
 }
 
-func (ec *executionContext) marshalOCandleEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐCandleEdge(ctx context.Context, sel ast.SelectionSet, v *v2.CandleEdge) graphql.Marshaler {
+func (ec *executionContext) marshalOCandleEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐCandleEdge(ctx context.Context, sel ast.SelectionSet, v *v2.CandleEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._CandleEdge(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOCondition2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐConditionᚄ(ctx context.Context, sel ast.SelectionSet, v []*v11.Condition) graphql.Marshaler {
+func (ec *executionContext) marshalOCondition2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐConditionᚄ(ctx context.Context, sel ast.SelectionSet, v []*v11.Condition) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -61047,7 +63629,7 @@ func (ec *executionContext) marshalOCondition2ᚕᚖcodeᚗvegaprotocolᚗioᚋp
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNCondition2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐCondition(ctx, sel, v[i])
+			ret[i] = ec.marshalNCondition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐCondition(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -61067,7 +63649,7 @@ func (ec *executionContext) marshalOCondition2ᚕᚖcodeᚗvegaprotocolᚗioᚋp
 	return ret
 }
 
-func (ec *executionContext) marshalODelegation2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐDelegationᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Delegation) graphql.Marshaler {
+func (ec *executionContext) marshalODelegation2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDelegationᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Delegation) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -61094,7 +63676,7 @@ func (ec *executionContext) marshalODelegation2ᚕᚖcodeᚗvegaprotocolᚗioᚋ
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNDelegation2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐDelegation(ctx, sel, v[i])
+			ret[i] = ec.marshalNDelegation2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDelegation(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -61114,7 +63696,7 @@ func (ec *executionContext) marshalODelegation2ᚕᚖcodeᚗvegaprotocolᚗioᚋ
 	return ret
 }
 
-func (ec *executionContext) marshalODelegationEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDelegationEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.DelegationEdge) graphql.Marshaler {
+func (ec *executionContext) marshalODelegationEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDelegationEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.DelegationEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -61141,7 +63723,7 @@ func (ec *executionContext) marshalODelegationEdge2ᚕᚖcodeᚗvegaprotocolᚗi
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalODelegationEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDelegationEdge(ctx, sel, v[i])
+			ret[i] = ec.marshalODelegationEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDelegationEdge(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -61155,14 +63737,14 @@ func (ec *executionContext) marshalODelegationEdge2ᚕᚖcodeᚗvegaprotocolᚗi
 	return ret
 }
 
-func (ec *executionContext) marshalODelegationEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDelegationEdge(ctx context.Context, sel ast.SelectionSet, v *v2.DelegationEdge) graphql.Marshaler {
+func (ec *executionContext) marshalODelegationEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDelegationEdge(ctx context.Context, sel ast.SelectionSet, v *v2.DelegationEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._DelegationEdge(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalODeposit2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐDepositᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Deposit) graphql.Marshaler {
+func (ec *executionContext) marshalODeposit2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDepositᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Deposit) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -61189,7 +63771,7 @@ func (ec *executionContext) marshalODeposit2ᚕᚖcodeᚗvegaprotocolᚗioᚋpro
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNDeposit2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐDeposit(ctx, sel, v[i])
+			ret[i] = ec.marshalNDeposit2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDeposit(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -61209,14 +63791,14 @@ func (ec *executionContext) marshalODeposit2ᚕᚖcodeᚗvegaprotocolᚗioᚋpro
 	return ret
 }
 
-func (ec *executionContext) marshalODeposit2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐDeposit(ctx context.Context, sel ast.SelectionSet, v *vega.Deposit) graphql.Marshaler {
+func (ec *executionContext) marshalODeposit2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDeposit(ctx context.Context, sel ast.SelectionSet, v *vega.Deposit) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Deposit(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalODepositEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDepositEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.DepositEdge) graphql.Marshaler {
+func (ec *executionContext) marshalODepositEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDepositEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.DepositEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -61243,7 +63825,7 @@ func (ec *executionContext) marshalODepositEdge2ᚕᚖcodeᚗvegaprotocolᚗio�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalODepositEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDepositEdge(ctx, sel, v[i])
+			ret[i] = ec.marshalODepositEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDepositEdge(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -61257,7 +63839,7 @@ func (ec *executionContext) marshalODepositEdge2ᚕᚖcodeᚗvegaprotocolᚗio�
 	return ret
 }
 
-func (ec *executionContext) marshalODepositEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDepositEdge(ctx context.Context, sel ast.SelectionSet, v *v2.DepositEdge) graphql.Marshaler {
+func (ec *executionContext) marshalODepositEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDepositEdge(ctx context.Context, sel ast.SelectionSet, v *v2.DepositEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -61271,14 +63853,14 @@ func (ec *executionContext) marshalODispatchStrategy2ᚖcodeᚗvegaprotocolᚗio
 	return ec._DispatchStrategy(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOEpoch2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐEpoch(ctx context.Context, sel ast.SelectionSet, v *vega.Epoch) graphql.Marshaler {
+func (ec *executionContext) marshalOEpoch2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐEpoch(ctx context.Context, sel ast.SelectionSet, v *vega.Epoch) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Epoch(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOEpochData2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐEpochData(ctx context.Context, sel ast.SelectionSet, v *vega.EpochData) graphql.Marshaler {
+func (ec *executionContext) marshalOEpochData2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐEpochData(ctx context.Context, sel ast.SelectionSet, v *vega.EpochData) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -61292,7 +63874,7 @@ func (ec *executionContext) marshalOErc20WithdrawalApproval2ᚖcodeᚗvegaprotoc
 	return ec._Erc20WithdrawalApproval(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOFilter2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐFilterᚄ(ctx context.Context, sel ast.SelectionSet, v []*v11.Filter) graphql.Marshaler {
+func (ec *executionContext) marshalOFilter2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐFilterᚄ(ctx context.Context, sel ast.SelectionSet, v []*v11.Filter) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -61319,7 +63901,7 @@ func (ec *executionContext) marshalOFilter2ᚕᚖcodeᚗvegaprotocolᚗioᚋprot
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNFilter2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐFilter(ctx, sel, v[i])
+			ret[i] = ec.marshalNFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐFilter(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -61355,7 +63937,7 @@ func (ec *executionContext) marshalOFloat2ᚖfloat64(ctx context.Context, sel as
 	return graphql.WrapContextMarshaler(ctx, res)
 }
 
-func (ec *executionContext) marshalOFutureProduct2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐFutureProduct(ctx context.Context, sel ast.SelectionSet, v *vega.FutureProduct) graphql.Marshaler {
+func (ec *executionContext) marshalOFutureProduct2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐFutureProduct(ctx context.Context, sel ast.SelectionSet, v *vega.FutureProduct) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -61458,7 +64040,7 @@ func (ec *executionContext) marshalOInt2ᚖint32(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) marshalOKeyRotation2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv1ᚐKeyRotationᚄ(ctx context.Context, sel ast.SelectionSet, v []*v12.KeyRotation) graphql.Marshaler {
+func (ec *executionContext) marshalOKeyRotation2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐKeyRotationᚄ(ctx context.Context, sel ast.SelectionSet, v []*v1.KeyRotation) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -61485,7 +64067,7 @@ func (ec *executionContext) marshalOKeyRotation2ᚕᚖcodeᚗvegaprotocolᚗio�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNKeyRotation2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv1ᚐKeyRotation(ctx, sel, v[i])
+			ret[i] = ec.marshalNKeyRotation2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐKeyRotation(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -61503,6 +64085,54 @@ func (ec *executionContext) marshalOKeyRotation2ᚕᚖcodeᚗvegaprotocolᚗio�
 	}
 
 	return ret
+}
+
+func (ec *executionContext) marshalOKeyRotationEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐKeyRotationEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.KeyRotationEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOKeyRotationEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐKeyRotationEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOKeyRotationEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐKeyRotationEdge(ctx context.Context, sel ast.SelectionSet, v *v2.KeyRotationEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._KeyRotationEdge(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOLedgerEntry2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐLedgerEntryᚄ(ctx context.Context, sel ast.SelectionSet, v []*LedgerEntry) graphql.Marshaler {
@@ -61552,7 +64182,7 @@ func (ec *executionContext) marshalOLedgerEntry2ᚕᚖcodeᚗvegaprotocolᚗio�
 	return ret
 }
 
-func (ec *executionContext) marshalOLiquidityOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLiquidityOrderᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.LiquidityOrder) graphql.Marshaler {
+func (ec *executionContext) marshalOLiquidityOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityOrderᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.LiquidityOrder) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -61579,7 +64209,7 @@ func (ec *executionContext) marshalOLiquidityOrder2ᚕᚖcodeᚗvegaprotocolᚗi
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNLiquidityOrder2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLiquidityOrder(ctx, sel, v[i])
+			ret[i] = ec.marshalNLiquidityOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityOrder(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -61599,7 +64229,7 @@ func (ec *executionContext) marshalOLiquidityOrder2ᚕᚖcodeᚗvegaprotocolᚗi
 	return ret
 }
 
-func (ec *executionContext) marshalOLiquidityOrderReference2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLiquidityOrderReferenceᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.LiquidityOrderReference) graphql.Marshaler {
+func (ec *executionContext) marshalOLiquidityOrderReference2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityOrderReferenceᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.LiquidityOrderReference) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -61626,7 +64256,7 @@ func (ec *executionContext) marshalOLiquidityOrderReference2ᚕᚖcodeᚗvegapro
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNLiquidityOrderReference2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLiquidityOrderReference(ctx, sel, v[i])
+			ret[i] = ec.marshalNLiquidityOrderReference2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityOrderReference(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -61693,7 +64323,7 @@ func (ec *executionContext) marshalOLiquidityProviderFeeShare2ᚕᚖcodeᚗvegap
 	return ret
 }
 
-func (ec *executionContext) marshalOLiquidityProvision2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLiquidityProvisionᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.LiquidityProvision) graphql.Marshaler {
+func (ec *executionContext) marshalOLiquidityProvision2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityProvisionᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.LiquidityProvision) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -61720,7 +64350,7 @@ func (ec *executionContext) marshalOLiquidityProvision2ᚕᚖcodeᚗvegaprotocol
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNLiquidityProvision2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLiquidityProvision(ctx, sel, v[i])
+			ret[i] = ec.marshalNLiquidityProvision2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityProvision(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -61740,14 +64370,14 @@ func (ec *executionContext) marshalOLiquidityProvision2ᚕᚖcodeᚗvegaprotocol
 	return ret
 }
 
-func (ec *executionContext) marshalOLiquidityProvision2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLiquidityProvision(ctx context.Context, sel ast.SelectionSet, v *vega.LiquidityProvision) graphql.Marshaler {
+func (ec *executionContext) marshalOLiquidityProvision2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityProvision(ctx context.Context, sel ast.SelectionSet, v *vega.LiquidityProvision) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._LiquidityProvision(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOLiquidityProvisionsEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLiquidityProvisionsEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.LiquidityProvisionsEdge) graphql.Marshaler {
+func (ec *executionContext) marshalOLiquidityProvisionsEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLiquidityProvisionsEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.LiquidityProvisionsEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -61774,7 +64404,7 @@ func (ec *executionContext) marshalOLiquidityProvisionsEdge2ᚕᚖcodeᚗvegapro
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOLiquidityProvisionsEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLiquidityProvisionsEdge(ctx, sel, v[i])
+			ret[i] = ec.marshalOLiquidityProvisionsEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLiquidityProvisionsEdge(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -61788,28 +64418,28 @@ func (ec *executionContext) marshalOLiquidityProvisionsEdge2ᚕᚖcodeᚗvegapro
 	return ret
 }
 
-func (ec *executionContext) marshalOLiquidityProvisionsEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLiquidityProvisionsEdge(ctx context.Context, sel ast.SelectionSet, v *v2.LiquidityProvisionsEdge) graphql.Marshaler {
+func (ec *executionContext) marshalOLiquidityProvisionsEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLiquidityProvisionsEdge(ctx context.Context, sel ast.SelectionSet, v *v2.LiquidityProvisionsEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._LiquidityProvisionsEdge(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOLogNormalRiskModel2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLogNormalRiskModel(ctx context.Context, sel ast.SelectionSet, v *vega.LogNormalRiskModel) graphql.Marshaler {
+func (ec *executionContext) marshalOLogNormalRiskModel2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLogNormalRiskModel(ctx context.Context, sel ast.SelectionSet, v *vega.LogNormalRiskModel) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._LogNormalRiskModel(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOMarginCalculator2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarginCalculator(ctx context.Context, sel ast.SelectionSet, v *vega.MarginCalculator) graphql.Marshaler {
+func (ec *executionContext) marshalOMarginCalculator2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarginCalculator(ctx context.Context, sel ast.SelectionSet, v *vega.MarginCalculator) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._MarginCalculator(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOMarginEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarginEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*v2.MarginEdge) graphql.Marshaler {
+func (ec *executionContext) marshalOMarginEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarginEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*v2.MarginEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -61836,7 +64466,7 @@ func (ec *executionContext) marshalOMarginEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋ
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNMarginEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarginEdge(ctx, sel, v[i])
+			ret[i] = ec.marshalNMarginEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarginEdge(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -61856,7 +64486,7 @@ func (ec *executionContext) marshalOMarginEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋ
 	return ret
 }
 
-func (ec *executionContext) marshalOMarginLevels2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarginLevelsᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.MarginLevels) graphql.Marshaler {
+func (ec *executionContext) marshalOMarginLevels2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarginLevelsᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.MarginLevels) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -61883,7 +64513,7 @@ func (ec *executionContext) marshalOMarginLevels2ᚕᚖcodeᚗvegaprotocolᚗio�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNMarginLevels2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarginLevels(ctx, sel, v[i])
+			ret[i] = ec.marshalNMarginLevels2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarginLevels(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -61903,7 +64533,7 @@ func (ec *executionContext) marshalOMarginLevels2ᚕᚖcodeᚗvegaprotocolᚗio�
 	return ret
 }
 
-func (ec *executionContext) marshalOMarket2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Market) graphql.Marshaler {
+func (ec *executionContext) marshalOMarket2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Market) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -61930,7 +64560,7 @@ func (ec *executionContext) marshalOMarket2ᚕᚖcodeᚗvegaprotocolᚗioᚋprot
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarket(ctx, sel, v[i])
+			ret[i] = ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarket(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -61950,14 +64580,14 @@ func (ec *executionContext) marshalOMarket2ᚕᚖcodeᚗvegaprotocolᚗioᚋprot
 	return ret
 }
 
-func (ec *executionContext) marshalOMarket2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarket(ctx context.Context, sel ast.SelectionSet, v *vega.Market) graphql.Marshaler {
+func (ec *executionContext) marshalOMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarket(ctx context.Context, sel ast.SelectionSet, v *vega.Market) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Market(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOMarketData2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketData(ctx context.Context, sel ast.SelectionSet, v []*vega.MarketData) graphql.Marshaler {
+func (ec *executionContext) marshalOMarketData2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketData(ctx context.Context, sel ast.SelectionSet, v []*vega.MarketData) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -61984,7 +64614,7 @@ func (ec *executionContext) marshalOMarketData2ᚕᚖcodeᚗvegaprotocolᚗioᚋ
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOMarketData2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketData(ctx, sel, v[i])
+			ret[i] = ec.marshalOMarketData2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketData(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -61998,14 +64628,14 @@ func (ec *executionContext) marshalOMarketData2ᚕᚖcodeᚗvegaprotocolᚗioᚋ
 	return ret
 }
 
-func (ec *executionContext) marshalOMarketData2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarketData(ctx context.Context, sel ast.SelectionSet, v *vega.MarketData) graphql.Marshaler {
+func (ec *executionContext) marshalOMarketData2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketData(ctx context.Context, sel ast.SelectionSet, v *vega.MarketData) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._MarketData(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOMarketDataEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketDataEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.MarketDataEdge) graphql.Marshaler {
+func (ec *executionContext) marshalOMarketDataEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketDataEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.MarketDataEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -62032,7 +64662,7 @@ func (ec *executionContext) marshalOMarketDataEdge2ᚕᚖcodeᚗvegaprotocolᚗi
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOMarketDataEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketDataEdge(ctx, sel, v[i])
+			ret[i] = ec.marshalOMarketDataEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketDataEdge(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -62046,21 +64676,21 @@ func (ec *executionContext) marshalOMarketDataEdge2ᚕᚖcodeᚗvegaprotocolᚗi
 	return ret
 }
 
-func (ec *executionContext) marshalOMarketDataEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketDataEdge(ctx context.Context, sel ast.SelectionSet, v *v2.MarketDataEdge) graphql.Marshaler {
+func (ec *executionContext) marshalOMarketDataEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketDataEdge(ctx context.Context, sel ast.SelectionSet, v *v2.MarketDataEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._MarketDataEdge(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalONetworkLimits2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐNetworkLimits(ctx context.Context, sel ast.SelectionSet, v *vega.NetworkLimits) graphql.Marshaler {
+func (ec *executionContext) marshalONetworkLimits2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐNetworkLimits(ctx context.Context, sel ast.SelectionSet, v *vega.NetworkLimits) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._NetworkLimits(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalONetworkParameter2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐNetworkParameterᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.NetworkParameter) graphql.Marshaler {
+func (ec *executionContext) marshalONetworkParameter2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐNetworkParameterᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.NetworkParameter) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -62087,7 +64717,7 @@ func (ec *executionContext) marshalONetworkParameter2ᚕᚖcodeᚗvegaprotocol�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNNetworkParameter2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐNetworkParameter(ctx, sel, v[i])
+			ret[i] = ec.marshalNNetworkParameter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐNetworkParameter(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -62107,14 +64737,62 @@ func (ec *executionContext) marshalONetworkParameter2ᚕᚖcodeᚗvegaprotocol�
 	return ret
 }
 
-func (ec *executionContext) marshalONewMarketCommitment2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐNewMarketCommitment(ctx context.Context, sel ast.SelectionSet, v *vega.NewMarketCommitment) graphql.Marshaler {
+func (ec *executionContext) marshalONetworkParameterEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNetworkParameterEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.NetworkParameterEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalONetworkParameterEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNetworkParameterEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalONetworkParameterEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNetworkParameterEdge(ctx context.Context, sel ast.SelectionSet, v *v2.NetworkParameterEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._NetworkParameterEdge(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalONewMarketCommitment2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐNewMarketCommitment(ctx context.Context, sel ast.SelectionSet, v *vega.NewMarketCommitment) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._NewMarketCommitment(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalONode2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐNodeᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Node) graphql.Marshaler {
+func (ec *executionContext) marshalONode2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐNodeᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Node) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -62141,7 +64819,7 @@ func (ec *executionContext) marshalONode2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotos
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNNode2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐNode(ctx, sel, v[i])
+			ret[i] = ec.marshalNNode2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐNode(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -62161,21 +64839,21 @@ func (ec *executionContext) marshalONode2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotos
 	return ret
 }
 
-func (ec *executionContext) marshalONode2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐNode(ctx context.Context, sel ast.SelectionSet, v *vega.Node) graphql.Marshaler {
+func (ec *executionContext) marshalONode2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐNode(ctx context.Context, sel ast.SelectionSet, v *vega.Node) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Node(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalONodeData2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐNodeData(ctx context.Context, sel ast.SelectionSet, v *vega.NodeData) graphql.Marshaler {
+func (ec *executionContext) marshalONodeData2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐNodeData(ctx context.Context, sel ast.SelectionSet, v *vega.NodeData) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._NodeData(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalONodeEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodeEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.NodeEdge) graphql.Marshaler {
+func (ec *executionContext) marshalONodeEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodeEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.NodeEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -62202,7 +64880,7 @@ func (ec *executionContext) marshalONodeEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋpr
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalONodeEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodeEdge(ctx, sel, v[i])
+			ret[i] = ec.marshalONodeEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodeEdge(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -62216,14 +64894,14 @@ func (ec *executionContext) marshalONodeEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋpr
 	return ret
 }
 
-func (ec *executionContext) marshalONodeEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodeEdge(ctx context.Context, sel ast.SelectionSet, v *v2.NodeEdge) graphql.Marshaler {
+func (ec *executionContext) marshalONodeEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodeEdge(ctx context.Context, sel ast.SelectionSet, v *v2.NodeEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._NodeEdge(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalONodeSignature2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋcommandsᚋv1ᚐNodeSignatureᚄ(ctx context.Context, sel ast.SelectionSet, v []*v13.NodeSignature) graphql.Marshaler {
+func (ec *executionContext) marshalONodeSignature2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋcommandsᚋv1ᚐNodeSignatureᚄ(ctx context.Context, sel ast.SelectionSet, v []*v12.NodeSignature) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -62250,7 +64928,7 @@ func (ec *executionContext) marshalONodeSignature2ᚕᚖcodeᚗvegaprotocolᚗio
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNNodeSignature2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋcommandsᚋv1ᚐNodeSignature(ctx, sel, v[i])
+			ret[i] = ec.marshalNNodeSignature2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋcommandsᚋv1ᚐNodeSignature(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -62268,6 +64946,54 @@ func (ec *executionContext) marshalONodeSignature2ᚕᚖcodeᚗvegaprotocolᚗio
 	}
 
 	return ret
+}
+
+func (ec *executionContext) marshalONodeSignatureEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodeSignatureEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.NodeSignatureEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalONodeSignatureEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodeSignatureEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalONodeSignatureEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodeSignatureEdge(ctx context.Context, sel ast.SelectionSet, v *v2.NodeSignatureEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._NodeSignatureEdge(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalONodeSignatureKind2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐNodeSignatureKind(ctx context.Context, v interface{}) (*NodeSignatureKind, error) {
@@ -62341,7 +65067,7 @@ func (ec *executionContext) unmarshalOOffsetPagination2ᚖcodeᚗvegaprotocolᚗ
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOOracleData2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleDataᚄ(ctx context.Context, sel ast.SelectionSet, v []*v11.OracleData) graphql.Marshaler {
+func (ec *executionContext) marshalOOracleData2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleDataᚄ(ctx context.Context, sel ast.SelectionSet, v []*v11.OracleData) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -62368,7 +65094,7 @@ func (ec *executionContext) marshalOOracleData2ᚕᚖcodeᚗvegaprotocolᚗioᚋ
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNOracleData2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleData(ctx, sel, v[i])
+			ret[i] = ec.marshalNOracleData2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleData(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -62388,7 +65114,7 @@ func (ec *executionContext) marshalOOracleData2ᚕᚖcodeᚗvegaprotocolᚗioᚋ
 	return ret
 }
 
-func (ec *executionContext) marshalOOracleDataEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOracleDataEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.OracleDataEdge) graphql.Marshaler {
+func (ec *executionContext) marshalOOracleDataEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOracleDataEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.OracleDataEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -62415,7 +65141,7 @@ func (ec *executionContext) marshalOOracleDataEdge2ᚕᚖcodeᚗvegaprotocolᚗi
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOOracleDataEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOracleDataEdge(ctx, sel, v[i])
+			ret[i] = ec.marshalOOracleDataEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOracleDataEdge(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -62429,14 +65155,14 @@ func (ec *executionContext) marshalOOracleDataEdge2ᚕᚖcodeᚗvegaprotocolᚗi
 	return ret
 }
 
-func (ec *executionContext) marshalOOracleDataEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOracleDataEdge(ctx context.Context, sel ast.SelectionSet, v *v2.OracleDataEdge) graphql.Marshaler {
+func (ec *executionContext) marshalOOracleDataEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOracleDataEdge(ctx context.Context, sel ast.SelectionSet, v *v2.OracleDataEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._OracleDataEdge(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOOracleSpec2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpecᚄ(ctx context.Context, sel ast.SelectionSet, v []*v11.OracleSpec) graphql.Marshaler {
+func (ec *executionContext) marshalOOracleSpec2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpecᚄ(ctx context.Context, sel ast.SelectionSet, v []*v11.OracleSpec) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -62463,7 +65189,7 @@ func (ec *executionContext) marshalOOracleSpec2ᚕᚖcodeᚗvegaprotocolᚗioᚋ
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNOracleSpec2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpec(ctx, sel, v[i])
+			ret[i] = ec.marshalNOracleSpec2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpec(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -62483,14 +65209,14 @@ func (ec *executionContext) marshalOOracleSpec2ᚕᚖcodeᚗvegaprotocolᚗioᚋ
 	return ret
 }
 
-func (ec *executionContext) marshalOOracleSpec2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpec(ctx context.Context, sel ast.SelectionSet, v *v11.OracleSpec) graphql.Marshaler {
+func (ec *executionContext) marshalOOracleSpec2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpec(ctx context.Context, sel ast.SelectionSet, v *v11.OracleSpec) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._OracleSpec(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOOracleSpecEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOracleSpecEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.OracleSpecEdge) graphql.Marshaler {
+func (ec *executionContext) marshalOOracleSpecEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOracleSpecEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.OracleSpecEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -62517,7 +65243,7 @@ func (ec *executionContext) marshalOOracleSpecEdge2ᚕᚖcodeᚗvegaprotocolᚗi
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOOracleSpecEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOracleSpecEdge(ctx, sel, v[i])
+			ret[i] = ec.marshalOOracleSpecEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOracleSpecEdge(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -62531,14 +65257,14 @@ func (ec *executionContext) marshalOOracleSpecEdge2ᚕᚖcodeᚗvegaprotocolᚗi
 	return ret
 }
 
-func (ec *executionContext) marshalOOracleSpecEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOracleSpecEdge(ctx context.Context, sel ast.SelectionSet, v *v2.OracleSpecEdge) graphql.Marshaler {
+func (ec *executionContext) marshalOOracleSpecEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOracleSpecEdge(ctx context.Context, sel ast.SelectionSet, v *v2.OracleSpecEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._OracleSpecEdge(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐOrderᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Order) graphql.Marshaler {
+func (ec *executionContext) marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrderᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Order) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -62565,7 +65291,7 @@ func (ec *executionContext) marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋproto
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNOrder2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐOrder(ctx, sel, v[i])
+			ret[i] = ec.marshalNOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -62585,14 +65311,14 @@ func (ec *executionContext) marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋproto
 	return ret
 }
 
-func (ec *executionContext) marshalOOrder2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐOrder(ctx context.Context, sel ast.SelectionSet, v *vega.Order) graphql.Marshaler {
+func (ec *executionContext) marshalOOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder(ctx context.Context, sel ast.SelectionSet, v *vega.Order) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Order(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOOrderEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*v2.OrderEdge) graphql.Marshaler {
+func (ec *executionContext) marshalOOrderEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*v2.OrderEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -62619,7 +65345,7 @@ func (ec *executionContext) marshalOOrderEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋp
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNOrderEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderEdge(ctx, sel, v[i])
+			ret[i] = ec.marshalNOrderEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderEdge(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -62671,14 +65397,14 @@ func (ec *executionContext) marshalOOrderType2ᚖcodeᚗvegaprotocolᚗioᚋvega
 	return v
 }
 
-func (ec *executionContext) marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v *v2.PageInfo) graphql.Marshaler {
+func (ec *executionContext) marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v *v2.PageInfo) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._PageInfo(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx context.Context, v interface{}) (*v2.Pagination, error) {
+func (ec *executionContext) unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx context.Context, v interface{}) (*v2.Pagination, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -62686,7 +65412,7 @@ func (ec *executionContext) unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋp
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOParty2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐPartyᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Party) graphql.Marshaler {
+func (ec *executionContext) marshalOParty2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPartyᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Party) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -62713,7 +65439,7 @@ func (ec *executionContext) marshalOParty2ᚕᚖcodeᚗvegaprotocolᚗioᚋproto
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐParty(ctx, sel, v[i])
+			ret[i] = ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐParty(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -62733,21 +65459,21 @@ func (ec *executionContext) marshalOParty2ᚕᚖcodeᚗvegaprotocolᚗioᚋproto
 	return ret
 }
 
-func (ec *executionContext) marshalOParty2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐParty(ctx context.Context, sel ast.SelectionSet, v *vega.Party) graphql.Marshaler {
+func (ec *executionContext) marshalOParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐParty(ctx context.Context, sel ast.SelectionSet, v *vega.Party) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Party(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOPeggedOrder2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐPeggedOrder(ctx context.Context, sel ast.SelectionSet, v *vega.PeggedOrder) graphql.Marshaler {
+func (ec *executionContext) marshalOPeggedOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPeggedOrder(ctx context.Context, sel ast.SelectionSet, v *vega.PeggedOrder) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._PeggedOrder(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOPosition2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐPositionᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Position) graphql.Marshaler {
+func (ec *executionContext) marshalOPosition2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPositionᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Position) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -62774,7 +65500,7 @@ func (ec *executionContext) marshalOPosition2ᚕᚖcodeᚗvegaprotocolᚗioᚋpr
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNPosition2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐPosition(ctx, sel, v[i])
+			ret[i] = ec.marshalNPosition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPosition(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -62794,7 +65520,7 @@ func (ec *executionContext) marshalOPosition2ᚕᚖcodeᚗvegaprotocolᚗioᚋpr
 	return ret
 }
 
-func (ec *executionContext) marshalOPositionEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPositionEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*v2.PositionEdge) graphql.Marshaler {
+func (ec *executionContext) marshalOPositionEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPositionEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*v2.PositionEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -62821,7 +65547,7 @@ func (ec *executionContext) marshalOPositionEdge2ᚕᚖcodeᚗvegaprotocolᚗio�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNPositionEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPositionEdge(ctx, sel, v[i])
+			ret[i] = ec.marshalNPositionEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPositionEdge(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -62841,7 +65567,7 @@ func (ec *executionContext) marshalOPositionEdge2ᚕᚖcodeᚗvegaprotocolᚗio�
 	return ret
 }
 
-func (ec *executionContext) marshalOPriceLevel2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐPriceLevelᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.PriceLevel) graphql.Marshaler {
+func (ec *executionContext) marshalOPriceLevel2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPriceLevelᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.PriceLevel) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -62868,7 +65594,7 @@ func (ec *executionContext) marshalOPriceLevel2ᚕᚖcodeᚗvegaprotocolᚗioᚋ
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNPriceLevel2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐPriceLevel(ctx, sel, v[i])
+			ret[i] = ec.marshalNPriceLevel2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPriceLevel(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -62989,7 +65715,7 @@ func (ec *executionContext) marshalOPriceMonitoringTrigger2ᚕᚖcodeᚗvegaprot
 	return ret
 }
 
-func (ec *executionContext) marshalOProperty2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐPropertyᚄ(ctx context.Context, sel ast.SelectionSet, v []*v11.Property) graphql.Marshaler {
+func (ec *executionContext) marshalOProperty2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐPropertyᚄ(ctx context.Context, sel ast.SelectionSet, v []*v11.Property) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -63016,7 +65742,7 @@ func (ec *executionContext) marshalOProperty2ᚕᚖcodeᚗvegaprotocolᚗioᚋpr
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNProperty2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐProperty(ctx, sel, v[i])
+			ret[i] = ec.marshalNProperty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐProperty(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -63036,7 +65762,7 @@ func (ec *executionContext) marshalOProperty2ᚕᚖcodeᚗvegaprotocolᚗioᚋpr
 	return ret
 }
 
-func (ec *executionContext) marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐGovernanceData(ctx context.Context, sel ast.SelectionSet, v []*vega.GovernanceData) graphql.Marshaler {
+func (ec *executionContext) marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐGovernanceData(ctx context.Context, sel ast.SelectionSet, v []*vega.GovernanceData) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -63063,7 +65789,7 @@ func (ec *executionContext) marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋpr
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOProposal2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐGovernanceData(ctx, sel, v[i])
+			ret[i] = ec.marshalOProposal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐGovernanceData(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -63077,7 +65803,7 @@ func (ec *executionContext) marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋpr
 	return ret
 }
 
-func (ec *executionContext) marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐGovernanceDataᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.GovernanceData) graphql.Marshaler {
+func (ec *executionContext) marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐGovernanceDataᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.GovernanceData) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -63104,7 +65830,7 @@ func (ec *executionContext) marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋpr
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNProposal2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐGovernanceData(ctx, sel, v[i])
+			ret[i] = ec.marshalNProposal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐGovernanceData(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -63124,14 +65850,14 @@ func (ec *executionContext) marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋpr
 	return ret
 }
 
-func (ec *executionContext) marshalOProposal2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐGovernanceData(ctx context.Context, sel ast.SelectionSet, v *vega.GovernanceData) graphql.Marshaler {
+func (ec *executionContext) marshalOProposal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐGovernanceData(ctx context.Context, sel ast.SelectionSet, v *vega.GovernanceData) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Proposal(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOProposalEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐGovernanceDataEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.GovernanceDataEdge) graphql.Marshaler {
+func (ec *executionContext) marshalOProposalEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐGovernanceDataEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.GovernanceDataEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -63158,7 +65884,7 @@ func (ec *executionContext) marshalOProposalEdge2ᚕᚖcodeᚗvegaprotocolᚗio�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOProposalEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐGovernanceDataEdge(ctx, sel, v[i])
+			ret[i] = ec.marshalOProposalEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐGovernanceDataEdge(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -63172,7 +65898,7 @@ func (ec *executionContext) marshalOProposalEdge2ᚕᚖcodeᚗvegaprotocolᚗio�
 	return ret
 }
 
-func (ec *executionContext) marshalOProposalEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐGovernanceDataEdge(ctx context.Context, sel ast.SelectionSet, v *v2.GovernanceDataEdge) graphql.Marshaler {
+func (ec *executionContext) marshalOProposalEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐGovernanceDataEdge(ctx context.Context, sel ast.SelectionSet, v *v2.GovernanceDataEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -63322,7 +66048,7 @@ func (ec *executionContext) marshalOProposalVoteEdge2ᚕᚖcodeᚗvegaprotocol�
 	return ret
 }
 
-func (ec *executionContext) marshalOReward2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐReward(ctx context.Context, sel ast.SelectionSet, v []*vega.Reward) graphql.Marshaler {
+func (ec *executionContext) marshalOReward2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐReward(ctx context.Context, sel ast.SelectionSet, v []*vega.Reward) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -63349,7 +66075,7 @@ func (ec *executionContext) marshalOReward2ᚕᚖcodeᚗvegaprotocolᚗioᚋprot
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOReward2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐReward(ctx, sel, v[i])
+			ret[i] = ec.marshalOReward2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐReward(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -63363,14 +66089,14 @@ func (ec *executionContext) marshalOReward2ᚕᚖcodeᚗvegaprotocolᚗioᚋprot
 	return ret
 }
 
-func (ec *executionContext) marshalOReward2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐReward(ctx context.Context, sel ast.SelectionSet, v *vega.Reward) graphql.Marshaler {
+func (ec *executionContext) marshalOReward2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐReward(ctx context.Context, sel ast.SelectionSet, v *vega.Reward) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Reward(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalORewardEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐRewardEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.RewardEdge) graphql.Marshaler {
+func (ec *executionContext) marshalORewardEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐRewardEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.RewardEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -63397,7 +66123,7 @@ func (ec *executionContext) marshalORewardEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋ
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalORewardEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐRewardEdge(ctx, sel, v[i])
+			ret[i] = ec.marshalORewardEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐRewardEdge(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -63411,14 +66137,14 @@ func (ec *executionContext) marshalORewardEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋ
 	return ret
 }
 
-func (ec *executionContext) marshalORewardEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐRewardEdge(ctx context.Context, sel ast.SelectionSet, v *v2.RewardEdge) graphql.Marshaler {
+func (ec *executionContext) marshalORewardEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐRewardEdge(ctx context.Context, sel ast.SelectionSet, v *v2.RewardEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._RewardEdge(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalORewardPerAssetDetail2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐRewardSummary(ctx context.Context, sel ast.SelectionSet, v []*vega.RewardSummary) graphql.Marshaler {
+func (ec *executionContext) marshalORewardPerAssetDetail2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐRewardSummary(ctx context.Context, sel ast.SelectionSet, v []*vega.RewardSummary) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -63445,7 +66171,7 @@ func (ec *executionContext) marshalORewardPerAssetDetail2ᚕᚖcodeᚗvegaprotoc
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalORewardPerAssetDetail2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐRewardSummary(ctx, sel, v[i])
+			ret[i] = ec.marshalORewardPerAssetDetail2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐRewardSummary(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -63459,21 +66185,21 @@ func (ec *executionContext) marshalORewardPerAssetDetail2ᚕᚖcodeᚗvegaprotoc
 	return ret
 }
 
-func (ec *executionContext) marshalORewardPerAssetDetail2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐRewardSummary(ctx context.Context, sel ast.SelectionSet, v *vega.RewardSummary) graphql.Marshaler {
+func (ec *executionContext) marshalORewardPerAssetDetail2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐRewardSummary(ctx context.Context, sel ast.SelectionSet, v *vega.RewardSummary) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._RewardPerAssetDetail(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalORewardScore2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐRewardScore(ctx context.Context, sel ast.SelectionSet, v *vega.RewardScore) graphql.Marshaler {
+func (ec *executionContext) marshalORewardScore2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐRewardScore(ctx context.Context, sel ast.SelectionSet, v *vega.RewardScore) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._RewardScore(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalORewardSummary2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐRewardSummary(ctx context.Context, sel ast.SelectionSet, v []*vega.RewardSummary) graphql.Marshaler {
+func (ec *executionContext) marshalORewardSummary2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐRewardSummary(ctx context.Context, sel ast.SelectionSet, v []*vega.RewardSummary) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -63500,7 +66226,7 @@ func (ec *executionContext) marshalORewardSummary2ᚕᚖcodeᚗvegaprotocolᚗio
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalORewardSummary2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐRewardSummary(ctx, sel, v[i])
+			ret[i] = ec.marshalORewardSummary2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐRewardSummary(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -63514,35 +66240,14 @@ func (ec *executionContext) marshalORewardSummary2ᚕᚖcodeᚗvegaprotocolᚗio
 	return ret
 }
 
-func (ec *executionContext) marshalORewardSummary2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐRewardSummary(ctx context.Context, sel ast.SelectionSet, v *vega.RewardSummary) graphql.Marshaler {
+func (ec *executionContext) marshalORewardSummary2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐRewardSummary(ctx context.Context, sel ast.SelectionSet, v *vega.RewardSummary) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._RewardSummary(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalORewardsConnection2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐRewardsConnection(ctx context.Context, sel ast.SelectionSet, v *v2.RewardsConnection) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._RewardsConnection(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalORiskFactor2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐRiskFactor(ctx context.Context, sel ast.SelectionSet, v *vega.RiskFactor) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._RiskFactor(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalOSimpleRiskModelParams2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐSimpleModelParams(ctx context.Context, sel ast.SelectionSet, v *vega.SimpleModelParams) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._SimpleRiskModelParams(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalOStakeLinking2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋeventsᚋv1ᚐStakeLinkingᚄ(ctx context.Context, sel ast.SelectionSet, v []*v1.StakeLinking) graphql.Marshaler {
+func (ec *executionContext) marshalORewardSummaryEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐRewardSummaryEdge(ctx context.Context, sel ast.SelectionSet, v []*RewardSummaryEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -63569,7 +66274,76 @@ func (ec *executionContext) marshalOStakeLinking2ᚕᚖcodeᚗvegaprotocolᚗio�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNStakeLinking2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋeventsᚋv1ᚐStakeLinking(ctx, sel, v[i])
+			ret[i] = ec.marshalORewardSummaryEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐRewardSummaryEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalORewardSummaryEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐRewardSummaryEdge(ctx context.Context, sel ast.SelectionSet, v *RewardSummaryEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._RewardSummaryEdge(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalORewardsConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐRewardsConnection(ctx context.Context, sel ast.SelectionSet, v *v2.RewardsConnection) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._RewardsConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalORiskFactor2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐRiskFactor(ctx context.Context, sel ast.SelectionSet, v *vega.RiskFactor) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._RiskFactor(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOSimpleRiskModelParams2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐSimpleModelParams(ctx context.Context, sel ast.SelectionSet, v *vega.SimpleModelParams) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._SimpleRiskModelParams(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOStakeLinking2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐStakeLinkingᚄ(ctx context.Context, sel ast.SelectionSet, v []*v1.StakeLinking) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNStakeLinking2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐStakeLinking(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -63587,6 +66361,54 @@ func (ec *executionContext) marshalOStakeLinking2ᚕᚖcodeᚗvegaprotocolᚗio�
 	}
 
 	return ret
+}
+
+func (ec *executionContext) marshalOStakeLinkingEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐStakeLinkingEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.StakeLinkingEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOStakeLinkingEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐStakeLinkingEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOStakeLinkingEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐStakeLinkingEdge(ctx context.Context, sel ast.SelectionSet, v *v2.StakeLinkingEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._StakeLinkingEdge(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
@@ -63685,7 +66507,7 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 	return res
 }
 
-func (ec *executionContext) marshalOTrade2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐTradeᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Trade) graphql.Marshaler {
+func (ec *executionContext) marshalOTrade2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTradeᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Trade) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -63712,7 +66534,7 @@ func (ec *executionContext) marshalOTrade2ᚕᚖcodeᚗvegaprotocolᚗioᚋproto
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNTrade2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐTrade(ctx, sel, v[i])
+			ret[i] = ec.marshalNTrade2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTrade(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -63732,7 +66554,7 @@ func (ec *executionContext) marshalOTrade2ᚕᚖcodeᚗvegaprotocolᚗioᚋproto
 	return ret
 }
 
-func (ec *executionContext) marshalOTrade2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐTrade(ctx context.Context, sel ast.SelectionSet, v *vega.Trade) graphql.Marshaler {
+func (ec *executionContext) marshalOTrade2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTrade(ctx context.Context, sel ast.SelectionSet, v *vega.Trade) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -63786,7 +66608,7 @@ func (ec *executionContext) marshalOTradeSettlement2ᚕᚖcodeᚗvegaprotocolᚗ
 	return ret
 }
 
-func (ec *executionContext) marshalOTransfer2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋeventsᚋv1ᚐTransferᚄ(ctx context.Context, sel ast.SelectionSet, v []*v1.Transfer) graphql.Marshaler {
+func (ec *executionContext) marshalOTransfer2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐTransferᚄ(ctx context.Context, sel ast.SelectionSet, v []*v1.Transfer) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -63813,7 +66635,7 @@ func (ec *executionContext) marshalOTransfer2ᚕᚖcodeᚗvegaprotocolᚗioᚋpr
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNTransfer2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋeventsᚋv1ᚐTransfer(ctx, sel, v[i])
+			ret[i] = ec.marshalNTransfer2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐTransfer(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -63880,7 +66702,7 @@ func (ec *executionContext) marshalOTransferBalance2ᚕᚖcodeᚗvegaprotocolᚗ
 	return ret
 }
 
-func (ec *executionContext) marshalOTransferEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTransferEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.TransferEdge) graphql.Marshaler {
+func (ec *executionContext) marshalOTransferEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTransferEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.TransferEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -63907,7 +66729,7 @@ func (ec *executionContext) marshalOTransferEdge2ᚕᚖcodeᚗvegaprotocolᚗio�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOTransferEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTransferEdge(ctx, sel, v[i])
+			ret[i] = ec.marshalOTransferEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTransferEdge(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -63921,7 +66743,7 @@ func (ec *executionContext) marshalOTransferEdge2ᚕᚖcodeᚗvegaprotocolᚗio�
 	return ret
 }
 
-func (ec *executionContext) marshalOTransferEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTransferEdge(ctx context.Context, sel ast.SelectionSet, v *v2.TransferEdge) graphql.Marshaler {
+func (ec *executionContext) marshalOTransferEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTransferEdge(ctx context.Context, sel ast.SelectionSet, v *v2.TransferEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -63975,7 +66797,7 @@ func (ec *executionContext) marshalOTransferResponse2ᚕᚖcodeᚗvegaprotocol�
 	return ret
 }
 
-func (ec *executionContext) marshalOVote2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐVoteᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Vote) graphql.Marshaler {
+func (ec *executionContext) marshalOVote2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐVoteᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Vote) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -64002,7 +66824,7 @@ func (ec *executionContext) marshalOVote2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotos
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNVote2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐVote(ctx, sel, v[i])
+			ret[i] = ec.marshalNVote2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐVote(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -64022,7 +66844,7 @@ func (ec *executionContext) marshalOVote2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotos
 	return ret
 }
 
-func (ec *executionContext) marshalOVoteEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐVoteEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*v2.VoteEdge) graphql.Marshaler {
+func (ec *executionContext) marshalOVoteEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐVoteEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*v2.VoteEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -64049,7 +66871,7 @@ func (ec *executionContext) marshalOVoteEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋpr
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNVoteEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐVoteEdge(ctx, sel, v[i])
+			ret[i] = ec.marshalNVoteEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐVoteEdge(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -64069,7 +66891,7 @@ func (ec *executionContext) marshalOVoteEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋpr
 	return ret
 }
 
-func (ec *executionContext) marshalOWithdrawal2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐWithdrawalᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Withdrawal) graphql.Marshaler {
+func (ec *executionContext) marshalOWithdrawal2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐWithdrawalᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Withdrawal) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -64096,7 +66918,7 @@ func (ec *executionContext) marshalOWithdrawal2ᚕᚖcodeᚗvegaprotocolᚗioᚋ
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNWithdrawal2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐWithdrawal(ctx, sel, v[i])
+			ret[i] = ec.marshalNWithdrawal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐWithdrawal(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -64116,7 +66938,7 @@ func (ec *executionContext) marshalOWithdrawal2ᚕᚖcodeᚗvegaprotocolᚗioᚋ
 	return ret
 }
 
-func (ec *executionContext) marshalOWithdrawal2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐWithdrawal(ctx context.Context, sel ast.SelectionSet, v *vega.Withdrawal) graphql.Marshaler {
+func (ec *executionContext) marshalOWithdrawal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐWithdrawal(ctx context.Context, sel ast.SelectionSet, v *vega.Withdrawal) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -64130,7 +66952,7 @@ func (ec *executionContext) marshalOWithdrawalDetails2codeᚗvegaprotocolᚗio�
 	return ec._WithdrawalDetails(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOWithdrawalEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐWithdrawalEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.WithdrawalEdge) graphql.Marshaler {
+func (ec *executionContext) marshalOWithdrawalEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐWithdrawalEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.WithdrawalEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -64157,7 +66979,7 @@ func (ec *executionContext) marshalOWithdrawalEdge2ᚕᚖcodeᚗvegaprotocolᚗi
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOWithdrawalEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐWithdrawalEdge(ctx, sel, v[i])
+			ret[i] = ec.marshalOWithdrawalEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐWithdrawalEdge(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -64171,7 +66993,7 @@ func (ec *executionContext) marshalOWithdrawalEdge2ᚕᚖcodeᚗvegaprotocolᚗi
 	return ret
 }
 
-func (ec *executionContext) marshalOWithdrawalEdge2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐWithdrawalEdge(ctx context.Context, sel ast.SelectionSet, v *v2.WithdrawalEdge) graphql.Marshaler {
+func (ec *executionContext) marshalOWithdrawalEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐWithdrawalEdge(ctx context.Context, sel ast.SelectionSet, v *v2.WithdrawalEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}

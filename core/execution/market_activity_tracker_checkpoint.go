@@ -16,11 +16,11 @@ import (
 	"context"
 	"sort"
 
-	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
+	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
 
 	"code.vegaprotocol.io/vega/core/types"
 
-	"code.vegaprotocol.io/vega/core/libs/proto"
+	"code.vegaprotocol.io/vega/libs/proto"
 )
 
 func (mat *MarketActivityTracker) Name() types.CheckpointName {

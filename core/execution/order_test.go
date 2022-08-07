@@ -18,11 +18,11 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
-	vegacontext "code.vegaprotocol.io/vega/core/libs/context"
-	vgcrypto "code.vegaprotocol.io/vega/core/libs/crypto"
+	vegacontext "code.vegaprotocol.io/vega/libs/context"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -72,7 +72,7 @@ func TestOrderBufferOutputCount(t *testing.T) {
 
 	one := num.NewUint(1)
 	// Amend price down (generates one order message)
-	amend.Price = num.Zero().Sub(orderBuy.Price, one)
+	amend.Price = num.UintZero().Sub(orderBuy.Price, one)
 	amendConf, err := tm.market.AmendOrder(context.TODO(), amend, party1, vgcrypto.RandomHash())
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
@@ -1930,7 +1930,7 @@ func testPeggedOrderRepricing(t *testing.T) {
 			reference:      types.PeggedReferenceBestAsk,
 			side:           types.SideBuy,
 			offset:         0,
-			expectedPrice:  num.Zero(),
+			expectedPrice:  num.UintZero(),
 			expectingError: "offset must be greater than zero",
 		},
 		{
@@ -2939,7 +2939,7 @@ func Test2965EnsureLPOrdersAreNotCancelleableWithCancelAll(t *testing.T) {
 		tpl.New(types.Order{
 			Size:        20,
 			Remaining:   20,
-			Price:       num.Zero().Sub(num.NewUint(5500), partyA.pegOffset), // 3500
+			Price:       num.UintZero().Sub(num.NewUint(5500), partyA.pegOffset), // 3500
 			Side:        types.SideBuy,
 			Party:       "party-0",
 			TimeInForce: types.OrderTimeInForceGFA,
@@ -2947,7 +2947,7 @@ func Test2965EnsureLPOrdersAreNotCancelleableWithCancelAll(t *testing.T) {
 		tpl.New(types.Order{
 			Size:        20,
 			Remaining:   20,
-			Price:       num.Zero().Sub(num.NewUint(5000), partyB.pegOffset), // 4000
+			Price:       num.UintZero().Sub(num.NewUint(5000), partyB.pegOffset), // 4000
 			Side:        types.SideSell,
 			Party:       "party-1",
 			TimeInForce: types.OrderTimeInForceGFA,

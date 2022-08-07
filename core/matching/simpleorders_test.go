@@ -16,9 +16,9 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/core/events"
-	vgcrypto "code.vegaprotocol.io/vega/core/libs/crypto"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/num"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -746,21 +746,21 @@ func (m MarketPos) Price() *num.Uint {
 	if m.price != nil {
 		return m.price
 	}
-	return num.Zero()
+	return num.UintZero()
 }
 
 func (m MarketPos) VWBuy() *num.Uint {
 	if m.vwBuy != nil {
 		return m.vwBuy
 	}
-	return num.Zero()
+	return num.UintZero()
 }
 
 func (m MarketPos) VWSell() *num.Uint {
 	if m.vwSell != nil {
 		return m.vwSell
 	}
-	return num.Zero()
+	return num.UintZero()
 }
 
 func TestOrderBookSimple_CancelDistressedOrders(t *testing.T) {

@@ -19,11 +19,11 @@ import (
 	"sort"
 	"sync"
 
-	ptypes "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	ptypes "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type OE interface {
@@ -503,7 +503,7 @@ func (mdb *MarketDepthBuilder) GetBestBidPrice(market string) *num.Uint {
 			return md.buySide[0].price.Clone()
 		}
 	}
-	return num.Zero()
+	return num.UintZero()
 }
 
 // GetBestAskPrice returns the highest bid price in the book.
@@ -514,7 +514,7 @@ func (mdb *MarketDepthBuilder) GetBestAskPrice(market string) *num.Uint {
 			return md.sellSide[0].price.Clone()
 		}
 	}
-	return num.Zero()
+	return num.UintZero()
 }
 
 // GetBuyPriceLevels returns the number of non empty buy price levels.

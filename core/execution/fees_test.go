@@ -17,7 +17,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/execution"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 
 	"github.com/stretchr/testify/require"
 )
@@ -35,7 +35,7 @@ func TestFeeSplitter(t *testing.T) {
 		expectedValueProxy num.Decimal
 	}{
 		{
-			tradedValue:        num.Zero(),
+			tradedValue:        num.UintZero(),
 			currentTime:        timeWindowStart,
 			expectedValueProxy: num.DecimalFromFloat(100),
 		},

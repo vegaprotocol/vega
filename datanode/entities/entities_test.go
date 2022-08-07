@@ -17,8 +17,8 @@ import (
 	"testing"
 	"time"
 
-	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/datanode/entities"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -16,7 +16,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -37,9 +37,9 @@ type MarketPosition struct {
 func NewMarketPosition(party string) *MarketPosition {
 	return &MarketPosition{
 		partyID:     party,
-		price:       num.Zero(),
-		vwBuyPrice:  num.Zero(),
-		vwSellPrice: num.Zero(),
+		price:       num.UintZero(),
+		vwBuyPrice:  num.UintZero(),
+		vwSellPrice: num.UintZero(),
 	}
 }
 
@@ -177,7 +177,7 @@ func (p MarketPosition) Price() *num.Uint {
 	if p.price != nil {
 		return p.price.Clone()
 	}
-	return num.Zero()
+	return num.UintZero()
 }
 
 // VWBuy - get volume weighted buy price for unmatched buy orders.
@@ -185,7 +185,7 @@ func (p MarketPosition) VWBuy() *num.Uint {
 	if p.vwBuyPrice != nil {
 		return p.vwBuyPrice.Clone()
 	}
-	return num.Zero()
+	return num.UintZero()
 }
 
 // VWSell - get volume weighted sell price for unmatched sell orders.
@@ -193,5 +193,5 @@ func (p MarketPosition) VWSell() *num.Uint {
 	if p.vwSellPrice != nil {
 		return p.vwSellPrice.Clone()
 	}
-	return num.Zero()
+	return num.UintZero()
 }

@@ -22,11 +22,11 @@ import (
 
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/events"
-	vgcrypto "code.vegaprotocol.io/vega/core/libs/crypto"
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
 	"code.vegaprotocol.io/vega/core/validators"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/pkg/errors"
 )
@@ -707,7 +707,7 @@ func (e *Engine) AddVote(ctx context.Context, cmd types.VoteSubmission, party st
 		ProposalID:                  cmd.ProposalID,
 		Value:                       cmd.Value,
 		Timestamp:                   e.timeService.GetTimeNow().UnixNano(),
-		TotalGovernanceTokenBalance: num.Zero(),
+		TotalGovernanceTokenBalance: num.UintZero(),
 		TotalGovernanceTokenWeight:  num.DecimalZero(),
 		TotalEquityLikeShareWeight:  num.DecimalZero(),
 	}
@@ -1108,7 +1108,7 @@ func (p *proposal) computeVoteStateUsingEquityLikeShare(params *ProposalParamete
 }
 
 func (p *proposal) countTokens(votes map[string]*types.Vote, accounts StakingAccounts) *num.Uint {
-	tally := num.Zero()
+	tally := num.UintZero()
 	for _, v := range votes {
 		v.TotalGovernanceTokenBalance = getTokensBalance(accounts, v.PartyID)
 		tally.AddSum(v.TotalGovernanceTokenBalance)

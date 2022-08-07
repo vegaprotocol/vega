@@ -16,8 +16,8 @@ import (
 	"context"
 	"testing"
 
-	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/core/events"
+	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 	"github.com/stretchr/testify/assert"
 )
 

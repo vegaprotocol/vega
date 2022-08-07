@@ -25,7 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/core/settlement"
 	"code.vegaprotocol.io/vega/core/settlement/mocks"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/golang/mock/gomock"
@@ -338,7 +338,7 @@ func testSettleExpiredSuccess(t *testing.T) {
 	} // }}}
 	oraclePrice := num.NewUint(1100)
 	settleF := func(price *num.Uint, assetDecimals uint32, size num.Decimal) (*types.FinancialAmount, bool, error) {
-		amt, neg := num.Zero().Delta(oraclePrice, price)
+		amt, neg := num.UintZero().Delta(oraclePrice, price)
 		if size.IsNegative() {
 			size = size.Neg()
 			neg = !neg
@@ -722,7 +722,7 @@ func TestConcurrent(t *testing.T) {
 	engine := getTestEngine(t)
 	defer engine.Finish()
 	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(price *num.Uint, assetDecimals uint32, size num.Decimal) (*types.FinancialAmount, bool, error) {
-		return &types.FinancialAmount{Amount: num.Zero()}, false, nil
+		return &types.FinancialAmount{Amount: num.UintZero()}, false, nil
 	})
 
 	cfg := engine.Config
@@ -810,7 +810,7 @@ func (t testPos) Sell() int64 {
 
 func (t testPos) Price() *num.Uint {
 	if t.price == nil {
-		return num.Zero()
+		return num.UintZero()
 	}
 	return t.price
 }
@@ -869,7 +869,7 @@ func (m marginVal) GeneralBalance() *num.Uint {
 }
 
 func (m marginVal) BondBalance() *num.Uint {
-	return num.Zero()
+	return num.UintZero()
 }
 
 func (m marginVal) MarginShortFall() *num.Uint {

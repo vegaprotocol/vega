@@ -15,7 +15,7 @@
 
 package statevar
 
-import vegapb "code.vegaprotocol.io/protos/vega"
+import vegapb "code.vegaprotocol.io/vega/protos/vega"
 
 func (sv *StateVariable) AddNoise(kvb []*vegapb.KeyValueBundle) []*vegapb.KeyValueBundle {
 	return kvb

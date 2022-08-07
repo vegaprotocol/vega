@@ -16,7 +16,7 @@ import (
 	"fmt"
 	"os"
 
-	"code.vegaprotocol.io/shared/paths"
+	"code.vegaprotocol.io/vega/paths"
 )
 
 func EnsureNodeConfig(vegaPaths paths.Paths) (*Loader, *Config, error) {

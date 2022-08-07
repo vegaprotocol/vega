@@ -16,12 +16,12 @@ import (
 	"context"
 	"sort"
 
-	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
-	events "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
+	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
+	events "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
-	"code.vegaprotocol.io/vega/core/libs/proto"
+	"code.vegaprotocol.io/vega/libs/proto"
 )
 
 func (t *Topology) Name() types.CheckpointName {

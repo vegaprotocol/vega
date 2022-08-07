@@ -15,15 +15,13 @@ package entities
 import (
 	"time"
 
-	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/core/types"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 )
 
-type PartyID struct{ ID }
+type _Party struct{}
 
-func NewPartyID(id string) PartyID {
-	return PartyID{ID: ID(id)}
-}
+type PartyID = ID[_Party]
 
 type Party struct {
 	ID       PartyID
@@ -31,7 +29,7 @@ type Party struct {
 }
 
 func PartyFromProto(pp *types.Party) Party {
-	return Party{ID: NewPartyID(pp.Id)}
+	return Party{ID: PartyID(pp.Id)}
 }
 
 func (p *Party) ToProto() *types.Party {

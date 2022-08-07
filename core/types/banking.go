@@ -16,11 +16,11 @@ import (
 	"errors"
 	"time"
 
-	vegapb "code.vegaprotocol.io/protos/vega"
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
-	vgcrypto "code.vegaprotocol.io/vega/core/crypto"
-	"code.vegaprotocol.io/vega/core/types/num"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/num"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
 type TransferStatus = eventspb.Transfer_Status

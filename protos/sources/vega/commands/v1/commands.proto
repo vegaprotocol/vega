@@ -1,0 +1,208 @@
+syntax = "proto3";
+
+package vega.commands.v1;
+option go_package = "code.vegaprotocol.io/vega/protos/vega/commands/v1";
+
+import "vega/governance.proto";
+import "vega/vega.proto";
+
+
+// An order submission is a request to submit or create a new order on Vega
+message OrderSubmission {
+  // Market identifier for the order, required field
+  string market_id = 1;
+  // Price for the order, the price is an integer, for example `123456` is a correctly
+  // formatted price of `1.23456` assuming market configured to 5 decimal places,
+  // , required field for limit orders, however it is not required for market orders
+  string price = 2;
+  // Size for the order, for example, in a futures market the size equals the number of contracts, cannot be negative
+  uint64 size = 3;
+  // Side for the order, e.g. SIDE_BUY or SIDE_SELL, required field
+  // - See `Side`
+  vega.Side side = 4;
+  // Time in force indicates how long an order will remain active before it is executed or expires, required field
+  // - See `Order.TimeInForce`
+  vega.Order.TimeInForce time_in_force = 5;
+  // Timestamp for when the order will expire, in nanoseconds since the epoch,
+  // required field only for `Order.TimeInForce`.TIME_IN_FORCE_GTT`
+  // - See `VegaTimeResponse`.`timestamp`
+  int64 expires_at = 6;
+  // Type for the order, required field - See `Order.Type`
+  vega.Order.Type type = 7;
+  // Reference given for the order, this is typically used to retrieve an order submitted through consensus, currently
+  // set internally by the node to return a unique reference identifier for the order submission
+  string reference = 8;
+  // Used to specify the details for a pegged order
+  // - See `PeggedOrder`
+  vega.PeggedOrder pegged_order = 9;
+}
+
+// An order cancellation is a request to cancel an existing order on Vega
+message OrderCancellation {
+  // Unique identifier for the order (set by the system after consensus), required field
+  string order_id = 1;
+  // Market identifier for the order, required field
+  string market_id = 2;
+}
+
+// An order amendment is a request to amend or update an existing order on Vega
+message OrderAmendment {
+  // The `orderID`, `partyID` and `marketID` fields are used for looking up the order only and cannot be amended by this command
+
+  // Order identifier, this is required to find the order and will not be updated, required field
+  string order_id = 1;
+  // Market identifier, this is required to find the order and will not be updated
+  string market_id = 2;
+
+  // All fields below can be altered by this command:
+
+  // Amend the price for the order, if the Price value is set, otherwise price will remain unchanged - See [`Price`](#vega.Price)
+  optional string price = 3;
+  // Amend the size for the order by the delta specified:
+  // - To reduce the size from the current value set a negative integer value
+  // - To increase the size from the current value, set a positive integer value
+  // - To leave the size unchanged set a value of zero
+  int64 size_delta = 4;
+  // Amend the expiry time for the order, if the Timestamp value is set, otherwise expiry time will remain unchanged
+  // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
+  optional int64 expires_at = 5;
+  // Amend the time in force for the order, set to TIME_IN_FORCE_UNSPECIFIED to remain unchanged
+  // - See [`TimeInForce`](#api.VegaTimeResponse).`timestamp`
+  vega.Order.TimeInForce time_in_force = 6;
+  // Amend the pegged order offset for the order
+  string pegged_offset = 7;
+  // Amend the pegged order reference for the order
+  // - See [`PeggedReference`](#vega.PeggedReference)
+  vega.PeggedReference pegged_reference = 8;
+}
+
+// A liquidity provision submitted for a given market
+message LiquidityProvisionSubmission {
+  // Market identifier for the order, required field
+  string market_id = 1;
+  // Specified as a unitless number that represents the amount of settlement asset of the market
+  string commitment_amount = 2;
+  // Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers
+  string fee = 3;
+  // A set of liquidity sell orders to meet the liquidity provision obligation
+  repeated vega.LiquidityOrder sells = 4;
+  // A set of liquidity buy orders to meet the liquidity provision obligation
+  repeated vega.LiquidityOrder buys = 5;
+  // A reference to be added to every order created out of this liquidityProvisionSubmission
+  string reference = 6;
+}
+
+// Cancel a liquidity provision request
+message LiquidityProvisionCancellation {
+  string market_id = 1; // Unique ID for the market with the liquidity provision to be cancelled
+}
+
+// Amend a liquidity provision request
+message LiquidityProvisionAmendment {
+  string market_id = 1; // Unique ID for the market with the liquidity provision to be amended
+
+  // From here at least one of the following is required to consider the command valid
+  string commitment_amount = 2; // an empty strings means no change
+  string fee = 3; // an empty strings means no change
+  repeated vega.LiquidityOrder sells = 4; // empty slice means no change
+  repeated vega.LiquidityOrder buys = 5; // empty slice means no change
+  string reference = 6; // empty string means no change
+}
+
+// Represents the submission request to withdraw funds for a party on Vega
+message WithdrawSubmission {
+  // The amount to be withdrawn
+  string amount = 1;
+  // The asset to be withdrawn
+  string asset = 2;
+  // Foreign chain specifics
+  vega.WithdrawExt ext = 3;
+}
+
+// A command to submit a new proposal for the
+// Vega network governance
+message ProposalSubmission {
+  // Proposal reference
+  string reference = 1;
+  // Proposal configuration and the actual change that is meant to be executed when proposal is enacted
+  vega.ProposalTerms terms = 2;
+  // The rationale behind a proposal.
+  vega.ProposalRationale rationale = 3;
+}
+
+// A command to submit a new vote for a governance
+// proposal.
+message VoteSubmission {
+  // The ID of the proposal to vote for.
+  string proposal_id = 1;
+  // The actual value of the vote
+  vega.Vote.Value value = 2;
+}
+
+// A command to submit an instruction to delegate some stake to a node
+message DelegateSubmission {
+  // The ID for the node to delegate to
+  string node_id = 1;
+  // The amount of stake to delegate
+  string amount = 2;
+}
+
+message UndelegateSubmission {
+  enum Method {
+    METHOD_UNSPECIFIED = 0;
+    METHOD_NOW = 1;
+    METHOD_AT_END_OF_EPOCH = 2;
+    METHOD_IN_ANGER = 3;
+  }
+  string node_id = 1;
+  // optional, if not specified = ALL
+  string amount = 2;
+  Method method = 3;
+}
+
+// A transfer initiated by a party
+message Transfer {
+  // The account type from which the funds of the party
+  // should be taken
+  vega.AccountType from_account_type = 1;
+  // The public key of the destination account
+  string to = 2;
+  // The type of the destination account
+  vega.AccountType to_account_type = 3;
+  // The asset
+  string asset = 4;
+  // The amount to be taken from the source account
+  string amount = 5;
+  // The reference to be attached to the transfer
+  string reference = 6;
+  // Specific details of the transfer
+  oneof kind {
+    OneOffTransfer one_off = 101;
+    RecurringTransfer recurring = 102;
+  }
+}
+
+// Specific details for a one off transfer
+message OneOffTransfer {
+  // A unix timestamp in second. Time at which the
+  // transfer should be delivered in the to account
+  int64 deliver_on = 1;
+}
+
+// Specific details for a recurring transfer
+message RecurringTransfer {
+  // The first epoch from which this transfer shall be paid
+  uint64 start_epoch = 1;
+  // The last epoch at which this transfer shall be paid
+  optional uint64 end_epoch = 2;
+  // factor needs to be > 0
+  string factor = 3;
+  // optional parameter defining how a transfer is dispatched
+  vega.DispatchStrategy dispatch_strategy = 4;
+}
+
+// A request for cancelling a recurring transfer
+message CancelTransfer {
+  // The ID of the transfer to cancel
+  string transfer_id = 1;
+}

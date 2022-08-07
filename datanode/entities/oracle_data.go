@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"time"
 
-	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
-	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 )
 
 type Property struct {
@@ -52,7 +52,7 @@ func OracleDataFromProto(data *oraclespb.OracleData, vegaTime time.Time) (*Oracl
 	}
 
 	for _, specID := range data.MatchedSpecIds {
-		id := NewSpecID(specID)
+		id := SpecID(specID)
 		idBytes, err := id.Bytes()
 		if err != nil {
 			return nil, fmt.Errorf("cannot decode spec ID: %w", err)

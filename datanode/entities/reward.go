@@ -18,9 +18,9 @@ import (
 	"strconv"
 	"time"
 
-	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
-	"code.vegaprotocol.io/protos/vega"
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	"code.vegaprotocol.io/vega/protos/vega"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"github.com/shopspring/decimal"
 )
 
@@ -90,13 +90,13 @@ func RewardFromProto(pr eventspb.RewardPayoutEvent, vegaTime time.Time) (Reward,
 	}
 
 	reward := Reward{
-		PartyID:        NewPartyID(pr.Party),
-		AssetID:        NewAssetID(pr.Asset),
+		PartyID:        PartyID(pr.Party),
+		AssetID:        AssetID(pr.Asset),
 		EpochID:        epochID,
 		Amount:         amount,
 		PercentOfTotal: percentOfTotal,
 		Timestamp:      NanosToPostgresTimestamp(pr.Timestamp),
-		MarketID:       NewMarketID(pr.Market),
+		MarketID:       MarketID(pr.Market),
 		RewardType:     pr.RewardType,
 		VegaTime:       vegaTime,
 	}

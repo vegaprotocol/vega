@@ -16,8 +16,8 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
@@ -38,15 +38,15 @@ func TestProtoFromTrade(t *testing.T) {
 
 	trade := entities.Trade{
 		VegaTime:                vegaTime,
-		ID:                      entities.NewTradeID(idString),
-		MarketID:                entities.NewMarketID(marketIdString),
+		ID:                      entities.TradeID(idString),
+		MarketID:                entities.MarketID(marketIdString),
 		Price:                   price,
 		Size:                    size,
-		Buyer:                   entities.NewPartyID(buyerIdString),
-		Seller:                  entities.NewPartyID(sellerIdString),
+		Buyer:                   entities.PartyID(buyerIdString),
+		Seller:                  entities.PartyID(sellerIdString),
 		Aggressor:               entities.SideBuy,
-		BuyOrder:                entities.NewOrderID(buyOrderIdString),
-		SellOrder:               entities.NewOrderID(sellOrderIdString),
+		BuyOrder:                entities.OrderID(buyOrderIdString),
+		SellOrder:               entities.OrderID(sellOrderIdString),
 		Type:                    entities.TradeTypeNetworkCloseOutGood,
 		BuyerMakerFee:           decimal.NewFromInt(2),
 		BuyerInfrastructureFee:  decimal.NewFromInt(3),

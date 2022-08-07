@@ -19,10 +19,10 @@ import (
 
 	"github.com/cucumber/godog"
 
-	types "code.vegaprotocol.io/protos/vega"
-	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
 	"code.vegaprotocol.io/vega/core/integration/steps/market"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
+	types "code.vegaprotocol.io/vega/protos/vega"
+	oraclesv1 "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 )
 
 func TheOracleSpec(config *market.Config, name string, specType string, rawPubKeys string, table *godog.Table) error {

@@ -17,12 +17,12 @@ import (
 	"math/rand"
 	"testing"
 
-	v1 "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	v1 "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )

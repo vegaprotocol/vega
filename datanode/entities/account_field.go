@@ -15,7 +15,7 @@ package entities
 import (
 	"fmt"
 
-	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 )
 
 // AccountField is an enumeration of the properties of an account

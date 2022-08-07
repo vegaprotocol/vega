@@ -17,14 +17,14 @@ import (
 	"fmt"
 	"time"
 
-	"code.vegaprotocol.io/protos/commands"
-	api "code.vegaprotocol.io/protos/vega/api/v1"
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/core/blockchain"
-	vgproto "code.vegaprotocol.io/vega/core/libs/proto"
 	"code.vegaprotocol.io/vega/core/nodewallets/vega"
 	"code.vegaprotocol.io/vega/core/txn"
+	vgproto "code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
+	api "code.vegaprotocol.io/vega/protos/vega/api/v1"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
 	"github.com/cenkalti/backoff"
 	"github.com/golang/protobuf/proto"

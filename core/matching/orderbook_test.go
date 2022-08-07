@@ -18,11 +18,12 @@ import (
 	"testing"
 	"time"
 
-	vgcrypto "code.vegaprotocol.io/vega/core/libs/crypto"
 	"code.vegaprotocol.io/vega/core/matching"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -1165,12 +1166,11 @@ func TestOrderBook_RemoveOrder(t *testing.T) {
 	book.ob.SubmitOrder(newOrder)
 
 	// First time we remove the order it should succeed
-	err = book.ob.RemoveOrder(newOrder)
-	assert.NoError(t, err)
-	assert.Equal(t, types.OrderStatusParked, newOrder.Status)
+	_, err = book.ob.RemoveOrder(newOrder.ID)
+	assert.Error(t, err, vega.ErrInvalidOrderID)
 
 	// Second time we try to remove the order it should fail
-	err = book.ob.RemoveOrder(newOrder)
+	_, err = book.ob.RemoveOrder(newOrder.ID)
 	assert.Error(t, err)
 }
 

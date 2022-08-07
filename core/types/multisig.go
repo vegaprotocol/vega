@@ -17,9 +17,9 @@ import (
 	"fmt"
 	"strconv"
 
-	vgproto "code.vegaprotocol.io/protos/vega"
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
-	"code.vegaprotocol.io/vega/core/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/crypto"
+	vgproto "code.vegaprotocol.io/vega/protos/vega"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
 type SignerEventKind = eventspb.ERC20MultiSigSignerEvent_Type

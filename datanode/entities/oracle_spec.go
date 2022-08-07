@@ -18,19 +18,13 @@ import (
 	"strings"
 	"time"
 
-	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
-	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 )
 
-type SpecID struct {
-	ID
-}
+type _Spec struct{}
 
-func NewSpecID(id string) SpecID {
-	return SpecID{
-		ID: ID(id),
-	}
-}
+type SpecID = ID[_Spec]
 
 type (
 	PublicKey  = []byte
@@ -48,7 +42,7 @@ type OracleSpec struct {
 }
 
 func OracleSpecFromProto(spec *oraclespb.OracleSpec, vegaTime time.Time) (*OracleSpec, error) {
-	id := NewSpecID(spec.Id)
+	id := SpecID(spec.Id)
 	pubKeys, err := decodePublicKeys(spec.PubKeys)
 	if err != nil {
 		return nil, err

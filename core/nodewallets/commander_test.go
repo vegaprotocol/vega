@@ -16,15 +16,15 @@ import (
 	"context"
 	"testing"
 
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
 	"code.vegaprotocol.io/vega/core/blockchain"
-	vgtesting "code.vegaprotocol.io/vega/core/libs/testing"
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	"code.vegaprotocol.io/vega/core/nodewallets/mocks"
 	vgnw "code.vegaprotocol.io/vega/core/nodewallets/vega"
 	"code.vegaprotocol.io/vega/core/txn"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
+	vgtesting "code.vegaprotocol.io/vega/libs/testing"
 	"code.vegaprotocol.io/vega/logging"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	"github.com/stretchr/testify/require"
 
 	"github.com/golang/mock/gomock"

@@ -19,9 +19,9 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
-	"code.vegaprotocol.io/vega/core/libs/proto"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -61,7 +61,7 @@ func NewSimpleSpamPolicy(policyName string, minTokensParamName string, maxAllowe
 		lock:                  sync.RWMutex{},
 		minTokensParamName:    minTokensParamName,
 		maxAllowedParamName:   maxAllowedParamName,
-		minTokensRequired:     num.Zero(),
+		minTokensRequired:     num.UintZero(),
 		maxAllowedCommands:    1, // default is allow one per epoch
 		banErr:                errors.New("party is banned from submitting " + policyName + " in the current epoch"),
 		insufficientTokensErr: errors.New("party has insufficient tokens to submit " + policyName + " request in this epoch"),

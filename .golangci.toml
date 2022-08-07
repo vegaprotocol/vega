@@ -87,6 +87,10 @@ linters = ["forbidigo"]
 path = "print.go"
 linters = ["forbidigo"]
 
+[[issues.exclude-rules]]
+path = "libs/json/json.go"
+linters = ["forbidigo"]
+
 [linters-settings.forbidigo]
 forbid = ["fmt\\.Print.*"]
 

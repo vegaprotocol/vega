@@ -12,7 +12,7 @@
 
 package types
 
-import proto "code.vegaprotocol.io/protos/vega"
+import proto "code.vegaprotocol.io/vega/protos/vega"
 
 type (
 	Candle   = proto.Candle

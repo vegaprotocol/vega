@@ -16,7 +16,7 @@ import (
 	"errors"
 	"fmt"
 
-	"code.vegaprotocol.io/shared/paths"
+	"code.vegaprotocol.io/vega/paths"
 )
 
 var ErrFaucetConfigAlreadyExists = errors.New("faucet configuration already exists")

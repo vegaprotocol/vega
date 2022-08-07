@@ -16,9 +16,9 @@ import (
 	"context"
 	"fmt"
 
-	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/cucumber/godog"
 )

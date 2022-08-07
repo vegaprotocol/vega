@@ -19,8 +19,8 @@ import (
 	"code.vegaprotocol.io/vega/core/liquidity/supplied"
 	"code.vegaprotocol.io/vega/core/liquidity/supplied/mocks"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
 	"code.vegaprotocol.io/vega/core/types/statevar"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/golang/mock/gomock"
@@ -233,7 +233,7 @@ func TestCalculateLiquidityImpliedSizes_NoLimitOrders(t *testing.T) {
 		validBuy2,
 	}
 	validSell1 := &supplied.LiquidityOrder{
-		Price:      num.Zero().Sub(maxPrice.Representation(), num.NewUint(1)),
+		Price:      num.UintZero().Sub(maxPrice.Representation(), num.NewUint(1)),
 		Proportion: 11,
 	}
 	validSell2 := &supplied.LiquidityOrder{
@@ -362,7 +362,7 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 		validBuy2,
 	}
 	validSell1 := &supplied.LiquidityOrder{
-		Price:      num.Zero().Sub(maxPrice.Representation(), num.NewUint(1)),
+		Price:      num.UintZero().Sub(maxPrice.Representation(), num.NewUint(1)),
 		Proportion: 11,
 	}
 	validSell2 := &supplied.LiquidityOrder{
@@ -580,7 +580,7 @@ func TestCalculateLiquidityImpliedSizes_NoValidOrders(t *testing.T) {
 	limitOrders := []*types.Order{}
 
 	invalidBuy := &supplied.LiquidityOrder{
-		Price:      num.Zero().Sub(minPrice.Representation(), num.NewUint(1)),
+		Price:      num.UintZero().Sub(minPrice.Representation(), num.NewUint(1)),
 		Proportion: 10,
 	}
 	buyShapes := []*supplied.LiquidityOrder{

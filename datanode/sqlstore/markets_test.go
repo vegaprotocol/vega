@@ -17,10 +17,10 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/protos/vega"
-	v1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/protos/vega"
+	v1 "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgx/v4"
 	"github.com/stretchr/testify/assert"
@@ -270,43 +270,43 @@ func populateTestMarkets(ctx context.Context, t *testing.T, bs *sqlstore.Blocks,
 
 	markets := []entities.Market{
 		{
-			ID:           entities.NewMarketID("02a16077"),
+			ID:           entities.MarketID("02a16077"),
 			InstrumentID: "AAA",
 		},
 		{
-			ID:           entities.NewMarketID("44eea1bc"),
+			ID:           entities.MarketID("44eea1bc"),
 			InstrumentID: "BBB",
 		},
 		{
-			ID:           entities.NewMarketID("65be62cd"),
+			ID:           entities.MarketID("65be62cd"),
 			InstrumentID: "CCC",
 		},
 		{
-			ID:           entities.NewMarketID("7a797e0e"),
+			ID:           entities.MarketID("7a797e0e"),
 			InstrumentID: "DDD",
 		},
 		{
-			ID:           entities.NewMarketID("7bb2356e"),
+			ID:           entities.MarketID("7bb2356e"),
 			InstrumentID: "EEE",
 		},
 		{
-			ID:           entities.NewMarketID("b7c84b8e"),
+			ID:           entities.MarketID("b7c84b8e"),
 			InstrumentID: "FFF",
 		},
 		{
-			ID:           entities.NewMarketID("c612300d"),
+			ID:           entities.MarketID("c612300d"),
 			InstrumentID: "GGG",
 		},
 		{
-			ID:           entities.NewMarketID("c8744329"),
+			ID:           entities.MarketID("c8744329"),
 			InstrumentID: "HHH",
 		},
 		{
-			ID:           entities.NewMarketID("da8d1803"),
+			ID:           entities.MarketID("da8d1803"),
 			InstrumentID: "III",
 		},
 		{
-			ID:           entities.NewMarketID("fb1528a5"),
+			ID:           entities.MarketID("fb1528a5"),
 			InstrumentID: "JJJ",
 		},
 	}

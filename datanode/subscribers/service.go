@@ -16,9 +16,9 @@ import (
 	"context"
 	"time"
 
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/broker"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
 type Broker interface {

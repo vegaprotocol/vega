@@ -26,10 +26,10 @@ import (
 )
 
 var (
-	market1ID     = entities.NewMarketID("aa")
-	market2ID     = entities.NewMarketID("bb")
-	party1ID      = entities.NewPartyID("cc")
-	party2ID      = entities.NewPartyID("dd")
+	market1ID     = entities.MarketID("aa")
+	market2ID     = entities.MarketID("bb")
+	party1ID      = entities.PartyID("cc")
+	party2ID      = entities.PartyID("dd")
 	testPosition1 = entities.Position{MarketID: market1ID, PartyID: party1ID, OpenVolume: 1}
 	testPosition2 = entities.Position{MarketID: market2ID, PartyID: party2ID, OpenVolume: 2}
 	testPosition3 = entities.Position{MarketID: market1ID, PartyID: party1ID, OpenVolume: 10}

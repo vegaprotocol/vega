@@ -19,13 +19,13 @@ import (
 	"testing"
 	"time"
 
-	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/core/positions"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
+	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
-	"code.vegaprotocol.io/vega/core/libs/crypto"
-	"code.vegaprotocol.io/vega/core/libs/proto"
+	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -37,28 +37,28 @@ func fillTestPositions(e *positions.SnapshotEngine) {
 			Side:      types.SideBuy,
 			Size:      uint64(100),
 			Remaining: uint64(100),
-			Price:     num.Zero(),
+			Price:     num.UintZero(),
 		},
 		{
 			Party:     "test_party_2",
 			Side:      types.SideBuy,
 			Size:      uint64(200),
 			Remaining: uint64(200),
-			Price:     num.Zero(),
+			Price:     num.UintZero(),
 		},
 		{
 			Party:     "test_party_3",
 			Side:      types.SideBuy,
 			Size:      uint64(300),
 			Remaining: uint64(300),
-			Price:     num.Zero(),
+			Price:     num.UintZero(),
 		},
 		{
 			Party:     "test_party_1",
 			Side:      types.SideSell,
 			Size:      uint64(1000),
 			Remaining: uint64(1000),
-			Price:     num.Zero(),
+			Price:     num.UintZero(),
 		},
 	}
 
@@ -152,7 +152,7 @@ func TestSnapshotStateRegisterOrder(t *testing.T) {
 		Side:      types.SideBuy,
 		Size:      uint64(150),
 		Remaining: uint64(150),
-		Price:     num.Zero(),
+		Price:     num.UintZero(),
 	}
 	engine.RegisterOrder(context.TODO(), newOrder)
 	s2, _, err := engine.GetState(keys[0])
@@ -174,7 +174,7 @@ func TestSnapshotStateUnregisterOrder(t *testing.T) {
 		Side:      types.SideBuy,
 		Size:      uint64(10),
 		Remaining: uint64(10),
-		Price:     num.Zero(),
+		Price:     num.UintZero(),
 	}
 	engine.RegisterOrder(context.TODO(), newOrder)
 	s2, _, err := engine.GetState(keys[0])
@@ -193,14 +193,14 @@ func TestSnapshotStateAmendOrder(t *testing.T) {
 			Side:      types.SideBuy,
 			Size:      uint64(100),
 			Remaining: uint64(100),
-			Price:     num.Zero(),
+			Price:     num.UintZero(),
 		},
 		{
 			Party:     "test_party_1",
 			Side:      types.SideBuy,
 			Size:      uint64(90),
 			Remaining: uint64(90),
-			Price:     num.Zero(),
+			Price:     num.UintZero(),
 		},
 	}
 	engine.RegisterOrder(context.TODO(), newOrders[0])

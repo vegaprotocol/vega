@@ -3,7 +3,6 @@ package assets_test
 import (
 	"testing"
 
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
 	"code.vegaprotocol.io/vega/core/assets"
 	erc20mocks "code.vegaprotocol.io/vega/core/assets/erc20/mocks"
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
@@ -11,7 +10,8 @@ import (
 	nweth "code.vegaprotocol.io/vega/core/nodewallets/eth"
 	nwvega "code.vegaprotocol.io/vega/core/nodewallets/vega"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"

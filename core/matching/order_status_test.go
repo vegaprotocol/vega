@@ -16,9 +16,9 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/core/events"
-	vgcrypto "code.vegaprotocol.io/vega/core/libs/crypto"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/num"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -806,6 +806,6 @@ func (m marketPositionFake) Party() string     { return m.party }
 func (m marketPositionFake) Size() int64       { return 0 }
 func (m marketPositionFake) Buy() int64        { return 0 }
 func (m marketPositionFake) Sell() int64       { return 0 }
-func (m marketPositionFake) Price() *num.Uint  { return num.Zero() }
-func (m marketPositionFake) VWBuy() *num.Uint  { return num.Zero() }
-func (m marketPositionFake) VWSell() *num.Uint { return num.Zero() }
+func (m marketPositionFake) Price() *num.Uint  { return num.UintZero() }
+func (m marketPositionFake) VWBuy() *num.Uint  { return num.UintZero() }
+func (m marketPositionFake) VWSell() *num.Uint { return num.UintZero() }

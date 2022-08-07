@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	typespb "code.vegaprotocol.io/protos/vega"
+	typespb "code.vegaprotocol.io/vega/protos/vega"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

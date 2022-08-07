@@ -13,16 +13,33 @@
 package types
 
 import (
+	"encoding/hex"
 	"fmt"
 	"strings"
 
-	vegapb "code.vegaprotocol.io/protos/vega"
-	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
+	"code.vegaprotocol.io/vega/libs/crypto"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
+	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 )
 
 type OracleSpecConfiguration struct {
 	PubKeys []string
 	Filters []*OracleSpecFilter
+}
+
+func SpecID(pubKeys []string, filters []*oraclespb.Filter) string {
+	buf := []byte{}
+	for _, filter := range filters {
+		s := filter.Key.Name + filter.Key.Type.String()
+		for _, c := range filter.Conditions {
+			s += c.Operator.String() + c.Value
+		}
+
+		buf = append(buf, []byte(s)...)
+	}
+	buf = append(buf, []byte(strings.Join(pubKeys, ""))...)
+
+	return hex.EncodeToString(crypto.Hash(buf))
 }
 
 func (c OracleSpecConfiguration) String() string {
@@ -49,7 +66,7 @@ func (c *OracleSpecConfiguration) DeepClone() *OracleSpecConfiguration {
 
 func (c OracleSpecConfiguration) ToOracleSpec() *OracleSpec {
 	return &OracleSpec{
-		ID:      oraclespb.NewID(c.PubKeys, OracleSpecFilters(c.Filters).IntoProto()),
+		ID:      SpecID(c.PubKeys, OracleSpecFilters(c.Filters).IntoProto()),
 		PubKeys: c.PubKeys,
 		Filters: c.Filters,
 	}

@@ -14,7 +14,6 @@ package sqlstore_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -27,7 +26,7 @@ import (
 func addTestParty(t *testing.T, ps *sqlstore.Parties, block entities.Block) entities.Party {
 	t.Helper()
 	party := entities.Party{
-		ID:       entities.NewPartyID(generateID()),
+		ID:       entities.PartyID(generateID()),
 		VegaTime: &block.VegaTime,
 	}
 
@@ -70,7 +69,6 @@ func TestParty(t *testing.T) {
 	// Check we get the right error if we ask for a non-existent party
 	_, err = ps.GetByID(ctx, "beef")
 	assert.ErrorIs(t, err, sqlstore.ErrPartyNotFound)
-	fmt.Println("yay")
 }
 
 func setupPartyTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.Parties, sqlstore.Config, func(t *testing.T)) {
@@ -93,34 +91,34 @@ func populateTestParties(ctx context.Context, t *testing.T, bs *sqlstore.Blocks,
 	t.Helper()
 	parties := []entities.Party{
 		{
-			ID: entities.NewPartyID("02a16077"),
+			ID: entities.PartyID("02a16077"),
 		},
 		{
-			ID: entities.NewPartyID("44eea1bc"),
+			ID: entities.PartyID("44eea1bc"),
 		},
 		{
-			ID: entities.NewPartyID("65be62cd"),
+			ID: entities.PartyID("65be62cd"),
 		},
 		{
-			ID: entities.NewPartyID("7a797e0e"),
+			ID: entities.PartyID("7a797e0e"),
 		},
 		{
-			ID: entities.NewPartyID("7bb2356e"),
+			ID: entities.PartyID("7bb2356e"),
 		},
 		{
-			ID: entities.NewPartyID("b7c84b8e"),
+			ID: entities.PartyID("b7c84b8e"),
 		},
 		{
-			ID: entities.NewPartyID("c612300d"),
+			ID: entities.PartyID("c612300d"),
 		},
 		{
-			ID: entities.NewPartyID("c8744329"),
+			ID: entities.PartyID("c8744329"),
 		},
 		{
-			ID: entities.NewPartyID("da8d1803"),
+			ID: entities.PartyID("da8d1803"),
 		},
 		{
-			ID: entities.NewPartyID("fb1528a5"),
+			ID: entities.PartyID("fb1528a5"),
 		},
 	}
 

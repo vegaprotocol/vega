@@ -15,8 +15,8 @@ package steps
 import (
 	"fmt"
 
-	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
+	types "code.vegaprotocol.io/vega/protos/vega"
 	"github.com/cucumber/godog"
 )
 

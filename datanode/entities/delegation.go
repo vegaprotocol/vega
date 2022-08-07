@@ -17,9 +17,9 @@ import (
 	"strconv"
 	"time"
 
-	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
-	"code.vegaprotocol.io/protos/vega"
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	"code.vegaprotocol.io/vega/protos/vega"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"github.com/shopspring/decimal"
 )
 
@@ -70,8 +70,8 @@ func DelegationFromProto(pd *vega.Delegation) (Delegation, error) {
 	}
 
 	delegation := Delegation{
-		PartyID: NewPartyID(pd.Party),
-		NodeID:  NewNodeID(pd.NodeId),
+		PartyID: PartyID(pd.Party),
+		NodeID:  NodeID(pd.NodeId),
 		EpochID: epochID,
 		Amount:  amount,
 	}
@@ -92,8 +92,8 @@ func DelegationFromEventProto(pd *eventspb.DelegationBalanceEvent) (Delegation, 
 	}
 
 	delegation := Delegation{
-		PartyID: NewPartyID(pd.Party),
-		NodeID:  NewNodeID(pd.NodeId),
+		PartyID: PartyID(pd.Party),
+		NodeID:  NodeID(pd.NodeId),
 		EpochID: epochID,
 		Amount:  amount,
 	}

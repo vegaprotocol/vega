@@ -18,10 +18,10 @@ import (
 	"errors"
 	"fmt"
 
-	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
-	"code.vegaprotocol.io/vega/core/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/crypto"
+	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
-	"code.vegaprotocol.io/vega/core/libs/proto"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/cosmos/iavl"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 )

@@ -15,10 +15,10 @@ package epochtime
 import (
 	"context"
 
-	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/protos/vega"
 
-	"code.vegaprotocol.io/vega/core/libs/proto"
+	"code.vegaprotocol.io/vega/libs/proto"
 )
 
 func (s *Svc) serialise() error {

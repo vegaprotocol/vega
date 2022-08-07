@@ -19,26 +19,31 @@ pipeline {
     options {
         skipDefaultCheckout true
         timestamps()
-        timeout(time: 45, unit: 'MINUTES')
+        timeout(time: isPRBuild() ? 50 : 120, unit: 'MINUTES')
     }
     parameters {
-        string( name: 'DATA_NODE_BRANCH', defaultValue: '',
-                description: '''Git branch, tag or hash of the vegaprotocol/data-node repository.
-                    e.g. "develop", "v0.44.0" or commit hash. Default empty: use latests published version.''')
-        string( name: 'DEVOPS_INFRA_BRANCH', defaultValue: 'master',
-                description: 'Git branch, tag or hash of the vegaprotocol/devops-infra repository')
-        string( name: 'VEGATOOLS_BRANCH', defaultValue: 'develop',
-                description: 'Git branch, tag or hash of the vegaprotocol/vegatools repository')
         string( name: 'SYSTEM_TESTS_BRANCH', defaultValue: 'develop',
                 description: 'Git branch, tag or hash of the vegaprotocol/system-tests repository')
-        string( name: 'PROTOS_BRANCH', defaultValue: 'develop',
-                description: 'Git branch, tag or hash of the vegaprotocol/protos repository')
+        string( name: 'VEGACAPSULE_BRANCH', defaultValue: '',
+                description: 'Git branch, tag or hash of the vegaprotocol/vegacapsule repository')
+        string( name: 'VEGATOOLS_BRANCH', defaultValue: 'develop',
+                description: 'Git branch, tag or hash of the vegaprotocol/vegatools repository')
+        string( name: 'DEVOPS_INFRA_BRANCH', defaultValue: 'master',
+                description: 'Git branch, tag or hash of the vegaprotocol/devops-infra repository')
+        string( name: 'DEVOPSSCRIPTS_BRANCH', defaultValue: 'main',
+                description: 'Git branch, tag or hash of the vegaprotocol/devopsscripts repository')
     }
     environment {
         CGO_ENABLED = 0
         GO111MODULE = 'on'
-        DOCKER_IMAGE_TAG_LOCAL = "v-${ env.JOB_BASE_NAME.replaceAll('[^A-Za-z0-9\\._]','-') }-${BUILD_NUMBER}-${EXECUTOR_NUMBER}"
-        DOCKER_IMAGE_VEGA_CORE_LOCAL = "ghcr.io/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_LOCAL}"
+        BUILD_UID="${BUILD_NUMBER}-${EXECUTOR_NUMBER}"
+        DOCKER_CONFIG="${env.WORKSPACE}/docker-home"
+        DOCKER_BUILD_ARCH = "${ isPRBuild() ? 'linux/amd64' : 'linux/arm64,linux/amd64' }"
+        DOCKER_IMAGE_TAG = "${ env.TAG_NAME ? 'latest' : env.BRANCH_NAME }"
+        DOCKER_VEGA_BUILDER_NAME="vega-${BUILD_UID}"
+        DOCKER_DATANODE_BUILDER_NAME="data-node-${BUILD_UID}"
+        DOCKER_VEGAWALLET_BUILDER_NAME="vegawallet-${BUILD_UID}"
+        DOCKER_BUILD_CACHE="${env.WORKSPACE}/docker-cache"
     }
 
     stages {
@@ -55,6 +60,9 @@ pipeline {
             }
         }
 
+        //
+        // Begin PREPARE
+        //
         stage('Git clone') {
             options { retry(3) }
             steps {
@@ -75,99 +83,111 @@ pipeline {
             options { retry(3) }
             steps {
                 dir('vega') {
-                    sh 'go mod download -x'
+                    sh '''#!/bin/bash -e
+                        go mod download -x
+                    '''
                 }
             }
         }
 
-        stage('Compile') {
-            failFast true
-            parallel {
-                stage('Linux build') {
-                    environment {
-                        GOOS         = 'linux'
-                        GOARCH       = 'amd64'
-                        OUTPUT       = './cmd/vega/vega-linux-amd64'
-                    }
-                    options { retry(3) }
-                    steps {
-                        dir('vega') {
-                            sh label: 'Compile', script: '''
-                                go build -v -o "${OUTPUT}" ./cmd/vega
-                            '''
-                            sh label: 'Sanity check', script: '''
-                                file ${OUTPUT}
-                                ${OUTPUT} version
-                            '''
-                        }
-                    }
-                }
-                stage('MacOS build') {
-                    environment {
-                        GOOS         = 'darwin'
-                        GOARCH       = 'amd64'
-                        OUTPUT       = './cmd/vega/vega-darwin-amd64'
-                    }
-                    options { retry(3) }
-                    steps {
-                        dir('vega') {
-                            sh label: 'Compile', script: '''
-                                go build -v -o "${OUTPUT}" ./cmd/vega
-                            '''
-                            sh label: 'Sanity check', script: '''
-                                file ${OUTPUT}
-                            '''
-                        }
-                    }
-                }
-                stage('Windows build') {
-                    environment {
-                        GOOS         = 'windows'
-                        GOARCH       = 'amd64'
-                        OUTPUT       = './cmd/vega/vega-windows-amd64'
-                    }
-                    options { retry(3) }
-                    steps {
-                        dir('vega') {
-                            sh label: 'Compile', script: '''
-                                go build -v -o "${OUTPUT}" ./cmd/vega
-                            '''
-                            sh label: 'Sanity check', script: '''
-                                file ${OUTPUT}
-                            '''
-                        }
-                    }
-                }
-            }
-        }
-
-        stage('Build docker image') {
-            environment {
-                LINUX_BINARY = './cmd/vega/vega-linux-amd64'
-            }
-            options { retry(3) }
+        stage('Docker login') {
             steps {
-                dir('vega') {
-                    sh label: 'Copy binary', script: '''#!/bin/bash -e
-                        mkdir -p docker/bin
-                        cp -a "${LINUX_BINARY}" "docker/bin/vega"
-                    '''
-                    // Note: This docker image is used by publish stage
-                    withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://ghcr.io"]) {
-                        sh label: 'Build docker image', script: '''
-                            docker build -t "${DOCKER_IMAGE_VEGA_CORE_LOCAL}" docker/
-                        '''
-                    }
-                    sh label: 'Cleanup', script: '''#!/bin/bash -e
-                        rm -rf docker/bin
-                    '''
-                    sh label: 'Sanity check', script: '''
-                        docker run --rm --entrypoint "" "${DOCKER_IMAGE_VEGA_CORE_LOCAL}" vega version
+                withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                    sh label: 'docker login ghcr.io', script: '''#!/bin/bash -e
+                        echo "${PASSWORD}" | docker login --username ${USERNAME} --password-stdin ghcr.io
                     '''
                 }
             }
         }
+        //
+        // End PREPARE
+        //
 
+        //
+        // Begin COMPILE
+        //
+        stage('Compile') {
+            matrix {
+                axes {
+                    axis {
+                        name 'GOOS'
+                        values 'linux', 'darwin', 'windows'
+                    }
+                    axis {
+                        name 'GOARCH'
+                        values 'amd64', 'arm64'
+                    }
+                }
+                excludes {
+                    exclude {
+                        axis {
+                            name 'GOOS'
+                            values 'windows'
+                        }
+                        axis {
+                            name 'GOARCH'
+                            values 'arm64'
+                        }
+                    }
+                }
+                when {
+                    anyOf {
+                        expression { !isPRBuild() }
+                        allOf {
+                            environment name: 'GOOS', value: 'linux'
+                            environment name: 'GOARCH', value: 'amd64'
+                        }
+                    }
+                }
+                stages {
+                    stage('Build') {
+                        environment {
+                            GOOS         = "${GOOS}"
+                            GOARCH       = "${GOARCH}"
+                        }
+                        options { retry(3) }
+                        steps {
+                            sh 'printenv'
+                            dir('vega') {
+                                sh label: 'Compile', script: """#!/bin/bash -e
+                                    go build -v \
+                                        -o ../build-${GOOS}-${GOARCH}/ \
+                                        ./cmd/vega \
+                                        ./cmd/data-node \
+                                        ./cmd/vegawallet
+                                """
+                                sh label: 'check for modifications', script: 'git diff'
+                            }
+                            dir("build-${GOOS}-${GOARCH}") {
+                                sh label: 'list files', script: '''#!/bin/bash -e
+                                    pwd
+                                    ls -lah
+                                '''
+                                sh label: 'Sanity check', script: '''#!/bin/bash -e
+                                    file *
+                                '''
+                                script {
+                                    if ( GOOS == "linux" && GOARCH == "amd64" ) {
+                                        sh label: 'get version', script: '''#!/bin/bash -e
+                                            ./vega version
+                                            ./data-node version
+                                            ./vegawallet version
+                                        '''
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        //
+        // End COMPILE
+        //
+
+        //
+        // Begin LINTERS
+        //
         stage('Linters') {
             parallel {
                 stage('linters') {
@@ -217,6 +237,7 @@ pipeline {
                                 sh 'mdspell --en-gb --ignore-acronyms --ignore-numbers --no-suggestions --report "*.md" "docs/**/*.md"'
                             }
                         }
+                        sh 'printenv'
                     }
                 }
                 stage('approbation') {
@@ -230,14 +251,113 @@ pipeline {
                     steps {
                         script {
                             runApprobation ignoreFailure: !isPRBuild(),
-                                vegaCore: commitHash
+                                vegaVersion: commitHash
                         }
                     }
                 }
+                stage('protos') {
+                    environment {
+                        GOPATH = "${env.WORKSPACE}/GOPATH"
+                        GOBIN = "${env.GOPATH}/bin"
+                        PROTOC_HOME = "${env.WORKSPACE}/PROTOC_HOME"
+                        PATH = "${env.PROTOC_HOME}/bin:${env.GOBIN}:${env.PATH}"
+                        PROTOC_VERSION = "3.19.4"
+                    }
+                    stages {
+                        stage('Install dependencies') {
+                            // We are using specific tools versions
+                            // Please use exactly the same versions when modifying protos
+                            options { retry(3) }
+                            steps {
+                                dir('vega') {
+                                    sh 'printenv'
+                                    sh label: 'protoc', script: """#!/bin/bash -e
+                                        PB_REL="https://github.com/protocolbuffers/protobuf/releases"
+                                        curl -LO \$PB_REL/download/v${env.PROTOC_VERSION}/protoc-${env.PROTOC_VERSION}-linux-x86_64.zip
+                                        unzip -o protoc-${env.PROTOC_VERSION}-linux-x86_64.zip -d "${PROTOC_HOME}"
+                                    """
+                                    sh './script/gettools.sh'
+                                    sh 'protoc --version'
+                                    sh 'which protoc'
+                                    sh 'buf --version'
+                                    sh 'which buf'
+                                }
+                            }
+                        }
+                        stage('buf lint') {
+                            options { retry(3) }
+                            steps {
+                                dir('vega') {
+                                    sh '''#!/bin/bash -e
+                                        buf lint
+                                    '''
+                                }
+                            }
+                            post {
+                                failure {
+                                    sh 'printenv'
+                                    echo "params=${params}"
+                                    sh 'protoc --version'
+                                    sh 'which protoc'
+                                    sh 'buf --version'
+                                    sh 'which buf'
+                                    sh 'git diff'
+                                }
+                            }
+                        }
+                        stage('proto check') {
+                            options { retry(3) }
+                            steps {
+                                dir('vega') {
+                                    sh '''#!/bin/bash -e
+                                        make proto_check
+                                    '''
+                                }
+                            }
+                            post {
+                                failure {
+                                    sh 'printenv'
+                                    echo "params=${params}"
+                                    sh 'protoc --version'
+                                    sh 'which protoc'
+                                    sh 'buf --version'
+                                    sh 'which buf'
+                                    sh 'git diff'
+                                }
+                            }
+                        }
+                    }
+                }
+                stage('create docker builders') {
+                    steps {
+                        sh label: 'vega builder', script: """#!/bin/bash -e
+                            docker buildx create --bootstrap --name ${DOCKER_VEGA_BUILDER_NAME}
+                        """
+                        sh label: 'data-node builder', script: """#!/bin/bash -e
+                            docker buildx create --bootstrap --name ${DOCKER_DATANODE_BUILDER_NAME}
+                        """
+                        sh label: 'vegawallet builder', script: """#!/bin/bash -e
+                            docker buildx create --bootstrap --name ${DOCKER_VEGAWALLET_BUILDER_NAME}
+                        """
+                        sh 'docker buildx ls'
+                        sh label: 'create cache directory for docker buildx', script: """#!/bin/bash -e
+                            mkdir -p '${DOCKER_BUILD_CACHE}'
+                        """
+                    }
+                }  // docker builders
             }
         }
+        //
+        // End LINTERS
+        //
 
+        //
+        // Begin TESTS
+        //
         stage('Tests') {
+            environment {
+                DOCKER_IMAGE_TAG_VERSION = "${ env.TAG_NAME ?: versionHash }"
+            }
             parallel {
                 stage('unit tests') {
                     options { retry(3) }
@@ -273,37 +393,101 @@ pipeline {
                     steps {
                         script {
                             systemTestsCapsule ignoreFailure: !isPRBuild(),
-                                vegaCore: commitHash,
-                                dataNode: params.DATA_NODE_BRANCH,
-                                vegatools: params.VEGATOOLS_BRANCH,
+                                timeout: 30,
+                                vegaVersion: commitHash,
                                 systemTests: params.SYSTEM_TESTS_BRANCH,
-                                protos: params.PROTOS_BRANCH,
+                                vegacapsule: params.VEGACAPSULE_BRANCH,
+                                vegatools: params.VEGATOOLS_BRANCH,
+                                devopsInfra: params.DEVOPS_INFRA_BRANCH,
+                                devopsScripts: params.DEVOPSSCRIPTS_BRANCH,
                                 testMark: "network_infra_smoke"
                         }
                     }
                 }
                 stage('Capsule System Tests') {
-                        steps {
-                            script {
-                                systemTestsCapsule vegaCore: commitHash,
-                                    dataNode: params.DATA_NODE_BRANCH,
-                                    devopsInfra: params.DEVOPS_INFRA_BRANCH,
-                                    vegatools: params.VEGATOOLS_BRANCH,
-                                    systemTests: params.SYSTEM_TESTS_BRANCH,
-                                    protos: params.PROTOS_BRANCH,
-                                    ignoreFailure: !isPRBuild()
-
-                            }
+                    steps {
+                        script {
+                            systemTestsCapsule ignoreFailure: !isPRBuild(),
+                                timeout: 30,
+                                vegaVersion: commitHash,
+                                systemTests: params.SYSTEM_TESTS_BRANCH,
+                                vegacapsule: params.VEGACAPSULE_BRANCH,
+                                vegatools: params.VEGATOOLS_BRANCH,
+                                devopsInfra: params.DEVOPS_INFRA_BRANCH,
+                                devopsScripts: params.DEVOPSSCRIPTS_BRANCH
                         }
+                    }
+                }
+
+                //
+                // Build docker images during system-tests
+                //
+                stage('build vega docker image') {
+                    steps {
+                        dir('vega') {
+                            sh 'printenv'
+                            sh label: 'build vega docker image', script: """#!/bin/bash -e
+                                docker buildx build \
+                                    --builder ${DOCKER_VEGA_BUILDER_NAME} \
+                                    --platform=${DOCKER_BUILD_ARCH} \
+                                    -f docker/vega.dockerfile \
+                                    -t ghcr.io/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_VERSION} \
+                                    -t ghcr.io/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG} \
+                                    --cache-to type=local,mode=max,dest='${DOCKER_BUILD_CACHE}' \
+                                    .
+                            """
+                        }
+                    }
+                }
+                stage('build data-node docker image') {
+                    steps {
+                        dir('vega') {
+                            sh 'printenv'
+                            sh label: 'build data-node docker image', script: """#!/bin/bash -e
+                                docker buildx build \
+                                    --builder ${DOCKER_DATANODE_BUILDER_NAME} \
+                                    --platform=${DOCKER_BUILD_ARCH} \
+                                    -f docker/data-node.dockerfile \
+                                    -t ghcr.io/vegaprotocol/vega/data-node:${DOCKER_IMAGE_TAG_VERSION} \
+                                    -t ghcr.io/vegaprotocol/vega/data-node:${DOCKER_IMAGE_TAG} \
+                                    --cache-to type=local,mode=max,dest='${DOCKER_BUILD_CACHE}' \
+                                    .
+                            """
+                        }
+                    }
+                }
+                stage('build vegawallet docker image') {
+                    steps {
+                        dir('vega') {
+                            sh 'printenv'
+                            sh label: 'build vegawallet docker image', script: """#!/bin/bash -e
+                                docker buildx build \
+                                    --builder ${DOCKER_VEGAWALLET_BUILDER_NAME} \
+                                    --platform=${DOCKER_BUILD_ARCH} \
+                                    -f docker/vegawallet.dockerfile \
+                                    -t ghcr.io/vegaprotocol/vega/vegawallet:${DOCKER_IMAGE_TAG_VERSION} \
+                                    -t ghcr.io/vegaprotocol/vega/vegawallet:${DOCKER_IMAGE_TAG} \
+                                    --cache-to type=local,mode=max,dest='${DOCKER_BUILD_CACHE}' \
+                                    .
+                            """
+                        }
+                    }
                 }
             }
         }
+        //
+        // End TESTS
+        //
 
-
+        //
+        // Begin PUBLISH
+        //
         stage('Publish') {
+            environment {
+                DOCKER_IMAGE_TAG_VERSION = "${ env.TAG_NAME ?: versionHash }"
+            }
             parallel {
-
-                stage('docker image') {
+                stage('vega docker image') {
                     when {
                         anyOf {
                             buildingTag()
@@ -311,31 +495,91 @@ pipeline {
                             // changeRequest() // uncomment only for testing
                         }
                     }
-                    environment {
-                        DOCKER_IMAGE_TAG_VERSIONED = "${ env.TAG_NAME ? env.TAG_NAME : env.BRANCH_NAME }"
-                        DOCKER_IMAGE_VEGA_CORE_VERSIONED = "ghcr.io/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_VERSIONED}"
-                        DOCKER_IMAGE_TAG_ALIAS = "${ env.TAG_NAME ? 'latest' : 'edge' }"
-                        DOCKER_IMAGE_VEGA_CORE_ALIAS = "ghcr.io/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_ALIAS}"
+                    options { retry(3) }
+                    steps {
+                        dir('vega') {
+                            sh label: 'publish vega docker image', script: """#!/bin/bash -e
+                                docker buildx build \
+                                    --builder ${DOCKER_VEGA_BUILDER_NAME} \
+                                    --platform=${DOCKER_BUILD_ARCH} \
+                                    -f docker/vega.dockerfile \
+                                    -t ghcr.io/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG} \
+                                    -t ghcr.io/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_VERSION} \
+                                    --cache-from type=local,src='${DOCKER_BUILD_CACHE}' \
+                                    --push \
+                                    .
+                            """
+                        }
+                    }
+                    post {
+                        failure {
+                            sh 'printenv'
+                            echo "params=${params}"
+                            sh 'docker buildx ls'
+                        }
+                    }
+                }
+                stage('data-node docker image') {
+                    when {
+                        anyOf {
+                            buildingTag()
+                            branch 'develop'
+                            // changeRequest() // uncomment only for testing
+                        }
                     }
                     options { retry(3) }
                     steps {
                         dir('vega') {
-                            sh label: 'Tag new images', script: '''#!/bin/bash -e
-                                docker image tag "${DOCKER_IMAGE_VEGA_CORE_LOCAL}" "${DOCKER_IMAGE_VEGA_CORE_VERSIONED}"
-                                docker image tag "${DOCKER_IMAGE_VEGA_CORE_LOCAL}" "${DOCKER_IMAGE_VEGA_CORE_ALIAS}"
-                            '''
-
-                            withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://ghcr.io"]) {
-                                sh label: 'Push docker images', script: '''
-                                    docker push "${DOCKER_IMAGE_VEGA_CORE_VERSIONED}"
-                                    docker push "${DOCKER_IMAGE_VEGA_CORE_ALIAS}"
-                                '''
-                            }
-                            slackSend(
-                                channel: "#tradingcore-notify",
-                                color: "good",
-                                message: ":docker: Vega Core » Published new docker image `${DOCKER_IMAGE_VEGA_CORE_VERSIONED}` aka `${DOCKER_IMAGE_VEGA_CORE_ALIAS}`",
-                            )
+                            sh label: 'publish data-node docker image', script: """#!/bin/bash -e
+                                docker buildx build \
+                                    --builder ${DOCKER_DATANODE_BUILDER_NAME} \
+                                    --platform=${DOCKER_BUILD_ARCH} \
+                                    -f docker/data-node.dockerfile \
+                                    -t ghcr.io/vegaprotocol/vega/data-node:${DOCKER_IMAGE_TAG} \
+                                    -t ghcr.io/vegaprotocol/vega/data-node:${DOCKER_IMAGE_TAG_VERSION} \
+                                    --cache-from type=local,src='${DOCKER_BUILD_CACHE}' \
+                                    --push \
+                                    .
+                            """
+                        }
+                    }
+                    post {
+                        failure {
+                            sh 'printenv'
+                            echo "params=${params}"
+                            sh 'docker buildx ls'
+                        }
+                    }
+                }
+                stage('vegawallet docker image') {
+                    when {
+                        anyOf {
+                            buildingTag()
+                            branch 'develop'
+                            // changeRequest() // uncomment only for testing
+                        }
+                    }
+                    options { retry(3) }
+                    steps {
+                        dir('vega') {
+                            sh label: 'publish vegawallet docker image', script: """#!/bin/bash -e
+                                docker buildx build \
+                                    --builder ${DOCKER_VEGAWALLET_BUILDER_NAME} \
+                                    --platform=${DOCKER_BUILD_ARCH} \
+                                    -f docker/vegawallet.dockerfile \
+                                    -t ghcr.io/vegaprotocol/vega/vegawallet:${DOCKER_IMAGE_TAG} \
+                                    -t ghcr.io/vegaprotocol/vega/vegawallet:${DOCKER_IMAGE_TAG_VERSION} \
+                                    --cache-from type=local,src='${DOCKER_BUILD_CACHE}' \
+                                    --push \
+                                    .
+                            """
+                        }
+                    }
+                    post {
+                        failure {
+                            sh 'printenv'
+                            echo "params=${params}"
+                            sh 'docker buildx ls'
                         }
                     }
                 }
@@ -347,9 +591,8 @@ pipeline {
                     environment {
                         AWS_REGION = 'eu-west-2'
                     }
-
                     steps {
-                        dir('vega') {
+                        dir('build-linux-amd64') {
                             script {
                                 vegaS3Ops = usernamePassword(
                                     credentialsId: 'vegacapsule-s3-operations',
@@ -363,7 +606,14 @@ pipeline {
                                 withCredentials([vegaS3Ops, bucketName]) {
                                     try {
                                         sh label: 'Upload vega binary to S3', script: '''
-                                            aws s3 cp ./cmd/vega/vega-linux-amd64 s3://''' + env.VEGACAPSULE_S3_BUCKET_NAME + '''/bin/vega-linux-amd64-''' + versionHash + '''
+                                            aws s3 cp ./vega s3://''' + env.VEGACAPSULE_S3_BUCKET_NAME + '''/bin/vega-linux-amd64-''' + versionHash + '''
+                                        '''
+                                    } catch(err) {
+                                        print(err)
+                                    }
+                                    try {
+                                        sh label: 'Upload data-node binary to S3', script: '''
+                                            aws s3 cp ./data-node s3://''' + env.VEGACAPSULE_S3_BUCKET_NAME + '''/bin/data-node-linux-amd64-''' + versionHash + '''
                                         '''
                                     } catch(err) {
                                         print(err)
@@ -374,6 +624,7 @@ pipeline {
                     }
                 }
 
+
                 stage('release to GitHub') {
                     when {
                         buildingTag()
@@ -383,37 +634,62 @@ pipeline {
                     }
                     options { retry(3) }
                     steps {
-                        dir('vega') {
+                        sh label: 'copy artefacts to publish to one directory', script: '''#!/bin/bash -e
+                            mkdir release
+                            # linux
+                            cp ./build-linux-amd64/vega ./release/vega-linux-amd64
+                            cp ./build-linux-amd64/data-node ./release/data-node-linux-amd64
+                            cp ./build-linux-arm64/vega ./release/vega-linux-arm64
+                            cp ./build-linux-arm64/data-node ./release/data-node-linux-arm64
+                            # MacOS
+                            cp ./build-darwin-amd64/vega ./release/vega-macos-amd64
+                            cp ./build-darwin-amd64/data-node ./release/data-node-macos-amd64
+                            cp ./build-darwin-arm64/vega ./release/vega-macos-arm64
+                            cp ./build-darwin-arm64/data-node ./release/data-node-macos-arm64
+                            # Windows
+                            cp ./build-windows-amd64/vega ./release/vega-windows-amd64
+                            cp ./build-windows-amd64/data-node ./release/data-node-windows-amd64
+                        '''
+                        dir('release') {
                             script {
                                 withGHCLI('credentialsId': 'github-vega-ci-bot-artifacts') {
                                     sh label: 'Upload artifacts', script: '''#!/bin/bash -e
                                         [[ $TAG_NAME =~ '-pre' ]] && prerelease='--prerelease' || prerelease=''
 
-                                        gh release view $TAG_NAME && gh release upload $TAG_NAME ./cmd/vega/vega-* \
-                                            || gh release create $TAG_NAME $prerelease ./cmd/vega/vega-*
+                                        gh release view $TAG_NAME && gh release upload $TAG_NAME ./* \
+                                            || gh release create $TAG_NAME $prerelease ./*
                                     '''
                                 }
                             }
-                            slackSend(
-                                channel: "#tradingcore-notify",
-                                color: "good",
-                                message: ":rocket: Vega Core » Published new version to GitHub <${RELEASE_URL}|${TAG_NAME}>",
-                            )
                         }
-                    }
-                }
-
-                stage('Deploy to Devnet') {
-                    when {
-                        branch 'develop'
-                    }
-                    steps {
-                        devnetDeploy vegaCore: commitHash,
-                            wait: false
+                        slackSend(
+                            channel: "#tradingcore-notify",
+                            color: "good",
+                            message: ":rocket: Vega Core » Published new version to GitHub <${RELEASE_URL}|${TAG_NAME}>",
+                        )
                     }
                 }
             }
         }
+        //
+        // End PUBLISH
+        //
+
+        //
+        // Begin DEVNET deploy
+        //
+        stage('Deploy to Devnet') {
+            when {
+                branch 'develop'
+            }
+            steps {
+                devnetDeploy vegaVersion: versionHash,
+                    wait: false
+            }
+        }
+        //
+        // End DEVNET deploy
+        //
 
     }
     post {
@@ -431,12 +707,30 @@ pipeline {
                 }
             }
         }
-        cleanup {
+        always {
             retry(3) {
-                sh label: 'Clean docker images', script: '''#!/bin/bash -e
-                    [ -z "$(docker images -q "${DOCKER_IMAGE_VEGA_CORE_LOCAL}")" ] || docker rmi "${DOCKER_IMAGE_VEGA_CORE_LOCAL}"
+                sh label: 'destroy vega docker builder',
+                returnStatus: true,  // ignore exit code
+                script: """#!/bin/bash -e
+                    docker buildx rm --force ${DOCKER_VEGA_BUILDER_NAME}
+                """
+                sh label: 'destroy data-node docker builder',
+                returnStatus: true,  // ignore exit code
+                script: """#!/bin/bash -e
+                    docker buildx rm --force ${DOCKER_DATANODE_BUILDER_NAME}
+                """
+                sh label: 'destroy vegawallet docker builder',
+                returnStatus: true,  // ignore exit code
+                script: """#!/bin/bash -e
+                    docker buildx rm --force ${DOCKER_VEGAWALLET_BUILDER_NAME}
+                """
+                sh label: 'docker logout ghcr.io',
+                returnStatus: true,  // ignore exit code
+                script: '''#!/bin/bash -e
+                    docker logout ghcr.io
                 '''
             }
+            cleanWs()
         }
     }
 }

@@ -26,8 +26,6 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/api"
 
-	vegaprotoapi "code.vegaprotocol.io/protos/vega/api/v1"
-	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/datanode/broker"
 	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/datanode/gateway/server"
@@ -37,6 +35,8 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlsubscribers"
 	"code.vegaprotocol.io/vega/datanode/subscribers"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/paths"
+	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 
 	"golang.org/x/sync/errgroup"
 )

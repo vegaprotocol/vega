@@ -12,7 +12,7 @@ build/
 bin/
 *.exe
 vegawallet
-vega
+#vega
 cmd/vegawallet/vegawallet*
 cmd/vegabenchmark/vegabenchmark*
 cmd/examples/nullchain/nullchain*
@@ -30,6 +30,8 @@ proto/*-re
 proto/**.orig
 *.pb.go-re
 gomock_reflect_*
+protos/generated/
+protos/swagger/
 
 # Exclude other random
 data/

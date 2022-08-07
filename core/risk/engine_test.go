@@ -18,7 +18,6 @@ import (
 	"testing"
 	"time"
 
-	proto "code.vegaprotocol.io/protos/vega"
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/config"
 	"code.vegaprotocol.io/vega/core/events"
@@ -26,9 +25,10 @@ import (
 	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/risk/mocks"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
 	"code.vegaprotocol.io/vega/core/types/statevar"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	proto "code.vegaprotocol.io/vega/protos/vega"
 	"github.com/stretchr/testify/require"
 
 	"github.com/golang/mock/gomock"
@@ -711,7 +711,7 @@ func (m testMargin) GeneralBalance() *num.Uint {
 }
 
 func (m testMargin) BondBalance() *num.Uint {
-	return num.Zero()
+	return num.UintZero()
 }
 
 func (m testMargin) Price() *num.Uint {

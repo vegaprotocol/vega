@@ -16,7 +16,7 @@ import (
 	"context"
 	"strconv"
 
-	vega "code.vegaprotocol.io/protos/vega/api/v1"
+	vega "code.vegaprotocol.io/vega/protos/vega/api/v1"
 )
 
 type statisticsResolver VegaResolverRoot
