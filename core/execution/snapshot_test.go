@@ -19,8 +19,6 @@ import (
 	"testing"
 	"time"
 
-	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
-	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/core/collateral"
 	"code.vegaprotocol.io/vega/core/epochtime"
 	"code.vegaprotocol.io/vega/core/execution"
@@ -29,12 +27,14 @@ import (
 	snp "code.vegaprotocol.io/vega/core/snapshot"
 	"code.vegaprotocol.io/vega/core/stats"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
+	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
+	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 	"github.com/stretchr/testify/require"
 )
 

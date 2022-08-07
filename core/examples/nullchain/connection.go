@@ -19,9 +19,9 @@ import (
 	config "code.vegaprotocol.io/vega/core/examples/nullchain/config"
 	"github.com/pkg/errors"
 
-	datanode "code.vegaprotocol.io/protos/data-node/api/v1"
-	"code.vegaprotocol.io/protos/vega"
-	api "code.vegaprotocol.io/protos/vega/api/v1"
+	datanode "code.vegaprotocol.io/vega/protos/data-node/api/v1"
+	"code.vegaprotocol.io/vega/protos/vega"
+	api "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	"google.golang.org/grpc"
 )
 

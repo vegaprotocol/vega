@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"testing"
 
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	cmd "code.vegaprotocol.io/vega/cmd/vegawallet/commands"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

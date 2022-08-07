@@ -16,9 +16,9 @@ import (
 	"context"
 	"fmt"
 
-	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -63,7 +63,7 @@ where id = $1
 order by id, vega_time desc`, getOracleSpecsQuery())
 
 	defer metrics.StartSQLQuery("OracleSpec", "GetByID")()
-	err := pgxscan.Get(ctx, os.Connection, &spec, query, entities.NewSpecID(specID))
+	err := pgxscan.Get(ctx, os.Connection, &spec, query, entities.SpecID(specID))
 	return spec, err
 }
 
@@ -110,7 +110,7 @@ func (os *OracleSpec) getSpecsWithPageInfo(ctx context.Context, pagination entit
 
 	sorting, cmp, cursor := extractPaginationInfo(pagination)
 	cursorParams := []CursorQueryParameter{
-		NewCursorQueryParameter("id", sorting, cmp, entities.NewSpecID(cursor)),
+		NewCursorQueryParameter("id", sorting, cmp, entities.SpecID(cursor)),
 		NewCursorQueryParameter("vega_time", "desc", cmp, nil),
 	}
 

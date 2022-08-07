@@ -18,7 +18,7 @@ import (
 	"io"
 	"strconv"
 
-	"code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/protos/vega"
 	"github.com/99designs/gqlgen/graphql"
 )
 

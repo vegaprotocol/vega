@@ -19,13 +19,13 @@ import (
 	"sort"
 	"time"
 
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
-	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
 	vegactx "code.vegaprotocol.io/vega/libs/context"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
 	"code.vegaprotocol.io/vega/libs/proto"
 	tmtypes "github.com/tendermint/tendermint/abci/types"

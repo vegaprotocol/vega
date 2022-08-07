@@ -18,9 +18,9 @@ import (
 	"errors"
 	"fmt"
 
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	signatures "code.vegaprotocol.io/vega/libs/crypto/signature"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
 	"github.com/ethereum/go-ethereum/crypto"
 )

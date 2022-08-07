@@ -17,11 +17,11 @@ import (
 	"fmt"
 	"sync"
 
-	proto "code.vegaprotocol.io/protos/vega"
-	types "code.vegaprotocol.io/protos/vega"
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/core/broker"
 	"code.vegaprotocol.io/vega/core/events"
+	proto "code.vegaprotocol.io/vega/protos/vega"
+	types "code.vegaprotocol.io/vega/protos/vega"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
 type AssetParty struct {
@@ -361,7 +361,8 @@ func (b *BrokerStub) GetTradeEvents() []events.Trade {
 }
 
 func (b *BrokerStub) GetAccountEvents() []events.Acc {
-	batch := b.GetBatch(events.AccountEvent)
+	// Use GetImmBatch so that clearing events doesn't affact this method
+	batch := b.GetImmBatch(events.AccountEvent)
 	if len(batch) == 0 {
 		return nil
 	}

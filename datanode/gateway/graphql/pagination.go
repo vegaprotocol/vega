@@ -13,8 +13,8 @@
 package gql
 
 import (
-	"code.vegaprotocol.io/protos/commands"
-	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
+	"code.vegaprotocol.io/vega/commands"
+	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 )
 
 var defaultPagination = protoapi.Pagination{

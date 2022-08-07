@@ -15,8 +15,8 @@ package evtforward
 import (
 	"context"
 
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/core/types"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
 	"code.vegaprotocol.io/vega/libs/proto"
 )

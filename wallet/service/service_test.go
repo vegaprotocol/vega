@@ -12,9 +12,9 @@ import (
 	"testing"
 	"time"
 
-	api "code.vegaprotocol.io/protos/vega/api/v1"
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
+	api "code.vegaprotocol.io/vega/protos/vega/api/v1"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/wallet/crypto"
 	"code.vegaprotocol.io/vega/wallet/network"
 	"code.vegaprotocol.io/vega/wallet/service"

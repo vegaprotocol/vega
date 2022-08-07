@@ -16,8 +16,8 @@ import (
 	"context"
 	"strconv"
 
-	types "code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
+	types "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type proposalResolver VegaResolverRoot
@@ -56,7 +56,7 @@ func (r *proposalResolver) Party(ctx context.Context, data *types.GovernanceData
 	if data == nil || data.Proposal == nil {
 		return nil, ErrInvalidProposal
 	}
-	p, err := getParty(ctx, r.log, r.tradingDataClient, data.Proposal.PartyId)
+	p, err := getParty(ctx, r.log, r.tradingDataClientV2, data.Proposal.PartyId)
 	if p == nil && err == nil {
 		// the api could return an nil party in some cases
 		// e.g: when a party does not exists in the stores
@@ -105,7 +105,7 @@ func (r *proposalResolver) Votes(_ context.Context, obj *types.GovernanceData) (
 	}
 
 	var yesWeight float64
-	yesToken := num.Zero()
+	yesToken := num.UintZero()
 	for _, yes := range obj.Yes {
 		weight, err := strconv.ParseFloat(yes.TotalGovernanceTokenWeight, 64)
 		if err != nil {
@@ -119,7 +119,7 @@ func (r *proposalResolver) Votes(_ context.Context, obj *types.GovernanceData) (
 		yesToken.Add(yesToken, yesUint)
 	}
 	var noWeight float64
-	noToken := num.Zero()
+	noToken := num.UintZero()
 	for _, no := range obj.No {
 		weight, err := strconv.ParseFloat(no.TotalGovernanceTokenWeight, 64)
 		if err != nil {

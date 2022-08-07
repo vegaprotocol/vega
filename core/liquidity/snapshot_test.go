@@ -20,11 +20,11 @@ import (
 	"testing"
 	"time"
 
-	snapshotpb "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/core/idgeneration"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/num"
+	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
 	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/golang/mock/gomock"
@@ -188,7 +188,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 	}
 
 	e2.priceMonitor.EXPECT().GetValidPriceRange().
-		Return(num.NewWrappedDecimal(num.Zero(), num.DecimalZero()), num.NewWrappedDecimal(num.NewUint(90), num.DecimalFromInt64(110))).
+		Return(num.NewWrappedDecimal(num.UintZero(), num.DecimalZero()), num.NewWrappedDecimal(num.NewUint(90), num.DecimalFromInt64(110))).
 		AnyTimes()
 
 	_, _, err := e2.engine.Update(ctx, num.DecimalFromFloat(99), num.DecimalFromFloat(101),
@@ -321,7 +321,7 @@ func TestSnapshotChangeOnUpdate(t *testing.T) {
 	}
 
 	e1.priceMonitor.EXPECT().GetValidPriceRange().
-		Return(num.NewWrappedDecimal(num.Zero(), num.DecimalZero()), num.NewWrappedDecimal(num.NewUint(90), num.DecimalFromInt64(110))).
+		Return(num.NewWrappedDecimal(num.UintZero(), num.DecimalZero()), num.NewWrappedDecimal(num.NewUint(90), num.DecimalFromInt64(110))).
 		AnyTimes()
 
 	_, _, err = e1.engine.Update(ctx, num.DecimalFromFloat(99), num.DecimalFromFloat(101),

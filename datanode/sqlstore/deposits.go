@@ -17,9 +17,9 @@ import (
 	"fmt"
 	"strings"
 
-	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -69,7 +69,7 @@ func (d *Deposits) GetByID(ctx context.Context, depositID string) (entities.Depo
 		order by id, party_id, vega_time desc`
 
 	defer metrics.StartSQLQuery("Deposits", "GetByID")()
-	err := pgxscan.Get(ctx, d.Connection, &deposit, query, entities.NewDepositID(depositID))
+	err := pgxscan.Get(ctx, d.Connection, &deposit, query, entities.DepositID(depositID))
 	return deposit, err
 }
 
@@ -94,7 +94,7 @@ func (d *Deposits) getByPartyOffsetPagination(ctx context.Context, party string,
 
 	query, args := getDepositsByPartyQuery()
 	query = fmt.Sprintf("%s where party_id = %s order by id, party_id, vega_time desc",
-		query, nextBindVar(&args, entities.NewPartyID(party)))
+		query, nextBindVar(&args, entities.PartyID(party)))
 
 	if openOnly {
 		query = fmt.Sprintf(`%s and status = %s`, query, nextBindVar(&args, entities.DepositStatusOpen))
@@ -123,9 +123,9 @@ func (d *Deposits) getByPartyCursorPagination(ctx context.Context, party string,
 	}
 
 	cursorParams := []CursorQueryParameter{
-		NewCursorQueryParameter("party_id", sorting, "=", entities.NewPartyID(party)),
+		NewCursorQueryParameter("party_id", sorting, "=", entities.PartyID(party)),
 		NewCursorQueryParameter("vega_time", sorting, cmp, dc.VegaTime),
-		NewCursorQueryParameter("id", sorting, cmp, entities.NewDepositID(dc.ID)),
+		NewCursorQueryParameter("id", sorting, cmp, entities.DepositID(dc.ID)),
 	}
 
 	query, args := getDepositsByPartyQuery()

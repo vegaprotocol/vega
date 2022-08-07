@@ -31,7 +31,7 @@ import (
 	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/settlement"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -113,7 +113,7 @@ func NewMarketFromSnapshot(
 	}
 
 	exp := assetDetails.DecimalPlaces() - mkt.DecimalPlaces
-	priceFactor := num.Zero().Exp(num.NewUint(10), num.NewUint(exp))
+	priceFactor := num.UintZero().Exp(num.NewUint(10), num.NewUint(exp))
 	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
 
 	liqEngine := liquidity.NewSnapshotEngine(liquidityConfig, log, timeService, broker, tradableInstrument.RiskModel, pMonitor, asset, mkt.ID, stateVarEngine, mkt.TickSize(), priceFactor.Clone(), positionFactor)
@@ -139,7 +139,7 @@ func NewMarketFromSnapshot(
 		feeSplitter:                NewFeeSplitterFromSnapshot(em.FeeSplitter, now),
 		as:                         as,
 		pMonitor:                   pMonitor,
-		peggedOrders:               NewPeggedOrdersFromSnapshot(em.PeggedOrders, timeService),
+		peggedOrders:               NewPeggedOrdersFromSnapshot(log, timeService, em.PeggedOrders),
 		expiringOrders:             NewExpiringOrdersFromState(em.ExpiringOrders),
 		equityShares:               NewEquitySharesFromSnapshot(em.EquityShare),
 		lastBestBidPrice:           em.LastBestBid.Clone(),

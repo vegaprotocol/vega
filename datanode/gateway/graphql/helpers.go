@@ -14,13 +14,14 @@ package gql
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 
 	"github.com/vektah/gqlparser/v2/gqlerror"
 	"google.golang.org/grpc/status"
 
-	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/datanode/vegatime"
+	types "code.vegaprotocol.io/vega/protos/vega"
 )
 
 func safeStringUint64(input string) (uint64, error) {
@@ -70,12 +71,12 @@ func nanoTSToDatetime(timestampInNanoSeconds int64) string {
 	return vegatime.Format(vegatime.UnixNano(timestampInNanoSeconds))
 }
 
-func convertVersion(version *int) (uint64, error) {
+func convertVersion(version *int) (int32, error) {
 	const defaultValue = 0
 
 	if version != nil {
-		if *version >= 0 {
-			return uint64(*version), nil
+		if *version >= 0 && *version < math.MaxInt32 {
+			return int32(*version), nil
 		}
 		return defaultValue, fmt.Errorf("invalid version value %d", *version)
 	}

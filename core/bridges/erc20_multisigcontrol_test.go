@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/core/bridges"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/assert"

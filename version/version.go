@@ -12,7 +12,9 @@
 
 package version
 
-import "runtime/debug"
+import (
+	"runtime/debug"
+)
 
 var (
 	cLIVersionHash = ""
@@ -27,7 +29,7 @@ func init() {
 		if v.Key == "vcs.revision" {
 			cLIVersionHash = v.Value
 		}
-		if v.Key == "vcs.modified" {
+		if v.Key == "vcs.modified" && v.Value == "true" {
 			modified = true
 		}
 	}

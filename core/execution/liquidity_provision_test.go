@@ -24,10 +24,10 @@ import (
 	vegacontext "code.vegaprotocol.io/vega/libs/context"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 
-	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
+	proto "code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -2655,7 +2655,7 @@ func TestAmend(t *testing.T) {
 		lpa = &types.LiquidityProvisionAmendment{
 			Fee:              num.DecimalZero(),
 			MarketID:         lps.MarketID,
-			CommitmentAmount: num.Zero(),
+			CommitmentAmount: num.UintZero(),
 			Buys:             nil,
 			Sells:            nil,
 		}
@@ -2667,7 +2667,7 @@ func TestAmend(t *testing.T) {
 		lpa = &types.LiquidityProvisionAmendment{
 			Fee:              num.DecimalZero(),
 			MarketID:         lps.MarketID,
-			CommitmentAmount: num.Zero(),
+			CommitmentAmount: num.UintZero(),
 			Buys:             []*types.LiquidityOrder{},
 			Sells:            []*types.LiquidityOrder{},
 		}

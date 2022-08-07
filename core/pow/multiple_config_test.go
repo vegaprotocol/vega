@@ -16,8 +16,8 @@ import (
 	"context"
 	"testing"
 
-	"code.vegaprotocol.io/vega/core/types/num"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/stretchr/testify/require"
 )

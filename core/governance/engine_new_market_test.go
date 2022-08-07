@@ -19,7 +19,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/governance"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -154,7 +154,7 @@ func testSubmittingProposalForNewMarketWithoutValidCommitmentFails(t *testing.T)
 	proposal.ID += "2"
 	// Then no amount
 	proposal.Terms.GetNewMarket().LiquidityCommitment = newMarketLiquidityCommitment()
-	proposal.Terms.GetNewMarket().LiquidityCommitment.CommitmentAmount = num.Zero()
+	proposal.Terms.GetNewMarket().LiquidityCommitment.CommitmentAmount = num.UintZero()
 	eng.ensureTokenBalanceForParty(t, party, 1)
 	eng.expectRejectedProposalEvent(t, party, proposal.ID, types.ProposalErrorMissingCommitmentAmount)
 	_, err = eng.submitProposal(t, proposal)

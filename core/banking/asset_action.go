@@ -15,10 +15,10 @@ package banking
 import (
 	"errors"
 
-	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/assets/common"
 	"code.vegaprotocol.io/vega/core/types"
+	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
 
 var ErrUnknownAssetAction = errors.New("unknown asset action")

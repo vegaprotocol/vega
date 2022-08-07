@@ -16,9 +16,9 @@ import (
 	"context"
 	"fmt"
 
-	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
-	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
-	proto "code.vegaprotocol.io/protos/vega"
+	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type nodeResolver VegaResolverRoot
@@ -27,6 +27,7 @@ func (r *nodeResolver) Status(ctx context.Context, obj *proto.Node) (NodeStatus,
 	return nodeStatusFromProto(obj.Status)
 }
 
+// Deprecated: Use DelegationsConnection instead.
 func (r *nodeResolver) Delegations(
 	ctx context.Context,
 	obj *proto.Node,

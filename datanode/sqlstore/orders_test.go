@@ -83,8 +83,8 @@ func TestOrders(t *testing.T) {
 	}
 
 	markets := []entities.Market{
-		{ID: entities.NewMarketID("aa")},
-		{ID: entities.NewMarketID("bb")},
+		{ID: entities.MarketID("aa")},
+		{ID: entities.MarketID("bb")},
 	}
 
 	// Make some orders
@@ -94,7 +94,7 @@ func TestOrders(t *testing.T) {
 	version := int32(1)
 	for i := 0; i < numTestOrders; i++ {
 		order := addTestOrder(t, os,
-			entities.NewOrderID(generateID()),
+			entities.OrderID(generateID()),
 			block,
 			parties[i%3],
 			markets[i%2],
@@ -260,7 +260,7 @@ func generateParties(t *testing.T, numParties int, block entities.Block, ps *sql
 func addTestMarket(t *testing.T, ms *sqlstore.Markets, block entities.Block) entities.Market {
 	t.Helper()
 	market := entities.Market{
-		ID:       entities.NewMarketID(generateID()),
+		ID:       entities.MarketID(generateID()),
 		VegaTime: block.VegaTime,
 	}
 
@@ -282,7 +282,7 @@ func generateOrderIDs(t *testing.T, numIDs int) []entities.OrderID {
 	t.Helper()
 	orderIDs := make([]entities.OrderID, numIDs)
 	for i := 0; i < numIDs; i++ {
-		orderIDs[i] = entities.NewOrderID(generateID())
+		orderIDs[i] = entities.OrderID(generateID())
 		time.Sleep(time.Millisecond)
 	}
 	return orderIDs

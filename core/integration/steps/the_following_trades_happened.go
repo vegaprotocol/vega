@@ -18,8 +18,8 @@ import (
 
 	"github.com/cucumber/godog"
 
-	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
+	"code.vegaprotocol.io/vega/protos/vega"
 )
 
 func TheFollowingTradesShouldBeExecuted(

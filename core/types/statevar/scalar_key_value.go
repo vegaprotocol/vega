@@ -13,8 +13,8 @@
 package statevar
 
 import (
-	"code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/protos/vega"
 )
 
 // DecimalScalar is a scalar floating point value.

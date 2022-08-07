@@ -17,10 +17,10 @@ import (
 	"sort"
 	"strings"
 
-	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
+	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
 
 	"code.vegaprotocol.io/vega/libs/proto"
 )
@@ -66,7 +66,7 @@ func (e *Engine) delegationStateFromDelegationEntry(ctx context.Context, delegat
 			ps = &partyDelegation{
 				party:          de.Party,
 				nodeToAmount:   map[string]*num.Uint{},
-				totalDelegated: num.Zero(),
+				totalDelegated: num.UintZero(),
 			}
 			delegationState[de.Party] = ps
 		}
@@ -152,9 +152,9 @@ func (e *Engine) getPendingBackwardCompatible() []*types.DelegationEntry {
 				des = append(des, &types.DelegationEntry{Party: party, Node: node, Amount: amt.Clone(), Undelegate: false, EpochSeq: e.currentEpoch.Seq + 1})
 			} else {
 				if amt.GT(currNodeAmt) {
-					des = append(des, &types.DelegationEntry{Party: party, Node: node, Amount: num.Zero().Sub(amt, currNodeAmt), Undelegate: false, EpochSeq: e.currentEpoch.Seq + 1})
+					des = append(des, &types.DelegationEntry{Party: party, Node: node, Amount: num.UintZero().Sub(amt, currNodeAmt), Undelegate: false, EpochSeq: e.currentEpoch.Seq + 1})
 				} else if amt.LT(currNodeAmt) {
-					des = append(des, &types.DelegationEntry{Party: party, Node: node, Amount: num.Zero().Sub(currNodeAmt, amt), Undelegate: true, EpochSeq: e.currentEpoch.Seq + 1})
+					des = append(des, &types.DelegationEntry{Party: party, Node: node, Amount: num.UintZero().Sub(currNodeAmt, amt), Undelegate: true, EpochSeq: e.currentEpoch.Seq + 1})
 				}
 			}
 		}
@@ -234,7 +234,7 @@ func (e *Engine) setPendingBackwardCompatible(ctx context.Context, entries []*ty
 			ps = &partyDelegation{
 				party:          de.Party,
 				nodeToAmount:   map[string]*num.Uint{},
-				totalDelegated: num.Zero(),
+				totalDelegated: num.UintZero(),
 			}
 			e.nextPartyDelegationState[de.Party] = ps
 		}

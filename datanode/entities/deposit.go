@@ -17,16 +17,14 @@ import (
 	"fmt"
 	"time"
 
-	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
-	"code.vegaprotocol.io/protos/vega"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	"code.vegaprotocol.io/vega/protos/vega"
 	"github.com/shopspring/decimal"
 )
 
-type DepositID struct{ ID }
+type _Deposit struct{}
 
-func NewDepositID(id string) DepositID {
-	return DepositID{ID: ID(id)}
-}
+type DepositID = ID[_Deposit]
 
 type Deposit struct {
 	ID                DepositID
@@ -49,10 +47,10 @@ func DepositFromProto(deposit *vega.Deposit, vegaTime time.Time) (*Deposit, erro
 	}
 
 	return &Deposit{
-		ID:                NewDepositID(deposit.Id),
+		ID:                DepositID(deposit.Id),
 		Status:            DepositStatus(deposit.Status),
-		PartyID:           NewPartyID(deposit.PartyId),
-		Asset:             NewAssetID(deposit.Asset),
+		PartyID:           PartyID(deposit.PartyId),
+		Asset:             AssetID(deposit.Asset),
 		Amount:            amount,
 		TxHash:            deposit.TxHash,
 		CreditedTimestamp: NanosToPostgresTimestamp(deposit.CreditedTimestamp),

@@ -18,10 +18,10 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/protos/vega"
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/protos/vega"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -486,7 +486,7 @@ func getTestAccounts(t *testing.T, accounts *sqlstore.Accounts, block entities.B
 	t.Helper()
 	assets := sqlstore.NewAssets(connectionSource)
 
-	testAssetId := entities.AssetID{ID: entities.ID(generateID())}
+	testAssetId := entities.AssetID(generateID())
 	testAsset := entities.Asset{
 		ID:            testAssetId,
 		Name:          "testAssetName",
@@ -505,7 +505,7 @@ func getTestAccounts(t *testing.T, accounts *sqlstore.Accounts, block entities.B
 	}
 
 	accountFrom = entities.Account{
-		PartyID:  entities.PartyID{ID: entities.ID(generateID())},
+		PartyID:  entities.PartyID(generateID()),
 		AssetID:  testAssetId,
 		Type:     vega.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
 		VegaTime: block.VegaTime,
@@ -516,7 +516,7 @@ func getTestAccounts(t *testing.T, accounts *sqlstore.Accounts, block entities.B
 	}
 
 	accountTo = entities.Account{
-		PartyID: entities.PartyID{ID: entities.ID(generateID())},
+		PartyID: entities.PartyID(generateID()),
 		AssetID: testAssetId,
 
 		Type:     vega.AccountType_ACCOUNT_TYPE_GENERAL,
@@ -691,11 +691,11 @@ func addTransfers(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, transf
 
 		amount, _ := decimal.NewFromString("10")
 		transfer := entities.Transfer{
-			ID:                  entities.NewTransferID(fmt.Sprintf("deadbeef%02d", i+1)),
+			ID:                  entities.TransferID(fmt.Sprintf("deadbeef%02d", i+1)),
 			VegaTime:            vegaTime,
 			FromAccountId:       accountFrom.ID,
 			ToAccountId:         accountTo.ID,
-			AssetId:             entities.AssetID{},
+			AssetId:             entities.AssetID(""),
 			Amount:              amount,
 			Reference:           "",
 			Status:              0,

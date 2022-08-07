@@ -18,13 +18,13 @@ import (
 	"sort"
 	"time"
 
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/core/bridges"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/signatures_mock.go -package mocks code.vegaprotocol.io/vega/core/validators Signatures
@@ -71,7 +71,7 @@ func NewSignatures(
 	s := &ERC20Signatures{
 		log:              log,
 		notary:           notary,
-		lastNonce:        num.Zero(),
+		lastNonce:        num.UintZero(),
 		broker:           broker,
 		isValidatorSetup: isValidatorSetup,
 	}

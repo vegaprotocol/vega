@@ -19,12 +19,11 @@ import (
 	"strings"
 	"time"
 
-	proto "code.vegaprotocol.io/protos/vega"
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
-	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
+	proto "code.vegaprotocol.io/vega/protos/vega"
+	oraclesv1 "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 
 	"github.com/cucumber/godog"
 	"github.com/cucumber/messages-go/v16"
@@ -50,7 +49,7 @@ func StrictParseTable(dt *godog.Table, required, optional []string) []RowWrapper
 		panic("A table is required.")
 	}
 
-	if len(required) != 0 {
+	if len(required)+len(optional) != 0 {
 		err := verifyTableIntegrity(required, optional, dt.Rows[0])
 		if err != nil {
 			panic(err)
@@ -452,11 +451,11 @@ func (r RowWrapper) MustEventType(name string) events.Type {
 }
 
 func EventType(rawValue string) (events.Type, error) {
-	ty, ok := eventspb.BusEventType_value[rawValue]
+	ty, ok := events.TryFromString(rawValue)
 	if !ok {
 		return 0, fmt.Errorf("invalid event type: %v", rawValue)
 	}
-	return events.Type(ty), nil
+	return *ty, nil
 }
 
 func (r RowWrapper) MustOrderType(name string) types.OrderType {

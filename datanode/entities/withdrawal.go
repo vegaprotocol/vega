@@ -17,17 +17,15 @@ import (
 	"fmt"
 	"time"
 
-	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
-	"code.vegaprotocol.io/protos/vega"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	"code.vegaprotocol.io/vega/protos/vega"
 	"github.com/shopspring/decimal"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
-type WithdrawalID struct{ ID }
+type _Withdrawal struct{}
 
-func NewWithdrawalID(id string) WithdrawalID {
-	return WithdrawalID{ID: ID(id)}
-}
+type WithdrawalID = ID[_Withdrawal]
 
 type Withdrawal struct {
 	ID                 WithdrawalID
@@ -53,10 +51,10 @@ func WithdrawalFromProto(withdrawal *vega.Withdrawal, vegaTime time.Time) (*With
 	}
 
 	return &Withdrawal{
-		ID:      NewWithdrawalID(withdrawal.Id),
-		PartyID: NewPartyID(withdrawal.PartyId),
+		ID:      WithdrawalID(withdrawal.Id),
+		PartyID: PartyID(withdrawal.PartyId),
 		Amount:  amount,
-		Asset:   NewAssetID(withdrawal.Asset),
+		Asset:   AssetID(withdrawal.Asset),
 		Status:  WithdrawalStatus(withdrawal.Status),
 		Ref:     withdrawal.Ref,
 		// According to the GraphQL resolver, the expiry is the Unix time, not UnixNano

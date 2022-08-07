@@ -18,10 +18,10 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/service"
 	"code.vegaprotocol.io/vega/datanode/service/mocks"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -656,9 +656,9 @@ func TestInitFromSqlStore(t *testing.T) {
 		store := mocks.NewMockOrderStore(ctrl)
 		store.EXPECT().GetLiveOrders(gomock.Any()).Return([]entities.Order{
 			{
-				ID:              entities.NewOrderID("22EEA97BF1D9067D7533D0E671FC97C22146CE6785B4B142EBDF53FF0ED73E25"),
-				MarketID:        entities.NewMarketID("2EBD1AF4C84D5E004FD2797FF268258BFA21A37A6D0BCE289FB21151ACEF0F36"),
-				PartyID:         entities.NewPartyID("FB0C9F50787E5E090591E6600DBBEB5A4771D5A0C9B1AE09BC673AB9F471D210"),
+				ID:              entities.OrderID("22EEA97BF1D9067D7533D0E671FC97C22146CE6785B4B142EBDF53FF0ED73E25"),
+				MarketID:        entities.MarketID("2EBD1AF4C84D5E004FD2797FF268258BFA21A37A6D0BCE289FB21151ACEF0F36"),
+				PartyID:         entities.PartyID("FB0C9F50787E5E090591E6600DBBEB5A4771D5A0C9B1AE09BC673AB9F471D210"),
 				Side:            2,
 				Price:           1200,
 				Size:            5,
@@ -680,9 +680,9 @@ func TestInitFromSqlStore(t *testing.T) {
 				SeqNum:          32,
 			},
 			{
-				ID:              entities.NewOrderID("0E6BFB468B1D57B6463B3A2D133DEA107A56B34CC641235469E834145DE55803"),
-				MarketID:        entities.NewMarketID("52D3FCF2EFC15518EDFA25154E909348A2D7F45903C72CD88CB32EFD747CA001"),
-				PartyID:         entities.NewPartyID("29FE22227631DE06D9FBBCF2450DEA492E685E5953AEF60A76A95D0DA156806D"),
+				ID:              entities.OrderID("0E6BFB468B1D57B6463B3A2D133DEA107A56B34CC641235469E834145DE55803"),
+				MarketID:        entities.MarketID("52D3FCF2EFC15518EDFA25154E909348A2D7F45903C72CD88CB32EFD747CA001"),
+				PartyID:         entities.PartyID("29FE22227631DE06D9FBBCF2450DEA492E685E5953AEF60A76A95D0DA156806D"),
 				Side:            1,
 				Price:           22,
 				Size:            26,
@@ -704,9 +704,9 @@ func TestInitFromSqlStore(t *testing.T) {
 				SeqNum:          32,
 			},
 			{
-				ID:              entities.NewOrderID("D8DA96D3B61F1E745061F85D46CE4440E188F846BBD76F7475C7D8AF0E9AB971"),
-				MarketID:        entities.NewMarketID("2EBD1AF4C84D5E004FD2797FF268258BFA21A37A6D0BCE289FB21151ACEF0F36"),
-				PartyID:         entities.NewPartyID("5F9A129B40E17BA0A17272697E3D521356AFC20BB56BF68C9242097AAFF879BF"),
+				ID:              entities.OrderID("D8DA96D3B61F1E745061F85D46CE4440E188F846BBD76F7475C7D8AF0E9AB971"),
+				MarketID:        entities.MarketID("2EBD1AF4C84D5E004FD2797FF268258BFA21A37A6D0BCE289FB21151ACEF0F36"),
+				PartyID:         entities.PartyID("5F9A129B40E17BA0A17272697E3D521356AFC20BB56BF68C9242097AAFF879BF"),
 				Side:            1,
 				Price:           900,
 				Size:            5,
@@ -728,9 +728,9 @@ func TestInitFromSqlStore(t *testing.T) {
 				SeqNum:          39,
 			},
 			{
-				ID:              entities.NewOrderID("9CABDED74F357688E96AAD50353122F23C441CF6134BA1B31E4B75D5D5EB7B36"),
-				MarketID:        entities.NewMarketID("2EBD1AF4C84D5E004FD2797FF268258BFA21A37A6D0BCE289FB21151ACEF0F36"),
-				PartyID:         entities.NewPartyID("5F9A129B40E17BA0A17272697E3D521356AFC20BB56BF68C9242097AAFF879BF"),
+				ID:              entities.OrderID("9CABDED74F357688E96AAD50353122F23C441CF6134BA1B31E4B75D5D5EB7B36"),
+				MarketID:        entities.MarketID("2EBD1AF4C84D5E004FD2797FF268258BFA21A37A6D0BCE289FB21151ACEF0F36"),
+				PartyID:         entities.PartyID("5F9A129B40E17BA0A17272697E3D521356AFC20BB56BF68C9242097AAFF879BF"),
 				Side:            1,
 				Price:           100,
 				Size:            1,
@@ -752,9 +752,9 @@ func TestInitFromSqlStore(t *testing.T) {
 				SeqNum:          43,
 			},
 			{
-				ID:              entities.NewOrderID("4300A037014C7ACFFC1C371697BD7A0ECAE4A54FCC4BFCB8A43E6EF4140A4F64"),
-				MarketID:        entities.NewMarketID("2EBD1AF4C84D5E004FD2797FF268258BFA21A37A6D0BCE289FB21151ACEF0F36"),
-				PartyID:         entities.NewPartyID("FB0C9F50787E5E090591E6600DBBEB5A4771D5A0C9B1AE09BC673AB9F471D210"),
+				ID:              entities.OrderID("4300A037014C7ACFFC1C371697BD7A0ECAE4A54FCC4BFCB8A43E6EF4140A4F64"),
+				MarketID:        entities.MarketID("2EBD1AF4C84D5E004FD2797FF268258BFA21A37A6D0BCE289FB21151ACEF0F36"),
+				PartyID:         entities.PartyID("FB0C9F50787E5E090591E6600DBBEB5A4771D5A0C9B1AE09BC673AB9F471D210"),
 				Side:            2,
 				Price:           100000,
 				Size:            1,
@@ -776,9 +776,9 @@ func TestInitFromSqlStore(t *testing.T) {
 				SeqNum:          53,
 			},
 			{
-				ID:              entities.NewOrderID("F8062CA2F4EE26C6208881CFC9844F12BEE6AA0A087D155BE695AFF6FF00AB00"),
-				MarketID:        entities.NewMarketID("2EBD1AF4C84D5E004FD2797FF268258BFA21A37A6D0BCE289FB21151ACEF0F36"),
-				PartyID:         entities.NewPartyID("076E3373D4F4197731A3161D2F50CE286B93278BF2B650705691514DD49EFDA1"),
+				ID:              entities.OrderID("F8062CA2F4EE26C6208881CFC9844F12BEE6AA0A087D155BE695AFF6FF00AB00"),
+				MarketID:        entities.MarketID("2EBD1AF4C84D5E004FD2797FF268258BFA21A37A6D0BCE289FB21151ACEF0F36"),
+				PartyID:         entities.PartyID("076E3373D4F4197731A3161D2F50CE286B93278BF2B650705691514DD49EFDA1"),
 				Side:            2,
 				Price:           1201,
 				Size:            1301,
@@ -800,9 +800,9 @@ func TestInitFromSqlStore(t *testing.T) {
 				SeqNum:          61,
 			},
 			{
-				ID:              entities.NewOrderID("15E8D38DD216C5EE969EC7B7A2EB031E56474A9552CC10E00036A7DC1C0546B5"),
-				MarketID:        entities.NewMarketID("2EBD1AF4C84D5E004FD2797FF268258BFA21A37A6D0BCE289FB21151ACEF0F36"),
-				PartyID:         entities.NewPartyID("076E3373D4F4197731A3161D2F50CE286B93278BF2B650705691514DD49EFDA1"),
+				ID:              entities.OrderID("15E8D38DD216C5EE969EC7B7A2EB031E56474A9552CC10E00036A7DC1C0546B5"),
+				MarketID:        entities.MarketID("2EBD1AF4C84D5E004FD2797FF268258BFA21A37A6D0BCE289FB21151ACEF0F36"),
+				PartyID:         entities.PartyID("076E3373D4F4197731A3161D2F50CE286B93278BF2B650705691514DD49EFDA1"),
 				Side:            1,
 				Price:           899,
 				Size:            1738,

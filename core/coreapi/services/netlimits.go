@@ -16,9 +16,9 @@ import (
 	"context"
 	"sync"
 
-	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/subscribers"
+	"code.vegaprotocol.io/vega/protos/vega"
 )
 
 type netLimitsEvent interface {

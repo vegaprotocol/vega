@@ -17,7 +17,7 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/collateral"
@@ -399,7 +399,7 @@ func getEngine(t *testing.T) *testEngine {
 		NodeID:            "node3",
 		PubKey:            "node3",
 		SelfStake:         num.NewUint(4000),
-		StakeByDelegators: num.Zero(),
+		StakeByDelegators: num.UintZero(),
 		Delegators:        map[string]*num.Uint{},
 	}
 
@@ -407,7 +407,7 @@ func getEngine(t *testing.T) *testEngine {
 		NodeID:            "node4",
 		PubKey:            "node4",
 		SelfStake:         num.NewUint(6000),
-		StakeByDelegators: num.Zero(),
+		StakeByDelegators: num.UintZero(),
 		Delegators:        map[string]*num.Uint{},
 	}
 

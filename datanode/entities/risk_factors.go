@@ -16,7 +16,7 @@ import (
 	"fmt"
 	"time"
 
-	"code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/shopspring/decimal"
 )
@@ -41,7 +41,7 @@ func RiskFactorFromProto(factor *vega.RiskFactor, vegaTime time.Time) (*RiskFact
 	}
 
 	return &RiskFactor{
-		MarketID: NewMarketID(factor.Market),
+		MarketID: MarketID(factor.Market),
 		Short:    short,
 		Long:     long,
 		VegaTime: vegaTime,

@@ -20,8 +20,8 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/core/events"
-	"code.vegaprotocol.io/vega/core/types/num"
 	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/libs/num"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -30,7 +30,7 @@ func TestMultipleTradesOfSameSize(t *testing.T) {
 	ctx := context.Background()
 	market := "market-id"
 	party := "party1"
-	position := entities.NewEmptyPosition(entities.NewMarketID(market), entities.NewPartyID(party))
+	position := entities.NewEmptyPosition(entities.MarketID(market), entities.PartyID(party))
 	ps := events.NewSettlePositionEvent(ctx, party, market, num.NewUint(1000), []events.TradeSettlement{
 		tradeStub{
 			size:  -1,
@@ -51,7 +51,7 @@ func TestMultipleTradesAndLossSocializationPartyNoOpenVolume(t *testing.T) {
 	ctx := context.Background()
 	market := "market-id"
 	party := "party1"
-	position := entities.NewEmptyPosition(entities.NewMarketID(market), entities.NewPartyID(party))
+	position := entities.NewEmptyPosition(entities.MarketID(market), entities.PartyID(party))
 
 	ps := events.NewSettlePositionEvent(ctx, party, market, num.NewUint(1000), []events.TradeSettlement{
 		tradeStub{
@@ -79,7 +79,7 @@ func TestDistressedPartyUpdate(t *testing.T) {
 	ctx := context.Background()
 	market := "market-id"
 	party := "party1"
-	position := entities.NewEmptyPosition(entities.NewMarketID(market), entities.NewPartyID(party))
+	position := entities.NewEmptyPosition(entities.MarketID(market), entities.PartyID(party))
 
 	ps := events.NewSettlePositionEvent(ctx, party, market, num.NewUint(1000), []events.TradeSettlement{
 		tradeStub{
@@ -104,7 +104,7 @@ func TestDistressedPartyUpdate(t *testing.T) {
 	assert.Equal(t, "-600", pp.UnrealisedPnl)
 
 	// now assume this party is distressed, and we've taken all their funds
-	sde := events.NewSettleDistressed(ctx, party, market, num.Zero(), num.NewUint(100), 1)
+	sde := events.NewSettleDistressed(ctx, party, market, num.UintZero(), num.NewUint(100), 1)
 	position.UpdateWithSettleDestressed(sde)
 	pp = position.ToProto()
 	assert.Equal(t, "0", pp.UnrealisedPnl)
@@ -115,7 +115,7 @@ func TestMultipleTradesAndLossSocializationPartyWithOpenVolume(t *testing.T) {
 	ctx := context.Background()
 	market := "market-id"
 	party := "party1"
-	position := entities.NewEmptyPosition(entities.NewMarketID(market), entities.NewPartyID(party))
+	position := entities.NewEmptyPosition(entities.MarketID(market), entities.PartyID(party))
 
 	ps := events.NewSettlePositionEvent(ctx, party, market, num.NewUint(1000), []events.TradeSettlement{
 		tradeStub{

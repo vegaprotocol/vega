@@ -17,8 +17,8 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"code.vegaprotocol.io/vega/core/types/num"
 	"code.vegaprotocol.io/vega/core/validators"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/stretchr/testify/require"
 )

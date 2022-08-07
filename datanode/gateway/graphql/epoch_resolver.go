@@ -16,9 +16,9 @@ import (
 	"context"
 	"strconv"
 
-	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
-	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
-	proto "code.vegaprotocol.io/protos/vega"
+	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type epochResolver VegaResolverRoot
@@ -29,6 +29,7 @@ func (r *epochResolver) ID(ctx context.Context, obj *proto.Epoch) (string, error
 	return id, nil
 }
 
+// Deprecated: Use DelegationsConnection instead.
 func (r *epochResolver) Delegations(
 	ctx context.Context,
 	obj *proto.Epoch,

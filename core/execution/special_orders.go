@@ -21,7 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/core/liquidity"
 	"code.vegaprotocol.io/vega/core/metrics"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -32,7 +32,19 @@ func (m *Market) repricePeggedOrders(
 	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "repricePeggedOrders")
 
 	// Go through all the pegged orders and remove from the order book
-	for _, order := range m.peggedOrders.orders {
+	for _, oid := range m.peggedOrders.GetIDs() {
+		var (
+			order *types.Order
+			err   error
+		)
+		if m.peggedOrders.IsParked(oid) {
+			order = m.peggedOrders.GetParkedByID(oid)
+		} else {
+			order, err = m.matching.GetOrderByID(oid)
+			if err != nil {
+				m.log.Panic("if order is not parked, it should be on the book", logging.OrderID(oid))
+			}
+		}
 		if OrderReferenceCheck(*order).HasMoved(changes) {
 			// First if the order isn't parked, then
 			// we will just remove if from the orderbook
@@ -47,20 +59,21 @@ func (m *Market) repricePeggedOrders(
 				}
 
 				// Remove it from the party position
+				// _ = m.position.UnregisterOrder(ctx, cancellation.Order)
 				_ = m.position.UnregisterOrder(ctx, order)
+			} else {
+				// unpark before it's reparked next eventually
+				m.peggedOrders.Unpark(order.ID)
 			}
 
 			if price, err := m.getNewPeggedPrice(order); err != nil {
-				// Failed to reprice, if we are parked we do nothing,
-				// if not parked we need to park
-				if order.Status != types.OrderStatusParked {
-					order.UpdatedAt = m.timeService.GetTimeNow().UnixNano()
-					order.Status = types.OrderStatusParked
-					order.Price = num.Zero()
-					order.OriginalPrice = nil
-					m.broker.Send(events.NewOrderEvent(ctx, order))
-					parked = append(parked, order)
-				}
+				// Failed to reprice, we need to park again
+				order.UpdatedAt = m.timeService.GetTimeNow().UnixNano()
+				order.Status = types.OrderStatusParked
+				order.Price = num.UintZero()
+				order.OriginalPrice = nil
+				m.broker.Send(events.NewOrderEvent(ctx, order))
+				parked = append(parked, order)
 			} else {
 				// Repriced so all good make sure status is correct
 				order.Price = price.Clone()
@@ -131,7 +144,11 @@ func (m *Market) repriceAllSpecialOrders(
 	var parked, toSubmit []*types.Order
 	if changes != 0 {
 		parked, toSubmit = m.repricePeggedOrders(ctx, changes)
+		for _, topark := range parked {
+			m.peggedOrders.Park(topark)
+		}
 	}
+
 	// just checking if we need to take all lp of the book too
 	// normal lp updates would be fine without taking order from the
 	// book as no prices would be conlficting

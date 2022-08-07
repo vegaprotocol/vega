@@ -18,9 +18,9 @@ import (
 	"fmt"
 	"strings"
 
-	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -71,12 +71,12 @@ func (ds *Delegations) Get(ctx context.Context,
 	conditions := []string{}
 
 	if partyIDHex != nil {
-		partyID := entities.NewPartyID(*partyIDHex)
+		partyID := entities.PartyID(*partyIDHex)
 		conditions = append(conditions, fmt.Sprintf("party_id=%s", nextBindVar(&args, partyID)))
 	}
 
 	if nodeIDHex != nil {
-		nodeID := entities.NewNodeID(*nodeIDHex)
+		nodeID := entities.NodeID(*nodeIDHex)
 		conditions = append(conditions, fmt.Sprintf("node_id=%s", nextBindVar(&args, nodeID)))
 	}
 

@@ -20,7 +20,6 @@ import (
 	"testing"
 	"time"
 
-	checkpointpb "code.vegaprotocol.io/protos/vega/checkpoint/v1"
 	"code.vegaprotocol.io/vega/core/assets"
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/checkpoint"
@@ -37,6 +36,7 @@ import (
 	vgtesting "code.vegaprotocol.io/vega/libs/testing"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
+	checkpointpb "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )

@@ -16,11 +16,11 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/num"
 
-	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/core/netparams/checks"
+	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
 const (
@@ -56,8 +56,8 @@ func defaultNetParams() map[string]value {
 		GovernanceProposalMarketMaxEnact:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("8760h0m0s"),
 		GovernanceProposalMarketRequiredParticipation: NewDecimal(DecimalGTE(num.DecimalZero()), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.00001"),
 		GovernanceProposalMarketRequiredMajority:      NewDecimal(DecimalGTE(num.MustDecimalFromString("0.5")), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.66"),
-		GovernanceProposalMarketMinProposerBalance:    NewUint(UintGTE(num.Zero())).Mutable(true).MustUpdate("0"),
-		GovernanceProposalMarketMinVoterBalance:       NewUint(UintGTE(num.Zero())).Mutable(true).MustUpdate("0"),
+		GovernanceProposalMarketMinProposerBalance:    NewUint(UintGTE(num.UintZero())).Mutable(true).MustUpdate("0"),
+		GovernanceProposalMarketMinVoterBalance:       NewUint(UintGTE(num.UintZero())).Mutable(true).MustUpdate("0"),
 
 		// governance asset proposal
 		GovernanceProposalAssetMinClose:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("48h0m0s"),
@@ -66,8 +66,8 @@ func defaultNetParams() map[string]value {
 		GovernanceProposalAssetMaxEnact:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("8760h0m0s"),
 		GovernanceProposalAssetRequiredParticipation: NewDecimal(DecimalGTE(num.DecimalZero()), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.00001"),
 		GovernanceProposalAssetRequiredMajority:      NewDecimal(DecimalGTE(num.MustDecimalFromString("0.5")), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.66"),
-		GovernanceProposalAssetMinProposerBalance:    NewUint(UintGTE(num.Zero())).Mutable(true).MustUpdate("0"),
-		GovernanceProposalAssetMinVoterBalance:       NewUint(UintGTE(num.Zero())).Mutable(true).MustUpdate("0"),
+		GovernanceProposalAssetMinProposerBalance:    NewUint(UintGTE(num.UintZero())).Mutable(true).MustUpdate("0"),
+		GovernanceProposalAssetMinVoterBalance:       NewUint(UintGTE(num.UintZero())).Mutable(true).MustUpdate("0"),
 
 		// governance update asset proposal
 		GovernanceProposalUpdateAssetMinClose:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("48h0m0s"),
@@ -76,8 +76,8 @@ func defaultNetParams() map[string]value {
 		GovernanceProposalUpdateAssetMaxEnact:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("8760h0m0s"),
 		GovernanceProposalUpdateAssetRequiredParticipation: NewDecimal(DecimalGTE(num.DecimalZero()), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.00001"),
 		GovernanceProposalUpdateAssetRequiredMajority:      NewDecimal(DecimalGTE(num.MustDecimalFromString("0.5")), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.66"),
-		GovernanceProposalUpdateAssetMinProposerBalance:    NewUint(UintGTE(num.Zero())).Mutable(true).MustUpdate("0"),
-		GovernanceProposalUpdateAssetMinVoterBalance:       NewUint(UintGTE(num.Zero())).Mutable(true).MustUpdate("0"),
+		GovernanceProposalUpdateAssetMinProposerBalance:    NewUint(UintGTE(num.UintZero())).Mutable(true).MustUpdate("0"),
+		GovernanceProposalUpdateAssetMinVoterBalance:       NewUint(UintGTE(num.UintZero())).Mutable(true).MustUpdate("0"),
 
 		// governance update market proposal
 		GovernanceProposalUpdateMarketMinClose:                   NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("48h0m0s"),
@@ -86,11 +86,11 @@ func defaultNetParams() map[string]value {
 		GovernanceProposalUpdateMarketMaxEnact:                   NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("8760h0m0s"),
 		GovernanceProposalUpdateMarketRequiredParticipation:      NewDecimal(DecimalGTE(num.DecimalZero()), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.00001"),
 		GovernanceProposalUpdateMarketRequiredMajority:           NewDecimal(DecimalGTE(num.MustDecimalFromString("0.5")), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.66"),
-		GovernanceProposalUpdateMarketMinProposerBalance:         NewUint(UintGTE(num.Zero())).Mutable(true).MustUpdate("0"),
-		GovernanceProposalUpdateMarketMinVoterBalance:            NewUint(UintGTE(num.Zero())).Mutable(true).MustUpdate("0"),
+		GovernanceProposalUpdateMarketMinProposerBalance:         NewUint(UintGTE(num.UintZero())).Mutable(true).MustUpdate("0"),
+		GovernanceProposalUpdateMarketMinVoterBalance:            NewUint(UintGTE(num.UintZero())).Mutable(true).MustUpdate("0"),
 		GovernanceProposalUpdateMarketRequiredParticipationLP:    NewDecimal(DecimalGTE(num.DecimalZero()), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.00001"),
 		GovernanceProposalUpdateMarketRequiredMajorityLP:         NewDecimal(DecimalGTE(num.MustDecimalFromString("0.5")), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.66"),
-		GovernanceProposalUpdateMarketMinProposerEquityLikeShare: NewDecimal(DecimalGTE(num.MustDecimalFromString("0.01")), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.66"),
+		GovernanceProposalUpdateMarketMinProposerEquityLikeShare: NewDecimal(DecimalGTE(num.MustDecimalFromString("0")), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.66"),
 
 		// governance UpdateNetParam proposal
 		GovernanceProposalUpdateNetParamMinClose:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("48h0m0s"),
@@ -99,16 +99,16 @@ func defaultNetParams() map[string]value {
 		GovernanceProposalUpdateNetParamMaxEnact:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("8760h0m0s"),
 		GovernanceProposalUpdateNetParamRequiredParticipation: NewDecimal(DecimalGTE(num.DecimalZero()), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.00001"),
 		GovernanceProposalUpdateNetParamRequiredMajority:      NewDecimal(DecimalGTE(num.MustDecimalFromString("0.5")), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.66"),
-		GovernanceProposalUpdateNetParamMinProposerBalance:    NewUint(UintGTE(num.Zero())).Mutable(true).MustUpdate("0"),
-		GovernanceProposalUpdateNetParamMinVoterBalance:       NewUint(UintGTE(num.Zero())).Mutable(true).MustUpdate("0"),
+		GovernanceProposalUpdateNetParamMinProposerBalance:    NewUint(UintGTE(num.UintZero())).Mutable(true).MustUpdate("0"),
+		GovernanceProposalUpdateNetParamMinVoterBalance:       NewUint(UintGTE(num.UintZero())).Mutable(true).MustUpdate("0"),
 
 		// governance Freeform proposal
 		GovernanceProposalFreeformMinClose:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("48h0m0s"),
 		GovernanceProposalFreeformMaxClose:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("8760h0m0s"),
 		GovernanceProposalFreeformRequiredParticipation: NewDecimal(DecimalGTE(num.DecimalZero()), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.00001"),
 		GovernanceProposalFreeformRequiredMajority:      NewDecimal(DecimalGTE(num.MustDecimalFromString("0.5")), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.66"),
-		GovernanceProposalFreeformMinProposerBalance:    NewUint(UintGTE(num.Zero())).Mutable(true).MustUpdate("0"),
-		GovernanceProposalFreeformMinVoterBalance:       NewUint(UintGTE(num.Zero())).Mutable(true).MustUpdate("0"),
+		GovernanceProposalFreeformMinProposerBalance:    NewUint(UintGTE(num.UintZero())).Mutable(true).MustUpdate("0"),
+		GovernanceProposalFreeformMinVoterBalance:       NewUint(UintGTE(num.UintZero())).Mutable(true).MustUpdate("0"),
 
 		// Delegation default params
 		DelegationMinAmount: NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("1"),
@@ -171,10 +171,10 @@ func defaultNetParams() map[string]value {
 
 		// pow
 		SpamPoWNumberOfPastBlocks:   NewUint(UintGTE(num.NewUint(50)), UintLTE(num.NewUint(500))).Mutable(true).MustUpdate("100"),
-		SpamPoWDifficulty:           NewUint(UintGT(num.Zero()), UintLTE(num.NewUint(256))).Mutable(true).MustUpdate("15"),
+		SpamPoWDifficulty:           NewUint(UintGT(num.UintZero()), UintLTE(num.NewUint(256))).Mutable(true).MustUpdate("15"),
 		SpamPoWHashFunction:         NewString().Mutable(true).MustUpdate(crypto.Sha3),
 		SpamPoWNumberOfTxPerBlock:   NewUint(UintGTE(num.NewUint(1)), UintLTE(num.NewUint(1000))).Mutable(true).MustUpdate("2"),
-		SpamPoWIncreasingDifficulty: NewUint(UintGTE(num.Zero()), UintLTE(num.NewUint(1))).Mutable(true).MustUpdate("0"),
+		SpamPoWIncreasingDifficulty: NewUint(UintGTE(num.UintZero()), UintLTE(num.NewUint(1))).Mutable(true).MustUpdate("0"),
 
 		LimitsProposeMarketEnabledFrom: NewString(checkOptionalRFC3339Date).Mutable(true).MustUpdate(""), // none by default
 		LimitsProposeAssetEnabledFrom:  NewString(checkOptionalRFC3339Date).Mutable(true).MustUpdate(""), // none by default

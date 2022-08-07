@@ -16,7 +16,7 @@ import (
 	"encoding/hex"
 
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -26,7 +26,7 @@ const (
 
 func (b OrderBook) validateOrder(orderMessage *types.Order) (err error) {
 	if orderMessage.Price == nil {
-		orderMessage.Price = num.Zero()
+		orderMessage.Price = num.UintZero()
 	}
 	if orderMessage.MarketID != b.marketID {
 		b.log.Error("Market ID mismatch",

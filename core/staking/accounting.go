@@ -19,14 +19,14 @@ import (
 	"fmt"
 	"time"
 
-	vgproto "code.vegaprotocol.io/protos/vega"
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/core/contracts/erc20"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	vgproto "code.vegaprotocol.io/vega/protos/vega"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethcmn "github.com/ethereum/go-ethereum/common"
@@ -106,7 +106,7 @@ func NewAccounting(
 		broker:                  broker,
 		ethClient:               ethClient,
 		accounts:                map[string]*StakingAccount{},
-		stakingAssetTotalSupply: num.Zero(),
+		stakingAssetTotalSupply: num.UintZero(),
 		accState:                accountingSnapshotState{changed: true},
 		evtFwd:                  evtForward,
 		witness:                 witness,
@@ -179,7 +179,7 @@ func (a *Accounting) UpdateStakingBridgeAddress(stakingBridgeAddress ethcmn.Addr
 }
 
 func (a *Accounting) ProcessStakeTotalSupply(_ context.Context, evt *types.StakeTotalSupply) error {
-	if a.stakingAssetTotalSupply.NEQ(num.Zero()) {
+	if a.stakingAssetTotalSupply.NEQ(num.UintZero()) {
 		return ErrStakeTotalSupplyAlreadyProcessed
 	}
 
@@ -312,7 +312,7 @@ func (a *Accounting) getStakeAssetTotalSupply(address ethcmn.Address) (*num.Uint
 func (a *Accounting) GetAvailableBalance(party string) (*num.Uint, error) {
 	acc, ok := a.accounts[party]
 	if !ok {
-		return num.Zero(), ErrNoBalanceForParty
+		return num.UintZero(), ErrNoBalanceForParty
 	}
 
 	return acc.GetAvailableBalance(), nil
@@ -323,7 +323,7 @@ func (a *Accounting) GetAvailableBalanceAt(
 ) (*num.Uint, error) {
 	acc, ok := a.accounts[party]
 	if !ok {
-		return num.Zero(), ErrNoBalanceForParty
+		return num.UintZero(), ErrNoBalanceForParty
 	}
 
 	return acc.GetAvailableBalanceAt(at)
@@ -334,7 +334,7 @@ func (a *Accounting) GetAvailableBalanceInRange(
 ) (*num.Uint, error) {
 	acc, ok := a.accounts[party]
 	if !ok {
-		return num.Zero(), ErrNoBalanceForParty
+		return num.UintZero(), ErrNoBalanceForParty
 	}
 
 	return acc.GetAvailableBalanceInRange(from, to)

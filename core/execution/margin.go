@@ -19,7 +19,7 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/positions"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -83,7 +83,7 @@ func (m *Market) calcMarginsLiquidityProvisionAmendAuction(
 	// then we check if the required top-up is greated that the amound in
 	// the GeneralBalance, if yes it means we would have to use the bond
 	// account which is not acceptable at this point, we return an error as well
-	if risk[0].Amount().GT(num.Zero().Sub(risk[0].GeneralBalance(), risk[0].BondBalance())) {
+	if risk[0].Amount().GT(num.UintZero().Sub(risk[0].GeneralBalance(), risk[0].BondBalance())) {
 		return nil, fmt.Errorf("margin would require bond: %w", ErrMarginCheckInsufficient)
 	}
 
@@ -208,14 +208,14 @@ func (m *Market) getMarkPrice(o *types.Order) *num.Uint {
 		return o.Price.Clone()
 	}
 	if m.markPrice == nil {
-		return num.Zero()
+		return num.UintZero()
 	}
 	return m.markPrice.Clone()
 }
 
 func (m *Market) getCurrentMarkPrice() *num.Uint {
 	if m.markPrice == nil {
-		return num.Zero()
+		return num.UintZero()
 	}
 	return m.markPrice.Clone()
 }

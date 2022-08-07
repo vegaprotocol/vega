@@ -4,7 +4,6 @@ go 1.18
 
 require (
 	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
-	code.vegaprotocol.io/protos v0.53.1-0.20220728102859-02ab6d8a0804
 	code.vegaprotocol.io/quant v0.2.5
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cenkalti/backoff v2.2.1+incompatible
@@ -77,6 +76,7 @@ require (
 
 require (
 	github.com/DataDog/zstd v1.4.1 // indirect
+	github.com/StackExchange/wmi v1.2.1 // indirect
 	github.com/agnivade/levenshtein v1.1.0 // indirect
 	github.com/armon/go-radix v1.0.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -99,11 +99,15 @@ require (
 	github.com/elastic/go-windows v1.0.0 // indirect
 	github.com/fullstorydev/grpcurl v1.8.6 // indirect
 	github.com/go-kit/kit v0.12.0 // indirect
+	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/gofrs/uuid v4.2.0+incompatible // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/orderedcode v0.0.1 // indirect
+	github.com/google/uuid v1.3.0 // indirect
+	github.com/gorilla/mux v1.8.0
+	github.com/gorilla/rpc v1.2.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
@@ -146,13 +150,16 @@ require (
 	github.com/shirou/gopsutil v3.21.4-0.20210419000835-c7a38de76ee5+incompatible // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
+	github.com/spf13/viper v1.12.0
 	github.com/stretchr/objx v0.4.0 // indirect
 	github.com/subosito/gotenv v1.4.0 // indirect
 	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c // indirect
+	github.com/tklauser/go-sysconf v0.3.10 // indirect
 	github.com/tklauser/numcpus v0.4.0 // indirect
 	github.com/urfave/cli/v2 v2.10.2 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
+	go.elastic.co/apm v1.12.0 // indirect
 	go.elastic.co/fastjson v1.1.0 // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
@@ -162,31 +169,19 @@ require (
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
 	golang.org/x/net v0.0.0-20220617184016-355a448f1bc9 // indirect
 	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/tools v0.1.11 // indirect
 	gonum.org/v1/gonum v0.9.1 // indirect
 	google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd // indirect
+	gopkg.in/ini.v1 v1.66.6 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	howett.net/plist v0.0.0-20181124034731-591f970eefbb // indirect
 )
 
-require (
-	github.com/StackExchange/wmi v1.2.1 // indirect
-	github.com/go-ole/go-ole v1.2.6 // indirect
-	github.com/google/uuid v1.3.0 // indirect
-	github.com/gorilla/mux v1.8.0
-	github.com/gorilla/rpc v1.2.0
-	github.com/spf13/viper v1.12.0
-	github.com/tklauser/go-sysconf v0.3.10 // indirect
-	go.elastic.co/apm v1.12.0 // indirect
-	golang.org/x/tools v0.1.11 // indirect
-	gopkg.in/ini.v1 v1.66.6 // indirect
+replace (
+	github.com/fergusstrange/embedded-postgres => github.com/vegaprotocol/embedded-postgres v1.13.1-0.20220607151211-5f2f488de508
+	github.com/jackc/pgx/v4 v4.14.1 => github.com/pscott31/pgx/v4 v4.16.2-0.20220531164027-bd666b84b61f
+	github.com/shopspring/decimal => github.com/vegaprotocol/decimal v1.3.1-uint256
+	github.com/tendermint/tendermint => github.com/vegaprotocol/tendermint v0.35.10-0.20220724091544-f328f3ea62c3
 )
-
-replace github.com/shopspring/decimal => github.com/vegaprotocol/decimal v1.3.1-uint256
-
-replace github.com/tendermint/tendermint => github.com/vegaprotocol/tendermint v0.35.10-0.20220724091544-f328f3ea62c3
-
-replace github.com/fergusstrange/embedded-postgres => github.com/vegaprotocol/embedded-postgres v1.13.1-0.20220607151211-5f2f488de508
-
-replace github.com/jackc/pgx/v4 v4.14.1 => github.com/pscott31/pgx/v4 v4.16.2-0.20220531164027-bd666b84b61f

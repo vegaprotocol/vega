@@ -13,18 +13,16 @@
 package execution_test
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
-	"code.vegaprotocol.io/vega/core/config"
 	"code.vegaprotocol.io/vega/core/execution"
 	"code.vegaprotocol.io/vega/core/execution/mocks"
-	"code.vegaprotocol.io/vega/core/matching"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -65,13 +63,17 @@ func testPeggedOrdersSnapshot(t *testing.T) {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 	tm := mocks.NewMockTimeService(ctrl)
-	p := execution.NewPeggedOrders(tm)
-	a.False(p.Changed())
+	p := execution.NewPeggedOrders(logging.NewTestLogger(), tm)
 
 	// Test empty
 	s := p.GetState()
-	a.False(p.Changed())
-	a.Equal([]*types.Order{}, s)
+	a.Equal(
+		&types.PeggedOrdersState{
+			Orders: map[string]string{},
+			Parked: []*types.Order{},
+		},
+		s,
+	)
 
 	testOrders := getTestOrders()[:4]
 
@@ -80,66 +82,49 @@ func testPeggedOrdersSnapshot(t *testing.T) {
 	p.Add(testOrders[1])
 	p.Add(testOrders[2])
 	p.Add(testOrders[3])
-	a.True(p.Changed())
-	a.Equal(testOrders, p.GetState())
-	a.False(p.Changed())
+	a.Equal([]*types.Order{}, p.GetState().Parked)
+	a.Equal("party-1", p.GetState().Orders[testOrders[0].ID])
+	a.Equal("party-1", p.GetState().Orders[testOrders[1].ID])
+	a.Equal("party-1", p.GetState().Orders[testOrders[2].ID])
+	a.Equal("party-1", p.GetState().Orders[testOrders[3].ID])
 
 	// Test amend
-	p.Amend(testOrders[0])
+	tm.EXPECT().GetTimeNow().AnyTimes()
+	p.Park(testOrders[0])
+	p.AmendParked(testOrders[0])
 	a.True(p.Changed())
-	a.Equal(testOrders, p.GetState())
-	a.False(p.Changed())
+	a.Equal(
+		[]*types.Order{testOrders[0]},
+		p.GetState().Parked,
+	)
 
 	// Test park
 	tm.EXPECT().GetTimeNow().AnyTimes()
 	p.Park(testOrders[1])
 	a.True(p.Changed())
-	a.Equal(testOrders, p.GetState())
-	a.False(p.Changed())
+	a.Equal(
+		[]*types.Order{testOrders[0], testOrders[1]},
+		p.GetState().Parked,
+	)
 
 	// Test remove
-	p.Remove(testOrders[3])
-	testOrders = testOrders[:3]
-	a.True(p.Changed())
-	a.Equal(testOrders, p.GetState())
-	a.False(p.Changed())
+	p.Remove(testOrders[3].ID)
+	// testOrders = testOrders[:3]
+	a.Equal("", p.GetState().Orders[testOrders[3].ID])
+	a.Equal(
+		[]*types.Order{testOrders[0], testOrders[1]},
+		p.GetState().Parked,
+	)
 
 	// Test get functions won't change state
 	p.GetAllActiveOrders()
 	p.GetAllForParty("party-1")
-	p.GetByID("id-2")
-	a.False(p.Changed())
+	p.GetParkedByID("id-2")
 
 	// Test restore state
 	s = p.GetState()
 
-	ob := matching.NewCachedOrderBook(logging.NewTestLogger(), config.NewDefaultConfig().Execution.Matching, "market-1", false)
-	pl := &types.Payload{
-		Data: &types.PayloadMatchingBook{
-			MatchingBook: &types.MatchingBook{
-				MarketID:        "market-1",
-				Buy:             testOrders,
-				Sell:            nil,
-				LastTradedPrice: num.NewUint(100),
-				Auction:         false,
-				BatchID:         1,
-			},
-		},
-	}
-	ob.LoadState(context.Background(), pl)
-
-	newP := execution.NewPeggedOrdersFromSnapshot(s, tm)
-	newP.ReconcileWithOrderBook(ob)
+	newP := execution.NewPeggedOrdersFromSnapshot(logging.NewTestLogger(), tm, s)
 	a.Equal(s, newP.GetState())
-	a.Equal(len(p.GetAll()), len(newP.GetAll()))
-
-	// if market is in a auction we'll have pegged orders on the market but not the orderbook
-	ob2 := matching.NewCachedOrderBook(logging.NewTestLogger(), config.NewDefaultConfig().Execution.Matching, "market-1", false)
-	newP2 := execution.NewPeggedOrdersFromSnapshot(s, tm)
-	tm.EXPECT().GetTimeNow().AnyTimes()
-	for _, o := range newP2.GetAll() {
-		newP2.Park(o)
-	}
-	newP2.ReconcileWithOrderBook(ob2)
-	a.Equal(len(p.GetAll()), len(newP2.GetAll()))
+	a.Equal(len(p.GetIDs()), len(newP.GetIDs()))
 }

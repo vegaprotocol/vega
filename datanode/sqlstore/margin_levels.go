@@ -16,9 +16,9 @@ import (
 	"context"
 	"fmt"
 
-	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -74,8 +74,8 @@ func (ml *MarginLevels) GetMarginLevelsByID(ctx context.Context, partyID, market
 }
 
 func buildAccountWhereClause(partyID, marketID string) (string, []interface{}) {
-	party := entities.NewPartyID(partyID)
-	market := entities.NewMarketID(marketID)
+	party := entities.PartyID(partyID)
+	market := entities.MarketID(marketID)
 
 	var bindVars []interface{}
 

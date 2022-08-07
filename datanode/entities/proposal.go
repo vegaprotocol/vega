@@ -17,8 +17,8 @@ import (
 	"fmt"
 	"time"
 
-	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
-	"code.vegaprotocol.io/protos/vega"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	"code.vegaprotocol.io/vega/protos/vega"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
@@ -32,11 +32,9 @@ var (
 	ProposalTypeNewFreeform            = ProposalType("newFreeform")
 )
 
-type ProposalID struct{ ID }
+type _Proposal struct{}
 
-func NewProposalID(id string) ProposalID {
-	return ProposalID{ID: ID(id)}
-}
+type ProposalID = ID[_Proposal]
 
 type Proposal struct {
 	ID           ProposalID
@@ -86,9 +84,9 @@ func (p Proposal) ToProtoEdge(_ ...any) (*v2.GovernanceDataEdge, error) {
 
 func ProposalFromProto(pp *vega.Proposal) (Proposal, error) {
 	p := Proposal{
-		ID:           NewProposalID(pp.Id),
+		ID:           ProposalID(pp.Id),
 		Reference:    pp.Reference,
-		PartyID:      NewPartyID(pp.PartyId),
+		PartyID:      PartyID(pp.PartyId),
 		State:        ProposalState(pp.State),
 		Rationale:    ProposalRationale{pp.Rationale},
 		Terms:        ProposalTerms{pp.Terms},

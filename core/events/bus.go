@@ -18,8 +18,8 @@ import (
 	"strconv"
 	"strings"
 
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/pkg/errors"
 )
@@ -369,6 +369,16 @@ func (t Type) String() string {
 		return "UNKNOWN EVENT"
 	}
 	return s
+}
+
+// TryFromString tries to parse a raw string into an event type, false indicates that.
+func TryFromString(s string) (*Type, bool) {
+	for k, v := range eventStrings {
+		if strings.EqualFold(s, v) {
+			return &k, true
+		}
+	}
+	return nil, false
 }
 
 // ProtoToInternal converts the proto message enum to our internal constants

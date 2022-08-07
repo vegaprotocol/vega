@@ -27,7 +27,7 @@ import (
 func addTestNode(t *testing.T, ps *sqlstore.Node, block entities.Block, id string) entities.Node {
 	t.Helper()
 	node := entities.Node{
-		ID:              entities.NewNodeID(id),
+		ID:              entities.NodeID(id),
 		PubKey:          entities.VegaPublicKey(generateID()),
 		TmPubKey:        entities.TendermintPublicKey(generateTendermintPublicKey()),
 		EthereumAddress: entities.EthereumAddress(generateEthereumAddress()),

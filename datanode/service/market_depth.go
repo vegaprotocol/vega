@@ -17,12 +17,12 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/utils"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/protos/vega"
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/market_depth_mock.go -package mocks code.vegaprotocol.io/vega/datanode/service OrderStore
@@ -305,7 +305,7 @@ func (m *MarketDepth) GetBestBidPrice(market string) *num.Uint {
 			return md.BuySide[0].Price.Clone()
 		}
 	}
-	return num.Zero()
+	return num.UintZero()
 }
 
 // GetBestAskPrice returns the highest bid price in the book.
@@ -316,7 +316,7 @@ func (m *MarketDepth) GetBestAskPrice(market string) *num.Uint {
 			return md.SellSide[0].Price.Clone()
 		}
 	}
-	return num.Zero()
+	return num.UintZero()
 }
 
 // GetBuyPriceLevels returns the number of non empty buy price levels.

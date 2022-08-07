@@ -18,20 +18,14 @@ import (
 	"math"
 	"time"
 
-	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"github.com/shopspring/decimal"
 )
 
-type StakeLinkingID struct {
-	ID
-}
+type _StakeLinking struct{}
 
-func NewStakeLinkingID(id string) StakeLinkingID {
-	return StakeLinkingID{
-		ID: ID(id),
-	}
-}
+type StakeLinkingID = ID[_StakeLinking]
 
 type StakeLinking struct {
 	ID                 StakeLinkingID
@@ -48,8 +42,8 @@ type StakeLinking struct {
 }
 
 func StakeLinkingFromProto(stake *eventspb.StakeLinking, vegaTime time.Time) (*StakeLinking, error) {
-	id := NewStakeLinkingID(stake.Id)
-	partyID := NewPartyID(stake.Party)
+	id := StakeLinkingID(stake.Id)
+	partyID := PartyID(stake.Party)
 	amount, err := decimal.NewFromString(stake.Amount)
 	if err != nil {
 		return nil, fmt.Errorf("received invalid staking amount: %s - %w", stake.Amount, err)

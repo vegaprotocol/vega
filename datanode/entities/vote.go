@@ -17,9 +17,9 @@ import (
 	"fmt"
 	"time"
 
-	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 
-	"code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/protos/vega"
 	"github.com/shopspring/decimal"
 )
 
@@ -63,8 +63,8 @@ func VoteFromProto(pv *vega.Vote) (Vote, error) {
 	}
 
 	v := Vote{
-		PartyID:                     NewPartyID(pv.PartyId),
-		ProposalID:                  NewProposalID(pv.ProposalId),
+		PartyID:                     PartyID(pv.PartyId),
+		ProposalID:                  ProposalID(pv.ProposalId),
 		Value:                       VoteValue(pv.Value),
 		TotalGovernanceTokenBalance: totalGovernanceTokenBalance,
 		TotalGovernanceTokenWeight:  totalGovernanceTokenWeight,

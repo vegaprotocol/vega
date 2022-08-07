@@ -18,10 +18,10 @@ import (
 	"testing"
 	"time"
 
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
-	"code.vegaprotocol.io/vega/core/types/num"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/libs/num"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"github.com/jackc/pgx/v4"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
@@ -118,7 +118,7 @@ func testGetStake(t *testing.T) {
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from stake_linking").Scan(&rowCount))
 	assert.Equal(t, 2, rowCount)
 
-	partyID := entities.NewPartyID("cafed00d")
+	partyID := entities.PartyID("cafed00d")
 
 	currentBalance, links, _, err := sl.GetStake(ctx, partyID, entities.OffsetPagination{})
 	require.NoError(t, err)
@@ -198,7 +198,7 @@ func testStakeLinkingPaginationNoPagination(t *testing.T) {
 
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
-	partyID := entities.NewPartyID("cafed00d")
+	partyID := entities.PartyID("cafed00d")
 
 	_, got, pageInfo, err := ls.GetStake(timeoutCtx, partyID, pagination)
 	require.NoError(t, err)
@@ -222,7 +222,7 @@ func testStakeLinkingPaginationFirst(t *testing.T) {
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	require.NoError(t, err)
-	partyID := entities.NewPartyID("cafed00d")
+	partyID := entities.PartyID("cafed00d")
 
 	_, got, pageInfo, err := ls.GetStake(timeoutCtx, partyID, pagination)
 	require.NoError(t, err)
@@ -246,7 +246,7 @@ func testStakeLinkingPaginationLast(t *testing.T) {
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	require.NoError(t, err)
-	partyID := entities.NewPartyID("cafed00d")
+	partyID := entities.PartyID("cafed00d")
 
 	_, got, pageInfo, err := ls.GetStake(timeoutCtx, partyID, pagination)
 	require.NoError(t, err)
@@ -271,7 +271,7 @@ func testStakeLinkingPaginationFirstAndAfter(t *testing.T) {
 	after := links[12].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	require.NoError(t, err)
-	partyID := entities.NewPartyID("cafed00d")
+	partyID := entities.PartyID("cafed00d")
 
 	_, got, pageInfo, err := ls.GetStake(timeoutCtx, partyID, pagination)
 	require.NoError(t, err)
@@ -296,7 +296,7 @@ func testStakeLinkingPaginationLastAndBefore(t *testing.T) {
 	before := links[17].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 	require.NoError(t, err)
-	partyID := entities.NewPartyID("cafed00d")
+	partyID := entities.PartyID("cafed00d")
 
 	_, got, pageInfo, err := ls.GetStake(timeoutCtx, partyID, pagination)
 	require.NoError(t, err)
@@ -319,7 +319,7 @@ func testStakeLinkingPaginationNoPaginationNewestFirst(t *testing.T) {
 
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	require.NoError(t, err)
-	partyID := entities.NewPartyID("cafed00d")
+	partyID := entities.PartyID("cafed00d")
 
 	_, got, pageInfo, err := ls.GetStake(timeoutCtx, partyID, pagination)
 	require.NoError(t, err)
@@ -343,7 +343,7 @@ func testStakeLinkingPaginationFirstNewestFirst(t *testing.T) {
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
 	require.NoError(t, err)
-	partyID := entities.NewPartyID("cafed00d")
+	partyID := entities.PartyID("cafed00d")
 
 	_, got, pageInfo, err := ls.GetStake(timeoutCtx, partyID, pagination)
 	require.NoError(t, err)
@@ -367,7 +367,7 @@ func testStakeLinkingPaginationLastNewestFirst(t *testing.T) {
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
 	require.NoError(t, err)
-	partyID := entities.NewPartyID("cafed00d")
+	partyID := entities.PartyID("cafed00d")
 
 	_, got, pageInfo, err := ls.GetStake(timeoutCtx, partyID, pagination)
 	require.NoError(t, err)
@@ -392,7 +392,7 @@ func testStakeLinkingPaginationFirstAndAfterNewestFirst(t *testing.T) {
 	after := links[17].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
 	require.NoError(t, err)
-	partyID := entities.NewPartyID("cafed00d")
+	partyID := entities.PartyID("cafed00d")
 
 	_, got, pageInfo, err := ls.GetStake(timeoutCtx, partyID, pagination)
 	require.NoError(t, err)
@@ -417,7 +417,7 @@ func testStakeLinkingPaginationLastAndBeforeNewestFirst(t *testing.T) {
 	before := links[12].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
 	require.NoError(t, err)
-	partyID := entities.NewPartyID("cafed00d")
+	partyID := entities.PartyID("cafed00d")
 
 	_, got, pageInfo, err := ls.GetStake(timeoutCtx, partyID, pagination)
 	require.NoError(t, err)
@@ -434,10 +434,10 @@ func testStakeLinkingPaginationLastAndBeforeNewestFirst(t *testing.T) {
 func addStakeLinking(t *testing.T, ctx context.Context, ls *sqlstore.StakeLinking, id string, partyID string, logIndex int64, block entities.Block) entities.StakeLinking {
 	t.Helper()
 	l := entities.StakeLinking{
-		ID:                 entities.NewStakeLinkingID(id),
+		ID:                 entities.StakeLinkingID(id),
 		StakeLinkingType:   entities.StakeLinkingTypeLink,
 		EthereumTimestamp:  block.VegaTime,
-		PartyID:            entities.NewPartyID(partyID),
+		PartyID:            entities.PartyID(partyID),
 		Amount:             decimal.NewFromFloat(1),
 		StakeLinkingStatus: entities.StakeLinkingStatusAccepted,
 		FinalizedAt:        block.VegaTime,

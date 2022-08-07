@@ -18,10 +18,10 @@ import (
 	"math"
 	"time"
 
-	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/protos/vega"
 	"github.com/pkg/errors"
 
 	"github.com/shopspring/decimal"
@@ -110,7 +110,7 @@ func (as *Asset) addAsset(ctx context.Context, va vega.Asset, vegaTime time.Time
 	decimals := int(va.Details.Decimals)
 
 	asset := entities.Asset{
-		ID:                entities.NewAssetID(va.Id),
+		ID:                entities.AssetID(va.Id),
 		Name:              va.Details.Name,
 		Symbol:            va.Details.Symbol,
 		TotalSupply:       totalSupply,

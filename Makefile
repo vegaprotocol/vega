@@ -69,3 +69,32 @@ spellcheck: ## Run markdown spellcheck container
 clean: SHELL:=/bin/bash
 clean: ## Remove previous build
 	rm cmd/vega/vega
+	rm -rf ./**/*-re
+
+.PHONY: proto
+proto: ## build proto definitions
+	@./script/generate.sh
+
+.PHONY: proto_json
+proto_json: ## build proto definitions
+	@./script/generate_json.sh
+
+.PHONY: proto_check
+proto_check: ## proto: Check committed files match just-generated files
+	@make proto_clean 1>/dev/null
+	@make proto 1>/dev/null
+	@files="$$(git diff --name-only protos/vega/ protos/data-node/)" ; \
+	if test -n "$$files" ; then \
+		echo "Committed files do not match just-generated files: " $$files ; \
+		test -n "$(CI)" && git diff vega/ ; \
+		exit 1 ; \
+	fi
+
+.PHONY: proto_clean
+proto_clean:
+	@find protos/vega protos/data-node -name '*.pb.go' -o -name '*.pb.gw.go' \
+		| xargs -r rm
+
+.PHONY: buflint
+buflint: ## Run buf lint
+	@buf lint

@@ -16,10 +16,10 @@ import (
 	"context"
 	"sync"
 
-	vegapb "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/subscribers"
 	"code.vegaprotocol.io/vega/core/types"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type partyE interface {

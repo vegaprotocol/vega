@@ -18,6 +18,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -49,10 +50,31 @@ func (n *Notary) Add(ctx context.Context, ns *entities.NodeSignature) error {
 	return nil
 }
 
-func (n *Notary) GetByResourceID(ctx context.Context, id string) ([]entities.NodeSignature, error) {
+func (n *Notary) GetByResourceID(ctx context.Context, id string, pagination entities.CursorPagination) ([]entities.NodeSignature, entities.PageInfo, error) {
 	defer metrics.StartSQLQuery("Notary", "GetByResourceID")()
+	var pageInfo entities.PageInfo
+	var args []interface{}
+
+	sorting, cmp, cursor := extractPaginationInfo(pagination)
+
+	nc := &entities.NodeSignatureCursor{}
+	if err := nc.Parse(cursor); err != nil {
+		return nil, pageInfo, fmt.Errorf("could not parse cursor information: %w", err)
+	}
+
+	cursorParams := []CursorQueryParameter{
+		NewCursorQueryParameter("resource_id", sorting, EQ, entities.NodeSignatureID(id)),
+		NewCursorQueryParameter("sig", sorting, cmp, nc.Sig),
+	}
+
 	ns := []entities.NodeSignature{}
-	query := `SELECT resource_id, sig, kind FROM node_signatures WHERE resource_id=$1`
-	err := pgxscan.Select(ctx, n.Connection, &ns, query, entities.NewNodeSignatureID(id))
-	return ns, err
+	query := `SELECT resource_id, sig, kind FROM node_signatures`
+	query, args = orderAndPaginateWithCursor(query, pagination, cursorParams, args...)
+
+	if err := pgxscan.Select(ctx, n.Connection, &ns, query, args...); err != nil {
+		return nil, pageInfo, fmt.Errorf("could not get node signatures for resource: %w", err)
+	}
+
+	ns, pageInfo = entities.PageEntities[*v2.NodeSignatureEdge](ns, pagination)
+	return ns, pageInfo, nil
 }

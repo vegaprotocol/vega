@@ -21,9 +21,9 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
 	"code.vegaprotocol.io/vega/core/validators"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -209,16 +209,16 @@ func (e *Engine) reconcile(ctx context.Context, delegationState map[string]*part
 		partyDelegation := delegationState[party]
 		// if the stake account balance for the epoch is less than the delegated balance - we need to undelegate the difference
 		// this will be done evenly as much as possible between all validators with delegation from the party
-		remainingBalanceToUndelegate := num.Zero().Sub(partyDelegation.totalDelegated, stakeBalance)
-		totalTaken := num.Zero()
+		remainingBalanceToUndelegate := num.UintZero().Sub(partyDelegation.totalDelegated, stakeBalance)
+		totalTaken := num.UintZero()
 		nodeIDs := e.sortNodes(partyDelegation.nodeToAmount)
 
 		// undelegate proportionally across delegated validator nodes
 		totalDeletation := partyDelegation.totalDelegated.Clone()
 		for _, nodeID := range nodeIDs {
 			balance := partyDelegation.nodeToAmount[nodeID]
-			balanceToTake := num.Zero().Mul(balance, remainingBalanceToUndelegate)
-			balanceToTake = num.Zero().Div(balanceToTake, totalDeletation)
+			balanceToTake := num.UintZero().Mul(balance, remainingBalanceToUndelegate)
+			balanceToTake = num.UintZero().Div(balanceToTake, totalDeletation)
 
 			if balanceToTake.IsZero() {
 				continue
@@ -290,7 +290,7 @@ func (e *Engine) Delegate(ctx context.Context, party string, nodeID string, amou
 	}
 
 	// get the pending balance for the next epoch
-	nextEpochBalance := num.Zero()
+	nextEpochBalance := num.UintZero()
 	if nextEpoch, ok := e.nextPartyDelegationState[party]; ok {
 		nextEpochBalance = nextEpoch.totalDelegated
 	}
@@ -305,8 +305,8 @@ func (e *Engine) Delegate(ctx context.Context, party string, nodeID string, amou
 	if _, ok := e.nextPartyDelegationState[party]; !ok {
 		e.nextPartyDelegationState[party] = &partyDelegation{
 			party:          party,
-			totalDelegated: num.Zero(),
-			nodeToAmount:   map[string]*num.Uint{nodeID: num.Zero()},
+			totalDelegated: num.UintZero(),
+			nodeToAmount:   map[string]*num.Uint{nodeID: num.UintZero()},
 		}
 	}
 
@@ -314,7 +314,7 @@ func (e *Engine) Delegate(ctx context.Context, party string, nodeID string, amou
 	nextEpochState := e.nextPartyDelegationState[party]
 	nextEpochState.totalDelegated.AddSum(amt)
 	if _, ok := nextEpochState.nodeToAmount[nodeID]; !ok {
-		nextEpochState.nodeToAmount[nodeID] = num.Zero()
+		nextEpochState.nodeToAmount[nodeID] = num.UintZero()
 	}
 	nextEpochState.nodeToAmount[nodeID].AddSum(amt)
 	e.sendDelegatedBalanceEvent(ctx, party, nodeID, e.currentEpoch.Seq+1, e.nextPartyDelegationState[party].nodeToAmount[nodeID])
@@ -333,7 +333,7 @@ func (e *Engine) UndelegateAtEndOfEpoch(ctx context.Context, party string, nodeI
 	}
 
 	// get the balance for next epoch
-	nextEpochBalanceOnNode := num.Zero()
+	nextEpochBalanceOnNode := num.UintZero()
 	if nextEpoch, ok := e.nextPartyDelegationState[party]; ok {
 		if nodeAmount, ok := nextEpoch.nodeToAmount[nodeID]; ok {
 			nextEpochBalanceOnNode = nodeAmount
@@ -373,13 +373,13 @@ func (e *Engine) UndelegateNow(ctx context.Context, party string, nodeID string,
 
 	// the purpose of this is that if a party has x delegated in the current epoch and x + a delegated for the next epoch, undelegateNow will start with undelegating
 	// the current epoch but if there's any left it will undelegate from the next epoch. This is unlikely to happen but still
-	currentEpochBalanceOnNode := num.Zero()
+	currentEpochBalanceOnNode := num.UintZero()
 	if epoch, ok := e.partyDelegationState[party]; ok {
 		if nodeAmount, ok := epoch.nodeToAmount[nodeID]; ok {
 			currentEpochBalanceOnNode = nodeAmount
 		}
 	}
-	nextEpochBalanceOnNode := num.Zero()
+	nextEpochBalanceOnNode := num.UintZero()
 	if epoch, ok := e.nextPartyDelegationState[party]; ok {
 		if nodeAmount, ok := epoch.nodeToAmount[nodeID]; ok {
 			nextEpochBalanceOnNode = nodeAmount
@@ -482,7 +482,7 @@ func (e *Engine) ProcessEpochDelegations(ctx context.Context, epoch types.Epoch)
 // sendDelegatedBalanceEvent emits an event with the delegation balance for the given epoch.
 func (e *Engine) sendDelegatedBalanceEvent(ctx context.Context, party, nodeID string, seq uint64, amt *num.Uint) {
 	if amt == nil {
-		e.broker.Send(events.NewDelegationBalance(ctx, party, nodeID, num.Zero(), num.NewUint(seq).String()))
+		e.broker.Send(events.NewDelegationBalance(ctx, party, nodeID, num.UintZero(), num.NewUint(seq).String()))
 	} else {
 		e.broker.Send(events.NewDelegationBalance(ctx, party, nodeID, amt.Clone(), num.NewUint(seq).String()))
 	}
@@ -497,14 +497,14 @@ func (e *Engine) decreaseBalanceAndFireEvent(ctx context.Context, party, nodeID 
 	if partyState.totalDelegated.GT(amt) {
 		partyState.totalDelegated.Sub(partyState.totalDelegated, amt)
 	} else {
-		partyState.totalDelegated = num.Zero()
+		partyState.totalDelegated = num.UintZero()
 	}
 
 	if nodeAmt, ok := partyState.nodeToAmount[nodeID]; ok {
 		if nodeAmt.GT(amt) {
 			partyState.nodeToAmount[nodeID].Sub(nodeAmt, amt)
 		} else {
-			partyState.nodeToAmount[nodeID] = num.Zero()
+			partyState.nodeToAmount[nodeID] = num.UintZero()
 		}
 		if fireEvent {
 			e.sendDelegatedBalanceEvent(ctx, party, nodeID, epoch, partyState.nodeToAmount[nodeID])
@@ -600,7 +600,7 @@ func (e *Engine) eligiblePartiesForAutoDelegtion(exclude map[string]struct{}) ma
 		}
 
 		// calculate the available balance
-		available := num.Zero().Sub(balance, delegated)
+		available := num.UintZero().Sub(balance, delegated)
 		if !available.IsZero() {
 			partyToAvailableBalance[party] = available
 		}
@@ -651,8 +651,8 @@ func (e *Engine) getValidatorData() []*types.ValidatorData {
 			NodeID:            vn,
 			PubKey:            e.topology.Get(vn).VegaPubKey,
 			Delegators:        map[string]*num.Uint{},
-			SelfStake:         num.Zero(),
-			StakeByDelegators: num.Zero(),
+			SelfStake:         num.UintZero(),
+			StakeByDelegators: num.UintZero(),
 			TmPubKey:          e.topology.Get(vn).TmPubKey,
 		}
 	}
@@ -703,7 +703,7 @@ func (e *Engine) updateParty(ctx context.Context, partyDelegationMap map[string]
 
 	sortedNodes := e.sortNodes(partyDelegationState.nodeToAmount)
 	for _, node := range sortedNodes {
-		e.sendDelegatedBalanceEvent(ctx, oldKey, node, epoch, num.Zero())
+		e.sendDelegatedBalanceEvent(ctx, oldKey, node, epoch, num.UintZero())
 		e.sendDelegatedBalanceEvent(ctx, newKey, node, epoch, partyDelegationState.nodeToAmount[node])
 	}
 	e.dss.changedActive = true

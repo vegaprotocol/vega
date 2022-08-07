@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"testing"
 
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/nodewallets"
@@ -30,6 +29,7 @@ import (
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	vgtesting "code.vegaprotocol.io/vega/libs/testing"
 	"code.vegaprotocol.io/vega/logging"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

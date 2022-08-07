@@ -7,7 +7,7 @@ package mocks
 import (
 	reflect "reflect"
 
-	num "code.vegaprotocol.io/vega/core/types/num"
+	num "code.vegaprotocol.io/vega/libs/num"
 	gomock "github.com/golang/mock/gomock"
 )
 

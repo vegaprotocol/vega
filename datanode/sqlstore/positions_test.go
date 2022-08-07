@@ -72,8 +72,8 @@ func TestPosition(t *testing.T) {
 	block2 := addTestBlockForTime(t, bs, time.Now().Add((-26*time.Hour)-(1*time.Second)))
 	block3 := addTestBlockForTime(t, bs, time.Now().Add(-26*time.Hour))
 
-	market1 := entities.Market{ID: entities.NewMarketID("dead")}
-	market2 := entities.Market{ID: entities.NewMarketID("beef")}
+	market1 := entities.Market{ID: entities.MarketID("dead")}
+	market2 := entities.Market{ID: entities.MarketID("beef")}
 	party1 := addTestParty(t, qs, block1)
 	party2 := addTestParty(t, qs, block1)
 
@@ -141,7 +141,7 @@ func TestPosition(t *testing.T) {
 	})
 
 	t.Run("GetBadMarketAndParty", func(t *testing.T) {
-		_, err := ps.GetByMarketAndParty(ctx, market2.ID, entities.NewPartyID("ffff"))
+		_, err := ps.GetByMarketAndParty(ctx, market2.ID, entities.PartyID("ffff"))
 		assert.ErrorIs(t, err, sqlstore.ErrPositionNotFound)
 	})
 }
@@ -151,10 +151,10 @@ func setupPositionPaginationData(t *testing.T, ctx context.Context, bs *sqlstore
 	positions := make([]entities.Position, 0, 10)
 	blockTime := time.Now()
 	for i := 0; i < 10; i++ {
-		market := entities.Market{ID: entities.NewMarketID(fmt.Sprintf("deadbeef%02d", i))}
+		market := entities.Market{ID: entities.MarketID(fmt.Sprintf("deadbeef%02d", i))}
 		for j := 0; j < 10; j++ {
 			block := addTestBlockForTime(t, bs, blockTime)
-			party := entities.Party{ID: entities.NewPartyID(fmt.Sprintf("deadbeef%02d", j)), VegaTime: &block.VegaTime}
+			party := entities.Party{ID: entities.PartyID(fmt.Sprintf("deadbeef%02d", j)), VegaTime: &block.VegaTime}
 			err := pts.Add(ctx, party)
 			require.NoError(t, err)
 			position := addTestPosition(t, ps, market, party, int64(i), block)
@@ -194,14 +194,14 @@ func testPositionCursorPaginationPartyNoCursor(t *testing.T) {
 	pts := sqlstore.NewParties(connectionSource)
 	bs := sqlstore.NewBlocks(connectionSource)
 
-	emptyMarketID := entities.NewMarketID("")
+	emptyMarketID := entities.MarketID("")
 
 	positions := setupPositionPaginationData(t, ctx, bs, ps, pts)
 
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
 
-	party := entities.Party{ID: entities.NewPartyID("deadbeef00")}
+	party := entities.Party{ID: entities.PartyID("deadbeef00")}
 	want := []entities.Position{
 		positions[0],
 		positions[10],
@@ -235,7 +235,7 @@ func testPositionCursorPaginationPartyFirstCursor(t *testing.T) {
 	pts := sqlstore.NewParties(connectionSource)
 	bs := sqlstore.NewBlocks(connectionSource)
 
-	emptyMarketID := entities.NewMarketID("")
+	emptyMarketID := entities.MarketID("")
 
 	positions := setupPositionPaginationData(t, ctx, bs, ps, pts)
 	first := int32(3)
@@ -243,7 +243,7 @@ func testPositionCursorPaginationPartyFirstCursor(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	require.NoError(t, err)
 
-	party := entities.Party{ID: entities.NewPartyID("deadbeef00")}
+	party := entities.Party{ID: entities.PartyID("deadbeef00")}
 	want := []entities.Position{
 		positions[0],
 		positions[10],
@@ -270,7 +270,7 @@ func testPositionCursorPaginationPartyLastCursor(t *testing.T) {
 	pts := sqlstore.NewParties(connectionSource)
 	bs := sqlstore.NewBlocks(connectionSource)
 
-	emptyMarketID := entities.NewMarketID("")
+	emptyMarketID := entities.MarketID("")
 
 	positions := setupPositionPaginationData(t, ctx, bs, ps, pts)
 
@@ -278,7 +278,7 @@ func testPositionCursorPaginationPartyLastCursor(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	require.NoError(t, err)
 
-	party := entities.Party{ID: entities.NewPartyID("deadbeef00")}
+	party := entities.Party{ID: entities.PartyID("deadbeef00")}
 	want := []entities.Position{
 		positions[70],
 		positions[80],
@@ -305,7 +305,7 @@ func testPositionCursorPaginationPartyFirstAfterCursor(t *testing.T) {
 	pts := sqlstore.NewParties(connectionSource)
 	bs := sqlstore.NewBlocks(connectionSource)
 
-	emptyMarketID := entities.NewMarketID("")
+	emptyMarketID := entities.MarketID("")
 
 	positions := setupPositionPaginationData(t, ctx, bs, ps, pts)
 
@@ -314,7 +314,7 @@ func testPositionCursorPaginationPartyFirstAfterCursor(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	require.NoError(t, err)
 
-	party := entities.Party{ID: entities.NewPartyID("deadbeef00")}
+	party := entities.Party{ID: entities.PartyID("deadbeef00")}
 	want := []entities.Position{
 		positions[30],
 		positions[40],
@@ -341,7 +341,7 @@ func testPositionCursorPaginationPartyLastBeforeCursor(t *testing.T) {
 	pts := sqlstore.NewParties(connectionSource)
 	bs := sqlstore.NewBlocks(connectionSource)
 
-	emptyMarketID := entities.NewMarketID("")
+	emptyMarketID := entities.MarketID("")
 
 	positions := setupPositionPaginationData(t, ctx, bs, ps, pts)
 
@@ -350,7 +350,7 @@ func testPositionCursorPaginationPartyLastBeforeCursor(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 	require.NoError(t, err)
 
-	party := entities.Party{ID: entities.NewPartyID("deadbeef00")}
+	party := entities.Party{ID: entities.PartyID("deadbeef00")}
 	want := []entities.Position{
 		positions[40],
 		positions[50],
@@ -377,14 +377,14 @@ func testPositionCursorPaginationPartyMarketNoCursor(t *testing.T) {
 	pts := sqlstore.NewParties(connectionSource)
 	bs := sqlstore.NewBlocks(connectionSource)
 
-	emptyMarketID := entities.NewMarketID("deadbeef00")
+	emptyMarketID := entities.MarketID("deadbeef00")
 
 	positions := setupPositionPaginationData(t, ctx, bs, ps, pts)
 
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
 
-	party := entities.Party{ID: entities.NewPartyID("deadbeef00")}
+	party := entities.Party{ID: entities.PartyID("deadbeef00")}
 	want := []entities.Position{
 		positions[0],
 	}
@@ -409,14 +409,14 @@ func testPositionCursorPaginationPartyNoCursorNewestFirst(t *testing.T) {
 	pts := sqlstore.NewParties(connectionSource)
 	bs := sqlstore.NewBlocks(connectionSource)
 
-	emptyMarketID := entities.NewMarketID("")
+	emptyMarketID := entities.MarketID("")
 
 	positions := setupPositionPaginationData(t, ctx, bs, ps, pts)
 
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	require.NoError(t, err)
 
-	party := entities.Party{ID: entities.NewPartyID("deadbeef00")}
+	party := entities.Party{ID: entities.PartyID("deadbeef00")}
 	want := []entities.Position{
 		positions[0],
 		positions[10],
@@ -452,7 +452,7 @@ func testPositionCursorPaginationPartyFirstCursorNewestFirst(t *testing.T) {
 	pts := sqlstore.NewParties(connectionSource)
 	bs := sqlstore.NewBlocks(connectionSource)
 
-	emptyMarketID := entities.NewMarketID("")
+	emptyMarketID := entities.MarketID("")
 
 	positions := setupPositionPaginationData(t, ctx, bs, ps, pts)
 	first := int32(3)
@@ -460,7 +460,7 @@ func testPositionCursorPaginationPartyFirstCursorNewestFirst(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
 	require.NoError(t, err)
 
-	party := entities.Party{ID: entities.NewPartyID("deadbeef00")}
+	party := entities.Party{ID: entities.PartyID("deadbeef00")}
 	want := []entities.Position{
 		positions[90],
 		positions[80],
@@ -487,7 +487,7 @@ func testPositionCursorPaginationPartyLastCursorNewestFirst(t *testing.T) {
 	pts := sqlstore.NewParties(connectionSource)
 	bs := sqlstore.NewBlocks(connectionSource)
 
-	emptyMarketID := entities.NewMarketID("")
+	emptyMarketID := entities.MarketID("")
 
 	positions := setupPositionPaginationData(t, ctx, bs, ps, pts)
 
@@ -495,7 +495,7 @@ func testPositionCursorPaginationPartyLastCursorNewestFirst(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
 	require.NoError(t, err)
 
-	party := entities.Party{ID: entities.NewPartyID("deadbeef00")}
+	party := entities.Party{ID: entities.PartyID("deadbeef00")}
 	want := []entities.Position{
 		positions[20],
 		positions[10],
@@ -522,7 +522,7 @@ func testPositionCursorPaginationPartyFirstAfterCursorNewestFirst(t *testing.T) 
 	pts := sqlstore.NewParties(connectionSource)
 	bs := sqlstore.NewBlocks(connectionSource)
 
-	emptyMarketID := entities.NewMarketID("")
+	emptyMarketID := entities.MarketID("")
 
 	positions := setupPositionPaginationData(t, ctx, bs, ps, pts)
 
@@ -531,7 +531,7 @@ func testPositionCursorPaginationPartyFirstAfterCursorNewestFirst(t *testing.T) 
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
 	require.NoError(t, err)
 
-	party := entities.Party{ID: entities.NewPartyID("deadbeef00")}
+	party := entities.Party{ID: entities.PartyID("deadbeef00")}
 	want := []entities.Position{
 		positions[60],
 		positions[50],
@@ -558,7 +558,7 @@ func testPositionCursorPaginationPartyLastBeforeCursorNewestFirst(t *testing.T) 
 	pts := sqlstore.NewParties(connectionSource)
 	bs := sqlstore.NewBlocks(connectionSource)
 
-	emptyMarketID := entities.NewMarketID("")
+	emptyMarketID := entities.MarketID("")
 
 	positions := setupPositionPaginationData(t, ctx, bs, ps, pts)
 
@@ -567,7 +567,7 @@ func testPositionCursorPaginationPartyLastBeforeCursorNewestFirst(t *testing.T) 
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
 	require.NoError(t, err)
 
-	party := entities.Party{ID: entities.NewPartyID("deadbeef00")}
+	party := entities.Party{ID: entities.PartyID("deadbeef00")}
 	want := []entities.Position{
 		positions[50],
 		positions[40],
@@ -594,14 +594,14 @@ func testPositionCursorPaginationPartyMarketNoCursorNewestFirst(t *testing.T) {
 	pts := sqlstore.NewParties(connectionSource)
 	bs := sqlstore.NewBlocks(connectionSource)
 
-	emptyMarketID := entities.NewMarketID("deadbeef00")
+	emptyMarketID := entities.MarketID("deadbeef00")
 
 	positions := setupPositionPaginationData(t, ctx, bs, ps, pts)
 
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	require.NoError(t, err)
 
-	party := entities.Party{ID: entities.NewPartyID("deadbeef00")}
+	party := entities.Party{ID: entities.PartyID("deadbeef00")}
 	want := []entities.Position{
 		positions[0],
 	}

@@ -16,7 +16,7 @@ import (
 	"context"
 	"errors"
 
-	types "code.vegaprotocol.io/protos/vega"
+	types "code.vegaprotocol.io/vega/protos/vega"
 )
 
 var ErrUnsupportedProduct = errors.New("unsupported product")

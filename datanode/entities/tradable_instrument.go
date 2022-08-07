@@ -13,8 +13,8 @@
 package entities
 
 import (
-	"code.vegaprotocol.io/protos/vega"
-	v1 "code.vegaprotocol.io/protos/vega/oracles/v1"
+	"code.vegaprotocol.io/vega/protos/vega"
+	v1 "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 

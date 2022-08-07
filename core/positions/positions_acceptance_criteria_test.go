@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -537,7 +537,7 @@ func testNewOrderAddedToTheBook(t *testing.T) {
 				Remaining: 10,
 				Party:     partyA,
 				Side:      types.SideBuy,
-				Price:     num.Zero(),
+				Price:     num.UintZero(),
 			},
 			expectedBuy:  10,
 			expectedSell: 0,
@@ -550,7 +550,7 @@ func testNewOrderAddedToTheBook(t *testing.T) {
 				Remaining: 16,
 				Party:     partyB,
 				Side:      types.SideSell,
-				Price:     num.Zero(),
+				Price:     num.UintZero(),
 			},
 			expectedBuy:  0,
 			expectedSell: 16,
@@ -563,7 +563,7 @@ func testNewOrderAddedToTheBook(t *testing.T) {
 				Remaining: 17,
 				Party:     partyA,
 				Side:      types.SideBuy,
-				Price:     num.Zero(),
+				Price:     num.UintZero(),
 			},
 			expectedBuy:  27,
 			expectedSell: 0,
@@ -576,7 +576,7 @@ func testNewOrderAddedToTheBook(t *testing.T) {
 				Remaining: 5,
 				Party:     partyB,
 				Side:      types.SideSell,
-				Price:     num.Zero(),
+				Price:     num.UintZero(),
 			},
 			expectedBuy:  0,
 			expectedSell: 21,
@@ -613,14 +613,14 @@ func testNewTradePartialAmountOfExistingOrderTraded(t *testing.T) {
 				Remaining: 10,
 				Party:     partyA,
 				Side:      types.SideBuy,
-				Price:     num.Zero(),
+				Price:     num.UintZero(),
 			},
 			{
 				Size:      16,
 				Remaining: 16,
 				Party:     partyB,
 				Side:      types.SideSell,
-				Price:     num.Zero(),
+				Price:     num.UintZero(),
 			},
 		},
 		expects: map[string]struct {
@@ -707,14 +707,14 @@ func testTradeCauseTheFullAmountOfOrderToTrade(t *testing.T) {
 				Remaining: 10,
 				Party:     partyA,
 				Side:      types.SideBuy,
-				Price:     num.Zero(),
+				Price:     num.UintZero(),
 			},
 			{
 				Size:      10,
 				Remaining: 10,
 				Party:     partyB,
 				Side:      types.SideSell,
-				Price:     num.Zero(),
+				Price:     num.UintZero(),
 			},
 		},
 		expects: map[string]struct {
@@ -801,14 +801,14 @@ func testOrderCancelled(t *testing.T) {
 				Remaining: 10,
 				Party:     partyA,
 				Side:      types.SideBuy,
-				Price:     num.Zero(),
+				Price:     num.UintZero(),
 			},
 			{
 				Size:      10,
 				Remaining: 10,
 				Party:     partyB,
 				Side:      types.SideSell,
-				Price:     num.Zero(),
+				Price:     num.UintZero(),
 			},
 		},
 		expects: map[string]struct {
@@ -860,14 +860,14 @@ func testOrderCancelled(t *testing.T) {
 				Remaining: 10,
 				Party:     partyA,
 				Side:      types.SideBuy,
-				Price:     num.Zero(),
+				Price:     num.UintZero(),
 			},
 			{
 				Size:      10,
 				Remaining: 10,
 				Party:     partyB,
 				Side:      types.SideSell,
-				Price:     num.Zero(),
+				Price:     num.UintZero(),
 			},
 		},
 		expects: map[string]struct {

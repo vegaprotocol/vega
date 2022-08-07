@@ -17,12 +17,12 @@ import (
 	"errors"
 	"testing"
 
-	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/core/txn"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/protos/vega"
 	"github.com/stretchr/testify/require"
 )
 

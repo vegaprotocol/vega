@@ -15,10 +15,10 @@ package events
 import (
 	"context"
 
-	vegapb "code.vegaprotocol.io/protos/vega"
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
 type RewardPayout struct {

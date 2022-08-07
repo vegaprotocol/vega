@@ -17,8 +17,8 @@ import (
 	"fmt"
 	"time"
 
-	ptypes "code.vegaprotocol.io/protos/vega"
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	ptypes "code.vegaprotocol.io/vega/protos/vega"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
 	"go.uber.org/zap"
 )

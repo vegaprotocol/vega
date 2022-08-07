@@ -17,9 +17,9 @@ import (
 	"fmt"
 	"strings"
 
-	proto "code.vegaprotocol.io/protos/vega"
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
+	proto "code.vegaprotocol.io/vega/protos/vega"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
 
 type LiquidityProvisionStatus = proto.LiquidityProvision_Status
@@ -119,7 +119,7 @@ func LiquidityProvisionSubmissionFromProto(p *commandspb.LiquidityProvisionSubmi
 		return nil, err
 	}
 
-	commitmentAmount := num.Zero()
+	commitmentAmount := num.UintZero()
 	if len(p.CommitmentAmount) > 0 {
 		var overflowed bool
 		commitmentAmount, overflowed = num.UintFromString(p.CommitmentAmount, 10)
@@ -242,7 +242,7 @@ func (l LiquidityProvision) IntoProto() *proto.LiquidityProvision {
 
 func LiquidityProvisionFromProto(p *proto.LiquidityProvision) (*LiquidityProvision, error) {
 	fee, _ := num.DecimalFromString(p.Fee)
-	commitmentAmount := num.Zero()
+	commitmentAmount := num.UintZero()
 	if len(p.CommitmentAmount) > 0 {
 		var overflowed bool
 		commitmentAmount, overflowed = num.UintFromString(p.CommitmentAmount, 10)
@@ -488,7 +488,7 @@ func LiquidityProvisionAmendmentFromProto(p *commandspb.LiquidityProvisionAmendm
 		return nil, err
 	}
 
-	commitmentAmount := num.Zero()
+	commitmentAmount := num.UintZero()
 	if len(p.CommitmentAmount) > 0 {
 		var overflowed bool
 		commitmentAmount, overflowed = num.UintFromString(p.CommitmentAmount, 10)
@@ -507,7 +507,7 @@ func LiquidityProvisionAmendmentFromProto(p *commandspb.LiquidityProvisionAmendm
 	}
 
 	for _, sell := range p.Sells {
-		offset := num.Zero()
+		offset := num.UintZero()
 
 		if len(p.CommitmentAmount) > 0 {
 			var overflowed bool
@@ -526,7 +526,7 @@ func LiquidityProvisionAmendmentFromProto(p *commandspb.LiquidityProvisionAmendm
 	}
 
 	for _, buy := range p.Buys {
-		offset := num.Zero()
+		offset := num.UintZero()
 
 		if len(p.CommitmentAmount) > 0 {
 			var overflowed bool

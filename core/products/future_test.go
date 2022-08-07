@@ -16,13 +16,13 @@ import (
 	"context"
 	"testing"
 
-	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/products"
 	"code.vegaprotocol.io/vega/core/products/mocks"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )

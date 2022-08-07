@@ -16,8 +16,8 @@ import (
 	"context"
 	"fmt"
 
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
 type TxErr struct {

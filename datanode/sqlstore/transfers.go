@@ -16,9 +16,9 @@ import (
 	"context"
 	"fmt"
 
-	v2 "code.vegaprotocol.io/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -166,7 +166,7 @@ func (t *Transfers) getTransfers(ctx context.Context, pagination entities.Cursor
 
 	cursorParams := []CursorQueryParameter{
 		NewCursorQueryParameter("vega_time", sorting, cmp, tc.VegaTime),
-		NewCursorQueryParameter("id", sorting, cmp, entities.NewWithdrawalID(tc.ID)),
+		NewCursorQueryParameter("id", sorting, cmp, entities.WithdrawalID(tc.ID)),
 	}
 
 	query := "select * from transfers_current " + where

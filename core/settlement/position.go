@@ -15,7 +15,7 @@ package settlement
 import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 
 	"github.com/pkg/errors"
 )
@@ -109,9 +109,9 @@ func (n npos) Price() *num.Uint {
 }
 
 func (npos) VWBuy() *num.Uint {
-	return num.Zero()
+	return num.UintZero()
 }
 
 func (npos) VWSell() *num.Uint {
-	return num.Zero()
+	return num.UintZero()
 }

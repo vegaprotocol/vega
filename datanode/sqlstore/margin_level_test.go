@@ -17,9 +17,9 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/protos/vega"
 	"github.com/jackc/pgx/v4"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
@@ -81,7 +81,7 @@ func setupMarginLevelTests(t *testing.T, ctx context.Context) (*testBlockSource,
 	assets := sqlstore.NewAssets(connectionSource)
 
 	testAsset := entities.Asset{
-		ID:            entities.AssetID{ID: entities.ID(testAssetId)},
+		ID:            testAssetId,
 		Name:          "testAssetName",
 		Symbol:        "tan",
 		TotalSupply:   decimal.NewFromInt(20),

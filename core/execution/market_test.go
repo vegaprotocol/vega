@@ -24,9 +24,6 @@ import (
 
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 
-	proto "code.vegaprotocol.io/protos/vega"
-	vegapb "code.vegaprotocol.io/protos/vega"
-	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/collateral"
 	"code.vegaprotocol.io/vega/core/events"
@@ -41,8 +38,11 @@ import (
 	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/settlement"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	proto "code.vegaprotocol.io/vega/protos/vega"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
+	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -360,7 +360,7 @@ func getTestMarket2WithDP(
 		ID: "ETH",
 		Details: &types.AssetDetails{
 			Symbol:      "ETH",
-			TotalSupply: num.Zero(),
+			TotalSupply: num.UintZero(),
 			Decimals:    0, // no decimals
 			Quantum:     num.DecimalZero(),
 		},
@@ -2112,7 +2112,7 @@ func TestTriggerByMarketOrder(t *testing.T) {
 		Party:     party1,
 		MarketID:  tm.market.GetID(),
 		Size:      4,
-		Price:     num.Zero(),
+		Price:     num.UintZero(),
 		Remaining: 4,
 		CreatedAt: now.UnixNano(),
 		Reference: "party1-buy-order-2",
@@ -5556,7 +5556,7 @@ func Test3008CancelLiquidityProvisionWhenTargetStakeNotReached(t *testing.T) {
 		tpl.New(types.Order{
 			Size:        20,
 			Remaining:   20,
-			Price:       num.Zero().Sub(num.NewUint(5000), partyB.pegOffset), // 4000
+			Price:       num.UintZero().Sub(num.NewUint(5000), partyB.pegOffset), // 4000
 			Side:        types.SideSell,
 			Party:       "party-1",
 			TimeInForce: types.OrderTimeInForceGFA,
@@ -5708,7 +5708,7 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 		tpl.New(types.Order{
 			Size:        20,
 			Remaining:   20,
-			Price:       num.Zero().Sub(num.NewUint(5500), partyA.pegOffset), // 3500
+			Price:       num.UintZero().Sub(num.NewUint(5500), partyA.pegOffset), // 3500
 			Side:        types.SideBuy,
 			Party:       "party-0",
 			TimeInForce: types.OrderTimeInForceGFA,
@@ -5716,7 +5716,7 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 		tpl.New(types.Order{
 			Size:        20,
 			Remaining:   20,
-			Price:       num.Zero().Sub(num.NewUint(5000), partyB.pegOffset), // 4000
+			Price:       num.UintZero().Sub(num.NewUint(5000), partyB.pegOffset), // 4000
 			Side:        types.SideSell,
 			Party:       "party-1",
 			TimeInForce: types.OrderTimeInForceGFA,
@@ -6205,7 +6205,7 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 		tpl.New(types.Order{
 			Size:        20,
 			Remaining:   20,
-			Price:       num.Zero().Sub(num.NewUint(5000), partyB.pegOffset), // 4000
+			Price:       num.UintZero().Sub(num.NewUint(5000), partyB.pegOffset), // 4000
 			Side:        types.SideSell,
 			Party:       "party-1",
 			TimeInForce: types.OrderTimeInForceGFA,

@@ -19,9 +19,9 @@ import (
 	"testing"
 	"time"
 
-	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 	"github.com/jackc/pgx/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -259,7 +259,7 @@ func createOracleSpecPaginationTestData(t *testing.T, ctx context.Context, bs *s
 		pubKey, err := hex.DecodeString(generateID())
 		require.NoError(t, err)
 		spec := entities.OracleSpec{
-			ID:         entities.NewSpecID(fmt.Sprintf("deadbeef%02d", i+1)),
+			ID:         entities.SpecID(fmt.Sprintf("deadbeef%02d", i+1)),
 			CreatedAt:  time.Now().Truncate(time.Microsecond),
 			UpdatedAt:  time.Now().Truncate(time.Microsecond),
 			PublicKeys: entities.PublicKeys{pubKey},

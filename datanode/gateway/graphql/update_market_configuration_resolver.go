@@ -17,7 +17,7 @@ import (
 	"errors"
 	"strconv"
 
-	"code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/protos/vega"
 )
 
 type updateMarketConfigurationResolver VegaResolverRoot

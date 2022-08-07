@@ -22,15 +22,15 @@ import (
 
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 
-	proto "code.vegaprotocol.io/protos/vega"
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/liquidity"
 	"code.vegaprotocol.io/vega/core/liquidity/mocks"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/num"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	proto "code.vegaprotocol.io/vega/protos/vega"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -247,7 +247,7 @@ func TestInitialDeployFailsWorksLater(t *testing.T) {
 	}
 
 	// Expectations
-	tng.priceMonitor.EXPECT().GetValidPriceRange().Return(num.NewWrappedDecimal(num.Zero(), num.DecimalZero()), num.NewWrappedDecimal(num.NewUint(100), num.DecimalFromInt64(100))).AnyTimes()
+	tng.priceMonitor.EXPECT().GetValidPriceRange().Return(num.NewWrappedDecimal(num.UintZero(), num.DecimalZero()), num.NewWrappedDecimal(num.NewUint(100), num.DecimalFromInt64(100))).AnyTimes()
 	any := gomock.Any()
 	tng.riskModel.EXPECT().ProbabilityOfTrading(
 		any, any, any, any, any, any, any,
@@ -440,7 +440,7 @@ func TestUpdate(t *testing.T) {
 	}
 
 	// Expectations
-	tng.priceMonitor.EXPECT().GetValidPriceRange().Return(num.NewWrappedDecimal(num.Zero(), num.DecimalZero()), num.NewWrappedDecimal(num.NewUint(100), num.DecimalFromInt64(100))).AnyTimes()
+	tng.priceMonitor.EXPECT().GetValidPriceRange().Return(num.NewWrappedDecimal(num.UintZero(), num.DecimalZero()), num.NewWrappedDecimal(num.NewUint(100), num.DecimalFromInt64(100))).AnyTimes()
 	any := gomock.Any()
 	tng.riskModel.EXPECT().ProbabilityOfTrading(
 		any, any, any, any, any, any, any,

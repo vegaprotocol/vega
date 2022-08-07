@@ -19,9 +19,9 @@ import (
 
 	"github.com/jinzhu/copier"
 
-	types "code.vegaprotocol.io/protos/vega"
-	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/core/integration/steps/market/defaults"
+	types "code.vegaprotocol.io/vega/protos/vega"
+	oraclesv1 "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 )
 
 var (
