@@ -419,6 +419,25 @@ pipeline {
                     }
                 }
 
+                stage('mocks check') {
+                    steps {
+                        dir('vega') {
+                            sh '''#!/bin/bash -e
+                                make mocks_check
+                            '''
+                        }
+                    }
+                    post {
+                        failure {
+                            sh 'printenv'
+                            echo "params=${params}"
+                            dir('vega') {
+                                sh 'git diff'
+                            }
+                        }
+                    }
+                }
+
                 //
                 // Build docker images during system-tests
                 //

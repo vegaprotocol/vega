@@ -31,6 +31,18 @@ race: ## Run data race detector
 mocks: ## Make mocks
 	go generate ./...
 
+.PHONY: mocks_check
+mocks_check: ## mocks: Check committed files match just-generated files
+# TODO: how to delete all generated files
+#	@make proto_clean 1>/dev/null
+	@make mocks 1>/dev/null
+	@files="$$(git diff --name-only)" ; \
+	if test -n "$$files" ; then \
+		echo "Committed files do not match just-generated files: " $$files ; \
+		test -n "$(CI)" && git diff vega/ ; \
+		exit 1 ; \
+	fi
+
 .PHONY: build
 build: ## install the binaries in cmd/{progname}/
 	go build -o cmd/vega ./cmd/vega
