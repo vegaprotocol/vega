@@ -2723,10 +2723,10 @@ enum MarketTradingMode {
 "Whether the placer of an order is aiming to buy or sell on the market"
 enum Side {
   "The placer of the order is aiming to buy"
-  Buy
+  SIDE_BUY
 
   "The placer of the order is aiming to sell"
-  Sell
+  SIDE_SELL
 }
 
 "The interval for trade candles when subscribing via Vega GraphQL, default is I15M"

@@ -1930,50 +1930,6 @@ func (e ProposalType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-// Whether the placer of an order is aiming to buy or sell on the market
-type Side string
-
-const (
-	// The placer of the order is aiming to buy
-	SideBuy Side = "Buy"
-	// The placer of the order is aiming to sell
-	SideSell Side = "Sell"
-)
-
-var AllSide = []Side{
-	SideBuy,
-	SideSell,
-}
-
-func (e Side) IsValid() bool {
-	switch e {
-	case SideBuy, SideSell:
-		return true
-	}
-	return false
-}
-
-func (e Side) String() string {
-	return string(e)
-}
-
-func (e *Side) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = Side(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid Side", str)
-	}
-	return nil
-}
-
-func (e Side) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
 // The status of the stake linking
 type StakeLinkingStatus string
 

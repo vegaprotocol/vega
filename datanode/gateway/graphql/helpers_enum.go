@@ -637,31 +637,31 @@ func convertOrderRejectionReasonFromProto(x types.OrderError) (OrderRejectionRea
 	}
 }
 
-// convertSideToProto converts a GraphQL enum to a Proto enum.
-func convertSideToProto(x Side) (types.Side, error) {
-	switch x {
-	case SideBuy:
-		return types.Side_SIDE_BUY, nil
-	case SideSell:
-		return types.Side_SIDE_SELL, nil
-	default:
-		err := fmt.Errorf("failed to convert Side from GraphQL to Proto: %v", x)
-		return types.Side_SIDE_UNSPECIFIED, err
-	}
-}
+// // convertSideToProto converts a GraphQL enum to a Proto enum.
+// func convertSideToProto(x Side) (types.Side, error) {
+// 	switch x {
+// 	case SideBuy:
+// 		return types.Side_SIDE_BUY, nil
+// 	case SideSell:
+// 		return types.Side_SIDE_SELL, nil
+// 	default:
+// 		err := fmt.Errorf("failed to convert Side from GraphQL to Proto: %v", x)
+// 		return types.Side_SIDE_UNSPECIFIED, err
+// 	}
+// }
 
-// convertSideFromProto converts a Proto enum to a GraphQL enum.
-func convertSideFromProto(x types.Side) (Side, error) {
-	switch x {
-	case types.Side_SIDE_BUY:
-		return SideBuy, nil
-	case types.Side_SIDE_SELL:
-		return SideSell, nil
-	default:
-		err := fmt.Errorf("failed to convert Side from Proto to GraphQL: %v", x)
-		return SideBuy, err
-	}
-}
+// // convertSideFromProto converts a Proto enum to a GraphQL enum.
+// func convertSideFromProto(x types.Side) (Side, error) {
+// 	switch x {
+// 	case types.Side_SIDE_BUY:
+// 		return SideBuy, nil
+// 	case types.Side_SIDE_SELL:
+// 		return SideSell, nil
+// 	default:
+// 		err := fmt.Errorf("failed to convert Side from Proto to GraphQL: %v", x)
+// 		return SideBuy, err
+// 	}
+// }
 
 func convertPeggedReferenceFromProto(x types.PeggedReference) (PeggedReference, error) {
 	switch x {
