@@ -959,14 +959,14 @@ type RewardScore {
   "The normalised score of the validator"
   normalisedScore: String!
   "The status of the validator for this score"
-  validatorStatus: String!
+  validatorStatus: ValidatorStatus!
 }
 
 type RankingScore {
   "The current validation status of the validator"
-  status: String!
+  status: ValidatorStatus!
   "The former validation status of the validator"
-  previousStatus: String!
+  previousStatus: ValidatorStatus!
   "The ranking score of the validator"
   rankingScore: String!
   "The stake based score of the validator (no anti-whaling)"
@@ -975,6 +975,15 @@ type RankingScore {
   performanceScore: String!
   "The Tendermint voting power of the validator (uint32)"
   votingPower: String!
+}
+
+enum ValidatorStatus {
+  "The node is taking part in Tendermint consensus"
+  VALIDATOR_NODE_STATUS_TENDERMINT
+  "The node is a candidate to become a Tendermint validator if a slot is made available"
+  VALIDATOR_NODE_STATUS_ERSATZ
+  "The node is pending to be promoted to Ersatz"
+  VALIDATOR_NODE_STATUS_PENDING
 }
 
 type Delegation {

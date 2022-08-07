@@ -92,7 +92,6 @@ type ResolverRoot interface {
 	RecurringTransfer() RecurringTransferResolver
 	Reward() RewardResolver
 	RewardPerAssetDetail() RewardPerAssetDetailResolver
-	RewardScore() RewardScoreResolver
 	RewardSummary() RewardSummaryResolver
 	StakeLinking() StakeLinkingResolver
 	Statistics() StatisticsResolver
@@ -1878,9 +1877,6 @@ type QueryResolver interface {
 	GetMarketDataHistoryConnectionByID(ctx context.Context, id string, start *int, end *int, pagination *v2.Pagination) (*v2.MarketDataConnection, error)
 }
 type RankingScoreResolver interface {
-	Status(ctx context.Context, obj *vega.RankingScore) (string, error)
-	PreviousStatus(ctx context.Context, obj *vega.RankingScore) (string, error)
-
 	VotingPower(ctx context.Context, obj *vega.RankingScore) (string, error)
 }
 type RecurringTransferResolver interface {
@@ -1903,9 +1899,6 @@ type RewardPerAssetDetailResolver interface {
 
 	Rewards(ctx context.Context, obj *vega.RewardSummary) ([]*vega.Reward, error)
 	TotalAmount(ctx context.Context, obj *vega.RewardSummary) (string, error)
-}
-type RewardScoreResolver interface {
-	ValidatorStatus(ctx context.Context, obj *vega.RewardScore) (string, error)
 }
 type RewardSummaryResolver interface {
 	Asset(ctx context.Context, obj *vega.RewardSummary) (*vega.Asset, error)
@@ -9409,14 +9402,14 @@ type RewardScore {
   "The normalised score of the validator"
   normalisedScore: String!
   "The status of the validator for this score"
-  validatorStatus: String!
+  validatorStatus: ValidatorStatus!
 }
 
 type RankingScore {
   "The current validation status of the validator"
-  status: String!
+  status: ValidatorStatus!
   "The former validation status of the validator"
-  previousStatus: String!
+  previousStatus: ValidatorStatus!
   "The ranking score of the validator"
   rankingScore: String!
   "The stake based score of the validator (no anti-whaling)"
@@ -9425,6 +9418,15 @@ type RankingScore {
   performanceScore: String!
   "The Tendermint voting power of the validator (uint32)"
   votingPower: String!
+}
+
+enum ValidatorStatus {
+  "The node is taking part in Tendermint consensus"
+  VALIDATOR_NODE_STATUS_TENDERMINT
+  "The node is a candidate to become a Tendermint validator if a slot is made available"
+  VALIDATOR_NODE_STATUS_ERSATZ
+  "The node is pending to be promoted to Ersatz"
+  VALIDATOR_NODE_STATUS_PENDING
 }
 
 type Delegation {
@@ -36743,14 +36745,14 @@ func (ec *executionContext) _RankingScore_status(ctx context.Context, field grap
 		Object:     "RankingScore",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.RankingScore().Status(rctx, obj)
+		return obj.Status, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -36762,9 +36764,9 @@ func (ec *executionContext) _RankingScore_status(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(vega.ValidatorNodeStatus)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNValidatorStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐValidatorNodeStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RankingScore_previousStatus(ctx context.Context, field graphql.CollectedField, obj *vega.RankingScore) (ret graphql.Marshaler) {
@@ -36778,14 +36780,14 @@ func (ec *executionContext) _RankingScore_previousStatus(ctx context.Context, fi
 		Object:     "RankingScore",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.RankingScore().PreviousStatus(rctx, obj)
+		return obj.PreviousStatus, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -36797,9 +36799,9 @@ func (ec *executionContext) _RankingScore_previousStatus(ctx context.Context, fi
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(vega.ValidatorNodeStatus)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNValidatorStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐValidatorNodeStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RankingScore_rankingScore(ctx context.Context, field graphql.CollectedField, obj *vega.RankingScore) (ret graphql.Marshaler) {
@@ -37749,14 +37751,14 @@ func (ec *executionContext) _RewardScore_validatorStatus(ctx context.Context, fi
 		Object:     "RewardScore",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.RewardScore().ValidatorStatus(rctx, obj)
+		return obj.ValidatorStatus, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -37768,9 +37770,9 @@ func (ec *executionContext) _RewardScore_validatorStatus(ctx context.Context, fi
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(vega.ValidatorNodeStatus)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNValidatorStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐValidatorNodeStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RewardSummary_asset(ctx context.Context, field graphql.CollectedField, obj *vega.RewardSummary) (ret graphql.Marshaler) {
@@ -57150,45 +57152,25 @@ func (ec *executionContext) _RankingScore(ctx context.Context, sel ast.Selection
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("RankingScore")
 		case "status":
-			field := field
-
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._RankingScore_status(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+				return ec._RankingScore_status(ctx, field, obj)
 			}
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
+			out.Values[i] = innerFunc(ctx)
 
-			})
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "previousStatus":
-			field := field
-
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._RankingScore_previousStatus(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+				return ec._RankingScore_previousStatus(ctx, field, obj)
 			}
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
+			out.Values[i] = innerFunc(ctx)
 
-			})
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "rankingScore":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._RankingScore_rankingScore(ctx, field, obj)
@@ -57633,7 +57615,7 @@ func (ec *executionContext) _RewardScore(ctx context.Context, sel ast.SelectionS
 			out.Values[i] = innerFunc(ctx)
 
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "performanceScore":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -57643,7 +57625,7 @@ func (ec *executionContext) _RewardScore(ctx context.Context, sel ast.SelectionS
 			out.Values[i] = innerFunc(ctx)
 
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "multisigScore":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -57653,7 +57635,7 @@ func (ec *executionContext) _RewardScore(ctx context.Context, sel ast.SelectionS
 			out.Values[i] = innerFunc(ctx)
 
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "validatorScore":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -57663,7 +57645,7 @@ func (ec *executionContext) _RewardScore(ctx context.Context, sel ast.SelectionS
 			out.Values[i] = innerFunc(ctx)
 
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "normalisedScore":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -57673,28 +57655,18 @@ func (ec *executionContext) _RewardScore(ctx context.Context, sel ast.SelectionS
 			out.Values[i] = innerFunc(ctx)
 
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "validatorStatus":
-			field := field
-
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._RewardScore_validatorStatus(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+				return ec._RewardScore_validatorStatus(ctx, field, obj)
 			}
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
+			out.Values[i] = innerFunc(ctx)
 
-			})
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -63814,6 +63786,21 @@ func (ec *executionContext) marshalNUpdateMarketRiskParameters2codeᚗvegaprotoc
 		return graphql.Null
 	}
 	return ec._UpdateMarketRiskParameters(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNValidatorStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐValidatorNodeStatus(ctx context.Context, v interface{}) (vega.ValidatorNodeStatus, error) {
+	res, err := marshallers.UnmarshalValidatorStatus(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNValidatorStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐValidatorNodeStatus(ctx context.Context, sel ast.SelectionSet, v vega.ValidatorNodeStatus) graphql.Marshaler {
+	res := marshallers.MarshalValidatorStatus(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
 }
 
 func (ec *executionContext) marshalNVote2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐVote(ctx context.Context, sel ast.SelectionSet, v *vega.Vote) graphql.Marshaler {
