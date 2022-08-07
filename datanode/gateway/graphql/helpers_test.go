@@ -103,20 +103,6 @@ func TestParseOrderTimeInForce(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestParseSide(t *testing.T) {
-	buy := SideBuy
-	side, err := convertSideToProto(buy)
-	assert.Nil(t, err)
-	assert.Equal(t, types.Side_SIDE_BUY, side)
-	sell := SideSell
-	side, err = convertSideToProto(sell)
-	assert.Nil(t, err)
-	assert.Equal(t, types.Side_SIDE_SELL, side)
-	unknown := Side("好到时候")
-	_, err = convertSideToProto(unknown)
-	assert.Error(t, err)
-}
-
 func TestSecondsTSToDatetime(t *testing.T) {
 	aTime := "2020-05-30T00:00:00Z"
 	testTime, err := time.Parse(time.RFC3339Nano, aTime)

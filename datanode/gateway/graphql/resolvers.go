@@ -29,6 +29,7 @@ import (
 	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/vega/protos/vega"
+	vega "code.vegaprotocol.io/vega/protos/vega"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
@@ -652,7 +653,7 @@ func (r *myQueryResolver) Deposit(ctx context.Context, did string) (*types.Depos
 	return res.Deposit, nil
 }
 
-func (r *myQueryResolver) EstimateOrder(ctx context.Context, market, party string, price *string, size string, side Side,
+func (r *myQueryResolver) EstimateOrder(ctx context.Context, market, party string, price *string, size string, side vega.Side,
 	timeInForce OrderTimeInForce, expiration *string, ty OrderType,
 ) (*OrderEstimate, error) {
 	order := &types.Order{}
@@ -680,9 +681,7 @@ func (r *myQueryResolver) EstimateOrder(ctx context.Context, market, party strin
 	if order.TimeInForce, err = convertOrderTimeInForceToProto(timeInForce); err != nil {
 		return nil, err
 	}
-	if order.Side, err = convertSideToProto(side); err != nil {
-		return nil, err
-	}
+	order.Side = side
 	if order.Type, err = convertOrderTypeToProto(ty); err != nil {
 		return nil, err
 	}
@@ -1899,10 +1898,6 @@ func (r *myOrderResolver) Type(ctx context.Context, obj *types.Order) (*OrderTyp
 	return &t, nil
 }
 
-func (r *myOrderResolver) Side(ctx context.Context, obj *types.Order) (Side, error) {
-	return convertSideFromProto(obj.Side)
-}
-
 func (r *myOrderResolver) Market(ctx context.Context, obj *types.Order) (*types.Market, error) {
 	return r.r.getMarketByID(ctx, obj.MarketId)
 }
@@ -2015,10 +2010,6 @@ type myTradeResolver VegaResolverRoot
 
 func (r *myTradeResolver) Market(ctx context.Context, obj *types.Trade) (*types.Market, error) {
 	return r.r.getMarketByID(ctx, obj.MarketId)
-}
-
-func (r *myTradeResolver) Aggressor(ctx context.Context, obj *types.Trade) (Side, error) {
-	return Side(obj.Aggressor.String()), nil
 }
 
 func (r *myTradeResolver) Price(ctx context.Context, obj *types.Trade) (string, error) {

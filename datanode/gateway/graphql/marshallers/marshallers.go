@@ -6,12 +6,13 @@ import (
 	"strconv"
 
 	"code.vegaprotocol.io/vega/protos/vega"
+
 	"github.com/99designs/gqlgen/graphql"
 )
 
-func MarshalSide(t vega.Side) graphql.Marshaler {
+func MarshalSide(s vega.Side) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
-		w.Write([]byte(strconv.Quote(t.String())))
+		w.Write([]byte(strconv.Quote(s.String())))
 	})
 }
 
