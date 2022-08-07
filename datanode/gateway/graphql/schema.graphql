@@ -2032,6 +2032,15 @@ type Party {
 
   "return reward information"
   rewardDetails: [RewardPerAssetDetail] @deprecated(reason: "Use rewardSummaries or rewards instead.")
+
+  "get a list of all transfers for a public key"
+  transfersConnection(
+    "direction of the transfer with respect to the public key"
+    direction: TransferDirection
+    "Pagination information"
+    pagination: Pagination
+  ): TransferConnection!
+
 }
 
 """
