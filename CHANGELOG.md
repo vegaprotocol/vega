@@ -48,6 +48,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5683](https://github.com/vegaprotocol/vega/issues/5683) - Made market mandatory in `GraphQL` for order
 - [5677](https://github.com/vegaprotocol/vega/issues/5677) - Fixed trading mode status
 - [5663](https://github.com/vegaprotocol/vega/issues/5663) - Fixed panic with de-registering positions
+- [5781](https://github.com/vegaprotocol/vega/issues/5781) - Make enactment timestamp optional in proposal for `graphql`
 
 ## 0.53.0
 
