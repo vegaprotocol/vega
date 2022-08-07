@@ -43,6 +43,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5685](https://github.com/vegaprotocol/vega/issues/5685) - Migrated `apis` from `datanode v1` to `datanode v2`
 - [5761](https://github.com/vegaprotocol/vega/issues/5761) - Transfers connection make direction optional
 - [5762](https://github.com/vegaprotocol/vega/issues/5762) - Transfers connection add under `party` type
+- [5685](https://github.com/vegaprotocol/vega/issues/5685) - Migrated `apis` from `datanode v1` to `datanode v2`
 
 ### 🐛 Fixes
 - [5571](https://github.com/vegaprotocol/vega/issues/5571) - Restore pending assets status correctly after snapshot restore
@@ -65,6 +66,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5767](https://github.com/vegaprotocol/vega/issues/5767) - Fix typo in command validation
 - [5825](https://github.com/vegaprotocol/vega/issues/5825) - Fix panic in pegged orders when going into auction
 - [5763](https://github.com/vegaprotocol/vega/issues/5763) - Transfers connection rename `pubkey` to `partyId`
+- [5486](https://github.com/vegaprotocol/vega/issues/5486) - Fix amend order expiring
 
 ## 0.53.0
 
