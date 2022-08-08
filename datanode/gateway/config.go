@@ -36,6 +36,7 @@ type GraphqlServiceConfig struct {
 	AutoCertDomain  string        `long:"auto-cert-domain" description:"Automatically generate and sign https certificate via LetsEncrypt"`
 	CertificateFile string        `long:"certificate-file" description:"Path to SSL certificate, if using HTTPS but not autocert"`
 	KeyFile         string        `long:"key-file" description:"Path to private key, if using HTTPS but not autocert"`
+	Endpoint        string        `long:"endpoint" description:"Endpoint to expose the graphql API at"`
 }
 
 // RESTGatewayServiceConfig represent the configuration of the rest service.
@@ -69,6 +70,7 @@ func NewDefaultConfig() Config {
 			},
 			Enabled:      true,
 			HTTPSEnabled: false,
+			Endpoint:     "/graphql",
 		},
 		REST: RESTGatewayServiceConfig{
 			ServerConfig: ServerConfig{
