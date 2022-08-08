@@ -24,7 +24,7 @@ func assertRequestNotPermittedError(t *testing.T, errorDetails *jsonrpc.ErrorDet
 	t.Helper()
 	require.NotNil(t, errorDetails)
 	assert.Equal(t, api.ErrorCodeRequestNotPermitted, errorDetails.Code)
-	assert.Equal(t, "Client error", errorDetails.Message)
+	assert.Equal(t, "Application error", errorDetails.Message)
 	assert.Equal(t, expectedErr.Error(), errorDetails.Data)
 }
 
