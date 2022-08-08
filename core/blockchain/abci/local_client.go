@@ -2,13 +2,13 @@ package abci
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	tmquery "github.com/tendermint/tendermint/libs/pubsub/query"
 	"github.com/tendermint/tendermint/libs/service"
+	nm "github.com/tendermint/tendermint/node"
 	"github.com/tendermint/tendermint/rpc/client/local"
-	tmctypes "github.com/tendermint/tendermint/rpc/coretypes"
+	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
@@ -17,11 +17,7 @@ type LocalClient struct {
 }
 
 func newLocalClient(node service.Service) (*LocalClient, error) {
-	localNode, err := local.New(node.(local.NodeService))
-	if err != nil {
-		return nil, fmt.Errorf("could not instantiate client: %w", err)
-	}
-
+	localNode := local.New(node.(*nm.Node))
 	return &LocalClient{
 		node: localNode,
 	}, nil

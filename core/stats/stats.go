@@ -41,7 +41,7 @@ func New(log *logging.Logger, cfg Config) *Stats {
 		Blockchain:   &Blockchain{},
 		version:      version.Get(),
 		versionHash:  version.GetCommitHash(),
-		chainVersion: tmversion.TMVersion,
+		chainVersion: tmversion.TMCoreSemVer,
 		uptime:       time.Now(),
 	}
 }

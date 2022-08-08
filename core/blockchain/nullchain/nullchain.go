@@ -31,9 +31,10 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 
 	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/p2p"
 	"github.com/tendermint/tendermint/proto/tendermint/crypto"
 	"github.com/tendermint/tendermint/proto/tendermint/types"
-	tmctypes "github.com/tendermint/tendermint/rpc/coretypes"
+	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
@@ -298,7 +299,7 @@ func (n *NullBlockchain) GetChainID(context.Context) (string, error) {
 
 func (n *NullBlockchain) GetStatus(context.Context) (*tmctypes.ResultStatus, error) {
 	return &tmctypes.ResultStatus{
-		NodeInfo: tmtypes.NodeInfo{
+		NodeInfo: p2p.DefaultNodeInfo{
 			Version: "0.35.8",
 		},
 		SyncInfo: tmctypes.SyncInfo{
