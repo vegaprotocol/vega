@@ -1319,6 +1319,8 @@ message ListGovernanceDataRequest {
         TYPE_NEW_ASSET = 5;
         // Proposals for creating a new free form proposal
         TYPE_NEW_FREE_FORM = 6;
+        // Update asset proposals
+      TYPE_UPDATE_ASSET = 7;
     }
     optional vega.Proposal.State proposal_state = 1;
     optional Type proposal_type = 2;

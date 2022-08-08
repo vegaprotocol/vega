@@ -18,6 +18,7 @@ func (Market) IsEvent()                                                   {}
 func (Future) IsProduct()                                                 {}
 func (NewMarket) IsProposalChange()                                       {}
 func (NewAsset) IsProposalChange()                                        {}
+func (UpdateAsset) IsProposalChange()                                     {}
 func (UpdateMarket) IsProposalChange()                                    {}
 func (UpdateNetworkParameter) IsProposalChange()                          {}
 func (NewFreeform) IsProposalChange()                                     {}
