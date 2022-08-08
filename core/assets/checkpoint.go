@@ -71,12 +71,13 @@ func (s *Service) Load(ctx context.Context, cp []byte) error {
 		}
 		pa, _ := s.Get(a.Id)
 		if s.isValidator {
-			if err := pa.Validate(); err != nil {
+			if err := s.validateAsset(pa); err != nil {
 				return err
 			}
-		} else {
-			pa.SetValidNonValidator()
 		}
+		// always valid now
+		pa.SetValid()
+
 		if err := s.Enable(ctx, id); err != nil {
 			return err
 		}

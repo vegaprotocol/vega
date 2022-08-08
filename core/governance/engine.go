@@ -76,6 +76,7 @@ type Assets interface {
 	IsEnabled(string) bool
 	SetRejected(ctx context.Context, assetID string) error
 	SetPendingListing(ctx context.Context, assetID string) error
+	ValidateAsset(assetID string) error
 }
 
 // TimeService ...

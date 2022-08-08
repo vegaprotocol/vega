@@ -32,6 +32,7 @@ func (e *Engine) Checkpoint() ([]byte, error) {
 	msg := &checkpoint.Banking{
 		TransfersAtTime:    e.getScheduledTransfers(),
 		RecurringTransfers: e.getRecurringTransfers(),
+		BridgeState:        e.getBridgeState(),
 	}
 	ret, err := proto.Marshal(msg)
 	if err != nil {
@@ -53,11 +54,31 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 
 	evts = append(evts, e.loadRecurringTransfers(ctx, b.RecurringTransfers)...)
 
+	e.loadBridgeState(b.BridgeState)
+
 	if len(evts) > 0 {
 		e.broker.SendBatch(evts)
 	}
 
 	return nil
+}
+
+func (e *Engine) loadBridgeState(state *checkpoint.BridgeState) {
+	// this would eventually be nil if we restore from a checkpoint
+	// which have been produce from an old version of the core.
+	// we set it to active by default in the case
+	if state == nil {
+		e.bridgeState = &bridgeState{
+			active: true,
+		}
+		return
+	}
+
+	e.bridgeState = &bridgeState{
+		active:   state.Active,
+		block:    state.BlockHeight,
+		logIndex: state.LogIndex,
+	}
 }
 
 func (e *Engine) loadScheduledTransfers(
@@ -90,6 +111,14 @@ func (e *Engine) loadRecurringTransfers(
 		evts = append(evts, events.NewRecurringTransferFundsEvent(ctx, transfer))
 	}
 	return evts
+}
+
+func (e *Engine) getBridgeState() *checkpoint.BridgeState {
+	return &checkpoint.BridgeState{
+		Active:      e.bridgeState.active,
+		BlockHeight: e.bridgeState.block,
+		LogIndex:    e.bridgeState.logIndex,
+	}
 }
 
 func (e *Engine) getRecurringTransfers() *checkpoint.RecurringTransfers {

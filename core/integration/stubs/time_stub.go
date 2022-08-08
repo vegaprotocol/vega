@@ -47,9 +47,7 @@ func (t *TimeStub) SetTime(newNow time.Time) {
 }
 
 func (t *TimeStub) NotifyOnTick(scbs ...func(context.Context, time.Time)) {
-	for _, scb := range scbs {
-		t.subscribers = append(t.subscribers, scb)
-	}
+	t.subscribers = append(t.subscribers, scbs...)
 }
 
 func (t *TimeStub) notify(context context.Context, newTime time.Time) {

@@ -30,19 +30,13 @@ type isAsset interface {
 	GetAssetClass() common.AssetClass
 	// IsValid is the order valid / validated with the target chain?
 	IsValid() bool
-	// Validate is used to check if the assets
-	// are present on the target chain
-	Validate() error
-	// SetValidNonValidator will set an asset as valid
-	// without running actual validation, this is used in the
-	// context of a non-validator node.
-	SetValidNonValidator()
 	// SetPendingListing Update the state of the asset to pending for listing
 	// on an external bridge
 	SetPendingListing()
 	// SetRejected Update the state of the asset to rejected
 	SetRejected()
 	SetEnabled()
+	SetValid()
 	String() string
 }
 

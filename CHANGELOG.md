@@ -30,6 +30,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5636](https://github.com/vegaprotocol/vega/issues/5636) - Assure no false positives in cucumber steps
 - [5011](https://github.com/vegaprotocol/vega/issues/5011) - Import the `protos` repo in the vega repo
 - [5774](https://github.com/vegaprotocol/vega/issues/5774) - Use `generics` for `ID` types
+- [5785](https://github.com/vegaprotocol/vega/issues/5785) - Add support form `ERC20` bridge stopped and resumed events
 
 - [5685](https://github.com/vegaprotocol/vega/issues/5685) - Migrated `apis` from `datanode v1` to `datanode v2`
 ### 🐛 Fixes
