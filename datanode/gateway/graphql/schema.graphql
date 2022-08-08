@@ -1320,13 +1320,13 @@ type OracleSpec {
 
 "Status describe the status of the oracle spec"
 enum OracleSpecStatus {
-  "StatusActive describes an active oracle spec."
-  StatusActive
+  "describes an active oracle spec."
+  STATUS_ACTIVE
   """
-  StatusUnused describes an oracle spec that is not listening to data
+  describes an oracle spec that is not listening to data
   anymore.
   """
-  StatusUnused
+  STATUS_DEACTIVATED
 }
 
 """

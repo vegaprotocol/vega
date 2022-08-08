@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 
 	"github.com/99designs/gqlgen/graphql"
 )
@@ -85,4 +86,14 @@ func MarshalNodeSignatureKind(s commandspb.NodeSignatureKind) graphql.Marshaler 
 
 func UnmarshalNodeSignatureKind(v interface{}) (commandspb.NodeSignatureKind, error) {
 	return commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_UNSPECIFIED, ErrUnimplemented
+}
+
+func MarshalOracleSpecStatus(s oraclespb.OracleSpec_Status) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalOracleSpecStatus(v interface{}) (oraclespb.OracleSpec_Status, error) {
+	return oraclespb.OracleSpec_STATUS_UNSPECIFIED, ErrUnimplemented
 }

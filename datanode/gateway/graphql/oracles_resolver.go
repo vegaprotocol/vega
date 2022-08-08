@@ -35,10 +35,6 @@ func (o *oracleSpecResolver) UpdatedAt(_ context.Context, obj *v1.OracleSpec) (*
 	return &formattedTime, nil
 }
 
-func (o oracleSpecResolver) Status(_ context.Context, obj *v1.OracleSpec) (OracleSpecStatus, error) {
-	return convertOracleSpecStatusFromProto(obj.Status)
-}
-
 func (o oracleSpecResolver) Data(ctx context.Context, obj *v1.OracleSpec) ([]*v1.OracleData, error) {
 	resp, err := o.tradingDataClient.OracleDataBySpec(ctx, &protoapi.OracleDataBySpecRequest{Id: obj.Id})
 	if err != nil {

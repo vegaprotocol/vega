@@ -1759,7 +1759,6 @@ type OracleSpecResolver interface {
 	CreatedAt(ctx context.Context, obj *v11.OracleSpec) (string, error)
 	UpdatedAt(ctx context.Context, obj *v11.OracleSpec) (*string, error)
 
-	Status(ctx context.Context, obj *v11.OracleSpec) (OracleSpecStatus, error)
 	Data(ctx context.Context, obj *v11.OracleSpec) ([]*v11.OracleData, error)
 	DataConnection(ctx context.Context, obj *v11.OracleSpec, pagination *v2.Pagination) (*v2.OracleDataConnection, error)
 }
@@ -9791,13 +9790,13 @@ type OracleSpec {
 
 "Status describe the status of the oracle spec"
 enum OracleSpecStatus {
-  "StatusActive describes an active oracle spec."
-  StatusActive
+  "describes an active oracle spec."
+  STATUS_ACTIVE
   """
-  StatusUnused describes an oracle spec that is not listening to data
+  describes an oracle spec that is not listening to data
   anymore.
   """
-  StatusUnused
+  STATUS_DEACTIVATED
 }
 
 """
@@ -29499,14 +29498,14 @@ func (ec *executionContext) _OracleSpec_status(ctx context.Context, field graphq
 		Object:     "OracleSpec",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.OracleSpec().Status(rctx, obj)
+		return obj.Status, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -29518,9 +29517,9 @@ func (ec *executionContext) _OracleSpec_status(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(OracleSpecStatus)
+	res := resTmp.(v11.OracleSpec_Status)
 	fc.Result = res
-	return ec.marshalNOracleSpecStatus2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐOracleSpecStatus(ctx, field.Selections, res)
+	return ec.marshalNOracleSpecStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpec_Status(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OracleSpec_data(ctx context.Context, field graphql.CollectedField, obj *v11.OracleSpec) (ret graphql.Marshaler) {
@@ -53381,25 +53380,15 @@ func (ec *executionContext) _OracleSpec(ctx context.Context, sel ast.SelectionSe
 			out.Values[i] = innerFunc(ctx)
 
 		case "status":
-			field := field
-
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._OracleSpec_status(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+				return ec._OracleSpec_status(ctx, field, obj)
 			}
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
+			out.Values[i] = innerFunc(ctx)
 
-			})
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "data":
 			field := field
 
@@ -62975,14 +62964,19 @@ func (ec *executionContext) marshalNOracleSpecConfiguration2ᚖcodeᚗvegaprotoc
 	return ec._OracleSpecConfiguration(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNOracleSpecStatus2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐOracleSpecStatus(ctx context.Context, v interface{}) (OracleSpecStatus, error) {
-	var res OracleSpecStatus
-	err := res.UnmarshalGQL(v)
+func (ec *executionContext) unmarshalNOracleSpecStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpec_Status(ctx context.Context, v interface{}) (v11.OracleSpec_Status, error) {
+	res, err := marshallers.UnmarshalOracleSpecStatus(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNOracleSpecStatus2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐOracleSpecStatus(ctx context.Context, sel ast.SelectionSet, v OracleSpecStatus) graphql.Marshaler {
-	return v
+func (ec *executionContext) marshalNOracleSpecStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpec_Status(ctx context.Context, sel ast.SelectionSet, v v11.OracleSpec_Status) graphql.Marshaler {
+	res := marshallers.MarshalOracleSpecStatus(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
 }
 
 func (ec *executionContext) marshalNOracleSpecToFutureBinding2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOracleSpecToFutureBinding(ctx context.Context, sel ast.SelectionSet, v *vega.OracleSpecToFutureBinding) graphql.Marshaler {

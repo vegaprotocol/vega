@@ -992,51 +992,6 @@ func (e MarketTradingMode) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-// Status describe the status of the oracle spec
-type OracleSpecStatus string
-
-const (
-	// StatusActive describes an active oracle spec.
-	OracleSpecStatusStatusActive OracleSpecStatus = "StatusActive"
-	// StatusUnused describes an oracle spec that is not listening to data
-	// anymore.
-	OracleSpecStatusStatusUnused OracleSpecStatus = "StatusUnused"
-)
-
-var AllOracleSpecStatus = []OracleSpecStatus{
-	OracleSpecStatusStatusActive,
-	OracleSpecStatusStatusUnused,
-}
-
-func (e OracleSpecStatus) IsValid() bool {
-	switch e {
-	case OracleSpecStatusStatusActive, OracleSpecStatusStatusUnused:
-		return true
-	}
-	return false
-}
-
-func (e OracleSpecStatus) String() string {
-	return string(e)
-}
-
-func (e *OracleSpecStatus) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = OracleSpecStatus(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid OracleSpecStatus", str)
-	}
-	return nil
-}
-
-func (e OracleSpecStatus) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
 // Reason for the order being rejected by the core node
 type OrderRejectionReason string
 
