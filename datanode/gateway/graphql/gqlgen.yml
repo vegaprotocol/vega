@@ -38,6 +38,9 @@ models:
   OracleSpecStatus:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.OracleSpecStatus
+  PropertyKeyType:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.PropertyKeyType
   Order:
     model: code.vegaprotocol.io/vega/protos/vega.Order
   PaginatedOrder:

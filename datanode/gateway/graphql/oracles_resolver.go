@@ -63,10 +63,6 @@ func (o oracleSpecResolver) DataConnection(ctx context.Context, spec *v1.OracleS
 
 type propertyKeyResolver VegaResolverRoot
 
-func (p propertyKeyResolver) Type(_ context.Context, obj *v1.PropertyKey) (PropertyKeyType, error) {
-	return convertPropertyKeyTypeFromProto(obj.Type)
-}
-
 type conditionResolver VegaResolverRoot
 
 func (c conditionResolver) Operator(_ context.Context, obj *v1.Condition) (ConditionOperator, error) {

@@ -103,27 +103,6 @@ func PriceMonitoringSettingsFromProto(ppmst *types.PriceMonitoringSettings) (*Pr
 }
 
 // IntoProto ...
-func (t PropertyKeyType) IntoProto() (oraclesv1.PropertyKey_Type, error) {
-	switch t {
-	case PropertyKeyTypeTypeEmpty:
-		return oraclesv1.PropertyKey_TYPE_EMPTY, nil
-	case PropertyKeyTypeTypeInteger:
-		return oraclesv1.PropertyKey_TYPE_INTEGER, nil
-	case PropertyKeyTypeTypeDecimal:
-		return oraclesv1.PropertyKey_TYPE_DECIMAL, nil
-	case PropertyKeyTypeTypeBoolean:
-		return oraclesv1.PropertyKey_TYPE_BOOLEAN, nil
-	case PropertyKeyTypeTypeTimestamp:
-		return oraclesv1.PropertyKey_TYPE_TIMESTAMP, nil
-	case PropertyKeyTypeTypeString:
-		return oraclesv1.PropertyKey_TYPE_STRING, nil
-	default:
-		err := fmt.Errorf("failed to convert PropertyKeyType from GraphQL to Proto: %v", t)
-		return oraclesv1.PropertyKey_TYPE_EMPTY, err
-	}
-}
-
-// IntoProto ...
 func (o ConditionOperator) IntoProto() (oraclesv1.Condition_Operator, error) {
 	switch o {
 	case ConditionOperatorOperatorEquals:

@@ -51,26 +51,6 @@ func convertStakeLinkingStatusFromProto(
 	}
 }
 
-func convertPropertyKeyTypeFromProto(t oraclesv1.PropertyKey_Type) (PropertyKeyType, error) {
-	switch t {
-	case oraclesv1.PropertyKey_TYPE_EMPTY:
-		return PropertyKeyTypeTypeEmpty, nil
-	case oraclesv1.PropertyKey_TYPE_INTEGER:
-		return PropertyKeyTypeTypeInteger, nil
-	case oraclesv1.PropertyKey_TYPE_DECIMAL:
-		return PropertyKeyTypeTypeDecimal, nil
-	case oraclesv1.PropertyKey_TYPE_BOOLEAN:
-		return PropertyKeyTypeTypeBoolean, nil
-	case oraclesv1.PropertyKey_TYPE_TIMESTAMP:
-		return PropertyKeyTypeTypeTimestamp, nil
-	case oraclesv1.PropertyKey_TYPE_STRING:
-		return PropertyKeyTypeTypeString, nil
-	default:
-		err := fmt.Errorf("failed to convert PropertyKeyType from Proto to GraphQL: %v", t)
-		return PropertyKeyTypeTypeEmpty, err
-	}
-}
-
 func convertConditionOperatorFromProto(o oraclesv1.Condition_Operator) (ConditionOperator, error) {
 	switch o {
 	case oraclesv1.Condition_OPERATOR_EQUALS:

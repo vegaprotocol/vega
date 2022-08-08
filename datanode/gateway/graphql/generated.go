@@ -88,7 +88,6 @@ type ResolverRoot interface {
 	PeggedOrder() PeggedOrderResolver
 	Position() PositionResolver
 	PriceLevel() PriceLevelResolver
-	PropertyKey() PropertyKeyResolver
 	Proposal() ProposalResolver
 	ProposalTerms() ProposalTermsResolver
 	Query() QueryResolver
@@ -1830,9 +1829,6 @@ type PositionResolver interface {
 type PriceLevelResolver interface {
 	Volume(ctx context.Context, obj *vega.PriceLevel) (string, error)
 	NumberOfOrders(ctx context.Context, obj *vega.PriceLevel) (string, error)
-}
-type PropertyKeyResolver interface {
-	Type(ctx context.Context, obj *v11.PropertyKey) (PropertyKeyType, error)
 }
 type ProposalResolver interface {
 	ID(ctx context.Context, obj *vega.GovernanceData) (*string, error)
@@ -9827,17 +9823,17 @@ engine.
 """
 enum PropertyKeyType {
   "Any type."
-  TypeEmpty
+  TYPE_EMPTY
   "Integer type."
-  TypeInteger
+  TYPE_INTEGER
   "String type."
-  TypeString
+  TYPE_STRING
   "Boolean type."
-  TypeBoolean
+  TYPE_BOOLEAN
   "Any floating point decimal type."
-  TypeDecimal
+  TYPE_DECIMAL
   "Timestamp date type."
-  TypeTimestamp
+  TYPE_TIMESTAMP
 }
 
 """
@@ -33447,14 +33443,14 @@ func (ec *executionContext) _PropertyKey_type(ctx context.Context, field graphql
 		Object:     "PropertyKey",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.PropertyKey().Type(rctx, obj)
+		return obj.Type, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -33466,9 +33462,9 @@ func (ec *executionContext) _PropertyKey_type(ctx context.Context, field graphql
 		}
 		return graphql.Null
 	}
-	res := resTmp.(PropertyKeyType)
+	res := resTmp.(v11.PropertyKey_Type)
 	fc.Result = res
-	return ec.marshalNPropertyKeyType2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐPropertyKeyType(ctx, field.Selections, res)
+	return ec.marshalNPropertyKeyType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐPropertyKey_Type(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Proposal_id(ctx context.Context, field graphql.CollectedField, obj *vega.GovernanceData) (ret graphql.Marshaler) {
@@ -55454,25 +55450,15 @@ func (ec *executionContext) _PropertyKey(ctx context.Context, sel ast.SelectionS
 			out.Values[i] = innerFunc(ctx)
 
 		case "type":
-			field := field
-
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._PropertyKey_type(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+				return ec._PropertyKey_type(ctx, field, obj)
 			}
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
+			out.Values[i] = innerFunc(ctx)
 
-			})
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -63327,14 +63313,19 @@ func (ec *executionContext) marshalNPropertyKey2ᚖcodeᚗvegaprotocolᚗioᚋve
 	return ec._PropertyKey(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNPropertyKeyType2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐPropertyKeyType(ctx context.Context, v interface{}) (PropertyKeyType, error) {
-	var res PropertyKeyType
-	err := res.UnmarshalGQL(v)
+func (ec *executionContext) unmarshalNPropertyKeyType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐPropertyKey_Type(ctx context.Context, v interface{}) (v11.PropertyKey_Type, error) {
+	res, err := marshallers.UnmarshalPropertyKeyType(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNPropertyKeyType2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐPropertyKeyType(ctx context.Context, sel ast.SelectionSet, v PropertyKeyType) graphql.Marshaler {
-	return v
+func (ec *executionContext) marshalNPropertyKeyType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐPropertyKey_Type(ctx context.Context, sel ast.SelectionSet, v v11.PropertyKey_Type) graphql.Marshaler {
+	res := marshallers.MarshalPropertyKeyType(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
 }
 
 func (ec *executionContext) marshalNProposal2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐGovernanceData(ctx context.Context, sel ast.SelectionSet, v vega.GovernanceData) graphql.Marshaler {

@@ -1379,63 +1379,6 @@ func (e PeggedReference) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-// Type describes the type of properties that are supported by the oracle
-// engine.
-type PropertyKeyType string
-
-const (
-	// Any type.
-	PropertyKeyTypeTypeEmpty PropertyKeyType = "TypeEmpty"
-	// Integer type.
-	PropertyKeyTypeTypeInteger PropertyKeyType = "TypeInteger"
-	// String type.
-	PropertyKeyTypeTypeString PropertyKeyType = "TypeString"
-	// Boolean type.
-	PropertyKeyTypeTypeBoolean PropertyKeyType = "TypeBoolean"
-	// Any floating point decimal type.
-	PropertyKeyTypeTypeDecimal PropertyKeyType = "TypeDecimal"
-	// Timestamp date type.
-	PropertyKeyTypeTypeTimestamp PropertyKeyType = "TypeTimestamp"
-)
-
-var AllPropertyKeyType = []PropertyKeyType{
-	PropertyKeyTypeTypeEmpty,
-	PropertyKeyTypeTypeInteger,
-	PropertyKeyTypeTypeString,
-	PropertyKeyTypeTypeBoolean,
-	PropertyKeyTypeTypeDecimal,
-	PropertyKeyTypeTypeTimestamp,
-}
-
-func (e PropertyKeyType) IsValid() bool {
-	switch e {
-	case PropertyKeyTypeTypeEmpty, PropertyKeyTypeTypeInteger, PropertyKeyTypeTypeString, PropertyKeyTypeTypeBoolean, PropertyKeyTypeTypeDecimal, PropertyKeyTypeTypeTimestamp:
-		return true
-	}
-	return false
-}
-
-func (e PropertyKeyType) String() string {
-	return string(e)
-}
-
-func (e *PropertyKeyType) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = PropertyKeyType(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid PropertyKeyType", str)
-	}
-	return nil
-}
-
-func (e PropertyKeyType) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
 // Reason for the proposal being rejected by the core node
 type ProposalRejectionReason string
 

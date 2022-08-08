@@ -1357,17 +1357,17 @@ engine.
 """
 enum PropertyKeyType {
   "Any type."
-  TypeEmpty
+  TYPE_EMPTY
   "Integer type."
-  TypeInteger
+  TYPE_INTEGER
   "String type."
-  TypeString
+  TYPE_STRING
   "Boolean type."
-  TypeBoolean
+  TYPE_BOOLEAN
   "Any floating point decimal type."
-  TypeDecimal
+  TYPE_DECIMAL
   "Timestamp date type."
-  TypeTimestamp
+  TYPE_TIMESTAMP
 }
 
 """

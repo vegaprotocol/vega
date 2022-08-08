@@ -97,3 +97,13 @@ func MarshalOracleSpecStatus(s oraclespb.OracleSpec_Status) graphql.Marshaler {
 func UnmarshalOracleSpecStatus(v interface{}) (oraclespb.OracleSpec_Status, error) {
 	return oraclespb.OracleSpec_STATUS_UNSPECIFIED, ErrUnimplemented
 }
+
+func MarshalPropertyKeyType(s oraclespb.PropertyKey_Type) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalPropertyKeyType(v interface{}) (oraclespb.PropertyKey_Type, error) {
+	return oraclespb.PropertyKey_TYPE_UNSPECIFIED, ErrUnimplemented
+}
