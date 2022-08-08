@@ -1712,49 +1712,6 @@ func (e TransferDirection) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-type VoteValue string
-
-const (
-	// No reject a proposal
-	VoteValueNo VoteValue = "No"
-	// Yes accept a proposal
-	VoteValueYes VoteValue = "Yes"
-)
-
-var AllVoteValue = []VoteValue{
-	VoteValueNo,
-	VoteValueYes,
-}
-
-func (e VoteValue) IsValid() bool {
-	switch e {
-	case VoteValueNo, VoteValueYes:
-		return true
-	}
-	return false
-}
-
-func (e VoteValue) String() string {
-	return string(e)
-}
-
-func (e *VoteValue) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = VoteValue(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid VoteValue", str)
-	}
-	return nil
-}
-
-func (e VoteValue) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
 // The status of a withdrawal
 type WithdrawalStatus string
 

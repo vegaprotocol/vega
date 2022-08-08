@@ -2025,7 +2025,6 @@ type UpdateNetworkParameterResolver interface {
 	NetworkParameter(ctx context.Context, obj *vega.UpdateNetworkParameter) (*vega.NetworkParameter, error)
 }
 type VoteResolver interface {
-	Value(ctx context.Context, obj *vega.Vote) (VoteValue, error)
 	Party(ctx context.Context, obj *vega.Vote) (*vega.Party, error)
 	Datetime(ctx context.Context, obj *vega.Vote) (string, error)
 
@@ -11574,9 +11573,9 @@ type ProposalVoteSide {
 
 enum VoteValue {
   "No reject a proposal"
-  No
+  VALUE_NO
   "Yes accept a proposal"
-  Yes
+  VALUE_YES
 }
 
 type Vote {
@@ -43457,14 +43456,14 @@ func (ec *executionContext) _Vote_value(ctx context.Context, field graphql.Colle
 		Object:     "Vote",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Vote().Value(rctx, obj)
+		return obj.Value, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -43476,9 +43475,9 @@ func (ec *executionContext) _Vote_value(ctx context.Context, field graphql.Colle
 		}
 		return graphql.Null
 	}
-	res := resTmp.(VoteValue)
+	res := resTmp.(vega.Vote_Value)
 	fc.Result = res
-	return ec.marshalNVoteValue2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐVoteValue(ctx, field.Selections, res)
+	return ec.marshalNVoteValue2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐVote_Value(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Vote_party(ctx context.Context, field graphql.CollectedField, obj *vega.Vote) (ret graphql.Marshaler) {
@@ -60515,25 +60514,15 @@ func (ec *executionContext) _Vote(ctx context.Context, sel ast.SelectionSet, obj
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Vote")
 		case "value":
-			field := field
-
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Vote_value(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+				return ec._Vote_value(ctx, field, obj)
 			}
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
+			out.Values[i] = innerFunc(ctx)
 
-			})
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "party":
 			field := field
 
@@ -63928,14 +63917,19 @@ func (ec *executionContext) marshalNVoteEdge2ᚖcodeᚗvegaprotocolᚗioᚋvega�
 	return ec._VoteEdge(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNVoteValue2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐVoteValue(ctx context.Context, v interface{}) (VoteValue, error) {
-	var res VoteValue
-	err := res.UnmarshalGQL(v)
+func (ec *executionContext) unmarshalNVoteValue2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐVote_Value(ctx context.Context, v interface{}) (vega.Vote_Value, error) {
+	res, err := marshallers.UnmarshalVoteValue(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNVoteValue2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐVoteValue(ctx context.Context, sel ast.SelectionSet, v VoteValue) graphql.Marshaler {
-	return v
+func (ec *executionContext) marshalNVoteValue2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐVote_Value(ctx context.Context, sel ast.SelectionSet, v vega.Vote_Value) graphql.Marshaler {
+	res := marshallers.MarshalVoteValue(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
 }
 
 func (ec *executionContext) marshalNWithdrawal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐWithdrawal(ctx context.Context, sel ast.SelectionSet, v *vega.Withdrawal) graphql.Marshaler {

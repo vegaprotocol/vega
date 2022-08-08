@@ -157,3 +157,13 @@ func MarshalConditionOperator(s oraclespb.Condition_Operator) graphql.Marshaler 
 func UnmarshalConditionOperator(v interface{}) (oraclespb.Condition_Operator, error) {
 	return oraclespb.Condition_OPERATOR_UNSPECIFIED, ErrUnimplemented
 }
+
+func MarshalVoteValue(s vega.Vote_Value) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalVoteValue(v interface{}) (vega.Vote_Value, error) {
+	return vega.Vote_VALUE_UNSPECIFIED, ErrUnimplemented
+}

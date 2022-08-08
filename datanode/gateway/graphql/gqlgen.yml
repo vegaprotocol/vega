@@ -47,6 +47,9 @@ models:
   ProposalState:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.ProposalState
+  VoteValue:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.VoteValue
   Order:
     model: code.vegaprotocol.io/vega/protos/vega.Order
   PaginatedOrder:

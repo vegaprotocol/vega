@@ -3112,9 +3112,9 @@ type ProposalVoteSide {
 
 enum VoteValue {
   "No reject a proposal"
-  No
+  VALUE_NO
   "Yes accept a proposal"
-  Yes
+  VALUE_YES
 }
 
 type Vote {
