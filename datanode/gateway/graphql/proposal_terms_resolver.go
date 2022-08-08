@@ -27,8 +27,13 @@ func (r *proposalTermsResolver) ClosingDatetime(ctx context.Context, obj *types.
 	return secondsTSToDatetime(obj.ClosingTimestamp), nil
 }
 
-func (r *proposalTermsResolver) EnactmentDatetime(ctx context.Context, obj *types.ProposalTerms) (string, error) {
-	return secondsTSToDatetime(obj.EnactmentTimestamp), nil
+func (r *proposalTermsResolver) EnactmentDatetime(ctx context.Context, obj *types.ProposalTerms) (*string, error) {
+	var dt *string
+	if obj.EnactmentTimestamp != 0 {
+		tmpdt := secondsTSToDatetime(obj.EnactmentTimestamp)
+		dt = &tmpdt
+	}
+	return dt, nil
 }
 
 func (r *proposalTermsResolver) Change(ctx context.Context, obj *types.ProposalTerms) (ProposalChange, error) {

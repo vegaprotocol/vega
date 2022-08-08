@@ -54,6 +54,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5789](https://github.com/vegaprotocol/vega/issues/5789) - Fix performance issue with position query
 - [5677](https://github.com/vegaprotocol/vega/issues/5677) - Fixed trading mode status
 - [5663](https://github.com/vegaprotocol/vega/issues/5663) - Fixed panic with de-registering positions
+- [5781](https://github.com/vegaprotocol/vega/issues/5781) - Make enactment timestamp optional in proposal for `graphql`
 - [5767](https://github.com/vegaprotocol/vega/issues/5767) - Fix typo in command validation
 
 ## 0.53.0

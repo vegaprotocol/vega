@@ -1852,7 +1852,7 @@ type ProposalResolver interface {
 }
 type ProposalTermsResolver interface {
 	ClosingDatetime(ctx context.Context, obj *vega.ProposalTerms) (string, error)
-	EnactmentDatetime(ctx context.Context, obj *vega.ProposalTerms) (string, error)
+	EnactmentDatetime(ctx context.Context, obj *vega.ProposalTerms) (*string, error)
 	Change(ctx context.Context, obj *vega.ProposalTerms) (ProposalChange, error)
 }
 type QueryResolver interface {
@@ -11487,8 +11487,9 @@ type ProposalTerms {
   """
   RFC3339Nano time and date when this proposal is executed (if passed). Note that it has to be after closing date time.
   Constrained by "minEnactInSeconds" and "maxEnactInSeconds" network parameters.
+  Note: Optional as free form proposals do not require it.
   """
-  enactmentDatetime: String!
+  enactmentDatetime: String
 
   "Actual change being introduced by the proposal - action the proposal triggers if passed and enacted."
   change: ProposalChange!
@@ -12412,7 +12413,8 @@ type AccountsConnection {
   edges: [AccountEdge]
   "Page information for the connection"
   pageInfo: PageInfo!
-}`, BuiltIn: false},
+}
+`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
@@ -34037,14 +34039,11 @@ func (ec *executionContext) _ProposalTerms_enactmentDatetime(ctx context.Context
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ProposalTerms_change(ctx context.Context, field graphql.CollectedField, obj *vega.ProposalTerms) (ret graphql.Marshaler) {
@@ -55871,9 +55870,6 @@ func (ec *executionContext) _ProposalTerms(ctx context.Context, sel ast.Selectio
 					}
 				}()
 				res = ec._ProposalTerms_enactmentDatetime(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			}
 
