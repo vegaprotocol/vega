@@ -41,6 +41,9 @@ models:
   PropertyKeyType:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.PropertyKeyType
+  ConditionOperator:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.ConditionOperator
   Order:
     model: code.vegaprotocol.io/vega/protos/vega.Order
   PaginatedOrder:

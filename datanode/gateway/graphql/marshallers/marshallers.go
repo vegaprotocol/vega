@@ -107,3 +107,13 @@ func MarshalPropertyKeyType(s oraclespb.PropertyKey_Type) graphql.Marshaler {
 func UnmarshalPropertyKeyType(v interface{}) (oraclespb.PropertyKey_Type, error) {
 	return oraclespb.PropertyKey_TYPE_UNSPECIFIED, ErrUnimplemented
 }
+
+func MarshalConditionOperator(s oraclespb.Condition_Operator) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalConditionOperator(v interface{}) (oraclespb.Condition_Operator, error) {
+	return oraclespb.Condition_OPERATOR_UNSPECIFIED, ErrUnimplemented
+}

@@ -1383,21 +1383,21 @@ type Condition {
 "Comparator describes the type of comparison."
 enum ConditionOperator {
   "Verify if the property values are strictly equal or not."
-  OperatorEquals
+  OPERATOR_EQUALS
   "Verify if the oracle data value is greater than the Condition value."
-  OperatorGreaterThan
+  OPERATOR_GREATER_THAN
   """
   Verify if the oracle data value is greater than or equal to the Condition
   value.
   """
-  OperatorGreaterThanOrEqual
+  OPERATOR_GREATER_THAN_OR_EQUAL
   " Verify if the oracle data value is less than the Condition value."
-  OperatorLessThan
+  OPERATOR_LESS_THAN
   """
   Verify if the oracle data value is less or equal to than the Condition
   value.
   """
-  OperatorLessThanOrEqual
+  OPERATOR_LESS_THAN_OR_EQUAL
 }
 
 "An oracle data contains the data sent by an oracle"

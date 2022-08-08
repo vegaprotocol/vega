@@ -65,10 +65,6 @@ type propertyKeyResolver VegaResolverRoot
 
 type conditionResolver VegaResolverRoot
 
-func (c conditionResolver) Operator(_ context.Context, obj *v1.Condition) (ConditionOperator, error) {
-	return convertConditionOperatorFromProto(obj.Operator)
-}
-
 type oracleDataResolver VegaResolverRoot
 
 func (o *oracleDataResolver) BroadcastAt(_ context.Context, obj *v1.OracleData) (string, error) {

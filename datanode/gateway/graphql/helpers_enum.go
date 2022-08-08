@@ -18,7 +18,6 @@ import (
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
-	oraclesv1 "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 )
 
 func convertStakeLinkingTypeFromProto(
@@ -48,24 +47,6 @@ func convertStakeLinkingStatusFromProto(
 	default:
 		err := fmt.Errorf("failed to convert StakeLinkingStatus from Proto to GraphQL: %v", s)
 		return StakeLinkingStatus(""), err
-	}
-}
-
-func convertConditionOperatorFromProto(o oraclesv1.Condition_Operator) (ConditionOperator, error) {
-	switch o {
-	case oraclesv1.Condition_OPERATOR_EQUALS:
-		return ConditionOperatorOperatorEquals, nil
-	case oraclesv1.Condition_OPERATOR_GREATER_THAN:
-		return ConditionOperatorOperatorGreaterThan, nil
-	case oraclesv1.Condition_OPERATOR_GREATER_THAN_OR_EQUAL:
-		return ConditionOperatorOperatorGreaterThanOrEqual, nil
-	case oraclesv1.Condition_OPERATOR_LESS_THAN:
-		return ConditionOperatorOperatorLessThan, nil
-	case oraclesv1.Condition_OPERATOR_LESS_THAN_OR_EQUAL:
-		return ConditionOperatorOperatorLessThanOrEqual, nil
-	default:
-		err := fmt.Errorf("failed to convert ConditionOperator from Proto to GraphQL: %v", o)
-		return ConditionOperatorOperatorEquals, err
 	}
 }
 

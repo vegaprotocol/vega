@@ -255,10 +255,6 @@ func (r *VegaResolverRoot) OracleData() OracleDataResolver {
 	return (*oracleDataResolver)(r)
 }
 
-func (r *VegaResolverRoot) Condition() ConditionResolver {
-	return (*conditionResolver)(r)
-}
-
 func (r *VegaResolverRoot) AuctionEvent() AuctionEventResolver {
 	return (*auctionEventResolver)(r)
 }

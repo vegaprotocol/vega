@@ -17,9 +17,9 @@ import (
 	"code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
 	v14 "code.vegaprotocol.io/vega/protos/vega/api/v1"
-	v12 "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	v11 "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/protos/vega/events/v1"
-	v11 "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
+	v12 "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
 	gqlparser "github.com/vektah/gqlparser/v2"
@@ -50,7 +50,6 @@ type ResolverRoot interface {
 	AuctionEvent() AuctionEventResolver
 	Candle() CandleResolver
 	CandleNode() CandleNodeResolver
-	Condition() ConditionResolver
 	Delegation() DelegationResolver
 	Deposit() DepositResolver
 	Epoch() EpochResolver
@@ -1547,9 +1546,6 @@ type CandleNodeResolver interface {
 
 	Volume(ctx context.Context, obj *v2.Candle) (string, error)
 }
-type ConditionResolver interface {
-	Operator(ctx context.Context, obj *v11.Condition) (ConditionOperator, error)
-}
 type DelegationResolver interface {
 	Party(ctx context.Context, obj *vega.Delegation) (*vega.Party, error)
 	Node(ctx context.Context, obj *vega.Delegation) (*vega.Node, error)
@@ -1713,7 +1709,7 @@ type NodeDataResolver interface {
 	Uptime(ctx context.Context, obj *vega.NodeData) (float64, error)
 }
 type NodeSignatureResolver interface {
-	Signature(ctx context.Context, obj *v12.NodeSignature) (*string, error)
+	Signature(ctx context.Context, obj *v11.NodeSignature) (*string, error)
 }
 type ObservableMarketDataResolver interface {
 	MarketID(ctx context.Context, obj *vega.MarketData) (string, error)
@@ -1752,14 +1748,14 @@ type OneOffTransferResolver interface {
 	DeliverOn(ctx context.Context, obj *v1.OneOffTransfer) (*string, error)
 }
 type OracleDataResolver interface {
-	BroadcastAt(ctx context.Context, obj *v11.OracleData) (string, error)
+	BroadcastAt(ctx context.Context, obj *v12.OracleData) (string, error)
 }
 type OracleSpecResolver interface {
-	CreatedAt(ctx context.Context, obj *v11.OracleSpec) (string, error)
-	UpdatedAt(ctx context.Context, obj *v11.OracleSpec) (*string, error)
+	CreatedAt(ctx context.Context, obj *v12.OracleSpec) (string, error)
+	UpdatedAt(ctx context.Context, obj *v12.OracleSpec) (*string, error)
 
-	Data(ctx context.Context, obj *v11.OracleSpec) ([]*v11.OracleData, error)
-	DataConnection(ctx context.Context, obj *v11.OracleSpec, pagination *v2.Pagination) (*v2.OracleDataConnection, error)
+	Data(ctx context.Context, obj *v12.OracleSpec) ([]*v12.OracleData, error)
+	DataConnection(ctx context.Context, obj *v12.OracleSpec, pagination *v2.Pagination) (*v2.OracleDataConnection, error)
 }
 type OrderResolver interface {
 	TimeInForce(ctx context.Context, obj *vega.Order) (OrderTimeInForce, error)
@@ -1855,12 +1851,12 @@ type QueryResolver interface {
 	PartiesConnection(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.PartyConnection, error)
 	Party(ctx context.Context, id string) (*vega.Party, error)
 	LastBlockHeight(ctx context.Context) (string, error)
-	OracleSpecs(ctx context.Context, pagination *OffsetPagination) ([]*v11.OracleSpec, error)
+	OracleSpecs(ctx context.Context, pagination *OffsetPagination) ([]*v12.OracleSpec, error)
 	OracleSpecsConnection(ctx context.Context, pagination *v2.Pagination) (*v2.OracleSpecsConnection, error)
-	OracleSpec(ctx context.Context, oracleSpecID string) (*v11.OracleSpec, error)
-	OracleDataBySpec(ctx context.Context, oracleSpecID string, pagination *OffsetPagination) ([]*v11.OracleData, error)
+	OracleSpec(ctx context.Context, oracleSpecID string) (*v12.OracleSpec, error)
+	OracleDataBySpec(ctx context.Context, oracleSpecID string, pagination *OffsetPagination) ([]*v12.OracleData, error)
 	OracleDataBySpecConnection(ctx context.Context, oracleSpecID string, pagination *v2.Pagination) (*v2.OracleDataConnection, error)
-	OracleData(ctx context.Context, pagination *OffsetPagination) ([]*v11.OracleData, error)
+	OracleData(ctx context.Context, pagination *OffsetPagination) ([]*v12.OracleData, error)
 	OracleDataConnection(ctx context.Context, pagination *v2.Pagination) (*v2.OracleDataConnection, error)
 	OrderByID(ctx context.Context, orderID string, version *int) (*vega.Order, error)
 	OrderVersions(ctx context.Context, orderID string, skip *int, first *int, last *int) ([]*vega.Order, error)
@@ -1874,7 +1870,7 @@ type QueryResolver interface {
 	NetworkParametersProposals(ctx context.Context, inState *ProposalState) ([]*vega.GovernanceData, error)
 	NewAssetProposals(ctx context.Context, inState *ProposalState) ([]*vega.GovernanceData, error)
 	NewFreeformProposals(ctx context.Context, inState *ProposalState) ([]*vega.GovernanceData, error)
-	NodeSignatures(ctx context.Context, resourceID string) ([]*v12.NodeSignature, error)
+	NodeSignatures(ctx context.Context, resourceID string) ([]*v11.NodeSignature, error)
 	NodeSignaturesConnection(ctx context.Context, resourceID string, pagination *v2.Pagination) (*v2.NodeSignaturesConnection, error)
 	Asset(ctx context.Context, assetID string) (*vega.Asset, error)
 	Assets(ctx context.Context) ([]*vega.Asset, error)
@@ -9849,21 +9845,21 @@ type Condition {
 "Comparator describes the type of comparison."
 enum ConditionOperator {
   "Verify if the property values are strictly equal or not."
-  OperatorEquals
+  OPERATOR_EQUALS
   "Verify if the oracle data value is greater than the Condition value."
-  OperatorGreaterThan
+  OPERATOR_GREATER_THAN
   """
   Verify if the oracle data value is greater than or equal to the Condition
   value.
   """
-  OperatorGreaterThanOrEqual
+  OPERATOR_GREATER_THAN_OR_EQUAL
   " Verify if the oracle data value is less than the Condition value."
-  OperatorLessThan
+  OPERATOR_LESS_THAN
   """
   Verify if the oracle data value is less or equal to than the Condition
   value.
   """
-  OperatorLessThanOrEqual
+  OPERATOR_LESS_THAN_OR_EQUAL
 }
 
 "An oracle data contains the data sent by an oracle"
@@ -17213,7 +17209,7 @@ func (ec *executionContext) _CandleNode_volume(ctx context.Context, field graphq
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Condition_operator(ctx context.Context, field graphql.CollectedField, obj *v11.Condition) (ret graphql.Marshaler) {
+func (ec *executionContext) _Condition_operator(ctx context.Context, field graphql.CollectedField, obj *v12.Condition) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -17224,14 +17220,14 @@ func (ec *executionContext) _Condition_operator(ctx context.Context, field graph
 		Object:     "Condition",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Condition().Operator(rctx, obj)
+		return obj.Operator, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -17243,12 +17239,12 @@ func (ec *executionContext) _Condition_operator(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.(ConditionOperator)
+	res := resTmp.(v12.Condition_Operator)
 	fc.Result = res
-	return ec.marshalNConditionOperator2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐConditionOperator(ctx, field.Selections, res)
+	return ec.marshalNConditionOperator2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐCondition_Operator(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Condition_value(ctx context.Context, field graphql.CollectedField, obj *v11.Condition) (ret graphql.Marshaler) {
+func (ec *executionContext) _Condition_value(ctx context.Context, field graphql.CollectedField, obj *v12.Condition) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -19601,7 +19597,7 @@ func (ec *executionContext) _Fees_factors(ctx context.Context, field graphql.Col
 	return ec.marshalNFeeFactors2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐFeeFactors(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Filter_key(ctx context.Context, field graphql.CollectedField, obj *v11.Filter) (ret graphql.Marshaler) {
+func (ec *executionContext) _Filter_key(ctx context.Context, field graphql.CollectedField, obj *v12.Filter) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -19631,12 +19627,12 @@ func (ec *executionContext) _Filter_key(ctx context.Context, field graphql.Colle
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*v11.PropertyKey)
+	res := resTmp.(*v12.PropertyKey)
 	fc.Result = res
 	return ec.marshalNPropertyKey2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐPropertyKey(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Filter_conditions(ctx context.Context, field graphql.CollectedField, obj *v11.Filter) (ret graphql.Marshaler) {
+func (ec *executionContext) _Filter_conditions(ctx context.Context, field graphql.CollectedField, obj *v12.Filter) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -19663,7 +19659,7 @@ func (ec *executionContext) _Filter_conditions(ctx context.Context, field graphq
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*v11.Condition)
+	res := resTmp.([]*v12.Condition)
 	fc.Result = res
 	return ec.marshalOCondition2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐConditionᚄ(ctx, field.Selections, res)
 }
@@ -19768,7 +19764,7 @@ func (ec *executionContext) _Future_oracleSpecForSettlementPrice(ctx context.Con
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*v11.OracleSpec)
+	res := resTmp.(*v12.OracleSpec)
 	fc.Result = res
 	return ec.marshalNOracleSpec2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpec(ctx, field.Selections, res)
 }
@@ -19803,7 +19799,7 @@ func (ec *executionContext) _Future_oracleSpecForTradingTermination(ctx context.
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*v11.OracleSpec)
+	res := resTmp.(*v12.OracleSpec)
 	fc.Result = res
 	return ec.marshalNOracleSpec2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpec(ctx, field.Selections, res)
 }
@@ -19943,7 +19939,7 @@ func (ec *executionContext) _FutureProduct_oracleSpecForSettlementPrice(ctx cont
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*v11.OracleSpecConfiguration)
+	res := resTmp.(*v12.OracleSpecConfiguration)
 	fc.Result = res
 	return ec.marshalNOracleSpecConfiguration2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpecConfiguration(ctx, field.Selections, res)
 }
@@ -19978,7 +19974,7 @@ func (ec *executionContext) _FutureProduct_oracleSpecForTradingTermination(ctx c
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*v11.OracleSpecConfiguration)
+	res := resTmp.(*v12.OracleSpecConfiguration)
 	fc.Result = res
 	return ec.marshalNOracleSpecConfiguration2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpecConfiguration(ctx, field.Selections, res)
 }
@@ -27379,7 +27375,7 @@ func (ec *executionContext) _NodeEdge_cursor(ctx context.Context, field graphql.
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _NodeSignature_id(ctx context.Context, field graphql.CollectedField, obj *v12.NodeSignature) (ret graphql.Marshaler) {
+func (ec *executionContext) _NodeSignature_id(ctx context.Context, field graphql.CollectedField, obj *v11.NodeSignature) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -27414,7 +27410,7 @@ func (ec *executionContext) _NodeSignature_id(ctx context.Context, field graphql
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _NodeSignature_signature(ctx context.Context, field graphql.CollectedField, obj *v12.NodeSignature) (ret graphql.Marshaler) {
+func (ec *executionContext) _NodeSignature_signature(ctx context.Context, field graphql.CollectedField, obj *v11.NodeSignature) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -27446,7 +27442,7 @@ func (ec *executionContext) _NodeSignature_signature(ctx context.Context, field 
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _NodeSignature_kind(ctx context.Context, field graphql.CollectedField, obj *v12.NodeSignature) (ret graphql.Marshaler) {
+func (ec *executionContext) _NodeSignature_kind(ctx context.Context, field graphql.CollectedField, obj *v11.NodeSignature) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -27473,7 +27469,7 @@ func (ec *executionContext) _NodeSignature_kind(ctx context.Context, field graph
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(v12.NodeSignatureKind)
+	res := resTmp.(v11.NodeSignatureKind)
 	fc.Result = res
 	return ec.marshalONodeSignatureKind2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋcommandsᚋv1ᚐNodeSignatureKind(ctx, field.Selections, res)
 }
@@ -27508,7 +27504,7 @@ func (ec *executionContext) _NodeSignatureEdge_node(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*v12.NodeSignature)
+	res := resTmp.(*v11.NodeSignature)
 	fc.Result = res
 	return ec.marshalNNodeSignature2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋcommandsᚋv1ᚐNodeSignature(ctx, field.Selections, res)
 }
@@ -29049,7 +29045,7 @@ func (ec *executionContext) _OneOffTransfer_deliverOn(ctx context.Context, field
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OracleData_pubKeys(ctx context.Context, field graphql.CollectedField, obj *v11.OracleData) (ret graphql.Marshaler) {
+func (ec *executionContext) _OracleData_pubKeys(ctx context.Context, field graphql.CollectedField, obj *v12.OracleData) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -29081,7 +29077,7 @@ func (ec *executionContext) _OracleData_pubKeys(ctx context.Context, field graph
 	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OracleData_data(ctx context.Context, field graphql.CollectedField, obj *v11.OracleData) (ret graphql.Marshaler) {
+func (ec *executionContext) _OracleData_data(ctx context.Context, field graphql.CollectedField, obj *v12.OracleData) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -29108,12 +29104,12 @@ func (ec *executionContext) _OracleData_data(ctx context.Context, field graphql.
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*v11.Property)
+	res := resTmp.([]*v12.Property)
 	fc.Result = res
 	return ec.marshalOProperty2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐPropertyᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OracleData_matchedSpecIds(ctx context.Context, field graphql.CollectedField, obj *v11.OracleData) (ret graphql.Marshaler) {
+func (ec *executionContext) _OracleData_matchedSpecIds(ctx context.Context, field graphql.CollectedField, obj *v12.OracleData) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -29145,7 +29141,7 @@ func (ec *executionContext) _OracleData_matchedSpecIds(ctx context.Context, fiel
 	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OracleData_broadcastAt(ctx context.Context, field graphql.CollectedField, obj *v11.OracleData) (ret graphql.Marshaler) {
+func (ec *executionContext) _OracleData_broadcastAt(ctx context.Context, field graphql.CollectedField, obj *v12.OracleData) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -29277,7 +29273,7 @@ func (ec *executionContext) _OracleDataEdge_node(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*v11.OracleData)
+	res := resTmp.(*v12.OracleData)
 	fc.Result = res
 	return ec.marshalNOracleData2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleData(ctx, field.Selections, res)
 }
@@ -29317,7 +29313,7 @@ func (ec *executionContext) _OracleDataEdge_cursor(ctx context.Context, field gr
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OracleSpec_id(ctx context.Context, field graphql.CollectedField, obj *v11.OracleSpec) (ret graphql.Marshaler) {
+func (ec *executionContext) _OracleSpec_id(ctx context.Context, field graphql.CollectedField, obj *v12.OracleSpec) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -29352,7 +29348,7 @@ func (ec *executionContext) _OracleSpec_id(ctx context.Context, field graphql.Co
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OracleSpec_createdAt(ctx context.Context, field graphql.CollectedField, obj *v11.OracleSpec) (ret graphql.Marshaler) {
+func (ec *executionContext) _OracleSpec_createdAt(ctx context.Context, field graphql.CollectedField, obj *v12.OracleSpec) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -29387,7 +29383,7 @@ func (ec *executionContext) _OracleSpec_createdAt(ctx context.Context, field gra
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OracleSpec_updatedAt(ctx context.Context, field graphql.CollectedField, obj *v11.OracleSpec) (ret graphql.Marshaler) {
+func (ec *executionContext) _OracleSpec_updatedAt(ctx context.Context, field graphql.CollectedField, obj *v12.OracleSpec) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -29419,7 +29415,7 @@ func (ec *executionContext) _OracleSpec_updatedAt(ctx context.Context, field gra
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OracleSpec_pubKeys(ctx context.Context, field graphql.CollectedField, obj *v11.OracleSpec) (ret graphql.Marshaler) {
+func (ec *executionContext) _OracleSpec_pubKeys(ctx context.Context, field graphql.CollectedField, obj *v12.OracleSpec) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -29451,7 +29447,7 @@ func (ec *executionContext) _OracleSpec_pubKeys(ctx context.Context, field graph
 	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OracleSpec_filters(ctx context.Context, field graphql.CollectedField, obj *v11.OracleSpec) (ret graphql.Marshaler) {
+func (ec *executionContext) _OracleSpec_filters(ctx context.Context, field graphql.CollectedField, obj *v12.OracleSpec) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -29478,12 +29474,12 @@ func (ec *executionContext) _OracleSpec_filters(ctx context.Context, field graph
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*v11.Filter)
+	res := resTmp.([]*v12.Filter)
 	fc.Result = res
 	return ec.marshalOFilter2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐFilterᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OracleSpec_status(ctx context.Context, field graphql.CollectedField, obj *v11.OracleSpec) (ret graphql.Marshaler) {
+func (ec *executionContext) _OracleSpec_status(ctx context.Context, field graphql.CollectedField, obj *v12.OracleSpec) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -29513,12 +29509,12 @@ func (ec *executionContext) _OracleSpec_status(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(v11.OracleSpec_Status)
+	res := resTmp.(v12.OracleSpec_Status)
 	fc.Result = res
 	return ec.marshalNOracleSpecStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpec_Status(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OracleSpec_data(ctx context.Context, field graphql.CollectedField, obj *v11.OracleSpec) (ret graphql.Marshaler) {
+func (ec *executionContext) _OracleSpec_data(ctx context.Context, field graphql.CollectedField, obj *v12.OracleSpec) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -29548,12 +29544,12 @@ func (ec *executionContext) _OracleSpec_data(ctx context.Context, field graphql.
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*v11.OracleData)
+	res := resTmp.([]*v12.OracleData)
 	fc.Result = res
 	return ec.marshalNOracleData2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleDataᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OracleSpec_dataConnection(ctx context.Context, field graphql.CollectedField, obj *v11.OracleSpec) (ret graphql.Marshaler) {
+func (ec *executionContext) _OracleSpec_dataConnection(ctx context.Context, field graphql.CollectedField, obj *v12.OracleSpec) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -29595,7 +29591,7 @@ func (ec *executionContext) _OracleSpec_dataConnection(ctx context.Context, fiel
 	return ec.marshalNOracleDataConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOracleDataConnection(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OracleSpecConfiguration_pubKeys(ctx context.Context, field graphql.CollectedField, obj *v11.OracleSpecConfiguration) (ret graphql.Marshaler) {
+func (ec *executionContext) _OracleSpecConfiguration_pubKeys(ctx context.Context, field graphql.CollectedField, obj *v12.OracleSpecConfiguration) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -29627,7 +29623,7 @@ func (ec *executionContext) _OracleSpecConfiguration_pubKeys(ctx context.Context
 	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OracleSpecConfiguration_filters(ctx context.Context, field graphql.CollectedField, obj *v11.OracleSpecConfiguration) (ret graphql.Marshaler) {
+func (ec *executionContext) _OracleSpecConfiguration_filters(ctx context.Context, field graphql.CollectedField, obj *v12.OracleSpecConfiguration) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -29654,7 +29650,7 @@ func (ec *executionContext) _OracleSpecConfiguration_filters(ctx context.Context
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*v11.Filter)
+	res := resTmp.([]*v12.Filter)
 	fc.Result = res
 	return ec.marshalOFilter2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐFilterᚄ(ctx, field.Selections, res)
 }
@@ -29689,7 +29685,7 @@ func (ec *executionContext) _OracleSpecEdge_node(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*v11.OracleSpec)
+	res := resTmp.(*v12.OracleSpec)
 	fc.Result = res
 	return ec.marshalNOracleSpec2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpec(ctx, field.Selections, res)
 }
@@ -33330,7 +33326,7 @@ func (ec *executionContext) _PriceMonitoringTrigger_auctionExtensionSecs(ctx con
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Property_name(ctx context.Context, field graphql.CollectedField, obj *v11.Property) (ret graphql.Marshaler) {
+func (ec *executionContext) _Property_name(ctx context.Context, field graphql.CollectedField, obj *v12.Property) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -33365,7 +33361,7 @@ func (ec *executionContext) _Property_name(ctx context.Context, field graphql.Co
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Property_value(ctx context.Context, field graphql.CollectedField, obj *v11.Property) (ret graphql.Marshaler) {
+func (ec *executionContext) _Property_value(ctx context.Context, field graphql.CollectedField, obj *v12.Property) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -33400,7 +33396,7 @@ func (ec *executionContext) _Property_value(ctx context.Context, field graphql.C
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PropertyKey_name(ctx context.Context, field graphql.CollectedField, obj *v11.PropertyKey) (ret graphql.Marshaler) {
+func (ec *executionContext) _PropertyKey_name(ctx context.Context, field graphql.CollectedField, obj *v12.PropertyKey) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -33432,7 +33428,7 @@ func (ec *executionContext) _PropertyKey_name(ctx context.Context, field graphql
 	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PropertyKey_type(ctx context.Context, field graphql.CollectedField, obj *v11.PropertyKey) (ret graphql.Marshaler) {
+func (ec *executionContext) _PropertyKey_type(ctx context.Context, field graphql.CollectedField, obj *v12.PropertyKey) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -33462,7 +33458,7 @@ func (ec *executionContext) _PropertyKey_type(ctx context.Context, field graphql
 		}
 		return graphql.Null
 	}
-	res := resTmp.(v11.PropertyKey_Type)
+	res := resTmp.(v12.PropertyKey_Type)
 	fc.Result = res
 	return ec.marshalNPropertyKeyType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐPropertyKey_Type(ctx, field.Selections, res)
 }
@@ -34863,7 +34859,7 @@ func (ec *executionContext) _Query_oracleSpecs(ctx context.Context, field graphq
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*v11.OracleSpec)
+	res := resTmp.([]*v12.OracleSpec)
 	fc.Result = res
 	return ec.marshalOOracleSpec2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpecᚄ(ctx, field.Selections, res)
 }
@@ -34944,7 +34940,7 @@ func (ec *executionContext) _Query_oracleSpec(ctx context.Context, field graphql
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*v11.OracleSpec)
+	res := resTmp.(*v12.OracleSpec)
 	fc.Result = res
 	return ec.marshalOOracleSpec2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpec(ctx, field.Selections, res)
 }
@@ -34983,7 +34979,7 @@ func (ec *executionContext) _Query_oracleDataBySpec(ctx context.Context, field g
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*v11.OracleData)
+	res := resTmp.([]*v12.OracleData)
 	fc.Result = res
 	return ec.marshalOOracleData2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleDataᚄ(ctx, field.Selections, res)
 }
@@ -35064,7 +35060,7 @@ func (ec *executionContext) _Query_oracleData(ctx context.Context, field graphql
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*v11.OracleData)
+	res := resTmp.([]*v12.OracleData)
 	fc.Result = res
 	return ec.marshalOOracleData2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleDataᚄ(ctx, field.Selections, res)
 }
@@ -35628,7 +35624,7 @@ func (ec *executionContext) _Query_nodeSignatures(ctx context.Context, field gra
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*v12.NodeSignature)
+	res := resTmp.([]*v11.NodeSignature)
 	fc.Result = res
 	return ec.marshalONodeSignature2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋcommandsᚋv1ᚐNodeSignatureᚄ(ctx, field.Selections, res)
 }
@@ -42964,7 +42960,7 @@ func (ec *executionContext) _UpdateFutureProduct_oracleSpecForSettlementPrice(ct
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*v11.OracleSpecConfiguration)
+	res := resTmp.(*v12.OracleSpecConfiguration)
 	fc.Result = res
 	return ec.marshalNOracleSpecConfiguration2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpecConfiguration(ctx, field.Selections, res)
 }
@@ -42999,7 +42995,7 @@ func (ec *executionContext) _UpdateFutureProduct_oracleSpecForTradingTermination
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*v11.OracleSpecConfiguration)
+	res := resTmp.(*v12.OracleSpecConfiguration)
 	fc.Result = res
 	return ec.marshalNOracleSpecConfiguration2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpecConfiguration(ctx, field.Selections, res)
 }
@@ -45671,9 +45667,9 @@ func (ec *executionContext) _Event(ctx context.Context, sel ast.SelectionSet, ob
 			return graphql.Null
 		}
 		return ec._MarketData(ctx, sel, obj)
-	case v12.NodeSignature:
+	case v11.NodeSignature:
 		return ec._NodeSignature(ctx, sel, &obj)
-	case *v12.NodeSignature:
+	case *v11.NodeSignature:
 		if obj == nil {
 			return graphql.Null
 		}
@@ -45748,9 +45744,9 @@ func (ec *executionContext) _Event(ctx context.Context, sel ast.SelectionSet, ob
 			return graphql.Null
 		}
 		return ec._Withdrawal(ctx, sel, obj)
-	case v11.OracleSpec:
+	case v12.OracleSpec:
 		return ec._OracleSpec(ctx, sel, &obj)
-	case *v11.OracleSpec:
+	case *v12.OracleSpec:
 		if obj == nil {
 			return graphql.Null
 		}
@@ -47131,7 +47127,7 @@ func (ec *executionContext) _CandleNode(ctx context.Context, sel ast.SelectionSe
 
 var conditionImplementors = []string{"Condition"}
 
-func (ec *executionContext) _Condition(ctx context.Context, sel ast.SelectionSet, obj *v11.Condition) graphql.Marshaler {
+func (ec *executionContext) _Condition(ctx context.Context, sel ast.SelectionSet, obj *v12.Condition) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, conditionImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -47140,25 +47136,15 @@ func (ec *executionContext) _Condition(ctx context.Context, sel ast.SelectionSet
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Condition")
 		case "operator":
-			field := field
-
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Condition_operator(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+				return ec._Condition_operator(ctx, field, obj)
 			}
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
+			out.Values[i] = innerFunc(ctx)
 
-			})
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "value":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Condition_value(ctx, field, obj)
@@ -48416,7 +48402,7 @@ func (ec *executionContext) _Fees(ctx context.Context, sel ast.SelectionSet, obj
 
 var filterImplementors = []string{"Filter"}
 
-func (ec *executionContext) _Filter(ctx context.Context, sel ast.SelectionSet, obj *v11.Filter) graphql.Marshaler {
+func (ec *executionContext) _Filter(ctx context.Context, sel ast.SelectionSet, obj *v12.Filter) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, filterImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -52321,7 +52307,7 @@ func (ec *executionContext) _NodeEdge(ctx context.Context, sel ast.SelectionSet,
 
 var nodeSignatureImplementors = []string{"NodeSignature", "Event"}
 
-func (ec *executionContext) _NodeSignature(ctx context.Context, sel ast.SelectionSet, obj *v12.NodeSignature) graphql.Marshaler {
+func (ec *executionContext) _NodeSignature(ctx context.Context, sel ast.SelectionSet, obj *v11.NodeSignature) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, nodeSignatureImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -53165,7 +53151,7 @@ func (ec *executionContext) _OneOffTransfer(ctx context.Context, sel ast.Selecti
 
 var oracleDataImplementors = []string{"OracleData"}
 
-func (ec *executionContext) _OracleData(ctx context.Context, sel ast.SelectionSet, obj *v11.OracleData) graphql.Marshaler {
+func (ec *executionContext) _OracleData(ctx context.Context, sel ast.SelectionSet, obj *v12.OracleData) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, oracleDataImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -53306,7 +53292,7 @@ func (ec *executionContext) _OracleDataEdge(ctx context.Context, sel ast.Selecti
 
 var oracleSpecImplementors = []string{"OracleSpec", "Event"}
 
-func (ec *executionContext) _OracleSpec(ctx context.Context, sel ast.SelectionSet, obj *v11.OracleSpec) graphql.Marshaler {
+func (ec *executionContext) _OracleSpec(ctx context.Context, sel ast.SelectionSet, obj *v12.OracleSpec) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, oracleSpecImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -53438,7 +53424,7 @@ func (ec *executionContext) _OracleSpec(ctx context.Context, sel ast.SelectionSe
 
 var oracleSpecConfigurationImplementors = []string{"OracleSpecConfiguration"}
 
-func (ec *executionContext) _OracleSpecConfiguration(ctx context.Context, sel ast.SelectionSet, obj *v11.OracleSpecConfiguration) graphql.Marshaler {
+func (ec *executionContext) _OracleSpecConfiguration(ctx context.Context, sel ast.SelectionSet, obj *v12.OracleSpecConfiguration) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, oracleSpecConfigurationImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -55393,7 +55379,7 @@ func (ec *executionContext) _PriceMonitoringTrigger(ctx context.Context, sel ast
 
 var propertyImplementors = []string{"Property"}
 
-func (ec *executionContext) _Property(ctx context.Context, sel ast.SelectionSet, obj *v11.Property) graphql.Marshaler {
+func (ec *executionContext) _Property(ctx context.Context, sel ast.SelectionSet, obj *v12.Property) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, propertyImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -55434,7 +55420,7 @@ func (ec *executionContext) _Property(ctx context.Context, sel ast.SelectionSet,
 
 var propertyKeyImplementors = []string{"PropertyKey"}
 
-func (ec *executionContext) _PropertyKey(ctx context.Context, sel ast.SelectionSet, obj *v11.PropertyKey) graphql.Marshaler {
+func (ec *executionContext) _PropertyKey(ctx context.Context, sel ast.SelectionSet, obj *v12.PropertyKey) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, propertyKeyImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -61717,7 +61703,7 @@ func (ec *executionContext) marshalNCandleNode2ᚖcodeᚗvegaprotocolᚗioᚋveg
 	return ec._CandleNode(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNCondition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐCondition(ctx context.Context, sel ast.SelectionSet, v *v11.Condition) graphql.Marshaler {
+func (ec *executionContext) marshalNCondition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐCondition(ctx context.Context, sel ast.SelectionSet, v *v12.Condition) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -61727,14 +61713,19 @@ func (ec *executionContext) marshalNCondition2ᚖcodeᚗvegaprotocolᚗioᚋvega
 	return ec._Condition(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNConditionOperator2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐConditionOperator(ctx context.Context, v interface{}) (ConditionOperator, error) {
-	var res ConditionOperator
-	err := res.UnmarshalGQL(v)
+func (ec *executionContext) unmarshalNConditionOperator2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐCondition_Operator(ctx context.Context, v interface{}) (v12.Condition_Operator, error) {
+	res, err := marshallers.UnmarshalConditionOperator(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNConditionOperator2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐConditionOperator(ctx context.Context, sel ast.SelectionSet, v ConditionOperator) graphql.Marshaler {
-	return v
+func (ec *executionContext) marshalNConditionOperator2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐCondition_Operator(ctx context.Context, sel ast.SelectionSet, v v12.Condition_Operator) graphql.Marshaler {
+	res := marshallers.MarshalConditionOperator(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
 }
 
 func (ec *executionContext) marshalNDelegation2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDelegation(ctx context.Context, sel ast.SelectionSet, v vega.Delegation) graphql.Marshaler {
@@ -61990,7 +61981,7 @@ func (ec *executionContext) marshalNFees2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋpr
 	return ec._Fees(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐFilter(ctx context.Context, sel ast.SelectionSet, v *v11.Filter) graphql.Marshaler {
+func (ec *executionContext) marshalNFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐFilter(ctx context.Context, sel ast.SelectionSet, v *v12.Filter) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -62637,7 +62628,7 @@ func (ec *executionContext) marshalNNode2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋpr
 	return ec._Node(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNNodeSignature2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋcommandsᚋv1ᚐNodeSignature(ctx context.Context, sel ast.SelectionSet, v *v12.NodeSignature) graphql.Marshaler {
+func (ec *executionContext) marshalNNodeSignature2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋcommandsᚋv1ᚐNodeSignature(ctx context.Context, sel ast.SelectionSet, v *v11.NodeSignature) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -62862,7 +62853,7 @@ func (ec *executionContext) marshalNObservableMarketDepthUpdate2ᚖcodeᚗvegapr
 	return ec._ObservableMarketDepthUpdate(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNOracleData2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleDataᚄ(ctx context.Context, sel ast.SelectionSet, v []*v11.OracleData) graphql.Marshaler {
+func (ec *executionContext) marshalNOracleData2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleDataᚄ(ctx context.Context, sel ast.SelectionSet, v []*v12.OracleData) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -62906,7 +62897,7 @@ func (ec *executionContext) marshalNOracleData2ᚕᚖcodeᚗvegaprotocolᚗioᚋ
 	return ret
 }
 
-func (ec *executionContext) marshalNOracleData2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleData(ctx context.Context, sel ast.SelectionSet, v *v11.OracleData) graphql.Marshaler {
+func (ec *executionContext) marshalNOracleData2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleData(ctx context.Context, sel ast.SelectionSet, v *v12.OracleData) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -62930,7 +62921,7 @@ func (ec *executionContext) marshalNOracleDataConnection2ᚖcodeᚗvegaprotocol�
 	return ec._OracleDataConnection(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNOracleSpec2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpec(ctx context.Context, sel ast.SelectionSet, v *v11.OracleSpec) graphql.Marshaler {
+func (ec *executionContext) marshalNOracleSpec2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpec(ctx context.Context, sel ast.SelectionSet, v *v12.OracleSpec) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -62940,7 +62931,7 @@ func (ec *executionContext) marshalNOracleSpec2ᚖcodeᚗvegaprotocolᚗioᚋveg
 	return ec._OracleSpec(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNOracleSpecConfiguration2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpecConfiguration(ctx context.Context, sel ast.SelectionSet, v *v11.OracleSpecConfiguration) graphql.Marshaler {
+func (ec *executionContext) marshalNOracleSpecConfiguration2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpecConfiguration(ctx context.Context, sel ast.SelectionSet, v *v12.OracleSpecConfiguration) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -62950,12 +62941,12 @@ func (ec *executionContext) marshalNOracleSpecConfiguration2ᚖcodeᚗvegaprotoc
 	return ec._OracleSpecConfiguration(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNOracleSpecStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpec_Status(ctx context.Context, v interface{}) (v11.OracleSpec_Status, error) {
+func (ec *executionContext) unmarshalNOracleSpecStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpec_Status(ctx context.Context, v interface{}) (v12.OracleSpec_Status, error) {
 	res, err := marshallers.UnmarshalOracleSpecStatus(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNOracleSpecStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpec_Status(ctx context.Context, sel ast.SelectionSet, v v11.OracleSpec_Status) graphql.Marshaler {
+func (ec *executionContext) marshalNOracleSpecStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpec_Status(ctx context.Context, sel ast.SelectionSet, v v12.OracleSpec_Status) graphql.Marshaler {
 	res := marshallers.MarshalOracleSpecStatus(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -63293,7 +63284,7 @@ func (ec *executionContext) marshalNProduct2codeᚗvegaprotocolᚗioᚋvegaᚋda
 	return ec._Product(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNProperty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐProperty(ctx context.Context, sel ast.SelectionSet, v *v11.Property) graphql.Marshaler {
+func (ec *executionContext) marshalNProperty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐProperty(ctx context.Context, sel ast.SelectionSet, v *v12.Property) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -63303,7 +63294,7 @@ func (ec *executionContext) marshalNProperty2ᚖcodeᚗvegaprotocolᚗioᚋvega�
 	return ec._Property(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNPropertyKey2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐPropertyKey(ctx context.Context, sel ast.SelectionSet, v *v11.PropertyKey) graphql.Marshaler {
+func (ec *executionContext) marshalNPropertyKey2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐPropertyKey(ctx context.Context, sel ast.SelectionSet, v *v12.PropertyKey) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -63313,12 +63304,12 @@ func (ec *executionContext) marshalNPropertyKey2ᚖcodeᚗvegaprotocolᚗioᚋve
 	return ec._PropertyKey(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNPropertyKeyType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐPropertyKey_Type(ctx context.Context, v interface{}) (v11.PropertyKey_Type, error) {
+func (ec *executionContext) unmarshalNPropertyKeyType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐPropertyKey_Type(ctx context.Context, v interface{}) (v12.PropertyKey_Type, error) {
 	res, err := marshallers.UnmarshalPropertyKeyType(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNPropertyKeyType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐPropertyKey_Type(ctx context.Context, sel ast.SelectionSet, v v11.PropertyKey_Type) graphql.Marshaler {
+func (ec *executionContext) marshalNPropertyKeyType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐPropertyKey_Type(ctx context.Context, sel ast.SelectionSet, v v12.PropertyKey_Type) graphql.Marshaler {
 	res := marshallers.MarshalPropertyKeyType(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -64796,7 +64787,7 @@ func (ec *executionContext) marshalOCandleEdge2ᚖcodeᚗvegaprotocolᚗioᚋveg
 	return ec._CandleEdge(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOCondition2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐConditionᚄ(ctx context.Context, sel ast.SelectionSet, v []*v11.Condition) graphql.Marshaler {
+func (ec *executionContext) marshalOCondition2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐConditionᚄ(ctx context.Context, sel ast.SelectionSet, v []*v12.Condition) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -65068,7 +65059,7 @@ func (ec *executionContext) marshalOErc20WithdrawalApproval2ᚖcodeᚗvegaprotoc
 	return ec._Erc20WithdrawalApproval(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOFilter2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐFilterᚄ(ctx context.Context, sel ast.SelectionSet, v []*v11.Filter) graphql.Marshaler {
+func (ec *executionContext) marshalOFilter2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐFilterᚄ(ctx context.Context, sel ast.SelectionSet, v []*v12.Filter) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -66095,7 +66086,7 @@ func (ec *executionContext) marshalONodeEdge2ᚖcodeᚗvegaprotocolᚗioᚋvega�
 	return ec._NodeEdge(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalONodeSignature2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋcommandsᚋv1ᚐNodeSignatureᚄ(ctx context.Context, sel ast.SelectionSet, v []*v12.NodeSignature) graphql.Marshaler {
+func (ec *executionContext) marshalONodeSignature2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋcommandsᚋv1ᚐNodeSignatureᚄ(ctx context.Context, sel ast.SelectionSet, v []*v11.NodeSignature) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -66190,12 +66181,12 @@ func (ec *executionContext) marshalONodeSignatureEdge2ᚖcodeᚗvegaprotocolᚗi
 	return ec._NodeSignatureEdge(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalONodeSignatureKind2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋcommandsᚋv1ᚐNodeSignatureKind(ctx context.Context, v interface{}) (v12.NodeSignatureKind, error) {
+func (ec *executionContext) unmarshalONodeSignatureKind2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋcommandsᚋv1ᚐNodeSignatureKind(ctx context.Context, v interface{}) (v11.NodeSignatureKind, error) {
 	res, err := marshallers.UnmarshalNodeSignatureKind(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalONodeSignatureKind2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋcommandsᚋv1ᚐNodeSignatureKind(ctx context.Context, sel ast.SelectionSet, v v12.NodeSignatureKind) graphql.Marshaler {
+func (ec *executionContext) marshalONodeSignatureKind2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋcommandsᚋv1ᚐNodeSignatureKind(ctx context.Context, sel ast.SelectionSet, v v11.NodeSignatureKind) graphql.Marshaler {
 	res := marshallers.MarshalNodeSignatureKind(v)
 	return res
 }
@@ -66255,7 +66246,7 @@ func (ec *executionContext) unmarshalOOffsetPagination2ᚖcodeᚗvegaprotocolᚗ
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOOracleData2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleDataᚄ(ctx context.Context, sel ast.SelectionSet, v []*v11.OracleData) graphql.Marshaler {
+func (ec *executionContext) marshalOOracleData2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleDataᚄ(ctx context.Context, sel ast.SelectionSet, v []*v12.OracleData) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -66350,7 +66341,7 @@ func (ec *executionContext) marshalOOracleDataEdge2ᚖcodeᚗvegaprotocolᚗio�
 	return ec._OracleDataEdge(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOOracleSpec2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpecᚄ(ctx context.Context, sel ast.SelectionSet, v []*v11.OracleSpec) graphql.Marshaler {
+func (ec *executionContext) marshalOOracleSpec2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpecᚄ(ctx context.Context, sel ast.SelectionSet, v []*v12.OracleSpec) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -66397,7 +66388,7 @@ func (ec *executionContext) marshalOOracleSpec2ᚕᚖcodeᚗvegaprotocolᚗioᚋ
 	return ret
 }
 
-func (ec *executionContext) marshalOOracleSpec2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpec(ctx context.Context, sel ast.SelectionSet, v *v11.OracleSpec) graphql.Marshaler {
+func (ec *executionContext) marshalOOracleSpec2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐOracleSpec(ctx context.Context, sel ast.SelectionSet, v *v12.OracleSpec) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -66903,7 +66894,7 @@ func (ec *executionContext) marshalOPriceMonitoringTrigger2ᚕᚖcodeᚗvegaprot
 	return ret
 }
 
-func (ec *executionContext) marshalOProperty2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐPropertyᚄ(ctx context.Context, sel ast.SelectionSet, v []*v11.Property) graphql.Marshaler {
+func (ec *executionContext) marshalOProperty2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐPropertyᚄ(ctx context.Context, sel ast.SelectionSet, v []*v12.Property) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}

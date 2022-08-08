@@ -14,14 +14,12 @@ package gql
 
 import (
 	"errors"
-	"fmt"
 	"strconv"
 
 	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
-	oraclesv1 "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 )
 
 var (
@@ -100,25 +98,6 @@ func PriceMonitoringSettingsFromProto(ppmst *types.PriceMonitoringSettings) (*Pr
 	return &PriceMonitoringSettings{
 		Parameters: params,
 	}, nil
-}
-
-// IntoProto ...
-func (o ConditionOperator) IntoProto() (oraclesv1.Condition_Operator, error) {
-	switch o {
-	case ConditionOperatorOperatorEquals:
-		return oraclesv1.Condition_OPERATOR_EQUALS, nil
-	case ConditionOperatorOperatorGreaterThan:
-		return oraclesv1.Condition_OPERATOR_GREATER_THAN, nil
-	case ConditionOperatorOperatorGreaterThanOrEqual:
-		return oraclesv1.Condition_OPERATOR_GREATER_THAN_OR_EQUAL, nil
-	case ConditionOperatorOperatorLessThan:
-		return oraclesv1.Condition_OPERATOR_LESS_THAN, nil
-	case ConditionOperatorOperatorLessThanOrEqual:
-		return oraclesv1.Condition_OPERATOR_LESS_THAN_OR_EQUAL, nil
-	default:
-		err := fmt.Errorf("failed to convert ConditionOperator from Proto to GraphQL: %v", o)
-		return oraclesv1.Condition_OPERATOR_EQUALS, err
-	}
 }
 
 // ToOptionalProposalState ...

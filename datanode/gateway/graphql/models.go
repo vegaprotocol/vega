@@ -656,61 +656,6 @@ func (e BusEventType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-// Comparator describes the type of comparison.
-type ConditionOperator string
-
-const (
-	// Verify if the property values are strictly equal or not.
-	ConditionOperatorOperatorEquals ConditionOperator = "OperatorEquals"
-	// Verify if the oracle data value is greater than the Condition value.
-	ConditionOperatorOperatorGreaterThan ConditionOperator = "OperatorGreaterThan"
-	// Verify if the oracle data value is greater than or equal to the Condition
-	// value.
-	ConditionOperatorOperatorGreaterThanOrEqual ConditionOperator = "OperatorGreaterThanOrEqual"
-	//  Verify if the oracle data value is less than the Condition value.
-	ConditionOperatorOperatorLessThan ConditionOperator = "OperatorLessThan"
-	// Verify if the oracle data value is less or equal to than the Condition
-	// value.
-	ConditionOperatorOperatorLessThanOrEqual ConditionOperator = "OperatorLessThanOrEqual"
-)
-
-var AllConditionOperator = []ConditionOperator{
-	ConditionOperatorOperatorEquals,
-	ConditionOperatorOperatorGreaterThan,
-	ConditionOperatorOperatorGreaterThanOrEqual,
-	ConditionOperatorOperatorLessThan,
-	ConditionOperatorOperatorLessThanOrEqual,
-}
-
-func (e ConditionOperator) IsValid() bool {
-	switch e {
-	case ConditionOperatorOperatorEquals, ConditionOperatorOperatorGreaterThan, ConditionOperatorOperatorGreaterThanOrEqual, ConditionOperatorOperatorLessThan, ConditionOperatorOperatorLessThanOrEqual:
-		return true
-	}
-	return false
-}
-
-func (e ConditionOperator) String() string {
-	return string(e)
-}
-
-func (e *ConditionOperator) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = ConditionOperator(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid ConditionOperator", str)
-	}
-	return nil
-}
-
-func (e ConditionOperator) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
 // The status of a deposit
 type DepositStatus string
 
