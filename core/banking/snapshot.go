@@ -321,9 +321,7 @@ func (e *Engine) restoreScheduledTransfers(ctx context.Context, transfers []*che
 	return err
 }
 
-func (e *Engine) restoreBridgeState(ctx context.Context, state *types.BankingBridgeState, p *types.Payload) error {
-	var err error
-
+func (e *Engine) restoreBridgeState(ctx context.Context, state *types.BankingBridgeState, p *types.Payload) (err error) {
 	if state != nil {
 		e.bridgeState = &bridgeState{
 			active:   state.Active,
@@ -334,7 +332,7 @@ func (e *Engine) restoreBridgeState(ctx context.Context, state *types.BankingBri
 
 	e.bss.changedBridgeState = false
 	e.bss.serialisedBridgeState, err = proto.Marshal(p.IntoProto())
-	return err
+	return
 }
 
 func (e *Engine) restoreDeposits(ctx context.Context, deposits *types.BankingDeposits, p *types.Payload) error {

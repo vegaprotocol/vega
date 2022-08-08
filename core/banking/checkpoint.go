@@ -71,12 +71,13 @@ func (e *Engine) loadBridgeState(state *checkpoint.BridgeState) {
 		e.bridgeState = &bridgeState{
 			active: true,
 		}
-	} else {
-		e.bridgeState = &bridgeState{
-			active:   state.Active,
-			block:    state.BlockHeight,
-			logIndex: state.LogIndex,
-		}
+		return
+	}
+
+	e.bridgeState = &bridgeState{
+		active:   state.Active,
+		block:    state.BlockHeight,
+		logIndex: state.LogIndex,
 	}
 }
 
