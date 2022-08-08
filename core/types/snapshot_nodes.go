@@ -2085,7 +2085,7 @@ func AssetActionFromProto(a *snapshot.AssetAction) *AssetAction {
 		BlockNumber:   a.BlockNumber,
 		TxIndex:       a.TxIndex,
 		Hash:          a.Hash,
-		BridgeStopped: a.Erc20BridgeResumed,
+		BridgeStopped: a.Erc20BridgeStopped,
 		BridgeResume:  a.Erc20BridgeResumed,
 	}
 
