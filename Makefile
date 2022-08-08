@@ -39,7 +39,7 @@ mocks_check: ## mocks: Check committed files match just-generated files
 	@files="$$(git diff --name-only)" ; \
 	if test -n "$$files" ; then \
 		echo "Committed files do not match just-generated files: " $$files ; \
-		test -n "$(CI)" && git diff vega/ ; \
+		git diff ; \
 		exit 1 ; \
 	fi
 
@@ -98,7 +98,7 @@ proto_check: ## proto: Check committed files match just-generated files
 	@files="$$(git diff --name-only protos/vega/ protos/data-node/)" ; \
 	if test -n "$$files" ; then \
 		echo "Committed files do not match just-generated files: " $$files ; \
-		test -n "$(CI)" && git diff vega/ ; \
+		git diff ; \
 		exit 1 ; \
 	fi
 
