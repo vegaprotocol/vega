@@ -55,3 +55,13 @@ func MarshalDispatchMetric(s vega.DispatchMetric) graphql.Marshaler {
 func UnmarshalDispatchMetric(v interface{}) (vega.DispatchMetric, error) {
 	return vega.DispatchMetric_DISPATCH_METRIC_UNSPECIFIED, ErrUnimplemented
 }
+
+func MarshalNodeStatus(s vega.NodeStatus) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalNodeStatus(v interface{}) (vega.NodeStatus, error) {
+	return vega.NodeStatus_NODE_STATUS_UNSPECIFIED, ErrUnimplemented
+}

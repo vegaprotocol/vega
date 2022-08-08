@@ -28,6 +28,9 @@ models:
   DispatchMetric:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.DispatchMetric
+  NodeStatus:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.NodeStatus
   PaginatedOrder:
     model: code.vegaprotocol.io/vega/protos/vega.Order
   Trade:

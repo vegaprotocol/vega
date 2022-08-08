@@ -1708,8 +1708,6 @@ type NewMarketResolver interface {
 	Commitment(ctx context.Context, obj *vega.NewMarket) (*vega.NewMarketCommitment, error)
 }
 type NodeResolver interface {
-	Status(ctx context.Context, obj *vega.Node) (NodeStatus, error)
-
 	DelegationsConnection(ctx context.Context, obj *vega.Node, partyID *string, pagination *v2.Pagination) (*v2.DelegationsConnection, error)
 }
 type NodeDataResolver interface {
@@ -9220,10 +9218,10 @@ type DispatchStrategy {
 
 enum NodeStatus {
   "The node is non-validating"
-  NonValidator
+  NODE_STATUS_NON_VALIDATOR
 
   "The node is validating"
-  Validator
+  NODE_STATUS_VALIDATOR
 }
 
 # Describes in both human readable and block time when an epoch spans.
@@ -26894,14 +26892,14 @@ func (ec *executionContext) _Node_status(ctx context.Context, field graphql.Coll
 		Object:     "Node",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Node().Status(rctx, obj)
+		return obj.Status, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -26913,9 +26911,9 @@ func (ec *executionContext) _Node_status(ctx context.Context, field graphql.Coll
 		}
 		return graphql.Null
 	}
-	res := resTmp.(NodeStatus)
+	res := resTmp.(vega.NodeStatus)
 	fc.Result = res
-	return ec.marshalNNodeStatus2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐNodeStatus(ctx, field.Selections, res)
+	return ec.marshalNNodeStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐNodeStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Node_delegations(ctx context.Context, field graphql.CollectedField, obj *vega.Node) (ret graphql.Marshaler) {
@@ -52125,25 +52123,15 @@ func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = innerFunc(ctx)
 
 		case "status":
-			field := field
-
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Node_status(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+				return ec._Node_status(ctx, field, obj)
 			}
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
+			out.Values[i] = innerFunc(ctx)
 
-			})
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "delegations":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Node_delegations(ctx, field, obj)
@@ -62705,14 +62693,19 @@ func (ec *executionContext) marshalNNodeSignaturesConnection2ᚖcodeᚗvegaproto
 	return ec._NodeSignaturesConnection(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNNodeStatus2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐNodeStatus(ctx context.Context, v interface{}) (NodeStatus, error) {
-	var res NodeStatus
-	err := res.UnmarshalGQL(v)
+func (ec *executionContext) unmarshalNNodeStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐNodeStatus(ctx context.Context, v interface{}) (vega.NodeStatus, error) {
+	res, err := marshallers.UnmarshalNodeStatus(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNNodeStatus2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐNodeStatus(ctx context.Context, sel ast.SelectionSet, v NodeStatus) graphql.Marshaler {
-	return v
+func (ec *executionContext) marshalNNodeStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐNodeStatus(ctx context.Context, sel ast.SelectionSet, v vega.NodeStatus) graphql.Marshaler {
+	res := marshallers.MarshalNodeStatus(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
 }
 
 func (ec *executionContext) marshalNNodesConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodesConnection(ctx context.Context, sel ast.SelectionSet, v v2.NodesConnection) graphql.Marshaler {

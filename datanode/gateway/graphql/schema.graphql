@@ -746,10 +746,10 @@ type DispatchStrategy {
 
 enum NodeStatus {
   "The node is non-validating"
-  NonValidator
+  NODE_STATUS_NON_VALIDATOR
 
   "The node is validating"
-  Validator
+  NODE_STATUS_VALIDATOR
 }
 
 # Describes in both human readable and block time when an epoch spans.

@@ -1085,49 +1085,6 @@ func (e NodeSignatureKind) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-type NodeStatus string
-
-const (
-	// The node is non-validating
-	NodeStatusNonValidator NodeStatus = "NonValidator"
-	// The node is validating
-	NodeStatusValidator NodeStatus = "Validator"
-)
-
-var AllNodeStatus = []NodeStatus{
-	NodeStatusNonValidator,
-	NodeStatusValidator,
-}
-
-func (e NodeStatus) IsValid() bool {
-	switch e {
-	case NodeStatusNonValidator, NodeStatusValidator:
-		return true
-	}
-	return false
-}
-
-func (e NodeStatus) String() string {
-	return string(e)
-}
-
-func (e *NodeStatus) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = NodeStatus(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid NodeStatus", str)
-	}
-	return nil
-}
-
-func (e NodeStatus) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
 // Status describe the status of the oracle spec
 type OracleSpecStatus string
 
