@@ -9137,7 +9137,7 @@ enum TransferStatus {
   Indicates a transfer stopped by the Vega network
   e.g: no funds left to cover the transfer
   """
-  STATUS_STOPPED
+  STATUS_STOPPEDah
   "Indication of a transfer cancelled by the user"
   STATUS_CANCELLED
 }
@@ -9198,14 +9198,13 @@ type RecurringTransfer {
 }
 
 enum DispatchMetric {
+  DISPATCH_METRIC_TAKER_FEES_PAID
 
-  MarketTradingValue
+  DISPATCH_METRIC_MAKER_FEES_RECEIVED
 
-  MakerFeesReceived
+  DISPATCH_METRIC_LP_FEES_RECEIVED
 
-  TakerFeesPaid
-
-  LPFeesReceived
+  DISPATCH_METRIC_MARKET_VALUE
 }
 
 type DispatchStrategy {
@@ -18100,9 +18099,9 @@ func (ec *executionContext) _DispatchStrategy_dispatchMetric(ctx context.Context
 		}
 		return graphql.Null
 	}
-	res := resTmp.(DispatchMetric)
+	res := resTmp.(vega.DispatchMetric)
 	fc.Result = res
-	return ec.marshalNDispatchMetric2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐDispatchMetric(ctx, field.Selections, res)
+	return ec.marshalNDispatchMetric2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDispatchMetric(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DispatchStrategy_dispatchMetricAssetId(ctx context.Context, field graphql.CollectedField, obj *DispatchStrategy) (ret graphql.Marshaler) {
@@ -61888,14 +61887,19 @@ func (ec *executionContext) marshalNDepositsConnection2ᚖcodeᚗvegaprotocolᚗ
 	return ec._DepositsConnection(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNDispatchMetric2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐDispatchMetric(ctx context.Context, v interface{}) (DispatchMetric, error) {
-	var res DispatchMetric
-	err := res.UnmarshalGQL(v)
+func (ec *executionContext) unmarshalNDispatchMetric2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDispatchMetric(ctx context.Context, v interface{}) (vega.DispatchMetric, error) {
+	res, err := marshallers.UnmarshalDispatchMetric(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNDispatchMetric2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐDispatchMetric(ctx context.Context, sel ast.SelectionSet, v DispatchMetric) graphql.Marshaler {
-	return v
+func (ec *executionContext) marshalNDispatchMetric2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDispatchMetric(ctx context.Context, sel ast.SelectionSet, v vega.DispatchMetric) graphql.Marshaler {
+	res := marshallers.MarshalDispatchMetric(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
 }
 
 func (ec *executionContext) marshalNEpoch2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐEpoch(ctx context.Context, sel ast.SelectionSet, v vega.Epoch) graphql.Marshaler {

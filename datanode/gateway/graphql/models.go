@@ -103,7 +103,7 @@ type DiscreteTrading struct {
 
 type DispatchStrategy struct {
 	// Defines the data that will be used to compare markets so as to distribute rewards appropriately
-	DispatchMetric DispatchMetric `json:"dispatchMetric"`
+	DispatchMetric vega.DispatchMetric `json:"dispatchMetric"`
 	// The asset to use for measuring contribution to the metric
 	DispatchMetricAssetID string `json:"dispatchMetricAssetId"`
 	// Scope the dispatch to this market only under the metric asset
@@ -804,51 +804,6 @@ func (e *DepositStatus) UnmarshalGQL(v interface{}) error {
 }
 
 func (e DepositStatus) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-type DispatchMetric string
-
-const (
-	DispatchMetricMarketTradingValue DispatchMetric = "MarketTradingValue"
-	DispatchMetricMakerFeesReceived  DispatchMetric = "MakerFeesReceived"
-	DispatchMetricTakerFeesPaid      DispatchMetric = "TakerFeesPaid"
-	DispatchMetricLPFeesReceived     DispatchMetric = "LPFeesReceived"
-)
-
-var AllDispatchMetric = []DispatchMetric{
-	DispatchMetricMarketTradingValue,
-	DispatchMetricMakerFeesReceived,
-	DispatchMetricTakerFeesPaid,
-	DispatchMetricLPFeesReceived,
-}
-
-func (e DispatchMetric) IsValid() bool {
-	switch e {
-	case DispatchMetricMarketTradingValue, DispatchMetricMakerFeesReceived, DispatchMetricTakerFeesPaid, DispatchMetricLPFeesReceived:
-		return true
-	}
-	return false
-}
-
-func (e DispatchMetric) String() string {
-	return string(e)
-}
-
-func (e *DispatchMetric) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = DispatchMetric(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid DispatchMetric", str)
-	}
-	return nil
-}
-
-func (e DispatchMetric) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

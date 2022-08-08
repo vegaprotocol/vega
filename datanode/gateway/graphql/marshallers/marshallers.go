@@ -45,3 +45,13 @@ func MarshalTransferStatus(s eventspb.Transfer_Status) graphql.Marshaler {
 func UnmarshalTransferStatus(v interface{}) (eventspb.Transfer_Status, error) {
 	return eventspb.Transfer_STATUS_UNSPECIFIED, ErrUnimplemented
 }
+
+func MarshalDispatchMetric(s vega.DispatchMetric) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalDispatchMetric(v interface{}) (vega.DispatchMetric, error) {
+	return vega.DispatchMetric_DISPATCH_METRIC_UNSPECIFIED, ErrUnimplemented
+}

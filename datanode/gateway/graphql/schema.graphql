@@ -663,7 +663,7 @@ enum TransferStatus {
   Indicates a transfer stopped by the Vega network
   e.g: no funds left to cover the transfer
   """
-  STATUS_STOPPED
+  STATUS_STOPPEDah
   "Indication of a transfer cancelled by the user"
   STATUS_CANCELLED
 }
@@ -724,14 +724,13 @@ type RecurringTransfer {
 }
 
 enum DispatchMetric {
+  DISPATCH_METRIC_TAKER_FEES_PAID
 
-  MarketTradingValue
+  DISPATCH_METRIC_MAKER_FEES_RECEIVED
 
-  MakerFeesReceived
+  DISPATCH_METRIC_LP_FEES_RECEIVED
 
-  TakerFeesPaid
-
-  LPFeesReceived
+  DISPATCH_METRIC_MARKET_VALUE
 }
 
 type DispatchStrategy {
