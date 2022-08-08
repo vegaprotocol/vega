@@ -38,24 +38,6 @@ func convertAssetStatusFromProto(s types.Asset_Status) (AssetStatus, error) {
 	}
 }
 
-func convertTransferStatusFromProto(x eventspb.Transfer_Status) (TransferStatus, error) {
-	switch x {
-	case eventspb.Transfer_STATUS_PENDING:
-		return TransferStatusPending, nil
-	case eventspb.Transfer_STATUS_DONE:
-		return TransferStatusDone, nil
-	case eventspb.Transfer_STATUS_STOPPED:
-		return TransferStatusStopped, nil
-	case eventspb.Transfer_STATUS_REJECTED:
-		return TransferStatusRejected, nil
-	case eventspb.Transfer_STATUS_CANCELLED:
-		return TransferStatusCancelled, nil
-	default:
-		err := fmt.Errorf("failed to convert TransferStatus from GraphQL to Proto: %v", x)
-		return TransferStatusDone, err
-	}
-}
-
 func convertStakeLinkingTypeFromProto(
 	s eventspb.StakeLinking_Type,
 ) (StakeLinkingType, error) {

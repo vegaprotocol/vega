@@ -2013,7 +2013,6 @@ type TradeResolver interface {
 type TransferResolver interface {
 	Asset(ctx context.Context, obj *v1.Transfer) (*vega.Asset, error)
 
-	Status(ctx context.Context, obj *v1.Transfer) (TransferStatus, error)
 	Timestamp(ctx context.Context, obj *v1.Transfer) (string, error)
 	Kind(ctx context.Context, obj *v1.Transfer) (TransferKind, error)
 }
@@ -9129,18 +9128,18 @@ type Query {
 
 enum TransferStatus {
   "Indicates a transfer still being processed"
-  Pending
+  STATUS_PENDING
   "Indicates a transfer accepted by the Vega network"
-  Done
+  STATUS_DONE
   "Indicates a transfer rejected by the Vega network"
-  Rejected
+  STATUS_REJECTED
   """
   Indicates a transfer stopped by the Vega network
   e.g: no funds left to cover the transfer
   """
-  Stopped
+  STATUS_STOPPED
   "Indication of a transfer cancelled by the user"
-  Cancelled
+  STATUS_CANCELLED
 }
 
 "A user initiated transfer"
@@ -42258,14 +42257,14 @@ func (ec *executionContext) _Transfer_status(ctx context.Context, field graphql.
 		Object:     "Transfer",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Transfer().Status(rctx, obj)
+		return obj.Status, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -42277,9 +42276,9 @@ func (ec *executionContext) _Transfer_status(ctx context.Context, field graphql.
 		}
 		return graphql.Null
 	}
-	res := resTmp.(TransferStatus)
+	res := resTmp.(v1.Transfer_Status)
 	fc.Result = res
-	return ec.marshalNTransferStatus2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferStatus(ctx, field.Selections, res)
+	return ec.marshalNTransferStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐTransfer_Status(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Transfer_timestamp(ctx context.Context, field graphql.CollectedField, obj *v1.Transfer) (ret graphql.Marshaler) {
@@ -59806,25 +59805,15 @@ func (ec *executionContext) _Transfer(ctx context.Context, sel ast.SelectionSet,
 			out.Values[i] = innerFunc(ctx)
 
 		case "status":
-			field := field
-
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Transfer_status(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+				return ec._Transfer_status(ctx, field, obj)
 			}
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
+			out.Values[i] = innerFunc(ctx)
 
-			})
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "timestamp":
 			field := field
 
@@ -63875,14 +63864,19 @@ func (ec *executionContext) marshalNTransferResponse2ᚖcodeᚗvegaprotocolᚗio
 	return ec._TransferResponse(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNTransferStatus2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferStatus(ctx context.Context, v interface{}) (TransferStatus, error) {
-	var res TransferStatus
-	err := res.UnmarshalGQL(v)
+func (ec *executionContext) unmarshalNTransferStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐTransfer_Status(ctx context.Context, v interface{}) (v1.Transfer_Status, error) {
+	res, err := marshallers.UnmarshalTransferStatus(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNTransferStatus2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferStatus(ctx context.Context, sel ast.SelectionSet, v TransferStatus) graphql.Marshaler {
-	return v
+func (ec *executionContext) marshalNTransferStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐTransfer_Status(ctx context.Context, sel ast.SelectionSet, v v1.Transfer_Status) graphql.Marshaler {
+	res := marshallers.MarshalTransferStatus(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
 }
 
 func (ec *executionContext) marshalNUpdateAssetSource2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐUpdateAssetSource(ctx context.Context, sel ast.SelectionSet, v UpdateAssetSource) graphql.Marshaler {

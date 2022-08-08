@@ -30,10 +30,6 @@ func (r *transferResolver) Asset(ctx context.Context, obj *eventspb.Transfer) (*
 	return r.r.getAssetByID(ctx, obj.Asset)
 }
 
-func (r *transferResolver) Status(ctx context.Context, obj *eventspb.Transfer) (TransferStatus, error) {
-	return convertTransferStatusFromProto(obj.Status)
-}
-
 func (r *transferResolver) Timestamp(ctx context.Context, obj *eventspb.Transfer) (string, error) {
 	return vegatime.Format(vegatime.UnixNano(obj.Timestamp)), nil
 }

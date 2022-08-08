@@ -22,6 +22,9 @@ models:
   Side:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.Side
+  TransferStatus:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.TransferStatus
   PaginatedOrder:
     model: code.vegaprotocol.io/vega/protos/vega.Order
   Trade:

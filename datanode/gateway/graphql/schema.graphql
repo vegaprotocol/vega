@@ -654,18 +654,18 @@ type Query {
 
 enum TransferStatus {
   "Indicates a transfer still being processed"
-  Pending
+  STATUS_PENDING
   "Indicates a transfer accepted by the Vega network"
-  Done
+  STATUS_DONE
   "Indicates a transfer rejected by the Vega network"
-  Rejected
+  STATUS_REJECTED
   """
   Indicates a transfer stopped by the Vega network
   e.g: no funds left to cover the transfer
   """
-  Stopped
+  STATUS_STOPPED
   "Indication of a transfer cancelled by the user"
-  Cancelled
+  STATUS_CANCELLED
 }
 
 "A user initiated transfer"

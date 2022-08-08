@@ -1,13 +1,19 @@
 package marshallers
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"strconv"
 
 	"code.vegaprotocol.io/vega/protos/vega"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/99designs/gqlgen/graphql"
+)
+
+var (
+	ErrUnimplemented = errors.New("Unmarshaller not implemented as this API is query only")
 )
 
 func MarshalSide(s vega.Side) graphql.Marshaler {
@@ -28,4 +34,14 @@ func UnmarshalSide(v interface{}) (vega.Side, error) {
 	}
 
 	return vega.Side(side), nil
+}
+
+func MarshalTransferStatus(s eventspb.Transfer_Status) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalTransferStatus(v interface{}) (eventspb.Transfer_Status, error) {
+	return eventspb.Transfer_STATUS_UNSPECIFIED, ErrUnimplemented
 }

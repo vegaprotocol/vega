@@ -2113,59 +2113,6 @@ func (e TransferDirection) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-type TransferStatus string
-
-const (
-	// Indicates a transfer still being processed
-	TransferStatusPending TransferStatus = "Pending"
-	// Indicates a transfer accepted by the Vega network
-	TransferStatusDone TransferStatus = "Done"
-	// Indicates a transfer rejected by the Vega network
-	TransferStatusRejected TransferStatus = "Rejected"
-	// Indicates a transfer stopped by the Vega network
-	// e.g: no funds left to cover the transfer
-	TransferStatusStopped TransferStatus = "Stopped"
-	// Indication of a transfer cancelled by the user
-	TransferStatusCancelled TransferStatus = "Cancelled"
-)
-
-var AllTransferStatus = []TransferStatus{
-	TransferStatusPending,
-	TransferStatusDone,
-	TransferStatusRejected,
-	TransferStatusStopped,
-	TransferStatusCancelled,
-}
-
-func (e TransferStatus) IsValid() bool {
-	switch e {
-	case TransferStatusPending, TransferStatusDone, TransferStatusRejected, TransferStatusStopped, TransferStatusCancelled:
-		return true
-	}
-	return false
-}
-
-func (e TransferStatus) String() string {
-	return string(e)
-}
-
-func (e *TransferStatus) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = TransferStatus(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid TransferStatus", str)
-	}
-	return nil
-}
-
-func (e TransferStatus) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
 type VoteValue string
 
 const (
