@@ -489,58 +489,6 @@ type UpdateInstrumentConfiguration struct {
 	Product *vega.UpdateFutureProduct `json:"product"`
 }
 
-type AuctionTrigger string
-
-const (
-	// Invalid trigger (or no auction)
-	AuctionTriggerUnspecified AuctionTrigger = "Unspecified"
-	// Auction because market has a frequent batch auction trading mode
-	AuctionTriggerBatch AuctionTrigger = "Batch"
-	// Opening auction
-	AuctionTriggerOpening AuctionTrigger = "Opening"
-	// Price monitoring
-	AuctionTriggerPrice AuctionTrigger = "Price"
-	// Liquidity monitoring
-	AuctionTriggerLiquidity AuctionTrigger = "Liquidity"
-)
-
-var AllAuctionTrigger = []AuctionTrigger{
-	AuctionTriggerUnspecified,
-	AuctionTriggerBatch,
-	AuctionTriggerOpening,
-	AuctionTriggerPrice,
-	AuctionTriggerLiquidity,
-}
-
-func (e AuctionTrigger) IsValid() bool {
-	switch e {
-	case AuctionTriggerUnspecified, AuctionTriggerBatch, AuctionTriggerOpening, AuctionTriggerPrice, AuctionTriggerLiquidity:
-		return true
-	}
-	return false
-}
-
-func (e AuctionTrigger) String() string {
-	return string(e)
-}
-
-func (e *AuctionTrigger) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = AuctionTrigger(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid AuctionTrigger", str)
-	}
-	return nil
-}
-
-func (e AuctionTrigger) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
 type BusEventType string
 
 const (

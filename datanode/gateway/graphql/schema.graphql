@@ -3265,15 +3265,15 @@ type AuctionEvent {
 
 enum AuctionTrigger {
   "Invalid trigger (or no auction)"
-  Unspecified
+  AUCTION_TRIGGER_UNSPECIFIED
   "Auction because market has a frequent batch auction trading mode"
-  Batch
+  AUCTION_TRIGGER_BATCH
   "Opening auction"
-  Opening
+  AUCTION_TRIGGER_OPENING
   "Price monitoring"
-  Price
+  AUCTION_TRIGGER_PRICE
   "Liquidity monitoring"
-  Liquidity
+  AUCTION_TRIGGER_LIQUIDITY
 }
 
 enum BusEventType {

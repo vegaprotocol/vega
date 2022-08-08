@@ -167,3 +167,13 @@ func MarshalVoteValue(s vega.Vote_Value) graphql.Marshaler {
 func UnmarshalVoteValue(v interface{}) (vega.Vote_Value, error) {
 	return vega.Vote_VALUE_UNSPECIFIED, ErrUnimplemented
 }
+
+func MarshalAuctionTrigger(s vega.AuctionTrigger) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalAuctionTrigger(v interface{}) (vega.AuctionTrigger, error) {
+	return vega.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED, ErrUnimplemented
+}

@@ -1531,8 +1531,6 @@ type AssetResolver interface {
 type AuctionEventResolver interface {
 	AuctionStart(ctx context.Context, obj *v1.AuctionEvent) (string, error)
 	AuctionEnd(ctx context.Context, obj *v1.AuctionEvent) (string, error)
-	Trigger(ctx context.Context, obj *v1.AuctionEvent) (AuctionTrigger, error)
-	ExtensionTrigger(ctx context.Context, obj *v1.AuctionEvent) (*AuctionTrigger, error)
 }
 type CandleResolver interface {
 	Timestamp(ctx context.Context, obj *vega.Candle) (string, error)
@@ -1658,8 +1656,6 @@ type MarketDataResolver interface {
 
 	IndicativeVolume(ctx context.Context, obj *vega.MarketData) (string, error)
 	MarketTradingMode(ctx context.Context, obj *vega.MarketData) (MarketTradingMode, error)
-	Trigger(ctx context.Context, obj *vega.MarketData) (AuctionTrigger, error)
-	ExtensionTrigger(ctx context.Context, obj *vega.MarketData) (AuctionTrigger, error)
 
 	Commitments(ctx context.Context, obj *vega.MarketData) (*MarketDataCommitments, error)
 	PriceMonitoringBounds(ctx context.Context, obj *vega.MarketData) ([]*PriceMonitoringBounds, error)
@@ -1729,8 +1725,6 @@ type ObservableMarketDataResolver interface {
 
 	IndicativeVolume(ctx context.Context, obj *vega.MarketData) (string, error)
 	MarketTradingMode(ctx context.Context, obj *vega.MarketData) (MarketTradingMode, error)
-	Trigger(ctx context.Context, obj *vega.MarketData) (AuctionTrigger, error)
-	ExtensionTrigger(ctx context.Context, obj *vega.MarketData) (AuctionTrigger, error)
 
 	PriceMonitoringBounds(ctx context.Context, obj *vega.MarketData) ([]*PriceMonitoringBounds, error)
 
@@ -11726,15 +11720,15 @@ type AuctionEvent {
 
 enum AuctionTrigger {
   "Invalid trigger (or no auction)"
-  Unspecified
+  AUCTION_TRIGGER_UNSPECIFIED
   "Auction because market has a frequent batch auction trading mode"
-  Batch
+  AUCTION_TRIGGER_BATCH
   "Opening auction"
-  Opening
+  AUCTION_TRIGGER_OPENING
   "Price monitoring"
-  Price
+  AUCTION_TRIGGER_PRICE
   "Liquidity monitoring"
-  Liquidity
+  AUCTION_TRIGGER_LIQUIDITY
 }
 
 enum BusEventType {
@@ -16318,14 +16312,14 @@ func (ec *executionContext) _AuctionEvent_trigger(ctx context.Context, field gra
 		Object:     "AuctionEvent",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.AuctionEvent().Trigger(rctx, obj)
+		return obj.Trigger, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -16337,9 +16331,9 @@ func (ec *executionContext) _AuctionEvent_trigger(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(AuctionTrigger)
+	res := resTmp.(vega.AuctionTrigger)
 	fc.Result = res
-	return ec.marshalNAuctionTrigger2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐAuctionTrigger(ctx, field.Selections, res)
+	return ec.marshalNAuctionTrigger2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAuctionTrigger(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _AuctionEvent_extensionTrigger(ctx context.Context, field graphql.CollectedField, obj *v1.AuctionEvent) (ret graphql.Marshaler) {
@@ -16353,14 +16347,14 @@ func (ec *executionContext) _AuctionEvent_extensionTrigger(ctx context.Context, 
 		Object:     "AuctionEvent",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.AuctionEvent().ExtensionTrigger(rctx, obj)
+		return obj.ExtensionTrigger, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -16369,9 +16363,9 @@ func (ec *executionContext) _AuctionEvent_extensionTrigger(ctx context.Context, 
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*AuctionTrigger)
+	res := resTmp.(vega.AuctionTrigger)
 	fc.Result = res
-	return ec.marshalOAuctionTrigger2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐAuctionTrigger(ctx, field.Selections, res)
+	return ec.marshalOAuctionTrigger2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAuctionTrigger(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _BuiltinAsset_maxFaucetAmountMint(ctx context.Context, field graphql.CollectedField, obj *BuiltinAsset) (ret graphql.Marshaler) {
@@ -24168,14 +24162,14 @@ func (ec *executionContext) _MarketData_trigger(ctx context.Context, field graph
 		Object:     "MarketData",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.MarketData().Trigger(rctx, obj)
+		return obj.Trigger, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -24187,9 +24181,9 @@ func (ec *executionContext) _MarketData_trigger(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.(AuctionTrigger)
+	res := resTmp.(vega.AuctionTrigger)
 	fc.Result = res
-	return ec.marshalNAuctionTrigger2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐAuctionTrigger(ctx, field.Selections, res)
+	return ec.marshalNAuctionTrigger2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAuctionTrigger(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketData_extensionTrigger(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
@@ -24203,14 +24197,14 @@ func (ec *executionContext) _MarketData_extensionTrigger(ctx context.Context, fi
 		Object:     "MarketData",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.MarketData().ExtensionTrigger(rctx, obj)
+		return obj.ExtensionTrigger, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -24222,9 +24216,9 @@ func (ec *executionContext) _MarketData_extensionTrigger(ctx context.Context, fi
 		}
 		return graphql.Null
 	}
-	res := resTmp.(AuctionTrigger)
+	res := resTmp.(vega.AuctionTrigger)
 	fc.Result = res
-	return ec.marshalNAuctionTrigger2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐAuctionTrigger(ctx, field.Selections, res)
+	return ec.marshalNAuctionTrigger2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAuctionTrigger(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketData_targetStake(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
@@ -28452,14 +28446,14 @@ func (ec *executionContext) _ObservableMarketData_trigger(ctx context.Context, f
 		Object:     "ObservableMarketData",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.ObservableMarketData().Trigger(rctx, obj)
+		return obj.Trigger, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -28471,9 +28465,9 @@ func (ec *executionContext) _ObservableMarketData_trigger(ctx context.Context, f
 		}
 		return graphql.Null
 	}
-	res := resTmp.(AuctionTrigger)
+	res := resTmp.(vega.AuctionTrigger)
 	fc.Result = res
-	return ec.marshalNAuctionTrigger2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐAuctionTrigger(ctx, field.Selections, res)
+	return ec.marshalNAuctionTrigger2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAuctionTrigger(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ObservableMarketData_extensionTrigger(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
@@ -28487,14 +28481,14 @@ func (ec *executionContext) _ObservableMarketData_extensionTrigger(ctx context.C
 		Object:     "ObservableMarketData",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.ObservableMarketData().ExtensionTrigger(rctx, obj)
+		return obj.ExtensionTrigger, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -28506,9 +28500,9 @@ func (ec *executionContext) _ObservableMarketData_extensionTrigger(ctx context.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.(AuctionTrigger)
+	res := resTmp.(vega.AuctionTrigger)
 	fc.Result = res
-	return ec.marshalNAuctionTrigger2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐAuctionTrigger(ctx, field.Selections, res)
+	return ec.marshalNAuctionTrigger2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAuctionTrigger(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ObservableMarketData_targetStake(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
@@ -46657,42 +46651,22 @@ func (ec *executionContext) _AuctionEvent(ctx context.Context, sel ast.Selection
 
 			})
 		case "trigger":
-			field := field
-
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._AuctionEvent_trigger(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+				return ec._AuctionEvent_trigger(ctx, field, obj)
 			}
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
+			out.Values[i] = innerFunc(ctx)
 
-			})
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "extensionTrigger":
-			field := field
-
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._AuctionEvent_extensionTrigger(ctx, field, obj)
-				return res
+				return ec._AuctionEvent_extensionTrigger(ctx, field, obj)
 			}
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
+			out.Values[i] = innerFunc(ctx)
 
-			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -50710,45 +50684,25 @@ func (ec *executionContext) _MarketData(ctx context.Context, sel ast.SelectionSe
 
 			})
 		case "trigger":
-			field := field
-
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._MarketData_trigger(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+				return ec._MarketData_trigger(ctx, field, obj)
 			}
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
+			out.Values[i] = innerFunc(ctx)
 
-			})
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "extensionTrigger":
-			field := field
-
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._MarketData_extensionTrigger(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+				return ec._MarketData_extensionTrigger(ctx, field, obj)
 			}
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
+			out.Values[i] = innerFunc(ctx)
 
-			})
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "targetStake":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._MarketData_targetStake(ctx, field, obj)
@@ -52832,45 +52786,25 @@ func (ec *executionContext) _ObservableMarketData(ctx context.Context, sel ast.S
 
 			})
 		case "trigger":
-			field := field
-
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._ObservableMarketData_trigger(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+				return ec._ObservableMarketData_trigger(ctx, field, obj)
 			}
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
+			out.Values[i] = innerFunc(ctx)
 
-			})
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "extensionTrigger":
-			field := field
-
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._ObservableMarketData_extensionTrigger(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+				return ec._ObservableMarketData_extensionTrigger(ctx, field, obj)
 			}
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
+			out.Values[i] = innerFunc(ctx)
 
-			})
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "targetStake":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._ObservableMarketData_targetStake(ctx, field, obj)
@@ -61548,14 +61482,19 @@ func (ec *executionContext) marshalNAuctionDuration2ᚖcodeᚗvegaprotocolᚗio�
 	return ec._AuctionDuration(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNAuctionTrigger2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐAuctionTrigger(ctx context.Context, v interface{}) (AuctionTrigger, error) {
-	var res AuctionTrigger
-	err := res.UnmarshalGQL(v)
+func (ec *executionContext) unmarshalNAuctionTrigger2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAuctionTrigger(ctx context.Context, v interface{}) (vega.AuctionTrigger, error) {
+	res, err := marshallers.UnmarshalAuctionTrigger(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNAuctionTrigger2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐAuctionTrigger(ctx context.Context, sel ast.SelectionSet, v AuctionTrigger) graphql.Marshaler {
-	return v
+func (ec *executionContext) marshalNAuctionTrigger2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAuctionTrigger(ctx context.Context, sel ast.SelectionSet, v vega.AuctionTrigger) graphql.Marshaler {
+	res := marshallers.MarshalAuctionTrigger(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
 }
 
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
@@ -64601,20 +64540,14 @@ func (ec *executionContext) marshalOAssetEdge2ᚖcodeᚗvegaprotocolᚗioᚋvega
 	return ec._AssetEdge(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOAuctionTrigger2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐAuctionTrigger(ctx context.Context, v interface{}) (*AuctionTrigger, error) {
-	if v == nil {
-		return nil, nil
-	}
-	var res = new(AuctionTrigger)
-	err := res.UnmarshalGQL(v)
+func (ec *executionContext) unmarshalOAuctionTrigger2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAuctionTrigger(ctx context.Context, v interface{}) (vega.AuctionTrigger, error) {
+	res, err := marshallers.UnmarshalAuctionTrigger(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOAuctionTrigger2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐAuctionTrigger(ctx context.Context, sel ast.SelectionSet, v *AuctionTrigger) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return v
+func (ec *executionContext) marshalOAuctionTrigger2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAuctionTrigger(ctx context.Context, sel ast.SelectionSet, v vega.AuctionTrigger) graphql.Marshaler {
+	res := marshallers.MarshalAuctionTrigger(v)
+	return res
 }
 
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
