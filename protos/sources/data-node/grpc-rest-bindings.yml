@@ -167,6 +167,106 @@ http:
     - selector: datanode.api.v1.TradingDataService.Transfers
       get: "/transfers"
 
-    # Transfers
+    ## v2 APIs from this point
+    ## Defined in order relative to the proto service
+
+    - selector: datanode.api.v2.TradingDataService.ListAccounts
+      get: "/api/v2/accounts"
     - selector: datanode.api.v2.TradingDataService.Info
       get: "/api/v2/info"
+    - selector: datanode.api.v2.TradingDataService.GetOrder
+      get: "/api/v2/order/{order_id}"
+    - selector: datanode.api.v2.TradingDataService.ListOrders
+      get: "/api/v2/orders"
+    - selector: datanode.api.v2.TradingDataService.ListOrderVersions
+      get: "/api/v2/order/versions/{order_id}"
+    - selector: datanode.api.v2.TradingDataService.ListPositions
+      get: "/api/v2/positions"
+    - selector: datanode.api.v2.TradingDataService.GetBalanceHistory
+      get: "/api/v2/balance/history"
+    - selector: datanode.api.v2.TradingDataService.GetLatestMarketData
+      get: "/api/v2/market/data/{market_id}/latest"
+    - selector: datanode.api.v2.TradingDataService.ListLatestMarketData
+      get: "/api/v2/markets/data"
+    - selector: datanode.api.v2.TradingDataService.GetLatestMarketDepth
+      get: "/api/v2/market/depth/{market_id}/latest"
+    - selector: datanode.api.v2.TradingDataService.GetMarketDataHistoryByID
+      get: "/api/v2/market/data/{market_id}"
+    - selector: datanode.api.v2.TradingDataService.ListTransfers
+      get: "/api/v2/transfers"
+    - selector: datanode.api.v2.TradingDataService.GetNetworkLimits
+      get: "/api/v2/network/limits"
+    - selector: datanode.api.v2.TradingDataService.ListCandleData
+      get: "/api/v2/candle"
+    - selector: datanode.api.v2.TradingDataService.ListCandleIntervals
+      get: "/api/v2/candle/intervals"
+    - selector: datanode.api.v2.TradingDataService.ListVotes
+      get: "/api/v2/votes"
+    - selector: datanode.api.v2.TradingDataService.GetERC20MultiSigSignerAddedBundles
+      get: "/api/v2/erc20/multisigcontrol/signer/added/bundles"
+    - selector: datanode.api.v2.TradingDataService.GetERC20MultiSigSignerRemovedBundles
+      get: "/api/v2/erc20/multisigcontrol/signer/removed/bundles"
+    - selector: datanode.api.v2.TradingDataService.GetERC20ListAssetBundle
+      get: "/api/v2/erc20/asset/list/bundle"
+    - selector: datanode.api.v2.TradingDataService.GetERC20SetAssetLimitsBundle
+      get: "/api/v2/erc20/asset/limits/bundle"
+    - selector: datanode.api.v2.TradingDataService.GetERC20WithdrawalApproval
+      get: "/api/v2/erc20/asset/withdrawal/bundle"
+    - selector: datanode.api.v2.TradingDataService.GetLastTrade
+      get: "/api/v2/market/{market_id}/trade/latest"
+    - selector: datanode.api.v2.TradingDataService.ListTrades
+      get: "/api/v2/trades"
+    - selector: datanode.api.v2.TradingDataService.GetMarket
+      get: "/api/v2/market/{market_id}"
+    - selector: datanode.api.v2.TradingDataService.ListMarkets
+      get: "/api/v2/markets"
+    - selector: datanode.api.v2.TradingDataService.GetParty
+      get: "/api/v2/party/{party_id}"
+    - selector: datanode.api.v2.TradingDataService.ListParties
+      get: "/api/v2/parties"
+    - selector: datanode.api.v2.TradingDataService.ListMarginLevels
+      get: "/api/v2/margin/levels"
+    - selector: datanode.api.v2.TradingDataService.ListRewards
+      get: "/api/v2/rewards"
+    - selector: datanode.api.v2.TradingDataService.ListRewardSummaries
+      get: "/api/v2/rewards/summaries"
+    - selector: datanode.api.v2.TradingDataService.GetDeposit
+      get: "/api/v2/deposit/{id}"
+    - selector: datanode.api.v2.TradingDataService.ListDeposits
+      get: "/api/v2/deposits"
+    - selector: datanode.api.v2.TradingDataService.GetWithdrawal
+      get: "/api/v2/withdrawal/{id}"
+    - selector: datanode.api.v2.TradingDataService.ListWithdrawals
+      get: "/api/v2/withdrawals"
+    - selector: datanode.api.v2.TradingDataService.GetAsset
+      get: "/api/v2/asset/{asset_id}"
+    - selector: datanode.api.v2.TradingDataService.ListAssets
+      get: "/api/v2/assets"
+    - selector: datanode.api.v2.TradingDataService.ListLiquidityProvisions
+      get: "/api/v2/liquidity/provisions"
+    - selector: datanode.api.v2.TradingDataService.ListGovernanceData
+      get: "/api/v2/governance"
+    - selector: datanode.api.v2.TradingDataService.ListDelegations
+      get: "/api/v2/delegations"
+    - selector: datanode.api.v2.TradingDataService.GetNetworkData
+      get: "/api/v2/network/data"
+    - selector: datanode.api.v2.TradingDataService.GetNode
+      get: "/api/v2/node/{id}"
+    - selector: datanode.api.v2.TradingDataService.ListNodes
+      get: "/api/v2/nodes"
+    - selector: datanode.api.v2.TradingDataService.ListNodeSignatures
+      get: "/api/v2/node/signatures"
+    - selector: datanode.api.v2.TradingDataService.GetEpoch
+      get: "/api/v2/epoch"
+    - selector: datanode.api.v2.TradingDataService.EstimateFee
+      get: "/api/v2/estimate/fee"
+    - selector: datanode.api.v2.TradingDataService.EstimateMargin
+      get: "/api/v2/estimate/margin"
+    - selector: datanode.api.v2.TradingDataService.ListNetworkParameters
+      get: "/api/v2/network/parameters"
+    - selector: datanode.api.v2.TradingDataService.ListCheckpoints
+      get: "/api/v2/checkpoints"
+    - selector: datanode.api.v2.TradingDataService.ListKeyRotations
+      get: "/api/v2/vega/keys/rotations"
+    - selector: datanode.api.v2.TradingDataService.GetVegaTime
+      get: "/api/v2/vega/time"

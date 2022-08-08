@@ -33,8 +33,9 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5785](https://github.com/vegaprotocol/vega/issues/5785) - Add support form `ERC20` bridge stopped and resumed events
 - [5712](https://github.com/vegaprotocol/vega/issues/5712) - Configurable `graphql` endpoint
 - [5689](https://github.com/vegaprotocol/vega/issues/5689) - Support `UpdateAsset` proposal in APIs
-
 - [5685](https://github.com/vegaprotocol/vega/issues/5685) - Migrated `apis` from `datanode v1` to `datanode v2`
+- [5760](https://github.com/vegaprotocol/vega/issues/5760) - Map all `GRPC` to `REST`
+
 ### 🐛 Fixes
 - [5571](https://github.com/vegaprotocol/vega/issues/5571) - Restore pending assets status correctly after snapshot restore
 - [5572](https://github.com/vegaprotocol/vega/issues/5572) - Add validation on `IDs` and public keys
