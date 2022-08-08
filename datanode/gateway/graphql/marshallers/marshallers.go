@@ -18,6 +18,26 @@ var (
 	ErrUnimplemented = errors.New("Unmarshaller not implemented as this API is query only")
 )
 
+func MarshalAccountType(t vega.AccountType) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(t.String())))
+	})
+}
+
+func UnmarshalAccountType(v interface{}) (vega.AccountType, error) {
+	s, ok := v.(string)
+	if !ok {
+		return vega.AccountType_ACCOUNT_TYPE_UNSPECIFIED, fmt.Errorf("expected account type to be a string")
+	}
+
+	t, ok := vega.AccountType_value[s]
+	if !ok {
+		return vega.AccountType_ACCOUNT_TYPE_UNSPECIFIED, fmt.Errorf("failed to convert AccountType from GraphQL to Proto: %v", s)
+	}
+
+	return vega.AccountType(t), nil
+}
+
 func MarshalSide(s vega.Side) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
 		w.Write([]byte(strconv.Quote(s.String())))

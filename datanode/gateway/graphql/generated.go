@@ -11223,11 +11223,11 @@ enum Interval {
 "The various account types in Vega (used by collateral)"
 enum AccountType {
   "Insurance pool account - only for 'system' party"
-  Insurance
+  ACCOUNT_TYPE_INSURANCE
   "Global insurance pool account for an asset"
-  GlobalInsurance
+  ACCOUNT_TYPE_GLOBAL_INSURANCE
   "Settlement - only for 'system' party"
-  Settlement
+  ACCOUNT_TYPE_SETTLEMENT
   """
   Margin - The leverage account for parties, contains funds set aside for the margin needed to support
   a party's open positions. Each party will have a margin account for each market they have traded in.
@@ -11236,31 +11236,31 @@ enum AccountType {
   The protocol uses an internal accounting system to segregate funds held as margin from other funds
   to ensure they are never lost or 'double spent'
   """
-  Margin
+  ACCOUNT_TYPE_MARGIN
   "General account - the account containing 'unused' collateral for parties"
-  General
+  ACCOUNT_TYPE_GENERAL
   "Infrastructure fee account - the account where all infrastructure fees are collected"
-  FeeInfrastructure
+  ACCOUNT_TYPE_FEES_INFRASTRUCTURE
   "Liquidity fee account - the account contains fees earned by providing liquidity"
-  FeeLiquidity
+  ACCOUNT_TYPE_FEES_LIQUIDITY
   "Market maker fee account - holds fees paid to the passive side when a trade matches"
-  FeeMaker
+  ACCOUNT_TYPE_FEES_MAKER
   "Bond - an account use to maintain liquidity commitments"
-  Bond
+  ACCOUNT_TYPE_BOND
   "External - an account use to refer to external account"
-  External
+  ACCOUNT_TYPE_EXTERNAL
   "GlobalReward - a global account for the reward pool"
-  GlobalReward
+  ACCOUNT_TYPE_GLOBAL_REWARD
   "PendingTransfers - a global account for the pending transfers pool"
-  PendingTransfers
+  ACCOUNT_TYPE_PENDING_TRANSFERS
   "RewardTakerPaidFees - an account holding rewards for taker paid fees"
-  RewardTakerPaidFees
+  ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES
   "RewardMakerReceivedFees - an account holding rewards for maker received fees"
-  RewardMakerReceivedFees
+  ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES
   "RewardLpReceivedFees - an account holding rewards for a liquidity provider's received fees"
-  RewardLpReceivedFees
+  ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES
   "RewardMarketProposers - an account holding rewards for market proposers"
-  RewardMarketProposers
+  ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS
 }
 
 type FutureProduct {
@@ -61410,7 +61410,7 @@ func (ec *executionContext) marshalNAccount2ᚖcodeᚗvegaprotocolᚗioᚋvega�
 }
 
 func (ec *executionContext) unmarshalNAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountType(ctx context.Context, v interface{}) (vega.AccountType, error) {
-	res, err := marshallers.UnmarshalAccountType(ctx, v)
+	res, err := marshallers.UnmarshalAccountType(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -61421,7 +61421,7 @@ func (ec *executionContext) marshalNAccountType2codeᚗvegaprotocolᚗioᚋvega�
 			ec.Errorf(ctx, "must not be null")
 		}
 	}
-	return graphql.WrapContextMarshaler(ctx, res)
+	return res
 }
 
 func (ec *executionContext) marshalNAccountsConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountsConnection(ctx context.Context, sel ast.SelectionSet, v v2.AccountsConnection) graphql.Marshaler {
@@ -64408,13 +64408,13 @@ func (ec *executionContext) unmarshalOAccountFilter2ᚖcodeᚗvegaprotocolᚗio�
 }
 
 func (ec *executionContext) unmarshalOAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountType(ctx context.Context, v interface{}) (vega.AccountType, error) {
-	res, err := marshallers.UnmarshalAccountType(ctx, v)
+	res, err := marshallers.UnmarshalAccountType(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountType(ctx context.Context, sel ast.SelectionSet, v vega.AccountType) graphql.Marshaler {
 	res := marshallers.MarshalAccountType(v)
-	return graphql.WrapContextMarshaler(ctx, res)
+	return res
 }
 
 func (ec *executionContext) unmarshalOAccountType2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountTypeᚄ(ctx context.Context, v interface{}) ([]vega.AccountType, error) {
@@ -64488,7 +64488,7 @@ func (ec *executionContext) unmarshalOAccountType2ᚖcodeᚗvegaprotocolᚗioᚋ
 	if v == nil {
 		return nil, nil
 	}
-	res, err := marshallers.UnmarshalAccountType(ctx, v)
+	res, err := marshallers.UnmarshalAccountType(v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -64497,7 +64497,7 @@ func (ec *executionContext) marshalOAccountType2ᚖcodeᚗvegaprotocolᚗioᚋve
 		return graphql.Null
 	}
 	res := marshallers.MarshalAccountType(*v)
-	return graphql.WrapContextMarshaler(ctx, res)
+	return res
 }
 
 func (ec *executionContext) marshalOAsset2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAssetᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Asset) graphql.Marshaler {
