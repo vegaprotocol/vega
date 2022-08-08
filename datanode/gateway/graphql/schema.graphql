@@ -1101,10 +1101,19 @@ type NodeSignature {
 "Represents the type signature provided by a node"
 enum NodeSignatureKind {
   "A signature for proposing a new asset into the network"
-  AssetNew
+  NODE_SIGNATURE_KIND_ASSET_NEW
 
   "A signature for allowing funds withdrawal"
-  AssetWithdrawal
+  NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL
+
+  "A signature to add a new validator to the ERC20 bridge"
+  NODE_SIGNATURE_KIND_ERC20_MULTISIG_SIGNER_ADDED
+
+  "A siganture to remove a validator from the ERC20 bridge"
+  NODE_SIGNATURE_KIND_ERC20_MULTISIG_SIGNER_REMOVED
+
+  "A signature to update limits of an ERC20 asset"
+  NODE_SIGNATURE_KIND_ASSET_UPDATE
 }
 
 "Statistics about the node"

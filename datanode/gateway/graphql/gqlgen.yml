@@ -34,6 +34,9 @@ models:
   AssetStatus:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.AssetStatus
+  NodeSignatureKind:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.NodeSignatureKind
   PaginatedOrder:
     model: code.vegaprotocol.io/vega/protos/vega.Order
   Trade:

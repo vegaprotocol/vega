@@ -992,50 +992,6 @@ func (e MarketTradingMode) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-// Represents the type signature provided by a node
-type NodeSignatureKind string
-
-const (
-	// A signature for proposing a new asset into the network
-	NodeSignatureKindAssetNew NodeSignatureKind = "AssetNew"
-	// A signature for allowing funds withdrawal
-	NodeSignatureKindAssetWithdrawal NodeSignatureKind = "AssetWithdrawal"
-)
-
-var AllNodeSignatureKind = []NodeSignatureKind{
-	NodeSignatureKindAssetNew,
-	NodeSignatureKindAssetWithdrawal,
-}
-
-func (e NodeSignatureKind) IsValid() bool {
-	switch e {
-	case NodeSignatureKindAssetNew, NodeSignatureKindAssetWithdrawal:
-		return true
-	}
-	return false
-}
-
-func (e NodeSignatureKind) String() string {
-	return string(e)
-}
-
-func (e *NodeSignatureKind) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = NodeSignatureKind(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid NodeSignatureKind", str)
-	}
-	return nil
-}
-
-func (e NodeSignatureKind) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
 // Status describe the status of the oracle spec
 type OracleSpecStatus string
 

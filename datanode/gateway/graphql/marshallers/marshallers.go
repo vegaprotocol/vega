@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"code.vegaprotocol.io/vega/protos/vega"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/99designs/gqlgen/graphql"
@@ -74,4 +75,14 @@ func MarshalAssetStatus(s vega.Asset_Status) graphql.Marshaler {
 
 func UnmarshalAssetStatus(v interface{}) (vega.Asset_Status, error) {
 	return vega.Asset_STATUS_UNSPECIFIED, ErrUnimplemented
+}
+
+func MarshalNodeSignatureKind(s commandspb.NodeSignatureKind) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalNodeSignatureKind(v interface{}) (commandspb.NodeSignatureKind, error) {
+	return commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_UNSPECIFIED, ErrUnimplemented
 }

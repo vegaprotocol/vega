@@ -1715,7 +1715,6 @@ type NodeDataResolver interface {
 }
 type NodeSignatureResolver interface {
 	Signature(ctx context.Context, obj *v12.NodeSignature) (*string, error)
-	Kind(ctx context.Context, obj *v12.NodeSignature) (*NodeSignatureKind, error)
 }
 type ObservableMarketDataResolver interface {
 	MarketID(ctx context.Context, obj *vega.MarketData) (string, error)
@@ -9573,10 +9572,19 @@ type NodeSignature {
 "Represents the type signature provided by a node"
 enum NodeSignatureKind {
   "A signature for proposing a new asset into the network"
-  AssetNew
+  NODE_SIGNATURE_KIND_ASSET_NEW
 
   "A signature for allowing funds withdrawal"
-  AssetWithdrawal
+  NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL
+
+  "A signature to add a new validator to the ERC20 bridge"
+  NODE_SIGNATURE_KIND_ERC20_MULTISIG_SIGNER_ADDED
+
+  "A siganture to remove a validator from the ERC20 bridge"
+  NODE_SIGNATURE_KIND_ERC20_MULTISIG_SIGNER_REMOVED
+
+  "A signature to update limits of an ERC20 asset"
+  NODE_SIGNATURE_KIND_ASSET_UPDATE
 }
 
 "Statistics about the node"
@@ -27454,14 +27462,14 @@ func (ec *executionContext) _NodeSignature_kind(ctx context.Context, field graph
 		Object:     "NodeSignature",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.NodeSignature().Kind(rctx, obj)
+		return obj.Kind, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -27470,9 +27478,9 @@ func (ec *executionContext) _NodeSignature_kind(ctx context.Context, field graph
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*NodeSignatureKind)
+	res := resTmp.(v12.NodeSignatureKind)
 	fc.Result = res
-	return ec.marshalONodeSignatureKind2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐNodeSignatureKind(ctx, field.Selections, res)
+	return ec.marshalONodeSignatureKind2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋcommandsᚋv1ᚐNodeSignatureKind(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _NodeSignatureEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.NodeSignatureEdge) (ret graphql.Marshaler) {
@@ -52354,22 +52362,12 @@ func (ec *executionContext) _NodeSignature(ctx context.Context, sel ast.Selectio
 
 			})
 		case "kind":
-			field := field
-
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._NodeSignature_kind(ctx, field, obj)
-				return res
+				return ec._NodeSignature_kind(ctx, field, obj)
 			}
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
+			out.Values[i] = innerFunc(ctx)
 
-			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -66207,20 +66205,14 @@ func (ec *executionContext) marshalONodeSignatureEdge2ᚖcodeᚗvegaprotocolᚗi
 	return ec._NodeSignatureEdge(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalONodeSignatureKind2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐNodeSignatureKind(ctx context.Context, v interface{}) (*NodeSignatureKind, error) {
-	if v == nil {
-		return nil, nil
-	}
-	var res = new(NodeSignatureKind)
-	err := res.UnmarshalGQL(v)
+func (ec *executionContext) unmarshalONodeSignatureKind2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋcommandsᚋv1ᚐNodeSignatureKind(ctx context.Context, v interface{}) (v12.NodeSignatureKind, error) {
+	res, err := marshallers.UnmarshalNodeSignatureKind(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalONodeSignatureKind2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐNodeSignatureKind(ctx context.Context, sel ast.SelectionSet, v *NodeSignatureKind) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return v
+func (ec *executionContext) marshalONodeSignatureKind2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋcommandsᚋv1ᚐNodeSignatureKind(ctx context.Context, sel ast.SelectionSet, v v12.NodeSignatureKind) graphql.Marshaler {
+	res := marshallers.MarshalNodeSignatureKind(v)
+	return res
 }
 
 func (ec *executionContext) marshalOObservableLiquidityProviderFeeShare2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐObservableLiquidityProviderFeeShareᚄ(ctx context.Context, sel ast.SelectionSet, v []*ObservableLiquidityProviderFeeShare) graphql.Marshaler {

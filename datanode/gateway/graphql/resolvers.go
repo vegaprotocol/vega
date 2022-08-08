@@ -1164,14 +1164,6 @@ func (r *myNodeSignatureResolver) Signature(ctx context.Context, obj *commandspb
 	return &sig, nil
 }
 
-func (r *myNodeSignatureResolver) Kind(ctx context.Context, obj *commandspb.NodeSignature) (*NodeSignatureKind, error) {
-	kind, err := convertNodeSignatureKindFromProto(obj.Kind)
-	if err != nil {
-		return nil, err
-	}
-	return &kind, nil
-}
-
 // BEGIN: Party Resolver
 
 type myPartyResolver VegaResolverRoot

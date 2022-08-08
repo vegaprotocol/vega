@@ -17,7 +17,6 @@ import (
 
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/vega/protos/vega"
-	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	oraclesv1 "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 )
@@ -147,18 +146,6 @@ func convertWithdrawalStatusFromProto(x types.Withdrawal_Status) (WithdrawalStat
 	default:
 		err := fmt.Errorf("failed to convert WithdrawalStatus from GraphQL to Proto: %v", x)
 		return WithdrawalStatusOpen, err
-	}
-}
-
-func convertNodeSignatureKindFromProto(x commandspb.NodeSignatureKind) (NodeSignatureKind, error) {
-	switch x {
-	case commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW:
-		return NodeSignatureKindAssetNew, nil
-	case commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL:
-		return NodeSignatureKindAssetWithdrawal, nil
-	default:
-		err := fmt.Errorf("failed to convert NodeSignatureKind from proto to graphql: %v", x)
-		return NodeSignatureKindAssetNew, err
 	}
 }
 
