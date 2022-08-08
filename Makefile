@@ -29,7 +29,19 @@ race: ## Run data race detector
 
 .PHONY: mocks
 mocks: ## Make mocks
-	go generate ./...
+	go generate -v ./...
+
+.PHONY: mocks_check
+mocks_check: ## mocks: Check committed files match just-generated files
+# TODO: how to delete all generated files
+#	@make proto_clean 1>/dev/null
+	@make mocks 1>/dev/null
+	@files="$$(git diff --name-only)" ; \
+	if test -n "$$files" ; then \
+		echo "Committed files do not match just-generated files: " $$files ; \
+		git diff ; \
+		exit 1 ; \
+	fi
 
 .PHONY: build
 build: ## install the binaries in cmd/{progname}/
@@ -86,7 +98,7 @@ proto_check: ## proto: Check committed files match just-generated files
 	@files="$$(git diff --name-only protos/vega/ protos/data-node/)" ; \
 	if test -n "$$files" ; then \
 		echo "Committed files do not match just-generated files: " $$files ; \
-		test -n "$(CI)" && git diff vega/ ; \
+		git diff ; \
 		exit 1 ; \
 	fi
 

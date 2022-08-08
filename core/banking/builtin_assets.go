@@ -80,7 +80,7 @@ func (e *Engine) DepositBuiltinAsset(
 		state:    pendingState,
 		builtinD: d,
 		asset:    asset,
-		hash:     hex.EncodeToString(vgcrypto.Hash(b)),
+		txHash:   hex.EncodeToString(vgcrypto.Hash(b)),
 	}
 	e.assetActs[aa.id] = aa
 	e.deposits[dep.ID] = dep

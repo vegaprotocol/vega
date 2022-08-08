@@ -256,30 +256,14 @@ func (n *NodeValidation) getChecker(ctx context.Context, p *types.Proposal) (fun
 }
 
 func (n *NodeValidation) checkAsset(assetID string) error {
-	// get the asset to validate from the assets pool
-	asset, err := n.assets.Get(assetID)
-	// if we get an error here, we'll never change the state of the proposal,
-	// so it will be dismissed later on by all the whole network
-	if err != nil || asset == nil {
-		n.log.Error("Validating asset, unable to get the asset",
-			logging.AssetID(assetID),
-			logging.Error(err),
-		)
-		return errors.New("invalid asset ID")
-	}
-
-	err = asset.Validate()
+	err := n.assets.ValidateAsset(assetID)
 	if err != nil {
 		// we just log the error, but these are not critical, as it may be
 		// things unrelated to the current node, and would recover later on.
 		// it's just informative
 		n.log.Warn("error validating asset", logging.Error(err))
-		return err
 	}
-	if asset.IsValid() {
-		return nil
-	}
-	return nil
+	return err
 }
 
 func (n *NodeValidation) checkProposal(prop *types.Proposal) error {

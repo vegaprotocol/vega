@@ -29,9 +29,9 @@ type assetAction struct {
 	asset *assets.Asset
 
 	// erc20 specifics
-	blockNumber uint64
-	txIndex     uint64
-	hash        string
+	blockHeight uint64
+	logIndex    uint64
+	txHash      string
 
 	// all deposit related types
 	builtinD *types.BuiltinAssetDeposit
@@ -39,6 +39,11 @@ type assetAction struct {
 	erc20AL  *types.ERC20AssetList
 
 	erc20AssetLimitsUpdated *types.ERC20AssetLimitsUpdated
+
+	erc20BridgeStopped *types.ERC20EventBridgeStopped
+	erc20BridgeResumed *types.ERC20EventBridgeResumed
+
+	bridgeView ERC20BridgeView
 }
 
 func (t *assetAction) GetID() string {
@@ -47,6 +52,14 @@ func (t *assetAction) GetID() string {
 
 func (t *assetAction) IsBuiltinAssetDeposit() bool {
 	return t.builtinD != nil
+}
+
+func (t *assetAction) IsERC20BridgeStopped() bool {
+	return t.erc20BridgeStopped != nil
+}
+
+func (t *assetAction) IsERC20BridgeResumed() bool {
+	return t.erc20BridgeResumed != nil
 }
 
 func (t *assetAction) IsERC20Deposit() bool {
@@ -87,6 +100,10 @@ func (t *assetAction) String() string {
 		return t.erc20AL.String()
 	case t.IsERC20AssetLimitsUpdated():
 		return t.erc20AssetLimitsUpdated.String()
+	case t.IsERC20BridgeStopped():
+		return t.erc20BridgeStopped.String()
+	case t.IsERC20BridgeResumed():
+		return t.erc20BridgeResumed.String()
 	default:
 		return ""
 	}
@@ -102,6 +119,10 @@ func (t *assetAction) Check() error {
 		return t.checkERC20AssetList()
 	case t.IsERC20AssetLimitsUpdated():
 		return t.checkERC20AssetLimitsUpdated()
+	case t.IsERC20BridgeStopped():
+		return t.checkERC20BridgeStopped()
+	case t.IsERC20BridgeResumed():
+		return t.checkERC20BridgeResumed()
 	default:
 		return ErrUnknownAssetAction
 	}
@@ -111,31 +132,48 @@ func (t *assetAction) checkBuiltinAssetDeposit() error {
 	return nil
 }
 
+func (t *assetAction) checkERC20BridgeStopped() error {
+	return t.bridgeView.FindBridgeStopped(
+		t.erc20BridgeStopped, t.blockHeight, t.logIndex)
+}
+
+func (t *assetAction) checkERC20BridgeResumed() error {
+	return t.bridgeView.FindBridgeResumed(
+		t.erc20BridgeResumed, t.blockHeight, t.logIndex)
+}
+
 func (t *assetAction) checkERC20Deposit() error {
 	asset, _ := t.asset.ERC20()
-	return asset.ValidateDeposit(t.erc20D, t.blockNumber, t.txIndex)
+	return t.bridgeView.FindDeposit(
+		t.erc20D, t.blockHeight, t.logIndex, asset.Address(),
+	)
 }
 
 func (t *assetAction) checkERC20AssetList() error {
-	asset, _ := t.asset.ERC20()
-	return asset.ValidateAssetList(t.erc20AL, t.blockNumber, t.txIndex)
+	return t.bridgeView.FindAssetList(t.erc20AL, t.blockHeight, t.logIndex)
 }
 
 func (t *assetAction) checkERC20AssetLimitsUpdated() error {
 	asset, _ := t.asset.ERC20()
-	return asset.ValidateAssetLimitsUpdated(t.erc20AssetLimitsUpdated, t.blockNumber, t.txIndex)
+	return t.bridgeView.FindAssetLimitsUpdated(
+		t.erc20AssetLimitsUpdated, t.blockHeight, t.logIndex, asset.Address(),
+	)
 }
 
 func (t *assetAction) getRef() snapshot.TxRef {
 	switch {
 	case t.IsBuiltinAssetDeposit():
-		return snapshot.TxRef{Asset: string(common.Builtin), BlockNr: 0, Hash: t.hash, LogIndex: 0}
+		return snapshot.TxRef{Asset: string(common.Builtin), BlockNr: 0, Hash: t.txHash, LogIndex: 0}
 	case t.IsERC20Deposit():
-		return snapshot.TxRef{Asset: string(common.ERC20), BlockNr: t.blockNumber, Hash: t.hash, LogIndex: t.txIndex}
+		return snapshot.TxRef{Asset: string(common.ERC20), BlockNr: t.blockHeight, Hash: t.txHash, LogIndex: t.logIndex}
 	case t.IsERC20AssetList():
-		return snapshot.TxRef{Asset: string(common.ERC20), BlockNr: t.blockNumber, Hash: t.hash, LogIndex: t.txIndex}
+		return snapshot.TxRef{Asset: string(common.ERC20), BlockNr: t.blockHeight, Hash: t.txHash, LogIndex: t.logIndex}
 	case t.IsERC20AssetLimitsUpdated():
-		return snapshot.TxRef{Asset: string(common.ERC20), BlockNr: t.blockNumber, Hash: t.hash, LogIndex: t.txIndex}
+		return snapshot.TxRef{Asset: string(common.ERC20), BlockNr: t.blockHeight, Hash: t.txHash, LogIndex: t.logIndex}
+	case t.IsERC20BridgeStopped():
+		return snapshot.TxRef{Asset: string(common.ERC20), BlockNr: t.blockHeight, Hash: t.txHash, LogIndex: t.logIndex}
+	case t.IsERC20BridgeResumed():
+		return snapshot.TxRef{Asset: string(common.ERC20), BlockNr: t.blockHeight, Hash: t.txHash, LogIndex: t.logIndex}
 	default:
 		return snapshot.TxRef{} // this is basically unreachable
 	}

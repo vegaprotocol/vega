@@ -21,6 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/core/blockchain"
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
 	"code.vegaprotocol.io/vega/core/blockchain/nullchain"
+	"code.vegaprotocol.io/vega/core/bridges"
 	"code.vegaprotocol.io/vega/core/broker"
 	"code.vegaprotocol.io/vega/core/checkpoint"
 	ethclient "code.vegaprotocol.io/vega/core/client/eth"
@@ -114,6 +115,8 @@ type allServices struct {
 	stakeCheckpoint       *staking.Checkpoint
 	erc20MultiSigTopology *erc20multisig.Topology
 
+	erc20BridgeView *bridges.ERC20LogicView
+
 	commander *nodewallets.Commander
 }
 
@@ -147,6 +150,9 @@ func newServices(
 		return nil, err
 	}
 
+	// this will be needed very soon, instantiate straight away
+	svcs.erc20BridgeView = bridges.NewERC20LogicView(ethClient, ethConfirmations)
+
 	svcs.timeService = vegatime.New(svcs.conf.Time, svcs.broker)
 	svcs.epochService = epochtime.NewService(svcs.log, svcs.conf.Epoch, svcs.broker)
 
@@ -164,7 +170,7 @@ func newServices(
 	svcs.genesisHandler.OnGenesisTimeLoaded(svcs.timeService.SetTimeNow)
 
 	svcs.eventService = subscribers.NewService(svcs.broker)
-	svcs.assets = assets.New(svcs.log, svcs.conf.Assets, nodeWallets, svcs.ethClient, svcs.broker, svcs.conf.HaveEthClient())
+	svcs.assets = assets.New(svcs.log, svcs.conf.Assets, nodeWallets, svcs.ethClient, svcs.broker, svcs.erc20BridgeView, svcs.conf.HaveEthClient())
 	svcs.collateral = collateral.New(svcs.log, svcs.conf.Collateral, svcs.timeService, svcs.broker)
 	svcs.oracle = oracles.NewEngine(svcs.log, svcs.conf.Oracles, svcs.timeService, svcs.broker)
 
@@ -233,7 +239,7 @@ func newServices(
 	// TODO(): this is not pretty
 	svcs.topology.SetNotary(svcs.notary)
 
-	svcs.banking = banking.New(svcs.log, svcs.conf.Banking, svcs.collateral, svcs.witness, svcs.timeService, svcs.assets, svcs.notary, svcs.broker, svcs.topology, svcs.epochService, svcs.marketActivityTracker)
+	svcs.banking = banking.New(svcs.log, svcs.conf.Banking, svcs.collateral, svcs.witness, svcs.timeService, svcs.assets, svcs.notary, svcs.broker, svcs.topology, svcs.epochService, svcs.marketActivityTracker, svcs.erc20BridgeView)
 	svcs.rewards = rewards.New(svcs.log, svcs.conf.Rewards, svcs.broker, svcs.delegation, svcs.epochService, svcs.collateral, svcs.timeService, svcs.marketActivityTracker, svcs.topology)
 
 	svcs.registerTimeServiceCallbacks()

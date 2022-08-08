@@ -37,7 +37,7 @@ func (m *MockNodeStore) EXPECT() *MockNodeStoreMockRecorder {
 }
 
 // AddNodeAnnoucedEvent mocks base method.
-func (m *MockNodeStore) AddNodeAnnoucedEvent(arg0 context.Context, arg1 entities.NodeID, arg2 time.Time, arg3 *entities.ValidatorUpdateAux) error {
+func (m *MockNodeStore) AddNodeAnnoucedEvent(arg0 context.Context, arg1 string, arg2 time.Time, arg3 *entities.ValidatorUpdateAux) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddNodeAnnoucedEvent", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)

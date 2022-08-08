@@ -556,6 +556,8 @@ type ERC20Event struct {
 	//	*ERC20EventDeposit
 	//	*ERC20EventWithdrawal
 	//	*ERC20EventAssetLimitsUpdated
+	//	*ERC20BridgeStopped
+	//	*ERC20BridgeRemoved
 	Action erc20EventAction
 }
 
@@ -590,6 +592,12 @@ func NewERC20Event(p *vegapb.ERC20Event) (*ERC20Event, error) {
 		return &e, nil
 	case *vegapb.ERC20Event_AssetLimitsUpdated:
 		e.Action = NewERC20EventAssetLimitsUpdated(a)
+		return &e, nil
+	case *vegapb.ERC20Event_BridgeStopped:
+		e.Action = NewERC20EventBridgeStopped(a)
+		return &e, nil
+	case *vegapb.ERC20Event_BridgeResumed:
+		e.Action = NewERC20EventBridgeResumed(a)
 		return &e, nil
 	default:
 		return nil, errors.New("unknown erc20 event type")
@@ -956,4 +964,62 @@ func (e ERC20AssetLimitsUpdated) String() string {
 
 func (e ERC20AssetLimitsUpdated) GetVegaAssetID() string {
 	return e.VegaAssetID
+}
+
+type ERC20EventBridgeStopped struct {
+	BridgeStopped bool
+}
+
+func (ERC20EventBridgeStopped) isErc20EventAction() {}
+
+func (e ERC20EventBridgeStopped) oneOfProto() interface{} {
+	return e.IntoProto()
+}
+
+func (e ERC20EventBridgeStopped) String() string {
+	return fmt.Sprintf(
+		"bridgeStopped(%v)",
+		e.BridgeStopped,
+	)
+}
+
+func NewERC20EventBridgeStopped(p *vegapb.ERC20Event_BridgeStopped) *ERC20EventBridgeStopped {
+	return &ERC20EventBridgeStopped{
+		BridgeStopped: p.BridgeStopped,
+	}
+}
+
+func (e ERC20EventBridgeStopped) IntoProto() *vegapb.ERC20Event_BridgeStopped {
+	return &vegapb.ERC20Event_BridgeStopped{
+		BridgeStopped: e.BridgeStopped,
+	}
+}
+
+type ERC20EventBridgeResumed struct {
+	BridgeResumed bool
+}
+
+func (ERC20EventBridgeResumed) isErc20EventAction() {}
+
+func (e ERC20EventBridgeResumed) oneOfProto() interface{} {
+	return e.IntoProto()
+}
+
+func (e ERC20EventBridgeResumed) String() string {
+	return fmt.Sprintf(
+		"bridgeResumed(%v)",
+		e.BridgeResumed,
+	)
+}
+
+func NewERC20EventBridgeResumed(p *vegapb.ERC20Event_BridgeResumed) *ERC20EventBridgeResumed {
+	return &ERC20EventBridgeResumed{
+		BridgeResumed: p.BridgeResumed,
+	}
+}
+
+func (e ERC20EventBridgeResumed) IntoProto() *vegapb.ERC20Event_BridgeResumed {
+	return &vegapb.ERC20Event_BridgeResumed{
+		BridgeResumed: e.BridgeResumed,
+	}
 }

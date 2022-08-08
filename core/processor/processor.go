@@ -188,6 +188,8 @@ type Banking interface {
 	ERC20WithdrawalEvent(context.Context, *types.ERC20Withdrawal, uint64, uint64, string) error
 	TransferFunds(context.Context, *types.TransferFunds) error
 	CancelTransferFunds(context.Context, *types.CancelTransferFunds) error
+	BridgeStopped(context.Context, bool, string, uint64, uint64, string) error
+	BridgeResumed(context.Context, bool, string, uint64, uint64, string) error
 }
 
 // NetworkParameters ...

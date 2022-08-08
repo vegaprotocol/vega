@@ -17,6 +17,7 @@ import (
 	"math/big"
 	"sort"
 
+	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
@@ -30,6 +31,7 @@ var (
 	assetActionsKey       = (&types.PayloadBankingAssetActions{}).Key()
 	recurringTransfersKey = (&types.PayloadBankingRecurringTransfers{}).Key()
 	scheduledTransfersKey = (&types.PayloadBankingScheduledTransfers{}).Key()
+	bridgeStateKey        = (&types.PayloadBankingBridgeState{}).Key()
 
 	hashKeys = []string{
 		withdrawalsKey,
@@ -38,6 +40,7 @@ var (
 		assetActionsKey,
 		recurringTransfersKey,
 		scheduledTransfersKey,
+		bridgeStateKey,
 	}
 )
 
@@ -48,12 +51,14 @@ type bankingSnapshotState struct {
 	changedAssetActions          bool
 	changedRecurringTransfers    bool
 	changedScheduledTransfers    bool
+	changedBridgeState           bool
 	serialisedWithdrawals        []byte
 	serialisedDeposits           []byte
 	serialisedSeen               []byte
 	serialisedAssetActions       []byte
 	serialisedRecurringTransfers []byte
 	serialisedScheduledTransfers []byte
+	serialisedBridgeState        []byte
 }
 
 func (e *Engine) Namespace() types.SnapshotNamespace {
@@ -66,6 +71,20 @@ func (e *Engine) Keys() []string {
 
 func (e *Engine) Stopped() bool {
 	return false
+}
+
+func (e *Engine) serialiseBridgeState() ([]byte, error) {
+	payload := types.Payload{
+		Data: &types.PayloadBankingBridgeState{
+			BankingBridgeState: &types.BankingBridgeState{
+				Active:      e.bridgeState.active,
+				BlockHeight: e.bridgeState.block,
+				LogIndex:    e.bridgeState.logIndex,
+			},
+		},
+	}
+
+	return proto.Marshal(payload.IntoProto())
 }
 
 func (e *Engine) serialiseRecurringTransfers() ([]byte, error) {
@@ -91,17 +110,35 @@ func (e *Engine) serialiseScheduledTransfers() ([]byte, error) {
 func (e *Engine) serialiseAssetActions() ([]byte, error) {
 	aa := make([]*types.AssetAction, 0, len(e.assetActs))
 	for _, v := range e.assetActs {
+		// this is optional as bridge action don't have one
+		var assetID string
+		if v.asset != nil {
+			assetID = v.asset.ToAssetType().ID
+		}
+
+		var bridgeStopped bool
+		if v.erc20BridgeStopped != nil {
+			bridgeStopped = true
+		}
+
+		var bridgeResumed bool
+		if v.erc20BridgeResumed != nil {
+			bridgeResumed = true
+		}
+
 		aa = append(aa, &types.AssetAction{
 			ID:                      v.id,
 			State:                   v.state,
-			BlockNumber:             v.blockNumber,
-			Asset:                   v.asset.ToAssetType().ID,
-			TxIndex:                 v.txIndex,
-			Hash:                    v.hash,
+			BlockNumber:             v.blockHeight,
+			Asset:                   assetID,
+			TxIndex:                 v.logIndex,
+			Hash:                    v.txHash,
 			BuiltinD:                v.builtinD,
 			Erc20AL:                 v.erc20AL,
 			Erc20D:                  v.erc20D,
 			ERC20AssetLimitsUpdated: v.erc20AssetLimitsUpdated,
+			BridgeStopped:           bridgeStopped,
+			BridgeResume:            bridgeResumed,
 		})
 	}
 
@@ -204,6 +241,8 @@ func (e *Engine) serialise(k string) ([]byte, error) {
 		return e.serialiseK(k, e.serialiseRecurringTransfers, &e.bss.serialisedRecurringTransfers, &e.bss.changedRecurringTransfers)
 	case scheduledTransfersKey:
 		return e.serialiseK(k, e.serialiseScheduledTransfers, &e.bss.serialisedScheduledTransfers, &e.bss.changedScheduledTransfers)
+	case bridgeStateKey:
+		return e.serialiseK(k, e.serialiseBridgeState, &e.bss.serialisedBridgeState, &e.bss.changedBridgeState)
 	default:
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
@@ -252,6 +291,8 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 		return nil, e.restoreRecurringTransfers(ctx, pl.BankingRecurringTransfers, p)
 	case *types.PayloadBankingScheduledTransfers:
 		return nil, e.restoreScheduledTransfers(ctx, pl.BankingScheduledTransfers, p)
+	case *types.PayloadBankingBridgeState:
+		return nil, e.restoreBridgeState(ctx, pl.BankingBridgeState, p)
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
@@ -278,6 +319,20 @@ func (e *Engine) restoreScheduledTransfers(ctx context.Context, transfers []*che
 	e.bss.changedScheduledTransfers = false
 	e.bss.serialisedScheduledTransfers, err = proto.Marshal(p.IntoProto())
 	return err
+}
+
+func (e *Engine) restoreBridgeState(ctx context.Context, state *types.BankingBridgeState, p *types.Payload) (err error) {
+	if state != nil {
+		e.bridgeState = &bridgeState{
+			active:   state.Active,
+			block:    state.BlockHeight,
+			logIndex: state.LogIndex,
+		}
+	}
+
+	e.bss.changedBridgeState = false
+	e.bss.serialisedBridgeState, err = proto.Marshal(p.IntoProto())
+	return
 }
 
 func (e *Engine) restoreDeposits(ctx context.Context, deposits *types.BankingDeposits, p *types.Payload) error {
@@ -325,22 +380,43 @@ func (e *Engine) restoreSeen(ctx context.Context, seen *types.BankingSeen, p *ty
 func (e *Engine) restoreAssetActions(ctx context.Context, aa *types.BankingAssetActions, p *types.Payload) error {
 	var err error
 	for _, v := range aa.AssetAction {
-		asset, err := e.assets.Get(v.Asset)
-		if err != nil {
-			e.log.Panic("trying to restore an assetAction with no asset", logging.String("asset", v.Asset))
+		var (
+			asset         *assets.Asset
+			bridgeStopped *types.ERC20EventBridgeStopped
+			bridgeResumed *types.ERC20EventBridgeResumed
+		)
+		// only others action than bridge stop and resume
+		// have an actual asset associated
+		if !v.BridgeResume && !v.BridgeStopped {
+			asset, err = e.assets.Get(v.Asset)
+			if err != nil {
+				e.log.Panic("trying to restore an assetAction with no asset", logging.String("asset", v.Asset))
+			}
+		}
+
+		if v.BridgeStopped {
+			bridgeStopped = &types.ERC20EventBridgeStopped{BridgeStopped: true}
+		}
+
+		if v.BridgeResume {
+			bridgeResumed = &types.ERC20EventBridgeResumed{BridgeResumed: true}
 		}
 
 		aa := &assetAction{
 			id:                      v.ID,
 			state:                   v.State,
-			blockNumber:             v.BlockNumber,
+			blockHeight:             v.BlockNumber,
 			asset:                   asset,
-			txIndex:                 v.TxIndex,
-			hash:                    v.Hash,
+			logIndex:                v.TxIndex,
+			txHash:                  v.Hash,
 			builtinD:                v.BuiltinD,
 			erc20AL:                 v.Erc20AL,
 			erc20D:                  v.Erc20D,
 			erc20AssetLimitsUpdated: v.ERC20AssetLimitsUpdated,
+			erc20BridgeStopped:      bridgeStopped,
+			erc20BridgeResumed:      bridgeResumed,
+			// this is needed every time now
+			bridgeView: e.bridgeView,
 		}
 		e.assetActs[v.ID] = aa
 		if err := e.witness.RestoreResource(aa, e.onCheckDone); err != nil {

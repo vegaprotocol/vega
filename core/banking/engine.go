@@ -153,6 +153,10 @@ type Engine struct {
 	// recurring transfers
 	// transfer id to recurringTransfers
 	recurringTransfers map[string]*types.RecurringTransfer
+
+	bridgeState *bridgeState
+
+	bridgeView ERC20BridgeView
 }
 
 type withdrawalRef struct {
@@ -172,6 +176,7 @@ func New(
 	top Topology,
 	epoch EpochService,
 	marketActivityTracker MarketActivityTracker,
+	bridgeView ERC20BridgeView,
 ) (e *Engine) {
 	defer func() {
 		epoch.NotifyOnEpoch(e.OnEpoch, e.OnEpochRestore)
@@ -202,12 +207,17 @@ func New(
 			changedAssetActions:       true,
 			changedRecurringTransfers: true,
 			changedScheduledTransfers: true,
+			changedBridgeState:        true,
 		},
 		scheduledTransfers:         map[time.Time][]scheduledTransfer{},
 		recurringTransfers:         map[string]*types.RecurringTransfer{},
 		transferFeeFactor:          num.DecimalZero(),
 		minTransferQuantumMultiple: num.DecimalZero(),
 		marketActivityTracker:      marketActivityTracker,
+		bridgeState: &bridgeState{
+			active: true,
+		},
+		bridgeView: bridgeView,
 	}
 }
 
@@ -350,6 +360,12 @@ func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
 		return e.finalizeAssetList(ctx, aa.erc20AL.VegaAssetID)
 	case aa.IsERC20AssetLimitsUpdated():
 		return e.finalizeAssetLimitsUpdated(ctx, aa.erc20AssetLimitsUpdated.VegaAssetID)
+	case aa.IsERC20BridgeStopped():
+		e.bridgeState.NewBridgeStopped(aa.blockHeight, aa.logIndex)
+		return nil
+	case aa.IsERC20BridgeResumed():
+		e.bridgeState.NewBridgeResumed(aa.blockHeight, aa.logIndex)
+		return nil
 	default:
 		return ErrUnknownAssetAction
 	}

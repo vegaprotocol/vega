@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/assets"
+	amocks "code.vegaprotocol.io/vega/core/assets/mocks"
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/checkpoint"
 	"code.vegaprotocol.io/vega/core/collateral"
@@ -128,7 +129,9 @@ func createExecutionEngine(t *testing.T, tm time.Time) (*execution.Engine, *gove
 	epochEngine := emocks.NewMockEpochEngine(ctrl)
 	epochEngine.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).Times(1)
 
-	asset := assets.New(log, assets.NewDefaultConfig(), getNodeWallet(), nil, broker, false)
+	bridgeView := amocks.NewMockERC20BridgeView(ctrl)
+
+	asset := assets.New(log, assets.NewDefaultConfig(), getNodeWallet(), nil, broker, bridgeView, false)
 	marketTracker := execution.NewMarketActivityTracker(log, epochEngine)
 	exec := execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, marketTracker, asset)
 	accounts := mocks.NewMockStakingAccounts(ctrl)

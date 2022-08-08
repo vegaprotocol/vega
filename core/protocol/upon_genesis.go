@@ -85,11 +85,7 @@ func (svcs *allServices) loadAsset(
 		// just a simple backoff here
 		err = backoff.Retry(
 			func() error {
-				err := asset.Validate()
-				if !asset.IsValid() {
-					return err
-				}
-				return nil
+				return svcs.assets.ValidateAsset(aid)
 			},
 			backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5),
 		)
@@ -97,7 +93,7 @@ func (svcs *allServices) loadAsset(
 			return fmt.Errorf("unable to instantiate asset \"%s\": %w", v.Name, err)
 		}
 	} else {
-		asset.SetValidNonValidator()
+		svcs.assets.ValidateAssetNonValidator(aid)
 	}
 
 	if err := svcs.assets.Enable(ctx, aid); err != nil {

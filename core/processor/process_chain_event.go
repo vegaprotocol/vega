@@ -201,6 +201,12 @@ func (app *App) processChainEventERC20(
 			return err
 		}
 		return app.banking.UpdateERC20(ctx, act.AssetLimitsUpdated, id, evt.Block, evt.Index, txID)
+	case *types.ERC20EventBridgeStopped:
+		return app.banking.BridgeStopped(
+			ctx, act.BridgeStopped, id, evt.Block, evt.Index, txID)
+	case *types.ERC20EventBridgeResumed:
+		return app.banking.BridgeResumed(
+			ctx, act.BridgeResumed, id, evt.Block, evt.Index, txID)
 	default:
 		return ErrUnsupportedEventAction
 	}

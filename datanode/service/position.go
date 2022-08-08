@@ -19,6 +19,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/utils"
 	"code.vegaprotocol.io/vega/logging"
+
 	lru "github.com/hashicorp/golang-lru"
 )
 
@@ -26,10 +27,10 @@ import (
 type PositionStore interface {
 	Flush(ctx context.Context) ([]entities.Position, error)
 	Add(ctx context.Context, p entities.Position) error
-	GetByMarketAndParty(ctx context.Context, marketID entities.MarketID, partyID entities.PartyID) (entities.Position, error)
-	GetByMarket(ctx context.Context, marketID entities.MarketID) ([]entities.Position, error)
-	GetByParty(ctx context.Context, partyID entities.PartyID) ([]entities.Position, error)
-	GetByPartyConnection(ctx context.Context, partyID entities.PartyID, marketID entities.MarketID, pagination entities.CursorPagination) ([]entities.Position, entities.PageInfo, error)
+	GetByMarketAndParty(ctx context.Context, marketID string, partyID string) (entities.Position, error)
+	GetByMarket(ctx context.Context, marketID string) ([]entities.Position, error)
+	GetByParty(ctx context.Context, partyID string) ([]entities.Position, error)
+	GetByPartyConnection(ctx context.Context, partyID string, marketID string, pagination entities.CursorPagination) ([]entities.Position, entities.PageInfo, error)
 	GetAll(ctx context.Context) ([]entities.Position, error)
 }
 
@@ -72,11 +73,12 @@ func (p *Position) Add(ctx context.Context, pos entities.Position) error {
 	return p.store.Add(ctx, pos)
 }
 
-func (p *Position) GetByMarketAndParty(ctx context.Context, marketID entities.MarketID, partyID entities.PartyID) (entities.Position, error) {
-	key := positionCacheKey{marketID, partyID}
+func (p *Position) GetByMarketAndParty(ctx context.Context, marketID string, partyID string) (entities.Position, error) {
+	key := positionCacheKey{entities.MarketID(marketID), entities.PartyID(partyID)}
 	value, ok := p.cache.Get(key)
 	if !ok {
-		pos, err := p.store.GetByMarketAndParty(ctx, marketID, partyID)
+		pos, err := p.store.GetByMarketAndParty(
+			ctx, marketID, partyID)
 		if err == nil {
 			p.cache.Add(key, pos)
 		} else { // If store errors in the cache too
@@ -96,16 +98,16 @@ func (p *Position) GetByMarketAndParty(ctx context.Context, marketID entities.Ma
 	}
 }
 
-func (p *Position) GetByMarket(ctx context.Context, marketID entities.MarketID) ([]entities.Position, error) {
+func (p *Position) GetByMarket(ctx context.Context, marketID string) ([]entities.Position, error) {
 	return p.store.GetByMarket(ctx, marketID)
 }
 
 func (p *Position) GetByParty(ctx context.Context, partyID entities.PartyID) ([]entities.Position, error) {
-	return p.store.GetByParty(ctx, partyID)
+	return p.store.GetByParty(ctx, partyID.String())
 }
 
 func (p *Position) GetByPartyConnection(ctx context.Context, partyID entities.PartyID, marketID entities.MarketID, pagination entities.CursorPagination) ([]entities.Position, entities.PageInfo, error) {
-	return p.store.GetByPartyConnection(ctx, partyID, marketID, pagination)
+	return p.store.GetByPartyConnection(ctx, partyID.String(), marketID.String(), pagination)
 }
 
 func (p *Position) GetAll(ctx context.Context) ([]entities.Position, error) {
