@@ -300,7 +300,7 @@ func (n *NullBlockchain) GetChainID(context.Context) (string, error) {
 func (n *NullBlockchain) GetStatus(context.Context) (*tmctypes.ResultStatus, error) {
 	return &tmctypes.ResultStatus{
 		NodeInfo: p2p.DefaultNodeInfo{
-			Version: "0.35.8",
+			Version: "0.34.20",
 		},
 		SyncInfo: tmctypes.SyncInfo{
 			CatchingUp: false,
