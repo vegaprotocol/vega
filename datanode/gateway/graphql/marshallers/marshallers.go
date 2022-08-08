@@ -65,3 +65,13 @@ func MarshalNodeStatus(s vega.NodeStatus) graphql.Marshaler {
 func UnmarshalNodeStatus(v interface{}) (vega.NodeStatus, error) {
 	return vega.NodeStatus_NODE_STATUS_UNSPECIFIED, ErrUnimplemented
 }
+
+func MarshalAssetStatus(s vega.Asset_Status) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalAssetStatus(v interface{}) (vega.Asset_Status, error) {
+	return vega.Asset_STATUS_UNSPECIFIED, ErrUnimplemented
+}

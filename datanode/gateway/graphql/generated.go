@@ -1522,7 +1522,7 @@ type AssetResolver interface {
 	Decimals(ctx context.Context, obj *vega.Asset) (int, error)
 	Quantum(ctx context.Context, obj *vega.Asset) (string, error)
 	Source(ctx context.Context, obj *vega.Asset) (AssetSource, error)
-	Status(ctx context.Context, obj *vega.Asset) (AssetStatus, error)
+
 	InfrastructureFeeAccount(ctx context.Context, obj *vega.Asset) (*vega.Account, error)
 	GlobalRewardPoolAccount(ctx context.Context, obj *vega.Asset) (*vega.Account, error)
 	TakerFeeRewardAccount(ctx context.Context, obj *vega.Asset) (*vega.Account, error)
@@ -9465,13 +9465,13 @@ type Delegation {
 
 enum AssetStatus {
   "Asset is proposed to be added to the network"
-  Proposed
+  STATUS_PROPOSED
   "Asset has been rejected"
-  Rejected
+  STATUS_REJECTED
   "Asset is pending listing on the ethereum bridge"
-  PendingListing
+  STATUS_PENDING_LISTING
   "Asset can be used on the Vega network"
-  Enabled
+  STATUS_ENABLED
 }
 
 "Represents an asset in Vega"
@@ -15711,14 +15711,14 @@ func (ec *executionContext) _Asset_status(ctx context.Context, field graphql.Col
 		Object:     "Asset",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Asset().Status(rctx, obj)
+		return obj.Status, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -15730,9 +15730,9 @@ func (ec *executionContext) _Asset_status(ctx context.Context, field graphql.Col
 		}
 		return graphql.Null
 	}
-	res := resTmp.(AssetStatus)
+	res := resTmp.(vega.Asset_Status)
 	fc.Result = res
-	return ec.marshalNAssetStatus2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐAssetStatus(ctx, field.Selections, res)
+	return ec.marshalNAssetStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAsset_Status(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Asset_infrastructureFeeAccount(ctx context.Context, field graphql.CollectedField, obj *vega.Asset) (ret graphql.Marshaler) {
@@ -46336,25 +46336,15 @@ func (ec *executionContext) _Asset(ctx context.Context, sel ast.SelectionSet, ob
 
 			})
 		case "status":
-			field := field
-
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Asset_status(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+				return ec._Asset_status(ctx, field, obj)
 			}
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
+			out.Values[i] = innerFunc(ctx)
 
-			})
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "infrastructureFeeAccount":
 			field := field
 
@@ -61567,14 +61557,19 @@ func (ec *executionContext) marshalNAssetSource2codeᚗvegaprotocolᚗioᚋvega�
 	return ec._AssetSource(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNAssetStatus2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐAssetStatus(ctx context.Context, v interface{}) (AssetStatus, error) {
-	var res AssetStatus
-	err := res.UnmarshalGQL(v)
+func (ec *executionContext) unmarshalNAssetStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAsset_Status(ctx context.Context, v interface{}) (vega.Asset_Status, error) {
+	res, err := marshallers.UnmarshalAssetStatus(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNAssetStatus2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐAssetStatus(ctx context.Context, sel ast.SelectionSet, v AssetStatus) graphql.Marshaler {
-	return v
+func (ec *executionContext) marshalNAssetStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAsset_Status(ctx context.Context, sel ast.SelectionSet, v vega.Asset_Status) graphql.Marshaler {
+	res := marshallers.MarshalAssetStatus(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
 }
 
 func (ec *executionContext) marshalNAssetsConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAssetsConnection(ctx context.Context, sel ast.SelectionSet, v v2.AssetsConnection) graphql.Marshaler {

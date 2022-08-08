@@ -993,13 +993,13 @@ type Delegation {
 
 enum AssetStatus {
   "Asset is proposed to be added to the network"
-  Proposed
+  STATUS_PROPOSED
   "Asset has been rejected"
-  Rejected
+  STATUS_REJECTED
   "Asset is pending listing on the ethereum bridge"
-  PendingListing
+  STATUS_PENDING_LISTING
   "Asset can be used on the Vega network"
-  Enabled
+  STATUS_ENABLED
 }
 
 "Represents an asset in Vega"
