@@ -61,10 +61,6 @@ func (o oracleSpecResolver) DataConnection(ctx context.Context, spec *v1.OracleS
 	return resp.OracleData, nil
 }
 
-type propertyKeyResolver VegaResolverRoot
-
-type conditionResolver VegaResolverRoot
-
 type oracleDataResolver VegaResolverRoot
 
 func (o *oracleDataResolver) BroadcastAt(_ context.Context, obj *v1.OracleData) (string, error) {

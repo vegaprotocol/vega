@@ -14,9 +14,7 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 )
 
-var (
-	ErrUnimplemented = errors.New("unmarshaller not implemented as this API is query only")
-)
+var ErrUnimplemented = errors.New("unmarshaller not implemented as this API is query only")
 
 func MarshalAccountType(t vega.AccountType) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
