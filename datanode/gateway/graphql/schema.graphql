@@ -573,6 +573,9 @@ type Query {
   "query for historic key rotations"
   keyRotationsConnection(id: String, pagination: Pagination): KeyRotationConnection!
 
+  "query for historic ethereum key rotations"
+  ethereumKeyRotations(nodeId: String): EthereumKeyRotationsConnection!
+
   "get data for a specific epoch, if ID omitted it gets the current epoch. If the string is 'next', fetch the next epoch"
   epoch(id: String): Epoch!
 
@@ -773,6 +776,30 @@ type KeyRotation {
   oldPubKey: String!
   "New public key rotated to"
   newPubKey: String!
+  "Block height when the rotation took place"
+  blockHeight: String!
+}
+
+type EthereumKeyRotationEdge {
+  ethereumKeyRotation: EthereumKeyRotation!
+  cursor: String
+}
+
+type EthereumKeyRotationsConnection {
+  "The ethereum key rotations in this connection"
+  edges: [EthereumKeyRotationEdge!]!
+  "The pagination information"
+  pageInfo: PageInfo
+}
+
+# Describes the ethereum key rotations of nodes on the vega network
+type EthereumKeyRotation {
+  "ID of node where rotation took place"
+  nodeId: String!
+  "Old ethereum address"
+  oldAddress: String!
+  "New ethereum address"
+  newAddress: String!
   "Block height when the rotation took place"
   blockHeight: String!
 }
@@ -1021,10 +1048,27 @@ type Asset {
 "One of the possible asset sources"
 union AssetSource = BuiltinAsset | ERC20
 
+"One of the possible asset sources for update assets proposals"
+union UpdateAssetSource = UpdateERC20
+
 "An asset originated from an Ethereum ERC20 Token"
 type ERC20 {
   "The address of the ERC20 contract"
   contractAddress: String!
+  """
+  The lifetime limits deposit per address
+  Note: this is a temporary measure for alpha mainnet
+  """
+  lifetimeLimit: String!
+  """
+  The maximum allowed per withdrawal
+  Note: this is a temporary measure for alpha mainnet
+  """
+  withdrawThreshold: String!
+}
+
+"An asset originated from an Ethereum ERC20 Token"
+type UpdateERC20 {
   """
   The lifetime limits deposit per address
   Note: this is a temporary measure for alpha mainnet
@@ -2886,6 +2930,24 @@ type NewAsset {
   source: AssetSource!
 }
 
+"A new asset proposal change"
+type UpdateAsset {
+  "The full name of the asset (e.g: Great British Pound)"
+  name: String!
+
+  "The symbol of the asset (e.g: GBP)"
+  symbol: String!
+
+  "The total supply of the market"
+  totalSupply: String!
+
+  "The minimum stake to become a liquidity provider for any market using this asset for settlement"
+  minLpStake: String!
+
+  "The source of the updated asset"
+  source: UpdateAssetSource!
+}
+
 """
 A new freeform proposal change. It has no properties on purpose. Use proposal
 rationale, instead.
@@ -2913,6 +2975,7 @@ union ProposalChange =
   | UpdateMarket
   | UpdateNetworkParameter
   | NewAsset
+  | UpdateAsset
   | NewFreeform
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 
@@ -2968,6 +3031,8 @@ enum ProposalType {
   NetworkParameters
   "Proposal to add a new asset"
   NewAsset
+  "Proposal to update an existing asset"
+  UpdateAsset
   "Proposal to create a new freeform proposal"
   NewFreeForm
 }

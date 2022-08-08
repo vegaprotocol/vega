@@ -117,6 +117,7 @@ func (l *NodeCommand) setupSQLSubscribers() {
 	l.notarySub = sqlsubscribers.NewNotary(l.notaryService, l.Log)
 	l.multiSigSignerEventSub = sqlsubscribers.NewERC20MultiSigSignerEvent(l.multiSigService, l.Log)
 	l.keyRotationsSub = sqlsubscribers.NewKeyRotation(l.keyRotationsService, l.Log)
+	l.ethereumKeyRotationsSub = sqlsubscribers.NewEthereumKeyRotation(l.ethereumKeyRotationsService, l.Log)
 	l.nodeSub = sqlsubscribers.NewNode(l.nodeService, l.Log)
 	l.marketDepthSub = sqlsubscribers.NewMarketDepth(l.marketDepthService)
 }
@@ -180,6 +181,7 @@ func (l *NodeCommand) setupStoresSQL() error {
 	l.notaryStore = sqlstore.NewNotary(transactionalConnectionSource)
 	l.multiSigSignerAddedStore = sqlstore.NewERC20MultiSigSignerEvent(transactionalConnectionSource)
 	l.keyRotationsStore = sqlstore.NewKeyRotations(transactionalConnectionSource)
+	l.ethereumKeyRotationsStore = sqlstore.NewEthereumKeyRotations(transactionalConnectionSource)
 	l.nodeStore = sqlstore.NewNode(transactionalConnectionSource)
 	l.candleStore = sqlstore.NewCandles(l.ctx, transactionalConnectionSource, l.conf.CandlesV2.CandleStore)
 	l.chainStore = sqlstore.NewChain(transactionalConnectionSource)
@@ -276,6 +278,7 @@ func (l *NodeCommand) setupServices() error {
 	l.epochService = service.NewEpoch(l.epochStore, log)
 	l.governanceService = service.NewGovernance(l.proposalStore, l.voteStore, log)
 	l.keyRotationsService = service.NewKeyRotations(l.keyRotationsStore, log)
+	l.ethereumKeyRotationsService = service.NewEthereumKeyRotation(l.ethereumKeyRotationsStore, log)
 	l.ledgerService = service.NewLedger(l.ledger, log)
 	l.liquidityProvisionService = service.NewLiquidityProvision(l.liquidityProvisionStore, log)
 	l.marketDataService = service.NewMarketData(l.marketDataStore, log)

@@ -14,23 +14,16 @@ package erc20
 
 import (
 	"context"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"math/big"
-	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/assets/common"
 	"code.vegaprotocol.io/vega/core/bridges"
-	"code.vegaprotocol.io/vega/core/contracts/erc20"
-	bridge "code.vegaprotocol.io/vega/core/contracts/erc20_bridge_logic_restricted"
-	"code.vegaprotocol.io/vega/core/metrics"
 	ethnw "code.vegaprotocol.io/vega/core/nodewallets/eth"
 	"code.vegaprotocol.io/vega/core/types"
-	vgerrors "code.vegaprotocol.io/vega/libs/errors"
 	"code.vegaprotocol.io/vega/libs/num"
 	typespb "code.vegaprotocol.io/vega/protos/vega"
 
@@ -125,54 +118,8 @@ func (e *ERC20) IsValid() bool {
 	return e.ok
 }
 
-// SetValidNonValidator this method is here temporarsy
-// to avoid requiring ethclient for the non-validators
-// will be removed once the eth client can be removed from this type.
-func (e *ERC20) SetValidNonValidator() {
+func (e *ERC20) SetValid() {
 	e.ok = true
-}
-
-func (e *ERC20) Validate() error {
-	t, err := erc20.NewErc20(ethcommon.HexToAddress(e.address), e.ethClient)
-	if err != nil {
-		return err
-	}
-
-	validationErrs := vgerrors.NewCumulatedErrors()
-
-	if name, err := t.Name(&bind.CallOpts{}); err != nil {
-		validationErrs.Add(fmt.Errorf("couldn't get name: %w", err))
-	} else if name != e.asset.Details.Name {
-		validationErrs.Add(fmt.Errorf("invalid name, expected(%s), got(%s)", e.asset.Details.Name, name))
-	}
-
-	if symbol, err := t.Symbol(&bind.CallOpts{}); err != nil {
-		validationErrs.Add(fmt.Errorf("couldn't get symbol: %w", err))
-	} else if symbol != e.asset.Details.Symbol {
-		validationErrs.Add(fmt.Errorf("invalid symbol, expected(%s), got(%s)", e.asset.Details.Symbol, symbol))
-	}
-
-	if decimals, err := t.Decimals(&bind.CallOpts{}); err != nil {
-		validationErrs.Add(fmt.Errorf("couldn't get decimals: %w", err))
-	} else if uint64(decimals) != e.asset.Details.Decimals {
-		validationErrs.Add(fmt.Errorf("invalid decimals, expected(%d), got(%d)", e.asset.Details.Decimals, decimals))
-	}
-
-	// FIXME: We do not check the total supply for now.
-	// It's for normal asset never really used, and will also vary
-	// if new coins are minted...
-	// if totalSupply, err := t.TotalSupply(&bind.CallOpts{}); err != nil {
-	// 	carryErr = fmt.Errorf("couldn't get totalSupply %v: %w", err, carryErr)
-	// } else if totalSupply.String() != b.asset.Details.TotalSupply {
-	// 	carryErr = maybeError(carryErr, "invalid symbol, expected(%s), got(%s)", b.asset.Details.TotalSupply, totalSupply)
-	// }
-
-	if validationErrs.HasAny() {
-		return validationErrs
-	}
-
-	e.ok = true
-	return nil
 }
 
 // SignListAsset create and sign the message to
@@ -208,110 +155,6 @@ func (e *ERC20) SignSetAssetLimits(nonce *num.Uint, lifetimeLimit *num.Uint, wit
 	return bundle.Message, bundle.Signature, nil
 }
 
-func (e *ERC20) ValidateAssetList(w *types.ERC20AssetList, blockNumber, txIndex uint64) error {
-	bf, err := bridge.NewErc20BridgeLogicRestrictedFilterer(
-		e.ethClient.CollateralBridgeAddress(), e.ethClient)
-	if err != nil {
-		return err
-	}
-
-	resp := "ok"
-	defer func() {
-		metrics.EthCallInc("validate_allowlist", e.asset.ID, resp)
-	}()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	iter, err := bf.FilterAssetListed(
-		&bind.FilterOpts{
-			Start:   blockNumber - 1,
-			Context: ctx,
-		},
-		[]ethcommon.Address{ethcommon.HexToAddress(e.address)},
-		[][32]byte{},
-	)
-	if err != nil {
-		resp = getMaybeHTTPStatus(err)
-		return err
-	}
-
-	defer iter.Close()
-	var event *bridge.Erc20BridgeLogicRestrictedAssetListed
-
-	assetID := strings.TrimPrefix(w.VegaAssetID, "0x")
-	for iter.Next() {
-		if hex.EncodeToString(iter.Event.VegaAssetId[:]) == assetID &&
-			iter.Event.Raw.BlockNumber == blockNumber &&
-			uint64(iter.Event.Raw.Index) == txIndex {
-			event = iter.Event
-
-			break
-		}
-	}
-
-	if event == nil {
-		return ErrUnableToFindERC20AssetList
-	}
-
-	// now ensure we have enough confirmations
-	if err := e.checkConfirmations(event.Raw.BlockNumber); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (e *ERC20) ValidateAssetLimitsUpdated(update *types.ERC20AssetLimitsUpdated, blockNumber uint64, txIndex uint64) error {
-	bf, err := bridge.NewErc20BridgeLogicRestrictedFilterer(e.ethClient.CollateralBridgeAddress(), e.ethClient)
-	if err != nil {
-		return err
-	}
-
-	resp := "ok"
-	defer func() {
-		metrics.EthCallInc("validate_asset_limits_updated", e.asset.ID, resp)
-	}()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	iter, err := bf.FilterAssetLimitsUpdated(
-		&bind.FilterOpts{
-			Start:   blockNumber - 1,
-			Context: ctx,
-		},
-		[]ethcommon.Address{ethcommon.HexToAddress(e.address)},
-	)
-	if err != nil {
-		resp = getMaybeHTTPStatus(err)
-		return err
-	}
-
-	defer iter.Close()
-	var event *bridge.Erc20BridgeLogicRestrictedAssetLimitsUpdated
-	for iter.Next() {
-		eventLifetimeLimit, _ := num.UintFromBig(iter.Event.LifetimeLimit)
-		eventWithdrawThreshold, _ := num.UintFromBig(iter.Event.WithdrawThreshold)
-		if update.LifetimeLimits.EQ(eventLifetimeLimit) &&
-			update.WithdrawThreshold.EQ(eventWithdrawThreshold) &&
-			iter.Event.Raw.BlockNumber == blockNumber &&
-			uint64(iter.Event.Raw.Index) == txIndex {
-			event = iter.Event
-			break
-		}
-	}
-
-	if event == nil {
-		return ErrUnableToFindERC20AssetLimitsUpdated
-	}
-
-	// now ensure we have enough confirmations
-	if err := e.checkConfirmations(event.Raw.BlockNumber); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (e *ERC20) SignWithdrawal(
 	amount *num.Uint,
 	ethPartyAddress string,
@@ -329,151 +172,8 @@ func (e *ERC20) SignWithdrawal(
 	return bundle.Message, bundle.Signature, nil
 }
 
-func (e *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txIndex uint64) (*big.Int, string, uint, error) {
-	bf, err := bridge.NewErc20BridgeLogicRestrictedFilterer(
-		e.ethClient.CollateralBridgeAddress(), e.ethClient)
-	if err != nil {
-		return nil, "", 0, err
-	}
-
-	resp := "ok"
-	defer func() {
-		metrics.EthCallInc("validate_withdrawal", e.asset.ID, resp)
-	}()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	iter, err := bf.FilterAssetWithdrawn(
-		&bind.FilterOpts{
-			Start:   blockNumber - 1,
-			Context: ctx,
-		},
-		// user_address
-		[]ethcommon.Address{ethcommon.HexToAddress(w.TargetEthereumAddress)},
-		// asset_source
-		[]ethcommon.Address{ethcommon.HexToAddress(e.address)})
-	if err != nil {
-		resp = getMaybeHTTPStatus(err)
-		return nil, "", 0, err
-	}
-
-	defer iter.Close()
-	var event *bridge.Erc20BridgeLogicRestrictedAssetWithdrawn
-	nonce := &big.Int{}
-	_, ok := nonce.SetString(w.ReferenceNonce, 10)
-	if !ok {
-		return nil, "", 0, fmt.Errorf("could not use reference nonce, expected base 10 integer: %v", w.ReferenceNonce)
-	}
-	for iter.Next() {
-		if nonce.Cmp(iter.Event.Nonce) == 0 &&
-			iter.Event.Raw.BlockNumber == blockNumber &&
-			uint64(iter.Event.Raw.Index) == txIndex {
-			event = iter.Event
-
-			break
-		}
-	}
-
-	if event == nil {
-		return nil, "", 0, ErrUnableToFindWithdrawal
-	}
-
-	// now ensure we have enough confirmations
-	if err := e.checkConfirmations(event.Raw.BlockNumber); err != nil {
-		return nil, "", 0, err
-	}
-
-	return nonce, event.Raw.TxHash.Hex(), event.Raw.Index, nil
-}
-
-func (e *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint64) error {
-	bf, err := bridge.NewErc20BridgeLogicRestrictedFilterer(
-		e.ethClient.CollateralBridgeAddress(), e.ethClient)
-	if err != nil {
-		return err
-	}
-
-	resp := "ok"
-	defer func() {
-		metrics.EthCallInc("validate_deposit", e.asset.ID, resp)
-	}()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	iter, err := bf.FilterAssetDeposited(
-		&bind.FilterOpts{
-			Start:   blockNumber - 1,
-			Context: ctx,
-		},
-		// user_address
-		[]ethcommon.Address{ethcommon.HexToAddress(d.SourceEthereumAddress)},
-		// asset_source
-		[]ethcommon.Address{ethcommon.HexToAddress(e.address)})
-	if err != nil {
-		resp = getMaybeHTTPStatus(err)
-		return err
-	}
-
-	depamount := d.Amount.BigInt()
-	defer iter.Close()
-	var event *bridge.Erc20BridgeLogicRestrictedAssetDeposited
-	targetPartyID := strings.TrimPrefix(d.TargetPartyID, "0x")
-	for iter.Next() {
-		if hex.EncodeToString(iter.Event.VegaPublicKey[:]) == targetPartyID &&
-			iter.Event.Amount.Cmp(depamount) == 0 &&
-			iter.Event.Raw.BlockNumber == blockNumber &&
-			uint64(iter.Event.Raw.Index) == txIndex {
-			event = iter.Event
-			break
-		}
-	}
-
-	if event == nil {
-		return ErrUnableToFindDeposit
-	}
-
-	// now ensure we have enough confirmations
-	if err := e.checkConfirmations(event.Raw.BlockNumber); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (e *ERC20) checkConfirmations(txBlock uint64) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	curBlock, err := e.ethClient.CurrentHeight(ctx)
-	if err != nil {
-		return err
-	}
-
-	if curBlock < txBlock || (curBlock-txBlock) < e.ethClient.ConfirmationsRequired() {
-		return ErrMissingConfirmations
-	}
-
-	return nil
-}
-
 func (e *ERC20) String() string {
 	return fmt.Sprintf("id(%v) name(%v) symbol(%v) totalSupply(%v) decimals(%v)",
 		e.asset.ID, e.asset.Details.Name, e.asset.Details.Symbol, e.asset.Details.TotalSupply,
 		e.asset.Details.Decimals)
-}
-
-func getMaybeHTTPStatus(err error) string {
-	errstr := err.Error()
-	if len(errstr) < 3 {
-		return "tooshort"
-	}
-	i, err := strconv.Atoi(errstr[:3])
-	if err != nil {
-		return "nan"
-	}
-	if http.StatusText(i) == "" {
-		return "unknown"
-	}
-
-	return errstr[:3]
 }

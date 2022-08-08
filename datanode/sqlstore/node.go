@@ -79,7 +79,7 @@ func (store *Node) UpsertNode(ctx context.Context, node *entities.Node) error {
 }
 
 // AddNodeAnnoucedEvent store data about which epoch a particular node was added or removed from the roster of alidators.
-func (store *Node) AddNodeAnnoucedEvent(ctx context.Context, nodeID entities.NodeID, vegatime time.Time, aux *entities.ValidatorUpdateAux) error {
+func (store *Node) AddNodeAnnoucedEvent(ctx context.Context, nodeID string, vegatime time.Time, aux *entities.ValidatorUpdateAux) error {
 	defer metrics.StartSQLQuery("Node", "AddNodeAnnoucedEvent")()
 	_, err := store.pool.Exec(ctx, `
 		INSERT INTO nodes_announced (
@@ -91,7 +91,7 @@ func (store *Node) AddNodeAnnoucedEvent(ctx context.Context, nodeID entities.Nod
 			($1, $2, $3, $4)
 		ON CONFLICT (node_id, epoch_seq, vega_time) DO UPDATE SET
 			added=EXCLUDED.added`,
-		nodeID,
+		entities.NodeID(nodeID),
 		aux.FromEpoch,
 		aux.Added,
 		vegatime,
@@ -143,8 +143,8 @@ func (store *Node) UpsertScore(ctx context.Context, rs *entities.RewardScore, au
 			multisig_score,
 			validator_score,
 			normalised_score,
-			vega_time) 
-		VALUES 
+			vega_time)
+		VALUES
 			($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
 		aux.NodeId,
 		rs.EpochSeq,
@@ -164,6 +164,14 @@ func (store *Node) UpdatePublicKey(ctx context.Context, kr *entities.KeyRotation
 	defer metrics.StartSQLQuery("Node", "UpdatePublicKey")()
 
 	_, err := store.pool.Exec(ctx, `UPDATE nodes SET pub_key = $1 WHERE id = $2`, kr.NewPubKey, kr.NodeID)
+
+	return err
+}
+
+func (store *Node) UpdateEthereumAddress(ctx context.Context, kr entities.EthereumKeyRotation) error {
+	defer metrics.StartSQLQuery("Node", "UpdateEthereumPublicKey")()
+
+	_, err := store.pool.Exec(ctx, `UPDATE nodes SET ethereum_address = $1 WHERE id = $2`, kr.NewAddress, kr.NodeID)
 
 	return err
 }
@@ -196,21 +204,21 @@ func (store *Node) GetNodeData(ctx context.Context) (entities.NodeData, error) {
 			),
 			/* partitioned by node_id find the join/leave annoucement with the biggest epoch that is also less or equal to the target epoch */
 			join_event AS (
-				SELECT 
-					node_id, added 
-				FROM 
-					( 
-						SELECT 
-							node_id, added, epoch_seq, Row_Number() 
-						OVER(PARTITION BY node_id order BY epoch_seq desc) 
-						AS 
-							row_number 
-						FROM 
-							nodes_announced 
-						WHERE 
+				SELECT
+					node_id, added
+				FROM
+					(
+						SELECT
+							node_id, added, epoch_seq, Row_Number()
+						OVER(PARTITION BY node_id order BY epoch_seq desc)
+						AS
+							row_number
+						FROM
+							nodes_announced
+						WHERE
 							epoch_seq <= (SELECT MAX(id) FROM epochs)
 					) AS a
-				WHERE 
+				WHERE
 					row_number = 1 AND added = true
 			),
 
@@ -266,16 +274,16 @@ func (store *Node) GetNodes(ctx context.Context, epochSeq uint64, pagination ent
 
 	/* partitioned by node_id find the join/leave annoucement with the biggest epoch that is also less or equal to the target epoch */
 	join_event AS (
-		SELECT 
-			node_id, added 
-		FROM ( 
-			SELECT 
-				node_id, added, epoch_seq, Row_Number() 
-			OVER(PARTITION BY node_id order BY epoch_seq desc) 
-			AS 
-				row_number 
-			FROM 
-				nodes_announced 
+		SELECT
+			node_id, added
+		FROM (
+			SELECT
+				node_id, added, epoch_seq, Row_Number()
+			OVER(PARTITION BY node_id order BY epoch_seq desc)
+			AS
+				row_number
+			FROM
+				nodes_announced
 			WHERE epoch_seq <= $1) AS a
 		WHERE row_number = 1 AND added = true
 	),
@@ -365,16 +373,16 @@ func (store *Node) GetNodeByID(ctx context.Context, nodeId string, epochSeq uint
 
 	/* partitioned by node_id find the join/leave annoucement with the biggest epoch that is also less or equal to the target epoch */
 	join_event AS (
-		SELECT 
-			node_id, added 
-		FROM ( 
-			SELECT 
-				node_id, added, epoch_seq, Row_Number() 
-			OVER(PARTITION BY node_id order BY epoch_seq desc) 
-			AS 
-				row_number 
-			FROM 
-				nodes_announced 
+		SELECT
+			node_id, added
+		FROM (
+			SELECT
+				node_id, added, epoch_seq, Row_Number()
+			OVER(PARTITION BY node_id order BY epoch_seq desc)
+			AS
+				row_number
+			FROM
+				nodes_announced
 			WHERE epoch_seq <= $1) AS a
 		WHERE row_number = 1 AND added = true
 	),

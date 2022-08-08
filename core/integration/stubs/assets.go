@@ -119,7 +119,7 @@ func (isAssetStub) Validate() error {
 	return nil
 }
 
-func (isAssetStub) SetValidNonValidator() {}
+func (isAssetStub) SetValid() {}
 
 func (a isAssetStub) String() string {
 	return a.ID

@@ -39,14 +39,15 @@ var testAsset = assets.NewAsset(builtin.New("VGT", &types.AssetDetails{
 
 type testEngine struct {
 	*banking.Engine
-	ctrl   *gomock.Controller
-	erc    *fakeERC
-	col    *mocks.MockCollateral
-	assets *mocks.MockAssets
-	tsvc   *mocks.MockTimeService
-	top    *mocks.MockTopology
-	broker *bmocks.MockBroker
-	epoch  *mocks.MockEpochService
+	ctrl       *gomock.Controller
+	erc        *fakeERC
+	col        *mocks.MockCollateral
+	assets     *mocks.MockAssets
+	tsvc       *mocks.MockTimeService
+	top        *mocks.MockTopology
+	broker     *bmocks.MockBroker
+	epoch      *mocks.MockEpochService
+	bridgeView *mocks.MockERC20BridgeView
 }
 
 func getTestEngine(t *testing.T) *testEngine {
@@ -60,22 +61,24 @@ func getTestEngine(t *testing.T) *testEngine {
 	broker := bmocks.NewMockBroker(ctrl)
 	top := mocks.NewMockTopology(ctrl)
 	epoch := mocks.NewMockEpochService(ctrl)
+	bridgeView := mocks.NewMockERC20BridgeView(ctrl)
 	marketActivityTracker := mocks.NewMockMarketActivityTracker(ctrl)
 
 	notary.EXPECT().OfferSignatures(gomock.Any(), gomock.Any()).AnyTimes()
 	epoch.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).Times(1)
-	eng := banking.New(logging.NewTestLogger(), banking.NewDefaultConfig(), col, erc, tsvc, assets, notary, broker, top, epoch, marketActivityTracker)
+	eng := banking.New(logging.NewTestLogger(), banking.NewDefaultConfig(), col, erc, tsvc, assets, notary, broker, top, epoch, marketActivityTracker, bridgeView)
 
 	return &testEngine{
-		Engine: eng,
-		ctrl:   ctrl,
-		erc:    erc,
-		col:    col,
-		assets: assets,
-		tsvc:   tsvc,
-		broker: broker,
-		top:    top,
-		epoch:  epoch,
+		Engine:     eng,
+		ctrl:       ctrl,
+		erc:        erc,
+		col:        col,
+		assets:     assets,
+		tsvc:       tsvc,
+		broker:     broker,
+		top:        top,
+		epoch:      epoch,
+		bridgeView: bridgeView,
 	}
 }
 

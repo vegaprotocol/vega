@@ -148,6 +148,7 @@ func getTestGRPCServer(
 	sqlNotaryService := service.NewNotary(sqlstore.NewNotary(sqlConn), logger)
 	sqlMultiSigService := service.NewMultiSig(sqlstore.NewERC20MultiSigSignerEvent(sqlConn), logger)
 	sqlKeyRotationsService := service.NewKeyRotations(sqlstore.NewKeyRotations(sqlConn), logger)
+	sqlEthereumKeyRotationService := service.NewEthereumKeyRotation(sqlstore.NewEthereumKeyRotations(sqlConn), logger)
 	sqlNodeService := service.NewNode(sqlstore.NewNode(sqlConn), logger)
 	sqlMarketDepthService := service.NewMarketDepth(sqlOrderService, logger)
 	sqlLedgerService := service.NewLedger(sqlstore.NewLedger(sqlConn), logger)
@@ -186,6 +187,7 @@ func getTestGRPCServer(
 		sqlNotaryService,
 		sqlMultiSigService,
 		sqlKeyRotationsService,
+		sqlEthereumKeyRotationService,
 		sqlNodeService,
 		sqlMarketDepthService,
 		sqlLedgerService,

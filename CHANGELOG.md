@@ -24,14 +24,19 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5439](https://github.com/vegaprotocol/vega/issues/5439) - `vegwallet` returns better responses when a transaction fails
 - [5465](https://github.com/vegaprotocol/vega/issues/5465) - Verify `bytecode` of smart-contracts on startup
 - [5608](https://github.com/vegaprotocol/vega/issues/5608) - Ignore stale price monitoring trigger when market is already in auction
+- [5673](https://github.com/vegaprotocol/vega/issues/5673) - Add support for `ethereum` key rotations to `datanode`
 - [5639](https://github.com/vegaprotocol/vega/issues/5639) - Move all core code in the core directory
 - [5613](https://github.com/vegaprotocol/vega/issues/5613) - Import the `datanode` in the vega repo
 - [5660](https://github.com/vegaprotocol/vega/issues/5660) - Migrate subscription `apis` from `datanode v1 api` to `datanode v2 api`
 - [5636](https://github.com/vegaprotocol/vega/issues/5636) - Assure no false positives in cucumber steps
 - [5011](https://github.com/vegaprotocol/vega/issues/5011) - Import the `protos` repo in the vega repo
 - [5774](https://github.com/vegaprotocol/vega/issues/5774) - Use `generics` for `ID` types
-
+- [5785](https://github.com/vegaprotocol/vega/issues/5785) - Add support form `ERC20` bridge stopped and resumed events
+- [5712](https://github.com/vegaprotocol/vega/issues/5712) - Configurable `graphql` endpoint
+- [5689](https://github.com/vegaprotocol/vega/issues/5689) - Support `UpdateAsset` proposal in APIs
 - [5685](https://github.com/vegaprotocol/vega/issues/5685) - Migrated `apis` from `datanode v1` to `datanode v2`
+- [5760](https://github.com/vegaprotocol/vega/issues/5760) - Map all `GRPC` to `REST`
+
 ### 🐛 Fixes
 - [5571](https://github.com/vegaprotocol/vega/issues/5571) - Restore pending assets status correctly after snapshot restore
 - [5572](https://github.com/vegaprotocol/vega/issues/5572) - Add validation on `IDs` and public keys
@@ -46,9 +51,11 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5633](https://github.com/vegaprotocol/vega/issues/5633) - Allow `minProposerEquityLikeShare` to accept 0
 - [5672](https://github.com/vegaprotocol/vega/issues/5672) - Typo fixed in datanode `ethereum` address
 - [5683](https://github.com/vegaprotocol/vega/issues/5683) - Made market mandatory in `GraphQL` for order
+- [5789](https://github.com/vegaprotocol/vega/issues/5789) - Fix performance issue with position query
 - [5677](https://github.com/vegaprotocol/vega/issues/5677) - Fixed trading mode status
 - [5663](https://github.com/vegaprotocol/vega/issues/5663) - Fixed panic with de-registering positions
 - [5781](https://github.com/vegaprotocol/vega/issues/5781) - Make enactment timestamp optional in proposal for `graphql`
+- [5767](https://github.com/vegaprotocol/vega/issues/5767) - Fix typo in command validation
 
 ## 0.53.0
 

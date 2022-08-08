@@ -97,6 +97,10 @@ type PayloadPendingAssetUpdates struct {
 	PendingAssetUpdates *PendingAssetUpdates
 }
 
+type PayloadBankingBridgeState struct {
+	BankingBridgeState *BankingBridgeState
+}
+
 type PayloadBankingWithdrawals struct {
 	BankingWithdrawals *BankingWithdrawals
 }
@@ -436,6 +440,12 @@ type PendingAssetUpdates struct {
 	Assets []*Asset
 }
 
+type BankingBridgeState struct {
+	Active      bool
+	BlockHeight uint64
+	LogIndex    uint64
+}
+
 type BankingWithdrawals struct {
 	Withdrawals []*RWithdrawal
 }
@@ -473,6 +483,8 @@ type AssetAction struct {
 	Erc20D                  *ERC20Deposit
 	Erc20AL                 *ERC20AssetList
 	ERC20AssetLimitsUpdated *ERC20AssetLimitsUpdated
+	BridgeStopped           bool
+	BridgeResume            bool
 }
 
 type CPState struct {
@@ -668,6 +680,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadPendingAssetsFromProto(dt)
 	case *snapshot.Payload_PendingAssetUpdates:
 		ret.Data = PayloadPendingAssetUpdatesFromProto(dt)
+	case *snapshot.Payload_BankingBridgeState:
+		ret.Data = PayloadBankingBridgeStateFromProto(dt)
 	case *snapshot.Payload_BankingWithdrawals:
 		ret.Data = PayloadBankingWithdrawalsFromProto(dt)
 	case *snapshot.Payload_BankingDeposits:
@@ -804,6 +818,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_BankingSeen:
 		ret.Data = dt
 	case *snapshot.Payload_BankingDeposits:
+		ret.Data = dt
+	case *snapshot.Payload_BankingBridgeState:
 		ret.Data = dt
 	case *snapshot.Payload_BankingWithdrawals:
 		ret.Data = dt
@@ -1187,6 +1203,42 @@ func PendingAssetUpdatesFromProto(aa *snapshot.PendingAssetUpdates) *PendingAsse
 		ret.Assets = append(ret.Assets, pa)
 	}
 	return &ret
+}
+
+func PayloadBankingBridgeStateFromProto(pbbs *snapshot.Payload_BankingBridgeState) *PayloadBankingBridgeState {
+	return &PayloadBankingBridgeState{
+		BankingBridgeState: &BankingBridgeState{
+			Active:      pbbs.BankingBridgeState.BridgeState.Active,
+			BlockHeight: pbbs.BankingBridgeState.BridgeState.BlockHeight,
+			LogIndex:    pbbs.BankingBridgeState.BridgeState.LogIndex,
+		},
+	}
+}
+
+func (p PayloadBankingBridgeState) IntoProto() *snapshot.Payload_BankingBridgeState {
+	return &snapshot.Payload_BankingBridgeState{
+		BankingBridgeState: &snapshot.BankingBridgeState{
+			BridgeState: &checkpointpb.BridgeState{
+				Active:      p.BankingBridgeState.Active,
+				BlockHeight: p.BankingBridgeState.BlockHeight,
+				LogIndex:    p.BankingBridgeState.LogIndex,
+			},
+		},
+	}
+}
+
+func (*PayloadBankingBridgeState) isPayload() {}
+
+func (p *PayloadBankingBridgeState) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadBankingBridgeState) Key() string {
+	return "bridgeState"
+}
+
+func (*PayloadBankingBridgeState) Namespace() SnapshotNamespace {
+	return BankingSnapshot
 }
 
 func PayloadBankingWithdrawalsFromProto(pbw *snapshot.Payload_BankingWithdrawals) *PayloadBankingWithdrawals {
@@ -1993,12 +2045,14 @@ func (a *BankingAssetActions) IntoProto() *snapshot.BankingAssetActions {
 
 func (aa *AssetAction) IntoProto() *snapshot.AssetAction {
 	ret := &snapshot.AssetAction{
-		Id:          aa.ID,
-		State:       aa.State,
-		Asset:       aa.Asset,
-		BlockNumber: aa.BlockNumber,
-		TxIndex:     aa.TxIndex,
-		Hash:        aa.Hash,
+		Id:                 aa.ID,
+		State:              aa.State,
+		Asset:              aa.Asset,
+		BlockNumber:        aa.BlockNumber,
+		TxIndex:            aa.TxIndex,
+		Hash:               aa.Hash,
+		Erc20BridgeStopped: aa.BridgeStopped,
+		Erc20BridgeResumed: aa.BridgeResume,
 	}
 	if aa.BuiltinD != nil {
 		ret.BuiltinDeposit = aa.BuiltinD.IntoProto()
@@ -2025,12 +2079,14 @@ func BankingAssetActionsFromProto(aa *snapshot.BankingAssetActions) *BankingAsse
 
 func AssetActionFromProto(a *snapshot.AssetAction) *AssetAction {
 	aa := &AssetAction{
-		ID:          a.Id,
-		State:       a.State,
-		Asset:       a.Asset,
-		BlockNumber: a.BlockNumber,
-		TxIndex:     a.TxIndex,
-		Hash:        a.Hash,
+		ID:            a.Id,
+		State:         a.State,
+		Asset:         a.Asset,
+		BlockNumber:   a.BlockNumber,
+		TxIndex:       a.TxIndex,
+		Hash:          a.Hash,
+		BridgeStopped: a.Erc20BridgeStopped,
+		BridgeResume:  a.Erc20BridgeResumed,
 	}
 
 	if a.Erc20Deposit != nil {

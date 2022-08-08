@@ -27,6 +27,7 @@ type ProposalType string
 var (
 	ProposalTypeNewMarket              = ProposalType("newMarket")
 	ProposalTypeNewAsset               = ProposalType("newAsset")
+	ProposalTypeUpdateAsset            = ProposalType("updateAsset")
 	ProposalTypeUpdateMarket           = ProposalType("updateMarket")
 	ProposalTypeUpdateNetworkParameter = ProposalType("updateNetworkParameter")
 	ProposalTypeNewFreeform            = ProposalType("newFreeform")

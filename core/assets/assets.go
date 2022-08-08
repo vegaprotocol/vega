@@ -33,6 +33,11 @@ var (
 	ErrUnknownAssetSource = errors.New("unknown asset source")
 )
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/erc20_bridge_view_mock.go -package mocks code.vegaprotocol.io/vega/core/assets ERC20BridgeView
+type ERC20BridgeView interface {
+	FindAsset(asset *types.AssetDetails) error
+}
+
 type Service struct {
 	log *logging.Logger
 	cfg Config
@@ -57,6 +62,8 @@ type Service struct {
 
 	ethToVega   map[string]string
 	isValidator bool
+
+	bridgeView ERC20BridgeView
 }
 
 func New(
@@ -65,6 +72,7 @@ func New(
 	nw *nodewallets.NodeWallets,
 	ethClient erc20.ETHClient,
 	broker broker.BrokerI,
+	bridgeView ERC20BridgeView,
 	isValidator bool,
 ) *Service {
 	log = log.Named(namedLogger)
@@ -85,6 +93,7 @@ func New(
 		},
 		isValidator: isValidator,
 		ethToVega:   map[string]string{},
+		bridgeView:  bridgeView,
 	}
 }
 
@@ -333,4 +342,53 @@ func (s *Service) Get(assetID string) (*Asset, error) {
 		return asset, nil
 	}
 	return nil, ErrAssetDoesNotExist
+}
+
+// ValidateAssetNonValidator is only to be used by non-validators
+// at startup when loading genesis file. We just assume assets are
+// valid.
+func (s *Service) ValidateAssetNonValidator(assetID string) error {
+	// get the asset to validate from the assets pool
+	asset, err := s.Get(assetID)
+	// if we get an error here, we'll never change the state of the proposal,
+	// so it will be dismissed later on by all the whole network
+	if err != nil || asset == nil {
+		s.log.Error("Validating asset, unable to get the asset",
+			logging.AssetID(assetID),
+			logging.Error(err),
+		)
+		return errors.New("invalid asset ID")
+	}
+
+	asset.SetValid()
+	return nil
+}
+
+func (s *Service) ValidateAsset(assetID string) error {
+	// get the asset to validate from the assets pool
+	asset, err := s.Get(assetID)
+	// if we get an error here, we'll never change the state of the proposal,
+	// so it will be dismissed later on by all the whole network
+	if err != nil || asset == nil {
+		s.log.Error("Validating asset, unable to get the asset",
+			logging.AssetID(assetID),
+			logging.Error(err),
+		)
+		return errors.New("invalid asset ID")
+	}
+
+	return s.validateAsset(asset)
+}
+
+func (s *Service) validateAsset(a *Asset) error {
+	var err error
+	if erc20, ok := a.ERC20(); ok {
+		err = s.bridgeView.FindAsset(erc20.Type().Details.DeepClone())
+		// no error, our asset exists on chain
+		if err == nil {
+			erc20.SetValid()
+		}
+	}
+
+	return err
 }

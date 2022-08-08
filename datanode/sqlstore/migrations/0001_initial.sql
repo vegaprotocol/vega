@@ -906,8 +906,7 @@ SELECT
     conflated_positions.adjustment,
     conflated_positions.vega_time
 FROM conflated_positions
-WHERE conflated_positions.vega_time < ( SELECT min(positions.vega_time) FROM positions) OR
-        0 = (select count(*) from positions));
+WHERE conflated_positions.vega_time < (SELECT coalesce(min(positions.vega_time), 'infinity') FROM positions));
 
 CREATE VIEW positions_current AS (
  SELECT DISTINCT ON (party_id, market_id) * FROM all_positions ORDER BY party_id, market_id, vega_time DESC
@@ -1075,6 +1074,14 @@ create table if not exists key_rotations (
   primary key (node_id, vega_time)
 );
 
+create table if not exists ethereum_key_rotations (
+  node_id bytea not null references nodes(id),
+  old_address bytea not null,
+  new_address bytea not null,
+  block_height bigint not null,
+  vega_time timestamp with time zone not null references blocks(vega_time)
+);
+
 create type erc20_multisig_signer_event as enum('SIGNER_ADDED', 'SIGNER_REMOVED');
 
 create table if not exists erc20_multisig_signer_events(
@@ -1130,6 +1137,8 @@ DROP AGGREGATE IF EXISTS public.first(anyelement);
 DROP AGGREGATE IF EXISTS public.last(anyelement);
 DROP FUNCTION IF EXISTS public.first_agg(anyelement, anyelement);
 DROP FUNCTION IF EXISTS public.last_agg(anyelement, anyelement);
+
+DROP TABLE IF EXISTS ethereum_key_rotations;
 
 DROP TABLE IF EXISTS key_rotations;
 

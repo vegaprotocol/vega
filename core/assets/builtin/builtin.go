@@ -34,6 +34,8 @@ func New(id string, asset *types.AssetDetails) *Builtin {
 	}
 }
 
+func (e *Builtin) SetValid() {}
+
 func (e *Builtin) SetPendingListing() {
 	e.asset.Status = types.AssetStatusPendingListing
 }
@@ -61,15 +63,6 @@ func (b *Builtin) GetAssetClass() common.AssetClass {
 func (b *Builtin) IsValid() bool {
 	return true
 }
-
-func (b *Builtin) Validate() error {
-	return nil
-}
-
-// SetValidNonValidator this method is here temporarly
-// to avoid requiring ethclient for the non-validators
-// will be removed once the eth client can be removed from this type
-func (b *Builtin) SetValidNonValidator() {}
 
 func (b *Builtin) SignBridgeWhitelisting() ([]byte, []byte, error) {
 	return nil, nil, nil

@@ -36,6 +36,34 @@ func (m *MockBanking) EXPECT() *MockBankingMockRecorder {
 	return m.recorder
 }
 
+// BridgeResumed mocks base method.
+func (m *MockBanking) BridgeResumed(arg0 context.Context, arg1 bool, arg2 string, arg3, arg4 uint64, arg5 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BridgeResumed", arg0, arg1, arg2, arg3, arg4, arg5)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// BridgeResumed indicates an expected call of BridgeResumed.
+func (mr *MockBankingMockRecorder) BridgeResumed(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BridgeResumed", reflect.TypeOf((*MockBanking)(nil).BridgeResumed), arg0, arg1, arg2, arg3, arg4, arg5)
+}
+
+// BridgeStopped mocks base method.
+func (m *MockBanking) BridgeStopped(arg0 context.Context, arg1 bool, arg2 string, arg3, arg4 uint64, arg5 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BridgeStopped", arg0, arg1, arg2, arg3, arg4, arg5)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// BridgeStopped indicates an expected call of BridgeStopped.
+func (mr *MockBankingMockRecorder) BridgeStopped(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BridgeStopped", reflect.TypeOf((*MockBanking)(nil).BridgeStopped), arg0, arg1, arg2, arg3, arg4, arg5)
+}
+
 // CancelTransferFunds mocks base method.
 func (m *MockBanking) CancelTransferFunds(arg0 context.Context, arg1 *types.CancelTransferFunds) error {
 	m.ctrl.T.Helper()

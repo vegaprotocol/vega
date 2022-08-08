@@ -55,6 +55,7 @@ type ResolverRoot interface {
 	Deposit() DepositResolver
 	Epoch() EpochResolver
 	EpochTimestamps() EpochTimestampsResolver
+	EthereumKeyRotation() EthereumKeyRotationResolver
 	Future() FutureResolver
 	FutureProduct() FutureProductResolver
 	Instrument() InstrumentResolver
@@ -103,6 +104,7 @@ type ResolverRoot interface {
 	TradableInstrument() TradableInstrumentResolver
 	Trade() TradeResolver
 	Transfer() TransferResolver
+	UpdateAsset() UpdateAssetResolver
 	UpdateMarket() UpdateMarketResolver
 	UpdateMarketConfiguration() UpdateMarketConfigurationResolver
 	UpdateNetworkParameter() UpdateNetworkParameterResolver
@@ -334,6 +336,23 @@ type ComplexityRoot struct {
 	EthereumEvent struct {
 		ContractID func(childComplexity int) int
 		Event      func(childComplexity int) int
+	}
+
+	EthereumKeyRotation struct {
+		BlockHeight func(childComplexity int) int
+		NewAddress  func(childComplexity int) int
+		NodeId      func(childComplexity int) int
+		OldAddress  func(childComplexity int) int
+	}
+
+	EthereumKeyRotationEdge struct {
+		Cursor              func(childComplexity int) int
+		EthereumKeyRotation func(childComplexity int) int
+	}
+
+	EthereumKeyRotationsConnection struct {
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
 	}
 
 	FeeFactors struct {
@@ -1072,6 +1091,7 @@ type ComplexityRoot struct {
 		Epoch                              func(childComplexity int, id *string) int
 		Erc20WithdrawalApproval            func(childComplexity int, withdrawalID string) int
 		EstimateOrder                      func(childComplexity int, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) int
+		EthereumKeyRotations               func(childComplexity int, nodeID *string) int
 		GetMarketDataHistoryByID           func(childComplexity int, id string, start *int, end *int, skip *int, first *int, last *int) int
 		GetMarketDataHistoryConnectionByID func(childComplexity int, id string, start *int, end *int, pagination *v2.Pagination) int
 		HistoricBalances                   func(childComplexity int, filter *v2.AccountFilter, groupBy []*v2.AccountField) int
@@ -1393,6 +1413,19 @@ type ComplexityRoot struct {
 		Responses func(childComplexity int) int
 	}
 
+	UpdateAsset struct {
+		MinLpStake  func(childComplexity int) int
+		Name        func(childComplexity int) int
+		Source      func(childComplexity int) int
+		Symbol      func(childComplexity int) int
+		TotalSupply func(childComplexity int) int
+	}
+
+	UpdateERC20 struct {
+		LifetimeLimit     func(childComplexity int) int
+		WithdrawThreshold func(childComplexity int) int
+	}
+
 	UpdateFutureProduct struct {
 		OracleSpecBinding               func(childComplexity int) int
 		OracleSpecForSettlementPrice    func(childComplexity int) int
@@ -1542,6 +1575,9 @@ type EpochTimestampsResolver interface {
 	Start(ctx context.Context, obj *vega.EpochTimestamps) (*string, error)
 	Expiry(ctx context.Context, obj *vega.EpochTimestamps) (*string, error)
 	End(ctx context.Context, obj *vega.EpochTimestamps) (*string, error)
+}
+type EthereumKeyRotationResolver interface {
+	BlockHeight(ctx context.Context, obj *v1.EthereumKeyRotation) (string, error)
 }
 type FutureResolver interface {
 	SettlementAsset(ctx context.Context, obj *vega.Future) (*vega.Asset, error)
@@ -1863,6 +1899,7 @@ type QueryResolver interface {
 	Node(ctx context.Context, id string) (*vega.Node, error)
 	KeyRotations(ctx context.Context, id *string) ([]*v1.KeyRotation, error)
 	KeyRotationsConnection(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.KeyRotationConnection, error)
+	EthereumKeyRotations(ctx context.Context, nodeID *string) (*v2.EthereumKeyRotationsConnection, error)
 	Epoch(ctx context.Context, id *string) (*vega.Epoch, error)
 	Transfers(ctx context.Context, pubkey string, isFrom *bool, isTo *bool) ([]*v1.Transfer, error)
 	TransfersConnection(ctx context.Context, pubkey *string, direction TransferDirection, pagination *v2.Pagination) (*v2.TransferConnection, error)
@@ -1980,6 +2017,13 @@ type TransferResolver interface {
 	Status(ctx context.Context, obj *v1.Transfer) (TransferStatus, error)
 	Timestamp(ctx context.Context, obj *v1.Transfer) (string, error)
 	Kind(ctx context.Context, obj *v1.Transfer) (TransferKind, error)
+}
+type UpdateAssetResolver interface {
+	Name(ctx context.Context, obj *vega.UpdateAsset) (string, error)
+	Symbol(ctx context.Context, obj *vega.UpdateAsset) (string, error)
+	TotalSupply(ctx context.Context, obj *vega.UpdateAsset) (string, error)
+	MinLpStake(ctx context.Context, obj *vega.UpdateAsset) (string, error)
+	Source(ctx context.Context, obj *vega.UpdateAsset) (UpdateAssetSource, error)
 }
 type UpdateMarketResolver interface {
 	UpdateMarketConfiguration(ctx context.Context, obj *vega.UpdateMarket) (*vega.UpdateMarketConfiguration, error)
@@ -2905,6 +2949,62 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.EthereumEvent.Event(childComplexity), true
+
+	case "EthereumKeyRotation.blockHeight":
+		if e.complexity.EthereumKeyRotation.BlockHeight == nil {
+			break
+		}
+
+		return e.complexity.EthereumKeyRotation.BlockHeight(childComplexity), true
+
+	case "EthereumKeyRotation.newAddress":
+		if e.complexity.EthereumKeyRotation.NewAddress == nil {
+			break
+		}
+
+		return e.complexity.EthereumKeyRotation.NewAddress(childComplexity), true
+
+	case "EthereumKeyRotation.nodeId":
+		if e.complexity.EthereumKeyRotation.NodeId == nil {
+			break
+		}
+
+		return e.complexity.EthereumKeyRotation.NodeId(childComplexity), true
+
+	case "EthereumKeyRotation.oldAddress":
+		if e.complexity.EthereumKeyRotation.OldAddress == nil {
+			break
+		}
+
+		return e.complexity.EthereumKeyRotation.OldAddress(childComplexity), true
+
+	case "EthereumKeyRotationEdge.cursor":
+		if e.complexity.EthereumKeyRotationEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.EthereumKeyRotationEdge.Cursor(childComplexity), true
+
+	case "EthereumKeyRotationEdge.ethereumKeyRotation":
+		if e.complexity.EthereumKeyRotationEdge.EthereumKeyRotation == nil {
+			break
+		}
+
+		return e.complexity.EthereumKeyRotationEdge.EthereumKeyRotation(childComplexity), true
+
+	case "EthereumKeyRotationsConnection.edges":
+		if e.complexity.EthereumKeyRotationsConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.EthereumKeyRotationsConnection.Edges(childComplexity), true
+
+	case "EthereumKeyRotationsConnection.pageInfo":
+		if e.complexity.EthereumKeyRotationsConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.EthereumKeyRotationsConnection.PageInfo(childComplexity), true
 
 	case "FeeFactors.infrastructureFee":
 		if e.complexity.FeeFactors.InfrastructureFee == nil {
@@ -6213,6 +6313,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.EstimateOrder(childComplexity, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType)), true
 
+	case "Query.ethereumKeyRotations":
+		if e.complexity.Query.EthereumKeyRotations == nil {
+			break
+		}
+
+		args, err := ec.field_Query_ethereumKeyRotations_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.EthereumKeyRotations(childComplexity, args["nodeId"].(*string)), true
+
 	case "Query.getMarketDataHistoryByID":
 		if e.complexity.Query.GetMarketDataHistoryByID == nil {
 			break
@@ -7959,6 +8071,55 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TransferResponses.Responses(childComplexity), true
 
+	case "UpdateAsset.minLpStake":
+		if e.complexity.UpdateAsset.MinLpStake == nil {
+			break
+		}
+
+		return e.complexity.UpdateAsset.MinLpStake(childComplexity), true
+
+	case "UpdateAsset.name":
+		if e.complexity.UpdateAsset.Name == nil {
+			break
+		}
+
+		return e.complexity.UpdateAsset.Name(childComplexity), true
+
+	case "UpdateAsset.source":
+		if e.complexity.UpdateAsset.Source == nil {
+			break
+		}
+
+		return e.complexity.UpdateAsset.Source(childComplexity), true
+
+	case "UpdateAsset.symbol":
+		if e.complexity.UpdateAsset.Symbol == nil {
+			break
+		}
+
+		return e.complexity.UpdateAsset.Symbol(childComplexity), true
+
+	case "UpdateAsset.totalSupply":
+		if e.complexity.UpdateAsset.TotalSupply == nil {
+			break
+		}
+
+		return e.complexity.UpdateAsset.TotalSupply(childComplexity), true
+
+	case "UpdateERC20.lifetimeLimit":
+		if e.complexity.UpdateERC20.LifetimeLimit == nil {
+			break
+		}
+
+		return e.complexity.UpdateERC20.LifetimeLimit(childComplexity), true
+
+	case "UpdateERC20.withdrawThreshold":
+		if e.complexity.UpdateERC20.WithdrawThreshold == nil {
+			break
+		}
+
+		return e.complexity.UpdateERC20.WithdrawThreshold(childComplexity), true
+
 	case "UpdateFutureProduct.oracleSpecBinding":
 		if e.complexity.UpdateFutureProduct.OracleSpecBinding == nil {
 			break
@@ -8888,6 +9049,9 @@ type Query {
   "query for historic key rotations"
   keyRotationsConnection(id: String, pagination: Pagination): KeyRotationConnection!
 
+  "query for historic ethereum key rotations"
+  ethereumKeyRotations(nodeId: String): EthereumKeyRotationsConnection!
+
   "get data for a specific epoch, if ID omitted it gets the current epoch. If the string is 'next', fetch the next epoch"
   epoch(id: String): Epoch!
 
@@ -9088,6 +9252,30 @@ type KeyRotation {
   oldPubKey: String!
   "New public key rotated to"
   newPubKey: String!
+  "Block height when the rotation took place"
+  blockHeight: String!
+}
+
+type EthereumKeyRotationEdge {
+  ethereumKeyRotation: EthereumKeyRotation!
+  cursor: String
+}
+
+type EthereumKeyRotationsConnection {
+  "The ethereum key rotations in this connection"
+  edges: [EthereumKeyRotationEdge!]!
+  "The pagination information"
+  pageInfo: PageInfo
+}
+
+# Describes the ethereum key rotations of nodes on the vega network
+type EthereumKeyRotation {
+  "ID of node where rotation took place"
+  nodeId: String!
+  "Old ethereum address"
+  oldAddress: String!
+  "New ethereum address"
+  newAddress: String!
   "Block height when the rotation took place"
   blockHeight: String!
 }
@@ -9336,10 +9524,27 @@ type Asset {
 "One of the possible asset sources"
 union AssetSource = BuiltinAsset | ERC20
 
+"One of the possible asset sources for update assets proposals"
+union UpdateAssetSource = UpdateERC20
+
 "An asset originated from an Ethereum ERC20 Token"
 type ERC20 {
   "The address of the ERC20 contract"
   contractAddress: String!
+  """
+  The lifetime limits deposit per address
+  Note: this is a temporary measure for alpha mainnet
+  """
+  lifetimeLimit: String!
+  """
+  The maximum allowed per withdrawal
+  Note: this is a temporary measure for alpha mainnet
+  """
+  withdrawThreshold: String!
+}
+
+"An asset originated from an Ethereum ERC20 Token"
+type UpdateERC20 {
   """
   The lifetime limits deposit per address
   Note: this is a temporary measure for alpha mainnet
@@ -11201,6 +11406,24 @@ type NewAsset {
   source: AssetSource!
 }
 
+"A new asset proposal change"
+type UpdateAsset {
+  "The full name of the asset (e.g: Great British Pound)"
+  name: String!
+
+  "The symbol of the asset (e.g: GBP)"
+  symbol: String!
+
+  "The total supply of the market"
+  totalSupply: String!
+
+  "The minimum stake to become a liquidity provider for any market using this asset for settlement"
+  minLpStake: String!
+
+  "The source of the updated asset"
+  source: UpdateAssetSource!
+}
+
 """
 A new freeform proposal change. It has no properties on purpose. Use proposal
 rationale, instead.
@@ -11228,6 +11451,7 @@ union ProposalChange =
   | UpdateMarket
   | UpdateNetworkParameter
   | NewAsset
+  | UpdateAsset
   | NewFreeform
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 
@@ -11283,6 +11507,8 @@ enum ProposalType {
   NetworkParameters
   "Proposal to add a new asset"
   NewAsset
+  "Proposal to update an existing asset"
+  UpdateAsset
   "Proposal to create a new freeform proposal"
   NewFreeForm
 }
@@ -13399,6 +13625,21 @@ func (ec *executionContext) field_Query_estimateOrder_args(ctx context.Context, 
 		}
 	}
 	args["type"] = arg7
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_ethereumKeyRotations_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["nodeId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeId"))
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["nodeId"] = arg0
 	return args, nil
 }
 
@@ -18946,6 +19187,280 @@ func (ec *executionContext) _EthereumEvent_event(ctx context.Context, field grap
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _EthereumKeyRotation_nodeId(ctx context.Context, field graphql.CollectedField, obj *v1.EthereumKeyRotation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "EthereumKeyRotation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NodeId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _EthereumKeyRotation_oldAddress(ctx context.Context, field graphql.CollectedField, obj *v1.EthereumKeyRotation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "EthereumKeyRotation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OldAddress, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _EthereumKeyRotation_newAddress(ctx context.Context, field graphql.CollectedField, obj *v1.EthereumKeyRotation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "EthereumKeyRotation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NewAddress, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _EthereumKeyRotation_blockHeight(ctx context.Context, field graphql.CollectedField, obj *v1.EthereumKeyRotation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "EthereumKeyRotation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.EthereumKeyRotation().BlockHeight(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _EthereumKeyRotationEdge_ethereumKeyRotation(ctx context.Context, field graphql.CollectedField, obj *v2.EthereumKeyRotationEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "EthereumKeyRotationEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EthereumKeyRotation, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v1.EthereumKeyRotation)
+	fc.Result = res
+	return ec.marshalNEthereumKeyRotation2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐEthereumKeyRotation(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _EthereumKeyRotationEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.EthereumKeyRotationEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "EthereumKeyRotationEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _EthereumKeyRotationsConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.EthereumKeyRotationsConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "EthereumKeyRotationsConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*v2.EthereumKeyRotationEdge)
+	fc.Result = res
+	return ec.marshalNEthereumKeyRotationEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐEthereumKeyRotationEdgeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _EthereumKeyRotationsConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.EthereumKeyRotationsConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "EthereumKeyRotationsConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v2.PageInfo)
+	fc.Result = res
+	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FeeFactors_makerFee(ctx context.Context, field graphql.CollectedField, obj *vega.FeeFactors) (ret graphql.Marshaler) {
@@ -35734,6 +36249,48 @@ func (ec *executionContext) _Query_keyRotationsConnection(ctx context.Context, f
 	return ec.marshalNKeyRotationConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐKeyRotationConnection(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_ethereumKeyRotations(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_ethereumKeyRotations_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().EthereumKeyRotations(rctx, args["nodeId"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.EthereumKeyRotationsConnection)
+	fc.Result = res
+	return ec.marshalNEthereumKeyRotationsConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐEthereumKeyRotationsConnection(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_epoch(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -42099,6 +42656,251 @@ func (ec *executionContext) _TransferResponses_responses(ctx context.Context, fi
 	return ec.marshalOTransferResponse2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferResponseᚄ(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _UpdateAsset_name(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateAsset) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "UpdateAsset",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.UpdateAsset().Name(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _UpdateAsset_symbol(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateAsset) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "UpdateAsset",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.UpdateAsset().Symbol(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _UpdateAsset_totalSupply(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateAsset) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "UpdateAsset",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.UpdateAsset().TotalSupply(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _UpdateAsset_minLpStake(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateAsset) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "UpdateAsset",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.UpdateAsset().MinLpStake(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _UpdateAsset_source(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateAsset) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "UpdateAsset",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.UpdateAsset().Source(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(UpdateAssetSource)
+	fc.Result = res
+	return ec.marshalNUpdateAssetSource2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐUpdateAssetSource(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _UpdateERC20_lifetimeLimit(ctx context.Context, field graphql.CollectedField, obj *UpdateErc20) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "UpdateERC20",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LifetimeLimit, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _UpdateERC20_withdrawThreshold(ctx context.Context, field graphql.CollectedField, obj *UpdateErc20) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "UpdateERC20",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.WithdrawThreshold, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _UpdateFutureProduct_quoteName(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateFutureProduct) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -45031,6 +45833,13 @@ func (ec *executionContext) _ProposalChange(ctx context.Context, sel ast.Selecti
 			return graphql.Null
 		}
 		return ec._NewAsset(ctx, sel, obj)
+	case vega.UpdateAsset:
+		return ec._UpdateAsset(ctx, sel, &obj)
+	case *vega.UpdateAsset:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._UpdateAsset(ctx, sel, obj)
 	case vega.NewFreeform:
 		return ec._NewFreeform(ctx, sel, &obj)
 	case *vega.NewFreeform:
@@ -45084,6 +45893,22 @@ func (ec *executionContext) _TransferKind(ctx context.Context, sel ast.Selection
 			return graphql.Null
 		}
 		return ec._RecurringTransfer(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
+func (ec *executionContext) _UpdateAssetSource(ctx context.Context, sel ast.SelectionSet, obj UpdateAssetSource) graphql.Marshaler {
+	switch obj := (obj).(type) {
+	case nil:
+		return graphql.Null
+	case UpdateErc20:
+		return ec._UpdateERC20(ctx, sel, &obj)
+	case *UpdateErc20:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._UpdateERC20(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -47361,6 +48186,153 @@ func (ec *executionContext) _EthereumEvent(ctx context.Context, sel ast.Selectio
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var ethereumKeyRotationImplementors = []string{"EthereumKeyRotation"}
+
+func (ec *executionContext) _EthereumKeyRotation(ctx context.Context, sel ast.SelectionSet, obj *v1.EthereumKeyRotation) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, ethereumKeyRotationImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("EthereumKeyRotation")
+		case "nodeId":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._EthereumKeyRotation_nodeId(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "oldAddress":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._EthereumKeyRotation_oldAddress(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "newAddress":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._EthereumKeyRotation_newAddress(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "blockHeight":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._EthereumKeyRotation_blockHeight(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var ethereumKeyRotationEdgeImplementors = []string{"EthereumKeyRotationEdge"}
+
+func (ec *executionContext) _EthereumKeyRotationEdge(ctx context.Context, sel ast.SelectionSet, obj *v2.EthereumKeyRotationEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, ethereumKeyRotationEdgeImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("EthereumKeyRotationEdge")
+		case "ethereumKeyRotation":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._EthereumKeyRotationEdge_ethereumKeyRotation(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cursor":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._EthereumKeyRotationEdge_cursor(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var ethereumKeyRotationsConnectionImplementors = []string{"EthereumKeyRotationsConnection"}
+
+func (ec *executionContext) _EthereumKeyRotationsConnection(ctx context.Context, sel ast.SelectionSet, obj *v2.EthereumKeyRotationsConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, ethereumKeyRotationsConnectionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("EthereumKeyRotationsConnection")
+		case "edges":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._EthereumKeyRotationsConnection_edges(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "pageInfo":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._EthereumKeyRotationsConnection_pageInfo(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -56117,6 +57089,29 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
+		case "ethereumKeyRotations":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_ethereumKeyRotations(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
 		case "epoch":
 			field := field
 
@@ -59085,6 +60080,168 @@ func (ec *executionContext) _TransferResponses(ctx context.Context, sel ast.Sele
 	return out
 }
 
+var updateAssetImplementors = []string{"UpdateAsset", "ProposalChange"}
+
+func (ec *executionContext) _UpdateAsset(ctx context.Context, sel ast.SelectionSet, obj *vega.UpdateAsset) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, updateAssetImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UpdateAsset")
+		case "name":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._UpdateAsset_name(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "symbol":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._UpdateAsset_symbol(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "totalSupply":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._UpdateAsset_totalSupply(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "minLpStake":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._UpdateAsset_minLpStake(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "source":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._UpdateAsset_source(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var updateERC20Implementors = []string{"UpdateERC20", "UpdateAssetSource"}
+
+func (ec *executionContext) _UpdateERC20(ctx context.Context, sel ast.SelectionSet, obj *UpdateErc20) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, updateERC20Implementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UpdateERC20")
+		case "lifetimeLimit":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._UpdateERC20_lifetimeLimit(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "withdrawThreshold":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._UpdateERC20_withdrawThreshold(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var updateFutureProductImplementors = []string{"UpdateFutureProduct"}
 
 func (ec *executionContext) _UpdateFutureProduct(ctx context.Context, sel ast.SelectionSet, obj *vega.UpdateFutureProduct) graphql.Marshaler {
@@ -60795,6 +61952,84 @@ func (ec *executionContext) marshalNEpochTimestamps2ᚖcodeᚗvegaprotocolᚗio�
 		return graphql.Null
 	}
 	return ec._EpochTimestamps(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNEthereumKeyRotation2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐEthereumKeyRotation(ctx context.Context, sel ast.SelectionSet, v *v1.EthereumKeyRotation) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._EthereumKeyRotation(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNEthereumKeyRotationEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐEthereumKeyRotationEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*v2.EthereumKeyRotationEdge) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNEthereumKeyRotationEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐEthereumKeyRotationEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNEthereumKeyRotationEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐEthereumKeyRotationEdge(ctx context.Context, sel ast.SelectionSet, v *v2.EthereumKeyRotationEdge) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._EthereumKeyRotationEdge(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNEthereumKeyRotationsConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐEthereumKeyRotationsConnection(ctx context.Context, sel ast.SelectionSet, v v2.EthereumKeyRotationsConnection) graphql.Marshaler {
+	return ec._EthereumKeyRotationsConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNEthereumKeyRotationsConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐEthereumKeyRotationsConnection(ctx context.Context, sel ast.SelectionSet, v *v2.EthereumKeyRotationsConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._EthereumKeyRotationsConnection(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNEvent2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐEvent(ctx context.Context, sel ast.SelectionSet, v Event) graphql.Marshaler {
@@ -62664,6 +63899,16 @@ func (ec *executionContext) unmarshalNTransferStatus2codeᚗvegaprotocolᚗioᚋ
 
 func (ec *executionContext) marshalNTransferStatus2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferStatus(ctx context.Context, sel ast.SelectionSet, v TransferStatus) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) marshalNUpdateAssetSource2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐUpdateAssetSource(ctx context.Context, sel ast.SelectionSet, v UpdateAssetSource) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._UpdateAssetSource(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNUpdateFutureProduct2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐUpdateFutureProduct(ctx context.Context, sel ast.SelectionSet, v *vega.UpdateFutureProduct) graphql.Marshaler {

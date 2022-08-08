@@ -128,6 +128,8 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.NewMarketCommitment
   NewAsset:
     model: code.vegaprotocol.io/vega/protos/vega.NewAsset
+  UpdateAsset:
+    model: code.vegaprotocol.io/vega/protos/vega.UpdateAsset
   NewFreeform:
     model: code.vegaprotocol.io/vega/protos/vega.NewFreeform
   UpdateMarket:
@@ -213,6 +215,12 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v1.PartyStakeResponse
   KeyRotation:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.KeyRotation
+  EthereumKeyRotationsConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.EthereumKeyRotationsConnection
+  EthereumKeyRotationEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.EthereumKeyRotationEdge
+  EthereumKeyRotation:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.EthereumKeyRotation
   Transfer:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.Transfer
   OneOffTransfer:

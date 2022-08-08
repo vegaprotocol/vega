@@ -55,10 +55,10 @@ func (_ isAssetStub) Validate() error {
 	return nil
 }
 
-func (_ isAssetStub) SetValidNonValidator() {}
-func (_ isAssetStub) SetPendingListing()    {}
-func (_ isAssetStub) SetRejected()          {}
-func (_ isAssetStub) SetEnabled()           {}
+func (_ isAssetStub) SetValid()          {}
+func (_ isAssetStub) SetPendingListing() {}
+func (_ isAssetStub) SetRejected()       {}
+func (_ isAssetStub) SetEnabled()        {}
 
 func (a isAssetStub) String() string {
 	return a.ID

@@ -183,7 +183,7 @@ message ProposalTerms {
     UpdateNetworkParameter update_network_parameter = 103;
     // Proposal change for creating new assets on Vega
     NewAsset new_asset = 104;
-    // Proposal change for a freeform request, which can be voted on but does not change the behaviour of the system, 
+    // Proposal change for a freeform request, which can be voted on but does not change the behaviour of the system,
     // and can be used to gauge community sentiment
     NewFreeform new_freeform = 105;
     // Proposal change for updating an asset

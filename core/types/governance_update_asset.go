@@ -159,7 +159,6 @@ func (a AssetDetailsUpdate) IntoProto() *vegapb.AssetDetailsUpdate {
 		Name:        a.Name,
 		Symbol:      a.Symbol,
 		TotalSupply: num.UintToString(a.TotalSupply),
-		Decimals:    a.Decimals,
 		Quantum:     a.Quantum.String(),
 	}
 	if a.Source == nil {
@@ -255,7 +254,6 @@ func AssetDetailsUpdateFromProto(p *vegapb.AssetDetailsUpdate) (*AssetDetailsUpd
 		Name:        p.Name,
 		Symbol:      p.Symbol,
 		TotalSupply: total,
-		Decimals:    p.Decimals,
 		Quantum:     min,
 		Source:      src,
 	}, nil
