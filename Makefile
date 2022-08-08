@@ -29,7 +29,7 @@ race: ## Run data race detector
 
 .PHONY: mocks
 mocks: ## Make mocks
-	go generate ./...
+	go generate -v ./...
 
 .PHONY: mocks_check
 mocks_check: ## mocks: Check committed files match just-generated files
