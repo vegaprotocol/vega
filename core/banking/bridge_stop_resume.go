@@ -80,12 +80,8 @@ func (b *bridgeState) NewBridgeResumed(
 func (b *bridgeState) isNewerEvent(
 	block, logIndex uint64,
 ) bool {
-	if block > b.block {
-		return true
-	} else if block < b.block {
-		return false
+	if block == b.block {
+		return logIndex > b.logIndex
 	}
-
-	// transaction were in the same block
-	return logIndex > b.logIndex
+	return block > b.block
 }
