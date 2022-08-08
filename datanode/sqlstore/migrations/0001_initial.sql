@@ -906,8 +906,7 @@ SELECT
     conflated_positions.adjustment,
     conflated_positions.vega_time
 FROM conflated_positions
-WHERE conflated_positions.vega_time < ( SELECT min(positions.vega_time) FROM positions) OR
-        0 = (select count(*) from positions));
+WHERE conflated_positions.vega_time < (SELECT coalesce(min(positions.vega_time), 'infinity') FROM positions));
 
 CREATE VIEW positions_current AS (
  SELECT DISTINCT ON (party_id, market_id) * FROM all_positions ORDER BY party_id, market_id, vega_time DESC
