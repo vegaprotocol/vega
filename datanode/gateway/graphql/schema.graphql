@@ -573,6 +573,9 @@ type Query {
   "query for historic key rotations"
   keyRotationsConnection(id: String, pagination: Pagination): KeyRotationConnection!
 
+  "query for historic ethereum key rotations"
+  ethereumKeyRotations(nodeId: String): EthereumKeyRotationsConnection!
+
   "get data for a specific epoch, if ID omitted it gets the current epoch. If the string is 'next', fetch the next epoch"
   epoch(id: String): Epoch!
 
@@ -773,6 +776,30 @@ type KeyRotation {
   oldPubKey: String!
   "New public key rotated to"
   newPubKey: String!
+  "Block height when the rotation took place"
+  blockHeight: String!
+}
+
+type EthereumKeyRotationEdge {
+  ethereumKeyRotation: EthereumKeyRotation!
+  cursor: String
+}
+
+type EthereumKeyRotationsConnection {
+  "The ethereum key rotations in this connection"
+  edges: [EthereumKeyRotationEdge!]!
+  "The pagination information"
+  pageInfo: PageInfo
+}
+
+# Describes the ethereum key rotations of nodes on the vega network
+type EthereumKeyRotation {
+  "ID of node where rotation took place"
+  nodeId: String!
+  "Old ethereum address"
+  oldAddress: String!
+  "New ethereum address"
+  newAddress: String!
   "Block height when the rotation took place"
   blockHeight: String!
 }

@@ -294,6 +294,10 @@ func (r *VegaResolverRoot) KeyRotation() KeyRotationResolver {
 	return (*keyRotationResolver)(r)
 }
 
+func (r *VegaResolverRoot) EthereumKeyRotation() EthereumKeyRotationResolver {
+	return (*ethereumKeyRotationResolver)(r)
+}
+
 func (r *VegaResolverRoot) Delegation() DelegationResolver {
 	return (*delegationResolver)(r)
 }
@@ -1085,6 +1089,15 @@ func (r *myQueryResolver) KeyRotationsConnection(ctx context.Context, id *string
 	}
 
 	return resp.Rotations, nil
+}
+
+func (r *myQueryResolver) EthereumKeyRotations(ctx context.Context, nodeID *string) (*v2.EthereumKeyRotationsConnection, error) {
+	resp, err := r.tradingDataClientV2.ListEthereumKeyRotations(ctx, &v2.ListEthereumKeyRotationsRequest{NodeId: nodeID})
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.KeyRotations, nil
 }
 
 func (r *myQueryResolver) Epoch(ctx context.Context, id *string) (*types.Epoch, error) {
