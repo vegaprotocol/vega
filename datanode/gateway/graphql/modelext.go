@@ -16,7 +16,6 @@ import (
 	"errors"
 	"strconv"
 
-	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
@@ -98,25 +97,6 @@ func PriceMonitoringSettingsFromProto(ppmst *types.PriceMonitoringSettings) (*Pr
 	return &PriceMonitoringSettings{
 		Parameters: params,
 	}, nil
-}
-
-// ToOptionalProposalState ...
-func (s *ProposalState) ToOptionalProposalState() (*protoapi.OptionalProposalState, error) {
-	if s != nil {
-		value, err := s.IntoProtoValue()
-		if err != nil {
-			return nil, err
-		}
-		return &protoapi.OptionalProposalState{
-			Value: value,
-		}, nil
-	}
-	return nil, nil
-}
-
-// IntoProtoValue ...
-func (s ProposalState) IntoProtoValue() (types.Proposal_State, error) {
-	return convertProposalStateToProto(s)
 }
 
 func (t *ProposalType) IntoProtoValue() v2.ListGovernanceDataRequest_Type {

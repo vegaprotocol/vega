@@ -1473,69 +1473,6 @@ func (e ProposalRejectionReason) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-// Various states a proposal can transition through:
-// Open ->
-// - Passed -> Enacted.
-// - Rejected.
-// Proposal can enter Failed state from any other state.
-type ProposalState string
-
-const (
-	// Proposal became invalid and cannot be processed
-	ProposalStateFailed ProposalState = "Failed"
-	// Proposal is open for voting
-	ProposalStateOpen ProposalState = "Open"
-	// Proposal has gained enough support to be executed
-	ProposalStatePassed ProposalState = "Passed"
-	// Proposal didn't get enough votes
-	ProposalStateDeclined ProposalState = "Declined"
-	// Proposal could not gain enough support to be executed
-	ProposalStateRejected ProposalState = "Rejected"
-	// Proposal has been executed and the changes under this proposal have now been applied
-	ProposalStateEnacted ProposalState = "Enacted"
-	// Proposal is waiting for the node to run validation
-	ProposalStateWaitingForNodeVote ProposalState = "WaitingForNodeVote"
-)
-
-var AllProposalState = []ProposalState{
-	ProposalStateFailed,
-	ProposalStateOpen,
-	ProposalStatePassed,
-	ProposalStateDeclined,
-	ProposalStateRejected,
-	ProposalStateEnacted,
-	ProposalStateWaitingForNodeVote,
-}
-
-func (e ProposalState) IsValid() bool {
-	switch e {
-	case ProposalStateFailed, ProposalStateOpen, ProposalStatePassed, ProposalStateDeclined, ProposalStateRejected, ProposalStateEnacted, ProposalStateWaitingForNodeVote:
-		return true
-	}
-	return false
-}
-
-func (e ProposalState) String() string {
-	return string(e)
-}
-
-func (e *ProposalState) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = ProposalState(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid ProposalState", str)
-	}
-	return nil
-}
-
-func (e ProposalState) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
 // Various proposal types that are supported by Vega
 type ProposalType string
 

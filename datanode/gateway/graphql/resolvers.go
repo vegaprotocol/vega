@@ -877,13 +877,9 @@ func (r *myQueryResolver) OrderByReference(ctx context.Context, reference string
 }
 
 // Deprecated: Use ProposalsConnection instead.
-func (r *myQueryResolver) Proposals(ctx context.Context, inState *ProposalState) ([]*types.GovernanceData, error) {
-	filter, err := inState.ToOptionalProposalState()
-	if err != nil {
-		return nil, err
-	}
+func (r *myQueryResolver) Proposals(ctx context.Context, inState *vega.Proposal_State) ([]*types.GovernanceData, error) {
 	resp, err := r.tradingDataClient.GetProposals(ctx, &protoapi.GetProposalsRequest{
-		SelectInState: filter,
+		SelectInState: inState,
 	})
 	if err != nil {
 		return nil, err
@@ -891,7 +887,7 @@ func (r *myQueryResolver) Proposals(ctx context.Context, inState *ProposalState)
 	return resp.Data, nil
 }
 
-func (r *myQueryResolver) ProposalsConnection(ctx context.Context, proposalType *ProposalType, inState *ProposalState,
+func (r *myQueryResolver) ProposalsConnection(ctx context.Context, proposalType *ProposalType, inState *vega.Proposal_State,
 	pagination *v2.Pagination,
 ) (*v2.GovernanceDataConnection, error) {
 	return handleProposalsRequest(ctx, r.tradingDataClientV2, nil, nil, proposalType, inState, pagination)
@@ -920,13 +916,9 @@ func (r *myQueryResolver) Proposal(ctx context.Context, id *string, reference *s
 }
 
 // Deprecated: Use ProposalsConnection instead.
-func (r *myQueryResolver) NewMarketProposals(ctx context.Context, inState *ProposalState) ([]*types.GovernanceData, error) {
-	filter, err := inState.ToOptionalProposalState()
-	if err != nil {
-		return nil, err
-	}
+func (r *myQueryResolver) NewMarketProposals(ctx context.Context, inState *vega.Proposal_State) ([]*types.GovernanceData, error) {
 	resp, err := r.tradingDataClient.GetNewMarketProposals(ctx, &protoapi.GetNewMarketProposalsRequest{
-		SelectInState: filter,
+		SelectInState: inState,
 	})
 	if err != nil {
 		return nil, err
@@ -935,18 +927,14 @@ func (r *myQueryResolver) NewMarketProposals(ctx context.Context, inState *Propo
 }
 
 // Deprecated: Use ProposalsConnection instead.
-func (r *myQueryResolver) UpdateMarketProposals(ctx context.Context, marketID *string, inState *ProposalState) ([]*types.GovernanceData, error) {
-	filter, err := inState.ToOptionalProposalState()
-	if err != nil {
-		return nil, err
-	}
+func (r *myQueryResolver) UpdateMarketProposals(ctx context.Context, marketID *string, inState *vega.Proposal_State) ([]*types.GovernanceData, error) {
 	var market string
 	if marketID != nil {
 		market = *marketID
 	}
 	resp, err := r.tradingDataClient.GetUpdateMarketProposals(ctx, &protoapi.GetUpdateMarketProposalsRequest{
 		MarketId:      market,
-		SelectInState: filter,
+		SelectInState: inState,
 	})
 	if err != nil {
 		return nil, err
@@ -955,13 +943,9 @@ func (r *myQueryResolver) UpdateMarketProposals(ctx context.Context, marketID *s
 }
 
 // Deprecated: Use ProposalsConnection instead.
-func (r *myQueryResolver) NetworkParametersProposals(ctx context.Context, inState *ProposalState) ([]*types.GovernanceData, error) {
-	filter, err := inState.ToOptionalProposalState()
-	if err != nil {
-		return nil, err
-	}
+func (r *myQueryResolver) NetworkParametersProposals(ctx context.Context, inState *vega.Proposal_State) ([]*types.GovernanceData, error) {
 	resp, err := r.tradingDataClient.GetNetworkParametersProposals(ctx, &protoapi.GetNetworkParametersProposalsRequest{
-		SelectInState: filter,
+		SelectInState: inState,
 	})
 	if err != nil {
 		return nil, err
@@ -970,13 +954,9 @@ func (r *myQueryResolver) NetworkParametersProposals(ctx context.Context, inStat
 }
 
 // Deprecated: Use ProposalsConnection instead.
-func (r *myQueryResolver) NewAssetProposals(ctx context.Context, inState *ProposalState) ([]*types.GovernanceData, error) {
-	filter, err := inState.ToOptionalProposalState()
-	if err != nil {
-		return nil, err
-	}
+func (r *myQueryResolver) NewAssetProposals(ctx context.Context, inState *vega.Proposal_State) ([]*types.GovernanceData, error) {
 	resp, err := r.tradingDataClient.GetNewAssetProposals(ctx, &protoapi.GetNewAssetProposalsRequest{
-		SelectInState: filter,
+		SelectInState: inState,
 	})
 	if err != nil {
 		return nil, err
@@ -985,13 +965,9 @@ func (r *myQueryResolver) NewAssetProposals(ctx context.Context, inState *Propos
 }
 
 // Deprecated: Use ProposalsConnection instead.
-func (r *myQueryResolver) NewFreeformProposals(ctx context.Context, inState *ProposalState) ([]*types.GovernanceData, error) {
-	filter, err := inState.ToOptionalProposalState()
-	if err != nil {
-		return nil, err
-	}
+func (r *myQueryResolver) NewFreeformProposals(ctx context.Context, inState *vega.Proposal_State) ([]*types.GovernanceData, error) {
 	resp, err := r.tradingDataClient.GetNewFreeformProposals(ctx, &protoapi.GetNewFreeformProposalsRequest{
-		SelectInState: filter,
+		SelectInState: inState,
 	})
 	if err != nil {
 		return nil, err
@@ -1669,14 +1645,10 @@ func (r *myPartyResolver) AccountsConnection(ctx context.Context, party *types.P
 }
 
 // Deprecated: use ProposalsConnection instead.
-func (r *myPartyResolver) Proposals(ctx context.Context, party *types.Party, inState *ProposalState) ([]*types.GovernanceData, error) {
-	filter, err := inState.ToOptionalProposalState()
-	if err != nil {
-		return nil, err
-	}
+func (r *myPartyResolver) Proposals(ctx context.Context, party *types.Party, inState *vega.Proposal_State) ([]*types.GovernanceData, error) {
 	resp, err := r.tradingDataClient.GetProposalsByParty(ctx, &protoapi.GetProposalsByPartyRequest{
 		PartyId:       party.Id,
-		SelectInState: filter,
+		SelectInState: inState,
 	})
 	if err != nil {
 		return nil, err
@@ -1684,7 +1656,7 @@ func (r *myPartyResolver) Proposals(ctx context.Context, party *types.Party, inS
 	return resp.Data, nil
 }
 
-func (r *myPartyResolver) ProposalsConnection(ctx context.Context, party *types.Party, proposalType *ProposalType, inState *ProposalState,
+func (r *myPartyResolver) ProposalsConnection(ctx context.Context, party *types.Party, proposalType *ProposalType, inState *vega.Proposal_State,
 	pagination *v2.Pagination,
 ) (*v2.GovernanceDataConnection, error) {
 	return handleProposalsRequest(ctx, r.tradingDataClientV2, party, nil, proposalType, inState, pagination)

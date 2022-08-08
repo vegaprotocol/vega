@@ -58,6 +58,26 @@ func UnmarshalSide(v interface{}) (vega.Side, error) {
 	return vega.Side(side), nil
 }
 
+func MarshalProposalState(s vega.Proposal_State) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalProposalState(v interface{}) (vega.Proposal_State, error) {
+	s, ok := v.(string)
+	if !ok {
+		return vega.Proposal_STATE_UNSPECIFIED, fmt.Errorf("expected proposal state to be a string")
+	}
+
+	side, ok := vega.Proposal_State_value[s]
+	if !ok {
+		return vega.Proposal_STATE_UNSPECIFIED, fmt.Errorf("failed to convert ProposalState from GraphQL to Proto: %v", s)
+	}
+
+	return vega.Proposal_State(side), nil
+}
+
 func MarshalTransferStatus(s eventspb.Transfer_Status) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
 		w.Write([]byte(strconv.Quote(s.String())))

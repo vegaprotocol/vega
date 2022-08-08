@@ -305,29 +305,6 @@ func convertAuctionTriggerFromProto(t types.AuctionTrigger) (AuctionTrigger, err
 }
 
 // convertProposalStateToProto converts a GraphQL enum to a Proto enum.
-func convertProposalStateToProto(x ProposalState) (types.Proposal_State, error) {
-	switch x {
-	case ProposalStateFailed:
-		return types.Proposal_STATE_FAILED, nil
-	case ProposalStateOpen:
-		return types.Proposal_STATE_OPEN, nil
-	case ProposalStatePassed:
-		return types.Proposal_STATE_PASSED, nil
-	case ProposalStateRejected:
-		return types.Proposal_STATE_REJECTED, nil
-	case ProposalStateDeclined:
-		return types.Proposal_STATE_DECLINED, nil
-	case ProposalStateEnacted:
-		return types.Proposal_STATE_ENACTED, nil
-	case ProposalStateWaitingForNodeVote:
-		return types.Proposal_STATE_WAITING_FOR_NODE_VOTE, nil
-	default:
-		err := fmt.Errorf("failed to convert ProposalState from GraphQL to Proto: %v", x)
-		return types.Proposal_STATE_UNSPECIFIED, err
-	}
-}
-
-// convertProposalStateToProto converts a GraphQL enum to a Proto enum.
 func convertProposalTypeToProto(x ProposalType) v2.ListGovernanceDataRequest_Type {
 	switch x {
 	case ProposalTypeNewMarket:
@@ -344,29 +321,6 @@ func convertProposalTypeToProto(x ProposalType) v2.ListGovernanceDataRequest_Typ
 		return v2.ListGovernanceDataRequest_TYPE_NEW_FREE_FORM
 	default:
 		return v2.ListGovernanceDataRequest_TYPE_ALL
-	}
-}
-
-// convertProposalStateFromProto converts a Proto enum to a GraphQL enum.
-func convertProposalStateFromProto(x types.Proposal_State) (ProposalState, error) {
-	switch x {
-	case types.Proposal_STATE_FAILED:
-		return ProposalStateFailed, nil
-	case types.Proposal_STATE_OPEN:
-		return ProposalStateOpen, nil
-	case types.Proposal_STATE_PASSED:
-		return ProposalStatePassed, nil
-	case types.Proposal_STATE_REJECTED:
-		return ProposalStateRejected, nil
-	case types.Proposal_STATE_DECLINED:
-		return ProposalStateDeclined, nil
-	case types.Proposal_STATE_ENACTED:
-		return ProposalStateEnacted, nil
-	case types.Proposal_STATE_WAITING_FOR_NODE_VOTE:
-		return ProposalStateWaitingForNodeVote, nil
-	default:
-		err := fmt.Errorf("failed to convert ProposalState from Proto to GraphQL: %v", x)
-		return ProposalStateFailed, err
 	}
 }
 

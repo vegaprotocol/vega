@@ -3054,19 +3054,19 @@ Proposal can enter Failed state from any other state.
 """
 enum ProposalState {
   "Proposal became invalid and cannot be processed"
-  Failed
+  STATE_FAILED
   "Proposal is open for voting"
-  Open
+  STATE_OPEN
   "Proposal has gained enough support to be executed"
-  Passed
+  STATE_PASSED
   "Proposal didn't get enough votes"
-  Declined
+  STATE_DECLINED
   "Proposal could not gain enough support to be executed"
-  Rejected
+  STATE_REJECTED
   "Proposal has been executed and the changes under this proposal have now been applied"
-  Enacted
+  STATE_ENACTED
   "Proposal is waiting for the node to run validation"
-  WaitingForNodeVote
+  STATE_WAITING_FOR_NODE_VOTE
 }
 
 type Proposal {

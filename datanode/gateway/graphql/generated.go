@@ -917,8 +917,8 @@ type ComplexityRoot struct {
 		OrdersConnection              func(childComplexity int, pagination *v2.Pagination) int
 		Positions                     func(childComplexity int) int
 		PositionsConnection           func(childComplexity int, market *string, pagination *v2.Pagination) int
-		Proposals                     func(childComplexity int, inState *ProposalState) int
-		ProposalsConnection           func(childComplexity int, proposalType *ProposalType, inState *ProposalState, pagination *v2.Pagination) int
+		Proposals                     func(childComplexity int, inState *vega.Proposal_State) int
+		ProposalsConnection           func(childComplexity int, proposalType *ProposalType, inState *vega.Proposal_State, pagination *v2.Pagination) int
 		RewardDetails                 func(childComplexity int) int
 		RewardSummaries               func(childComplexity int, asset *string) int
 		Rewards                       func(childComplexity int, asset *string, skip *int, first *int, last *int) int
@@ -1102,10 +1102,10 @@ type ComplexityRoot struct {
 		NetworkLimits                      func(childComplexity int) int
 		NetworkParameters                  func(childComplexity int) int
 		NetworkParametersConnection        func(childComplexity int, pagination *v2.Pagination) int
-		NetworkParametersProposals         func(childComplexity int, inState *ProposalState) int
-		NewAssetProposals                  func(childComplexity int, inState *ProposalState) int
-		NewFreeformProposals               func(childComplexity int, inState *ProposalState) int
-		NewMarketProposals                 func(childComplexity int, inState *ProposalState) int
+		NetworkParametersProposals         func(childComplexity int, inState *vega.Proposal_State) int
+		NewAssetProposals                  func(childComplexity int, inState *vega.Proposal_State) int
+		NewFreeformProposals               func(childComplexity int, inState *vega.Proposal_State) int
+		NewMarketProposals                 func(childComplexity int, inState *vega.Proposal_State) int
 		Node                               func(childComplexity int, id string) int
 		NodeData                           func(childComplexity int) int
 		NodeSignatures                     func(childComplexity int, resourceID string) int
@@ -1127,12 +1127,12 @@ type ComplexityRoot struct {
 		PartiesConnection                  func(childComplexity int, id *string, pagination *v2.Pagination) int
 		Party                              func(childComplexity int, id string) int
 		Proposal                           func(childComplexity int, id *string, reference *string) int
-		Proposals                          func(childComplexity int, inState *ProposalState) int
-		ProposalsConnection                func(childComplexity int, proposalType *ProposalType, inState *ProposalState, pagination *v2.Pagination) int
+		Proposals                          func(childComplexity int, inState *vega.Proposal_State) int
+		ProposalsConnection                func(childComplexity int, proposalType *ProposalType, inState *vega.Proposal_State, pagination *v2.Pagination) int
 		Statistics                         func(childComplexity int) int
 		Transfers                          func(childComplexity int, pubkey string, isFrom *bool, isTo *bool) int
 		TransfersConnection                func(childComplexity int, pubkey *string, direction TransferDirection, pagination *v2.Pagination) int
-		UpdateMarketProposals              func(childComplexity int, marketID *string, inState *ProposalState) int
+		UpdateMarketProposals              func(childComplexity int, marketID *string, inState *vega.Proposal_State) int
 		Withdrawal                         func(childComplexity int, id string) int
 	}
 
@@ -1788,8 +1788,8 @@ type PartyResolver interface {
 	PositionsConnection(ctx context.Context, obj *vega.Party, market *string, pagination *v2.Pagination) (*v2.PositionConnection, error)
 	Margins(ctx context.Context, obj *vega.Party, marketID *string) ([]*vega.MarginLevels, error)
 	MarginsConnection(ctx context.Context, obj *vega.Party, marketID *string, pagination *v2.Pagination) (*v2.MarginConnection, error)
-	Proposals(ctx context.Context, obj *vega.Party, inState *ProposalState) ([]*vega.GovernanceData, error)
-	ProposalsConnection(ctx context.Context, obj *vega.Party, proposalType *ProposalType, inState *ProposalState, pagination *v2.Pagination) (*v2.GovernanceDataConnection, error)
+	Proposals(ctx context.Context, obj *vega.Party, inState *vega.Proposal_State) ([]*vega.GovernanceData, error)
+	ProposalsConnection(ctx context.Context, obj *vega.Party, proposalType *ProposalType, inState *vega.Proposal_State, pagination *v2.Pagination) (*v2.GovernanceDataConnection, error)
 	Votes(ctx context.Context, obj *vega.Party) ([]*ProposalVote, error)
 	VotesConnection(ctx context.Context, obj *vega.Party, pagination *v2.Pagination) (*ProposalVoteConnection, error)
 	Withdrawals(ctx context.Context, obj *vega.Party) ([]*vega.Withdrawal, error)
@@ -1830,7 +1830,7 @@ type ProposalResolver interface {
 	ID(ctx context.Context, obj *vega.GovernanceData) (*string, error)
 	Reference(ctx context.Context, obj *vega.GovernanceData) (string, error)
 	Party(ctx context.Context, obj *vega.GovernanceData) (*vega.Party, error)
-	State(ctx context.Context, obj *vega.GovernanceData) (ProposalState, error)
+	State(ctx context.Context, obj *vega.GovernanceData) (vega.Proposal_State, error)
 	Datetime(ctx context.Context, obj *vega.GovernanceData) (string, error)
 	Rationale(ctx context.Context, obj *vega.GovernanceData) (*vega.ProposalRationale, error)
 	Terms(ctx context.Context, obj *vega.GovernanceData) (*vega.ProposalTerms, error)
@@ -1862,14 +1862,14 @@ type QueryResolver interface {
 	OrderVersions(ctx context.Context, orderID string, skip *int, first *int, last *int) ([]*vega.Order, error)
 	OrderVersionsConnection(ctx context.Context, orderID *string, pagination *v2.Pagination) (*v2.OrderConnection, error)
 	OrderByReference(ctx context.Context, reference string) (*vega.Order, error)
-	Proposals(ctx context.Context, inState *ProposalState) ([]*vega.GovernanceData, error)
-	ProposalsConnection(ctx context.Context, proposalType *ProposalType, inState *ProposalState, pagination *v2.Pagination) (*v2.GovernanceDataConnection, error)
+	Proposals(ctx context.Context, inState *vega.Proposal_State) ([]*vega.GovernanceData, error)
+	ProposalsConnection(ctx context.Context, proposalType *ProposalType, inState *vega.Proposal_State, pagination *v2.Pagination) (*v2.GovernanceDataConnection, error)
 	Proposal(ctx context.Context, id *string, reference *string) (*vega.GovernanceData, error)
-	NewMarketProposals(ctx context.Context, inState *ProposalState) ([]*vega.GovernanceData, error)
-	UpdateMarketProposals(ctx context.Context, marketID *string, inState *ProposalState) ([]*vega.GovernanceData, error)
-	NetworkParametersProposals(ctx context.Context, inState *ProposalState) ([]*vega.GovernanceData, error)
-	NewAssetProposals(ctx context.Context, inState *ProposalState) ([]*vega.GovernanceData, error)
-	NewFreeformProposals(ctx context.Context, inState *ProposalState) ([]*vega.GovernanceData, error)
+	NewMarketProposals(ctx context.Context, inState *vega.Proposal_State) ([]*vega.GovernanceData, error)
+	UpdateMarketProposals(ctx context.Context, marketID *string, inState *vega.Proposal_State) ([]*vega.GovernanceData, error)
+	NetworkParametersProposals(ctx context.Context, inState *vega.Proposal_State) ([]*vega.GovernanceData, error)
+	NewAssetProposals(ctx context.Context, inState *vega.Proposal_State) ([]*vega.GovernanceData, error)
+	NewFreeformProposals(ctx context.Context, inState *vega.Proposal_State) ([]*vega.GovernanceData, error)
 	NodeSignatures(ctx context.Context, resourceID string) ([]*v11.NodeSignature, error)
 	NodeSignaturesConnection(ctx context.Context, resourceID string, pagination *v2.Pagination) (*v2.NodeSignaturesConnection, error)
 	Asset(ctx context.Context, assetID string) (*vega.Asset, error)
@@ -5566,7 +5566,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Party.Proposals(childComplexity, args["inState"].(*ProposalState)), true
+		return e.complexity.Party.Proposals(childComplexity, args["inState"].(*vega.Proposal_State)), true
 
 	case "Party.proposalsConnection":
 		if e.complexity.Party.ProposalsConnection == nil {
@@ -5578,7 +5578,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Party.ProposalsConnection(childComplexity, args["proposalType"].(*ProposalType), args["inState"].(*ProposalState), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Party.ProposalsConnection(childComplexity, args["proposalType"].(*ProposalType), args["inState"].(*vega.Proposal_State), args["pagination"].(*v2.Pagination)), true
 
 	case "Party.rewardDetails":
 		if e.complexity.Party.RewardDetails == nil {
@@ -6450,7 +6450,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.NetworkParametersProposals(childComplexity, args["inState"].(*ProposalState)), true
+		return e.complexity.Query.NetworkParametersProposals(childComplexity, args["inState"].(*vega.Proposal_State)), true
 
 	case "Query.newAssetProposals":
 		if e.complexity.Query.NewAssetProposals == nil {
@@ -6462,7 +6462,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.NewAssetProposals(childComplexity, args["inState"].(*ProposalState)), true
+		return e.complexity.Query.NewAssetProposals(childComplexity, args["inState"].(*vega.Proposal_State)), true
 
 	case "Query.newFreeformProposals":
 		if e.complexity.Query.NewFreeformProposals == nil {
@@ -6474,7 +6474,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.NewFreeformProposals(childComplexity, args["inState"].(*ProposalState)), true
+		return e.complexity.Query.NewFreeformProposals(childComplexity, args["inState"].(*vega.Proposal_State)), true
 
 	case "Query.newMarketProposals":
 		if e.complexity.Query.NewMarketProposals == nil {
@@ -6486,7 +6486,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.NewMarketProposals(childComplexity, args["inState"].(*ProposalState)), true
+		return e.complexity.Query.NewMarketProposals(childComplexity, args["inState"].(*vega.Proposal_State)), true
 
 	case "Query.node":
 		if e.complexity.Query.Node == nil {
@@ -6740,7 +6740,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Proposals(childComplexity, args["inState"].(*ProposalState)), true
+		return e.complexity.Query.Proposals(childComplexity, args["inState"].(*vega.Proposal_State)), true
 
 	case "Query.proposalsConnection":
 		if e.complexity.Query.ProposalsConnection == nil {
@@ -6752,7 +6752,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.ProposalsConnection(childComplexity, args["proposalType"].(*ProposalType), args["inState"].(*ProposalState), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Query.ProposalsConnection(childComplexity, args["proposalType"].(*ProposalType), args["inState"].(*vega.Proposal_State), args["pagination"].(*v2.Pagination)), true
 
 	case "Query.statistics":
 		if e.complexity.Query.Statistics == nil {
@@ -6795,7 +6795,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.UpdateMarketProposals(childComplexity, args["marketId"].(*string), args["inState"].(*ProposalState)), true
+		return e.complexity.Query.UpdateMarketProposals(childComplexity, args["marketId"].(*string), args["inState"].(*vega.Proposal_State)), true
 
 	case "Query.withdrawal":
 		if e.complexity.Query.Withdrawal == nil {
@@ -11516,19 +11516,19 @@ Proposal can enter Failed state from any other state.
 """
 enum ProposalState {
   "Proposal became invalid and cannot be processed"
-  Failed
+  STATE_FAILED
   "Proposal is open for voting"
-  Open
+  STATE_OPEN
   "Proposal has gained enough support to be executed"
-  Passed
+  STATE_PASSED
   "Proposal didn't get enough votes"
-  Declined
+  STATE_DECLINED
   "Proposal could not gain enough support to be executed"
-  Rejected
+  STATE_REJECTED
   "Proposal has been executed and the changes under this proposal have now been applied"
-  Enacted
+  STATE_ENACTED
   "Proposal is waiting for the node to run validation"
-  WaitingForNodeVote
+  STATE_WAITING_FOR_NODE_VOTE
 }
 
 type Proposal {
@@ -13202,10 +13202,10 @@ func (ec *executionContext) field_Party_proposalsConnection_args(ctx context.Con
 		}
 	}
 	args["proposalType"] = arg0
-	var arg1 *ProposalState
+	var arg1 *vega.Proposal_State
 	if tmp, ok := rawArgs["inState"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("inState"))
-		arg1, err = ec.unmarshalOProposalState2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProposalState(ctx, tmp)
+		arg1, err = ec.unmarshalOProposalState2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐProposal_State(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -13226,10 +13226,10 @@ func (ec *executionContext) field_Party_proposalsConnection_args(ctx context.Con
 func (ec *executionContext) field_Party_proposals_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *ProposalState
+	var arg0 *vega.Proposal_State
 	if tmp, ok := rawArgs["inState"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("inState"))
-		arg0, err = ec.unmarshalOProposalState2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProposalState(ctx, tmp)
+		arg0, err = ec.unmarshalOProposalState2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐProposal_State(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -13874,10 +13874,10 @@ func (ec *executionContext) field_Query_networkParametersConnection_args(ctx con
 func (ec *executionContext) field_Query_networkParametersProposals_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *ProposalState
+	var arg0 *vega.Proposal_State
 	if tmp, ok := rawArgs["inState"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("inState"))
-		arg0, err = ec.unmarshalOProposalState2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProposalState(ctx, tmp)
+		arg0, err = ec.unmarshalOProposalState2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐProposal_State(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -13889,10 +13889,10 @@ func (ec *executionContext) field_Query_networkParametersProposals_args(ctx cont
 func (ec *executionContext) field_Query_newAssetProposals_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *ProposalState
+	var arg0 *vega.Proposal_State
 	if tmp, ok := rawArgs["inState"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("inState"))
-		arg0, err = ec.unmarshalOProposalState2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProposalState(ctx, tmp)
+		arg0, err = ec.unmarshalOProposalState2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐProposal_State(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -13904,10 +13904,10 @@ func (ec *executionContext) field_Query_newAssetProposals_args(ctx context.Conte
 func (ec *executionContext) field_Query_newFreeformProposals_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *ProposalState
+	var arg0 *vega.Proposal_State
 	if tmp, ok := rawArgs["inState"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("inState"))
-		arg0, err = ec.unmarshalOProposalState2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProposalState(ctx, tmp)
+		arg0, err = ec.unmarshalOProposalState2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐProposal_State(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -13919,10 +13919,10 @@ func (ec *executionContext) field_Query_newFreeformProposals_args(ctx context.Co
 func (ec *executionContext) field_Query_newMarketProposals_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *ProposalState
+	var arg0 *vega.Proposal_State
 	if tmp, ok := rawArgs["inState"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("inState"))
-		arg0, err = ec.unmarshalOProposalState2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProposalState(ctx, tmp)
+		arg0, err = ec.unmarshalOProposalState2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐProposal_State(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -14318,10 +14318,10 @@ func (ec *executionContext) field_Query_proposalsConnection_args(ctx context.Con
 		}
 	}
 	args["proposalType"] = arg0
-	var arg1 *ProposalState
+	var arg1 *vega.Proposal_State
 	if tmp, ok := rawArgs["inState"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("inState"))
-		arg1, err = ec.unmarshalOProposalState2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProposalState(ctx, tmp)
+		arg1, err = ec.unmarshalOProposalState2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐProposal_State(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -14342,10 +14342,10 @@ func (ec *executionContext) field_Query_proposalsConnection_args(ctx context.Con
 func (ec *executionContext) field_Query_proposals_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *ProposalState
+	var arg0 *vega.Proposal_State
 	if tmp, ok := rawArgs["inState"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("inState"))
-		arg0, err = ec.unmarshalOProposalState2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProposalState(ctx, tmp)
+		arg0, err = ec.unmarshalOProposalState2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐProposal_State(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -14432,10 +14432,10 @@ func (ec *executionContext) field_Query_updateMarketProposals_args(ctx context.C
 		}
 	}
 	args["marketId"] = arg0
-	var arg1 *ProposalState
+	var arg1 *vega.Proposal_State
 	if tmp, ok := rawArgs["inState"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("inState"))
-		arg1, err = ec.unmarshalOProposalState2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProposalState(ctx, tmp)
+		arg1, err = ec.unmarshalOProposalState2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐProposal_State(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -31382,7 +31382,7 @@ func (ec *executionContext) _Party_proposals(ctx context.Context, field graphql.
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Party().Proposals(rctx, obj, args["inState"].(*ProposalState))
+		return ec.resolvers.Party().Proposals(rctx, obj, args["inState"].(*vega.Proposal_State))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -31421,7 +31421,7 @@ func (ec *executionContext) _Party_proposalsConnection(ctx context.Context, fiel
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Party().ProposalsConnection(rctx, obj, args["proposalType"].(*ProposalType), args["inState"].(*ProposalState), args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Party().ProposalsConnection(rctx, obj, args["proposalType"].(*ProposalType), args["inState"].(*vega.Proposal_State), args["pagination"].(*v2.Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -33595,9 +33595,9 @@ func (ec *executionContext) _Proposal_state(ctx context.Context, field graphql.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.(ProposalState)
+	res := resTmp.(vega.Proposal_State)
 	fc.Result = res
-	return ec.marshalNProposalState2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProposalState(ctx, field.Selections, res)
+	return ec.marshalNProposalState2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐProposal_State(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Proposal_datetime(ctx context.Context, field graphql.CollectedField, obj *vega.GovernanceData) (ret graphql.Marshaler) {
@@ -35297,7 +35297,7 @@ func (ec *executionContext) _Query_proposals(ctx context.Context, field graphql.
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Proposals(rctx, args["inState"].(*ProposalState))
+		return ec.resolvers.Query().Proposals(rctx, args["inState"].(*vega.Proposal_State))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -35336,7 +35336,7 @@ func (ec *executionContext) _Query_proposalsConnection(ctx context.Context, fiel
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().ProposalsConnection(rctx, args["proposalType"].(*ProposalType), args["inState"].(*ProposalState), args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Query().ProposalsConnection(rctx, args["proposalType"].(*ProposalType), args["inState"].(*vega.Proposal_State), args["pagination"].(*v2.Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -35420,7 +35420,7 @@ func (ec *executionContext) _Query_newMarketProposals(ctx context.Context, field
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().NewMarketProposals(rctx, args["inState"].(*ProposalState))
+		return ec.resolvers.Query().NewMarketProposals(rctx, args["inState"].(*vega.Proposal_State))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -35459,7 +35459,7 @@ func (ec *executionContext) _Query_updateMarketProposals(ctx context.Context, fi
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().UpdateMarketProposals(rctx, args["marketId"].(*string), args["inState"].(*ProposalState))
+		return ec.resolvers.Query().UpdateMarketProposals(rctx, args["marketId"].(*string), args["inState"].(*vega.Proposal_State))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -35498,7 +35498,7 @@ func (ec *executionContext) _Query_networkParametersProposals(ctx context.Contex
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().NetworkParametersProposals(rctx, args["inState"].(*ProposalState))
+		return ec.resolvers.Query().NetworkParametersProposals(rctx, args["inState"].(*vega.Proposal_State))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -35537,7 +35537,7 @@ func (ec *executionContext) _Query_newAssetProposals(ctx context.Context, field 
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().NewAssetProposals(rctx, args["inState"].(*ProposalState))
+		return ec.resolvers.Query().NewAssetProposals(rctx, args["inState"].(*vega.Proposal_State))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -35576,7 +35576,7 @@ func (ec *executionContext) _Query_newFreeformProposals(ctx context.Context, fie
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().NewFreeformProposals(rctx, args["inState"].(*ProposalState))
+		return ec.resolvers.Query().NewFreeformProposals(rctx, args["inState"].(*vega.Proposal_State))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -63357,14 +63357,19 @@ func (ec *executionContext) marshalNProposalRationale2ᚖcodeᚗvegaprotocolᚗi
 	return ec._ProposalRationale(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNProposalState2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProposalState(ctx context.Context, v interface{}) (ProposalState, error) {
-	var res ProposalState
-	err := res.UnmarshalGQL(v)
+func (ec *executionContext) unmarshalNProposalState2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐProposal_State(ctx context.Context, v interface{}) (vega.Proposal_State, error) {
+	res, err := marshallers.UnmarshalProposalState(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNProposalState2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProposalState(ctx context.Context, sel ast.SelectionSet, v ProposalState) graphql.Marshaler {
-	return v
+func (ec *executionContext) marshalNProposalState2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐProposal_State(ctx context.Context, sel ast.SelectionSet, v vega.Proposal_State) graphql.Marshaler {
+	res := marshallers.MarshalProposalState(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
 }
 
 func (ec *executionContext) marshalNProposalTerms2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐProposalTerms(ctx context.Context, sel ast.SelectionSet, v vega.ProposalTerms) graphql.Marshaler {
@@ -67100,20 +67105,20 @@ func (ec *executionContext) marshalOProposalRejectionReason2ᚖcodeᚗvegaprotoc
 	return v
 }
 
-func (ec *executionContext) unmarshalOProposalState2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProposalState(ctx context.Context, v interface{}) (*ProposalState, error) {
+func (ec *executionContext) unmarshalOProposalState2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐProposal_State(ctx context.Context, v interface{}) (*vega.Proposal_State, error) {
 	if v == nil {
 		return nil, nil
 	}
-	var res = new(ProposalState)
-	err := res.UnmarshalGQL(v)
-	return res, graphql.ErrorOnPath(ctx, err)
+	res, err := marshallers.UnmarshalProposalState(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOProposalState2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProposalState(ctx context.Context, sel ast.SelectionSet, v *ProposalState) graphql.Marshaler {
+func (ec *executionContext) marshalOProposalState2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐProposal_State(ctx context.Context, sel ast.SelectionSet, v *vega.Proposal_State) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return v
+	res := marshallers.MarshalProposalState(*v)
+	return res
 }
 
 func (ec *executionContext) unmarshalOProposalType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProposalType(ctx context.Context, v interface{}) (*ProposalType, error) {

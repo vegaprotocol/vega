@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/vegatime"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/vega/protos/vega"
+	vega "code.vegaprotocol.io/vega/protos/vega"
 )
 
 func handleCandleConnectionRequest(ctx context.Context, client TradingDataServiceClientV2, market *types.Market, sinceRaw string, toRaw *string,
@@ -93,7 +94,7 @@ func handleDepositsConnectionRequest(ctx context.Context, client TradingDataServ
 }
 
 func handleProposalsRequest(ctx context.Context, client TradingDataServiceClientV2, party *types.Party, ref *string, inType *ProposalType,
-	inState *ProposalState, pagination *v2.Pagination,
+	inState *vega.Proposal_State, pagination *v2.Pagination,
 ) (*v2.GovernanceDataConnection, error) {
 	var partyID *string
 	var proposalState *types.Proposal_State
@@ -106,14 +107,6 @@ func handleProposalsRequest(ctx context.Context, client TradingDataServiceClient
 	if inType != nil {
 		pType := inType.IntoProtoValue()
 		proposalType = &pType
-	}
-
-	if inState != nil {
-		state, err := inState.IntoProtoValue()
-		if err != nil {
-			return nil, err
-		}
-		proposalState = &state
 	}
 
 	req := v2.ListGovernanceDataRequest{
