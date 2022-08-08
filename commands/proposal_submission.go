@@ -290,9 +290,6 @@ func checkUpdateAssetChanges(change *types.ProposalTerms_UpdateAsset) Errors {
 	if len(change.UpdateAsset.Changes.Symbol) == 0 {
 		errs.AddForProperty("proposal_submission.terms.change.update_asset.changes.symbol", ErrIsRequired)
 	}
-	if change.UpdateAsset.Changes.Decimals == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.update_asset.changes.decimals", ErrIsRequired)
-	}
 	if len(change.UpdateAsset.Changes.TotalSupply) == 0 {
 		errs.AddForProperty("proposal_submission.terms.change.update_asset.changes.total_supply", ErrIsRequired)
 	} else {

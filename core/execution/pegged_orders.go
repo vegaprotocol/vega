@@ -200,6 +200,7 @@ func (p *PeggedOrders) GetAllActiveOrders() (orders []string) {
 			orders = append(orders, k)
 		}
 	}
+	sort.Strings(orders)
 	return
 }
 

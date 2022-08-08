@@ -218,6 +218,10 @@ func (r *VegaResolverRoot) NewAsset() NewAssetResolver {
 	return (*newAssetResolver)(r)
 }
 
+func (r *VegaResolverRoot) UpdateAsset() UpdateAssetResolver {
+	return (*updateAssetResolver)(r)
+}
+
 func (r *VegaResolverRoot) NewMarket() NewMarketResolver {
 	return (*newMarketResolver)(r)
 }

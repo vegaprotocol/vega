@@ -41,6 +41,11 @@ type TransferKind interface {
 	IsTransferKind()
 }
 
+// One of the possible asset sources for update assets proposals
+type UpdateAssetSource interface {
+	IsUpdateAssetSource()
+}
+
 type UpdateMarketRiskParameters interface {
 	IsUpdateMarketRiskParameters()
 }
@@ -466,6 +471,18 @@ type TransferResponses struct {
 }
 
 func (TransferResponses) IsEvent() {}
+
+// An asset originated from an Ethereum ERC20 Token
+type UpdateErc20 struct {
+	// The lifetime limits deposit per address
+	// Note: this is a temporary measure for alpha mainnet
+	LifetimeLimit string `json:"lifetimeLimit"`
+	// The maximum allowed per withdrawal
+	// Note: this is a temporary measure for alpha mainnet
+	WithdrawThreshold string `json:"withdrawThreshold"`
+}
+
+func (UpdateErc20) IsUpdateAssetSource() {}
 
 type UpdateInstrumentConfiguration struct {
 	Code    string                    `json:"code"`
@@ -1869,6 +1886,8 @@ const (
 	ProposalTypeNetworkParameters ProposalType = "NetworkParameters"
 	// Proposal to add a new asset
 	ProposalTypeNewAsset ProposalType = "NewAsset"
+	// Proposal to update an existing asset
+	ProposalTypeUpdateAsset ProposalType = "UpdateAsset"
 	// Proposal to create a new freeform proposal
 	ProposalTypeNewFreeForm ProposalType = "NewFreeForm"
 )
@@ -1878,12 +1897,13 @@ var AllProposalType = []ProposalType{
 	ProposalTypeUpdateMarket,
 	ProposalTypeNetworkParameters,
 	ProposalTypeNewAsset,
+	ProposalTypeUpdateAsset,
 	ProposalTypeNewFreeForm,
 }
 
 func (e ProposalType) IsValid() bool {
 	switch e {
-	case ProposalTypeNewMarket, ProposalTypeUpdateMarket, ProposalTypeNetworkParameters, ProposalTypeNewAsset, ProposalTypeNewFreeForm:
+	case ProposalTypeNewMarket, ProposalTypeUpdateMarket, ProposalTypeNetworkParameters, ProposalTypeNewAsset, ProposalTypeUpdateAsset, ProposalTypeNewFreeForm:
 		return true
 	}
 	return false

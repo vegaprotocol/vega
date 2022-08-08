@@ -103,6 +103,7 @@ type ResolverRoot interface {
 	TradableInstrument() TradableInstrumentResolver
 	Trade() TradeResolver
 	Transfer() TransferResolver
+	UpdateAsset() UpdateAssetResolver
 	UpdateMarket() UpdateMarketResolver
 	UpdateMarketConfiguration() UpdateMarketConfigurationResolver
 	UpdateNetworkParameter() UpdateNetworkParameterResolver
@@ -1393,6 +1394,19 @@ type ComplexityRoot struct {
 		Responses func(childComplexity int) int
 	}
 
+	UpdateAsset struct {
+		MinLpStake  func(childComplexity int) int
+		Name        func(childComplexity int) int
+		Source      func(childComplexity int) int
+		Symbol      func(childComplexity int) int
+		TotalSupply func(childComplexity int) int
+	}
+
+	UpdateERC20 struct {
+		LifetimeLimit     func(childComplexity int) int
+		WithdrawThreshold func(childComplexity int) int
+	}
+
 	UpdateFutureProduct struct {
 		OracleSpecBinding               func(childComplexity int) int
 		OracleSpecForSettlementPrice    func(childComplexity int) int
@@ -1980,6 +1994,13 @@ type TransferResolver interface {
 	Status(ctx context.Context, obj *v1.Transfer) (TransferStatus, error)
 	Timestamp(ctx context.Context, obj *v1.Transfer) (string, error)
 	Kind(ctx context.Context, obj *v1.Transfer) (TransferKind, error)
+}
+type UpdateAssetResolver interface {
+	Name(ctx context.Context, obj *vega.UpdateAsset) (string, error)
+	Symbol(ctx context.Context, obj *vega.UpdateAsset) (string, error)
+	TotalSupply(ctx context.Context, obj *vega.UpdateAsset) (string, error)
+	MinLpStake(ctx context.Context, obj *vega.UpdateAsset) (string, error)
+	Source(ctx context.Context, obj *vega.UpdateAsset) (UpdateAssetSource, error)
 }
 type UpdateMarketResolver interface {
 	UpdateMarketConfiguration(ctx context.Context, obj *vega.UpdateMarket) (*vega.UpdateMarketConfiguration, error)
@@ -7959,6 +7980,55 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TransferResponses.Responses(childComplexity), true
 
+	case "UpdateAsset.minLpStake":
+		if e.complexity.UpdateAsset.MinLpStake == nil {
+			break
+		}
+
+		return e.complexity.UpdateAsset.MinLpStake(childComplexity), true
+
+	case "UpdateAsset.name":
+		if e.complexity.UpdateAsset.Name == nil {
+			break
+		}
+
+		return e.complexity.UpdateAsset.Name(childComplexity), true
+
+	case "UpdateAsset.source":
+		if e.complexity.UpdateAsset.Source == nil {
+			break
+		}
+
+		return e.complexity.UpdateAsset.Source(childComplexity), true
+
+	case "UpdateAsset.symbol":
+		if e.complexity.UpdateAsset.Symbol == nil {
+			break
+		}
+
+		return e.complexity.UpdateAsset.Symbol(childComplexity), true
+
+	case "UpdateAsset.totalSupply":
+		if e.complexity.UpdateAsset.TotalSupply == nil {
+			break
+		}
+
+		return e.complexity.UpdateAsset.TotalSupply(childComplexity), true
+
+	case "UpdateERC20.lifetimeLimit":
+		if e.complexity.UpdateERC20.LifetimeLimit == nil {
+			break
+		}
+
+		return e.complexity.UpdateERC20.LifetimeLimit(childComplexity), true
+
+	case "UpdateERC20.withdrawThreshold":
+		if e.complexity.UpdateERC20.WithdrawThreshold == nil {
+			break
+		}
+
+		return e.complexity.UpdateERC20.WithdrawThreshold(childComplexity), true
+
 	case "UpdateFutureProduct.oracleSpecBinding":
 		if e.complexity.UpdateFutureProduct.OracleSpecBinding == nil {
 			break
@@ -9336,10 +9406,27 @@ type Asset {
 "One of the possible asset sources"
 union AssetSource = BuiltinAsset | ERC20
 
+"One of the possible asset sources for update assets proposals"
+union UpdateAssetSource = UpdateERC20
+
 "An asset originated from an Ethereum ERC20 Token"
 type ERC20 {
   "The address of the ERC20 contract"
   contractAddress: String!
+  """
+  The lifetime limits deposit per address
+  Note: this is a temporary measure for alpha mainnet
+  """
+  lifetimeLimit: String!
+  """
+  The maximum allowed per withdrawal
+  Note: this is a temporary measure for alpha mainnet
+  """
+  withdrawThreshold: String!
+}
+
+"An asset originated from an Ethereum ERC20 Token"
+type UpdateERC20 {
   """
   The lifetime limits deposit per address
   Note: this is a temporary measure for alpha mainnet
@@ -9865,7 +9952,7 @@ type Market {
   """
   positionDecimalPlaces indicates the number of decimal places that an integer must be shifted in order to get a correct size (uint64).
   i.e. 0 means there are no fractional orders for the market, and order sizes are always whole sizes.
-  2 means sizes given as 10^2 * desired size, e.g. a desired size of 1.23 is represented as 123 in this market. 
+  2 means sizes given as 10^2 * desired size, e.g. a desired size of 1.23 is represented as 123 in this market.
   This sets how big the smallest order / position on the market can be.
   """
   positionDecimalPlaces: Int!
@@ -10197,7 +10284,7 @@ type Party {
 
   proposals(
     "Select only proposals in the specified state. Leave out to get all proposals"
-    inState: ProposalState 
+    inState: ProposalState
   ): [Proposal] @deprecated(reason: "Use proposalsConnection instead")
 
   "All governance proposals in the VEGA network"
@@ -11030,11 +11117,11 @@ enum AccountType {
   "Settlement - only for 'system' party"
   Settlement
   """
-  Margin - The leverage account for parties, contains funds set aside for the margin needed to support 
-  a party's open positions. Each party will have a margin account for each market they have traded in. 
-  The required initial margin is allocated to each market from the general account, and it cannot be withdrawn 
-  or used as margin on another market until it's released back into the general account. 
-  The protocol uses an internal accounting system to segregate funds held as margin from other funds 
+  Margin - The leverage account for parties, contains funds set aside for the margin needed to support
+  a party's open positions. Each party will have a margin account for each market they have traded in.
+  The required initial margin is allocated to each market from the general account, and it cannot be withdrawn
+  or used as margin on another market until it's released back into the general account.
+  The protocol uses an internal accounting system to segregate funds held as margin from other funds
   to ensure they are never lost or 'double spent'
   """
   Margin
@@ -11201,6 +11288,24 @@ type NewAsset {
   source: AssetSource!
 }
 
+"A new asset proposal change"
+type UpdateAsset {
+  "The full name of the asset (e.g: Great British Pound)"
+  name: String!
+
+  "The symbol of the asset (e.g: GBP)"
+  symbol: String!
+
+  "The total supply of the market"
+  totalSupply: String!
+
+  "The minimum stake to become a liquidity provider for any market using this asset for settlement"
+  minLpStake: String!
+
+  "The source of the updated asset"
+  source: UpdateAssetSource!
+}
+
 """
 A new freeform proposal change. It has no properties on purpose. Use proposal
 rationale, instead.
@@ -11228,6 +11333,7 @@ union ProposalChange =
   | UpdateMarket
   | UpdateNetworkParameter
   | NewAsset
+  | UpdateAsset
   | NewFreeform
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 
@@ -11282,6 +11388,8 @@ enum ProposalType {
   NetworkParameters
   "Proposal to add a new asset"
   NewAsset
+  "Proposal to update an existing asset"
+  UpdateAsset
   "Proposal to create a new freeform proposal"
   NewFreeForm
 }
@@ -42100,6 +42208,251 @@ func (ec *executionContext) _TransferResponses_responses(ctx context.Context, fi
 	return ec.marshalOTransferResponse2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferResponseᚄ(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _UpdateAsset_name(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateAsset) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "UpdateAsset",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.UpdateAsset().Name(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _UpdateAsset_symbol(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateAsset) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "UpdateAsset",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.UpdateAsset().Symbol(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _UpdateAsset_totalSupply(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateAsset) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "UpdateAsset",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.UpdateAsset().TotalSupply(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _UpdateAsset_minLpStake(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateAsset) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "UpdateAsset",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.UpdateAsset().MinLpStake(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _UpdateAsset_source(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateAsset) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "UpdateAsset",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.UpdateAsset().Source(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(UpdateAssetSource)
+	fc.Result = res
+	return ec.marshalNUpdateAssetSource2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐUpdateAssetSource(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _UpdateERC20_lifetimeLimit(ctx context.Context, field graphql.CollectedField, obj *UpdateErc20) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "UpdateERC20",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LifetimeLimit, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _UpdateERC20_withdrawThreshold(ctx context.Context, field graphql.CollectedField, obj *UpdateErc20) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "UpdateERC20",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.WithdrawThreshold, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _UpdateFutureProduct_quoteName(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateFutureProduct) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -45032,6 +45385,13 @@ func (ec *executionContext) _ProposalChange(ctx context.Context, sel ast.Selecti
 			return graphql.Null
 		}
 		return ec._NewAsset(ctx, sel, obj)
+	case vega.UpdateAsset:
+		return ec._UpdateAsset(ctx, sel, &obj)
+	case *vega.UpdateAsset:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._UpdateAsset(ctx, sel, obj)
 	case vega.NewFreeform:
 		return ec._NewFreeform(ctx, sel, &obj)
 	case *vega.NewFreeform:
@@ -45085,6 +45445,22 @@ func (ec *executionContext) _TransferKind(ctx context.Context, sel ast.Selection
 			return graphql.Null
 		}
 		return ec._RecurringTransfer(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
+func (ec *executionContext) _UpdateAssetSource(ctx context.Context, sel ast.SelectionSet, obj UpdateAssetSource) graphql.Marshaler {
+	switch obj := (obj).(type) {
+	case nil:
+		return graphql.Null
+	case UpdateErc20:
+		return ec._UpdateERC20(ctx, sel, &obj)
+	case *UpdateErc20:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._UpdateERC20(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -59089,6 +59465,168 @@ func (ec *executionContext) _TransferResponses(ctx context.Context, sel ast.Sele
 	return out
 }
 
+var updateAssetImplementors = []string{"UpdateAsset", "ProposalChange"}
+
+func (ec *executionContext) _UpdateAsset(ctx context.Context, sel ast.SelectionSet, obj *vega.UpdateAsset) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, updateAssetImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UpdateAsset")
+		case "name":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._UpdateAsset_name(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "symbol":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._UpdateAsset_symbol(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "totalSupply":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._UpdateAsset_totalSupply(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "minLpStake":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._UpdateAsset_minLpStake(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "source":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._UpdateAsset_source(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var updateERC20Implementors = []string{"UpdateERC20", "UpdateAssetSource"}
+
+func (ec *executionContext) _UpdateERC20(ctx context.Context, sel ast.SelectionSet, obj *UpdateErc20) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, updateERC20Implementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UpdateERC20")
+		case "lifetimeLimit":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._UpdateERC20_lifetimeLimit(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "withdrawThreshold":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._UpdateERC20_withdrawThreshold(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var updateFutureProductImplementors = []string{"UpdateFutureProduct"}
 
 func (ec *executionContext) _UpdateFutureProduct(ctx context.Context, sel ast.SelectionSet, obj *vega.UpdateFutureProduct) graphql.Marshaler {
@@ -62668,6 +63206,16 @@ func (ec *executionContext) unmarshalNTransferStatus2codeᚗvegaprotocolᚗioᚋ
 
 func (ec *executionContext) marshalNTransferStatus2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferStatus(ctx context.Context, sel ast.SelectionSet, v TransferStatus) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) marshalNUpdateAssetSource2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐUpdateAssetSource(ctx context.Context, sel ast.SelectionSet, v UpdateAssetSource) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._UpdateAssetSource(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNUpdateFutureProduct2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐUpdateFutureProduct(ctx context.Context, sel ast.SelectionSet, v *vega.UpdateFutureProduct) graphql.Marshaler {
