@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	ErrUnimplemented = errors.New("Unmarshaller not implemented as this API is query only")
+	ErrUnimplemented = errors.New("unmarshaller not implemented as this API is query only")
 )
 
 func MarshalAccountType(t vega.AccountType) graphql.Marshaler {
