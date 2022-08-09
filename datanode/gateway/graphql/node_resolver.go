@@ -14,7 +14,6 @@ package gql
 
 import (
 	"context"
-	"fmt"
 
 	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
@@ -22,10 +21,6 @@ import (
 )
 
 type nodeResolver VegaResolverRoot
-
-func (r *nodeResolver) Status(ctx context.Context, obj *proto.Node) (NodeStatus, error) {
-	return nodeStatusFromProto(obj.Status)
-}
 
 // Deprecated: Use DelegationsConnection instead.
 func (r *nodeResolver) Delegations(
@@ -49,17 +44,6 @@ func (r *nodeResolver) Delegations(
 	}
 
 	return resp.Delegations, nil
-}
-
-func nodeStatusFromProto(s proto.NodeStatus) (NodeStatus, error) {
-	switch s {
-	case proto.NodeStatus_NODE_STATUS_VALIDATOR:
-		return NodeStatusValidator, nil
-	case proto.NodeStatus_NODE_STATUS_NON_VALIDATOR:
-		return NodeStatusNonValidator, nil
-	default:
-		return NodeStatus(""), fmt.Errorf("failed to convert NodeStatus from Proto to GraphQL: %s", s.String())
-	}
 }
 
 func (r *nodeResolver) RankingScore(ctx context.Context, obj *proto.Node) (proto.RankingScore, error) {

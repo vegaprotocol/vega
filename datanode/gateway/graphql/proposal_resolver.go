@@ -18,11 +18,12 @@ import (
 
 	"code.vegaprotocol.io/vega/libs/num"
 	types "code.vegaprotocol.io/vega/protos/vega"
+	vega "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type proposalResolver VegaResolverRoot
 
-func (r *proposalResolver) RejectionReason(_ context.Context, data *types.GovernanceData) (*ProposalRejectionReason, error) {
+func (r *proposalResolver) RejectionReason(_ context.Context, data *types.GovernanceData) (*vega.ProposalError, error) {
 	if data == nil || data.Proposal == nil {
 		return nil, ErrInvalidProposal
 	}
@@ -31,11 +32,7 @@ func (r *proposalResolver) RejectionReason(_ context.Context, data *types.Govern
 		return nil, nil
 	}
 
-	reason, err := convertProposalRejectionReasonFromProto(p.Reason)
-	if err != nil {
-		return nil, err
-	}
-	return &reason, nil
+	return &p.Reason, nil
 }
 
 func (r *proposalResolver) ID(_ context.Context, data *types.GovernanceData) (*string, error) {
@@ -67,11 +64,11 @@ func (r *proposalResolver) Party(ctx context.Context, data *types.GovernanceData
 	return p, err
 }
 
-func (r *proposalResolver) State(_ context.Context, data *types.GovernanceData) (ProposalState, error) {
+func (r *proposalResolver) State(_ context.Context, data *types.GovernanceData) (vega.Proposal_State, error) {
 	if data == nil || data.Proposal == nil {
-		return "", ErrInvalidProposal
+		return vega.Proposal_STATE_UNSPECIFIED, ErrInvalidProposal
 	}
-	return convertProposalStateFromProto(data.Proposal.State)
+	return data.Proposal.State, nil
 }
 
 func (r *proposalResolver) Datetime(_ context.Context, data *types.GovernanceData) (string, error) {

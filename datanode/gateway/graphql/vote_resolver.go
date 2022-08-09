@@ -21,10 +21,6 @@ import (
 
 type voteResolver VegaResolverRoot
 
-func (r *voteResolver) Value(_ context.Context, obj *proto.Vote) (VoteValue, error) {
-	return convertVoteValueFromProto(obj.Value)
-}
-
 func (r *voteResolver) Party(_ context.Context, obj *proto.Vote) (*proto.Party, error) {
 	return &proto.Party{Id: obj.PartyId}, nil
 }

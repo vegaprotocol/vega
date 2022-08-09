@@ -21,10 +21,6 @@ import (
 
 type myAssetResolver VegaResolverRoot
 
-func (r *myAssetResolver) Status(ctx context.Context, obj *types.Asset) (AssetStatus, error) {
-	return convertAssetStatusFromProto(obj.Status)
-}
-
 func listAssetAccounts(ctx context.Context, client TradingDataServiceClientV2, asset *types.Asset, accountType types.AccountType) (*types.Account, error) {
 	if asset == nil || len(asset.Id) <= 0 {
 		return nil, ErrMissingIDOrReference
