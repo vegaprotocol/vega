@@ -263,7 +263,9 @@ jobs:
           echo 'CURRENT_STATUS='${{ env.IN_REVIEW_COLUMN }} >> $GITHUB_ENV
       - name: 'Set work item for approved column'
         id: approved
-        if: steps.draft-pr.outcome == 'skipped' && env.REVIEW_DECISION == '"APPROVED"'
+        if: |
+          (steps.draft-pr.outcome == 'skipped' && (env.REVIEW_DECISION == '"APPROVED"' ||
+           env.LATEST_REVIEW_STATE == '"APPROVED"'))
         run: |
           echo 'ITEM_ID='${{  env.BOARD_ITEM_ID }} >> $GITHUB_ENV
           echo 'CURRENT_STATUS='${{ env.APPROVED_COLUMN }} >> $GITHUB_ENV
