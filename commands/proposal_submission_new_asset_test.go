@@ -1,6 +1,7 @@
 package commands_test
 
 import (
+	"errors"
 	"testing"
 
 	"code.vegaprotocol.io/vega/commands"
@@ -33,6 +34,45 @@ func TestCheckProposalSubmissionForNewAsset(t *testing.T) {
 	t.Run("Submitting an ERC20 asset change with valid lifetime limit succeeds", testNewERC20AssetChangeSubmissionWithValidLifetimeLimitSucceeds)
 	t.Run("Submitting an ERC20 asset change with invalid withdrawal threshold fails", testNewERC20AssetChangeSubmissionWithInvalidWithdrawalThresholdFails)
 	t.Run("Submitting an ERC20 asset change with valid withdrawal threshold succeeds", testNewERC20AssetChangeSubmissionWithValidWithdrawalThresholdSucceeds)
+	t.Run("Submitting an ERC20 asset change without validation timestamp fails", testNewAssetERC20ChangeSubmissionMissingValidationTimestamp)
+	t.Run("Submitting an ERC20 asset change with validation timestamp succeed", testNewAssetERC20ChangeSubmissionWithValidationTimestampSucceeds)
+	t.Run("Submitting an ERC20 asset change with validation after closing timestamp fails", testNewAssetERC20ChangeSubmissionValidationAfterClosingTimestampsFails)
+}
+
+func testNewAssetERC20ChangeSubmissionWithValidationTimestampSucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			ValidationTimestamp: 10,
+			ClosingTimestamp:    20,
+			EnactmentTimestamp:  30,
+			Change:              &types.ProposalTerms_NewAsset{},
+		},
+	})
+
+	assert.Empty(t, err.Get("proposal_submission.terms.validation_timestamp"))
+}
+
+func testNewAssetERC20ChangeSubmissionValidationAfterClosingTimestampsFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			ValidationTimestamp: 10,
+			ClosingTimestamp:    5,
+			EnactmentTimestamp:  30,
+			Change:              &types.ProposalTerms_NewAsset{},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.validation_timestamp"), errors.New("cannot be after closing time"))
+}
+
+func testNewAssetERC20ChangeSubmissionMissingValidationTimestamp(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			Change: &types.ProposalTerms_NewAsset{},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.validation_timestamp"), commands.ErrMustBePositive)
 }
 
 func TestNewAssetChangeSubmissionWithoutNewsAssetFails(t *testing.T) {
