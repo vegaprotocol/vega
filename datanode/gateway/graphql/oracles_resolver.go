@@ -35,10 +35,6 @@ func (o *oracleSpecResolver) UpdatedAt(_ context.Context, obj *v1.OracleSpec) (*
 	return &formattedTime, nil
 }
 
-func (o oracleSpecResolver) Status(_ context.Context, obj *v1.OracleSpec) (OracleSpecStatus, error) {
-	return convertOracleSpecStatusFromProto(obj.Status)
-}
-
 func (o oracleSpecResolver) Data(ctx context.Context, obj *v1.OracleSpec) ([]*v1.OracleData, error) {
 	resp, err := o.tradingDataClient.OracleDataBySpec(ctx, &protoapi.OracleDataBySpecRequest{Id: obj.Id})
 	if err != nil {
@@ -63,18 +59,6 @@ func (o oracleSpecResolver) DataConnection(ctx context.Context, spec *v1.OracleS
 	}
 
 	return resp.OracleData, nil
-}
-
-type propertyKeyResolver VegaResolverRoot
-
-func (p propertyKeyResolver) Type(_ context.Context, obj *v1.PropertyKey) (PropertyKeyType, error) {
-	return convertPropertyKeyTypeFromProto(obj.Type)
-}
-
-type conditionResolver VegaResolverRoot
-
-func (c conditionResolver) Operator(_ context.Context, obj *v1.Condition) (ConditionOperator, error) {
-	return convertConditionOperatorFromProto(obj.Operator)
 }
 
 type oracleDataResolver VegaResolverRoot

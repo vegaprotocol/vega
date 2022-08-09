@@ -14,14 +14,10 @@ package gql
 
 import (
 	"errors"
-	"fmt"
 	"strconv"
 
-	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
-	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
-	oraclesv1 "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 )
 
 var (
@@ -100,69 +96,6 @@ func PriceMonitoringSettingsFromProto(ppmst *types.PriceMonitoringSettings) (*Pr
 	return &PriceMonitoringSettings{
 		Parameters: params,
 	}, nil
-}
-
-// IntoProto ...
-func (t PropertyKeyType) IntoProto() (oraclesv1.PropertyKey_Type, error) {
-	switch t {
-	case PropertyKeyTypeTypeEmpty:
-		return oraclesv1.PropertyKey_TYPE_EMPTY, nil
-	case PropertyKeyTypeTypeInteger:
-		return oraclesv1.PropertyKey_TYPE_INTEGER, nil
-	case PropertyKeyTypeTypeDecimal:
-		return oraclesv1.PropertyKey_TYPE_DECIMAL, nil
-	case PropertyKeyTypeTypeBoolean:
-		return oraclesv1.PropertyKey_TYPE_BOOLEAN, nil
-	case PropertyKeyTypeTypeTimestamp:
-		return oraclesv1.PropertyKey_TYPE_TIMESTAMP, nil
-	case PropertyKeyTypeTypeString:
-		return oraclesv1.PropertyKey_TYPE_STRING, nil
-	default:
-		err := fmt.Errorf("failed to convert PropertyKeyType from GraphQL to Proto: %v", t)
-		return oraclesv1.PropertyKey_TYPE_EMPTY, err
-	}
-}
-
-// IntoProto ...
-func (o ConditionOperator) IntoProto() (oraclesv1.Condition_Operator, error) {
-	switch o {
-	case ConditionOperatorOperatorEquals:
-		return oraclesv1.Condition_OPERATOR_EQUALS, nil
-	case ConditionOperatorOperatorGreaterThan:
-		return oraclesv1.Condition_OPERATOR_GREATER_THAN, nil
-	case ConditionOperatorOperatorGreaterThanOrEqual:
-		return oraclesv1.Condition_OPERATOR_GREATER_THAN_OR_EQUAL, nil
-	case ConditionOperatorOperatorLessThan:
-		return oraclesv1.Condition_OPERATOR_LESS_THAN, nil
-	case ConditionOperatorOperatorLessThanOrEqual:
-		return oraclesv1.Condition_OPERATOR_LESS_THAN_OR_EQUAL, nil
-	default:
-		err := fmt.Errorf("failed to convert ConditionOperator from Proto to GraphQL: %v", o)
-		return oraclesv1.Condition_OPERATOR_EQUALS, err
-	}
-}
-
-// ToOptionalProposalState ...
-func (s *ProposalState) ToOptionalProposalState() (*protoapi.OptionalProposalState, error) {
-	if s != nil {
-		value, err := s.IntoProtoValue()
-		if err != nil {
-			return nil, err
-		}
-		return &protoapi.OptionalProposalState{
-			Value: value,
-		}, nil
-	}
-	return nil, nil
-}
-
-// IntoProtoValue ...
-func (s ProposalState) IntoProtoValue() (types.Proposal_State, error) {
-	return convertProposalStateToProto(s)
-}
-
-func (t *ProposalType) IntoProtoValue() v2.ListGovernanceDataRequest_Type {
-	return convertProposalTypeToProto(*t)
 }
 
 // ProposalVoteFromProto ...

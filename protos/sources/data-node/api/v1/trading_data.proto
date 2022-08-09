@@ -429,16 +429,10 @@ message GetNodeSignaturesAggregateResponse {
   repeated vega.commands.v1.NodeSignature signatures = 1;
 }
 
-// Optional proposal state
-message OptionalProposalState {
-  // Proposal state value
-  vega.Proposal.State value = 1;
-}
-
 // Request for a list of proposals
 message GetProposalsRequest {
   // Optional proposal state
-  OptionalProposalState select_in_state = 1;
+  optional vega.Proposal.State select_in_state = 1;
 }
 
 // Response for a list of proposals
@@ -452,7 +446,7 @@ message GetProposalsByPartyRequest {
   // Party identifier, required field
   string party_id = 1;
   // Optional proposal state
-  OptionalProposalState select_in_state = 2;
+  optional vega.Proposal.State select_in_state = 2;
 }
 
 // Response for a list of proposals for a party
@@ -476,7 +470,7 @@ message GetVotesByPartyResponse {
 // Request for a list of new market proposals
 message GetNewMarketProposalsRequest {
   // Optional proposal state
-  OptionalProposalState select_in_state = 1;
+  optional vega.Proposal.State select_in_state = 1;
 }
 
 // Response for a list of new market proposals
@@ -490,7 +484,7 @@ message GetUpdateMarketProposalsRequest {
   // Market identifier, required field
   string market_id = 1;
   // Proposal state
-  OptionalProposalState select_in_state = 2;
+  optional vega.Proposal.State select_in_state = 2;
 }
 
 // Response for a list of update market proposals
@@ -502,7 +496,7 @@ message GetUpdateMarketProposalsResponse {
 // Request for a list of network parameter proposals
 message GetNetworkParametersProposalsRequest {
   // Optional proposal state
-  OptionalProposalState select_in_state = 1;
+  optional vega.Proposal.State select_in_state = 1;
 }
 
 // Response for a list of network parameter proposals
@@ -514,7 +508,7 @@ message GetNetworkParametersProposalsResponse {
 // Request for a list of new freeform proposals
 message GetNewFreeformProposalsRequest {
   // Optional proposal state
-  OptionalProposalState select_in_state = 1;
+  optional vega.Proposal.State select_in_state = 1;
 }
 
 // Response for a list of new freeform proposals
@@ -526,7 +520,7 @@ message GetNewFreeformProposalsResponse {
 // Request for a list of new asset proposals
 message GetNewAssetProposalsRequest {
   // Optional proposal state
-  OptionalProposalState select_in_state = 1;
+  optional vega.Proposal.State select_in_state = 1;
 }
 
 // Response for a list of new asset proposals
