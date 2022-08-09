@@ -16,7 +16,6 @@ import (
 	"errors"
 	"strconv"
 
-	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
@@ -97,10 +96,6 @@ func PriceMonitoringSettingsFromProto(ppmst *types.PriceMonitoringSettings) (*Pr
 	return &PriceMonitoringSettings{
 		Parameters: params,
 	}, nil
-}
-
-func (t *ProposalType) IntoProtoValue() v2.ListGovernanceDataRequest_Type {
-	return convertProposalTypeToProto(*t)
 }
 
 // ProposalVoteFromProto ...

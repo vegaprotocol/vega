@@ -15,7 +15,6 @@ package gql
 import (
 	"fmt"
 
-	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -56,26 +55,6 @@ func convertDataNodeIntervalToProto(interval string) (types.Interval, error) {
 	default:
 		err := fmt.Errorf("failed to convert Interval from GraphQL to Proto: %v", interval)
 		return types.Interval_INTERVAL_UNSPECIFIED, err
-	}
-}
-
-// convertProposalStateToProto converts a GraphQL enum to a Proto enum.
-func convertProposalTypeToProto(x ProposalType) v2.ListGovernanceDataRequest_Type {
-	switch x {
-	case ProposalTypeNewMarket:
-		return v2.ListGovernanceDataRequest_TYPE_NEW_MARKET
-	case ProposalTypeUpdateMarket:
-		return v2.ListGovernanceDataRequest_TYPE_UPDATE_MARKET
-	case ProposalTypeNetworkParameters:
-		return v2.ListGovernanceDataRequest_TYPE_NETWORK_PARAMETERS
-	case ProposalTypeNewAsset:
-		return v2.ListGovernanceDataRequest_TYPE_NEW_ASSET
-	case ProposalTypeUpdateAsset:
-		return v2.ListGovernanceDataRequest_TYPE_UPDATE_ASSET
-	case ProposalTypeNewFreeForm:
-		return v2.ListGovernanceDataRequest_TYPE_NEW_FREE_FORM
-	default:
-		return v2.ListGovernanceDataRequest_TYPE_ALL
 	}
 }
 

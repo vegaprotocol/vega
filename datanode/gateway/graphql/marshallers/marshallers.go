@@ -6,6 +6,7 @@ import (
 	"io"
 	"strconv"
 
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
@@ -324,4 +325,24 @@ func UnmarshalInterval(v interface{}) (vega.Interval, error) {
 	}
 
 	return vega.Interval(t), nil
+}
+
+func MarshalProposalType(s v2.ListGovernanceDataRequest_Type) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalProposalType(v interface{}) (v2.ListGovernanceDataRequest_Type, error) {
+	s, ok := v.(string)
+	if !ok {
+		return v2.ListGovernanceDataRequest_TYPE_UNSPECIFIED, fmt.Errorf("expected proposal type in force to be a string")
+	}
+
+	t, ok := v2.ListGovernanceDataRequest_Type_value[s]
+	if !ok {
+		return v2.ListGovernanceDataRequest_TYPE_UNSPECIFIED, fmt.Errorf("failed to convert proposal type from GraphQL to Proto: %v", s)
+	}
+
+	return v2.ListGovernanceDataRequest_Type(t), nil
 }

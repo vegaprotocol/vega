@@ -3032,17 +3032,17 @@ Various proposal types that are supported by Vega
 """
 enum ProposalType {
   "Propose a new market"
-  NewMarket
+  TYPE_NEW_MARKET
   "Update an existing market"
-  UpdateMarket
+  TYPE_UPDATE_MARKET
   "Proposal to change Vega network parameters"
-  NetworkParameters
+  TYPE_NETWORK_PARAMETERS
   "Proposal to add a new asset"
-  NewAsset
-  "Proposal to update an existing asset"
-  UpdateAsset
+  TYPE_NEW_ASSET
   "Proposal to create a new freeform proposal"
-  NewFreeForm
+  TYPE_NEW_FREE_FORM
+  "Proposal to update an existing asset"
+  TYPE_UPDATE_ASSET
 }
 
 """

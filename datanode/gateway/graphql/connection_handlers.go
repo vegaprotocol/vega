@@ -88,26 +88,20 @@ func handleDepositsConnectionRequest(ctx context.Context, client TradingDataServ
 	return resp.Deposits, nil
 }
 
-func handleProposalsRequest(ctx context.Context, client TradingDataServiceClientV2, party *types.Party, ref *string, inType *ProposalType,
+func handleProposalsRequest(ctx context.Context, client TradingDataServiceClientV2, party *types.Party, ref *string, inType *v2.ListGovernanceDataRequest_Type,
 	inState *vega.Proposal_State, pagination *v2.Pagination,
 ) (*v2.GovernanceDataConnection, error) {
 	var partyID *string
 	var proposalState *types.Proposal_State
-	var proposalType *v2.ListGovernanceDataRequest_Type
 
 	if party != nil {
 		partyID = &party.Id
 	}
 
-	if inType != nil {
-		pType := inType.IntoProtoValue()
-		proposalType = &pType
-	}
-
 	req := v2.ListGovernanceDataRequest{
 		ProposerPartyId:   partyID,
 		ProposalReference: ref,
-		ProposalType:      proposalType,
+		ProposalType:      inType,
 		ProposalState:     proposalState,
 		Pagination:        pagination,
 	}

@@ -916,7 +916,7 @@ type ComplexityRoot struct {
 		Positions                     func(childComplexity int) int
 		PositionsConnection           func(childComplexity int, market *string, pagination *v2.Pagination) int
 		Proposals                     func(childComplexity int, inState *vega.Proposal_State) int
-		ProposalsConnection           func(childComplexity int, proposalType *ProposalType, inState *vega.Proposal_State, pagination *v2.Pagination) int
+		ProposalsConnection           func(childComplexity int, proposalType *v2.ListGovernanceDataRequest_Type, inState *vega.Proposal_State, pagination *v2.Pagination) int
 		RewardDetails                 func(childComplexity int) int
 		RewardSummaries               func(childComplexity int, asset *string) int
 		Rewards                       func(childComplexity int, asset *string, skip *int, first *int, last *int) int
@@ -1126,7 +1126,7 @@ type ComplexityRoot struct {
 		Party                              func(childComplexity int, id string) int
 		Proposal                           func(childComplexity int, id *string, reference *string) int
 		Proposals                          func(childComplexity int, inState *vega.Proposal_State) int
-		ProposalsConnection                func(childComplexity int, proposalType *ProposalType, inState *vega.Proposal_State, pagination *v2.Pagination) int
+		ProposalsConnection                func(childComplexity int, proposalType *v2.ListGovernanceDataRequest_Type, inState *vega.Proposal_State, pagination *v2.Pagination) int
 		Statistics                         func(childComplexity int) int
 		Transfers                          func(childComplexity int, pubkey string, isFrom *bool, isTo *bool) int
 		TransfersConnection                func(childComplexity int, pubkey *string, direction TransferDirection, pagination *v2.Pagination) int
@@ -1771,7 +1771,7 @@ type PartyResolver interface {
 	Margins(ctx context.Context, obj *vega.Party, marketID *string) ([]*vega.MarginLevels, error)
 	MarginsConnection(ctx context.Context, obj *vega.Party, marketID *string, pagination *v2.Pagination) (*v2.MarginConnection, error)
 	Proposals(ctx context.Context, obj *vega.Party, inState *vega.Proposal_State) ([]*vega.GovernanceData, error)
-	ProposalsConnection(ctx context.Context, obj *vega.Party, proposalType *ProposalType, inState *vega.Proposal_State, pagination *v2.Pagination) (*v2.GovernanceDataConnection, error)
+	ProposalsConnection(ctx context.Context, obj *vega.Party, proposalType *v2.ListGovernanceDataRequest_Type, inState *vega.Proposal_State, pagination *v2.Pagination) (*v2.GovernanceDataConnection, error)
 	Votes(ctx context.Context, obj *vega.Party) ([]*ProposalVote, error)
 	VotesConnection(ctx context.Context, obj *vega.Party, pagination *v2.Pagination) (*ProposalVoteConnection, error)
 	Withdrawals(ctx context.Context, obj *vega.Party) ([]*vega.Withdrawal, error)
@@ -1842,7 +1842,7 @@ type QueryResolver interface {
 	OrderVersionsConnection(ctx context.Context, orderID *string, pagination *v2.Pagination) (*v2.OrderConnection, error)
 	OrderByReference(ctx context.Context, reference string) (*vega.Order, error)
 	Proposals(ctx context.Context, inState *vega.Proposal_State) ([]*vega.GovernanceData, error)
-	ProposalsConnection(ctx context.Context, proposalType *ProposalType, inState *vega.Proposal_State, pagination *v2.Pagination) (*v2.GovernanceDataConnection, error)
+	ProposalsConnection(ctx context.Context, proposalType *v2.ListGovernanceDataRequest_Type, inState *vega.Proposal_State, pagination *v2.Pagination) (*v2.GovernanceDataConnection, error)
 	Proposal(ctx context.Context, id *string, reference *string) (*vega.GovernanceData, error)
 	NewMarketProposals(ctx context.Context, inState *vega.Proposal_State) ([]*vega.GovernanceData, error)
 	UpdateMarketProposals(ctx context.Context, marketID *string, inState *vega.Proposal_State) ([]*vega.GovernanceData, error)
@@ -5553,7 +5553,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Party.ProposalsConnection(childComplexity, args["proposalType"].(*ProposalType), args["inState"].(*vega.Proposal_State), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Party.ProposalsConnection(childComplexity, args["proposalType"].(*v2.ListGovernanceDataRequest_Type), args["inState"].(*vega.Proposal_State), args["pagination"].(*v2.Pagination)), true
 
 	case "Party.rewardDetails":
 		if e.complexity.Party.RewardDetails == nil {
@@ -6727,7 +6727,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.ProposalsConnection(childComplexity, args["proposalType"].(*ProposalType), args["inState"].(*vega.Proposal_State), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Query.ProposalsConnection(childComplexity, args["proposalType"].(*v2.ListGovernanceDataRequest_Type), args["inState"].(*vega.Proposal_State), args["pagination"].(*v2.Pagination)), true
 
 	case "Query.statistics":
 		if e.complexity.Query.Statistics == nil {
@@ -11469,17 +11469,17 @@ Various proposal types that are supported by Vega
 """
 enum ProposalType {
   "Propose a new market"
-  NewMarket
+  TYPE_NEW_MARKET
   "Update an existing market"
-  UpdateMarket
+  TYPE_UPDATE_MARKET
   "Proposal to change Vega network parameters"
-  NetworkParameters
+  TYPE_NETWORK_PARAMETERS
   "Proposal to add a new asset"
-  NewAsset
-  "Proposal to update an existing asset"
-  UpdateAsset
+  TYPE_NEW_ASSET
   "Proposal to create a new freeform proposal"
-  NewFreeForm
+  TYPE_NEW_FREE_FORM
+  "Proposal to update an existing asset"
+  TYPE_UPDATE_ASSET
 }
 
 """
@@ -13168,10 +13168,10 @@ func (ec *executionContext) field_Party_positionsConnection_args(ctx context.Con
 func (ec *executionContext) field_Party_proposalsConnection_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *ProposalType
+	var arg0 *v2.ListGovernanceDataRequest_Type
 	if tmp, ok := rawArgs["proposalType"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("proposalType"))
-		arg0, err = ec.unmarshalOProposalType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProposalType(ctx, tmp)
+		arg0, err = ec.unmarshalOProposalType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐListGovernanceDataRequest_Type(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -14284,10 +14284,10 @@ func (ec *executionContext) field_Query_proposal_args(ctx context.Context, rawAr
 func (ec *executionContext) field_Query_proposalsConnection_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *ProposalType
+	var arg0 *v2.ListGovernanceDataRequest_Type
 	if tmp, ok := rawArgs["proposalType"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("proposalType"))
-		arg0, err = ec.unmarshalOProposalType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProposalType(ctx, tmp)
+		arg0, err = ec.unmarshalOProposalType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐListGovernanceDataRequest_Type(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -31396,7 +31396,7 @@ func (ec *executionContext) _Party_proposalsConnection(ctx context.Context, fiel
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Party().ProposalsConnection(rctx, obj, args["proposalType"].(*ProposalType), args["inState"].(*vega.Proposal_State), args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Party().ProposalsConnection(rctx, obj, args["proposalType"].(*v2.ListGovernanceDataRequest_Type), args["inState"].(*vega.Proposal_State), args["pagination"].(*v2.Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -35311,7 +35311,7 @@ func (ec *executionContext) _Query_proposalsConnection(ctx context.Context, fiel
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().ProposalsConnection(rctx, args["proposalType"].(*ProposalType), args["inState"].(*vega.Proposal_State), args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Query().ProposalsConnection(rctx, args["proposalType"].(*v2.ListGovernanceDataRequest_Type), args["inState"].(*vega.Proposal_State), args["pagination"].(*v2.Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -66939,20 +66939,20 @@ func (ec *executionContext) marshalOProposalState2ᚖcodeᚗvegaprotocolᚗioᚋ
 	return res
 }
 
-func (ec *executionContext) unmarshalOProposalType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProposalType(ctx context.Context, v interface{}) (*ProposalType, error) {
+func (ec *executionContext) unmarshalOProposalType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐListGovernanceDataRequest_Type(ctx context.Context, v interface{}) (*v2.ListGovernanceDataRequest_Type, error) {
 	if v == nil {
 		return nil, nil
 	}
-	var res = new(ProposalType)
-	err := res.UnmarshalGQL(v)
-	return res, graphql.ErrorOnPath(ctx, err)
+	res, err := marshallers.UnmarshalProposalType(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOProposalType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProposalType(ctx context.Context, sel ast.SelectionSet, v *ProposalType) graphql.Marshaler {
+func (ec *executionContext) marshalOProposalType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐListGovernanceDataRequest_Type(ctx context.Context, sel ast.SelectionSet, v *v2.ListGovernanceDataRequest_Type) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return v
+	res := marshallers.MarshalProposalType(*v)
+	return res
 }
 
 func (ec *executionContext) marshalOProposalVote2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProposalVote(ctx context.Context, sel ast.SelectionSet, v []*ProposalVote) graphql.Marshaler {
