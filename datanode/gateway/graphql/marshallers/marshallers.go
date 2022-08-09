@@ -175,3 +175,23 @@ func MarshalAuctionTrigger(s vega.AuctionTrigger) graphql.Marshaler {
 func UnmarshalAuctionTrigger(v interface{}) (vega.AuctionTrigger, error) {
 	return vega.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED, ErrUnimplemented
 }
+
+func MarshalStakeLinkingStatus(s eventspb.StakeLinking_Status) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalStakeLinkingStatus(v interface{}) (eventspb.StakeLinking_Status, error) {
+	return eventspb.StakeLinking_STATUS_UNSPECIFIED, ErrUnimplemented
+}
+
+func MarshalStakeLinkingType(s eventspb.StakeLinking_Type) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalStakeLinkingType(v interface{}) (eventspb.StakeLinking_Type, error) {
+	return eventspb.StakeLinking_TYPE_UNSPECIFIED, ErrUnimplemented
+}

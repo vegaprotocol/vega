@@ -20,6 +20,12 @@ models:
   Side:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.Side
+  StakeLinkingType:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.StakeLinkingType
+  StakeLinkingStatus:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.StakeLinkingStatus
   TransferStatus:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.TransferStatus

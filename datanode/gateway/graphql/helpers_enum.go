@@ -17,38 +17,7 @@ import (
 
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/vega/protos/vega"
-	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
-
-func convertStakeLinkingTypeFromProto(
-	s eventspb.StakeLinking_Type,
-) (StakeLinkingType, error) {
-	switch s {
-	case eventspb.StakeLinking_TYPE_LINK:
-		return StakeLinkingTypeLink, nil
-	case eventspb.StakeLinking_TYPE_UNLINK:
-		return StakeLinkingTypeUnlink, nil
-	default:
-		err := fmt.Errorf("failed to convert StakeLinkingType from Proto to GraphQL: %v", s)
-		return StakeLinkingType(""), err
-	}
-}
-
-func convertStakeLinkingStatusFromProto(
-	s eventspb.StakeLinking_Status,
-) (StakeLinkingStatus, error) {
-	switch s {
-	case eventspb.StakeLinking_STATUS_PENDING:
-		return StakeLinkingStatusPending, nil
-	case eventspb.StakeLinking_STATUS_ACCEPTED:
-		return StakeLinkingStatusAccepted, nil
-	case eventspb.StakeLinking_STATUS_REJECTED:
-		return StakeLinkingStatusRejected, nil
-	default:
-		err := fmt.Errorf("failed to convert StakeLinkingStatus from Proto to GraphQL: %v", s)
-		return StakeLinkingStatus(""), err
-	}
-}
 
 func convertLiquidityProvisionStatusFromProto(x types.LiquidityProvision_Status) (LiquidityProvisionStatus, error) {
 	switch x {

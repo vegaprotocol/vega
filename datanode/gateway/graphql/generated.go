@@ -1928,11 +1928,9 @@ type RewardSummaryResolver interface {
 	RewardsConnection(ctx context.Context, obj *vega.RewardSummary, asset *string, pagination *v2.Pagination) (*v2.RewardsConnection, error)
 }
 type StakeLinkingResolver interface {
-	Type(ctx context.Context, obj *v1.StakeLinking) (StakeLinkingType, error)
 	Timestamp(ctx context.Context, obj *v1.StakeLinking) (string, error)
 	Party(ctx context.Context, obj *v1.StakeLinking) (*vega.Party, error)
 
-	Status(ctx context.Context, obj *v1.StakeLinking) (StakeLinkingStatus, error)
 	FinalizedAt(ctx context.Context, obj *v1.StakeLinking) (*string, error)
 }
 type StatisticsResolver interface {
@@ -10516,9 +10514,9 @@ type StakingSummary {
 "The type of stake linking"
 enum StakeLinkingType {
   "The stake is being linked (deposited) to a Vega stake account"
-  Link
+  TYPE_LINK
   "The stake is being unlinked (removed) from a Vega stake account"
-  Unlink
+  TYPE_UNLINK
 }
 
 "The status of the stake linking"
@@ -10528,11 +10526,11 @@ enum StakeLinkingStatus {
   the Vega network have seen a stake linking, but is still to confirm
   it's valid on the ethereum chain and accepted by all nodes of the network
   """
-  Pending
+  STATUS_PENDING
   "The stake linking has been accepted and processed fully (balance updated) by the network"
-  Accepted
+  STATUS_ACCEPTED
   "The Vega network has rejected this stake linking"
-  Rejected
+  STATUS_REJECTED
 }
 
 "A stake linking represent the intent from a party to deposit / remove stake on their account"
@@ -38690,14 +38688,14 @@ func (ec *executionContext) _StakeLinking_type(ctx context.Context, field graphq
 		Object:     "StakeLinking",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.StakeLinking().Type(rctx, obj)
+		return obj.Type, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -38709,9 +38707,9 @@ func (ec *executionContext) _StakeLinking_type(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(StakeLinkingType)
+	res := resTmp.(v1.StakeLinking_Type)
 	fc.Result = res
-	return ec.marshalNStakeLinkingType2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐStakeLinkingType(ctx, field.Selections, res)
+	return ec.marshalNStakeLinkingType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐStakeLinking_Type(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _StakeLinking_timestamp(ctx context.Context, field graphql.CollectedField, obj *v1.StakeLinking) (ret graphql.Marshaler) {
@@ -38830,14 +38828,14 @@ func (ec *executionContext) _StakeLinking_status(ctx context.Context, field grap
 		Object:     "StakeLinking",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.StakeLinking().Status(rctx, obj)
+		return obj.Status, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -38849,9 +38847,9 @@ func (ec *executionContext) _StakeLinking_status(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(StakeLinkingStatus)
+	res := resTmp.(v1.StakeLinking_Status)
 	fc.Result = res
-	return ec.marshalNStakeLinkingStatus2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐStakeLinkingStatus(ctx, field.Selections, res)
+	return ec.marshalNStakeLinkingStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐStakeLinking_Status(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _StakeLinking_finalizedAt(ctx context.Context, field graphql.CollectedField, obj *v1.StakeLinking) (ret graphql.Marshaler) {
@@ -58249,25 +58247,15 @@ func (ec *executionContext) _StakeLinking(ctx context.Context, sel ast.Selection
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "type":
-			field := field
-
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._StakeLinking_type(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+				return ec._StakeLinking_type(ctx, field, obj)
 			}
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
+			out.Values[i] = innerFunc(ctx)
 
-			})
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "timestamp":
 			field := field
 
@@ -58319,25 +58307,15 @@ func (ec *executionContext) _StakeLinking(ctx context.Context, sel ast.Selection
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "status":
-			field := field
-
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._StakeLinking_status(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+				return ec._StakeLinking_status(ctx, field, obj)
 			}
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
+			out.Values[i] = innerFunc(ctx)
 
-			})
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "finalizedAt":
 			field := field
 
@@ -63479,24 +63457,34 @@ func (ec *executionContext) marshalNStakeLinking2ᚖcodeᚗvegaprotocolᚗioᚋv
 	return ec._StakeLinking(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNStakeLinkingStatus2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐStakeLinkingStatus(ctx context.Context, v interface{}) (StakeLinkingStatus, error) {
-	var res StakeLinkingStatus
-	err := res.UnmarshalGQL(v)
+func (ec *executionContext) unmarshalNStakeLinkingStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐStakeLinking_Status(ctx context.Context, v interface{}) (v1.StakeLinking_Status, error) {
+	res, err := marshallers.UnmarshalStakeLinkingStatus(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNStakeLinkingStatus2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐStakeLinkingStatus(ctx context.Context, sel ast.SelectionSet, v StakeLinkingStatus) graphql.Marshaler {
-	return v
+func (ec *executionContext) marshalNStakeLinkingStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐStakeLinking_Status(ctx context.Context, sel ast.SelectionSet, v v1.StakeLinking_Status) graphql.Marshaler {
+	res := marshallers.MarshalStakeLinkingStatus(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
 }
 
-func (ec *executionContext) unmarshalNStakeLinkingType2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐStakeLinkingType(ctx context.Context, v interface{}) (StakeLinkingType, error) {
-	var res StakeLinkingType
-	err := res.UnmarshalGQL(v)
+func (ec *executionContext) unmarshalNStakeLinkingType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐStakeLinking_Type(ctx context.Context, v interface{}) (v1.StakeLinking_Type, error) {
+	res, err := marshallers.UnmarshalStakeLinkingType(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNStakeLinkingType2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐStakeLinkingType(ctx context.Context, sel ast.SelectionSet, v StakeLinkingType) graphql.Marshaler {
-	return v
+func (ec *executionContext) marshalNStakeLinkingType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐStakeLinking_Type(ctx context.Context, sel ast.SelectionSet, v v1.StakeLinking_Type) graphql.Marshaler {
+	res := marshallers.MarshalStakeLinkingType(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
 }
 
 func (ec *executionContext) marshalNStakesConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐStakesConnection(ctx context.Context, sel ast.SelectionSet, v *v2.StakesConnection) graphql.Marshaler {

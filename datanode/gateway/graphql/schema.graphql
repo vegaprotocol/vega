@@ -2061,9 +2061,9 @@ type StakingSummary {
 "The type of stake linking"
 enum StakeLinkingType {
   "The stake is being linked (deposited) to a Vega stake account"
-  Link
+  TYPE_LINK
   "The stake is being unlinked (removed) from a Vega stake account"
-  Unlink
+  TYPE_UNLINK
 }
 
 "The status of the stake linking"
@@ -2073,11 +2073,11 @@ enum StakeLinkingStatus {
   the Vega network have seen a stake linking, but is still to confirm
   it's valid on the ethereum chain and accepted by all nodes of the network
   """
-  Pending
+  STATUS_PENDING
   "The stake linking has been accepted and processed fully (balance updated) by the network"
-  Accepted
+  STATUS_ACCEPTED
   "The Vega network has rejected this stake linking"
-  Rejected
+  STATUS_REJECTED
 }
 
 "A stake linking represent the intent from a party to deposit / remove stake on their account"
