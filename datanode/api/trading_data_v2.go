@@ -47,42 +47,43 @@ var defaultPaginationV2 = entities.OffsetPagination{
 
 type tradingDataServiceV2 struct {
 	v2.UnimplementedTradingDataServiceServer
-	config                    Config
-	log                       *logging.Logger
-	eventService              EventService
-	orderService              *service.Order
-	networkLimitsService      *service.NetworkLimits
-	marketDataService         *service.MarketData
-	tradeService              *service.Trade
-	multiSigService           *service.MultiSig
-	notaryService             *service.Notary
-	assetService              *service.Asset
-	candleService             *candlesv2.Svc
-	marketsService            *service.Markets
-	partyService              *service.Party
-	riskService               *service.Risk
-	positionService           *service.Position
-	accountService            *service.Account
-	rewardService             *service.Reward
-	depositService            *service.Deposit
-	withdrawalService         *service.Withdrawal
-	oracleSpecService         *service.OracleSpec
-	oracleDataService         *service.OracleData
-	liquidityProvisionService *service.LiquidityProvision
-	governanceService         *service.Governance
-	transfersService          *service.Transfer
-	delegationService         *service.Delegation
-	marketService             *service.Markets
-	marketDepthService        *service.MarketDepth
-	nodeService               *service.Node
-	epochService              *service.Epoch
-	riskFactorService         *service.RiskFactor
-	networkParameterService   *service.NetworkParameter
-	checkpointService         *service.Checkpoint
-	stakeLinkingService       *service.StakeLinking
-	ledgerService             *service.Ledger
-	keyRotationService        *service.KeyRotations
-	blockService              *service.Block
+	config                     Config
+	log                        *logging.Logger
+	eventService               EventService
+	orderService               *service.Order
+	networkLimitsService       *service.NetworkLimits
+	marketDataService          *service.MarketData
+	tradeService               *service.Trade
+	multiSigService            *service.MultiSig
+	notaryService              *service.Notary
+	assetService               *service.Asset
+	candleService              *candlesv2.Svc
+	marketsService             *service.Markets
+	partyService               *service.Party
+	riskService                *service.Risk
+	positionService            *service.Position
+	accountService             *service.Account
+	rewardService              *service.Reward
+	depositService             *service.Deposit
+	withdrawalService          *service.Withdrawal
+	oracleSpecService          *service.OracleSpec
+	oracleDataService          *service.OracleData
+	liquidityProvisionService  *service.LiquidityProvision
+	governanceService          *service.Governance
+	transfersService           *service.Transfer
+	delegationService          *service.Delegation
+	marketService              *service.Markets
+	marketDepthService         *service.MarketDepth
+	nodeService                *service.Node
+	epochService               *service.Epoch
+	riskFactorService          *service.RiskFactor
+	networkParameterService    *service.NetworkParameter
+	checkpointService          *service.Checkpoint
+	stakeLinkingService        *service.StakeLinking
+	ledgerService              *service.Ledger
+	keyRotationService         *service.KeyRotations
+	ethereumKeyRotationService *service.EthereumKeyRotation
+	blockService               *service.Block
 }
 
 func (t *tradingDataServiceV2) ListAccounts(ctx context.Context, req *v2.ListAccountsRequest) (*v2.ListAccountsResponse, error) {
@@ -2510,6 +2511,34 @@ func makeKeyRotationResponse(rotations []entities.KeyRotation, pageInfo entities
 	return &v2.ListKeyRotationsResponse{
 		Rotations: keyRotationConnection,
 	}, nil
+}
+
+// -- Ethereum Key Rotations --.
+func (t *tradingDataServiceV2) ListEthereumKeyRotations(ctx context.Context, req *v2.ListEthereumKeyRotationsRequest) (*v2.ListEthereumKeyRotationsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListEthereumKeyRotationsV2")()
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, apiError(codes.InvalidArgument, err)
+	}
+
+	rotations, pageInfo, err := t.ethereumKeyRotationService.List(ctx, entities.NodeID(req.GetNodeId()), pagination)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	edges, err := makeEdges[*v2.EthereumKeyRotationEdge](rotations)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	connection := &v2.EthereumKeyRotationsConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
+	}
+
+	resp := v2.ListEthereumKeyRotationsResponse{KeyRotations: connection}
+	return &resp, nil
 }
 
 // Get Time.

@@ -27,7 +27,7 @@ func CheckSubmitTransactionRequest(req *walletpb.SubmitTransactionRequest) comma
 	case *walletpb.SubmitTransactionRequest_OrderSubmission:
 		cmdErr = commands.CheckOrderSubmission(cmd.OrderSubmission)
 	case *walletpb.SubmitTransactionRequest_OrderCancellation:
-		cmdErr = commands.NewErrors()
+		cmdErr = commands.CheckOrderCancellation(cmd.OrderCancellation)
 	case *walletpb.SubmitTransactionRequest_OrderAmendment:
 		cmdErr = commands.CheckOrderAmendment(cmd.OrderAmendment)
 	case *walletpb.SubmitTransactionRequest_VoteSubmission:

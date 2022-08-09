@@ -45,6 +45,7 @@ type NodeStore interface {
 	UpsertScore(context.Context, *entities.RewardScore, *entities.RewardScoreAux) error
 	UpdatePublicKey(context.Context, *entities.KeyRotation) error
 	AddNodeAnnoucedEvent(context.Context, string, time.Time, *entities.ValidatorUpdateAux) error
+	UpdateEthereumAddress(ctx context.Context, kr entities.EthereumKeyRotation) error
 }
 
 type Node struct {
@@ -74,6 +75,8 @@ func (n *Node) Push(ctx context.Context, evt events.Event) error {
 		return n.consumeRewardScore(ctx, e)
 	case KeyRotationEvent:
 		return n.consumeKeyRotation(ctx, e)
+	case EthereumKeyRotationEvent:
+		return n.consumeEthereumKeyRotation(ctx, e)
 	default:
 		return errors.Errorf("unknown event type %s", e.Type().String())
 	}
@@ -117,4 +120,14 @@ func (n *Node) consumeKeyRotation(ctx context.Context, event KeyRotationEvent) e
 	}
 
 	return errors.Wrap(n.store.UpdatePublicKey(ctx, record), "Updating public key to SQL store failed")
+}
+
+func (n *Node) consumeEthereumKeyRotation(ctx context.Context, event EthereumKeyRotationEvent) error {
+	key_rotation := event.EthereumKeyRotation()
+	record, err := entities.EthereumKeyRotationFromProto(&key_rotation, n.vegaTime)
+	if err != nil {
+		return errors.Wrap(err, "converting ethereum key rotation proto to database entity failed")
+	}
+
+	return errors.Wrap(n.store.UpdateEthereumAddress(ctx, record), "Updating public key to SQL store failed")
 }

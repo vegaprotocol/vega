@@ -214,6 +214,9 @@ service TradingDataService {
     // -- Key Rotations --
     rpc ListKeyRotations(ListKeyRotationsRequest) returns (ListKeyRotationsResponse);
 
+    // -- Ethereum Key Rotations --
+    rpc ListEthereumKeyRotations(ListEthereumKeyRotationsRequest) returns (ListEthereumKeyRotationsResponse);
+
     // -- Vega Time --
 
     // Get Time
@@ -1609,6 +1612,28 @@ message KeyRotationConnection {
     PageInfo page_info = 2;
 }
 
+// -- Ethereum Key Rotations --
+// Request to list ethereum key rotations for nodes, optionally filtered by node
+message ListEthereumKeyRotationsRequest {
+    optional string node_id = 1;
+    optional Pagination pagination = 2;
+}
+
+// Response message containing all checkpoints requested
+message ListEthereumKeyRotationsResponse {
+    EthereumKeyRotationsConnection key_rotations = 1;
+}
+
+message EthereumKeyRotationsConnection {
+    repeated EthereumKeyRotationEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
+message EthereumKeyRotationEdge {
+    vega.events.v1.EthereumKeyRotation ethereum_key_rotation = 1;
+    string cursor = 2;
+}
+
 // -- Vega Time --
 // Request for the current time of the vega network
 message GetVegaTimeRequest {}
@@ -1619,4 +1644,3 @@ message GetVegaTimeResponse {
     // Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2020-01-31T12:30:59.111222333Z`
     int64 timestamp = 1;
 }
-

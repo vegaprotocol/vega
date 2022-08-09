@@ -177,6 +177,8 @@ type TradingDataServiceClient interface {
 	ObserveTransferResponses(ctx context.Context, in *ObserveTransferResponsesRequest, opts ...grpc.CallOption) (TradingDataService_ObserveTransferResponsesClient, error)
 	// -- Key Rotations --
 	ListKeyRotations(ctx context.Context, in *ListKeyRotationsRequest, opts ...grpc.CallOption) (*ListKeyRotationsResponse, error)
+	// -- Ethereum Key Rotations --
+	ListEthereumKeyRotations(ctx context.Context, in *ListEthereumKeyRotationsRequest, opts ...grpc.CallOption) (*ListEthereumKeyRotationsResponse, error)
 	// Get Time
 	GetVegaTime(ctx context.Context, in *GetVegaTimeRequest, opts ...grpc.CallOption) (*GetVegaTimeResponse, error)
 }
@@ -1163,6 +1165,15 @@ func (c *tradingDataServiceClient) ListKeyRotations(ctx context.Context, in *Lis
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) ListEthereumKeyRotations(ctx context.Context, in *ListEthereumKeyRotationsRequest, opts ...grpc.CallOption) (*ListEthereumKeyRotationsResponse, error) {
+	out := new(ListEthereumKeyRotationsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListEthereumKeyRotations", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) GetVegaTime(ctx context.Context, in *GetVegaTimeRequest, opts ...grpc.CallOption) (*GetVegaTimeResponse, error) {
 	out := new(GetVegaTimeResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetVegaTime", in, out, opts...)
@@ -1331,6 +1342,8 @@ type TradingDataServiceServer interface {
 	ObserveTransferResponses(*ObserveTransferResponsesRequest, TradingDataService_ObserveTransferResponsesServer) error
 	// -- Key Rotations --
 	ListKeyRotations(context.Context, *ListKeyRotationsRequest) (*ListKeyRotationsResponse, error)
+	// -- Ethereum Key Rotations --
+	ListEthereumKeyRotations(context.Context, *ListEthereumKeyRotationsRequest) (*ListEthereumKeyRotationsResponse, error)
 	// Get Time
 	GetVegaTime(context.Context, *GetVegaTimeRequest) (*GetVegaTimeResponse, error)
 	mustEmbedUnimplementedTradingDataServiceServer()
@@ -1549,6 +1562,9 @@ func (UnimplementedTradingDataServiceServer) ObserveTransferResponses(*ObserveTr
 }
 func (UnimplementedTradingDataServiceServer) ListKeyRotations(context.Context, *ListKeyRotationsRequest) (*ListKeyRotationsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListKeyRotations not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ListEthereumKeyRotations(context.Context, *ListEthereumKeyRotationsRequest) (*ListEthereumKeyRotationsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListEthereumKeyRotations not implemented")
 }
 func (UnimplementedTradingDataServiceServer) GetVegaTime(context.Context, *GetVegaTimeRequest) (*GetVegaTimeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetVegaTime not implemented")
@@ -2876,6 +2892,24 @@ func _TradingDataService_ListKeyRotations_Handler(srv interface{}, ctx context.C
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_ListEthereumKeyRotations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListEthereumKeyRotationsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListEthereumKeyRotations(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListEthereumKeyRotations",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListEthereumKeyRotations(ctx, req.(*ListEthereumKeyRotationsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_GetVegaTime_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetVegaTimeRequest)
 	if err := dec(in); err != nil {
@@ -3120,6 +3154,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListKeyRotations",
 			Handler:    _TradingDataService_ListKeyRotations_Handler,
+		},
+		{
+			MethodName: "ListEthereumKeyRotations",
+			Handler:    _TradingDataService_ListEthereumKeyRotations_Handler,
 		},
 		{
 			MethodName: "GetVegaTime",

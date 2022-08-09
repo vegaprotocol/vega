@@ -22,7 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/proto"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
-	tmctypes "github.com/tendermint/tendermint/rpc/coretypes"
+	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 

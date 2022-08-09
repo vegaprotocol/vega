@@ -573,6 +573,9 @@ type Query {
   "query for historic key rotations"
   keyRotationsConnection(id: String, pagination: Pagination): KeyRotationConnection!
 
+  "query for historic ethereum key rotations"
+  ethereumKeyRotations(nodeId: String): EthereumKeyRotationsConnection!
+
   "get data for a specific epoch, if ID omitted it gets the current epoch. If the string is 'next', fetch the next epoch"
   epoch(id: String): Epoch!
 
@@ -773,6 +776,30 @@ type KeyRotation {
   oldPubKey: String!
   "New public key rotated to"
   newPubKey: String!
+  "Block height when the rotation took place"
+  blockHeight: String!
+}
+
+type EthereumKeyRotationEdge {
+  ethereumKeyRotation: EthereumKeyRotation!
+  cursor: String
+}
+
+type EthereumKeyRotationsConnection {
+  "The ethereum key rotations in this connection"
+  edges: [EthereumKeyRotationEdge!]!
+  "The pagination information"
+  pageInfo: PageInfo
+}
+
+# Describes the ethereum key rotations of nodes on the vega network
+type EthereumKeyRotation {
+  "ID of node where rotation took place"
+  nodeId: String!
+  "Old ethereum address"
+  oldAddress: String!
+  "New ethereum address"
+  newAddress: String!
   "Block height when the rotation took place"
   blockHeight: String!
 }
@@ -2984,8 +3011,9 @@ type ProposalTerms {
   """
   RFC3339Nano time and date when this proposal is executed (if passed). Note that it has to be after closing date time.
   Constrained by "minEnactInSeconds" and "maxEnactInSeconds" network parameters.
+  Note: Optional as free form proposals do not require it.
   """
-  enactmentDatetime: String!
+  enactmentDatetime: String
 
   "Actual change being introduced by the proposal - action the proposal triggers if passed and enacted."
   change: ProposalChange!

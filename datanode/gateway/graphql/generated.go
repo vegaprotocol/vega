@@ -55,6 +55,7 @@ type ResolverRoot interface {
 	Deposit() DepositResolver
 	Epoch() EpochResolver
 	EpochTimestamps() EpochTimestampsResolver
+	EthereumKeyRotation() EthereumKeyRotationResolver
 	Future() FutureResolver
 	FutureProduct() FutureProductResolver
 	Instrument() InstrumentResolver
@@ -335,6 +336,23 @@ type ComplexityRoot struct {
 	EthereumEvent struct {
 		ContractID func(childComplexity int) int
 		Event      func(childComplexity int) int
+	}
+
+	EthereumKeyRotation struct {
+		BlockHeight func(childComplexity int) int
+		NewAddress  func(childComplexity int) int
+		NodeId      func(childComplexity int) int
+		OldAddress  func(childComplexity int) int
+	}
+
+	EthereumKeyRotationEdge struct {
+		Cursor              func(childComplexity int) int
+		EthereumKeyRotation func(childComplexity int) int
+	}
+
+	EthereumKeyRotationsConnection struct {
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
 	}
 
 	FeeFactors struct {
@@ -1073,6 +1091,7 @@ type ComplexityRoot struct {
 		Epoch                              func(childComplexity int, id *string) int
 		Erc20WithdrawalApproval            func(childComplexity int, withdrawalID string) int
 		EstimateOrder                      func(childComplexity int, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) int
+		EthereumKeyRotations               func(childComplexity int, nodeID *string) int
 		GetMarketDataHistoryByID           func(childComplexity int, id string, start *int, end *int, skip *int, first *int, last *int) int
 		GetMarketDataHistoryConnectionByID func(childComplexity int, id string, start *int, end *int, pagination *v2.Pagination) int
 		HistoricBalances                   func(childComplexity int, filter *v2.AccountFilter, groupBy []*v2.AccountField) int
@@ -1557,6 +1576,9 @@ type EpochTimestampsResolver interface {
 	Expiry(ctx context.Context, obj *vega.EpochTimestamps) (*string, error)
 	End(ctx context.Context, obj *vega.EpochTimestamps) (*string, error)
 }
+type EthereumKeyRotationResolver interface {
+	BlockHeight(ctx context.Context, obj *v1.EthereumKeyRotation) (string, error)
+}
 type FutureResolver interface {
 	SettlementAsset(ctx context.Context, obj *vega.Future) (*vega.Asset, error)
 }
@@ -1830,7 +1852,7 @@ type ProposalResolver interface {
 }
 type ProposalTermsResolver interface {
 	ClosingDatetime(ctx context.Context, obj *vega.ProposalTerms) (string, error)
-	EnactmentDatetime(ctx context.Context, obj *vega.ProposalTerms) (string, error)
+	EnactmentDatetime(ctx context.Context, obj *vega.ProposalTerms) (*string, error)
 	Change(ctx context.Context, obj *vega.ProposalTerms) (ProposalChange, error)
 }
 type QueryResolver interface {
@@ -1877,6 +1899,7 @@ type QueryResolver interface {
 	Node(ctx context.Context, id string) (*vega.Node, error)
 	KeyRotations(ctx context.Context, id *string) ([]*v1.KeyRotation, error)
 	KeyRotationsConnection(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.KeyRotationConnection, error)
+	EthereumKeyRotations(ctx context.Context, nodeID *string) (*v2.EthereumKeyRotationsConnection, error)
 	Epoch(ctx context.Context, id *string) (*vega.Epoch, error)
 	Transfers(ctx context.Context, pubkey string, isFrom *bool, isTo *bool) ([]*v1.Transfer, error)
 	TransfersConnection(ctx context.Context, pubkey *string, direction TransferDirection, pagination *v2.Pagination) (*v2.TransferConnection, error)
@@ -2926,6 +2949,62 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.EthereumEvent.Event(childComplexity), true
+
+	case "EthereumKeyRotation.blockHeight":
+		if e.complexity.EthereumKeyRotation.BlockHeight == nil {
+			break
+		}
+
+		return e.complexity.EthereumKeyRotation.BlockHeight(childComplexity), true
+
+	case "EthereumKeyRotation.newAddress":
+		if e.complexity.EthereumKeyRotation.NewAddress == nil {
+			break
+		}
+
+		return e.complexity.EthereumKeyRotation.NewAddress(childComplexity), true
+
+	case "EthereumKeyRotation.nodeId":
+		if e.complexity.EthereumKeyRotation.NodeId == nil {
+			break
+		}
+
+		return e.complexity.EthereumKeyRotation.NodeId(childComplexity), true
+
+	case "EthereumKeyRotation.oldAddress":
+		if e.complexity.EthereumKeyRotation.OldAddress == nil {
+			break
+		}
+
+		return e.complexity.EthereumKeyRotation.OldAddress(childComplexity), true
+
+	case "EthereumKeyRotationEdge.cursor":
+		if e.complexity.EthereumKeyRotationEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.EthereumKeyRotationEdge.Cursor(childComplexity), true
+
+	case "EthereumKeyRotationEdge.ethereumKeyRotation":
+		if e.complexity.EthereumKeyRotationEdge.EthereumKeyRotation == nil {
+			break
+		}
+
+		return e.complexity.EthereumKeyRotationEdge.EthereumKeyRotation(childComplexity), true
+
+	case "EthereumKeyRotationsConnection.edges":
+		if e.complexity.EthereumKeyRotationsConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.EthereumKeyRotationsConnection.Edges(childComplexity), true
+
+	case "EthereumKeyRotationsConnection.pageInfo":
+		if e.complexity.EthereumKeyRotationsConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.EthereumKeyRotationsConnection.PageInfo(childComplexity), true
 
 	case "FeeFactors.infrastructureFee":
 		if e.complexity.FeeFactors.InfrastructureFee == nil {
@@ -6234,6 +6313,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.EstimateOrder(childComplexity, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType)), true
 
+	case "Query.ethereumKeyRotations":
+		if e.complexity.Query.EthereumKeyRotations == nil {
+			break
+		}
+
+		args, err := ec.field_Query_ethereumKeyRotations_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.EthereumKeyRotations(childComplexity, args["nodeId"].(*string)), true
+
 	case "Query.getMarketDataHistoryByID":
 		if e.complexity.Query.GetMarketDataHistoryByID == nil {
 			break
@@ -8958,6 +9049,9 @@ type Query {
   "query for historic key rotations"
   keyRotationsConnection(id: String, pagination: Pagination): KeyRotationConnection!
 
+  "query for historic ethereum key rotations"
+  ethereumKeyRotations(nodeId: String): EthereumKeyRotationsConnection!
+
   "get data for a specific epoch, if ID omitted it gets the current epoch. If the string is 'next', fetch the next epoch"
   epoch(id: String): Epoch!
 
@@ -9158,6 +9252,30 @@ type KeyRotation {
   oldPubKey: String!
   "New public key rotated to"
   newPubKey: String!
+  "Block height when the rotation took place"
+  blockHeight: String!
+}
+
+type EthereumKeyRotationEdge {
+  ethereumKeyRotation: EthereumKeyRotation!
+  cursor: String
+}
+
+type EthereumKeyRotationsConnection {
+  "The ethereum key rotations in this connection"
+  edges: [EthereumKeyRotationEdge!]!
+  "The pagination information"
+  pageInfo: PageInfo
+}
+
+# Describes the ethereum key rotations of nodes on the vega network
+type EthereumKeyRotation {
+  "ID of node where rotation took place"
+  nodeId: String!
+  "Old ethereum address"
+  oldAddress: String!
+  "New ethereum address"
+  newAddress: String!
   "Block height when the rotation took place"
   blockHeight: String!
 }
@@ -11369,8 +11487,9 @@ type ProposalTerms {
   """
   RFC3339Nano time and date when this proposal is executed (if passed). Note that it has to be after closing date time.
   Constrained by "minEnactInSeconds" and "maxEnactInSeconds" network parameters.
+  Note: Optional as free form proposals do not require it.
   """
-  enactmentDatetime: String!
+  enactmentDatetime: String
 
   "Actual change being introduced by the proposal - action the proposal triggers if passed and enacted."
   change: ProposalChange!
@@ -12294,7 +12413,8 @@ type AccountsConnection {
   edges: [AccountEdge]
   "Page information for the connection"
   pageInfo: PageInfo!
-}`, BuiltIn: false},
+}
+`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
@@ -13505,6 +13625,21 @@ func (ec *executionContext) field_Query_estimateOrder_args(ctx context.Context, 
 		}
 	}
 	args["type"] = arg7
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_ethereumKeyRotations_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["nodeId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeId"))
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["nodeId"] = arg0
 	return args, nil
 }
 
@@ -19052,6 +19187,280 @@ func (ec *executionContext) _EthereumEvent_event(ctx context.Context, field grap
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _EthereumKeyRotation_nodeId(ctx context.Context, field graphql.CollectedField, obj *v1.EthereumKeyRotation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "EthereumKeyRotation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NodeId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _EthereumKeyRotation_oldAddress(ctx context.Context, field graphql.CollectedField, obj *v1.EthereumKeyRotation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "EthereumKeyRotation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OldAddress, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _EthereumKeyRotation_newAddress(ctx context.Context, field graphql.CollectedField, obj *v1.EthereumKeyRotation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "EthereumKeyRotation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NewAddress, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _EthereumKeyRotation_blockHeight(ctx context.Context, field graphql.CollectedField, obj *v1.EthereumKeyRotation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "EthereumKeyRotation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.EthereumKeyRotation().BlockHeight(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _EthereumKeyRotationEdge_ethereumKeyRotation(ctx context.Context, field graphql.CollectedField, obj *v2.EthereumKeyRotationEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "EthereumKeyRotationEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EthereumKeyRotation, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v1.EthereumKeyRotation)
+	fc.Result = res
+	return ec.marshalNEthereumKeyRotation2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐEthereumKeyRotation(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _EthereumKeyRotationEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.EthereumKeyRotationEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "EthereumKeyRotationEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _EthereumKeyRotationsConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.EthereumKeyRotationsConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "EthereumKeyRotationsConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*v2.EthereumKeyRotationEdge)
+	fc.Result = res
+	return ec.marshalNEthereumKeyRotationEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐEthereumKeyRotationEdgeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _EthereumKeyRotationsConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.EthereumKeyRotationsConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "EthereumKeyRotationsConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v2.PageInfo)
+	fc.Result = res
+	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FeeFactors_makerFee(ctx context.Context, field graphql.CollectedField, obj *vega.FeeFactors) (ret graphql.Marshaler) {
@@ -33630,14 +34039,11 @@ func (ec *executionContext) _ProposalTerms_enactmentDatetime(ctx context.Context
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ProposalTerms_change(ctx context.Context, field graphql.CollectedField, obj *vega.ProposalTerms) (ret graphql.Marshaler) {
@@ -35841,6 +36247,48 @@ func (ec *executionContext) _Query_keyRotationsConnection(ctx context.Context, f
 	res := resTmp.(*v2.KeyRotationConnection)
 	fc.Result = res
 	return ec.marshalNKeyRotationConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐKeyRotationConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_ethereumKeyRotations(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_ethereumKeyRotations_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().EthereumKeyRotations(rctx, args["nodeId"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.EthereumKeyRotationsConnection)
+	fc.Result = res
+	return ec.marshalNEthereumKeyRotationsConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐEthereumKeyRotationsConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_epoch(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -47749,6 +48197,153 @@ func (ec *executionContext) _EthereumEvent(ctx context.Context, sel ast.Selectio
 	return out
 }
 
+var ethereumKeyRotationImplementors = []string{"EthereumKeyRotation"}
+
+func (ec *executionContext) _EthereumKeyRotation(ctx context.Context, sel ast.SelectionSet, obj *v1.EthereumKeyRotation) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, ethereumKeyRotationImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("EthereumKeyRotation")
+		case "nodeId":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._EthereumKeyRotation_nodeId(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "oldAddress":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._EthereumKeyRotation_oldAddress(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "newAddress":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._EthereumKeyRotation_newAddress(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "blockHeight":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._EthereumKeyRotation_blockHeight(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var ethereumKeyRotationEdgeImplementors = []string{"EthereumKeyRotationEdge"}
+
+func (ec *executionContext) _EthereumKeyRotationEdge(ctx context.Context, sel ast.SelectionSet, obj *v2.EthereumKeyRotationEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, ethereumKeyRotationEdgeImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("EthereumKeyRotationEdge")
+		case "ethereumKeyRotation":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._EthereumKeyRotationEdge_ethereumKeyRotation(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cursor":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._EthereumKeyRotationEdge_cursor(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var ethereumKeyRotationsConnectionImplementors = []string{"EthereumKeyRotationsConnection"}
+
+func (ec *executionContext) _EthereumKeyRotationsConnection(ctx context.Context, sel ast.SelectionSet, obj *v2.EthereumKeyRotationsConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, ethereumKeyRotationsConnectionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("EthereumKeyRotationsConnection")
+		case "edges":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._EthereumKeyRotationsConnection_edges(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "pageInfo":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._EthereumKeyRotationsConnection_pageInfo(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var feeFactorsImplementors = []string{"FeeFactors"}
 
 func (ec *executionContext) _FeeFactors(ctx context.Context, sel ast.SelectionSet, obj *vega.FeeFactors) graphql.Marshaler {
@@ -55275,9 +55870,6 @@ func (ec *executionContext) _ProposalTerms(ctx context.Context, sel ast.Selectio
 					}
 				}()
 				res = ec._ProposalTerms_enactmentDatetime(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			}
 
@@ -56484,6 +57076,29 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_keyRotationsConnection(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "ethereumKeyRotations":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_ethereumKeyRotations(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -61337,6 +61952,84 @@ func (ec *executionContext) marshalNEpochTimestamps2ᚖcodeᚗvegaprotocolᚗio�
 		return graphql.Null
 	}
 	return ec._EpochTimestamps(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNEthereumKeyRotation2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐEthereumKeyRotation(ctx context.Context, sel ast.SelectionSet, v *v1.EthereumKeyRotation) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._EthereumKeyRotation(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNEthereumKeyRotationEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐEthereumKeyRotationEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*v2.EthereumKeyRotationEdge) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNEthereumKeyRotationEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐEthereumKeyRotationEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNEthereumKeyRotationEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐEthereumKeyRotationEdge(ctx context.Context, sel ast.SelectionSet, v *v2.EthereumKeyRotationEdge) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._EthereumKeyRotationEdge(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNEthereumKeyRotationsConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐEthereumKeyRotationsConnection(ctx context.Context, sel ast.SelectionSet, v v2.EthereumKeyRotationsConnection) graphql.Marshaler {
+	return ec._EthereumKeyRotationsConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNEthereumKeyRotationsConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐEthereumKeyRotationsConnection(ctx context.Context, sel ast.SelectionSet, v *v2.EthereumKeyRotationsConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._EthereumKeyRotationsConnection(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNEvent2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐEvent(ctx context.Context, sel ast.SelectionSet, v Event) graphql.Marshaler {

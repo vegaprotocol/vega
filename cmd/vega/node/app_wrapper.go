@@ -95,3 +95,9 @@ func (app *appW) ApplySnapshotChunk(
 ) types.ResponseApplySnapshotChunk {
 	return app.impl.ApplySnapshotChunk(req)
 }
+
+func (app *appW) SetOption(
+	req types.RequestSetOption,
+) types.ResponseSetOption {
+	return app.impl.SetOption(req)
+}

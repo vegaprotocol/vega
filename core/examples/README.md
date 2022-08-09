@@ -28,10 +28,9 @@ Prerequistes:
 The following bash should get you some way there:
 ```
 git clone git@github.com:vegaprotocol/vega.git
-git clone git@github.com:vegaprotocol/vegawallet.git
 git clone git@github.com:vegaprotocol/data-node.git
 
-# cd into vega data-node vegawallet directories and run
+# cd into vega data-node directories and run
 go install ./...
 
 # initialise vega
@@ -50,11 +49,11 @@ vega genesis update --tm-home=/tenderminthome --home=/vegahome
 # initialise the data-node
 data-node init -f --home=vegahome
 
-# initialise a vegawallet and make some parties
-vegawallet init -f --home=vegahome
-vegawallet key generate --wallet=A --home=vegahome
-vegawallet key generate --wallet=B --home=vegahome
-vegawallet key generate --wallet=C --home=vegahome
+# initialise a vega wallet and make some parties
+vega wallet init -f --home=vegahome
+vega wallet key generate --wallet=A --home=vegahome
+vega wallet key generate --wallet=B --home=vegahome
+vega wallet key generate --wallet=C --home=vegahome
 ```
 
 Next you need to fiddle with the vega config file to switch the blockchain on by changing the `BlockChain` section in `vegahome/config/node/config.toml` to look like this:

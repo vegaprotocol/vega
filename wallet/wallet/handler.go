@@ -1,6 +1,7 @@
 package wallet
 
 import (
+	"context"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -15,11 +16,11 @@ import (
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/store_mock.go -package mocks code.vegaprotocol.io/vega/wallet/wallet Store
 type Store interface {
-	WalletExists(name string) bool
-	SaveWallet(w Wallet, passphrase string) error
-	GetWallet(name, passphrase string) (Wallet, error)
+	WalletExists(ctx context.Context, name string) (bool, error)
+	SaveWallet(ctx context.Context, w Wallet, passphrase string) error
+	GetWallet(ctx context.Context, name, passphrase string) (Wallet, error)
 	GetWalletPath(name string) string
-	ListWallets() ([]string, error)
+	ListWallets(ctx context.Context) ([]string, error)
 }
 
 type GenerateKeyRequest struct {
@@ -49,7 +50,7 @@ func GenerateKey(store Store, req *GenerateKeyRequest) (*GenerateKeyResponse, er
 		return nil, err
 	}
 
-	if err := store.SaveWallet(w, req.Passphrase); err != nil {
+	if err := store.SaveWallet(context.Background(), w, req.Passphrase); err != nil {
 		return nil, fmt.Errorf("couldn't save wallet: %w", err)
 	}
 
@@ -78,7 +79,7 @@ func AnnotateKey(store Store, req *AnnotateKeyRequest) error {
 		return fmt.Errorf("couldn't update metadata: %w", err)
 	}
 
-	if err := store.SaveWallet(w, req.Passphrase); err != nil {
+	if err := store.SaveWallet(context.Background(), w, req.Passphrase); err != nil {
 		return fmt.Errorf("couldn't save wallet: %w", err)
 	}
 
@@ -101,7 +102,7 @@ func TaintKey(store Store, req *TaintKeyRequest) error {
 		return fmt.Errorf("couldn't taint key: %w", err)
 	}
 
-	if err := store.SaveWallet(w, req.Passphrase); err != nil {
+	if err := store.SaveWallet(context.Background(), w, req.Passphrase); err != nil {
 		return fmt.Errorf("couldn't save wallet: %w", err)
 	}
 
@@ -124,7 +125,7 @@ func UntaintKey(store Store, req *UntaintKeyRequest) error {
 		return fmt.Errorf("couldn't untaint key: %w", err)
 	}
 
-	if err := store.SaveWallet(w, req.Passphrase); err != nil {
+	if err := store.SaveWallet(context.Background(), w, req.Passphrase); err != nil {
 		return fmt.Errorf("couldn't save wallet: %w", err)
 	}
 
@@ -153,7 +154,7 @@ func IsolateKey(store Store, req *IsolateKeyRequest) (*IsolateKeyResponse, error
 		return nil, fmt.Errorf("couldn't isolate wallet %s: %w", req.Wallet, err)
 	}
 
-	if err := store.SaveWallet(isolatedWallet, req.Passphrase); err != nil {
+	if err := store.SaveWallet(context.Background(), isolatedWallet, req.Passphrase); err != nil {
 		return nil, fmt.Errorf("couldn't save isolated wallet %s: %w", isolatedWallet.Name(), err)
 	}
 
@@ -365,7 +366,9 @@ type FirstPublicKey struct {
 func CreateWallet(store Store, req *CreateWalletRequest) (*CreateWalletResponse, error) {
 	resp := &CreateWalletResponse{}
 
-	if store.WalletExists(req.Wallet) {
+	if exist, err := store.WalletExists(context.Background(), req.Wallet); err != nil {
+		return nil, fmt.Errorf("couldn't verify wallet existence: %w", err)
+	} else if exist {
 		return nil, ErrWalletAlreadyExists
 	}
 
@@ -379,7 +382,7 @@ func CreateWallet(store Store, req *CreateWalletRequest) (*CreateWalletResponse,
 		return nil, err
 	}
 
-	if err := store.SaveWallet(w, req.Passphrase); err != nil {
+	if err := store.SaveWallet(context.Background(), w, req.Passphrase); err != nil {
 		return nil, fmt.Errorf("couldn't save wallet: %w", err)
 	}
 
@@ -414,7 +417,11 @@ type ImportedWallet struct {
 }
 
 func ImportWallet(store Store, req *ImportWalletRequest) (*ImportWalletResponse, error) {
-	if store.WalletExists(req.Wallet) {
+	ctx := context.Background()
+
+	if exist, err := store.WalletExists(ctx, req.Wallet); err != nil {
+		return nil, fmt.Errorf("couldn't verify wallet existence: %w", err)
+	} else if exist {
 		return nil, ErrWalletAlreadyExists
 	}
 
@@ -428,7 +435,7 @@ func ImportWallet(store Store, req *ImportWalletRequest) (*ImportWalletResponse,
 		return nil, err
 	}
 
-	if err := store.SaveWallet(w, req.Passphrase); err != nil {
+	if err := store.SaveWallet(ctx, w, req.Passphrase); err != nil {
 		return nil, fmt.Errorf("couldn't save wallet: %w", err)
 	}
 
@@ -449,7 +456,7 @@ type ListWalletsResponse struct {
 }
 
 func ListWallets(store Store) (*ListWalletsResponse, error) {
-	ws, err := store.ListWallets()
+	ws, err := store.ListWallets(context.Background())
 	if err != nil {
 		return nil, err
 	}
@@ -592,7 +599,7 @@ func RevokePermissions(store Store, req *RevokePermissionsRequest) error {
 
 	w.RevokePermissions(req.Hostname)
 
-	if err := store.SaveWallet(w, req.Passphrase); err != nil {
+	if err := store.SaveWallet(context.Background(), w, req.Passphrase); err != nil {
 		return fmt.Errorf("couldn't save wallet: %w", err)
 	}
 	return nil
@@ -611,18 +618,20 @@ func PurgePermissions(store Store, req *PurgePermissionsRequest) error {
 
 	w.PurgePermissions()
 
-	if err := store.SaveWallet(w, req.Passphrase); err != nil {
+	if err := store.SaveWallet(context.Background(), w, req.Passphrase); err != nil {
 		return fmt.Errorf("couldn't save wallet: %w", err)
 	}
 	return nil
 }
 
 func getWallet(store Store, wallet, passphrase string) (Wallet, error) {
-	if !store.WalletExists(wallet) {
+	if exist, err := store.WalletExists(context.Background(), wallet); err != nil {
+		return nil, fmt.Errorf("couldn't verify wallet existence: %w", err)
+	} else if !exist {
 		return nil, ErrWalletDoesNotExists
 	}
 
-	w, err := store.GetWallet(wallet, passphrase)
+	w, err := store.GetWallet(context.Background(), wallet, passphrase)
 	if err != nil {
 		if errors.Is(err, ErrWrongPassphrase) {
 			return nil, err

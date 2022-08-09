@@ -10,7 +10,12 @@ import (
 // InitialiseStore builds a wallet Store specifically for users wallets.
 func InitialiseStore(vegaHome string) (*wstorev1.Store, error) {
 	p := paths.New(vegaHome)
-	walletsHome, err := p.CreateDataPathFor(paths.WalletsDataHome)
+	return InitialiseStoreFromPaths(p)
+}
+
+// InitialiseStoreFromPaths builds a wallet Store specifically for users wallets.
+func InitialiseStoreFromPaths(vegaPaths paths.Paths) (*wstorev1.Store, error) {
+	walletsHome, err := vegaPaths.CreateDataPathFor(paths.WalletsDataHome)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get wallets data home path: %w", err)
 	}

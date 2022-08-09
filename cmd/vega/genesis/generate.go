@@ -15,6 +15,7 @@ package genesis
 import (
 	"encoding/base64"
 	"fmt"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/genesis"
 	"code.vegaprotocol.io/vega/core/nodewallets"
@@ -25,7 +26,6 @@ import (
 	"code.vegaprotocol.io/vega/paths"
 
 	"github.com/jessevdk/go-flags"
-	tmtime "github.com/tendermint/tendermint/libs/time"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
@@ -77,7 +77,7 @@ func (opts *generateCmd) Execute(_ []string) error {
 
 	genesisDoc := &tmtypes.GenesisDoc{
 		ChainID:         fmt.Sprintf("test-chain-%v", vgrand.RandomStr(6)),
-		GenesisTime:     tmtime.Now(),
+		GenesisTime:     time.Now().Round(0).UTC(),
 		ConsensusParams: tmtypes.DefaultConsensusParams(),
 		Validators: []tmtypes.GenesisValidator{
 			{

@@ -215,6 +215,12 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v1.PartyStakeResponse
   KeyRotation:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.KeyRotation
+  EthereumKeyRotationsConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.EthereumKeyRotationsConnection
+  EthereumKeyRotationEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.EthereumKeyRotationEdge
+  EthereumKeyRotation:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.EthereumKeyRotation
   Transfer:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.Transfer
   OneOffTransfer:

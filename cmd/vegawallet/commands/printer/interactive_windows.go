@@ -18,7 +18,7 @@ func NewInteractivePrinter(w io.Writer) *InteractivePrinter {
 		writer:       w,
 		profile:      profile,
 		checkMark:    termenv.String("* ").Foreground(profile.Color("2")).String(),
-		questionMark: termenv.String("? ").Foreground(profile.Color("2")).String(),
+		questionMark: termenv.String("? ").Foreground(profile.Color("5")).String(),
 		crossMark:    termenv.String("x ").Foreground(profile.Color("1")).String(),
 		bangMark:     termenv.String("! "),
 		arrow:        termenv.String("> "),

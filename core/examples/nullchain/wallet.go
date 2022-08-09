@@ -20,7 +20,7 @@ import (
 	api "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
 	storev1 "code.vegaprotocol.io/vega/wallet/wallet/store/v1"
-	wallets "code.vegaprotocol.io/vega/wallet/wallets"
+	"code.vegaprotocol.io/vega/wallet/wallets"
 )
 
 var ErrFailedSubmission = errors.New("failed to submit transaction")
@@ -81,8 +81,9 @@ func (w *Wallet) MakeParties(n uint64) ([]*Party, error) {
 }
 
 func (w *Wallet) DeleteParties(party []*Party) {
+	ctx := context.Background()
 	for _, party := range party {
-		w.store.DeleteWallet(party.wallet)
+		_ = w.store.DeleteWallet(ctx, party.wallet)
 	}
 }
 
