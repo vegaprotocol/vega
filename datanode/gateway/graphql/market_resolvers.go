@@ -21,6 +21,7 @@ import (
 	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/vega/protos/vega"
+	vega "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type myMarketResolver VegaResolverRoot
@@ -187,13 +188,8 @@ func (r *myMarketResolver) Depth(ctx context.Context, market *types.Market, maxD
 
 // Deprecated: Use CandlesConnection instead.
 func (r *myMarketResolver) Candles(ctx context.Context, market *types.Market,
-	sinceRaw string, interval Interval,
+	sinceRaw string, interval vega.Interval,
 ) ([]*types.Candle, error) {
-	pinterval, err := convertIntervalToProto(interval)
-	if err != nil {
-		r.log.Debug("interval convert error", logging.Error(err))
-	}
-
 	since, err := vegatime.Parse(sinceRaw)
 	if err != nil {
 		return nil, err
@@ -207,7 +203,7 @@ func (r *myMarketResolver) Candles(ctx context.Context, market *types.Market,
 	req := protoapi.CandlesRequest{
 		MarketId:       mkt,
 		SinceTimestamp: since.UnixNano(),
-		Interval:       pinterval,
+		Interval:       interval,
 	}
 	res, err := r.tradingDataClient.Candles(ctx, &req)
 	if err != nil {
@@ -321,14 +317,6 @@ func (r *myMarketResolver) LiquidityMonitoringParameters(ctx context.Context, ob
 	}, nil
 }
 
-func (r *myMarketResolver) TradingMode(ctx context.Context, obj *types.Market) (MarketTradingMode, error) {
-	return convertMarketTradingModeFromProto(obj.TradingMode)
-}
-
-func (r *myMarketResolver) State(ctx context.Context, obj *types.Market) (MarketState, error) {
-	return convertMarketStateFromProto(obj.State)
-}
-
 func (r *myMarketResolver) Proposal(ctx context.Context, obj *types.Market) (*types.GovernanceData, error) {
 	resp, err := r.tradingDataClientV2.GetGovernanceData(ctx, &v2.GetGovernanceDataRequest{
 		ProposalId: &obj.Id,
@@ -354,7 +342,7 @@ func (r *myMarketResolver) RiskFactors(ctx context.Context, obj *types.Market) (
 }
 
 func (r *myMarketResolver) CandlesConnection(ctx context.Context, market *types.Market, sinceRaw string, toRaw *string,
-	interval Interval, pagination *v2.Pagination,
+	interval vega.Interval, pagination *v2.Pagination,
 ) (*v2.CandleDataConnection, error) {
 	return handleCandleConnectionRequest(ctx, r.tradingDataClientV2, market, sinceRaw, toRaw, interval, pagination)
 }

@@ -15,7 +15,6 @@ package gql
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"code.vegaprotocol.io/vega/datanode/vegatime"
 	"code.vegaprotocol.io/vega/protos/vega"
@@ -28,10 +27,6 @@ type transferResolver VegaResolverRoot
 
 func (r *transferResolver) Asset(ctx context.Context, obj *eventspb.Transfer) (*vega.Asset, error) {
 	return r.r.getAssetByID(ctx, obj.Asset)
-}
-
-func (r *transferResolver) Status(ctx context.Context, obj *eventspb.Transfer) (TransferStatus, error) {
-	return convertTransferStatusFromProto(obj.Status)
 }
 
 func (r *transferResolver) Timestamp(ctx context.Context, obj *eventspb.Transfer) (string, error) {
@@ -65,33 +60,13 @@ func (r *recurringTransferResolver) EndEpoch(ctx context.Context, obj *eventspb.
 
 func (r *recurringTransferResolver) DispatchStrategy(ctx context.Context, obj *eventspb.RecurringTransfer) (*DispatchStrategy, error) {
 	if obj.DispatchStrategy != nil {
-		metric, err := dispatchMetricFromProto(obj.DispatchStrategy.Metric)
-		if err != nil {
-			return nil, err
-		}
 		return &DispatchStrategy{
-			DispatchMetric:        metric,
+			DispatchMetric:        obj.DispatchStrategy.Metric,
 			DispatchMetricAssetID: obj.DispatchStrategy.AssetForMetric,
 			MarketIdsInScope:      obj.DispatchStrategy.Markets,
 		}, nil
 	}
 	return nil, nil
-}
-
-func dispatchMetricFromProto(s vega.DispatchMetric) (DispatchMetric, error) {
-	switch s {
-	case vega.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED:
-		return DispatchMetricLPFeesReceived, nil
-	case vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED:
-		return DispatchMetricMakerFeesReceived, nil
-	case vega.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID:
-		return DispatchMetricTakerFeesPaid, nil
-	case vega.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE:
-		return DispatchMetricMarketTradingValue, nil
-
-	default:
-		return DispatchMetric(""), fmt.Errorf("failed to convert dispatch metric from Proto to GraphQL: %s", s.String())
-	}
 }
 
 type oneoffTransferResolver VegaResolverRoot

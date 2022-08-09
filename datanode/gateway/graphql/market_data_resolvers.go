@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/vega/protos/vega"
+	vega "code.vegaprotocol.io/vega/protos/vega"
 	"google.golang.org/grpc"
 )
 
@@ -58,10 +59,6 @@ func (r *myMarketDataResolver) AuctionEnd(_ context.Context, m *types.MarketData
 	}
 	s := vegatime.Format(vegatime.UnixNano(m.AuctionEnd))
 	return &s, nil
-}
-
-func (r *myMarketDataResolver) MarketTradingMode(_ context.Context, m *types.MarketData) (MarketTradingMode, error) {
-	return convertMarketTradingModeFromProto(m.MarketTradingMode)
 }
 
 func (r *myMarketDataResolver) IndicativePrice(_ context.Context, m *types.MarketData) (string, error) {
@@ -177,16 +174,6 @@ func (r *myMarketDataResolver) Market(ctx context.Context, m *types.MarketData) 
 	return r.r.getMarketByID(ctx, m.Market)
 }
 
-// Trigger...
-func (r *myMarketDataResolver) Trigger(_ context.Context, m *types.MarketData) (AuctionTrigger, error) {
-	return convertAuctionTriggerFromProto(m.Trigger)
-}
-
-// ExtensionTrigger same as Trigger.
-func (r *myMarketDataResolver) ExtensionTrigger(_ context.Context, m *types.MarketData) (AuctionTrigger, error) {
-	return convertAuctionTriggerFromProto(m.ExtensionTrigger)
-}
-
 func (r *myMarketDataResolver) MarketValueProxy(_ context.Context, m *types.MarketData) (string, error) {
 	return m.MarketValueProxy, nil
 }
@@ -215,10 +202,6 @@ func (r *myObservableMarketDataResolver) AuctionStart(ctx context.Context, m *ty
 
 func (r *myObservableMarketDataResolver) AuctionEnd(ctx context.Context, m *types.MarketData) (*string, error) {
 	return (*myMarketDataResolver)(r).AuctionEnd(ctx, m)
-}
-
-func (r *myObservableMarketDataResolver) MarketTradingMode(ctx context.Context, m *types.MarketData) (MarketTradingMode, error) {
-	return (*myMarketDataResolver)(r).MarketTradingMode(ctx, m)
 }
 
 func (r *myObservableMarketDataResolver) IndicativePrice(ctx context.Context, m *types.MarketData) (string, error) {
@@ -285,14 +268,9 @@ func (r *myObservableMarketDataResolver) PriceMonitoringBounds(ctx context.Conte
 	return (*myMarketDataResolver)(r).PriceMonitoringBounds(ctx, obj)
 }
 
-// Trigger...
-func (r *myObservableMarketDataResolver) Trigger(ctx context.Context, m *types.MarketData) (AuctionTrigger, error) {
-	return (*myMarketDataResolver)(r).Trigger(ctx, m)
-}
-
 // ExtensionTrigger same as Trigger.
-func (r *myObservableMarketDataResolver) ExtensionTrigger(ctx context.Context, m *types.MarketData) (AuctionTrigger, error) {
-	return (*myMarketDataResolver)(r).ExtensionTrigger(ctx, m)
+func (r *myObservableMarketDataResolver) ExtensionTrigger(ctx context.Context, m *types.MarketData) (vega.AuctionTrigger, error) {
+	return m.ExtensionTrigger, nil
 }
 
 func (r *myObservableMarketDataResolver) MarketValueProxy(ctx context.Context, m *types.MarketData) (string, error) {

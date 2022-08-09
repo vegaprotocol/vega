@@ -8,16 +8,12 @@ import (
 	"code.vegaprotocol.io/vega/datanode/vegatime"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/vega/protos/vega"
+	vega "code.vegaprotocol.io/vega/protos/vega"
 )
 
 func handleCandleConnectionRequest(ctx context.Context, client TradingDataServiceClientV2, market *types.Market, sinceRaw string, toRaw *string,
-	interval Interval, pagination *v2.Pagination,
+	interval vega.Interval, pagination *v2.Pagination,
 ) (*v2.CandleDataConnection, error) {
-	pInterval, err := convertIntervalToProto(interval)
-	if err != nil {
-		return nil, fmt.Errorf("could not convert interval: %w", err)
-	}
-
 	since, err := vegatime.Parse(sinceRaw)
 	if err != nil {
 		return nil, err
@@ -59,7 +55,7 @@ func handleCandleConnectionRequest(ctx context.Context, client TradingDataServic
 		CandleId:      candleID,
 		FromTimestamp: since.Unix(),
 		ToTimestamp:   to.Unix(),
-		Interval:      pInterval,
+		Interval:      interval,
 		Pagination:    pagination,
 	}
 	resp, err := client.ListCandleData(ctx, &req)
@@ -92,34 +88,20 @@ func handleDepositsConnectionRequest(ctx context.Context, client TradingDataServ
 	return resp.Deposits, nil
 }
 
-func handleProposalsRequest(ctx context.Context, client TradingDataServiceClientV2, party *types.Party, ref *string, inType *ProposalType,
-	inState *ProposalState, pagination *v2.Pagination,
+func handleProposalsRequest(ctx context.Context, client TradingDataServiceClientV2, party *types.Party, ref *string, inType *v2.ListGovernanceDataRequest_Type,
+	inState *vega.Proposal_State, pagination *v2.Pagination,
 ) (*v2.GovernanceDataConnection, error) {
 	var partyID *string
 	var proposalState *types.Proposal_State
-	var proposalType *v2.ListGovernanceDataRequest_Type
 
 	if party != nil {
 		partyID = &party.Id
 	}
 
-	if inType != nil {
-		pType := inType.IntoProtoValue()
-		proposalType = &pType
-	}
-
-	if inState != nil {
-		state, err := inState.IntoProtoValue()
-		if err != nil {
-			return nil, err
-		}
-		proposalState = &state
-	}
-
 	req := v2.ListGovernanceDataRequest{
 		ProposerPartyId:   partyID,
 		ProposalReference: ref,
-		ProposalType:      proposalType,
+		ProposalType:      inType,
 		ProposalState:     proposalState,
 		Pagination:        pagination,
 	}

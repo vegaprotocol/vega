@@ -40,7 +40,3 @@ func (r *myLiquidityProvisionResolver) Market(ctx context.Context, obj *types.Li
 func (r *myLiquidityProvisionResolver) CommitmentAmount(ctx context.Context, obj *types.LiquidityProvision) (string, error) {
 	return obj.CommitmentAmount, nil
 }
-
-func (r *myLiquidityProvisionResolver) Status(ctx context.Context, obj *types.LiquidityProvision) (LiquidityProvisionStatus, error) {
-	return convertLiquidityProvisionStatusFromProto(obj.Status)
-}

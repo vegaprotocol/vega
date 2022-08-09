@@ -29,6 +29,7 @@ import (
 	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/vega/protos/vega"
+	vega "code.vegaprotocol.io/vega/protos/vega"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
@@ -182,10 +183,6 @@ func (r *VegaResolverRoot) Withdrawal() WithdrawalResolver {
 	return (*myWithdrawalResolver)(r)
 }
 
-func (r *VegaResolverRoot) LiquidityOrder() LiquidityOrderResolver {
-	return (*myLiquidityOrderResolver)(r)
-}
-
 func (r *VegaResolverRoot) LiquidityOrderReference() LiquidityOrderReferenceResolver {
 	return (*myLiquidityOrderReferenceResolver)(r)
 }
@@ -242,24 +239,12 @@ func (r *VegaResolverRoot) NewFreeform() NewFreeformResolver {
 	return (*newFreeformResolver)(r)
 }
 
-func (r *VegaResolverRoot) PeggedOrder() PeggedOrderResolver {
-	return (*myPeggedOrderResolver)(r)
-}
-
 func (r *VegaResolverRoot) OracleSpec() OracleSpecResolver {
 	return (*oracleSpecResolver)(r)
 }
 
 func (r *VegaResolverRoot) OracleData() OracleDataResolver {
 	return (*oracleDataResolver)(r)
-}
-
-func (r *VegaResolverRoot) PropertyKey() PropertyKeyResolver {
-	return (*propertyKeyResolver)(r)
-}
-
-func (r *VegaResolverRoot) Condition() ConditionResolver {
-	return (*conditionResolver)(r)
 }
 
 func (r *VegaResolverRoot) AuctionEvent() AuctionEventResolver {
@@ -359,10 +344,6 @@ func (r *myLiquidityOrderResolver) Proportion(ctx context.Context, obj *types.Li
 	return int(obj.Proportion), nil
 }
 
-func (r *myLiquidityOrderResolver) Reference(ctx context.Context, obj *types.LiquidityOrder) (PeggedReference, error) {
-	return convertPeggedReferenceFromProto(obj.Reference)
-}
-
 // LiquidityOrderReference resolver
 
 type myLiquidityOrderReferenceResolver VegaResolverRoot
@@ -402,10 +383,6 @@ func (r *myDepositResolver) CreditedTimestamp(ctx context.Context, obj *types.De
 	}
 	t := vegatime.Format(vegatime.UnixNano(obj.CreditedTimestamp))
 	return &t, nil
-}
-
-func (r *myDepositResolver) Status(ctx context.Context, obj *types.Deposit) (DepositStatus, error) {
-	return convertDepositStatusFromProto(obj.Status)
 }
 
 // BEGIN: Query Resolver
@@ -652,8 +629,8 @@ func (r *myQueryResolver) Deposit(ctx context.Context, did string) (*types.Depos
 	return res.Deposit, nil
 }
 
-func (r *myQueryResolver) EstimateOrder(ctx context.Context, market, party string, price *string, size string, side Side,
-	timeInForce OrderTimeInForce, expiration *string, ty OrderType,
+func (r *myQueryResolver) EstimateOrder(ctx context.Context, market, party string, price *string, size string, side vega.Side,
+	timeInForce vega.Order_TimeInForce, expiration *string, ty vega.Order_Type,
 ) (*OrderEstimate, error) {
 	order := &types.Order{}
 
@@ -677,15 +654,9 @@ func (r *myQueryResolver) EstimateOrder(ctx context.Context, market, party strin
 	}
 
 	order.PartyId = party
-	if order.TimeInForce, err = convertOrderTimeInForceToProto(timeInForce); err != nil {
-		return nil, err
-	}
-	if order.Side, err = convertSideToProto(side); err != nil {
-		return nil, err
-	}
-	if order.Type, err = convertOrderTypeToProto(ty); err != nil {
-		return nil, err
-	}
+	order.TimeInForce = timeInForce
+	order.Side = side
+	order.Type = ty
 
 	// GTT must have an expiration value
 	if order.TimeInForce == types.Order_TIME_IN_FORCE_GTT && expiration != nil {
@@ -886,13 +857,9 @@ func (r *myQueryResolver) OrderByReference(ctx context.Context, reference string
 }
 
 // Deprecated: Use ProposalsConnection instead.
-func (r *myQueryResolver) Proposals(ctx context.Context, inState *ProposalState) ([]*types.GovernanceData, error) {
-	filter, err := inState.ToOptionalProposalState()
-	if err != nil {
-		return nil, err
-	}
+func (r *myQueryResolver) Proposals(ctx context.Context, inState *vega.Proposal_State) ([]*types.GovernanceData, error) {
 	resp, err := r.tradingDataClient.GetProposals(ctx, &protoapi.GetProposalsRequest{
-		SelectInState: filter,
+		SelectInState: inState,
 	})
 	if err != nil {
 		return nil, err
@@ -900,7 +867,7 @@ func (r *myQueryResolver) Proposals(ctx context.Context, inState *ProposalState)
 	return resp.Data, nil
 }
 
-func (r *myQueryResolver) ProposalsConnection(ctx context.Context, proposalType *ProposalType, inState *ProposalState,
+func (r *myQueryResolver) ProposalsConnection(ctx context.Context, proposalType *v2.ListGovernanceDataRequest_Type, inState *vega.Proposal_State,
 	pagination *v2.Pagination,
 ) (*v2.GovernanceDataConnection, error) {
 	return handleProposalsRequest(ctx, r.tradingDataClientV2, nil, nil, proposalType, inState, pagination)
@@ -929,13 +896,9 @@ func (r *myQueryResolver) Proposal(ctx context.Context, id *string, reference *s
 }
 
 // Deprecated: Use ProposalsConnection instead.
-func (r *myQueryResolver) NewMarketProposals(ctx context.Context, inState *ProposalState) ([]*types.GovernanceData, error) {
-	filter, err := inState.ToOptionalProposalState()
-	if err != nil {
-		return nil, err
-	}
+func (r *myQueryResolver) NewMarketProposals(ctx context.Context, inState *vega.Proposal_State) ([]*types.GovernanceData, error) {
 	resp, err := r.tradingDataClient.GetNewMarketProposals(ctx, &protoapi.GetNewMarketProposalsRequest{
-		SelectInState: filter,
+		SelectInState: inState,
 	})
 	if err != nil {
 		return nil, err
@@ -944,18 +907,14 @@ func (r *myQueryResolver) NewMarketProposals(ctx context.Context, inState *Propo
 }
 
 // Deprecated: Use ProposalsConnection instead.
-func (r *myQueryResolver) UpdateMarketProposals(ctx context.Context, marketID *string, inState *ProposalState) ([]*types.GovernanceData, error) {
-	filter, err := inState.ToOptionalProposalState()
-	if err != nil {
-		return nil, err
-	}
+func (r *myQueryResolver) UpdateMarketProposals(ctx context.Context, marketID *string, inState *vega.Proposal_State) ([]*types.GovernanceData, error) {
 	var market string
 	if marketID != nil {
 		market = *marketID
 	}
 	resp, err := r.tradingDataClient.GetUpdateMarketProposals(ctx, &protoapi.GetUpdateMarketProposalsRequest{
 		MarketId:      market,
-		SelectInState: filter,
+		SelectInState: inState,
 	})
 	if err != nil {
 		return nil, err
@@ -964,13 +923,9 @@ func (r *myQueryResolver) UpdateMarketProposals(ctx context.Context, marketID *s
 }
 
 // Deprecated: Use ProposalsConnection instead.
-func (r *myQueryResolver) NetworkParametersProposals(ctx context.Context, inState *ProposalState) ([]*types.GovernanceData, error) {
-	filter, err := inState.ToOptionalProposalState()
-	if err != nil {
-		return nil, err
-	}
+func (r *myQueryResolver) NetworkParametersProposals(ctx context.Context, inState *vega.Proposal_State) ([]*types.GovernanceData, error) {
 	resp, err := r.tradingDataClient.GetNetworkParametersProposals(ctx, &protoapi.GetNetworkParametersProposalsRequest{
-		SelectInState: filter,
+		SelectInState: inState,
 	})
 	if err != nil {
 		return nil, err
@@ -979,13 +934,9 @@ func (r *myQueryResolver) NetworkParametersProposals(ctx context.Context, inStat
 }
 
 // Deprecated: Use ProposalsConnection instead.
-func (r *myQueryResolver) NewAssetProposals(ctx context.Context, inState *ProposalState) ([]*types.GovernanceData, error) {
-	filter, err := inState.ToOptionalProposalState()
-	if err != nil {
-		return nil, err
-	}
+func (r *myQueryResolver) NewAssetProposals(ctx context.Context, inState *vega.Proposal_State) ([]*types.GovernanceData, error) {
 	resp, err := r.tradingDataClient.GetNewAssetProposals(ctx, &protoapi.GetNewAssetProposalsRequest{
-		SelectInState: filter,
+		SelectInState: inState,
 	})
 	if err != nil {
 		return nil, err
@@ -994,13 +945,9 @@ func (r *myQueryResolver) NewAssetProposals(ctx context.Context, inState *Propos
 }
 
 // Deprecated: Use ProposalsConnection instead.
-func (r *myQueryResolver) NewFreeformProposals(ctx context.Context, inState *ProposalState) ([]*types.GovernanceData, error) {
-	filter, err := inState.ToOptionalProposalState()
-	if err != nil {
-		return nil, err
-	}
+func (r *myQueryResolver) NewFreeformProposals(ctx context.Context, inState *vega.Proposal_State) ([]*types.GovernanceData, error) {
 	resp, err := r.tradingDataClient.GetNewFreeformProposals(ctx, &protoapi.GetNewFreeformProposalsRequest{
-		SelectInState: filter,
+		SelectInState: inState,
 	})
 	if err != nil {
 		return nil, err
@@ -1163,14 +1110,6 @@ type myNodeSignatureResolver VegaResolverRoot
 func (r *myNodeSignatureResolver) Signature(ctx context.Context, obj *commandspb.NodeSignature) (*string, error) {
 	sig := base64.StdEncoding.EncodeToString(obj.Sig)
 	return &sig, nil
-}
-
-func (r *myNodeSignatureResolver) Kind(ctx context.Context, obj *commandspb.NodeSignature) (*NodeSignatureKind, error) {
-	kind, err := convertNodeSignatureKindFromProto(obj.Kind)
-	if err != nil {
-		return nil, err
-	}
-	return &kind, nil
 }
 
 // BEGIN: Party Resolver
@@ -1686,14 +1625,10 @@ func (r *myPartyResolver) AccountsConnection(ctx context.Context, party *types.P
 }
 
 // Deprecated: use ProposalsConnection instead.
-func (r *myPartyResolver) Proposals(ctx context.Context, party *types.Party, inState *ProposalState) ([]*types.GovernanceData, error) {
-	filter, err := inState.ToOptionalProposalState()
-	if err != nil {
-		return nil, err
-	}
+func (r *myPartyResolver) Proposals(ctx context.Context, party *types.Party, inState *vega.Proposal_State) ([]*types.GovernanceData, error) {
 	resp, err := r.tradingDataClient.GetProposalsByParty(ctx, &protoapi.GetProposalsByPartyRequest{
 		PartyId:       party.Id,
-		SelectInState: filter,
+		SelectInState: inState,
 	})
 	if err != nil {
 		return nil, err
@@ -1701,7 +1636,7 @@ func (r *myPartyResolver) Proposals(ctx context.Context, party *types.Party, inS
 	return resp.Data, nil
 }
 
-func (r *myPartyResolver) ProposalsConnection(ctx context.Context, party *types.Party, proposalType *ProposalType, inState *ProposalState,
+func (r *myPartyResolver) ProposalsConnection(ctx context.Context, party *types.Party, proposalType *v2.ListGovernanceDataRequest_Type, inState *vega.Proposal_State,
 	pagination *v2.Pagination,
 ) (*v2.GovernanceDataConnection, error) {
 	return handleProposalsRequest(ctx, r.tradingDataClientV2, party, nil, proposalType, inState, pagination)
@@ -1872,35 +1807,15 @@ func (r *myMarginLevelsResolver) Timestamp(_ context.Context, m *types.MarginLev
 
 type myOrderResolver VegaResolverRoot
 
-func (r *myOrderResolver) RejectionReason(_ context.Context, o *types.Order) (*OrderRejectionReason, error) {
+func (r *myOrderResolver) RejectionReason(_ context.Context, o *types.Order) (*vega.OrderError, error) {
 	if o.Reason == types.OrderError_ORDER_ERROR_UNSPECIFIED {
 		return nil, nil
 	}
-	reason, err := convertOrderRejectionReasonFromProto(o.Reason)
-	if err != nil {
-		return nil, err
-	}
-	return &reason, nil
+	return &o.Reason, nil
 }
 
 func (r *myOrderResolver) Price(ctx context.Context, obj *types.Order) (string, error) {
 	return obj.Price, nil
-}
-
-func (r *myOrderResolver) TimeInForce(ctx context.Context, obj *types.Order) (OrderTimeInForce, error) {
-	return convertOrderTimeInForceFromProto(obj.TimeInForce)
-}
-
-func (r *myOrderResolver) Type(ctx context.Context, obj *types.Order) (*OrderType, error) {
-	t, err := convertOrderTypeFromProto(obj.Type)
-	if err != nil {
-		return nil, err
-	}
-	return &t, nil
-}
-
-func (r *myOrderResolver) Side(ctx context.Context, obj *types.Order) (Side, error) {
-	return convertSideFromProto(obj.Side)
 }
 
 func (r *myOrderResolver) Market(ctx context.Context, obj *types.Order) (*types.Market, error) {
@@ -1913,10 +1828,6 @@ func (r *myOrderResolver) Size(ctx context.Context, obj *types.Order) (string, e
 
 func (r *myOrderResolver) Remaining(ctx context.Context, obj *types.Order) (string, error) {
 	return strconv.FormatUint(obj.Remaining, 10), nil
-}
-
-func (r *myOrderResolver) Status(ctx context.Context, obj *types.Order) (OrderStatus, error) {
-	return convertOrderStatusFromProto(obj.Status)
 }
 
 func (r *myOrderResolver) CreatedAt(ctx context.Context, obj *types.Order) (string, error) {
@@ -2017,10 +1928,6 @@ func (r *myTradeResolver) Market(ctx context.Context, obj *types.Trade) (*types.
 	return r.r.getMarketByID(ctx, obj.MarketId)
 }
 
-func (r *myTradeResolver) Aggressor(ctx context.Context, obj *types.Trade) (Side, error) {
-	return Side(obj.Aggressor.String()), nil
-}
-
 func (r *myTradeResolver) Price(ctx context.Context, obj *types.Trade) (string, error) {
 	return obj.Price, nil
 }
@@ -2063,10 +1970,6 @@ func (r *myTradeResolver) Seller(ctx context.Context, obj *types.Trade) (*types.
 		return nil, customErrorFromStatus(err)
 	}
 	return res.Party, nil
-}
-
-func (r *myTradeResolver) Type(ctx context.Context, obj *types.Trade) (TradeType, error) {
-	return convertTradeTypeFromProto(obj.Type)
 }
 
 func (r *myTradeResolver) BuyerAuctionBatch(ctx context.Context, obj *types.Trade) (*int, error) {
@@ -2141,10 +2044,6 @@ func (r *myCandleResolver) Timestamp(ctx context.Context, obj *types.Candle) (st
 	return strconv.FormatInt(obj.Timestamp, 10), nil
 }
 
-func (r *myCandleResolver) Interval(ctx context.Context, obj *types.Candle) (Interval, error) {
-	return convertIntervalFromProto(obj.Interval)
-}
-
 // END: Candle Resolver
 
 // BEGIN: CandleNode Resolver
@@ -2182,16 +2081,6 @@ func (r *myPriceLevelResolver) NumberOfOrders(ctx context.Context, obj *types.Pr
 }
 
 // END: Price Level Resolver
-
-// BEGIN: PeggedOrder Resolver
-
-type myPeggedOrderResolver VegaResolverRoot
-
-func (r *myPeggedOrderResolver) Reference(ctx context.Context, obj *types.PeggedOrder) (PeggedReference, error) {
-	return convertPeggedReferenceFromProto(obj.Reference)
-}
-
-// END: PeggedOrder Resolver
 
 // BEGIN: Position Resolver
 
@@ -2523,12 +2412,7 @@ func (r *mySubscriptionResolver) Positions(ctx context.Context, party, market *s
 	return c, nil
 }
 
-func (r *mySubscriptionResolver) Candles(ctx context.Context, market string, interval Interval) (<-chan *types.Candle, error) {
-	pinterval, err := convertIntervalToProto(interval)
-	if err != nil {
-		r.log.Debug("invalid interval for candles subscriptions", logging.Error(err))
-	}
-
+func (r *mySubscriptionResolver) Candles(ctx context.Context, market string, interval vega.Interval) (<-chan *types.Candle, error) {
 	intervalToCandleIDs, err := r.tradingDataClientV2.ListCandleIntervals(ctx, &v2.ListCandleIntervalsRequest{
 		MarketId: market,
 	})
@@ -2544,7 +2428,7 @@ func (r *mySubscriptionResolver) Candles(ctx context.Context, market string, int
 			r.log.Errorf("convert interval to candle id failed: %v", err)
 			continue
 		}
-		if candleInterval == pinterval {
+		if candleInterval == interval {
 			candleID = ic.CandleId
 			break
 		}

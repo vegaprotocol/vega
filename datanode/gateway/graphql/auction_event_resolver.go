@@ -16,7 +16,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/datanode/vegatime"
-	types "code.vegaprotocol.io/vega/protos/vega"
+	vega "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
@@ -33,17 +33,6 @@ func (r *auctionEventResolver) AuctionEnd(ctx context.Context, obj *eventspb.Auc
 	return "", nil
 }
 
-func (r *auctionEventResolver) Trigger(ctx context.Context, obj *eventspb.AuctionEvent) (AuctionTrigger, error) {
-	return convertAuctionTriggerFromProto(obj.Trigger)
-}
-
-func (r *auctionEventResolver) ExtensionTrigger(ctx context.Context, obj *eventspb.AuctionEvent) (*AuctionTrigger, error) {
-	if obj.ExtensionTrigger == types.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED {
-		return nil, nil
-	}
-	t, err := convertAuctionTriggerFromProto(obj.ExtensionTrigger)
-	if err != nil {
-		return nil, err
-	}
-	return &t, nil
+func (r *auctionEventResolver) ExtensionTrigger(ctx context.Context, obj *eventspb.AuctionEvent) (*vega.AuctionTrigger, error) {
+	return &obj.ExtensionTrigger, nil
 }

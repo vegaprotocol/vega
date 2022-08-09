@@ -717,10 +717,10 @@ func (t *tradingDataService) GetNewFreeformProposals(ctx context.Context,
 	return &protoapi.GetNewFreeformProposalsResponse{Data: governanceData}, nil
 }
 
-func proposalState(protoState *protoapi.OptionalProposalState) *entities.ProposalState {
+func proposalState(protoState *vega.Proposal_State) *entities.ProposalState {
 	var s *entities.ProposalState
 	if protoState != nil {
-		state := entities.ProposalState(protoState.Value)
+		state := entities.ProposalState(*protoState)
 		s = &state
 	}
 	return s

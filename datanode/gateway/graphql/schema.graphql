@@ -654,18 +654,18 @@ type Query {
 
 enum TransferStatus {
   "Indicates a transfer still being processed"
-  Pending
+  STATUS_PENDING
   "Indicates a transfer accepted by the Vega network"
-  Done
+  STATUS_DONE
   "Indicates a transfer rejected by the Vega network"
-  Rejected
+  STATUS_REJECTED
   """
   Indicates a transfer stopped by the Vega network
   e.g: no funds left to cover the transfer
   """
-  Stopped
+  STATUS_STOPPED
   "Indication of a transfer cancelled by the user"
-  Cancelled
+  STATUS_CANCELLED
 }
 
 "A user initiated transfer"
@@ -724,14 +724,13 @@ type RecurringTransfer {
 }
 
 enum DispatchMetric {
+  DISPATCH_METRIC_TAKER_FEES_PAID
 
-  MarketTradingValue
+  DISPATCH_METRIC_MAKER_FEES_RECEIVED
 
-  MakerFeesReceived
+  DISPATCH_METRIC_LP_FEES_RECEIVED
 
-  TakerFeesPaid
-
-  LPFeesReceived
+  DISPATCH_METRIC_MARKET_VALUE
 }
 
 type DispatchStrategy {
@@ -747,10 +746,10 @@ type DispatchStrategy {
 
 enum NodeStatus {
   "The node is non-validating"
-  NonValidator
+  NODE_STATUS_NON_VALIDATOR
 
   "The node is validating"
-  Validator
+  NODE_STATUS_VALIDATOR
 }
 
 # Describes in both human readable and block time when an epoch spans.
@@ -994,13 +993,13 @@ type Delegation {
 
 enum AssetStatus {
   "Asset is proposed to be added to the network"
-  Proposed
+  STATUS_PROPOSED
   "Asset has been rejected"
-  Rejected
+  STATUS_REJECTED
   "Asset is pending listing on the ethereum bridge"
-  PendingListing
+  STATUS_PENDING_LISTING
   "Asset can be used on the Vega network"
-  Enabled
+  STATUS_ENABLED
 }
 
 "Represents an asset in Vega"
@@ -1102,10 +1101,19 @@ type NodeSignature {
 "Represents the type signature provided by a node"
 enum NodeSignatureKind {
   "A signature for proposing a new asset into the network"
-  AssetNew
+  NODE_SIGNATURE_KIND_ASSET_NEW
 
   "A signature for allowing funds withdrawal"
-  AssetWithdrawal
+  NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL
+
+  "A signature to add a new validator to the ERC20 bridge"
+  NODE_SIGNATURE_KIND_ERC20_MULTISIG_SIGNER_ADDED
+
+  "A siganture to remove a validator from the ERC20 bridge"
+  NODE_SIGNATURE_KIND_ERC20_MULTISIG_SIGNER_REMOVED
+
+  "A signature to update limits of an ERC20 asset"
+  NODE_SIGNATURE_KIND_ASSET_UPDATE
 }
 
 "Statistics about the node"
@@ -1312,13 +1320,13 @@ type OracleSpec {
 
 "Status describe the status of the oracle spec"
 enum OracleSpecStatus {
-  "StatusActive describes an active oracle spec."
-  StatusActive
+  "describes an active oracle spec."
+  STATUS_ACTIVE
   """
-  StatusUnused describes an oracle spec that is not listening to data
+  describes an oracle spec that is not listening to data
   anymore.
   """
-  StatusUnused
+  STATUS_DEACTIVATED
 }
 
 """
@@ -1349,17 +1357,17 @@ engine.
 """
 enum PropertyKeyType {
   "Any type."
-  TypeEmpty
+  TYPE_EMPTY
   "Integer type."
-  TypeInteger
+  TYPE_INTEGER
   "String type."
-  TypeString
+  TYPE_STRING
   "Boolean type."
-  TypeBoolean
+  TYPE_BOOLEAN
   "Any floating point decimal type."
-  TypeDecimal
+  TYPE_DECIMAL
   "Timestamp date type."
-  TypeTimestamp
+  TYPE_TIMESTAMP
 }
 
 """
@@ -1375,21 +1383,21 @@ type Condition {
 "Comparator describes the type of comparison."
 enum ConditionOperator {
   "Verify if the property values are strictly equal or not."
-  OperatorEquals
+  OPERATOR_EQUALS
   "Verify if the oracle data value is greater than the Condition value."
-  OperatorGreaterThan
+  OPERATOR_GREATER_THAN
   """
   Verify if the oracle data value is greater than or equal to the Condition
   value.
   """
-  OperatorGreaterThanOrEqual
+  OPERATOR_GREATER_THAN_OR_EQUAL
   " Verify if the oracle data value is less than the Condition value."
-  OperatorLessThan
+  OPERATOR_LESS_THAN
   """
   Verify if the oracle data value is less or equal to than the Condition
   value.
   """
-  OperatorLessThanOrEqual
+  OPERATOR_LESS_THAN_OR_EQUAL
 }
 
 "An oracle data contains the data sent by an oracle"
@@ -2053,9 +2061,9 @@ type StakingSummary {
 "The type of stake linking"
 enum StakeLinkingType {
   "The stake is being linked (deposited) to a Vega stake account"
-  Link
+  TYPE_LINK
   "The stake is being unlinked (removed) from a Vega stake account"
-  Unlink
+  TYPE_UNLINK
 }
 
 "The status of the stake linking"
@@ -2065,11 +2073,11 @@ enum StakeLinkingStatus {
   the Vega network have seen a stake linking, but is still to confirm
   it's valid on the ethereum chain and accepted by all nodes of the network
   """
-  Pending
+  STATUS_PENDING
   "The stake linking has been accepted and processed fully (balance updated) by the network"
-  Accepted
+  STATUS_ACCEPTED
   "The Vega network has rejected this stake linking"
-  Rejected
+  STATUS_REJECTED
 }
 
 "A stake linking represent the intent from a party to deposit / remove stake on their account"
@@ -2264,13 +2272,13 @@ type TradeFee {
 "Valid trade types"
 enum TradeType {
   "Default trade type"
-  Default
+  TYPE_DEFAULT
 
   "Network close-out - good"
-  NetworkCloseOutGood
+  TYPE_NETWORK_CLOSE_OUT_BAD
 
   "Network close-out - bad"
-  NetworkCloseOutBad
+  TYPE_NETWORK_CLOSE_OUT_GOOD
 }
 
 "An account record"
@@ -2343,11 +2351,11 @@ type Erc20WithdrawalDetails {
 "The status of a withdrawal"
 enum WithdrawalStatus {
   "The withdrawal is open and being processed by the network"
-  Open
+  STATUS_OPEN
   "The withdrawal have been cancelled by the network, either because it expired, or something went wrong with the foreign chain"
-  Rejected
+  STATUS_REJECTED
   "The withdrawal was finalised, it was valid, the foreign chain has executed it and the network updated all accounts"
-  Finalized
+  STATUS_FINALIZED
 }
 
 "The details of a deposit processed by Vega"
@@ -2373,45 +2381,45 @@ type Deposit {
 "The status of a deposit"
 enum DepositStatus {
   "The deposit is open and being processed by the network"
-  Open
+  STATUS_OPEN
   "The deposit have been cancelled by the network, either because it expired, or something went wrong with the foreign chain"
-  Cancelled
+  STATUS_CANCELLED
   "The deposit was finalised, it was valid, the foreign chain has executed it and the network updated all accounts"
-  Finalized
+  STATUS_FINALIZED
 }
 
 "Valid order types, these determine what happens when an order is added to the book"
 enum OrderTimeInForce {
   "Fill or Kill: The order either trades completely (remainingSize == 0 after adding) or not at all, does not remain on the book if it doesn't trade"
-  FOK
+  TIME_IN_FORCE_FOK
 
   "Immediate or Cancel: The order trades any amount and as much as possible but does not remain on the book (whether it trades or not)"
-  IOC
+  TIME_IN_FORCE_IOC
 
   "Good 'til Cancelled: This order trades any amount and as much as possible and remains on the book until it either trades completely or is cancelled"
-  GTC
+  TIME_IN_FORCE_GTC
 
   """
   Good 'til Time: This order type trades any amount and as much as possible and remains on the book until they either trade completely, are cancelled, or expires at a set time
   NOTE: this may in future be multiple types or have sub types for orders that provide different ways of specifying expiry
   """
-  GTT
+  TIME_IN_FORCE_GTT
 
   "Good for Auction: This order is only accepted during an auction period"
-  GFA
+  TIME_IN_FORCE_GFA
 
   "Good for Normal: This order is only accepted during normal trading (continuous trading or frequent batched auctions)"
-  GFN
+  TIME_IN_FORCE_GFN
 }
 
 "Valid references used for pegged orders."
 enum PeggedReference {
   "Peg the order against the mid price of the order book"
-  Mid
+  PEGGED_REFERENCE_MID
   "Peg the order against the best bid price of the order book"
-  BestBid
+  PEGGED_REFERENCE_BEST_BID
   "Peg the order against the best ask price of the order book"
-  BestAsk
+  PEGGED_REFERENCE_BEST_ASK
 }
 
 "Valid order statuses, these determine several states for an order that cannot be expressed with other fields in Order."
@@ -2420,344 +2428,344 @@ enum OrderStatus {
   The order is active and not cancelled or expired, it could be unfilled, partially filled or fully filled.
   Active does not necessarily mean it's still on the order book.
   """
-  Active
+  STATUS_ACTIVE
 
   "This order trades any amount and as much as possible and remains on the book until it either trades completely or expires."
-  Expired
+  STATUS_EXPIRED
 
   "The order is cancelled, the order could be partially filled or unfilled before it was cancelled. It is not possible to cancel an order with 0 remaining."
-  Cancelled
+  STATUS_CANCELLED
 
   "This order was of type IOC or FOK and could not be processed by the matching engine due to lack of liquidity."
-  Stopped
+  STATUS_STOPPED
 
   "This order is fully filled with remaining equalling zero."
-  Filled
+  STATUS_FILLED
 
   "This order was rejected while being processed."
-  Rejected
+  STATUS_REJECTED
 
   "This order was partially filled."
-  PartiallyFilled
+  STATUS_PARTIALLY_FILLED
 
   "This order has been removed from the order book because the market is in auction, the reference price doesn't exist, or the order needs to be repriced and can't. Applies to pegged orders only"
-  Parked
+  STATUS_PARKED
 }
 
 "Reason for the proposal being rejected by the core node"
 enum ProposalRejectionReason {
   "The specified close time is too early based on network parameters"
-  CloseTimeTooSoon
+  PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON
   "The specified close time is too late based on network parameters"
-  CloseTimeTooLate
+  PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE
   "The specified enactment time is too early based on network parameters"
-  EnactTimeTooSoon
+  PROPOSAL_ERROR_ENACT_TIME_TOO_SOON
   "The specified enactment time is too late based on network parameters"
-  EnactTimeTooLate
+  PROPOSAL_ERROR_ENACT_TIME_TOO_LATE
   "The proposer for this proposal has insufficient tokens"
-  InsufficientTokens
+  PROPOSAL_ERROR_INSUFFICIENT_TOKENS
   "The instrument quote name and base name were the same"
-  InvalidInstrumentSecurity
+  PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY
   "The proposal has no product specified"
-  NoProduct
+  PROPOSAL_ERROR_NO_PRODUCT
   "The specified product is not supported"
-  UnsupportedProduct
-  "Invalid future maturity timestamp (expect RFC3339)"
-  InvalidFutureMaturityTimestamp
-  "The product maturity is already in the past"
-  ProductMaturityIsPassed
+  PROPOSAL_ERROR_UNSUPPORTED_PRODUCT
   "The proposal has no trading mode"
-  NoTradingMode
+  PROPOSAL_ERROR_NO_TRADING_MODE
   "The proposal has an unsupported trading mode"
-  UnsupportedTradingMode
+  PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE
   "The proposal failed node validation"
-  NodeValidationFailed
+  PROPOSAL_ERROR_NODE_VALIDATION_FAILED
   "A builtin asset configuration is missing"
-  MissingBuiltinAssetField
+  PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD
   "The ERC20 contract address is missing from an ERC20 asset proposal"
-  MissingERC20ContractAddress
+  PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS
   "The specified asset for the market proposal is invalid"
-  InvalidAsset
+  PROPOSAL_ERROR_INVALID_ASSET
   "proposal terms timestamps are not compatible (Validation < Closing < Enactment)"
-  IncompatibleTimestamps
+  PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS
   "Risk parameters are missing from the market proposal"
-  NoRiskParameters
+  PROPOSAL_ERROR_NO_RISK_PARAMETERS
   "Invalid key in update network parameter proposal"
-  NetworkParameterInvalidKey
+  PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY
   "Invalid value in update network parameter proposal"
-  NetworkParameterInvalidValue
+  PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE
   "Validation failed for network parameter proposal"
-  NetworkParameterValidationFailed
+  PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED
   "Opening auction duration is less than the network minimum opening auction time"
-  OpeningAuctionDurationTooSmall
+  PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_SMALL
   "Opening auction duration is more than the network minimum opening auction time"
-  OpeningAuctionDurationTooLarge
+  PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_LARGE
   "Market proposal is missing a liquidity commitment"
-  MarketMissingLiquidityCommitment
+  PROPOSAL_ERROR_MARKET_MISSING_LIQUIDITY_COMMITMENT
   "Market could not be created"
-  CouldNotInstantiateMarket
+  PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET
   "Market proposal market contained invalid product definition"
-  InvalidFutureProduct
+  PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT
   "Market proposal is missing commitment amount"
-  MissingCommitmentAmount
+  PROPOSAL_ERROR_MISSING_COMMITMENT_AMOUNT
   "Market proposal has invalid fee amount"
-  InvalidFeeAmount
+  PROPOSAL_ERROR_INVALID_FEE_AMOUNT
   "Market proposal has one or more invalid liquidity shapes"
-  InvalidShape
+  PROPOSAL_ERROR_INVALID_SHAPE
   "Market proposal uses an invalid risk parameter"
-  InvalidRiskParameter
+  PROPOSAL_ERROR_INVALID_RISK_PARAMETER
   "Proposal declined because the majority threshold was not reached"
-  MajorityThresholdNotReached
+  PROPOSAL_ERROR_MAJORITY_THRESHOLD_NOT_REACHED
   "Proposal declined because the participation threshold was not reached"
-  ParticipationThresholdNotReached
+  PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED
   "Asset details are invalid"
-  InvalidAssetDetails
+  PROPOSAL_ERROR_INVALID_ASSET_DETAILS
   "Too many price monitoring triggers specified in market"
-  TooManyPriceMonitoringTriggers
+  PROPOSAL_ERROR_TOO_MANY_PRICE_MONITORING_TRIGGERS
   "Too many decimal places specified in market"
-  TooManyMarketDecimalPlaces
+  PROPOSAL_ERROR_TOO_MANY_MARKET_DECIMAL_PLACES
   "The market is invalid"
-  InvalidMarket
+  PROPOSAL_ERROR_INVALID_MARKET
   "The proposal is rejected because the party does not have enough equity like share in the market"
-  InsufficientEquityLikeShare
+  PROPOSAL_ERROR_INSUFFICIENT_EQUITY_LIKE_SHARE
+  "Unknown proposal type"
+  PROPOSAL_ERROR_UNKNOWN_TYPE
+  "Unknow risk paramters"
+  PROPOSAL_ERROR_UNKNOWN_RISK_PARAMETER_TYPE
+  "Freeform proposal is invalid"
+  PROPOSAL_ERROR_INVALID_FREEFORM
 }
 
 "Reason for the order being rejected by the core node"
 enum OrderRejectionReason {
   "Market ID is invalid"
-  InvalidMarketId
+  ORDER_ERROR_INVALID_MARKET_ID
 
   "Order ID is invalid"
-  InvalidOrderId
+  ORDER_ERROR_INVALID_ORDER_ID
 
   "Order is out of sequence"
-  OrderOutOfSequence
+  ORDER_ERROR_OUT_OF_SEQUENCE
 
   "Remaining size in the order is invalid"
-  InvalidRemainingSize
+  ORDER_ERROR_INVALID_REMAINING_SIZE
 
   "Time has failed us"
-  TimeFailure
+  ORDER_ERROR_TIME_FAILURE
 
   "Unable to remove the order"
-  OrderRemovalFailure
+  ORDER_ERROR_REMOVAL_FAILURE
 
   "Expiration time is invalid"
-  InvalidExpirationTime
+  ORDER_ERROR_INVALID_EXPIRATION_DATETIME
 
   "Order reference is invalid"
-  InvalidOrderReference
+  ORDER_ERROR_INVALID_ORDER_REFERENCE
 
   "Edit is not allowed"
-  EditNotAllowed
+  ORDER_ERROR_EDIT_NOT_ALLOWED
 
   "Amending the order failed"
-  OrderAmendFailure
+  ORDER_ERROR_AMEND_FAILURE
 
   "Order does not exist"
-  OrderNotFound
+  ORDER_ERROR_NOT_FOUND
 
   "Party ID is invalid"
-  InvalidPartyId
+  ORDER_ERROR_INVALID_PARTY_ID
 
   "Market is closed"
-  MarketClosed
+  ORDER_ERROR_MARKET_CLOSED
 
   "Margin check failed - not enough available margin"
-  MarginCheckFailed
+  ORDER_ERROR_MARGIN_CHECK_FAILED
 
   "Order missing general account"
-  MissingGeneralAccount
+  ORDER_ERROR_MISSING_GENERAL_ACCOUNT
 
   "An internal error happened"
-  InternalError
+  ORDER_ERROR_INTERNAL_ERROR
 
   "Invalid size"
-  InvalidSize
+  ORDER_ERROR_INVALID_SIZE
 
   "Invalid persistence"
-  InvalidPersistence
+  ORDER_ERROR_INVALID_PERSISTENCE
 
   "Invalid type"
-  InvalidType
+  ORDER_ERROR_INVALID_TYPE
 
   "Order cannot be filled because it would require self trading"
-  SelfTrading
+  ORDER_ERROR_SELF_TRADING
 
   "Insufficient funds to pay fees"
-  InsufficientFundsToPayFees
+  ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES
 
   "Invalid Time In Force"
-  InvalidTimeInForce
+  ORDER_ERROR_INVALID_TIME_IN_FORCE
 
   "Attempt to amend order to Good til Time without expiry time"
-  AmendToGTTWithoutExpiryAt
+  ORDER_ERROR_CANNOT_AMEND_TO_GTT_WITHOUT_EXPIRYAT
 
   "Attempt to amend expiry time to a value before time order was created"
-  ExpiryAtBeforeCreatedAt
+  ORDER_ERROR_EXPIRYAT_BEFORE_CREATEDAT
 
   "Attempt to amend to Good till Cancelled without an expiry time"
-  GTCWithExpiryAtNotValid
+  ORDER_ERROR_CANNOT_HAVE_GTC_AND_EXPIRYAT
 
   "Amending to Fill or Kill, or Immediate or Cancel is invalid"
-  CannotAmendToFOKOrIOC
+  ORDER_ERROR_CANNOT_AMEND_TO_FOK_OR_IOC
 
   "Amending to Good for Auction or Good for Normal is invalid"
-  CannotAmendToGFAOrGFN
+  ORDER_ERROR_CANNOT_AMEND_TO_GFA_OR_GFN
 
   "Amending from Good for Auction or Good for Normal is invalid"
-  CannotAmendFromGFAOrGFN
-
-  "Invalid market type"
-  InvalidMarketType
+  ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN
 
   "Good for Normal order received during an auction"
-  GFNOrderDuringAuction
+  ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION
 
   "Good for Auction order received during continuous trading"
-  GFAOrderDuringContinuousTrading
+  ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING
 
-  "Immediate or Cancel orders are not allowed during auction"
-  IOCOrderDuringAuction
+  "Cannot send IOC orders during an auction"
+  ORDER_ERROR_CANNOT_SEND_IOC_ORDER_DURING_AUCTION
 
-  "Fill or Kill orders are not allowed during auction"
-  FOKOrderDuringAuction
+  "Cannot send FOK orders during an auction"
+  ORDER_ERROR_CANNOT_SEND_FOK_ORDER_DURING_AUCTION
 
   "Pegged orders must be limit orders"
-  PeggedOrderMustBeLimitOrder
+  ORDER_ERROR_MUST_BE_LIMIT_ORDER
 
   "Pegged orders can only have a time in force of Good til Cancelled or Good til Time"
-  PeggedOrderMustBeGTTOrGTC
+  ORDER_ERROR_MUST_BE_GTT_OR_GTC
 
   "Pegged order must have a reference price"
-  PeggedOrderWithoutReferencePrice
+  ORDER_ERROR_WITHOUT_REFERENCE_PRICE
 
   "Buy pegged order cannot reference best ask price"
-  PeggedOrderBuyCannotReferenceBestAskPrice
+  ORDER_ERROR_BUY_CANNOT_REFERENCE_BEST_ASK_PRICE
 
   "Pegged order offset must be >= 0"
-  PeggedOrderOffsetMustBeGreaterOrEqualToZero
+  ORDER_ERROR_OFFSET_MUST_BE_GREATER_OR_EQUAL_TO_ZERO
 
   "Sell pegged order cannot reference best bid price"
-  PeggedOrderSellCannotReferenceBestBidPrice
+  ORDER_ERROR_SELL_CANNOT_REFERENCE_BEST_BID_PRICE
 
   "Pegged order offset must be > zero"
-  PeggedOrderOffsetMustBeGreaterThanZero
+  ORDER_ERROR_OFFSET_MUST_BE_GREATER_THAN_ZERO
 
   "Insufficient balance to submit the order (no deposit made)"
-  InsufficientAssetBalance
+  ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE
 
   "Cannot change pegged order fields on a non pegged order"
-  CannotAmendPeggedOrderDetailsOnNonPeggedOrder
+  ORDER_ERROR_CANNOT_AMEND_PEGGED_ORDER_DETAILS_ON_NON_PEGGED_ORDER
 
   "Unable to reprice a pegged order"
-  UnableToRepricePeggedOrder
+  ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER
 
   "Unable to amend pegged order price"
-  UnableToAmendPeggedOrderPrice
+  ORDER_ERROR_UNABLE_TO_AMEND_PRICE_ON_PEGGED_ORDER
 
   "Non-persistent order exceeds price bounds"
-  NonPersistentOrderExceedsPriceBounds
+  ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS
+
 }
 
 enum OrderType {
   "An order to buy or sell at the market's current best available price"
-  Market
+  TYPE_MARKET
 
   "Order that uses a pre-specified price to buy or sell"
-  Limit
+  TYPE_LIMIT
 
   """
   Used for distressed parties, an order placed by the network to close out distressed parties
   similar to Market order, only no party is attached to the order.
   """
-  Network
+  TYPE_NETWORK
 }
 
 "The current state of a market"
 enum MarketState {
   "The governance proposal valid and accepted"
-  Proposed
+  STATE_PROPOSED
   "Outcome of governance votes is to reject the market"
-  Rejected
+  STATE_REJECTED
   "Governance vote passes/wins"
-  Pending
+  STATE_PENDING
   """
   Market triggers cancellation condition or governance
   votes to close before market becomes Active
   """
-  Cancelled
+  STATE_CANCELLED
   "Enactment date reached and usual auction exit checks pass"
-  Active
+  STATE_ACTIVE
   "Price monitoring or liquidity monitoring trigger"
-  Suspended
+  STATE_SUSPENDED
   "Governance vote (to close)"
-  Closed
+  STATE_CLOSED
   """
   Defined by the product (i.e. from a product parameter,
   specified in market definition, giving close date/time)
   """
-  TradingTerminated
+  STATE_TRADING_TERMINATED
   "Settlement triggered and completed as defined by product"
-  Settled
+  STATE_SETTLED
 }
 
 "What market trading mode is the market in"
 enum MarketTradingMode {
   "Continuous trading where orders are processed and potentially matched on arrival"
-  Continuous
+  TRADING_MODE_CONTINUOUS
 
   "Auction trading where orders are uncrossed at the end of the opening auction period"
-  OpeningAuction
+  TRADING_MODE_OPENING_AUCTION
 
   "Auction as normal trading mode for the market, where orders are uncrossed periodically"
-  BatchAuction
+  TRADING_MODE_BATCH_AUCTION
 
   "Auction triggered by price/liquidity monitoring"
-  MonitoringAuction
+  TRADING_MODE_MONITORING_AUCTION
 
   "No trading allowed"
-  NoTrading
+  TRADING_MODE_NO_TRADING
 }
 
 "Whether the placer of an order is aiming to buy or sell on the market"
 enum Side {
   "The placer of the order is aiming to buy"
-  Buy
+  SIDE_BUY
 
   "The placer of the order is aiming to sell"
-  Sell
+  SIDE_SELL
 }
 
 "The interval for trade candles when subscribing via Vega GraphQL, default is I15M"
 enum Interval {
   "1 minute interval"
-  I1M
+  INTERVAL_I1M
 
   "5 minute interval"
-  I5M
+  INTERVAL_I5M
 
   "15 minute interval (default)"
-  I15M
+  INTERVAL_I15M
 
   "1 hour interval"
-  I1H
+  INTERVAL_I1H
 
   "6 hour interval"
-  I6H
+  INTERVAL_I6H
 
   "1 day interval"
-  I1D
+  INTERVAL_I1D
 }
 
 "The various account types in Vega (used by collateral)"
 enum AccountType {
   "Insurance pool account - only for 'system' party"
-  Insurance
+  ACCOUNT_TYPE_INSURANCE
   "Global insurance pool account for an asset"
-  GlobalInsurance
+  ACCOUNT_TYPE_GLOBAL_INSURANCE
   "Settlement - only for 'system' party"
-  Settlement
+  ACCOUNT_TYPE_SETTLEMENT
   """
   Margin - The leverage account for parties, contains funds set aside for the margin needed to support
   a party's open positions. Each party will have a margin account for each market they have traded in.
@@ -2766,31 +2774,31 @@ enum AccountType {
   The protocol uses an internal accounting system to segregate funds held as margin from other funds
   to ensure they are never lost or 'double spent'
   """
-  Margin
+  ACCOUNT_TYPE_MARGIN
   "General account - the account containing 'unused' collateral for parties"
-  General
+  ACCOUNT_TYPE_GENERAL
   "Infrastructure fee account - the account where all infrastructure fees are collected"
-  FeeInfrastructure
+  ACCOUNT_TYPE_FEES_INFRASTRUCTURE
   "Liquidity fee account - the account contains fees earned by providing liquidity"
-  FeeLiquidity
+  ACCOUNT_TYPE_FEES_LIQUIDITY
   "Market maker fee account - holds fees paid to the passive side when a trade matches"
-  FeeMaker
+  ACCOUNT_TYPE_FEES_MAKER
   "Bond - an account use to maintain liquidity commitments"
-  Bond
+  ACCOUNT_TYPE_BOND
   "External - an account use to refer to external account"
-  External
+  ACCOUNT_TYPE_EXTERNAL
   "GlobalReward - a global account for the reward pool"
-  GlobalReward
+  ACCOUNT_TYPE_GLOBAL_REWARD
   "PendingTransfers - a global account for the pending transfers pool"
-  PendingTransfers
+  ACCOUNT_TYPE_PENDING_TRANSFERS
   "RewardTakerPaidFees - an account holding rewards for taker paid fees"
-  RewardTakerPaidFees
+  ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES
   "RewardMakerReceivedFees - an account holding rewards for maker received fees"
-  RewardMakerReceivedFees
+  ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES
   "RewardLpReceivedFees - an account holding rewards for a liquidity provider's received fees"
-  RewardLpReceivedFees
+  ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES
   "RewardMarketProposers - an account holding rewards for market proposers"
-  RewardMarketProposers
+  ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS
 }
 
 type FutureProduct {
@@ -3024,17 +3032,17 @@ Various proposal types that are supported by Vega
 """
 enum ProposalType {
   "Propose a new market"
-  NewMarket
+  TYPE_NEW_MARKET
   "Update an existing market"
-  UpdateMarket
+  TYPE_UPDATE_MARKET
   "Proposal to change Vega network parameters"
-  NetworkParameters
+  TYPE_NETWORK_PARAMETERS
   "Proposal to add a new asset"
-  NewAsset
-  "Proposal to update an existing asset"
-  UpdateAsset
+  TYPE_NEW_ASSET
   "Proposal to create a new freeform proposal"
-  NewFreeForm
+  TYPE_NEW_FREE_FORM
+  "Proposal to update an existing asset"
+  TYPE_UPDATE_ASSET
 }
 
 """
@@ -3046,19 +3054,19 @@ Proposal can enter Failed state from any other state.
 """
 enum ProposalState {
   "Proposal became invalid and cannot be processed"
-  Failed
+  STATE_FAILED
   "Proposal is open for voting"
-  Open
+  STATE_OPEN
   "Proposal has gained enough support to be executed"
-  Passed
+  STATE_PASSED
   "Proposal didn't get enough votes"
-  Declined
+  STATE_DECLINED
   "Proposal could not gain enough support to be executed"
-  Rejected
+  STATE_REJECTED
   "Proposal has been executed and the changes under this proposal have now been applied"
-  Enacted
+  STATE_ENACTED
   "Proposal is waiting for the node to run validation"
-  WaitingForNodeVote
+  STATE_WAITING_FOR_NODE_VOTE
 }
 
 type Proposal {
@@ -3104,9 +3112,9 @@ type ProposalVoteSide {
 
 enum VoteValue {
   "No reject a proposal"
-  No
+  VALUE_NO
   "Yes accept a proposal"
-  Yes
+  VALUE_YES
 }
 
 type Vote {
@@ -3257,15 +3265,15 @@ type AuctionEvent {
 
 enum AuctionTrigger {
   "Invalid trigger (or no auction)"
-  Unspecified
+  AUCTION_TRIGGER_UNSPECIFIED
   "Auction because market has a frequent batch auction trading mode"
-  Batch
+  AUCTION_TRIGGER_BATCH
   "Opening auction"
-  Opening
+  AUCTION_TRIGGER_OPENING
   "Price monitoring"
-  Price
+  AUCTION_TRIGGER_PRICE
   "Liquidity monitoring"
-  Liquidity
+  AUCTION_TRIGGER_LIQUIDITY
 }
 
 enum BusEventType {
@@ -3385,21 +3393,21 @@ type LiquidityOrder {
 "Status of a liquidity provision order"
 enum LiquidityProvisionStatus {
   "An active liquidity provision"
-  Active
+  STATUS_ACTIVE
   "A liquidity provision stopped by the network"
-  Stopped
+  STATUS_STOPPED
   "A cancelled liquidity provision"
-  Cancelled
+  STATUS_CANCELLED
   "Liquidity provision was invalid and got rejected"
-  Rejected
+  STATUS_REJECTED
   "The liquidity provision is valid and accepted by the network, but orders aren't deployed"
-  Undeployed
+  STATUS_UNDEPLOYED
   """
   The liquidity provision is valid and accepted by the network, but orders aren't deployed and
   have never been deployed. If when it's possible to deploy them for the first time the
   margin check fails, then they will be cancelled without any penalties.
   """
-  Pending
+  STATUS_PENDING
 }
 
 type LiquidityOrderReference {

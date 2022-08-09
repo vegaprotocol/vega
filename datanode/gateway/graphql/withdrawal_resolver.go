@@ -34,10 +34,6 @@ func (r *myWithdrawalResolver) Asset(ctx context.Context, obj *types.Withdrawal)
 	return r.r.getAssetByID(ctx, obj.Asset)
 }
 
-func (r *myWithdrawalResolver) Status(ctx context.Context, obj *types.Withdrawal) (WithdrawalStatus, error) {
-	return convertWithdrawalStatusFromProto(obj.Status)
-}
-
 func (r *myWithdrawalResolver) Expiry(ctx context.Context, obj *types.Withdrawal) (string, error) {
 	// this is a unix time stamp / non-nano
 	return vegatime.Format(time.Unix(obj.Expiry, 0)), nil
