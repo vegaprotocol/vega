@@ -9099,7 +9099,7 @@ enum TransferStatus {
   Indicates a transfer stopped by the Vega network
   e.g: no funds left to cover the transfer
   """
-  STATUS_STOPPEDah
+  STATUS_STOPPED
   "Indication of a transfer cancelled by the user"
   STATUS_CANCELLED
 }
