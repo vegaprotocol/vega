@@ -164,9 +164,6 @@ func (p *PeggedOrders) RemoveAllParkedForParty(
 }
 
 func (p *PeggedOrders) GetParkedIDs() []string {
-	// the reason for this is that if an pegged order cannot be priced it remains in the book as parked in which case it will be both in the
-	// orders from the order book as well as in parked orders so we need to dedup
-
 	ids := make([]string, 0, len(p.isParked))
 	for k := range p.isParked {
 		ids = append(ids, k)
