@@ -62,6 +62,7 @@ require (
 	github.com/jackc/pgtype v1.11.0
 	github.com/jackc/pgx/v4 v4.14.1
 	github.com/machinebox/graphql v0.2.2
+	github.com/mitchellh/mapstructure v1.5.0
 	github.com/muesli/termenv v0.11.0
 	github.com/oasisprotocol/curve25519-voi v0.0.0-20220317090546-adb2f9614b17
 	github.com/pressly/goose/v3 v3.6.1
@@ -90,6 +91,7 @@ require (
 	github.com/StackExchange/wmi v1.2.1 // indirect
 	github.com/agnivade/levenshtein v1.1.0 // indirect
 	github.com/armon/go-radix v1.0.0 // indirect
+	github.com/benbjohnson/clock v1.3.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/btcsuite/btcd v0.22.1 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.2.0 // indirect
@@ -140,7 +142,6 @@ require (
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
 	github.com/minio/highwayhash v1.0.2 // indirect
-	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.2 // indirect
 	github.com/petermattis/goid v0.0.0-20180202154549-b0b1615b78e5 // indirect

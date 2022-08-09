@@ -13,6 +13,7 @@ import (
 
 	"code.vegaprotocol.io/vega/commands"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	api "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
@@ -46,6 +47,7 @@ type Service struct {
 	auth        Auth
 	nodeForward NodeForward
 	policy      Policy
+	apiV2       *jsonrpc.API
 }
 
 // CreateWalletRequest describes the request for CreateWallet.
@@ -425,7 +427,7 @@ type NodeForward interface {
 	LastBlockHeightAndHash(context.Context) (*api.LastBlockHeightResponse, int, error)
 }
 
-func NewService(log *zap.Logger, net *network.Network, h WalletHandler, a Auth, n NodeForward, policy Policy) (*Service, error) {
+func NewService(log *zap.Logger, net *network.Network, apiV2 *jsonrpc.API, h WalletHandler, a Auth, n NodeForward, policy Policy) (*Service, error) {
 	s := &Service{
 		Router:      httprouter.New(),
 		log:         log,
@@ -434,6 +436,7 @@ func NewService(log *zap.Logger, net *network.Network, h WalletHandler, a Auth, 
 		nodeForward: n,
 		network:     net,
 		policy:      policy,
+		apiV2:       apiV2,
 	}
 
 	s.server = &http.Server{
@@ -465,6 +468,10 @@ func NewService(log *zap.Logger, net *network.Network, h WalletHandler, a Auth, 
 
 	s.handle(http.MethodGet, "/api/v1/version", s.Version)
 	s.handle(http.MethodGet, "/api/v1/status", s.Health)
+
+	// We don't use the `Service.handle() method to favour the improved logging
+	// inside the handler.
+	s.Handle(http.MethodPost, "/api/v2/requests", s.HandleRequestV2)
 
 	return s, nil
 }

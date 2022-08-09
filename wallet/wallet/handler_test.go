@@ -1,6 +1,7 @@
 package wallet_test
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"sort"
@@ -54,9 +55,9 @@ func testAnnotatingKeySucceeds(t *testing.T) {
 
 			// setup
 			store := handlerMocks(tt)
-			store.EXPECT().WalletExists(req.Wallet).Times(1).Return(true)
-			store.EXPECT().GetWallet(req.Wallet, req.Passphrase).Times(1).Return(w, nil)
-			store.EXPECT().SaveWallet(w, req.Passphrase).Times(1).Return(nil)
+			store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(true, nil)
+			store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(1).Return(w, nil)
+			store.EXPECT().SaveWallet(gomock.Any(), w, req.Passphrase).Times(1).Return(nil)
 
 			// when
 			err := wallet.AnnotateKey(store, req)
@@ -86,9 +87,9 @@ func testGenerateKeyInNonExistingWalletFails(t *testing.T) {
 
 	// setup
 	store := handlerMocks(t)
-	store.EXPECT().WalletExists(req.Wallet).Times(1).Return(false)
+	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(false, nil)
 	store.EXPECT().GetWalletPath(req.Wallet).Times(0)
-	store.EXPECT().SaveWallet(gomock.Any(), req.Passphrase).Times(0)
+	store.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), req.Passphrase).Times(0)
 
 	// when
 	resp, err := wallet.GenerateKey(store, req)
@@ -112,9 +113,9 @@ func testGenerateKeyInExistingWalletSucceeds(t *testing.T) {
 
 	// setup
 	store := handlerMocks(t)
-	store.EXPECT().WalletExists(req.Wallet).Times(1).Return(true)
-	store.EXPECT().GetWallet(req.Wallet, req.Passphrase).Times(1).Return(w, nil)
-	store.EXPECT().SaveWallet(gomock.Any(), req.Passphrase).Times(1).Return(nil)
+	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(true, nil)
+	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(1).Return(w, nil)
+	store.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), req.Passphrase).Times(1).Return(nil)
 
 	// when
 	resp, err := wallet.GenerateKey(store, req)
@@ -152,9 +153,9 @@ func testTaintingKeySucceeds(t *testing.T) {
 
 	// setup
 	store := handlerMocks(t)
-	store.EXPECT().WalletExists(req.Wallet).Times(1).Return(true)
-	store.EXPECT().GetWallet(req.Wallet, req.Passphrase).Times(1).Return(w, nil)
-	store.EXPECT().SaveWallet(w, req.Passphrase).Times(1).Return(nil)
+	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(true, nil)
+	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(1).Return(w, nil)
+	store.EXPECT().SaveWallet(gomock.Any(), w, req.Passphrase).Times(1).Return(nil)
 
 	// when
 	err := wallet.TaintKey(store, req)
@@ -174,9 +175,9 @@ func testTaintingKeyOfNonExistingWalletFails(t *testing.T) {
 
 	// setup
 	store := handlerMocks(t)
-	store.EXPECT().WalletExists(req.Wallet).Times(1).Return(false)
-	store.EXPECT().GetWallet(req.Wallet, req.Passphrase).Times(0)
-	store.EXPECT().SaveWallet(gomock.Any(), req.Passphrase).Times(0)
+	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(false, nil)
+	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(0)
+	store.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), req.Passphrase).Times(0)
 
 	// when
 	err := wallet.TaintKey(store, req)
@@ -207,9 +208,9 @@ func testUntaintingKeySucceeds(t *testing.T) {
 
 	// setup
 	store := handlerMocks(t)
-	store.EXPECT().WalletExists(req.Wallet).Times(1).Return(true)
-	store.EXPECT().GetWallet(req.Wallet, req.Passphrase).Times(1).Return(w, nil)
-	store.EXPECT().SaveWallet(w, req.Passphrase).Times(1).Return(nil)
+	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(true, nil)
+	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(1).Return(w, nil)
+	store.EXPECT().SaveWallet(gomock.Any(), w, req.Passphrase).Times(1).Return(nil)
 
 	// when
 	err = wallet.UntaintKey(store, req)
@@ -229,9 +230,9 @@ func testUntaintingKeyOfNonExistingWalletFails(t *testing.T) {
 
 	// setup
 	store := handlerMocks(t)
-	store.EXPECT().WalletExists(req.Wallet).Times(1).Return(false)
-	store.EXPECT().GetWallet(req.Wallet, req.Passphrase).Times(0)
-	store.EXPECT().SaveWallet(gomock.Any(), req.Passphrase).Times(0)
+	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(false, nil)
+	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(0)
+	store.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), req.Passphrase).Times(0)
 
 	// when
 	err := wallet.UntaintKey(store, req)
@@ -261,9 +262,9 @@ func testIsolatingKeySucceeds(t *testing.T) {
 
 	// setup
 	store := handlerMocks(t)
-	store.EXPECT().WalletExists(req.Wallet).Times(1).Return(true)
-	store.EXPECT().GetWallet(req.Wallet, req.Passphrase).Times(1).Return(w, nil)
-	store.EXPECT().SaveWallet(gomock.Any(), req.Passphrase).Times(1).Return(nil)
+	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(true, nil)
+	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(1).Return(w, nil)
+	store.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), req.Passphrase).Times(1).Return(nil)
 	store.EXPECT().GetWalletPath(gomock.Any()).Times(1).Return(expectedResp.FilePath)
 
 	// when
@@ -285,9 +286,9 @@ func testIsolatingKeyOfNonExistingWalletFails(t *testing.T) {
 
 	// setup
 	store := handlerMocks(t)
-	store.EXPECT().WalletExists(req.Wallet).Times(1).Return(false)
-	store.EXPECT().GetWallet(req.Wallet, req.Passphrase).Times(0)
-	store.EXPECT().SaveWallet(gomock.Any(), req.Passphrase).Times(0)
+	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(false, nil)
+	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(0)
+	store.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), req.Passphrase).Times(0)
 
 	// when
 	resp, err := wallet.IsolateKey(store, req)
@@ -328,8 +329,8 @@ func testListKeysSucceeds(t *testing.T) {
 
 	// setup
 	store := handlerMocks(t)
-	store.EXPECT().WalletExists(req.Wallet).Times(1).Return(true)
-	store.EXPECT().GetWallet(req.Wallet, req.Passphrase).Times(1).Return(w, nil)
+	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(true, nil)
+	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(1).Return(w, nil)
 
 	// when
 	resp, err := wallet.ListKeys(store, req)
@@ -349,8 +350,8 @@ func testListKeysOfNonExistingWalletFails(t *testing.T) {
 
 	// setup
 	store := handlerMocks(t)
-	store.EXPECT().WalletExists(req.Wallet).Times(1).Return(false)
-	store.EXPECT().GetWallet(req.Wallet, req.Passphrase).Times(0)
+	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(false, nil)
+	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(0)
 
 	// when
 	resp, err := wallet.ListKeys(store, req)
@@ -381,8 +382,8 @@ func testGetWalletInfoSucceeds(t *testing.T) {
 
 	// setup
 	store := handlerMocks(t)
-	store.EXPECT().WalletExists(req.Wallet).Times(1).Return(true)
-	store.EXPECT().GetWallet(req.Wallet, req.Passphrase).Times(1).Return(w, nil)
+	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(true, nil)
+	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(1).Return(w, nil)
 
 	// when
 	resp, err := wallet.GetWalletInfo(store, req)
@@ -402,8 +403,8 @@ func testGetWalletInfoOfNonExistingWalletFails(t *testing.T) {
 
 	// setup
 	store := handlerMocks(t)
-	store.EXPECT().WalletExists(req.Wallet).Times(1).Return(false)
-	store.EXPECT().GetWallet(req.Wallet, req.Passphrase).Times(0)
+	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(false, nil)
+	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(0)
 
 	// when
 	resp, err := wallet.GetWalletInfo(store, req)
@@ -422,15 +423,15 @@ func TestCreateWalletSucceeds(t *testing.T) {
 
 	// setup
 	var createdWallet wallet.Wallet
-	captureWallet := func(w wallet.Wallet, passphrase string) error {
+	captureWallet := func(_ context.Context, w wallet.Wallet, passphrase string) error {
 		createdWallet = w
 		return nil
 	}
 	fakePath := fmt.Sprintf("/path/to/wallets/%s", req.Wallet)
 	store := handlerMocks(t)
-	store.EXPECT().WalletExists(req.Wallet).Times(1).Return(false)
+	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(false, nil)
 	store.EXPECT().GetWalletPath(req.Wallet).Times(1).Return(fakePath)
-	store.EXPECT().SaveWallet(gomock.Any(), req.Passphrase).Times(1).DoAndReturn(captureWallet)
+	store.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), req.Passphrase).Times(1).DoAndReturn(captureWallet)
 
 	// when
 	resp, err := wallet.CreateWallet(store, req)
@@ -465,15 +466,15 @@ func TestImportWalletSucceeds(t *testing.T) {
 
 	// setup
 	var importedWallet wallet.Wallet
-	captureWallet := func(w wallet.Wallet, passphrase string) error {
+	captureWallet := func(_ context.Context, w wallet.Wallet, passphrase string) error {
 		importedWallet = w
 		return nil
 	}
 	fakePath := fmt.Sprintf("/path/to/wallets/%s", req.Wallet)
 	store := handlerMocks(t)
-	store.EXPECT().WalletExists(req.Wallet).Times(1).Return(false)
+	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(false, nil)
 	store.EXPECT().GetWalletPath(req.Wallet).Times(1).Return(fakePath)
-	store.EXPECT().SaveWallet(gomock.Any(), req.Passphrase).Times(1).DoAndReturn(captureWallet)
+	store.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), req.Passphrase).Times(1).DoAndReturn(captureWallet)
 
 	// when
 	resp, err := wallet.ImportWallet(store, req)
@@ -508,7 +509,7 @@ func TestListWalletsSucceeds(t *testing.T) {
 
 	// setup
 	store := handlerMocks(t)
-	store.EXPECT().ListWallets().Times(1).Return(walletNames, nil)
+	store.EXPECT().ListWallets(gomock.Any()).Times(1).Return(walletNames, nil)
 
 	// when
 	resp, err := wallet.ListWallets(store)
@@ -546,8 +547,8 @@ func testSignCommandSucceeds(t *testing.T) {
 
 	// setup
 	store := handlerMocks(t)
-	store.EXPECT().WalletExists(req.Wallet).Times(1).Return(true)
-	store.EXPECT().GetWallet(req.Wallet, req.Passphrase).Times(1).Return(w, nil)
+	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(true, nil)
+	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(1).Return(w, nil)
 
 	// when
 	resp, err := wallet.SignCommand(store, req)
@@ -577,8 +578,8 @@ func testSignCommandWithNonExistingWalletFails(t *testing.T) {
 
 	// setup
 	store := handlerMocks(t)
-	store.EXPECT().WalletExists(req.Wallet).Times(1).Return(false)
-	store.EXPECT().GetWallet(req.Wallet, req.Passphrase).Times(0)
+	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(false, nil)
+	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(0)
 
 	// when
 	resp, err := wallet.SignCommand(store, req)
@@ -612,8 +613,8 @@ func testSignMessageSucceeds(t *testing.T) {
 
 	// setup
 	store := handlerMocks(t)
-	store.EXPECT().WalletExists(req.Wallet).Times(1).Return(true)
-	store.EXPECT().GetWallet(req.Wallet, req.Passphrase).Times(1).Return(w, nil)
+	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(true, nil)
+	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(1).Return(w, nil)
 
 	// when
 	resp, err := wallet.SignMessage(store, req)
@@ -633,8 +634,8 @@ func testSignMessageWithNonExistingWalletFails(t *testing.T) {
 
 	// setup
 	store := handlerMocks(t)
-	store.EXPECT().WalletExists(req.Wallet).Times(1).Return(false)
-	store.EXPECT().GetWallet(req.Wallet, req.Passphrase).Times(0)
+	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(false, nil)
+	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(0)
 
 	// when
 	resp, err := wallet.SignMessage(store, req)
@@ -673,8 +674,8 @@ func testRotateKeySucceeds(t *testing.T) {
 
 	// setup
 	store := handlerMocks(t)
-	store.EXPECT().WalletExists(req.Wallet).Times(1).Return(true)
-	store.EXPECT().GetWallet(req.Wallet, req.Passphrase).Times(1).Return(w, nil)
+	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(true, nil)
+	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(1).Return(w, nil)
 
 	// when
 	resp, err := wallet.RotateKey(store, req)
@@ -717,8 +718,8 @@ func testRotateWithNonExistingWalletFails(t *testing.T) {
 
 	// setup
 	store := handlerMocks(t)
-	store.EXPECT().WalletExists(req.Wallet).Times(1).Return(false)
-	store.EXPECT().GetWallet(req.Wallet, req.Passphrase).Times(0)
+	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(false, nil)
+	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(0)
 
 	// when
 	resp, err := wallet.RotateKey(store, req)
@@ -742,8 +743,8 @@ func testRotateKeyWithNonExistingNewPublicKeyFails(t *testing.T) {
 
 	// setup
 	store := handlerMocks(t)
-	store.EXPECT().WalletExists(req.Wallet).Times(1).Return(true)
-	store.EXPECT().GetWallet(req.Wallet, req.Passphrase).Times(1).Return(w, nil)
+	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(true, nil)
+	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(1).Return(w, nil)
 
 	// when
 	resp, err := wallet.RotateKey(store, req)
@@ -770,8 +771,8 @@ func testRotateKeyWithNonExistingCurrentPublicKeyFails(t *testing.T) {
 
 	// setup
 	store := handlerMocks(t)
-	store.EXPECT().WalletExists(req.Wallet).Times(1).Return(true)
-	store.EXPECT().GetWallet(req.Wallet, req.Passphrase).Times(1).Return(w, nil)
+	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(true, nil)
+	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(1).Return(w, nil)
 
 	// when
 	resp, err := wallet.RotateKey(store, req)
@@ -802,8 +803,8 @@ func testRotateKeyWithTaintedPublicKeyFails(t *testing.T) {
 
 	// setup
 	store := handlerMocks(t)
-	store.EXPECT().WalletExists(req.Wallet).Times(1).Return(true)
-	store.EXPECT().GetWallet(req.Wallet, req.Passphrase).Times(1).Return(w, nil)
+	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(true, nil)
+	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(1).Return(w, nil)
 
 	// when
 	resp, err := wallet.RotateKey(store, req)
@@ -856,8 +857,8 @@ func testListPermissionsSucceeds(t *testing.T) {
 
 	// setup
 	store := handlerMocks(t)
-	store.EXPECT().WalletExists(req.Wallet).Times(1).Return(true)
-	store.EXPECT().GetWallet(req.Wallet, req.Passphrase).Times(1).Return(w, nil)
+	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(true, nil)
+	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(1).Return(w, nil)
 
 	// when
 	resp, err := wallet.ListPermissions(store, req)
@@ -879,8 +880,8 @@ func testListPermissionsOfNonExistingWalletFails(t *testing.T) {
 
 	// setup
 	store := handlerMocks(t)
-	store.EXPECT().WalletExists(req.Wallet).Times(1).Return(false)
-	store.EXPECT().GetWallet(req.Wallet, req.Passphrase).Times(0)
+	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(false, nil)
+	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(0)
 
 	// when
 	resp, err := wallet.ListPermissions(store, req)
@@ -936,8 +937,8 @@ func testDescribePermissionsSucceeds(t *testing.T) {
 
 	// setup
 	store := handlerMocks(t)
-	store.EXPECT().WalletExists(req.Wallet).Times(1).Return(true)
-	store.EXPECT().GetWallet(req.Wallet, req.Passphrase).Times(1).Return(w, nil)
+	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(true, nil)
+	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(1).Return(w, nil)
 
 	// when
 	resp, err := wallet.DescribePermissions(store, req)
@@ -960,8 +961,8 @@ func testDescribePermissionsOfNonExistingWalletFails(t *testing.T) {
 
 	// setup
 	store := handlerMocks(t)
-	store.EXPECT().WalletExists(req.Wallet).Times(1).Return(false)
-	store.EXPECT().GetWallet(req.Wallet, req.Passphrase).Times(0)
+	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(false, nil)
+	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(0)
 
 	// when
 	resp, err := wallet.DescribePermissions(store, req)
@@ -983,8 +984,8 @@ func testDescribePermissionsForUnknownHostnameSucceeds(t *testing.T) {
 
 	// setup
 	store := handlerMocks(t)
-	store.EXPECT().WalletExists(req.Wallet).Times(1).Return(true)
-	store.EXPECT().GetWallet(req.Wallet, req.Passphrase).Times(1).Return(w, nil)
+	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(true, nil)
+	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(1).Return(w, nil)
 
 	// when
 	resp, err := wallet.DescribePermissions(store, req)
@@ -1044,9 +1045,9 @@ func testRevokePermissionsSucceeds(t *testing.T) {
 
 	// setup
 	store := handlerMocks(t)
-	store.EXPECT().WalletExists(req.Wallet).Times(1).Return(true)
-	store.EXPECT().GetWallet(req.Wallet, req.Passphrase).Times(1).Return(w, nil)
-	store.EXPECT().SaveWallet(w, req.Passphrase).Times(1).Return(nil)
+	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(true, nil)
+	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(1).Return(w, nil)
+	store.EXPECT().SaveWallet(gomock.Any(), w, req.Passphrase).Times(1).Return(nil)
 
 	// when
 	err = wallet.RevokePermissions(store, req)
@@ -1067,9 +1068,9 @@ func testRevokePermissionsOfNonExistingWalletFails(t *testing.T) {
 
 	// setup
 	store := handlerMocks(t)
-	store.EXPECT().WalletExists(req.Wallet).Times(1).Return(false)
-	store.EXPECT().GetWallet(req.Wallet, req.Passphrase).Times(0)
-	store.EXPECT().SaveWallet(gomock.Any(), req.Passphrase).Times(0)
+	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(false, nil)
+	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(0)
+	store.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), req.Passphrase).Times(0)
 
 	// when
 	err := wallet.RevokePermissions(store, req)
@@ -1090,9 +1091,9 @@ func testRevokePermissionsForUnknownHostnameSucceeds(t *testing.T) {
 
 	// setup
 	store := handlerMocks(t)
-	store.EXPECT().WalletExists(req.Wallet).Times(1).Return(true)
-	store.EXPECT().GetWallet(req.Wallet, req.Passphrase).Times(1).Return(w, nil)
-	store.EXPECT().SaveWallet(w, req.Passphrase).Times(1).Return(nil)
+	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(true, nil)
+	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(1).Return(w, nil)
+	store.EXPECT().SaveWallet(gomock.Any(), w, req.Passphrase).Times(1).Return(nil)
 
 	// when
 	err := wallet.RevokePermissions(store, req)
@@ -1146,9 +1147,9 @@ func testPurgePermissionsSucceeds(t *testing.T) {
 
 	// setup
 	store := handlerMocks(t)
-	store.EXPECT().WalletExists(req.Wallet).Times(1).Return(true)
-	store.EXPECT().GetWallet(req.Wallet, req.Passphrase).Times(1).Return(w, nil)
-	store.EXPECT().SaveWallet(w, req.Passphrase).Times(1).Return(nil)
+	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(true, nil)
+	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(1).Return(w, nil)
+	store.EXPECT().SaveWallet(gomock.Any(), w, req.Passphrase).Times(1).Return(nil)
 
 	// when
 	err = wallet.PurgePermissions(store, req)
@@ -1168,9 +1169,9 @@ func testPurgePermissionsOfNonExistingWalletFails(t *testing.T) {
 
 	// setup
 	store := handlerMocks(t)
-	store.EXPECT().WalletExists(req.Wallet).Times(1).Return(false)
-	store.EXPECT().GetWallet(req.Wallet, req.Passphrase).Times(0)
-	store.EXPECT().SaveWallet(gomock.Any(), req.Passphrase).Times(0)
+	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(false, nil)
+	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(0)
+	store.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), req.Passphrase).Times(0)
 
 	// when
 	err := wallet.PurgePermissions(store, req)
@@ -1190,9 +1191,9 @@ func testPurgePermissionsWithExistingPermissionsSucceeds(t *testing.T) {
 
 	// setup
 	store := handlerMocks(t)
-	store.EXPECT().WalletExists(req.Wallet).Times(1).Return(true)
-	store.EXPECT().GetWallet(req.Wallet, req.Passphrase).Times(1).Return(w, nil)
-	store.EXPECT().SaveWallet(w, req.Passphrase).Times(1).Return(nil)
+	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(true, nil)
+	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(1).Return(w, nil)
+	store.EXPECT().SaveWallet(gomock.Any(), w, req.Passphrase).Times(1).Return(nil)
 
 	// when
 	err := wallet.PurgePermissions(store, req)

@@ -61,7 +61,7 @@ func getTestService(t *testing.T, consentPolicy string) *testService {
 		t.Fatalf("unknown consent policy: %s", consentPolicy)
 	}
 	// no needs of the conf or path as we do not run an actual service
-	s, err := service.NewService(zap.NewNop(), &network.Network{}, handler, auth, nodeForward, policy)
+	s, err := service.NewService(zap.NewNop(), &network.Network{}, nil, handler, auth, nodeForward, policy)
 	if err != nil {
 		t.Fatalf("couldn't create service: %v", err)
 	}
@@ -213,13 +213,13 @@ func testServiceImportWalletFailInvalidRequest(t *testing.T) {
 	}{
 		{
 			name:    "misspelled wallet property",
-			payload: fmt.Sprintf(`{"wall": "jeremy", "passphrase": "oh yea?", "recoveryPhrase": \"%s\"}`, testRecoveryPhrase),
+			payload: fmt.Sprintf(`{"wall": "jeremy", "passphrase": "oh yea?", "recoveryPhrase": %q}`, testRecoveryPhrase),
 		}, {
 			name:    "misspelled passphrase property",
-			payload: fmt.Sprintf(`{"wallet": "jeremy", "password": "oh yea?", "recoveryPhrase": \"%s\"}`, testRecoveryPhrase),
+			payload: fmt.Sprintf(`{"wallet": "jeremy", "password": "oh yea?", "recoveryPhrase": %q}`, testRecoveryPhrase),
 		}, {
 			name:    "misspelled recovery phrase property",
-			payload: fmt.Sprintf(`{"wallet": "jeremy", "passphrase": "oh yea?", "little_words": \"%s\"}`, testRecoveryPhrase),
+			payload: fmt.Sprintf(`{"wallet": "jeremy", "passphrase": "oh yea?", "little_words": %q}`, testRecoveryPhrase),
 		},
 	}
 

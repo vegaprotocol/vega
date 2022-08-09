@@ -37,6 +37,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5685](https://github.com/vegaprotocol/vega/issues/5685) - Migrated `apis` from `datanode v1` to `datanode v2`
 - [5760](https://github.com/vegaprotocol/vega/issues/5760) - Map all `GRPC` to `REST`
 - [5804](https://github.com/vegaprotocol/vega/issues/5804) - Rollback Tendermint to version `0.34.20`
+- [5503](https://github.com/vegaprotocol/vega/issues/5503) - Introduce wallet API version 2 based on JSON-RPC with new authentication workflow
 
 ### 🐛 Fixes
 - [5571](https://github.com/vegaprotocol/vega/issues/5571) - Restore pending assets status correctly after snapshot restore

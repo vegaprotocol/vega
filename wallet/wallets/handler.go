@@ -1,6 +1,7 @@
 package wallets
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sync"
@@ -17,11 +18,11 @@ var ErrWalletDoesNotExists = errors.New("wallet does not exist")
 
 // Store abstracts the underlying storage for wallet data.
 type Store interface {
-	WalletExists(name string) bool
-	SaveWallet(w wallet.Wallet, passphrase string) error
-	GetWallet(name, passphrase string) (wallet.Wallet, error)
+	WalletExists(ctx context.Context, name string) (bool, error)
+	SaveWallet(ctx context.Context, w wallet.Wallet, passphrase string) error
+	GetWallet(ctx context.Context, name, passphrase string) (wallet.Wallet, error)
 	GetWalletPath(name string) string
-	ListWallets() ([]string, error)
+	ListWallets(ctx context.Context) ([]string, error)
 }
 
 type Handler struct {
@@ -43,21 +44,24 @@ func (h *Handler) WalletExists(name string) bool {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	return h.store.WalletExists(name)
+	exist, _ := h.store.WalletExists(context.Background(), name)
+	return exist
 }
 
 func (h *Handler) ListWallets() ([]string, error) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	return h.store.ListWallets()
+	return h.store.ListWallets(context.Background())
 }
 
 func (h *Handler) CreateWallet(name, passphrase string) (string, error) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	if h.store.WalletExists(name) {
+	if exists, err := h.store.WalletExists(context.Background(), name); err != nil {
+		return "", fmt.Errorf("couldn't verify wallet existence: %w", err)
+	} else if exists {
 		return "", wallet.ErrWalletAlreadyExists
 	}
 
@@ -78,7 +82,9 @@ func (h *Handler) ImportWallet(name, passphrase, recoveryPhrase string, version 
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	if h.store.WalletExists(name) {
+	if exists, err := h.store.WalletExists(context.Background(), name); err != nil {
+		return fmt.Errorf("couldn't verify wallet existence: %w", err)
+	} else if exists {
 		return wallet.ErrWalletAlreadyExists
 	}
 
@@ -94,11 +100,13 @@ func (h *Handler) LoginWallet(name, passphrase string) error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	if !h.store.WalletExists(name) {
+	if exists, err := h.store.WalletExists(context.Background(), name); err != nil {
+		return fmt.Errorf("couldn't verify wallet existence: %w", err)
+	} else if !exists {
 		return ErrWalletDoesNotExists
 	}
 
-	w, err := h.store.GetWallet(name, passphrase)
+	w, err := h.store.GetWallet(context.Background(), name, passphrase)
 	if err != nil {
 		if errors.Is(err, wallet.ErrWrongPassphrase) {
 			return err
@@ -119,7 +127,7 @@ func (h *Handler) GenerateKeyPair(name, passphrase string, meta []wallet.Meta) (
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	w, err := h.store.GetWallet(name, passphrase)
+	w, err := h.store.GetWallet(context.Background(), name, passphrase)
 	if err != nil {
 		if errors.Is(err, wallet.ErrWrongPassphrase) {
 			return nil, err
@@ -242,7 +250,7 @@ func (h *Handler) TaintKey(name, pubKey, passphrase string) error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	w, err := h.store.GetWallet(name, passphrase)
+	w, err := h.store.GetWallet(context.Background(), name, passphrase)
 	if err != nil {
 		if errors.Is(err, wallet.ErrWrongPassphrase) {
 			return err
@@ -262,7 +270,7 @@ func (h *Handler) UntaintKey(name string, pubKey string, passphrase string) erro
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	w, err := h.store.GetWallet(name, passphrase)
+	w, err := h.store.GetWallet(context.Background(), name, passphrase)
 	if err != nil {
 		if errors.Is(err, wallet.ErrWrongPassphrase) {
 			return err
@@ -282,7 +290,7 @@ func (h *Handler) UpdateMeta(name, pubKey, passphrase string, meta []wallet.Meta
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	w, err := h.store.GetWallet(name, passphrase)
+	w, err := h.store.GetWallet(context.Background(), name, passphrase)
 	if err != nil {
 		if errors.Is(err, wallet.ErrWrongPassphrase) {
 			return err
@@ -303,7 +311,7 @@ func (h *Handler) GetWalletPath(name string) (string, error) {
 }
 
 func (h *Handler) saveWallet(w wallet.Wallet, passphrase string) error {
-	err := h.store.SaveWallet(w, passphrase)
+	err := h.store.SaveWallet(context.Background(), w, passphrase)
 	if err != nil {
 		return err
 	}
@@ -314,7 +322,9 @@ func (h *Handler) saveWallet(w wallet.Wallet, passphrase string) error {
 }
 
 func (h *Handler) getLoggedWallet(name string) (wallet.Wallet, error) {
-	if exists := h.store.WalletExists(name); !exists {
+	if exists, err := h.store.WalletExists(context.Background(), name); err != nil {
+		return nil, fmt.Errorf("couldn't verify wallet existence: %w", err)
+	} else if !exists {
 		return nil, ErrWalletDoesNotExists
 	}
 
