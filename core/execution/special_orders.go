@@ -31,8 +31,12 @@ func (m *Market) repricePeggedOrders(
 ) (parked []*types.Order, toSubmit []*types.Order) {
 	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "repricePeggedOrders")
 
-	// Go through all the pegged orders and remove from the order book
-	for _, oid := range m.peggedOrders.GetIDs() {
+	// Go through *all* of the pegged orders and remove from the order book
+	// NB: this is getting all of the pegged orders that are unparked in the order book AND all
+	// the parked pegged orders.
+	allPeggedIDs := m.matching.GetActivePeggedOrderIDs()
+	allPeggedIDs = append(allPeggedIDs, m.peggedOrders.GetParkedIDs()...)
+	for _, oid := range allPeggedIDs {
 		var (
 			order *types.Order
 			err   error

@@ -25,9 +25,6 @@ import (
 type PeggedOrders struct {
 	log         *logging.Logger
 	timeService TimeService
-	// mapping orderid -> partyid
-	orders map[string]string
-
 	// parked list
 	parked   []*types.Order
 	isParked map[string]struct{}
@@ -37,7 +34,6 @@ func NewPeggedOrders(log *logging.Logger, ts TimeService) *PeggedOrders {
 	return &PeggedOrders{
 		log:         log,
 		timeService: ts,
-		orders:      map[string]string{},
 		parked:      []*types.Order{},
 		isParked:    map[string]struct{}{},
 	}
@@ -49,7 +45,6 @@ func NewPeggedOrdersFromSnapshot(
 	state *types.PeggedOrdersState,
 ) *PeggedOrders {
 	p := NewPeggedOrders(log, ts)
-	p.orders = state.Orders
 	p.parked = state.Parked
 	for _, v := range p.parked {
 		p.isParked[v.ID] = struct{}{}
@@ -62,18 +57,12 @@ func (p *PeggedOrders) Changed() bool {
 }
 
 func (p *PeggedOrders) GetState() *types.PeggedOrdersState {
-	ordersCopy := make(map[string]string, len(p.orders))
-	for k, v := range p.orders {
-		ordersCopy[k] = v
-	}
-
 	parkedCopy := make([]*types.Order, 0, len(p.parked))
 	for _, v := range p.parked {
 		parkedCopy = append(parkedCopy, v.Clone())
 	}
 
 	return &types.PeggedOrdersState{
-		Orders: ordersCopy,
 		Parked: parkedCopy,
 	}
 }
@@ -115,18 +104,6 @@ func (p *PeggedOrders) GetParkedByID(id string) *types.Order {
 	return nil
 }
 
-func (p *PeggedOrders) Add(o *types.Order) {
-	p.orders[o.ID] = o.Party
-}
-
-// Remove from the parked list AND the list of pegged orders.
-func (p *PeggedOrders) Remove(oid string) {
-	// delete from the list
-	delete(p.orders, oid)
-	// remove if parked
-	p.Unpark(oid)
-}
-
 func (p *PeggedOrders) AmendParked(amended *types.Order) {
 	for i, o := range p.parked {
 		if o.ID == amended.ID {
@@ -143,13 +120,6 @@ func (p *PeggedOrders) RemoveAllForParty(
 ) (orders []*types.Order, evts []events.Event) {
 	n := 0
 	now := p.timeService.GetTimeNow().UnixNano()
-
-	// first all pegged IDs
-	for oid, pid := range p.orders {
-		if pid == party {
-			delete(p.orders, oid)
-		}
-	}
 
 	// then we look at the parked and delete + create events
 	for _, o := range p.parked {
@@ -183,7 +153,6 @@ func (p *PeggedOrders) RemoveAllParkedForParty(
 			orders = append(orders, o)
 			evts = append(evts, events.NewOrderEvent(ctx, o))
 			delete(p.isParked, o.ID)
-			delete(p.orders, o.ID)
 			continue
 		}
 		// here we insert back in the slice
@@ -194,22 +163,11 @@ func (p *PeggedOrders) RemoveAllParkedForParty(
 	return
 }
 
-func (p *PeggedOrders) GetAllActiveOrders() (orders []string) {
-	for k := range p.orders {
-		if _, parked := p.isParked[k]; !parked {
-			orders = append(orders, k)
-		}
-	}
-	sort.Strings(orders)
-	return
-}
-
-func (p *PeggedOrders) GetIDs() []string {
-	ids := make([]string, 0, len(p.orders))
-	for k := range p.orders {
+func (p *PeggedOrders) GetParkedIDs() []string {
+	ids := make([]string, 0, len(p.isParked))
+	for k := range p.isParked {
 		ids = append(ids, k)
 	}
-
 	sort.Strings(ids)
 	return ids
 }
@@ -220,30 +178,8 @@ func (p *PeggedOrders) GetAllParkedForParty(party string) (orders []*types.Order
 			orders = append(orders, order)
 		}
 	}
+	sort.Slice(orders, func(i, j int) bool { return orders[i].ID < orders[j].ID })
 	return
-}
-
-func (p *PeggedOrders) GetAllForParty(
-	party string,
-) (live []string, parked []*types.Order) {
-	parkedIDs := map[string]struct{}{}
-	for _, order := range p.parked {
-		if order.Party == party {
-			parked = append(parked, order)
-			parkedIDs[order.ID] = struct{}{}
-		}
-	}
-
-	// now iterate over the whole list and get non parked
-	for k := range p.orders {
-		if _, ok := parkedIDs[k]; !ok {
-			live = append(live, k)
-		}
-	}
-
-	sort.Strings(live)
-
-	return live, parked
 }
 
 func (p *PeggedOrders) Settled() []*types.Order {
@@ -260,7 +196,9 @@ func (p *PeggedOrders) Settled() []*types.Order {
 
 	p.parked = nil
 	p.isParked = map[string]struct{}{}
-	p.orders = map[string]string{}
-
 	return peggedOrders
+}
+
+func (p *PeggedOrders) GetParkedOrdersCount() int {
+	return len(p.isParked)
 }

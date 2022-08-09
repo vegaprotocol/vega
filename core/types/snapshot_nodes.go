@@ -372,7 +372,6 @@ type KeyDecimalPair struct {
 }
 
 type PeggedOrdersState struct {
-	Orders map[string]string
 	Parked []*Order
 }
 
@@ -2529,12 +2528,7 @@ func (e EquityShareLP) IntoProto() *snapshot.EquityShareLP {
 
 func PeggedOrdersStateFromProto(s *snapshot.PeggedOrders) *PeggedOrdersState {
 	po := &PeggedOrdersState{
-		Orders: make(map[string]string, len(s.OrderParties)),
 		Parked: make([]*Order, 0, len(s.ParkedOrders)),
-	}
-
-	for _, v := range s.OrderParties {
-		po.Orders[v.OrderId] = v.Party
 	}
 
 	for _, v := range s.ParkedOrders {
@@ -2546,23 +2540,13 @@ func PeggedOrdersStateFromProto(s *snapshot.PeggedOrders) *PeggedOrdersState {
 
 func (s PeggedOrdersState) IntoProto() *snapshot.PeggedOrders {
 	po := &snapshot.PeggedOrders{
-		OrderParties: make([]*snapshot.OrderPartyPair, 0, len(s.Orders)),
 		ParkedOrders: make([]*vega.Order, 0, len(s.Parked)),
 	}
-
-	for k, v := range s.Orders {
-		po.OrderParties = append(po.OrderParties, &snapshot.OrderPartyPair{
-			OrderId: k,
-			Party:   v,
-		})
-	}
-	sort.Slice(po.OrderParties, func(i, j int) bool {
-		return po.OrderParties[i].OrderId < po.OrderParties[j].OrderId
-	})
 
 	for _, v := range s.Parked {
 		po.ParkedOrders = append(po.ParkedOrders, v.IntoProto())
 	}
+	sort.Slice(po.ParkedOrders, func(i, j int) bool { return po.ParkedOrders[i].Id < po.ParkedOrders[j].Id })
 	return po
 }
 
