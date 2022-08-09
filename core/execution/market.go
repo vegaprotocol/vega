@@ -2315,28 +2315,18 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*typ
 		return nil, ErrMarketClosed
 	}
 
-	order, foundOnBook, err := m.getOrderByID(orderID)
+	parked, err := m.findOrderForParty(orderID, partyID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Only allow the original order creator to cancel their order
-	if order.Party != partyID {
-		if m.log.GetLevel() == logging.DebugLevel {
-			m.log.Debug("Party ID mismatch",
-				logging.String("party-id", partyID),
-				logging.String("order-id", orderID),
-				logging.String("market", m.mkt.ID))
-		}
-		return nil, types.ErrInvalidPartyID
-	}
-
 	defer m.releaseMarginExcess(ctx, partyID)
 
-	if foundOnBook {
-		cancelledOrder, err := m.matching.RemoveOrderWithStatus(
-			order.ID, types.OrderStatusCancelled)
-		if cancelledOrder == nil || err != nil {
+	var order *types.Order
+	if !parked {
+		order, err = m.matching.RemoveOrderWithStatus(
+			orderID, types.OrderStatusCancelled)
+		if order == nil || err != nil {
 			m.log.Panic("Failure after cancel order from matching engine",
 				logging.String("party-id", partyID),
 				logging.String("order-id", orderID),
@@ -2345,16 +2335,12 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*typ
 		}
 		_ = m.position.UnregisterOrder(ctx, order)
 	} else {
+		order = m.peggedOrders.Remove(orderID)
 		order.Status = types.OrderStatusCancelled
 	}
 
 	if order.IsExpireable() {
 		m.expiringOrders.RemoveOrder(order.ExpiresAt, order.ID)
-	}
-
-	// If this is a pegged order, remove from pegged and parked lists
-	if order.PeggedOrder != nil {
-		m.removePeggedOrder(order)
 	}
 
 	// Publish the changed order details
@@ -2374,10 +2360,10 @@ func (m *Market) parkOrder(ctx context.Context, orderID string) *types.Order {
 			logging.OrderID(orderID),
 			logging.Error(err))
 	}
+	_ = m.position.UnregisterOrder(ctx, order)
 
 	m.peggedOrders.Park(order)
 	m.broker.Send(events.NewOrderEvent(ctx, order))
-	_ = m.position.UnregisterOrder(ctx, order)
 	m.releaseMarginExcess(ctx, order.Party)
 	return order
 }
@@ -3082,6 +3068,26 @@ func (m *Market) findOrder(orderID string) (parked bool, _ error) {
 	// We couldn't find it
 	return false, ErrOrderNotFound
 
+}
+
+func (m *Market) findOrderForParty(orderID, party string) (parked bool, _ error) {
+	parked = true
+	order, err := m.matching.GetOrderByID(orderID)
+	if err == nil {
+		parked = false
+	} else {
+		order = m.peggedOrders.GetParkedByID(orderID)
+	}
+
+	if order == nil {
+		return false, ErrOrderNotFound
+	}
+
+	if order.Party != party {
+		return false, errors.New("party do not own this order")
+	}
+
+	return parked, nil
 }
 
 func (m *Market) getRiskFactors() (*types.RiskFactor, error) {
