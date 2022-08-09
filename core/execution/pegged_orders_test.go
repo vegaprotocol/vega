@@ -22,7 +22,6 @@ import (
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
-
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -64,12 +63,12 @@ func testPeggedOrdersSnapshot(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	tm := mocks.NewMockTimeService(ctrl)
 	p := execution.NewPeggedOrders(logging.NewTestLogger(), tm)
+	tm.EXPECT().GetTimeNow().AnyTimes()
 
 	// Test empty
 	s := p.GetState()
 	a.Equal(
 		&types.PeggedOrdersState{
-			Orders: map[string]string{},
 			Parked: []*types.Order{},
 		},
 		s,
@@ -78,53 +77,37 @@ func testPeggedOrdersSnapshot(t *testing.T) {
 	testOrders := getTestOrders()[:4]
 
 	// Test after adding orders
-	p.Add(testOrders[0])
-	p.Add(testOrders[1])
-	p.Add(testOrders[2])
-	p.Add(testOrders[3])
-	a.Equal([]*types.Order{}, p.GetState().Parked)
-	a.Equal("party-1", p.GetState().Orders[testOrders[0].ID])
-	a.Equal("party-1", p.GetState().Orders[testOrders[1].ID])
-	a.Equal("party-1", p.GetState().Orders[testOrders[2].ID])
-	a.Equal("party-1", p.GetState().Orders[testOrders[3].ID])
+	p.Park(testOrders[0])
+	p.Park(testOrders[1])
+	p.Park(testOrders[2])
+	p.Park(testOrders[3])
+	a.Equal(testOrders[0].ID, p.GetState().Parked[0].ID)
+	a.Equal(testOrders[1].ID, p.GetState().Parked[1].ID)
+	a.Equal(testOrders[2].ID, p.GetState().Parked[2].ID)
+	a.Equal(testOrders[3].ID, p.GetState().Parked[3].ID)
 
 	// Test amend
-	tm.EXPECT().GetTimeNow().AnyTimes()
-	p.Park(testOrders[0])
 	p.AmendParked(testOrders[0])
 	a.True(p.Changed())
-	a.Equal(
-		[]*types.Order{testOrders[0]},
-		p.GetState().Parked,
-	)
+	a.Equal(testOrders[0], p.GetState().Parked[0])
 
-	// Test park
-	tm.EXPECT().GetTimeNow().AnyTimes()
-	p.Park(testOrders[1])
-	a.True(p.Changed())
-	a.Equal(
-		[]*types.Order{testOrders[0], testOrders[1]},
-		p.GetState().Parked,
-	)
-
-	// Test remove
-	p.Remove(testOrders[3].ID)
-	// testOrders = testOrders[:3]
-	a.Equal("", p.GetState().Orders[testOrders[3].ID])
-	a.Equal(
-		[]*types.Order{testOrders[0], testOrders[1]},
-		p.GetState().Parked,
-	)
+	// Test unpark
+	p.Unpark(testOrders[3].ID)
+	a.Equal(3, len(p.GetState().Parked))
+	a.Equal(testOrders[0].ID, p.GetState().Parked[0].ID)
+	a.Equal(testOrders[1].ID, p.GetState().Parked[1].ID)
+	a.Equal(testOrders[2].ID, p.GetState().Parked[2].ID)
 
 	// Test get functions won't change state
-	p.GetAllActiveOrders()
-	p.GetAllForParty("party-1")
+	p.GetAllParkedForParty("party-1")
+	p.GetParkedIDs()
 	p.GetParkedByID("id-2")
+	p.GetParkedOrdersCount()
 
 	// Test restore state
 	s = p.GetState()
 
 	newP := execution.NewPeggedOrdersFromSnapshot(logging.NewTestLogger(), tm, s)
 	a.Equal(s, newP.GetState())
-	a.Equal(len(p.GetIDs()), len(newP.GetIDs()))
+	a.Equal(len(p.GetParkedIDs()), len(newP.GetParkedIDs()))
 }

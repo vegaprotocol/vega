@@ -22,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/pkg/errors"
 )
@@ -55,6 +56,9 @@ type OrderBook struct {
 	indicativePriceAndVolume *IndicativePriceAndVolume
 	snapshot                 *types.PayloadMatchingBook
 	stopped                  bool // if true then we should stop creating snapshots
+	// we keep track here of which orders in the order book are pegged orders.
+	// this gets updated when orders are added or removed from the book.
+	peggedOrders map[string]struct{}
 }
 
 // CumulativeVolumeLevel represents the cumulative volume at a price level for both bid and ask.
@@ -94,6 +98,7 @@ func NewOrderBook(log *logging.Logger, config Config, marketID string, auction b
 				MarketID: marketID,
 			},
 		},
+		peggedOrders: map[string]struct{}{},
 	}
 }
 
@@ -192,7 +197,8 @@ func (b *OrderBook) LeaveAuction(at time.Time) ([]*types.OrderConfirmation, []*t
 	for _, uo := range uncrossedOrders {
 		if uo.Order.Remaining == 0 {
 			uo.Order.Status = types.OrderStatusFilled
-			// delete from lookup table
+			// delete from lookup tables
+			delete(b.peggedOrders, uo.Order.ID)
 			delete(b.ordersByID, uo.Order.ID)
 			delete(b.ordersPerParty[uo.Order.Party], uo.Order.ID)
 		}
@@ -204,7 +210,8 @@ func (b *OrderBook) LeaveAuction(at time.Time) ([]*types.OrderConfirmation, []*t
 			if uo.PassiveOrdersAffected[idx].Remaining == 0 {
 				uo.PassiveOrdersAffected[idx].Status = types.OrderStatusFilled
 
-				// delete from lookup table
+				// delete from lookup tables
+				delete(b.peggedOrders, uo.Order.ID)
 				delete(b.ordersByID, po.ID)
 				delete(b.ordersPerParty[po.Party], po.ID)
 			}
@@ -787,6 +794,9 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	// and we did not hit a error / wash trade error
 	if order.IsPersistent() && err == nil {
 		b.getSide(order.Side).addOrder(order)
+		if order.PeggedOrder != nil {
+			b.peggedOrders[order.ID] = struct{}{}
+		}
 		// also add it to the indicative price and volume if in auction
 		if b.auction {
 			b.indicativePriceAndVolume.AddVolumeAtPrice(
@@ -830,6 +840,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 			impactedOrders[idx].Status = types.OrderStatusFilled
 
 			// delete from lookup table
+			delete(b.peggedOrders, impactedOrders[idx].ID)
 			delete(b.ordersByID, impactedOrders[idx].ID)
 			delete(b.ordersPerParty[impactedOrders[idx].Party], impactedOrders[idx].ID)
 		}
@@ -876,6 +887,7 @@ func (b *OrderBook) DeleteOrder(
 	}
 	delete(b.ordersByID, order.ID)
 	delete(b.ordersPerParty[order.Party], order.ID)
+	delete(b.peggedOrders, order.ID)
 	// also add it to the indicative price and volume if in auction
 	if b.auction {
 		b.indicativePriceAndVolume.RemoveVolumeAtPrice(
@@ -1034,8 +1046,24 @@ func (b *OrderBook) Settled() []*types.Order {
 	b.ordersByID = map[string]*types.Order{}
 	b.ordersPerParty = map[string]map[string]struct{}{}
 	b.indicativePriceAndVolume = nil
+	b.peggedOrders = map[string]struct{}{}
 	b.buy.cleanup()
 	b.sell.cleanup()
 
 	return orders
+}
+
+// GetActivePeggedOrderIDs returns the order identifiers of all pegged orders in the order book that are not parked.
+func (b *OrderBook) GetActivePeggedOrderIDs() []string {
+	pegged := make([]string, 0, len(b.peggedOrders))
+	for ID := range b.peggedOrders {
+		if o, ok := b.ordersByID[ID]; ok {
+			if o.Status == vega.Order_STATUS_PARKED {
+				panic("unexpected parked pegged order in order book")
+			}
+			pegged = append(pegged, o.ID)
+		}
+	}
+	sort.Strings(pegged)
+	return pegged
 }

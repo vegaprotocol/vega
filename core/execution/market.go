@@ -907,7 +907,8 @@ func (m *Market) repricePeggedOrder(order *types.Order) error {
 }
 
 func (m *Market) parkAllPeggedOrders(ctx context.Context) []*types.Order {
-	toParkIDs := m.peggedOrders.GetAllActiveOrders()
+	toParkIDs := m.matching.GetActivePeggedOrderIDs()
+
 	parked := make([]*types.Order, 0, len(toParkIDs))
 	for _, order := range toParkIDs {
 		parked = append(parked, m.parkOrder(ctx, order))
@@ -1303,11 +1304,6 @@ func (m *Market) submitOrder(ctx context.Context, order *types.Order) (*types.Or
 
 	if err := m.validateAccounts(ctx, order); err != nil {
 		return nil, nil, err
-	}
-
-	if order.PeggedOrder != nil {
-		// Add pegged order to time sorted list
-		m.peggedOrders.Add(order)
 	}
 
 	// Now that validation is handled, call the code to place the order
@@ -3054,7 +3050,8 @@ func (m *Market) getStaticMidPrice(side types.Side) (*num.Uint, error) {
 func (m *Market) removePeggedOrder(order *types.Order) {
 	// remove if order was expiring
 	m.expiringOrders.RemoveOrder(order.ExpiresAt, order.ID)
-	m.peggedOrders.Remove(order.ID)
+	// unpark will remove the order from the pegged orders data structure
+	m.peggedOrders.Unpark(order.ID)
 }
 
 // getOrderBy looks for the order in the order book and in the list

@@ -431,13 +431,7 @@ message Market {
   string settlement_price = 18;
 }
 
-message OrderPartyPair {
-  string order_id = 1;
-  string party = 2;
-}
-
 message PeggedOrders {
-  repeated OrderPartyPair order_parties = 1;
   repeated vega.Order parked_orders = 2;
 }
 

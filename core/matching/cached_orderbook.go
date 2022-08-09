@@ -71,7 +71,7 @@ func (b *CachedOrderBook) CancelAllOrders(
 
 func (b *CachedOrderBook) maybeInvalidateDuringAuction(orderID string) {
 	bestBid, errBestBid := b.GetBestBidPrice()
-	bestAsk, errBestAsk := b.GetBestBidPrice()
+	bestAsk, errBestAsk := b.GetBestAskPrice()
 	// if any of side have not best price, let's invalidate
 	if errBestBid != nil || errBestAsk != nil {
 		b.cache.Invalidate()
@@ -99,7 +99,7 @@ func (b *CachedOrderBook) maybeInvalidateDuringAuction(orderID string) {
 
 func (b *CachedOrderBook) maybeInvalidateDuringAuctionNewOrder(order *types.Order) {
 	bestBid, errBestBid := b.GetBestBidPrice()
-	bestAsk, errBestAsk := b.GetBestBidPrice()
+	bestAsk, errBestAsk := b.GetBestAskPrice()
 	// if any of side have not best price, let's invalidate
 	if errBestBid != nil || errBestAsk != nil {
 		b.cache.Invalidate()
