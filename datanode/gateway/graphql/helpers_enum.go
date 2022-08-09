@@ -39,34 +39,6 @@ func convertLiquidityProvisionStatusFromProto(x types.LiquidityProvision_Status)
 	}
 }
 
-func convertDepositStatusFromProto(x types.Deposit_Status) (DepositStatus, error) {
-	switch x {
-	case types.Deposit_STATUS_OPEN:
-		return DepositStatusOpen, nil
-	case types.Deposit_STATUS_CANCELLED:
-		return DepositStatusCancelled, nil
-	case types.Deposit_STATUS_FINALIZED:
-		return DepositStatusFinalized, nil
-	default:
-		err := fmt.Errorf("failed to convert DepositStatus from GraphQL to Proto: %v", x)
-		return DepositStatusOpen, err
-	}
-}
-
-func convertWithdrawalStatusFromProto(x types.Withdrawal_Status) (WithdrawalStatus, error) {
-	switch x {
-	case types.Withdrawal_STATUS_OPEN:
-		return WithdrawalStatusOpen, nil
-	case types.Withdrawal_STATUS_REJECTED:
-		return WithdrawalStatusRejected, nil
-	case types.Withdrawal_STATUS_FINALIZED:
-		return WithdrawalStatusFinalized, nil
-	default:
-		err := fmt.Errorf("failed to convert WithdrawalStatus from GraphQL to Proto: %v", x)
-		return WithdrawalStatusOpen, err
-	}
-}
-
 // convertIntervalToProto converts a GraphQL enum to a Proto enum.
 func convertIntervalToProto(x Interval) (types.Interval, error) {
 	switch x {

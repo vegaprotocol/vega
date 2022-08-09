@@ -397,10 +397,6 @@ func (r *myDepositResolver) CreditedTimestamp(ctx context.Context, obj *types.De
 	return &t, nil
 }
 
-func (r *myDepositResolver) Status(ctx context.Context, obj *types.Deposit) (DepositStatus, error) {
-	return convertDepositStatusFromProto(obj.Status)
-}
-
 // BEGIN: Query Resolver
 
 type myQueryResolver VegaResolverRoot

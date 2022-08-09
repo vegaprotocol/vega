@@ -2351,11 +2351,11 @@ type Erc20WithdrawalDetails {
 "The status of a withdrawal"
 enum WithdrawalStatus {
   "The withdrawal is open and being processed by the network"
-  Open
+  STATUS_OPEN
   "The withdrawal have been cancelled by the network, either because it expired, or something went wrong with the foreign chain"
-  Rejected
+  STATUS_REJECTED
   "The withdrawal was finalised, it was valid, the foreign chain has executed it and the network updated all accounts"
-  Finalized
+  STATUS_FINALIZED
 }
 
 "The details of a deposit processed by Vega"
@@ -2381,11 +2381,11 @@ type Deposit {
 "The status of a deposit"
 enum DepositStatus {
   "The deposit is open and being processed by the network"
-  Open
+  STATUS_OPEN
   "The deposit have been cancelled by the network, either because it expired, or something went wrong with the foreign chain"
-  Cancelled
+  STATUS_CANCELLED
   "The deposit was finalised, it was valid, the foreign chain has executed it and the network updated all accounts"
-  Finalized
+  STATUS_FINALIZED
 }
 
 "Valid order types, these determine what happens when an order is added to the book"

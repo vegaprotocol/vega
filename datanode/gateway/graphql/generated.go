@@ -1553,7 +1553,7 @@ type DepositResolver interface {
 	Party(ctx context.Context, obj *vega.Deposit) (*vega.Party, error)
 
 	Asset(ctx context.Context, obj *vega.Deposit) (*vega.Asset, error)
-	Status(ctx context.Context, obj *vega.Deposit) (DepositStatus, error)
+
 	CreatedTimestamp(ctx context.Context, obj *vega.Deposit) (string, error)
 	CreditedTimestamp(ctx context.Context, obj *vega.Deposit) (*string, error)
 }
@@ -2027,7 +2027,6 @@ type WithdrawalResolver interface {
 	Party(ctx context.Context, obj *vega.Withdrawal) (*vega.Party, error)
 
 	Asset(ctx context.Context, obj *vega.Withdrawal) (*vega.Asset, error)
-	Status(ctx context.Context, obj *vega.Withdrawal) (WithdrawalStatus, error)
 
 	Expiry(ctx context.Context, obj *vega.Withdrawal) (string, error)
 	CreatedTimestamp(ctx context.Context, obj *vega.Withdrawal) (string, error)
@@ -10804,11 +10803,11 @@ type Erc20WithdrawalDetails {
 "The status of a withdrawal"
 enum WithdrawalStatus {
   "The withdrawal is open and being processed by the network"
-  Open
+  STATUS_OPEN
   "The withdrawal have been cancelled by the network, either because it expired, or something went wrong with the foreign chain"
-  Rejected
+  STATUS_REJECTED
   "The withdrawal was finalised, it was valid, the foreign chain has executed it and the network updated all accounts"
-  Finalized
+  STATUS_FINALIZED
 }
 
 "The details of a deposit processed by Vega"
@@ -10834,11 +10833,11 @@ type Deposit {
 "The status of a deposit"
 enum DepositStatus {
   "The deposit is open and being processed by the network"
-  Open
+  STATUS_OPEN
   "The deposit have been cancelled by the network, either because it expired, or something went wrong with the foreign chain"
-  Cancelled
+  STATUS_CANCELLED
   "The deposit was finalised, it was valid, the foreign chain has executed it and the network updated all accounts"
-  Finalized
+  STATUS_FINALIZED
 }
 
 "Valid order types, these determine what happens when an order is added to the book"
@@ -17730,14 +17729,14 @@ func (ec *executionContext) _Deposit_status(ctx context.Context, field graphql.C
 		Object:     "Deposit",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Deposit().Status(rctx, obj)
+		return obj.Status, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -17749,9 +17748,9 @@ func (ec *executionContext) _Deposit_status(ctx context.Context, field graphql.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.(DepositStatus)
+	res := resTmp.(vega.Deposit_Status)
 	fc.Result = res
-	return ec.marshalNDepositStatus2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐDepositStatus(ctx, field.Selections, res)
+	return ec.marshalNDepositStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDeposit_Status(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Deposit_createdTimestamp(ctx context.Context, field graphql.CollectedField, obj *vega.Deposit) (ret graphql.Marshaler) {
@@ -43929,14 +43928,14 @@ func (ec *executionContext) _Withdrawal_status(ctx context.Context, field graphq
 		Object:     "Withdrawal",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Withdrawal().Status(rctx, obj)
+		return obj.Status, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -43948,9 +43947,9 @@ func (ec *executionContext) _Withdrawal_status(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(WithdrawalStatus)
+	res := resTmp.(vega.Withdrawal_Status)
 	fc.Result = res
-	return ec.marshalNWithdrawalStatus2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐWithdrawalStatus(ctx, field.Selections, res)
+	return ec.marshalNWithdrawalStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐWithdrawal_Status(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Withdrawal_ref(ctx context.Context, field graphql.CollectedField, obj *vega.Withdrawal) (ret graphql.Marshaler) {
@@ -47406,25 +47405,15 @@ func (ec *executionContext) _Deposit(ctx context.Context, sel ast.SelectionSet, 
 
 			})
 		case "status":
-			field := field
-
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Deposit_status(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+				return ec._Deposit_status(ctx, field, obj)
 			}
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
+			out.Values[i] = innerFunc(ctx)
 
-			})
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "createdTimestamp":
 			field := field
 
@@ -60680,25 +60669,15 @@ func (ec *executionContext) _Withdrawal(ctx context.Context, sel ast.SelectionSe
 
 			})
 		case "status":
-			field := field
-
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Withdrawal_status(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+				return ec._Withdrawal_status(ctx, field, obj)
 			}
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
+			out.Values[i] = innerFunc(ctx)
 
-			})
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "ref":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Withdrawal_ref(ctx, field, obj)
@@ -61716,14 +61695,19 @@ func (ec *executionContext) marshalNDeposit2ᚖcodeᚗvegaprotocolᚗioᚋvega�
 	return ec._Deposit(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNDepositStatus2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐDepositStatus(ctx context.Context, v interface{}) (DepositStatus, error) {
-	var res DepositStatus
-	err := res.UnmarshalGQL(v)
+func (ec *executionContext) unmarshalNDepositStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDeposit_Status(ctx context.Context, v interface{}) (vega.Deposit_Status, error) {
+	res, err := marshallers.UnmarshalDepositStatus(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNDepositStatus2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐDepositStatus(ctx context.Context, sel ast.SelectionSet, v DepositStatus) graphql.Marshaler {
-	return v
+func (ec *executionContext) marshalNDepositStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDeposit_Status(ctx context.Context, sel ast.SelectionSet, v vega.Deposit_Status) graphql.Marshaler {
+	res := marshallers.MarshalDepositStatus(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
 }
 
 func (ec *executionContext) marshalNDepositsConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDepositsConnection(ctx context.Context, sel ast.SelectionSet, v v2.DepositsConnection) graphql.Marshaler {
@@ -63869,14 +63853,19 @@ func (ec *executionContext) marshalNWithdrawal2ᚖcodeᚗvegaprotocolᚗioᚋveg
 	return ec._Withdrawal(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNWithdrawalStatus2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐWithdrawalStatus(ctx context.Context, v interface{}) (WithdrawalStatus, error) {
-	var res WithdrawalStatus
-	err := res.UnmarshalGQL(v)
+func (ec *executionContext) unmarshalNWithdrawalStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐWithdrawal_Status(ctx context.Context, v interface{}) (vega.Withdrawal_Status, error) {
+	res, err := marshallers.UnmarshalWithdrawalStatus(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNWithdrawalStatus2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐWithdrawalStatus(ctx context.Context, sel ast.SelectionSet, v WithdrawalStatus) graphql.Marshaler {
-	return v
+func (ec *executionContext) marshalNWithdrawalStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐWithdrawal_Status(ctx context.Context, sel ast.SelectionSet, v vega.Withdrawal_Status) graphql.Marshaler {
+	res := marshallers.MarshalWithdrawalStatus(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
 }
 
 func (ec *executionContext) marshalNWithdrawalsConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐWithdrawalsConnection(ctx context.Context, sel ast.SelectionSet, v v2.WithdrawalsConnection) graphql.Marshaler {
