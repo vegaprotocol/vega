@@ -34,7 +34,7 @@ func (m *Market) repricePeggedOrders(
 	// Go through *all* of the pegged orders and remove from the order book
 	// NB: this is getting all of the pegged orders that are unparked in the order book AND all
 	// the parked pegged orders.
-	allPeggedIDs := m.matching.GetAllUnParkedPeggedOrderIDs()
+	allPeggedIDs := m.matching.GetActivePeggedOrderIDs()
 	allPeggedIDs = append(allPeggedIDs, m.peggedOrders.GetParkedIDs()...)
 	for _, oid := range allPeggedIDs {
 		var (

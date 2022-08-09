@@ -907,7 +907,7 @@ func (m *Market) repricePeggedOrder(order *types.Order) error {
 }
 
 func (m *Market) parkAllPeggedOrders(ctx context.Context) []*types.Order {
-	toParkIDs := m.matching.GetAllUnParkedPeggedOrderIDs()
+	toParkIDs := m.matching.GetActivePeggedOrderIDs()
 
 	parked := make([]*types.Order, 0, len(toParkIDs))
 	for _, order := range toParkIDs {

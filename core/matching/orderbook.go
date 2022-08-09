@@ -1053,11 +1053,14 @@ func (b *OrderBook) Settled() []*types.Order {
 	return orders
 }
 
-// GetAllUnParkedPeggedOrderIDs returns the order identifiers of all pegged orders in the order book that are not parked.
-func (b *OrderBook) GetAllUnParkedPeggedOrderIDs() []string {
+// GetActivePeggedOrderIDs returns the order identifiers of all pegged orders in the order book that are not parked.
+func (b *OrderBook) GetActivePeggedOrderIDs() []string {
 	pegged := make([]string, 0, len(b.peggedOrders))
 	for ID := range b.peggedOrders {
-		if o, ok := b.ordersByID[ID]; ok && o.Status != vega.Order_STATUS_PARKED {
+		if o, ok := b.ordersByID[ID]; ok {
+			if o.Status == vega.Order_STATUS_PARKED {
+				panic("unexpected parked pegged order in order book")
+			}
 			pegged = append(pegged, o.ID)
 		}
 	}
