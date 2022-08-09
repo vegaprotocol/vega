@@ -366,3 +366,13 @@ func MarshalTradeType(s vega.Trade_Type) graphql.Marshaler {
 func UnmarshalTradeType(v interface{}) (vega.Trade_Type, error) {
 	return vega.Trade_TYPE_UNSPECIFIED, ErrUnimplemented
 }
+
+func MarshalValidatorStatus(s vega.ValidatorNodeStatus) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalValidatorStatus(v interface{}) (vega.ValidatorNodeStatus, error) {
+	return vega.ValidatorNodeStatus_VALIDATOR_NODE_STATUS_UNSPECIFIED, ErrUnimplemented
+}
