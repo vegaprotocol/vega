@@ -1757,7 +1757,7 @@ type OrderResolver interface {
 	Trades(ctx context.Context, obj *vega.Order) ([]*vega.Trade, error)
 	TradesConnection(ctx context.Context, obj *vega.Order, pagination *v2.Pagination) (*v2.TradeConnection, error)
 	Type(ctx context.Context, obj *vega.Order) (*OrderType, error)
-	RejectionReason(ctx context.Context, obj *vega.Order) (*OrderRejectionReason, error)
+	RejectionReason(ctx context.Context, obj *vega.Order) (*vega.OrderError, error)
 	Version(ctx context.Context, obj *vega.Order) (string, error)
 	UpdatedAt(ctx context.Context, obj *vega.Order) (*string, error)
 
@@ -10976,139 +10976,137 @@ enum ProposalRejectionReason {
 "Reason for the order being rejected by the core node"
 enum OrderRejectionReason {
   "Market ID is invalid"
-  InvalidMarketId
+  ORDER_ERROR_INVALID_MARKET_ID
 
   "Order ID is invalid"
-  InvalidOrderId
+  ORDER_ERROR_INVALID_ORDER_ID
 
   "Order is out of sequence"
-  OrderOutOfSequence
+  ORDER_ERROR_OUT_OF_SEQUENCE
 
   "Remaining size in the order is invalid"
-  InvalidRemainingSize
+  ORDER_ERROR_INVALID_REMAINING_SIZE
 
   "Time has failed us"
-  TimeFailure
+  ORDER_ERROR_TIME_FAILURE
 
   "Unable to remove the order"
-  OrderRemovalFailure
+  ORDER_ERROR_REMOVAL_FAILURE
 
   "Expiration time is invalid"
-  InvalidExpirationTime
+  ORDER_ERROR_INVALID_EXPIRATION_DATETIME
 
   "Order reference is invalid"
-  InvalidOrderReference
+  ORDER_ERROR_INVALID_ORDER_REFERENCE
 
   "Edit is not allowed"
-  EditNotAllowed
+  ORDER_ERROR_EDIT_NOT_ALLOWED
 
   "Amending the order failed"
-  OrderAmendFailure
+  ORDER_ERROR_AMEND_FAILURE
 
   "Order does not exist"
-  OrderNotFound
+  ORDER_ERROR_NOT_FOUND
 
   "Party ID is invalid"
-  InvalidPartyId
+  ORDER_ERROR_INVALID_PARTY_ID
 
   "Market is closed"
-  MarketClosed
+  ORDER_ERROR_MARKET_CLOSED
 
   "Margin check failed - not enough available margin"
-  MarginCheckFailed
+  ORDER_ERROR_MARGIN_CHECK_FAILED
 
   "Order missing general account"
-  MissingGeneralAccount
+  ORDER_ERROR_MISSING_GENERAL_ACCOUNT
 
   "An internal error happened"
-  InternalError
+  ORDER_ERROR_INTERNAL_ERROR
 
   "Invalid size"
-  InvalidSize
+  ORDER_ERROR_INVALID_SIZE
 
   "Invalid persistence"
-  InvalidPersistence
+  ORDER_ERROR_INVALID_PERSISTENCE
 
   "Invalid type"
-  InvalidType
+  ORDER_ERROR_INVALID_TYPE
 
   "Order cannot be filled because it would require self trading"
-  SelfTrading
+  ORDER_ERROR_SELF_TRADING
 
   "Insufficient funds to pay fees"
-  InsufficientFundsToPayFees
+  ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES
 
   "Invalid Time In Force"
-  InvalidTimeInForce
+  ORDER_ERROR_INVALID_TIME_IN_FORCE
 
   "Attempt to amend order to Good til Time without expiry time"
-  AmendToGTTWithoutExpiryAt
+  ORDER_ERROR_CANNOT_AMEND_TO_GTT_WITHOUT_EXPIRYAT
 
   "Attempt to amend expiry time to a value before time order was created"
-  ExpiryAtBeforeCreatedAt
+  ORDER_ERROR_EXPIRYAT_BEFORE_CREATEDAT
 
   "Attempt to amend to Good till Cancelled without an expiry time"
-  GTCWithExpiryAtNotValid
+  ORDER_ERROR_CANNOT_HAVE_GTC_AND_EXPIRYAT
 
   "Amending to Fill or Kill, or Immediate or Cancel is invalid"
-  CannotAmendToFOKOrIOC
+  ORDER_ERROR_CANNOT_AMEND_TO_FOK_OR_IOC
 
   "Amending to Good for Auction or Good for Normal is invalid"
-  CannotAmendToGFAOrGFN
+  ORDER_ERROR_CANNOT_AMEND_TO_GFA_OR_GFN
 
   "Amending from Good for Auction or Good for Normal is invalid"
-  CannotAmendFromGFAOrGFN
-
-  "Invalid market type"
-  InvalidMarketType
+  ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN
 
   "Good for Normal order received during an auction"
-  GFNOrderDuringAuction
+  ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION
 
   "Good for Auction order received during continuous trading"
-  GFAOrderDuringContinuousTrading
+  ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING
 
-  "Immediate or Cancel orders are not allowed during auction"
-  IOCOrderDuringAuction
+  "Cannot send IOC orders during an auction"
+  ORDER_ERROR_CANNOT_SEND_IOC_ORDER_DURING_AUCTION
 
-  "Fill or Kill orders are not allowed during auction"
-  FOKOrderDuringAuction
+  "Cannot send FOK orders during an auction"
+  ORDER_ERROR_CANNOT_SEND_FOK_ORDER_DURING_AUCTION
 
   "Pegged orders must be limit orders"
-  PeggedOrderMustBeLimitOrder
+  ORDER_ERROR_MUST_BE_LIMIT_ORDER
 
   "Pegged orders can only have a time in force of Good til Cancelled or Good til Time"
-  PeggedOrderMustBeGTTOrGTC
+  ORDER_ERROR_MUST_BE_GTT_OR_GTC
 
   "Pegged order must have a reference price"
-  PeggedOrderWithoutReferencePrice
+  ORDER_ERROR_WITHOUT_REFERENCE_PRICE
 
   "Buy pegged order cannot reference best ask price"
-  PeggedOrderBuyCannotReferenceBestAskPrice
+  ORDER_ERROR_BUY_CANNOT_REFERENCE_BEST_ASK_PRICE
 
   "Pegged order offset must be >= 0"
-  PeggedOrderOffsetMustBeGreaterOrEqualToZero
+  ORDER_ERROR_OFFSET_MUST_BE_GREATER_OR_EQUAL_TO_ZERO
 
   "Sell pegged order cannot reference best bid price"
-  PeggedOrderSellCannotReferenceBestBidPrice
+  ORDER_ERROR_SELL_CANNOT_REFERENCE_BEST_BID_PRICE
 
   "Pegged order offset must be > zero"
-  PeggedOrderOffsetMustBeGreaterThanZero
+  ORDER_ERROR_OFFSET_MUST_BE_GREATER_THAN_ZERO
 
   "Insufficient balance to submit the order (no deposit made)"
-  InsufficientAssetBalance
+  ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE
 
   "Cannot change pegged order fields on a non pegged order"
-  CannotAmendPeggedOrderDetailsOnNonPeggedOrder
+  ORDER_ERROR_CANNOT_AMEND_PEGGED_ORDER_DETAILS_ON_NON_PEGGED_ORDER
 
   "Unable to reprice a pegged order"
-  UnableToRepricePeggedOrder
+  ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER
 
   "Unable to amend pegged order price"
-  UnableToAmendPeggedOrderPrice
+  ORDER_ERROR_UNABLE_TO_AMEND_PRICE_ON_PEGGED_ORDER
 
   "Non-persistent order exceeds price bounds"
-  NonPersistentOrderExceedsPriceBounds
+  ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS
+
 }
 
 enum OrderType {
@@ -30393,9 +30391,9 @@ func (ec *executionContext) _Order_rejectionReason(ctx context.Context, field gr
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*OrderRejectionReason)
+	res := resTmp.(*vega.OrderError)
 	fc.Result = res
-	return ec.marshalOOrderRejectionReason2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐOrderRejectionReason(ctx, field.Selections, res)
+	return ec.marshalOOrderRejectionReason2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrderError(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Order_version(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
@@ -66419,20 +66417,20 @@ func (ec *executionContext) marshalOOrderEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋv
 	return ret
 }
 
-func (ec *executionContext) unmarshalOOrderRejectionReason2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐOrderRejectionReason(ctx context.Context, v interface{}) (*OrderRejectionReason, error) {
+func (ec *executionContext) unmarshalOOrderRejectionReason2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrderError(ctx context.Context, v interface{}) (*vega.OrderError, error) {
 	if v == nil {
 		return nil, nil
 	}
-	var res = new(OrderRejectionReason)
-	err := res.UnmarshalGQL(v)
-	return res, graphql.ErrorOnPath(ctx, err)
+	res, err := marshallers.UnmarshalOrderRejectionReason(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOOrderRejectionReason2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐOrderRejectionReason(ctx context.Context, sel ast.SelectionSet, v *OrderRejectionReason) graphql.Marshaler {
+func (ec *executionContext) marshalOOrderRejectionReason2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrderError(ctx context.Context, sel ast.SelectionSet, v *vega.OrderError) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return v
+	res := marshallers.MarshalOrderRejectionReason(*v)
+	return res
 }
 
 func (ec *executionContext) unmarshalOOrderType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐOrderType(ctx context.Context, v interface{}) (*OrderType, error) {

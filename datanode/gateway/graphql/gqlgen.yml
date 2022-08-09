@@ -23,6 +23,9 @@ models:
   ProposalRejectionReason:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.ProposalRejectionReason
+  OrderRejectionReason:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.OrderRejectionReason
   PeggedReference:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.PeggedReference

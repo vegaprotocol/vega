@@ -1809,15 +1809,11 @@ func (r *myMarginLevelsResolver) Timestamp(_ context.Context, m *types.MarginLev
 
 type myOrderResolver VegaResolverRoot
 
-func (r *myOrderResolver) RejectionReason(_ context.Context, o *types.Order) (*OrderRejectionReason, error) {
+func (r *myOrderResolver) RejectionReason(_ context.Context, o *types.Order) (*vega.OrderError, error) {
 	if o.Reason == types.OrderError_ORDER_ERROR_UNSPECIFIED {
 		return nil, nil
 	}
-	reason, err := convertOrderRejectionReasonFromProto(o.Reason)
-	if err != nil {
-		return nil, err
-	}
-	return &reason, nil
+	return &o.Reason, nil
 }
 
 func (r *myOrderResolver) Price(ctx context.Context, obj *types.Order) (string, error) {

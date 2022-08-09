@@ -244,7 +244,6 @@ func UnmarshalOrderTimeInForce(v interface{}) (vega.Order_TimeInForce, error) {
 	}
 
 	return vega.Order_TimeInForce(t), nil
-
 }
 
 func MarshalPeggedReference(s vega.PeggedReference) graphql.Marshaler {
@@ -265,4 +264,14 @@ func MarshalProposalRejectionReason(s vega.ProposalError) graphql.Marshaler {
 
 func UnmarshalProposalRejectionReason(v interface{}) (vega.ProposalError, error) {
 	return vega.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, ErrUnimplemented
+}
+
+func MarshalOrderRejectionReason(s vega.OrderError) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalOrderRejectionReason(v interface{}) (vega.OrderError, error) {
+	return vega.OrderError_ORDER_ERROR_UNSPECIFIED, ErrUnimplemented
 }
