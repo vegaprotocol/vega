@@ -53,7 +53,6 @@ func (opts *tmCmd) Execute(_ []string) error {
 	rootCmd := tmcmd.RootCmd
 	rootCmd.AddCommand(
 		tmcmd.GenValidatorCmd,
-		tmcmd.ReIndexEventCmd,
 		tmcmd.InitFilesCmd,
 		tmcmd.ProbeUpnpCmd,
 		tmcmd.LightCmd,
@@ -61,13 +60,14 @@ func (opts *tmCmd) Execute(_ []string) error {
 		tmcmd.ReplayConsoleCmd,
 		tmcmd.ResetAllCmd,
 		tmcmd.ResetPrivValidatorCmd,
+		tmcmd.ResetStateCmd,
 		tmcmd.ShowValidatorCmd,
 		tmcmd.TestnetFilesCmd,
 		tmcmd.ShowNodeIDCmd,
 		tmcmd.GenNodeKeyCmd,
 		tmcmd.VersionCmd,
-		tmcmd.InspectCmd,
-		tmcmd.MakeKeyMigrateCommand(),
+		tmcmd.RollbackStateCmd,
+		tmcmd.CompactGoLevelDBCmd,
 		tmdebug.DebugCmd,
 		tmcli.NewCompletionCmd(rootCmd, true),
 	)

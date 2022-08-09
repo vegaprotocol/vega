@@ -30,7 +30,7 @@ import (
 	tmcfg "github.com/tendermint/tendermint/config"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
-	tmtime "github.com/tendermint/tendermint/libs/time"
+	"github.com/tendermint/tendermint/p2p"
 	"github.com/tendermint/tendermint/privval"
 	"github.com/tendermint/tendermint/types"
 )
@@ -118,7 +118,6 @@ func (opts *InitCmd) Execute(args []string) error {
 
 	if !initCmd.NoTendermint {
 		tmCfg := tmcfg.DefaultConfig()
-		tmCfg.Mode = string(mode)
 		tmCfg.SetRoot(os.ExpandEnv(initCmd.TendermintHome))
 		tmcfg.EnsureRoot(tmCfg.RootDir)
 		if err := initTendermintConfiguration(logger, tmCfg, initCmd.TendermintKey); err != nil {
@@ -151,43 +150,30 @@ func initTendermintConfiguration(
 	config *tmcfg.Config,
 	keyType string,
 ) error {
-	var (
-		pv  *privval.FilePV
-		err error
-	)
-
-	if config.Mode == tmcfg.ModeValidator {
-		// private validator
-		privValKeyFile := config.PrivValidator.KeyFile()
-		privValStateFile := config.PrivValidator.StateFile()
-		if tmos.FileExists(privValKeyFile) {
-			pv, err = privval.LoadFilePV(privValKeyFile, privValStateFile)
-			if err != nil {
-				return err
-			}
-
-			logger.Info("Found private validator",
-				logging.String("keyFile", privValKeyFile),
-				logging.String("stateFile", privValStateFile),
-			)
-		} else {
-			pv, err = privval.GenFilePV(privValKeyFile, privValStateFile, keyType)
-			if err != nil {
-				return err
-			}
-			pv.Save()
-			logger.Info("Generated private validator",
-				logging.String("keyFile", privValKeyFile),
-				logging.String("stateFile", privValStateFile),
-			)
-		}
+	// private validator
+	privValKeyFile := config.PrivValidatorKeyFile()
+	privValStateFile := config.PrivValidatorStateFile()
+	var pv *privval.FilePV
+	if tmos.FileExists(privValKeyFile) {
+		pv = privval.LoadFilePV(privValKeyFile, privValStateFile)
+		logger.Info("Found private validator",
+			logging.String("keyFile", privValKeyFile),
+			logging.String("stateFile", privValStateFile),
+		)
+	} else {
+		pv = privval.GenFilePV(privValKeyFile, privValStateFile)
+		pv.Save()
+		logger.Info("Generated private validator",
+			logging.String("keyFile", privValKeyFile),
+			logging.String("stateFile", privValStateFile),
+		)
 	}
 
 	nodeKeyFile := config.NodeKeyFile()
 	if tmos.FileExists(nodeKeyFile) {
 		logger.Info("Found node key", logging.String("path", nodeKeyFile))
 	} else {
-		if _, err := types.LoadOrGenNodeKey(nodeKeyFile); err != nil {
+		if _, err := p2p.LoadOrGenNodeKey(nodeKeyFile); err != nil {
 			return err
 		}
 		logger.Info("Generated node key", logging.String("path", nodeKeyFile))
@@ -200,42 +186,24 @@ func initTendermintConfiguration(
 	} else {
 		genDoc := types.GenesisDoc{
 			ChainID:         fmt.Sprintf("test-chain-%v", tmrand.Str(6)),
-			GenesisTime:     tmtime.Now(),
+			GenesisTime:     time.Now().Round(0).UTC(),
 			ConsensusParams: types.DefaultConsensusParams(),
 		}
-		if keyType == "secp256k1" {
-			genDoc.ConsensusParams.Validator = types.ValidatorParams{
-				PubKeyTypes: []string{types.ABCIPubKeyTypeSecp256k1},
-			}
+		pubKey, err := pv.GetPubKey()
+		if err != nil {
+			return fmt.Errorf("can't get pubkey: %w", err)
 		}
-
-		ctx, cancel := context.WithTimeout(context.TODO(), 4*time.Second)
-		defer cancel()
-
-		// if this is a validator we add it to genesis
-		if pv != nil {
-			pubKey, err := pv.GetPubKey(ctx)
-			if err != nil {
-				return fmt.Errorf("can't get pubkey: %w", err)
-			}
-			genDoc.Validators = []types.GenesisValidator{{
-				Address: pubKey.Address(),
-				PubKey:  pubKey,
-				Power:   10,
-			}}
-		}
+		genDoc.Validators = []types.GenesisValidator{{
+			Address: pubKey.Address(),
+			PubKey:  pubKey,
+			Power:   10,
+		}}
 
 		if err := genDoc.SaveAs(genFile); err != nil {
 			return err
 		}
 		logger.Info("Generated genesis file", logging.String("path", genFile))
 	}
-
-	// write config file
-	if err := tmcfg.WriteConfigFile(config.RootDir, config); err != nil {
-		return err
-	}
-	logger.Info("Generated config", logging.String("mode", config.Mode))
 
 	return nil
 }

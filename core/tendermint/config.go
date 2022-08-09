@@ -13,7 +13,6 @@
 package tendermint
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -41,18 +40,17 @@ func NewConfig(home string) *Config {
 }
 
 func (c *Config) PublicValidatorKey() (tmcrypto.PubKey, error) {
-	privValKeyFile := c.config.PrivValidator.KeyFile()
-	privValStateFile := c.config.PrivValidator.StateFile()
+	privValKeyFile := c.config.PrivValidatorKeyFile()
 	if !tmos.FileExists(privValKeyFile) {
 		return nil, fmt.Errorf("file \"%s\" not found", privValKeyFile)
 	}
+	// read private validator
+	pv := privval.LoadFilePV(
+		c.config.PrivValidatorKeyFile(),
+		c.config.PrivValidatorStateFile(),
+	)
 
-	pv, err := privval.LoadFilePV(privValKeyFile, privValStateFile)
-	if err != nil {
-		return nil, err
-	}
-
-	pubKey, err := pv.GetPubKey(context.Background())
+	pubKey, err := pv.GetPubKey()
 	if err != nil {
 		return nil, fmt.Errorf("can't get tendermint public key: %w", err)
 	}

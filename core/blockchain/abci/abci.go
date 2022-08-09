@@ -221,8 +221,8 @@ func getBaseTxEvents(tx Tx) []types.Event {
 			Type: "tx",
 			Attributes: []types.EventAttribute{
 				{
-					Key:   "submitter",
-					Value: tx.PubKeyHex(),
+					Key:   []byte("submitter"),
+					Value: []byte(tx.PubKeyHex()),
 					Index: true,
 				},
 			},
@@ -231,8 +231,8 @@ func getBaseTxEvents(tx Tx) []types.Event {
 			Type: "command",
 			Attributes: []types.EventAttribute{
 				{
-					Key:   "type",
-					Value: tx.Command().String(),
+					Key:   []byte("type"),
+					Value: []byte(tx.Command().String()),
 					Index: true,
 				},
 			},
@@ -250,8 +250,8 @@ func getBaseTxEvents(tx Tx) []types.Event {
 		Type: "command",
 		Attributes: []types.EventAttribute{
 			{
-				Key:   "market",
-				Value: market,
+				Key:   []byte("market"),
+				Value: []byte(market),
 				Index: true,
 			},
 		},
@@ -268,8 +268,8 @@ func getBaseTxEvents(tx Tx) []types.Event {
 		Type: "command",
 		Attributes: []types.EventAttribute{
 			{
-				Key:   "asset",
-				Value: asset,
+				Key:   []byte("asset"),
+				Value: []byte(asset),
 				Index: true,
 			},
 		},
@@ -283,8 +283,8 @@ func getBaseTxEvents(tx Tx) []types.Event {
 		Type: "command",
 		Attributes: []types.EventAttribute{
 			{
-				Key:   "reference",
-				Value: reference,
+				Key:   []byte("reference"),
+				Value: []byte(reference),
 				Index: true,
 			},
 		},
@@ -298,8 +298,8 @@ func getBaseTxEvents(tx Tx) []types.Event {
 		Type: "command",
 		Attributes: []types.EventAttribute{
 			{
-				Key:   "proposal",
-				Value: proposal,
+				Key:   []byte("proposal"),
+				Value: []byte(proposal),
 				Index: true,
 			},
 		},

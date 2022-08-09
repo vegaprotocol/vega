@@ -7,11 +7,13 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/spf13/viper"
-	abciclient "github.com/tendermint/tendermint/abci/client"
 	"github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/libs/service"
 	nm "github.com/tendermint/tendermint/node"
+	"github.com/tendermint/tendermint/p2p"
+	"github.com/tendermint/tendermint/privval"
+	"github.com/tendermint/tendermint/proxy"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
@@ -53,12 +55,44 @@ func NewTmNode(
 		}
 	}
 
-	acc := abciclient.NewLocalCreator(app)
-	logger := newTmLogger(log)
-	node, err := nm.New(config, logger, acc, genesisDoc)
-	if err != nil {
-		return nil, fmt.Errorf("creating tendermint node: %v", err)
+	genesisDocProvider := func() (*tmtypes.GenesisDoc, error) {
+		return genesisDoc, nil
 	}
+
+	// read private validator
+	pv := privval.LoadFilePV(
+		config.PrivValidatorKeyFile(),
+		config.PrivValidatorStateFile(),
+	)
+
+	// read node key
+	nodeKey, err := p2p.LoadNodeKey(config.NodeKeyFile())
+	if err != nil {
+		return nil, fmt.Errorf("failed to load node's key: %w", err)
+	}
+
+	// create logger
+	logger := newTmLogger(log)
+
+	// create node
+	node, err := nm.NewNode(
+		config,
+		pv,
+		nodeKey,
+		proxy.NewLocalClientCreator(app),
+		genesisDocProvider,
+		nm.DefaultDBProvider,
+		nm.DefaultMetricsProvider(config.Instrumentation),
+		logger)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create new Tendermint node: %w", err)
+	}
+
+	// acc := abciclient.NewLocalCreator(app)
+	// node, err := nm.New(config, logger, acc, genesisDoc)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("creating tendermint node: %v", err)
+	// }
 
 	return &TmNode{conf, node}, nil
 }
@@ -80,7 +114,7 @@ func (t *TmNode) Stop() error {
 			return err
 		}
 	}
-	t.node.Wait()
+	<-t.node.Quit()
 	return nil
 }
 
