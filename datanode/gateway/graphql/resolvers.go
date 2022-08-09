@@ -630,7 +630,7 @@ func (r *myQueryResolver) Deposit(ctx context.Context, did string) (*types.Depos
 }
 
 func (r *myQueryResolver) EstimateOrder(ctx context.Context, market, party string, price *string, size string, side vega.Side,
-	timeInForce vega.Order_TimeInForce, expiration *string, ty OrderType,
+	timeInForce vega.Order_TimeInForce, expiration *string, ty vega.Order_Type,
 ) (*OrderEstimate, error) {
 	order := &types.Order{}
 
@@ -656,9 +656,7 @@ func (r *myQueryResolver) EstimateOrder(ctx context.Context, market, party strin
 	order.PartyId = party
 	order.TimeInForce = timeInForce
 	order.Side = side
-	if order.Type, err = convertOrderTypeToProto(ty); err != nil {
-		return nil, err
-	}
+	order.Type = ty
 
 	// GTT must have an expiration value
 	if order.TimeInForce == types.Order_TIME_IN_FORCE_GTT && expiration != nil {
@@ -1820,14 +1818,6 @@ func (r *myOrderResolver) Price(ctx context.Context, obj *types.Order) (string, 
 	return obj.Price, nil
 }
 
-func (r *myOrderResolver) Type(ctx context.Context, obj *types.Order) (*OrderType, error) {
-	t, err := convertOrderTypeFromProto(obj.Type)
-	if err != nil {
-		return nil, err
-	}
-	return &t, nil
-}
-
 func (r *myOrderResolver) Market(ctx context.Context, obj *types.Order) (*types.Market, error) {
 	return r.r.getMarketByID(ctx, obj.MarketId)
 }
@@ -2056,10 +2046,6 @@ func (r *myCandleResolver) Datetime(ctx context.Context, obj *types.Candle) (str
 
 func (r *myCandleResolver) Timestamp(ctx context.Context, obj *types.Candle) (string, error) {
 	return strconv.FormatInt(obj.Timestamp, 10), nil
-}
-
-func (r *myCandleResolver) Interval(ctx context.Context, obj *types.Candle) (Interval, error) {
-	return convertIntervalFromProto(obj.Interval)
 }
 
 // END: Candle Resolver
@@ -2430,12 +2416,7 @@ func (r *mySubscriptionResolver) Positions(ctx context.Context, party, market *s
 	return c, nil
 }
 
-func (r *mySubscriptionResolver) Candles(ctx context.Context, market string, interval Interval) (<-chan *types.Candle, error) {
-	pinterval, err := convertIntervalToProto(interval)
-	if err != nil {
-		r.log.Debug("invalid interval for candles subscriptions", logging.Error(err))
-	}
-
+func (r *mySubscriptionResolver) Candles(ctx context.Context, market string, interval vega.Interval) (<-chan *types.Candle, error) {
 	intervalToCandleIDs, err := r.tradingDataClientV2.ListCandleIntervals(ctx, &v2.ListCandleIntervalsRequest{
 		MarketId: market,
 	})
@@ -2451,7 +2432,7 @@ func (r *mySubscriptionResolver) Candles(ctx context.Context, market string, int
 			r.log.Errorf("convert interval to candle id failed: %v", err)
 			continue
 		}
-		if candleInterval == pinterval {
+		if candleInterval == interval {
 			candleID = ic.CandleId
 			break
 		}

@@ -61,10 +61,6 @@ func (r *myMarketDataResolver) AuctionEnd(_ context.Context, m *types.MarketData
 	return &s, nil
 }
 
-func (r *myMarketDataResolver) MarketTradingMode(_ context.Context, m *types.MarketData) (MarketTradingMode, error) {
-	return convertMarketTradingModeFromProto(m.MarketTradingMode)
-}
-
 func (r *myMarketDataResolver) IndicativePrice(_ context.Context, m *types.MarketData) (string, error) {
 	return m.IndicativePrice, nil
 }
@@ -206,10 +202,6 @@ func (r *myObservableMarketDataResolver) AuctionStart(ctx context.Context, m *ty
 
 func (r *myObservableMarketDataResolver) AuctionEnd(ctx context.Context, m *types.MarketData) (*string, error) {
 	return (*myMarketDataResolver)(r).AuctionEnd(ctx, m)
-}
-
-func (r *myObservableMarketDataResolver) MarketTradingMode(ctx context.Context, m *types.MarketData) (MarketTradingMode, error) {
-	return (*myMarketDataResolver)(r).MarketTradingMode(ctx, m)
 }
 
 func (r *myObservableMarketDataResolver) IndicativePrice(ctx context.Context, m *types.MarketData) (string, error) {

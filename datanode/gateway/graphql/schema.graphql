@@ -2670,62 +2670,62 @@ enum OrderRejectionReason {
 
 enum OrderType {
   "An order to buy or sell at the market's current best available price"
-  Market
+  TYPE_MARKET
 
   "Order that uses a pre-specified price to buy or sell"
-  Limit
+  TYPE_LIMIT
 
   """
   Used for distressed parties, an order placed by the network to close out distressed parties
   similar to Market order, only no party is attached to the order.
   """
-  Network
+  TYPE_NETWORK
 }
 
 "The current state of a market"
 enum MarketState {
   "The governance proposal valid and accepted"
-  Proposed
+  STATE_PROPOSED
   "Outcome of governance votes is to reject the market"
-  Rejected
+  STATE_REJECTED
   "Governance vote passes/wins"
-  Pending
+  STATE_PENDING
   """
   Market triggers cancellation condition or governance
   votes to close before market becomes Active
   """
-  Cancelled
+  STATE_CANCELLED
   "Enactment date reached and usual auction exit checks pass"
-  Active
+  STATE_ACTIVE
   "Price monitoring or liquidity monitoring trigger"
-  Suspended
+  STATE_SUSPENDED
   "Governance vote (to close)"
-  Closed
+  STATE_CLOSED
   """
   Defined by the product (i.e. from a product parameter,
   specified in market definition, giving close date/time)
   """
-  TradingTerminated
+  STATE_TRADING_TERMINATED
   "Settlement triggered and completed as defined by product"
-  Settled
+  STATE_SETTLED
 }
 
 "What market trading mode is the market in"
 enum MarketTradingMode {
   "Continuous trading where orders are processed and potentially matched on arrival"
-  Continuous
+  TRADING_MODE_CONTINUOUS
 
   "Auction trading where orders are uncrossed at the end of the opening auction period"
-  OpeningAuction
+  TRADING_MODE_OPENING_AUCTION
 
   "Auction as normal trading mode for the market, where orders are uncrossed periodically"
-  BatchAuction
+  TRADING_MODE_BATCH_AUCTION
 
   "Auction triggered by price/liquidity monitoring"
-  MonitoringAuction
+  TRADING_MODE_MONITORING_AUCTION
 
   "No trading allowed"
-  NoTrading
+  TRADING_MODE_NO_TRADING
 }
 
 "Whether the placer of an order is aiming to buy or sell on the market"
@@ -2740,22 +2740,22 @@ enum Side {
 "The interval for trade candles when subscribing via Vega GraphQL, default is I15M"
 enum Interval {
   "1 minute interval"
-  I1M
+  INTERVAL_I1M
 
   "5 minute interval"
-  I5M
+  INTERVAL_I5M
 
   "15 minute interval (default)"
-  I15M
+  INTERVAL_I15M
 
   "1 hour interval"
-  I1H
+  INTERVAL_I1H
 
   "6 hour interval"
-  I6H
+  INTERVAL_I6H
 
   "1 day interval"
-  I1D
+  INTERVAL_I1D
 }
 
 "The various account types in Vega (used by collateral)"

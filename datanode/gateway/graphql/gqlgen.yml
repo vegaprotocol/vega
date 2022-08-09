@@ -17,9 +17,21 @@ models:
       - github.com/99designs/gqlgen/graphql.Int64
       - github.com/99designs/gqlgen/graphql.Int32
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.Uint32
+  Interval:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.Interval
   Side:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.Side
+  OrderType:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.OrderType
+  MarketState:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.MarketState
+  MarketTradingMode:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.MarketTradingMode
   ProposalRejectionReason:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.ProposalRejectionReason

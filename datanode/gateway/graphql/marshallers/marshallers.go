@@ -275,3 +275,53 @@ func MarshalOrderRejectionReason(s vega.OrderError) graphql.Marshaler {
 func UnmarshalOrderRejectionReason(v interface{}) (vega.OrderError, error) {
 	return vega.OrderError_ORDER_ERROR_UNSPECIFIED, ErrUnimplemented
 }
+
+func MarshalOrderType(s vega.Order_Type) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalOrderType(v interface{}) (vega.Order_Type, error) {
+	return vega.Order_TYPE_UNSPECIFIED, ErrUnimplemented
+}
+
+func MarshalMarketState(s vega.Market_State) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalMarketState(v interface{}) (vega.Market_State, error) {
+	return vega.Market_STATE_UNSPECIFIED, ErrUnimplemented
+}
+
+func MarshalMarketTradingMode(s vega.Market_TradingMode) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalMarketTradingMode(v interface{}) (vega.Market_TradingMode, error) {
+	return vega.Market_TRADING_MODE_UNSPECIFIED, ErrUnimplemented
+}
+
+func MarshalInterval(s vega.Interval) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalInterval(v interface{}) (vega.Interval, error) {
+	s, ok := v.(string)
+	if !ok {
+		return vega.Interval_INTERVAL_UNSPECIFIED, fmt.Errorf("expected interval in force to be a string")
+	}
+
+	t, ok := vega.Interval_value[s]
+	if !ok {
+		return vega.Interval_INTERVAL_UNSPECIFIED, fmt.Errorf("failed to convert Interval from GraphQL to Proto: %v", s)
+	}
+
+	return vega.Interval(t), nil
+}

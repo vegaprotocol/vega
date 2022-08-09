@@ -12,13 +12,8 @@ import (
 )
 
 func handleCandleConnectionRequest(ctx context.Context, client TradingDataServiceClientV2, market *types.Market, sinceRaw string, toRaw *string,
-	interval Interval, pagination *v2.Pagination,
+	interval vega.Interval, pagination *v2.Pagination,
 ) (*v2.CandleDataConnection, error) {
-	pInterval, err := convertIntervalToProto(interval)
-	if err != nil {
-		return nil, fmt.Errorf("could not convert interval: %w", err)
-	}
-
 	since, err := vegatime.Parse(sinceRaw)
 	if err != nil {
 		return nil, err
@@ -60,7 +55,7 @@ func handleCandleConnectionRequest(ctx context.Context, client TradingDataServic
 		CandleId:      candleID,
 		FromTimestamp: since.Unix(),
 		ToTimestamp:   to.Unix(),
-		Interval:      pInterval,
+		Interval:      interval,
 		Pagination:    pagination,
 	}
 	resp, err := client.ListCandleData(ctx, &req)
