@@ -925,6 +925,7 @@ type ComplexityRoot struct {
 		StakingSummary                func(childComplexity int, pagination *v2.Pagination) int
 		Trades                        func(childComplexity int, marketID *string, skip *int, first *int, last *int) int
 		TradesConnection              func(childComplexity int, marketID *string, pagination *v2.Pagination) int
+		TransfersConnection           func(childComplexity int, direction *TransferDirection, pagination *v2.Pagination) int
 		Votes                         func(childComplexity int) int
 		VotesConnection               func(childComplexity int, pagination *v2.Pagination) int
 		Withdrawals                   func(childComplexity int) int
@@ -1129,7 +1130,7 @@ type ComplexityRoot struct {
 		ProposalsConnection                func(childComplexity int, proposalType *v2.ListGovernanceDataRequest_Type, inState *vega.Proposal_State, pagination *v2.Pagination) int
 		Statistics                         func(childComplexity int) int
 		Transfers                          func(childComplexity int, pubkey string, isFrom *bool, isTo *bool) int
-		TransfersConnection                func(childComplexity int, pubkey *string, direction TransferDirection, pagination *v2.Pagination) int
+		TransfersConnection                func(childComplexity int, partyID *string, direction *TransferDirection, pagination *v2.Pagination) int
 		UpdateMarketProposals              func(childComplexity int, marketID *string, inState *vega.Proposal_State) int
 		Withdrawal                         func(childComplexity int, id string) int
 	}
@@ -1787,6 +1788,7 @@ type PartyResolver interface {
 	RewardsConnection(ctx context.Context, obj *vega.Party, asset *string, pagination *v2.Pagination) (*v2.RewardsConnection, error)
 	RewardSummaries(ctx context.Context, obj *vega.Party, asset *string) ([]*vega.RewardSummary, error)
 	RewardDetails(ctx context.Context, obj *vega.Party) ([]*vega.RewardSummary, error)
+	TransfersConnection(ctx context.Context, obj *vega.Party, direction *TransferDirection, pagination *v2.Pagination) (*v2.TransferConnection, error)
 }
 type PartyStakeResolver interface {
 	Linkings(ctx context.Context, obj *v13.PartyStakeResponse) ([]*v1.StakeLinking, error)
@@ -1868,7 +1870,7 @@ type QueryResolver interface {
 	EthereumKeyRotations(ctx context.Context, nodeID *string) (*v2.EthereumKeyRotationsConnection, error)
 	Epoch(ctx context.Context, id *string) (*vega.Epoch, error)
 	Transfers(ctx context.Context, pubkey string, isFrom *bool, isTo *bool) ([]*v1.Transfer, error)
-	TransfersConnection(ctx context.Context, pubkey *string, direction TransferDirection, pagination *v2.Pagination) (*v2.TransferConnection, error)
+	TransfersConnection(ctx context.Context, partyID *string, direction *TransferDirection, pagination *v2.Pagination) (*v2.TransferConnection, error)
 	Statistics(ctx context.Context) (*v14.Statistics, error)
 	HistoricBalances(ctx context.Context, filter *v2.AccountFilter, groupBy []*v2.AccountField) ([]*v2.AggregatedBalance, error)
 	NetworkLimits(ctx context.Context) (*vega.NetworkLimits, error)
@@ -5640,6 +5642,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Party.TradesConnection(childComplexity, args["marketId"].(*string), args["pagination"].(*v2.Pagination)), true
 
+	case "Party.transfersConnection":
+		if e.complexity.Party.TransfersConnection == nil {
+			break
+		}
+
+		args, err := ec.field_Party_transfersConnection_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Party.TransfersConnection(childComplexity, args["direction"].(*TransferDirection), args["pagination"].(*v2.Pagination)), true
+
 	case "Party.votes":
 		if e.complexity.Party.Votes == nil {
 			break
@@ -6757,7 +6771,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.TransfersConnection(childComplexity, args["pubkey"].(*string), args["direction"].(TransferDirection), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Query.TransfersConnection(childComplexity, args["partyId"].(*string), args["direction"].(*TransferDirection), args["pagination"].(*v2.Pagination)), true
 
 	case "Query.updateMarketProposals":
 		if e.complexity.Query.UpdateMarketProposals == nil {
@@ -9028,9 +9042,9 @@ type Query {
   "get a list of all transfers for a public key"
   transfersConnection(
     "the public key to look for"
-    pubkey: String
+    partyId: String
     "direction of the transfer with respect to the public key"
-    direction: TransferDirection!
+    direction: TransferDirection
     "Pagination information"
     pagination: Pagination
   ): TransferConnection!
@@ -10468,6 +10482,15 @@ type Party {
 
   "return reward information"
   rewardDetails: [RewardPerAssetDetail] @deprecated(reason: "Use rewardSummaries or rewards instead.")
+
+  "get a list of all transfers for a public key"
+  transfersConnection(
+    "direction of the transfer with respect to the public key"
+    direction: TransferDirection
+    "Pagination information"
+    pagination: Pagination
+  ): TransferConnection!
+
 }
 
 """
@@ -13374,6 +13397,30 @@ func (ec *executionContext) field_Party_trades_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
+func (ec *executionContext) field_Party_transfersConnection_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *TransferDirection
+	if tmp, ok := rawArgs["direction"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("direction"))
+		arg0, err = ec.unmarshalOTransferDirection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferDirection(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["direction"] = arg0
+	var arg1 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Party_votesConnection_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -14332,18 +14379,18 @@ func (ec *executionContext) field_Query_transfersConnection_args(ctx context.Con
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
-	if tmp, ok := rawArgs["pubkey"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pubkey"))
+	if tmp, ok := rawArgs["partyId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyId"))
 		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["pubkey"] = arg0
-	var arg1 TransferDirection
+	args["partyId"] = arg0
+	var arg1 *TransferDirection
 	if tmp, ok := rawArgs["direction"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("direction"))
-		arg1, err = ec.unmarshalNTransferDirection2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferDirection(ctx, tmp)
+		arg1, err = ec.unmarshalOTransferDirection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferDirection(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -32022,6 +32069,48 @@ func (ec *executionContext) _Party_rewardDetails(ctx context.Context, field grap
 	return ec.marshalORewardPerAssetDetail2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐRewardSummary(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Party_transfersConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Party",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Party_transfersConnection_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Party().TransfersConnection(rctx, obj, args["direction"].(*TransferDirection), args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.TransferConnection)
+	fc.Result = res
+	return ec.marshalNTransferConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTransferConnection(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _PartyConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.PartyConnection) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -36365,7 +36454,7 @@ func (ec *executionContext) _Query_transfersConnection(ctx context.Context, fiel
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().TransfersConnection(rctx, args["pubkey"].(*string), args["direction"].(TransferDirection), args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Query().TransfersConnection(rctx, args["partyId"].(*string), args["direction"].(*TransferDirection), args["pagination"].(*v2.Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -54451,6 +54540,26 @@ func (ec *executionContext) _Party(ctx context.Context, sel ast.SelectionSet, ob
 				return innerFunc(ctx)
 
 			})
+		case "transfersConnection":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Party_transfersConnection(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -63614,16 +63723,6 @@ func (ec *executionContext) marshalNTransferConnection2ᚖcodeᚗvegaprotocolᚗ
 	return ec._TransferConnection(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNTransferDirection2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferDirection(ctx context.Context, v interface{}) (TransferDirection, error) {
-	var res TransferDirection
-	err := res.UnmarshalGQL(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNTransferDirection2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferDirection(ctx context.Context, sel ast.SelectionSet, v TransferDirection) graphql.Marshaler {
-	return v
-}
-
 func (ec *executionContext) marshalNTransferKind2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferKind(ctx context.Context, sel ast.SelectionSet, v TransferKind) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -67691,6 +67790,22 @@ func (ec *executionContext) marshalOTransferBalance2ᚕᚖcodeᚗvegaprotocolᚗ
 	}
 
 	return ret
+}
+
+func (ec *executionContext) unmarshalOTransferDirection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferDirection(ctx context.Context, v interface{}) (*TransferDirection, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(TransferDirection)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOTransferDirection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferDirection(ctx context.Context, sel ast.SelectionSet, v *TransferDirection) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) marshalOTransferEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTransferEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.TransferEdge) graphql.Marshaler {

@@ -135,3 +135,37 @@ func (r *allResolver) allRewards(ctx context.Context, partyID, assetID string, s
 
 	return resp.Rewards, nil
 }
+
+func (r *allResolver) transfersConnection(
+	ctx context.Context,
+	partyID *string,
+	direction *TransferDirection,
+	pagination *v2.Pagination,
+) (*v2.TransferConnection, error) {
+	// if direction is nil just default to ToOrFrom
+	if direction == nil {
+		d := TransferDirectionToOrFrom
+		direction = &d
+	}
+
+	var transferDirection v2.TransferDirection
+	switch *direction {
+	case TransferDirectionFrom:
+		transferDirection = v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_FROM
+	case TransferDirectionTo:
+		transferDirection = v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_TO
+	case TransferDirectionToOrFrom:
+		transferDirection = v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_TO_OR_FROM
+	}
+
+	res, err := r.clt2.ListTransfers(ctx, &v2.ListTransfersRequest{
+		Pubkey:     partyID,
+		Direction:  transferDirection,
+		Pagination: pagination,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return res.Transfers, nil
+}
