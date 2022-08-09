@@ -2559,9 +2559,8 @@ func (m *Market) amendOrder(
 		// Update the existing message in place before we cancel it
 		if foundOnBook {
 			// Do not amend in place, the amened could be something
-			// not support for an amend in place, and not pass
+			// not supported for an amend in place, and not pass
 			// the validation of the order book
-			// m.orderAmendInPlace(existingOrder, amendedOrder)
 			cancellation, err := m.matching.CancelOrder(amendedOrder)
 			if cancellation == nil || err != nil {
 				m.log.Panic("Failure to cancel order from matching engine",
@@ -2572,9 +2571,7 @@ func (m *Market) amendOrder(
 			}
 
 			// unregister the existing order
-			// _ = m.position.UnregisterOrder(ctx, cancellation.Order)
 			_ = m.position.UnregisterOrder(ctx, existingOrder)
-			// amendedOrder = cancellation.Order
 		}
 
 		// Update the order in our stores (will be marked as cancelled)
