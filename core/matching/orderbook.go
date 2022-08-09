@@ -58,7 +58,7 @@ type OrderBook struct {
 	stopped                  bool // if true then we should stop creating snapshots
 	// we keep track here of which orders in the order book are pegged orders.
 	// this gets updated when orders are added or removed from the book.
-	peggedOrders map[string]*types.Order
+	peggedOrders map[string]struct{}
 }
 
 // CumulativeVolumeLevel represents the cumulative volume at a price level for both bid and ask.
@@ -98,7 +98,7 @@ func NewOrderBook(log *logging.Logger, config Config, marketID string, auction b
 				MarketID: marketID,
 			},
 		},
-		peggedOrders: map[string]*types.Order{},
+		peggedOrders: map[string]struct{}{},
 	}
 }
 
@@ -795,7 +795,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	if order.IsPersistent() && err == nil {
 		b.getSide(order.Side).addOrder(order)
 		if order.PeggedOrder != nil {
-			b.peggedOrders[order.ID] = order
+			b.peggedOrders[order.ID] = struct{}{}
 		}
 		// also add it to the indicative price and volume if in auction
 		if b.auction {
@@ -1046,7 +1046,7 @@ func (b *OrderBook) Settled() []*types.Order {
 	b.ordersByID = map[string]*types.Order{}
 	b.ordersPerParty = map[string]map[string]struct{}{}
 	b.indicativePriceAndVolume = nil
-	b.peggedOrders = map[string]*types.Order{}
+	b.peggedOrders = map[string]struct{}{}
 	b.buy.cleanup()
 	b.sell.cleanup()
 
@@ -1056,8 +1056,8 @@ func (b *OrderBook) Settled() []*types.Order {
 // GetAllUnParkedPeggedOrderIDs returns the order identifiers of all pegged orders in the order book that are not parked.
 func (b *OrderBook) GetAllUnParkedPeggedOrderIDs() []string {
 	pegged := make([]string, 0, len(b.peggedOrders))
-	for _, o := range b.peggedOrders {
-		if o.Status != vega.Order_STATUS_PARKED {
+	for ID := range b.peggedOrders {
+		if o, ok := b.ordersByID[ID]; ok && o.Status != vega.Order_STATUS_PARKED {
 			pegged = append(pegged, o.ID)
 		}
 	}

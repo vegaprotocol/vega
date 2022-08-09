@@ -113,7 +113,7 @@ func (b *OrderBook) LoadState(_ context.Context, payload *types.Payload) ([]type
 		b.addOrderToMaps(o)
 		// reconstruct pegged orders state
 		if o.PeggedOrder != nil {
-			b.peggedOrders[o.ID] = o
+			b.peggedOrders[o.ID] = struct{}{}
 		}
 	}
 
@@ -122,7 +122,7 @@ func (b *OrderBook) LoadState(_ context.Context, payload *types.Payload) ([]type
 		b.addOrderToMaps(o)
 		// reconstruct pegged orders state
 		if o.PeggedOrder != nil {
-			b.peggedOrders[o.ID] = o
+			b.peggedOrders[o.ID] = struct{}{}
 		}
 	}
 
