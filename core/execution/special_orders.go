@@ -55,7 +55,7 @@ func (m *Market) repricePeggedOrders(
 			if order.Status != types.OrderStatusParked {
 				// Remove order if any volume remains,
 				// otherwise it's already been popped by the matching engine.
-				cancellation, err := m.matching.CancelOrder(order)
+				cancellation, err := m.matching.RemoveOrderWithStatus(order.ID, types.OrderStatusParked)
 				if cancellation == nil || err != nil {
 					m.log.Panic("Failure after cancel order from matching engine",
 						logging.Order(*order),

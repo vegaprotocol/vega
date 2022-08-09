@@ -62,11 +62,12 @@ func (b *CachedOrderBook) LeaveAuction(
 	return b.OrderBook.LeaveAuction(at)
 }
 
-func (b *CachedOrderBook) CancelAllOrders(
+func (b *CachedOrderBook) RemovePartyOrdersWithStatus(
 	party string,
-) ([]*types.OrderCancellationConfirmation, error) {
+	status types.OrderStatus,
+) ([]*types.Order, error) {
 	b.cache.Invalidate()
-	return b.OrderBook.CancelAllOrders(party)
+	return b.OrderBook.RemovePartyOrdersWithStatus(party, status)
 }
 
 func (b *CachedOrderBook) maybeInvalidateDuringAuction(orderID string) {
@@ -120,22 +121,13 @@ func (b *CachedOrderBook) maybeInvalidateDuringAuctionNewOrder(order *types.Orde
 	}
 }
 
-func (b *CachedOrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error) {
-	if !b.InAuction() {
-		b.cache.Invalidate()
-	} else {
-		b.maybeInvalidateDuringAuction(order.ID)
-	}
-	return b.OrderBook.CancelOrder(order)
-}
-
-func (b *CachedOrderBook) RemoveOrder(order string) (*types.Order, error) {
+func (b *CachedOrderBook) RemoveOrderWithStatus(order string, status types.OrderStatus) (*types.Order, error) {
 	if !b.InAuction() {
 		b.cache.Invalidate()
 	} else {
 		b.maybeInvalidateDuringAuction(order)
 	}
-	return b.OrderBook.RemoveOrder(order)
+	return b.OrderBook.RemoveOrderWithStatus(order, status)
 }
 
 func (b *CachedOrderBook) AmendOrder(
@@ -167,17 +159,6 @@ func (b *CachedOrderBook) SubmitOrder(
 		b.maybeInvalidateDuringAuctionNewOrder(order)
 	}
 	return b.OrderBook.SubmitOrder(order)
-}
-
-func (b *CachedOrderBook) DeleteOrder(
-	order *types.Order,
-) (*types.Order, error) {
-	if !b.InAuction() {
-		b.cache.Invalidate()
-	} else {
-		b.maybeInvalidateDuringAuction(order.ID)
-	}
-	return b.OrderBook.DeleteOrder(order)
 }
 
 func (b *CachedOrderBook) RemoveDistressedOrders(

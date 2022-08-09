@@ -2334,18 +2334,18 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*typ
 	defer m.releaseMarginExcess(ctx, partyID)
 
 	if foundOnBook {
-		cancellation, err := m.matching.CancelOrder(order)
-		if cancellation == nil || err != nil {
-			if m.log.GetLevel() == logging.DebugLevel {
-				m.log.Debug("Failure after cancel order from matching engine",
-					logging.String("party-id", partyID),
-					logging.String("order-id", orderID),
-					logging.String("market", m.mkt.ID),
-					logging.Error(err))
-			}
-			return nil, err
+		cancelledOrder, err := m.matching.RemoveOrderWithStatus(
+			order.ID, types.OrderStatusCancelled)
+		if cancelledOrder == nil || err != nil {
+			m.log.Panic("Failure after cancel order from matching engine",
+				logging.String("party-id", partyID),
+				logging.String("order-id", orderID),
+				logging.String("market", m.mkt.ID),
+				logging.Error(err))
 		}
 		_ = m.position.UnregisterOrder(ctx, order)
+	} else {
+		order.Status = types.OrderStatusCancelled
 	}
 
 	if order.IsExpireable() {
@@ -2355,7 +2355,6 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*typ
 	// If this is a pegged order, remove from pegged and parked lists
 	if order.PeggedOrder != nil {
 		m.removePeggedOrder(order)
-		order.Status = types.OrderStatusCancelled
 	}
 
 	// Publish the changed order details
@@ -2369,7 +2368,7 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*typ
 // parkOrder will panic if it encounters errors, which means that it reached an
 // invalid state.
 func (m *Market) parkOrder(ctx context.Context, orderID string) *types.Order {
-	order, err := m.matching.RemoveOrder(orderID)
+	order, err := m.matching.RemoveOrderWithStatus(orderID, types.OrderStatusParked)
 	if err != nil {
 		m.log.Panic("Failure to remove order from matching engine",
 			logging.OrderID(orderID),
@@ -2558,19 +2557,19 @@ func (m *Market) amendOrder(
 
 		// Update the existing message in place before we cancel it
 		if foundOnBook {
-			m.orderAmendInPlace(existingOrder, amendedOrder)
-			cancellation, err := m.matching.CancelOrder(amendedOrder)
-			if cancellation == nil || err != nil {
+			// m.orderAmendInPlace(existingOrder, amendedOrder)
+			cancelledOrder, err := m.matching.RemoveOrderWithStatus(
+				amendedOrder.ID, types.OrderStatusExpired)
+			if cancelledOrder == nil || err != nil {
 				m.log.Panic("Failure to cancel order from matching engine",
 					logging.String("party-id", amendedOrder.Party),
 					logging.String("order-id", amendedOrder.ID),
 					logging.String("market", m.mkt.ID),
 					logging.Error(err))
-				return nil, nil, err
 			}
 
-			_ = m.position.UnregisterOrder(ctx, cancellation.Order)
-			amendedOrder = cancellation.Order
+			_ = m.position.UnregisterOrder(ctx, cancelledOrder)
+			// amendedOrder = cancelledOrder
 		}
 
 		// Update the order in our stores (will be marked as cancelled)
@@ -2943,37 +2942,34 @@ func (m *Market) removeExpiredOrders(
 	expired := []*types.Order{}
 	evts := []events.Event{}
 	for _, orderID := range m.expiringOrders.Expire(timestamp) {
-		var order *types.Order
 		// The pegged expiry orders are copies and do not reflect the
 		// current state of the order, therefore we look it up
-		originalOrder, foundOnBook, err := m.getOrderByID(orderID)
+		parked, err := m.findOrder(orderID)
 		if err != nil {
 			// nothing to do there.
 			continue
 		}
-		// assign to the order the order from the book
-		// so we get the most recent version from the book
-		// to continue with
-		order = originalOrder
+
+		var order *types.Order
 
 		// if the order was on the book basically
 		// either a pegged + non parked
 		// or a non-pegged order
-		if foundOnBook {
-			m.position.UnregisterOrder(ctx, order)
-			m.matching.DeleteOrder(order)
-		}
+		if parked {
+			order = m.peggedOrders.Remove(orderID)
+			order.Status = types.OrderStatusExpired
+		} else {
+			order, err = m.matching.RemoveOrderWithStatus(orderID, types.OrderStatusExpired)
+			if err != nil {
+				m.log.Panic("order should be on book")
+			}
 
-		// if this was a pegged order
-		// remove from the pegged / parked list
-		if order.PeggedOrder != nil {
-			m.removePeggedOrder(order)
+			m.position.UnregisterOrder(ctx, order)
 		}
 
 		// now we add to the list of expired orders
 		// and assign the appropriate status
 		order.UpdatedAt = m.timeService.GetTimeNow().UnixNano()
-		order.Status = types.OrderStatusExpired
 		expired = append(expired, order)
 		evts = append(evts, events.NewOrderEvent(ctx, order))
 	}
@@ -3071,6 +3067,21 @@ func (m *Market) getOrderByID(orderID string) (*types.Order, bool, error) {
 
 	// We couldn't find it
 	return nil, false, ErrOrderNotFound
+}
+
+func (m *Market) findOrder(orderID string) (parked bool, _ error) {
+	_, err := m.matching.GetOrderByID(orderID)
+	if err == nil {
+		return false, nil
+	}
+
+	if o := m.peggedOrders.GetParkedByID(orderID); o != nil {
+		return true, nil
+	}
+
+	// We couldn't find it
+	return false, ErrOrderNotFound
+
 }
 
 func (m *Market) getRiskFactors() (*types.RiskFactor, error) {

@@ -585,79 +585,43 @@ func (b *OrderBook) BestOfferPriceAndVolume() (*num.Uint, uint64, error) {
 	return b.sell.BestPriceAndVolume()
 }
 
-func (b *OrderBook) CancelAllOrders(party string) ([]*types.OrderCancellationConfirmation, error) {
-	var (
-		orders = b.GetOrdersPerParty(party)
-		confs  = []*types.OrderCancellationConfirmation{}
-		conf   *types.OrderCancellationConfirmation
-		err    error
-	)
+// // CancelOrder cancel an order that is active on an order book. Market and Order ID are validated, however the order must match
+// // the order on the book with respect to side etc. The caller will typically validate this by using a store, we should
+// // not trust that the external world can provide these values reliably.
+// func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error) {
+// 	// Validate Market
+// 	if order.MarketID != b.marketID {
+// 		if b.log.GetLevel() == logging.DebugLevel {
+// 			b.log.Debug("Market ID mismatch",
+// 				logging.Order(*order),
+// 				logging.String("order-book", b.marketID))
+// 		}
+// 		return nil, types.OrderErrorInvalidMarketID
+// 	}
 
-	for _, o := range orders {
-		conf, err = b.CancelOrder(o)
-		if err != nil {
-			return nil, err
-		}
-		confs = append(confs, conf)
-	}
+// 	// Validate Order ID must be present
+// 	if err := validateOrderID(order.ID); err != nil {
+// 		if b.log.GetLevel() == logging.DebugLevel {
+// 			b.log.Debug("Order ID missing or invalid",
+// 				logging.Order(*order),
+// 				logging.String("order-book", b.marketID))
+// 		}
+// 		return nil, err
+// 	}
 
-	return confs, err
-}
+// 	order, err := b.DeleteOrder(order)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-// CancelOrder cancel an order that is active on an order book. Market and Order ID are validated, however the order must match
-// the order on the book with respect to side etc. The caller will typically validate this by using a store, we should
-// not trust that the external world can provide these values reliably.
-func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error) {
-	// Validate Market
-	if order.MarketID != b.marketID {
-		if b.log.GetLevel() == logging.DebugLevel {
-			b.log.Debug("Market ID mismatch",
-				logging.Order(*order),
-				logging.String("order-book", b.marketID))
-		}
-		return nil, types.OrderErrorInvalidMarketID
-	}
+// 	// Important to mark the order as cancelled (and no longer active)
+// 	order.Status = types.OrderStatusCancelled
 
-	// Validate Order ID must be present
-	if err := validateOrderID(order.ID); err != nil {
-		if b.log.GetLevel() == logging.DebugLevel {
-			b.log.Debug("Order ID missing or invalid",
-				logging.Order(*order),
-				logging.String("order-book", b.marketID))
-		}
-		return nil, err
-	}
-
-	order, err := b.DeleteOrder(order)
-	if err != nil {
-		return nil, err
-	}
-
-	// Important to mark the order as cancelled (and no longer active)
-	order.Status = types.OrderStatusCancelled
-
-	result := &types.OrderCancellationConfirmation{
-		Order: order,
-	}
-	return result, nil
-}
-
-// RemoveOrder takes the order off the order book.
-func (b *OrderBook) RemoveOrder(id string) (*types.Order, error) {
-	order, err := b.GetOrderByID(id)
-	if err != nil {
-		return nil, err
-	}
-	order, err = b.DeleteOrder(order)
-	if err != nil {
-		return nil, err
-	}
-
-	// Important to mark the order as parked (and no longer active)
-	order.Status = types.OrderStatusParked
-
-	return order, nil
-}
+// 	result := &types.OrderCancellationConfirmation{
+// 		Order: order,
+// 	}
+// 	return result, nil
+// }
 
 // AmendOrder amends an order which is an active order on the book.
 func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
@@ -744,7 +708,7 @@ func (b *OrderBook) GetTrades(order *types.Order) ([]*types.Trade, error) {
 }
 
 func (b *OrderBook) ReplaceOrder(rm, rpl *types.Order) (*types.OrderConfirmation, error) {
-	if _, err := b.CancelOrder(rm); err != nil {
+	if _, err := b.RemoveOrderWithStatus(rm.ID, types.OrderStatusCancelled); err != nil {
 		return nil, err
 	}
 	// Because other collections might be pointing at the original order
@@ -871,8 +835,49 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	return orderConfirmation, nil
 }
 
+func (b *OrderBook) RemovePartyOrdersWithStatus(
+	party string,
+	status types.OrderStatus,
+) ([]*types.Order, error) {
+	var (
+		orders = b.GetOrdersPerParty(party)
+		confs  = []*types.Order{}
+		conf   *types.Order
+		err    error
+	)
+
+	for _, o := range orders {
+		conf, err = b.RemoveOrderWithStatus(o.ID, status)
+		if err != nil {
+			return nil, err
+		}
+		confs = append(confs, conf)
+	}
+
+	return confs, err
+}
+
+// RemoveOrder takes the order off the order book.
+func (b *OrderBook) RemoveOrderWithStatus(
+	id string,
+	status types.OrderStatus,
+) (*types.Order, error) {
+	order, err := b.GetOrderByID(id)
+	if err != nil {
+		return nil, err
+	}
+	order, err = b.deleteOrder(order)
+	if err != nil {
+		return nil, err
+	}
+
+	order.Status = status
+
+	return order, nil
+}
+
 // DeleteOrder remove a given order on a given side from the book.
-func (b *OrderBook) DeleteOrder(
+func (b *OrderBook) deleteOrder(
 	order *types.Order,
 ) (*types.Order, error) {
 	dorder, err := b.getSide(order.Side).RemoveOrder(order)
@@ -920,32 +925,15 @@ func (b *OrderBook) RemoveDistressedOrders(
 	rmorders := []*types.Order{}
 
 	for _, party := range parties {
-		orders := []*types.Order{}
-		for _, l := range b.buy.levels {
-			rm := l.getOrdersByParty(party.Party())
-			orders = append(orders, rm...)
+		removedOrders, err := b.RemovePartyOrdersWithStatus(
+			party.Party(), types.OrderStatusStopped)
+		if err != nil {
+			b.log.Panic("could not remove distressed party orders",
+				logging.String("party", party.Party()),
+				logging.Error(err),
+			)
 		}
-		for _, l := range b.sell.levels {
-			rm := l.getOrdersByParty(party.Party())
-			orders = append(orders, rm...)
-		}
-		for _, o := range orders {
-			confirm, err := b.CancelOrder(o)
-			if err != nil {
-				if b.log.GetLevel() == logging.DebugLevel {
-					b.log.Debug(
-						"Failed to cancel a given order for party",
-						logging.Order(*o),
-						logging.String("party", party.Party()),
-						logging.Error(err))
-				}
-				// let's see whether we need to handle this further down
-				continue
-			}
-			// here we set the status of the order as stopped as the system triggered it as well.
-			confirm.Order.Status = types.OrderStatusStopped
-			rmorders = append(rmorders, confirm.Order)
-		}
+		rmorders = append(rmorders, removedOrders...)
 	}
 	return rmorders, nil
 }

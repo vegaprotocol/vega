@@ -82,7 +82,7 @@ func (p *PeggedOrders) Park(o *types.Order) {
 	p.isParked[o.ID] = struct{}{}
 }
 
-func (p *PeggedOrders) Unpark(oid string) {
+func (p *PeggedOrders) Unpark(oid string) *types.Order {
 	for i, po := range p.parked {
 		if po.ID == oid {
 			// Remove item from slice
@@ -90,9 +90,11 @@ func (p *PeggedOrders) Unpark(oid string) {
 			p.parked[len(p.parked)-1] = nil
 			p.parked = p.parked[:len(p.parked)-1]
 			delete(p.isParked, oid)
-			return
+			return po
 		}
 	}
+
+	return nil
 }
 
 func (p *PeggedOrders) GetParkedByID(id string) *types.Order {
@@ -102,6 +104,12 @@ func (p *PeggedOrders) GetParkedByID(id string) *types.Order {
 		}
 	}
 	return nil
+}
+
+// Remove from the parked list AND the list of pegged orders.
+func (p *PeggedOrders) Remove(oid string) *types.Order {
+	// remove if parked
+	return p.Unpark(oid)
 }
 
 func (p *PeggedOrders) AmendParked(amended *types.Order) {
