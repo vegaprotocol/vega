@@ -112,7 +112,6 @@ func checkProposalSubmission(cmd *commandspb.ProposalSubmission) Errors {
 		if cmd.Terms.ValidationTimestamp != 0 {
 			errs.AddForProperty("proposal_submission.terms.validation_timestamp", ErrIsNotValid)
 		}
-
 	}
 
 	errs.Merge(checkProposalChanges(cmd.Terms))
