@@ -215,3 +215,44 @@ func MarshalDepositStatus(s vega.Deposit_Status) graphql.Marshaler {
 func UnmarshalDepositStatus(v interface{}) (vega.Deposit_Status, error) {
 	return vega.Deposit_STATUS_UNSPECIFIED, ErrUnimplemented
 }
+
+func MarshalOrderStatus(s vega.Order_Status) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalOrderStatus(v interface{}) (vega.Order_Status, error) {
+	return vega.Order_STATUS_UNSPECIFIED, ErrUnimplemented
+}
+
+func MarshalOrderTimeInForce(s vega.Order_TimeInForce) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalOrderTimeInForce(v interface{}) (vega.Order_TimeInForce, error) {
+	s, ok := v.(string)
+	if !ok {
+		return vega.Order_TIME_IN_FORCE_UNSPECIFIED, fmt.Errorf("expected order time in force to be a string")
+	}
+
+	t, ok := vega.Order_TimeInForce_value[s]
+	if !ok {
+		return vega.Order_TIME_IN_FORCE_UNSPECIFIED, fmt.Errorf("failed to convert TimeInForce from GraphQL to Proto: %v", s)
+	}
+
+	return vega.Order_TimeInForce(t), nil
+
+}
+
+func MarshalPeggedReference(s vega.PeggedReference) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalPeggedReference(v interface{}) (vega.PeggedReference, error) {
+	return vega.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED, ErrUnimplemented
+}

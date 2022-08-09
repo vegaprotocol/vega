@@ -2391,35 +2391,35 @@ enum DepositStatus {
 "Valid order types, these determine what happens when an order is added to the book"
 enum OrderTimeInForce {
   "Fill or Kill: The order either trades completely (remainingSize == 0 after adding) or not at all, does not remain on the book if it doesn't trade"
-  FOK
+  TIME_IN_FORCE_FOK
 
   "Immediate or Cancel: The order trades any amount and as much as possible but does not remain on the book (whether it trades or not)"
-  IOC
+  TIME_IN_FORCE_IOC
 
   "Good 'til Cancelled: This order trades any amount and as much as possible and remains on the book until it either trades completely or is cancelled"
-  GTC
+  TIME_IN_FORCE_GTC
 
   """
   Good 'til Time: This order type trades any amount and as much as possible and remains on the book until they either trade completely, are cancelled, or expires at a set time
   NOTE: this may in future be multiple types or have sub types for orders that provide different ways of specifying expiry
   """
-  GTT
+  TIME_IN_FORCE_GTT
 
   "Good for Auction: This order is only accepted during an auction period"
-  GFA
+  TIME_IN_FORCE_GFA
 
   "Good for Normal: This order is only accepted during normal trading (continuous trading or frequent batched auctions)"
-  GFN
+  TIME_IN_FORCE_GFN
 }
 
 "Valid references used for pegged orders."
 enum PeggedReference {
   "Peg the order against the mid price of the order book"
-  Mid
+  PEGGED_REFERENCE_MID
   "Peg the order against the best bid price of the order book"
-  BestBid
+  PEGGED_REFERENCE_BEST_BID
   "Peg the order against the best ask price of the order book"
-  BestAsk
+  PEGGED_REFERENCE_BEST_ASK
 }
 
 "Valid order statuses, these determine several states for an order that cannot be expressed with other fields in Order."
@@ -2428,28 +2428,28 @@ enum OrderStatus {
   The order is active and not cancelled or expired, it could be unfilled, partially filled or fully filled.
   Active does not necessarily mean it's still on the order book.
   """
-  Active
+  STATUS_ACTIVE
 
   "This order trades any amount and as much as possible and remains on the book until it either trades completely or expires."
-  Expired
+  STATUS_EXPIRED
 
   "The order is cancelled, the order could be partially filled or unfilled before it was cancelled. It is not possible to cancel an order with 0 remaining."
-  Cancelled
+  STATUS_CANCELLED
 
   "This order was of type IOC or FOK and could not be processed by the matching engine due to lack of liquidity."
-  Stopped
+  STATUS_STOPPED
 
   "This order is fully filled with remaining equalling zero."
-  Filled
+  STATUS_FILLED
 
   "This order was rejected while being processed."
-  Rejected
+  STATUS_REJECTED
 
   "This order was partially filled."
-  PartiallyFilled
+  STATUS_PARTIALLY_FILLED
 
   "This order has been removed from the order book because the market is in auction, the reference price doesn't exist, or the order needs to be repriced and can't. Applies to pegged orders only"
-  Parked
+  STATUS_PARKED
 }
 
 "Reason for the proposal being rejected by the core node"

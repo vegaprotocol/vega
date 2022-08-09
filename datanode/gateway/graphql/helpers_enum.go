@@ -101,56 +101,6 @@ func convertIntervalFromProto(x types.Interval) (Interval, error) {
 	}
 }
 
-// convertOrderStatusToProto converts a GraphQL enum to a Proto enum.
-func convertOrderStatusToProto(x OrderStatus) (types.Order_Status, error) {
-	switch x {
-	case OrderStatusActive:
-		return types.Order_STATUS_ACTIVE, nil
-	case OrderStatusExpired:
-		return types.Order_STATUS_EXPIRED, nil
-	case OrderStatusCancelled:
-		return types.Order_STATUS_CANCELLED, nil
-	case OrderStatusStopped:
-		return types.Order_STATUS_STOPPED, nil
-	case OrderStatusFilled:
-		return types.Order_STATUS_FILLED, nil
-	case OrderStatusRejected:
-		return types.Order_STATUS_REJECTED, nil
-	case OrderStatusPartiallyFilled:
-		return types.Order_STATUS_PARTIALLY_FILLED, nil
-	case OrderStatusParked:
-		return types.Order_STATUS_PARKED, nil
-	default:
-		err := fmt.Errorf("failed to convert OrderStatus from GraphQL to Proto: %v", x)
-		return types.Order_STATUS_UNSPECIFIED, err
-	}
-}
-
-// convertOrderStatusFromProto converts a Proto enum to a GraphQL enum.
-func convertOrderStatusFromProto(x types.Order_Status) (OrderStatus, error) {
-	switch x {
-	case types.Order_STATUS_ACTIVE:
-		return OrderStatusActive, nil
-	case types.Order_STATUS_EXPIRED:
-		return OrderStatusExpired, nil
-	case types.Order_STATUS_CANCELLED:
-		return OrderStatusCancelled, nil
-	case types.Order_STATUS_STOPPED:
-		return OrderStatusStopped, nil
-	case types.Order_STATUS_FILLED:
-		return OrderStatusFilled, nil
-	case types.Order_STATUS_REJECTED:
-		return OrderStatusRejected, nil
-	case types.Order_STATUS_PARTIALLY_FILLED:
-		return OrderStatusPartiallyFilled, nil
-	case types.Order_STATUS_PARKED:
-		return OrderStatusParked, nil
-	default:
-		err := fmt.Errorf("failed to convert OrderStatus from Proto to GraphQL: %v", x)
-		return OrderStatusActive, err
-	}
-}
-
 // convertOrderTypeToProto converts a GraphQL enum to a Proto enum.
 func convertOrderTypeToProto(x OrderType) (types.Order_Type, error) {
 	switch x {
@@ -413,62 +363,6 @@ func convertOrderRejectionReasonFromProto(x types.OrderError) (OrderRejectionRea
 	default:
 		err := fmt.Errorf("failed to convert OrderRejectionReason from Proto to GraphQL: %v", x)
 		return OrderRejectionReasonInternalError, err
-	}
-}
-
-func convertPeggedReferenceFromProto(x types.PeggedReference) (PeggedReference, error) {
-	switch x {
-	case types.PeggedReference_PEGGED_REFERENCE_MID:
-		return PeggedReferenceMid, nil
-	case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
-		return PeggedReferenceBestBid, nil
-	case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
-		return PeggedReferenceBestAsk, nil
-	default:
-		err := fmt.Errorf("failed to convert PeggedReference from Proto to GraphQL: %v", x)
-		return PeggedReferenceMid, err
-	}
-}
-
-// convertOrderTimeInForceToProto converts a GraphQL enum to a Proto enum.
-func convertOrderTimeInForceToProto(x OrderTimeInForce) (types.Order_TimeInForce, error) {
-	switch x {
-	case OrderTimeInForceFok:
-		return types.Order_TIME_IN_FORCE_FOK, nil
-	case OrderTimeInForceIoc:
-		return types.Order_TIME_IN_FORCE_IOC, nil
-	case OrderTimeInForceGtc:
-		return types.Order_TIME_IN_FORCE_GTC, nil
-	case OrderTimeInForceGtt:
-		return types.Order_TIME_IN_FORCE_GTT, nil
-	case OrderTimeInForceGfa:
-		return types.Order_TIME_IN_FORCE_GFA, nil
-	case OrderTimeInForceGfn:
-		return types.Order_TIME_IN_FORCE_GFN, nil
-	default:
-		err := fmt.Errorf("failed to convert OrderTimeInForce from GraphQL to Proto: %v", x)
-		return types.Order_TIME_IN_FORCE_UNSPECIFIED, err
-	}
-}
-
-// convertOrderTimeInForceFromProto converts a Proto enum to a GraphQL enum.
-func convertOrderTimeInForceFromProto(x types.Order_TimeInForce) (OrderTimeInForce, error) {
-	switch x {
-	case types.Order_TIME_IN_FORCE_FOK:
-		return OrderTimeInForceFok, nil
-	case types.Order_TIME_IN_FORCE_IOC:
-		return OrderTimeInForceIoc, nil
-	case types.Order_TIME_IN_FORCE_GTC:
-		return OrderTimeInForceGtc, nil
-	case types.Order_TIME_IN_FORCE_GTT:
-		return OrderTimeInForceGtt, nil
-	case types.Order_TIME_IN_FORCE_GFA:
-		return OrderTimeInForceGfa, nil
-	case types.Order_TIME_IN_FORCE_GFN:
-		return OrderTimeInForceGfn, nil
-	default:
-		err := fmt.Errorf("failed to convert OrderTimeInForce from Proto to GraphQL: %v", x)
-		return OrderTimeInForceGtc, err
 	}
 }
 

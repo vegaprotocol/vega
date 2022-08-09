@@ -20,6 +20,15 @@ models:
   Side:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.Side
+  PeggedReference:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.PeggedReference
+  OrderTimeInForce:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.OrderTimeInForce
+  OrderStatus:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.OrderStatus
   DepositStatus:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.DepositStatus

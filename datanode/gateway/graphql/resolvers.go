@@ -183,10 +183,6 @@ func (r *VegaResolverRoot) Withdrawal() WithdrawalResolver {
 	return (*myWithdrawalResolver)(r)
 }
 
-func (r *VegaResolverRoot) LiquidityOrder() LiquidityOrderResolver {
-	return (*myLiquidityOrderResolver)(r)
-}
-
 func (r *VegaResolverRoot) LiquidityOrderReference() LiquidityOrderReferenceResolver {
 	return (*myLiquidityOrderReferenceResolver)(r)
 }
@@ -241,10 +237,6 @@ func (r *VegaResolverRoot) UpdateNetworkParameter() UpdateNetworkParameterResolv
 
 func (r *VegaResolverRoot) NewFreeform() NewFreeformResolver {
 	return (*newFreeformResolver)(r)
-}
-
-func (r *VegaResolverRoot) PeggedOrder() PeggedOrderResolver {
-	return (*myPeggedOrderResolver)(r)
 }
 
 func (r *VegaResolverRoot) OracleSpec() OracleSpecResolver {
@@ -350,10 +342,6 @@ type myLiquidityOrderResolver VegaResolverRoot
 
 func (r *myLiquidityOrderResolver) Proportion(ctx context.Context, obj *types.LiquidityOrder) (int, error) {
 	return int(obj.Proportion), nil
-}
-
-func (r *myLiquidityOrderResolver) Reference(ctx context.Context, obj *types.LiquidityOrder) (PeggedReference, error) {
-	return convertPeggedReferenceFromProto(obj.Reference)
 }
 
 // LiquidityOrderReference resolver
@@ -642,7 +630,7 @@ func (r *myQueryResolver) Deposit(ctx context.Context, did string) (*types.Depos
 }
 
 func (r *myQueryResolver) EstimateOrder(ctx context.Context, market, party string, price *string, size string, side vega.Side,
-	timeInForce OrderTimeInForce, expiration *string, ty OrderType,
+	timeInForce vega.Order_TimeInForce, expiration *string, ty OrderType,
 ) (*OrderEstimate, error) {
 	order := &types.Order{}
 
@@ -666,9 +654,7 @@ func (r *myQueryResolver) EstimateOrder(ctx context.Context, market, party strin
 	}
 
 	order.PartyId = party
-	if order.TimeInForce, err = convertOrderTimeInForceToProto(timeInForce); err != nil {
-		return nil, err
-	}
+	order.TimeInForce = timeInForce
 	order.Side = side
 	if order.Type, err = convertOrderTypeToProto(ty); err != nil {
 		return nil, err
@@ -1838,10 +1824,6 @@ func (r *myOrderResolver) Price(ctx context.Context, obj *types.Order) (string, 
 	return obj.Price, nil
 }
 
-func (r *myOrderResolver) TimeInForce(ctx context.Context, obj *types.Order) (OrderTimeInForce, error) {
-	return convertOrderTimeInForceFromProto(obj.TimeInForce)
-}
-
 func (r *myOrderResolver) Type(ctx context.Context, obj *types.Order) (*OrderType, error) {
 	t, err := convertOrderTypeFromProto(obj.Type)
 	if err != nil {
@@ -1860,10 +1842,6 @@ func (r *myOrderResolver) Size(ctx context.Context, obj *types.Order) (string, e
 
 func (r *myOrderResolver) Remaining(ctx context.Context, obj *types.Order) (string, error) {
 	return strconv.FormatUint(obj.Remaining, 10), nil
-}
-
-func (r *myOrderResolver) Status(ctx context.Context, obj *types.Order) (OrderStatus, error) {
-	return convertOrderStatusFromProto(obj.Status)
 }
 
 func (r *myOrderResolver) CreatedAt(ctx context.Context, obj *types.Order) (string, error) {
@@ -2125,16 +2103,6 @@ func (r *myPriceLevelResolver) NumberOfOrders(ctx context.Context, obj *types.Pr
 }
 
 // END: Price Level Resolver
-
-// BEGIN: PeggedOrder Resolver
-
-type myPeggedOrderResolver VegaResolverRoot
-
-func (r *myPeggedOrderResolver) Reference(ctx context.Context, obj *types.PeggedOrder) (PeggedReference, error) {
-	return convertPeggedReferenceFromProto(obj.Reference)
-}
-
-// END: PeggedOrder Resolver
 
 // BEGIN: Position Resolver
 
