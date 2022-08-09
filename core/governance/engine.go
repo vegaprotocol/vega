@@ -56,6 +56,7 @@ type Broker interface {
 type Markets interface {
 	MarketExists(market string) bool
 	GetMarket(market string) (types.Market, bool)
+	GetMarketState(market string) (types.MarketState, error)
 	GetEquityLikeShareForMarketAndParty(market, party string) (num.Decimal, bool)
 	RestoreMarket(ctx context.Context, marketConfig *types.Market) error
 	RestoreMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *types.LiquidityProvisionSubmission, lpid, deterministicID string) error
@@ -307,9 +308,9 @@ func (e *Engine) removeProposal(ctx context.Context, id string) {
 // OnTick triggers time bound state changes.
 func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteClosed) {
 	var (
-		toBeEnacted []*ToEnact
-		voteClosed  []*VoteClosed
-		toBeRemoved []string // ids
+		preparedToEnact []*ToEnact
+		voteClosed      []*VoteClosed
+		toBeRemoved     []string // ids
 	)
 
 	now := t.Unix()
@@ -332,14 +333,9 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteCl
 					logging.Error(err))
 			} else {
 				toBeRemoved = append(toBeRemoved, proposal.ID)
-				toBeEnacted = append(toBeEnacted, enact)
+				preparedToEnact = append(preparedToEnact, enact)
 			}
 		}
-	}
-
-	// now we iterate over all proposal ids to remove them from the list
-	for _, id := range toBeRemoved {
-		e.removeProposal(ctx, id)
 	}
 
 	// then get all proposal accepted through node validation, and start their vote time.
@@ -369,10 +365,23 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteCl
 		e.gss.changedNodeValidation = true
 	}
 
-	for _, ep := range toBeEnacted {
+	toBeEnacted := []*ToEnact{}
+	for i, ep := range preparedToEnact {
 		// this is the new market proposal, and should already be in the slice
 		prop := *ep.ProposalData()
+
 		if prop.Terms.Change.GetTermType() == types.ProposalTermsTypeNewMarket {
+			mktState, err := e.markets.GetMarketState(prop.ID)
+			if err != nil {
+				e.log.Error("could not get state of market %s", logging.String("market-id", prop.ID))
+				continue
+			}
+
+			if mktState == types.MarketStateCancelled {
+				toBeRemoved = append(toBeRemoved, prop.ID)
+				continue
+			}
+
 			// just in case the proposal wasn't added for whatever reason (shouldn't be possible)
 			found := false
 			for i, p := range e.enactedProposals {
@@ -384,11 +393,18 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteCl
 			}
 			// no need to append
 			if found {
+				toBeEnacted = append(toBeEnacted, preparedToEnact[i])
 				continue
 			}
 		}
 		// take a copy in the state just before the proposal was enacted
 		e.enactedProposals = append(e.enactedProposals, &prop)
+		toBeEnacted = append(toBeEnacted, preparedToEnact[i])
+	}
+
+	// now we iterate over all proposal ids to remove them from the list
+	for _, id := range toBeRemoved {
+		e.removeProposal(ctx, id)
 	}
 
 	if len(toBeEnacted) != 0 {
@@ -460,7 +476,7 @@ func (e *Engine) SubmitProposal(
 		e.startProposal(p)
 	}
 
-	return e.intoToSubmit(ctx, p)
+	return e.intoToSubmit(ctx, p, &enactmentTime{current: p.Terms.EnactmentTimestamp})
 }
 
 func (e *Engine) RejectProposal(
@@ -496,7 +512,7 @@ func (e *Engine) rejectProposal(ctx context.Context, p *types.Proposal, r types.
 
 // toSubmit build the return response for the SubmitProposal
 // method.
-func (e *Engine) intoToSubmit(ctx context.Context, p *types.Proposal) (*ToSubmit, error) {
+func (e *Engine) intoToSubmit(ctx context.Context, p *types.Proposal, enct *enactmentTime) (*ToSubmit, error) {
 	tsb := &ToSubmit{p: p}
 
 	switch p.Terms.Change.GetTermType() {
@@ -510,7 +526,7 @@ func (e *Engine) intoToSubmit(ctx context.Context, p *types.Proposal) (*ToSubmit
 		enactTime := time.Unix(p.Terms.EnactmentTimestamp, 0)
 		newMarket := p.Terms.GetNewMarket()
 		auctionDuration := enactTime.Sub(closeTime)
-		if perr, err := validateNewMarketChange(newMarket, e.assets, true, e.netp, auctionDuration); err != nil {
+		if perr, err := validateNewMarketChange(newMarket, e.assets, true, e.netp, auctionDuration, enct); err != nil {
 			e.rejectProposal(ctx, p, perr, err)
 			return nil, fmt.Errorf("%w, %v", err, perr)
 		}
@@ -797,13 +813,15 @@ func (e *Engine) validateMarketUpdate(proposal *types.Proposal, params *Proposal
 
 // validates proposed change.
 func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError, error) {
+	enactTime := time.Unix(terms.EnactmentTimestamp, 0)
+	enct := &enactmentTime{current: terms.EnactmentTimestamp}
+
 	switch terms.Change.GetTermType() {
 	case types.ProposalTermsTypeNewMarket:
 		closeTime := time.Unix(terms.ClosingTimestamp, 0)
-		enactTime := time.Unix(terms.EnactmentTimestamp, 0)
-		return validateNewMarketChange(terms.GetNewMarket(), e.assets, true, e.netp, enactTime.Sub(closeTime))
+		return validateNewMarketChange(terms.GetNewMarket(), e.assets, true, e.netp, enactTime.Sub(closeTime), enct)
 	case types.ProposalTermsTypeUpdateMarket:
-		return validateUpdateMarketChange(terms.GetUpdateMarket())
+		return validateUpdateMarketChange(terms.GetUpdateMarket(), enct)
 	case types.ProposalTermsTypeNewAsset:
 		return terms.GetNewAsset().Validate()
 	case types.ProposalTermsTypeUpdateAsset:
@@ -934,7 +952,7 @@ func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.Pr
 		return nil, types.ProposalErrorUnsupportedProduct, ErrUnsupportedProduct
 	}
 
-	if perr, err := validateUpdateMarketChange(terms); err != nil {
+	if perr, err := validateUpdateMarketChange(terms, &enactmentTime{current: p.Terms.EnactmentTimestamp}); err != nil {
 		return nil, perr, err
 	}
 

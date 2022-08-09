@@ -44,7 +44,7 @@ func TestGovernanceSnapshotProposalReject(t *testing.T) {
 
 	// Submit a proposal
 	party := eng.newValidParty("a-valid-party", 123456789)
-	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow())
+	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow(), nil, nil)
 	eng.ensureAllAssetEnabled(t)
 	eng.expectOpenProposalEvent(t, party.Id, proposal.ID)
 
@@ -82,7 +82,7 @@ func TestGovernanceSnapshotProposalEnacted(t *testing.T) {
 
 	proposer := eng.newValidParty("proposer", 1)
 	voter1 := eng.newValidPartyTimes("voter-1", 7, 2)
-	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow())
+	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow(), nil, nil)
 
 	eng.ensureStakingAssetTotalSupply(t, 9)
 	eng.ensureAllAssetEnabled(t)
@@ -109,6 +109,7 @@ func TestGovernanceSnapshotProposalEnacted(t *testing.T) {
 	eng.expectTotalGovernanceTokenFromVoteEvents(t, "1", "7")
 
 	afterClosing := time.Unix(proposal.Terms.ClosingTimestamp, 0).Add(time.Second)
+	eng.expectGetMarketState(t, proposal.ID)
 	eng.OnTick(context.Background(), afterClosing)
 
 	require.True(t, eng.HasChanged(activeKey))
@@ -195,7 +196,7 @@ func TestGovernanceSnapshotRoundTrip(t *testing.T) {
 	require.Nil(t, err)
 
 	proposer := eng.newValidParty("proposer", 1)
-	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow())
+	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow(), nil, nil)
 	ctx := context.Background()
 
 	eng.ensureAllAssetEnabled(t)
