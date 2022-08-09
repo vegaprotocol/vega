@@ -59,6 +59,13 @@ var (
 	ErrWalletDoesNotExist                       = errors.New("the wallet does not exist")
 )
 
+func applicationError(code jsonrpc.ErrorCode, err error) *jsonrpc.ErrorDetails {
+	if code <= -32000 {
+		panic("client error code should be greater than -32000")
+	}
+	return jsonrpc.NewCustomError(code, "Application error", err)
+}
+
 func clientError(code jsonrpc.ErrorCode, err error) *jsonrpc.ErrorDetails {
 	if code <= -32000 {
 		panic("client error code should be greater than -32000")
@@ -78,7 +85,7 @@ func invalidParams(err error) *jsonrpc.ErrorDetails {
 }
 
 func requestNotPermittedError(err error) *jsonrpc.ErrorDetails {
-	return clientError(ErrorCodeRequestNotPermitted, err)
+	return applicationError(ErrorCodeRequestNotPermitted, err)
 }
 
 func connectionClosedError(err error) *jsonrpc.ErrorDetails {
