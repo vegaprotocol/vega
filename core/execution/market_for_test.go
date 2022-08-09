@@ -38,7 +38,7 @@ func (m *Market) LeaveAuctionWithIdGen(ctx context.Context, now time.Time, gener
 
 // GetPeggedOrderCount returns the number of pegged orders in the market.
 func (m *Market) GetPeggedOrderCount() int {
-	return len(m.peggedOrders.orders)
+	return len(m.matching.GetAllUnParkedPeggedOrderIDs()) + len(m.peggedOrders.GetParkedIDs())
 }
 
 // GetParkedOrderCount returns hte number of parked orders in the market.

@@ -422,7 +422,7 @@ func TestEvents_PeggedOrderNotAbleToRepriceDueToMargin(t *testing.T) {
 	require.NotNil(t, o5conf)
 	require.NoError(t, err)
 
-	// Move the best bid price up so that the pegged order cannot reprice
+	// Move the best bid price up so that the pegged order cannot repriced
 	o7 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order07", types.SideBuy, "party-B", 2, 200)
 	o7conf, err := tm.market.SubmitOrder(ctx, o7)
 	require.NotNil(t, o7conf)
