@@ -67,6 +67,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5767](https://github.com/vegaprotocol/vega/issues/5767) - Fix typo in command validation
 - [5825](https://github.com/vegaprotocol/vega/issues/5825) - Fix panic in pegged orders when going into auction
 - [5763](https://github.com/vegaprotocol/vega/issues/5763) - Transfers connection rename `pubkey` to `partyId`
+- [5809](https://github.com/vegaprotocol/vega/issues/5809) - Remove state variables when a market proposal is rejected
 
 ## 0.53.0
 
