@@ -18,26 +18,6 @@ import (
 	types "code.vegaprotocol.io/vega/protos/vega"
 )
 
-func convertLiquidityProvisionStatusFromProto(x types.LiquidityProvision_Status) (LiquidityProvisionStatus, error) {
-	switch x {
-	case types.LiquidityProvision_STATUS_ACTIVE:
-		return LiquidityProvisionStatusActive, nil
-	case types.LiquidityProvision_STATUS_STOPPED:
-		return LiquidityProvisionStatusStopped, nil
-	case types.LiquidityProvision_STATUS_CANCELLED:
-		return LiquidityProvisionStatusCancelled, nil
-	case types.LiquidityProvision_STATUS_REJECTED:
-		return LiquidityProvisionStatusRejected, nil
-	case types.LiquidityProvision_STATUS_UNDEPLOYED:
-		return LiquidityProvisionStatusUndeployed, nil
-	case types.LiquidityProvision_STATUS_PENDING:
-		return LiquidityProvisionStatusPending, nil
-	default:
-		err := fmt.Errorf("failed to convert LiquidityProvisionStatus from GraphQL to Proto: %v", x)
-		return LiquidityProvisionStatusActive, err
-	}
-}
-
 func convertDataNodeIntervalToProto(interval string) (types.Interval, error) {
 	switch interval {
 	case "1 minute":
@@ -55,20 +35,5 @@ func convertDataNodeIntervalToProto(interval string) (types.Interval, error) {
 	default:
 		err := fmt.Errorf("failed to convert Interval from GraphQL to Proto: %v", interval)
 		return types.Interval_INTERVAL_UNSPECIFIED, err
-	}
-}
-
-// convertTradeTypeFromProto converts a Proto enum to a GraphQL enum.
-func convertTradeTypeFromProto(x types.Trade_Type) (TradeType, error) {
-	switch x {
-	case types.Trade_TYPE_DEFAULT:
-		return TradeTypeDefault, nil
-	case types.Trade_TYPE_NETWORK_CLOSE_OUT_BAD:
-		return TradeTypeNetworkCloseOutBad, nil
-	case types.Trade_TYPE_NETWORK_CLOSE_OUT_GOOD:
-		return TradeTypeNetworkCloseOutGood, nil
-	default:
-		err := fmt.Errorf("failed to convert TradeType from Proto to GraphQL: %v", x)
-		return TradeTypeDefault, err
 	}
 }

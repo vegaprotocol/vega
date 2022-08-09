@@ -1594,7 +1594,6 @@ type LiquidityProvisionResolver interface {
 	Market(ctx context.Context, obj *vega.LiquidityProvision) (*vega.Market, error)
 
 	Version(ctx context.Context, obj *vega.LiquidityProvision) (string, error)
-	Status(ctx context.Context, obj *vega.LiquidityProvision) (LiquidityProvisionStatus, error)
 }
 type MarginLevelsResolver interface {
 	Market(ctx context.Context, obj *vega.MarginLevels) (*vega.Market, error)
@@ -1969,7 +1968,7 @@ type TradeResolver interface {
 
 	Size(ctx context.Context, obj *vega.Trade) (string, error)
 	CreatedAt(ctx context.Context, obj *vega.Trade) (string, error)
-	Type(ctx context.Context, obj *vega.Trade) (TradeType, error)
+
 	BuyerFee(ctx context.Context, obj *vega.Trade) (*TradeFee, error)
 	SellerFee(ctx context.Context, obj *vega.Trade) (*TradeFee, error)
 	BuyerAuctionBatch(ctx context.Context, obj *vega.Trade) (*int, error)
@@ -10709,13 +10708,13 @@ type TradeFee {
 "Valid trade types"
 enum TradeType {
   "Default trade type"
-  Default
+  TYPE_DEFAULT
 
   "Network close-out - good"
-  NetworkCloseOutGood
+  TYPE_NETWORK_CLOSE_OUT_BAD
 
   "Network close-out - bad"
-  NetworkCloseOutBad
+  TYPE_NETWORK_CLOSE_OUT_GOOD
 }
 
 "An account record"
@@ -11830,21 +11829,21 @@ type LiquidityOrder {
 "Status of a liquidity provision order"
 enum LiquidityProvisionStatus {
   "An active liquidity provision"
-  Active
+  STATUS_ACTIVE
   "A liquidity provision stopped by the network"
-  Stopped
+  STATUS_STOPPED
   "A cancelled liquidity provision"
-  Cancelled
+  STATUS_CANCELLED
   "Liquidity provision was invalid and got rejected"
-  Rejected
+  STATUS_REJECTED
   "The liquidity provision is valid and accepted by the network, but orders aren't deployed"
-  Undeployed
+  STATUS_UNDEPLOYED
   """
   The liquidity provision is valid and accepted by the network, but orders aren't deployed and
   have never been deployed. If when it's possible to deploy them for the first time the
   margin check fails, then they will be cancelled without any penalties.
   """
-  Pending
+  STATUS_PENDING
 }
 
 type LiquidityOrderReference {
@@ -21487,14 +21486,14 @@ func (ec *executionContext) _LiquidityProvision_status(ctx context.Context, fiel
 		Object:     "LiquidityProvision",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.LiquidityProvision().Status(rctx, obj)
+		return obj.Status, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -21506,9 +21505,9 @@ func (ec *executionContext) _LiquidityProvision_status(ctx context.Context, fiel
 		}
 		return graphql.Null
 	}
-	res := resTmp.(LiquidityProvisionStatus)
+	res := resTmp.(vega.LiquidityProvision_Status)
 	fc.Result = res
-	return ec.marshalNLiquidityProvisionStatus2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐLiquidityProvisionStatus(ctx, field.Selections, res)
+	return ec.marshalNLiquidityProvisionStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityProvision_Status(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _LiquidityProvision_reference(ctx context.Context, field graphql.CollectedField, obj *vega.LiquidityProvision) (ret graphql.Marshaler) {
@@ -41435,14 +41434,14 @@ func (ec *executionContext) _Trade_type(ctx context.Context, field graphql.Colle
 		Object:     "Trade",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Trade().Type(rctx, obj)
+		return obj.Type, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -41454,9 +41453,9 @@ func (ec *executionContext) _Trade_type(ctx context.Context, field graphql.Colle
 		}
 		return graphql.Null
 	}
-	res := resTmp.(TradeType)
+	res := resTmp.(vega.Trade_Type)
 	fc.Result = res
-	return ec.marshalNTradeType2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTradeType(ctx, field.Selections, res)
+	return ec.marshalNTradeType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTrade_Type(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Trade_buyerFee(ctx context.Context, field graphql.CollectedField, obj *vega.Trade) (ret graphql.Marshaler) {
@@ -49279,25 +49278,15 @@ func (ec *executionContext) _LiquidityProvision(ctx context.Context, sel ast.Sel
 
 			})
 		case "status":
-			field := field
-
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._LiquidityProvision_status(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+				return ec._LiquidityProvision_status(ctx, field, obj)
 			}
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
+			out.Values[i] = innerFunc(ctx)
 
-			})
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "reference":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._LiquidityProvision_reference(ctx, field, obj)
@@ -59122,25 +59111,15 @@ func (ec *executionContext) _Trade(ctx context.Context, sel ast.SelectionSet, ob
 
 			})
 		case "type":
-			field := field
-
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Trade_type(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+				return ec._Trade_type(ctx, field, obj)
 			}
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
+			out.Values[i] = innerFunc(ctx)
 
-			})
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "buyerFee":
 			field := field
 
@@ -62054,14 +62033,19 @@ func (ec *executionContext) marshalNLiquidityProvision2ᚖcodeᚗvegaprotocolᚗ
 	return ec._LiquidityProvision(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNLiquidityProvisionStatus2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐLiquidityProvisionStatus(ctx context.Context, v interface{}) (LiquidityProvisionStatus, error) {
-	var res LiquidityProvisionStatus
-	err := res.UnmarshalGQL(v)
+func (ec *executionContext) unmarshalNLiquidityProvisionStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityProvision_Status(ctx context.Context, v interface{}) (vega.LiquidityProvision_Status, error) {
+	res, err := marshallers.UnmarshalLiquidityProvisionStatus(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNLiquidityProvisionStatus2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐLiquidityProvisionStatus(ctx context.Context, sel ast.SelectionSet, v LiquidityProvisionStatus) graphql.Marshaler {
-	return v
+func (ec *executionContext) marshalNLiquidityProvisionStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityProvision_Status(ctx context.Context, sel ast.SelectionSet, v vega.LiquidityProvision_Status) graphql.Marshaler {
+	res := marshallers.MarshalLiquidityProvisionStatus(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
 }
 
 func (ec *executionContext) marshalNLiquidityProvisionsConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLiquidityProvisionsConnection(ctx context.Context, sel ast.SelectionSet, v v2.LiquidityProvisionsConnection) graphql.Marshaler {
@@ -63581,14 +63565,19 @@ func (ec *executionContext) marshalNTradeSettlement2ᚖcodeᚗvegaprotocolᚗio�
 	return ec._TradeSettlement(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNTradeType2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTradeType(ctx context.Context, v interface{}) (TradeType, error) {
-	var res TradeType
-	err := res.UnmarshalGQL(v)
+func (ec *executionContext) unmarshalNTradeType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTrade_Type(ctx context.Context, v interface{}) (vega.Trade_Type, error) {
+	res, err := marshallers.UnmarshalTradeType(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNTradeType2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTradeType(ctx context.Context, sel ast.SelectionSet, v TradeType) graphql.Marshaler {
-	return v
+func (ec *executionContext) marshalNTradeType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTrade_Type(ctx context.Context, sel ast.SelectionSet, v vega.Trade_Type) graphql.Marshaler {
+	res := marshallers.MarshalTradeType(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
 }
 
 func (ec *executionContext) marshalNTransfer2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐTransfer(ctx context.Context, sel ast.SelectionSet, v *v1.Transfer) graphql.Marshaler {

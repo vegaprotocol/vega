@@ -2272,13 +2272,13 @@ type TradeFee {
 "Valid trade types"
 enum TradeType {
   "Default trade type"
-  Default
+  TYPE_DEFAULT
 
   "Network close-out - good"
-  NetworkCloseOutGood
+  TYPE_NETWORK_CLOSE_OUT_BAD
 
   "Network close-out - bad"
-  NetworkCloseOutBad
+  TYPE_NETWORK_CLOSE_OUT_GOOD
 }
 
 "An account record"
@@ -3393,21 +3393,21 @@ type LiquidityOrder {
 "Status of a liquidity provision order"
 enum LiquidityProvisionStatus {
   "An active liquidity provision"
-  Active
+  STATUS_ACTIVE
   "A liquidity provision stopped by the network"
-  Stopped
+  STATUS_STOPPED
   "A cancelled liquidity provision"
-  Cancelled
+  STATUS_CANCELLED
   "Liquidity provision was invalid and got rejected"
-  Rejected
+  STATUS_REJECTED
   "The liquidity provision is valid and accepted by the network, but orders aren't deployed"
-  Undeployed
+  STATUS_UNDEPLOYED
   """
   The liquidity provision is valid and accepted by the network, but orders aren't deployed and
   have never been deployed. If when it's possible to deploy them for the first time the
   margin check fails, then they will be cancelled without any penalties.
   """
-  Pending
+  STATUS_PENDING
 }
 
 type LiquidityOrderReference {

@@ -17,6 +17,9 @@ models:
       - github.com/99designs/gqlgen/graphql.Int64
       - github.com/99designs/gqlgen/graphql.Int32
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.Uint32
+  LiquidityProvisionStatus:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.LiquidityProvisionStatus
   ProposalType:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.ProposalType
@@ -26,6 +29,9 @@ models:
   Side:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.Side
+  TradeType:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.TradeType
   OrderType:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.OrderType

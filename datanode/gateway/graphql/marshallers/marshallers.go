@@ -346,3 +346,23 @@ func UnmarshalProposalType(v interface{}) (v2.ListGovernanceDataRequest_Type, er
 
 	return v2.ListGovernanceDataRequest_Type(t), nil
 }
+
+func MarshalLiquidityProvisionStatus(s vega.LiquidityProvision_Status) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalLiquidityProvisionStatus(v interface{}) (vega.LiquidityProvision_Status, error) {
+	return vega.LiquidityProvision_STATUS_UNSPECIFIED, ErrUnimplemented
+}
+
+func MarshalTradeType(s vega.Trade_Type) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalTradeType(v interface{}) (vega.Trade_Type, error) {
+	return vega.Trade_TYPE_UNSPECIFIED, ErrUnimplemented
+}

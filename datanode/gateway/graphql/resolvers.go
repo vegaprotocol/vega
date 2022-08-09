@@ -1972,10 +1972,6 @@ func (r *myTradeResolver) Seller(ctx context.Context, obj *types.Trade) (*types.
 	return res.Party, nil
 }
 
-func (r *myTradeResolver) Type(ctx context.Context, obj *types.Trade) (TradeType, error) {
-	return convertTradeTypeFromProto(obj.Type)
-}
-
 func (r *myTradeResolver) BuyerAuctionBatch(ctx context.Context, obj *types.Trade) (*int, error) {
 	i := int(obj.BuyerAuctionBatch)
 	return &i, nil
