@@ -1818,7 +1818,7 @@ type ProposalResolver interface {
 	Rationale(ctx context.Context, obj *vega.GovernanceData) (*vega.ProposalRationale, error)
 	Terms(ctx context.Context, obj *vega.GovernanceData) (*vega.ProposalTerms, error)
 	Votes(ctx context.Context, obj *vega.GovernanceData) (*ProposalVotes, error)
-	RejectionReason(ctx context.Context, obj *vega.GovernanceData) (*ProposalRejectionReason, error)
+	RejectionReason(ctx context.Context, obj *vega.GovernanceData) (*vega.ProposalError, error)
 	ErrorDetails(ctx context.Context, obj *vega.GovernanceData) (*string, error)
 }
 type ProposalTermsResolver interface {
@@ -10896,79 +10896,81 @@ enum OrderStatus {
 "Reason for the proposal being rejected by the core node"
 enum ProposalRejectionReason {
   "The specified close time is too early based on network parameters"
-  CloseTimeTooSoon
+  PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON
   "The specified close time is too late based on network parameters"
-  CloseTimeTooLate
+  PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE
   "The specified enactment time is too early based on network parameters"
-  EnactTimeTooSoon
+  PROPOSAL_ERROR_ENACT_TIME_TOO_SOON
   "The specified enactment time is too late based on network parameters"
-  EnactTimeTooLate
+  PROPOSAL_ERROR_ENACT_TIME_TOO_LATE
   "The proposer for this proposal has insufficient tokens"
-  InsufficientTokens
+  PROPOSAL_ERROR_INSUFFICIENT_TOKENS
   "The instrument quote name and base name were the same"
-  InvalidInstrumentSecurity
+  PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY
   "The proposal has no product specified"
-  NoProduct
+  PROPOSAL_ERROR_NO_PRODUCT
   "The specified product is not supported"
-  UnsupportedProduct
-  "Invalid future maturity timestamp (expect RFC3339)"
-  InvalidFutureMaturityTimestamp
-  "The product maturity is already in the past"
-  ProductMaturityIsPassed
+  PROPOSAL_ERROR_UNSUPPORTED_PRODUCT
   "The proposal has no trading mode"
-  NoTradingMode
+  PROPOSAL_ERROR_NO_TRADING_MODE
   "The proposal has an unsupported trading mode"
-  UnsupportedTradingMode
+  PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE
   "The proposal failed node validation"
-  NodeValidationFailed
+  PROPOSAL_ERROR_NODE_VALIDATION_FAILED
   "A builtin asset configuration is missing"
-  MissingBuiltinAssetField
+  PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD
   "The ERC20 contract address is missing from an ERC20 asset proposal"
-  MissingERC20ContractAddress
+  PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS
   "The specified asset for the market proposal is invalid"
-  InvalidAsset
+  PROPOSAL_ERROR_INVALID_ASSET
   "proposal terms timestamps are not compatible (Validation < Closing < Enactment)"
-  IncompatibleTimestamps
+  PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS
   "Risk parameters are missing from the market proposal"
-  NoRiskParameters
+  PROPOSAL_ERROR_NO_RISK_PARAMETERS
   "Invalid key in update network parameter proposal"
-  NetworkParameterInvalidKey
+  PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY
   "Invalid value in update network parameter proposal"
-  NetworkParameterInvalidValue
+  PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE
   "Validation failed for network parameter proposal"
-  NetworkParameterValidationFailed
+  PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED
   "Opening auction duration is less than the network minimum opening auction time"
-  OpeningAuctionDurationTooSmall
+  PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_SMALL
   "Opening auction duration is more than the network minimum opening auction time"
-  OpeningAuctionDurationTooLarge
+  PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_LARGE
   "Market proposal is missing a liquidity commitment"
-  MarketMissingLiquidityCommitment
+  PROPOSAL_ERROR_MARKET_MISSING_LIQUIDITY_COMMITMENT
   "Market could not be created"
-  CouldNotInstantiateMarket
+  PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET
   "Market proposal market contained invalid product definition"
-  InvalidFutureProduct
+  PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT
   "Market proposal is missing commitment amount"
-  MissingCommitmentAmount
+  PROPOSAL_ERROR_MISSING_COMMITMENT_AMOUNT
   "Market proposal has invalid fee amount"
-  InvalidFeeAmount
+  PROPOSAL_ERROR_INVALID_FEE_AMOUNT
   "Market proposal has one or more invalid liquidity shapes"
-  InvalidShape
+  PROPOSAL_ERROR_INVALID_SHAPE
   "Market proposal uses an invalid risk parameter"
-  InvalidRiskParameter
+  PROPOSAL_ERROR_INVALID_RISK_PARAMETER
   "Proposal declined because the majority threshold was not reached"
-  MajorityThresholdNotReached
+  PROPOSAL_ERROR_MAJORITY_THRESHOLD_NOT_REACHED
   "Proposal declined because the participation threshold was not reached"
-  ParticipationThresholdNotReached
+  PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED
   "Asset details are invalid"
-  InvalidAssetDetails
+  PROPOSAL_ERROR_INVALID_ASSET_DETAILS
   "Too many price monitoring triggers specified in market"
-  TooManyPriceMonitoringTriggers
+  PROPOSAL_ERROR_TOO_MANY_PRICE_MONITORING_TRIGGERS
   "Too many decimal places specified in market"
-  TooManyMarketDecimalPlaces
+  PROPOSAL_ERROR_TOO_MANY_MARKET_DECIMAL_PLACES
   "The market is invalid"
-  InvalidMarket
+  PROPOSAL_ERROR_INVALID_MARKET
   "The proposal is rejected because the party does not have enough equity like share in the market"
-  InsufficientEquityLikeShare
+  PROPOSAL_ERROR_INSUFFICIENT_EQUITY_LIKE_SHARE
+  "Unknown proposal type"
+  PROPOSAL_ERROR_UNKNOWN_TYPE
+  "Unknow risk paramters"
+  PROPOSAL_ERROR_UNKNOWN_RISK_PARAMETER_TYPE
+  "Freeform proposal is invalid"
+  PROPOSAL_ERROR_INVALID_FREEFORM
 }
 
 "Reason for the order being rejected by the core node"
@@ -33746,9 +33748,9 @@ func (ec *executionContext) _Proposal_rejectionReason(ctx context.Context, field
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*ProposalRejectionReason)
+	res := resTmp.(*vega.ProposalError)
 	fc.Result = res
-	return ec.marshalOProposalRejectionReason2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProposalRejectionReason(ctx, field.Selections, res)
+	return ec.marshalOProposalRejectionReason2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐProposalError(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Proposal_errorDetails(ctx context.Context, field graphql.CollectedField, obj *vega.GovernanceData) (ret graphql.Marshaler) {
@@ -66957,20 +66959,20 @@ func (ec *executionContext) marshalOProposalEdge2ᚖcodeᚗvegaprotocolᚗioᚋv
 	return ec._ProposalEdge(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOProposalRejectionReason2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProposalRejectionReason(ctx context.Context, v interface{}) (*ProposalRejectionReason, error) {
+func (ec *executionContext) unmarshalOProposalRejectionReason2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐProposalError(ctx context.Context, v interface{}) (*vega.ProposalError, error) {
 	if v == nil {
 		return nil, nil
 	}
-	var res = new(ProposalRejectionReason)
-	err := res.UnmarshalGQL(v)
-	return res, graphql.ErrorOnPath(ctx, err)
+	res, err := marshallers.UnmarshalProposalRejectionReason(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOProposalRejectionReason2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProposalRejectionReason(ctx context.Context, sel ast.SelectionSet, v *ProposalRejectionReason) graphql.Marshaler {
+func (ec *executionContext) marshalOProposalRejectionReason2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐProposalError(ctx context.Context, sel ast.SelectionSet, v *vega.ProposalError) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return v
+	res := marshallers.MarshalProposalRejectionReason(*v)
+	return res
 }
 
 func (ec *executionContext) unmarshalOProposalState2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐProposal_State(ctx context.Context, v interface{}) (*vega.Proposal_State, error) {

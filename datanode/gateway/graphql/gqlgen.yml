@@ -20,6 +20,9 @@ models:
   Side:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.Side
+  ProposalRejectionReason:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.ProposalRejectionReason
   PeggedReference:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.PeggedReference

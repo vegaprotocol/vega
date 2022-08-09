@@ -23,7 +23,7 @@ import (
 
 type proposalResolver VegaResolverRoot
 
-func (r *proposalResolver) RejectionReason(_ context.Context, data *types.GovernanceData) (*ProposalRejectionReason, error) {
+func (r *proposalResolver) RejectionReason(_ context.Context, data *types.GovernanceData) (*vega.ProposalError, error) {
 	if data == nil || data.Proposal == nil {
 		return nil, ErrInvalidProposal
 	}
@@ -32,11 +32,7 @@ func (r *proposalResolver) RejectionReason(_ context.Context, data *types.Govern
 		return nil, nil
 	}
 
-	reason, err := convertProposalRejectionReasonFromProto(p.Reason)
-	if err != nil {
-		return nil, err
-	}
-	return &reason, nil
+	return &p.Reason, nil
 }
 
 func (r *proposalResolver) ID(_ context.Context, data *types.GovernanceData) (*string, error) {

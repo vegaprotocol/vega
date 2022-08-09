@@ -256,3 +256,13 @@ func MarshalPeggedReference(s vega.PeggedReference) graphql.Marshaler {
 func UnmarshalPeggedReference(v interface{}) (vega.PeggedReference, error) {
 	return vega.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED, ErrUnimplemented
 }
+
+func MarshalProposalRejectionReason(s vega.ProposalError) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalProposalRejectionReason(v interface{}) (vega.ProposalError, error) {
+	return vega.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, ErrUnimplemented
+}
