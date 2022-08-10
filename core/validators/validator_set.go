@@ -275,12 +275,15 @@ func (t *Topology) applyPromotion(performanceScore, rankingScore map[string]num.
 	byStatusChangeBlock := func(val1, val2 *valState) bool { return val1.statusChangeBlock < val2.statusChangeBlock }
 	byBlockAdded := func(val1, val2 *valState) bool { return val1.blockAdded < val2.blockAdded }
 	sortValidatorDescRankingScoreAscBlockcompare(tendermintValidators, rankingScore, byStatusChangeBlock, t.rng)
+	sortValidatorDescRankingScoreAscBlockcompare(remainingValidators, rankingScore, byBlockAdded, t.rng)
 
 	// if there are not enought slots, demote from tm to remaining
-	tendermintValidators, remainingValidators, removedFromTM := demoteDueToLackOfSlots(tendermintValidators, remainingValidators, ValidatorStatusTendermint, ValidatorStatusErsatz, t.numberOfTendermintValidators, int64(t.currentBlockHeight+1))
+	tendermintValidators, remainingValidators, removedFromTM := handleSlotChanges(tendermintValidators, remainingValidators, ValidatorStatusTendermint, ValidatorStatusErsatz, t.numberOfTendermintValidators, int64(t.currentBlockHeight+1), rankingScore)
 	t.log.Info("removedFromTM", logging.Strings("IDs", removedFromTM))
 
 	// now we're sorting the remaining validators - some of which may be eratz, some may have been tendermint (as demoted above) and some just in the waiting list
+	// we also sort the tendermint set again as there may have been a promotion due to a slot change
+	sortValidatorDescRankingScoreAscBlockcompare(tendermintValidators, rankingScore, byStatusChangeBlock, t.rng)
 	sortValidatorDescRankingScoreAscBlockcompare(remainingValidators, rankingScore, byBlockAdded, t.rng)
 
 	// apply promotions and demotions from tendermint to ersatz and vice versa
@@ -304,8 +307,9 @@ func (t *Topology) applyPromotion(performanceScore, rankingScore map[string]num.
 	}
 
 	// demote from ersatz to pending due to more ersatz than slots allowed
-	ersatzValidators, waitingListValidators, _ = demoteDueToLackOfSlots(ersatzValidators, waitingListValidators, ValidatorStatusErsatz, ValidatorStatusPending, t.numberOfErsatzValidators, int64(t.currentBlockHeight+1))
-
+	ersatzValidators, waitingListValidators, _ = handleSlotChanges(ersatzValidators, waitingListValidators, ValidatorStatusErsatz, ValidatorStatusPending, t.numberOfErsatzValidators, int64(t.currentBlockHeight+1), rankingScore)
+	sortValidatorDescRankingScoreAscBlockcompare(ersatzValidators, rankingScore, byBlockAdded, t.rng)
+	sortValidatorDescRankingScoreAscBlockcompare(waitingListValidators, rankingScore, byBlockAdded, t.rng)
 	// apply promotions and demotions from ersatz to pending and vice versa
 	promote(ersatzValidators, waitingListValidators, ValidatorStatusErsatz, ValidatorStatusPending, t.numberOfErsatzValidators, rankingScore, int64(t.currentBlockHeight+1))
 
@@ -384,20 +388,55 @@ func (t *Topology) applyPromotion(performanceScore, rankingScore map[string]num.
 	return vUpdates, nextValidatorsVotingPower
 }
 
-func demoteDueToLackOfSlots(seriesA []*valState, seriesB []*valState, statusA ValidatorStatus, statusB ValidatorStatus, maxForSeriesA int, nextBlockHeight int64) ([]*valState, []*valState, []string) {
+// handleSlotChanges the number of slots may have increased or decreased and so we slide the nodes into the different sets based on the change.
+func handleSlotChanges(seriesA []*valState, seriesB []*valState, statusA ValidatorStatus, statusB ValidatorStatus, maxForSeriesA int, nextBlockHeight int64, rankingScore map[string]num.Decimal) ([]*valState, []*valState, []string) {
 	removedFromSeriesA := []string{}
-	// that means that the number of tendermint validators has been reduced and we need to downgrade some validators to become ersatz
+
+	if len(seriesA) == maxForSeriesA {
+		// no change we're done
+		return seriesA, seriesB, removedFromSeriesA
+	}
+
+	// the number of slots for series A has decrease, move some into series B
 	if len(seriesA) > maxForSeriesA {
-		demoted := len(seriesA) - maxForSeriesA
-		for i := 0; i < demoted; i++ {
-			vd := seriesA[len(seriesA)-1-i]
-			vd.status = statusB
-			vd.statusChangeBlock = nextBlockHeight
+		nDescreased := len(seriesA) - maxForSeriesA
+		for i := 0; i < nDescreased; i++ {
+			toDemote := seriesA[len(seriesA)-1-i]
+			toDemote.status = statusB
+			toDemote.statusChangeBlock = nextBlockHeight
+
 			// add to the remaining validators so it can compete with the ersatzvalidators
-			seriesB = append(seriesB, vd)
-			removedFromSeriesA = append(removedFromSeriesA, vd.data.ID)
+			seriesB = append(seriesB, toDemote)
+			removedFromSeriesA = append(removedFromSeriesA, toDemote.data.ID)
 		}
+
+		// they've been added to seriesB slice, remove them from seriesA
 		seriesA = seriesA[:maxForSeriesA]
+		return seriesA, seriesB, removedFromSeriesA
+	}
+
+	// the number of slots for series A has increased, move some in from series B
+	if len(seriesA) < maxForSeriesA && len(seriesB) > 0 {
+		nIncreased := maxForSeriesA - len(seriesA)
+
+		if nIncreased > len(seriesB) {
+			nIncreased = len(seriesB)
+		}
+
+		for i := 0; i < nIncreased; i++ {
+			to_promote := seriesB[0]
+
+			the_score := rankingScore[to_promote.data.ID]
+			if the_score.Equal(num.DecimalZero()) {
+				break // the nodes are ordered by ranking score and we do not want to promote one with 0 score so we stop here
+			}
+
+			to_promote.status = statusA
+			to_promote.statusChangeBlock = nextBlockHeight
+			// add to the remaining validators so it can compete with the ersatzvalidators
+			seriesA = append(seriesA, to_promote)
+			seriesB = seriesB[1:]
+		}
 		return seriesA, seriesB, removedFromSeriesA
 	}
 
@@ -408,30 +447,6 @@ func demoteDueToLackOfSlots(seriesA []*valState, seriesB []*valState, statusA Va
 func promote(seriesA []*valState, seriesB []*valState, statusA ValidatorStatus, statusB ValidatorStatus, maxForSeriesA int, rankingScore map[string]num.Decimal, nextBlockHeight int64) ([]*valState, []*valState, []string) {
 	removedFromSeriesA := []string{}
 
-	// there's free slots to become seriesA validator and there are candidates
-	if promotion := maxForSeriesA - len(seriesA); promotion > 0 && len(seriesB) > 0 {
-		if promotion > len(seriesB) {
-			promotion = len(seriesB)
-		}
-		removedIndices := map[int]struct{}{}
-		for i := 0; i < promotion; i++ {
-			if rankingScore[seriesB[i].data.ID].IsPositive() {
-				seriesB[i].statusChangeBlock = nextBlockHeight
-				seriesB[i].status = statusA
-				seriesA = append(seriesA, seriesB[i])
-				removedIndices[i] = struct{}{}
-			} else {
-				break
-			}
-		}
-		newSeriesB := make([]*valState, 0, len(seriesB)-len(removedIndices))
-		for i, vs := range seriesB {
-			if _, ok := removedIndices[i]; !ok {
-				newSeriesB = append(newSeriesB, vs)
-			}
-		}
-		return seriesA, newSeriesB, removedFromSeriesA
-	}
 	if maxForSeriesA > 0 && maxForSeriesA == len(seriesA) && len(seriesB) > 0 {
 		// the best of the remaining is better than the worst tendermint validator
 		if rankingScore[seriesA[len(seriesA)-1].data.ID].LessThan(rankingScore[seriesB[0].data.ID]) {
