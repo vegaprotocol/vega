@@ -28,20 +28,42 @@ type RPCConfig struct {
 	HttpPath   string `toml:"httpPath"`
 }
 
-type RunConfig struct {
-	Name     string         `toml:"name"`
-	RCP      RPCConfig      `toml:"rpc"`
-	Binaries []BinaryConfig `toml:"binaries"`
+type VegaConfig struct {
+	Binary BinaryConfig `toml:"binary"`
+	RCP    RPCConfig    `toml:"rpc"`
 }
 
-func ExampleRunConfig(name string) *RunConfig {
-	return &RunConfig{
+type DataNodeConfig struct {
+	Binary BinaryConfig `toml:"binary"`
+}
+
+type RunConfig struct {
+	Name     string          `toml:"name"`
+	Vega     VegaConfig      `toml:"vega"`
+	DataNode *DataNodeConfig `toml:"data_node"`
+}
+
+func ExampleRunConfig(name string, withDataNode bool) *RunConfig {
+	c := &RunConfig{
 		Name: name,
-		Binaries: []BinaryConfig{{
-			Path: "vega",
-			Args: []string{"arg1", "arg2", "..."},
-		}},
+		Vega: VegaConfig{
+			Binary: BinaryConfig{
+				Path: "vega",
+				Args: []string{"arg1", "arg2", "..."},
+			},
+		},
 	}
+
+	if withDataNode {
+		c.DataNode = &DataNodeConfig{
+			Binary: BinaryConfig{
+				Path: "data-node",
+				Args: []string{"arg1", "arg2", "..."},
+			},
+		}
+	}
+
+	return c
 }
 
 func ParseRunConfig(path string) (*RunConfig, error) {

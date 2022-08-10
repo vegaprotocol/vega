@@ -46,68 +46,75 @@ func NewBinariesRunner(log *logging.Logger, binsFolder string, stopTimeout time.
 	}
 }
 
-func (r *BinariesRunner) Run(ctx context.Context, binaries []config.BinaryConfig) chan error {
-	eg, ctx := errgroup.WithContext(ctx)
-	for _, bin := range binaries {
-		bin := bin
+func (r *BinariesRunner) runBinary(ctx context.Context, bin config.BinaryConfig) error {
+	binPath := path.Join(r.binsFolder, bin.Path)
+	if err := utils.EnsureBinary(binPath); err != nil {
+		return fmt.Errorf("failed to locate binary %s %v: %w", binPath, bin.Args, err)
+	}
 
-		eg.Go(func() error {
-			binPath := path.Join(r.binsFolder, bin.Path)
-			if err := utils.EnsureBinary(binPath); err != nil {
-				return fmt.Errorf("failed to locate binary %s %v: %w", binPath, bin.Args, err)
-			}
+	cmd := exec.CommandContext(ctx, binPath, bin.Args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 
-			cmd := exec.CommandContext(ctx, binPath, bin.Args...)
-			cmd.Stdout = os.Stdout
-			cmd.Stderr = os.Stderr
+	r.log.Debug("Starting binary",
+		logging.String("binaryPath", binPath),
+		logging.Strings("args", bin.Args),
+	)
 
-			r.log.Debug("Starting binary",
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("failed to execute binary %s %v: %w", binPath, bin.Args, err)
+	}
+
+	// Ensures that if one binary failes all of them are killed
+	go func() {
+		<-ctx.Done()
+
+		if cmd.Process == nil {
+			return
+		}
+
+		// Process has already exited - no need to kill it
+		if cmd.ProcessState != nil {
+			return
+		}
+
+		r.log.Debug("Killing binary", logging.String("binaryPath", binPath))
+
+		if err := cmd.Process.Kill(); err != nil {
+			r.log.Debug("Failed to kill binary",
 				logging.String("binaryPath", binPath),
-				logging.Strings("args", bin.Args),
+				logging.Error(err),
 			)
+		}
+	}()
 
-			if err := cmd.Start(); err != nil {
-				return fmt.Errorf("failed to execute binary %s %v: %w", binPath, bin.Args, err)
-			}
+	r.mut.Lock()
+	r.running[binPath] = cmd
+	r.mut.Unlock()
 
-			// Ensures that if one binary failes all of them are killed
-			go func() {
-				<-ctx.Done()
+	defer func() {
+		r.mut.Lock()
+		delete(r.running, binPath)
+		r.mut.Unlock()
+	}()
 
-				if cmd.Process == nil {
-					return
-				}
+	if err := cmd.Wait(); err != nil {
+		return fmt.Errorf("failed to execute binary %s %v: %w", binPath, bin.Args, err)
+	}
 
-				// Process has already exited - no need to kill it
-				if cmd.ProcessState != nil {
-					return
-				}
+	return nil
+}
 
-				r.log.Debug("Killing binary", logging.String("binaryPath", binPath))
+func (r *BinariesRunner) Run(ctx context.Context, runConf *config.RunConfig) chan error {
+	eg, ctx := errgroup.WithContext(ctx)
 
-				if err := cmd.Process.Kill(); err != nil {
-					r.log.Debug("Failed to kill binary",
-						logging.String("binaryPath", binPath),
-						logging.Error(err),
-					)
-				}
-			}()
+	eg.Go(func() error {
+		return r.runBinary(ctx, runConf.Vega.Binary)
+	})
 
-			r.mut.Lock()
-			r.running[binPath] = cmd
-			r.mut.Unlock()
-
-			defer func() {
-				r.mut.Lock()
-				delete(r.running, binPath)
-				r.mut.Unlock()
-			}()
-
-			if err := cmd.Wait(); err != nil {
-				return fmt.Errorf("failed to execute binary %s %v: %w", binPath, bin.Args, err)
-			}
-
-			return nil
+	if runConf.DataNode != nil {
+		eg.Go(func() error {
+			return r.runBinary(ctx, runConf.DataNode.Binary)
 		})
 	}
 

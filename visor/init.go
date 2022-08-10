@@ -22,7 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/visor/utils"
 )
 
-func Init(log *logging.Logger, homeFolder string) error {
+func Init(log *logging.Logger, homeFolder string, withDataNode bool) error {
 	homePath, err := utils.AbsPath(homeFolder)
 	if err != nil {
 		return fmt.Errorf("failed to get absolute path for %q: %w", homeFolder, err)
@@ -40,12 +40,12 @@ func Init(log *logging.Logger, homeFolder string) error {
 	visorConf := config.DefaultVisorConfig(log, homePath)
 
 	log.Info("Initiating genesis folder")
-	if err := initDefaultFolder(visorConf.GenesisFolder(), "genesis"); err != nil {
+	if err := initDefaultFolder(visorConf.GenesisFolder(), "genesis", withDataNode); err != nil {
 		return err
 	}
 
 	log.Info("Initiating upgrade folder")
-	if err := initDefaultFolder(visorConf.UpgradeFolder(), "upgrade"); err != nil {
+	if err := initDefaultFolder(visorConf.UpgradeFolder(), "upgrade", withDataNode); err != nil {
 		return err
 	}
 
@@ -57,12 +57,12 @@ func Init(log *logging.Logger, homeFolder string) error {
 	return nil
 }
 
-func initDefaultFolder(folderPath, name string) error {
+func initDefaultFolder(folderPath, name string, withDataNode bool) error {
 	if err := os.MkdirAll(folderPath, 0o755); err != nil {
 		return fmt.Errorf("failed to create %q folder: %w", name, err)
 	}
 
-	if err := config.ExampleRunConfig(name).WriteToFile(path.Join(folderPath, config.RunConfigFileName)); err != nil {
+	if err := config.ExampleRunConfig(name, withDataNode).WriteToFile(path.Join(folderPath, config.RunConfigFileName)); err != nil {
 		return fmt.Errorf("failed to write example config file for %q: %w", name, err)
 	}
 

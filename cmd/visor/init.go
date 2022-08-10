@@ -18,11 +18,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const withDataNodeFlagName = "home"
+
 func init() {
 	rootCmd.AddCommand(initCmd)
 
 	initCmd.Flags().String(homeFlagName, "", "Path to visor home folder to be generated")
 	initCmd.MarkFlagRequired(homeFlagName)
+
+	initCmd.Flags().Bool(withDataNodeFlagName, false, "Determines whether or not data node config should be also generated")
+	initCmd.MarkFlagRequired(withDataNodeFlagName)
 }
 
 var initCmd = &cobra.Command{
@@ -33,10 +38,16 @@ var initCmd = &cobra.Command{
 		homePath, err := cmd.Flags().GetString(homeFlagName)
 		if err != nil {
 			return err
+
+		}
+
+		withDataNode, err := cmd.Flags().GetBool(withDataNodeFlagName)
+		if err != nil {
+			return err
 		}
 
 		log := logging.NewDevLogger()
 
-		return visor.Init(log, homePath)
+		return visor.Init(log, homePath, withDataNode)
 	},
 }

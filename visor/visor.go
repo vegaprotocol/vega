@@ -115,6 +115,7 @@ func (r *Visor) setCurrentFolder(sourceFolder, currentFolder string) error {
 
 func (r *Visor) Run(ctx context.Context) error {
 	numOfRestarts := 0
+	// var relaseInfo *types.ReleaseInfo
 
 	upgradeTicker := time.NewTicker(upgradeApiCallTickerDuration)
 	defer upgradeTicker.Stop()
@@ -128,7 +129,10 @@ func (r *Visor) Run(ctx context.Context) error {
 			return fmt.Errorf("failed to parse run config: %w", err)
 		}
 
-		client := r.clientFactory.GetClient(runConf.RCP.SocketPath, runConf.RCP.HttpPath)
+		client := r.clientFactory.GetClient(
+			runConf.Vega.RCP.SocketPath,
+			runConf.Vega.RCP.HttpPath,
+		)
 
 		numOfUpgradeStatusErrs := 0
 		maxNumRestarts := r.conf.MaxNumberOfRestarts()
@@ -136,7 +140,7 @@ func (r *Visor) Run(ctx context.Context) error {
 
 		r.log.Info("Starting binaries")
 		binRunner := NewBinariesRunner(r.log, r.conf.CurrentFolder(), time.Second*time.Duration(r.conf.StopSignalTimeoutSeconds()))
-		binErrs := binRunner.Run(ctx, runConf.Binaries)
+		binErrs := binRunner.Run(ctx, runConf)
 
 		upgradeTicker.Reset(upgradeApiCallTickerDuration)
 
