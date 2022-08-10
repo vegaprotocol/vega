@@ -126,6 +126,19 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 func (e *Engine) getCheckpointProposals() []*vega.Proposal {
 	ret := make([]*vega.Proposal, 0, len(e.enactedProposals))
 	for _, p := range e.enactedProposals {
+		switch p.Terms.Change.GetTermType() {
+		case types.ProposalTermsTypeNewMarket:
+			mktState, err := e.markets.GetMarketState(p.ID)
+			// if the market is missing from the execution engine it means it's been already cancelled or settled or rejected
+			if err == types.ErrInvalidMarketID {
+				e.log.Info("not saving market proposal to checkpoint - market has already been removed", logging.String("market-id", p.ID))
+				continue
+			}
+			if mktState == types.MarketStateTradingTerminated {
+				e.log.Info("not saving market proposal to checkpoint ", logging.String("market-id", p.ID), logging.String("market-state", mktState.String()))
+				continue
+			}
+		}
 		ret = append(ret, p.IntoProto())
 	}
 	return ret

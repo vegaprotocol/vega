@@ -1386,7 +1386,7 @@ func (e *tstEngine) ensureGetMarket(t *testing.T, marketID string, market types.
 
 func (e *tstEngine) expectGetMarketState(t *testing.T, marketID string) {
 	t.Helper()
-	e.markets.EXPECT().GetMarketState(marketID).AnyTimes()
+	e.markets.EXPECT().GetMarketState(marketID).AnyTimes().Return(types.MarketStateActive, nil)
 }
 
 func (e *tstEngine) ensureNonExistingMarket(t *testing.T, market string) {
