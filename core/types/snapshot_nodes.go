@@ -2062,6 +2062,9 @@ func (aa *AssetAction) IntoProto() *snapshot.AssetAction {
 	if aa.Erc20AL != nil {
 		ret.AssetList = aa.Erc20AL.IntoProto()
 	}
+	if aa.ERC20AssetLimitsUpdated != nil {
+		ret.Erc20AssetLimitsUpdated = aa.ERC20AssetLimitsUpdated.IntoProto()
+	}
 	return ret
 }
 
