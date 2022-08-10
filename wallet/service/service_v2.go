@@ -47,7 +47,11 @@ func (s *Service) HandleRequestV2(w http.ResponseWriter, r *http.Request, _ http
 	if response.Error == nil {
 		lw.WriteHeader(http.StatusOK)
 	} else {
-		lw.WriteHeader(http.StatusBadRequest)
+		if response.Error.IsInternalError() {
+			lw.WriteHeader(http.StatusInternalServerError)
+		} else {
+			lw.WriteHeader(http.StatusBadRequest)
+		}
 	}
 	lw.WriteBody(response)
 }
