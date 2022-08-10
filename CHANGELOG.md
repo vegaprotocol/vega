@@ -45,6 +45,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5762](https://github.com/vegaprotocol/vega/issues/5762) - Transfers connection add under `party` type
 - [5705](https://github.com/vegaprotocol/vega/issues/5705) - Use enum for validator status
 - [5685](https://github.com/vegaprotocol/vega/issues/5685) - Migrated `apis` from `datanode v1` to `datanode v2`
+- [5834](https://github.com/vegaprotocol/vega/issues/5834) - Avoid saving proposals of terminated/cancelled/rejected/settled markets in checkpoint
 
 ### 🐛 Fixes
 - [5571](https://github.com/vegaprotocol/vega/issues/5571) - Restore pending assets status correctly after snapshot restore
