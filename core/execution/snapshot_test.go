@@ -49,7 +49,8 @@ type snapshotTestData struct {
 func TestSnapshotOraclesTerminatingMarketFromSnapshot(t *testing.T) {
 	now := time.Now()
 	exec := getEngine(t, now)
-	err := exec.engine.SubmitMarket(context.Background(), newMarket("MarketID", "0xDEADBEEF"), "")
+	mkt := newMarket("MarketID", "0xDEADBEEF")
+	err := exec.engine.SubmitMarket(context.Background(), mkt, "")
 	require.NoError(t, err)
 
 	state, _, _ := exec.engine.GetState("")
@@ -60,6 +61,18 @@ func TestSnapshotOraclesTerminatingMarketFromSnapshot(t *testing.T) {
 	_, _ = exec2.engine.LoadState(context.Background(), types.PayloadFromProto(snap))
 
 	state2, _, _ := exec2.engine.GetState("")
+
+	err = exec.engine.StartOpeningAuction(context.Background(), mkt.ID)
+	require.NoError(t, err)
+	mktState, err := exec.engine.GetMarketState("MarketID")
+	require.NoError(t, err)
+	require.Equal(t, types.MarketStateActive, mktState)
+
+	err = exec2.engine.StartOpeningAuction(context.Background(), mkt.ID)
+	require.NoError(t, err)
+	mktState, err = exec2.engine.GetMarketState("MarketID")
+	require.NoError(t, err)
+	require.Equal(t, types.MarketStateActive, mktState)
 
 	exec.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
 		PubKeys: []string{"0xDEADBEEF"},
@@ -103,7 +116,8 @@ func TestSnapshotOraclesTerminatingMarketFromSnapshot(t *testing.T) {
 func TestSnapshotOraclesTerminatingMarketFromSnapshotAfterSettlementPrice(t *testing.T) {
 	now := time.Now()
 	exec := getEngine(t, now)
-	err := exec.engine.SubmitMarket(context.Background(), newMarket("MarketID", "0xDEADBEEF"), "")
+	mkt := newMarket("MarketID", "0xDEADBEEF")
+	err := exec.engine.SubmitMarket(context.Background(), mkt, "")
 	require.NoError(t, err)
 
 	// settlement price arrives first
@@ -124,6 +138,18 @@ func TestSnapshotOraclesTerminatingMarketFromSnapshotAfterSettlementPrice(t *tes
 	// take a snapshot on the loaded engine
 	state2, _, _ := exec2.engine.GetState("")
 	require.True(t, bytes.Equal(state, state2))
+
+	err = exec.engine.StartOpeningAuction(context.Background(), mkt.ID)
+	require.NoError(t, err)
+	mktState, err := exec.engine.GetMarketState("MarketID")
+	require.NoError(t, err)
+	require.Equal(t, types.MarketStateActive, mktState)
+
+	err = exec2.engine.StartOpeningAuction(context.Background(), mkt.ID)
+	require.NoError(t, err)
+	mktState, err = exec2.engine.GetMarketState("MarketID")
+	require.NoError(t, err)
+	require.Equal(t, types.MarketStateActive, mktState)
 
 	// terminate the market to lead to settlement
 	exec.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
@@ -157,8 +183,20 @@ func TestLoadTerminatedMarketFromSnapshot(t *testing.T) {
 
 	// submit and terminate all markets
 	for i := 0; i < 3; i++ {
-		err := exec.engine.SubmitMarket(ctx, newMarket(marketIDs[i], pubKeys[i]), "")
+		mkt := newMarket(marketIDs[i], pubKeys[i])
+		err := exec.engine.SubmitMarket(ctx, mkt, "")
 		require.NoError(t, err)
+
+		// verify markets are terminated
+		marketState, err := exec.engine.GetMarketState(marketIDs[i])
+		require.NoError(t, err)
+		require.Equal(t, types.MarketStateProposed, marketState)
+
+		err = exec.engine.StartOpeningAuction(context.Background(), mkt.ID)
+		require.NoError(t, err)
+		marketState, err = exec.engine.GetMarketState(marketIDs[i])
+		require.NoError(t, err)
+		require.Equal(t, marketState, types.MarketStateActive)
 
 		// terminate all markets
 		exec.oracleEngine.BroadcastData(ctx, oracles.OracleData{
@@ -166,8 +204,8 @@ func TestLoadTerminatedMarketFromSnapshot(t *testing.T) {
 			Data:    map[string]string{"trading.terminated": "true"},
 		})
 
-		// verify markets are terminated
-		marketState, _ := exec.engine.GetMarketState(marketIDs[i])
+		marketState, err = exec.engine.GetMarketState(marketIDs[i])
+		require.NoError(t, err)
 		require.Equal(t, types.MarketStateTradingTerminated, marketState)
 	}
 

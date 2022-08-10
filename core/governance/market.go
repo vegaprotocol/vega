@@ -15,6 +15,7 @@ package governance
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/netparams"
@@ -40,6 +41,9 @@ var (
 	ErrMissingOracleSpecForSettlementPrice = errors.New("missing oracle spec for settlement price")
 	// ErrMissingOracleSpecForTradingTermination is returned when the oracle spec for trading termination is absent.
 	ErrMissingOracleSpecForTradingTermination = errors.New("missing oracle spec for trading termination")
+	// ErrOracleSpecTerminationTimeBeforeEnactment is returned when termination time is before enactment
+	// for time triggered termination condition.
+	ErrOracleSpecTerminationTimeBeforeEnactment = errors.New("oracle spec termination time before enactment")
 	// ErrMissingFutureProduct is returned when future product is absent from the instrument.
 	ErrMissingFutureProduct = errors.New("missing future product")
 	// ErrInvalidRiskParameter ...
@@ -222,13 +226,31 @@ func validateAsset(assetID string, decimals uint64, assets Assets, deepCheck boo
 	return types.ProposalErrorUnspecified, nil
 }
 
-func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets, deepCheck bool) (types.ProposalError, error) {
+func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets, et *enactmentTime, deepCheck bool) (types.ProposalError, error) {
 	if future.OracleSpecForSettlementPrice == nil {
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingOracleSpecForSettlementPrice
 	}
 
 	if future.OracleSpecForTradingTermination == nil {
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingOracleSpecForTradingTermination
+	}
+
+	if !et.shouldNotVerify {
+		for i, f := range future.OracleSpecForTradingTermination.ToOracleSpec().Filters {
+			if f.Key.Type == oraclespb.PropertyKey_TYPE_TIMESTAMP {
+				for j, cond := range f.Conditions {
+					v, err := strconv.ParseInt(cond.Value, 10, 64)
+					if err != nil {
+						return types.ProposalErrorInvalidFutureProduct, err
+					}
+
+					future.OracleSpecForTradingTermination.Filters[i].Conditions[j].Value = strconv.FormatInt(v, 10)
+					if v <= et.current {
+						return types.ProposalErrorInvalidFutureProduct, ErrOracleSpecTerminationTimeBeforeEnactment
+					}
+				}
+			}
+		}
 	}
 
 	if future.OracleSpecBinding == nil {
@@ -263,12 +285,12 @@ func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets,
 	return validateAsset(future.SettlementAsset, decimals, assets, deepCheck)
 }
 
-func validateNewInstrument(instrument *types.InstrumentConfiguration, decimals uint64, assets Assets, deepCheck bool) (types.ProposalError, error) {
+func validateNewInstrument(instrument *types.InstrumentConfiguration, decimals uint64, assets Assets, et *enactmentTime, deepCheck bool) (types.ProposalError, error) {
 	switch product := instrument.Product.(type) {
 	case nil:
 		return types.ProposalErrorNoProduct, ErrMissingProduct
 	case *types.InstrumentConfigurationFuture:
-		return validateFuture(product.Future, decimals, assets, deepCheck)
+		return validateFuture(product.Future, decimals, assets, et, deepCheck)
 	default:
 		return types.ProposalErrorUnsupportedProduct, ErrUnsupportedProduct
 	}
@@ -391,8 +413,9 @@ func validateNewMarketChange(
 	deepCheck bool,
 	netp NetParams,
 	openingAuctionDuration time.Duration,
+	etu *enactmentTime,
 ) (types.ProposalError, error) {
-	if perr, err := validateNewInstrument(terms.Changes.Instrument, terms.Changes.DecimalPlaces, assets, deepCheck); err != nil {
+	if perr, err := validateNewInstrument(terms.Changes.Instrument, terms.Changes.DecimalPlaces, assets, etu, deepCheck); err != nil {
 		return perr, err
 	}
 	if perr, err := validateRiskParameters(terms.Changes.RiskParameters); err != nil {
@@ -415,8 +438,8 @@ func validateNewMarketChange(
 }
 
 // validateUpdateMarketChange checks market update proposal terms.
-func validateUpdateMarketChange(terms *types.UpdateMarket) (types.ProposalError, error) {
-	if perr, err := validateUpdateInstrument(terms.Changes.Instrument); err != nil {
+func validateUpdateMarketChange(terms *types.UpdateMarket, etu *enactmentTime) (types.ProposalError, error) {
+	if perr, err := validateUpdateInstrument(terms.Changes.Instrument, etu); err != nil {
 		return perr, err
 	}
 	if perr, err := validateRiskParameters(terms.Changes.RiskParameters); err != nil {
@@ -426,24 +449,42 @@ func validateUpdateMarketChange(terms *types.UpdateMarket) (types.ProposalError,
 	return types.ProposalErrorUnspecified, nil
 }
 
-func validateUpdateInstrument(instrument *types.UpdateInstrumentConfiguration) (types.ProposalError, error) {
+func validateUpdateInstrument(instrument *types.UpdateInstrumentConfiguration, et *enactmentTime) (types.ProposalError, error) {
 	switch product := instrument.Product.(type) {
 	case nil:
 		return types.ProposalErrorNoProduct, ErrMissingProduct
 	case *types.UpdateInstrumentConfigurationFuture:
-		return validateUpdateFuture(product.Future)
+		return validateUpdateFuture(product.Future, et)
 	default:
 		return types.ProposalErrorUnsupportedProduct, ErrUnsupportedProduct
 	}
 }
 
-func validateUpdateFuture(future *types.UpdateFutureProduct) (types.ProposalError, error) {
+func validateUpdateFuture(future *types.UpdateFutureProduct, et *enactmentTime) (types.ProposalError, error) {
 	if future.OracleSpecForSettlementPrice == nil {
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingOracleSpecForSettlementPrice
 	}
 
 	if future.OracleSpecForTradingTermination == nil {
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingOracleSpecForTradingTermination
+	}
+
+	if !et.shouldNotVerify {
+		for i, f := range future.OracleSpecForTradingTermination.ToOracleSpec().Filters {
+			if f.Key.Type == oraclespb.PropertyKey_TYPE_TIMESTAMP {
+				for j, cond := range f.Conditions {
+					v, err := strconv.ParseInt(cond.Value, 10, 64)
+					if err != nil {
+						return types.ProposalErrorInvalidFutureProduct, err
+					}
+
+					future.OracleSpecForTradingTermination.Filters[i].Conditions[j].Value = strconv.FormatInt(v, 10)
+					if v <= et.current {
+						return types.ProposalErrorInvalidFutureProduct, ErrOracleSpecTerminationTimeBeforeEnactment
+					}
+				}
+			}
+		}
 	}
 
 	if future.OracleSpecBinding == nil {
