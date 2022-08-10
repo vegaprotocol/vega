@@ -47,6 +47,30 @@
           }
         }
       }
+    },
+    "/v2/methods": {
+      "get": {
+        "summary": "List the available methods on the JSON-RPC API.",
+        "description": "The JSON-RPC API behind this HTTP API can have an arbitrary set of endpoints enabled.\n\nThis method allows an application to check for the existence of the JSON-RPC before calling the requests method.",
+        "responses": {
+          "200": {
+            "description": "Successful listing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something failed internally. Nothing can be done about it."
+          }
+        }
+      }
     }
   },
   "components": {

@@ -3,6 +3,7 @@ package jsonrpc
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"sync/atomic"
 
@@ -82,6 +83,15 @@ func (a *API) RegisterMethod(method string, handler Command) {
 
 	a.commands[method] = handler
 	a.log.Info("new JSON-RPC method registered", zap.String("method", method))
+}
+
+func (a *API) RegisteredMethods() []string {
+	methods := make([]string, 0, len(a.commands))
+	for method := range a.commands {
+		methods = append(methods, method)
+	}
+	sort.Strings(methods)
+	return methods
 }
 
 func requestAlreadyBeingProcessed(request *Request) *Response {
