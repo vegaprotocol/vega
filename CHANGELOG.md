@@ -40,10 +40,16 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5503](https://github.com/vegaprotocol/vega/issues/5503) - Introduce wallet API version 2 based on JSON-RPC with new authentication workflow
 - [5822](https://github.com/vegaprotocol/vega/issues/5822) - Rename `Graphql` enums
 - [5618](https://github.com/vegaprotocol/vega/issues/5618) - Add wallet JSON-RPC documentation
+- [5776](https://github.com/vegaprotocol/vega/issues/5776) - Add endpoint to get a single network parameter
 - [5685](https://github.com/vegaprotocol/vega/issues/5685) - Migrated `apis` from `datanode v1` to `datanode v2`
 - [5761](https://github.com/vegaprotocol/vega/issues/5761) - Transfers connection make direction optional
 - [5762](https://github.com/vegaprotocol/vega/issues/5762) - Transfers connection add under `party` type
 - [5685](https://github.com/vegaprotocol/vega/issues/5685) - Migrated `apis` from `datanode v1` to `datanode v2`
+- [5705](https://github.com/vegaprotocol/vega/issues/5705) - Use enum for validator status
+- [5685](https://github.com/vegaprotocol/vega/issues/5685) - Migrated `apis` from `datanode v1` to `datanode v2`
+- [5834](https://github.com/vegaprotocol/vega/issues/5834) - Avoid saving proposals of terminated/cancelled/rejected/settled markets in checkpoint
+- [5619](https://github.com/vegaprotocol/vega/issues/5619) - Add wallet HTTP API version 2 documentation
+- [5823](https://github.com/vegaprotocol/vega/issues/5823) - Add endpoint to wallet HTTP API version 2 to list available RPC methods
 
 ### 🐛 Fixes
 - [5571](https://github.com/vegaprotocol/vega/issues/5571) - Restore pending assets status correctly after snapshot restore
@@ -51,6 +57,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5348](https://github.com/vegaprotocol/vega/issues/5348) - Restore markets from checkpoint proposal
 - [5279](https://github.com/vegaprotocol/vega/issues/5279) - Fix loading of proposals from checkpoint
 - [5598](https://github.com/vegaprotocol/vega/issues/5598) - Remove `currentTime` from topology engine to ease snapshot restoration
+- [5836](https://github.com/vegaprotocol/vega/issues/5836) - Add missing `GetMarket` `GRPC` end point
 - [5609](https://github.com/vegaprotocol/vega/issues/5609) - Set event forwarder last seen height after snapshot restore
 - [5782](https://github.com/vegaprotocol/vega/issues/5782) - `Pagination` with a cursor was returning incorrect results
 - [5629](https://github.com/vegaprotocol/vega/issues/5629) - Fixes for loading voting power from checkpoint with non genesis validators
@@ -67,6 +74,10 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5825](https://github.com/vegaprotocol/vega/issues/5825) - Fix panic in pegged orders when going into auction
 - [5763](https://github.com/vegaprotocol/vega/issues/5763) - Transfers connection rename `pubkey` to `partyId`
 - [5486](https://github.com/vegaprotocol/vega/issues/5486) - Fix amend order expiring
+- [5809](https://github.com/vegaprotocol/vega/issues/5809) - Remove state variables when a market proposal is rejected
+- [5329](https://github.com/vegaprotocol/vega/issues/5329) - Fix checks for market enactment and termination
+- [5837](https://github.com/vegaprotocol/vega/issues/5837) - Allow a promotion due to increased slots and a swap to happen in the same epoch
+- [5819](https://github.com/vegaprotocol/vega/issues/5819) - Add new asset proposal validation timestamp validation
 
 ## 0.53.0
 

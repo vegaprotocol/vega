@@ -103,6 +103,8 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | id  | party    | market id | commitment amount      | fee | side | pegged reference | proportion | offset    | lp type    |
       | lp1 | party-lp | ETH/DEC19 | 3000000000000          | 0   | buy  | BID              | 50         | 10000     | submission |
       | lp1 | party-lp | ETH/DEC19 | 3000000000000          | 0   | sell | ASK              | 50         | 10000     | amendment  |
+      | lp2 | party-lp | ETH/DEC21 | 3000000000000          | 0   | buy  | BID              | 50         | 10000     | submission |
+      | lp2 | party-lp | ETH/DEC21 | 3000000000000          | 0   | sell | ASK              | 50         | 10000     | amendment  |
 
     When the parties place the following orders:
       | party | market id | side | volume | price    | resulting trades | type       | tif     | reference |
@@ -110,15 +112,32 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | aux2  | ETH/DEC19 | sell | 2      | 1001000  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
       | aux1  | ETH/DEC19 | buy  | 1      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
       | aux2  | ETH/DEC19 | sell | 1      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
+
+    # Other market
+    And the parties place the following orders:
+      | party | market id | side | volume | price    | resulting trades | type       | tif     | reference |
+      | aux1  | ETH/DEC21 | buy  | 2      | 999000   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | aux2  | ETH/DEC21 | sell | 2      | 1001000  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | aux1  | ETH/DEC21 | buy  | 1      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
+      | aux2  | ETH/DEC21 | sell | 1      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
+
     Then the market data for the market "ETH/DEC19" should be:
       | target stake | supplied stake |
       | 110000000    | 3000000000000  |
+
+    Then the market data for the market "ETH/DEC21" should be:
+      | target stake | supplied stake |
+      | 2000000000   | 3000000000000  |
+
     Then the opening auction period ends for market "ETH/DEC19"
+    Then the opening auction period ends for market "ETH/DEC21"
     And the mark price should be "1000000" for the market "ETH/DEC19"
 
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
 
     And the market state should be "STATE_ACTIVE" for the market "ETH/DEC19"
+    And the market state should be "STATE_ACTIVE" for the market "ETH/DEC21"
 
     Then the network moves ahead "2" blocks
 
@@ -351,6 +370,8 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
       | lp1 | party-lp | ETH/DEC19 | 3000000000000     | 0   | buy  | BID              | 50         | 10000  | submission |
       | lp1 | party-lp | ETH/DEC19 | 3000000000000     | 0   | sell | ASK              | 50         | 10000  | amendment  |
+      | lp2 | party-lp | ETH/DEC21 | 3000000000000     | 0   | buy  | BID              | 50         | 10000  | submission |
+      | lp2 | party-lp | ETH/DEC21 | 3000000000000     | 0   | sell | ASK              | 50         | 10000  | amendment  |
 
     When the parties place the following orders:
       | party | market id | side | volume | price    | resulting trades | type       | tif     | reference |
@@ -358,10 +379,22 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | aux2  | ETH/DEC19 | sell | 1      | 1001000  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
       | aux1  | ETH/DEC19 | buy  | 1      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
       | aux2  | ETH/DEC19 | sell | 1      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
+
+    # Other market
+    And the parties place the following orders:
+      | party | market id | side | volume | price    | resulting trades | type       | tif     | reference |
+      | aux1  | ETH/DEC21 | buy  | 1      | 999000   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | aux2  | ETH/DEC21 | sell | 1      | 1001000  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | aux1  | ETH/DEC21 | buy  | 1      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
+      | aux2  | ETH/DEC21 | sell | 1      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
+
     Then the opening auction period ends for market "ETH/DEC19"
+    Then the opening auction period ends for market "ETH/DEC21"
+
     And the mark price should be "1000000" for the market "ETH/DEC19"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
 
     When the parties place the following orders:
       | party  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
@@ -418,6 +451,8 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
       | lp1 | party-lp | ETH/DEC19 | 3000000000000     | 0   | buy  | BID              | 50         | 10000  | submission |
       | lp1 | party-lp | ETH/DEC19 | 3000000000000     | 0   | sell | ASK              | 50         | 10000  | amendment  |
+      | lp2 | party-lp | ETH/DEC21 | 3000000000000     | 0   | buy  | BID              | 50         | 10000  | submission |
+      | lp2 | party-lp | ETH/DEC21 | 3000000000000     | 0   | sell | ASK              | 50         | 10000  | amendment  |
 
     When the parties place the following orders:
       | party | market id | side | volume | price    | resulting trades | type       | tif     | reference |
@@ -425,10 +460,22 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | aux2  | ETH/DEC19 | sell | 1      | 1001000  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
       | aux1  | ETH/DEC19 | buy  | 2      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
       | aux2  | ETH/DEC19 | sell | 2      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
+
+    # Other market
+    And the parties place the following orders:
+      | party | market id | side | volume | price    | resulting trades | type       | tif     | reference |
+      | aux1  | ETH/DEC21 | buy  | 1      | 999000   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | aux2  | ETH/DEC21 | sell | 1      | 1001000  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | aux1  | ETH/DEC21 | buy  | 2      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
+      | aux2  | ETH/DEC21 | sell | 2      | 1000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
+
     Then the opening auction period ends for market "ETH/DEC19"
+    Then the opening auction period ends for market "ETH/DEC21"
+
     And the mark price should be "1000000" for the market "ETH/DEC19"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
 
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |

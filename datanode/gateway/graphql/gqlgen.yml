@@ -17,6 +17,9 @@ models:
       - github.com/99designs/gqlgen/graphql.Int64
       - github.com/99designs/gqlgen/graphql.Int32
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.Uint32
+  ValidatorStatus:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.ValidatorStatus
   LiquidityProvisionStatus:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.LiquidityProvisionStatus

@@ -1,0 +1,133 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Wallet API",
+    "description": "The version 2 of the wallet HTTP API leverages the wallet JSON-RPC API.\n\nSome useful links:\n- [JSON-RPC 2.0 Specification](https://www.jsonrpc.org/specification)",
+    "version": "2.0.0"
+  },
+  "externalDocs": {
+    "description": "Find out more about Vega REST APIs.",
+    "url": "https://docs.vega.xyz/docs/mainnet/api/rest/overview"
+  },
+  "paths": {
+    "/v2/requests": {
+      "post": {
+        "summary": "Submit a JSON-RPC request to the wallet API.",
+        "description": "This endpoint is the main entrypoint to submit the JSON-RPC requests. The body of the HTTP request should be formatted as a JSON-RPC v2 request. The HTTP response is formatted as the JSON-RPC v2 response.\n\nBe sure to specify the `ID` if you are interested in the response. See [the JSON-RPC notification documentation](https://www.jsonrpc.org/specification#notification) for more details.",
+        "requestBody": {
+          "description": "The JSON-RPC v2 request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JsonRpcRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonRpcResponse"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "The request is considered as a notification because it doesn't have an ID. As a result, no result shall be expected, even in case of failure."
+          },
+          "400": {
+            "description": "The submitted request does not have a valid format, or doesn't comply with the API constraints, or failed."
+          },
+          "500": {
+            "description": "Something failed internally. Nothing can be done about it."
+          }
+        }
+      }
+    },
+    "/v2/methods": {
+      "get": {
+        "summary": "List the available methods on the JSON-RPC API.",
+        "description": "The JSON-RPC API behind this HTTP API can have an arbitrary set of endpoints enabled.\n\nThis method allows an application to check for the existence of the JSON-RPC before calling the requests method.",
+        "responses": {
+          "200": {
+            "description": "Successful listing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something failed internally. Nothing can be done about it."
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "JsonRpcRequest": {
+        "type": "object",
+        "description": "See [the JSON-RPC request documentation](https://www.jsonrpc.org/specification#request_object) for more details.",
+        "properties": {
+          "jsonrpc": {
+            "type": "string",
+            "enum": [
+              "2.0"
+            ]
+          },
+          "method": {
+            "type": "string"
+          },
+          "params": {
+            "type": "object"
+          },
+          "id": {
+            "type": "string"
+          }
+        }
+      },
+      "JsonRpcResponse": {
+        "type": "object",
+        "description": "See [the JSON-RPC response documentation](https://www.jsonrpc.org/specification#response_object) for more details.",
+        "properties": {
+          "jsonrpc": {
+            "type": "string",
+            "enum": [
+              "2.0"
+            ]
+          },
+          "result": {
+            "type": "object"
+          },
+          "errors": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "number"
+              },
+              "message": {
+                "type": "string"
+              },
+              "data": {
+                "type": "string"
+              }
+            }
+          },
+          "id": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

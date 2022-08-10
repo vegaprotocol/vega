@@ -29,6 +29,11 @@ import (
 	"code.vegaprotocol.io/vega/libs/proto"
 )
 
+type enactmentTime struct {
+	current         int64
+	shouldNotVerify bool
+}
+
 func (e *Engine) Name() types.CheckpointName {
 	return types.GovernanceCheckpoint
 }
@@ -73,11 +78,14 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 
 		switch prop.Terms.Change.GetTermType() {
 		case types.ProposalTermsTypeNewMarket:
+			enct := &enactmentTime{}
 			// if the proposal is for a new market we want to restore it such that it will be in opening auction
 			if p.Terms.EnactmentTimestamp <= now.Unix() {
 				prop.Terms.EnactmentTimestamp = now.Add(duration).Unix()
+				enct.shouldNotVerify = true
 			}
-			toSubmit, err := e.intoToSubmit(ctx, prop)
+			enct.current = prop.Terms.EnactmentTimestamp
+			toSubmit, err := e.intoToSubmit(ctx, prop, enct)
 			if err != nil {
 				e.log.Panic("Failed to convert proposal into market")
 			}
@@ -118,6 +126,19 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 func (e *Engine) getCheckpointProposals() []*vega.Proposal {
 	ret := make([]*vega.Proposal, 0, len(e.enactedProposals))
 	for _, p := range e.enactedProposals {
+		switch p.Terms.Change.GetTermType() {
+		case types.ProposalTermsTypeNewMarket:
+			mktState, err := e.markets.GetMarketState(p.ID)
+			// if the market is missing from the execution engine it means it's been already cancelled or settled or rejected
+			if err == types.ErrInvalidMarketID {
+				e.log.Info("not saving market proposal to checkpoint - market has already been removed", logging.String("market-id", p.ID))
+				continue
+			}
+			if mktState == types.MarketStateTradingTerminated {
+				e.log.Info("not saving market proposal to checkpoint ", logging.String("market-id", p.ID), logging.String("market-state", mktState.String()))
+				continue
+			}
+		}
 		ret = append(ret, p.IntoProto())
 	}
 	return ret

@@ -1021,6 +1021,26 @@ func (t *tradingDataServiceV2) ObserveTrades(req *v2.ObserveTradesRequest,
 	})
 }
 
+/****************************** Markets **************************************/
+
+// GetMarket provides the given market.
+func (t *tradingDataServiceV2) GetMarket(ctx context.Context, req *v2.GetMarketRequest) (*v2.GetMarketResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("MarketByID_SQL")()
+
+	if len(req.MarketId) == 0 {
+		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingMarketID)
+	}
+
+	market, err := t.marketService.GetByID(ctx, req.MarketId)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	return &v2.GetMarketResponse{
+		Market: market.ToProto(),
+	}, nil
+}
+
 // List all markets using a cursor based pagination model.
 func (t *tradingDataServiceV2) ListMarkets(ctx context.Context, in *v2.ListMarketsRequest) (*v2.ListMarketsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListMarketsV2")()
@@ -2218,7 +2238,7 @@ func (t *tradingDataServiceV2) estimateMargin(ctx context.Context, order *vega.O
 }
 
 func (t *tradingDataServiceV2) ListNetworkParameters(ctx context.Context, req *v2.ListNetworkParametersRequest) (*v2.ListNetworkParametersResponse, error) {
-	defer metrics.StartAPIRequestAndTimeGRPC("NetworkParametersV2")()
+	defer metrics.StartAPIRequestAndTimeGRPC("ListNetworkParametersV2")()
 	var pagination entities.CursorPagination
 	var err error
 	if req != nil {
@@ -2244,6 +2264,26 @@ func (t *tradingDataServiceV2) ListNetworkParameters(ctx context.Context, req *v
 
 	return &v2.ListNetworkParametersResponse{
 		NetworkParameters: networkParametersConnection,
+	}, nil
+}
+
+func (t *tradingDataServiceV2) GetNetworkParameter(ctx context.Context, req *v2.GetNetworkParameterRequest) (*v2.GetNetworkParameterResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetNetworkParameter")()
+	nps, _, err := t.networkParameterService.GetAll(ctx, entities.CursorPagination{})
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	var np *vega.NetworkParameter
+	for _, v := range nps {
+		if req.Key == v.Key {
+			np = v.ToProto()
+			break
+		}
+	}
+
+	return &v2.GetNetworkParameterResponse{
+		NetworkParameter: np,
 	}, nil
 }
 

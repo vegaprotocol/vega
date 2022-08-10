@@ -47,7 +47,7 @@ func testSubmittingProposalForMarketUpdateSucceeds(t *testing.T) {
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate(proposer, eng.tsvc.GetTimeNow())
+	proposal := eng.newProposalForMarketUpdate(proposer, eng.tsvc.GetTimeNow(), nil, nil)
 	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
@@ -72,7 +72,7 @@ func testSubmittingProposalForMarketUpdateForUnknownMarketFails(t *testing.T) {
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate(proposer, eng.tsvc.GetTimeNow())
+	proposal := eng.newProposalForMarketUpdate(proposer, eng.tsvc.GetTimeNow(), nil, nil)
 	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
@@ -96,7 +96,7 @@ func testSubmittingProposalForMarketUpdateForNotEnactedMarketFails(t *testing.T)
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	newMarketProposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow())
+	newMarketProposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow(), nil, nil)
 	marketID := newMarketProposal.ID
 
 	// setup
@@ -113,7 +113,7 @@ func testSubmittingProposalForMarketUpdateForNotEnactedMarketFails(t *testing.T)
 	assert.True(t, toSubmit.IsNewMarket())
 
 	// given
-	updateMarketProposal := eng.newProposalForMarketUpdate(proposer, eng.tsvc.GetTimeNow())
+	updateMarketProposal := eng.newProposalForMarketUpdate(proposer, eng.tsvc.GetTimeNow(), nil, nil)
 	updateMarketProposal.MarketUpdate().MarketID = marketID
 
 	// setup
@@ -137,7 +137,7 @@ func testSubmittingProposalForMarketUpdateWithInsufficientEquityLikeShareFails(t
 
 	// given
 	party := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate(party, eng.tsvc.GetTimeNow())
+	proposal := eng.newProposalForMarketUpdate(party, eng.tsvc.GetTimeNow(), nil, nil)
 	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
@@ -164,7 +164,7 @@ func testPreEnactmentOfMarketUpdateSucceeds(t *testing.T) {
 	// Submit proposal.
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate(proposer, eng.tsvc.GetTimeNow())
+	proposal := eng.newProposalForMarketUpdate(proposer, eng.tsvc.GetTimeNow(), nil, nil)
 	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
@@ -228,6 +228,7 @@ func testPreEnactmentOfMarketUpdateSucceeds(t *testing.T) {
 	// expect
 	eng.expectPassedProposalEvent(t, proposal.ID)
 	eng.expectVoteEvents(t)
+	eng.expectGetMarketState(t, proposal.ID)
 
 	// when
 	eng.OnTick(context.Background(), afterClosing)
@@ -278,7 +279,7 @@ func testRejectingProposalForMarketUpdateSucceeds(t *testing.T) {
 
 	// given
 	party := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate(party, eng.tsvc.GetTimeNow())
+	proposal := eng.newProposalForMarketUpdate(party, eng.tsvc.GetTimeNow(), nil, nil)
 	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
@@ -322,7 +323,7 @@ func testVotingWithoutMinimumTokenHoldersAndEquityLikeShareMakesMarketUpdateProp
 	// Submit proposal.
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate(proposer, eng.tsvc.GetTimeNow())
+	proposal := eng.newProposalForMarketUpdate(proposer, eng.tsvc.GetTimeNow(), nil, nil)
 	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
@@ -390,6 +391,7 @@ func testVotingWithoutMinimumTokenHoldersAndEquityLikeShareMakesMarketUpdateProp
 	// expect
 	eng.expectDeclinedProposalEvent(t, proposal.ID, types.ProposalErrorParticipationThresholdNotReached)
 	eng.expectVoteEvents(t)
+	eng.expectGetMarketState(t, proposal.ID)
 
 	// when
 	eng.OnTick(context.Background(), afterClosing)
@@ -402,7 +404,7 @@ func testVotingWithMajorityOfYesFromTokenHoldersMakesMarketUpdateProposalPassed(
 	// Submit proposal.
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate(proposer, eng.tsvc.GetTimeNow())
+	proposal := eng.newProposalForMarketUpdate(proposer, eng.tsvc.GetTimeNow(), nil, nil)
 	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
@@ -502,6 +504,7 @@ func testVotingWithMajorityOfYesFromTokenHoldersMakesMarketUpdateProposalPassed(
 	// expect
 	eng.expectPassedProposalEvent(t, proposal.ID)
 	eng.expectVoteEvents(t)
+	eng.expectGetMarketState(t, proposal.ID)
 
 	// when
 	eng.OnTick(context.Background(), afterClosing)
@@ -514,7 +517,7 @@ func testVotingWithMajorityOfNoFromTokenHoldersMakesMarketUpdateProposalDeclined
 	// Submit proposal.
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate(proposer, eng.tsvc.GetTimeNow())
+	proposal := eng.newProposalForMarketUpdate(proposer, eng.tsvc.GetTimeNow(), nil, nil)
 	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
@@ -614,6 +617,7 @@ func testVotingWithMajorityOfNoFromTokenHoldersMakesMarketUpdateProposalDeclined
 	// expect
 	eng.expectDeclinedProposalEvent(t, proposal.ID, types.ProposalErrorMajorityThresholdNotReached)
 	eng.expectVoteEvents(t)
+	eng.expectGetMarketState(t, proposal.ID)
 
 	// when
 	eng.OnTick(context.Background(), afterClosing)
@@ -626,7 +630,7 @@ func testVotingWithoutTokenAndMajorityOfYesFromEquityLikeShareHoldersMakesMarket
 	// Submit proposal.
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate(proposer, eng.tsvc.GetTimeNow())
+	proposal := eng.newProposalForMarketUpdate(proposer, eng.tsvc.GetTimeNow(), nil, nil)
 	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
@@ -712,6 +716,7 @@ func testVotingWithoutTokenAndMajorityOfYesFromEquityLikeShareHoldersMakesMarket
 	// expect
 	eng.expectPassedProposalEvent(t, proposal.ID)
 	eng.expectVoteEvents(t)
+	eng.expectGetMarketState(t, proposal.ID)
 
 	// when
 	eng.OnTick(context.Background(), afterClosing)
@@ -724,7 +729,7 @@ func testVotingWithoutTokenAndMajorityOfNoFromEquityLikeShareHoldersMakesMarketU
 	// Submit proposal.
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate(proposer, eng.tsvc.GetTimeNow())
+	proposal := eng.newProposalForMarketUpdate(proposer, eng.tsvc.GetTimeNow(), nil, nil)
 	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
@@ -810,6 +815,7 @@ func testVotingWithoutTokenAndMajorityOfNoFromEquityLikeShareHoldersMakesMarketU
 	// expect
 	eng.expectDeclinedProposalEvent(t, proposal.ID, types.ProposalErrorMajorityThresholdNotReached)
 	eng.expectVoteEvents(t)
+	eng.expectGetMarketState(t, proposal.ID)
 
 	// when
 	eng.OnTick(context.Background(), afterClosing)

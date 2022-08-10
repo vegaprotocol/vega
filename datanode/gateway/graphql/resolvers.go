@@ -271,10 +271,6 @@ func (r *VegaResolverRoot) RankingScore() RankingScoreResolver {
 	return (*rankingScoreResolver)(r)
 }
 
-func (r *VegaResolverRoot) RewardScore() RewardScoreResolver {
-	return (*rewardScoreResolver)(r)
-}
-
 func (r *VegaResolverRoot) KeyRotation() KeyRotationResolver {
 	return (*keyRotationResolver)(r)
 }
@@ -565,8 +561,18 @@ func (r *myQueryResolver) NetworkParametersConnection(ctx context.Context, pagin
 	if err != nil {
 		return nil, err
 	}
-
 	return res.NetworkParameters, nil
+}
+
+func (r *myQueryResolver) NetworkParameter(ctx context.Context, key string) (*types.NetworkParameter, error) {
+	res, err := r.tradingDataClientV2.GetNetworkParameter(
+		ctx, &v2.GetNetworkParameterRequest{Key: key},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return res.NetworkParameter, nil
 }
 
 func (r *myQueryResolver) Erc20WithdrawalApproval(ctx context.Context, wid string) (*Erc20WithdrawalApproval, error) {
@@ -1060,7 +1066,7 @@ func (r *myQueryResolver) HistoricBalances(ctx context.Context, filter *v2.Accou
 	gb := make([]v2.AccountField, len(groupBy))
 	for i, g := range groupBy {
 		if g == nil {
-			return nil, fmt.Errorf("Nil group by")
+			return nil, errors.New("nil group by")
 		}
 		gb[i] = *g
 	}

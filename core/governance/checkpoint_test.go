@@ -20,6 +20,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/assets/builtin"
+	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/governance"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/proto"
@@ -45,7 +46,11 @@ func testCheckpointSuccess(t *testing.T) {
 	proposer := eng.newValidParty("proposer", 1)
 	voter1 := eng.newValidPartyTimes("voter-1", 7, 2)
 	voter2 := eng.newValidPartyTimes("voter2", 1, 0)
-	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow())
+
+	now := eng.tsvc.GetTimeNow()
+	termTimeAfterEnact := now.Add(4 * 48 * time.Hour).Add(1 * time.Second)
+	filter, binding := produceTimeTriggeredOracleSpec(termTimeAfterEnact)
+	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow(), filter, binding)
 	ctx := context.Background()
 
 	// setup
@@ -80,10 +85,11 @@ func testCheckpointSuccess(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, data)
 
+	eng.expectGetMarketState(t, proposal.ID)
 	// when
 	eng.OnTick(ctx, afterClosing)
 
-	// the proposal should already be in the snapshot
+	// the proposal should already be in the checkpoint
 	data, err = eng.Checkpoint()
 	require.NoError(t, err)
 	require.NotEmpty(t, data)
@@ -124,6 +130,7 @@ func testCheckpointSuccess(t *testing.T) {
 	eng2.assets.EXPECT().IsEnabled(gomock.Any()).Return(true).AnyTimes()
 	eng2.markets.EXPECT().RestoreMarketWithLiquidityProvision(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	eng2.markets.EXPECT().StartOpeningAuction(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	eng2.expectGetMarketState(t, proposal.ID)
 
 	// Load checkpoint
 	require.NoError(t, eng2.Load(ctx, data))
@@ -135,6 +142,90 @@ func testCheckpointSuccess(t *testing.T) {
 
 	data = append(data, []byte("foo")...)
 	require.Error(t, eng2.Load(ctx, data))
+}
+
+func enactProposal(t *testing.T, eng *tstEngine) string {
+	t.Helper()
+	proposer := eng.newValidParty("proposer", 1)
+	voter1 := eng.newValidPartyTimes("voter-1", 7, 2)
+	now := eng.tsvc.GetTimeNow()
+	termTimeAfterEnact := now.Add(4 * 48 * time.Hour).Add(1 * time.Second)
+	filter, binding := produceTimeTriggeredOracleSpec(termTimeAfterEnact)
+	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow(), filter, binding)
+	ctx := context.Background()
+
+	// setup
+	eng.ensureStakingAssetTotalSupply(t, 9)
+	eng.ensureAllAssetEnabled(t)
+	eng.expectOpenProposalEvent(t, proposer.Id, proposal.ID)
+
+	// when
+	_, err := eng.submitProposal(t, proposal)
+
+	// then
+	require.NoError(t, err)
+
+	// setup
+	eng.expectVoteEvent(t, voter1.Id, proposal.ID)
+
+	// then
+	err = eng.addYesVote(t, voter1.Id, proposal.ID)
+
+	// then
+	require.NoError(t, err)
+
+	// given
+	afterClosing := time.Unix(proposal.Terms.ClosingTimestamp, 0).Add(time.Second)
+
+	// setup
+	eng.expectPassedProposalEvent(t, proposal.ID)
+	eng.expectTotalGovernanceTokenFromVoteEvents(t, "1", "7")
+
+	// when
+	eng.OnTick(ctx, afterClosing)
+	return proposal.ID
+}
+
+func TestCheckpointSavingAndLoadingWithDroppedMarkets(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// enact a proposal for market 1,2,3
+	proposalIDs := make([]string, 0, 3)
+	for i := 0; i < 3; i++ {
+		proposalIDs = append(proposalIDs, enactProposal(t, eng))
+	}
+
+	// market 1 has already been dropped of the execution engine
+	// market 2 has trading terminated
+	// market 3 is there and should be saved to the checkpoint
+	eng.markets.EXPECT().GetMarketState(proposalIDs[0]).Times(1).Return(types.MarketStateUnspecified, types.ErrInvalidMarketID)
+	eng.markets.EXPECT().GetMarketState(proposalIDs[1]).Times(1).Return(types.MarketStateTradingTerminated, nil)
+	eng.markets.EXPECT().GetMarketState(proposalIDs[2]).Times(1).Return(types.MarketStateActive, nil)
+
+	// the proposal2 should already be in the checkpoint, proposal 0,1 should be ignored
+	data, err := eng.Checkpoint()
+	require.NoError(t, err)
+	require.NotEmpty(t, data)
+
+	eng2 := getTestEngine(t)
+	defer eng2.ctrl.Finish()
+
+	var counter int
+	eng2.broker.EXPECT().SendBatch(gomock.Any()).Times(1).DoAndReturn(func(es []events.Event) { counter = len(es) })
+
+	eng2.assets.EXPECT().Get(gomock.Any()).AnyTimes().DoAndReturn(func(id string) (*assets.Asset, error) {
+		ret := assets.NewAsset(builtin.New(id, &types.AssetDetails{}))
+		return ret, nil
+	})
+	eng2.assets.EXPECT().IsEnabled(gomock.Any()).Return(true).AnyTimes()
+	eng2.markets.EXPECT().RestoreMarketWithLiquidityProvision(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	eng2.markets.EXPECT().StartOpeningAuction(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+
+	// Load checkpoint
+	require.NoError(t, eng2.Load(context.Background(), data))
+	// there should be only one proposal in there
+	require.Equal(t, 1, counter)
 }
 
 func testCheckpointLoadingWithMissingRationaleShouldNotBeProblem(t *testing.T) {

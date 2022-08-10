@@ -3,6 +3,7 @@ package jsonrpc_test
 import (
 	"context"
 	"fmt"
+	"sort"
 	"testing"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
@@ -21,6 +22,7 @@ func TestAPI(t *testing.T) {
 	t.Run("Dispatching a request succeeds", testDispatchingRequestSucceeds)
 	t.Run("Dispatching an unknown request fails", testDispatchingUnknownRequestFails)
 	t.Run("Failed commands return an error response", testFailedCommandReturnErrorResponse)
+	t.Run("Listing registered methods succeeds", testListingRegisteredMethodsSucceeds)
 }
 
 func testAPIOnlySupportsJSONRPC2Request(t *testing.T) {
@@ -194,6 +196,20 @@ func testFailedCommandReturnErrorResponse(t *testing.T) {
 	assert.Equal(t, request.ID, response.ID)
 	assert.Nil(t, response.Result)
 	assert.Equal(t, expectedError, response.Error)
+}
+
+func testListingRegisteredMethodsSucceeds(t *testing.T) {
+	// given
+	jsonrpcAPI := newAPI(t)
+
+	// when
+	methods := jsonrpcAPI.RegisteredMethods()
+
+	// then
+	require.NotNil(t, methods)
+	expectedMethods := []string{jsonrpcAPI.method1, jsonrpcAPI.method2}
+	sort.Strings(expectedMethods)
+	assert.Equal(t, expectedMethods, methods)
 }
 
 type testAPI struct {
