@@ -19,8 +19,44 @@ var (
 	ErrRequestCannotBeBlank    = errors.New("request can't be blank")
 )
 
+type ListMethodsV2Response struct {
+	RegisteredMethods []string `json:"registeredMethods"`
+}
+
+func (s *Service) ListMethodsV2(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	s.log.Info("New request",
+		logging.String("url", r.URL.String()),
+	)
+
+	registeredMethods := s.apiV2.RegisteredMethods()
+
+	body, _ := json.Marshal(ListMethodsV2Response{
+		RegisteredMethods: registeredMethods,
+	})
+
+	w.WriteHeader(http.StatusOK)
+	if _, err := w.Write(body); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		s.log.Info("Internal error",
+			logging.Int("http-status", http.StatusInternalServerError),
+			logging.Error(err),
+		)
+		return
+	}
+
+	s.log.Info("Success",
+		logging.Int("http-status", http.StatusOK),
+	)
+}
+
 func (s *Service) HandleRequestV2(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	traceID := vgrand.RandomStr(64)
+
+	s.log.Info("New request",
+		logging.String("url", r.URL.String()),
+		logging.String("trace-id", traceID),
+	)
+
 	tracedCtx := context.WithValue(r.Context(), "trace-id", traceID)
 
 	lw := newLoggedResponseWriter(w, traceID)
@@ -57,11 +93,6 @@ func (s *Service) HandleRequestV2(w http.ResponseWriter, r *http.Request, _ http
 }
 
 func (s *Service) unmarshallRequest(traceID string, r *http.Request) (*jsonrpc.Request, *jsonrpc.ErrorDetails) {
-	s.log.Info("Incoming request",
-		logging.String("url", r.URL.String()),
-		logging.String("trace-id", traceID),
-	)
-
 	defer r.Body.Close()
 
 	body, err := ioutil.ReadAll(r.Body)
