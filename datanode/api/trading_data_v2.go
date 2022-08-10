@@ -1021,6 +1021,26 @@ func (t *tradingDataServiceV2) ObserveTrades(req *v2.ObserveTradesRequest,
 	})
 }
 
+/****************************** Markets **************************************/
+
+// GetMarket provides the given market.
+func (t *tradingDataServiceV2) GetMarket(ctx context.Context, req *v2.GetMarketRequest) (*v2.GetMarketResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("MarketByID_SQL")()
+
+	if len(req.MarketId) == 0 {
+		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingMarketID)
+	}
+
+	market, err := t.marketService.GetByID(ctx, req.MarketId)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	return &v2.GetMarketResponse{
+		Market: market.ToProto(),
+	}, nil
+}
+
 // List all markets using a cursor based pagination model.
 func (t *tradingDataServiceV2) ListMarkets(ctx context.Context, in *v2.ListMarketsRequest) (*v2.ListMarketsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListMarketsV2")()
