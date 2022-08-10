@@ -7,5 +7,5 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationCon
 	if err != nil {
 		return nil, err
 	}
-	return &types.OrderCancellationConfirmation{o}, err
+	return &types.OrderCancellationConfirmation{Order: o}, err
 }

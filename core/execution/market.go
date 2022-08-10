@@ -3067,7 +3067,6 @@ func (m *Market) findOrder(orderID string) (parked bool, _ error) {
 
 	// We couldn't find it
 	return false, ErrOrderNotFound
-
 }
 
 func (m *Market) findOrderForParty(orderID, party string) (parked bool, _ error) {
