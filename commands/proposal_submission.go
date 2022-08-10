@@ -83,7 +83,7 @@ func checkProposalSubmission(cmd *commandspb.ProposalSubmission) Errors {
 	switch cmd.Terms.Change.(type) {
 	case *types.ProposalTerms_NewFreeform:
 		if cmd.Terms.EnactmentTimestamp != 0 {
-			errs.AddForProperty("proposal_submission.terms.enactment_timestamp", ErrIsNotValid)
+			errs.AddForProperty("proposal_submission.terms.enactment_timestamp", ErrIsNotSupported)
 		}
 	default:
 		if cmd.Terms.EnactmentTimestamp <= 0 {
@@ -110,7 +110,7 @@ func checkProposalSubmission(cmd *commandspb.ProposalSubmission) Errors {
 		}
 	default:
 		if cmd.Terms.ValidationTimestamp != 0 {
-			errs.AddForProperty("proposal_submission.terms.validation_timestamp", ErrIsNotValid)
+			errs.AddForProperty("proposal_submission.terms.validation_timestamp", ErrIsNotSupported)
 		}
 	}
 

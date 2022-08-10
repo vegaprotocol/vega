@@ -37,6 +37,30 @@ func TestCheckProposalSubmissionForNewAsset(t *testing.T) {
 	t.Run("Submitting an ERC20 asset change without validation timestamp fails", testNewAssetERC20ChangeSubmissionMissingValidationTimestamp)
 	t.Run("Submitting an ERC20 asset change with validation timestamp succeed", testNewAssetERC20ChangeSubmissionWithValidationTimestampSucceeds)
 	t.Run("Submitting an ERC20 asset change with validation after closing timestamp fails", testNewAssetERC20ChangeSubmissionValidationAfterClosingTimestampsFails)
+	t.Run("Submitting an ERC20 asset change other proposals should omit validation timestamp", testNewAssetERC20ChangeOtherProposalShouldOmitValidationTimestamp)
+}
+
+func testNewAssetERC20ChangeOtherProposalShouldOmitValidationTimestamp(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			ValidationTimestamp: 10,
+			ClosingTimestamp:    15,
+			EnactmentTimestamp:  20,
+			Change:              &types.ProposalTerms_NewMarket{},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.validation_timestamp"), commands.ErrIsNotSupported)
+
+	err = checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			ClosingTimestamp:   10,
+			EnactmentTimestamp: 20,
+			Change:             &types.ProposalTerms_NewMarket{},
+		},
+	})
+
+	assert.Empty(t, err.Get("proposal_submission.terms.validation_timestamp"))
 }
 
 func testNewAssetERC20ChangeSubmissionWithValidationTimestampSucceeds(t *testing.T) {
