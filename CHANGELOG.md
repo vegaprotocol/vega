@@ -55,6 +55,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5348](https://github.com/vegaprotocol/vega/issues/5348) - Restore markets from checkpoint proposal
 - [5279](https://github.com/vegaprotocol/vega/issues/5279) - Fix loading of proposals from checkpoint
 - [5598](https://github.com/vegaprotocol/vega/issues/5598) - Remove `currentTime` from topology engine to ease snapshot restoration
+- [5836](https://github.com/vegaprotocol/vega/issues/5836) - Add missing `GetMarket` `GRPC` end point
 - [5609](https://github.com/vegaprotocol/vega/issues/5609) - Set event forwarder last seen height after snapshot restore
 - [5782](https://github.com/vegaprotocol/vega/issues/5782) - `Pagination` with a cursor was returning incorrect results
 - [5629](https://github.com/vegaprotocol/vega/issues/5629) - Fixes for loading voting power from checkpoint with non genesis validators
