@@ -388,7 +388,7 @@ func (t *Topology) applyPromotion(performanceScore, rankingScore map[string]num.
 	return vUpdates, nextValidatorsVotingPower
 }
 
-// handleSlotChanges the number of slots may have increased or decreased and so we slide the nodes into the different sets based on the change
+// handleSlotChanges the number of slots may have increased or decreased and so we slide the nodes into the different sets based on the change.
 func handleSlotChanges(seriesA []*valState, seriesB []*valState, statusA ValidatorStatus, statusB ValidatorStatus, maxForSeriesA int, nextBlockHeight int64, rankingScore map[string]num.Decimal) ([]*valState, []*valState, []string) {
 	removedFromSeriesA := []string{}
 
@@ -401,7 +401,6 @@ func handleSlotChanges(seriesA []*valState, seriesB []*valState, statusA Validat
 	if len(seriesA) > maxForSeriesA {
 		nDescreased := len(seriesA) - maxForSeriesA
 		for i := 0; i < nDescreased; i++ {
-
 			toDemote := seriesA[len(seriesA)-1-i]
 			toDemote.status = statusB
 			toDemote.statusChangeBlock = nextBlockHeight
