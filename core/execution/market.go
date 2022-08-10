@@ -3295,6 +3295,8 @@ func (m *Market) cleanupOnReject(ctx context.Context) {
 		return
 	}
 
+	m.stateVarEngine.UnregisterStateVariable(asset, m.mkt.ID)
+
 	// then send the responses
 	m.broker.Send(events.NewTransferResponse(ctx, tresps))
 }
