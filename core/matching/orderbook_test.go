@@ -221,7 +221,7 @@ func cancelAllOrderForAParty(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, 0, len(confirm.Trades))
 	}
-	confs, err := book.ob.CancelAllOrders("A")
+	confs, err := book.ob.RemovePartyOrdersWithStatus("A", types.OrderStatusCancelled)
 	assert.NoError(t, err)
 	assert.Len(t, confs, 3)
 	expectedIDs := map[string]struct{}{
@@ -230,10 +230,10 @@ func cancelAllOrderForAParty(t *testing.T) {
 		orderId4: {},
 	}
 	for _, conf := range confs {
-		if _, ok := expectedIDs[conf.Order.ID]; ok {
-			delete(expectedIDs, conf.Order.ID)
+		if _, ok := expectedIDs[conf.ID]; ok {
+			delete(expectedIDs, conf.ID)
 		} else {
-			t.Fatalf("unexpected order has been cancelled %v", conf.Order)
+			t.Fatalf("unexpected order has been cancelled %v", conf.ID)
 		}
 	}
 }
@@ -1134,7 +1134,7 @@ func TestOrderBook_DeleteOrder(t *testing.T) {
 	assert.Equal(t, 0, len(trades))
 	book.ob.SubmitOrder(newOrder)
 
-	if _, err := book.ob.DeleteOrder(newOrder); err != nil {
+	if _, err := book.ob.RemoveOrderWithStatus(newOrder.ID, types.OrderStatusCancelled); err != nil {
 		fmt.Println(err, "ORDER_NOT_FOUND")
 	}
 
@@ -1166,11 +1166,11 @@ func TestOrderBook_RemoveOrder(t *testing.T) {
 	book.ob.SubmitOrder(newOrder)
 
 	// First time we remove the order it should succeed
-	_, err = book.ob.RemoveOrder(newOrder.ID)
+	_, err = book.ob.RemoveOrderWithStatus(newOrder.ID, types.OrderStatusCancelled)
 	assert.Error(t, err, vega.ErrInvalidOrderID)
 
 	// Second time we try to remove the order it should fail
-	_, err = book.ob.RemoveOrder(newOrder.ID)
+	_, err = book.ob.RemoveOrderWithStatus(newOrder.ID, types.OrderStatusCancelled)
 	assert.Error(t, err)
 }
 
@@ -1347,41 +1347,6 @@ func TestOrderBook_CancelOrderByID(t *testing.T) {
 	assert.Nil(t, orderFound, "order lookup for an already cancelled order should not be possible")
 
 	book.ob.PrintState("AFTER CANCEL ORDER BY ID")
-}
-
-func TestOrderBook_CancelOrderMarketMismatch(t *testing.T) {
-	logger := logging.NewTestLogger()
-	defer logger.Sync()
-	logger.Debug("BEGIN CANCELLING MARKET MISMATCH ORDER")
-
-	market := "testOrderbook"
-	book := getTestOrderBook(t, market)
-	defer book.Finish()
-	newOrder := &types.Order{
-		Status:    types.OrderStatusActive,
-		Type:      types.OrderTypeLimit,
-		MarketID:  market,
-		ID:        vgcrypto.RandomHash(),
-		Party:     "A",
-		Size:      100,
-		Remaining: 100,
-	}
-
-	trades, getErr := book.ob.GetTrades(newOrder)
-	assert.NoError(t, getErr)
-	confirmation, err := book.ob.SubmitOrder(newOrder)
-	assert.NoError(t, err)
-	orderAdded := confirmation.Order
-	assert.Equal(t, len(trades), len(confirmation.Trades))
-
-	orderAdded.MarketID = "invalid" // Bad market, malformed?
-
-	_, err = book.ob.CancelOrder(orderAdded)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	assert.Equal(t, types.OrderErrorInvalidMarketID, err)
 }
 
 func TestOrderBook_CancelOrderInvalidID(t *testing.T) {
@@ -3503,9 +3468,9 @@ func TestOrderBook_BidAndAskPresentAfterAuction(t *testing.T) {
 	require.Equal(t, true, book.ob.BidAndAskPresentAfterAuction())
 	require.Equal(t, true, book.ob.CanUncross())
 
-	_, err := book.ob.CancelAllOrders(party1)
+	_, err := book.ob.RemovePartyOrdersWithStatus(party1, types.OrderStatusCancelled)
 	require.NoError(t, err)
-	_, err = book.ob.CancelAllOrders(party2)
+	_, err = book.ob.RemovePartyOrdersWithStatus(party2, types.OrderStatusCancelled)
 	require.NoError(t, err)
 
 	require.Equal(t, int64(0), book.ob.GetTotalNumberOfOrders())

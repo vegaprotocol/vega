@@ -52,7 +52,7 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectOrderID(t *testing.T) {
 		Type:        types.OrderTypeLimit,
 		ID:          "v0000000000000-0000002", // Invalid, must match original
 	}
-	_, err = book.CancelOrder(&order2)
+	_, err = book.RemoveOrderWithStatus(order2.ID, types.OrderStatusCancelled)
 	assert.Error(t, err, types.ErrOrderRemovalFailure)
 	assert.Equal(t, book.getNumberOfBuyLevels(), 1)
 	assert.Equal(t, book.getNumberOfSellLevels(), 0)
@@ -88,7 +88,7 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectMarketID(t *testing.T) {
 		Type:        types.OrderTypeLimit,
 		ID:          "v0000000000000-0000001",
 	}
-	_, err = book.CancelOrder(&order2)
+	_, err = book.RemoveOrderWithStatus(order2.ID, types.OrderStatusCancelled)
 	assert.Error(t, err, types.ErrOrderRemovalFailure)
 	assert.Equal(t, book.getNumberOfBuyLevels(), 1)
 	assert.Equal(t, book.getNumberOfSellLevels(), 0)
@@ -124,7 +124,7 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectSide(t *testing.T) {
 		Type:        types.OrderTypeLimit,
 		ID:          "v0000000000000-0000001",
 	}
-	_, err = book.CancelOrder(&order2)
+	_, err = book.RemoveOrderWithStatus(order2.ID, types.OrderStatusCancelled)
 	assert.Error(t, err, types.ErrOrderRemovalFailure)
 	assert.Equal(t, book.getNumberOfBuyLevels(), 1)
 	assert.Equal(t, book.getNumberOfSellLevels(), 0)
@@ -160,7 +160,7 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectPrice(t *testing.T) {
 		Type:        types.OrderTypeLimit,
 		ID:          "v0000000000000-0000001",
 	}
-	_, err = book.CancelOrder(&order2)
+	_, err = book.RemoveOrderWithStatus(order2.ID, types.OrderStatusCancelled)
 	assert.Error(t, err, types.ErrOrderRemovalFailure)
 	assert.Equal(t, book.getNumberOfBuyLevels(), 1)
 	assert.Equal(t, book.getNumberOfSellLevels(), 0)
@@ -182,23 +182,13 @@ func TestOrderBookSimple_CancelOrderIncorrectNonCriticalFields(t *testing.T) {
 		TimeInForce: types.OrderTimeInForceGTC,
 		Type:        types.OrderTypeLimit,
 		ID:          orderId,
+		Status:      types.OrderStatusActive,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(confirm.Trades))
 
-	order2 := types.Order{
-		MarketID:    market,                    // Must match
-		Party:       "B",                       // Does not matter
-		Side:        types.SideBuy,             // Must match
-		Price:       num.NewUint(100),          // Must match
-		Size:        10,                        // Does not matter
-		Remaining:   10,                        // Does not matter
-		TimeInForce: types.OrderTimeInForceGTC, // Does not matter
-		Type:        types.OrderTypeLimit,      // Does not matter
-		ID:          orderId,                   // Must match
-	}
-	_, err = book.CancelOrder(&order2)
+	_, err = book.RemoveOrderWithStatus(orderId, types.OrderStatusCancelled)
 	assert.NoError(t, err)
 	assert.Equal(t, book.getNumberOfBuyLevels(), 0)
 	assert.Equal(t, book.getNumberOfSellLevels(), 0)
