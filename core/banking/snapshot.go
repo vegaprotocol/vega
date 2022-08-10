@@ -418,6 +418,12 @@ func (e *Engine) restoreAssetActions(ctx context.Context, aa *types.BankingAsset
 			// this is needed every time now
 			bridgeView: e.bridgeView,
 		}
+
+		if len(aa.getRef().Hash) == 0 {
+			// if we're here it means that the IntoProto code has not done its job properly for a particular asset action type
+			e.log.Panic("asset action has not been serialised correct and is empty", logging.String("txHash", aa.txHash))
+		}
+
 		e.assetActs[v.ID] = aa
 		if err := e.witness.RestoreResource(aa, e.onCheckDone); err != nil {
 			e.log.Panic("unable to restore witness resource", logging.String("id", v.ID), logging.Error(err))
