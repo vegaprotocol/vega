@@ -70,6 +70,10 @@ type ErrorDetails struct {
 	Data string `json:"data,omitempty"`
 }
 
+func (d ErrorDetails) IsInternalError() bool {
+	return d.Message == "Internal error"
+}
+
 func NewParseError(data error) *ErrorDetails {
 	return &ErrorDetails{
 		Code:    ErrorCodeParseError,
