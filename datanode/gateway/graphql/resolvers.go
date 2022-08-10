@@ -561,8 +561,18 @@ func (r *myQueryResolver) NetworkParametersConnection(ctx context.Context, pagin
 	if err != nil {
 		return nil, err
 	}
-
 	return res.NetworkParameters, nil
+}
+
+func (r *myQueryResolver) NetworkParameter(ctx context.Context, key string) (*types.NetworkParameter, error) {
+	res, err := r.tradingDataClientV2.GetNetworkParameter(
+		ctx, &v2.GetNetworkParameterRequest{Key: key},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return res.NetworkParameter, nil
 }
 
 func (r *myQueryResolver) Erc20WithdrawalApproval(ctx context.Context, wid string) (*Erc20WithdrawalApproval, error) {

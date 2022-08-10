@@ -555,6 +555,12 @@ type Query {
 
   networkParametersConnection(pagination: Pagination): NetworkParametersConnection!
 
+  "return a single network parameter"
+  networkParameter(
+    "key of the network parameter"
+    key: String!
+  ): NetworkParameter
+
   "returns information about nodes"
   nodeData: NodeData
 

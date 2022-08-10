@@ -416,6 +416,26 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) GetNetworkLimits(arg0, arg
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNetworkLimits", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetNetworkLimits), varargs...)
 }
 
+// GetNetworkParameter mocks base method.
+func (m *MockTradingDataServiceClientV2) GetNetworkParameter(arg0 context.Context, arg1 *v2.GetNetworkParameterRequest, arg2 ...grpc.CallOption) (*v2.GetNetworkParameterResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetNetworkParameter", varargs...)
+	ret0, _ := ret[0].(*v2.GetNetworkParameterResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetNetworkParameter indicates an expected call of GetNetworkParameter.
+func (mr *MockTradingDataServiceClientV2MockRecorder) GetNetworkParameter(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNetworkParameter", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetNetworkParameter), varargs...)
+}
+
 // GetNode mocks base method.
 func (m *MockTradingDataServiceClientV2) GetNode(arg0 context.Context, arg1 *v2.GetNodeRequest, arg2 ...grpc.CallOption) (*v2.GetNodeResponse, error) {
 	m.ctrl.T.Helper()

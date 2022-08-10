@@ -1098,6 +1098,7 @@ type ComplexityRoot struct {
 		Markets                            func(childComplexity int, id *string) int
 		MarketsConnection                  func(childComplexity int, id *string, pagination *v2.Pagination) int
 		NetworkLimits                      func(childComplexity int) int
+		NetworkParameter                   func(childComplexity int, key string) int
 		NetworkParameters                  func(childComplexity int) int
 		NetworkParametersConnection        func(childComplexity int, pagination *v2.Pagination) int
 		NetworkParametersProposals         func(childComplexity int, inState *vega.Proposal_State) int
@@ -1860,6 +1861,7 @@ type QueryResolver interface {
 	Deposit(ctx context.Context, id string) (*vega.Deposit, error)
 	NetworkParameters(ctx context.Context) ([]*vega.NetworkParameter, error)
 	NetworkParametersConnection(ctx context.Context, pagination *v2.Pagination) (*v2.NetworkParameterConnection, error)
+	NetworkParameter(ctx context.Context, key string) (*vega.NetworkParameter, error)
 	NodeData(ctx context.Context) (*vega.NodeData, error)
 	Nodes(ctx context.Context) ([]*vega.Node, error)
 	NodesConnection(ctx context.Context, pagination *v2.Pagination) (*v2.NodesConnection, error)
@@ -6402,6 +6404,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.NetworkLimits(childComplexity), true
 
+	case "Query.networkParameter":
+		if e.complexity.Query.NetworkParameter == nil {
+			break
+		}
+
+		args, err := ec.field_Query_networkParameter_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.NetworkParameter(childComplexity, args["key"].(string)), true
+
 	case "Query.networkParameters":
 		if e.complexity.Query.NetworkParameters == nil {
 			break
@@ -8997,6 +9011,12 @@ type Query {
   networkParameters: [NetworkParameter!] @deprecated(reason: "Use networkParametersConnection instead")
 
   networkParametersConnection(pagination: Pagination): NetworkParametersConnection!
+
+  "return a single network parameters"
+  networkParameter(
+    "key of the network parameter"
+    key: String!
+  ): NetworkParameter
 
   "returns information about nodes"
   nodeData: NodeData
@@ -13876,6 +13896,21 @@ func (ec *executionContext) field_Query_markets_args(ctx context.Context, rawArg
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_networkParameter_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["key"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("key"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["key"] = arg0
 	return args, nil
 }
 
@@ -36082,6 +36117,45 @@ func (ec *executionContext) _Query_networkParametersConnection(ctx context.Conte
 	return ec.marshalNNetworkParametersConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNetworkParameterConnection(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_networkParameter(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_networkParameter_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().NetworkParameter(rctx, args["key"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*vega.NetworkParameter)
+	fc.Result = res
+	return ec.marshalONetworkParameter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐNetworkParameter(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_nodeData(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -56792,6 +56866,26 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
+		case "networkParameter":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_networkParameter(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
 		case "nodeData":
 			field := field
 
@@ -65824,6 +65918,13 @@ func (ec *executionContext) marshalONetworkParameter2ᚕᚖcodeᚗvegaprotocol�
 	}
 
 	return ret
+}
+
+func (ec *executionContext) marshalONetworkParameter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐNetworkParameter(ctx context.Context, sel ast.SelectionSet, v *vega.NetworkParameter) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._NetworkParameter(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalONetworkParameterEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNetworkParameterEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.NetworkParameterEdge) graphql.Marshaler {

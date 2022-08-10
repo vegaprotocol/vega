@@ -40,6 +40,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5503](https://github.com/vegaprotocol/vega/issues/5503) - Introduce wallet API version 2 based on JSON-RPC with new authentication workflow
 - [5822](https://github.com/vegaprotocol/vega/issues/5822) - Rename `Graphql` enums
 - [5618](https://github.com/vegaprotocol/vega/issues/5618) - Add wallet JSON-RPC documentation
+- [5776](https://github.com/vegaprotocol/vega/issues/5776) - Add endpoint to get a single network parameter
 - [5685](https://github.com/vegaprotocol/vega/issues/5685) - Migrated `apis` from `datanode v1` to `datanode v2`
 - [5761](https://github.com/vegaprotocol/vega/issues/5761) - Transfers connection make direction optional
 - [5762](https://github.com/vegaprotocol/vega/issues/5762) - Transfers connection add under `party` type
