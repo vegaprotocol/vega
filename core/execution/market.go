@@ -787,12 +787,12 @@ func (m *Market) removeOrders(ctx context.Context) {
 }
 
 func (m *Market) cleanMarketWithState(ctx context.Context, mktState types.MarketState) error {
-	asset, _ := m.mkt.GetAsset()
 	parties := make([]string, 0, len(m.parties))
 	for k := range m.parties {
 		parties = append(parties, k)
 	}
 
+	asset, _ := m.mkt.GetAsset()
 	sort.Strings(parties)
 	clearMarketTransfers, err := m.collateral.ClearMarket(ctx, m.GetID(), asset, parties)
 	if err != nil {
@@ -821,10 +821,17 @@ func (m *Market) closeCancelledMarket(ctx context.Context, t time.Time) error {
 		return err
 	}
 
+	err = m.stopAllLiquidityProvisionOnReject(ctx)
+	if err != nil {
+		m.log.Debug("could not stop all liquidity provision on market rejection",
+			logging.MarketID(m.GetID()),
+			logging.Error(err))
+	}
+
 	m.closed = true
 	m.stateChanged = true
 
-	return m.Reject(ctx)
+	return nil
 }
 
 func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
