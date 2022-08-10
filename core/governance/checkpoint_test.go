@@ -145,6 +145,7 @@ func testCheckpointSuccess(t *testing.T) {
 }
 
 func enactProposal(t *testing.T, eng *tstEngine) string {
+	t.Helper()
 	proposer := eng.newValidParty("proposer", 1)
 	voter1 := eng.newValidPartyTimes("voter-1", 7, 2)
 	now := eng.tsvc.GetTimeNow()
