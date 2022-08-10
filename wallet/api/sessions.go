@@ -107,6 +107,16 @@ func (s *ConnectedWallet) UpdatePermissions(perms wallet.Permissions) error {
 	return nil
 }
 
+func (s *ConnectedWallet) ReloadWithWallet(updatedWallet wallet.Wallet) error {
+	s.Wallet = updatedWallet
+
+	if err := s.loadRestrictedKeys(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *ConnectedWallet) loadRestrictedKeys() error {
 	perms := s.Permissions()
 
