@@ -71,6 +71,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5809](https://github.com/vegaprotocol/vega/issues/5809) - Remove state variables when a market proposal is rejected
 - [5329](https://github.com/vegaprotocol/vega/issues/5329) - Fix checks for market enactment and termination
 - [5837](https://github.com/vegaprotocol/vega/issues/5837) - Allow a promotion due to increased slots and a swap to happen in the same epoch
+- [5819](https://github.com/vegaprotocol/vega/issues/5819) - Add new asset proposal validation timestamp validation
 
 ## 0.53.0
 
