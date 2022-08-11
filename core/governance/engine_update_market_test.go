@@ -228,7 +228,7 @@ func testPreEnactmentOfMarketUpdateSucceeds(t *testing.T) {
 	// expect
 	eng.expectPassedProposalEvent(t, proposal.ID)
 	eng.expectVoteEvents(t)
-	eng.expectGetMarketState(t, proposal.ID)
+	eng.expectGetMarketState(t, marketID)
 
 	// when
 	eng.OnTick(context.Background(), afterClosing)

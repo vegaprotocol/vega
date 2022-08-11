@@ -370,33 +370,35 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteCl
 		// this is the new market proposal, and should already be in the slice
 		prop := *ep.ProposalData()
 
-		if prop.Terms.Change.GetTermType() == types.ProposalTermsTypeNewMarket {
-			mktState, err := e.markets.GetMarketState(prop.ID)
+		propType := prop.Terms.Change.GetTermType()
+		id := prop.ID
+		if propType == types.ProposalTermsTypeNewMarket || propType == types.ProposalTermsTypeUpdateMarket {
+			if propType == types.ProposalTermsTypeUpdateMarket {
+				id = prop.Terms.GetUpdateMarket().MarketID
+			}
+
+			_, err := e.markets.GetMarketState(id)
 			if err != nil {
-				e.log.Error("could not get state of market %s", logging.String("market-id", prop.ID))
-				continue
-			}
-
-			if mktState == types.MarketStateCancelled {
-				toBeRemoved = append(toBeRemoved, prop.ID)
-				continue
-			}
-
-			// just in case the proposal wasn't added for whatever reason (shouldn't be possible)
-			found := false
-			for i, p := range e.enactedProposals {
-				if p.ID == prop.ID {
-					e.enactedProposals[i] = &prop // replace with pointer to copy
-					found = true
-					break
-				}
-			}
-			// no need to append
-			if found {
-				toBeEnacted = append(toBeEnacted, preparedToEnact[i])
+				e.log.Error("could not get state of market %s", logging.String("market-id", id))
 				continue
 			}
 		}
+
+		// just in case the proposal wasn't added for whatever reason (shouldn't be possible)
+		found := false
+		for i, p := range e.enactedProposals {
+			if p.ID == prop.ID {
+				e.enactedProposals[i] = &prop // replace with pointer to copy
+				found = true
+				break
+			}
+		}
+		// no need to append
+		if found {
+			toBeEnacted = append(toBeEnacted, preparedToEnact[i])
+			continue
+		}
+
 		// take a copy in the state just before the proposal was enacted
 		e.enactedProposals = append(e.enactedProposals, &prop)
 		toBeEnacted = append(toBeEnacted, preparedToEnact[i])
