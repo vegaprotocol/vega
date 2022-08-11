@@ -79,6 +79,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5329](https://github.com/vegaprotocol/vega/issues/5329) - Fix checks for market enactment and termination
 - [5837](https://github.com/vegaprotocol/vega/issues/5837) - Allow a promotion due to increased slots and a swap to happen in the same epoch
 - [5819](https://github.com/vegaprotocol/vega/issues/5819) - Add new asset proposal validation timestamp validation
+- [5811](https://github.com/vegaprotocol/vega/issues/5811) - Do not overwrite local changes when updating wallet through JSON-RPC API
 
 ## 0.53.0
 
