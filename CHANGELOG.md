@@ -44,6 +44,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5685](https://github.com/vegaprotocol/vega/issues/5685) - Migrated `apis` from `datanode v1` to `datanode v2`
 - [5761](https://github.com/vegaprotocol/vega/issues/5761) - Transfers connection make direction optional
 - [5762](https://github.com/vegaprotocol/vega/issues/5762) - Transfers connection add under `party` type
+- [5685](https://github.com/vegaprotocol/vega/issues/5685) - Migrated `apis` from `datanode v1` to `datanode v2`
 - [5705](https://github.com/vegaprotocol/vega/issues/5705) - Use enum for validator status
 - [5685](https://github.com/vegaprotocol/vega/issues/5685) - Migrated `apis` from `datanode v1` to `datanode v2`
 - [5834](https://github.com/vegaprotocol/vega/issues/5834) - Avoid saving proposals of terminated/cancelled/rejected/settled markets in checkpoint
@@ -73,6 +74,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5767](https://github.com/vegaprotocol/vega/issues/5767) - Fix typo in command validation
 - [5825](https://github.com/vegaprotocol/vega/issues/5825) - Fix panic in pegged orders when going into auction
 - [5763](https://github.com/vegaprotocol/vega/issues/5763) - Transfers connection rename `pubkey` to `partyId`
+- [5486](https://github.com/vegaprotocol/vega/issues/5486) - Fix amend order expiring
 - [5809](https://github.com/vegaprotocol/vega/issues/5809) - Remove state variables when a market proposal is rejected
 - [5329](https://github.com/vegaprotocol/vega/issues/5329) - Fix checks for market enactment and termination
 - [5837](https://github.com/vegaprotocol/vega/issues/5837) - Allow a promotion due to increased slots and a swap to happen in the same epoch
