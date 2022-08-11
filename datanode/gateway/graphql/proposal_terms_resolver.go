@@ -36,6 +36,15 @@ func (r *proposalTermsResolver) EnactmentDatetime(ctx context.Context, obj *type
 	return dt, nil
 }
 
+func (r *proposalTermsResolver) ValidationDatetime(ctx context.Context, obj *types.ProposalTerms) (*string, error) {
+	var dt *string
+	if obj.ValidationTimestamp != 0 {
+		tmpdt := secondsTSToDatetime(obj.ValidationTimestamp)
+		dt = &tmpdt
+	}
+	return dt, nil
+}
+
 func (r *proposalTermsResolver) Change(ctx context.Context, obj *types.ProposalTerms) (ProposalChange, error) {
 	switch obj.Change.(type) {
 	case *types.ProposalTerms_UpdateMarket:

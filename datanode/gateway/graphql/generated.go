@@ -1042,9 +1042,10 @@ type ComplexityRoot struct {
 	}
 
 	ProposalTerms struct {
-		Change            func(childComplexity int) int
-		ClosingDatetime   func(childComplexity int) int
-		EnactmentDatetime func(childComplexity int) int
+		Change             func(childComplexity int) int
+		ClosingDatetime    func(childComplexity int) int
+		EnactmentDatetime  func(childComplexity int) int
+		ValidationDatetime func(childComplexity int) int
 	}
 
 	ProposalVote struct {
@@ -1821,6 +1822,7 @@ type ProposalResolver interface {
 type ProposalTermsResolver interface {
 	ClosingDatetime(ctx context.Context, obj *vega.ProposalTerms) (string, error)
 	EnactmentDatetime(ctx context.Context, obj *vega.ProposalTerms) (*string, error)
+	ValidationDatetime(ctx context.Context, obj *vega.ProposalTerms) (*string, error)
 	Change(ctx context.Context, obj *vega.ProposalTerms) (ProposalChange, error)
 }
 type QueryResolver interface {
@@ -6105,6 +6107,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ProposalTerms.EnactmentDatetime(childComplexity), true
 
+	case "ProposalTerms.validationDatetime":
+		if e.complexity.ProposalTerms.ValidationDatetime == nil {
+			break
+		}
+
+		return e.complexity.ProposalTerms.ValidationDatetime(childComplexity), true
+
 	case "ProposalVote.proposalId":
 		if e.complexity.ProposalVote.ProposalID == nil {
 			break
@@ -9012,7 +9021,7 @@ type Query {
 
   networkParametersConnection(pagination: Pagination): NetworkParametersConnection!
 
-  "return a single network parameters"
+  "return a single network parameter"
   networkParameter(
     "key of the network parameter"
     key: String!
@@ -11503,6 +11512,9 @@ type ProposalTerms {
   Note: Optional as free form proposals do not require it.
   """
   enactmentDatetime: String
+
+  "RFC3339Nano time and when node validation of the proposal stops, accepted only with new asset proposals"
+  validationDatetime: String
 
   "Actual change being introduced by the proposal - action the proposal triggers if passed and enacted."
   change: ProposalChange!
@@ -34140,6 +34152,38 @@ func (ec *executionContext) _ProposalTerms_enactmentDatetime(ctx context.Context
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _ProposalTerms_validationDatetime(ctx context.Context, field graphql.CollectedField, obj *vega.ProposalTerms) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ProposalTerms",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ProposalTerms().ValidationDatetime(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _ProposalTerms_change(ctx context.Context, field graphql.CollectedField, obj *vega.ProposalTerms) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -55773,6 +55817,23 @@ func (ec *executionContext) _ProposalTerms(ctx context.Context, sel ast.Selectio
 					}
 				}()
 				res = ec._ProposalTerms_enactmentDatetime(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "validationDatetime":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ProposalTerms_validationDatetime(ctx, field, obj)
 				return res
 			}
 
