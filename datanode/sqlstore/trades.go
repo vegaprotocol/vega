@@ -30,6 +30,10 @@ type Trades struct {
 	trades []*entities.Trade
 }
 
+var tradesOrdering = TableOrdering{
+	ColumnOrdering{"synthetic_time", ASC},
+}
+
 func NewTrades(connectionSource *ConnectionSource) *Trades {
 	t := &Trades{
 		ConnectionSource: connectionSource,
@@ -207,22 +211,22 @@ func (ts *Trades) queryTrades(ctx context.Context, query string, args []interfac
 }
 
 func (ts *Trades) queryTradesWithCursorPagination(ctx context.Context, query string, args []interface{}, pagination entities.CursorPagination) ([]entities.Trade, entities.PageInfo, error) {
-	var err error
+	var (
+		err      error
+		pageInfo entities.PageInfo
+	)
 
-	sorting, cmp, cursor := extractPaginationInfo(pagination)
-	cursors := []CursorQueryParameter{NewCursorQueryParameter("synthetic_time", sorting, cmp, cursor)}
-
-	query, args = orderAndPaginateWithCursor(query, pagination, cursors, args...)
-
+	query, args, err = PaginateQuery[entities.TradeCursor](query, args, tradesOrdering, pagination)
+	if err != nil {
+		return nil, pageInfo, err
+	}
 	var trades []entities.Trade
-	var pageInfo entities.PageInfo
-	var pagedTrades []entities.Trade
 
 	err = pgxscan.Select(ctx, ts.Connection, &trades, query, args...)
 	if err != nil {
-		return pagedTrades, pageInfo, fmt.Errorf("querying trades: %w", err)
+		return trades, pageInfo, fmt.Errorf("querying trades: %w", err)
 	}
 
-	pagedTrades, pageInfo = entities.PageEntities[*v2.TradeEdge](trades, pagination)
-	return pagedTrades, pageInfo, nil
+	trades, pageInfo = entities.PageEntities[*v2.TradeEdge](trades, pagination)
+	return trades, pageInfo, nil
 }

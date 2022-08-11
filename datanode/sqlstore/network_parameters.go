@@ -26,6 +26,10 @@ type NetworkParameters struct {
 	*ConnectionSource
 }
 
+var networkParameterOrdering = TableOrdering{
+	ColumnOrdering{"key", ASC},
+}
+
 func NewNetworkParameters(connectionSource *ConnectionSource) *NetworkParameters {
 	p := &NetworkParameters{
 		ConnectionSource: connectionSource,
@@ -57,18 +61,19 @@ func (np *NetworkParameters) GetAll(ctx context.Context, pagination entities.Cur
 	if pagination.NewestFirst {
 		pagination.NewestFirst = false
 	}
-	sorting, cmp, cursor := extractPaginationInfo(pagination)
 
-	cursorParams := []CursorQueryParameter{
-		NewCursorQueryParameter("key", sorting, cmp, cursor),
+	var (
+		nps  []entities.NetworkParameter
+		args []interface{}
+		err  error
+	)
+	query := `SELECT * FROM network_parameters_current`
+	query, args, err = PaginateQuery[entities.NetworkParameterCursor](query, args, networkParameterOrdering, pagination)
+	if err != nil {
+		return nil, pageInfo, err
 	}
 
-	var nps []entities.NetworkParameter
-	var args []interface{}
-	query := `SELECT * FROM network_parameters_current`
-	query, args = orderAndPaginateWithCursor(query, pagination, cursorParams, args...)
-
-	if err := pgxscan.Select(ctx, np.Connection, &nps, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, np.Connection, &nps, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("could not get network parameters: %w", err)
 	}
 

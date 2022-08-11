@@ -32,6 +32,11 @@ func NewWithdrawals(connectionSource *ConnectionSource) *Withdrawals {
 	}
 }
 
+var withdrawalsOrdering = TableOrdering{
+	ColumnOrdering{"vega_time", ASC},
+	ColumnOrdering{"id", ASC},
+}
+
 func (w *Withdrawals) Upsert(ctx context.Context, withdrawal *entities.Withdrawal) error {
 	defer metrics.StartSQLQuery("Withdrawals", "Upsert")()
 	query := `insert into withdrawals(
@@ -120,28 +125,21 @@ func (w *Withdrawals) getByPartyOffset(ctx context.Context, partyID string, open
 func (w *Withdrawals) getByPartyCursor(ctx context.Context, partyID string, openOnly bool,
 	pagination entities.CursorPagination,
 ) ([]entities.Withdrawal, entities.PageInfo, error) {
-	var withdrawals []entities.Withdrawal
-	var pageInfo entities.PageInfo
+	var (
+		withdrawals []entities.Withdrawal
+		pageInfo    entities.PageInfo
+		err         error
+		args        []interface{}
+	)
 
-	sorting, cmp, cursor := extractPaginationInfo(pagination)
-
-	wc := &entities.WithdrawalCursor{}
-	if err := wc.Parse(cursor); err != nil {
-		return nil, pageInfo, fmt.Errorf("could not parse cursor information: %w", err)
-	}
-
-	cursorParams := []CursorQueryParameter{
-		NewCursorQueryParameter("party_id", sorting, "=", entities.PartyID(partyID)),
-		NewCursorQueryParameter("vega_time", sorting, cmp, wc.VegaTime),
-		NewCursorQueryParameter("id", sorting, cmp, entities.WithdrawalID(wc.ID)),
-	}
-
-	var args []interface{}
 	query := getWithdrawalsByPartyQuery()
-	query, args = orderAndPaginateWithCursor(query, pagination, cursorParams, args...)
+	query, args, err = PaginateQuery[entities.WithdrawalCursor](query, args, withdrawalsOrdering, pagination)
+	if err != nil {
+		return withdrawals, pageInfo, err
+	}
 
 	defer metrics.StartSQLQuery("Withdrawals", "GetByParty")()
-	if err := pgxscan.Select(ctx, w.Connection, &withdrawals, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, w.Connection, &withdrawals, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("could not get withdrawals by party: %w", err)
 	}
 

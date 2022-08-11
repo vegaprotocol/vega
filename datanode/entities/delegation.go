@@ -13,6 +13,7 @@
 package entities
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
@@ -47,7 +48,13 @@ func (d *Delegation) ToProto() *vega.Delegation {
 }
 
 func (d Delegation) Cursor() *Cursor {
-	return NewCursor(d.VegaTime.Format(time.RFC3339Nano))
+	dc := DelegationCursor{
+		VegaTime: d.VegaTime,
+		PartyID:  d.PartyID,
+		NodeID:   d.NodeID,
+		EpochID:  d.EpochID,
+	}
+	return NewCursor(dc.String())
 }
 
 func (d Delegation) ToProtoEdge(_ ...any) (*v2.DelegationEdge, error) {
@@ -99,4 +106,26 @@ func DelegationFromEventProto(pd *eventspb.DelegationBalanceEvent) (Delegation, 
 	}
 
 	return delegation, nil
+}
+
+type DelegationCursor struct {
+	VegaTime time.Time `json:"vegaTime"`
+	PartyID  PartyID   `json:"partyId"`
+	NodeID   NodeID    `json:"nodeId"`
+	EpochID  int64     `json:"epochId"`
+}
+
+func (c DelegationCursor) String() string {
+	bs, err := json.Marshal(c)
+	if err != nil {
+		panic(fmt.Errorf("could not marshal delegation cursor: %w", err))
+	}
+	return string(bs)
+}
+
+func (c *DelegationCursor) Parse(cursorString string) error {
+	if cursorString == "" {
+		return nil
+	}
+	return json.Unmarshal([]byte(cursorString), c)
 }

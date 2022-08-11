@@ -13,6 +13,8 @@
 package entities
 
 import (
+	"encoding/json"
+	"fmt"
 	"time"
 
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
@@ -58,7 +60,10 @@ func (c *Candle) ToV2CandleProto() *v2.Candle {
 }
 
 func (c Candle) Cursor() *Cursor {
-	return NewCursor(c.PeriodStart.Format(time.RFC3339Nano))
+	cc := CandleCursor{
+		PeriodStart: c.PeriodStart,
+	}
+	return NewCursor(cc.String())
 }
 
 func (c Candle) ToProtoEdge(_ ...any) (*v2.CandleEdge, error) {
@@ -66,4 +71,23 @@ func (c Candle) ToProtoEdge(_ ...any) (*v2.CandleEdge, error) {
 		Node:   c.ToV2CandleProto(),
 		Cursor: c.Cursor().Encode(),
 	}, nil
+}
+
+type CandleCursor struct {
+	PeriodStart time.Time `json:"periodStart"`
+}
+
+func (c CandleCursor) String() string {
+	bs, err := json.Marshal(c)
+	if err != nil {
+		panic(fmt.Errorf("could not marshal candle cursor: %w", err))
+	}
+	return string(bs)
+}
+
+func (c *CandleCursor) Parse(cursorString string) error {
+	if cursorString == "" {
+		return nil
+	}
+	return json.Unmarshal([]byte(cursorString), c)
 }

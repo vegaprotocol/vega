@@ -26,6 +26,10 @@ type Rewards struct {
 	*ConnectionSource
 }
 
+var rewardsOrdering = TableOrdering{
+	ColumnOrdering{"epoch_id", ASC},
+}
+
 func NewRewards(connectionSource *ConnectionSource) *Rewards {
 	r := &Rewards{
 		ConnectionSource: connectionSource,
@@ -64,34 +68,24 @@ func (rs *Rewards) GetByCursor(ctx context.Context,
 	assetIDHex *string,
 	pagination entities.CursorPagination,
 ) ([]entities.Reward, entities.PageInfo, error) {
+	var pageInfo entities.PageInfo
 	query, args, err := selectRewards(partyIDHex, assetIDHex)
 	if err != nil {
-		return nil, entities.PageInfo{}, err
+		return nil, pageInfo, err
 	}
 
-	sorting, cmp, cursor := extractPaginationInfo(pagination)
-	rc := &entities.RewardCursor{}
-	if cursor != "" {
-		err := rc.Parse(cursor)
-		if err != nil {
-			return nil, entities.PageInfo{}, fmt.Errorf("parsing cursor: %w", err)
-		}
+	query, args, err = PaginateQuery[entities.RewardCursor](query, args, rewardsOrdering, pagination)
+	if err != nil {
+		return nil, pageInfo, err
 	}
-	cursorParams := []CursorQueryParameter{
-		NewCursorQueryParameter("party_id", sorting, cmp, entities.PartyID(rc.PartyID)),
-		NewCursorQueryParameter("asset_id", sorting, cmp, entities.AssetID(rc.AssetID)),
-		NewCursorQueryParameter("epoch_id", sorting, cmp, rc.EpochID),
-	}
-
-	query, args = orderAndPaginateWithCursor(query, pagination, cursorParams, args...)
 
 	rewards := []entities.Reward{}
 	if err := pgxscan.Select(ctx, rs.Connection, &rewards, query, args...); err != nil {
 		return nil, entities.PageInfo{}, fmt.Errorf("querying rewards: %w", err)
 	}
 
-	pagedData, pageInfo := entities.PageEntities[*v2.RewardEdge](rewards, pagination)
-	return pagedData, pageInfo, nil
+	rewards, pageInfo = entities.PageEntities[*v2.RewardEdge](rewards, pagination)
+	return rewards, pageInfo, nil
 }
 
 func (rs *Rewards) GetByOffset(ctx context.Context,

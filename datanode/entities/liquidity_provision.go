@@ -156,7 +156,7 @@ func (lp LiquidityProvision) ToRow() []interface{} {
 func (lp LiquidityProvision) Cursor() *Cursor {
 	lc := LiquidityProvisionCursor{
 		VegaTime: lp.VegaTime,
-		ID:       lp.ID.String(),
+		ID:       lp.ID,
 	}
 	return NewCursor(lc.String())
 }
@@ -169,8 +169,8 @@ func (lp LiquidityProvision) ToProtoEdge(_ ...any) (*v2.LiquidityProvisionsEdge,
 }
 
 type LiquidityProvisionCursor struct {
-	VegaTime time.Time `json:"vegaTime"`
-	ID       string    `json:"id"`
+	VegaTime time.Time            `json:"vegaTime"`
+	ID       LiquidityProvisionID `json:"id"`
 }
 
 func (lc LiquidityProvisionCursor) String() string {

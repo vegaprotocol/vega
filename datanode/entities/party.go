@@ -13,6 +13,8 @@
 package entities
 
 import (
+	"encoding/json"
+	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
@@ -37,7 +39,7 @@ func (p *Party) ToProto() *types.Party {
 }
 
 func (p Party) Cursor() *Cursor {
-	return NewCursor(p.VegaTime.In(time.UTC).Format(time.RFC3339Nano))
+	return NewCursor(p.String())
 }
 
 func (p Party) ToProtoEdge(_ ...any) (*v2.PartyEdge, error) {
@@ -45,4 +47,20 @@ func (p Party) ToProtoEdge(_ ...any) (*v2.PartyEdge, error) {
 		Node:   p.ToProto(),
 		Cursor: p.Cursor().Encode(),
 	}, nil
+}
+
+func (p *Party) Parse(cursorString string) error {
+	if cursorString == "" {
+		return nil
+	}
+
+	return json.Unmarshal([]byte(cursorString), p)
+}
+
+func (p Party) String() string {
+	bs, err := json.Marshal(p)
+	if err != nil {
+		panic(fmt.Errorf("failed to marshal party: %w", err))
+	}
+	return string(bs)
 }
