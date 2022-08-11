@@ -13,7 +13,6 @@ import (
 func TestRunServiceFlags(t *testing.T) {
 	t.Run("Valid flags succeeds", testRunServiceFlagsValidFlagsSucceeds)
 	t.Run("Missing network fails", testRunServiceFlagsMissingNetworkFails)
-	t.Run("No browser without console nor token dApp fails", testRunServiceFlagsNoBrowserWithoutConsoleNorTokenDAppFails)
 }
 
 func testRunServiceFlagsValidFlagsSucceeds(t *testing.T) {
@@ -21,10 +20,7 @@ func testRunServiceFlagsValidFlagsSucceeds(t *testing.T) {
 	networkName := vgrand.RandomStr(10)
 
 	f := &cmd.RunServiceFlags{
-		Network:       networkName,
-		WithConsole:   true,
-		WithTokenDApp: true,
-		NoBrowser:     true,
+		Network: networkName,
 	}
 
 	// when
@@ -46,29 +42,12 @@ func testRunServiceFlagsMissingNetworkFails(t *testing.T) {
 	assert.ErrorIs(t, err, flags.FlagMustBeSpecifiedError("network"))
 }
 
-func testRunServiceFlagsNoBrowserWithoutConsoleNorTokenDAppFails(t *testing.T) {
-	// given
-	f := newRunServiceFlags(t)
-	f.WithConsole = false
-	f.WithTokenDApp = false
-	f.NoBrowser = true
-
-	// when
-	err := f.Validate()
-
-	// then
-	assert.ErrorIs(t, err, flags.OneOfParentsFlagMustBeSpecifiedError("no-browser", "with-console", "with-token-dapp"))
-}
-
 func newRunServiceFlags(t *testing.T) *cmd.RunServiceFlags {
 	t.Helper()
 
 	networkName := vgrand.RandomStr(10)
 
 	return &cmd.RunServiceFlags{
-		Network:       networkName,
-		WithConsole:   true,
-		WithTokenDApp: true,
-		NoBrowser:     true,
+		Network: networkName,
 	}
 }

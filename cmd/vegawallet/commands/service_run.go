@@ -25,14 +25,12 @@ import (
 	"code.vegaprotocol.io/vega/wallet/network"
 	netstore "code.vegaprotocol.io/vega/wallet/network/store/v1"
 	"code.vegaprotocol.io/vega/wallet/node"
-	"code.vegaprotocol.io/vega/wallet/proxy"
 	"code.vegaprotocol.io/vega/wallet/service"
 	svcstore "code.vegaprotocol.io/vega/wallet/service/store/v1"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 	"github.com/golang/protobuf/jsonpb"
 	"golang.org/x/term"
 
-	"github.com/skratchdot/open-golang/open"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -67,19 +65,7 @@ var (
 		# Start the service
 		{{.Software}} service run --network NETWORK
 
-		# Start the service and open the console in the default browser
-		{{.Software}} service run --network NETWORK --with-console
-
-		# Start the service without opening the console
-		{{.Software}} service run --network NETWORK --with-console --no-browser
-
-		# Start the service and open the token dApp in the default browser
-		{{.Software}} service run --network NETWORK --with-token-dapp
-
-		# Start the service without opening the token dApp
-		{{.Software}} service run --network NETWORK --with-token-dapp --no-browser
-
-		# Start the service with automatic consent of incoming transactions
+		# Start the service with automatic consent of incoming transactions for API v1.
 		{{.Software}} service run --network NETWORK --automatic-consent
 	`)
 )
@@ -116,25 +102,10 @@ func BuildCmdRunService(w io.Writer, handler RunServiceHandler, rf *RootFlags) *
 		"",
 		"Network configuration to use",
 	)
-	cmd.Flags().BoolVar(&f.WithConsole,
-		"with-console",
-		false,
-		"Start the Vega console behind a proxy and open it in the default browser",
-	)
-	cmd.Flags().BoolVar(&f.WithTokenDApp,
-		"with-token-dapp",
-		false,
-		"Start the Vega Token dApp behind a proxy and open it in the default browser",
-	)
-	cmd.Flags().BoolVar(&f.NoBrowser,
-		"no-browser",
-		false,
-		"Do not open the default browser when starting applications",
-	)
 	cmd.Flags().BoolVar(&f.EnableAutomaticConsent,
 		"automatic-consent",
 		false,
-		"Automatically approve incoming transaction. Only use this flag when you have absolute trust in incoming transactions! No logs on standard output.",
+		"Automatically approve incoming transaction. Only use this flag when you have absolute trust in incoming transactions! No logs on standard output. Only works for API v1.",
 	)
 
 	autoCompleteNetwork(cmd, rf.Home)
@@ -144,19 +115,12 @@ func BuildCmdRunService(w io.Writer, handler RunServiceHandler, rf *RootFlags) *
 
 type RunServiceFlags struct {
 	Network                string
-	WithConsole            bool
-	WithTokenDApp          bool
-	NoBrowser              bool
 	EnableAutomaticConsent bool
 }
 
 func (f *RunServiceFlags) Validate() error {
 	if len(f.Network) == 0 {
 		return flags.FlagMustBeSpecifiedError("network")
-	}
-
-	if f.NoBrowser && !f.WithConsole && !f.WithTokenDApp {
-		return flags.OneOfParentsFlagMustBeSpecifiedError("no-browser", "with-console", "with-token-dapp")
 	}
 
 	return nil
@@ -193,7 +157,7 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 		return fmt.Errorf("couldn't initialise network store: %w", err)
 	}
 
-	if err := verifyNetworkConfig(cfg, f); err != nil {
+	if err := verifyNetworkConfig(cfg); err != nil {
 		return err
 	}
 	svcLog, svcLogPath, err := BuildJSONLogger(cfg.Level.String(), vegaPaths, paths.WalletServiceLogsHome)
@@ -308,104 +272,13 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 		p.Print(p.String().CheckMark().Text("HTTP service stopped").NextLine())
 	}()
 
-	var cs *proxy.Proxy
-	if f.WithConsole {
-		cs = startConsole(cliLog, f, cfg, cancel, p)
-		defer func() {
-			if err = cs.Stop(); err != nil {
-				cliLog.Error("failed to stop console proxy", zap.Error(err))
-				p.Print(p.String().DangerBangMark().Text("Failed to stop console proxy: ").DangerText(err.Error()).NextLine())
-				return
-			}
-			cliLog.Info("Console proxy stopped with success")
-			p.Print(p.String().CheckMark().Text("Console proxy stopped").NextLine())
-		}()
-	}
-
-	var tokenDApp *proxy.Proxy
-	if f.WithTokenDApp {
-		tokenDApp = startTokenDApp(cliLog, f, cfg, cancel, p)
-		defer func() {
-			if err = tokenDApp.Stop(); err != nil {
-				cliLog.Error("failed to stop token dApp proxy", zap.Error(err))
-				p.Print(p.String().DangerBangMark().Text("Failed to stop token dApp proxy: ").DangerText(err.Error()).NextLine())
-				return
-			}
-			cliLog.Info("Token dApp proxy stopped with success")
-			p.Print(p.String().CheckMark().Text("Token dApp proxy stopped").NextLine())
-		}()
-	}
-
 	waitSig(ctx, cancel, cliLog, consentRequests, sentTransactions, receptionChan, responseChan, p)
 
 	return nil
 }
 
-func verifyNetworkConfig(cfg *network.Network, f *RunServiceFlags) error {
-	if err := cfg.EnsureCanConnectGRPCNode(); err != nil {
-		return err
-	}
-	if f.WithConsole {
-		if err := cfg.EnsureCanConnectConsole(); err != nil {
-			return err
-		}
-	}
-	if f.WithTokenDApp {
-		if err := cfg.EnsureCanConnectTokenDApp(); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func startConsole(log *zap.Logger, f *RunServiceFlags, cfg *network.Network, cancel context.CancelFunc, p *printer.InteractivePrinter) *proxy.Proxy {
-	cs := proxy.NewProxy(cfg.Console.LocalPort, cfg.Console.URL, cfg.API.GRPC.Hosts[0])
-	consoleLocalProxyURL := cs.GetLocalProxyURL()
-	go func() {
-		defer cancel()
-		p.Print(p.String().CheckMark().Text("Starting console proxy for ").Bold(cfg.Console.URL).Text(" at: ").SuccessText(consoleLocalProxyURL).NextLine())
-		log.Info("starting console proxy", zap.String("target-url", cfg.Console.URL), zap.String("proxy-url", consoleLocalProxyURL))
-		if err := cs.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Error("Failed to start the console proxy", zap.Error(err))
-			p.Print(p.String().DangerBangMark().Text("Failed to start console proxy: ").DangerText(consoleLocalProxyURL).NextLine())
-		}
-	}()
-
-	if !f.NoBrowser {
-		p.Print(p.String().CheckMark().Text("Opening browser for console proxy at: ").SuccessText(consoleLocalProxyURL).NextLine())
-		log.Info("opening browser for console proxy", zap.String("url", consoleLocalProxyURL))
-		if err := open.Run(consoleLocalProxyURL); err != nil {
-			log.Error("unable to open the application in the default browser", zap.Error(err))
-			p.Print(p.String().DangerBangMark().Text("Failed to open the browser for console proxy: ").DangerText(err.Error()).NextLine())
-		}
-	}
-
-	return cs
-}
-
-func startTokenDApp(log *zap.Logger, f *RunServiceFlags, cfg *network.Network, cancel context.CancelFunc, p *printer.InteractivePrinter) *proxy.Proxy {
-	tokenDApp := proxy.NewProxy(cfg.TokenDApp.LocalPort, cfg.TokenDApp.URL, cfg.API.GRPC.Hosts[0])
-	tokenDAppLocalProxyURL := tokenDApp.GetLocalProxyURL()
-	go func() {
-		defer cancel()
-		p.Print(p.String().CheckMark().Text("Starting token dApp proxy for ").Bold(cfg.TokenDApp.URL).Text(" at: ").SuccessText(tokenDAppLocalProxyURL).NextLine())
-		log.Info("starting token dApp proxy", zap.String("target-url", cfg.TokenDApp.URL), zap.String("proxy-url", tokenDAppLocalProxyURL))
-
-		if err := tokenDApp.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Error("failed to start the token dApp proxy", zap.Error(err))
-			p.Print(p.String().DangerBangMark().Text("Failed to start token dApp proxy: ").DangerText(tokenDAppLocalProxyURL).NextLine())
-		}
-	}()
-
-	if !f.NoBrowser {
-		p.Print(p.String().CheckMark().Text("Opening browser for token dApp proxy at: ").SuccessText(tokenDAppLocalProxyURL).NextLine())
-		log.Info("opening browser for token dApp proxy", zap.String("url", tokenDAppLocalProxyURL))
-		if err := open.Run(tokenDAppLocalProxyURL); err != nil {
-			log.Error("unable to open the token dApp in the default browser", zap.Error(err))
-			p.Print(p.String().DangerBangMark().Text("Failed to open the browser for token dApp proxy: ").DangerText(err.Error()).NextLine())
-		}
-	}
-	return tokenDApp
+func verifyNetworkConfig(cfg *network.Network) error {
+	return cfg.EnsureCanConnectGRPCNode()
 }
 
 // waitSig will wait for a sigterm or sigint interrupt.

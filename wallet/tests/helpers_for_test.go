@@ -58,7 +58,9 @@ Hosts = [
 
 [Console]
 URL = "console.example.com"
-LocalPort = 1847
+
+[TokenDApp]
+URL = "token.example.com"
 `, name)
 }
 
