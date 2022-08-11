@@ -90,7 +90,6 @@ proto: ## build proto definitions
 .PHONY: proto_json
 proto_docs: ## build proto definitions
 	rm -rf protos/generated
-	rm -rf protos/swagger
 	buf generate --template buf.gen.swagger.yaml
 
 .PHONY: proto_check
