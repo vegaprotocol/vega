@@ -85,7 +85,7 @@ clean: ## Remove previous build
 
 .PHONY: proto
 proto: ## build proto definitions
-	@./script/generate.sh
+	buf generate
 
 .PHONY: proto_json
 proto_docs: ## build proto definitions
