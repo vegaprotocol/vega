@@ -21,6 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/core/validators"
 	"code.vegaprotocol.io/vega/core/validators/mocks"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
@@ -211,6 +212,62 @@ func testNodeVoteDuplicateVote(t *testing.T) {
 	erc.top.EXPECT().IsValidatorVegaPubKey(pubKey.Hex()).Times(1).Return(true)
 	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id}, pubKey)
 	require.EqualError(t, err, validators.ErrDuplicateVoteFromNode.Error())
+}
+
+func TestVoteMajorityCalculation(t *testing.T) {
+	erc := getTestWitness(t)
+	defer erc.ctrl.Finish()
+	defer erc.Stop()
+	erc.Witness.OnDefaultValidatorsVoteRequiredUpdate(context.Background(), num.DecimalFromFloat(0.67))
+	selfPubKey := "b7ee437dc100d642"
+
+	erc.top.EXPECT().Len().AnyTimes().Return(5)
+	erc.top.EXPECT().IsValidator().AnyTimes().Return(true)
+
+	ch := make(chan struct{}, 1)
+	res := testRes{"resource-id-1", func() error {
+		ch <- struct{}{}
+		return nil
+	}}
+	checkUntil := erc.startTime.Add(700 * time.Second)
+	cb := func(interface{}, bool) {
+		// unblock chanel listen to finish test
+		ch <- struct{}{}
+	}
+
+	err := erc.StartCheck(res, cb, checkUntil)
+	assert.NoError(t, err)
+
+	// first wait once for the asset to be validated
+	<-ch
+
+	// first on chain time update, we send our own vote
+	erc.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
+	newNow := erc.startTime.Add(1 * time.Second)
+	erc.OnTick(context.Background(), newNow)
+
+	// then we propagate our own vote
+	pubKey := newPublicKey(selfPubKey)
+	erc.top.EXPECT().IsValidatorVegaPubKey(pubKey.Hex()).Times(1).Return(true)
+	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id}, pubKey)
+	assert.NoError(t, err)
+
+	for i := 0; i < 3; i++ {
+		// second vote from another validator
+		othPubKey := newPublicKey(crypto.RandomHash())
+		erc.top.EXPECT().IsValidatorVegaPubKey(othPubKey.Hex()).Times(1).Return(true)
+		err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id}, othPubKey)
+		assert.NoError(t, err)
+	}
+
+	// we have 4 votes, that should suffice to pass
+	// call onTick again to get the callback called
+	newNow = newNow.Add(1 * time.Second)
+	erc.top.EXPECT().IsTendermintValidator(gomock.Any()).Times(4).Return(true)
+	erc.OnTick(context.Background(), newNow)
+
+	// block to wait for the result
+	<-ch
 }
 
 func testOnTick(t *testing.T) {
