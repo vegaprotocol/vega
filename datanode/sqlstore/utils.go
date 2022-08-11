@@ -158,6 +158,15 @@ func extractPaginationInfo(pagination entities.CursorPagination) (Sorting, Compa
 	return sort, cmp, value
 }
 
+func extractCursorFromPagination(pagination entities.CursorPagination) (cursor string) {
+	if pagination.HasForward() && pagination.Forward.HasCursor() {
+		cursor = pagination.Forward.Cursor.Value()
+	} else if pagination.HasBackward() && pagination.Backward.HasCursor() {
+		cursor = pagination.Backward.Cursor.Value()
+	}
+	return
+}
+
 // StructValueForColumn replicates some of the unexported functionality from Scanny. You pass a
 // struct (or pointer to a struct), and a column name. It converts the struct field names into
 // database column names in a similar way to scanny and if one matches colName, that field value

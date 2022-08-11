@@ -29,6 +29,11 @@ var (
 	ErrInvalidPartyID = errors.New("invalid hex id")
 )
 
+var partiesOrdering = TableOrdering{
+	ColumnOrdering{"vega_time", ASC},
+	ColumnOrdering{"id", ASC},
+}
+
 type Parties struct {
 	*ConnectionSource
 }
@@ -114,17 +119,20 @@ func (ps *Parties) GetAllPaged(ctx context.Context, partyID string, pagination e
 		FROM parties
 	`
 
-	var pagedParties []entities.Party
-	var pageInfo entities.PageInfo
+	var (
+		pageInfo entities.PageInfo
+		err      error
+	)
 
-	sorting, cmp, cursor := extractPaginationInfo(pagination)
-	cursors := []CursorQueryParameter{NewCursorQueryParameter("vega_time", sorting, cmp, cursor)}
-	query, args = orderAndPaginateWithCursor(query, pagination, cursors, args...)
-
-	if err := pgxscan.Select(ctx, ps.Connection, &parties, query, args...); err != nil {
-		return pagedParties, pageInfo, err
+	query, args, err = PaginateQuery[entities.Party](query, args, partiesOrdering, pagination)
+	if err != nil {
+		return nil, pageInfo, err
 	}
 
-	pagedParties, pageInfo = entities.PageEntities[*v2.PartyEdge](parties, pagination)
-	return pagedParties, pageInfo, nil
+	if err := pgxscan.Select(ctx, ps.Connection, &parties, query, args...); err != nil {
+		return nil, pageInfo, err
+	}
+
+	parties, pageInfo = entities.PageEntities[*v2.PartyEdge](parties, pagination)
+	return parties, pageInfo, nil
 }

@@ -373,14 +373,8 @@ func testDepositsPaginationNoPagination(t *testing.T) {
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     false,
 		HasPreviousPage: false,
-		StartCursor: entities.NewCursor(entities.DepositCursor{
-			VegaTime: testDeposits[0].VegaTime,
-			ID:       testDeposits[0].ID.String(),
-		}.String()).Encode(),
-		EndCursor: entities.NewCursor(entities.DepositCursor{
-			VegaTime: testDeposits[9].VegaTime,
-			ID:       testDeposits[9].ID.String(),
-		}.String()).Encode(),
+		StartCursor:     testDeposits[0].Cursor().Encode(),
+		EndCursor:       testDeposits[9].Cursor().Encode(),
 	}, pageInfo)
 }
 
@@ -402,14 +396,8 @@ func testDepositsPaginationFirst(t *testing.T) {
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     true,
 		HasPreviousPage: false,
-		StartCursor: entities.NewCursor(entities.DepositCursor{
-			VegaTime: testDeposits[0].VegaTime,
-			ID:       testDeposits[0].ID.String(),
-		}.String()).Encode(),
-		EndCursor: entities.NewCursor(entities.DepositCursor{
-			VegaTime: testDeposits[2].VegaTime,
-			ID:       testDeposits[2].ID.String(),
-		}.String()).Encode(),
+		StartCursor:     testDeposits[0].Cursor().Encode(),
+		EndCursor:       testDeposits[2].Cursor().Encode(),
 	}, pageInfo)
 }
 
@@ -431,14 +419,8 @@ func testDepositsPaginationLast(t *testing.T) {
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     false,
 		HasPreviousPage: true,
-		StartCursor: entities.NewCursor(entities.DepositCursor{
-			VegaTime: testDeposits[7].VegaTime,
-			ID:       testDeposits[7].ID.String(),
-		}.String()).Encode(),
-		EndCursor: entities.NewCursor(entities.DepositCursor{
-			VegaTime: testDeposits[9].VegaTime,
-			ID:       testDeposits[9].ID.String(),
-		}.String()).Encode(),
+		StartCursor:     testDeposits[7].Cursor().Encode(),
+		EndCursor:       testDeposits[9].Cursor().Encode(),
 	}, pageInfo)
 }
 
@@ -450,10 +432,7 @@ func testDepositsPaginationFirstAfter(t *testing.T) {
 	testDeposits := addDeposits(timeoutCtx, t, bs, ds)
 
 	first := int32(3)
-	after := entities.NewCursor(entities.DepositCursor{
-		VegaTime: testDeposits[2].VegaTime,
-		ID:       testDeposits[2].ID.String(),
-	}.String()).Encode()
+	after := testDeposits[2].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	require.NoError(t, err)
 	got, pageInfo, err := ds.GetByParty(timeoutCtx, testID, false, pagination)
@@ -464,14 +443,8 @@ func testDepositsPaginationFirstAfter(t *testing.T) {
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     true,
 		HasPreviousPage: true,
-		StartCursor: entities.NewCursor(entities.DepositCursor{
-			VegaTime: testDeposits[3].VegaTime,
-			ID:       testDeposits[3].ID.String(),
-		}.String()).Encode(),
-		EndCursor: entities.NewCursor(entities.DepositCursor{
-			VegaTime: testDeposits[5].VegaTime,
-			ID:       testDeposits[5].ID.String(),
-		}.String()).Encode(),
+		StartCursor:     testDeposits[3].Cursor().Encode(),
+		EndCursor:       testDeposits[5].Cursor().Encode(),
 	}, pageInfo)
 }
 
@@ -483,10 +456,7 @@ func testDepositsPaginationLastBefore(t *testing.T) {
 	testDeposits := addDeposits(timeoutCtx, t, bs, ds)
 
 	last := int32(3)
-	before := entities.NewCursor(entities.DepositCursor{
-		VegaTime: testDeposits[7].VegaTime,
-		ID:       testDeposits[7].ID.String(),
-	}.String()).Encode()
+	before := testDeposits[7].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 	require.NoError(t, err)
 	got, pageInfo, err := ds.GetByParty(timeoutCtx, testID, false, pagination)
@@ -497,14 +467,8 @@ func testDepositsPaginationLastBefore(t *testing.T) {
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     true,
 		HasPreviousPage: true,
-		StartCursor: entities.NewCursor(entities.DepositCursor{
-			VegaTime: testDeposits[4].VegaTime,
-			ID:       testDeposits[4].ID.String(),
-		}.String()).Encode(),
-		EndCursor: entities.NewCursor(entities.DepositCursor{
-			VegaTime: testDeposits[6].VegaTime,
-			ID:       testDeposits[6].ID.String(),
-		}.String()).Encode(),
+		StartCursor:     testDeposits[4].Cursor().Encode(),
+		EndCursor:       testDeposits[6].Cursor().Encode(),
 	}, pageInfo)
 }
 
@@ -524,14 +488,8 @@ func testDepositsPaginationNoPaginationNewestFirst(t *testing.T) {
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     false,
 		HasPreviousPage: false,
-		StartCursor: entities.NewCursor(entities.DepositCursor{
-			VegaTime: testDeposits[0].VegaTime,
-			ID:       testDeposits[0].ID.String(),
-		}.String()).Encode(),
-		EndCursor: entities.NewCursor(entities.DepositCursor{
-			VegaTime: testDeposits[9].VegaTime,
-			ID:       testDeposits[9].ID.String(),
-		}.String()).Encode(),
+		StartCursor:     testDeposits[0].Cursor().Encode(),
+		EndCursor:       testDeposits[9].Cursor().Encode(),
 	}, pageInfo)
 }
 
@@ -553,14 +511,8 @@ func testDepositsPaginationFirstNewestFirst(t *testing.T) {
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     true,
 		HasPreviousPage: false,
-		StartCursor: entities.NewCursor(entities.DepositCursor{
-			VegaTime: testDeposits[0].VegaTime,
-			ID:       testDeposits[0].ID.String(),
-		}.String()).Encode(),
-		EndCursor: entities.NewCursor(entities.DepositCursor{
-			VegaTime: testDeposits[2].VegaTime,
-			ID:       testDeposits[2].ID.String(),
-		}.String()).Encode(),
+		StartCursor:     testDeposits[0].Cursor().Encode(),
+		EndCursor:       testDeposits[2].Cursor().Encode(),
 	}, pageInfo)
 }
 
@@ -582,14 +534,8 @@ func testDepositsPaginationLastNewestFirst(t *testing.T) {
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     false,
 		HasPreviousPage: true,
-		StartCursor: entities.NewCursor(entities.DepositCursor{
-			VegaTime: testDeposits[7].VegaTime,
-			ID:       testDeposits[7].ID.String(),
-		}.String()).Encode(),
-		EndCursor: entities.NewCursor(entities.DepositCursor{
-			VegaTime: testDeposits[9].VegaTime,
-			ID:       testDeposits[9].ID.String(),
-		}.String()).Encode(),
+		StartCursor:     testDeposits[7].Cursor().Encode(),
+		EndCursor:       testDeposits[9].Cursor().Encode(),
 	}, pageInfo)
 }
 
@@ -601,10 +547,7 @@ func testDepositsPaginationFirstAfterNewestFirst(t *testing.T) {
 	testDeposits := entities.ReverseSlice(addDeposits(timeoutCtx, t, bs, ds))
 
 	first := int32(3)
-	after := entities.NewCursor(entities.DepositCursor{
-		VegaTime: testDeposits[2].VegaTime,
-		ID:       testDeposits[2].ID.String(),
-	}.String()).Encode()
+	after := testDeposits[2].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
 	require.NoError(t, err)
 	got, pageInfo, err := ds.GetByParty(timeoutCtx, testID, false, pagination)
@@ -615,14 +558,8 @@ func testDepositsPaginationFirstAfterNewestFirst(t *testing.T) {
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     true,
 		HasPreviousPage: true,
-		StartCursor: entities.NewCursor(entities.DepositCursor{
-			VegaTime: testDeposits[3].VegaTime,
-			ID:       testDeposits[3].ID.String(),
-		}.String()).Encode(),
-		EndCursor: entities.NewCursor(entities.DepositCursor{
-			VegaTime: testDeposits[5].VegaTime,
-			ID:       testDeposits[5].ID.String(),
-		}.String()).Encode(),
+		StartCursor:     testDeposits[3].Cursor().Encode(),
+		EndCursor:       testDeposits[5].Cursor().Encode(),
 	}, pageInfo)
 }
 
@@ -634,10 +571,7 @@ func testDepositsPaginationLastBeforeNewestFirst(t *testing.T) {
 	testDeposits := entities.ReverseSlice(addDeposits(timeoutCtx, t, bs, ds))
 
 	last := int32(3)
-	before := entities.NewCursor(entities.DepositCursor{
-		VegaTime: testDeposits[7].VegaTime,
-		ID:       testDeposits[7].ID.String(),
-	}.String()).Encode()
+	before := testDeposits[7].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
 	require.NoError(t, err)
 	got, pageInfo, err := ds.GetByParty(timeoutCtx, testID, false, pagination)
@@ -648,13 +582,7 @@ func testDepositsPaginationLastBeforeNewestFirst(t *testing.T) {
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     true,
 		HasPreviousPage: true,
-		StartCursor: entities.NewCursor(entities.DepositCursor{
-			VegaTime: testDeposits[4].VegaTime,
-			ID:       testDeposits[4].ID.String(),
-		}.String()).Encode(),
-		EndCursor: entities.NewCursor(entities.DepositCursor{
-			VegaTime: testDeposits[6].VegaTime,
-			ID:       testDeposits[6].ID.String(),
-		}.String()).Encode(),
+		StartCursor:     testDeposits[4].Cursor().Encode(),
+		EndCursor:       testDeposits[6].Cursor().Encode(),
 	}, pageInfo)
 }

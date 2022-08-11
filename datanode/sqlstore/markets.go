@@ -29,6 +29,10 @@ type Markets struct {
 	cacheLock sync.Mutex
 }
 
+var marketOrdering = TableOrdering{
+	ColumnOrdering{"vega_time", ASC},
+}
+
 const (
 	sqlMarketsColumns = `id, vega_time, instrument_id, tradable_instrument, decimal_places,
 		fees, opening_auction, price_monitoring_settings, liquidity_monitoring_parameters,
@@ -135,17 +139,20 @@ func (m *Markets) GetAllPaged(ctx context.Context, marketID string, pagination e
 	query := fmt.Sprintf(`select %s
 		from markets_current`, sqlMarketsColumns)
 
-	var pagedMarkets []entities.Market
-	var pageInfo entities.PageInfo
+	var (
+		pageInfo entities.PageInfo
+		err      error
+	)
 
-	sorting, cmp, cursor := extractPaginationInfo(pagination)
-	cursors := []CursorQueryParameter{NewCursorQueryParameter("vega_time", sorting, cmp, cursor)}
-	query, args = orderAndPaginateWithCursor(query, pagination, cursors, args...)
-
-	if err := pgxscan.Select(ctx, m.Connection, &markets, query, args...); err != nil {
-		return pagedMarkets, pageInfo, err
+	query, args, err = PaginateQuery[entities.MarketCursor](query, args, marketOrdering, pagination)
+	if err != nil {
+		return markets, pageInfo, err
 	}
 
-	pagedMarkets, pageInfo = entities.PageEntities[*v2.MarketEdge](markets, pagination)
-	return pagedMarkets, pageInfo, nil
+	if err = pgxscan.Select(ctx, m.Connection, &markets, query, args...); err != nil {
+		return markets, pageInfo, err
+	}
+
+	markets, pageInfo = entities.PageEntities[*v2.MarketEdge](markets, pagination)
+	return markets, pageInfo, nil
 }

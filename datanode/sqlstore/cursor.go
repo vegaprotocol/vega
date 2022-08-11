@@ -13,6 +13,8 @@
 package sqlstore
 
 import (
+	"bytes"
+	"encoding/gob"
 	"fmt"
 	"strings"
 
@@ -84,11 +86,11 @@ func (t *TableOrdering) Reversed() TableOrdering {
 // And 'args' would have 1 and 2 appended to it.
 //
 // Notes:
-//  - The predicate *includes* the value at the cursor
-//  - Only fields that are present in both the cursor and the ordering are considered
-//  - The union of those fields must have enough information to uniquely identify a row
-//  - The table ordering must be sufficient to ensure that a row identified by a cursor cannot
-//    change position in relation to the other rows
+//   - The predicate *includes* the value at the cursor
+//   - Only fields that are present in both the cursor and the ordering are considered
+//   - The union of those fields must have enough information to uniquely identify a row
+//   - The table ordering must be sufficient to ensure that a row identified by a cursor cannot
+//     change position in relation to the other rows
 func CursorPredicate(args []interface{}, cursor interface{}, ordering TableOrdering) (string, []interface{}, error) {
 	cursorPredicates := []string{}
 	equalPredicates := []string{}
@@ -144,12 +146,31 @@ type parserPtr[T any] interface {
 	*T
 }
 
+// We have to roll our own equals function here for comparing the cursors because some cursor parameters use
+// types that do not implement `comparable`.
+func equals[T any](actual, other T) (bool, error) {
+	var a, b bytes.Buffer
+	enc := gob.NewEncoder(&a)
+	err := enc.Encode(actual)
+	if err != nil {
+		return false, err
+	}
+
+	enc = gob.NewEncoder(&b)
+	err = enc.Encode(other)
+	if err != nil {
+		return false, err
+	}
+
+	return bytes.Equal(a.Bytes(), b.Bytes()), nil
+}
+
 // PaginateQuery takes a query string & bind arg list and returns the same with additional SQL to
-// - exclude rows before the cursor (or after it if the cusor is a backwards looking one)
-// - limit the number of rows to the pagination limit +1 (no cursor) or +2 (cursor)
-//   [for purposes of later figuring out whether there are next or previous pages]
-// - order the query according to the TableOrdering supplied
-//   the order is reversed if pagination request is backwards
+//   - exclude rows before the cursor (or after it if the cursor is a backwards looking one)
+//   - limit the number of rows to the pagination limit +1 (no cursor) or +2 (cursor)
+//     [for purposes of later figuring out whether there are next or previous pages]
+//   - order the query according to the TableOrdering supplied
+//     the order is reversed if pagination request is backwards
 //
 // For example with cursor to a row where foo=42, and a pagination saying get the next 3 then:
 // PaginateQuery[MyCursor]("SELECT foo FROM my_table", args, ordering, pagination)
@@ -158,26 +179,32 @@ type parserPtr[T any] interface {
 // SELECT foo FROM my_table WHERE foo>=$1 ORDER BY foo ASC LIMIT 5
 //
 // See CursorPredicate() for more details about how the cursor filtering is done.
-func PaginateQuery[T comparable, PT parserPtr[T]](
+func PaginateQuery[T any, PT parserPtr[T]](
 	query string,
 	args []interface{},
 	ordering TableOrdering,
 	pagination entities.CursorPagination,
 ) (string, []interface{}, error) {
-	// Extract a cusor struct from the pagination struct
+	// Extract a cursor struct from the pagination struct
 	cursor, err := parseCursor[T, PT](pagination)
 	if err != nil {
 		return "", nil, fmt.Errorf("parsing cursor: %w", err)
 	}
 
 	// If we're fetching rows before the cursor, reverse the ordering
-	if pagination.HasBackward() {
+	if (pagination.HasBackward() && !pagination.NewestFirst) || // Navigating backwards in time order
+		(pagination.HasForward() && pagination.NewestFirst) || // Navigating forward in reverse time order
+		(!pagination.HasBackward() && !pagination.HasForward() && pagination.NewestFirst) { // No pagination provided, but in reverse time order
 		ordering = ordering.Reversed()
 	}
 
 	// If the cursor wasn't empty, exclude rows preceding the cursor's row
 	var emptyCursor T
-	if cursor != emptyCursor {
+	isEmpty, err := equals[T](cursor, emptyCursor)
+	if err != nil {
+		return "", nil, fmt.Errorf("checking empty cursor: %w", err)
+	}
+	if !isEmpty {
 		whereOrAnd := "WHERE"
 		if strings.Contains(strings.ToUpper(query), "WHERE") {
 			whereOrAnd = "AND"
@@ -188,7 +215,7 @@ func PaginateQuery[T comparable, PT parserPtr[T]](
 		if err != nil {
 			return "", nil, fmt.Errorf("building cursor predicate: %w", err)
 		}
-		query = fmt.Sprintf("%s %s %s", query, whereOrAnd, predicate)
+		query = fmt.Sprintf("%s %s (%s)", query, whereOrAnd, predicate)
 	}
 
 	// Add an ORDER BY clause

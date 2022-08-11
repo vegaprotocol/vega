@@ -13,7 +13,8 @@
 package entities
 
 import (
-	"strconv"
+	"encoding/json"
+	"fmt"
 	"time"
 
 	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
@@ -47,7 +48,7 @@ func (cp *Checkpoint) ToProto() *v2.Checkpoint {
 }
 
 func (cp Checkpoint) Cursor() *Cursor {
-	return NewCursor(strconv.FormatInt(cp.BlockHeight, 10))
+	return NewCursor(CheckpointCursor{BlockHeight: cp.BlockHeight}.String())
 }
 
 func (cp Checkpoint) ToProtoEdge(_ ...any) (*v2.CheckpointEdge, error) {
@@ -64,4 +65,23 @@ func CheckpointFromProto(cpe *eventspb.CheckpointEvent) (Checkpoint, error) {
 		BlockHeight: int64(cpe.BlockHeight),
 	}
 	return cp, nil
+}
+
+type CheckpointCursor struct {
+	BlockHeight int64 `json:"blockHeight"`
+}
+
+func (cp CheckpointCursor) String() string {
+	bs, err := json.Marshal(cp)
+	if err != nil {
+		panic(fmt.Errorf("couldn't marshal CheckpointCursor: %w", err))
+	}
+	return string(bs)
+}
+
+func (cp *CheckpointCursor) Parse(cursorString string) error {
+	if cursorString == "" {
+		return nil
+	}
+	return json.Unmarshal([]byte(cursorString), cp)
 }

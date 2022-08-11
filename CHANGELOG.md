@@ -51,9 +51,11 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5619](https://github.com/vegaprotocol/vega/issues/5619) - Add wallet HTTP API version 2 documentation
 - [5823](https://github.com/vegaprotocol/vega/issues/5823) - Add endpoint to wallet HTTP API version 2 to list available RPC methods
 - [5814](https://github.com/vegaprotocol/vega/issues/5815) - Add proposal validation date time to `graphql`
+- [5803](https://github.com/vegaprotocol/vega/issues/5803) - Update cursor pagination to use new method from [5784](https://github.com/vegaprotocol/vega/pull/5784)
 
 ### 🐛 Fixes
 - [5571](https://github.com/vegaprotocol/vega/issues/5571) - Restore pending assets status correctly after snapshot restore
+- [5857](https://github.com/vegaprotocol/vega/issues/5857) - Fix panic when calling `ListAssets` `grpc` end point with no arguments
 - [5572](https://github.com/vegaprotocol/vega/issues/5572) - Add validation on `IDs` and public keys
 - [5348](https://github.com/vegaprotocol/vega/issues/5348) - Restore markets from checkpoint proposal
 - [5279](https://github.com/vegaprotocol/vega/issues/5279) - Fix loading of proposals from checkpoint

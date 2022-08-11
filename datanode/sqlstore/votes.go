@@ -28,6 +28,10 @@ type Votes struct {
 	*ConnectionSource
 }
 
+var votesOrdering = TableOrdering{
+	ColumnOrdering{"vega_time", ASC},
+}
+
 func NewVotes(connectionSource *ConnectionSource) *Votes {
 	d := &Votes{
 		ConnectionSource: connectionSource,
@@ -81,20 +85,18 @@ func (vs *Votes) GetByPartyConnection(ctx context.Context, partyIDStr string, pa
 	args := make([]interface{}, 0)
 	query := fmt.Sprintf(`select * from votes_current where party_id=%s`, nextBindVar(&args, entities.PartyID(partyIDStr)))
 
-	var votes []entities.Vote
-	var pageInfo entities.PageInfo
+	var (
+		votes    []entities.Vote
+		pageInfo entities.PageInfo
+		err      error
+	)
 
-	sorting, cmp, cursor := extractPaginationInfo(pagination)
-
-	vc := &entities.VoteCursor{}
-	if err := vc.Parse(cursor); err != nil {
-		return nil, pageInfo, fmt.Errorf("parsing cursor: %w", err)
+	query, args, err = PaginateQuery[entities.VoteCursor](query, args, votesOrdering, pagination)
+	if err != nil {
+		return votes, pageInfo, err
 	}
 
-	cursors := []CursorQueryParameter{NewCursorQueryParameter("vega_time", sorting, cmp, vc.VegaTime)}
-	query, args = orderAndPaginateWithCursor(query, pagination, cursors, args...)
-
-	if err := pgxscan.Select(ctx, vs.Connection, &votes, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, vs.Connection, &votes, query, args...); err != nil {
 		return nil, entities.PageInfo{}, err
 	}
 

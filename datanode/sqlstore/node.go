@@ -24,7 +24,12 @@ import (
 	"github.com/georgysavva/scany/pgxscan"
 )
 
-var ErrNodeNotFound = errors.New("node not found")
+var (
+	ErrNodeNotFound = errors.New("node not found")
+	nodeOrdering    = TableOrdering{
+		ColumnOrdering{"id", ASC},
+	}
+)
 
 type Node struct {
 	*ConnectionSource
@@ -259,8 +264,11 @@ func (store *Node) GetNodeData(ctx context.Context) (entities.NodeData, error) {
 
 func (store *Node) GetNodes(ctx context.Context, epochSeq uint64, pagination entities.CursorPagination) ([]entities.Node, entities.PageInfo, error) {
 	defer metrics.StartSQLQuery("Node", "GetNodes")()
-	var nodes []entities.Node
-	var pageInfo entities.PageInfo
+	var (
+		nodes    []entities.Node
+		pageInfo entities.PageInfo
+		err      error
+	)
 
 	query := `WITH
 	current_delegations AS (
@@ -338,15 +346,12 @@ func (store *Node) GetNodes(ctx context.Context, epochSeq uint64, pagination ent
 		epochSeq,
 	}
 
-	sorting, cmp, cursor := extractPaginationInfo(pagination)
-
-	cursorParams := []CursorQueryParameter{
-		NewCursorQueryParameter("id", sorting, cmp, entities.NodeID(cursor)),
+	query, args, err = PaginateQuery[entities.NodeCursor](query, args, nodeOrdering, pagination)
+	if err != nil {
+		return nil, pageInfo, err
 	}
 
-	query, args = orderAndPaginateWithCursor(query, pagination, cursorParams, args...)
-
-	if err := pgxscan.Select(ctx, store.pool, &nodes, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, store.pool, &nodes, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("could not get nodes: %w", err)
 	}
 

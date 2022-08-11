@@ -25,6 +25,10 @@ import (
 	"github.com/jackc/pgx/v4"
 )
 
+var accountOrdering = TableOrdering{
+	ColumnOrdering{"account_id", ASC},
+}
+
 type Accounts struct {
 	*ConnectionSource
 	cache     map[accountCacheKey]entities.Account
@@ -197,7 +201,7 @@ func (as *Accounts) QueryBalances(ctx context.Context,
 		return nil, entities.PageInfo{}, fmt.Errorf("querying account balances: %w", err)
 	}
 
-	query, args, err = paginateAccountsQuery(query, args, pagination)
+	query, args, err = PaginateQuery[entities.AccountCursor](query, args, accountOrdering, pagination)
 	if err != nil {
 		return nil, entities.PageInfo{}, fmt.Errorf("querying account balances: %w", err)
 	}
@@ -216,22 +220,4 @@ func (as *Accounts) QueryBalances(ctx context.Context,
 
 	pagedAccountBalances, pageInfo := entities.PageEntities[*v2.AccountEdge](accountBalances, pagination)
 	return pagedAccountBalances, pageInfo, nil
-}
-
-func paginateAccountsQuery(query string, args []interface{}, pagination entities.CursorPagination) (string, []interface{}, error) {
-	sorting, cmp, cursor := extractPaginationInfo(pagination)
-
-	ac := &entities.AccountCursor{}
-	if cursor != "" {
-		err := ac.Parse(cursor)
-		if err != nil {
-			return query, args, fmt.Errorf("parsing cursor: %w", err)
-		}
-	}
-
-	builders := []CursorQueryParameter{
-		NewCursorQueryParameter("id", sorting, cmp, ac.AccountID),
-	}
-	query, args = orderAndPaginateWithCursor(query, pagination, builders, args...)
-	return query, args, nil
 }
