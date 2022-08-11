@@ -6,3 +6,10 @@ plugins:
     opt:
       - logtostderr=true
       - grpc_api_configuration=protos/sources/data-node/grpc-rest-bindings.yml
+  - name: jsonschema
+    out: ./protos/generated
+  - name: doc
+    out: ./protos/generated
+    opt:
+      - json
+      - proto.json
