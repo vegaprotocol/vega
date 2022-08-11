@@ -64,7 +64,7 @@ func NewSimpleSpamPolicy(policyName string, minTokensParamName string, maxAllowe
 		minTokensRequired:     num.UintZero(),
 		maxAllowedCommands:    1, // default is allow one per epoch
 		banErr:                errors.New("party is banned from submitting " + policyName + " in the current epoch"),
-		insufficientTokensErr: errors.New("party has insufficient tokens to submit " + policyName + " request in this epoch"),
+		insufficientTokensErr: errors.New("party has insufficient associated governance tokens in their staking account to submit " + policyName + " request"),
 		tooManyCommands:       errors.New("party has already proposed the maximum number of " + policyName + " requests per epoch"),
 	}
 }

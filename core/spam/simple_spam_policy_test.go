@@ -104,7 +104,7 @@ func testCommandPreRejectInsufficientBalance(t *testing.T) {
 	tx := &testTx{party: "party1", proposal: "proposal1"}
 	accept, err := policy.PreBlockAccept(tx)
 	require.Equal(t, false, accept)
-	require.Equal(t, errors.New("party has insufficient tokens to submit simple request in this epoch"), err)
+	require.Equal(t, errors.New("party has insufficient associated governance tokens in their staking account to submit simple request"), err)
 }
 
 // reject proposal requests from banned parties for as long as they are banned.

@@ -84,6 +84,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5837](https://github.com/vegaprotocol/vega/issues/5837) - Allow a promotion due to increased slots and a swap to happen in the same epoch
 - [5819](https://github.com/vegaprotocol/vega/issues/5819) - Add new asset proposal validation timestamp validation
 - [5811](https://github.com/vegaprotocol/vega/issues/5811) - Do not overwrite local changes when updating wallet through JSON-RPC API
+- [5868](https://github.com/vegaprotocol/vega/issues/5868) - Clarify the error for insufficient token to submit proposal or vote
 - [5867](https://github.com/vegaprotocol/vega/issues/5867) - Fix witness check for majority
 
 ## 0.53.0
