@@ -187,7 +187,7 @@ func testPreBlockAccept(t *testing.T) {
 
 	tx1 = &testTx{party: "party2", proposal: "proposal1", command: txn.ProposeCommand}
 	_, err := engine.PreBlockAccept(tx1)
-	require.Equal(t, errors.New("party has insufficient tokens to submit proposal request in this epoch"), err)
+	require.Equal(t, errors.New("party has insufficient associated governance tokens in their staking account to submit proposal request"), err)
 
 	tx2 = &testTx{party: "party2", proposal: "proposal1", command: txn.VoteCommand}
 	_, err = engine.PreBlockAccept(tx2)
