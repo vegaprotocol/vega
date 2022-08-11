@@ -19,6 +19,9 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
     title: "Vega data node APIs";
     version: "42.0";
   }
+  schemes: [HTTP, HTTPS]
+  host: "lb.testnet.vega.xyz/datanode/rest",
+  base_path: "/api/v2"
 };
 
 service TradingDataService {

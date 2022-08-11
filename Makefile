@@ -88,8 +88,8 @@ proto: ## build proto definitions
 	@./script/generate.sh
 
 .PHONY: proto_json
-proto_json: ## build proto definitions
-	@./script/generate_json.sh
+proto_docs: ## build proto definitions
+	buf generate --template buf.gen.swagger.yaml
 
 .PHONY: proto_check
 proto_check: ## proto: Check committed files match just-generated files
