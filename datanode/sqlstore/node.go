@@ -347,6 +347,9 @@ func (store *Node) GetNodes(ctx context.Context, epochSeq uint64, pagination ent
 	}
 
 	query, args, err = PaginateQuery[entities.NodeCursor](query, args, nodeOrdering, pagination)
+	if err != nil {
+		return nil, pageInfo, err
+	}
 
 	if err = pgxscan.Select(ctx, store.pool, &nodes, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("could not get nodes: %w", err)

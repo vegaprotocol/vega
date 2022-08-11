@@ -210,7 +210,7 @@ func getAllForMarketBetweenDates(t *testing.T) {
 				}.String()).Encode(),
 			EndCursor: entities.NewCursor(
 				entities.MarketDataCursor{
-					SyntheticTime: time.Date(2022, 02, 11, 10, 05, 41, 183000, time.UTC).Local(),
+					SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 41, 183000, time.UTC).Local(),
 				}.String()).Encode(),
 		}, pageInfo)
 	})
@@ -224,11 +224,11 @@ func getAllForMarketBetweenDates(t *testing.T) {
 			HasPreviousPage: false,
 			StartCursor: entities.NewCursor(
 				entities.MarketDataCursor{
-					SyntheticTime: time.Date(2022, 02, 11, 10, 05, 41, 183000, time.UTC).Local(),
+					SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 41, 183000, time.UTC).Local(),
 				}.String()).Encode(),
 			EndCursor: entities.NewCursor(
 				entities.MarketDataCursor{
-					SyntheticTime: time.Date(2022, 02, 11, 10, 05, 31, 175000, time.UTC).Local(),
+					SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 31, 175000, time.UTC).Local(),
 				}.String()).Encode(),
 		}, pageInfo)
 	})
@@ -254,11 +254,11 @@ func getAllForMarketBetweenDates(t *testing.T) {
 			HasPreviousPage: false,
 			StartCursor: entities.NewCursor(
 				entities.MarketDataCursor{
-					SyntheticTime: time.Date(2022, 02, 11, 10, 05, 31, 175000, time.UTC).Local(),
+					SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 31, 175000, time.UTC).Local(),
 				}.String()).Encode(),
 			EndCursor: entities.NewCursor(
 				entities.MarketDataCursor{
-					SyntheticTime: time.Date(2022, 02, 11, 10, 05, 36, 179000, time.UTC).Local(),
+					SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 36, 179000, time.UTC).Local(),
 				}.String()).Encode(),
 		}, pageInfo)
 	})
@@ -275,11 +275,11 @@ func getAllForMarketBetweenDates(t *testing.T) {
 			HasPreviousPage: false,
 			StartCursor: entities.NewCursor(
 				entities.MarketDataCursor{
-					SyntheticTime: time.Date(2022, 02, 11, 10, 05, 41, 183000, time.UTC).Local(),
+					SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 41, 183000, time.UTC).Local(),
 				}.String()).Encode(),
 			EndCursor: entities.NewCursor(
 				entities.MarketDataCursor{
-					SyntheticTime: time.Date(2022, 02, 11, 10, 05, 36, 179000, time.UTC).Local(),
+					SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 36, 179000, time.UTC).Local(),
 				}.String()).Encode(),
 		}, pageInfo)
 	})
@@ -287,7 +287,7 @@ func getAllForMarketBetweenDates(t *testing.T) {
 	t.Run("should return page of results if forward cursor pagination is provided with first and after parameter", func(t *testing.T) {
 		first := int32(5)
 		after := entities.NewCursor(entities.MarketDataCursor{
-			SyntheticTime: time.Date(2022, 02, 11, 10, 05, 32, 176000, time.UTC).Local(),
+			SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 32, 176000, time.UTC).Local(),
 		}.String()).Encode()
 		pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 		require.NoError(t, err)
@@ -299,11 +299,11 @@ func getAllForMarketBetweenDates(t *testing.T) {
 			HasPreviousPage: true,
 			StartCursor: entities.NewCursor(
 				entities.MarketDataCursor{
-					SyntheticTime: time.Date(2022, 02, 11, 10, 05, 33, 177000, time.UTC).Local(),
+					SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 33, 177000, time.UTC).Local(),
 				}.String()).Encode(),
 			EndCursor: entities.NewCursor(
 				entities.MarketDataCursor{
-					SyntheticTime: time.Date(2022, 02, 11, 10, 05, 39, 181000, time.UTC).Local(),
+					SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 39, 181000, time.UTC).Local(),
 				}.String()).Encode(),
 		}, pageInfo)
 	})
@@ -311,7 +311,7 @@ func getAllForMarketBetweenDates(t *testing.T) {
 	t.Run("should return page of results if forward cursor pagination is provided with first and after parameter - newest first", func(t *testing.T) {
 		first := int32(5)
 		after := entities.NewCursor(entities.MarketDataCursor{
-			SyntheticTime: time.Date(2022, 02, 11, 10, 05, 40, 182000, time.UTC).Local(),
+			SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 40, 182000, time.UTC).Local(),
 		}.String()).Encode()
 		pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
 		require.NoError(t, err)
@@ -323,11 +323,11 @@ func getAllForMarketBetweenDates(t *testing.T) {
 			HasPreviousPage: true,
 			StartCursor: entities.NewCursor(
 				entities.MarketDataCursor{
-					SyntheticTime: time.Date(2022, 02, 11, 10, 05, 39, 181000, time.UTC).Local(),
+					SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 39, 181000, time.UTC).Local(),
 				}.String()).Encode(),
 			EndCursor: entities.NewCursor(
 				entities.MarketDataCursor{
-					SyntheticTime: time.Date(2022, 02, 11, 10, 05, 33, 177000, time.UTC).Local(),
+					SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 33, 177000, time.UTC).Local(),
 				}.String()).Encode(),
 		}, pageInfo)
 	})
@@ -344,11 +344,11 @@ func getAllForMarketBetweenDates(t *testing.T) {
 			HasPreviousPage: true,
 			StartCursor: entities.NewCursor(
 				entities.MarketDataCursor{
-					SyntheticTime: time.Date(2022, 02, 11, 10, 05, 36, 179000, time.UTC).Local(),
+					SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 36, 179000, time.UTC).Local(),
 				}.String()).Encode(),
 			EndCursor: entities.NewCursor(
 				entities.MarketDataCursor{
-					SyntheticTime: time.Date(2022, 02, 11, 10, 05, 41, 183000, time.UTC).Local(),
+					SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 41, 183000, time.UTC).Local(),
 				}.String()).Encode(),
 		}, pageInfo)
 	})
@@ -365,11 +365,11 @@ func getAllForMarketBetweenDates(t *testing.T) {
 			HasPreviousPage: true,
 			StartCursor: entities.NewCursor(
 				entities.MarketDataCursor{
-					SyntheticTime: time.Date(2022, 02, 11, 10, 05, 36, 179000, time.UTC).Local(),
+					SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 36, 179000, time.UTC).Local(),
 				}.String()).Encode(),
 			EndCursor: entities.NewCursor(
 				entities.MarketDataCursor{
-					SyntheticTime: time.Date(2022, 02, 11, 10, 05, 31, 175000, time.UTC).Local(),
+					SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 31, 175000, time.UTC).Local(),
 				}.String()).Encode(),
 		}, pageInfo)
 	})
@@ -378,7 +378,7 @@ func getAllForMarketBetweenDates(t *testing.T) {
 		last := int32(5)
 		before := entities.NewCursor(
 			entities.MarketDataCursor{
-				SyntheticTime: time.Date(2022, 02, 11, 10, 05, 40, 182000, time.UTC).Local(),
+				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 40, 182000, time.UTC).Local(),
 			}.String()).Encode()
 		pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 		require.NoError(t, err)
@@ -390,11 +390,11 @@ func getAllForMarketBetweenDates(t *testing.T) {
 			HasPreviousPage: true,
 			StartCursor: entities.NewCursor(
 				entities.MarketDataCursor{
-					SyntheticTime: time.Date(2022, 02, 11, 10, 05, 33, 177000, time.UTC).Local(),
+					SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 33, 177000, time.UTC).Local(),
 				}.String()).Encode(),
 			EndCursor: entities.NewCursor(
 				entities.MarketDataCursor{
-					SyntheticTime: time.Date(2022, 02, 11, 10, 05, 39, 181000, time.UTC).Local(),
+					SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 39, 181000, time.UTC).Local(),
 				}.String()).Encode(),
 		}, pageInfo)
 	})
@@ -403,7 +403,7 @@ func getAllForMarketBetweenDates(t *testing.T) {
 		last := int32(5)
 		before := entities.NewCursor(
 			entities.MarketDataCursor{
-				SyntheticTime: time.Date(2022, 02, 11, 10, 05, 32, 176000, time.UTC).Local(),
+				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 32, 176000, time.UTC).Local(),
 			}.String()).Encode()
 		pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
 		require.NoError(t, err)
@@ -415,11 +415,11 @@ func getAllForMarketBetweenDates(t *testing.T) {
 			HasPreviousPage: true,
 			StartCursor: entities.NewCursor(
 				entities.MarketDataCursor{
-					SyntheticTime: time.Date(2022, 02, 11, 10, 05, 39, 181000, time.UTC).Local(),
+					SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 39, 181000, time.UTC).Local(),
 				}.String()).Encode(),
 			EndCursor: entities.NewCursor(
 				entities.MarketDataCursor{
-					SyntheticTime: time.Date(2022, 02, 11, 10, 05, 33, 177000, time.UTC).Local(),
+					SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 33, 177000, time.UTC).Local(),
 				}.String()).Encode(),
 		}, pageInfo)
 	})
@@ -452,10 +452,10 @@ func getForMarketFromDate(t *testing.T) {
 			HasNextPage:     false,
 			HasPreviousPage: false,
 			StartCursor: entities.NewCursor(entities.MarketDataCursor{
-				SyntheticTime: time.Date(2022, 02, 11, 10, 05, 00, 152000, time.UTC).Local(),
+				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 0o0, 152000, time.UTC).Local(),
 			}.String()).Encode(),
 			EndCursor: entities.NewCursor(entities.MarketDataCursor{
-				SyntheticTime: time.Date(2022, 02, 11, 10, 05, 41, 183000, time.UTC).Local(),
+				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 41, 183000, time.UTC).Local(),
 			}.String()).Encode(),
 		}, pageInfo)
 	})
@@ -468,10 +468,10 @@ func getForMarketFromDate(t *testing.T) {
 			HasNextPage:     false,
 			HasPreviousPage: false,
 			StartCursor: entities.NewCursor(entities.MarketDataCursor{
-				SyntheticTime: time.Date(2022, 02, 11, 10, 05, 41, 183000, time.UTC).Local(),
+				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 41, 183000, time.UTC).Local(),
 			}.String()).Encode(),
 			EndCursor: entities.NewCursor(entities.MarketDataCursor{
-				SyntheticTime: time.Date(2022, 02, 11, 10, 05, 00, 152000, time.UTC).Local(),
+				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 0o0, 152000, time.UTC).Local(),
 			}.String()).Encode(),
 		}, pageInfo)
 	})
@@ -495,10 +495,10 @@ func getForMarketFromDate(t *testing.T) {
 			HasNextPage:     true,
 			HasPreviousPage: false,
 			StartCursor: entities.NewCursor(entities.MarketDataCursor{
-				SyntheticTime: time.Date(2022, 02, 11, 10, 05, 00, 152000, time.UTC).Local(),
+				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 0o0, 152000, time.UTC).Local(),
 			}.String()).Encode(),
 			EndCursor: entities.NewCursor(entities.MarketDataCursor{
-				SyntheticTime: time.Date(2022, 02, 11, 10, 05, 05, 156000, time.UTC).Local(),
+				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 0o5, 156000, time.UTC).Local(),
 			}.String()).Encode(),
 		}, pageInfo)
 	})
@@ -536,10 +536,10 @@ func getForMarketFromDate(t *testing.T) {
 			HasNextPage:     true,
 			HasPreviousPage: true,
 			StartCursor: entities.NewCursor(entities.MarketDataCursor{
-				SyntheticTime: time.Date(2022, 02, 11, 10, 05, 11, 160000, time.UTC).Local(),
+				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 11, 160000, time.UTC).Local(),
 			}.String()).Encode(),
 			EndCursor: entities.NewCursor(entities.MarketDataCursor{
-				SyntheticTime: time.Date(2022, 02, 11, 10, 05, 16, 164000, time.UTC).Local(),
+				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 16, 164000, time.UTC).Local(),
 			}.String()).Encode(),
 		}, pageInfo)
 	})
@@ -561,7 +561,7 @@ func getForMarketFromDate(t *testing.T) {
 				SyntheticTime: time.Date(2022, 2, 11, 10, 5, 8, 158000, time.UTC).Local(),
 			}.String()).Encode(),
 			EndCursor: entities.NewCursor(entities.MarketDataCursor{
-				SyntheticTime: time.Date(2022, 02, 11, 10, 05, 03, 154000, time.UTC).Local(),
+				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 0o3, 154000, time.UTC).Local(),
 			}.String()).Encode(),
 		}, pageInfo)
 	})
@@ -577,10 +577,10 @@ func getForMarketFromDate(t *testing.T) {
 			HasNextPage:     false,
 			HasPreviousPage: true,
 			StartCursor: entities.NewCursor(entities.MarketDataCursor{
-				SyntheticTime: time.Date(2022, 02, 11, 10, 05, 36, 179000, time.UTC).Local(),
+				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 36, 179000, time.UTC).Local(),
 			}.String()).Encode(),
 			EndCursor: entities.NewCursor(entities.MarketDataCursor{
-				SyntheticTime: time.Date(2022, 02, 11, 10, 05, 41, 183000, time.UTC).Local(),
+				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 41, 183000, time.UTC).Local(),
 			}.String()).Encode(),
 		}, pageInfo)
 	})
@@ -596,10 +596,10 @@ func getForMarketFromDate(t *testing.T) {
 			HasNextPage:     false,
 			HasPreviousPage: true,
 			StartCursor: entities.NewCursor(entities.MarketDataCursor{
-				SyntheticTime: time.Date(2022, 02, 11, 10, 05, 05, 156000, time.UTC).Local(),
+				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 0o5, 156000, time.UTC).Local(),
 			}.String()).Encode(),
 			EndCursor: entities.NewCursor(entities.MarketDataCursor{
-				SyntheticTime: time.Date(2022, 02, 11, 10, 05, 00, 152000, time.UTC).Local(),
+				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 0o0, 152000, time.UTC).Local(),
 			}.String()).Encode(),
 		}, pageInfo)
 	})
@@ -607,7 +607,7 @@ func getForMarketFromDate(t *testing.T) {
 	t.Run("should return a page of results if cursor pagination is provided with last and before", func(t *testing.T) {
 		last := int32(5)
 		before := entities.NewCursor(entities.MarketDataCursor{
-			SyntheticTime: time.Date(2022, 02, 11, 10, 05, 37, 180000, time.UTC).Local(),
+			SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 37, 180000, time.UTC).Local(),
 		}.String()).Encode()
 		pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 		require.NoError(t, err)
@@ -618,10 +618,10 @@ func getForMarketFromDate(t *testing.T) {
 			HasNextPage:     true,
 			HasPreviousPage: true,
 			StartCursor: entities.NewCursor(entities.MarketDataCursor{
-				SyntheticTime: time.Date(2022, 02, 11, 10, 05, 31, 175000, time.UTC).Local(),
+				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 31, 175000, time.UTC).Local(),
 			}.String()).Encode(),
 			EndCursor: entities.NewCursor(entities.MarketDataCursor{
-				SyntheticTime: time.Date(2022, 02, 11, 10, 05, 36, 179000, time.UTC).Local(),
+				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 36, 179000, time.UTC).Local(),
 			}.String()).Encode(),
 		}, pageInfo)
 	})
@@ -629,7 +629,7 @@ func getForMarketFromDate(t *testing.T) {
 	t.Run("should return a page of results if cursor pagination is provided with last and before - newest first", func(t *testing.T) {
 		last := int32(5)
 		before := entities.NewCursor(entities.MarketDataCursor{
-			SyntheticTime: time.Date(2022, 02, 11, 10, 05, 20, 167000, time.UTC).Local(),
+			SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 20, 167000, time.UTC).Local(),
 		}.String()).Encode()
 		pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
 		require.NoError(t, err)
@@ -640,10 +640,10 @@ func getForMarketFromDate(t *testing.T) {
 			HasNextPage:     true,
 			HasPreviousPage: true,
 			StartCursor: entities.NewCursor(entities.MarketDataCursor{
-				SyntheticTime: time.Date(2022, 02, 11, 10, 05, 27, 172000, time.UTC).Local(),
+				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 27, 172000, time.UTC).Local(),
 			}.String()).Encode(),
 			EndCursor: entities.NewCursor(entities.MarketDataCursor{
-				SyntheticTime: time.Date(2022, 02, 11, 10, 05, 22, 168000, time.UTC).Local(),
+				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 22, 168000, time.UTC).Local(),
 			}.String()).Encode(),
 		}, pageInfo)
 	})
@@ -673,10 +673,10 @@ func getForMarketToDate(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, 18, len(got))
 		wantStartCursor := entities.NewCursor(entities.MarketDataCursor{
-			SyntheticTime: time.Date(2022, 02, 11, 10, 01, 35, 0, time.UTC).Local(),
+			SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o1, 35, 0, time.UTC).Local(),
 		}.String()).Encode()
 		wantEndCursor := entities.NewCursor(entities.MarketDataCursor{
-			SyntheticTime: time.Date(2022, 02, 11, 10, 02, 00, 17000, time.UTC).Local(),
+			SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o2, 0o0, 17000, time.UTC).Local(),
 		}.String()).Encode()
 		assert.Equal(t, entities.PageInfo{
 			HasNextPage:     false,
@@ -691,10 +691,10 @@ func getForMarketToDate(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, 18, len(got))
 		wantStartCursor := entities.NewCursor(entities.MarketDataCursor{
-			SyntheticTime: time.Date(2022, 02, 11, 10, 02, 00, 17000, time.UTC).Local(),
+			SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o2, 0o0, 17000, time.UTC).Local(),
 		}.String()).Encode()
 		wantEndCursor := entities.NewCursor(entities.MarketDataCursor{
-			SyntheticTime: time.Date(2022, 02, 11, 10, 01, 35, 0, time.UTC).Local(),
+			SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o1, 35, 0, time.UTC).Local(),
 		}.String()).Encode()
 		assert.Equal(t, entities.PageInfo{
 			HasNextPage:     false,
@@ -723,10 +723,10 @@ func getForMarketToDate(t *testing.T) {
 			HasNextPage:     true,
 			HasPreviousPage: false,
 			StartCursor: entities.NewCursor(entities.MarketDataCursor{
-				SyntheticTime: time.Date(2022, 02, 11, 10, 01, 35, 0, time.UTC).Local(),
+				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o1, 35, 0, time.UTC).Local(),
 			}.String()).Encode(),
 			EndCursor: entities.NewCursor(entities.MarketDataCursor{
-				SyntheticTime: time.Date(2022, 02, 11, 10, 01, 49, 9000, time.UTC).Local(),
+				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o1, 49, 9000, time.UTC).Local(),
 			}.String()).Encode(),
 		}, pageInfo)
 	})
@@ -742,10 +742,10 @@ func getForMarketToDate(t *testing.T) {
 			HasNextPage:     true,
 			HasPreviousPage: false,
 			StartCursor: entities.NewCursor(entities.MarketDataCursor{
-				SyntheticTime: time.Date(2022, 02, 11, 10, 02, 00, 17000, time.UTC).Local(),
+				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o2, 0o0, 17000, time.UTC).Local(),
 			}.String()).Encode(),
 			EndCursor: entities.NewCursor(entities.MarketDataCursor{
-				SyntheticTime: time.Date(2022, 02, 11, 10, 01, 47, 8000, time.UTC).Local(),
+				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o1, 47, 8000, time.UTC).Local(),
 			}.String()).Encode(),
 		}, pageInfo)
 	})
@@ -753,7 +753,7 @@ func getForMarketToDate(t *testing.T) {
 	t.Run("should return a page of results if cursor pagination is provided with first and after", func(t *testing.T) {
 		first := int32(10)
 		after := entities.NewCursor(entities.MarketDataCursor{
-			SyntheticTime: time.Date(2022, 02, 11, 10, 01, 49, 9000, time.UTC).Local(),
+			SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o1, 49, 9000, time.UTC).Local(),
 		}.String()).Encode()
 		pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 		require.NoError(t, err)
@@ -764,10 +764,10 @@ func getForMarketToDate(t *testing.T) {
 			HasNextPage:     false,
 			HasPreviousPage: true,
 			StartCursor: entities.NewCursor(entities.MarketDataCursor{
-				SyntheticTime: time.Date(2022, 02, 11, 10, 01, 50, 10000, time.UTC).Local(),
+				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o1, 50, 10000, time.UTC).Local(),
 			}.String()).Encode(),
 			EndCursor: entities.NewCursor(entities.MarketDataCursor{
-				SyntheticTime: time.Date(2022, 02, 11, 10, 02, 00, 17000, time.UTC).Local(),
+				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o2, 0o0, 17000, time.UTC).Local(),
 			}.String()).Encode(),
 		}, pageInfo)
 	})
@@ -775,7 +775,7 @@ func getForMarketToDate(t *testing.T) {
 	t.Run("should return a page of results if cursor pagination is provided with first and after - newest first", func(t *testing.T) {
 		first := int32(10)
 		after := entities.NewCursor(entities.MarketDataCursor{
-			SyntheticTime: time.Date(2022, 02, 11, 10, 01, 47, 8000, time.UTC).Local(),
+			SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o1, 47, 8000, time.UTC).Local(),
 		}.String()).Encode()
 		pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
 		require.NoError(t, err)
@@ -786,10 +786,10 @@ func getForMarketToDate(t *testing.T) {
 			HasNextPage:     false,
 			HasPreviousPage: true,
 			StartCursor: entities.NewCursor(entities.MarketDataCursor{
-				SyntheticTime: time.Date(2022, 02, 11, 10, 01, 46, 7000, time.UTC).Local(),
+				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o1, 46, 7000, time.UTC).Local(),
 			}.String()).Encode(),
 			EndCursor: entities.NewCursor(entities.MarketDataCursor{
-				SyntheticTime: time.Date(2022, 02, 11, 10, 01, 35, 0, time.UTC).Local(),
+				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o1, 35, 0, time.UTC).Local(),
 			}.String()).Encode(),
 		}, pageInfo)
 	})
@@ -805,10 +805,10 @@ func getForMarketToDate(t *testing.T) {
 			HasNextPage:     false,
 			HasPreviousPage: true,
 			StartCursor: entities.NewCursor(entities.MarketDataCursor{
-				SyntheticTime: time.Date(2022, 02, 11, 10, 01, 47, 8000, time.UTC).Local(),
+				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o1, 47, 8000, time.UTC).Local(),
 			}.String()).Encode(),
 			EndCursor: entities.NewCursor(entities.MarketDataCursor{
-				SyntheticTime: time.Date(2022, 02, 11, 10, 02, 00, 17000, time.UTC).Local(),
+				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o2, 0o0, 17000, time.UTC).Local(),
 			}.String()).Encode(),
 		}, pageInfo)
 	})
@@ -824,10 +824,10 @@ func getForMarketToDate(t *testing.T) {
 			HasNextPage:     false,
 			HasPreviousPage: true,
 			StartCursor: entities.NewCursor(entities.MarketDataCursor{
-				SyntheticTime: time.Date(2022, 02, 11, 10, 01, 49, 9000, time.UTC).Local(),
+				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o1, 49, 9000, time.UTC).Local(),
 			}.String()).Encode(),
 			EndCursor: entities.NewCursor(entities.MarketDataCursor{
-				SyntheticTime: time.Date(2022, 02, 11, 10, 01, 35, 0, time.UTC).Local(),
+				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o1, 35, 0, time.UTC).Local(),
 			}.String()).Encode(),
 		}, pageInfo)
 	})
@@ -835,7 +835,7 @@ func getForMarketToDate(t *testing.T) {
 	t.Run("should return a page of results if cursor pagination is provided with last and before", func(t *testing.T) {
 		last := int32(10)
 		before := entities.NewCursor(entities.MarketDataCursor{
-			SyntheticTime: time.Date(2022, 02, 11, 10, 01, 49, 9000, time.UTC).Local(),
+			SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o1, 49, 9000, time.UTC).Local(),
 		}.String()).Encode()
 		pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 		require.NoError(t, err)
@@ -846,10 +846,10 @@ func getForMarketToDate(t *testing.T) {
 			HasNextPage:     true,
 			HasPreviousPage: false,
 			StartCursor: entities.NewCursor(entities.MarketDataCursor{
-				SyntheticTime: time.Date(2022, 02, 11, 10, 01, 35, 0, time.UTC).Local(),
+				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o1, 35, 0, time.UTC).Local(),
 			}.String()).Encode(),
 			EndCursor: entities.NewCursor(entities.MarketDataCursor{
-				SyntheticTime: time.Date(2022, 02, 11, 10, 01, 47, 8000, time.UTC).Local(),
+				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o1, 47, 8000, time.UTC).Local(),
 			}.String()).Encode(),
 		}, pageInfo)
 	})
@@ -857,7 +857,7 @@ func getForMarketToDate(t *testing.T) {
 	t.Run("should return a page of results if cursor pagination is provided with last and before - newest first", func(t *testing.T) {
 		last := int32(10)
 		before := entities.NewCursor(entities.MarketDataCursor{
-			SyntheticTime: time.Date(2022, 02, 11, 10, 01, 47, 8000, time.UTC).Local(),
+			SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o1, 47, 8000, time.UTC).Local(),
 		}.String()).Encode()
 		pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
 		require.NoError(t, err)
@@ -868,10 +868,10 @@ func getForMarketToDate(t *testing.T) {
 			HasNextPage:     true,
 			HasPreviousPage: false,
 			StartCursor: entities.NewCursor(entities.MarketDataCursor{
-				SyntheticTime: time.Date(2022, 02, 11, 10, 02, 00, 17000, time.UTC).Local(),
+				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o2, 0o0, 17000, time.UTC).Local(),
 			}.String()).Encode(),
 			EndCursor: entities.NewCursor(entities.MarketDataCursor{
-				SyntheticTime: time.Date(2022, 02, 11, 10, 01, 49, 9000, time.UTC).Local(),
+				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o1, 49, 9000, time.UTC).Local(),
 			}.String()).Encode(),
 		}, pageInfo)
 	})

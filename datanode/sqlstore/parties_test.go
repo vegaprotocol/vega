@@ -584,7 +584,6 @@ func testPartyPaginationReturnsPageTraversingBackwardNewestFirst(t *testing.T) {
 		VegaTime: &beforeVegaTime,
 	}.String()
 	before := entities.NewCursor(beforeParty).Encode()
-	//before := entities.NewCursor(blockTimes["65be62cd"].Format(time.RFC3339Nano)).Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
 	require.NoError(t, err)
 

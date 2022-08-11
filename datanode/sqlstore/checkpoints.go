@@ -26,11 +26,9 @@ type Checkpoints struct {
 	*ConnectionSource
 }
 
-var (
-	checkpointOrdering = TableOrdering{
-		ColumnOrdering{"block_height", ASC},
-	}
-)
+var checkpointOrdering = TableOrdering{
+	ColumnOrdering{"block_height", ASC},
+}
 
 func NewCheckpoints(connectionSource *ConnectionSource) *Checkpoints {
 	p := &Checkpoints{

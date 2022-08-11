@@ -34,11 +34,9 @@ const (
 	candlesViewNamePrePend = sourceDataTableName + "_candle_"
 )
 
-var (
-	candleOrdering = TableOrdering{
-		ColumnOrdering{"period_start", ASC},
-	}
-)
+var candleOrdering = TableOrdering{
+	ColumnOrdering{"period_start", ASC},
+}
 
 type Candles struct {
 	*ConnectionSource
@@ -96,6 +94,9 @@ func (cs *Candles) GetCandleDataForTimeSpan(ctx context.Context, candleId string
 	}
 
 	query, args, err = PaginateQuery[entities.CandleCursor](query, args, candleOrdering, p)
+	if err != nil {
+		return nil, pageInfo, err
+	}
 
 	defer metrics.StartSQLQuery("Candles", "GetCandleDataForTimeSpan")()
 	err = pgxscan.Select(ctx, cs.Connection, &candles, query, args...)

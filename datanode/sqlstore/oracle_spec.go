@@ -119,6 +119,9 @@ func (os *OracleSpec) getSpecsWithPageInfo(ctx context.Context, pagination entit
 
 	query := getOracleSpecsQuery()
 	query, args, err = PaginateQuery[entities.OracleSpecCursor](query, args, oracleSpecOrdering, pagination)
+	if err != nil {
+		return nil, pageInfo, err
+	}
 
 	if err = pgxscan.Select(ctx, os.Connection, &specs, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("querying oracle specs: %w", err)

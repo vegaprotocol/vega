@@ -35,12 +35,10 @@ const (
 tx_hash, log_index, ethereum_address, vega_time`
 )
 
-var (
-	stakeLinkingOrdering = TableOrdering{
-		ColumnOrdering{"vega_time", ASC},
-		ColumnOrdering{"id", ASC},
-	}
-)
+var stakeLinkingOrdering = TableOrdering{
+	ColumnOrdering{"vega_time", ASC},
+	ColumnOrdering{"id", ASC},
+}
 
 func NewStakeLinking(connectionSource *ConnectionSource) *StakeLinking {
 	return &StakeLinking{
