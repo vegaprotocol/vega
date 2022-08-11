@@ -23,6 +23,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 
 service TradingDataService {
     // -- Accounts --
+
     // Returns a list of accounts matching the supplied filter, including their current balances.
     // If a given account has never had a balance, it will be absent from the list.
     rpc ListAccounts(ListAccountsRequest) returns (ListAccountsResponse);
@@ -34,6 +35,7 @@ service TradingDataService {
     rpc Info(InfoRequest) returns (InfoResponse);
 
     // -- Orders --
+
     // Gets the current version of an order, or optionally provide a version id to retrieve a given version.
     rpc GetOrder(GetOrderRequest) returns (GetOrderResponse);
 
@@ -47,16 +49,19 @@ service TradingDataService {
     rpc ObserveOrders(ObserveOrdersRequest) returns (stream ObserveOrdersResponse);
 
     // -- Positions --
+
     // Get a list of Positions by Party using cursor based pagination
     rpc ListPositions(ListPositionsRequest) returns (ListPositionsResponse);
     // Subscribe to a stream of Positions
     rpc ObservePositions(ObservePositionsRequest) returns (stream ObservePositionsResponse);
 
     // -- Balances --
+
     // Get an aggregated list of the changes in balances in a set of accounts over time
     rpc GetBalanceHistory(GetBalanceHistoryRequest) returns (GetBalanceHistoryResponse) {}
 
     // -- Market Data --
+
     // Get the lastest market data for a given market
     rpc GetLatestMarketData(GetLatestMarketDataRequest) returns (GetLatestMarketDataResponse);
 
@@ -76,14 +81,17 @@ service TradingDataService {
     rpc GetMarketDataHistoryByID(GetMarketDataHistoryByIDRequest) returns (GetMarketDataHistoryByIDResponse);
 
     // -- Transfers --
+
     // List Transfers to/from/either a public key using a cursor based pagination model
     rpc ListTransfers(ListTransfersRequest) returns (ListTransfersResponse);
 
-    // -- Network Limits --
-    // Get the current network limits (is bootstrapping finished, are proposals enabled etc..)
+  // -- Network Limits --
+
+  // Get the current network limits (is bootstrapping finished, are proposals enabled etc..)
     rpc GetNetworkLimits(GetNetworkLimitsRequest) returns (GetNetworkLimitsResponse);
 
     // -- Candles --
+
     // Get candle data for a given candle id
     rpc ListCandleData(ListCandleDataRequest) returns (ListCandleDataResponse);
     // Subscribe to a stream of Candle updates
@@ -92,12 +100,14 @@ service TradingDataService {
     rpc ListCandleIntervals(ListCandleIntervalsRequest) returns (ListCandleIntervalsResponse);
 
     // -- Votes --
+
     // Get Votes for a Party ID using a cursor based pagination model
     rpc ListVotes(ListVotesRequest) returns (ListVotesResponse);
     // Subscribe to a stream of votes
     rpc ObserveVotes(ObserveVotesRequest) returns (stream ObserveVotesResponse);
 
     // -- ERC20 Multi Sig --
+
     // Gets the signature bundles that add a particular validator to the multisig contract
     rpc GetERC20MultiSigSignerAddedBundles(GetERC20MultiSigSignerAddedBundlesRequest) returns (GetERC20MultiSigSignerAddedBundlesResponse);
     // Gets the signature bundles that remove a particular validator to the multisig contract
@@ -109,6 +119,7 @@ service TradingDataService {
     rpc GetERC20WithdrawalApproval(GetERC20WithdrawalApprovalRequest) returns (GetERC20WithdrawalApprovalResponse);
 
     // -- Trades --
+
     // Get latest Trade
     rpc GetLastTrade(GetLastTradeRequest) returns (GetLastTradeResponse);
 
@@ -119,6 +130,7 @@ service TradingDataService {
     rpc ObserveTrades(ObserveTradesRequest) returns (stream ObserveTradesResponse);
 
     // -- Oracles --
+
     // Get an oracle spec by ID.
     rpc GetOracleSpec(GetOracleSpecRequest) returns (GetOracleSpecResponse);
     // Get the oracle specs
@@ -127,22 +139,26 @@ service TradingDataService {
     rpc ListOracleData(ListOracleDataRequest) returns (ListOracleDataResponse);
 
     // -- Markets --
+
     // Get all markets using a cursor based pagination model
     rpc GetMarket(GetMarketRequest) returns (GetMarketResponse);
     rpc ListMarkets(ListMarketsRequest) returns (ListMarketsResponse);
 
     // -- Parties --
+
     // Get Parties using a cursor based pagination model
     rpc GetParty(GetPartyRequest) returns (GetPartyResponse);
     rpc ListParties(ListPartiesRequest) returns (ListPartiesResponse);
 
     // -- Margin Levels --
+
     // Get Margin Levels using a cursor based pagination model
     rpc ListMarginLevels(ListMarginLevelsRequest) returns (ListMarginLevelsResponse);
     // Subscribe to a stream of Margin Levels
     rpc ObserveMarginLevels(ObserveMarginLevelsRequest) returns (stream ObserveMarginLevelsResponse);
 
     // -- Rewards --
+
     // Get rewards
     rpc ListRewards(ListRewardsRequest) returns (ListRewardsResponse);
     // Get reward summaries
@@ -151,35 +167,42 @@ service TradingDataService {
     rpc ObserveRewards(ObserveRewardsRequest) returns (stream ObserveRewardsResponse);
 
     // -- Deposits --
+
     // Get a deposit by its identifier
     rpc GetDeposit(GetDepositRequest) returns (GetDepositResponse);
     // Get a list of deposits for a given party
     rpc ListDeposits(ListDepositsRequest) returns (ListDepositsResponse);
 
     // -- Withdrawals --
+
     rpc GetWithdrawal(GetWithdrawalRequest) returns (GetWithdrawalResponse);
     rpc ListWithdrawals(ListWithdrawalsRequest) returns (ListWithdrawalsResponse);
 
     // -- Assets --
+
     rpc GetAsset(GetAssetRequest) returns (GetAssetResponse);
     rpc ListAssets(ListAssetsRequest) returns (ListAssetsResponse);
 
     // -- Liquidity Provisions --
+
     rpc ListLiquidityProvisions(ListLiquidityProvisionsRequest) returns (ListLiquidityProvisionsResponse);
 
     // -- Governance --
+
     // List proposals using a cursor based pagination model
     rpc GetGovernanceData(GetGovernanceDataRequest) returns (GetGovernanceDataResponse);
     rpc ListGovernanceData(ListGovernanceDataRequest) returns (ListGovernanceDataResponse);
     rpc ObserveGovernance(ObserveGovernanceRequest) returns (stream ObserveGovernanceResponse);
 
     // -- Delegation --
+
     // List delegations
     rpc ListDelegations(ListDelegationsRequest) returns (ListDelegationsResponse);
     // subscribe to delegation events
     rpc ObserveDelegations(ObserveDelegationsRequest) returns (stream ObserveDelegationsResponse);
 
     // -- Nodes --
+
     // Get data regarding the nodes of the network
     rpc GetNetworkData(GetNetworkDataRequest) returns (GetNetworkDataResponse);
     // Get information about a given node
@@ -190,40 +213,50 @@ service TradingDataService {
     rpc ListNodeSignatures(ListNodeSignaturesRequest) returns (ListNodeSignaturesResponse);
 
     // -- Epochs --
+
     // Get data for a specific epoch, if id omitted it gets the current epoch
     rpc GetEpoch(GetEpochRequest) returns (GetEpochResponse);
 
     // -- Estimates --
+
     rpc EstimateFee(EstimateFeeRequest) returns (EstimateFeeResponse);
     rpc EstimateMargin(EstimateMarginRequest) returns (EstimateMarginResponse);
 
     // -- Network Parameters --
+
     // Get the network parameters
     rpc ListNetworkParameters(ListNetworkParametersRequest) returns (ListNetworkParametersResponse);
     rpc GetNetworkParameter(GetNetworkParameterRequest) returns (GetNetworkParameterResponse);
 
     // -- Checkpoints --
+
     rpc ListCheckpoints(ListCheckpointsRequest) returns (ListCheckpointsResponse);
 
     // -- Stake --
+
     rpc GetStake(GetStakeRequest) returns (GetStakeResponse);
 
     // -- Risk Factors --
+
     // Get Risk Factor data for a given market
     rpc GetRiskFactors(GetRiskFactorsRequest) returns (GetRiskFactorsResponse);
 
     // -- Event Bus --
+
     // Subscribe to a stream of events from the core
     rpc ObserveEventBus(stream ObserveEventBusRequest) returns (stream ObserveEventBusResponse);
 
     // -- Transfer Responses --
+
     // Subscribe to a stream of Transfer Responses
     rpc ObserveTransferResponses(ObserveTransferResponsesRequest) returns (stream ObserveTransferResponsesResponse);
 
     // -- Key Rotations --
+
     rpc ListKeyRotations(ListKeyRotationsRequest) returns (ListKeyRotationsResponse);
 
     // -- Ethereum Key Rotations --
+
     rpc ListEthereumKeyRotations(ListEthereumKeyRotationsRequest) returns (ListEthereumKeyRotationsResponse);
 
     // -- Vega Time --
@@ -233,6 +266,7 @@ service TradingDataService {
 }
 
 // -- Pagination --
+
 // Pagination controls
 message OffsetPagination {
     // Skip the number of records specified, default is 0
@@ -306,6 +340,7 @@ message ObserveAccountsResponse {
 }
 
 // -- Info --
+
 // node info
 message InfoRequest {}
 
@@ -623,6 +658,7 @@ message GetNetworkLimitsResponse {
 }
 
 // -- Candles --
+
 // Request to get a list of supported intervals for the given market along with the corresponding candle id
 message ListCandleIntervalsRequest {
     // The unique identifier for the market
