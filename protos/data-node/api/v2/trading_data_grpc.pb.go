@@ -72,6 +72,8 @@ type TradingDataServiceClient interface {
 	ObserveMarketsDepth(ctx context.Context, in *ObserveMarketsDepthRequest, opts ...grpc.CallOption) (TradingDataService_ObserveMarketsDepthClient, error)
 	ObserveMarketsDepthUpdates(ctx context.Context, in *ObserveMarketsDepthUpdatesRequest, opts ...grpc.CallOption) (TradingDataService_ObserveMarketsDepthUpdatesClient, error)
 	ObserveMarketsData(ctx context.Context, in *ObserveMarketsDataRequest, opts ...grpc.CallOption) (TradingDataService_ObserveMarketsDataClient, error)
+	// Market data history
+	//
 	// Get Market Data History for a Market ID between given dates using a cursor based pagination model
 	GetMarketDataHistoryByID(ctx context.Context, in *GetMarketDataHistoryByIDRequest, opts ...grpc.CallOption) (*GetMarketDataHistoryByIDResponse, error)
 	// Transfers list
@@ -1348,6 +1350,8 @@ type TradingDataServiceServer interface {
 	ObserveMarketsDepth(*ObserveMarketsDepthRequest, TradingDataService_ObserveMarketsDepthServer) error
 	ObserveMarketsDepthUpdates(*ObserveMarketsDepthUpdatesRequest, TradingDataService_ObserveMarketsDepthUpdatesServer) error
 	ObserveMarketsData(*ObserveMarketsDataRequest, TradingDataService_ObserveMarketsDataServer) error
+	// Market data history
+	//
 	// Get Market Data History for a Market ID between given dates using a cursor based pagination model
 	GetMarketDataHistoryByID(context.Context, *GetMarketDataHistoryByIDRequest) (*GetMarketDataHistoryByIDResponse, error)
 	// Transfers list

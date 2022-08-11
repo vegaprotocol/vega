@@ -445,11 +445,11 @@ message InfoResponse {
 // -- Orders --
 
 message GetOrderRequest {
-    // Order identifier
-    string order_id = 1;
+  // Order identifier
+  string order_id = 1;
 
-    // Optional version
-    optional int32 version = 2;
+  // Optional version
+  optional int32 version = 2;
 }
 
 message GetOrderResponse {
