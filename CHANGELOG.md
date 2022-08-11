@@ -49,6 +49,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5834](https://github.com/vegaprotocol/vega/issues/5834) - Avoid saving proposals of terminated/cancelled/rejected/settled markets in checkpoint
 - [5619](https://github.com/vegaprotocol/vega/issues/5619) - Add wallet HTTP API version 2 documentation
 - [5823](https://github.com/vegaprotocol/vega/issues/5823) - Add endpoint to wallet HTTP API version 2 to list available RPC methods
+- [5814](https://github.com/vegaprotocol/vega/issues/5815) - Add proposal validation date time to `graphql`
 
 ### 🐛 Fixes
 - [5571](https://github.com/vegaprotocol/vega/issues/5571) - Restore pending assets status correctly after snapshot restore
