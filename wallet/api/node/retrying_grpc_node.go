@@ -46,32 +46,6 @@ func (n *RetryingGRPCNode) HealthCheck(ctx context.Context) error {
 	return nil
 }
 
-func (n *RetryingGRPCNode) NetworkChainID(ctx context.Context) (string, error) {
-	n.log.Debug("getting network chain ID from core client", zap.String("host", n.client.Host()))
-	chainID := ""
-	if err := n.retry(func() error {
-		req := apipb.StatisticsRequest{}
-		resp, err := n.client.Statistics(ctx, &req)
-		if err != nil {
-			return err
-		}
-		chainID = resp.Statistics.ChainId
-		n.log.Debug("response from Statistics",
-			zap.String("host", n.client.Host()),
-			zap.String("chainID", chainID),
-		)
-		return nil
-	}); err != nil {
-		n.log.Error("couldn't get chainID",
-			zap.String("host", n.client.Host()),
-			zap.Error(err),
-		)
-		return "", err
-	}
-
-	return chainID, nil
-}
-
 // LastBlock returns information about the last block acknowledged by the node.
 func (n *RetryingGRPCNode) LastBlock(ctx context.Context) (*apipb.LastBlockHeightResponse, error) {
 	n.log.Debug("getting last block from core client", zap.String("host", n.client.Host()))

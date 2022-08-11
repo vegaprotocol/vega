@@ -27,7 +27,6 @@ type Tx interface {
 	Party() string
 	Hash() []byte
 	Signature() []byte
-	Validate() error
 	BlockHeight() uint64
 	GetCmd() interface{}
 	GetPoWNonce() uint64
@@ -36,7 +35,7 @@ type Tx interface {
 }
 
 type Codec interface {
-	Decode(in []byte) (Tx, error)
+	Decode(in []byte, chainID string) (Tx, error)
 }
 
 // ABCI hooks.

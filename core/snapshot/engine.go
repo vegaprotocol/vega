@@ -119,7 +119,7 @@ type Engine struct {
 	wrap *types.PayloadAppState
 	app  *types.AppState
 
-	// unused bit related to experiemental channel based snapshot update stuff?
+	// unused bit related to experimental channel based snapshot update stuff?
 	providerTS map[string]StateProviderT
 	pollCtx    context.Context
 	pollCfunc  context.CancelFunc
@@ -519,6 +519,7 @@ func (e *Engine) applySnap(ctx context.Context) error {
 	// set the context with the height + block + chainid
 	ctx = vegactx.WithTraceID(vegactx.WithBlockHeight(ctx, int64(e.app.Height)), e.app.Block)
 	ctx = vegactx.WithChainID(ctx, e.app.ChainID)
+
 	// we're done restoring, now save the snapshot locally, so we can provide it moving forwards
 	now := time.Unix(0, e.app.Time)
 	// restore app state
@@ -621,8 +622,8 @@ func (e *Engine) GetMissingChunks() []uint32 {
 
 // Info simply returns the current snapshot hash
 // Can be used for the TM info call.
-func (e *Engine) Info() ([]byte, int64) {
-	return e.lastSnapshotHash, int64(e.app.Height)
+func (e *Engine) Info() ([]byte, int64, string) {
+	return e.lastSnapshotHash, int64(e.app.Height), e.app.ChainID
 }
 
 type nsInput struct {

@@ -168,7 +168,6 @@ func TestCheckpoint(t *testing.T) {
 
 	for i, a := range rewardAccounts {
 		acc, err := loadEng.GetAccountByID(a.ID)
-		println(a.ID)
 		require.NoError(t, err)
 		require.Equal(t, num.NewUint(uint64((i+1)*11111)), acc.Balance)
 	}

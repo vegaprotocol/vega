@@ -119,9 +119,7 @@ func TestApplyPromotionAllThingsEqual(t *testing.T) {
 
 func TestSortValidatorDescRankingScoreAscBlockStatusChanged(t *testing.T) {
 	tm := int64(1654747635)
-	println(tm)
 	for i := 0; i < 100; i++ {
-		println("round i", i)
 		rng := rand.New(rand.NewSource(tm))
 		byStatusChangeBlock := func(val1, val2 *valState) bool { return val1.statusChangeBlock < val2.statusChangeBlock }
 		valStates1 := []*valState{

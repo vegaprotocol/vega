@@ -3,7 +3,6 @@ package service_test
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -703,13 +702,14 @@ func testCheckTransactionSucceeds(t *testing.T) {
 	// given
 	walletName := vgrand.RandomStr(5)
 	token := vgrand.RandomStr(5)
+	chainID := vgrand.RandomStr(5)
 	headers := authHeaders(t, token)
 	pubKey := vgrand.RandomStr(5)
 	payload := fmt.Sprintf(`{"pubKey": "%s", "orderCancellation": {}}`, pubKey)
 
 	// setup
 	s.auth.EXPECT().VerifyToken(token).Times(1).Return(walletName, nil)
-	s.handler.EXPECT().SignTx(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(&commandspb.Transaction{}, nil)
+	s.handler.EXPECT().SignTx(gomock.Any(), gomock.Any(), gomock.Any(), chainID).Times(1).Return(&commandspb.Transaction{}, nil)
 	s.nodeForward.EXPECT().CheckTx(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(&api.CheckTransactionResponse{
 		Success:   true,
 		Code:      0,
@@ -721,6 +721,7 @@ func testCheckTransactionSucceeds(t *testing.T) {
 		Hash:                "0292041e2f0cf741894503fb3ead4cb817bca2375e543aa70f7c4d938157b5a6",
 		SpamPowDifficulty:   2,
 		SpamPowHashFunction: "sha3_24_rounds",
+		ChainId:             chainID,
 	}, 0, nil)
 	// when
 
@@ -742,6 +743,7 @@ func testCheckTransactionWithRejectedTransactionSucceeds(t *testing.T) {
 
 	// given
 	walletName := vgrand.RandomStr(5)
+	chainID := vgrand.RandomStr(5)
 	token := vgrand.RandomStr(5)
 	headers := authHeaders(t, token)
 	pubKey := vgrand.RandomStr(5)
@@ -749,7 +751,7 @@ func testCheckTransactionWithRejectedTransactionSucceeds(t *testing.T) {
 
 	// setup
 	s.auth.EXPECT().VerifyToken(token).Times(1).Return(walletName, nil)
-	s.handler.EXPECT().SignTx(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(&commandspb.Transaction{}, nil)
+	s.handler.EXPECT().SignTx(gomock.Any(), gomock.Any(), gomock.Any(), chainID).Times(1).Return(&commandspb.Transaction{}, nil)
 	s.nodeForward.EXPECT().CheckTx(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(&api.CheckTransactionResponse{
 		Success: false,
 		Code:    4,
@@ -759,6 +761,7 @@ func testCheckTransactionWithRejectedTransactionSucceeds(t *testing.T) {
 		Hash:                "0292041e2f0cf741894503fb3ead4cb817bca2375e543aa70f7c4d938157b5a6",
 		SpamPowDifficulty:   2,
 		SpamPowHashFunction: "sha3_24_rounds",
+		ChainId:             chainID,
 	}, 0, nil)
 	// when
 
@@ -781,19 +784,21 @@ func testCheckTransactionWithFailedTransactionFails(t *testing.T) {
 	// given
 	walletName := vgrand.RandomStr(5)
 	token := vgrand.RandomStr(5)
+	chainID := vgrand.RandomStr(5)
 	headers := authHeaders(t, token)
 	pubKey := vgrand.RandomStr(5)
 	payload := fmt.Sprintf(`{"pubKey": "%s", "orderCancellation": {}}`, pubKey)
 
 	// setup
 	s.auth.EXPECT().VerifyToken(token).Times(1).Return(walletName, nil)
-	s.handler.EXPECT().SignTx(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(&commandspb.Transaction{}, nil)
+	s.handler.EXPECT().SignTx(gomock.Any(), gomock.Any(), gomock.Any(), chainID).Times(1).Return(&commandspb.Transaction{}, nil)
 	s.nodeForward.EXPECT().CheckTx(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, assert.AnError)
 	s.nodeForward.EXPECT().LastBlockHeightAndHash(gomock.Any()).Times(1).Return(&api.LastBlockHeightResponse{
 		Height:              42,
 		Hash:                "0292041e2f0cf741894503fb3ead4cb817bca2375e543aa70f7c4d938157b5a6",
 		SpamPowDifficulty:   2,
 		SpamPowHashFunction: "sha3_24_rounds",
+		ChainId:             chainID,
 	}, 0, nil)
 	// when
 
@@ -808,13 +813,14 @@ func testAcceptSigningTransactionSucceeds(t *testing.T) {
 	// given
 	walletName := vgrand.RandomStr(5)
 	token := vgrand.RandomStr(5)
+	chainID := vgrand.RandomStr(5)
 	headers := authHeaders(t, token)
 	pubKey := vgrand.RandomStr(5)
 	payload := fmt.Sprintf(`{"pubKey": "%s", "orderCancellation": {}}`, pubKey)
 
 	// setup
 	s.auth.EXPECT().VerifyToken(token).Times(1).Return(walletName, nil)
-	s.handler.EXPECT().SignTx(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(&commandspb.Transaction{}, nil)
+	s.handler.EXPECT().SignTx(gomock.Any(), gomock.Any(), gomock.Any(), chainID).Times(1).Return(&commandspb.Transaction{}, nil)
 	s.nodeForward.EXPECT().SendTx(gomock.Any(), gomock.Any(), api.SubmitTransactionRequest_TYPE_ASYNC, gomock.Any()).Times(1).
 		Return(&api.SubmitTransactionResponse{Success: true}, nil)
 	s.nodeForward.EXPECT().LastBlockHeightAndHash(gomock.Any()).Times(1).Return(&api.LastBlockHeightResponse{
@@ -822,6 +828,7 @@ func testAcceptSigningTransactionSucceeds(t *testing.T) {
 		Hash:                "0292041e2f0cf741894503fb3ead4cb817bca2375e543aa70f7c4d938157b5a6",
 		SpamPowDifficulty:   2,
 		SpamPowHashFunction: "sha3_24_rounds",
+		ChainId:             chainID,
 	}, 0, nil)
 	// when
 
@@ -842,7 +849,7 @@ func testDeclineSigningTransactionManuallySucceeds(t *testing.T) {
 
 	// setup
 	s.auth.EXPECT().VerifyToken(token).Times(1).Return(walletName, nil)
-	s.handler.EXPECT().SignTx(walletName, gomock.Any(), gomock.Any()).Times(0).Return(&commandspb.Transaction{}, nil)
+	s.handler.EXPECT().SignTx(walletName, gomock.Any(), gomock.Any(), gomock.Any()).Times(0).Return(&commandspb.Transaction{}, nil)
 	s.nodeForward.EXPECT().SendTx(gomock.Any(), gomock.Any(), api.SubmitTransactionRequest_TYPE_ASYNC, gomock.Any()).Times(0)
 	s.nodeForward.EXPECT().LastBlockHeightAndHash(gomock.Any()).Times(0)
 	// when
@@ -858,12 +865,13 @@ func testSigningTransactionWithPropagationSucceeds(t *testing.T) {
 	// given
 	walletName := vgrand.RandomStr(5)
 	token := vgrand.RandomStr(5)
+	chainID := vgrand.RandomStr(5)
 	headers := authHeaders(t, token)
 	payload := fmt.Sprintf(`{"propagate": true, "pubKey": "%s", "orderCancellation": {}}`, vgrand.RandomStr(5))
 
 	// setup
 	s.auth.EXPECT().VerifyToken(token).Times(1).Return(walletName, nil)
-	s.handler.EXPECT().SignTx(walletName, gomock.Any(), gomock.Any()).Times(1).Return(&commandspb.Transaction{}, nil)
+	s.handler.EXPECT().SignTx(walletName, gomock.Any(), gomock.Any(), chainID).Times(1).Return(&commandspb.Transaction{}, nil)
 	s.nodeForward.EXPECT().SendTx(gomock.Any(), gomock.Any(), api.SubmitTransactionRequest_TYPE_ASYNC, gomock.Any()).Times(1).
 		Return(&api.SubmitTransactionResponse{Success: true}, nil)
 	s.nodeForward.EXPECT().LastBlockHeightAndHash(gomock.Any()).Times(1).Return(&api.LastBlockHeightResponse{
@@ -871,6 +879,7 @@ func testSigningTransactionWithPropagationSucceeds(t *testing.T) {
 		Hash:                "0292041e2f0cf741894503fb3ead4cb817bca2375e543aa70f7c4d938157b5a6",
 		SpamPowDifficulty:   2,
 		SpamPowHashFunction: "sha3_24_rounds",
+		ChainId:             chainID,
 	}, 0, nil)
 
 	// when
@@ -887,12 +896,13 @@ func testSigningTransactionWithFailedPropagationFails(t *testing.T) {
 	// given
 	walletName := vgrand.RandomStr(5)
 	token := vgrand.RandomStr(5)
+	chainID := vgrand.RandomStr(5)
 	headers := authHeaders(t, token)
 	payload := fmt.Sprintf(`{"propagate": true, "pubKey": "%s", "orderCancellation": {}}`, vgrand.RandomStr(5))
 
 	// setup
 	s.auth.EXPECT().VerifyToken(token).Times(1).Return(walletName, nil)
-	s.handler.EXPECT().SignTx(walletName, gomock.Any(), gomock.Any()).Times(1).Return(&commandspb.Transaction{}, nil)
+	s.handler.EXPECT().SignTx(walletName, gomock.Any(), gomock.Any(), chainID).Times(1).Return(&commandspb.Transaction{}, nil)
 	s.nodeForward.EXPECT().SendTx(gomock.Any(), gomock.Any(), api.SubmitTransactionRequest_TYPE_ASYNC, gomock.Any()).Times(1).
 		Return(nil, assert.AnError)
 	s.nodeForward.EXPECT().LastBlockHeightAndHash(gomock.Any()).Times(1).Return(&api.LastBlockHeightResponse{
@@ -900,6 +910,7 @@ func testSigningTransactionWithFailedPropagationFails(t *testing.T) {
 		Hash:                "0292041e2f0cf741894503fb3ead4cb817bca2375e543aa70f7c4d938157b5a6",
 		SpamPowDifficulty:   2,
 		SpamPowHashFunction: "sha3_24_rounds",
+		ChainId:             chainID,
 	}, 0, nil)
 
 	// when
@@ -916,18 +927,20 @@ func testFailedTransactionSigningFails(t *testing.T) {
 	// given
 	walletName := vgrand.RandomStr(5)
 	token := vgrand.RandomStr(5)
+	chainID := vgrand.RandomStr(5)
 	headers := authHeaders(t, token)
 	payload := fmt.Sprintf(`{"propagate": true, "pubKey": "%s", "orderCancellation": {}}`, vgrand.RandomStr(5))
 
 	// setup
 	s.auth.EXPECT().VerifyToken(token).Times(1).Return(walletName, nil)
-	s.handler.EXPECT().SignTx(walletName, gomock.Any(), gomock.Any()).Times(1).Return(nil, assert.AnError)
+	s.handler.EXPECT().SignTx(walletName, gomock.Any(), gomock.Any(), chainID).Times(1).Return(nil, assert.AnError)
 	s.nodeForward.EXPECT().SendTx(gomock.Any(), &commandspb.Transaction{}, api.SubmitTransactionRequest_TYPE_ASYNC, gomock.Any()).Times(0)
 	s.nodeForward.EXPECT().LastBlockHeightAndHash(gomock.Any()).Times(1).Return(&api.LastBlockHeightResponse{
 		Height:              42,
 		Hash:                "0292041e2f0cf741894503fb3ead4cb817bca2375e543aa70f7c4d938157b5a6",
 		SpamPowDifficulty:   2,
 		SpamPowHashFunction: "sha3_24_rounds",
+		ChainId:             chainID,
 	}, 0, nil)
 
 	// when
@@ -1135,7 +1148,9 @@ func testGetNetworkChainIDSuccess(t *testing.T) {
 
 	// setup
 	expectedChainID := "some-chain-id"
-	s.nodeForward.EXPECT().GetNetworkChainID(gomock.Any()).Return(expectedChainID, nil)
+	s.nodeForward.EXPECT().LastBlockHeightAndHash(gomock.Any()).AnyTimes().Return(&api.LastBlockHeightResponse{
+		ChainId: expectedChainID,
+	}, 0, nil)
 
 	// when
 	statusCode, body := serveHTTP(t, s, chainIDRequest(t))
@@ -1155,7 +1170,7 @@ func testGetNetworkChainIDFailure(t *testing.T) {
 	defer s.ctrl.Finish()
 
 	// setup
-	s.nodeForward.EXPECT().GetNetworkChainID(gomock.Any()).Return("", errors.New("dummyerror"))
+	s.nodeForward.EXPECT().LastBlockHeightAndHash(gomock.Any()).AnyTimes().Return(nil, 0, assert.AnError)
 
 	// when
 	statusCode, _ := serveHTTP(t, s, chainIDRequest(t))
@@ -1282,18 +1297,20 @@ func testAcceptSigningTransactionFailsSpam(t *testing.T) {
 	// given
 	walletName := vgrand.RandomStr(5)
 	token := vgrand.RandomStr(5)
+	chainID := vgrand.RandomStr(5)
 	headers := authHeaders(t, token)
 	pubKey := vgrand.RandomStr(5)
 	payload := fmt.Sprintf(`{"pubKey": "%s", "orderCancellation": {}}`, pubKey)
 
 	// setup
 	s.auth.EXPECT().VerifyToken(token).AnyTimes().Return(walletName, nil)
-	s.handler.EXPECT().SignTx(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&commandspb.Transaction{}, nil)
+	s.handler.EXPECT().SignTx(gomock.Any(), gomock.Any(), gomock.Any(), chainID).AnyTimes().Return(&commandspb.Transaction{}, nil)
 	s.nodeForward.EXPECT().LastBlockHeightAndHash(gomock.Any()).AnyTimes().Return(&api.LastBlockHeightResponse{
 		Height:              42,
 		Hash:                "0292041e2f0cf741894503fb3ead4cb817bca2375e543aa70f7c4d938157b5a6",
 		SpamPowDifficulty:   2,
 		SpamPowHashFunction: "sha3_24_rounds",
+		ChainId:             chainID,
 	}, 0, nil)
 	// when
 

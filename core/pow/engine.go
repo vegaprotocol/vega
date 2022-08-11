@@ -224,7 +224,7 @@ func (e *Engine) DeliverTx(tx abci.Tx) error {
 	e.seenTx[txHash] = struct{}{}
 	e.heightToTx[tx.BlockHeight()] = append(e.heightToTx[tx.BlockHeight()], txHash)
 
-	if tx.GetVersion() < 2 || tx.Command().IsValidatorCommand() {
+	if tx.Command().IsValidatorCommand() {
 		return nil
 	}
 
@@ -252,7 +252,7 @@ func (e *Engine) DeliverTx(tx abci.Tx) error {
 		return nil
 	}
 
-	// if we've seen already enough transactions and `spamPoWIncreasingDifficulty` is not enabled then fail the transction and ban the party
+	// if we've seen already enough transactions and `spamPoWIncreasingDifficulty` is not enabled then fail the transaction and ban the party
 	if !params.spamPoWIncreasingDifficulty {
 		e.bannedParties[tx.Party()] = e.currentEpoch + banPeriod
 		return errors.New("too many transactions per block")
@@ -273,7 +273,7 @@ func (e *Engine) DeliverTx(tx abci.Tx) error {
 	return nil
 }
 
-// calculateExpectedDifficulty calculates the expected difficulty of the transction with index `seenTx`, i.e. having seen already `seenTx`-1 transactions.
+// calculateExpectedDifficulty calculates the expected difficulty of the transaction with index `seenTx`, i.e. having seen already `seenTx`-1 transactions.
 // `spamPoWDifficulty * i for i == 0..min(seenTx, spamPoWNumberOfTxPerBlock) + sum(spamPoWDifficulty + i) for i = spamPoWNumberOfTxPerBlock..seenTx if seenTx > spamPoWNumberOfTxPerBlock`.
 func calculateExpectedDifficulty(spamPoWDifficulty uint, spamPoWNumberOfTxPerBlock uint, seenTx uint) uint {
 	if seenTx <= spamPoWNumberOfTxPerBlock {
@@ -294,7 +294,7 @@ func (e *Engine) findParamsForBlockHeight(height uint64) int {
 
 // verify the proof of work
 // 1. check that the party is not banned
-// 2. check that the block height is already known to the engine - this is rejected if its too old or not yet seen as we need to know the block hash
+// 2. check that the block height is already known to the engine - this is rejected if it's too old or not yet seen as we need to know the block hash
 // 3. check that we've not seen this transaction ID before (in the previous `spamPoWNumberOfPastBlocks` blocks)
 // 4. check that the proof of work can be verified with the required difficulty.
 func (e *Engine) verify(tx abci.Tx) (byte, error) {
@@ -322,7 +322,7 @@ func (e *Engine) verify(tx abci.Tx) (byte, error) {
 
 	params := e.activeParams[paramIndex]
 	idx := tx.BlockHeight() % ringSize
-	// if the block height doesn't match out expextation or is older than what's alloed by the parameters used for the transaction then reject
+	// if the block height doesn't match out expectation or is older than what's allowed by the parameters used for the transaction then reject
 	if e.blockHeight[idx] != tx.BlockHeight() || tx.BlockHeight()+params.spamPoWNumberOfPastBlocks < e.currentBlock {
 		if e.log.IsDebug() {
 			e.log.Debug("unknown block height", logging.Uint64("current-block-height", e.currentBlock), logging.String("tx-hash", txHash), logging.String("tid", tx.GetPoWTID()), logging.Uint64("tx-block-height", tx.BlockHeight()), logging.Uint64("index", idx), logging.String("command", tx.Command().String()), logging.String("party", tx.Party()))
@@ -335,8 +335,7 @@ func (e *Engine) verify(tx abci.Tx) (byte, error) {
 		return h, errors.New("transaction hash already used")
 	}
 
-	// we don't require proof of work for v1 or validator command
-	if tx.GetVersion() < 2 || tx.Command().IsValidatorCommand() {
+	if tx.Command().IsValidatorCommand() {
 		return h, nil
 	}
 

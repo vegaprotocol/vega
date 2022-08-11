@@ -61,57 +61,6 @@ func testRetryingGRPCNodeHealthCheckRetryingWithoutSuccessfulCallsFails(t *testi
 	require.Error(t, err, assert.AnError)
 }
 
-func TestRetryingGRPCNode_NetworkChainID(t *testing.T) {
-	t.Run("Retrying with one successful call succeeds", testRetryingGRPCNodeNetworkChainIDRetryingWithOneSuccessfulCallSucceeds)
-	t.Run("Retrying without successful calls fails", testRetryingGRPCNodeNetworkChainIDRetryingWithoutSuccessfulCallsFails)
-}
-
-func testRetryingGRPCNodeNetworkChainIDRetryingWithOneSuccessfulCallSucceeds(t *testing.T) {
-	// given
-	ctx := context.Background()
-	log := newTestLogger(t)
-	expectedNodeID := vgrand.RandomStr(5)
-
-	// setup
-	request := &apipb.StatisticsRequest{}
-	client := newClientMock(t)
-	client.EXPECT().Host().AnyTimes().Return("test-client")
-	unsuccessfulCalls := client.EXPECT().Statistics(ctx, request).Times(2).Return(nil, assert.AnError)
-	successfulCall := client.EXPECT().Statistics(ctx, request).Times(1).Return(&apipb.StatisticsResponse{
-		Statistics: &apipb.Statistics{
-			ChainId: expectedNodeID,
-		},
-	}, nil)
-	gomock.InOrder(unsuccessfulCalls, successfulCall)
-
-	// when
-	grpcNode := node.BuildGRPCNode(log, client, 3)
-	nodeID, err := grpcNode.NetworkChainID(ctx)
-
-	// then
-	require.NoError(t, err)
-	assert.Equal(t, expectedNodeID, nodeID)
-}
-
-func testRetryingGRPCNodeNetworkChainIDRetryingWithoutSuccessfulCallsFails(t *testing.T) {
-	// given
-	ctx := context.Background()
-	log := newTestLogger(t)
-
-	// setup
-	client := newClientMock(t)
-	client.EXPECT().Host().AnyTimes().Return("test-client")
-	client.EXPECT().Statistics(ctx, &apipb.StatisticsRequest{}).Times(4).Return(nil, assert.AnError)
-	grpcNode := node.BuildGRPCNode(log, client, 3)
-
-	// when
-	nodeID, err := grpcNode.NetworkChainID(ctx)
-
-	// then
-	require.Error(t, err, assert.AnError)
-	assert.Empty(t, nodeID)
-}
-
 func TestRetryingGRPCNode_LastBlock(t *testing.T) {
 	t.Run("Retrying with one successful call succeeds", testRetryingGRPCNodeLastBlockRetryingWithOneSuccessfulCallSucceeds)
 	t.Run("Retrying without successful calls fails", testRetryingGRPCNodeLastBlockRetryingWithoutSuccessfulCallsFails)
@@ -188,9 +137,8 @@ func testRetryingGRPCNodeCheckTransactionRetryingWithOneSuccessfulCallSucceeds(t
 			PubKey: vgrand.RandomStr(5),
 		},
 		Pow: &commandspb.ProofOfWork{
-			Tid:          vgrand.RandomStr(5),
-			Nonce:        23214,
-			HashFunction: vgrand.RandomStr(5),
+			Tid:   vgrand.RandomStr(5),
+			Nonce: 23214,
 		},
 	}
 
@@ -235,9 +183,8 @@ func testRetryingGRPCNodeCheckTransactionRetryingWithoutSuccessfulCallsFails(t *
 			PubKey: vgrand.RandomStr(5),
 		},
 		Pow: &commandspb.ProofOfWork{
-			Tid:          vgrand.RandomStr(5),
-			Nonce:        23214,
-			HashFunction: vgrand.RandomStr(5),
+			Tid:   vgrand.RandomStr(5),
+			Nonce: 23214,
 		},
 	}
 
@@ -279,9 +226,8 @@ func testRetryingGRPCNodeSendTransactionRetryingWithOneSuccessfulCallSucceeds(t 
 			PubKey: vgrand.RandomStr(5),
 		},
 		Pow: &commandspb.ProofOfWork{
-			Tid:          vgrand.RandomStr(5),
-			Nonce:        23214,
-			HashFunction: vgrand.RandomStr(5),
+			Tid:   vgrand.RandomStr(5),
+			Nonce: 23214,
 		},
 	}
 
@@ -324,9 +270,8 @@ func testRetryingGRPCNodeSendTransactionRetryingWithoutSuccessfulCallsFails(t *t
 			PubKey: vgrand.RandomStr(5),
 		},
 		Pow: &commandspb.ProofOfWork{
-			Tid:          vgrand.RandomStr(5),
-			Nonce:        23214,
-			HashFunction: vgrand.RandomStr(5),
+			Tid:   vgrand.RandomStr(5),
+			Nonce: 23214,
 		},
 	}
 

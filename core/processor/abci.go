@@ -82,7 +82,7 @@ type PoWEngine interface {
 }
 
 type Snapshot interface {
-	Info() ([]byte, int64)
+	Info() ([]byte, int64, string)
 	Snapshot(ctx context.Context) ([]byte, error)
 	SnapshotNow(ctx context.Context) (b []byte, errlol error)
 	AddProviders(provs ...types.StateProvider)
@@ -429,9 +429,10 @@ func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
 	}
 
 	if loaded {
-		hash, height := app.snapshot.Info()
+		hash, height, chainID := app.snapshot.Info()
 		resp.LastBlockHeight = height
 		resp.LastBlockAppHash = hash
+		app.abci.SetChainID(chainID)
 	}
 
 	app.log.Info("ABCI service INFO requested",
@@ -562,6 +563,7 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 	app.log.Debug("ABCI service InitChain start")
 	hash := hex.EncodeToString(vgcrypto.Hash(req.AppStateBytes))
 	// let's assume genesis block is block 0
+	app.abci.SetChainID(req.ChainId)
 	app.chainCtx = vgcontext.WithChainID(context.Background(), req.ChainId)
 	ctx := vgcontext.WithBlockHeight(app.chainCtx, 0)
 	ctx = vgcontext.WithTraceID(ctx, hash)
@@ -640,9 +642,7 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 	app.stats.SetHash(hash)
 	app.stats.SetHeight(uint64(req.Header.Height))
 
-	// Set chainID, if we have loaded from a snapshot we will not have called InitChain
-	// TODO: we may be able to better if we store the chainID in the appstate's snapshot
-	app.chainCtx = vgcontext.WithChainID(context.Background(), req.Header.GetChainID())
+	app.chainCtx = vgcontext.WithChainID(context.Background(), app.abci.GetChainID())
 
 	ctx = vgcontext.WithBlockHeight(vgcontext.WithTraceID(app.chainCtx, hash), req.Header.Height)
 	app.blockCtx = ctx

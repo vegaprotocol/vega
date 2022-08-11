@@ -16,7 +16,6 @@ import (
 	"context"
 	"testing"
 
-	"code.vegaprotocol.io/vega/core/blockchain"
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	"code.vegaprotocol.io/vega/core/nodewallets/mocks"
 	vgnw "code.vegaprotocol.io/vega/core/nodewallets/vega"
@@ -28,7 +27,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/golang/mock/gomock"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
@@ -59,8 +57,7 @@ func getTestCommander(t *testing.T) *testCommander {
 	require.NoError(t, err)
 	require.NotNil(t, wallet)
 
-	cmd, err := nodewallets.NewCommander(
-		nodewallets.NewDefaultConfig(), logging.NewTestLogger(), chain, wallet, bstats)
+	cmd, err := nodewallets.NewCommander(nodewallets.NewDefaultConfig(), logging.NewTestLogger(), chain, wallet, bstats)
 	require.NoError(t, err)
 
 	return &testCommander{
@@ -77,13 +74,6 @@ func getTestCommander(t *testing.T) *testCommander {
 func TestCommand(t *testing.T) {
 	t.Run("Signed command - success", testSignedCommandSuccess)
 	t.Run("Signed command - failure", testSignedCommandFailure)
-	t.Run("SetChain - dummy test for completeness", testSetChain)
-}
-
-func testSetChain(t *testing.T) {
-	commander := getTestCommander(t)
-	defer commander.Finish()
-	commander.SetChain(&blockchain.Client{})
 }
 
 func testSignedCommandSuccess(t *testing.T) {
@@ -94,14 +84,14 @@ func testSignedCommandSuccess(t *testing.T) {
 	payload := &commandspb.NodeVote{
 		Reference: "test",
 	}
-	ctx := context.Background()
+	expectedChainID := vgrand.RandomStr(5)
 
 	commander.bstats.EXPECT().Height().AnyTimes().Return(uint64(42))
-	commander.chain.EXPECT().SubmitTransactionSync(
-		gomock.Any(), gomock.Any()).Times(1).Return(&tmctypes.ResultBroadcastTx{}, nil)
+	commander.chain.EXPECT().GetChainID(gomock.Any()).Times(1).Return(expectedChainID, nil)
+	commander.chain.EXPECT().SubmitTransactionSync(gomock.Any(), gomock.Any()).Times(1).Return(&tmctypes.ResultBroadcastTx{}, nil)
 
 	ok := make(chan error)
-	commander.Command(ctx, cmd, payload, func(err error) {
+	commander.Command(context.Background(), cmd, payload, func(err error) {
 		ok <- err
 	}, nil)
 	assert.NoError(t, <-ok)
@@ -115,14 +105,12 @@ func testSignedCommandFailure(t *testing.T) {
 	payload := &commandspb.NodeVote{
 		Reference: "test",
 	}
-	ctx := context.Background()
-
 	commander.bstats.EXPECT().Height().AnyTimes().Return(uint64(42))
-	commander.chain.EXPECT().SubmitTransactionSync(
-		gomock.Any(), gomock.Any()).Times(1).Return(&tmctypes.ResultBroadcastTx{}, errors.New("bad bad"))
+	commander.chain.EXPECT().GetChainID(gomock.Any()).Times(1).Return(vgrand.RandomStr(5), nil)
+	commander.chain.EXPECT().SubmitTransactionSync(gomock.Any(), gomock.Any()).Times(1).Return(&tmctypes.ResultBroadcastTx{}, assert.AnError)
 
 	ok := make(chan error)
-	commander.Command(ctx, cmd, payload, func(err error) {
+	commander.Command(context.Background(), cmd, payload, func(err error) {
 		ok <- err
 	}, nil)
 	assert.Error(t, <-ok)

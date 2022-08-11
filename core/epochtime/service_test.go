@@ -137,7 +137,6 @@ func TestEpochServiceCheckpointLoading(t *testing.T) {
 
 	// move to 13 hours into the epoch
 	now = now.Add(time.Hour * 13)
-	println(now.String())
 	service.cb(ctx, now)
 
 	// take a checkpoint - 11h to go for the epoch
@@ -155,7 +154,6 @@ func TestEpochServiceCheckpointLoading(t *testing.T) {
 
 	// we're loading the checkpoint 4 hours after the time it was taken but we're still within the same epoch for another few good hours
 	now = now.Add((time.Hour * 4))
-	println(now.String())
 	loadService.cb(ctx, now)
 	loadService.Load(ctx, cp)
 	loadService.cb(ctx, now.Add(time.Second))
@@ -164,7 +162,6 @@ func TestEpochServiceCheckpointLoading(t *testing.T) {
 
 	// run to the expected end of the epoch and verify it's ended
 	now = now.Add((time.Hour * 7) + 1*time.Second)
-	println(now.String())
 	loadService.cb(ctx, now)
 	require.Equal(t, 2, len(loadEpochs))
 
@@ -192,7 +189,6 @@ func TestEpochServiceCheckpointFastForward(t *testing.T) {
 
 	// move to 13 hours into the epoch
 	now = now.Add(time.Hour * 13)
-	println(now.String())
 	service.cb(ctx, now)
 
 	// take a checkpoint - 11h to go for the epoch

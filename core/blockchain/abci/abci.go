@@ -93,12 +93,6 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 		}
 	}
 
-	// if we passed spam protection, validate the signature
-	code, err = app.validateTx(tx)
-	if err != nil {
-		return AddCommonCheckTxEvents(NewResponseCheckTxError(code, err), tx)
-	}
-
 	ctx := app.ctx
 	if fn := app.OnCheckTx; fn != nil {
 		ctx, resp = fn(ctx, req, tx)
@@ -138,12 +132,6 @@ func (app *App) DeliverTx(req types.RequestDeliverTx) (resp types.ResponseDelive
 		if resp.IsErr() {
 			return AddCommonDeliverTxEvents(resp, tx)
 		}
-	}
-
-	// if we passed spam protection, validate the signature
-	code, err = app.validateTx(tx)
-	if err != nil {
-		return NewResponseDeliverTxError(code, err)
 	}
 
 	// It's been validated by CheckTx so we can skip the validation here

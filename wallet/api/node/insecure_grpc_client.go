@@ -36,10 +36,6 @@ func (c *InsecureGRPCClient) CheckTransaction(ctx context.Context, req *apipb.Ch
 	return c.client.CheckTransaction(ctx, req, opts...)
 }
 
-func (c *InsecureGRPCClient) Statistics(ctx context.Context, req *apipb.StatisticsRequest, opts ...grpc.CallOption) (*apipb.StatisticsResponse, error) {
-	return c.client.Statistics(ctx, req, opts...)
-}
-
 func (c *InsecureGRPCClient) Stop() error {
 	return c.connection.Close()
 }

@@ -358,7 +358,7 @@ func (n *NodeCommand) setupCommon(_ []string) (err error) {
 		}
 	}()
 
-	// initialize the application contet
+	// initialize the application context
 	n.ctx, n.cancel = context.WithCancel(context.Background())
 
 	// get the configuration, this have been loaded by the root

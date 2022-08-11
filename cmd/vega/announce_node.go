@@ -196,12 +196,11 @@ func getNodeWalletCommander(log *logging.Logger, registryPass string, vegaPaths 
 		return nil, nil, nil, fmt.Errorf("couldn't get last block height: %w", err)
 	}
 
-	commander, err := nodewallets.NewCommander(cfg.NodeWallet, log, nil, vegaWallet, heightProvider{height: resp.Height})
+	commander, err := nodewallets.NewCommander(cfg.NodeWallet, log, blockchain.NewClientWithImpl(abciClient), vegaWallet, heightProvider{height: resp.Height})
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("couldn't initialise node wallet commander: %w", err)
 	}
 
-	commander.SetChain(blockchain.NewClientWithImpl(abciClient))
 	return commander, resp, cancel, nil
 }
 

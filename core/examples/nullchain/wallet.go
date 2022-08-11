@@ -104,7 +104,12 @@ func (w *Wallet) SubmitTransaction(conn *Connection, party *Party, txn *walletpb
 	// Add public key to the transaction
 	txn.PubKey = party.pubkey
 
-	signedTx, err := w.handler.SignTx(party.wallet, txn, blockHeight)
+	chainID, err := conn.NetworkChainID()
+	if err != nil {
+		return err
+	}
+
+	signedTx, err := w.handler.SignTx(party.wallet, txn, blockHeight, chainID)
 	if err != nil {
 		return err
 	}
