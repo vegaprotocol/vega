@@ -132,8 +132,8 @@ func DescribeNetwork(store Store, req *DescribeNetworkRequest) (*DescribeNetwork
 	resp.API.GRPCConfig.Retries = net.API.GRPC.Retries
 	resp.API.RESTConfig.Hosts = net.API.REST.Hosts
 	resp.API.GraphQLConfig.Hosts = net.API.GraphQL.Hosts
-	resp.Console.LocalPort = net.Console.LocalPort
 	resp.Console.URL = net.Console.URL
+	resp.TokenDApp.URL = net.TokenDApp.URL
 
 	return resp, nil
 }
@@ -161,9 +161,11 @@ type DescribeNetworkResponse struct {
 		} `json:"graphQLConfig"`
 	} `json:"api"`
 	Console struct {
-		URL       string `json:"url"`
-		LocalPort int    `json:"localPort"`
-	}
+		URL string `json:"url"`
+	} `json:"console"`
+	TokenDApp struct {
+		URL string `json:"url"`
+	} `json:"tokenDApp"`
 }
 
 type DeleteNetworkRequest struct {

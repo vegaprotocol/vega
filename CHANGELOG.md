@@ -13,6 +13,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5579](https://github.com/vegaprotocol/vega/issues/5579) - Make vega a built-in Tendermint application
 - [5249](https://github.com/vegaprotocol/vega/issues/5249) - Migrate to Tendermint version 0.35.8
 - [5624](https://github.com/vegaprotocol/vega/issues/5624) - Get rid of `updateFrequency` in price monitoring definition
+- [5601](https://github.com/vegaprotocol/vega/issues/5601) - Remove support for launching a proxy in front of console and token dApp 
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
