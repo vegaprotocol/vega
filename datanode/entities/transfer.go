@@ -191,7 +191,7 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, vegaTime time.
 func (t Transfer) Cursor() *Cursor {
 	wc := TransferCursor{
 		VegaTime: t.VegaTime,
-		ID:       t.ID.String(),
+		ID:       t.ID,
 	}
 	return NewCursor(wc.String())
 }
@@ -217,8 +217,8 @@ func (t Transfer) ToProtoEdge(input ...any) (*v2.TransferEdge, error) {
 }
 
 type TransferCursor struct {
-	VegaTime time.Time `json:"vegaTime"`
-	ID       string    `json:"id"`
+	VegaTime time.Time  `json:"vegaTime"`
+	ID       TransferID `json:"id"`
 }
 
 func (tc TransferCursor) String() string {

@@ -381,11 +381,11 @@ func testWithdrawalsPaginationNoPagination(t *testing.T) {
 		HasPreviousPage: false,
 		StartCursor: entities.NewCursor(entities.WithdrawalCursor{
 			VegaTime: testWithdrawals[0].VegaTime,
-			ID:       testWithdrawals[0].ID.String(),
+			ID:       testWithdrawals[0].ID,
 		}.String()).Encode(),
 		EndCursor: entities.NewCursor(entities.WithdrawalCursor{
 			VegaTime: testWithdrawals[9].VegaTime,
-			ID:       testWithdrawals[9].ID.String(),
+			ID:       testWithdrawals[9].ID,
 		}.String()).Encode(),
 	}, pageInfo)
 }
@@ -410,11 +410,11 @@ func testWithdrawalsPaginationFirst(t *testing.T) {
 		HasPreviousPage: false,
 		StartCursor: entities.NewCursor(entities.WithdrawalCursor{
 			VegaTime: testWithdrawals[0].VegaTime,
-			ID:       testWithdrawals[0].ID.String(),
+			ID:       testWithdrawals[0].ID,
 		}.String()).Encode(),
 		EndCursor: entities.NewCursor(entities.WithdrawalCursor{
 			VegaTime: testWithdrawals[2].VegaTime,
-			ID:       testWithdrawals[2].ID.String(),
+			ID:       testWithdrawals[2].ID,
 		}.String()).Encode(),
 	}, pageInfo)
 }
@@ -439,11 +439,11 @@ func testWithdrawalsPaginationLast(t *testing.T) {
 		HasPreviousPage: true,
 		StartCursor: entities.NewCursor(entities.WithdrawalCursor{
 			VegaTime: testWithdrawals[7].VegaTime,
-			ID:       testWithdrawals[7].ID.String(),
+			ID:       testWithdrawals[7].ID,
 		}.String()).Encode(),
 		EndCursor: entities.NewCursor(entities.WithdrawalCursor{
 			VegaTime: testWithdrawals[9].VegaTime,
-			ID:       testWithdrawals[9].ID.String(),
+			ID:       testWithdrawals[9].ID,
 		}.String()).Encode(),
 	}, pageInfo)
 }
@@ -456,10 +456,7 @@ func testWithdrawalsPaginationFirstAfter(t *testing.T) {
 	testWithdrawals := addWithdrawals(timeoutCtx, t, bs, ws)
 
 	first := int32(3)
-	after := entities.NewCursor(entities.DepositCursor{
-		VegaTime: testWithdrawals[2].VegaTime,
-		ID:       testWithdrawals[2].ID.String(),
-	}.String()).Encode()
+	after := testWithdrawals[2].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	require.NoError(t, err)
 	got, pageInfo, err := ws.GetByParty(timeoutCtx, testID, false, pagination)
@@ -472,11 +469,11 @@ func testWithdrawalsPaginationFirstAfter(t *testing.T) {
 		HasPreviousPage: true,
 		StartCursor: entities.NewCursor(entities.WithdrawalCursor{
 			VegaTime: testWithdrawals[3].VegaTime,
-			ID:       testWithdrawals[3].ID.String(),
+			ID:       testWithdrawals[3].ID,
 		}.String()).Encode(),
 		EndCursor: entities.NewCursor(entities.WithdrawalCursor{
 			VegaTime: testWithdrawals[5].VegaTime,
-			ID:       testWithdrawals[5].ID.String(),
+			ID:       testWithdrawals[5].ID,
 		}.String()).Encode(),
 	}, pageInfo)
 }
@@ -491,7 +488,7 @@ func testWithdrawalsPaginationLastBefore(t *testing.T) {
 	last := int32(3)
 	before := entities.NewCursor(entities.WithdrawalCursor{
 		VegaTime: testWithdrawals[7].VegaTime,
-		ID:       testWithdrawals[7].ID.String(),
+		ID:       testWithdrawals[7].ID,
 	}.String()).Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 	require.NoError(t, err)
@@ -505,11 +502,11 @@ func testWithdrawalsPaginationLastBefore(t *testing.T) {
 		HasPreviousPage: true,
 		StartCursor: entities.NewCursor(entities.WithdrawalCursor{
 			VegaTime: testWithdrawals[4].VegaTime,
-			ID:       testWithdrawals[4].ID.String(),
+			ID:       testWithdrawals[4].ID,
 		}.String()).Encode(),
 		EndCursor: entities.NewCursor(entities.WithdrawalCursor{
 			VegaTime: testWithdrawals[6].VegaTime,
-			ID:       testWithdrawals[6].ID.String(),
+			ID:       testWithdrawals[6].ID,
 		}.String()).Encode(),
 	}, pageInfo)
 }
@@ -532,11 +529,11 @@ func testWithdrawalsPaginationNoPaginationNewestFirst(t *testing.T) {
 		HasPreviousPage: false,
 		StartCursor: entities.NewCursor(entities.WithdrawalCursor{
 			VegaTime: testWithdrawals[0].VegaTime,
-			ID:       testWithdrawals[0].ID.String(),
+			ID:       testWithdrawals[0].ID,
 		}.String()).Encode(),
 		EndCursor: entities.NewCursor(entities.WithdrawalCursor{
 			VegaTime: testWithdrawals[9].VegaTime,
-			ID:       testWithdrawals[9].ID.String(),
+			ID:       testWithdrawals[9].ID,
 		}.String()).Encode(),
 	}, pageInfo)
 }
@@ -561,11 +558,11 @@ func testWithdrawalsPaginationFirstNewestFirst(t *testing.T) {
 		HasPreviousPage: false,
 		StartCursor: entities.NewCursor(entities.WithdrawalCursor{
 			VegaTime: testWithdrawals[0].VegaTime,
-			ID:       testWithdrawals[0].ID.String(),
+			ID:       testWithdrawals[0].ID,
 		}.String()).Encode(),
 		EndCursor: entities.NewCursor(entities.WithdrawalCursor{
 			VegaTime: testWithdrawals[2].VegaTime,
-			ID:       testWithdrawals[2].ID.String(),
+			ID:       testWithdrawals[2].ID,
 		}.String()).Encode(),
 	}, pageInfo)
 }
@@ -590,11 +587,11 @@ func testWithdrawalsPaginationLastNewestFirst(t *testing.T) {
 		HasPreviousPage: true,
 		StartCursor: entities.NewCursor(entities.WithdrawalCursor{
 			VegaTime: testWithdrawals[7].VegaTime,
-			ID:       testWithdrawals[7].ID.String(),
+			ID:       testWithdrawals[7].ID,
 		}.String()).Encode(),
 		EndCursor: entities.NewCursor(entities.WithdrawalCursor{
 			VegaTime: testWithdrawals[9].VegaTime,
-			ID:       testWithdrawals[9].ID.String(),
+			ID:       testWithdrawals[9].ID,
 		}.String()).Encode(),
 	}, pageInfo)
 }
@@ -607,10 +604,7 @@ func testWithdrawalsPaginationFirstAfterNewestFirst(t *testing.T) {
 	testWithdrawals := entities.ReverseSlice(addWithdrawals(timeoutCtx, t, bs, ws))
 
 	first := int32(3)
-	after := entities.NewCursor(entities.DepositCursor{
-		VegaTime: testWithdrawals[2].VegaTime,
-		ID:       testWithdrawals[2].ID.String(),
-	}.String()).Encode()
+	after := testWithdrawals[2].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
 	require.NoError(t, err)
 	got, pageInfo, err := ws.GetByParty(timeoutCtx, testID, false, pagination)
@@ -623,11 +617,11 @@ func testWithdrawalsPaginationFirstAfterNewestFirst(t *testing.T) {
 		HasPreviousPage: true,
 		StartCursor: entities.NewCursor(entities.WithdrawalCursor{
 			VegaTime: testWithdrawals[3].VegaTime,
-			ID:       testWithdrawals[3].ID.String(),
+			ID:       testWithdrawals[3].ID,
 		}.String()).Encode(),
 		EndCursor: entities.NewCursor(entities.WithdrawalCursor{
 			VegaTime: testWithdrawals[5].VegaTime,
-			ID:       testWithdrawals[5].ID.String(),
+			ID:       testWithdrawals[5].ID,
 		}.String()).Encode(),
 	}, pageInfo)
 }
@@ -642,7 +636,7 @@ func testWithdrawalsPaginationLastBeforeNewestFirst(t *testing.T) {
 	last := int32(3)
 	before := entities.NewCursor(entities.WithdrawalCursor{
 		VegaTime: testWithdrawals[7].VegaTime,
-		ID:       testWithdrawals[7].ID.String(),
+		ID:       testWithdrawals[7].ID,
 	}.String()).Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
 	require.NoError(t, err)
@@ -656,11 +650,11 @@ func testWithdrawalsPaginationLastBeforeNewestFirst(t *testing.T) {
 		HasPreviousPage: true,
 		StartCursor: entities.NewCursor(entities.WithdrawalCursor{
 			VegaTime: testWithdrawals[4].VegaTime,
-			ID:       testWithdrawals[4].ID.String(),
+			ID:       testWithdrawals[4].ID,
 		}.String()).Encode(),
 		EndCursor: entities.NewCursor(entities.WithdrawalCursor{
 			VegaTime: testWithdrawals[6].VegaTime,
-			ID:       testWithdrawals[6].ID.String(),
+			ID:       testWithdrawals[6].ID,
 		}.String()).Encode(),
 	}, pageInfo)
 }

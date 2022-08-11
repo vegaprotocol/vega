@@ -24,7 +24,14 @@ import (
 	"github.com/georgysavva/scany/pgxscan"
 )
 
-var ErrPositionNotFound = errors.New("party not found")
+var (
+	ErrPositionNotFound = errors.New("party not found")
+	positionsOrdering   = TableOrdering{
+		ColumnOrdering{"vega_time", ASC},
+		ColumnOrdering{"party_id", ASC},
+		ColumnOrdering{"market_id", ASC},
+	}
+)
 
 type Positions struct {
 	*ConnectionSource
@@ -93,37 +100,29 @@ func (ps *Positions) GetByParty(ctx context.Context, partyID string) ([]entities
 
 func (ps *Positions) GetByPartyConnection(ctx context.Context, partyIDRaw string, marketIDRaw string, pagination entities.CursorPagination) ([]entities.Position, entities.PageInfo, error) {
 	var (
-		args                 []interface{}
-		pageInfo             entities.PageInfo
-		query                = `select * from positions_current`
-		where                string
-		sorting, cmp, cursor = extractPaginationInfo(pagination)
-		partyID              = entities.PartyID(partyIDRaw)
-		marketID             = entities.MarketID(marketIDRaw)
+		args     []interface{}
+		pageInfo entities.PageInfo
+		query    = `select * from positions_current`
+		where    string
+		partyID  = entities.PartyID(partyIDRaw)
+		marketID = entities.MarketID(marketIDRaw)
+		err      error
 	)
-
-	positionCursor := &entities.PositionCursor{}
-	if err := positionCursor.Parse(cursor); err != nil {
-		return nil, pageInfo, fmt.Errorf("invalid cursor: %w", err)
-	}
-
-	cursorParams := []CursorQueryParameter{
-		NewCursorQueryParameter("vega_time", sorting, cmp, positionCursor.VegaTime),
-	}
 
 	if marketID == "" {
 		where = fmt.Sprintf(" where party_id=%s", nextBindVar(&args, partyID))
-		cursorParams = append(cursorParams, NewCursorQueryParameter("market_id", sorting, cmp,
-			entities.MarketID(positionCursor.MarketID)))
 	} else {
 		where = fmt.Sprintf(" where party_id=%s and market_id=%s", nextBindVar(&args, partyID), nextBindVar(&args, marketID))
 	}
 
 	query = fmt.Sprintf("%s %s", query, where)
-	query, args = orderAndPaginateWithCursor(query, pagination, cursorParams, args...)
+	query, args, err = PaginateQuery[entities.PositionCursor](query, args, positionsOrdering, pagination)
+	if err != nil {
+		return nil, pageInfo, err
+	}
 
 	var positions []entities.Position
-	if err := pgxscan.Select(ctx, ps.Connection, &positions, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, ps.Connection, &positions, query, args...); err != nil {
 		return nil, pageInfo, err
 	}
 

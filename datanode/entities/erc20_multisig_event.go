@@ -47,7 +47,7 @@ type ERC20MultiSigSignerEvent struct {
 func (e ERC20MultiSigSignerEvent) Cursor() *Cursor {
 	ec := ERC20MultiSigSignerEventCursor{
 		VegaTime: e.VegaTime,
-		ID:       e.ID.String(),
+		ID:       e.ID,
 	}
 
 	return NewCursor(ec.String())
@@ -95,8 +95,8 @@ func ERC20MultiSigSignerEventFromRemovedProto(e *eventspb.ERC20MultiSigSignerRem
 }
 
 type ERC20MultiSigSignerEventCursor struct {
-	VegaTime time.Time `json:"vega_time"`
-	ID       string    `json:"id"`
+	VegaTime time.Time                  `json:"vega_time"`
+	ID       ERC20MultiSigSignerEventID `json:"id"`
 }
 
 func (c ERC20MultiSigSignerEventCursor) String() string {
@@ -123,7 +123,7 @@ type ERC20MultiSigSignerAddedEvent struct {
 func (e ERC20MultiSigSignerAddedEvent) Cursor() *Cursor {
 	ec := ERC20MultiSigSignerEventCursor{
 		VegaTime: e.VegaTime,
-		ID:       e.ID.String(),
+		ID:       e.ID,
 	}
 
 	return NewCursor(ec.String())
@@ -155,7 +155,7 @@ type ERC20MultiSigSignerRemovedEvent struct {
 func (e ERC20MultiSigSignerRemovedEvent) Cursor() *Cursor {
 	ec := ERC20MultiSigSignerEventCursor{
 		VegaTime: e.VegaTime,
-		ID:       e.ID.String(),
+		ID:       e.ID,
 	}
 
 	return NewCursor(ec.String())

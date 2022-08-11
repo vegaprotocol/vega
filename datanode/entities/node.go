@@ -13,6 +13,8 @@
 package entities
 
 import (
+	"encoding/json"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -343,7 +345,7 @@ func (node *Node) ToProto() *vega.Node {
 }
 
 func (node Node) Cursor() *Cursor {
-	return NewCursor(node.ID.String())
+	return NewCursor(NodeCursor{ID: node.ID}.String())
 }
 
 func (node Node) ToProtoEdge(_ ...any) (*v2.NodeEdge, error) {
@@ -370,4 +372,23 @@ func (n *NodeData) ToProto() *vega.NodeData {
 		ValidatingNodes: n.ValidatingNodes,
 		Uptime:          float32(n.Uptime),
 	}
+}
+
+type NodeCursor struct {
+	ID NodeID `json:"id"`
+}
+
+func (nc NodeCursor) String() string {
+	bs, err := json.Marshal(nc)
+	if err != nil {
+		panic(fmt.Errorf("could not marshal node cursor: %w", err))
+	}
+	return string(bs)
+}
+
+func (nc *NodeCursor) Parse(cursorString string) error {
+	if cursorString == "" {
+		return nil
+	}
+	return json.Unmarshal([]byte(cursorString), nc)
 }

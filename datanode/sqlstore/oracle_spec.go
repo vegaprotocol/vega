@@ -26,6 +26,11 @@ type OracleSpec struct {
 	*ConnectionSource
 }
 
+var oracleSpecOrdering = TableOrdering{
+	ColumnOrdering{"id", ASC},
+	ColumnOrdering{"vega_time", ASC},
+}
+
 const (
 	sqlOracleSpecColumns = `id, created_at, updated_at, public_keys, filters, status, vega_time`
 )
@@ -105,21 +110,17 @@ func (os *OracleSpec) getSingleSpecWithPageInfo(ctx context.Context, specID stri
 func (os *OracleSpec) getSpecsWithPageInfo(ctx context.Context, pagination entities.CursorPagination) (
 	[]entities.OracleSpec, entities.PageInfo, error,
 ) {
-	var specs []entities.OracleSpec
-	var pageInfo entities.PageInfo
+	var (
+		specs    []entities.OracleSpec
+		pageInfo entities.PageInfo
+		err      error
+		args     []interface{}
+	)
 
-	sorting, cmp, cursor := extractPaginationInfo(pagination)
-	cursorParams := []CursorQueryParameter{
-		NewCursorQueryParameter("id", sorting, cmp, entities.SpecID(cursor)),
-		NewCursorQueryParameter("vega_time", "desc", cmp, nil),
-	}
-
-	var args []interface{}
 	query := getOracleSpecsQuery()
-	query, args = orderAndPaginateWithCursor(query, pagination, cursorParams, args...)
+	query, args, err = PaginateQuery[entities.OracleSpecCursor](query, args, oracleSpecOrdering, pagination)
 
-	specs = []entities.OracleSpec{}
-	if err := pgxscan.Select(ctx, os.Connection, &specs, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, os.Connection, &specs, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("querying oracle specs: %w", err)
 	}
 

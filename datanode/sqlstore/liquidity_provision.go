@@ -23,6 +23,11 @@ import (
 	"github.com/georgysavva/scany/pgxscan"
 )
 
+var lpOrdering = TableOrdering{
+	ColumnOrdering{"vega_time", ASC},
+	ColumnOrdering{"id", ASC},
+}
+
 type LiquidityProvision struct {
 	*ConnectionSource
 	batcher MapBatcher[entities.LiquidityProvisionKey, entities.LiquidityProvision]
@@ -75,27 +80,16 @@ func (lp *LiquidityProvision) getWithCursorPagination(ctx context.Context, party
 ) ([]entities.LiquidityProvision, entities.PageInfo, error) {
 	query, bindVars := lp.buildLiquidityProvisionsSelect(partyID, marketID, reference)
 
-	sorting, cmp, cursor := extractPaginationInfo(pagination)
 	var err error
-	lc := &entities.LiquidityProvisionCursor{}
-
-	if cursor != "" {
-		err = lc.Parse(cursor)
-		if err != nil {
-			return nil, entities.PageInfo{}, fmt.Errorf("parsing cursor: %w", err)
-		}
+	var pageInfo entities.PageInfo
+	query, bindVars, err = PaginateQuery[entities.LiquidityProvisionCursor](query, bindVars, lpOrdering, pagination)
+	if err != nil {
+		return nil, pageInfo, err
 	}
-
-	builders := []CursorQueryParameter{
-		NewCursorQueryParameter("id", sorting, cmp, entities.LiquidityProvisionID(lc.ID)),
-		NewCursorQueryParameter("vega_time", sorting, cmp, lc.VegaTime),
-	}
-
-	query, bindVars = orderAndPaginateWithCursor(query, pagination, builders, bindVars...)
 
 	var liquidityProvisions []entities.LiquidityProvision
 
-	if err := pgxscan.Select(ctx, lp.Connection, &liquidityProvisions, query, bindVars...); err != nil {
+	if err = pgxscan.Select(ctx, lp.Connection, &liquidityProvisions, query, bindVars...); err != nil {
 		return nil, entities.PageInfo{}, err
 	}
 

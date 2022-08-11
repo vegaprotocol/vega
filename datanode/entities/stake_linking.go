@@ -90,7 +90,7 @@ func (s *StakeLinking) ToProto() *eventspb.StakeLinking {
 func (s StakeLinking) Cursor() *Cursor {
 	cursor := StakeLinkingCursor{
 		VegaTime: s.VegaTime,
-		ID:       s.ID.String(),
+		ID:       s.ID,
 	}
 	return NewCursor(cursor.String())
 }
@@ -103,8 +103,8 @@ func (s StakeLinking) ToProtoEdge(_ ...any) (*v2.StakeLinkingEdge, error) {
 }
 
 type StakeLinkingCursor struct {
-	VegaTime time.Time `json:"vegaTime"`
-	ID       string    `json:"id"`
+	VegaTime time.Time      `json:"vegaTime"`
+	ID       StakeLinkingID `json:"id"`
 }
 
 func (s StakeLinkingCursor) String() string {
