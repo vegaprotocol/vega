@@ -627,6 +627,8 @@ func testVotingWithoutTokenAndMajorityOfYesFromEquityLikeShareHoldersMakesMarket
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
+	eng.ensureNetworkParameter(t, netparams.GovernanceProposalUpdateMarketRequiredParticipation, "0.5")
+
 	// Submit proposal.
 	// given
 	proposer := vgrand.RandomStr(5)
@@ -704,7 +706,6 @@ func testVotingWithoutTokenAndMajorityOfYesFromEquityLikeShareHoldersMakesMarket
 	afterClosing := time.Unix(proposal.Terms.ClosingTimestamp, 0).Add(time.Second)
 
 	// setup
-	eng.ensureNetworkParameter(t, netparams.GovernanceProposalUpdateMarketRequiredParticipation, "0.5")
 	eng.ensureStakingAssetTotalSupply(t, 13)
 	eng.ensureTokenBalanceForParty(t, voterWithToken, 2)
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voterWithToken, 0)
