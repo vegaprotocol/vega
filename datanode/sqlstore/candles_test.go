@@ -88,7 +88,7 @@ func TestCandlesPagination(t *testing.T) {
 	lastCandle := candles[9]
 
 	first = int32(5)
-	after := entities.NewCursor(candles[8].PeriodStart.Format(time.RFC3339Nano)).Encode()
+	after := candles[8].Cursor().Encode()
 
 	pagination, _ = entities.NewCursorPagination(&first, &after, nil, nil, false)
 
@@ -371,8 +371,8 @@ func TestCandlesCursorPagination(t *testing.T) {
 		assert.Equal(t, entities.PageInfo{
 			HasNextPage:     true,
 			HasPreviousPage: false,
-			StartCursor:     entities.NewCursor(allCandles[0].PeriodStart.Format(time.RFC3339Nano)).Encode(),
-			EndCursor:       entities.NewCursor(allCandles[9].PeriodStart.Format(time.RFC3339Nano)).Encode(),
+			StartCursor:     allCandles[0].Cursor().Encode(),
+			EndCursor:       allCandles[9].Cursor().Encode(),
 		}, pageInfo)
 	})
 
@@ -389,8 +389,8 @@ func TestCandlesCursorPagination(t *testing.T) {
 		assert.Equal(t, entities.PageInfo{
 			HasNextPage:     true,
 			HasPreviousPage: false,
-			StartCursor:     entities.NewCursor(allCandles[lastIndex].PeriodStart.Format(time.RFC3339Nano)).Encode(),
-			EndCursor:       entities.NewCursor(allCandles[lastIndex-9].PeriodStart.Format(time.RFC3339Nano)).Encode(),
+			StartCursor:     allCandles[lastIndex].Cursor().Encode(),
+			EndCursor:       allCandles[lastIndex-9].Cursor().Encode(),
 		}, pageInfo)
 	})
 
@@ -406,8 +406,8 @@ func TestCandlesCursorPagination(t *testing.T) {
 		assert.Equal(t, entities.PageInfo{
 			HasNextPage:     false,
 			HasPreviousPage: true,
-			StartCursor:     entities.NewCursor(allCandles[157].PeriodStart.Format(time.RFC3339Nano)).Encode(),
-			EndCursor:       entities.NewCursor(allCandles[166].PeriodStart.Format(time.RFC3339Nano)).Encode(),
+			StartCursor:     allCandles[157].Cursor().Encode(),
+			EndCursor:       allCandles[166].Cursor().Encode(),
 		}, pageInfo)
 	})
 
@@ -423,14 +423,14 @@ func TestCandlesCursorPagination(t *testing.T) {
 		assert.Equal(t, entities.PageInfo{
 			HasNextPage:     false,
 			HasPreviousPage: true,
-			StartCursor:     entities.NewCursor(allCandles[9].PeriodStart.Format(time.RFC3339Nano)).Encode(),
-			EndCursor:       entities.NewCursor(allCandles[0].PeriodStart.Format(time.RFC3339Nano)).Encode(),
+			StartCursor:     allCandles[9].Cursor().Encode(),
+			EndCursor:       allCandles[0].Cursor().Encode(),
 		}, pageInfo)
 	})
 
 	t.Run("should return the requested page of candles when first and after are provided", func(t *testing.T) {
 		first := int32(10)
-		after := entities.NewCursor(allCandles[99].PeriodStart.Format(time.RFC3339Nano)).Encode()
+		after := allCandles[99].Cursor().Encode()
 		pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 		require.NoError(t, err)
 		candles, pageInfo, err := candleStore.GetCandleDataForTimeSpan(context.Background(), candleId, &startTime, nil, pagination)
@@ -441,14 +441,14 @@ func TestCandlesCursorPagination(t *testing.T) {
 		assert.Equal(t, entities.PageInfo{
 			HasNextPage:     true,
 			HasPreviousPage: true,
-			StartCursor:     entities.NewCursor(allCandles[100].PeriodStart.Format(time.RFC3339Nano)).Encode(),
-			EndCursor:       entities.NewCursor(allCandles[109].PeriodStart.Format(time.RFC3339Nano)).Encode(),
+			StartCursor:     allCandles[100].Cursor().Encode(),
+			EndCursor:       allCandles[109].Cursor().Encode(),
 		}, pageInfo)
 	})
 
 	t.Run("should return the requested page of candles when first and after are provided - newest first", func(t *testing.T) {
 		first := int32(10)
-		after := entities.NewCursor(allCandles[99].PeriodStart.Format(time.RFC3339Nano)).Encode()
+		after := allCandles[99].Cursor().Encode()
 		pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
 		require.NoError(t, err)
 		candles, pageInfo, err := candleStore.GetCandleDataForTimeSpan(context.Background(), candleId, &startTime, nil, pagination)
@@ -459,14 +459,14 @@ func TestCandlesCursorPagination(t *testing.T) {
 		assert.Equal(t, entities.PageInfo{
 			HasNextPage:     true,
 			HasPreviousPage: true,
-			StartCursor:     entities.NewCursor(allCandles[98].PeriodStart.Format(time.RFC3339Nano)).Encode(),
-			EndCursor:       entities.NewCursor(allCandles[89].PeriodStart.Format(time.RFC3339Nano)).Encode(),
+			StartCursor:     allCandles[98].Cursor().Encode(),
+			EndCursor:       allCandles[89].Cursor().Encode(),
 		}, pageInfo)
 	})
 
 	t.Run("Should return the requested page of candles when last and before are provided", func(t *testing.T) {
 		last := int32(10)
-		before := entities.NewCursor(allCandles[100].PeriodStart.Format(time.RFC3339Nano)).Encode()
+		before := allCandles[100].Cursor().Encode()
 		pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 		require.NoError(t, err)
 		candles, pageInfo, err := candleStore.GetCandleDataForTimeSpan(context.Background(), candleId, &startTime, nil, pagination)
@@ -477,14 +477,14 @@ func TestCandlesCursorPagination(t *testing.T) {
 		assert.Equal(t, entities.PageInfo{
 			HasNextPage:     true,
 			HasPreviousPage: true,
-			StartCursor:     entities.NewCursor(allCandles[90].PeriodStart.Format(time.RFC3339Nano)).Encode(),
-			EndCursor:       entities.NewCursor(allCandles[99].PeriodStart.Format(time.RFC3339Nano)).Encode(),
+			StartCursor:     allCandles[90].Cursor().Encode(),
+			EndCursor:       allCandles[99].Cursor().Encode(),
 		}, pageInfo)
 	})
 
 	t.Run("Should return the requested page of candles when last and before are provided - newest first", func(t *testing.T) {
 		last := int32(10)
-		before := entities.NewCursor(allCandles[100].PeriodStart.Format(time.RFC3339Nano)).Encode()
+		before := allCandles[100].Cursor().Encode()
 		pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
 		require.NoError(t, err)
 		candles, pageInfo, err := candleStore.GetCandleDataForTimeSpan(context.Background(), candleId, &startTime, nil, pagination)
@@ -495,8 +495,8 @@ func TestCandlesCursorPagination(t *testing.T) {
 		assert.Equal(t, entities.PageInfo{
 			HasNextPage:     true,
 			HasPreviousPage: true,
-			StartCursor:     entities.NewCursor(allCandles[110].PeriodStart.Format(time.RFC3339Nano)).Encode(),
-			EndCursor:       entities.NewCursor(allCandles[101].PeriodStart.Format(time.RFC3339Nano)).Encode(),
+			StartCursor:     allCandles[110].Cursor().Encode(),
+			EndCursor:       allCandles[101].Cursor().Encode(),
 		}, pageInfo)
 	})
 }

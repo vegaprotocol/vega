@@ -14,6 +14,7 @@ package entities
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -82,7 +83,7 @@ func (os *OracleSpec) ToProto() *oraclespb.OracleSpec {
 }
 
 func (os OracleSpec) Cursor() *Cursor {
-	return NewCursor(os.ID.String())
+	return NewCursor(OracleSpecCursor{os.VegaTime, os.ID}.String())
 }
 
 func (os OracleSpec) ToProtoEdge(_ ...any) (*v2.OracleSpecEdge, error) {
@@ -106,4 +107,24 @@ func decodePublicKeys(publicKeys []string) (PublicKeys, error) {
 	}
 
 	return pkList, nil
+}
+
+type OracleSpecCursor struct {
+	VegaTime time.Time `json:"vegaTime"`
+	ID       SpecID    `json:"id"`
+}
+
+func (os OracleSpecCursor) String() string {
+	bs, err := json.Marshal(os)
+	if err != nil {
+		panic(fmt.Errorf("could not marshal oracle spec cursor: %w", err))
+	}
+	return string(bs)
+}
+
+func (os *OracleSpecCursor) Parse(cursorString string) error {
+	if cursorString == "" {
+		return nil
+	}
+	return json.Unmarshal([]byte(cursorString), os)
 }

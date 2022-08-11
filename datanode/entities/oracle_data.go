@@ -99,15 +99,9 @@ func (od *OracleData) ToProto() *oraclespb.OracleData {
 }
 
 func (od OracleData) Cursor() *Cursor {
-	pks := make([]string, 0, len(od.PublicKeys))
-
-	for _, pk := range od.PublicKeys {
-		pks = append(pks, hex.EncodeToString(pk))
-	}
-
 	return NewCursor(OracleDataCursor{
 		VegaTime:   od.VegaTime,
-		PublicKeys: pks,
+		PublicKeys: od.PublicKeys,
 	}.String())
 }
 
@@ -119,8 +113,8 @@ func (od OracleData) ToProtoEdge(_ ...any) (*v2.OracleDataEdge, error) {
 }
 
 type OracleDataCursor struct {
-	VegaTime   time.Time `json:"vegaTime"`
-	PublicKeys []string  `json:"publicKeys"`
+	VegaTime   time.Time  `json:"vegaTime"`
+	PublicKeys PublicKeys `json:"publicKeys"`
 }
 
 func (c OracleDataCursor) String() string {

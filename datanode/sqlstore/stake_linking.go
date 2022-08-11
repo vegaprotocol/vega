@@ -35,6 +35,11 @@ const (
 tx_hash, log_index, ethereum_address, vega_time`
 )
 
+var stakeLinkingOrdering = TableOrdering{
+	ColumnOrdering{"vega_time", ASC},
+	ColumnOrdering{"id", ASC},
+}
+
 func NewStakeLinking(connectionSource *ConnectionSource) *StakeLinking {
 	return &StakeLinking{
 		ConnectionSource: connectionSource,
@@ -109,24 +114,18 @@ func (s *StakeLinking) getStakeWithOffsetPagination(ctx context.Context, partyID
 func (s *StakeLinking) getStakeWithCursorPagination(ctx context.Context, partyID entities.PartyID, pagination entities.CursorPagination) (
 	*num.Uint, []entities.StakeLinking, entities.PageInfo, error,
 ) {
-	var links []entities.StakeLinking
-	var pageInfo entities.PageInfo
+	var (
+		links    []entities.StakeLinking
+		pageInfo entities.PageInfo
+		err      error
+	)
 	// get the links from the database
 	query, bindVars := getStakeLinkingQuery(partyID)
 
-	sorting, cmp, cursor := extractPaginationInfo(pagination)
-	sc := &entities.StakeLinkingCursor{}
-	err := sc.Parse(cursor)
+	query, bindVars, err = PaginateQuery[entities.StakeLinkingCursor](query, bindVars, stakeLinkingOrdering, pagination)
 	if err != nil {
-		return nil, nil, pageInfo, fmt.Errorf("could not parse pagination: %w", err)
+		return nil, nil, pageInfo, err
 	}
-
-	cursorParams := []CursorQueryParameter{
-		NewCursorQueryParameter("vega_time", sorting, cmp, sc.VegaTime),
-		NewCursorQueryParameter("id", sorting, cmp, entities.StakeLinkingID(sc.ID)),
-	}
-
-	query, bindVars = orderAndPaginateWithCursor(query, pagination, cursorParams, bindVars...)
 	defer metrics.StartSQLQuery("StakeLinking", "GetStake")()
 
 	var bal *num.Uint

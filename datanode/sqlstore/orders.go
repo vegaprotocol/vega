@@ -38,6 +38,11 @@ type Orders struct {
 	batcher MapBatcher[entities.OrderKey, entities.Order]
 }
 
+var ordersOrdering = TableOrdering{
+	ColumnOrdering{"vega_time", ASC},
+	ColumnOrdering{"seq_num", ASC},
+}
+
 func NewOrders(connectionSource *ConnectionSource, logger *logging.Logger) *Orders {
 	a := &Orders{
 		ConnectionSource: connectionSource,
@@ -160,35 +165,23 @@ func (os *Orders) queryOrders(ctx context.Context, query string, args []interfac
 func (os *Orders) queryOrdersWithCursorPagination(ctx context.Context, query string, args []interface{},
 	pagination entities.CursorPagination,
 ) ([]entities.Order, entities.PageInfo, error) {
-	var err error
+	var (
+		err      error
+		orders   []entities.Order
+		pageInfo entities.PageInfo
+	)
 
-	sorting, cmp, cursor := extractPaginationInfo(pagination)
-	var builders CursorQueryParameters
-
-	oc := &entities.OrderCursor{}
-	if cursor != "" {
-		err = oc.Parse(cursor)
-		if err != nil {
-			return nil, entities.PageInfo{}, fmt.Errorf("parsing cursor: %w", err)
-		}
+	query, args, err = PaginateQuery[entities.OrderCursor](query, args, ordersOrdering, pagination)
+	if err != nil {
+		return orders, pageInfo, err
 	}
-
-	builders = []CursorQueryParameter{
-		NewCursorQueryParameter("vega_time", sorting, cmp, oc.VegaTime),
-		NewCursorQueryParameter("seq_num", sorting, cmp, oc.SeqNum),
-	}
-
-	query, args = orderAndPaginateWithCursor(query, pagination, builders, args...)
-	var orders []entities.Order
-	var pageInfo entities.PageInfo
-	var pagedOrders []entities.Order
 	err = pgxscan.Select(ctx, os.Connection, &orders, query, args...)
 	if err != nil {
 		return nil, pageInfo, fmt.Errorf("querying orders: %w", err)
 	}
 
-	pagedOrders, pageInfo = entities.PageEntities[*v2.OrderEdge](orders, pagination)
-	return pagedOrders, pageInfo, nil
+	orders, pageInfo = entities.PageEntities[*v2.OrderEdge](orders, pagination)
+	return orders, pageInfo, nil
 }
 
 func paginateOrderQuery(query string, args []interface{}, p entities.OffsetPagination) (string, []interface{}) {

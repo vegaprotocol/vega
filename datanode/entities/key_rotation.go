@@ -60,8 +60,10 @@ func (kr *KeyRotation) ToProtoV1() *protoapi.KeyRotation {
 
 func (kr KeyRotation) Cursor() *Cursor {
 	cursor := KeyRotationCursor{
-		VegaTime: kr.VegaTime,
-		NodeID:   kr.NodeID.String(),
+		VegaTime:  kr.VegaTime,
+		NodeID:    kr.NodeID,
+		OldPubKey: kr.OldPubKey,
+		NewPubKey: kr.NewPubKey,
 	}
 
 	return NewCursor(cursor.String())
@@ -75,8 +77,10 @@ func (kr KeyRotation) ToProtoEdge(_ ...any) (*v2.KeyRotationEdge, error) {
 }
 
 type KeyRotationCursor struct {
-	VegaTime time.Time `json:"vega_time"`
-	NodeID   string    `json:"node_id"`
+	VegaTime  time.Time     `json:"vega_time"`
+	NodeID    NodeID        `json:"node_id"`
+	OldPubKey VegaPublicKey `json:"old_pub_key"`
+	NewPubKey VegaPublicKey `json:"new_pub_key"`
 }
 
 func (c KeyRotationCursor) String() string {

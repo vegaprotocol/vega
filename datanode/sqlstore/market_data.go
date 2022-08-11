@@ -26,6 +26,10 @@ import (
 	"github.com/jackc/pgx/v4"
 )
 
+var marketdataOrdering = TableOrdering{
+	ColumnOrdering{"synthetic_time", ASC},
+}
+
 type MarketData struct {
 	*ConnectionSource
 	columns    []string
@@ -186,10 +190,13 @@ func (md *MarketData) getBetweenDatesByID(ctx context.Context, marketID string, 
 	market := entities.MarketID(marketID)
 
 	selectStatement := `select * from market_data`
-	sorting, cmp, cursor := extractPaginationInfo(pagination)
 	args := make([]interface{}, 0)
 
-	var query string
+	var (
+		query    string
+		err      error
+		pageInfo entities.PageInfo
+	)
 
 	if start != nil && end != nil {
 		query = fmt.Sprintf(`%s where market = %s and vega_time between %s and %s`, selectStatement,
@@ -207,20 +214,17 @@ func (md *MarketData) getBetweenDatesByID(ctx context.Context, marketID string, 
 			nextBindVar(&args, *end))
 	}
 
-	cursorParams := []CursorQueryParameter{
-		NewCursorQueryParameter("synthetic_time", sorting, cmp, cursor),
+	query, args, err = PaginateQuery[entities.MarketDataCursor](query, args, marketdataOrdering, pagination)
+	if err != nil {
+		return nil, pageInfo, err
 	}
-
-	query, args = orderAndPaginateWithCursor(query, pagination, cursorParams, args...)
-	results := make([]entities.MarketData, 0)
 	var pagedData []entities.MarketData
-	var pageInfo entities.PageInfo
 
-	if err := pgxscan.Select(ctx, md.Connection, &results, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, md.Connection, &pagedData, query, args...); err != nil {
 		return pagedData, pageInfo, err
 	}
 
-	pagedData, pageInfo = entities.PageEntities[*v2.MarketDataEdge](results, pagination)
+	pagedData, pageInfo = entities.PageEntities[*v2.MarketDataEdge](pagedData, pagination)
 
 	return pagedData, pageInfo, nil
 }

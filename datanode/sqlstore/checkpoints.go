@@ -15,7 +15,6 @@ package sqlstore
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
@@ -25,6 +24,10 @@ import (
 
 type Checkpoints struct {
 	*ConnectionSource
+}
+
+var checkpointOrdering = TableOrdering{
+	ColumnOrdering{"block_height", ASC},
 }
 
 func NewCheckpoints(connectionSource *ConnectionSource) *Checkpoints {
@@ -52,27 +55,16 @@ func (np *Checkpoints) GetAll(ctx context.Context, pagination entities.CursorPag
 	defer metrics.StartSQLQuery("Checkpoints", "GetAll")()
 	var nps []entities.Checkpoint
 	var pageInfo entities.PageInfo
+	var err error
+
 	query := `SELECT * FROM checkpoints`
-
-	sorting, cmp, cursor := extractPaginationInfo(pagination)
-
-	var blockHeight int64
-
-	if cursor != "" {
-		var err error
-		if blockHeight, err = strconv.ParseInt(cursor, 10, 64); err != nil {
-			return nil, pageInfo, fmt.Errorf("invalid cursor value: %w", err)
-		}
-	}
-
-	cursorParams := []CursorQueryParameter{
-		NewCursorQueryParameter("block_height", sorting, cmp, blockHeight),
-	}
-
 	var args []interface{}
-	query, args = orderAndPaginateWithCursor(query, pagination, cursorParams, args...)
+	query, args, err = PaginateQuery[entities.CheckpointCursor](query, args, checkpointOrdering, pagination)
+	if err != nil {
+		return nps, pageInfo, err
+	}
 
-	if err := pgxscan.Select(ctx, np.Connection, &nps, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, np.Connection, &nps, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("could not get checkpoint data: %w", err)
 	}
 

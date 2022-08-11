@@ -51,3 +51,12 @@ func NetworkParameterFromProto(pnp *vega.NetworkParameter) (NetworkParameter, er
 	}
 	return np, nil
 }
+
+type NetworkParameterCursor struct {
+	Key string
+}
+
+func (c *NetworkParameterCursor) Parse(cursorString string) error {
+	c.Key = cursorString
+	return nil
+}

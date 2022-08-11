@@ -22,6 +22,11 @@ import (
 	"github.com/georgysavva/scany/pgxscan"
 )
 
+var erc20MultSigSignerOrdering = TableOrdering{
+	ColumnOrdering{"vega_time", ASC},
+	ColumnOrdering{"id", ASC},
+}
+
 type ERC20MultiSigSignerEvent struct {
 	*ConnectionSource
 }
@@ -60,19 +65,9 @@ func (m *ERC20MultiSigSignerEvent) GetAddedEvents(ctx context.Context, validator
 ) {
 	var pageInfo entities.PageInfo
 	out := []entities.ERC20MultiSigSignerAddedEvent{}
-	sorting, cmp, cursor := extractPaginationInfo(pagination)
-
-	ec := &entities.ERC20MultiSigSignerEventCursor{}
-	if err := ec.Parse(cursor); err != nil {
-		return nil, pageInfo, fmt.Errorf("failed to extract pagination information: %w", err)
-	}
-
-	cursorParams := []CursorQueryParameter{
-		NewCursorQueryParameter("vega_time", sorting, cmp, ec.VegaTime),
-		NewCursorQueryParameter("id", sorting, cmp, entities.ERC20MultiSigSignerEventID(ec.ID)),
-	}
 
 	var args []interface{}
+	var err error
 	query := fmt.Sprintf(`SELECT * FROM erc20_multisig_signer_events WHERE validator_id=%s AND event=%s`,
 		nextBindVar(&args, entities.NodeID(validatorID)),
 		nextBindVar(&args, entities.ERC20MultiSigSignerEventTypeAdded),
@@ -82,10 +77,13 @@ func (m *ERC20MultiSigSignerEvent) GetAddedEvents(ctx context.Context, validator
 		query = fmt.Sprintf(`%s AND epoch_id=%s`, query, nextBindVar(&args, *epochID))
 	}
 
-	query, args = orderAndPaginateWithCursor(query, pagination, cursorParams, args...)
+	query, args, err = PaginateQuery[entities.ERC20MultiSigSignerEventCursor](query, args, erc20MultSigSignerOrdering, pagination)
+	if err != nil {
+		return nil, pageInfo, err
+	}
 
 	defer metrics.StartSQLQuery("ERC20MultiSigSignerEvent", "GetAddedEvents")()
-	if err := pgxscan.Select(ctx, m.pool, &out, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, m.pool, &out, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("failed to retrieve multisig signer events: %w", err)
 	}
 
@@ -109,19 +107,8 @@ func (m *ERC20MultiSigSignerEvent) GetAddedEvents(ctx context.Context, validator
 
 func (m *ERC20MultiSigSignerEvent) GetRemovedEvents(ctx context.Context, validatorID string, submitter string, epochID *int64, pagination entities.CursorPagination) ([]entities.ERC20MultiSigSignerEvent, entities.PageInfo, error) {
 	var pageInfo entities.PageInfo
+	var err error
 	out := []entities.ERC20MultiSigSignerRemovedEvent{}
-	sorting, cmp, cursor := extractPaginationInfo(pagination)
-
-	ec := &entities.ERC20MultiSigSignerEventCursor{}
-	if err := ec.Parse(cursor); err != nil {
-		return nil, pageInfo, fmt.Errorf("failed to extract pagination information: %w", err)
-	}
-
-	cursorParams := []CursorQueryParameter{
-		NewCursorQueryParameter("vega_time", sorting, cmp, ec.VegaTime),
-		NewCursorQueryParameter("id", sorting, cmp, entities.ERC20MultiSigSignerEventID(ec.ID)),
-	}
-
 	var args []interface{}
 	query := fmt.Sprintf(`SELECT * FROM erc20_multisig_signer_events WHERE validator_id=%s AND submitter=%s AND event=%s`,
 		nextBindVar(&args, entities.NodeID(validatorID)),
@@ -133,10 +120,13 @@ func (m *ERC20MultiSigSignerEvent) GetRemovedEvents(ctx context.Context, validat
 		query = fmt.Sprintf(`%s AND epoch_id=%s`, query, nextBindVar(&args, *epochID))
 	}
 
-	query, args = orderAndPaginateWithCursor(query, pagination, cursorParams, args...)
+	query, args, err = PaginateQuery[entities.ERC20MultiSigSignerEventCursor](query, args, erc20MultSigSignerOrdering, pagination)
+	if err != nil {
+		return nil, pageInfo, err
+	}
 
 	defer metrics.StartSQLQuery("ERC20MultiSigSignerEvent", "GetRemovedEvents")()
-	if err := pgxscan.Select(ctx, m.pool, &out, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, m.pool, &out, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("failed to retrieve multisig signer events: %w", err)
 	}
 

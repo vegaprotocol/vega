@@ -547,13 +547,13 @@ func testTransferPaginationNoPagination(t *testing.T) {
 	assert.Equal(t, testTransfers, got)
 	assert.False(t, pageInfo.HasPreviousPage)
 	assert.False(t, pageInfo.HasNextPage)
-	assert.Equal(t, entities.NewCursor(entities.WithdrawalCursor{
+	assert.Equal(t, entities.NewCursor(entities.TransferCursor{
 		VegaTime: testTransfers[0].VegaTime,
-		ID:       testTransfers[0].ID.String(),
+		ID:       testTransfers[0].ID,
 	}.String()).Encode(), pageInfo.StartCursor)
-	assert.Equal(t, entities.NewCursor(entities.WithdrawalCursor{
+	assert.Equal(t, entities.NewCursor(entities.TransferCursor{
 		VegaTime: testTransfers[9].VegaTime,
-		ID:       testTransfers[9].ID.String(),
+		ID:       testTransfers[9].ID,
 	}.String()).Encode(), pageInfo.EndCursor)
 }
 
@@ -575,13 +575,13 @@ func testTransferPaginationFirst(t *testing.T) {
 	assert.Equal(t, want, got)
 	assert.False(t, pageInfo.HasPreviousPage)
 	assert.True(t, pageInfo.HasNextPage)
-	assert.Equal(t, entities.NewCursor(entities.WithdrawalCursor{
+	assert.Equal(t, entities.NewCursor(entities.TransferCursor{
 		VegaTime: testTransfers[0].VegaTime,
-		ID:       testTransfers[0].ID.String(),
+		ID:       testTransfers[0].ID,
 	}.String()).Encode(), pageInfo.StartCursor)
-	assert.Equal(t, entities.NewCursor(entities.WithdrawalCursor{
+	assert.Equal(t, entities.NewCursor(entities.TransferCursor{
 		VegaTime: testTransfers[2].VegaTime,
-		ID:       testTransfers[2].ID.String(),
+		ID:       testTransfers[2].ID,
 	}.String()).Encode(), pageInfo.EndCursor)
 }
 
@@ -603,13 +603,13 @@ func testTransferPaginationLast(t *testing.T) {
 	assert.Equal(t, want, got)
 	assert.True(t, pageInfo.HasPreviousPage)
 	assert.False(t, pageInfo.HasNextPage)
-	assert.Equal(t, entities.NewCursor(entities.WithdrawalCursor{
+	assert.Equal(t, entities.NewCursor(entities.TransferCursor{
 		VegaTime: testTransfers[7].VegaTime,
-		ID:       testTransfers[7].ID.String(),
+		ID:       testTransfers[7].ID,
 	}.String()).Encode(), pageInfo.StartCursor)
-	assert.Equal(t, entities.NewCursor(entities.WithdrawalCursor{
+	assert.Equal(t, entities.NewCursor(entities.TransferCursor{
 		VegaTime: testTransfers[9].VegaTime,
-		ID:       testTransfers[9].ID.String(),
+		ID:       testTransfers[9].ID,
 	}.String()).Encode(), pageInfo.EndCursor)
 }
 
@@ -622,10 +622,7 @@ func testTransferPaginationFirstAfter(t *testing.T) {
 	testTransfers := addTransfers(timeoutCtx, t, bs, transfers)
 
 	first := int32(3)
-	after := entities.NewCursor(entities.DepositCursor{
-		VegaTime: testTransfers[2].VegaTime,
-		ID:       testTransfers[2].ID.String(),
-	}.String()).Encode()
+	after := testTransfers[2].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	require.NoError(t, err)
 	got, pageInfo, err := transfers.GetAll(timeoutCtx, pagination)
@@ -635,13 +632,13 @@ func testTransferPaginationFirstAfter(t *testing.T) {
 	assert.Equal(t, want, got)
 	assert.True(t, pageInfo.HasPreviousPage)
 	assert.True(t, pageInfo.HasNextPage)
-	assert.Equal(t, entities.NewCursor(entities.WithdrawalCursor{
+	assert.Equal(t, entities.NewCursor(entities.TransferCursor{
 		VegaTime: testTransfers[3].VegaTime,
-		ID:       testTransfers[3].ID.String(),
+		ID:       testTransfers[3].ID,
 	}.String()).Encode(), pageInfo.StartCursor)
-	assert.Equal(t, entities.NewCursor(entities.WithdrawalCursor{
+	assert.Equal(t, entities.NewCursor(entities.TransferCursor{
 		VegaTime: testTransfers[5].VegaTime,
-		ID:       testTransfers[5].ID.String(),
+		ID:       testTransfers[5].ID,
 	}.String()).Encode(), pageInfo.EndCursor)
 }
 
@@ -654,9 +651,9 @@ func testTransferPaginationLastBefore(t *testing.T) {
 	testTransfers := addTransfers(timeoutCtx, t, bs, transfers)
 
 	last := int32(3)
-	before := entities.NewCursor(entities.LiquidityProvisionCursor{
+	before := entities.NewCursor(entities.TransferCursor{
 		VegaTime: testTransfers[7].VegaTime,
-		ID:       testTransfers[7].ID.String(),
+		ID:       testTransfers[7].ID,
 	}.String()).Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 	require.NoError(t, err)
@@ -667,13 +664,13 @@ func testTransferPaginationLastBefore(t *testing.T) {
 	assert.Equal(t, want, got)
 	assert.True(t, pageInfo.HasPreviousPage)
 	assert.True(t, pageInfo.HasNextPage)
-	assert.Equal(t, entities.NewCursor(entities.WithdrawalCursor{
+	assert.Equal(t, entities.NewCursor(entities.TransferCursor{
 		VegaTime: testTransfers[4].VegaTime,
-		ID:       testTransfers[4].ID.String(),
+		ID:       testTransfers[4].ID,
 	}.String()).Encode(), pageInfo.StartCursor)
-	assert.Equal(t, entities.NewCursor(entities.WithdrawalCursor{
+	assert.Equal(t, entities.NewCursor(entities.TransferCursor{
 		VegaTime: testTransfers[6].VegaTime,
-		ID:       testTransfers[6].ID.String(),
+		ID:       testTransfers[6].ID,
 	}.String()).Encode(), pageInfo.EndCursor)
 }
 

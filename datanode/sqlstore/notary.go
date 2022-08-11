@@ -26,6 +26,11 @@ type Notary struct {
 	*ConnectionSource
 }
 
+var notaryOrdering = TableOrdering{
+	ColumnOrdering{"resource_id", ASC},
+	ColumnOrdering{"sig", ASC},
+}
+
 func NewNotary(connectionSource *ConnectionSource) *Notary {
 	return &Notary{
 		ConnectionSource: connectionSource,
@@ -52,26 +57,21 @@ func (n *Notary) Add(ctx context.Context, ns *entities.NodeSignature) error {
 
 func (n *Notary) GetByResourceID(ctx context.Context, id string, pagination entities.CursorPagination) ([]entities.NodeSignature, entities.PageInfo, error) {
 	defer metrics.StartSQLQuery("Notary", "GetByResourceID")()
-	var pageInfo entities.PageInfo
-	var args []interface{}
+	var (
+		pageInfo entities.PageInfo
+		args     []interface{}
+		err      error
+		ns       []entities.NodeSignature
+	)
 
-	sorting, cmp, cursor := extractPaginationInfo(pagination)
-
-	nc := &entities.NodeSignatureCursor{}
-	if err := nc.Parse(cursor); err != nil {
-		return nil, pageInfo, fmt.Errorf("could not parse cursor information: %w", err)
+	query := fmt.Sprintf(`SELECT resource_id, sig, kind FROM node_signatures where resource_id=%s`,
+		nextBindVar(&args, entities.NodeID(id)))
+	query, args, err = PaginateQuery[entities.NodeSignatureCursor](query, args, notaryOrdering, pagination)
+	if err != nil {
+		return ns, pageInfo, err
 	}
 
-	cursorParams := []CursorQueryParameter{
-		NewCursorQueryParameter("resource_id", sorting, EQ, entities.NodeSignatureID(id)),
-		NewCursorQueryParameter("sig", sorting, cmp, nc.Sig),
-	}
-
-	ns := []entities.NodeSignature{}
-	query := `SELECT resource_id, sig, kind FROM node_signatures`
-	query, args = orderAndPaginateWithCursor(query, pagination, cursorParams, args...)
-
-	if err := pgxscan.Select(ctx, n.Connection, &ns, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, n.Connection, &ns, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("could not get node signatures for resource: %w", err)
 	}
 

@@ -15,7 +15,6 @@ package sqlstore
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
@@ -31,6 +30,11 @@ const (
 	sqlDepositsColumns = `id, status, party_id, asset, amount, tx_hash,
 		credited_timestamp, created_timestamp, vega_time`
 )
+
+var depositOrdering = TableOrdering{
+	ColumnOrdering{"vega_time", ASC},
+	ColumnOrdering{"id", ASC},
+}
 
 func NewDeposits(connectionSource *ConnectionSource) *Deposits {
 	return &Deposits{
@@ -92,9 +96,9 @@ func (d *Deposits) getByPartyOffsetPagination(ctx context.Context, party string,
 	var deposits []entities.Deposit
 	var pageInfo entities.PageInfo
 
-	query, args := getDepositsByPartyQuery()
-	query = fmt.Sprintf("%s where party_id = %s order by id, party_id, vega_time desc",
-		query, nextBindVar(&args, entities.PartyID(party)))
+	query, args := getDepositsByPartyQuery(party)
+	query = fmt.Sprintf("%s order by id, party_id, vega_time desc",
+		query)
 
 	if openOnly {
 		query = fmt.Sprintf(`%s and status = %s`, query, nextBindVar(&args, entities.DepositStatusOpen))
@@ -114,28 +118,19 @@ func (d *Deposits) getByPartyCursorPagination(ctx context.Context, party string,
 ) ([]entities.Deposit, entities.PageInfo, error) {
 	var deposits []entities.Deposit
 	var pageInfo entities.PageInfo
+	var err error
 
-	sorting, cmp, cursor := extractPaginationInfo(pagination)
-
-	dc := &entities.DepositCursor{}
-	if err := dc.Parse(cursor); err != nil {
-		return nil, pageInfo, fmt.Errorf("could not parse cursor information: %w", err)
-	}
-
-	cursorParams := []CursorQueryParameter{
-		NewCursorQueryParameter("party_id", sorting, "=", entities.PartyID(party)),
-		NewCursorQueryParameter("vega_time", sorting, cmp, dc.VegaTime),
-		NewCursorQueryParameter("id", sorting, cmp, entities.DepositID(dc.ID)),
-	}
-
-	query, args := getDepositsByPartyQuery()
-	query, args = orderAndPaginateWithCursor(query, pagination, cursorParams, args...)
+	query, args := getDepositsByPartyQuery(party)
 	if openOnly {
 		query = fmt.Sprintf(`%s and status = %s`, query, nextBindVar(&args, entities.DepositStatusOpen))
 	}
+	query, args, err = PaginateQuery[entities.DepositCursor](query, args, depositOrdering, pagination)
+	if err != nil {
+		return nil, pageInfo, err
+	}
 
 	defer metrics.StartSQLQuery("Deposits", "GetByParty")()
-	if err := pgxscan.Select(ctx, d.Connection, &deposits, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, d.Connection, &deposits, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("could not get deposits by party: %w", err)
 	}
 
@@ -144,12 +139,11 @@ func (d *Deposits) getByPartyCursorPagination(ctx context.Context, party string,
 	return deposits, pageInfo, nil
 }
 
-func getDepositsByPartyQuery() (string, []interface{}) {
+func getDepositsByPartyQuery(party string) (string, []interface{}) {
 	var args []interface{}
 
-	queryBuilder := strings.Builder{}
-	queryBuilder.WriteString(`select id, status, party_id, asset, amount, tx_hash, credited_timestamp, created_timestamp, vega_time
-		from deposits_current`)
+	query := fmt.Sprintf(`select id, status, party_id, asset, amount, tx_hash, credited_timestamp, created_timestamp, vega_time
+		from deposits_current where party_id = %s`, nextBindVar(&args, entities.PartyID(party)))
 
-	return queryBuilder.String(), args
+	return query, args
 }

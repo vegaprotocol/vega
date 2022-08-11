@@ -34,6 +34,10 @@ const (
 	candlesViewNamePrePend = sourceDataTableName + "_candle_"
 )
 
+var candleOrdering = TableOrdering{
+	ColumnOrdering{"period_start", ASC},
+}
+
 type Candles struct {
 	*ConnectionSource
 
@@ -89,13 +93,10 @@ func (cs *Candles) GetCandleDataForTimeSpan(ctx context.Context, candleId string
 		query = fmt.Sprintf("%s AND period_start < %s", query, nextBindVar(&args, to))
 	}
 
-	sorting, cmp, cursor := extractPaginationInfo(p)
-
-	cursorParams := []CursorQueryParameter{
-		NewCursorQueryParameter("period_start", sorting, cmp, cursor),
+	query, args, err = PaginateQuery[entities.CandleCursor](query, args, candleOrdering, p)
+	if err != nil {
+		return nil, pageInfo, err
 	}
-
-	query, args = orderAndPaginateWithCursor(query, p, cursorParams, args...)
 
 	defer metrics.StartSQLQuery("Candles", "GetCandleDataForTimeSpan")()
 	err = pgxscan.Select(ctx, cs.Connection, &candles, query, args...)
