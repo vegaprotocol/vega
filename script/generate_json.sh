@@ -35,8 +35,7 @@ function gen_docs() {
 }
 
 function gen_swagger() {
-	buf generate --path=./protos/sources/vega/api --template=./protos/sources/vega/api/v1/buf.gen.yaml --output ./protos # generate swagger
-	buf generate --path=./protos/sources/data-node/api/v1 --template=./protos/sources/data-node/api/v1/buf.gen.yaml --output ./protos # generate swagger
+    buf generate --template buf.gen.swagger.yaml
 }
 
 clean

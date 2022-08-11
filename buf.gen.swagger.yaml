@@ -1,0 +1,8 @@
+---
+version: v1
+plugins:
+  - name: openapiv2
+    out: ./protos/swagger
+    opt:
+      - logtostderr=true
+      - grpc_api_configuration=protos/sources/data-node/grpc-rest-bindings.yml

@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "code.vegaprotocol.io/vega/protos/data-node/api/v2";
+package datanode.api.v2;
 
 import "vega/vega.proto";
 import "vega/governance.proto";
@@ -10,8 +10,16 @@ import "vega/oracles/v1/data.proto";
 import "vega/oracles/v1/spec.proto";
 import "vega/events/v1/events.proto";
 import "vega/commands/v1/validator_commands.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
-package datanode.api.v2;
+option go_package = "code.vegaprotocol.io/vega/protos/data-node/api/v2";
+
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "Vega data node APIs";
+    version: "42.0";
+  }
+};
 
 service TradingDataService {
     // -- Accounts --
