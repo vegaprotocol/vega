@@ -13,7 +13,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5579](https://github.com/vegaprotocol/vega/issues/5579) - Make vega a built-in Tendermint application
 - [5249](https://github.com/vegaprotocol/vega/issues/5249) - Migrate to Tendermint version 0.35.8
 - [5624](https://github.com/vegaprotocol/vega/issues/5624) - Get rid of `updateFrequency` in price monitoring definition
-- [5601](https://github.com/vegaprotocol/vega/issues/5601) - Remove support for launching a proxy in front of console and token dApp 
+- [5601](https://github.com/vegaprotocol/vega/issues/5601) - Remove support for launching a proxy in front of console and token dApp
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -54,6 +54,8 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5814](https://github.com/vegaprotocol/vega/issues/5815) - Add proposal validation date time to `graphql`
 - [5803](https://github.com/vegaprotocol/vega/issues/5803) - Update cursor pagination to use new method from [5784](https://github.com/vegaprotocol/vega/pull/5784)
 - [5862](https://github.com/vegaprotocol/vega/issues/5862) - Add base `URL` in `swagger`
+- [5817](https://github.com/vegaprotocol/vega/issues/5817) - Add validation error on asset proposal when rejected
+- [5816](https://github.com/vegaprotocol/vega/issues/5816) - Set proper status to rejected asset proposal
 
 ### 🐛 Fixes
 - [5571](https://github.com/vegaprotocol/vega/issues/5571) - Restore pending assets status correctly after snapshot restore
