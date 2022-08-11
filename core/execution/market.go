@@ -2585,7 +2585,7 @@ func (m *Market) amendOrder(
 
 		// Update the existing message in place before we cancel it
 		if foundOnBook {
-			// Do not amend in place, the amened could be something
+			// Do not amend in place, the amend could be something
 			// not supported for an amend in place, and not pass
 			// the validation of the order book
 			cancellation, err := m.matching.CancelOrder(amendedOrder)
