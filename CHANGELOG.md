@@ -68,6 +68,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5665](https://github.com/vegaprotocol/vega/issues/5665) - Binary version hash always contain `-modified` suffix
 - [5633](https://github.com/vegaprotocol/vega/issues/5633) - Allow `minProposerEquityLikeShare` to accept 0
 - [5672](https://github.com/vegaprotocol/vega/issues/5672) - Typo fixed in datanode `ethereum` address
+- [5863](https://github.com/vegaprotocol/vega/issues/5863) - Fix panic when calling `VegaTime` on `v2 api`
 - [5683](https://github.com/vegaprotocol/vega/issues/5683) - Made market mandatory in `GraphQL` for order
 - [5789](https://github.com/vegaprotocol/vega/issues/5789) - Fix performance issue with position query
 - [5677](https://github.com/vegaprotocol/vega/issues/5677) - Fixed trading mode status

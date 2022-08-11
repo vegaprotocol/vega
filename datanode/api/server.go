@@ -368,6 +368,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		eventService:               g.eventService,
 		ledgerService:              g.ledgerService,
 		ethereumKeyRotationService: g.ethereumKeyRotationService,
+		blockService:               g.blockService,
 	}
 
 	protoapi2.RegisterTradingDataServiceServer(g.srv, tradingDataSvcV2)
