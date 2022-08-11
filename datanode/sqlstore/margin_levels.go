@@ -22,6 +22,11 @@ import (
 	"github.com/georgysavva/scany/pgxscan"
 )
 
+var mlOrdering = TableOrdering{
+	ColumnOrdering{"vega_time", ASC},
+	ColumnOrdering{"account_id", ASC},
+}
+
 type AccountSource interface {
 	Query(filter entities.AccountFilter) ([]entities.Account, error)
 }
@@ -110,26 +115,15 @@ func (ml *MarginLevels) GetMarginLevelsByIDWithCursorPagination(ctx context.Cont
 		%s`, sqlMarginLevelColumns,
 		whereClause)
 
-	sorting, cmp, cursor := extractPaginationInfo(pagination)
 	var err error
-	mc := &entities.MarginCursor{}
-
-	if cursor != "" {
-		err = mc.Parse(cursor)
-		if err != nil {
-			return nil, entities.PageInfo{}, fmt.Errorf("parsing cursor: %w", err)
-		}
+	var pageInfo entities.PageInfo
+	query, bindVars, err = PaginateQuery[entities.MarginCursor](query, bindVars, mlOrdering, pagination)
+	if err != nil {
+		return nil, pageInfo, err
 	}
-
-	builders := []CursorQueryParameter{
-		NewCursorQueryParameter("account_id", sorting, cmp, mc.AccountID),
-		NewCursorQueryParameter("vega_time", sorting, cmp, mc.VegaTime),
-	}
-
-	query, bindVars = orderAndPaginateWithCursor(query, pagination, builders, bindVars...)
 	var marginLevels []entities.MarginLevels
 
-	if err := pgxscan.Select(ctx, ml.Connection, &marginLevels, query, bindVars...); err != nil {
+	if err = pgxscan.Select(ctx, ml.Connection, &marginLevels, query, bindVars...); err != nil {
 		return nil, entities.PageInfo{}, err
 	}
 

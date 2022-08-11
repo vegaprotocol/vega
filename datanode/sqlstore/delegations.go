@@ -28,6 +28,13 @@ type Delegations struct {
 	*ConnectionSource
 }
 
+var delegationsOrdering = TableOrdering{
+	ColumnOrdering{"vega_time", ASC},
+	ColumnOrdering{"party_id", ASC},
+	ColumnOrdering{"node_id", ASC},
+	ColumnOrdering{"epoch_id", ASC},
+}
+
 func NewDelegations(connectionSource *ConnectionSource) *Delegations {
 	d := &Delegations{
 		ConnectionSource: connectionSource,
@@ -64,8 +71,7 @@ func (ds *Delegations) Get(ctx context.Context,
 	pagination entities.Pagination,
 ) ([]entities.Delegation, entities.PageInfo, error) {
 	query := `SELECT * from delegations_current`
-	args := []interface{}{}
-	var cursorParams []CursorQueryParameter
+	var args []interface{}
 	var pageInfo entities.PageInfo
 
 	conditions := []string{}
@@ -90,6 +96,7 @@ func (ds *Delegations) Get(ctx context.Context,
 
 	defer metrics.StartSQLQuery("Delegations", "Get")()
 	delegations := []entities.Delegation{}
+	var err error
 	if pagination != nil {
 		switch p := pagination.(type) {
 		case *entities.OffsetPagination:
@@ -98,11 +105,10 @@ func (ds *Delegations) Get(ctx context.Context,
 				query, args = orderAndPaginateQuery(query, order_cols, *p, args...)
 			}
 		case entities.CursorPagination:
-			sorting, cmp, cursor := extractPaginationInfo(p)
-			cursorParams = append(cursorParams,
-				NewCursorQueryParameter("vega_time", sorting, cmp, cursor),
-			)
-			query, args = orderAndPaginateWithCursor(query, p, cursorParams, args...)
+			query, args, err = PaginateQuery[entities.DelegationCursor](query, args, delegationsOrdering, p)
+			if err != nil {
+				return nil, pageInfo, err
+			}
 
 			err := pgxscan.Select(ctx, ds.Connection, &delegations, query, args...)
 			if err != nil {
@@ -118,7 +124,7 @@ func (ds *Delegations) Get(ctx context.Context,
 		}
 	}
 
-	err := pgxscan.Select(ctx, ds.Connection, &delegations, query, args...)
+	err = pgxscan.Select(ctx, ds.Connection, &delegations, query, args...)
 	if err != nil {
 		return nil, pageInfo, fmt.Errorf("querying delegations: %w", err)
 	}

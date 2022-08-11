@@ -26,6 +26,11 @@ type Transfers struct {
 	*ConnectionSource
 }
 
+var transfersOrdering = TableOrdering{
+	ColumnOrdering{"vega_time", ASC},
+	ColumnOrdering{"id", ASC},
+}
+
 func NewTransfers(connectionSource *ConnectionSource) *Transfers {
 	return &Transfers{
 		ConnectionSource: connectionSource,
@@ -155,25 +160,19 @@ func (t *Transfers) GetAll(ctx context.Context, pagination entities.CursorPagina
 func (t *Transfers) getTransfers(ctx context.Context, pagination entities.CursorPagination, where string, args ...interface{}) ([]entities.Transfer,
 	entities.PageInfo, error,
 ) {
-	var pageInfo entities.PageInfo
-
-	sorting, cmp, cursor := extractPaginationInfo(pagination)
-
-	tc := &entities.TransferCursor{}
-	if err := tc.Parse(cursor); err != nil {
-		return nil, pageInfo, fmt.Errorf("could not parse cursor information: %w", err)
-	}
-
-	cursorParams := []CursorQueryParameter{
-		NewCursorQueryParameter("vega_time", sorting, cmp, tc.VegaTime),
-		NewCursorQueryParameter("id", sorting, cmp, entities.WithdrawalID(tc.ID)),
-	}
+	var (
+		pageInfo entities.PageInfo
+		err      error
+	)
 
 	query := "select * from transfers_current " + where
-	query, args = orderAndPaginateWithCursor(query, pagination, cursorParams, args...)
+	query, args, err = PaginateQuery[entities.TransferCursor](query, args, transfersOrdering, pagination)
+	if err != nil {
+		return nil, pageInfo, err
+	}
 
 	var transfers []entities.Transfer
-	err := pgxscan.Select(ctx, t.Connection, &transfers, query, args...)
+	err = pgxscan.Select(ctx, t.Connection, &transfers, query, args...)
 	if err != nil {
 		return nil, pageInfo, fmt.Errorf("getting transfers:%w", err)
 	}

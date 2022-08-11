@@ -13,6 +13,7 @@
 package entities
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -391,9 +392,7 @@ func (md MarketData) ToProto() *types.MarketData {
 }
 
 func (md MarketData) Cursor() *Cursor {
-	// NOTE: We need to force the time into a specific timezone or the formatting will reflect the time based on the timezone
-	// of the database that returns the data if the postgres server has a timezone that is not set to UTC
-	return NewCursor(md.SyntheticTime.In(time.UTC).Format(time.RFC3339Nano))
+	return NewCursor(MarketDataCursor{md.SyntheticTime}.String())
 }
 
 func (md MarketData) ToProtoEdge(_ ...any) (*v2.MarketDataEdge, error) {
@@ -450,4 +449,24 @@ func priceMonitoringTriggerToProto(trigger PriceMonitoringTrigger) *types.PriceM
 		Probability:      trigger.Probability.String(),
 		AuctionExtension: int64(trigger.AuctionExtension),
 	}
+}
+
+type MarketDataCursor struct {
+	SyntheticTime time.Time `json:"synthetic_time"`
+}
+
+func (c MarketDataCursor) String() string {
+	bs, err := json.Marshal(c)
+	if err != nil {
+		panic(fmt.Errorf("could not marshal market data cursor: %w", err))
+	}
+	return string(bs)
+}
+
+func (c *MarketDataCursor) Parse(cursorString string) error {
+	if cursorString == "" {
+		return nil
+	}
+
+	return json.Unmarshal([]byte(cursorString), c)
 }

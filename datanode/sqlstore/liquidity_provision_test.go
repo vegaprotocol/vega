@@ -360,13 +360,13 @@ func testLiquidityProvisionPaginationNoPagination(t *testing.T) {
 	assert.Equal(t, testLps, got)
 	assert.False(t, pageInfo.HasPreviousPage)
 	assert.False(t, pageInfo.HasNextPage)
-	assert.Equal(t, entities.NewCursor(entities.WithdrawalCursor{
+	assert.Equal(t, entities.NewCursor(entities.LiquidityProvisionCursor{
 		VegaTime: testLps[0].VegaTime,
-		ID:       testLps[0].ID.String(),
+		ID:       testLps[0].ID,
 	}.String()).Encode(), pageInfo.StartCursor)
-	assert.Equal(t, entities.NewCursor(entities.WithdrawalCursor{
+	assert.Equal(t, entities.NewCursor(entities.LiquidityProvisionCursor{
 		VegaTime: testLps[9].VegaTime,
-		ID:       testLps[9].ID.String(),
+		ID:       testLps[9].ID,
 	}.String()).Encode(), pageInfo.EndCursor)
 }
 
@@ -386,13 +386,13 @@ func testLiquidityProvisionPaginationFirst(t *testing.T) {
 	assert.Equal(t, want, got)
 	assert.False(t, pageInfo.HasPreviousPage)
 	assert.True(t, pageInfo.HasNextPage)
-	assert.Equal(t, entities.NewCursor(entities.WithdrawalCursor{
+	assert.Equal(t, entities.NewCursor(entities.LiquidityProvisionCursor{
 		VegaTime: testLps[0].VegaTime,
-		ID:       testLps[0].ID.String(),
+		ID:       testLps[0].ID,
 	}.String()).Encode(), pageInfo.StartCursor)
-	assert.Equal(t, entities.NewCursor(entities.WithdrawalCursor{
+	assert.Equal(t, entities.NewCursor(entities.LiquidityProvisionCursor{
 		VegaTime: testLps[2].VegaTime,
-		ID:       testLps[2].ID.String(),
+		ID:       testLps[2].ID,
 	}.String()).Encode(), pageInfo.EndCursor)
 }
 
@@ -412,13 +412,13 @@ func testLiquidityProvisionPaginationLast(t *testing.T) {
 	assert.Equal(t, want, got)
 	assert.True(t, pageInfo.HasPreviousPage)
 	assert.False(t, pageInfo.HasNextPage)
-	assert.Equal(t, entities.NewCursor(entities.WithdrawalCursor{
+	assert.Equal(t, entities.NewCursor(entities.LiquidityProvisionCursor{
 		VegaTime: testLps[7].VegaTime,
-		ID:       testLps[7].ID.String(),
+		ID:       testLps[7].ID,
 	}.String()).Encode(), pageInfo.StartCursor)
-	assert.Equal(t, entities.NewCursor(entities.WithdrawalCursor{
+	assert.Equal(t, entities.NewCursor(entities.LiquidityProvisionCursor{
 		VegaTime: testLps[9].VegaTime,
-		ID:       testLps[9].ID.String(),
+		ID:       testLps[9].ID,
 	}.String()).Encode(), pageInfo.EndCursor)
 }
 
@@ -429,10 +429,7 @@ func testLiquidityProvisionPaginationFirstAfter(t *testing.T) {
 	testLps := addLiquidityProvisions(timeoutCtx, t, bs, lpStore)
 
 	first := int32(3)
-	after := entities.NewCursor(entities.DepositCursor{
-		VegaTime: testLps[2].VegaTime,
-		ID:       testLps[2].ID.String(),
-	}.String()).Encode()
+	after := testLps[2].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	require.NoError(t, err)
 	got, pageInfo, err := lpStore.Get(timeoutCtx, entities.PartyID("deadbaad"), entities.MarketID(""), "", pagination)
@@ -442,13 +439,13 @@ func testLiquidityProvisionPaginationFirstAfter(t *testing.T) {
 	assert.Equal(t, want, got)
 	assert.True(t, pageInfo.HasPreviousPage)
 	assert.True(t, pageInfo.HasNextPage)
-	assert.Equal(t, entities.NewCursor(entities.WithdrawalCursor{
+	assert.Equal(t, entities.NewCursor(entities.LiquidityProvisionCursor{
 		VegaTime: testLps[3].VegaTime,
-		ID:       testLps[3].ID.String(),
+		ID:       testLps[3].ID,
 	}.String()).Encode(), pageInfo.StartCursor)
-	assert.Equal(t, entities.NewCursor(entities.WithdrawalCursor{
+	assert.Equal(t, entities.NewCursor(entities.LiquidityProvisionCursor{
 		VegaTime: testLps[5].VegaTime,
-		ID:       testLps[5].ID.String(),
+		ID:       testLps[5].ID,
 	}.String()).Encode(), pageInfo.EndCursor)
 }
 
@@ -461,7 +458,7 @@ func testLiquidityProvisionPaginationLastBefore(t *testing.T) {
 	last := int32(3)
 	before := entities.NewCursor(entities.LiquidityProvisionCursor{
 		VegaTime: testLps[7].VegaTime,
-		ID:       testLps[7].ID.String(),
+		ID:       testLps[7].ID,
 	}.String()).Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 	require.NoError(t, err)
@@ -472,13 +469,13 @@ func testLiquidityProvisionPaginationLastBefore(t *testing.T) {
 	assert.Equal(t, want, got)
 	assert.True(t, pageInfo.HasPreviousPage)
 	assert.True(t, pageInfo.HasNextPage)
-	assert.Equal(t, entities.NewCursor(entities.WithdrawalCursor{
+	assert.Equal(t, entities.NewCursor(entities.LiquidityProvisionCursor{
 		VegaTime: testLps[4].VegaTime,
-		ID:       testLps[4].ID.String(),
+		ID:       testLps[4].ID,
 	}.String()).Encode(), pageInfo.StartCursor)
-	assert.Equal(t, entities.NewCursor(entities.WithdrawalCursor{
+	assert.Equal(t, entities.NewCursor(entities.LiquidityProvisionCursor{
 		VegaTime: testLps[6].VegaTime,
-		ID:       testLps[6].ID.String(),
+		ID:       testLps[6].ID,
 	}.String()).Encode(), pageInfo.EndCursor)
 }
 

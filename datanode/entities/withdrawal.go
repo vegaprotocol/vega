@@ -86,7 +86,7 @@ func (w Withdrawal) ToProto() *vega.Withdrawal {
 func (w Withdrawal) Cursor() *Cursor {
 	wc := WithdrawalCursor{
 		VegaTime: w.VegaTime,
-		ID:       w.ID.String(),
+		ID:       w.ID,
 	}
 	return NewCursor(wc.String())
 }
@@ -112,8 +112,8 @@ func (we *WithdrawExt) UnmarshalJSON(b []byte) error {
 }
 
 type WithdrawalCursor struct {
-	VegaTime time.Time `json:"vegaTime"`
-	ID       string    `json:"id"`
+	VegaTime time.Time    `json:"vegaTime"`
+	ID       WithdrawalID `json:"id"`
 }
 
 func (wc WithdrawalCursor) String() string {

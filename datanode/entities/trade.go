@@ -13,6 +13,7 @@
 package entities
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -79,7 +80,7 @@ func (t *Trade) ToProto() *vega.Trade {
 }
 
 func (t Trade) Cursor() *Cursor {
-	return NewCursor(t.SyntheticTime.In(time.UTC).Format(time.RFC3339Nano))
+	return NewCursor(TradeCursor{SyntheticTime: t.SyntheticTime}.String())
 }
 
 func (t Trade) ToProtoEdge(_ ...any) (*v2.TradeEdge, error) {
@@ -161,4 +162,23 @@ func TradeFromProto(t *vega.Trade, vegaTime time.Time, sequenceNumber uint64) (*
 		SellerAuctionBatch:      t.SellerAuctionBatch,
 	}
 	return &trade, nil
+}
+
+type TradeCursor struct {
+	SyntheticTime time.Time `json:"synthetic_time"`
+}
+
+func (c TradeCursor) String() string {
+	bs, err := json.Marshal(c)
+	if err != nil {
+		panic(fmt.Errorf("could not marshal Trade cursor: %w", err))
+	}
+	return string(bs)
+}
+
+func (c *TradeCursor) Parse(cursorString string) error {
+	if cursorString == "" {
+		return nil
+	}
+	return json.Unmarshal([]byte(cursorString), c)
 }

@@ -13,6 +13,8 @@
 package entities
 
 import (
+	"encoding/json"
+	"fmt"
 	"time"
 
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
@@ -71,7 +73,10 @@ func (a Asset) ToProto() *pb.Asset {
 }
 
 func (a Asset) Cursor() *Cursor {
-	return NewCursor(a.ID.String())
+	ac := AssetCursor{
+		ID: a.ID,
+	}
+	return NewCursor(ac.String())
 }
 
 func (a Asset) ToProtoEdge(_ ...any) (*v2.AssetEdge, error) {
@@ -79,4 +84,24 @@ func (a Asset) ToProtoEdge(_ ...any) (*v2.AssetEdge, error) {
 		Node:   a.ToProto(),
 		Cursor: a.Cursor().Encode(),
 	}, nil
+}
+
+type AssetCursor struct {
+	ID AssetID `json:"id"`
+}
+
+func (ac AssetCursor) String() string {
+	bs, err := json.Marshal(ac)
+	if err != nil {
+		panic(fmt.Errorf("couldn't marshal asset cursor: %w", err))
+	}
+	return string(bs)
+}
+
+func (ac *AssetCursor) Parse(cursorString string) error {
+	if cursorString == "" {
+		return nil
+	}
+
+	return json.Unmarshal([]byte(cursorString), ac)
 }
