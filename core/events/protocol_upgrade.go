@@ -22,17 +22,15 @@ type ProtocolUpgradeProposalEvent struct {
 	*Base
 	UpgradeBlockHeight uint64
 	VegaReleaseTag     string
-	DataNodeReleaseTag string
 	AcceptedBy         []string
 	ProposalStatus     eventspb.ProtocolUpgradeProposalStatus
 }
 
-func NewProtocolUpgradeProposalEvent(ctx context.Context, upgradeBlockHeight uint64, vegaReleaseTag string, dataNodeReleaseTag string, acceptedBy []string, status eventspb.ProtocolUpgradeProposalStatus) *ProtocolUpgradeProposalEvent {
+func NewProtocolUpgradeProposalEvent(ctx context.Context, upgradeBlockHeight uint64, vegaReleaseTag string, acceptedBy []string, status eventspb.ProtocolUpgradeProposalStatus) *ProtocolUpgradeProposalEvent {
 	return &ProtocolUpgradeProposalEvent{
 		Base:               newBase(ctx, ValidatorScoreEvent),
 		UpgradeBlockHeight: upgradeBlockHeight,
 		VegaReleaseTag:     vegaReleaseTag,
-		DataNodeReleaseTag: dataNodeReleaseTag,
 		AcceptedBy:         acceptedBy,
 		ProposalStatus:     status,
 	}
@@ -41,7 +39,6 @@ func NewProtocolUpgradeProposalEvent(ctx context.Context, upgradeBlockHeight uin
 func (pup ProtocolUpgradeProposalEvent) Proto() eventspb.ProtocolUpgradeEvent {
 	return eventspb.ProtocolUpgradeEvent{
 		VegaReleaseTag:     pup.VegaReleaseTag,
-		DataNodeReleaseTag: pup.DataNodeReleaseTag,
 		UpgradeBlockHeight: pup.UpgradeBlockHeight,
 		Approvers:          pup.AcceptedBy,
 		Status:             pup.ProposalStatus,
@@ -72,7 +69,6 @@ func ProtocolUpgradeProposalEventFromStream(ctx context.Context, be *eventspb.Bu
 		Base:               newBaseFromBusEvent(ctx, ProtocolUpgradeEvent, be),
 		UpgradeBlockHeight: event.UpgradeBlockHeight,
 		VegaReleaseTag:     event.VegaReleaseTag,
-		DataNodeReleaseTag: event.DataNodeReleaseTag,
 		AcceptedBy:         event.Approvers,
 		ProposalStatus:     event.Status,
 	}

@@ -781,7 +781,5 @@ message AcceptedProtocolUpgradeProposal {
     // The block height at which to perform the upgrade
     uint64 upgrade_block_height = 1;
     // the release tag for the vega binary
-    string vega_release_tag = 2;
-    // the release tag for the data-node binary
-    string data_node_release_tag = 3;
+    string vega_release_tag = 2;   
 }

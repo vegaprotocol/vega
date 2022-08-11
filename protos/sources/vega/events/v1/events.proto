@@ -464,16 +464,14 @@ enum ProtocolUpgradeProposalStatus {
 }
 
 message ProtocolUpgradeEvent {
-   // The block height at which to perform the upgrade
-   uint64 upgrade_block_height = 1;
-   // the release tag for the vega binary
-   string vega_release_tag = 2;
-   // the release tag for the data-node binary
-   string data_node_release_tag = 3;
-   // tendermint validators that have agreed to the upgrade
-  repeated string approvers = 4;
+  // The block height at which to perform the upgrade
+  uint64 upgrade_block_height = 1;
+  // the release tag for the vega binary
+  string vega_release_tag = 2;
+  // tendermint validators that have agreed to the upgrade
+  repeated string approvers = 3;
   // the status of the proposal
-  ProtocolUpgradeProposalStatus status = 5;
+  ProtocolUpgradeProposalStatus status = 4;
 }
 
 //StateVarEvent - updates on state changes in state variable consensus

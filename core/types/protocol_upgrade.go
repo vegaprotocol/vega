@@ -7,6 +7,5 @@ type UpgradeStatus struct {
 
 type ReleaseInfo struct {
 	VegaReleaseTag     string
-	DatanodeReleaseTag string
 	UpgradeBlockHeight uint64
 }
