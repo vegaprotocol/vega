@@ -24,8 +24,8 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 };
 
 service TradingDataService {
-    // -- Accounts --
-
+    // Accounts
+    //
     // Returns a list of accounts matching the supplied filter, including their current balances.
     // If a given account has never had a balance, it will be absent from the list.
     rpc ListAccounts(ListAccountsRequest) returns (ListAccountsResponse);
@@ -33,43 +33,54 @@ service TradingDataService {
     // Subscribe to a stream of Accounts
     rpc ObserveAccounts(ObserveAccountsRequest) returns (stream ObserveAccountsResponse);
 
-    // node info
+    // Info
+    //
+    // Retrieve informations about this dataa
     rpc Info(InfoRequest) returns (InfoResponse);
 
-    // -- Orders --
-
+    // Order
+    //
     // Gets the current version of an order, or optionally provide a version id to retrieve a given version.
     rpc GetOrder(GetOrderRequest) returns (GetOrderResponse);
 
+    // Orders list
+    //
     // Get a list of orders that match the given filters
     rpc ListOrders(ListOrdersRequest) returns (ListOrdersResponse);
 
+    // Order history
+    //
     // List all versions of an order in the order history
     rpc ListOrderVersions(ListOrderVersionsRequest) returns (ListOrderVersionsResponse);
 
     // Subscribe to a stream of Orders
     rpc ObserveOrders(ObserveOrdersRequest) returns (stream ObserveOrdersResponse);
 
-    // -- Positions --
-
+    // Positions
+    //
     // Get a list of Positions by Party using cursor based pagination
     rpc ListPositions(ListPositionsRequest) returns (ListPositionsResponse);
+
     // Subscribe to a stream of Positions
     rpc ObservePositions(ObservePositionsRequest) returns (stream ObservePositionsResponse);
 
-    // -- Balances --
-
+    // Balances
+    //
     // Get an aggregated list of the changes in balances in a set of accounts over time
     rpc GetBalanceHistory(GetBalanceHistoryRequest) returns (GetBalanceHistoryResponse) {}
 
-    // -- Market Data --
-
+    // Market Data
+    //
     // Get the lastest market data for a given market
     rpc GetLatestMarketData(GetLatestMarketDataRequest) returns (GetLatestMarketDataResponse);
 
+    // Market Data list
+    //
     // Lists the latest market data for every market
     rpc ListLatestMarketData(ListLatestMarketDataRequest) returns (ListLatestMarketDataResponse);
 
+    // Market Detph
+    //
     // Get the latest market depth for a given market
     rpc GetLatestMarketDepth(GetLatestMarketDepthRequest) returns (GetLatestMarketDepthResponse);
 
@@ -79,191 +90,269 @@ service TradingDataService {
 
     rpc ObserveMarketsData(ObserveMarketsDataRequest) returns (stream ObserveMarketsDataResponse);
 
+    // Market data history
+    //
     // Get Market Data History for a Market ID between given dates using a cursor based pagination model
     rpc GetMarketDataHistoryByID(GetMarketDataHistoryByIDRequest) returns (GetMarketDataHistoryByIDResponse);
 
-    // -- Transfers --
-
+    // Transfers list
+    //
     // List Transfers to/from/either a public key using a cursor based pagination model
     rpc ListTransfers(ListTransfersRequest) returns (ListTransfersResponse);
 
-  // -- Network Limits --
-
-  // Get the current network limits (is bootstrapping finished, are proposals enabled etc..)
+    // Network Limits
+    //
+    // Get the current network limits (is bootstrapping finished, are proposals enabled etc..)
     rpc GetNetworkLimits(GetNetworkLimitsRequest) returns (GetNetworkLimitsResponse);
 
-    // -- Candles --
-
+    // Candles list
+    //
     // Get candle data for a given candle id
     rpc ListCandleData(ListCandleDataRequest) returns (ListCandleDataResponse);
     // Subscribe to a stream of Candle updates
     rpc ObserveCandleData(ObserveCandleDataRequest) returns (stream ObserveCandleDataResponse);
+
+    // Candle intervals list
+    //
     // Gets all available intervals for a given market along with the corresponding candle id
     rpc ListCandleIntervals(ListCandleIntervalsRequest) returns (ListCandleIntervalsResponse);
 
-    // -- Votes --
-
+    // Votes list
+    //
     // Get Votes for a Party ID using a cursor based pagination model
     rpc ListVotes(ListVotesRequest) returns (ListVotesResponse);
     // Subscribe to a stream of votes
     rpc ObserveVotes(ObserveVotesRequest) returns (stream ObserveVotesResponse);
 
-    // -- ERC20 Multi Sig --
-
+    // ERC20 add signer bundle
+    //
     // Gets the signature bundles that add a particular validator to the multisig contract
     rpc GetERC20MultiSigSignerAddedBundles(GetERC20MultiSigSignerAddedBundlesRequest) returns (GetERC20MultiSigSignerAddedBundlesResponse);
+
+    // ERC20 remove signer bundle
+    //
     // Gets the signature bundles that remove a particular validator to the multisig contract
     rpc GetERC20MultiSigSignerRemovedBundles(GetERC20MultiSigSignerRemovedBundlesRequest) returns (GetERC20MultiSigSignerRemovedBundlesResponse);
+
+    // ERC20 list asset bundle
+    //
     // Gets the signature bundles that remove a particular validator to the multisig contract
     rpc GetERC20ListAssetBundle(GetERC20ListAssetBundleRequest) returns (GetERC20ListAssetBundleResponse);
+
+    // ERC20 set asset limit bundle
+    //
     // Gets the signature bundles that remove a particular validator to the multisig contract
     rpc GetERC20SetAssetLimitsBundle(GetERC20SetAssetLimitsBundleRequest) returns (GetERC20SetAssetLimitsBundleResponse);
+
+    // ERC20 withdrawal bundle
+    //
+    // Get the signature bundle to finalize a withdrawal on ethereum
     rpc GetERC20WithdrawalApproval(GetERC20WithdrawalApprovalRequest) returns (GetERC20WithdrawalApprovalResponse);
 
-    // -- Trades --
-
+    // Trade (latest)
+    //
     // Get latest Trade
     rpc GetLastTrade(GetLastTradeRequest) returns (GetLastTradeResponse);
 
+    // Trades list
+    //
     // Get a list of all trades, optionally filtered by party/market/order using a cursor based pagination model
     rpc ListTrades(ListTradesRequest) returns (ListTradesResponse);
 
     // Subscribe to a stream of Trades, optionally filtered by party/market
     rpc ObserveTrades(ObserveTradesRequest) returns (stream ObserveTradesResponse);
 
-    // -- Oracles --
-
+    // Oracle Spec
+    //
     // Get an oracle spec by ID.
     rpc GetOracleSpec(GetOracleSpecRequest) returns (GetOracleSpecResponse);
+
+    // Oracle Spec list
+    //
     // Get the oracle specs
     rpc ListOracleSpecs(ListOracleSpecsRequest) returns (ListOracleSpecsResponse);
+
+    // Oracle data list
+    //
     // Get all oracle data
     rpc ListOracleData(ListOracleDataRequest) returns (ListOracleDataResponse);
 
-    // -- Markets --
-
+    // Market
+    //
     // Get all markets using a cursor based pagination model
     rpc GetMarket(GetMarketRequest) returns (GetMarketResponse);
+
+    // Markets list
+    //
+    // Get markets using a cursor based pagination
     rpc ListMarkets(ListMarketsRequest) returns (ListMarketsResponse);
 
-    // -- Parties --
-
-    // Get Parties using a cursor based pagination model
+    // Party
+    //
+    // Get a single party
     rpc GetParty(GetPartyRequest) returns (GetPartyResponse);
+
+    // Parties
+    //
+    // Get Parties using a cursor based pagination model
     rpc ListParties(ListPartiesRequest) returns (ListPartiesResponse);
 
-    // -- Margin Levels --
-
+    // Margin Levels list
+    //
     // Get Margin Levels using a cursor based pagination model
     rpc ListMarginLevels(ListMarginLevelsRequest) returns (ListMarginLevelsResponse);
     // Subscribe to a stream of Margin Levels
     rpc ObserveMarginLevels(ObserveMarginLevelsRequest) returns (stream ObserveMarginLevelsResponse);
 
-    // -- Rewards --
-
+    // Rewards list
+    //
     // Get rewards
     rpc ListRewards(ListRewardsRequest) returns (ListRewardsResponse);
+
+    // Reward summaries list
+    //
     // Get reward summaries
     rpc ListRewardSummaries(ListRewardSummariesRequest) returns (ListRewardSummariesResponse);
     // subscribe to rewards
     rpc ObserveRewards(ObserveRewardsRequest) returns (stream ObserveRewardsResponse);
 
-    // -- Deposits --
-
+    // Deposit
+    //
     // Get a deposit by its identifier
     rpc GetDeposit(GetDepositRequest) returns (GetDepositResponse);
+
+    // Deposits list
+    //
     // Get a list of deposits for a given party
     rpc ListDeposits(ListDepositsRequest) returns (ListDepositsResponse);
 
-    // -- Withdrawals --
-
+    // Withdrawal
+    //
+    // Get a withdrawal by its identifier
     rpc GetWithdrawal(GetWithdrawalRequest) returns (GetWithdrawalResponse);
+
+    // Withdrawals list
+    //
+    // Get a list of withdrawals for a given party
     rpc ListWithdrawals(ListWithdrawalsRequest) returns (ListWithdrawalsResponse);
 
-    // -- Assets --
-
+    // Asset
+    //
+    // Get a single asset using it's identifier
     rpc GetAsset(GetAssetRequest) returns (GetAssetResponse);
+
+    // Assets list
+    //
+    // Get a list of asset using cusor based pagination
     rpc ListAssets(ListAssetsRequest) returns (ListAssetsResponse);
 
-    // -- Liquidity Provisions --
-
+    // Liquidity Provisions list
+    //
+    // Get a liquidity provision list for a given market using a cursor based pagination
     rpc ListLiquidityProvisions(ListLiquidityProvisionsRequest) returns (ListLiquidityProvisionsResponse);
 
-    // -- Governance --
-
-    // List proposals using a cursor based pagination model
+    // Governance
+    //
+    // Get a single proposal details
     rpc GetGovernanceData(GetGovernanceDataRequest) returns (GetGovernanceDataResponse);
+
+    // Governance list
+    //
+    // List proposals using a cursor based pagination model
     rpc ListGovernanceData(ListGovernanceDataRequest) returns (ListGovernanceDataResponse);
+
     rpc ObserveGovernance(ObserveGovernanceRequest) returns (stream ObserveGovernanceResponse);
 
-    // -- Delegation --
-
+    // Delegation list
+    //
     // List delegations
     rpc ListDelegations(ListDelegationsRequest) returns (ListDelegationsResponse);
     // subscribe to delegation events
     rpc ObserveDelegations(ObserveDelegationsRequest) returns (stream ObserveDelegationsResponse);
 
-    // -- Nodes --
-
+    // Network data
+    //
     // Get data regarding the nodes of the network
     rpc GetNetworkData(GetNetworkDataRequest) returns (GetNetworkDataResponse);
+
+    // Node
+    //
     // Get information about a given node
     rpc GetNode(GetNodeRequest) returns (GetNodeResponse);
+
+    // Node
+    //
     // List information about the nodes on the network
     rpc ListNodes(ListNodesRequest) returns (ListNodesResponse);
+
+    // Node signatures list
+    //
     // List an aggregate of signatures from all the nodes of the network
     rpc ListNodeSignatures(ListNodeSignaturesRequest) returns (ListNodeSignaturesResponse);
 
-    // -- Epochs --
-
+    // Epoch
+    //
     // Get data for a specific epoch, if id omitted it gets the current epoch
     rpc GetEpoch(GetEpochRequest) returns (GetEpochResponse);
 
-    // -- Estimates --
-
+    // Estimate fee
+    //
+    // Estimate the fee that would incur for submitting this order
     rpc EstimateFee(EstimateFeeRequest) returns (EstimateFeeResponse);
+
+    // Estimate margin
+    //
+    // Estimate the margin that would be required for submitting this order
     rpc EstimateMargin(EstimateMarginRequest) returns (EstimateMarginResponse);
 
-    // -- Network Parameters --
-
+    // Network Parameters list
+    //
     // Get the network parameters
     rpc ListNetworkParameters(ListNetworkParametersRequest) returns (ListNetworkParametersResponse);
+
+    // Network Parameter
+    //
+    // Get a single network parameter
     rpc GetNetworkParameter(GetNetworkParameterRequest) returns (GetNetworkParameterResponse);
 
-    // -- Checkpoints --
-
+    // Checkpoints list
+    //
+    // List information about checkpoint generated by the network
     rpc ListCheckpoints(ListCheckpointsRequest) returns (ListCheckpointsResponse);
 
-    // -- Stake --
-
+    // Stake
+    //
+    // Retrieve staking informations for a given party
     rpc GetStake(GetStakeRequest) returns (GetStakeResponse);
 
-    // -- Risk Factors --
-
+    // Risk Factors
+    //
     // Get Risk Factor data for a given market
     rpc GetRiskFactors(GetRiskFactorsRequest) returns (GetRiskFactorsResponse);
 
-    // -- Event Bus --
-
+    // Event Bus
+    //
     // Subscribe to a stream of events from the core
     rpc ObserveEventBus(stream ObserveEventBusRequest) returns (stream ObserveEventBusResponse);
 
-    // -- Transfer Responses --
-
+    // Transfer Responses
+    //
     // Subscribe to a stream of Transfer Responses
     rpc ObserveTransferResponses(ObserveTransferResponsesRequest) returns (stream ObserveTransferResponsesResponse);
 
-    // -- Key Rotations --
-
+    // Key Rotations list
+    //
+    // List all key rotation applied for a given party
     rpc ListKeyRotations(ListKeyRotationsRequest) returns (ListKeyRotationsResponse);
 
-    // -- Ethereum Key Rotations --
-
+    // Ethereum Key Rotations
+    //
+    // List all ethereum key rotation applied for a given party
     rpc ListEthereumKeyRotations(ListEthereumKeyRotationsRequest) returns (ListEthereumKeyRotationsResponse);
 
-    // -- Vega Time --
-
-    // Get Time
+    // Vega Time
+    //
+    // Get the current time of the network
     rpc GetVegaTime(GetVegaTimeRequest) returns (GetVegaTimeResponse);
 }
 
