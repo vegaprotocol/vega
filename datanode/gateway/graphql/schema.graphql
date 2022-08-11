@@ -3047,6 +3047,9 @@ type ProposalTerms {
   """
   enactmentDatetime: String
 
+  "RFC3339Nano time and when node validation of the proposal stops, accepted only with new asset proposals"
+  validationDatetime: String
+
   "Actual change being introduced by the proposal - action the proposal triggers if passed and enacted."
   change: ProposalChange!
 }
