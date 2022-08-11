@@ -48,8 +48,8 @@ func (w NodeSignature) ToProto() *commandspb.NodeSignature {
 
 func (w NodeSignature) Cursor() *Cursor {
 	cursor := NodeSignatureCursor{
-		ID:  w.ResourceID.String(),
-		Sig: w.Sig,
+		ResourceID: w.ResourceID,
+		Sig:        w.Sig,
 	}
 	return NewCursor(cursor.String())
 }
@@ -62,8 +62,8 @@ func (w NodeSignature) ToProtoEdge(_ ...any) (*v2.NodeSignatureEdge, error) {
 }
 
 type NodeSignatureCursor struct {
-	ID  string `json:"id"`
-	Sig []byte `json:"sig"`
+	ResourceID NodeSignatureID `json:"resource_id"`
+	Sig        []byte          `json:"sig"`
 }
 
 func (c NodeSignatureCursor) String() string {

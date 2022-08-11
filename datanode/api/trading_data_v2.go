@@ -1439,7 +1439,7 @@ func (t *tradingDataServiceV2) ListAssets(ctx context.Context, req *v2.ListAsset
 		req = &v2.ListAssetsRequest{}
 	}
 
-	if req != nil && *req.AssetId != "" {
+	if req.AssetId != nil && *req.AssetId != "" {
 		return t.getSingleAsset(ctx, *req.AssetId)
 	}
 

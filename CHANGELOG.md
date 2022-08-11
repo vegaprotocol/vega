@@ -13,6 +13,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5579](https://github.com/vegaprotocol/vega/issues/5579) - Make vega a built-in Tendermint application
 - [5249](https://github.com/vegaprotocol/vega/issues/5249) - Migrate to Tendermint version 0.35.8
 - [5624](https://github.com/vegaprotocol/vega/issues/5624) - Get rid of `updateFrequency` in price monitoring definition
+- [5601](https://github.com/vegaprotocol/vega/issues/5601) - Remove support for launching a proxy in front of console and token dApp 
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -44,6 +45,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5685](https://github.com/vegaprotocol/vega/issues/5685) - Migrated `apis` from `datanode v1` to `datanode v2`
 - [5761](https://github.com/vegaprotocol/vega/issues/5761) - Transfers connection make direction optional
 - [5762](https://github.com/vegaprotocol/vega/issues/5762) - Transfers connection add under `party` type
+- [5685](https://github.com/vegaprotocol/vega/issues/5685) - Migrated `apis` from `datanode v1` to `datanode v2`
 - [5705](https://github.com/vegaprotocol/vega/issues/5705) - Use enum for validator status
 - [5685](https://github.com/vegaprotocol/vega/issues/5685) - Migrated `apis` from `datanode v1` to `datanode v2`
 - [5834](https://github.com/vegaprotocol/vega/issues/5834) - Avoid saving proposals of terminated/cancelled/rejected/settled markets in checkpoint
@@ -51,9 +53,11 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5823](https://github.com/vegaprotocol/vega/issues/5823) - Add endpoint to wallet HTTP API version 2 to list available RPC methods
 - [5814](https://github.com/vegaprotocol/vega/issues/5815) - Add proposal validation date time to `graphql`
 - [5865](https://github.com/vegaprotocol/vega/issues/5865) - Allow a validator to withdraw their protocol upgrade proposal
+- [5803](https://github.com/vegaprotocol/vega/issues/5803) - Update cursor pagination to use new method from [5784](https://github.com/vegaprotocol/vega/pull/5784)
 
 ### 🐛 Fixes
 - [5571](https://github.com/vegaprotocol/vega/issues/5571) - Restore pending assets status correctly after snapshot restore
+- [5857](https://github.com/vegaprotocol/vega/issues/5857) - Fix panic when calling `ListAssets` `grpc` end point with no arguments
 - [5572](https://github.com/vegaprotocol/vega/issues/5572) - Add validation on `IDs` and public keys
 - [5348](https://github.com/vegaprotocol/vega/issues/5348) - Restore markets from checkpoint proposal
 - [5279](https://github.com/vegaprotocol/vega/issues/5279) - Fix loading of proposals from checkpoint
@@ -66,6 +70,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5665](https://github.com/vegaprotocol/vega/issues/5665) - Binary version hash always contain `-modified` suffix
 - [5633](https://github.com/vegaprotocol/vega/issues/5633) - Allow `minProposerEquityLikeShare` to accept 0
 - [5672](https://github.com/vegaprotocol/vega/issues/5672) - Typo fixed in datanode `ethereum` address
+- [5863](https://github.com/vegaprotocol/vega/issues/5863) - Fix panic when calling `VegaTime` on `v2 api`
 - [5683](https://github.com/vegaprotocol/vega/issues/5683) - Made market mandatory in `GraphQL` for order
 - [5789](https://github.com/vegaprotocol/vega/issues/5789) - Fix performance issue with position query
 - [5677](https://github.com/vegaprotocol/vega/issues/5677) - Fixed trading mode status
@@ -74,10 +79,12 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5767](https://github.com/vegaprotocol/vega/issues/5767) - Fix typo in command validation
 - [5825](https://github.com/vegaprotocol/vega/issues/5825) - Fix panic in pegged orders when going into auction
 - [5763](https://github.com/vegaprotocol/vega/issues/5763) - Transfers connection rename `pubkey` to `partyId`
+- [5486](https://github.com/vegaprotocol/vega/issues/5486) - Fix amend order expiring
 - [5809](https://github.com/vegaprotocol/vega/issues/5809) - Remove state variables when a market proposal is rejected
 - [5329](https://github.com/vegaprotocol/vega/issues/5329) - Fix checks for market enactment and termination
 - [5837](https://github.com/vegaprotocol/vega/issues/5837) - Allow a promotion due to increased slots and a swap to happen in the same epoch
 - [5819](https://github.com/vegaprotocol/vega/issues/5819) - Add new asset proposal validation timestamp validation
+- [5811](https://github.com/vegaprotocol/vega/issues/5811) - Do not overwrite local changes when updating wallet through JSON-RPC API
 
 ## 0.53.0
 

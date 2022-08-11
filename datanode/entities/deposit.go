@@ -75,7 +75,7 @@ func (d Deposit) ToProto() *vega.Deposit {
 func (d Deposit) Cursor() *Cursor {
 	cursor := DepositCursor{
 		VegaTime: d.VegaTime,
-		ID:       d.ID.String(),
+		ID:       d.ID,
 	}
 	return NewCursor(cursor.String())
 }
@@ -89,7 +89,7 @@ func (d Deposit) ToProtoEdge(_ ...any) (*v2.DepositEdge, error) {
 
 type DepositCursor struct {
 	VegaTime time.Time `json:"vegaTime"`
-	ID       string    `json:"id"`
+	ID       DepositID `json:"id"`
 }
 
 func (dc DepositCursor) String() string {

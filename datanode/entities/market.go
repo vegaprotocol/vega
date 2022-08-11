@@ -13,6 +13,7 @@
 package entities
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -41,6 +42,27 @@ type Market struct {
 	State                         MarketState
 	MarketTimestamps              MarketTimestamps
 	PositionDecimalPlaces         int
+}
+
+type MarketCursor struct {
+	VegaTime time.Time `json:"vegaTime"`
+	ID       MarketID  `json:"id"`
+}
+
+func (mc MarketCursor) String() string {
+	bs, err := json.Marshal(mc)
+	if err != nil {
+		panic(fmt.Errorf("could not marshal market cursor: %w", err))
+	}
+	return string(bs)
+}
+
+func (mc *MarketCursor) Parse(cursorString string) error {
+	if cursorString == "" {
+		return nil
+	}
+
+	return json.Unmarshal([]byte(cursorString), mc)
 }
 
 func NewMarketFromProto(market *vega.Market, vegaTime time.Time) (*Market, error) {
@@ -120,7 +142,11 @@ func (m Market) ToProto() *vega.Market {
 }
 
 func (m Market) Cursor() *Cursor {
-	return NewCursor(m.VegaTime.In(time.UTC).Format(time.RFC3339Nano))
+	mc := MarketCursor{
+		VegaTime: m.VegaTime,
+		ID:       m.ID,
+	}
+	return NewCursor(mc.String())
 }
 
 func (m Market) ToProtoEdge(_ ...any) (*v2.MarketEdge, error) {

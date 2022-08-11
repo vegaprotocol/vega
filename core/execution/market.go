@@ -787,12 +787,12 @@ func (m *Market) removeOrders(ctx context.Context) {
 }
 
 func (m *Market) cleanMarketWithState(ctx context.Context, mktState types.MarketState) error {
-	asset, _ := m.mkt.GetAsset()
 	parties := make([]string, 0, len(m.parties))
 	for k := range m.parties {
 		parties = append(parties, k)
 	}
 
+	asset, _ := m.mkt.GetAsset()
 	sort.Strings(parties)
 	clearMarketTransfers, err := m.collateral.ClearMarket(ctx, m.GetID(), asset, parties)
 	if err != nil {
@@ -821,10 +821,17 @@ func (m *Market) closeCancelledMarket(ctx context.Context, t time.Time) error {
 		return err
 	}
 
+	err = m.stopAllLiquidityProvisionOnReject(ctx)
+	if err != nil {
+		m.log.Debug("could not stop all liquidity provision on market rejection",
+			logging.MarketID(m.GetID()),
+			logging.Error(err))
+	}
+
 	m.closed = true
 	m.stateChanged = true
 
-	return m.Reject(ctx)
+	return nil
 }
 
 func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
@@ -2585,7 +2592,9 @@ func (m *Market) amendOrder(
 
 		// Update the existing message in place before we cancel it
 		if foundOnBook {
-			m.orderAmendInPlace(existingOrder, amendedOrder)
+			// Do not amend in place, the amend could be something
+			// not supported for an amend in place, and not pass
+			// the validation of the order book
 			cancellation, err := m.matching.CancelOrder(amendedOrder)
 			if cancellation == nil || err != nil {
 				m.log.Panic("Failure to cancel order from matching engine",
@@ -2593,11 +2602,10 @@ func (m *Market) amendOrder(
 					logging.String("order-id", amendedOrder.ID),
 					logging.String("market", m.mkt.ID),
 					logging.Error(err))
-				return nil, nil, err
 			}
 
-			_ = m.position.UnregisterOrder(ctx, cancellation.Order)
-			amendedOrder = cancellation.Order
+			// unregister the existing order
+			_ = m.position.UnregisterOrder(ctx, existingOrder)
 		}
 
 		// Update the order in our stores (will be marked as cancelled)

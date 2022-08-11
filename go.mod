@@ -66,7 +66,6 @@ require (
 	github.com/muesli/termenv v0.11.0
 	github.com/oasisprotocol/curve25519-voi v0.0.0-20220317090546-adb2f9614b17
 	github.com/pressly/goose/v3 v3.6.1
-	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966
 	github.com/tyler-smith/go-bip39 v1.1.0
 	github.com/vegaprotocol/go-slip10 v0.1.0
 	github.com/vektah/gqlparser/v2 v2.2.0

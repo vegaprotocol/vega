@@ -72,6 +72,7 @@ func (h *RequestPermissions) Handle(ctx context.Context, rawParams jsonrpc.Param
 	}
 
 	var passphrase string
+	var walletFromStore wallet.Wallet
 	for {
 		if ctx.Err() != nil {
 			return nil, requestInterruptedError(ErrRequestInterrupted)
@@ -86,7 +87,7 @@ func (h *RequestPermissions) Handle(ctx context.Context, rawParams jsonrpc.Param
 			return nil, internalError(ErrCouldNotRequestPermissions)
 		}
 
-		_, err = h.walletStore.GetWallet(ctx, connectedWallet.Wallet.Name(), enteredPassphrase)
+		w, err := h.walletStore.GetWallet(ctx, connectedWallet.Wallet.Name(), enteredPassphrase)
 		if err != nil {
 			if errors.Is(err, wallet.ErrWrongPassphrase) {
 				h.pipeline.NotifyError(ctx, traceID, ClientError, wallet.ErrWrongPassphrase)
@@ -96,26 +97,34 @@ func (h *RequestPermissions) Handle(ctx context.Context, rawParams jsonrpc.Param
 			return nil, internalError(ErrCouldNotRequestPermissions)
 		}
 		passphrase = enteredPassphrase
+		walletFromStore = w
 		break
 	}
 
-	previousPerms := connectedWallet.Permissions()
-	var updateErr error
-	defer func() {
-		// If any of the actions below fails, we try to revert the in-memory
-		// wallet permissions to the previous state.
-		// It may fail, but at least we tried.
-		if updateErr != nil {
-			_ = connectedWallet.Wallet.UpdatePermissions(connectedWallet.Hostname, previousPerms)
-		}
-	}()
-	if updateErr = connectedWallet.UpdatePermissions(perms); updateErr != nil {
-		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("couldn't update the permissions: %w", updateErr))
+	// We keep a reference to the in-memory wallet, it case we need to roll back.
+	previousWallet := connectedWallet.Wallet
+
+	// We update the wallet we just loaded from the wallet store to ensure
+	// we don't overwrite changes that could have been done outside the API.
+	if err := walletFromStore.UpdatePermissions(connectedWallet.Hostname, perms); err != nil {
+		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("couldn't update the permissions: %w", err))
 		return nil, internalError(ErrCouldNotRequestPermissions)
 	}
 
-	if updateErr = h.walletStore.SaveWallet(ctx, connectedWallet.Wallet, passphrase); updateErr != nil {
-		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("couldn't save wallet: %w", updateErr))
+	// Then, we update the in-memory wallet with the updated wallet, before
+	// saving it, to ensure there is no problem with the resources reloading.
+	if err := connectedWallet.ReloadWithWallet(walletFromStore); err != nil {
+		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("couldn't reload wallet's resources: %w", err))
+		return nil, internalError(ErrCouldNotRequestPermissions)
+	}
+
+	// And, to finish, we save the wallet loaded from the wallet store.
+	if err := h.walletStore.SaveWallet(ctx, walletFromStore, passphrase); err != nil {
+		// We ignore the error as we know the previous state worked so far.
+		// There is no sane reason it fails out of the blue.
+		_ = connectedWallet.ReloadWithWallet(previousWallet)
+
+		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("couldn't save wallet: %w", err))
 		return nil, internalError(ErrCouldNotRequestPermissions)
 	}
 

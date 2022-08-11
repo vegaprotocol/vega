@@ -26,6 +26,13 @@ type KeyRotations struct {
 	*ConnectionSource
 }
 
+var keyRotationsOrdering = TableOrdering{
+	ColumnOrdering{"vega_time", ASC},
+	ColumnOrdering{"node_id", ASC},
+	ColumnOrdering{"old_pub_key", ASC},
+	ColumnOrdering{"new_pub_key", ASC},
+}
+
 func NewKeyRotations(connectionSource *ConnectionSource) *KeyRotations {
 	return &KeyRotations{
 		ConnectionSource: connectionSource,
@@ -53,23 +60,15 @@ func (store *KeyRotations) GetAllPubKeyRotations(ctx context.Context, pagination
 	var pageInfo entities.PageInfo
 	keyRotations := []entities.KeyRotation{}
 
-	sorting, cmp, cursor := extractPaginationInfo(pagination)
-
-	kc := &entities.KeyRotationCursor{}
-	if err := kc.Parse(cursor); err != nil {
-		return nil, pageInfo, fmt.Errorf("could not parse key rotation cursor: %w", err)
-	}
-
-	cursorParams := []CursorQueryParameter{
-		NewCursorQueryParameter("vega_time", sorting, cmp, kc.VegaTime),
-		NewCursorQueryParameter("node_id", sorting, cmp, entities.NodeID(kc.NodeID)),
-	}
-
 	var args []interface{}
+	var err error
 	query := `SELECT * FROM key_rotations`
-	query, args = orderAndPaginateWithCursor(query, pagination, cursorParams, args...)
+	query, args, err = PaginateQuery[entities.KeyRotationCursor](query, args, keyRotationsOrdering, pagination)
+	if err != nil {
+		return nil, pageInfo, err
+	}
 
-	if err := pgxscan.Select(ctx, store.pool, &keyRotations, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, store.pool, &keyRotations, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("failed to retrieve key rotations: %w", err)
 	}
 

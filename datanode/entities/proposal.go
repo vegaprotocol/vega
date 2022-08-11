@@ -69,7 +69,7 @@ func (p Proposal) Cursor() *Cursor {
 	pc := ProposalCursor{
 		State:    p.State,
 		VegaTime: p.VegaTime,
-		ID:       p.ID.String(),
+		ID:       p.ID,
 	}
 	return NewCursor(pc.String())
 }
@@ -127,7 +127,7 @@ func (pt *ProposalTerms) UnmarshalJSON(b []byte) error {
 type ProposalCursor struct {
 	State    ProposalState `json:"state"`
 	VegaTime time.Time     `json:"vega_time"`
-	ID       string        `json:"id"`
+	ID       ProposalID    `json:"id"`
 }
 
 func (pc ProposalCursor) String() string {

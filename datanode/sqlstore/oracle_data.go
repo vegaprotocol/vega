@@ -30,6 +30,11 @@ const (
 	sqlOracleDataColumns = `public_keys, data, matched_spec_ids, broadcast_at, vega_time`
 )
 
+var oracleDataOrdering = TableOrdering{
+	ColumnOrdering{"vega_time", ASC},
+	ColumnOrdering{"public_keys", ASC},
+}
+
 func NewOracleData(connectionSource *ConnectionSource) *OracleData {
 	return &OracleData{
 		ConnectionSource: connectionSource,
@@ -81,33 +86,24 @@ func getOracleDataBySpecIDOffsetPagination(ctx context.Context, conn Connection,
 func getOracleDataBySpecIDCursorPagination(ctx context.Context, conn Connection, id string, pagination entities.CursorPagination) (
 	[]entities.OracleData, entities.PageInfo, error,
 ) {
-	var oracleData []entities.OracleData
-	var pageInfo entities.PageInfo
-	var bindVars []interface{}
+	var (
+		oracleData []entities.OracleData
+		pageInfo   entities.PageInfo
+		bindVars   []interface{}
+		err        error
+	)
 
 	specID := entities.SpecID(id)
 	query := fmt.Sprintf(`select %s
 	from oracle_data where %s = ANY(matched_spec_ids)`, sqlOracleDataColumns, nextBindVar(&bindVars, specID))
 
-	sorting, cmp, cursor := extractPaginationInfo(pagination)
-
-	dc := &entities.OracleDataCursor{}
-	if cursor != "" {
-		err := dc.Parse(cursor)
-		if err != nil {
-			return nil, pageInfo, fmt.Errorf("parsing cursor information: %w", err)
-		}
+	query, bindVars, err = PaginateQuery[entities.OracleDataCursor](query, bindVars, oracleDataOrdering, pagination)
+	if err != nil {
+		return oracleData, pageInfo, err
 	}
-
-	cursorParams := []CursorQueryParameter{
-		NewCursorQueryParameter("vega_time", sorting, cmp, dc.VegaTime),
-		NewCursorQueryParameter("matched_spec_ids", sorting, cmp, nil),
-	}
-
-	query, bindVars = orderAndPaginateWithCursor(query, pagination, cursorParams, bindVars...)
 
 	defer metrics.StartSQLQuery("OracleData", "ListOracleData")()
-	if err := pgxscan.Select(ctx, conn, &oracleData, query, bindVars...); err != nil {
+	if err = pgxscan.Select(ctx, conn, &oracleData, query, bindVars...); err != nil {
 		return oracleData, pageInfo, err
 	}
 
@@ -145,31 +141,22 @@ order by vega_time desc, matched_spec_id`, selectOracleData())
 func listOracleDataCursorPagination(ctx context.Context, conn Connection, pagination entities.CursorPagination) (
 	[]entities.OracleData, entities.PageInfo, error,
 ) {
-	var data []entities.OracleData
-	var pageInfo entities.PageInfo
+	var (
+		data     []entities.OracleData
+		pageInfo entities.PageInfo
+		bindVars []interface{}
+		err      error
+	)
 
 	query := selectOracleData()
-	var bindVars []interface{}
 
-	sorting, cmp, cursor := extractPaginationInfo(pagination)
-
-	dc := &entities.OracleDataCursor{}
-	if cursor != "" {
-		err := dc.Parse(cursor)
-		if err != nil {
-			return nil, pageInfo, fmt.Errorf("parsing cursor information: %w", err)
-		}
+	query, bindVars, err = PaginateQuery[entities.OracleDataCursor](query, bindVars, oracleDataOrdering, pagination)
+	if err != nil {
+		return data, pageInfo, err
 	}
-
-	cursorParams := []CursorQueryParameter{
-		NewCursorQueryParameter("vega_time", sorting, cmp, dc.VegaTime),
-		NewCursorQueryParameter("matched_spec_ids", sorting, cmp, nil),
-	}
-
-	query, bindVars = orderAndPaginateWithCursor(query, pagination, cursorParams, bindVars...)
 
 	defer metrics.StartSQLQuery("OracleData", "ListOracleData")()
-	if err := pgxscan.Select(ctx, conn, &data, query, bindVars...); err != nil {
+	if err = pgxscan.Select(ctx, conn, &data, query, bindVars...); err != nil {
 		return data, pageInfo, err
 	}
 

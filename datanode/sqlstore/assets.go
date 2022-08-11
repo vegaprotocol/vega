@@ -23,6 +23,10 @@ import (
 	"github.com/georgysavva/scany/pgxscan"
 )
 
+var assetOrdering = TableOrdering{
+	ColumnOrdering{"id", ASC},
+}
+
 type Assets struct {
 	*ConnectionSource
 	cache     map[string]entities.Asset
@@ -114,19 +118,16 @@ func (as *Assets) GetAllWithCursorPagination(ctx context.Context, pagination ent
 	var assets []entities.Asset
 	var pageInfo entities.PageInfo
 	var args []interface{}
-
-	sorting, cmp, cursor := extractPaginationInfo(pagination)
-
-	cursorParams := []CursorQueryParameter{
-		NewCursorQueryParameter("id", sorting, cmp, entities.AssetID(cursor)),
-	}
+	var err error
 
 	query := getAssetQuery()
-	query, args = orderAndPaginateWithCursor(query, pagination, cursorParams, args...)
-
+	query, args, err = PaginateQuery[entities.AssetCursor](query, args, assetOrdering, pagination)
+	if err != nil {
+		return nil, pageInfo, err
+	}
 	defer metrics.StartSQLQuery("Assets", "GetAllWithCursorPagination")()
 
-	if err := pgxscan.Select(ctx, as.Connection, &assets, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, as.Connection, &assets, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("could not get assets: %w", err)
 	}
 
