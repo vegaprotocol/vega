@@ -130,9 +130,4 @@ func PrintDescribeNetworkResponse(w io.Writer, resp *network.DescribeNetworkResp
 		str.Text("    - ").WarningText(h).NextLine()
 	}
 	str.NextLine()
-
-	str.Text("Console").NextLine()
-	str.Text("  Address: ").WarningText(resp.Console.URL).NextSection()
-	str.Text("Token dApp").NextLine()
-	str.Text("  Address: ").WarningText(resp.TokenDApp.URL).NextLine()
 }
