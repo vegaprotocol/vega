@@ -42,10 +42,14 @@ func addNodes(top *testTop, number int) {
 		top.AddNewNode(ctx, &commandspb.AnnounceNode{
 			Id:              fmt.Sprintf("vega-master-pubkey-%d", i),
 			ChainPubKey:     tmPubKeys[0],
-			VegaPubKey:      hex.EncodeToString([]byte(fmt.Sprintf("vega-key-%d", i))),
+			VegaPubKey:      hexEncode(fmt.Sprintf("vega-key-%d", i)),
 			EthereumAddress: fmt.Sprintf("eth-address-%d", i),
 		}, validators.ValidatorStatusTendermint)
 	}
+}
+
+func hexEncode(str string) string {
+	return hex.EncodeToString([]byte(str))
 }
 
 func TestTopologyCheckpoint(t *testing.T) {
@@ -102,7 +106,7 @@ func testTopologyCheckpointSuccess(t *testing.T) {
 		NewAddress:     "new-eth-address-0",
 		CurrentAddress: "eth-address-0",
 	}
-	err = top.RotateEthereumKey(ctx, "vega-master-pubkey-0", 5, ekr1)
+	err = top.RotateEthereumKey(ctx, hexEncode("vega-key-0"), 5, ekr1)
 	assert.NoError(t, err)
 
 	ekr2 := &commandspb.EthereumKeyRotateSubmission{
@@ -110,7 +114,7 @@ func testTopologyCheckpointSuccess(t *testing.T) {
 		NewAddress:     "new-eth-address-1",
 		CurrentAddress: "eth-address-1",
 	}
-	err = top.RotateEthereumKey(ctx, "vega-master-pubkey-1", 5, ekr2)
+	err = top.RotateEthereumKey(ctx, hexEncode("vega-key-1"), 5, ekr2)
 	assert.NoError(t, err)
 
 	pkrs := top.GetAllPendingKeyRotations()
@@ -165,7 +169,7 @@ func testTopologyCheckpointUsesRelativeBlockHeight(t *testing.T) {
 		NewAddress:     "new-eth-address-0",
 		CurrentAddress: "eth-address-0",
 	}
-	err = top.RotateEthereumKey(ctx, "vega-master-pubkey-0", 5, ekr1)
+	err = top.RotateEthereumKey(ctx, hexEncode("vega-key-0"), 5, ekr1)
 	assert.NoError(t, err)
 
 	ekr2 := &commandspb.EthereumKeyRotateSubmission{
@@ -173,7 +177,7 @@ func testTopologyCheckpointUsesRelativeBlockHeight(t *testing.T) {
 		NewAddress:     "new-eth-address-1",
 		CurrentAddress: "eth-address-1",
 	}
-	err = top.RotateEthereumKey(ctx, "vega-master-pubkey-1", 5, ekr2)
+	err = top.RotateEthereumKey(ctx, hexEncode("vega-key-1"), 5, ekr2)
 	assert.NoError(t, err)
 
 	pkrs := top.GetAllPendingKeyRotations()
