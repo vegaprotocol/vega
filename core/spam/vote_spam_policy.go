@@ -44,7 +44,7 @@ var (
 	// ErrPartyIsBannedFromVoting is returned when the party is banned from voting.
 	ErrPartyIsBannedFromVoting = errors.New("party is banned from submitting votes in the current epoch")
 	// ErrInsufficientTokensForVoting is returned when the party has insufficient tokens for voting.
-	ErrInsufficientTokensForVoting = errors.New("party has insufficient tokens to submit votes in this epoch")
+	ErrInsufficientTokensForVoting = errors.New("party has insufficient associated governance tokens in their staking account to submit votes")
 	// ErrTooManyVotes is returned when the party has voted already the maximum allowed votes per proposal per epoch.
 	ErrTooManyVotes = errors.New("party has already voted the maximum number of times per proposal per epoch")
 )

@@ -22,165 +22,268 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TradingDataServiceClient interface {
-	// -- Accounts --
+	// Accounts
+	//
 	// Returns a list of accounts matching the supplied filter, including their current balances.
 	// If a given account has never had a balance, it will be absent from the list.
 	ListAccounts(ctx context.Context, in *ListAccountsRequest, opts ...grpc.CallOption) (*ListAccountsResponse, error)
 	// Subscribe to a stream of Accounts
 	ObserveAccounts(ctx context.Context, in *ObserveAccountsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveAccountsClient, error)
-	// node info
+	// Info
+	//
+	// Retrieve informations about this dataa
 	Info(ctx context.Context, in *InfoRequest, opts ...grpc.CallOption) (*InfoResponse, error)
-	// -- Orders --
+	// Order
+	//
 	// Gets the current version of an order, or optionally provide a version id to retrieve a given version.
 	GetOrder(ctx context.Context, in *GetOrderRequest, opts ...grpc.CallOption) (*GetOrderResponse, error)
+	// Orders list
+	//
 	// Get a list of orders that match the given filters
 	ListOrders(ctx context.Context, in *ListOrdersRequest, opts ...grpc.CallOption) (*ListOrdersResponse, error)
+	// Order history
+	//
 	// List all versions of an order in the order history
 	ListOrderVersions(ctx context.Context, in *ListOrderVersionsRequest, opts ...grpc.CallOption) (*ListOrderVersionsResponse, error)
 	// Subscribe to a stream of Orders
 	ObserveOrders(ctx context.Context, in *ObserveOrdersRequest, opts ...grpc.CallOption) (TradingDataService_ObserveOrdersClient, error)
-	// -- Positions --
+	// Positions
+	//
 	// Get a list of Positions by Party using cursor based pagination
 	ListPositions(ctx context.Context, in *ListPositionsRequest, opts ...grpc.CallOption) (*ListPositionsResponse, error)
 	// Subscribe to a stream of Positions
 	ObservePositions(ctx context.Context, in *ObservePositionsRequest, opts ...grpc.CallOption) (TradingDataService_ObservePositionsClient, error)
-	// -- Balances --
+	// Balances
+	//
 	// Get an aggregated list of the changes in balances in a set of accounts over time
 	GetBalanceHistory(ctx context.Context, in *GetBalanceHistoryRequest, opts ...grpc.CallOption) (*GetBalanceHistoryResponse, error)
-	// -- Market Data --
+	// Market Data
+	//
 	// Get the lastest market data for a given market
 	GetLatestMarketData(ctx context.Context, in *GetLatestMarketDataRequest, opts ...grpc.CallOption) (*GetLatestMarketDataResponse, error)
+	// Market Data list
+	//
 	// Lists the latest market data for every market
 	ListLatestMarketData(ctx context.Context, in *ListLatestMarketDataRequest, opts ...grpc.CallOption) (*ListLatestMarketDataResponse, error)
+	// Market Detph
+	//
 	// Get the latest market depth for a given market
 	GetLatestMarketDepth(ctx context.Context, in *GetLatestMarketDepthRequest, opts ...grpc.CallOption) (*GetLatestMarketDepthResponse, error)
 	ObserveMarketsDepth(ctx context.Context, in *ObserveMarketsDepthRequest, opts ...grpc.CallOption) (TradingDataService_ObserveMarketsDepthClient, error)
 	ObserveMarketsDepthUpdates(ctx context.Context, in *ObserveMarketsDepthUpdatesRequest, opts ...grpc.CallOption) (TradingDataService_ObserveMarketsDepthUpdatesClient, error)
 	ObserveMarketsData(ctx context.Context, in *ObserveMarketsDataRequest, opts ...grpc.CallOption) (TradingDataService_ObserveMarketsDataClient, error)
+	// Market data history
+	//
 	// Get Market Data History for a Market ID between given dates using a cursor based pagination model
 	GetMarketDataHistoryByID(ctx context.Context, in *GetMarketDataHistoryByIDRequest, opts ...grpc.CallOption) (*GetMarketDataHistoryByIDResponse, error)
-	// -- Transfers --
+	// Transfers list
+	//
 	// List Transfers to/from/either a public key using a cursor based pagination model
 	ListTransfers(ctx context.Context, in *ListTransfersRequest, opts ...grpc.CallOption) (*ListTransfersResponse, error)
-	// -- Network Limits --
+	// Network Limits
+	//
 	// Get the current network limits (is bootstrapping finished, are proposals enabled etc..)
 	GetNetworkLimits(ctx context.Context, in *GetNetworkLimitsRequest, opts ...grpc.CallOption) (*GetNetworkLimitsResponse, error)
-	// -- Candles --
+	// Candles list
+	//
 	// Get candle data for a given candle id
 	ListCandleData(ctx context.Context, in *ListCandleDataRequest, opts ...grpc.CallOption) (*ListCandleDataResponse, error)
 	// Subscribe to a stream of Candle updates
 	ObserveCandleData(ctx context.Context, in *ObserveCandleDataRequest, opts ...grpc.CallOption) (TradingDataService_ObserveCandleDataClient, error)
+	// Candle intervals list
+	//
 	// Gets all available intervals for a given market along with the corresponding candle id
 	ListCandleIntervals(ctx context.Context, in *ListCandleIntervalsRequest, opts ...grpc.CallOption) (*ListCandleIntervalsResponse, error)
-	// -- Votes --
+	// Votes list
+	//
 	// Get Votes for a Party ID using a cursor based pagination model
 	ListVotes(ctx context.Context, in *ListVotesRequest, opts ...grpc.CallOption) (*ListVotesResponse, error)
 	// Subscribe to a stream of votes
 	ObserveVotes(ctx context.Context, in *ObserveVotesRequest, opts ...grpc.CallOption) (TradingDataService_ObserveVotesClient, error)
-	// -- ERC20 Multi Sig --
+	// ERC20 add signer bundle
+	//
 	// Gets the signature bundles that add a particular validator to the multisig contract
 	GetERC20MultiSigSignerAddedBundles(ctx context.Context, in *GetERC20MultiSigSignerAddedBundlesRequest, opts ...grpc.CallOption) (*GetERC20MultiSigSignerAddedBundlesResponse, error)
+	// ERC20 remove signer bundle
+	//
 	// Gets the signature bundles that remove a particular validator to the multisig contract
 	GetERC20MultiSigSignerRemovedBundles(ctx context.Context, in *GetERC20MultiSigSignerRemovedBundlesRequest, opts ...grpc.CallOption) (*GetERC20MultiSigSignerRemovedBundlesResponse, error)
+	// ERC20 list asset bundle
+	//
 	// Gets the signature bundles that remove a particular validator to the multisig contract
 	GetERC20ListAssetBundle(ctx context.Context, in *GetERC20ListAssetBundleRequest, opts ...grpc.CallOption) (*GetERC20ListAssetBundleResponse, error)
+	// ERC20 set asset limit bundle
+	//
 	// Gets the signature bundles that remove a particular validator to the multisig contract
 	GetERC20SetAssetLimitsBundle(ctx context.Context, in *GetERC20SetAssetLimitsBundleRequest, opts ...grpc.CallOption) (*GetERC20SetAssetLimitsBundleResponse, error)
+	// ERC20 withdrawal bundle
+	//
+	// Get the signature bundle to finalize a withdrawal on ethereum
 	GetERC20WithdrawalApproval(ctx context.Context, in *GetERC20WithdrawalApprovalRequest, opts ...grpc.CallOption) (*GetERC20WithdrawalApprovalResponse, error)
-	// -- Trades --
+	// Trade (latest)
+	//
 	// Get latest Trade
 	GetLastTrade(ctx context.Context, in *GetLastTradeRequest, opts ...grpc.CallOption) (*GetLastTradeResponse, error)
+	// Trades list
+	//
 	// Get a list of all trades, optionally filtered by party/market/order using a cursor based pagination model
 	ListTrades(ctx context.Context, in *ListTradesRequest, opts ...grpc.CallOption) (*ListTradesResponse, error)
 	// Subscribe to a stream of Trades, optionally filtered by party/market
 	ObserveTrades(ctx context.Context, in *ObserveTradesRequest, opts ...grpc.CallOption) (TradingDataService_ObserveTradesClient, error)
-	// -- Oracles --
+	// Oracle Spec
+	//
 	// Get an oracle spec by ID.
 	GetOracleSpec(ctx context.Context, in *GetOracleSpecRequest, opts ...grpc.CallOption) (*GetOracleSpecResponse, error)
+	// Oracle Spec list
+	//
 	// Get the oracle specs
 	ListOracleSpecs(ctx context.Context, in *ListOracleSpecsRequest, opts ...grpc.CallOption) (*ListOracleSpecsResponse, error)
+	// Oracle data list
+	//
 	// Get all oracle data
 	ListOracleData(ctx context.Context, in *ListOracleDataRequest, opts ...grpc.CallOption) (*ListOracleDataResponse, error)
-	// -- Markets --
+	// Market
+	//
 	// Get all markets using a cursor based pagination model
 	GetMarket(ctx context.Context, in *GetMarketRequest, opts ...grpc.CallOption) (*GetMarketResponse, error)
+	// Markets list
+	//
+	// Get markets using a cursor based pagination
 	ListMarkets(ctx context.Context, in *ListMarketsRequest, opts ...grpc.CallOption) (*ListMarketsResponse, error)
-	// -- Parties --
-	// Get Parties using a cursor based pagination model
+	// Party
+	//
+	// Get a single party
 	GetParty(ctx context.Context, in *GetPartyRequest, opts ...grpc.CallOption) (*GetPartyResponse, error)
+	// Parties
+	//
+	// Get Parties using a cursor based pagination model
 	ListParties(ctx context.Context, in *ListPartiesRequest, opts ...grpc.CallOption) (*ListPartiesResponse, error)
-	// -- Margin Levels --
+	// Margin Levels list
+	//
 	// Get Margin Levels using a cursor based pagination model
 	ListMarginLevels(ctx context.Context, in *ListMarginLevelsRequest, opts ...grpc.CallOption) (*ListMarginLevelsResponse, error)
 	// Subscribe to a stream of Margin Levels
 	ObserveMarginLevels(ctx context.Context, in *ObserveMarginLevelsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveMarginLevelsClient, error)
-	// -- Rewards --
+	// Rewards list
+	//
 	// Get rewards
 	ListRewards(ctx context.Context, in *ListRewardsRequest, opts ...grpc.CallOption) (*ListRewardsResponse, error)
+	// Reward summaries list
+	//
 	// Get reward summaries
 	ListRewardSummaries(ctx context.Context, in *ListRewardSummariesRequest, opts ...grpc.CallOption) (*ListRewardSummariesResponse, error)
 	// subscribe to rewards
 	ObserveRewards(ctx context.Context, in *ObserveRewardsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveRewardsClient, error)
-	// -- Deposits --
+	// Deposit
+	//
 	// Get a deposit by its identifier
 	GetDeposit(ctx context.Context, in *GetDepositRequest, opts ...grpc.CallOption) (*GetDepositResponse, error)
+	// Deposits list
+	//
 	// Get a list of deposits for a given party
 	ListDeposits(ctx context.Context, in *ListDepositsRequest, opts ...grpc.CallOption) (*ListDepositsResponse, error)
-	// -- Withdrawals --
+	// Withdrawal
+	//
+	// Get a withdrawal by its identifier
 	GetWithdrawal(ctx context.Context, in *GetWithdrawalRequest, opts ...grpc.CallOption) (*GetWithdrawalResponse, error)
+	// Withdrawals list
+	//
+	// Get a list of withdrawals for a given party
 	ListWithdrawals(ctx context.Context, in *ListWithdrawalsRequest, opts ...grpc.CallOption) (*ListWithdrawalsResponse, error)
-	// -- Assets --
+	// Asset
+	//
+	// Get a single asset using it's identifier
 	GetAsset(ctx context.Context, in *GetAssetRequest, opts ...grpc.CallOption) (*GetAssetResponse, error)
+	// Assets list
+	//
+	// Get a list of asset using cusor based pagination
 	ListAssets(ctx context.Context, in *ListAssetsRequest, opts ...grpc.CallOption) (*ListAssetsResponse, error)
-	// -- Liquidity Provisions --
+	// Liquidity Provisions list
+	//
+	// Get a liquidity provision list for a given market using a cursor based pagination
 	ListLiquidityProvisions(ctx context.Context, in *ListLiquidityProvisionsRequest, opts ...grpc.CallOption) (*ListLiquidityProvisionsResponse, error)
-	// -- Governance --
-	// List proposals using a cursor based pagination model
+	// Governance
+	//
+	// Get a single proposal details
 	GetGovernanceData(ctx context.Context, in *GetGovernanceDataRequest, opts ...grpc.CallOption) (*GetGovernanceDataResponse, error)
+	// Governance list
+	//
+	// List proposals using a cursor based pagination model
 	ListGovernanceData(ctx context.Context, in *ListGovernanceDataRequest, opts ...grpc.CallOption) (*ListGovernanceDataResponse, error)
 	ObserveGovernance(ctx context.Context, in *ObserveGovernanceRequest, opts ...grpc.CallOption) (TradingDataService_ObserveGovernanceClient, error)
-	// -- Delegation --
+	// Delegation list
+	//
 	// List delegations
 	ListDelegations(ctx context.Context, in *ListDelegationsRequest, opts ...grpc.CallOption) (*ListDelegationsResponse, error)
 	// subscribe to delegation events
 	ObserveDelegations(ctx context.Context, in *ObserveDelegationsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveDelegationsClient, error)
-	// -- Nodes --
+	// Network data
+	//
 	// Get data regarding the nodes of the network
 	GetNetworkData(ctx context.Context, in *GetNetworkDataRequest, opts ...grpc.CallOption) (*GetNetworkDataResponse, error)
+	// Node
+	//
 	// Get information about a given node
 	GetNode(ctx context.Context, in *GetNodeRequest, opts ...grpc.CallOption) (*GetNodeResponse, error)
+	// Node
+	//
 	// List information about the nodes on the network
 	ListNodes(ctx context.Context, in *ListNodesRequest, opts ...grpc.CallOption) (*ListNodesResponse, error)
+	// Node signatures list
+	//
 	// List an aggregate of signatures from all the nodes of the network
 	ListNodeSignatures(ctx context.Context, in *ListNodeSignaturesRequest, opts ...grpc.CallOption) (*ListNodeSignaturesResponse, error)
-	// -- Epochs --
+	// Epoch
+	//
 	// Get data for a specific epoch, if id omitted it gets the current epoch
 	GetEpoch(ctx context.Context, in *GetEpochRequest, opts ...grpc.CallOption) (*GetEpochResponse, error)
-	// -- Estimates --
+	// Estimate fee
+	//
+	// Estimate the fee that would incur for submitting this order
 	EstimateFee(ctx context.Context, in *EstimateFeeRequest, opts ...grpc.CallOption) (*EstimateFeeResponse, error)
+	// Estimate margin
+	//
+	// Estimate the margin that would be required for submitting this order
 	EstimateMargin(ctx context.Context, in *EstimateMarginRequest, opts ...grpc.CallOption) (*EstimateMarginResponse, error)
-	// -- Network Parameters --
+	// Network Parameters list
+	//
 	// Get the network parameters
 	ListNetworkParameters(ctx context.Context, in *ListNetworkParametersRequest, opts ...grpc.CallOption) (*ListNetworkParametersResponse, error)
+	// Network Parameter
+	//
+	// Get a single network parameter
 	GetNetworkParameter(ctx context.Context, in *GetNetworkParameterRequest, opts ...grpc.CallOption) (*GetNetworkParameterResponse, error)
-	// -- Checkpoints --
+	// Checkpoints list
+	//
+	// List information about checkpoint generated by the network
 	ListCheckpoints(ctx context.Context, in *ListCheckpointsRequest, opts ...grpc.CallOption) (*ListCheckpointsResponse, error)
-	// -- Stake --
+	// Stake
+	//
+	// Retrieve staking informations for a given party
 	GetStake(ctx context.Context, in *GetStakeRequest, opts ...grpc.CallOption) (*GetStakeResponse, error)
-	// -- Risk Factors --
+	// Risk Factors
+	//
 	// Get Risk Factor data for a given market
 	GetRiskFactors(ctx context.Context, in *GetRiskFactorsRequest, opts ...grpc.CallOption) (*GetRiskFactorsResponse, error)
-	// -- Event Bus --
+	// Event Bus
+	//
 	// Subscribe to a stream of events from the core
 	ObserveEventBus(ctx context.Context, opts ...grpc.CallOption) (TradingDataService_ObserveEventBusClient, error)
-	// -- Transfer Responses --
+	// Transfer Responses
+	//
 	// Subscribe to a stream of Transfer Responses
 	ObserveTransferResponses(ctx context.Context, in *ObserveTransferResponsesRequest, opts ...grpc.CallOption) (TradingDataService_ObserveTransferResponsesClient, error)
-	// -- Key Rotations --
+	// Key Rotations list
+	//
+	// List all key rotation applied for a given party
 	ListKeyRotations(ctx context.Context, in *ListKeyRotationsRequest, opts ...grpc.CallOption) (*ListKeyRotationsResponse, error)
-	// -- Ethereum Key Rotations --
+	// Ethereum Key Rotations
+	//
+	// List all ethereum key rotation applied for a given party
 	ListEthereumKeyRotations(ctx context.Context, in *ListEthereumKeyRotationsRequest, opts ...grpc.CallOption) (*ListEthereumKeyRotationsResponse, error)
-	// Get Time
+	// Vega Time
+	//
+	// Get the current time of the network
 	GetVegaTime(ctx context.Context, in *GetVegaTimeRequest, opts ...grpc.CallOption) (*GetVegaTimeResponse, error)
 }
 
@@ -1197,165 +1300,268 @@ func (c *tradingDataServiceClient) GetVegaTime(ctx context.Context, in *GetVegaT
 // All implementations must embed UnimplementedTradingDataServiceServer
 // for forward compatibility
 type TradingDataServiceServer interface {
-	// -- Accounts --
+	// Accounts
+	//
 	// Returns a list of accounts matching the supplied filter, including their current balances.
 	// If a given account has never had a balance, it will be absent from the list.
 	ListAccounts(context.Context, *ListAccountsRequest) (*ListAccountsResponse, error)
 	// Subscribe to a stream of Accounts
 	ObserveAccounts(*ObserveAccountsRequest, TradingDataService_ObserveAccountsServer) error
-	// node info
+	// Info
+	//
+	// Retrieve informations about this dataa
 	Info(context.Context, *InfoRequest) (*InfoResponse, error)
-	// -- Orders --
+	// Order
+	//
 	// Gets the current version of an order, or optionally provide a version id to retrieve a given version.
 	GetOrder(context.Context, *GetOrderRequest) (*GetOrderResponse, error)
+	// Orders list
+	//
 	// Get a list of orders that match the given filters
 	ListOrders(context.Context, *ListOrdersRequest) (*ListOrdersResponse, error)
+	// Order history
+	//
 	// List all versions of an order in the order history
 	ListOrderVersions(context.Context, *ListOrderVersionsRequest) (*ListOrderVersionsResponse, error)
 	// Subscribe to a stream of Orders
 	ObserveOrders(*ObserveOrdersRequest, TradingDataService_ObserveOrdersServer) error
-	// -- Positions --
+	// Positions
+	//
 	// Get a list of Positions by Party using cursor based pagination
 	ListPositions(context.Context, *ListPositionsRequest) (*ListPositionsResponse, error)
 	// Subscribe to a stream of Positions
 	ObservePositions(*ObservePositionsRequest, TradingDataService_ObservePositionsServer) error
-	// -- Balances --
+	// Balances
+	//
 	// Get an aggregated list of the changes in balances in a set of accounts over time
 	GetBalanceHistory(context.Context, *GetBalanceHistoryRequest) (*GetBalanceHistoryResponse, error)
-	// -- Market Data --
+	// Market Data
+	//
 	// Get the lastest market data for a given market
 	GetLatestMarketData(context.Context, *GetLatestMarketDataRequest) (*GetLatestMarketDataResponse, error)
+	// Market Data list
+	//
 	// Lists the latest market data for every market
 	ListLatestMarketData(context.Context, *ListLatestMarketDataRequest) (*ListLatestMarketDataResponse, error)
+	// Market Detph
+	//
 	// Get the latest market depth for a given market
 	GetLatestMarketDepth(context.Context, *GetLatestMarketDepthRequest) (*GetLatestMarketDepthResponse, error)
 	ObserveMarketsDepth(*ObserveMarketsDepthRequest, TradingDataService_ObserveMarketsDepthServer) error
 	ObserveMarketsDepthUpdates(*ObserveMarketsDepthUpdatesRequest, TradingDataService_ObserveMarketsDepthUpdatesServer) error
 	ObserveMarketsData(*ObserveMarketsDataRequest, TradingDataService_ObserveMarketsDataServer) error
+	// Market data history
+	//
 	// Get Market Data History for a Market ID between given dates using a cursor based pagination model
 	GetMarketDataHistoryByID(context.Context, *GetMarketDataHistoryByIDRequest) (*GetMarketDataHistoryByIDResponse, error)
-	// -- Transfers --
+	// Transfers list
+	//
 	// List Transfers to/from/either a public key using a cursor based pagination model
 	ListTransfers(context.Context, *ListTransfersRequest) (*ListTransfersResponse, error)
-	// -- Network Limits --
+	// Network Limits
+	//
 	// Get the current network limits (is bootstrapping finished, are proposals enabled etc..)
 	GetNetworkLimits(context.Context, *GetNetworkLimitsRequest) (*GetNetworkLimitsResponse, error)
-	// -- Candles --
+	// Candles list
+	//
 	// Get candle data for a given candle id
 	ListCandleData(context.Context, *ListCandleDataRequest) (*ListCandleDataResponse, error)
 	// Subscribe to a stream of Candle updates
 	ObserveCandleData(*ObserveCandleDataRequest, TradingDataService_ObserveCandleDataServer) error
+	// Candle intervals list
+	//
 	// Gets all available intervals for a given market along with the corresponding candle id
 	ListCandleIntervals(context.Context, *ListCandleIntervalsRequest) (*ListCandleIntervalsResponse, error)
-	// -- Votes --
+	// Votes list
+	//
 	// Get Votes for a Party ID using a cursor based pagination model
 	ListVotes(context.Context, *ListVotesRequest) (*ListVotesResponse, error)
 	// Subscribe to a stream of votes
 	ObserveVotes(*ObserveVotesRequest, TradingDataService_ObserveVotesServer) error
-	// -- ERC20 Multi Sig --
+	// ERC20 add signer bundle
+	//
 	// Gets the signature bundles that add a particular validator to the multisig contract
 	GetERC20MultiSigSignerAddedBundles(context.Context, *GetERC20MultiSigSignerAddedBundlesRequest) (*GetERC20MultiSigSignerAddedBundlesResponse, error)
+	// ERC20 remove signer bundle
+	//
 	// Gets the signature bundles that remove a particular validator to the multisig contract
 	GetERC20MultiSigSignerRemovedBundles(context.Context, *GetERC20MultiSigSignerRemovedBundlesRequest) (*GetERC20MultiSigSignerRemovedBundlesResponse, error)
+	// ERC20 list asset bundle
+	//
 	// Gets the signature bundles that remove a particular validator to the multisig contract
 	GetERC20ListAssetBundle(context.Context, *GetERC20ListAssetBundleRequest) (*GetERC20ListAssetBundleResponse, error)
+	// ERC20 set asset limit bundle
+	//
 	// Gets the signature bundles that remove a particular validator to the multisig contract
 	GetERC20SetAssetLimitsBundle(context.Context, *GetERC20SetAssetLimitsBundleRequest) (*GetERC20SetAssetLimitsBundleResponse, error)
+	// ERC20 withdrawal bundle
+	//
+	// Get the signature bundle to finalize a withdrawal on ethereum
 	GetERC20WithdrawalApproval(context.Context, *GetERC20WithdrawalApprovalRequest) (*GetERC20WithdrawalApprovalResponse, error)
-	// -- Trades --
+	// Trade (latest)
+	//
 	// Get latest Trade
 	GetLastTrade(context.Context, *GetLastTradeRequest) (*GetLastTradeResponse, error)
+	// Trades list
+	//
 	// Get a list of all trades, optionally filtered by party/market/order using a cursor based pagination model
 	ListTrades(context.Context, *ListTradesRequest) (*ListTradesResponse, error)
 	// Subscribe to a stream of Trades, optionally filtered by party/market
 	ObserveTrades(*ObserveTradesRequest, TradingDataService_ObserveTradesServer) error
-	// -- Oracles --
+	// Oracle Spec
+	//
 	// Get an oracle spec by ID.
 	GetOracleSpec(context.Context, *GetOracleSpecRequest) (*GetOracleSpecResponse, error)
+	// Oracle Spec list
+	//
 	// Get the oracle specs
 	ListOracleSpecs(context.Context, *ListOracleSpecsRequest) (*ListOracleSpecsResponse, error)
+	// Oracle data list
+	//
 	// Get all oracle data
 	ListOracleData(context.Context, *ListOracleDataRequest) (*ListOracleDataResponse, error)
-	// -- Markets --
+	// Market
+	//
 	// Get all markets using a cursor based pagination model
 	GetMarket(context.Context, *GetMarketRequest) (*GetMarketResponse, error)
+	// Markets list
+	//
+	// Get markets using a cursor based pagination
 	ListMarkets(context.Context, *ListMarketsRequest) (*ListMarketsResponse, error)
-	// -- Parties --
-	// Get Parties using a cursor based pagination model
+	// Party
+	//
+	// Get a single party
 	GetParty(context.Context, *GetPartyRequest) (*GetPartyResponse, error)
+	// Parties
+	//
+	// Get Parties using a cursor based pagination model
 	ListParties(context.Context, *ListPartiesRequest) (*ListPartiesResponse, error)
-	// -- Margin Levels --
+	// Margin Levels list
+	//
 	// Get Margin Levels using a cursor based pagination model
 	ListMarginLevels(context.Context, *ListMarginLevelsRequest) (*ListMarginLevelsResponse, error)
 	// Subscribe to a stream of Margin Levels
 	ObserveMarginLevels(*ObserveMarginLevelsRequest, TradingDataService_ObserveMarginLevelsServer) error
-	// -- Rewards --
+	// Rewards list
+	//
 	// Get rewards
 	ListRewards(context.Context, *ListRewardsRequest) (*ListRewardsResponse, error)
+	// Reward summaries list
+	//
 	// Get reward summaries
 	ListRewardSummaries(context.Context, *ListRewardSummariesRequest) (*ListRewardSummariesResponse, error)
 	// subscribe to rewards
 	ObserveRewards(*ObserveRewardsRequest, TradingDataService_ObserveRewardsServer) error
-	// -- Deposits --
+	// Deposit
+	//
 	// Get a deposit by its identifier
 	GetDeposit(context.Context, *GetDepositRequest) (*GetDepositResponse, error)
+	// Deposits list
+	//
 	// Get a list of deposits for a given party
 	ListDeposits(context.Context, *ListDepositsRequest) (*ListDepositsResponse, error)
-	// -- Withdrawals --
+	// Withdrawal
+	//
+	// Get a withdrawal by its identifier
 	GetWithdrawal(context.Context, *GetWithdrawalRequest) (*GetWithdrawalResponse, error)
+	// Withdrawals list
+	//
+	// Get a list of withdrawals for a given party
 	ListWithdrawals(context.Context, *ListWithdrawalsRequest) (*ListWithdrawalsResponse, error)
-	// -- Assets --
+	// Asset
+	//
+	// Get a single asset using it's identifier
 	GetAsset(context.Context, *GetAssetRequest) (*GetAssetResponse, error)
+	// Assets list
+	//
+	// Get a list of asset using cusor based pagination
 	ListAssets(context.Context, *ListAssetsRequest) (*ListAssetsResponse, error)
-	// -- Liquidity Provisions --
+	// Liquidity Provisions list
+	//
+	// Get a liquidity provision list for a given market using a cursor based pagination
 	ListLiquidityProvisions(context.Context, *ListLiquidityProvisionsRequest) (*ListLiquidityProvisionsResponse, error)
-	// -- Governance --
-	// List proposals using a cursor based pagination model
+	// Governance
+	//
+	// Get a single proposal details
 	GetGovernanceData(context.Context, *GetGovernanceDataRequest) (*GetGovernanceDataResponse, error)
+	// Governance list
+	//
+	// List proposals using a cursor based pagination model
 	ListGovernanceData(context.Context, *ListGovernanceDataRequest) (*ListGovernanceDataResponse, error)
 	ObserveGovernance(*ObserveGovernanceRequest, TradingDataService_ObserveGovernanceServer) error
-	// -- Delegation --
+	// Delegation list
+	//
 	// List delegations
 	ListDelegations(context.Context, *ListDelegationsRequest) (*ListDelegationsResponse, error)
 	// subscribe to delegation events
 	ObserveDelegations(*ObserveDelegationsRequest, TradingDataService_ObserveDelegationsServer) error
-	// -- Nodes --
+	// Network data
+	//
 	// Get data regarding the nodes of the network
 	GetNetworkData(context.Context, *GetNetworkDataRequest) (*GetNetworkDataResponse, error)
+	// Node
+	//
 	// Get information about a given node
 	GetNode(context.Context, *GetNodeRequest) (*GetNodeResponse, error)
+	// Node
+	//
 	// List information about the nodes on the network
 	ListNodes(context.Context, *ListNodesRequest) (*ListNodesResponse, error)
+	// Node signatures list
+	//
 	// List an aggregate of signatures from all the nodes of the network
 	ListNodeSignatures(context.Context, *ListNodeSignaturesRequest) (*ListNodeSignaturesResponse, error)
-	// -- Epochs --
+	// Epoch
+	//
 	// Get data for a specific epoch, if id omitted it gets the current epoch
 	GetEpoch(context.Context, *GetEpochRequest) (*GetEpochResponse, error)
-	// -- Estimates --
+	// Estimate fee
+	//
+	// Estimate the fee that would incur for submitting this order
 	EstimateFee(context.Context, *EstimateFeeRequest) (*EstimateFeeResponse, error)
+	// Estimate margin
+	//
+	// Estimate the margin that would be required for submitting this order
 	EstimateMargin(context.Context, *EstimateMarginRequest) (*EstimateMarginResponse, error)
-	// -- Network Parameters --
+	// Network Parameters list
+	//
 	// Get the network parameters
 	ListNetworkParameters(context.Context, *ListNetworkParametersRequest) (*ListNetworkParametersResponse, error)
+	// Network Parameter
+	//
+	// Get a single network parameter
 	GetNetworkParameter(context.Context, *GetNetworkParameterRequest) (*GetNetworkParameterResponse, error)
-	// -- Checkpoints --
+	// Checkpoints list
+	//
+	// List information about checkpoint generated by the network
 	ListCheckpoints(context.Context, *ListCheckpointsRequest) (*ListCheckpointsResponse, error)
-	// -- Stake --
+	// Stake
+	//
+	// Retrieve staking informations for a given party
 	GetStake(context.Context, *GetStakeRequest) (*GetStakeResponse, error)
-	// -- Risk Factors --
+	// Risk Factors
+	//
 	// Get Risk Factor data for a given market
 	GetRiskFactors(context.Context, *GetRiskFactorsRequest) (*GetRiskFactorsResponse, error)
-	// -- Event Bus --
+	// Event Bus
+	//
 	// Subscribe to a stream of events from the core
 	ObserveEventBus(TradingDataService_ObserveEventBusServer) error
-	// -- Transfer Responses --
+	// Transfer Responses
+	//
 	// Subscribe to a stream of Transfer Responses
 	ObserveTransferResponses(*ObserveTransferResponsesRequest, TradingDataService_ObserveTransferResponsesServer) error
-	// -- Key Rotations --
+	// Key Rotations list
+	//
+	// List all key rotation applied for a given party
 	ListKeyRotations(context.Context, *ListKeyRotationsRequest) (*ListKeyRotationsResponse, error)
-	// -- Ethereum Key Rotations --
+	// Ethereum Key Rotations
+	//
+	// List all ethereum key rotation applied for a given party
 	ListEthereumKeyRotations(context.Context, *ListEthereumKeyRotationsRequest) (*ListEthereumKeyRotationsResponse, error)
-	// Get Time
+	// Vega Time
+	//
+	// Get the current time of the network
 	GetVegaTime(context.Context, *GetVegaTimeRequest) (*GetVegaTimeResponse, error)
 	mustEmbedUnimplementedTradingDataServiceServer()
 }
