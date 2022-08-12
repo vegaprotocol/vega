@@ -53,6 +53,7 @@ type NodeValidation struct {
 
 type nodeProposal struct {
 	*proposal
+	err     string
 	state   uint32
 	checker func() error
 }
@@ -62,7 +63,16 @@ func (n *nodeProposal) GetID() string {
 }
 
 func (n *nodeProposal) Check() error {
-	return n.checker()
+	// always keep the last error
+	err := n.checker()
+	if err != nil {
+		n.err = err.Error()
+		return err
+	}
+
+	n.err = ""
+
+	return nil
 }
 
 func NewNodeValidation(
@@ -157,6 +167,8 @@ func (n *NodeValidation) OnTick(t time.Time) (accepted []*proposal, rejected []*
 		case okProposal:
 			accepted = append(accepted, prop.proposal)
 		case rejectedProposal:
+			// set the last error we got when checking
+			prop.proposal.ErrorDetails = prop.err
 			rejected = append(rejected, prop.proposal)
 		}
 		toRemove = append(toRemove, prop.ID)

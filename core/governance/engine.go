@@ -472,6 +472,13 @@ func (e *Engine) SubmitProposal(
 	if e.isTwoStepsProposal(p) {
 		p.WaitForNodeVote()
 		if err := e.startTwoStepsProposal(ctx, p); err != nil {
+			p.RejectWithErr(types.ProposalErrorNodeValidationFailed, err)
+			if e.log.IsDebug() {
+				e.log.Debug("Proposal rejected",
+					logging.String("proposal-id", p.ID),
+					logging.String("proposal details", p.String()),
+				)
+			}
 			return nil, err
 		}
 	} else {
@@ -662,6 +669,14 @@ func (e *Engine) validateOpenProposal(proposal *types.Proposal) (types.ProposalE
 				logging.String("id", proposal.ID))
 			return types.ProposalErrorIncompatibleTimestamps,
 				fmt.Errorf("proposal closing time cannot be before validation time, expected > %v got %v", validationTime.UTC(), closeTime.UTC())
+		}
+		if closeTime.Before(now) {
+			e.log.Debug("proposal validation time can't be in the past",
+				logging.Time("now", now),
+				logging.Time("validation-time", validationTime),
+				logging.String("id", proposal.ID))
+			return types.ProposalErrorIncompatibleTimestamps,
+				fmt.Errorf("proposal validation time cannot be in the past, expected > %v got %v", now.UTC(), validationTime.UTC())
 		}
 	}
 
