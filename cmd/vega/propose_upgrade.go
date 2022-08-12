@@ -34,7 +34,6 @@ type ProposeUpgradeCmd struct {
 	config.Passphrase `long:"passphrase-file"`
 
 	VegaReleaseTag     string `short:"v" long:"vega-release-tag" required:"true" description:"A valid vega core release tag for the upgrade proposal"`
-	DatanodeReleaseTag string `short:"d" long:"datanode-release-tag" required:"true" description:"A valid data-node release tag for upgrade proposal"`
 	UpgradeBlockHeight uint64 `short:"h" long:"height" required:"true" description:"The block height at which the upgrade should be made"`
 }
 
@@ -62,7 +61,6 @@ func (opts *ProposeUpgradeCmd) Execute(args []string) error {
 
 	cmd := commandspb.ProtocolUpgradeProposal{
 		VegaReleaseTag:     opts.VegaReleaseTag,
-		DataNodeReleaseTag: opts.DatanodeReleaseTag,
 		UpgradeBlockHeight: opts.UpgradeBlockHeight,
 	}
 
@@ -77,11 +75,6 @@ func (opts *ProposeUpgradeCmd) Execute(args []string) error {
 	_, err = semver.Parse(opts.VegaReleaseTag)
 	if err != nil {
 		return fmt.Errorf("invalid protocol version for upgrade received: version (%s), %w", opts.VegaReleaseTag, err)
-	}
-
-	_, err = semver.Parse(opts.DatanodeReleaseTag)
-	if err != nil {
-		return fmt.Errorf("invalid protocol version for upgrade received: version (%s), %w", opts.DatanodeReleaseTag, err)
 	}
 
 	defer cfunc()

@@ -112,10 +112,11 @@ type BlockchainClient interface {
 
 type ProtocolUpgradeService interface {
 	BeginBlock(ctx context.Context, blockHeight uint64)
-	UpgradeProposal(ctx context.Context, pk string, upgradeBlockHeight uint64, vegaReleaseTag, dataNodeReleaseTag string) error
+	UpgradeProposal(ctx context.Context, pk string, upgradeBlockHeight uint64, vegaReleaseTag string) error
 	TimeForUpgrade() bool
 	GetUpgradeStatus() types.UpgradeStatus
 	SetReadyForUpgrade()
+	Cleanup(ctx context.Context)
 }
 
 type App struct {
@@ -681,6 +682,7 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	var err error
 	// if there is an approved protocol upgrade proposal and the current block height is later than the proposal's block height then take a snapshot and wait to be killed by the process manager
 	if app.protocolUpgradeService.TimeForUpgrade() {
+		app.protocolUpgradeService.Cleanup(app.blockCtx)
 		snapHash, err = app.snapshot.SnapshotNow(app.blockCtx)
 		if err == nil {
 			app.protocolUpgradeService.SetReadyForUpgrade()
@@ -924,7 +926,7 @@ func (app *App) DeliverProtocolUpgradeCommand(ctx context.Context, tx abci.Tx) e
 	if err := tx.Unmarshal(pu); err != nil {
 		return err
 	}
-	return app.protocolUpgradeService.UpgradeProposal(ctx, tx.PubKeyHex(), pu.UpgradeBlockHeight, pu.VegaReleaseTag, pu.DataNodeReleaseTag)
+	return app.protocolUpgradeService.UpgradeProposal(ctx, tx.PubKeyHex(), pu.UpgradeBlockHeight, pu.VegaReleaseTag)
 }
 
 func (app *App) DeliverAnnounceNode(ctx context.Context, tx abci.Tx) error {

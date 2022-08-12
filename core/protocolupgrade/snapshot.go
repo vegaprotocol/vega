@@ -44,10 +44,7 @@ func (e *Engine) serialise(k string) ([]byte, error) {
 
 	sort.SliceStable(events, func(i, j int) bool {
 		if events[i].VegaReleaseTag == events[j].VegaReleaseTag {
-			if events[i].DataNodeReleaseTag == events[j].DataNodeReleaseTag {
-				return events[i].UpgradeBlockHeight < events[j].UpgradeBlockHeight
-			}
-			return events[i].DataNodeReleaseTag < events[j].DataNodeReleaseTag
+			return events[i].UpgradeBlockHeight < events[j].UpgradeBlockHeight
 		}
 		return events[i].VegaReleaseTag < events[j].VegaReleaseTag
 	})
@@ -62,7 +59,6 @@ func (e *Engine) serialise(k string) ([]byte, error) {
 		payloadProtocolUpgradeProposals.Proposals.AcceptedProposal = &snappb.AcceptedProtocolUpgradeProposal{
 			UpgradeBlockHeight: e.upgradeStatus.AcceptedReleaseInfo.UpgradeBlockHeight,
 			VegaReleaseTag:     e.upgradeStatus.AcceptedReleaseInfo.VegaReleaseTag,
-			DataNodeReleaseTag: e.upgradeStatus.AcceptedReleaseInfo.DatanodeReleaseTag,
 		}
 	}
 
@@ -98,16 +94,15 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 	e.events = make(map[string]*eventspb.ProtocolUpgradeEvent, len(pl.Proposals.ActiveProposals))
 
 	for _, pue := range pl.Proposals.ActiveProposals {
-		ID := protocolUpgradeProposalID(pue.UpgradeBlockHeight, pue.VegaReleaseTag, pue.DataNodeReleaseTag)
+		ID := protocolUpgradeProposalID(pue.UpgradeBlockHeight, pue.VegaReleaseTag)
 		e.events[ID] = pue
 	}
 
 	for ID, evt := range e.events {
 		e.activeProposals[ID] = &protocolUpgradeProposal{
-			vegaReleaseTag:     evt.VegaReleaseTag,
-			dataNodeReleaseTag: evt.DataNodeReleaseTag,
-			blockHeight:        evt.UpgradeBlockHeight,
-			accepted:           make(map[string]struct{}, len(evt.Approvers)),
+			vegaReleaseTag: evt.VegaReleaseTag,
+			blockHeight:    evt.UpgradeBlockHeight,
+			accepted:       make(map[string]struct{}, len(evt.Approvers)),
 		}
 		for _, approver := range evt.Approvers {
 			e.activeProposals[ID].accepted[approver] = struct{}{}
@@ -118,7 +113,6 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 		e.upgradeStatus.AcceptedReleaseInfo = &types.ReleaseInfo{
 			UpgradeBlockHeight: pl.Proposals.AcceptedProposal.UpgradeBlockHeight,
 			VegaReleaseTag:     pl.Proposals.AcceptedProposal.VegaReleaseTag,
-			DatanodeReleaseTag: pl.Proposals.AcceptedProposal.DataNodeReleaseTag,
 		}
 	}
 
