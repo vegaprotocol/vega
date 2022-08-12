@@ -6,13 +6,7 @@ import (
 	"code.vegaprotocol.io/vega/wallet/service/encoding"
 )
 
-var (
-	ErrNetworkDoesNotHaveGRPCHostConfigured              = errors.New("network configuration does not have any gRPC host set")
-	ErrNetworkDoesNotHaveHostConfiguredForConsole        = errors.New("network configuration does not have any host set for console")
-	ErrNetworkDoesNotHaveLocalPortConfiguredForConsole   = errors.New("network configuration does not have any local port set for console")
-	ErrNetworkDoesNotHaveHostConfiguredForTokenDApp      = errors.New("network configuration does not have any host set for token dApp")
-	ErrNetworkDoesNotHaveLocalPortConfiguredForTokenDApp = errors.New("network configuration does not have any local port set for token dApp")
-)
+var ErrNetworkDoesNotHaveGRPCHostConfigured = errors.New("network configuration does not have any gRPC host set")
 
 type Network struct {
 	Name        string            `json:"name"`
@@ -21,8 +15,6 @@ type Network struct {
 	Port        int               `json:"port"`
 	Host        string            `json:"host"`
 	API         APIConfig         `json:"api"`
-	TokenDApp   TokenDAppConfig   `json:"tokenDApp"`
-	Console     ConsoleConfig     `json:"console"`
 }
 
 type APIConfig struct {
@@ -42,14 +34,6 @@ type RESTConfig struct {
 
 type GraphQLConfig struct {
 	Hosts []string `json:"hosts"`
-}
-
-type ConsoleConfig struct {
-	URL string `json:"url"`
-}
-
-type TokenDAppConfig struct {
-	URL string `json:"url"`
 }
 
 func (n *Network) EnsureCanConnectGRPCNode() error {

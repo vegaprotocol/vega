@@ -496,12 +496,6 @@ type DescribeNetworkResponse struct {
 			Hosts []string `json:"hosts"`
 		} `json:"graphQLConfig"`
 	} `json:"api"`
-	Console struct {
-		URL string `json:"url"`
-	} `json:"console"`
-	TokenDApp struct {
-		URL string `json:"url"`
-	} `json:"tokenDApp"`
 }
 
 func NetworkDescribe(t *testing.T, args []string) (*DescribeNetworkResponse, error) {
@@ -549,16 +543,6 @@ func (d *DescribeNetworkAssertion) WithHostAndPort(host string, port int) *Descr
 
 func (d *DescribeNetworkAssertion) WithTokenExpiry(expected string) *DescribeNetworkAssertion {
 	assert.Equal(d.t, expected, d.resp.TokenExpiry)
-	return d
-}
-
-func (d *DescribeNetworkAssertion) WithConsole(url string) *DescribeNetworkAssertion {
-	assert.Equal(d.t, url, d.resp.Console.URL)
-	return d
-}
-
-func (d *DescribeNetworkAssertion) WithTokenDApp(url string) *DescribeNetworkAssertion {
-	assert.Equal(d.t, url, d.resp.TokenDApp.URL)
 	return d
 }
 
