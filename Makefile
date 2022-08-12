@@ -85,11 +85,12 @@ clean: ## Remove previous build
 
 .PHONY: proto
 proto: ## build proto definitions
-	@./script/generate.sh
+	buf generate
 
 .PHONY: proto_json
-proto_json: ## build proto definitions
-	@./script/generate_json.sh
+proto_docs: ## build proto definitions
+	rm -rf protos/generated
+	buf generate --template buf.gen.swagger.yaml
 
 .PHONY: proto_check
 proto_check: ## proto: Check committed files match just-generated files

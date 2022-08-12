@@ -1,0 +1,15 @@
+---
+version: v1
+plugins:
+  - name: openapiv2
+    out: ./protos/generated/swagger
+    opt:
+      - logtostderr=true
+      - grpc_api_configuration=protos/sources/data-node/grpc-rest-bindings.yml
+  - name: jsonschema
+    out: ./protos/generated/jsonschema
+  - name: doc
+    out: ./protos/generated/grpc
+    opt:
+      - json
+      - proto.json
