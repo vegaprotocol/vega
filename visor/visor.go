@@ -19,6 +19,7 @@ import (
 	"path"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/visor/client"
 	"code.vegaprotocol.io/vega/visor/config"
@@ -115,7 +116,7 @@ func (r *Visor) setCurrentFolder(sourceFolder, currentFolder string) error {
 
 func (r *Visor) Run(ctx context.Context) error {
 	numOfRestarts := 0
-	// var relaseInfo *types.ReleaseInfo
+	var currentRelaseInfo *types.ReleaseInfo
 
 	upgradeTicker := time.NewTicker(upgradeApiCallTickerDuration)
 	defer upgradeTicker.Stop()
@@ -140,7 +141,7 @@ func (r *Visor) Run(ctx context.Context) error {
 
 		r.log.Info("Starting binaries")
 		binRunner := NewBinariesRunner(r.log, r.conf.CurrentFolder(), time.Second*time.Duration(r.conf.StopSignalTimeoutSeconds()))
-		binErrs := binRunner.Run(ctx, runConf)
+		binErrs := binRunner.Run(ctx, runConf, currentRelaseInfo)
 
 		upgradeTicker.Reset(upgradeApiCallTickerDuration)
 
@@ -178,6 +179,8 @@ func (r *Visor) Run(ctx context.Context) error {
 				if !upStatus.ReadyToUpgrade {
 					break
 				}
+
+				currentRelaseInfo = upStatus.AcceptedReleaseInfo
 
 				r.log.Info("Preparing upgrade")
 

@@ -18,7 +18,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const withDataNodeFlagName = "home"
+const withDataNodeFlagName = "with-data-node"
 
 func init() {
 	rootCmd.AddCommand(initCmd)
@@ -27,7 +27,6 @@ func init() {
 	initCmd.MarkFlagRequired(homeFlagName)
 
 	initCmd.Flags().Bool(withDataNodeFlagName, false, "Determines whether or not data node config should be also generated")
-	initCmd.MarkFlagRequired(withDataNodeFlagName)
 }
 
 var initCmd = &cobra.Command{

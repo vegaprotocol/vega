@@ -18,10 +18,12 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strconv"
 	"sync"
 	"syscall"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/visor/config"
 	"code.vegaprotocol.io/vega/visor/utils"
@@ -46,23 +48,23 @@ func NewBinariesRunner(log *logging.Logger, binsFolder string, stopTimeout time.
 	}
 }
 
-func (r *BinariesRunner) runBinary(ctx context.Context, bin config.BinaryConfig) error {
-	binPath := path.Join(r.binsFolder, bin.Path)
+func (r *BinariesRunner) runBinary(ctx context.Context, binary string, args []string) error {
+	binPath := path.Join(r.binsFolder, binary)
 	if err := utils.EnsureBinary(binPath); err != nil {
-		return fmt.Errorf("failed to locate binary %s %v: %w", binPath, bin.Args, err)
+		return fmt.Errorf("failed to locate binary %s %v: %w", binPath, args, err)
 	}
 
-	cmd := exec.CommandContext(ctx, binPath, bin.Args...)
+	cmd := exec.CommandContext(ctx, binPath, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
 	r.log.Debug("Starting binary",
 		logging.String("binaryPath", binPath),
-		logging.Strings("args", bin.Args),
+		logging.Strings("args", args),
 	)
 
 	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("failed to execute binary %s %v: %w", binPath, bin.Args, err)
+		return fmt.Errorf("failed to execute binary %s %v: %w", binPath, args, err)
 	}
 
 	// Ensures that if one binary failes all of them are killed
@@ -99,22 +101,28 @@ func (r *BinariesRunner) runBinary(ctx context.Context, bin config.BinaryConfig)
 	}()
 
 	if err := cmd.Wait(); err != nil {
-		return fmt.Errorf("failed to execute binary %s %v: %w", binPath, bin.Args, err)
+		return fmt.Errorf("failed to execute binary %s %v: %w", binPath, args, err)
 	}
 
 	return nil
 }
 
-func (r *BinariesRunner) Run(ctx context.Context, runConf *config.RunConfig) chan error {
+func (r *BinariesRunner) Run(ctx context.Context, runConf *config.RunConfig, rInfo *types.ReleaseInfo) chan error {
 	eg, ctx := errgroup.WithContext(ctx)
 
 	eg.Go(func() error {
-		return r.runBinary(ctx, runConf.Vega.Binary)
+		// TODO consider moving this logic somewhere else
+		args := Args(runConf.Vega.Binary.Args)
+		if rInfo != nil {
+			args.Set("--snapshot.load-from-block-height", strconv.FormatUint(rInfo.UpgradeBlockHeight+1, 10))
+		}
+
+		return r.runBinary(ctx, runConf.Vega.Binary.Path, args)
 	})
 
 	if runConf.DataNode != nil {
 		eg.Go(func() error {
-			return r.runBinary(ctx, runConf.DataNode.Binary)
+			return r.runBinary(ctx, runConf.DataNode.Binary.Path, runConf.DataNode.Binary.Args)
 		})
 	}
 
