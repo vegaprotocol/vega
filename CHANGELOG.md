@@ -13,6 +13,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5579](https://github.com/vegaprotocol/vega/issues/5579) - Make vega a built-in Tendermint application
 - [5249](https://github.com/vegaprotocol/vega/issues/5249) - Migrate to Tendermint version 0.35.8
 - [5624](https://github.com/vegaprotocol/vega/issues/5624) - Get rid of `updateFrequency` in price monitoring definition
+- [5601](https://github.com/vegaprotocol/vega/issues/5601) - Remove support for launching a proxy in front of console and token dApp 
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -69,6 +70,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5665](https://github.com/vegaprotocol/vega/issues/5665) - Binary version hash always contain `-modified` suffix
 - [5633](https://github.com/vegaprotocol/vega/issues/5633) - Allow `minProposerEquityLikeShare` to accept 0
 - [5672](https://github.com/vegaprotocol/vega/issues/5672) - Typo fixed in datanode `ethereum` address
+- [5863](https://github.com/vegaprotocol/vega/issues/5863) - Fix panic when calling `VegaTime` on `v2 api`
 - [5683](https://github.com/vegaprotocol/vega/issues/5683) - Made market mandatory in `GraphQL` for order
 - [5789](https://github.com/vegaprotocol/vega/issues/5789) - Fix performance issue with position query
 - [5677](https://github.com/vegaprotocol/vega/issues/5677) - Fixed trading mode status
@@ -83,6 +85,8 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5837](https://github.com/vegaprotocol/vega/issues/5837) - Allow a promotion due to increased slots and a swap to happen in the same epoch
 - [5819](https://github.com/vegaprotocol/vega/issues/5819) - Add new asset proposal validation timestamp validation
 - [5811](https://github.com/vegaprotocol/vega/issues/5811) - Do not overwrite local changes when updating wallet through JSON-RPC API
+- [5868](https://github.com/vegaprotocol/vega/issues/5868) - Clarify the error for insufficient token to submit proposal or vote
+- [5867](https://github.com/vegaprotocol/vega/issues/5867) - Fix witness check for majority
 
 ## 0.53.0
 

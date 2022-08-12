@@ -77,10 +77,7 @@ const (
 	// by default all validators needs to sign.
 )
 
-var (
-	defaultValidatorsVoteRequired = num.MustDecimalFromString("1.0")
-	oneDec                        = num.MustDecimalFromString("1")
-)
+var defaultValidatorsVoteRequired = num.MustDecimalFromString("1.0")
 
 func init() {
 	// we seed the random generator just in case
@@ -316,11 +313,11 @@ func (w *Witness) start(ctx context.Context, r *res) {
 	atomic.StoreUint32(&r.state, validated)
 }
 
-func (w *Witness) votePassed(votesCount, topLen int) bool {
-	topLenDec := num.DecimalFromInt64(int64(topLen))
-	return num.MinD(
-		(topLenDec.Mul(w.validatorVotesRequired)).Add(oneDec), topLenDec,
-	).LessThanOrEqual(num.DecimalFromInt64(int64(votesCount)))
+func (w *Witness) votePassed(votesCount, validators int) bool {
+	validatorsDec := num.DecimalFromInt64(int64(validators))
+	votesDec := num.DecimalFromInt64(int64(votesCount))
+	minimumVotesForMajority := num.MinD(validatorsDec, validatorsDec.Mul(w.validatorVotesRequired))
+	return votesDec.GreaterThanOrEqual(minimumVotesForMajority)
 }
 
 func (w *Witness) OnTick(ctx context.Context, t time.Time) {
