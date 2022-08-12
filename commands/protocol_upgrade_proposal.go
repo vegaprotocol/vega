@@ -15,7 +15,7 @@ func checkProtocolUpgradeProposal(cmd *commandspb.ProtocolUpgradeProposal) Error
 	}
 
 	if len(cmd.VegaReleaseTag) == 0 {
-		errs.AddForProperty("state_variable_proposal.vega_release_tag", ErrIsRequired)
+		errs.AddForProperty("protocol_upgrade_proposal.vega_release_tag", ErrIsRequired)
 	}
 
 	return errs

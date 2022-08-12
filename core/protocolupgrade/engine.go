@@ -195,6 +195,15 @@ func (e *Engine) isAccepted(p *protocolUpgradeProposal) bool {
 	return ratio.GreaterThan(e.requiredMajority)
 }
 
+func (e *Engine) getProposalIDs() []string {
+	proposalIDs := make([]string, 0, len(e.activeProposals))
+	for k := range e.activeProposals {
+		proposalIDs = append(proposalIDs, k)
+	}
+	sort.Strings(proposalIDs)
+	return proposalIDs
+}
+
 // BeginBlock is called at the beginning of the block, to mark the current block height and check if there are proposals that are accepted/rejected.
 // If there is more than one active proposal that is accepted (unlikely) we choose the one with the earliest upgrade block.
 func (e *Engine) BeginBlock(ctx context.Context, blockHeight uint64) {
@@ -203,14 +212,7 @@ func (e *Engine) BeginBlock(ctx context.Context, blockHeight uint64) {
 	e.lock.Unlock()
 
 	var accepted *protocolUpgradeProposal
-
-	proposalIDs := make([]string, 0, len(e.activeProposals))
-	for k := range e.activeProposals {
-		proposalIDs = append(proposalIDs, k)
-	}
-	sort.Strings(proposalIDs)
-
-	for _, ID := range proposalIDs {
+	for _, ID := range e.getProposalIDs() {
 		pup := e.activeProposals[ID]
 		if e.isAccepted(pup) {
 			if accepted == nil || accepted.blockHeight > pup.blockHeight {
@@ -242,23 +244,16 @@ func (e *Engine) BeginBlock(ctx context.Context, blockHeight uint64) {
 func (e *Engine) Cleanup(ctx context.Context) {
 	e.lock.Lock()
 	defer e.lock.Unlock()
-	proposalIDs := make([]string, 0, len(e.activeProposals))
-	for k := range e.activeProposals {
-		proposalIDs = append(proposalIDs, k)
-	}
-	sort.Strings(proposalIDs)
-	for _, ID := range proposalIDs {
+	for _, ID := range e.getProposalIDs() {
 		pup := e.activeProposals[ID]
-		if e.isAccepted(pup) {
-			ID := protocolUpgradeProposalID(pup.blockHeight, pup.vegaReleaseTag)
-			e.broker.Send(events.NewProtocolUpgradeProposalEvent(ctx, pup.blockHeight, pup.vegaReleaseTag, pup.approvers(), eventspb.ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_APPROVED))
+		status := eventspb.ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_APPROVED
 
-			delete(e.activeProposals, ID)
-			delete(e.events, ID)
-			continue
+		if !e.isAccepted(pup) {
+			e.log.Info("protocol upgrade rejected", logging.String("vega-release-tag", pup.vegaReleaseTag), logging.Uint64("upgrade-block-height", pup.blockHeight))
+			status = eventspb.ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_REJECTED
 		}
-		e.log.Info("protocol upgrade rejected", logging.String("vega-release-tag", pup.vegaReleaseTag), logging.Uint64("upgrade-block-height", pup.blockHeight))
-		e.broker.Send(events.NewProtocolUpgradeProposalEvent(ctx, pup.blockHeight, pup.vegaReleaseTag, pup.approvers(), eventspb.ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_REJECTED))
+
+		e.broker.Send(events.NewProtocolUpgradeProposalEvent(ctx, pup.blockHeight, pup.vegaReleaseTag, pup.approvers(), status))
 		delete(e.activeProposals, ID)
 		delete(e.events, ID)
 	}
