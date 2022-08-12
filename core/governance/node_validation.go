@@ -65,8 +65,14 @@ func (n *nodeProposal) GetID() string {
 func (n *nodeProposal) Check() error {
 	// always keep the last error
 	err := n.checker()
-	n.err = err.Error()
-	return err
+	if err != nil {
+		n.err = err.Error()
+		return err
+	}
+
+	n.err = ""
+
+	return nil
 }
 
 func NewNodeValidation(
