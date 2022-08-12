@@ -31,14 +31,13 @@ import (
 )
 
 type protocolUpgradeProposal struct {
-	blockHeight        uint64
-	vegaReleaseTag     string
-	dataNodeReleaseTag string
-	accepted           map[string]struct{}
+	blockHeight    uint64
+	vegaReleaseTag string
+	accepted       map[string]struct{}
 }
 
-func protocolUpgradeProposalID(upgradeBlockHeight uint64, vegaReleaseTag string, dataNodeReleaseTag string) string {
-	return fmt.Sprintf("%v@%v/%v", vegaReleaseTag, upgradeBlockHeight, dataNodeReleaseTag)
+func protocolUpgradeProposalID(upgradeBlockHeight uint64, vegaReleaseTag string) string {
+	return fmt.Sprintf("%v@%v", vegaReleaseTag, upgradeBlockHeight)
 }
 
 func (p *protocolUpgradeProposal) approvers() []string {
@@ -65,11 +64,12 @@ type Broker interface {
 }
 
 type Engine struct {
-	log      *logging.Logger
-	config   Config
-	broker   Broker
-	topology ValidatorTopology
-	hashKeys []string
+	log            *logging.Logger
+	config         Config
+	broker         Broker
+	topology       ValidatorTopology
+	hashKeys       []string
+	currentVersion string
 
 	currentBlockHeight uint64
 	activeProposals    map[string]*protocolUpgradeProposal
@@ -80,7 +80,7 @@ type Engine struct {
 	upgradeStatus    *types.UpgradeStatus
 }
 
-func New(log *logging.Logger, config Config, broker Broker, topology ValidatorTopology) *Engine {
+func New(log *logging.Logger, config Config, broker Broker, topology ValidatorTopology, version string) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 	return &Engine{
@@ -92,6 +92,7 @@ func New(log *logging.Logger, config Config, broker Broker, topology ValidatorTo
 		topology:        topology,
 		hashKeys:        []string{(&types.PayloadProtocolUpgradeProposals{}).Key()},
 		upgradeStatus:   &types.UpgradeStatus{},
+		currentVersion:  version,
 	}
 }
 
@@ -101,7 +102,7 @@ func (e *Engine) OnRequiredMajorityChanged(_ context.Context, requiredMajority n
 }
 
 // UpgradeProposal records the intention of a validator to upgrade the protocol to a release tag at block height.
-func (e *Engine) UpgradeProposal(ctx context.Context, pk string, upgradeBlockHeight uint64, vegaReleaseTag, dataNodeReleaseTag string) error {
+func (e *Engine) UpgradeProposal(ctx context.Context, pk string, upgradeBlockHeight uint64, vegaReleaseTag string) error {
 	e.lock.RLock()
 	defer e.lock.RUnlock()
 	if !e.topology.IsTendermintValidator(pk) {
@@ -113,10 +114,6 @@ func (e *Engine) UpgradeProposal(ctx context.Context, pk string, upgradeBlockHei
 		return errors.New("upgrade block earlier than current block height")
 	}
 
-	if e.upgradeStatus.AcceptedReleaseInfo != nil {
-		return errors.New("protocol upgrade already scheduled")
-	}
-
 	_, err := semver.Parse(vegaReleaseTag)
 	if err != nil {
 		err = fmt.Errorf("invalid protocol version for upgrade received: version (%s), %w", vegaReleaseTag, err)
@@ -124,34 +121,32 @@ func (e *Engine) UpgradeProposal(ctx context.Context, pk string, upgradeBlockHei
 		return err
 	}
 
-	_, err = semver.Parse(dataNodeReleaseTag)
-	if err != nil {
-		err = fmt.Errorf("invalid protocol version for upgrade received: version (%s), %w", dataNodeReleaseTag, err)
-		e.log.Error("", logging.Error(err))
-		return err
-	}
+	ID := protocolUpgradeProposalID(upgradeBlockHeight, vegaReleaseTag)
 
-	ID := protocolUpgradeProposalID(upgradeBlockHeight, vegaReleaseTag, dataNodeReleaseTag)
-
-	// if it's the first time we see this ID, generate an active proposal entry
-	if _, ok := e.activeProposals[ID]; !ok {
-		e.activeProposals[ID] = &protocolUpgradeProposal{
-			blockHeight:        upgradeBlockHeight,
-			vegaReleaseTag:     vegaReleaseTag,
-			dataNodeReleaseTag: dataNodeReleaseTag,
-			accepted:           map[string]struct{}{},
+	// if the proposed upgrade version is different from the current version we create a new proposal and keep it
+	// if it is the same as the current version, this is taken as a signal to withdraw previous vote for another proposal - in this case the validator will have no vote for no proposal.
+	if vegaReleaseTag != e.currentVersion {
+		// if it's the first time we see this ID, generate an active proposal entry
+		if _, ok := e.activeProposals[ID]; !ok {
+			e.activeProposals[ID] = &protocolUpgradeProposal{
+				blockHeight:    upgradeBlockHeight,
+				vegaReleaseTag: vegaReleaseTag,
+				accepted:       map[string]struct{}{},
+			}
 		}
-	}
 
-	active := e.activeProposals[ID]
-	active.accepted[pk] = struct{}{}
-	e.sendAndKeepEvent(ctx, ID, active)
+		active := e.activeProposals[ID]
+		active.accepted[pk] = struct{}{}
+		e.sendAndKeepEvent(ctx, ID, active)
+	}
 
 	activeIDs := make([]string, 0, len(e.activeProposals))
 	for k := range e.activeProposals {
 		activeIDs = append(activeIDs, k)
 	}
 	sort.Strings(activeIDs)
+
+	// each validator can only have one vote so if we got a vote for a different release than they voted for before, we remove that vote
 	for _, activeID := range activeIDs {
 		if activeID == ID {
 			continue
@@ -162,12 +157,16 @@ func (e *Engine) UpgradeProposal(ctx context.Context, pk string, upgradeBlockHei
 			delete(activeProposal.accepted, pk)
 			e.sendAndKeepEvent(ctx, activeID, activeProposal)
 		}
+		if len(activeProposal.accepted) == 0 {
+			delete(e.activeProposals, activeID)
+			delete(e.events, activeID)
+		}
 	}
 	return nil
 }
 
 func (e *Engine) sendAndKeepEvent(ctx context.Context, ID string, activeProposal *protocolUpgradeProposal) {
-	evt := events.NewProtocolUpgradeProposalEvent(ctx, activeProposal.blockHeight, activeProposal.vegaReleaseTag, activeProposal.dataNodeReleaseTag, activeProposal.approvers(), eventspb.ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_PENDING)
+	evt := events.NewProtocolUpgradeProposalEvent(ctx, activeProposal.blockHeight, activeProposal.vegaReleaseTag, activeProposal.approvers(), eventspb.ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_PENDING)
 	evtProto := evt.Proto()
 	e.events[ID] = &evtProto
 	e.broker.Send(evt)
@@ -184,7 +183,7 @@ func (e *Engine) TimeForUpgrade() bool {
 func (e *Engine) isAccepted(p *protocolUpgradeProposal) bool {
 	count := 0
 	// if the block is already behind us or we've already accepted a proposal return false
-	if p.blockHeight < e.currentBlockHeight || e.upgradeStatus.AcceptedReleaseInfo != nil {
+	if p.blockHeight < e.currentBlockHeight {
 		return false
 	}
 	for k := range p.accepted {
@@ -196,6 +195,15 @@ func (e *Engine) isAccepted(p *protocolUpgradeProposal) bool {
 	return ratio.GreaterThan(e.requiredMajority)
 }
 
+func (e *Engine) getProposalIDs() []string {
+	proposalIDs := make([]string, 0, len(e.activeProposals))
+	for k := range e.activeProposals {
+		proposalIDs = append(proposalIDs, k)
+	}
+	sort.Strings(proposalIDs)
+	return proposalIDs
+}
+
 // BeginBlock is called at the beginning of the block, to mark the current block height and check if there are proposals that are accepted/rejected.
 // If there is more than one active proposal that is accepted (unlikely) we choose the one with the earliest upgrade block.
 func (e *Engine) BeginBlock(ctx context.Context, blockHeight uint64) {
@@ -204,14 +212,7 @@ func (e *Engine) BeginBlock(ctx context.Context, blockHeight uint64) {
 	e.lock.Unlock()
 
 	var accepted *protocolUpgradeProposal
-
-	proposalIDs := make([]string, 0, len(e.activeProposals))
-	for k := range e.activeProposals {
-		proposalIDs = append(proposalIDs, k)
-	}
-	sort.Strings(proposalIDs)
-
-	for _, ID := range proposalIDs {
+	for _, ID := range e.getProposalIDs() {
 		pup := e.activeProposals[ID]
 		if e.isAccepted(pup) {
 			if accepted == nil || accepted.blockHeight > pup.blockHeight {
@@ -221,34 +222,40 @@ func (e *Engine) BeginBlock(ctx context.Context, blockHeight uint64) {
 			if blockHeight > pup.blockHeight {
 				delete(e.activeProposals, ID)
 				delete(e.events, ID)
-				e.log.Info("protocol upgrade rejected", logging.String("vega-release-tag", pup.vegaReleaseTag), logging.String("datanode-release-tag", pup.dataNodeReleaseTag), logging.Uint64("upgrade-block-height", pup.blockHeight))
-				e.broker.Send(events.NewProtocolUpgradeProposalEvent(ctx, pup.blockHeight, pup.vegaReleaseTag, pup.dataNodeReleaseTag, pup.approvers(), eventspb.ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_REJECTED))
+				e.log.Info("protocol upgrade rejected", logging.String("vega-release-tag", pup.vegaReleaseTag), logging.Uint64("upgrade-block-height", pup.blockHeight))
+				e.broker.Send(events.NewProtocolUpgradeProposalEvent(ctx, pup.blockHeight, pup.vegaReleaseTag, pup.approvers(), eventspb.ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_REJECTED))
 			}
 		}
 	}
+	e.lock.Lock()
+
 	if accepted != nil {
-		ID := protocolUpgradeProposalID(accepted.blockHeight, accepted.vegaReleaseTag, accepted.dataNodeReleaseTag)
-		delete(e.activeProposals, ID)
-		delete(e.events, ID)
-		e.broker.Send(events.NewProtocolUpgradeProposalEvent(ctx, accepted.blockHeight, accepted.vegaReleaseTag, accepted.dataNodeReleaseTag, accepted.approvers(), eventspb.ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_APPROVED))
-		e.lock.Lock()
 		e.upgradeStatus.AcceptedReleaseInfo = &types.ReleaseInfo{
 			VegaReleaseTag:     accepted.vegaReleaseTag,
-			DatanodeReleaseTag: accepted.dataNodeReleaseTag,
 			UpgradeBlockHeight: accepted.blockHeight,
 		}
-		e.lock.Unlock()
-		e.log.Info("protocol upgrade agreed", logging.String("release-tag", accepted.vegaReleaseTag), logging.String("datanode-release-tag", accepted.dataNodeReleaseTag), logging.Uint64("upgrade-block-height", accepted.blockHeight))
+	} else {
+		e.upgradeStatus.AcceptedReleaseInfo = &types.ReleaseInfo{}
+	}
+	e.lock.Unlock()
+}
 
-		// if a proposal has been accepted we are auto rejecting all other proposals
-		for _, ID := range proposalIDs {
-			if pup, ok := e.activeProposals[ID]; ok {
-				e.log.Info("protocol upgrade rejected", logging.String("vega-release-tag", pup.vegaReleaseTag), logging.String("datanode-release-tag", pup.dataNodeReleaseTag), logging.Uint64("upgrade-block-height", pup.blockHeight))
-				e.broker.Send(events.NewProtocolUpgradeProposalEvent(ctx, pup.blockHeight, pup.vegaReleaseTag, pup.dataNodeReleaseTag, pup.approvers(), eventspb.ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_REJECTED))
-				delete(e.activeProposals, ID)
-				delete(e.events, ID)
-			}
+// Cleanup is called by the abci before the final snapshot is taken to clear remaining state. It emits events for the accepted and rejected proposals.
+func (e *Engine) Cleanup(ctx context.Context) {
+	e.lock.Lock()
+	defer e.lock.Unlock()
+	for _, ID := range e.getProposalIDs() {
+		pup := e.activeProposals[ID]
+		status := eventspb.ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_APPROVED
+
+		if !e.isAccepted(pup) {
+			e.log.Info("protocol upgrade rejected", logging.String("vega-release-tag", pup.vegaReleaseTag), logging.Uint64("upgrade-block-height", pup.blockHeight))
+			status = eventspb.ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_REJECTED
 		}
+
+		e.broker.Send(events.NewProtocolUpgradeProposalEvent(ctx, pup.blockHeight, pup.vegaReleaseTag, pup.approvers(), status))
+		delete(e.activeProposals, ID)
+		delete(e.events, ID)
 	}
 }
 

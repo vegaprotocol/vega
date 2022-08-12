@@ -52,6 +52,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5619](https://github.com/vegaprotocol/vega/issues/5619) - Add wallet HTTP API version 2 documentation
 - [5823](https://github.com/vegaprotocol/vega/issues/5823) - Add endpoint to wallet HTTP API version 2 to list available RPC methods
 - [5814](https://github.com/vegaprotocol/vega/issues/5815) - Add proposal validation date time to `graphql`
+- [5865](https://github.com/vegaprotocol/vega/issues/5865) - Allow a validator to withdraw their protocol upgrade proposal
 - [5803](https://github.com/vegaprotocol/vega/issues/5803) - Update cursor pagination to use new method from [5784](https://github.com/vegaprotocol/vega/pull/5784)
 - [5862](https://github.com/vegaprotocol/vega/issues/5862) - Add base `URL` in `swagger`
 

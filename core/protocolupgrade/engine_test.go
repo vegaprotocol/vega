@@ -32,7 +32,7 @@ func testEngine(t *testing.T) (*protocolupgrade.Engine, *snp.Engine, *bmocks.Moc
 	broker := bmocks.NewMockBroker(ctrl)
 	now := time.Now()
 	log := logging.NewTestLogger()
-	engine := protocolupgrade.New(log, protocolupgrade.NewDefaultConfig(), broker, &TestValidatorToplogy{})
+	engine := protocolupgrade.New(log, protocolupgrade.NewDefaultConfig(), broker, &TestValidatorToplogy{}, "0.54.0")
 	timeService := stubs.NewTimeStub()
 	timeService.SetTime(now)
 	statsData := stats.New(log, stats.NewDefaultConfig())
@@ -49,6 +49,24 @@ func Test(t *testing.T) {
 	t.Run("Upgrade proposal gets accepted", testProposalApproved)
 	t.Run("Multiple upgrade proposal get accepted, earliest is chosen", testMultiProposalApproved)
 	t.Run("Snapshot roundtrip test", testSnapshotRoundtrip)
+	t.Run("Revert a proposal", testRevertProposal)
+}
+
+func testRevertProposal(t *testing.T) {
+	e, _, broker := testEngine(t)
+	var evts []events.Event
+	broker.EXPECT().Send(gomock.Any()).DoAndReturn(func(event events.Event) {
+		evts = append(evts, event)
+	}).AnyTimes()
+	// validator1 proposed an upgrade to v1 at block height 100
+	require.NoError(t, e.UpgradeProposal(context.Background(), "pk1", 100, "1.0.0"))
+	require.Equal(t, eventspb.ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_PENDING, evts[0].StreamMessage().GetProtocolUpgradeEvent().Status)
+	require.Equal(t, 1, len(evts[0].StreamMessage().GetProtocolUpgradeEvent().Approvers))
+
+	// validator1 proposed an upgrade to v1 at block height 100
+	require.NoError(t, e.UpgradeProposal(context.Background(), "pk1", 100, "0.54.0"))
+	require.Equal(t, eventspb.ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_PENDING, evts[1].StreamMessage().GetProtocolUpgradeEvent().Status)
+	require.Equal(t, 0, len(evts[1].StreamMessage().GetProtocolUpgradeEvent().Approvers))
 }
 
 func testUpgradeProposalRejected(t *testing.T) {
@@ -59,11 +77,11 @@ func testUpgradeProposalRejected(t *testing.T) {
 	}).AnyTimes()
 
 	// validator1 proposed an upgrade to v1 at block height 100
-	require.NoError(t, e.UpgradeProposal(context.Background(), "pk1", 100, "1.0.0", "1.0.0"))
+	require.NoError(t, e.UpgradeProposal(context.Background(), "pk1", 100, "1.0.0"))
 	// validator2 agrees
-	require.NoError(t, e.UpgradeProposal(context.Background(), "pk2", 100, "1.0.0", "1.0.0"))
+	require.NoError(t, e.UpgradeProposal(context.Background(), "pk2", 100, "1.0.0"))
 	// validator3 proposed an upgrade to v2 at block height 100
-	require.NoError(t, e.UpgradeProposal(context.Background(), "pk3", 100, "1.0.2", "1.0.2"))
+	require.NoError(t, e.UpgradeProposal(context.Background(), "pk3", 100, "1.0.2"))
 
 	// we reached block 101 and only 50% of the validators agreed so the proposal is rejected
 	e.BeginBlock(context.Background(), 101)
@@ -98,15 +116,14 @@ func testProposalApproved(t *testing.T) {
 	}).AnyTimes()
 
 	// validator1 proposed an upgrade to v1 at block height 100
-	require.NoError(t, e.UpgradeProposal(context.Background(), "pk1", 100, "1.0.0", "1.0.0"))
+	require.NoError(t, e.UpgradeProposal(context.Background(), "pk1", 100, "1.0.0"))
 	// validator2 agrees
-	require.NoError(t, e.UpgradeProposal(context.Background(), "pk2", 100, "1.0.0", "1.0.0"))
+	require.NoError(t, e.UpgradeProposal(context.Background(), "pk2", 100, "1.0.0"))
 	// validator3 agrees
-	require.NoError(t, e.UpgradeProposal(context.Background(), "pk3", 100, "1.0.0", "1.0.0"))
+	require.NoError(t, e.UpgradeProposal(context.Background(), "pk3", 100, "1.0.0"))
 
 	e.BeginBlock(context.Background(), 50)
-
-	require.Equal(t, 4, len(evts))
+	require.Equal(t, 3, len(evts))
 
 	require.Equal(t, eventspb.ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_PENDING, evts[0].StreamMessage().GetProtocolUpgradeEvent().Status)
 	require.Equal(t, 1, len(evts[0].StreamMessage().GetProtocolUpgradeEvent().Approvers))
@@ -120,11 +137,12 @@ func testProposalApproved(t *testing.T) {
 	require.Equal(t, 3, len(evts[2].StreamMessage().GetProtocolUpgradeEvent().Approvers))
 	require.Equal(t, "1.0.0", evts[2].StreamMessage().GetProtocolUpgradeEvent().VegaReleaseTag)
 
-	require.Equal(t, eventspb.ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_APPROVED, evts[3].StreamMessage().GetProtocolUpgradeEvent().Status)
-	require.Equal(t, "1.0.0", evts[3].StreamMessage().GetProtocolUpgradeEvent().VegaReleaseTag)
-
 	e.BeginBlock(context.Background(), 100)
 	require.True(t, e.TimeForUpgrade())
+	e.Cleanup(context.Background())
+	require.Equal(t, 4, len(evts))
+	require.Equal(t, eventspb.ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_APPROVED, evts[3].StreamMessage().GetProtocolUpgradeEvent().Status)
+	require.Equal(t, "1.0.0", evts[3].StreamMessage().GetProtocolUpgradeEvent().VegaReleaseTag)
 }
 
 func testMultiProposalApproved(t *testing.T) {
@@ -135,45 +153,45 @@ func testMultiProposalApproved(t *testing.T) {
 	}).AnyTimes()
 
 	// validator1 proposed an upgrade to v1 at block height 100
-	require.NoError(t, e.UpgradeProposal(context.Background(), "pk1", 100, "1.0.0", "1.0.0"))
+	require.NoError(t, e.UpgradeProposal(context.Background(), "pk1", 100, "1.0.0"))
 	// validator2 agrees
-	require.NoError(t, e.UpgradeProposal(context.Background(), "pk2", 100, "1.0.0", "1.0.0"))
+	require.NoError(t, e.UpgradeProposal(context.Background(), "pk2", 100, "1.0.0"))
 	// validator3 agrees
-	require.NoError(t, e.UpgradeProposal(context.Background(), "pk3", 100, "1.0.0", "1.0.0"))
+	require.NoError(t, e.UpgradeProposal(context.Background(), "pk3", 100, "1.0.0"))
 
 	require.Equal(t, 3, len(evts[2].StreamMessage().GetProtocolUpgradeEvent().Approvers))
 
 	// validator1 also proposed an upgrade to v1 at block height 90
-	require.NoError(t, e.UpgradeProposal(context.Background(), "pk1", 90, "1.0.1", "1.0.1"))
+	require.NoError(t, e.UpgradeProposal(context.Background(), "pk1", 90, "1.0.1"))
 
 	// the new proposal from pk1 voids their approval of the former proposal
 	require.Equal(t, 2, len(evts[4].StreamMessage().GetProtocolUpgradeEvent().Approvers))
 
 	// validator2 agrees
-	require.NoError(t, e.UpgradeProposal(context.Background(), "pk2", 90, "1.0.1", "1.0.1"))
+	require.NoError(t, e.UpgradeProposal(context.Background(), "pk2", 90, "1.0.1"))
 
 	// the new proposal from pk1 voids their approval of the former proposal
 	require.Equal(t, 1, len(evts[6].StreamMessage().GetProtocolUpgradeEvent().Approvers))
 
 	// validator3 agrees
-	require.NoError(t, e.UpgradeProposal(context.Background(), "pk3", 90, "1.0.1", "1.0.1"))
+	require.NoError(t, e.UpgradeProposal(context.Background(), "pk3", 90, "1.0.1"))
+
+	// at this point there are no votes for the proposal for 1.0.0 so it gets removed
 
 	// the new proposal from pk1 voids their approval of the former proposal
 	require.Equal(t, 0, len(evts[8].StreamMessage().GetProtocolUpgradeEvent().Approvers))
 
 	e.BeginBlock(context.Background(), 55)
+	require.Equal(t, 9, len(evts))
 
-	require.Equal(t, 11, len(evts))
 	e.BeginBlock(context.Background(), 90)
+	e.Cleanup(context.Background())
+	require.Equal(t, 10, len(evts))
 	require.True(t, e.TimeForUpgrade())
 
 	require.Equal(t, eventspb.ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_APPROVED, evts[9].StreamMessage().GetProtocolUpgradeEvent().Status)
 	require.Equal(t, "1.0.1", evts[9].StreamMessage().GetProtocolUpgradeEvent().VegaReleaseTag)
 	require.Equal(t, uint64(90), evts[9].StreamMessage().GetProtocolUpgradeEvent().UpgradeBlockHeight)
-
-	require.Equal(t, eventspb.ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_REJECTED, evts[10].StreamMessage().GetProtocolUpgradeEvent().Status)
-	require.Equal(t, "1.0.0", evts[10].StreamMessage().GetProtocolUpgradeEvent().VegaReleaseTag)
-	require.Equal(t, uint64(100), evts[10].StreamMessage().GetProtocolUpgradeEvent().UpgradeBlockHeight)
 }
 
 func testSnapshotRoundtrip(t *testing.T) {
@@ -188,18 +206,18 @@ func testSnapshotRoundtrip(t *testing.T) {
 	e.BeginBlock(ctx, 50)
 
 	// validator1 proposed an upgrade to v1 at block height 100
-	require.NoError(t, e.UpgradeProposal(context.Background(), "pk1", 100, "1.0.0", "1.0.0"))
+	require.NoError(t, e.UpgradeProposal(context.Background(), "pk1", 100, "1.0.0"))
 	// validator2 agrees
-	require.NoError(t, e.UpgradeProposal(context.Background(), "pk2", 100, "1.0.0", "1.0.0"))
+	require.NoError(t, e.UpgradeProposal(context.Background(), "pk2", 100, "1.0.0"))
 	// validator3 agrees
-	require.NoError(t, e.UpgradeProposal(context.Background(), "pk3", 100, "1.0.0", "1.0.0"))
+	require.NoError(t, e.UpgradeProposal(context.Background(), "pk3", 100, "1.0.0"))
 
 	// validator1 also proposed an upgrade to v1 at block height 90
-	require.NoError(t, e.UpgradeProposal(context.Background(), "pk1", 90, "1.0.1", "1.0.1"))
+	require.NoError(t, e.UpgradeProposal(context.Background(), "pk1", 90, "1.0.1"))
 	// validator2 agrees
-	require.NoError(t, e.UpgradeProposal(context.Background(), "pk2", 90, "1.0.1", "1.0.1"))
+	require.NoError(t, e.UpgradeProposal(context.Background(), "pk2", 90, "1.0.1"))
 	// validator3 agrees
-	require.NoError(t, e.UpgradeProposal(context.Background(), "pk3", 90, "1.0.1", "1.0.1"))
+	require.NoError(t, e.UpgradeProposal(context.Background(), "pk3", 90, "1.0.1"))
 
 	// take a snapshot
 	_, err := snapshotEngine.Snapshot(ctx)
