@@ -19,6 +19,7 @@ import (
 	vgterm "code.vegaprotocol.io/vega/libs/term"
 	vglog "code.vegaprotocol.io/vega/libs/zap"
 	"code.vegaprotocol.io/vega/paths"
+	coreversion "code.vegaprotocol.io/vega/version"
 	walletapi "code.vegaprotocol.io/vega/wallet/api"
 	walletnode "code.vegaprotocol.io/vega/wallet/api/node"
 	"code.vegaprotocol.io/vega/wallet/api/pipeline"
@@ -27,6 +28,7 @@ import (
 	"code.vegaprotocol.io/vega/wallet/node"
 	"code.vegaprotocol.io/vega/wallet/service"
 	svcstore "code.vegaprotocol.io/vega/wallet/service/store/v1"
+	"code.vegaprotocol.io/vega/wallet/version"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 	"github.com/golang/protobuf/jsonpb"
 	"golang.org/x/term"
@@ -67,6 +69,9 @@ var (
 
 		# Start the service with automatic consent of incoming transactions for API v1.
 		{{.Software}} service run --network NETWORK --automatic-consent
+
+		# Start the service without verifying network version compatibility
+		{{.Software}} service run --network NETWORK --no-version-check
 	`)
 )
 
@@ -107,6 +112,11 @@ func BuildCmdRunService(w io.Writer, handler RunServiceHandler, rf *RootFlags) *
 		false,
 		"Automatically approve incoming transaction. Only use this flag when you have absolute trust in incoming transactions! No logs on standard output. Only works for API v1.",
 	)
+	cmd.PersistentFlags().BoolVar(&f.NoVersionCheck,
+		"no-version-check",
+		false,
+		"Do not check for new version of the Vega wallet",
+	)
 
 	autoCompleteNetwork(cmd, rf.Home)
 
@@ -116,6 +126,7 @@ func BuildCmdRunService(w io.Writer, handler RunServiceHandler, rf *RootFlags) *
 type RunServiceFlags struct {
 	Network                string
 	EnableAutomaticConsent bool
+	NoVersionCheck         bool
 }
 
 func (f *RunServiceFlags) Validate() error {
@@ -129,6 +140,15 @@ func (f *RunServiceFlags) Validate() error {
 func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 	if err := ensureNotRunningInMsys(); err != nil {
 		return err
+	}
+
+	p := printer.NewInteractivePrinter(w)
+
+	if rf.Output == flags.InteractiveOutput && version.IsUnreleased() {
+		str := p.String()
+		str.CrossMark().DangerText("You are running an unreleased version of the Vega wallet (").DangerText(coreversion.Get()).DangerText(").").NextLine()
+		str.Pad().DangerText("Use it at your own risk!").NextSection()
+		p.Print(str)
 	}
 
 	walletStore, err := wallets.InitialiseStore(rf.Home)
@@ -157,9 +177,20 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 		return fmt.Errorf("couldn't initialise network store: %w", err)
 	}
 
-	if err := verifyNetworkConfig(cfg); err != nil {
+	if err := cfg.EnsureCanConnectGRPCNode(); err != nil {
 		return err
 	}
+
+	if !f.NoVersionCheck {
+		networkVersion, err := getNetworkVersion(cfg.API.GRPC.Hosts[0])
+		if err != nil {
+			return err
+		}
+		if networkVersion != coreversion.Get() {
+			return fmt.Errorf("software is not compatible with this network: network is running version %s but wallet software has version %s", networkVersion, coreversion.Get())
+		}
+	}
+
 	svcLog, svcLogPath, err := BuildJSONLogger(cfg.Level.String(), vegaPaths, paths.WalletServiceLogsHome)
 	if err != nil {
 		return err
@@ -200,10 +231,10 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 
 	cliLog = cliLog.Named("command")
 
-	p := printer.NewInteractivePrinter(w)
-
-	p.Print(p.String().CheckMark().Text("Service logs located at: ").SuccessText(svcLogPath).NextLine())
-	p.Print(p.String().CheckMark().Text("CLI logs located at: ").SuccessText(cliLogPath).NextLine())
+	str := p.String()
+	str.CheckMark().Text("Service logs located at: ").SuccessText(svcLogPath).NextLine()
+	str.CheckMark().Text("CLI logs located at: ").SuccessText(cliLogPath).NextLine()
+	p.Print(str)
 
 	consentRequests := make(chan service.ConsentRequest, MaxConsentRequests)
 	defer close(consentRequests)
@@ -275,10 +306,6 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 	waitSig(ctx, cancel, cliLog, consentRequests, sentTransactions, receptionChan, responseChan, p)
 
 	return nil
-}
-
-func verifyNetworkConfig(cfg *network.Network) error {
-	return cfg.EnsureCanConnectGRPCNode()
 }
 
 // waitSig will wait for a sigterm or sigint interrupt.

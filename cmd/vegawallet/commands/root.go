@@ -1,58 +1,31 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"os"
-	"time"
 
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
-	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
-	"code.vegaprotocol.io/vega/wallet/version"
-
-	vgversion "code.vegaprotocol.io/vega/libs/version"
-	coreversion "code.vegaprotocol.io/vega/version"
-	"github.com/blang/semver/v4"
 	"github.com/spf13/cobra"
 )
 
-var (
-	requestTimeout = 30 * time.Second
+var rootExamples = cli.Examples(`
+	# Specify a custom Vega home directory
+	{{.Software}} --home PATH_TO_DIR COMMAND
 
-	rootExamples = cli.Examples(`
-		# Specify a custom Vega home directory
-		{{.Software}} --home PATH_TO_DIR COMMAND
+	# Change the output to JSON
+	{{.Software}} --output json COMMAND
 
-		# Change the output to JSON
-		{{.Software}} --output json COMMAND
-
-		# Disable colors on output using environment variable
-		NO_COLOR=1 {{.Software}} COMMAND
-
-		# Disable the verification of the software version
-		{{.Software}} --no-version-check COMMAND
-	`)
-)
-
-type CheckVersionHandler func() (*semver.Version, error)
+	# Disable colors on output using environment variable
+	NO_COLOR=1 {{.Software}} COMMAND
+`)
 
 func NewCmdRoot(w io.Writer) *cobra.Command {
-	vh := func() (*semver.Version, error) {
-		ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
-		defer cancel()
-		v, err := version.Check(vgversion.BuildGithubReleasesRequestFrom(ctx, version.ReleasesAPI), coreversion.Get())
-		if err != nil {
-			return nil, fmt.Errorf("couldn't check latest releases: %w", err)
-		}
-		return v, nil
-	}
-
-	return BuildCmdRoot(w, vh)
+	return BuildCmdRoot(w)
 }
 
-func BuildCmdRoot(w io.Writer, vh CheckVersionHandler) *cobra.Command {
+func BuildCmdRoot(w io.Writer) *cobra.Command {
 	f := &RootFlags{}
 
 	cmd := &cobra.Command{
@@ -76,25 +49,6 @@ func BuildCmdRoot(w io.Writer, vh CheckVersionHandler) *cobra.Command {
 				return err
 			}
 
-			if !f.NoVersionCheck && f.Output == flags.InteractiveOutput {
-				p := printer.NewInteractivePrinter(w)
-				if version.IsUnreleased() {
-					p.Print(p.String().CrossMark().DangerText("You are running an unreleased version of the Vega wallet (").DangerText(coreversion.Get()).DangerText("). Use it at your own risk!").NextSection())
-				}
-
-				v, err := vh()
-				if err != nil {
-					p.Print(p.String().CrossMark().DangerText(err.Error()).NextSection())
-					return nil
-				}
-
-				if v != nil {
-					str := p.String()
-					str.Text("Version ").SuccessText(v.String()).Text(" is available. Your current version is ").DangerText(coreversion.Get()).Text(".").NextLine()
-					str.Text("Download the latest version at: ").Underline(vgversion.GetGithubReleaseURL(version.ReleasesURL, v)).NextSection()
-					p.Print(str)
-				}
-			}
 			return nil
 		},
 	}
@@ -108,11 +62,6 @@ func BuildCmdRoot(w io.Writer, vh CheckVersionHandler) *cobra.Command {
 		"home",
 		"",
 		"Specify the location of a custom Vega home",
-	)
-	cmd.PersistentFlags().BoolVar(&f.NoVersionCheck,
-		"no-version-check",
-		false,
-		"Do not check for new version of the Vega wallet",
 	)
 
 	_ = cmd.MarkPersistentFlagDirname("home")
@@ -146,9 +95,8 @@ func BuildCmdRoot(w io.Writer, vh CheckVersionHandler) *cobra.Command {
 }
 
 type RootFlags struct {
-	Output         string
-	Home           string
-	NoVersionCheck bool
+	Output string
+	Home   string
 }
 
 func (f *RootFlags) Validate() error {

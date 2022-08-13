@@ -9,7 +9,9 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
 	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
+	coreversion "code.vegaprotocol.io/vega/version"
 	wcommands "code.vegaprotocol.io/vega/wallet/commands"
+	"code.vegaprotocol.io/vega/wallet/version"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 	"github.com/golang/protobuf/jsonpb"
@@ -85,7 +87,7 @@ func BuildCmdCommandSign(w io.Writer, handler SignCommandHandler, rf *RootFlags)
 
 			switch rf.Output {
 			case flags.InteractiveOutput:
-				PrintSignCommandResponse(w, resp)
+				PrintSignCommandResponse(w, resp, rf)
 			case flags.JSONOutput:
 				return printer.FprintJSON(w, resp)
 			}
@@ -170,8 +172,15 @@ func (f *SignCommandFlags) Validate() (*wallet.SignCommandRequest, error) {
 	return req, nil
 }
 
-func PrintSignCommandResponse(w io.Writer, req *wallet.SignCommandResponse) {
+func PrintSignCommandResponse(w io.Writer, req *wallet.SignCommandResponse, rf *RootFlags) {
 	p := printer.NewInteractivePrinter(w)
+
+	if rf.Output == flags.InteractiveOutput && version.IsUnreleased() {
+		str := p.String()
+		str.CrossMark().DangerText("You are running an unreleased version of the Vega wallet (").DangerText(coreversion.Get()).DangerText(").").NextLine()
+		str.Pad().DangerText("Use it at your own risk!").NextSection()
+		p.Print(str)
+	}
 
 	str := p.String()
 	defer p.Print(str)
