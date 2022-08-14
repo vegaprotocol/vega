@@ -145,11 +145,11 @@ func SessionAPI(log *zap.Logger, walletStore WalletStore, pipeline Pipeline, nod
 	walletAPI := jsonrpc.New(log)
 	walletAPI.RegisterMethod("session.connect_wallet", NewConnectWallet(walletStore, pipeline, sessions))
 	walletAPI.RegisterMethod("session.disconnect_wallet", NewDisconnectWallet(sessions))
+	walletAPI.RegisterMethod("session.get_chain_id", NewGetChainID(nodeSelector))
 	walletAPI.RegisterMethod("session.get_permissions", NewGetPermissions(sessions))
 	walletAPI.RegisterMethod("session.list_keys", NewListKeys(sessions))
 	walletAPI.RegisterMethod("session.request_permissions", NewRequestPermissions(walletStore, pipeline, sessions))
 	walletAPI.RegisterMethod("session.send_transaction", NewSendTransaction(pipeline, nodeSelector, sessions))
-	walletAPI.RegisterMethod("session.get_chain_id", &UnimplementedMethod{})
 
 	log.Info("restricted JSON-RPC API initialised")
 
