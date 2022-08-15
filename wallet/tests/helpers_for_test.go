@@ -55,12 +55,6 @@ Hosts = [
 Hosts = [
     "https://example.com/gql/query"
 ]
-
-[Console]
-URL = "console.example.com"
-
-[TokenDApp]
-URL = "token.example.com"
 `, name)
 }
 
