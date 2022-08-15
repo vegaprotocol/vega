@@ -90,7 +90,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5811](https://github.com/vegaprotocol/vega/issues/5811) - Do not overwrite local changes when updating wallet through JSON-RPC API
 - [5868](https://github.com/vegaprotocol/vega/issues/5868) - Clarify the error for insufficient token to submit proposal or vote
 - [5867](https://github.com/vegaprotocol/vega/issues/5867) - Fix witness check for majority
-- [5648](https://github.com/vegaprotocol/vega/issues/5648) - Ethereum key rotation - search validators by Vega pub key and listen to rotation evenets in core API
+- [5648](https://github.com/vegaprotocol/vega/issues/5648) - Ethereum key rotation - search validators by Vega pub key and listen to rotation events in core API
 
 ## 0.53.0
 
