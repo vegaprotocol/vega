@@ -88,7 +88,7 @@ func (v *Visor) watchForConfigUpdates(ctx context.Context) {
 
 func (v *Visor) Run(ctx context.Context) error {
 	numOfRestarts := 0
-	var currentRelaseInfo *types.ReleaseInfo
+	var currentReleaseInfo *types.ReleaseInfo
 
 	upgradeTicker := time.NewTicker(upgradeApiCallTickerDuration)
 	defer upgradeTicker.Stop()
@@ -112,8 +112,13 @@ func (v *Visor) Run(ctx context.Context) error {
 		restartsDelay := time.Second * time.Duration(v.conf.RestartsDelaySeconds())
 
 		v.log.Info("Starting binaries")
-		binRunner := NewBinariesRunner(v.log, v.conf.CurrentFolder(), time.Second*time.Duration(v.conf.StopSignalTimeoutSeconds()))
-		binErrs := binRunner.Run(ctx, runConf, currentRelaseInfo)
+		binRunner := NewBinariesRunner(
+			v.log,
+			v.conf.CurrentFolder(),
+			time.Second*time.Duration(v.conf.StopSignalTimeoutSeconds()),
+			currentReleaseInfo,
+		)
+		binErrs := binRunner.Run(ctx, runConf)
 
 		upgradeTicker.Reset(upgradeApiCallTickerDuration)
 
@@ -152,7 +157,7 @@ func (v *Visor) Run(ctx context.Context) error {
 					break
 				}
 
-				currentRelaseInfo = upStatus.AcceptedReleaseInfo
+				currentReleaseInfo = upStatus.AcceptedReleaseInfo
 
 				v.log.Info("Preparing upgrade")
 
@@ -165,7 +170,7 @@ func (v *Visor) Run(ctx context.Context) error {
 
 				v.log.Info("Starting upgrade")
 
-				if err := v.prepareNextUpgradeFolder(ctx, currentRelaseInfo.VegaReleaseTag); err != nil {
+				if err := v.prepareNextUpgradeFolder(ctx, currentReleaseInfo.VegaReleaseTag); err != nil {
 					return fmt.Errorf("failed to prepare next upgrade folder")
 				}
 

@@ -33,27 +33,53 @@ import (
 
 const snapshotBlockHeightFlagName = "--snapshot.load-from-block-height"
 
+type versionCommandOutput struct {
+	Version string `json:"version"`
+	Hash    string `json:"hash"`
+}
+
 type BinariesRunner struct {
 	mut         sync.RWMutex
 	running     map[string]*exec.Cmd
 	binsFolder  string
 	log         *logging.Logger
 	stopTimeout time.Duration
+	releaseInfo *types.ReleaseInfo
 }
 
-func NewBinariesRunner(log *logging.Logger, binsFolder string, stopTimeout time.Duration) *BinariesRunner {
+func NewBinariesRunner(log *logging.Logger, binsFolder string, stopTimeout time.Duration, rInfo *types.ReleaseInfo) *BinariesRunner {
 	return &BinariesRunner{
 		binsFolder:  binsFolder,
 		running:     map[string]*exec.Cmd{},
 		log:         log,
 		stopTimeout: stopTimeout,
+		releaseInfo: rInfo,
 	}
+}
+
+func ensureBinaryVersion(binary, version string) error {
+	var output versionCommandOutput
+	if _, err := utils.ExecuteBinary(binary, []string{"version", "--output", "json"}, &output); err != nil {
+		return err
+	}
+
+	if output.Version != version {
+		return fmt.Errorf("wrong binary version provided - provided: %s, want: %s", output.Version, version)
+	}
+
+	return nil
 }
 
 func (r *BinariesRunner) runBinary(ctx context.Context, binary string, args []string) error {
 	binPath := path.Join(r.binsFolder, binary)
 	if err := utils.EnsureBinary(binPath); err != nil {
 		return fmt.Errorf("failed to locate binary %s %v: %w", binPath, args, err)
+	}
+
+	if r.releaseInfo != nil {
+		if err := ensureBinaryVersion(binPath, r.releaseInfo.VegaReleaseTag); err != nil {
+			return err
+		}
 	}
 
 	cmd := exec.CommandContext(ctx, binPath, args...)
@@ -109,14 +135,14 @@ func (r *BinariesRunner) runBinary(ctx context.Context, binary string, args []st
 	return nil
 }
 
-func (r *BinariesRunner) Run(ctx context.Context, runConf *config.RunConfig, rInfo *types.ReleaseInfo) chan error {
+func (r *BinariesRunner) Run(ctx context.Context, runConf *config.RunConfig) chan error {
 	eg, ctx := errgroup.WithContext(ctx)
 
 	eg.Go(func() error {
 		// TODO consider moving this logic somewhere else
 		args := Args(runConf.Vega.Binary.Args)
-		if rInfo != nil {
-			args.Set(snapshotBlockHeightFlagName, strconv.FormatUint(rInfo.UpgradeBlockHeight+1, 10))
+		if r.releaseInfo != nil {
+			args.Set(snapshotBlockHeightFlagName, strconv.FormatUint(r.releaseInfo.UpgradeBlockHeight+1, 10))
 		}
 
 		return r.runBinary(ctx, runConf.Vega.Binary.Path, args)
