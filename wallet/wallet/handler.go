@@ -341,62 +341,10 @@ func GetWalletInfo(store Store, req *GetWalletInfoRequest) (*GetWalletInfoRespon
 	}, nil
 }
 
-type CreateWalletRequest struct {
-	Wallet     string `json:"wallet"`
-	Passphrase string `json:"passphrase"`
-}
-
-type CreateWalletResponse struct {
-	Wallet CreatedWallet  `json:"wallet"`
-	Key    FirstPublicKey `json:"key"`
-}
-
-type CreatedWallet struct {
-	Name           string `json:"name"`
-	Version        uint32 `json:"version"`
-	FilePath       string `json:"filePath"`
-	RecoveryPhrase string `json:"recoveryPhrase"`
-}
-
 type FirstPublicKey struct {
 	PublicKey string    `json:"publicKey"`
 	Algorithm Algorithm `json:"algorithm"`
 	Meta      []Meta    `json:"meta"`
-}
-
-func CreateWallet(store Store, req *CreateWalletRequest) (*CreateWalletResponse, error) {
-	resp := &CreateWalletResponse{}
-
-	if exist, err := store.WalletExists(context.Background(), req.Wallet); err != nil {
-		return nil, fmt.Errorf("couldn't verify wallet existence: %w", err)
-	} else if exist {
-		return nil, ErrWalletAlreadyExists
-	}
-
-	w, recoveryPhrase, err := NewHDWallet(req.Wallet)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't create HD wallet: %w", err)
-	}
-
-	kp, err := w.GenerateKeyPair(addDefaultKeyName(w, nil))
-	if err != nil {
-		return nil, err
-	}
-
-	if err := store.SaveWallet(context.Background(), w, req.Passphrase); err != nil {
-		return nil, fmt.Errorf("couldn't save wallet: %w", err)
-	}
-
-	resp.Wallet.Name = req.Wallet
-	resp.Wallet.RecoveryPhrase = recoveryPhrase
-	resp.Wallet.Version = w.Version()
-	resp.Wallet.FilePath = store.GetWalletPath(req.Wallet)
-	resp.Key.PublicKey = kp.PublicKey()
-	resp.Key.Algorithm.Name = kp.AlgorithmName()
-	resp.Key.Algorithm.Version = kp.AlgorithmVersion()
-	resp.Key.Meta = kp.Meta()
-
-	return resp, nil
 }
 
 type ImportWalletRequest struct {

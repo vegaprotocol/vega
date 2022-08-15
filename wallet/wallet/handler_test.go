@@ -415,47 +415,6 @@ func testGetWalletInfoOfNonExistingWalletFails(t *testing.T) {
 	assert.Nil(t, resp)
 }
 
-func TestCreateWalletSucceeds(t *testing.T) {
-	// given
-	req := &wallet.CreateWalletRequest{
-		Wallet:     vgrand.RandomStr(5),
-		Passphrase: vgrand.RandomStr(5),
-	}
-
-	// setup
-	var createdWallet wallet.Wallet
-	captureWallet := func(_ context.Context, w wallet.Wallet, passphrase string) error {
-		createdWallet = w
-		return nil
-	}
-	fakePath := fmt.Sprintf("/path/to/wallets/%s", req.Wallet)
-	store := handlerMocks(t)
-	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(false, nil)
-	store.EXPECT().GetWalletPath(req.Wallet).Times(1).Return(fakePath)
-	store.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), req.Passphrase).Times(1).DoAndReturn(captureWallet)
-
-	// when
-	resp, err := wallet.CreateWallet(store, req)
-
-	// then
-	require.NoError(t, err)
-	require.NotNil(t, resp)
-	// verify generated wallet
-	assert.Equal(t, req.Wallet, createdWallet.Name())
-	assert.Len(t, createdWallet.ListKeyPairs(), 1)
-	keyPair := createdWallet.ListKeyPairs()[0]
-	assert.NotEmpty(t, keyPair.Meta())
-	// verify response
-	assert.Equal(t, req.Wallet, resp.Wallet.Name)
-	assert.NotEmpty(t, resp.Wallet.RecoveryPhrase)
-	assert.Equal(t, uint32(2), resp.Wallet.Version)
-	assert.Equal(t, fakePath, resp.Wallet.FilePath)
-	assert.Equal(t, keyPair.PublicKey(), resp.Key.PublicKey)
-	assert.Equal(t, keyPair.AlgorithmName(), resp.Key.Algorithm.Name)
-	assert.Equal(t, keyPair.AlgorithmVersion(), resp.Key.Algorithm.Version)
-	assert.Equal(t, keyPair.Meta(), resp.Key.Meta)
-}
-
 func TestImportWalletSucceeds(t *testing.T) {
 	// given
 	req := &wallet.ImportWalletRequest{

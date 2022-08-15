@@ -46,6 +46,7 @@ var (
 	ErrEncodedTransactionIsRequired             = errors.New("the encoded transaction is required")
 	ErrHostnameIsRequired                       = errors.New("the hostname is required")
 	ErrNoHealthyNodeAvailable                   = errors.New("no healthy node available")
+	ErrPassphraseIsRequired                     = errors.New("the passphrase is required")
 	ErrParamsDoNotMatch                         = errors.New("the params do not match expected ones")
 	ErrParamsRequired                           = errors.New("the params are required")
 	ErrPublicKeyIsNotAllowedToBeUsed            = errors.New("the public key is not allowed to be used")
@@ -57,6 +58,8 @@ var (
 	ErrSendingModeIsRequired                    = errors.New("the sending mode is required")
 	ErrTransactionFailed                        = errors.New("the transaction failed")
 	ErrWalletDoesNotExist                       = errors.New("the wallet does not exist")
+	ErrWalletAlreadyExists                      = errors.New("a wallet with the same name already exists")
+	ErrWalletIsRequired                         = errors.New("the wallet is required")
 )
 
 func applicationError(code jsonrpc.ErrorCode, err error) *jsonrpc.ErrorDetails {

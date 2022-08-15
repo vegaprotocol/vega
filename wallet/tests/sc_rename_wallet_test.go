@@ -2,10 +2,10 @@ package tests_test
 
 import (
 	"os"
-	"path/filepath"
 	"testing"
 
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
+	"code.vegaprotocol.io/vega/paths"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -32,11 +32,12 @@ func TestRenameWallet(t *testing.T) {
 
 	// given
 	newWalletName := vgrand.RandomStr(5)
-	currentDir := filepath.Dir(createWalletResp.Wallet.FilePath)
-	newPath := filepath.Join(currentDir, newWalletName)
+	vegaPaths := paths.New(home)
+	currentFilePath := vegaPaths.DataPathFor(paths.JoinDataPath(paths.WalletsDataHome, createWalletResp.Wallet.Name))
+	newFilePath := vegaPaths.DataPathFor(paths.JoinDataPath(paths.WalletsDataHome, newWalletName))
 
 	// when
-	err = os.Rename(createWalletResp.Wallet.FilePath, newPath)
+	err = os.Rename(currentFilePath, newFilePath)
 
 	// then
 	require.NoError(t, err)
