@@ -27,7 +27,6 @@ var (
 	ErrInvalidAssetNameEmpty           = errors.New("invalid asset, name must not be empty")
 	ErrInvalidAssetSymbolEmpty         = errors.New("invalid asset, symbol must not be empty")
 	ErrInvalidAssetDecimalPlacesZero   = errors.New("invalid asset, decimal places must not be zero")
-	ErrInvalidAssetTotalSupplyZero     = errors.New("invalid asset, total supply must not be zero")
 	ErrInvalidAssetQuantumZero         = errors.New("invalid asset, quantum must not be zero")
 	ErrLifetimeLimitMustBePositive     = errors.New("lifetime limit must be positive")
 	ErrWithdrawThresholdMustBePositive = errors.New("withdraw threshold must be positive")
@@ -82,21 +81,11 @@ func (a Asset) DeepClone() *Asset {
 	if a.Details == nil {
 		return &cpy
 	}
-	if a.Details.TotalSupply != nil {
-		cpy.Details.TotalSupply = a.Details.TotalSupply.Clone()
-	}
 	cpy.Details.Quantum = a.Details.Quantum
 	if a.Details.Source != nil {
 		cpy.Details.Source = a.Details.Source.DeepClone()
 	}
 	return &cpy
-}
-
-func (a Asset) GetAssetTotalSupply() *num.Uint {
-	if a.Details == nil || a.Details.TotalSupply == nil {
-		return num.UintZero()
-	}
-	return a.Details.TotalSupply.Clone()
 }
 
 func AssetFromProto(p *proto.Asset) (*Asset, error) {
@@ -118,11 +107,10 @@ func AssetFromProto(p *proto.Asset) (*Asset, error) {
 }
 
 type AssetDetails struct {
-	Name        string
-	Symbol      string
-	TotalSupply *num.Uint
-	Decimals    uint64
-	Quantum     num.Decimal
+	Name     string
+	Symbol   string
+	Decimals uint64
+	Quantum  num.Decimal
 	//	*AssetDetailsBuiltinAsset
 	//	*AssetDetailsErc20
 	Source isAssetDetails
@@ -130,11 +118,10 @@ type AssetDetails struct {
 
 func (a AssetDetails) String() string {
 	return fmt.Sprintf(
-		"name(%s) symbol(%s) quantum(%s) totalSupply(%s) decimals(%d) source(%s)",
+		"name(%s) symbol(%s) quantum(%s) decimals(%d) source(%s)",
 		a.Name,
 		a.Symbol,
 		a.Quantum.String(),
-		uintPointerToString(a.TotalSupply),
 		a.Decimals,
 		reflectPointerToString(a.Source),
 	)
@@ -151,10 +138,6 @@ func (a AssetDetails) Validate() (ProposalError, error) {
 
 	if a.Decimals == 0 {
 		return ProposalErrorInvalidAssetDetails, ErrInvalidAssetDecimalPlacesZero
-	}
-
-	if a.TotalSupply.IsZero() {
-		return ProposalErrorInvalidAssetDetails, ErrInvalidAssetTotalSupplyZero
 	}
 
 	if a.Quantum.IsZero() {
@@ -204,11 +187,6 @@ func (a AssetDetails) DeepClone() *AssetDetails {
 		Decimals: a.Decimals,
 		Source:   src,
 	}
-	if a.TotalSupply != nil {
-		cpy.TotalSupply = a.TotalSupply.Clone()
-	} else {
-		cpy.TotalSupply = num.UintZero()
-	}
 	cpy.Quantum = a.Quantum
 	return cpy
 }
@@ -227,7 +205,6 @@ func AssetDetailsFromProto(p *proto.AssetDetails) (*AssetDetails, error) {
 	case *proto.AssetDetails_BuiltinAsset:
 		src = AssetDetailsBuiltinFromProto(st)
 	}
-	total := num.UintZero()
 	min := num.DecimalZero()
 	if len(p.Quantum) > 0 {
 		var err error
@@ -237,12 +214,11 @@ func AssetDetailsFromProto(p *proto.AssetDetails) (*AssetDetails, error) {
 		}
 	}
 	return &AssetDetails{
-		Name:        p.Name,
-		Symbol:      p.Symbol,
-		TotalSupply: total,
-		Decimals:    p.Decimals,
-		Quantum:     min,
-		Source:      src,
+		Name:     p.Name,
+		Symbol:   p.Symbol,
+		Decimals: p.Decimals,
+		Quantum:  min,
+		Source:   src,
 	}, nil
 }
 

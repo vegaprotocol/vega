@@ -93,10 +93,9 @@ func enableVoteAsset(collateralEngine *collateral.Engine) error {
 	voteAsset := types.Asset{
 		ID: "VOTE",
 		Details: &types.AssetDetails{
-			Name:        "VOTE",
-			Symbol:      "VOTE",
-			Decimals:    5,
-			TotalSupply: num.NewUint(1000),
+			Name:     "VOTE",
+			Symbol:   "VOTE",
+			Decimals: 5,
 			Source: &types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{
 					MaxFaucetAmountMint: num.NewUint(10),

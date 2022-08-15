@@ -81,7 +81,7 @@ func (b *Builtin) ValidateDeposit() error {
 }
 
 func (b *Builtin) String() string {
-	return fmt.Sprintf("id(%v) name(%v) symbol(%v) totalSupply(%v) decimals(%v)",
-		b.asset.ID, b.asset.Details.Name, b.asset.Details.Symbol, b.asset.Details.TotalSupply,
+	return fmt.Sprintf("id(%v) name(%v) symbol(%v) decimals(%v)",
+		b.asset.ID, b.asset.Details.Name, b.asset.Details.Symbol,
 		b.asset.Details.Decimals)
 }

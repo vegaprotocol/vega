@@ -204,10 +204,6 @@ func (a AssetDetailsUpdate) Validate() (ProposalError, error) {
 		return ProposalErrorInvalidAssetDetails, ErrInvalidAssetDecimalPlacesZero
 	}
 
-	if a.TotalSupply.IsZero() {
-		return ProposalErrorInvalidAssetDetails, ErrInvalidAssetTotalSupplyZero
-	}
-
 	if a.Quantum.IsZero() {
 		return ProposalErrorInvalidAssetDetails, ErrInvalidAssetQuantumZero
 	}

@@ -65,11 +65,10 @@ var defaultCollateralAssets = []types.Asset{
 	{
 		ID: "VOTE",
 		Details: &types.AssetDetails{
-			Name:        "VOTE",
-			Symbol:      "VOTE",
-			Decimals:    5,
-			TotalSupply: num.NewUint(1000),
-			Quantum:     num.DecimalZero(),
+			Name:     "VOTE",
+			Symbol:   "VOTE",
+			Decimals: 5,
+			Quantum:  num.DecimalZero(),
 			Source: &types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{},
 			},
@@ -359,10 +358,9 @@ func getTestMarket2WithDP(
 	err := collateralEngine.EnableAsset(context.Background(), types.Asset{
 		ID: "ETH",
 		Details: &types.AssetDetails{
-			Symbol:      "ETH",
-			TotalSupply: num.UintZero(),
-			Decimals:    0, // no decimals
-			Quantum:     num.DecimalZero(),
+			Symbol:   "ETH",
+			Decimals: 0, // no decimals
+			Quantum:  num.DecimalZero(),
 		},
 	})
 	require.NoError(t, err)
@@ -376,11 +374,10 @@ func getTestMarket2WithDP(
 	tokAsset := types.Asset{
 		ID: "VOTE",
 		Details: &types.AssetDetails{
-			Name:        "VOTE",
-			Symbol:      "VOTE",
-			Decimals:    5,
-			TotalSupply: num.NewUint(1000),
-			Quantum:     num.DecimalZero(),
+			Name:     "VOTE",
+			Symbol:   "VOTE",
+			Decimals: 5,
+			Quantum:  num.DecimalZero(),
 			Source: &types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{},
 			},
