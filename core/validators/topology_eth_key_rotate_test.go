@@ -66,7 +66,7 @@ func testRotateEthereumKeySuccess(t *testing.T) {
 		gomock.Any(),
 	).Times(1)
 
-	err = top.RotateEthereumKey(ctx, nr.Id, 10, ekr)
+	err = top.RotateEthereumKey(ctx, nr.VegaPubKey, 10, ekr)
 	require.NoError(t, err)
 }
 
@@ -77,23 +77,21 @@ func testRotateEthereumKeyFailsOnNonExistingNode(t *testing.T) {
 
 	err := top.RotateEthereumKey(
 		context.Background(),
-		"vega-master-pubkey",
+		"vega-nonexisting-pubkey",
 		10,
 		newEthereumKeyRotationSubmission("", "new-eth-addr", 10),
 	)
 
 	assert.Error(t, err)
-	assert.EqualError(t, err, "failed to rotate ethereum key for non existing validator \"vega-master-pubkey\"")
+	assert.EqualError(t, err, "failed to rotate ethereum key for non existing validator \"vega-nonexisting-pubkey\"")
 }
 
 func testRotateEthereumKeyFailsWhenTargetBlockHeightIsLessThenCurrentBlockHeight(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
 
-	id := "vega-master-pubkey"
-
 	nr := commandspb.AnnounceNode{
-		Id:              id,
+		Id:              "vega-master-pubkey",
 		ChainPubKey:     tmPubKey,
 		VegaPubKey:      "vega-key",
 		EthereumAddress: "eth-address",
@@ -104,7 +102,7 @@ func testRotateEthereumKeyFailsWhenTargetBlockHeightIsLessThenCurrentBlockHeight
 
 	err = top.RotateEthereumKey(
 		context.Background(),
-		id,
+		nr.VegaPubKey,
 		10,
 		newEthereumKeyRotationSubmission("eth-address", "new-eth-addr", 5),
 	)
@@ -116,10 +114,8 @@ func testRotateEthereumKeyFailsWhenCurrentAddressDoesNotMatch(t *testing.T) {
 	defer top.ctrl.Finish()
 	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 
-	id := "vega-master-pubkey"
-
 	nr := commandspb.AnnounceNode{
-		Id:              id,
+		Id:              "vega-master-pubkey",
 		ChainPubKey:     tmPubKey,
 		VegaPubKey:      "vega-key",
 		EthereumAddress: "eth-address",
@@ -130,7 +126,7 @@ func testRotateEthereumKeyFailsWhenCurrentAddressDoesNotMatch(t *testing.T) {
 
 	err = top.RotateEthereumKey(
 		context.Background(),
-		id,
+		nr.VegaPubKey,
 		10,
 		newEthereumKeyRotationSubmission("random-key", "new-eth-key", 20),
 	)
@@ -155,11 +151,11 @@ func testEthereumKeyRotationBeginBlock(t *testing.T) {
 	ctx := context.Background()
 	for i := 0; i < len(chainValidators); i++ {
 		j := i + 1
-		id := fmt.Sprintf("vega-master-pubkey-%d", j)
+		id := fmt.Sprintf("vega-key-%d", j)
 		nr := commandspb.AnnounceNode{
-			Id:              id,
+			Id:              fmt.Sprintf("vega-master-pubkey-%d", j),
 			ChainPubKey:     chainValidators[i],
-			VegaPubKey:      fmt.Sprintf("vega-key-%d", j),
+			VegaPubKey:      id,
 			EthereumAddress: fmt.Sprintf("eth-address-%d", j),
 		}
 
@@ -183,13 +179,13 @@ func testEthereumKeyRotationBeginBlock(t *testing.T) {
 	).Times(len(chainValidators))
 
 	// add ethereum key rotations
-	err := top.RotateEthereumKey(ctx, "vega-master-pubkey-1", 10, newEthereumKeyRotationSubmission("eth-address-1", "new-eth-address-1", 11))
+	err := top.RotateEthereumKey(ctx, "vega-key-1", 10, newEthereumKeyRotationSubmission("eth-address-1", "new-eth-address-1", 11))
 	require.NoError(t, err)
-	err = top.RotateEthereumKey(ctx, "vega-master-pubkey-2", 10, newEthereumKeyRotationSubmission("eth-address-2", "new-eth-address-2", 11))
+	err = top.RotateEthereumKey(ctx, "vega-key-2", 10, newEthereumKeyRotationSubmission("eth-address-2", "new-eth-address-2", 11))
 	require.NoError(t, err)
-	err = top.RotateEthereumKey(ctx, "vega-master-pubkey-3", 10, newEthereumKeyRotationSubmission("eth-address-3", "new-eth-address-3", 13))
+	err = top.RotateEthereumKey(ctx, "vega-key-3", 10, newEthereumKeyRotationSubmission("eth-address-3", "new-eth-address-3", 13))
 	require.NoError(t, err)
-	err = top.RotateEthereumKey(ctx, "vega-master-pubkey-4", 10, newEthereumKeyRotationSubmission("eth-address-4", "new-eth-address-4", 13))
+	err = top.RotateEthereumKey(ctx, "vega-key-4", 10, newEthereumKeyRotationSubmission("eth-address-4", "new-eth-address-4", 13))
 	require.NoError(t, err)
 
 	// when

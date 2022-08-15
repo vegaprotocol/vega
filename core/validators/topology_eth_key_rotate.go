@@ -53,27 +53,50 @@ func (pm pendingEthereumKeyRotationMapping) get(height uint64) []PendingEthereum
 
 func (t *Topology) RotateEthereumKey(
 	ctx context.Context,
-	nodeID string,
+	publicKey string,
 	currentBlockHeight uint64,
 	kr *commandspb.EthereumKeyRotateSubmission,
 ) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	node, ok := t.validators[nodeID]
-	if !ok {
-		return fmt.Errorf("failed to rotate ethereum key for non existing validator %q", nodeID)
+	t.log.Debug("Adding Ethereum key rotation",
+		logging.String("publicKey", publicKey),
+		logging.Uint64("currentBlockHeight", currentBlockHeight),
+		logging.Uint64("targetBlock", kr.TargetBlock),
+		logging.String("newAddress", kr.NewAddress),
+	)
+
+	var node *valState
+	for _, v := range t.validators {
+		if v.data.VegaPubKey == publicKey {
+			node = v
+			break
+		}
+	}
+
+	if node == nil {
+		err := fmt.Errorf("failed to rotate ethereum key for non existing validator %q", publicKey)
+		t.log.Debug("Failed to add Eth key rotation", logging.Error(err))
+
+		return err
 	}
 
 	if currentBlockHeight >= kr.TargetBlock {
+		t.log.Debug("Failed to add Eth key rotation",
+			logging.Error(ErrTargetBlockHeightMustBeGraterThanCurrentHeight),
+		)
 		return ErrTargetBlockHeightMustBeGraterThanCurrentHeight
 	}
 
 	if node.data.EthereumAddress != kr.CurrentAddress {
+		t.log.Debug("Failed to add Eth key rotation",
+			logging.Error(ErrCurrentEthAddressDoesNotMatch),
+		)
 		return ErrCurrentEthAddressDoesNotMatch
 	}
 
-	toRemove := []NodeIDAddress{{NodeID: nodeID, EthAddress: node.data.EthereumAddress}}
+	toRemove := []NodeIDAddress{{NodeID: node.data.ID, EthAddress: node.data.EthereumAddress}}
 	allValidators := t.validators.toNodeIDAdresses()
 
 	// we can emit remove validator signatures immediately
@@ -82,9 +105,16 @@ func (t *Topology) RotateEthereumKey(
 	// schedule signature collection to future block
 	// those signature should be emitted after validator has rotated is key in node wallet
 	t.pendingEthKeyRotations.add(kr.TargetBlock, PendingEthereumKeyRotation{
-		NodeID:     nodeID,
+		NodeID:     node.data.ID,
 		NewAddress: kr.NewAddress,
 	})
+
+	t.log.Debug("Successfully added Ethereum key rotation to pending key rotations",
+		logging.String("publicKey", publicKey),
+		logging.Uint64("currentBlockHeight", currentBlockHeight),
+		logging.Uint64("targetBlock", kr.TargetBlock),
+		logging.String("newAddress", kr.NewAddress),
+	)
 
 	return nil
 }
@@ -111,13 +141,22 @@ func (t *Topology) GetPendingEthereumKeyRotation(blockHeight uint64, nodeID stri
 }
 
 func (t *Topology) ethereumKeyRotationBeginBlockLocked(ctx context.Context) {
+	t.log.Debug("Trying to apply pending Ethereum key rotations", logging.Uint64("currentBlockHeight", t.currentBlockHeight))
+
 	// key swaps should run in deterministic order
 	rotations := t.pendingEthKeyRotations.get(t.currentBlockHeight)
 	if len(rotations) == 0 {
 		return
 	}
 
+	t.log.Debug("Applying pending Ethereum key rotations", logging.Int("count", len(rotations)))
+
 	for _, r := range rotations {
+		t.log.Debug("Applying Ethereum key rotation",
+			logging.String("nodeID", r.NodeID),
+			logging.String("newAddress", r.NewAddress),
+		)
+
 		data, ok := t.validators[r.NodeID]
 		if !ok {
 			// this should actually happen if validator was removed due to poor performance
@@ -140,6 +179,12 @@ func (t *Topology) ethereumKeyRotationBeginBlockLocked(ctx context.Context) {
 			r.NewAddress,
 			t.currentBlockHeight,
 		))
+
+		t.log.Debug("Applied Ethereum key rotation",
+			logging.String("nodeID", r.NodeID),
+			logging.String("oldAddress", oldAddress),
+			logging.String("newAddress", r.NewAddress),
+		)
 	}
 
 	delete(t.pendingPubKeyRotations, t.currentBlockHeight)
