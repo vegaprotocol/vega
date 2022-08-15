@@ -98,15 +98,6 @@ func (e *ERC20LogicView) FindAsset(
 		validationErrs.Add(fmt.Errorf("invalid decimals, expected(%d), got(%d)", asset.Decimals, decimals))
 	}
 
-	// FIXME: We do not check the total supply for now.
-	// It's for normal asset never really used, and will also vary
-	// if new coins are minted...
-	// if totalSupply, err := t.TotalSupply(&bind.CallOpts{}); err != nil {
-	// 	carryErr = fmt.Errorf("couldn't get totalSupply %v: %w", err, carryErr)
-	// } else if totalSupply.String() != b.asset.Details.TotalSupply {
-	// 	carryErr = maybeError(carryErr, "invalid symbol, expected(%s), got(%s)", b.asset.Details.TotalSupply, totalSupply)
-	// }
-
 	if validationErrs.HasAny() {
 		return validationErrs
 	}

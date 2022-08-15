@@ -20,12 +20,11 @@ import (
 )
 
 type AssetDetails struct {
-	Name        string  `json:"name"`
-	Symbol      string  `json:"symbol"`
-	TotalSupply string  `json:"total_supply"`
-	Decimals    uint64  `json:"decimals"`
-	Quantum     string  `json:"quantum"`
-	Source      *Source `json:"source"`
+	Name     string  `json:"name"`
+	Symbol   string  `json:"symbol"`
+	Decimals uint64  `json:"decimals"`
+	Quantum  string  `json:"quantum"`
+	Source   *Source `json:"source"`
 }
 
 type Source struct {
@@ -53,11 +52,10 @@ func (a *AssetDetails) IntoProto() (*types.AssetDetails, error) {
 	}
 
 	details := types.AssetDetails{
-		Name:        a.Name,
-		Symbol:      a.Symbol,
-		TotalSupply: a.TotalSupply,
-		Decimals:    a.Decimals,
-		Quantum:     a.Quantum,
+		Name:     a.Name,
+		Symbol:   a.Symbol,
+		Decimals: a.Decimals,
+		Quantum:  a.Quantum,
 	}
 
 	if a.Source.BuiltinAsset != nil {
@@ -84,11 +82,10 @@ func (a *AssetDetails) IntoProto() (*types.AssetDetails, error) {
 type GenesisState map[string]AssetDetails
 
 var governanceAsset = AssetDetails{
-	Name:        "VOTE",
-	Symbol:      "VOTE",
-	TotalSupply: "0",
-	Decimals:    5,
-	Quantum:     "1",
+	Name:     "VOTE",
+	Symbol:   "VOTE",
+	Decimals: 5,
+	Quantum:  "1",
 	Source: &Source{
 		BuiltinAsset: &BuiltinAsset{
 			MaxFaucetAmountMint: "10000",

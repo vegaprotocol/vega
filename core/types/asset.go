@@ -166,11 +166,10 @@ func (a AssetDetails) Validate() (ProposalError, error) {
 
 func (a AssetDetails) IntoProto() *proto.AssetDetails {
 	r := &proto.AssetDetails{
-		Name:        a.Name,
-		Symbol:      a.Symbol,
-		TotalSupply: num.UintToString(a.TotalSupply),
-		Decimals:    a.Decimals,
-		Quantum:     a.Quantum.String(),
+		Name:     a.Name,
+		Symbol:   a.Symbol,
+		Decimals: a.Decimals,
+		Quantum:  a.Quantum.String(),
 	}
 	if a.Source == nil {
 		return r
@@ -230,13 +229,6 @@ func AssetDetailsFromProto(p *proto.AssetDetails) (*AssetDetails, error) {
 	}
 	total := num.UintZero()
 	min := num.DecimalZero()
-	if len(p.TotalSupply) > 0 {
-		var overflow bool
-		total, overflow = num.UintFromString(p.TotalSupply, 10)
-		if overflow {
-			return nil, errors.New("invalid total supply")
-		}
-	}
 	if len(p.Quantum) > 0 {
 		var err error
 		min, err = num.DecimalFromString(p.Quantum)

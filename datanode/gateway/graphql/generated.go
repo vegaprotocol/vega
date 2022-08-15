@@ -152,7 +152,6 @@ type ComplexityRoot struct {
 		Status                      func(childComplexity int) int
 		Symbol                      func(childComplexity int) int
 		TakerFeeRewardAccount       func(childComplexity int) int
-		TotalSupply                 func(childComplexity int) int
 	}
 
 	AssetEdge struct {
@@ -666,12 +665,11 @@ type ComplexityRoot struct {
 	}
 
 	NewAsset struct {
-		Decimals    func(childComplexity int) int
-		MinLpStake  func(childComplexity int) int
-		Name        func(childComplexity int) int
-		Source      func(childComplexity int) int
-		Symbol      func(childComplexity int) int
-		TotalSupply func(childComplexity int) int
+		Decimals   func(childComplexity int) int
+		MinLpStake func(childComplexity int) int
+		Name       func(childComplexity int) int
+		Source     func(childComplexity int) int
+		Symbol     func(childComplexity int) int
 	}
 
 	NewFreeform struct {
@@ -1412,11 +1410,10 @@ type ComplexityRoot struct {
 	}
 
 	UpdateAsset struct {
-		MinLpStake  func(childComplexity int) int
-		Name        func(childComplexity int) int
-		Source      func(childComplexity int) int
-		Symbol      func(childComplexity int) int
-		TotalSupply func(childComplexity int) int
+		MinLpStake func(childComplexity int) int
+		Name       func(childComplexity int) int
+		Source     func(childComplexity int) int
+		Symbol     func(childComplexity int) int
 	}
 
 	UpdateERC20 struct {
@@ -1516,7 +1513,6 @@ type AccountEdgeResolver interface {
 type AssetResolver interface {
 	Name(ctx context.Context, obj *vega.Asset) (string, error)
 	Symbol(ctx context.Context, obj *vega.Asset) (string, error)
-	TotalSupply(ctx context.Context, obj *vega.Asset) (string, error)
 	Decimals(ctx context.Context, obj *vega.Asset) (int, error)
 	Quantum(ctx context.Context, obj *vega.Asset) (string, error)
 	Source(ctx context.Context, obj *vega.Asset) (AssetSource, error)
@@ -1676,7 +1672,6 @@ type MarketTimestampsResolver interface {
 type NewAssetResolver interface {
 	Name(ctx context.Context, obj *vega.NewAsset) (string, error)
 	Symbol(ctx context.Context, obj *vega.NewAsset) (string, error)
-	TotalSupply(ctx context.Context, obj *vega.NewAsset) (string, error)
 	Decimals(ctx context.Context, obj *vega.NewAsset) (int, error)
 	MinLpStake(ctx context.Context, obj *vega.NewAsset) (string, error)
 	Source(ctx context.Context, obj *vega.NewAsset) (AssetSource, error)
@@ -1982,7 +1977,6 @@ type TransferResolver interface {
 type UpdateAssetResolver interface {
 	Name(ctx context.Context, obj *vega.UpdateAsset) (string, error)
 	Symbol(ctx context.Context, obj *vega.UpdateAsset) (string, error)
-	TotalSupply(ctx context.Context, obj *vega.UpdateAsset) (string, error)
 	MinLpStake(ctx context.Context, obj *vega.UpdateAsset) (string, error)
 	Source(ctx context.Context, obj *vega.UpdateAsset) (UpdateAssetSource, error)
 }
@@ -2228,13 +2222,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Asset.TakerFeeRewardAccount(childComplexity), true
-
-	case "Asset.totalSupply":
-		if e.complexity.Asset.TotalSupply == nil {
-			break
-		}
-
-		return e.complexity.Asset.TotalSupply(childComplexity), true
 
 	case "AssetEdge.cursor":
 		if e.complexity.AssetEdge.Cursor == nil {
@@ -4356,13 +4343,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.NewAsset.Symbol(childComplexity), true
-
-	case "NewAsset.totalSupply":
-		if e.complexity.NewAsset.TotalSupply == nil {
-			break
-		}
-
-		return e.complexity.NewAsset.TotalSupply(childComplexity), true
 
 	case "NewFreeform._doNotUse":
 		if e.complexity.NewFreeform.DoNotUse == nil {
@@ -8089,13 +8069,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.UpdateAsset.Symbol(childComplexity), true
 
-	case "UpdateAsset.totalSupply":
-		if e.complexity.UpdateAsset.TotalSupply == nil {
-			break
-		}
-
-		return e.complexity.UpdateAsset.TotalSupply(childComplexity), true
-
 	case "UpdateERC20.lifetimeLimit":
 		if e.complexity.UpdateERC20.LifetimeLimit == nil {
 			break
@@ -9493,9 +9466,6 @@ type Asset {
 
   "The symbol of the asset (e.g: GBP)"
   symbol: String!
-
-  "The total supply of the market"
-  totalSupply: String!
 
   "The precision of the asset. Should match the decimal precision of the asset on its native chain, e.g: for ERC20 assets, it is often 18"
   decimals: Int!
@@ -11415,9 +11385,6 @@ type NewAsset {
   "The symbol of the asset (e.g: GBP)"
   symbol: String!
 
-  "The total supply of the market"
-  totalSupply: String!
-
   "The precision of the asset"
   decimals: Int!
 
@@ -11435,9 +11402,6 @@ type UpdateAsset {
 
   "The symbol of the asset (e.g: GBP)"
   symbol: String!
-
-  "The total supply of the market"
-  totalSupply: String!
 
   "The minimum stake to become a liquidity provider for any market using this asset for settlement"
   minLpStake: String!
@@ -15613,41 +15577,6 @@ func (ec *executionContext) _Asset_symbol(ctx context.Context, field graphql.Col
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Asset().Symbol(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Asset_totalSupply(ctx context.Context, field graphql.CollectedField, obj *vega.Asset) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Asset",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Asset().TotalSupply(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -26045,41 +25974,6 @@ func (ec *executionContext) _NewAsset_symbol(ctx context.Context, field graphql.
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.NewAsset().Symbol(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _NewAsset_totalSupply(ctx context.Context, field graphql.CollectedField, obj *vega.NewAsset) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "NewAsset",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.NewAsset().TotalSupply(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -42903,41 +42797,6 @@ func (ec *executionContext) _UpdateAsset_symbol(ctx context.Context, field graph
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UpdateAsset_totalSupply(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateAsset) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "UpdateAsset",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.UpdateAsset().TotalSupply(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _UpdateAsset_minLpStake(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateAsset) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -46427,26 +46286,6 @@ func (ec *executionContext) _Asset(ctx context.Context, sel ast.SelectionSet, ob
 					}
 				}()
 				res = ec._Asset_symbol(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
-		case "totalSupply":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Asset_totalSupply(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -51741,26 +51580,6 @@ func (ec *executionContext) _NewAsset(ctx context.Context, sel ast.SelectionSet,
 					}
 				}()
 				res = ec._NewAsset_symbol(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
-		case "totalSupply":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._NewAsset_totalSupply(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -60024,26 +59843,6 @@ func (ec *executionContext) _UpdateAsset(ctx context.Context, sel ast.SelectionS
 					}
 				}()
 				res = ec._UpdateAsset_symbol(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
-		case "totalSupply":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._UpdateAsset_totalSupply(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
