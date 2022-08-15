@@ -15,8 +15,6 @@ package visor
 import (
 	"context"
 	"fmt"
-	"os"
-	"path"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
@@ -47,6 +45,7 @@ func NewVisor(ctx context.Context, log *logging.Logger, clientFactory client.Cli
 	if err != nil {
 		return nil, err
 	}
+
 	if !homeExists {
 		return nil, fmt.Errorf("home folder %q does not exists, it can initiated with init command", homePath)
 	}
@@ -58,63 +57,36 @@ func NewVisor(ctx context.Context, log *logging.Logger, clientFactory client.Cli
 
 	currentFolderExists, err := utils.PathExists(visorConf.CurrentRunConfigPath())
 	if err != nil {
-		return nil, fmt.Errorf("failed to check if %q path exists: %w", visorConf.CurrentRunConfigPath(), err)
+		return nil, err
 	}
 
-	r := &Visor{
+	v := &Visor{
 		conf:          visorConf,
 		clientFactory: clientFactory,
 		log:           log,
 	}
 
 	if !currentFolderExists {
-		if err := r.setCurrentFolder(visorConf.GenesisFolder(), visorConf.CurrentFolder()); err != nil {
+		if err := v.setCurrentFolder(visorConf.GenesisFolder(), visorConf.CurrentFolder()); err != nil {
 			return nil, fmt.Errorf("failed to set current folder to %q: %w", visorConf.CurrentFolder(), err)
 		}
 	}
 
-	go r.watchForConfigUpdates(ctx)
+	go v.watchForConfigUpdates(ctx)
 
-	return r, nil
+	return v, nil
 }
 
-func (r *Visor) watchForConfigUpdates(ctx context.Context) {
+func (v *Visor) watchForConfigUpdates(ctx context.Context) {
 	for {
-		r.log.Debug("starting config file watcher")
-		if err := r.conf.WatchForUpdate(ctx); err != nil {
-			r.log.Error("config file watcher has failed", logging.Error(err))
+		v.log.Debug("starting config file watcher")
+		if err := v.conf.WatchForUpdate(ctx); err != nil {
+			v.log.Error("config file watcher has failed", logging.Error(err))
 		}
 	}
 }
 
-func (r *Visor) setCurrentFolder(sourceFolder, currentFolder string) error {
-	r.log.Debug("setting current folder",
-		logging.String("sourceFolder", sourceFolder),
-		logging.String("currentFolder", currentFolder),
-	)
-
-	runConfPath := path.Join(sourceFolder, config.RunConfigFileName)
-	runConfExists, err := utils.PathExists(runConfPath)
-	if err != nil {
-		return err
-	}
-
-	if !runConfExists {
-		return fmt.Errorf("missing run config in %q folder", runConfPath)
-	}
-
-	if err := os.RemoveAll(currentFolder); err != nil {
-		return fmt.Errorf("failed to remove current folder: %w", err)
-	}
-
-	if err := os.Symlink(sourceFolder, currentFolder); err != nil {
-		return fmt.Errorf("failed to set current folder as current: %w", err)
-	}
-
-	return nil
-}
-
-func (r *Visor) Run(ctx context.Context) error {
+func (v *Visor) Run(ctx context.Context) error {
 	numOfRestarts := 0
 	var currentRelaseInfo *types.ReleaseInfo
 
@@ -125,22 +97,22 @@ func (r *Visor) Run(ctx context.Context) error {
 	defer cancel()
 
 	for {
-		runConf, err := config.ParseRunConfig(r.conf.CurrentRunConfigPath())
+		runConf, err := config.ParseRunConfig(v.conf.CurrentRunConfigPath())
 		if err != nil {
 			return fmt.Errorf("failed to parse run config: %w", err)
 		}
 
-		client := r.clientFactory.GetClient(
+		client := v.clientFactory.GetClient(
 			runConf.Vega.RCP.SocketPath,
 			runConf.Vega.RCP.HttpPath,
 		)
 
 		numOfUpgradeStatusErrs := 0
-		maxNumRestarts := r.conf.MaxNumberOfRestarts()
-		restartsDelay := time.Second * time.Duration(r.conf.RestartsDelaySeconds())
+		maxNumRestarts := v.conf.MaxNumberOfRestarts()
+		restartsDelay := time.Second * time.Duration(v.conf.RestartsDelaySeconds())
 
-		r.log.Info("Starting binaries")
-		binRunner := NewBinariesRunner(r.log, r.conf.CurrentFolder(), time.Second*time.Duration(r.conf.StopSignalTimeoutSeconds()))
+		v.log.Info("Starting binaries")
+		binRunner := NewBinariesRunner(v.log, v.conf.CurrentFolder(), time.Second*time.Duration(v.conf.StopSignalTimeoutSeconds()))
 		binErrs := binRunner.Run(ctx, runConf, currentRelaseInfo)
 
 		upgradeTicker.Reset(upgradeApiCallTickerDuration)
@@ -151,16 +123,16 @@ func (r *Visor) Run(ctx context.Context) error {
 			case <-ctx.Done():
 				return ctx.Err()
 			case err := <-binErrs:
-				r.log.Error("Binaries executions has failed", logging.Error(err))
+				v.log.Error("Binaries executions has failed", logging.Error(err))
 
 				if numOfRestarts >= maxNumRestarts {
 					return fmt.Errorf("maximum number of possible restarts has been reached: %w", err)
 				}
 
 				numOfRestarts++
-				r.log.Info("Binaries restart is scheduled", logging.Duration("restartDelay", restartsDelay))
+				v.log.Info("Binaries restart is scheduled", logging.Duration("restartDelay", restartsDelay))
 				time.Sleep(restartsDelay)
-				r.log.Info("Restarting binaries", logging.Int("remainingRestarts", maxNumRestarts-numOfRestarts))
+				v.log.Info("Restarting binaries", logging.Int("remainingRestarts", maxNumRestarts-numOfRestarts))
 
 				break CheckLoop
 			case <-upgradeTicker.C:
@@ -170,7 +142,7 @@ func (r *Visor) Run(ctx context.Context) error {
 						return fmt.Errorf("failed to upgrade status for maximum amount of %d times: %w", maxUpgradeStatusErrs, err)
 					}
 
-					r.log.Debug("failed to get upgrade status from API", logging.Error(err))
+					v.log.Debug("failed to get upgrade status from API", logging.Error(err))
 					numOfUpgradeStatusErrs++
 
 					break
@@ -182,7 +154,7 @@ func (r *Visor) Run(ctx context.Context) error {
 
 				currentRelaseInfo = upStatus.AcceptedReleaseInfo
 
-				r.log.Info("Preparing upgrade")
+				v.log.Info("Preparing upgrade")
 
 				if err := binRunner.Stop(); err != nil {
 					// Force to kill if fails grateful stop fails
@@ -191,10 +163,10 @@ func (r *Visor) Run(ctx context.Context) error {
 					}
 				}
 
-				r.log.Info("Starting upgrade")
+				v.log.Info("Starting upgrade")
 
-				if err := r.setCurrentFolder(r.conf.UpgradeFolder(), r.conf.CurrentFolder()); err != nil {
-					return fmt.Errorf("failed to set current folder to %q: %w", r.conf.CurrentFolder(), err)
+				if err := v.prepareNextUpgradeFolder(ctx, currentRelaseInfo.VegaReleaseTag); err != nil {
+					return fmt.Errorf("failed to prepare next upgrade folder")
 				}
 
 				numOfRestarts = 0

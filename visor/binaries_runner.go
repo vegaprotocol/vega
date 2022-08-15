@@ -31,6 +31,8 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+const snapshotBlockHeightFlagName = "--snapshot.load-from-block-height"
+
 type BinariesRunner struct {
 	mut         sync.RWMutex
 	running     map[string]*exec.Cmd
@@ -114,7 +116,7 @@ func (r *BinariesRunner) Run(ctx context.Context, runConf *config.RunConfig, rIn
 		// TODO consider moving this logic somewhere else
 		args := Args(runConf.Vega.Binary.Args)
 		if rInfo != nil {
-			args.Set("--snapshot.load-from-block-height", strconv.FormatUint(rInfo.UpgradeBlockHeight+1, 10))
+			args.Set(snapshotBlockHeightFlagName, strconv.FormatUint(rInfo.UpgradeBlockHeight+1, 10))
 		}
 
 		return r.runBinary(ctx, runConf.Vega.Binary.Path, args)

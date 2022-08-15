@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"path"
+	"runtime"
 	"sync"
 	"time"
 
@@ -26,27 +27,47 @@ import (
 )
 
 const (
-	currentFolder     = "current"
-	genesisFolder     = "genesis"
-	configFileName    = "config.toml"
-	RunConfigFileName = "run-config.toml"
+	currentFolder      = "current"
+	genesisFolder      = "genesis"
+	configFileName     = "config.toml"
+	RunConfigFileName  = "run-config.toml"
+	VegaBinaryName     = "vega"
+	DataNodeBinaryName = "data-node"
 )
 
+type AssetsConfig struct {
+	Vega     string  `toml:"vega"`
+	DataNode *string `toml:"data_node"`
+}
+
+func (ac AssetsConfig) ToSlice() []string {
+	s := []string{ac.Vega}
+	if ac.DataNode != nil {
+		s = append(s, *ac.DataNode)
+	}
+	return s
+}
+
+type AutoInstallConfig struct {
+	Enabled               bool         `toml:"enabled"`
+	GithubRepositoryOwner string       `toml:"repositoryOwner"`
+	GithubRepository      string       `toml:"repository"`
+	Assets                AssetsConfig `toml:"assets"`
+}
+
 type VisorConfigFile struct {
-	UpgradeFolder            string `toml:"nextUpgradeFolder"`
-	MaxNumberOfRestarts      int    `toml:"maxNumberOfRestarts"`
-	RestartsDelaySeconds     int    `toml:"restartsDelaySeconds"`
-	StopSignalTimeoutSeconds int    `toml:"stopSignalTimeoutSeconds"`
+	UpgradeFolders           map[string]string `toml:"upgradeFolders"`
+	MaxNumberOfRestarts      int               `toml:"maxNumberOfRestarts"`
+	RestartsDelaySeconds     int               `toml:"restartsDelaySeconds"`
+	StopSignalTimeoutSeconds int               `toml:"stopSignalTimeoutSeconds"`
+
+	AutoInstall AutoInstallConfig `toml:"autoInstall"`
 }
 
 func parseAndValidateVisorConfigFile(path string) (*VisorConfigFile, error) {
 	conf := VisorConfigFile{}
 	if err := paths.ReadStructuredFile(path, &conf); err != nil {
 		return nil, fmt.Errorf("failed to parse VisorConfig: %w", err)
-	}
-
-	if conf.UpgradeFolder == "" {
-		return nil, fmt.Errorf("upgradeFolder has to be defined")
 	}
 
 	return &conf, nil
@@ -66,10 +87,18 @@ func DefaultVisorConfig(log *logging.Logger, homePath string) *VisorConfig {
 		homePath:   homePath,
 		configPath: path.Join(homePath, configFileName),
 		data: &VisorConfigFile{
-			UpgradeFolder:            "upgrade",
+			UpgradeFolders:           map[string]string{"vX.X.X": "vX.X.X"},
 			MaxNumberOfRestarts:      3,
 			RestartsDelaySeconds:     5,
 			StopSignalTimeoutSeconds: 15,
+			AutoInstall: AutoInstallConfig{
+				Enabled:               true,
+				GithubRepositoryOwner: "vegaprotocol",
+				GithubRepository:      "vega",
+				Assets: AssetsConfig{
+					Vega: fmt.Sprintf("vega-%s-%s", runtime.GOOS, "amd64"),
+				},
+			},
 		},
 	}
 }
@@ -98,7 +127,7 @@ func (pc *VisorConfig) reload() error {
 	}
 
 	pc.mut.Lock()
-	pc.data.UpgradeFolder = dataFile.UpgradeFolder
+	pc.data.UpgradeFolders = dataFile.UpgradeFolders
 	pc.data.MaxNumberOfRestarts = dataFile.MaxNumberOfRestarts
 	pc.data.RestartsDelaySeconds = dataFile.RestartsDelaySeconds
 	pc.mut.Unlock()
@@ -173,11 +202,15 @@ func (pc *VisorConfig) GenesisFolder() string {
 	return path.Join(pc.homePath, genesisFolder)
 }
 
-func (pc *VisorConfig) UpgradeFolder() string {
+func (pc *VisorConfig) UpgradeFolder(releaseTag string) string {
 	pc.mut.RLock()
 	defer pc.mut.RUnlock()
 
-	return path.Join(pc.homePath, pc.data.UpgradeFolder)
+	if folderName, ok := pc.data.UpgradeFolders[releaseTag]; ok {
+		return path.Join(pc.homePath, folderName)
+	}
+
+	return path.Join(pc.homePath, releaseTag)
 }
 
 func (pc *VisorConfig) MaxNumberOfRestarts() int {
@@ -199,6 +232,13 @@ func (pc *VisorConfig) StopSignalTimeoutSeconds() int {
 	defer pc.mut.RUnlock()
 
 	return pc.data.StopSignalTimeoutSeconds
+}
+
+func (pc *VisorConfig) AutoInstall() AutoInstallConfig {
+	pc.mut.RLock()
+	defer pc.mut.RUnlock()
+
+	return pc.data.AutoInstall
 }
 
 func (pc *VisorConfig) WriteToFile() error {

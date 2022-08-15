@@ -30,7 +30,7 @@ func Init(log *logging.Logger, homeFolder string, withDataNode bool) error {
 
 	homeExists, err := utils.PathExists(homePath)
 	if err != nil {
-		return fmt.Errorf("failed to check if %q path exists: %w", homePath, err)
+		return err
 	}
 
 	if homeExists {
@@ -44,8 +44,8 @@ func Init(log *logging.Logger, homeFolder string, withDataNode bool) error {
 		return err
 	}
 
-	log.Info("Initiating upgrade folder")
-	if err := initDefaultFolder(visorConf.UpgradeFolder(), "upgrade", withDataNode); err != nil {
+	log.Info("Initiating vX.X.X upgrade folder")
+	if err := initDefaultFolder(visorConf.UpgradeFolder("vX.X.X"), "vX.X.X", withDataNode); err != nil {
 		return err
 	}
 

@@ -39,7 +39,7 @@ func PathExists(path string) (bool, error) {
 	if os.IsNotExist(err) {
 		return false, nil
 	}
-	return false, err
+	return false, fmt.Errorf("failed to check if %q path exists: %w", path, err)
 }
 
 func EnsureBinary(path string) error {
@@ -58,4 +58,12 @@ func EnsureBinary(path string) error {
 		return os.Chmod(path, newMode)
 	}
 	return nil
+}
+
+func ToLookupMap[T comparable](slice []T) map[T]struct{} {
+	m := make(map[T]struct{}, len(slice))
+	for _, v := range slice {
+		m[v] = struct{}{}
+	}
+	return m
 }
