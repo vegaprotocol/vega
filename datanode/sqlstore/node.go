@@ -186,15 +186,15 @@ func (store *Node) GetNodeData(ctx context.Context) (entities.NodeData, error) {
 	query := `
 		WITH
 			uptime AS (
-				SELECT ` +
-		// 			Uptime denominated in minutes, hence division by 60 seconds
-		`			EXTRACT(EPOCH FROM SUM(end_time - start_time)) / 60.0 AS total,
+				SELECT
+		-- 			Uptime denominated in minutes, hence division by 60 seconds
+					EXTRACT(EPOCH FROM SUM(end_time - start_time)) / 60.0 AS total,
 					ROW_NUMBER() OVER () AS id
 				FROM
 					epochs
-				WHERE` +
-		// 			Only include epochs that have elapsed
-		`			end_time IS NOT NULL
+				WHERE
+		-- 			Only include epochs that have elapsed
+					end_time IS NOT NULL
 			),
 
 			staked AS (
@@ -227,10 +227,10 @@ func (store *Node) GetNodeData(ctx context.Context) (entities.NodeData, error) {
 					row_number = 1 AND added = true
 			),
 
-			node_totals AS ( ` +
-		// 		Currently there's no mechanism for changing the node status
-		// 		and it's unclear what exactly an inactive node is
-		`		SELECT
+			node_totals AS (
+		-- 		Currently there's no mechanism for changing the node status
+		-- 		and it's unclear what exactly an inactive node is
+				SELECT
 					COUNT(1) filter (where nodes.status = 'NODE_STATUS_VALIDATOR') 		AS validating_nodes,
 					0 																	AS inactive_nodes,
 					COUNT(1) filter (where nodes.status <> 'NODE_STATUS_UNSPECIFIED') 	AS total_nodes,
@@ -245,14 +245,14 @@ func (store *Node) GetNodeData(ctx context.Context) (entities.NodeData, error) {
 			)
 		SELECT
 			staked.total AS staked_total,
-			uptime.total AS uptime,
+			coalesce(uptime.total, 0) AS uptime,
 			node_totals.validating_nodes,
 			node_totals.inactive_nodes,
 			node_totals.total_nodes
 
-		FROM node_totals ` +
-		// These joins are "fake" as to extract all the individual values as one row
-		`JOIN staked ON node_totals.id = staked.id
+		FROM node_totals
+		--  These joins are "fake" as to extract all the individual values as one row
+		JOIN staked ON node_totals.id = staked.id
 		JOIN uptime ON uptime.id = staked.id;
 	`
 
