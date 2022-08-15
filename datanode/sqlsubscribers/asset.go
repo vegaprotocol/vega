@@ -67,7 +67,6 @@ func (as *Asset) consume(ctx context.Context, ae AssetEvent) error {
 }
 
 func (as *Asset) addAsset(ctx context.Context, va vega.Asset, vegaTime time.Time) error {
-
 	quantum, err := decimal.NewFromString(va.Details.Quantum)
 	if err != nil {
 		return errors.Errorf("bad quantum '%v'", va.Details.Quantum)
