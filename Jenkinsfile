@@ -389,36 +389,14 @@ pipeline {
                         }
                     }
                 }
-                stage('System Tests Network Smoke') {
+                stage('System Tests') {
                     steps {
-                        script {
-                            systemTestsCapsule ignoreFailure: !isPRBuild(),
-                                timeout: 30,
-                                vegaVersion: commitHash,
-                                systemTests: params.SYSTEM_TESTS_BRANCH,
-                                vegacapsule: params.VEGACAPSULE_BRANCH,
-                                vegatools: params.VEGATOOLS_BRANCH,
-                                devopsInfra: params.DEVOPS_INFRA_BRANCH,
-                                devopsScripts: params.DEVOPSSCRIPTS_BRANCH,
-                                testMark: "network_infra_smoke"
-                        }
+                        build(
+                            job: 'common/system-tests',
+                            params: collectParams() + [string(name: 'VEGA_BRANCH', value: commitHash)]
+                        )
                     }
                 }
-                stage('Capsule System Tests') {
-                    steps {
-                        script {
-                            systemTestsCapsule ignoreFailure: !isPRBuild(),
-                                timeout: 30,
-                                vegaVersion: commitHash,
-                                systemTests: params.SYSTEM_TESTS_BRANCH,
-                                vegacapsule: params.VEGACAPSULE_BRANCH,
-                                vegatools: params.VEGATOOLS_BRANCH,
-                                devopsInfra: params.DEVOPS_INFRA_BRANCH,
-                                devopsScripts: params.DEVOPSSCRIPTS_BRANCH
-                        }
-                    }
-                }
-
                 stage('mocks check') {
                     steps {
                         dir('vega') {
