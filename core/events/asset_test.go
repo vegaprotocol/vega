@@ -61,7 +61,6 @@ func TestAssetBuiltInAssetDeepClone(t *testing.T) {
 	assert.NotEqual(t, a.ID, a2.Id)
 	assert.NotEqual(t, a.Details.Name, a2.Details.Name)
 	assert.NotEqual(t, a.Details.Symbol, a2.Details.Symbol)
-	assert.NotEqual(t, a.Details.TotalSupply, a2.Details.TotalSupply)
 	assert.NotEqual(t, a.Details.Decimals, a2.Details.Decimals)
 
 	assert.NotEqual(t, bia.MaxFaucetAmountMint, bia2.MaxFaucetAmountMint)
@@ -105,7 +104,6 @@ func TestAssetERCDeepClone(t *testing.T) {
 	assert.NotEqual(t, a.ID, a2.Id)
 	assert.NotEqual(t, a.Details.Name, a2.Details.Name)
 	assert.NotEqual(t, a.Details.Symbol, a2.Details.Symbol)
-	assert.NotEqual(t, a.Details.TotalSupply, a2.Details.TotalSupply)
 	assert.NotEqual(t, a.Details.Decimals, a2.Details.Decimals)
 
 	assert.NotEqual(t, erc.ContractAddress, erc2.ContractAddress)
