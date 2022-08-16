@@ -288,4 +288,6 @@ message LastBlockHeightResponse {
   uint32 spam_pow_number_of_tx_per_block = 6;
   // is increasing difficulty allowed for using the same height for more than `spam_pow_number_of_past_blocks` transactions
   bool spam_pow_increasing_difficulty = 7;
+  // the network chain id from which the block comes from
+  string chain_id = 8;
 }

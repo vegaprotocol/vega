@@ -7,8 +7,6 @@ import (
 	"code.vegaprotocol.io/vega/commands"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
-
-	"github.com/golang/protobuf/proto"
 )
 
 func CheckSubmitTransactionRequest(req *walletpb.SubmitTransactionRequest) commands.Errors {
@@ -77,10 +75,10 @@ func CheckSubmitTransactionRequest(req *walletpb.SubmitTransactionRequest) comma
 	return errs
 }
 
-func ToMarshaledInputData(req *walletpb.SubmitTransactionRequest, height uint64) ([]byte, error) {
+func ToMarshaledInputData(req *walletpb.SubmitTransactionRequest, height uint64, chainID string) ([]byte, error) {
 	data := commands.NewInputData(height)
 	wrapRequestCommandIntoInputData(data, req)
-	return proto.Marshal(data)
+	return commands.MarshalInputData(chainID, data)
 }
 
 func wrapRequestCommandIntoInputData(data *commandspb.InputData, req *walletpb.SubmitTransactionRequest) {

@@ -15,6 +15,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5624](https://github.com/vegaprotocol/vega/issues/5624) - Get rid of `updateFrequency` in price monitoring definition
 - [5601](https://github.com/vegaprotocol/vega/issues/5601) - Remove support for launching a proxy in front of console and token dApp
 - [5872](https://github.com/vegaprotocol/vega/issues/5872) - Remove console and token dApp from networks
+- [5802](https://github.com/vegaprotocol/vega/issues/5802) - Remove support for transaction version 1
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -60,6 +61,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5816](https://github.com/vegaprotocol/vega/issues/5816) - Set proper status to rejected asset proposal
 - [5893](https://github.com/vegaprotocol/vega/issues/5893) - Remove total supply from assets
 - [5752](https://github.com/vegaprotocol/vega/issues/5752) - Remove URL and Hash from proposal rationale, add Title
+- [5802](https://github.com/vegaprotocol/vega/issues/5802) - Introduce transaction version 3 that encode the chain ID in its input data to protect against transaction replay
 
 ### 🐛 Fixes
 - [5571](https://github.com/vegaprotocol/vega/issues/5571) - Restore pending assets status correctly after snapshot restore
@@ -97,6 +99,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5867](https://github.com/vegaprotocol/vega/issues/5867) - Fix witness check for majority
 - [5853](https://github.com/vegaprotocol/vega/issues/5853) - Do not ignore market update proposals when loading from checkpoint
 - [5648](https://github.com/vegaprotocol/vega/issues/5648) - Ethereum key rotation - search validators by Vega pub key and listen to rotation events in core API
+- [5648](https://github.com/vegaprotocol/vega/issues/5648) - Search validator by vega pub key and update the core validators API
 
 ## 0.53.0
 

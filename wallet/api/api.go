@@ -29,7 +29,6 @@ type Node interface {
 	SendTransaction(context.Context, *commandspb.Transaction, apipb.SubmitTransactionRequest_Type) (string, error)
 	CheckTransaction(context.Context, *commandspb.Transaction) (*apipb.CheckTransactionResponse, error)
 	HealthCheck(context.Context) error
-	NetworkChainID(context.Context) (string, error)
 	LastBlock(context.Context) (*apipb.LastBlockHeightResponse, error)
 }
 

@@ -36,6 +36,21 @@ func (m *MockChain) EXPECT() *MockChainMockRecorder {
 	return m.recorder
 }
 
+// GetChainID mocks base method.
+func (m *MockChain) GetChainID(arg0 context.Context) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChainID", arg0)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetChainID indicates an expected call of GetChainID.
+func (mr *MockChainMockRecorder) GetChainID(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChainID", reflect.TypeOf((*MockChain)(nil).GetChainID), arg0)
+}
+
 // SubmitTransactionAsync mocks base method.
 func (m *MockChain) SubmitTransactionAsync(arg0 context.Context, arg1 *v1.Transaction) (*coretypes.ResultBroadcastTx, error) {
 	m.ctrl.T.Helper()

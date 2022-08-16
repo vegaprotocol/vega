@@ -40,6 +40,20 @@ func protocolUpgradeProposalID(upgradeBlockHeight uint64, vegaReleaseTag string)
 	return fmt.Sprintf("%v@%v", vegaReleaseTag, upgradeBlockHeight)
 }
 
+// TrimReleaseTag removes 'v' or 'V' at the beginning of the tag if present.
+func TrimReleaseTag(tag string) string {
+	if len(tag) == 0 {
+		return tag
+	}
+
+	switch tag[0] {
+	case 'v', 'V':
+		return tag[1:]
+	default:
+		return tag
+	}
+}
+
 func (p *protocolUpgradeProposal) approvers() []string {
 	accepted := make([]string, 0, len(p.accepted))
 	for k := range p.accepted {
@@ -105,6 +119,13 @@ func (e *Engine) OnRequiredMajorityChanged(_ context.Context, requiredMajority n
 func (e *Engine) UpgradeProposal(ctx context.Context, pk string, upgradeBlockHeight uint64, vegaReleaseTag string) error {
 	e.lock.RLock()
 	defer e.lock.RUnlock()
+
+	e.log.Debug("Adding protocol upgrade proposal",
+		logging.String("validatorPubKey", pk),
+		logging.Uint64("upgradeBlockHeight", upgradeBlockHeight),
+		logging.String("vegaReleaseTag", vegaReleaseTag),
+	)
+
 	if !e.topology.IsTendermintValidator(pk) {
 		// not a tendermint validator, so we don't care about their intention
 		return nil
@@ -114,7 +135,7 @@ func (e *Engine) UpgradeProposal(ctx context.Context, pk string, upgradeBlockHei
 		return errors.New("upgrade block earlier than current block height")
 	}
 
-	_, err := semver.Parse(vegaReleaseTag)
+	_, err := semver.Parse(TrimReleaseTag(vegaReleaseTag))
 	if err != nil {
 		err = fmt.Errorf("invalid protocol version for upgrade received: version (%s), %w", vegaReleaseTag, err)
 		e.log.Error("", logging.Error(err))
@@ -162,6 +183,13 @@ func (e *Engine) UpgradeProposal(ctx context.Context, pk string, upgradeBlockHei
 			delete(e.events, activeID)
 		}
 	}
+
+	e.log.Debug("Successfully added protocol upgrade proposal",
+		logging.String("validatorPubKey", pk),
+		logging.Uint64("upgradeBlockHeight", upgradeBlockHeight),
+		logging.String("vegaReleaseTag", vegaReleaseTag),
+	)
+
 	return nil
 }
 
@@ -177,7 +205,7 @@ func (e *Engine) sendAndKeepEvent(ctx context.Context, ID string, activeProposal
 func (e *Engine) TimeForUpgrade() bool {
 	e.lock.RLock()
 	defer e.lock.RUnlock()
-	return e.upgradeStatus.AcceptedReleaseInfo != nil && e.currentBlockHeight == e.upgradeStatus.AcceptedReleaseInfo.UpgradeBlockHeight
+	return e.upgradeStatus.AcceptedReleaseInfo != nil && e.currentBlockHeight-e.upgradeStatus.AcceptedReleaseInfo.UpgradeBlockHeight == 0
 }
 
 func (e *Engine) isAccepted(p *protocolUpgradeProposal) bool {
@@ -263,8 +291,8 @@ func (e *Engine) Cleanup(ctx context.Context) {
 func (e *Engine) SetReadyForUpgrade() {
 	e.lock.Lock()
 	defer e.lock.Unlock()
-	if int(e.currentBlockHeight)-int(e.upgradeStatus.AcceptedReleaseInfo.UpgradeBlockHeight) != 1 {
-		e.log.Panic("can only call SetReadyForUpgrade at the block following the block height for upgrade", logging.Uint64("block-height", e.currentBlockHeight), logging.Int("block-height-for-upgrade", int(e.upgradeStatus.AcceptedReleaseInfo.UpgradeBlockHeight)))
+	if int(e.currentBlockHeight)-int(e.upgradeStatus.AcceptedReleaseInfo.UpgradeBlockHeight) != 0 {
+		e.log.Panic("can only call SetReadyForUpgrade at the block of the block height for upgrade", logging.Uint64("block-height", e.currentBlockHeight), logging.Int("block-height-for-upgrade", int(e.upgradeStatus.AcceptedReleaseInfo.UpgradeBlockHeight)))
 	}
 	e.log.Info("marking vega as ready to shut down")
 	e.upgradeStatus.ReadyToUpgrade = true

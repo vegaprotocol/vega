@@ -20,12 +20,12 @@ type TxCodec struct{}
 
 // Decode takes a raw input from a Tendermint Tx and decodes into a vega Tx,
 // the decoding process involves a signature verification.
-func (c *TxCodec) Decode(payload []byte) (abci.Tx, error) {
-	return DecodeTx(payload)
+func (c *TxCodec) Decode(payload []byte, chainID string) (abci.Tx, error) {
+	return DecodeTx(payload, chainID)
 }
 
 type NullBlockchainTxCodec struct{}
 
-func (c *NullBlockchainTxCodec) Decode(payload []byte) (abci.Tx, error) {
+func (c *NullBlockchainTxCodec) Decode(payload []byte, _ string) (abci.Tx, error) {
 	return DecodeTxNoValidation(payload)
 }

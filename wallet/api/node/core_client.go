@@ -15,6 +15,5 @@ type CoreClient interface {
 	LastBlockHeight(ctx context.Context, in *apipb.LastBlockHeightRequest, opts ...grpc.CallOption) (*apipb.LastBlockHeightResponse, error)
 	GetVegaTime(ctx context.Context, in *apipb.GetVegaTimeRequest, opts ...grpc.CallOption) (*apipb.GetVegaTimeResponse, error)
 	CheckTransaction(ctx context.Context, in *apipb.CheckTransactionRequest, opts ...grpc.CallOption) (*apipb.CheckTransactionResponse, error)
-	Statistics(ctx context.Context, in *apipb.StatisticsRequest, opts ...grpc.CallOption) (*apipb.StatisticsResponse, error)
 	Stop() error
 }

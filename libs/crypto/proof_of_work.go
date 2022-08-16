@@ -16,7 +16,7 @@ const (
 var prefix = []byte("Vega_SPAM_PoW")
 
 // PoW calculates proof of work given block hash, transaction hash, target difficulty and a hash function.
-// returns the nonce, the hash and th error if any.
+// returns the nonce, the hash and the error if any.
 func PoW(blockHash string, txID string, difficulty uint, hashFunction string) (uint64, []byte, error) {
 	var h []byte
 	var err error

@@ -37,8 +37,9 @@ const (
 var (
 	ErrClientRejectedTheRequest                 = errors.New("the client rejected the request")
 	ErrConnectionClosed                         = errors.New("the client closed the connection")
-	ErrCouldNotGetLastBlockInformation          = errors.New("couldn't get information about the last block on the network")
+	ErrConnectionTokenIsRequired                = errors.New("the connection token is required")
 	ErrCouldNotConnectToWallet                  = errors.New("couldn't connect to the wallet")
+	ErrCouldNotGetLastBlockInformation          = errors.New("couldn't get information about the last block on the network")
 	ErrCouldNotRequestPermissions               = errors.New("couldn't request permissions")
 	ErrCouldNotSendTransaction                  = errors.New("couldn't send transaction")
 	ErrEncodedTransactionIsNotValidBase64String = errors.New("the encoded transaction is not a valid base-64 string")
@@ -54,7 +55,6 @@ var (
 	ErrRequestedPermissionsAreRequired          = errors.New("the requested permissions are required")
 	ErrSendingModeCannotBeTypeUnspecified       = errors.New(`the sending mode can't be "TYPE_UNSPECIFIED"`)
 	ErrSendingModeIsRequired                    = errors.New("the sending mode is required")
-	ErrConnectionTokenIsRequired                = errors.New("the connection token is required")
 	ErrTransactionFailed                        = errors.New("the transaction failed")
 	ErrWalletDoesNotExist                       = errors.New("the wallet does not exist")
 )
