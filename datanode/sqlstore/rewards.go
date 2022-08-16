@@ -27,7 +27,7 @@ type Rewards struct {
 }
 
 var rewardsOrdering = TableOrdering{
-	ColumnOrdering{"epoch_id", ASC},
+	ColumnOrdering{Name: "epoch_id", Sorting: ASC, CursorColumn: true},
 }
 
 func NewRewards(connectionSource *ConnectionSource) *Rewards {
@@ -74,7 +74,7 @@ func (rs *Rewards) GetByCursor(ctx context.Context,
 		return nil, pageInfo, err
 	}
 
-	query, args, err = PaginateQuery[entities.RewardCursor](query, args, rewardsOrdering, pagination)
+	query, args, err = PaginateQuery[entities.RewardCursor](query, args, rewardsOrdering, pagination, nil)
 	if err != nil {
 		return nil, pageInfo, err
 	}

@@ -172,18 +172,28 @@ func (t *tradingDataServiceV2) GetBalanceHistory(ctx context.Context, req *v2.Ge
 		groupBy = append(groupBy, field)
 	}
 
-	balances, err := t.accountService.QueryAggregatedBalances(filter, groupBy)
+	dateRange := entities.DateRangeFromProto(req.DateRange)
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, apiError(codes.InvalidArgument, fmt.Errorf("invalid cursor: %w", err))
+	}
+
+	balances, pageInfo, err := t.accountService.QueryAggregatedBalances(filter, groupBy, dateRange, pagination)
 	if err != nil {
 		return nil, fmt.Errorf("querying balances: %w", err)
 	}
 
-	pbBalances := make([]*v2.AggregatedBalance, len(*balances))
-	for i, balance := range *balances {
-		pbBalance := balance.ToProto()
-		pbBalances[i] = &pbBalance
+	edges, err := makeEdges[*v2.AggregatedBalanceEdge](*balances)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrAccountServiceListAccounts, err)
 	}
 
-	return &v2.GetBalanceHistoryResponse{Balances: pbBalances}, nil
+	return &v2.GetBalanceHistoryResponse{
+		Balances: &v2.AggregatedBalanceConnection{
+			Edges:    edges,
+			PageInfo: pageInfo.ToProto(),
+		},
+	}, nil
 }
 
 func entityMarketDataListToProtoList(list []entities.MarketData) (*v2.MarketDataConnection, error) {
@@ -971,12 +981,13 @@ func (t *tradingDataServiceV2) ListTrades(ctx context.Context, in *v2.ListTrades
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, err)
 	}
-
+	dateRange := entities.DateRangeFromProto(in.DateRange)
 	trades, pageInfo, err := t.tradeService.List(ctx,
 		entities.MarketID(in.GetMarketId()),
 		entities.PartyID(in.GetPartyId()),
 		entities.OrderID(in.GetOrderId()),
-		pagination)
+		pagination,
+		dateRange)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -1337,7 +1348,9 @@ func (t *tradingDataServiceV2) ListDeposits(ctx context.Context, req *v2.ListDep
 		return nil, apiError(codes.InvalidArgument, err)
 	}
 
-	deposits, pageInfo, err := t.depositService.GetByParty(ctx, req.PartyId, false, pagination)
+	dateRange := entities.DateRangeFromProto(req.DateRange)
+
+	deposits, pageInfo, err := t.depositService.GetByParty(ctx, req.PartyId, false, pagination, dateRange)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -1394,8 +1407,8 @@ func (t *tradingDataServiceV2) ListWithdrawals(ctx context.Context, req *v2.List
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, err)
 	}
-
-	withdrawals, pageInfo, err := t.withdrawalService.GetByParty(ctx, req.PartyId, false, pagination)
+	dateRange := entities.DateRangeFromProto(req.DateRange)
+	withdrawals, pageInfo, err := t.withdrawalService.GetByParty(ctx, req.PartyId, false, pagination, dateRange)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -1784,7 +1797,9 @@ func (t *tradingDataServiceV2) ListOrders(ctx context.Context, in *v2.ListOrders
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, err)
 	}
-	orders, pageInfo, err := t.orderService.ListOrders(ctx, in.PartyId, in.MarketId, in.Reference, pagination)
+	dateRange := entities.DateRangeFromProto(in.DateRange)
+
+	orders, pageInfo, err := t.orderService.ListOrders(ctx, in.PartyId, in.MarketId, in.Reference, pagination, dateRange)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}

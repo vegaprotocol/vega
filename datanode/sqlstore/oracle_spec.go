@@ -27,8 +27,8 @@ type OracleSpec struct {
 }
 
 var oracleSpecOrdering = TableOrdering{
-	ColumnOrdering{"id", ASC},
-	ColumnOrdering{"vega_time", ASC},
+	ColumnOrdering{Name: "id", Sorting: ASC, CursorColumn: true},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC, CursorColumn: true},
 }
 
 const (
@@ -118,7 +118,7 @@ func (os *OracleSpec) getSpecsWithPageInfo(ctx context.Context, pagination entit
 	)
 
 	query := getOracleSpecsQuery()
-	query, args, err = PaginateQuery[entities.OracleSpecCursor](query, args, oracleSpecOrdering, pagination)
+	query, args, err = PaginateQuery[entities.OracleSpecCursor](query, args, oracleSpecOrdering, pagination, nil)
 	if err != nil {
 		return nil, pageInfo, err
 	}

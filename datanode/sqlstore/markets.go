@@ -30,7 +30,7 @@ type Markets struct {
 }
 
 var marketOrdering = TableOrdering{
-	ColumnOrdering{"vega_time", ASC},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC, CursorColumn: true},
 }
 
 const (
@@ -144,7 +144,7 @@ func (m *Markets) GetAllPaged(ctx context.Context, marketID string, pagination e
 		err      error
 	)
 
-	query, args, err = PaginateQuery[entities.MarketCursor](query, args, marketOrdering, pagination)
+	query, args, err = PaginateQuery[entities.MarketCursor](query, args, marketOrdering, pagination, nil)
 	if err != nil {
 		return markets, pageInfo, err
 	}

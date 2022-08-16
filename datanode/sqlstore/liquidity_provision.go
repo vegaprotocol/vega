@@ -24,8 +24,8 @@ import (
 )
 
 var lpOrdering = TableOrdering{
-	ColumnOrdering{"vega_time", ASC},
-	ColumnOrdering{"id", ASC},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC, CursorColumn: true},
+	ColumnOrdering{Name: "id", Sorting: ASC, CursorColumn: true},
 }
 
 type LiquidityProvision struct {
@@ -82,7 +82,7 @@ func (lp *LiquidityProvision) getWithCursorPagination(ctx context.Context, party
 
 	var err error
 	var pageInfo entities.PageInfo
-	query, bindVars, err = PaginateQuery[entities.LiquidityProvisionCursor](query, bindVars, lpOrdering, pagination)
+	query, bindVars, err = PaginateQuery[entities.LiquidityProvisionCursor](query, bindVars, lpOrdering, pagination, nil)
 	if err != nil {
 		return nil, pageInfo, err
 	}

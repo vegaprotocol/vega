@@ -39,12 +39,14 @@ const (
 )
 
 type ColumnOrdering struct {
-	Name    string
-	Sorting Sorting
+	Name         string
+	Sorting      Sorting
+	CursorColumn bool
+	Prefix       string
 }
 
-func NewColumnOrdering(name string, sorting Sorting) ColumnOrdering {
-	return ColumnOrdering{Name: name, Sorting: sorting}
+func NewColumnOrdering(name string, sorting Sorting, cursorColumn bool) ColumnOrdering {
+	return ColumnOrdering{Name: name, Sorting: sorting, CursorColumn: cursorColumn}
 }
 
 type TableOrdering []ColumnOrdering
@@ -65,10 +67,10 @@ func (t *TableOrdering) Reversed() TableOrdering {
 	reversed := make([]ColumnOrdering, len(*t))
 	for i, column := range *t {
 		if column.Sorting == DESC {
-			reversed[i] = ColumnOrdering{Name: column.Name, Sorting: ASC}
+			reversed[i] = ColumnOrdering{Name: column.Name, Sorting: ASC, CursorColumn: column.CursorColumn}
 		}
 		if column.Sorting == ASC {
-			reversed[i] = ColumnOrdering{Name: column.Name, Sorting: DESC}
+			reversed[i] = ColumnOrdering{Name: column.Name, Sorting: DESC, CursorColumn: column.CursorColumn}
 		}
 	}
 	return reversed
@@ -96,6 +98,9 @@ func CursorPredicate(args []interface{}, cursor interface{}, ordering TableOrder
 	equalPredicates := []string{}
 
 	for i, column := range ordering {
+		if !column.CursorColumn {
+			continue
+		}
 		// For the non-last columns, use LT/GT, so we don't include stuff before the cursor
 		var operator string
 		if column.Sorting == ASC {
@@ -118,15 +123,19 @@ func CursorPredicate(args []interface{}, cursor interface{}, ordering TableOrder
 		}
 
 		bindVar := nextBindVar(&args, value)
-		inequlityPredicate := fmt.Sprintf("%s %s %s", column.Name, operator, bindVar)
+		columnName := column.Name
+		if column.Prefix != "" {
+			columnName = fmt.Sprintf("%s.%s", column.Prefix, column.Name)
+		}
+		inequalityPredicate := fmt.Sprintf("%s %s %s", columnName, operator, bindVar)
 
-		colPredicates := append(equalPredicates, inequlityPredicate)
+		colPredicates := append(equalPredicates, inequalityPredicate)
 		colPredicateString := strings.Join(colPredicates, " AND ")
 		colPredicateString = fmt.Sprintf("(%s)", colPredicateString)
 		cursorPredicates = append(cursorPredicates, colPredicateString)
 
-		equlityPredicate := fmt.Sprintf("%s = %s", column.Name, bindVar)
-		equalPredicates = append(equalPredicates, equlityPredicate)
+		equalityPredicate := fmt.Sprintf("%s = %s", columnName, bindVar)
+		equalPredicates = append(equalPredicates, equalityPredicate)
 	}
 
 	predicateString := strings.Join(cursorPredicates, " OR ")
@@ -184,6 +193,7 @@ func PaginateQuery[T any, PT parserPtr[T]](
 	args []interface{},
 	ordering TableOrdering,
 	pagination entities.CursorPagination,
+	grouping []string,
 ) (string, []interface{}, error) {
 	// Extract a cursor struct from the pagination struct
 	cursor, err := parseCursor[T, PT](pagination)
@@ -217,6 +227,13 @@ func PaginateQuery[T any, PT parserPtr[T]](
 		}
 		query = fmt.Sprintf("%s %s (%s)", query, whereOrAnd, predicate)
 	}
+
+	groupBy := ""
+	if len(grouping) > 0 {
+		groupBy = fmt.Sprintf(" GROUP BY %s", strings.Join(grouping, ","))
+	}
+
+	query = fmt.Sprintf("%s%s", query, groupBy)
 
 	// Add an ORDER BY clause
 	query = fmt.Sprintf("%s %s", query, ordering.OrderByClause())

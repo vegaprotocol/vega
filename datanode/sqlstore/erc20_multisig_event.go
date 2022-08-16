@@ -23,8 +23,8 @@ import (
 )
 
 var erc20MultSigSignerOrdering = TableOrdering{
-	ColumnOrdering{"vega_time", ASC},
-	ColumnOrdering{"id", ASC},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC, CursorColumn: true},
+	ColumnOrdering{Name: "id", Sorting: ASC, CursorColumn: true},
 }
 
 type ERC20MultiSigSignerEvent struct {
@@ -77,7 +77,7 @@ func (m *ERC20MultiSigSignerEvent) GetAddedEvents(ctx context.Context, validator
 		query = fmt.Sprintf(`%s AND epoch_id=%s`, query, nextBindVar(&args, *epochID))
 	}
 
-	query, args, err = PaginateQuery[entities.ERC20MultiSigSignerEventCursor](query, args, erc20MultSigSignerOrdering, pagination)
+	query, args, err = PaginateQuery[entities.ERC20MultiSigSignerEventCursor](query, args, erc20MultSigSignerOrdering, pagination, nil)
 	if err != nil {
 		return nil, pageInfo, err
 	}
@@ -120,7 +120,7 @@ func (m *ERC20MultiSigSignerEvent) GetRemovedEvents(ctx context.Context, validat
 		query = fmt.Sprintf(`%s AND epoch_id=%s`, query, nextBindVar(&args, *epochID))
 	}
 
-	query, args, err = PaginateQuery[entities.ERC20MultiSigSignerEventCursor](query, args, erc20MultSigSignerOrdering, pagination)
+	query, args, err = PaginateQuery[entities.ERC20MultiSigSignerEventCursor](query, args, erc20MultSigSignerOrdering, pagination, nil)
 	if err != nil {
 		return nil, pageInfo, err
 	}

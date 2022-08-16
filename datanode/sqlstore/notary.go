@@ -27,8 +27,8 @@ type Notary struct {
 }
 
 var notaryOrdering = TableOrdering{
-	ColumnOrdering{"resource_id", ASC},
-	ColumnOrdering{"sig", ASC},
+	ColumnOrdering{Name: "resource_id", Sorting: ASC, CursorColumn: true},
+	ColumnOrdering{Name: "sig", Sorting: ASC, CursorColumn: true},
 }
 
 func NewNotary(connectionSource *ConnectionSource) *Notary {
@@ -66,7 +66,7 @@ func (n *Notary) GetByResourceID(ctx context.Context, id string, pagination enti
 
 	query := fmt.Sprintf(`SELECT resource_id, sig, kind FROM node_signatures where resource_id=%s`,
 		nextBindVar(&args, entities.NodeID(id)))
-	query, args, err = PaginateQuery[entities.NodeSignatureCursor](query, args, notaryOrdering, pagination)
+	query, args, err = PaginateQuery[entities.NodeSignatureCursor](query, args, notaryOrdering, pagination, nil)
 	if err != nil {
 		return ns, pageInfo, err
 	}

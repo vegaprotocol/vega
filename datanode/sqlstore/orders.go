@@ -31,6 +31,8 @@ const (
                        reference, reason, version, batch_id, pegged_offset,
                        pegged_reference, lp_id, created_at, updated_at, expires_at,
                        vega_time, seq_num`
+
+	ordersFilterDateColumn = "vega_time"
 )
 
 type Orders struct {
@@ -39,8 +41,8 @@ type Orders struct {
 }
 
 var ordersOrdering = TableOrdering{
-	ColumnOrdering{"vega_time", ASC},
-	ColumnOrdering{"seq_num", ASC},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC, CursorColumn: true},
+	ColumnOrdering{Name: "seq_num", Sorting: ASC, CursorColumn: true},
 }
 
 func NewOrders(connectionSource *ConnectionSource, logger *logging.Logger) *Orders {
@@ -121,11 +123,6 @@ func (os *Orders) GetByReference(ctx context.Context, reference string, p entiti
 	return os.queryOrders(ctx, query, args, &p)
 }
 
-// GetByReference returns the last update of orders with the specified user-suppled reference.
-func (os *Orders) GetByReferencePaged(ctx context.Context, reference string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
-	return os.ListOrders(ctx, nil, nil, &reference, p)
-}
-
 // GetAllVersionsByOrderID the last update to all versions (e.g. manual changes that lead to
 // incrementing the version field) of a given order id.
 func (os *Orders) GetAllVersionsByOrderID(ctx context.Context, id string, p entities.OffsetPagination) ([]entities.Order, error) {
@@ -171,7 +168,7 @@ func (os *Orders) queryOrdersWithCursorPagination(ctx context.Context, query str
 		pageInfo entities.PageInfo
 	)
 
-	query, args, err = PaginateQuery[entities.OrderCursor](query, args, ordersOrdering, pagination)
+	query, args, err = PaginateQuery[entities.OrderCursor](query, args, ordersOrdering, pagination, nil)
 	if err != nil {
 		return orders, pageInfo, err
 	}
@@ -201,7 +198,9 @@ func paginateOrderQuery(query string, args []interface{}, p entities.OffsetPagin
 	return query, args
 }
 
-func (os *Orders) ListOrders(ctx context.Context, party *string, market *string, reference *string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
+func (os *Orders) ListOrders(ctx context.Context, party *string, market *string, reference *string, p entities.CursorPagination,
+	dateRange entities.DateRange,
+) ([]entities.Order, entities.PageInfo, error) {
 	var filters []filter
 	if party != nil {
 		filters = append(filters, filter{"party_id", entities.PartyID(*party)})
@@ -218,6 +217,8 @@ func (os *Orders) ListOrders(ctx context.Context, party *string, market *string,
 	where, args := buildWhereClause(filters...)
 
 	query := fmt.Sprintf(`SELECT %s from orders_current %s`, sqlOrderColumns, where)
+	query, args = filterDateRange(query, ordersFilterDateColumn, dateRange, args...)
+
 	defer metrics.StartSQLQuery("Orders", "GetByMarketPaged")()
 
 	return os.queryOrdersWithCursorPagination(ctx, query, args, p)

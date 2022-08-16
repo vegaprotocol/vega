@@ -35,7 +35,7 @@ const (
 )
 
 var candleOrdering = TableOrdering{
-	ColumnOrdering{"period_start", ASC},
+	ColumnOrdering{Name: "period_start", Sorting: ASC, CursorColumn: true},
 }
 
 type Candles struct {
@@ -93,7 +93,7 @@ func (cs *Candles) GetCandleDataForTimeSpan(ctx context.Context, candleId string
 		query = fmt.Sprintf("%s AND period_start < %s", query, nextBindVar(&args, to))
 	}
 
-	query, args, err = PaginateQuery[entities.CandleCursor](query, args, candleOrdering, p)
+	query, args, err = PaginateQuery[entities.CandleCursor](query, args, candleOrdering, p, nil)
 	if err != nil {
 		return nil, pageInfo, err
 	}

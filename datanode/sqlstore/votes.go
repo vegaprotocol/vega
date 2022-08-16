@@ -29,7 +29,7 @@ type Votes struct {
 }
 
 var votesOrdering = TableOrdering{
-	ColumnOrdering{"vega_time", ASC},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC, CursorColumn: true},
 }
 
 func NewVotes(connectionSource *ConnectionSource) *Votes {
@@ -91,7 +91,7 @@ func (vs *Votes) GetByPartyConnection(ctx context.Context, partyIDStr string, pa
 		err      error
 	)
 
-	query, args, err = PaginateQuery[entities.VoteCursor](query, args, votesOrdering, pagination)
+	query, args, err = PaginateQuery[entities.VoteCursor](query, args, votesOrdering, pagination, nil)
 	if err != nil {
 		return votes, pageInfo, err
 	}

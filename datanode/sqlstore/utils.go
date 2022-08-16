@@ -26,9 +26,9 @@ import (
 // to the 'args' slice and returns a string '$N' referring to the index
 // of the value in args. For example:
 //
-// 	var args []interface{}
-//  query = "select * from foo where id=" + nextBindVar(&args, 100)
-//  db.Query(query, args...)
+//		var args []interface{}
+//	 query = "select * from foo where id=" + nextBindVar(&args, 100)
+//	 db.Query(query, args...)
 func nextBindVar(args *[]interface{}, value interface{}) string {
 	*args = append(*args, value)
 	return "$" + strconv.Itoa(len(*args))
@@ -172,18 +172,17 @@ func extractCursorFromPagination(pagination entities.CursorPagination) (cursor s
 // database column names in a similar way to scanny and if one matches colName, that field value
 // is returned. For example
 //
-// type Foo struct {
-// 	Thingy        int `db:"wotsit"`
-// 	SomethingElse int
-// }
+//	type Foo struct {
+//		Thingy        int `db:"wotsit"`
+//		SomethingElse int
+//	}
 //
-// 	val, err := StructValueForColumn(foo, "wotsit")             -> 1
+//	val, err := StructValueForColumn(foo, "wotsit")             -> 1
 //	val, err := StructValueForColumn(&foo, "something_else")    -> 2
 //
 // NB - not all functionality of scanny is supported (but could be added if needed)
 //   - we don't support embedded structs
 //   - assumes the 'dbTag' is the default 'db'
-//
 func StructValueForColumn(obj any, colName string) (interface{}, error) {
 	structType := reflect.TypeOf(obj)
 	structValue := reflect.ValueOf(obj)
@@ -209,4 +208,16 @@ func StructValueForColumn(obj any, colName string) (interface{}, error) {
 		}
 	}
 	return nil, fmt.Errorf("no field matching column name %s", colName)
+}
+
+func filterDateRange(query, dateColumn string, dateRange entities.DateRange, args ...interface{}) (string, []interface{}) {
+	if dateRange.Start != nil {
+		query = fmt.Sprintf("%s AND %s >= %s", query, dateColumn, nextBindVar(&args, *dateRange.Start))
+	}
+
+	if dateRange.End != nil {
+		query = fmt.Sprintf("%s AND %s < %s", query, dateColumn, nextBindVar(&args, *dateRange.End))
+	}
+
+	return query, args
 }

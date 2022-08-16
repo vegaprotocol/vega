@@ -27,8 +27,8 @@ type Transfers struct {
 }
 
 var transfersOrdering = TableOrdering{
-	ColumnOrdering{"vega_time", ASC},
-	ColumnOrdering{"id", ASC},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC, CursorColumn: true},
+	ColumnOrdering{Name: "id", Sorting: ASC, CursorColumn: true},
 }
 
 func NewTransfers(connectionSource *ConnectionSource) *Transfers {
@@ -166,7 +166,7 @@ func (t *Transfers) getTransfers(ctx context.Context, pagination entities.Cursor
 	)
 
 	query := "select * from transfers_current " + where
-	query, args, err = PaginateQuery[entities.TransferCursor](query, args, transfersOrdering, pagination)
+	query, args, err = PaginateQuery[entities.TransferCursor](query, args, transfersOrdering, pagination, nil)
 	if err != nil {
 		return nil, pageInfo, err
 	}

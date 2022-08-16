@@ -30,8 +30,8 @@ var (
 )
 
 var partiesOrdering = TableOrdering{
-	ColumnOrdering{"vega_time", ASC},
-	ColumnOrdering{"id", ASC},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC, CursorColumn: true},
+	ColumnOrdering{Name: "id", Sorting: ASC, CursorColumn: true},
 }
 
 type Parties struct {
@@ -124,7 +124,7 @@ func (ps *Parties) GetAllPaged(ctx context.Context, partyID string, pagination e
 		err      error
 	)
 
-	query, args, err = PaginateQuery[entities.Party](query, args, partiesOrdering, pagination)
+	query, args, err = PaginateQuery[entities.Party](query, args, partiesOrdering, pagination, nil)
 	if err != nil {
 		return nil, pageInfo, err
 	}

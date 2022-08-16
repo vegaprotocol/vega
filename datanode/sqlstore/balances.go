@@ -18,8 +18,13 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
 )
+
+var aggregateBalancesOrdering = TableOrdering{
+	ColumnOrdering{Name: "vega_time", Sorting: ASC, CursorColumn: true, Prefix: "forward_filled_balances"},
+}
 
 type Balances struct {
 	*ConnectionSource
@@ -54,7 +59,7 @@ func (bs *Balances) Add(b entities.AccountBalance) error {
 //
 // Optionally you can supply a list of fields to market by, which will break down the results by those fields.
 //
-// For example, if you have balances table that looks like
+// # For example, if you have balances table that looks like
 //
 // Time  Account   Balance
 // 1     a         1
@@ -74,11 +79,22 @@ func (bs *Balances) Add(b entities.AccountBalance) error {
 // 1     1          x
 // 2     11         x
 // 3     100        y.
-//
-func (bs *Balances) Query(filter entities.AccountFilter, groupBy []entities.AccountField) (*[]entities.AggregatedBalance, error) {
+func (bs *Balances) Query(filter entities.AccountFilter, groupBy []entities.AccountField, dateRange entities.DateRange,
+	pagination entities.CursorPagination,
+) (*[]entities.AggregatedBalance, entities.PageInfo, error) {
+	var pageInfo entities.PageInfo
 	assetsQuery, args, err := filterAccountsQuery(filter)
 	if err != nil {
-		return nil, err
+		return nil, pageInfo, err
+	}
+
+	whereDate := ""
+	if dateRange.Start != nil {
+		whereDate = fmt.Sprintf("AND forward_filled_balances.vega_time >= %s", nextBindVar(&args, *dateRange.Start))
+	}
+
+	if dateRange.End != nil {
+		whereDate = fmt.Sprintf("%s AND forward_filled_balances.vega_time < %s", whereDate, nextBindVar(&args, *dateRange.End))
 	}
 
 	query := `
@@ -98,27 +114,43 @@ func (bs *Balances) Query(filter entities.AccountFilter, groupBy []entities.Acco
         FROM forward_filled_balances
         JOIN our_accounts ON account_id=our_accounts.id
         WHERE balance IS NOT NULL
-        GROUP BY forward_filled_balances.vega_time %s
-        ORDER BY forward_filled_balances.vega_time %s;`
+        %s`
 
 	groups := ""
+	ordering := make(TableOrdering, len(aggregateBalancesOrdering))
+	grouping := []string{"forward_filled_balances.vega_time"}
+	copy(ordering, aggregateBalancesOrdering)
 	for _, col := range groupBy {
 		groups = fmt.Sprintf("%s, %s", groups, col.String())
+		ordering = append(ordering, ColumnOrdering{
+			Name:         col.String(),
+			Sorting:      ASC,
+			CursorColumn: false,
+		})
+		grouping = append(grouping, col.String())
 	}
 
-	query = fmt.Sprintf(query, assetsQuery, groups, groups, groups)
+	query = fmt.Sprintf(query, assetsQuery, groups, whereDate)
+
+	query, args, err = PaginateQuery[entities.AggregatedBalanceCursor](query, args, aggregateBalancesOrdering, pagination, grouping)
+	if err != nil {
+		return nil, pageInfo, err
+	}
+
 	defer metrics.StartSQLQuery("Balances", "Query")()
 	rows, err := bs.Connection.Query(context.Background(), query, args...)
 	defer rows.Close()
 	if err != nil {
-		return nil, fmt.Errorf("querying balances: %w", err)
+		return nil, pageInfo, fmt.Errorf("querying balances: %w", err)
 	}
 
 	res := []entities.AggregatedBalance{}
 
 	if err = pgxscan.ScanAll(&res, rows); err != nil {
-		return nil, fmt.Errorf("scanning balances: %w", err)
+		return nil, pageInfo, fmt.Errorf("scanning balances: %w", err)
 	}
 
-	return &res, nil
+	res, pageInfo = entities.PageEntities[*v2.AggregatedBalanceEdge](res, pagination)
+
+	return &res, pageInfo, nil
 }

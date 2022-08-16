@@ -610,8 +610,10 @@ type Query {
 
   historicBalances(
     filter: AccountFilter,
-    groupBy: [AccountField])
-  : [AggregatedBalance!]!
+    groupBy: [AccountField],
+    dateRange: DateRange,
+    pagination: Pagination
+  ) : AggregatedBalanceConnection!
 
   "Current network limits"
   networkLimits: NetworkLimits
@@ -1652,6 +1654,8 @@ type Market {
 
   "Orders on a market"
   ordersConnection(
+    "DateRange to retrieve orders from/to"
+    dateRange: DateRange,
     "Pagination information"
     pagination: Pagination
   ): OrderConnection!
@@ -1680,7 +1684,11 @@ type Market {
     last: Int
   ): [Trade!] @deprecated(reason: "Use tradesConnection for cursor based pagination instead")
 
-  tradesConnection(pagination: Pagination): TradeConnection!
+  tradesConnection(
+    "DateRange to retrieve trades from/to"
+    dateRange: DateRange,
+    pagination: Pagination
+  ): TradeConnection!
 
   "Current depth on the order book for this market"
   depth(
@@ -1884,6 +1892,8 @@ type Party {
 
   "Orders relating to a party"
   ordersConnection(
+    "Date range to retrieve orders from/to"
+    dateRange: DateRange
     "Pagination information"
     pagination: Pagination
   ): OrderConnection!
@@ -1900,7 +1910,11 @@ type Party {
     last: Int
   ): [Trade!] @deprecated(reason: "Use tradesConnection for cursor based pagination instead")
 
-  tradesConnection(marketId: ID, pagination: Pagination): TradeConnection!
+  tradesConnection(
+    marketId: ID,
+    dataRange: DateRange,
+    pagination: Pagination
+  ): TradeConnection!
 
   "Collateral accounts relating to a party"
   accounts(
@@ -1967,13 +1981,19 @@ type Party {
   withdrawals: [Withdrawal!] @deprecated(reason: "Use withdrawalsConnection instead")
 
   "The list of all withdrawals initiated by the party"
-  withdrawalsConnection(pagination: Pagination): WithdrawalsConnection!
+  withdrawalsConnection(
+    dateRange: DateRange,
+    pagination: Pagination
+  ): WithdrawalsConnection!
 
   "The list of all deposits for a party by the party"
   deposits: [Deposit!] @deprecated(reason: "Use depositsConnection instead")
 
   "The list of all deposits for a party by the party"
-  depositsConnection(pagination: Pagination): DepositsConnection!
+  depositsConnection(
+    dateRange: DateRange,
+    pagination: Pagination
+  ): DepositsConnection!
 
   "The list of the liquidity provision commitment from this party"
   liquidityProvisions(
@@ -2197,7 +2217,10 @@ type Order {
   trades: [Trade!] @deprecated(reason: "Use tradesConnection instead")
 
   "Trades relating to this order"
-  tradesConnection(pagination: Pagination): TradeConnection!
+  tradesConnection(
+    dateRange: DateRange,
+    pagination: Pagination
+  ): TradeConnection!
 
   "Type the order type (defaults to PARTY)"
   type: OrderType
@@ -3517,6 +3540,7 @@ type RewardPerAssetDetail {
   totalAmount: String!
 }
 
+"RFC3339Nano value for time"
 scalar Timestamp
 
 type AggregatedBalance {
@@ -3534,6 +3558,17 @@ type AggregatedBalance {
   marketId: String
   "Account type, if query was grouped by account type - else null"
   accountType: AccountType
+}
+
+type AggregatedBalanceEdge {
+  "The aggregated balance"
+  node: AggregatedBalance!
+  cursor: String!
+}
+
+type AggregatedBalanceConnection {
+  edges: [AggregatedBalanceEdge]!
+  pageInfo: PageInfo!
 }
 
 enum AccountField {
@@ -3963,4 +3998,15 @@ type AccountsConnection {
   edges: [AccountEdge]
   "Page information for the connection"
   pageInfo: PageInfo!
+}
+
+"""
+Range of dates to retrieve information for.
+If start and end are provided, data will be returned within the specified range (exclusive).
+If start is provided without end, the end date will be the latest time available in the data set.
+If end is provided without start, the start time will be the earliest time available in the data set.
+"""
+input DateRange {
+  start: Timestamp
+  end: Timestamp
 }
