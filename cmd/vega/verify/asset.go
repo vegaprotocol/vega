@@ -85,9 +85,6 @@ func verifyAssetTerms(r *reporter, prop *types.Proposal) {
 	if len(newAsset.Changes.Symbol) <= 0 {
 		r.Err("prop.terms.newAsset.changes.symbol is missing or empty")
 	}
-	if len(newAsset.Changes.TotalSupply) <= 0 {
-		r.Err("prop.terms.newAsset.changes.totalSupply is missing or empty")
-	}
 	if newAsset.Changes.Decimals == 0 {
 		r.Err("prop.terms.newAsset.changes.decimals is missing or empty")
 	}

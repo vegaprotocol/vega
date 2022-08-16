@@ -58,6 +58,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5862](https://github.com/vegaprotocol/vega/issues/5862) - Add base `URL` in `swagger`
 - [5817](https://github.com/vegaprotocol/vega/issues/5817) - Add validation error on asset proposal when rejected
 - [5816](https://github.com/vegaprotocol/vega/issues/5816) - Set proper status to rejected asset proposal
+- [5893](https://github.com/vegaprotocol/vega/issues/5893) - Remove total supply from assets
 
 ### 🐛 Fixes
 - [5571](https://github.com/vegaprotocol/vega/issues/5571) - Restore pending assets status correctly after snapshot restore

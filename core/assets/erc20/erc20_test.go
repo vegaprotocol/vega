@@ -42,11 +42,10 @@ const (
 )
 
 var token = &types.AssetDetails{
-	Name:        "VEGA",
-	Symbol:      "VEGA",
-	TotalSupply: num.NewUint(10000),
-	Decimals:    18,
-	Quantum:     num.DecimalFromFloat(1),
+	Name:     "VEGA",
+	Symbol:   "VEGA",
+	Decimals: 18,
+	Quantum:  num.DecimalFromFloat(1),
 	Source: &types.AssetDetailsErc20{
 		ERC20: &types.ERC20{
 			ContractAddress:   "0x1FaA74E181092A97Fecc923015293ce57eE1208A",

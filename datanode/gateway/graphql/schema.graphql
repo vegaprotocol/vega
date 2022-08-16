@@ -1028,9 +1028,6 @@ type Asset {
   "The symbol of the asset (e.g: GBP)"
   symbol: String!
 
-  "The total supply of the market"
-  totalSupply: String!
-
   "The precision of the asset. Should match the decimal precision of the asset on its native chain, e.g: for ERC20 assets, it is often 18"
   decimals: Int!
 
@@ -2949,9 +2946,6 @@ type NewAsset {
   "The symbol of the asset (e.g: GBP)"
   symbol: String!
 
-  "The total supply of the market"
-  totalSupply: String!
-
   "The precision of the asset"
   decimals: Int!
 
@@ -2969,9 +2963,6 @@ type UpdateAsset {
 
   "The symbol of the asset (e.g: GBP)"
   symbol: String!
-
-  "The total supply of the market"
-  totalSupply: String!
 
   "The minimum stake to become a liquidity provider for any market using this asset for settlement"
   minLpStake: String!

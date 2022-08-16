@@ -20,9 +20,6 @@ func TestCheckProposalSubmissionForNewAsset(t *testing.T) {
 	t.Run("Submitting an asset change with symbol succeeds", testNewAssetChangeSubmissionWithSymbolSucceeds)
 	t.Run("Submitting an asset change without decimal fails", testNewAssetChangeSubmissionWithoutDecimalsFails)
 	t.Run("Submitting an asset change with decimal succeeds", testNewAssetChangeSubmissionWithDecimalsSucceeds)
-	t.Run("Submitting an asset change without total supply fails", testNewAssetChangeSubmissionWithoutTotalSupplyFails)
-	t.Run("Submitting an asset change with total supply succeeds", testNewAssetChangeSubmissionWithTotalSupplySucceeds)
-	t.Run("Submitting an asset change with not-a-number total supply fails", testNewAssetChangeSubmissionWithNaNTotalSupplyFails)
 	t.Run("Submitting an built-in asset change without built-in asset fails", testNewAssetChangeSubmissionWithoutBuiltInAssetFails)
 	t.Run("Submitting an built-in asset change without max faucet amount fails", testNewBuiltInAssetChangeSubmissionWithoutMaxFaucetAmountMintFails)
 	t.Run("Submitting an built-in asset change with max faucet amount succeeds", testNewBuiltInAssetChangeSubmissionWithMaxFaucetAmountMintSucceeds)
@@ -229,73 +226,6 @@ func testNewAssetChangeSubmissionWithDecimalsSucceeds(t *testing.T) {
 	})
 
 	assert.Empty(t, err.Get("proposal_submission.terms.change.new_asset.changes.decimals"))
-}
-
-func testNewAssetChangeSubmissionWithoutTotalSupplyFails(t *testing.T) {
-	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewAsset{
-				NewAsset: &types.NewAsset{
-					Changes: &types.AssetDetails{
-						TotalSupply: "",
-					},
-				},
-			},
-		},
-	})
-
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_asset.changes.total_supply"), commands.ErrIsRequired)
-}
-
-func testNewAssetChangeSubmissionWithTotalSupplySucceeds(t *testing.T) {
-	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewAsset{
-				NewAsset: &types.NewAsset{
-					Changes: &types.AssetDetails{
-						TotalSupply: "10000",
-					},
-				},
-			},
-		},
-	})
-
-	assert.Empty(t, err.Get("proposal_submission.terms.change.new_asset.changes.total_supply"))
-}
-
-func testNewAssetChangeSubmissionWithNaNTotalSupplyFails(t *testing.T) {
-	testCases := []struct {
-		msg   string
-		value string
-		error error
-	}{
-		{
-			msg:   "with not-a-number value",
-			value: "hello",
-			error: commands.ErrIsNotValidNumber,
-		}, {
-			msg:   "with value of 0",
-			value: "0",
-			error: commands.ErrMustBePositive,
-		},
-	}
-	for _, tc := range testCases {
-		t.Run(tc.msg, func(t *testing.T) {
-			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &types.ProposalTerms{
-					Change: &types.ProposalTerms_NewAsset{
-						NewAsset: &types.NewAsset{
-							Changes: &types.AssetDetails{
-								TotalSupply: tc.value,
-							},
-						},
-					},
-				},
-			})
-
-			assert.Contains(t, err.Get("proposal_submission.terms.change.new_asset.changes.total_supply"), tc.error)
-		})
-	}
 }
 
 func testNewAssetChangeSubmissionWithoutBuiltInAssetFails(t *testing.T) {
