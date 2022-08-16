@@ -67,11 +67,6 @@ func (as *Asset) consume(ctx context.Context, ae AssetEvent) error {
 }
 
 func (as *Asset) addAsset(ctx context.Context, va vega.Asset, vegaTime time.Time) error {
-	totalSupply, err := decimal.NewFromString(va.Details.TotalSupply)
-	if err != nil {
-		return errors.Errorf("bad total supply '%v'", va.Details.TotalSupply)
-	}
-
 	quantum, err := decimal.NewFromString(va.Details.Quantum)
 	if err != nil {
 		return errors.Errorf("bad quantum '%v'", va.Details.Quantum)
@@ -113,7 +108,6 @@ func (as *Asset) addAsset(ctx context.Context, va vega.Asset, vegaTime time.Time
 		ID:                entities.AssetID(va.Id),
 		Name:              va.Details.Name,
 		Symbol:            va.Details.Symbol,
-		TotalSupply:       totalSupply,
 		Decimals:          decimals,
 		Quantum:           quantum,
 		Source:            source,

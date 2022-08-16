@@ -28,7 +28,6 @@ type MarketDataEvent interface {
 	MarketData() types.MarketData
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_data_mock.go -package mocks code.vegaprotocol.io/vega/datanode/sqlsubscribers MarketDataStore
 type MarketDataStore interface {
 	Add(*entities.MarketData) error
 	Flush(context.Context) error

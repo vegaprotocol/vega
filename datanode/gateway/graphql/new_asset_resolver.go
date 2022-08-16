@@ -32,10 +32,6 @@ func (r newAssetResolver) Symbol(ctx context.Context, obj *types.NewAsset) (stri
 	return obj.Changes.Symbol, nil
 }
 
-func (r newAssetResolver) TotalSupply(ctx context.Context, obj *types.NewAsset) (string, error) {
-	return obj.Changes.TotalSupply, nil
-}
-
 func (r *newAssetResolver) Decimals(ctx context.Context, obj *types.NewAsset) (int, error) {
 	return int(obj.Changes.Decimals), nil
 }

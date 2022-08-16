@@ -28,8 +28,7 @@ var (
 	ErrUnimplementedRiskModel = errors.New("unimplemented risk model")
 )
 
-// Model represents a risk model interface
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/risk_model_mock.go -package mocks code.vegaprotocol.io/vega/core/risk Model
+// Model represents a risk model interface.
 type Model interface {
 	CalculateRiskFactors() *types.RiskFactor
 	DefaultRiskFactors() *types.RiskFactor

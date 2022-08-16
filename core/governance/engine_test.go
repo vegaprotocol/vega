@@ -163,7 +163,7 @@ func testSubmittingProposalWithNonExistingAccountFails(t *testing.T) {
 			proposal: eng.newProposalForNewMarket(party, now, nil, nil),
 		}, {
 			name:     "For market update",
-			proposal: eng.newProposalForMarketUpdate(party, now, nil, nil),
+			proposal: eng.newProposalForMarketUpdate("", party, now, nil, nil),
 		}, {
 			name:     "For new asset",
 			proposal: eng.newProposalForNewAsset(party, now),
@@ -210,7 +210,7 @@ func testSubmittingProposalWithoutEnoughStakeFails(t *testing.T) {
 		}, {
 			name:                    "For market update",
 			minProposerBalanceParam: netparams.GovernanceProposalUpdateMarketMinProposerBalance,
-			proposal:                eng.newProposalForMarketUpdate(party, now, nil, nil),
+			proposal:                eng.newProposalForMarketUpdate("market-1", party, now, nil, nil),
 		}, {
 			name:                    "For new asset",
 			minProposerBalanceParam: netparams.GovernanceProposalAssetMinProposerBalance,
@@ -256,7 +256,7 @@ func testSubmittingProposalWithClosingTimeTooSoonFails(t *testing.T) {
 			proposal: eng.newProposalForNewMarket(party, now, nil, nil),
 		}, {
 			msg:      "For market update",
-			proposal: eng.newProposalForMarketUpdate(party, now, nil, nil),
+			proposal: eng.newProposalForMarketUpdate("market-1", party, now, nil, nil),
 		}, {
 			msg:      "For new asset",
 			proposal: eng.newProposalForNewAsset(party, now),
@@ -300,7 +300,7 @@ func testSubmittingProposalWithClosingTimeTooLateFails(t *testing.T) {
 			proposal: eng.newProposalForNewMarket(party, now, nil, nil),
 		}, {
 			msg:      "For market update",
-			proposal: eng.newProposalForMarketUpdate(party, now, nil, nil),
+			proposal: eng.newProposalForMarketUpdate("market-1", party, now, nil, nil),
 		}, {
 			msg:      "For new asset",
 			proposal: eng.newProposalForNewAsset(party, now),
@@ -419,7 +419,7 @@ func testSubmittingTimeTriggeredProposalMarketUpdateTerminationEnactmentFails(t 
 	// Set termination timestamp 45 minutes before enactment time
 	// Enactment time for updating market is now + 192 hours
 	filter, binding = produceTimeTriggeredOracleSpec(now.Add(3 * 48 * time.Hour).Add(1 * 47 * time.Hour).Add(15 * time.Minute))
-	proposal2 := eng.newProposalForMarketUpdate(proposer, now, filter, binding)
+	proposal2 := eng.newProposalForMarketUpdate("market-1", proposer, now, filter, binding)
 
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
 	eng.ensureAllAssetEnabled(t)
@@ -435,7 +435,7 @@ func testSubmittingTimeTriggeredProposalMarketUpdateTerminationEnactmentFails(t 
 
 	// Set termination timestamp same as enactment timestamp
 	filter, binding = produceTimeTriggeredOracleSpec(now.Add(4 * 48 * time.Hour))
-	proposal3 := eng.newProposalForMarketUpdate(proposer, now, filter, binding)
+	proposal3 := eng.newProposalForMarketUpdate("market-1", proposer, now, filter, binding)
 
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
 	eng.ensureAllAssetEnabled(t)
@@ -466,7 +466,7 @@ func testSubmittingProposalWithEnactmentTimeTooSoonFails(t *testing.T) {
 			proposal: eng.newProposalForNewMarket(party, now, nil, nil),
 		}, {
 			msg:      "For market update",
-			proposal: eng.newProposalForMarketUpdate(party, now, nil, nil),
+			proposal: eng.newProposalForMarketUpdate("market-1", party, now, nil, nil),
 		}, {
 			msg:      "For new asset",
 			proposal: eng.newProposalForNewAsset(party, now),
@@ -508,7 +508,7 @@ func testSubmittingProposalWithEnactmentTimeTooLateFails(t *testing.T) {
 			proposal: eng.newProposalForNewMarket(party, now, nil, nil),
 		}, {
 			msg:      "For market update",
-			proposal: eng.newProposalForMarketUpdate(party, now, nil, nil),
+			proposal: eng.newProposalForMarketUpdate("market-1", party, now, nil, nil),
 		}, {
 			msg:      "For new asset",
 			proposal: eng.newProposalForNewAsset(party, now),
@@ -935,11 +935,10 @@ func newAssetTerms() *types.ProposalTermsNewAsset {
 	return &types.ProposalTermsNewAsset{
 		NewAsset: &types.NewAsset{
 			Changes: &types.AssetDetails{
-				Name:        "token",
-				Symbol:      "TKN",
-				TotalSupply: num.NewUint(10000),
-				Decimals:    18,
-				Quantum:     num.DecimalFromFloat(1),
+				Name:     "token",
+				Symbol:   "TKN",
+				Decimals: 18,
+				Quantum:  num.DecimalFromFloat(1),
 				Source: &types.AssetDetailsBuiltinAsset{
 					BuiltinAsset: &types.BuiltinAsset{
 						MaxFaucetAmountMint: num.NewUint(1),
@@ -1186,9 +1185,9 @@ func (e *tstEngine) newProposalForNewMarket(partyID string, now time.Time, termF
 	}
 }
 
-func (e *tstEngine) newProposalForMarketUpdate(partyID string, now time.Time, termFilter *types.OracleSpecFilter, termBinding *types.OracleSpecBindingForFuture) types.Proposal {
+func (e *tstEngine) newProposalForMarketUpdate(marketID, partyID string, now time.Time, termFilter *types.OracleSpecFilter, termBinding *types.OracleSpecBindingForFuture) types.Proposal {
 	id := e.newProposalID()
-	return types.Proposal{
+	prop := types.Proposal{
 		ID:        id,
 		Reference: "ref-" + id,
 		Party:     partyID,
@@ -1203,6 +1202,11 @@ func (e *tstEngine) newProposalForMarketUpdate(partyID string, now time.Time, te
 			Description: "some description",
 		},
 	}
+	switch p := prop.Terms.Change.(type) {
+	case *types.ProposalTermsUpdateMarket:
+		p.UpdateMarket.MarketID = marketID
+	}
+	return prop
 }
 
 func (e *tstEngine) newProposalForNewAsset(partyID string, now time.Time) types.Proposal {

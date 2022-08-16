@@ -32,11 +32,10 @@ func checkpointTestEngine(t *testing.T) *collateral.Engine {
 	e.EnableAsset(context.Background(), types.Asset{
 		ID: "VEGA",
 		Details: &types.AssetDetails{
-			Name:        "VEGA",
-			Symbol:      "VEGA",
-			Decimals:    5,
-			TotalSupply: num.NewUint(1000),
-			Quantum:     num.DecimalZero(),
+			Name:     "VEGA",
+			Symbol:   "VEGA",
+			Decimals: 5,
+			Quantum:  num.DecimalZero(),
 			Source: &types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{
 					MaxFaucetAmountMint: num.UintZero(),

@@ -266,6 +266,8 @@ http:
       get: "/api/v2/network/parameters"
     - selector: datanode.api.v2.TradingDataService.ListCheckpoints
       get: "/api/v2/checkpoints"
+    - selector: datanode.api.v2.TradingDataService.GetStake
+      get: "/api/v2/parties/{party_id}/stake"
     - selector: datanode.api.v2.TradingDataService.ListKeyRotations
       get: "/api/v2/vega/keys/rotations"
     - selector: datanode.api.v2.TradingDataService.GetVegaTime

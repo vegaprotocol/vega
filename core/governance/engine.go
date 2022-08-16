@@ -61,6 +61,7 @@ type Markets interface {
 	RestoreMarket(ctx context.Context, marketConfig *types.Market) error
 	RestoreMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *types.LiquidityProvisionSubmission, lpid, deterministicID string) error
 	StartOpeningAuction(ctx context.Context, marketID string) error
+	UpdateMarket(ctx context.Context, marketConfig *types.Market) error
 }
 
 // StakingAccounts ...
@@ -987,11 +988,10 @@ func (e *Engine) updatedAssetFromProposal(p *proposal) (*types.Asset, types.Prop
 	newAsset := &types.Asset{
 		ID: a.AssetID,
 		Details: &types.AssetDetails{
-			Name:        a.Changes.Name,
-			Symbol:      a.Changes.Symbol,
-			TotalSupply: a.Changes.TotalSupply,
-			Decimals:    a.Changes.Decimals,
-			Quantum:     a.Changes.Quantum,
+			Name:     a.Changes.Name,
+			Symbol:   a.Changes.Symbol,
+			Quantum:  a.Changes.Quantum,
+			Decimals: existingAsset.DecimalPlaces(),
 		},
 	}
 

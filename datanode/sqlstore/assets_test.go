@@ -31,7 +31,6 @@ func addTestAsset(t *testing.T, as *sqlstore.Assets, block entities.Block, idPre
 	t.Helper()
 	// Make an asset
 	testAssetCount += 1
-	totalSupply, _ := decimal.NewFromString("1000000000000000000001")
 	quantum, _ := decimal.NewFromString("10")
 	assetID := generateID()
 
@@ -43,7 +42,6 @@ func addTestAsset(t *testing.T, as *sqlstore.Assets, block entities.Block, idPre
 		ID:                entities.AssetID(assetID),
 		Name:              fmt.Sprint("my test asset", testAssetCount),
 		Symbol:            fmt.Sprint("TEST", testAssetCount),
-		TotalSupply:       totalSupply,
 		Decimals:          5,
 		Quantum:           quantum,
 		ERC20Contract:     "0xdeadbeef",
@@ -81,7 +79,6 @@ func TestAsset(t *testing.T) {
 	assert.Equal(t, asset.ID, fetchedAsset.ID)
 	assert.Equal(t, asset.Name, fetchedAsset.Name)
 	assert.Equal(t, asset.Symbol, fetchedAsset.Symbol)
-	assert.Equal(t, asset.TotalSupply, fetchedAsset.TotalSupply)
 	assert.Equal(t, asset.Decimals, fetchedAsset.Decimals)
 	assert.Equal(t, asset.Quantum, fetchedAsset.Quantum)
 	assert.Equal(t, asset.ERC20Contract, fetchedAsset.ERC20Contract)

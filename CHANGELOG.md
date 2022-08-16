@@ -58,6 +58,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5862](https://github.com/vegaprotocol/vega/issues/5862) - Add base `URL` in `swagger`
 - [5817](https://github.com/vegaprotocol/vega/issues/5817) - Add validation error on asset proposal when rejected
 - [5816](https://github.com/vegaprotocol/vega/issues/5816) - Set proper status to rejected asset proposal
+- [5893](https://github.com/vegaprotocol/vega/issues/5893) - Remove total supply from assets
 
 ### 🐛 Fixes
 - [5571](https://github.com/vegaprotocol/vega/issues/5571) - Restore pending assets status correctly after snapshot restore
@@ -81,6 +82,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5663](https://github.com/vegaprotocol/vega/issues/5663) - Fixed panic with de-registering positions
 - [5781](https://github.com/vegaprotocol/vega/issues/5781) - Make enactment timestamp optional in proposal for `graphql`
 - [5767](https://github.com/vegaprotocol/vega/issues/5767) - Fix typo in command validation
+- [5900](https://github.com/vegaprotocol/vega/issues/5900) - Add missing `/api/v2/parties/{party_id}/stake` `REST` end point
 - [5825](https://github.com/vegaprotocol/vega/issues/5825) - Fix panic in pegged orders when going into auction
 - [5763](https://github.com/vegaprotocol/vega/issues/5763) - Transfers connection rename `pubkey` to `partyId`
 - [5486](https://github.com/vegaprotocol/vega/issues/5486) - Fix amend order expiring
@@ -92,6 +94,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5811](https://github.com/vegaprotocol/vega/issues/5811) - Do not overwrite local changes when updating wallet through JSON-RPC API
 - [5868](https://github.com/vegaprotocol/vega/issues/5868) - Clarify the error for insufficient token to submit proposal or vote
 - [5867](https://github.com/vegaprotocol/vega/issues/5867) - Fix witness check for majority
+- [5853](https://github.com/vegaprotocol/vega/issues/5853) - Do not ignore market update proposals when loading from checkpoint
 - [5648](https://github.com/vegaprotocol/vega/issues/5648) - Ethereum key rotation - search validators by Vega pub key and listen to rotation events in core API
 
 ## 0.53.0

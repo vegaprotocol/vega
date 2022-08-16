@@ -62,9 +62,5 @@ func (s *StakingLoop) GetAvailableBalanceInRange(party string, from, to time.Tim
 }
 
 func (s *StakingLoop) GetStakingAssetTotalSupply() *num.Uint {
-	asset, err := s.assets.Get(s.stakingAsset)
-	if err != nil {
-		return nil
-	}
-	return asset.Type().GetAssetTotalSupply()
+	return num.NewUint(1)
 }

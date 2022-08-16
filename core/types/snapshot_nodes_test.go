@@ -39,11 +39,10 @@ func getDummyData() *types.Chunk {
 					{
 						ID: "asset",
 						Details: &types.AssetDetails{
-							Name:        "asset",
-							Symbol:      "AST",
-							TotalSupply: num.UintZero(),
-							Decimals:    0,
-							Quantum:     num.DecimalZero(),
+							Name:     "asset",
+							Symbol:   "AST",
+							Decimals: 0,
+							Quantum:  num.DecimalZero(),
 							Source: &types.AssetDetailsBuiltinAsset{
 								BuiltinAsset: &types.BuiltinAsset{
 									MaxFaucetAmountMint: num.UintZero(),
@@ -61,11 +60,10 @@ func getDummyData() *types.Chunk {
 					{
 						ID: "asset2",
 						Details: &types.AssetDetails{
-							Name:        "asset2",
-							Symbol:      "AS2",
-							TotalSupply: num.UintZero(),
-							Decimals:    0,
-							Quantum:     num.DecimalZero(),
+							Name:     "asset2",
+							Symbol:   "AS2",
+							Decimals: 0,
+							Quantum:  num.DecimalZero(),
 							Source: &types.AssetDetailsBuiltinAsset{
 								BuiltinAsset: &types.BuiltinAsset{
 									MaxFaucetAmountMint: num.UintZero(),
@@ -169,11 +167,10 @@ func getDummyData() *types.Chunk {
 					{
 						ID: "asset",
 						Details: &types.AssetDetails{
-							Name:        "asset",
-							Symbol:      "AST",
-							TotalSupply: num.UintZero(),
-							Decimals:    0,
-							Quantum:     num.DecimalZero(),
+							Name:     "asset",
+							Symbol:   "AST",
+							Decimals: 0,
+							Quantum:  num.DecimalZero(),
 							Source: &types.AssetDetailsBuiltinAsset{
 								BuiltinAsset: &types.BuiltinAsset{
 									MaxFaucetAmountMint: num.UintZero(),
@@ -265,11 +262,10 @@ func getDummyData() *types.Chunk {
 								Change: &types.ProposalTermsNewAsset{
 									NewAsset: &types.NewAsset{
 										Changes: &types.AssetDetails{
-											Name:        "foocoin2",
-											Symbol:      "FO2",
-											TotalSupply: num.NewUint(1000000),
-											Decimals:    5,
-											Quantum:     num.DecimalFromFloat(10),
+											Name:     "foocoin2",
+											Symbol:   "FO2",
+											Decimals: 5,
+											Quantum:  num.DecimalFromFloat(10),
 											Source: &types.AssetDetailsBuiltinAsset{
 												BuiltinAsset: &types.BuiltinAsset{
 													MaxFaucetAmountMint: num.NewUint(1),
@@ -321,11 +317,10 @@ func getDummyData() *types.Chunk {
 								Change: &types.ProposalTermsNewAsset{
 									NewAsset: &types.NewAsset{
 										Changes: &types.AssetDetails{
-											Name:        "foocoin",
-											Symbol:      "FOO",
-											TotalSupply: num.NewUint(1000000),
-											Decimals:    5,
-											Quantum:     num.DecimalFromFloat(10),
+											Name:     "foocoin",
+											Symbol:   "FOO",
+											Decimals: 5,
+											Quantum:  num.DecimalFromFloat(10),
 											Source: &types.AssetDetailsBuiltinAsset{
 												BuiltinAsset: &types.BuiltinAsset{
 													MaxFaucetAmountMint: num.NewUint(1),

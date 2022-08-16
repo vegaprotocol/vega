@@ -47,7 +47,7 @@ func testSubmittingProposalForMarketUpdateSucceeds(t *testing.T) {
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate(proposer, eng.tsvc.GetTimeNow(), nil, nil)
+	proposal := eng.newProposalForMarketUpdate("market-1", proposer, eng.tsvc.GetTimeNow(), nil, nil)
 	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
@@ -72,7 +72,7 @@ func testSubmittingProposalForMarketUpdateForUnknownMarketFails(t *testing.T) {
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate(proposer, eng.tsvc.GetTimeNow(), nil, nil)
+	proposal := eng.newProposalForMarketUpdate("״market-1", proposer, eng.tsvc.GetTimeNow(), nil, nil)
 	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
@@ -113,7 +113,7 @@ func testSubmittingProposalForMarketUpdateForNotEnactedMarketFails(t *testing.T)
 	assert.True(t, toSubmit.IsNewMarket())
 
 	// given
-	updateMarketProposal := eng.newProposalForMarketUpdate(proposer, eng.tsvc.GetTimeNow(), nil, nil)
+	updateMarketProposal := eng.newProposalForMarketUpdate("״market-1", proposer, eng.tsvc.GetTimeNow(), nil, nil)
 	updateMarketProposal.MarketUpdate().MarketID = marketID
 
 	// setup
@@ -137,7 +137,7 @@ func testSubmittingProposalForMarketUpdateWithInsufficientEquityLikeShareFails(t
 
 	// given
 	party := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate(party, eng.tsvc.GetTimeNow(), nil, nil)
+	proposal := eng.newProposalForMarketUpdate("״market-1", party, eng.tsvc.GetTimeNow(), nil, nil)
 	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
@@ -164,7 +164,7 @@ func testPreEnactmentOfMarketUpdateSucceeds(t *testing.T) {
 	// Submit proposal.
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate(proposer, eng.tsvc.GetTimeNow(), nil, nil)
+	proposal := eng.newProposalForMarketUpdate("״market-1", proposer, eng.tsvc.GetTimeNow(), nil, nil)
 	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
@@ -279,7 +279,7 @@ func testRejectingProposalForMarketUpdateSucceeds(t *testing.T) {
 
 	// given
 	party := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate(party, eng.tsvc.GetTimeNow(), nil, nil)
+	proposal := eng.newProposalForMarketUpdate("market-1", party, eng.tsvc.GetTimeNow(), nil, nil)
 	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
@@ -323,7 +323,7 @@ func testVotingWithoutMinimumTokenHoldersAndEquityLikeShareMakesMarketUpdateProp
 	// Submit proposal.
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate(proposer, eng.tsvc.GetTimeNow(), nil, nil)
+	proposal := eng.newProposalForMarketUpdate("״market-1", proposer, eng.tsvc.GetTimeNow(), nil, nil)
 	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
@@ -404,7 +404,7 @@ func testVotingWithMajorityOfYesFromTokenHoldersMakesMarketUpdateProposalPassed(
 	// Submit proposal.
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate(proposer, eng.tsvc.GetTimeNow(), nil, nil)
+	proposal := eng.newProposalForMarketUpdate("״market-1", proposer, eng.tsvc.GetTimeNow(), nil, nil)
 	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
@@ -517,7 +517,7 @@ func testVotingWithMajorityOfNoFromTokenHoldersMakesMarketUpdateProposalDeclined
 	// Submit proposal.
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate(proposer, eng.tsvc.GetTimeNow(), nil, nil)
+	proposal := eng.newProposalForMarketUpdate("market-1", proposer, eng.tsvc.GetTimeNow(), nil, nil)
 	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
@@ -630,7 +630,7 @@ func testVotingWithoutTokenAndMajorityOfYesFromEquityLikeShareHoldersMakesMarket
 	// Submit proposal.
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate(proposer, eng.tsvc.GetTimeNow(), nil, nil)
+	proposal := eng.newProposalForMarketUpdate("market-1", proposer, eng.tsvc.GetTimeNow(), nil, nil)
 	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
@@ -729,7 +729,7 @@ func testVotingWithoutTokenAndMajorityOfNoFromEquityLikeShareHoldersMakesMarketU
 	// Submit proposal.
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate(proposer, eng.tsvc.GetTimeNow(), nil, nil)
+	proposal := eng.newProposalForMarketUpdate("market-1", proposer, eng.tsvc.GetTimeNow(), nil, nil)
 	marketID := proposal.MarketUpdate().MarketID
 
 	// setup

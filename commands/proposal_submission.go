@@ -190,15 +190,6 @@ func checkNewAssetChanges(change *types.ProposalTerms_NewAsset) Errors {
 	if change.NewAsset.Changes.Decimals == 0 {
 		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.decimals", ErrIsRequired)
 	}
-	if len(change.NewAsset.Changes.TotalSupply) == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.total_supply", ErrIsRequired)
-	} else {
-		if totalSupply, ok := big.NewInt(0).SetString(change.NewAsset.Changes.TotalSupply, 10); !ok {
-			errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.total_supply", ErrIsNotValidNumber)
-		} else if totalSupply.Cmp(big.NewInt(0)) <= 0 {
-			errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.total_supply", ErrMustBePositive)
-		}
-	}
 
 	if change.NewAsset.Changes.Source == nil {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_asset.changes.source", ErrIsRequired)
@@ -307,15 +298,6 @@ func checkUpdateAssetChanges(change *types.ProposalTerms_UpdateAsset) Errors {
 	}
 	if len(change.UpdateAsset.Changes.Symbol) == 0 {
 		errs.AddForProperty("proposal_submission.terms.change.update_asset.changes.symbol", ErrIsRequired)
-	}
-	if len(change.UpdateAsset.Changes.TotalSupply) == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.update_asset.changes.total_supply", ErrIsRequired)
-	} else {
-		if totalSupply, ok := big.NewInt(0).SetString(change.UpdateAsset.Changes.TotalSupply, 10); !ok {
-			errs.AddForProperty("proposal_submission.terms.change.update_asset.changes.total_supply", ErrIsNotValidNumber)
-		} else if totalSupply.Cmp(big.NewInt(0)) <= 0 {
-			errs.AddForProperty("proposal_submission.terms.change.update_asset.changes.total_supply", ErrMustBePositive)
-		}
 	}
 
 	if change.UpdateAsset.Changes.Source == nil {
