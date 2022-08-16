@@ -14,30 +14,26 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"os"
 
-	"code.vegaprotocol.io/vega/version"
+	cmd "code.vegaprotocol.io/vega/cmd/data-node/commands"
 	"github.com/jessevdk/go-flags"
 )
 
-type VersionCmd struct {
-	version string
-	hash    string
+type datanodeCmd struct{}
+
+func (opts *datanodeCmd) Execute(_ []string) error {
+	os.Args = os.Args[1:]
+	return cmd.Execute(context.Background())
 }
 
-func (cmd *VersionCmd) Execute(_ []string) error {
-	fmt.Printf("Vega CLI %s (%s)\n", cmd.version, cmd.hash)
-	return nil
-}
+func Datanode(ctx context.Context, parser *flags.Parser) error {
+	_, err := parser.AddCommand(
+		"datanode",
+		"The vega data node",
+		"The vega data node",
+		&datanodeCmd{},
+	)
 
-var versionCmd VersionCmd
-
-func Version(ctx context.Context, parser *flags.Parser) error {
-	versionCmd = VersionCmd{
-		version: version.Get(),
-		hash:    version.GetCommitHash(),
-	}
-
-	_, err := parser.AddCommand("version", "Show version info", "Show version info", &versionCmd)
 	return err
 }

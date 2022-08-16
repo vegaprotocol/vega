@@ -10,7 +10,7 @@
 // of this software will be governed by version 3 or later of the GNU General
 // Public License.
 
-package main
+package commands
 
 import (
 	"context"
@@ -36,7 +36,7 @@ func (suite *CommandSuite) RunMain(ctx context.Context, format string, args ...i
 	cmd := fmt.Sprintf(format, args...)
 	fmt.Fprintf(old, "-> %s\n", cmd)
 	os.Args = append([]string{"vega"}, strings.Fields(cmd)...)
-	err := Main(ctx)
+	err := Execute(ctx)
 
 	w.Close()
 	out, _ := ioutil.ReadAll(r)

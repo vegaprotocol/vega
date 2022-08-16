@@ -10,12 +10,12 @@
 // of this software will be governed by version 3 or later of the GNU General
 // Public License.
 
-package main
+package commands
 
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/cmd/data-node/start"
+	"code.vegaprotocol.io/vega/cmd/data-node/commands/start"
 	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
