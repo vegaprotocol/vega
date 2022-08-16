@@ -23,12 +23,10 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/core/idgeneration"
-	vegacontext "code.vegaprotocol.io/vega/libs/context"
-
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/fee"
+	"code.vegaprotocol.io/vega/core/idgeneration"
 	"code.vegaprotocol.io/vega/core/liquidity"
 	liquiditytarget "code.vegaprotocol.io/vega/core/liquidity/target"
 	"code.vegaprotocol.io/vega/core/markets"
@@ -43,11 +41,11 @@ import (
 	"code.vegaprotocol.io/vega/core/settlement"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/types/statevar"
+	vegacontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
-	"code.vegaprotocol.io/vega/logging"
-
 	"code.vegaprotocol.io/vega/libs/proto"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 // InitialOrderVersion is set on `Version` field for every new order submission read from the network.

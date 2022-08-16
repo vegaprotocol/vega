@@ -27,7 +27,6 @@ type RiskFactorEvent interface {
 	RiskFactor() vega.RiskFactor
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/risk_factor_mock.go -package mocks code.vegaprotocol.io/vega/datanode/sqlsubscribers RiskFactorStore
 type RiskFactorStore interface {
 	Upsert(context.Context, *entities.RiskFactor) error
 }

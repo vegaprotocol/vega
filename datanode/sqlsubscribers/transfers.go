@@ -27,12 +27,10 @@ type TransferEvent interface {
 	TransferFunds() eventspb.Transfer
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/transfer_store_mock.go -package mocks code.vegaprotocol.io/vega/datanode/sqlsubscribers TransferStore
 type TransferStore interface {
 	Upsert(ctx context.Context, transfer *entities.Transfer) error
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/transfer_store_mock.go -package mocks code.vegaprotocol.io/vega/datanode/sqlsubscribers AccountSource
 type AccountSource interface {
 	Obtain(ctx context.Context, a *entities.Account) error
 	GetByID(id int64) (entities.Account, error)

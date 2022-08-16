@@ -23,7 +23,6 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_data_mock.go -package mocks code.vegaprotocol.io/vega/datanode/service MarketDataStore
 type MarketDataStore interface {
 	Add(data *entities.MarketData) error
 	Flush(ctx context.Context) ([]*entities.MarketData, error)
