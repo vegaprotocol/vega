@@ -27,7 +27,7 @@ import (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/datanode/broker Subscriber,BrokerI,ChainInfoI
 
 // Subscriber interface allows pushing values to subscribers, can be set to
-// a Skip state (temporarily not receiving any events), or closed. Otherwise events are pushed
+// a Skip state (temporarily not receiving any events), or closed. Otherwise events are pushed.
 type Subscriber interface {
 	Push(val ...events.Event)
 	Skip() <-chan struct{}
@@ -41,7 +41,7 @@ type Subscriber interface {
 
 // BrokerI interface (horribly named) is declared here to provide a drop-in replacement for broker mocks used throughout
 // in addition to providing the classical mockgen functionality, this mock can be used to check the actual events that will be generated
-// so we don't have to rely on test-only helper functions
+// so we don't have to rely on test-only helper functions.
 type BrokerI interface {
 	Send(event events.Event)
 	Subscribe(s Subscriber) int

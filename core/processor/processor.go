@@ -149,7 +149,7 @@ type Broker interface {
 	SetStreaming(on bool) bool
 }
 
-// Notary
+// Notary.
 type Notary interface {
 	StartAggregate(resID string, kind commandspb.NodeSignatureKind, signature []byte)
 	RegisterSignature(ctx context.Context, pubKey string, ns commandspb.NodeSignature) error

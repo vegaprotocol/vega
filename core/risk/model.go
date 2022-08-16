@@ -28,7 +28,7 @@ var (
 	ErrUnimplementedRiskModel = errors.New("unimplemented risk model")
 )
 
-// Model represents a risk model interface
+// Model represents a risk model interface.
 type Model interface {
 	CalculateRiskFactors() *types.RiskFactor
 	DefaultRiskFactors() *types.RiskFactor

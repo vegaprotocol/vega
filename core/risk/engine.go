@@ -34,13 +34,13 @@ var (
 
 const RiskFactorStateVarName = "risk-factors"
 
-// Orderbook represent an abstraction over the orderbook
+// Orderbook represent an abstraction over the orderbook.
 type Orderbook interface {
 	GetCloseoutPrice(volume uint64, side types.Side) (*num.Uint, error)
 	GetIndicativePrice() *num.Uint
 }
 
-// AuctionState represents the current auction state of the market, previously we got this information from the matching engine, but really... that's not its job
+// AuctionState represents the current auction state of the market, previously we got this information from the matching engine, but really... that's not its job.
 type AuctionState interface {
 	InAuction() bool
 	CanLeave() bool

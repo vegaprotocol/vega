@@ -67,7 +67,7 @@ type Notary interface {
 	OfferSignatures(kind types.NodeSignatureKind, f func(resources string) []byte)
 }
 
-// Collateral engine
+// Collateral engine.
 type Collateral interface {
 	Deposit(ctx context.Context, party, asset string, amount *num.Uint) (*types.TransferResponse, error)
 	Withdraw(ctx context.Context, party, asset string, amount *num.Uint) (*types.TransferResponse, error)
@@ -83,13 +83,13 @@ type Collateral interface {
 	PropagateAssetUpdate(ctx context.Context, asset types.Asset) error
 }
 
-// Witness provide foreign chain resources validations
+// Witness provide foreign chain resources validations.
 type Witness interface {
 	StartCheck(validators.Resource, func(interface{}, bool), time.Time) error
 	RestoreResource(validators.Resource, func(interface{}, bool)) error
 }
 
-// TimeService provide the time of the vega node using the tm time
+// TimeService provide the time of the vega node using the tm time.
 type TimeService interface {
 	GetTimeNow() time.Time
 }
