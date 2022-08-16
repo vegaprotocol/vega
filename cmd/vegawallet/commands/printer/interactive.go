@@ -67,6 +67,18 @@ func (s *FormattedString) CheckMark() *FormattedString {
 	return s
 }
 
+func (s *FormattedString) ListItem() *FormattedString {
+	s.str += "    "
+	return s
+}
+
+// Pad adds a padding that compensate the status characters.
+// It's useful to display information on multiple lines.
+func (s *FormattedString) Pad() *FormattedString {
+	s.str += "  "
+	return s
+}
+
 func (s *FormattedString) WarningBangMark() *FormattedString {
 	s.str += s.bangMark.Foreground(s.profile.Color("3")).String()
 	return s

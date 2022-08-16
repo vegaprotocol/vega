@@ -21,7 +21,7 @@ import (
 	"strings"
 	"testing"
 
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"github.com/stretchr/testify/require"
 )
 
@@ -81,6 +81,5 @@ func (suite *CommandSuite) PrepareSandbox(t *testing.T) (string, string, func())
 func TestSuite(t *testing.T) {
 	s := &CommandSuite{}
 
-	// t.Run("Wallet", s.TestWallet)
 	t.Run("Faucet", s.TestFaucet)
 }

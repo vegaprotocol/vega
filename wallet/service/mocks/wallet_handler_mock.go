@@ -7,8 +7,8 @@ package mocks
 import (
 	reflect "reflect"
 
-	v1 "code.vegaprotocol.io/protos/vega/commands/v1"
-	v10 "code.vegaprotocol.io/protos/vega/wallet/v1"
+	v1 "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	v10 "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
 	wallet "code.vegaprotocol.io/vega/wallet/wallet"
 	gomock "github.com/golang/mock/gomock"
 )
@@ -152,18 +152,18 @@ func (mr *MockWalletHandlerMockRecorder) SignAny(arg0, arg1, arg2 interface{}) *
 }
 
 // SignTx mocks base method.
-func (m *MockWalletHandler) SignTx(arg0 string, arg1 *v10.SubmitTransactionRequest, arg2 uint64) (*v1.Transaction, error) {
+func (m *MockWalletHandler) SignTx(arg0 string, arg1 *v10.SubmitTransactionRequest, arg2 uint64, arg3 string) (*v1.Transaction, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SignTx", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "SignTx", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(*v1.Transaction)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SignTx indicates an expected call of SignTx.
-func (mr *MockWalletHandlerMockRecorder) SignTx(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockWalletHandlerMockRecorder) SignTx(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SignTx", reflect.TypeOf((*MockWalletHandler)(nil).SignTx), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SignTx", reflect.TypeOf((*MockWalletHandler)(nil).SignTx), arg0, arg1, arg2, arg3)
 }
 
 // TaintKey mocks base method.

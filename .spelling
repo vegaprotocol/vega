@@ -20,10 +20,11 @@ checkpointing
 CI
 cleanup
 Cleanup
-cmd/vegawallet
 clef
 codegen
 cyclomatic
+dApp
+datanode
 datestamps
 datetime
 denylist
@@ -59,10 +60,13 @@ int
 init
 istake
 Jenkinsfile
+JSON-RPC
 Kanban
 lifecycle
 linters
 LICENSE.MIT
+LICENSE.VEGA
+LICENSE.DATANODE
 MacOSX
 mainnet
 MarkToMarket

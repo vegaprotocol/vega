@@ -496,10 +496,6 @@ type DescribeNetworkResponse struct {
 			Hosts []string `json:"hosts"`
 		} `json:"graphQLConfig"`
 	} `json:"api"`
-	Console struct {
-		URL       string `json:"url"`
-		LocalPort int    `json:"localPort"`
-	}
 }
 
 func NetworkDescribe(t *testing.T, args []string) (*DescribeNetworkResponse, error) {
@@ -547,12 +543,6 @@ func (d *DescribeNetworkAssertion) WithHostAndPort(host string, port int) *Descr
 
 func (d *DescribeNetworkAssertion) WithTokenExpiry(expected string) *DescribeNetworkAssertion {
 	assert.Equal(d.t, expected, d.resp.TokenExpiry)
-	return d
-}
-
-func (d *DescribeNetworkAssertion) WithConsole(url string, port int) *DescribeNetworkAssertion {
-	assert.Equal(d.t, url, d.resp.Console.URL)
-	assert.Equal(d.t, port, d.resp.Console.LocalPort)
 	return d
 }
 
@@ -735,7 +725,7 @@ func AssertCreateWallet(t *testing.T, resp *CreateWalletResponse) *CreateWalletA
 	assert.NotNil(t, resp)
 	assert.NotEmpty(t, resp.Wallet.Name)
 	assert.NotEmpty(t, resp.Wallet.RecoveryPhrase)
-	assert.NotEmpty(t, resp.Wallet.Version)
+	assert.Equal(t, uint32(2), resp.Wallet.Version)
 	assert.NotEmpty(t, resp.Wallet.FilePath)
 	assert.FileExists(t, resp.Wallet.FilePath)
 	assert.NotEmpty(t, resp.Key.PublicKey)

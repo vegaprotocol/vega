@@ -1,6 +1,7 @@
 package v1_test
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -9,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
-	vgtest "code.vegaprotocol.io/shared/libs/test"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
+	vgtest "code.vegaprotocol.io/vega/libs/test"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	storev1 "code.vegaprotocol.io/vega/wallet/wallet/store/v1"
 
@@ -52,7 +53,7 @@ func testFileStoreV1ListWalletsSucceeds(t *testing.T) {
 		w := newHDWalletWithKeys(t)
 
 		// when
-		err := s.SaveWallet(w, passphrase)
+		err := s.SaveWallet(context.Background(), w, passphrase)
 
 		// then
 		require.NoError(t, err)
@@ -62,7 +63,7 @@ func testFileStoreV1ListWalletsSucceeds(t *testing.T) {
 	sort.Strings(expectedWallets)
 
 	// when
-	returnedWallets, err := s.ListWallets()
+	returnedWallets, err := s.ListWallets(context.Background())
 
 	// then
 	require.NoError(t, err)
@@ -78,13 +79,13 @@ func testFileStoreV1GetWalletSucceeds(t *testing.T) {
 	passphrase := vgrand.RandomStr(5)
 
 	// when
-	err := s.SaveWallet(w, passphrase)
+	err := s.SaveWallet(context.Background(), w, passphrase)
 
 	// then
 	require.NoError(t, err)
 
 	// when
-	returnedWallet, err := s.GetWallet(w.Name(), passphrase)
+	returnedWallet, err := s.GetWallet(context.Background(), w.Name(), passphrase)
 
 	// then
 	require.NoError(t, err)
@@ -101,13 +102,13 @@ func testFileStoreV1GetWalletWithWrongPassphraseFails(t *testing.T) {
 	othPassphrase := "not-original-passphrase"
 
 	// when
-	err := s.SaveWallet(w, passphrase)
+	err := s.SaveWallet(context.Background(), w, passphrase)
 
 	// then
 	require.NoError(t, err)
 
 	// when
-	returnedWallet, err := s.GetWallet(w.Name(), othPassphrase)
+	returnedWallet, err := s.GetWallet(context.Background(), w.Name(), othPassphrase)
 
 	// then
 	assert.ErrorIs(t, err, wallet.ErrWrongPassphrase)
@@ -123,7 +124,7 @@ func testFileStoreV1GetNonExistingWalletFails(t *testing.T) {
 	passphrase := vgrand.RandomStr(5)
 
 	// when
-	returnedWallet, err := s.GetWallet(name, passphrase)
+	returnedWallet, err := s.GetWallet(context.Background(), name, passphrase)
 
 	// then
 	assert.Error(t, err)
@@ -152,9 +153,10 @@ func testFileStoreV1NonExistingWalletFails(t *testing.T) {
 	name := vgrand.RandomStr(5)
 
 	// when
-	exists := s.WalletExists(name)
+	exists, err := s.WalletExists(context.Background(), name)
 
 	// then
+	require.NoError(t, err)
 	assert.False(t, exists)
 }
 
@@ -167,15 +169,16 @@ func testFileStoreV1ExistingWalletSucceeds(t *testing.T) {
 	passphrase := vgrand.RandomStr(5)
 
 	// when
-	err := s.SaveWallet(w, passphrase)
+	err := s.SaveWallet(context.Background(), w, passphrase)
 
 	// then
 	require.NoError(t, err)
 
 	// when
-	exists := s.WalletExists(w.Name())
+	exists, err := s.WalletExists(context.Background(), w.Name())
 
 	// then
+	require.NoError(t, err)
 	assert.True(t, exists)
 }
 
@@ -188,7 +191,7 @@ func testFileStoreV1SaveHDWalletSucceeds(t *testing.T) {
 	w := newHDWalletWithKeys(t)
 
 	// when
-	err := s.SaveWallet(w, passphrase)
+	err := s.SaveWallet(context.Background(), w, passphrase)
 
 	// then
 	require.NoError(t, err)

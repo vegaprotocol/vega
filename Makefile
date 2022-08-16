@@ -17,7 +17,11 @@ test: ## Run unit tests
 
 .PHONY: integrationtest
 integrationtest: ## run integration tests, showing ledger movements and full scenario output
-	go test -v ./integration/... --godog.format=pretty
+	go test -v ./core/integration/... --godog.format=pretty
+
+.PHONY: gqlgen
+gqlgen:
+	cd datanode/gateway/graphql && go run github.com/99designs/gqlgen --config=gqlgen.yml
 
 .PHONY: race
 race: ## Run data race detector
@@ -25,7 +29,19 @@ race: ## Run data race detector
 
 .PHONY: mocks
 mocks: ## Make mocks
-	go generate ./...
+	go generate -v ./...
+
+.PHONY: mocks_check
+mocks_check: ## mocks: Check committed files match just-generated files
+# TODO: how to delete all generated files
+#	@make proto_clean 1>/dev/null
+	@make mocks 1>/dev/null
+	@files="$$(git diff --name-only)" ; \
+	if test -n "$$files" ; then \
+		echo "Committed files do not match just-generated files: " $$files ; \
+		git diff ; \
+		exit 1 ; \
+	fi
 
 .PHONY: build
 build: ## install the binaries in cmd/{progname}/
@@ -65,3 +81,33 @@ spellcheck: ## Run markdown spellcheck container
 clean: SHELL:=/bin/bash
 clean: ## Remove previous build
 	rm cmd/vega/vega
+	rm -rf ./**/*-re
+
+.PHONY: proto
+proto: ## build proto definitions
+	buf generate
+
+.PHONY: proto_json
+proto_docs: ## build proto definitions
+	rm -rf protos/generated
+	buf generate --template buf.gen.swagger.yaml
+
+.PHONY: proto_check
+proto_check: ## proto: Check committed files match just-generated files
+	@make proto_clean 1>/dev/null
+	@make proto 1>/dev/null
+	@files="$$(git diff --name-only protos/vega/ protos/data-node/)" ; \
+	if test -n "$$files" ; then \
+		echo "Committed files do not match just-generated files: " $$files ; \
+		git diff ; \
+		exit 1 ; \
+	fi
+
+.PHONY: proto_clean
+proto_clean:
+	@find protos/vega protos/data-node -name '*.pb.go' -o -name '*.pb.gw.go' \
+		| xargs -r rm
+
+.PHONY: buflint
+buflint: ## Run buf lint
+	@buf lint

@@ -16,14 +16,23 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"time"
 
-	vgjson "code.vegaprotocol.io/shared/libs/json"
-	"code.vegaprotocol.io/shared/paths"
-	"code.vegaprotocol.io/vega/config"
-	"code.vegaprotocol.io/vega/config/encoding"
+	"code.vegaprotocol.io/vega/core/config"
+	"code.vegaprotocol.io/vega/core/config/encoding"
+	"code.vegaprotocol.io/vega/core/nodewallets/registry"
+	vgjson "code.vegaprotocol.io/vega/libs/json"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/nodewallets/registry"
+	"code.vegaprotocol.io/vega/paths"
+
 	"github.com/jessevdk/go-flags"
+	tmcfg "github.com/tendermint/tendermint/config"
+	tmos "github.com/tendermint/tendermint/libs/os"
+	tmrand "github.com/tendermint/tendermint/libs/rand"
+	"github.com/tendermint/tendermint/p2p"
+	"github.com/tendermint/tendermint/privval"
+	"github.com/tendermint/tendermint/types"
 )
 
 type InitCmd struct {
@@ -32,6 +41,10 @@ type InitCmd struct {
 	config.Passphrase `long:"nodewallet-passphrase-file"`
 
 	Force bool `short:"f" long:"force" description:"Erase exiting vega configuration at the specified path"`
+
+	NoTendermint   bool   `long:"no-tendermint" description:"Disable tendermint configuration generation"`
+	TendermintHome string `long:"tendermint-home" required:"true" description:"Directory for tendermint config and data" default:"$HOME/.tendermint"`
+	TendermintKey  string `long:"tendermint-key" description:"Key type to generate privval file with" choice:"ed25519" choice:"secp256k1" default:"ed25519"`
 }
 
 var initCmd InitCmd
@@ -41,7 +54,7 @@ func (opts *InitCmd) Execute(args []string) error {
 	defer logger.AtExit()
 
 	if len(args) != 1 {
-		return errors.New("require exactly 1 parameter mode, expected modes [validator, full]")
+		return errors.New("require exactly 1 parameter mode, expected modes [validator, full, seed]")
 	}
 
 	mode, err := encoding.NodeModeFromString(args[0])
@@ -99,8 +112,20 @@ func (opts *InitCmd) Execute(args []string) error {
 	}
 
 	if output.IsHuman() {
-		logger.Info("configuration generated successfully", logging.String("path", cfgLoader.ConfigFilePath()))
-	} else if output.IsJSON() {
+		logger.Info("configuration generated successfully",
+			logging.String("path", cfgLoader.ConfigFilePath()))
+	}
+
+	if !initCmd.NoTendermint {
+		tmCfg := tmcfg.DefaultConfig()
+		tmCfg.SetRoot(os.ExpandEnv(initCmd.TendermintHome))
+		tmcfg.EnsureRoot(tmCfg.RootDir)
+		if err := initTendermintConfiguration(logger, tmCfg, initCmd.TendermintKey); err != nil {
+			return fmt.Errorf("couldn't initialise tendermint %w", err)
+		}
+	}
+
+	if output.IsJSON() {
 		if mode == encoding.NodeModeValidator {
 			return vgjson.Print(struct {
 				ConfigFilePath           string `json:"configFilePath"`
@@ -115,6 +140,69 @@ func (opts *InitCmd) Execute(args []string) error {
 		}{
 			ConfigFilePath: cfgLoader.ConfigFilePath(),
 		})
+	}
+
+	return nil
+}
+
+func initTendermintConfiguration(
+	logger *logging.Logger,
+	config *tmcfg.Config,
+	keyType string,
+) error {
+	// private validator
+	privValKeyFile := config.PrivValidatorKeyFile()
+	privValStateFile := config.PrivValidatorStateFile()
+	var pv *privval.FilePV
+	if tmos.FileExists(privValKeyFile) {
+		pv = privval.LoadFilePV(privValKeyFile, privValStateFile)
+		logger.Info("Found private validator",
+			logging.String("keyFile", privValKeyFile),
+			logging.String("stateFile", privValStateFile),
+		)
+	} else {
+		pv = privval.GenFilePV(privValKeyFile, privValStateFile)
+		pv.Save()
+		logger.Info("Generated private validator",
+			logging.String("keyFile", privValKeyFile),
+			logging.String("stateFile", privValStateFile),
+		)
+	}
+
+	nodeKeyFile := config.NodeKeyFile()
+	if tmos.FileExists(nodeKeyFile) {
+		logger.Info("Found node key", logging.String("path", nodeKeyFile))
+	} else {
+		if _, err := p2p.LoadOrGenNodeKey(nodeKeyFile); err != nil {
+			return err
+		}
+		logger.Info("Generated node key", logging.String("path", nodeKeyFile))
+	}
+
+	// genesis file
+	genFile := config.GenesisFile()
+	if tmos.FileExists(genFile) {
+		logger.Info("Found genesis file", logging.String("path", genFile))
+	} else {
+		genDoc := types.GenesisDoc{
+			ChainID:         fmt.Sprintf("test-chain-%v", tmrand.Str(6)),
+			GenesisTime:     time.Now().Round(0).UTC(),
+			ConsensusParams: types.DefaultConsensusParams(),
+		}
+		pubKey, err := pv.GetPubKey()
+		if err != nil {
+			return fmt.Errorf("can't get pubkey: %w", err)
+		}
+		genDoc.Validators = []types.GenesisValidator{{
+			Address: pubKey.Address(),
+			PubKey:  pubKey,
+			Power:   10,
+		}}
+
+		if err := genDoc.SaveAs(genFile); err != nil {
+			return err
+		}
+		logger.Info("Generated genesis file", logging.String("path", genFile))
 	}
 
 	return nil

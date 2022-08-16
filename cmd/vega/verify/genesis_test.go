@@ -18,10 +18,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/cmd/vega/verify"
-	"code.vegaprotocol.io/vega/genesis"
-	"code.vegaprotocol.io/vega/validators"
+	"code.vegaprotocol.io/vega/core/assets"
+	"code.vegaprotocol.io/vega/core/genesis"
+	"code.vegaprotocol.io/vega/core/validators"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -48,8 +48,7 @@ func testVerifyBuiltinAssets(t *testing.T) {
 	// LP stake not a bignum
 	gs := genesis.DefaultGenesisState()
 	gs.Assets["FAILURE"] = assets.AssetDetails{
-		TotalSupply: "100",
-		Quantum:     "FAILURE",
+		Quantum: "FAILURE",
 		Source: &assets.Source{
 			BuiltinAsset: &assets.BuiltinAsset{
 				MaxFaucetAmountMint: "100",
@@ -62,8 +61,7 @@ func testVerifyBuiltinAssets(t *testing.T) {
 	// Max faucet amount not a bignum
 	gs = genesis.DefaultGenesisState()
 	gs.Assets["FAILURE"] = assets.AssetDetails{
-		TotalSupply: "100",
-		Quantum:     "100",
+		Quantum: "100",
 		Source: &assets.Source{
 			BuiltinAsset: &assets.BuiltinAsset{
 				MaxFaucetAmountMint: "FAILURE",
@@ -76,8 +74,7 @@ func testVerifyBuiltinAssets(t *testing.T) {
 	// Completely Valid
 	gs = genesis.DefaultGenesisState()
 	gs.Assets["FAILURE"] = assets.AssetDetails{
-		TotalSupply: "100",
-		Quantum:     "100",
+		Quantum: "100",
 		Source: &assets.Source{
 			BuiltinAsset: &assets.BuiltinAsset{
 				MaxFaucetAmountMint: "100",
@@ -94,8 +91,7 @@ func testVerifyERC20Assets(t *testing.T) {
 	// Invalid ID
 	gs := genesis.DefaultGenesisState()
 	gs.Assets["tooshort"] = assets.AssetDetails{
-		TotalSupply: "100",
-		Quantum:     "100",
+		Quantum: "100",
 		Source: &assets.Source{
 			Erc20: &assets.Erc20{
 				ContractAddress: "0xBC944ba38753A6fCAdd634Be98379330dbaB3Eb8",
@@ -107,8 +103,7 @@ func testVerifyERC20Assets(t *testing.T) {
 	// Invalid contract address
 	gs = genesis.DefaultGenesisState()
 	gs.Assets["b4f2726571fbe8e33b442dc92ed2d7f0d810e21835b7371a7915a365f07ccd9b"] = assets.AssetDetails{
-		TotalSupply: "100",
-		Quantum:     "100",
+		Quantum: "100",
 		Source: &assets.Source{
 			Erc20: &assets.Erc20{
 				ContractAddress: "invalid",
@@ -120,8 +115,7 @@ func testVerifyERC20Assets(t *testing.T) {
 	// Completely valid
 	gs = genesis.DefaultGenesisState()
 	gs.Assets["b4f2726571fbe8e33b442dc92ed2d7f0d810e21835b7371a7915a365f07ccd9b"] = assets.AssetDetails{
-		TotalSupply: "100",
-		Quantum:     "100",
+		Quantum: "100",
 		Source: &assets.Source{
 			Erc20: &assets.Erc20{
 				ContractAddress: "0xF0a9b5d3a00b53362F9b73892124743BAaE526c4",
@@ -156,7 +150,7 @@ func testVerifyValidators(t *testing.T) {
 
 	valid := validators.ValidatorData{
 		ID:              "eb2374c1e8e746cb5fbda66ee69eba0c2c551bea8793afe8c5a239b9763d14bf",
-		VegaPubKey:      "adf2e74b372be36f6373ea9c2c4cf496310852228c54867726dbb77528b35761",
+		VegaPubKey:      "Adf2e74b372be36f6373ea9c2c4cf496310852228c54867726dbb77528b35761",
 		VegaPubKeyIndex: 4,
 		EthereumAddress: "0xF0a9b5d3a00b53362F9b73892124743BAaE526c4",
 		TmPubKey:        "2D2TXGN2GD4GTCQV9sbrXw7RVb3td7S4pWq6v3wIpvI=",
@@ -234,6 +228,7 @@ func getFileFromAppstate(t *testing.T, gs genesis.GenesisState) string {
 	}{AppState: gs}
 	// marshall it
 	file, _ := json.MarshalIndent(genesis, "", " ")
+
 	err := os.WriteFile(testFile, file, 0o644)
 
 	// write to file

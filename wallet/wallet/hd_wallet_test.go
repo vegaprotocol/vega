@@ -5,16 +5,14 @@ import (
 	"fmt"
 	"testing"
 
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	TestRecoveryPhrase1 = "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render"
-)
+const TestRecoveryPhrase1 = "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render"
 
 func TestHDWallet(t *testing.T) {
 	t.Run("Creating wallet succeeds", testHDWalletCreateWalletSucceeds)
@@ -52,6 +50,9 @@ func TestHDWallet(t *testing.T) {
 	t.Run("Isolating wallet with tainted key pair fails", testHDWalletIsolatingWalletWithTaintedKeyPairFails)
 	t.Run("Isolating wallet with non-existing key pair fails", testHDWalletIsolatingWalletWithNonExistingKeyPairFails)
 	t.Run("Getting master key pair succeeds", testHDWalletGettingWalletMasterKeySucceeds)
+	t.Run("Updating permissions with inconsistent setup fails", testHDWalletUpdatingPermissionsWithInconsistentSetupFails)
+	t.Run("Revoking permissions succeeds", testHDWalletRevokingPermissionsSucceeds)
+	t.Run("Purging permissions succeeds", testHDWalletPurgingPermissionsSucceeds)
 }
 
 func testHDWalletCreateWalletSucceeds(t *testing.T) {
@@ -1166,11 +1167,11 @@ func testHDWalletMarshalingWalletSucceeds(t *testing.T) {
 		{
 			name:    "version 1",
 			version: 1,
-			result:  `{"version":1,"node":"PjI6zxEu4dtcTu92dYlB/2Da+rvSpg7KzvmLMQ9wv6i6n75/ftik1rPYiZ/nTfBzqVttvNnoswyldTjPCjV5kw==","id":"9df682a3c87d90567f260566a9c223ccbbb7529c38340cf163b8fe199dbf0f2e","keys":[{"index":1,"public_key":"30ebce58d94ad37c4ff6a9014c955c20e12468da956163228cc7ec9b98d3a371","private_key":"1bbd4efb460d0bf457251e866697d5d2e9b58c5dcb96a964cd9cfff1a712a2b930ebce58d94ad37c4ff6a9014c955c20e12468da956163228cc7ec9b98d3a371","meta":[],"tainted":false,"algorithm":{"name":"vega/ed25519","version":1}}]}`,
+			result:  `{"version":1,"node":"PjI6zxEu4dtcTu92dYlB/2Da+rvSpg7KzvmLMQ9wv6i6n75/ftik1rPYiZ/nTfBzqVttvNnoswyldTjPCjV5kw==","id":"9df682a3c87d90567f260566a9c223ccbbb7529c38340cf163b8fe199dbf0f2e","keys":[{"index":1,"public_key":"30ebce58d94ad37c4ff6a9014c955c20e12468da956163228cc7ec9b98d3a371","private_key":"1bbd4efb460d0bf457251e866697d5d2e9b58c5dcb96a964cd9cfff1a712a2b930ebce58d94ad37c4ff6a9014c955c20e12468da956163228cc7ec9b98d3a371","meta":[],"tainted":false,"algorithm":{"name":"vega/ed25519","version":1}}],"permissions":{}}`,
 		}, {
 			name:    "version 2",
 			version: 2,
-			result:  `{"version":2,"node":"PjI6zxEu4dtcTu92dYlB/2Da+rvSpg7KzvmLMQ9wv6i6n75/ftik1rPYiZ/nTfBzqVttvNnoswyldTjPCjV5kw==","id":"9df682a3c87d90567f260566a9c223ccbbb7529c38340cf163b8fe199dbf0f2e","keys":[{"index":1,"public_key":"b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","private_key":"0bfdfb4a04e22d7252a4f24eb9d0f35a82efdc244cb0876d919361e61f6f56a2b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","meta":[],"tainted":false,"algorithm":{"name":"vega/ed25519","version":1}}]}`,
+			result:  `{"version":2,"node":"PjI6zxEu4dtcTu92dYlB/2Da+rvSpg7KzvmLMQ9wv6i6n75/ftik1rPYiZ/nTfBzqVttvNnoswyldTjPCjV5kw==","id":"9df682a3c87d90567f260566a9c223ccbbb7529c38340cf163b8fe199dbf0f2e","keys":[{"index":1,"public_key":"b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","private_key":"0bfdfb4a04e22d7252a4f24eb9d0f35a82efdc244cb0876d919361e61f6f56a2b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","meta":[],"tainted":false,"algorithm":{"name":"vega/ed25519","version":1}}],"permissions":{}}`,
 		},
 	}
 
@@ -1212,11 +1213,11 @@ func testHDWalletMarshalingIsolatedWalletSucceeds(t *testing.T) {
 		{
 			name:      "version 1",
 			version:   1,
-			marshaled: `{"version":1,"id":"9df682a3c87d90567f260566a9c223ccbbb7529c38340cf163b8fe199dbf0f2e","keys":[{"index":1,"public_key":"30ebce58d94ad37c4ff6a9014c955c20e12468da956163228cc7ec9b98d3a371","private_key":"1bbd4efb460d0bf457251e866697d5d2e9b58c5dcb96a964cd9cfff1a712a2b930ebce58d94ad37c4ff6a9014c955c20e12468da956163228cc7ec9b98d3a371","meta":[],"tainted":false,"algorithm":{"name":"vega/ed25519","version":1}}]}`,
+			marshaled: `{"version":1,"id":"9df682a3c87d90567f260566a9c223ccbbb7529c38340cf163b8fe199dbf0f2e","keys":[{"index":1,"public_key":"30ebce58d94ad37c4ff6a9014c955c20e12468da956163228cc7ec9b98d3a371","private_key":"1bbd4efb460d0bf457251e866697d5d2e9b58c5dcb96a964cd9cfff1a712a2b930ebce58d94ad37c4ff6a9014c955c20e12468da956163228cc7ec9b98d3a371","meta":[],"tainted":false,"algorithm":{"name":"vega/ed25519","version":1}}],"permissions":{}}`,
 		}, {
 			name:      "version 2",
 			version:   2,
-			marshaled: `{"version":2,"id":"9df682a3c87d90567f260566a9c223ccbbb7529c38340cf163b8fe199dbf0f2e","keys":[{"index":1,"public_key":"b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","private_key":"0bfdfb4a04e22d7252a4f24eb9d0f35a82efdc244cb0876d919361e61f6f56a2b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","meta":[],"tainted":false,"algorithm":{"name":"vega/ed25519","version":1}}]}`,
+			marshaled: `{"version":2,"id":"9df682a3c87d90567f260566a9c223ccbbb7529c38340cf163b8fe199dbf0f2e","keys":[{"index":1,"public_key":"b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","private_key":"0bfdfb4a04e22d7252a4f24eb9d0f35a82efdc244cb0876d919361e61f6f56a2b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","meta":[],"tainted":false,"algorithm":{"name":"vega/ed25519","version":1}}],"permissions":{}}`,
 		},
 	}
 
@@ -1258,25 +1259,41 @@ func testHDWalletMarshalingIsolatedWalletSucceeds(t *testing.T) {
 
 func testHDWalletUnmarshalingWalletSucceeds(t *testing.T) {
 	tcs := []struct {
-		name       string
-		version    uint32
-		marshaled  string
-		publicKey  string
-		privateKey string
+		name                string
+		marshaled           string
+		expectedVersion     uint32
+		expectedPublicKey   string
+		expectedPrivateKey  string
+		expectedPermissions wallet.Permissions
 	}{
 		{
-			name:       "version 1",
-			version:    1,
-			marshaled:  `{"version":1,"node":"CZ13XhuFZ8K7TxNTAdKmMXh+OIVX6TFxTToXgnAqGlcO5eTY/5AVqZkWRIU3zfr8hvE7i2yIYAB6HT28ibi1fg==","keys":[{"index":1,"public_key":"30ebce58d94ad37c4ff6a9014c955c20e12468da956163228cc7ec9b98d3a371","private_key":"1bbd4efb460d0bf457251e866697d5d2e9b58c5dcb96a964cd9cfff1a712a2b930ebce58d94ad37c4ff6a9014c955c20e12468da956163228cc7ec9b98d3a371","meta":null,"tainted":false,"algorithm":{"name":"vega/ed25519","version":1}}]}`,
-			publicKey:  "30ebce58d94ad37c4ff6a9014c955c20e12468da956163228cc7ec9b98d3a371",
-			privateKey: "1bbd4efb460d0bf457251e866697d5d2e9b58c5dcb96a964cd9cfff1a712a2b930ebce58d94ad37c4ff6a9014c955c20e12468da956163228cc7ec9b98d3a371",
-		},
-		{
-			name:       "version 2",
-			version:    2,
-			marshaled:  `{"version":2,"node":"CZ13XhuFZ8K7TxNTAdKmMXh+OIVX6TFxTToXgnAqGlcO5eTY/5AVqZkWRIU3zfr8hvE7i2yIYAB6HT28ibi1fg==","keys":[{"index":1,"public_key":"b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","private_key":"0bfdfb4a04e22d7252a4f24eb9d0f35a82efdc244cb0876d919361e61f6f56a2b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","meta":null,"tainted":false,"algorithm":{"name":"vega/ed25519","version":1}}]}`,
-			publicKey:  "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
-			privateKey: "0bfdfb4a04e22d7252a4f24eb9d0f35a82efdc244cb0876d919361e61f6f56a2b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
+			name:                "version 1",
+			expectedVersion:     1,
+			marshaled:           `{"version":1,"node":"CZ13XhuFZ8K7TxNTAdKmMXh+OIVX6TFxTToXgnAqGlcO5eTY/5AVqZkWRIU3zfr8hvE7i2yIYAB6HT28ibi1fg==","keys":[{"index":1,"public_key":"30ebce58d94ad37c4ff6a9014c955c20e12468da956163228cc7ec9b98d3a371","private_key":"1bbd4efb460d0bf457251e866697d5d2e9b58c5dcb96a964cd9cfff1a712a2b930ebce58d94ad37c4ff6a9014c955c20e12468da956163228cc7ec9b98d3a371","meta":null,"tainted":false,"algorithm":{"name":"vega/ed25519","version":1}}]}`,
+			expectedPublicKey:   "30ebce58d94ad37c4ff6a9014c955c20e12468da956163228cc7ec9b98d3a371",
+			expectedPrivateKey:  "1bbd4efb460d0bf457251e866697d5d2e9b58c5dcb96a964cd9cfff1a712a2b930ebce58d94ad37c4ff6a9014c955c20e12468da956163228cc7ec9b98d3a371",
+			expectedPermissions: wallet.DefaultPermissions(),
+		}, {
+			name:                "version 2 without permissions",
+			expectedVersion:     2,
+			marshaled:           `{"version":2,"node":"CZ13XhuFZ8K7TxNTAdKmMXh+OIVX6TFxTToXgnAqGlcO5eTY/5AVqZkWRIU3zfr8hvE7i2yIYAB6HT28ibi1fg==","keys":[{"index":1,"public_key":"b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","private_key":"0bfdfb4a04e22d7252a4f24eb9d0f35a82efdc244cb0876d919361e61f6f56a2b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","meta":null,"tainted":false,"algorithm":{"name":"vega/ed25519","version":1}}]}`,
+			expectedPublicKey:   "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
+			expectedPrivateKey:  "0bfdfb4a04e22d7252a4f24eb9d0f35a82efdc244cb0876d919361e61f6f56a2b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
+			expectedPermissions: wallet.DefaultPermissions(),
+		}, {
+			name:               "version 2 with permissions",
+			expectedVersion:    2,
+			marshaled:          `{"version":2,"node":"CZ13XhuFZ8K7TxNTAdKmMXh+OIVX6TFxTToXgnAqGlcO5eTY/5AVqZkWRIU3zfr8hvE7i2yIYAB6HT28ibi1fg==","keys":[{"index":1,"public_key":"b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","private_key":"0bfdfb4a04e22d7252a4f24eb9d0f35a82efdc244cb0876d919361e61f6f56a2b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","meta":null,"tainted":false,"algorithm":{"name":"vega/ed25519","version":1}}],"permissions":{"vega.xyz":{"publicKeys":{"access":"read","restrictedKeys":["b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0"]},"transactions":{"access":"write"}}}}`,
+			expectedPublicKey:  "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
+			expectedPrivateKey: "0bfdfb4a04e22d7252a4f24eb9d0f35a82efdc244cb0876d919361e61f6f56a2b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
+			expectedPermissions: wallet.Permissions{
+				PublicKeys: wallet.PublicKeysPermission{
+					Access: "read",
+					RestrictedKeys: []string{
+						"b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
+					},
+				},
+			},
 		},
 	}
 
@@ -1289,17 +1306,18 @@ func testHDWalletUnmarshalingWalletSucceeds(t *testing.T) {
 			err := json.Unmarshal([]byte(tc.marshaled), &w)
 
 			// then
-			assert.NoError(tt, err)
-			assert.Equal(tt, tc.version, w.Version())
+			require.NoError(tt, err)
+			assert.Equal(tt, tc.expectedVersion, w.Version())
 			keyPairs := w.ListKeyPairs()
 			assert.Len(tt, keyPairs, 1)
-			assert.Equal(tt, tc.publicKey, keyPairs[0].PublicKey())
-			assert.Equal(tt, tc.privateKey, keyPairs[0].PrivateKey())
+			assert.Equal(tt, tc.expectedPublicKey, keyPairs[0].PublicKey())
+			assert.Equal(tt, tc.expectedPrivateKey, keyPairs[0].PrivateKey())
 			assert.Equal(tt, uint32(1), keyPairs[0].AlgorithmVersion())
 			assert.Equal(tt, "vega/ed25519", keyPairs[0].AlgorithmName())
 			assert.False(tt, keyPairs[0].IsTainted())
 			assert.Nil(tt, keyPairs[0].Meta())
 			assert.NotEmpty(tt, w.ID())
+			assert.Equal(tt, tc.expectedPermissions, w.Permissions("vega.xyz"))
 		})
 	}
 }
@@ -1545,4 +1563,171 @@ func testHDWalletGettingWalletMasterKeySucceeds(t *testing.T) {
 			assert.Equal(tt, "HD wallet", w.Type())
 		})
 	}
+}
+
+func testHDWalletUpdatingPermissionsWithInconsistentSetupFails(t *testing.T) {
+	// when
+	w, err := wallet.ImportHDWallet(vgrand.RandomStr(5), TestRecoveryPhrase1, 2)
+
+	// then
+	require.NoError(t, err)
+	require.NotNil(t, w)
+
+	// when
+	_, err = w.GenerateKeyPair(nil)
+
+	// then
+	require.NoError(t, err)
+
+	// given
+	randomKey := vgrand.RandomStr(5)
+
+	tcs := []struct {
+		name          string
+		permissions   wallet.Permissions
+		expectedError error
+	}{
+		{
+			name: "with non-existing keys on the wallet",
+			permissions: wallet.Permissions{
+				PublicKeys: wallet.PublicKeysPermission{
+					Access:         wallet.ReadAccess,
+					RestrictedKeys: []string{randomKey},
+				},
+			},
+			expectedError: fmt.Errorf("restricted key %s does not exist on wallet", randomKey),
+		}, {
+			name: "with restricted keys and no access",
+			permissions: wallet.Permissions{
+				PublicKeys: wallet.PublicKeysPermission{
+					Access:         wallet.NoAccess,
+					RestrictedKeys: []string{w.ListKeyPairs()[0].PublicKey()},
+				},
+			},
+			expectedError: wallet.ErrCannotSetRestrictedKeysWithNoAccess,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(tt *testing.T) {
+			// when
+			err = w.UpdatePermissions("vega.xyz", tc.permissions)
+
+			// then
+			require.Equal(tt, err, fmt.Errorf("inconsistent permissions setup: %w", tc.expectedError))
+		})
+	}
+}
+
+func testHDWalletRevokingPermissionsSucceeds(t *testing.T) {
+	// given
+	name := vgrand.RandomStr(5)
+
+	// when
+	w, err := wallet.ImportHDWallet(name, TestRecoveryPhrase1, 2)
+
+	// then
+	require.NoError(t, err)
+	require.NotNil(t, w)
+
+	// when
+	_, err = w.GenerateKeyPair(nil)
+
+	// then
+	require.NoError(t, err)
+
+	// when
+	err = w.UpdatePermissions("vega.xyz", wallet.Permissions{
+		PublicKeys: wallet.PublicKeysPermission{
+			Access:         wallet.ReadAccess,
+			RestrictedKeys: []string{w.ListKeyPairs()[0].PublicKey()},
+		},
+	})
+
+	// then
+	require.NoError(t, err)
+
+	// given
+	tokenPermissions := wallet.Permissions{
+		PublicKeys: wallet.PublicKeysPermission{
+			Access:         wallet.ReadAccess,
+			RestrictedKeys: []string{w.ListKeyPairs()[0].PublicKey()},
+		},
+	}
+
+	// when
+	err = w.UpdatePermissions("token.vega.xyz", tokenPermissions)
+
+	// then
+	require.NoError(t, err)
+
+	// when
+	w.RevokePermissions("vega.xyz")
+
+	// when
+	revokedPerms := w.Permissions("vega.xyz")
+
+	// then
+	assert.Equal(t, wallet.DefaultPermissions(), revokedPerms)
+
+	// when
+	tokenPerms := w.Permissions("token.vega.xyz")
+
+	// then
+	assert.Equal(t, tokenPermissions, tokenPerms)
+}
+
+func testHDWalletPurgingPermissionsSucceeds(t *testing.T) {
+	// given
+	name := vgrand.RandomStr(5)
+
+	// when
+	w, err := wallet.ImportHDWallet(name, TestRecoveryPhrase1, 2)
+
+	// then
+	require.NoError(t, err)
+	require.NotNil(t, w)
+
+	// when
+	_, err = w.GenerateKeyPair(nil)
+
+	// then
+	require.NoError(t, err)
+
+	// when
+	err = w.UpdatePermissions("vega.xyz", wallet.Permissions{
+		PublicKeys: wallet.PublicKeysPermission{
+			Access:         wallet.ReadAccess,
+			RestrictedKeys: []string{w.ListKeyPairs()[0].PublicKey()},
+		},
+	})
+
+	// then
+	require.NoError(t, err)
+
+	// when
+	err = w.UpdatePermissions("token.vega.xyz", wallet.Permissions{
+		PublicKeys: wallet.PublicKeysPermission{
+			Access:         wallet.ReadAccess,
+			RestrictedKeys: []string{w.ListKeyPairs()[0].PublicKey()},
+		},
+	})
+
+	// then
+	require.NoError(t, err)
+
+	// when
+	w.PurgePermissions()
+
+	// when
+	perms := w.Permissions("vega.xyz")
+
+	// then
+	assert.Equal(t, wallet.DefaultPermissions(), perms)
+
+	// when
+	perms = w.Permissions("token.vega.xyz")
+
+	// then
+	assert.Equal(t, wallet.DefaultPermissions(), perms)
 }

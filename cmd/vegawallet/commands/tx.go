@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	"code.vegaprotocol.io/shared/paths"
+	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/wallet/network"
 	netstore "code.vegaprotocol.io/vega/wallet/network/store/v1"
 	"github.com/spf13/cobra"

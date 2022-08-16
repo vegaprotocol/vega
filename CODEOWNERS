@@ -1,3 +1,4 @@
 *.md @edd @jeremyletang
 * @vegaprotocol/core
-integration/features/verified/ @vegaprotocol/research
+core/integration/features/verified/ @vegaprotocol/research
+datanode/gateway/graphql/schema.graphql @vegaprotocol/frontend

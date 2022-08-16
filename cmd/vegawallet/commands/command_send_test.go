@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"testing"
 
-	"code.vegaprotocol.io/protos/vega"
-	v1 "code.vegaprotocol.io/protos/vega/commands/v1"
-	walletpb "code.vegaprotocol.io/protos/vega/wallet/v1"
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
 	cmd "code.vegaprotocol.io/vega/cmd/vegawallet/commands"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
+	"code.vegaprotocol.io/vega/protos/vega"
+	v1 "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -45,7 +45,7 @@ func testSendCommandFlagsValidFlagsSucceeds(t *testing.T) {
 		Retries:        10,
 		LogLevel:       "debug",
 		PassphraseFile: passphraseFilePath,
-		RawCommand:     `{"voteSubmission": {"proposalId": "some-id", "value": "VALUE_YES"}}`,
+		RawCommand:     `{"voteSubmission": {"proposalId": "ec066610abbd1736b69cadcb059b9efdfdd9e3e33560fc46b2b8b62764edf33f", "value": "VALUE_YES"}}`,
 	}
 
 	expectedReq := &cmd.SendCommandRequest{
@@ -60,7 +60,7 @@ func testSendCommandFlagsValidFlagsSucceeds(t *testing.T) {
 			Propagate: true,
 			Command: &walletpb.SubmitTransactionRequest_VoteSubmission{
 				VoteSubmission: &v1.VoteSubmission{
-					ProposalId: "some-id",
+					ProposalId: "ec066610abbd1736b69cadcb059b9efdfdd9e3e33560fc46b2b8b62764edf33f",
 					Value:      vega.Vote_VALUE_YES,
 				},
 			},

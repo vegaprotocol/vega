@@ -1,0 +1,1794 @@
+syntax = "proto3";
+
+package datanode.api.v2;
+
+import "vega/vega.proto";
+import "vega/governance.proto";
+import "vega/markets.proto";
+import "vega/assets.proto";
+import "vega/oracles/v1/data.proto";
+import "vega/oracles/v1/spec.proto";
+import "vega/events/v1/events.proto";
+import "vega/commands/v1/validator_commands.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "code.vegaprotocol.io/vega/protos/data-node/api/v2";
+
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "Vega data node APIs";
+    version: "42.0";
+  }
+  schemes: [HTTP, HTTPS]
+  host: "lb.testnet.vega.xyz/datanode/rest"
+};
+
+service TradingDataService {
+    // Accounts
+    //
+    // Returns a list of accounts matching the supplied filter, including their current balances.
+    // If a given account has never had a balance, it will be absent from the list.
+    rpc ListAccounts(ListAccountsRequest) returns (ListAccountsResponse);
+
+    // Subscribe to a stream of Accounts
+    rpc ObserveAccounts(ObserveAccountsRequest) returns (stream ObserveAccountsResponse);
+
+    // Info
+    //
+    // Retrieve informations about this dataa
+    rpc Info(InfoRequest) returns (InfoResponse);
+
+    // Order
+    //
+    // Gets the current version of an order, or optionally provide a version id to retrieve a given version.
+    rpc GetOrder(GetOrderRequest) returns (GetOrderResponse);
+
+    // Orders list
+    //
+    // Get a list of orders that match the given filters
+    rpc ListOrders(ListOrdersRequest) returns (ListOrdersResponse);
+
+    // Order history
+    //
+    // List all versions of an order in the order history
+    rpc ListOrderVersions(ListOrderVersionsRequest) returns (ListOrderVersionsResponse);
+
+    // Subscribe to a stream of Orders
+    rpc ObserveOrders(ObserveOrdersRequest) returns (stream ObserveOrdersResponse);
+
+    // Positions
+    //
+    // Get a list of Positions by Party using cursor based pagination
+    rpc ListPositions(ListPositionsRequest) returns (ListPositionsResponse);
+
+    // Subscribe to a stream of Positions
+    rpc ObservePositions(ObservePositionsRequest) returns (stream ObservePositionsResponse);
+
+    // Balances
+    //
+    // Get an aggregated list of the changes in balances in a set of accounts over time
+    rpc GetBalanceHistory(GetBalanceHistoryRequest) returns (GetBalanceHistoryResponse) {}
+
+    // Market Data
+    //
+    // Get the lastest market data for a given market
+    rpc GetLatestMarketData(GetLatestMarketDataRequest) returns (GetLatestMarketDataResponse);
+
+    // Market Data list
+    //
+    // Lists the latest market data for every market
+    rpc ListLatestMarketData(ListLatestMarketDataRequest) returns (ListLatestMarketDataResponse);
+
+    // Market Detph
+    //
+    // Get the latest market depth for a given market
+    rpc GetLatestMarketDepth(GetLatestMarketDepthRequest) returns (GetLatestMarketDepthResponse);
+
+    rpc ObserveMarketsDepth(ObserveMarketsDepthRequest) returns (stream ObserveMarketsDepthResponse);
+
+    rpc ObserveMarketsDepthUpdates(ObserveMarketsDepthUpdatesRequest) returns (stream ObserveMarketsDepthUpdatesResponse);
+
+    rpc ObserveMarketsData(ObserveMarketsDataRequest) returns (stream ObserveMarketsDataResponse);
+
+    // Market data history
+    //
+    // Get Market Data History for a Market ID between given dates using a cursor based pagination model
+    rpc GetMarketDataHistoryByID(GetMarketDataHistoryByIDRequest) returns (GetMarketDataHistoryByIDResponse);
+
+    // Transfers list
+    //
+    // List Transfers to/from/either a public key using a cursor based pagination model
+    rpc ListTransfers(ListTransfersRequest) returns (ListTransfersResponse);
+
+    // Network Limits
+    //
+    // Get the current network limits (is bootstrapping finished, are proposals enabled etc..)
+    rpc GetNetworkLimits(GetNetworkLimitsRequest) returns (GetNetworkLimitsResponse);
+
+    // Candles list
+    //
+    // Get candle data for a given candle id
+    rpc ListCandleData(ListCandleDataRequest) returns (ListCandleDataResponse);
+    // Subscribe to a stream of Candle updates
+    rpc ObserveCandleData(ObserveCandleDataRequest) returns (stream ObserveCandleDataResponse);
+
+    // Candle intervals list
+    //
+    // Gets all available intervals for a given market along with the corresponding candle id
+    rpc ListCandleIntervals(ListCandleIntervalsRequest) returns (ListCandleIntervalsResponse);
+
+    // Votes list
+    //
+    // Get Votes for a Party ID using a cursor based pagination model
+    rpc ListVotes(ListVotesRequest) returns (ListVotesResponse);
+    // Subscribe to a stream of votes
+    rpc ObserveVotes(ObserveVotesRequest) returns (stream ObserveVotesResponse);
+
+    // ERC20 add signer bundle
+    //
+    // Gets the signature bundles that add a particular validator to the multisig contract
+    rpc GetERC20MultiSigSignerAddedBundles(GetERC20MultiSigSignerAddedBundlesRequest) returns (GetERC20MultiSigSignerAddedBundlesResponse);
+
+    // ERC20 remove signer bundle
+    //
+    // Gets the signature bundles that remove a particular validator to the multisig contract
+    rpc GetERC20MultiSigSignerRemovedBundles(GetERC20MultiSigSignerRemovedBundlesRequest) returns (GetERC20MultiSigSignerRemovedBundlesResponse);
+
+    // ERC20 list asset bundle
+    //
+    // Gets the signature bundles that remove a particular validator to the multisig contract
+    rpc GetERC20ListAssetBundle(GetERC20ListAssetBundleRequest) returns (GetERC20ListAssetBundleResponse);
+
+    // ERC20 set asset limit bundle
+    //
+    // Gets the signature bundles that remove a particular validator to the multisig contract
+    rpc GetERC20SetAssetLimitsBundle(GetERC20SetAssetLimitsBundleRequest) returns (GetERC20SetAssetLimitsBundleResponse);
+
+    // ERC20 withdrawal bundle
+    //
+    // Get the signature bundle to finalize a withdrawal on ethereum
+    rpc GetERC20WithdrawalApproval(GetERC20WithdrawalApprovalRequest) returns (GetERC20WithdrawalApprovalResponse);
+
+    // Trade (latest)
+    //
+    // Get latest Trade
+    rpc GetLastTrade(GetLastTradeRequest) returns (GetLastTradeResponse);
+
+    // Trades list
+    //
+    // Get a list of all trades, optionally filtered by party/market/order using a cursor based pagination model
+    rpc ListTrades(ListTradesRequest) returns (ListTradesResponse);
+
+    // Subscribe to a stream of Trades, optionally filtered by party/market
+    rpc ObserveTrades(ObserveTradesRequest) returns (stream ObserveTradesResponse);
+
+    // Oracle Spec
+    //
+    // Get an oracle spec by ID.
+    rpc GetOracleSpec(GetOracleSpecRequest) returns (GetOracleSpecResponse);
+
+    // Oracle Spec list
+    //
+    // Get the oracle specs
+    rpc ListOracleSpecs(ListOracleSpecsRequest) returns (ListOracleSpecsResponse);
+
+    // Oracle data list
+    //
+    // Get all oracle data
+    rpc ListOracleData(ListOracleDataRequest) returns (ListOracleDataResponse);
+
+    // Market
+    //
+    // Get all markets using a cursor based pagination model
+    rpc GetMarket(GetMarketRequest) returns (GetMarketResponse);
+
+    // Markets list
+    //
+    // Get markets using a cursor based pagination
+    rpc ListMarkets(ListMarketsRequest) returns (ListMarketsResponse);
+
+    // Party
+    //
+    // Get a single party
+    rpc GetParty(GetPartyRequest) returns (GetPartyResponse);
+
+    // Parties
+    //
+    // Get Parties using a cursor based pagination model
+    rpc ListParties(ListPartiesRequest) returns (ListPartiesResponse);
+
+    // Margin Levels list
+    //
+    // Get Margin Levels using a cursor based pagination model
+    rpc ListMarginLevels(ListMarginLevelsRequest) returns (ListMarginLevelsResponse);
+    // Subscribe to a stream of Margin Levels
+    rpc ObserveMarginLevels(ObserveMarginLevelsRequest) returns (stream ObserveMarginLevelsResponse);
+
+    // Rewards list
+    //
+    // Get rewards
+    rpc ListRewards(ListRewardsRequest) returns (ListRewardsResponse);
+
+    // Reward summaries list
+    //
+    // Get reward summaries
+    rpc ListRewardSummaries(ListRewardSummariesRequest) returns (ListRewardSummariesResponse);
+    // subscribe to rewards
+    rpc ObserveRewards(ObserveRewardsRequest) returns (stream ObserveRewardsResponse);
+
+    // Deposit
+    //
+    // Get a deposit by its identifier
+    rpc GetDeposit(GetDepositRequest) returns (GetDepositResponse);
+
+    // Deposits list
+    //
+    // Get a list of deposits for a given party
+    rpc ListDeposits(ListDepositsRequest) returns (ListDepositsResponse);
+
+    // Withdrawal
+    //
+    // Get a withdrawal by its identifier
+    rpc GetWithdrawal(GetWithdrawalRequest) returns (GetWithdrawalResponse);
+
+    // Withdrawals list
+    //
+    // Get a list of withdrawals for a given party
+    rpc ListWithdrawals(ListWithdrawalsRequest) returns (ListWithdrawalsResponse);
+
+    // Asset
+    //
+    // Get a single asset using it's identifier
+    rpc GetAsset(GetAssetRequest) returns (GetAssetResponse);
+
+    // Assets list
+    //
+    // Get a list of asset using cusor based pagination
+    rpc ListAssets(ListAssetsRequest) returns (ListAssetsResponse);
+
+    // Liquidity Provisions list
+    //
+    // Get a liquidity provision list for a given market using a cursor based pagination
+    rpc ListLiquidityProvisions(ListLiquidityProvisionsRequest) returns (ListLiquidityProvisionsResponse);
+
+    // Governance
+    //
+    // Get a single proposal details
+    rpc GetGovernanceData(GetGovernanceDataRequest) returns (GetGovernanceDataResponse);
+
+    // Governance list
+    //
+    // List proposals using a cursor based pagination model
+    rpc ListGovernanceData(ListGovernanceDataRequest) returns (ListGovernanceDataResponse);
+
+    rpc ObserveGovernance(ObserveGovernanceRequest) returns (stream ObserveGovernanceResponse);
+
+    // Delegation list
+    //
+    // List delegations
+    rpc ListDelegations(ListDelegationsRequest) returns (ListDelegationsResponse);
+    // subscribe to delegation events
+    rpc ObserveDelegations(ObserveDelegationsRequest) returns (stream ObserveDelegationsResponse);
+
+    // Network data
+    //
+    // Get data regarding the nodes of the network
+    rpc GetNetworkData(GetNetworkDataRequest) returns (GetNetworkDataResponse);
+
+    // Node
+    //
+    // Get information about a given node
+    rpc GetNode(GetNodeRequest) returns (GetNodeResponse);
+
+    // Node
+    //
+    // List information about the nodes on the network
+    rpc ListNodes(ListNodesRequest) returns (ListNodesResponse);
+
+    // Node signatures list
+    //
+    // List an aggregate of signatures from all the nodes of the network
+    rpc ListNodeSignatures(ListNodeSignaturesRequest) returns (ListNodeSignaturesResponse);
+
+    // Epoch
+    //
+    // Get data for a specific epoch, if id omitted it gets the current epoch
+    rpc GetEpoch(GetEpochRequest) returns (GetEpochResponse);
+
+    // Estimate fee
+    //
+    // Estimate the fee that would incur for submitting this order
+    rpc EstimateFee(EstimateFeeRequest) returns (EstimateFeeResponse);
+
+    // Estimate margin
+    //
+    // Estimate the margin that would be required for submitting this order
+    rpc EstimateMargin(EstimateMarginRequest) returns (EstimateMarginResponse);
+
+    // Network Parameters list
+    //
+    // Get the network parameters
+    rpc ListNetworkParameters(ListNetworkParametersRequest) returns (ListNetworkParametersResponse);
+
+    // Network Parameter
+    //
+    // Get a single network parameter
+    rpc GetNetworkParameter(GetNetworkParameterRequest) returns (GetNetworkParameterResponse);
+
+    // Checkpoints list
+    //
+    // List information about checkpoint generated by the network
+    rpc ListCheckpoints(ListCheckpointsRequest) returns (ListCheckpointsResponse);
+
+    // Stake
+    //
+    // Retrieve staking informations for a given party
+    rpc GetStake(GetStakeRequest) returns (GetStakeResponse);
+
+    // Risk Factors
+    //
+    // Get Risk Factor data for a given market
+    rpc GetRiskFactors(GetRiskFactorsRequest) returns (GetRiskFactorsResponse);
+
+    // Event Bus
+    //
+    // Subscribe to a stream of events from the core
+    rpc ObserveEventBus(stream ObserveEventBusRequest) returns (stream ObserveEventBusResponse);
+
+    // Transfer Responses
+    //
+    // Subscribe to a stream of Transfer Responses
+    rpc ObserveTransferResponses(ObserveTransferResponsesRequest) returns (stream ObserveTransferResponsesResponse);
+
+    // Key Rotations list
+    //
+    // List all key rotation applied for a given party
+    rpc ListKeyRotations(ListKeyRotationsRequest) returns (ListKeyRotationsResponse);
+
+    // Ethereum Key Rotations
+    //
+    // List all ethereum key rotation applied for a given party
+    rpc ListEthereumKeyRotations(ListEthereumKeyRotationsRequest) returns (ListEthereumKeyRotationsResponse);
+
+    // Vega Time
+    //
+    // Get the current time of the network
+    rpc GetVegaTime(GetVegaTimeRequest) returns (GetVegaTimeResponse);
+}
+
+// -- Pagination --
+
+// Pagination controls
+message OffsetPagination {
+    // Skip the number of records specified, default is 0
+    uint64 skip = 1;
+    // Limit the number of returned records to the value specified, default is 50
+    uint64 limit = 2;
+    // Descending reverses the order of the records returned,
+    // default is true, if false the results will be returned in ascending order
+    bool descending = 3;
+}
+
+// Cursor information for cursor based pagination requests
+message Pagination {
+    optional int32 first = 1;
+    optional string after = 2;
+    optional int32 last = 3;
+    optional string before = 4;
+    // Newest records first, older records last, default is true
+    optional bool newest_first = 5;
+}
+
+// Page information for cursor based pagination
+message PageInfo {
+    bool has_next_page = 1;
+    bool has_previous_page = 2;
+    string start_cursor = 3;
+    string end_cursor = 4;
+}
+
+// -- Accounts --
+message ListAccountsRequest {
+    // Limit the accounts considered according to the filter supplied
+    AccountFilter filter = 1;
+    // Optional pagination control
+    optional Pagination pagination = 2;
+}
+
+message ListAccountsResponse {
+    // Paged connection with 0 or more accounts
+    AccountsConnection accounts = 1;
+}
+
+message AccountsConnection {
+    // The accounts & cursors
+    repeated AccountEdge edges = 1;
+    // Information for fetching further pages
+    PageInfo page_info = 2;
+}
+
+message AccountEdge {
+    // The actual account object
+    vega.Account account = 1;
+    // A cursor which can be used to fetch further pages with reference to this account
+    string cursor = 2;
+}
+
+// Request to subscribe to a stream of (Accounts)[#vega.Account]
+message ObserveAccountsRequest {
+    // Market identifier
+    string market_id = 1;
+    // Party identifier
+    string party_id = 2;
+    // Asset identifier
+    string asset = 3;
+    // Account type to subscribe to, required field
+    vega.AccountType type = 4;
+}
+
+message ObserveAccountsResponse {
+    vega.Account account = 1;
+}
+
+// -- Info --
+
+// node info
+message InfoRequest {}
+
+message InfoResponse {
+    // A semver formatted version of the data node
+    string version = 1;
+    // The commit hash from which the data-node was built
+    string commit_hash = 2;
+}
+
+// -- Orders --
+
+message GetOrderRequest {
+  // Order identifier
+  string order_id = 1;
+
+  // Optional version
+  optional int32 version = 2;
+}
+
+message GetOrderResponse {
+    // An order, if found
+    vega.Order order = 1;
+}
+
+message ListOrdersRequest {
+    // Party identifier
+    optional string party_id = 1;
+    // Market identifier
+    optional string market_id = 2;
+    // Reference
+    optional string reference = 3;
+    // Optional pagination control
+    optional Pagination pagination = 4;
+
+}
+
+message ListOrdersResponse {
+    // Paged connection with 0 or more orders
+    OrderConnection orders = 1;
+}
+
+message ListOrderVersionsRequest {
+    // Order identifier
+    string order_id = 1;
+
+    // Optional pagination control
+    optional Pagination pagination = 4;
+}
+
+message ListOrderVersionsResponse {
+    // Paged connection with 0 or more order versions
+    OrderConnection orders = 1;
+}
+
+// Request to subscribe to a stream of (Orders)[#vega.Order]
+message ObserveOrdersRequest {
+    // The fields for market identifier and party identifier are optional filters:
+    // If omitted all orders, for all parties on all markets will be returned on the stream
+    // If market identifier is given, orders from that market will be returned on the stream
+    // If party identifier is given, orders from that party will be returned on the stream
+    // Both filters can be combined
+
+    // Market identifier
+    optional string market_id = 1;
+    // Party identifier
+    optional string party_id = 2;
+}
+
+// Response sent over an orders stream
+message ObserveOrdersResponse {
+    // A list of 0 or more orders
+    repeated vega.Order orders = 1;
+}
+
+// -- Positions --
+// Request for a list of positions for a party
+// Optionally, if a market identifier is set, the results will be filtered for that market only
+message ListPositionsRequest {
+    // Party identifier, required field
+    string party_id = 1;
+    // Market identifier
+    string market_id = 2;
+    // Optional pagination control
+    optional Pagination pagination = 3;
+}
+
+// Response for a list of positions for a party
+message ListPositionsResponse {
+    // A list of 0 or more positions
+    PositionConnection positions = 1;
+}
+
+message PositionEdge {
+    vega.Position node = 1;
+    string cursor = 2;
+}
+
+message PositionConnection {
+    repeated PositionEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
+// Request to subscribe to a stream of (Positions)[#vega.Position]
+message ObservePositionsRequest {
+    // Optional party identifier
+    optional string party_id = 1;
+    // Optional market identifier
+    optional string market_id = 2;
+}
+
+message ObservePositionsResponse {
+    vega.Position position = 1;
+}
+
+// -- Balances --
+message GetBalanceHistoryRequest {
+    // Limit the accounts considered according to the filter supplied
+    AccountFilter filter = 1;
+    // By default the net balances of all the accounts specified by the filter are returned.
+    // If a list if fields is given in group_by, split out those balances by the supplied crietera.
+    repeated AccountField group_by = 2;
+}
+
+message GetBalanceHistoryResponse {
+    repeated AggregatedBalance balances = 1;
+}
+
+message AccountFilter{
+    // Restrict accounts to those holding balances in this asset ID
+    string asset_id = 1;
+    // Restrict accounts to those owned by the parties in this list (pass an empty list for no filter)
+    repeated string party_ids = 2;
+    // Restrict accounts to those connected to the marketsin this list (pass an empty list for no filter)
+    repeated string market_ids = 3;
+    // Restrict accounts to those connected to any of the types in this list (pass an empty list for no filter)
+    repeated vega.AccountType account_types = 4;
+}
+
+// A list of the properties of an account, used for grouping
+enum AccountField {
+    ACCOUNT_FIELD_UNSPECIFIED = 0;
+    ACCOUNT_FIELD_ID = 1;
+    ACCOUNT_FIELD_PARTY_ID = 2;
+    ACCOUNT_FIELD_ASSET_ID = 3;
+    ACCOUNT_FIELD_MARKET_ID = 4;
+    ACCOUNT_FIELD_TYPE = 5;
+}
+
+message AggregatedBalance {
+    // Timestamp to of block the balance is referring to, in nanoseconds since the epoch
+    int64 timestamp = 1;
+    // The balance of the set of requested accounts at the time above
+    string balance = 2;
+    // If grouping by account ID, the account ID
+    optional string account_id = 3;
+    // If grouping by party, the party ID
+    optional string party_id = 4;
+    // If grouping by asset, the asset ID
+    optional string asset_id = 5;
+    // If grouping by market, the market ID
+    optional string market_id = 6;
+    // If grouping by account type, the account type
+    vega.AccountType account_type = 7;
+}
+
+// -- Market Data --
+message ObserveMarketsDepthRequest {
+    repeated string market_ids = 1;
+}
+
+message ObserveMarketsDepthResponse {
+    repeated vega.MarketDepth market_depth = 1;
+}
+
+message ObserveMarketsDepthUpdatesRequest {
+    repeated string market_ids = 1;
+}
+
+message ObserveMarketsDepthUpdatesResponse {
+    repeated vega.MarketDepthUpdate update = 1;
+}
+
+message ObserveMarketsDataRequest {
+    repeated string market_ids = 1;
+}
+
+message ObserveMarketsDataResponse {
+    repeated vega.MarketData market_data = 1;
+}
+
+message GetLatestMarketDepthRequest {
+    // Market identifier, required field
+    string market_id = 1;
+
+    optional uint64 max_depth = 2;
+}
+
+message GetLatestMarketDepthResponse {
+    // Market identifier
+    string market_id = 1;
+    // Zero or more price levels for the buy side of the market depth data
+    repeated vega.PriceLevel buy = 2;
+    // Zero or more price levels for the sell side of the market depth data
+    repeated vega.PriceLevel sell = 3;
+    // Last trade recorded on Vega at the time of retrieving the `MarketDepthResponse`
+    vega.Trade last_trade = 4;
+    // Sequence number incremented after each update
+    uint64 sequence_number = 5;
+}
+
+// Request to get the latest market data for every market
+message ListLatestMarketDataRequest {
+}
+
+message ListLatestMarketDataResponse {
+    repeated vega.MarketData markets_data = 1;
+}
+
+
+// Request for the latest market data for a given market
+message GetLatestMarketDataRequest {
+    // Market identifier, required field
+    string market_id = 1;
+}
+
+message GetLatestMarketDataResponse {
+    // Market identifier, required field
+    vega.MarketData market_data = 1;
+}
+
+
+// Request for Market Data History
+message GetMarketDataHistoryByIDRequest {
+    // Market identifier, required field
+    string market_id = 1;
+    // Optional Unix time in nanoseconds
+    optional int64 start_timestamp = 2;
+    // Optional Unix time in nanoseconds
+    optional int64 end_timestamp = 3;
+    // Optional pagination control
+    optional Pagination pagination = 4;
+    // Optional offset pagination control in order to support existing version of the Market Data History query
+    // that is available in the GraphQL API. That function has been deprecated, but until it's removed we have
+    // added this to support pagination queries that use an offset.
+    optional OffsetPagination offset_pagination = 5 [deprecated = true];
+}
+
+// Response for Market Data History
+message GetMarketDataHistoryByIDResponse {
+    MarketDataConnection market_data = 1;
+}
+
+message MarketDataEdge {
+    vega.MarketData node = 1;
+    string cursor = 2;
+}
+
+message MarketDataConnection {
+    repeated MarketDataEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
+// Request to subscribe to a stream of MarketsData
+// Optionally, the list can be additionally filtered by market
+message MarketsDataSubscribeRequest {
+    // Market identifier
+    string market_id = 1;
+}
+
+message MarketsDataSubscribeResponse {
+    repeated vega.MarketData market_data = 1;
+}
+
+// -- Transfers --
+enum TransferDirection {
+    TRANSFER_DIRECTION_UNSPECIFIED = 0;
+    TRANSFER_DIRECTION_TRANSFER_FROM = 1;
+    TRANSFER_DIRECTION_TRANSFER_TO = 2;
+    TRANSFER_DIRECTION_TRANSFER_TO_OR_FROM = 3;
+}
+
+// Request for transfers
+message ListTransfersRequest {
+    // Public key of which transfers to request
+    optional string pubkey = 1;
+    // Directions to include in the response data
+    TransferDirection direction = 2;
+    // Optional pagination cntrol
+    optional Pagination pagination = 3;
+}
+
+// Response for transfers
+message ListTransfersResponse {
+    TransferConnection transfers = 1;
+}
+
+message TransferEdge {
+    vega.events.v1.Transfer node = 1;
+    string cursor = 2;
+}
+
+message TransferConnection {
+    repeated TransferEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
+// -- Network Limits --
+// Request for the current network limits
+message GetNetworkLimitsRequest {}
+
+// Response for the current network limits
+message GetNetworkLimitsResponse {
+    vega.NetworkLimits limits = 1;
+}
+
+// -- Candles --
+
+// Request to get a list of supported intervals for the given market along with the corresponding candle id
+message ListCandleIntervalsRequest {
+    // The unique identifier for the market
+    string market_id = 1;
+}
+
+// Maps an interval for a given market to its corresponding candle_id
+message IntervalToCandleId {
+    // The interval for the candle
+    string interval = 1;
+
+    // The unique id of the candle
+    string candle_id=2;
+}
+
+// A list of interval to candle id mappings for a given market
+message ListCandleIntervalsResponse {
+    repeated IntervalToCandleId interval_to_candle_id = 1;
+}
+
+// Represents the high, low, open, and closing prices for an interval of trading,
+// referred to commonly as a candlestick or candle
+message Candle {
+    // Timestamp for the point in time when the candle was initially created/opened, in nanoseconds since the epoch
+    // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
+    int64 start = 1;
+    // Timestamp for the point in time when the candle was last updated, in nanoseconds since the epoch
+    // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
+    int64 last_update = 2;
+    // Highest price for trading during the candle interval
+    string high = 3;
+    // Lowest price for trading during the candle interval
+    string low = 4;
+    // Open trade price
+    string open = 5;
+    // Closing trade price
+    string close = 6;
+    // Total trading volume during the candle interval
+    uint64 volume = 7;
+}
+
+// Request to subscribe to a stream of (Candles)[#vega.Candle]
+message ObserveCandleDataRequest {
+    // The unique identifier for the candle
+    string candle_id = 1;
+}
+
+message ObserveCandleDataResponse {
+    Candle candle = 1;
+}
+
+// Request for a list of candles for a market at an interval
+message ListCandleDataRequest {
+    // Candle identifier, required field.
+    string candle_id = 1;
+
+    // Timestamp to retrieve candles since, in nanoseconds since the epoch,
+    // required field - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
+    int64 from_timestamp = 2;
+
+    // Timestamp to retrieve candles since, in nanoseconds since the epoch,
+    // required field - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
+    int64 to_timestamp = 3;
+
+    // Time interval for the candles, required field specified as a valid postgres interval
+    vega.Interval interval = 4;
+
+    // pagination controls
+    optional Pagination pagination = 5;
+}
+
+// Response for list of candles for a market at an interval
+message ListCandleDataResponse {
+    // A list of 0 or more candles
+    CandleDataConnection candles = 1;
+}
+
+message CandleEdge {
+    Candle node = 1;
+    string cursor = 2;
+}
+
+message CandleDataConnection {
+    repeated CandleEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
+// -- Votes --
+// Request for Votes
+message ListVotesRequest {
+    // Party of which the votes are requested
+    string party_id = 1;
+
+    // Optional pagination control
+    optional Pagination pagination = 2;
+}
+
+// Response for Votes
+message ListVotesResponse {
+    VoteConnection votes = 1;
+}
+
+message VoteEdge {
+    vega.Vote node = 1;
+    string cursor = 2;
+}
+
+message VoteConnection {
+    repeated VoteEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
+message ObserveVotesRequest {
+    // Party of which the votes are requested
+    optional string party_id = 1;
+    // Option proposal id for which the votes are requested
+    optional string proposal_id = 2;
+}
+
+message ObserveVotesResponse {
+    vega.Vote vote = 1;
+}
+
+// -- ERC20 Multi Sig --
+message GetERC20MultiSigSignerAddedBundlesRequest {
+
+    // The node id of the validator of which a signature bundle is required
+    string node_id = 1;
+
+    // The epoch which generated the bundle i.e the epoch in which the node became a tendermint validator
+    string epoch_seq = 2;
+
+    // Pagination controls
+    Pagination pagination = 3;
+}
+
+message GetERC20MultiSigSignerAddedBundlesResponse {
+
+    // list of bundles for that validator, it may have been added multiple times if removed in between
+    ERC20MultiSigSignerAddedConnection bundles = 1;
+}
+
+message ERC20MultiSigSignerAddedEdge {
+    vega.events.v1.ERC20MultiSigSignerAdded node = 1;
+    string cursor = 2;
+}
+
+message ERC20MultiSigSignerAddedBundleEdge {
+    ERC20MultiSigSignerAddedBundle node = 1;
+    string cursor = 2;
+}
+
+message ERC20MultiSigSignerAddedConnection {
+    repeated ERC20MultiSigSignerAddedBundleEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
+message ERC20MultiSigSignerAddedBundle {
+
+    // The ethereum address of the signer to be removed
+    string new_signer = 1;
+
+    // The ethereum address of the submitter
+    string submitter = 2;
+
+    // The nonce used in the signing operation
+    string nonce = 4;
+
+    // unixnano timestamp for when the validator was added
+    int64 timestamp = 5;
+
+    // The bundle of signatures from current validators to sign in the new signer
+    string signatures = 6;
+
+    // The epoch in which the validator was added
+    string epoch_seq = 3;
+
+}
+
+message GetERC20MultiSigSignerRemovedBundlesRequest {
+    // The node id of the validator of which a signature bundle is required
+    string node_id = 1;
+
+    // The ethereum address of the validator which will submit the bundle
+    string submitter = 2;
+
+    // The epoch which generated the bundle i.e the epoch in which the node was demoted from a tendermint validator
+    string epoch_seq = 3;
+
+    // Pagination controls
+    Pagination pagination = 4;
+}
+
+message GetERC20MultiSigSignerRemovedBundlesResponse {
+    // list of signer bundles for that validator
+    ERC20MultiSigSignerRemovedConnection bundles = 1;
+}
+
+message ERC20MultiSigSignerRemovedEdge {
+    vega.events.v1.ERC20MultiSigSignerRemoved node = 1;
+    string cursor = 2;
+}
+
+message ERC20MultiSigSignerRemovedBundleEdge {
+    ERC20MultiSigSignerRemovedBundle node = 1;
+    string cursor = 2;
+}
+
+message ERC20MultiSigSignerRemovedConnection {
+    repeated ERC20MultiSigSignerRemovedBundleEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
+message ERC20MultiSigSignerRemovedBundle {
+
+    // The ethereum address of the signer to be removed
+    string old_signer = 1;
+
+    // The ethereum address of the submitter
+    string submitter = 2;
+
+    // The nonce used in the signing operation
+    string nonce = 4;
+
+    // unixnano timestamp for when the validator was added
+    int64 timestamp = 5;
+
+    // The bundle of signatures from current validators to sign in the new signer
+    string signatures = 6;
+
+    // The epoch in which the validator was removed
+    string epoch_seq = 7;
+
+}
+
+// A request to get an asset bundle details
+message GetERC20ListAssetBundleRequest {
+  // The ID of the asset requested
+  string asset_id = 1;
+}
+
+// The response with all information required to bundle the call to propose an erc20 asset
+message GetERC20ListAssetBundleResponse {
+  // The address of the asset on ethereum
+  string asset_source = 1;
+  // The ID of the vega asset
+  string vega_asset_id = 2;
+  // The nonce, which is actually the internal reference for the proposal
+  string nonce = 3;
+   // The signatures bundle as hex encoded data, forward by 0x
+  // e.g: 0x + sig1 + sig2 + ... + sixN
+  string signatures = 4;
+}
+
+// A request to get an asset bundle details
+message GetERC20SetAssetLimitsBundleRequest {
+  // The ID of the proposal to update an asset
+  string proposal_id = 1;
+}
+
+// The response with all information required to bundle the call to propose an erc20 asset
+message GetERC20SetAssetLimitsBundleResponse {
+  // The address of the asset on ethereum
+  string asset_source = 1;
+  // The ID of the vega asset
+  string vega_asset_id = 2;
+  // The nonce, which is actually the internal reference for the proposal
+  string nonce = 3;
+  // The lifetime limit deposit for this asset
+  string lifetime_limit = 4;
+  // The threshold withdraw for this asset
+  string threshold = 5;
+  // The signatures bundle as hex encoded data, forward by 0x
+  // e.g: 0x + sig1 + sig2 + ... + sixN
+  string signatures = 6;
+}
+
+// The request to get all information required to bundle the call to finalise the withdrawal on the erc20 bridge
+message GetERC20WithdrawalApprovalRequest {
+    // The identifier of the withdrawal
+    string withdrawal_id = 1;
+}
+
+// The response with all information required to bundle the call to finalise the withdrawal on the erc20 bridge
+// function withdraw_asset(address asset_source, uint256 asset_id, uint256 amount, uint256 expiry, uint256 nonce, bytes memory signatures)
+message GetERC20WithdrawalApprovalResponse {
+    // The address of asset on ethereum
+    string asset_source = 1;
+    // The amount to be withdrawn
+    string amount = 2;
+    // The expiry / until what time the request is valid
+    int64 expiry = 3;
+    // The nonce, which is actually the internal reference for the withdrawal
+    string nonce = 4;
+    // The signatures bundle as hex encoded data, forward by 0x
+    // e.g: 0x + sig1 + sig2 + ... + sixN
+    string signatures = 5;
+    // The ethereum address to withdraw the funds to, 0x prefixed
+    string target_address = 6;
+    // The creation timestamps
+    int64 creation = 7;
+}
+
+// -- Trades --
+
+// Request for the latest trade that occurred on Vega for a given market
+message GetLastTradeRequest {
+    // Market identifier, required field
+    string market_id = 1;
+}
+
+// Response for the latest trade that occurred on Vega for a given market
+message GetLastTradeResponse {
+    // A trade, if found
+    vega.Trade trade = 1;
+}
+
+message ListTradesRequest {
+    optional string market_id = 1;
+    optional string order_id = 2;
+    optional string party_id = 3;
+    optional Pagination pagination = 4;
+}
+
+message ListTradesResponse {
+    TradeConnection trades = 1;
+}
+
+message TradeConnection {
+    repeated TradeEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
+message TradeEdge {
+    vega.Trade node = 1;
+    string cursor = 2;
+}
+
+// Request to subscribe to a stream of (Trades)[#vega.Trade]
+message ObserveTradesRequest {
+    // The fields for market identifier and party identifier are optional filters:
+    // If omitted all trades, for all parties on all markets will be returned on the stream
+    // If market identifier is given, trades from that market will be returned on the stream
+    // If party identifier is given, trades from that party will be returned on the stream
+    // Both filters can be combined
+
+    // Market identifier
+    optional string market_id = 1;
+    // Party identifier
+    optional string party_id = 2;
+}
+
+// A stream of trades
+message ObserveTradesResponse {
+    // A list of 0 or more trades
+    repeated vega.Trade trades = 1;
+}
+
+// -- Oracles --
+
+// The request to get a specific oracle spec by identifier
+message GetOracleSpecRequest {
+    // The ID to get the oracle spec for
+    string oracle_spec_id = 1;
+}
+
+// The response for a oracle spec
+message GetOracleSpecResponse {
+    // The oracle spec matching the ID.
+    oracles.v1.OracleSpec oracle_spec = 1 ;
+}
+
+// The request to get all active oracle specs
+message ListOracleSpecsRequest {
+    // Pagination controls
+    optional Pagination pagination = 2;
+}
+
+// The response to get all active oracle specs
+message ListOracleSpecsResponse {
+    // The list of active oracle specs
+    OracleSpecsConnection oracle_specs = 1;
+}
+
+// The request to get all seen oracle data
+message ListOracleDataRequest {
+    optional string oracle_spec_id = 1;
+    // Pagination controls
+    optional Pagination pagination = 2;
+}
+
+// The response to get all seen oracle data
+message ListOracleDataResponse {
+    // The list of seen oracle data
+    OracleDataConnection oracle_data = 1;
+}
+
+message OracleSpecEdge {
+    oracles.v1.OracleSpec node = 1;
+    string cursor = 2;
+}
+
+message OracleSpecsConnection {
+    repeated OracleSpecEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
+message OracleDataEdge {
+    oracles.v1.OracleData node = 1;
+    string cursor = 2;
+}
+
+message OracleDataConnection {
+    repeated OracleDataEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
+// -- Markets --
+message GetMarketRequest {
+    string market_id = 1;
+}
+
+message GetMarketResponse {
+    vega.Market market = 1;
+}
+
+message ListMarketsRequest {
+    optional Pagination pagination = 2;
+}
+
+message ListMarketsResponse {
+    MarketConnection markets = 1;
+}
+
+message MarketEdge {
+    vega.Market node = 1;
+    string cursor = 2;
+}
+
+message MarketConnection {
+    repeated MarketEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
+// -- Parties --
+message GetPartyRequest {
+    string party_id = 1;
+}
+
+message GetPartyResponse {
+    vega.Party party = 1;
+}
+
+message ListPartiesRequest {
+    string party_id = 1;
+    Pagination pagination = 2;
+}
+
+message ListPartiesResponse {
+    PartyConnection party = 1;
+}
+
+message PartyEdge {
+    vega.Party node = 1;
+    string cursor = 2;
+}
+
+message PartyConnection {
+    repeated PartyEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
+message OrderEdge {
+    vega.Order node = 1;
+    string cursor = 2;
+}
+
+message ListMarginLevelsRequest {
+    string party_id = 1;
+    string market_id = 2;
+    Pagination pagination = 3;
+}
+
+message ListMarginLevelsResponse {
+    MarginConnection margin_levels = 1;
+}
+
+// Request to subscribe to a stream of MarginLevels data matching the given party identifier
+// Optionally, the list can be additionally filtered by market
+message ObserveMarginLevelsRequest {
+    // Party identifier, required field
+    string party_id = 1;
+    // Market identifier
+    optional string market_id = 2;
+}
+
+message ObserveMarginLevelsResponse {
+    vega.MarginLevels margin_levels = 1;
+}
+
+message OrderConnection {
+    repeated OrderEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
+message MarginEdge {
+    vega.MarginLevels node = 1;
+    string cursor = 2;
+}
+
+message MarginConnection {
+    repeated MarginEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
+// A request to get reward details for a party
+message ListRewardsRequest {
+    string party_id = 1;
+    optional string asset_id = 2;
+    optional Pagination pagination = 3;
+}
+
+// The return message with reward details in for a single party
+message ListRewardsResponse {
+    RewardsConnection rewards = 1;
+}
+
+message RewardEdge {
+    vega.Reward node = 1;
+    string cursor = 2;
+}
+
+message RewardsConnection {
+    repeated RewardEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
+// A request to get reward details for a party
+message ListRewardSummariesRequest {
+    optional string party_id = 1;
+    optional string asset_id = 2;
+    optional Pagination pagination = 3;
+}
+
+// The return message with reward details in for a single party
+message ListRewardSummariesResponse {
+    repeated vega.RewardSummary summaries = 1;
+}
+
+message ObserveRewardsRequest {
+    optional string asset_id = 1;
+    optional string party_id = 2;
+}
+
+message ObserveRewardsResponse {
+    vega.Reward reward = 1;
+}
+
+// -- Deposits --
+// A request to get a specific deposit by identifier
+message GetDepositRequest {
+    // The identifier of the deposit
+    string id = 1;
+}
+
+// A response for a deposit
+message GetDepositResponse {
+    // The deposit matching the identifier from the request
+    vega.Deposit deposit = 1 ;
+}
+
+// A request to list all deposits for a given party
+message ListDepositsRequest {
+    // The identifier of a party whose deposits are to be retrieved
+    string party_id = 1;
+    // Optional pagination control
+    optional Pagination pagination = 2;
+}
+
+message ListDepositsResponse {
+    DepositsConnection deposits = 1;
+}
+
+message DepositEdge {
+    vega.Deposit node = 1;
+    string cursor = 2;
+}
+
+message DepositsConnection {
+    repeated DepositEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
+// -- Withdrawals --
+// A request to get a specific withdrawal by identifier
+message GetWithdrawalRequest {
+    // The identifier of the withdrawal
+    string id = 1;
+}
+
+// A response for a withdrawal request
+message GetWithdrawalResponse {
+    // The withdrawal matching the identifier from the request
+    vega.Withdrawal withdrawal = 1;
+}
+
+// List all withdrawals for a given party
+message ListWithdrawalsRequest {
+    // The identifier for the party whose withdrawals we want to retrieve
+    string party_id = 1;
+    // Optional pagination information to limit the data that is returned
+    optional Pagination pagination = 2;
+}
+
+// A paged connection with the requested withdrawal information
+message ListWithdrawalsResponse {
+    WithdrawalsConnection withdrawals = 1;
+}
+
+message WithdrawalEdge {
+    vega.Withdrawal node = 1;
+    string cursor = 2;
+}
+
+message WithdrawalsConnection {
+    repeated WithdrawalEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
+// -- Assets --
+message GetAssetRequest {
+    string asset_id = 1;
+}
+
+message GetAssetResponse {
+    vega.Asset asset = 1;
+}
+
+message ListAssetsRequest {
+    optional string asset_id = 1;
+    optional Pagination pagination = 2;
+}
+
+message ListAssetsResponse {
+    AssetsConnection assets = 1;
+}
+
+message AssetEdge {
+    vega.Asset node = 1;
+    string cursor = 2;
+}
+
+message AssetsConnection {
+    repeated AssetEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
+// -- Liquidity Provisions --
+message ListLiquidityProvisionsRequest {
+    // The target market for the liquidity provision orders
+    optional string market_id = 1;
+    // The party which submitted the liquidity provision orders
+    optional string party_id = 2;
+    // The reference of the liquidity provision
+    optional string reference = 3;
+
+    optional Pagination pagination = 4;
+}
+
+message ListLiquidityProvisionsResponse {
+    LiquidityProvisionsConnection liquidity_provisions = 1;
+}
+
+message LiquidityProvisionsEdge {
+    vega.LiquidityProvision node = 1;
+    string cursor = 2;
+}
+
+message LiquidityProvisionsConnection {
+    repeated LiquidityProvisionsEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
+// -- Governance Data --
+message GetGovernanceDataRequest {
+    optional string proposal_id = 1;
+    optional string reference = 2;
+}
+
+message GetGovernanceDataResponse {
+    vega.GovernanceData data = 1;
+}
+
+message ListGovernanceDataRequest {
+    enum Type {
+        TYPE_UNSPECIFIED = 0;
+        // List all proposals
+        TYPE_ALL = 1;
+        // List new market proposals
+        TYPE_NEW_MARKET = 2;
+        // List update market proposals
+        TYPE_UPDATE_MARKET = 3;
+        // List change Vega network parameter proposals
+        TYPE_NETWORK_PARAMETERS = 4;
+        // New asset proposals
+        TYPE_NEW_ASSET = 5;
+        // Proposals for creating a new free form proposal
+        TYPE_NEW_FREE_FORM = 6;
+        // Update asset proposals
+      TYPE_UPDATE_ASSET = 7;
+    }
+    optional vega.Proposal.State proposal_state = 1;
+    optional Type proposal_type = 2;
+    optional string proposer_party_id = 3;
+    optional string proposal_reference = 4;
+    optional Pagination pagination = 5;
+}
+
+message ListGovernanceDataResponse {
+    GovernanceDataConnection connection = 1;
+}
+
+message GovernanceDataEdge {
+    vega.GovernanceData node = 1;
+    string cursor = 2;
+}
+
+message GovernanceDataConnection {
+    repeated GovernanceDataEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
+message ObserveGovernanceRequest {
+    optional string party_id = 1;
+}
+
+message ObserveGovernanceResponse {
+    vega.GovernanceData data = 1;
+}
+
+message ListDelegationsRequest {
+    optional string party_id = 1;
+    optional string node_id = 2;
+    optional string epoch_id = 3;
+    optional Pagination pagination = 4;
+}
+
+message ListDelegationsResponse {
+    DelegationsConnection delegations = 1;
+}
+
+message DelegationEdge {
+    vega.Delegation node = 1;
+    string cursor = 2;
+}
+
+message DelegationsConnection {
+    repeated DelegationEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
+// Request to obsever all event related to delegation with the given filters
+message ObserveDelegationsRequest {
+    optional string party_id = 1;
+    optional string node_id = 2;
+}
+
+// All events related to delegation with the given filters
+message ObserveDelegationsResponse {
+    vega.Delegation delegation = 1;
+}
+
+// -- Nodes --
+message GetNetworkDataRequest {}
+
+message GetNetworkDataResponse {
+    vega.NodeData node_data = 1;
+}
+
+message GetNodeRequest {
+    string id = 1;
+}
+
+message GetNodeResponse {
+    vega.Node node = 1;
+}
+
+message ListNodesRequest {
+    optional uint64 epoch_seq = 1;
+    optional Pagination pagination = 2;
+}
+
+message ListNodesResponse {
+    NodesConnection nodes = 1;
+}
+
+message NodeEdge {
+    vega.Node node = 1;
+    string cursor = 2;
+}
+
+message NodesConnection {
+    repeated NodeEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
+// Request to specify the identifier of the resource to retrieve aggregated signatures for
+message ListNodeSignaturesRequest {
+    // Resource identifier, required field
+    string id = 1;
+    optional Pagination pagination = 2;
+}
+
+// Response to specify the identifier of the resource to retrieve aggregated signatures for
+message ListNodeSignaturesResponse {
+    NodeSignaturesConnection signatures = 1;
+}
+
+message NodeSignatureEdge {
+    vega.commands.v1.NodeSignature node = 1;
+    string cursor = 2;
+}
+
+message NodeSignaturesConnection {
+    // A list of 0 or more signatures
+    repeated NodeSignatureEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
+// -- Epochs --
+message GetEpochRequest {
+   optional uint64 id = 1;
+}
+
+message GetEpochResponse {
+    vega.Epoch epoch = 1;
+}
+
+// -- Estimates --
+// Request to fetch the estimated fee if an order were to trade immediately
+message EstimateFeeRequest {
+    // Order to estimate fees for
+    // the following fields in the order are required:
+    // MarketID (used to specify the fee factors)
+    // Price (the price at which the order could trade)
+    // Size (the size at which the order could eventually trade)
+    vega.Order order = 1;
+}
+
+// Response to a EstimateFeeRequest, containing the estimated fees for a given order
+message EstimateFeeResponse {
+    // Summary of the estimated fees for this order if it were to trade now
+    vega.Fee fee = 2;
+}
+
+// Request to fetch the estimated MarginLevels if an order were to trade immediately
+message EstimateMarginRequest {
+    // Order to estimate fees for
+    vega.Order order = 1;
+}
+
+// Response to a EstimateMarginRequest, containing the estimated marginLevels for a given order
+message EstimateMarginResponse {
+    // Summary of the estimated margins for this order if it were to trade now
+    vega.MarginLevels margin_levels = 2;
+}
+
+// A message requesting for the list of all network parameters
+message ListNetworkParametersRequest {
+    optional Pagination pagination = 1;
+}
+
+// A response containing all of the vega network parameters
+message ListNetworkParametersResponse {
+    NetworkParameterConnection network_parameters = 1;
+}
+
+// A message requesting a single network parameter
+message GetNetworkParameterRequest {
+  // The key identifying the network parameter
+  string key = 1;
+}
+
+// A reponse containing a network parameter
+message GetNetworkParameterResponse {
+  // The network parameter key and value
+  vega.NetworkParameter network_parameter = 1;
+}
+
+message NetworkParameterEdge {
+    vega.NetworkParameter node = 1;
+    string cursor = 2;
+}
+
+message NetworkParameterConnection {
+    repeated NetworkParameterEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
+// -- Checkpoints --
+// The actual data regarding a checkpoint
+message Checkpoint {
+    string hash = 1;
+    string block_hash = 2;
+    uint64 at_block = 3;
+}
+
+// Request to get all checkpoints. Currently no fields, probably will be expanded to allow filtering data
+message ListCheckpointsRequest {
+    optional Pagination pagination = 1;
+}
+
+// Response message containing all checkpoints requested
+message ListCheckpointsResponse {
+    CheckpointsConnection checkpoints = 1;
+}
+
+message CheckpointEdge {
+    Checkpoint node = 1;
+    string cursor = 2;
+}
+
+message CheckpointsConnection {
+    repeated CheckpointEdge edges= 1;
+    PageInfo page_info = 2;
+}
+
+message GetStakeRequest {
+    string party_id = 1;
+    optional Pagination pagination = 2;
+}
+
+message GetStakeResponse {
+    string current_stake_available = 1;
+    StakesConnection stake_linkings = 2;
+}
+
+message StakeLinkingEdge {
+    vega.events.v1.StakeLinking node = 1;
+    string cursor = 2;
+}
+
+message StakesConnection {
+    repeated StakeLinkingEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
+message GetRiskFactorsRequest {
+    string market_id = 1;
+}
+
+message GetRiskFactorsResponse {
+    vega.RiskFactor risk_factor = 1;
+}
+
+// -- EventBus --
+// Request to subscribe to a stream of one or more event types from the Vega event bus
+message ObserveEventBusRequest {
+    // One or more types of event, required field
+    repeated vega.events.v1.BusEventType type = 1;
+    // Market identifier, optional field
+    string market_id = 2;
+    // Party identifier, optional field
+    string party_id = 3;
+    // Batch size, optional field -
+    // If not specified, any events received will be sent immediately. If the client is not ready
+    // for the next data-set, data may be dropped a number of times, and eventually the stream is closed.
+    // if specified, the first batch will be sent when ready. To receive the next set of events, the client
+    // must write an `ObserveEventBatch` message on the stream to flush the buffer.
+    // If no message is received in 5 seconds, the stream is closed.
+    // Default: 0, send any and all events when they are available.
+    int64 batch_size = 4;
+}
+
+// Response to a subscribed stream of events from the Vega event bus
+message ObserveEventBusResponse {
+    // One or more events
+    repeated vega.events.v1.BusEvent events = 1;
+}
+
+// -- Transfer Responses --
+message ObserveTransferResponsesRequest {}
+
+message ObserveTransferResponsesResponse {
+    vega.TransferResponse response = 1;
+}
+
+// -- Key Rotations --
+
+// Request to list all key rotations
+message ListKeyRotationsRequest {
+    optional string node_id = 1;
+    optional Pagination pagination = 2;
+}
+
+// Response with all key rotations
+message ListKeyRotationsResponse {
+    KeyRotationConnection rotations = 1;
+}
+
+message KeyRotationEdge {
+    vega.events.v1.KeyRotation node = 1;
+    string cursor = 2;
+}
+
+message KeyRotationConnection {
+    repeated KeyRotationEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
+// -- Ethereum Key Rotations --
+// Request to list ethereum key rotations for nodes, optionally filtered by node
+message ListEthereumKeyRotationsRequest {
+    optional string node_id = 1;
+    optional Pagination pagination = 2;
+}
+
+// Response message containing all checkpoints requested
+message ListEthereumKeyRotationsResponse {
+    EthereumKeyRotationsConnection key_rotations = 1;
+}
+
+message EthereumKeyRotationsConnection {
+    repeated EthereumKeyRotationEdge edges = 1;
+    PageInfo page_info = 2;
+}
+
+message EthereumKeyRotationEdge {
+    vega.events.v1.EthereumKeyRotation ethereum_key_rotation = 1;
+    string cursor = 2;
+}
+
+// -- Vega Time --
+// Request for the current time of the vega network
+message GetVegaTimeRequest {}
+
+// Response for the current consensus coordinated time on the Vega network, referred to as "VegaTime"
+message GetVegaTimeResponse {
+    // Timestamp representation of current VegaTime as represented in
+    // Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2020-01-31T12:30:59.111222333Z`
+    int64 timestamp = 1;
+}

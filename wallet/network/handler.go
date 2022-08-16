@@ -3,7 +3,7 @@ package network
 import (
 	"fmt"
 
-	"code.vegaprotocol.io/shared/paths"
+	"code.vegaprotocol.io/vega/paths"
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/store_mock.go -package mocks code.vegaprotocol.io/vega/wallet/network Store
@@ -16,7 +16,6 @@ type Store interface {
 	DeleteNetwork(string) error
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/reader_mock.go -package mocks code.vegaprotocol.io/vega/wallet/network Reader
 type Reader func(uri string, net interface{}) error
 
 type Readers struct {
@@ -133,8 +132,6 @@ func DescribeNetwork(store Store, req *DescribeNetworkRequest) (*DescribeNetwork
 	resp.API.GRPCConfig.Retries = net.API.GRPC.Retries
 	resp.API.RESTConfig.Hosts = net.API.REST.Hosts
 	resp.API.GraphQLConfig.Hosts = net.API.GraphQL.Hosts
-	resp.Console.LocalPort = net.Console.LocalPort
-	resp.Console.URL = net.Console.URL
 
 	return resp, nil
 }
@@ -161,10 +158,6 @@ type DescribeNetworkResponse struct {
 			Hosts []string `json:"hosts"`
 		} `json:"graphQLConfig"`
 	} `json:"api"`
-	Console struct {
-		URL       string `json:"url"`
-		LocalPort int    `json:"localPort"`
-	}
 }
 
 type DeleteNetworkRequest struct {

@@ -3,14 +3,19 @@ package wallets
 import (
 	"fmt"
 
-	"code.vegaprotocol.io/shared/paths"
+	"code.vegaprotocol.io/vega/paths"
 	wstorev1 "code.vegaprotocol.io/vega/wallet/wallet/store/v1"
 )
 
 // InitialiseStore builds a wallet Store specifically for users wallets.
 func InitialiseStore(vegaHome string) (*wstorev1.Store, error) {
 	p := paths.New(vegaHome)
-	walletsHome, err := p.CreateDataPathFor(paths.WalletsDataHome)
+	return InitialiseStoreFromPaths(p)
+}
+
+// InitialiseStoreFromPaths builds a wallet Store specifically for users wallets.
+func InitialiseStoreFromPaths(vegaPaths paths.Paths) (*wstorev1.Store, error) {
+	walletsHome, err := vegaPaths.CreateDataPathFor(paths.WalletsDataHome)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get wallets data home path: %w", err)
 	}

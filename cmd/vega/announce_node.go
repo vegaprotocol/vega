@@ -20,19 +20,19 @@ import (
 	"strconv"
 	"time"
 
-	api "code.vegaprotocol.io/protos/vega/api/v1"
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	vgcrypto "code.vegaprotocol.io/shared/libs/crypto"
-	vgjson "code.vegaprotocol.io/shared/libs/json"
-	"code.vegaprotocol.io/shared/paths"
-	"code.vegaprotocol.io/vega/blockchain"
-	"code.vegaprotocol.io/vega/blockchain/abci"
-	"code.vegaprotocol.io/vega/config"
+	"code.vegaprotocol.io/vega/core/blockchain"
+	"code.vegaprotocol.io/vega/core/blockchain/abci"
+	"code.vegaprotocol.io/vega/core/config"
+	"code.vegaprotocol.io/vega/core/nodewallets"
+	"code.vegaprotocol.io/vega/core/txn"
+	"code.vegaprotocol.io/vega/core/validators"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	vgjson "code.vegaprotocol.io/vega/libs/json"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/nodewallets"
-	"code.vegaprotocol.io/vega/txn"
-	"code.vegaprotocol.io/vega/validators"
+	"code.vegaprotocol.io/vega/paths"
+	api "code.vegaprotocol.io/vega/protos/vega/api/v1"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	"google.golang.org/grpc"
 
 	"github.com/jessevdk/go-flags"
@@ -179,7 +179,7 @@ func getNodeWalletCommander(log *logging.Logger, registryPass string, vegaPaths 
 		return nil, nil, nil, fmt.Errorf("couldn't get Vega node wallet: %w", err)
 	}
 
-	abciClient, err := abci.NewClient(cfg.Blockchain.Tendermint.ClientAddr)
+	abciClient, err := abci.NewClient(cfg.Blockchain.Tendermint.RPCAddr)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("couldn't initialise ABCI client: %w", err)
 	}
@@ -196,12 +196,11 @@ func getNodeWalletCommander(log *logging.Logger, registryPass string, vegaPaths 
 		return nil, nil, nil, fmt.Errorf("couldn't get last block height: %w", err)
 	}
 
-	commander, err := nodewallets.NewCommander(cfg.NodeWallet, log, nil, vegaWallet, heightProvider{height: resp.Height})
+	commander, err := nodewallets.NewCommander(cfg.NodeWallet, log, blockchain.NewClientWithImpl(abciClient), vegaWallet, heightProvider{height: resp.Height})
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("couldn't initialise node wallet commander: %w", err)
 	}
 
-	commander.SetChain(blockchain.NewClient(abciClient))
 	return commander, resp, cancel, nil
 }
 

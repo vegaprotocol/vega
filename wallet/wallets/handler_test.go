@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	walletpb "code.vegaprotocol.io/protos/vega/wallet/v1"
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 	"github.com/stretchr/testify/require"
@@ -1273,11 +1273,11 @@ func testHandlerSigningTxSucceeds(t *testing.T) {
 	}
 
 	// when
-	tx, err := h.SignTx(name, req, 42)
+	tx, err := h.SignTx(name, req, 42, vgrand.RandomStr(5))
 
 	// then
 	require.NoError(t, err)
-	assert.Equal(t, uint32(2), tx.Version)
+	assert.Equal(t, commandspb.TxVersion(3), tx.Version)
 	assert.NotEmpty(t, tx.From)
 	assert.Equal(t, tx.GetPubKey(), pubKey)
 	assert.NotEmpty(t, tx.InputData)
@@ -1324,7 +1324,7 @@ func testHandlerSigningTxWithLoggedOutWalletFails(t *testing.T) {
 	}
 
 	// when
-	tx, err := h.SignTx(name, req, 42)
+	tx, err := h.SignTx(name, req, 42, vgrand.RandomStr(5))
 
 	// then
 	require.ErrorIs(t, err, wallet.ErrWalletNotLoggedIn)
@@ -1369,7 +1369,7 @@ func testHandlerSigningTxWithTaintedKeyFails(t *testing.T) {
 	}
 
 	// when
-	tx, err := h.SignTx(name, req, 42)
+	tx, err := h.SignTx(name, req, 42, vgrand.RandomStr(5))
 
 	// then
 	assert.Error(t, err)

@@ -16,12 +16,13 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"code.vegaprotocol.io/shared/paths"
-	"code.vegaprotocol.io/vega/genesis"
+	"code.vegaprotocol.io/vega/core/genesis"
+	"code.vegaprotocol.io/vega/core/nodewallets"
+	vgtm "code.vegaprotocol.io/vega/core/tendermint"
+	"code.vegaprotocol.io/vega/core/validators"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/nodewallets"
-	vgtm "code.vegaprotocol.io/vega/tendermint"
-	"code.vegaprotocol.io/vega/validators"
+	"code.vegaprotocol.io/vega/paths"
+
 	"github.com/jessevdk/go-flags"
 )
 

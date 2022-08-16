@@ -2,18 +2,19 @@ package cmd
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
 
-	api "code.vegaprotocol.io/protos/vega/api/v1"
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	walletpb "code.vegaprotocol.io/protos/vega/wallet/v1"
-	"code.vegaprotocol.io/shared/libs/crypto"
-	vglog "code.vegaprotocol.io/shared/libs/zap"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
+	"code.vegaprotocol.io/vega/libs/crypto"
+	vglog "code.vegaprotocol.io/vega/libs/zap"
+	api "code.vegaprotocol.io/vega/protos/vega/api/v1"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
 	wcommands "code.vegaprotocol.io/vega/wallet/commands"
 	"code.vegaprotocol.io/vega/wallet/network"
 	"code.vegaprotocol.io/vega/wallet/node"
@@ -272,7 +273,7 @@ func SendCommand(w io.Writer, rf *RootFlags, req *SendCommandRequest) error {
 
 	log.Info(fmt.Sprintf("last block height found: %d", blockData.Height))
 
-	tx, err := handler.SignTx(req.Wallet, req.Request, blockData.Height)
+	tx, err := handler.SignTx(req.Wallet, req.Request, blockData.Height, blockData.ChainId)
 	if err != nil {
 		log.Error("couldn't sign transaction", zap.Error(err))
 		return fmt.Errorf("couldn't sign transaction: %w", err)
@@ -295,13 +296,22 @@ func SendCommand(w io.Writer, rf *RootFlags, req *SendCommandRequest) error {
 
 	log.Info("calculated proof of work for transaction", zap.String("signature", tx.Signature.Value))
 
-	txHash, err := forwarder.SendTx(ctx, tx, api.SubmitTransactionRequest_TYPE_ASYNC, cltIdx)
+	resp, err := forwarder.SendTx(ctx, tx, api.SubmitTransactionRequest_TYPE_ASYNC, cltIdx)
 	if err != nil {
 		log.Error("couldn't send transaction", zap.Error(err))
 		return fmt.Errorf("couldn't send transaction: %w", err)
 	}
 
-	log.Info("transaction successfully sent", zap.String("hash", txHash))
+	if !resp.Success {
+		d, err := hex.DecodeString(resp.Data)
+		if err != nil {
+			log.Error("unable to decode resp error string")
+		}
+		log.Error("transaction failed", zap.String("err", string(d)), zap.Uint32("code", resp.Code))
+		return fmt.Errorf("transaction failed: %s", string(d))
+	}
+
+	log.Info("transaction successfully sent", zap.String("hash", resp.TxHash))
 
 	return nil
 }

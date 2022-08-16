@@ -1,0 +1,205 @@
+syntax = "proto3";
+
+package vega;
+option go_package = "code.vegaprotocol.io/vega/protos/vega";
+
+// A deposit for a Vega built-in asset
+message BuiltinAssetDeposit {
+  // A Vega network internal asset identifier
+  string vega_asset_id = 1;
+  // A Vega party identifier (pub-key)
+  string party_id = 2;
+  // The amount to be deposited
+  string amount = 3;
+}
+
+// A withdrawal for a Vega built-in asset
+message BuiltinAssetWithdrawal {
+  // A Vega network internal asset identifier
+  string vega_asset_id = 1;
+  // A Vega network party identifier (pub-key)
+  string party_id = 2;
+  // The amount to be withdrawn
+  string amount = 3;
+}
+
+// An event related to a Vega built-in asset
+message BuiltinAssetEvent {
+  oneof action {
+    // Built-in asset deposit
+    BuiltinAssetDeposit deposit = 1001;
+    // Built-in asset withdrawal
+    BuiltinAssetWithdrawal withdrawal = 1002;
+  }
+}
+
+// An asset allow-listing for an ERC20 token
+message ERC20AssetList {
+  // The Vega network internal identifier of the asset
+  string vega_asset_id = 1;
+  // The ethereum address of the asset
+  string asset_source = 2;
+}
+
+// An asset deny-listing for an ERC20 token
+message ERC20AssetDelist {
+  // The Vega network internal identifier of the asset
+  string vega_asset_id = 1;
+}
+
+message ERC20AssetLimitsUpdated {
+  // The Vega network internal identifier of the asset
+  string vega_asset_id = 1;
+  // The Ethereum wallet that initiated the deposit
+  string source_ethereum_address = 2;
+  // The updated lifetime limits
+  string lifetime_limits = 3;
+  // The updated withdraw threshold
+  string withdraw_threshold = 4;
+}
+
+// An asset deposit for an ERC20 token
+message ERC20Deposit {
+  // The vega network internal identifier of the asset
+  string vega_asset_id = 1;
+  // The Ethereum wallet that initiated the deposit
+  string source_ethereum_address = 2;
+  // The Vega party identifier (pub-key) which is the target of the deposit
+  string target_party_id = 3;
+  // The amount to be deposited
+  string amount = 4;
+}
+
+// An asset withdrawal for an ERC20 token
+message ERC20Withdrawal {
+  // The Vega network internal identifier of the asset
+  string vega_asset_id = 1;
+  // The target Ethereum wallet address
+  string target_ethereum_address = 2;
+  // The reference nonce used for the transaction
+  string reference_nonce = 3;
+}
+
+// An event related to an ERC20 token
+message ERC20Event {
+  // Index of the log in the transaction
+  uint64 index = 1;
+  // The block in which the transaction was added
+  uint64 block = 2;
+  // The action
+  oneof action {
+    // List an ERC20 asset
+    ERC20AssetList asset_list = 1001;
+    // De-list an ERC20 asset
+    ERC20AssetDelist asset_delist = 1002;
+    // Deposit ERC20 asset
+    ERC20Deposit deposit = 1003;
+    // Withdraw ERC20 asset
+    ERC20Withdrawal withdrawal = 1004;
+    // Update an ERC20 asset
+    ERC20AssetLimitsUpdated asset_limits_updated = 1005;
+    // Bridge operations has been stopped
+    bool bridge_stopped = 1006;
+    // Bridge operations has been resumed
+    bool bridge_resumed = 1007;
+  }
+}
+
+// A new signer added to the ERC20 bridge
+message ERC20SignerAdded {
+  // The ethereum address of the new signer
+  string new_signer = 1;
+  // The nonce create by the vega network used for this new signer
+  string nonce = 2;
+  // The time at which the block was produced
+  // will be used to inform the core at what time
+  // the stake was made unavailable.
+  int64 block_time = 3;
+}
+
+// A signer removed from the ERC20 bridge
+message ERC20SignerRemoved {
+  // The ethereum address of the old signer
+  string old_signer = 1;
+  // The nonce create by the vega network used for this old signer
+  string nonce = 2;
+  // The time at which the block was produced
+  // will be used to inform the core at what time
+  // the stake was made unavailable.
+  int64 block_time = 3;
+}
+
+// The threshold have been updated on the multisigcontrol
+message ERC20ThresholdSet {
+  // The new threshold
+  uint32 new_threshold = 1;
+  // The nonce create by the vega network
+  string nonce = 2;
+  // The time at which the block was produced
+  // will be used to inform the core at what time
+  // the stake was made unavailable.
+  int64 block_time = 3;
+}
+
+// An event related to the ERC20 MultiSig
+message ERC20MultiSigEvent {
+  // Index of the log in the transaction
+  uint64 index = 1;
+  // The block in which the transaction was added
+  uint64 block = 2;
+  // The action
+  oneof action {
+    // Add a signer to the erc20 bridge
+    ERC20SignerAdded signer_added = 1001;
+    // Remove a signer from the erc20 bridge
+    ERC20SignerRemoved signer_removed = 1002;
+    // Threshold set
+    ERC20ThresholdSet threshold_set = 1003;
+  }
+}
+
+message StakingEvent {
+  // Index of the log in the transaction
+  uint64 index = 1;
+  // The block in which the transaction was added
+  uint64 block = 2;
+
+  oneof action {
+    StakeDeposited stake_deposited = 1001;
+    StakeRemoved stake_removed = 1002;
+    StakeTotalSupply total_supply = 1003;
+  }
+}
+
+message StakeDeposited {
+  // Ethereum Address of the user depositing stake (hex encode with 0x prefix)
+  string ethereum_address = 1;
+  // The public of the party receiving the stake deposit (hex encode)
+  string vega_public_key = 2;
+  // The amount deposited (base 10)
+  string amount = 3;
+  // The time at which the block was produced
+  // will be used to inform the core at what time
+  // the stake started to be available.
+  int64 block_time = 4;
+}
+
+message StakeRemoved {
+  // Ethereum address of the user removing stake (hex encode with 0x prefix)
+  string ethereum_address = 1;
+  // The public key of the party from which to remove stake (hex encode)
+  string vega_public_key = 2;
+  // The amount removed (base 10)
+  string amount = 3;
+  // The time at which the block was produced
+  // will be used to inform the core at what time
+  // the stake was made unavailable.
+  int64 block_time = 4;
+}
+
+message StakeTotalSupply {
+  // The address of the staking asset
+  string token_address = 1;
+  // The total supply observed for the token
+  string total_supply = 2;
+}

@@ -2,6 +2,9 @@
 allow-parallel-runners = true
 print-linter-name = true
 timeout = '5m0s'
+skip-dirs = [
+    'protos',
+]
 
 [issues]
 max-issues-per-linter = 0
@@ -85,6 +88,10 @@ linters = ["forbidigo"]
 
 [[issues.exclude-rules]]
 path = "print.go"
+linters = ["forbidigo"]
+
+[[issues.exclude-rules]]
+path = "libs/json/json.go"
 linters = ["forbidigo"]
 
 [linters-settings.forbidigo]

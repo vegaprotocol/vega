@@ -8,8 +8,8 @@ import (
 	context "context"
 	reflect "reflect"
 
-	v1 "code.vegaprotocol.io/protos/vega/api/v1"
-	v10 "code.vegaprotocol.io/protos/vega/commands/v1"
+	v1 "code.vegaprotocol.io/vega/protos/vega/api/v1"
+	v10 "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -51,21 +51,6 @@ func (mr *MockNodeForwardMockRecorder) CheckTx(arg0, arg1, arg2 interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckTx", reflect.TypeOf((*MockNodeForward)(nil).CheckTx), arg0, arg1, arg2)
 }
 
-// GetNetworkChainID mocks base method.
-func (m *MockNodeForward) GetNetworkChainID(arg0 context.Context) (string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNetworkChainID", arg0)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetNetworkChainID indicates an expected call of GetNetworkChainID.
-func (mr *MockNodeForwardMockRecorder) GetNetworkChainID(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNetworkChainID", reflect.TypeOf((*MockNodeForward)(nil).GetNetworkChainID), arg0)
-}
-
 // HealthCheck mocks base method.
 func (m *MockNodeForward) HealthCheck(arg0 context.Context) error {
 	m.ctrl.T.Helper()
@@ -97,10 +82,10 @@ func (mr *MockNodeForwardMockRecorder) LastBlockHeightAndHash(arg0 interface{}) 
 }
 
 // SendTx mocks base method.
-func (m *MockNodeForward) SendTx(arg0 context.Context, arg1 *v10.Transaction, arg2 v1.SubmitTransactionRequest_Type, arg3 int) (string, error) {
+func (m *MockNodeForward) SendTx(arg0 context.Context, arg1 *v10.Transaction, arg2 v1.SubmitTransactionRequest_Type, arg3 int) (*v1.SubmitTransactionResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SendTx", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(string)
+	ret0, _ := ret[0].(*v1.SubmitTransactionResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

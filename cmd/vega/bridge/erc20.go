@@ -17,11 +17,11 @@ import (
 	"fmt"
 	"time"
 
-	"code.vegaprotocol.io/shared/paths"
-	"code.vegaprotocol.io/vega/bridges"
-	"code.vegaprotocol.io/vega/config"
-	"code.vegaprotocol.io/vega/nodewallets"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/core/bridges"
+	"code.vegaprotocol.io/vega/core/config"
+	"code.vegaprotocol.io/vega/core/nodewallets"
+	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/paths"
 	"github.com/jessevdk/go-flags"
 )
 

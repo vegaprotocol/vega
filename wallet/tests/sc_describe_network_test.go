@@ -37,7 +37,6 @@ func TestDescribeNetwork(t *testing.T) {
 		WithName("my-network-1").
 		WithHostAndPort("127.0.0.1", 8000).
 		WithTokenExpiry("1h0m0s").
-		WithConsole("console.example.com", 1847).
 		WithGRPCConfig([]string{"example.com:3007"}, 5).
 		WithRESTConfig([]string{"https://example.com/rest"}).
 		WithGraphQLConfig([]string{"https://example.com/gql/query"})

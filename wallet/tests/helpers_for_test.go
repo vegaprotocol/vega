@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	vgfs "code.vegaprotocol.io/shared/libs/fs"
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 )
 
 const testRecoveryPhrase = "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render"
@@ -55,10 +55,6 @@ Hosts = [
 Hosts = [
     "https://example.com/gql/query"
 ]
-
-[Console]
-URL = "console.example.com"
-LocalPort = 1847
 `, name)
 }
 

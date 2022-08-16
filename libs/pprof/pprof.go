@@ -1,7 +1,7 @@
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
-// in the LICENSE file and at https://www.mariadb.com/bsl11.
+// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
 //
 // Change Date: 18 months from the later of the date of the first publicly
 // available Distribution of this version of the repository, and 25 June 2022.
@@ -25,8 +25,8 @@ import (
 	"runtime/pprof"
 	"time"
 
-	vgfs "code.vegaprotocol.io/shared/libs/fs"
-	"code.vegaprotocol.io/vega/config/encoding"
+	"code.vegaprotocol.io/vega/core/config/encoding"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/logging"
 )
 

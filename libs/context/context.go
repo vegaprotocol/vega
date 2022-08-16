@@ -1,7 +1,7 @@
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
-// in the LICENSE file and at https://www.mariadb.com/bsl11.
+// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
 //
 // Change Date: 18 months from the later of the date of the first publicly
 // available Distribution of this version of the repository, and 25 June 2022.
@@ -99,7 +99,11 @@ func ChainIDFromContext(ctx context.Context) (string, error) {
 func TxHashFromContext(ctx context.Context) (string, error) {
 	cv := ctx.Value(txHashKey)
 	if cv == nil {
-		return "", ErrTxHashMissing
+		// if this is not happening in the context of a transaction, use the hash of the block
+		cv = ctx.Value(traceIDKey)
+		if cv == nil {
+			return "", ErrTxHashMissing
+		}
 	}
 	c, ok := cv.(string)
 	if !ok {

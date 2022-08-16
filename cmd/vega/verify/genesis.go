@@ -16,11 +16,11 @@ import (
 	"bytes"
 	"encoding/json"
 
-	vgjson "code.vegaprotocol.io/shared/libs/json"
-	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/netparams"
+	vgjson "code.vegaprotocol.io/vega/libs/json"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/netparams"
-	"code.vegaprotocol.io/vega/types/num"
 )
 
 // These types are copies of the ones in the engines that read the genesis file appstate
@@ -39,17 +39,18 @@ type validator struct {
 }
 
 type asset struct {
-	Name        string
-	Symbol      string
-	Decimals    uint64
-	TotalSupply string `json:"total_supply"`
-	Quantum     string `json:"quantum"`
-	Source      *struct {
+	Name     string
+	Symbol   string
+	Decimals uint64
+	Quantum  string `json:"quantum"`
+	Source   *struct {
 		BuiltInAsset *struct {
 			MaxFaucetAmountMint string `json:"max_faucet_amount_mint"`
 		} `json:"builtin_asset,omitempty"`
 		ERC20 *struct {
-			ContractAddress string `json:"contract_address"`
+			ContractAddress   string `json:"contract_address"`
+			LifetimeLimit     string `json:"lifetime_limit"`
+			WithdrawThreshold string `json:"withdraw_threshold"`
 		} `json:"erc20,omitempty"`
 	}
 }
@@ -84,12 +85,8 @@ func verifyAssets(r *reporter, assets map[string]asset) {
 	}
 
 	for k, v := range assets {
-		if _, failed := num.UintFromString(v.TotalSupply, 10); failed {
-			r.Err("app_state.assets[%s].total_supply not a valid number: %s", k, v.TotalSupply)
-		}
-
 		if _, failed := num.UintFromString(v.Quantum, 10); failed {
-			r.Err("app_state.assets[%s].quantum not a valid number: %s", k, v.TotalSupply)
+			r.Err("app_state.assets[%s].quantum not a valid number: %s", k, v.Quantum)
 		}
 
 		switch {
@@ -100,7 +97,7 @@ func verifyAssets(r *reporter, assets map[string]asset) {
 		case v.Source.BuiltInAsset != nil:
 			if _, failed := num.UintFromString(v.Source.BuiltInAsset.MaxFaucetAmountMint, 10); failed {
 				r.Err("app_state.assets[%s].source.builtin_asset.max_faucet_amount_mint is not a valid number: %s",
-					k, v.TotalSupply)
+					k, v.Source.BuiltInAsset.MaxFaucetAmountMint)
 			}
 		case v.Source.ERC20 != nil:
 			if !isValidParty(k) {

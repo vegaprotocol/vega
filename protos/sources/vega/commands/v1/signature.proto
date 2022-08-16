@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package vega.commands.v1;
+option go_package = "code.vegaprotocol.io/vega/protos/vega/commands/v1";
+
+
+// A signature to authenticate a transaction and to be verified by the Vega
+// network.
+message Signature {
+  // The bytes of the signature (hex-encoded).
+  string value = 1;
+  // The algorithm used to create the signature.
+  string algo = 2;
+  // The version of the signature used to create the signature.
+  uint32 version = 3;
+}

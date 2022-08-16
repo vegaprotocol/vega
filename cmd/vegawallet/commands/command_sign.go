@@ -5,10 +5,10 @@ import (
 	"io"
 	"os"
 
-	walletpb "code.vegaprotocol.io/protos/vega/wallet/v1"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
+	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
 	wcommands "code.vegaprotocol.io/vega/wallet/commands"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"code.vegaprotocol.io/vega/wallet/wallets"
@@ -33,11 +33,11 @@ var (
 
 	signCommandExample = cli.Examples(`
 		# Sign a command
-		{{.Software}} command sign --wallet WALLET --pubkey PUBKEY --tx-height TX_HEIGHT COMMAND
+		{{.Software}} command sign --wallet WALLET --pubkey PUBKEY --tx-height TX_HEIGHT --chain-id CHAIN_ID COMMAND
 
 		# To decode the result, save the result in a file and use the command
 		# "base64"
-		{{.Software}} command sign --wallet WALLET --pubkey PUBKEY --tx-height TX_HEIGHT COMMAND > result.txt
+		{{.Software}} command sign --wallet WALLET --pubkey PUBKEY --tx-height TX_HEIGHT --chain-id CHAIN_ID COMMAND > result.txt
 		base64 --decode --input result.txt
 	`)
 )
@@ -114,6 +114,11 @@ func BuildCmdCommandSign(w io.Writer, handler SignCommandHandler, rf *RootFlags)
 		0,
 		"It should be close to the current block height when the transaction is applied, with a threshold of ~ - 150 blocks.",
 	)
+	cmd.Flags().StringVar(&f.ChainID,
+		"chain-id",
+		"",
+		"The identifier of the chain on which the rotation will be done.",
+	)
 
 	autoCompleteWallet(cmd, rf.Home)
 
@@ -126,6 +131,7 @@ type SignCommandFlags struct {
 	PassphraseFile string
 	RawCommand     string
 	TxBlockHeight  uint64
+	ChainID        string
 }
 
 func (f *SignCommandFlags) Validate() (*wallet.SignCommandRequest, error) {
@@ -135,6 +141,11 @@ func (f *SignCommandFlags) Validate() (*wallet.SignCommandRequest, error) {
 		return nil, flags.FlagMustBeSpecifiedError("wallet")
 	}
 	req.Wallet = f.Wallet
+
+	if len(f.ChainID) == 0 {
+		return nil, flags.FlagMustBeSpecifiedError("chain-id")
+	}
+	req.ChainID = f.ChainID
 
 	passphrase, err := flags.GetPassphrase(f.PassphraseFile)
 	if err != nil {

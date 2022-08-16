@@ -14,6 +14,106 @@
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
+## 0.54.0
+
+### 🚨 Breaking changes
+With this release a few breaking changes are introduced.
+The Vega application is now a built-in application. This means that Tendermint doesn't need to be started separately any more.
+The `vega node` command has been renamed `vega start`.
+The `vega tm` command has been renamed `vega tendermint`.
+The `Blockchain.Tendermint.ClientAddr` configuration field have been renamed `Blockchain.Tendermint.RPCAddr`.
+The init command now also generate the configuration for tendermint, the flags `--no-tendermint`, `--tendermint-home` and `--tendermint-key` have been introduced
+
+- [5579](https://github.com/vegaprotocol/vega/issues/5579) - Make vega a built-in Tendermint application
+- [5249](https://github.com/vegaprotocol/vega/issues/5249) - Migrate to Tendermint version 0.35.8
+- [5624](https://github.com/vegaprotocol/vega/issues/5624) - Get rid of `updateFrequency` in price monitoring definition
+- [5601](https://github.com/vegaprotocol/vega/issues/5601) - Remove support for launching a proxy in front of console and token dApp
+- [5872](https://github.com/vegaprotocol/vega/issues/5872) - Remove console and token dApp from networks
+- [5802](https://github.com/vegaprotocol/vega/issues/5802) - Remove support for transaction version 1
+
+### 🗑️ Deprecation
+- [4655](https://github.com/vegaprotocol/vega/issues/4655) - Move Ethereum `RPC` endpoint configuration from `Nodewallet` section to `Ethereum` section
+
+### 🛠 Improvements
+- [5589](https://github.com/vegaprotocol/vega/issues/5589) - Used custom version of Clef
+- [5541](https://github.com/vegaprotocol/vega/issues/5541) - Support permissions in wallets
+- [5439](https://github.com/vegaprotocol/vega/issues/5439) - `vegwallet` returns better responses when a transaction fails
+- [5465](https://github.com/vegaprotocol/vega/issues/5465) - Verify `bytecode` of smart-contracts on startup
+- [5608](https://github.com/vegaprotocol/vega/issues/5608) - Ignore stale price monitoring trigger when market is already in auction
+- [5673](https://github.com/vegaprotocol/vega/issues/5673) - Add support for `ethereum` key rotations to `datanode`
+- [5639](https://github.com/vegaprotocol/vega/issues/5639) - Move all core code in the core directory
+- [5613](https://github.com/vegaprotocol/vega/issues/5613) - Import the `datanode` in the vega repo
+- [5660](https://github.com/vegaprotocol/vega/issues/5660) - Migrate subscription `apis` from `datanode v1 api` to `datanode v2 api`
+- [5636](https://github.com/vegaprotocol/vega/issues/5636) - Assure no false positives in cucumber steps
+- [5011](https://github.com/vegaprotocol/vega/issues/5011) - Import the `protos` repo in the vega repo
+- [5774](https://github.com/vegaprotocol/vega/issues/5774) - Use `generics` for `ID` types
+- [5785](https://github.com/vegaprotocol/vega/issues/5785) - Add support form `ERC20` bridge stopped and resumed events
+- [5712](https://github.com/vegaprotocol/vega/issues/5712) - Configurable `graphql` endpoint
+- [5689](https://github.com/vegaprotocol/vega/issues/5689) - Support `UpdateAsset` proposal in APIs
+- [5685](https://github.com/vegaprotocol/vega/issues/5685) - Migrated `apis` from `datanode v1` to `datanode v2`
+- [5760](https://github.com/vegaprotocol/vega/issues/5760) - Map all `GRPC` to `REST`
+- [5804](https://github.com/vegaprotocol/vega/issues/5804) - Rollback Tendermint to version `0.34.20`
+- [5503](https://github.com/vegaprotocol/vega/issues/5503) - Introduce wallet API version 2 based on JSON-RPC with new authentication workflow
+- [5822](https://github.com/vegaprotocol/vega/issues/5822) - Rename `Graphql` enums
+- [5618](https://github.com/vegaprotocol/vega/issues/5618) - Add wallet JSON-RPC documentation
+- [5776](https://github.com/vegaprotocol/vega/issues/5776) - Add endpoint to get a single network parameter
+- [5685](https://github.com/vegaprotocol/vega/issues/5685) - Migrated `apis` from `datanode v1` to `datanode v2`
+- [5761](https://github.com/vegaprotocol/vega/issues/5761) - Transfers connection make direction optional
+- [5762](https://github.com/vegaprotocol/vega/issues/5762) - Transfers connection add under `party` type
+- [5685](https://github.com/vegaprotocol/vega/issues/5685) - Migrated `apis` from `datanode v1` to `datanode v2`
+- [5705](https://github.com/vegaprotocol/vega/issues/5705) - Use enum for validator status
+- [5685](https://github.com/vegaprotocol/vega/issues/5685) - Migrated `apis` from `datanode v1` to `datanode v2`
+- [5834](https://github.com/vegaprotocol/vega/issues/5834) - Avoid saving proposals of terminated/cancelled/rejected/settled markets in checkpoint
+- [5619](https://github.com/vegaprotocol/vega/issues/5619) - Add wallet HTTP API version 2 documentation
+- [5823](https://github.com/vegaprotocol/vega/issues/5823) - Add endpoint to wallet HTTP API version 2 to list available RPC methods
+- [5814](https://github.com/vegaprotocol/vega/issues/5815) - Add proposal validation date time to `graphql`
+- [5865](https://github.com/vegaprotocol/vega/issues/5865) - Allow a validator to withdraw their protocol upgrade proposal
+- [5803](https://github.com/vegaprotocol/vega/issues/5803) - Update cursor pagination to use new method from [5784](https://github.com/vegaprotocol/vega/pull/5784)
+- [5862](https://github.com/vegaprotocol/vega/issues/5862) - Add base `URL` in `swagger`
+- [5817](https://github.com/vegaprotocol/vega/issues/5817) - Add validation error on asset proposal when rejected
+- [5816](https://github.com/vegaprotocol/vega/issues/5816) - Set proper status to rejected asset proposal
+- [5893](https://github.com/vegaprotocol/vega/issues/5893) - Remove total supply from assets
+- [5752](https://github.com/vegaprotocol/vega/issues/5752) - Remove URL and Hash from proposal rationale, add Title
+- [5802](https://github.com/vegaprotocol/vega/issues/5802) - Introduce transaction version 3 that encode the chain ID in its input data to protect against transaction replay
+
+### 🐛 Fixes
+- [5571](https://github.com/vegaprotocol/vega/issues/5571) - Restore pending assets status correctly after snapshot restore
+- [5857](https://github.com/vegaprotocol/vega/issues/5857) - Fix panic when calling `ListAssets` `grpc` end point with no arguments
+- [5572](https://github.com/vegaprotocol/vega/issues/5572) - Add validation on `IDs` and public keys
+- [5348](https://github.com/vegaprotocol/vega/issues/5348) - Restore markets from checkpoint proposal
+- [5279](https://github.com/vegaprotocol/vega/issues/5279) - Fix loading of proposals from checkpoint
+- [5598](https://github.com/vegaprotocol/vega/issues/5598) - Remove `currentTime` from topology engine to ease snapshot restoration
+- [5836](https://github.com/vegaprotocol/vega/issues/5836) - Add missing `GetMarket` `GRPC` end point
+- [5609](https://github.com/vegaprotocol/vega/issues/5609) - Set event forwarder last seen height after snapshot restore
+- [5782](https://github.com/vegaprotocol/vega/issues/5782) - `Pagination` with a cursor was returning incorrect results
+- [5629](https://github.com/vegaprotocol/vega/issues/5629) - Fixes for loading voting power from checkpoint with non genesis validators
+- [5626](https://github.com/vegaprotocol/vega/issues/5626) - Update `protos`, remove optional types
+- [5665](https://github.com/vegaprotocol/vega/issues/5665) - Binary version hash always contain `-modified` suffix
+- [5633](https://github.com/vegaprotocol/vega/issues/5633) - Allow `minProposerEquityLikeShare` to accept 0
+- [5672](https://github.com/vegaprotocol/vega/issues/5672) - Typo fixed in datanode `ethereum` address
+- [5863](https://github.com/vegaprotocol/vega/issues/5863) - Fix panic when calling `VegaTime` on `v2 api`
+- [5683](https://github.com/vegaprotocol/vega/issues/5683) - Made market mandatory in `GraphQL` for order
+- [5789](https://github.com/vegaprotocol/vega/issues/5789) - Fix performance issue with position query
+- [5677](https://github.com/vegaprotocol/vega/issues/5677) - Fixed trading mode status
+- [5663](https://github.com/vegaprotocol/vega/issues/5663) - Fixed panic with de-registering positions
+- [5781](https://github.com/vegaprotocol/vega/issues/5781) - Make enactment timestamp optional in proposal for `graphql`
+- [5767](https://github.com/vegaprotocol/vega/issues/5767) - Fix typo in command validation
+- [5900](https://github.com/vegaprotocol/vega/issues/5900) - Add missing `/api/v2/parties/{party_id}/stake` `REST` end point
+- [5825](https://github.com/vegaprotocol/vega/issues/5825) - Fix panic in pegged orders when going into auction
+- [5763](https://github.com/vegaprotocol/vega/issues/5763) - Transfers connection rename `pubkey` to `partyId`
+- [5486](https://github.com/vegaprotocol/vega/issues/5486) - Fix amend order expiring
+- [5809](https://github.com/vegaprotocol/vega/issues/5809) - Remove state variables when a market proposal is rejected
+- [5329](https://github.com/vegaprotocol/vega/issues/5329) - Fix checks for market enactment and termination
+- [5837](https://github.com/vegaprotocol/vega/issues/5837) - Allow a promotion due to increased slots and a swap to happen in the same epoch
+- [5819](https://github.com/vegaprotocol/vega/issues/5819) - Add new asset proposal validation timestamp validation
+- [5897](https://github.com/vegaprotocol/vega/issues/5897) - Return uptime of 0, rather than error, when querying for `NodeData` before end of first epoch
+- [5811](https://github.com/vegaprotocol/vega/issues/5811) - Do not overwrite local changes when updating wallet through JSON-RPC API
+- [5868](https://github.com/vegaprotocol/vega/issues/5868) - Clarify the error for insufficient token to submit proposal or vote
+- [5867](https://github.com/vegaprotocol/vega/issues/5867) - Fix witness check for majority
+- [5853](https://github.com/vegaprotocol/vega/issues/5853) - Do not ignore market update proposals when loading from checkpoint
+- [5648](https://github.com/vegaprotocol/vega/issues/5648) - Ethereum key rotation - search validators by Vega pub key and listen to rotation events in core API
+- [5648](https://github.com/vegaprotocol/vega/issues/5648) - Search validator by vega pub key and update the core validators API
+
 ## 0.53.0
 
 ### 🗑️ Deprecation
@@ -22,6 +122,7 @@
 ### 🛠 Improvements
 - [5428](https://github.com/vegaprotocol/vega/pull/5428) - Update contributor information
 - [5519](https://github.com/vegaprotocol/vega/pull/5519) - Add `--genesis-file` option to the `load_checkpoint` command
+- [5538](https://github.com/vegaprotocol/vega/issues/5538) - Core side implementation of protocol upgrade
 - [5525](https://github.com/vegaprotocol/vega/pull/5525) - Release `vegawallet` from the core
 - [5524](https://github.com/vegaprotocol/vega/pull/5524) - Align `vegawallet` and core versions
 - [5524](https://github.com/vegaprotocol/vega/pull/5549) - Add endpoint for getting the network's `chain-id`
@@ -42,6 +143,7 @@
 - [5480](https://github.com/vegaprotocol/vega/issues/5480) - Assure indicative trades are in line with actual uncrossing trades
 - [5556](https://github.com/vegaprotocol/vega/issues/5556) - Fix id generation seed
 - [5361](https://github.com/vegaprotocol/vega/issues/5361) - Fix limits for proposals
+- [5557](https://github.com/vegaprotocol/vega/issues/5427) - Fix oracle status at market settlement
 
 ## 0.52.0
 
@@ -124,7 +226,9 @@
 - [5268](https://github.com/vegaprotocol/vega/issues/5268) - Make validator heartbeat frequency a function of the epoch duration.
 - [5271](https://github.com/vegaprotocol/vega/issues/5271) - Make generated hex IDs lower case
 - [5273](https://github.com/vegaprotocol/vega/issues/5273) - Reward / Transfer to allow payout of reward in an arbitrary asset unrelated to the settlement and by market.
+- [5207](https://github.com/vegaprotocol/vega/issues/5206) - Add integration tests to ensure price bounds and decimal places work as expected
 - [5243](https://github.com/vegaprotocol/vega/issues/5243) - Update equity like share according to spec changes.
+- [5249](https://github.com/vegaprotocol/vega/issues/5249) - Upgrade to tendermint 0.35.6
 
 ### 🐛 Fixes
 - [4798](https://github.com/vegaprotocol/vega/issues/4978) - Set market pending timestamp to the time at which the market is created.

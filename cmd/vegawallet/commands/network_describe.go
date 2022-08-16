@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"io"
 
-	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
+	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/wallet/network"
 	netstore "code.vegaprotocol.io/vega/wallet/network/store/v1"
 
@@ -122,16 +122,12 @@ func PrintDescribeNetworkResponse(w io.Writer, resp *network.DescribeNetworkResp
 	for _, h := range resp.API.RESTConfig.Hosts {
 		str.Text("    - ").WarningText(h).NextLine()
 	}
-
 	str.NextLine()
+
 	str.Text("API.GraphQL").NextLine()
 	str.Text("  Hosts:").NextLine()
 	for _, h := range resp.API.GraphQLConfig.Hosts {
 		str.Text("    - ").WarningText(h).NextLine()
 	}
 	str.NextLine()
-
-	str.Text("Console").NextLine()
-	str.Text("  Address: ").WarningText(resp.Console.URL).WarningText(":").WarningText(fmt.Sprint(resp.Console.LocalPort))
-	str.NextSection()
 }

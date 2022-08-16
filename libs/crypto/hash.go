@@ -1,7 +1,7 @@
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
-// in the LICENSE file and at https://www.mariadb.com/bsl11.
+// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
 //
 // Change Date: 18 months from the later of the date of the first publicly
 // available Distribution of this version of the repository, and 25 June 2022.
@@ -27,7 +27,7 @@ func Hash(key []byte) []byte {
 }
 
 // HashHexStr hash a hex encoded string with sha3 256
-// returns an hex encoded string of the result.
+// returns a hex encoded string of the result.
 func HashHexStr(s string) string {
 	x, err := hex.DecodeString(s)
 	if err != nil {
@@ -39,7 +39,7 @@ func HashHexStr(s string) string {
 }
 
 // HashStr hash a string (converts to bytes first)
-// returns an hex encoded string of the result.
+// returns a hex encoded string of the result.
 func HashStr(s string) string {
 	hasher := sha3.New256()
 	hasher.Write([]byte(s))
@@ -48,6 +48,8 @@ func HashStr(s string) string {
 
 func RandomHash() string {
 	data := make([]byte, 10)
-	rand.Read(data)
+	if _, err := rand.Read(data); err != nil {
+		panic(fmt.Errorf("couldn't generate random string: %w", err))
+	}
 	return hex.EncodeToString(Hash(data))
 }

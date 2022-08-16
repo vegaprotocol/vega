@@ -3,15 +3,16 @@ package cmd
 import (
 	"context"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"io"
 
-	api "code.vegaprotocol.io/protos/vega/api/v1"
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	vglog "code.vegaprotocol.io/shared/libs/zap"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
+	vglog "code.vegaprotocol.io/vega/libs/zap"
+	api "code.vegaprotocol.io/vega/protos/vega/api/v1"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/wallet/network"
 	"code.vegaprotocol.io/vega/wallet/node"
 	"github.com/golang/protobuf/proto"
@@ -201,15 +202,24 @@ func SendTx(w io.Writer, rf *RootFlags, req *SendTxRequest) error {
 	ctx, cancelFn := context.WithTimeout(context.Background(), ForwarderRequestTimeout)
 	defer cancelFn()
 
-	txHash, err := forwarder.SendTx(ctx, req.Tx, api.SubmitTransactionRequest_TYPE_ASYNC, -1)
+	resp, err := forwarder.SendTx(ctx, req.Tx, api.SubmitTransactionRequest_TYPE_ASYNC, -1)
 	if err != nil {
-		log.Error("Couldn't send transaction", zap.Error(err))
+		log.Error("couldn't send transaction", zap.Error(err))
 		return fmt.Errorf("couldn't send transaction: %w", err)
 	}
 
-	log.Info("transaction successfully sent", zap.String("hash", txHash))
+	if !resp.Success {
+		d, err := hex.DecodeString(resp.Data)
+		if err != nil {
+			log.Error("unable to decode resp error string")
+		}
+		log.Error("transaction failed", zap.String("err", string(d)), zap.Uint32("code", resp.Code))
+		return fmt.Errorf("transaction failed: %s", resp.Data)
+	}
+
+	log.Info("transaction successfully sent", zap.String("hash", resp.TxHash))
 	if rf.Output == flags.InteractiveOutput {
-		str.NextLine().CheckMark().Text("Transaction sent: ").SuccessText(txHash).NextLine()
+		str.NextLine().CheckMark().Text("Transaction sent: ").SuccessText(resp.TxHash).NextLine()
 	}
 
 	return nil

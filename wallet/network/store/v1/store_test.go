@@ -1,13 +1,11 @@
 package v1_test
 
 import (
-	"os"
 	"path/filepath"
 	"testing"
 
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
-	vgtest "code.vegaprotocol.io/shared/libs/test"
-	"code.vegaprotocol.io/shared/paths"
+	vgtest "code.vegaprotocol.io/vega/libs/test"
+	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/wallet/network"
 	v1 "code.vegaprotocol.io/vega/wallet/network/store/v1"
 	"github.com/stretchr/testify/assert"
@@ -253,14 +251,7 @@ func initialiseFromPath(t *testing.T, vegaHome paths.Paths) *v1.Store {
 
 func newVegaHome(t *testing.T) *paths.CustomPaths {
 	t.Helper()
-	rootPath := filepath.Join("/tmp", "vegawallet", vgrand.RandomStr(10))
-	t.Cleanup(func() {
-		if err := os.RemoveAll(rootPath); err != nil {
-			t.Fatalf("couldn't remove vega home: %v", err)
-		}
-	})
-
-	return &paths.CustomPaths{CustomHome: rootPath}
+	return &paths.CustomPaths{CustomHome: t.TempDir()}
 }
 
 func networksHome(t *testing.T, vegaHome *paths.CustomPaths) string {

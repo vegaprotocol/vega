@@ -16,10 +16,10 @@ import (
 	"context"
 	"fmt"
 
-	"code.vegaprotocol.io/shared/paths"
-	"code.vegaprotocol.io/vega/config"
+	"code.vegaprotocol.io/vega/core/config"
+	"code.vegaprotocol.io/vega/core/snapshot"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/snapshot"
+	"code.vegaprotocol.io/vega/paths"
 
 	"github.com/jessevdk/go-flags"
 )

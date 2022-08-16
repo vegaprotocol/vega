@@ -7,10 +7,10 @@ import (
 	"os"
 	"time"
 
-	vgterm "code.vegaprotocol.io/shared/libs/term"
-	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
+	vgterm "code.vegaprotocol.io/vega/libs/term"
+	"code.vegaprotocol.io/vega/paths"
 	netstore "code.vegaprotocol.io/vega/wallet/network/store/v1"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"code.vegaprotocol.io/vega/wallet/wallets"

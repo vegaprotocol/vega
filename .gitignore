@@ -12,12 +12,15 @@ build/
 bin/
 *.exe
 vegawallet
-vega
-cmd/vega/vega*
+#vega
 cmd/vegawallet/vegawallet*
 cmd/vegabenchmark/vegabenchmark*
 cmd/examples/nullchain/nullchain*
-cmd/*/*-dbg
+cmd/data-node/__debug_bin
+data-node-amd64
+vega-amd64
+vegawallet-amd64
+#cmd/*/*-dbg
 
 # Exclude files related to tests
 integration.test
@@ -31,6 +34,8 @@ proto/*-re
 proto/**.orig
 *.pb.go-re
 gomock_reflect_*
+protos/generated/
+protos/swagger/
 
 # Exclude other random
 data/
@@ -39,4 +44,3 @@ data/
 *.log
 *.patch
 .metals
-

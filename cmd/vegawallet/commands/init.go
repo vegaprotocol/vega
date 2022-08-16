@@ -5,10 +5,10 @@ import (
 	"io"
 	"os"
 
-	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
+	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/wallet/service"
 	svcstore "code.vegaprotocol.io/vega/wallet/service/store/v1"
 	"code.vegaprotocol.io/vega/wallet/wallets"

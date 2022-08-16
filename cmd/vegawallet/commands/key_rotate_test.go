@@ -3,9 +3,9 @@ package cmd_test
 import (
 	"testing"
 
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
 	cmd "code.vegaprotocol.io/vega/cmd/vegawallet/commands"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -14,6 +14,7 @@ import (
 func TestRotateKeyFlags(t *testing.T) {
 	t.Run("Valid flags succeeds", testRotateKeyFlagsValidFlagsSucceeds)
 	t.Run("Missing wallet fails", testRotateKeyFlagsMissingWalletFails)
+	t.Run("Missing chain ID fails", testRotateKeyFlagsMissingChainIDFails)
 	t.Run("Missing new public key fails", testRotateKeyFlagsMissingNewPublicKeyFails)
 	t.Run("Missing current public key fails", testRotateKeyFlagsMissingCurrentPublicKeyFails)
 	t.Run("Missing tx height fails", testRotateKeyFlagsMissingTxBlockHeightFails)
@@ -31,11 +32,13 @@ func testRotateKeyFlagsValidFlagsSucceeds(t *testing.T) {
 	pubKey := vgrand.RandomStr(20)
 	txBlockHeight := uint64(20)
 	targetBlockHeight := uint64(25)
+	chainID := vgrand.RandomStr(5)
 
 	f := &cmd.RotateKeyFlags{
 		Wallet:            walletName,
 		PassphraseFile:    passphraseFilePath,
 		CurrentPubKey:     currentPubKey,
+		ChainID:           chainID,
 		NewPublicKey:      pubKey,
 		TxBlockHeight:     txBlockHeight,
 		TargetBlockHeight: targetBlockHeight,
@@ -45,6 +48,7 @@ func testRotateKeyFlagsValidFlagsSucceeds(t *testing.T) {
 		Wallet:            walletName,
 		Passphrase:        passphrase,
 		CurrentPublicKey:  currentPubKey,
+		ChainID:           chainID,
 		NewPublicKey:      pubKey,
 		TxBlockHeight:     txBlockHeight,
 		TargetBlockHeight: targetBlockHeight,
@@ -71,6 +75,21 @@ func testRotateKeyFlagsMissingWalletFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.FlagMustBeSpecifiedError("wallet"))
+	assert.Nil(t, req)
+}
+
+func testRotateKeyFlagsMissingChainIDFails(t *testing.T) {
+	testDir := t.TempDir()
+
+	// given
+	f := newRotateKeyFlags(t, testDir)
+	f.ChainID = ""
+
+	// when
+	req, err := f.Validate()
+
+	// then
+	assert.ErrorIs(t, err, flags.FlagMustBeSpecifiedError("chain-id"))
 	assert.Nil(t, req)
 }
 
@@ -157,6 +176,7 @@ func newRotateKeyFlags(t *testing.T, testDir string) *cmd.RotateKeyFlags {
 	walletName := vgrand.RandomStr(10)
 	pubKey := vgrand.RandomStr(20)
 	currentPubKey := vgrand.RandomStr(20)
+	chainID := vgrand.RandomStr(5)
 	txBlockHeight := uint64(20)
 	targetBlockHeight := uint64(25)
 
@@ -166,6 +186,7 @@ func newRotateKeyFlags(t *testing.T, testDir string) *cmd.RotateKeyFlags {
 		CurrentPubKey:     currentPubKey,
 		PassphraseFile:    passphraseFilePath,
 		TxBlockHeight:     txBlockHeight,
+		ChainID:           chainID,
 		TargetBlockHeight: targetBlockHeight,
 	}
 }

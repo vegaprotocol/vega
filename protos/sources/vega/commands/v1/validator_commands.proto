@@ -1,0 +1,136 @@
+syntax = "proto3";
+
+package vega.commands.v1;
+option go_package = "code.vegaprotocol.io/vega/protos/vega/commands/v1";
+
+import "vega/vega.proto";
+import "vega/chain_events.proto";
+import "vega/commands/v1/signature.proto";
+
+// A message from a validator signaling they are still online and validating blocks
+// or ready to validate block when they are till a potential validator
+message ValidatorHeartbeat {
+  // the id of the node emitting the heartbeat
+  string node_id = 1;
+  // Signature from the validator made using the ethereum wallet
+  Signature ethereum_signature = 2;
+  // Signature from the validator made using the vega wallet
+  Signature vega_signature = 3;
+}
+
+// Used announce a node as a new potential validator
+message AnnounceNode {
+  // Vega public key, required field
+  string vega_pub_key = 1;
+  // Ethereum public key, required field
+  string ethereum_address = 2;
+  // Public key for the blockchain, required field
+  string chain_pub_key = 3;
+  // URL with more info on the node
+  string info_url = 4;
+  // Country code (ISO 3166-1 alpha-2) for the location of the node
+  string country = 5;
+  // ID of the validator, (public master key)
+  string id = 6;
+  // Name of the validator
+  string name = 7;
+  // AvatarURL of the validator
+  string avatar_url = 8;
+  // Vega public key derivation index
+  uint32 vega_pub_key_index = 9;
+  // The epoch from which the validator is expected
+  // to be ready to validate blocks
+  uint64 from_epoch = 10;
+  // Signature from the validator made using the ethereum wallet
+  Signature ethereum_signature = 11;
+  // Signature from the validator made using the vega wallet
+  Signature vega_signature = 12;
+}
+// Used when a node votes for validating a given resource exists or is valid,
+// for example, an ERC20 deposit is valid and exists on ethereum
+message NodeVote {
+  // Previous public key field.
+  reserved 1;
+  // Reference, required field
+  string reference = 2;
+}
+
+// The kind of the signature created by a node, for example, allow-listing a new asset, withdrawal etc
+enum NodeSignatureKind {
+  // Represents an unspecified or missing value from the input
+  NODE_SIGNATURE_KIND_UNSPECIFIED = 0;
+  // Represents a signature for a new asset allow-listing
+  NODE_SIGNATURE_KIND_ASSET_NEW = 1;
+  // Represents a signature for an asset withdrawal
+  NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL = 2;
+  // Represents a signature for a new signer added to the erc20 multisig contract
+  NODE_SIGNATURE_KIND_ERC20_MULTISIG_SIGNER_ADDED = 3;
+  // Represents a signature for a signer removed from the erc20 multisig contract
+  NODE_SIGNATURE_KIND_ERC20_MULTISIG_SIGNER_REMOVED = 4;
+  // Represents a signature for an asset update allow-listing
+  NODE_SIGNATURE_KIND_ASSET_UPDATE = 5;
+}
+
+// Represents a signature from a validator, to be used by a foreign chain in order to recognise a decision taken by the Vega network
+message NodeSignature {
+  // The identifier of the resource being signed
+  string id = 1;
+  // The signature
+  bytes sig = 2;
+  // The kind of resource being signed
+  NodeSignatureKind kind = 3;
+}
+
+// An event forwarded to the Vega network to provide information on events happening on other networks
+message ChainEvent {
+  reserved 1003, 1004;
+  // The identifier of the transaction in which the events happened, usually a hash
+  string tx_id = 1;
+  // Arbitrary one-time integer used to prevent replay attacks
+  uint64 nonce = 2;
+  // The event
+  oneof event {
+    // Built-in asset event
+    vega.BuiltinAssetEvent builtin = 1001;
+    // Ethereum ERC20 event
+    vega.ERC20Event erc20 = 1002;
+    // Ethereum Staking event
+    vega.StakingEvent staking_event = 1005;
+    // Ethereum ERC20 multisig event
+    vega.ERC20MultiSigEvent erc20_multisig = 1006;
+  }
+}
+
+// A transaction to allow validator to rotate their vega keys
+message KeyRotateSubmission {
+  // New Vega public key derivation index
+  uint32 new_pub_key_index = 1;
+  // Target block at which the key rotation will take effect on
+  uint64 target_block = 2;
+  // The new public key to rotate to
+  string new_pub_key = 3;
+  // Hash of currently used public key
+  string current_pub_key_hash = 4;
+}
+
+// A transaction to allow validator to rotate their ethereum keys
+message EthereumKeyRotateSubmission {
+  // Target block at which the key rotation will take effect on
+  uint64 target_block = 1;
+  // The new adress to rotate to
+  string new_address = 2;
+  // Currently used public address
+  string current_address = 3;
+}
+
+message StateVariableProposal {
+  // The state value proposal details
+  vega.StateValueProposal proposal = 1;
+}
+
+message ProtocolUpgradeProposal {
+   // The block height at which to perform the upgrade
+   uint64 upgrade_block_height = 1;
+   // the release tag for the vega binary
+   string vega_release_tag = 2;
+}

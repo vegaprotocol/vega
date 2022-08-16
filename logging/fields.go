@@ -14,13 +14,11 @@ package logging
 
 import (
 	"encoding/hex"
+	"fmt"
 	"time"
 
-	ptypes "code.vegaprotocol.io/protos/vega"
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	ptypes "code.vegaprotocol.io/vega/protos/vega"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
 	"go.uber.org/zap"
 )
@@ -115,17 +113,17 @@ func Strings(key string, val []string) zap.Field {
 }
 
 // Decimal constructs a field with the given key and value.
-func Decimal(key string, val num.Decimal) zap.Field {
+func Decimal(key string, val fmt.Stringer) zap.Field {
 	return String(key, val.String())
 }
 
 // BigUint constructs a field with the given key and value.
-func BigUint(key string, val *num.Uint) zap.Field {
+func BigUint(key string, val fmt.Stringer) zap.Field {
 	return String(key, val.String())
 }
 
 // BigInt constructs a field with the given key and value.
-func BigInt(key string, val *num.Int) zap.Field {
+func BigInt(key string, val fmt.Stringer) zap.Field {
 	return String(key, val.String())
 }
 
@@ -169,17 +167,17 @@ func Error(val error) zap.Field {
 }
 
 // Candle constructs a field with the given VEGA candle proto value.
-func Candle(c types.Candle) zap.Field {
+func Candle(c fmt.Stringer) zap.Field {
 	return zap.String("candle", c.String())
 }
 
 // CandleWithTag constructs a field with the given VEGA candle proto value and key equal to the tag string.
-func CandleWithTag(c types.Candle, tag string) zap.Field {
+func CandleWithTag(c fmt.Stringer, tag string) zap.Field {
 	return zap.String(tag, c.String())
 }
 
 // Order constructs a field with the given VEGA order value.
-func Order(o types.Order) zap.Field {
+func Order(o fmt.Stringer) zap.Field {
 	return zap.String("order", o.String())
 }
 
@@ -198,17 +196,17 @@ func Time(key string, t time.Time) zap.Field {
 }
 
 // OrderWithTag constructs a field with the given VEGA order proto value and key equal to the tag string.
-func OrderWithTag(o types.Order, tag string) zap.Field {
+func OrderWithTag(o fmt.Stringer, tag string) zap.Field {
 	return zap.String(tag, o.String())
 }
 
 // Trade constructs a field with the given VEGA trade proto value.
-func Trade(t types.Trade) zap.Field {
+func Trade(t fmt.Stringer) zap.Field {
 	return zap.String("trade", t.String())
 }
 
 // Market constructs a field with the given VEGA market proto value.
-func Market(m types.Market) zap.Field {
+func Market(m fmt.Stringer) zap.Field {
 	return zap.String("market", m.String())
 }
 
@@ -235,7 +233,7 @@ func LiquidityProvisionSubmissionProto(
 }
 
 func LiquidityProvisionSubmission(
-	lp types.LiquidityProvisionSubmission,
+	lp fmt.Stringer,
 ) zap.Field {
 	return zap.String("liquidity-provision-submission", lp.String())
 }
@@ -247,7 +245,7 @@ func LiquidityProvisionCancellationProto(
 }
 
 func LiquidityProvisionCancellation(
-	lp types.LiquidityProvisionCancellation,
+	lp fmt.Stringer,
 ) zap.Field {
 	return zap.String("liquidity-provision-cancellation", lp.String())
 }
@@ -259,7 +257,7 @@ func LiquidityProvisionAmendmentProto(
 }
 
 func LiquidityProvisionAmendment(
-	lp types.LiquidityProvisionAmendment,
+	lp fmt.Stringer,
 ) zap.Field {
 	return zap.String("liquidity-provision-amendment", lp.String())
 }
@@ -271,13 +269,13 @@ func WithdrawSubmissionProto(
 }
 
 func WithdrawSubmission(
-	lp types.WithdrawSubmission,
+	lp fmt.Stringer,
 ) zap.Field {
 	return zap.String("withdraw-submission", lp.String())
 }
 
 // Party constructs a field with the given VEGA party proto value.
-func Party(p types.Party) zap.Field {
+func Party(p fmt.Stringer) zap.Field {
 	return zap.String("party", p.String())
 }
 
@@ -290,7 +288,7 @@ func ProposalID(id string) zap.Field {
 }
 
 // Account constructs a field with the given VEGA account proto value.
-func Account(a types.Account) zap.Field {
+func Account(a fmt.Stringer) zap.Field {
 	return zap.String("account", a.String())
 }
 
@@ -305,7 +303,7 @@ func OrderAmendmentProto(oa *commandspb.OrderAmendment) zap.Field {
 }
 
 // OrderAmendment constructs a single string field to contain all the object information.
-func OrderAmendment(oa *types.OrderAmendment) zap.Field {
+func OrderAmendment(oa fmt.Stringer) zap.Field {
 	return zap.String("order-amendment", oa.String())
 }
 
@@ -315,11 +313,11 @@ func OrderSubmissionProto(os *commandspb.OrderSubmission) zap.Field {
 }
 
 // OrderSubmission constructs a single string field to contain all the object information.
-func OrderSubmission(os *types.OrderSubmission) zap.Field {
+func OrderSubmission(os fmt.Stringer) zap.Field {
 	return zap.String("order-submission", os.String())
 }
 
-func OrderCancellation(oc *types.OrderCancellation) zap.Field {
+func OrderCancellation(oc fmt.Stringer) zap.Field {
 	return zap.String("order-cancellation", oc.String())
 }
 
@@ -332,12 +330,11 @@ func Reflect(key string, val interface{}) zap.Field {
 	return zap.Reflect(key, val)
 }
 
-// TraceID logs the event traceID.
-func TraceID(e events.Event) zap.Field {
-	return zap.String("trace-id", e.TraceID())
+type Tracer interface {
+	TraceID() string
 }
 
-// EventType logs the event type as a string.
-func EventType(e events.Event) zap.Field {
-	return zap.String("event-type", e.Type().String())
+// TraceID logs the event traceID.
+func TraceID(e Tracer) zap.Field {
+	return zap.String("trace-id", e.TraceID())
 }

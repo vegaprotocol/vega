@@ -3,7 +3,9 @@ package wallet
 import (
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"sort"
 
 	"github.com/tyler-smith/go-bip39"
 	"github.com/vegaprotocol/go-slip10"
@@ -20,6 +22,8 @@ const (
 	OriginIndex = slip10.FirstHardenedIndex + MagicIndex
 )
 
+var ErrCannotSetRestrictedKeysWithNoAccess = errors.New("can't set restricted keys with \"none\" access")
+
 type HDWallet struct {
 	version uint32
 	name    string
@@ -29,8 +33,9 @@ type HDWallet struct {
 	// not the master node. This is a node derived from the master. Its
 	// derivation index is constant (see OriginIndex). This node is referred as
 	// "wallet node".
-	node *slip10.Node
-	id   string
+	node        *slip10.Node
+	id          string
+	permissions map[string]Permissions
 }
 
 // NewHDWallet creates a wallet with auto-generated recovery phrase. This is
@@ -68,11 +73,12 @@ func ImportHDWallet(name, recoveryPhrase string, version uint32) (*HDWallet, err
 	}
 
 	return &HDWallet{
-		version: version,
-		name:    name,
-		keyRing: NewHDKeyRing(),
-		node:    walletNode,
-		id:      walletID(walletNode),
+		version:     version,
+		name:        name,
+		node:        walletNode,
+		id:          walletID(walletNode),
+		keyRing:     NewHDKeyRing(),
+		permissions: map[string]Permissions{},
 	}, nil
 }
 
@@ -266,10 +272,11 @@ func (w *HDWallet) IsolateWithKey(pubKey string) (Wallet, error) {
 	}
 
 	return &HDWallet{
-		version: w.version,
-		name:    fmt.Sprintf("%s.%s.isolated", w.name, keyPair.PublicKey()[0:8]),
-		keyRing: LoadHDKeyRing([]HDKeyPair{keyPair}),
-		id:      w.id,
+		version:     w.version,
+		name:        fmt.Sprintf("%s.%s.isolated", w.name, keyPair.PublicKey()[0:8]),
+		keyRing:     LoadHDKeyRing([]HDKeyPair{keyPair}),
+		id:          w.id,
+		permissions: w.permissions,
 	}, nil
 }
 
@@ -277,22 +284,47 @@ func (w *HDWallet) IsIsolated() bool {
 	return w.node == nil
 }
 
-type jsonHDWallet struct {
-	// The wallet name is retrieved from the file name it is stored in, so no
-	// need to serialize it.
+func (w *HDWallet) Permissions(hostname string) Permissions {
+	perms, ok := w.permissions[hostname]
+	if !ok {
+		return DefaultPermissions()
+	}
+	return perms
+}
 
-	Version uint32       `json:"version"`
-	Node    *slip10.Node `json:"node,omitempty"`
-	ID      string       `json:"id,omitempty"`
-	Keys    []HDKeyPair  `json:"keys"`
+func (w *HDWallet) PermittedHostnames() []string {
+	hostnames := make([]string, 0, len(w.permissions))
+	for hostname := range w.permissions {
+		hostnames = append(hostnames, hostname)
+	}
+	sort.Strings(hostnames)
+	return hostnames
+}
+
+func (w *HDWallet) RevokePermissions(hostname string) {
+	delete(w.permissions, hostname)
+}
+
+func (w *HDWallet) PurgePermissions() {
+	w.permissions = map[string]Permissions{}
+}
+
+func (w *HDWallet) UpdatePermissions(hostname string, perms Permissions) error {
+	if err := ensurePermissionsConsistency(w, perms); err != nil {
+		return fmt.Errorf("inconsistent permissions setup: %w", err)
+	}
+
+	w.permissions[hostname] = perms
+	return nil
 }
 
 func (w *HDWallet) MarshalJSON() ([]byte, error) {
 	jsonW := jsonHDWallet{
-		Version: w.Version(),
-		Keys:    w.keyRing.ListKeyPairs(),
-		Node:    w.node,
-		ID:      w.id,
+		Version:     w.Version(),
+		Node:        w.node,
+		ID:          w.id,
+		Keys:        w.keyRing.ListKeyPairs(),
+		Permissions: w.permissions,
 	}
 	return json.Marshal(jsonW)
 }
@@ -304,10 +336,17 @@ func (w *HDWallet) UnmarshalJSON(data []byte) error {
 	}
 
 	*w = HDWallet{
-		version: jsonW.Version,
-		keyRing: LoadHDKeyRing(jsonW.Keys),
-		node:    jsonW.Node,
-		id:      jsonW.ID,
+		version:     jsonW.Version,
+		node:        jsonW.Node,
+		id:          jsonW.ID,
+		keyRing:     LoadHDKeyRing(jsonW.Keys),
+		permissions: jsonW.Permissions,
+	}
+
+	for hostname, perms := range w.permissions {
+		if err := ensurePermissionsConsistency(w, perms); err != nil {
+			return fmt.Errorf("inconsistent permissions setup for hostname %q: %w", hostname, err)
+		}
 	}
 
 	if len(w.id) == 0 {
@@ -351,6 +390,17 @@ func (w *HDWallet) deriveKeyNodeV2(nextIndex uint32) (*slip10.Node, error) {
 	return keyNode, nil
 }
 
+type jsonHDWallet struct {
+	// The wallet name is retrieved from the file name it is stored in, so no
+	// need to serialize it.
+
+	Version     uint32                 `json:"version"`
+	Node        *slip10.Node           `json:"node,omitempty"`
+	ID          string                 `json:"id,omitempty"`
+	Keys        []HDKeyPair            `json:"keys"`
+	Permissions map[string]Permissions `json:"permissions"`
+}
+
 // NewRecoveryPhrase generates a recovery phrase with an entropy of 256 bits.
 func NewRecoveryPhrase() (string, error) {
 	entropy, err := bip39.NewEntropy(MaxEntropyByteSize)
@@ -380,4 +430,26 @@ func deriveWalletNodeFromRecoveryPhrase(recoveryPhrase string) (*slip10.Node, er
 func walletID(walletNode *slip10.Node) string {
 	pubKey, _ := walletNode.Keypair()
 	return hex.EncodeToString(pubKey)
+}
+
+func ensurePermissionsConsistency(w *HDWallet, perms Permissions) error {
+	if perms.PublicKeys.Access == NoAccess && len(perms.PublicKeys.RestrictedKeys) != 0 {
+		return ErrCannotSetRestrictedKeysWithNoAccess
+	}
+
+	if len(perms.PublicKeys.RestrictedKeys) != 0 {
+		existingKeys := w.ListKeyPairs()
+		for _, restrictedKey := range perms.PublicKeys.RestrictedKeys {
+			// Verify the restricted key exists in keys present in the wallet.
+			for _, k := range existingKeys {
+				// If it matches, we try the next one.
+				if k.PublicKey() == restrictedKey {
+					break
+				}
+				return fmt.Errorf("restricted key %s does not exist on wallet", restrictedKey)
+			}
+		}
+	}
+
+	return nil
 }

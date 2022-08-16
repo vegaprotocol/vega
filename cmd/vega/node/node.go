@@ -20,26 +20,29 @@ import (
 	"os/signal"
 	"syscall"
 
-	apipb "code.vegaprotocol.io/protos/vega/api/v1"
-	"code.vegaprotocol.io/shared/paths"
-	"code.vegaprotocol.io/vega/admin"
-	"code.vegaprotocol.io/vega/api"
-	"code.vegaprotocol.io/vega/api/rest"
-	"code.vegaprotocol.io/vega/blockchain"
-	"code.vegaprotocol.io/vega/blockchain/abci"
-	"code.vegaprotocol.io/vega/blockchain/nullchain"
-	ethclient "code.vegaprotocol.io/vega/client/eth"
-	"code.vegaprotocol.io/vega/config"
-	"code.vegaprotocol.io/vega/coreapi"
+	"code.vegaprotocol.io/vega/core/admin"
+	"code.vegaprotocol.io/vega/core/api"
+	"code.vegaprotocol.io/vega/core/api/rest"
+	"code.vegaprotocol.io/vega/core/blockchain"
+	"code.vegaprotocol.io/vega/core/blockchain/abci"
+	"code.vegaprotocol.io/vega/core/blockchain/nullchain"
+	ethclient "code.vegaprotocol.io/vega/core/client/eth"
+	"code.vegaprotocol.io/vega/core/config"
+	"code.vegaprotocol.io/vega/core/coreapi"
+	"code.vegaprotocol.io/vega/core/metrics"
+	"code.vegaprotocol.io/vega/core/nodewallets"
+	"code.vegaprotocol.io/vega/core/protocol"
+	"code.vegaprotocol.io/vega/core/protocolupgrade"
+	"code.vegaprotocol.io/vega/core/stats"
 	"code.vegaprotocol.io/vega/libs/pprof"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/metrics"
-	"code.vegaprotocol.io/vega/monitoring"
-	"code.vegaprotocol.io/vega/nodewallets"
-	"code.vegaprotocol.io/vega/protocol"
-	"code.vegaprotocol.io/vega/stats"
+	"code.vegaprotocol.io/vega/paths"
+	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
+	"code.vegaprotocol.io/vega/version"
 
 	"github.com/blang/semver"
+	"github.com/tendermint/tendermint/abci/types"
+	tmtypes "github.com/tendermint/tendermint/types"
 	"google.golang.org/grpc"
 )
 
@@ -49,9 +52,7 @@ type NodeCommand struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 
-	Log         *logging.Logger
-	Version     string
-	VersionHash string
+	Log *logging.Logger
 
 	pproffhandlr *pprof.Pprofhandler
 	stats        *stats.Stats
@@ -80,15 +81,15 @@ type NodeCommand struct {
 	adminServer *admin.Server
 	coreService *coreapi.Service
 
-	statusChecker *monitoring.Status
-
 	protocolUpgrade <-chan string
+
+	tmNode *abci.TmNode
 }
 
 func (n *NodeCommand) Run(
 	confWatcher *config.Watcher,
 	vegaPaths paths.Paths,
-	nodeWalletPassphrase string,
+	nodeWalletPassphrase, tmHome, networkURL, network string,
 	args []string,
 ) error {
 	n.confWatcher = confWatcher
@@ -109,12 +110,6 @@ func (n *NodeCommand) Run(
 		return err
 	}
 
-	n.statusChecker = monitoring.New(n.Log, n.conf.Monitoring, n.blockchainClient)
-	n.statusChecker.OnChainDisconnect(n.cancel)
-	n.statusChecker.OnChainVersionObtained(
-		func(v string) { n.stats.SetChainVersion(v) },
-	)
-
 	// TODO(): later we will want to select what version of the protocol
 	// to run, most likely via configuration, so we can use legacy or current
 	var err error
@@ -124,11 +119,11 @@ func (n *NodeCommand) Run(
 		return err
 	}
 
-	if err := n.startBlockchain(); err != nil {
+	if err := n.startAPIs(); err != nil {
 		return err
 	}
 
-	if err := n.startAPIs(); err != nil {
+	if err := n.startBlockchain(tmHome, network, networkURL); err != nil {
 		return err
 	}
 
@@ -171,7 +166,7 @@ func (n *NodeCommand) wait() {
 }
 
 func (n *NodeCommand) startProtocolUpgrade(version string) {
-	semVersion, err := semver.Parse(version)
+	semVersion, err := semver.Parse(protocolupgrade.TrimReleaseTag(version))
 	if err != nil {
 		n.Log.Error("invalid protocol version upgrade received, upgrade aborted",
 			logging.String("version", version),
@@ -214,9 +209,6 @@ func (n *NodeCommand) Stop() error {
 	if n.blockchainServer != nil {
 		n.blockchainServer.Stop()
 	}
-	if n.statusChecker != nil {
-		n.statusChecker.Stop()
-	}
 	if n.proxyServer != nil {
 		n.proxyServer.Stop()
 	}
@@ -236,8 +228,8 @@ func (n *NodeCommand) Stop() error {
 	}
 
 	n.Log.Info("Vega shutdown complete",
-		logging.String("version", n.Version),
-		logging.String("version-hash", n.VersionHash))
+		logging.String("version", version.Get()),
+		logging.String("version-hash", version.GetCommitHash()))
 
 	n.Log.Sync()
 	n.cancel()
@@ -267,25 +259,29 @@ func (n *NodeCommand) startAPIs() error {
 		n.protocol.GetEventForwarder(),
 		n.protocol.GetTimeService(),
 		n.protocol.GetEventService(),
-		n.statusChecker,
 		n.protocol.GetPoW(),
 	)
 
+	n.coreService = coreapi.NewService(n.ctx, n.Log, n.conf.CoreAPI, n.protocol.GetBroker())
 	n.grpcServer.RegisterService(func(server *grpc.Server) {
-		svc := coreapi.NewService(n.ctx, n.Log, n.conf.CoreAPI, n.protocol.GetBroker())
-		apipb.RegisterCoreStateServiceServer(server, svc)
+		apipb.RegisterCoreStateServiceServer(server, n.coreService)
 	})
 
 	// watch configs
 	n.confWatcher.OnConfigUpdate(
 		func(cfg config.Config) { n.grpcServer.ReloadConf(cfg.API) },
-		func(cfg config.Config) { n.statusChecker.ReloadConf(cfg.Monitoring) },
 	)
 
 	n.proxyServer = rest.NewProxyServer(n.Log, n.conf.API)
 
-	if bool(n.conf.Admin.Server.Enabled) && n.conf.IsValidator() {
-		adminServer, err := admin.NewServer(n.Log, n.conf.Admin, n.vegaPaths, n.nodeWalletPassphrase, n.nodeWallets)
+	if n.conf.IsValidator() {
+		adminServer, err := admin.NewValidatorServer(n.Log, n.conf.Admin, n.vegaPaths, n.nodeWalletPassphrase, n.nodeWallets, n.protocol.GetProtocolUpgradeService())
+		if err != nil {
+			return err
+		}
+		n.adminServer = adminServer
+	} else {
+		adminServer, err := admin.NewNonValidatorServer(n.Log, n.conf.Admin, n.vegaPaths, n.protocol.GetProtocolUpgradeService())
 		if err != nil {
 			return err
 		}
@@ -302,18 +298,35 @@ func (n *NodeCommand) startAPIs() error {
 	return nil
 }
 
-func (n *NodeCommand) startBlockchain() error {
+func (n *NodeCommand) startBlockchain(tmHome, network, networkURL string) error {
+	// make sure any env variable is resolved
+	tmHome = os.ExpandEnv(tmHome)
 	n.abciApp = newAppW(n.protocol.Abci())
 
 	switch n.conf.Blockchain.ChainProvider {
 	case blockchain.ProviderTendermint:
-		n.blockchainServer = blockchain.NewServer(
-			abci.NewServer(n.Log, n.conf.Blockchain, n.abciApp),
-		)
+		var err error
+		// initialise the node
+		n.tmNode, err = n.startABCI(n.ctx, n.abciApp, tmHome, network, networkURL)
+		if err != nil {
+			return err
+		}
+		n.blockchainServer = blockchain.NewServer(n.tmNode)
+		// initialise the client
+		client, err := n.tmNode.GetClient()
+		if err != nil {
+			return err
+		}
+		// n.blockchainClient = blockchain.NewClient(client)
+		n.blockchainClient.Set(client)
 	case blockchain.ProviderNullChain:
-		n.nullBlockchain.SetABCIApp(n.abciApp)
 		// nullchain acts as both the client and the server because its does everything
+		n.nullBlockchain = nullchain.NewClient(n.Log, n.conf.Blockchain.Null)
+		n.nullBlockchain.SetABCIApp(n.abciApp)
 		n.blockchainServer = blockchain.NewServer(n.nullBlockchain)
+		// n.blockchainClient = blockchain.NewClient(n.nullBlockchain)
+		n.blockchainClient.Set(n.nullBlockchain)
+
 	default:
 		return ErrUnknownChainProvider
 	}
@@ -346,7 +359,7 @@ func (n *NodeCommand) setupCommon(_ []string) (err error) {
 		}
 	}()
 
-	// initialize the application contet
+	// initialize the application context
 	n.ctx, n.cancel = context.WithCancel(context.Background())
 
 	// get the configuration, this have been loaded by the root
@@ -367,7 +380,7 @@ func (n *NodeCommand) setupCommon(_ []string) (err error) {
 		)
 	}
 
-	n.stats = stats.New(n.Log, n.conf.Stats, n.Version, n.VersionHash)
+	n.stats = stats.New(n.Log, n.conf.Stats)
 
 	// start prometheus stuff
 	metrics.Start(n.conf.Metrics)
@@ -389,18 +402,39 @@ func (n *NodeCommand) loadNodeWallets(_ []string) (err error) {
 	return n.nodeWallets.Verify()
 }
 
-func (n *NodeCommand) startBlockchainClients(_ []string) error {
-	switch n.conf.Blockchain.ChainProvider {
-	case blockchain.ProviderTendermint:
-		a, err := abci.NewClient(n.conf.Blockchain.Tendermint.ClientAddr)
-		if err != nil {
-			return err
-		}
-		n.blockchainClient = blockchain.NewClient(a)
-	case blockchain.ProviderNullChain:
-		n.nullBlockchain = nullchain.NewClient(n.Log, n.conf.Blockchain.Null)
-		n.blockchainClient = blockchain.NewClient(n.nullBlockchain)
+func (n *NodeCommand) startABCI(
+	ctx context.Context,
+	app types.Application,
+	tmHome string,
+	network string,
+	networkURL string,
+) (*abci.TmNode, error) {
+	var (
+		genesisDoc *tmtypes.GenesisDoc
+		err        error
+	)
+	if len(network) > 0 {
+		genesisDoc, err = httpGenesisDocProvider(network)
+	} else if len(networkURL) > 0 {
+		genesisDoc, err = genesisDocHTTPFromURL(networkURL)
 	}
+	if err != nil {
+		return nil, err
+	}
+
+	return abci.NewTmNode(
+		n.conf.Blockchain,
+		n.Log,
+		tmHome,
+		app,
+		genesisDoc,
+	)
+}
+
+func (n *NodeCommand) startBlockchainClients(_ []string) error {
+	// just intantiate the client here, we'll setup the actual impl later on
+	// when the null blockchain or tendermint is started.
+	n.blockchainClient = blockchain.NewClient()
 
 	// if we are a non-validator, nothing needs to be done here
 	if !n.conf.IsValidator() {
@@ -409,7 +443,7 @@ func (n *NodeCommand) startBlockchainClients(_ []string) error {
 
 	if n.conf.Blockchain.ChainProvider != blockchain.ProviderNullChain {
 		var err error
-		n.ethClient, err = ethclient.Dial(n.ctx, n.conf.NodeWallet.ETH.Address)
+		n.ethClient, err = ethclient.Dial(n.ctx, n.conf.Ethereum)
 		if err != nil {
 			return fmt.Errorf("could not instantiate ethereum client: %w", err)
 		}

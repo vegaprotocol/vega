@@ -15,18 +15,18 @@ package genesis
 import (
 	"encoding/base64"
 	"fmt"
+	"time"
 
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
-	"code.vegaprotocol.io/shared/paths"
-	"code.vegaprotocol.io/vega/genesis"
+	"code.vegaprotocol.io/vega/core/genesis"
+	"code.vegaprotocol.io/vega/core/nodewallets"
+	vgtm "code.vegaprotocol.io/vega/core/tendermint"
+	"code.vegaprotocol.io/vega/core/validators"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/nodewallets"
-	vgtm "code.vegaprotocol.io/vega/tendermint"
-	"code.vegaprotocol.io/vega/validators"
+	"code.vegaprotocol.io/vega/paths"
 
 	"github.com/jessevdk/go-flags"
 	tmtypes "github.com/tendermint/tendermint/types"
-	tmtime "github.com/tendermint/tendermint/types/time"
 )
 
 type generateCmd struct {
@@ -77,7 +77,7 @@ func (opts *generateCmd) Execute(_ []string) error {
 
 	genesisDoc := &tmtypes.GenesisDoc{
 		ChainID:         fmt.Sprintf("test-chain-%v", vgrand.RandomStr(6)),
-		GenesisTime:     tmtime.Now(),
+		GenesisTime:     time.Now().Round(0).UTC(),
 		ConsensusParams: tmtypes.DefaultConsensusParams(),
 		Validators: []tmtypes.GenesisValidator{
 			{

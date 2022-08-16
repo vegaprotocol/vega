@@ -1,0 +1,130 @@
+package gql
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"code.vegaprotocol.io/vega/datanode/vegatime"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	types "code.vegaprotocol.io/vega/protos/vega"
+	vega "code.vegaprotocol.io/vega/protos/vega"
+)
+
+func handleCandleConnectionRequest(ctx context.Context, client TradingDataServiceClientV2, market *types.Market, sinceRaw string, toRaw *string,
+	interval vega.Interval, pagination *v2.Pagination,
+) (*v2.CandleDataConnection, error) {
+	since, err := vegatime.Parse(sinceRaw)
+	if err != nil {
+		return nil, err
+	}
+
+	to := time.Unix(0, 0)
+	if toRaw != nil {
+		to, err = vegatime.Parse(*toRaw)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var mkt string
+	if market != nil {
+		mkt = market.Id
+	}
+
+	candlesForMktReq := v2.ListCandleIntervalsRequest{MarketId: mkt}
+	candlesForMktResp, err := client.ListCandleIntervals(ctx, &candlesForMktReq)
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve candles for market %s: %w", mkt, err)
+	}
+
+	candleID := ""
+
+	for _, c4m := range candlesForMktResp.IntervalToCandleId {
+		if c4m.Interval == string(interval) {
+			candleID = c4m.CandleId
+			break
+		}
+	}
+
+	if candleID == "" {
+		return nil, fmt.Errorf("could not find candle for market %s and interval %s", mkt, interval)
+	}
+
+	req := v2.ListCandleDataRequest{
+		CandleId:      candleID,
+		FromTimestamp: since.Unix(),
+		ToTimestamp:   to.Unix(),
+		Interval:      interval,
+		Pagination:    pagination,
+	}
+	resp, err := client.ListCandleData(ctx, &req)
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve candles for market %s: %w", mkt, err)
+	}
+
+	return resp.Candles, nil
+}
+
+func handleWithdrawalsConnectionRequest(ctx context.Context, client TradingDataServiceClientV2, party *types.Party,
+	pagination *v2.Pagination,
+) (*v2.WithdrawalsConnection, error) {
+	req := v2.ListWithdrawalsRequest{PartyId: party.Id, Pagination: pagination}
+	resp, err := client.ListWithdrawals(ctx, &req)
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve withdrawals for party %s: %w", party.Id, err)
+	}
+	return resp.Withdrawals, nil
+}
+
+func handleDepositsConnectionRequest(ctx context.Context, client TradingDataServiceClientV2, party *types.Party,
+	pagination *v2.Pagination,
+) (*v2.DepositsConnection, error) {
+	req := v2.ListDepositsRequest{PartyId: party.Id, Pagination: pagination}
+	resp, err := client.ListDeposits(ctx, &req)
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve deposits for party %s: %w", party.Id, err)
+	}
+	return resp.Deposits, nil
+}
+
+func handleProposalsRequest(ctx context.Context, client TradingDataServiceClientV2, party *types.Party, ref *string, inType *v2.ListGovernanceDataRequest_Type,
+	inState *vega.Proposal_State, pagination *v2.Pagination,
+) (*v2.GovernanceDataConnection, error) {
+	var partyID *string
+	var proposalState *types.Proposal_State
+
+	if party != nil {
+		partyID = &party.Id
+	}
+
+	req := v2.ListGovernanceDataRequest{
+		ProposerPartyId:   partyID,
+		ProposalReference: ref,
+		ProposalType:      inType,
+		ProposalState:     proposalState,
+		Pagination:        pagination,
+	}
+	resp, err := client.ListGovernanceData(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Connection, nil
+}
+
+func handleDelegationConnectionRequest(ctx context.Context, client TradingDataServiceClientV2,
+	partyID, nodeID, epochID *string, pagination *v2.Pagination,
+) (*v2.DelegationsConnection, error) {
+	req := v2.ListDelegationsRequest{
+		PartyId:    partyID,
+		NodeId:     nodeID,
+		EpochId:    epochID,
+		Pagination: pagination,
+	}
+
+	resp, err := client.ListDelegations(ctx, &req)
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve requested delegations: %w", err)
+	}
+	return resp.Delegations, nil
+}

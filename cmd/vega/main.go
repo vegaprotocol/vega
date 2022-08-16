@@ -16,7 +16,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"runtime/debug"
 
 	"github.com/jessevdk/go-flags"
 
@@ -24,12 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vega/genesis"
 	"code.vegaprotocol.io/vega/cmd/vega/nodewallet"
 	"code.vegaprotocol.io/vega/cmd/vega/paths"
-	"code.vegaprotocol.io/vega/config"
-)
-
-var (
-	CLIVersionHash = ""
-	CLIVersion     = "v0.53.0"
+	"code.vegaprotocol.io/vega/core/config"
 )
 
 // Subcommand is the signature of a sub command that can be registered.
@@ -46,7 +40,6 @@ func Register(ctx context.Context, parser *flags.Parser, cmds ...Subcommand) err
 }
 
 func main() {
-	setCommitHash()
 	ctx := context.Background()
 	if err := Main(ctx); err != nil {
 		os.Exit(-1)
@@ -57,10 +50,12 @@ func Main(ctx context.Context) error {
 	// special case for the tendermint subcommand, so we bypass the command line
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
-		case "tm":
+		case "tendermint", "tm":
 			return (&tmCmd{}).Execute(nil)
 		case "wallet":
 			return (&walletCmd{}).Execute(nil)
+		case "datanode":
+			return (&datanodeCmd{}).Execute(nil)
 		}
 	}
 
@@ -74,15 +69,19 @@ func Main(ctx context.Context) error {
 		Verify,
 		Version,
 		Wallet,
+		Datanode,
 		Watch,
 		Tm,
+		Tendermint,
 		Query,
 		Bridge,
 		paths.Paths,
 		UnsafeResetAll,
 		SnapshotList,
 		AnnounceNode,
+		ProposeProtocolUpgrade,
 		Start,
+		Node,
 	); err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, err)
 		return err
@@ -92,21 +91,4 @@ func Main(ctx context.Context) error {
 		return err
 	}
 	return nil
-}
-
-func setCommitHash() {
-	info, _ := debug.ReadBuildInfo()
-	modified := false
-
-	for _, v := range info.Settings {
-		if v.Key == "vcs.revision" {
-			CLIVersionHash = v.Value
-		}
-		if v.Key == "vcs.modified" {
-			modified = true
-		}
-	}
-	if modified {
-		CLIVersionHash += "-modified"
-	}
 }

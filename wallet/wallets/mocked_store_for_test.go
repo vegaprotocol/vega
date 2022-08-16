@@ -1,6 +1,7 @@
 package wallets_test
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -22,12 +23,12 @@ func newMockedStore() *mockedStore {
 	}
 }
 
-func (m *mockedStore) WalletExists(name string) bool {
+func (m *mockedStore) WalletExists(_ context.Context, name string) (bool, error) {
 	_, ok := m.wallets[name]
-	return ok
+	return ok, nil
 }
 
-func (m *mockedStore) ListWallets() ([]string, error) {
+func (m *mockedStore) ListWallets(_ context.Context) ([]string, error) {
 	ws := make([]string, 0, len(m.wallets))
 	for k := range m.wallets {
 		ws = append(ws, k)
@@ -35,13 +36,13 @@ func (m *mockedStore) ListWallets() ([]string, error) {
 	return ws, nil
 }
 
-func (m *mockedStore) SaveWallet(w wallet.Wallet, passphrase string) error {
+func (m *mockedStore) SaveWallet(_ context.Context, w wallet.Wallet, passphrase string) error {
 	m.passphrase = passphrase
 	m.wallets[w.Name()] = w
 	return nil
 }
 
-func (m *mockedStore) GetWallet(name, passphrase string) (wallet.Wallet, error) {
+func (m *mockedStore) GetWallet(_ context.Context, name, passphrase string) (wallet.Wallet, error) {
 	w, ok := m.wallets[name]
 	if !ok {
 		return nil, wallets.ErrWalletDoesNotExists

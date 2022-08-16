@@ -3,7 +3,7 @@ package tests_test
 import (
 	"testing"
 
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"github.com/stretchr/testify/require"
 )
 
@@ -35,10 +35,11 @@ func TestSignCommand(t *testing.T) {
 		"--home", home,
 		"--output", "json",
 		"--wallet", walletName,
+		"--chain-id", vgrand.RandomStr(5),
 		"--pubkey", importWalletResp.Key.PublicKey,
 		"--passphrase-file", passphraseFilePath,
 		"--tx-height", "150",
-		`{"voteSubmission": {"proposalId": "some-id", "value": "VALUE_YES"}}`,
+		`{"voteSubmission": {"proposalId": "1da3c57bfc2ff8fac2bd2160e5bed5f88f49d1d54d655918cf0758585f248ef7", "value": "VALUE_YES"}}`,
 	})
 
 	// then
@@ -87,10 +88,11 @@ func TestSignCommandWithTaintedKey(t *testing.T) {
 		"--home", home,
 		"--output", "json",
 		"--wallet", walletName,
+		"--chain-id", vgrand.RandomStr(5),
 		"--pubkey", importWalletResp.Key.PublicKey,
 		"--passphrase-file", passphraseFilePath,
 		"--tx-height", "150",
-		`{"voteSubmission": {"proposalId": "some-id", "value": "VALUE_YES"}}`,
+		`{"voteSubmission": {"proposalId": "1da3c57bfc2ff8fac2bd2160e5bed5f88f49d1d54d655918cf0758585f248ef7", "value": "VALUE_YES"}}`,
 	})
 
 	// then
@@ -114,10 +116,11 @@ func TestSignCommandWithTaintedKey(t *testing.T) {
 		"--home", home,
 		"--output", "json",
 		"--wallet", walletName,
+		"--chain-id", vgrand.RandomStr(5),
 		"--pubkey", importWalletResp.Key.PublicKey,
 		"--passphrase-file", passphraseFilePath,
 		"--tx-height", "150",
-		`{"voteSubmission": {"proposalId": "some-id", "value": "VALUE_YES"}}`,
+		`{"voteSubmission": {"proposalId": "1da3c57bfc2ff8fac2bd2160e5bed5f88f49d1d54d655918cf0758585f248ef7", "value": "VALUE_YES"}}`,
 	})
 
 	// then

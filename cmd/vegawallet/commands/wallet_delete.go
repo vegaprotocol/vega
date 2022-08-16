@@ -1,14 +1,15 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
 
-	vgterm "code.vegaprotocol.io/shared/libs/term"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
+	vgterm "code.vegaprotocol.io/vega/libs/term"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
 	"github.com/spf13/cobra"
@@ -46,7 +47,7 @@ func NewCmdDeleteWallet(w io.Writer, rf *RootFlags) *cobra.Command {
 			return fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 
-		return s.DeleteWallet(wallet)
+		return s.DeleteWallet(context.Background(), wallet)
 	}
 
 	return BuildCmdDeleteWallet(w, h, rf)
