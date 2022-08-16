@@ -125,14 +125,14 @@ func (bound PriceMonitoringBound) Equals(other PriceMonitoringBound) bool {
 }
 
 type LiquidityProviderFeeShare struct {
-	Party                 string `json:"party"`
-	EquityLikeShare       uint64 `json:"equityLikeShare"`
-	AverageEntryValuation uint64 `json:"averageEntryValuation"`
+	Party                 string          `json:"party"`
+	EquityLikeShare       decimal.Decimal `json:"equityLikeShare"`
+	AverageEntryValuation uint64          `json:"averageEntryValuation"`
 }
 
 func (fee LiquidityProviderFeeShare) Equals(other LiquidityProviderFeeShare) bool {
 	return fee.Party == other.Party &&
-		fee.EquityLikeShare == other.EquityLikeShare &&
+		fee.EquityLikeShare.Equals(other.EquityLikeShare) &&
 		fee.AverageEntryValuation == other.AverageEntryValuation
 }
 
@@ -292,7 +292,7 @@ func liquidityProviderFeeShareFromProto(feeShare *types.LiquidityProviderFeeShar
 		return nil
 	}
 
-	equityLikeShare, _ := strconv.ParseUint(feeShare.EquityLikeShare, 10, 64)
+	equityLikeShare, _ := decimal.NewFromString(feeShare.EquityLikeShare)
 	averageEntryValuation, _ := strconv.ParseUint(feeShare.AverageEntryValuation, 10, 64)
 
 	return &LiquidityProviderFeeShare{
