@@ -70,6 +70,8 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 		duration = minAuctionDuration
 	}
 
+	latestUpdateMarketProposals := map[string]*types.Proposal{}
+	updatedMarketIDs := []string{}
 	for _, p := range cp.Proposals {
 		prop, err := types.ProposalFromProto(p)
 		if err != nil {
@@ -110,6 +112,13 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 			if err := e.markets.StartOpeningAuction(ctx, prop.ID); err != nil {
 				e.log.Panic("failed to start opening auction for market", logging.String("market-id", prop.ID), logging.Error(err))
 			}
+		case types.ProposalTermsTypeUpdateMarket:
+			marketID := prop.Terms.GetUpdateMarket().MarketID
+			updatedMarketIDs = append(updatedMarketIDs, marketID)
+			last, ok := latestUpdateMarketProposals[marketID]
+			if !ok || prop.Terms.EnactmentTimestamp > last.Terms.EnactmentTimestamp {
+				latestUpdateMarketProposals[marketID] = prop
+			}
 		}
 
 		evts = append(evts, events.NewProposalEvent(ctx, *prop))
@@ -117,6 +126,16 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 			Proposal: prop,
 		})
 	}
+
+	for _, v := range updatedMarketIDs {
+		p := latestUpdateMarketProposals[v]
+		mkt, _, err := e.updatedMarketFromProposal(&proposal{Proposal: p})
+		if err != nil {
+			continue
+		}
+		e.markets.UpdateMarket(ctx, mkt)
+	}
+
 	// send events for restored proposals
 	e.broker.SendBatch(evts)
 	// @TODO ensure OnTick is called
@@ -138,7 +157,19 @@ func (e *Engine) getCheckpointProposals() []*vega.Proposal {
 				e.log.Info("not saving market proposal to checkpoint ", logging.String("market-id", p.ID), logging.String("market-state", mktState.String()))
 				continue
 			}
+		case types.ProposalTermsTypeUpdateMarket:
+			mktState, err := e.markets.GetMarketState(p.MarketUpdate().MarketID)
+			// if the market is missing from the execution engine it means it's been already cancelled or settled or rejected
+			if err == types.ErrInvalidMarketID {
+				e.log.Info("not saving market update proposal to checkpoint - market has already been removed", logging.String("market-id", p.ID))
+				continue
+			}
+			if mktState == types.MarketStateTradingTerminated {
+				e.log.Info("not saving market update proposal to checkpoint ", logging.String("market-id", p.ID), logging.String("market-state", mktState.String()))
+				continue
+			}
 		}
+
 		ret = append(ret, p.IntoProto())
 	}
 	return ret
