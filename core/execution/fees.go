@@ -25,18 +25,26 @@ type FeeSplitter struct {
 	currentTime     time.Time
 	tradeValue      *num.Uint
 	changed         bool
+	avg             num.Decimal
+	window          int64
 }
 
 func NewFeeSplitter() *FeeSplitter {
 	return &FeeSplitter{
 		tradeValue: num.UintZero(),
 		changed:    true,
+		window:     1, // initialise as 1 otherwise the average value calculation ends up being borked
+		avg:        num.DecimalZero(),
 	}
 }
 
 func (fs *FeeSplitter) SetCurrentTime(t time.Time) error {
 	if t.Before(fs.timeWindowStart) {
 		return errors.New("current time can't be before current window time")
+	}
+	// we're past the opening auction, or we have a trade value (ie we're leaving opening auction)
+	if fs.window > 1 || !fs.tradeValue.IsZero() {
+		fs.window++
 	}
 	fs.currentTime = t
 	return nil
@@ -80,7 +88,19 @@ func (fs *FeeSplitter) MarketValueProxy(mvwl time.Duration, totalStakeU *num.Uin
 	return totalStake
 }
 
+func (fs *FeeSplitter) AvgTradeValue() num.Decimal {
+	return fs.avg
+}
+
 func (fs *FeeSplitter) AddTradeValue(v *num.Uint) {
+	tv := num.DecimalFromUint(v)
+	if fs.window > 1 {
+		n := num.NewDecimalFromFloat(float64(fs.window))
+		nmin := num.NewDecimalFromFloat(float64(fs.window - 1))
+		fs.avg = fs.avg.Mul(nmin.Div(n)).Add(tv.Div(n))
+	} else {
+		fs.avg = fs.avg.Add(tv) // keep adding during first period
+	}
 	fs.tradeValue.AddSum(v)
 	fs.changed = true
 }

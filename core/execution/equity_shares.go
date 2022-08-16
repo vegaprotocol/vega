@@ -34,6 +34,8 @@ type EquityShares struct {
 	pMvp num.Decimal // @TODO add to snapshot
 	r    num.Decimal
 
+	totalVStake num.Decimal
+	totalPStake num.Decimal
 	// lps is a map of party id to lp (LiquidityProviders)
 	lps map[string]*lp
 
@@ -47,6 +49,8 @@ func NewEquityShares(mvp num.Decimal) *EquityShares {
 		mvp:          mvp,
 		pMvp:         num.DecimalZero(),
 		r:            num.DecimalZero(),
+		totalPStake:  num.DecimalZero(),
+		totalVStake:  num.DecimalZero(),
 		lps:          map[string]*lp{},
 		stateChanged: true,
 	}
@@ -62,18 +66,42 @@ func (es *EquityShares) OpeningAuctionEnded() {
 	es.openingAuctionEnded = true
 	es.stateChanged = true
 	es.setOpeningAuctionAVG()
+	es.pMvp = num.DecimalZero()
+	es.r = num.DecimalZero()
 }
 
 // we just the average entry valuation to the same value
 // for every LP during opening auction.
 func (es *EquityShares) setOpeningAuctionAVG() {
 	// now set average entry valuation for all of them.
+	factor := es.totalPStake.Div(es.totalVStake)
 	for _, v := range es.lps {
-		v.avg = es.mvp
+		v.avg = v.vStake.Mul(factor) // perhaps we ought to move this to a separate loop once the totals have all been updated
+		// v.avg = es.mvp
 	}
 }
 
 func (es *EquityShares) UpdateVirtualStake() {
+	if es.mvp.IsZero() || es.pMvp.IsZero() {
+		for _, v := range es.lps {
+			es.totalVStake = es.totalVStake.Sub(v.vStake).Add(v.stake)
+			v.vStake = v.stake
+			v.avg = v.vStake // this might be something we ought to recalculate the normal way... although it should amount to avg == physical stake
+		}
+		es.stateChanged = true
+		return
+	}
+	growth := es.r.Add(num.NewDecimalFromFloat(1.0))
+	for _, v := range es.lps {
+		vStake := num.MaxD(v.stake, growth.Mul(v.vStake))
+		es.totalVStake = es.totalVStake.Sub(v.vStake).Add(vStake)
+		v.vStake = vStake
+		v.avg = v.vStake.Mul(es.totalPStake.Div(es.totalVStake)) // perhaps we ought to move this to a separate loop once the totals have all been updated
+	}
+	es.stateChanged = true
+}
+
+func (es *EquityShares) UpdateVirtualStakeOld() {
 	// this isn't used if we have to set vStake to physical stake
 	growth := es.r
 	// if A(n) == 0 or A(n-1) == 0, vStake = physical stake
@@ -93,6 +121,21 @@ func (es *EquityShares) UpdateVirtualStake() {
 		es.stateChanged = (es.stateChanged || !vStake.Equals(v.vStake))
 		v.vStake = vStake
 	}
+}
+
+func (es *EquityShares) AvgTradeValue(avg num.Decimal) *EquityShares {
+	if !es.mvp.IsZero() && !avg.IsZero() {
+		growth := avg.Sub(es.mvp).Div(es.mvp)
+		es.stateChanged = (es.stateChanged || !growth.Equals(es.r))
+		es.r = growth
+	} else {
+		es.r = num.DecimalZero()
+		es.stateChanged = true
+	}
+	es.stateChanged = (es.stateChanged || !avg.Equals(es.mvp) || !es.pMvp.Equals(es.mvp))
+	es.pMvp = es.mvp
+	es.mvp = avg
+	return es
 }
 
 func (es *EquityShares) WithMVP(mvp num.Decimal) *EquityShares {
@@ -122,6 +165,10 @@ func (es *EquityShares) SetPartyStake(id string, newStakeU *num.Uint) {
 
 	v, found := es.lps[id]
 	if newStakeU == nil || newStakeU.IsZero() {
+		if found {
+			es.totalVStake = es.totalVStake.Sub(v.vStake)
+			es.totalPStake = es.totalPStake.Sub(v.stake)
+		}
 		delete(es.lps, id)
 		es.stateChanged = (es.stateChanged || found)
 		return
@@ -132,40 +179,57 @@ func (es *EquityShares) SetPartyStake(id string, newStakeU *num.Uint) {
 	newStake := num.DecimalFromUint(newStakeU)
 	// first time we set the newStake and mvp as avg.
 	if !found {
-		avg := num.DecimalZero()
-		if es.openingAuctionEnded {
-			avg = es.mvp
-		}
+		avg := es.mvp
 		es.lps[id] = &lp{
 			stake:  newStake,
 			avg:    avg,
 			vStake: newStake,
+		}
+		es.totalPStake = es.totalPStake.Add(newStake)
+		es.totalVStake = es.totalVStake.Add(newStake)
+		if es.openingAuctionEnded {
+			es.lps[id].avg = es.AvgEntryValuation(id)
 		}
 		return
 	}
 
 	delta := newStake.Sub(v.stake)
 	if newStake.LessThanOrEqual(v.stake) {
+		es.totalVStake = es.totalVStake.Sub(v.vStake)
+		es.totalPStake = es.totalPStake.Sub(v.stake)
 		// vStake * (newStake/oldStake)
 		v.vStake = v.vStake.Mul(newStake.Div(v.stake))
 		v.stake = newStake
+		es.totalVStake = es.totalVStake.Add(v.vStake)
+		es.totalPStake = es.totalPStake.Add(v.stake)
+		v.avg = v.vStake.Mul(es.totalPStake.Div(es.totalVStake))
 		return
 	}
 
+	es.totalVStake = es.totalVStake.Add(delta)
+	es.totalPStake = es.totalPStake.Sub(v.stake).Add(newStake)
+	// stakes were originally assigned _after_ the mustEquity call
+	v.vStake = v.vStake.Add(delta) // increase
+	v.stake = newStake
+	// average was calculated in the if es.openingAuctionEnded bit
+	v.avg = v.vStake.Mul(es.totalPStake.Div(es.totalVStake))
 	// delta will allways be > 0 at this point
 	if es.openingAuctionEnded {
 		eq := es.mustEquity(id)
+		v.share = eq
 		// v.avg = ((eq * v.avg) + (delta * es.mvp)) / (eq + v.stake)
-		v.avg = (eq.Mul(v.avg).Add(delta.Mul(es.mvp))).Div(eq.Add(v.stake))
+		// v.avg = (eq.Mul(v.avg).Add(delta.Mul(es.mvp))).Div(eq.Add(v.stake))
 	}
-	v.vStake = v.vStake.Add(delta) // increase
-	v.stake = newStake
 }
 
 // AvgEntryValuation returns the Average Entry Valuation for a given party.
 func (es *EquityShares) AvgEntryValuation(id string) num.Decimal {
 	if v, ok := es.lps[id]; ok {
-		es.stateChanged = true
+		avg := v.vStake.Mul(es.totalPStake.Div(es.totalVStake))
+		if !avg.Equal(v.avg) {
+			v.avg = avg
+			es.stateChanged = true
+		}
 		return v.avg
 	}
 	return num.DecimalZero()
@@ -186,7 +250,10 @@ func (es *EquityShares) mustEquity(party string) num.Decimal {
 // Returns an error if the party has no stake.
 func (es *EquityShares) equity(id string) (num.Decimal, error) {
 	if v, ok := es.lps[id]; ok {
-		return (v.vStake.Mul(es.mvp)).Div(v.avg), nil
+		if es.totalVStake.IsZero() {
+			return num.DecimalZero(), nil
+		}
+		return v.vStake.Div(es.totalVStake), nil
 	}
 
 	return num.DecimalZero(), fmt.Errorf("party %s has no stake", id)
@@ -225,35 +292,33 @@ func (es *EquityShares) SharesFromParty(party string) num.Decimal {
 // SharesExcept returns the ratio of equity for each party on the market, except
 // the ones listed in parameter.
 func (es *EquityShares) SharesExcept(except map[string]struct{}) map[string]num.Decimal {
-	// Calculate the equity for each party and the totalEquity (the sum of all
-	// the equities)
-	var totalEquity num.Decimal
-	shares := map[string]num.Decimal{}
-	for id := range es.lps {
-		// If the party is not one of the deployed parties, we just skip.
+	shares := make(map[string]num.Decimal, len(es.lps)-len(except))
+	allTotal, allTotalV := es.totalPStake, es.totalVStake
+	all := true
+	for k := range except {
+		if v, ok := es.lps[k]; ok {
+			es.totalPStake = es.totalPStake.Sub(v.stake)
+			es.totalVStake = es.totalVStake.Sub(v.vStake)
+			all = false
+		}
+	}
+	for id, v := range es.lps {
 		if _, ok := except[id]; ok {
 			continue
 		}
 		eq, err := es.equity(id)
 		if err != nil {
-			// since equity(id) returns an error when the party does not exist
-			// getting an error here means we are doing something wrong cause
-			// it should never happen unless `.equity()` behavior changes.
 			panic(err)
 		}
 		shares[id] = eq
-		totalEquity = totalEquity.Add(eq)
+		if all && !v.share.Equals(eq) {
+			v.share = eq
+			es.stateChanged = true
+		}
 	}
-
-	for id, eq := range shares {
-		eqshare := eq.Div(totalEquity)
-		shares[id] = eqshare
-		es.lps[id].share = eqshare
+	if !all {
+		es.totalPStake = allTotal
+		es.totalVStake = allTotalV
 	}
-
-	if len(shares) > 0 {
-		es.stateChanged = true
-	}
-
 	return shares
 }
