@@ -32,7 +32,6 @@ var (
 	ErrWithdrawalDisabledWhenBridgeIsStopped = errors.New("withdrawal issuance is disabled when the erc20 is stopped")
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/erc20_bridge_view_mock.go -package mocks code.vegaprotocol.io/vega/core/banking ERC20BridgeView
 type ERC20BridgeView interface {
 	FindAssetList(al *types.ERC20AssetList, blockNumber, logIndex uint64) error
 	FindBridgeStopped(al *types.ERC20EventBridgeStopped, blockNumber, logIndex uint64) error

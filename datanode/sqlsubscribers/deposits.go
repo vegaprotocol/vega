@@ -27,7 +27,6 @@ type DepositEvent interface {
 	Deposit() vega.Deposit
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/deposits_mock.go -package mocks code.vegaprotocol.io/vega/datanode/sqlsubscribers DepositStore
 type DepositStore interface {
 	Upsert(context.Context, *entities.Deposit) error
 }

@@ -33,6 +33,8 @@ import (
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/banking Assets,Notary,Collateral,Witness,TimeService,EpochService,Topology,MarketActivityTracker,ERC20BridgeView
+
 const (
 	// this is temporarily used until we remove expiry completely
 	// make the expiry 2 years, which will outlive anyway any
@@ -51,7 +53,6 @@ var (
 	ErrNotEnoughFundsToTransfer                   = errors.New("not enough funds to transfer")
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/core/banking Assets
 type Assets interface {
 	Get(assetID string) (*assets.Asset, error)
 	Enable(ctx context.Context, assetID string) error
@@ -59,15 +60,14 @@ type Assets interface {
 }
 
 // Notary ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/notary_mock.go -package mocks code.vegaprotocol.io/vega/core/banking Notary
+
 type Notary interface {
 	StartAggregate(resID string, kind types.NodeSignatureKind, signature []byte)
 	IsSigned(ctx context.Context, id string, kind types.NodeSignatureKind) ([]types.NodeSignature, bool)
 	OfferSignatures(kind types.NodeSignatureKind, f func(resources string) []byte)
 }
 
-// Collateral engine
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/collateral_mock.go -package mocks code.vegaprotocol.io/vega/core/banking Collateral
+// Collateral engine.
 type Collateral interface {
 	Deposit(ctx context.Context, party, asset string, amount *num.Uint) (*types.TransferResponse, error)
 	Withdraw(ctx context.Context, party, asset string, amount *num.Uint) (*types.TransferResponse, error)
@@ -83,32 +83,27 @@ type Collateral interface {
 	PropagateAssetUpdate(ctx context.Context, asset types.Asset) error
 }
 
-// Witness provide foreign chain resources validations
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/witness_mock.go -package mocks code.vegaprotocol.io/vega/core/banking Witness
+// Witness provide foreign chain resources validations.
 type Witness interface {
 	StartCheck(validators.Resource, func(interface{}, bool), time.Time) error
 	RestoreResource(validators.Resource, func(interface{}, bool)) error
 }
 
-// TimeService provide the time of the vega node using the tm time
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/core/banking TimeService
+// TimeService provide the time of the vega node using the tm time.
 type TimeService interface {
 	GetTimeNow() time.Time
 }
 
 // Epochervice ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/epoch_service_mock.go -package mocks code.vegaprotocol.io/vega/core/banking EpochService
 type EpochService interface {
 	NotifyOnEpoch(f func(context.Context, types.Epoch), r func(context.Context, types.Epoch))
 }
 
 // Topology ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/topology_mock.go -package mocks code.vegaprotocol.io/vega/core/banking Topology
 type Topology interface {
 	IsValidator() bool
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_activity_tracker_mock.go -package mocks code.vegaprotocol.io/vega/core/banking MarketActivityTracker
 type MarketActivityTracker interface {
 	GetMarketScores(asset string, markets []string, dispatchMetric proto.DispatchMetric) []*types.MarketContributionScore
 	GetMarketsWithEligibleProposer(asset string, markets []string) []*types.MarketContributionScore
