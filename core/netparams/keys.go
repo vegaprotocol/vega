@@ -107,6 +107,8 @@ const (
 	StakingAndDelegationRewardsMinValidators          = "reward.staking.delegation.minValidators"
 	StakingAndDelegationRewardOptimalStakeMultiplier  = "reward.staking.delegation.optimalStakeMultiplier"
 
+	RewardMarketCreationQuantumMultiple = "rewards.marketCreationQuantumMultiple"
+
 	// spam policies params.
 	SpamProtectionMaxVotes               = "spam.protection.max.votes"
 	SpamProtectionMinTokensForVoting     = "spam.protection.voting.min.tokens"
@@ -160,6 +162,7 @@ const (
 )
 
 var AllKeys = map[string]struct{}{
+	RewardMarketCreationQuantumMultiple:                      {},
 	MarketMarginScalingFactors:                               {},
 	MarketFeeFactorsMakerFee:                                 {},
 	MarketFeeFactorsInfrastructureFee:                        {},
