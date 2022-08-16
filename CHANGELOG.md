@@ -3,6 +3,20 @@
 ## Unreleased 0.54.0
 
 ### 🚨 Breaking changes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🗑️ Deprecation
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🛠 Improvements
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+## 0.54.0
+
+### 🚨 Breaking changes
 With this release a few breaking changes are introduced.
 The Vega application is now a built-in application. This means that Tendermint doesn't need to be started separately any more.
 The `vega node` command has been renamed `vega start`.
@@ -18,7 +32,6 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5802](https://github.com/vegaprotocol/vega/issues/5802) - Remove support for transaction version 1
 
 ### 🗑️ Deprecation
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 - [4655](https://github.com/vegaprotocol/vega/issues/4655) - Move Ethereum `RPC` endpoint configuration from `Nodewallet` section to `Ethereum` section
 
 ### 🛠 Improvements
