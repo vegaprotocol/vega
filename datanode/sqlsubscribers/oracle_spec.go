@@ -27,7 +27,6 @@ type OracleSpecEvent interface {
 	OracleSpec() oraclespb.OracleSpec
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/oracle_spec_mock.go -package mocks code.vegaprotocol.io/vega/datanode/sqlsubscribers OracleSpecStore
 type OracleSpecStore interface {
 	Upsert(context.Context, *entities.OracleSpec) error
 }

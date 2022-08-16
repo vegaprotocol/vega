@@ -54,6 +54,8 @@ func Main(ctx context.Context) error {
 			return (&tmCmd{}).Execute(nil)
 		case "wallet":
 			return (&walletCmd{}).Execute(nil)
+		case "datanode":
+			return (&datanodeCmd{}).Execute(nil)
 		}
 	}
 
@@ -67,6 +69,7 @@ func Main(ctx context.Context) error {
 		Verify,
 		Version,
 		Wallet,
+		Datanode,
 		Watch,
 		Tm,
 		Tendermint,

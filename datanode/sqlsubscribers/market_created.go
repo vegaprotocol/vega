@@ -27,7 +27,6 @@ type MarketCreatedEvent interface {
 	Market() vega.Market
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/markets_mock.go -package mocks code.vegaprotocol.io/vega/datanode/sqlsubscribers MarketsStore
 type MarketsStore interface {
 	Upsert(context.Context, *entities.Market) error
 }
