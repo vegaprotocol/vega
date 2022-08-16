@@ -24,6 +24,8 @@ import (
 	"code.vegaprotocol.io/vega/visor/utils"
 )
 
+var vegaDataNodeStartCmdArgs = []string{"datanode", "start"}
+
 func (v *Visor) setCurrentFolder(sourceFolder, currentFolder string) error {
 	v.log.Info("setting current folder",
 		logging.String("sourceFolder", sourceFolder),
@@ -61,11 +63,6 @@ func (v *Visor) installUpgradeFolder(ctx context.Context, folder, releaseTag str
 		return err
 	}
 
-	// TODO - remove this after data-node autoinstall is supported
-	if runConf.DataNode != nil {
-		return fmt.Errorf("data-node is not supported for auto install")
-	}
-
 	assetsFetcher := github.NewAssetsFetcher(
 		conf.GithubRepositoryOwner,
 		conf.GithubRepository,
@@ -78,6 +75,14 @@ func (v *Visor) installUpgradeFolder(ctx context.Context, folder, releaseTag str
 
 	runConf.Name = releaseTag
 	runConf.Vega.Binary.Path = conf.Assets.Vega
+
+	if runConf.DataNode != nil {
+		runConf.DataNode.Binary.Path = conf.Assets.Vega
+
+		if len(runConf.DataNode.Binary.Args) != 0 && runConf.DataNode.Binary.Args[0] != vegaDataNodeStartCmdArgs[0] {
+			runConf.DataNode.Binary.Args = append(vegaDataNodeStartCmdArgs, runConf.DataNode.Binary.Args[1:]...)
+		}
+	}
 
 	runConfPath := path.Join(folder, config.RunConfigFileName)
 	if err := runConf.WriteToFile(runConfPath); err != nil {

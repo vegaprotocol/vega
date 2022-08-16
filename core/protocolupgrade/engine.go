@@ -40,6 +40,20 @@ func protocolUpgradeProposalID(upgradeBlockHeight uint64, vegaReleaseTag string)
 	return fmt.Sprintf("%v@%v", vegaReleaseTag, upgradeBlockHeight)
 }
 
+// TrimReleaseTag removes 'v' or 'V' at the beggining of the tag if present
+func TrimReleaseTag(tag string) string {
+	if len(tag) == 0 {
+		return tag
+	}
+
+	switch tag[0] {
+	case 'v', 'V':
+		return tag[1:]
+	default:
+		return tag
+	}
+}
+
 func (p *protocolUpgradeProposal) approvers() []string {
 	accepted := make([]string, 0, len(p.accepted))
 	for k := range p.accepted {
@@ -121,7 +135,7 @@ func (e *Engine) UpgradeProposal(ctx context.Context, pk string, upgradeBlockHei
 		return errors.New("upgrade block earlier than current block height")
 	}
 
-	_, err := semver.Parse(vegaReleaseTag)
+	_, err := semver.Parse(TrimReleaseTag(vegaReleaseTag))
 	if err != nil {
 		err = fmt.Errorf("invalid protocol version for upgrade received: version (%s), %w", vegaReleaseTag, err)
 		e.log.Error("", logging.Error(err))

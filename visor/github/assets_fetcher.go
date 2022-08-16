@@ -88,7 +88,7 @@ func (af *assetsFetcher) DownloadAsset(ctx context.Context, assetID int64, path 
 		return fmt.Errorf("failed to read  %q: %w", path, err)
 	}
 
-	if err := os.WriteFile(path, all, 0770); err != nil {
+	if err := os.WriteFile(path, all, 0o770); err != nil {
 		return fmt.Errorf("failed to write to %q: %w", path, err)
 	}
 

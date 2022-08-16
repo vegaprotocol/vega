@@ -30,11 +30,23 @@ func (a Args) Exists(name string) bool {
 	return false
 }
 
+// Set sets a new argument. Ignores if argument exists
 func (a *Args) Set(name, value string) bool {
 	if a.Exists(name) {
 		return false
 	}
 
+	if name[0:2] != "--" {
+		name = fmt.Sprintf("--%s", name)
+	}
+
+	*a = append(*a, name, value)
+
+	return true
+}
+
+// ForceSet sets a new argument even if the argument currently exists
+func (a *Args) ForceSet(name, value string) bool {
 	if name[0:2] != "--" {
 		name = fmt.Sprintf("--%s", name)
 	}
