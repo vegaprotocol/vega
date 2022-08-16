@@ -650,17 +650,17 @@ pipeline {
                             cp ./build-darwin-arm64/vega ./release/vega-macos-arm64
                             cp ./build-darwin-arm64/data-node ./release/data-node-macos-arm64
                             # Windows
-                            cp ./build-windows-amd64/vega ./release/vega-windows-amd64
-                            cp ./build-windows-amd64/data-node ./release/data-node-windows-amd64
+                            cp ./build-windows-amd64/vega.exe ./release/vega-windows-amd64.exe
+                            cp ./build-windows-amd64/data-node.exe ./release/data-node-windows-amd64.exe
                         '''
-                        dir('release') {
+                        dir('vega') {
                             script {
                                 withGHCLI('credentialsId': 'github-vega-ci-bot-artifacts') {
                                     sh label: 'Upload artifacts', script: '''#!/bin/bash -e
                                         [[ $TAG_NAME =~ '-pre' ]] && prerelease='--prerelease' || prerelease=''
 
-                                        gh release view $TAG_NAME && gh release upload $TAG_NAME ./* \
-                                            || gh release create $TAG_NAME $prerelease ./*
+                                        gh release view $TAG_NAME && gh release upload $TAG_NAME ../release/* \
+                                            || gh release create $TAG_NAME $prerelease ../release/*
                                     '''
                                 }
                             }
