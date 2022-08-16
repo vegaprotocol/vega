@@ -27,7 +27,6 @@ type KeyRotationEvent interface {
 	KeyRotation() eventspb.KeyRotation
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/key_rotation_mock.go -package mocks code.vegaprotocol.io/vega/datanode/sqlsubscribers KeyRotationStore
 type KeyRotationStore interface {
 	Upsert(context.Context, *entities.KeyRotation) error
 }
