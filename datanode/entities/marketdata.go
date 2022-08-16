@@ -125,15 +125,15 @@ func (bound PriceMonitoringBound) Equals(other PriceMonitoringBound) bool {
 }
 
 type LiquidityProviderFeeShare struct {
-	Party                 string `json:"party"`
-	EquityLikeShare       uint64 `json:"equityLikeShare"`
-	AverageEntryValuation uint64 `json:"averageEntryValuation"`
+	Party                 string          `json:"party"`
+	EquityLikeShare       decimal.Decimal `json:"equityLikeShare"`
+	AverageEntryValuation decimal.Decimal `json:"averageEntryValuation"`
 }
 
 func (fee LiquidityProviderFeeShare) Equals(other LiquidityProviderFeeShare) bool {
 	return fee.Party == other.Party &&
-		fee.EquityLikeShare == other.EquityLikeShare &&
-		fee.AverageEntryValuation == other.AverageEntryValuation
+		fee.EquityLikeShare.Equals(other.EquityLikeShare) &&
+		fee.AverageEntryValuation.Equals(other.AverageEntryValuation)
 }
 
 func MarketDataFromProto(data *types.MarketData) (*MarketData, error) {
@@ -292,8 +292,8 @@ func liquidityProviderFeeShareFromProto(feeShare *types.LiquidityProviderFeeShar
 		return nil
 	}
 
-	equityLikeShare, _ := strconv.ParseUint(feeShare.EquityLikeShare, 10, 64)
-	averageEntryValuation, _ := strconv.ParseUint(feeShare.AverageEntryValuation, 10, 64)
+	equityLikeShare, _ := decimal.NewFromString(feeShare.EquityLikeShare)
+	averageEntryValuation, _ := decimal.NewFromString(feeShare.AverageEntryValuation)
 
 	return &LiquidityProviderFeeShare{
 		Party:                 feeShare.Party,
@@ -433,8 +433,8 @@ func liquidityProviderFeeSharesToProto(feeShares []*LiquidityProviderFeeShare) [
 	for _, feeShare := range feeShares {
 		protoFeeShare := types.LiquidityProviderFeeShare{
 			Party:                 feeShare.Party,
-			EquityLikeShare:       fmt.Sprintf("%d", feeShare.EquityLikeShare),
-			AverageEntryValuation: fmt.Sprintf("%d", feeShare.AverageEntryValuation),
+			EquityLikeShare:       feeShare.EquityLikeShare.String(),
+			AverageEntryValuation: feeShare.AverageEntryValuation.String(),
 		}
 
 		results = append(results, &protoFeeShare)

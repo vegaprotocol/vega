@@ -2591,17 +2591,6 @@ func (e *Engine) GetEnabledAssets() []string {
 	return assets
 }
 
-// GetAssetTotalSupply - return the total supply of the asset if it's known
-// from the collateral engine.
-func (e *Engine) GetAssetTotalSupply(asset string) (*num.Uint, error) {
-	asst, ok := e.enabledAssets[asset]
-	if !ok {
-		return nil, fmt.Errorf("invalid asset: %s", asset)
-	}
-
-	return asst.GetAssetTotalSupply(), nil
-}
-
 func (e *Engine) removeAccount(id string) {
 	delete(e.accs, id)
 	e.removeAccountFromHashableSlice(id)

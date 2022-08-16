@@ -2391,11 +2391,10 @@ func enableGovernanceAsset(t *testing.T, eng *collateral.Engine) {
 	tokAsset := types.Asset{
 		ID: "VOTE",
 		Details: &types.AssetDetails{
-			Name:        "VOTE",
-			Symbol:      "VOTE",
-			Decimals:    5,
-			TotalSupply: num.NewUint(1000),
-			Quantum:     num.DecimalZero(),
+			Name:     "VOTE",
+			Symbol:   "VOTE",
+			Decimals: 5,
+			Quantum:  num.DecimalZero(),
 			Source: &types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{
 					MaxFaucetAmountMint: num.UintZero(),
@@ -2432,11 +2431,10 @@ func getTestEngine(t *testing.T, market string) *testEngine {
 	asset := types.Asset{
 		ID: testMarketAsset,
 		Details: &types.AssetDetails{
-			Symbol:      testMarketAsset,
-			Name:        testMarketAsset,
-			Decimals:    0,
-			TotalSupply: num.NewUint(10000),
-			Quantum:     num.DecimalZero(),
+			Symbol:   testMarketAsset,
+			Name:     testMarketAsset,
+			Decimals: 0,
+			Quantum:  num.DecimalZero(),
 			Source: &types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{
 					MaxFaucetAmountMint: num.UintZero(),
@@ -2450,11 +2448,10 @@ func getTestEngine(t *testing.T, market string) *testEngine {
 	asset = types.Asset{
 		ID: "ETH",
 		Details: &types.AssetDetails{
-			Symbol:      "ETH",
-			Name:        "ETH",
-			Decimals:    18,
-			TotalSupply: num.NewUint(1000000000),
-			Quantum:     num.DecimalZero(),
+			Symbol:   "ETH",
+			Name:     "ETH",
+			Decimals: 18,
+			Quantum:  num.DecimalZero(),
 			Source: &types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{
 					MaxFaucetAmountMint: num.UintZero(),

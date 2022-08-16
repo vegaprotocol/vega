@@ -185,11 +185,10 @@ func testSnapshotConsistentHash(t *testing.T) {
 	asset := types.Asset{
 		ID: "foo",
 		Details: &types.AssetDetails{
-			Name:        "foo",
-			Symbol:      "FOO",
-			TotalSupply: num.NewUint(100000000),
-			Decimals:    5,
-			Quantum:     num.DecimalFromFloat(1),
+			Name:     "foo",
+			Symbol:   "FOO",
+			Decimals: 5,
+			Quantum:  num.DecimalFromFloat(1),
 			Source: types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{
 					MaxFaucetAmountMint: num.NewUint(100000000),
@@ -285,12 +284,11 @@ func testSnapshotRestore(t *testing.T) {
 	asset := types.Asset{
 		ID: "foo",
 		Details: &types.AssetDetails{
-			Name:        "foo",
-			Symbol:      "FOO",
-			TotalSupply: num.NewUint(100000000),
-			Decimals:    5,
-			Quantum:     num.DecimalFromFloat(1),
-			Source:      erc20,
+			Name:     "foo",
+			Symbol:   "FOO",
+			Decimals: 5,
+			Quantum:  num.DecimalFromFloat(1),
+			Source:   erc20,
 		},
 	}
 	eng := getTestEngine(t, mkt)
@@ -411,12 +409,11 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 		asset := types.Asset{
 			ID: "foo",
 			Details: &types.AssetDetails{
-				Name:        "foo",
-				Symbol:      "FOO",
-				TotalSupply: num.NewUint(100000000),
-				Decimals:    5,
-				Quantum:     num.DecimalFromFloat(1),
-				Source:      erc20,
+				Name:     "foo",
+				Symbol:   "FOO",
+				Decimals: 5,
+				Quantum:  num.DecimalFromFloat(1),
+				Source:   erc20,
 			},
 		}
 		eng := getTestEngine(t, mkt)
@@ -507,12 +504,11 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 		newAsset := types.Asset{
 			ID: "foo2",
 			Details: &types.AssetDetails{
-				Name:        "foo2",
-				Symbol:      "FOO2",
-				TotalSupply: num.NewUint(200000000),
-				Decimals:    5,
-				Quantum:     num.DecimalFromFloat(2),
-				Source:      erc20,
+				Name:     "foo2",
+				Symbol:   "FOO2",
+				Decimals: 5,
+				Quantum:  num.DecimalFromFloat(2),
+				Source:   erc20,
 			},
 		}
 

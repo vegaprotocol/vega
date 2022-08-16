@@ -28,7 +28,6 @@ type LiquidityProvisionEvent interface {
 	LiquidityProvision() *vega.LiquidityProvision
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/liquidity_provision_mock.go -package mocks code.vegaprotocol.io/vega/datanode/sqlsubscribers LiquidityProvisionStore
 type LiquidityProvisionStore interface {
 	Upsert(context.Context, entities.LiquidityProvision) error
 	Flush(ctx context.Context) error

@@ -44,12 +44,11 @@ func NewAssets(connectionSource *ConnectionSource) *Assets {
 func (as *Assets) Add(ctx context.Context, a entities.Asset) error {
 	defer metrics.StartSQLQuery("Assets", "Add")()
 	_, err := as.Connection.Exec(ctx,
-		`INSERT INTO assets(id, name, symbol, total_supply, decimals, quantum, source, erc20_contract, lifetime_limit, withdraw_threshold, vega_time, status)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+		`INSERT INTO assets(id, name, symbol, decimals, quantum, source, erc20_contract, lifetime_limit, withdraw_threshold, vega_time, status)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
          ON CONFLICT (id, vega_time) DO UPDATE SET
             name = EXCLUDED.name,
             symbol = EXCLUDED.symbol,
-            total_supply = EXCLUDED.total_supply,
             decimals = EXCLUDED.decimals,
             quantum = EXCLUDED.quantum,
             source = EXCLUDED.source,
@@ -62,7 +61,6 @@ func (as *Assets) Add(ctx context.Context, a entities.Asset) error {
 		a.ID,
 		a.Name,
 		a.Symbol,
-		a.TotalSupply,
 		a.Decimals,
 		a.Quantum,
 		a.Source,

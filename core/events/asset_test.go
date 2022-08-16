@@ -29,10 +29,9 @@ func TestAssetBuiltInAssetDeepClone(t *testing.T) {
 	a := types.Asset{
 		ID: "Id",
 		Details: &types.AssetDetails{
-			Name:        "Name",
-			Symbol:      "Symbol",
-			TotalSupply: num.NewUint(10000),
-			Decimals:    5,
+			Name:     "Name",
+			Symbol:   "Symbol",
+			Decimals: 5,
 			Source: &types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{
 					MaxFaucetAmountMint: num.NewUint(100000000),
@@ -48,7 +47,6 @@ func TestAssetBuiltInAssetDeepClone(t *testing.T) {
 	a.ID = "Changed"
 	a.Details.Name = "Changed"
 	a.Details.Symbol = "Changed"
-	a.Details.TotalSupply = num.NewUint(999)
 	a.Details.Decimals = 999
 
 	as := a.Details.Source.(*types.AssetDetailsBuiltinAsset)
@@ -61,7 +59,6 @@ func TestAssetBuiltInAssetDeepClone(t *testing.T) {
 	assert.NotEqual(t, a.ID, a2.Id)
 	assert.NotEqual(t, a.Details.Name, a2.Details.Name)
 	assert.NotEqual(t, a.Details.Symbol, a2.Details.Symbol)
-	assert.NotEqual(t, a.Details.TotalSupply, a2.Details.TotalSupply)
 	assert.NotEqual(t, a.Details.Decimals, a2.Details.Decimals)
 
 	assert.NotEqual(t, bia.MaxFaucetAmountMint, bia2.MaxFaucetAmountMint)
@@ -73,10 +70,9 @@ func TestAssetERCDeepClone(t *testing.T) {
 	a := types.Asset{
 		ID: "Id",
 		Details: &types.AssetDetails{
-			Name:        "Name",
-			Symbol:      "Symbol",
-			TotalSupply: num.NewUint(10000),
-			Decimals:    5,
+			Name:     "Name",
+			Symbol:   "Symbol",
+			Decimals: 5,
 			Source: &types.AssetDetailsErc20{
 				ERC20: &types.ERC20{
 					ContractAddress: "Contact Address",
@@ -92,7 +88,6 @@ func TestAssetERCDeepClone(t *testing.T) {
 	a.ID = "Changed"
 	a.Details.Name = "Changed"
 	a.Details.Symbol = "Changed"
-	a.Details.TotalSupply = num.NewUint(999)
 	a.Details.Decimals = 999
 
 	as := a.Details.Source.(*types.AssetDetailsErc20)
@@ -105,7 +100,6 @@ func TestAssetERCDeepClone(t *testing.T) {
 	assert.NotEqual(t, a.ID, a2.Id)
 	assert.NotEqual(t, a.Details.Name, a2.Details.Name)
 	assert.NotEqual(t, a.Details.Symbol, a2.Details.Symbol)
-	assert.NotEqual(t, a.Details.TotalSupply, a2.Details.TotalSupply)
 	assert.NotEqual(t, a.Details.Decimals, a2.Details.Decimals)
 
 	assert.NotEqual(t, erc.ContractAddress, erc2.ContractAddress)

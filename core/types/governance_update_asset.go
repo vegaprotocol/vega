@@ -134,32 +134,28 @@ func (a UpdateAsset) Validate() (ProposalError, error) {
 }
 
 type AssetDetailsUpdate struct {
-	Name        string
-	Symbol      string
-	TotalSupply *num.Uint
-	Decimals    uint64
-	Quantum     num.Decimal
+	Name    string
+	Symbol  string
+	Quantum num.Decimal
 	//	*AssetDetailsUpdateERC20
 	Source isAssetDetailsUpdate
 }
 
 func (a AssetDetailsUpdate) String() string {
 	return fmt.Sprintf(
-		"name(%s) symbol(%s) quantum(%s) totalSupply(%s) source(%s)",
+		"name(%s) symbol(%s) quantum(%s)x(%s)",
 		a.Name,
 		a.Symbol,
 		a.Quantum.String(),
-		uintPointerToString(a.TotalSupply),
 		reflectPointerToString(a.Source),
 	)
 }
 
 func (a AssetDetailsUpdate) IntoProto() *vegapb.AssetDetailsUpdate {
 	r := &vegapb.AssetDetailsUpdate{
-		Name:        a.Name,
-		Symbol:      a.Symbol,
-		TotalSupply: num.UintToString(a.TotalSupply),
-		Quantum:     a.Quantum.String(),
+		Name:    a.Name,
+		Symbol:  a.Symbol,
+		Quantum: a.Quantum.String(),
 	}
 	if a.Source == nil {
 		return r
@@ -178,15 +174,9 @@ func (a AssetDetailsUpdate) DeepClone() *AssetDetailsUpdate {
 		src = a.Source.DeepClone()
 	}
 	cpy := &AssetDetailsUpdate{
-		Name:     a.Name,
-		Symbol:   a.Symbol,
-		Decimals: a.Decimals,
-		Source:   src,
-	}
-	if a.TotalSupply != nil {
-		cpy.TotalSupply = a.TotalSupply.Clone()
-	} else {
-		cpy.TotalSupply = num.UintZero()
+		Name:   a.Name,
+		Symbol: a.Symbol,
+		Source: src,
 	}
 	cpy.Quantum = a.Quantum
 	return cpy
@@ -199,14 +189,6 @@ func (a AssetDetailsUpdate) Validate() (ProposalError, error) {
 
 	if len(a.Symbol) == 0 {
 		return ProposalErrorInvalidAssetDetails, ErrInvalidAssetSymbolEmpty
-	}
-
-	if a.Decimals == 0 {
-		return ProposalErrorInvalidAssetDetails, ErrInvalidAssetDecimalPlacesZero
-	}
-
-	if a.TotalSupply.IsZero() {
-		return ProposalErrorInvalidAssetDetails, ErrInvalidAssetTotalSupplyZero
 	}
 
 	if a.Quantum.IsZero() {
@@ -232,14 +214,6 @@ func AssetDetailsUpdateFromProto(p *vegapb.AssetDetailsUpdate) (*AssetDetailsUpd
 			return nil, err
 		}
 	}
-	total := num.UintZero()
-	if len(p.TotalSupply) > 0 {
-		var overflow bool
-		total, overflow = num.UintFromString(p.TotalSupply, 10)
-		if overflow {
-			return nil, ErrInvalidTotalSupply
-		}
-	}
 
 	min := num.DecimalZero()
 	if len(p.Quantum) > 0 {
@@ -251,11 +225,10 @@ func AssetDetailsUpdateFromProto(p *vegapb.AssetDetailsUpdate) (*AssetDetailsUpd
 	}
 
 	return &AssetDetailsUpdate{
-		Name:        p.Name,
-		Symbol:      p.Symbol,
-		TotalSupply: total,
-		Quantum:     min,
-		Source:      src,
+		Name:    p.Name,
+		Symbol:  p.Symbol,
+		Quantum: min,
+		Source:  src,
 	}, nil
 }
 

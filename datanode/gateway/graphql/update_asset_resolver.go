@@ -32,10 +32,6 @@ func (r updateAssetResolver) Symbol(ctx context.Context, obj *types.UpdateAsset)
 	return obj.Changes.Symbol, nil
 }
 
-func (r updateAssetResolver) TotalSupply(ctx context.Context, obj *types.UpdateAsset) (string, error) {
-	return obj.Changes.TotalSupply, nil
-}
-
 func (r *updateAssetResolver) MinLpStake(ctx context.Context, obj *types.UpdateAsset) (string, error) {
 	return obj.Changes.Quantum, nil
 }

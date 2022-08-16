@@ -25,6 +25,8 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/risk Orderbook,AuctionState,TimeService,StateVarEngine,Model
+
 var (
 	ErrInsufficientFundsForMaintenanceMargin = errors.New("insufficient funds for maintenance margin")
 	ErrRiskFactorsNotAvailableForAsset       = errors.New("risk factors not available for the specified asset")
@@ -32,22 +34,19 @@ var (
 
 const RiskFactorStateVarName = "risk-factors"
 
-// Orderbook represent an abstraction over the orderbook
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/orderbook_mock.go -package mocks code.vegaprotocol.io/vega/core/risk Orderbook
+// Orderbook represent an abstraction over the orderbook.
 type Orderbook interface {
 	GetCloseoutPrice(volume uint64, side types.Side) (*num.Uint, error)
 	GetIndicativePrice() *num.Uint
 }
 
-// AuctionState represents the current auction state of the market, previously we got this information from the matching engine, but really... that's not its job
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/auction_state_mock.go -package mocks code.vegaprotocol.io/vega/core/risk AuctionState
+// AuctionState represents the current auction state of the market, previously we got this information from the matching engine, but really... that's not its job.
 type AuctionState interface {
 	InAuction() bool
 	CanLeave() bool
 }
 
 // TimeService.
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/core/risk TimeService
 type TimeService interface {
 	GetTimeNow() time.Time
 }
@@ -58,7 +57,6 @@ type Broker interface {
 	SendBatch([]events.Event)
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/state_var_mock.go -package mocks code.vegaprotocol.io/vega/core/risk StateVarEngine
 type StateVarEngine interface {
 	RegisterStateVariable(asset, market, name string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error) error
 	NewEvent(asset, market string, eventType statevar.StateVarEventType)

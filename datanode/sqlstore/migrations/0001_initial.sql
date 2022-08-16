@@ -23,7 +23,6 @@ create table assets
     id                  BYTEA NOT NULL,
     name                TEXT NOT NULL,
     symbol              TEXT NOT NULL,
-    total_supply        HUGEINT,
     decimals            INT,
     quantum             HUGEINT,
     source              TEXT,

@@ -36,11 +36,10 @@ func testStagingAssetUpdateForUnknownAssetFails(t *testing.T) {
 	asset := &types.Asset{
 		ID: vgrand.RandomStr(5),
 		Details: &types.AssetDetails{
-			Name:        vgrand.RandomStr(5),
-			Symbol:      vgrand.RandomStr(3),
-			TotalSupply: num.NewUint(100000),
-			Decimals:    10,
-			Quantum:     num.DecimalFromInt64(42),
+			Name:     vgrand.RandomStr(5),
+			Symbol:   vgrand.RandomStr(3),
+			Decimals: 10,
+			Quantum:  num.DecimalFromInt64(42),
 			Source: &types.AssetDetailsErc20{
 				ERC20: &types.ERC20{
 					ContractAddress:   vgrand.RandomStr(5),
