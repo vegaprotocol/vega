@@ -21,13 +21,13 @@ import (
 	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/datanode/pprof"
 	"code.vegaprotocol.io/vega/datanode/service"
+	"code.vegaprotocol.io/vega/datanode/snapshot"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/sqlsubscribers"
 	"code.vegaprotocol.io/vega/datanode/subscribers"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
-
 	"google.golang.org/grpc"
 )
 
@@ -60,7 +60,7 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 		)
 	}
 
-	l.Log.Info("Starting Vega",
+	l.Log.Info("Starting Vega Datanode",
 		logging.String("version", l.Version),
 		logging.String("version-hash", l.VersionHash))
 
@@ -122,9 +122,17 @@ func (l *NodeCommand) setupStoresSQL() error {
 		}
 	}
 
-	err = sqlstore.MigrateToLatestSchema(l.Log, l.conf.SQLStore)
+	l.snapshotService = snapshot.NewSnapshotService(l.Log, l.conf.Snapshot, l.conf.SQLStore.ConnectionConfig, l.vegaPaths)
+	loadedFromSnapshot, err := l.snapshotService.LoadSnapshot(l.ctx)
 	if err != nil {
-		return fmt.Errorf("failed to migrate to latest schema:%w", err)
+		return fmt.Errorf("failed to load snapshot: %w", err)
+	}
+
+	if !loadedFromSnapshot {
+		err = sqlstore.MigrateToLatestSchema(l.Log, l.conf.SQLStore)
+		if err != nil {
+			return fmt.Errorf("failed to migrate to latest schema:%w", err)
+		}
 	}
 
 	err = sqlstore.ApplyDataRetentionPolicies(l.conf.SQLStore)
@@ -198,6 +206,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.sqlBroker = broker.NewSqlStoreBroker(l.Log, l.conf.Broker, l.chainService, eventSource,
 		l.transactionalConnectionSource,
 		l.blockStore,
+		l.snapshotService,
 		l.accountSub,
 		l.assetSub,
 		l.partySub,

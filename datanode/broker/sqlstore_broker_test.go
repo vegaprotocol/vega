@@ -406,10 +406,15 @@ func createTestBroker(transactionManager broker.TransactionManager, blockStore b
 		errorsCh: make(chan error, 1),
 	}
 
-	sb := broker.NewSqlStoreBroker(logger, conf, testChainInfo, tes, transactionManager, blockStore,
+	sb := broker.NewSqlStoreBroker(logger, conf, testChainInfo, tes, transactionManager, blockStore, &testSnapshotService{},
 		subs...)
 
 	return tes, sb
+}
+
+type testSnapshotService struct{}
+
+func (t testSnapshotService) OnBlockCommitted(chainId string, lastCommittedBlockHeight int64) {
 }
 
 type testBlockStore struct {

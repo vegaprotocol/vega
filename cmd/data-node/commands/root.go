@@ -45,6 +45,7 @@ func Execute(ctx context.Context) error {
 		Start,
 		Version,
 		Postgres,
+		ListSnapshots,
 	); err != nil {
 		fmt.Printf("%+v\n", err)
 		return err

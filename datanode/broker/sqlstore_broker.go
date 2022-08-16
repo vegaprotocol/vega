@@ -48,6 +48,10 @@ type BlockStore interface {
 	GetLastBlock(ctx context.Context) (entities.Block, error)
 }
 
+type SnapshotService interface {
+	OnBlockCommitted(chainId string, lastCommittedBlockHeight int64)
+}
+
 // sqlStoreBroker : push events to each subscriber with a single go routine across all types.
 type sqlStoreBroker struct {
 	config             Config
@@ -57,12 +61,14 @@ type sqlStoreBroker struct {
 	eventSource        eventSource
 	transactionManager TransactionManager
 	blockStore         BlockStore
+	snapshotService    SnapshotService
 	chainInfo          ChainInfoI
 	lastBlock          *entities.Block
 }
 
 func NewSqlStoreBroker(log *logging.Logger, config Config, chainInfo ChainInfoI,
-	eventsource eventSource, transactionManager TransactionManager, blockStore BlockStore, subs ...SqlBrokerSubscriber,
+	eventsource eventSource, transactionManager TransactionManager, blockStore BlockStore, snapshotService SnapshotService,
+	subs ...SqlBrokerSubscriber,
 ) *sqlStoreBroker {
 	b := &sqlStoreBroker{
 		config:             config,
@@ -73,6 +79,7 @@ func NewSqlStoreBroker(log *logging.Logger, config Config, chainInfo ChainInfoI,
 		transactionManager: transactionManager,
 		blockStore:         blockStore,
 		chainInfo:          chainInfo,
+		snapshotService:    snapshotService,
 	}
 
 	for _, s := range subs {
@@ -105,6 +112,13 @@ func (b *sqlStoreBroker) Receive(ctx context.Context) error {
 		if nextBlock, err = b.processBlock(ctx, dbContext, nextBlock, receiveCh, errCh); err != nil {
 			return err
 		}
+
+		chainId, err := b.chainInfo.GetChainID()
+		if err != nil {
+			return fmt.Errorf("failed to receive events, unable to get chain id:%w", err)
+		}
+		lastCommittedBlockHeight := nextBlock.Height - 1
+		b.snapshotService.OnBlockCommitted(chainId, lastCommittedBlockHeight)
 	}
 }
 
@@ -114,7 +128,7 @@ func (b *sqlStoreBroker) waitForFirstBlock(ctx context.Context, errCh <-chan err
 	lastProcessedBlock, err := b.blockStore.GetLastBlock(ctx)
 
 	if err == nil {
-		b.log.Infof("waiting for first unprocessed block, last processed block: %v", lastProcessedBlock)
+		b.log.Infof("waiting for first unprocessed block, last processed block height: %d", lastProcessedBlock.Height)
 	} else if errors.Is(err, sqlstore.ErrNoLastBlock) {
 		lastProcessedBlock = entities.Block{
 			VegaTime: time.Time{},
@@ -143,7 +157,7 @@ func (b *sqlStoreBroker) waitForFirstBlock(ctx context.Context, errCh <-chan err
 				}
 
 				if timeUpdate.BlockNr() > lastProcessedBlock.Height {
-					b.log.Info("first unprocessed block received, starting block processing")
+					b.log.Infof("first unprocessed block received, starting block processing at height %d", timeUpdate.BlockNr())
 					return entities.BlockFromTimeUpdate(timeUpdate)
 				}
 			}

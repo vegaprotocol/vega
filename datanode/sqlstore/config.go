@@ -30,12 +30,11 @@ type Config struct {
 }
 
 type ConnectionConfig struct {
-	Host            string        `long:"host"`
-	Port            int           `long:"port"`
-	Username        string        `long:"username"`
-	Password        string        `long:"password"`
-	Database        string        `long:"database"`
-	UseTransactions encoding.Bool `long:"use-transactions" description:"If true all changes caused by events in a single block will be committed in a single transaction"`
+	Host     string `long:"host"`
+	Port     int    `long:"port"`
+	Username string `long:"username"`
+	Password string `long:"password"`
+	Database string `long:"database"`
 }
 
 type RetentionPolicy struct {
@@ -44,12 +43,20 @@ type RetentionPolicy struct {
 }
 
 func (conf ConnectionConfig) GetConnectionString() string {
+	return conf.getConnectionStringForDatabase(conf.Database)
+}
+
+func (conf ConnectionConfig) getConnectionStringForDatabase(database string) string {
 	return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s",
 		conf.Username,
 		conf.Password,
 		conf.Host,
 		conf.Port,
-		conf.Database)
+		database)
+}
+
+func (conf ConnectionConfig) GetConnectionStringForPostgresDatabase() string {
+	return conf.getConnectionStringForDatabase("postgres")
 }
 
 func (conf ConnectionConfig) GetPoolConfig() (*pgxpool.Config, error) {
@@ -64,12 +71,11 @@ func (conf ConnectionConfig) GetPoolConfig() (*pgxpool.Config, error) {
 func NewDefaultConfig() Config {
 	return Config{
 		ConnectionConfig: ConnectionConfig{
-			Host:            "localhost",
-			Port:            5432,
-			Username:        "vega",
-			Password:        "vega",
-			Database:        "vega",
-			UseTransactions: true,
+			Host:     "localhost",
+			Port:     5432,
+			Username: "vega",
+			Password: "vega",
+			Database: "vega",
 		},
 		WipeOnStartup:    true,
 		Level:            encoding.LogLevel{Level: logging.InfoLevel},
