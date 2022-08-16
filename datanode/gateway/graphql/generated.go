@@ -11436,7 +11436,7 @@ union ProposalChange =
 type ProposalRationale {
   """
   Description to show a short title / something in case the link goes offline.
-  This is to be between 0 and 1024 unicode characters.
+  This is to be between 0 and 20k unicode characters.
   This is mandatory for all proposals.
   """
   description: String!
