@@ -38,7 +38,6 @@ type ValidatorRewardScoreEvent interface {
 	ValidatorScoreEvent() eventspb.ValidatorScoreEvent
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/node_mock.go -package mocks code.vegaprotocol.io/vega/datanode/sqlsubscribers NodeStore
 type NodeStore interface {
 	UpsertNode(context.Context, *entities.Node) error
 	UpsertRanking(context.Context, *entities.RankingScore, *entities.RankingScoreAux) error

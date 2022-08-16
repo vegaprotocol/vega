@@ -27,7 +27,6 @@ type WithdrawalEvent interface {
 	Withdrawal() vega.Withdrawal
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/withdrawals_mock.go -package mocks code.vegaprotocol.io/vega/datanode/sqlsubscribers WithdrawalStore
 type WithdrawalStore interface {
 	Upsert(context.Context, *entities.Withdrawal) error
 }

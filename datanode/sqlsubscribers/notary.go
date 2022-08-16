@@ -30,7 +30,6 @@ type NodeSignatureEvent interface {
 	NodeSignature() commandspb.NodeSignature
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/notary_mock.go -package mocks code.vegaprotocol.io/vega/datanode/sqlsubscribers NotaryStore
 type NotaryStore interface {
 	Add(context.Context, *entities.NodeSignature) error
 }

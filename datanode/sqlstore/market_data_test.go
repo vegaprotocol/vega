@@ -163,8 +163,8 @@ func getLatestMarketData(t *testing.T) {
 		LiquidityProviderFeeShares: []*entities.LiquidityProviderFeeShare{
 			{
 				Party:                 "af2bb48edd738353fcd7a2b6cea4821dd2382ec95497954535278dfbfff7b5b5",
-				EquityLikeShare:       1,
-				AverageEntryValuation: 50000000000,
+				EquityLikeShare:       decimal.NewFromFloat(1),
+				AverageEntryValuation: decimal.NewFromInt(50000000000),
 			},
 		},
 		VegaTime: time.Date(2022, 2, 11, 10, 5, 41, 0, time.UTC),
