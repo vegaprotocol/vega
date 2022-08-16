@@ -71,8 +71,8 @@ func TestProposals(t *testing.T) {
 
 	party1 := addTestParty(t, partyStore, block1)
 	party2 := addTestParty(t, partyStore, block1)
-	rationale1 := entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Url: "myurl1.com"}}
-	rationale2 := entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Url: "myurl2.com"}}
+	rationale1 := entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl1.com", Description: "desc"}}
+	rationale2 := entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl2.com", Description: "desc"}}
 	id1 := generateID()
 	id2 := generateID()
 
@@ -896,8 +896,8 @@ func createPaginationTestProposals(t *testing.T, pps *sqlstore.Proposals) ([]ent
 
 		ref1 := fmt.Sprintf("cafed00d%02d", i)
 		ref2 := fmt.Sprintf("cafed00d%02d", i+10)
-		rationale1 := entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Url: fmt.Sprintf("https://rationale1-%02d.com", i)}}
-		rationale2 := entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Url: fmt.Sprintf("https://rationale1-%02d.com", i+10)}}
+		rationale1 := entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: fmt.Sprintf("https://rationale1-%02d.com", i), Description: "desc"}}
+		rationale2 := entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: fmt.Sprintf("https://rationale1-%02d.com", i+10), Description: "desc"}}
 
 		proposals[i] = addTestProposal(t, pps, id1, parties[0], ref1, block, states[i], rationale1)
 		proposals[i+10] = addTestProposal(t, pps, id2, parties[1], ref2, block2, states[i], rationale2)

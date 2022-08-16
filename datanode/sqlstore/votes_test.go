@@ -74,8 +74,8 @@ func TestVotes(t *testing.T) {
 
 	party1 := addTestParty(t, partyStore, block1)
 	party2 := addTestParty(t, partyStore, block1)
-	prop1 := addTestProposal(t, propStore, generateID(), party1, generateID(), block1, entities.ProposalStateEnacted, entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Url: "myurl1.com"}})
-	prop2 := addTestProposal(t, propStore, generateID(), party1, generateID(), block1, entities.ProposalStateEnacted, entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Url: "myurl2.com"}})
+	prop1 := addTestProposal(t, propStore, generateID(), party1, generateID(), block1, entities.ProposalStateEnacted, entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl1.com", Description: "desc"}})
+	prop2 := addTestProposal(t, propStore, generateID(), party1, generateID(), block1, entities.ProposalStateEnacted, entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl2.com", Description: "desc"}})
 
 	party1ID := party1.ID.String()
 	prop1ID := prop1.ID.String()
@@ -155,7 +155,7 @@ func setupPaginationTestVotes(t *testing.T) (*sqlstore.Votes, entities.Party, []
 			generateID(),
 			block,
 			entities.ProposalStateEnacted,
-			entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Url: fmt.Sprintf("myurl%02d.com", i+1)}},
+			entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: fmt.Sprintf("myurl%02d.com", i+1), Description: "desc"}},
 		)
 
 		voteValue := entities.VoteValueYes

@@ -362,7 +362,6 @@ func testProposalSubmissionWithRationalDescriptionAndTitleSucceeds(t *testing.T)
 			name: "with NewAsset with rational Title and Description",
 			submission: &commandspb.ProposalSubmission{
 				Terms: &types.ProposalTerms{
-
 					Change: &types.ProposalTerms_NewAsset{},
 				},
 				Rationale: &types.ProposalRationale{

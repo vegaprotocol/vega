@@ -44,7 +44,6 @@ func checkProposalSubmission(cmd *commandspb.ProposalSubmission) Errors {
 			} else if len(cmd.Rationale.Title) > 100 {
 				errs.AddForProperty("proposal_submission.rationale.title", ErrMustBeLessThan100Chars)
 			}
-
 		}
 	}
 
