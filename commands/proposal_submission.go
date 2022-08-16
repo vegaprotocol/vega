@@ -36,28 +36,15 @@ func checkProposalSubmission(cmd *commandspb.ProposalSubmission) Errors {
 		if cmd.Rationale != nil {
 			if len(strings.Trim(cmd.Rationale.Description, " \n\r\t")) == 0 {
 				errs.AddForProperty("proposal_submission.rationale.description", ErrIsRequired)
-			} else if len(cmd.Rationale.Description) > 1024 {
-				errs.AddForProperty("proposal_submission.rationale.description", ErrMustNotExceed1024Chars)
+			} else if len(cmd.Rationale.Description) > 20000 {
+				errs.AddForProperty("proposal_submission.rationale.description", ErrMustNotExceed20000Chars)
+			}
+			if len(strings.Trim(cmd.Rationale.Title, " \n\r\t")) == 0 {
+				errs.AddForProperty("proposal_submission.rationale.title", ErrIsRequired)
+			} else if len(cmd.Rationale.Title) > 100 {
+				errs.AddForProperty("proposal_submission.rationale.title", ErrMustBeLessThan100Chars)
 			}
 
-			if cmd.Terms != nil && cmd.Terms.Change != nil {
-				switch cmd.Terms.Change.(type) {
-				case *types.ProposalTerms_NewFreeform:
-					if len(cmd.Rationale.Url) == 0 {
-						errs.AddForProperty("proposal_submission.rationale.url", ErrIsRequired)
-					}
-					if len(cmd.Rationale.Hash) == 0 {
-						errs.AddForProperty("proposal_submission.rationale.hash", ErrIsRequired)
-					}
-				default:
-					if len(cmd.Rationale.Url) != 0 && len(cmd.Rationale.Hash) == 0 {
-						errs.AddForProperty("proposal_submission.rationale.hash", ErrIsRequired)
-					}
-					if len(cmd.Rationale.Url) == 0 && len(cmd.Rationale.Hash) != 0 {
-						errs.AddForProperty("proposal_submission.rationale.url", ErrIsRequired)
-					}
-				}
-			}
 		}
 	}
 
