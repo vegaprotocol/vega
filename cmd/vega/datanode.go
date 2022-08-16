@@ -10,12 +10,30 @@
 // of this software will be governed by version 3 or later of the GNU General
 // Public License.
 
-//go:build windows
-// +build windows
+package main
 
-package node
+import (
+	"context"
+	"os"
 
-// SetUlimits is currently a no-op on Windows.
-func (l *NodeCommand) SetUlimits() error {
-	return nil
+	cmd "code.vegaprotocol.io/vega/cmd/data-node/commands"
+	"github.com/jessevdk/go-flags"
+)
+
+type datanodeCmd struct{}
+
+func (opts *datanodeCmd) Execute(_ []string) error {
+	os.Args = os.Args[1:]
+	return cmd.Execute(context.Background())
+}
+
+func Datanode(ctx context.Context, parser *flags.Parser) error {
+	_, err := parser.AddCommand(
+		"datanode",
+		"The vega data node",
+		"The vega data node",
+		&datanodeCmd{},
+	)
+
+	return err
 }
