@@ -17,7 +17,7 @@ import (
 	"strings"
 )
 
-// TODO make these functions more robust
+// TODO make these functions more robust.
 type Args []string
 
 func (a Args) Exists(name string) bool {

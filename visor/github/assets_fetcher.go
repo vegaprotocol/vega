@@ -69,7 +69,6 @@ func (af *assetsFetcher) GetAssets(ctx context.Context, releaseID int64) ([]*git
 	var filteredAssets []*github.ReleaseAsset
 	for _, asset := range assets {
 		if _, ok := af.assetNames[asset.GetName()]; ok {
-			fmt.Printf("%+v \n", asset)
 			filteredAssets = append(filteredAssets, asset)
 		}
 	}
