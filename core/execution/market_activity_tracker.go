@@ -23,7 +23,6 @@ import (
 	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_activity_tracker_mock.go -package mocks code.vegaprotocol.io/vega/core/execution EpochEngine
 type EpochEngine interface {
 	NotifyOnEpoch(f func(context.Context, types.Epoch), r func(context.Context, types.Epoch))
 }

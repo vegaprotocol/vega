@@ -131,23 +131,20 @@ func DeleteEverything() {
 
 // Generate a 256 bit pseudo-random hash ID based on the time.
 func generateID() string {
-	currentTime := time.Now().UnixNano()
-	currentTimeString := strconv.FormatInt(currentTime, 10)
-	hash := sha256.Sum256([]byte(currentTimeString))
+	randomString := strconv.FormatInt(rand.Int63(), 10)
+	hash := sha256.Sum256([]byte(randomString))
 	return hex.EncodeToString(hash[:])
 }
 
 func generateEthereumAddress() string {
-	currentTime := time.Now().UnixNano()
-	currentTimeString := strconv.FormatInt(currentTime, 10)
-	hash := sha256.Sum256([]byte(currentTimeString))
+	randomString := strconv.FormatInt(rand.Int63(), 10)
+	hash := sha256.Sum256([]byte(randomString))
 	return "0x" + hex.EncodeToString(hash[1:21])
 }
 
 func generateTendermintPublicKey() string {
-	currentTime := time.Now().UnixNano()
-	currentTimeString := strconv.FormatInt(currentTime, 10)
-	hash := sha256.Sum256([]byte(currentTimeString))
+	randomString := strconv.FormatInt(rand.Int63(), 10)
+	hash := sha256.Sum256([]byte(randomString))
 	return base64.StdEncoding.EncodeToString(hash[:])
 }
 

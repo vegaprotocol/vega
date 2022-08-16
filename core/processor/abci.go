@@ -24,10 +24,6 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/commands"
-	vgfs "code.vegaprotocol.io/vega/libs/fs"
-	"code.vegaprotocol.io/vega/paths"
-	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-
 	"code.vegaprotocol.io/vega/core/api"
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
 	"code.vegaprotocol.io/vega/core/events"
@@ -41,8 +37,11 @@ import (
 	"code.vegaprotocol.io/vega/libs/crypto"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	signatures "code.vegaprotocol.io/vega/libs/crypto/signature"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/paths"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 	tmtypesint "github.com/tendermint/tendermint/types"
@@ -63,7 +62,6 @@ var (
 	}
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/checkpoint_mock.go -package mocks code.vegaprotocol.io/vega/core/processor Checkpoint
 type Checkpoint interface {
 	BalanceCheckpoint(ctx context.Context) (*types.CheckpointState, error)
 	Checkpoint(ctx context.Context, now time.Time) (*types.CheckpointState, error)
