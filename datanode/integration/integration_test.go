@@ -29,7 +29,7 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/cmd/data-node/node"
+	"code.vegaprotocol.io/vega/cmd/data-node/commands/start"
 	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/datanode/config/encoding"
 	"code.vegaprotocol.io/vega/datanode/fsutil"
@@ -284,7 +284,7 @@ func runTestNode(cfg *config.Config) error {
 		log.Fatal("Couldn't set up config", logging.Error(err))
 	}
 
-	cmd := node.NodeCommand{
+	cmd := start.NodeCommand{
 		Log:         log,
 		Version:     "test",
 		VersionHash: "",

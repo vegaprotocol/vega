@@ -10,20 +10,16 @@
 // of this software will be governed by version 3 or later of the GNU General
 // Public License.
 
-package main
+package commands
 
 import (
 	"context"
 	"fmt"
 	"os"
 
-	"github.com/jessevdk/go-flags"
+	"code.vegaprotocol.io/vega/datanode/config"
 
-	"code.vegaprotocol.io/vega/cmd/vega/faucet"
-	"code.vegaprotocol.io/vega/cmd/vega/genesis"
-	"code.vegaprotocol.io/vega/cmd/vega/nodewallet"
-	"code.vegaprotocol.io/vega/cmd/vega/paths"
-	"code.vegaprotocol.io/vega/core/config"
+	"github.com/jessevdk/go-flags"
 )
 
 // Subcommand is the signature of a sub command that can be registered.
@@ -39,55 +35,28 @@ func Register(ctx context.Context, parser *flags.Parser, cmds ...Subcommand) err
 	return nil
 }
 
-func main() {
-	ctx := context.Background()
-	if err := Main(ctx); err != nil {
-		os.Exit(-1)
-	}
-}
-
-func Main(ctx context.Context) error {
-	// special case for the tendermint subcommand, so we bypass the command line
-	if len(os.Args) >= 2 {
-		switch os.Args[1] {
-		case "tendermint", "tm":
-			return (&tmCmd{}).Execute(nil)
-		case "wallet":
-			return (&walletCmd{}).Execute(nil)
-		case "datanode":
-			return (&datanodeCmd{}).Execute(nil)
-		}
-	}
-
+func Execute(ctx context.Context) error {
 	parser := flags.NewParser(&config.Empty{}, flags.Default)
 
 	if err := Register(ctx, parser,
-		faucet.Faucet,
-		genesis.Genesis,
 		Init,
-		nodewallet.NodeWallet,
-		Verify,
-		Version,
-		Wallet,
-		Datanode,
-		Watch,
-		Tm,
-		Tendermint,
-		Query,
-		Bridge,
-		paths.Paths,
-		UnsafeResetAll,
-		SnapshotList,
-		AnnounceNode,
-		ProposeProtocolUpgrade,
-		Start,
+		Gateway,
 		Node,
+		Start,
+		Version,
+		Postgres,
 	); err != nil {
-		_, _ = fmt.Fprintln(os.Stderr, err)
+		fmt.Printf("%+v\n", err)
 		return err
 	}
 
 	if _, err := parser.Parse(); err != nil {
+		switch t := err.(type) {
+		case *flags.Error:
+			if t.Type != flags.ErrHelp {
+				parser.WriteHelp(os.Stdout)
+			}
+		}
 		return err
 	}
 	return nil
