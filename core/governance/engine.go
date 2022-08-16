@@ -990,8 +990,8 @@ func (e *Engine) updatedAssetFromProposal(p *proposal) (*types.Asset, types.Prop
 		Details: &types.AssetDetails{
 			Name:     a.Changes.Name,
 			Symbol:   a.Changes.Symbol,
-			Decimals: a.Changes.Decimals,
 			Quantum:  a.Changes.Quantum,
+			Decimals: existingAsset.DecimalPlaces(),
 		},
 	}
 
