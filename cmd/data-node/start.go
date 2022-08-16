@@ -15,23 +15,24 @@ package main
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/cmd/data-node/node"
+	"code.vegaprotocol.io/vega/cmd/data-node/start"
 	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/version"
+
 	"github.com/jessevdk/go-flags"
 )
 
-type NodeCmd struct {
+type StartCmd struct {
 	config.VegaHomeFlag
 
 	config.Config
 }
 
-var nodeCmd NodeCmd
+var startCmd StartCmd
 
-func (cmd *NodeCmd) Execute(args []string) error {
+func (cmd *StartCmd) Execute(args []string) error {
 	log := logging.NewLoggerFromConfig(
 		logging.NewDefaultConfig(),
 	)
@@ -51,7 +52,7 @@ func (cmd *NodeCmd) Execute(args []string) error {
 		return err
 	}
 
-	return (&node.NodeCommand{
+	return (&start.NodeCommand{
 		Log:         log,
 		Version:     version.Get(),
 		VersionHash: version.GetCommitHash(),
@@ -63,10 +64,28 @@ func (cmd *NodeCmd) Execute(args []string) error {
 }
 
 func Node(ctx context.Context, parser *flags.Parser) error {
-	nodeCmd = NodeCmd{
+	startCmd = StartCmd{
 		Config: config.NewDefaultConfig(),
 	}
-	cmd, err := parser.AddCommand("node", "Runs a vega data node", "Runs a vega data node as defined by the config files", &nodeCmd)
+	cmd, err := parser.AddCommand("node", "deprecated, see data-node start instead", "deprecated, see data-node start instead", &startCmd)
+	if err != nil {
+		return err
+	}
+
+	// Print nested groups under parent's name using `::` as the separator.
+	for _, parent := range cmd.Groups() {
+		for _, grp := range parent.Groups() {
+			grp.ShortDescription = parent.ShortDescription + "::" + grp.ShortDescription
+		}
+	}
+	return nil
+}
+
+func Start(ctx context.Context, parser *flags.Parser) error {
+	startCmd = StartCmd{
+		Config: config.NewDefaultConfig(),
+	}
+	cmd, err := parser.AddCommand("start", "Start a vega data node", "Start a vega data node as defined by the config files", &startCmd)
 	if err != nil {
 		return err
 	}

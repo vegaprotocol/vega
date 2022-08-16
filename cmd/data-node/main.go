@@ -48,6 +48,7 @@ func Main(ctx context.Context) error {
 		Init,
 		Gateway,
 		Node,
+		Start,
 		Version,
 		Postgres,
 	); err != nil {

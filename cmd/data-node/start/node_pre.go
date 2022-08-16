@@ -10,23 +10,22 @@
 // of this software will be governed by version 3 or later of the GNU General
 // Public License.
 
-package node
+package start
 
 import (
 	"context"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/datanode/candlesv2"
-	"code.vegaprotocol.io/vega/datanode/service"
-	"code.vegaprotocol.io/vega/paths"
-
 	"code.vegaprotocol.io/vega/datanode/broker"
+	"code.vegaprotocol.io/vega/datanode/candlesv2"
 	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/datanode/pprof"
+	"code.vegaprotocol.io/vega/datanode/service"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/sqlsubscribers"
 	"code.vegaprotocol.io/vega/datanode/subscribers"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/paths"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 
 	"google.golang.org/grpc"
@@ -64,15 +63,6 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 	l.Log.Info("Starting Vega",
 		logging.String("version", l.Version),
 		logging.String("version-hash", l.VersionHash))
-
-	// Set ulimits
-	if err = l.SetUlimits(); err != nil {
-		l.Log.Warn("Unable to set ulimits",
-			logging.Error(err))
-	} else {
-		l.Log.Debug("Set ulimits",
-			logging.Uint64("nofile", l.conf.UlimitNOFile))
-	}
 
 	l.Log.Info("Enabling SQL stores")
 	if err := l.setupStoresSQL(); err != nil {
