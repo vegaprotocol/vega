@@ -93,12 +93,12 @@ func (h *SendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) 
 
 	lastBlockData, err := currentNode.LastBlock(ctx)
 	if err != nil {
-		h.pipeline.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("couldn't get last block: %w", err))
+		h.pipeline.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("couldn't get last block from node: %w", err))
 		return nil, networkError(ErrorCodeNodeRequestFailed, ErrCouldNotGetLastBlockInformation)
 	}
 
 	// Sign the payload.
-	inputData, err := wcommands.ToMarshaledInputData(request, lastBlockData.Height)
+	inputData, err := wcommands.ToMarshaledInputData(request, lastBlockData.Height, lastBlockData.ChainId)
 	if err != nil {
 		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("couldn't marshal input data: %w", err))
 		return nil, internalError(ErrCouldNotSendTransaction)

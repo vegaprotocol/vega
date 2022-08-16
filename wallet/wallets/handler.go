@@ -207,7 +207,7 @@ func (h *Handler) SignAny(name string, inputData []byte, pubKey string) ([]byte,
 	return w.SignAny(pubKey, inputData)
 }
 
-func (h *Handler) SignTx(name string, req *walletpb.SubmitTransactionRequest, height uint64) (*commandspb.Transaction, error) {
+func (h *Handler) SignTx(name string, req *walletpb.SubmitTransactionRequest, height uint64, chainID string) (*commandspb.Transaction, error) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
@@ -216,7 +216,7 @@ func (h *Handler) SignTx(name string, req *walletpb.SubmitTransactionRequest, he
 		return nil, err
 	}
 
-	data, err := wcommands.ToMarshaledInputData(req, height)
+	data, err := wcommands.ToMarshaledInputData(req, height, chainID)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't marshal input data: %w", err)
 	}

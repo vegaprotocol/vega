@@ -18,6 +18,7 @@ import (
 func TestSignCommandFlags(t *testing.T) {
 	t.Run("Valid flags succeeds", testSignCommandFlagsValidFlagsSucceeds)
 	t.Run("Missing wallet fails", testSignCommandFlagsMissingWalletFails)
+	t.Run("Missing chain ID fails", testSignCommandFlagsMissingChainIDFails)
 	t.Run("Missing public key fails", testSignCommandFlagsMissingPubKeyFails)
 	t.Run("Missing tx height fails", testSignCommandFlagsMissingTxBlockHeightFails)
 	t.Run("Missing request fails", testSignCommandFlagsMissingRequestFails)
@@ -33,11 +34,13 @@ func testSignCommandFlagsValidFlagsSucceeds(t *testing.T) {
 	passphrase, passphraseFilePath := NewPassphraseFile(t, testDir)
 	walletName := vgrand.RandomStr(10)
 	pubKey := vgrand.RandomStr(20)
+	chainID := vgrand.RandomStr(20)
 
 	f := &cmd.SignCommandFlags{
 		Wallet:         walletName,
 		PubKey:         pubKey,
 		PassphraseFile: passphraseFilePath,
+		ChainID:        chainID,
 		TxBlockHeight:  150,
 		RawCommand:     `{"voteSubmission": {"proposalId": "ec066610abbd1736b69cadcb059b9efdfdd9e3e33560fc46b2b8b62764edf33f", "value": "VALUE_YES"}}`,
 	}
@@ -46,6 +49,7 @@ func testSignCommandFlagsValidFlagsSucceeds(t *testing.T) {
 		Wallet:        walletName,
 		Passphrase:    passphrase,
 		TxBlockHeight: 150,
+		ChainID:       chainID,
 		Request: &walletpb.SubmitTransactionRequest{
 			PubKey:    pubKey,
 			Propagate: true,
@@ -82,6 +86,21 @@ func testSignCommandFlagsMissingWalletFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.FlagMustBeSpecifiedError("wallet"))
+	assert.Nil(t, req)
+}
+
+func testSignCommandFlagsMissingChainIDFails(t *testing.T) {
+	testDir := t.TempDir()
+
+	// given
+	f := newSignCommandFlags(t, testDir)
+	f.ChainID = ""
+
+	// when
+	req, err := f.Validate()
+
+	// then
+	assert.ErrorIs(t, err, flags.FlagMustBeSpecifiedError("chain-id"))
 	assert.Nil(t, req)
 }
 
@@ -187,6 +206,7 @@ func newSignCommandFlags(t *testing.T, testDir string) *cmd.SignCommandFlags {
 		Wallet:         walletName,
 		PubKey:         pubKey,
 		TxBlockHeight:  150,
+		ChainID:        vgrand.RandomStr(5),
 		PassphraseFile: passphraseFilePath,
 	}
 }

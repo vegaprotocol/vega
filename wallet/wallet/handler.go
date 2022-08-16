@@ -235,6 +235,7 @@ type RotateKeyRequest struct {
 	Wallet            string `json:"wallet"`
 	Passphrase        string `json:"passphrase"`
 	NewPublicKey      string `json:"newPublicKey"`
+	ChainID           string `json:"chainId"`
 	CurrentPublicKey  string `json:"currentPublicKey"`
 	TxBlockHeight     uint64 `json:"txBlockHeight"`
 	TargetBlockHeight uint64 `json:"targetBlockHeight"`
@@ -288,7 +289,7 @@ func RotateKey(store Store, req *RotateKeyRequest) (*RotateKeyResponse, error) {
 		},
 	}
 
-	data, err := proto.Marshal(inputData)
+	data, err := commands.MarshalInputData(req.ChainID, inputData)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't marshal key rotate submission input data: %w", err)
 	}
@@ -472,6 +473,7 @@ type SignCommandRequest struct {
 	Wallet        string `json:"wallet"`
 	Passphrase    string `json:"passphrase"`
 	TxBlockHeight uint64 `json:"txBlockHeight"`
+	ChainID       string `json:"chainID"`
 
 	Request *walletpb.SubmitTransactionRequest `json:"request"`
 }
@@ -486,7 +488,7 @@ func SignCommand(store Store, req *SignCommandRequest) (*SignCommandResponse, er
 		return nil, err
 	}
 
-	data, err := wcommands.ToMarshaledInputData(req.Request, req.TxBlockHeight)
+	data, err := wcommands.ToMarshaledInputData(req.Request, req.TxBlockHeight, req.ChainID)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't marshal input data: %w", err)
 	}

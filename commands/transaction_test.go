@@ -6,26 +6,31 @@ import (
 	"code.vegaprotocol.io/vega/commands"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestCheckTransaction(t *testing.T) {
 	t.Run("Submitting valid transaction succeeds", testSubmittingValidTransactionSucceeds)
 	t.Run("Submitting empty transaction fails", testSubmittingEmptyTransactionFails)
 	t.Run("Submitting nil transaction fails", testSubmittingNilTransactionFails)
+	t.Run("Submitting transaction without version fails", testSubmittingTransactionWithoutVersionFails)
+	t.Run("Submitting transaction with unsupported version fails", testSubmittingTransactionWithUnsupportedVersionFails)
 	t.Run("Submitting transaction without input data fails", testSubmittingTransactionWithoutInputDataFails)
 	t.Run("Submitting transaction without signature fails", testSubmittingTransactionWithoutSignatureFails)
 	t.Run("Submitting transaction without signature value fails", testSubmittingTransactionWithoutSignatureValueFails)
 	t.Run("Submitting transaction without signature algo fails", testSubmittingTransactionWithoutSignatureAlgoFails)
 	t.Run("Submitting transaction without from fails", testSubmittingTransactionWithoutFromFails)
 	t.Run("Submitting transaction without public key fails", testSubmittingTransactionWithoutPubKeyFromFails)
-	t.Run("Submitting transaction with invalid encoding of bytes fails", testSubmittingTransactionWithInvalidEncodingOfValueFails)
-	t.Run("Submitting transaction with invalid encoding of bytes fails", testSubmittingTransactionWithInvalidEncodingOfPubKeyFails)
+	t.Run("Submitting transaction with invalid encoding of value fails", testSubmittingTransactionWithInvalidEncodingOfValueFails)
+	t.Run("Submitting transaction with invalid encoding of public key fails", testSubmittingTransactionWithInvalidEncodingOfPubKeyFails)
 }
 
 func testSubmittingValidTransactionSucceeds(t *testing.T) {
-	err := checkTransaction(newValidTransaction())
+	tx := newValidTransactionV2(t)
 
-	assert.True(t, err.Empty())
+	err := checkTransaction(tx)
+
+	assert.True(t, err.Empty(), err.Error())
 }
 
 func testSubmittingEmptyTransactionFails(t *testing.T) {
@@ -40,8 +45,43 @@ func testSubmittingNilTransactionFails(t *testing.T) {
 	assert.Contains(t, err.Get("tx"), commands.ErrIsRequired)
 }
 
+func testSubmittingTransactionWithoutVersionFails(t *testing.T) {
+	tx := newValidTransactionV2(t)
+	tx.Version = 0
+
+	err := checkTransaction(tx)
+
+	assert.Contains(t, err.Get("tx.version"), commands.ErrIsRequired)
+}
+
+func testSubmittingTransactionWithUnsupportedVersionFails(t *testing.T) {
+	tcs := []struct {
+		name    string
+		version uint32
+	}{
+		{
+			name:    "version 1",
+			version: 1,
+		}, {
+			name:    "version 4",
+			version: 4,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(tt *testing.T) {
+			tx := newValidTransactionV2(tt)
+			tx.Version = commandspb.TxVersion(tc.version)
+
+			err := checkTransaction(tx)
+
+			assert.Contains(tt, err.Get("tx.version"), commands.ErrIsNotSupported)
+		})
+	}
+}
+
 func testSubmittingTransactionWithoutInputDataFails(t *testing.T) {
-	tx := newValidTransaction()
+	tx := newValidTransactionV2(t)
 	tx.InputData = []byte{}
 
 	err := checkTransaction(tx)
@@ -50,7 +90,7 @@ func testSubmittingTransactionWithoutInputDataFails(t *testing.T) {
 }
 
 func testSubmittingTransactionWithoutSignatureFails(t *testing.T) {
-	tx := newValidTransaction()
+	tx := newValidTransactionV2(t)
 	tx.Signature = nil
 
 	err := checkTransaction(tx)
@@ -59,7 +99,7 @@ func testSubmittingTransactionWithoutSignatureFails(t *testing.T) {
 }
 
 func testSubmittingTransactionWithoutSignatureValueFails(t *testing.T) {
-	tx := newValidTransaction()
+	tx := newValidTransactionV2(t)
 	tx.Signature.Value = ""
 
 	err := checkTransaction(tx)
@@ -68,7 +108,7 @@ func testSubmittingTransactionWithoutSignatureValueFails(t *testing.T) {
 }
 
 func testSubmittingTransactionWithoutSignatureAlgoFails(t *testing.T) {
-	tx := newValidTransaction()
+	tx := newValidTransactionV2(t)
 	tx.Signature.Algo = ""
 
 	err := checkTransaction(tx)
@@ -77,7 +117,7 @@ func testSubmittingTransactionWithoutSignatureAlgoFails(t *testing.T) {
 }
 
 func testSubmittingTransactionWithoutFromFails(t *testing.T) {
-	tx := newValidTransaction()
+	tx := newValidTransactionV2(t)
 	tx.From = nil
 
 	err := checkTransaction(tx)
@@ -86,7 +126,7 @@ func testSubmittingTransactionWithoutFromFails(t *testing.T) {
 }
 
 func testSubmittingTransactionWithoutPubKeyFromFails(t *testing.T) {
-	tx := newValidTransaction()
+	tx := newValidTransactionV2(t)
 	tx.From = &commandspb.Transaction_PubKey{
 		PubKey: "",
 	}
@@ -97,16 +137,16 @@ func testSubmittingTransactionWithoutPubKeyFromFails(t *testing.T) {
 }
 
 func testSubmittingTransactionWithInvalidEncodingOfValueFails(t *testing.T) {
-	tx := newValidTransaction()
+	tx := newValidTransactionV2(t)
 	tx.Signature.Value = "invalid-hex-encoding"
 
 	err := checkTransaction(tx)
 
-	assert.Contains(t, err.Get("tx.signature.value"), commands.ErrShouldBeHexEncoded)
+	assert.Contains(t, err.Get("tx.signature.value"), commands.ErrShouldBeHexEncoded, err.Error())
 }
 
 func testSubmittingTransactionWithInvalidEncodingOfPubKeyFails(t *testing.T) {
-	tx := newValidTransaction()
+	tx := newValidTransactionV2(t)
 	tx.From = &commandspb.Transaction_PubKey{
 		PubKey: "my-pub-key",
 	}
@@ -117,7 +157,7 @@ func testSubmittingTransactionWithInvalidEncodingOfPubKeyFails(t *testing.T) {
 }
 
 func checkTransaction(cmd *commandspb.Transaction) commands.Errors {
-	_, err := commands.CheckTransaction(cmd)
+	_, err := commands.CheckTransaction(cmd, "testnet")
 
 	e, ok := err.(commands.Errors)
 	if !ok {
@@ -127,16 +167,34 @@ func checkTransaction(cmd *commandspb.Transaction) commands.Errors {
 	return e
 }
 
-func newValidTransaction() *commandspb.Transaction {
+func newValidTransactionV2(t *testing.T) *commandspb.Transaction {
+	t.Helper()
+
+	inputData := &commandspb.InputData{
+		Nonce:       123456789,
+		BlockHeight: 1789,
+		Command: &commandspb.InputData_OrderCancellation{
+			OrderCancellation: &commandspb.OrderCancellation{
+				MarketId: "USD/BTC",
+				OrderId:  "7fa6d9f6a9dfa9f66fada",
+			},
+		},
+	}
+
+	rawInputData, err := proto.Marshal(inputData)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	return &commandspb.Transaction{
-		InputData: []byte{8, 178, 211, 130, 220, 159, 158, 160, 128, 80, 210, 62, 0},
+		InputData: rawInputData,
 		Signature: &commandspb.Signature{
 			Algo:    "vega/ed25519",
-			Value:   "8ea1c9baab2919a73b6acd3dae15f515c9d9b191ac2a2cd9e7d7a2f9750da0793a88c8ee96a640e0de64c91d81770299769d4d4d93f81208e17573c836e3a80d",
+			Value:   "876e46defc40030391b5feb2c9bb0b6b68b2d95a6b5fd17a730a46ea73f3b1808420c8c609be6f1c6156e472ecbcd09202f750da000dee41429947a4b7eca00b",
 			Version: 1,
 		},
 		From: &commandspb.Transaction_PubKey{
-			PubKey: "b82756d3a3c5beff01152d3565e0c5c2235ccbe9c9d29ea4e760d981f53db7c6",
+			PubKey: "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
 		},
 		Version: 2,
 	}

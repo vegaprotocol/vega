@@ -10,10 +10,8 @@ import (
 
 var (
 	ErrIsRequired              = errors.New("is required")
-	ErrMustBeValidDate         = errors.New("must be a RFC3339 date")
 	ErrMustBePositive          = errors.New("must be positive")
 	ErrMustBePositiveOrZero    = errors.New("must be positive or zero")
-	ErrMustBeNegative          = errors.New("must be negative")
 	ErrMustBeNegativeOrZero    = errors.New("must be negative or zero")
 	ErrMustBeLessThan150       = errors.New("must be less than 150")
 	ErrMustBeLessThan7         = errors.New("must be less than 7")
@@ -30,8 +28,11 @@ var (
 	ErrNotAValidInteger        = errors.New("not a valid integer")
 	ErrNotAValidFloat          = errors.New("not a valid float")
 	ErrMustBeLessThan100Chars  = errors.New("must be less than 100 characters")
-	ErrMustNotExceed1024Chars  = errors.New("must not exceed 1024 characters")
 	ErrMustNotExceed20000Chars = errors.New("must not exceed 20000 characters")
+	ErrShouldBeHexEncoded      = errors.New("should be hex encoded")
+	ErrSignatureNotVerifiable  = errors.New("signature is not verifiable")
+	ErrInvalidSignature        = errors.New("invalid signature")
+	ErrUnsupportedAlgorithm    = errors.New("unsupported algorithm")
 )
 
 type Errors map[string][]error
@@ -47,7 +48,7 @@ func (e Errors) Error() string {
 
 	propMessages := []string{}
 	for prop, errs := range e {
-		errMessages := []string{}
+		errMessages := make([]string, 0, len(errs))
 		for _, err := range errs {
 			errMessages = append(errMessages, err.Error())
 		}
