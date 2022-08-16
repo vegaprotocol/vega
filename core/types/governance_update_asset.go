@@ -156,10 +156,9 @@ func (a AssetDetailsUpdate) String() string {
 
 func (a AssetDetailsUpdate) IntoProto() *vegapb.AssetDetailsUpdate {
 	r := &vegapb.AssetDetailsUpdate{
-		Name:        a.Name,
-		Symbol:      a.Symbol,
-		TotalSupply: num.UintToString(a.TotalSupply),
-		Quantum:     a.Quantum.String(),
+		Name:    a.Name,
+		Symbol:  a.Symbol,
+		Quantum: a.Quantum.String(),
 	}
 	if a.Source == nil {
 		return r
@@ -205,10 +204,6 @@ func (a AssetDetailsUpdate) Validate() (ProposalError, error) {
 		return ProposalErrorInvalidAssetDetails, ErrInvalidAssetDecimalPlacesZero
 	}
 
-	if a.TotalSupply.IsZero() {
-		return ProposalErrorInvalidAssetDetails, ErrInvalidAssetTotalSupplyZero
-	}
-
 	if a.Quantum.IsZero() {
 		return ProposalErrorInvalidAssetDetails, ErrInvalidAssetQuantumZero
 	}
@@ -233,13 +228,6 @@ func AssetDetailsUpdateFromProto(p *vegapb.AssetDetailsUpdate) (*AssetDetailsUpd
 		}
 	}
 	total := num.UintZero()
-	if len(p.TotalSupply) > 0 {
-		var overflow bool
-		total, overflow = num.UintFromString(p.TotalSupply, 10)
-		if overflow {
-			return nil, ErrInvalidTotalSupply
-		}
-	}
 
 	min := num.DecimalZero()
 	if len(p.Quantum) > 0 {

@@ -935,11 +935,10 @@ func newAssetTerms() *types.ProposalTermsNewAsset {
 	return &types.ProposalTermsNewAsset{
 		NewAsset: &types.NewAsset{
 			Changes: &types.AssetDetails{
-				Name:        "token",
-				Symbol:      "TKN",
-				TotalSupply: num.NewUint(10000),
-				Decimals:    18,
-				Quantum:     num.DecimalFromFloat(1),
+				Name:     "token",
+				Symbol:   "TKN",
+				Decimals: 18,
+				Quantum:  num.DecimalFromFloat(1),
 				Source: &types.AssetDetailsBuiltinAsset{
 					BuiltinAsset: &types.BuiltinAsset{
 						MaxFaucetAmountMint: num.NewUint(1),

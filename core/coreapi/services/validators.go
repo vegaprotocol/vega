@@ -26,13 +26,22 @@ type validatorUpdateE interface {
 	ValidatorUpdate() eventspb.ValidatorUpdate
 }
 
+type ethereumKeyRotationE interface {
+	events.Event
+	EthereumKeyRotation() eventspb.EthereumKeyRotation
+}
+type keyRotationE interface {
+	events.Event
+	KeyRotation() eventspb.KeyRotation
+}
+
 type Validators struct {
 	*subscribers.Base
 	ctx context.Context
 
 	mu         sync.RWMutex
 	validators map[string]eventspb.ValidatorUpdate
-	ch         chan eventspb.ValidatorUpdate
+	ch         chan events.Event
 }
 
 func NewValidators(ctx context.Context) (assets *Validators) {
@@ -41,7 +50,7 @@ func NewValidators(ctx context.Context) (assets *Validators) {
 		Base:       subscribers.NewBase(ctx, 1000, true),
 		ctx:        ctx,
 		validators: map[string]eventspb.ValidatorUpdate{},
-		ch:         make(chan eventspb.ValidatorUpdate, 100),
+		ch:         make(chan events.Event, 100),
 	}
 }
 
@@ -51,7 +60,7 @@ func (a *Validators) consume() {
 		select {
 		case <-a.Closed():
 			return
-		case vu, ok := <-a.ch:
+		case e, ok := <-a.ch:
 			if !ok {
 				// cleanup base
 				a.Halt()
@@ -59,7 +68,28 @@ func (a *Validators) consume() {
 				return
 			}
 			a.mu.Lock()
-			a.validators[vu.TmPubKey] = vu
+			switch te := e.(type) {
+			case keyRotationE:
+				kr := te.KeyRotation()
+				vu, ok := a.validators[kr.NodeId]
+				if !ok {
+					break
+				}
+
+				vu.VegaPubKey = kr.NewPubKey
+				a.validators[kr.NodeId] = vu
+			case ethereumKeyRotationE:
+				kr := te.EthereumKeyRotation()
+				vu, ok := a.validators[kr.NodeId]
+				if !ok {
+					break
+				}
+
+				vu.EthereumAddress = kr.NewAddress
+				a.validators[kr.NodeId] = vu
+			case validatorUpdateE:
+				a.validators[te.ValidatorUpdate().NodeId] = te.ValidatorUpdate()
+			}
 			a.mu.Unlock()
 		}
 	}
@@ -67,8 +97,11 @@ func (a *Validators) consume() {
 
 func (a *Validators) Push(evts ...events.Event) {
 	for _, e := range evts {
-		if ae, ok := e.(validatorUpdateE); ok {
-			a.ch <- ae.ValidatorUpdate()
+		switch te := e.(type) {
+		case keyRotationE,
+			ethereumKeyRotationE,
+			validatorUpdateE:
+			a.ch <- te
 		}
 	}
 }
@@ -87,5 +120,7 @@ func (a *Validators) List() []*eventspb.ValidatorUpdate {
 func (a *Validators) Types() []events.Type {
 	return []events.Type{
 		events.ValidatorUpdateEvent,
+		events.EthereumKeyRotationEvent,
+		events.KeyRotationEvent,
 	}
 }

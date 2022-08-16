@@ -39,12 +39,11 @@ type validator struct {
 }
 
 type asset struct {
-	Name        string
-	Symbol      string
-	Decimals    uint64
-	TotalSupply string `json:"total_supply"`
-	Quantum     string `json:"quantum"`
-	Source      *struct {
+	Name     string
+	Symbol   string
+	Decimals uint64
+	Quantum  string `json:"quantum"`
+	Source   *struct {
 		BuiltInAsset *struct {
 			MaxFaucetAmountMint string `json:"max_faucet_amount_mint"`
 		} `json:"builtin_asset,omitempty"`
@@ -86,12 +85,8 @@ func verifyAssets(r *reporter, assets map[string]asset) {
 	}
 
 	for k, v := range assets {
-		if _, failed := num.UintFromString(v.TotalSupply, 10); failed {
-			r.Err("app_state.assets[%s].total_supply not a valid number: %s", k, v.TotalSupply)
-		}
-
 		if _, failed := num.UintFromString(v.Quantum, 10); failed {
-			r.Err("app_state.assets[%s].quantum not a valid number: %s", k, v.TotalSupply)
+			r.Err("app_state.assets[%s].quantum not a valid number: %s", k, v.Quantum)
 		}
 
 		switch {
@@ -102,7 +97,7 @@ func verifyAssets(r *reporter, assets map[string]asset) {
 		case v.Source.BuiltInAsset != nil:
 			if _, failed := num.UintFromString(v.Source.BuiltInAsset.MaxFaucetAmountMint, 10); failed {
 				r.Err("app_state.assets[%s].source.builtin_asset.max_faucet_amount_mint is not a valid number: %s",
-					k, v.TotalSupply)
+					k, v.Source.BuiltInAsset.MaxFaucetAmountMint)
 			}
 		case v.Source.ERC20 != nil:
 			if !isValidParty(k) {

@@ -58,6 +58,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5862](https://github.com/vegaprotocol/vega/issues/5862) - Add base `URL` in `swagger`
 - [5817](https://github.com/vegaprotocol/vega/issues/5817) - Add validation error on asset proposal when rejected
 - [5816](https://github.com/vegaprotocol/vega/issues/5816) - Set proper status to rejected asset proposal
+- [5893](https://github.com/vegaprotocol/vega/issues/5893) - Remove total supply from assets
 
 ### 🐛 Fixes
 - [5571](https://github.com/vegaprotocol/vega/issues/5571) - Restore pending assets status correctly after snapshot restore
@@ -88,10 +89,12 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5329](https://github.com/vegaprotocol/vega/issues/5329) - Fix checks for market enactment and termination
 - [5837](https://github.com/vegaprotocol/vega/issues/5837) - Allow a promotion due to increased slots and a swap to happen in the same epoch
 - [5819](https://github.com/vegaprotocol/vega/issues/5819) - Add new asset proposal validation timestamp validation
+- [5897](https://github.com/vegaprotocol/vega/issues/5897) - Return uptime of 0, rather than error, when querying for `NodeData` before end of first epoch
 - [5811](https://github.com/vegaprotocol/vega/issues/5811) - Do not overwrite local changes when updating wallet through JSON-RPC API
 - [5868](https://github.com/vegaprotocol/vega/issues/5868) - Clarify the error for insufficient token to submit proposal or vote
 - [5867](https://github.com/vegaprotocol/vega/issues/5867) - Fix witness check for majority
 - [5853](https://github.com/vegaprotocol/vega/issues/5853) - Do not ignore market update proposals when loading from checkpoint
+- [5648](https://github.com/vegaprotocol/vega/issues/5648) - Ethereum key rotation - search validators by Vega pub key and listen to rotation events in core API
 
 ## 0.53.0
 

@@ -173,7 +173,6 @@ func (e *ERC20) SignWithdrawal(
 }
 
 func (e *ERC20) String() string {
-	return fmt.Sprintf("id(%v) name(%v) symbol(%v) totalSupply(%v) decimals(%v)",
-		e.asset.ID, e.asset.Details.Name, e.asset.Details.Symbol, e.asset.Details.TotalSupply,
-		e.asset.Details.Decimals)
+	return fmt.Sprintf("id(%v) name(%v) symbol(%v) decimals(%v)",
+		e.asset.ID, e.asset.Details.Name, e.asset.Details.Symbol, e.asset.Details.Decimals)
 }

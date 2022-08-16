@@ -78,10 +78,6 @@ func (r myAssetResolver) Symbol(ctx context.Context, obj *types.Asset) (string, 
 	return obj.Details.Symbol, nil
 }
 
-func (r myAssetResolver) TotalSupply(ctx context.Context, obj *types.Asset) (string, error) {
-	return obj.Details.TotalSupply, nil
-}
-
 func (r *myAssetResolver) Decimals(ctx context.Context, obj *types.Asset) (int, error) {
 	return int(obj.Details.Decimals), nil
 }

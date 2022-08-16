@@ -30,7 +30,6 @@ type Asset struct {
 	ID                AssetID
 	Name              string
 	Symbol            string
-	TotalSupply       decimal.Decimal // Maybe num.Uint if we can figure out how to add support to pgx
 	Decimals          int
 	Quantum           decimal.Decimal
 	Source            string
@@ -45,11 +44,10 @@ func (a Asset) ToProto() *pb.Asset {
 	pbAsset := &pb.Asset{
 		Id: a.ID.String(),
 		Details: &pb.AssetDetails{
-			Name:        a.Name,
-			Symbol:      a.Symbol,
-			TotalSupply: a.TotalSupply.BigInt().String(),
-			Decimals:    uint64(a.Decimals),
-			Quantum:     a.Quantum.String(),
+			Name:     a.Name,
+			Symbol:   a.Symbol,
+			Decimals: uint64(a.Decimals),
+			Quantum:  a.Quantum.String(),
 		},
 		Status: pb.Asset_Status(a.Status),
 	}
