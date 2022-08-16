@@ -110,7 +110,6 @@ func (e *Engine) UpgradeProposal(ctx context.Context, pk string, upgradeBlockHei
 		logging.String("validatorPubKey", pk),
 		logging.Uint64("upgradeBlockHeight", upgradeBlockHeight),
 		logging.String("vegaReleaseTag", vegaReleaseTag),
-		logging.String("dataNodeReleaseTag", dataNodeReleaseTag),
 	)
 
 	if !e.topology.IsTendermintValidator(pk) {
@@ -175,7 +174,6 @@ func (e *Engine) UpgradeProposal(ctx context.Context, pk string, upgradeBlockHei
 		logging.String("validatorPubKey", pk),
 		logging.Uint64("upgradeBlockHeight", upgradeBlockHeight),
 		logging.String("vegaReleaseTag", vegaReleaseTag),
-		logging.String("dataNodeReleaseTag", dataNodeReleaseTag),
 	)
 
 	return nil
@@ -193,7 +191,7 @@ func (e *Engine) sendAndKeepEvent(ctx context.Context, ID string, activeProposal
 func (e *Engine) TimeForUpgrade() bool {
 	e.lock.RLock()
 	defer e.lock.RUnlock()
-	return e.upgradeStatus.AcceptedReleaseInfo != nil && e.currentBlockHeight-e.upgradeStatus.AcceptedReleaseInfo.UpgradeBlockHeight == 1
+	return e.upgradeStatus.AcceptedReleaseInfo != nil && e.currentBlockHeight-e.upgradeStatus.AcceptedReleaseInfo.UpgradeBlockHeight == 0
 }
 
 func (e *Engine) isAccepted(p *protocolUpgradeProposal) bool {
@@ -279,8 +277,8 @@ func (e *Engine) Cleanup(ctx context.Context) {
 func (e *Engine) SetReadyForUpgrade() {
 	e.lock.Lock()
 	defer e.lock.Unlock()
-	if int(e.currentBlockHeight)-int(e.upgradeStatus.AcceptedReleaseInfo.UpgradeBlockHeight) != 1 {
-		e.log.Panic("can only call SetReadyForUpgrade at the block following the block height for upgrade", logging.Uint64("block-height", e.currentBlockHeight), logging.Int("block-height-for-upgrade", int(e.upgradeStatus.AcceptedReleaseInfo.UpgradeBlockHeight)))
+	if int(e.currentBlockHeight)-int(e.upgradeStatus.AcceptedReleaseInfo.UpgradeBlockHeight) != 0 {
+		e.log.Panic("can only call SetReadyForUpgrade at the block of the block height for upgrade", logging.Uint64("block-height", e.currentBlockHeight), logging.Int("block-height-for-upgrade", int(e.upgradeStatus.AcceptedReleaseInfo.UpgradeBlockHeight)))
 	}
 	e.log.Info("marking vega as ready to shut down")
 	e.upgradeStatus.ReadyToUpgrade = true

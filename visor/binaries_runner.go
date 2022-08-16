@@ -204,10 +204,11 @@ func (r *BinariesRunner) Stop() error {
 	for {
 		select {
 		case <-timeout:
-			return fmt.Errorf("failed to gratefully shut down processes: timed out")
+			return fmt.Errorf("failed to gracefully shut down processes: timed out")
 		case <-ticker.C:
 			r.mut.RLock()
 			if len(r.running) == 0 {
+				r.mut.RUnlock()
 				return nil
 			}
 			r.mut.RUnlock()
