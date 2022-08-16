@@ -61,6 +61,7 @@ type Markets interface {
 	RestoreMarket(ctx context.Context, marketConfig *types.Market) error
 	RestoreMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *types.LiquidityProvisionSubmission, lpid, deterministicID string) error
 	StartOpeningAuction(ctx context.Context, marketID string) error
+	UpdateMarket(ctx context.Context, marketConfig *types.Market) error
 }
 
 // StakingAccounts ...

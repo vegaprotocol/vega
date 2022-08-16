@@ -137,3 +137,17 @@ func (mr *MockMarketsMockRecorder) StartOpeningAuction(arg0, arg1 interface{}) *
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartOpeningAuction", reflect.TypeOf((*MockMarkets)(nil).StartOpeningAuction), arg0, arg1)
 }
+
+// UpdateMarket mocks base method.
+func (m *MockMarkets) UpdateMarket(arg0 context.Context, arg1 *types.Market) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateMarket", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateMarket indicates an expected call of UpdateMarket.
+func (mr *MockMarketsMockRecorder) UpdateMarket(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMarket", reflect.TypeOf((*MockMarkets)(nil).UpdateMarket), arg0, arg1)
+}
