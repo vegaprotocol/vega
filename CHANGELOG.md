@@ -99,6 +99,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5867](https://github.com/vegaprotocol/vega/issues/5867) - Fix witness check for majority
 - [5853](https://github.com/vegaprotocol/vega/issues/5853) - Do not ignore market update proposals when loading from checkpoint
 - [5648](https://github.com/vegaprotocol/vega/issues/5648) - Ethereum key rotation - search validators by Vega pub key and listen to rotation events in core API
+- [5648](https://github.com/vegaprotocol/vega/issues/5648) - Search validator by vega pub key and update the core validators API
 
 ## 0.53.0
 

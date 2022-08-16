@@ -32,6 +32,7 @@ import (
 	"code.vegaprotocol.io/vega/core/metrics"
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	"code.vegaprotocol.io/vega/core/protocol"
+	"code.vegaprotocol.io/vega/core/protocolupgrade"
 	"code.vegaprotocol.io/vega/core/stats"
 	"code.vegaprotocol.io/vega/libs/pprof"
 	"code.vegaprotocol.io/vega/logging"
@@ -165,7 +166,7 @@ func (n *NodeCommand) wait() {
 }
 
 func (n *NodeCommand) startProtocolUpgrade(version string) {
-	semVersion, err := semver.Parse(version)
+	semVersion, err := semver.Parse(protocolupgrade.TrimReleaseTag(version))
 	if err != nil {
 		n.Log.Error("invalid protocol version upgrade received, upgrade aborted",
 			logging.String("version", version),
