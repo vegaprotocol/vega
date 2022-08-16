@@ -1035,8 +1035,7 @@ type ComplexityRoot struct {
 
 	ProposalRationale struct {
 		Description func(childComplexity int) int
-		Hash        func(childComplexity int) int
-		Url         func(childComplexity int) int
+		Title       func(childComplexity int) int
 	}
 
 	ProposalTerms struct {
@@ -6052,19 +6051,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ProposalRationale.Description(childComplexity), true
 
-	case "ProposalRationale.hash":
-		if e.complexity.ProposalRationale.Hash == nil {
+	case "ProposalRationale.title":
+		if e.complexity.ProposalRationale.Title == nil {
 			break
 		}
 
-		return e.complexity.ProposalRationale.Hash(childComplexity), true
-
-	case "ProposalRationale.url":
-		if e.complexity.ProposalRationale.Url == nil {
-			break
-		}
-
-		return e.complexity.ProposalRationale.Url(childComplexity), true
+		return e.complexity.ProposalRationale.Title(childComplexity), true
 
 	case "ProposalTerms.change":
 		if e.complexity.ProposalTerms.Change == nil {
@@ -11444,23 +11436,16 @@ union ProposalChange =
 type ProposalRationale {
   """
   Description to show a short title / something in case the link goes offline.
-  This is to be between 0 and 1024 unicode characters.
+  This is to be between 0 and 20k unicode characters.
   This is mandatory for all proposals.
   """
   description: String!
   """
-  Cryptographically secure hash (SHA3-512) of the text pointed by the ` + "`" + `url` + "`" + ` property
-  so that viewers can check that the text hasn't been changed over time.
-  Optional except for FreeFrom proposal where it's mandatory.
-  If set, the ` + "`" + `url` + "`" + ` property must be set.
+  Title to be used to give a short description of the proposal in lists.
+  This is to be between 0 and 100 unicode characters.
+  This is mandatory for all proposals.
   """
-  hash: String
-  """
-  Link to a text file describing the proposal in depth.
-  Optional except for FreeFrom proposal where it's mandatory.
-  If set, the ` + "`" + `url` + "`" + ` property must be set.
-  """
-  url: String
+  title: String!
 }
 
 "The rationale behind the proposal"
@@ -33915,7 +33900,7 @@ func (ec *executionContext) _ProposalRationale_description(ctx context.Context, 
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ProposalRationale_hash(ctx context.Context, field graphql.CollectedField, obj *vega.ProposalRationale) (ret graphql.Marshaler) {
+func (ec *executionContext) _ProposalRationale_title(ctx context.Context, field graphql.CollectedField, obj *vega.ProposalRationale) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -33933,50 +33918,21 @@ func (ec *executionContext) _ProposalRationale_hash(ctx context.Context, field g
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Hash, nil
+		return obj.Title, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ProposalRationale_url(ctx context.Context, field graphql.CollectedField, obj *vega.ProposalRationale) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
 		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "ProposalRationale",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Url, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
 		return graphql.Null
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ProposalTerms_closingDatetime(ctx context.Context, field graphql.CollectedField, obj *vega.ProposalTerms) (ret graphql.Marshaler) {
@@ -55571,20 +55527,16 @@ func (ec *executionContext) _ProposalRationale(ctx context.Context, sel ast.Sele
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "hash":
+		case "title":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._ProposalRationale_hash(ctx, field, obj)
+				return ec._ProposalRationale_title(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
 
-		case "url":
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._ProposalRationale_url(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
 			}
-
-			out.Values[i] = innerFunc(ctx)
-
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
