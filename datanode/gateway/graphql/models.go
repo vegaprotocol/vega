@@ -78,7 +78,7 @@ func (BuiltinAsset) IsAssetSource() {}
 
 type BusEvent struct {
 	// the ID for this event
-	EventID string `json:"eventId"`
+	ID string `json:"id"`
 	// the block hash
 	Block string `json:"block"`
 	// the type of event
@@ -331,7 +331,7 @@ type PriceMonitoringTrigger struct {
 type ProposalVote struct {
 	// Cast vote
 	Vote *vega.Vote `json:"vote"`
-	// Proposal the vote is cast on
+	// Proposal ID the vote is cast on
 	ProposalID string `json:"proposalId"`
 }
 
