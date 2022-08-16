@@ -391,10 +391,16 @@ pipeline {
                 }
                 stage('System Tests') {
                     steps {
-                        build(
-                            job: 'common/system-tests',
-                            params: collectParams() + [string(name: 'VEGA_BRANCH', value: commitHash)]
-                        )
+                        script {
+                            systemTestsCapsule ignoreFailure: !isPRBuild(),
+                                timeout: 30,
+                                vegaVersion: commitHash,
+                                systemTests: params.SYSTEM_TESTS_BRANCH,
+                                vegacapsule: params.VEGACAPSULE_BRANCH,
+                                vegatools: params.VEGATOOLS_BRANCH,
+                                devopsInfra: params.DEVOPS_INFRA_BRANCH,
+                                devopsScripts: params.DEVOPSSCRIPTS_BRANCH
+                        }
                     }
                 }
                 stage('mocks check') {
