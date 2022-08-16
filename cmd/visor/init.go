@@ -37,7 +37,6 @@ var initCmd = &cobra.Command{
 		homePath, err := cmd.Flags().GetString(homeFlagName)
 		if err != nil {
 			return err
-
 		}
 
 		withDataNode, err := cmd.Flags().GetBool(withDataNodeFlagName)

@@ -40,7 +40,7 @@ func protocolUpgradeProposalID(upgradeBlockHeight uint64, vegaReleaseTag string)
 	return fmt.Sprintf("%v@%v", vegaReleaseTag, upgradeBlockHeight)
 }
 
-// TrimReleaseTag removes 'v' or 'V' at the beggining of the tag if present
+// TrimReleaseTag removes 'v' or 'V' at the beginning of the tag if present.
 func TrimReleaseTag(tag string) string {
 	if len(tag) == 0 {
 		return tag

@@ -38,7 +38,6 @@ func (cmd *VersionCmd) Execute(_ []string) error {
 			Version: cmd.version,
 			Hash:    cmd.hash,
 		})
-
 	}
 
 	fmt.Printf("Vega CLI %s (%s)\n", cmd.version, cmd.hash)
