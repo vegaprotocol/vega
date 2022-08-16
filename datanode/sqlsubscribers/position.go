@@ -48,7 +48,6 @@ type settleDistressed interface {
 	Margin() *num.Uint
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/positions_mock.go -package mocks code.vegaprotocol.io/vega/datanode/sqlsubscribers PositionStore
 type PositionStore interface {
 	Add(context.Context, entities.Position) error
 	GetByMarket(ctx context.Context, marketID string) ([]entities.Position, error)

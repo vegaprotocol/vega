@@ -29,6 +29,8 @@ import (
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 )
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/processor TimeService,EpochService,DelegationEngine,ExecutionEngine,GovernanceEngine,Stats,Assets,ValidatorTopology,Notary,EvtForwarder,Witness,Banking,NetworkParameters,OraclesEngine,OracleAdaptors,Limits,StakeVerifier,StakingAccounts,ERC20MultiSigTopology,Checkpoint
+
 var (
 	ErrInvalidSignature                       = errors.New("invalid signature")
 	ErrChainEventFromNonValidator             = errors.New("chain event emitted from a non-validator node")
@@ -37,7 +39,6 @@ var (
 	ErrNodeSignatureWithNonValidatorMasterKey = errors.New("node signature not signed with validator master key")
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/core/processor TimeService
 type TimeService interface {
 	GetTimeNow() time.Time
 	GetTimeLastBatch() time.Time
@@ -45,13 +46,11 @@ type TimeService interface {
 	SetTimeNow(context.Context, time.Time)
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/epoch_service_mock.go -package mocks code.vegaprotocol.io/vega/core/processor EpochService
 type EpochService interface {
 	NotifyOnEpoch(f func(context.Context, types.Epoch), r func(context.Context, types.Epoch))
 	OnBlockEnd(ctx context.Context)
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/delegation_engine_mock.go -package mocks code.vegaprotocol.io/vega/core/processor DelegationEngine
 type DelegationEngine interface {
 	Delegate(ctx context.Context, party string, nodeID string, amount *num.Uint) error
 	UndelegateAtEndOfEpoch(ctx context.Context, party string, nodeID string, amount *num.Uint) error
@@ -60,7 +59,6 @@ type DelegationEngine interface {
 	Hash() []byte
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/execution_engine_mock.go -package mocks code.vegaprotocol.io/vega/core/processor ExecutionEngine
 type ExecutionEngine interface {
 	// orders stuff
 	SubmitOrder(ctx context.Context, orderSubmission *types.OrderSubmission, party string, deterministicId string) (*types.OrderConfirmation, error)
@@ -81,7 +79,6 @@ type ExecutionEngine interface {
 	Hash() []byte
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_engine_mock.go -package mocks code.vegaprotocol.io/vega/core/processor GovernanceEngine
 type GovernanceEngine interface {
 	SubmitProposal(context.Context, types.ProposalSubmission, string, string) (*governance.ToSubmit, error)
 	FinaliseEnactment(ctx context.Context, prop *types.Proposal)
@@ -91,7 +88,6 @@ type GovernanceEngine interface {
 	Hash() []byte
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/stats_mock.go -package mocks code.vegaprotocol.io/vega/core/processor Stats
 type Stats interface {
 	IncTotalCreateOrder()
 	AddCurrentTradesInBatch(i uint64)
@@ -125,7 +121,6 @@ type Stats interface {
 	SetHeight(uint64)
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/core/processor Assets
 type Assets interface {
 	NewAsset(ctx context.Context, ref string, assetSrc *types.AssetDetails) (string, error)
 	StageAssetUpdate(*types.Asset) error
@@ -133,7 +128,6 @@ type Assets interface {
 	IsEnabled(string) bool
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/core/processor ValidatorTopology
 type ValidatorTopology interface {
 	Len() int
 	IsValidatorVegaPubKey(pk string) bool
@@ -155,8 +149,7 @@ type Broker interface {
 	SetStreaming(on bool) bool
 }
 
-// Notary ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/notary_mock.go -package mocks code.vegaprotocol.io/vega/core/processor Notary
+// Notary.
 type Notary interface {
 	StartAggregate(resID string, kind commandspb.NodeSignatureKind, signature []byte)
 	RegisterSignature(ctx context.Context, pubKey string, ns commandspb.NodeSignature) error
@@ -164,19 +157,16 @@ type Notary interface {
 }
 
 // Witness ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/witness_mock.go -package mocks code.vegaprotocol.io/vega/core/processor Witness
 type Witness interface {
 	AddNodeCheck(ctx context.Context, nv *commandspb.NodeVote, key crypto.PublicKey) error
 }
 
 // EvtForwarder ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/evtforwarder_mock.go -package mocks code.vegaprotocol.io/vega/core/processor EvtForwarder
 type EvtForwarder interface {
 	Ack(*commandspb.ChainEvent) bool
 }
 
 // Banking ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/banking_mock.go -package mocks code.vegaprotocol.io/vega/core/processor Banking
 type Banking interface {
 	EnableBuiltinAsset(context.Context, string) error
 	DepositBuiltinAsset(context.Context, *types.BuiltinAssetDeposit, string, uint64) error
@@ -193,7 +183,6 @@ type Banking interface {
 }
 
 // NetworkParameters ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/network_parameters_mock.go -package mocks code.vegaprotocol.io/vega/core/processor NetworkParameters
 type NetworkParameters interface {
 	Update(ctx context.Context, key, value string) error
 	DispatchChanges(ctx context.Context)
@@ -204,37 +193,31 @@ type Oracle struct {
 	Adaptors OracleAdaptors
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/oracles_engine_mock.go -package mocks code.vegaprotocol.io/vega/core/processor OraclesEngine
 type OraclesEngine interface {
 	BroadcastData(context.Context, oracles.OracleData) error
 	ListensToPubKeys(oracles.OracleData) bool
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/oracle_adaptors_mock.go -package mocks code.vegaprotocol.io/vega/core/processor OracleAdaptors
 type OracleAdaptors interface {
 	Normalise(crypto.PublicKey, commandspb.OracleDataSubmission) (*oracles.OracleData, error)
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/limits_mock.go -package mocks code.vegaprotocol.io/vega/core/processor Limits
 type Limits interface {
 	CanProposeMarket() bool
 	CanProposeAsset() bool
 	CanTrade() bool
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/stake_verifier_mock.go -package mocks code.vegaprotocol.io/vega/core/processor StakeVerifier
 type StakeVerifier interface {
 	ProcessStakeRemoved(ctx context.Context, event *types.StakeRemoved) error
 	ProcessStakeDeposited(ctx context.Context, event *types.StakeDeposited) error
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/staking_accounts_mock.go -package mocks code.vegaprotocol.io/vega/core/processor StakingAccounts
 type StakingAccounts interface {
 	Hash() []byte
 	ProcessStakeTotalSupply(ctx context.Context, event *types.StakeTotalSupply) error
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/erc20_multisig_topology_mock.go -package mocks code.vegaprotocol.io/vega/core/processor ERC20MultiSigTopology
 type ERC20MultiSigTopology interface {
 	ProcessSignerEvent(event *types.SignerEvent) error
 	ProcessThresholdEvent(event *types.SignerThresholdSetEvent) error

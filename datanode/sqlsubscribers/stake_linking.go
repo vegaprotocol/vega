@@ -27,7 +27,6 @@ type StakeLinkingEvent interface {
 	StakeLinking() eventspb.StakeLinking
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/stake_linking_mock.go -package mocks code.vegaprotocol.io/vega/datanode/sqlsubscribers StakeLinkingStore
 type StakeLinkingStore interface {
 	Upsert(ctx context.Context, linking *entities.StakeLinking) error
 }
