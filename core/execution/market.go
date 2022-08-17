@@ -758,7 +758,9 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 func (m *Market) updateMarketValueProxy() {
 	// if windows length is reached, reset fee splitter
 	if mvwl := m.marketValueWindowLength; m.feeSplitter.Elapsed() > mvwl {
+		// AvgTradeValue calculates the rolling average trade value to include the current window (which is ending)
 		m.equityShares.AvgTradeValue(m.feeSplitter.AvgTradeValue())
+		// this increments the internal window counter
 		m.feeSplitter.TimeWindowStart(m.timeService.GetTimeNow())
 		// m.equityShares.UpdateVirtualStake() // this should always set the vStake >= physical stake?
 	}

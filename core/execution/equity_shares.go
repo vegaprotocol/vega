@@ -83,7 +83,6 @@ func (es *EquityShares) setOpeningAuctionAVG() {
 }
 
 func (es *EquityShares) UpdateVStake() {
-	es.stateChanged = true
 	if es.r.IsZero() {
 		for _, v := range es.lps {
 			v.vStake = v.stake
@@ -102,7 +101,15 @@ func (es *EquityShares) UpdateVStake() {
 }
 
 func (es *EquityShares) AvgTradeValue(avg num.Decimal) *EquityShares {
-	if !es.mvp.IsZero() && !avg.IsZero() {
+	if avg.IsZero() {
+		// panic? this shouldn't be possible, once we leave opening auction, avg will always be > 0
+		if es.openingAuctionEnded {
+			panic("opening auction ended, and avg trade value hit zero somehow?")
+		}
+		return es
+	}
+	es.stateChanged = true
+	if !es.mvp.IsZero() && avg.GreaterThan(es.mvp) {
 		es.r = avg.Sub(es.mvp).Div(es.mvp)
 	} else {
 		es.r = num.DecimalZero()

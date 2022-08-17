@@ -26,7 +26,7 @@ type FeeSplitter struct {
 	tradeValue      *num.Uint
 	changed         bool
 	avg             num.Decimal
-	window          int64
+	window          uint64
 }
 
 func NewFeeSplitter() *FeeSplitter {
@@ -43,9 +43,6 @@ func (fs *FeeSplitter) SetCurrentTime(t time.Time) error {
 		return errors.New("current time can't be before current window time")
 	}
 	// we're past the opening auction, or we have a trade value (ie we're leaving opening auction)
-	if fs.window > 1 || !fs.tradeValue.IsZero() {
-		fs.window++
-	}
 	fs.currentTime = t
 	return nil
 }
@@ -53,6 +50,11 @@ func (fs *FeeSplitter) SetCurrentTime(t time.Time) error {
 // TimeWindowStart starts or restarts (if active) a current time window.
 // This sets the internal timers to `t` and resets the accumulated trade values.
 func (fs *FeeSplitter) TimeWindowStart(t time.Time) {
+	// if we have an average value, that means we left the opening auction
+	// and we can increase the window to the next value
+	if !fs.avg.IsZero() {
+		fs.window++
+	}
 	// reset the trade value for this window
 	fs.tradeValue = num.UintZero()
 
@@ -89,18 +91,18 @@ func (fs *FeeSplitter) MarketValueProxy(mvwl time.Duration, totalStakeU *num.Uin
 }
 
 func (fs *FeeSplitter) AvgTradeValue() num.Decimal {
+	tv := num.DecimalFromUint(fs.tradeValue)
+	if fs.avg.IsZero() {
+		fs.avg = tv
+	} else {
+		n := num.NewDecimalFromFloat(float64(fs.window))
+		nmin := num.NewDecimalFromFloat(float64(fs.window - 1))
+		fs.avg = fs.avg.Mul(nmin.Div(n)).Add(tv.Div(n))
+	}
 	return fs.avg
 }
 
 func (fs *FeeSplitter) AddTradeValue(v *num.Uint) {
-	tv := num.DecimalFromUint(v)
-	if fs.window > 1 {
-		n := num.NewDecimalFromFloat(float64(fs.window))
-		nmin := num.NewDecimalFromFloat(float64(fs.window - 1))
-		fs.avg = fs.avg.Mul(nmin.Div(n)).Add(tv.Div(n))
-	} else {
-		fs.avg = fs.avg.Add(tv) // keep adding during first period
-	}
 	fs.tradeValue.AddSum(v)
 	fs.changed = true
 }
@@ -112,7 +114,7 @@ func NewFeeSplitterFromSnapshot(fs *types.FeeSplitter, now time.Time) *FeeSplitt
 		tradeValue:      fs.TradeValue,
 		changed:         true,
 		avg:             fs.Avg,
-		window:          fs.window,
+		window:          fs.Window,
 	}
 }
 
