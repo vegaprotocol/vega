@@ -65,6 +65,8 @@ type App struct {
 
 	// the current block context
 	ctx context.Context
+
+	chainID string
 }
 
 func New(codec Codec) *App {
@@ -78,6 +80,14 @@ func New(codec Codec) *App {
 	}
 }
 
+func (app *App) SetChainID(chainID string) {
+	app.chainID = chainID
+}
+
+func (app *App) GetChainID() string {
+	return app.chainID
+}
+
 func (app *App) HandleCheckTx(cmd txn.Command, fn TxHandler) *App {
 	app.checkTxs[cmd] = fn
 	return app
@@ -88,16 +98,8 @@ func (app *App) HandleDeliverTx(cmd txn.Command, fn TxHandler) *App {
 	return app
 }
 
-func (app *App) validateTx(tx Tx) (uint32, error) {
-	if err := tx.Validate(); err != nil {
-		return AbciTxnValidationFailure, err
-	}
-
-	return 0, nil
-}
-
 func (app *App) decodeTx(bytes []byte) (Tx, uint32, error) {
-	tx, err := app.codec.Decode(bytes)
+	tx, err := app.codec.Decode(bytes, app.chainID)
 	if err != nil {
 		return nil, AbciTxnDecodingFailure, err
 	}

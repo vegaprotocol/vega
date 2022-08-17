@@ -17,7 +17,8 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/core/netparams"
-	types "code.vegaprotocol.io/vega/protos/vega"
+	"code.vegaprotocol.io/vega/protos/vega"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -89,7 +90,7 @@ func TestJSONValues(t *testing.T) {
 func TestJSONVPriceMonitoringParameters(t *testing.T) {
 	// happy case, populated parameters array
 	validPmJSONString := `{"triggers": [{"horizon": 60, "probability": "0.95", "auction_extension": 90},{"horizon": 120, "probability": "0.99", "auction_extension": 180}]}`
-	j := netparams.NewJSON(&types.PriceMonitoringParameters{}, netparams.JSONProtoValidator()).Mutable(true).MustUpdate(validPmJSONString)
+	j := netparams.NewJSON(&vega.PriceMonitoringParameters{}, netparams.PriceMonitoringParametersValidation).Mutable(true).MustUpdate(validPmJSONString)
 	assert.NotNil(t, j)
 	err := j.Validate(validPmJSONString)
 	assert.NoError(t, err)
@@ -97,7 +98,7 @@ func TestJSONVPriceMonitoringParameters(t *testing.T) {
 	err = j.Update(validPmJSONString)
 	assert.NoError(t, err)
 
-	pm := &types.PriceMonitoringParameters{}
+	pm := &vega.PriceMonitoringParameters{}
 	err = j.ToJSONStruct(pm)
 	assert.NoError(t, err)
 
@@ -111,7 +112,7 @@ func TestJSONVPriceMonitoringParameters(t *testing.T) {
 
 	// happy case, empty parameters array
 	validPmJSONString = `{"triggers": []}`
-	j = netparams.NewJSON(&types.PriceMonitoringParameters{}, netparams.JSONProtoValidator()).Mutable(true).MustUpdate(validPmJSONString)
+	j = netparams.NewJSON(&vega.PriceMonitoringParameters{}, netparams.PriceMonitoringParametersValidation).Mutable(true).MustUpdate(validPmJSONString)
 	assert.NotNil(t, j)
 	err = j.Validate(validPmJSONString)
 	assert.NoError(t, err)
@@ -119,7 +120,7 @@ func TestJSONVPriceMonitoringParameters(t *testing.T) {
 	err = j.Update(validPmJSONString)
 	assert.NoError(t, err)
 
-	pm = &types.PriceMonitoringParameters{}
+	pm = &vega.PriceMonitoringParameters{}
 	err = j.ToJSONStruct(pm)
 	assert.NoError(t, err)
 
@@ -140,7 +141,7 @@ func TestJSONVPriceMonitoringParameters(t *testing.T) {
 
 	// horizon
 	invalidPmJSONString = `{"triggers": [{"horizon": 0, "probability": "0.95", "auction_extension": 90},{"horizon": 120, "probability": "0.99", "auction_extension": 180}]}`
-	expectedErrorMsg = "invalid field Triggers.Horizon: value '0' must be greater than '0'"
+	expectedErrorMsg = "triggers.horizon must be greater than `0`, got `0`"
 	err = j.Validate(invalidPmJSONString)
 	assert.EqualError(t, err, expectedErrorMsg)
 
@@ -149,7 +150,7 @@ func TestJSONVPriceMonitoringParameters(t *testing.T) {
 
 	// probability
 	invalidPmJSONString = `{"triggers": [{"horizon": 60, "probability": "0", "auction_extension": 90},{"horizon": 120, "probability": "0.99", "auction_extension": 180}]}`
-	expectedErrorMsg = "invalid field Triggers.Probability: value '0' must be strictly greater than '0'"
+	expectedErrorMsg = "triggers.probability must be greater than `0`, got `0`"
 	err = j.Validate(invalidPmJSONString)
 	assert.EqualError(t, err, expectedErrorMsg)
 
@@ -157,7 +158,7 @@ func TestJSONVPriceMonitoringParameters(t *testing.T) {
 	assert.EqualError(t, err, expectedErrorMsg)
 
 	invalidPmJSONString = `{"triggers": [{"horizon": 60, "probability": "1", "auction_extension": 90},{"horizon": 120, "probability": "0.99", "auction_extension": 180}]}`
-	expectedErrorMsg = "invalid field Triggers.Probability: value '1' must be strictly lower than '1'"
+	expectedErrorMsg = "triggers.probability must be lower than `1`, got `1`"
 	err = j.Validate(invalidPmJSONString)
 	assert.EqualError(t, err, expectedErrorMsg)
 
@@ -166,7 +167,7 @@ func TestJSONVPriceMonitoringParameters(t *testing.T) {
 
 	// auctionExtension
 	invalidPmJSONString = `{"triggers": [{"horizon": 60, "probability": "0.95", "auction_extension": 0},{"horizon": 120, "probability": "0.99", "auction_extension": 180}]}`
-	expectedErrorMsg = "invalid field Triggers.AuctionExtension: value '0' must be greater than '0'"
+	expectedErrorMsg = "triggers.auction_extension must be greater than `0`, got `0`"
 	err = j.Validate(invalidPmJSONString)
 	assert.EqualError(t, err, expectedErrorMsg)
 }

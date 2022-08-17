@@ -94,21 +94,6 @@ func (mr *MockNodeMockRecorder) LastBlock(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LastBlock", reflect.TypeOf((*MockNode)(nil).LastBlock), arg0)
 }
 
-// NetworkChainID mocks base method.
-func (m *MockNode) NetworkChainID(arg0 context.Context) (string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NetworkChainID", arg0)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// NetworkChainID indicates an expected call of NetworkChainID.
-func (mr *MockNodeMockRecorder) NetworkChainID(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkChainID", reflect.TypeOf((*MockNode)(nil).NetworkChainID), arg0)
-}
-
 // SendTransaction mocks base method.
 func (m *MockNode) SendTransaction(arg0 context.Context, arg1 *v10.Transaction, arg2 v1.SubmitTransactionRequest_Type) (string, error) {
 	m.ctrl.T.Helper()

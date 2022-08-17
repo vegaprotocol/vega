@@ -527,6 +527,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.executionEngine.OnMinLpStakeQuantumMultipleUpdate,
 		},
 		{
+			Param:   netparams.RewardMarketCreationQuantumMultiple,
+			Watcher: svcs.executionEngine.OnMarketCreationQuantumMultipleUpdate,
+		},
+		{
 			Param:   netparams.MarketLiquidityMaximumLiquidityFeeFactorLevel,
 			Watcher: svcs.executionEngine.OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate,
 		},

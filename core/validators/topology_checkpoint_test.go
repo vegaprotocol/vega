@@ -68,7 +68,7 @@ func TestCheckPointLoading(t *testing.T) {
 	data, _ := ioutil.ReadFile(inFile)
 	cp := &checkpoint.Checkpoint{}
 	if err := proto.Unmarshal(data, cp); err != nil {
-		println(err)
+		t.Fatal(err)
 	}
 	require.Equal(t, 1, len(newTop.AllNodeIDs()))
 	newTop.Load(context.Background(), cp.Validators)

@@ -3,6 +3,20 @@
 ## Unreleased 0.54.0
 
 ### 🚨 Breaking changes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🗑️ Deprecation
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🛠 Improvements
+- [5766](https://github.com/vegaprotocol/vega/issues/5766) - Better notification for version update on the wallet
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+## 0.54.0
+
+### 🚨 Breaking changes
 With this release a few breaking changes are introduced.
 The Vega application is now a built-in application. This means that Tendermint doesn't need to be started separately any more.
 The `vega node` command has been renamed `vega start`.
@@ -15,9 +29,9 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5624](https://github.com/vegaprotocol/vega/issues/5624) - Get rid of `updateFrequency` in price monitoring definition
 - [5601](https://github.com/vegaprotocol/vega/issues/5601) - Remove support for launching a proxy in front of console and token dApp
 - [5872](https://github.com/vegaprotocol/vega/issues/5872) - Remove console and token dApp from networks
+- [5802](https://github.com/vegaprotocol/vega/issues/5802) - Remove support for transaction version 1
 
 ### 🗑️ Deprecation
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 - [4655](https://github.com/vegaprotocol/vega/issues/4655) - Move Ethereum `RPC` endpoint configuration from `Nodewallet` section to `Ethereum` section
 
 ### 🛠 Improvements
@@ -60,6 +74,8 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5816](https://github.com/vegaprotocol/vega/issues/5816) - Set proper status to rejected asset proposal
 - [5893](https://github.com/vegaprotocol/vega/issues/5893) - Remove total supply from assets
 - [5684](https://github.com/vegaprotocol/vega/issues/5684) - Added date range to a number of historic balances, deposits, withdrawals, orders and trades queries
+- [5752](https://github.com/vegaprotocol/vega/issues/5752) - Remove URL and Hash from proposal rationale, add Title
+- [5802](https://github.com/vegaprotocol/vega/issues/5802) - Introduce transaction version 3 that encode the chain ID in its input data to protect against transaction replay
 
 ### 🐛 Fixes
 - [5571](https://github.com/vegaprotocol/vega/issues/5571) - Restore pending assets status correctly after snapshot restore
@@ -97,6 +113,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5867](https://github.com/vegaprotocol/vega/issues/5867) - Fix witness check for majority
 - [5853](https://github.com/vegaprotocol/vega/issues/5853) - Do not ignore market update proposals when loading from checkpoint
 - [5648](https://github.com/vegaprotocol/vega/issues/5648) - Ethereum key rotation - search validators by Vega pub key and listen to rotation events in core API
+- [5648](https://github.com/vegaprotocol/vega/issues/5648) - Search validator by vega pub key and update the core validators API
 
 ## 0.53.0
 

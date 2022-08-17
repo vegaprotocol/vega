@@ -49,12 +49,6 @@ func (tx *testTx) Hash() []byte                { return tx.hash }
 func (tx *testTx) Command() txn.Command        { return tx.command }
 func (tx *testTx) BlockHeight() uint64         { return tx.blockHeight }
 func (tx *testTx) GetCmd() interface{}         { return nil }
-func (tx *testTx) Validate() error {
-	if fn := tx.validateFn; fn != nil {
-		return fn()
-	}
-	return nil
-}
 
 type testCodec struct {
 	txs map[string]abci.Tx
@@ -71,7 +65,7 @@ func (c *testCodec) addTx(in []byte, tx abci.Tx) *testCodec {
 	return c
 }
 
-func (c *testCodec) Decode(in []byte) (abci.Tx, error) {
+func (c *testCodec) Decode(in []byte, chainID string) (abci.Tx, error) {
 	tx, ok := c.txs[string(in)]
 	if !ok {
 		return nil, errors.New("tx not defined")
@@ -127,19 +121,6 @@ func TestABCICheckTx(t *testing.T) {
 		resp := app.CheckTx(req)
 		require.True(t, resp.IsErr())
 		require.Equal(t, abci.AbciTxnInternalError, resp.Code)
-	})
-
-	t.Run("TxValidationError", func(t *testing.T) {
-		tx := []byte("tx3")
-		cdc.addTx(tx, &testTx{
-			command:    testCommandA,
-			validateFn: func() error { return errors.New("invalid tx") },
-		})
-
-		req := types.RequestCheckTx{Tx: tx}
-		resp := app.CheckTx(req)
-		require.True(t, resp.IsErr())
-		require.Equal(t, abci.AbciTxnValidationFailure, resp.Code)
 	})
 
 	t.Run("TxDecodingError", func(t *testing.T) {

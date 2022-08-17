@@ -528,7 +528,7 @@ func testFailingToGetLastBlockDoesNotSendTransaction(t *testing.T) {
 	handler.pipeline.EXPECT().RequestTransactionReview(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx).Times(1).Return(handler.node, nil)
 	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(nil, assert.AnError)
-	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.NetworkError, fmt.Errorf("couldn't get last block: %w", assert.AnError)).Times(1)
+	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.NetworkError, fmt.Errorf("couldn't get last block from node: %w", assert.AnError)).Times(1)
 	// -- unexpected calls
 	handler.node.EXPECT().LastBlock(gomock.Any()).Times(0)
 	handler.node.EXPECT().SendTransaction(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
