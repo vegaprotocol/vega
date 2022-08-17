@@ -709,17 +709,21 @@ CREATE TYPE vote_value AS enum('VALUE_UNSPECIFIED', 'VALUE_NO', 'VALUE_YES');
 
 
 CREATE TABLE proposals(
-  id                   BYTEA NOT NULL,
-  reference            TEXT NOT NULL,
-  party_id             BYTEA NOT NULL,
-  state                proposal_state NOT NULL,
-  terms                JSONB          NOT NULL,
-  rationale            JSONB          NOT NULL,
-  reason               proposal_error,
-  error_details        TEXT,
-  tx_hash              BYTEA NOT NULL,
-  vega_time            TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
-  proposal_time        TIMESTAMP WITH TIME ZONE,
+  id                        BYTEA NOT NULL,
+  reference                 TEXT NOT NULL,
+  party_id                  BYTEA NOT NULL,  -- TODO, once parties is properly populated REFERENCES parties(id),
+  state                     proposal_state NOT NULL,
+  terms                     JSONB          NOT NULL,
+  rationale                 JSONB          NOT NULL,
+  reason                    proposal_error,
+  error_details             TEXT,
+  vega_time                 TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
+  proposal_time             TIMESTAMP WITH TIME ZONE,
+  required_majority         NUMERIC(1000, 16) NOT NULL,
+  required_participation    NUMERIC(1000, 16) NOT NULL,
+  required_lp_majority      NUMERIC(1000, 16),
+  required_lp_participation NUMERIC(1000, 16),
+  tx_hash                   BYTEA NOT NULL,
   PRIMARY KEY (id, vega_time)
 );
 

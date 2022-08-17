@@ -729,6 +729,9 @@ func testVotingWithoutTokenAndMajorityOfNoFromEquityLikeShareHoldersMakesMarketU
 
 	// Submit proposal.
 	// given
+
+	eng.ensureNetworkParameter(t, netparams.GovernanceProposalUpdateMarketRequiredParticipation, "0.5")
+
 	proposer := vgrand.RandomStr(5)
 	proposal := eng.newProposalForMarketUpdate("market-1", proposer, eng.tsvc.GetTimeNow(), nil, nil)
 	marketID := proposal.MarketUpdate().MarketID
@@ -804,7 +807,6 @@ func testVotingWithoutTokenAndMajorityOfNoFromEquityLikeShareHoldersMakesMarketU
 	afterClosing := time.Unix(proposal.Terms.ClosingTimestamp, 0).Add(time.Second)
 
 	// setup
-	eng.ensureNetworkParameter(t, netparams.GovernanceProposalUpdateMarketRequiredParticipation, "0.5")
 	eng.ensureStakingAssetTotalSupply(t, 13)
 	eng.ensureTokenBalanceForParty(t, voterWithToken, 2)
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voterWithToken, 0)
@@ -812,6 +814,9 @@ func testVotingWithoutTokenAndMajorityOfNoFromEquityLikeShareHoldersMakesMarketU
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voterWithELS1, 0.1)
 	eng.ensureTokenBalanceForParty(t, voterWithELS2, 0)
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voterWithELS2, 0.7)
+
+	// ensure setting again the values have no effect
+	eng.ensureNetworkParameter(t, netparams.GovernanceProposalUpdateMarketRequiredParticipation, "0")
 
 	// expect
 	eng.expectDeclinedProposalEvent(t, proposal.ID, types.ProposalErrorMajorityThresholdNotReached)
