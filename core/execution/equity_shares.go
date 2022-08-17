@@ -104,6 +104,9 @@ func (es *EquityShares) UpdateVStake() {
 }
 
 func (es *EquityShares) AvgTradeValue(avg num.Decimal) *EquityShares {
+	defer func() {
+		fmt.Printf(">>>>>>>>>> Growth is %s - Avg trade value was: %s\n", es.r.String(), avg.String())
+	}()
 	if avg.IsZero() {
 		if es.openingAuctionEnded {
 			// this should not be possible IRL, however unit tests like amend_lp_orders
