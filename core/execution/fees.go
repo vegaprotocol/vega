@@ -93,13 +93,18 @@ func (fs *FeeSplitter) MarketValueProxy(mvwl time.Duration, totalStakeU *num.Uin
 func (fs *FeeSplitter) AvgTradeValue() num.Decimal {
 	tv := num.DecimalFromUint(fs.tradeValue)
 	if fs.avg.IsZero() {
+		if !tv.IsZero() {
+			fs.changed = true
+		}
 		fs.avg = tv
-	} else {
-		n := num.NewDecimalFromFloat(float64(fs.window))
-		nmin := num.NewDecimalFromFloat(float64(fs.window - 1))
-		fs.avg = fs.avg.Mul(nmin.Div(n)).Add(tv.Div(n))
+		return tv
 	}
+	fs.changed = true
+	n := num.NewDecimalFromFloat(float64(fs.window))
+	nmin := num.NewDecimalFromFloat(float64(fs.window - 1))
+	fs.avg = fs.avg.Mul(nmin.Div(n)).Add(tv.Div(n))
 	return fs.avg
+	// return tv
 }
 
 func (fs *FeeSplitter) AddTradeValue(v *num.Uint) {

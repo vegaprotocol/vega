@@ -33,9 +33,73 @@ import (
 )
 
 func TestEquityShares(t *testing.T) {
-	t.Run("AverageEntryValuation", testAverageEntryValuation)
+	t.Run("AvgEntryValuation with trade value", testAvgEntryValuationGrowth)
+	// t.Run("AverageEntryValuation", testAverageEntryValuation)
 	t.Run("SharesExcept", testShares)
 	t.Run("WithinMarket", testWithinMarket)
+}
+
+func testAvgEntryValuationGrowth(t *testing.T) {
+	es := execution.NewEquityShares(num.DecimalZero())
+	tradeVal := num.DecimalFromFloat(1000)
+	lps := []struct {
+		id  string
+		amt *num.Uint
+		avg num.Decimal
+	}{
+		{
+			id:  "LP1",
+			amt: num.NewUint(100),
+			avg: num.DecimalFromFloat(100),
+		},
+		{
+			id:  "LP2",
+			amt: num.NewUint(200),
+			avg: num.DecimalFromFloat(200),
+		},
+	}
+
+	for _, l := range lps {
+		es.SetPartyStake(l.id, l.amt)
+		require.True(t, l.avg.Equals(es.AvgEntryValuation(l.id)))
+	}
+	es.OpeningAuctionEnded()
+
+	// set trade value at auction end
+	es.AvgTradeValue(tradeVal)
+	for _, l := range lps {
+		aev := es.AvgEntryValuation(l.id)
+		require.True(t, l.avg.Equals(es.AvgEntryValuation(l.id)), fmt.Sprintf("FAIL ==> expected %s, got %s", l.avg, aev))
+	}
+
+	// growth
+	tradeVal = num.DecimalFromFloat(1100)
+	aev1, _ := num.DecimalFromString("100.000000000000001")
+	lps[0].avg = aev1
+	lps[1].avg = aev1.Add(aev1) // double
+	es.AvgTradeValue(tradeVal)
+	for _, l := range lps {
+		aev := es.AvgEntryValuation(l.id)
+		require.True(t, l.avg.Equals(es.AvgEntryValuation(l.id)), fmt.Sprintf("FAIL => expected %s, got %s", l.avg, aev))
+	}
+	lps[1].amt = num.NewUint(150) // reduce LP
+	aev1, _ = num.DecimalFromString("150.0000000000000015")
+	lps[1].avg = aev1
+	es.SetPartyStake(lps[1].id, lps[1].amt)
+	for _, l := range lps {
+		aev := es.AvgEntryValuation(l.id)
+		require.True(t, l.avg.Equals(es.AvgEntryValuation(l.id)), fmt.Sprintf("FAIL => expected %s, got %s", l.avg, aev))
+	}
+	// now simulate negative growth (ie r == 0)
+	tradeVal = num.DecimalFromFloat(1000)
+	es.AvgTradeValue(tradeVal)
+	// avg should line up with physical stake once more
+	lps[0].avg = num.DecimalFromFloat(100)
+	lps[1].avg = num.DecimalFromFloat(150)
+	for _, l := range lps {
+		aev := es.AvgEntryValuation(l.id)
+		require.True(t, l.avg.Equals(es.AvgEntryValuation(l.id)), fmt.Sprintf("FAIL => expected %s, got %s", l.avg, aev))
+	}
 }
 
 // TestEquitySharesAverageEntryValuation is based on the spec example:
