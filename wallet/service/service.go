@@ -393,6 +393,7 @@ type NetworkResponse struct {
 }
 
 // WalletHandler ...
+//
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/wallet_handler_mock.go -package mocks code.vegaprotocol.io/vega/wallet/service WalletHandler
 type WalletHandler interface {
 	CreateWallet(name, passphrase string) (string, error)
@@ -402,7 +403,7 @@ type WalletHandler interface {
 	SecureGenerateKeyPair(name, passphrase string, meta []wallet.Meta) (string, error)
 	GetPublicKey(name, pubKey string) (wallet.PublicKey, error)
 	ListPublicKeys(name string) ([]wallet.PublicKey, error)
-	SignTx(name string, req *walletpb.SubmitTransactionRequest, height uint64) (*commandspb.Transaction, error)
+	SignTx(name string, req *walletpb.SubmitTransactionRequest, height uint64, chainID string) (*commandspb.Transaction, error)
 	SignAny(name string, inputData []byte, pubKey string) ([]byte, error)
 	VerifyAny(inputData, sig []byte, pubKey string) (bool, error)
 	TaintKey(name, pubKey, passphrase string) error
@@ -410,6 +411,7 @@ type WalletHandler interface {
 }
 
 // Auth ...
+//
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/auth_mock.go -package mocks code.vegaprotocol.io/vega/wallet/service Auth
 type Auth interface {
 	NewSession(name string) (string, error)
@@ -418,12 +420,12 @@ type Auth interface {
 }
 
 // NodeForward ...
+//
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/node_forward_mock.go -package mocks code.vegaprotocol.io/vega/wallet/service NodeForward
 type NodeForward interface {
 	SendTx(context.Context, *commandspb.Transaction, api.SubmitTransactionRequest_Type, int) (*api.SubmitTransactionResponse, error)
 	CheckTx(context.Context, *commandspb.Transaction, int) (*api.CheckTransactionResponse, error)
 	HealthCheck(context.Context) error
-	GetNetworkChainID(context.Context) (string, error)
 	LastBlockHeightAndHash(context.Context) (*api.LastBlockHeightResponse, int, error)
 }
 
@@ -752,7 +754,7 @@ func (s *Service) CheckTx(token string, w http.ResponseWriter, r *http.Request, 
 		return
 	}
 
-	tx, err := s.handler.SignTx(name, req, blockData.Height)
+	tx, err := s.handler.SignTx(name, req, blockData.Height, blockData.ChainId)
 	if err != nil {
 		s.writeInternalError(w, err)
 		return
@@ -844,7 +846,7 @@ func (s *Service) signTx(token string, w http.ResponseWriter, r *http.Request, _
 		return
 	}
 
-	tx, err := s.handler.SignTx(name, req, blockData.Height)
+	tx, err := s.handler.SignTx(name, req, blockData.Height, blockData.ChainId)
 	if err != nil {
 		s.policy.Report(SentTransaction{
 			TxID:  txID,
@@ -942,7 +944,7 @@ func (s *Service) Health(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 }
 
 func (s *Service) GetNetworkChainID(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	chainID, err := s.nodeForward.GetNetworkChainID(r.Context())
+	lastBlock, _, err := s.nodeForward.LastBlockHeightAndHash(r.Context())
 	if err != nil {
 		s.writeError(w, newErrorResponse(err.Error()), http.StatusFailedDependency)
 		return
@@ -950,7 +952,7 @@ func (s *Service) GetNetworkChainID(w http.ResponseWriter, r *http.Request, _ ht
 	s.writeSuccess(w, struct {
 		ChainID string `json:"chainID"`
 	}{
-		ChainID: chainID,
+		ChainID: lastBlock.ChainId,
 	})
 }
 

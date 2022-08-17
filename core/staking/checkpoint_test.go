@@ -79,7 +79,7 @@ func TestCheckpointLoadNoDuplicates(t *testing.T) {
 
 	cp := &checkpoint.Checkpoint{}
 	if err := proto.Unmarshal(cpFile, cp); err != nil {
-		println(err)
+		t.Fatal(err)
 	}
 
 	cptest.acc.broker.EXPECT().Send(gomock.Any()).AnyTimes()

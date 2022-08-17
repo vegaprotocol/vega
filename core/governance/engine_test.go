@@ -1241,9 +1241,8 @@ func (e *tstEngine) newFreeformProposal(partyID string, now time.Time) types.Pro
 			Change:              newFreeformTerms(),
 		},
 		Rationale: &types.ProposalRationale{
-			URL:         "https://example.com",
+			Title:       "https://example.com",
 			Description: "Test my freeform proposal",
-			Hash:        "2fb572edea4af9154edeff680e23689ed076d08934c60f8a4c1f5743a614954e",
 		},
 	}
 }

@@ -302,7 +302,7 @@ func SendCommand(w io.Writer, f *SendCommandFlags, rf *RootFlags, req *SendComma
 
 	log.Info(fmt.Sprintf("last block height found: %d", blockData.Height))
 
-	tx, err := handler.SignTx(req.Wallet, req.Request, blockData.Height)
+	tx, err := handler.SignTx(req.Wallet, req.Request, blockData.Height, blockData.ChainId)
 	if err != nil {
 		log.Error("couldn't sign transaction", zap.Error(err))
 		return fmt.Errorf("couldn't sign transaction: %w", err)

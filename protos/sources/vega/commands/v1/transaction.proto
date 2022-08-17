@@ -65,6 +65,18 @@ message InputData {
   }
 }
 
+// The current supported version of the transaction inside the network.
+enum TxVersion {
+  reserved 1;
+
+  TX_VERSION_UNSPECIFIED = 0;
+  // This version requires the Proof-of-work added to the transaction.
+  TX_VERSION_V2 = 2;
+  // This version requires the chain ID to be append in front of the input data
+  // byte, with a `\0` delimiter.
+  TX_VERSION_V3 = 3;
+}
+
 // Represents a transaction to be sent to Vega.
 message Transaction {
   // One of the set of Vega commands (proto marshalled).
@@ -84,7 +96,7 @@ message Transaction {
 
   // A version of the transaction, to be used in the future in case changes are implemented
   // to the Transaction format.
-  uint32 version = 2000;
+  TxVersion version = 2000;
 
   // Proof of work contains the random transaction id used by the client and the nonce.
   ProofOfWork pow = 3000;
@@ -93,5 +105,4 @@ message Transaction {
 message ProofOfWork {
   string tid = 1;
   uint64 nonce = 2;
-  string hash_function = 3;
 }

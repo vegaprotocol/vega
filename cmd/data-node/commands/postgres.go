@@ -10,7 +10,7 @@
 // of this software will be governed by version 3 or later of the GNU General
 // Public License.
 
-package main
+package commands
 
 import (
 	"context"
@@ -22,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
+
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 	"github.com/jessevdk/go-flags"
 )

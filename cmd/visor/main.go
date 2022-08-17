@@ -10,18 +10,22 @@
 // of this software will be governed by version 3 or later of the GNU General
 // Public License.
 
-//go:build !windows
-// +build !windows
+package main
 
-package node
+import (
+	"context"
+	"os"
 
-import "syscall"
+	"github.com/spf13/cobra"
+)
 
-// SetUlimits sets limits (within OS-specified limits):
-// * nofile - max number of open files - for badger LSM tree.
-func (l *NodeCommand) SetUlimits() error {
-	return syscall.Setrlimit(syscall.RLIMIT_NOFILE, &syscall.Rlimit{
-		Max: l.conf.UlimitNOFile,
-		Cur: l.conf.UlimitNOFile,
-	})
+var rootCmd = &cobra.Command{
+	Use:   "vegavisor",
+	Short: "A process manager for Vega binaries.",
+}
+
+func main() {
+	if err := rootCmd.ExecuteContext(context.Background()); err != nil {
+		os.Exit(1)
+	}
 }

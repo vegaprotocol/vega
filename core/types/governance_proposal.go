@@ -150,8 +150,7 @@ func (p ProposalSubmission) IntoProto() *commandspb.ProposalSubmission {
 		Terms:     terms,
 		Rationale: &vegapb.ProposalRationale{
 			Description: p.Rationale.Description,
-			Hash:        p.Rationale.Hash,
-			Url:         p.Rationale.URL,
+			Title:       p.Rationale.Title,
 		},
 	}
 }
@@ -178,8 +177,7 @@ func NewProposalSubmissionFromProto(p *commandspb.ProposalSubmission) (*Proposal
 		Terms:     pterms,
 		Rationale: &ProposalRationale{
 			Description: p.Rationale.Description,
-			Hash:        p.Rationale.Hash,
-			URL:         p.Rationale.Url,
+			Title:       p.Rationale.Title,
 		},
 	}, nil
 }
@@ -284,8 +282,7 @@ func (p Proposal) IntoProto() *vegapb.Proposal {
 	if p.Rationale != nil {
 		proposal.Rationale = &vegapb.ProposalRationale{
 			Description: p.Rationale.Description,
-			Hash:        p.Rationale.Hash,
-			Url:         p.Rationale.URL,
+			Title:       p.Rationale.Title,
 		}
 	}
 
@@ -313,8 +310,7 @@ func ProposalFromProto(pp *vegapb.Proposal) (*Proposal, error) {
 
 type ProposalRationale struct {
 	Description string
-	Hash        string
-	URL         string
+	Title       string
 }
 
 func ProposalRationaleFromProto(p *vegapb.ProposalRationale) *ProposalRationale {
@@ -323,8 +319,7 @@ func ProposalRationaleFromProto(p *vegapb.ProposalRationale) *ProposalRationale 
 	}
 	return &ProposalRationale{
 		Description: p.Description,
-		Hash:        p.Hash,
-		URL:         p.Url,
+		Title:       p.Title,
 	}
 }
 

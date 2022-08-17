@@ -30,8 +30,7 @@ func TestCheckProposalSubmission(t *testing.T) {
 	t.Run("Submitting a proposal with rational succeeds", testProposalSubmissionWithRationalSucceeds)
 	t.Run("Submitting a proposal with rational description succeeds", testProposalSubmissionWithRationalDescriptionSucceeds)
 	t.Run("Submitting a proposal with incorrect rational description fails", testProposalSubmissionWithIncorrectRationalDescriptionFails)
-	t.Run("Submitting a proposal with rational URL and hash succeeds", testProposalSubmissionWithRationalURLandHashSucceeds)
-	t.Run("Submitting a proposal with missing rational URL or hash fails", testProposalSubmissionWithMissingRationalURLOrHashFails)
+	t.Run("Submitting a proposal with rational URL and hash succeeds", testProposalSubmissionWithRationalDescriptionAndTitleSucceeds)
 }
 
 func testNilProposalSubmissionFails(t *testing.T) {
@@ -295,8 +294,8 @@ func testProposalSubmissionWithIncorrectRationalDescriptionFails(t *testing.T) {
 			expectedErr: commands.ErrIsRequired,
 		}, {
 			name:        "with description > 1024",
-			description: RandomStr(2042),
-			expectedErr: commands.ErrMustNotExceed1024Chars,
+			description: RandomStr(20420),
+			expectedErr: commands.ErrMustNotExceed20000Chars,
 		},
 	}
 
@@ -313,24 +312,26 @@ func testProposalSubmissionWithIncorrectRationalDescriptionFails(t *testing.T) {
 	}
 }
 
-func testProposalSubmissionWithRationalURLandHashSucceeds(t *testing.T) {
+func testProposalSubmissionWithRationalDescriptionAndTitleSucceeds(t *testing.T) {
 	tcs := []struct {
 		name       string
+		shouldErr  bool
 		submission *commandspb.ProposalSubmission
 	}{
 		{
-			name: "NewMarket with rational URL and hash",
+			name: "NewMarket with rational Title and Description",
 			submission: &commandspb.ProposalSubmission{
 				Terms: &types.ProposalTerms{
 					Change: &types.ProposalTerms_NewMarket{},
 				},
 				Rationale: &types.ProposalRationale{
-					Hash: RandomStr(10),
-					Url:  "https://example.com/" + RandomStr(5),
+					Title:       RandomStr(10),
+					Description: RandomStr(10),
 				},
 			},
 		}, {
-			name: "NewMarket without rational URL and hash",
+			name:      "NewMarket without rational Title and Description",
+			shouldErr: true,
 			submission: &commandspb.ProposalSubmission{
 				Terms: &types.ProposalTerms{
 					Change: &types.ProposalTerms_NewMarket{},
@@ -338,18 +339,19 @@ func testProposalSubmissionWithRationalURLandHashSucceeds(t *testing.T) {
 				Rationale: &types.ProposalRationale{},
 			},
 		}, {
-			name: "with UpdateMarket with rational URL and hash",
+			name: "with UpdateMarket with rational Title and Description",
 			submission: &commandspb.ProposalSubmission{
 				Terms: &types.ProposalTerms{
 					Change: &types.ProposalTerms_UpdateMarket{},
 				},
 				Rationale: &types.ProposalRationale{
-					Hash: RandomStr(10),
-					Url:  "https://example.com/" + RandomStr(5),
+					Title:       RandomStr(10),
+					Description: RandomStr(10),
 				},
 			},
 		}, {
-			name: "with UpdateMarket without rational URL and hash",
+			name:      "with UpdateMarket without rational Title and Description",
+			shouldErr: true,
 			submission: &commandspb.ProposalSubmission{
 				Terms: &types.ProposalTerms{
 					Change: &types.ProposalTerms_UpdateMarket{},
@@ -357,18 +359,19 @@ func testProposalSubmissionWithRationalURLandHashSucceeds(t *testing.T) {
 				Rationale: &types.ProposalRationale{},
 			},
 		}, {
-			name: "with NewAsset with rational URL and hash",
+			name: "with NewAsset with rational Title and Description",
 			submission: &commandspb.ProposalSubmission{
 				Terms: &types.ProposalTerms{
 					Change: &types.ProposalTerms_NewAsset{},
 				},
 				Rationale: &types.ProposalRationale{
-					Hash: RandomStr(10),
-					Url:  "https://example.com/" + RandomStr(5),
+					Title:       RandomStr(10),
+					Description: RandomStr(10),
 				},
 			},
 		}, {
-			name: "with NewAsset without rational URL and hash",
+			name:      "with NewAsset without rational Title and Description",
+			shouldErr: true,
 			submission: &commandspb.ProposalSubmission{
 				Terms: &types.ProposalTerms{
 					Change: &types.ProposalTerms_NewAsset{},
@@ -376,18 +379,19 @@ func testProposalSubmissionWithRationalURLandHashSucceeds(t *testing.T) {
 				Rationale: &types.ProposalRationale{},
 			},
 		}, {
-			name: "with UpdateNetworkParameter with rational URL and hash",
+			name: "with UpdateNetworkParameter with rational Title and Description",
 			submission: &commandspb.ProposalSubmission{
 				Terms: &types.ProposalTerms{
 					Change: &types.ProposalTerms_UpdateNetworkParameter{},
 				},
 				Rationale: &types.ProposalRationale{
-					Hash: RandomStr(10),
-					Url:  "https://example.com/" + RandomStr(5),
+					Title:       RandomStr(10),
+					Description: RandomStr(10),
 				},
 			},
 		}, {
-			name: "with UpdateNetworkParameter without rational URL and hash",
+			name:      "with UpdateNetworkParameter without rational Title and Description",
+			shouldErr: true,
 			submission: &commandspb.ProposalSubmission{
 				Terms: &types.ProposalTerms{
 					Change: &types.ProposalTerms_UpdateNetworkParameter{},
@@ -395,14 +399,14 @@ func testProposalSubmissionWithRationalURLandHashSucceeds(t *testing.T) {
 				Rationale: &types.ProposalRationale{},
 			},
 		}, {
-			name: "with NewFreeform with rational URL and hash",
+			name: "with NewFreeform with rational Title and Description",
 			submission: &commandspb.ProposalSubmission{
 				Terms: &types.ProposalTerms{
 					Change: &types.ProposalTerms_NewFreeform{},
 				},
 				Rationale: &types.ProposalRationale{
-					Hash: RandomStr(10),
-					Url:  "https://example.com/" + RandomStr(5),
+					Title:       RandomStr(10),
+					Description: RandomStr(10),
 				},
 			},
 		},
@@ -411,111 +415,12 @@ func testProposalSubmissionWithRationalURLandHashSucceeds(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			err := checkProposalSubmission(tc.submission)
-
-			assert.Empty(tt, err.Get("proposal_submission.rationale.url"))
-			assert.Empty(tt, err.Get("proposal_submission.rationale.hash"))
-		})
-	}
-}
-
-func testProposalSubmissionWithMissingRationalURLOrHashFails(t *testing.T) {
-	tcs := []struct {
-		name       string
-		submission *commandspb.ProposalSubmission
-	}{
-		{
-			name: "NewMarket with rational URL and no hash",
-			submission: &commandspb.ProposalSubmission{
-				Terms: &types.ProposalTerms{
-					Change: &types.ProposalTerms_NewMarket{},
-				},
-				Rationale: &types.ProposalRationale{
-					Url: "https://example.com/" + RandomStr(5),
-				},
-			},
-		}, {
-			name: "NewMarket with rational hash and no URL",
-			submission: &commandspb.ProposalSubmission{
-				Terms: &types.ProposalTerms{
-					Change: &types.ProposalTerms_NewMarket{},
-				},
-				Rationale: &types.ProposalRationale{
-					Hash: RandomStr(10),
-				},
-			},
-		}, {
-			name: "with UpdateMarket with rational URL and no hash",
-			submission: &commandspb.ProposalSubmission{
-				Terms: &types.ProposalTerms{
-					Change: &types.ProposalTerms_UpdateMarket{},
-				},
-				Rationale: &types.ProposalRationale{
-					Url: "https://example.com/" + RandomStr(5),
-				},
-			},
-		}, {
-			name: "with UpdateMarket with rational hash and no URL",
-			submission: &commandspb.ProposalSubmission{
-				Terms: &types.ProposalTerms{
-					Change: &types.ProposalTerms_UpdateMarket{},
-				},
-				Rationale: &types.ProposalRationale{
-					Hash: RandomStr(10),
-				},
-			},
-		}, {
-			name: "with NewAsset with rational with URL and no hash",
-			submission: &commandspb.ProposalSubmission{
-				Terms: &types.ProposalTerms{
-					Change: &types.ProposalTerms_NewAsset{},
-				},
-				Rationale: &types.ProposalRationale{
-					Url: "https://example.com/" + RandomStr(5),
-				},
-			},
-		}, {
-			name: "with NewAsset without rational hash and no URL",
-			submission: &commandspb.ProposalSubmission{
-				Terms: &types.ProposalTerms{
-					Change: &types.ProposalTerms_NewAsset{},
-				},
-				Rationale: &types.ProposalRationale{
-					Hash: RandomStr(10),
-				},
-			},
-		}, {
-			name: "with UpdateNetworkParameter with rational URL and no hash",
-			submission: &commandspb.ProposalSubmission{
-				Terms: &types.ProposalTerms{
-					Change: &types.ProposalTerms_UpdateNetworkParameter{},
-				},
-				Rationale: &types.ProposalRationale{
-					Url: "https://example.com/" + RandomStr(5),
-				},
-			},
-		}, {
-			name: "with UpdateNetworkParameter without rational hash and no URL",
-			submission: &commandspb.ProposalSubmission{
-				Terms: &types.ProposalTerms{
-					Change: &types.ProposalTerms_UpdateNetworkParameter{},
-				},
-				Rationale: &types.ProposalRationale{
-					Hash: RandomStr(10),
-				},
-			},
-		},
-	}
-
-	for _, tc := range tcs {
-		t.Run(tc.name, func(tt *testing.T) {
-			err := checkProposalSubmission(tc.submission)
-
-			if len(tc.submission.Rationale.Url) == 0 {
-				assert.Contains(tt, err.Get("proposal_submission.rationale.url"), commands.ErrIsRequired)
-				assert.Empty(tt, err.Get("proposal_submission.rationale.hash"))
+			if !tc.shouldErr {
+				assert.Empty(tt, err.Get("proposal_submission.rationale.title"), tc.name)
+				assert.Empty(tt, err.Get("proposal_submission.rationale.description"), tc.name)
 			} else {
-				assert.Contains(tt, err.Get("proposal_submission.rationale.hash"), commands.ErrIsRequired)
-				assert.Empty(tt, err.Get("proposal_submission.rationale.url"))
+				assert.Contains(tt, err.Get("proposal_submission.rationale.title"), commands.ErrIsRequired, tc.name)
+				assert.Contains(tt, err.Get("proposal_submission.rationale.description"), commands.ErrIsRequired, tc.name)
 			}
 		})
 	}

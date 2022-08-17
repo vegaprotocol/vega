@@ -10,23 +10,37 @@
 // of this software will be governed by version 3 or later of the GNU General
 // Public License.
 
-package main
+package commands
 
 import (
 	"context"
 	"fmt"
 
+	"code.vegaprotocol.io/vega/core/config"
+	vgjson "code.vegaprotocol.io/vega/libs/json"
 	"code.vegaprotocol.io/vega/version"
+
 	"github.com/jessevdk/go-flags"
 )
 
 type VersionCmd struct {
 	version string
 	hash    string
+	config.OutputFlag
 }
 
 func (cmd *VersionCmd) Execute(_ []string) error {
-	fmt.Printf("Vega CLI %s (%s)\n", cmd.version, cmd.hash)
+	if cmd.Output.IsJSON() {
+		return vgjson.Print(struct {
+			Version string `json:"version"`
+			Hash    string `json:"hash"`
+		}{
+			Version: cmd.version,
+			Hash:    cmd.hash,
+		})
+	}
+
+	fmt.Printf("Vega Datanode CLI %s (%s)\n", cmd.version, cmd.hash)
 	return nil
 }
 

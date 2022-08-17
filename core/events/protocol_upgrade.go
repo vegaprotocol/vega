@@ -28,7 +28,7 @@ type ProtocolUpgradeProposalEvent struct {
 
 func NewProtocolUpgradeProposalEvent(ctx context.Context, upgradeBlockHeight uint64, vegaReleaseTag string, acceptedBy []string, status eventspb.ProtocolUpgradeProposalStatus) *ProtocolUpgradeProposalEvent {
 	return &ProtocolUpgradeProposalEvent{
-		Base:               newBase(ctx, ValidatorScoreEvent),
+		Base:               newBase(ctx, ProtocolUpgradeEvent),
 		UpgradeBlockHeight: upgradeBlockHeight,
 		VegaReleaseTag:     vegaReleaseTag,
 		AcceptedBy:         acceptedBy,

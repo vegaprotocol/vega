@@ -10,7 +10,7 @@
 // of this software will be governed by version 3 or later of the GNU General
 // Public License.
 
-package node
+package start
 
 import (
 	"context"
@@ -20,17 +20,14 @@ import (
 	"os/signal"
 	"syscall"
 
-	"code.vegaprotocol.io/vega/datanode/candlesv2"
-	"code.vegaprotocol.io/vega/datanode/service"
-	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
-
 	"code.vegaprotocol.io/vega/datanode/api"
-
 	"code.vegaprotocol.io/vega/datanode/broker"
+	"code.vegaprotocol.io/vega/datanode/candlesv2"
 	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/datanode/gateway/server"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/datanode/pprof"
+	"code.vegaprotocol.io/vega/datanode/service"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/sqlsubscribers"
 	"code.vegaprotocol.io/vega/datanode/subscribers"
@@ -38,6 +35,7 @@ import (
 	"code.vegaprotocol.io/vega/paths"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 
+	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 	"golang.org/x/sync/errgroup"
 )
 
