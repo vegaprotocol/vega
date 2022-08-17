@@ -272,7 +272,7 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 		cliLog.Error("Couldn't instantiate node API", zap.Error(err))
 		return fmt.Errorf("couldn't instantiate node API: %w", err)
 	}
-	apiV2, err := walletapi.RestrictedAPI(jsonrpcLog, walletStore, seqPipeline, nodeSelector)
+	apiV2, err := walletapi.SessionAPI(jsonrpcLog, walletStore, seqPipeline, nodeSelector)
 	if err != nil {
 		return fmt.Errorf("couldn't instantiate JSON-RPC API: %w", err)
 	}

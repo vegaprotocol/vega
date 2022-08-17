@@ -6,7 +6,7 @@
   },
   "methods": [
     {
-      "name": "connect_wallet",
+      "name": "session.connect_wallet",
       "summary": "Initiates a connection between a wallet and a third-party application.",
       "description": "This method initiates a connection between a wallet and a third-party application.\n\nThe client has to review the request, and, if they accept it, select the wallet they want to use for this connection.\n\nA connection token is generated and returned to the third-party application. This token is meant to be used in protected methods.\n\n**Supported connections:**\n- Multiple wallets connected for the same hostname. Each connection will have a different token.\n- A single wallet connected to multiple hostnames. Each connection will have a different token.\n- Combination of the above setups.\n\nHowever, it's not possible to have multiple connections on the same wallet for the same hostname. The previous connection will be terminated and a new token will be generated.\n\nThis method should be the entry point of every third-party application. Once connected, see the method `get_permissions`.",
       "tags": [
@@ -62,7 +62,7 @@
       ]
     },
     {
-      "name": "disconnect_wallet",
+      "name": "session.disconnect_wallet",
       "summary": "Ends the connection between the third-party application and the wallet.",
       "description": "This method ends the connection between the third-party application and the wallet. The token is, then, no longer valid.\n\nCalling this method with an invalid token doesn't fail.",
       "tags": [
@@ -102,7 +102,7 @@
       ]
     },
     {
-      "name": "get_permissions",
+      "name": "session.get_permissions",
       "summary": "Returns the permissions set on the wallet for the third-party application.",
       "description": "This method returns the permissions set on the wallet for the third-party application.\n\nThis method should be called, by the third-party application, right after it successfully connected to a wallet, to ensure it has sufficient permissions to call the method it relies on. If the third-party application doesn't have enough permissions, see the method `request_permissions`.",
       "tags": [
@@ -146,7 +146,7 @@
       ]
     },
     {
-      "name": "request_permissions",
+      "name": "session.request_permissions",
       "summary": "Requests permissions update for the third-party application.",
       "description": "This method allows a third-party application to request new permissions to access the methods it requires.\n\nAll permissions the third-party relies on have to be specified. If a permission is omitted, it will be considered as no longer required and, as a result, be automatically revoked.\n\nThe client has to review the permissions.",
       "tags": [
@@ -238,7 +238,7 @@
       ]
     },
     {
-      "name": "list_keys",
+      "name": "session.list_keys",
       "summary": "Returns the keys the client has allowed the third-party application to have access to.",
       "description": "This method returns the keys the client has allowed the third-party application to have access to.\n\nIt requires a `read` access on `public_keys`.",
       "paramStructure": "by-name",
@@ -286,7 +286,7 @@
       ]
     },
     {
-      "name": "send_transaction",
+      "name": "session.send_transaction",
       "summary": "Send a transaction to the network.",
       "description": "This method sends a transaction to the network.\n\nThe client has to review the transaction.",
       "tags": [
