@@ -49,7 +49,6 @@ type EthereumClientCaller interface {
 }
 
 // EvtForwarder forwarder information to the tendermint chain to be agreed on by validators
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/evt_forwarder_mock.go -package mocks code.vegaprotocol.io/vega/core/staking EvtForwarder
 type EvtForwarder interface {
 	ForwardFromSelf(evt *commandspb.ChainEvent)
 }
