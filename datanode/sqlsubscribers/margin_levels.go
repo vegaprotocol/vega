@@ -28,7 +28,6 @@ type MarginLevelsEvent interface {
 	MarginLevels() vega.MarginLevels
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/margin_levels_mock.go -package mocks code.vegaprotocol.io/vega/datanode/sqlsubscribers MarginLevelsStore
 type MarginLevelsStore interface {
 	Add(entities.MarginLevels) error
 	Flush(context.Context) error

@@ -31,6 +31,8 @@ import (
 	"code.vegaprotocol.io/vega/protos/vega"
 )
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution TimeService,Assets,StateVarEngine,Collateral,OracleEngine,EpochEngine
+
 var (
 	// ErrMarketDoesNotExist is returned when the market does not exist.
 	ErrMarketDoesNotExist = errors.New("market does not exist")
@@ -43,13 +45,12 @@ var (
 )
 
 // TimeService ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/core/execution TimeService
+
 type TimeService interface {
 	GetTimeNow() time.Time
 }
 
 // OracleEngine ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/oracle_engine_mock.go -package mocks code.vegaprotocol.io/vega/core/execution OracleEngine
 type OracleEngine interface {
 	ListensToPubKeys(oracles.OracleData) bool
 	Subscribe(context.Context, oracles.OracleSpec, oracles.OnMatchedOracleData) (oracles.SubscriptionID, oracles.Unsubscriber)
@@ -62,14 +63,12 @@ type Broker interface {
 	SendBatch(events []events.Event)
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/collateral_mock.go -package mocks code.vegaprotocol.io/vega/core/execution Collateral
 type Collateral interface {
 	MarketCollateral
 	AssetExists(string) bool
 	CreateMarketAccounts(context.Context, string, string) (string, string, error)
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/state_var_engine_mock.go -package mocks code.vegaprotocol.io/vega/core/execution StateVarEngine
 type StateVarEngine interface {
 	RegisterStateVariable(asset, market, name string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error) error
 	UnregisterStateVariable(asset, market string)
@@ -77,7 +76,6 @@ type StateVarEngine interface {
 	ReadyForTimeTrigger(asset, mktID string)
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/core/execution Assets
 type Assets interface {
 	Get(assetID string) (*assets.Asset, error)
 }
@@ -128,6 +126,7 @@ type netParamsValues struct {
 	probabilityOfTradingTauScaling  num.Decimal
 	minProbabilityOfTradingLPOrders num.Decimal
 	minLpStakeQuantumMultiple       num.Decimal
+	marketCreationQuantumMultiple   num.Decimal
 }
 
 func defaultNetParamsValues() netParamsValues {
@@ -145,6 +144,7 @@ func defaultNetParamsValues() netParamsValues {
 		probabilityOfTradingTauScaling:  num.DecimalFromInt64(-1),
 		minProbabilityOfTradingLPOrders: num.DecimalFromInt64(-1),
 		minLpStakeQuantumMultiple:       num.DecimalFromInt64(-1),
+		marketCreationQuantumMultiple:   num.DecimalFromInt64(-1),
 	}
 }
 
@@ -271,7 +271,7 @@ func (e *Engine) IsEligibleForProposerBonus(marketID string, value *num.Uint) bo
 	if err != nil {
 		return false
 	}
-	return value.ToDecimal().GreaterThan(quantum.Mul(e.npv.minLpStakeQuantumMultiple))
+	return value.ToDecimal().GreaterThan(quantum.Mul(e.npv.marketCreationQuantumMultiple))
 }
 
 // SubmitMarketWithLiquidityProvision is submitting a market through
@@ -1088,6 +1088,16 @@ func (e *Engine) OnMinLpStakeQuantumMultipleUpdate(ctx context.Context, d num.De
 		mkt.OnMarketMinLpStakeQuantumMultipleUpdate(ctx, d)
 	}
 	e.npv.minLpStakeQuantumMultiple = d
+	return nil
+}
+
+func (e *Engine) OnMarketCreationQuantumMultipleUpdate(ctx context.Context, d num.Decimal) error {
+	if e.log.IsDebug() {
+		e.log.Debug("update market creation quantum multiple",
+			logging.Decimal("market-creation-quantum-multiple", d),
+		)
+	}
+	e.npv.marketCreationQuantumMultiple = d
 	return nil
 }
 

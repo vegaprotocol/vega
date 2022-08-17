@@ -12,9 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	TestRecoveryPhrase1 = "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render"
-)
+const TestRecoveryPhrase1 = "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render"
 
 func TestHDWallet(t *testing.T) {
 	t.Run("Creating wallet succeeds", testHDWalletCreateWalletSucceeds)

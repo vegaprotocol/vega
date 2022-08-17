@@ -24,10 +24,6 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/commands"
-	vgfs "code.vegaprotocol.io/vega/libs/fs"
-	"code.vegaprotocol.io/vega/paths"
-	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-
 	"code.vegaprotocol.io/vega/core/api"
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
 	"code.vegaprotocol.io/vega/core/events"
@@ -41,8 +37,11 @@ import (
 	"code.vegaprotocol.io/vega/libs/crypto"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	signatures "code.vegaprotocol.io/vega/libs/crypto/signature"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/paths"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 	tmtypesint "github.com/tendermint/tendermint/types"
@@ -63,7 +62,6 @@ var (
 	}
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/checkpoint_mock.go -package mocks code.vegaprotocol.io/vega/core/processor Checkpoint
 type Checkpoint interface {
 	BalanceCheckpoint(ctx context.Context) (*types.CheckpointState, error)
 	Checkpoint(ctx context.Context, now time.Time) (*types.CheckpointState, error)
@@ -84,7 +82,7 @@ type PoWEngine interface {
 }
 
 type Snapshot interface {
-	Info() ([]byte, int64)
+	Info() ([]byte, int64, string)
 	Snapshot(ctx context.Context) ([]byte, error)
 	SnapshotNow(ctx context.Context) (b []byte, errlol error)
 	AddProviders(provs ...types.StateProvider)
@@ -431,9 +429,10 @@ func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
 	}
 
 	if loaded {
-		hash, height := app.snapshot.Info()
+		hash, height, chainID := app.snapshot.Info()
 		resp.LastBlockHeight = height
 		resp.LastBlockAppHash = hash
+		app.abci.SetChainID(chainID)
 	}
 
 	app.log.Info("ABCI service INFO requested",
@@ -564,6 +563,7 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 	app.log.Debug("ABCI service InitChain start")
 	hash := hex.EncodeToString(vgcrypto.Hash(req.AppStateBytes))
 	// let's assume genesis block is block 0
+	app.abci.SetChainID(req.ChainId)
 	app.chainCtx = vgcontext.WithChainID(context.Background(), req.ChainId)
 	ctx := vgcontext.WithBlockHeight(app.chainCtx, 0)
 	ctx = vgcontext.WithTraceID(ctx, hash)
@@ -642,9 +642,7 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 	app.stats.SetHash(hash)
 	app.stats.SetHeight(uint64(req.Header.Height))
 
-	// Set chainID, if we have loaded from a snapshot we will not have called InitChain
-	// TODO: we may be able to better if we store the chainID in the appstate's snapshot
-	app.chainCtx = vgcontext.WithChainID(context.Background(), req.Header.GetChainID())
+	app.chainCtx = vgcontext.WithChainID(context.Background(), app.abci.GetChainID())
 
 	ctx = vgcontext.WithBlockHeight(vgcontext.WithTraceID(app.chainCtx, hash), req.Header.Height)
 	app.blockCtx = ctx
@@ -695,6 +693,7 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 		app.log.Panic("Failed to create snapshot",
 			logging.Error(err))
 	}
+
 	t1 := time.Now()
 	if len(snapHash) > 0 {
 		app.log.Info("#### snapshot took ", logging.Float64("time", t1.Sub(t0).Seconds()))

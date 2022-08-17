@@ -13,6 +13,7 @@
 package processor
 
 import (
+	"bytes"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -21,20 +22,15 @@ import (
 	"code.vegaprotocol.io/vega/core/txn"
 	"code.vegaprotocol.io/vega/libs/proto"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-	wcrypto "code.vegaprotocol.io/vega/wallet/crypto"
-
 	"github.com/tendermint/tendermint/crypto/tmhash"
 )
-
-var ErrUnsupportedFromValueInTransaction = errors.New("unsupported value from `from` field in transaction")
 
 type Tx struct {
 	originalTx []byte
 	tx         *commandspb.Transaction
 	inputData  *commandspb.InputData
-	err        error
 	pow        *commandspb.ProofOfWork
-	version    uint32
+	version    commandspb.TxVersion
 }
 
 func DecodeTxNoValidation(payload []byte) (*Tx, error) {
@@ -42,33 +38,37 @@ func DecodeTxNoValidation(payload []byte) (*Tx, error) {
 	if err := proto.Unmarshal(payload, tx); err != nil {
 		return nil, fmt.Errorf("unable to unmarshal transaction: %w", err)
 	}
-	input := commandspb.InputData{}
-	if err := proto.Unmarshal(tx.InputData, &input); err != nil {
+
+	// We ignore the chain ID, as the null chain is meant to be use for simulation.
+	var rawInputData []byte
+	idx := bytes.IndexByte(tx.InputData, commands.ChainIDDelimiter)
+	if idx == -1 {
+		rawInputData = tx.InputData
+	} else {
+		rawInputData = tx.InputData[idx+1:]
+	}
+
+	inputData := &commandspb.InputData{}
+	if err := proto.Unmarshal(rawInputData, inputData); err != nil {
 		return nil, fmt.Errorf("unable to unmarshal input data: %w", err)
 	}
 
 	return &Tx{
 		originalTx: payload,
 		tx:         tx,
-		inputData:  &input,
-		err:        nil,
+		inputData:  inputData,
 		pow:        tx.Pow,
 		version:    tx.Version,
 	}, nil
 }
 
-func DecodeTx(payload []byte) (*Tx, error) {
+func DecodeTx(payload []byte, chainID string) (*Tx, error) {
 	tx := &commandspb.Transaction{}
 	if err := proto.Unmarshal(payload, tx); err != nil {
 		return nil, fmt.Errorf("unable to unmarshal transaction: %w", err)
 	}
 
-	inputData, err := commands.CheckTransaction(tx)
-	if err != nil {
-		return nil, err
-	}
-
-	err = checkSignature(tx)
+	inputData, err := commands.CheckTransaction(tx, chainID)
 	if err != nil {
 		return nil, err
 	}
@@ -77,41 +77,9 @@ func DecodeTx(payload []byte) (*Tx, error) {
 		originalTx: payload,
 		tx:         tx,
 		inputData:  inputData,
-		err:        err,
 		pow:        tx.Pow,
 		version:    tx.Version,
 	}, nil
-}
-
-func checkSignature(tx *commandspb.Transaction) error {
-	algo, err := wcrypto.NewSignatureAlgorithm(tx.Signature.Algo, tx.Signature.Version)
-	if err != nil {
-		return err
-	}
-
-	decodedSig, err := hex.DecodeString(tx.Signature.Value)
-	if err != nil {
-		return err
-	}
-
-	if len(tx.GetPubKey()) == 0 {
-		return ErrUnsupportedFromValueInTransaction
-	}
-	pubKeyOrAddress, err := hex.DecodeString(tx.GetPubKey())
-	if err != nil {
-		return fmt.Errorf("invalid public key, %w", err)
-	}
-
-	verified, err := algo.Verify(pubKeyOrAddress, tx.InputData, decodedSig)
-	if err != nil {
-		return err
-	}
-
-	if !verified {
-		return ErrInvalidSignature
-	}
-
-	return nil
 }
 
 func (t Tx) Command() txn.Command {
@@ -168,20 +136,24 @@ func (t Tx) Command() txn.Command {
 }
 
 func (t Tx) GetPoWNonce() uint64 {
-	if t.version > 1 && t.pow != nil {
-		return t.pow.Nonce
+	// The proof-of-work is not required by validator commands. So, it can be
+	// nil.
+	if t.pow == nil {
+		return 0
 	}
-	return 0
+	return t.pow.Nonce
 }
 
 func (t Tx) GetPoWTID() string {
-	if t.version > 1 && t.pow != nil {
-		return t.pow.Tid
+	// The proof-of-work is not required by validator commands. So, it can be
+	// nil.
+	if t.pow == nil {
+		return ""
 	}
-	return ""
+	return t.pow.Tid
 }
 
-func (t Tx) GetVersion() uint32 { return t.version }
+func (t Tx) GetVersion() uint32 { return uint32(t.version) }
 
 func (t Tx) GetCmd() interface{} {
 	switch cmd := t.inputData.Command.(type) {
@@ -408,10 +380,6 @@ func (t Tx) Signature() []byte {
 		panic("signature should be hex encoded")
 	}
 	return decodedSig
-}
-
-func (t Tx) Validate() error {
-	return t.err
 }
 
 func (t Tx) BlockHeight() uint64 {

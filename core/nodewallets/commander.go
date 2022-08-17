@@ -18,10 +18,8 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/commands"
-	"code.vegaprotocol.io/vega/core/blockchain"
 	"code.vegaprotocol.io/vega/core/nodewallets/vega"
 	"code.vegaprotocol.io/vega/core/txn"
-	vgproto "code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	api "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
@@ -39,6 +37,7 @@ const (
 type Chain interface {
 	SubmitTransactionSync(ctx context.Context, tx *commandspb.Transaction) (*tmctypes.ResultBroadcastTx, error)
 	SubmitTransactionAsync(ctx context.Context, tx *commandspb.Transaction) (*tmctypes.ResultBroadcastTx, error)
+	GetChainID(ctx context.Context) (string, error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_stats_mock.go -package mocks code.vegaprotocol.io/vega/core/nodewallets BlockchainStats
@@ -68,11 +67,6 @@ func NewCommander(cfg Config, log *logging.Logger, bc Chain, w *vega.Wallet, bst
 	}, nil
 }
 
-// SetChain - currently need to hack around the chicken/egg problem.
-func (c *Commander) SetChain(bc *blockchain.Client) {
-	c.bc = bc
-}
-
 // Command - send command to chain.
 // Note: beware when passing in an exponential back off since the done function may be called many times.
 func (c *Commander) Command(ctx context.Context, cmd txn.Command, payload proto.Message, done func(error), bo *backoff.ExponentialBackOff) {
@@ -87,16 +81,25 @@ func (c *Commander) CommandWithPoW(ctx context.Context, cmd txn.Command, payload
 	c.command(ctx, cmd, payload, done, api.SubmitTransactionRequest_TYPE_SYNC, bo, pow)
 }
 
-func (c *Commander) command(_ context.Context, cmd txn.Command, payload proto.Message, done func(error), ty api.SubmitTransactionRequest_Type, bo *backoff.ExponentialBackOff, pow *commandspb.ProofOfWork) {
+func (c *Commander) command(ctx context.Context, cmd txn.Command, payload proto.Message, done func(error), ty api.SubmitTransactionRequest_Type, bo *backoff.ExponentialBackOff, pow *commandspb.ProofOfWork) {
 	if c.bc == nil {
 		panic("commander was instantiated without a chain")
 	}
 	f := func() error {
-		ctx, cfunc := context.WithTimeout(context.Background(), 5*time.Second)
+		innerCtx, cfunc := context.WithTimeout(ctx, 5*time.Second)
 		defer cfunc()
+
+		chainID, err := c.bc.GetChainID(innerCtx)
+		if err != nil {
+			c.log.Error("couldn't retrieve chain ID",
+				logging.Error(err),
+			)
+			return err
+		}
+
 		inputData := commands.NewInputData(c.bstats.Height())
 		wrapPayloadIntoInputData(inputData, cmd, payload)
-		marshalledData, err := vgproto.Marshal(inputData)
+		marshalledData, err := commands.MarshalInputData(chainID, inputData)
 		if err != nil {
 			// this should never be possible
 			c.log.Panic("could not marshal core transaction", logging.Error(err))
@@ -112,9 +115,9 @@ func (c *Commander) command(_ context.Context, cmd txn.Command, payload proto.Me
 		tx.Pow = pow
 
 		if ty == api.SubmitTransactionRequest_TYPE_SYNC {
-			_, err = c.bc.SubmitTransactionSync(ctx, tx)
+			_, err = c.bc.SubmitTransactionSync(innerCtx, tx)
 		} else {
-			_, err = c.bc.SubmitTransactionAsync(ctx, tx)
+			_, err = c.bc.SubmitTransactionAsync(innerCtx, tx)
 		}
 
 		if err != nil {

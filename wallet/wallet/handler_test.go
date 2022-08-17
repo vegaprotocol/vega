@@ -7,6 +7,7 @@ import (
 	"sort"
 	"testing"
 
+	"code.vegaprotocol.io/vega/commands"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
@@ -650,12 +651,13 @@ func TestRotateKey(t *testing.T) {
 	t.Run("Rotate key with non existing wallet fails", testRotateWithNonExistingWalletFails)
 	t.Run("Rotate key with non existing new public key fails", testRotateKeyWithNonExistingNewPublicKeyFails)
 	t.Run("Rotate key with non existing current public key fails", testRotateKeyWithNonExistingCurrentPublicKeyFails)
-	t.Run("Rotate key tained public key fails", testRotateKeyWithTaintedPublicKeyFails)
+	t.Run("Rotate key tainted public key fails", testRotateKeyWithTaintedPublicKeyFails)
 }
 
 func testRotateKeySucceeds(t *testing.T) {
 	// given
 	w := importWalletWithTwoKeys(t)
+	chainID := vgrand.RandomStr(5)
 
 	currentPubKey := w.ListPublicKeys()[0]
 	newPubKey := w.ListPublicKeys()[1]
@@ -666,6 +668,7 @@ func testRotateKeySucceeds(t *testing.T) {
 	req := &wallet.RotateKeyRequest{
 		Wallet:            w.Name(),
 		Passphrase:        "passphrase",
+		ChainID:           chainID,
 		NewPublicKey:      newPubKey.Key(),
 		CurrentPublicKey:  currentPubKey.Key(),
 		TxBlockHeight:     20,
@@ -692,8 +695,7 @@ func testRotateKeySucceeds(t *testing.T) {
 	err = proto.Unmarshal(transactionRaw, transaction)
 	require.NoError(t, err)
 
-	inputData := &commandspb.InputData{}
-	err = proto.Unmarshal(transaction.InputData, inputData)
+	inputData, err := commands.UnmarshalInputData(transaction.Version, transaction.InputData, chainID)
 	require.NoError(t, err)
 
 	keyRotate, ok := inputData.Command.(*commandspb.InputData_KeyRotateSubmission)

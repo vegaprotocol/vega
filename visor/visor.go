@@ -1,0 +1,183 @@
+// Copyright (c) 2022 Gobalsky Labs Limited
+//
+// Use of this software is governed by the Business Source License included
+// in the LICENSE file and at https://www.mariadb.com/bsl11.
+//
+// Change Date: 18 months from the later of the date of the first publicly
+// available Distribution of this version of the repository, and 25 June 2022.
+//
+// On the date above, in accordance with the Business Source License, use
+// of this software will be governed by version 3 or later of the GNU General
+// Public License.
+
+package visor
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/visor/client"
+	"code.vegaprotocol.io/vega/visor/config"
+	"code.vegaprotocol.io/vega/visor/utils"
+)
+
+const (
+	upgradeApiCallTickerDuration = time.Second * 2
+	maxUpgradeStatusErrs         = 10
+)
+
+type Visor struct {
+	conf          *config.VisorConfig
+	clientFactory client.ClientFactory
+	log           *logging.Logger
+}
+
+func NewVisor(ctx context.Context, log *logging.Logger, clientFactory client.ClientFactory, homePath string) (*Visor, error) {
+	homePath, err := utils.AbsPath(homePath)
+	if err != nil {
+		return nil, err
+	}
+
+	homeExists, err := utils.PathExists(homePath)
+	if err != nil {
+		return nil, err
+	}
+
+	if !homeExists {
+		return nil, fmt.Errorf("home folder %q does not exists, it can initiated with init command", homePath)
+	}
+
+	visorConf, err := config.NewVisorConfig(log, homePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get config: %w", err)
+	}
+
+	currentFolderExists, err := utils.PathExists(visorConf.CurrentRunConfigPath())
+	if err != nil {
+		return nil, err
+	}
+
+	v := &Visor{
+		conf:          visorConf,
+		clientFactory: clientFactory,
+		log:           log,
+	}
+
+	if !currentFolderExists {
+		if err := v.setCurrentFolder(visorConf.GenesisFolder(), visorConf.CurrentFolder()); err != nil {
+			return nil, fmt.Errorf("failed to set current folder to %q: %w", visorConf.CurrentFolder(), err)
+		}
+	}
+
+	go v.watchForConfigUpdates(ctx)
+
+	return v, nil
+}
+
+func (v *Visor) watchForConfigUpdates(ctx context.Context) {
+	for {
+		v.log.Debug("starting config file watcher")
+		if err := v.conf.WatchForUpdate(ctx); err != nil {
+			v.log.Error("config file watcher has failed", logging.Error(err))
+		}
+	}
+}
+
+func (v *Visor) Run(ctx context.Context) error {
+	numOfRestarts := 0
+	var currentReleaseInfo *types.ReleaseInfo
+
+	upgradeTicker := time.NewTicker(upgradeApiCallTickerDuration)
+	defer upgradeTicker.Stop()
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	for {
+		runConf, err := config.ParseRunConfig(v.conf.CurrentRunConfigPath())
+		if err != nil {
+			return fmt.Errorf("failed to parse run config: %w", err)
+		}
+
+		client := v.clientFactory.GetClient(
+			runConf.Vega.RCP.SocketPath,
+			runConf.Vega.RCP.HttpPath,
+		)
+
+		numOfUpgradeStatusErrs := 0
+		maxNumRestarts := v.conf.MaxNumberOfRestarts()
+		restartsDelay := time.Second * time.Duration(v.conf.RestartsDelaySeconds())
+
+		v.log.Info("Starting binaries")
+		binRunner := NewBinariesRunner(
+			v.log,
+			v.conf.CurrentFolder(),
+			time.Second*time.Duration(v.conf.StopSignalTimeoutSeconds()),
+			currentReleaseInfo,
+		)
+		binErrs := binRunner.Run(ctx, runConf)
+
+		upgradeTicker.Reset(upgradeApiCallTickerDuration)
+
+	CheckLoop:
+		for {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case err := <-binErrs:
+				v.log.Error("Binaries executions has failed", logging.Error(err))
+
+				if numOfRestarts >= maxNumRestarts {
+					return fmt.Errorf("maximum number of possible restarts has been reached: %w", err)
+				}
+
+				numOfRestarts++
+				v.log.Info("Binaries restart is scheduled", logging.Duration("restartDelay", restartsDelay))
+				time.Sleep(restartsDelay)
+				v.log.Info("Restarting binaries", logging.Int("remainingRestarts", maxNumRestarts-numOfRestarts))
+
+				break CheckLoop
+			case <-upgradeTicker.C:
+				upStatus, err := client.UpgradeStatus(ctx)
+				if err != nil {
+					if numOfUpgradeStatusErrs > maxUpgradeStatusErrs {
+						return fmt.Errorf("failed to upgrade status for maximum amount of %d times: %w", maxUpgradeStatusErrs, err)
+					}
+
+					v.log.Debug("failed to get upgrade status from API", logging.Error(err))
+					numOfUpgradeStatusErrs++
+
+					break
+				}
+
+				if !upStatus.ReadyToUpgrade {
+					break
+				}
+
+				currentReleaseInfo = upStatus.AcceptedReleaseInfo
+
+				v.log.Info("Preparing upgrade")
+
+				if err := binRunner.Stop(); err != nil {
+					// Force to kill if fails grateful stop fails
+					if err := binRunner.Kill(); err != nil {
+						return fmt.Errorf("failed to force kill the running processes: %w", err)
+					}
+				}
+
+				v.log.Info("Starting upgrade")
+
+				if err := v.prepareNextUpgradeFolder(ctx, currentReleaseInfo.VegaReleaseTag); err != nil {
+					return fmt.Errorf("failed to prepare next upgrade folder")
+				}
+
+				numOfRestarts = 0
+
+				break CheckLoop
+			}
+		}
+	}
+}

@@ -47,21 +47,18 @@ var (
 	ErrInvalidProposal = errors.New("invalid proposal")
 )
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/datanode/gateway/graphql CoreProxyServiceClient,TradingDataServiceClientV2,TradingDataServiceClient
+
 // CoreProxyServiceClient ...
-//
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/core_service_client_mock.go -package mocks code.vegaprotocol.io/vega/datanode/gateway/graphql CoreProxyServiceClient
 type CoreProxyServiceClient interface {
 	vegaprotoapi.CoreServiceClient
 }
 
 // TradingDataServiceClient ...
-//
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_data_service_client_mock.go -package mocks code.vegaprotocol.io/vega/datanode/gateway/graphql TradingDataServiceClient
 type TradingDataServiceClient interface {
 	protoapi.TradingDataServiceClient
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_data_service_client_v2_mock.go -package mocks code.vegaprotocol.io/vega/datanode/gateway/graphql TradingDataServiceClientV2
 type TradingDataServiceClientV2 interface {
 	v2.TradingDataServiceClient
 }

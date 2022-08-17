@@ -46,7 +46,6 @@ type Config struct {
 
 	Pprof          pprof.Config  `group:"Pprof" namespace:"pprof"`
 	GatewayEnabled encoding.Bool `long:"gateway-enabled" choice:"true" choice:"false" description:" "`
-	UlimitNOFile   uint64        `long:"ulimit-no-files" description:"Set the max number of open files (see: ulimit -n)" tomlcp:"Set the max number of open files (see: ulimit -n)"`
 }
 
 // NewDefaultConfig returns a set of default configs for all vega packages, as specified at the per package
@@ -63,7 +62,6 @@ func NewDefaultConfig() Config {
 		Broker:         broker.NewDefaultConfig(),
 		Service:        service.NewDefaultConfig(),
 		GatewayEnabled: true,
-		UlimitNOFile:   8192,
 	}
 }
 

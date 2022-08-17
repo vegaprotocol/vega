@@ -29,11 +29,9 @@ func testNewFreeformProposalSubmissionWithoutRationalURLandHashFails(t *testing.
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_NewFreeform{},
 		},
-		Rationale: &types.ProposalRationale{
-			Description: RandomStr(50),
-		},
+		Rationale: &types.ProposalRationale{},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.rationale.url"), commands.ErrIsRequired)
-	assert.Contains(t, err.Get("proposal_submission.rationale.hash"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.rationale.description"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.rationale.title"), commands.ErrIsRequired)
 }

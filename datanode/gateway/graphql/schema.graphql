@@ -3005,23 +3005,16 @@ union ProposalChange =
 type ProposalRationale {
   """
   Description to show a short title / something in case the link goes offline.
-  This is to be between 0 and 1024 unicode characters.
+  This is to be between 0 and 20k unicode characters.
   This is mandatory for all proposals.
   """
   description: String!
   """
-  Cryptographically secure hash (SHA3-512) of the text pointed by the `url` property
-  so that viewers can check that the text hasn't been changed over time.
-  Optional except for FreeFrom proposal where it's mandatory.
-  If set, the `url` property must be set.
+  Title to be used to give a short description of the proposal in lists.
+  This is to be between 0 and 100 unicode characters.
+  This is mandatory for all proposals.
   """
-  hash: String
-  """
-  Link to a text file describing the proposal in depth.
-  Optional except for FreeFrom proposal where it's mandatory.
-  If set, the `url` property must be set.
-  """
-  url: String
+  title: String!
 }
 
 "The rationale behind the proposal"

@@ -14,7 +14,6 @@ package protocolupgrade
 
 import (
 	"context"
-	"encoding/hex"
 	"sort"
 
 	"code.vegaprotocol.io/vega/core/types"
@@ -70,8 +69,6 @@ func (e *Engine) serialise(k string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	println(hex.EncodeToString(data))
 
 	return data, nil
 }

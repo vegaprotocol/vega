@@ -91,8 +91,13 @@ func (c *Client) CheckTransaction(ctx context.Context, tx *commandspb.Transactio
 	if !c.isReady() {
 		return nil, ErrClientNotReady
 	}
-	_, err := commands.CheckTransaction(tx)
+
+	chainID, err := c.clt.GetChainID(ctx)
 	if err != nil {
+		return nil, err
+	}
+
+	if _, err := commands.CheckTransaction(tx, chainID); err != nil {
 		return nil, err
 	}
 
@@ -111,8 +116,13 @@ func (c *Client) SubmitTransactionSync(ctx context.Context, tx *commandspb.Trans
 	if !c.isReady() {
 		return nil, ErrClientNotReady
 	}
-	_, err := commands.CheckTransaction(tx)
+
+	chainID, err := c.clt.GetChainID(ctx)
 	if err != nil {
+		return nil, err
+	}
+
+	if _, err := commands.CheckTransaction(tx, chainID); err != nil {
 		return nil, err
 	}
 
@@ -133,8 +143,13 @@ func (c *Client) SubmitTransactionCommit(ctx context.Context, tx *commandspb.Tra
 	if !c.isReady() {
 		return nil, ErrClientNotReady
 	}
-	_, err := commands.CheckTransaction(tx)
+
+	chainID, err := c.clt.GetChainID(ctx)
 	if err != nil {
+		return nil, err
+	}
+
+	if _, err := commands.CheckTransaction(tx, chainID); err != nil {
 		return nil, err
 	}
 
@@ -155,8 +170,13 @@ func (c *Client) SubmitTransactionAsync(ctx context.Context, tx *commandspb.Tran
 	if !c.isReady() {
 		return nil, ErrClientNotReady
 	}
-	_, err := commands.CheckTransaction(tx)
+
+	chainID, err := c.clt.GetChainID(ctx)
 	if err != nil {
+		return nil, err
+	}
+
+	if _, err := commands.CheckTransaction(tx, chainID); err != nil {
 		return nil, err
 	}
 

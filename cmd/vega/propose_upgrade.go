@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/core/config"
+	"code.vegaprotocol.io/vega/core/protocolupgrade"
 	"code.vegaprotocol.io/vega/core/txn"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
@@ -72,7 +73,8 @@ func (opts *ProposeUpgradeCmd) Execute(args []string) error {
 	if opts.UpgradeBlockHeight <= blockData.Height {
 		return fmt.Errorf("upgrade block earlier than current block height")
 	}
-	_, err = semver.Parse(opts.VegaReleaseTag)
+
+	_, err = semver.Parse(protocolupgrade.TrimReleaseTag(opts.VegaReleaseTag))
 	if err != nil {
 		return fmt.Errorf("invalid protocol version for upgrade received: version (%s), %w", opts.VegaReleaseTag, err)
 	}

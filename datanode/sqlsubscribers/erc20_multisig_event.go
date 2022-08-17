@@ -32,7 +32,6 @@ type ERC20MultiSigSignerRemovedEvent interface {
 	Proto() eventspb.ERC20MultiSigSignerRemoved
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/withdrawals_mock.go -package mocks code.vegaprotocol.io/vega/datanode/sqlsubscribers WithdrawalStore
 type ERC20MultiSigSignerEventStore interface {
 	Add(ctx context.Context, e *entities.ERC20MultiSigSignerEvent) error
 }

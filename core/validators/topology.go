@@ -48,7 +48,6 @@ type Broker interface {
 	SendBatch(events []events.Event)
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/wallet_mock.go -package mocks code.vegaprotocol.io/vega/core/validators Wallet
 type Wallet interface {
 	PubKey() crypto.PublicKey
 	ID() crypto.PublicKey
@@ -60,7 +59,6 @@ type MultiSigTopology interface {
 	ExcessSigners(addresses []string) bool
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/val_performance_mock.go -package mocks code.vegaprotocol.io/vega/core/validators ValidatorPerformance
 type ValidatorPerformance interface {
 	ValidatorPerformanceScore(address string, votingPower, totalPower int64) num.Decimal
 	BeginBlock(ctx context.Context, proposer string)
@@ -70,7 +68,6 @@ type ValidatorPerformance interface {
 }
 
 // Notary ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/notary_mock.go -package mocks code.vegaprotocol.io/vega/core/validators Notary
 type Notary interface {
 	StartAggregate(resID string, kind types.NodeSignatureKind, signature []byte)
 	IsSigned(ctx context.Context, id string, kind types.NodeSignatureKind) ([]types.NodeSignature, bool)

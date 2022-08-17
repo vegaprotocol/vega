@@ -110,26 +110,6 @@ func (mr *MockCoreClientMockRecorder) LastBlockHeight(arg0, arg1 interface{}, ar
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LastBlockHeight", reflect.TypeOf((*MockCoreClient)(nil).LastBlockHeight), varargs...)
 }
 
-// Statistics mocks base method.
-func (m *MockCoreClient) Statistics(arg0 context.Context, arg1 *v1.StatisticsRequest, arg2 ...grpc.CallOption) (*v1.StatisticsResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "Statistics", varargs...)
-	ret0, _ := ret[0].(*v1.StatisticsResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Statistics indicates an expected call of Statistics.
-func (mr *MockCoreClientMockRecorder) Statistics(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Statistics", reflect.TypeOf((*MockCoreClient)(nil).Statistics), varargs...)
-}
-
 // Stop mocks base method.
 func (m *MockCoreClient) Stop() error {
 	m.ctrl.T.Helper()
