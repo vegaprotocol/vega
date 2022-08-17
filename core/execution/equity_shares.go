@@ -114,7 +114,7 @@ func (es *EquityShares) AvgTradeValue(avg num.Decimal) *EquityShares {
 		return es
 	}
 	es.stateChanged = true
-	if !es.mvp.IsZero() && avg.GreaterThan(es.mvp) {
+	if !es.mvp.IsZero() {
 		es.r = avg.Sub(es.mvp).Div(es.mvp)
 	} else {
 		es.r = num.DecimalZero()
