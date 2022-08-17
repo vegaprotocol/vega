@@ -32,6 +32,8 @@ pipeline {
                 description: 'Git branch, tag or hash of the vegaprotocol/devops-infra repository')
         string( name: 'DEVOPSSCRIPTS_BRANCH', defaultValue: 'main',
                 description: 'Git branch, tag or hash of the vegaprotocol/devopsscripts repository')
+        string( name: 'JENKINS_SHARED_LIB_BRANCH', defaultValue: 'main',
+                description: 'Git branch, tag or hash of the vegaprotocol/jenkins-shared-library repository')
     }
     environment {
         CGO_ENABLED = 0
@@ -399,7 +401,8 @@ pipeline {
                                 vegacapsule: params.VEGACAPSULE_BRANCH,
                                 vegatools: params.VEGATOOLS_BRANCH,
                                 devopsInfra: params.DEVOPS_INFRA_BRANCH,
-                                devopsScripts: params.DEVOPSSCRIPTS_BRANCH
+                                devopsScripts: params.DEVOPSSCRIPTS_BRANCH,
+                                jenkinsSharedLib: params.JENKINS_SHARED_LIB_BRANCH
                         }
                     }
                 }
@@ -687,7 +690,8 @@ pipeline {
             }
             steps {
                 devnetDeploy vegaVersion: versionHash,
-                    wait: false
+                    wait: false,
+                    jenkinsSharedLib: params.JENKINS_SHARED_LIB_BRANCH
             }
         }
         //
