@@ -30,9 +30,8 @@ type lp struct {
 // https://github.com/vegaprotocol/product/blob/02af55e048a92a204e9ee7b7ae6b4475a198c7ff/specs/0042-setting-fees-and-rewarding-lps.md#calculating-liquidity-provider-equity-like-share
 type EquityShares struct {
 	// mvp is the MarketValueProxy
-	mvp  num.Decimal
-	pMvp num.Decimal // @TODO add to snapshot
-	r    num.Decimal
+	mvp num.Decimal
+	r   num.Decimal
 
 	totalVStake num.Decimal
 	totalPStake num.Decimal
@@ -47,7 +46,6 @@ type EquityShares struct {
 func NewEquityShares(mvp num.Decimal) *EquityShares {
 	return &EquityShares{
 		mvp:          mvp,
-		pMvp:         num.DecimalZero(),
 		r:            num.DecimalZero(),
 		totalPStake:  num.DecimalZero(),
 		totalVStake:  num.DecimalZero(),
@@ -66,7 +64,6 @@ func (es *EquityShares) OpeningAuctionEnded() {
 	es.openingAuctionEnded = true
 	es.stateChanged = true
 	es.setOpeningAuctionAVG()
-	es.pMvp = num.DecimalZero()
 	es.r = num.DecimalZero()
 }
 
@@ -104,66 +101,13 @@ func (es *EquityShares) UpdateVStake() {
 	es.totalVStake = total
 }
 
-func (es *EquityShares) UpdateVirtualStake() {
-	defer func() {
-		es.stateChanged = true
-		es.recalcAverages()
-	}()
-	if es.mvp.IsZero() || es.pMvp.IsZero() {
-		for _, v := range es.lps {
-			es.totalVStake = es.totalVStake.Sub(v.vStake).Add(v.stake)
-			v.vStake = v.stake
-		}
-		return
-	}
-	growth := es.r.Add(num.NewDecimalFromFloat(1.0))
-	for _, v := range es.lps {
-		vStake := num.MaxD(v.stake, growth.Mul(v.vStake))
-		es.totalVStake = es.totalVStake.Sub(v.vStake).Add(vStake)
-		v.vStake = vStake
-	}
-	// now that the total Virtual stake has been corrected, update the averages
-}
-
-func (es *EquityShares) recalcAverages() {
-	factor := es.totalPStake.Div(es.totalVStake)
-	for _, v := range es.lps {
-		v.avg = v.vStake.Mul(factor)
-	}
-}
-
-func (es *EquityShares) UpdateVirtualStakeOld() {
-	// this isn't used if we have to set vStake to physical stake
-	growth := es.r
-	// if A(n) == 0 or A(n-1) == 0, vStake = physical stake
-	setPhysical := (es.mvp.IsZero() || es.pMvp.IsZero())
-	if !setPhysical {
-		growth = num.NewDecimalFromFloat(1.0).Add(growth)
-	}
-	for _, v := range es.lps {
-		// default to physical stake
-		vStake := v.stake
-		if !setPhysical {
-			// unless A(n) != 0 || A(n-1) != 0
-			// then set vStake = max(physical stake, ((r+1)*vStqake))
-			vStake = num.MaxD(v.stake, growth.Mul(v.vStake))
-		}
-		// if virtual stake doesn't change, then stateChanged shouldn't be toggled
-		es.stateChanged = (es.stateChanged || !vStake.Equals(v.vStake))
-		v.vStake = vStake
-	}
-}
-
 func (es *EquityShares) AvgTradeValue(avg num.Decimal) *EquityShares {
 	if !es.mvp.IsZero() && !avg.IsZero() {
-		growth := avg.Sub(es.mvp).Div(es.mvp)
-		es.stateChanged = (es.stateChanged || !growth.Equals(es.r))
-		es.r = growth
+		es.r = avg.Sub(es.mvp).Div(es.mvp)
 	} else {
 		es.r = num.DecimalZero()
 	}
-	es.stateChanged = true
-	es.pMvp = es.mvp
+	es.UpdateVStake()
 	es.mvp = avg
 	return es
 }
@@ -180,9 +124,7 @@ func (es *EquityShares) WithMVP(mvp num.Decimal) *EquityShares {
 	}
 	// only flip state changed if growth rate and/or mvp has changed
 	// previous mvp can still change, so we need to check that, too
-	es.stateChanged = (es.stateChanged || !es.mvp.Equals(mvp) || !es.mvp.Equals(es.pMvp))
-	// pMvp would otherwise be A(n-2) -> update to A(n-1)
-	es.pMvp = es.mvp
+	es.stateChanged = (es.stateChanged || !es.mvp.Equals(mvp))
 	es.mvp = mvp
 	return es
 }
