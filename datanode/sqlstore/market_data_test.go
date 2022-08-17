@@ -951,6 +951,16 @@ func mustParseTimestamp(t *testing.T, value string) time.Time {
 	return ts
 }
 
+func mustParseUInt64(t *testing.T, value string) uint64 {
+	t.Helper()
+	i, err := strconv.ParseUint(value, 10, 64)
+	if err != nil {
+		t.Fatalf("could not parse int64: %s", err)
+	}
+
+	return i
+}
+
 func mustParseInt64(t *testing.T, value string) int64 {
 	t.Helper()
 	i, err := strconv.ParseInt(value, 10, 64)
@@ -1002,21 +1012,21 @@ func csvToMarketData(t *testing.T, line []string, seqNum int) *entities.MarketDa
 	return &entities.MarketData{
 		MarkPrice:                  mustParseDecimal(t, line[csvColumnMarkPrice]),
 		BestBidPrice:               mustParseDecimal(t, line[csvColumnBestBidPrice]),
-		BestBidVolume:              mustParseInt64(t, line[csvColumnBestBidVolume]),
+		BestBidVolume:              mustParseUInt64(t, line[csvColumnBestBidVolume]),
 		BestOfferPrice:             mustParseDecimal(t, line[csvColumnBestOfferPrice]),
-		BestOfferVolume:            mustParseInt64(t, line[csvColumnBestOfferVolume]),
+		BestOfferVolume:            mustParseUInt64(t, line[csvColumnBestOfferVolume]),
 		BestStaticBidPrice:         mustParseDecimal(t, line[csvColumnBestStaticBidPrice]),
-		BestStaticBidVolume:        mustParseInt64(t, line[csvColumnBestStaticBidVolume]),
+		BestStaticBidVolume:        mustParseUInt64(t, line[csvColumnBestStaticBidVolume]),
 		BestStaticOfferPrice:       mustParseDecimal(t, line[csvColumnBestStaticOfferPrice]),
-		BestStaticOfferVolume:      mustParseInt64(t, line[csvColumnBestStaticOfferVolume]),
+		BestStaticOfferVolume:      mustParseUInt64(t, line[csvColumnBestStaticOfferVolume]),
 		MidPrice:                   mustParseDecimal(t, line[csvColumnMidPrice]),
 		StaticMidPrice:             mustParseDecimal(t, line[csvColumnStaticMidPrice]),
 		Market:                     entities.MarketID(line[csvColumnMarket]),
-		OpenInterest:               mustParseInt64(t, line[csvColumnOpenInterest]),
+		OpenInterest:               mustParseUInt64(t, line[csvColumnOpenInterest]),
 		AuctionEnd:                 mustParseInt64(t, line[csvColumnAuctionEnd]),
 		AuctionStart:               mustParseInt64(t, line[csvColumnAuctionStart]),
 		IndicativePrice:            mustParseDecimal(t, line[csvColumnIndicativePrice]),
-		IndicativeVolume:           mustParseInt64(t, line[csvColumnIndicativeVolume]),
+		IndicativeVolume:           mustParseUInt64(t, line[csvColumnIndicativeVolume]),
 		MarketTradingMode:          line[csvColumnMarketTradingMode],
 		AuctionTrigger:             line[csvColumnAuctionTrigger],
 		ExtensionTrigger:           line[csvColumnExtensionTrigger],
