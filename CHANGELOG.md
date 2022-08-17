@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased 0.54.0
+## Unreleased 0.55.0
 
 ### 🚨 Breaking changes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -13,7 +13,7 @@
 - [5841](https://github.com/vegaprotocol/vega/issues/5841) - Add transaction to request `multisigControl` signatures on demand
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [5934](https://github.com/vegaprotocol/vega/issues/5934) - Ensure wallet without permissions can be read
 
 ## 0.54.0
 
