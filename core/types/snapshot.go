@@ -175,7 +175,7 @@ func AppStateFromTree(tree *iavl.ImmutableTree) (*PayloadAppState, error) {
 		Data: &PayloadAppState{AppState: &AppState{}},
 	}
 	key := appState.GetTreeKey()
-	_, data := tree.Get([]byte(key))
+	data, _ := tree.Get([]byte(key))
 	if data == nil {
 		return nil, ErrSnapshotKeyDoesNotExist
 	}
@@ -242,8 +242,12 @@ func (s *Snapshot) TreeFromSnapshot(tree *iavl.MutableTree) error {
 
 // SnapshotFromTree traverses the given avl tree and represents it as a Snapshot.
 func SnapshotFromTree(tree *iavl.ImmutableTree) (*Snapshot, error) {
+	hash, err := tree.Hash()
+	if err != nil {
+		return nil, err
+	}
 	snap := Snapshot{
-		Hash: tree.Hash(),
+		Hash: hash,
 		Meta: &Metadata{
 			Version:     tree.Version(),
 			NodeHashes:  []*NodeHash{}, // a slice of the data for each node in the tree without the payload value, just its hash

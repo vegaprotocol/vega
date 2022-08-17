@@ -655,7 +655,7 @@ func (e *Engine) SnapshotNow(ctx context.Context) (b []byte, errlol error) {
 	return e.snapshotNow(ctx, false)
 }
 
-func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) (b []byte, errlol error) {
+func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, error) {
 	defer metrics.StartSnapshot("all")()
 	e.avlLock.Lock()
 
@@ -745,8 +745,8 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) (b []byte, err
 			e.log.Debug("State updated", logging.String("node-key", string(tkRes.input.treeKey)))
 			if len(tkRes.state) == 0 {
 				// empty state -> remove data from snapshot
-				if e.avl.Has(treeKey) {
-					_, _ = e.avl.Remove(treeKey)
+				if ok, _ := e.avl.Has(treeKey); ok {
+					_, _, _ = e.avl.Remove(treeKey)
 					updated = true
 					continue
 				}
@@ -754,7 +754,7 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) (b []byte, err
 				continue
 			}
 			// new value needs to be set
-			_ = e.avl.Set(treeKey, tkRes.state)
+			_, _ = e.avl.Set(treeKey, tkRes.state)
 			updated = true
 		}
 		if len(toRemove) == 0 {
@@ -776,12 +776,12 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) (b []byte, err
 			delete(e.providers, treeKeyStr)
 			delete(e.treeKeyProvider, treeKeyStr)
 
-			if !e.avl.Has(treeKey) {
+			if ok, _ := e.avl.Has(treeKey); !ok {
 				e.log.Panic("trying to remove non-existent payload from tree", logging.String("key", treeKeyStr))
 				continue
 			}
 
-			if _, removed := e.avl.Remove(treeKey); !removed {
+			if _, removed, _ := e.avl.Remove(treeKey); !removed {
 				e.log.Panic("failed to remove node from AVL tree", logging.String("key", treeKeyStr))
 			}
 			e.nsTreeKeys[ns] = append(e.nsTreeKeys[ns][:i], e.nsTreeKeys[ns][i+1:]...)
@@ -841,7 +841,10 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) (b []byte, err
 		e.avlLock.Unlock()
 	}
 
-	snapshot := e.avl.WorkingHash()
+	snapshot, err := e.avl.WorkingHash()
+	if err != nil {
+		return nil, err
+	}
 	if saveAsync {
 		go save()
 	} else {
@@ -989,7 +992,7 @@ func (e *Engine) updateAppState() error {
 	if err != nil {
 		return err
 	}
-	_ = e.avl.Set(keys[0], data)
+	_, _ = e.avl.Set(keys[0], data)
 	return nil
 }
 
