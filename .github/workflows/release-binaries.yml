@@ -19,19 +19,19 @@ name: Release vega, data-node and vegawallet binaries
         required: false
         type: choice
         options:
-          - [ vega, data-node, vegawallet ]
-          - [ vega ]
-          - [ data-node ]
-          - [ vegawallet ]
-          - [ vegavisor ]
+          - [vega, data-node, vegawallet]
+          - [vega]
+          - [data-node]
+          - [vegawallet]
+          - [vegavisor]
       archs:
         description: 'Architecture to build and publish'
         required: false
         type: choice
         options:
-          - [ amd64, arm64 ]
-          - [ amd64 ]
-          - [ arm64 ]
+          - [amd64, arm64]
+          - [amd64]
+          - [arm64]
   push:
     branches:
       - develop
