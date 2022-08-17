@@ -275,7 +275,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | party1 | USD   | 100000000  |
       | party2 | USD   | 100000000  |
     # set default block duration to 1h
-    And the average block duration is "3600"
+    And the average block duration is "1801"
 
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -325,10 +325,10 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | sell | 1001  | 14     |
 
     # roughly 20 minutes
-    When the network moves ahead "19m" with block duration of "2s"
+    #When the network moves ahead "19m" with block duration of "2s"
     #Then time is updated to "2019-11-30T00:20:10Z"
     #week2
-  
+    Then the network moves ahead "2" blocks
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/MAR22 | buy  | 5      | 1001  | 1                | TYPE_LIMIT | TIF_GTC |
@@ -342,7 +342,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1001       | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 6506         | 7000           | 65            |
 
-    When the network moves ahead "40m" with block duration of "1s"
+    #When the network moves ahead "40m" with block duration of "1s"
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share    | average entry valuation |
       #| lp1   | 0.6097560975609760   | 4268                    |
@@ -354,10 +354,10 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | lp2   | 0.2857142857142857   | 2000                    |
 
     # fast forwards 4 hours
-    Then the network moves ahead "4" blocks
+   
     #Then time is updated to "2019-11-30T04:20:10Z"
     #week3
-
+    Then the network moves ahead "2" blocks
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
       | buy  | 898   | 53     |
@@ -390,8 +390,9 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       #| lp1   | 0.7263323782234957   | 5000                    |
       #| lp2   | 0.2836676217765043   | 1980                    |
 
-    Then time is updated to "2019-11-30T05:22:10Z"
+    #Then time is updated to "2019-11-30T05:22:10Z"
     #week4
+    Then the network moves ahead "2" blocks
 
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
@@ -423,9 +424,9 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       #| lp2   | 0.2732558139534884   | 1880                    |
       | lp2   | 0.2732558139534884   | 1880.00000000000001     |
 
-    Then time is updated to "2019-11-30T08:22:10Z"
+    #Then time is updated to "2019-11-30T08:22:10Z"
     #week5
-
+    Then the network moves ahead "2" blocks
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
       | buy  | 898   | 52     |
@@ -449,8 +450,9 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       #| lp2   | 0.2732558139534884   | 1880                    |
       | lp2   | 0.2732558139534884   | 1880.00000000000001     |
 
-    Then time is updated to "2019-11-30T10:22:10Z"
+    #Then time is updated to "2019-11-30T10:22:10Z"
     #week6
+    Then the network moves ahead "2" blocks
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp2 | lp2   | ETH/MAR22 | 2000              | 0.001 | sell | ASK              | 1          | 2      | amendment  |
@@ -478,9 +480,9 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | sell | 1100  | 1      |
       | sell | 1001  | 10     |
 
-    Then time is updated to "2019-11-30T12:22:10Z"
+    #Then time is updated to "2019-11-30T12:22:10Z"
      #week7
-
+    Then the network moves ahead "2" blocks
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/MAR22 | sell | 1      | 999   | 1                | TYPE_LIMIT | TIF_GTC |
