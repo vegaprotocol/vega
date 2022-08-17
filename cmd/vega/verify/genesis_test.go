@@ -31,7 +31,7 @@ func Test(t *testing.T) {
 	t.Run("verify ERC20 assets", testVerifyERC20Assets)
 	t.Run("verify builtin assets", testVerifyBuiltinAssets)
 	t.Run("verify netparams", testVerifyNetworkParams)
-	t.Run("verify validators", testVerifyValidators)
+	t.Run("verify validators", TestVerifyValidators)
 	t.Run("verify unknown appstate field", testUnknownAppstateField)
 }
 
@@ -145,7 +145,7 @@ func testVerifyNetworkParams(t *testing.T) {
 	assert.Error(t, cmd.Execute([]string{getFileFromAppstate(t, gs)}))
 }
 
-func testVerifyValidators(t *testing.T) {
+func TestVerifyValidators(t *testing.T) {
 	cmd := verify.GenesisCmd{}
 
 	valid := validators.ValidatorData{

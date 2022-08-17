@@ -1128,6 +1128,20 @@ func (mr *MockValidatorTopologyMockRecorder) IsValidatorVegaPubKey(arg0 interfac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsValidatorVegaPubKey", reflect.TypeOf((*MockValidatorTopology)(nil).IsValidatorVegaPubKey), arg0)
 }
 
+// IssueSignatures mocks base method.
+func (m *MockValidatorTopology) IssueSignatures(arg0 context.Context, arg1, arg2 string, arg3 v1.NodeSignatureKind) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IssueSignatures", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// IssueSignatures indicates an expected call of IssueSignatures.
+func (mr *MockValidatorTopologyMockRecorder) IssueSignatures(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IssueSignatures", reflect.TypeOf((*MockValidatorTopology)(nil).IssueSignatures), arg0, arg1, arg2, arg3)
+}
+
 // Len mocks base method.
 func (m *MockValidatorTopology) Len() int {
 	m.ctrl.T.Helper()

@@ -28,14 +28,16 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type testSignatures struct {
 	*validators.ERC20Signatures
-	notary *mocks.MockNotary
-	ctrl   *gomock.Controller
-	broker *bmocks.MockBroker
-	signer testSigner
+	notary           *mocks.MockNotary
+	ctrl             *gomock.Controller
+	broker           *bmocks.MockBroker
+	signer           testSigner
+	multisigTopology *mocks.MockMultiSigTopology
 }
 
 func getTestSignatures(t *testing.T) *testSignatures {
@@ -44,25 +46,29 @@ func getTestSignatures(t *testing.T) *testSignatures {
 	notary := mocks.NewMockNotary(ctrl)
 	broker := bmocks.NewMockBroker(ctrl)
 	nodewallet := mocks.NewMockNodeWallets(ctrl)
+	multisigTopology := mocks.NewMockMultiSigTopology(ctrl)
 	tsigner := testSigner{}
 	nodewallet.EXPECT().GetEthereum().AnyTimes().Return(tsigner)
 
 	return &testSignatures{
 		ERC20Signatures: validators.NewSignatures(
 			logging.NewTestLogger(),
+			multisigTopology,
 			notary,
 			nodewallet,
 			broker,
 			true,
 		),
-		ctrl:   ctrl,
-		notary: notary,
-		broker: broker,
-		signer: tsigner,
+		ctrl:             ctrl,
+		notary:           notary,
+		broker:           broker,
+		signer:           tsigner,
+		multisigTopology: multisigTopology,
 	}
 }
 
 func TestPromotionSignatures(t *testing.T) {
+	ctx := context.Background()
 	signatures := getTestSignatures(t)
 	defer signatures.ctrl.Finish()
 
@@ -111,22 +117,44 @@ func TestPromotionSignatures(t *testing.T) {
 	// just aggregate all events
 	// we'll verify their content after
 	evts := []events.Event{}
-	signatures.broker.EXPECT().SendBatch(gomock.Any()).Times(2).DoAndReturn(func(newEvts []events.Event) {
+	signatures.broker.EXPECT().SendBatch(gomock.Any()).Times(5).DoAndReturn(func(newEvts []events.Event) {
 		evts = append(evts, newEvts...)
 	})
 
 	signatures.notary.EXPECT().StartAggregate(gomock.Any(), gomock.Any(), gomock.Any()).Times(5)
 
 	// now, there's no assertion to do just now, this only send a sh*t ton of events
-	signatures.EmitPromotionsSignatures(
-		context.Background(),
+	signatures.PreparePromotionsSignatures(
+		ctx,
 		currentTime,
 		12,
 		previousState,
 		newState,
 	)
 
-	assert.Len(t, evts, 3)
+	assert.Len(t, evts, 0)
+
+	// now request the signature bundle for the adding
+	err := signatures.EmitValidatorAddedSignatures(ctx, "0x7629Faf5B7a3BB167B6f2F86DB5fB7f13B20Ee90", "4554375ce61b6828c6f7b625b7735034496b7ea19951509cccf4eb2ba35011b0", currentTime)
+	require.NoError(t, err)
+
+	// now ask for all the removes, each tendermint validator will ask
+	toAsk := []string{
+		"0xddDFA1974b156336b9c49579A2bC4e0a7059CAD0",
+		"0x5945ae02D5EE15181cc4AC0f5EaeF4C25Dc17Aa8",
+	}
+
+	for _, v := range toAsk {
+		err = signatures.EmitValidatorRemovedSignatures(ctx, v, "927cbf8d5909cc017cf78ea9806fd57c3115d37e481eaf9d866f526b356f3ced", currentTime)
+		require.NoError(t, err)
+	}
+
+	for _, v := range toAsk {
+		err = signatures.EmitValidatorRemovedSignatures(ctx, v, "95893347980299679883f817f118718f949826d1a0a1c2e4f22ba5f0cd6d1f5d", currentTime)
+		require.NoError(t, err)
+	}
+
+	require.Len(t, evts, 5)
 
 	t.Run("ensure all correct events are sent", func(t *testing.T) {
 		add1, ok := evts[0].(*events.ERC20MultiSigSignerAdded)
@@ -135,15 +163,38 @@ func TestPromotionSignatures(t *testing.T) {
 
 		remove1, ok := evts[1].(*events.ERC20MultiSigSignerRemoved)
 		assert.True(t, ok, "invalid event, expected SignedRemoved")
-		assert.Equal(t, remove1.ERC20MultiSigSignerRemoved().OldSigner, "0x539ac90d9523f878779491D4175dc11AD09972F0")
-		// also ensure 2 signature are expected
-		assert.Len(t, remove1.ERC20MultiSigSignerRemoved().SignatureSubmitters, 2)
+		assert.Equal(t, remove1.ERC20MultiSigSignerRemoved().OldSigner, "0x5945ae02D5EE15181cc4AC0f5EaeF4C25Dc17Aa8")
 
-		remove2, ok := evts[2].(*events.ERC20MultiSigSignerRemoved)
+		remove2, ok := evts[1].(*events.ERC20MultiSigSignerRemoved)
 		assert.True(t, ok, "invalid event, expected SignedRemoved")
 		assert.Equal(t, remove2.ERC20MultiSigSignerRemoved().OldSigner, "0x5945ae02D5EE15181cc4AC0f5EaeF4C25Dc17Aa8")
-		// also ensure 2 signature are expected
-		assert.Len(t, remove2.ERC20MultiSigSignerRemoved().SignatureSubmitters, 2)
+
+		// check the two removes on the same node have the same nonce
+		assert.Equal(t, remove1.ERC20MultiSigSignerRemoved().Nonce, remove2.ERC20MultiSigSignerRemoved().Nonce)
+
+		remove3, ok := evts[3].(*events.ERC20MultiSigSignerRemoved)
+		assert.True(t, ok, "invalid event, expected SignedRemoved")
+		assert.Equal(t, remove3.ERC20MultiSigSignerRemoved().OldSigner, "0x539ac90d9523f878779491D4175dc11AD09972F0")
+
+		remove4, ok := evts[4].(*events.ERC20MultiSigSignerRemoved)
+		assert.True(t, ok, "invalid event, expected SignedRemoved")
+		assert.Equal(t, remove4.ERC20MultiSigSignerRemoved().OldSigner, "0x539ac90d9523f878779491D4175dc11AD09972F0")
+
+		assert.Equal(t, remove3.ERC20MultiSigSignerRemoved().Nonce, remove4.ERC20MultiSigSignerRemoved().Nonce)
+	})
+
+	t.Run("clear stale remove signatures", func(t *testing.T) {
+		// return that the signers are not on the contract
+		signatures.multisigTopology.EXPECT().IsSigner(gomock.Any()).Return(false).Times(3)
+		signatures.ClearStaleSignatures()
+
+		// we should get no signatures for the removed nodes
+		require.Error(t, validators.ErrNoPendingSignaturesForNodeID, signatures.EmitValidatorRemovedSignatures(ctx, "submitter", "927cbf8d5909cc017cf78ea9806fd57c3115d37e481eaf9d866f526b356f3ced", currentTime))
+
+		// now for the add signatures
+		signatures.multisigTopology.EXPECT().IsSigner(gomock.Any()).Return(true).Times(1)
+		signatures.ClearStaleSignatures()
+		require.Error(t, validators.ErrNoPendingSignaturesForNodeID, signatures.EmitValidatorAddedSignatures(ctx, "0x7629Faf5B7a3BB167B6f2F86DB5fB7f13B20Ee90", "4554375ce61b6828c6f7b625b7735034496b7ea19951509cccf4eb2ba35011b0", currentTime))
 	})
 }
 

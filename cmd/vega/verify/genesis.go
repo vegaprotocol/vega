@@ -26,16 +26,17 @@ import (
 // These types are copies of the ones in the engines that read the genesis file appstate
 // but the double-book keeping allows us to know when a change to the genesis state occurs.
 type validator struct {
-	ID              string `json:"id"`
-	VegaPubKey      string `json:"vega_pub_key"`
-	VegaPubKeyIndex uint32 `json:"vega_pub_key_index"`
-	EthereumAddress string `json:"ethereum_address"`
-	TMPubKey        string `json:"tm_pub_key"`
-	InfoURL         string `json:"info_url"`
-	Country         string `json:"country"`
-	Name            string `json:"name"`
-	AvatarURL       string `json:"avatar_url"`
-	FromEpoch       uint64 `json:"from_epoch"`
+	ID               string `json:"id"`
+	VegaPubKey       string `json:"vega_pub_key"`
+	VegaPubKeyIndex  uint32 `json:"vega_pub_key_index"`
+	EthereumAddress  string `json:"ethereum_address"`
+	TMPubKey         string `json:"tm_pub_key"`
+	InfoURL          string `json:"info_url"`
+	Country          string `json:"country"`
+	Name             string `json:"name"`
+	AvatarURL        string `json:"avatar_url"`
+	FromEpoch        uint64 `json:"from_epoch"`
+	SubmitterAddress string `json:"submitter_address"`
 }
 
 type asset struct {

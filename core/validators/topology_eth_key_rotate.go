@@ -26,8 +26,9 @@ import (
 var ErrCurrentEthAddressDoesNotMatch = errors.New("current Ethereum address does not match")
 
 type PendingEthereumKeyRotation struct {
-	NodeID     string
-	NewAddress string
+	NodeID           string
+	NewAddress       string
+	SubmitterAddress string
 }
 
 type pendingEthereumKeyRotationMapping map[uint64][]PendingEthereumKeyRotation
@@ -97,16 +98,20 @@ func (t *Topology) RotateEthereumKey(
 	}
 
 	toRemove := []NodeIDAddress{{NodeID: node.data.ID, EthAddress: node.data.EthereumAddress}}
-	allValidators := t.validators.toNodeIDAdresses()
 
-	// we can emit remove validator signatures immediately
-	t.signatures.EmitRemoveValidatorsSignatures(ctx, toRemove, allValidators, t.timeService.GetTimeNow(), t.epochSeq)
+	t.signatures.PrepareValidatorSignatures(ctx, toRemove, t.epochSeq, false)
+
+	if len(kr.SubmitterAddress) != 0 {
+		// we were given an address that will be submitting the multisig changes, we can emit a remove signature for it right now
+		t.signatures.EmitValidatorRemovedSignatures(ctx, kr.SubmitterAddress, node.data.ID, t.timeService.GetTimeNow())
+	}
 
 	// schedule signature collection to future block
 	// those signature should be emitted after validator has rotated is key in node wallet
 	t.pendingEthKeyRotations.add(kr.TargetBlock, PendingEthereumKeyRotation{
-		NodeID:     node.data.ID,
-		NewAddress: kr.NewAddress,
+		NodeID:           node.data.ID,
+		NewAddress:       kr.NewAddress,
+		SubmitterAddress: kr.SubmitterAddress,
 	})
 
 	t.log.Debug("Successfully added Ethereum key rotation to pending key rotations",
@@ -170,7 +175,12 @@ func (t *Topology) ethereumKeyRotationBeginBlockLocked(ctx context.Context) {
 		t.validators[r.NodeID] = data
 
 		toAdd := []NodeIDAddress{{NodeID: r.NodeID, EthAddress: r.NewAddress}}
-		t.signatures.EmitNewValidatorsSignatures(ctx, toAdd, t.timeService.GetTimeNow(), t.epochSeq)
+		t.signatures.PrepareValidatorSignatures(ctx, toAdd, t.epochSeq, true)
+
+		if len(r.SubmitterAddress) != 0 {
+			// we were given an address that will be submitting the multisig changes, we can emit signatures for it right now
+			t.signatures.EmitValidatorAddedSignatures(ctx, r.SubmitterAddress, r.NodeID, t.timeService.GetTimeNow())
+		}
 
 		t.broker.Send(events.NewEthereumKeyRotationEvent(
 			ctx,

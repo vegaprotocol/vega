@@ -251,6 +251,7 @@ message TxErrorEvent {
     commands.v1.AnnounceNode announce_node = 115;
     commands.v1.OracleDataSubmission oracle_data_submission = 116;
     commands.v1.ProtocolUpgradeProposal protocol_upgrade_proposal = 117;
+    commands.v1.IssueSignatures issue_signatures = 118;
   }
 }
 
@@ -407,6 +408,8 @@ message ValidatorUpdate {
   bool added = 10;
   // The epoch from which the validator was added or removed
   uint64 from_epoch = 11;
+  // Ethereum public key being used as the submitter to allow automatic signature generation
+  string submitter_address = 12;
 }
 
 // An event that explains the status of the validator for the coming epoch
