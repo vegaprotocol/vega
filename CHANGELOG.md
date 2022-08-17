@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased 0.54.0
+## Unreleased 0.55.0
 
 ### 🚨 Breaking changes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -12,7 +12,7 @@
 - [5766](https://github.com/vegaprotocol/vega/issues/5766) - Better notification for version update on the wallet
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [5934](https://github.com/vegaprotocol/vega/issues/5934) - Ensure wallet without permissions can be deserialized
 
 ## 0.54.0
 

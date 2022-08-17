@@ -326,6 +326,11 @@ func (w *HDWallet) MarshalJSON() ([]byte, error) {
 		Keys:        w.keyRing.ListKeyPairs(),
 		Permissions: w.permissions,
 	}
+
+	if jsonW.Permissions == nil {
+		jsonW.Permissions = map[string]Permissions{}
+	}
+
 	return json.Marshal(jsonW)
 }
 
@@ -333,6 +338,10 @@ func (w *HDWallet) UnmarshalJSON(data []byte) error {
 	jsonW := &jsonHDWallet{}
 	if err := json.Unmarshal(data, jsonW); err != nil {
 		return err
+	}
+
+	if jsonW.Permissions == nil {
+		jsonW.Permissions = map[string]Permissions{}
 	}
 
 	*w = HDWallet{
