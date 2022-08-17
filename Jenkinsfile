@@ -310,11 +310,17 @@ pipeline {
                         stage('proto check') {
                             options { retry(3) }
                             steps {
-                                dir('vega') {
+                                sh label: 'copy vega repo', script: '''#!/bin/bash -e
+                                        cp -r ./vega ./vega-proto-check
+                                    '''
+                                dir('vega-proto-check') {
                                     sh '''#!/bin/bash -e
                                         make proto_check
                                     '''
                                 }
+                                sh label: 'remove vega copy', script: '''#!/bin/bash -e
+                                        rm -rf ./vega-proto-check
+                                    '''
                             }
                             post {
                                 failure {
@@ -408,11 +414,17 @@ pipeline {
                 }
                 stage('mocks check') {
                     steps {
-                        dir('vega') {
+                        sh label: 'copy vega repo', script: '''#!/bin/bash -e
+                                cp -r ./vega ./vega-mocks-check
+                            '''
+                        dir('vega-mocks-check') {
                             sh '''#!/bin/bash -e
                                 make mocks_check
                             '''
                         }
+                        sh label: 'remove vega copy', script: '''#!/bin/bash -e
+                                rm -rf ./vega-mocks-check
+                            '''
                     }
                     post {
                         failure {
