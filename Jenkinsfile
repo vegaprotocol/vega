@@ -32,6 +32,8 @@ pipeline {
                 description: 'Git branch, tag or hash of the vegaprotocol/devops-infra repository')
         string( name: 'DEVOPSSCRIPTS_BRANCH', defaultValue: 'main',
                 description: 'Git branch, tag or hash of the vegaprotocol/devopsscripts repository')
+        string( name: 'JENKINS_SHARED_LIB_BRANCH', defaultValue: 'main',
+                description: 'Git branch, tag or hash of the vegaprotocol/jenkins-shared-library repository')
     }
     environment {
         CGO_ENABLED = 0
@@ -308,11 +310,17 @@ pipeline {
                         stage('proto check') {
                             options { retry(3) }
                             steps {
-                                dir('vega') {
+                                sh label: 'copy vega repo', script: '''#!/bin/bash -e
+                                        cp -r ./vega ./vega-proto-check
+                                    '''
+                                dir('vega-proto-check') {
                                     sh '''#!/bin/bash -e
                                         make proto_check
                                     '''
                                 }
+                                sh label: 'remove vega copy', script: '''#!/bin/bash -e
+                                        rm -rf ./vega-proto-check
+                                    '''
                             }
                             post {
                                 failure {
@@ -399,17 +407,24 @@ pipeline {
                                 vegacapsule: params.VEGACAPSULE_BRANCH,
                                 vegatools: params.VEGATOOLS_BRANCH,
                                 devopsInfra: params.DEVOPS_INFRA_BRANCH,
-                                devopsScripts: params.DEVOPSSCRIPTS_BRANCH
+                                devopsScripts: params.DEVOPSSCRIPTS_BRANCH,
+                                jenkinsSharedLib: params.JENKINS_SHARED_LIB_BRANCH
                         }
                     }
                 }
                 stage('mocks check') {
                     steps {
-                        dir('vega') {
+                        sh label: 'copy vega repo', script: '''#!/bin/bash -e
+                                cp -r ./vega ./vega-mocks-check
+                            '''
+                        dir('vega-mocks-check') {
                             sh '''#!/bin/bash -e
                                 make mocks_check
                             '''
                         }
+                        sh label: 'remove vega copy', script: '''#!/bin/bash -e
+                                rm -rf ./vega-mocks-check
+                            '''
                     }
                     post {
                         failure {
@@ -650,17 +665,17 @@ pipeline {
                             cp ./build-darwin-arm64/vega ./release/vega-macos-arm64
                             cp ./build-darwin-arm64/data-node ./release/data-node-macos-arm64
                             # Windows
-                            cp ./build-windows-amd64/vega ./release/vega-windows-amd64
-                            cp ./build-windows-amd64/data-node ./release/data-node-windows-amd64
+                            cp ./build-windows-amd64/vega.exe ./release/vega-windows-amd64.exe
+                            cp ./build-windows-amd64/data-node.exe ./release/data-node-windows-amd64.exe
                         '''
-                        dir('release') {
+                        dir('vega') {
                             script {
                                 withGHCLI('credentialsId': 'github-vega-ci-bot-artifacts') {
                                     sh label: 'Upload artifacts', script: '''#!/bin/bash -e
                                         [[ $TAG_NAME =~ '-pre' ]] && prerelease='--prerelease' || prerelease=''
 
-                                        gh release view $TAG_NAME && gh release upload $TAG_NAME ./* \
-                                            || gh release create $TAG_NAME $prerelease ./*
+                                        gh release view $TAG_NAME && gh release upload $TAG_NAME ../release/* \
+                                            || gh release create $TAG_NAME $prerelease ../release/*
                                     '''
                                 }
                             }
@@ -687,7 +702,8 @@ pipeline {
             }
             steps {
                 devnetDeploy vegaVersion: versionHash,
-                    wait: false
+                    wait: false,
+                    jenkinsSharedLib: params.JENKINS_SHARED_LIB_BRANCH
             }
         }
         //
