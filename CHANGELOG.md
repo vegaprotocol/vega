@@ -13,7 +13,7 @@
 - [5841](https://github.com/vegaprotocol/vega/issues/5841) - Add transaction to request `multisigControl` signatures on demand
 
 ### 🐛 Fixes
-- [5934](https://github.com/vegaprotocol/vega/issues/5934) - Ensure wallet without permissions can be deserialized
+- [5934](https://github.com/vegaprotocol/vega/issues/5934) - Ensure wallet without permissions can be read
 
 ## 0.54.0
 
