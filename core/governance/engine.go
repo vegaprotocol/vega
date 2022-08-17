@@ -723,12 +723,6 @@ func (e *Engine) validateOpenProposal(proposal *types.Proposal) (types.ProposalE
 		}
 	}
 
-	// assign all requirement to the proposal itself.
-	proposal.RequiredMajority = params.RequiredMajority
-	proposal.RequiredParticipation = params.RequiredParticipation
-	proposal.RequiredLPMajority = params.RequiredMajorityLP
-	proposal.RequiredLPParticipation = params.RequiredParticipationLP
-
 	return e.validateChange(proposal.Terms)
 }
 
@@ -907,16 +901,6 @@ func newUpdatedProposalEvents(ctx context.Context, proposal *proposal) []events.
 	}
 
 	return evts
-}
-
-func (e *Engine) mustGetProposalParams(proposal *proposal) *ProposalParameters {
-	params, err := e.getProposalParams(proposal.Terms)
-	if err != nil {
-		e.log.Panic("failed to get the proposal parameters from the terms",
-			logging.Error(err),
-		)
-	}
-	return params
 }
 
 func (e *Engine) updateValidatorKey(ctx context.Context, m map[string]*types.Vote, oldKey, newKey string) {

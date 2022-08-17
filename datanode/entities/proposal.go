@@ -63,7 +63,7 @@ func (p *Proposal) ToProto() *vega.Proposal {
 	}
 	var lpParticipation *string
 	if !p.RequiredLPParticipation.IsZero() {
-		lpMajority = toPtr(p.RequiredLPParticipation.String())
+		lpParticipation = toPtr(p.RequiredLPParticipation.String())
 	}
 
 	pp := vega.Proposal{

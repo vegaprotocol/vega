@@ -284,7 +284,7 @@ func (p Proposal) IntoProto() *vegapb.Proposal {
 	}
 	var lpParticipation *string
 	if !p.RequiredLPParticipation.IsZero() {
-		lpMajority = toPtr(p.RequiredLPParticipation.String())
+		lpParticipation = toPtr(p.RequiredLPParticipation.String())
 	}
 
 	proposal := &vegapb.Proposal{

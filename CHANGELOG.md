@@ -11,9 +11,11 @@
 ### 🛠 Improvements
 - [5766](https://github.com/vegaprotocol/vega/issues/5766) - Better notification for version update on the wallet
 - [5841](https://github.com/vegaprotocol/vega/issues/5841) - Add transaction to request `multisigControl` signatures on demand
-- [5937](https://github.com/vegaprotocol/vega/issues/5937) - Add more flexibility to market creation bonus 
+- [5937](https://github.com/vegaprotocol/vega/issues/5937) - Add more flexibility to market creation bonus
 - [5949](https://github.com/vegaprotocol/vega/issues/5949) - Transfers processed in the order they were received
 - [5675](https://github.com/vegaprotocol/vega/issues/5675) - Add transaction information to all database tables
+- [5849](https://github.com/vegaprotocol/vega/issues/5849) - Use network parameter from creation time of the proposal for requirements
+- [5846](https://github.com/vegaprotocol/vega/issues/5846) - Expose network parameter from creation time of the proposal through `APIs`.
 
 ### 🐛 Fixes
 - [5934](https://github.com/vegaprotocol/vega/issues/5934) - Ensure wallet without permissions can be read
