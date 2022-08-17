@@ -40,6 +40,7 @@ import (
 var (
 	ErrVegaNodeAlreadyRegisterForChain = errors.New("a vega node is already registered with the blockchain node")
 	ErrInvalidChainPubKey              = errors.New("invalid blockchain public key")
+	ErrIssueSignaturesUnexpectedKind   = errors.New("unexpected node-signature kind")
 )
 
 // Broker needs no mocks.
@@ -48,7 +49,6 @@ type Broker interface {
 	SendBatch(events []events.Event)
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/wallet_mock.go -package mocks code.vegaprotocol.io/vega/core/validators Wallet
 type Wallet interface {
 	PubKey() crypto.PublicKey
 	ID() crypto.PublicKey
@@ -60,7 +60,6 @@ type MultiSigTopology interface {
 	ExcessSigners(addresses []string) bool
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/val_performance_mock.go -package mocks code.vegaprotocol.io/vega/core/validators ValidatorPerformance
 type ValidatorPerformance interface {
 	ValidatorPerformanceScore(address string, votingPower, totalPower int64) num.Decimal
 	BeginBlock(ctx context.Context, proposer string)
@@ -70,7 +69,6 @@ type ValidatorPerformance interface {
 }
 
 // Notary ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/notary_mock.go -package mocks code.vegaprotocol.io/vega/core/validators Notary
 type Notary interface {
 	StartAggregate(resID string, kind types.NodeSignatureKind, signature []byte)
 	IsSigned(ctx context.Context, id string, kind types.NodeSignatureKind) ([]types.NodeSignature, bool)
@@ -78,16 +76,17 @@ type Notary interface {
 }
 
 type ValidatorData struct {
-	ID              string `json:"id"`
-	VegaPubKey      string `json:"vega_pub_key"`
-	VegaPubKeyIndex uint32 `json:"vega_pub_key_index"`
-	EthereumAddress string `json:"ethereum_address"`
-	TmPubKey        string `json:"tm_pub_key"`
-	InfoURL         string `json:"info_url"`
-	Country         string `json:"country"`
-	Name            string `json:"name"`
-	AvatarURL       string `json:"avatar_url"`
-	FromEpoch       uint64 `json:"from_epoch"`
+	ID               string `json:"id"`
+	VegaPubKey       string `json:"vega_pub_key"`
+	VegaPubKeyIndex  uint32 `json:"vega_pub_key_index"`
+	EthereumAddress  string `json:"ethereum_address"`
+	TmPubKey         string `json:"tm_pub_key"`
+	InfoURL          string `json:"info_url"`
+	Country          string `json:"country"`
+	Name             string `json:"name"`
+	AvatarURL        string `json:"avatar_url"`
+	FromEpoch        uint64 `json:"from_epoch"`
+	SubmitterAddress string `json:"submitter_address"`
 }
 
 func (v ValidatorData) IsValid() bool {
@@ -265,7 +264,7 @@ func (t *Topology) OnEpochLengthUpdate(ctx context.Context, l time.Duration) err
 // anyway we may want to extract the code requiring the notary somewhere
 // else or have different pattern somehow...
 func (t *Topology) SetNotary(notary Notary) {
-	t.signatures = NewSignatures(t.log, notary, t.wallets, t.broker, t.isValidatorSetup)
+	t.signatures = NewSignatures(t.log, t.multiSigTopology, notary, t.wallets, t.broker, t.isValidatorSetup)
 	t.notary = notary
 }
 
@@ -438,8 +437,9 @@ func (t *Topology) BeginBlock(ctx context.Context, req abcitypes.RequestBeginBlo
 
 	t.checkHeartbeat(ctx)
 	t.validatorPerformance.BeginBlock(ctx, hex.EncodeToString(req.Header.ProposerAddress))
-	blockHeight := uint64(req.Header.Height)
-	t.currentBlockHeight = blockHeight
+	t.currentBlockHeight = uint64(req.Header.Height)
+
+	t.signatures.ClearStaleSignatures()
 	t.keyRotationBeginBlockLocked(ctx)
 	t.ethereumKeyRotationBeginBlockLocked(ctx)
 
@@ -457,16 +457,17 @@ func (t *Topology) AddNewNode(ctx context.Context, nr *commandspb.AnnounceNode, 
 	}
 
 	data := ValidatorData{
-		ID:              nr.Id,
-		VegaPubKey:      nr.VegaPubKey,
-		VegaPubKeyIndex: nr.VegaPubKeyIndex,
-		EthereumAddress: nr.EthereumAddress,
-		TmPubKey:        nr.ChainPubKey,
-		InfoURL:         nr.InfoUrl,
-		Country:         nr.Country,
-		Name:            nr.Name,
-		AvatarURL:       nr.AvatarUrl,
-		FromEpoch:       nr.FromEpoch,
+		ID:               nr.Id,
+		VegaPubKey:       nr.VegaPubKey,
+		VegaPubKeyIndex:  nr.VegaPubKeyIndex,
+		EthereumAddress:  nr.EthereumAddress,
+		TmPubKey:         nr.ChainPubKey,
+		InfoURL:          nr.InfoUrl,
+		Country:          nr.Country,
+		Name:             nr.Name,
+		AvatarURL:        nr.AvatarUrl,
+		FromEpoch:        nr.FromEpoch,
+		SubmitterAddress: nr.SubmitterAddress,
 	}
 
 	// then add it to the topology
@@ -606,4 +607,17 @@ func (t *Topology) checkValidatorDataWithSelfWallets(data ValidatorData) {
 	}
 
 	t.isValidator = true
+}
+
+func (t *Topology) IssueSignatures(ctx context.Context, submitter, nodeID string, kind types.NodeSignatureKind) error {
+	t.log.Debug("received IssueSignatures txn", logging.String("submitter", submitter), logging.String("nodeID", nodeID))
+	currentTime := t.timeService.GetTimeNow()
+	switch kind {
+	case types.NodeSignatureKindERC20MultiSigSignerAdded:
+		return t.signatures.EmitValidatorAddedSignatures(ctx, submitter, nodeID, currentTime)
+	case types.NodeSignatureKindERC20MultiSigSignerRemoved:
+		return t.signatures.EmitValidatorRemovedSignatures(ctx, submitter, nodeID, currentTime)
+	default:
+		return ErrIssueSignaturesUnexpectedKind
+	}
 }

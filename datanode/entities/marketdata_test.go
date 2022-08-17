@@ -16,6 +16,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/libs/num"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
@@ -273,8 +274,9 @@ func testParseMarketDataSuccessfully(t *testing.T) {
 				ExtensionTrigger:  "AUCTION_TRIGGER_UNSPECIFIED",
 				PriceMonitoringBounds: []*entities.PriceMonitoringBound{
 					{
-						MinValidPrice: 100,
-						MaxValidPrice: 200,
+						MinValidPrice:  num.NewUint(100),
+						MaxValidPrice:  num.NewUint(200),
+						ReferencePrice: num.NewUint(0),
 					},
 				},
 			},

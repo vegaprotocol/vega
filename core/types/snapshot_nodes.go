@@ -222,6 +222,7 @@ type Topology struct {
 	ChainValidators             []string
 	PendingPubKeyRotations      []*snapshot.PendingKeyRotation
 	PendingEthereumKeyRotations []*snapshot.PendingEthereumKeyRotation
+	Signatures                  *snapshot.ToplogySignatures
 	ValidatorPerformance        *snapshot.ValidatorPerformance
 }
 
@@ -3719,6 +3720,7 @@ func PayloadTopologyFromProto(t *snapshot.Payload_Topology) *PayloadTopology {
 			ValidatorData:               t.Topology.ValidatorData,
 			PendingPubKeyRotations:      t.Topology.PendingPubKeyRotations,
 			PendingEthereumKeyRotations: t.Topology.PendingEthereumKeyRotations,
+			Signatures:                  t.Topology.Signatures,
 			ValidatorPerformance:        t.Topology.ValidatorPerformance,
 		},
 	}
@@ -3731,6 +3733,7 @@ func (p *PayloadTopology) IntoProto() *snapshot.Payload_Topology {
 			ValidatorData:               p.Topology.ValidatorData,
 			PendingPubKeyRotations:      p.Topology.PendingPubKeyRotations,
 			PendingEthereumKeyRotations: p.Topology.PendingEthereumKeyRotations,
+			Signatures:                  p.Topology.Signatures,
 			ValidatorPerformance:        p.Topology.ValidatorPerformance,
 		},
 	}

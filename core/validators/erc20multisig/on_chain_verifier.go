@@ -37,7 +37,6 @@ type EthereumClient interface {
 	bind.ContractFilterer
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_confirmations_mock.go -package mocks code.vegaprotocol.io/vega/core/validators/erc20multisig EthConfirmations
 type EthConfirmations interface {
 	Check(uint64) error
 }

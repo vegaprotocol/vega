@@ -10,6 +10,7 @@
 
 ### 🛠 Improvements
 - [5766](https://github.com/vegaprotocol/vega/issues/5766) - Better notification for version update on the wallet
+- [5841](https://github.com/vegaprotocol/vega/issues/5841) - Add transaction to request `multisigControl` signatures on demand
 
 ### 🐛 Fixes
 - [5934](https://github.com/vegaprotocol/vega/issues/5934) - Ensure wallet without permissions can be deserialized

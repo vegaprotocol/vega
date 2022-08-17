@@ -63,6 +63,8 @@ const (
 	RotateEthereumKeySubmissionCommand Command = 0x57
 	// ProtocolUpgradeCommand Command ...
 	ProtocolUpgradeCommand Command = 0x58
+	// ProtocolUpgradeCommand Command ...
+	IssueSignatures Command = 0x59
 )
 
 var commandName = map[Command]string{
@@ -89,6 +91,7 @@ var commandName = map[Command]string{
 	ValidatorHeartbeatCommand:          "Validator Heartbeat",
 	RotateEthereumKeySubmissionCommand: "Ethereum Key Rotate Submission",
 	ProtocolUpgradeCommand:             "Protocol Upgrade",
+	IssueSignatures:                    "Issue Signatures",
 }
 
 func (cmd Command) IsValidatorCommand() bool {

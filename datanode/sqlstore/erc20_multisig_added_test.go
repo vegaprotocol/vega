@@ -105,14 +105,14 @@ func testGetWithFilters(t *testing.T) {
 	err = ms.Add(ctx, getTestSignerEvent(t, vgcrypto.RandomHash(), vID2, generateEthereumAddress(), "12", true))
 	require.NoError(t, err)
 
-	res, _, err := ms.GetAddedEvents(ctx, vID1, nil, entities.CursorPagination{})
+	res, _, err := ms.GetAddedEvents(ctx, vID1, "", nil, entities.CursorPagination{})
 	require.NoError(t, err)
 	require.Len(t, res, 2)
 	assert.Equal(t, vID1, res[0].ValidatorID.String())
 	assert.Equal(t, vID1, res[1].ValidatorID.String())
 
 	epoch := int64(12)
-	res, _, err = ms.GetAddedEvents(ctx, vID1, &epoch, entities.CursorPagination{})
+	res, _, err = ms.GetAddedEvents(ctx, vID1, "", &epoch, entities.CursorPagination{})
 	require.NoError(t, err)
 	require.Len(t, res, 1)
 	assert.Equal(t, vID1, res[0].ValidatorID.String())
@@ -148,7 +148,7 @@ func testGetWithAddAndRemoveEvents(t *testing.T) {
 	err = ms.Add(ctx, getTestSignerEvent(t, vgcrypto.RandomHash(), vID2, generateEthereumAddress(), "12", true))
 	require.NoError(t, err)
 
-	res, _, err := ms.GetAddedEvents(ctx, vID1, nil, entities.CursorPagination{})
+	res, _, err := ms.GetAddedEvents(ctx, vID1, "", nil, entities.CursorPagination{})
 	require.NoError(t, err)
 	require.Len(t, res, 1)
 	assert.Equal(t, vID1, res[0].ValidatorID.String())
@@ -242,7 +242,7 @@ func testERC20MultiSigAddedEventPaginationNoPagination(t *testing.T) {
 	require.NoError(t, err)
 
 	validator := "fc677151d0c93726"
-	got, pageInfo, err := es.GetAddedEvents(ctx, validator, nil, pagination)
+	got, pageInfo, err := es.GetAddedEvents(ctx, validator, "", nil, pagination)
 	require.NoError(t, err)
 	want := events[:10]
 	assert.Equal(t, want, got)
@@ -265,7 +265,7 @@ func testERC20MultiSigAddedEventPaginationFirst(t *testing.T) {
 	require.NoError(t, err)
 
 	validator := "fc677151d0c93726"
-	got, pageInfo, err := es.GetAddedEvents(ctx, validator, nil, pagination)
+	got, pageInfo, err := es.GetAddedEvents(ctx, validator, "", nil, pagination)
 	require.NoError(t, err)
 	want := events[:3]
 	assert.Equal(t, want, got)
@@ -288,7 +288,7 @@ func testERC20MultiSigAddedEventPaginationLast(t *testing.T) {
 	require.NoError(t, err)
 
 	validator := "fc677151d0c93726"
-	got, pageInfo, err := es.GetAddedEvents(ctx, validator, nil, pagination)
+	got, pageInfo, err := es.GetAddedEvents(ctx, validator, "", nil, pagination)
 	require.NoError(t, err)
 	want := events[7:10]
 	assert.Equal(t, want, got)
@@ -312,7 +312,7 @@ func testERC20MultiSigAddedEventPaginationFirstAfter(t *testing.T) {
 	require.NoError(t, err)
 
 	validator := "fc677151d0c93726"
-	got, pageInfo, err := es.GetAddedEvents(ctx, validator, nil, pagination)
+	got, pageInfo, err := es.GetAddedEvents(ctx, validator, "", nil, pagination)
 	require.NoError(t, err)
 	want := events[3:6]
 	assert.Equal(t, want, got)
@@ -336,7 +336,7 @@ func testERC20MultiSigAddedEventPaginationLastBefore(t *testing.T) {
 	require.NoError(t, err)
 
 	validator := "fc677151d0c93726"
-	got, pageInfo, err := es.GetAddedEvents(ctx, validator, nil, pagination)
+	got, pageInfo, err := es.GetAddedEvents(ctx, validator, "", nil, pagination)
 	require.NoError(t, err)
 	want := events[4:7]
 	assert.Equal(t, want, got)
@@ -358,7 +358,7 @@ func testERC20MultiSigAddedEventPaginationNoPaginationNewestFirst(t *testing.T) 
 	require.NoError(t, err)
 
 	validator := "fc677151d0c93726"
-	got, pageInfo, err := es.GetAddedEvents(ctx, validator, nil, pagination)
+	got, pageInfo, err := es.GetAddedEvents(ctx, validator, "", nil, pagination)
 	require.NoError(t, err)
 	want := entities.ReverseSlice(events[:10])
 	assert.Equal(t, want, got)
@@ -381,7 +381,7 @@ func testERC20MultiSigAddedEventPaginationFirstNewestFirst(t *testing.T) {
 	require.NoError(t, err)
 
 	validator := "fc677151d0c93726"
-	got, pageInfo, err := es.GetAddedEvents(ctx, validator, nil, pagination)
+	got, pageInfo, err := es.GetAddedEvents(ctx, validator, "", nil, pagination)
 	require.NoError(t, err)
 	want := entities.ReverseSlice(events[:10])[:3]
 	assert.Equal(t, want, got)
@@ -404,7 +404,7 @@ func testERC20MultiSigAddedEventPaginationLastNewestFirst(t *testing.T) {
 	require.NoError(t, err)
 
 	validator := "fc677151d0c93726"
-	got, pageInfo, err := es.GetAddedEvents(ctx, validator, nil, pagination)
+	got, pageInfo, err := es.GetAddedEvents(ctx, validator, "", nil, pagination)
 	require.NoError(t, err)
 	want := entities.ReverseSlice(events[:10])[7:]
 	assert.Equal(t, want, got)
@@ -428,7 +428,7 @@ func testERC20MultiSigAddedEventPaginationFirstAfterNewestFirst(t *testing.T) {
 	require.NoError(t, err)
 
 	validator := "fc677151d0c93726"
-	got, pageInfo, err := es.GetAddedEvents(ctx, validator, nil, pagination)
+	got, pageInfo, err := es.GetAddedEvents(ctx, validator, "", nil, pagination)
 	require.NoError(t, err)
 	want := entities.ReverseSlice(events[:10])[3:6]
 	assert.Equal(t, want, got)
@@ -452,7 +452,7 @@ func testERC20MultiSigAddedEventPaginationLastBeforeNewestFirst(t *testing.T) {
 	require.NoError(t, err)
 
 	validator := "fc677151d0c93726"
-	got, pageInfo, err := es.GetAddedEvents(ctx, validator, nil, pagination)
+	got, pageInfo, err := es.GetAddedEvents(ctx, validator, "", nil, pagination)
 	require.NoError(t, err)
 	want := entities.ReverseSlice(events[:10])[4:7]
 	assert.Equal(t, want, got)
