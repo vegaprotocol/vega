@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -11,10 +12,13 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
 	vgterm "code.vegaprotocol.io/vega/libs/term"
 	"code.vegaprotocol.io/vega/paths"
+	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	netstore "code.vegaprotocol.io/vega/wallet/network/store/v1"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 	"github.com/spf13/cobra"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 const (
@@ -118,4 +122,20 @@ func autoCompleteLogLevel(cmd *cobra.Command) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func getNetworkVersion(url string) (string, error) {
+	connection, err := grpc.Dial(url, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return "", fmt.Errorf("couldn't initialize gRPC client: %w", err)
+	}
+
+	client := apipb.NewCoreServiceClient(connection)
+	timeout, cancelFn := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelFn()
+	statistics, err := client.Statistics(timeout, &apipb.StatisticsRequest{})
+	if err != nil {
+		return "", fmt.Errorf("couldn't get network statistics: %w", err)
+	}
+	return statistics.Statistics.AppVersion, nil
 }
