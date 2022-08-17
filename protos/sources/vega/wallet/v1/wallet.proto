@@ -39,6 +39,7 @@ message SubmitTransactionRequest {
     commands.v1.ValidatorHeartbeat validator_heartbeat = 2007;
     commands.v1.EthereumKeyRotateSubmission ethereum_key_rotate_submission = 2008;
     commands.v1.ProtocolUpgradeProposal protocol_upgrade_proposal = 2009;
+    commands.v1.IssueSignatures issue_signatures = 2010;
 
     // Oracle commands
     commands.v1.OracleDataSubmission oracle_data_submission = 3001;

@@ -597,11 +597,6 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerAddedBundles(ctx context.Co
 		return nil, errors.New("sql multisig event store not available")
 	}
 
-	nodeID := req.GetNodeId()
-	if len(nodeID) == 0 {
-		return nil, apiError(codes.InvalidArgument, fmt.Errorf("node id must be supplied"))
-	}
-
 	var epochID *int64
 	if len(req.EpochSeq) != 0 {
 		e, err := strconv.ParseInt(req.EpochSeq, 10, 64)
@@ -620,7 +615,7 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerAddedBundles(ctx context.Co
 		}
 	}
 
-	res, pageInfo, err := t.multiSigService.GetAddedEvents(ctx, nodeID, epochID, p)
+	res, pageInfo, err := t.multiSigService.GetAddedEvents(ctx, req.GetNodeId(), req.GetSubmitter(), epochID, p)
 	if err != nil {
 		c := codes.Internal
 		if errors.Is(err, entities.ErrInvalidID) {
@@ -679,13 +674,6 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerRemovedBundles(ctx context.
 		return nil, errors.New("sql multisig event store not available")
 	}
 
-	nodeID := req.GetNodeId()
-	submitter := req.GetSubmitter()
-
-	if len(nodeID) == 0 || len(submitter) == 0 {
-		return nil, apiError(codes.InvalidArgument, fmt.Errorf("nodeId and submitter must be supplied"))
-	}
-
 	var epochID *int64
 	if len(req.EpochSeq) != 0 {
 		e, err := strconv.ParseInt(req.EpochSeq, 10, 64)
@@ -704,7 +692,7 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerRemovedBundles(ctx context.
 		}
 	}
 
-	res, pageInfo, err := t.multiSigService.GetRemovedEvents(ctx, nodeID, submitter, epochID, p)
+	res, pageInfo, err := t.multiSigService.GetRemovedEvents(ctx, req.GetNodeId(), req.GetSubmitter(), epochID, p)
 	if err != nil {
 		c := codes.Internal
 		if errors.Is(err, entities.ErrInvalidID) {

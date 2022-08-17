@@ -59,6 +59,7 @@ message InputData {
     ValidatorHeartbeat validator_heartbeat = 2007;
     EthereumKeyRotateSubmission ethereum_key_rotate_submission = 2008;
     ProtocolUpgradeProposal protocol_upgrade_proposal = 2009;
+    IssueSignatures issue_signatures = 2010;
 
     // Oracles
     OracleDataSubmission oracle_data_submission = 3001;

@@ -98,6 +98,10 @@ func NewTxErrEvent(ctx context.Context, err error, partyID string, tx interface{
 		evt.evt.Transaction = &eventspb.TxErrorEvent_ProtocolUpgradeProposal{
 			ProtocolUpgradeProposal: tv,
 		}
+	case *commandspb.IssueSignatures:
+		evt.evt.Transaction = &eventspb.TxErrorEvent_IssueSignatures{
+			IssueSignatures: tv,
+		}
 	case error: // unsupported command error
 		evt.evt.ErrMsg = fmt.Sprintf("%v - %v", err, tv)
 	}

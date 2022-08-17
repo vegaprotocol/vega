@@ -273,9 +273,12 @@ func NewApp(
 		HandleCheckTx(txn.StateVariableProposalCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.ValidatorHeartbeatCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.RotateEthereumKeySubmissionCommand, app.RequireValidatorPubKey).
-		HandleCheckTx(txn.ProtocolUpgradeCommand, app.RequireValidatorPubKey)
+		HandleCheckTx(txn.ProtocolUpgradeCommand, app.RequireValidatorPubKey).
+		HandleCheckTx(txn.IssueSignatures, app.RequireValidatorPubKey)
 
 	app.abci.
+		HandleDeliverTx(txn.IssueSignatures,
+			app.SendEventOnError(app.DeliverIssueSignatures)).
 		HandleDeliverTx(txn.ProtocolUpgradeCommand,
 			app.SendEventOnError(app.DeliverProtocolUpgradeCommand)).
 		HandleDeliverTx(txn.AnnounceNodeCommand,
@@ -918,6 +921,14 @@ func (app *App) RequireValidatorMasterPubKey(ctx context.Context, tx abci.Tx) er
 		return ErrNodeSignatureWithNonValidatorMasterKey
 	}
 	return nil
+}
+
+func (app *App) DeliverIssueSignatures(ctx context.Context, tx abci.Tx) error {
+	is := &commandspb.IssueSignatures{}
+	if err := tx.Unmarshal(is); err != nil {
+		return err
+	}
+	return app.top.IssueSignatures(ctx, crypto.EthereumChecksumAddress(is.Submitter), is.ValidatorNodeId, is.Kind)
 }
 
 func (app *App) DeliverProtocolUpgradeCommand(ctx context.Context, tx abci.Tx) error {

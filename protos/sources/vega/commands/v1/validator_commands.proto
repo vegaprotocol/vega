@@ -45,6 +45,8 @@ message AnnounceNode {
   Signature ethereum_signature = 11;
   // Signature from the validator made using the vega wallet
   Signature vega_signature = 12;
+  // Ethereum public key to use as a submitter to allow automatic signature generation
+  string submitter_address = 13;
 }
 // Used when a node votes for validating a given resource exists or is valid,
 // for example, an ERC20 deposit is valid and exists on ethereum
@@ -121,6 +123,8 @@ message EthereumKeyRotateSubmission {
   string new_address = 2;
   // Currently used public address
   string current_address = 3;
+  // Ethereum public key to use as a submitter to allow automatic signature generation
+  string submitter_address = 4;
 }
 
 message StateVariableProposal {
@@ -133,4 +137,14 @@ message ProtocolUpgradeProposal {
    uint64 upgrade_block_height = 1;
    // the release tag for the vega binary
    string vega_release_tag = 2;
+}
+
+
+message IssueSignatures {
+  // The ethereum address which will submit the signatures to the smart-contract
+  string submitter = 1;
+  // The kind of signatures to generate, namely for whether a signer is being added or removed
+  NodeSignatureKind kind = 2;
+  // The ID of the node that will be signed in or out of the smartcontract
+  string validator_node_id = 3; // the node for which to emit the signatures.
 }
