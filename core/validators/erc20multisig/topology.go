@@ -38,7 +38,7 @@ var (
 	ErrDuplicatedThresholdEvent = errors.New("duplicated threshold event")
 )
 
-// Witness provide foreign chain resources validations
+// Witness provide foreign chain resources validations.
 type Witness interface {
 	StartCheck(validators.Resource, func(interface{}, bool), time.Time) error
 	RestoreResource(validators.Resource, func(interface{}, bool)) error

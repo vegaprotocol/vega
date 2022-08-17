@@ -48,7 +48,7 @@ type EthereumClientCaller interface {
 	bind.ContractCaller
 }
 
-// EvtForwarder forwarder information to the tendermint chain to be agreed on by validators
+// EvtForwarder forwarder information to the tendermint chain to be agreed on by validators.
 type EvtForwarder interface {
 	ForwardFromSelf(evt *commandspb.ChainEvent)
 }
