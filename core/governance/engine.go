@@ -28,6 +28,7 @@ import (
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+
 	"github.com/pkg/errors"
 )
 
@@ -44,6 +45,8 @@ var (
 	ErrExpectedERC20Asset                        = errors.New("expected an ERC20 asset but was not")
 )
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/governance Markets,StakingAccounts,Assets,TimeService,Witness,NetParams
+
 // Broker - event bus.
 type Broker interface {
 	Send(e events.Event)
@@ -52,7 +55,7 @@ type Broker interface {
 
 // Markets allows to get the market data for use in the market update proposal
 // computation.
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/markets_mock.go -package mocks code.vegaprotocol.io/vega/core/governance Markets
+
 type Markets interface {
 	MarketExists(market string) bool
 	GetMarket(market string) (types.Market, bool)
@@ -65,13 +68,12 @@ type Markets interface {
 }
 
 // StakingAccounts ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/staking_accounts_mock.go -package mocks code.vegaprotocol.io/vega/core/governance StakingAccounts
+
 type StakingAccounts interface {
 	GetAvailableBalance(party string) (*num.Uint, error)
 	GetStakingAssetTotalSupply() *num.Uint
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/core/governance Assets
 type Assets interface {
 	NewAsset(ctx context.Context, ref string, assetDetails *types.AssetDetails) (string, error)
 	Get(assetID string) (*assets.Asset, error)
@@ -82,19 +84,16 @@ type Assets interface {
 }
 
 // TimeService ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/core/governance TimeService
 type TimeService interface {
 	GetTimeNow() time.Time
 }
 
 // Witness ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/witness_mock.go -package mocks code.vegaprotocol.io/vega/core/governance Witness
 type Witness interface {
 	StartCheck(validators.Resource, func(interface{}, bool), time.Time) error
 	RestoreResource(validators.Resource, func(interface{}, bool)) error
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/netparams_mock.go -package mocks code.vegaprotocol.io/vega/core/governance NetParams
 type NetParams interface {
 	Validate(string, string) error
 	Update(context.Context, string, string) error
