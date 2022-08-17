@@ -490,7 +490,9 @@ type Transaction struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// One of the set of Vega commands (proto marshalled).
+	// One of the set of Vega commands.
+	// These bytes are should be built as follow:
+	//   chain_id_as_bytes + \0 character as delimiter + proto_marshalled_command
 	InputData []byte `protobuf:"bytes,1,opt,name=input_data,json=inputData,proto3" json:"input_data,omitempty"`
 	// The signature of the inputData.
 	Signature *Signature `protobuf:"bytes,2,opt,name=signature,proto3" json:"signature,omitempty"`

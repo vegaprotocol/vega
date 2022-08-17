@@ -79,7 +79,9 @@ enum TxVersion {
 
 // Represents a transaction to be sent to Vega.
 message Transaction {
-  // One of the set of Vega commands (proto marshalled).
+  // One of the set of Vega commands.
+  // These bytes are should be built as follow:
+  //   chain_id_as_bytes + \0 character as delimiter + proto_marshalled_command
   bytes input_data = 1;
 
   // The signature of the inputData.

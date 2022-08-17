@@ -87,7 +87,7 @@ clean: ## Remove previous build
 proto: ## build proto definitions
 	buf generate
 
-.PHONY: proto_json
+.PHONY: proto_docs
 proto_docs: ## build proto definitions
 	rm -rf protos/generated
 	buf generate --template buf.gen.swagger.yaml
