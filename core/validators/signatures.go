@@ -27,7 +27,6 @@ import (
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/signatures_mock.go -package mocks code.vegaprotocol.io/vega/core/validators Signatures
 type Signatures interface {
 	EmitPromotionsSignatures(
 		ctx context.Context,
