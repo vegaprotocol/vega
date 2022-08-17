@@ -44,9 +44,10 @@ func SnapshotsHeightsFromTree(tree *iavl.MutableTree) ([]SnapshotData, []Snapsho
 
 		app, err := types.AppStateFromTree(tree.ImmutableTree)
 		if err != nil {
+			hash, _ := tree.Hash()
 			invalidVersions = append(invalidVersions, SnapshotData{
 				Version: v,
-				Hash:    tree.Hash(),
+				Hash:    hash,
 			})
 			continue
 		}
