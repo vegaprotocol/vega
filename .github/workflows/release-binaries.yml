@@ -33,6 +33,8 @@ name: Release vega, data-node and vegawallet binaries
           - [ amd64 ]
           - [ arm64 ]
   push:
+    branches:
+      - develop
     tags:
       - "v*"
 
