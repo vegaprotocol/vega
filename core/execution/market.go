@@ -760,9 +760,10 @@ func (m *Market) updateMarketValueProxy() {
 	if mvwl := m.marketValueWindowLength; m.feeSplitter.Elapsed() > mvwl {
 		m.equityShares.AvgTradeValue(m.feeSplitter.AvgTradeValue())
 		m.feeSplitter.TimeWindowStart(m.timeService.GetTimeNow())
-		m.equityShares.UpdateVirtualStake() // this should always set the vStake >= physical stake?
+		// m.equityShares.UpdateVirtualStake() // this should always set the vStake >= physical stake?
 	}
 
+	m.equityShares.UpdateVStake()
 	// these need to happen every block
 	// but also when new LP is submitted just so we are sure we do
 	// not have a mvp of 0

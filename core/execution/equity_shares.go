@@ -76,19 +76,44 @@ func (es *EquityShares) setOpeningAuctionAVG() {
 	// now set average entry valuation for all of them.
 	factor := es.totalPStake.Div(es.totalVStake)
 	for _, v := range es.lps {
+		if v.stake.GreaterThan(v.vStake) {
+			v.vStake = v.stake
+		}
 		v.avg = v.vStake.Mul(factor) // perhaps we ought to move this to a separate loop once the totals have all been updated
 		// v.avg = es.mvp
 	}
+	es.stateChanged = true
+}
+
+func (es *EquityShares) UpdateVStake() {
+	es.stateChanged = true
+	if es.r.IsZero() {
+		for _, v := range es.lps {
+			v.vStake = v.stake
+		}
+		es.totalVStake = es.totalPStake
+		return
+	}
+	total := num.DecimalZero()
+	factor := num.DecimalFromFloat(1.0).Add(es.r)
+	for _, v := range es.lps {
+		vStake := num.MaxD(v.stake, v.vStake.Mul(factor))
+		v.vStake = vStake
+		total = total.Add(vStake)
+	}
+	es.totalVStake = total
 }
 
 func (es *EquityShares) UpdateVirtualStake() {
+	defer func() {
+		es.stateChanged = true
+		es.recalcAverages()
+	}()
 	if es.mvp.IsZero() || es.pMvp.IsZero() {
 		for _, v := range es.lps {
 			es.totalVStake = es.totalVStake.Sub(v.vStake).Add(v.stake)
 			v.vStake = v.stake
-			v.avg = v.vStake // this might be something we ought to recalculate the normal way... although it should amount to avg == physical stake
 		}
-		es.stateChanged = true
 		return
 	}
 	growth := es.r.Add(num.NewDecimalFromFloat(1.0))
@@ -96,9 +121,15 @@ func (es *EquityShares) UpdateVirtualStake() {
 		vStake := num.MaxD(v.stake, growth.Mul(v.vStake))
 		es.totalVStake = es.totalVStake.Sub(v.vStake).Add(vStake)
 		v.vStake = vStake
-		v.avg = v.vStake.Mul(es.totalPStake.Div(es.totalVStake)) // perhaps we ought to move this to a separate loop once the totals have all been updated
 	}
-	es.stateChanged = true
+	// now that the total Virtual stake has been corrected, update the averages
+}
+
+func (es *EquityShares) recalcAverages() {
+	factor := es.totalPStake.Div(es.totalVStake)
+	for _, v := range es.lps {
+		v.avg = v.vStake.Mul(factor)
+	}
 }
 
 func (es *EquityShares) UpdateVirtualStakeOld() {
@@ -130,9 +161,8 @@ func (es *EquityShares) AvgTradeValue(avg num.Decimal) *EquityShares {
 		es.r = growth
 	} else {
 		es.r = num.DecimalZero()
-		es.stateChanged = true
 	}
-	es.stateChanged = (es.stateChanged || !avg.Equals(es.mvp) || !es.pMvp.Equals(es.mvp))
+	es.stateChanged = true
 	es.pMvp = es.mvp
 	es.mvp = avg
 	return es
@@ -159,10 +189,6 @@ func (es *EquityShares) WithMVP(mvp num.Decimal) *EquityShares {
 
 // SetPartyStake sets LP values for a given party.
 func (es *EquityShares) SetPartyStake(id string, newStakeU *num.Uint) {
-	if !es.openingAuctionEnded {
-		defer es.setOpeningAuctionAVG()
-	}
-
 	v, found := es.lps[id]
 	if newStakeU == nil || newStakeU.IsZero() {
 		if found {
@@ -173,10 +199,14 @@ func (es *EquityShares) SetPartyStake(id string, newStakeU *num.Uint) {
 		es.stateChanged = (es.stateChanged || found)
 		return
 	}
+	newStake := num.DecimalFromUint(newStakeU)
+	if found && newStake.Equals(v.stake) {
+		// stake didn't change? there's nothing to do really
+		return
+	}
 	defer func() {
 		es.stateChanged = true
 	}()
-	newStake := num.DecimalFromUint(newStakeU)
 	// first time we set the newStake and mvp as avg.
 	if !found {
 		avg := es.mvp
@@ -194,10 +224,12 @@ func (es *EquityShares) SetPartyStake(id string, newStakeU *num.Uint) {
 	}
 
 	delta := newStake.Sub(v.stake)
-	if newStake.LessThanOrEqual(v.stake) {
+	if newStake.LessThan(v.stake) {
+		// commitment decreased
 		es.totalVStake = es.totalVStake.Sub(v.vStake)
 		es.totalPStake = es.totalPStake.Sub(v.stake)
-		// vStake * (newStake/oldStake)
+		// vStake * (newStake/oldStake) or vStake * (old_stake + (-delta))/old_stake
+		// e.g. 8000 => 5000 == vStakle * ((8000 + (-3000))/8000) == vStake * (5000/8000)
 		v.vStake = v.vStake.Mul(newStake.Div(v.stake))
 		v.stake = newStake
 		es.totalVStake = es.totalVStake.Add(v.vStake)
@@ -209,17 +241,11 @@ func (es *EquityShares) SetPartyStake(id string, newStakeU *num.Uint) {
 	es.totalVStake = es.totalVStake.Add(delta)
 	es.totalPStake = es.totalPStake.Sub(v.stake).Add(newStake)
 	// stakes were originally assigned _after_ the mustEquity call
+	// average was calculated in the if es.openingAuctionEnded bit
+	// v.avg = v.vStake.Mul(es.totalPStake.Div(es.totalVStake))
 	v.vStake = v.vStake.Add(delta) // increase
 	v.stake = newStake
-	// average was calculated in the if es.openingAuctionEnded bit
 	v.avg = v.vStake.Mul(es.totalPStake.Div(es.totalVStake))
-	// delta will allways be > 0 at this point
-	if es.openingAuctionEnded {
-		eq := es.mustEquity(id)
-		v.share = eq
-		// v.avg = ((eq * v.avg) + (delta * es.mvp)) / (eq + v.stake)
-		// v.avg = (eq.Mul(v.avg).Add(delta.Mul(es.mvp))).Div(eq.Add(v.stake))
-	}
 }
 
 // AvgEntryValuation returns the Average Entry Valuation for a given party.

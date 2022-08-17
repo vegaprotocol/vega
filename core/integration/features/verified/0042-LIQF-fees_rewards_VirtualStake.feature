@@ -325,7 +325,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | sell | 1001  | 14     |
 
     # roughly 20 minutes
-    When the network moves ahead "21m" with block duration of "2s"
+    When the network moves ahead "19m" with block duration of "2s"
     #Then time is updated to "2019-11-30T00:20:10Z"
     #week2
   
@@ -446,7 +446,8 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share    | average entry valuation |
       | lp1   | 0.7267441860465116   | 5000                    |
-      | lp2   | 0.2732558139534884   | 1880                    |
+      #| lp2   | 0.2732558139534884   | 1880                    |
+      | lp2   | 0.2732558139534884   | 1880.00000000000001     |
 
     Then time is updated to "2019-11-30T10:22:10Z"
     #week6
