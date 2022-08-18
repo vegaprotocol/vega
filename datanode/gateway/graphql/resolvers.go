@@ -28,8 +28,8 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	"code.vegaprotocol.io/vega/protos/vega"
 	types "code.vegaprotocol.io/vega/protos/vega"
-	vega "code.vegaprotocol.io/vega/protos/vega"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
@@ -588,6 +588,88 @@ func (r *myQueryResolver) Erc20WithdrawalApproval(ctx context.Context, wid strin
 		Signatures:    res.Signatures,
 		TargetAddress: res.TargetAddress,
 		Creation:      fmt.Sprintf("%d", res.Creation),
+	}, nil
+}
+
+func (r *myQueryResolver) Erc20ListAssetBundle(ctx context.Context, assetID string) (*Erc20ListAssetBundle, error) {
+	res, err := r.tradingDataClientV2.GetERC20ListAssetBundle(
+		ctx, &v2.GetERC20ListAssetBundleRequest{AssetId: assetID})
+	if err != nil {
+		return nil, err
+	}
+
+	return &Erc20ListAssetBundle{
+		AssetSource: res.AssetSource,
+		VegaAssetID: res.VegaAssetId,
+		Nonce:       res.Nonce,
+		Signatures:  res.Signatures,
+	}, nil
+}
+
+func (r *myQueryResolver) Erc20MultiSigSignerAddedBundles(ctx context.Context, nodeID string, epochSeq string, pagination *v2.Pagination) (*ERC20MultiSigSignerAddedConnection, error) {
+	res, err := r.tradingDataClientV2.GetERC20MultiSigSignerAddedBundles(
+		ctx, &v2.GetERC20MultiSigSignerAddedBundlesRequest{
+			NodeId:     nodeID,
+			EpochSeq:   epochSeq,
+			Pagination: pagination,
+		})
+	if err != nil {
+		return nil, err
+	}
+
+	edges := make([]*ERC20MultiSigSignerAddedBundleEdge, 0, len(res.Bundles.Edges))
+
+	for _, edge := range res.Bundles.Edges {
+		edges = append(edges, &ERC20MultiSigSignerAddedBundleEdge{
+			Node: &ERC20MultiSigSignerAddedBundle{
+				NewSigner:  edge.Node.NewSigner,
+				Submitter:  edge.Node.Submitter,
+				Nonce:      edge.Node.Nonce,
+				Timestamp:  fmt.Sprint(edge.Node.Timestamp),
+				Signatures: edge.Node.Signatures,
+				EpochSeq:   edge.Node.EpochSeq,
+			},
+			Cursor: edge.Cursor,
+		})
+	}
+
+	return &ERC20MultiSigSignerAddedConnection{
+		Edges:    edges,
+		PageInfo: res.Bundles.PageInfo,
+	}, nil
+}
+
+func (r *myQueryResolver) Erc20MultiSigSignerRemovedBundles(ctx context.Context, nodeID string, submitter string, epochSeq string, pagination *v2.Pagination) (*ERC20MultiSigSignerRemovedConnection, error) {
+	res, err := r.tradingDataClientV2.GetERC20MultiSigSignerRemovedBundles(
+		ctx, &v2.GetERC20MultiSigSignerRemovedBundlesRequest{
+			NodeId:     nodeID,
+			Submitter:  submitter,
+			EpochSeq:   epochSeq,
+			Pagination: pagination,
+		})
+	if err != nil {
+		return nil, err
+	}
+
+	edges := make([]*ERC20MultiSigSignerRemovedBundleEdge, 0, len(res.Bundles.Edges))
+
+	for _, edge := range res.Bundles.Edges {
+		edges = append(edges, &ERC20MultiSigSignerRemovedBundleEdge{
+			Node: &ERC20MultiSigSignerRemovedBundle{
+				OldSigner:  edge.Node.OldSigner,
+				Submitter:  edge.Node.Submitter,
+				Nonce:      edge.Node.Nonce,
+				Timestamp:  fmt.Sprint(edge.Node.Timestamp),
+				Signatures: edge.Node.Signatures,
+				EpochSeq:   edge.Node.EpochSeq,
+			},
+			Cursor: edge.Cursor,
+		})
+	}
+
+	return &ERC20MultiSigSignerRemovedConnection{
+		Edges:    edges,
+		PageInfo: res.Bundles.PageInfo,
 	}, nil
 }
 

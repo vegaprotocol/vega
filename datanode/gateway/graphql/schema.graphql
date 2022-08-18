@@ -542,6 +542,32 @@ type Query {
     withdrawalId: ID!
   ): Erc20WithdrawalApproval
 
+  erc20MultiSigSignerAddedBundles(
+    "The node id of the validator of which a signature bundle is required"
+    nodeId: ID!
+    "The epoch which generated the bundle i.e the epoch in which the node was demoted from a tendermint validator"
+    epochSeq: String!
+    "Pagination"
+    pagination: Pagination
+  ): ERC20MultiSigSignerAddedConnection!
+
+  erc20MultiSigSignerRemovedBundles(
+    "The node id of the validator of which a signature bundle is required"
+    nodeId: ID!
+    "The ethereum address of the validator which will submit the bundle"
+    submitter: String!
+    "The epoch which generated the bundle i.e the epoch in which the node was demoted from a tendermint validator"
+    epochSeq: String!
+    "Pagination"
+    pagination: Pagination
+  ): ERC20MultiSigSignerRemovedConnection!
+
+  "find an erc20 signature bundle using its asset ID"
+  erc20ListAssetBundle(
+    "ID of the asset"
+    assetId: ID!
+  ): Erc20ListAssetBundle!
+
   "find a deposit using its ID"
   deposit("ID of the Deposit" id: ID!): Deposit
 
@@ -2329,6 +2355,72 @@ type Erc20WithdrawalApproval {
   targetAddress: String!
   "Timestamp at which the withdrawal was created"
   creation: String!
+}
+
+type ERC20MultiSigSignerAddedConnection {
+  edges: [ERC20MultiSigSignerAddedBundleEdge]
+  pageInfo: PageInfo
+}
+
+type ERC20MultiSigSignerAddedBundleEdge {
+  node: ERC20MultiSigSignerAddedBundle!
+  cursor: String!
+}
+
+type ERC20MultiSigSignerAddedBundle {
+  "The ethereum address of the signer to be removed"
+  newSigner: String!
+  "The ethereum address of the submitter"
+  submitter: String!
+  "The nonce used in the signing operation"
+  nonce: String!
+  "unixnano timestamp for when the validator was added"
+  timestamp: String!
+  "The bundle of signatures from current validators to sign in the new signer"
+  signatures: String!
+  "The epoch in which the validator was added"
+  epochSeq: String!
+}
+
+type ERC20MultiSigSignerRemovedConnection {
+  "The list of signer bundles for that validator"
+  edges: [ERC20MultiSigSignerRemovedBundleEdge]
+  "The pagination information"
+  pageInfo: PageInfo
+}
+
+type ERC20MultiSigSignerRemovedBundleEdge {
+  node: ERC20MultiSigSignerRemovedBundle!
+  cursor: String!
+}
+
+type ERC20MultiSigSignerRemovedBundle {
+  "The ethereum address of the signer to be removed"
+  oldSigner: String!
+  "The ethereum address of the submitter"
+  submitter: String!
+  "The nonce used in the signing operation"
+  nonce: String!
+  "Unix-nano timestamp for when the validator was added"
+  timestamp: String!
+  "The bundle of signatures from current validators to sign in the new signer"
+  signatures: String!
+  "The epoch in which the validator was removed"
+  epochSeq: String!
+}
+
+type Erc20ListAssetBundle {
+  "The source asset in the ethereum network"
+  assetSource: String!
+  "The ID of the vega asset"
+  vegaAssetId: String!
+  "The nonce to be used in the request"
+  nonce: String!
+  """
+  Signature aggregate from the nodes, in the following format:
+  0x + sig1 + sig2 + ... + sigN
+  """
+  signatures: String!
 }
 
 "The details of a withdrawal processed by Vega"
