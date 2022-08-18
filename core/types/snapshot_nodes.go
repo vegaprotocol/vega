@@ -391,6 +391,8 @@ type AuctionState struct {
 type FeeSplitter struct {
 	TimeWindowStart time.Time
 	TradeValue      *num.Uint
+	Avg             num.Decimal
+	Window          uint64
 }
 
 type EpochState struct {
@@ -2811,9 +2813,12 @@ func (p PriceMonitor) IntoProto() *snapshot.PriceMonitor {
 
 func FeeSplitterFromProto(fs *snapshot.FeeSplitter) *FeeSplitter {
 	tv, _ := num.UintFromString(fs.TradeValue, 10)
+	avg, _ := num.DecimalFromString(fs.Avg)
 	ret := FeeSplitter{
 		TimeWindowStart: time.Unix(0, fs.TimeWindowStart),
 		TradeValue:      tv,
+		Avg:             avg,
+		Window:          fs.Window,
 	}
 
 	return &ret
@@ -2823,6 +2828,8 @@ func (f FeeSplitter) IntoProto() *snapshot.FeeSplitter {
 	ret := snapshot.FeeSplitter{
 		TimeWindowStart: f.TimeWindowStart.UnixNano(),
 		TradeValue:      f.TradeValue.String(),
+		Avg:             f.Avg.String(),
+		Window:          f.Window,
 	}
 
 	return &ret

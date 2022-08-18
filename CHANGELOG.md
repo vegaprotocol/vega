@@ -76,6 +76,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5893](https://github.com/vegaprotocol/vega/issues/5893) - Remove total supply from assets
 - [5752](https://github.com/vegaprotocol/vega/issues/5752) - Remove URL and Hash from proposal rationale, add Title
 - [5802](https://github.com/vegaprotocol/vega/issues/5802) - Introduce transaction version 3 that encode the chain ID in its input data to protect against transaction replay
+- [5358](https://github.com/vegaprotocol/vega/issues/5358) - Port equity like shares update to new structure
 
 ### 🐛 Fixes
 - [5571](https://github.com/vegaprotocol/vega/issues/5571) - Restore pending assets status correctly after snapshot restore
