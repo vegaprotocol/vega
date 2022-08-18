@@ -183,6 +183,20 @@ func TestPromotionSignatures(t *testing.T) {
 		assert.Equal(t, remove3.ERC20MultiSigSignerRemoved().Nonce, remove4.ERC20MultiSigSignerRemoved().Nonce)
 	})
 
+	t.Run("test snapshots", func(t *testing.T) {
+		state := signatures.SerialisePendingSignatures()
+		snap := getTestSignatures(t)
+		snap.RestorePendingSignatures(state)
+
+		snap.broker.EXPECT().SendBatch(gomock.Any()).Times(len(toAsk) + 1)
+
+		// check the pending signatures still exist (we get no error) and that "already issued" is restored (notary mock should not expect anything)
+		require.NoError(t, snap.EmitValidatorAddedSignatures(ctx, "0x7629Faf5B7a3BB167B6f2F86DB5fB7f13B20Ee90", "4554375ce61b6828c6f7b625b7735034496b7ea19951509cccf4eb2ba35011b0", currentTime))
+		for _, v := range toAsk {
+			require.NoError(t, snap.EmitValidatorRemovedSignatures(ctx, v, "95893347980299679883f817f118718f949826d1a0a1c2e4f22ba5f0cd6d1f5d", currentTime))
+		}
+	})
+
 	t.Run("clear stale remove signatures", func(t *testing.T) {
 		// return that the signers are not on the contract
 		signatures.multisigTopology.EXPECT().IsSigner(gomock.Any()).Return(false).Times(3)
