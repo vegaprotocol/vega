@@ -2,6 +2,12 @@
 name: Release vega, data-node and vegawallet binaries
 
 "on":
+  push:
+    branches:
+      - develop
+    tags:
+      - "v*"
+
   workflow_dispatch:
     inputs:
       publish:
@@ -32,17 +38,27 @@ name: Release vega, data-node and vegawallet binaries
           - [amd64, arm64]
           - [amd64]
           - [arm64]
-  push:
-    branches:
-      - develop
-    tags:
-      - "v*"
+      os:
+        description: 'OS to build and publish'
+        required: false
+        type: choice
+        options:
+          - [linux, macos, windows]
+          - [linux]
+          - [macos]
+          - [windows]
+      disableTests:
+        description: 'Skip running tests'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   #
   # Linux
   #
   release-linux:
+    if: ${{ contains(fromJson(inputs.os || '["linux"]'), 'linux') }}
     name: Release ${{ matrix.app }} on Linux ${{ matrix.arch }}
     runs-on: ubuntu-latest
     strategy:
@@ -75,11 +91,16 @@ jobs:
         run: go get -v -t -d ./...
 
       - name: Run tests
-        if: ${{ env.GOARCH == 'amd64' }}
+        if: ${{ env.GOARCH == 'amd64' && inputs.disableTests != true }}
         run: go test -v ./...
 
       - name: Build binary
         run: go build -o build/${{ matrix.app }} ./cmd/${{ matrix.app }}
+
+      - name: Check version
+        if: ${{ env.GOARCH == 'amd64' }}
+        working-directory: build
+        run: ./${{ matrix.app }} version
 
       - name: Bundle binary in archive
         uses: thedoctor0/zip-release@master
@@ -103,6 +124,7 @@ jobs:
   # macOS
   #
   release-macos:
+    if: ${{ contains(fromJson(inputs.os || '["macos"]'), 'macos') }}
     name: Release ${{ matrix.app }} on MacOS ${{ matrix.arch }}
     runs-on: macos-latest
     strategy:
@@ -136,7 +158,7 @@ jobs:
         run: go get -v -t -d ./...
 
       - name: Run tests
-        if: ${{ env.GOARCH == 'amd64' }}
+        if: ${{ env.GOARCH == 'amd64' && inputs.disableTests != true }}
         run: go test -v ./...
 
       - name: Build binary
@@ -172,6 +194,11 @@ jobs:
         if: ${{ matrix.app == 'vegawallet' }}
         working-directory: build
         run: codesign --verbose --verify --strict --deep ${{ matrix.app }}
+
+      - name: Check version
+        if: ${{ env.GOARCH == 'amd64' }}
+        working-directory: build
+        run: ./${{ matrix.app }} version
 
       - name: Bundle binary in archive
         uses: thedoctor0/zip-release@master
@@ -215,18 +242,17 @@ jobs:
   # Windows
   #
   release-windows:
+    if: ${{ contains(fromJson(inputs.os || '["windows"]'), 'windows') }}
     name: Release ${{ matrix.app }} on Windows ${{ matrix.arch }}
     runs-on: windows-2019
     strategy:
       fail-fast: false
       matrix:
         arch: ${{ fromJson(inputs.archs || '["amd64", "arm64"]') }}
-        app: ${{ fromJson(inputs.apps || '["vega", "data-node", "vegawallet"]') }}
+        app: ${{ fromJson(inputs.apps || '["vegawallet"]') }}
         exclude:
-          - arch: arm64
-            app: vega
-          - arch: arm64
-            app: data-node
+          - app: vega
+          - app: data-node
     env:
       GOOS: windows
       GOARCH: ${{ matrix.arch }}
@@ -252,7 +278,7 @@ jobs:
         run: go get -v -t -d ./...
 
       - name: Run tests
-        if: ${{ env.GOARCH == 'amd64' }}
+        if: ${{ env.GOARCH == 'amd64' && inputs.disableTests != true }}
         run: go test -v ./...
 
       - name: Build binary
@@ -268,6 +294,11 @@ jobs:
           certificatesha1: ${{ secrets.WINDOWS_CERTIFICATE_HASH }}
           folder: "build"
           timestampUrl: "http://timestamp.sectigo.com"
+
+      - name: Check version
+        if: ${{ env.GOARCH == 'amd64' }}
+        working-directory: build
+        run: ${{ matrix.app }}.exe version
 
       - name: Bundle binary in archive
         uses: thedoctor0/zip-release@master
