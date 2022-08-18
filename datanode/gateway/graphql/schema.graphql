@@ -2949,14 +2949,14 @@ type NewAsset {
   "The precision of the asset"
   decimals: Int!
 
-  "The minimum stake to become a liquidity provider for any market using this asset for settlement"
-  minLpStake: String!
+  "The minimum economically meaningful amount of this specific asset"
+  quantum: String!
 
   "The source of the new asset"
   source: AssetSource!
 }
 
-"A new asset proposal change"
+"A proposal to update an asset's details"
 type UpdateAsset {
   "The full name of the asset (e.g: Great British Pound)"
   name: String!
@@ -2964,8 +2964,8 @@ type UpdateAsset {
   "The symbol of the asset (e.g: GBP)"
   symbol: String!
 
-  "The minimum stake to become a liquidity provider for any market using this asset for settlement"
-  minLpStake: String!
+  "The minimum economically meaningful amount of this specific asset"
+  quantum: String!
 
   "The source of the updated asset"
   source: UpdateAssetSource!
