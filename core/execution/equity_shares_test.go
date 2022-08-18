@@ -93,8 +93,7 @@ func testAvgEntryValuationGrowth(t *testing.T) {
 	tradeVal = num.DecimalFromFloat(1000)
 	es.AvgTradeValue(tradeVal)
 	// avg should line up with physical stake once more
-	lps[0].avg = num.DecimalFromFloat(100)
-	lps[1].avg = num.DecimalFromFloat(150)
+	// lps[1].avg = num.DecimalFromFloat(150)
 	for _, l := range lps {
 		aev := es.AvgEntryValuation(l.id)
 		require.True(t, l.avg.Equals(es.AvgEntryValuation(l.id)), fmt.Sprintf("FAIL => expected %s, got %s", l.avg, aev))
