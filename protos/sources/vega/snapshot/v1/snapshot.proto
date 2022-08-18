@@ -408,6 +408,8 @@ message EquityShare {
 message FeeSplitter {
   int64  time_window_start = 1;
   string trade_value = 2;
+  string avg = 3;
+  uint64 window = 4;
 }
 
 message Market {

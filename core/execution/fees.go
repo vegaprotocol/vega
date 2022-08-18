@@ -111,6 +111,8 @@ func NewFeeSplitterFromSnapshot(fs *types.FeeSplitter, now time.Time) *FeeSplitt
 		currentTime:     now,
 		tradeValue:      fs.TradeValue,
 		changed:         true,
+		avg:             fs.Avg,
+		window:          fs.window,
 	}
 }
 
@@ -119,6 +121,8 @@ func (fs *FeeSplitter) GetState() *types.FeeSplitter {
 	return &types.FeeSplitter{
 		TimeWindowStart: fs.timeWindowStart,
 		TradeValue:      fs.tradeValue,
+		Avg:             fs.avg,
+		Window:          fs.window,
 	}
 }
 
