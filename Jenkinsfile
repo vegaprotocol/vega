@@ -109,77 +109,32 @@ pipeline {
         // Begin COMPILE
         //
         stage('Compile') {
-            matrix {
-                axes {
-                    axis {
-                        name 'GOOS'
-                        values 'linux', 'darwin', 'windows'
-                    }
-                    axis {
-                        name 'GOARCH'
-                        values 'amd64', 'arm64'
-                    }
+            options { retry(3) }
+            steps {
+                sh 'printenv'
+                dir('vega') {
+                    sh label: 'Compile', script: """#!/bin/bash -e
+                        go build -v \
+                            -o ../build/ \
+                            ./cmd/vega \
+                            ./cmd/data-node \
+                            ./cmd/vegawallet
+                    """
+                    sh label: 'check for modifications', script: 'git diff'
                 }
-                excludes {
-                    exclude {
-                        axis {
-                            name 'GOOS'
-                            values 'windows'
-                        }
-                        axis {
-                            name 'GOARCH'
-                            values 'arm64'
-                        }
-                    }
-                }
-                when {
-                    anyOf {
-                        expression { !isPRBuild() }
-                        allOf {
-                            environment name: 'GOOS', value: 'linux'
-                            environment name: 'GOARCH', value: 'amd64'
-                        }
-                    }
-                }
-                stages {
-                    stage('Build') {
-                        environment {
-                            GOOS         = "${GOOS}"
-                            GOARCH       = "${GOARCH}"
-                        }
-                        options { retry(3) }
-                        steps {
-                            sh 'printenv'
-                            dir('vega') {
-                                sh label: 'Compile', script: """#!/bin/bash -e
-                                    go build -v \
-                                        -o ../build-${GOOS}-${GOARCH}/ \
-                                        ./cmd/vega \
-                                        ./cmd/data-node \
-                                        ./cmd/vegawallet
-                                """
-                                sh label: 'check for modifications', script: 'git diff'
-                            }
-                            dir("build-${GOOS}-${GOARCH}") {
-                                sh label: 'list files', script: '''#!/bin/bash -e
-                                    pwd
-                                    ls -lah
-                                '''
-                                sh label: 'Sanity check', script: '''#!/bin/bash -e
-                                    file *
-                                '''
-                                script {
-                                    if ( GOOS == "linux" && GOARCH == "amd64" ) {
-                                        sh label: 'get version', script: '''#!/bin/bash -e
-                                            ./vega version
-                                            ./data-node version
-                                            ./vegawallet version
-                                        '''
-                                    }
-                                }
-                            }
-                        }
-                    }
+                dir("build") {
+                    sh label: 'list files', script: '''#!/bin/bash -e
+                        pwd
+                        ls -lah
+                    '''
+                    sh label: 'Sanity check', script: '''#!/bin/bash -e
+                        file *
+                    '''
+                    sh label: 'get version', script: '''#!/bin/bash -e
+                        ./vega version
+                        ./data-node version
+                        ./vegawallet version
+                    '''
                 }
             }
         }
@@ -639,52 +594,6 @@ pipeline {
                                 }
                             }
                         }
-                    }
-                }
-
-
-                stage('release to GitHub') {
-                    when {
-                        buildingTag()
-                    }
-                    environment {
-                        RELEASE_URL = "https://github.com/vegaprotocol/vega/releases/tag/${TAG_NAME}"
-                    }
-                    options { retry(3) }
-                    steps {
-                        sh label: 'copy artefacts to publish to one directory', script: '''#!/bin/bash -e
-                            mkdir release
-                            # linux
-                            cp ./build-linux-amd64/vega ./release/vega-linux-amd64
-                            cp ./build-linux-amd64/data-node ./release/data-node-linux-amd64
-                            cp ./build-linux-arm64/vega ./release/vega-linux-arm64
-                            cp ./build-linux-arm64/data-node ./release/data-node-linux-arm64
-                            # MacOS
-                            cp ./build-darwin-amd64/vega ./release/vega-macos-amd64
-                            cp ./build-darwin-amd64/data-node ./release/data-node-macos-amd64
-                            cp ./build-darwin-arm64/vega ./release/vega-macos-arm64
-                            cp ./build-darwin-arm64/data-node ./release/data-node-macos-arm64
-                            # Windows
-                            cp ./build-windows-amd64/vega.exe ./release/vega-windows-amd64.exe
-                            cp ./build-windows-amd64/data-node.exe ./release/data-node-windows-amd64.exe
-                        '''
-                        dir('vega') {
-                            script {
-                                withGHCLI('credentialsId': 'github-vega-ci-bot-artifacts') {
-                                    sh label: 'Upload artifacts', script: '''#!/bin/bash -e
-                                        [[ $TAG_NAME =~ '-pre' ]] && prerelease='--prerelease' || prerelease=''
-
-                                        gh release view $TAG_NAME && gh release upload $TAG_NAME ../release/* \
-                                            || gh release create $TAG_NAME $prerelease ../release/*
-                                    '''
-                                }
-                            }
-                        }
-                        slackSend(
-                            channel: "#tradingcore-notify",
-                            color: "good",
-                            message: ":rocket: Vega Core » Published new version to GitHub <${RELEASE_URL}|${TAG_NAME}>",
-                        )
                     }
                 }
             }
