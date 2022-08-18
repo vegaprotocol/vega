@@ -665,11 +665,11 @@ type ComplexityRoot struct {
 	}
 
 	NewAsset struct {
-		Decimals   func(childComplexity int) int
-		MinLpStake func(childComplexity int) int
-		Name       func(childComplexity int) int
-		Source     func(childComplexity int) int
-		Symbol     func(childComplexity int) int
+		Decimals func(childComplexity int) int
+		Name     func(childComplexity int) int
+		Quantum  func(childComplexity int) int
+		Source   func(childComplexity int) int
+		Symbol   func(childComplexity int) int
 	}
 
 	NewFreeform struct {
@@ -1409,10 +1409,10 @@ type ComplexityRoot struct {
 	}
 
 	UpdateAsset struct {
-		MinLpStake func(childComplexity int) int
-		Name       func(childComplexity int) int
-		Source     func(childComplexity int) int
-		Symbol     func(childComplexity int) int
+		Name    func(childComplexity int) int
+		Quantum func(childComplexity int) int
+		Source  func(childComplexity int) int
+		Symbol  func(childComplexity int) int
 	}
 
 	UpdateERC20 struct {
@@ -1672,7 +1672,7 @@ type NewAssetResolver interface {
 	Name(ctx context.Context, obj *vega.NewAsset) (string, error)
 	Symbol(ctx context.Context, obj *vega.NewAsset) (string, error)
 	Decimals(ctx context.Context, obj *vega.NewAsset) (int, error)
-	MinLpStake(ctx context.Context, obj *vega.NewAsset) (string, error)
+	Quantum(ctx context.Context, obj *vega.NewAsset) (string, error)
 	Source(ctx context.Context, obj *vega.NewAsset) (AssetSource, error)
 }
 type NewFreeformResolver interface {
@@ -1976,7 +1976,7 @@ type TransferResolver interface {
 type UpdateAssetResolver interface {
 	Name(ctx context.Context, obj *vega.UpdateAsset) (string, error)
 	Symbol(ctx context.Context, obj *vega.UpdateAsset) (string, error)
-	MinLpStake(ctx context.Context, obj *vega.UpdateAsset) (string, error)
+	Quantum(ctx context.Context, obj *vega.UpdateAsset) (string, error)
 	Source(ctx context.Context, obj *vega.UpdateAsset) (UpdateAssetSource, error)
 }
 type UpdateMarketResolver interface {
@@ -4315,19 +4315,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.NewAsset.Decimals(childComplexity), true
 
-	case "NewAsset.minLpStake":
-		if e.complexity.NewAsset.MinLpStake == nil {
-			break
-		}
-
-		return e.complexity.NewAsset.MinLpStake(childComplexity), true
-
 	case "NewAsset.name":
 		if e.complexity.NewAsset.Name == nil {
 			break
 		}
 
 		return e.complexity.NewAsset.Name(childComplexity), true
+
+	case "NewAsset.quantum":
+		if e.complexity.NewAsset.Quantum == nil {
+			break
+		}
+
+		return e.complexity.NewAsset.Quantum(childComplexity), true
 
 	case "NewAsset.source":
 		if e.complexity.NewAsset.Source == nil {
@@ -8033,19 +8033,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TransferResponses.Responses(childComplexity), true
 
-	case "UpdateAsset.minLpStake":
-		if e.complexity.UpdateAsset.MinLpStake == nil {
-			break
-		}
-
-		return e.complexity.UpdateAsset.MinLpStake(childComplexity), true
-
 	case "UpdateAsset.name":
 		if e.complexity.UpdateAsset.Name == nil {
 			break
 		}
 
 		return e.complexity.UpdateAsset.Name(childComplexity), true
+
+	case "UpdateAsset.quantum":
+		if e.complexity.UpdateAsset.Quantum == nil {
+			break
+		}
+
+		return e.complexity.UpdateAsset.Quantum(childComplexity), true
 
 	case "UpdateAsset.source":
 		if e.complexity.UpdateAsset.Source == nil {
@@ -11380,14 +11380,14 @@ type NewAsset {
   "The precision of the asset"
   decimals: Int!
 
-  "The minimum stake to become a liquidity provider for any market using this asset for settlement"
-  minLpStake: String!
+  "The minimum economically meaningful amount of this specific asset"
+  quantum: String!
 
   "The source of the new asset"
   source: AssetSource!
 }
 
-"A new asset proposal change"
+"A proposal to update an asset's details"
 type UpdateAsset {
   "The full name of the asset (e.g: Great British Pound)"
   name: String!
@@ -11395,8 +11395,8 @@ type UpdateAsset {
   "The symbol of the asset (e.g: GBP)"
   symbol: String!
 
-  "The minimum stake to become a liquidity provider for any market using this asset for settlement"
-  minLpStake: String!
+  "The minimum economically meaningful amount of this specific asset"
+  quantum: String!
 
   "The source of the updated asset"
   source: UpdateAssetSource!
@@ -26010,7 +26010,7 @@ func (ec *executionContext) _NewAsset_decimals(ctx context.Context, field graphq
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _NewAsset_minLpStake(ctx context.Context, field graphql.CollectedField, obj *vega.NewAsset) (ret graphql.Marshaler) {
+func (ec *executionContext) _NewAsset_quantum(ctx context.Context, field graphql.CollectedField, obj *vega.NewAsset) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -26028,7 +26028,7 @@ func (ec *executionContext) _NewAsset_minLpStake(ctx context.Context, field grap
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.NewAsset().MinLpStake(rctx, obj)
+		return ec.resolvers.NewAsset().Quantum(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -42753,7 +42753,7 @@ func (ec *executionContext) _UpdateAsset_symbol(ctx context.Context, field graph
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UpdateAsset_minLpStake(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateAsset) (ret graphql.Marshaler) {
+func (ec *executionContext) _UpdateAsset_quantum(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateAsset) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -42771,7 +42771,7 @@ func (ec *executionContext) _UpdateAsset_minLpStake(ctx context.Context, field g
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.UpdateAsset().MinLpStake(rctx, obj)
+		return ec.resolvers.UpdateAsset().Quantum(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -51566,7 +51566,7 @@ func (ec *executionContext) _NewAsset(ctx context.Context, sel ast.SelectionSet,
 				return innerFunc(ctx)
 
 			})
-		case "minLpStake":
+		case "quantum":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -51575,7 +51575,7 @@ func (ec *executionContext) _NewAsset(ctx context.Context, sel ast.SelectionSet,
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._NewAsset_minLpStake(ctx, field, obj)
+				res = ec._NewAsset_quantum(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -59805,7 +59805,7 @@ func (ec *executionContext) _UpdateAsset(ctx context.Context, sel ast.SelectionS
 				return innerFunc(ctx)
 
 			})
-		case "minLpStake":
+		case "quantum":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -59814,7 +59814,7 @@ func (ec *executionContext) _UpdateAsset(ctx context.Context, sel ast.SelectionS
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._UpdateAsset_minLpStake(ctx, field, obj)
+				res = ec._UpdateAsset_quantum(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
