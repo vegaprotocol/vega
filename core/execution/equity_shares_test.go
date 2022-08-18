@@ -34,7 +34,6 @@ import (
 
 func TestEquityShares(t *testing.T) {
 	t.Run("AvgEntryValuation with trade value", testAvgEntryValuationGrowth)
-	// t.Run("AverageEntryValuation", testAverageEntryValuation)
 	t.Run("SharesExcept", testShares)
 	t.Run("WithinMarket", testWithinMarket)
 }
@@ -100,30 +99,6 @@ func testAvgEntryValuationGrowth(t *testing.T) {
 		aev := es.AvgEntryValuation(l.id)
 		require.True(t, l.avg.Equals(es.AvgEntryValuation(l.id)), fmt.Sprintf("FAIL => expected %s, got %s", l.avg, aev))
 	}
-}
-
-// TestEquitySharesAverageEntryValuation is based on the spec example:
-// https://github.com/vegaprotocol/product/blob/02af55e048a92a204e9ee7b7ae6b4475a198c7ff/specs/0042-setting-fees-and-rewarding-lps.md#calculating-liquidity-provider-equity-like-share
-func testAverageEntryValuation(t *testing.T) {
-	es := execution.NewEquityShares(num.DecimalFromFloat(100))
-
-	es.SetPartyStake("LP1", num.NewUint(100))
-	require.EqualValues(t, num.DecimalFromFloat(100), es.AvgEntryValuation("LP1"))
-	es.OpeningAuctionEnded()
-
-	es.SetPartyStake("LP1", num.NewUint(200))
-	require.True(t, num.DecimalFromFloat(100).Equal(es.AvgEntryValuation("LP1")))
-
-	es.WithMVP(num.DecimalFromFloat(200)).SetPartyStake("LP2", num.NewUint(200))
-	require.True(t, num.DecimalFromFloat(200).Equal(es.AvgEntryValuation("LP2")))
-	require.True(t, num.DecimalFromFloat(100).Equal(es.AvgEntryValuation("LP1")))
-
-	es.WithMVP(num.DecimalFromFloat(400)).SetPartyStake("LP1", num.NewUint(300))
-	require.True(t, num.DecimalFromFloat(120).Equal(es.AvgEntryValuation("LP1")))
-
-	es.SetPartyStake("LP1", num.NewUint(1))
-	require.True(t, num.DecimalFromFloat(120).Equal(es.AvgEntryValuation("LP1")))
-	require.True(t, num.DecimalFromFloat(200).Equal(es.AvgEntryValuation("LP2")))
 }
 
 func testShares(t *testing.T) {

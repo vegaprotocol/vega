@@ -124,23 +124,6 @@ func (es *EquityShares) AvgTradeValue(avg num.Decimal) *EquityShares {
 	return es
 }
 
-func (es *EquityShares) WithMVP(mvp num.Decimal) *EquityShares {
-	// growth always defaults to 0
-	es.r = num.DecimalZero()
-	if !es.mvp.IsZero() && !mvp.IsZero() {
-		// Spec notation: r = (A(n) - A(n-1))/A(n-1)
-		growth := mvp.Sub(es.mvp).Div(es.mvp)
-		// toggle state changed if growth rate has changed
-		es.stateChanged = (es.stateChanged || !growth.Equals(es.r))
-		es.r = growth
-	}
-	// only flip state changed if growth rate and/or mvp has changed
-	// previous mvp can still change, so we need to check that, too
-	es.stateChanged = (es.stateChanged || !es.mvp.Equals(mvp))
-	es.mvp = mvp
-	return es
-}
-
 // SetPartyStake sets LP values for a given party.
 func (es *EquityShares) SetPartyStake(id string, newStakeU *num.Uint) {
 	v, found := es.lps[id]
