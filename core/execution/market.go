@@ -1314,8 +1314,6 @@ func (m *Market) SubmitOrder(
 	if !m.as.InAuction() {
 		m.checkForReferenceMoves(
 			ctx, allUpdatedOrders, false)
-		m.checkLiquidity(ctx, nil, true)
-		m.commandLiquidityAuction(ctx)
 	}
 
 	return conf, nil
@@ -1492,9 +1490,9 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 		return nil, types.OrderErrorNonPersistentOrderOutOfPriceBounds
 	}
 
-	if m.checkLiquidity(ctx, trades, persistent) {
+	/*if m.checkLiquidity(ctx, trades, persistent) {
 		return nil, types.OrderErrorInvalidPersistance
-	}
+	}*/
 
 	if evt := m.as.AuctionExtended(ctx, m.timeService.GetTimeNow()); evt != nil {
 		m.broker.Send(evt)
@@ -2308,8 +2306,6 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 	}
 
 	m.checkForReferenceMoves(ctx, cancelledOrders, false)
-	m.checkLiquidity(ctx, nil, true)
-	m.commandLiquidityAuction(ctx)
 
 	return cancellations, nil
 }
@@ -2334,8 +2330,6 @@ func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string, deter
 
 	if !m.as.InAuction() {
 		m.checkForReferenceMoves(ctx, []*types.Order{conf.Order}, false)
-		m.checkLiquidity(ctx, nil, true)
-		m.commandLiquidityAuction(ctx)
 	}
 
 	return conf, nil
@@ -2446,12 +2440,6 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		allUpdatedOrders,
 		updatedOrders...,
 	)
-	if !m.as.InAuction() {
-		m.checkForReferenceMoves(ctx, allUpdatedOrders, false)
-		m.checkLiquidity(ctx, nil, true)
-		m.commandLiquidityAuction(ctx)
-	}
-
 	return conf, nil
 }
 
@@ -3019,8 +3007,6 @@ func (m *Market) removeExpiredOrders(
 	// or maybe notify the liquidity engine
 	if len(expired) > 0 && !m.as.InAuction() {
 		m.checkForReferenceMoves(ctx, expired, false)
-		m.checkLiquidity(ctx, nil, true)
-		m.commandLiquidityAuction(ctx)
 	}
 
 	return expired, nil
