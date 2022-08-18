@@ -68,11 +68,7 @@ message ERC20 {
 
 // The changes to apply on an existing asset.
 message AssetDetailsUpdate {
-  reserved 3, 4;
-  // Name of the asset (e.g: Great British Pound)
-  string name = 1;
-  // Symbol of the asset (e.g: GBP)
-  string symbol = 2;
+  reserved 1, 2, 3, 4;
   // The minimum economically meaningful amount in the asset
   string quantum = 5;
 

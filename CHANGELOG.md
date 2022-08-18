@@ -11,6 +11,7 @@
 ### 🛠 Improvements
 - [5766](https://github.com/vegaprotocol/vega/issues/5766) - Better notification for version update on the wallet
 - [5841](https://github.com/vegaprotocol/vega/issues/5841) - Add transaction to request `multisigControl` signatures on demand
+- [5932](https://github.com/vegaprotocol/vega/issues/5932) - Remove Name and Symbol from update asset proposal
 
 ### 🐛 Fixes
 - [5934](https://github.com/vegaprotocol/vega/issues/5934) - Ensure wallet without permissions can be read

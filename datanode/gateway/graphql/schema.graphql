@@ -2958,12 +2958,6 @@ type NewAsset {
 
 "A proposal to update an asset's details"
 type UpdateAsset {
-  "The full name of the asset (e.g: Great British Pound)"
-  name: String!
-
-  "The symbol of the asset (e.g: GBP)"
-  symbol: String!
-
   "The minimum economically meaningful amount of this specific asset"
   quantum: String!
 
