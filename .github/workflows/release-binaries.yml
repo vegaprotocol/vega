@@ -298,7 +298,7 @@ jobs:
       - name: Check version
         if: ${{ env.GOARCH == 'amd64' }}
         working-directory: build
-        run: ${{ matrix.app }}.exe version
+        run: .\${{ matrix.app }}.exe version
 
       - name: Bundle binary in archive
         uses: thedoctor0/zip-release@master
