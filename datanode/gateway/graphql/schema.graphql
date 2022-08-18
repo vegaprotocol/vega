@@ -66,7 +66,7 @@ type Subscription {
     "ID of the party from which to receive accounts updates for"
     partyId: ID
     "Asset code"
-    asset: String
+    assetId: ID
     "Type of the account"
     type: AccountType
   ): Account!
@@ -132,17 +132,17 @@ type Subscription {
   "Subscribe to delegation data"
   delegations(
     "the party to subscribe for, empty if all"
-    party: ID
+    partyId: ID
     "the node to subscribe for, empty if all"
-    nodeID: ID
+    nodeId: ID
   ): Delegation!
 
   "Subscribe to reward details data"
   rewards(
     "the asset to subscribe for, empty if all"
     assetId: ID
-    "the party to subscribe for, empty if all"
-    party: ID
+    "the party ID to subscribe for, empty if all"
+    partyId: ID
   ): Reward!
 }
 
@@ -152,7 +152,7 @@ type MarginLevels {
   market: Market!
   "asset for the current margins"
   asset: Asset!
-  "ID of the party for this margin"
+  "The party for this margin"
   party: Party!
   "minimal margin for the position to be maintained in the network (unsigned integer)"
   maintenanceLevel: String!
@@ -173,7 +173,7 @@ type MarginLevels {
 
 "Live data of a Market"
 type MarketData {
-  "market ID of the associated mark price"
+  "market of the associated mark price"
   market: Market!
   "the mark price (an unsigned integer)"
   markPrice: String!
@@ -232,7 +232,7 @@ type MarketData {
 "Live data of a Market"
 type ObservableMarketData {
   "market ID of the associated mark price"
-  marketId: String!
+  marketId: ID!
   "the mark price (an unsigned integer)"
   markPrice: String!
   "the highest price level on an order book for buy orders."
@@ -285,8 +285,6 @@ type ObservableMarketData {
   liquidityProviderFeeShare: [ObservableLiquidityProviderFeeShare!]
 }
 
-
-
 "timestamps for when the market changes state"
 type MarketTimestamps {
   "Time when the market is first proposed"
@@ -312,14 +310,12 @@ type LiquidityProviderFeeShare {
 "The equity like share of liquidity fee for each liquidity provider"
 type ObservableLiquidityProviderFeeShare {
   "The liquidity provider party ID"
-  partyId: String!
+  partyId: ID!
   "The share owned by this liquidity provider (float)"
   equityLikeShare: String!
   "The average entry valuation of the liquidity provider for the market"
   averageEntryValuation: String!
 }
-
-
 
 "The liquidity commitments for this market"
 type MarketDataCommitments {
@@ -377,7 +373,6 @@ type Query {
     pagination: OffsetPagination
   ): [OracleSpec!] @deprecated(reason: "Use oracleSpecsConnection instead")
 
-
   "All registered oracle specs"
   oracleSpecsConnection(
     "Pagination"
@@ -385,19 +380,19 @@ type Query {
   ): OracleSpecsConnection!
 
   "An oracle spec for a given oracle spec ID"
-  oracleSpec("ID for an oracle spec" oracleSpecID: String!): OracleSpec
+  oracleSpec("ID for an oracle spec" oracleSpecId: ID!): OracleSpec
 
   "All oracle data for a given oracle spec ID"
   oracleDataBySpec(
     "ID for an oracle spec"
-    oracleSpecID: String!
+    oracleSpecId: ID!
     "Pagination"
     pagination: OffsetPagination
   ): [OracleData!] @deprecated(reason: "Use oracleDataBySpecConnection instead")
 
   oracleDataBySpecConnection(
     "ID for an oracle spec"
-    oracleSpecID: String!
+    oracleSpecId: ID!
     "Pagination"
     pagination: Pagination
   ): OracleDataConnection!
@@ -417,7 +412,7 @@ type Query {
   "An order in the Vega network found by orderID"
   orderByID(
     "ID for an order"
-    orderId: ID!
+    id: ID!
 
     "version of the order (omitted or 0 for most recent; 1 for original; 2 for first amendment, etc)"
     version: Int
@@ -469,7 +464,7 @@ type Query {
     id: ID
     "Optionally, locate proposal by its reference. If ID is set, this parameter is ignored."
     reference: String
-  ): Proposal!
+  ): Proposal
 
   "Governance proposals that aim to create new markets"
   newMarketProposals(
@@ -510,7 +505,7 @@ type Query {
   nodeSignaturesConnection(resourceId: ID!, pagination: Pagination): NodeSignaturesConnection!
 
   "An asset which is used in the vega network"
-  asset("Id of the asset" assetId: ID!): Asset
+  asset("ID of the asset" id: ID!): Asset
 
   "The list of all assets in use in the Vega network"
   assets: [Asset!] @deprecated(reason: "Use assetsConnection instead")
@@ -539,7 +534,7 @@ type Query {
   ): OrderEstimate!
 
   "find a withdrawal using its ID"
-  withdrawal("id of the withdrawal" id: ID!): Withdrawal
+  withdrawal("ID of the withdrawal" id: ID!): Withdrawal
 
   "find an erc20 withdrawal approval using its withdrawal ID"
   erc20WithdrawalApproval(
@@ -548,7 +543,7 @@ type Query {
   ): Erc20WithdrawalApproval
 
   "find a deposit using its ID"
-  deposit("id of the Deposit" id: ID!): Deposit
+  deposit("ID of the Deposit" id: ID!): Deposit
 
   "return the full list of network parameters"
   networkParameters: [NetworkParameter!] @deprecated(reason: "Use networkParametersConnection instead")
@@ -571,19 +566,19 @@ type Query {
   nodesConnection(pagination: Pagination): NodesConnection!
 
   "specific node in network"
-  node("required id of node" id: String!): Node
+  node("required ID of node" id: ID!): Node
 
   "query for historic key rotations"
-  keyRotations(id: String): [KeyRotation!] @deprecated(reason: "use keyRotationsConnection instead")
+  keyRotations(id: ID): [KeyRotation!] @deprecated(reason: "use keyRotationsConnection instead")
 
   "query for historic key rotations"
-  keyRotationsConnection(id: String, pagination: Pagination): KeyRotationConnection!
+  keyRotationsConnection(id: ID, pagination: Pagination): KeyRotationConnection!
 
   "query for historic ethereum key rotations"
-  ethereumKeyRotations(nodeId: String): EthereumKeyRotationsConnection!
+  ethereumKeyRotations(nodeId: ID): EthereumKeyRotationsConnection!
 
   "get data for a specific epoch, if ID omitted it gets the current epoch. If the string is 'next', fetch the next epoch"
-  epoch(id: String): Epoch!
+  epoch(id: ID): Epoch!
 
   "get a list of all transfers for a public key"
   transfers(
@@ -598,7 +593,7 @@ type Query {
   "get a list of all transfers for a public key"
   transfersConnection(
     "the public key to look for"
-    partyId: String
+    partyId: ID
     "direction of the transfer with respect to the public key"
     direction: TransferDirection
     "Pagination information"
@@ -618,7 +613,7 @@ type Query {
 
   "get market data history for a specific market. If no dates are given, the latest snapshot will be returned. If only the start date is provided, all history from the given date will be provided, and if only the end date is provided, all history from the start up to and including the end date will be provided."
   getMarketDataHistoryByID(
-    id: String!
+    id: ID!
     """
     Optional start date time for the historic data query.
     If both the start and end date is not provided, only the latest snapshot will be returned.
@@ -641,7 +636,7 @@ type Query {
 
   "get market data history for a specific market. If no dates are given, the latest snapshot will be returned. If only the start date is provided all history from the given date will be provided, and if only the end date is provided, all history from the start up to and including the end date will be provided. Pagination is provided using a cursor based pagination model"
   getMarketDataHistoryConnectionByID(
-    id: String!
+    id: ID!
     """
     Optional start date time for the historic data query.
     If both the start and end date is not provided, only the latest snapshot will be returned.
@@ -776,7 +771,7 @@ type EpochTimestamps {
 
 type KeyRotation {
   "ID of node where rotation took place"
-  nodeId: String!
+  nodeId: ID!
   "Old public key rotated from"
   oldPubKey: String!
   "New public key rotated to"
@@ -800,7 +795,7 @@ type EthereumKeyRotationsConnection {
 # Describes the ethereum key rotations of nodes on the vega network
 type EthereumKeyRotation {
   "ID of node where rotation took place"
-  nodeId: String!
+  nodeId: ID!
   "Old ethereum address"
   oldAddress: String!
   "New ethereum address"
@@ -811,7 +806,7 @@ type EthereumKeyRotation {
 
 type Epoch {
   "Presumably this is an integer or something. If there's no such thing, disregard"
-  id: String!
+  id: ID!
 
   "Timestamps for start and end of epochs"
   timestamps: EpochTimestamps!
@@ -824,9 +819,9 @@ type Epoch {
 
   delegations(
     # Optional party ID to filter on
-    partyId: String
+    partyId: ID
     # Optional node ID to filter on
-    nodeId: String
+    nodeId: ID
     "Pagination skip"
     skip: Int
     "Pagination first element"
@@ -836,9 +831,9 @@ type Epoch {
 
   delegationsConnection(
     # Optional party ID to filter on
-    partyId: String
+    partyId: ID
     # Optional node ID to filter on
-    nodeId: String
+    nodeId: ID
     "Pagination information"
    pagination: Pagination
   ): DelegationsConnection!
@@ -887,7 +882,7 @@ type EpochData {
 
 type Node {
   "The node URL eg n01.vega.xyz"
-  id: String!
+  id: ID!
 
   "Public key of the node operator"
   pubkey: String!
@@ -928,7 +923,8 @@ type Node {
   status: NodeStatus!
 
   # All delegation for a node by a given party if specified, or all delegations.
-  delegations(partyId: String,
+  delegations(
+    partyId: ID,
     "Pagination skip"
     skip: Int
     "Pagination first element"
@@ -937,7 +933,7 @@ type Node {
     last: Int): [Delegation!] @deprecated(reason: "Use delegationsConnection instead")
 
   delegationsConnection(
-    partyId: String,
+    partyId: ID,
     pagination: Pagination
   ): DelegationsConnection!
 
@@ -1203,7 +1199,7 @@ type Statistics {
   blockDuration: String!
 
   "Current chain ID"
-  chainId: String!
+  chainId: ID!
 }
 
 "A mode where Vega tries to execute orders as soon as they are received"
@@ -1265,7 +1261,7 @@ type InstrumentMetadata {
 "An Ethereum oracle"
 type EthereumEvent {
   "The ID of the ethereum contract to use (string)"
-  contractId: String!
+  contractId: ID!
 
   "Name of the Ethereum event to listen to. (string)"
   event: String!
@@ -1306,7 +1302,7 @@ wants to get from the oracle engine.
 """
 type OracleSpec {
   "ID is a hash generated from the OracleSpec data."
-  id: String!
+  id: ID!
   "RFC3339Nano creation date time"
   createdAt: String!
   "RFC3339Nano last updated timestamp"
@@ -1423,7 +1419,7 @@ type OracleData {
   lists all the oracle specs that matched this oracle data.
   When the array is empty, it means no oracle spec matched this oracle data.
   """
-  matchedSpecIds: [String!]
+  matchedSpecIds: [ID!]
   """
   RFC3339Nano formatted date and time for when the data was broadcast to the markets
   with a matching oracle spec.
@@ -1445,7 +1441,7 @@ union Product = Future
 "Describes something that can be traded on Vega"
 type Instrument {
   "Uniquely identify an instrument across all instruments available on Vega (string)"
-  id: String!
+  id: ID!
 
   "A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18) (string)"
   code: String!
@@ -1714,13 +1710,13 @@ type Market {
   "The list of the liquidity provision commitments for this market"
   liquidityProvisions(
     "An optional party ID"
-    party: String
+    partyId: ID
   ): [LiquidityProvision!] @deprecated(reason: "Use liquidityProvisionsConnection instead")
 
   "The list of the liquidity provision commitments for this market"
    liquidityProvisionsConnection(
      "An optional party ID"
-     party: String
+     partyId: ID
      "Pagination information"
      pagination: Pagination
   ): LiquidityProvisionsConnection!
@@ -1737,7 +1733,7 @@ Market Depth is a measure of the number of open buy and sell orders for a securi
 The depth of market measure provides an indication of the liquidity and depth for the instrument.
 """
 type MarketDepth {
-  "Market ID"
+  "Market"
   market: Market!
 
   "Buy side price levels (if available)"
@@ -1759,7 +1755,7 @@ The depth of market measure provides an indication of the liquidity and depth fo
 """
 type ObservableMarketDepth {
   "Market ID"
-  marketId: String!
+  marketId: ID!
 
   "Buy side price levels (if available)"
   buy: [PriceLevel!]
@@ -1776,7 +1772,7 @@ type ObservableMarketDepth {
 
 type MarketDepthTrade {
   "ID of the trade for the given market (if available)"
-  id: String!
+  id: ID!
 
   "Price of the trade"
   price: String!
@@ -1811,8 +1807,8 @@ Market Depth Update is a delta to the current market depth which can be used to 
 market depth structure to keep it correct
 """
 type ObservableMarketDepthUpdate {
-  "Market id"
-  marketId: String!
+  "Market ID"
+  marketId: ID!
 
   "Buy side price levels (if available)"
   buy: [PriceLevel!]
@@ -1906,8 +1902,8 @@ type Party {
   accounts(
     "Market ID - specify what market accounts for the party to return"
     marketId: ID
-    "Asset (ETH, DAI etc)"
-    asset: String
+    "Asset ID"
+    assetId: ID
     "Filter accounts by type (General account, margin account, etc...)"
     type: AccountType
   ): [Account!] @deprecated(reason: "Use accountsConnection instead")
@@ -1916,8 +1912,8 @@ type Party {
   accountsConnection(
     "Market ID - specify what market accounts for the party to return"
     marketId: ID
-    "Asset (ETH, DAI etc)"
-    asset: String
+    "Asset ID"
+    assetId: ID
     "Filter accounts by type (General account, margin account, etc...)"
     type: AccountType
     "Cursor pagination information"
@@ -1977,7 +1973,7 @@ type Party {
 
   "The list of the liquidity provision commitment from this party"
   liquidityProvisions(
-    "An optional market id"
+    "An optional market"
     market: String
     "An optional reference"
     reference: String
@@ -1986,7 +1982,7 @@ type Party {
    "The list of the liquidity provision commitment for this party"
      liquidityProvisionsConnection(
        "An optional market ID"
-       market: String
+       marketId: ID
        "An optional reference"
        reference: String
        "Pagination information"
@@ -1995,8 +1991,8 @@ type Party {
 
   # All delegations for a party to a given node if node is specified, or all delegations if not
   delegations(
-    "Optional node"
-    nodeId: String
+    "Optional node ID"
+    nodeId: ID
     "Pagination skip"
     skip: Int
     "Pagination first element"
@@ -2005,8 +2001,8 @@ type Party {
     last: Int): [Delegation!] @deprecated(reason: "Use delegationsConnection instead")
 
   delegationsConnection(
-    "Optional node"
-    nodeId: String
+    "Optional node ID"
+    nodeId: ID
     "Pagination information"
     pagination: Pagination
   ): DelegationsConnection!
@@ -2019,8 +2015,8 @@ type Party {
 
   "Return individual reward information"
   rewards(
-    "An optional asset"
-    asset: String
+    "An optional asset ID"
+    assetId: ID
     "Pagination skip element"
     skip: Int
     "Pagination first element"
@@ -2030,16 +2026,16 @@ type Party {
   ): [Reward] @deprecated(reason: "Use rewardsConnection instead")
 
   rewardsConnection(
-    "An asset (optional)"
-    asset: String
+    "An asset ID (optional)"
+    assetId: ID
     "Cursor pagination information"
     pagination: Pagination
   ): RewardsConnection
 
   "Return net reward information"
   rewardSummaries(
-    "An asset (optional)"
-    asset: String
+    "An asset ID (optional)"
+    assetId: ID
   ): [RewardSummary]
 
   "return reward information"
@@ -2339,7 +2335,7 @@ type Erc20WithdrawalApproval {
 type Withdrawal {
   "The Vega internal ID of the withdrawal"
   id: ID!
-  "The PartyID (public key) initiating the withdrawal"
+  "The Party initiating the withdrawal"
   party: Party!
   "The amount to be withdrawn"
   amount: String!
@@ -2383,7 +2379,7 @@ enum WithdrawalStatus {
 type Deposit {
   "The Vega internal ID of the deposit"
   id: ID!
-  "The PartyID initiating the deposit"
+  "The Party initiating the deposit"
   party: Party!
   "The amount to be withdrawn"
   amount: String!
@@ -2686,7 +2682,6 @@ enum OrderRejectionReason {
 
   "Non-persistent order exceeds price bounds"
   ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS
-
 }
 
 enum OrderType {
@@ -2823,7 +2818,7 @@ enum AccountType {
 }
 
 type FutureProduct {
-  "Product asset ID"
+  "Product asset"
   settlementAsset: Asset!
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
@@ -3151,7 +3146,7 @@ type Vote {
 type ProposalVote {
   "Cast vote"
   vote: Vote!
-  "Proposal the vote is cast on"
+  "Proposal ID the vote is cast on"
   proposalId: ID!
 }
 
@@ -3372,7 +3367,7 @@ union Event =
 
 type BusEvent {
   "the ID for this event"
-  eventId: ID!
+  id: ID!
   "the block hash"
   block: String!
   "the type of event"
@@ -3422,7 +3417,7 @@ enum LiquidityProvisionStatus {
 }
 
 type LiquidityOrderReference {
-  "The ID of the pegged order generated to fulfill this commitment"
+  "The pegged order generated to fulfill this commitment"
   order: Order
   "The liquidity order"
   liquidityOrder: LiquidityOrder!
@@ -3432,13 +3427,13 @@ type LiquidityOrderReference {
 type LiquidityProvision {
   "Unique identifier for the order (set by the system after consensus)"
   id: ID
-  "The Id of the party making this commitment"
+  "The party making this commitment"
   party: Party!
   "When the liquidity provision was initially created (formatted RFC3339)"
   createdAt: String!
   "RFC3339Nano time of when the liquidity provision was updated"
   updatedAt: String
-  "Market ID for the order"
+  "Market for the order"
   market: Market!
   "Specified as a unit-less number that represents the amount of settlement asset of the market."
   commitmentAmount: String!
@@ -3460,8 +3455,8 @@ type LiquidityProvision {
 type Reward {
   "The asset this reward is paid in"
   asset: Asset!
-  "The market for which this reward is paid if any"
-  marketID: String!
+  "The market ID for which this reward is paid if any"
+  marketId: ID!
   "The type of reward"
   rewardType: AccountType!
   "Party receiving the reward"
@@ -3491,8 +3486,8 @@ type RewardSummary {
     last: Int): [Reward] @deprecated(reason: "Use rewardsConnection instead")
   "List of individual reward payouts, ordered by epoch"
   rewardsConnection(
-    "An optional asset"
-    asset: String
+    "An optional asset ID"
+    assetId: ID
     "Cursor pagination information"
     pagination: Pagination
   ): RewardsConnection
@@ -3502,8 +3497,8 @@ type RewardSummary {
 type RewardPerAssetDetail {
   "Asset in which the reward was paid"
   asset: Asset!
-  "Id of asset in which the reward was paid"
-  assetId: String! @deprecated(reason: "Use asset{id} instead")
+  "ID of asset in which the reward was paid"
+  assetId: ID! @deprecated(reason: "Use asset{ID} instead")
   "A list of rewards received for this asset"
   rewards: [Reward]
   "The total amount of rewards received for this asset."
@@ -3518,13 +3513,13 @@ type AggregatedBalance {
   "Net balance of the accounts specified in the filter at this time"
   balance: String!
   "Account identifier, if query was grouped by account - else null"
-  accountId: String
+  accountId: ID
   "Party identifier, if query was grouped by party - else null"
-  partyId: String
+  partyId: ID
   "Asset identifier, if query was grouped by asset - else null"
-  assetId: String
+  assetId: ID
   "Market identifier, if query was grouped by market - else null"
-  marketId: String
+  marketId: ID
   "Account type, if query was grouped by account type - else null"
   accountType: AccountType
 }
@@ -3846,6 +3841,7 @@ type ProposalsConnection {
     "Page information for the connection"
     pageInfo: PageInfo!
 }
+
 type DelegationEdge {
   "The delegation information"
   node: Delegation!

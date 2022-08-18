@@ -184,10 +184,10 @@ type ComplexityRoot struct {
 	}
 
 	BusEvent struct {
-		Block   func(childComplexity int) int
-		Event   func(childComplexity int) int
-		EventID func(childComplexity int) int
-		Type    func(childComplexity int) int
+		Block func(childComplexity int) int
+		Event func(childComplexity int) int
+		ID    func(childComplexity int) int
+		Type  func(childComplexity int) int
 	}
 
 	Candle struct {
@@ -525,8 +525,8 @@ type ComplexityRoot struct {
 		Fees                          func(childComplexity int) int
 		Id                            func(childComplexity int) int
 		LiquidityMonitoringParameters func(childComplexity int) int
-		LiquidityProvisions           func(childComplexity int, party *string) int
-		LiquidityProvisionsConnection func(childComplexity int, party *string, pagination *v2.Pagination) int
+		LiquidityProvisions           func(childComplexity int, partyID *string) int
+		LiquidityProvisionsConnection func(childComplexity int, partyID *string, pagination *v2.Pagination) int
 		MarketTimestamps              func(childComplexity int) int
 		Name                          func(childComplexity int) int
 		OpeningAuction                func(childComplexity int) int
@@ -897,15 +897,15 @@ type ComplexityRoot struct {
 	}
 
 	Party struct {
-		Accounts                      func(childComplexity int, marketID *string, asset *string, typeArg *vega.AccountType) int
-		AccountsConnection            func(childComplexity int, marketID *string, asset *string, typeArg *vega.AccountType, pagination *v2.Pagination) int
+		Accounts                      func(childComplexity int, marketID *string, assetID *string, typeArg *vega.AccountType) int
+		AccountsConnection            func(childComplexity int, marketID *string, assetID *string, typeArg *vega.AccountType, pagination *v2.Pagination) int
 		Delegations                   func(childComplexity int, nodeID *string, skip *int, first *int, last *int) int
 		DelegationsConnection         func(childComplexity int, nodeID *string, pagination *v2.Pagination) int
 		Deposits                      func(childComplexity int) int
 		DepositsConnection            func(childComplexity int, pagination *v2.Pagination) int
 		Id                            func(childComplexity int) int
 		LiquidityProvisions           func(childComplexity int, market *string, reference *string) int
-		LiquidityProvisionsConnection func(childComplexity int, market *string, reference *string, pagination *v2.Pagination) int
+		LiquidityProvisionsConnection func(childComplexity int, marketID *string, reference *string, pagination *v2.Pagination) int
 		Margins                       func(childComplexity int, marketID *string) int
 		MarginsConnection             func(childComplexity int, marketID *string, pagination *v2.Pagination) int
 		Orders                        func(childComplexity int, skip *int, first *int, last *int) int
@@ -915,9 +915,9 @@ type ComplexityRoot struct {
 		Proposals                     func(childComplexity int, inState *vega.Proposal_State) int
 		ProposalsConnection           func(childComplexity int, proposalType *v2.ListGovernanceDataRequest_Type, inState *vega.Proposal_State, pagination *v2.Pagination) int
 		RewardDetails                 func(childComplexity int) int
-		RewardSummaries               func(childComplexity int, asset *string) int
-		Rewards                       func(childComplexity int, asset *string, skip *int, first *int, last *int) int
-		RewardsConnection             func(childComplexity int, asset *string, pagination *v2.Pagination) int
+		RewardSummaries               func(childComplexity int, assetID *string) int
+		Rewards                       func(childComplexity int, assetID *string, skip *int, first *int, last *int) int
+		RewardsConnection             func(childComplexity int, assetID *string, pagination *v2.Pagination) int
 		Stake                         func(childComplexity int) int
 		StakingSummary                func(childComplexity int, pagination *v2.Pagination) int
 		Trades                        func(childComplexity int, marketID *string, skip *int, first *int, last *int) int
@@ -1078,7 +1078,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Asset                              func(childComplexity int, assetID string) int
+		Asset                              func(childComplexity int, id string) int
 		Assets                             func(childComplexity int) int
 		AssetsConnection                   func(childComplexity int, id *string, pagination *v2.Pagination) int
 		Deposit                            func(childComplexity int, id string) int
@@ -1116,7 +1116,7 @@ type ComplexityRoot struct {
 		OracleSpec                         func(childComplexity int, oracleSpecID string) int
 		OracleSpecs                        func(childComplexity int, pagination *OffsetPagination) int
 		OracleSpecsConnection              func(childComplexity int, pagination *v2.Pagination) int
-		OrderByID                          func(childComplexity int, orderID string, version *int) int
+		OrderByID                          func(childComplexity int, id string, version *int) int
 		OrderByReference                   func(childComplexity int, reference string) int
 		OrderVersions                      func(childComplexity int, orderID string, skip *int, first *int, last *int) int
 		OrderVersionsConnection            func(childComplexity int, orderID *string, pagination *v2.Pagination) int
@@ -1185,7 +1185,7 @@ type ComplexityRoot struct {
 		Amount            func(childComplexity int) int
 		Asset             func(childComplexity int) int
 		Rewards           func(childComplexity int, skip *int, first *int, last *int) int
-		RewardsConnection func(childComplexity int, asset *string, pagination *v2.Pagination) int
+		RewardsConnection func(childComplexity int, assetID *string, pagination *v2.Pagination) int
 	}
 
 	RewardSummaryConnection struct {
@@ -1293,10 +1293,10 @@ type ComplexityRoot struct {
 	}
 
 	Subscription struct {
-		Accounts           func(childComplexity int, marketID *string, partyID *string, asset *string, typeArg *vega.AccountType) int
+		Accounts           func(childComplexity int, marketID *string, partyID *string, assetID *string, typeArg *vega.AccountType) int
 		BusEvents          func(childComplexity int, types []BusEventType, marketID *string, partyID *string, batchSize int) int
 		Candles            func(childComplexity int, marketID string, interval vega.Interval) int
-		Delegations        func(childComplexity int, party *string, nodeID *string) int
+		Delegations        func(childComplexity int, partyID *string, nodeID *string) int
 		Margins            func(childComplexity int, partyID string, marketID *string) int
 		MarketData         func(childComplexity int, marketID *string) int
 		MarketDepth        func(childComplexity int, marketID string) int
@@ -1307,7 +1307,7 @@ type ComplexityRoot struct {
 		Orders             func(childComplexity int, marketID *string, partyID *string) int
 		Positions          func(childComplexity int, partyID *string, marketID *string) int
 		Proposals          func(childComplexity int, partyID *string) int
-		Rewards            func(childComplexity int, assetID *string, party *string) int
+		Rewards            func(childComplexity int, assetID *string, partyID *string) int
 		Trades             func(childComplexity int, marketID *string, partyID *string) int
 		Votes              func(childComplexity int, proposalID *string, partyID *string) int
 	}
@@ -1622,8 +1622,8 @@ type MarketResolver interface {
 	Candles(ctx context.Context, obj *vega.Market, since string, interval vega.Interval) ([]*vega.Candle, error)
 	CandlesConnection(ctx context.Context, obj *vega.Market, since string, to *string, interval vega.Interval, pagination *v2.Pagination) (*v2.CandleDataConnection, error)
 	Data(ctx context.Context, obj *vega.Market) (*vega.MarketData, error)
-	LiquidityProvisions(ctx context.Context, obj *vega.Market, party *string) ([]*vega.LiquidityProvision, error)
-	LiquidityProvisionsConnection(ctx context.Context, obj *vega.Market, party *string, pagination *v2.Pagination) (*v2.LiquidityProvisionsConnection, error)
+	LiquidityProvisions(ctx context.Context, obj *vega.Market, partyID *string) ([]*vega.LiquidityProvision, error)
+	LiquidityProvisionsConnection(ctx context.Context, obj *vega.Market, partyID *string, pagination *v2.Pagination) (*v2.LiquidityProvisionsConnection, error)
 
 	RiskFactors(ctx context.Context, obj *vega.Market) (*vega.RiskFactor, error)
 }
@@ -1759,8 +1759,8 @@ type PartyResolver interface {
 	OrdersConnection(ctx context.Context, obj *vega.Party, pagination *v2.Pagination) (*v2.OrderConnection, error)
 	Trades(ctx context.Context, obj *vega.Party, marketID *string, skip *int, first *int, last *int) ([]*vega.Trade, error)
 	TradesConnection(ctx context.Context, obj *vega.Party, marketID *string, pagination *v2.Pagination) (*v2.TradeConnection, error)
-	Accounts(ctx context.Context, obj *vega.Party, marketID *string, asset *string, typeArg *vega.AccountType) ([]*vega.Account, error)
-	AccountsConnection(ctx context.Context, obj *vega.Party, marketID *string, asset *string, typeArg *vega.AccountType, pagination *v2.Pagination) (*v2.AccountsConnection, error)
+	Accounts(ctx context.Context, obj *vega.Party, marketID *string, assetID *string, typeArg *vega.AccountType) ([]*vega.Account, error)
+	AccountsConnection(ctx context.Context, obj *vega.Party, marketID *string, assetID *string, typeArg *vega.AccountType, pagination *v2.Pagination) (*v2.AccountsConnection, error)
 	Positions(ctx context.Context, obj *vega.Party) ([]*vega.Position, error)
 	PositionsConnection(ctx context.Context, obj *vega.Party, market *string, pagination *v2.Pagination) (*v2.PositionConnection, error)
 	Margins(ctx context.Context, obj *vega.Party, marketID *string) ([]*vega.MarginLevels, error)
@@ -1774,14 +1774,14 @@ type PartyResolver interface {
 	Deposits(ctx context.Context, obj *vega.Party) ([]*vega.Deposit, error)
 	DepositsConnection(ctx context.Context, obj *vega.Party, pagination *v2.Pagination) (*v2.DepositsConnection, error)
 	LiquidityProvisions(ctx context.Context, obj *vega.Party, market *string, reference *string) ([]*vega.LiquidityProvision, error)
-	LiquidityProvisionsConnection(ctx context.Context, obj *vega.Party, market *string, reference *string, pagination *v2.Pagination) (*v2.LiquidityProvisionsConnection, error)
+	LiquidityProvisionsConnection(ctx context.Context, obj *vega.Party, marketID *string, reference *string, pagination *v2.Pagination) (*v2.LiquidityProvisionsConnection, error)
 	Delegations(ctx context.Context, obj *vega.Party, nodeID *string, skip *int, first *int, last *int) ([]*vega.Delegation, error)
 	DelegationsConnection(ctx context.Context, obj *vega.Party, nodeID *string, pagination *v2.Pagination) (*v2.DelegationsConnection, error)
 	Stake(ctx context.Context, obj *vega.Party) (*v13.PartyStakeResponse, error)
 	StakingSummary(ctx context.Context, obj *vega.Party, pagination *v2.Pagination) (*StakingSummary, error)
-	Rewards(ctx context.Context, obj *vega.Party, asset *string, skip *int, first *int, last *int) ([]*vega.Reward, error)
-	RewardsConnection(ctx context.Context, obj *vega.Party, asset *string, pagination *v2.Pagination) (*v2.RewardsConnection, error)
-	RewardSummaries(ctx context.Context, obj *vega.Party, asset *string) ([]*vega.RewardSummary, error)
+	Rewards(ctx context.Context, obj *vega.Party, assetID *string, skip *int, first *int, last *int) ([]*vega.Reward, error)
+	RewardsConnection(ctx context.Context, obj *vega.Party, assetID *string, pagination *v2.Pagination) (*v2.RewardsConnection, error)
+	RewardSummaries(ctx context.Context, obj *vega.Party, assetID *string) ([]*vega.RewardSummary, error)
 	RewardDetails(ctx context.Context, obj *vega.Party) ([]*vega.RewardSummary, error)
 	TransfersConnection(ctx context.Context, obj *vega.Party, direction *TransferDirection, pagination *v2.Pagination) (*v2.TransferConnection, error)
 }
@@ -1834,7 +1834,7 @@ type QueryResolver interface {
 	OracleDataBySpecConnection(ctx context.Context, oracleSpecID string, pagination *v2.Pagination) (*v2.OracleDataConnection, error)
 	OracleData(ctx context.Context, pagination *OffsetPagination) ([]*v12.OracleData, error)
 	OracleDataConnection(ctx context.Context, pagination *v2.Pagination) (*v2.OracleDataConnection, error)
-	OrderByID(ctx context.Context, orderID string, version *int) (*vega.Order, error)
+	OrderByID(ctx context.Context, id string, version *int) (*vega.Order, error)
 	OrderVersions(ctx context.Context, orderID string, skip *int, first *int, last *int) ([]*vega.Order, error)
 	OrderVersionsConnection(ctx context.Context, orderID *string, pagination *v2.Pagination) (*v2.OrderConnection, error)
 	OrderByReference(ctx context.Context, reference string) (*vega.Order, error)
@@ -1848,7 +1848,7 @@ type QueryResolver interface {
 	NewFreeformProposals(ctx context.Context, inState *vega.Proposal_State) ([]*vega.GovernanceData, error)
 	NodeSignatures(ctx context.Context, resourceID string) ([]*v11.NodeSignature, error)
 	NodeSignaturesConnection(ctx context.Context, resourceID string, pagination *v2.Pagination) (*v2.NodeSignaturesConnection, error)
-	Asset(ctx context.Context, assetID string) (*vega.Asset, error)
+	Asset(ctx context.Context, id string) (*vega.Asset, error)
 	Assets(ctx context.Context) ([]*vega.Asset, error)
 	AssetsConnection(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.AssetsConnection, error)
 	EstimateOrder(ctx context.Context, marketID string, partyID string, price *string, size string, side vega.Side, timeInForce vega.Order_TimeInForce, expiration *string, typeArg vega.Order_Type) (*OrderEstimate, error)
@@ -1902,7 +1902,7 @@ type RewardSummaryResolver interface {
 	Asset(ctx context.Context, obj *vega.RewardSummary) (*vega.Asset, error)
 
 	Rewards(ctx context.Context, obj *vega.RewardSummary, skip *int, first *int, last *int) ([]*vega.Reward, error)
-	RewardsConnection(ctx context.Context, obj *vega.RewardSummary, asset *string, pagination *v2.Pagination) (*v2.RewardsConnection, error)
+	RewardsConnection(ctx context.Context, obj *vega.RewardSummary, assetID *string, pagination *v2.Pagination) (*v2.RewardsConnection, error)
 }
 type StakeLinkingResolver interface {
 	Timestamp(ctx context.Context, obj *v1.StakeLinking) (string, error)
@@ -1938,7 +1938,7 @@ type SubscriptionResolver interface {
 	Positions(ctx context.Context, partyID *string, marketID *string) (<-chan *vega.Position, error)
 	MarketDepth(ctx context.Context, marketID string) (<-chan *vega.MarketDepth, error)
 	MarketDepthUpdate(ctx context.Context, marketID string) (<-chan *vega.MarketDepthUpdate, error)
-	Accounts(ctx context.Context, marketID *string, partyID *string, asset *string, typeArg *vega.AccountType) (<-chan *vega.Account, error)
+	Accounts(ctx context.Context, marketID *string, partyID *string, assetID *string, typeArg *vega.AccountType) (<-chan *vega.Account, error)
 	MarketData(ctx context.Context, marketID *string) (<-chan *vega.MarketData, error)
 	MarketsDepth(ctx context.Context, marketIds []string) (<-chan []*vega.MarketDepth, error)
 	MarketsDepthUpdate(ctx context.Context, marketIds []string) (<-chan []*vega.MarketDepthUpdate, error)
@@ -1947,8 +1947,8 @@ type SubscriptionResolver interface {
 	Proposals(ctx context.Context, partyID *string) (<-chan *vega.GovernanceData, error)
 	Votes(ctx context.Context, proposalID *string, partyID *string) (<-chan *ProposalVote, error)
 	BusEvents(ctx context.Context, types []BusEventType, marketID *string, partyID *string, batchSize int) (<-chan []*BusEvent, error)
-	Delegations(ctx context.Context, party *string, nodeID *string) (<-chan *vega.Delegation, error)
-	Rewards(ctx context.Context, assetID *string, party *string) (<-chan *vega.Reward, error)
+	Delegations(ctx context.Context, partyID *string, nodeID *string) (<-chan *vega.Delegation, error)
+	Rewards(ctx context.Context, assetID *string, partyID *string) (<-chan *vega.Reward, error)
 }
 type TradableInstrumentResolver interface {
 	RiskModel(ctx context.Context, obj *vega.TradableInstrument) (RiskModel, error)
@@ -2334,12 +2334,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.BusEvent.Event(childComplexity), true
 
-	case "BusEvent.eventId":
-		if e.complexity.BusEvent.EventID == nil {
+	case "BusEvent.id":
+		if e.complexity.BusEvent.ID == nil {
 			break
 		}
 
-		return e.complexity.BusEvent.EventID(childComplexity), true
+		return e.complexity.BusEvent.ID(childComplexity), true
 
 	case "BusEvent.type":
 		if e.complexity.BusEvent.Type == nil {
@@ -3665,7 +3665,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Market.LiquidityProvisions(childComplexity, args["party"].(*string)), true
+		return e.complexity.Market.LiquidityProvisions(childComplexity, args["partyId"].(*string)), true
 
 	case "Market.liquidityProvisionsConnection":
 		if e.complexity.Market.LiquidityProvisionsConnection == nil {
@@ -3677,7 +3677,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Market.LiquidityProvisionsConnection(childComplexity, args["party"].(*string), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Market.LiquidityProvisionsConnection(childComplexity, args["partyId"].(*string), args["pagination"].(*v2.Pagination)), true
 
 	case "Market.marketTimestamps":
 		if e.complexity.Market.MarketTimestamps == nil {
@@ -5353,7 +5353,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Party.Accounts(childComplexity, args["marketId"].(*string), args["asset"].(*string), args["type"].(*vega.AccountType)), true
+		return e.complexity.Party.Accounts(childComplexity, args["marketId"].(*string), args["assetId"].(*string), args["type"].(*vega.AccountType)), true
 
 	case "Party.accountsConnection":
 		if e.complexity.Party.AccountsConnection == nil {
@@ -5365,7 +5365,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Party.AccountsConnection(childComplexity, args["marketId"].(*string), args["asset"].(*string), args["type"].(*vega.AccountType), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Party.AccountsConnection(childComplexity, args["marketId"].(*string), args["assetId"].(*string), args["type"].(*vega.AccountType), args["pagination"].(*v2.Pagination)), true
 
 	case "Party.delegations":
 		if e.complexity.Party.Delegations == nil {
@@ -5439,7 +5439,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Party.LiquidityProvisionsConnection(childComplexity, args["market"].(*string), args["reference"].(*string), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Party.LiquidityProvisionsConnection(childComplexity, args["marketId"].(*string), args["reference"].(*string), args["pagination"].(*v2.Pagination)), true
 
 	case "Party.margins":
 		if e.complexity.Party.Margins == nil {
@@ -5549,7 +5549,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Party.RewardSummaries(childComplexity, args["asset"].(*string)), true
+		return e.complexity.Party.RewardSummaries(childComplexity, args["assetId"].(*string)), true
 
 	case "Party.rewards":
 		if e.complexity.Party.Rewards == nil {
@@ -5561,7 +5561,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Party.Rewards(childComplexity, args["asset"].(*string), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
+		return e.complexity.Party.Rewards(childComplexity, args["assetId"].(*string), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
 
 	case "Party.rewardsConnection":
 		if e.complexity.Party.RewardsConnection == nil {
@@ -5573,7 +5573,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Party.RewardsConnection(childComplexity, args["asset"].(*string), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Party.RewardsConnection(childComplexity, args["assetId"].(*string), args["pagination"].(*v2.Pagination)), true
 
 	case "Party.stake":
 		if e.complexity.Party.Stake == nil {
@@ -6194,7 +6194,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Asset(childComplexity, args["assetId"].(string)), true
+		return e.complexity.Query.Asset(childComplexity, args["id"].(string)), true
 
 	case "Query.assets":
 		if e.complexity.Query.Assets == nil {
@@ -6548,7 +6548,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.OracleDataBySpec(childComplexity, args["oracleSpecID"].(string), args["pagination"].(*OffsetPagination)), true
+		return e.complexity.Query.OracleDataBySpec(childComplexity, args["oracleSpecId"].(string), args["pagination"].(*OffsetPagination)), true
 
 	case "Query.oracleDataBySpecConnection":
 		if e.complexity.Query.OracleDataBySpecConnection == nil {
@@ -6560,7 +6560,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.OracleDataBySpecConnection(childComplexity, args["oracleSpecID"].(string), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Query.OracleDataBySpecConnection(childComplexity, args["oracleSpecId"].(string), args["pagination"].(*v2.Pagination)), true
 
 	case "Query.oracleDataConnection":
 		if e.complexity.Query.OracleDataConnection == nil {
@@ -6584,7 +6584,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.OracleSpec(childComplexity, args["oracleSpecID"].(string)), true
+		return e.complexity.Query.OracleSpec(childComplexity, args["oracleSpecId"].(string)), true
 
 	case "Query.oracleSpecs":
 		if e.complexity.Query.OracleSpecs == nil {
@@ -6620,7 +6620,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.OrderByID(childComplexity, args["orderId"].(string), args["version"].(*int)), true
+		return e.complexity.Query.OrderByID(childComplexity, args["id"].(string), args["version"].(*int)), true
 
 	case "Query.orderByReference":
 		if e.complexity.Query.OrderByReference == nil {
@@ -6876,7 +6876,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Reward.Epoch(childComplexity), true
 
-	case "Reward.marketID":
+	case "Reward.marketId":
 		if e.complexity.Reward.MarketId == nil {
 			break
 		}
@@ -7031,7 +7031,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.RewardSummary.RewardsConnection(childComplexity, args["asset"].(*string), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.RewardSummary.RewardsConnection(childComplexity, args["assetId"].(*string), args["pagination"].(*v2.Pagination)), true
 
 	case "RewardSummaryConnection.edges":
 		if e.complexity.RewardSummaryConnection.Edges == nil {
@@ -7482,7 +7482,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Subscription.Accounts(childComplexity, args["marketId"].(*string), args["partyId"].(*string), args["asset"].(*string), args["type"].(*vega.AccountType)), true
+		return e.complexity.Subscription.Accounts(childComplexity, args["marketId"].(*string), args["partyId"].(*string), args["assetId"].(*string), args["type"].(*vega.AccountType)), true
 
 	case "Subscription.busEvents":
 		if e.complexity.Subscription.BusEvents == nil {
@@ -7518,7 +7518,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Subscription.Delegations(childComplexity, args["party"].(*string), args["nodeID"].(*string)), true
+		return e.complexity.Subscription.Delegations(childComplexity, args["partyId"].(*string), args["nodeId"].(*string)), true
 
 	case "Subscription.margins":
 		if e.complexity.Subscription.Margins == nil {
@@ -7650,7 +7650,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Subscription.Rewards(childComplexity, args["assetId"].(*string), args["party"].(*string)), true
+		return e.complexity.Subscription.Rewards(childComplexity, args["assetId"].(*string), args["partyId"].(*string)), true
 
 	case "Subscription.trades":
 		if e.complexity.Subscription.Trades == nil {
@@ -8497,7 +8497,7 @@ type Subscription {
     "ID of the party from which to receive accounts updates for"
     partyId: ID
     "Asset code"
-    asset: String
+    assetId: ID
     "Type of the account"
     type: AccountType
   ): Account!
@@ -8563,17 +8563,17 @@ type Subscription {
   "Subscribe to delegation data"
   delegations(
     "the party to subscribe for, empty if all"
-    party: ID
+    partyId: ID
     "the node to subscribe for, empty if all"
-    nodeID: ID
+    nodeId: ID
   ): Delegation!
 
   "Subscribe to reward details data"
   rewards(
     "the asset to subscribe for, empty if all"
     assetId: ID
-    "the party to subscribe for, empty if all"
-    party: ID
+    "the party ID to subscribe for, empty if all"
+    partyId: ID
   ): Reward!
 }
 
@@ -8583,7 +8583,7 @@ type MarginLevels {
   market: Market!
   "asset for the current margins"
   asset: Asset!
-  "ID of the party for this margin"
+  "The party for this margin"
   party: Party!
   "minimal margin for the position to be maintained in the network (unsigned integer)"
   maintenanceLevel: String!
@@ -8604,7 +8604,7 @@ type MarginLevels {
 
 "Live data of a Market"
 type MarketData {
-  "market ID of the associated mark price"
+  "market of the associated mark price"
   market: Market!
   "the mark price (an unsigned integer)"
   markPrice: String!
@@ -8663,7 +8663,7 @@ type MarketData {
 "Live data of a Market"
 type ObservableMarketData {
   "market ID of the associated mark price"
-  marketId: String!
+  marketId: ID!
   "the mark price (an unsigned integer)"
   markPrice: String!
   "the highest price level on an order book for buy orders."
@@ -8716,8 +8716,6 @@ type ObservableMarketData {
   liquidityProviderFeeShare: [ObservableLiquidityProviderFeeShare!]
 }
 
-
-
 "timestamps for when the market changes state"
 type MarketTimestamps {
   "Time when the market is first proposed"
@@ -8743,14 +8741,12 @@ type LiquidityProviderFeeShare {
 "The equity like share of liquidity fee for each liquidity provider"
 type ObservableLiquidityProviderFeeShare {
   "The liquidity provider party ID"
-  partyId: String!
+  partyId: ID!
   "The share owned by this liquidity provider (float)"
   equityLikeShare: String!
   "The average entry valuation of the liquidity provider for the market"
   averageEntryValuation: String!
 }
-
-
 
 "The liquidity commitments for this market"
 type MarketDataCommitments {
@@ -8808,7 +8804,6 @@ type Query {
     pagination: OffsetPagination
   ): [OracleSpec!] @deprecated(reason: "Use oracleSpecsConnection instead")
 
-
   "All registered oracle specs"
   oracleSpecsConnection(
     "Pagination"
@@ -8816,19 +8811,19 @@ type Query {
   ): OracleSpecsConnection!
 
   "An oracle spec for a given oracle spec ID"
-  oracleSpec("ID for an oracle spec" oracleSpecID: String!): OracleSpec
+  oracleSpec("ID for an oracle spec" oracleSpecId: ID!): OracleSpec
 
   "All oracle data for a given oracle spec ID"
   oracleDataBySpec(
     "ID for an oracle spec"
-    oracleSpecID: String!
+    oracleSpecId: ID!
     "Pagination"
     pagination: OffsetPagination
   ): [OracleData!] @deprecated(reason: "Use oracleDataBySpecConnection instead")
 
   oracleDataBySpecConnection(
     "ID for an oracle spec"
-    oracleSpecID: String!
+    oracleSpecId: ID!
     "Pagination"
     pagination: Pagination
   ): OracleDataConnection!
@@ -8848,7 +8843,7 @@ type Query {
   "An order in the Vega network found by orderID"
   orderByID(
     "ID for an order"
-    orderId: ID!
+    id: ID!
 
     "version of the order (omitted or 0 for most recent; 1 for original; 2 for first amendment, etc)"
     version: Int
@@ -8900,7 +8895,7 @@ type Query {
     id: ID
     "Optionally, locate proposal by its reference. If ID is set, this parameter is ignored."
     reference: String
-  ): Proposal!
+  ): Proposal
 
   "Governance proposals that aim to create new markets"
   newMarketProposals(
@@ -8941,7 +8936,7 @@ type Query {
   nodeSignaturesConnection(resourceId: ID!, pagination: Pagination): NodeSignaturesConnection!
 
   "An asset which is used in the vega network"
-  asset("Id of the asset" assetId: ID!): Asset
+  asset("ID of the asset" id: ID!): Asset
 
   "The list of all assets in use in the Vega network"
   assets: [Asset!] @deprecated(reason: "Use assetsConnection instead")
@@ -8970,7 +8965,7 @@ type Query {
   ): OrderEstimate!
 
   "find a withdrawal using its ID"
-  withdrawal("id of the withdrawal" id: ID!): Withdrawal
+  withdrawal("ID of the withdrawal" id: ID!): Withdrawal
 
   "find an erc20 withdrawal approval using its withdrawal ID"
   erc20WithdrawalApproval(
@@ -8979,7 +8974,7 @@ type Query {
   ): Erc20WithdrawalApproval
 
   "find a deposit using its ID"
-  deposit("id of the Deposit" id: ID!): Deposit
+  deposit("ID of the Deposit" id: ID!): Deposit
 
   "return the full list of network parameters"
   networkParameters: [NetworkParameter!] @deprecated(reason: "Use networkParametersConnection instead")
@@ -9002,19 +8997,19 @@ type Query {
   nodesConnection(pagination: Pagination): NodesConnection!
 
   "specific node in network"
-  node("required id of node" id: String!): Node
+  node("required ID of node" id: ID!): Node
 
   "query for historic key rotations"
-  keyRotations(id: String): [KeyRotation!] @deprecated(reason: "use keyRotationsConnection instead")
+  keyRotations(id: ID): [KeyRotation!] @deprecated(reason: "use keyRotationsConnection instead")
 
   "query for historic key rotations"
-  keyRotationsConnection(id: String, pagination: Pagination): KeyRotationConnection!
+  keyRotationsConnection(id: ID, pagination: Pagination): KeyRotationConnection!
 
   "query for historic ethereum key rotations"
-  ethereumKeyRotations(nodeId: String): EthereumKeyRotationsConnection!
+  ethereumKeyRotations(nodeId: ID): EthereumKeyRotationsConnection!
 
   "get data for a specific epoch, if ID omitted it gets the current epoch. If the string is 'next', fetch the next epoch"
-  epoch(id: String): Epoch!
+  epoch(id: ID): Epoch!
 
   "get a list of all transfers for a public key"
   transfers(
@@ -9029,7 +9024,7 @@ type Query {
   "get a list of all transfers for a public key"
   transfersConnection(
     "the public key to look for"
-    partyId: String
+    partyId: ID
     "direction of the transfer with respect to the public key"
     direction: TransferDirection
     "Pagination information"
@@ -9049,7 +9044,7 @@ type Query {
 
   "get market data history for a specific market. If no dates are given, the latest snapshot will be returned. If only the start date is provided, all history from the given date will be provided, and if only the end date is provided, all history from the start up to and including the end date will be provided."
   getMarketDataHistoryByID(
-    id: String!
+    id: ID!
     """
     Optional start date time for the historic data query.
     If both the start and end date is not provided, only the latest snapshot will be returned.
@@ -9072,7 +9067,7 @@ type Query {
 
   "get market data history for a specific market. If no dates are given, the latest snapshot will be returned. If only the start date is provided all history from the given date will be provided, and if only the end date is provided, all history from the start up to and including the end date will be provided. Pagination is provided using a cursor based pagination model"
   getMarketDataHistoryConnectionByID(
-    id: String!
+    id: ID!
     """
     Optional start date time for the historic data query.
     If both the start and end date is not provided, only the latest snapshot will be returned.
@@ -9207,7 +9202,7 @@ type EpochTimestamps {
 
 type KeyRotation {
   "ID of node where rotation took place"
-  nodeId: String!
+  nodeId: ID!
   "Old public key rotated from"
   oldPubKey: String!
   "New public key rotated to"
@@ -9231,7 +9226,7 @@ type EthereumKeyRotationsConnection {
 # Describes the ethereum key rotations of nodes on the vega network
 type EthereumKeyRotation {
   "ID of node where rotation took place"
-  nodeId: String!
+  nodeId: ID!
   "Old ethereum address"
   oldAddress: String!
   "New ethereum address"
@@ -9242,7 +9237,7 @@ type EthereumKeyRotation {
 
 type Epoch {
   "Presumably this is an integer or something. If there's no such thing, disregard"
-  id: String!
+  id: ID!
 
   "Timestamps for start and end of epochs"
   timestamps: EpochTimestamps!
@@ -9255,9 +9250,9 @@ type Epoch {
 
   delegations(
     # Optional party ID to filter on
-    partyId: String
+    partyId: ID
     # Optional node ID to filter on
-    nodeId: String
+    nodeId: ID
     "Pagination skip"
     skip: Int
     "Pagination first element"
@@ -9267,9 +9262,9 @@ type Epoch {
 
   delegationsConnection(
     # Optional party ID to filter on
-    partyId: String
+    partyId: ID
     # Optional node ID to filter on
-    nodeId: String
+    nodeId: ID
     "Pagination information"
    pagination: Pagination
   ): DelegationsConnection!
@@ -9318,7 +9313,7 @@ type EpochData {
 
 type Node {
   "The node URL eg n01.vega.xyz"
-  id: String!
+  id: ID!
 
   "Public key of the node operator"
   pubkey: String!
@@ -9359,7 +9354,8 @@ type Node {
   status: NodeStatus!
 
   # All delegation for a node by a given party if specified, or all delegations.
-  delegations(partyId: String,
+  delegations(
+    partyId: ID,
     "Pagination skip"
     skip: Int
     "Pagination first element"
@@ -9368,7 +9364,7 @@ type Node {
     last: Int): [Delegation!] @deprecated(reason: "Use delegationsConnection instead")
 
   delegationsConnection(
-    partyId: String,
+    partyId: ID,
     pagination: Pagination
   ): DelegationsConnection!
 
@@ -9634,7 +9630,7 @@ type Statistics {
   blockDuration: String!
 
   "Current chain ID"
-  chainId: String!
+  chainId: ID!
 }
 
 "A mode where Vega tries to execute orders as soon as they are received"
@@ -9696,7 +9692,7 @@ type InstrumentMetadata {
 "An Ethereum oracle"
 type EthereumEvent {
   "The ID of the ethereum contract to use (string)"
-  contractId: String!
+  contractId: ID!
 
   "Name of the Ethereum event to listen to. (string)"
   event: String!
@@ -9737,7 +9733,7 @@ wants to get from the oracle engine.
 """
 type OracleSpec {
   "ID is a hash generated from the OracleSpec data."
-  id: String!
+  id: ID!
   "RFC3339Nano creation date time"
   createdAt: String!
   "RFC3339Nano last updated timestamp"
@@ -9854,7 +9850,7 @@ type OracleData {
   lists all the oracle specs that matched this oracle data.
   When the array is empty, it means no oracle spec matched this oracle data.
   """
-  matchedSpecIds: [String!]
+  matchedSpecIds: [ID!]
   """
   RFC3339Nano formatted date and time for when the data was broadcast to the markets
   with a matching oracle spec.
@@ -9876,7 +9872,7 @@ union Product = Future
 "Describes something that can be traded on Vega"
 type Instrument {
   "Uniquely identify an instrument across all instruments available on Vega (string)"
-  id: String!
+  id: ID!
 
   "A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18) (string)"
   code: String!
@@ -10145,13 +10141,13 @@ type Market {
   "The list of the liquidity provision commitments for this market"
   liquidityProvisions(
     "An optional party ID"
-    party: String
+    partyId: ID
   ): [LiquidityProvision!] @deprecated(reason: "Use liquidityProvisionsConnection instead")
 
   "The list of the liquidity provision commitments for this market"
    liquidityProvisionsConnection(
      "An optional party ID"
-     party: String
+     partyId: ID
      "Pagination information"
      pagination: Pagination
   ): LiquidityProvisionsConnection!
@@ -10168,7 +10164,7 @@ Market Depth is a measure of the number of open buy and sell orders for a securi
 The depth of market measure provides an indication of the liquidity and depth for the instrument.
 """
 type MarketDepth {
-  "Market ID"
+  "Market"
   market: Market!
 
   "Buy side price levels (if available)"
@@ -10190,7 +10186,7 @@ The depth of market measure provides an indication of the liquidity and depth fo
 """
 type ObservableMarketDepth {
   "Market ID"
-  marketId: String!
+  marketId: ID!
 
   "Buy side price levels (if available)"
   buy: [PriceLevel!]
@@ -10207,7 +10203,7 @@ type ObservableMarketDepth {
 
 type MarketDepthTrade {
   "ID of the trade for the given market (if available)"
-  id: String!
+  id: ID!
 
   "Price of the trade"
   price: String!
@@ -10242,8 +10238,8 @@ Market Depth Update is a delta to the current market depth which can be used to 
 market depth structure to keep it correct
 """
 type ObservableMarketDepthUpdate {
-  "Market id"
-  marketId: String!
+  "Market ID"
+  marketId: ID!
 
   "Buy side price levels (if available)"
   buy: [PriceLevel!]
@@ -10337,8 +10333,8 @@ type Party {
   accounts(
     "Market ID - specify what market accounts for the party to return"
     marketId: ID
-    "Asset (ETH, DAI etc)"
-    asset: String
+    "Asset ID"
+    assetId: ID
     "Filter accounts by type (General account, margin account, etc...)"
     type: AccountType
   ): [Account!] @deprecated(reason: "Use accountsConnection instead")
@@ -10347,8 +10343,8 @@ type Party {
   accountsConnection(
     "Market ID - specify what market accounts for the party to return"
     marketId: ID
-    "Asset (ETH, DAI etc)"
-    asset: String
+    "Asset ID"
+    assetId: ID
     "Filter accounts by type (General account, margin account, etc...)"
     type: AccountType
     "Cursor pagination information"
@@ -10408,7 +10404,7 @@ type Party {
 
   "The list of the liquidity provision commitment from this party"
   liquidityProvisions(
-    "An optional market id"
+    "An optional market"
     market: String
     "An optional reference"
     reference: String
@@ -10417,7 +10413,7 @@ type Party {
    "The list of the liquidity provision commitment for this party"
      liquidityProvisionsConnection(
        "An optional market ID"
-       market: String
+       marketId: ID
        "An optional reference"
        reference: String
        "Pagination information"
@@ -10426,8 +10422,8 @@ type Party {
 
   # All delegations for a party to a given node if node is specified, or all delegations if not
   delegations(
-    "Optional node"
-    nodeId: String
+    "Optional node ID"
+    nodeId: ID
     "Pagination skip"
     skip: Int
     "Pagination first element"
@@ -10436,8 +10432,8 @@ type Party {
     last: Int): [Delegation!] @deprecated(reason: "Use delegationsConnection instead")
 
   delegationsConnection(
-    "Optional node"
-    nodeId: String
+    "Optional node ID"
+    nodeId: ID
     "Pagination information"
     pagination: Pagination
   ): DelegationsConnection!
@@ -10450,8 +10446,8 @@ type Party {
 
   "Return individual reward information"
   rewards(
-    "An optional asset"
-    asset: String
+    "An optional asset ID"
+    assetId: ID
     "Pagination skip element"
     skip: Int
     "Pagination first element"
@@ -10461,16 +10457,16 @@ type Party {
   ): [Reward] @deprecated(reason: "Use rewardsConnection instead")
 
   rewardsConnection(
-    "An asset (optional)"
-    asset: String
+    "An asset ID (optional)"
+    assetId: ID
     "Cursor pagination information"
     pagination: Pagination
   ): RewardsConnection
 
   "Return net reward information"
   rewardSummaries(
-    "An asset (optional)"
-    asset: String
+    "An asset ID (optional)"
+    assetId: ID
   ): [RewardSummary]
 
   "return reward information"
@@ -10770,7 +10766,7 @@ type Erc20WithdrawalApproval {
 type Withdrawal {
   "The Vega internal ID of the withdrawal"
   id: ID!
-  "The PartyID (public key) initiating the withdrawal"
+  "The Party initiating the withdrawal"
   party: Party!
   "The amount to be withdrawn"
   amount: String!
@@ -10814,7 +10810,7 @@ enum WithdrawalStatus {
 type Deposit {
   "The Vega internal ID of the deposit"
   id: ID!
-  "The PartyID initiating the deposit"
+  "The Party initiating the deposit"
   party: Party!
   "The amount to be withdrawn"
   amount: String!
@@ -11117,7 +11113,6 @@ enum OrderRejectionReason {
 
   "Non-persistent order exceeds price bounds"
   ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS
-
 }
 
 enum OrderType {
@@ -11254,7 +11249,7 @@ enum AccountType {
 }
 
 type FutureProduct {
-  "Product asset ID"
+  "Product asset"
   settlementAsset: Asset!
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
@@ -11582,7 +11577,7 @@ type Vote {
 type ProposalVote {
   "Cast vote"
   vote: Vote!
-  "Proposal the vote is cast on"
+  "Proposal ID the vote is cast on"
   proposalId: ID!
 }
 
@@ -11803,7 +11798,7 @@ union Event =
 
 type BusEvent {
   "the ID for this event"
-  eventId: ID!
+  id: ID!
   "the block hash"
   block: String!
   "the type of event"
@@ -11853,7 +11848,7 @@ enum LiquidityProvisionStatus {
 }
 
 type LiquidityOrderReference {
-  "The ID of the pegged order generated to fulfill this commitment"
+  "The pegged order generated to fulfill this commitment"
   order: Order
   "The liquidity order"
   liquidityOrder: LiquidityOrder!
@@ -11863,13 +11858,13 @@ type LiquidityOrderReference {
 type LiquidityProvision {
   "Unique identifier for the order (set by the system after consensus)"
   id: ID
-  "The Id of the party making this commitment"
+  "The party making this commitment"
   party: Party!
   "When the liquidity provision was initially created (formatted RFC3339)"
   createdAt: String!
   "RFC3339Nano time of when the liquidity provision was updated"
   updatedAt: String
-  "Market ID for the order"
+  "Market for the order"
   market: Market!
   "Specified as a unit-less number that represents the amount of settlement asset of the market."
   commitmentAmount: String!
@@ -11891,8 +11886,8 @@ type LiquidityProvision {
 type Reward {
   "The asset this reward is paid in"
   asset: Asset!
-  "The market for which this reward is paid if any"
-  marketID: String!
+  "The market ID for which this reward is paid if any"
+  marketId: ID!
   "The type of reward"
   rewardType: AccountType!
   "Party receiving the reward"
@@ -11922,8 +11917,8 @@ type RewardSummary {
     last: Int): [Reward] @deprecated(reason: "Use rewardsConnection instead")
   "List of individual reward payouts, ordered by epoch"
   rewardsConnection(
-    "An optional asset"
-    asset: String
+    "An optional asset ID"
+    assetId: ID
     "Cursor pagination information"
     pagination: Pagination
   ): RewardsConnection
@@ -11933,8 +11928,8 @@ type RewardSummary {
 type RewardPerAssetDetail {
   "Asset in which the reward was paid"
   asset: Asset!
-  "Id of asset in which the reward was paid"
-  assetId: String! @deprecated(reason: "Use asset{id} instead")
+  "ID of asset in which the reward was paid"
+  assetId: ID! @deprecated(reason: "Use asset{ID} instead")
   "A list of rewards received for this asset"
   rewards: [Reward]
   "The total amount of rewards received for this asset."
@@ -11949,13 +11944,13 @@ type AggregatedBalance {
   "Net balance of the accounts specified in the filter at this time"
   balance: String!
   "Account identifier, if query was grouped by account - else null"
-  accountId: String
+  accountId: ID
   "Party identifier, if query was grouped by party - else null"
-  partyId: String
+  partyId: ID
   "Asset identifier, if query was grouped by asset - else null"
-  assetId: String
+  assetId: ID
   "Market identifier, if query was grouped by market - else null"
-  marketId: String
+  marketId: ID
   "Account type, if query was grouped by account type - else null"
   accountType: AccountType
 }
@@ -12277,6 +12272,7 @@ type ProposalsConnection {
     "Page information for the connection"
     pageInfo: PageInfo!
 }
+
 type DelegationEdge {
   "The delegation information"
   node: Delegation!
@@ -12402,7 +12398,7 @@ func (ec *executionContext) field_Epoch_delegationsConnection_args(ctx context.C
 	var arg0 *string
 	if tmp, ok := rawArgs["partyId"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyId"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -12411,7 +12407,7 @@ func (ec *executionContext) field_Epoch_delegationsConnection_args(ctx context.C
 	var arg1 *string
 	if tmp, ok := rawArgs["nodeId"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeId"))
-		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -12435,7 +12431,7 @@ func (ec *executionContext) field_Epoch_delegations_args(ctx context.Context, ra
 	var arg0 *string
 	if tmp, ok := rawArgs["partyId"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyId"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -12444,7 +12440,7 @@ func (ec *executionContext) field_Epoch_delegations_args(ctx context.Context, ra
 	var arg1 *string
 	if tmp, ok := rawArgs["nodeId"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeId"))
-		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -12619,14 +12615,14 @@ func (ec *executionContext) field_Market_liquidityProvisionsConnection_args(ctx 
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
-	if tmp, ok := rawArgs["party"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("party"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+	if tmp, ok := rawArgs["partyId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyId"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["party"] = arg0
+	args["partyId"] = arg0
 	var arg1 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
@@ -12643,14 +12639,14 @@ func (ec *executionContext) field_Market_liquidityProvisions_args(ctx context.Co
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
-	if tmp, ok := rawArgs["party"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("party"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+	if tmp, ok := rawArgs["partyId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyId"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["party"] = arg0
+	args["partyId"] = arg0
 	return args, nil
 }
 
@@ -12756,7 +12752,7 @@ func (ec *executionContext) field_Node_delegationsConnection_args(ctx context.Co
 	var arg0 *string
 	if tmp, ok := rawArgs["partyId"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyId"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -12780,7 +12776,7 @@ func (ec *executionContext) field_Node_delegations_args(ctx context.Context, raw
 	var arg0 *string
 	if tmp, ok := rawArgs["partyId"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyId"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -12859,14 +12855,14 @@ func (ec *executionContext) field_Party_accountsConnection_args(ctx context.Cont
 	}
 	args["marketId"] = arg0
 	var arg1 *string
-	if tmp, ok := rawArgs["asset"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("asset"))
-		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+	if tmp, ok := rawArgs["assetId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("assetId"))
+		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["asset"] = arg1
+	args["assetId"] = arg1
 	var arg2 *vega.AccountType
 	if tmp, ok := rawArgs["type"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
@@ -12901,14 +12897,14 @@ func (ec *executionContext) field_Party_accounts_args(ctx context.Context, rawAr
 	}
 	args["marketId"] = arg0
 	var arg1 *string
-	if tmp, ok := rawArgs["asset"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("asset"))
-		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+	if tmp, ok := rawArgs["assetId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("assetId"))
+		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["asset"] = arg1
+	args["assetId"] = arg1
 	var arg2 *vega.AccountType
 	if tmp, ok := rawArgs["type"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
@@ -12927,7 +12923,7 @@ func (ec *executionContext) field_Party_delegationsConnection_args(ctx context.C
 	var arg0 *string
 	if tmp, ok := rawArgs["nodeId"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeId"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -12951,7 +12947,7 @@ func (ec *executionContext) field_Party_delegations_args(ctx context.Context, ra
 	var arg0 *string
 	if tmp, ok := rawArgs["nodeId"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeId"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -13006,14 +13002,14 @@ func (ec *executionContext) field_Party_liquidityProvisionsConnection_args(ctx c
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
-	if tmp, ok := rawArgs["market"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("market"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+	if tmp, ok := rawArgs["marketId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("marketId"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["market"] = arg0
+	args["marketId"] = arg0
 	var arg1 *string
 	if tmp, ok := rawArgs["reference"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("reference"))
@@ -13222,14 +13218,14 @@ func (ec *executionContext) field_Party_rewardSummaries_args(ctx context.Context
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
-	if tmp, ok := rawArgs["asset"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("asset"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+	if tmp, ok := rawArgs["assetId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("assetId"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["asset"] = arg0
+	args["assetId"] = arg0
 	return args, nil
 }
 
@@ -13237,14 +13233,14 @@ func (ec *executionContext) field_Party_rewardsConnection_args(ctx context.Conte
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
-	if tmp, ok := rawArgs["asset"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("asset"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+	if tmp, ok := rawArgs["assetId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("assetId"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["asset"] = arg0
+	args["assetId"] = arg0
 	var arg1 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
@@ -13261,14 +13257,14 @@ func (ec *executionContext) field_Party_rewards_args(ctx context.Context, rawArg
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
-	if tmp, ok := rawArgs["asset"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("asset"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+	if tmp, ok := rawArgs["assetId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("assetId"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["asset"] = arg0
+	args["assetId"] = arg0
 	var arg1 *int
 	if tmp, ok := rawArgs["skip"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("skip"))
@@ -13468,14 +13464,14 @@ func (ec *executionContext) field_Query_asset_args(ctx context.Context, rawArgs 
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["assetId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("assetId"))
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
 		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["assetId"] = arg0
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -13524,7 +13520,7 @@ func (ec *executionContext) field_Query_epoch_args(ctx context.Context, rawArgs 
 	var arg0 *string
 	if tmp, ok := rawArgs["id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -13632,7 +13628,7 @@ func (ec *executionContext) field_Query_ethereumKeyRotations_args(ctx context.Co
 	var arg0 *string
 	if tmp, ok := rawArgs["nodeId"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeId"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -13647,7 +13643,7 @@ func (ec *executionContext) field_Query_getMarketDataHistoryByID_args(ctx contex
 	var arg0 string
 	if tmp, ok := rawArgs["id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -13707,7 +13703,7 @@ func (ec *executionContext) field_Query_getMarketDataHistoryConnectionByID_args(
 	var arg0 string
 	if tmp, ok := rawArgs["id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -13773,7 +13769,7 @@ func (ec *executionContext) field_Query_keyRotationsConnection_args(ctx context.
 	var arg0 *string
 	if tmp, ok := rawArgs["id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -13797,7 +13793,7 @@ func (ec *executionContext) field_Query_keyRotations_args(ctx context.Context, r
 	var arg0 *string
 	if tmp, ok := rawArgs["id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -13995,7 +13991,7 @@ func (ec *executionContext) field_Query_node_args(ctx context.Context, rawArgs m
 	var arg0 string
 	if tmp, ok := rawArgs["id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -14023,14 +14019,14 @@ func (ec *executionContext) field_Query_oracleDataBySpecConnection_args(ctx cont
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["oracleSpecID"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("oracleSpecID"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+	if tmp, ok := rawArgs["oracleSpecId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("oracleSpecId"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["oracleSpecID"] = arg0
+	args["oracleSpecId"] = arg0
 	var arg1 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
@@ -14047,14 +14043,14 @@ func (ec *executionContext) field_Query_oracleDataBySpec_args(ctx context.Contex
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["oracleSpecID"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("oracleSpecID"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+	if tmp, ok := rawArgs["oracleSpecId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("oracleSpecId"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["oracleSpecID"] = arg0
+	args["oracleSpecId"] = arg0
 	var arg1 *OffsetPagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
@@ -14101,14 +14097,14 @@ func (ec *executionContext) field_Query_oracleSpec_args(ctx context.Context, raw
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["oracleSpecID"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("oracleSpecID"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+	if tmp, ok := rawArgs["oracleSpecId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("oracleSpecId"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["oracleSpecID"] = arg0
+	args["oracleSpecId"] = arg0
 	return args, nil
 }
 
@@ -14146,14 +14142,14 @@ func (ec *executionContext) field_Query_orderByID_args(ctx context.Context, rawA
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["orderId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderId"))
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
 		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["orderId"] = arg0
+	args["id"] = arg0
 	var arg1 *int
 	if tmp, ok := rawArgs["version"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("version"))
@@ -14379,7 +14375,7 @@ func (ec *executionContext) field_Query_transfersConnection_args(ctx context.Con
 	var arg0 *string
 	if tmp, ok := rawArgs["partyId"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyId"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -14482,14 +14478,14 @@ func (ec *executionContext) field_RewardSummary_rewardsConnection_args(ctx conte
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
-	if tmp, ok := rawArgs["asset"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("asset"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+	if tmp, ok := rawArgs["assetId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("assetId"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["asset"] = arg0
+	args["assetId"] = arg0
 	var arg1 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
@@ -14572,14 +14568,14 @@ func (ec *executionContext) field_Subscription_accounts_args(ctx context.Context
 	}
 	args["partyId"] = arg1
 	var arg2 *string
-	if tmp, ok := rawArgs["asset"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("asset"))
-		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+	if tmp, ok := rawArgs["assetId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("assetId"))
+		arg2, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["asset"] = arg2
+	args["assetId"] = arg2
 	var arg3 *vega.AccountType
 	if tmp, ok := rawArgs["type"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
@@ -14662,23 +14658,23 @@ func (ec *executionContext) field_Subscription_delegations_args(ctx context.Cont
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
-	if tmp, ok := rawArgs["party"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("party"))
+	if tmp, ok := rawArgs["partyId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyId"))
 		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["party"] = arg0
+	args["partyId"] = arg0
 	var arg1 *string
-	if tmp, ok := rawArgs["nodeID"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeID"))
+	if tmp, ok := rawArgs["nodeId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeId"))
 		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["nodeID"] = arg1
+	args["nodeId"] = arg1
 	return args, nil
 }
 
@@ -14872,14 +14868,14 @@ func (ec *executionContext) field_Subscription_rewards_args(ctx context.Context,
 	}
 	args["assetId"] = arg0
 	var arg1 *string
-	if tmp, ok := rawArgs["party"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("party"))
+	if tmp, ok := rawArgs["partyId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyId"))
 		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["party"] = arg1
+	args["partyId"] = arg1
 	return args, nil
 }
 
@@ -15342,7 +15338,7 @@ func (ec *executionContext) _AggregatedBalance_accountId(ctx context.Context, fi
 	}
 	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _AggregatedBalance_partyId(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedBalance) (ret graphql.Marshaler) {
@@ -15374,7 +15370,7 @@ func (ec *executionContext) _AggregatedBalance_partyId(ctx context.Context, fiel
 	}
 	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _AggregatedBalance_assetId(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedBalance) (ret graphql.Marshaler) {
@@ -15406,7 +15402,7 @@ func (ec *executionContext) _AggregatedBalance_assetId(ctx context.Context, fiel
 	}
 	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _AggregatedBalance_marketId(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedBalance) (ret graphql.Marshaler) {
@@ -15438,7 +15434,7 @@ func (ec *executionContext) _AggregatedBalance_marketId(ctx context.Context, fie
 	}
 	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _AggregatedBalance_accountType(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedBalance) (ret graphql.Marshaler) {
@@ -16394,7 +16390,7 @@ func (ec *executionContext) _BuiltinAsset_maxFaucetAmountMint(ctx context.Contex
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _BusEvent_eventId(ctx context.Context, field graphql.CollectedField, obj *BusEvent) (ret graphql.Marshaler) {
+func (ec *executionContext) _BusEvent_id(ctx context.Context, field graphql.CollectedField, obj *BusEvent) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -16412,7 +16408,7 @@ func (ec *executionContext) _BusEvent_eventId(ctx context.Context, field graphql
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.EventID, nil
+		return obj.ID, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -18289,7 +18285,7 @@ func (ec *executionContext) _Epoch_id(ctx context.Context, field graphql.Collect
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Epoch_timestamps(ctx context.Context, field graphql.CollectedField, obj *vega.Epoch) (ret graphql.Marshaler) {
@@ -19129,7 +19125,7 @@ func (ec *executionContext) _EthereumEvent_contractId(ctx context.Context, field
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _EthereumEvent_event(ctx context.Context, field graphql.CollectedField, obj *EthereumEvent) (ret graphql.Marshaler) {
@@ -19199,7 +19195,7 @@ func (ec *executionContext) _EthereumKeyRotation_nodeId(ctx context.Context, fie
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _EthereumKeyRotation_oldAddress(ctx context.Context, field graphql.CollectedField, obj *v1.EthereumKeyRotation) (ret graphql.Marshaler) {
@@ -20030,7 +20026,7 @@ func (ec *executionContext) _Instrument_id(ctx context.Context, field graphql.Co
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Instrument_code(ctx context.Context, field graphql.CollectedField, obj *vega.Instrument) (ret graphql.Marshaler) {
@@ -20339,7 +20335,7 @@ func (ec *executionContext) _KeyRotation_nodeId(ctx context.Context, field graph
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _KeyRotation_oldPubKey(ctx context.Context, field graphql.CollectedField, obj *v1.KeyRotation) (ret graphql.Marshaler) {
@@ -23290,7 +23286,7 @@ func (ec *executionContext) _Market_liquidityProvisions(ctx context.Context, fie
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Market().LiquidityProvisions(rctx, obj, args["party"].(*string))
+		return ec.resolvers.Market().LiquidityProvisions(rctx, obj, args["partyId"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -23329,7 +23325,7 @@ func (ec *executionContext) _Market_liquidityProvisionsConnection(ctx context.Co
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Market().LiquidityProvisionsConnection(rctx, obj, args["party"].(*string), args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Market().LiquidityProvisionsConnection(rctx, obj, args["partyId"].(*string), args["pagination"].(*v2.Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -24803,7 +24799,7 @@ func (ec *executionContext) _MarketDepthTrade_id(ctx context.Context, field grap
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketDepthTrade_price(ctx context.Context, field graphql.CollectedField, obj *MarketDepthTrade) (ret graphql.Marshaler) {
@@ -26479,7 +26475,7 @@ func (ec *executionContext) _Node_id(ctx context.Context, field graphql.Collecte
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Node_pubkey(ctx context.Context, field graphql.CollectedField, obj *vega.Node) (ret graphql.Marshaler) {
@@ -27659,7 +27655,7 @@ func (ec *executionContext) _ObservableLiquidityProviderFeeShare_partyId(ctx con
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ObservableLiquidityProviderFeeShare_equityLikeShare(ctx context.Context, field graphql.CollectedField, obj *ObservableLiquidityProviderFeeShare) (ret graphql.Marshaler) {
@@ -27764,7 +27760,7 @@ func (ec *executionContext) _ObservableMarketData_marketId(ctx context.Context, 
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ObservableMarketData_markPrice(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
@@ -28656,7 +28652,7 @@ func (ec *executionContext) _ObservableMarketDepth_marketId(ctx context.Context,
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ObservableMarketDepth_buy(ctx context.Context, field graphql.CollectedField, obj *vega.MarketDepth) (ret graphql.Marshaler) {
@@ -28825,7 +28821,7 @@ func (ec *executionContext) _ObservableMarketDepthUpdate_marketId(ctx context.Co
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ObservableMarketDepthUpdate_buy(ctx context.Context, field graphql.CollectedField, obj *vega.MarketDepthUpdate) (ret graphql.Marshaler) {
@@ -29087,7 +29083,7 @@ func (ec *executionContext) _OracleData_matchedSpecIds(ctx context.Context, fiel
 	}
 	res := resTmp.([]string)
 	fc.Result = res
-	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+	return ec.marshalOID2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OracleData_broadcastAt(ctx context.Context, field graphql.CollectedField, obj *v12.OracleData) (ret graphql.Marshaler) {
@@ -29294,7 +29290,7 @@ func (ec *executionContext) _OracleSpec_id(ctx context.Context, field graphql.Co
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OracleSpec_createdAt(ctx context.Context, field graphql.CollectedField, obj *v12.OracleSpec) (ret graphql.Marshaler) {
@@ -31095,7 +31091,7 @@ func (ec *executionContext) _Party_accounts(ctx context.Context, field graphql.C
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Party().Accounts(rctx, obj, args["marketId"].(*string), args["asset"].(*string), args["type"].(*vega.AccountType))
+		return ec.resolvers.Party().Accounts(rctx, obj, args["marketId"].(*string), args["assetId"].(*string), args["type"].(*vega.AccountType))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -31134,7 +31130,7 @@ func (ec *executionContext) _Party_accountsConnection(ctx context.Context, field
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Party().AccountsConnection(rctx, obj, args["marketId"].(*string), args["asset"].(*string), args["type"].(*vega.AccountType), args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Party().AccountsConnection(rctx, obj, args["marketId"].(*string), args["assetId"].(*string), args["type"].(*vega.AccountType), args["pagination"].(*v2.Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -31673,7 +31669,7 @@ func (ec *executionContext) _Party_liquidityProvisionsConnection(ctx context.Con
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Party().LiquidityProvisionsConnection(rctx, obj, args["market"].(*string), args["reference"].(*string), args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Party().LiquidityProvisionsConnection(rctx, obj, args["marketId"].(*string), args["reference"].(*string), args["pagination"].(*v2.Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -31873,7 +31869,7 @@ func (ec *executionContext) _Party_rewards(ctx context.Context, field graphql.Co
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Party().Rewards(rctx, obj, args["asset"].(*string), args["skip"].(*int), args["first"].(*int), args["last"].(*int))
+		return ec.resolvers.Party().Rewards(rctx, obj, args["assetId"].(*string), args["skip"].(*int), args["first"].(*int), args["last"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -31912,7 +31908,7 @@ func (ec *executionContext) _Party_rewardsConnection(ctx context.Context, field 
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Party().RewardsConnection(rctx, obj, args["asset"].(*string), args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Party().RewardsConnection(rctx, obj, args["assetId"].(*string), args["pagination"].(*v2.Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -31951,7 +31947,7 @@ func (ec *executionContext) _Party_rewardSummaries(ctx context.Context, field gr
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Party().RewardSummaries(rctx, obj, args["asset"].(*string))
+		return ec.resolvers.Party().RewardSummaries(rctx, obj, args["assetId"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -34925,7 +34921,7 @@ func (ec *executionContext) _Query_oracleSpec(ctx context.Context, field graphql
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().OracleSpec(rctx, args["oracleSpecID"].(string))
+		return ec.resolvers.Query().OracleSpec(rctx, args["oracleSpecId"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -34964,7 +34960,7 @@ func (ec *executionContext) _Query_oracleDataBySpec(ctx context.Context, field g
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().OracleDataBySpec(rctx, args["oracleSpecID"].(string), args["pagination"].(*OffsetPagination))
+		return ec.resolvers.Query().OracleDataBySpec(rctx, args["oracleSpecId"].(string), args["pagination"].(*OffsetPagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -35003,7 +34999,7 @@ func (ec *executionContext) _Query_oracleDataBySpecConnection(ctx context.Contex
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().OracleDataBySpecConnection(rctx, args["oracleSpecID"].(string), args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Query().OracleDataBySpecConnection(rctx, args["oracleSpecId"].(string), args["pagination"].(*v2.Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -35126,7 +35122,7 @@ func (ec *executionContext) _Query_orderByID(ctx context.Context, field graphql.
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().OrderByID(rctx, args["orderId"].(string), args["version"].(*int))
+		return ec.resolvers.Query().OrderByID(rctx, args["id"].(string), args["version"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -35379,14 +35375,11 @@ func (ec *executionContext) _Query_proposal(ctx context.Context, field graphql.C
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*vega.GovernanceData)
 	fc.Result = res
-	return ec.marshalNProposal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐGovernanceData(ctx, field.Selections, res)
+	return ec.marshalOProposal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐGovernanceData(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_newMarketProposals(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -35690,7 +35683,7 @@ func (ec *executionContext) _Query_asset(ctx context.Context, field graphql.Coll
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Asset(rctx, args["assetId"].(string))
+		return ec.resolvers.Query().Asset(rctx, args["id"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -37081,7 +37074,7 @@ func (ec *executionContext) _Reward_asset(ctx context.Context, field graphql.Col
 	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Reward_marketID(ctx context.Context, field graphql.CollectedField, obj *vega.Reward) (ret graphql.Marshaler) {
+func (ec *executionContext) _Reward_marketId(ctx context.Context, field graphql.CollectedField, obj *vega.Reward) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -37113,7 +37106,7 @@ func (ec *executionContext) _Reward_marketID(ctx context.Context, field graphql.
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Reward_rewardType(ctx context.Context, field graphql.CollectedField, obj *vega.Reward) (ret graphql.Marshaler) {
@@ -37463,7 +37456,7 @@ func (ec *executionContext) _RewardPerAssetDetail_assetId(ctx context.Context, f
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RewardPerAssetDetail_rewards(ctx context.Context, field graphql.CollectedField, obj *vega.RewardSummary) (ret graphql.Marshaler) {
@@ -37877,7 +37870,7 @@ func (ec *executionContext) _RewardSummary_rewardsConnection(ctx context.Context
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.RewardSummary().RewardsConnection(rctx, obj, args["asset"].(*string), args["pagination"].(*v2.Pagination))
+		return ec.resolvers.RewardSummary().RewardsConnection(rctx, obj, args["assetId"].(*string), args["pagination"].(*v2.Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -40047,7 +40040,7 @@ func (ec *executionContext) _Statistics_chainId(ctx context.Context, field graph
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Subscription_candles(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
@@ -40381,7 +40374,7 @@ func (ec *executionContext) _Subscription_accounts(ctx context.Context, field gr
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Subscription().Accounts(rctx, args["marketId"].(*string), args["partyId"].(*string), args["asset"].(*string), args["type"].(*vega.AccountType))
+		return ec.resolvers.Subscription().Accounts(rctx, args["marketId"].(*string), args["partyId"].(*string), args["assetId"].(*string), args["type"].(*vega.AccountType))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -40846,7 +40839,7 @@ func (ec *executionContext) _Subscription_delegations(ctx context.Context, field
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Subscription().Delegations(rctx, args["party"].(*string), args["nodeID"].(*string))
+		return ec.resolvers.Subscription().Delegations(rctx, args["partyId"].(*string), args["nodeId"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -40898,7 +40891,7 @@ func (ec *executionContext) _Subscription_rewards(ctx context.Context, field gra
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Subscription().Rewards(rctx, args["assetId"].(*string), args["party"].(*string))
+		return ec.resolvers.Subscription().Rewards(rctx, args["assetId"].(*string), args["partyId"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -46704,9 +46697,9 @@ func (ec *executionContext) _BusEvent(ctx context.Context, sel ast.SelectionSet,
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("BusEvent")
-		case "eventId":
+		case "id":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._BusEvent_eventId(ctx, field, obj)
+				return ec._BusEvent_id(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -56353,9 +56346,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_proposal(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			}
 
@@ -57273,9 +57263,9 @@ func (ec *executionContext) _Reward(ctx context.Context, sel ast.SelectionSet, o
 				return innerFunc(ctx)
 
 			})
-		case "marketID":
+		case "marketId":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Reward_marketID(ctx, field, obj)
+				return ec._Reward_marketId(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
