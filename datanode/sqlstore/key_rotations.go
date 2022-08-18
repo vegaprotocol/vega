@@ -42,13 +42,14 @@ func NewKeyRotations(connectionSource *ConnectionSource) *KeyRotations {
 func (store *KeyRotations) Upsert(ctx context.Context, kr *entities.KeyRotation) error {
 	defer metrics.StartSQLQuery("KeyRotations", "Upsert")()
 	_, err := store.pool.Exec(ctx, `
-		INSERT INTO key_rotations(node_id, old_pub_key, new_pub_key, block_height, vega_time)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO key_rotations(node_id, old_pub_key, new_pub_key, block_height, tx_hash, vega_time)
+		VALUES ($1, $2, $3, $4, $5, $6)
 		ON CONFLICT (node_id, vega_time) DO UPDATE SET
 			old_pub_key = EXCLUDED.old_pub_key,
 			new_pub_key = EXCLUDED.new_pub_key,
-			block_height = EXCLUDED.block_height
-	`, kr.NodeID, kr.OldPubKey, kr.NewPubKey, kr.BlockHeight, kr.VegaTime)
+			block_height = EXCLUDED.block_height,
+			tx_hash = EXCLUDED.tx_hash
+	`, kr.NodeID, kr.OldPubKey, kr.NewPubKey, kr.BlockHeight, kr.TxHash, kr.VegaTime)
 
 	// TODO Update node table with new pubkey here?
 

@@ -180,12 +180,13 @@ func getTestSignerEvent(t *testing.T, signatureID string, validatorID string, su
 				EpochSeq:    epochSeq,
 				Timestamp:   time.Unix(10000000, 13000).UnixNano(),
 			},
+			generateTxHash(),
 		)
 		require.NoError(t, err)
 	case false:
 		evts, err := entities.ERC20MultiSigSignerEventFromRemovedProto(
 			&eventspb.ERC20MultiSigSignerRemoved{
-				SignatureSubmitters: []*eventspb.ERC20MulistSigSignerRemovedSubmitter{
+				SignatureSubmitters: []*eventspb.ERC20MultiSigSignerRemovedSubmitter{
 					{
 						SignatureId: signatureID,
 						Submitter:   submitter,
@@ -197,6 +198,7 @@ func getTestSignerEvent(t *testing.T, signatureID string, validatorID string, su
 				EpochSeq:    epochSeq,
 				Timestamp:   time.Unix(10000000, 13000).UnixNano(),
 			},
+			generateTxHash(),
 		)
 		require.NoError(t, err)
 		evt = evts[0]

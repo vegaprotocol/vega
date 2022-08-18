@@ -32,10 +32,11 @@ type OracleData struct {
 	Data           []Property
 	MatchedSpecIds [][]byte // pgx automatically handles [][]byte to Postgres ByteaArray mappings
 	BroadcastAt    time.Time
+	TxHash         TxHash
 	VegaTime       time.Time
 }
 
-func OracleDataFromProto(data *oraclespb.OracleData, vegaTime time.Time) (*OracleData, error) {
+func OracleDataFromProto(data *oraclespb.OracleData, txHash TxHash, vegaTime time.Time) (*OracleData, error) {
 	properties := make([]Property, 0, len(data.Data))
 	specIDs := make([][]byte, 0, len(data.MatchedSpecIds))
 
@@ -65,6 +66,7 @@ func OracleDataFromProto(data *oraclespb.OracleData, vegaTime time.Time) (*Oracl
 		Data:           properties,
 		MatchedSpecIds: specIDs,
 		BroadcastAt:    NanosToPostgresTimestamp(data.BroadcastAt),
+		TxHash:         txHash,
 		VegaTime:       vegaTime,
 	}, nil
 }

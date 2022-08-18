@@ -47,6 +47,7 @@ type Proposal struct {
 	Reason       ProposalError
 	ErrorDetails string
 	ProposalTime time.Time
+	TxHash       TxHash
 	VegaTime     time.Time
 }
 
@@ -83,7 +84,7 @@ func (p Proposal) ToProtoEdge(_ ...any) (*v2.GovernanceDataEdge, error) {
 	}, nil
 }
 
-func ProposalFromProto(pp *vega.Proposal) (Proposal, error) {
+func ProposalFromProto(pp *vega.Proposal, txHash TxHash) (Proposal, error) {
 	p := Proposal{
 		ID:           ProposalID(pp.Id),
 		Reference:    pp.Reference,
@@ -94,6 +95,7 @@ func ProposalFromProto(pp *vega.Proposal) (Proposal, error) {
 		Reason:       ProposalError(pp.Reason),
 		ErrorDetails: pp.ErrorDetails,
 		ProposalTime: time.Unix(0, pp.Timestamp),
+		TxHash:       txHash,
 	}
 	return p, nil
 }

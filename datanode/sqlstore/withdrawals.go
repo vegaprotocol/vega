@@ -40,10 +40,10 @@ var withdrawalsOrdering = TableOrdering{
 func (w *Withdrawals) Upsert(ctx context.Context, withdrawal *entities.Withdrawal) error {
 	defer metrics.StartSQLQuery("Withdrawals", "Upsert")()
 	query := `insert into withdrawals(
-		id, party_id, amount, asset, status, ref, expiry, tx_hash,
-		created_timestamp, withdrawn_timestamp, ext, vega_time
+		id, party_id, amount, asset, status, ref, expiry, foreign_tx_hash,
+		created_timestamp, withdrawn_timestamp, ext, tx_hash, vega_time
 	)
-		values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+		values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 		on conflict (id, vega_time) do update
 		set
 			party_id=EXCLUDED.party_id,
@@ -52,10 +52,11 @@ func (w *Withdrawals) Upsert(ctx context.Context, withdrawal *entities.Withdrawa
 			status=EXCLUDED.status,
 			ref=EXCLUDED.ref,
 			expiry=EXCLUDED.expiry,
-			tx_hash=EXCLUDED.tx_hash,
+			foreign_tx_hash=EXCLUDED.foreign_tx_hash,
 			created_timestamp=EXCLUDED.created_timestamp,
 			withdrawn_timestamp=EXCLUDED.withdrawn_timestamp,
-			ext=EXCLUDED.ext`
+			ext=EXCLUDED.ext,
+			tx_hash=EXCLUDED.tx_hash`
 
 	if _, err := w.Connection.Exec(ctx, query,
 		withdrawal.ID,
@@ -65,10 +66,11 @@ func (w *Withdrawals) Upsert(ctx context.Context, withdrawal *entities.Withdrawa
 		withdrawal.Status,
 		withdrawal.Ref,
 		withdrawal.Expiry,
-		withdrawal.TxHash,
+		withdrawal.ForeignTxHash,
 		withdrawal.CreatedTimestamp,
 		withdrawal.WithdrawnTimestamp,
 		withdrawal.Ext,
+		withdrawal.TxHash,
 		withdrawal.VegaTime); err != nil {
 		err = fmt.Errorf("could not insert deposit into database: %w", err)
 		return err
@@ -81,7 +83,9 @@ func (w *Withdrawals) GetByID(ctx context.Context, withdrawalID string) (entitie
 	defer metrics.StartSQLQuery("Withdrawals", "GetByID")()
 	var withdrawal entities.Withdrawal
 
-	query := `select distinct on (id) id, party_id, amount, asset, status, ref, expiry, tx_hash, created_timestamp, withdrawn_timestamp, ext, vega_time
+	query := `select distinct on (id) id, party_id, amount, asset, status, ref, expiry,
+									  foreign_tx_hash, created_timestamp, withdrawn_timestamp,
+									  ext, tx_hash, vega_time
 		from withdrawals
 		where id = $1
 		order by id, vega_time desc`
@@ -150,7 +154,7 @@ func (w *Withdrawals) getByPartyCursor(ctx context.Context, partyID string, open
 
 func getWithdrawalsByPartyQuery() string {
 	return `SELECT
-		id, party_id, amount, asset, status, ref, expiry, tx_hash,
-		created_timestamp, withdrawn_timestamp, ext, vega_time
+		id, party_id, amount, asset, status, ref, expiry, foreign_tx_hash,
+		created_timestamp, withdrawn_timestamp, ext, tx_hash, vega_time
 		FROM withdrawals_current`
 }
