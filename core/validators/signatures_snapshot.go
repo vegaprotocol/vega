@@ -28,7 +28,7 @@ func (s *ERC20Signatures) SerialisePendingSignatures() *snapshot.ToplogySignatur
 				NodeId:          data.NodeID,
 				Nonce:           data.Nonce.String(),
 				EthereumAddress: e,
-				Added:           true,
+				Added:           data.Added,
 				EpochSeq:        data.EpochSeq,
 			},
 		)
@@ -51,8 +51,8 @@ func (s *ERC20Signatures) SerialisePendingSignatures() *snapshot.ToplogySignatur
 
 func (s *ERC20Signatures) RestorePendingSignatures(sigs *snapshot.ToplogySignatures) {
 	for _, data := range sigs.PendingSignatures {
-		nonce, ok := num.UintFromString(data.Nonce, 10)
-		if !ok {
+		nonce, overflow := num.UintFromString(data.Nonce, 10)
+		if overflow {
 			s.log.Panic("Uint string not save/restored properly", logging.String("nonce", data.Nonce))
 		}
 		sd := &signatureData{
