@@ -3,7 +3,7 @@ module code.vegaprotocol.io/vega
 go 1.18
 
 require (
-	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
+	code.vegaprotocol.io/oracles-relay v0.0.0-20220819135656-783260e20264
 	code.vegaprotocol.io/quant v0.2.5
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cenkalti/backoff v2.2.1+incompatible
