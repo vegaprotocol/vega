@@ -191,7 +191,7 @@ message MarketActivityTracker {
   repeated PartyFees taker_fees = 4;
   repeated PartyFees lp_fees = 5;
   string proposer = 6;
-  bool bonus_paid = 7;
+  repeated string bonus_paid = 7;
   string value_traded = 8;
   bool ready_to_delete = 9;
 }
