@@ -106,7 +106,8 @@ type Topology interface {
 
 type MarketActivityTracker interface {
 	GetMarketScores(asset string, markets []string, dispatchMetric proto.DispatchMetric) []*types.MarketContributionScore
-	GetMarketsWithEligibleProposer(asset string, markets []string) []*types.MarketContributionScore
+	GetMarketsWithEligibleProposer(asset string, markets []string, payoutAsset string, funder string) []*types.MarketContributionScore
+	MarkPaidProposer(market, payoutAsset string, marketsInScope []string, funder string)
 }
 
 const (
@@ -145,9 +146,10 @@ type Engine struct {
 	scheduledTransfers         map[time.Time][]scheduledTransfer
 	transferFeeFactor          num.Decimal
 	minTransferQuantumMultiple num.Decimal
-	// recurring transfers
+	// recurring transfers in the order they were created
+	recurringTransfers []*types.RecurringTransfer
 	// transfer id to recurringTransfers
-	recurringTransfers map[string]*types.RecurringTransfer
+	recurringTransfersMap map[string]*types.RecurringTransfer
 
 	bridgeState *bridgeState
 
@@ -205,7 +207,8 @@ func New(
 			changedBridgeState:        true,
 		},
 		scheduledTransfers:         map[time.Time][]scheduledTransfer{},
-		recurringTransfers:         map[string]*types.RecurringTransfer{},
+		recurringTransfers:         []*types.RecurringTransfer{},
+		recurringTransfersMap:      map[string]*types.RecurringTransfer{},
 		transferFeeFactor:          num.DecimalZero(),
 		minTransferQuantumMultiple: num.DecimalZero(),
 		marketActivityTracker:      marketActivityTracker,
