@@ -606,11 +606,12 @@ func (r *myQueryResolver) Erc20ListAssetBundle(ctx context.Context, assetID stri
 	}, nil
 }
 
-func (r *myQueryResolver) Erc20MultiSigSignerAddedBundles(ctx context.Context, nodeID string, epochSeq string, pagination *v2.Pagination) (*ERC20MultiSigSignerAddedConnection, error) {
+func (r *myQueryResolver) Erc20MultiSigSignerAddedBundles(ctx context.Context, nodeID string, submitter, epochSeq *string, pagination *v2.Pagination) (*ERC20MultiSigSignerAddedConnection, error) {
 	res, err := r.tradingDataClientV2.GetERC20MultiSigSignerAddedBundles(
 		ctx, &v2.GetERC20MultiSigSignerAddedBundlesRequest{
 			NodeId:     nodeID,
-			EpochSeq:   epochSeq,
+			Submitter:  fromPtr(submitter),
+			EpochSeq:   fromPtr(epochSeq),
 			Pagination: pagination,
 		})
 	if err != nil {
@@ -639,12 +640,12 @@ func (r *myQueryResolver) Erc20MultiSigSignerAddedBundles(ctx context.Context, n
 	}, nil
 }
 
-func (r *myQueryResolver) Erc20MultiSigSignerRemovedBundles(ctx context.Context, nodeID string, submitter string, epochSeq string, pagination *v2.Pagination) (*ERC20MultiSigSignerRemovedConnection, error) {
+func (r *myQueryResolver) Erc20MultiSigSignerRemovedBundles(ctx context.Context, nodeID string, submitter, epochSeq *string, pagination *v2.Pagination) (*ERC20MultiSigSignerRemovedConnection, error) {
 	res, err := r.tradingDataClientV2.GetERC20MultiSigSignerRemovedBundles(
 		ctx, &v2.GetERC20MultiSigSignerRemovedBundlesRequest{
 			NodeId:     nodeID,
-			Submitter:  submitter,
-			EpochSeq:   epochSeq,
+			Submitter:  fromPtr(submitter),
+			EpochSeq:   fromPtr(epochSeq),
 			Pagination: pagination,
 		})
 	if err != nil {
@@ -671,6 +672,13 @@ func (r *myQueryResolver) Erc20MultiSigSignerRemovedBundles(ctx context.Context,
 		Edges:    edges,
 		PageInfo: res.Bundles.PageInfo,
 	}, nil
+}
+
+func fromPtr[T any](ptr *T) (ret T) {
+	if ptr != nil {
+		ret = *ptr
+	}
+	return
 }
 
 func (r *myQueryResolver) Withdrawal(ctx context.Context, wid string) (*types.Withdrawal, error) {

@@ -1129,8 +1129,8 @@ type ComplexityRoot struct {
 		Deposit                            func(childComplexity int, id string) int
 		Epoch                              func(childComplexity int, id *string) int
 		Erc20ListAssetBundle               func(childComplexity int, assetID string) int
-		Erc20MultiSigSignerAddedBundles    func(childComplexity int, nodeID string, epochSeq string, pagination *v2.Pagination) int
-		Erc20MultiSigSignerRemovedBundles  func(childComplexity int, nodeID string, submitter string, epochSeq string, pagination *v2.Pagination) int
+		Erc20MultiSigSignerAddedBundles    func(childComplexity int, nodeID string, submitter *string, epochSeq *string, pagination *v2.Pagination) int
+		Erc20MultiSigSignerRemovedBundles  func(childComplexity int, nodeID string, submitter *string, epochSeq *string, pagination *v2.Pagination) int
 		Erc20WithdrawalApproval            func(childComplexity int, withdrawalID string) int
 		EstimateOrder                      func(childComplexity int, marketID string, partyID string, price *string, size string, side vega.Side, timeInForce vega.Order_TimeInForce, expiration *string, typeArg vega.Order_Type) int
 		EthereumKeyRotations               func(childComplexity int, nodeID *string) int
@@ -1902,8 +1902,8 @@ type QueryResolver interface {
 	EstimateOrder(ctx context.Context, marketID string, partyID string, price *string, size string, side vega.Side, timeInForce vega.Order_TimeInForce, expiration *string, typeArg vega.Order_Type) (*OrderEstimate, error)
 	Withdrawal(ctx context.Context, id string) (*vega.Withdrawal, error)
 	Erc20WithdrawalApproval(ctx context.Context, withdrawalID string) (*Erc20WithdrawalApproval, error)
-	Erc20MultiSigSignerAddedBundles(ctx context.Context, nodeID string, epochSeq string, pagination *v2.Pagination) (*ERC20MultiSigSignerAddedConnection, error)
-	Erc20MultiSigSignerRemovedBundles(ctx context.Context, nodeID string, submitter string, epochSeq string, pagination *v2.Pagination) (*ERC20MultiSigSignerRemovedConnection, error)
+	Erc20MultiSigSignerAddedBundles(ctx context.Context, nodeID string, submitter *string, epochSeq *string, pagination *v2.Pagination) (*ERC20MultiSigSignerAddedConnection, error)
+	Erc20MultiSigSignerRemovedBundles(ctx context.Context, nodeID string, submitter *string, epochSeq *string, pagination *v2.Pagination) (*ERC20MultiSigSignerRemovedConnection, error)
 	Erc20ListAssetBundle(ctx context.Context, assetID string) (*Erc20ListAssetBundle, error)
 	Deposit(ctx context.Context, id string) (*vega.Deposit, error)
 	NetworkParameters(ctx context.Context) ([]*vega.NetworkParameter, error)
@@ -6480,7 +6480,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Erc20MultiSigSignerAddedBundles(childComplexity, args["nodeId"].(string), args["epochSeq"].(string), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Query.Erc20MultiSigSignerAddedBundles(childComplexity, args["nodeId"].(string), args["submitter"].(*string), args["epochSeq"].(*string), args["pagination"].(*v2.Pagination)), true
 
 	case "Query.erc20MultiSigSignerRemovedBundles":
 		if e.complexity.Query.Erc20MultiSigSignerRemovedBundles == nil {
@@ -6492,7 +6492,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Erc20MultiSigSignerRemovedBundles(childComplexity, args["nodeId"].(string), args["submitter"].(string), args["epochSeq"].(string), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Query.Erc20MultiSigSignerRemovedBundles(childComplexity, args["nodeId"].(string), args["submitter"].(*string), args["epochSeq"].(*string), args["pagination"].(*v2.Pagination)), true
 
 	case "Query.erc20WithdrawalApproval":
 		if e.complexity.Query.Erc20WithdrawalApproval == nil {
@@ -9231,8 +9231,10 @@ type Query {
   erc20MultiSigSignerAddedBundles(
     "The node id of the validator of which a signature bundle is required"
     nodeId: ID!
+    "The ethereum address of the submitter"
+    submitter: String
     "The epoch which generated the bundle i.e the epoch in which the node was demoted from a tendermint validator"
-    epochSeq: String!
+    epochSeq: String
     "Pagination"
     pagination: Pagination
   ): ERC20MultiSigSignerAddedConnection!
@@ -9241,9 +9243,9 @@ type Query {
     "The node id of the validator of which a signature bundle is required"
     nodeId: ID!
     "The ethereum address of the validator which will submit the bundle"
-    submitter: String!
+    submitter: String
     "The epoch which generated the bundle i.e the epoch in which the node was demoted from a tendermint validator"
-    epochSeq: String!
+    epochSeq: String
     "Pagination"
     pagination: Pagination
   ): ERC20MultiSigSignerRemovedConnection!
@@ -13903,24 +13905,33 @@ func (ec *executionContext) field_Query_erc20MultiSigSignerAddedBundles_args(ctx
 		}
 	}
 	args["nodeId"] = arg0
-	var arg1 string
+	var arg1 *string
+	if tmp, ok := rawArgs["submitter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("submitter"))
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["submitter"] = arg1
+	var arg2 *string
 	if tmp, ok := rawArgs["epochSeq"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("epochSeq"))
-		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["epochSeq"] = arg1
-	var arg2 *v2.Pagination
+	args["epochSeq"] = arg2
+	var arg3 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg2, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		arg3, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["pagination"] = arg2
+	args["pagination"] = arg3
 	return args, nil
 }
 
@@ -13936,19 +13947,19 @@ func (ec *executionContext) field_Query_erc20MultiSigSignerRemovedBundles_args(c
 		}
 	}
 	args["nodeId"] = arg0
-	var arg1 string
+	var arg1 *string
 	if tmp, ok := rawArgs["submitter"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("submitter"))
-		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
 	args["submitter"] = arg1
-	var arg2 string
+	var arg2 *string
 	if tmp, ok := rawArgs["epochSeq"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("epochSeq"))
-		arg2, err = ec.unmarshalNString2string(ctx, tmp)
+		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -37181,7 +37192,7 @@ func (ec *executionContext) _Query_erc20MultiSigSignerAddedBundles(ctx context.C
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Erc20MultiSigSignerAddedBundles(rctx, args["nodeId"].(string), args["epochSeq"].(string), args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Query().Erc20MultiSigSignerAddedBundles(rctx, args["nodeId"].(string), args["submitter"].(*string), args["epochSeq"].(*string), args["pagination"].(*v2.Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -37223,7 +37234,7 @@ func (ec *executionContext) _Query_erc20MultiSigSignerRemovedBundles(ctx context
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Erc20MultiSigSignerRemovedBundles(rctx, args["nodeId"].(string), args["submitter"].(string), args["epochSeq"].(string), args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Query().Erc20MultiSigSignerRemovedBundles(rctx, args["nodeId"].(string), args["submitter"].(*string), args["epochSeq"].(*string), args["pagination"].(*v2.Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

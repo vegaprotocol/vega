@@ -545,8 +545,10 @@ type Query {
   erc20MultiSigSignerAddedBundles(
     "The node id of the validator of which a signature bundle is required"
     nodeId: ID!
+    "The ethereum address of the submitter"
+    submitter: String
     "The epoch which generated the bundle i.e the epoch in which the node was demoted from a tendermint validator"
-    epochSeq: String!
+    epochSeq: String
     "Pagination"
     pagination: Pagination
   ): ERC20MultiSigSignerAddedConnection!
@@ -555,9 +557,9 @@ type Query {
     "The node id of the validator of which a signature bundle is required"
     nodeId: ID!
     "The ethereum address of the validator which will submit the bundle"
-    submitter: String!
+    submitter: String
     "The epoch which generated the bundle i.e the epoch in which the node was demoted from a tendermint validator"
-    epochSeq: String!
+    epochSeq: String
     "Pagination"
     pagination: Pagination
   ): ERC20MultiSigSignerRemovedConnection!
