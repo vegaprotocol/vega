@@ -9,6 +9,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
+- [5678](https://github.com/vegaprotocol/vega/issues/5678) - Add GraphQL endpoints for Ethereum bundles: `listAsset`, `addSigner` and `removeSigner`
 - [5766](https://github.com/vegaprotocol/vega/issues/5766) - Better notification for version update on the wallet
 - [5841](https://github.com/vegaprotocol/vega/issues/5841) - Add transaction to request `multisigControl` signatures on demand
 
