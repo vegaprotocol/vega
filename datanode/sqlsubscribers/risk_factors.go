@@ -54,7 +54,7 @@ func (rf *RiskFactor) Push(ctx context.Context, evt events.Event) error {
 
 func (rf *RiskFactor) consume(ctx context.Context, event RiskFactorEvent) error {
 	riskFactor := event.RiskFactor()
-	record, err := entities.RiskFactorFromProto(&riskFactor, rf.vegaTime)
+	record, err := entities.RiskFactorFromProto(&riskFactor, entities.TxHash(event.TxHash()), rf.vegaTime)
 	if err != nil {
 		return errors.Wrap(err, "converting risk factor proto to database entity failed")
 	}

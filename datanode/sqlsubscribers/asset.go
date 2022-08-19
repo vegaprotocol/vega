@@ -58,7 +58,7 @@ func (as *Asset) Push(ctx context.Context, evt events.Event) error {
 }
 
 func (as *Asset) consume(ctx context.Context, ae AssetEvent) error {
-	err := as.addAsset(ctx, ae.Asset(), as.vegaTime)
+	err := as.addAsset(ctx, ae.Asset(), ae.TxHash(), as.vegaTime)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -66,7 +66,7 @@ func (as *Asset) consume(ctx context.Context, ae AssetEvent) error {
 	return nil
 }
 
-func (as *Asset) addAsset(ctx context.Context, va vega.Asset, vegaTime time.Time) error {
+func (as *Asset) addAsset(ctx context.Context, va vega.Asset, txHash string, vegaTime time.Time) error {
 	quantum, err := decimal.NewFromString(va.Details.Quantum)
 	if err != nil {
 		return errors.Errorf("bad quantum '%v'", va.Details.Quantum)
@@ -112,6 +112,7 @@ func (as *Asset) addAsset(ctx context.Context, va vega.Asset, vegaTime time.Time
 		Quantum:           quantum,
 		Source:            source,
 		ERC20Contract:     erc20Contract,
+		TxHash:            entities.TxHash(txHash),
 		VegaTime:          vegaTime,
 		LifetimeLimit:     lifetimeLimit,
 		WithdrawThreshold: withdrawalThreshold,

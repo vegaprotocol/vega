@@ -31,6 +31,7 @@ type Vote struct {
 	TotalGovernanceTokenWeight  decimal.Decimal
 	TotalEquityLikeShareWeight  decimal.Decimal
 	InitialTime                 time.Time // First vote for this party/proposal
+	TxHash                      TxHash
 	VegaTime                    time.Time // Time of last vote update
 }
 
@@ -46,7 +47,7 @@ func (v *Vote) ToProto() *vega.Vote {
 	}
 }
 
-func VoteFromProto(pv *vega.Vote) (Vote, error) {
+func VoteFromProto(pv *vega.Vote, txHash TxHash) (Vote, error) {
 	totalGovernanceTokenBalance, err := decimal.NewFromString(pv.TotalGovernanceTokenBalance)
 	if err != nil {
 		return Vote{}, err
@@ -70,6 +71,7 @@ func VoteFromProto(pv *vega.Vote) (Vote, error) {
 		TotalGovernanceTokenWeight:  totalGovernanceTokenWeight,
 		TotalEquityLikeShareWeight:  totalEquityLikeShareWeight,
 		InitialTime:                 NanosToPostgresTimestamp(pv.Timestamp),
+		TxHash:                      txHash,
 	}
 
 	return v, nil

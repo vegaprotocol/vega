@@ -35,6 +35,7 @@ type TransferID = ID[_Transfer]
 
 type Transfer struct {
 	ID                  TransferID
+	TxHash              TxHash
 	VegaTime            time.Time
 	FromAccountId       int64
 	ToAccountId         int64
@@ -108,12 +109,13 @@ func (t *Transfer) ToProto(accountSource AccountSource) (*eventspb.Transfer, err
 	return &proto, nil
 }
 
-func TransferFromProto(ctx context.Context, t *eventspb.Transfer, vegaTime time.Time, accountSource AccountSource) (*Transfer, error) {
+func TransferFromProto(ctx context.Context, t *eventspb.Transfer, txHash TxHash, vegaTime time.Time, accountSource AccountSource) (*Transfer, error) {
 	fromAcc := Account{
 		ID:       0,
 		PartyID:  PartyID(t.From),
 		AssetID:  AssetID(t.Asset),
 		Type:     t.FromAccountType,
+		TxHash:   txHash,
 		VegaTime: vegaTime,
 	}
 
@@ -127,6 +129,7 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, vegaTime time.
 		PartyID:  PartyID(t.To),
 		AssetID:  AssetID(t.Asset),
 		Type:     t.ToAccountType,
+		TxHash:   txHash,
 		VegaTime: vegaTime,
 	}
 
@@ -143,6 +146,7 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, vegaTime time.
 
 	transfer := Transfer{
 		ID:            TransferID(t.Id),
+		TxHash:        txHash,
 		VegaTime:      vegaTime,
 		FromAccountId: fromAcc.ID,
 		ToAccountId:   toAcc.ID,

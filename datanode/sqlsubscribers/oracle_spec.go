@@ -54,7 +54,7 @@ func (od *OracleSpec) Push(ctx context.Context, evt events.Event) error {
 
 func (od *OracleSpec) consume(ctx context.Context, event OracleSpecEvent) error {
 	spec := event.OracleSpec()
-	entity, err := entities.OracleSpecFromProto(&spec, od.vegaTime)
+	entity, err := entities.OracleSpecFromProto(&spec, entities.TxHash(event.TxHash()), od.vegaTime)
 	if err != nil {
 		return errors.Wrap(err, "converting oracle spec to database entity failed")
 	}

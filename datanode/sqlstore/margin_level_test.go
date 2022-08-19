@@ -119,7 +119,7 @@ func testInsertMarginLevels(t *testing.T) {
 	assert.NoError(t, err)
 
 	marginLevelProto := getMarginLevelProto()
-	marginLevel, err := entities.MarginLevelsFromProto(context.Background(), marginLevelProto, accountStore, block.VegaTime)
+	marginLevel, err := entities.MarginLevelsFromProto(context.Background(), marginLevelProto, accountStore, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
 
 	err = ml.Add(marginLevel)
@@ -150,7 +150,7 @@ func testDuplicateMarginLevelInSameBlock(t *testing.T) {
 	assert.NoError(t, err)
 
 	marginLevelProto := getMarginLevelProto()
-	marginLevel, err := entities.MarginLevelsFromProto(context.Background(), marginLevelProto, accountStore, block.VegaTime)
+	marginLevel, err := entities.MarginLevelsFromProto(context.Background(), marginLevelProto, accountStore, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
 
 	err = ml.Add(marginLevel)
@@ -217,10 +217,10 @@ func testGetMarginLevelsByPartyID(t *testing.T) {
 	ml4.SearchLevel = "2000"
 	ml4.MarketId = "deadbaad"
 
-	marginLevel1, err := entities.MarginLevelsFromProto(context.Background(), ml1, accountStore, block.VegaTime)
+	marginLevel1, err := entities.MarginLevelsFromProto(context.Background(), ml1, accountStore, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
 
-	marginLevel2, err := entities.MarginLevelsFromProto(context.Background(), ml2, accountStore, block.VegaTime)
+	marginLevel2, err := entities.MarginLevelsFromProto(context.Background(), ml2, accountStore, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
 
 	err = ml.Add(marginLevel1)
@@ -236,10 +236,10 @@ func testGetMarginLevelsByPartyID(t *testing.T) {
 	assert.Equal(t, 2, rowCount)
 
 	block = blockSource.getNextBlock(t)
-	marginLevel3, err := entities.MarginLevelsFromProto(context.Background(), ml3, accountStore, block.VegaTime)
+	marginLevel3, err := entities.MarginLevelsFromProto(context.Background(), ml3, accountStore, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
 
-	marginLevel4, err := entities.MarginLevelsFromProto(context.Background(), ml4, accountStore, block.VegaTime)
+	marginLevel4, err := entities.MarginLevelsFromProto(context.Background(), ml4, accountStore, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
 
 	err = ml.Add(marginLevel3)
@@ -301,10 +301,10 @@ func testGetMarginLevelsByMarketID(t *testing.T) {
 	ml4.SearchLevel = "2000"
 	ml4.PartyId = "deadbaad"
 
-	marginLevel1, err := entities.MarginLevelsFromProto(context.Background(), ml1, accountStore, block.VegaTime)
+	marginLevel1, err := entities.MarginLevelsFromProto(context.Background(), ml1, accountStore, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
 
-	marginLevel2, err := entities.MarginLevelsFromProto(context.Background(), ml2, accountStore, block.VegaTime)
+	marginLevel2, err := entities.MarginLevelsFromProto(context.Background(), ml2, accountStore, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
 
 	err = ml.Add(marginLevel1)
@@ -322,10 +322,10 @@ func testGetMarginLevelsByMarketID(t *testing.T) {
 	time.Sleep(time.Second)
 
 	block = blockSource.getNextBlock(t)
-	marginLevel3, err := entities.MarginLevelsFromProto(context.Background(), ml3, accountStore, block.VegaTime)
+	marginLevel3, err := entities.MarginLevelsFromProto(context.Background(), ml3, accountStore, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
 
-	marginLevel4, err := entities.MarginLevelsFromProto(context.Background(), ml4, accountStore, block.VegaTime)
+	marginLevel4, err := entities.MarginLevelsFromProto(context.Background(), ml4, accountStore, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
 
 	err = ml.Add(marginLevel3)
@@ -387,10 +387,10 @@ func testGetMarginLevelsByID(t *testing.T) {
 	ml4.SearchLevel = "2000"
 	ml4.PartyId = "DEADBAAD"
 
-	marginLevel1, err := entities.MarginLevelsFromProto(context.Background(), ml1, accountStore, block.VegaTime)
+	marginLevel1, err := entities.MarginLevelsFromProto(context.Background(), ml1, accountStore, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
 
-	marginLevel2, err := entities.MarginLevelsFromProto(context.Background(), ml2, accountStore, block.VegaTime)
+	marginLevel2, err := entities.MarginLevelsFromProto(context.Background(), ml2, accountStore, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
 
 	err = ml.Add(marginLevel1)
@@ -408,10 +408,10 @@ func testGetMarginLevelsByID(t *testing.T) {
 	time.Sleep(time.Second)
 
 	block = blockSource.getNextBlock(t)
-	marginLevel3, err := entities.MarginLevelsFromProto(context.Background(), ml3, accountStore, block.VegaTime)
+	marginLevel3, err := entities.MarginLevelsFromProto(context.Background(), ml3, accountStore, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
 
-	marginLevel4, err := entities.MarginLevelsFromProto(context.Background(), ml4, accountStore, block.VegaTime)
+	marginLevel4, err := entities.MarginLevelsFromProto(context.Background(), ml4, accountStore, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
 
 	err = ml.Add(marginLevel3)
@@ -549,7 +549,7 @@ func populateMarginLevelPaginationTestData(t *testing.T, ctx context.Context) (*
 	for i, ml := range margins {
 		block := blockSource.getNextBlock(t)
 		mlProto := getMarginLevelWithMaintenanceProto(ml.maintenanceMargin, ml.partyID, ml.marketID, block.VegaTime.UnixNano())
-		mlEntity, err := entities.MarginLevelsFromProto(ctx, mlProto, accountStore, block.VegaTime)
+		mlEntity, err := entities.MarginLevelsFromProto(ctx, mlProto, accountStore, generateTxHash(), block.VegaTime)
 		require.NoError(t, err, "Converting margin levels proto to database entity")
 		err = mlStore.Add(mlEntity)
 		require.NoError(t, err)
