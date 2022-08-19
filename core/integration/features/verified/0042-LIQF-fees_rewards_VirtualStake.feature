@@ -274,7 +274,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | lp2    | USD   | 1000000000 |
       | party1 | USD   | 100000000  |
       | party2 | USD   | 100000000  |
-    # set default block duration to 1h
+    # set default block duration to a bit more than half hour, hence 2 blocks will make a bit more than a timewindow (1h)
     And the average block duration is "1801"
 
     And the parties submit the following liquidity provision:
@@ -324,10 +324,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | sell | 1100  | 1      |
       | sell | 1001  | 14     |
 
-    # roughly 20 minutes
-    #When the network moves ahead "19m" with block duration of "2s"
-    #Then time is updated to "2019-11-30T00:20:10Z"
-    #week2
+    #timewindow1
     Then the network moves ahead "2" blocks
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -342,21 +339,14 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1001       | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 6506         | 7000           | 65            |
 
-    #When the network moves ahead "40m" with block duration of "1s"
+    #Since lp1 wants to decrease their commitment by delta < 0. Then we update: LP i virtual stake <- LP i virtual stake x (LP i stake + delta)/(LP i stake).
+    #grwoth factor for this time window is 0 since there is no fee during auction in the previous timewindow, so taking growth factor into the calculation, lp1 virtual stake stays at 5000, lp2 virtual stake stays at 2000
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share    | average entry valuation |
-      #| lp1   | 0.6097560975609760   | 4268                    |
-      #| lp2   | 0.3902439024390240   | 2732                    |
-      #| lp1   | 0.6097560975609756   | 5000                    |
-      #| lp2   | 0.3902439024390244   | 2000                    |
-      #| lp2   | 0.3902439024390240   | 2000                    |
       | lp1   | 0.7142857142857143   | 5000                    |
       | lp2   | 0.2857142857142857   | 2000                    |
 
-    # fast forwards 4 hours
-   
-    #Then time is updated to "2019-11-30T04:20:10Z"
-    #week3
+    #timewindow2
     Then the network moves ahead "2" blocks
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
@@ -365,7 +355,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | buy  | 999   | 10     |
       | sell | 1102  | 44     |
       | sell | 1100  | 1      |
-      | sell | 1001  | 10     |
+      | sell | 1001  | 10     | 
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -379,19 +369,16 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 999        | TRADING_MODE_CONTINUOUS | 1       | 502       | 1500      | 6793         | 6980           | 68            |
-      # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 999 x 68 x 1 x 0.1
+    # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 999 x 68 x 1 x 0.1
 
+    #Since lp1 wants to decrease their commitment by delta < 0. Then we update: LP i virtual stake <- LP i virtual stake x (LP i stake + delta)/(LP i stake).
+    #grwoth factor for this time window is -0.2, so taking growth factor into the calculation, LP i virtual stake <- max(LP i physical stake, (1 + r) x (LP i virtual stake)), lp1 virtual stake stays at 5000, lp2 virtual stake stays at 1980
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share    | average entry valuation |
-      #| lp1   | 0.7183701617769610   | 5014                    |
-      #| lp2   | 0.2816298382230400   | 1966                    |
       | lp1   | 0.7163323782234957   | 5000                    |
       | lp2   | 0.2836676217765043   | 1980                    |
-      #| lp1   | 0.7263323782234957   | 5000                    |
-      #| lp2   | 0.2836676217765043   | 1980                    |
-
-    #Then time is updated to "2019-11-30T05:22:10Z"
-    #week4
+  
+    #timewindow3
     Then the network moves ahead "2" blocks
 
     Then the order book should have the following volumes for market "ETH/MAR22":
@@ -416,16 +403,15 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 999        | TRADING_MODE_CONTINUOUS | 1       | 500       | 1498      | 6793         | 6880           | 66            |
 
+    #Since lp2 wants to decrease their commitment by delta < 0. Then we update: LP i virtual stake <- LP i virtual stake x (LP i stake + delta)/(LP i stake).
+    #grwoth factor for this time window is -0.17, so taking growth factor into the calculation, LP i virtual stake <- max(LP i physical stake, (1 + r) x (LP i virtual stake)), lp1 virtual stake stays at 5000, lp2 virtual stake stays at 1880
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share    | average entry valuation |
-      #| lp1   | 0.7369141904364910   | 5070                    |
-      #| lp2   | 0.2630858095635090   | 1810                    |
       | lp1   | 0.7267441860465116   | 5000                    |
-      #| lp2   | 0.2732558139534884   | 1880                    |
       | lp2   | 0.2732558139534884   | 1880.00000000000001     |
 
     #Then time is updated to "2019-11-30T08:22:10Z"
-    #week5
+    #timewindow4
     Then the network moves ahead "2" blocks
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
@@ -444,14 +430,14 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 999        | TRADING_MODE_CONTINUOUS | 1       | 500       | 1498      | 6793         | 6880           | 64            |
 
+    #grwoth factor for this time window is -0.1, no change on commitment, so no change on virtual stake 
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share    | average entry valuation |
       | lp1   | 0.7267441860465116   | 5000                    |
-      #| lp2   | 0.2732558139534884   | 1880                    |
       | lp2   | 0.2732558139534884   | 1880.00000000000001     |
 
     #Then time is updated to "2019-11-30T10:22:10Z"
-    #week6
+    #timewindow5
     Then the network moves ahead "2" blocks
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -462,12 +448,10 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 999        | TRADING_MODE_CONTINUOUS | 1       | 500       | 1498      | 6793         | 7000           | 64            |
 
+    #lp2 wants to increase stake, we use this formula for lp2 virtual satke: LP i virtual stake <- LP i virtual stake + delta.
+    #growth rate is -0.2
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share    | average entry valuation |
-      #| lp1   | 0.7182132526872552   | 10000                   |
-      #| lp2   | 0.2817867473127448   | 421.3495683743868003    |
-      #| lp1   | 0.7022471910112360   | 4916                    |
-      #| lp2   | 0.2977528089887640   | 2084                    |
       | lp1   | 0.7142857142857143   | 5000                    |
       | lp2   | 0.2857142857142857   | 2000                    |
 
@@ -481,7 +465,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | sell | 1001  | 10     |
 
     #Then time is updated to "2019-11-30T12:22:10Z"
-     #week7
+    #timewindow6
     Then the network moves ahead "2" blocks
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -496,12 +480,10 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 999        | TRADING_MODE_CONTINUOUS | 1       | 500       | 1498      | 6793         | 8000           | 63            |
 
+    #lp2 wants to increase stake, we use this formula for lp2 virtual satke: LP i virtual stake <- LP i virtual stake + delta.
+    #growth rate is -0.1
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share    | average entry valuation |
-      #| lp1   | 0.6552177177520024   | 10000                   |
-      #| lp2   | 0.3447822822479976   | 2666.4086478022710885   |
-      #| lp1   | 0.5555555555555560   | 4444                    |
-      #| lp2   | 0.4444444444444440   | 3556                    |
       | lp1   | 0.625                | 5000                    |
       | lp2   | 0.375                | 3000                    |
 
