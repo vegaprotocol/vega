@@ -22,8 +22,8 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/broker"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
-
 	"github.com/golang/protobuf/proto"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -39,7 +39,7 @@ func TestReceiveEvents(t *testing.T) {
 		a3.StreamMessage(),
 	}
 
-	err := writeEventsToFile(evts, path)
+	err := writeEventsToPath(evts, path)
 	if err != nil {
 		t.Fatalf("failed to write events to %s: %s", path, err)
 	}
@@ -63,25 +63,33 @@ func TestReceiveEvents(t *testing.T) {
 	assert.Equal(t, "3", r3.Asset().Id)
 }
 
-func writeEventsToFile(events []*eventspb.BusEvent, path string) error {
+func writeEventsToPath(events []*eventspb.BusEvent, path string) error {
 	file, err := os.Create(path)
 	if err != nil {
 		return err
 	}
 
-	sizeBytes := make([]byte, 4)
-	for _, e := range events {
-		size := uint32(proto.Size(e))
-		protoBytes, err := proto.Marshal(e)
-		if err != nil {
-			panic("failed to marshal bus event:" + e.String())
-		}
-
-		binary.BigEndian.PutUint32(sizeBytes, size)
-		allBytes := append([]byte{}, sizeBytes...)
-		allBytes = append(allBytes, protoBytes...)
-		file.Write(allBytes)
-	}
+	writeEventsToFile(events, file)
 
 	return nil
+}
+
+func writeEventsToFile(events []*eventspb.BusEvent, file *os.File) {
+	for _, e := range events {
+		WriteEventToFile(e, file)
+	}
+}
+
+func WriteEventToFile(e *eventspb.BusEvent, file *os.File) {
+	sizeBytes := make([]byte, 4)
+	size := uint32(proto.Size(e))
+	protoBytes, err := proto.Marshal(e)
+	if err != nil {
+		panic("failed to marshal bus event:" + e.String())
+	}
+
+	binary.BigEndian.PutUint32(sizeBytes, size)
+	allBytes := append([]byte{}, sizeBytes...)
+	allBytes = append(allBytes, protoBytes...)
+	file.Write(allBytes)
 }
