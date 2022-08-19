@@ -44,7 +44,7 @@ func (m *ERC20MultiSigSignerEvent) Add(ctx context.Context, e *entities.ERC20Mul
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		ON CONFLICT (id) DO NOTHING`
 
-	if _, err := m.pool.Exec(ctx, query,
+	if _, err := m.Connection.Exec(ctx, query,
 		e.ID,
 		e.ValidatorID,
 		e.SignerChange,

@@ -44,7 +44,7 @@ func NewNode(connectionSource *ConnectionSource) *Node {
 func (store *Node) UpsertNode(ctx context.Context, node *entities.Node) error {
 	defer metrics.StartSQLQuery("Node", "UpsertNode")()
 
-	_, err := store.pool.Exec(ctx, `
+	_, err := store.Connection.Exec(ctx, `
 		INSERT INTO nodes (
 			id,
 			vega_pub_key,
@@ -90,7 +90,7 @@ func (store *Node) UpsertNode(ctx context.Context, node *entities.Node) error {
 // AddNodeAnnouncedEvent store data about which epoch a particular node was added or removed from the roster of validators.
 func (store *Node) AddNodeAnnouncedEvent(ctx context.Context, nodeID string, vegatime time.Time, aux *entities.ValidatorUpdateAux) error {
 	defer metrics.StartSQLQuery("Node", "AddNodeAnnouncedEvent")()
-	_, err := store.pool.Exec(ctx, `
+	_, err := store.Connection.Exec(ctx, `
 		INSERT INTO nodes_announced (
 			node_id,
 			epoch_seq,
@@ -114,7 +114,7 @@ func (store *Node) AddNodeAnnouncedEvent(ctx context.Context, nodeID string, veg
 func (store *Node) UpsertRanking(ctx context.Context, rs *entities.RankingScore, aux *entities.RankingScoreAux) error {
 	defer metrics.StartSQLQuery("Node", "UpsertRanking")()
 
-	_, err := store.pool.Exec(ctx, `
+	_, err := store.Connection.Exec(ctx, `
 		INSERT INTO ranking_scores (
 			node_id,
 			epoch_seq,
@@ -146,7 +146,7 @@ func (store *Node) UpsertRanking(ctx context.Context, rs *entities.RankingScore,
 func (store *Node) UpsertScore(ctx context.Context, rs *entities.RewardScore, aux *entities.RewardScoreAux) error {
 	defer metrics.StartSQLQuery("Node", "UpsertScore")()
 
-	_, err := store.pool.Exec(ctx, `
+	_, err := store.Connection.Exec(ctx, `
 		INSERT INTO reward_scores (
 			node_id,
 			epoch_seq,
@@ -178,7 +178,7 @@ func (store *Node) UpsertScore(ctx context.Context, rs *entities.RewardScore, au
 func (store *Node) UpdatePublicKey(ctx context.Context, kr *entities.KeyRotation) error {
 	defer metrics.StartSQLQuery("Node", "UpdatePublicKey")()
 
-	_, err := store.pool.Exec(ctx, `UPDATE nodes SET pub_key = $1 WHERE id = $2`, kr.NewPubKey, kr.NodeID)
+	_, err := store.Connection.Exec(ctx, `UPDATE nodes SET pub_key = $1 WHERE id = $2`, kr.NewPubKey, kr.NodeID)
 
 	return err
 }
@@ -186,7 +186,7 @@ func (store *Node) UpdatePublicKey(ctx context.Context, kr *entities.KeyRotation
 func (store *Node) UpdateEthereumAddress(ctx context.Context, kr entities.EthereumKeyRotation) error {
 	defer metrics.StartSQLQuery("Node", "UpdateEthereumPublicKey")()
 
-	_, err := store.pool.Exec(ctx, `UPDATE nodes SET ethereum_address = $1 WHERE id = $2`, kr.NewAddress, kr.NodeID)
+	_, err := store.Connection.Exec(ctx, `UPDATE nodes SET ethereum_address = $1 WHERE id = $2`, kr.NewAddress, kr.NodeID)
 
 	return err
 }

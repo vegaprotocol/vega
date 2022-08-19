@@ -43,7 +43,7 @@ func (n *Notary) Add(ctx context.Context, ns *entities.NodeSignature) error {
 		VALUES ($1, $2, $3, $4, $5)
 		ON CONFLICT (resource_id, sig) DO NOTHING`
 
-	if _, err := n.pool.Exec(ctx, query,
+	if _, err := n.Connection.Exec(ctx, query,
 		ns.ResourceID,
 		ns.Sig,
 		ns.Kind,
