@@ -45,7 +45,9 @@ pipeline {
         DOCKER_VEGA_BUILDER_NAME="vega-${BUILD_UID}"
         DOCKER_DATANODE_BUILDER_NAME="data-node-${BUILD_UID}"
         DOCKER_VEGAWALLET_BUILDER_NAME="vegawallet-${BUILD_UID}"
-        DOCKER_BUILD_CACHE="${env.WORKSPACE}/docker-cache"
+        DOCKER_VEGA_BUILDER_CACHE="${env.WORKSPACE}/docker-cache-vega"
+        DOCKER_DATANODE_BUILDER_CACHE="${env.WORKSPACE}/docker-cache-data-node"
+        DOCKER_VEGAWALLET_BUILDER_CACHE="${env.WORKSPACE}/docker-cache-vegawallet"
     }
 
     stages {
@@ -304,7 +306,9 @@ pipeline {
                         """
                         sh 'docker buildx ls'
                         sh label: 'create cache directory for docker buildx', script: """#!/bin/bash -e
-                            mkdir -p '${DOCKER_BUILD_CACHE}'
+                            mkdir -p '${DOCKER_VEGA_BUILDER_CACHE}'
+                            mkdir -p '${DOCKER_DATANODE_BUILDER_CACHE}'
+                            mkdir -p '${DOCKER_VEGAWALLET_BUILDER_CACHE}'
                         """
                     }
                 }  // docker builders
@@ -406,7 +410,7 @@ pipeline {
                                     -f docker/vega.dockerfile \
                                     -t ghcr.io/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_VERSION} \
                                     -t ghcr.io/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG} \
-                                    --cache-to type=local,mode=max,dest='${DOCKER_BUILD_CACHE}' \
+                                    --cache-to type=local,mode=max,dest='${DOCKER_VEGA_BUILDER_CACHE}' \
                                     .
                             """
                         }
@@ -423,7 +427,7 @@ pipeline {
                                     -f docker/data-node.dockerfile \
                                     -t ghcr.io/vegaprotocol/vega/data-node:${DOCKER_IMAGE_TAG_VERSION} \
                                     -t ghcr.io/vegaprotocol/vega/data-node:${DOCKER_IMAGE_TAG} \
-                                    --cache-to type=local,mode=max,dest='${DOCKER_BUILD_CACHE}' \
+                                    --cache-to type=local,mode=max,dest='${DOCKER_DATANODE_BUILDER_CACHE}' \
                                     .
                             """
                         }
@@ -440,7 +444,7 @@ pipeline {
                                     -f docker/vegawallet.dockerfile \
                                     -t ghcr.io/vegaprotocol/vega/vegawallet:${DOCKER_IMAGE_TAG_VERSION} \
                                     -t ghcr.io/vegaprotocol/vega/vegawallet:${DOCKER_IMAGE_TAG} \
-                                    --cache-to type=local,mode=max,dest='${DOCKER_BUILD_CACHE}' \
+                                    --cache-to type=local,mode=max,dest='${DOCKER_VEGAWALLET_BUILDER_CACHE}' \
                                     .
                             """
                         }
@@ -462,11 +466,7 @@ pipeline {
             parallel {
                 stage('vega docker image') {
                     when {
-                        anyOf {
-                            buildingTag()
-                            branch 'develop'
-                            // changeRequest() // uncomment only for testing
-                        }
+                        branch 'develop'
                     }
                     options { retry(3) }
                     steps {
@@ -478,7 +478,7 @@ pipeline {
                                     -f docker/vega.dockerfile \
                                     -t ghcr.io/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG} \
                                     -t ghcr.io/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_VERSION} \
-                                    --cache-from type=local,src='${DOCKER_BUILD_CACHE}' \
+                                    --cache-from type=local,src='${DOCKER_VEGA_BUILDER_CACHE}' \
                                     --push \
                                     .
                             """
@@ -494,11 +494,7 @@ pipeline {
                 }
                 stage('data-node docker image') {
                     when {
-                        anyOf {
-                            buildingTag()
-                            branch 'develop'
-                            // changeRequest() // uncomment only for testing
-                        }
+                        branch 'develop'
                     }
                     options { retry(3) }
                     steps {
@@ -510,7 +506,7 @@ pipeline {
                                     -f docker/data-node.dockerfile \
                                     -t ghcr.io/vegaprotocol/vega/data-node:${DOCKER_IMAGE_TAG} \
                                     -t ghcr.io/vegaprotocol/vega/data-node:${DOCKER_IMAGE_TAG_VERSION} \
-                                    --cache-from type=local,src='${DOCKER_BUILD_CACHE}' \
+                                    --cache-from type=local,src='${DOCKER_DATANODE_BUILDER_CACHE}' \
                                     --push \
                                     .
                             """
@@ -526,11 +522,7 @@ pipeline {
                 }
                 stage('vegawallet docker image') {
                     when {
-                        anyOf {
-                            buildingTag()
-                            branch 'develop'
-                            // changeRequest() // uncomment only for testing
-                        }
+                        branch 'develop'
                     }
                     options { retry(3) }
                     steps {
@@ -542,7 +534,7 @@ pipeline {
                                     -f docker/vegawallet.dockerfile \
                                     -t ghcr.io/vegaprotocol/vega/vegawallet:${DOCKER_IMAGE_TAG} \
                                     -t ghcr.io/vegaprotocol/vega/vegawallet:${DOCKER_IMAGE_TAG_VERSION} \
-                                    --cache-from type=local,src='${DOCKER_BUILD_CACHE}' \
+                                    --cache-from type=local,src='${DOCKER_VEGAWALLET_BUILDER_CACHE}' \
                                     --push \
                                     .
                             """
