@@ -65,6 +65,7 @@ require (
 	github.com/muesli/termenv v0.11.0
 	github.com/oasisprotocol/curve25519-voi v0.0.0-20220317090546-adb2f9614b17
 	github.com/pressly/goose/v3 v3.6.1
+	github.com/tmc/grpc-websocket-proxy v0.0.0-20220101234140-673ab2c3ae75
 	github.com/tyler-smith/go-bip39 v1.1.0
 	github.com/vegaprotocol/go-slip10 v0.1.0
 	github.com/vektah/gqlparser/v2 v2.2.0
@@ -84,6 +85,7 @@ require (
 	github.com/gtank/merlin v0.1.1 // indirect
 	github.com/gtank/ristretto255 v0.1.2 // indirect
 	github.com/mimoo/StrobeGo v0.0.0-20181016162300-f8f6d4d2b643 // indirect
+	github.com/sirupsen/logrus v1.8.1 // indirect
 )
 
 require (
