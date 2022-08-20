@@ -19,6 +19,7 @@ import (
 )
 
 type NetworkLimits struct {
+	TxHash                   TxHash
 	VegaTime                 time.Time
 	CanProposeMarket         bool
 	CanProposeAsset          bool
@@ -31,8 +32,9 @@ type NetworkLimits struct {
 	ProposeAssetEnabledFrom  time.Time
 }
 
-func NetworkLimitsFromProto(vn *vega.NetworkLimits) NetworkLimits {
+func NetworkLimitsFromProto(vn *vega.NetworkLimits, txHash TxHash) NetworkLimits {
 	return NetworkLimits{
+		TxHash:                   txHash,
 		CanProposeMarket:         vn.CanProposeMarket,
 		CanProposeAsset:          vn.CanProposeAsset,
 		BootstrapFinished:        vn.BootstrapFinished,

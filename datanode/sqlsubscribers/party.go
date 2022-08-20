@@ -58,7 +58,7 @@ func (ps *Party) Push(ctx context.Context, evt events.Event) error {
 
 func (ps *Party) consume(ctx context.Context, event PartyEvent) error {
 	pp := event.Party()
-	p := entities.PartyFromProto(&pp)
+	p := entities.PartyFromProto(&pp, entities.TxHash(event.TxHash()))
 	vt := ps.vegaTime
 	p.VegaTime = &vt
 

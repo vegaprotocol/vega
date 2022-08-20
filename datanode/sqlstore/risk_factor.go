@@ -26,7 +26,7 @@ type RiskFactors struct {
 }
 
 const (
-	sqlRiskFactorColumns = `market_id, short, long, vega_time`
+	sqlRiskFactorColumns = `market_id, short, long, tx_hash, vega_time`
 )
 
 func NewRiskFactors(connectionSource *ConnectionSource) *RiskFactors {
@@ -38,13 +38,14 @@ func NewRiskFactors(connectionSource *ConnectionSource) *RiskFactors {
 func (rf *RiskFactors) Upsert(ctx context.Context, factor *entities.RiskFactor) error {
 	defer metrics.StartSQLQuery("RiskFactor", "Upsert")()
 	query := fmt.Sprintf(`insert into risk_factors (%s)
-values ($1, $2, $3, $4)
+values ($1, $2, $3, $4, $5)
 on conflict (market_id, vega_time) do update
 set 
 	short=EXCLUDED.short,
-	long=EXCLUDED.long`, sqlRiskFactorColumns)
+	long=EXCLUDED.long,
+	tx_hash=EXCLUDED.tx_hash`, sqlRiskFactorColumns)
 
-	if _, err := rf.Connection.Exec(ctx, query, factor.MarketID, factor.Short, factor.Long, factor.VegaTime); err != nil {
+	if _, err := rf.Connection.Exec(ctx, query, factor.MarketID, factor.Short, factor.Long, factor.TxHash, factor.VegaTime); err != nil {
 		err = fmt.Errorf("could not insert risk factor into database: %w", err)
 		return err
 	}

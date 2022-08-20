@@ -43,7 +43,7 @@ func testParseAllValidPrices(t *testing.T) {
 		SuppliedStake:        "1",
 	}
 
-	md, err := entities.MarketDataFromProto(&marketdata)
+	md, err := entities.MarketDataFromProto(&marketdata, generateTxHash())
 	assert.NoError(t, err)
 	assert.NotNil(t, md.MarkPrice)
 	assert.NotNil(t, md.BestBidPrice)
@@ -71,7 +71,7 @@ func testParseAllValidPrices(t *testing.T) {
 
 func testParseEmptyPrices(t *testing.T) {
 	marketdata := types.MarketData{}
-	md, err := entities.MarketDataFromProto(&marketdata)
+	md, err := entities.MarketDataFromProto(&marketdata, generateTxHash())
 	assert.NoError(t, err)
 	assert.True(t, decimal.Zero.Equals(md.MarkPrice))
 	assert.True(t, decimal.Zero.Equals(md.BestBidPrice))
@@ -177,7 +177,7 @@ func testParseInvalidPriceString(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(tt *testing.T) {
-			md, err := entities.MarketDataFromProto(&tc.args.marketdata)
+			md, err := entities.MarketDataFromProto(&tc.args.marketdata, generateTxHash())
 			assert.Error(tt, err)
 			assert.Nil(tt, md)
 		})
@@ -203,6 +203,7 @@ func testParseMarketDataSuccessfully(t *testing.T) {
 				AuctionTrigger:    "AUCTION_TRIGGER_UNSPECIFIED",
 				MarketTradingMode: "TRADING_MODE_UNSPECIFIED",
 				ExtensionTrigger:  "AUCTION_TRIGGER_UNSPECIFIED",
+				TxHash:            generateTxHash(),
 			},
 		},
 		{
@@ -216,6 +217,7 @@ func testParseMarketDataSuccessfully(t *testing.T) {
 				AuctionTrigger:    "AUCTION_TRIGGER_PRICE",
 				MarketTradingMode: "TRADING_MODE_UNSPECIFIED",
 				ExtensionTrigger:  "AUCTION_TRIGGER_UNSPECIFIED",
+				TxHash:            generateTxHash(),
 			},
 		},
 		{
@@ -230,6 +232,7 @@ func testParseMarketDataSuccessfully(t *testing.T) {
 				AuctionTrigger:    "AUCTION_TRIGGER_PRICE",
 				MarketTradingMode: "TRADING_MODE_CONTINUOUS",
 				ExtensionTrigger:  "AUCTION_TRIGGER_UNSPECIFIED",
+				TxHash:            generateTxHash(),
 			},
 		},
 		{
@@ -248,6 +251,7 @@ func testParseMarketDataSuccessfully(t *testing.T) {
 				AuctionTrigger:    "AUCTION_TRIGGER_PRICE",
 				MarketTradingMode: "TRADING_MODE_CONTINUOUS",
 				ExtensionTrigger:  "AUCTION_TRIGGER_UNSPECIFIED",
+				TxHash:            generateTxHash(),
 			},
 		},
 		{
@@ -279,13 +283,14 @@ func testParseMarketDataSuccessfully(t *testing.T) {
 						ReferencePrice: num.NewUint(0),
 					},
 				},
+				TxHash: generateTxHash(),
 			},
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(tt *testing.T) {
-			got, err := entities.MarketDataFromProto(&tc.args.marketdata)
+			got, err := entities.MarketDataFromProto(&tc.args.marketdata, tc.want.TxHash)
 			assert.NoError(tt, err)
 			assert.True(tt, tc.want.Equal(*got))
 		})

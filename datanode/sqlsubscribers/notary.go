@@ -53,7 +53,7 @@ func (w *Notary) Push(ctx context.Context, evt events.Event) error {
 
 func (w *Notary) consume(ctx context.Context, event NodeSignatureEvent) error {
 	ns := event.NodeSignature()
-	record, err := entities.NodeSignatureFromProto(&ns)
+	record, err := entities.NodeSignatureFromProto(&ns, entities.TxHash(event.TxHash()), w.vegaTime)
 	if err != nil {
 		return errors.Wrap(err, "converting node-signature proto to database entity failed")
 	}

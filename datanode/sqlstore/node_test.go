@@ -46,7 +46,7 @@ func addNodeAnnounced(t *testing.T, ps *sqlstore.Node, nodeID entities.NodeID, a
 		Added:     added,
 		FromEpoch: fromEpoch,
 	}
-	err := ps.AddNodeAnnoucedEvent(context.Background(), nodeID.String(), vegatime, &aux)
+	err := ps.AddNodeAnnouncedEvent(context.Background(), nodeID.String(), vegatime, &aux)
 	require.NoError(t, err)
 }
 
