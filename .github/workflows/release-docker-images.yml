@@ -85,7 +85,7 @@ jobs:
           versionTag=${{ inputs.tag || startsWith(github.ref, 'refs/tags/') && github.ref_name || '${hash}' }}
           echo ::set-output name=version::${versionTag}
 
-      - name: Sanity check
+      - name: Print config
         run: |
           git rev-parse --verify HEAD
           git status
@@ -95,17 +95,31 @@ jobs:
           echo "inputs.archs=${{ inputs.archs }}"
           echo "steps.tags.outputs.version=${{ steps.tags.outputs.version }}"
 
-      - name: Build
+      - name: Build and export to local Docker
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: false
+          file: ./docker/${{ matrix.app }}.dockerfile
+          load: true
+          tags: vegaprotocol/${{ matrix.app }}:local
+
+      - name: Sanity check docker image
+        run: |
+          docker run --rm vegaprotocol/${{ matrix.app }}:local version
+
+      - name: Build and push to Docker registries
         id: docker_build
         uses: docker/build-push-action@v3
         with:
+          context: .
           push: ${{ inputs.publish || startsWith(github.ref, 'refs/tags/') }}
           file: ./docker/${{ matrix.app }}.dockerfile
           platforms: ${{ inputs.archs || 'linux/amd64, linux/arm64' }}
-          tags: >-
-            ghcr.io/vegaprotocol/vega/${{ matrix.app }}:latest,
-            ghcr.io/vegaprotocol/vega/${{ matrix.app }}:${{ steps.tags.outputs.version }},
-            vegaprotocol/${{ matrix.app }}:latest,
+          tags: |
+            ghcr.io/vegaprotocol/vega/${{ matrix.app }}:latest
+            ghcr.io/vegaprotocol/vega/${{ matrix.app }}:${{ steps.tags.outputs.version }}
+            vegaprotocol/${{ matrix.app }}:latest
             vegaprotocol/${{ matrix.app }}:${{ steps.tags.outputs.version }}
 
       - name: Image digest
