@@ -49,9 +49,10 @@ func (rs *Rewards) Add(ctx context.Context, r entities.Reward) error {
 			amount,
 			percent_of_total,
 			timestamp,
+			tx_hash,
 			vega_time)
-		 VALUES ($1,  $2,  $3,  $4,  $5,  $6, $7, $8, $9);`,
-		r.PartyID, r.AssetID, r.MarketID, r.RewardType, r.EpochID, r.Amount, r.PercentOfTotal, r.Timestamp, r.VegaTime)
+		 VALUES ($1,  $2,  $3,  $4,  $5,  $6, $7, $8, $9, $10);`,
+		r.PartyID, r.AssetID, r.MarketID, r.RewardType, r.EpochID, r.Amount, r.PercentOfTotal, r.Timestamp, r.TxHash, r.VegaTime)
 	return err
 }
 

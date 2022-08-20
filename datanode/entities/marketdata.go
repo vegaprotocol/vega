@@ -84,6 +84,8 @@ type MarketData struct {
 	LiquidityProviderFeeShares []*LiquidityProviderFeeShare
 	// A synthetic time created which is the sum of vega_time + (seq num * Microsecond)
 	SyntheticTime time.Time
+	// Transaction which caused this update
+	TxHash TxHash
 	// Vega Block time at which the data was received from Vega Node
 	VegaTime time.Time
 	// SeqNum is the order in which the market data was received in the block
@@ -158,7 +160,7 @@ func (fee LiquidityProviderFeeShare) Equals(other LiquidityProviderFeeShare) boo
 		fee.AverageEntryValuation.Equals(other.AverageEntryValuation)
 }
 
-func MarketDataFromProto(data *types.MarketData) (*MarketData, error) {
+func MarketDataFromProto(data *types.MarketData, txHash TxHash) (*MarketData, error) {
 	var mark, bid, offer, staticBid, staticOffer, mid, staticMid, indicative, targetStake, suppliedStake decimal.Decimal
 	var err error
 
@@ -219,6 +221,7 @@ func MarketDataFromProto(data *types.MarketData) (*MarketData, error) {
 		PriceMonitoringBounds:      parsePriceMonitoringBounds(data.PriceMonitoringBounds),
 		MarketValueProxy:           data.MarketValueProxy,
 		LiquidityProviderFeeShares: parseLiquidityProviderFeeShares(data.LiquidityProviderFeeShare),
+		TxHash:                     txHash,
 	}
 
 	return marketData, nil
@@ -336,7 +339,8 @@ func (md MarketData) Equal(other MarketData) bool {
 		md.ExtensionTrigger == other.ExtensionTrigger &&
 		md.MarketValueProxy == other.MarketValueProxy &&
 		priceMonitoringBoundsMatches(md.PriceMonitoringBounds, other.PriceMonitoringBounds) &&
-		liquidityProviderFeeShareMatches(md.LiquidityProviderFeeShares, other.LiquidityProviderFeeShares)
+		liquidityProviderFeeShareMatches(md.LiquidityProviderFeeShares, other.LiquidityProviderFeeShares) &&
+		md.TxHash == other.TxHash
 }
 
 func priceMonitoringBoundsMatches(bounds, other []*PriceMonitoringBound) bool {

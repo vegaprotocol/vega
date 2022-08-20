@@ -74,7 +74,7 @@ func (t *TransferResponse) consume(ctx context.Context, e TransferResponseEvent)
 	for _, tr := range e.TransferResponses() {
 		t.ledger.AddTransferResponse(tr)
 		for _, vle := range tr.Transfers {
-			if err := t.addLedgerEntry(ctx, vle, t.vegaTime); err != nil {
+			if err := t.addLedgerEntry(ctx, vle, e.TxHash(), t.vegaTime); err != nil {
 				errs.WriteString(fmt.Sprintf("couldn't add ledger entry: %v, error:%s\n", vle, err))
 			}
 		}
@@ -87,13 +87,13 @@ func (t *TransferResponse) consume(ctx context.Context, e TransferResponseEvent)
 	return nil
 }
 
-func (t *TransferResponse) addLedgerEntry(ctx context.Context, vle *vega.LedgerEntry, vegaTime time.Time) error {
-	accFrom, err := t.obtainAccountWithID(ctx, vle.FromAccount, vegaTime)
+func (t *TransferResponse) addLedgerEntry(ctx context.Context, vle *vega.LedgerEntry, txHash string, vegaTime time.Time) error {
+	accFrom, err := t.obtainAccountWithID(ctx, vle.FromAccount, txHash, vegaTime)
 	if err != nil {
 		return errors.Wrap(err, "obtaining 'from' account")
 	}
 
-	accTo, err := t.obtainAccountWithID(ctx, vle.ToAccount, vegaTime)
+	accTo, err := t.obtainAccountWithID(ctx, vle.ToAccount, txHash, vegaTime)
 	if err != nil {
 		return errors.Wrap(err, "obtaining 'to' account")
 	}
@@ -107,6 +107,7 @@ func (t *TransferResponse) addLedgerEntry(ctx context.Context, vle *vega.LedgerE
 		AccountFromID: accTo.ID,
 		AccountToID:   accFrom.ID,
 		Quantity:      quantity,
+		TxHash:        entities.TxHash(txHash),
 		VegaTime:      vegaTime,
 		TransferTime:  time.Unix(0, vle.Timestamp),
 		Reference:     vle.Reference,
@@ -121,8 +122,8 @@ func (t *TransferResponse) addLedgerEntry(ctx context.Context, vle *vega.LedgerE
 }
 
 // Parse the vega account ID; if that account already exists in the db, fetch it; else create it.
-func (t *TransferResponse) obtainAccountWithID(ctx context.Context, id string, vegaTime time.Time) (entities.Account, error) {
-	a, err := entities.AccountFromAccountID(id)
+func (t *TransferResponse) obtainAccountWithID(ctx context.Context, id string, txHash string, vegaTime time.Time) (entities.Account, error) {
+	a, err := entities.AccountFromAccountID(id, entities.TxHash(txHash))
 	if err != nil {
 		return entities.Account{}, errors.Wrapf(err, "parsing account id: %s", id)
 	}

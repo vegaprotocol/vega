@@ -50,6 +50,7 @@ type Order struct {
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 	ExpiresAt       time.Time
+	TxHash          TxHash
 	VegaTime        time.Time
 	SeqNum          uint64
 }
@@ -94,7 +95,7 @@ func (o Order) ToProtoEdge(_ ...any) (*v2.OrderEdge, error) {
 	}, nil
 }
 
-func OrderFromProto(po *vega.Order, seqNum uint64) (Order, error) {
+func OrderFromProto(po *vega.Order, seqNum uint64, txHash TxHash) (Order, error) {
 	price, err := strconv.ParseInt(po.Price, 10, 64)
 	if err != nil {
 		return Order{}, fmt.Errorf("Price is not a valid integer: %v", po.Price)
@@ -158,6 +159,7 @@ func OrderFromProto(po *vega.Order, seqNum uint64) (Order, error) {
 		UpdatedAt:       NanosToPostgresTimestamp(po.UpdatedAt),
 		ExpiresAt:       NanosToPostgresTimestamp(po.ExpiresAt),
 		SeqNum:          seqNum,
+		TxHash:          txHash,
 	}
 
 	return o, nil
@@ -179,7 +181,7 @@ func (o Order) ToRow() []interface{} {
 		o.Size, o.Remaining, o.TimeInForce, o.Type, o.Status,
 		o.Reference, o.Reason, o.Version, o.PeggedOffset, o.BatchID,
 		o.PeggedReference, o.LpID, o.CreatedAt, o.UpdatedAt, o.ExpiresAt,
-		o.VegaTime, o.SeqNum,
+		o.TxHash, o.VegaTime, o.SeqNum,
 	}
 }
 
@@ -188,7 +190,7 @@ var OrderColumns = []string{
 	"size", "remaining", "time_in_force", "type", "status",
 	"reference", "reason", "version", "pegged_offset", "batch_id",
 	"pegged_reference", "lp_id", "created_at", "updated_at", "expires_at",
-	"vega_time", "seq_num",
+	"tx_hash", "vega_time", "seq_num",
 }
 
 type OrderCursor struct {

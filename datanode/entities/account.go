@@ -32,6 +32,7 @@ type Account struct {
 	AssetID  AssetID
 	MarketID MarketID
 	Type     vega.AccountType
+	TxHash   TxHash
 	VegaTime time.Time
 }
 
@@ -39,12 +40,13 @@ func (a Account) String() string {
 	return fmt.Sprintf("{ID: %s}", a.AssetID)
 }
 
-func AccountFromProto(va *vega.Account) (Account, error) {
+func AccountFromProto(va *vega.Account, txHash TxHash) (Account, error) {
 	account := Account{
 		PartyID:  PartyID(va.Owner),
 		AssetID:  AssetID(va.Asset),
 		MarketID: MarketID(va.MarketId),
 		Type:     va.Type,
+		TxHash:   txHash,
 	}
 	return account, nil
 }
@@ -55,7 +57,7 @@ func AccountFromProto(va *vega.Account) (Account, error) {
 // (see collateral/engine.go). It's a bit unfortunate that this internal detail leaks out of core,
 // but it's required for now as it's the only way we can extract all the required account information
 // out of an TransferResponse message.
-func AccountFromAccountID(id string) (Account, error) {
+func AccountFromAccountID(id string, txHash TxHash) (Account, error) {
 	var a Account
 	var offset int
 
@@ -100,5 +102,6 @@ func AccountFromAccountID(id string) (Account, error) {
 		return Account{}, fmt.Errorf("party id: %w", err)
 	}
 	a.Type = vega.AccountType(id[len(id)-1] - 48)
+	a.TxHash = txHash
 	return a, nil
 }

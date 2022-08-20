@@ -13,6 +13,10 @@
 package entities_test
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"math/rand"
+	"strconv"
 	"testing"
 	"time"
 
@@ -21,6 +25,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func generateTxHash() entities.TxHash {
+	randomString := strconv.FormatInt(rand.Int63(), 10)
+	hash := sha256.Sum256([]byte(randomString))
+	return entities.TxHash(hex.EncodeToString(hash[:]))
+}
 
 func TestPageEntities(t *testing.T) {
 	t.Run("Number of results is 2 more then the page limit", func(t *testing.T) {

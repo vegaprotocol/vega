@@ -63,7 +63,7 @@ func testInsertIntoNewBlock(t *testing.T) {
 	specProtos := getTestSpecs()
 
 	proto := specProtos[0]
-	data, err := entities.OracleSpecFromProto(proto, block.VegaTime)
+	data, err := entities.OracleSpecFromProto(proto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err)
 	assert.NoError(t, os.Upsert(context.Background(), data))
 
@@ -86,7 +86,7 @@ func testUpdateExistingInBlock(t *testing.T) {
 	specProtos := getTestSpecs()
 
 	proto := specProtos[0]
-	data, err := entities.OracleSpecFromProto(proto, block.VegaTime)
+	data, err := entities.OracleSpecFromProto(proto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err)
 	assert.NoError(t, os.Upsert(context.Background(), data))
 
@@ -112,7 +112,7 @@ func testGetSpecByID(t *testing.T) {
 	specProtos := getTestSpecs()
 
 	for _, proto := range specProtos {
-		data, err := entities.OracleSpecFromProto(proto, block.VegaTime)
+		data, err := entities.OracleSpecFromProto(proto, generateTxHash(), block.VegaTime)
 		require.NoError(t, err)
 		assert.NoError(t, os.Upsert(context.Background(), data))
 	}
@@ -123,7 +123,7 @@ func testGetSpecByID(t *testing.T) {
 	got, err := os.GetSpecByID(ctx, "DEADBEEF")
 	require.NoError(t, err)
 
-	want, err := entities.OracleSpecFromProto(specProtos[0], block.VegaTime)
+	want, err := entities.OracleSpecFromProto(specProtos[0], got.TxHash, block.VegaTime)
 	assert.NoError(t, err)
 	// truncate the time to microseconds as postgres doesn't support nanosecond granularity.
 	want.UpdatedAt = want.UpdatedAt.Truncate(time.Microsecond)
@@ -148,7 +148,7 @@ func testGetSpecs(t *testing.T) {
 	want := make([]entities.OracleSpec, 0)
 
 	for _, proto := range specProtos {
-		data, err := entities.OracleSpecFromProto(proto, block.VegaTime)
+		data, err := entities.OracleSpecFromProto(proto, generateTxHash(), block.VegaTime)
 		require.NoError(t, err)
 		assert.NoError(t, os.Upsert(context.Background(), data))
 

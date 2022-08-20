@@ -328,7 +328,7 @@ func createTestTrade(t *testing.T, price int, size int, block entities.Block, se
 		SellOrder: generateID(),
 	}
 
-	trade, err := entities.TradeFromProto(proto, block.VegaTime, uint64(seqNum))
+	trade, err := entities.TradeFromProto(proto, generateTxHash(), block.VegaTime, uint64(seqNum))
 	if err != nil {
 		t.Fatalf("failed to create trade from proto:%s", err)
 	}

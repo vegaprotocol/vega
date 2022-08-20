@@ -58,7 +58,7 @@ func (es *Epoch) Push(ctx context.Context, evt events.Event) error {
 
 func (es *Epoch) consume(ctx context.Context, event EpochUpdateEvent) error {
 	epochUpdateEvent := event.Proto()
-	epoch := entities.EpochFromProto(epochUpdateEvent)
+	epoch := entities.EpochFromProto(epochUpdateEvent, entities.TxHash(event.TxHash()))
 	epoch.VegaTime = es.vegaTime
 
 	return errors.Wrap(es.store.Add(ctx, epoch), "error adding epoch update")

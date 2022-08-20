@@ -40,14 +40,16 @@ func (es *Epochs) Add(ctx context.Context, r entities.Epoch) error {
 			start_time,
 			expire_time,
 			end_time,
+			tx_hash,
 			vega_time)
-		 VALUES ($1,  $2,  $3,  $4,  $5)
+		 VALUES ($1,  $2,  $3,  $4,  $5, $6)
 		 ON CONFLICT (id, vega_time)
 		 DO UPDATE SET start_time=EXCLUDED.start_time,
 		 	           expire_time=EXCLUDED.expire_time,
-		               end_time=EXCLUDED.end_time
+		               end_time=EXCLUDED.end_time,
+					   tx_hash=EXCLUDED.tx_hash
 		 ;`,
-		r.ID, r.StartTime, r.ExpireTime, r.EndTime, r.VegaTime)
+		r.ID, r.StartTime, r.ExpireTime, r.EndTime, r.TxHash, r.VegaTime)
 	return err
 }
 
