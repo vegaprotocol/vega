@@ -27,6 +27,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/rs/cors"
+	"github.com/tmc/grpc-websocket-proxy/wsproxy"
 	"go.elastic.co/apm/module/apmhttp"
 	"google.golang.org/grpc"
 )
@@ -114,6 +115,7 @@ func (s *ProxyServer) Start() error {
 	handler = newGzipHandler(*logger, handler.(http.HandlerFunc))
 	// Metric support
 	handler = gateway.MetricCollectionMiddleware(logger, handler)
+	handler = wsproxy.WebsocketProxy(handler)
 
 	// APM
 	if s.REST.APMEnabled {
