@@ -82,7 +82,7 @@ func testTransfers_GetTransferToOrFromParty(t *testing.T) {
 		}},
 	}
 
-	transfer, err := entities.TransferFromProto(context.Background(), sourceTransferProto, block.VegaTime, accounts)
+	transfer, err := entities.TransferFromProto(context.Background(), sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
 	assert.NoError(t, err)
 	err = transfers.Upsert(context.Background(), transfer)
 	assert.NoError(t, err)
@@ -105,7 +105,7 @@ func testTransfers_GetTransferToOrFromParty(t *testing.T) {
 		}},
 	}
 
-	transfer, err = entities.TransferFromProto(context.Background(), sourceTransferProto2, block.VegaTime, accounts)
+	transfer, err = entities.TransferFromProto(context.Background(), sourceTransferProto2, generateTxHash(), block.VegaTime, accounts)
 	assert.NoError(t, err)
 	err = transfers.Upsert(context.Background(), transfer)
 	assert.NoError(t, err)
@@ -159,7 +159,7 @@ func testTransfers_GetTransfersByParty(t *testing.T) {
 		}},
 	}
 
-	transfer, _ := entities.TransferFromProto(context.Background(), sourceTransferProto, block.VegaTime, accounts)
+	transfer, _ := entities.TransferFromProto(context.Background(), sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
 	transfers.Upsert(context.Background(), transfer)
 
 	sourceTransferProto2 := &eventspb.Transfer{
@@ -180,7 +180,7 @@ func testTransfers_GetTransfersByParty(t *testing.T) {
 		}},
 	}
 
-	transfer, _ = entities.TransferFromProto(context.Background(), sourceTransferProto2, block.VegaTime, accounts)
+	transfer, _ = entities.TransferFromProto(context.Background(), sourceTransferProto2, generateTxHash(), block.VegaTime, accounts)
 	transfers.Upsert(context.Background(), transfer)
 
 	retrieved, _, err := transfers.GetTransfersFromParty(ctx, accountFrom.PartyID, entities.CursorPagination{})
@@ -232,7 +232,7 @@ func testTransfers_GetFromAccountAndGetToAccount(t *testing.T) {
 		}},
 	}
 
-	transfer, _ := entities.TransferFromProto(context.Background(), sourceTransferProto1, block.VegaTime, accounts)
+	transfer, _ := entities.TransferFromProto(context.Background(), sourceTransferProto1, generateTxHash(), block.VegaTime, accounts)
 	transfers.Upsert(context.Background(), transfer)
 
 	sourceTransferProto2 := &eventspb.Transfer{
@@ -253,7 +253,7 @@ func testTransfers_GetFromAccountAndGetToAccount(t *testing.T) {
 		}},
 	}
 
-	transfer, _ = entities.TransferFromProto(context.Background(), sourceTransferProto2, block.VegaTime, accounts)
+	transfer, _ = entities.TransferFromProto(context.Background(), sourceTransferProto2, generateTxHash(), block.VegaTime, accounts)
 	transfers.Upsert(context.Background(), transfer)
 
 	retrieved, _, _ := transfers.GetAll(ctx, entities.CursorPagination{})
@@ -310,7 +310,7 @@ func testTransfers_UpdatesInDifferentBlocks(t *testing.T) {
 		Kind:            &eventspb.Transfer_OneOff{OneOff: &eventspb.OneOffTransfer{DeliverOn: deliverOn.Unix()}},
 	}
 
-	transfer, _ := entities.TransferFromProto(context.Background(), sourceTransferProto, block.VegaTime, accounts)
+	transfer, _ := entities.TransferFromProto(context.Background(), sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
 	transfers.Upsert(context.Background(), transfer)
 
 	block = getTestBlock(t, block.VegaTime.Add(1*time.Microsecond))
@@ -328,7 +328,7 @@ func testTransfers_UpdatesInDifferentBlocks(t *testing.T) {
 		Timestamp:       block.VegaTime.UnixNano(),
 		Kind:            &eventspb.Transfer_OneOff{OneOff: &eventspb.OneOffTransfer{DeliverOn: deliverOn.Unix()}},
 	}
-	transfer, _ = entities.TransferFromProto(context.Background(), sourceTransferProto, block.VegaTime, accounts)
+	transfer, _ = entities.TransferFromProto(context.Background(), sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
 	transfers.Upsert(context.Background(), transfer)
 
 	retrieved, _, _ := transfers.GetAll(ctx, entities.CursorPagination{})
@@ -367,7 +367,7 @@ func testTransfers_UpdateInSameBlock(t *testing.T) {
 		Kind:            &eventspb.Transfer_OneOff{OneOff: &eventspb.OneOffTransfer{DeliverOn: deliverOn.Unix()}},
 	}
 
-	transfer, _ := entities.TransferFromProto(context.Background(), sourceTransferProto, block.VegaTime, accounts)
+	transfer, _ := entities.TransferFromProto(context.Background(), sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
 	transfers.Upsert(context.Background(), transfer)
 
 	deliverOn = deliverOn.Add(1 * time.Minute)
@@ -384,7 +384,7 @@ func testTransfers_UpdateInSameBlock(t *testing.T) {
 		Timestamp:       block.VegaTime.UnixNano(),
 		Kind:            &eventspb.Transfer_OneOff{OneOff: &eventspb.OneOffTransfer{DeliverOn: deliverOn.Unix()}},
 	}
-	transfer, _ = entities.TransferFromProto(context.Background(), sourceTransferProto, block.VegaTime, accounts)
+	transfer, _ = entities.TransferFromProto(context.Background(), sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
 	transfers.Upsert(context.Background(), transfer)
 
 	retrieved, _, _ := transfers.GetAll(ctx, entities.CursorPagination{})
@@ -423,7 +423,7 @@ func testTransfers_AddAndRetrieveOneOffTransfer(t *testing.T) {
 		Kind:            &eventspb.Transfer_OneOff{OneOff: &eventspb.OneOffTransfer{DeliverOn: deliverOn.Unix()}},
 	}
 
-	transfer, _ := entities.TransferFromProto(context.Background(), sourceTransferProto, block.VegaTime, accounts)
+	transfer, _ := entities.TransferFromProto(context.Background(), sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
 	transfers.Upsert(context.Background(), transfer)
 	retrieved, _, _ := transfers.GetAll(ctx, entities.CursorPagination{})
 	assert.Equal(t, 1, len(retrieved))
@@ -463,7 +463,7 @@ func testTransfers_AddAndRetrieveRecurringTransfer(t *testing.T) {
 		}},
 	}
 
-	transfer, _ := entities.TransferFromProto(context.Background(), sourceTransferProto, block.VegaTime, accounts)
+	transfer, _ := entities.TransferFromProto(context.Background(), sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
 	transfers.Upsert(context.Background(), transfer)
 
 	retrieved, _, _ := transfers.GetAll(ctx, entities.CursorPagination{})

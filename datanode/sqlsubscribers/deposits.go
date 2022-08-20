@@ -54,7 +54,7 @@ func (d *Deposit) Push(ctx context.Context, evt events.Event) error {
 
 func (d *Deposit) consume(ctx context.Context, event DepositEvent) error {
 	deposit := event.Deposit()
-	record, err := entities.DepositFromProto(&deposit, d.vegaTime)
+	record, err := entities.DepositFromProto(&deposit, entities.TxHash(event.TxHash()), d.vegaTime)
 	if err != nil {
 		return errors.Wrap(err, "converting deposit proto to database entity failed")
 	}

@@ -61,7 +61,7 @@ func (vs *Vote) Push(ctx context.Context, evt events.Event) error {
 
 func (vs *Vote) consume(ctx context.Context, event VoteEvent) error {
 	protoVote := event.Vote()
-	vote, err := entities.VoteFromProto(&protoVote)
+	vote, err := entities.VoteFromProto(&protoVote, entities.TxHash(event.TxHash()))
 
 	// The timestamp provided on the vote proto object is from when the vote was first created.
 	// It doesn't change when the vote is updated (e.g. with TotalGovernanceTokenWeight et al when

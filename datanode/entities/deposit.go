@@ -32,13 +32,14 @@ type Deposit struct {
 	PartyID           PartyID
 	Asset             AssetID
 	Amount            decimal.Decimal
-	TxHash            string
+	ForeignTxHash     string
 	CreditedTimestamp time.Time
 	CreatedTimestamp  time.Time
+	TxHash            TxHash
 	VegaTime          time.Time
 }
 
-func DepositFromProto(deposit *vega.Deposit, vegaTime time.Time) (*Deposit, error) {
+func DepositFromProto(deposit *vega.Deposit, txHash TxHash, vegaTime time.Time) (*Deposit, error) {
 	var err error
 	var amount decimal.Decimal
 
@@ -52,9 +53,10 @@ func DepositFromProto(deposit *vega.Deposit, vegaTime time.Time) (*Deposit, erro
 		PartyID:           PartyID(deposit.PartyId),
 		Asset:             AssetID(deposit.Asset),
 		Amount:            amount,
-		TxHash:            deposit.TxHash,
+		ForeignTxHash:     deposit.TxHash,
 		CreditedTimestamp: NanosToPostgresTimestamp(deposit.CreditedTimestamp),
 		CreatedTimestamp:  NanosToPostgresTimestamp(deposit.CreatedTimestamp),
+		TxHash:            txHash,
 		VegaTime:          vegaTime,
 	}, nil
 }
@@ -66,7 +68,7 @@ func (d Deposit) ToProto() *vega.Deposit {
 		PartyId:           d.PartyID.String(),
 		Asset:             d.Asset.String(),
 		Amount:            d.Amount.String(),
-		TxHash:            d.TxHash,
+		TxHash:            d.ForeignTxHash,
 		CreditedTimestamp: d.CreditedTimestamp.UnixNano(),
 		CreatedTimestamp:  d.CreatedTimestamp.UnixNano(),
 	}

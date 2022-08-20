@@ -61,7 +61,7 @@ func (rf *Transfer) Push(ctx context.Context, evt events.Event) error {
 
 func (rf *Transfer) consume(ctx context.Context, event TransferEvent) error {
 	transfer := event.TransferFunds()
-	record, err := entities.TransferFromProto(ctx, &transfer, rf.vegaTime, rf.accountSource)
+	record, err := entities.TransferFromProto(ctx, &transfer, entities.TxHash(event.TxHash()), rf.vegaTime, rf.accountSource)
 	if err != nil {
 		return errors.Wrap(err, "converting transfer proto to database entity failed")
 	}

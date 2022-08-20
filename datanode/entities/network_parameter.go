@@ -22,6 +22,7 @@ import (
 type NetworkParameter struct {
 	Key      string
 	Value    string
+	TxHash   TxHash
 	VegaTime time.Time
 }
 
@@ -44,10 +45,11 @@ func (np NetworkParameter) ToProtoEdge(_ ...any) (*v2.NetworkParameterEdge, erro
 	}, nil
 }
 
-func NetworkParameterFromProto(pnp *vega.NetworkParameter) (NetworkParameter, error) {
+func NetworkParameterFromProto(pnp *vega.NetworkParameter, txHash TxHash) (NetworkParameter, error) {
 	np := NetworkParameter{
-		Key:   pnp.Key,
-		Value: pnp.Value,
+		Key:    pnp.Key,
+		Value:  pnp.Value,
+		TxHash: txHash,
 	}
 	return np, nil
 }

@@ -39,10 +39,11 @@ type OracleSpec struct {
 	PublicKeys PublicKeys
 	Filters    []Filter
 	Status     OracleSpecStatus
+	TxHash     TxHash
 	VegaTime   time.Time
 }
 
-func OracleSpecFromProto(spec *oraclespb.OracleSpec, vegaTime time.Time) (*OracleSpec, error) {
+func OracleSpecFromProto(spec *oraclespb.OracleSpec, txHash TxHash, vegaTime time.Time) (*OracleSpec, error) {
 	id := SpecID(spec.Id)
 	pubKeys, err := decodePublicKeys(spec.PubKeys)
 	if err != nil {
@@ -58,6 +59,7 @@ func OracleSpecFromProto(spec *oraclespb.OracleSpec, vegaTime time.Time) (*Oracl
 		PublicKeys: pubKeys,
 		Filters:    filters,
 		Status:     OracleSpecStatus(spec.Status),
+		TxHash:     txHash,
 		VegaTime:   vegaTime,
 	}, nil
 }
