@@ -24,6 +24,7 @@ type Epoch struct {
 	StartTime  time.Time
 	ExpireTime time.Time
 	EndTime    *time.Time
+	TxHash     TxHash
 	VegaTime   time.Time
 }
 
@@ -41,7 +42,7 @@ func (e *Epoch) ToProto() *vega.Epoch {
 	return &protoEpoch
 }
 
-func EpochFromProto(ee eventspb.EpochEvent) Epoch {
+func EpochFromProto(ee eventspb.EpochEvent, txHash TxHash) Epoch {
 	var endTime *time.Time
 	if ee.Action == vega.EpochAction_EPOCH_ACTION_END {
 		t := NanosToPostgresTimestamp(ee.EndTime)
@@ -52,6 +53,7 @@ func EpochFromProto(ee eventspb.EpochEvent) Epoch {
 		StartTime:  NanosToPostgresTimestamp(ee.StartTime),
 		ExpireTime: NanosToPostgresTimestamp(ee.ExpireTime),
 		EndTime:    endTime,
+		TxHash:     txHash,
 	}
 	return epoch
 }

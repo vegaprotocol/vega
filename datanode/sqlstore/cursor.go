@@ -118,15 +118,15 @@ func CursorPredicate(args []interface{}, cursor interface{}, ordering TableOrder
 		}
 
 		bindVar := nextBindVar(&args, value)
-		inequlityPredicate := fmt.Sprintf("%s %s %s", column.Name, operator, bindVar)
+		inequalityPredicate := fmt.Sprintf("%s %s %s", column.Name, operator, bindVar)
 
-		colPredicates := append(equalPredicates, inequlityPredicate)
+		colPredicates := append(equalPredicates, inequalityPredicate)
 		colPredicateString := strings.Join(colPredicates, " AND ")
 		colPredicateString = fmt.Sprintf("(%s)", colPredicateString)
 		cursorPredicates = append(cursorPredicates, colPredicateString)
 
-		equlityPredicate := fmt.Sprintf("%s = %s", column.Name, bindVar)
-		equalPredicates = append(equalPredicates, equlityPredicate)
+		equalityPredicate := fmt.Sprintf("%s = %s", column.Name, bindVar)
+		equalPredicates = append(equalPredicates, equalityPredicate)
 	}
 
 	predicateString := strings.Join(cursorPredicates, " OR ")
@@ -200,7 +200,7 @@ func PaginateQuery[T any, PT parserPtr[T]](
 
 	// If the cursor wasn't empty, exclude rows preceding the cursor's row
 	var emptyCursor T
-	isEmpty, err := equals[T](cursor, emptyCursor)
+	isEmpty, err := equals(cursor, emptyCursor)
 	if err != nil {
 		return "", nil, fmt.Errorf("checking empty cursor: %w", err)
 	}

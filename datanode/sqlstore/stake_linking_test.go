@@ -63,7 +63,7 @@ func testUpsertShouldAddNewInBlock(t *testing.T) {
 	stakingProtos := getStakingProtos()
 
 	proto := stakingProtos[0]
-	data, err := entities.StakeLinkingFromProto(proto, block.VegaTime)
+	data, err := entities.StakeLinkingFromProto(proto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err)
 	assert.NoError(t, sl.Upsert(context.Background(), data))
 
@@ -86,7 +86,7 @@ func testUpsertShouldUpdateExistingInBlock(t *testing.T) {
 	stakingProtos := getStakingProtos()
 
 	for _, proto := range stakingProtos {
-		data, err := entities.StakeLinkingFromProto(proto, block.VegaTime)
+		data, err := entities.StakeLinkingFromProto(proto, generateTxHash(), block.VegaTime)
 		require.NoError(t, err)
 		assert.NoError(t, sl.Upsert(context.Background(), data))
 	}
@@ -110,7 +110,7 @@ func testGetStake(t *testing.T) {
 	stakingProtos := getStakingProtos()
 
 	for _, proto := range stakingProtos {
-		data, err := entities.StakeLinkingFromProto(proto, block.VegaTime)
+		data, err := entities.StakeLinkingFromProto(proto, generateTxHash(), block.VegaTime)
 		require.NoError(t, err)
 		assert.NoError(t, sl.Upsert(context.Background(), data))
 	}
@@ -441,7 +441,7 @@ func addStakeLinking(t *testing.T, ctx context.Context, ls *sqlstore.StakeLinkin
 		Amount:             decimal.NewFromFloat(1),
 		StakeLinkingStatus: entities.StakeLinkingStatusAccepted,
 		FinalizedAt:        block.VegaTime,
-		TxHash:             generateID(),
+		ForeignTxHash:      generateID(),
 		LogIndex:           logIndex,
 		EthereumAddress:    "0xfe179560b9d0cc44c5fea54c2167c1cee7ccfcabf294752a4f43fb64ddffda85",
 		VegaTime:           block.VegaTime,

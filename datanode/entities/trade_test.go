@@ -105,7 +105,7 @@ func TestTradeFromProto(t *testing.T) {
 	}
 
 	testVegaTime := time.Now()
-	trade, err := entities.TradeFromProto(&tradeEventProto, testVegaTime, 5)
+	trade, err := entities.TradeFromProto(&tradeEventProto, generateTxHash(), testVegaTime, 5)
 	if err != nil {
 		t.Fatalf("failed to convert proto to trade:%s", err)
 	}

@@ -52,7 +52,7 @@ func shouldInsertAValidMarketRecord(t *testing.T) {
 
 	marketProto := getTestMarket()
 
-	market, err := entities.NewMarketFromProto(marketProto, block.VegaTime)
+	market, err := entities.NewMarketFromProto(marketProto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
 
 	err = md.Upsert(context.Background(), market)
@@ -100,7 +100,7 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 		block = addTestBlock(t, bs)
 		marketProto = getTestMarket()
 
-		market, err := entities.NewMarketFromProto(marketProto, block.VegaTime)
+		market, err := entities.NewMarketFromProto(marketProto, generateTxHash(), block.VegaTime)
 		require.NoError(t, err, "Converting market proto to database entity")
 
 		err = md.Upsert(context.Background(), market)
@@ -118,7 +118,7 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 	marketProto.TradableInstrument.Instrument.Metadata.Tags = append(marketProto.TradableInstrument.Instrument.Metadata.Tags, "CCC")
 
 	t.Run("should update a valid market record to the database if the block number already exists", func(t *testing.T) {
-		market, err := entities.NewMarketFromProto(marketProto, block.VegaTime)
+		market, err := entities.NewMarketFromProto(marketProto, generateTxHash(), block.VegaTime)
 
 		require.NoError(t, err, "Converting market proto to database entity")
 
@@ -139,7 +139,7 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 		time.Sleep(time.Second)
 		newBlock := addTestBlock(t, bs)
 
-		market, err := entities.NewMarketFromProto(newMarketProto, newBlock.VegaTime)
+		market, err := entities.NewMarketFromProto(newMarketProto, generateTxHash(), newBlock.VegaTime)
 		require.NoError(t, err, "Converting market proto to database entity")
 
 		err = md.Upsert(context.Background(), market)

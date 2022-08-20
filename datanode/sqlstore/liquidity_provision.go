@@ -35,7 +35,7 @@ type LiquidityProvision struct {
 
 const (
 	sqlOracleLiquidityProvisionColumns = `id, party_id, created_at, updated_at, market_id, 
-		commitment_amount, fee, sells, buys, version, status, reference, vega_time`
+		commitment_amount, fee, sells, buys, version, status, reference, tx_hash, vega_time`
 )
 
 func NewLiquidityProvision(connectionSource *ConnectionSource) *LiquidityProvision {
