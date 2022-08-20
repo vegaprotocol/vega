@@ -92,6 +92,11 @@ func (n *NodeCommand) Run(
 	nodeWalletPassphrase, tmHome, networkURL, network string,
 	args []string,
 ) error {
+	n.Log.Info("starting vega",
+		logging.String("version", version.Get()),
+		logging.String("commit-hash", version.GetCommitHash()),
+	)
+
 	n.confWatcher = confWatcher
 	n.nodeWalletPassphrase = nodeWalletPassphrase
 

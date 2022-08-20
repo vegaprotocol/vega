@@ -274,3 +274,36 @@ http:
       get: "/api/v2/vega/time"
     - selector: datanode.api.v2.TradingDataService.GetNetworkParameter
       get: '/api/v2/network/parameters/{key}'
+
+    # websockets
+
+    - selector: datanode.api.v2.TradingDataService.ObserveAccounts
+      get: '/api/v2/stream/accounts'
+    - selector: datanode.api.v2.TradingDataService.ObserveOrders
+      get: '/api/v2/stream/orders'
+    - selector: datanode.api.v2.TradingDataService.ObservePositions
+      get: '/api/v2/stream/positions'
+    - selector: datanode.api.v2.TradingDataService.ObserveMarketsDepth
+      get: '/api/v2/stream/markets/depth'
+    - selector: datanode.api.v2.TradingDataService.ObserveMarketsDepthUpdates
+      get: '/api/v2/stream/markets/depth/updates'
+    - selector: datanode.api.v2.TradingDataService.ObserveMarketsData
+      get: '/api/v2/stream/markets/data'
+    - selector: datanode.api.v2.TradingDataService.ObserveCandleData
+      get: '/api/v2/stream/candle/data'
+    - selector: datanode.api.v2.TradingDataService.ObserveVotes
+      get: '/api/v2/stream/votes'
+    - selector: datanode.api.v2.TradingDataService.ObserveTrades
+      get: '/api/v2/stream/trades'
+    - selector: datanode.api.v2.TradingDataService.ObserveMarginLevels
+      get: '/api/v2/stream/margin/levels'
+    - selector: datanode.api.v2.TradingDataService.ObserveRewards
+      get: '/api/v2/stream/rewards'
+    - selector: datanode.api.v2.TradingDataService.ObserveGovernance
+      get: '/api/v2/stream/governance'
+    - selector: datanode.api.v2.TradingDataService.ObserveDelegations
+      get: '/api/v2/stream/delegations'
+    - selector: datanode.api.v2.TradingDataService.ObserveEventBus
+      get: '/api/v2/stream/event/bus'
+    - selector: datanode.api.v2.TradingDataService.ObserveTransferResponses
+      get: '/api/v2/stream/transfer/responses'
