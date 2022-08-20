@@ -54,9 +54,9 @@ func (sl *StakeLinking) Push(ctx context.Context, evt events.Event) error {
 
 func (sl StakeLinking) consume(ctx context.Context, event StakeLinkingEvent) error {
 	stake := event.StakeLinking()
-	entity, err := entities.StakeLinkingFromProto(&stake, sl.vegaTime)
+	entity, err := entities.StakeLinkingFromProto(&stake, entities.TxHash(event.TxHash()), sl.vegaTime)
 	if err != nil {
-		return errors.Wrap(err, "converting stake linking event to database entitiy failed")
+		return errors.Wrap(err, "converting stake linking event to database entity failed")
 	}
 
 	return errors.Wrap(sl.store.Upsert(ctx, entity), "inserting stake linking event to SQL store failed")

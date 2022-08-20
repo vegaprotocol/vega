@@ -655,18 +655,18 @@ func (m *MockNodeStore) EXPECT() *MockNodeStoreMockRecorder {
 	return m.recorder
 }
 
-// AddNodeAnnoucedEvent mocks base method.
-func (m *MockNodeStore) AddNodeAnnoucedEvent(arg0 context.Context, arg1 string, arg2 time.Time, arg3 *entities.ValidatorUpdateAux) error {
+// AddNodeAnnouncedEvent mocks base method.
+func (m *MockNodeStore) AddNodeAnnouncedEvent(arg0 context.Context, arg1 string, arg2 time.Time, arg3 *entities.ValidatorUpdateAux) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddNodeAnnoucedEvent", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "AddNodeAnnouncedEvent", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// AddNodeAnnoucedEvent indicates an expected call of AddNodeAnnoucedEvent.
-func (mr *MockNodeStoreMockRecorder) AddNodeAnnoucedEvent(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+// AddNodeAnnouncedEvent indicates an expected call of AddNodeAnnouncedEvent.
+func (mr *MockNodeStoreMockRecorder) AddNodeAnnouncedEvent(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNodeAnnoucedEvent", reflect.TypeOf((*MockNodeStore)(nil).AddNodeAnnoucedEvent), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNodeAnnouncedEvent", reflect.TypeOf((*MockNodeStore)(nil).AddNodeAnnouncedEvent), arg0, arg1, arg2, arg3)
 }
 
 // UpdateEthereumAddress mocks base method.
