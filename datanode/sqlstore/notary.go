@@ -39,14 +39,16 @@ func NewNotary(connectionSource *ConnectionSource) *Notary {
 
 func (n *Notary) Add(ctx context.Context, ns *entities.NodeSignature) error {
 	defer metrics.StartSQLQuery("Notary", "Add")()
-	query := `INSERT INTO node_signatures (resource_id, sig, kind)
-		VALUES ($1, $2, $3)
+	query := `INSERT INTO node_signatures (resource_id, sig, kind, tx_hash, vega_time)
+		VALUES ($1, $2, $3, $4, $5)
 		ON CONFLICT (resource_id, sig) DO NOTHING`
 
-	if _, err := n.pool.Exec(ctx, query,
+	if _, err := n.Connection.Exec(ctx, query,
 		ns.ResourceID,
 		ns.Sig,
 		ns.Kind,
+		ns.TxHash,
+		ns.VegaTime,
 	); err != nil {
 		err = fmt.Errorf("could not insert node-signature into database: %w", err)
 		return err
@@ -64,7 +66,7 @@ func (n *Notary) GetByResourceID(ctx context.Context, id string, pagination enti
 		ns       []entities.NodeSignature
 	)
 
-	query := fmt.Sprintf(`SELECT resource_id, sig, kind FROM node_signatures where resource_id=%s`,
+	query := fmt.Sprintf(`SELECT resource_id, sig, kind, tx_hash, vega_time FROM node_signatures where resource_id=%s`,
 		nextBindVar(&args, entities.NodeID(id)))
 	query, args, err = PaginateQuery[entities.NodeSignatureCursor](query, args, notaryOrdering, pagination)
 	if err != nil {

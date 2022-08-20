@@ -203,8 +203,8 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share | average entry valuation |
-      | lp1   | 0.5               | 10000                   |
-      | lp2   | 0.5               | 10000                   |
+      | lp1   | 0.5               | 5000                    |
+      | lp2   | 0.5               | 5000                    |
 
     And the price monitoring bounds for the market "ETH/MAR22" should be:
       | min bound | max bound |
@@ -301,8 +301,8 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share | average entry valuation |
-      | lp1   | 0.8               | 10000                   |
-      | lp2   | 0.2               | 10000                   |
+      | lp1   | 0.8               | 8000                    |
+      | lp2   | 0.2               | 2000                    |
 
     And the price monitoring bounds for the market "ETH/MAR22" should be:
       | min bound | max bound |
@@ -401,8 +401,8 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   | 0.9999998750000156 | 8000001                 |
-      | lp2   | 0.0000001249999844 | 8000001                 |
+      | lp1   | 0.9999998750000156 | 8000000                 |
+      | lp2   | 0.0000001249999844 | 1                       |
 
     And the price monitoring bounds for the market "ETH/MAR22" should be:
       | min bound | max bound |
@@ -471,8 +471,8 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share | average entry valuation |
-      | lp1   | 0.8               | 10000                   |
-      | lp2   | 0.2               | 10000                   |
+      | lp1   | 0.8               | 8000                    |
+      | lp2   | 0.2               | 2000                    |
 
     And the liquidity fee factor should "0.001" for the market "ETH/MAR22"
 

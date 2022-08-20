@@ -44,10 +44,11 @@ func (ps *Checkpoints) Add(ctx context.Context, r entities.Checkpoint) error {
 			hash,
 			block_hash,
 			block_height,
+			tx_hash,
 			vega_time)
-		 VALUES ($1, $2, $3, $4)
+		 VALUES ($1, $2, $3, $4, $5)
 		 `,
-		r.Hash, r.BlockHash, r.BlockHeight, r.VegaTime)
+		r.Hash, r.BlockHash, r.BlockHeight, r.TxHash, r.VegaTime)
 	return err
 }
 

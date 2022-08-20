@@ -35,14 +35,15 @@ type Withdrawal struct {
 	Status             WithdrawalStatus
 	Ref                string
 	Expiry             time.Time
-	TxHash             string
+	ForeignTxHash      string
 	CreatedTimestamp   time.Time
 	WithdrawnTimestamp time.Time
 	Ext                WithdrawExt
+	TxHash             TxHash
 	VegaTime           time.Time
 }
 
-func WithdrawalFromProto(withdrawal *vega.Withdrawal, vegaTime time.Time) (*Withdrawal, error) {
+func WithdrawalFromProto(withdrawal *vega.Withdrawal, txHash TxHash, vegaTime time.Time) (*Withdrawal, error) {
 	var err error
 	var amount decimal.Decimal
 
@@ -59,10 +60,11 @@ func WithdrawalFromProto(withdrawal *vega.Withdrawal, vegaTime time.Time) (*With
 		Ref:     withdrawal.Ref,
 		// According to the GraphQL resolver, the expiry is the Unix time, not UnixNano
 		Expiry:             time.Unix(withdrawal.Expiry, 0),
-		TxHash:             withdrawal.TxHash,
+		ForeignTxHash:      withdrawal.TxHash,
 		CreatedTimestamp:   NanosToPostgresTimestamp(withdrawal.CreatedTimestamp),
 		WithdrawnTimestamp: NanosToPostgresTimestamp(withdrawal.WithdrawnTimestamp),
 		Ext:                WithdrawExt{withdrawal.Ext},
+		TxHash:             txHash,
 		VegaTime:           vegaTime,
 	}, nil
 }
@@ -76,7 +78,7 @@ func (w Withdrawal) ToProto() *vega.Withdrawal {
 		Status:             vega.Withdrawal_Status(w.Status),
 		Ref:                w.Ref,
 		Expiry:             w.Expiry.Unix(),
-		TxHash:             w.TxHash,
+		TxHash:             w.ForeignTxHash,
 		CreatedTimestamp:   w.CreatedTimestamp.UnixNano(),
 		WithdrawnTimestamp: w.WithdrawnTimestamp.UnixNano(),
 		Ext:                w.Ext.WithdrawExt,

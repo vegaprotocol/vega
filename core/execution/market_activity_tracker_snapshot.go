@@ -63,6 +63,12 @@ func marketFeesToProto(partyFees map[string]*num.Uint) []*checkpoint.PartyFees {
 }
 
 func (mt *marketTracker) IntoProto(market string) *checkpoint.MarketActivityTracker {
+	paid := make([]string, 0, len(mt.proposersPaid))
+	for k := range mt.proposersPaid {
+		paid = append(paid, k)
+	}
+	sort.Strings(paid)
+
 	return &checkpoint.MarketActivityTracker{
 		Asset:         mt.asset,
 		Market:        market,
@@ -71,7 +77,7 @@ func (mt *marketTracker) IntoProto(market string) *checkpoint.MarketActivityTrac
 		LpFees:        marketFeesToProto(mt.lpFees),
 		ValueTraded:   mt.valueTraded.String(),
 		Proposer:      mt.proposer,
-		BonusPaid:     mt.proposersPaid,
+		BonusPaid:     paid,
 		ReadyToDelete: mt.readyToDelete,
 	}
 }
@@ -157,10 +163,15 @@ func marketTrackerFromProto(data *checkpoint.MarketActivityTracker) *marketTrack
 		totalLPFees:    num.UintZero(),
 		valueTraded:    valueTrades,
 		proposer:       data.Proposer,
-		proposersPaid:  data.BonusPaid,
+		proposersPaid:  map[string]struct{}{},
 		asset:          data.Asset,
 		readyToDelete:  data.ReadyToDelete,
 	}
+
+	for _, bpfpa := range data.BonusPaid {
+		mft.proposersPaid[bpfpa] = struct{}{}
+	}
+
 	for _, mf := range data.MakerFees {
 		mft.makerFees[mf.Party], _ = num.UintFromString(mf.Fee, 10)
 		mft.totalMakerFees.AddSum(mft.makerFees[mf.Party])

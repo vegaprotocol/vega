@@ -24,7 +24,7 @@ func filterAccountsQuery(af entities.AccountFilter) (string, []interface{}, erro
 	var args []interface{}
 	var err error
 
-	query := `SELECT id, party_id, asset_id, market_id, type, vega_time
+	query := `SELECT id, party_id, asset_id, market_id, type, tx_hash, vega_time
 	          FROM ACCOUNTS `
 	if af.AssetID.String() != "" {
 		query = fmt.Sprintf("%s WHERE asset_id=%s", query, nextBindVar(&args, af.AssetID))
@@ -109,7 +109,7 @@ func filterAccountBalancesQuery(af entities.AccountFilter) (string, []interface{
 	}
 
 	query := `SELECT ACCOUNTS.id, ACCOUNTS.party_id, ACCOUNTS.asset_id, ACCOUNTS.market_id, ACCOUNTS.type, 
-				current_balances.balance, current_balances.vega_time
+				current_balances.balance, current_balances.tx_hash, current_balances.vega_time
 	          FROM ACCOUNTS JOIN current_balances ON ACCOUNTS.id = current_balances.account_id `
 
 	if where != "" {

@@ -58,7 +58,7 @@ func (ds *Delegation) Push(ctx context.Context, evt events.Event) error {
 
 func (ds *Delegation) consume(ctx context.Context, event DelegationBalanceEvent) error {
 	protoDBE := event.Proto()
-	delegation, err := entities.DelegationFromEventProto(&protoDBE)
+	delegation, err := entities.DelegationFromEventProto(&protoDBE, entities.TxHash(event.TxHash()))
 	if err != nil {
 		return errors.Wrap(err, "unable to parse delegation")
 	}

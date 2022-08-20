@@ -34,6 +34,7 @@ type Asset struct {
 	Quantum           decimal.Decimal
 	Source            string
 	ERC20Contract     string
+	TxHash            TxHash
 	VegaTime          time.Time
 	LifetimeLimit     decimal.Decimal
 	WithdrawThreshold decimal.Decimal

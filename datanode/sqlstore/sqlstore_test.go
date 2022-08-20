@@ -27,6 +27,7 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 
+	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/cenkalti/backoff/v4"
@@ -129,11 +130,15 @@ func DeleteEverything() {
 	}
 }
 
-// Generate a 256 bit pseudo-random hash ID based on the time.
+// Generate a 256 bit pseudo-random hash ID.
 func generateID() string {
 	randomString := strconv.FormatInt(rand.Int63(), 10)
 	hash := sha256.Sum256([]byte(randomString))
 	return hex.EncodeToString(hash[:])
+}
+
+func generateTxHash() entities.TxHash {
+	return entities.TxHash(generateID())
 }
 
 func generateEthereumAddress() string {

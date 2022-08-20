@@ -15,24 +15,23 @@ package sqlsubscribers
 import (
 	"context"
 	"testing"
-	"time"
 
 	"code.vegaprotocol.io/vega/protos/vega"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestEventDeduplicator_Flush(t *testing.T) {
-	edd := NewEventDeduplicator[string, *vega.LiquidityProvision](func(ctx context.Context,
-		lp *vega.LiquidityProvision, vegaTime time.Time,
-	) (string, error) {
-		return lp.Id, nil
-	})
+	edd := NewEventDeduplicator[string, *vega.LiquidityProvision](
+		func(ctx context.Context, lp *vega.LiquidityProvision) string { return lp.Id },
+		func(lp1 *vega.LiquidityProvision, lp2 *vega.LiquidityProvision) bool { return proto.Equal(lp1, lp2) },
+	)
 
 	lp1 := &vega.LiquidityProvision{
 		Id: "1",
 	}
 
-	edd.AddEvent(context.Background(), lp1, time.Now())
+	edd.AddEvent(context.Background(), lp1)
 	events := edd.Flush()
 	assert.Equal(t, lp1, events["1"])
 
@@ -41,23 +40,23 @@ func TestEventDeduplicator_Flush(t *testing.T) {
 		Status: vega.LiquidityProvision_STATUS_PENDING,
 	}
 
-	edd.AddEvent(context.Background(), lp2, time.Now())
+	edd.AddEvent(context.Background(), lp2)
 	events = edd.Flush()
 	assert.Equal(t, lp2, events["1"])
 
-	edd.AddEvent(context.Background(), lp2, time.Now())
+	edd.AddEvent(context.Background(), lp2)
 	events = edd.Flush()
 	assert.Equal(t, 0, len(events))
 
-	edd.AddEvent(context.Background(), lp2, time.Now())
-	edd.AddEvent(context.Background(), lp1, time.Now())
-	edd.AddEvent(context.Background(), lp2, time.Now())
+	edd.AddEvent(context.Background(), lp2)
+	edd.AddEvent(context.Background(), lp1)
+	edd.AddEvent(context.Background(), lp2)
 	events = edd.Flush()
 	assert.Equal(t, 0, len(events))
 
-	edd.AddEvent(context.Background(), lp1, time.Now())
-	edd.AddEvent(context.Background(), lp2, time.Now())
-	edd.AddEvent(context.Background(), lp1, time.Now())
+	edd.AddEvent(context.Background(), lp1)
+	edd.AddEvent(context.Background(), lp2)
+	edd.AddEvent(context.Background(), lp1)
 	events = edd.Flush()
 	assert.Equal(t, lp1, events["1"])
 }

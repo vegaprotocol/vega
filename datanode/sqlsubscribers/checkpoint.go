@@ -58,7 +58,7 @@ func (n *Checkpoint) Push(ctx context.Context, evt events.Event) error {
 
 func (n *Checkpoint) consume(ctx context.Context, event CheckpointEvent) error {
 	pnp := event.Proto()
-	np, err := entities.CheckpointFromProto(&pnp)
+	np, err := entities.CheckpointFromProto(&pnp, entities.TxHash(event.TxHash()))
 	if err != nil {
 		return errors.Wrap(err, "unable to parse checkpoint")
 	}

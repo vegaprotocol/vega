@@ -15,6 +15,7 @@ package entities
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
@@ -28,13 +29,17 @@ type NodeSignature struct {
 	ResourceID NodeSignatureID
 	Sig        []byte
 	Kind       NodeSignatureKind
+	TxHash     TxHash
+	VegaTime   time.Time
 }
 
-func NodeSignatureFromProto(ns *commandspb.NodeSignature) (*NodeSignature, error) {
+func NodeSignatureFromProto(ns *commandspb.NodeSignature, txHash TxHash, vegaTime time.Time) (*NodeSignature, error) {
 	return &NodeSignature{
 		ResourceID: NodeSignatureID(ns.Id),
 		Sig:        ns.Sig,
 		Kind:       NodeSignatureKind(ns.Kind),
+		TxHash:     txHash,
+		VegaTime:   vegaTime,
 	}, nil
 }
 

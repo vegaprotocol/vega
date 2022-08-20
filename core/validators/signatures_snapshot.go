@@ -62,7 +62,7 @@ func (s *ERC20Signatures) RestorePendingSignatures(sigs *snapshot.ToplogySignatu
 			EpochSeq:   data.EpochSeq,
 			Added:      data.Added,
 		}
-		s.pendingSignatures[data.NodeId] = sd
+		s.pendingSignatures[data.EthereumAddress] = sd
 	}
 
 	for _, i := range sigs.IssuedSignatures {

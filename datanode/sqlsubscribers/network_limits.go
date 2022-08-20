@@ -59,7 +59,7 @@ func (nl *NetworkLimits) Push(ctx context.Context, evt events.Event) error {
 
 func (nl *NetworkLimits) consume(ctx context.Context, event NetworkLimitsEvent) error {
 	protoLimits := event.NetworkLimits()
-	limits := entities.NetworkLimitsFromProto(protoLimits)
+	limits := entities.NetworkLimitsFromProto(protoLimits, entities.TxHash(event.TxHash()))
 	limits.VegaTime = nl.vegaTime
 
 	return errors.Wrap(nl.store.Add(ctx, limits), "error adding network limits")

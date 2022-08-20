@@ -12,6 +12,9 @@
 - [5766](https://github.com/vegaprotocol/vega/issues/5766) - Better notification for version update on the wallet
 - [5841](https://github.com/vegaprotocol/vega/issues/5841) - Add transaction to request `multisigControl` signatures on demand
 - [5932](https://github.com/vegaprotocol/vega/issues/5932) - Remove Name and Symbol from update asset proposal
+- [5937](https://github.com/vegaprotocol/vega/issues/5937) - Add more flexibility to market creation bonus 
+- [5949](https://github.com/vegaprotocol/vega/issues/5949) - Transfers processed in the order they were received
+- [5675](https://github.com/vegaprotocol/vega/issues/5675) - Add transaction information to all database tables
 
 ### 🐛 Fixes
 - [5934](https://github.com/vegaprotocol/vega/issues/5934) - Ensure wallet without permissions can be read
@@ -77,6 +80,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5893](https://github.com/vegaprotocol/vega/issues/5893) - Remove total supply from assets
 - [5752](https://github.com/vegaprotocol/vega/issues/5752) - Remove URL and Hash from proposal rationale, add Title
 - [5802](https://github.com/vegaprotocol/vega/issues/5802) - Introduce transaction version 3 that encode the chain ID in its input data to protect against transaction replay
+- [5358](https://github.com/vegaprotocol/vega/issues/5358) - Port equity like shares update to new structure
 
 ### 🐛 Fixes
 - [5571](https://github.com/vegaprotocol/vega/issues/5571) - Restore pending assets status correctly after snapshot restore

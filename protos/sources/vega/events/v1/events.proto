@@ -30,7 +30,7 @@ message ERC20MultiSigSignerAdded {
   string epoch_seq = 7;
 }
 
-message ERC20MulistSigSignerRemovedSubmitter {
+message ERC20MultiSigSignerRemovedSubmitter {
   // The ID of this signature bundle
   string signature_id = 1;
   // The address of the submitter of the transaction
@@ -41,7 +41,7 @@ message ERC20MultiSigSignerRemoved {
   // A list containing all the IDs of bundle generated
   // There should be one bundle generated for every validators
   // in the validator set
-  repeated ERC20MulistSigSignerRemovedSubmitter signature_submitters = 1;
+  repeated ERC20MultiSigSignerRemovedSubmitter signature_submitters = 1;
   // The vega node ID of the node which is to be removed
   string validator_id = 2;
   // the time at which this happened

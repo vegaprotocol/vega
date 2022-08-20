@@ -32,7 +32,7 @@ var oracleSpecOrdering = TableOrdering{
 }
 
 const (
-	sqlOracleSpecColumns = `id, created_at, updated_at, public_keys, filters, status, vega_time`
+	sqlOracleSpecColumns = `id, created_at, updated_at, public_keys, filters, status, tx_hash, vega_time`
 )
 
 func NewOracleSpec(connectionSource *ConnectionSource) *OracleSpec {
@@ -43,18 +43,19 @@ func NewOracleSpec(connectionSource *ConnectionSource) *OracleSpec {
 
 func (os *OracleSpec) Upsert(ctx context.Context, spec *entities.OracleSpec) error {
 	query := fmt.Sprintf(`insert into oracle_specs(%s)
-values ($1, $2, $3, $4, $5, $6, $7)
+values ($1, $2, $3, $4, $5, $6, $7, $8)
 on conflict (id, vega_time) do update
 set
 	created_at=EXCLUDED.created_at,
 	updated_at=EXCLUDED.updated_at,
 	public_keys=EXCLUDED.public_keys,
 	filters=EXCLUDED.filters,
-	status=EXCLUDED.status`, sqlOracleSpecColumns)
+	status=EXCLUDED.status,
+	tx_hash=EXCLUDED.tx_hash`, sqlOracleSpecColumns)
 
 	defer metrics.StartSQLQuery("OracleSpec", "Upsert")()
 	if _, err := os.Connection.Exec(ctx, query, spec.ID, spec.CreatedAt, spec.UpdatedAt, spec.PublicKeys,
-		spec.Filters, spec.Status, spec.VegaTime); err != nil {
+		spec.Filters, spec.Status, spec.TxHash, spec.VegaTime); err != nil {
 		return err
 	}
 

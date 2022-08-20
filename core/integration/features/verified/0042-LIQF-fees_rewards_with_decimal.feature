@@ -47,23 +47,23 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp1 | lp1   | USD/DEC19 | 1000000000        | 0.001 | buy  | BID              | 1          | 2000   | submission |
-      | lp2 | lp1   | USD/DEC20 | 1000000000        | 0.001 | buy  | BID              | 1          | 200000 | submission  |
-      | lp3 | lp1   | USD/DEC21 | 1000000000        | 0.001 | buy  | BID              | 1          | 200000 | submission  |
-      | lp1 | lp1   | USD/DEC19 | 1000000000        | 0.001 | buy  | MID              | 2          | 1000   | submission  |
-      | lp2 | lp1   | USD/DEC20 | 1000000000        | 0.001 | buy  | MID              | 2          | 100000 | submission  |
-      | lp3 | lp1   | USD/DEC21 | 1000000000        | 0.001 | buy  | MID              | 2          | 100000 | submission  |
-      | lp1 | lp1   | USD/DEC19 | 1000000000        | 0.001 | sell | ASK              | 1          | 2000   | submission  |
-      | lp2 | lp1   | USD/DEC20 | 1000000000        | 0.001 | sell | ASK              | 1          | 200000 | submission  |
-      | lp3 | lp1   | USD/DEC21 | 1000000000        | 0.001 | sell | ASK              | 1          | 200000 | submission  |
-      | lp1 | lp1   | USD/DEC19 | 1000000000        | 0.001 | sell | MID              | 2          | 1000   | submission  |
-      | lp2 | lp1   | USD/DEC20 | 1000000000        | 0.001 | sell | MID              | 2          | 100000 | submission  |
-      | lp3 | lp1   | USD/DEC21 | 1000000000        | 0.001 | sell | MID              | 2          | 100000 | submission  |
+      | lp2 | lp1   | USD/DEC20 | 1000000000        | 0.001 | buy  | BID              | 1          | 200000 | submission |
+      | lp3 | lp1   | USD/DEC21 | 1000000000        | 0.001 | buy  | BID              | 1          | 200000 | submission |
+      | lp1 | lp1   | USD/DEC19 | 1000000000        | 0.001 | buy  | MID              | 2          | 1000   | submission |
+      | lp2 | lp1   | USD/DEC20 | 1000000000        | 0.001 | buy  | MID              | 2          | 100000 | submission |
+      | lp3 | lp1   | USD/DEC21 | 1000000000        | 0.001 | buy  | MID              | 2          | 100000 | submission |
+      | lp1 | lp1   | USD/DEC19 | 1000000000        | 0.001 | sell | ASK              | 1          | 2000   | submission |
+      | lp2 | lp1   | USD/DEC20 | 1000000000        | 0.001 | sell | ASK              | 1          | 200000 | submission |
+      | lp3 | lp1   | USD/DEC21 | 1000000000        | 0.001 | sell | ASK              | 1          | 200000 | submission |
+      | lp1 | lp1   | USD/DEC19 | 1000000000        | 0.001 | sell | MID              | 2          | 1000   | submission |
+      | lp2 | lp1   | USD/DEC20 | 1000000000        | 0.001 | sell | MID              | 2          | 100000 | submission |
+      | lp3 | lp1   | USD/DEC21 | 1000000000        | 0.001 | sell | MID              | 2          | 100000 | submission |
       | lp4 | lpprov| USD/DEC19 | 5000000000        | 0.001 | buy  | BID              | 1          | 2000   | submission |
-      | lp5 | lpprov| USD/DEC20 | 5000000000        | 0.001 | buy  | BID              | 1          | 200000 | submission  |
-      | lp6 | lpprov| USD/DEC21 | 5000000000        | 0.001 | buy  | BID              | 1          | 200000 | submission  |
-      | lp4 | lpprov| USD/DEC19 | 5000000000        | 0.001 | sell | MID              | 2          | 1000   | submission  |
-      | lp5 | lpprov| USD/DEC20 | 5000000000        | 0.001 | sell | MID              | 2          | 100000 | submission  |
-      | lp6 | lpprov| USD/DEC21 | 5000000000        | 0.001 | sell | MID              | 2          | 100000 | submission  |
+      | lp5 | lpprov| USD/DEC20 | 5000000000        | 0.001 | buy  | BID              | 1          | 200000 | submission |
+      | lp6 | lpprov| USD/DEC21 | 5000000000        | 0.001 | buy  | BID              | 1          | 200000 | submission |
+      | lp4 | lpprov| USD/DEC19 | 5000000000        | 0.001 | sell | MID              | 2          | 1000   | submission |
+      | lp5 | lpprov| USD/DEC20 | 5000000000        | 0.001 | sell | MID              | 2          | 100000 | submission |
+      | lp6 | lpprov| USD/DEC21 | 5000000000        | 0.001 | sell | MID              | 2          | 100000 | submission |
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price    | resulting trades | type       | tif     |
@@ -129,15 +129,15 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
     
     And the liquidity provider fee shares for the market "USD/DEC19" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   | 0.1666666666666667 | 6000000000              |
+      | lp1   | 0.1666666666666667 | 1000000000              |
 
     And the liquidity provider fee shares for the market "USD/DEC20" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   | 0.1666666666666667 | 6000000000              |
+      | lp1   | 0.1666666666666667 | 1000000000              |
 
     And the liquidity provider fee shares for the market "USD/DEC21" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   | 0.1666666666666667 | 6000000000              |
+      | lp1   | 0.1666666666666667 | 1000000000              |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin       | general        | bond       |
@@ -284,15 +284,15 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
     
     And the liquidity provider fee shares for the market "USD/DEC19" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   | 0.0001999600079984 | 5001000000              |
+      | lp1   | 0.0001999600079984 | 1000000                 |
 
     And the liquidity provider fee shares for the market "USD/DEC20" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   | 0.0001999600079984 | 5001000000              |
+      | lp1   | 0.0001999600079984 | 1000000                 |
 
     And the liquidity provider fee shares for the market "USD/DEC21" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   | 0.0001999600079984 | 5001000000              |
+      | lp1   | 0.0001999600079984 | 1000000                 |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin       | general        | bond    |
