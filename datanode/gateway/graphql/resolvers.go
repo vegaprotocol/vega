@@ -606,6 +606,23 @@ func (r *myQueryResolver) Erc20ListAssetBundle(ctx context.Context, assetID stri
 	}, nil
 }
 
+func (r *myQueryResolver) Erc20SetAssetLimitsBundle(ctx context.Context, proposalID string) (*ERC20SetAssetLimitsBundle, error) {
+	res, err := r.tradingDataClientV2.GetERC20SetAssetLimitsBundle(
+		ctx, &v2.GetERC20SetAssetLimitsBundleRequest{ProposalId: proposalID})
+	if err != nil {
+		return nil, err
+	}
+
+	return &ERC20SetAssetLimitsBundle{
+		AssetSource:   res.AssetSource,
+		VegaAssetID:   res.VegaAssetId,
+		Nonce:         res.Nonce,
+		LifetimeLimit: res.LifetimeLimit,
+		Threshold:     res.Threshold,
+		Signatures:    res.Signatures,
+	}, nil
+}
+
 func (r *myQueryResolver) Erc20MultiSigSignerAddedBundles(ctx context.Context, nodeID string, submitter, epochSeq *string, pagination *v2.Pagination) (*ERC20MultiSigSignerAddedConnection, error) {
 	res, err := r.tradingDataClientV2.GetERC20MultiSigSignerAddedBundles(
 		ctx, &v2.GetERC20MultiSigSignerAddedBundlesRequest{

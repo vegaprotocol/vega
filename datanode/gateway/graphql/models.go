@@ -125,13 +125,13 @@ type Erc20 struct {
 func (Erc20) IsAssetSource() {}
 
 type ERC20MultiSigSignerAddedBundle struct {
-	// The ethereum address of the signer to be removed
+	// The ethereum address of the signer to be added
 	NewSigner string `json:"newSigner"`
 	// The ethereum address of the submitter
 	Submitter string `json:"submitter"`
 	// The nonce used in the signing operation
 	Nonce string `json:"nonce"`
-	// unixnano timestamp for when the validator was added
+	// Unix-nano timestamp for when the validator was added
 	Timestamp string `json:"timestamp"`
 	// The bundle of signatures from current validators to sign in the new signer
 	Signatures string `json:"signatures"`
@@ -174,6 +174,22 @@ type ERC20MultiSigSignerRemovedConnection struct {
 	Edges []*ERC20MultiSigSignerRemovedBundleEdge `json:"edges"`
 	// The pagination information
 	PageInfo *v2.PageInfo `json:"pageInfo"`
+}
+
+type ERC20SetAssetLimitsBundle struct {
+	// The address of the asset on ethereum
+	AssetSource string `json:"assetSource"`
+	// The ID of the vega asset
+	VegaAssetID string `json:"vegaAssetId"`
+	// The nonce, which is actually the internal reference for the proposal
+	Nonce string `json:"nonce"`
+	// The lifetime limit deposit for this asset
+	LifetimeLimit string `json:"lifetimeLimit"`
+	// The threshold withdraw for this asset
+	Threshold string `json:"threshold"`
+	// The signatures bundle as hex encoded data, forward by 0x
+	// e.g: 0x + sig1 + sig2 + ... + sixN
+	Signatures string `json:"signatures"`
 }
 
 type EpochParticipation struct {

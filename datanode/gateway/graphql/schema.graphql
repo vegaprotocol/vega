@@ -570,6 +570,11 @@ type Query {
     assetId: ID!
   ): Erc20ListAssetBundle!
 
+  erc20SetAssetLimitsBundle(
+    "ID of the proposal to update an asset"
+    proposalId: ID!
+  ): ERC20SetAssetLimitsBundle!
+
   "find a deposit using its ID"
   deposit("ID of the Deposit" id: ID!): Deposit
 
@@ -2421,6 +2426,24 @@ type Erc20ListAssetBundle {
   """
   Signature aggregate from the nodes, in the following format:
   0x + sig1 + sig2 + ... + sigN
+  """
+  signatures: String!
+}
+
+type ERC20SetAssetLimitsBundle {
+  "The address of the asset on ethereum"
+  assetSource: String!
+  "The ID of the vega asset"
+  vegaAssetId: String!
+  "The nonce, which is actually the internal reference for the proposal"
+  nonce: String!
+  "The lifetime limit deposit for this asset"
+  lifetimeLimit: String!
+  "The threshold withdraw for this asset"
+  threshold: String!
+  """
+  The signatures bundle as hex encoded data, forward by 0x
+  e.g: 0x + sig1 + sig2 + ... + sixN
   """
   signatures: String!
 }

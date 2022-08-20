@@ -323,6 +323,15 @@ type ComplexityRoot struct {
 		PageInfo func(childComplexity int) int
 	}
 
+	ERC20SetAssetLimitsBundle struct {
+		AssetSource   func(childComplexity int) int
+		LifetimeLimit func(childComplexity int) int
+		Nonce         func(childComplexity int) int
+		Signatures    func(childComplexity int) int
+		Threshold     func(childComplexity int) int
+		VegaAssetID   func(childComplexity int) int
+	}
+
 	Epoch struct {
 		Delegations           func(childComplexity int, partyID *string, nodeID *string, skip *int, first *int, last *int) int
 		DelegationsConnection func(childComplexity int, partyID *string, nodeID *string, pagination *v2.Pagination) int
@@ -1131,6 +1140,7 @@ type ComplexityRoot struct {
 		Erc20ListAssetBundle               func(childComplexity int, assetID string) int
 		Erc20MultiSigSignerAddedBundles    func(childComplexity int, nodeID string, submitter *string, epochSeq *string, pagination *v2.Pagination) int
 		Erc20MultiSigSignerRemovedBundles  func(childComplexity int, nodeID string, submitter *string, epochSeq *string, pagination *v2.Pagination) int
+		Erc20SetAssetLimitsBundle          func(childComplexity int, proposalID string) int
 		Erc20WithdrawalApproval            func(childComplexity int, withdrawalID string) int
 		EstimateOrder                      func(childComplexity int, marketID string, partyID string, price *string, size string, side vega.Side, timeInForce vega.Order_TimeInForce, expiration *string, typeArg vega.Order_Type) int
 		EthereumKeyRotations               func(childComplexity int, nodeID *string) int
@@ -1905,6 +1915,7 @@ type QueryResolver interface {
 	Erc20MultiSigSignerAddedBundles(ctx context.Context, nodeID string, submitter *string, epochSeq *string, pagination *v2.Pagination) (*ERC20MultiSigSignerAddedConnection, error)
 	Erc20MultiSigSignerRemovedBundles(ctx context.Context, nodeID string, submitter *string, epochSeq *string, pagination *v2.Pagination) (*ERC20MultiSigSignerRemovedConnection, error)
 	Erc20ListAssetBundle(ctx context.Context, assetID string) (*Erc20ListAssetBundle, error)
+	Erc20SetAssetLimitsBundle(ctx context.Context, proposalID string) (*ERC20SetAssetLimitsBundle, error)
 	Deposit(ctx context.Context, id string) (*vega.Deposit, error)
 	NetworkParameters(ctx context.Context) ([]*vega.NetworkParameter, error)
 	NetworkParametersConnection(ctx context.Context, pagination *v2.Pagination) (*v2.NetworkParameterConnection, error)
@@ -2888,6 +2899,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ERC20MultiSigSignerRemovedConnection.PageInfo(childComplexity), true
+
+	case "ERC20SetAssetLimitsBundle.assetSource":
+		if e.complexity.ERC20SetAssetLimitsBundle.AssetSource == nil {
+			break
+		}
+
+		return e.complexity.ERC20SetAssetLimitsBundle.AssetSource(childComplexity), true
+
+	case "ERC20SetAssetLimitsBundle.lifetimeLimit":
+		if e.complexity.ERC20SetAssetLimitsBundle.LifetimeLimit == nil {
+			break
+		}
+
+		return e.complexity.ERC20SetAssetLimitsBundle.LifetimeLimit(childComplexity), true
+
+	case "ERC20SetAssetLimitsBundle.nonce":
+		if e.complexity.ERC20SetAssetLimitsBundle.Nonce == nil {
+			break
+		}
+
+		return e.complexity.ERC20SetAssetLimitsBundle.Nonce(childComplexity), true
+
+	case "ERC20SetAssetLimitsBundle.signatures":
+		if e.complexity.ERC20SetAssetLimitsBundle.Signatures == nil {
+			break
+		}
+
+		return e.complexity.ERC20SetAssetLimitsBundle.Signatures(childComplexity), true
+
+	case "ERC20SetAssetLimitsBundle.threshold":
+		if e.complexity.ERC20SetAssetLimitsBundle.Threshold == nil {
+			break
+		}
+
+		return e.complexity.ERC20SetAssetLimitsBundle.Threshold(childComplexity), true
+
+	case "ERC20SetAssetLimitsBundle.vegaAssetId":
+		if e.complexity.ERC20SetAssetLimitsBundle.VegaAssetID == nil {
+			break
+		}
+
+		return e.complexity.ERC20SetAssetLimitsBundle.VegaAssetID(childComplexity), true
 
 	case "Epoch.delegations":
 		if e.complexity.Epoch.Delegations == nil {
@@ -6494,6 +6547,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Erc20MultiSigSignerRemovedBundles(childComplexity, args["nodeId"].(string), args["submitter"].(*string), args["epochSeq"].(*string), args["pagination"].(*v2.Pagination)), true
 
+	case "Query.erc20SetAssetLimitsBundle":
+		if e.complexity.Query.Erc20SetAssetLimitsBundle == nil {
+			break
+		}
+
+		args, err := ec.field_Query_erc20SetAssetLimitsBundle_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Erc20SetAssetLimitsBundle(childComplexity, args["proposalId"].(string)), true
+
 	case "Query.erc20WithdrawalApproval":
 		if e.complexity.Query.Erc20WithdrawalApproval == nil {
 			break
@@ -9229,22 +9294,22 @@ type Query {
   ): Erc20WithdrawalApproval
 
   erc20MultiSigSignerAddedBundles(
-    "The node id of the validator of which a signature bundle is required"
+    "The node ID of the validator of which a signature bundle is required"
     nodeId: ID!
     "The ethereum address of the submitter"
     submitter: String
-    "The epoch which generated the bundle i.e the epoch in which the node was demoted from a tendermint validator"
+    "The epoch that generated the bundle i.e the epoch in which the node was demoted from a tendermint validator"
     epochSeq: String
     "Pagination"
     pagination: Pagination
   ): ERC20MultiSigSignerAddedConnection!
 
   erc20MultiSigSignerRemovedBundles(
-    "The node id of the validator of which a signature bundle is required"
+    "The node ID of the validator of which a signature bundle is required"
     nodeId: ID!
-    "The ethereum address of the validator which will submit the bundle"
+    "The ethereum address of the validator that will submit the bundle"
     submitter: String
-    "The epoch which generated the bundle i.e the epoch in which the node was demoted from a tendermint validator"
+    "The epoch that generated the bundle i.e the epoch in which the node was demoted from a tendermint validator"
     epochSeq: String
     "Pagination"
     pagination: Pagination
@@ -9255,6 +9320,11 @@ type Query {
     "ID of the asset"
     assetId: ID!
   ): Erc20ListAssetBundle!
+
+  erc20SetAssetLimitsBundle(
+    "ID of the proposal to update an asset"
+    proposalId: ID!
+  ): ERC20SetAssetLimitsBundle!
 
   "find a deposit using its ID"
   deposit("ID of the Deposit" id: ID!): Deposit
@@ -11056,13 +11126,13 @@ type ERC20MultiSigSignerAddedBundleEdge {
 }
 
 type ERC20MultiSigSignerAddedBundle {
-  "The ethereum address of the signer to be removed"
+  "The ethereum address of the signer to be added"
   newSigner: String!
   "The ethereum address of the submitter"
   submitter: String!
   "The nonce used in the signing operation"
   nonce: String!
-  "unixnano timestamp for when the validator was added"
+  "Unix-nano timestamp for when the validator was added"
   timestamp: String!
   "The bundle of signatures from current validators to sign in the new signer"
   signatures: String!
@@ -11107,6 +11177,24 @@ type Erc20ListAssetBundle {
   """
   Signature aggregate from the nodes, in the following format:
   0x + sig1 + sig2 + ... + sigN
+  """
+  signatures: String!
+}
+
+type ERC20SetAssetLimitsBundle {
+  "The address of the asset on ethereum"
+  assetSource: String!
+  "The ID of the vega asset"
+  vegaAssetId: String!
+  "The nonce, which is actually the internal reference for the proposal"
+  nonce: String!
+  "The lifetime limit deposit for this asset"
+  lifetimeLimit: String!
+  "The threshold withdraw for this asset"
+  threshold: String!
+  """
+  The signatures bundle as hex encoded data, forward by 0x
+  e.g: 0x + sig1 + sig2 + ... + sixN
   """
   signatures: String!
 }
@@ -13974,6 +14062,21 @@ func (ec *executionContext) field_Query_erc20MultiSigSignerRemovedBundles_args(c
 		}
 	}
 	args["pagination"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_erc20SetAssetLimitsBundle_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["proposalId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("proposalId"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["proposalId"] = arg0
 	return args, nil
 }
 
@@ -19387,6 +19490,216 @@ func (ec *executionContext) _ERC20MultiSigSignerRemovedConnection_pageInfo(ctx c
 	res := resTmp.(*v2.PageInfo)
 	fc.Result = res
 	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20SetAssetLimitsBundle_assetSource(ctx context.Context, field graphql.CollectedField, obj *ERC20SetAssetLimitsBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20SetAssetLimitsBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AssetSource, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20SetAssetLimitsBundle_vegaAssetId(ctx context.Context, field graphql.CollectedField, obj *ERC20SetAssetLimitsBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20SetAssetLimitsBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.VegaAssetID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20SetAssetLimitsBundle_nonce(ctx context.Context, field graphql.CollectedField, obj *ERC20SetAssetLimitsBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20SetAssetLimitsBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Nonce, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20SetAssetLimitsBundle_lifetimeLimit(ctx context.Context, field graphql.CollectedField, obj *ERC20SetAssetLimitsBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20SetAssetLimitsBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LifetimeLimit, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20SetAssetLimitsBundle_threshold(ctx context.Context, field graphql.CollectedField, obj *ERC20SetAssetLimitsBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20SetAssetLimitsBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Threshold, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20SetAssetLimitsBundle_signatures(ctx context.Context, field graphql.CollectedField, obj *ERC20SetAssetLimitsBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20SetAssetLimitsBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Signatures, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Epoch_id(ctx context.Context, field graphql.CollectedField, obj *vega.Epoch) (ret graphql.Marshaler) {
@@ -37293,6 +37606,48 @@ func (ec *executionContext) _Query_erc20ListAssetBundle(ctx context.Context, fie
 	return ec.marshalNErc20ListAssetBundle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐErc20ListAssetBundle(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_erc20SetAssetLimitsBundle(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_erc20SetAssetLimitsBundle_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Erc20SetAssetLimitsBundle(rctx, args["proposalId"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ERC20SetAssetLimitsBundle)
+	fc.Result = res
+	return ec.marshalNERC20SetAssetLimitsBundle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20SetAssetLimitsBundle(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_deposit(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -49372,6 +49727,87 @@ func (ec *executionContext) _ERC20MultiSigSignerRemovedConnection(ctx context.Co
 	return out
 }
 
+var eRC20SetAssetLimitsBundleImplementors = []string{"ERC20SetAssetLimitsBundle"}
+
+func (ec *executionContext) _ERC20SetAssetLimitsBundle(ctx context.Context, sel ast.SelectionSet, obj *ERC20SetAssetLimitsBundle) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, eRC20SetAssetLimitsBundleImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ERC20SetAssetLimitsBundle")
+		case "assetSource":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20SetAssetLimitsBundle_assetSource(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "vegaAssetId":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20SetAssetLimitsBundle_vegaAssetId(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "nonce":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20SetAssetLimitsBundle_nonce(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "lifetimeLimit":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20SetAssetLimitsBundle_lifetimeLimit(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "threshold":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20SetAssetLimitsBundle_threshold(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "signatures":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20SetAssetLimitsBundle_signatures(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var epochImplementors = []string{"Epoch"}
 
 func (ec *executionContext) _Epoch(ctx context.Context, sel ast.SelectionSet, obj *vega.Epoch) graphql.Marshaler {
@@ -58471,6 +58907,29 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
+		case "erc20SetAssetLimitsBundle":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_erc20SetAssetLimitsBundle(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
 		case "deposit":
 			field := field
 
@@ -63472,6 +63931,20 @@ func (ec *executionContext) marshalNERC20MultiSigSignerRemovedConnection2ᚖcode
 		return graphql.Null
 	}
 	return ec._ERC20MultiSigSignerRemovedConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNERC20SetAssetLimitsBundle2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20SetAssetLimitsBundle(ctx context.Context, sel ast.SelectionSet, v ERC20SetAssetLimitsBundle) graphql.Marshaler {
+	return ec._ERC20SetAssetLimitsBundle(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNERC20SetAssetLimitsBundle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20SetAssetLimitsBundle(ctx context.Context, sel ast.SelectionSet, v *ERC20SetAssetLimitsBundle) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._ERC20SetAssetLimitsBundle(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNEpoch2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐEpoch(ctx context.Context, sel ast.SelectionSet, v vega.Epoch) graphql.Marshaler {
