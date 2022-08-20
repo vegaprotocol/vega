@@ -60,7 +60,7 @@ func (ps *Proposal) Push(ctx context.Context, evt events.Event) error {
 
 func (ps *Proposal) consume(ctx context.Context, event ProposalEvent) error {
 	protoProposal := event.Proposal()
-	proposal, err := entities.ProposalFromProto(&protoProposal)
+	proposal, err := entities.ProposalFromProto(&protoProposal, entities.TxHash(event.TxHash()))
 
 	// The timestamp in the proto proposal is the time of the initial proposal, not any update
 	proposal.VegaTime = ps.vegaTime

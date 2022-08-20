@@ -40,17 +40,18 @@ func NewERC20MultiSigSignerEvent(connectionSource *ConnectionSource) *ERC20Multi
 
 func (m *ERC20MultiSigSignerEvent) Add(ctx context.Context, e *entities.ERC20MultiSigSignerEvent) error {
 	defer metrics.StartSQLQuery("ERC20MultiSigSignerEvent", "Add")()
-	query := `INSERT INTO erc20_multisig_signer_events (id, validator_id, signer_change, submitter, nonce, event, vega_time, epoch_id)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+	query := `INSERT INTO erc20_multisig_signer_events (id, validator_id, signer_change, submitter, nonce, event, tx_hash, vega_time, epoch_id)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		ON CONFLICT (id) DO NOTHING`
 
-	if _, err := m.pool.Exec(ctx, query,
+	if _, err := m.Connection.Exec(ctx, query,
 		e.ID,
 		e.ValidatorID,
 		e.SignerChange,
 		e.Submitter,
 		e.Nonce,
 		e.Event,
+		e.TxHash,
 		e.VegaTime,
 		e.EpochID,
 	); err != nil {
@@ -110,6 +111,7 @@ func (m *ERC20MultiSigSignerEvent) GetAddedEvents(ctx context.Context, validator
 			Submitter:    e.Submitter,
 			Nonce:        e.Nonce,
 			VegaTime:     e.VegaTime,
+			TxHash:       e.TxHash,
 			EpochID:      e.EpochID,
 			Event:        e.Event,
 		}
@@ -163,6 +165,7 @@ func (m *ERC20MultiSigSignerEvent) GetRemovedEvents(ctx context.Context, validat
 			SignerChange: e.SignerChange,
 			Submitter:    e.Submitter,
 			Nonce:        e.Nonce,
+			TxHash:       e.TxHash,
 			VegaTime:     e.VegaTime,
 			EpochID:      e.EpochID,
 			Event:        e.Event,

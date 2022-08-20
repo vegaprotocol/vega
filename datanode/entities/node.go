@@ -48,6 +48,7 @@ type Node struct {
 	RankingScore      *RankingScore `json:""`
 	Name              string
 	AvatarUrl         string
+	TxHash            TxHash
 	VegaTime          time.Time
 }
 
@@ -55,6 +56,7 @@ type ValidatorUpdateAux struct {
 	Added           bool
 	FromEpoch       uint64
 	VegaPubKeyIndex uint32
+	TxHash          TxHash
 }
 
 type EpochData struct {
@@ -68,6 +70,7 @@ type RewardScore struct {
 	ValidatorScore      decimal.Decimal     `json:"validator_score"`
 	NormalisedScore     decimal.Decimal     `json:"normalised_score"`
 	ValidatorNodeStatus ValidatorNodeStatus `json:"validator_node_status,string"`
+	TxHash              TxHash              `json:"tx_hash"`
 	VegaTime            time.Time           `json:"vega_time"`
 	EpochSeq            uint64
 }
@@ -84,6 +87,7 @@ type RankingScore struct {
 	Status           ValidatorNodeStatus `json:",string"`
 	VotingPower      uint32              `json:"voting_power"`
 	RankingScore     decimal.Decimal     `json:"ranking_score"`
+	TxHash           TxHash              `json:"tx_hash"`
 	VegaTime         time.Time           `json:"vega_time"`
 	EpochSeq         uint64
 }
@@ -102,7 +106,7 @@ type NodeData struct {
 	VegaTime        time.Time
 }
 
-func NodeFromValidatorUpdateEvent(evt eventspb.ValidatorUpdate, vegaTime time.Time) (Node, ValidatorUpdateAux, error) {
+func NodeFromValidatorUpdateEvent(evt eventspb.ValidatorUpdate, txHash TxHash, vegaTime time.Time) (Node, ValidatorUpdateAux, error) {
 	return Node{
 			ID:              NodeID(evt.NodeId),
 			PubKey:          VegaPublicKey(evt.VegaPubKey),
@@ -112,6 +116,7 @@ func NodeFromValidatorUpdateEvent(evt eventspb.ValidatorUpdate, vegaTime time.Ti
 			Location:        evt.Country,
 			Name:            evt.Name,
 			AvatarUrl:       evt.AvatarUrl,
+			TxHash:          txHash,
 			VegaTime:        vegaTime,
 
 			// Not present in the event
@@ -129,6 +134,7 @@ func NodeFromValidatorUpdateEvent(evt eventspb.ValidatorUpdate, vegaTime time.Ti
 			Added:           evt.Added,
 			FromEpoch:       evt.FromEpoch,
 			VegaPubKeyIndex: evt.VegaPubKeyIndex,
+			TxHash:          txHash,
 		}, nil
 }
 
@@ -142,12 +148,12 @@ func ValidatorNodeStatusFromString(status string) ValidatorNodeStatus {
 		return ValidatorNodeStatusPending
 	case "unspecified":
 		fallthrough
-	default: // Is this appropriate behaviour? Should we error on the default case?
+	default: // Is this appropriate behavior? Should we error on the default case?
 		return ValidatorNodeStatusUnspecified
 	}
 }
 
-func RankingScoreFromRankingEvent(evt eventspb.ValidatorRankingEvent, vegaTime time.Time) (RankingScore, RankingScoreAux, error) {
+func RankingScoreFromRankingEvent(evt eventspb.ValidatorRankingEvent, txHash TxHash, vegaTime time.Time) (RankingScore, RankingScoreAux, error) {
 	stakeScore, err := decimal.NewFromString(evt.StakeScore)
 	if err != nil {
 		return RankingScore{}, RankingScoreAux{}, err
@@ -175,6 +181,7 @@ func RankingScoreFromRankingEvent(evt eventspb.ValidatorRankingEvent, vegaTime t
 			Status:           ValidatorNodeStatusFromString(evt.NextStatus),
 			VotingPower:      evt.TmVotingPower,
 			RankingScore:     rankingScore,
+			TxHash:           txHash,
 			VegaTime:         vegaTime,
 			EpochSeq:         epochSeq,
 		}, RankingScoreAux{
@@ -194,7 +201,7 @@ func (rs *RankingScore) ToProto() *vega.RankingScore {
 	}
 }
 
-func RewardScoreFromScoreEvent(evt eventspb.ValidatorScoreEvent, vegaTime time.Time) (RewardScore, RewardScoreAux, error) {
+func RewardScoreFromScoreEvent(evt eventspb.ValidatorScoreEvent, txHash TxHash, vegaTime time.Time) (RewardScore, RewardScoreAux, error) {
 	rawValidatorScore, err := decimal.NewFromString(evt.RawValidatorScore)
 	if err != nil {
 		return RewardScore{}, RewardScoreAux{}, err
@@ -232,6 +239,7 @@ func RewardScoreFromScoreEvent(evt eventspb.ValidatorScoreEvent, vegaTime time.T
 			ValidatorScore:      validatorScore,
 			NormalisedScore:     normalisedScore,
 			ValidatorNodeStatus: ValidatorNodeStatusFromString(evt.ValidatorStatus),
+			TxHash:              txHash,
 			VegaTime:            vegaTime,
 			EpochSeq:            epochSeq,
 		}, RewardScoreAux{
@@ -251,7 +259,7 @@ func (rs *RewardScore) ToProto() *vega.RewardScore {
 	}
 }
 
-func NodeFromProto(node *vega.Node, vegaTime time.Time) (Node, error) {
+func NodeFromProto(node *vega.Node, txHash TxHash, vegaTime time.Time) (Node, error) {
 	stakedByOperator, err := decimal.NewFromString(node.StakedByOperator)
 	if err != nil {
 		return Node{}, err
@@ -279,7 +287,7 @@ func NodeFromProto(node *vega.Node, vegaTime time.Time) (Node, error) {
 
 	delegations := make([]Delegation, len(node.Delegations))
 	for i, delegation := range node.Delegations {
-		delegations[i], err = DelegationFromProto(delegation)
+		delegations[i], err = DelegationFromProto(delegation, txHash)
 		if err != nil {
 			return Node{}, err
 		}
@@ -304,6 +312,7 @@ func NodeFromProto(node *vega.Node, vegaTime time.Time) (Node, error) {
 		// RankingScore:      RankingScore{node.RankingScore},
 		Name:      node.Name,
 		AvatarUrl: node.AvatarUrl,
+		TxHash:    txHash,
 		VegaTime:  vegaTime,
 	}, nil
 }

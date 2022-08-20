@@ -26,6 +26,7 @@ type Checkpoint struct {
 	Hash        string
 	BlockHash   string
 	BlockHeight int64
+	TxHash      TxHash
 	VegaTime    time.Time
 }
 
@@ -58,11 +59,12 @@ func (cp Checkpoint) ToProtoEdge(_ ...any) (*v2.CheckpointEdge, error) {
 	}, nil
 }
 
-func CheckpointFromProto(cpe *eventspb.CheckpointEvent) (Checkpoint, error) {
+func CheckpointFromProto(cpe *eventspb.CheckpointEvent, txHash TxHash) (Checkpoint, error) {
 	cp := Checkpoint{
 		Hash:        cpe.Hash,
 		BlockHash:   cpe.BlockHash,
 		BlockHeight: int64(cpe.BlockHeight),
+		TxHash:      txHash,
 	}
 	return cp, nil
 }

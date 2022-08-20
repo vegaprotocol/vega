@@ -38,7 +38,7 @@ func TestRewardFromProto(t *testing.T) {
 
 	vegaTime := entities.NanosToPostgresTimestamp(now.UnixNano())
 
-	reward, err := entities.RewardFromProto(pbReward, vegaTime)
+	reward, err := entities.RewardFromProto(pbReward, generateTxHash(), vegaTime)
 	require.NoError(t, err)
 	assert.Equal(t, "a0b1", reward.PartyID.String())
 	assert.Equal(t, "c2d3", reward.AssetID.String())

@@ -39,6 +39,7 @@ type ERC20MultiSigSignerEvent struct {
 	SignerChange EthereumAddress
 	Submitter    EthereumAddress
 	Nonce        string
+	TxHash       TxHash
 	VegaTime     time.Time
 	EpochID      int64
 	Event        ERC20MultiSigSignerEventType
@@ -53,7 +54,7 @@ func (e ERC20MultiSigSignerEvent) Cursor() *Cursor {
 	return NewCursor(ec.String())
 }
 
-func ERC20MultiSigSignerEventFromAddedProto(e *eventspb.ERC20MultiSigSignerAdded) (*ERC20MultiSigSignerEvent, error) {
+func ERC20MultiSigSignerEventFromAddedProto(e *eventspb.ERC20MultiSigSignerAdded, txHash TxHash) (*ERC20MultiSigSignerEvent, error) {
 	epochID, err := strconv.ParseInt(e.EpochSeq, 10, 64)
 	if err != nil {
 		return &ERC20MultiSigSignerEvent{}, fmt.Errorf("parsing epoch '%v': %w", e.EpochSeq, err)
@@ -64,26 +65,28 @@ func ERC20MultiSigSignerEventFromAddedProto(e *eventspb.ERC20MultiSigSignerAdded
 		SignerChange: EthereumAddress(e.NewSigner),
 		Submitter:    EthereumAddress(e.Submitter),
 		Nonce:        e.Nonce,
+		TxHash:       txHash,
 		VegaTime:     time.Unix(0, e.Timestamp),
 		EpochID:      epochID,
 		Event:        ERC20MultiSigSignerEventTypeAdded,
 	}, nil
 }
 
-func ERC20MultiSigSignerEventFromRemovedProto(e *eventspb.ERC20MultiSigSignerRemoved) ([]*ERC20MultiSigSignerEvent, error) {
-	ents := []*ERC20MultiSigSignerEvent{}
+func ERC20MultiSigSignerEventFromRemovedProto(e *eventspb.ERC20MultiSigSignerRemoved, txHash TxHash) ([]*ERC20MultiSigSignerEvent, error) {
+	events := []*ERC20MultiSigSignerEvent{}
 
 	epochID, err := strconv.ParseInt(e.EpochSeq, 10, 64)
 	if err != nil {
 		return nil, fmt.Errorf("parsing epoch '%v': %w", e.EpochSeq, err)
 	}
 	for _, s := range e.SignatureSubmitters {
-		ents = append(ents, &ERC20MultiSigSignerEvent{
+		events = append(events, &ERC20MultiSigSignerEvent{
 			ID:           ERC20MultiSigSignerEventID(s.SignatureId),
 			Submitter:    EthereumAddress(s.Submitter),
 			SignerChange: EthereumAddress(e.OldSigner),
 			ValidatorID:  NodeID(e.ValidatorId),
 			Nonce:        e.Nonce,
+			TxHash:       txHash,
 			VegaTime:     time.Unix(0, e.Timestamp),
 			EpochID:      epochID,
 			Event:        ERC20MultiSigSignerEventTypeRemoved,
@@ -91,7 +94,7 @@ func ERC20MultiSigSignerEventFromRemovedProto(e *eventspb.ERC20MultiSigSignerRem
 		)
 	}
 
-	return ents, nil
+	return events, nil
 }
 
 type ERC20MultiSigSignerEventCursor struct {

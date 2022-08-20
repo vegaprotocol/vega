@@ -25,6 +25,7 @@ import (
 type AccountBalance struct {
 	*Account
 	Balance  decimal.Decimal
+	TxHash   TxHash
 	VegaTime time.Time
 }
 
@@ -65,7 +66,7 @@ func (b AccountBalance) Key() AccountBalanceKey {
 }
 
 func (b AccountBalance) ToRow() []interface{} {
-	return []interface{}{b.Account.ID, b.VegaTime, b.Balance}
+	return []interface{}{b.Account.ID, b.TxHash, b.VegaTime, b.Balance}
 }
 
 func (b AccountBalance) Cursor() *Cursor {

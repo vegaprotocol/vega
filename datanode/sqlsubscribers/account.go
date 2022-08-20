@@ -66,7 +66,7 @@ func (as *Account) Push(ctx context.Context, evt events.Event) error {
 
 func (as *Account) consume(ctx context.Context, evt AccountEvent) error {
 	protoAcc := evt.Account()
-	acc, err := as.obtainAccountWithProto(ctx, &protoAcc, as.vegaTime)
+	acc, err := as.obtainAccountWithProto(ctx, &protoAcc, evt.TxHash(), as.vegaTime)
 	if err != nil {
 		return errors.Wrap(err, "obtaining account")
 	}
@@ -77,10 +77,11 @@ func (as *Account) consume(ctx context.Context, evt AccountEvent) error {
 	}
 
 	ab := entities.AccountBalance{
-		Balance: balance,
-		Account: &acc,
+		Balance:  balance,
+		Account:  &acc,
+		TxHash:   entities.TxHash(evt.TxHash()),
+		VegaTime: as.vegaTime,
 	}
-	ab.VegaTime = as.vegaTime
 
 	err = as.accounts.AddAccountBalance(ab)
 	if err != nil {
@@ -89,8 +90,8 @@ func (as *Account) consume(ctx context.Context, evt AccountEvent) error {
 	return nil
 }
 
-func (as *Account) obtainAccountWithProto(ctx context.Context, va *vega.Account, vegaTime time.Time) (entities.Account, error) {
-	a, err := entities.AccountFromProto(va)
+func (as *Account) obtainAccountWithProto(ctx context.Context, va *vega.Account, txHash string, vegaTime time.Time) (entities.Account, error) {
+	a, err := entities.AccountFromProto(va, entities.TxHash(txHash))
 	if err != nil {
 		return entities.Account{}, errors.Wrap(err, "obtaining account for balance")
 	}

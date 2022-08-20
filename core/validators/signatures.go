@@ -293,8 +293,8 @@ func (s *ERC20Signatures) EmitValidatorRemovedSignatures(ctx context.Context, su
 		s.notary.StartAggregate(
 			resid, types.NodeSignatureKindERC20MultiSigSignerRemoved, sig)
 
-		submitters := []*eventspb.ERC20MulistSigSignerRemovedSubmitter{}
-		submitters = append(submitters, &eventspb.ERC20MulistSigSignerRemovedSubmitter{
+		submitters := []*eventspb.ERC20MultiSigSignerRemovedSubmitter{}
+		submitters = append(submitters, &eventspb.ERC20MultiSigSignerRemovedSubmitter{
 			SignatureId: resid,
 			Submitter:   submitter,
 		})
