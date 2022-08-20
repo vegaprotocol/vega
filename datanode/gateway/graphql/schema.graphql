@@ -543,22 +543,22 @@ type Query {
   ): Erc20WithdrawalApproval
 
   erc20MultiSigSignerAddedBundles(
-    "The node id of the validator of which a signature bundle is required"
+    "The node ID of the validator of which a signature bundle is required"
     nodeId: ID!
     "The ethereum address of the submitter"
     submitter: String
-    "The epoch which generated the bundle i.e the epoch in which the node was demoted from a tendermint validator"
+    "The epoch that generated the bundle i.e the epoch in which the node was demoted from a tendermint validator"
     epochSeq: String
     "Pagination"
     pagination: Pagination
   ): ERC20MultiSigSignerAddedConnection!
 
   erc20MultiSigSignerRemovedBundles(
-    "The node id of the validator of which a signature bundle is required"
+    "The node ID of the validator of which a signature bundle is required"
     nodeId: ID!
-    "The ethereum address of the validator which will submit the bundle"
+    "The ethereum address of the validator that will submit the bundle"
     submitter: String
-    "The epoch which generated the bundle i.e the epoch in which the node was demoted from a tendermint validator"
+    "The epoch that generated the bundle i.e the epoch in which the node was demoted from a tendermint validator"
     epochSeq: String
     "Pagination"
     pagination: Pagination
@@ -2370,13 +2370,13 @@ type ERC20MultiSigSignerAddedBundleEdge {
 }
 
 type ERC20MultiSigSignerAddedBundle {
-  "The ethereum address of the signer to be removed"
+  "The ethereum address of the signer to be added"
   newSigner: String!
   "The ethereum address of the submitter"
   submitter: String!
   "The nonce used in the signing operation"
   nonce: String!
-  "unixnano timestamp for when the validator was added"
+  "Unix-nano timestamp for when the validator was added"
   timestamp: String!
   "The bundle of signatures from current validators to sign in the new signer"
   signatures: String!
