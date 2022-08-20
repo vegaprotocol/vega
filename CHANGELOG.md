@@ -17,6 +17,7 @@
 
 ### 🐛 Fixes
 - [5934](https://github.com/vegaprotocol/vega/issues/5934) - Ensure wallet without permissions can be read
+- [5950](https://github.com/vegaprotocol/vega/issues/5934) - Fix documentation for new wallet command
 
 ## 0.54.0
 
