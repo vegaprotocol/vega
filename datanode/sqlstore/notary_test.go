@@ -32,18 +32,19 @@ func TestNotary(t *testing.T) {
 	t.Run("Getting a non-existing resource signatures", testNoResource)
 }
 
-func setupNotaryStoreTests(t *testing.T, ctx context.Context) (*sqlstore.Notary, *pgx.Conn) {
+func setupNotaryStoreTests(t *testing.T, ctx context.Context) (*sqlstore.Notary, *sqlstore.Blocks, *pgx.Conn) {
 	t.Helper()
 	DeleteEverything()
 
 	ns := sqlstore.NewNotary(connectionSource)
+	bs := sqlstore.NewBlocks(connectionSource)
 
 	config := NewTestConfig(testDBPort)
 
 	conn, err := pgx.Connect(ctx, connectionString(config.ConnectionConfig))
 	require.NoError(t, err)
 
-	return ns, conn
+	return ns, bs, conn
 }
 
 func testAddSignatures(t *testing.T) {
@@ -51,7 +52,7 @@ func testAddSignatures(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
-	ws, conn := setupNotaryStoreTests(t, ctx)
+	ws, bs, conn := setupNotaryStoreTests(t, ctx)
 
 	var rowCount int
 
@@ -59,7 +60,7 @@ func testAddSignatures(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 0, rowCount)
 
-	ns := getTestNodeSignature(t, "deadbeef", "iamsig")
+	ns := getTestNodeSignature(t, bs, "deadbeef", "iamsig")
 	err = ws.Add(context.Background(), ns)
 	require.NoError(t, err)
 
@@ -73,12 +74,12 @@ func testAddMultipleSignatures(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
-	ws, _ := setupNotaryStoreTests(t, ctx)
+	ws, bs, _ := setupNotaryStoreTests(t, ctx)
 
-	nodeSig1 := getTestNodeSignature(t, "deadbeef", "iamsig")
-	nodeSig2 := getTestNodeSignature(t, "deadbeef", "iamsig")         // this will have a different sig
-	nodeSig3 := getTestNodeSignature(t, "deadbeef", "iamsig")         // this will be a dupe of ns2
-	nodeSig4 := getTestNodeSignature(t, "deadbeefdeadbeef", "iamsig") // this will have a different sig and id
+	nodeSig1 := getTestNodeSignature(t, bs, "deadbeef", "iamsig")
+	nodeSig2 := getTestNodeSignature(t, bs, "deadbeef", "iamsig")         // this will have a different sig
+	nodeSig3 := getTestNodeSignature(t, bs, "deadbeef", "iamsig")         // this will be a dupe of ns2
+	nodeSig4 := getTestNodeSignature(t, bs, "deadbeefdeadbeef", "iamsig") // this will have a different sig and id
 
 	nodeSig2.Sig = []byte("iamdifferentsig")
 	nodeSig4.Sig = []byte("iamdifferentsigagain")
@@ -104,14 +105,17 @@ func testAddMultipleSignatures(t *testing.T) {
 	require.Len(t, res, 1)
 }
 
-func getTestNodeSignature(t *testing.T, id string, sig string) *entities.NodeSignature {
+func getTestNodeSignature(t *testing.T, bs *sqlstore.Blocks, id string, sig string) *entities.NodeSignature {
 	t.Helper()
+	block := addTestBlock(t, bs)
 	ns, err := entities.NodeSignatureFromProto(
 		&v1.NodeSignature{
 			Id:   id,
 			Sig:  []byte(sig),
 			Kind: v1.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL,
 		},
+		generateTxHash(),
+		block.VegaTime,
 	)
 	require.NoError(t, err)
 	return ns
@@ -122,7 +126,7 @@ func testNoResource(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
-	ws, _ := setupNotaryStoreTests(t, ctx)
+	ws, _, _ := setupNotaryStoreTests(t, ctx)
 
 	res, _, err := ws.GetByResourceID(ctx, "deadbeefdeadbeef", entities.CursorPagination{})
 	require.NoError(t, err)
@@ -367,11 +371,12 @@ func testNodeSignaturePaginationLastBeforeNewestFirst(t *testing.T) {
 
 func setupNodeSignaturePaginationTest(t *testing.T, ctx context.Context) (*sqlstore.Notary, []entities.NodeSignature) {
 	t.Helper()
+	bs := sqlstore.NewBlocks(connectionSource)
 	ns := sqlstore.NewNotary(connectionSource)
 	signatures := make([]entities.NodeSignature, 10)
 
 	for i := 0; i < 10; i++ {
-		signature := getTestNodeSignature(t, "deadbeef", fmt.Sprintf("sig%02d", i+1))
+		signature := getTestNodeSignature(t, bs, "deadbeef", fmt.Sprintf("sig%02d", i+1))
 		signatures[i] = *signature
 		err := ns.Add(ctx, signature)
 		require.NoError(t, err)

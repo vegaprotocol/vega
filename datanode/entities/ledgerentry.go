@@ -23,6 +23,7 @@ type LedgerEntry struct {
 	AccountFromID int64
 	AccountToID   int64
 	Quantity      decimal.Decimal
+	TxHash        TxHash
 	VegaTime      time.Time
 	TransferTime  time.Time
 	Reference     string
@@ -31,7 +32,7 @@ type LedgerEntry struct {
 
 var LedgerEntryColumns = []string{
 	"account_from_id", "account_to_id", "quantity",
-	"vega_time", "transfer_time", "reference", "type",
+	"tx_hash", "vega_time", "transfer_time", "reference", "type",
 }
 
 func (le LedgerEntry) ToRow() []any {
@@ -39,6 +40,7 @@ func (le LedgerEntry) ToRow() []any {
 		le.AccountFromID,
 		le.AccountToID,
 		le.Quantity,
+		le.TxHash,
 		le.VegaTime,
 		le.TransferTime,
 		le.Reference,

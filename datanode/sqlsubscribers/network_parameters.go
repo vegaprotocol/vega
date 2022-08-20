@@ -58,7 +58,7 @@ func (n *NetworkParameter) Push(ctx context.Context, evt events.Event) error {
 
 func (n *NetworkParameter) consume(ctx context.Context, event NetworkParameterEvent) error {
 	pnp := event.NetworkParameter()
-	np, err := entities.NetworkParameterFromProto(&pnp)
+	np, err := entities.NetworkParameterFromProto(&pnp, entities.TxHash(event.TxHash()))
 	if err != nil {
 		return errors.Wrap(err, "unable to parse network parameter")
 	}

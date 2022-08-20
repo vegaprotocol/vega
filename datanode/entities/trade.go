@@ -29,6 +29,7 @@ type TradeID = ID[_Trade]
 
 type Trade struct {
 	SyntheticTime           time.Time
+	TxHash                  TxHash
 	VegaTime                time.Time
 	SeqNum                  uint64
 	ID                      TradeID
@@ -90,7 +91,7 @@ func (t Trade) ToProtoEdge(_ ...any) (*v2.TradeEdge, error) {
 	}, nil
 }
 
-func TradeFromProto(t *vega.Trade, vegaTime time.Time, sequenceNumber uint64) (*Trade, error) {
+func TradeFromProto(t *vega.Trade, txHash TxHash, vegaTime time.Time, sequenceNumber uint64) (*Trade, error) {
 	syntheticTime := vegaTime.Add(time.Duration(sequenceNumber) * time.Microsecond)
 
 	price, err := decimal.NewFromString(t.Price)
@@ -140,6 +141,7 @@ func TradeFromProto(t *vega.Trade, vegaTime time.Time, sequenceNumber uint64) (*
 
 	trade := Trade{
 		SyntheticTime:           syntheticTime,
+		TxHash:                  txHash,
 		VegaTime:                vegaTime,
 		SeqNum:                  sequenceNumber,
 		ID:                      TradeID(t.Id),

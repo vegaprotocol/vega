@@ -58,7 +58,7 @@ func testAddRiskFactor(t *testing.T) {
 
 	block := addTestBlock(t, bs)
 	riskFactorProto := getRiskFactorProto()
-	riskFactor, err := entities.RiskFactorFromProto(riskFactorProto, block.VegaTime)
+	riskFactor, err := entities.RiskFactorFromProto(riskFactorProto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting risk factor proto to database entity")
 
 	err = rfStore.Upsert(context.Background(), riskFactor)
@@ -82,7 +82,7 @@ func testUpsertDuplicateMarketInSameBlock(t *testing.T) {
 
 	block := addTestBlock(t, bs)
 	riskFactorProto := getRiskFactorProto()
-	riskFactor, err := entities.RiskFactorFromProto(riskFactorProto, block.VegaTime)
+	riskFactor, err := entities.RiskFactorFromProto(riskFactorProto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting risk factor proto to database entity")
 
 	err = rfStore.Upsert(context.Background(), riskFactor)
@@ -121,7 +121,7 @@ func testGetMarketRiskFactors(t *testing.T) {
 
 	block := addTestBlock(t, bs)
 	riskFactorProto := getRiskFactorProto()
-	riskFactor, err := entities.RiskFactorFromProto(riskFactorProto, block.VegaTime)
+	riskFactor, err := entities.RiskFactorFromProto(riskFactorProto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting risk factor proto to database entity")
 
 	err = rfStore.Upsert(context.Background(), riskFactor)

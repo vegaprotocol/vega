@@ -134,6 +134,40 @@ func (addr *EthereumAddress) DecodeBinary(ci *pgtype.ConnInfo, src []byte) error
 	return nil
 }
 
+type TxHash string
+
+func (pk *TxHash) Bytes() ([]byte, error) {
+	strPK := pk.String()
+
+	bytes, err := hex.DecodeString(strPK)
+	if err != nil {
+		return nil, fmt.Errorf("decoding '%v': %w", pk.String(), ErrInvalidID)
+	}
+	return bytes, nil
+}
+
+func (addr *TxHash) Error() error {
+	_, err := addr.Bytes()
+	return err
+}
+
+func (addr *TxHash) String() string {
+	return string(*addr)
+}
+
+func (addr TxHash) EncodeBinary(ci *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	bytes, err := addr.Bytes()
+	if err != nil {
+		return buf, err
+	}
+	return append(buf, bytes...), nil
+}
+
+func (addr *TxHash) DecodeBinary(ci *pgtype.ConnInfo, src []byte) error {
+	*addr = TxHash(hex.EncodeToString(src))
+	return nil
+}
+
 // NanosToPostgresTimestamp postgres stores timestamps in microsecond resolution.
 func NanosToPostgresTimestamp(nanos int64) time.Time {
 	return time.Unix(0, nanos).Truncate(time.Microsecond)

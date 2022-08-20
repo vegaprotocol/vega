@@ -46,6 +46,7 @@ func (ts *Trades) Flush(ctx context.Context) ([]*entities.Trade, error) {
 	for _, t := range ts.trades {
 		rows = append(rows, []interface{}{
 			t.SyntheticTime,
+			t.TxHash,
 			t.VegaTime,
 			t.SeqNum,
 			t.ID,
@@ -76,7 +77,7 @@ func (ts *Trades) Flush(ctx context.Context) ([]*entities.Trade, error) {
 			ctx,
 			pgx.Identifier{"trades"},
 			[]string{
-				"synthetic_time", "vega_time", "seq_num", "id", "market_id", "price", "size", "buyer", "seller",
+				"synthetic_time", "tx_hash", "vega_time", "seq_num", "id", "market_id", "price", "size", "buyer", "seller",
 				"aggressor", "buy_order", "sell_order", "type", "buyer_maker_fee", "buyer_infrastructure_fee",
 				"buyer_liquidity_fee", "seller_maker_fee", "seller_infrastructure_fee", "seller_liquidity_fee",
 				"buyer_auction_batch", "seller_auction_batch",

@@ -43,7 +43,7 @@ type NodeStore interface {
 	UpsertRanking(context.Context, *entities.RankingScore, *entities.RankingScoreAux) error
 	UpsertScore(context.Context, *entities.RewardScore, *entities.RewardScoreAux) error
 	UpdatePublicKey(context.Context, *entities.KeyRotation) error
-	AddNodeAnnoucedEvent(context.Context, string, time.Time, *entities.ValidatorUpdateAux) error
+	AddNodeAnnouncedEvent(context.Context, string, time.Time, *entities.ValidatorUpdateAux) error
 	UpdateEthereumAddress(ctx context.Context, kr entities.EthereumKeyRotation) error
 }
 
@@ -82,7 +82,7 @@ func (n *Node) Push(ctx context.Context, evt events.Event) error {
 }
 
 func (n *Node) consumeUpdate(ctx context.Context, event ValidatorUpdateEvent) error {
-	node, aux, err := entities.NodeFromValidatorUpdateEvent(event.ValidatorUpdate(), n.vegaTime)
+	node, aux, err := entities.NodeFromValidatorUpdateEvent(event.ValidatorUpdate(), entities.TxHash(event.TxHash()), n.vegaTime)
 	if err != nil {
 		return errors.Wrap(err, "converting validator update event proto to database entity failed")
 	}
@@ -90,11 +90,11 @@ func (n *Node) consumeUpdate(ctx context.Context, event ValidatorUpdateEvent) er
 	if err := errors.Wrap(n.store.UpsertNode(ctx, &node), "inserting node to SQL store failed"); err != nil {
 		return err
 	}
-	return errors.Wrap(n.store.AddNodeAnnoucedEvent(ctx, node.ID.String(), node.VegaTime, &aux), "inserting node to SQL store failed")
+	return errors.Wrap(n.store.AddNodeAnnouncedEvent(ctx, node.ID.String(), node.VegaTime, &aux), "inserting node to SQL store failed")
 }
 
 func (n *Node) consumeRankingScore(ctx context.Context, event ValidatorRankingScoreEvent) error {
-	ranking, aux, err := entities.RankingScoreFromRankingEvent(event.ValidatorRankingEvent(), n.vegaTime)
+	ranking, aux, err := entities.RankingScoreFromRankingEvent(event.ValidatorRankingEvent(), entities.TxHash(event.TxHash()), n.vegaTime)
 	if err != nil {
 		return errors.Wrap(err, "converting ranking score event proto to database entity failed")
 	}
@@ -103,7 +103,7 @@ func (n *Node) consumeRankingScore(ctx context.Context, event ValidatorRankingSc
 }
 
 func (n *Node) consumeRewardScore(ctx context.Context, event ValidatorRewardScoreEvent) error {
-	reward, aux, err := entities.RewardScoreFromScoreEvent(event.ValidatorScoreEvent(), n.vegaTime)
+	reward, aux, err := entities.RewardScoreFromScoreEvent(event.ValidatorScoreEvent(), entities.TxHash(event.TxHash()), n.vegaTime)
 	if err != nil {
 		return errors.Wrap(err, "converting reward score event proto to database entity failed")
 	}
@@ -113,7 +113,7 @@ func (n *Node) consumeRewardScore(ctx context.Context, event ValidatorRewardScor
 
 func (n *Node) consumeKeyRotation(ctx context.Context, event KeyRotationEvent) error {
 	key_rotation := event.KeyRotation()
-	record, err := entities.KeyRotationFromProto(&key_rotation, n.vegaTime)
+	record, err := entities.KeyRotationFromProto(&key_rotation, entities.TxHash(event.TxHash()), n.vegaTime)
 	if err != nil {
 		return errors.Wrap(err, "converting key rotation proto to database entity failed")
 	}
@@ -123,7 +123,7 @@ func (n *Node) consumeKeyRotation(ctx context.Context, event KeyRotationEvent) e
 
 func (n *Node) consumeEthereumKeyRotation(ctx context.Context, event EthereumKeyRotationEvent) error {
 	key_rotation := event.EthereumKeyRotation()
-	record, err := entities.EthereumKeyRotationFromProto(&key_rotation, n.vegaTime)
+	record, err := entities.EthereumKeyRotationFromProto(&key_rotation, entities.TxHash(event.TxHash()), n.vegaTime)
 	if err != nil {
 		return errors.Wrap(err, "converting ethereum key rotation proto to database entity failed")
 	}

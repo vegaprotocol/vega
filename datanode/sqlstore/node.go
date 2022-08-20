@@ -44,7 +44,7 @@ func NewNode(connectionSource *ConnectionSource) *Node {
 func (store *Node) UpsertNode(ctx context.Context, node *entities.Node) error {
 	defer metrics.StartSQLQuery("Node", "UpsertNode")()
 
-	_, err := store.pool.Exec(ctx, `
+	_, err := store.Connection.Exec(ctx, `
 		INSERT INTO nodes (
 			id,
 			vega_pub_key,
@@ -55,9 +55,10 @@ func (store *Node) UpsertNode(ctx context.Context, node *entities.Node) error {
 			status,
 			name,
 			avatar_url,
+			tx_hash,
 			vega_time)
 		VALUES
-			($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+			($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 		ON CONFLICT (id) DO UPDATE
 		SET
 			vega_pub_key = EXCLUDED.vega_pub_key,
@@ -67,7 +68,9 @@ func (store *Node) UpsertNode(ctx context.Context, node *entities.Node) error {
 			location = EXCLUDED.location,
 			status = EXCLUDED.status,
 			name = EXCLUDED.name,
-			avatar_url = EXCLUDED.avatar_url`,
+			avatar_url = EXCLUDED.avatar_url,
+			tx_hash = EXCLUDED.tx_hash,
+			vega_time = EXCLUDED.vega_time`,
 		node.ID,
 		node.PubKey,
 		node.TmPubKey,
@@ -77,28 +80,31 @@ func (store *Node) UpsertNode(ctx context.Context, node *entities.Node) error {
 		node.Status,
 		node.Name,
 		node.AvatarUrl,
+		node.TxHash,
 		node.VegaTime,
 	)
 
 	return err
 }
 
-// AddNodeAnnoucedEvent store data about which epoch a particular node was added or removed from the roster of alidators.
-func (store *Node) AddNodeAnnoucedEvent(ctx context.Context, nodeID string, vegatime time.Time, aux *entities.ValidatorUpdateAux) error {
-	defer metrics.StartSQLQuery("Node", "AddNodeAnnoucedEvent")()
-	_, err := store.pool.Exec(ctx, `
+// AddNodeAnnouncedEvent store data about which epoch a particular node was added or removed from the roster of validators.
+func (store *Node) AddNodeAnnouncedEvent(ctx context.Context, nodeID string, vegatime time.Time, aux *entities.ValidatorUpdateAux) error {
+	defer metrics.StartSQLQuery("Node", "AddNodeAnnouncedEvent")()
+	_, err := store.Connection.Exec(ctx, `
 		INSERT INTO nodes_announced (
 			node_id,
 			epoch_seq,
 			added,
+			tx_hash,
 		    vega_time)
 		VALUES
-			($1, $2, $3, $4)
+			($1, $2, $3, $4, $5)
 		ON CONFLICT (node_id, epoch_seq, vega_time) DO UPDATE SET
 			added=EXCLUDED.added`,
 		entities.NodeID(nodeID),
 		aux.FromEpoch,
 		aux.Added,
+		aux.TxHash,
 		vegatime,
 	)
 
@@ -108,7 +114,7 @@ func (store *Node) AddNodeAnnoucedEvent(ctx context.Context, nodeID string, vega
 func (store *Node) UpsertRanking(ctx context.Context, rs *entities.RankingScore, aux *entities.RankingScoreAux) error {
 	defer metrics.StartSQLQuery("Node", "UpsertRanking")()
 
-	_, err := store.pool.Exec(ctx, `
+	_, err := store.Connection.Exec(ctx, `
 		INSERT INTO ranking_scores (
 			node_id,
 			epoch_seq,
@@ -118,9 +124,10 @@ func (store *Node) UpsertRanking(ctx context.Context, rs *entities.RankingScore,
 			voting_power,
 			previous_status,
 			status,
+			tx_hash,
 			vega_time)
 		VALUES
-			($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+			($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
 		aux.NodeId,
 		rs.EpochSeq,
 		rs.StakeScore,
@@ -129,6 +136,7 @@ func (store *Node) UpsertRanking(ctx context.Context, rs *entities.RankingScore,
 		rs.VotingPower,
 		rs.PreviousStatus,
 		rs.Status,
+		rs.TxHash,
 		rs.VegaTime,
 	)
 
@@ -138,7 +146,7 @@ func (store *Node) UpsertRanking(ctx context.Context, rs *entities.RankingScore,
 func (store *Node) UpsertScore(ctx context.Context, rs *entities.RewardScore, aux *entities.RewardScoreAux) error {
 	defer metrics.StartSQLQuery("Node", "UpsertScore")()
 
-	_, err := store.pool.Exec(ctx, `
+	_, err := store.Connection.Exec(ctx, `
 		INSERT INTO reward_scores (
 			node_id,
 			epoch_seq,
@@ -148,9 +156,10 @@ func (store *Node) UpsertScore(ctx context.Context, rs *entities.RewardScore, au
 			multisig_score,
 			validator_score,
 			normalised_score,
+			tx_hash,
 			vega_time)
 		VALUES
-			($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+			($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
 		aux.NodeId,
 		rs.EpochSeq,
 		rs.ValidatorNodeStatus,
@@ -159,6 +168,7 @@ func (store *Node) UpsertScore(ctx context.Context, rs *entities.RewardScore, au
 		rs.MultisigScore,
 		rs.ValidatorScore,
 		rs.NormalisedScore,
+		rs.TxHash,
 		rs.VegaTime,
 	)
 
@@ -168,7 +178,7 @@ func (store *Node) UpsertScore(ctx context.Context, rs *entities.RewardScore, au
 func (store *Node) UpdatePublicKey(ctx context.Context, kr *entities.KeyRotation) error {
 	defer metrics.StartSQLQuery("Node", "UpdatePublicKey")()
 
-	_, err := store.pool.Exec(ctx, `UPDATE nodes SET pub_key = $1 WHERE id = $2`, kr.NewPubKey, kr.NodeID)
+	_, err := store.Connection.Exec(ctx, `UPDATE nodes SET pub_key = $1 WHERE id = $2`, kr.NewPubKey, kr.NodeID)
 
 	return err
 }
@@ -176,7 +186,7 @@ func (store *Node) UpdatePublicKey(ctx context.Context, kr *entities.KeyRotation
 func (store *Node) UpdateEthereumAddress(ctx context.Context, kr entities.EthereumKeyRotation) error {
 	defer metrics.StartSQLQuery("Node", "UpdateEthereumPublicKey")()
 
-	_, err := store.pool.Exec(ctx, `UPDATE nodes SET ethereum_address = $1 WHERE id = $2`, kr.NewAddress, kr.NodeID)
+	_, err := store.Connection.Exec(ctx, `UPDATE nodes SET ethereum_address = $1 WHERE id = $2`, kr.NewAddress, kr.NodeID)
 
 	return err
 }
@@ -207,7 +217,7 @@ func (store *Node) GetNodeData(ctx context.Context) (entities.NodeData, error) {
 					-- Select the current epoch
 					epoch_id = (SELECT MAX(id) FROM epochs)
 			),
-			/* partitioned by node_id find the join/leave annoucement with the biggest epoch that is also less or equal to the target epoch */
+			/* partitioned by node_id find the join/leave announcement with the biggest epoch that is also less or equal to the target epoch */
 			join_event AS (
 				SELECT
 					node_id, added
@@ -280,7 +290,7 @@ func (store *Node) GetNodes(ctx context.Context, epochSeq uint64, pagination ent
 		WHERE epoch_id = $1 + 1
 	),
 
-	/* partitioned by node_id find the join/leave annoucement with the biggest epoch that is also less or equal to the target epoch */
+	/* partitioned by node_id find the join/leave announcement with the biggest epoch that is also less or equal to the target epoch */
 	join_event AS (
 		SELECT
 			node_id, added
@@ -376,7 +386,7 @@ func (store *Node) GetNodeByID(ctx context.Context, nodeId string, epochSeq uint
 		WHERE epoch_id = $1 + 1
 	),
 
-	/* partitioned by node_id find the join/leave annoucement with the biggest epoch that is also less or equal to the target epoch */
+	/* partitioned by node_id find the join/leave announcement with the biggest epoch that is also less or equal to the target epoch */
 	join_event AS (
 		SELECT
 			node_id, added
