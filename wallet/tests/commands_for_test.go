@@ -849,9 +849,9 @@ func AssertWalletInfo(t *testing.T, resp *GetWalletInfoResponse) *GetWalletInfoA
 	t.Helper()
 
 	assert.NotNil(t, resp)
-	assert.NotEmpty(t, resp.Type)
-	assert.NotEmpty(t, resp.Version)
-	assert.NotEmpty(t, resp.ID)
+	assert.NotEmpty(t, resp.Type, "type is empty")
+	assert.NotEmpty(t, resp.Version, "version is empty")
+	assert.NotEmpty(t, resp.ID, "ID is empty")
 
 	return &GetWalletInfoAssertion{
 		t:    t,

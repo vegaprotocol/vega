@@ -362,59 +362,6 @@ func testListKeysOfNonExistingWalletFails(t *testing.T) {
 	assert.Nil(t, resp)
 }
 
-func TestGetWalletInfo(t *testing.T) {
-	t.Run("Get wallet info succeeds", testGetWalletInfoSucceeds)
-	t.Run("Get wallet info of non-existing wallet fails", testGetWalletInfoOfNonExistingWalletFails)
-}
-
-func testGetWalletInfoSucceeds(t *testing.T) {
-	// given
-	w := newWallet(t)
-	expectedKeys := &wallet.GetWalletInfoResponse{
-		Type:    w.Type(),
-		Version: w.Version(),
-		ID:      w.ID(),
-	}
-
-	req := &wallet.GetWalletInfoRequest{
-		Wallet:     w.Name(),
-		Passphrase: "passphrase",
-	}
-
-	// setup
-	store := handlerMocks(t)
-	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(true, nil)
-	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(1).Return(w, nil)
-
-	// when
-	resp, err := wallet.GetWalletInfo(store, req)
-
-	// then
-	require.NoError(t, err)
-	require.NotNil(t, resp)
-	assert.Equal(t, expectedKeys, resp)
-}
-
-func testGetWalletInfoOfNonExistingWalletFails(t *testing.T) {
-	// given
-	req := &wallet.GetWalletInfoRequest{
-		Wallet:     vgrand.RandomStr(5),
-		Passphrase: "passphrase",
-	}
-
-	// setup
-	store := handlerMocks(t)
-	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(false, nil)
-	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(0)
-
-	// when
-	resp, err := wallet.GetWalletInfo(store, req)
-
-	// then
-	require.Error(t, err)
-	assert.Nil(t, resp)
-}
-
 func TestImportWalletSucceeds(t *testing.T) {
 	// given
 	req := &wallet.ImportWalletRequest{

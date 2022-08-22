@@ -31,10 +31,10 @@ var (
 	`)
 )
 
-type CreateWalletHandler func(*api.CreateWalletParams) (api.CreateWalletResult, error)
+type CreateWalletHandler func(api.CreateWalletParams) (api.CreateWalletResult, error)
 
 func NewCmdCreateWallet(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(params *api.CreateWalletParams) (api.CreateWalletResult, error) {
+	h := func(params api.CreateWalletParams) (api.CreateWalletResult, error) {
 		s, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
 			return api.CreateWalletResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
@@ -46,9 +46,7 @@ func NewCmdCreateWallet(w io.Writer, rf *RootFlags) *cobra.Command {
 		if errDetails != nil {
 			return api.CreateWalletResult{}, errors.New(errDetails.Data)
 		}
-		result := rawResult.(api.CreateWalletResult)
-
-		return result, nil
+		return rawResult.(api.CreateWalletResult), nil
 	}
 
 	return BuildCmdCreateWallet(w, h, rf)
@@ -103,17 +101,17 @@ type CreateWalletFlags struct {
 	PassphraseFile string
 }
 
-func (f *CreateWalletFlags) Validate() (*api.CreateWalletParams, error) {
-	req := &api.CreateWalletParams{}
+func (f *CreateWalletFlags) Validate() (api.CreateWalletParams, error) {
+	req := api.CreateWalletParams{}
 
 	if len(f.Wallet) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("wallet")
+		return api.CreateWalletParams{}, flags.FlagMustBeSpecifiedError("wallet")
 	}
 	req.Wallet = f.Wallet
 
 	passphrase, err := flags.GetConfirmedPassphrase(f.PassphraseFile)
 	if err != nil {
-		return nil, err
+		return api.CreateWalletParams{}, err
 	}
 	req.Passphrase = passphrase
 

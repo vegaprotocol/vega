@@ -317,30 +317,6 @@ func RotateKey(store Store, req *RotateKeyRequest) (*RotateKeyResponse, error) {
 	}, nil
 }
 
-type GetWalletInfoRequest struct {
-	Wallet     string `json:"wallet"`
-	Passphrase string `json:"passphrase"`
-}
-
-type GetWalletInfoResponse struct {
-	Type    string `json:"type"`
-	Version uint32 `json:"version"`
-	ID      string `json:"id"`
-}
-
-func GetWalletInfo(store Store, req *GetWalletInfoRequest) (*GetWalletInfoResponse, error) {
-	w, err := getWallet(store, req.Wallet, req.Passphrase)
-	if err != nil {
-		return nil, err
-	}
-
-	return &GetWalletInfoResponse{
-		Type:    w.Type(),
-		Version: w.Version(),
-		ID:      w.ID(),
-	}, nil
-}
-
 type FirstPublicKey struct {
 	PublicKey string    `json:"publicKey"`
 	Algorithm Algorithm `json:"algorithm"`
