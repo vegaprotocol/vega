@@ -2440,6 +2440,9 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		allUpdatedOrders,
 		updatedOrders...,
 	)
+	if !m.as.InAuction() {
+		m.checkForReferenceMoves(ctx, allUpdatedOrders, false)
+	}
 	return conf, nil
 }
 

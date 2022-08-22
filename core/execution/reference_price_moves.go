@@ -50,6 +50,9 @@ func (m *Market) checkForReferenceMoves(
 		return
 	}
 
+	// will be set to non-nil if a peg is missing
+	_, _, err := m.getBestStaticPricesDecimal()
+
 	newBestBid, _ := m.getBestStaticBidPrice()
 	newBestAsk, _ := m.getBestStaticAskPrice()
 	newMidBuy, _ := m.getStaticMidPrice(types.SideBuy)
@@ -72,7 +75,15 @@ func (m *Market) checkForReferenceMoves(
 	}
 
 	// now we can start all special order repricing...
-	orderUpdates = m.repriceAllSpecialOrders(ctx, changes, orderUpdates)
+	if err == nil {
+		orderUpdates = m.repriceAllSpecialOrders(ctx, changes, orderUpdates)
+	} else {
+		cancels := m.liquidity.UndeployLPs(ctx, orderUpdates)
+		orderUpdates, err = m.updateAndCreateLPOrders(ctx, nil, cancels, nil)
+		if err != nil {
+			panic(err) // this should not be possible
+		}
+	}
 
 	// Update the last price values
 	// no need to clone the prices, they're not used in calculations anywhere in this function
