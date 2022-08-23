@@ -69,7 +69,7 @@ type Subscription {
     assetId: ID
     "Type of the account"
     type: AccountType
-  ): Account!
+  ): AccountUpdate!
 
   "Subscribe to the mark price changes"
   marketData(
@@ -2308,6 +2308,18 @@ type Account {
   type: AccountType!
   "Market (only relevant to margin accounts)"
   market: Market
+}
+
+"An account record used for subscriptions"
+type AccountUpdate {
+  "Balance as string - current account balance (approx. as balances can be updated several times per second)"
+  balance: String!
+  "Asset id, the 'currency'"
+  assetId: ID!
+  "Account type (General, Margin, etc)"
+  type: AccountType!
+  "Market id (only relevant to margin accounts)"
+  marketId: ID
 }
 
 "All the data related to the approval of a withdrawal from the network"
