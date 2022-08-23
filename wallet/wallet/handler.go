@@ -376,23 +376,6 @@ func ImportWallet(store Store, req *ImportWalletRequest) (*ImportWalletResponse,
 	return resp, nil
 }
 
-type ListWalletsResponse struct {
-	Wallets []string `json:"wallets"`
-}
-
-func ListWallets(store Store) (*ListWalletsResponse, error) {
-	ws, err := store.ListWallets(context.Background())
-	if err != nil {
-		return nil, err
-	}
-
-	resp := &ListWalletsResponse{}
-	resp.Wallets = make([]string, 0, len(ws))
-	resp.Wallets = append(resp.Wallets, ws...)
-
-	return resp, nil
-}
-
 type SignCommandRequest struct {
 	Wallet        string `json:"wallet"`
 	Passphrase    string `json:"passphrase"`

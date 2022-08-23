@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"sort"
 	"testing"
 
 	"code.vegaprotocol.io/vega/commands"
@@ -401,30 +400,6 @@ func TestImportWalletSucceeds(t *testing.T) {
 	assert.Equal(t, keyPair.AlgorithmName(), resp.Key.Algorithm.Name)
 	assert.Equal(t, keyPair.AlgorithmVersion(), resp.Key.Algorithm.Version)
 	assert.Equal(t, keyPair.Meta(), resp.Key.Meta)
-}
-
-func TestListWalletsSucceeds(t *testing.T) {
-	// given
-	w1 := newWallet(t)
-	w2 := newWallet(t)
-	w3 := newWallet(t)
-	walletNames := []string{w1.Name(), w2.Name(), w3.Name()}
-	sort.Strings(walletNames)
-	expectedResp := &wallet.ListWalletsResponse{
-		Wallets: walletNames,
-	}
-
-	// setup
-	store := handlerMocks(t)
-	store.EXPECT().ListWallets(gomock.Any()).Times(1).Return(walletNames, nil)
-
-	// when
-	resp, err := wallet.ListWallets(store)
-
-	// then
-	require.NoError(t, err)
-	require.NotNil(t, resp)
-	assert.Equal(t, expectedResp, resp)
 }
 
 func TestSignCommand(t *testing.T) {

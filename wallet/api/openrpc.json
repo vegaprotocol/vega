@@ -638,6 +638,36 @@
           }
         }
       ]
+    },
+    {
+      "name": "admin.list_wallets",
+      "summary": "Returns the list of the wallets present on the computer.",
+      "description": "This method returns the list of the wallets present on the computer. It is alphabetically sorted.",
+      "params": [],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "examples": [
+        {
+          "name": "Getting the list of wallets",
+          "params": [],
+          "result": {
+            "name": "Success",
+            "value": {
+              "wallets": [
+                "wallet-1",
+                "wallet-2"
+              ]
+            }
+          }
+        }
+      ]
     }
   ],
   "components": {
