@@ -312,7 +312,13 @@ func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) 
 	return payouts
 }
 
+// isValidAccountForMarket checks if the market ID of the given account represents a particular market vs a global account.
+func (e *Engine) isValidAccountForMarket(account *types.Account) bool {
+	return len(account.MarketID) > 0 && account.MarketID != "!"
+}
+
 // calculateRewardTypeForAsset calculates the payout for a given asset and reward type.
+// for market based rewards, we only care about account for specific markets (as opposed to global account for an asset)
 func (e *Engine) calculateRewardTypeForAsset(epochSeq, asset string, rewardType types.AccountType, account *types.Account, validatorData []*types.ValidatorData, validatorNormalisedScores map[string]num.Decimal, timestamp time.Time, factor num.Decimal) *payout {
 	switch rewardType {
 	case types.AccountTypeGlobalReward: // given to delegator based on stake
@@ -325,12 +331,24 @@ func (e *Engine) calculateRewardTypeForAsset(epochSeq, asset string, rewardType 
 	case types.AccountTypeFeesInfrastructure: // given to delegator based on stake
 		return calculateRewardsByStake(epochSeq, account.Asset, account.ID, account.Balance.Clone(), validatorNormalisedScores, validatorData, e.global.delegatorShare, num.UintZero(), e.global.minValStakeUInt, e.rng, e.log)
 	case types.AccountTypeMakerFeeReward: // given to receivers of maker fee in the asset based on their total received fee proportion
+		if !e.isValidAccountForMarket(account) {
+			return nil
+		}
 		return calculateRewardsByContribution(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.marketActivityTracker.GetFeePartyScores(account.MarketID, types.TransferTypeMakerFeeReceive), timestamp)
 	case types.AccountTypeTakerFeeReward: // given to payers of fee in the asset based on their total paid fee proportion
+		if !e.isValidAccountForMarket(account) {
+			return nil
+		}
 		return calculateRewardsByContribution(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.marketActivityTracker.GetFeePartyScores(account.MarketID, types.TransferTypeMakerFeePay), timestamp)
 	case types.AccountTypeLPFeeReward: // given to LP fee receivers in the asset based on their total received fee
+		if !e.isValidAccountForMarket(account) {
+			return nil
+		}
 		return calculateRewardsByContribution(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.marketActivityTracker.GetFeePartyScores(account.MarketID, types.TransferTypeLiquidityFeeDistribute), timestamp)
 	case types.AccountTypeMarketProposerReward:
+		if !e.isValidAccountForMarket(account) {
+			return nil
+		}
 		p := calculateRewardForProposers(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.marketActivityTracker.GetProposer(account.MarketID), timestamp)
 		return p
 	}
