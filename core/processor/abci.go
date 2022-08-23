@@ -28,6 +28,7 @@ import (
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/genesis"
+	"code.vegaprotocol.io/vega/core/idgeneration"
 	"code.vegaprotocol.io/vega/core/processor/ratelimit"
 	"code.vegaprotocol.io/vega/core/txn"
 	"code.vegaprotocol.io/vega/core/types"
@@ -169,6 +170,8 @@ type App struct {
 
 	nilPow  bool
 	nilSpam bool
+
+	maxBatchSize uint64
 }
 
 func NewApp(
@@ -276,7 +279,8 @@ func NewApp(
 		HandleCheckTx(txn.ValidatorHeartbeatCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.RotateEthereumKeySubmissionCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.ProtocolUpgradeCommand, app.CheckProtocolUpgradeProposal).
-		HandleCheckTx(txn.IssueSignatures, app.RequireValidatorPubKey)
+		HandleCheckTx(txn.IssueSignatures, app.RequireValidatorPubKey).
+		HandleCheckTx(txn.BatchMarketInstructions, app.CheckBatchMarketInstructions)
 
 	app.abci.
 		HandleDeliverTx(txn.IssueSignatures,
@@ -310,7 +314,8 @@ func NewApp(
 		HandleDeliverTx(txn.CancelLiquidityProvisionCommand,
 			app.SendEventOnError(app.DeliverCancelLiquidityProvision)).
 		HandleDeliverTx(txn.AmendLiquidityProvisionCommand,
-			app.SendEventOnError(addDeterministicID(app.DeliverAmendLiquidityProvision))).
+			app.SendEventOnError(
+				addDeterministicID(app.DeliverAmendLiquidityProvision))).
 		HandleDeliverTx(txn.NodeVoteCommand,
 			app.RequireValidatorPubKeyW(app.DeliverNodeVote)).
 		HandleDeliverTx(txn.ChainEventCommand,
@@ -325,13 +330,25 @@ func NewApp(
 		HandleDeliverTx(txn.StateVariableProposalCommand,
 			app.RequireValidatorPubKeyW(app.DeliverStateVarProposal)).
 		HandleDeliverTx(txn.RotateEthereumKeySubmissionCommand,
-			app.RequireValidatorPubKeyW(app.DeliverEthereumKeyRotateSubmission))
+			app.RequireValidatorPubKeyW(app.DeliverEthereumKeyRotateSubmission)).
+		HandleDeliverTx(txn.BatchMarketInstructions,
+			app.SendEventOnError(
+				app.CheckBatchMarketInstructionsW(
+					addDeterministicID(app.DeliverBatchMarketInstructions),
+				),
+			),
+		)
 
 	app.time.NotifyOnTick(app.onTick)
 
 	app.nilPow = app.pow == nil || reflect.ValueOf(app.pow).IsNil()
 	app.nilSpam = app.spam == nil || reflect.ValueOf(app.spam).IsNil()
 	return app
+}
+
+func (app *App) OnSpamProtectionMaxBatchSizeUpdate(ctx context.Context, u *num.Uint) error {
+	app.maxBatchSize = u.Uint64()
+	return nil
 }
 
 // addDeterministicID will build the command id and .
@@ -343,6 +360,17 @@ func addDeterministicID(
 ) func(context.Context, abci.Tx) error {
 	return func(ctx context.Context, tx abci.Tx) error {
 		return f(ctx, tx, hex.EncodeToString(vgcrypto.Hash(tx.Signature())))
+	}
+}
+
+func (app *App) CheckBatchMarketInstructionsW(
+	f func(context.Context, abci.Tx) error,
+) func(context.Context, abci.Tx) error {
+	return func(ctx context.Context, tx abci.Tx) error {
+		if err := app.CheckBatchMarketInstructions(ctx, tx); err != nil {
+			return err
+		}
+		return f(ctx, tx)
 	}
 }
 
@@ -919,6 +947,34 @@ func (app *App) RequireValidatorPubKey(ctx context.Context, tx abci.Tx) error {
 	return nil
 }
 
+func (app *App) CheckBatchMarketInstructions(ctx context.Context, tx abci.Tx) error {
+	bmi := &commandspb.BatchMarketInstructions{}
+	if err := tx.Unmarshal(bmi); err != nil {
+		return err
+	}
+
+	size := uint64(len(bmi.Cancellations) + len(bmi.Amendments) + len(bmi.Submissions))
+	if size > app.maxBatchSize {
+		return ErrMarketBatchInstructionTooBig(size, app.maxBatchSize)
+	}
+
+	return nil
+}
+
+func (app *App) DeliverBatchMarketInstructions(
+	ctx context.Context,
+	tx abci.Tx,
+	deterministicID string,
+) error {
+	batch := &commandspb.BatchMarketInstructions{}
+	if err := tx.Unmarshal(batch); err != nil {
+		return err
+	}
+
+	return NewBMIProcessor(app.log, app.exec).
+		ProcessBatch(ctx, batch, tx.Party(), deterministicID)
+}
+
 func (app *App) RequireValidatorMasterPubKey(ctx context.Context, tx abci.Tx) error {
 	if !app.top.IsValidatorNodeID(tx.PubKeyHex()) {
 		return ErrNodeSignatureWithNonValidatorMasterKey
@@ -998,7 +1054,8 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx, deterministi
 		return err
 	}
 	// Submit the create order request to the execution engine
-	conf, err := app.exec.SubmitOrder(ctx, os, tx.Party(), deterministicID)
+	idgen := idgeneration.New(deterministicID)
+	conf, err := app.exec.SubmitOrder(ctx, os, tx.Party(), idgen, idgen.NextID())
 	if conf != nil {
 		if app.log.GetLevel() <= logging.DebugLevel {
 			app.log.Debug("Order confirmed",
@@ -1036,7 +1093,8 @@ func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx, deterministi
 
 	order := types.OrderCancellationFromProto(porder)
 	// Submit the cancel new order request to the Vega trading core
-	msg, err := app.exec.CancelOrder(ctx, order, tx.Party(), deterministicID)
+	idgen := idgeneration.New(deterministicID)
+	msg, err := app.exec.CancelOrder(ctx, order, tx.Party(), idgen)
 	if err != nil {
 		app.log.Error("error on cancelling order", logging.String("order-id", order.OrderID), logging.Error(err))
 		return err
@@ -1050,7 +1108,11 @@ func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx, deterministi
 	return nil
 }
 
-func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx, deterministicID string) (errl error) {
+func (app *App) DeliverAmendOrder(
+	ctx context.Context,
+	tx abci.Tx,
+	deterministicID string,
+) (errl error) {
 	order := &commandspb.OrderAmendment{}
 	if err := tx.Unmarshal(order); err != nil {
 		return err
@@ -1066,7 +1128,8 @@ func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx, deterministic
 	}
 
 	// Submit the cancel new order request to the Vega trading core
-	msg, err := app.exec.AmendOrder(ctx, oa, tx.Party(), deterministicID)
+	idgen := idgeneration.New(deterministicID)
+	msg, err := app.exec.AmendOrder(ctx, oa, tx.Party(), idgen)
 	if err != nil {
 		app.log.Error("error on amending order", logging.String("order-id", order.OrderId), logging.Error(err))
 		return err

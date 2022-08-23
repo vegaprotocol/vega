@@ -181,6 +181,8 @@ func defaultNetParams() map[string]value {
 
 		LimitsProposeMarketEnabledFrom: NewString(checkOptionalRFC3339Date).Mutable(true).MustUpdate(""), // none by default
 		LimitsProposeAssetEnabledFrom:  NewString(checkOptionalRFC3339Date).Mutable(true).MustUpdate(""), // none by default
+
+		SpamProtectionMaxBatchSize: NewUint(UintGT(num.NewUint(2)), UintLTE(num.NewUint(200))).Mutable(true).MustUpdate("15"),
 	}
 }
 
