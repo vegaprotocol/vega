@@ -466,7 +466,8 @@ message ListOrdersRequest {
     optional string reference = 3;
     // Optional pagination control
     optional Pagination pagination = 4;
-
+    // If set to true, list only live orders
+    optional bool live_only = 5;
 }
 
 message ListOrdersResponse {
