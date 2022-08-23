@@ -69,7 +69,7 @@ type Subscription {
     assetId: ID
     "Type of the account"
     type: AccountType
-  ): StreamableAccount!
+  ): AccountUpdate!
 
   "Subscribe to the mark price changes"
   marketData(
@@ -2311,7 +2311,7 @@ type Account {
 }
 
 "An account record used for subscriptions"
-type StreamableAccount {
+type AccountUpdate {
   "Balance as string - current account balance (approx. as balances can be updated several times per second)"
   balance: String!
   "Asset id, the 'currency'"

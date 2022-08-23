@@ -329,13 +329,13 @@ func (r *VegaResolverRoot) UpdateMarketConfiguration() UpdateMarketConfiguration
 	return (*updateMarketConfigurationResolver)(r)
 }
 
-func (r *VegaResolverRoot) StreamableAccount() StreamableAccountResolver {
-	return (*streamableAccountResolver)(r)
+func (r *VegaResolverRoot) AccountUpdate() AccountUpdateResolver {
+	return (*accountUpdateResolver)(r)
 }
 
-type streamableAccountResolver VegaResolverRoot
+type accountUpdateResolver VegaResolverRoot
 
-func (r *streamableAccountResolver) AssetID(ctx context.Context, obj *types.Account) (string, error) {
+func (r *accountUpdateResolver) AssetID(ctx context.Context, obj *types.Account) (string, error) {
 	return obj.Asset, nil
 }
 
