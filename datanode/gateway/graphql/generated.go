@@ -95,6 +95,7 @@ type ResolverRoot interface {
 	RewardSummary() RewardSummaryResolver
 	StakeLinking() StakeLinkingResolver
 	Statistics() StatisticsResolver
+	StreamableAccount() StreamableAccountResolver
 	Subscription() SubscriptionResolver
 	TradableInstrument() TradableInstrumentResolver
 	Trade() TradeResolver
@@ -1292,6 +1293,13 @@ type ComplexityRoot struct {
 		VegaTime              func(childComplexity int) int
 	}
 
+	StreamableAccount struct {
+		AssetID  func(childComplexity int) int
+		Balance  func(childComplexity int) int
+		MarketId func(childComplexity int) int
+		Type     func(childComplexity int) int
+	}
+
 	Subscription struct {
 		Accounts           func(childComplexity int, marketID *string, partyID *string, assetID *string, typeArg *vega.AccountType) int
 		BusEvents          func(childComplexity int, types []BusEventType, marketID *string, partyID *string, batchSize int) int
@@ -1930,6 +1938,9 @@ type StatisticsResolver interface {
 	TotalTrades(ctx context.Context, obj *v14.Statistics) (string, error)
 
 	BlockDuration(ctx context.Context, obj *v14.Statistics) (string, error)
+}
+type StreamableAccountResolver interface {
+	AssetID(ctx context.Context, obj *vega.Account) (string, error)
 }
 type SubscriptionResolver interface {
 	Candles(ctx context.Context, marketID string, interval vega.Interval) (<-chan *vega.Candle, error)
@@ -7472,6 +7483,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Statistics.VegaTime(childComplexity), true
 
+	case "StreamableAccount.assetId":
+		if e.complexity.StreamableAccount.AssetID == nil {
+			break
+		}
+
+		return e.complexity.StreamableAccount.AssetID(childComplexity), true
+
+	case "StreamableAccount.balance":
+		if e.complexity.StreamableAccount.Balance == nil {
+			break
+		}
+
+		return e.complexity.StreamableAccount.Balance(childComplexity), true
+
+	case "StreamableAccount.marketId":
+		if e.complexity.StreamableAccount.MarketId == nil {
+			break
+		}
+
+		return e.complexity.StreamableAccount.MarketId(childComplexity), true
+
+	case "StreamableAccount.type":
+		if e.complexity.StreamableAccount.Type == nil {
+			break
+		}
+
+		return e.complexity.StreamableAccount.Type(childComplexity), true
+
 	case "Subscription.accounts":
 		if e.complexity.Subscription.Accounts == nil {
 			break
@@ -8500,7 +8539,7 @@ type Subscription {
     assetId: ID
     "Type of the account"
     type: AccountType
-  ): Account!
+  ): StreamableAccount!
 
   "Subscribe to the mark price changes"
   marketData(
@@ -10739,6 +10778,18 @@ type Account {
   type: AccountType!
   "Market (only relevant to margin accounts)"
   market: Market
+}
+
+"An account record used for subscriptions"
+type StreamableAccount {
+  "Balance as string - current account balance (approx. as balances can be updated several times per second)"
+  balance: String!
+  "Asset id, the 'currency'"
+  assetId: ID!
+  "Account type (General, Margin, etc)"
+  type: AccountType!
+  "Market id (only relevant to margin accounts)"
+  marketId: ID
 }
 
 "All the data related to the approval of a withdrawal from the network"
@@ -40043,6 +40094,143 @@ func (ec *executionContext) _Statistics_chainId(ctx context.Context, field graph
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _StreamableAccount_balance(ctx context.Context, field graphql.CollectedField, obj *vega.Account) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "StreamableAccount",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Balance, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _StreamableAccount_assetId(ctx context.Context, field graphql.CollectedField, obj *vega.Account) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "StreamableAccount",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.StreamableAccount().AssetID(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _StreamableAccount_type(ctx context.Context, field graphql.CollectedField, obj *vega.Account) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "StreamableAccount",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(vega.AccountType)
+	fc.Result = res
+	return ec.marshalNAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _StreamableAccount_marketId(ctx context.Context, field graphql.CollectedField, obj *vega.Account) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "StreamableAccount",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MarketId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOID2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Subscription_candles(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -40395,7 +40583,7 @@ func (ec *executionContext) _Subscription_accounts(ctx context.Context, field gr
 			w.Write([]byte{'{'})
 			graphql.MarshalString(field.Alias).MarshalGQL(w)
 			w.Write([]byte{':'})
-			ec.marshalNAccount2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccount(ctx, field.Selections, res).MarshalGQL(w)
+			ec.marshalNStreamableAccount2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccount(ctx, field.Selections, res).MarshalGQL(w)
 			w.Write([]byte{'}'})
 		})
 	}
@@ -58765,6 +58953,74 @@ func (ec *executionContext) _Statistics(ctx context.Context, sel ast.SelectionSe
 	return out
 }
 
+var streamableAccountImplementors = []string{"StreamableAccount"}
+
+func (ec *executionContext) _StreamableAccount(ctx context.Context, sel ast.SelectionSet, obj *vega.Account) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, streamableAccountImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("StreamableAccount")
+		case "balance":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._StreamableAccount_balance(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "assetId":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._StreamableAccount_assetId(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "type":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._StreamableAccount_type(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "marketId":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._StreamableAccount_marketId(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var subscriptionImplementors = []string{"Subscription"}
 
 func (ec *executionContext) _Subscription(ctx context.Context, sel ast.SelectionSet) func() graphql.Marshaler {
@@ -63388,6 +63644,20 @@ func (ec *executionContext) marshalNStatistics2ᚖcodeᚗvegaprotocolᚗioᚋveg
 		return graphql.Null
 	}
 	return ec._Statistics(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNStreamableAccount2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccount(ctx context.Context, sel ast.SelectionSet, v vega.Account) graphql.Marshaler {
+	return ec._StreamableAccount(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNStreamableAccount2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccount(ctx context.Context, sel ast.SelectionSet, v *vega.Account) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._StreamableAccount(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {

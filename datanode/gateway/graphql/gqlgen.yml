@@ -445,3 +445,5 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AccountEdge
   AccountsConnection:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AccountsConnection
+  StreamableAccount:
+    model: code.vegaprotocol.io/vega/protos/vega.Account

@@ -329,6 +329,16 @@ func (r *VegaResolverRoot) UpdateMarketConfiguration() UpdateMarketConfiguration
 	return (*updateMarketConfigurationResolver)(r)
 }
 
+func (r *VegaResolverRoot) StreamableAccount() StreamableAccountResolver {
+	return (*streamableAccountResolver)(r)
+}
+
+type streamableAccountResolver VegaResolverRoot
+
+func (r *streamableAccountResolver) AssetID(ctx context.Context, obj *types.Account) (string, error) {
+	return obj.Asset, nil
+}
+
 // LiquidityOrder resolver
 
 type myLiquidityOrderResolver VegaResolverRoot
