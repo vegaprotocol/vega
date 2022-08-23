@@ -102,7 +102,7 @@ func (s *coreService) LastBlockHeight(
 
 	if atomic.LoadUint32(&s.hasGenesisTimeAndChainID) == 0 {
 		if err := s.getGenesisTimeAndChainID(ctx); err != nil {
-			return nil, fmt.Errorf("failed to intialilse chainID: %w", err)
+			return nil, fmt.Errorf("failed to intialise chainID: %w", err)
 		}
 	}
 
