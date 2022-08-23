@@ -487,3 +487,480 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | lp1   | 0.625                | 5000                    |
       | lp2   | 0.375                | 3000                    |
 
+  @VirtStake
+  Scenario: 004 Checks equity calculated correctly for 2 LPs with unequal commitments whom decrease and/or increase their commitments in a stationary market (0042-LIQF-001)
+
+      Given the parties deposit on asset's general account the following amount:
+        | party  | asset | amount |
+        | lp1    | USD   | 100000 |
+        | lp2    | USD   | 100000 |
+        | party1 | USD   | 100000 |
+        | party2 | USD   | 100000 |
+
+      And the average block duration is "1801"
+
+      And the parties submit the following liquidity provision:
+        | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+        | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | buy  | BID              | 1          | 2      | submission |
+        | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | buy  | MID              | 3          | 1      | amendment  |
+        | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | sell | ASK              | 1          | 2      | amendment  |
+        | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | sell | MID              | 3          | 1      | amendment  |
+      And the parties submit the following liquidity provision:
+        | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+        | lp2 | lp2   | ETH/MAR22 | 6000              | 0.002 | buy  | BID              | 1          | 2      | submission |
+        | lp2 | lp2   | ETH/MAR22 | 6000              | 0.002 | buy  | MID              | 3          | 1      | amendment  |
+        | lp2 | lp2   | ETH/MAR22 | 6000              | 0.002 | sell | ASK              | 1          | 2      | amendment  |
+        | lp2 | lp2   | ETH/MAR22 | 6000              | 0.002 | sell | MID              | 3          | 1      | amendment  |
+
+      When the parties place the following orders:
+        | party  | market id | side | volume | price | resulting trades | type       | tif     |
+        | party1 | ETH/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+        | party1 | ETH/MAR22 | buy  | 50     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+        | party2 | ETH/MAR22 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+        | party2 | ETH/MAR22 | sell | 50     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+
+      # 0th Period (Bootstrap Period):
+      Then the opening auction period ends for market "ETH/MAR22"
+
+      And the following trades should be executed:
+        | buyer  | price | size | seller |
+        | party1 | 1000  | 50   | party2 |
+
+      And the market data for the market "ETH/MAR22" should be:
+        | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+        | 1000       | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 5000         | 10000          | 50            |
+
+      And the order book should have the following volumes for market "ETH/MAR22":
+        | side | price | volume |
+        | buy  | 898   | 57     |
+        | buy  | 900   | 1      |
+        | buy  | 999   | 17     |
+        | sell | 1001  | 15     |
+        | sell | 1100  | 1      |
+        | sell | 1102  | 47     |
+      
+      And the liquidity provider fee shares for the market "ETH/MAR22" should be:
+        | party | equity like share | average entry valuation |
+        | lp1   | 0.4               | 4000                    |
+        | lp2   | 0.6               | 6000                    |
+
+      And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
+
+      # 1st Period - Confirms equity calculated correctly when an LP decreases their commitment.
+      When the network moves ahead "2" blocks:
+
+      And the parties submit the following liquidity provision:
+        | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
+        | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | buy  | BID              | 1          | 2      | amendment |
+        | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | buy  | MID              | 3          | 1      | amendment |
+        | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
+        | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | sell | MID              | 3          | 1      | amendment |
+
+      Then the market data for the market "ETH/MAR22" should be:
+        | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+        | 1000       | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 5000         | 9000           | 50            |
+
+      And the order book should have the following volumes for market "ETH/MAR22":
+        | side | price | volume |
+        | buy  | 898   | 51     |
+        | buy  | 900   | 1      |
+        | buy  | 999   | 15     |
+        | sell | 1001  | 14     |
+        | sell | 1100  | 1      |
+        | sell | 1102  | 42     |
+
+      And the liquidity provider fee shares for the market "ETH/MAR22" should be:
+        | party | equity like share  | average entry valuation |
+        | lp1   | 0.3333333333333333 | 3000                    |
+        | lp2   | 0.6666666666666667 | 6000                    |
+
+
+      # 2nd Period - Confirms equity calculated correctly when an LP increases their commitment.
+      When the network moves ahead "2" blocks:
+
+      And the parties submit the following liquidity provision:
+        | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
+        | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | buy  | BID              | 1          | 2      | amendment |
+        | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | buy  | MID              | 3          | 1      | amendment |
+        | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
+        | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | sell | MID              | 3          | 1      | amendment |
+
+      Then the market data for the market "ETH/MAR22" should be:
+        | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+        | 1000       | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 5000         | 10000           | 50            |
+
+      And the order book should have the following volumes for market "ETH/MAR22":
+        | side | price | volume |
+        | buy  | 898   | 57     |
+        | buy  | 900   | 1      |
+        | buy  | 999   | 17     |
+        | sell | 1001  | 15     |
+        | sell | 1100  | 1      |
+        | sell | 1102  | 47     |
+
+      And the liquidity provider fee shares for the market "ETH/MAR22" should be:
+        | party | equity like share  | average entry valuation |
+        | lp1   | 0.4                | 4000                    |
+        | lp2   | 0.6                | 6000                    |
+
+      
+      # 3rd Period - Confirms equity calculated correctly when two LPs decrease their commitment.
+      When the network moves ahead "2" blocks:
+
+      And the parties submit the following liquidity provision:
+        | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
+        | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | buy  | BID              | 1          | 2      | amendment |
+        | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | buy  | MID              | 3          | 1      | amendment |
+        | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
+        | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | sell | MID              | 3          | 1      | amendment |
+      And the parties submit the following liquidity provision:
+        | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
+        | lp2 | lp2   | ETH/MAR22 | 5000              | 0.002 | buy  | BID              | 1          | 2      | amendment |
+        | lp2 | lp2   | ETH/MAR22 | 5000              | 0.002 | buy  | MID              | 3          | 1      | amendment |
+        | lp2 | lp2   | ETH/MAR22 | 5000              | 0.002 | sell | ASK              | 1          | 2      | amendment |
+        | lp2 | lp2   | ETH/MAR22 | 5000              | 0.002 | sell | MID              | 3          | 1      | amendment |
+
+      Then the market data for the market "ETH/MAR22" should be:
+        | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+        | 1000       | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 5000         | 8000           | 50            |
+
+      And the order book should have the following volumes for market "ETH/MAR22":
+        | side | price | volume |
+        | buy  | 898   | 45     |
+        | buy  | 900   | 1      |
+        | buy  | 999   | 13     |
+        | sell | 1001  | 13     |
+        | sell | 1100  | 1      |
+        | sell | 1102  | 37     |
+
+      And the liquidity provider fee shares for the market "ETH/MAR22" should be:
+        | party | equity like share | average entry valuation |
+        | lp1   | 0.375             | 3000   |
+        | lp2   | 0.625             | 4999.9999999999998   |
+
+
+      # 4th Period - Confirms equity calculated correctly when two LPs increase their commitment.
+      When the network moves ahead "2" blocks:
+
+      And the parties submit the following liquidity provision:
+        | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
+        | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | buy  | BID              | 1          | 2      | amendment |
+        | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | buy  | MID              | 3          | 1      | amendment |
+        | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
+        | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | sell | MID              | 3          | 1      | amendment |
+      And the parties submit the following liquidity provision:
+        | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
+        | lp2 | lp2   | ETH/MAR22 | 6000              | 0.002 | buy  | BID              | 1          | 2      | amendment |
+        | lp2 | lp2   | ETH/MAR22 | 6000              | 0.002 | buy  | MID              | 3          | 1      | amendment |
+        | lp2 | lp2   | ETH/MAR22 | 6000              | 0.002 | sell | ASK              | 1          | 2      | amendment |
+        | lp2 | lp2   | ETH/MAR22 | 6000              | 0.002 | sell | MID              | 3          | 1      | amendment |
+
+      Then the market data for the market "ETH/MAR22" should be:
+        | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+        | 1000       | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 5000         | 10000          | 50            |
+
+      And the order book should have the following volumes for market "ETH/MAR22":
+        | side | price | volume |
+        | buy  | 898   | 57     |
+        | buy  | 900   | 1      |
+        | buy  | 999   | 17     |
+        | sell | 1001  | 15     |
+        | sell | 1100  | 1      |
+        | sell | 1102  | 47     |
+
+      #And the liquidity provider fee shares for the market "ETH/MAR22" should be:
+      #  | party | equity like share  | average entry valuation |
+      #  | lp1   | 0.4 | 4000   |
+      #  | lp2   | 0.6 | 6000   |
+
+
+      # 5th Period - Confirms equity calculated correctly when one LP decreases and one LP increases their commitment.
+      When the network moves ahead "2" blocks:
+      
+      And the parties submit the following liquidity provision:
+        | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
+        | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | buy  | BID              | 1          | 2      | amendment |
+        | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | buy  | MID              | 3          | 1      | amendment |
+        | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
+        | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | sell | MID              | 3          | 1      | amendment |
+      And the parties submit the following liquidity provision:
+        | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
+        | lp2 | lp2   | ETH/MAR22 | 7000              | 0.002 | buy  | BID              | 1          | 2      | amendment |
+        | lp2 | lp2   | ETH/MAR22 | 7000              | 0.002 | buy  | MID              | 3          | 1      | amendment |
+        | lp2 | lp2   | ETH/MAR22 | 7000              | 0.002 | sell | ASK              | 1          | 2      | amendment |
+        | lp2 | lp2   | ETH/MAR22 | 7000              | 0.002 | sell | MID              | 3          | 1      | amendment |
+
+      Then the market data for the market "ETH/MAR22" should be:
+        | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+        | 1000       | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 5000         | 10000          | 50            |
+
+      And the order book should have the following volumes for market "ETH/MAR22":
+        | side | price | volume |
+        | buy  | 898   | 56     |
+        | buy  | 900   | 1      |
+        | buy  | 999   | 16     |
+        | sell | 1001  | 16     |
+        | sell | 1100  | 1      |
+        | sell | 1102  | 46     |
+
+      And the liquidity provider fee shares for the market "ETH/MAR22" should be:
+        | party | equity like share | average entry valuation |
+        | lp1   | 0.3               | 3000                    |
+        | lp2   | 0.7               | 7000                    |
+
+
+  @VirtStake
+  Scenario: 005 Checks equity calculated correctly for 2 LPs with unequal commitments whom decrease and/or increase their commitments in a growing market (0042-LIQF-001)
+
+      Given the parties deposit on asset's general account the following amount:
+        | party  | asset | amount |
+        | lp1    | USD   | 100000 |
+        | lp2    | USD   | 100000 |
+        | party1 | USD   | 100000 |
+        | party2 | USD   | 100000 |
+
+      And the average block duration is "1801"
+
+      And the parties submit the following liquidity provision:
+        | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+        | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | buy  | BID              | 1          | 2      | submission |
+        | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | buy  | MID              | 3          | 1      | amendment  |
+        | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | sell | ASK              | 1          | 2      | amendment  |
+        | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | sell | MID              | 3          | 1      | amendment  |
+      And the parties submit the following liquidity provision:
+        | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+        | lp2 | lp2   | ETH/MAR22 | 6000              | 0.002 | buy  | BID              | 1          | 2      | submission |
+        | lp2 | lp2   | ETH/MAR22 | 6000              | 0.002 | buy  | MID              | 3          | 1      | amendment  |
+        | lp2 | lp2   | ETH/MAR22 | 6000              | 0.002 | sell | ASK              | 1          | 2      | amendment  |
+        | lp2 | lp2   | ETH/MAR22 | 6000              | 0.002 | sell | MID              | 3          | 1      | amendment  |
+
+      When the parties place the following orders:
+        | party  | market id | side | volume | price | resulting trades | type       | tif     |
+        | party1 | ETH/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+        | party1 | ETH/MAR22 | buy  | 50     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+        | party2 | ETH/MAR22 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+        | party2 | ETH/MAR22 | sell | 50     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+
+      # 0th Period (Bootstrap Period):
+      Then the opening auction period ends for market "ETH/MAR22"
+
+      And the following trades should be executed:
+        | buyer  | price | size | seller |
+        | party1 | 1000  | 50   | party2 |
+
+      And the market data for the market "ETH/MAR22" should be:
+        | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+        | 1000       | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 5000         | 10000          | 50            |
+
+      And the order book should have the following volumes for market "ETH/MAR22":
+        | side | price | volume |
+        | buy  | 898   | 57     |
+        | buy  | 900   | 1      |
+        | buy  | 999   | 17     |
+        | sell | 1001  | 15     |
+        | sell | 1100  | 1      |
+        | sell | 1102  | 47     |
+      
+      And the liquidity provider fee shares for the market "ETH/MAR22" should be:
+        | party | equity like share | average entry valuation |
+        | lp1   | 0.4               | 4000                    |
+        | lp2   | 0.6               | 6000                    |
+
+      And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
+
+      # 1st Period - Confirms equity calculated correctly when an LP decreases their commitment.
+      When the network moves ahead "2" blocks:
+      When the parties place the following orders:
+        | party  | market id | side | volume | price | resulting trades | type       | tif     |
+        | party1 | ETH/MAR22 | buy  | 1      | 1001  | 1                | TYPE_LIMIT | TIF_GTC |
+
+      Then the following trades should be executed:
+        | buyer  | price | size | seller |
+        | party1 | 1001  | 1    | lp1    |
+
+      When the parties submit the following liquidity provision:
+        | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
+        | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | buy  | BID              | 1          | 2      | amendment |
+        | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | buy  | MID              | 3          | 1      | amendment |
+        | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
+        | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | sell | MID              | 3          | 1      | amendment |
+
+      Then the market data for the market "ETH/MAR22" should be:
+        | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+        | 1001       | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 5105         | 9000           | 51            |
+
+      And the order book should have the following volumes for market "ETH/MAR22":
+      | side | price | volume |
+      | buy  | 898   | 51     |
+      | buy  | 900   | 1      |
+      | buy  | 999   | 15     |
+      | sell | 1001  | 14     |
+      | sell | 1100  | 1      |
+      | sell | 1102  | 42     |
+
+      And the liquidity provider fee shares for the market "ETH/MAR22" should be:
+        | party | equity like share  | average entry valuation |
+        | lp1   | 0.3333333333333333 | 3000                    |
+        | lp2   | 0.6666666666666667 | 6000                    |
+
+
+      # 2nd Period - Confirms equity calculated correctly when an LP increases their commitment.
+      When the network moves ahead "2" blocks:
+      And the parties place the following orders:
+        | party  | market id | side | volume | price | resulting trades | type       | tif     |
+        | party1 | ETH/MAR22 | buy  | 2      | 1001  | 1                | TYPE_LIMIT | TIF_GTC |
+
+      Then the following trades should be executed:
+        | buyer  | price | size | seller |
+        | party1 | 1001  | 2    | lp2    |
+
+      When the parties submit the following liquidity provision:
+        | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
+        | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | buy  | BID              | 1          | 2      | amendment |
+        | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | buy  | MID              | 3          | 1      | amendment |
+        | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
+        | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | sell | MID              | 3          | 1      | amendment |
+
+      Then the market data for the market "ETH/MAR22" should be:
+        | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+        | 1001       | TRADING_MODE_CONTINUOUS | 1       | 502       | 1500      | 5305         | 10000          | 53            |
+
+      And the order book should have the following volumes for market "ETH/MAR22":
+        | side | price | volume |
+        | buy  | 898   | 57     |
+        | buy  | 900   | 1      |
+        | buy  | 999   | 17     |
+        | sell | 1001  | 15     |
+        | sell | 1100  | 1      |
+        | sell | 1102  | 47     |
+
+      And the liquidity provider fee shares for the market "ETH/MAR22" should be:
+        | party | equity like share  | average entry valuation |
+        | lp1   | 0.4                | 4000                    |
+        | lp2   | 0.6                | 6000                    |
+
+      
+      # 3rd Period - Confirms equity calculated correctly when two LPs decrease their commitment.
+      When the network moves ahead "2" blocks:
+      And the parties place the following orders:
+        | party  | market id | side | volume | price | resulting trades | type       | tif     |
+        | party1 | ETH/MAR22 | buy  | 3      | 1001  | 1                | TYPE_LIMIT | TIF_GTC |
+
+      Then the following trades should be executed:
+        | buyer  | price | size | seller |
+        | party1 | 1001  | 3    | lp2    |
+
+      When the parties submit the following liquidity provision:
+        | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
+        | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | buy  | BID              | 1          | 2      | amendment |
+        | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | buy  | MID              | 3          | 1      | amendment |
+        | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
+        | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | sell | MID              | 3          | 1      | amendment |
+      And the parties submit the following liquidity provision:
+        | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
+        | lp2 | lp2   | ETH/MAR22 | 5000              | 0.002 | buy  | BID              | 1          | 2      | amendment |
+        | lp2 | lp2   | ETH/MAR22 | 5000              | 0.002 | buy  | MID              | 3          | 1      | amendment |
+        | lp2 | lp2   | ETH/MAR22 | 5000              | 0.002 | sell | ASK              | 1          | 2      | amendment |
+        | lp2 | lp2   | ETH/MAR22 | 5000              | 0.002 | sell | MID              | 3          | 1      | amendment |
+
+      Then the market data for the market "ETH/MAR22" should be:
+        | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+        | 1001       | TRADING_MODE_CONTINUOUS | 1       | 502       | 1500      | 5605         | 8000           | 56            |
+
+      And the order book should have the following volumes for market "ETH/MAR22":
+        | side | price | volume |
+        | buy  | 898   | 45     |
+        | buy  | 900   | 1      |
+        | buy  | 999   | 13     |
+        | sell | 1001  | 13     |
+        | sell | 1100  | 1      |
+        | sell | 1102  | 37     |
+
+      And the liquidity provider fee shares for the market "ETH/MAR22" should be:
+        | party | equity like share | average entry valuation |
+        | lp1   | 0.375             | 3000.0000000000000375   |
+        | lp2   | 0.625             | 5000.00000000000070624999999999996375   |
+
+
+      # 4th Period - Confirms equity calculated correctly when two LPs increase their commitment.
+      When the network moves ahead "2" blocks:
+      And the parties place the following orders:
+        | party  | market id | side | volume | price | resulting trades | type       | tif     |
+        | party1 | ETH/MAR22 | buy  | 4      | 1001  | 1                | TYPE_LIMIT | TIF_GTC |
+
+      Then the following trades should be executed:
+        | buyer  | price | size | seller |
+        | party1 | 1001  | 4    | lp1    |
+
+      When the parties submit the following liquidity provision:
+        | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
+        | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | buy  | BID              | 1          | 2      | amendment |
+        | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | buy  | MID              | 3          | 1      | amendment |
+        | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
+        | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | sell | MID              | 3          | 1      | amendment |
+      And the parties submit the following liquidity provision:
+        | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
+        | lp2 | lp2   | ETH/MAR22 | 6000              | 0.002 | buy  | BID              | 1          | 2      | amendment |
+        | lp2 | lp2   | ETH/MAR22 | 6000              | 0.002 | buy  | MID              | 3          | 1      | amendment |
+        | lp2 | lp2   | ETH/MAR22 | 6000              | 0.002 | sell | ASK              | 1          | 2      | amendment |
+        | lp2 | lp2   | ETH/MAR22 | 6000              | 0.002 | sell | MID              | 3          | 1      | amendment |
+
+      Then the market data for the market "ETH/MAR22" should be:
+        | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+        | 1001       | TRADING_MODE_CONTINUOUS | 1       | 502       | 1500      | 6006         | 10000          | 60            |
+
+      And the order book should have the following volumes for market "ETH/MAR22":
+        | side | price | volume |
+        | buy  | 898   | 57     |
+        | buy  | 900   | 1      |
+        | buy  | 999   | 17     |
+        | sell | 1001  | 15     |
+        | sell | 1100  | 1      |
+        | sell | 1102  | 47     |
+
+      And the liquidity provider fee shares for the market "ETH/MAR22" should be:
+        | party | equity like share   | average entry valuation |
+        | lp1   | 0.38461538461538500 | 3846.15384615385000000  |
+        | lp2   | 0.61538461538461500 | 6153.84615384615000000  |
+
+
+      # 5th Period - Confirms equity calculated correctly when one LP decreases and one LP increases their commitment.
+      When the network moves ahead "2" blocks:
+      And the parties place the following orders:
+        | party  | market id | side | volume | price | resulting trades | type       | tif     |
+        | party1 | ETH/MAR22 | buy  | 5      | 1001  | 1                | TYPE_LIMIT | TIF_GTC |
+
+      Then the following trades should be executed:
+        | buyer  | price | size | seller |
+        | party1 | 1001  | 5    | lp1    |
+
+      When the parties submit the following liquidity provision:
+        | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
+        | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | buy  | BID              | 1          | 2      | amendment |
+        | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | buy  | MID              | 3          | 1      | amendment |
+        | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
+        | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | sell | MID              | 3          | 1      | amendment |
+      And the parties submit the following liquidity provision:
+        | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
+        | lp2 | lp2   | ETH/MAR22 | 7000              | 0.002 | buy  | BID              | 1          | 2      | amendment |
+        | lp2 | lp2   | ETH/MAR22 | 7000              | 0.002 | buy  | MID              | 3          | 1      | amendment |
+        | lp2 | lp2   | ETH/MAR22 | 7000              | 0.002 | sell | ASK              | 1          | 2      | amendment |
+        | lp2 | lp2   | ETH/MAR22 | 7000              | 0.002 | sell | MID              | 3          | 1      | amendment |
+
+      Then the market data for the market "ETH/MAR22" should be:
+        | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+        | 1001       | TRADING_MODE_CONTINUOUS | 1       | 502       | 1500      | 6506         | 10000          | 65            |
+
+      And the order book should have the following volumes for market "ETH/MAR22":
+        | side | price | volume |
+        | buy  | 898   | 56     |
+        | buy  | 900   | 1      |
+        | buy  | 999   | 16     |
+        | sell | 1001  | 16     |
+        | sell | 1100  | 1      |
+        | sell | 1102  | 46     |
+
+      And the liquidity provider fee shares for the market "ETH/MAR22" should be:
+        | party | equity like share   | average entry valuation |
+        | lp1   | 0.30927835051546400 | 3092.78350515464000000  |
+        | lp2   | 0.69072164948453600 | 6907.21649484536000000  |
