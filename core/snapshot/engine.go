@@ -383,11 +383,14 @@ func (e *Engine) initialiseTree() error {
 	if e.initialised {
 		return nil
 	}
-	switch e.Config.Storage {
+	switch e.Storage {
 	case memDB:
 		e.db = db.NewMemDB()
 	case goLevelDB:
-		conn, _ := db.NewGoLevelDB(SnapshotDBName, e.dbPath)
+		conn, err := db.NewGoLevelDB(SnapshotDBName, e.dbPath)
+		if err != nil {
+			return fmt.Errorf("could not open goleveldb: %w", err)
+		}
 		e.db = conn
 	default:
 		return types.ErrInvalidSnapshotStorageMethod

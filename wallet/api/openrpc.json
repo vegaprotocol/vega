@@ -424,23 +424,12 @@
         "schema": {
           "type": "object",
           "properties": {
-            "receivedAt": {
+            "chainID": {
               "type": "string",
-              "description": "The date when the API received the request to send the transaction.\n\nThe time is a quoted string in RFC 3339 format, with sub-second precision added if present.",
+              "description": "The identifier for the chain",
               "examples": [
-                "2021-02-18T21:54:42.123Z"
+                "test-chain-Thz9c6"
               ]
-            },
-            "sentAt": {
-              "type": "string",
-              "description": "The date when the transaction has been sent to the network.\n\nThe time is a quoted string in RFC 3339 format, with sub-second precision added if present.",
-              "examples": [
-                "2021-02-18T21:54:42.123Z"
-              ]
-            },
-            "transactionHash": {
-              "type": "string",
-              "description": "The hash of the transaction. It's used to uniquely identify the transaction and can be used in the block explorer to retrieve it."
             }
           }
         }
@@ -455,32 +444,13 @@
       ],
       "examples": [
         {
-          "name": "Sending a transaction for \"vega.xyz\"",
-          "description": "The third-party application \"vega.xyz\" requests to send a transaction and the client accepts.",
-          "params": [
-            {
-              "name": "token",
-              "value": "hZKSx0snBvikp2NGMJdKPHU5qvloSeqpqbJg6BsMwCcqX4iZvvy99BV2l13oeyEG"
-            },
-            {
-              "name": "publicKey",
-              "value": "3fd42fd5ceb22d99ac45086f1d82d516118a5cb7ad9a2e096cd78ca2c8960c80"
-            },
-            {
-              "name": "sendingMode",
-              "value": "TYPE_SYNC"
-            },
-            {
-              "name": "encodedTransaction",
-              "value": "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K"
-            }
-          ],
+          "name": "Fetching the chain ID",
+          "description": "An example of requesting the chain's ID",
+          "params": [],
           "result": {
             "name": "Success",
             "value": {
-              "receivedAt": "2021-02-18T21:54:42.123Z",
-              "sentAt": "2021-02-18T21:54:42.123Z",
-              "txHash": "E8C167126D1FC8D92898AB9C07C318161DF68753A1316A69ABDC9ADC557723B3"
+              "chainID": "test-chain-Thz9c6"
             }
           }
         }
