@@ -318,7 +318,7 @@ func (e *Engine) isValidAccountForMarket(account *types.Account) bool {
 }
 
 // calculateRewardTypeForAsset calculates the payout for a given asset and reward type.
-// for market based rewards, we only care about account for specific markets (as opposed to global account for an asset)
+// for market based rewards, we only care about account for specific markets (as opposed to global account for an asset).
 func (e *Engine) calculateRewardTypeForAsset(epochSeq, asset string, rewardType types.AccountType, account *types.Account, validatorData []*types.ValidatorData, validatorNormalisedScores map[string]num.Decimal, timestamp time.Time, factor num.Decimal) *payout {
 	switch rewardType {
 	case types.AccountTypeGlobalReward: // given to delegator based on stake
