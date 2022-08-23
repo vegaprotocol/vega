@@ -198,7 +198,7 @@ func SendTx(w io.Writer, f *SendTxFlags, rf *RootFlags, req *SendTxRequest) erro
 	}
 
 	if !f.NoVersionCheck {
-		networkVersion, err := getNetworkVersion(hosts[0])
+		networkVersion, err := getNetworkVersion(hosts)
 		if err != nil {
 			return err
 		}

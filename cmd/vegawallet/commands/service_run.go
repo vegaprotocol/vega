@@ -182,7 +182,7 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 	}
 
 	if !f.NoVersionCheck {
-		networkVersion, err := getNetworkVersion(cfg.API.GRPC.Hosts[0])
+		networkVersion, err := getNetworkVersion(cfg.API.GRPC.Hosts)
 		if err != nil {
 			return err
 		}
