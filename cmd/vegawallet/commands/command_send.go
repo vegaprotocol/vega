@@ -262,7 +262,7 @@ func SendCommand(w io.Writer, f *SendCommandFlags, rf *RootFlags, req *SendComma
 	}
 
 	if !f.NoVersionCheck {
-		networkVersion, err := getNetworkVersion(hosts[0])
+		networkVersion, err := getNetworkVersion(hosts)
 		if err != nil {
 			return err
 		}
