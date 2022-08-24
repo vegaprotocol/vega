@@ -66,6 +66,7 @@ func testCreatingWalletWithInvalidParamsFails(t *testing.T) {
 			handler.walletStore.EXPECT().ListWallets(gomock.Any()).Times(0)
 			handler.walletStore.EXPECT().GetWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 			handler.walletStore.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+			handler.walletStore.EXPECT().RemoveWallet(gomock.Any(), gomock.Any()).Times(0)
 
 			// when
 			result, errorDetails := handler.handle(t, ctx, tc.params)
@@ -95,6 +96,7 @@ func testCreatingWalletWithValidParamsSucceeds(t *testing.T) {
 	// -- unexpected calls
 	handler.walletStore.EXPECT().GetWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	handler.walletStore.EXPECT().ListWallets(gomock.Any()).Times(0)
+	handler.walletStore.EXPECT().RemoveWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.CreateWalletParams{
@@ -137,6 +139,7 @@ func testCreatingWalletThatAlreadyExistsFails(t *testing.T) {
 	handler.walletStore.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	handler.walletStore.EXPECT().GetWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	handler.walletStore.EXPECT().ListWallets(gomock.Any()).Times(0)
+	handler.walletStore.EXPECT().RemoveWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.CreateWalletParams{
@@ -165,6 +168,7 @@ func testGettingInternalErrorDuringVerificationDoesNotCreateWallet(t *testing.T)
 	handler.walletStore.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	handler.walletStore.EXPECT().GetWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	handler.walletStore.EXPECT().ListWallets(gomock.Any()).Times(0)
+	handler.walletStore.EXPECT().RemoveWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.CreateWalletParams{
@@ -192,6 +196,7 @@ func testGettingInternalErrorDuringSavingDoesNotCreateWallet(t *testing.T) {
 	// -- unexpected calls
 	handler.walletStore.EXPECT().GetWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	handler.walletStore.EXPECT().ListWallets(gomock.Any()).Times(0)
+	handler.walletStore.EXPECT().RemoveWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.CreateWalletParams{
@@ -201,7 +206,6 @@ func testGettingInternalErrorDuringSavingDoesNotCreateWallet(t *testing.T) {
 
 	// then
 	require.NotNil(t, errorDetails)
-	// Verify generated wallet.
 	assert.Empty(t, result)
 	assertInternalError(t, errorDetails, fmt.Errorf("couldn't save wallet: %w", assert.AnError))
 }

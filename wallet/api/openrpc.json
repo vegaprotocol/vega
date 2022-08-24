@@ -668,6 +668,42 @@
           }
         }
       ]
+    },
+    {
+      "name": "admin.remove_wallet",
+      "summary": "Removes a wallet from the computer.",
+      "description": "This method removes a wallet from the computer.",
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "wallet",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "null"
+        }
+      },
+      "examples": [
+        {
+          "name": "Remove a wallet",
+          "params": [
+            {
+              "name": "wallet",
+              "value": "my-wallet"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": {}
+          }
+        }
+      ]
     }
   ],
   "components": {

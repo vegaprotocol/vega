@@ -13,21 +13,21 @@ import (
 	"go.uber.org/zap"
 )
 
+// Generates mocks
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/wallet/api WalletStore,NetworkStore,Node,NodeSelector,Pipeline
+
 // WalletStore is the component used to retrieve and update wallets from the
 // computer.
-//
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/wallet_store_mock.go -package mocks code.vegaprotocol.io/vega/wallet/api WalletStore
 type WalletStore interface {
 	WalletExists(ctx context.Context, name string) (bool, error)
 	GetWallet(ctx context.Context, name, passphrase string) (wallet.Wallet, error)
 	ListWallets(ctx context.Context) ([]string, error)
 	SaveWallet(ctx context.Context, w wallet.Wallet, passphrase string) error
+	DeleteWallet(ctx context.Context, name string) error
 }
 
 // NetworkStore is the component used to retrieve and update the networks from the
 // computer,
-//
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/network_store_mock.go -package mocks code.vegaprotocol.io/vega/wallet/api NetworkStore
 type NetworkStore interface {
 	NetworkExists(string) (bool, error)
 	GetNetwork(string) (*network.Network, error)
@@ -38,8 +38,6 @@ type NetworkStore interface {
 }
 
 // Node is the component used to get network information and send transactions.
-//
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/node_mock.go -package mocks code.vegaprotocol.io/vega/wallet/api Node
 type Node interface {
 	Host() string
 	Stop() error
@@ -50,8 +48,6 @@ type Node interface {
 }
 
 // NodeSelector implementing the strategy for node selection.
-//
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/node_selector_mock.go -package mocks code.vegaprotocol.io/vega/wallet/api NodeSelector
 type NodeSelector interface {
 	Node(ctx context.Context) (Node, error)
 	Stop()
@@ -61,8 +57,6 @@ type NodeSelector interface {
 // Convention:
 //   - Notify* functions do not expect a response.
 //   - Request* functions are expecting a client intervention.
-//
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/pipeline_mock.go -package mocks code.vegaprotocol.io/vega/wallet/api Pipeline
 type Pipeline interface {
 	// NotifyError is used to report errors to the client.
 	NotifyError(ctx context.Context, traceID string, t ErrorType, err error)
@@ -177,6 +171,7 @@ func AdminAPI(log *zap.Logger, walletStore WalletStore, netStore NetworkStore) (
 	walletAPI.RegisterMethod("admin.list_wallets", NewListWallets(walletStore))
 	walletAPI.RegisterMethod("admin.purge_permissions", &UnimplementedMethod{})
 	walletAPI.RegisterMethod("admin.remove_network", &UnimplementedMethod{})
+	walletAPI.RegisterMethod("admin.remove_wallet", NewRemoveWallet(walletStore))
 	walletAPI.RegisterMethod("admin.revoke_permissions", &UnimplementedMethod{})
 	walletAPI.RegisterMethod("admin.rotate_key", &UnimplementedMethod{})
 	walletAPI.RegisterMethod("admin.send_message", &UnimplementedMethod{})
