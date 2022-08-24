@@ -162,8 +162,8 @@ func PrintImportWalletResponse(w io.Writer, resp api.ImportWalletResult) {
 	str := p.String()
 	defer p.Print(str)
 
-	str.CheckMark().Text("Wallet ").Bold(resp.Wallet.Name).Text(" has been imported.").NextLine()
-	str.CheckMark().Text("First key pair has been generated for wallet ").Bold(resp.Wallet.Name).NextLine()
+	str.CheckMark().Text("Wallet ").Bold(resp.Wallet.Name).Text(" has been imported at: ").SuccessText(resp.Wallet.FilePath).NextLine()
+	str.CheckMark().Text("First key pair has been generated for the wallet ").Bold(resp.Wallet.Name).Text(" at: ").SuccessText(resp.Wallet.FilePath).NextLine()
 	str.CheckMark().SuccessText("Importing the wallet succeeded").NextSection()
 
 	str.Text("First public key:").NextLine()

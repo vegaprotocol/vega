@@ -23,6 +23,7 @@ type CreatedWallet struct {
 	Name           string `json:"name"`
 	Version        uint32 `json:"version"`
 	RecoveryPhrase string `json:"recoveryPhrase"`
+	FilePath       string `json:"filePath"`
 }
 
 type FirstPublicKey struct {
@@ -64,9 +65,10 @@ func (h *CreateWallet) Handle(ctx context.Context, rawParams jsonrpc.Params) (js
 
 	return CreateWalletResult{
 		Wallet: CreatedWallet{
-			Name:           params.Wallet,
+			Name:           w.Name(),
 			Version:        w.Version(),
 			RecoveryPhrase: recoveryPhrase,
+			FilePath:       h.walletStore.GetWalletPath(w.Name()),
 		},
 		Key: FirstPublicKey{
 			PublicKey: kp.PublicKey(),

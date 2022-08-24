@@ -3,6 +3,7 @@ package api_test
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"testing"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
@@ -83,6 +84,7 @@ func testCreatingWalletWithValidParamsSucceeds(t *testing.T) {
 	ctx := context.Background()
 	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
+	expectedPath := filepath.Join(vgrand.RandomStr(3), vgrand.RandomStr(3))
 	var createdWallet wallet.Wallet
 
 	// setup
@@ -93,6 +95,7 @@ func testCreatingWalletWithValidParamsSucceeds(t *testing.T) {
 		createdWallet = w
 		return nil
 	})
+	handler.walletStore.EXPECT().GetWalletPath(name).Times(1).Return(expectedPath)
 	// -- unexpected calls
 	handler.walletStore.EXPECT().GetWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	handler.walletStore.EXPECT().ListWallets(gomock.Any()).Times(0)
@@ -119,6 +122,7 @@ func testCreatingWalletWithValidParamsSucceeds(t *testing.T) {
 	assert.Equal(t, name, result.Wallet.Name)
 	assert.NotEmpty(t, result.Wallet.RecoveryPhrase)
 	assert.Equal(t, uint32(2), result.Wallet.Version)
+	assert.Equal(t, expectedPath, result.Wallet.FilePath)
 	assert.Equal(t, keyPair.PublicKey(), result.Key.PublicKey)
 	assert.Equal(t, keyPair.AlgorithmName(), result.Key.Algorithm.Name)
 	assert.Equal(t, keyPair.AlgorithmVersion(), result.Key.Algorithm.Version)

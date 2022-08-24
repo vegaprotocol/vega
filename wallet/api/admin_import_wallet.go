@@ -22,8 +22,9 @@ type ImportWalletResult struct {
 }
 
 type ImportedWallet struct {
-	Name    string `json:"name"`
-	Version uint32 `json:"version"`
+	Name     string `json:"name"`
+	Version  uint32 `json:"version"`
+	FilePath string `json:"filePath"`
 }
 
 type ImportWallet struct {
@@ -59,8 +60,9 @@ func (h *ImportWallet) Handle(ctx context.Context, rawParams jsonrpc.Params) (js
 
 	return ImportWalletResult{
 		Wallet: ImportedWallet{
-			Name:    params.Wallet,
-			Version: w.Version(),
+			Name:     w.Name(),
+			Version:  w.Version(),
+			FilePath: h.walletStore.GetWalletPath(w.Name()),
 		},
 		Key: FirstPublicKey{
 			PublicKey: kp.PublicKey(),

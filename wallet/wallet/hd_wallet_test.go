@@ -234,7 +234,7 @@ func testHDWalletGeneratingKeyPairOnIsolatedWalletFails(t *testing.T) {
 			keyPair, err := isolatedWallet.GenerateKeyPair([]wallet.Meta{})
 
 			// then
-			require.ErrorIs(tt, err, wallet.ErrIsolatedWalletCantGenerateKeyPairs)
+			require.ErrorIs(tt, err, wallet.ErrIsolatedWalletCantGenerateKeys)
 			require.Nil(tt, keyPair)
 		})
 	}

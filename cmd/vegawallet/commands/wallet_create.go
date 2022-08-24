@@ -124,8 +124,8 @@ func PrintCreateWalletResponse(w io.Writer, resp api.CreateWalletResult) {
 	str := p.String()
 	defer p.Print(str)
 
-	str.CheckMark().Text("Wallet ").Bold(resp.Wallet.Name).Text(" has been created.").NextLine()
-	str.CheckMark().Text("Its first key pair has been generated").NextLine()
+	str.CheckMark().Text("Wallet ").Bold(resp.Wallet.Name).Text(" has been created at: ").SuccessText(resp.Wallet.FilePath).NextLine()
+	str.CheckMark().Text("First key pair has been generated for the wallet ").Bold(resp.Wallet.Name).Text(" at: ").SuccessText(resp.Wallet.FilePath).NextLine()
 	str.CheckMark().SuccessText("Creating wallet succeeded").NextSection()
 
 	str.Text("Wallet recovery phrase:").NextLine()

@@ -4,8 +4,7 @@ import (
 	"testing"
 
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
-	"code.vegaprotocol.io/vega/paths"
-	"code.vegaprotocol.io/vega/wallet/wallet"
+	"code.vegaprotocol.io/vega/wallet/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -40,9 +39,7 @@ func TestDeleteWallet(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
-	vegaPaths := paths.New(home)
-	currentFilePath := vegaPaths.DataPathFor(paths.JoinDataPath(paths.WalletsDataHome, createWalletResp.Wallet.Name))
-	assert.NoFileExists(t, currentFilePath)
+	assert.NoFileExists(t, createWalletResp.Wallet.FilePath)
 }
 
 func TestDeleteNonExistingWallet(t *testing.T) {
@@ -57,5 +54,5 @@ func TestDeleteNonExistingWallet(t *testing.T) {
 	})
 
 	// then
-	require.ErrorIs(t, err, wallet.ErrWalletDoesNotExists)
+	require.ErrorIs(t, err, api.ErrWalletDoesNotExist)
 }

@@ -24,6 +24,7 @@ type WalletStore interface {
 	ListWallets(ctx context.Context) ([]string, error)
 	SaveWallet(ctx context.Context, w wallet.Wallet, passphrase string) error
 	DeleteWallet(ctx context.Context, name string) error
+	GetWalletPath(name string) string
 }
 
 // NetworkStore is the component used to retrieve and update the networks from the

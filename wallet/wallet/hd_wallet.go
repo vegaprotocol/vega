@@ -169,7 +169,7 @@ func (w *HDWallet) GenerateKeyPair(meta []Meta) (KeyPair, error) {
 	meta = w.addDefaultKeyName(meta)
 
 	if w.IsIsolated() {
-		return nil, ErrIsolatedWalletCantGenerateKeyPairs
+		return nil, ErrIsolatedWalletCantGenerateKeys
 	}
 	nextIndex := w.keyRing.NextIndex()
 
