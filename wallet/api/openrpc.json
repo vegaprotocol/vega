@@ -200,7 +200,7 @@
             {
               "name": "requestedPermissions",
               "value": {
-                "public_key": "read"
+                "public_keys": "read"
               }
             }
           ],
@@ -208,7 +208,7 @@
             "name": "Success",
             "value": {
               "permissions": {
-                "public_key": "read"
+                "public_keys": "read"
               }
             }
           }
@@ -230,7 +230,7 @@
             "name": "Success",
             "value": {
               "permissions": {
-                "public_key": "none"
+                "public_keys": "none"
               }
             }
           }

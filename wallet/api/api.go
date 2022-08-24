@@ -27,7 +27,7 @@ type WalletStore interface {
 }
 
 // NetworkStore is the component used to retrieve and update the networks from the
-// computer,
+// computer.
 type NetworkStore interface {
 	NetworkExists(string) (bool, error)
 	GetNetwork(string) (*network.Network, error)
