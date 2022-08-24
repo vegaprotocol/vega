@@ -123,7 +123,7 @@ func (os *Orders) GetByReference(ctx context.Context, reference string, p entiti
 
 // GetByReference returns the last update of orders with the specified user-suppled reference.
 func (os *Orders) GetByReferencePaged(ctx context.Context, reference string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
-	return os.ListOrders(ctx, nil, nil, &reference, p)
+	return os.ListOrders(ctx, nil, nil, &reference, false, p)
 }
 
 // GetAllVersionsByOrderID the last update to all versions (e.g. manual changes that lead to
@@ -201,7 +201,7 @@ func paginateOrderQuery(query string, args []interface{}, p entities.OffsetPagin
 	return query, args
 }
 
-func (os *Orders) ListOrders(ctx context.Context, party *string, market *string, reference *string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
+func (os *Orders) ListOrders(ctx context.Context, party *string, market *string, reference *string, liveOnly bool, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
 	var filters []filter
 	if party != nil {
 		filters = append(filters, filter{"party_id", entities.PartyID(*party)})
@@ -217,7 +217,12 @@ func (os *Orders) ListOrders(ctx context.Context, party *string, market *string,
 
 	where, args := buildWhereClause(filters...)
 
-	query := fmt.Sprintf(`SELECT %s from orders_current %s`, sqlOrderColumns, where)
+	table := "orders_current"
+	if liveOnly == true {
+		table = "orders_live"
+	}
+
+	query := fmt.Sprintf(`SELECT %s from %s %s`, sqlOrderColumns, table, where)
 	defer metrics.StartSQLQuery("Orders", "GetByMarketPaged")()
 
 	return os.queryOrdersWithCursorPagination(ctx, query, args, p)

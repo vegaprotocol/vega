@@ -1776,7 +1776,13 @@ func (t *tradingDataServiceV2) ListOrders(ctx context.Context, in *v2.ListOrders
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, err)
 	}
-	orders, pageInfo, err := t.orderService.ListOrders(ctx, in.PartyId, in.MarketId, in.Reference, pagination)
+
+	liveOnly := false
+	if in.LiveOnly != nil {
+		liveOnly = *in.LiveOnly
+	}
+
+	orders, pageInfo, err := t.orderService.ListOrders(ctx, in.PartyId, in.MarketId, in.Reference, liveOnly, pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
