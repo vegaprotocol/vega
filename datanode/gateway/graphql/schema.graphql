@@ -37,7 +37,7 @@ type Subscription {
     marketId: ID
     "ID of the party from which you want trades updates"
     partyId: ID
-  ): [Trade!]
+  ): [TradeUpdate!]
 
   "Subscribe to the positions updates"
   positions(
@@ -2281,6 +2281,54 @@ type Trade {
 
   "The party that sold"
   seller: Party!
+
+  "The aggressor indicates whether this trade was related to a BUY or SELL"
+  aggressor: Side!
+
+  "The price of the trade (probably initially the passive order price, other determination algorithms are possible though) (uint64)"
+  price: String!
+
+  "The number of contracts trades, will always be <= the remaining size of both orders immediately before the trade (uint64)"
+  size: String!
+
+  "RFC3339Nano time for when the trade occurred"
+  createdAt: String!
+
+  "The type of trade"
+  type: TradeType!
+
+  "The fee paid by the buyer side of the trade"
+  buyerFee: TradeFee!
+
+  "The fee paid by the seller side of the trade"
+  sellerFee: TradeFee!
+
+  "The batch in which the buyer order was submitted (applies only for auction modes)"
+  buyerAuctionBatch: Int
+
+  "The batch in which the seller order was submitted (applies only for auction modes)"
+  sellerAuctionBatch: Int
+}
+
+"A trade on Vega, the result of two orders being 'matched' in the market"
+type TradeUpdate {
+  "The hash of the trade data"
+  id: ID!
+
+  "The market the trade occurred on"
+  marketId: ID!
+
+  "The order that bought"
+  buyOrder: String!
+
+  "The order that sold"
+  sellOrder: String!
+
+  "The party that bought"
+  buyerId: ID!
+
+  "The party that sold"
+  sellerId: ID!
 
   "The aggressor indicates whether this trade was related to a BUY or SELL"
   aggressor: Side!

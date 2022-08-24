@@ -333,6 +333,10 @@ func (r *VegaResolverRoot) AccountUpdate() AccountUpdateResolver {
 	return (*accountUpdateResolver)(r)
 }
 
+func (r *VegaResolverRoot) TradeUpdate() TradeUpdateResolver {
+	return (*tradeUpdateResolver)(r)
+}
+
 type accountUpdateResolver VegaResolverRoot
 
 func (r *accountUpdateResolver) AssetID(ctx context.Context, obj *types.Account) (string, error) {
