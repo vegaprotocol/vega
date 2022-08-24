@@ -43,7 +43,7 @@ func testListingWalletsSucceeds(t *testing.T) {
 	handler.walletStore.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	handler.walletStore.EXPECT().WalletExists(gomock.Any(), gomock.Any()).Times(0)
 	handler.walletStore.EXPECT().GetWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.walletStore.EXPECT().RemoveWallet(gomock.Any(), gomock.Any()).Times(0)
+	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, nil)
@@ -66,7 +66,7 @@ func testGettingInternalErrorDuringListingFails(t *testing.T) {
 	handler.walletStore.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	handler.walletStore.EXPECT().WalletExists(gomock.Any(), gomock.Any()).Times(0)
 	handler.walletStore.EXPECT().GetWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.walletStore.EXPECT().RemoveWallet(gomock.Any(), gomock.Any()).Times(0)
+	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, nil)

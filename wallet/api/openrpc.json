@@ -494,6 +494,9 @@
                 },
                 "recoveryPhrase": {
                   "type": "string"
+                },
+                "filePath": {
+                  "type": "string"
                 }
               }
             },
@@ -553,7 +556,8 @@
               "wallet": {
                 "name": "my-wallet",
                 "version": 2,
-                "recoveryPhrase": "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render"
+                "recoveryPhrase": "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render",
+                "filePath": "some/path/to/my-wallet"
               },
               "key": {
                 "publicKey": "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
@@ -622,6 +626,9 @@
                 },
                 "version": {
                   "type": "number"
+                },
+                "filePath": {
+                  "type": "string"
                 }
               }
             },
@@ -688,7 +695,8 @@
             "value": {
               "wallet": {
                 "name": "my-wallet",
-                "version": 2
+                "version": 2,
+                "filePath": "some/path/to/my-wallet"
               },
               "key": {
                 "publicKey": "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",

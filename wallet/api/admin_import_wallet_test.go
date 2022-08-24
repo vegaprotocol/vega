@@ -89,7 +89,7 @@ func testImportingWalletWithInvalidParamsFails(t *testing.T) {
 			handler.walletStore.EXPECT().ListWallets(gomock.Any()).Times(0)
 			handler.walletStore.EXPECT().GetWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 			handler.walletStore.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-			handler.walletStore.EXPECT().RemoveWallet(gomock.Any(), gomock.Any()).Times(0)
+			handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 			// when
 			result, errorDetails := handler.handle(t, ctx, tc.params)
@@ -121,7 +121,7 @@ func testImportingWalletWithValidParamsSucceeds(t *testing.T) {
 	// -- unexpected calls
 	handler.walletStore.EXPECT().GetWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	handler.walletStore.EXPECT().ListWallets(gomock.Any()).Times(0)
-	handler.walletStore.EXPECT().RemoveWallet(gomock.Any(), gomock.Any()).Times(0)
+	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ImportWalletParams{
@@ -166,7 +166,7 @@ func testImportingWalletThatAlreadyExistsFails(t *testing.T) {
 	handler.walletStore.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	handler.walletStore.EXPECT().GetWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	handler.walletStore.EXPECT().ListWallets(gomock.Any()).Times(0)
-	handler.walletStore.EXPECT().RemoveWallet(gomock.Any(), gomock.Any()).Times(0)
+	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ImportWalletParams{
@@ -197,7 +197,7 @@ func testGettingInternalErrorDuringVerificationDoesNotImportWallet(t *testing.T)
 	handler.walletStore.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	handler.walletStore.EXPECT().GetWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	handler.walletStore.EXPECT().ListWallets(gomock.Any()).Times(0)
-	handler.walletStore.EXPECT().RemoveWallet(gomock.Any(), gomock.Any()).Times(0)
+	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ImportWalletParams{
@@ -227,7 +227,7 @@ func testGettingInternalErrorDuringSavingDoesNotImportWallet(t *testing.T) {
 	// -- unexpected calls
 	handler.walletStore.EXPECT().GetWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	handler.walletStore.EXPECT().ListWallets(gomock.Any()).Times(0)
-	handler.walletStore.EXPECT().RemoveWallet(gomock.Any(), gomock.Any()).Times(0)
+	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ImportWalletParams{
@@ -247,7 +247,6 @@ type importWalletHandler struct {
 	*api.ImportWallet
 	ctrl        *gomock.Controller
 	walletStore *mocks.MockWalletStore
-	pipeline    *mocks.MockPipeline
 }
 
 func (h *importWalletHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.ImportWalletResult, *jsonrpc.ErrorDetails) {

@@ -56,7 +56,7 @@ func testRemovingWalletWithInvalidParamsFails(t *testing.T) {
 			handler.walletStore.EXPECT().ListWallets(gomock.Any()).Times(0)
 			handler.walletStore.EXPECT().GetWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 			handler.walletStore.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-			handler.walletStore.EXPECT().RemoveWallet(gomock.Any(), gomock.Any()).Times(0)
+			handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 			// when
 			result, errorDetails := handler.handle(t, ctx, tc.params)
@@ -77,7 +77,7 @@ func testRemovingWalletWithValidParamsSucceeds(t *testing.T) {
 	handler := newRemoveWalletHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().RemoveWallet(ctx, name).Times(1).Return(nil)
+	handler.walletStore.EXPECT().DeleteWallet(ctx, name).Times(1).Return(nil)
 	// -- unexpected calls
 	handler.walletStore.EXPECT().GetWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	handler.walletStore.EXPECT().ListWallets(gomock.Any()).Times(0)
@@ -105,7 +105,7 @@ func testRemovingWalletThatDoesNotExistsFails(t *testing.T) {
 	handler.walletStore.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	handler.walletStore.EXPECT().GetWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	handler.walletStore.EXPECT().ListWallets(gomock.Any()).Times(0)
-	handler.walletStore.EXPECT().RemoveWallet(gomock.Any(), gomock.Any()).Times(0)
+	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.RemoveWalletParams{
@@ -132,7 +132,7 @@ func testGettingInternalErrorDuringVerificationDoesNotRemoveWallet(t *testing.T)
 	handler.walletStore.EXPECT().GetWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	handler.walletStore.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	handler.walletStore.EXPECT().ListWallets(gomock.Any()).Times(0)
-	handler.walletStore.EXPECT().RemoveWallet(gomock.Any(), gomock.Any()).Times(0)
+	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.RemoveWalletParams{
