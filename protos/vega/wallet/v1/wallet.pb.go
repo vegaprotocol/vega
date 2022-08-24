@@ -29,6 +29,7 @@ type SubmitTransactionRequest struct {
 	PubKey    string `protobuf:"bytes,1,opt,name=pub_key,json=pubKey,proto3" json:"pub_key,omitempty"`
 	Propagate bool   `protobuf:"varint,2,opt,name=propagate,proto3" json:"propagate,omitempty"`
 	// Types that are assignable to Command:
+	//
 	//	*SubmitTransactionRequest_OrderSubmission
 	//	*SubmitTransactionRequest_OrderCancellation
 	//	*SubmitTransactionRequest_OrderAmendment
