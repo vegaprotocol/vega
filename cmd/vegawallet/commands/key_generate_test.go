@@ -6,6 +6,7 @@ import (
 	cmd "code.vegaprotocol.io/vega/cmd/vegawallet/commands"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
+	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -29,7 +30,7 @@ func testGenerateKeyFlagsValidFlagsSucceeds(t *testing.T) {
 		RawMetadata:    []string{"name:my-wallet", "role:validation"},
 	}
 
-	expectedReq := &wallet.GenerateKeyRequest{
+	expectedReq := api.GenerateKeyParams{
 		Wallet: walletName,
 		Metadata: []wallet.Meta{
 			{Key: "name", Value: "my-wallet"},
@@ -57,7 +58,7 @@ func testGenerateKeyFlagsMissingWalletFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("wallet"))
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func testGenerateKeyFlagsInvalidMetadataFails(t *testing.T) {
@@ -70,7 +71,7 @@ func testGenerateKeyFlagsInvalidMetadataFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.InvalidFlagFormatError("meta"))
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func newGenerateKeyFlags(t *testing.T) *cmd.GenerateKeyFlags {

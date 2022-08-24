@@ -11,7 +11,13 @@
       "description": "This method initiates a connection between a wallet and a third-party application.\n\nThe client has to review the request, and, if they accept it, select the wallet they want to use for this connection.\n\nA connection token is generated and returned to the third-party application. This token is meant to be used in protected methods.\n\n**Supported connections:**\n- Multiple wallets connected for the same hostname. Each connection will have a different token.\n- A single wallet connected to multiple hostnames. Each connection will have a different token.\n- Combination of the above setups.\n\nHowever, it's not possible to have multiple connections on the same wallet for the same hostname. The previous connection will be terminated and a new token will be generated.\n\nThis method should be the entry point of every third-party application. Once connected, see the method `get_permissions`.",
       "tags": [
         {
+          "name": "session"
+        },
+        {
           "name": "connection"
+        },
+        {
+          "name": "wallet"
         }
       ],
       "paramStructure": "by-name",
@@ -67,7 +73,13 @@
       "description": "This method ends the connection between the third-party application and the wallet. The token is, then, no longer valid.\n\nCalling this method with an invalid token doesn't fail.",
       "tags": [
         {
+          "name": "session"
+        },
+        {
           "name": "connection"
+        },
+        {
+          "name": "wallet"
         }
       ],
       "paramStructure": "by-name",
@@ -106,6 +118,9 @@
       "summary": "Returns the permissions set on the wallet for the third-party application.",
       "description": "This method returns the permissions set on the wallet for the third-party application.\n\nThis method should be called, by the third-party application, right after it successfully connected to a wallet, to ensure it has sufficient permissions to call the method it relies on. If the third-party application doesn't have enough permissions, see the method `request_permissions`.",
       "tags": [
+        {
+          "name": "session"
+        },
         {
           "name": "permissions"
         }
@@ -150,6 +165,9 @@
       "summary": "Requests permissions update for the third-party application.",
       "description": "This method allows a third-party application to request new permissions to access the methods it requires.\n\nAll permissions the third-party relies on have to be specified. If a permission is omitted, it will be considered as no longer required and, as a result, be automatically revoked.\n\nThe client has to review the permissions.",
       "tags": [
+        {
+          "name": "session"
+        },
         {
           "name": "permissions"
         }
@@ -241,6 +259,14 @@
       "name": "session.list_keys",
       "summary": "Returns the keys the client has allowed the third-party application to have access to.",
       "description": "This method returns the keys the client has allowed the third-party application to have access to.\n\nIt requires a `read` access on `public_keys`.",
+      "tags": [
+        {
+          "name": "session"
+        },
+        {
+          "name": "key"
+        }
+      ],
       "paramStructure": "by-name",
       "params": [
         {
@@ -290,6 +316,9 @@
       "summary": "Send a transaction to the network.",
       "description": "This method sends a transaction to the network.\n\nThe client has to review the transaction.",
       "tags": [
+        {
+          "name": "session"
+        },
         {
           "name": "transaction"
         }
@@ -417,6 +446,11 @@
       "name": "session.get_chain_id",
       "summary": "Returns the chain ID of the network in use.",
       "description": "This method returns the chain ID of the network in use.\n\nIt should be called by every third-party application to know from which network it should fetch data.",
+      "tags": [
+        {
+          "name": "session"
+        }
+      ],
       "paramStructure": "by-name",
       "params": [],
       "result": {
@@ -460,6 +494,14 @@
       "name": "admin.create_wallet",
       "summary": "Creates a wallet with its first key-pair.",
       "description": "This method creates a HD wallet (version 2) and generates its first key-pair the cryptographic algorithm ed25519.\n\nThe passphrase will be used to encrypt the wallet and its keys.\n\nIf successful, the wallet is ready to use for sending transaction.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "wallet"
+        }
+      ],
       "paramStructure": "by-name",
       "params": [
         {
@@ -581,6 +623,14 @@
       "name": "admin.import_wallet",
       "summary": "Import a wallet with its first key-pair with a recovery phrase and a version.",
       "description": "This method imports a wallet using the specified recovery phrase and wallet version, and generates its first key-pair.\n\nThe passphrase will be used to encrypt the wallet and its keys.\n\nIf successful, the wallet is ready to use for sending transaction.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "wallet"
+        }
+      ],
       "paramStructure": "by-name",
       "params": [
         {
@@ -720,6 +770,14 @@
       "name": "admin.describe_wallet",
       "summary": "Returns the wallet base information.",
       "description": "This method returns the wallet base information such as its name, ID, type and version. It doesn't return the keys nor the permissions.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "wallet"
+        }
+      ],
       "paramStructure": "by-name",
       "params": [
         {
@@ -786,6 +844,14 @@
       "name": "admin.list_wallets",
       "summary": "Returns the list of the wallets present on the computer.",
       "description": "This method returns the list of the wallets present on the computer. It is alphabetically sorted.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "wallet"
+        }
+      ],
       "params": [],
       "result": {
         "name": "Success",
@@ -816,6 +882,14 @@
       "name": "admin.remove_wallet",
       "summary": "Removes a wallet from the computer.",
       "description": "This method removes a wallet from the computer.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "wallet"
+        }
+      ],
       "paramStructure": "by-name",
       "params": [
         {
@@ -847,6 +921,104 @@
           }
         }
       ]
+    },
+    {
+      "name": "admin.generate_key",
+      "summary": "Generates a key on the specified wallet.",
+      "description": "This method generates a key on the specified wallet.\n\nMetadata can be attached to this key.\n\nA special metadata `name` can be provided to name the key. If no `name` is provided, a default name is generated.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "key"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "wallet",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "passphrase",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "metadata",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/metadata"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "publicKey": {
+              "$ref": "#/components/schemas/public_key"
+            },
+            "algorithm": {
+              "$ref": "#/components/schemas/algorithm"
+            },
+            "metadata": {
+              "$ref": "#/components/schemas/metadata"
+            }
+          }
+        }
+      },
+      "examples": [
+        {
+          "name": "Getting wallet base information",
+          "params": [
+            {
+              "name": "wallet",
+              "value": "my-wallet"
+            },
+            {
+              "name": "passphrase",
+              "value": "this-is-not-a-good-passphrase"
+            },
+            {
+              "name": "metadata",
+              "value": [
+                {
+                  "name": "portfolio",
+                  "value": "btc"
+                }
+              ]
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": {
+              "publicKey": "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
+              "algorithm": {
+                "name": "vega/ed25519",
+                "version": 1
+              },
+              "meta": [
+                {
+                  "name": "portfolio",
+                  "value": "btc"
+                },
+                {
+                  "name": "name",
+                  "value": "Key 1"
+                }
+              ]
+            }
+          }
+        }
+      ]
     }
   ],
   "components": {
@@ -858,6 +1030,30 @@
       "public_key": {
         "type": "string",
         "description": "The Vega public key to use."
+      },
+      "algorithm": {
+        "type": "object",
+        "description": "The algorithm used to generate the key.",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        }
+      },
+      "metadata": {
+        "type": "object",
+        "description": "The key metadata.",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        }
       },
       "encoded_transaction": {
         "type": "string",

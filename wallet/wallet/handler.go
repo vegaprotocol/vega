@@ -23,45 +23,6 @@ type Store interface {
 	ListWallets(ctx context.Context) ([]string, error)
 }
 
-type GenerateKeyRequest struct {
-	Wallet     string `json:"wallet"`
-	Metadata   []Meta `json:"metadata"`
-	Passphrase string `json:"passphrase"`
-}
-
-type GenerateKeyResponse struct {
-	PublicKey string    `json:"publicKey"`
-	Algorithm Algorithm `json:"algorithm"`
-	Meta      []Meta    `json:"meta"`
-}
-
-func GenerateKey(store Store, req *GenerateKeyRequest) (*GenerateKeyResponse, error) {
-	resp := &GenerateKeyResponse{}
-
-	w, err := getWallet(store, req.Wallet, req.Passphrase)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Metadata = addDefaultKeyName(w, req.Metadata)
-
-	kp, err := w.GenerateKeyPair(req.Metadata)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := store.SaveWallet(context.Background(), w, req.Passphrase); err != nil {
-		return nil, fmt.Errorf("couldn't save wallet: %w", err)
-	}
-
-	resp.PublicKey = kp.PublicKey()
-	resp.Algorithm.Name = kp.AlgorithmName()
-	resp.Algorithm.Version = kp.AlgorithmVersion()
-	resp.Meta = kp.Meta()
-
-	return resp, nil
-}
-
 type AnnotateKeyRequest struct {
 	Wallet     string `json:"wallet"`
 	PubKey     string `json:"pubKey"`
