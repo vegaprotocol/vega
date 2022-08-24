@@ -4121,7 +4121,7 @@ func (x *ObserveVotesResponse) GetVote() *vega.Vote {
 	return nil
 }
 
-// -- ERC20 Multi Sig --
+// Request for the signature bundle to add a particular validator to the signer list of the multisig contract
 type GetERC20MultiSigSignerAddedBundlesRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4131,7 +4131,7 @@ type GetERC20MultiSigSignerAddedBundlesRequest struct {
 	NodeId string `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
 	// The ethereum address of the validator which will submit the bundle
 	Submitter string `protobuf:"bytes,2,opt,name=submitter,proto3" json:"submitter,omitempty"`
-	// The epoch which generated the bundle i.e the epoch in which the node became a tendermint validator
+	// The epoch which generated the bundle i.e the epoch in which the node was promoted to tendermint validator
 	EpochSeq string `protobuf:"bytes,3,opt,name=epoch_seq,json=epochSeq,proto3" json:"epoch_seq,omitempty"`
 	// Pagination controls
 	Pagination *Pagination `protobuf:"bytes,4,opt,name=pagination,proto3" json:"pagination,omitempty"`
@@ -4197,6 +4197,7 @@ func (x *GetERC20MultiSigSignerAddedBundlesRequest) GetPagination() *Pagination 
 	return nil
 }
 
+// Response for the signature bundle to add a particular validator to the signer list of the multisig contract
 type GetERC20MultiSigSignerAddedBundlesResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4503,6 +4504,7 @@ func (x *ERC20MultiSigSignerAddedBundle) GetEpochSeq() string {
 	return ""
 }
 
+// Request for the signature bundle to remove a particular validator from the signer list of the multisig contract
 type GetERC20MultiSigSignerRemovedBundlesRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4578,6 +4580,7 @@ func (x *GetERC20MultiSigSignerRemovedBundlesRequest) GetPagination() *Paginatio
 	return nil
 }
 
+// Response for the signature bundle to remove a particular validator from the signer list of the multisig contract
 type GetERC20MultiSigSignerRemovedBundlesResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4884,7 +4887,7 @@ func (x *ERC20MultiSigSignerRemovedBundle) GetEpochSeq() string {
 	return ""
 }
 
-// A request to get an asset bundle details
+// Request for the signature bundle to allowlist an ERC20 token in the collateral bridge
 type GetERC20ListAssetBundleRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4933,7 +4936,7 @@ func (x *GetERC20ListAssetBundleRequest) GetAssetId() string {
 	return ""
 }
 
-// The response with all information required to bundle the call to propose an erc20 asset
+// Response for the signature bundle to allowlist an ERC20 token in the collateral bridge
 type GetERC20ListAssetBundleResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -5010,7 +5013,7 @@ func (x *GetERC20ListAssetBundleResponse) GetSignatures() string {
 	return ""
 }
 
-// A request to get an asset bundle details
+// Request for the signature bundle to update the token limits (maxLifetimeDeposit and withdrawThreshold) for a given ERC20 token (already allowlisted) in the collateral bridge
 type GetERC20SetAssetLimitsBundleRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -5059,7 +5062,7 @@ func (x *GetERC20SetAssetLimitsBundleRequest) GetProposalId() string {
 	return ""
 }
 
-// The response with all information required to bundle the call to propose an erc20 asset
+// Response for the signature bundle to update the token limits (maxLifetimeDeposit and withdrawThreshold) for a given ERC20 token (already allowlisted) in the collateral bridge
 type GetERC20SetAssetLimitsBundleResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

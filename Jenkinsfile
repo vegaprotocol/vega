@@ -32,6 +32,8 @@ pipeline {
                 description: 'Git branch, tag or hash of the vegaprotocol/devops-infra repository')
         string( name: 'DEVOPSSCRIPTS_BRANCH', defaultValue: 'main',
                 description: 'Git branch, tag or hash of the vegaprotocol/devopsscripts repository')
+        string( name: 'VEGA_MARKET_SIM_BRANCH', defaultValue: '',
+                description: 'Git branch, tag or hash of the vegaprotocol/vega-market-sim repository')
         string( name: 'JENKINS_SHARED_LIB_BRANCH', defaultValue: 'main',
                 description: 'Git branch, tag or hash of the vegaprotocol/jenkins-shared-library repository')
     }
@@ -353,6 +355,25 @@ pipeline {
                         dir('vega/core/integration') {
                             sh 'godog build -o integration.test && ./integration.test --format=junit:vega-integration-report.xml'
                             junit checksName: 'Integration Tests', testResults: 'vega-integration-report.xml'
+                        }
+                    }
+                }
+                stage('Vega Market Sim') {
+                    when {
+                        anyOf {
+                            branch 'develop'
+                            expression {
+                                params.VEGA_MARKET_SIM_BRANCH
+                            }
+                        }
+                    }
+                    steps {
+                        script {
+                            vegaMarketSim ignoreFailure: true,
+                                timeout: 45,
+                                vegaVersion: commitHash,
+                                vegaMarketSim: params.VEGA_MARKET_SIM_BRANCH,
+                                jenkinsSharedLib: params.JENKINS_SHARED_LIB_BRANCH
                         }
                     }
                 }
