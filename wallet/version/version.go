@@ -8,7 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/wallet/network"
 )
 
-type RequestVersionFn func(url string) (string, error)
+type RequestVersionFn func(hosts []string) (string, error)
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/store_mock.go -package mocks code.vegaprotocol.io/vega/wallet/version NetworkStore
 type NetworkStore interface {
@@ -47,7 +47,7 @@ func GetVersionInfo(netStore NetworkStore, requestVersionFn RequestVersionFn) (*
 				continue
 			}
 
-			networkVersion, err := requestVersionFn(netConfig.API.GRPC.Hosts[0])
+			networkVersion, err := requestVersionFn(netConfig.API.GRPC.Hosts)
 			if err != nil {
 				// We are in a best-effort, so we don't fail.
 				continue
