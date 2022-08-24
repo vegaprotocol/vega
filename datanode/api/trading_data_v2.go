@@ -131,6 +131,10 @@ func (t *tradingDataServiceV2) ObserveAccounts(req *v2.ObserveAccountsRequest,
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
+	// First get the 'initial image' of accounts matching the request and send those
+	if err := t.sendAccountsInitialImage(ctx, req, srv); err != nil {
+		return err
+	}
 	accountsChan, ref := t.accountService.ObserveAccountBalances(
 		ctx, t.config.StreamRetries, req.MarketId, req.PartyId, req.Asset, req.Type)
 
@@ -147,6 +151,44 @@ func (t *tradingDataServiceV2) ObserveAccounts(req *v2.ObserveAccountsRequest,
 			Accounts: protoAccounts,
 		})
 	})
+}
+
+func (t *tradingDataServiceV2) sendAccountsInitialImage(ctx context.Context, req *v2.ObserveAccountsRequest,
+	srv v2.TradingDataService_ObserveAccountsServer,
+) error {
+	filter := entities.AccountFilter{}
+	if req.Asset != "" {
+		filter.AssetID = entities.AssetID(req.Asset)
+	}
+	if req.PartyId != "" {
+		filter.PartyIDs = append(filter.PartyIDs, entities.PartyID(req.PartyId))
+	}
+	if req.MarketId != "" {
+		filter.MarketIDs = append(filter.MarketIDs, entities.MarketID(req.MarketId))
+	}
+	if req.Type != vega.AccountType_ACCOUNT_TYPE_UNSPECIFIED {
+		filter.AccountTypes = append(filter.AccountTypes, req.Type)
+	}
+
+	accounts, pageInfo, err := t.accountService.QueryBalances(ctx, filter, entities.CursorPagination{})
+	if err != nil {
+		return errors.Wrap(err, "fetching account balance initial image")
+	}
+
+	if pageInfo.HasNextPage {
+		return fmt.Errorf("initial image spans multiple pages")
+	}
+
+	protoAccounts := make([]*vega.Account, len(accounts))
+	for i := 0; i < len(accounts); i++ {
+		protoAccounts[i] = accounts[i].ToProto()
+	}
+
+	err = srv.Send(&v2.ObserveAccountsResponse{Accounts: protoAccounts})
+	if err != nil {
+		return errors.Wrap(err, "sending account balance initial image")
+	}
+	return nil
 }
 
 func (t *tradingDataServiceV2) Info(ctx context.Context, _ *v2.InfoRequest) (*v2.InfoResponse, error) {
@@ -1100,6 +1142,8 @@ func (t *tradingDataServiceV2) ObservePositions(req *v2.ObservePositionsRequest,
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
+	t.sendPositionsInitialImage(ctx, req, srv)
+
 	var partyID, marketID string
 	if req.PartyId != nil {
 		partyID = *req.PartyId
@@ -1115,10 +1159,62 @@ func (t *tradingDataServiceV2) ObservePositions(req *v2.ObservePositionsRequest,
 		t.log.Debug("Positions subscriber - new rpc stream", logging.Uint64("ref", ref))
 	}
 
-	return observe(ctx, t.log, "Position", positionsChan, ref, func(position entities.Position) error {
+	return observeBatch(ctx, t.log, "Position", positionsChan, ref, func(positions []entities.Position) error {
+		protos := make([]*vega.Position, len(positions))
+		for i := 0; i < len(positions); i++ {
+			protos[i] = positions[i].ToProto()
+		}
+
 		return srv.Send(&v2.ObservePositionsResponse{
-			Position: position.ToProto(),
+			Positions: protos,
 		})
+	})
+}
+
+func (t *tradingDataServiceV2) sendPositionsInitialImage(ctx context.Context, req *v2.ObservePositionsRequest, srv v2.TradingDataService_ObservePositionsServer) error {
+	var positions []entities.Position
+	var err error
+
+	// By market and party
+	if req.PartyId != nil && req.MarketId != nil {
+		position, err := t.positionService.GetByMarketAndParty(ctx, *req.MarketId, *req.PartyId)
+		if err != nil {
+			return errors.Wrap(err, "getting initial positions by market+party")
+		}
+		positions = append(positions, position)
+	}
+
+	// By market
+	if req.PartyId == nil && req.MarketId != nil {
+		positions, err = t.positionService.GetByMarket(ctx, *req.MarketId)
+		if err != nil {
+			return errors.Wrap(err, "getting initial positions by market")
+		}
+	}
+
+	// By party
+	if req.PartyId != nil && req.MarketId == nil {
+		positions, err = t.positionService.GetByParty(ctx, entities.PartyID(*req.PartyId))
+		if err != nil {
+			return errors.Wrap(err, "getting initial positions by party")
+		}
+	}
+
+	// All the positions
+	if req.PartyId == nil && req.MarketId == nil {
+		positions, err = t.positionService.GetAll(ctx)
+		if err != nil {
+			return errors.Wrap(err, "getting initial positions by party")
+		}
+	}
+
+	protos := make([]*vega.Position, len(positions))
+	for i := 0; i < len(positions); i++ {
+		protos[i] = positions[i].ToProto()
+	}
+
+	return srv.Send(&v2.ObservePositionsResponse{
+		Positions: protos,
 	})
 }
 
@@ -1839,6 +1935,9 @@ func (t *tradingDataServiceV2) ObserveOrders(req *v2.ObserveOrdersRequest, srv v
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
+	if err := t.sendOrdersInitialImage(ctx, req, srv); err != nil {
+		return err
+	}
 	ordersChan, ref := t.orderService.ObserveOrders(ctx, t.config.StreamRetries, req.MarketId, req.PartyId)
 
 	if t.log.GetLevel() == logging.DebugLevel {
@@ -1852,6 +1951,29 @@ func (t *tradingDataServiceV2) ObserveOrders(req *v2.ObserveOrdersRequest, srv v
 		}
 		return srv.Send(&v2.ObserveOrdersResponse{Orders: out})
 	})
+}
+
+func (t *tradingDataServiceV2) sendOrdersInitialImage(ctx context.Context, req *v2.ObserveOrdersRequest, srv v2.TradingDataService_ObserveOrdersServer) error {
+	orders, pageInfo, err := t.orderService.ListOrders(ctx, req.PartyId, req.MarketId, nil, true, entities.CursorPagination{})
+	if err != nil {
+		return errors.Wrap(err, "fetching orders initial image")
+	}
+
+	if pageInfo.HasNextPage {
+		return fmt.Errorf("orders initial image spans multiple pages")
+	}
+
+	protoOrders := make([]*vega.Order, 0, len(orders))
+	for _, v := range orders {
+		protoOrders = append(protoOrders, v.ToProto())
+	}
+
+	err = srv.Send(&v2.ObserveOrdersResponse{Orders: protoOrders})
+	if err != nil {
+		return errors.Wrap(err, "sending account balance initial image")
+	}
+
+	return nil
 }
 
 func (t *tradingDataServiceV2) ListDelegations(ctx context.Context, in *v2.ListDelegationsRequest) (*v2.ListDelegationsResponse, error) {
