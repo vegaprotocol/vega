@@ -114,7 +114,7 @@ service TradingDataService {
 
     // Candle intervals list
     //
-    // Gets all available intervals for a given market along with the corresponding candle id
+    // Get all available intervals for a given market along with the corresponding candle id
     rpc ListCandleIntervals(ListCandleIntervalsRequest) returns (ListCandleIntervalsResponse);
 
     // Votes list
@@ -126,22 +126,22 @@ service TradingDataService {
 
     // ERC20 add signer bundle
     //
-    // Gets the signature bundles that add a particular validator to the multisig contract
+    // Get the signature bundle to add a particular validator to the signer list of the multisig contract
     rpc GetERC20MultiSigSignerAddedBundles(GetERC20MultiSigSignerAddedBundlesRequest) returns (GetERC20MultiSigSignerAddedBundlesResponse);
 
     // ERC20 remove signer bundle
     //
-    // Gets the signature bundles that remove a particular validator to the multisig contract
+    // Get the signatures bundle to remove a particular validator from signer list of the multisig contract
     rpc GetERC20MultiSigSignerRemovedBundles(GetERC20MultiSigSignerRemovedBundlesRequest) returns (GetERC20MultiSigSignerRemovedBundlesResponse);
 
     // ERC20 list asset bundle
     //
-    // Gets the signature bundles that remove a particular validator to the multisig contract
+    // Get the signatures bundle to allowlist an ERC20 token in the collateral bridge
     rpc GetERC20ListAssetBundle(GetERC20ListAssetBundleRequest) returns (GetERC20ListAssetBundleResponse);
 
     // ERC20 set asset limit bundle
     //
-    // Gets the signature bundles that remove a particular validator to the multisig contract
+    // Get the signature bundle to update the token limits (maxLifetimeDeposit and withdrawThreshold) for a given ERC20 token (already allowlisted) in the collateral bridge
     rpc GetERC20SetAssetLimitsBundle(GetERC20SetAssetLimitsBundleRequest) returns (GetERC20SetAssetLimitsBundleResponse);
 
     // ERC20 withdrawal bundle
@@ -873,7 +873,7 @@ message ObserveVotesResponse {
     vega.Vote vote = 1;
 }
 
-// -- ERC20 Multi Sig --
+// Request for the signature bundle to add a particular validator to the signer list of the multisig contract
 message GetERC20MultiSigSignerAddedBundlesRequest {
 
     // The node id of the validator of which a signature bundle is required
@@ -882,13 +882,14 @@ message GetERC20MultiSigSignerAddedBundlesRequest {
     // The ethereum address of the validator which will submit the bundle
     string submitter = 2;
 
-    // The epoch which generated the bundle i.e the epoch in which the node became a tendermint validator
+    // The epoch which generated the bundle i.e the epoch in which the node was promoted to tendermint validator
     string epoch_seq = 3;
 
     // Pagination controls
     Pagination pagination = 4;
 }
 
+// Response for the signature bundle to add a particular validator to the signer list of the multisig contract
 message GetERC20MultiSigSignerAddedBundlesResponse {
 
     // list of bundles for that validator, it may have been added multiple times if removed in between
@@ -932,6 +933,7 @@ message ERC20MultiSigSignerAddedBundle {
 
 }
 
+// Request for the signature bundle to remove a particular validator from the signer list of the multisig contract
 message GetERC20MultiSigSignerRemovedBundlesRequest {
     // The node id of the validator of which a signature bundle is required
     string node_id = 1;
@@ -946,6 +948,7 @@ message GetERC20MultiSigSignerRemovedBundlesRequest {
     Pagination pagination = 4;
 }
 
+// Response for the signature bundle to remove a particular validator from the signer list of the multisig contract
 message GetERC20MultiSigSignerRemovedBundlesResponse {
     // list of signer bundles for that validator
     ERC20MultiSigSignerRemovedConnection bundles = 1;
@@ -988,13 +991,13 @@ message ERC20MultiSigSignerRemovedBundle {
 
 }
 
-// A request to get an asset bundle details
+// Request for the signature bundle to allowlist an ERC20 token in the collateral bridge
 message GetERC20ListAssetBundleRequest {
   // The ID of the asset requested
   string asset_id = 1;
 }
 
-// The response with all information required to bundle the call to propose an erc20 asset
+// Response for the signature bundle to allowlist an ERC20 token in the collateral bridge
 message GetERC20ListAssetBundleResponse {
   // The address of the asset on ethereum
   string asset_source = 1;
@@ -1007,13 +1010,13 @@ message GetERC20ListAssetBundleResponse {
   string signatures = 4;
 }
 
-// A request to get an asset bundle details
+// Request for the signature bundle to update the token limits (maxLifetimeDeposit and withdrawThreshold) for a given ERC20 token (already allowlisted) in the collateral bridge
 message GetERC20SetAssetLimitsBundleRequest {
   // The ID of the proposal to update an asset
   string proposal_id = 1;
 }
 
-// The response with all information required to bundle the call to propose an erc20 asset
+// Response for the signature bundle to update the token limits (maxLifetimeDeposit and withdrawThreshold) for a given ERC20 token (already allowlisted) in the collateral bridge
 message GetERC20SetAssetLimitsBundleResponse {
   // The address of the asset on ethereum
   string asset_source = 1;
