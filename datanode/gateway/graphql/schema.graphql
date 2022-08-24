@@ -69,7 +69,7 @@ type Subscription {
     assetId: ID
     "Type of the account"
     type: AccountType
-  ): Account!
+  ): AccountUpdate!
 
   "Subscribe to the mark price changes"
   marketData(
@@ -541,6 +541,42 @@ type Query {
     "ID of the withdrawal"
     withdrawalId: ID!
   ): Erc20WithdrawalApproval
+
+  "get the signature bundle to add a particular validator to the signer list of the multisig contract"
+  erc20MultiSigSignerAddedBundles(
+    "The node ID of the validator of which a signature bundle is required"
+    nodeId: ID!
+    "The ethereum address of the submitter"
+    submitter: String
+    "The epoch that generated the bundle i.e the epoch in which the node was promoted to tendermint validator"
+    epochSeq: String
+    "Pagination"
+    pagination: Pagination
+  ): ERC20MultiSigSignerAddedConnection!
+
+  "get the signatures bundle to remove a particular validator from signer list of the multisig contract"
+  erc20MultiSigSignerRemovedBundles(
+    "The node ID of the validator of which a signature bundle is required"
+    nodeId: ID!
+    "The ethereum address of the validator that will submit the bundle"
+    submitter: String
+    "The epoch that generated the bundle i.e the epoch in which the node was demoted from a tendermint validator"
+    epochSeq: String
+    "Pagination"
+    pagination: Pagination
+  ): ERC20MultiSigSignerRemovedConnection!
+
+  "get the signatures bundle to allowlist an ERC20 token in the collateral bridge"
+  erc20ListAssetBundle(
+    "ID of the asset"
+    assetId: ID!
+  ): Erc20ListAssetBundle!
+
+  "get the signature bundle to update the token limits (maxLifetimeDeposit and withdrawThreshold) for a given ERC20 token (already allowlisted) in the collateral bridge"
+  erc20SetAssetLimitsBundle(
+    "ID of the proposal to update an asset"
+    proposalId: ID!
+  ): ERC20SetAssetLimitsBundle!
 
   "find a deposit using its ID"
   deposit("ID of the Deposit" id: ID!): Deposit
@@ -2310,6 +2346,18 @@ type Account {
   market: Market
 }
 
+"An account record used for subscriptions"
+type AccountUpdate {
+  "Balance as string - current account balance (approx. as balances can be updated several times per second)"
+  balance: String!
+  "Asset id, the 'currency'"
+  assetId: ID!
+  "Account type (General, Margin, etc)"
+  type: AccountType!
+  "Market id (only relevant to margin accounts)"
+  marketId: ID
+}
+
 "All the data related to the approval of a withdrawal from the network"
 type Erc20WithdrawalApproval {
   "The source asset in the ethereum network"
@@ -2329,6 +2377,94 @@ type Erc20WithdrawalApproval {
   targetAddress: String!
   "Timestamp at which the withdrawal was created"
   creation: String!
+}
+
+"Response for the signature bundle to add a particular validator to the signer list of the multisig contract"
+type ERC20MultiSigSignerAddedConnection {
+  edges: [ERC20MultiSigSignerAddedBundleEdge]
+  pageInfo: PageInfo
+}
+
+type ERC20MultiSigSignerAddedBundleEdge {
+  node: ERC20MultiSigSignerAddedBundle!
+  cursor: String!
+}
+
+type ERC20MultiSigSignerAddedBundle {
+  "The ethereum address of the signer to be added"
+  newSigner: String!
+  "The ethereum address of the submitter"
+  submitter: String!
+  "The nonce used in the signing operation"
+  nonce: String!
+  "Unix-nano timestamp for when the validator was added"
+  timestamp: String!
+  "The bundle of signatures from current validators to sign in the new signer"
+  signatures: String!
+  "The epoch in which the validator was added"
+  epochSeq: String!
+}
+
+"Response for the signature bundle to remove a particular validator from the signer list of the multisig contract"
+type ERC20MultiSigSignerRemovedConnection {
+  "The list of signer bundles for that validator"
+  edges: [ERC20MultiSigSignerRemovedBundleEdge]
+  "The pagination information"
+  pageInfo: PageInfo
+}
+
+type ERC20MultiSigSignerRemovedBundleEdge {
+  node: ERC20MultiSigSignerRemovedBundle!
+  cursor: String!
+}
+
+type ERC20MultiSigSignerRemovedBundle {
+  "The ethereum address of the signer to be removed"
+  oldSigner: String!
+  "The ethereum address of the submitter"
+  submitter: String!
+  "The nonce used in the signing operation"
+  nonce: String!
+  "Unix-nano timestamp for when the validator was added"
+  timestamp: String!
+  "The bundle of signatures from current validators to sign in the new signer"
+  signatures: String!
+  "The epoch in which the validator was removed"
+  epochSeq: String!
+}
+
+"Response for the signature bundle to allowlist an ERC20 token in the collateral bridge"
+type Erc20ListAssetBundle {
+  "The source asset in the ethereum network"
+  assetSource: String!
+  "The ID of the vega asset"
+  vegaAssetId: String!
+  "The nonce to be used in the request"
+  nonce: String!
+  """
+  Signature aggregate from the nodes, in the following format:
+  0x + sig1 + sig2 + ... + sigN
+  """
+  signatures: String!
+}
+
+"Response for the signature bundle to update the token limits (maxLifetimeDeposit and withdrawThreshold) for a given ERC20 token (already allowlisted) in the collateral bridge"
+type ERC20SetAssetLimitsBundle {
+  "The address of the asset on ethereum"
+  assetSource: String!
+  "The ID of the vega asset"
+  vegaAssetId: String!
+  "The nonce, which is actually the internal reference for the proposal"
+  nonce: String!
+  "The lifetime limit deposit for this asset"
+  lifetimeLimit: String!
+  "The threshold withdraw for this asset"
+  threshold: String!
+  """
+  The signatures bundle as hex encoded data, forward by 0x
+  e.g: 0x + sig1 + sig2 + ... + sixN
+  """
+  signatures: String!
 }
 
 "The details of a withdrawal processed by Vega"

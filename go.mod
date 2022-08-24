@@ -116,7 +116,7 @@ require (
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/gofrs/uuid v4.2.0+incompatible // indirect
-	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/gogo/protobuf v1.3.2
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/orderedcode v0.0.1 // indirect
