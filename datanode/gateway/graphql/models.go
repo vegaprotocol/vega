@@ -144,6 +144,7 @@ type ERC20MultiSigSignerAddedBundleEdge struct {
 	Cursor string                          `json:"cursor"`
 }
 
+// Response for the signature bundle to add a particular validator to the signer list of the multisig contract
 type ERC20MultiSigSignerAddedConnection struct {
 	Edges    []*ERC20MultiSigSignerAddedBundleEdge `json:"edges"`
 	PageInfo *v2.PageInfo                          `json:"pageInfo"`
@@ -169,6 +170,7 @@ type ERC20MultiSigSignerRemovedBundleEdge struct {
 	Cursor string                            `json:"cursor"`
 }
 
+// Response for the signature bundle to remove a particular validator from the signer list of the multisig contract
 type ERC20MultiSigSignerRemovedConnection struct {
 	// The list of signer bundles for that validator
 	Edges []*ERC20MultiSigSignerRemovedBundleEdge `json:"edges"`
@@ -176,6 +178,7 @@ type ERC20MultiSigSignerRemovedConnection struct {
 	PageInfo *v2.PageInfo `json:"pageInfo"`
 }
 
+// Response for the signature bundle to update the token limits (maxLifetimeDeposit and withdrawThreshold) for a given ERC20 token (already allowlisted) in the collateral bridge
 type ERC20SetAssetLimitsBundle struct {
 	// The address of the asset on ethereum
 	AssetSource string `json:"assetSource"`
@@ -201,6 +204,7 @@ type EpochParticipation struct {
 	TotalRewards *float64 `json:"totalRewards"`
 }
 
+// Response for the signature bundle to allowlist an ERC20 token in the collateral bridge
 type Erc20ListAssetBundle struct {
 	// The source asset in the ethereum network
 	AssetSource string `json:"assetSource"`

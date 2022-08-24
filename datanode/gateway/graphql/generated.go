@@ -9332,17 +9332,19 @@ type Query {
     withdrawalId: ID!
   ): Erc20WithdrawalApproval
 
+  "get the signature bundle to add a particular validator to the signer list of the multisig contract"
   erc20MultiSigSignerAddedBundles(
     "The node ID of the validator of which a signature bundle is required"
     nodeId: ID!
     "The ethereum address of the submitter"
     submitter: String
-    "The epoch that generated the bundle i.e the epoch in which the node was demoted from a tendermint validator"
+    "The epoch that generated the bundle i.e the epoch in which the node was promoted to tendermint validator"
     epochSeq: String
     "Pagination"
     pagination: Pagination
   ): ERC20MultiSigSignerAddedConnection!
 
+  "get the signatures bundle to remove a particular validator from signer list of the multisig contract"
   erc20MultiSigSignerRemovedBundles(
     "The node ID of the validator of which a signature bundle is required"
     nodeId: ID!
@@ -9354,12 +9356,13 @@ type Query {
     pagination: Pagination
   ): ERC20MultiSigSignerRemovedConnection!
 
-  "find an erc20 signature bundle using its asset ID"
+  "get the signatures bundle to allowlist an ERC20 token in the collateral bridge"
   erc20ListAssetBundle(
     "ID of the asset"
     assetId: ID!
   ): Erc20ListAssetBundle!
 
+  "get the signature bundle to update the token limits (maxLifetimeDeposit and withdrawThreshold) for a given ERC20 token (already allowlisted) in the collateral bridge"
   erc20SetAssetLimitsBundle(
     "ID of the proposal to update an asset"
     proposalId: ID!
@@ -11166,6 +11169,7 @@ type Erc20WithdrawalApproval {
   creation: String!
 }
 
+"Response for the signature bundle to add a particular validator to the signer list of the multisig contract"
 type ERC20MultiSigSignerAddedConnection {
   edges: [ERC20MultiSigSignerAddedBundleEdge]
   pageInfo: PageInfo
@@ -11191,6 +11195,7 @@ type ERC20MultiSigSignerAddedBundle {
   epochSeq: String!
 }
 
+"Response for the signature bundle to remove a particular validator from the signer list of the multisig contract"
 type ERC20MultiSigSignerRemovedConnection {
   "The list of signer bundles for that validator"
   edges: [ERC20MultiSigSignerRemovedBundleEdge]
@@ -11218,6 +11223,7 @@ type ERC20MultiSigSignerRemovedBundle {
   epochSeq: String!
 }
 
+"Response for the signature bundle to allowlist an ERC20 token in the collateral bridge"
 type Erc20ListAssetBundle {
   "The source asset in the ethereum network"
   assetSource: String!
@@ -11232,6 +11238,7 @@ type Erc20ListAssetBundle {
   signatures: String!
 }
 
+"Response for the signature bundle to update the token limits (maxLifetimeDeposit and withdrawThreshold) for a given ERC20 token (already allowlisted) in the collateral bridge"
 type ERC20SetAssetLimitsBundle {
   "The address of the asset on ethereum"
   assetSource: String!
