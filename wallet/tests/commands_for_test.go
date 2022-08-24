@@ -749,9 +749,8 @@ func (a *CreateWalletAssertion) LocatedUnder(home string) *CreateWalletAssertion
 
 type ImportWalletResponse struct {
 	Wallet struct {
-		Name     string `json:"name"`
-		Version  uint32 `json:"version"`
-		FilePath string `json:"filePath"`
+		Name    string `json:"name"`
+		Version uint32 `json:"version"`
 	} `json:"wallet"`
 	Key struct {
 		PublicKey string `json:"publicKey"`
@@ -792,8 +791,6 @@ func AssertImportWallet(t *testing.T, resp *ImportWalletResponse) *ImportWalletA
 	assert.NotNil(t, resp)
 	assert.NotEmpty(t, resp.Wallet.Name)
 	assert.NotEmpty(t, resp.Wallet.Version)
-	assert.NotEmpty(t, resp.Wallet.FilePath)
-	assert.FileExists(t, resp.Wallet.FilePath)
 	assert.NotEmpty(t, resp.Key.PublicKey)
 	assert.Equal(t, "vega/ed25519", resp.Key.Algorithm.Name)
 	assert.Equal(t, uint32(1), resp.Key.Algorithm.Version)
@@ -815,7 +812,8 @@ func (a *ImportWalletAssertion) WithPublicKey(expected string) *ImportWalletAsse
 }
 
 func (a *ImportWalletAssertion) LocatedUnder(home string) *ImportWalletAssertion {
-	assert.True(a.t, strings.HasPrefix(a.resp.Wallet.FilePath, home), "wallet has not been imported under home directory")
+	vegaPaths := paths.New(home)
+	assert.FileExists(a.t, vegaPaths.DataPathFor(paths.JoinDataPath(paths.WalletsDataHome, a.resp.Wallet.Name)), "wallet has not been imported under home directory")
 	return a
 }
 

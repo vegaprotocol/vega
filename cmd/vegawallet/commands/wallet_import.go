@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -11,6 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
+	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 	"github.com/spf13/cobra"
@@ -35,16 +38,22 @@ var (
 	`)
 )
 
-type ImportWalletHandler func(*wallet.ImportWalletRequest) (*wallet.ImportWalletResponse, error)
+type ImportWalletHandler func(api.ImportWalletParams) (api.ImportWalletResult, error)
 
 func NewCmdImportWallet(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(req *wallet.ImportWalletRequest) (*wallet.ImportWalletResponse, error) {
+	h := func(params api.ImportWalletParams) (api.ImportWalletResult, error) {
 		s, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
-			return nil, fmt.Errorf("couldn't initialise wallets store: %w", err)
+			return api.ImportWalletResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 
-		return wallet.ImportWallet(s, req)
+		importWallet := api.NewImportWallet(s)
+
+		rawResult, errDetails := importWallet.Handle(context.Background(), params)
+		if errDetails != nil {
+			return api.ImportWalletResult{}, errors.New(errDetails.Data)
+		}
+		return rawResult.(api.ImportWalletResult), nil
 	}
 
 	return BuildCmdImportWallet(w, h, rf)
@@ -119,42 +128,42 @@ type ImportWalletFlags struct {
 	Version            uint32
 }
 
-func (f *ImportWalletFlags) Validate() (*wallet.ImportWalletRequest, error) {
-	req := &wallet.ImportWalletRequest{
+func (f *ImportWalletFlags) Validate() (api.ImportWalletParams, error) {
+	params := api.ImportWalletParams{
 		Version: f.Version,
 	}
 
 	if len(f.Wallet) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("wallet")
+		return api.ImportWalletParams{}, flags.FlagMustBeSpecifiedError("wallet")
 	}
-	req.Wallet = f.Wallet
+	params.Wallet = f.Wallet
 
 	if len(f.RecoveryPhraseFile) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("recovery-phrase-file")
+		return api.ImportWalletParams{}, flags.FlagMustBeSpecifiedError("recovery-phrase-file")
 	}
 	recoveryPhrase, err := vgfs.ReadFile(f.RecoveryPhraseFile)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't read recovery phrase file: %w", err)
+		return api.ImportWalletParams{}, fmt.Errorf("couldn't read recovery phrase file: %w", err)
 	}
-	req.RecoveryPhrase = strings.Trim(string(recoveryPhrase), "\n")
+	params.RecoveryPhrase = strings.Trim(string(recoveryPhrase), "\n")
 
 	passphrase, err := flags.GetConfirmedPassphrase(f.PassphraseFile)
 	if err != nil {
-		return nil, err
+		return api.ImportWalletParams{}, err
 	}
-	req.Passphrase = passphrase
+	params.Passphrase = passphrase
 
-	return req, nil
+	return params, nil
 }
 
-func PrintImportWalletResponse(w io.Writer, resp *wallet.ImportWalletResponse) {
+func PrintImportWalletResponse(w io.Writer, resp api.ImportWalletResult) {
 	p := printer.NewInteractivePrinter(w)
 
 	str := p.String()
 	defer p.Print(str)
 
-	str.CheckMark().Text("Wallet ").Bold(resp.Wallet.Name).Text(" has been imported at: ").SuccessText(resp.Wallet.FilePath).NextLine()
-	str.CheckMark().Text("First key pair has been generated for wallet ").Bold(resp.Wallet.Name).Text(" at: ").SuccessText(resp.Wallet.FilePath).NextLine()
+	str.CheckMark().Text("Wallet ").Bold(resp.Wallet.Name).Text(" has been imported.").NextLine()
+	str.CheckMark().Text("First key pair has been generated for wallet ").Bold(resp.Wallet.Name).NextLine()
 	str.CheckMark().SuccessText("Importing the wallet succeeded").NextSection()
 
 	str.Text("First public key:").NextLine()

@@ -1,7 +1,6 @@
 package wallet_test
 
 import (
-	"context"
 	"encoding/base64"
 	"fmt"
 	"testing"
@@ -359,47 +358,6 @@ func testListKeysOfNonExistingWalletFails(t *testing.T) {
 	// then
 	require.Error(t, err)
 	assert.Nil(t, resp)
-}
-
-func TestImportWalletSucceeds(t *testing.T) {
-	// given
-	req := &wallet.ImportWalletRequest{
-		Wallet:         vgrand.RandomStr(5),
-		RecoveryPhrase: TestRecoveryPhrase1,
-		Version:        2,
-		Passphrase:     vgrand.RandomStr(5),
-	}
-
-	// setup
-	var importedWallet wallet.Wallet
-	captureWallet := func(_ context.Context, w wallet.Wallet, passphrase string) error {
-		importedWallet = w
-		return nil
-	}
-	fakePath := fmt.Sprintf("/path/to/wallets/%s", req.Wallet)
-	store := handlerMocks(t)
-	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(false, nil)
-	store.EXPECT().GetWalletPath(req.Wallet).Times(1).Return(fakePath)
-	store.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), req.Passphrase).Times(1).DoAndReturn(captureWallet)
-
-	// when
-	resp, err := wallet.ImportWallet(store, req)
-
-	// then
-	require.NoError(t, err)
-	require.NotNil(t, resp)
-	// verify generated wallet
-	assert.Equal(t, req.Wallet, importedWallet.Name())
-	assert.Len(t, importedWallet.ListKeyPairs(), 1)
-	keyPair := importedWallet.ListKeyPairs()[0]
-	assert.NotEmpty(t, keyPair.Meta())
-	// verify response
-	assert.Equal(t, req.Wallet, resp.Wallet.Name)
-	assert.Equal(t, fakePath, resp.Wallet.FilePath)
-	assert.Equal(t, keyPair.PublicKey(), resp.Key.PublicKey)
-	assert.Equal(t, keyPair.AlgorithmName(), resp.Key.Algorithm.Name)
-	assert.Equal(t, keyPair.AlgorithmVersion(), resp.Key.Algorithm.Version)
-	assert.Equal(t, keyPair.Meta(), resp.Key.Meta)
 }
 
 func TestSignCommand(t *testing.T) {

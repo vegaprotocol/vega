@@ -323,59 +323,6 @@ type FirstPublicKey struct {
 	Meta      []Meta    `json:"meta"`
 }
 
-type ImportWalletRequest struct {
-	Wallet         string `json:"wallet"`
-	RecoveryPhrase string `json:"recoveryPhrase"`
-	Version        uint32 `json:"version"`
-	Passphrase     string `json:"passphrase"`
-}
-
-type ImportWalletResponse struct {
-	Wallet ImportedWallet `json:"wallet"`
-	Key    FirstPublicKey `json:"key"`
-}
-
-type ImportedWallet struct {
-	Name     string `json:"name"`
-	Version  uint32 `json:"version"`
-	FilePath string `json:"filePath"`
-}
-
-func ImportWallet(store Store, req *ImportWalletRequest) (*ImportWalletResponse, error) {
-	ctx := context.Background()
-
-	if exist, err := store.WalletExists(ctx, req.Wallet); err != nil {
-		return nil, fmt.Errorf("couldn't verify wallet existence: %w", err)
-	} else if exist {
-		return nil, ErrWalletAlreadyExists
-	}
-
-	w, err := ImportHDWallet(req.Wallet, req.RecoveryPhrase, req.Version)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't import the wallet: %w", err)
-	}
-
-	kp, err := w.GenerateKeyPair(addDefaultKeyName(w, nil))
-	if err != nil {
-		return nil, err
-	}
-
-	if err := store.SaveWallet(ctx, w, req.Passphrase); err != nil {
-		return nil, fmt.Errorf("couldn't save wallet: %w", err)
-	}
-
-	resp := &ImportWalletResponse{}
-	resp.Wallet.Name = req.Wallet
-	resp.Wallet.Version = w.Version()
-	resp.Wallet.FilePath = store.GetWalletPath(req.Wallet)
-	resp.Key.PublicKey = kp.PublicKey()
-	resp.Key.Algorithm.Name = kp.AlgorithmName()
-	resp.Key.Algorithm.Version = kp.AlgorithmVersion()
-	resp.Key.Meta = kp.Meta()
-
-	return resp, nil
-}
-
 type SignCommandRequest struct {
 	Wallet        string `json:"wallet"`
 	Passphrase    string `json:"passphrase"`

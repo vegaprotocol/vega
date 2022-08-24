@@ -574,6 +574,141 @@
       ]
     },
     {
+      "name": "admin.import_wallet",
+      "summary": "Import a wallet with its first key-pair with a recovery phrase and a version.",
+      "description": "This method imports a wallet using the specified recovery phrase and wallet version, and generates its first key-pair.\n\nThe passphrase will be used to encrypt the wallet and its keys.\n\nIf successful, the wallet is ready to use for sending transaction.",
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "wallet",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "passphrase",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "recoveryPhrase",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "version",
+          "required": true,
+          "schema": {
+            "type": "number"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "wallet": {
+              "type": "object",
+              "description": "the imported wallet",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "version": {
+                  "type": "number"
+                }
+              }
+            },
+            "key": {
+              "type": "object",
+              "description": "the first public key generated",
+              "properties": {
+                "publicKey": {
+                  "type": "string"
+                },
+                "algorithm": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "meta": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "key": {
+                        "type": "string"
+                      },
+                      "value": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "examples": [
+        {
+          "name": "Importing a wallet",
+          "params": [
+            {
+              "name": "wallet",
+              "value": "my-wallet"
+            },
+            {
+              "name": "passphrase",
+              "value": "this-is-not-a-good-passphrase"
+            },
+            {
+              "name": "recoveryPhrase",
+              "value": "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render"
+            },
+            {
+              "name": "version",
+              "value": "2"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": {
+              "wallet": {
+                "name": "my-wallet",
+                "version": 2
+              },
+              "key": {
+                "publicKey": "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
+                "algorithm": {
+                  "name": "vega/ed25519",
+                  "version": 1
+                },
+                "meta": [
+                  {
+                    "key": "name",
+                    "value": "my-wallet key 1"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "admin.describe_wallet",
       "summary": "Returns the wallet base information.",
       "description": "This method returns the wallet base information such as its name, ID, type and version. It doesn't return the keys nor the permissions.",
