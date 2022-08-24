@@ -427,7 +427,7 @@ message ObserveAccountsRequest {
 }
 
 message ObserveAccountsResponse {
-    vega.Account account = 1;
+    repeated vega.Account accounts = 1;
 }
 
 // -- Info --

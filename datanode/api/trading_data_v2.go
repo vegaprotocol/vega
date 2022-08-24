@@ -138,9 +138,13 @@ func (t *tradingDataServiceV2) ObserveAccounts(req *v2.ObserveAccountsRequest,
 		t.log.Debug("Accounts subscriber - new rpc stream", logging.Uint64("ref", ref))
 	}
 
-	return observe(ctx, t.log, "Accounts", accountsChan, ref, func(account entities.AccountBalance) error {
+	return observeBatch(ctx, t.log, "Accounts", accountsChan, ref, func(accounts []entities.AccountBalance) error {
+		protoAccounts := make([]*vega.Account, len(accounts))
+		for i := 0; i < len(accounts); i++ {
+			protoAccounts[i] = accounts[i].ToProto()
+		}
 		return srv.Send(&v2.ObserveAccountsResponse{
-			Account: account.ToProto(),
+			Accounts: protoAccounts,
 		})
 	})
 }

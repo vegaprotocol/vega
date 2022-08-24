@@ -2370,7 +2370,7 @@ func (r *mySubscriptionResolver) Margins(ctx context.Context, partyID string, ma
 	return ch, nil
 }
 
-func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string, partyID *string, asset *string, typeArg *types.AccountType) (<-chan *types.Account, error) {
+func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string, partyID *string, asset *string, typeArg *types.AccountType) (<-chan []*types.Account, error) {
 	var (
 		mkt, pty string
 		ty       types.AccountType
@@ -2400,7 +2400,7 @@ func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 		return nil, customErrorFromStatus(err)
 	}
 
-	c := make(chan *types.Account)
+	c := make(chan []*types.Account)
 	go func() {
 		defer func() {
 			stream.CloseSend()
@@ -2416,7 +2416,7 @@ func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 				r.log.Error("accounts: stream closed", logging.Error(err))
 				break
 			}
-			c <- a.Account
+			c <- a.Accounts
 		}
 	}()
 
