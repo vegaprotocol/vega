@@ -174,7 +174,7 @@ pipeline {
                     steps {
                         dir('vega') {
                             sh "git ls-files '*.yml' '*.yaml'"
-                            sh "git ls-files '*.yml' '*.yaml' | xargs yamllint -s -d '{extends: default, rules: {line-length: {max: 160}}}'"
+                            sh "git ls-files '*.yml' '*.yaml' | xargs yamllint -s -d '{extends: default, rules: {line-length: {max: 200}}}'"
                         }
                     }
                 }
@@ -220,9 +220,7 @@ pipeline {
                     environment {
                         GOPATH = "${env.WORKSPACE}/GOPATH"
                         GOBIN = "${env.GOPATH}/bin"
-                        PROTOC_HOME = "${env.WORKSPACE}/PROTOC_HOME"
-                        PATH = "${env.PROTOC_HOME}/bin:${env.GOBIN}:${env.PATH}"
-                        PROTOC_VERSION = "3.19.4"
+                        PATH = "${env.GOBIN}:${env.PATH}"
                     }
                     stages {
                         stage('Install dependencies') {
@@ -232,16 +230,7 @@ pipeline {
                             steps {
                                 dir('vega') {
                                     sh 'printenv'
-                                    sh label: 'protoc', script: """#!/bin/bash -e
-                                        PB_REL="https://github.com/protocolbuffers/protobuf/releases"
-                                        curl -LO \$PB_REL/download/v${env.PROTOC_VERSION}/protoc-${env.PROTOC_VERSION}-linux-x86_64.zip
-                                        unzip -o protoc-${env.PROTOC_VERSION}-linux-x86_64.zip -d "${PROTOC_HOME}"
-                                    """
                                     sh './script/gettools.sh'
-                                    sh 'protoc --version'
-                                    sh 'which protoc'
-                                    sh 'buf --version'
-                                    sh 'which buf'
                                 }
                             }
                         }
@@ -258,8 +247,6 @@ pipeline {
                                 failure {
                                     sh 'printenv'
                                     echo "params=${params}"
-                                    sh 'protoc --version'
-                                    sh 'which protoc'
                                     sh 'buf --version'
                                     sh 'which buf'
                                     sh 'git diff'
@@ -285,8 +272,6 @@ pipeline {
                                 failure {
                                     sh 'printenv'
                                     echo "params=${params}"
-                                    sh 'protoc --version'
-                                    sh 'which protoc'
                                     sh 'buf --version'
                                     sh 'which buf'
                                     sh 'git diff'
