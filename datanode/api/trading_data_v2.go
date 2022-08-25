@@ -45,6 +45,9 @@ var defaultPaginationV2 = entities.OffsetPagination{
 	Descending: true,
 }
 
+// When returning an 'initial image' snapshot, how many updates to batch into each page.
+var snapshotPageSize int = 500
+
 type tradingDataServiceV2 struct {
 	v2.UnimplementedTradingDataServiceServer
 	config                     Config
@@ -132,7 +135,7 @@ func (t *tradingDataServiceV2) ObserveAccounts(req *v2.ObserveAccountsRequest,
 	defer cancel()
 
 	// First get the 'initial image' of accounts matching the request and send those
-	if err := t.sendAccountsInitialImage(ctx, req, srv); err != nil {
+	if err := t.sendAccountsSnapshot(ctx, req, srv); err != nil {
 		return err
 	}
 	accountsChan, ref := t.accountService.ObserveAccountBalances(
@@ -143,17 +146,18 @@ func (t *tradingDataServiceV2) ObserveAccounts(req *v2.ObserveAccountsRequest,
 	}
 
 	return observeBatch(ctx, t.log, "Accounts", accountsChan, ref, func(accounts []entities.AccountBalance) error {
-		protoAccounts := make([]*vega.Account, len(accounts))
+		protos := make([]*vega.Account, len(accounts))
 		for i := 0; i < len(accounts); i++ {
-			protoAccounts[i] = accounts[i].ToProto()
+			protos[i] = accounts[i].ToProto()
 		}
-		return srv.Send(&v2.ObserveAccountsResponse{
-			Accounts: protoAccounts,
-		})
+		updates := &v2.AccountUpdates{Accounts: protos}
+		responseUpdates := &v2.ObserveAccountsResponse_Updates{Updates: updates}
+		response := &v2.ObserveAccountsResponse{Response: responseUpdates}
+		return srv.Send(response)
 	})
 }
 
-func (t *tradingDataServiceV2) sendAccountsInitialImage(ctx context.Context, req *v2.ObserveAccountsRequest,
+func (t *tradingDataServiceV2) sendAccountsSnapshot(ctx context.Context, req *v2.ObserveAccountsRequest,
 	srv v2.TradingDataService_ObserveAccountsServer,
 ) error {
 	filter := entities.AccountFilter{}
@@ -179,14 +183,20 @@ func (t *tradingDataServiceV2) sendAccountsInitialImage(ctx context.Context, req
 		return fmt.Errorf("initial image spans multiple pages")
 	}
 
-	protoAccounts := make([]*vega.Account, len(accounts))
+	protos := make([]*vega.Account, len(accounts))
 	for i := 0; i < len(accounts); i++ {
-		protoAccounts[i] = accounts[i].ToProto()
+		protos[i] = accounts[i].ToProto()
 	}
 
-	err = srv.Send(&v2.ObserveAccountsResponse{Accounts: protoAccounts})
-	if err != nil {
-		return errors.Wrap(err, "sending account balance initial image")
+	batches := batch(protos, snapshotPageSize)
+	for i, batch := range batches {
+		isLast := i == len(batches)-1
+		page := &v2.AccountSnapshotPage{Accounts: batch, LastPage: isLast}
+		snapshot := &v2.ObserveAccountsResponse_Snapshot{Snapshot: page}
+		response := &v2.ObserveAccountsResponse{Response: snapshot}
+		if err := srv.Send(response); err != nil {
+			return errors.Wrap(err, "sending account balance initial image")
+		}
 	}
 	return nil
 }
@@ -1142,7 +1152,7 @@ func (t *tradingDataServiceV2) ObservePositions(req *v2.ObservePositionsRequest,
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
-	t.sendPositionsInitialImage(ctx, req, srv)
+	t.sendPositionsSnapshot(ctx, req, srv)
 
 	var partyID, marketID string
 	if req.PartyId != nil {
@@ -1164,14 +1174,14 @@ func (t *tradingDataServiceV2) ObservePositions(req *v2.ObservePositionsRequest,
 		for i := 0; i < len(positions); i++ {
 			protos[i] = positions[i].ToProto()
 		}
-
-		return srv.Send(&v2.ObservePositionsResponse{
-			Positions: protos,
-		})
+		updates := &v2.PositionUpdates{Positions: protos}
+		responseUpdates := &v2.ObservePositionsResponse_Updates{Updates: updates}
+		response := &v2.ObservePositionsResponse{Response: responseUpdates}
+		return srv.Send(response)
 	})
 }
 
-func (t *tradingDataServiceV2) sendPositionsInitialImage(ctx context.Context, req *v2.ObservePositionsRequest, srv v2.TradingDataService_ObservePositionsServer) error {
+func (t *tradingDataServiceV2) sendPositionsSnapshot(ctx context.Context, req *v2.ObservePositionsRequest, srv v2.TradingDataService_ObservePositionsServer) error {
 	var positions []entities.Position
 	var err error
 
@@ -1213,9 +1223,17 @@ func (t *tradingDataServiceV2) sendPositionsInitialImage(ctx context.Context, re
 		protos[i] = positions[i].ToProto()
 	}
 
-	return srv.Send(&v2.ObservePositionsResponse{
-		Positions: protos,
-	})
+	batches := batch(protos, snapshotPageSize)
+	for i, batch := range batches {
+		isLast := i == len(batches)-1
+		positionList := &v2.PositionSnapshotPage{Positions: batch, LastPage: isLast}
+		snapshot := &v2.ObservePositionsResponse_Snapshot{Snapshot: positionList}
+		response := &v2.ObservePositionsResponse{Response: snapshot}
+		if err := srv.Send(response); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (t *tradingDataServiceV2) GetParty(ctx context.Context, req *v2.GetPartyRequest) (*v2.GetPartyResponse, error) {
@@ -1935,7 +1953,7 @@ func (t *tradingDataServiceV2) ObserveOrders(req *v2.ObserveOrdersRequest, srv v
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
-	if err := t.sendOrdersInitialImage(ctx, req, srv); err != nil {
+	if err := t.sendOrdersSnapshot(ctx, req, srv); err != nil {
 		return err
 	}
 	ordersChan, ref := t.orderService.ObserveOrders(ctx, t.config.StreamRetries, req.MarketId, req.PartyId)
@@ -1945,15 +1963,18 @@ func (t *tradingDataServiceV2) ObserveOrders(req *v2.ObserveOrdersRequest, srv v
 	}
 
 	return observeBatch(ctx, t.log, "Order", ordersChan, ref, func(orders []entities.Order) error {
-		out := make([]*vega.Order, 0, len(orders))
+		protos := make([]*vega.Order, 0, len(orders))
 		for _, v := range orders {
-			out = append(out, v.ToProto())
+			protos = append(protos, v.ToProto())
 		}
-		return srv.Send(&v2.ObserveOrdersResponse{Orders: out})
+		updates := &v2.OrderUpdates{Orders: protos}
+		responseUpdates := &v2.ObserveOrdersResponse_Updates{Updates: updates}
+		response := &v2.ObserveOrdersResponse{Response: responseUpdates}
+		return srv.Send(response)
 	})
 }
 
-func (t *tradingDataServiceV2) sendOrdersInitialImage(ctx context.Context, req *v2.ObserveOrdersRequest, srv v2.TradingDataService_ObserveOrdersServer) error {
+func (t *tradingDataServiceV2) sendOrdersSnapshot(ctx context.Context, req *v2.ObserveOrdersRequest, srv v2.TradingDataService_ObserveOrdersServer) error {
 	orders, pageInfo, err := t.orderService.ListOrders(ctx, req.PartyId, req.MarketId, nil, true, entities.CursorPagination{})
 	if err != nil {
 		return errors.Wrap(err, "fetching orders initial image")
@@ -1963,16 +1984,21 @@ func (t *tradingDataServiceV2) sendOrdersInitialImage(ctx context.Context, req *
 		return fmt.Errorf("orders initial image spans multiple pages")
 	}
 
-	protoOrders := make([]*vega.Order, 0, len(orders))
-	for _, v := range orders {
-		protoOrders = append(protoOrders, v.ToProto())
+	protos := make([]*vega.Order, len(orders))
+	for i := 0; i < len(orders); i++ {
+		protos[i] = orders[i].ToProto()
 	}
 
-	err = srv.Send(&v2.ObserveOrdersResponse{Orders: protoOrders})
-	if err != nil {
-		return errors.Wrap(err, "sending account balance initial image")
+	batches := batch(protos, snapshotPageSize)
+	for i, batch := range batches {
+		isLast := i == len(batches)-1
+		positionList := &v2.OrderSnapshotPage{Orders: batch, LastPage: isLast}
+		responseSnapshot := &v2.ObserveOrdersResponse_Snapshot{Snapshot: positionList}
+		response := &v2.ObserveOrdersResponse{Response: responseSnapshot}
+		if err := srv.Send(response); err != nil {
+			return errors.Wrap(err, "sending account balance initial image")
+		}
 	}
-
 	return nil
 }
 
@@ -2712,4 +2738,13 @@ func (t *tradingDataServiceV2) GetVegaTime(ctx context.Context, req *v2.GetVegaT
 	return &v2.GetVegaTimeResponse{
 		Timestamp: b.VegaTime.UnixNano(),
 	}, nil
+}
+
+func batch[T any](in []T, batchSize int) [][]T {
+	batches := make([][]T, 0, (len(in)+batchSize-1)/batchSize)
+	for batchSize < len(in) {
+		in, batches = in[batchSize:], append(batches, in[0:batchSize:batchSize])
+	}
+	batches = append(batches, in)
+	return batches
 }
