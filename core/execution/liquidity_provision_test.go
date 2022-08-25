@@ -42,13 +42,14 @@ func newLiquidityOrder(reference types.PeggedReference, offset uint64, proportio
 	}
 }
 
-func TestSubmit(t *testing.T) {
+func testSubmit(t *testing.T) {
 	pMonitorSettings := &types.PriceMonitoringSettings{
 		Parameters: &types.PriceMonitoringParameters{
 			Triggers: []*types.PriceMonitoringTrigger{},
 		},
 	}
 	now := time.Unix(10, 0)
+	block := time.Second
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	t.Run("check that we reject LP submission If fee is incorrect", func(t *testing.T) {
@@ -221,7 +222,7 @@ func TestSubmit(t *testing.T) {
 		tm := newTestMarket(t, now).Run(ctx, mktCfg)
 		tm.StartOpeningAuction().
 			// the liquidity provider
-			WithAccountAndAmount(lpparty, 500000000000)
+			WithAccountAndAmount(lpparty, 50000000000000)
 
 		tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
 		tm.now = now
@@ -1450,7 +1451,9 @@ func TestSubmit(t *testing.T) {
 			tm.market.OnTick(ctx, auctionEnd.Add(10*time.Second))
 		})
 
-		t.Run("pegged order is REJECTED", func(t *testing.T) {
+		t.Run("pegged order is ACCEPTED", func(t *testing.T) {
+			tm.market.OnTick(ctx, tm.now.Add(block))
+			tm.now = tm.now.Add(block)
 			// First collect all the orders events
 			found := &proto.Order{}
 			for _, e := range tm.events {
@@ -1463,7 +1466,8 @@ func TestSubmit(t *testing.T) {
 				}
 			}
 			// no update to the liquidity fee
-			assert.Equal(t, found.Status.String(), types.OrderStatusRejected.String())
+			// assert.Equal(t, found.Status.String(), types.OrderStatusRejected.String())
+			assert.Equal(t, found.Status.String(), types.OrderStatusUnspecified.String())
 		})
 
 		// now move the time to expire the pegged
@@ -1471,7 +1475,7 @@ func TestSubmit(t *testing.T) {
 		tm.now = timeExpires
 		tm.events = nil
 		tm.market.OnTick(ctx, timeExpires)
-		t.Run("no orders expired", func(t *testing.T) {
+		t.Run("No orders except pegged order expired", func(t *testing.T) {
 			// First collect all the orders events
 			orders := []*types.Order{}
 			for _, e := range tm.events {
@@ -1483,7 +1487,7 @@ func TestSubmit(t *testing.T) {
 				}
 			}
 
-			require.Len(t, orders, 0)
+			require.Len(t, orders, 1)
 		})
 	})
 
@@ -1585,7 +1589,9 @@ func TestSubmit(t *testing.T) {
 			assert.Len(t, confs, 1)
 		})
 
-		curt := auctionEnd.Add(1 * time.Second)
+		curt := auctionEnd.Add(block)
+		tm.now = curt
+		tm.market.OnTick(ctx, curt)
 
 		t.Run("party submit volume in both side of the book", func(t *testing.T) {
 			for i := 0; i < 50; i++ {
@@ -1625,7 +1631,7 @@ func TestSubmit(t *testing.T) {
 
 				tm.now = curt
 				tm.market.OnTick(ctx, curt)
-				curt = curt.Add(1 * time.Second)
+				curt = curt.Add(block)
 			}
 		})
 
@@ -1640,7 +1646,7 @@ func TestSubmit(t *testing.T) {
 				})
 				tm.now = curt
 				tm.market.OnTick(ctx, curt)
-				curt = curt.Add(1 * time.Second)
+				curt = curt.Add(block)
 			}
 		})
 
@@ -1655,7 +1661,7 @@ func TestSubmit(t *testing.T) {
 				})
 				tm.now = curt
 				tm.market.OnTick(ctx, curt)
-				curt = curt.Add(1 * time.Second)
+				curt = curt.Add(block)
 			}
 		})
 	})
@@ -1779,22 +1785,22 @@ func TestSubmit(t *testing.T) {
 		// we increase the time for 1 second
 		// the active_window_length =
 		// 1 second so factor = t_market_value_window_length / active_window_length = 2.
-		tm.now = auctionEnd.Add(1 * time.Second)
-		tm.market.OnTick(ctx, auctionEnd.Add(1*time.Second))
+		tm.now = auctionEnd.Add(block)
+		tm.market.OnTick(ctx, auctionEnd.Add(block))
 		md = tm.market.GetMarketData()
 		assert.Equal(t, "10000", md.MarketValueProxy)
 
 		// we increase the time for another second
-		tm.now = auctionEnd.Add(2 * time.Second)
-		tm.market.OnTick(ctx, auctionEnd.Add(2*time.Second))
+		tm.now = tm.now.Add(block)
+		tm.market.OnTick(ctx, tm.now)
 		md = tm.market.GetMarketData()
 		assert.Equal(t, "10000", md.MarketValueProxy)
 
 		// now we increase the time for another second, which makes us slide
 		// out of the window, and reset the tradeValue + window
 		// so the mvp is again the total stake submitted in the market
-		tm.now = auctionEnd.Add(3 * time.Second)
-		tm.market.OnTick(ctx, auctionEnd.Add(3*time.Second))
+		tm.now = tm.now.Add(block)
+		tm.market.OnTick(ctx, tm.now)
 		md = tm.market.GetMarketData()
 		assert.Equal(t, "10000", md.MarketValueProxy)
 	})
@@ -1858,6 +1864,8 @@ func TestSubmit(t *testing.T) {
 			tm.market.SubmitLiquidityProvision(
 				ctx, lpSubmission, lpparty, vgcrypto.RandomHash()),
 		)
+		tm.now = tm.now.Add(block)
+		tm.market.OnTick(ctx, tm.now)
 
 		t.Run("lp submission is pending", func(t *testing.T) {
 			// First collect all the orders events
@@ -2012,11 +2020,13 @@ func TestSubmit(t *testing.T) {
 		// then we'll submit an order which would expire
 		// we submit the order at the price of the LP shape generated order
 		expiringOrder := getMarketOrder(tm, auctionEnd, types.OrderTypeLimit, types.OrderTimeInForceGTT, "GTT-1", types.SideBuy, lpparty, 19, 890)
-		expiringOrder.ExpiresAt = auctionEnd.Add(10 * time.Second).UnixNano()
+		expiringOrder.ExpiresAt = auctionEnd.Add(11 * time.Second).UnixNano()
 
 		tm.events = nil
 		_, err := tm.market.SubmitOrder(ctx, expiringOrder)
 		assert.NoError(t, err)
+		tm.now = tm.now.Add(block)
+		tm.market.OnTick(ctx, tm.now)
 
 		// now we ensure we have 2 order on the buy side.
 		// one lp of size 6, on normal limit of size 500
@@ -2071,8 +2081,8 @@ func TestSubmit(t *testing.T) {
 
 		// now the limit order expires, and the LP order size should increase again
 		tm.events = nil
-		tm.now = auctionEnd.Add(11 * time.Second)
-		tm.market.OnTick(ctx, auctionEnd.Add(11*time.Second)) // this is 1 second after order expiry
+		tm.now = auctionEnd.Add(12 * time.Second)
+		tm.market.OnTick(ctx, auctionEnd.Add(12*time.Second)) // this is 1 second after order expiry
 
 		// now we ensure we have 2 order on the buy side.
 		// one lp of size 6, on normal limit of size 500
