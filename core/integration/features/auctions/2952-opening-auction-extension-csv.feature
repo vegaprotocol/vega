@@ -13,20 +13,20 @@ Feature: Set up a market, with an opening auction, then uncross the book
 
   Scenario: set up 2 parties with balance
     Given the parties deposit on asset's general account the following amount:
-      | party    | asset | amount       |
-      | party1   | ETH   | 1000000000   |
-      | party2   | ETH   | 1000000000   |
-      | party3   | ETH   | 1000000000   |
+      | party     | asset | amount       |
+      | party1    | ETH   | 1000000000   |
+      | party2    | ETH   | 1000000000   |
+      | party3    | ETH   | 1000000000   |
       | auxiliary | ETH   | 100000000000 |
-      | party-lp | ETH   | 100000000000 |
+      | party-lp  | ETH   | 100000000000 |
     And the parties submit the following liquidity provision:
-      | id  | party     | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type |
-      | lp1 | party-lp | ETH/DEC20 | 30000000          | 0.3 | buy  | BID              | 50         | 10    | submission |
-      | lp1 | party-lp | ETH/DEC20 | 30000000          | 0.3 | sell | ASK              | 50         | 10     | amendment |
+      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | party-lp | ETH/DEC20 | 30000000          | 0.3 | buy  | BID              | 50         | 10     | submission |
+      | lp1 | party-lp | ETH/DEC20 | 30000000          | 0.3 | sell | ASK              | 50         | 10     | submission |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     And the parties place the following orders:
-      | party    | market id | side | volume | price     | resulting trades | type       | tif     |
+      | party     | market id | side | volume | price     | resulting trades | type       | tif     |
       | auxiliary | ETH/DEC20 | buy  | 1      | 1         | 0                | TYPE_LIMIT | TIF_GTC |
       | auxiliary | ETH/DEC20 | sell | 1      | 100000000 | 0                | TYPE_LIMIT | TIF_GTC |
 
@@ -39,7 +39,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | party2 | ETH/DEC20 | sell | 1      | 10000000 | 0                | TYPE_LIMIT | TIF_GFA | t2-s-1    |
     And the opening auction period ends for market "ETH/DEC20"
     Then the following trades should be executed:
-      | buyer   | price    | size | seller  |
+      | buyer  | price    | size | seller |
       | party1 | 10000000 | 1    | party2 |
     And the mark price should be "10000000" for the market "ETH/DEC20"
 
@@ -48,7 +48,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | party1 | ETH/DEC20 | buy  | 1      | 10000000 | 0                | TYPE_LIMIT | TIF_GTC | post-oa-1 |
       | party3 | ETH/DEC20 | sell | 1      | 10000000 | 1                | TYPE_LIMIT | TIF_GTC | post-oa-2 |
     Then the following trades should be executed:
-      | buyer   | price    | size | seller  |
+      | buyer  | price    | size | seller  |
       | party1 | 10000000 | 1    | party3 |
     And the parties should have the following account balances:
       | party  | asset | market id | margin  | general   |
@@ -84,6 +84,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | party  | reference | price    | size delta | tif     |
       | party1 | t1-s-1    | 14500000 | 0          | TIF_GTC |
       | party2 | t2-b-1    | 13500000 | 0          | TIF_GTC |
+      #Then debug detailed orderbook volumes for market "ETH/DEC20"
 
     When the parties place the following orders:
       | party  | market id | side | volume | price    | resulting trades | type       | tif     | reference |

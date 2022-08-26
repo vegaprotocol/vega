@@ -530,6 +530,49 @@ func (e *Engine) CreateInitialOrders(
 	return creates, err
 }
 
+// UndeployLPs is called when a reference price is no longer available. LP orders should all be parked/set to pending
+// and should be redeployed once possible. Pass in updated orders and update internal records first...
+func (e *Engine) UndeployLPs(ctx context.Context, orders []*types.Order) []*ToCancel {
+	// make sure internal data matches the latest version of all orders on the book
+	for _, po := range Orders(orders).ByParty() {
+		if !e.IsLiquidityProvider(po.Party) {
+			continue
+		}
+		e.updatePartyOrders(po.Party, po.Orders)
+	}
+
+	provisions := e.provisions.Slice()
+	cancels := make([]*ToCancel, 0, len(provisions)*2) // one for each side
+	for _, lp := range provisions {
+		if lp.Status != types.LiquidityProvisionStatusActive {
+			continue
+		}
+		buys := make([]*supplied.LiquidityOrder, 0, len(lp.Buys))
+		sells := make([]*supplied.LiquidityOrder, 0, len(lp.Sells))
+		for _, o := range lp.Buys {
+			buys = append(buys, &supplied.LiquidityOrder{
+				OrderID:    o.OrderID,
+				Proportion: uint64(o.LiquidityOrder.Proportion),
+			})
+		}
+		for _, o := range lp.Sells {
+			sells = append(sells, &supplied.LiquidityOrder{
+				OrderID:    o.OrderID,
+				Proportion: uint64(o.LiquidityOrder.Proportion),
+			})
+		}
+		if cb := e.undeployOrdersFromShape(lp.Party, buys, types.SideBuy); cb != nil {
+			cancels = append(cancels, cb)
+		}
+		if cs := e.undeployOrdersFromShape(lp.Party, sells, types.SideSell); cs != nil {
+			cancels = append(cancels, cs)
+		}
+		// set as undeployed so we can redeploy it once the pegs become available again
+		lp.Status = types.LiquidityProvisionStatusUndeployed
+	}
+	return cancels
+}
+
 // Update gets the order changes.
 // It keeps track of all LP orders.
 func (e *Engine) Update(
