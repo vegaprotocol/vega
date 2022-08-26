@@ -1490,10 +1490,6 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 		return nil, types.OrderErrorNonPersistentOrderOutOfPriceBounds
 	}
 
-	/*if m.checkLiquidity(ctx, trades, persistent) {
-		return nil, types.OrderErrorInvalidPersistance
-	}*/
-
 	if evt := m.as.AuctionExtended(ctx, m.timeService.GetTimeNow()); evt != nil {
 		m.broker.Send(evt)
 	}

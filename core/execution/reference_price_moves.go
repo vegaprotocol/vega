@@ -16,6 +16,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 const (
@@ -81,7 +82,9 @@ func (m *Market) checkForReferenceMoves(
 		cancels := m.liquidity.UndeployLPs(ctx, orderUpdates)
 		orderUpdates, err = m.updateAndCreateLPOrders(ctx, nil, cancels, nil)
 		if err != nil {
-			panic(err) // this should not be possible
+			m.log.Panic("missing static prices and error canceling LP orders",
+				logging.MarketID(m.mkt.GetID()),
+				logging.Error(err))
 		}
 	}
 
