@@ -124,6 +124,77 @@ type Erc20 struct {
 
 func (Erc20) IsAssetSource() {}
 
+type ERC20MultiSigSignerAddedBundle struct {
+	// The ethereum address of the signer to be added
+	NewSigner string `json:"newSigner"`
+	// The ethereum address of the submitter
+	Submitter string `json:"submitter"`
+	// The nonce used in the signing operation
+	Nonce string `json:"nonce"`
+	// Unix-nano timestamp for when the validator was added
+	Timestamp string `json:"timestamp"`
+	// The bundle of signatures from current validators to sign in the new signer
+	Signatures string `json:"signatures"`
+	// The epoch in which the validator was added
+	EpochSeq string `json:"epochSeq"`
+}
+
+type ERC20MultiSigSignerAddedBundleEdge struct {
+	Node   *ERC20MultiSigSignerAddedBundle `json:"node"`
+	Cursor string                          `json:"cursor"`
+}
+
+// Response for the signature bundle to add a particular validator to the signer list of the multisig contract
+type ERC20MultiSigSignerAddedConnection struct {
+	Edges    []*ERC20MultiSigSignerAddedBundleEdge `json:"edges"`
+	PageInfo *v2.PageInfo                          `json:"pageInfo"`
+}
+
+type ERC20MultiSigSignerRemovedBundle struct {
+	// The ethereum address of the signer to be removed
+	OldSigner string `json:"oldSigner"`
+	// The ethereum address of the submitter
+	Submitter string `json:"submitter"`
+	// The nonce used in the signing operation
+	Nonce string `json:"nonce"`
+	// Unix-nano timestamp for when the validator was added
+	Timestamp string `json:"timestamp"`
+	// The bundle of signatures from current validators to sign in the new signer
+	Signatures string `json:"signatures"`
+	// The epoch in which the validator was removed
+	EpochSeq string `json:"epochSeq"`
+}
+
+type ERC20MultiSigSignerRemovedBundleEdge struct {
+	Node   *ERC20MultiSigSignerRemovedBundle `json:"node"`
+	Cursor string                            `json:"cursor"`
+}
+
+// Response for the signature bundle to remove a particular validator from the signer list of the multisig contract
+type ERC20MultiSigSignerRemovedConnection struct {
+	// The list of signer bundles for that validator
+	Edges []*ERC20MultiSigSignerRemovedBundleEdge `json:"edges"`
+	// The pagination information
+	PageInfo *v2.PageInfo `json:"pageInfo"`
+}
+
+// Response for the signature bundle to update the token limits (maxLifetimeDeposit and withdrawThreshold) for a given ERC20 token (already allowlisted) in the collateral bridge
+type ERC20SetAssetLimitsBundle struct {
+	// The address of the asset on ethereum
+	AssetSource string `json:"assetSource"`
+	// The ID of the vega asset
+	VegaAssetID string `json:"vegaAssetId"`
+	// The nonce, which is actually the internal reference for the proposal
+	Nonce string `json:"nonce"`
+	// The lifetime limit deposit for this asset
+	LifetimeLimit string `json:"lifetimeLimit"`
+	// The threshold withdraw for this asset
+	Threshold string `json:"threshold"`
+	// The signatures bundle as hex encoded data, forward by 0x
+	// e.g: 0x + sig1 + sig2 + ... + sixN
+	Signatures string `json:"signatures"`
+}
+
 type EpochParticipation struct {
 	Epoch *vega.Epoch `json:"epoch"`
 	// RFC3339 timestamp
@@ -131,6 +202,19 @@ type EpochParticipation struct {
 	// RFC3339 timestamp
 	Online       *string  `json:"online"`
 	TotalRewards *float64 `json:"totalRewards"`
+}
+
+// Response for the signature bundle to allowlist an ERC20 token in the collateral bridge
+type Erc20ListAssetBundle struct {
+	// The source asset in the ethereum network
+	AssetSource string `json:"assetSource"`
+	// The ID of the vega asset
+	VegaAssetID string `json:"vegaAssetId"`
+	// The nonce to be used in the request
+	Nonce string `json:"nonce"`
+	// Signature aggregate from the nodes, in the following format:
+	// 0x + sig1 + sig2 + ... + sigN
+	Signatures string `json:"signatures"`
 }
 
 // All the data related to the approval of a withdrawal from the network
