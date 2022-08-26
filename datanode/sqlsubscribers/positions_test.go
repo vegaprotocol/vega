@@ -511,3 +511,7 @@ func (t tradeStub) Size() int64 {
 func (t tradeStub) Price() *num.Uint {
 	return t.price.Clone()
 }
+
+func (t tradeStub) MarketPrice() *num.Uint {
+	return t.price.Clone()
+}
