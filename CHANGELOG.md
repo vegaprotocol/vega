@@ -9,6 +9,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
+- [5807](https://github.com/vegaprotocol/vega/issues/5807) - Add vegatools: `stream`, `snapshot` and `checkpoint`
 - [5678](https://github.com/vegaprotocol/vega/issues/5678) - Add GraphQL endpoints for Ethereum bundles: `listAsset`, `updateAsset`, `addSigner` and `removeSigner`
 - [5881](https://github.com/vegaprotocol/vega/issues/5881) - Return account subscription as a list
 - [5766](https://github.com/vegaprotocol/vega/issues/5766) - Better notification for version update on the wallet
