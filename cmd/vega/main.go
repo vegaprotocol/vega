@@ -77,7 +77,6 @@ func Main(ctx context.Context) error {
 		Bridge,
 		paths.Paths,
 		UnsafeResetAll,
-		SnapshotList,
 		AnnounceNode,
 		ProposeProtocolUpgrade,
 		Start,
