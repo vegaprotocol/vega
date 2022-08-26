@@ -359,7 +359,7 @@ func (TradableInstrumentSimpleRiskModel) rmType() rmType {
 	return SimpleRiskModelType
 }
 
-// Equal returns true if the risk models match
+// Equal returns true if the risk models match.
 func (t TradableInstrumentSimpleRiskModel) Equal(trm isTRM) bool {
 	var ct *TradableInstrumentSimpleRiskModel
 	switch et := trm.(type) {
