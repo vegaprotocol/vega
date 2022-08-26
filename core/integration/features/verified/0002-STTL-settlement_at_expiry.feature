@@ -1,4 +1,4 @@
-Feature: Test settlement at expiry
+Feature: Test settlement at expiry (0016-PFUT-012)
 
   Background:
     Given time is updated to "2019-11-30T00:00:00Z"

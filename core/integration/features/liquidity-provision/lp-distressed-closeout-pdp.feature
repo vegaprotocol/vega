@@ -180,6 +180,6 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | 1055       | TRADING_MODE_CONTINUOUS | 1       | 1045      | 1065      | 3481         | 5000           | 3300          |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
-      | party0 | ETH   | ETH/DEC21 | 1242   | 0       | 0    |
+      | party0 | ETH   | ETH/DEC21 | 1242   | 304     | 0    |
 
-    And the insurance pool balance should be "4881" for the market "ETH/DEC21"
+    And the insurance pool balance should be "4577" for the market "ETH/DEC21"

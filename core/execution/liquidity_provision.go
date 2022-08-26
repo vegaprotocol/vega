@@ -171,11 +171,6 @@ func (m *Market) SubmitLiquidityProvision(
 			m.equityShares.SetPartyStake(party, sub.CommitmentAmount.Clone())
 			// force update of shares so they are updated for all
 			_ = m.equityShares.SharesExcept(m.liquidity.GetInactiveParties())
-
-			if !m.as.IsOpeningAuction() {
-				m.checkLiquidity(ctx, nil, true)
-				m.commandLiquidityAuction(ctx)
-			}
 		}
 	}()
 
@@ -972,10 +967,6 @@ func (m *Market) cancelLiquidityProvision(
 	_ = m.equityShares.SharesExcept(m.liquidity.GetInactiveParties())
 
 	m.checkForReferenceMoves(ctx, []*types.Order{}, true)
-	if !m.as.IsOpeningAuction() {
-		m.checkLiquidity(ctx, nil, true)
-		m.commandLiquidityAuction(ctx)
-	}
 	return nil
 }
 
@@ -1136,11 +1127,6 @@ func (m *Market) finalizeLiquidityProvisionAmendmentAuction(
 	// force update of shares so they are updated for all
 	_ = m.equityShares.SharesExcept(m.liquidity.GetInactiveParties())
 
-	if !m.as.IsOpeningAuction() {
-		m.checkLiquidity(ctx, nil, true)
-		m.commandLiquidityAuction(ctx)
-	}
-
 	return nil
 }
 
@@ -1239,10 +1225,6 @@ func (m *Market) finalizeLiquidityProvisionAmendmentContinuous(
 	// this workd but we definitely trigger some recursive loop which
 	// are unlikely to be fine.
 	m.checkForReferenceMoves(ctx, []*types.Order{}, true)
-	if !m.as.IsOpeningAuction() {
-		m.checkLiquidity(ctx, nil, true)
-		m.commandLiquidityAuction(ctx)
-	}
 
 	return nil
 }

@@ -92,7 +92,7 @@ type TradingDataServiceClient interface {
 	ObserveCandleData(ctx context.Context, in *ObserveCandleDataRequest, opts ...grpc.CallOption) (TradingDataService_ObserveCandleDataClient, error)
 	// Candle intervals list
 	//
-	// Gets all available intervals for a given market along with the corresponding candle id
+	// Get all available intervals for a given market along with the corresponding candle id
 	ListCandleIntervals(ctx context.Context, in *ListCandleIntervalsRequest, opts ...grpc.CallOption) (*ListCandleIntervalsResponse, error)
 	// Votes list
 	//
@@ -102,19 +102,19 @@ type TradingDataServiceClient interface {
 	ObserveVotes(ctx context.Context, in *ObserveVotesRequest, opts ...grpc.CallOption) (TradingDataService_ObserveVotesClient, error)
 	// ERC20 add signer bundle
 	//
-	// Gets the signature bundles that add a particular validator to the multisig contract
+	// Get the signature bundle to add a particular validator to the signer list of the multisig contract
 	GetERC20MultiSigSignerAddedBundles(ctx context.Context, in *GetERC20MultiSigSignerAddedBundlesRequest, opts ...grpc.CallOption) (*GetERC20MultiSigSignerAddedBundlesResponse, error)
 	// ERC20 remove signer bundle
 	//
-	// Gets the signature bundles that remove a particular validator to the multisig contract
+	// Get the signatures bundle to remove a particular validator from signer list of the multisig contract
 	GetERC20MultiSigSignerRemovedBundles(ctx context.Context, in *GetERC20MultiSigSignerRemovedBundlesRequest, opts ...grpc.CallOption) (*GetERC20MultiSigSignerRemovedBundlesResponse, error)
 	// ERC20 list asset bundle
 	//
-	// Gets the signature bundles that remove a particular validator to the multisig contract
+	// Get the signatures bundle to allowlist an ERC20 token in the collateral bridge
 	GetERC20ListAssetBundle(ctx context.Context, in *GetERC20ListAssetBundleRequest, opts ...grpc.CallOption) (*GetERC20ListAssetBundleResponse, error)
 	// ERC20 set asset limit bundle
 	//
-	// Gets the signature bundles that remove a particular validator to the multisig contract
+	// Get the signature bundle to update the token limits (maxLifetimeDeposit and withdrawThreshold) for a given ERC20 token (already allowlisted) in the collateral bridge
 	GetERC20SetAssetLimitsBundle(ctx context.Context, in *GetERC20SetAssetLimitsBundleRequest, opts ...grpc.CallOption) (*GetERC20SetAssetLimitsBundleResponse, error)
 	// ERC20 withdrawal bundle
 	//
@@ -1370,7 +1370,7 @@ type TradingDataServiceServer interface {
 	ObserveCandleData(*ObserveCandleDataRequest, TradingDataService_ObserveCandleDataServer) error
 	// Candle intervals list
 	//
-	// Gets all available intervals for a given market along with the corresponding candle id
+	// Get all available intervals for a given market along with the corresponding candle id
 	ListCandleIntervals(context.Context, *ListCandleIntervalsRequest) (*ListCandleIntervalsResponse, error)
 	// Votes list
 	//
@@ -1380,19 +1380,19 @@ type TradingDataServiceServer interface {
 	ObserveVotes(*ObserveVotesRequest, TradingDataService_ObserveVotesServer) error
 	// ERC20 add signer bundle
 	//
-	// Gets the signature bundles that add a particular validator to the multisig contract
+	// Get the signature bundle to add a particular validator to the signer list of the multisig contract
 	GetERC20MultiSigSignerAddedBundles(context.Context, *GetERC20MultiSigSignerAddedBundlesRequest) (*GetERC20MultiSigSignerAddedBundlesResponse, error)
 	// ERC20 remove signer bundle
 	//
-	// Gets the signature bundles that remove a particular validator to the multisig contract
+	// Get the signatures bundle to remove a particular validator from signer list of the multisig contract
 	GetERC20MultiSigSignerRemovedBundles(context.Context, *GetERC20MultiSigSignerRemovedBundlesRequest) (*GetERC20MultiSigSignerRemovedBundlesResponse, error)
 	// ERC20 list asset bundle
 	//
-	// Gets the signature bundles that remove a particular validator to the multisig contract
+	// Get the signatures bundle to allowlist an ERC20 token in the collateral bridge
 	GetERC20ListAssetBundle(context.Context, *GetERC20ListAssetBundleRequest) (*GetERC20ListAssetBundleResponse, error)
 	// ERC20 set asset limit bundle
 	//
-	// Gets the signature bundles that remove a particular validator to the multisig contract
+	// Get the signature bundle to update the token limits (maxLifetimeDeposit and withdrawThreshold) for a given ERC20 token (already allowlisted) in the collateral bridge
 	GetERC20SetAssetLimitsBundle(context.Context, *GetERC20SetAssetLimitsBundleRequest) (*GetERC20SetAssetLimitsBundleResponse, error)
 	// ERC20 withdrawal bundle
 	//

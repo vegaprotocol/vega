@@ -28,8 +28,8 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	"code.vegaprotocol.io/vega/protos/vega"
 	types "code.vegaprotocol.io/vega/protos/vega"
-	vega "code.vegaprotocol.io/vega/protos/vega"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
@@ -329,6 +329,16 @@ func (r *VegaResolverRoot) UpdateMarketConfiguration() UpdateMarketConfiguration
 	return (*updateMarketConfigurationResolver)(r)
 }
 
+func (r *VegaResolverRoot) AccountUpdate() AccountUpdateResolver {
+	return (*accountUpdateResolver)(r)
+}
+
+type accountUpdateResolver VegaResolverRoot
+
+func (r *accountUpdateResolver) AssetID(ctx context.Context, obj *types.Account) (string, error) {
+	return obj.Asset, nil
+}
+
 // LiquidityOrder resolver
 
 type myLiquidityOrderResolver VegaResolverRoot
@@ -589,6 +599,113 @@ func (r *myQueryResolver) Erc20WithdrawalApproval(ctx context.Context, wid strin
 		TargetAddress: res.TargetAddress,
 		Creation:      fmt.Sprintf("%d", res.Creation),
 	}, nil
+}
+
+func (r *myQueryResolver) Erc20ListAssetBundle(ctx context.Context, assetID string) (*Erc20ListAssetBundle, error) {
+	res, err := r.tradingDataClientV2.GetERC20ListAssetBundle(
+		ctx, &v2.GetERC20ListAssetBundleRequest{AssetId: assetID})
+	if err != nil {
+		return nil, err
+	}
+
+	return &Erc20ListAssetBundle{
+		AssetSource: res.AssetSource,
+		VegaAssetID: res.VegaAssetId,
+		Nonce:       res.Nonce,
+		Signatures:  res.Signatures,
+	}, nil
+}
+
+func (r *myQueryResolver) Erc20SetAssetLimitsBundle(ctx context.Context, proposalID string) (*ERC20SetAssetLimitsBundle, error) {
+	res, err := r.tradingDataClientV2.GetERC20SetAssetLimitsBundle(
+		ctx, &v2.GetERC20SetAssetLimitsBundleRequest{ProposalId: proposalID})
+	if err != nil {
+		return nil, err
+	}
+
+	return &ERC20SetAssetLimitsBundle{
+		AssetSource:   res.AssetSource,
+		VegaAssetID:   res.VegaAssetId,
+		Nonce:         res.Nonce,
+		LifetimeLimit: res.LifetimeLimit,
+		Threshold:     res.Threshold,
+		Signatures:    res.Signatures,
+	}, nil
+}
+
+func (r *myQueryResolver) Erc20MultiSigSignerAddedBundles(ctx context.Context, nodeID string, submitter, epochSeq *string, pagination *v2.Pagination) (*ERC20MultiSigSignerAddedConnection, error) {
+	res, err := r.tradingDataClientV2.GetERC20MultiSigSignerAddedBundles(
+		ctx, &v2.GetERC20MultiSigSignerAddedBundlesRequest{
+			NodeId:     nodeID,
+			Submitter:  fromPtr(submitter),
+			EpochSeq:   fromPtr(epochSeq),
+			Pagination: pagination,
+		})
+	if err != nil {
+		return nil, err
+	}
+
+	edges := make([]*ERC20MultiSigSignerAddedBundleEdge, 0, len(res.Bundles.Edges))
+
+	for _, edge := range res.Bundles.Edges {
+		edges = append(edges, &ERC20MultiSigSignerAddedBundleEdge{
+			Node: &ERC20MultiSigSignerAddedBundle{
+				NewSigner:  edge.Node.NewSigner,
+				Submitter:  edge.Node.Submitter,
+				Nonce:      edge.Node.Nonce,
+				Timestamp:  fmt.Sprint(edge.Node.Timestamp),
+				Signatures: edge.Node.Signatures,
+				EpochSeq:   edge.Node.EpochSeq,
+			},
+			Cursor: edge.Cursor,
+		})
+	}
+
+	return &ERC20MultiSigSignerAddedConnection{
+		Edges:    edges,
+		PageInfo: res.Bundles.PageInfo,
+	}, nil
+}
+
+func (r *myQueryResolver) Erc20MultiSigSignerRemovedBundles(ctx context.Context, nodeID string, submitter, epochSeq *string, pagination *v2.Pagination) (*ERC20MultiSigSignerRemovedConnection, error) {
+	res, err := r.tradingDataClientV2.GetERC20MultiSigSignerRemovedBundles(
+		ctx, &v2.GetERC20MultiSigSignerRemovedBundlesRequest{
+			NodeId:     nodeID,
+			Submitter:  fromPtr(submitter),
+			EpochSeq:   fromPtr(epochSeq),
+			Pagination: pagination,
+		})
+	if err != nil {
+		return nil, err
+	}
+
+	edges := make([]*ERC20MultiSigSignerRemovedBundleEdge, 0, len(res.Bundles.Edges))
+
+	for _, edge := range res.Bundles.Edges {
+		edges = append(edges, &ERC20MultiSigSignerRemovedBundleEdge{
+			Node: &ERC20MultiSigSignerRemovedBundle{
+				OldSigner:  edge.Node.OldSigner,
+				Submitter:  edge.Node.Submitter,
+				Nonce:      edge.Node.Nonce,
+				Timestamp:  fmt.Sprint(edge.Node.Timestamp),
+				Signatures: edge.Node.Signatures,
+				EpochSeq:   edge.Node.EpochSeq,
+			},
+			Cursor: edge.Cursor,
+		})
+	}
+
+	return &ERC20MultiSigSignerRemovedConnection{
+		Edges:    edges,
+		PageInfo: res.Bundles.PageInfo,
+	}, nil
+}
+
+func fromPtr[T any](ptr *T) (ret T) {
+	if ptr != nil {
+		ret = *ptr
+	}
+	return
 }
 
 func (r *myQueryResolver) Withdrawal(ctx context.Context, wid string) (*types.Withdrawal, error) {
@@ -2253,7 +2370,7 @@ func (r *mySubscriptionResolver) Margins(ctx context.Context, partyID string, ma
 	return ch, nil
 }
 
-func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string, partyID *string, asset *string, typeArg *types.AccountType) (<-chan *types.Account, error) {
+func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string, partyID *string, asset *string, typeArg *types.AccountType) (<-chan []*types.Account, error) {
 	var (
 		mkt, pty string
 		ty       types.AccountType
@@ -2283,7 +2400,7 @@ func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 		return nil, customErrorFromStatus(err)
 	}
 
-	c := make(chan *types.Account)
+	c := make(chan []*types.Account)
 	go func() {
 		defer func() {
 			stream.CloseSend()
@@ -2299,7 +2416,7 @@ func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 				r.log.Error("accounts: stream closed", logging.Error(err))
 				break
 			}
-			c <- a.Account
+			c <- a.Accounts
 		}
 	}()
 

@@ -46,6 +46,7 @@ type Config struct {
 type ResolverRoot interface {
 	Account() AccountResolver
 	AccountEdge() AccountEdgeResolver
+	AccountUpdate() AccountUpdateResolver
 	Asset() AssetResolver
 	AuctionEvent() AuctionEventResolver
 	Candle() CandleResolver
@@ -121,6 +122,13 @@ type ComplexityRoot struct {
 	AccountEdge struct {
 		Cursor func(childComplexity int) int
 		Node   func(childComplexity int) int
+	}
+
+	AccountUpdate struct {
+		AssetID  func(childComplexity int) int
+		Balance  func(childComplexity int) int
+		MarketId func(childComplexity int) int
+		Type     func(childComplexity int) int
 	}
 
 	AccountsConnection struct {
@@ -285,6 +293,53 @@ type ComplexityRoot struct {
 		WithdrawThreshold func(childComplexity int) int
 	}
 
+	ERC20MultiSigSignerAddedBundle struct {
+		EpochSeq   func(childComplexity int) int
+		NewSigner  func(childComplexity int) int
+		Nonce      func(childComplexity int) int
+		Signatures func(childComplexity int) int
+		Submitter  func(childComplexity int) int
+		Timestamp  func(childComplexity int) int
+	}
+
+	ERC20MultiSigSignerAddedBundleEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
+	ERC20MultiSigSignerAddedConnection struct {
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
+	}
+
+	ERC20MultiSigSignerRemovedBundle struct {
+		EpochSeq   func(childComplexity int) int
+		Nonce      func(childComplexity int) int
+		OldSigner  func(childComplexity int) int
+		Signatures func(childComplexity int) int
+		Submitter  func(childComplexity int) int
+		Timestamp  func(childComplexity int) int
+	}
+
+	ERC20MultiSigSignerRemovedBundleEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
+	ERC20MultiSigSignerRemovedConnection struct {
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
+	}
+
+	ERC20SetAssetLimitsBundle struct {
+		AssetSource   func(childComplexity int) int
+		LifetimeLimit func(childComplexity int) int
+		Nonce         func(childComplexity int) int
+		Signatures    func(childComplexity int) int
+		Threshold     func(childComplexity int) int
+		VegaAssetID   func(childComplexity int) int
+	}
+
 	Epoch struct {
 		Delegations           func(childComplexity int, partyID *string, nodeID *string, skip *int, first *int, last *int) int
 		DelegationsConnection func(childComplexity int, partyID *string, nodeID *string, pagination *v2.Pagination) int
@@ -311,6 +366,13 @@ type ComplexityRoot struct {
 		End    func(childComplexity int) int
 		Expiry func(childComplexity int) int
 		Start  func(childComplexity int) int
+	}
+
+	Erc20ListAssetBundle struct {
+		AssetSource func(childComplexity int) int
+		Nonce       func(childComplexity int) int
+		Signatures  func(childComplexity int) int
+		VegaAssetID func(childComplexity int) int
 	}
 
 	Erc20WithdrawalApproval struct {
@@ -1083,6 +1145,10 @@ type ComplexityRoot struct {
 		AssetsConnection                   func(childComplexity int, id *string, pagination *v2.Pagination) int
 		Deposit                            func(childComplexity int, id string) int
 		Epoch                              func(childComplexity int, id *string) int
+		Erc20ListAssetBundle               func(childComplexity int, assetID string) int
+		Erc20MultiSigSignerAddedBundles    func(childComplexity int, nodeID string, submitter *string, epochSeq *string, pagination *v2.Pagination) int
+		Erc20MultiSigSignerRemovedBundles  func(childComplexity int, nodeID string, submitter *string, epochSeq *string, pagination *v2.Pagination) int
+		Erc20SetAssetLimitsBundle          func(childComplexity int, proposalID string) int
 		Erc20WithdrawalApproval            func(childComplexity int, withdrawalID string) int
 		EstimateOrder                      func(childComplexity int, marketID string, partyID string, price *string, size string, side vega.Side, timeInForce vega.Order_TimeInForce, expiration *string, typeArg vega.Order_Type) int
 		EthereumKeyRotations               func(childComplexity int, nodeID *string) int
@@ -1507,6 +1573,9 @@ type AccountResolver interface {
 type AccountEdgeResolver interface {
 	Node(ctx context.Context, obj *v2.AccountEdge) (*vega.Account, error)
 }
+type AccountUpdateResolver interface {
+	AssetID(ctx context.Context, obj *vega.Account) (string, error)
+}
 type AssetResolver interface {
 	Name(ctx context.Context, obj *vega.Asset) (string, error)
 	Symbol(ctx context.Context, obj *vega.Asset) (string, error)
@@ -1852,6 +1921,10 @@ type QueryResolver interface {
 	EstimateOrder(ctx context.Context, marketID string, partyID string, price *string, size string, side vega.Side, timeInForce vega.Order_TimeInForce, expiration *string, typeArg vega.Order_Type) (*OrderEstimate, error)
 	Withdrawal(ctx context.Context, id string) (*vega.Withdrawal, error)
 	Erc20WithdrawalApproval(ctx context.Context, withdrawalID string) (*Erc20WithdrawalApproval, error)
+	Erc20MultiSigSignerAddedBundles(ctx context.Context, nodeID string, submitter *string, epochSeq *string, pagination *v2.Pagination) (*ERC20MultiSigSignerAddedConnection, error)
+	Erc20MultiSigSignerRemovedBundles(ctx context.Context, nodeID string, submitter *string, epochSeq *string, pagination *v2.Pagination) (*ERC20MultiSigSignerRemovedConnection, error)
+	Erc20ListAssetBundle(ctx context.Context, assetID string) (*Erc20ListAssetBundle, error)
+	Erc20SetAssetLimitsBundle(ctx context.Context, proposalID string) (*ERC20SetAssetLimitsBundle, error)
 	Deposit(ctx context.Context, id string) (*vega.Deposit, error)
 	NetworkParameters(ctx context.Context) ([]*vega.NetworkParameter, error)
 	NetworkParametersConnection(ctx context.Context, pagination *v2.Pagination) (*v2.NetworkParameterConnection, error)
@@ -1936,7 +2009,7 @@ type SubscriptionResolver interface {
 	Positions(ctx context.Context, partyID *string, marketID *string) (<-chan *vega.Position, error)
 	MarketDepth(ctx context.Context, marketID string) (<-chan *vega.MarketDepth, error)
 	MarketDepthUpdate(ctx context.Context, marketID string) (<-chan *vega.MarketDepthUpdate, error)
-	Accounts(ctx context.Context, marketID *string, partyID *string, assetID *string, typeArg *vega.AccountType) (<-chan *vega.Account, error)
+	Accounts(ctx context.Context, marketID *string, partyID *string, assetID *string, typeArg *vega.AccountType) (<-chan []*vega.Account, error)
 	MarketData(ctx context.Context, marketID *string) (<-chan *vega.MarketData, error)
 	MarketsDepth(ctx context.Context, marketIds []string) (<-chan []*vega.MarketDepth, error)
 	MarketsDepthUpdate(ctx context.Context, marketIds []string) (<-chan []*vega.MarketDepthUpdate, error)
@@ -2063,6 +2136,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.AccountEdge.Node(childComplexity), true
+
+	case "AccountUpdate.assetId":
+		if e.complexity.AccountUpdate.AssetID == nil {
+			break
+		}
+
+		return e.complexity.AccountUpdate.AssetID(childComplexity), true
+
+	case "AccountUpdate.balance":
+		if e.complexity.AccountUpdate.Balance == nil {
+			break
+		}
+
+		return e.complexity.AccountUpdate.Balance(childComplexity), true
+
+	case "AccountUpdate.marketId":
+		if e.complexity.AccountUpdate.MarketId == nil {
+			break
+		}
+
+		return e.complexity.AccountUpdate.MarketId(childComplexity), true
+
+	case "AccountUpdate.type":
+		if e.complexity.AccountUpdate.Type == nil {
+			break
+		}
+
+		return e.complexity.AccountUpdate.Type(childComplexity), true
 
 	case "AccountsConnection.edges":
 		if e.complexity.AccountsConnection.Edges == nil {
@@ -2694,6 +2795,188 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ERC20.WithdrawThreshold(childComplexity), true
 
+	case "ERC20MultiSigSignerAddedBundle.epochSeq":
+		if e.complexity.ERC20MultiSigSignerAddedBundle.EpochSeq == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerAddedBundle.EpochSeq(childComplexity), true
+
+	case "ERC20MultiSigSignerAddedBundle.newSigner":
+		if e.complexity.ERC20MultiSigSignerAddedBundle.NewSigner == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerAddedBundle.NewSigner(childComplexity), true
+
+	case "ERC20MultiSigSignerAddedBundle.nonce":
+		if e.complexity.ERC20MultiSigSignerAddedBundle.Nonce == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerAddedBundle.Nonce(childComplexity), true
+
+	case "ERC20MultiSigSignerAddedBundle.signatures":
+		if e.complexity.ERC20MultiSigSignerAddedBundle.Signatures == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerAddedBundle.Signatures(childComplexity), true
+
+	case "ERC20MultiSigSignerAddedBundle.submitter":
+		if e.complexity.ERC20MultiSigSignerAddedBundle.Submitter == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerAddedBundle.Submitter(childComplexity), true
+
+	case "ERC20MultiSigSignerAddedBundle.timestamp":
+		if e.complexity.ERC20MultiSigSignerAddedBundle.Timestamp == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerAddedBundle.Timestamp(childComplexity), true
+
+	case "ERC20MultiSigSignerAddedBundleEdge.cursor":
+		if e.complexity.ERC20MultiSigSignerAddedBundleEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerAddedBundleEdge.Cursor(childComplexity), true
+
+	case "ERC20MultiSigSignerAddedBundleEdge.node":
+		if e.complexity.ERC20MultiSigSignerAddedBundleEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerAddedBundleEdge.Node(childComplexity), true
+
+	case "ERC20MultiSigSignerAddedConnection.edges":
+		if e.complexity.ERC20MultiSigSignerAddedConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerAddedConnection.Edges(childComplexity), true
+
+	case "ERC20MultiSigSignerAddedConnection.pageInfo":
+		if e.complexity.ERC20MultiSigSignerAddedConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerAddedConnection.PageInfo(childComplexity), true
+
+	case "ERC20MultiSigSignerRemovedBundle.epochSeq":
+		if e.complexity.ERC20MultiSigSignerRemovedBundle.EpochSeq == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerRemovedBundle.EpochSeq(childComplexity), true
+
+	case "ERC20MultiSigSignerRemovedBundle.nonce":
+		if e.complexity.ERC20MultiSigSignerRemovedBundle.Nonce == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerRemovedBundle.Nonce(childComplexity), true
+
+	case "ERC20MultiSigSignerRemovedBundle.oldSigner":
+		if e.complexity.ERC20MultiSigSignerRemovedBundle.OldSigner == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerRemovedBundle.OldSigner(childComplexity), true
+
+	case "ERC20MultiSigSignerRemovedBundle.signatures":
+		if e.complexity.ERC20MultiSigSignerRemovedBundle.Signatures == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerRemovedBundle.Signatures(childComplexity), true
+
+	case "ERC20MultiSigSignerRemovedBundle.submitter":
+		if e.complexity.ERC20MultiSigSignerRemovedBundle.Submitter == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerRemovedBundle.Submitter(childComplexity), true
+
+	case "ERC20MultiSigSignerRemovedBundle.timestamp":
+		if e.complexity.ERC20MultiSigSignerRemovedBundle.Timestamp == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerRemovedBundle.Timestamp(childComplexity), true
+
+	case "ERC20MultiSigSignerRemovedBundleEdge.cursor":
+		if e.complexity.ERC20MultiSigSignerRemovedBundleEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerRemovedBundleEdge.Cursor(childComplexity), true
+
+	case "ERC20MultiSigSignerRemovedBundleEdge.node":
+		if e.complexity.ERC20MultiSigSignerRemovedBundleEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerRemovedBundleEdge.Node(childComplexity), true
+
+	case "ERC20MultiSigSignerRemovedConnection.edges":
+		if e.complexity.ERC20MultiSigSignerRemovedConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerRemovedConnection.Edges(childComplexity), true
+
+	case "ERC20MultiSigSignerRemovedConnection.pageInfo":
+		if e.complexity.ERC20MultiSigSignerRemovedConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerRemovedConnection.PageInfo(childComplexity), true
+
+	case "ERC20SetAssetLimitsBundle.assetSource":
+		if e.complexity.ERC20SetAssetLimitsBundle.AssetSource == nil {
+			break
+		}
+
+		return e.complexity.ERC20SetAssetLimitsBundle.AssetSource(childComplexity), true
+
+	case "ERC20SetAssetLimitsBundle.lifetimeLimit":
+		if e.complexity.ERC20SetAssetLimitsBundle.LifetimeLimit == nil {
+			break
+		}
+
+		return e.complexity.ERC20SetAssetLimitsBundle.LifetimeLimit(childComplexity), true
+
+	case "ERC20SetAssetLimitsBundle.nonce":
+		if e.complexity.ERC20SetAssetLimitsBundle.Nonce == nil {
+			break
+		}
+
+		return e.complexity.ERC20SetAssetLimitsBundle.Nonce(childComplexity), true
+
+	case "ERC20SetAssetLimitsBundle.signatures":
+		if e.complexity.ERC20SetAssetLimitsBundle.Signatures == nil {
+			break
+		}
+
+		return e.complexity.ERC20SetAssetLimitsBundle.Signatures(childComplexity), true
+
+	case "ERC20SetAssetLimitsBundle.threshold":
+		if e.complexity.ERC20SetAssetLimitsBundle.Threshold == nil {
+			break
+		}
+
+		return e.complexity.ERC20SetAssetLimitsBundle.Threshold(childComplexity), true
+
+	case "ERC20SetAssetLimitsBundle.vegaAssetId":
+		if e.complexity.ERC20SetAssetLimitsBundle.VegaAssetID == nil {
+			break
+		}
+
+		return e.complexity.ERC20SetAssetLimitsBundle.VegaAssetID(childComplexity), true
+
 	case "Epoch.delegations":
 		if e.complexity.Epoch.Delegations == nil {
 			break
@@ -2820,6 +3103,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.EpochTimestamps.Start(childComplexity), true
+
+	case "Erc20ListAssetBundle.assetSource":
+		if e.complexity.Erc20ListAssetBundle.AssetSource == nil {
+			break
+		}
+
+		return e.complexity.Erc20ListAssetBundle.AssetSource(childComplexity), true
+
+	case "Erc20ListAssetBundle.nonce":
+		if e.complexity.Erc20ListAssetBundle.Nonce == nil {
+			break
+		}
+
+		return e.complexity.Erc20ListAssetBundle.Nonce(childComplexity), true
+
+	case "Erc20ListAssetBundle.signatures":
+		if e.complexity.Erc20ListAssetBundle.Signatures == nil {
+			break
+		}
+
+		return e.complexity.Erc20ListAssetBundle.Signatures(childComplexity), true
+
+	case "Erc20ListAssetBundle.vegaAssetId":
+		if e.complexity.Erc20ListAssetBundle.VegaAssetID == nil {
+			break
+		}
+
+		return e.complexity.Erc20ListAssetBundle.VegaAssetID(childComplexity), true
 
 	case "Erc20WithdrawalApproval.amount":
 		if e.complexity.Erc20WithdrawalApproval.Amount == nil {
@@ -6235,6 +6546,54 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Epoch(childComplexity, args["id"].(*string)), true
 
+	case "Query.erc20ListAssetBundle":
+		if e.complexity.Query.Erc20ListAssetBundle == nil {
+			break
+		}
+
+		args, err := ec.field_Query_erc20ListAssetBundle_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Erc20ListAssetBundle(childComplexity, args["assetId"].(string)), true
+
+	case "Query.erc20MultiSigSignerAddedBundles":
+		if e.complexity.Query.Erc20MultiSigSignerAddedBundles == nil {
+			break
+		}
+
+		args, err := ec.field_Query_erc20MultiSigSignerAddedBundles_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Erc20MultiSigSignerAddedBundles(childComplexity, args["nodeId"].(string), args["submitter"].(*string), args["epochSeq"].(*string), args["pagination"].(*v2.Pagination)), true
+
+	case "Query.erc20MultiSigSignerRemovedBundles":
+		if e.complexity.Query.Erc20MultiSigSignerRemovedBundles == nil {
+			break
+		}
+
+		args, err := ec.field_Query_erc20MultiSigSignerRemovedBundles_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Erc20MultiSigSignerRemovedBundles(childComplexity, args["nodeId"].(string), args["submitter"].(*string), args["epochSeq"].(*string), args["pagination"].(*v2.Pagination)), true
+
+	case "Query.erc20SetAssetLimitsBundle":
+		if e.complexity.Query.Erc20SetAssetLimitsBundle == nil {
+			break
+		}
+
+		args, err := ec.field_Query_erc20SetAssetLimitsBundle_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Erc20SetAssetLimitsBundle(childComplexity, args["proposalId"].(string)), true
+
 	case "Query.erc20WithdrawalApproval":
 		if e.complexity.Query.Erc20WithdrawalApproval == nil {
 			break
@@ -8482,7 +8841,7 @@ type Subscription {
     assetId: ID
     "Type of the account"
     type: AccountType
-  ): Account!
+  ): [AccountUpdate!]!
 
   "Subscribe to the mark price changes"
   marketData(
@@ -8954,6 +9313,42 @@ type Query {
     "ID of the withdrawal"
     withdrawalId: ID!
   ): Erc20WithdrawalApproval
+
+  "get the signature bundle to add a particular validator to the signer list of the multisig contract"
+  erc20MultiSigSignerAddedBundles(
+    "The node ID of the validator of which a signature bundle is required"
+    nodeId: ID!
+    "The ethereum address of the submitter"
+    submitter: String
+    "The epoch that generated the bundle i.e the epoch in which the node was promoted to tendermint validator"
+    epochSeq: String
+    "Pagination"
+    pagination: Pagination
+  ): ERC20MultiSigSignerAddedConnection!
+
+  "get the signatures bundle to remove a particular validator from signer list of the multisig contract"
+  erc20MultiSigSignerRemovedBundles(
+    "The node ID of the validator of which a signature bundle is required"
+    nodeId: ID!
+    "The ethereum address of the validator that will submit the bundle"
+    submitter: String
+    "The epoch that generated the bundle i.e the epoch in which the node was demoted from a tendermint validator"
+    epochSeq: String
+    "Pagination"
+    pagination: Pagination
+  ): ERC20MultiSigSignerRemovedConnection!
+
+  "get the signatures bundle to allowlist an ERC20 token in the collateral bridge"
+  erc20ListAssetBundle(
+    "ID of the asset"
+    assetId: ID!
+  ): Erc20ListAssetBundle!
+
+  "get the signature bundle to update the token limits (maxLifetimeDeposit and withdrawThreshold) for a given ERC20 token (already allowlisted) in the collateral bridge"
+  erc20SetAssetLimitsBundle(
+    "ID of the proposal to update an asset"
+    proposalId: ID!
+  ): ERC20SetAssetLimitsBundle!
 
   "find a deposit using its ID"
   deposit("ID of the Deposit" id: ID!): Deposit
@@ -10723,6 +11118,18 @@ type Account {
   market: Market
 }
 
+"An account record used for subscriptions"
+type AccountUpdate {
+  "Balance as string - current account balance (approx. as balances can be updated several times per second)"
+  balance: String!
+  "Asset id, the 'currency'"
+  assetId: ID!
+  "Account type (General, Margin, etc)"
+  type: AccountType!
+  "Market id (only relevant to margin accounts)"
+  marketId: ID
+}
+
 "All the data related to the approval of a withdrawal from the network"
 type Erc20WithdrawalApproval {
   "The source asset in the ethereum network"
@@ -10742,6 +11149,94 @@ type Erc20WithdrawalApproval {
   targetAddress: String!
   "Timestamp at which the withdrawal was created"
   creation: String!
+}
+
+"Response for the signature bundle to add a particular validator to the signer list of the multisig contract"
+type ERC20MultiSigSignerAddedConnection {
+  edges: [ERC20MultiSigSignerAddedBundleEdge]
+  pageInfo: PageInfo
+}
+
+type ERC20MultiSigSignerAddedBundleEdge {
+  node: ERC20MultiSigSignerAddedBundle!
+  cursor: String!
+}
+
+type ERC20MultiSigSignerAddedBundle {
+  "The ethereum address of the signer to be added"
+  newSigner: String!
+  "The ethereum address of the submitter"
+  submitter: String!
+  "The nonce used in the signing operation"
+  nonce: String!
+  "Unix-nano timestamp for when the validator was added"
+  timestamp: String!
+  "The bundle of signatures from current validators to sign in the new signer"
+  signatures: String!
+  "The epoch in which the validator was added"
+  epochSeq: String!
+}
+
+"Response for the signature bundle to remove a particular validator from the signer list of the multisig contract"
+type ERC20MultiSigSignerRemovedConnection {
+  "The list of signer bundles for that validator"
+  edges: [ERC20MultiSigSignerRemovedBundleEdge]
+  "The pagination information"
+  pageInfo: PageInfo
+}
+
+type ERC20MultiSigSignerRemovedBundleEdge {
+  node: ERC20MultiSigSignerRemovedBundle!
+  cursor: String!
+}
+
+type ERC20MultiSigSignerRemovedBundle {
+  "The ethereum address of the signer to be removed"
+  oldSigner: String!
+  "The ethereum address of the submitter"
+  submitter: String!
+  "The nonce used in the signing operation"
+  nonce: String!
+  "Unix-nano timestamp for when the validator was added"
+  timestamp: String!
+  "The bundle of signatures from current validators to sign in the new signer"
+  signatures: String!
+  "The epoch in which the validator was removed"
+  epochSeq: String!
+}
+
+"Response for the signature bundle to allowlist an ERC20 token in the collateral bridge"
+type Erc20ListAssetBundle {
+  "The source asset in the ethereum network"
+  assetSource: String!
+  "The ID of the vega asset"
+  vegaAssetId: String!
+  "The nonce to be used in the request"
+  nonce: String!
+  """
+  Signature aggregate from the nodes, in the following format:
+  0x + sig1 + sig2 + ... + sigN
+  """
+  signatures: String!
+}
+
+"Response for the signature bundle to update the token limits (maxLifetimeDeposit and withdrawThreshold) for a given ERC20 token (already allowlisted) in the collateral bridge"
+type ERC20SetAssetLimitsBundle {
+  "The address of the asset on ethereum"
+  assetSource: String!
+  "The ID of the vega asset"
+  vegaAssetId: String!
+  "The nonce, which is actually the internal reference for the proposal"
+  nonce: String!
+  "The lifetime limit deposit for this asset"
+  lifetimeLimit: String!
+  "The threshold withdraw for this asset"
+  threshold: String!
+  """
+  The signatures bundle as hex encoded data, forward by 0x
+  e.g: 0x + sig1 + sig2 + ... + sixN
+  """
+  signatures: String!
 }
 
 "The details of a withdrawal processed by Vega"
@@ -13505,6 +14000,120 @@ func (ec *executionContext) field_Query_epoch_args(ctx context.Context, rawArgs 
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_erc20ListAssetBundle_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["assetId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("assetId"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["assetId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_erc20MultiSigSignerAddedBundles_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["nodeId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeId"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["nodeId"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["submitter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("submitter"))
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["submitter"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["epochSeq"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("epochSeq"))
+		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["epochSeq"] = arg2
+	var arg3 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg3, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_erc20MultiSigSignerRemovedBundles_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["nodeId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeId"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["nodeId"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["submitter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("submitter"))
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["submitter"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["epochSeq"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("epochSeq"))
+		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["epochSeq"] = arg2
+	var arg3 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg3, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_erc20SetAssetLimitsBundle_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["proposalId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("proposalId"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["proposalId"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_erc20WithdrawalApproval_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -15146,6 +15755,143 @@ func (ec *executionContext) _AccountEdge_cursor(ctx context.Context, field graph
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AccountUpdate_balance(ctx context.Context, field graphql.CollectedField, obj *vega.Account) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AccountUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Balance, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AccountUpdate_assetId(ctx context.Context, field graphql.CollectedField, obj *vega.Account) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AccountUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.AccountUpdate().AssetID(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AccountUpdate_type(ctx context.Context, field graphql.CollectedField, obj *vega.Account) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AccountUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(vega.AccountType)
+	fc.Result = res
+	return ec.marshalNAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AccountUpdate_marketId(ctx context.Context, field graphql.CollectedField, obj *vega.Account) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AccountUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MarketId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _AccountsConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.AccountsConnection) (ret graphql.Marshaler) {
@@ -18229,6 +18975,904 @@ func (ec *executionContext) _ERC20_withdrawThreshold(ctx context.Context, field 
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _ERC20MultiSigSignerAddedBundle_newSigner(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerAddedBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerAddedBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NewSigner, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerAddedBundle_submitter(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerAddedBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerAddedBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Submitter, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerAddedBundle_nonce(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerAddedBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerAddedBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Nonce, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerAddedBundle_timestamp(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerAddedBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerAddedBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Timestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerAddedBundle_signatures(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerAddedBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerAddedBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Signatures, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerAddedBundle_epochSeq(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerAddedBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerAddedBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EpochSeq, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerAddedBundleEdge_node(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerAddedBundleEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerAddedBundleEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ERC20MultiSigSignerAddedBundle)
+	fc.Result = res
+	return ec.marshalNERC20MultiSigSignerAddedBundle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20MultiSigSignerAddedBundle(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerAddedBundleEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerAddedBundleEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerAddedBundleEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerAddedConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerAddedConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerAddedConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*ERC20MultiSigSignerAddedBundleEdge)
+	fc.Result = res
+	return ec.marshalOERC20MultiSigSignerAddedBundleEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20MultiSigSignerAddedBundleEdge(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerAddedConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerAddedConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerAddedConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v2.PageInfo)
+	fc.Result = res
+	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerRemovedBundle_oldSigner(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerRemovedBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerRemovedBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OldSigner, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerRemovedBundle_submitter(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerRemovedBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerRemovedBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Submitter, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerRemovedBundle_nonce(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerRemovedBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerRemovedBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Nonce, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerRemovedBundle_timestamp(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerRemovedBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerRemovedBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Timestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerRemovedBundle_signatures(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerRemovedBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerRemovedBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Signatures, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerRemovedBundle_epochSeq(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerRemovedBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerRemovedBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EpochSeq, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerRemovedBundleEdge_node(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerRemovedBundleEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerRemovedBundleEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ERC20MultiSigSignerRemovedBundle)
+	fc.Result = res
+	return ec.marshalNERC20MultiSigSignerRemovedBundle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20MultiSigSignerRemovedBundle(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerRemovedBundleEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerRemovedBundleEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerRemovedBundleEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerRemovedConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerRemovedConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerRemovedConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*ERC20MultiSigSignerRemovedBundleEdge)
+	fc.Result = res
+	return ec.marshalOERC20MultiSigSignerRemovedBundleEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20MultiSigSignerRemovedBundleEdge(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerRemovedConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerRemovedConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerRemovedConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v2.PageInfo)
+	fc.Result = res
+	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20SetAssetLimitsBundle_assetSource(ctx context.Context, field graphql.CollectedField, obj *ERC20SetAssetLimitsBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20SetAssetLimitsBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AssetSource, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20SetAssetLimitsBundle_vegaAssetId(ctx context.Context, field graphql.CollectedField, obj *ERC20SetAssetLimitsBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20SetAssetLimitsBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.VegaAssetID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20SetAssetLimitsBundle_nonce(ctx context.Context, field graphql.CollectedField, obj *ERC20SetAssetLimitsBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20SetAssetLimitsBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Nonce, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20SetAssetLimitsBundle_lifetimeLimit(ctx context.Context, field graphql.CollectedField, obj *ERC20SetAssetLimitsBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20SetAssetLimitsBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LifetimeLimit, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20SetAssetLimitsBundle_threshold(ctx context.Context, field graphql.CollectedField, obj *ERC20SetAssetLimitsBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20SetAssetLimitsBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Threshold, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20SetAssetLimitsBundle_signatures(ctx context.Context, field graphql.CollectedField, obj *ERC20SetAssetLimitsBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20SetAssetLimitsBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Signatures, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Epoch_id(ctx context.Context, field graphql.CollectedField, obj *vega.Epoch) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -18787,6 +20431,146 @@ func (ec *executionContext) _EpochTimestamps_end(ctx context.Context, field grap
 	res := resTmp.(*string)
 	fc.Result = res
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Erc20ListAssetBundle_assetSource(ctx context.Context, field graphql.CollectedField, obj *Erc20ListAssetBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Erc20ListAssetBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AssetSource, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Erc20ListAssetBundle_vegaAssetId(ctx context.Context, field graphql.CollectedField, obj *Erc20ListAssetBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Erc20ListAssetBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.VegaAssetID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Erc20ListAssetBundle_nonce(ctx context.Context, field graphql.CollectedField, obj *Erc20ListAssetBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Erc20ListAssetBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Nonce, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Erc20ListAssetBundle_signatures(ctx context.Context, field graphql.CollectedField, obj *Erc20ListAssetBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Erc20ListAssetBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Signatures, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Erc20WithdrawalApproval_assetSource(ctx context.Context, field graphql.CollectedField, obj *Erc20WithdrawalApproval) (ret graphql.Marshaler) {
@@ -35867,6 +37651,174 @@ func (ec *executionContext) _Query_erc20WithdrawalApproval(ctx context.Context, 
 	return ec.marshalOErc20WithdrawalApproval2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐErc20WithdrawalApproval(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_erc20MultiSigSignerAddedBundles(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_erc20MultiSigSignerAddedBundles_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Erc20MultiSigSignerAddedBundles(rctx, args["nodeId"].(string), args["submitter"].(*string), args["epochSeq"].(*string), args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ERC20MultiSigSignerAddedConnection)
+	fc.Result = res
+	return ec.marshalNERC20MultiSigSignerAddedConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20MultiSigSignerAddedConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_erc20MultiSigSignerRemovedBundles(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_erc20MultiSigSignerRemovedBundles_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Erc20MultiSigSignerRemovedBundles(rctx, args["nodeId"].(string), args["submitter"].(*string), args["epochSeq"].(*string), args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ERC20MultiSigSignerRemovedConnection)
+	fc.Result = res
+	return ec.marshalNERC20MultiSigSignerRemovedConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20MultiSigSignerRemovedConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_erc20ListAssetBundle(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_erc20ListAssetBundle_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Erc20ListAssetBundle(rctx, args["assetId"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*Erc20ListAssetBundle)
+	fc.Result = res
+	return ec.marshalNErc20ListAssetBundle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐErc20ListAssetBundle(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_erc20SetAssetLimitsBundle(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_erc20SetAssetLimitsBundle_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Erc20SetAssetLimitsBundle(rctx, args["proposalId"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ERC20SetAssetLimitsBundle)
+	fc.Result = res
+	return ec.marshalNERC20SetAssetLimitsBundle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20SetAssetLimitsBundle(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_deposit(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -40363,7 +42315,7 @@ func (ec *executionContext) _Subscription_accounts(ctx context.Context, field gr
 		return nil
 	}
 	return func() graphql.Marshaler {
-		res, ok := <-resTmp.(<-chan *vega.Account)
+		res, ok := <-resTmp.(<-chan []*vega.Account)
 		if !ok {
 			return nil
 		}
@@ -40371,7 +42323,7 @@ func (ec *executionContext) _Subscription_accounts(ctx context.Context, field gr
 			w.Write([]byte{'{'})
 			graphql.MarshalString(field.Alias).MarshalGQL(w)
 			w.Write([]byte{':'})
-			ec.marshalNAccount2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccount(ctx, field.Selections, res).MarshalGQL(w)
+			ec.marshalNAccountUpdate2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountᚄ(ctx, field.Selections, res).MarshalGQL(w)
 			w.Write([]byte{'}'})
 		})
 	}
@@ -45977,6 +47929,74 @@ func (ec *executionContext) _AccountEdge(ctx context.Context, sel ast.SelectionS
 	return out
 }
 
+var accountUpdateImplementors = []string{"AccountUpdate"}
+
+func (ec *executionContext) _AccountUpdate(ctx context.Context, sel ast.SelectionSet, obj *vega.Account) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, accountUpdateImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AccountUpdate")
+		case "balance":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._AccountUpdate_balance(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "assetId":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._AccountUpdate_assetId(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "type":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._AccountUpdate_type(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "marketId":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._AccountUpdate_marketId(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var accountsConnectionImplementors = []string{"AccountsConnection"}
 
 func (ec *executionContext) _AccountsConnection(ctx context.Context, sel ast.SelectionSet, obj *v2.AccountsConnection) graphql.Marshaler {
@@ -47562,6 +49582,401 @@ func (ec *executionContext) _ERC20(ctx context.Context, sel ast.SelectionSet, ob
 	return out
 }
 
+var eRC20MultiSigSignerAddedBundleImplementors = []string{"ERC20MultiSigSignerAddedBundle"}
+
+func (ec *executionContext) _ERC20MultiSigSignerAddedBundle(ctx context.Context, sel ast.SelectionSet, obj *ERC20MultiSigSignerAddedBundle) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, eRC20MultiSigSignerAddedBundleImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ERC20MultiSigSignerAddedBundle")
+		case "newSigner":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerAddedBundle_newSigner(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "submitter":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerAddedBundle_submitter(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "nonce":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerAddedBundle_nonce(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "timestamp":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerAddedBundle_timestamp(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "signatures":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerAddedBundle_signatures(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "epochSeq":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerAddedBundle_epochSeq(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var eRC20MultiSigSignerAddedBundleEdgeImplementors = []string{"ERC20MultiSigSignerAddedBundleEdge"}
+
+func (ec *executionContext) _ERC20MultiSigSignerAddedBundleEdge(ctx context.Context, sel ast.SelectionSet, obj *ERC20MultiSigSignerAddedBundleEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, eRC20MultiSigSignerAddedBundleEdgeImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ERC20MultiSigSignerAddedBundleEdge")
+		case "node":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerAddedBundleEdge_node(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cursor":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerAddedBundleEdge_cursor(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var eRC20MultiSigSignerAddedConnectionImplementors = []string{"ERC20MultiSigSignerAddedConnection"}
+
+func (ec *executionContext) _ERC20MultiSigSignerAddedConnection(ctx context.Context, sel ast.SelectionSet, obj *ERC20MultiSigSignerAddedConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, eRC20MultiSigSignerAddedConnectionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ERC20MultiSigSignerAddedConnection")
+		case "edges":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerAddedConnection_edges(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "pageInfo":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerAddedConnection_pageInfo(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var eRC20MultiSigSignerRemovedBundleImplementors = []string{"ERC20MultiSigSignerRemovedBundle"}
+
+func (ec *executionContext) _ERC20MultiSigSignerRemovedBundle(ctx context.Context, sel ast.SelectionSet, obj *ERC20MultiSigSignerRemovedBundle) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, eRC20MultiSigSignerRemovedBundleImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ERC20MultiSigSignerRemovedBundle")
+		case "oldSigner":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerRemovedBundle_oldSigner(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "submitter":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerRemovedBundle_submitter(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "nonce":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerRemovedBundle_nonce(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "timestamp":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerRemovedBundle_timestamp(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "signatures":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerRemovedBundle_signatures(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "epochSeq":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerRemovedBundle_epochSeq(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var eRC20MultiSigSignerRemovedBundleEdgeImplementors = []string{"ERC20MultiSigSignerRemovedBundleEdge"}
+
+func (ec *executionContext) _ERC20MultiSigSignerRemovedBundleEdge(ctx context.Context, sel ast.SelectionSet, obj *ERC20MultiSigSignerRemovedBundleEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, eRC20MultiSigSignerRemovedBundleEdgeImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ERC20MultiSigSignerRemovedBundleEdge")
+		case "node":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerRemovedBundleEdge_node(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cursor":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerRemovedBundleEdge_cursor(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var eRC20MultiSigSignerRemovedConnectionImplementors = []string{"ERC20MultiSigSignerRemovedConnection"}
+
+func (ec *executionContext) _ERC20MultiSigSignerRemovedConnection(ctx context.Context, sel ast.SelectionSet, obj *ERC20MultiSigSignerRemovedConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, eRC20MultiSigSignerRemovedConnectionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ERC20MultiSigSignerRemovedConnection")
+		case "edges":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerRemovedConnection_edges(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "pageInfo":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerRemovedConnection_pageInfo(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var eRC20SetAssetLimitsBundleImplementors = []string{"ERC20SetAssetLimitsBundle"}
+
+func (ec *executionContext) _ERC20SetAssetLimitsBundle(ctx context.Context, sel ast.SelectionSet, obj *ERC20SetAssetLimitsBundle) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, eRC20SetAssetLimitsBundleImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ERC20SetAssetLimitsBundle")
+		case "assetSource":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20SetAssetLimitsBundle_assetSource(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "vegaAssetId":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20SetAssetLimitsBundle_vegaAssetId(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "nonce":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20SetAssetLimitsBundle_nonce(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "lifetimeLimit":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20SetAssetLimitsBundle_lifetimeLimit(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "threshold":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20SetAssetLimitsBundle_threshold(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "signatures":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20SetAssetLimitsBundle_signatures(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var epochImplementors = []string{"Epoch"}
 
 func (ec *executionContext) _Epoch(ctx context.Context, sel ast.SelectionSet, obj *vega.Epoch) graphql.Marshaler {
@@ -47834,6 +50249,67 @@ func (ec *executionContext) _EpochTimestamps(ctx context.Context, sel ast.Select
 				return innerFunc(ctx)
 
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var erc20ListAssetBundleImplementors = []string{"Erc20ListAssetBundle"}
+
+func (ec *executionContext) _Erc20ListAssetBundle(ctx context.Context, sel ast.SelectionSet, obj *Erc20ListAssetBundle) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, erc20ListAssetBundleImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Erc20ListAssetBundle")
+		case "assetSource":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Erc20ListAssetBundle_assetSource(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "vegaAssetId":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Erc20ListAssetBundle_vegaAssetId(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "nonce":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Erc20ListAssetBundle_nonce(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "signatures":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Erc20ListAssetBundle_signatures(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -56531,6 +59007,98 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
+		case "erc20MultiSigSignerAddedBundles":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_erc20MultiSigSignerAddedBundles(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "erc20MultiSigSignerRemovedBundles":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_erc20MultiSigSignerRemovedBundles(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "erc20ListAssetBundle":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_erc20ListAssetBundle(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "erc20SetAssetLimitsBundle":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_erc20SetAssetLimitsBundle(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
 		case "deposit":
 			field := field
 
@@ -61011,6 +63579,60 @@ func (ec *executionContext) marshalNAccountType2codeᚗvegaprotocolᚗioᚋvega�
 	return res
 }
 
+func (ec *executionContext) marshalNAccountUpdate2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Account) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNAccountUpdate2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccount(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNAccountUpdate2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccount(ctx context.Context, sel ast.SelectionSet, v *vega.Account) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._AccountUpdate(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNAccountsConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountsConnection(ctx context.Context, sel ast.SelectionSet, v v2.AccountsConnection) graphql.Marshaler {
 	return ec._AccountsConnection(ctx, sel, &v)
 }
@@ -61446,6 +64068,68 @@ func (ec *executionContext) marshalNDispatchMetric2codeᚗvegaprotocolᚗioᚋve
 	return res
 }
 
+func (ec *executionContext) marshalNERC20MultiSigSignerAddedBundle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20MultiSigSignerAddedBundle(ctx context.Context, sel ast.SelectionSet, v *ERC20MultiSigSignerAddedBundle) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._ERC20MultiSigSignerAddedBundle(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNERC20MultiSigSignerAddedConnection2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20MultiSigSignerAddedConnection(ctx context.Context, sel ast.SelectionSet, v ERC20MultiSigSignerAddedConnection) graphql.Marshaler {
+	return ec._ERC20MultiSigSignerAddedConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNERC20MultiSigSignerAddedConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20MultiSigSignerAddedConnection(ctx context.Context, sel ast.SelectionSet, v *ERC20MultiSigSignerAddedConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._ERC20MultiSigSignerAddedConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNERC20MultiSigSignerRemovedBundle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20MultiSigSignerRemovedBundle(ctx context.Context, sel ast.SelectionSet, v *ERC20MultiSigSignerRemovedBundle) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._ERC20MultiSigSignerRemovedBundle(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNERC20MultiSigSignerRemovedConnection2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20MultiSigSignerRemovedConnection(ctx context.Context, sel ast.SelectionSet, v ERC20MultiSigSignerRemovedConnection) graphql.Marshaler {
+	return ec._ERC20MultiSigSignerRemovedConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNERC20MultiSigSignerRemovedConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20MultiSigSignerRemovedConnection(ctx context.Context, sel ast.SelectionSet, v *ERC20MultiSigSignerRemovedConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._ERC20MultiSigSignerRemovedConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNERC20SetAssetLimitsBundle2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20SetAssetLimitsBundle(ctx context.Context, sel ast.SelectionSet, v ERC20SetAssetLimitsBundle) graphql.Marshaler {
+	return ec._ERC20SetAssetLimitsBundle(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNERC20SetAssetLimitsBundle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20SetAssetLimitsBundle(ctx context.Context, sel ast.SelectionSet, v *ERC20SetAssetLimitsBundle) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._ERC20SetAssetLimitsBundle(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNEpoch2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐEpoch(ctx context.Context, sel ast.SelectionSet, v vega.Epoch) graphql.Marshaler {
 	return ec._Epoch(ctx, sel, &v)
 }
@@ -61468,6 +64152,20 @@ func (ec *executionContext) marshalNEpochTimestamps2ᚖcodeᚗvegaprotocolᚗio�
 		return graphql.Null
 	}
 	return ec._EpochTimestamps(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNErc20ListAssetBundle2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐErc20ListAssetBundle(ctx context.Context, sel ast.SelectionSet, v Erc20ListAssetBundle) graphql.Marshaler {
+	return ec._Erc20ListAssetBundle(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNErc20ListAssetBundle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐErc20ListAssetBundle(ctx context.Context, sel ast.SelectionSet, v *Erc20ListAssetBundle) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Erc20ListAssetBundle(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNEthereumKeyRotation2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐEthereumKeyRotation(ctx context.Context, sel ast.SelectionSet, v *v1.EthereumKeyRotation) graphql.Marshaler {
@@ -64702,6 +67400,102 @@ func (ec *executionContext) marshalODispatchStrategy2ᚖcodeᚗvegaprotocolᚗio
 		return graphql.Null
 	}
 	return ec._DispatchStrategy(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOERC20MultiSigSignerAddedBundleEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20MultiSigSignerAddedBundleEdge(ctx context.Context, sel ast.SelectionSet, v []*ERC20MultiSigSignerAddedBundleEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOERC20MultiSigSignerAddedBundleEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20MultiSigSignerAddedBundleEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOERC20MultiSigSignerAddedBundleEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20MultiSigSignerAddedBundleEdge(ctx context.Context, sel ast.SelectionSet, v *ERC20MultiSigSignerAddedBundleEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ERC20MultiSigSignerAddedBundleEdge(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOERC20MultiSigSignerRemovedBundleEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20MultiSigSignerRemovedBundleEdge(ctx context.Context, sel ast.SelectionSet, v []*ERC20MultiSigSignerRemovedBundleEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOERC20MultiSigSignerRemovedBundleEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20MultiSigSignerRemovedBundleEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOERC20MultiSigSignerRemovedBundleEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20MultiSigSignerRemovedBundleEdge(ctx context.Context, sel ast.SelectionSet, v *ERC20MultiSigSignerRemovedBundleEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ERC20MultiSigSignerRemovedBundleEdge(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOEpoch2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐEpoch(ctx context.Context, sel ast.SelectionSet, v *vega.Epoch) graphql.Marshaler {
