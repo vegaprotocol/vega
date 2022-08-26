@@ -14,6 +14,7 @@ package execution_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -1696,6 +1697,8 @@ func testPeggedOrderExpiring2(t *testing.T) {
 	confirmation, err = tm.market.SubmitOrder(ctx, &order2)
 	require.NoError(t, err)
 	assert.NotNil(t, confirmation)
+	tm.now = tm.now.Add(time.Second)
+	tm.market.OnTick(ctx, tm.now)
 
 	assert.Equal(t, 2, tm.market.GetParkedOrderCount())
 	assert.Equal(t, 2, tm.market.GetPeggedOrderCount())
@@ -1714,7 +1717,7 @@ func testPeggedOrderExpiring2(t *testing.T) {
 				}
 			}
 		}
-		require.Len(t, orders, 3)
+		require.Len(t, orders, 2)
 		// Check that we have no pegged orders
 		assert.Equal(t, 0, tm.market.GetParkedOrderCount())
 		assert.Equal(t, 0, tm.market.GetPeggedOrderCount())
@@ -2751,9 +2754,8 @@ func TestGTTExpiredPartiallyFilled(t *testing.T) {
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// leave auction
-	now = now.Add(2 * time.Second)
-	tm.now = now
-	tm.market.OnTick(ctx, now)
+	tm.now = tm.now.Add(2 * time.Second)
+	tm.market.OnTick(ctx, tm.now)
 	addAccount(t, tm, "aaa")
 	addAccount(t, tm, "bbb")
 
@@ -2762,14 +2764,14 @@ func TestGTTExpiredPartiallyFilled(t *testing.T) {
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), num.DecimalFromFloat(0))
 
 	// place expiring order
-	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTT, "Order01", types.SideSell, "aaa", 10, 100)
-	o1.ExpiresAt = now.Add(5 * time.Second).UnixNano()
+	o1 := getMarketOrder(tm, tm.now, types.OrderTypeLimit, types.OrderTimeInForceGTT, "Order01", types.SideSell, "aaa", 10, 100)
+	o1.ExpiresAt = tm.now.Add(5 * time.Second).UnixNano()
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
 	require.NoError(t, err)
 	require.NotNil(t, o1conf)
 
 	// add matching order
-	o2 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTT, "Order02", types.SideBuy, "bbb", 1, 100)
+	o2 := getMarketOrder(tm, tm.now, types.OrderTypeLimit, types.OrderTimeInForceGTT, "Order02", types.SideBuy, "bbb", 1, 100)
 	o2.ExpiresAt = now.Add(5 * time.Second).UnixNano()
 	o2conf, err := tm.market.SubmitOrder(ctx, o2)
 	require.NoError(t, err)
@@ -2777,8 +2779,8 @@ func TestGTTExpiredPartiallyFilled(t *testing.T) {
 
 	// then remove expired, set 1 sec after order exp time.
 	tm.events = nil
-	tm.market.OnTick(ctx, now.Add(10*time.Second))
-	t.Run("2 orders expired", func(t *testing.T) {
+	tm.market.OnTick(ctx, tm.now.Add(10*time.Second))
+	t.Run("1 order expired - the other matched", func(t *testing.T) {
 		// First collect all the orders events
 		orders := []*types.Order{}
 		for _, e := range tm.events {
@@ -2786,10 +2788,12 @@ func TestGTTExpiredPartiallyFilled(t *testing.T) {
 			case *events.Order:
 				if evt.Order().Status == types.OrderStatusExpired {
 					orders = append(orders, mustOrderFromProto(evt.Order()))
+				} else {
+					fmt.Printf("%s\n", evt.Order().Status)
 				}
 			}
 		}
-		assert.Len(t, orders, 2)
+		assert.Len(t, orders, 1)
 	})
 }
 

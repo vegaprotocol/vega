@@ -784,23 +784,39 @@ Feature: Fees calculations
       
     #Scenario:S010, Triggering Liquidity auction (0029-FEES-006)
 
-    Then the parties place the following orders:
+    When the parties place the following orders:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3a | ETH/DEC21 | buy  | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader4  | ETH/DEC21 | sell | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader4  | ETH/DEC21 | sell | 3      | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
 
-    When the opening auction period ends for market "ETH/DEC21"
+    Then the following trades should be executed:
+      | buyer    | price | size | seller  |
+      | trader3a | 1002  | 3    | trader4 |
+
+    # fees during normal trading
+    And the following transfers should happen:
+      | from     | to     | from account         | to account                       | market id | amount | asset |
+      | trader4  |        | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 7      | ETH   |
+      | trader4  | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 4      | ETH   |
+
+    When the network moves ahead "1" blocks
     Then the market data for the market "ETH/DEC21" should be:
       | trading mode                    | auction trigger           |
       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY |
+
+    # now place orders during auction
+    When the parties place the following orders:
+      | party    | market id | side | volume | price | resulting trades | type       | tif     |
+      | trader3a | ETH/DEC21 | buy  | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader4  | ETH/DEC21 | sell | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Given the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
       | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 10     | amendment |
       | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 10     | amendment |
 
-    When the network moves ahead "1" blocks
-
+    # leave auction
+    When the network moves ahead "2" blocks
     Then the following trades should be executed:
       | buyer    | price | size | seller  |
       | trader3a | 1002  | 3    | trader4 |
@@ -810,7 +826,6 @@ Feature: Fees calculations
     # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 3006 = 6.012 = 7(rounded up)
     # maker_fee =  0 in auction
     # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.001 * 3006 = 3.006 = 4 (rounded up)
-
     And the following transfers should happen:
       | from     | to     | from account         | to account                       | market id | amount | asset |
       | trader4  |        | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 4      | ETH   |
@@ -820,12 +835,12 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 3372   | 6622    |
-      | trader4  | ETH   | ETH/DEC21 | 5271   | 4723    |
+      | trader3a | ETH   | ETH/DEC21 | 5900   | 4110    |
+      | trader4  | ETH   | ETH/DEC21 | 9225   | 742     |
 
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1002       | TRADING_MODE_CONTINUOUS | 1       | 903       | 1101      | 801          | 10000          | 4             |
+      | 1002       | TRADING_MODE_CONTINUOUS | 1       | 903       | 1101      | 1402         | 10000          | 7             |
 
     Then the parties place the following orders:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
@@ -857,8 +872,8 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 3204   | 6380    |
-      | trader4  | ETH   | ETH/DEC21 | 7140   | 3260    |
+      | trader3a | ETH   | ETH/DEC21 | 5427   | 3867    |
+      | trader4  | ETH   | ETH/DEC21 | 10679  | 0       |
 
     Then the market data for the market "ETH/DEC21" should be:
       | trading mode            | auction trigger             |
@@ -900,6 +915,8 @@ Feature: Fees calculations
       | aux2     | ETH   | 100000000 |
       | trader3a | ETH   | 5000      |
       | trader4  | ETH   | 5261      |
+      | tradera3 | ETH   | 100000000 | # traders that trigger initial liquidity auction
+      | tradera4 | ETH   | 100000000 |
 
     Then the parties place the following orders:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
@@ -913,30 +930,36 @@ Feature: Fees calculations
       | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | buy  | BID              | 1          | 10     | submission |
       | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | sell | ASK              | 1          | 10     | amendment  |
 
-    Then the opening auction period ends for market "ETH/DEC21"
+    And the opening auction period ends for market "ETH/DEC21"
 
     # Scenario: S012, Triggering Liquidity auction (0029-FEES-006)
 
-    Then the parties place the following orders:
+    When the parties place the following orders:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader3a | ETH/DEC21 | buy  | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader4  | ETH/DEC21 | sell | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+      | tradera3 | ETH/DEC21 | buy  | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+      | tradera4 | ETH/DEC21 | sell | 3      | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
+    Then the following trades should be executed:
+      | buyer    | price | size | seller  |
+      | tradera3 | 1002  | 3    | tradera4|
 
-    When the opening auction period ends for market "ETH/DEC21"
+    When the network moves ahead "1" blocks
+
     Then the market data for the market "ETH/DEC21" should be:
       | trading mode                    | auction trigger           |
       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY |
 
-    Given the parties submit the following liquidity provision:
+    When the parties place the following orders:
+      | party    | market id | side | volume | price | resulting trades | type       | tif     |
+      | trader3a | ETH/DEC21 | buy  | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader4  | ETH/DEC21 | sell | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+
+    And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
       | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 10     | amendment |
       | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 10     | amendment |
 
-    When the network moves ahead "1" blocks
+    Then the network moves ahead "2" blocks
 
-    Then the following trades should be executed:
-      | buyer    | price | size | seller  |
-      | trader3a | 1002  | 3    | trader4 |
 
     # For trader3a & 4- Sharing IF and LP
     # trade_value_for_fee_purposes for trader3a = size_of_trade * price_of_trade = 3 * 1002= 3006
@@ -1101,6 +1124,8 @@ Feature: Fees calculations
       | aux2     | ETH   | 100000000 |
       | trader3a | ETH   | 5000      |
       | trader4  | ETH   | 5261      |
+      | tradera3 | ETH   | 100000000 |
+      | tradera4 | ETH   | 100000000 |
 
     Then the parties place the following orders:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
@@ -1114,28 +1139,38 @@ Feature: Fees calculations
       | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | buy  | BID              | 1          | 10     | submission |
       | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | sell | ASK              | 1          | 10     | amendment  |
 
-    Then the opening auction period ends for market "ETH/DEC21"
+    When the opening auction period ends for market "ETH/DEC21"
 
     #Scenario: S015, Triggering Liquidity auction (0029-FEES-008)
 
     Then the parties place the following orders:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader3a | ETH/DEC21 | buy  | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader4  | ETH/DEC21 | sell | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+      | tradera3 | ETH/DEC21 | buy  | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+      | tradera4 | ETH/DEC21 | sell | 3      | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
+    And the following trades should be executed:
+      | buyer    | price | size | seller   |
+      | tradera3 | 1002  | 3    | tradera4 |
 
-    When the opening auction period ends for market "ETH/DEC21"
+    When the network moves ahead "1" blocks
     Then the market data for the market "ETH/DEC21" should be:
       | trading mode                    | auction trigger           |
       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY |
 
-    Given the parties submit the following liquidity provision:
+    And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 10     | amendment |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 10     | amendment |
+      | lp1 | aux1  | ETH/DEC21 | 20000             | 0.001 | buy  | BID              | 1          | 10     | amendment |
+      | lp1 | aux1  | ETH/DEC21 | 20000             | 0.001 | sell | ASK              | 1          | 10     | amendment |
+    And the parties place the following orders:
+      | party    | market id | side | volume | price | resulting trades | type       | tif     |
+      | trader3a | ETH/DEC21 | buy  | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader4  | ETH/DEC21 | sell | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
 
-    When the network moves ahead "1" blocks
+    When the network moves ahead "2" blocks
+    Then the market data for the market "ETH/DEC21" should be:
+      | trading mode            | auction trigger             |
+      | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
-    Then the following trades should be executed:
+    And the following trades should be executed:
       | buyer    | price | size | seller  |
       | trader3a | 1002  | 3    | trader4 |
 
