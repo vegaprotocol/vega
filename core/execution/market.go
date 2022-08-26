@@ -445,6 +445,11 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 	config.State = m.mkt.State
 	config.MarketTimestamps = m.mkt.MarketTimestamps
 
+	recalcMargins := false
+	if !config.TradableInstrument.RiskModel.Equal(m.mkt.TradableInstrument.RiskModel) {
+		recalcMargins = true
+	}
+
 	asset, err := m.mkt.GetAsset()
 	if err != nil {
 		return err
@@ -467,8 +472,19 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 	m.tradableInstrument.Instrument.Product.NotifyOnSettlementPrice(m.settlementPrice)
 
 	m.updateLiquidityFee(ctx)
-
 	m.stateChanged = true
+	// risk model hasn't changed -> return
+	if !recalcMargins {
+		return nil
+	}
+	// We know the risk model has been updated, so we have to recalculate margin requirements
+	if err := m.recheckMargin(ctx, m.position.Positions()); err != nil {
+		m.log.Warn(
+			"Error encountered re-checking margin requirements after risk model update",
+			logging.Error(err),
+			logging.MarketID(m.mkt.ID),
+		)
+	}
 
 	return nil
 }
