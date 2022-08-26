@@ -531,7 +531,7 @@ func (e *Engine) CreateInitialOrders(
 }
 
 // UndeployLPs is called when a reference price is no longer available. LP orders should all be parked/set to pending
-// and should eb redeployed once possible. Pass in updated orders and update internal records first...
+// and should be redeployed once possible. Pass in updated orders and update internal records first...
 func (e *Engine) UndeployLPs(ctx context.Context, orders []*types.Order) []*ToCancel {
 	// make sure internal data matches the latest version of all orders on the book
 	for _, po := range Orders(orders).ByParty() {

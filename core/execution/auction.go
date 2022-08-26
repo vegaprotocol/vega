@@ -22,7 +22,6 @@ import (
 )
 
 func (m *Market) checkAuction(ctx context.Context, now time.Time) {
-	// of course, if we're not in auction, there's nothing to do here
 	if !m.as.InAuction() {
 		// new block, check liquidity, start auction if needed
 		m.checkLiquidity(ctx, nil, true)
