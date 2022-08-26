@@ -66,7 +66,7 @@ type Engine struct {
 	product        Product
 	pos            map[string]*pos
 	mu             *sync.Mutex
-	trades         map[string][]*pos
+	trades         map[string][]*settlementTrade
 	timeService    TimeService
 	broker         Broker
 	positionFactor num.Decimal
@@ -85,7 +85,7 @@ func New(log *logging.Logger, conf Config, product Product, market string, timeS
 		product:        product,
 		pos:            map[string]*pos{},
 		mu:             &sync.Mutex{},
-		trades:         map[string][]*pos{},
+		trades:         map[string][]*settlementTrade{},
 		timeService:    timeService,
 		broker:         broker,
 		positionFactor: positionFactor,
@@ -149,7 +149,7 @@ func (e *Engine) AddTrade(trade *types.Trade) {
 	// checking the len of cd shouldn't be required here, but it is needed in the second if
 	// in case the buyer and seller are one and the same...
 	if cd, ok := e.trades[trade.Buyer]; !ok || len(cd) == 0 {
-		e.trades[trade.Buyer] = []*pos{}
+		e.trades[trade.Buyer] = []*settlementTrade{}
 		// check if the buyer already has a known position
 		if pos, ok := e.pos[trade.Buyer]; ok {
 			buyerSize = pos.size
@@ -158,7 +158,7 @@ func (e *Engine) AddTrade(trade *types.Trade) {
 		buyerSize = cd[len(cd)-1].newSize
 	}
 	if cd, ok := e.trades[trade.Seller]; !ok || len(cd) == 0 {
-		e.trades[trade.Seller] = []*pos{}
+		e.trades[trade.Seller] = []*settlementTrade{}
 		// check if seller has a known position
 		if pos, ok := e.pos[trade.Seller]; ok {
 			sellerSize = pos.size
@@ -170,15 +170,17 @@ func (e *Engine) AddTrade(trade *types.Trade) {
 	// the parties both need to get a MTM settlement on the traded volume
 	// and this MTM part has to be based on the _actual_ trade value
 	price := trade.Price.Clone()
-	e.trades[trade.Buyer] = append(e.trades[trade.Buyer], &pos{
-		price:   price,
-		size:    size,
-		newSize: buyerSize + size,
+	e.trades[trade.Buyer] = append(e.trades[trade.Buyer], &settlementTrade{
+		price:       price,
+		marketPrice: trade.MarketPrice,
+		size:        size,
+		newSize:     buyerSize + size,
 	})
-	e.trades[trade.Seller] = append(e.trades[trade.Seller], &pos{
-		price:   price.Clone(),
-		size:    -size,
-		newSize: sellerSize - size,
+	e.trades[trade.Seller] = append(e.trades[trade.Seller], &settlementTrade{
+		price:       price.Clone(),
+		marketPrice: trade.MarketPrice,
+		size:        -size,
+		newSize:     sellerSize - size,
 	})
 	e.mu.Unlock()
 }
@@ -232,7 +234,7 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 	// roughly half of the transfers should be wins, half losses
 	wins := make([]events.Transfer, 0, tCap/2)
 	trades := e.trades
-	e.trades = map[string][]*pos{} // remove here, once we've processed it all here, we're done
+	e.trades = map[string][]*settlementTrade{} // remove here, once we've processed it all here, we're done
 	evts := make([]events.Event, 0, len(positions))
 	var (
 		largestShare *mtmTransfer       // pointer to whomever gets the last remaining amount from the loss
@@ -491,7 +493,7 @@ func (e *Engine) transferCap(evts []events.MarketPosition) int {
 // amount =  prev_vol * (current_price - prev_mark_price) + SUM(new_trade := range trades)( new_trade(i).volume(party)*(current_price - new_trade(i).price )
 // given that the new trades price will equal new mark price,  the sum(trades) bit will probably == 0 for nicenet
 // the size here is the _new_ position size, the price is the OLD price!!
-func calcMTM(markPrice, price *num.Uint, size int64, trades []*pos, positionFactor num.Decimal) (*num.Uint, num.Decimal, bool) {
+func calcMTM(markPrice, price *num.Uint, size int64, trades []*settlementTrade, positionFactor num.Decimal) (*num.Uint, num.Decimal, bool) {
 	delta, sign := num.UintZero().Delta(markPrice, price)
 	// this shouldn't be possible I don't think, but just in case
 	if size < 0 {

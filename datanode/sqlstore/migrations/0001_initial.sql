@@ -102,7 +102,7 @@ CREATE MATERIALIZED VIEW conflated_balances
             WITH (timescaledb.continuous, timescaledb.materialized_only = true) AS
 SELECT account_id, time_bucket('1 hour', vega_time) AS bucket,
        last(balance, vega_time) AS balance,
-       last(tx_hash, tx_hash) AS tx_hash,
+       last(tx_hash, vega_time) AS tx_hash,
        last(vega_time, vega_time) AS vega_time
 FROM balances
 GROUP BY account_id, bucket WITH NO DATA;
@@ -127,9 +127,7 @@ SELECT
     conflated_balances.vega_time,
     conflated_balances.balance
 FROM conflated_balances
-WHERE conflated_balances.vega_time < ( SELECT min(balances.vega_time) FROM balances) OR
-        0 = (select count(*) from balances));
-
+WHERE conflated_balances.vega_time < (SELECT coalesce(min(balances.vega_time), 'infinity') FROM balances));
 
 
 create table ledger
@@ -817,7 +815,7 @@ SELECT account_id, time_bucket('1 minute', vega_time) AS bucket,
        last(initial_margin, vega_time) AS initial_margin,
        last(collateral_release_level, vega_time) AS collateral_release_level,
        last(timestamp, vega_time) AS timestamp,
-       last(tx_hash, tx_hash) AS tx_hash,
+       last(tx_hash, vega_time) AS tx_hash,
        last(vega_time, vega_time) AS vega_time
 FROM margin_levels
 GROUP BY account_id, bucket WITH NO DATA;
@@ -848,8 +846,7 @@ SELECT conflated_margin_levels.account_id,
        conflated_margin_levels.tx_hash,
        conflated_margin_levels.vega_time
 FROM conflated_margin_levels
-WHERE conflated_margin_levels.vega_time < ( SELECT min(margin_levels.vega_time) FROM margin_levels) OR
-        0 = (select count(*) from margin_levels));
+WHERE conflated_margin_levels.vega_time < (SELECT coalesce(min(margin_levels.vega_time), 'infinity') FROM margin_levels));
 
 create table if not exists risk_factors (
     market_id bytea not null,
@@ -889,6 +886,7 @@ CREATE TABLE positions(
   realised_pnl        NUMERIC NOT NULL,
   unrealised_pnl      NUMERIC NOT NULL,
   average_entry_price NUMERIC NOT NULL,
+  average_entry_market_price NUMERIC NOT NULL,
   loss                NUMERIC NOT NULL,
   adjustment          NUMERIC NOT NULL,
   tx_hash             BYTEA                    NOT NULL,
@@ -906,9 +904,10 @@ SELECT market_id, party_id, time_bucket('1 hour', vega_time) AS bucket,
  last(realised_pnl, vega_time) AS realised_pnl,
  last(unrealised_pnl, vega_time) AS unrealised_pnl,
  last(average_entry_price, vega_time) AS average_entry_price,
+ last(average_entry_market_price, vega_time) AS average_entry_market_price,
  last(loss, vega_time) AS loss,
  last(adjustment, vega_time) AS adjustment,
- last(tx_hash, tx_hash) AS tx_hash,
+ last(tx_hash, vega_time) AS tx_hash,
  last(vega_time, vega_time) AS vega_time
 FROM positions
 GROUP BY market_id, party_id, bucket WITH NO DATA;
@@ -927,6 +926,7 @@ SELECT
   positions.realised_pnl,
   positions.unrealised_pnl,
   positions.average_entry_price,
+  positions.average_entry_market_price,
   positions.loss,
   positions.adjustment,
   positions.tx_hash,
@@ -940,6 +940,7 @@ SELECT
     conflated_positions.realised_pnl,
     conflated_positions.unrealised_pnl,
     conflated_positions.average_entry_price,
+    conflated_positions.average_entry_market_price,
     conflated_positions.loss,
     conflated_positions.adjustment,
     conflated_positions.tx_hash,

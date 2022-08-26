@@ -32,15 +32,33 @@ type pos struct {
 	// embed the type, we will copy the three main fields because those should be immutable
 	// which we can't guarantee through an embedded interface
 	events.MarketPosition
-	party   string
-	size    int64
-	price   *num.Uint
-	newSize int64 // track this so we can determine when a party switches between long <> short
+	party string
+	size  int64
+	price *num.Uint
 }
 
 type mtmTransfer struct {
 	events.MarketPosition
 	transfer *types.Transfer
+}
+
+type settlementTrade struct {
+	size        int64
+	price       *num.Uint
+	marketPrice *num.Uint
+	newSize     int64 // track this so we can determine when a party switches between long <> short
+}
+
+func (t settlementTrade) Size() int64 {
+	return t.size
+}
+
+func (t settlementTrade) Price() *num.Uint {
+	return t.price.Clone()
+}
+
+func (t settlementTrade) MarketPrice() *num.Uint {
+	return t.marketPrice.Clone()
 }
 
 func newPos(evt events.MarketPosition) *pos {
