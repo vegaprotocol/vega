@@ -436,6 +436,7 @@ func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
 		resp.LastBlockHeight = height
 		resp.LastBlockAppHash = hash
 		app.abci.SetChainID(chainID)
+		app.chainCtx = vgcontext.WithChainID(context.Background(), chainID)
 	}
 
 	app.log.Info("ABCI service INFO requested",
@@ -644,9 +645,6 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 
 	app.stats.SetHash(hash)
 	app.stats.SetHeight(uint64(req.Header.Height))
-
-	app.chainCtx = vgcontext.WithChainID(context.Background(), app.abci.GetChainID())
-
 	ctx = vgcontext.WithBlockHeight(vgcontext.WithTraceID(app.chainCtx, hash), req.Header.Height)
 	app.blockCtx = ctx
 

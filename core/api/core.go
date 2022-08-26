@@ -100,9 +100,15 @@ func (s *coreService) LastBlockHeight(
 ) (*protoapi.LastBlockHeightResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("LastBlockHeight")()
 
+	if atomic.LoadUint32(&s.hasGenesisTimeAndChainID) == 0 {
+		if err := s.getGenesisTimeAndChainID(ctx); err != nil {
+			return nil, fmt.Errorf("failed to intialise chainID: %w", err)
+		}
+	}
+
 	blockHeight, blockHash := s.powParams.BlockData()
 	if s.log.IsDebug() {
-		s.log.Debug("block height requested, returning", logging.Uint64("block-height", blockHeight), logging.String("block hash", blockHash))
+		s.log.Debug("block height requested, returning", logging.Uint64("block-height", blockHeight), logging.String("block hash", blockHash), logging.String("chaindID", s.chainID))
 	}
 
 	if !s.powParams.IsReady() {
