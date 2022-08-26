@@ -26,7 +26,7 @@ Feature: Ensure we don't uncross when leaving liquidity auction
     Then the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
       | lp1 | party1 | ETH/DEC19 | 300000            | 0.1 | buy  | MID              | 1          | 21     | submission |
-      | lp1 | party1 | ETH/DEC19 | 300000            | 0.1 | sell | MID              | 1          | 21     | amendment  |
+      | lp1 | party1 | ETH/DEC19 | 300000            | 0.1 | sell | MID              | 1          | 21     | submission |
 
 # get out of auction
     When the parties place the following orders:
@@ -42,6 +42,7 @@ Feature: Ensure we don't uncross when leaving liquidity auction
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | buy  | 1      | 120   | 1                | TYPE_LIMIT | TIF_GTC | t1-1      |
+    And the network moves ahead "1" blocks
 
    # enter price monitoring auction
     Then the market state should be "STATE_SUSPENDED" for the market "ETH/DEC19"
