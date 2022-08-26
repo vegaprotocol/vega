@@ -69,7 +69,7 @@ type Subscription {
     assetId: ID
     "Type of the account"
     type: AccountType
-  ): AccountUpdate!
+  ): [AccountUpdate!]!
 
   "Subscribe to the mark price changes"
   marketData(
