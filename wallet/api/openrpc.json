@@ -547,32 +547,13 @@
               "description": "the first public key generated",
               "properties": {
                 "publicKey": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/public_key"
                 },
                 "algorithm": {
-                  "type": "object",
-                  "properties": {
-                    "name": {
-                      "type": "string"
-                    },
-                    "version": {
-                      "type": "string"
-                    }
-                  }
+                  "$ref": "#/components/schemas/algorithm"
                 },
-                "meta": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "key": {
-                        "type": "string"
-                      },
-                      "value": {
-                        "type": "string"
-                      }
-                    }
-                  }
+                "metadata": {
+                  "$ref": "#/components/schemas/metadata"
                 }
               }
             }
@@ -607,7 +588,7 @@
                   "name": "vega/ed25519",
                   "version": 1
                 },
-                "meta": [
+                "metadata": [
                   {
                     "key": "name",
                     "value": "my-wallet key 1"
@@ -687,32 +668,13 @@
               "description": "the first public key generated",
               "properties": {
                 "publicKey": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/public_key"
                 },
                 "algorithm": {
-                  "type": "object",
-                  "properties": {
-                    "name": {
-                      "type": "string"
-                    },
-                    "version": {
-                      "type": "string"
-                    }
-                  }
+                  "$ref": "#/components/schemas/algorithm"
                 },
-                "meta": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "key": {
-                        "type": "string"
-                      },
-                      "value": {
-                        "type": "string"
-                      }
-                    }
-                  }
+                "metadata": {
+                  "$ref": "#/components/schemas/metadata"
                 }
               }
             }
@@ -754,7 +716,7 @@
                   "name": "vega/ed25519",
                   "version": 1
                 },
-                "meta": [
+                "metadata": [
                   {
                     "key": "name",
                     "value": "my-wallet key 1"
@@ -977,7 +939,7 @@
       },
       "examples": [
         {
-          "name": "Getting wallet base information",
+          "name": "Generating a key",
           "params": [
             {
               "name": "wallet",
@@ -1005,13 +967,111 @@
                 "name": "vega/ed25519",
                 "version": 1
               },
-              "meta": [
+              "metadata": [
                 {
-                  "name": "portfolio",
+                  "key": "portfolio",
                   "value": "btc"
                 },
                 {
-                  "name": "name",
+                  "key": "name",
+                  "value": "Key 1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin.annotate_key",
+      "summary": "Attaches metadata to a key.",
+      "description": "This method attaches metadata to the specified key.\n\nA special metadata `name` can be provided to name the key. If no `name` is provided, a default name is generated.\n\nThis method **replaces** the existing metadata by the specified ones. It does **not** update in place.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "key"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "wallet",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "passphrase",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "public_key",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/public_key"
+          }
+        },
+        {
+          "name": "metadata",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/metadata"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "metadata": {
+              "$ref": "#/components/schemas/metadata"
+            }
+          }
+        }
+      },
+      "examples": [
+        {
+          "name": "Getting wallet base information",
+          "params": [
+            {
+              "name": "wallet",
+              "value": "my-wallet"
+            },
+            {
+              "name": "passphrase",
+              "value": "this-is-not-a-good-passphrase"
+            },
+            {
+              "name": "public_key",
+              "value": "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0"
+            },
+            {
+              "name": "metadata",
+              "value": [
+                {
+                  "name": "portfolio",
+                  "value": "btc"
+                }
+              ]
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": {
+              "metadata": [
+                {
+                  "key": "portfolio",
+                  "value": "btc"
+                },
+                {
+                  "key": "name",
                   "value": "Key 1"
                 }
               ]
@@ -1045,9 +1105,9 @@
       },
       "metadata": {
         "type": "object",
-        "description": "The key metadata.",
+        "description": "The key's metadata.",
         "properties": {
-          "name": {
+          "key": {
             "type": "string"
           },
           "value": {

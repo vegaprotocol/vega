@@ -41,7 +41,7 @@ func TestRotateKeySucceeds(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	AssertGenerateKey(t, generateKeyResp).
-		WithMeta(map[string]string{"name": "key-2", "role": "validation"})
+		WithMetadata(map[string]string{"name": "key-2", "role": "validation"})
 
 	// when
 	resp, err := KeyRotate(t, []string{
@@ -93,7 +93,7 @@ func TestRotateKeyFailsOnTaintedPublicKey(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	AssertGenerateKey(t, generateKeyResp).
-		WithMeta(map[string]string{"name": "key-2", "role": "validation"})
+		WithMetadata(map[string]string{"name": "key-2", "role": "validation"})
 
 	// when
 	err = KeyTaint(t, []string{

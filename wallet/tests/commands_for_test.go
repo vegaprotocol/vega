@@ -77,10 +77,10 @@ type GenerateKeyResponse struct {
 		Name    string `json:"name"`
 		Version uint32 `json:"version"`
 	} `json:"algorithm"`
-	Meta []struct {
+	Metadata []struct {
 		Key   string `json:"key"`
 		Value string `json:"value"`
-	} `json:"meta"`
+	} `json:"metadata"`
 }
 
 func KeyGenerate(t *testing.T, args []string) (*GenerateKeyResponse, error) {
@@ -117,9 +117,9 @@ func AssertGenerateKey(t *testing.T, resp *GenerateKeyResponse) *GenerateKeyAsse
 	}
 }
 
-func (a *GenerateKeyAssertion) WithMeta(expected map[string]string) *GenerateKeyAssertion {
+func (a *GenerateKeyAssertion) WithMetadata(expected map[string]string) *GenerateKeyAssertion {
 	meta := map[string]string{}
-	for _, m := range a.resp.Meta {
+	for _, m := range a.resp.Metadata {
 		meta[m.Key] = m.Value
 	}
 	assert.Equal(a.t, expected, meta)

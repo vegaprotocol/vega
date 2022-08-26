@@ -396,7 +396,7 @@ func testHandlerGeneratingNewKeyPairSecurelySucceeds(t *testing.T) {
 	assert.NotEmpty(t, recoveryPhrase)
 
 	// when
-	key, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Meta{})
+	key, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Metadata{})
 
 	// then
 	require.NoError(t, err)
@@ -411,7 +411,7 @@ func testHandlerGeneratingNewKeyPairSecurelySucceeds(t *testing.T) {
 	assert.Equal(t, key, keys[0].Key())
 	assert.False(t, keys[0].IsTainted())
 	assert.Len(t, keys[0].Meta(), 1)
-	assert.Contains(t, keys[0].Meta(), wallet.Meta{Key: "name", Value: fmt.Sprintf("%s key 1", name)})
+	assert.Contains(t, keys[0].Meta(), wallet.Metadata{Key: "name", Value: "Key 1"})
 }
 
 func testHandlerGeneratingNewKeyPairSecurelyWithInvalidNameFails(t *testing.T) {
@@ -431,7 +431,7 @@ func testHandlerGeneratingNewKeyPairSecurelyWithInvalidNameFails(t *testing.T) {
 	assert.NotEmpty(t, recoveryPhrase)
 
 	// when
-	key, err := h.SecureGenerateKeyPair(otherName, passphrase, []wallet.Meta{})
+	key, err := h.SecureGenerateKeyPair(otherName, passphrase, []wallet.Metadata{})
 
 	// then
 	assert.EqualError(t, err, fmt.Sprintf("couldn't get wallet %s: wallet does not exist", otherName))
@@ -447,7 +447,7 @@ func testHandlerGeneratingNewKeyPairSecurelyWithoutWalletFails(t *testing.T) {
 	passphrase := vgrand.RandomStr(5)
 
 	// when
-	key, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Meta{})
+	key, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Metadata{})
 
 	// then
 	assert.EqualError(t, err, fmt.Sprintf("couldn't get wallet %s: wallet does not exist", name))
@@ -477,8 +477,8 @@ func testHandlerGeneratingNewKeyPairSucceeds(t *testing.T) {
 	assert.NotEmpty(t, keyPair.PublicKey())
 	assert.NotEmpty(t, keyPair.PrivateKey())
 	assert.False(t, keyPair.IsTainted())
-	assert.Len(t, keyPair.Meta(), 1)
-	assert.Contains(t, keyPair.Meta(), wallet.Meta{Key: "name", Value: fmt.Sprintf("%s key 1", name)})
+	assert.Len(t, keyPair.Metadata(), 1)
+	assert.Contains(t, keyPair.Metadata(), wallet.Metadata{Key: "name", Value: "Key 1"})
 
 	// when
 	keys, err := h.ListPublicKeys(name)
@@ -497,7 +497,7 @@ func testHandlerGeneratingNewKeyPairWithCustomNameSucceeds(t *testing.T) {
 	// given
 	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
-	meta := []wallet.Meta{
+	meta := []wallet.Metadata{
 		{
 			Key:   "name",
 			Value: "crypto-cutie",
@@ -519,19 +519,19 @@ func testHandlerGeneratingNewKeyPairWithCustomNameSucceeds(t *testing.T) {
 	assert.NotEmpty(t, keyPair1.PublicKey())
 	assert.NotEmpty(t, keyPair1.PrivateKey())
 	assert.False(t, keyPair1.IsTainted())
-	assert.Len(t, keyPair1.Meta(), 1)
-	assert.Contains(t, keyPair1.Meta(), wallet.Meta{Key: "name", Value: "crypto-cutie"})
+	assert.Len(t, keyPair1.Metadata(), 1)
+	assert.Contains(t, keyPair1.Metadata(), wallet.Metadata{Key: "name", Value: "crypto-cutie"})
 
 	// when
-	keyPair2, err := h.GenerateKeyPair(name, passphrase, []wallet.Meta{})
+	keyPair2, err := h.GenerateKeyPair(name, passphrase, []wallet.Metadata{})
 
 	// then
 	require.NoError(t, err)
 	assert.NotEmpty(t, keyPair2.PublicKey())
 	assert.NotEmpty(t, keyPair2.PrivateKey())
 	assert.False(t, keyPair2.IsTainted())
-	assert.Len(t, keyPair2.Meta(), 1)
-	assert.Contains(t, keyPair2.Meta(), wallet.Meta{Key: "name", Value: fmt.Sprintf("%s key 2", name)})
+	assert.Len(t, keyPair2.Metadata(), 1)
+	assert.Contains(t, keyPair2.Metadata(), wallet.Metadata{Key: "name", Value: "Key 2"})
 
 	// when
 	keys, err := h.ListPublicKeys(name)
@@ -618,7 +618,7 @@ func testHandlerListingPublicKeysSucceeds(t *testing.T) {
 	assert.Equal(t, keyPair.IsTainted(), returnedPublicKey.IsTainted())
 	assert.Equal(t, keyPair.AlgorithmName(), returnedPublicKey.AlgorithmName())
 	assert.Equal(t, keyPair.AlgorithmVersion(), returnedPublicKey.AlgorithmVersion())
-	assert.Equal(t, keyPair.Meta(), returnedPublicKey.Meta())
+	assert.Equal(t, keyPair.Metadata(), returnedPublicKey.Meta())
 }
 
 func testHandlerListingPublicKeysWithLoggedOutWalletFails(t *testing.T) {
@@ -729,7 +729,7 @@ func testHandlerListingKeyPairsSucceeds(t *testing.T) {
 	assert.Equal(t, keyPair.IsTainted(), returnedPublicKey.IsTainted())
 	assert.Equal(t, keyPair.AlgorithmName(), returnedPublicKey.AlgorithmName())
 	assert.Equal(t, keyPair.AlgorithmVersion(), returnedPublicKey.AlgorithmVersion())
-	assert.Equal(t, keyPair.Meta(), returnedPublicKey.Meta())
+	assert.Equal(t, keyPair.Metadata(), returnedPublicKey.Metadata())
 }
 
 func testHandlerListingKeyPairsWithLoggedOutWalletFails(t *testing.T) {
@@ -837,7 +837,7 @@ func testHandlerGettingPublicKeySucceeds(t *testing.T) {
 	assert.NotEmpty(t, recoveryPhrase)
 
 	// when
-	key, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Meta{})
+	key, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Metadata{})
 
 	// then
 	require.NoError(t, err)
@@ -866,7 +866,7 @@ func testHandlerGettingPublicKeyWithLoggedOutWalletFails(t *testing.T) {
 	assert.NotEmpty(t, recoveryPhrase)
 
 	// when
-	key, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Meta{})
+	key, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Metadata{})
 
 	// then
 	require.NoError(t, err)
@@ -901,7 +901,7 @@ func testHandlerGettingPublicKeyWithInvalidNameFails(t *testing.T) {
 	assert.NotEmpty(t, recoveryPhrase)
 
 	// when
-	key, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Meta{})
+	key, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Metadata{})
 
 	// then
 	require.NoError(t, err)
@@ -931,7 +931,7 @@ func testGettingNonExistingPublicKeyFails(t *testing.T) {
 	assert.NotEmpty(t, recoveryPhrase)
 
 	// when
-	key, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Meta{})
+	key, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Metadata{})
 
 	// then
 	require.NoError(t, err)
@@ -959,7 +959,7 @@ func testHandlerTaintingKeyPairSucceeds(t *testing.T) {
 	assert.NotEmpty(t, recoveryPhrase)
 
 	// when
-	key, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Meta{})
+	key, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Metadata{})
 
 	// then
 	require.NoError(t, err)
@@ -999,7 +999,7 @@ func testHandlerTaintingKeyPairWithInvalidNameFails(t *testing.T) {
 	assert.NotEmpty(t, recoveryPhrase)
 
 	// when
-	key, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Meta{})
+	key, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Metadata{})
 
 	// then
 	require.NoError(t, err)
@@ -1051,7 +1051,7 @@ func testHandlerTaintingKeyThatIsAlreadyTaintedFails(t *testing.T) {
 	assert.NotEmpty(t, recoveryPhrase)
 
 	// when
-	key, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Meta{})
+	key, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Metadata{})
 
 	// then
 	require.NoError(t, err)
@@ -1087,7 +1087,7 @@ func testHandlerUpdatingKeyPairMetaSucceeds(t *testing.T) {
 	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
-	meta := []wallet.Meta{{Key: "primary", Value: "yes"}}
+	meta := []wallet.Metadata{{Key: "primary", Value: "yes"}}
 
 	// when
 	recoveryPhrase, err := h.CreateWallet(name, passphrase)
@@ -1097,7 +1097,7 @@ func testHandlerUpdatingKeyPairMetaSucceeds(t *testing.T) {
 	assert.NotEmpty(t, recoveryPhrase)
 
 	// when
-	key, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Meta{})
+	key, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Metadata{})
 
 	// then
 	require.NoError(t, err)
@@ -1109,9 +1109,11 @@ func testHandlerUpdatingKeyPairMetaSucceeds(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	updatedKp := h.store.GetKey(name, key)
-	assert.Len(t, updatedKp.Meta(), 1)
+	assert.Len(t, updatedKp.Meta(), 2)
 	assert.Equal(t, updatedKp.Meta()[0].Key, "primary")
 	assert.Equal(t, updatedKp.Meta()[0].Value, "yes")
+	assert.Equal(t, updatedKp.Meta()[1].Key, "name")
+	assert.Equal(t, updatedKp.Meta()[1].Value, "Key 1")
 }
 
 func testHandlerUpdatingKeyPairMetaWithInvalidPassphraseFails(t *testing.T) {
@@ -1123,7 +1125,7 @@ func testHandlerUpdatingKeyPairMetaWithInvalidPassphraseFails(t *testing.T) {
 	othPassphrase := "other-passphrase"
 	name := vgrand.RandomStr(5)
 
-	meta := []wallet.Meta{{Key: "primary", Value: "yes"}}
+	meta := []wallet.Metadata{{Key: "primary", Value: "yes"}}
 
 	// when
 	recoveryPhrase, err := h.CreateWallet(name, passphrase)
@@ -1133,7 +1135,7 @@ func testHandlerUpdatingKeyPairMetaWithInvalidPassphraseFails(t *testing.T) {
 	assert.NotEmpty(t, recoveryPhrase)
 
 	// when
-	key, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Meta{})
+	key, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Metadata{})
 
 	// then
 	require.NoError(t, err)
@@ -1144,7 +1146,7 @@ func testHandlerUpdatingKeyPairMetaWithInvalidPassphraseFails(t *testing.T) {
 
 	// then
 	assert.Error(t, err)
-	assert.NotContains(t, h.store.GetKey(name, key).Meta(), wallet.Meta{Key: "primary", Value: "yes"})
+	assert.NotContains(t, h.store.GetKey(name, key).Meta(), wallet.Metadata{Key: "primary", Value: "yes"})
 }
 
 func testHandlerUpdatingKeyPairMetaWithInvalidNameFails(t *testing.T) {
@@ -1155,7 +1157,7 @@ func testHandlerUpdatingKeyPairMetaWithInvalidNameFails(t *testing.T) {
 	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 	otherName := "other name"
-	meta := []wallet.Meta{{Key: "primary", Value: "yes"}}
+	meta := []wallet.Metadata{{Key: "primary", Value: "yes"}}
 
 	// when
 	recoveryPhrase, err := h.CreateWallet(name, passphrase)
@@ -1165,7 +1167,7 @@ func testHandlerUpdatingKeyPairMetaWithInvalidNameFails(t *testing.T) {
 	assert.NotEmpty(t, recoveryPhrase)
 
 	// when
-	key, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Meta{})
+	key, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Metadata{})
 
 	// then
 	require.NoError(t, err)
@@ -1176,7 +1178,7 @@ func testHandlerUpdatingKeyPairMetaWithInvalidNameFails(t *testing.T) {
 
 	// then
 	assert.Error(t, err)
-	assert.NotContains(t, h.store.GetKey(name, key).Meta(), wallet.Meta{Key: "primary", Value: "yes"})
+	assert.NotContains(t, h.store.GetKey(name, key).Meta(), wallet.Metadata{Key: "primary", Value: "yes"})
 }
 
 func testHandlerUpdatingKeyPairMetaWithoutWalletFails(t *testing.T) {
@@ -1187,7 +1189,7 @@ func testHandlerUpdatingKeyPairMetaWithoutWalletFails(t *testing.T) {
 	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 	pubKey := "non-existing-public-key"
-	meta := []wallet.Meta{{Key: "primary", Value: "yes"}}
+	meta := []wallet.Metadata{{Key: "primary", Value: "yes"}}
 
 	// when
 	err := h.UpdateMeta(name, pubKey, passphrase, meta)
@@ -1204,7 +1206,7 @@ func testHandlerUpdatingKeyPairMetaWithNonExistingPublicKeyFails(t *testing.T) {
 	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 	pubKey := "non-existing-public-key"
-	meta := []wallet.Meta{{Key: "primary", Value: "yes"}}
+	meta := []wallet.Metadata{{Key: "primary", Value: "yes"}}
 
 	// when
 	recoveryPhrase, err := h.CreateWallet(name, passphrase)
@@ -1214,7 +1216,7 @@ func testHandlerUpdatingKeyPairMetaWithNonExistingPublicKeyFails(t *testing.T) {
 	assert.NotEmpty(t, recoveryPhrase)
 
 	// when
-	key, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Meta{})
+	key, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Metadata{})
 
 	// then
 	require.NoError(t, err)
@@ -1258,7 +1260,7 @@ func testHandlerSigningTxSucceeds(t *testing.T) {
 	assert.NotEmpty(t, recoveryPhrase)
 
 	// when
-	pubKey, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Meta{})
+	pubKey, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Metadata{})
 
 	// then
 	require.NoError(t, err)
@@ -1304,7 +1306,7 @@ func testHandlerSigningTxWithLoggedOutWalletFails(t *testing.T) {
 	assert.NotEmpty(t, recoveryPhrase)
 
 	// when
-	pubKey, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Meta{})
+	pubKey, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Metadata{})
 
 	// then
 	require.NoError(t, err)
@@ -1347,7 +1349,7 @@ func testHandlerSigningTxWithTaintedKeyFails(t *testing.T) {
 	assert.NotEmpty(t, recoveryPhrase)
 
 	// when
-	pubKey, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Meta{})
+	pubKey, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Metadata{})
 
 	// then
 	require.NoError(t, err)
@@ -1392,7 +1394,7 @@ func testHandlerSigningAndVerifyingMessageSucceeds(t *testing.T) {
 	assert.NotEmpty(t, recoveryPhrase)
 
 	// when
-	pubKey, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Meta{})
+	pubKey, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Metadata{})
 
 	// then
 	require.NoError(t, err)
@@ -1432,7 +1434,7 @@ func testHandlerSigningMessageWithLoggedOutWalletFails(t *testing.T) {
 	assert.NotEmpty(t, recoveryPhrase)
 
 	// when
-	pubKey, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Meta{})
+	pubKey, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Metadata{})
 
 	// then
 	require.NoError(t, err)
@@ -1470,7 +1472,7 @@ func testHandlerVerifyingMessageWithLoggedOutWalletSucceeds(t *testing.T) {
 	assert.NotEmpty(t, recoveryPhrase)
 
 	// when
-	pubKey, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Meta{})
+	pubKey, err := h.SecureGenerateKeyPair(name, passphrase, []wallet.Metadata{})
 
 	// then
 	require.NoError(t, err)

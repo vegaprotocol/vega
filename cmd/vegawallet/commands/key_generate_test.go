@@ -32,7 +32,7 @@ func testGenerateKeyFlagsValidFlagsSucceeds(t *testing.T) {
 
 	expectedReq := api.GenerateKeyParams{
 		Wallet: walletName,
-		Metadata: []wallet.Meta{
+		Metadata: []wallet.Metadata{
 			{Key: "name", Value: "my-wallet"},
 			{Key: "role", Value: "validation"},
 		},

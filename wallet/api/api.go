@@ -156,7 +156,7 @@ func SessionAPI(log *zap.Logger, walletStore WalletStore, pipeline Pipeline, nod
 // only exposed to highly-trustable applications.
 func AdminAPI(log *zap.Logger, walletStore WalletStore, netStore NetworkStore) (*jsonrpc.API, error) {
 	walletAPI := jsonrpc.New(log)
-	walletAPI.RegisterMethod("admin.annotate_key", &UnimplementedMethod{})
+	walletAPI.RegisterMethod("admin.annotate_key", NewAnnotateKey(walletStore))
 	walletAPI.RegisterMethod("admin.create_wallet", NewCreateWallet(walletStore))
 	walletAPI.RegisterMethod("admin.describe_key", &UnimplementedMethod{})
 	walletAPI.RegisterMethod("admin.describe_network", &UnimplementedMethod{})

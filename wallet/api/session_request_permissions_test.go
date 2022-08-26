@@ -716,7 +716,7 @@ func testUpdatingPermissionsDoesNotOverwriteUntrackedChanges(t *testing.T) {
 	if err != nil {
 		t.Fatal("could not import wallet for test: %w", err)
 	}
-	kp, _ := modifiedWallet.GenerateKeyPair([]wallet.Meta{{Key: "name", Value: "hello"}})
+	kp, _ := modifiedWallet.GenerateKeyPair([]wallet.Metadata{{Key: "name", Value: "hello"}})
 
 	passphrase := vgrand.RandomStr(5)
 	askedPermissions := wallet.PermissionsSummary{

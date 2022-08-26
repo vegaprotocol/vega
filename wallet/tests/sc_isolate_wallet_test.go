@@ -51,6 +51,6 @@ func TestIsolateWallet(t *testing.T) {
 	})
 
 	// then
-	require.EqualError(t, err, "an isolated wallet can't generate keys")
+	require.EqualError(t, err, "couldn't generate a new key: an isolated wallet can't generate keys")
 	require.Nil(t, generateKeyRespOnIsolatedWallet)
 }

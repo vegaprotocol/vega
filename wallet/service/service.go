@@ -186,8 +186,8 @@ func ParseTaintKeyRequest(r *http.Request, keyID string) (*TaintKeyRequest, comm
 
 // GenKeyPairRequest describes the request for GenerateKeyPair.
 type GenKeyPairRequest struct {
-	Passphrase string        `json:"passphrase"`
-	Meta       []wallet.Meta `json:"meta"`
+	Passphrase string            `json:"passphrase"`
+	Meta       []wallet.Metadata `json:"meta"`
 }
 
 func ParseGenKeyPairRequest(r *http.Request) (*GenKeyPairRequest, commands.Errors) {
@@ -209,10 +209,10 @@ func ParseGenKeyPairRequest(r *http.Request) (*GenKeyPairRequest, commands.Error
 	return req, errs
 }
 
-// UpdateMetaRequest describes the request for UpdateMeta.
+// UpdateMetaRequest describes the request for UpdateMetadata.
 type UpdateMetaRequest struct {
-	Passphrase string        `json:"passphrase"`
-	Meta       []wallet.Meta `json:"meta"`
+	Passphrase string            `json:"passphrase"`
+	Meta       []wallet.Metadata `json:"meta"`
 }
 
 func ParseUpdateMetaRequest(r *http.Request, keyID string) (*UpdateMetaRequest, commands.Errors) {
@@ -401,14 +401,14 @@ type WalletHandler interface {
 	ImportWallet(name, passphrase, recoveryPhrase string, version uint32) error
 	LoginWallet(name, passphrase string) error
 	LogoutWallet(name string)
-	SecureGenerateKeyPair(name, passphrase string, meta []wallet.Meta) (string, error)
+	SecureGenerateKeyPair(name, passphrase string, meta []wallet.Metadata) (string, error)
 	GetPublicKey(name, pubKey string) (wallet.PublicKey, error)
 	ListPublicKeys(name string) ([]wallet.PublicKey, error)
 	SignTx(name string, req *walletpb.SubmitTransactionRequest, height uint64, chainID string) (*commandspb.Transaction, error)
 	SignAny(name string, inputData []byte, pubKey string) ([]byte, error)
 	VerifyAny(inputData, sig []byte, pubKey string) (bool, error)
 	TaintKey(name, pubKey, passphrase string) error
-	UpdateMeta(name, pubKey, passphrase string, meta []wallet.Meta) error
+	UpdateMeta(name, pubKey, passphrase string, meta []wallet.Metadata) error
 }
 
 // Auth ...

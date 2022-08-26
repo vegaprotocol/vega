@@ -484,7 +484,7 @@ func testServiceGetPublicKeyOK(t *testing.T) {
 			Version: 1,
 		},
 		Tainted:  false,
-		MetaList: []wallet.Meta{{Key: "a", Value: "b"}},
+		MetaList: []wallet.Metadata{{Key: "a", Value: "b"}},
 	}
 	headers := authHeaders(t, token)
 
@@ -646,7 +646,7 @@ func testServiceUpdateMetaOK(t *testing.T) {
 
 	// setup
 	s.auth.EXPECT().VerifyToken(token).Times(1).Return(walletName, nil)
-	s.handler.EXPECT().UpdateMeta(walletName, pubKey, passphrase, []wallet.Meta{{
+	s.handler.EXPECT().UpdateMeta(walletName, pubKey, passphrase, []wallet.Metadata{{
 		Key:   "role",
 		Value: metaRole,
 	}}).Times(1).Return(nil)

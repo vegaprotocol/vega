@@ -49,6 +49,7 @@ var (
 	ErrParamsDoNotMatch                         = errors.New("the params do not match expected ones")
 	ErrParamsRequired                           = errors.New("the params are required")
 	ErrPassphraseIsRequired                     = errors.New("the passphrase is required")
+	ErrPublicKeyDoesNotExist                    = errors.New("the public key does not exist")
 	ErrPublicKeyIsNotAllowedToBeUsed            = errors.New("the public key is not allowed to be used")
 	ErrPublicKeyIsRequired                      = errors.New("the public key is required")
 	ErrReadAccessOnPublicKeysRequired           = errors.New(`a "read" access on public keys is required`)

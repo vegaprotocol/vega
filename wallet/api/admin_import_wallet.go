@@ -70,7 +70,7 @@ func (h *ImportWallet) Handle(ctx context.Context, rawParams jsonrpc.Params) (js
 				Name:    kp.AlgorithmName(),
 				Version: kp.AlgorithmVersion(),
 			},
-			Meta: kp.Meta(),
+			Meta: kp.Metadata(),
 		},
 	}, nil
 }

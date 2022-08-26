@@ -103,7 +103,7 @@ func testGeneratingKeyWithValidParamsSucceeds(t *testing.T) {
 	result, errorDetails := handler.handle(t, ctx, api.GenerateKeyParams{
 		Wallet:     name,
 		Passphrase: passphrase,
-		Metadata:   []wallet.Meta{{Key: "mode", Value: "test"}},
+		Metadata:   []wallet.Metadata{{Key: "mode", Value: "test"}},
 	})
 
 	// then
@@ -113,12 +113,12 @@ func testGeneratingKeyWithValidParamsSucceeds(t *testing.T) {
 	// Verify the first generated key.
 	assert.Len(t, expectedWallet.ListKeyPairs(), 1)
 	keyPair := expectedWallet.ListKeyPairs()[0]
-	assert.Equal(t, []wallet.Meta{{Key: "mode", Value: "test"}, {Key: "name", Value: fmt.Sprintf("%s key 1", name)}}, keyPair.Meta())
+	assert.Equal(t, []wallet.Metadata{{Key: "mode", Value: "test"}, {Key: "name", Value: "Key 1"}}, keyPair.Metadata())
 	// Verify the result.
 	assert.Equal(t, keyPair.PublicKey(), result.PublicKey)
 	assert.Equal(t, keyPair.AlgorithmName(), result.Algorithm.Name)
 	assert.Equal(t, keyPair.AlgorithmVersion(), result.Algorithm.Version)
-	assert.Equal(t, keyPair.Meta(), result.Metadata)
+	assert.Equal(t, keyPair.Metadata(), result.Metadata)
 }
 
 func testGeneratingKeyOnUnknownWalletFails(t *testing.T) {

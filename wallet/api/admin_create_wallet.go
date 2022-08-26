@@ -27,9 +27,9 @@ type CreatedWallet struct {
 }
 
 type FirstPublicKey struct {
-	PublicKey string           `json:"publicKey"`
-	Algorithm wallet.Algorithm `json:"algorithm"`
-	Meta      []wallet.Meta    `json:"meta"`
+	PublicKey string            `json:"publicKey"`
+	Algorithm wallet.Algorithm  `json:"algorithm"`
+	Meta      []wallet.Metadata `json:"metadata"`
 }
 
 type CreateWallet struct {
@@ -76,7 +76,7 @@ func (h *CreateWallet) Handle(ctx context.Context, rawParams jsonrpc.Params) (js
 				Name:    kp.AlgorithmName(),
 				Version: kp.AlgorithmVersion(),
 			},
-			Meta: kp.Meta(),
+			Meta: kp.Metadata(),
 		},
 	}, nil
 }

@@ -9,25 +9,24 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-type GenerateKeyParams struct {
+type AnnotateKeyParams struct {
 	Wallet     string            `json:"wallet"`
+	PubKey     string            `json:"pubKey"`
 	Metadata   []wallet.Metadata `json:"metadata"`
 	Passphrase string            `json:"passphrase"`
 }
 
-type GenerateKeyResult struct {
-	PublicKey string            `json:"publicKey"`
-	Algorithm wallet.Algorithm  `json:"algorithm"`
-	Metadata  []wallet.Metadata `json:"metadata"`
+type AnnotateKeyResult struct {
+	Metadata []wallet.Metadata `json:"metadata"`
 }
 
-type GenerateKey struct {
+type AnnotateKey struct {
 	walletStore WalletStore
 }
 
-// Handle generates a key of the specified wallet.
-func (h *GenerateKey) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
-	params, err := validateGenerateKeyParams(rawParams)
+// Handle creates a wallet and generates its first key.
+func (h *AnnotateKey) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+	params, err := validateAnnotateKeyParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
 	}
@@ -43,50 +42,53 @@ func (h *GenerateKey) Handle(ctx context.Context, rawParams jsonrpc.Params) (jso
 		return nil, internalError(fmt.Errorf("couldn't retrieve wallet: %w", err))
 	}
 
-	kp, err := w.GenerateKeyPair(params.Metadata)
+	if !w.HasPublicKey(params.PubKey) {
+		return nil, invalidParams(ErrPublicKeyDoesNotExist)
+	}
+
+	updatedMeta, err := w.AnnotateKey(params.PubKey, params.Metadata)
 	if err != nil {
-		return nil, internalError(fmt.Errorf("couldn't generate a new key-pair: %w", err))
+		return nil, internalError(fmt.Errorf("couldn't annotate the key: %w", err))
 	}
 
 	if err := h.walletStore.SaveWallet(ctx, w, params.Passphrase); err != nil {
 		return nil, internalError(fmt.Errorf("couldn't save wallet: %w", err))
 	}
 
-	return GenerateKeyResult{
-		PublicKey: kp.PublicKey(),
-		Algorithm: wallet.Algorithm{
-			Name:    kp.AlgorithmName(),
-			Version: kp.AlgorithmVersion(),
-		},
-		Metadata: kp.Metadata(),
+	return AnnotateKeyResult{
+		Metadata: updatedMeta,
 	}, nil
 }
 
-func validateGenerateKeyParams(rawParams jsonrpc.Params) (GenerateKeyParams, error) {
+func validateAnnotateKeyParams(rawParams jsonrpc.Params) (AnnotateKeyParams, error) {
 	if rawParams == nil {
-		return GenerateKeyParams{}, ErrParamsRequired
+		return AnnotateKeyParams{}, ErrParamsRequired
 	}
 
-	params := GenerateKeyParams{}
+	params := AnnotateKeyParams{}
 	if err := mapstructure.Decode(rawParams, &params); err != nil {
-		return GenerateKeyParams{}, ErrParamsDoNotMatch
+		return AnnotateKeyParams{}, ErrParamsDoNotMatch
 	}
 
 	if params.Wallet == "" {
-		return GenerateKeyParams{}, ErrWalletIsRequired
+		return AnnotateKeyParams{}, ErrWalletIsRequired
 	}
 
 	if params.Passphrase == "" {
-		return GenerateKeyParams{}, ErrPassphraseIsRequired
+		return AnnotateKeyParams{}, ErrPassphraseIsRequired
+	}
+
+	if params.PubKey == "" {
+		return AnnotateKeyParams{}, ErrPublicKeyIsRequired
 	}
 
 	return params, nil
 }
 
-func NewGenerateKey(
+func NewAnnotateKey(
 	walletStore WalletStore,
-) *GenerateKey {
-	return &GenerateKey{
+) *AnnotateKey {
+	return &AnnotateKey{
 		walletStore: walletStore,
 	}
 }

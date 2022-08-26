@@ -23,30 +23,6 @@ type Store interface {
 	ListWallets(ctx context.Context) ([]string, error)
 }
 
-type AnnotateKeyRequest struct {
-	Wallet     string `json:"wallet"`
-	PubKey     string `json:"pubKey"`
-	Metadata   []Meta `json:"metadata"`
-	Passphrase string `json:"passphrase"`
-}
-
-func AnnotateKey(store Store, req *AnnotateKeyRequest) error {
-	w, err := getWallet(store, req.Wallet, req.Passphrase)
-	if err != nil {
-		return err
-	}
-
-	if err = w.UpdateMeta(req.PubKey, req.Metadata); err != nil {
-		return fmt.Errorf("couldn't update metadata: %w", err)
-	}
-
-	if err := store.SaveWallet(context.Background(), w, req.Passphrase); err != nil {
-		return fmt.Errorf("couldn't save wallet: %w", err)
-	}
-
-	return nil
-}
-
 type TaintKeyRequest struct {
 	Wallet     string `json:"wallet"`
 	PubKey     string `json:"pubKey"`
@@ -141,10 +117,10 @@ type DescribeKeyRequest struct {
 }
 
 type DescribeKeyResponse struct {
-	PublicKey string    `json:"publicKey"`
-	Algorithm Algorithm `json:"algorithm"`
-	Meta      []Meta    `json:"meta"`
-	IsTainted bool      `json:"isTainted"`
+	PublicKey string     `json:"publicKey"`
+	Algorithm Algorithm  `json:"algorithm"`
+	Meta      []Metadata `json:"meta"`
+	IsTainted bool       `json:"isTainted"`
 }
 
 type NamedPubKey struct {
@@ -162,7 +138,7 @@ func ListKeys(store Store, req *ListKeysRequest) (*ListKeysResponse, error) {
 	keys := make([]NamedPubKey, 0, len(kps))
 	for _, kp := range kps {
 		keys = append(keys, NamedPubKey{
-			Name:      GetKeyName(kp.Meta()),
+			Name:      GetKeyName(kp.Metadata()),
 			PublicKey: kp.PublicKey(),
 		})
 	}
@@ -187,7 +163,7 @@ func DescribeKey(store Store, req *DescribeKeyRequest) (*DescribeKeyResponse, er
 	resp.PublicKey = kp.PublicKey()
 	resp.Algorithm.Name = kp.AlgorithmName()
 	resp.Algorithm.Version = kp.AlgorithmVersion()
-	resp.Meta = kp.Meta()
+	resp.Meta = kp.Metadata()
 	resp.IsTainted = kp.IsTainted()
 	return resp, nil
 }
@@ -279,9 +255,9 @@ func RotateKey(store Store, req *RotateKeyRequest) (*RotateKeyResponse, error) {
 }
 
 type FirstPublicKey struct {
-	PublicKey string    `json:"publicKey"`
-	Algorithm Algorithm `json:"algorithm"`
-	Meta      []Meta    `json:"meta"`
+	PublicKey string     `json:"publicKey"`
+	Algorithm Algorithm  `json:"algorithm"`
+	Meta      []Metadata `json:"meta"`
 }
 
 type SignCommandRequest struct {
@@ -457,24 +433,4 @@ func getWallet(store Store, wallet, passphrase string) (Wallet, error) {
 	}
 
 	return w, nil
-}
-
-func addDefaultKeyName(w Wallet, meta []Meta) []Meta {
-	for _, m := range meta {
-		if m.Key == KeyNameMeta {
-			return meta
-		}
-	}
-
-	if len(meta) == 0 {
-		meta = []Meta{}
-	}
-
-	nextID := len(w.ListKeyPairs()) + 1
-
-	meta = append(meta, Meta{
-		Key:   KeyNameMeta,
-		Value: fmt.Sprintf("%s key %d", w.Name(), nextID),
-	})
-	return meta
 }

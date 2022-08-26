@@ -40,7 +40,7 @@ func TestDescribeKey(t *testing.T) {
 	require.NoError(t, err)
 	AssertDescribeKey(t, descResp).
 		WithPubKey(createWalletResp.Key.PublicKey).
-		WithMeta(map[string]string{"name": DefaultMetaName(t, walletName, 1)}).
+		WithMeta(map[string]string{"name": "Key 1"}).
 		WithAlgorithm("vega/ed25519", 1).
 		WithTainted(false)
 }

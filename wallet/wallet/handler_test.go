@@ -18,56 +18,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAnnotateKey(t *testing.T) {
-	t.Run("Annotating an existing key succeeds", testAnnotatingKeySucceeds)
-}
-
-func testAnnotatingKeySucceeds(t *testing.T) {
-	tcs := []struct {
-		name     string
-		metadata []wallet.Meta
-	}{
-		{
-			name: "with metadata",
-			metadata: []wallet.Meta{
-				{Key: "name", Value: "my-wallet"},
-				{Key: "role", Value: "validation"},
-			},
-		}, {
-			name:     "without metadata",
-			metadata: nil,
-		},
-	}
-
-	for _, tc := range tcs {
-		t.Run(tc.name, func(tt *testing.T) {
-			// given
-			w := newWalletWithKey(t)
-			kp := w.ListKeyPairs()[0]
-
-			req := &wallet.AnnotateKeyRequest{
-				Wallet:     w.Name(),
-				PubKey:     kp.PublicKey(),
-				Metadata:   tc.metadata,
-				Passphrase: "passphrase",
-			}
-
-			// setup
-			store := handlerMocks(tt)
-			store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(true, nil)
-			store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(1).Return(w, nil)
-			store.EXPECT().SaveWallet(gomock.Any(), w, req.Passphrase).Times(1).Return(nil)
-
-			// when
-			err := wallet.AnnotateKey(store, req)
-
-			// then
-			require.NoError(tt, err)
-			assert.Equal(tt, req.Metadata, w.ListKeyPairs()[0].Meta())
-		})
-	}
-}
-
 func TestTaintKey(t *testing.T) {
 	t.Run("Tainting key succeeds", testTaintingKeySucceeds)
 	t.Run("Tainting key of non-existing wallet fails", testTaintingKeyOfNonExistingWalletFails)
@@ -245,7 +195,7 @@ func testListKeysSucceeds(t *testing.T) {
 	}
 	for i := 0; i < keyCount; i++ {
 		keyName := vgrand.RandomStr(5)
-		kp, err := w.GenerateKeyPair([]wallet.Meta{{Key: "name", Value: keyName}})
+		kp, err := w.GenerateKeyPair([]wallet.Metadata{{Key: "name", Value: keyName}})
 		if err != nil {
 			t.Fatalf("couldn't generate key: %v", err)
 		}

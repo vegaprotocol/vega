@@ -114,10 +114,7 @@ func testCreatingWalletWithValidParamsSucceeds(t *testing.T) {
 	// Verify the first generated key.
 	assert.Len(t, createdWallet.ListKeyPairs(), 1)
 	keyPair := createdWallet.ListKeyPairs()[0]
-	assert.Equal(t, []wallet.Meta{{
-		Key:   "name",
-		Value: fmt.Sprintf("%s key 1", name),
-	}}, keyPair.Meta())
+	assert.Equal(t, []wallet.Metadata{{Key: "name", Value: "Key 1"}}, keyPair.Metadata())
 	// Verify the result.
 	assert.Equal(t, name, result.Wallet.Name)
 	assert.NotEmpty(t, result.Wallet.RecoveryPhrase)
@@ -126,7 +123,7 @@ func testCreatingWalletWithValidParamsSucceeds(t *testing.T) {
 	assert.Equal(t, keyPair.PublicKey(), result.Key.PublicKey)
 	assert.Equal(t, keyPair.AlgorithmName(), result.Key.Algorithm.Name)
 	assert.Equal(t, keyPair.AlgorithmVersion(), result.Key.Algorithm.Version)
-	assert.Equal(t, keyPair.Meta(), result.Key.Meta)
+	assert.Equal(t, keyPair.Metadata(), result.Key.Meta)
 }
 
 func testCreatingWalletThatAlreadyExistsFails(t *testing.T) {

@@ -1,13 +1,15 @@
 package cmd
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"io"
 
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
-	"code.vegaprotocol.io/vega/wallet/wallet"
+	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
 	"github.com/spf13/cobra"
@@ -38,16 +40,22 @@ var (
 	`)
 )
 
-type AnnotateKeyHandler func(*wallet.AnnotateKeyRequest) error
+type AnnotateKeyHandler func(api.AnnotateKeyParams) (api.AnnotateKeyResult, error)
 
 func NewCmdAnnotateKey(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(req *wallet.AnnotateKeyRequest) error {
+	h := func(params api.AnnotateKeyParams) (api.AnnotateKeyResult, error) {
 		s, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
-			return fmt.Errorf("couldn't initialise wallets store: %w", err)
+			return api.AnnotateKeyResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 
-		return wallet.AnnotateKey(s, req)
+		annotateKey := api.NewAnnotateKey(s)
+
+		rawResult, errDetails := annotateKey.Handle(context.Background(), params)
+		if errDetails != nil {
+			return api.AnnotateKeyResult{}, errors.New(errDetails.Data)
+		}
+		return rawResult.(api.AnnotateKeyResult), nil
 	}
 
 	return BuildCmdAnnotateKey(w, h, rf)
@@ -67,15 +75,16 @@ func BuildCmdAnnotateKey(w io.Writer, handler AnnotateKeyHandler, rf *RootFlags)
 				return err
 			}
 
-			if err := handler(req); err != nil {
+			resp, err := handler(req)
+			if err != nil {
 				return err
 			}
 
 			switch rf.Output {
 			case flags.InteractiveOutput:
-				PrintAnnotateKeyResponse(w, req)
+				PrintAnnotateKeyResponse(w, f, resp)
 			case flags.JSONOutput:
-				return nil
+				return printer.FprintJSON(w, resp)
 			}
 
 			return nil
@@ -121,52 +130,49 @@ type AnnotateKeyFlags struct {
 	RawMetadata    []string
 }
 
-func (f *AnnotateKeyFlags) Validate() (*wallet.AnnotateKeyRequest, error) {
-	req := &wallet.AnnotateKeyRequest{}
-
+func (f *AnnotateKeyFlags) Validate() (api.AnnotateKeyParams, error) {
 	if len(f.Wallet) == 0 {
-		return nil, flags.MustBeSpecifiedError("wallet")
+		return api.AnnotateKeyParams{}, flags.MustBeSpecifiedError("wallet")
 	}
-	req.Wallet = f.Wallet
 
 	if len(f.PubKey) == 0 {
-		return nil, flags.MustBeSpecifiedError("pubkey")
+		return api.AnnotateKeyParams{}, flags.MustBeSpecifiedError("pubkey")
 	}
-	req.PubKey = f.PubKey
 
 	if len(f.RawMetadata) == 0 && !f.Clear {
-		return nil, flags.OneOfFlagsMustBeSpecifiedError("meta", "clear")
+		return api.AnnotateKeyParams{}, flags.OneOfFlagsMustBeSpecifiedError("meta", "clear")
 	}
 	if len(f.RawMetadata) != 0 && f.Clear {
-		return nil, flags.MutuallyExclusiveError("meta", "clear")
+		return api.AnnotateKeyParams{}, flags.MutuallyExclusiveError("meta", "clear")
 	}
 
 	metadata, err := cli.ParseMetadata(f.RawMetadata)
 	if err != nil {
-		return nil, err
+		return api.AnnotateKeyParams{}, err
 	}
-	req.Metadata = metadata
 
 	passphrase, err := flags.GetPassphrase(f.PassphraseFile)
 	if err != nil {
-		return nil, err
+		return api.AnnotateKeyParams{}, err
 	}
-	req.Passphrase = passphrase
 
-	return req, nil
+	return api.AnnotateKeyParams{
+		Wallet:     f.Wallet,
+		PubKey:     f.PubKey,
+		Metadata:   metadata,
+		Passphrase: passphrase,
+	}, nil
 }
 
-func PrintAnnotateKeyResponse(w io.Writer, req *wallet.AnnotateKeyRequest) {
-	metadataHaveBeenCleared := len(req.Metadata) == 0
-
+func PrintAnnotateKeyResponse(w io.Writer, f AnnotateKeyFlags, res api.AnnotateKeyResult) {
 	p := printer.NewInteractivePrinter(w)
 	str := p.String()
 	defer p.Print(str)
-	if metadataHaveBeenCleared {
+	if f.Clear {
 		str.CheckMark().SuccessText("Annotation cleared").NextLine()
-		return
+	} else {
+		str.CheckMark().SuccessText("Annotation succeeded").NextSection()
 	}
-	str.CheckMark().SuccessText("Annotation succeeded").NextSection()
 	str.Text("New metadata:").NextLine()
-	printMeta(str, req.Metadata)
+	printMeta(str, res.Metadata)
 }
