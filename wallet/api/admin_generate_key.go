@@ -33,23 +33,23 @@ func (h *GenerateKey) Handle(ctx context.Context, rawParams jsonrpc.Params) (jso
 	}
 
 	if exist, err := h.walletStore.WalletExists(ctx, params.Wallet); err != nil {
-		return nil, internalError(fmt.Errorf("couldn't verify wallet existence: %w", err))
+		return nil, internalError(fmt.Errorf("could not verify the wallet existence: %w", err))
 	} else if !exist {
 		return nil, invalidParams(ErrWalletDoesNotExist)
 	}
 
 	w, err := h.walletStore.GetWallet(ctx, params.Wallet, params.Passphrase)
 	if err != nil {
-		return nil, internalError(fmt.Errorf("couldn't retrieve wallet: %w", err))
+		return nil, internalError(fmt.Errorf("could not retrieve the wallet: %w", err))
 	}
 
 	kp, err := w.GenerateKeyPair(params.Metadata)
 	if err != nil {
-		return nil, internalError(fmt.Errorf("couldn't generate a new key-pair: %w", err))
+		return nil, internalError(fmt.Errorf("could not generate a new key: %w", err))
 	}
 
 	if err := h.walletStore.SaveWallet(ctx, w, params.Passphrase); err != nil {
-		return nil, internalError(fmt.Errorf("couldn't save wallet: %w", err))
+		return nil, internalError(fmt.Errorf("could not save the wallet: %w", err))
 	}
 
 	return GenerateKeyResult{

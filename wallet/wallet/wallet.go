@@ -45,7 +45,7 @@ type KeyPair interface {
 type PublicKey interface {
 	Key() string
 	IsTainted() bool
-	Meta() []Metadata
+	Metadata() []Metadata
 	Index() uint32
 	AlgorithmVersion() uint32
 	AlgorithmName() string

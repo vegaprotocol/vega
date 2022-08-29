@@ -149,7 +149,7 @@ func testHDKeyPairToPublicKeyRemovesSensitiveInformation(t *testing.T) {
 	assert.Equal(t, kp.IsTainted(), secureKp.IsTainted())
 	assert.Equal(t, kp.AlgorithmName(), secureKp.AlgorithmName())
 	assert.Equal(t, kp.AlgorithmVersion(), secureKp.AlgorithmVersion())
-	assert.Equal(t, kp.Metadata(), secureKp.Meta())
+	assert.Equal(t, kp.Metadata(), secureKp.Metadata())
 }
 
 func testHDKeyPairSigningTransactionSucceeds(t *testing.T) {

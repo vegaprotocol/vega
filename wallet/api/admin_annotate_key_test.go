@@ -43,7 +43,7 @@ func testAnnotatingKeyWithInvalidParamsFails(t *testing.T) {
 			name: "with empty name",
 			params: api.AnnotateKeyParams{
 				Wallet:     "",
-				PubKey:     "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
+				PublicKey:  "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
 				Metadata:   []wallet.Metadata{{Key: vgrand.RandomStr(5), Value: vgrand.RandomStr(5)}},
 				Passphrase: vgrand.RandomStr(5),
 			},
@@ -51,7 +51,7 @@ func testAnnotatingKeyWithInvalidParamsFails(t *testing.T) {
 		}, {
 			name: "with empty passphrase",
 			params: api.AnnotateKeyParams{
-				PubKey:     "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
+				PublicKey:  "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
 				Metadata:   []wallet.Metadata{{Key: vgrand.RandomStr(5), Value: vgrand.RandomStr(5)}},
 				Wallet:     vgrand.RandomStr(5),
 				Passphrase: "",
@@ -60,7 +60,7 @@ func testAnnotatingKeyWithInvalidParamsFails(t *testing.T) {
 		}, {
 			name: "with empty public key",
 			params: api.AnnotateKeyParams{
-				PubKey:     "",
+				PublicKey:  "",
 				Metadata:   []wallet.Metadata{{Key: vgrand.RandomStr(5), Value: vgrand.RandomStr(5)}},
 				Wallet:     vgrand.RandomStr(5),
 				Passphrase: vgrand.RandomStr(5),
@@ -113,7 +113,7 @@ func testAnnotatingKeyWithValidParamsSucceeds(t *testing.T) {
 	result, errorDetails := handler.handle(t, ctx, api.AnnotateKeyParams{
 		Wallet:     expectedWallet.Name(),
 		Passphrase: passphrase,
-		PubKey:     kp.PublicKey(),
+		PublicKey:  kp.PublicKey(),
 		Metadata:   []wallet.Metadata{{Key: "mode", Value: "test"}},
 	})
 
@@ -143,14 +143,13 @@ func testAnnotatingKeyOnUnknownWalletFails(t *testing.T) {
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AnnotateKeyParams{
 		Wallet:     name,
-		PubKey:     vgrand.RandomStr(5),
+		PublicKey:  vgrand.RandomStr(5),
 		Metadata:   []wallet.Metadata{{Key: "mode", Value: "test"}},
 		Passphrase: passphrase,
 	})
 
 	// then
 	require.NotNil(t, errorDetails)
-	// Verify generated wallet.
 	assert.Empty(t, result)
 	assertInvalidParams(t, errorDetails, api.ErrWalletDoesNotExist)
 }
@@ -174,14 +173,13 @@ func testAnnotatingKeyOnUnknownKeyFails(t *testing.T) {
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AnnotateKeyParams{
 		Wallet:     expectedWallet.Name(),
-		PubKey:     vgrand.RandomStr(5),
+		PublicKey:  vgrand.RandomStr(5),
 		Metadata:   []wallet.Metadata{{Key: "mode", Value: "test"}},
 		Passphrase: passphrase,
 	})
 
 	// then
 	require.NotNil(t, errorDetails)
-	// Verify generated wallet.
 	assert.Empty(t, result)
 	assertInvalidParams(t, errorDetails, api.ErrPublicKeyDoesNotExist)
 }
@@ -206,14 +204,14 @@ func testGettingInternalErrorDuringWalletVerificationDoesNotAnnotateKey(t *testi
 	result, errorDetails := handler.handle(t, ctx, api.AnnotateKeyParams{
 		Wallet:     expectedWallet.Name(),
 		Passphrase: passphrase,
-		PubKey:     kp.PublicKey(),
+		PublicKey:  kp.PublicKey(),
 		Metadata:   []wallet.Metadata{{Key: "mode", Value: "test"}},
 	})
 
 	// then
 	require.NotNil(t, errorDetails)
 	assert.Empty(t, result)
-	assertInternalError(t, errorDetails, fmt.Errorf("couldn't verify wallet existence: %w", assert.AnError))
+	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet existence: %w", assert.AnError))
 }
 
 func testGettingInternalErrorDuringWalletRetrievalDoesNotAnnotateKey(t *testing.T) {
@@ -236,15 +234,14 @@ func testGettingInternalErrorDuringWalletRetrievalDoesNotAnnotateKey(t *testing.
 	result, errorDetails := handler.handle(t, ctx, api.AnnotateKeyParams{
 		Wallet:     expectedWallet.Name(),
 		Passphrase: passphrase,
-		PubKey:     kp.PublicKey(),
+		PublicKey:  kp.PublicKey(),
 		Metadata:   []wallet.Metadata{{Key: "mode", Value: "test"}},
 	})
 
 	// then
 	require.NotNil(t, errorDetails)
-	// Verify generated wallet.
 	assert.Empty(t, result)
-	assertInternalError(t, errorDetails, fmt.Errorf("couldn't retrieve wallet: %w", assert.AnError))
+	assertInternalError(t, errorDetails, fmt.Errorf("could not retrieve the wallet: %w", assert.AnError))
 }
 
 func testGettingInternalErrorDuringWalletSavingDoesNotAnnotateKey(t *testing.T) {
@@ -267,14 +264,14 @@ func testGettingInternalErrorDuringWalletSavingDoesNotAnnotateKey(t *testing.T) 
 	result, errorDetails := handler.handle(t, ctx, api.AnnotateKeyParams{
 		Wallet:     expectedWallet.Name(),
 		Passphrase: passphrase,
-		PubKey:     kp.PublicKey(),
+		PublicKey:  kp.PublicKey(),
 		Metadata:   []wallet.Metadata{{Key: "mode", Value: "test"}},
 	})
 
 	// then
 	require.NotNil(t, errorDetails)
 	assert.Empty(t, result)
-	assertInternalError(t, errorDetails, fmt.Errorf("couldn't save wallet: %w", assert.AnError))
+	assertInternalError(t, errorDetails, fmt.Errorf("could not save the wallet: %w", assert.AnError))
 }
 
 type annotateKeyHandler struct {

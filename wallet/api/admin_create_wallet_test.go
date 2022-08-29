@@ -150,7 +150,6 @@ func testCreatingWalletThatAlreadyExistsFails(t *testing.T) {
 
 	// then
 	require.NotNil(t, errorDetails)
-	// Verify generated wallet.
 	assert.Empty(t, result)
 	assertInvalidParams(t, errorDetails, api.ErrWalletAlreadyExists)
 }

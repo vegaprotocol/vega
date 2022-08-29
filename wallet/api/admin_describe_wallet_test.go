@@ -94,7 +94,7 @@ func testDescribingWalletWithValidParamsSucceeds(t *testing.T) {
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, name, passphrase).Times(1).Return(expectedWallet, nil)
 	// -- unexpected calls
-	handler.walletStore.EXPECT().GetWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+	handler.walletStore.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	handler.walletStore.EXPECT().ListWallets(gomock.Any()).Times(0)
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
@@ -106,7 +106,6 @@ func testDescribingWalletWithValidParamsSucceeds(t *testing.T) {
 
 	// then
 	require.Nil(t, errorDetails)
-	// Verify generated wallet.
 	assert.Equal(t, api.DescribeWalletResult{
 		Name:    expectedWallet.Name(),
 		ID:      expectedWallet.ID(),
@@ -139,7 +138,6 @@ func testDescribingWalletThatDoesNotExistsFails(t *testing.T) {
 
 	// then
 	require.NotNil(t, errorDetails)
-	// Verify generated wallet.
 	assert.Empty(t, result)
 	assertInvalidParams(t, errorDetails, api.ErrWalletDoesNotExist)
 }
@@ -168,7 +166,6 @@ func testGettingInternalErrorDuringVerificationFails(t *testing.T) {
 
 	// then
 	require.NotNil(t, errorDetails)
-	// Verify generated wallet.
 	assert.Empty(t, result)
 	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet existence: %w", assert.AnError))
 }
@@ -197,7 +194,6 @@ func testGettingInternalErrorDuringRetrievalFails(t *testing.T) {
 
 	// then
 	require.NotNil(t, errorDetails)
-	// Verify generated wallet.
 	assert.Empty(t, result)
 	assertInternalError(t, errorDetails, fmt.Errorf("could not retrieve the wallet: %w", assert.AnError))
 }

@@ -158,7 +158,7 @@ func (f *AnnotateKeyFlags) Validate() (api.AnnotateKeyParams, error) {
 
 	return api.AnnotateKeyParams{
 		Wallet:     f.Wallet,
-		PubKey:     f.PubKey,
+		PublicKey:  f.PubKey,
 		Metadata:   metadata,
 		Passphrase: passphrase,
 	}, nil

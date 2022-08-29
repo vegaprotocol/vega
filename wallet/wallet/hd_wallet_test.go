@@ -649,7 +649,7 @@ func testHDWalletDescribingPublicKeysSucceeds(t *testing.T) {
 			// then
 			require.NoError(tt, err)
 			assert.Equal(tt, kp1.PublicKey(), pubKey.Key())
-			assert.Equal(tt, kp1.Metadata(), pubKey.Meta())
+			assert.Equal(tt, kp1.Metadata(), pubKey.Metadata())
 			assert.Equal(tt, kp1.IsTainted(), pubKey.IsTainted())
 			assert.Equal(tt, kp1.AlgorithmName(), pubKey.AlgorithmName())
 			assert.Equal(tt, kp1.AlgorithmVersion(), pubKey.AlgorithmVersion())

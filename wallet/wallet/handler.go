@@ -110,19 +110,6 @@ type ListKeysResponse struct {
 	Keys []NamedPubKey `json:"keys"`
 }
 
-type DescribeKeyRequest struct {
-	Wallet     string `json:"wallet"`
-	Passphrase string `json:"passphrase"`
-	PubKey     string `json:"pubKey"`
-}
-
-type DescribeKeyResponse struct {
-	PublicKey string     `json:"publicKey"`
-	Algorithm Algorithm  `json:"algorithm"`
-	Meta      []Metadata `json:"meta"`
-	IsTainted bool       `json:"isTainted"`
-}
-
 type NamedPubKey struct {
 	Name      string `json:"name"`
 	PublicKey string `json:"publicKey"`
@@ -146,26 +133,6 @@ func ListKeys(store Store, req *ListKeysRequest) (*ListKeysResponse, error) {
 	return &ListKeysResponse{
 		Keys: keys,
 	}, nil
-}
-
-func DescribeKey(store Store, req *DescribeKeyRequest) (*DescribeKeyResponse, error) {
-	w, err := getWallet(store, req.Wallet, req.Passphrase)
-	if err != nil {
-		return nil, err
-	}
-
-	resp := &DescribeKeyResponse{}
-
-	kp, err := w.DescribeKeyPair(req.PubKey)
-	if err != nil {
-		return nil, err
-	}
-	resp.PublicKey = kp.PublicKey()
-	resp.Algorithm.Name = kp.AlgorithmName()
-	resp.Algorithm.Version = kp.AlgorithmVersion()
-	resp.Meta = kp.Metadata()
-	resp.IsTainted = kp.IsTainted()
-	return resp, nil
 }
 
 type RotateKeyRequest struct {

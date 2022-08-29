@@ -410,8 +410,8 @@ func testHandlerGeneratingNewKeyPairSecurelySucceeds(t *testing.T) {
 	assert.Len(t, keys, 1)
 	assert.Equal(t, key, keys[0].Key())
 	assert.False(t, keys[0].IsTainted())
-	assert.Len(t, keys[0].Meta(), 1)
-	assert.Contains(t, keys[0].Meta(), wallet.Metadata{Key: "name", Value: "Key 1"})
+	assert.Len(t, keys[0].Metadata(), 1)
+	assert.Contains(t, keys[0].Metadata(), wallet.Metadata{Key: "name", Value: "Key 1"})
 }
 
 func testHandlerGeneratingNewKeyPairSecurelyWithInvalidNameFails(t *testing.T) {
@@ -618,7 +618,7 @@ func testHandlerListingPublicKeysSucceeds(t *testing.T) {
 	assert.Equal(t, keyPair.IsTainted(), returnedPublicKey.IsTainted())
 	assert.Equal(t, keyPair.AlgorithmName(), returnedPublicKey.AlgorithmName())
 	assert.Equal(t, keyPair.AlgorithmVersion(), returnedPublicKey.AlgorithmVersion())
-	assert.Equal(t, keyPair.Metadata(), returnedPublicKey.Meta())
+	assert.Equal(t, keyPair.Metadata(), returnedPublicKey.Metadata())
 }
 
 func testHandlerListingPublicKeysWithLoggedOutWalletFails(t *testing.T) {
@@ -1109,11 +1109,11 @@ func testHandlerUpdatingKeyPairMetaSucceeds(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	updatedKp := h.store.GetKey(name, key)
-	assert.Len(t, updatedKp.Meta(), 2)
-	assert.Equal(t, updatedKp.Meta()[0].Key, "primary")
-	assert.Equal(t, updatedKp.Meta()[0].Value, "yes")
-	assert.Equal(t, updatedKp.Meta()[1].Key, "name")
-	assert.Equal(t, updatedKp.Meta()[1].Value, "Key 1")
+	assert.Len(t, updatedKp.Metadata(), 2)
+	assert.Equal(t, updatedKp.Metadata()[0].Key, "primary")
+	assert.Equal(t, updatedKp.Metadata()[0].Value, "yes")
+	assert.Equal(t, updatedKp.Metadata()[1].Key, "name")
+	assert.Equal(t, updatedKp.Metadata()[1].Value, "Key 1")
 }
 
 func testHandlerUpdatingKeyPairMetaWithInvalidPassphraseFails(t *testing.T) {
@@ -1146,7 +1146,7 @@ func testHandlerUpdatingKeyPairMetaWithInvalidPassphraseFails(t *testing.T) {
 
 	// then
 	assert.Error(t, err)
-	assert.NotContains(t, h.store.GetKey(name, key).Meta(), wallet.Metadata{Key: "primary", Value: "yes"})
+	assert.NotContains(t, h.store.GetKey(name, key).Metadata(), wallet.Metadata{Key: "primary", Value: "yes"})
 }
 
 func testHandlerUpdatingKeyPairMetaWithInvalidNameFails(t *testing.T) {
@@ -1178,7 +1178,7 @@ func testHandlerUpdatingKeyPairMetaWithInvalidNameFails(t *testing.T) {
 
 	// then
 	assert.Error(t, err)
-	assert.NotContains(t, h.store.GetKey(name, key).Meta(), wallet.Metadata{Key: "primary", Value: "yes"})
+	assert.NotContains(t, h.store.GetKey(name, key).Metadata(), wallet.Metadata{Key: "primary", Value: "yes"})
 }
 
 func testHandlerUpdatingKeyPairMetaWithoutWalletFails(t *testing.T) {

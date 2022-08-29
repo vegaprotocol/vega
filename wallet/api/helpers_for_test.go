@@ -84,12 +84,12 @@ func walletWithKey(t *testing.T) (wallet.Wallet, wallet.KeyPair) {
 
 	w, _, err := wallet.NewHDWallet(walletName)
 	if err != nil {
-		t.Fatal("couldn't create wallet for test: %w", err)
+		t.Fatal("could not create wallet for test: %w", err)
 	}
 
 	kp, err := w.GenerateKeyPair(nil)
 	if err != nil {
-		t.Fatal("couldn't update permissions on wallet for test: %w", err)
+		t.Fatal("could not update permissions on wallet for test: %w", err)
 	}
 
 	return w, kp

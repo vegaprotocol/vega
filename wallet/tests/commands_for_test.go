@@ -160,10 +160,10 @@ type DescribeKeyResponse struct {
 		Name    string `json:"name"`
 		Version uint32 `json:"version"`
 	} `json:"algorithm"`
-	Meta []struct {
+	Metadata []struct {
 		Key   string `json:"key"`
 		Value string `json:"value"`
-	}
+	} `json:"metadata"`
 	IsTainted bool `json:"isTainted"`
 }
 
@@ -219,7 +219,7 @@ func (d *DescribeKeyAssertion) WithTainted(tainted bool) *DescribeKeyAssertion {
 
 func (d *DescribeKeyAssertion) WithMeta(expected map[string]string) *DescribeKeyAssertion {
 	meta := map[string]string{}
-	for _, m := range d.resp.Meta {
+	for _, m := range d.resp.Metadata {
 		meta[m.Key] = m.Value
 	}
 	assert.Equal(d.t, expected, meta)

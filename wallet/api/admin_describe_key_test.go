@@ -15,16 +15,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAdminGenerateKey(t *testing.T) {
-	t.Run("Generating a key with invalid params fails", testGeneratingKeyWithInvalidParamsFails)
-	t.Run("Generating a key with valid params succeeds", testGeneratingKeyWithValidParamsSucceeds)
-	t.Run("Generating a key on unknown wallet fails", testGeneratingKeyOnUnknownWalletFails)
-	t.Run("Getting internal error during wallet verification doesn't import the wallet", testGettingInternalErrorDuringWalletVerificationDoesNotGenerateKey)
-	t.Run("Getting internal error during wallet retrieval doesn't import the wallet", testGettingInternalErrorDuringWalletRetrievalDoesNotGenerateKey)
-	t.Run("Getting internal error during wallet saving doesn't import the wallet", testGettingInternalErrorDuringWalletSavingDoesNotGenerateKey)
+func TestAdminDescribeKey(t *testing.T) {
+	t.Run("Describing a key with invalid params fails", testDescribingKeyWithInvalidParamsFails)
+	t.Run("Describing a key with valid params succeeds", testDescribingKeyWithValidParamsSucceeds)
+	t.Run("Describing a key from wallet that does not exists fails", testDescribingKeyFromWalletThatDoesNotExistsFails)
+	t.Run("Getting internal error during wallet verification fails", testGettingInternalErrorDuringWalletVerificationFails)
+	t.Run("Getting internal error during wallet retrieval fails", testGettingInternalErrorDuringWalletRetrievalFails)
+	t.Run("Describing a key that does not exists fails", testDescribingKeyThatDoesNotExistsFails)
 }
 
-func testGeneratingKeyWithInvalidParamsFails(t *testing.T) {
+func testDescribingKeyWithInvalidParamsFails(t *testing.T) {
 	tcs := []struct {
 		name          string
 		params        interface{}
@@ -40,18 +40,28 @@ func testGeneratingKeyWithInvalidParamsFails(t *testing.T) {
 			expectedError: api.ErrParamsDoNotMatch,
 		}, {
 			name: "with empty name",
-			params: api.GenerateKeyParams{
+			params: api.DescribeKeyParams{
 				Wallet:     "",
 				Passphrase: vgrand.RandomStr(5),
+				PublicKey:  "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
 			},
 			expectedError: api.ErrWalletIsRequired,
 		}, {
 			name: "with empty passphrase",
-			params: api.GenerateKeyParams{
+			params: api.DescribeKeyParams{
 				Wallet:     vgrand.RandomStr(5),
 				Passphrase: "",
+				PublicKey:  "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
 			},
 			expectedError: api.ErrPassphraseIsRequired,
+		}, {
+			name: "with empty public key",
+			params: api.DescribeKeyParams{
+				Wallet:     vgrand.RandomStr(5),
+				Passphrase: vgrand.RandomStr(5),
+				PublicKey:  "",
+			},
+			expectedError: api.ErrPublicKeyIsRequired,
 		},
 	}
 
@@ -61,7 +71,7 @@ func testGeneratingKeyWithInvalidParamsFails(t *testing.T) {
 			ctx, _ := contextWithTraceID()
 
 			// setup
-			handler := newGenerateKeyHandler(tt)
+			handler := newDescribeKeyHandler(tt)
 			// -- unexpected calls
 			handler.walletStore.EXPECT().WalletExists(gomock.Any(), gomock.Any()).Times(0)
 			handler.walletStore.EXPECT().ListWallets(gomock.Any()).Times(0)
@@ -79,54 +89,51 @@ func testGeneratingKeyWithInvalidParamsFails(t *testing.T) {
 	}
 }
 
-func testGeneratingKeyWithValidParamsSucceeds(t *testing.T) {
+func testDescribingKeyWithValidParamsSucceeds(t *testing.T) {
 	// given
 	ctx := context.Background()
 	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
-	expectedWallet, _, err := wallet.NewHDWallet(name)
-	if err != nil {
-		t.Fatal(err)
-	}
+	expectedWallet, firstKey := walletWithKey(t)
 
 	// setup
-	handler := newGenerateKeyHandler(t)
+	handler := newDescribeKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, name, passphrase).Times(1).Return(expectedWallet, nil)
-	handler.walletStore.EXPECT().SaveWallet(ctx, expectedWallet, passphrase).Times(1).Return(nil)
 	// -- unexpected calls
+	handler.walletStore.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	handler.walletStore.EXPECT().ListWallets(gomock.Any()).Times(0)
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.GenerateKeyParams{
+	result, errorDetails := handler.handle(t, ctx, api.DescribeKeyParams{
 		Wallet:     name,
 		Passphrase: passphrase,
-		Metadata:   []wallet.Metadata{{Key: "mode", Value: "test"}},
+		PublicKey:  firstKey.PublicKey(),
 	})
 
 	// then
 	require.Nil(t, errorDetails)
-	assert.Equal(t, name, expectedWallet.Name())
-	assert.Len(t, expectedWallet.ListKeyPairs(), 1)
-	keyPair := expectedWallet.ListKeyPairs()[0]
-	assert.Equal(t, []wallet.Metadata{{Key: "mode", Value: "test"}, {Key: "name", Value: "Key 1"}}, keyPair.Metadata())
-	// Verify the result.
-	assert.Equal(t, keyPair.PublicKey(), result.PublicKey)
-	assert.Equal(t, keyPair.AlgorithmName(), result.Algorithm.Name)
-	assert.Equal(t, keyPair.AlgorithmVersion(), result.Algorithm.Version)
-	assert.Equal(t, keyPair.Metadata(), result.Metadata)
+	assert.Equal(t, api.DescribeKeyResult{
+		PublicKey: firstKey.PublicKey(),
+		Algorithm: wallet.Algorithm{
+			Name:    firstKey.AlgorithmName(),
+			Version: firstKey.AlgorithmVersion(),
+		},
+		Metadata:  firstKey.Metadata(),
+		IsTainted: firstKey.IsTainted(),
+	}, result)
 }
 
-func testGeneratingKeyOnUnknownWalletFails(t *testing.T) {
+func testDescribingKeyFromWalletThatDoesNotExistsFails(t *testing.T) {
 	// given
 	ctx := context.Background()
 	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
 	// setup
-	handler := newGenerateKeyHandler(t)
+	handler := newDescribeKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(false, nil)
 	// -- unexpected calls
@@ -136,9 +143,10 @@ func testGeneratingKeyOnUnknownWalletFails(t *testing.T) {
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.GenerateKeyParams{
+	result, errorDetails := handler.handle(t, ctx, api.DescribeKeyParams{
 		Wallet:     name,
 		Passphrase: passphrase,
+		PublicKey:  vgrand.RandomStr(5),
 	})
 
 	// then
@@ -147,26 +155,27 @@ func testGeneratingKeyOnUnknownWalletFails(t *testing.T) {
 	assertInvalidParams(t, errorDetails, api.ErrWalletDoesNotExist)
 }
 
-func testGettingInternalErrorDuringWalletVerificationDoesNotGenerateKey(t *testing.T) {
+func testGettingInternalErrorDuringWalletVerificationFails(t *testing.T) {
 	// given
 	ctx := context.Background()
 	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
 	// setup
-	handler := newGenerateKeyHandler(t)
+	handler := newDescribeKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(false, assert.AnError)
 	// -- unexpected calls
-	handler.walletStore.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	handler.walletStore.EXPECT().GetWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+	handler.walletStore.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	handler.walletStore.EXPECT().ListWallets(gomock.Any()).Times(0)
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.GenerateKeyParams{
+	result, errorDetails := handler.handle(t, ctx, api.DescribeKeyParams{
 		Wallet:     name,
 		Passphrase: passphrase,
+		PublicKey:  vgrand.RandomStr(5),
 	})
 
 	// then
@@ -175,14 +184,14 @@ func testGettingInternalErrorDuringWalletVerificationDoesNotGenerateKey(t *testi
 	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet existence: %w", assert.AnError))
 }
 
-func testGettingInternalErrorDuringWalletRetrievalDoesNotGenerateKey(t *testing.T) {
+func testGettingInternalErrorDuringWalletRetrievalFails(t *testing.T) {
 	// given
 	ctx := context.Background()
 	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
 	// setup
-	handler := newGenerateKeyHandler(t)
+	handler := newDescribeKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, name, passphrase).Times(1).Return(nil, assert.AnError)
@@ -192,9 +201,10 @@ func testGettingInternalErrorDuringWalletRetrievalDoesNotGenerateKey(t *testing.
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.GenerateKeyParams{
+	result, errorDetails := handler.handle(t, ctx, api.DescribeKeyParams{
 		Wallet:     name,
 		Passphrase: passphrase,
+		PublicKey:  vgrand.RandomStr(5),
 	})
 
 	// then
@@ -203,67 +213,64 @@ func testGettingInternalErrorDuringWalletRetrievalDoesNotGenerateKey(t *testing.
 	assertInternalError(t, errorDetails, fmt.Errorf("could not retrieve the wallet: %w", assert.AnError))
 }
 
-func testGettingInternalErrorDuringWalletSavingDoesNotGenerateKey(t *testing.T) {
+func testDescribingKeyThatDoesNotExistsFails(t *testing.T) {
 	// given
 	ctx := context.Background()
 	passphrase := vgrand.RandomStr(5)
-	name := vgrand.RandomStr(5)
-	expectedWallet, _, err := wallet.NewHDWallet(name)
-	if err != nil {
-		t.Fatal(err)
-	}
+	expectedWallet, _ := walletWithKey(t)
 
 	// setup
-	handler := newGenerateKeyHandler(t)
+	handler := newDescribeKeyHandler(t)
 	// -- expected calls
-	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, name, passphrase).Times(1).Return(expectedWallet, nil)
-	handler.walletStore.EXPECT().SaveWallet(ctx, gomock.Any(), passphrase).Times(1).Return(assert.AnError)
+	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(expectedWallet, nil)
 	// -- unexpected calls
+	handler.walletStore.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	handler.walletStore.EXPECT().ListWallets(gomock.Any()).Times(0)
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.GenerateKeyParams{
-		Wallet:     name,
+	result, errorDetails := handler.handle(t, ctx, api.DescribeKeyParams{
+		Wallet:     expectedWallet.Name(),
 		Passphrase: passphrase,
+		PublicKey:  vgrand.RandomStr(5),
 	})
 
 	// then
 	require.NotNil(t, errorDetails)
 	assert.Empty(t, result)
-	assertInternalError(t, errorDetails, fmt.Errorf("could not save the wallet: %w", assert.AnError))
+	assertInvalidParams(t, errorDetails, api.ErrPublicKeyDoesNotExist)
 }
 
-type generateKeyHandler struct {
-	*api.GenerateKey
+type describeKeyHandler struct {
+	*api.DescribeKey
 	ctrl        *gomock.Controller
 	walletStore *mocks.MockWalletStore
 	pipeline    *mocks.MockPipeline
 }
 
-func (h *generateKeyHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.GenerateKeyResult, *jsonrpc.ErrorDetails) {
+func (h *describeKeyHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.DescribeKeyResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
 	rawResult, err := h.Handle(ctx, params)
 	if rawResult != nil {
-		result, ok := rawResult.(api.GenerateKeyResult)
+		result, ok := rawResult.(api.DescribeKeyResult)
 		if !ok {
-			t.Fatal("GenerateKey handler result is not a GenerateKeyResult")
+			t.Fatal("DescribeKey handler result is not a DescribeKeyResult")
 		}
 		return result, err
 	}
-	return api.GenerateKeyResult{}, err
+	return api.DescribeKeyResult{}, err
 }
 
-func newGenerateKeyHandler(t *testing.T) *generateKeyHandler {
+func newDescribeKeyHandler(t *testing.T) *describeKeyHandler {
 	t.Helper()
 
 	ctrl := gomock.NewController(t)
 	walletStore := mocks.NewMockWalletStore(ctrl)
 
-	return &generateKeyHandler{
-		GenerateKey: api.NewGenerateKey(walletStore),
+	return &describeKeyHandler{
+		DescribeKey: api.NewDescribeKey(walletStore),
 		ctrl:        ctrl,
 		walletStore: walletStore,
 	}

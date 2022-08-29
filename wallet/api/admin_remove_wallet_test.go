@@ -114,7 +114,6 @@ func testRemovingWalletThatDoesNotExistsFails(t *testing.T) {
 
 	// then
 	require.NotNil(t, errorDetails)
-	// Verify generated wallet.
 	assert.Empty(t, result)
 	assertInvalidParams(t, errorDetails, api.ErrWalletDoesNotExist)
 }
@@ -141,7 +140,6 @@ func testGettingInternalErrorDuringVerificationDoesNotRemoveWallet(t *testing.T)
 
 	// then
 	require.NotNil(t, errorDetails)
-	// Verify generated wallet.
 	assert.Empty(t, result)
 	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet existence: %w", assert.AnError))
 }

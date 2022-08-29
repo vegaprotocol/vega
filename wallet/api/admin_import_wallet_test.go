@@ -133,7 +133,7 @@ func testImportingWalletWithValidParamsSucceeds(t *testing.T) {
 
 	// then
 	require.Nil(t, errorDetails)
-	// Verify generated wallet.
+	// Verify imported wallet.
 	assert.Equal(t, name, importedWallet.Name())
 	// Verify the first generated key.
 	assert.Len(t, importedWallet.ListKeyPairs(), 1)
@@ -175,7 +175,6 @@ func testImportingWalletThatAlreadyExistsFails(t *testing.T) {
 
 	// then
 	require.NotNil(t, errorDetails)
-	// Verify generated wallet.
 	assert.Empty(t, result)
 	assertInvalidParams(t, errorDetails, api.ErrWalletAlreadyExists)
 }

@@ -158,7 +158,7 @@ func AdminAPI(log *zap.Logger, walletStore WalletStore, netStore NetworkStore) (
 	walletAPI := jsonrpc.New(log)
 	walletAPI.RegisterMethod("admin.annotate_key", NewAnnotateKey(walletStore))
 	walletAPI.RegisterMethod("admin.create_wallet", NewCreateWallet(walletStore))
-	walletAPI.RegisterMethod("admin.describe_key", &UnimplementedMethod{})
+	walletAPI.RegisterMethod("admin.describe_key", NewDescribeKey(walletStore))
 	walletAPI.RegisterMethod("admin.describe_network", &UnimplementedMethod{})
 	walletAPI.RegisterMethod("admin.describe_permissions", &UnimplementedMethod{})
 	walletAPI.RegisterMethod("admin.describe_wallet", NewDescribeWallet(walletStore))

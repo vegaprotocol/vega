@@ -50,7 +50,6 @@ func testListingWalletsSucceeds(t *testing.T) {
 
 	// then
 	require.Nil(t, errorDetails)
-	// Verify generated wallet.
 	assert.Equal(t, expectedWallets, result.Wallets)
 }
 
@@ -73,7 +72,6 @@ func testGettingInternalErrorDuringListingFails(t *testing.T) {
 
 	// then
 	require.NotNil(t, errorDetails)
-	// Verify generated wallet.
 	assert.Empty(t, result)
 	assertInternalError(t, errorDetails, fmt.Errorf("could not list the wallets: %w", assert.AnError))
 }

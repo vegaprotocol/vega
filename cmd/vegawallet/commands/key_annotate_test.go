@@ -38,8 +38,8 @@ func testAnnotateKeyFlagsValidFlagsSucceeds(t *testing.T) {
 	}
 
 	expectedReq := api.AnnotateKeyParams{
-		Wallet: walletName,
-		PubKey: pubKey,
+		Wallet:    walletName,
+		PublicKey: pubKey,
 		Metadata: []wallet.Metadata{
 			{Key: "name", Value: "my-wallet"},
 			{Key: "role", Value: "validation"},

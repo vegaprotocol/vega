@@ -162,8 +162,8 @@ func (k *HDKeyPair) ToPublicKey() HDPublicKey {
 			Name:    k.algo.Name(),
 			Version: k.algo.Version(),
 		},
-		Tainted:  k.tainted,
-		MetaList: k.metadata,
+		Tainted:      k.tainted,
+		MetadataList: k.metadata,
 	}
 }
 

@@ -983,6 +983,104 @@
       ]
     },
     {
+      "name": "admin.describe_key",
+      "summary": "Returns key's information.",
+      "description": "This method returns the information of the specified key.\n\nIt doesn't return the private key for security reasons.  If you need something that requires a private key, you should use the available endpoints and let them handle the private key for you.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "key"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "wallet",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "passphrase",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "public_key",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/public_key"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "publicKey": {
+              "$ref": "#/components/schemas/public_key"
+            },
+            "algorithm": {
+              "$ref": "#/components/schemas/algorithm"
+            },
+            "metadata": {
+              "$ref": "#/components/schemas/metadata"
+            },
+            "isTainted": {
+              "type": "boolean",
+              "description": "Tells if the key is tainted or not. A tainted key cannot be used for signing and sending transaction, for example."
+            }
+          }
+        }
+      },
+      "examples": [
+        {
+          "name": "Getting key base information",
+          "params": [
+            {
+              "name": "wallet",
+              "value": "my-wallet"
+            },
+            {
+              "name": "passphrase",
+              "value": "this-is-not-a-good-passphrase"
+            },
+            {
+              "name": "public_key",
+              "value": "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": {
+              "publicKey": "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
+              "algorithm": {
+                "name": "vega/ed25519",
+                "version": 1
+              },
+              "metadata": [
+                {
+                  "key": "portfolio",
+                  "value": "btc"
+                },
+                {
+                  "key": "name",
+                  "value": "Key 1"
+                }
+              ],
+              "isTainted": false
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "admin.annotate_key",
       "summary": "Attaches metadata to a key.",
       "description": "This method attaches metadata to the specified key.\n\nA special metadata `name` can be provided to name the key. If no `name` is provided, a default name is generated.\n\nThis method **replaces** the existing metadata by the specified ones. It does **not** update in place.",

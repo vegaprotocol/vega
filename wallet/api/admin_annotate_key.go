@@ -11,7 +11,7 @@ import (
 
 type AnnotateKeyParams struct {
 	Wallet     string            `json:"wallet"`
-	PubKey     string            `json:"pubKey"`
+	PublicKey  string            `json:"publicKey"`
 	Metadata   []wallet.Metadata `json:"metadata"`
 	Passphrase string            `json:"passphrase"`
 }
@@ -32,27 +32,27 @@ func (h *AnnotateKey) Handle(ctx context.Context, rawParams jsonrpc.Params) (jso
 	}
 
 	if exist, err := h.walletStore.WalletExists(ctx, params.Wallet); err != nil {
-		return nil, internalError(fmt.Errorf("couldn't verify wallet existence: %w", err))
+		return nil, internalError(fmt.Errorf("could not verify the wallet existence: %w", err))
 	} else if !exist {
 		return nil, invalidParams(ErrWalletDoesNotExist)
 	}
 
 	w, err := h.walletStore.GetWallet(ctx, params.Wallet, params.Passphrase)
 	if err != nil {
-		return nil, internalError(fmt.Errorf("couldn't retrieve wallet: %w", err))
+		return nil, internalError(fmt.Errorf("could not retrieve the wallet: %w", err))
 	}
 
-	if !w.HasPublicKey(params.PubKey) {
+	if !w.HasPublicKey(params.PublicKey) {
 		return nil, invalidParams(ErrPublicKeyDoesNotExist)
 	}
 
-	updatedMeta, err := w.AnnotateKey(params.PubKey, params.Metadata)
+	updatedMeta, err := w.AnnotateKey(params.PublicKey, params.Metadata)
 	if err != nil {
-		return nil, internalError(fmt.Errorf("couldn't annotate the key: %w", err))
+		return nil, internalError(fmt.Errorf("could not annotate the key: %w", err))
 	}
 
 	if err := h.walletStore.SaveWallet(ctx, w, params.Passphrase); err != nil {
-		return nil, internalError(fmt.Errorf("couldn't save wallet: %w", err))
+		return nil, internalError(fmt.Errorf("could not save the wallet: %w", err))
 	}
 
 	return AnnotateKeyResult{
@@ -78,7 +78,7 @@ func validateAnnotateKeyParams(rawParams jsonrpc.Params) (AnnotateKeyParams, err
 		return AnnotateKeyParams{}, ErrPassphraseIsRequired
 	}
 
-	if params.PubKey == "" {
+	if params.PublicKey == "" {
 		return AnnotateKeyParams{}, ErrPublicKeyIsRequired
 	}
 
