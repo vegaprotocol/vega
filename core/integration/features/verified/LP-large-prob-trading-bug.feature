@@ -30,6 +30,7 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | market.stake.target.scalingFactor             | 1     |
       | market.liquidity.bondPenaltyParameter         | 0.2   |
       | market.liquidity.targetstake.triggering.ratio | 0.1   |
+      | market.liquidity.stakeToCcySiskas             | 1.0   |
 
    And the average block duration is "1"
 
@@ -90,7 +91,7 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | sell | 901   | 0      |
       | sell | 900   | 0      |
       | buy  | 900   | 1      |
-      | buy  | 899   | 112    | #ProbTrading = 1.3E-03, LP_Vol=50000/(0.0013*899) = 42783, but acutal output LP_Vol is 112 from LP_Vol=50000/(0.5*899) = 112 by using ProbTrading in line 75
+      | buy  | 899   | 112    | #ProbTrading = 0.56143099, LP_Vol=50000/(0.56143099*899) = 100, but acutal output LP_Vol is 112 from LP_Vol=50000/(0.5*899) = 112 by using ProbTrading in line 75
       | buy  | 890   | 0      |
       | buy  | 889   | 0      |
       | buy  | 1     | 1      |
@@ -101,3 +102,4 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | TRADING_MODE_CONTINUOUS | 50000          | 374541       |
 
   
+
