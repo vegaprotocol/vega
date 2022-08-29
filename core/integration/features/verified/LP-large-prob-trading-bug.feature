@@ -33,7 +33,7 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
 
    And the average block duration is "1"
 
-   Scenario: 001, LP commintment becomes undelpoyed once LP price is at 0
+   Scenario: LP vol seems wrong when a new best bit/ask price comes in
 
    And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
