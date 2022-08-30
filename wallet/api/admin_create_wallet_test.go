@@ -20,8 +20,8 @@ func TestAdminCreateWallet(t *testing.T) {
 	t.Run("Creating a wallet with invalid params fails", testCreatingWalletWithInvalidParamsFails)
 	t.Run("Creating a wallet with valid params succeeds", testCreatingWalletWithValidParamsSucceeds)
 	t.Run("Creating a wallet that already exists fails", testCreatingWalletThatAlreadyExistsFails)
-	t.Run("Getting internal error during verification doesn't create the wallet", testGettingInternalErrorDuringVerificationDoesNotCreateWallet)
-	t.Run("Getting internal error during saving doesn't create the wallet", testGettingInternalErrorDuringSavingDoesNotCreateWallet)
+	t.Run("Getting internal error during verification does not create the wallet", testGettingInternalErrorDuringVerificationDoesNotCreateWallet)
+	t.Run("Getting internal error during saving does not create the wallet", testGettingInternalErrorDuringSavingDoesNotCreateWallet)
 }
 
 func testCreatingWalletWithInvalidParamsFails(t *testing.T) {
@@ -183,7 +183,7 @@ func testGettingInternalErrorDuringVerificationDoesNotCreateWallet(t *testing.T)
 	// then
 	require.NotNil(t, errorDetails)
 	assert.Empty(t, result)
-	assertInternalError(t, errorDetails, fmt.Errorf("couldn't verify wallet existence: %w", assert.AnError))
+	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet existence: %w", assert.AnError))
 }
 
 func testGettingInternalErrorDuringSavingDoesNotCreateWallet(t *testing.T) {
@@ -211,7 +211,7 @@ func testGettingInternalErrorDuringSavingDoesNotCreateWallet(t *testing.T) {
 	// then
 	require.NotNil(t, errorDetails)
 	assert.Empty(t, result)
-	assertInternalError(t, errorDetails, fmt.Errorf("couldn't save wallet: %w", assert.AnError))
+	assertInternalError(t, errorDetails, fmt.Errorf("could not save the wallet: %w", assert.AnError))
 }
 
 type createWalletHandler struct {

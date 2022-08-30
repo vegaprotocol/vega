@@ -891,7 +891,7 @@
       "could_not_get_last_block": {
         "code": 1000,
         "message": "Network error",
-        "data": "couldn't get information about the last block on the network"
+        "data": "could not get information about the last block on the network"
       },
       "transaction_failed": {
         "code": 1000,

@@ -24,13 +24,13 @@ func (h *RemoveWallet) Handle(ctx context.Context, rawParams jsonrpc.Params) (js
 	}
 
 	if exist, err := h.walletStore.WalletExists(ctx, params.Wallet); err != nil {
-		return nil, internalError(fmt.Errorf("couldn't verify wallet existence: %w", err))
+		return nil, internalError(fmt.Errorf("could not verify the wallet existence: %w", err))
 	} else if !exist {
 		return nil, invalidParams(ErrWalletDoesNotExist)
 	}
 
 	if err := h.walletStore.DeleteWallet(ctx, params.Wallet); err != nil {
-		return nil, internalError(fmt.Errorf("couldn't remove wallet: %w", err))
+		return nil, internalError(fmt.Errorf("could not remove the wallet: %w", err))
 	}
 
 	return nil, nil

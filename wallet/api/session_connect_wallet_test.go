@@ -19,18 +19,18 @@ func TestConnectWallet(t *testing.T) {
 	t.Run("Connecting to a wallet with invalid params fails", testConnectingToWalletWithInvalidParamsFails)
 	t.Run("Connecting to a wallet with valid params succeeds", testConnectingToWalletWithValidParamsSucceeds)
 	t.Run("Connecting to a connected wallet disconnects the previous one and generates a new token", testConnectingToConnectedWalletDisconnectsPreviousOneAndGeneratesNewToken)
-	t.Run("Refusing a wallet connection doesn't connect to a wallet", testRefusingWalletConnectionDoesNotConnectToWallet)
-	t.Run("Canceling the review doesn't connect to a wallet", testCancelingTheReviewDoesNotConnectToWallet)
-	t.Run("Interrupting the request during the review doesn't connect to a wallet", testInterruptingTheRequestDuringReviewDoesNotConnectToWallet)
-	t.Run("Getting internal error during the review doesn't connect to a wallet", testGettingInternalErrorDuringReviewDoesNotConnectToWallet)
-	t.Run("Getting internal error during the wallet listing doesn't connect to a wallet", testGettingInternalErrorDuringWalletListingDoesNotConnectToWallet)
-	t.Run("Cancelling the wallet selection doesn't connect to a wallet", testCancellingTheWalletSelectionDoesNotConnectToWallet)
-	t.Run("Interrupting the request during the wallet selection doesn't connect to a wallet", testInterruptingTheRequestDuringWalletSelectionDoesNotConnectToWallet)
-	t.Run("Getting internal error during the wallet selection doesn't connect to a wallet", testGettingInternalErrorDuringWalletSelectionDoesNotConnectToWallet)
-	t.Run("Selecting a non-existing wallet doesn't connect to a wallet", testSelectingNonExistingWalletDoesNotConnectToWallet)
-	t.Run("Getting internal error during the wallet verification doesn't connect to a wallet", testGettingInternalErrorDuringWalletVerificationDoesNotConnectToWallet)
-	t.Run("Using the wrong passphrase doesn't connect to a wallet", testUsingWrongPassphraseDoesNotConnectToWallet)
-	t.Run("Getting internal error during the wallet retrieval doesn't connect to a wallet", testGettingInternalErrorDuringWalletRetrievalDoesNotConnectToWallet)
+	t.Run("Refusing a wallet connection does not connect to a wallet", testRefusingWalletConnectionDoesNotConnectToWallet)
+	t.Run("Canceling the review does not connect to a wallet", testCancelingTheReviewDoesNotConnectToWallet)
+	t.Run("Interrupting the request during the review does not connect to a wallet", testInterruptingTheRequestDuringReviewDoesNotConnectToWallet)
+	t.Run("Getting internal error during the review does not connect to a wallet", testGettingInternalErrorDuringReviewDoesNotConnectToWallet)
+	t.Run("Getting internal error during the wallet listing does not connect to a wallet", testGettingInternalErrorDuringWalletListingDoesNotConnectToWallet)
+	t.Run("Cancelling the wallet selection does not connect to a wallet", testCancellingTheWalletSelectionDoesNotConnectToWallet)
+	t.Run("Interrupting the request during the wallet selection does not connect to a wallet", testInterruptingTheRequestDuringWalletSelectionDoesNotConnectToWallet)
+	t.Run("Getting internal error during the wallet selection does not connect to a wallet", testGettingInternalErrorDuringWalletSelectionDoesNotConnectToWallet)
+	t.Run("Selecting a non-existing wallet does not connect to a wallet", testSelectingNonExistingWalletDoesNotConnectToWallet)
+	t.Run("Getting internal error during the wallet verification does not connect to a wallet", testGettingInternalErrorDuringWalletVerificationDoesNotConnectToWallet)
+	t.Run("Using the wrong passphrase does not connect to a wallet", testUsingWrongPassphraseDoesNotConnectToWallet)
+	t.Run("Getting internal error during the wallet retrieval does not connect to a wallet", testGettingInternalErrorDuringWalletRetrievalDoesNotConnectToWallet)
 }
 
 func testConnectingToWalletWithInvalidParamsFails(t *testing.T) {
@@ -363,7 +363,7 @@ func testGettingInternalErrorDuringWalletListingDoesNotConnectToWallet(t *testin
 	// -- expected calls
 	handler.pipeline.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return(nil, assert.AnError)
-	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("couldn't list available wallets: %w", assert.AnError)).Times(1)
+	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("could not list available wallets: %w", assert.AnError)).Times(1)
 	// -- unexpected calls
 	handler.walletStore.EXPECT().WalletExists(gomock.Any(), gomock.Any()).Times(0)
 	handler.walletStore.EXPECT().GetWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
@@ -557,7 +557,7 @@ func testGettingInternalErrorDuringWalletRetrievalDoesNotConnectToWallet(t *test
 		Passphrase: vgrand.RandomStr(5),
 	}, nil)
 	handler.walletStore.EXPECT().WalletExists(ctx, wallet1.Name()).Times(1).Return(false, assert.AnError)
-	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("couldn't verify wallet existence: %w", assert.AnError)).Times(1)
+	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("could not verify the wallet existence: %w", assert.AnError)).Times(1)
 	// -- unexpected calls
 	handler.walletStore.EXPECT().GetWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	handler.walletStore.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
@@ -642,7 +642,7 @@ func testGettingInternalErrorDuringWalletVerificationDoesNotConnectToWallet(t *t
 	}, nil)
 	handler.walletStore.EXPECT().WalletExists(ctx, wallet1.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name(), passphrase).Times(1).Return(nil, assert.AnError)
-	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("couldn't retrieve the wallet: %w", assert.AnError)).Times(1)
+	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("could not retrieve the wallet: %w", assert.AnError)).Times(1)
 	// -- unexpected calls
 	handler.walletStore.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)

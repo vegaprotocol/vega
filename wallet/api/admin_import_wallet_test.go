@@ -20,8 +20,8 @@ func TestAdminImportWallet(t *testing.T) {
 	t.Run("Importing a wallet with invalid params fails", testImportingWalletWithInvalidParamsFails)
 	t.Run("Importing a wallet with valid params succeeds", testImportingWalletWithValidParamsSucceeds)
 	t.Run("Importing a wallet that already exists fails", testImportingWalletThatAlreadyExistsFails)
-	t.Run("Getting internal error during verification doesn't import the wallet", testGettingInternalErrorDuringVerificationDoesNotImportWallet)
-	t.Run("Getting internal error during saving doesn't import the wallet", testGettingInternalErrorDuringSavingDoesNotImportWallet)
+	t.Run("Getting internal error during verification does not import the wallet", testGettingInternalErrorDuringVerificationDoesNotImportWallet)
+	t.Run("Getting internal error during saving does not import the wallet", testGettingInternalErrorDuringSavingDoesNotImportWallet)
 }
 
 func testImportingWalletWithInvalidParamsFails(t *testing.T) {
@@ -210,7 +210,7 @@ func testGettingInternalErrorDuringVerificationDoesNotImportWallet(t *testing.T)
 	// then
 	require.NotNil(t, errorDetails)
 	assert.Empty(t, result)
-	assertInternalError(t, errorDetails, fmt.Errorf("couldn't verify wallet existence: %w", assert.AnError))
+	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet existence: %w", assert.AnError))
 }
 
 func testGettingInternalErrorDuringSavingDoesNotImportWallet(t *testing.T) {
@@ -240,7 +240,7 @@ func testGettingInternalErrorDuringSavingDoesNotImportWallet(t *testing.T) {
 	// then
 	require.NotNil(t, errorDetails)
 	assert.Empty(t, result)
-	assertInternalError(t, errorDetails, fmt.Errorf("couldn't save wallet: %w", assert.AnError))
+	assertInternalError(t, errorDetails, fmt.Errorf("could not save the wallet: %w", assert.AnError))
 }
 
 type importWalletHandler struct {

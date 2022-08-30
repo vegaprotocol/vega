@@ -32,14 +32,14 @@ func (h *DescribeWallet) Handle(ctx context.Context, rawParams jsonrpc.Params) (
 	}
 
 	if exist, err := h.walletStore.WalletExists(ctx, params.Wallet); err != nil {
-		return nil, internalError(fmt.Errorf("couldn't verify wallet existence: %w", err))
+		return nil, internalError(fmt.Errorf("could not verify the wallet existence: %w", err))
 	} else if !exist {
 		return nil, invalidParams(ErrWalletDoesNotExist)
 	}
 
 	w, err := h.walletStore.GetWallet(ctx, params.Wallet, params.Passphrase)
 	if err != nil {
-		return nil, internalError(fmt.Errorf("couldn't retrieve wallet: %w", err))
+		return nil, internalError(fmt.Errorf("could not retrieve the wallet: %w", err))
 	}
 
 	return DescribeWalletResult{

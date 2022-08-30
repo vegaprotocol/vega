@@ -64,7 +64,7 @@ func (h *SendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) 
 	txReader := strings.NewReader(params.RawTransaction)
 	request := &walletpb.SubmitTransactionRequest{}
 	if err := jsonpb.Unmarshal(txReader, request); err != nil {
-		return nil, invalidParams(fmt.Errorf("couldn't parse the transaction: %w", err))
+		return nil, invalidParams(fmt.Errorf("could not parse the transaction: %w", err))
 	}
 
 	request.PubKey = params.PublicKey
@@ -87,26 +87,26 @@ func (h *SendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) 
 
 	currentNode, err := h.nodeSelector.Node(ctx)
 	if err != nil {
-		h.pipeline.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("couldn't find an healthy node: %w", err))
+		h.pipeline.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not find an healthy node: %w", err))
 		return nil, networkError(ErrorCodeNodeRequestFailed, ErrNoHealthyNodeAvailable)
 	}
 
 	lastBlockData, err := currentNode.LastBlock(ctx)
 	if err != nil {
-		h.pipeline.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("couldn't get last block from node: %w", err))
+		h.pipeline.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not get last block from node: %w", err))
 		return nil, networkError(ErrorCodeNodeRequestFailed, ErrCouldNotGetLastBlockInformation)
 	}
 
 	// Sign the payload.
 	inputData, err := wcommands.ToMarshaledInputData(request, lastBlockData.Height, lastBlockData.ChainId)
 	if err != nil {
-		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("couldn't marshal input data: %w", err))
+		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not marshal input data: %w", err))
 		return nil, internalError(ErrCouldNotSendTransaction)
 	}
 
 	signature, err := connectedWallet.Wallet.SignTx(params.PublicKey, inputData)
 	if err != nil {
-		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("couldn't sign command: %w", err))
+		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not sign command: %w", err))
 		return nil, internalError(ErrCouldNotSendTransaction)
 	}
 
@@ -121,7 +121,7 @@ func (h *SendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) 
 	txID := vgcrypto.RandomHash()
 	powNonce, _, err := vgcrypto.PoW(lastBlockData.Hash, txID, uint(lastBlockData.SpamPowDifficulty), vgcrypto.Sha3)
 	if err != nil {
-		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("couldn't compute the proof of work: %w", err))
+		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not compute the proof of work: %w", err))
 		return nil, internalError(ErrCouldNotSendTransaction)
 	}
 	tx.Pow = &commandspb.ProofOfWork{

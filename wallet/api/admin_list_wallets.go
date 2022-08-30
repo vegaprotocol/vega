@@ -19,7 +19,7 @@ type ListWallets struct {
 func (h *ListWallets) Handle(ctx context.Context, _ jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	wallets, err := h.walletStore.ListWallets(ctx)
 	if err != nil {
-		return nil, internalError(fmt.Errorf("couldn't list wallets: %w", err))
+		return nil, internalError(fmt.Errorf("could not list the wallets: %w", err))
 	}
 
 	return ListWalletsResult{

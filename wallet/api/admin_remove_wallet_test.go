@@ -17,8 +17,8 @@ import (
 func TestAdminRemoveWallet(t *testing.T) {
 	t.Run("Removing a wallet with invalid params fails", testRemovingWalletWithInvalidParamsFails)
 	t.Run("Removing a wallet with valid params succeeds", testRemovingWalletWithValidParamsSucceeds)
-	t.Run("Removing a wallet that doesn't exists fails", testRemovingWalletThatDoesNotExistsFails)
-	t.Run("Getting internal error during verification doesn't remove the wallet", testGettingInternalErrorDuringVerificationDoesNotRemoveWallet)
+	t.Run("Removing a wallet that does not exists fails", testRemovingWalletThatDoesNotExistsFails)
+	t.Run("Getting internal error during verification does not remove the wallet", testGettingInternalErrorDuringVerificationDoesNotRemoveWallet)
 }
 
 func testRemovingWalletWithInvalidParamsFails(t *testing.T) {
@@ -143,7 +143,7 @@ func testGettingInternalErrorDuringVerificationDoesNotRemoveWallet(t *testing.T)
 	require.NotNil(t, errorDetails)
 	// Verify generated wallet.
 	assert.Empty(t, result)
-	assertInternalError(t, errorDetails, fmt.Errorf("couldn't verify wallet existence: %w", assert.AnError))
+	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet existence: %w", assert.AnError))
 }
 
 type removeWalletHandler struct {

@@ -44,23 +44,23 @@ func (h *CreateWallet) Handle(ctx context.Context, rawParams jsonrpc.Params) (js
 	}
 
 	if exist, err := h.walletStore.WalletExists(ctx, params.Wallet); err != nil {
-		return nil, internalError(fmt.Errorf("couldn't verify wallet existence: %w", err))
+		return nil, internalError(fmt.Errorf("could not verify the wallet existence: %w", err))
 	} else if exist {
 		return nil, invalidParams(ErrWalletAlreadyExists)
 	}
 
 	w, recoveryPhrase, err := wallet.NewHDWallet(params.Wallet)
 	if err != nil {
-		return nil, internalError(fmt.Errorf("couldn't create HD wallet: %w", err))
+		return nil, internalError(fmt.Errorf("could not create the HD wallet: %w", err))
 	}
 
 	kp, err := w.GenerateKeyPair(nil)
 	if err != nil {
-		return nil, internalError(fmt.Errorf("couldn't generate first key-pair: %w", err))
+		return nil, internalError(fmt.Errorf("could not generate the first key: %w", err))
 	}
 
 	if err := h.walletStore.SaveWallet(ctx, w, params.Passphrase); err != nil {
-		return nil, internalError(fmt.Errorf("couldn't save wallet: %w", err))
+		return nil, internalError(fmt.Errorf("could not save the wallet: %w", err))
 	}
 
 	return CreateWalletResult{

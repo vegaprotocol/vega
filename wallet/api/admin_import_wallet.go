@@ -39,23 +39,23 @@ func (h *ImportWallet) Handle(ctx context.Context, rawParams jsonrpc.Params) (js
 	}
 
 	if exist, err := h.walletStore.WalletExists(ctx, params.Wallet); err != nil {
-		return nil, internalError(fmt.Errorf("couldn't verify wallet existence: %w", err))
+		return nil, internalError(fmt.Errorf("could not verify the wallet existence: %w", err))
 	} else if exist {
 		return nil, invalidParams(ErrWalletAlreadyExists)
 	}
 
 	w, err := wallet.ImportHDWallet(params.Wallet, params.RecoveryPhrase, params.Version)
 	if err != nil {
-		return nil, internalError(fmt.Errorf("couldn't import the wallet: %w", err))
+		return nil, internalError(fmt.Errorf("could not import the wallet: %w", err))
 	}
 
 	kp, err := w.GenerateKeyPair(nil)
 	if err != nil {
-		return nil, internalError(fmt.Errorf("couldn't generate first key-pair: %w", err))
+		return nil, internalError(fmt.Errorf("could not generate first key: %w", err))
 	}
 
 	if err := h.walletStore.SaveWallet(ctx, w, params.Passphrase); err != nil {
-		return nil, internalError(fmt.Errorf("couldn't save wallet: %w", err))
+		return nil, internalError(fmt.Errorf("could not save the wallet: %w", err))
 	}
 
 	return ImportWalletResult{

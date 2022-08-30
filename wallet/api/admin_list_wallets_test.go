@@ -26,11 +26,11 @@ func testListingWalletsSucceeds(t *testing.T) {
 	ctx := context.Background()
 	expectedWallet1, _, err := wallet.NewHDWallet(vgrand.RandomStr(5))
 	if err != nil {
-		t.Fatal(fmt.Errorf("couldn't create wallet for test: %w", err))
+		t.Fatal(fmt.Errorf("could not create wallet for test: %w", err))
 	}
 	expectedWallet2, _, err := wallet.NewHDWallet(vgrand.RandomStr(5))
 	if err != nil {
-		t.Fatal(fmt.Errorf("couldn't create wallet for test: %w", err))
+		t.Fatal(fmt.Errorf("could not create wallet for test: %w", err))
 	}
 
 	// setup
@@ -75,7 +75,7 @@ func testGettingInternalErrorDuringListingFails(t *testing.T) {
 	require.NotNil(t, errorDetails)
 	// Verify generated wallet.
 	assert.Empty(t, result)
-	assertInternalError(t, errorDetails, fmt.Errorf("couldn't list wallets: %w", assert.AnError))
+	assertInternalError(t, errorDetails, fmt.Errorf("could not list the wallets: %w", assert.AnError))
 }
 
 type listWalletsHandler struct {

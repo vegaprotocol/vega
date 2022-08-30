@@ -18,7 +18,7 @@ import (
 func TestAdminDescribeWallet(t *testing.T) {
 	t.Run("Describing a wallet with invalid params fails", testDescribingWalletWithInvalidParamsFails)
 	t.Run("Describing a wallet with valid params succeeds", testDescribingWalletWithValidParamsSucceeds)
-	t.Run("Describing a wallet that doesn't exists fails", testDescribingWalletThatDoesNotExistsFails)
+	t.Run("Describing a wallet that does not exists fails", testDescribingWalletThatDoesNotExistsFails)
 	t.Run("Getting internal error during verification fails", testGettingInternalErrorDuringVerificationFails)
 	t.Run("Getting internal error during retrieval fails", testGettingInternalErrorDuringRetrievalFails)
 }
@@ -85,7 +85,7 @@ func testDescribingWalletWithValidParamsSucceeds(t *testing.T) {
 	name := vgrand.RandomStr(5)
 	expectedWallet, _, err := wallet.NewHDWallet(name)
 	if err != nil {
-		t.Fatal(fmt.Errorf("couldn't create wallet for test: %w", err))
+		t.Fatal(fmt.Errorf("could not create wallet for test: %w", err))
 	}
 
 	// setup
@@ -170,7 +170,7 @@ func testGettingInternalErrorDuringVerificationFails(t *testing.T) {
 	require.NotNil(t, errorDetails)
 	// Verify generated wallet.
 	assert.Empty(t, result)
-	assertInternalError(t, errorDetails, fmt.Errorf("couldn't verify wallet existence: %w", assert.AnError))
+	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet existence: %w", assert.AnError))
 }
 
 func testGettingInternalErrorDuringRetrievalFails(t *testing.T) {
@@ -199,7 +199,7 @@ func testGettingInternalErrorDuringRetrievalFails(t *testing.T) {
 	require.NotNil(t, errorDetails)
 	// Verify generated wallet.
 	assert.Empty(t, result)
-	assertInternalError(t, errorDetails, fmt.Errorf("couldn't retrieve wallet: %w", assert.AnError))
+	assertInternalError(t, errorDetails, fmt.Errorf("could not retrieve the wallet: %w", assert.AnError))
 }
 
 type describeWalletHandler struct {

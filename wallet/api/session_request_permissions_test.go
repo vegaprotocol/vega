@@ -20,17 +20,17 @@ func TestRequestPermissions(t *testing.T) {
 	t.Run("Requesting permissions with invalid params fails", testRequestingPermissionsWithInvalidParamsFails)
 	t.Run("Requesting permissions with with valid params succeeds", testRequestingPermissionsWithValidParamsSucceeds)
 	t.Run("Requesting permissions with invalid token fails", testRequestingPermissionsWithInvalidTokenFails)
-	t.Run("Refusing permissions update doesn't update the permissions", testRefusingPermissionsUpdateDoesNotUpdatePermissions)
-	t.Run("Cancelling the review doesn't update the permissions", testCancellingTheReviewDoesNotUpdatePermissions)
-	t.Run("Interrupting the request doesn't update the permissions", testInterruptingTheRequestDoesNotUpdatePermissions)
-	t.Run("Getting internal error during the review doesn't update the permissions", testGettingInternalErrorDuringReviewDoesNotUpdatePermissions)
-	t.Run("Cancelling the passphrase request doesn't update the permissions", testCancellingThePassphraseRequestDoesNotUpdatePermissions)
-	t.Run("Interrupting the request during the passphrase request doesn't update the permissions", testInterruptingTheRequestDuringPassphraseRequestDoesNotUpdatePermissions)
-	t.Run("Getting internal error during the passphrase request doesn't update the permissions", testGettingInternalErrorDuringPassphraseRequestDoesNotUpdatePermissions)
-	t.Run("Using wrong passphrase doesn't update the permissions", testUsingWrongPassphraseDoesNotUpdatePermissions)
-	t.Run("Getting internal error during the wallet retrieval doesn't update the permissions", testGettingInternalErrorDuringWalletRetrievalDoesNotUpdatePermissions)
-	t.Run("Getting internal error during the wallet saving doesn't update the permissions", testGettingInternalErrorDuringWalletSavingDoesNotUpdatePermissions)
-	t.Run("Updating the permissions doesn't overwrite untracked changes", testUpdatingPermissionsDoesNotOverwriteUntrackedChanges)
+	t.Run("Refusing permissions update does not update the permissions", testRefusingPermissionsUpdateDoesNotUpdatePermissions)
+	t.Run("Cancelling the review does not update the permissions", testCancellingTheReviewDoesNotUpdatePermissions)
+	t.Run("Interrupting the request does not update the permissions", testInterruptingTheRequestDoesNotUpdatePermissions)
+	t.Run("Getting internal error during the review does not update the permissions", testGettingInternalErrorDuringReviewDoesNotUpdatePermissions)
+	t.Run("Cancelling the passphrase request does not update the permissions", testCancellingThePassphraseRequestDoesNotUpdatePermissions)
+	t.Run("Interrupting the request during the passphrase request does not update the permissions", testInterruptingTheRequestDuringPassphraseRequestDoesNotUpdatePermissions)
+	t.Run("Getting internal error during the passphrase request does not update the permissions", testGettingInternalErrorDuringPassphraseRequestDoesNotUpdatePermissions)
+	t.Run("Using wrong passphrase does not update the permissions", testUsingWrongPassphraseDoesNotUpdatePermissions)
+	t.Run("Getting internal error during the wallet retrieval does not update the permissions", testGettingInternalErrorDuringWalletRetrievalDoesNotUpdatePermissions)
+	t.Run("Getting internal error during the wallet saving does not update the permissions", testGettingInternalErrorDuringWalletSavingDoesNotUpdatePermissions)
+	t.Run("Updating the permissions does not overwrite untracked changes", testUpdatingPermissionsDoesNotOverwriteUntrackedChanges)
 }
 
 func testRequestingPermissionsWithInvalidParamsFails(t *testing.T) {
@@ -616,7 +616,7 @@ func testGettingInternalErrorDuringWalletRetrievalDoesNotUpdatePermissions(t *te
 	handler.pipeline.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(true, nil)
 	handler.pipeline.EXPECT().RequestPassphrase(ctx, traceID, wallet1.Name()).Times(1).Return(passphrase, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name(), passphrase).Times(1).Return(nil, assert.AnError)
-	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("couldn't retrieve the wallet: %w", assert.AnError)).Times(1)
+	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("could not retrieve the wallet: %w", assert.AnError)).Times(1)
 	// -- unexpected calls
 	handler.walletStore.EXPECT().WalletExists(gomock.Any(), gomock.Any()).Times(0)
 	handler.walletStore.EXPECT().ListWallets(gomock.Any()).Times(0)
@@ -652,14 +652,14 @@ func testGettingInternalErrorDuringWalletSavingDoesNotUpdatePermissions(t *testi
 	originalPermissions := wallet.Permissions{}
 	wallet1, recoveryPhrase, err := wallet.NewHDWallet(walletName)
 	if err != nil {
-		t.Fatal("couldn't create wallet for test: %w", err)
+		t.Fatal("could not create wallet for test: %w", err)
 	}
 
 	// Clone the wallet1, so we can emulate a different instance returned by
 	// the wallet store.
 	loadedWallet, err := wallet.ImportHDWallet(walletName, recoveryPhrase, 2)
 	if err != nil {
-		t.Fatal("couldn't import wallet for test: %w", err)
+		t.Fatal("could not import wallet for test: %w", err)
 	}
 	passphrase := vgrand.RandomStr(5)
 	requestedPermissions := map[string]string{
@@ -674,7 +674,7 @@ func testGettingInternalErrorDuringWalletSavingDoesNotUpdatePermissions(t *testi
 	handler.pipeline.EXPECT().RequestPassphrase(ctx, traceID, wallet1.Name()).Times(1).Return(passphrase, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name(), passphrase).Times(1).Return(loadedWallet, nil)
 	handler.walletStore.EXPECT().SaveWallet(ctx, loadedWallet, passphrase).Times(1).Return(assert.AnError)
-	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("couldn't save wallet: %w", assert.AnError)).Times(1)
+	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("could not save the wallet: %w", assert.AnError)).Times(1)
 	// -- unexpected calls
 	handler.walletStore.EXPECT().WalletExists(gomock.Any(), gomock.Any()).Times(0)
 	handler.walletStore.EXPECT().ListWallets(gomock.Any()).Times(0)
@@ -708,13 +708,13 @@ func testUpdatingPermissionsDoesNotOverwriteUntrackedChanges(t *testing.T) {
 	walletName := vgrand.RandomStr(5)
 	wallet1, recoveryPhrase, err := wallet.NewHDWallet(walletName)
 	if err != nil {
-		t.Fatal("couldn't create wallet for test: %w", err)
+		t.Fatal("could not create wallet for test: %w", err)
 	}
 
 	// Clone the wallet1, so we can modify the clone without tempering with wallet1.
 	modifiedWallet, err := wallet.ImportHDWallet(walletName, recoveryPhrase, 2)
 	if err != nil {
-		t.Fatal("couldn't import wallet for test: %w", err)
+		t.Fatal("could not import wallet for test: %w", err)
 	}
 	kp, _ := modifiedWallet.GenerateKeyPair([]wallet.Meta{{Key: "name", Value: "hello"}})
 

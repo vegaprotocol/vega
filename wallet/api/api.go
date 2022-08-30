@@ -146,7 +146,7 @@ func SessionAPI(log *zap.Logger, walletStore WalletStore, pipeline Pipeline, nod
 	walletAPI.RegisterMethod("session.request_permissions", NewRequestPermissions(walletStore, pipeline, sessions))
 	walletAPI.RegisterMethod("session.send_transaction", NewSendTransaction(pipeline, nodeSelector, sessions))
 
-	log.Info("restricted JSON-RPC API initialised")
+	log.Info("the restricted JSON-RPC API has been initialised")
 
 	return walletAPI, nil
 }
@@ -183,7 +183,7 @@ func AdminAPI(log *zap.Logger, walletStore WalletStore, netStore NetworkStore) (
 	walletAPI.RegisterMethod("admin.untaint_key", &UnimplementedMethod{})
 	walletAPI.RegisterMethod("admin.update_permissions", &UnimplementedMethod{})
 
-	log.Info("full JSON-RPC API initialised")
+	log.Info("the admin JSON-RPC API has been initialised")
 
 	return walletAPI, nil
 }
