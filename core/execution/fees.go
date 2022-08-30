@@ -54,6 +54,11 @@ func (fs *FeeSplitter) TimeWindowStart(t time.Time) {
 	// and we can increase the window to the next value
 	if !fs.avg.IsZero() {
 		fs.window++
+	} else if !fs.tradeValue.IsZero() {
+		// if tradeValue is set, but the average hasn't been updated, it means we're currently leaving opening auction
+		// we should set the average accordingly: avg == trade_value, but keep the window as-is.
+		// next time we calculate the avg for window == 1, the value should be avg + trade_val (opening auction + trade value)
+		fs.avg = num.DecimalFromUint(fs.tradeValue)
 	}
 	// reset the trade value for this window
 	fs.tradeValue = num.UintZero()
@@ -92,16 +97,20 @@ func (fs *FeeSplitter) MarketValueProxy(mvwl time.Duration, totalStakeU *num.Uin
 
 func (fs *FeeSplitter) AvgTradeValue() num.Decimal {
 	tv := num.DecimalFromUint(fs.tradeValue)
-	if fs.avg.IsZero() {
+	// end of 1st window after opening auction
+	if fs.window == 1 {
+		fs.avg = fs.avg.Add(tv)
 		if !tv.IsZero() {
 			fs.changed = true
 		}
-		fs.avg = tv
-		return tv
+		return fs.avg
 	}
 	fs.changed = true
+	// n == 2 or more
 	n := num.NewDecimalFromFloat(float64(fs.window))
+	// nmin == 1 or more
 	nmin := num.NewDecimalFromFloat(float64(fs.window - 1))
+	// avg = avg * ((n-1)/n) + tv/n
 	fs.avg = fs.avg.Mul(nmin.Div(n)).Add(tv.Div(n))
 	return fs.avg
 	// return tv
