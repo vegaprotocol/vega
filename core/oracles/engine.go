@@ -72,6 +72,16 @@ func (e *Engine) ListensToPubKeys(data OracleData) bool {
 	})
 }
 
+func (e *Engine) HasMatch(data OracleData) (bool, error) {
+	result, err := e.subscriptions.filterSubscribers(func(spec OracleSpec) (bool, error) {
+		return spec.MatchData(data)
+	})
+	if err != nil {
+		return false, err
+	}
+	return result.hasMatched(), nil
+}
+
 // BroadcastData broadcasts data to products and risk models that are interested
 // in it. If no one is listening to this OracleData, it is discarded.
 func (e *Engine) BroadcastData(ctx context.Context, data OracleData) error {
