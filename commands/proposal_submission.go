@@ -279,13 +279,6 @@ func checkUpdateAssetChanges(change *types.ProposalTerms_UpdateAsset) Errors {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.update_asset.changes", ErrIsRequired)
 	}
 
-	if len(change.UpdateAsset.Changes.Name) == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.update_asset.changes.name", ErrIsRequired)
-	}
-	if len(change.UpdateAsset.Changes.Symbol) == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.update_asset.changes.symbol", ErrIsRequired)
-	}
-
 	if change.UpdateAsset.Changes.Source == nil {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.update_asset.changes.source", ErrIsRequired)
 	}

@@ -15,10 +15,6 @@ func TestCheckProposalSubmissionForUpdateAsset(t *testing.T) {
 	t.Run("Submitting an asset update with asset ID succeeds", TestUpdateAssetSubmissionWithAssetIDSucceeds)
 	t.Run("Submitting an asset update without changes fails", TestUpdateAssetSubmissionWithoutChangesFails)
 	t.Run("Submitting an asset update without source fails", TestUpdateAssetSubmissionWithoutSourceFails)
-	t.Run("Submitting an asset update without name fails", testUpdateAssetSubmissionWithoutNameFails)
-	t.Run("Submitting an asset update with name succeeds", testUpdateAssetSubmissionWithNameSucceeds)
-	t.Run("Submitting an asset update without symbol fails", testUpdateAssetSubmissionWithoutSymbolFails)
-	t.Run("Submitting an asset update with symbol succeeds", testUpdateAssetSubmissionWithSymbolSucceeds)
 	t.Run("Submitting an ERC20 asset update without ERC20 asset fails", testUpdateERC20AssetChangeSubmissionWithoutErc20AssetFails)
 	t.Run("Submitting an ERC20 asset update with invalid lifetime limit fails", testUpdateERC20AssetChangeSubmissionWithInvalidLifetimeLimitFails)
 	t.Run("Submitting an ERC20 asset update with valid lifetime limit succeeds", testUpdateERC20AssetChangeSubmissionWithValidLifetimeLimitSucceeds)
@@ -88,70 +84,6 @@ func TestUpdateAssetSubmissionWithoutSourceFails(t *testing.T) {
 	})
 
 	assert.Contains(t, err.Get("proposal_submission.terms.change.update_asset.changes.source"), commands.ErrIsRequired)
-}
-
-func testUpdateAssetSubmissionWithoutNameFails(t *testing.T) {
-	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_UpdateAsset{
-				UpdateAsset: &types.UpdateAsset{
-					Changes: &types.AssetDetailsUpdate{
-						Name: "",
-					},
-				},
-			},
-		},
-	})
-
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_asset.changes.name"), commands.ErrIsRequired)
-}
-
-func testUpdateAssetSubmissionWithNameSucceeds(t *testing.T) {
-	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_UpdateAsset{
-				UpdateAsset: &types.UpdateAsset{
-					Changes: &types.AssetDetailsUpdate{
-						Name: "My built-in asset",
-					},
-				},
-			},
-		},
-	})
-
-	assert.Empty(t, err.Get("proposal_submission.terms.change.update_asset.changes.name"), commands.ErrIsRequired)
-}
-
-func testUpdateAssetSubmissionWithoutSymbolFails(t *testing.T) {
-	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_UpdateAsset{
-				UpdateAsset: &types.UpdateAsset{
-					Changes: &types.AssetDetailsUpdate{
-						Symbol: "",
-					},
-				},
-			},
-		},
-	})
-
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_asset.changes.symbol"), commands.ErrIsRequired)
-}
-
-func testUpdateAssetSubmissionWithSymbolSucceeds(t *testing.T) {
-	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_UpdateAsset{
-				UpdateAsset: &types.UpdateAsset{
-					Changes: &types.AssetDetailsUpdate{
-						Symbol: "My symbol",
-					},
-				},
-			},
-		},
-	})
-
-	assert.Empty(t, err.Get("proposal_submission.terms.change.update_asset.changes.symbol"))
 }
 
 func testUpdateERC20AssetChangeSubmissionWithoutErc20AssetFails(t *testing.T) {
