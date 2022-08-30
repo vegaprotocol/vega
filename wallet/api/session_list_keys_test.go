@@ -72,7 +72,7 @@ func testListingKeysWithValidParamsSucceeds(t *testing.T) {
 	})
 	_, err := w.GenerateKeyPair(nil)
 	if err != nil {
-		t.Fatal("couldn't generate key for tests: %w", err)
+		t.Fatal("could not generate key for tests: %w", err)
 	}
 	expectedPubKeys := make([]string, 0, len(w.ListPublicKeys()))
 	for _, key := range w.ListPublicKeys() {
@@ -123,7 +123,7 @@ func testListingKeysWithNotEnoughPermissionsFails(t *testing.T) {
 	w := walletWithPerms(t, hostname, expectedPermissions)
 	_, err := w.GenerateKeyPair(nil)
 	if err != nil {
-		t.Fatal("couldn't generate key for tests: %w", err)
+		t.Fatal("could not generate key for tests: %w", err)
 	}
 	expectedPubKeys := make([]string, 0, len(w.ListPublicKeys()))
 	for _, key := range w.ListPublicKeys() {

@@ -13,21 +13,22 @@ import (
 	"go.uber.org/zap"
 )
 
+// Generates mocks
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/wallet/api WalletStore,NetworkStore,Node,NodeSelector,Pipeline
+
 // WalletStore is the component used to retrieve and update wallets from the
 // computer.
-//
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/wallet_store_mock.go -package mocks code.vegaprotocol.io/vega/wallet/api WalletStore
 type WalletStore interface {
 	WalletExists(ctx context.Context, name string) (bool, error)
 	GetWallet(ctx context.Context, name, passphrase string) (wallet.Wallet, error)
 	ListWallets(ctx context.Context) ([]string, error)
 	SaveWallet(ctx context.Context, w wallet.Wallet, passphrase string) error
+	DeleteWallet(ctx context.Context, name string) error
+	GetWalletPath(name string) string
 }
 
 // NetworkStore is the component used to retrieve and update the networks from the
-// computer,
-//
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/network_store_mock.go -package mocks code.vegaprotocol.io/vega/wallet/api NetworkStore
+// computer.
 type NetworkStore interface {
 	NetworkExists(string) (bool, error)
 	GetNetwork(string) (*network.Network, error)
@@ -38,8 +39,6 @@ type NetworkStore interface {
 }
 
 // Node is the component used to get network information and send transactions.
-//
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/node_mock.go -package mocks code.vegaprotocol.io/vega/wallet/api Node
 type Node interface {
 	Host() string
 	Stop() error
@@ -50,8 +49,6 @@ type Node interface {
 }
 
 // NodeSelector implementing the strategy for node selection.
-//
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/node_selector_mock.go -package mocks code.vegaprotocol.io/vega/wallet/api NodeSelector
 type NodeSelector interface {
 	Node(ctx context.Context) (Node, error)
 	Stop()
@@ -61,8 +58,6 @@ type NodeSelector interface {
 // Convention:
 //   - Notify* functions do not expect a response.
 //   - Request* functions are expecting a client intervention.
-//
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/pipeline_mock.go -package mocks code.vegaprotocol.io/vega/wallet/api Pipeline
 type Pipeline interface {
 	// NotifyError is used to report errors to the client.
 	NotifyError(ctx context.Context, traceID string, t ErrorType, err error)
@@ -151,7 +146,7 @@ func SessionAPI(log *zap.Logger, walletStore WalletStore, pipeline Pipeline, nod
 	walletAPI.RegisterMethod("session.request_permissions", NewRequestPermissions(walletStore, pipeline, sessions))
 	walletAPI.RegisterMethod("session.send_transaction", NewSendTransaction(pipeline, nodeSelector, sessions))
 
-	log.Info("restricted JSON-RPC API initialised")
+	log.Info("the restricted JSON-RPC API has been initialised")
 
 	return walletAPI, nil
 }
@@ -162,21 +157,22 @@ func SessionAPI(log *zap.Logger, walletStore WalletStore, pipeline Pipeline, nod
 func AdminAPI(log *zap.Logger, walletStore WalletStore, netStore NetworkStore) (*jsonrpc.API, error) {
 	walletAPI := jsonrpc.New(log)
 	walletAPI.RegisterMethod("admin.annotate_key", &UnimplementedMethod{})
-	walletAPI.RegisterMethod("admin.create_wallet", &UnimplementedMethod{})
+	walletAPI.RegisterMethod("admin.create_wallet", NewCreateWallet(walletStore))
 	walletAPI.RegisterMethod("admin.describe_key", &UnimplementedMethod{})
 	walletAPI.RegisterMethod("admin.describe_network", &UnimplementedMethod{})
 	walletAPI.RegisterMethod("admin.describe_permissions", &UnimplementedMethod{})
-	walletAPI.RegisterMethod("admin.describe_wallet", &UnimplementedMethod{})
+	walletAPI.RegisterMethod("admin.describe_wallet", NewDescribeWallet(walletStore))
 	walletAPI.RegisterMethod("admin.generate_key", &UnimplementedMethod{})
 	walletAPI.RegisterMethod("admin.import_network", &UnimplementedMethod{})
-	walletAPI.RegisterMethod("admin.import_wallet", &UnimplementedMethod{})
+	walletAPI.RegisterMethod("admin.import_wallet", NewImportWallet(walletStore))
 	walletAPI.RegisterMethod("admin.isolate_key", &UnimplementedMethod{})
 	walletAPI.RegisterMethod("admin.list_keys", &UnimplementedMethod{})
 	walletAPI.RegisterMethod("admin.list_networks", &UnimplementedMethod{})
 	walletAPI.RegisterMethod("admin.list_permissions", &UnimplementedMethod{})
-	walletAPI.RegisterMethod("admin.list_wallets", &UnimplementedMethod{})
+	walletAPI.RegisterMethod("admin.list_wallets", NewListWallets(walletStore))
 	walletAPI.RegisterMethod("admin.purge_permissions", &UnimplementedMethod{})
 	walletAPI.RegisterMethod("admin.remove_network", &UnimplementedMethod{})
+	walletAPI.RegisterMethod("admin.remove_wallet", NewRemoveWallet(walletStore))
 	walletAPI.RegisterMethod("admin.revoke_permissions", &UnimplementedMethod{})
 	walletAPI.RegisterMethod("admin.rotate_key", &UnimplementedMethod{})
 	walletAPI.RegisterMethod("admin.send_message", &UnimplementedMethod{})
@@ -187,7 +183,7 @@ func AdminAPI(log *zap.Logger, walletStore WalletStore, netStore NetworkStore) (
 	walletAPI.RegisterMethod("admin.untaint_key", &UnimplementedMethod{})
 	walletAPI.RegisterMethod("admin.update_permissions", &UnimplementedMethod{})
 
-	log.Info("full JSON-RPC API initialised")
+	log.Info("the admin JSON-RPC API has been initialised")
 
 	return walletAPI, nil
 }

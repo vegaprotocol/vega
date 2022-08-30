@@ -35,14 +35,7 @@ func (s *Store) DeleteWallet(ctx context.Context, name string) error {
 
 	walletPath := s.walletPath(name)
 
-	if exists, _ := vgfs.PathExists(walletPath); !exists {
-		return wallet.ErrWalletDoesNotExists
-	}
-
-	if err := os.Remove(walletPath); err != nil {
-		return fmt.Errorf("couldn't remove wallet file at %s: %w", walletPath, err)
-	}
-	return nil
+	return os.Remove(walletPath)
 }
 
 func (s *Store) WalletExists(ctx context.Context, name string) (bool, error) {

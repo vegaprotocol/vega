@@ -9,7 +9,6 @@ import (
 )
 
 var (
-	ErrInvalidTotalSupply       = errors.New("invalid total supply")
 	ErrInvalidLifetimeLimit     = errors.New("invalid lifetime limit")
 	ErrInvalidWithdrawThreshold = errors.New("invalid withdraw threshold")
 	ErrAssetIDIsRequired        = errors.New("asset ID is required")
@@ -134,8 +133,6 @@ func (a UpdateAsset) Validate() (ProposalError, error) {
 }
 
 type AssetDetailsUpdate struct {
-	Name    string
-	Symbol  string
 	Quantum num.Decimal
 	//	*AssetDetailsUpdateERC20
 	Source isAssetDetailsUpdate
@@ -143,9 +140,7 @@ type AssetDetailsUpdate struct {
 
 func (a AssetDetailsUpdate) String() string {
 	return fmt.Sprintf(
-		"name(%s) symbol(%s) quantum(%s)x(%s)",
-		a.Name,
-		a.Symbol,
+		"quantum(%s) (%s)",
 		a.Quantum.String(),
 		reflectPointerToString(a.Source),
 	)
@@ -153,8 +148,6 @@ func (a AssetDetailsUpdate) String() string {
 
 func (a AssetDetailsUpdate) IntoProto() *vegapb.AssetDetailsUpdate {
 	r := &vegapb.AssetDetailsUpdate{
-		Name:    a.Name,
-		Symbol:  a.Symbol,
 		Quantum: a.Quantum.String(),
 	}
 	if a.Source == nil {
@@ -174,8 +167,6 @@ func (a AssetDetailsUpdate) DeepClone() *AssetDetailsUpdate {
 		src = a.Source.DeepClone()
 	}
 	cpy := &AssetDetailsUpdate{
-		Name:   a.Name,
-		Symbol: a.Symbol,
 		Source: src,
 	}
 	cpy.Quantum = a.Quantum
@@ -183,14 +174,6 @@ func (a AssetDetailsUpdate) DeepClone() *AssetDetailsUpdate {
 }
 
 func (a AssetDetailsUpdate) Validate() (ProposalError, error) {
-	if len(a.Name) == 0 {
-		return ProposalErrorInvalidAssetDetails, ErrInvalidAssetNameEmpty
-	}
-
-	if len(a.Symbol) == 0 {
-		return ProposalErrorInvalidAssetDetails, ErrInvalidAssetSymbolEmpty
-	}
-
 	if a.Quantum.IsZero() {
 		return ProposalErrorInvalidAssetDetails, ErrInvalidAssetQuantumZero
 	}
@@ -225,8 +208,6 @@ func AssetDetailsUpdateFromProto(p *vegapb.AssetDetailsUpdate) (*AssetDetailsUpd
 	}
 
 	return &AssetDetailsUpdate{
-		Name:    p.Name,
-		Symbol:  p.Symbol,
 		Quantum: min,
 		Source:  src,
 	}, nil

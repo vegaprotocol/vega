@@ -985,8 +985,8 @@ func (e *Engine) updatedAssetFromProposal(p *proposal) (*types.Asset, types.Prop
 	newAsset := &types.Asset{
 		ID: a.AssetID,
 		Details: &types.AssetDetails{
-			Name:     a.Changes.Name,
-			Symbol:   a.Changes.Symbol,
+			Name:     existingAsset.ToAssetType().Details.Name,
+			Symbol:   existingAsset.ToAssetType().Details.Symbol,
 			Quantum:  a.Changes.Quantum,
 			Decimals: existingAsset.DecimalPlaces(),
 		},
