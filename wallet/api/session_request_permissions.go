@@ -93,7 +93,7 @@ func (h *RequestPermissions) Handle(ctx context.Context, rawParams jsonrpc.Param
 				h.pipeline.NotifyError(ctx, traceID, ClientError, wallet.ErrWrongPassphrase)
 				continue
 			}
-			h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("couldn't retrieve the wallet: %w", err))
+			h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not retrieve the wallet: %w", err))
 			return nil, internalError(ErrCouldNotRequestPermissions)
 		}
 		passphrase = enteredPassphrase
@@ -107,14 +107,14 @@ func (h *RequestPermissions) Handle(ctx context.Context, rawParams jsonrpc.Param
 	// We update the wallet we just loaded from the wallet store to ensure
 	// we don't overwrite changes that could have been done outside the API.
 	if err := walletFromStore.UpdatePermissions(connectedWallet.Hostname, perms); err != nil {
-		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("couldn't update the permissions: %w", err))
+		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not update the permissions: %w", err))
 		return nil, internalError(ErrCouldNotRequestPermissions)
 	}
 
 	// Then, we update the in-memory wallet with the updated wallet, before
 	// saving it, to ensure there is no problem with the resources reloading.
 	if err := connectedWallet.ReloadWithWallet(walletFromStore); err != nil {
-		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("couldn't reload wallet's resources: %w", err))
+		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not reload wallet's resources: %w", err))
 		return nil, internalError(ErrCouldNotRequestPermissions)
 	}
 
@@ -124,7 +124,7 @@ func (h *RequestPermissions) Handle(ctx context.Context, rawParams jsonrpc.Param
 		// There is no sane reason it fails out of the blue.
 		_ = connectedWallet.ReloadWithWallet(previousWallet)
 
-		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("couldn't save wallet: %w", err))
+		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not save the wallet: %w", err))
 		return nil, internalError(ErrCouldNotRequestPermissions)
 	}
 

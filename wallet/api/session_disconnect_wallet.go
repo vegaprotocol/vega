@@ -17,7 +17,7 @@ type DisconnectWalletParams struct {
 
 // Handle disconnect a wallet for a third-party application.
 //
-// It doesn't fail. If there's no connected wallet for the given token, nothing
+// It does not fail. If there's no connected wallet for the given token, nothing
 // happens.
 //
 // The wallet resources are unloaded.

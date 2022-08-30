@@ -10,7 +10,7 @@ import (
 
 var (
 	ErrTraceIDMismatch   = errors.New("the trace IDs between request and response mismatch")
-	ErrWrongResponseType = errors.New("the received response doesn't match the expected response type")
+	ErrWrongResponseType = errors.New("the received response does not match the expected response type")
 )
 
 // SequentialPipeline is a pipeline built to handle one request at a time.

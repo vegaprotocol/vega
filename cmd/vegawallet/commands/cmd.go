@@ -13,8 +13,8 @@ import (
 	vgterm "code.vegaprotocol.io/vega/libs/term"
 	"code.vegaprotocol.io/vega/paths"
 	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
+	"code.vegaprotocol.io/vega/wallet/api"
 	netstore "code.vegaprotocol.io/vega/wallet/network/store/v1"
-	"code.vegaprotocol.io/vega/wallet/wallet"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
@@ -86,11 +86,12 @@ func autoCompleteWallet(cmd *cobra.Command, vegaHome string) {
 			return nil, cobra.ShellCompDirectiveDefault
 		}
 
-		ws, err := wallet.ListWallets(s)
-		if err != nil {
+		listWallet := api.NewListWallets(s)
+		rawResult, errorDetails := listWallet.Handle(context.Background(), nil)
+		if errorDetails != nil {
 			return nil, cobra.ShellCompDirectiveDefault
 		}
-		return ws.Wallets, cobra.ShellCompDirectiveDefault
+		return rawResult.(api.ListWalletsResult).Wallets, cobra.ShellCompDirectiveDefault
 	})
 	if err != nil {
 		panic(err)

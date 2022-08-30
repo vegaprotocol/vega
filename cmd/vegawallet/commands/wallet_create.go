@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -8,7 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
-	"code.vegaprotocol.io/vega/wallet/wallet"
+	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
 	"github.com/spf13/cobra"
@@ -29,16 +31,22 @@ var (
 	`)
 )
 
-type CreateWalletHandler func(*wallet.CreateWalletRequest) (*wallet.CreateWalletResponse, error)
+type CreateWalletHandler func(api.CreateWalletParams) (api.CreateWalletResult, error)
 
 func NewCmdCreateWallet(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(req *wallet.CreateWalletRequest) (*wallet.CreateWalletResponse, error) {
+	h := func(params api.CreateWalletParams) (api.CreateWalletResult, error) {
 		s, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
-			return nil, fmt.Errorf("couldn't initialise wallets store: %w", err)
+			return api.CreateWalletResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 
-		return wallet.CreateWallet(s, req)
+		createWallet := api.NewCreateWallet(s)
+
+		rawResult, errDetails := createWallet.Handle(context.Background(), params)
+		if errDetails != nil {
+			return api.CreateWalletResult{}, errors.New(errDetails.Data)
+		}
+		return rawResult.(api.CreateWalletResult), nil
 	}
 
 	return BuildCmdCreateWallet(w, h, rf)
@@ -93,31 +101,31 @@ type CreateWalletFlags struct {
 	PassphraseFile string
 }
 
-func (f *CreateWalletFlags) Validate() (*wallet.CreateWalletRequest, error) {
-	req := &wallet.CreateWalletRequest{}
+func (f *CreateWalletFlags) Validate() (api.CreateWalletParams, error) {
+	req := api.CreateWalletParams{}
 
 	if len(f.Wallet) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("wallet")
+		return api.CreateWalletParams{}, flags.FlagMustBeSpecifiedError("wallet")
 	}
 	req.Wallet = f.Wallet
 
 	passphrase, err := flags.GetConfirmedPassphrase(f.PassphraseFile)
 	if err != nil {
-		return nil, err
+		return api.CreateWalletParams{}, err
 	}
 	req.Passphrase = passphrase
 
 	return req, nil
 }
 
-func PrintCreateWalletResponse(w io.Writer, resp *wallet.CreateWalletResponse) {
+func PrintCreateWalletResponse(w io.Writer, resp api.CreateWalletResult) {
 	p := printer.NewInteractivePrinter(w)
 
 	str := p.String()
 	defer p.Print(str)
 
 	str.CheckMark().Text("Wallet ").Bold(resp.Wallet.Name).Text(" has been created at: ").SuccessText(resp.Wallet.FilePath).NextLine()
-	str.CheckMark().Text("First key pair has been generated for wallet ").Bold(resp.Wallet.Name).Text(" at: ").SuccessText(resp.Wallet.FilePath).NextLine()
+	str.CheckMark().Text("First key pair has been generated for the wallet ").Bold(resp.Wallet.Name).Text(" at: ").SuccessText(resp.Wallet.FilePath).NextLine()
 	str.CheckMark().SuccessText("Creating wallet succeeded").NextSection()
 
 	str.Text("Wallet recovery phrase:").NextLine()

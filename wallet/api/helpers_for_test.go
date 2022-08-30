@@ -67,11 +67,11 @@ func walletWithPerms(t *testing.T, hostname string, perms wallet.Permissions) wa
 
 	w, _, err := wallet.NewHDWallet(walletName)
 	if err != nil {
-		t.Fatal("couldn't create wallet for test: %w", err)
+		t.Fatal("could not create wallet for test: %w", err)
 	}
 
 	if err := w.UpdatePermissions(hostname, perms); err != nil {
-		t.Fatal("couldn't update permissions on wallet for test: %w", err)
+		t.Fatal("could not update permissions on wallet for test: %w", err)
 	}
 
 	return w
@@ -86,7 +86,7 @@ func connectWallet(t *testing.T, sessions *api.Sessions, hostname string, w wall
 	t.Helper()
 	token, err := sessions.ConnectWallet(hostname, w)
 	if err != nil {
-		t.Fatal("couldn't connect to a wallet for test: %w", err)
+		t.Fatal("could not connect to a wallet for test: %w", err)
 	}
 	return token
 }
