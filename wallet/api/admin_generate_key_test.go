@@ -40,14 +40,14 @@ func testGeneratingKeyWithInvalidParamsFails(t *testing.T) {
 			expectedError: api.ErrParamsDoNotMatch,
 		}, {
 			name: "with empty name",
-			params: api.GenerateKeyParams{
+			params: api.AdminGenerateKeyParams{
 				Wallet:     "",
 				Passphrase: vgrand.RandomStr(5),
 			},
 			expectedError: api.ErrWalletIsRequired,
 		}, {
 			name: "with empty passphrase",
-			params: api.GenerateKeyParams{
+			params: api.AdminGenerateKeyParams{
 				Wallet:     vgrand.RandomStr(5),
 				Passphrase: "",
 			},
@@ -100,7 +100,7 @@ func testGeneratingKeyWithValidParamsSucceeds(t *testing.T) {
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.GenerateKeyParams{
+	result, errorDetails := handler.handle(t, ctx, api.AdminGenerateKeyParams{
 		Wallet:     name,
 		Passphrase: passphrase,
 		Metadata:   []wallet.Metadata{{Key: "mode", Value: "test"}},
@@ -136,7 +136,7 @@ func testGeneratingKeyOnUnknownWalletFails(t *testing.T) {
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.GenerateKeyParams{
+	result, errorDetails := handler.handle(t, ctx, api.AdminGenerateKeyParams{
 		Wallet:     name,
 		Passphrase: passphrase,
 	})
@@ -164,7 +164,7 @@ func testGettingInternalErrorDuringWalletVerificationDoesNotGenerateKey(t *testi
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.GenerateKeyParams{
+	result, errorDetails := handler.handle(t, ctx, api.AdminGenerateKeyParams{
 		Wallet:     name,
 		Passphrase: passphrase,
 	})
@@ -192,7 +192,7 @@ func testGettingInternalErrorDuringWalletRetrievalDoesNotGenerateKey(t *testing.
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.GenerateKeyParams{
+	result, errorDetails := handler.handle(t, ctx, api.AdminGenerateKeyParams{
 		Wallet:     name,
 		Passphrase: passphrase,
 	})
@@ -224,7 +224,7 @@ func testGettingInternalErrorDuringWalletSavingDoesNotGenerateKey(t *testing.T) 
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.GenerateKeyParams{
+	result, errorDetails := handler.handle(t, ctx, api.AdminGenerateKeyParams{
 		Wallet:     name,
 		Passphrase: passphrase,
 	})
@@ -236,24 +236,24 @@ func testGettingInternalErrorDuringWalletSavingDoesNotGenerateKey(t *testing.T) 
 }
 
 type generateKeyHandler struct {
-	*api.GenerateKey
+	*api.AdminGenerateKey
 	ctrl        *gomock.Controller
 	walletStore *mocks.MockWalletStore
 	pipeline    *mocks.MockPipeline
 }
 
-func (h *generateKeyHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.GenerateKeyResult, *jsonrpc.ErrorDetails) {
+func (h *generateKeyHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminGenerateKeyResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
 	rawResult, err := h.Handle(ctx, params)
 	if rawResult != nil {
-		result, ok := rawResult.(api.GenerateKeyResult)
+		result, ok := rawResult.(api.AdminGenerateKeyResult)
 		if !ok {
-			t.Fatal("GenerateKey handler result is not a GenerateKeyResult")
+			t.Fatal("AdminGenerateKey handler result is not a AdminGenerateKeyResult")
 		}
 		return result, err
 	}
-	return api.GenerateKeyResult{}, err
+	return api.AdminGenerateKeyResult{}, err
 }
 
 func newGenerateKeyHandler(t *testing.T) *generateKeyHandler {
@@ -263,8 +263,8 @@ func newGenerateKeyHandler(t *testing.T) *generateKeyHandler {
 	walletStore := mocks.NewMockWalletStore(ctrl)
 
 	return &generateKeyHandler{
-		GenerateKey: api.NewGenerateKey(walletStore),
-		ctrl:        ctrl,
-		walletStore: walletStore,
+		AdminGenerateKey: api.NewAdminGenerateKey(walletStore),
+		ctrl:             ctrl,
+		walletStore:      walletStore,
 	}
 }

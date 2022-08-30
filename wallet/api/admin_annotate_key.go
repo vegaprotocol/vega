@@ -9,23 +9,23 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-type AnnotateKeyParams struct {
+type AdminAnnotateKeyParams struct {
 	Wallet     string            `json:"wallet"`
 	PublicKey  string            `json:"publicKey"`
 	Metadata   []wallet.Metadata `json:"metadata"`
 	Passphrase string            `json:"passphrase"`
 }
 
-type AnnotateKeyResult struct {
+type AdminAnnotateKeyResult struct {
 	Metadata []wallet.Metadata `json:"metadata"`
 }
 
-type AnnotateKey struct {
+type AdminAnnotateKey struct {
 	walletStore WalletStore
 }
 
 // Handle creates a wallet and generates its first key.
-func (h *AnnotateKey) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminAnnotateKey) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateAnnotateKeyParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
@@ -55,40 +55,40 @@ func (h *AnnotateKey) Handle(ctx context.Context, rawParams jsonrpc.Params) (jso
 		return nil, internalError(fmt.Errorf("could not save the wallet: %w", err))
 	}
 
-	return AnnotateKeyResult{
+	return AdminAnnotateKeyResult{
 		Metadata: updatedMeta,
 	}, nil
 }
 
-func validateAnnotateKeyParams(rawParams jsonrpc.Params) (AnnotateKeyParams, error) {
+func validateAnnotateKeyParams(rawParams jsonrpc.Params) (AdminAnnotateKeyParams, error) {
 	if rawParams == nil {
-		return AnnotateKeyParams{}, ErrParamsRequired
+		return AdminAnnotateKeyParams{}, ErrParamsRequired
 	}
 
-	params := AnnotateKeyParams{}
+	params := AdminAnnotateKeyParams{}
 	if err := mapstructure.Decode(rawParams, &params); err != nil {
-		return AnnotateKeyParams{}, ErrParamsDoNotMatch
+		return AdminAnnotateKeyParams{}, ErrParamsDoNotMatch
 	}
 
 	if params.Wallet == "" {
-		return AnnotateKeyParams{}, ErrWalletIsRequired
+		return AdminAnnotateKeyParams{}, ErrWalletIsRequired
 	}
 
 	if params.Passphrase == "" {
-		return AnnotateKeyParams{}, ErrPassphraseIsRequired
+		return AdminAnnotateKeyParams{}, ErrPassphraseIsRequired
 	}
 
 	if params.PublicKey == "" {
-		return AnnotateKeyParams{}, ErrPublicKeyIsRequired
+		return AdminAnnotateKeyParams{}, ErrPublicKeyIsRequired
 	}
 
 	return params, nil
 }
 
-func NewAnnotateKey(
+func NewAdminAnnotateKey(
 	walletStore WalletStore,
-) *AnnotateKey {
-	return &AnnotateKey{
+) *AdminAnnotateKey {
+	return &AdminAnnotateKey{
 		walletStore: walletStore,
 	}
 }

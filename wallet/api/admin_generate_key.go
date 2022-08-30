@@ -9,24 +9,24 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-type GenerateKeyParams struct {
+type AdminGenerateKeyParams struct {
 	Wallet     string            `json:"wallet"`
 	Metadata   []wallet.Metadata `json:"metadata"`
 	Passphrase string            `json:"passphrase"`
 }
 
-type GenerateKeyResult struct {
+type AdminGenerateKeyResult struct {
 	PublicKey string            `json:"publicKey"`
 	Algorithm wallet.Algorithm  `json:"algorithm"`
 	Metadata  []wallet.Metadata `json:"metadata"`
 }
 
-type GenerateKey struct {
+type AdminGenerateKey struct {
 	walletStore WalletStore
 }
 
 // Handle generates a key of the specified wallet.
-func (h *GenerateKey) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminGenerateKey) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateGenerateKeyParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
@@ -52,7 +52,7 @@ func (h *GenerateKey) Handle(ctx context.Context, rawParams jsonrpc.Params) (jso
 		return nil, internalError(fmt.Errorf("could not save the wallet: %w", err))
 	}
 
-	return GenerateKeyResult{
+	return AdminGenerateKeyResult{
 		PublicKey: kp.PublicKey(),
 		Algorithm: wallet.Algorithm{
 			Name:    kp.AlgorithmName(),
@@ -62,31 +62,31 @@ func (h *GenerateKey) Handle(ctx context.Context, rawParams jsonrpc.Params) (jso
 	}, nil
 }
 
-func validateGenerateKeyParams(rawParams jsonrpc.Params) (GenerateKeyParams, error) {
+func validateGenerateKeyParams(rawParams jsonrpc.Params) (AdminGenerateKeyParams, error) {
 	if rawParams == nil {
-		return GenerateKeyParams{}, ErrParamsRequired
+		return AdminGenerateKeyParams{}, ErrParamsRequired
 	}
 
-	params := GenerateKeyParams{}
+	params := AdminGenerateKeyParams{}
 	if err := mapstructure.Decode(rawParams, &params); err != nil {
-		return GenerateKeyParams{}, ErrParamsDoNotMatch
+		return AdminGenerateKeyParams{}, ErrParamsDoNotMatch
 	}
 
 	if params.Wallet == "" {
-		return GenerateKeyParams{}, ErrWalletIsRequired
+		return AdminGenerateKeyParams{}, ErrWalletIsRequired
 	}
 
 	if params.Passphrase == "" {
-		return GenerateKeyParams{}, ErrPassphraseIsRequired
+		return AdminGenerateKeyParams{}, ErrPassphraseIsRequired
 	}
 
 	return params, nil
 }
 
-func NewGenerateKey(
+func NewAdminGenerateKey(
 	walletStore WalletStore,
-) *GenerateKey {
-	return &GenerateKey{
+) *AdminGenerateKey {
+	return &AdminGenerateKey{
 		walletStore: walletStore,
 	}
 }

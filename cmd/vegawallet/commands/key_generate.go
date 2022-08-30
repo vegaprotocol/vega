@@ -33,21 +33,21 @@ var (
 	`)
 )
 
-type GenerateKeyHandler func(params api.GenerateKeyParams) (api.GenerateKeyResult, error)
+type GenerateKeyHandler func(params api.AdminGenerateKeyParams) (api.AdminGenerateKeyResult, error)
 
 func NewCmdGenerateKey(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(params api.GenerateKeyParams) (api.GenerateKeyResult, error) {
+	h := func(params api.AdminGenerateKeyParams) (api.AdminGenerateKeyResult, error) {
 		s, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
-			return api.GenerateKeyResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
+			return api.AdminGenerateKeyResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 
-		generateKey := api.NewGenerateKey(s)
+		generateKey := api.NewAdminGenerateKey(s)
 		rawResult, errDetails := generateKey.Handle(context.Background(), params)
 		if errDetails != nil {
-			return api.GenerateKeyResult{}, errors.New(errDetails.Data)
+			return api.AdminGenerateKeyResult{}, errors.New(errDetails.Data)
 		}
-		return rawResult.(api.GenerateKeyResult), nil
+		return rawResult.(api.AdminGenerateKeyResult), nil
 	}
 
 	return BuildCmdGenerateKey(w, h, rf)
@@ -110,30 +110,30 @@ type GenerateKeyFlags struct {
 	RawMetadata    []string
 }
 
-func (f *GenerateKeyFlags) Validate() (api.GenerateKeyParams, error) {
-	req := api.GenerateKeyParams{}
+func (f *GenerateKeyFlags) Validate() (api.AdminGenerateKeyParams, error) {
+	req := api.AdminGenerateKeyParams{}
 
 	if len(f.Wallet) == 0 {
-		return api.GenerateKeyParams{}, flags.MustBeSpecifiedError("wallet")
+		return api.AdminGenerateKeyParams{}, flags.MustBeSpecifiedError("wallet")
 	}
 	req.Wallet = f.Wallet
 
 	metadata, err := cli.ParseMetadata(f.RawMetadata)
 	if err != nil {
-		return api.GenerateKeyParams{}, err
+		return api.AdminGenerateKeyParams{}, err
 	}
 	req.Metadata = metadata
 
 	passphrase, err := flags.GetPassphrase(f.PassphraseFile)
 	if err != nil {
-		return api.GenerateKeyParams{}, err
+		return api.AdminGenerateKeyParams{}, err
 	}
 	req.Passphrase = passphrase
 
 	return req, nil
 }
 
-func PrintGenerateKeyResponse(w io.Writer, req api.GenerateKeyParams, resp api.GenerateKeyResult) {
+func PrintGenerateKeyResponse(w io.Writer, req api.AdminGenerateKeyParams, resp api.AdminGenerateKeyResult) {
 	p := printer.NewInteractivePrinter(w)
 
 	str := p.String()

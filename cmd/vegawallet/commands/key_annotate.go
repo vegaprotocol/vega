@@ -40,22 +40,22 @@ var (
 	`)
 )
 
-type AnnotateKeyHandler func(api.AnnotateKeyParams) (api.AnnotateKeyResult, error)
+type AnnotateKeyHandler func(api.AdminAnnotateKeyParams) (api.AdminAnnotateKeyResult, error)
 
 func NewCmdAnnotateKey(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(params api.AnnotateKeyParams) (api.AnnotateKeyResult, error) {
+	h := func(params api.AdminAnnotateKeyParams) (api.AdminAnnotateKeyResult, error) {
 		s, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
-			return api.AnnotateKeyResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
+			return api.AdminAnnotateKeyResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 
-		annotateKey := api.NewAnnotateKey(s)
+		annotateKey := api.NewAdminAnnotateKey(s)
 
 		rawResult, errDetails := annotateKey.Handle(context.Background(), params)
 		if errDetails != nil {
-			return api.AnnotateKeyResult{}, errors.New(errDetails.Data)
+			return api.AdminAnnotateKeyResult{}, errors.New(errDetails.Data)
 		}
-		return rawResult.(api.AnnotateKeyResult), nil
+		return rawResult.(api.AdminAnnotateKeyResult), nil
 	}
 
 	return BuildCmdAnnotateKey(w, h, rf)
@@ -130,33 +130,33 @@ type AnnotateKeyFlags struct {
 	RawMetadata    []string
 }
 
-func (f *AnnotateKeyFlags) Validate() (api.AnnotateKeyParams, error) {
+func (f *AnnotateKeyFlags) Validate() (api.AdminAnnotateKeyParams, error) {
 	if len(f.Wallet) == 0 {
-		return api.AnnotateKeyParams{}, flags.MustBeSpecifiedError("wallet")
+		return api.AdminAnnotateKeyParams{}, flags.MustBeSpecifiedError("wallet")
 	}
 
 	if len(f.PubKey) == 0 {
-		return api.AnnotateKeyParams{}, flags.MustBeSpecifiedError("pubkey")
+		return api.AdminAnnotateKeyParams{}, flags.MustBeSpecifiedError("pubkey")
 	}
 
 	if len(f.RawMetadata) == 0 && !f.Clear {
-		return api.AnnotateKeyParams{}, flags.OneOfFlagsMustBeSpecifiedError("meta", "clear")
+		return api.AdminAnnotateKeyParams{}, flags.OneOfFlagsMustBeSpecifiedError("meta", "clear")
 	}
 	if len(f.RawMetadata) != 0 && f.Clear {
-		return api.AnnotateKeyParams{}, flags.MutuallyExclusiveError("meta", "clear")
+		return api.AdminAnnotateKeyParams{}, flags.MutuallyExclusiveError("meta", "clear")
 	}
 
 	metadata, err := cli.ParseMetadata(f.RawMetadata)
 	if err != nil {
-		return api.AnnotateKeyParams{}, err
+		return api.AdminAnnotateKeyParams{}, err
 	}
 
 	passphrase, err := flags.GetPassphrase(f.PassphraseFile)
 	if err != nil {
-		return api.AnnotateKeyParams{}, err
+		return api.AdminAnnotateKeyParams{}, err
 	}
 
-	return api.AnnotateKeyParams{
+	return api.AdminAnnotateKeyParams{
 		Wallet:     f.Wallet,
 		PublicKey:  f.PubKey,
 		Metadata:   metadata,
@@ -164,7 +164,7 @@ func (f *AnnotateKeyFlags) Validate() (api.AnnotateKeyParams, error) {
 	}, nil
 }
 
-func PrintAnnotateKeyResponse(w io.Writer, f AnnotateKeyFlags, res api.AnnotateKeyResult) {
+func PrintAnnotateKeyResponse(w io.Writer, f AnnotateKeyFlags, res api.AdminAnnotateKeyResult) {
 	p := printer.NewInteractivePrinter(w)
 	str := p.String()
 	defer p.Print(str)

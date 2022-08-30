@@ -40,7 +40,7 @@ func testDescribingKeyWithInvalidParamsFails(t *testing.T) {
 			expectedError: api.ErrParamsDoNotMatch,
 		}, {
 			name: "with empty name",
-			params: api.DescribeKeyParams{
+			params: api.AdminDescribeKeyParams{
 				Wallet:     "",
 				Passphrase: vgrand.RandomStr(5),
 				PublicKey:  "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
@@ -48,7 +48,7 @@ func testDescribingKeyWithInvalidParamsFails(t *testing.T) {
 			expectedError: api.ErrWalletIsRequired,
 		}, {
 			name: "with empty passphrase",
-			params: api.DescribeKeyParams{
+			params: api.AdminDescribeKeyParams{
 				Wallet:     vgrand.RandomStr(5),
 				Passphrase: "",
 				PublicKey:  "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
@@ -56,7 +56,7 @@ func testDescribingKeyWithInvalidParamsFails(t *testing.T) {
 			expectedError: api.ErrPassphraseIsRequired,
 		}, {
 			name: "with empty public key",
-			params: api.DescribeKeyParams{
+			params: api.AdminDescribeKeyParams{
 				Wallet:     vgrand.RandomStr(5),
 				Passphrase: vgrand.RandomStr(5),
 				PublicKey:  "",
@@ -107,7 +107,7 @@ func testDescribingKeyWithValidParamsSucceeds(t *testing.T) {
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.DescribeKeyParams{
+	result, errorDetails := handler.handle(t, ctx, api.AdminDescribeKeyParams{
 		Wallet:     name,
 		Passphrase: passphrase,
 		PublicKey:  firstKey.PublicKey(),
@@ -115,7 +115,7 @@ func testDescribingKeyWithValidParamsSucceeds(t *testing.T) {
 
 	// then
 	require.Nil(t, errorDetails)
-	assert.Equal(t, api.DescribeKeyResult{
+	assert.Equal(t, api.AdminDescribeKeyResult{
 		PublicKey: firstKey.PublicKey(),
 		Algorithm: wallet.Algorithm{
 			Name:    firstKey.AlgorithmName(),
@@ -143,7 +143,7 @@ func testDescribingKeyFromWalletThatDoesNotExistsFails(t *testing.T) {
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.DescribeKeyParams{
+	result, errorDetails := handler.handle(t, ctx, api.AdminDescribeKeyParams{
 		Wallet:     name,
 		Passphrase: passphrase,
 		PublicKey:  vgrand.RandomStr(5),
@@ -172,7 +172,7 @@ func testGettingInternalErrorDuringWalletVerificationFails(t *testing.T) {
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.DescribeKeyParams{
+	result, errorDetails := handler.handle(t, ctx, api.AdminDescribeKeyParams{
 		Wallet:     name,
 		Passphrase: passphrase,
 		PublicKey:  vgrand.RandomStr(5),
@@ -201,7 +201,7 @@ func testGettingInternalErrorDuringWalletRetrievalFails(t *testing.T) {
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.DescribeKeyParams{
+	result, errorDetails := handler.handle(t, ctx, api.AdminDescribeKeyParams{
 		Wallet:     name,
 		Passphrase: passphrase,
 		PublicKey:  vgrand.RandomStr(5),
@@ -230,7 +230,7 @@ func testDescribingKeyThatDoesNotExistsFails(t *testing.T) {
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.DescribeKeyParams{
+	result, errorDetails := handler.handle(t, ctx, api.AdminDescribeKeyParams{
 		Wallet:     expectedWallet.Name(),
 		Passphrase: passphrase,
 		PublicKey:  vgrand.RandomStr(5),
@@ -243,24 +243,24 @@ func testDescribingKeyThatDoesNotExistsFails(t *testing.T) {
 }
 
 type describeKeyHandler struct {
-	*api.DescribeKey
+	*api.AdminDescribeKey
 	ctrl        *gomock.Controller
 	walletStore *mocks.MockWalletStore
 	pipeline    *mocks.MockPipeline
 }
 
-func (h *describeKeyHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.DescribeKeyResult, *jsonrpc.ErrorDetails) {
+func (h *describeKeyHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminDescribeKeyResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
 	rawResult, err := h.Handle(ctx, params)
 	if rawResult != nil {
-		result, ok := rawResult.(api.DescribeKeyResult)
+		result, ok := rawResult.(api.AdminDescribeKeyResult)
 		if !ok {
-			t.Fatal("DescribeKey handler result is not a DescribeKeyResult")
+			t.Fatal("AdminDescribeKey handler result is not a AdminDescribeKeyResult")
 		}
 		return result, err
 	}
-	return api.DescribeKeyResult{}, err
+	return api.AdminDescribeKeyResult{}, err
 }
 
 func newDescribeKeyHandler(t *testing.T) *describeKeyHandler {
@@ -270,8 +270,8 @@ func newDescribeKeyHandler(t *testing.T) *describeKeyHandler {
 	walletStore := mocks.NewMockWalletStore(ctrl)
 
 	return &describeKeyHandler{
-		DescribeKey: api.NewDescribeKey(walletStore),
-		ctrl:        ctrl,
-		walletStore: walletStore,
+		AdminDescribeKey: api.NewAdminDescribeKey(walletStore),
+		ctrl:             ctrl,
+		walletStore:      walletStore,
 	}
 }

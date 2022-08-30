@@ -30,7 +30,7 @@ func testGenerateKeyFlagsValidFlagsSucceeds(t *testing.T) {
 		RawMetadata:    []string{"name:my-wallet", "role:validation"},
 	}
 
-	expectedReq := api.GenerateKeyParams{
+	expectedReq := api.AdminGenerateKeyParams{
 		Wallet: walletName,
 		Metadata: []wallet.Metadata{
 			{Key: "name", Value: "my-wallet"},

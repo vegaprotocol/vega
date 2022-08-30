@@ -40,14 +40,14 @@ func testCreatingWalletWithInvalidParamsFails(t *testing.T) {
 			expectedError: api.ErrParamsDoNotMatch,
 		}, {
 			name: "with empty name",
-			params: api.CreateWalletParams{
+			params: api.AdminCreateWalletParams{
 				Wallet:     "",
 				Passphrase: vgrand.RandomStr(5),
 			},
 			expectedError: api.ErrWalletIsRequired,
 		}, {
 			name: "with empty passphrase",
-			params: api.CreateWalletParams{
+			params: api.AdminCreateWalletParams{
 				Wallet:     vgrand.RandomStr(5),
 				Passphrase: "",
 			},
@@ -102,7 +102,7 @@ func testCreatingWalletWithValidParamsSucceeds(t *testing.T) {
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.CreateWalletParams{
+	result, errorDetails := handler.handle(t, ctx, api.AdminCreateWalletParams{
 		Wallet:     name,
 		Passphrase: passphrase,
 	})
@@ -143,7 +143,7 @@ func testCreatingWalletThatAlreadyExistsFails(t *testing.T) {
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.CreateWalletParams{
+	result, errorDetails := handler.handle(t, ctx, api.AdminCreateWalletParams{
 		Wallet:     name,
 		Passphrase: passphrase,
 	})
@@ -171,7 +171,7 @@ func testGettingInternalErrorDuringVerificationDoesNotCreateWallet(t *testing.T)
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.CreateWalletParams{
+	result, errorDetails := handler.handle(t, ctx, api.AdminCreateWalletParams{
 		Wallet:     name,
 		Passphrase: passphrase,
 	})
@@ -199,7 +199,7 @@ func testGettingInternalErrorDuringSavingDoesNotCreateWallet(t *testing.T) {
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.CreateWalletParams{
+	result, errorDetails := handler.handle(t, ctx, api.AdminCreateWalletParams{
 		Wallet:     name,
 		Passphrase: passphrase,
 	})
@@ -211,23 +211,23 @@ func testGettingInternalErrorDuringSavingDoesNotCreateWallet(t *testing.T) {
 }
 
 type createWalletHandler struct {
-	*api.CreateWallet
+	*api.AdminCreateWallet
 	ctrl        *gomock.Controller
 	walletStore *mocks.MockWalletStore
 }
 
-func (h *createWalletHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.CreateWalletResult, *jsonrpc.ErrorDetails) {
+func (h *createWalletHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminCreateWalletResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
 	rawResult, err := h.Handle(ctx, params)
 	if rawResult != nil {
-		result, ok := rawResult.(api.CreateWalletResult)
+		result, ok := rawResult.(api.AdminCreateWalletResult)
 		if !ok {
-			t.Fatal("CreateWallet handler result is not a CreateWalletResult")
+			t.Fatal("AdminCreateWallet handler result is not a AdminCreateWalletResult")
 		}
 		return result, err
 	}
-	return api.CreateWalletResult{}, err
+	return api.AdminCreateWalletResult{}, err
 }
 
 func newCreateWalletHandler(t *testing.T) *createWalletHandler {
@@ -237,8 +237,8 @@ func newCreateWalletHandler(t *testing.T) *createWalletHandler {
 	walletStore := mocks.NewMockWalletStore(ctrl)
 
 	return &createWalletHandler{
-		CreateWallet: api.NewCreateWallet(walletStore),
-		ctrl:         ctrl,
-		walletStore:  walletStore,
+		AdminCreateWallet: api.NewAdminCreateWallet(walletStore),
+		ctrl:              ctrl,
+		walletStore:       walletStore,
 	}
 }

@@ -37,7 +37,7 @@ func testRemovingWalletWithInvalidParamsFails(t *testing.T) {
 			expectedError: api.ErrParamsDoNotMatch,
 		}, {
 			name: "with empty name",
-			params: api.RemoveWalletParams{
+			params: api.AdminRemoveWalletParams{
 				Wallet: "",
 			},
 			expectedError: api.ErrWalletIsRequired,
@@ -83,7 +83,7 @@ func testRemovingWalletWithValidParamsSucceeds(t *testing.T) {
 	handler.walletStore.EXPECT().ListWallets(gomock.Any()).Times(0)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.RemoveWalletParams{
+	result, errorDetails := handler.handle(t, ctx, api.AdminRemoveWalletParams{
 		Wallet: name,
 	})
 
@@ -108,7 +108,7 @@ func testRemovingWalletThatDoesNotExistsFails(t *testing.T) {
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.RemoveWalletParams{
+	result, errorDetails := handler.handle(t, ctx, api.AdminRemoveWalletParams{
 		Wallet: name,
 	})
 
@@ -134,7 +134,7 @@ func testGettingInternalErrorDuringVerificationDoesNotRemoveWallet(t *testing.T)
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.RemoveWalletParams{
+	result, errorDetails := handler.handle(t, ctx, api.AdminRemoveWalletParams{
 		Wallet: name,
 	})
 
@@ -145,7 +145,7 @@ func testGettingInternalErrorDuringVerificationDoesNotRemoveWallet(t *testing.T)
 }
 
 type removeWalletHandler struct {
-	*api.RemoveWallet
+	*api.AdminRemoveWallet
 	ctrl        *gomock.Controller
 	walletStore *mocks.MockWalletStore
 }
@@ -163,8 +163,8 @@ func newRemoveWalletHandler(t *testing.T) *removeWalletHandler {
 	walletStore := mocks.NewMockWalletStore(ctrl)
 
 	return &removeWalletHandler{
-		RemoveWallet: api.NewRemoveWallet(walletStore),
-		ctrl:         ctrl,
-		walletStore:  walletStore,
+		AdminRemoveWallet: api.NewAdminRemoveWallet(walletStore),
+		ctrl:              ctrl,
+		walletStore:       walletStore,
 	}
 }

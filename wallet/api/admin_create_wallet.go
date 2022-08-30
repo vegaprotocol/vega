@@ -9,35 +9,35 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-type CreateWalletParams struct {
+type AdminCreateWalletParams struct {
 	Wallet     string `json:"wallet"`
 	Passphrase string `json:"passphrase"`
 }
 
-type CreateWalletResult struct {
-	Wallet CreatedWallet  `json:"wallet"`
-	Key    FirstPublicKey `json:"key"`
+type AdminCreateWalletResult struct {
+	Wallet AdminCreatedWallet  `json:"wallet"`
+	Key    AdminFirstPublicKey `json:"key"`
 }
 
-type CreatedWallet struct {
+type AdminCreatedWallet struct {
 	Name           string `json:"name"`
 	Version        uint32 `json:"version"`
 	RecoveryPhrase string `json:"recoveryPhrase"`
 	FilePath       string `json:"filePath"`
 }
 
-type FirstPublicKey struct {
+type AdminFirstPublicKey struct {
 	PublicKey string            `json:"publicKey"`
 	Algorithm wallet.Algorithm  `json:"algorithm"`
 	Meta      []wallet.Metadata `json:"metadata"`
 }
 
-type CreateWallet struct {
+type AdminCreateWallet struct {
 	walletStore WalletStore
 }
 
 // Handle creates a wallet and generates its first key.
-func (h *CreateWallet) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminCreateWallet) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateCreateWalletParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
@@ -63,14 +63,14 @@ func (h *CreateWallet) Handle(ctx context.Context, rawParams jsonrpc.Params) (js
 		return nil, internalError(fmt.Errorf("could not save the wallet: %w", err))
 	}
 
-	return CreateWalletResult{
-		Wallet: CreatedWallet{
+	return AdminCreateWalletResult{
+		Wallet: AdminCreatedWallet{
 			Name:           w.Name(),
 			Version:        w.Version(),
 			RecoveryPhrase: recoveryPhrase,
 			FilePath:       h.walletStore.GetWalletPath(w.Name()),
 		},
-		Key: FirstPublicKey{
+		Key: AdminFirstPublicKey{
 			PublicKey: kp.PublicKey(),
 			Algorithm: wallet.Algorithm{
 				Name:    kp.AlgorithmName(),
@@ -81,31 +81,31 @@ func (h *CreateWallet) Handle(ctx context.Context, rawParams jsonrpc.Params) (js
 	}, nil
 }
 
-func validateCreateWalletParams(rawParams jsonrpc.Params) (CreateWalletParams, error) {
+func validateCreateWalletParams(rawParams jsonrpc.Params) (AdminCreateWalletParams, error) {
 	if rawParams == nil {
-		return CreateWalletParams{}, ErrParamsRequired
+		return AdminCreateWalletParams{}, ErrParamsRequired
 	}
 
-	params := CreateWalletParams{}
+	params := AdminCreateWalletParams{}
 	if err := mapstructure.Decode(rawParams, &params); err != nil {
-		return CreateWalletParams{}, ErrParamsDoNotMatch
+		return AdminCreateWalletParams{}, ErrParamsDoNotMatch
 	}
 
 	if params.Wallet == "" {
-		return CreateWalletParams{}, ErrWalletIsRequired
+		return AdminCreateWalletParams{}, ErrWalletIsRequired
 	}
 
 	if params.Passphrase == "" {
-		return CreateWalletParams{}, ErrPassphraseIsRequired
+		return AdminCreateWalletParams{}, ErrPassphraseIsRequired
 	}
 
 	return params, nil
 }
 
-func NewCreateWallet(
+func NewAdminCreateWallet(
 	walletStore WalletStore,
-) *CreateWallet {
-	return &CreateWallet{
+) *AdminCreateWallet {
+	return &AdminCreateWallet{
 		walletStore: walletStore,
 	}
 }

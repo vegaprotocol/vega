@@ -40,7 +40,7 @@ func testImportingWalletWithInvalidParamsFails(t *testing.T) {
 			expectedError: api.ErrParamsDoNotMatch,
 		}, {
 			name: "with empty name",
-			params: api.ImportWalletParams{
+			params: api.AdminImportWalletParams{
 				Wallet:         "",
 				RecoveryPhrase: "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render",
 				Version:        2,
@@ -49,7 +49,7 @@ func testImportingWalletWithInvalidParamsFails(t *testing.T) {
 			expectedError: api.ErrWalletIsRequired,
 		}, {
 			name: "with empty passphrase",
-			params: api.ImportWalletParams{
+			params: api.AdminImportWalletParams{
 				Wallet:         vgrand.RandomStr(5),
 				RecoveryPhrase: "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render",
 				Version:        2,
@@ -58,7 +58,7 @@ func testImportingWalletWithInvalidParamsFails(t *testing.T) {
 			expectedError: api.ErrPassphraseIsRequired,
 		}, {
 			name: "with empty recovery phrase",
-			params: api.ImportWalletParams{
+			params: api.AdminImportWalletParams{
 				Wallet:         vgrand.RandomStr(5),
 				RecoveryPhrase: "",
 				Version:        2,
@@ -67,7 +67,7 @@ func testImportingWalletWithInvalidParamsFails(t *testing.T) {
 			expectedError: api.ErrRecoveryPhraseIsRequired,
 		}, {
 			name: "with unset version phrase",
-			params: api.ImportWalletParams{
+			params: api.AdminImportWalletParams{
 				Wallet:         vgrand.RandomStr(5),
 				RecoveryPhrase: "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render",
 				Version:        0,
@@ -124,7 +124,7 @@ func testImportingWalletWithValidParamsSucceeds(t *testing.T) {
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.ImportWalletParams{
+	result, errorDetails := handler.handle(t, ctx, api.AdminImportWalletParams{
 		Wallet:         name,
 		Passphrase:     passphrase,
 		RecoveryPhrase: "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render",
@@ -166,7 +166,7 @@ func testImportingWalletThatAlreadyExistsFails(t *testing.T) {
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.ImportWalletParams{
+	result, errorDetails := handler.handle(t, ctx, api.AdminImportWalletParams{
 		Wallet:         name,
 		Passphrase:     passphrase,
 		RecoveryPhrase: "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render",
@@ -196,7 +196,7 @@ func testGettingInternalErrorDuringVerificationDoesNotImportWallet(t *testing.T)
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.ImportWalletParams{
+	result, errorDetails := handler.handle(t, ctx, api.AdminImportWalletParams{
 		Wallet:         name,
 		Passphrase:     passphrase,
 		RecoveryPhrase: "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render",
@@ -226,7 +226,7 @@ func testGettingInternalErrorDuringSavingDoesNotImportWallet(t *testing.T) {
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.ImportWalletParams{
+	result, errorDetails := handler.handle(t, ctx, api.AdminImportWalletParams{
 		Wallet:         name,
 		Passphrase:     passphrase,
 		RecoveryPhrase: "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render",
@@ -240,23 +240,23 @@ func testGettingInternalErrorDuringSavingDoesNotImportWallet(t *testing.T) {
 }
 
 type importWalletHandler struct {
-	*api.ImportWallet
+	*api.AdminImportWallet
 	ctrl        *gomock.Controller
 	walletStore *mocks.MockWalletStore
 }
 
-func (h *importWalletHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.ImportWalletResult, *jsonrpc.ErrorDetails) {
+func (h *importWalletHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminImportWalletResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
 	rawResult, err := h.Handle(ctx, params)
 	if rawResult != nil {
-		result, ok := rawResult.(api.ImportWalletResult)
+		result, ok := rawResult.(api.AdminImportWalletResult)
 		if !ok {
-			t.Fatal("ImportWallet handler result is not a ImportWalletResult")
+			t.Fatal("AdminImportWallet handler result is not a AdminImportWalletResult")
 		}
 		return result, err
 	}
-	return api.ImportWalletResult{}, err
+	return api.AdminImportWalletResult{}, err
 }
 
 func newImportWalletHandler(t *testing.T) *importWalletHandler {
@@ -266,8 +266,8 @@ func newImportWalletHandler(t *testing.T) *importWalletHandler {
 	walletStore := mocks.NewMockWalletStore(ctrl)
 
 	return &importWalletHandler{
-		ImportWallet: api.NewImportWallet(walletStore),
-		ctrl:         ctrl,
-		walletStore:  walletStore,
+		AdminImportWallet: api.NewAdminImportWallet(walletStore),
+		ctrl:              ctrl,
+		walletStore:       walletStore,
 	}
 }

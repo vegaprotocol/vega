@@ -9,30 +9,30 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-type ImportWalletParams struct {
+type AdminImportWalletParams struct {
 	Wallet         string `json:"wallet"`
 	RecoveryPhrase string `json:"recoveryPhrase"`
 	Version        uint32 `json:"version"`
 	Passphrase     string `json:"passphrase"`
 }
 
-type ImportWalletResult struct {
-	Wallet ImportedWallet `json:"wallet"`
-	Key    FirstPublicKey `json:"key"`
+type AdminImportWalletResult struct {
+	Wallet AdminImportedWallet `json:"wallet"`
+	Key    AdminFirstPublicKey `json:"key"`
 }
 
-type ImportedWallet struct {
+type AdminImportedWallet struct {
 	Name     string `json:"name"`
 	Version  uint32 `json:"version"`
 	FilePath string `json:"filePath"`
 }
 
-type ImportWallet struct {
+type AdminImportWallet struct {
 	walletStore WalletStore
 }
 
 // Handle creates a wallet and generates its first key.
-func (h *ImportWallet) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminImportWallet) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateImportWalletParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
@@ -58,13 +58,13 @@ func (h *ImportWallet) Handle(ctx context.Context, rawParams jsonrpc.Params) (js
 		return nil, internalError(fmt.Errorf("could not save the wallet: %w", err))
 	}
 
-	return ImportWalletResult{
-		Wallet: ImportedWallet{
+	return AdminImportWalletResult{
+		Wallet: AdminImportedWallet{
 			Name:     w.Name(),
 			Version:  w.Version(),
 			FilePath: h.walletStore.GetWalletPath(w.Name()),
 		},
-		Key: FirstPublicKey{
+		Key: AdminFirstPublicKey{
 			PublicKey: kp.PublicKey(),
 			Algorithm: wallet.Algorithm{
 				Name:    kp.AlgorithmName(),
@@ -75,39 +75,39 @@ func (h *ImportWallet) Handle(ctx context.Context, rawParams jsonrpc.Params) (js
 	}, nil
 }
 
-func validateImportWalletParams(rawParams jsonrpc.Params) (ImportWalletParams, error) {
+func validateImportWalletParams(rawParams jsonrpc.Params) (AdminImportWalletParams, error) {
 	if rawParams == nil {
-		return ImportWalletParams{}, ErrParamsRequired
+		return AdminImportWalletParams{}, ErrParamsRequired
 	}
 
-	params := ImportWalletParams{}
+	params := AdminImportWalletParams{}
 	if err := mapstructure.Decode(rawParams, &params); err != nil {
-		return ImportWalletParams{}, ErrParamsDoNotMatch
+		return AdminImportWalletParams{}, ErrParamsDoNotMatch
 	}
 
 	if params.Wallet == "" {
-		return ImportWalletParams{}, ErrWalletIsRequired
+		return AdminImportWalletParams{}, ErrWalletIsRequired
 	}
 
 	if params.Passphrase == "" {
-		return ImportWalletParams{}, ErrPassphraseIsRequired
+		return AdminImportWalletParams{}, ErrPassphraseIsRequired
 	}
 
 	if params.RecoveryPhrase == "" {
-		return ImportWalletParams{}, ErrRecoveryPhraseIsRequired
+		return AdminImportWalletParams{}, ErrRecoveryPhraseIsRequired
 	}
 
 	if params.Version == 0 {
-		return ImportWalletParams{}, ErrWalletVersionIsRequired
+		return AdminImportWalletParams{}, ErrWalletVersionIsRequired
 	}
 
 	return params, nil
 }
 
-func NewImportWallet(
+func NewAdminImportWallet(
 	walletStore WalletStore,
-) *ImportWallet {
-	return &ImportWallet{
+) *AdminImportWallet {
+	return &AdminImportWallet{
 		walletStore: walletStore,
 	}
 }

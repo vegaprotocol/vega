@@ -9,25 +9,25 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-type DescribeKeyParams struct {
+type AdminDescribeKeyParams struct {
 	Wallet     string `json:"wallet"`
 	Passphrase string `json:"passphrase"`
 	PublicKey  string `json:"publicKey"`
 }
 
-type DescribeKeyResult struct {
+type AdminDescribeKeyResult struct {
 	PublicKey string            `json:"publicKey"`
 	Algorithm wallet.Algorithm  `json:"algorithm"`
 	Metadata  []wallet.Metadata `json:"metadata"`
 	IsTainted bool              `json:"isTainted"`
 }
 
-type DescribeKey struct {
+type AdminDescribeKey struct {
 	walletStore WalletStore
 }
 
-// Handle retrieve key's information.
-func (h *DescribeKey) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+// Handle retrieves key's information.
+func (h *AdminDescribeKey) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateDescribeKeyParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
@@ -53,7 +53,7 @@ func (h *DescribeKey) Handle(ctx context.Context, rawParams jsonrpc.Params) (jso
 		return nil, internalError(fmt.Errorf("could not retrieve the key: %w", err))
 	}
 
-	return DescribeKeyResult{
+	return AdminDescribeKeyResult{
 		PublicKey: publicKey.Key(),
 		Algorithm: wallet.Algorithm{
 			Name:    publicKey.AlgorithmName(),
@@ -64,35 +64,35 @@ func (h *DescribeKey) Handle(ctx context.Context, rawParams jsonrpc.Params) (jso
 	}, nil
 }
 
-func validateDescribeKeyParams(rawParams jsonrpc.Params) (DescribeKeyParams, error) {
+func validateDescribeKeyParams(rawParams jsonrpc.Params) (AdminDescribeKeyParams, error) {
 	if rawParams == nil {
-		return DescribeKeyParams{}, ErrParamsRequired
+		return AdminDescribeKeyParams{}, ErrParamsRequired
 	}
 
-	params := DescribeKeyParams{}
+	params := AdminDescribeKeyParams{}
 	if err := mapstructure.Decode(rawParams, &params); err != nil {
-		return DescribeKeyParams{}, ErrParamsDoNotMatch
+		return AdminDescribeKeyParams{}, ErrParamsDoNotMatch
 	}
 
 	if params.Wallet == "" {
-		return DescribeKeyParams{}, ErrWalletIsRequired
+		return AdminDescribeKeyParams{}, ErrWalletIsRequired
 	}
 
 	if params.PublicKey == "" {
-		return DescribeKeyParams{}, ErrPublicKeyIsRequired
+		return AdminDescribeKeyParams{}, ErrPublicKeyIsRequired
 	}
 
 	if params.Passphrase == "" {
-		return DescribeKeyParams{}, ErrPassphraseIsRequired
+		return AdminDescribeKeyParams{}, ErrPassphraseIsRequired
 	}
 
 	return params, nil
 }
 
-func NewDescribeKey(
+func NewAdminDescribeKey(
 	walletStore WalletStore,
-) *DescribeKey {
-	return &DescribeKey{
+) *AdminDescribeKey {
+	return &AdminDescribeKey{
 		walletStore: walletStore,
 	}
 }

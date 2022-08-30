@@ -30,7 +30,7 @@ func testKeyDescribeValidFlagsSucceeds(t *testing.T) {
 		PublicKey:      pubKey,
 	}
 
-	expectedReq := api.DescribeKeyParams{
+	expectedReq := api.AdminDescribeKeyParams{
 		Wallet:     walletName,
 		Passphrase: passphrase,
 		PublicKey:  pubKey,

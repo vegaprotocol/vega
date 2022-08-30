@@ -41,7 +41,7 @@ func testAnnotatingKeyWithInvalidParamsFails(t *testing.T) {
 			expectedError: api.ErrParamsDoNotMatch,
 		}, {
 			name: "with empty name",
-			params: api.AnnotateKeyParams{
+			params: api.AdminAnnotateKeyParams{
 				Wallet:     "",
 				PublicKey:  "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
 				Metadata:   []wallet.Metadata{{Key: vgrand.RandomStr(5), Value: vgrand.RandomStr(5)}},
@@ -50,7 +50,7 @@ func testAnnotatingKeyWithInvalidParamsFails(t *testing.T) {
 			expectedError: api.ErrWalletIsRequired,
 		}, {
 			name: "with empty passphrase",
-			params: api.AnnotateKeyParams{
+			params: api.AdminAnnotateKeyParams{
 				PublicKey:  "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
 				Metadata:   []wallet.Metadata{{Key: vgrand.RandomStr(5), Value: vgrand.RandomStr(5)}},
 				Wallet:     vgrand.RandomStr(5),
@@ -59,7 +59,7 @@ func testAnnotatingKeyWithInvalidParamsFails(t *testing.T) {
 			expectedError: api.ErrPassphraseIsRequired,
 		}, {
 			name: "with empty public key",
-			params: api.AnnotateKeyParams{
+			params: api.AdminAnnotateKeyParams{
 				PublicKey:  "",
 				Metadata:   []wallet.Metadata{{Key: vgrand.RandomStr(5), Value: vgrand.RandomStr(5)}},
 				Wallet:     vgrand.RandomStr(5),
@@ -110,7 +110,7 @@ func testAnnotatingKeyWithValidParamsSucceeds(t *testing.T) {
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.AnnotateKeyParams{
+	result, errorDetails := handler.handle(t, ctx, api.AdminAnnotateKeyParams{
 		Wallet:     expectedWallet.Name(),
 		Passphrase: passphrase,
 		PublicKey:  kp.PublicKey(),
@@ -141,7 +141,7 @@ func testAnnotatingKeyOnUnknownWalletFails(t *testing.T) {
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.AnnotateKeyParams{
+	result, errorDetails := handler.handle(t, ctx, api.AdminAnnotateKeyParams{
 		Wallet:     name,
 		PublicKey:  vgrand.RandomStr(5),
 		Metadata:   []wallet.Metadata{{Key: "mode", Value: "test"}},
@@ -171,7 +171,7 @@ func testAnnotatingKeyOnUnknownKeyFails(t *testing.T) {
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.AnnotateKeyParams{
+	result, errorDetails := handler.handle(t, ctx, api.AdminAnnotateKeyParams{
 		Wallet:     expectedWallet.Name(),
 		PublicKey:  vgrand.RandomStr(5),
 		Metadata:   []wallet.Metadata{{Key: "mode", Value: "test"}},
@@ -201,7 +201,7 @@ func testGettingInternalErrorDuringWalletVerificationDoesNotAnnotateKey(t *testi
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.AnnotateKeyParams{
+	result, errorDetails := handler.handle(t, ctx, api.AdminAnnotateKeyParams{
 		Wallet:     expectedWallet.Name(),
 		Passphrase: passphrase,
 		PublicKey:  kp.PublicKey(),
@@ -231,7 +231,7 @@ func testGettingInternalErrorDuringWalletRetrievalDoesNotAnnotateKey(t *testing.
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.AnnotateKeyParams{
+	result, errorDetails := handler.handle(t, ctx, api.AdminAnnotateKeyParams{
 		Wallet:     expectedWallet.Name(),
 		Passphrase: passphrase,
 		PublicKey:  kp.PublicKey(),
@@ -261,7 +261,7 @@ func testGettingInternalErrorDuringWalletSavingDoesNotAnnotateKey(t *testing.T) 
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.AnnotateKeyParams{
+	result, errorDetails := handler.handle(t, ctx, api.AdminAnnotateKeyParams{
 		Wallet:     expectedWallet.Name(),
 		Passphrase: passphrase,
 		PublicKey:  kp.PublicKey(),
@@ -275,24 +275,24 @@ func testGettingInternalErrorDuringWalletSavingDoesNotAnnotateKey(t *testing.T) 
 }
 
 type annotateKeyHandler struct {
-	*api.AnnotateKey
+	*api.AdminAnnotateKey
 	ctrl        *gomock.Controller
 	walletStore *mocks.MockWalletStore
 	pipeline    *mocks.MockPipeline
 }
 
-func (h *annotateKeyHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AnnotateKeyResult, *jsonrpc.ErrorDetails) {
+func (h *annotateKeyHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminAnnotateKeyResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
 	rawResult, err := h.Handle(ctx, params)
 	if rawResult != nil {
-		result, ok := rawResult.(api.AnnotateKeyResult)
+		result, ok := rawResult.(api.AdminAnnotateKeyResult)
 		if !ok {
-			t.Fatal("AnnotateKey handler result is not a AnnotateKeyResult")
+			t.Fatal("AdminAnnotateKey handler result is not a AdminAnnotateKeyResult")
 		}
 		return result, err
 	}
-	return api.AnnotateKeyResult{}, err
+	return api.AdminAnnotateKeyResult{}, err
 }
 
 func newAnnotateKeyHandler(t *testing.T) *annotateKeyHandler {
@@ -302,8 +302,8 @@ func newAnnotateKeyHandler(t *testing.T) *annotateKeyHandler {
 	walletStore := mocks.NewMockWalletStore(ctrl)
 
 	return &annotateKeyHandler{
-		AnnotateKey: api.NewAnnotateKey(walletStore),
-		ctrl:        ctrl,
-		walletStore: walletStore,
+		AdminAnnotateKey: api.NewAdminAnnotateKey(walletStore),
+		ctrl:             ctrl,
+		walletStore:      walletStore,
 	}
 }

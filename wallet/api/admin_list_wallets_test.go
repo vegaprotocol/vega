@@ -77,23 +77,23 @@ func testGettingInternalErrorDuringListingFails(t *testing.T) {
 }
 
 type listWalletsHandler struct {
-	*api.ListWallets
+	*api.AdminListWallets
 	ctrl        *gomock.Controller
 	walletStore *mocks.MockWalletStore
 }
 
-func (h *listWalletsHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.ListWalletsResult, *jsonrpc.ErrorDetails) {
+func (h *listWalletsHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminListWalletsResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
 	rawResult, err := h.Handle(ctx, params)
 	if rawResult != nil {
-		result, ok := rawResult.(api.ListWalletsResult)
+		result, ok := rawResult.(api.AdminListWalletsResult)
 		if !ok {
-			t.Fatal("ListWallets handler result is not a ListWalletsResult")
+			t.Fatal("AdminListWallets handler result is not a AdminListWalletsResult")
 		}
 		return result, err
 	}
-	return api.ListWalletsResult{}, err
+	return api.AdminListWalletsResult{}, err
 }
 
 func newListWalletHandlers(t *testing.T) *listWalletsHandler {
@@ -103,8 +103,8 @@ func newListWalletHandlers(t *testing.T) *listWalletsHandler {
 	walletStore := mocks.NewMockWalletStore(ctrl)
 
 	return &listWalletsHandler{
-		ListWallets: api.NewListWallets(walletStore),
-		ctrl:        ctrl,
-		walletStore: walletStore,
+		AdminListWallets: api.NewAdminListWallets(walletStore),
+		ctrl:             ctrl,
+		walletStore:      walletStore,
 	}
 }

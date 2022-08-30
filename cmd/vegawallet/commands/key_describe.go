@@ -27,21 +27,21 @@ var (
 	`)
 )
 
-type DescribeKeyHandler func(api.DescribeKeyParams) (api.DescribeKeyResult, error)
+type DescribeKeyHandler func(api.AdminDescribeKeyParams) (api.AdminDescribeKeyResult, error)
 
 func NewCmdDescribeKey(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(params api.DescribeKeyParams) (api.DescribeKeyResult, error) {
+	h := func(params api.AdminDescribeKeyParams) (api.AdminDescribeKeyResult, error) {
 		s, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
-			return api.DescribeKeyResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
+			return api.AdminDescribeKeyResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 
-		generateKey := api.NewDescribeKey(s)
+		generateKey := api.NewAdminDescribeKey(s)
 		rawResult, errDetails := generateKey.Handle(context.Background(), params)
 		if errDetails != nil {
-			return api.DescribeKeyResult{}, errors.New(errDetails.Data)
+			return api.AdminDescribeKeyResult{}, errors.New(errDetails.Data)
 		}
-		return rawResult.(api.DescribeKeyResult), nil
+		return rawResult.(api.AdminDescribeKeyResult), nil
 	}
 
 	return BuildCmdDescribeKey(w, h, rf)
@@ -104,28 +104,28 @@ type DescribeKeyFlags struct {
 	PublicKey      string
 }
 
-func (f *DescribeKeyFlags) Validate() (api.DescribeKeyParams, error) {
+func (f *DescribeKeyFlags) Validate() (api.AdminDescribeKeyParams, error) {
 	if len(f.Wallet) == 0 {
-		return api.DescribeKeyParams{}, flags.MustBeSpecifiedError("wallet")
+		return api.AdminDescribeKeyParams{}, flags.MustBeSpecifiedError("wallet")
 	}
 
 	if len(f.PublicKey) == 0 {
-		return api.DescribeKeyParams{}, flags.MustBeSpecifiedError("pubkey")
+		return api.AdminDescribeKeyParams{}, flags.MustBeSpecifiedError("pubkey")
 	}
 
 	passphrase, err := flags.GetPassphrase(f.PassphraseFile)
 	if err != nil {
-		return api.DescribeKeyParams{}, err
+		return api.AdminDescribeKeyParams{}, err
 	}
 
-	return api.DescribeKeyParams{
+	return api.AdminDescribeKeyParams{
 		Wallet:     f.Wallet,
 		Passphrase: passphrase,
 		PublicKey:  f.PublicKey,
 	}, nil
 }
 
-func PrintDescribeKeyResponse(w io.Writer, resp api.DescribeKeyResult) {
+func PrintDescribeKeyResponse(w io.Writer, resp api.AdminDescribeKeyResult) {
 	p := printer.NewInteractivePrinter(w)
 
 	str := p.String()
