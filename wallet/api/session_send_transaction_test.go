@@ -23,11 +23,11 @@ func TestSendTransaction(t *testing.T) {
 	t.Run("Sending a transaction with with valid params succeeds", testSendingTransactionWithValidParamsSucceeds)
 	t.Run("Sending a transaction with invalid token fails", testSendingTransactionWithInvalidTokenFails)
 	t.Run("Sending a transaction without the needed permissions send the transaction", testSendingTransactionWithoutNeededPermissionsDoesNotSendTransaction)
-	t.Run("Refusing the sending of a transaction doesn't send the transaction", testRefusingSendingOfTransactionDoesNotSendTransaction)
-	t.Run("Cancelling the review doesn't send the transaction", testCancellingTheReviewDoesNotSendTransaction)
-	t.Run("Interrupting the request doesn't send the transaction", testInterruptingTheRequestDoesNotSendTransaction)
-	t.Run("Getting internal error during the review doesn't send the transaction", testGettingInternalErrorDuringReviewDoesNotSendTransaction)
-	t.Run("No healthy node available doesn't send the transaction", testNoHealthyNodeAvailableDoesNotSendTransaction)
+	t.Run("Refusing the sending of a transaction does not send the transaction", testRefusingSendingOfTransactionDoesNotSendTransaction)
+	t.Run("Cancelling the review does not send the transaction", testCancellingTheReviewDoesNotSendTransaction)
+	t.Run("Interrupting the request does not send the transaction", testInterruptingTheRequestDoesNotSendTransaction)
+	t.Run("Getting internal error during the review does not send the transaction", testGettingInternalErrorDuringReviewDoesNotSendTransaction)
+	t.Run("No healthy node available does not send the transaction", testNoHealthyNodeAvailableDoesNotSendTransaction)
 	t.Run("Failing to get the last block does not send the transaction", testFailingToGetLastBlockDoesNotSendTransaction)
 	t.Run("Failure when sending transaction returns an error", testFailureWhenSendingTransactionReturnsAnError)
 }
@@ -477,7 +477,7 @@ func testNoHealthyNodeAvailableDoesNotSendTransaction(t *testing.T) {
 	// -- expected calls
 	handler.pipeline.EXPECT().RequestTransactionReview(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx).Times(1).Return(nil, assert.AnError)
-	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.NetworkError, fmt.Errorf("couldn't find an healthy node: %w", assert.AnError)).Times(1)
+	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.NetworkError, fmt.Errorf("could not find an healthy node: %w", assert.AnError)).Times(1)
 	// -- unexpected calls
 	handler.node.EXPECT().LastBlock(gomock.Any()).Times(0)
 	handler.node.EXPECT().SendTransaction(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
@@ -528,7 +528,7 @@ func testFailingToGetLastBlockDoesNotSendTransaction(t *testing.T) {
 	handler.pipeline.EXPECT().RequestTransactionReview(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx).Times(1).Return(handler.node, nil)
 	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(nil, assert.AnError)
-	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.NetworkError, fmt.Errorf("couldn't get last block from node: %w", assert.AnError)).Times(1)
+	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.NetworkError, fmt.Errorf("could not get last block from node: %w", assert.AnError)).Times(1)
 	// -- unexpected calls
 	handler.node.EXPECT().LastBlock(gomock.Any()).Times(0)
 	handler.node.EXPECT().SendTransaction(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)

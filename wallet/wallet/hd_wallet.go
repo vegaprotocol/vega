@@ -166,8 +166,10 @@ func (w *HDWallet) ListKeyPairs() []KeyPair {
 // GenerateKeyPair generates a new key pair from a node, that is derived from
 // the wallet node.
 func (w *HDWallet) GenerateKeyPair(meta []Meta) (KeyPair, error) {
+	meta = w.addDefaultKeyName(meta)
+
 	if w.IsIsolated() {
-		return nil, ErrIsolatedWalletCantGenerateKeyPairs
+		return nil, ErrIsolatedWalletCantGenerateKeys
 	}
 	nextIndex := w.keyRing.NextIndex()
 
@@ -397,6 +399,26 @@ func (w *HDWallet) deriveKeyNodeV2(nextIndex uint32) (*slip10.Node, error) {
 		return nil, fmt.Errorf("couldn't derive key node for index %d: %w", OriginIndex+nextIndex, err)
 	}
 	return keyNode, nil
+}
+
+func (w *HDWallet) addDefaultKeyName(meta []Meta) []Meta {
+	if len(meta) == 0 {
+		meta = []Meta{}
+	}
+
+	for _, m := range meta {
+		if m.Key == KeyNameMeta {
+			return meta
+		}
+	}
+
+	nextID := len(w.ListKeyPairs()) + 1
+
+	meta = append(meta, Meta{
+		Key:   KeyNameMeta,
+		Value: fmt.Sprintf("%s key %d", w.Name(), nextID),
+	})
+	return meta
 }
 
 type jsonHDWallet struct {

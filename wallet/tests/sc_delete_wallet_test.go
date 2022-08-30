@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
-	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -54,5 +53,6 @@ func TestDeleteNonExistingWallet(t *testing.T) {
 	})
 
 	// then
-	require.ErrorIs(t, err, wallet.ErrWalletDoesNotExists)
+	require.Error(t, err)
+	assert.Equal(t, "the wallet does not exist", err.Error())
 }

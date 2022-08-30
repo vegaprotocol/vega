@@ -34,7 +34,7 @@ func (s *Sessions) ConnectWallet(hostname string, w wallet.Wallet) (string, erro
 
 	connectedWallet, err := NewConnectedWallet(hostname, w)
 	if err != nil {
-		return "", fmt.Errorf("couldn't load the wallet: %w", err)
+		return "", fmt.Errorf("could not load the wallet: %w", err)
 	}
 
 	token := vgrand.RandomStr(64)
@@ -46,7 +46,7 @@ func (s *Sessions) ConnectWallet(hostname string, w wallet.Wallet) (string, erro
 }
 
 // DisconnectWallet unloads the connected wallet resources and revokes the token.
-// It doesn't fail. Non-existing token does nothing.
+// It does not fail. Non-existing token does nothing.
 func (s *Sessions) DisconnectWallet(token string) {
 	connectedWallet, ok := s.connectedWallets[token]
 	if !ok {
@@ -95,7 +95,7 @@ func (s *ConnectedWallet) Permissions() wallet.Permissions {
 
 func (s *ConnectedWallet) UpdatePermissions(perms wallet.Permissions) error {
 	if err := s.Wallet.UpdatePermissions(s.Hostname, perms); err != nil {
-		return fmt.Errorf("couldn't update permission on the wallet: %w", err)
+		return fmt.Errorf("could not update permission on the wallet: %w", err)
 	}
 
 	// Since we just updated the permissions on the wallet, we need to reload
@@ -128,7 +128,7 @@ func (s *ConnectedWallet) loadRestrictedKeys() error {
 		for _, pubKey := range perms.PublicKeys.RestrictedKeys {
 			keyPair, err := s.Wallet.DescribeKeyPair(pubKey)
 			if err != nil {
-				return fmt.Errorf("couldn't load the key pair associated to the public key %q: %w", pubKey, err)
+				return fmt.Errorf("could not load the key pair associated to the public key %q: %w", pubKey, err)
 			}
 			s.RestrictedKeys[keyPair.PublicKey()] = keyPair
 		}
@@ -151,7 +151,7 @@ func NewConnectedWallet(hostname string, w wallet.Wallet) (*ConnectedWallet, err
 	}
 
 	if err := s.loadRestrictedKeys(); err != nil {
-		return nil, fmt.Errorf("couldn't load the restricted keys: %w", err)
+		return nil, fmt.Errorf("could not load the restricted keys: %w", err)
 	}
 
 	return s, nil

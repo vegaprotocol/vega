@@ -200,7 +200,7 @@
             {
               "name": "requestedPermissions",
               "value": {
-                "public_key": "read"
+                "public_keys": "read"
               }
             }
           ],
@@ -208,7 +208,7 @@
             "name": "Success",
             "value": {
               "permissions": {
-                "public_key": "read"
+                "public_keys": "read"
               }
             }
           }
@@ -230,7 +230,7 @@
             "name": "Success",
             "value": {
               "permissions": {
-                "public_key": "none"
+                "public_keys": "none"
               }
             }
           }
@@ -455,6 +455,398 @@
           }
         }
       ]
+    },
+    {
+      "name": "admin.create_wallet",
+      "summary": "Creates a wallet with its first key-pair.",
+      "description": "This method creates a HD wallet (version 2) and generates its first key-pair the cryptographic algorithm ed25519.\n\nThe passphrase will be used to encrypt the wallet and its keys.\n\nIf successful, the wallet is ready to use for sending transaction.",
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "wallet",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "passphrase",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "wallet": {
+              "type": "object",
+              "description": "the newly generated wallet",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "version": {
+                  "type": "number"
+                },
+                "recoveryPhrase": {
+                  "type": "string"
+                },
+                "filePath": {
+                  "type": "string"
+                }
+              }
+            },
+            "key": {
+              "type": "object",
+              "description": "the first public key generated",
+              "properties": {
+                "publicKey": {
+                  "type": "string"
+                },
+                "algorithm": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "meta": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "key": {
+                        "type": "string"
+                      },
+                      "value": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "examples": [
+        {
+          "name": "Creating a wallet",
+          "params": [
+            {
+              "name": "wallet",
+              "value": "my-wallet"
+            },
+            {
+              "name": "passphrase",
+              "value": "this-is-not-a-good-passphrase"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": {
+              "wallet": {
+                "name": "my-wallet",
+                "version": 2,
+                "recoveryPhrase": "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render",
+                "filePath": "some/path/to/my-wallet"
+              },
+              "key": {
+                "publicKey": "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
+                "algorithm": {
+                  "name": "vega/ed25519",
+                  "version": 1
+                },
+                "meta": [
+                  {
+                    "key": "name",
+                    "value": "my-wallet key 1"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin.import_wallet",
+      "summary": "Import a wallet with its first key-pair with a recovery phrase and a version.",
+      "description": "This method imports a wallet using the specified recovery phrase and wallet version, and generates its first key-pair.\n\nThe passphrase will be used to encrypt the wallet and its keys.\n\nIf successful, the wallet is ready to use for sending transaction.",
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "wallet",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "passphrase",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "recoveryPhrase",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "version",
+          "required": true,
+          "schema": {
+            "type": "number"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "wallet": {
+              "type": "object",
+              "description": "the imported wallet",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "version": {
+                  "type": "number"
+                },
+                "filePath": {
+                  "type": "string"
+                }
+              }
+            },
+            "key": {
+              "type": "object",
+              "description": "the first public key generated",
+              "properties": {
+                "publicKey": {
+                  "type": "string"
+                },
+                "algorithm": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "meta": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "key": {
+                        "type": "string"
+                      },
+                      "value": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "examples": [
+        {
+          "name": "Importing a wallet",
+          "params": [
+            {
+              "name": "wallet",
+              "value": "my-wallet"
+            },
+            {
+              "name": "passphrase",
+              "value": "this-is-not-a-good-passphrase"
+            },
+            {
+              "name": "recoveryPhrase",
+              "value": "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render"
+            },
+            {
+              "name": "version",
+              "value": "2"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": {
+              "wallet": {
+                "name": "my-wallet",
+                "version": 2,
+                "filePath": "some/path/to/my-wallet"
+              },
+              "key": {
+                "publicKey": "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
+                "algorithm": {
+                  "name": "vega/ed25519",
+                  "version": 1
+                },
+                "meta": [
+                  {
+                    "key": "name",
+                    "value": "my-wallet key 1"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin.describe_wallet",
+      "summary": "Returns the wallet base information.",
+      "description": "This method returns the wallet base information such as its name, ID, type and version. It doesn't return the keys nor the permissions.",
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "wallet",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "passphrase",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "version": {
+              "type": "number"
+            },
+            "id": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "examples": [
+        {
+          "name": "Getting wallet base information",
+          "params": [
+            {
+              "name": "wallet",
+              "value": "my-wallet"
+            },
+            {
+              "name": "passphrase",
+              "value": "this-is-not-a-good-passphrase"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": {
+              "name": "my-wallet",
+              "version": 2,
+              "type": "HD Wallet",
+              "ID": "7ffa36b2fb99d8404e9448f0d2ce944055e64c36d895d1fde044c867bfdf779f"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin.list_wallets",
+      "summary": "Returns the list of the wallets present on the computer.",
+      "description": "This method returns the list of the wallets present on the computer. It is alphabetically sorted.",
+      "params": [],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "examples": [
+        {
+          "name": "Getting the list of wallets",
+          "params": [],
+          "result": {
+            "name": "Success",
+            "value": {
+              "wallets": [
+                "wallet-1",
+                "wallet-2"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin.remove_wallet",
+      "summary": "Removes a wallet from the computer.",
+      "description": "This method removes a wallet from the computer.",
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "wallet",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "null"
+        }
+      },
+      "examples": [
+        {
+          "name": "Remove a wallet",
+          "params": [
+            {
+              "name": "wallet",
+              "value": "my-wallet"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": {}
+          }
+        }
+      ]
     }
   ],
   "components": {
@@ -499,7 +891,7 @@
       "could_not_get_last_block": {
         "code": 1000,
         "message": "Network error",
-        "data": "couldn't get information about the last block on the network"
+        "data": "could not get information about the last block on the network"
       },
       "transaction_failed": {
         "code": 1000,
