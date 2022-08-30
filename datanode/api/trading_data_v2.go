@@ -138,9 +138,13 @@ func (t *tradingDataServiceV2) ObserveAccounts(req *v2.ObserveAccountsRequest,
 		t.log.Debug("Accounts subscriber - new rpc stream", logging.Uint64("ref", ref))
 	}
 
-	return observe(ctx, t.log, "Accounts", accountsChan, ref, func(account entities.AccountBalance) error {
+	return observeBatch(ctx, t.log, "Accounts", accountsChan, ref, func(accounts []entities.AccountBalance) error {
+		protoAccounts := make([]*vega.Account, len(accounts))
+		for i := 0; i < len(accounts); i++ {
+			protoAccounts[i] = accounts[i].ToProto()
+		}
 		return srv.Send(&v2.ObserveAccountsResponse{
-			Account: account.ToProto(),
+			Accounts: protoAccounts,
 		})
 	})
 }
@@ -607,11 +611,6 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerAddedBundles(ctx context.Co
 		return nil, errors.New("sql multisig event store not available")
 	}
 
-	nodeID := req.GetNodeId()
-	if len(nodeID) == 0 {
-		return nil, apiError(codes.InvalidArgument, fmt.Errorf("node id must be supplied"))
-	}
-
 	var epochID *int64
 	if len(req.EpochSeq) != 0 {
 		e, err := strconv.ParseInt(req.EpochSeq, 10, 64)
@@ -630,7 +629,7 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerAddedBundles(ctx context.Co
 		}
 	}
 
-	res, pageInfo, err := t.multiSigService.GetAddedEvents(ctx, nodeID, epochID, p)
+	res, pageInfo, err := t.multiSigService.GetAddedEvents(ctx, req.GetNodeId(), req.GetSubmitter(), epochID, p)
 	if err != nil {
 		c := codes.Internal
 		if errors.Is(err, entities.ErrInvalidID) {
@@ -689,13 +688,6 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerRemovedBundles(ctx context.
 		return nil, errors.New("sql multisig event store not available")
 	}
 
-	nodeID := req.GetNodeId()
-	submitter := req.GetSubmitter()
-
-	if len(nodeID) == 0 || len(submitter) == 0 {
-		return nil, apiError(codes.InvalidArgument, fmt.Errorf("nodeId and submitter must be supplied"))
-	}
-
 	var epochID *int64
 	if len(req.EpochSeq) != 0 {
 		e, err := strconv.ParseInt(req.EpochSeq, 10, 64)
@@ -714,7 +706,7 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerRemovedBundles(ctx context.
 		}
 	}
 
-	res, pageInfo, err := t.multiSigService.GetRemovedEvents(ctx, nodeID, submitter, epochID, p)
+	res, pageInfo, err := t.multiSigService.GetRemovedEvents(ctx, req.GetNodeId(), req.GetSubmitter(), epochID, p)
 	if err != nil {
 		c := codes.Internal
 		if errors.Is(err, entities.ErrInvalidID) {
@@ -1797,9 +1789,14 @@ func (t *tradingDataServiceV2) ListOrders(ctx context.Context, in *v2.ListOrders
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, err)
 	}
+
+	liveOnly := false
+	if in.LiveOnly != nil {
+		liveOnly = *in.LiveOnly
+	}
 	dateRange := entities.DateRangeFromProto(in.DateRange)
 
-	orders, pageInfo, err := t.orderService.ListOrders(ctx, in.PartyId, in.MarketId, in.Reference, pagination, dateRange)
+	orders, pageInfo, err := t.orderService.ListOrders(ctx, in.PartyId, in.MarketId, in.Reference, liveOnly, pagination, dateRange)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}

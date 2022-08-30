@@ -22,17 +22,53 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CoreStateServiceClient interface {
+	// Accounts list
+	//
+	// Return a list of accounts
 	ListAccounts(ctx context.Context, in *ListAccountsRequest, opts ...grpc.CallOption) (*ListAccountsResponse, error)
+	// Assets list
+	//
+	// Return a list of assets
 	ListAssets(ctx context.Context, in *ListAssetsRequest, opts ...grpc.CallOption) (*ListAssetsResponse, error)
+	// Network parameters list
+	//
+	// Return a list of network paramters
 	ListNetworkParameters(ctx context.Context, in *ListNetworkParametersRequest, opts ...grpc.CallOption) (*ListNetworkParametersResponse, error)
+	// Network limits list
+	//
+	// Return a list of network limits
 	ListNetworkLimits(ctx context.Context, in *ListNetworkLimitsRequest, opts ...grpc.CallOption) (*ListNetworkLimitsResponse, error)
+	// Parties list
+	//
+	// Return a list of parties
 	ListParties(ctx context.Context, in *ListPartiesRequest, opts ...grpc.CallOption) (*ListPartiesResponse, error)
+	// Validators list
+	//
+	// Return a list of validators
 	ListValidators(ctx context.Context, in *ListValidatorsRequest, opts ...grpc.CallOption) (*ListValidatorsResponse, error)
+	// Markets list
+	//
+	// Return a list of markets
 	ListMarkets(ctx context.Context, in *ListMarketsRequest, opts ...grpc.CallOption) (*ListMarketsResponse, error)
+	// Proposals list
+	//
+	// Return a list of proposals
 	ListProposals(ctx context.Context, in *ListProposalsRequest, opts ...grpc.CallOption) (*ListProposalsResponse, error)
+	// Markets data list
+	//
+	// Return a list of markets data
 	ListMarketsData(ctx context.Context, in *ListMarketsDataRequest, opts ...grpc.CallOption) (*ListMarketsDataResponse, error)
+	// Votes list
+	//
+	// Return a list of votes
 	ListVotes(ctx context.Context, in *ListVotesRequest, opts ...grpc.CallOption) (*ListVotesResponse, error)
+	// Parties stake list
+	//
+	// Return a list of parties stake
 	ListPartiesStake(ctx context.Context, in *ListPartiesStakeRequest, opts ...grpc.CallOption) (*ListPartiesStakeResponse, error)
+	// Delegations list
+	//
+	// Return a list of delegations
 	ListDelegations(ctx context.Context, in *ListDelegationsRequest, opts ...grpc.CallOption) (*ListDelegationsResponse, error)
 }
 
@@ -156,17 +192,53 @@ func (c *coreStateServiceClient) ListDelegations(ctx context.Context, in *ListDe
 // All implementations must embed UnimplementedCoreStateServiceServer
 // for forward compatibility
 type CoreStateServiceServer interface {
+	// Accounts list
+	//
+	// Return a list of accounts
 	ListAccounts(context.Context, *ListAccountsRequest) (*ListAccountsResponse, error)
+	// Assets list
+	//
+	// Return a list of assets
 	ListAssets(context.Context, *ListAssetsRequest) (*ListAssetsResponse, error)
+	// Network parameters list
+	//
+	// Return a list of network paramters
 	ListNetworkParameters(context.Context, *ListNetworkParametersRequest) (*ListNetworkParametersResponse, error)
+	// Network limits list
+	//
+	// Return a list of network limits
 	ListNetworkLimits(context.Context, *ListNetworkLimitsRequest) (*ListNetworkLimitsResponse, error)
+	// Parties list
+	//
+	// Return a list of parties
 	ListParties(context.Context, *ListPartiesRequest) (*ListPartiesResponse, error)
+	// Validators list
+	//
+	// Return a list of validators
 	ListValidators(context.Context, *ListValidatorsRequest) (*ListValidatorsResponse, error)
+	// Markets list
+	//
+	// Return a list of markets
 	ListMarkets(context.Context, *ListMarketsRequest) (*ListMarketsResponse, error)
+	// Proposals list
+	//
+	// Return a list of proposals
 	ListProposals(context.Context, *ListProposalsRequest) (*ListProposalsResponse, error)
+	// Markets data list
+	//
+	// Return a list of markets data
 	ListMarketsData(context.Context, *ListMarketsDataRequest) (*ListMarketsDataResponse, error)
+	// Votes list
+	//
+	// Return a list of votes
 	ListVotes(context.Context, *ListVotesRequest) (*ListVotesResponse, error)
+	// Parties stake list
+	//
+	// Return a list of parties stake
 	ListPartiesStake(context.Context, *ListPartiesStakeRequest) (*ListPartiesStakeResponse, error)
+	// Delegations list
+	//
+	// Return a list of delegations
 	ListDelegations(context.Context, *ListDelegationsRequest) (*ListDelegationsResponse, error)
 	mustEmbedUnimplementedCoreStateServiceServer()
 }

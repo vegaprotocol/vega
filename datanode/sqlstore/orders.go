@@ -30,7 +30,7 @@ const (
                        size, remaining, time_in_force, type, status,
                        reference, reason, version, batch_id, pegged_offset,
                        pegged_reference, lp_id, created_at, updated_at, expires_at,
-                       vega_time, seq_num`
+                       tx_hash, vega_time, seq_num`
 
 	ordersFilterDateColumn = "vega_time"
 )
@@ -123,6 +123,11 @@ func (os *Orders) GetByReference(ctx context.Context, reference string, p entiti
 	return os.queryOrders(ctx, query, args, &p)
 }
 
+// GetByReference returns the last update of orders with the specified user-suppled reference.
+func (os *Orders) GetByReferencePaged(ctx context.Context, reference string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
+	return os.ListOrders(ctx, nil, nil, &reference, false, p, entities.DateRange{})
+}
+
 // GetAllVersionsByOrderID the last update to all versions (e.g. manual changes that lead to
 // incrementing the version field) of a given order id.
 func (os *Orders) GetAllVersionsByOrderID(ctx context.Context, id string, p entities.OffsetPagination) ([]entities.Order, error) {
@@ -198,7 +203,7 @@ func paginateOrderQuery(query string, args []interface{}, p entities.OffsetPagin
 	return query, args
 }
 
-func (os *Orders) ListOrders(ctx context.Context, party *string, market *string, reference *string, p entities.CursorPagination,
+func (os *Orders) ListOrders(ctx context.Context, party *string, market *string, reference *string, liveOnly bool, p entities.CursorPagination,
 	dateRange entities.DateRange,
 ) ([]entities.Order, entities.PageInfo, error) {
 	var filters []filter
@@ -216,7 +221,12 @@ func (os *Orders) ListOrders(ctx context.Context, party *string, market *string,
 
 	where, args := buildWhereClause(filters...)
 
-	query := fmt.Sprintf(`SELECT %s from orders_current %s`, sqlOrderColumns, where)
+	table := "orders_current"
+	if liveOnly == true {
+		table = "orders_live"
+	}
+
+	query := fmt.Sprintf(`SELECT %s from %s %s`, sqlOrderColumns, table, where)
 	query, args = filterDateRange(query, ordersFilterDateColumn, dateRange, args...)
 
 	defer metrics.StartSQLQuery("Orders", "GetByMarketPaged")()

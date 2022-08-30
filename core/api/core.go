@@ -100,9 +100,15 @@ func (s *coreService) LastBlockHeight(
 ) (*protoapi.LastBlockHeightResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("LastBlockHeight")()
 
+	if atomic.LoadUint32(&s.hasGenesisTimeAndChainID) == 0 {
+		if err := s.getGenesisTimeAndChainID(ctx); err != nil {
+			return nil, fmt.Errorf("failed to intialise chainID: %w", err)
+		}
+	}
+
 	blockHeight, blockHash := s.powParams.BlockData()
 	if s.log.IsDebug() {
-		s.log.Debug("block height requested, returning", logging.Uint64("block-height", blockHeight), logging.String("block hash", blockHash))
+		s.log.Debug("block height requested, returning", logging.Uint64("block-height", blockHeight), logging.String("block hash", blockHash), logging.String("chaindID", s.chainID))
 	}
 
 	if !s.powParams.IsReady() {
@@ -117,6 +123,7 @@ func (s *coreService) LastBlockHeight(
 		SpamPowNumberOfPastBlocks:   s.powParams.SpamPoWNumberOfPastBlocks(),
 		SpamPowNumberOfTxPerBlock:   s.powParams.SpamPoWNumberOfTxPerBlock(),
 		SpamPowIncreasingDifficulty: s.powParams.SpamPoWIncreasingDifficulty(),
+		ChainId:                     s.chainID,
 	}, nil
 }
 
@@ -361,7 +368,7 @@ func (s *coreService) getTendermintStats(
 	// Net info provides peer stats etc (block chain network info) == number of peers
 	netInfo, err := s.getTMNetInfo(ctx)
 	if err != nil {
-		return backlogLength, 0, &s.genesisTime, s.chainID, nil //nolint
+		return backlogLength, 0, &s.genesisTime, s.chainID, nil // nolint
 	}
 
 	return backlogLength, netInfo.NPeers, &s.genesisTime, s.chainID, nil
@@ -439,7 +446,7 @@ func (s *coreService) ObserveEventBus(
 	req, err := s.recvEventRequest(stream)
 	if err != nil {
 		// client exited, nothing to do
-		return nil //nolint
+		return nil // nolint
 	}
 
 	// now we will aggregate filter out of the initial request

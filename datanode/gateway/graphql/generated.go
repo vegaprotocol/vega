@@ -46,6 +46,7 @@ type Config struct {
 type ResolverRoot interface {
 	Account() AccountResolver
 	AccountEdge() AccountEdgeResolver
+	AccountUpdate() AccountUpdateResolver
 	Asset() AssetResolver
 	AuctionEvent() AuctionEventResolver
 	Candle() CandleResolver
@@ -124,6 +125,13 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
+	AccountUpdate struct {
+		AssetID  func(childComplexity int) int
+		Balance  func(childComplexity int) int
+		MarketId func(childComplexity int) int
+		Type     func(childComplexity int) int
+	}
+
 	AccountsConnection struct {
 		Edges    func(childComplexity int) int
 		PageInfo func(childComplexity int) int
@@ -195,10 +203,10 @@ type ComplexityRoot struct {
 	}
 
 	BusEvent struct {
-		Block   func(childComplexity int) int
-		Event   func(childComplexity int) int
-		EventID func(childComplexity int) int
-		Type    func(childComplexity int) int
+		Block func(childComplexity int) int
+		Event func(childComplexity int) int
+		ID    func(childComplexity int) int
+		Type  func(childComplexity int) int
 	}
 
 	Candle struct {
@@ -296,6 +304,53 @@ type ComplexityRoot struct {
 		WithdrawThreshold func(childComplexity int) int
 	}
 
+	ERC20MultiSigSignerAddedBundle struct {
+		EpochSeq   func(childComplexity int) int
+		NewSigner  func(childComplexity int) int
+		Nonce      func(childComplexity int) int
+		Signatures func(childComplexity int) int
+		Submitter  func(childComplexity int) int
+		Timestamp  func(childComplexity int) int
+	}
+
+	ERC20MultiSigSignerAddedBundleEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
+	ERC20MultiSigSignerAddedConnection struct {
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
+	}
+
+	ERC20MultiSigSignerRemovedBundle struct {
+		EpochSeq   func(childComplexity int) int
+		Nonce      func(childComplexity int) int
+		OldSigner  func(childComplexity int) int
+		Signatures func(childComplexity int) int
+		Submitter  func(childComplexity int) int
+		Timestamp  func(childComplexity int) int
+	}
+
+	ERC20MultiSigSignerRemovedBundleEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
+	ERC20MultiSigSignerRemovedConnection struct {
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
+	}
+
+	ERC20SetAssetLimitsBundle struct {
+		AssetSource   func(childComplexity int) int
+		LifetimeLimit func(childComplexity int) int
+		Nonce         func(childComplexity int) int
+		Signatures    func(childComplexity int) int
+		Threshold     func(childComplexity int) int
+		VegaAssetID   func(childComplexity int) int
+	}
+
 	Epoch struct {
 		Delegations           func(childComplexity int, partyID *string, nodeID *string, skip *int, first *int, last *int) int
 		DelegationsConnection func(childComplexity int, partyID *string, nodeID *string, pagination *v2.Pagination) int
@@ -322,6 +377,13 @@ type ComplexityRoot struct {
 		End    func(childComplexity int) int
 		Expiry func(childComplexity int) int
 		Start  func(childComplexity int) int
+	}
+
+	Erc20ListAssetBundle struct {
+		AssetSource func(childComplexity int) int
+		Nonce       func(childComplexity int) int
+		Signatures  func(childComplexity int) int
+		VegaAssetID func(childComplexity int) int
 	}
 
 	Erc20WithdrawalApproval struct {
@@ -536,8 +598,8 @@ type ComplexityRoot struct {
 		Fees                          func(childComplexity int) int
 		Id                            func(childComplexity int) int
 		LiquidityMonitoringParameters func(childComplexity int) int
-		LiquidityProvisions           func(childComplexity int, party *string) int
-		LiquidityProvisionsConnection func(childComplexity int, party *string, pagination *v2.Pagination) int
+		LiquidityProvisions           func(childComplexity int, partyID *string) int
+		LiquidityProvisionsConnection func(childComplexity int, partyID *string, pagination *v2.Pagination) int
 		MarketTimestamps              func(childComplexity int) int
 		Name                          func(childComplexity int) int
 		OpeningAuction                func(childComplexity int) int
@@ -676,11 +738,11 @@ type ComplexityRoot struct {
 	}
 
 	NewAsset struct {
-		Decimals   func(childComplexity int) int
-		MinLpStake func(childComplexity int) int
-		Name       func(childComplexity int) int
-		Source     func(childComplexity int) int
-		Symbol     func(childComplexity int) int
+		Decimals func(childComplexity int) int
+		Name     func(childComplexity int) int
+		Quantum  func(childComplexity int) int
+		Source   func(childComplexity int) int
+		Symbol   func(childComplexity int) int
 	}
 
 	NewFreeform struct {
@@ -908,15 +970,15 @@ type ComplexityRoot struct {
 	}
 
 	Party struct {
-		Accounts                      func(childComplexity int, marketID *string, asset *string, typeArg *vega.AccountType) int
-		AccountsConnection            func(childComplexity int, marketID *string, asset *string, typeArg *vega.AccountType, pagination *v2.Pagination) int
+		Accounts                      func(childComplexity int, marketID *string, assetID *string, typeArg *vega.AccountType) int
+		AccountsConnection            func(childComplexity int, marketID *string, assetID *string, typeArg *vega.AccountType, pagination *v2.Pagination) int
 		Delegations                   func(childComplexity int, nodeID *string, skip *int, first *int, last *int) int
 		DelegationsConnection         func(childComplexity int, nodeID *string, pagination *v2.Pagination) int
 		Deposits                      func(childComplexity int) int
 		DepositsConnection            func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination) int
 		Id                            func(childComplexity int) int
 		LiquidityProvisions           func(childComplexity int, market *string, reference *string) int
-		LiquidityProvisionsConnection func(childComplexity int, market *string, reference *string, pagination *v2.Pagination) int
+		LiquidityProvisionsConnection func(childComplexity int, marketID *string, reference *string, pagination *v2.Pagination) int
 		Margins                       func(childComplexity int, marketID *string) int
 		MarginsConnection             func(childComplexity int, marketID *string, pagination *v2.Pagination) int
 		Orders                        func(childComplexity int, skip *int, first *int, last *int) int
@@ -926,9 +988,9 @@ type ComplexityRoot struct {
 		Proposals                     func(childComplexity int, inState *vega.Proposal_State) int
 		ProposalsConnection           func(childComplexity int, proposalType *v2.ListGovernanceDataRequest_Type, inState *vega.Proposal_State, pagination *v2.Pagination) int
 		RewardDetails                 func(childComplexity int) int
-		RewardSummaries               func(childComplexity int, asset *string) int
-		Rewards                       func(childComplexity int, asset *string, skip *int, first *int, last *int) int
-		RewardsConnection             func(childComplexity int, asset *string, pagination *v2.Pagination) int
+		RewardSummaries               func(childComplexity int, assetID *string) int
+		Rewards                       func(childComplexity int, assetID *string, skip *int, first *int, last *int) int
+		RewardsConnection             func(childComplexity int, assetID *string, pagination *v2.Pagination) int
 		Stake                         func(childComplexity int) int
 		StakingSummary                func(childComplexity int, pagination *v2.Pagination) int
 		Trades                        func(childComplexity int, marketID *string, skip *int, first *int, last *int) int
@@ -1046,8 +1108,7 @@ type ComplexityRoot struct {
 
 	ProposalRationale struct {
 		Description func(childComplexity int) int
-		Hash        func(childComplexity int) int
-		Url         func(childComplexity int) int
+		Title       func(childComplexity int) int
 	}
 
 	ProposalTerms struct {
@@ -1090,11 +1151,15 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Asset                              func(childComplexity int, assetID string) int
+		Asset                              func(childComplexity int, id string) int
 		Assets                             func(childComplexity int) int
 		AssetsConnection                   func(childComplexity int, id *string, pagination *v2.Pagination) int
 		Deposit                            func(childComplexity int, id string) int
 		Epoch                              func(childComplexity int, id *string) int
+		Erc20ListAssetBundle               func(childComplexity int, assetID string) int
+		Erc20MultiSigSignerAddedBundles    func(childComplexity int, nodeID string, submitter *string, epochSeq *string, pagination *v2.Pagination) int
+		Erc20MultiSigSignerRemovedBundles  func(childComplexity int, nodeID string, submitter *string, epochSeq *string, pagination *v2.Pagination) int
+		Erc20SetAssetLimitsBundle          func(childComplexity int, proposalID string) int
 		Erc20WithdrawalApproval            func(childComplexity int, withdrawalID string) int
 		EstimateOrder                      func(childComplexity int, marketID string, partyID string, price *string, size string, side vega.Side, timeInForce vega.Order_TimeInForce, expiration *string, typeArg vega.Order_Type) int
 		EthereumKeyRotations               func(childComplexity int, nodeID *string) int
@@ -1128,7 +1193,7 @@ type ComplexityRoot struct {
 		OracleSpec                         func(childComplexity int, oracleSpecID string) int
 		OracleSpecs                        func(childComplexity int, pagination *OffsetPagination) int
 		OracleSpecsConnection              func(childComplexity int, pagination *v2.Pagination) int
-		OrderByID                          func(childComplexity int, orderID string, version *int) int
+		OrderByID                          func(childComplexity int, id string, version *int) int
 		OrderByReference                   func(childComplexity int, reference string) int
 		OrderVersions                      func(childComplexity int, orderID string, skip *int, first *int, last *int) int
 		OrderVersionsConnection            func(childComplexity int, orderID *string, pagination *v2.Pagination) int
@@ -1197,7 +1262,7 @@ type ComplexityRoot struct {
 		Amount            func(childComplexity int) int
 		Asset             func(childComplexity int) int
 		Rewards           func(childComplexity int, skip *int, first *int, last *int) int
-		RewardsConnection func(childComplexity int, asset *string, pagination *v2.Pagination) int
+		RewardsConnection func(childComplexity int, assetID *string, pagination *v2.Pagination) int
 	}
 
 	RewardSummaryConnection struct {
@@ -1305,10 +1370,10 @@ type ComplexityRoot struct {
 	}
 
 	Subscription struct {
-		Accounts           func(childComplexity int, marketID *string, partyID *string, asset *string, typeArg *vega.AccountType) int
+		Accounts           func(childComplexity int, marketID *string, partyID *string, assetID *string, typeArg *vega.AccountType) int
 		BusEvents          func(childComplexity int, types []BusEventType, marketID *string, partyID *string, batchSize int) int
 		Candles            func(childComplexity int, marketID string, interval vega.Interval) int
-		Delegations        func(childComplexity int, party *string, nodeID *string) int
+		Delegations        func(childComplexity int, partyID *string, nodeID *string) int
 		Margins            func(childComplexity int, partyID string, marketID *string) int
 		MarketData         func(childComplexity int, marketID *string) int
 		MarketDepth        func(childComplexity int, marketID string) int
@@ -1319,7 +1384,7 @@ type ComplexityRoot struct {
 		Orders             func(childComplexity int, marketID *string, partyID *string) int
 		Positions          func(childComplexity int, partyID *string, marketID *string) int
 		Proposals          func(childComplexity int, partyID *string) int
-		Rewards            func(childComplexity int, assetID *string, party *string) int
+		Rewards            func(childComplexity int, assetID *string, partyID *string) int
 		Trades             func(childComplexity int, marketID *string, partyID *string) int
 		Votes              func(childComplexity int, proposalID *string, partyID *string) int
 	}
@@ -1421,10 +1486,10 @@ type ComplexityRoot struct {
 	}
 
 	UpdateAsset struct {
-		MinLpStake func(childComplexity int) int
-		Name       func(childComplexity int) int
-		Source     func(childComplexity int) int
-		Symbol     func(childComplexity int) int
+		Name    func(childComplexity int) int
+		Quantum func(childComplexity int) int
+		Source  func(childComplexity int) int
+		Symbol  func(childComplexity int) int
 	}
 
 	UpdateERC20 struct {
@@ -1520,6 +1585,9 @@ type AccountResolver interface {
 }
 type AccountEdgeResolver interface {
 	Node(ctx context.Context, obj *v2.AccountEdge) (*vega.Account, error)
+}
+type AccountUpdateResolver interface {
+	AssetID(ctx context.Context, obj *vega.Account) (string, error)
 }
 type AssetResolver interface {
 	Name(ctx context.Context, obj *vega.Asset) (string, error)
@@ -1634,8 +1702,8 @@ type MarketResolver interface {
 	Candles(ctx context.Context, obj *vega.Market, since string, interval vega.Interval) ([]*vega.Candle, error)
 	CandlesConnection(ctx context.Context, obj *vega.Market, since string, to *string, interval vega.Interval, pagination *v2.Pagination) (*v2.CandleDataConnection, error)
 	Data(ctx context.Context, obj *vega.Market) (*vega.MarketData, error)
-	LiquidityProvisions(ctx context.Context, obj *vega.Market, party *string) ([]*vega.LiquidityProvision, error)
-	LiquidityProvisionsConnection(ctx context.Context, obj *vega.Market, party *string, pagination *v2.Pagination) (*v2.LiquidityProvisionsConnection, error)
+	LiquidityProvisions(ctx context.Context, obj *vega.Market, partyID *string) ([]*vega.LiquidityProvision, error)
+	LiquidityProvisionsConnection(ctx context.Context, obj *vega.Market, partyID *string, pagination *v2.Pagination) (*v2.LiquidityProvisionsConnection, error)
 
 	RiskFactors(ctx context.Context, obj *vega.Market) (*vega.RiskFactor, error)
 }
@@ -1684,7 +1752,7 @@ type NewAssetResolver interface {
 	Name(ctx context.Context, obj *vega.NewAsset) (string, error)
 	Symbol(ctx context.Context, obj *vega.NewAsset) (string, error)
 	Decimals(ctx context.Context, obj *vega.NewAsset) (int, error)
-	MinLpStake(ctx context.Context, obj *vega.NewAsset) (string, error)
+	Quantum(ctx context.Context, obj *vega.NewAsset) (string, error)
 	Source(ctx context.Context, obj *vega.NewAsset) (AssetSource, error)
 }
 type NewFreeformResolver interface {
@@ -1771,8 +1839,8 @@ type PartyResolver interface {
 	OrdersConnection(ctx context.Context, obj *vega.Party, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.OrderConnection, error)
 	Trades(ctx context.Context, obj *vega.Party, marketID *string, skip *int, first *int, last *int) ([]*vega.Trade, error)
 	TradesConnection(ctx context.Context, obj *vega.Party, marketID *string, dataRange *v2.DateRange, pagination *v2.Pagination) (*v2.TradeConnection, error)
-	Accounts(ctx context.Context, obj *vega.Party, marketID *string, asset *string, typeArg *vega.AccountType) ([]*vega.Account, error)
-	AccountsConnection(ctx context.Context, obj *vega.Party, marketID *string, asset *string, typeArg *vega.AccountType, pagination *v2.Pagination) (*v2.AccountsConnection, error)
+	Accounts(ctx context.Context, obj *vega.Party, marketID *string, assetID *string, typeArg *vega.AccountType) ([]*vega.Account, error)
+	AccountsConnection(ctx context.Context, obj *vega.Party, marketID *string, assetID *string, typeArg *vega.AccountType, pagination *v2.Pagination) (*v2.AccountsConnection, error)
 	Positions(ctx context.Context, obj *vega.Party) ([]*vega.Position, error)
 	PositionsConnection(ctx context.Context, obj *vega.Party, market *string, pagination *v2.Pagination) (*v2.PositionConnection, error)
 	Margins(ctx context.Context, obj *vega.Party, marketID *string) ([]*vega.MarginLevels, error)
@@ -1786,14 +1854,14 @@ type PartyResolver interface {
 	Deposits(ctx context.Context, obj *vega.Party) ([]*vega.Deposit, error)
 	DepositsConnection(ctx context.Context, obj *vega.Party, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.DepositsConnection, error)
 	LiquidityProvisions(ctx context.Context, obj *vega.Party, market *string, reference *string) ([]*vega.LiquidityProvision, error)
-	LiquidityProvisionsConnection(ctx context.Context, obj *vega.Party, market *string, reference *string, pagination *v2.Pagination) (*v2.LiquidityProvisionsConnection, error)
+	LiquidityProvisionsConnection(ctx context.Context, obj *vega.Party, marketID *string, reference *string, pagination *v2.Pagination) (*v2.LiquidityProvisionsConnection, error)
 	Delegations(ctx context.Context, obj *vega.Party, nodeID *string, skip *int, first *int, last *int) ([]*vega.Delegation, error)
 	DelegationsConnection(ctx context.Context, obj *vega.Party, nodeID *string, pagination *v2.Pagination) (*v2.DelegationsConnection, error)
 	Stake(ctx context.Context, obj *vega.Party) (*v13.PartyStakeResponse, error)
 	StakingSummary(ctx context.Context, obj *vega.Party, pagination *v2.Pagination) (*StakingSummary, error)
-	Rewards(ctx context.Context, obj *vega.Party, asset *string, skip *int, first *int, last *int) ([]*vega.Reward, error)
-	RewardsConnection(ctx context.Context, obj *vega.Party, asset *string, pagination *v2.Pagination) (*v2.RewardsConnection, error)
-	RewardSummaries(ctx context.Context, obj *vega.Party, asset *string) ([]*vega.RewardSummary, error)
+	Rewards(ctx context.Context, obj *vega.Party, assetID *string, skip *int, first *int, last *int) ([]*vega.Reward, error)
+	RewardsConnection(ctx context.Context, obj *vega.Party, assetID *string, pagination *v2.Pagination) (*v2.RewardsConnection, error)
+	RewardSummaries(ctx context.Context, obj *vega.Party, assetID *string) ([]*vega.RewardSummary, error)
 	RewardDetails(ctx context.Context, obj *vega.Party) ([]*vega.RewardSummary, error)
 	TransfersConnection(ctx context.Context, obj *vega.Party, direction *TransferDirection, pagination *v2.Pagination) (*v2.TransferConnection, error)
 }
@@ -1846,7 +1914,7 @@ type QueryResolver interface {
 	OracleDataBySpecConnection(ctx context.Context, oracleSpecID string, pagination *v2.Pagination) (*v2.OracleDataConnection, error)
 	OracleData(ctx context.Context, pagination *OffsetPagination) ([]*v12.OracleData, error)
 	OracleDataConnection(ctx context.Context, pagination *v2.Pagination) (*v2.OracleDataConnection, error)
-	OrderByID(ctx context.Context, orderID string, version *int) (*vega.Order, error)
+	OrderByID(ctx context.Context, id string, version *int) (*vega.Order, error)
 	OrderVersions(ctx context.Context, orderID string, skip *int, first *int, last *int) ([]*vega.Order, error)
 	OrderVersionsConnection(ctx context.Context, orderID *string, pagination *v2.Pagination) (*v2.OrderConnection, error)
 	OrderByReference(ctx context.Context, reference string) (*vega.Order, error)
@@ -1860,12 +1928,16 @@ type QueryResolver interface {
 	NewFreeformProposals(ctx context.Context, inState *vega.Proposal_State) ([]*vega.GovernanceData, error)
 	NodeSignatures(ctx context.Context, resourceID string) ([]*v11.NodeSignature, error)
 	NodeSignaturesConnection(ctx context.Context, resourceID string, pagination *v2.Pagination) (*v2.NodeSignaturesConnection, error)
-	Asset(ctx context.Context, assetID string) (*vega.Asset, error)
+	Asset(ctx context.Context, id string) (*vega.Asset, error)
 	Assets(ctx context.Context) ([]*vega.Asset, error)
 	AssetsConnection(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.AssetsConnection, error)
 	EstimateOrder(ctx context.Context, marketID string, partyID string, price *string, size string, side vega.Side, timeInForce vega.Order_TimeInForce, expiration *string, typeArg vega.Order_Type) (*OrderEstimate, error)
 	Withdrawal(ctx context.Context, id string) (*vega.Withdrawal, error)
 	Erc20WithdrawalApproval(ctx context.Context, withdrawalID string) (*Erc20WithdrawalApproval, error)
+	Erc20MultiSigSignerAddedBundles(ctx context.Context, nodeID string, submitter *string, epochSeq *string, pagination *v2.Pagination) (*ERC20MultiSigSignerAddedConnection, error)
+	Erc20MultiSigSignerRemovedBundles(ctx context.Context, nodeID string, submitter *string, epochSeq *string, pagination *v2.Pagination) (*ERC20MultiSigSignerRemovedConnection, error)
+	Erc20ListAssetBundle(ctx context.Context, assetID string) (*Erc20ListAssetBundle, error)
+	Erc20SetAssetLimitsBundle(ctx context.Context, proposalID string) (*ERC20SetAssetLimitsBundle, error)
 	Deposit(ctx context.Context, id string) (*vega.Deposit, error)
 	NetworkParameters(ctx context.Context) ([]*vega.NetworkParameter, error)
 	NetworkParametersConnection(ctx context.Context, pagination *v2.Pagination) (*v2.NetworkParameterConnection, error)
@@ -1914,7 +1986,7 @@ type RewardSummaryResolver interface {
 	Asset(ctx context.Context, obj *vega.RewardSummary) (*vega.Asset, error)
 
 	Rewards(ctx context.Context, obj *vega.RewardSummary, skip *int, first *int, last *int) ([]*vega.Reward, error)
-	RewardsConnection(ctx context.Context, obj *vega.RewardSummary, asset *string, pagination *v2.Pagination) (*v2.RewardsConnection, error)
+	RewardsConnection(ctx context.Context, obj *vega.RewardSummary, assetID *string, pagination *v2.Pagination) (*v2.RewardsConnection, error)
 }
 type StakeLinkingResolver interface {
 	Timestamp(ctx context.Context, obj *v1.StakeLinking) (string, error)
@@ -1950,7 +2022,7 @@ type SubscriptionResolver interface {
 	Positions(ctx context.Context, partyID *string, marketID *string) (<-chan *vega.Position, error)
 	MarketDepth(ctx context.Context, marketID string) (<-chan *vega.MarketDepth, error)
 	MarketDepthUpdate(ctx context.Context, marketID string) (<-chan *vega.MarketDepthUpdate, error)
-	Accounts(ctx context.Context, marketID *string, partyID *string, asset *string, typeArg *vega.AccountType) (<-chan *vega.Account, error)
+	Accounts(ctx context.Context, marketID *string, partyID *string, assetID *string, typeArg *vega.AccountType) (<-chan []*vega.Account, error)
 	MarketData(ctx context.Context, marketID *string) (<-chan *vega.MarketData, error)
 	MarketsDepth(ctx context.Context, marketIds []string) (<-chan []*vega.MarketDepth, error)
 	MarketsDepthUpdate(ctx context.Context, marketIds []string) (<-chan []*vega.MarketDepthUpdate, error)
@@ -1959,8 +2031,8 @@ type SubscriptionResolver interface {
 	Proposals(ctx context.Context, partyID *string) (<-chan *vega.GovernanceData, error)
 	Votes(ctx context.Context, proposalID *string, partyID *string) (<-chan *ProposalVote, error)
 	BusEvents(ctx context.Context, types []BusEventType, marketID *string, partyID *string, batchSize int) (<-chan []*BusEvent, error)
-	Delegations(ctx context.Context, party *string, nodeID *string) (<-chan *vega.Delegation, error)
-	Rewards(ctx context.Context, assetID *string, party *string) (<-chan *vega.Reward, error)
+	Delegations(ctx context.Context, partyID *string, nodeID *string) (<-chan *vega.Delegation, error)
+	Rewards(ctx context.Context, assetID *string, partyID *string) (<-chan *vega.Reward, error)
 }
 type TradableInstrumentResolver interface {
 	RiskModel(ctx context.Context, obj *vega.TradableInstrument) (RiskModel, error)
@@ -1988,7 +2060,7 @@ type TransferResolver interface {
 type UpdateAssetResolver interface {
 	Name(ctx context.Context, obj *vega.UpdateAsset) (string, error)
 	Symbol(ctx context.Context, obj *vega.UpdateAsset) (string, error)
-	MinLpStake(ctx context.Context, obj *vega.UpdateAsset) (string, error)
+	Quantum(ctx context.Context, obj *vega.UpdateAsset) (string, error)
 	Source(ctx context.Context, obj *vega.UpdateAsset) (UpdateAssetSource, error)
 }
 type UpdateMarketResolver interface {
@@ -2084,6 +2156,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.AccountEdge.Node(childComplexity), true
+
+	case "AccountUpdate.assetId":
+		if e.complexity.AccountUpdate.AssetID == nil {
+			break
+		}
+
+		return e.complexity.AccountUpdate.AssetID(childComplexity), true
+
+	case "AccountUpdate.balance":
+		if e.complexity.AccountUpdate.Balance == nil {
+			break
+		}
+
+		return e.complexity.AccountUpdate.Balance(childComplexity), true
+
+	case "AccountUpdate.marketId":
+		if e.complexity.AccountUpdate.MarketId == nil {
+			break
+		}
+
+		return e.complexity.AccountUpdate.MarketId(childComplexity), true
+
+	case "AccountUpdate.type":
+		if e.complexity.AccountUpdate.Type == nil {
+			break
+		}
+
+		return e.complexity.AccountUpdate.Type(childComplexity), true
 
 	case "AccountsConnection.edges":
 		if e.complexity.AccountsConnection.Edges == nil {
@@ -2379,12 +2479,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.BusEvent.Event(childComplexity), true
 
-	case "BusEvent.eventId":
-		if e.complexity.BusEvent.EventID == nil {
+	case "BusEvent.id":
+		if e.complexity.BusEvent.ID == nil {
 			break
 		}
 
-		return e.complexity.BusEvent.EventID(childComplexity), true
+		return e.complexity.BusEvent.ID(childComplexity), true
 
 	case "BusEvent.type":
 		if e.complexity.BusEvent.Type == nil {
@@ -2743,6 +2843,188 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ERC20.WithdrawThreshold(childComplexity), true
 
+	case "ERC20MultiSigSignerAddedBundle.epochSeq":
+		if e.complexity.ERC20MultiSigSignerAddedBundle.EpochSeq == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerAddedBundle.EpochSeq(childComplexity), true
+
+	case "ERC20MultiSigSignerAddedBundle.newSigner":
+		if e.complexity.ERC20MultiSigSignerAddedBundle.NewSigner == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerAddedBundle.NewSigner(childComplexity), true
+
+	case "ERC20MultiSigSignerAddedBundle.nonce":
+		if e.complexity.ERC20MultiSigSignerAddedBundle.Nonce == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerAddedBundle.Nonce(childComplexity), true
+
+	case "ERC20MultiSigSignerAddedBundle.signatures":
+		if e.complexity.ERC20MultiSigSignerAddedBundle.Signatures == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerAddedBundle.Signatures(childComplexity), true
+
+	case "ERC20MultiSigSignerAddedBundle.submitter":
+		if e.complexity.ERC20MultiSigSignerAddedBundle.Submitter == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerAddedBundle.Submitter(childComplexity), true
+
+	case "ERC20MultiSigSignerAddedBundle.timestamp":
+		if e.complexity.ERC20MultiSigSignerAddedBundle.Timestamp == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerAddedBundle.Timestamp(childComplexity), true
+
+	case "ERC20MultiSigSignerAddedBundleEdge.cursor":
+		if e.complexity.ERC20MultiSigSignerAddedBundleEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerAddedBundleEdge.Cursor(childComplexity), true
+
+	case "ERC20MultiSigSignerAddedBundleEdge.node":
+		if e.complexity.ERC20MultiSigSignerAddedBundleEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerAddedBundleEdge.Node(childComplexity), true
+
+	case "ERC20MultiSigSignerAddedConnection.edges":
+		if e.complexity.ERC20MultiSigSignerAddedConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerAddedConnection.Edges(childComplexity), true
+
+	case "ERC20MultiSigSignerAddedConnection.pageInfo":
+		if e.complexity.ERC20MultiSigSignerAddedConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerAddedConnection.PageInfo(childComplexity), true
+
+	case "ERC20MultiSigSignerRemovedBundle.epochSeq":
+		if e.complexity.ERC20MultiSigSignerRemovedBundle.EpochSeq == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerRemovedBundle.EpochSeq(childComplexity), true
+
+	case "ERC20MultiSigSignerRemovedBundle.nonce":
+		if e.complexity.ERC20MultiSigSignerRemovedBundle.Nonce == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerRemovedBundle.Nonce(childComplexity), true
+
+	case "ERC20MultiSigSignerRemovedBundle.oldSigner":
+		if e.complexity.ERC20MultiSigSignerRemovedBundle.OldSigner == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerRemovedBundle.OldSigner(childComplexity), true
+
+	case "ERC20MultiSigSignerRemovedBundle.signatures":
+		if e.complexity.ERC20MultiSigSignerRemovedBundle.Signatures == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerRemovedBundle.Signatures(childComplexity), true
+
+	case "ERC20MultiSigSignerRemovedBundle.submitter":
+		if e.complexity.ERC20MultiSigSignerRemovedBundle.Submitter == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerRemovedBundle.Submitter(childComplexity), true
+
+	case "ERC20MultiSigSignerRemovedBundle.timestamp":
+		if e.complexity.ERC20MultiSigSignerRemovedBundle.Timestamp == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerRemovedBundle.Timestamp(childComplexity), true
+
+	case "ERC20MultiSigSignerRemovedBundleEdge.cursor":
+		if e.complexity.ERC20MultiSigSignerRemovedBundleEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerRemovedBundleEdge.Cursor(childComplexity), true
+
+	case "ERC20MultiSigSignerRemovedBundleEdge.node":
+		if e.complexity.ERC20MultiSigSignerRemovedBundleEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerRemovedBundleEdge.Node(childComplexity), true
+
+	case "ERC20MultiSigSignerRemovedConnection.edges":
+		if e.complexity.ERC20MultiSigSignerRemovedConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerRemovedConnection.Edges(childComplexity), true
+
+	case "ERC20MultiSigSignerRemovedConnection.pageInfo":
+		if e.complexity.ERC20MultiSigSignerRemovedConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.ERC20MultiSigSignerRemovedConnection.PageInfo(childComplexity), true
+
+	case "ERC20SetAssetLimitsBundle.assetSource":
+		if e.complexity.ERC20SetAssetLimitsBundle.AssetSource == nil {
+			break
+		}
+
+		return e.complexity.ERC20SetAssetLimitsBundle.AssetSource(childComplexity), true
+
+	case "ERC20SetAssetLimitsBundle.lifetimeLimit":
+		if e.complexity.ERC20SetAssetLimitsBundle.LifetimeLimit == nil {
+			break
+		}
+
+		return e.complexity.ERC20SetAssetLimitsBundle.LifetimeLimit(childComplexity), true
+
+	case "ERC20SetAssetLimitsBundle.nonce":
+		if e.complexity.ERC20SetAssetLimitsBundle.Nonce == nil {
+			break
+		}
+
+		return e.complexity.ERC20SetAssetLimitsBundle.Nonce(childComplexity), true
+
+	case "ERC20SetAssetLimitsBundle.signatures":
+		if e.complexity.ERC20SetAssetLimitsBundle.Signatures == nil {
+			break
+		}
+
+		return e.complexity.ERC20SetAssetLimitsBundle.Signatures(childComplexity), true
+
+	case "ERC20SetAssetLimitsBundle.threshold":
+		if e.complexity.ERC20SetAssetLimitsBundle.Threshold == nil {
+			break
+		}
+
+		return e.complexity.ERC20SetAssetLimitsBundle.Threshold(childComplexity), true
+
+	case "ERC20SetAssetLimitsBundle.vegaAssetId":
+		if e.complexity.ERC20SetAssetLimitsBundle.VegaAssetID == nil {
+			break
+		}
+
+		return e.complexity.ERC20SetAssetLimitsBundle.VegaAssetID(childComplexity), true
+
 	case "Epoch.delegations":
 		if e.complexity.Epoch.Delegations == nil {
 			break
@@ -2869,6 +3151,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.EpochTimestamps.Start(childComplexity), true
+
+	case "Erc20ListAssetBundle.assetSource":
+		if e.complexity.Erc20ListAssetBundle.AssetSource == nil {
+			break
+		}
+
+		return e.complexity.Erc20ListAssetBundle.AssetSource(childComplexity), true
+
+	case "Erc20ListAssetBundle.nonce":
+		if e.complexity.Erc20ListAssetBundle.Nonce == nil {
+			break
+		}
+
+		return e.complexity.Erc20ListAssetBundle.Nonce(childComplexity), true
+
+	case "Erc20ListAssetBundle.signatures":
+		if e.complexity.Erc20ListAssetBundle.Signatures == nil {
+			break
+		}
+
+		return e.complexity.Erc20ListAssetBundle.Signatures(childComplexity), true
+
+	case "Erc20ListAssetBundle.vegaAssetId":
+		if e.complexity.Erc20ListAssetBundle.VegaAssetID == nil {
+			break
+		}
+
+		return e.complexity.Erc20ListAssetBundle.VegaAssetID(childComplexity), true
 
 	case "Erc20WithdrawalApproval.amount":
 		if e.complexity.Erc20WithdrawalApproval.Amount == nil {
@@ -3710,7 +4020,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Market.LiquidityProvisions(childComplexity, args["party"].(*string)), true
+		return e.complexity.Market.LiquidityProvisions(childComplexity, args["partyId"].(*string)), true
 
 	case "Market.liquidityProvisionsConnection":
 		if e.complexity.Market.LiquidityProvisionsConnection == nil {
@@ -3722,7 +4032,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Market.LiquidityProvisionsConnection(childComplexity, args["party"].(*string), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Market.LiquidityProvisionsConnection(childComplexity, args["partyId"].(*string), args["pagination"].(*v2.Pagination)), true
 
 	case "Market.marketTimestamps":
 		if e.complexity.Market.MarketTimestamps == nil {
@@ -4360,19 +4670,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.NewAsset.Decimals(childComplexity), true
 
-	case "NewAsset.minLpStake":
-		if e.complexity.NewAsset.MinLpStake == nil {
-			break
-		}
-
-		return e.complexity.NewAsset.MinLpStake(childComplexity), true
-
 	case "NewAsset.name":
 		if e.complexity.NewAsset.Name == nil {
 			break
 		}
 
 		return e.complexity.NewAsset.Name(childComplexity), true
+
+	case "NewAsset.quantum":
+		if e.complexity.NewAsset.Quantum == nil {
+			break
+		}
+
+		return e.complexity.NewAsset.Quantum(childComplexity), true
 
 	case "NewAsset.source":
 		if e.complexity.NewAsset.Source == nil {
@@ -5398,7 +5708,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Party.Accounts(childComplexity, args["marketId"].(*string), args["asset"].(*string), args["type"].(*vega.AccountType)), true
+		return e.complexity.Party.Accounts(childComplexity, args["marketId"].(*string), args["assetId"].(*string), args["type"].(*vega.AccountType)), true
 
 	case "Party.accountsConnection":
 		if e.complexity.Party.AccountsConnection == nil {
@@ -5410,7 +5720,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Party.AccountsConnection(childComplexity, args["marketId"].(*string), args["asset"].(*string), args["type"].(*vega.AccountType), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Party.AccountsConnection(childComplexity, args["marketId"].(*string), args["assetId"].(*string), args["type"].(*vega.AccountType), args["pagination"].(*v2.Pagination)), true
 
 	case "Party.delegations":
 		if e.complexity.Party.Delegations == nil {
@@ -5484,7 +5794,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Party.LiquidityProvisionsConnection(childComplexity, args["market"].(*string), args["reference"].(*string), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Party.LiquidityProvisionsConnection(childComplexity, args["marketId"].(*string), args["reference"].(*string), args["pagination"].(*v2.Pagination)), true
 
 	case "Party.margins":
 		if e.complexity.Party.Margins == nil {
@@ -5594,7 +5904,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Party.RewardSummaries(childComplexity, args["asset"].(*string)), true
+		return e.complexity.Party.RewardSummaries(childComplexity, args["assetId"].(*string)), true
 
 	case "Party.rewards":
 		if e.complexity.Party.Rewards == nil {
@@ -5606,7 +5916,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Party.Rewards(childComplexity, args["asset"].(*string), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
+		return e.complexity.Party.Rewards(childComplexity, args["assetId"].(*string), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
 
 	case "Party.rewardsConnection":
 		if e.complexity.Party.RewardsConnection == nil {
@@ -5618,7 +5928,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Party.RewardsConnection(childComplexity, args["asset"].(*string), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Party.RewardsConnection(childComplexity, args["assetId"].(*string), args["pagination"].(*v2.Pagination)), true
 
 	case "Party.stake":
 		if e.complexity.Party.Stake == nil {
@@ -6096,19 +6406,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ProposalRationale.Description(childComplexity), true
 
-	case "ProposalRationale.hash":
-		if e.complexity.ProposalRationale.Hash == nil {
+	case "ProposalRationale.title":
+		if e.complexity.ProposalRationale.Title == nil {
 			break
 		}
 
-		return e.complexity.ProposalRationale.Hash(childComplexity), true
-
-	case "ProposalRationale.url":
-		if e.complexity.ProposalRationale.Url == nil {
-			break
-		}
-
-		return e.complexity.ProposalRationale.Url(childComplexity), true
+		return e.complexity.ProposalRationale.Title(childComplexity), true
 
 	case "ProposalTerms.change":
 		if e.complexity.ProposalTerms.Change == nil {
@@ -6246,7 +6549,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Asset(childComplexity, args["assetId"].(string)), true
+		return e.complexity.Query.Asset(childComplexity, args["id"].(string)), true
 
 	case "Query.assets":
 		if e.complexity.Query.Assets == nil {
@@ -6290,6 +6593,54 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Epoch(childComplexity, args["id"].(*string)), true
+
+	case "Query.erc20ListAssetBundle":
+		if e.complexity.Query.Erc20ListAssetBundle == nil {
+			break
+		}
+
+		args, err := ec.field_Query_erc20ListAssetBundle_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Erc20ListAssetBundle(childComplexity, args["assetId"].(string)), true
+
+	case "Query.erc20MultiSigSignerAddedBundles":
+		if e.complexity.Query.Erc20MultiSigSignerAddedBundles == nil {
+			break
+		}
+
+		args, err := ec.field_Query_erc20MultiSigSignerAddedBundles_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Erc20MultiSigSignerAddedBundles(childComplexity, args["nodeId"].(string), args["submitter"].(*string), args["epochSeq"].(*string), args["pagination"].(*v2.Pagination)), true
+
+	case "Query.erc20MultiSigSignerRemovedBundles":
+		if e.complexity.Query.Erc20MultiSigSignerRemovedBundles == nil {
+			break
+		}
+
+		args, err := ec.field_Query_erc20MultiSigSignerRemovedBundles_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Erc20MultiSigSignerRemovedBundles(childComplexity, args["nodeId"].(string), args["submitter"].(*string), args["epochSeq"].(*string), args["pagination"].(*v2.Pagination)), true
+
+	case "Query.erc20SetAssetLimitsBundle":
+		if e.complexity.Query.Erc20SetAssetLimitsBundle == nil {
+			break
+		}
+
+		args, err := ec.field_Query_erc20SetAssetLimitsBundle_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Erc20SetAssetLimitsBundle(childComplexity, args["proposalId"].(string)), true
 
 	case "Query.erc20WithdrawalApproval":
 		if e.complexity.Query.Erc20WithdrawalApproval == nil {
@@ -6600,7 +6951,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.OracleDataBySpec(childComplexity, args["oracleSpecID"].(string), args["pagination"].(*OffsetPagination)), true
+		return e.complexity.Query.OracleDataBySpec(childComplexity, args["oracleSpecId"].(string), args["pagination"].(*OffsetPagination)), true
 
 	case "Query.oracleDataBySpecConnection":
 		if e.complexity.Query.OracleDataBySpecConnection == nil {
@@ -6612,7 +6963,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.OracleDataBySpecConnection(childComplexity, args["oracleSpecID"].(string), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Query.OracleDataBySpecConnection(childComplexity, args["oracleSpecId"].(string), args["pagination"].(*v2.Pagination)), true
 
 	case "Query.oracleDataConnection":
 		if e.complexity.Query.OracleDataConnection == nil {
@@ -6636,7 +6987,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.OracleSpec(childComplexity, args["oracleSpecID"].(string)), true
+		return e.complexity.Query.OracleSpec(childComplexity, args["oracleSpecId"].(string)), true
 
 	case "Query.oracleSpecs":
 		if e.complexity.Query.OracleSpecs == nil {
@@ -6672,7 +7023,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.OrderByID(childComplexity, args["orderId"].(string), args["version"].(*int)), true
+		return e.complexity.Query.OrderByID(childComplexity, args["id"].(string), args["version"].(*int)), true
 
 	case "Query.orderByReference":
 		if e.complexity.Query.OrderByReference == nil {
@@ -6928,7 +7279,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Reward.Epoch(childComplexity), true
 
-	case "Reward.marketID":
+	case "Reward.marketId":
 		if e.complexity.Reward.MarketId == nil {
 			break
 		}
@@ -7083,7 +7434,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.RewardSummary.RewardsConnection(childComplexity, args["asset"].(*string), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.RewardSummary.RewardsConnection(childComplexity, args["assetId"].(*string), args["pagination"].(*v2.Pagination)), true
 
 	case "RewardSummaryConnection.edges":
 		if e.complexity.RewardSummaryConnection.Edges == nil {
@@ -7534,7 +7885,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Subscription.Accounts(childComplexity, args["marketId"].(*string), args["partyId"].(*string), args["asset"].(*string), args["type"].(*vega.AccountType)), true
+		return e.complexity.Subscription.Accounts(childComplexity, args["marketId"].(*string), args["partyId"].(*string), args["assetId"].(*string), args["type"].(*vega.AccountType)), true
 
 	case "Subscription.busEvents":
 		if e.complexity.Subscription.BusEvents == nil {
@@ -7570,7 +7921,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Subscription.Delegations(childComplexity, args["party"].(*string), args["nodeID"].(*string)), true
+		return e.complexity.Subscription.Delegations(childComplexity, args["partyId"].(*string), args["nodeId"].(*string)), true
 
 	case "Subscription.margins":
 		if e.complexity.Subscription.Margins == nil {
@@ -7702,7 +8053,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Subscription.Rewards(childComplexity, args["assetId"].(*string), args["party"].(*string)), true
+		return e.complexity.Subscription.Rewards(childComplexity, args["assetId"].(*string), args["partyId"].(*string)), true
 
 	case "Subscription.trades":
 		if e.complexity.Subscription.Trades == nil {
@@ -8085,19 +8436,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TransferResponses.Responses(childComplexity), true
 
-	case "UpdateAsset.minLpStake":
-		if e.complexity.UpdateAsset.MinLpStake == nil {
-			break
-		}
-
-		return e.complexity.UpdateAsset.MinLpStake(childComplexity), true
-
 	case "UpdateAsset.name":
 		if e.complexity.UpdateAsset.Name == nil {
 			break
 		}
 
 		return e.complexity.UpdateAsset.Name(childComplexity), true
+
+	case "UpdateAsset.quantum":
+		if e.complexity.UpdateAsset.Quantum == nil {
+			break
+		}
+
+		return e.complexity.UpdateAsset.Quantum(childComplexity), true
 
 	case "UpdateAsset.source":
 		if e.complexity.UpdateAsset.Source == nil {
@@ -8549,10 +8900,10 @@ type Subscription {
     "ID of the party from which to receive accounts updates for"
     partyId: ID
     "Asset code"
-    asset: String
+    assetId: ID
     "Type of the account"
     type: AccountType
-  ): Account!
+  ): [AccountUpdate!]!
 
   "Subscribe to the mark price changes"
   marketData(
@@ -8615,17 +8966,17 @@ type Subscription {
   "Subscribe to delegation data"
   delegations(
     "the party to subscribe for, empty if all"
-    party: ID
+    partyId: ID
     "the node to subscribe for, empty if all"
-    nodeID: ID
+    nodeId: ID
   ): Delegation!
 
   "Subscribe to reward details data"
   rewards(
     "the asset to subscribe for, empty if all"
     assetId: ID
-    "the party to subscribe for, empty if all"
-    party: ID
+    "the party ID to subscribe for, empty if all"
+    partyId: ID
   ): Reward!
 }
 
@@ -8635,7 +8986,7 @@ type MarginLevels {
   market: Market!
   "asset for the current margins"
   asset: Asset!
-  "ID of the party for this margin"
+  "The party for this margin"
   party: Party!
   "minimal margin for the position to be maintained in the network (unsigned integer)"
   maintenanceLevel: String!
@@ -8656,7 +9007,7 @@ type MarginLevels {
 
 "Live data of a Market"
 type MarketData {
-  "market ID of the associated mark price"
+  "market of the associated mark price"
   market: Market!
   "the mark price (an unsigned integer)"
   markPrice: String!
@@ -8715,7 +9066,7 @@ type MarketData {
 "Live data of a Market"
 type ObservableMarketData {
   "market ID of the associated mark price"
-  marketId: String!
+  marketId: ID!
   "the mark price (an unsigned integer)"
   markPrice: String!
   "the highest price level on an order book for buy orders."
@@ -8768,8 +9119,6 @@ type ObservableMarketData {
   liquidityProviderFeeShare: [ObservableLiquidityProviderFeeShare!]
 }
 
-
-
 "timestamps for when the market changes state"
 type MarketTimestamps {
   "Time when the market is first proposed"
@@ -8795,14 +9144,12 @@ type LiquidityProviderFeeShare {
 "The equity like share of liquidity fee for each liquidity provider"
 type ObservableLiquidityProviderFeeShare {
   "The liquidity provider party ID"
-  partyId: String!
+  partyId: ID!
   "The share owned by this liquidity provider (float)"
   equityLikeShare: String!
   "The average entry valuation of the liquidity provider for the market"
   averageEntryValuation: String!
 }
-
-
 
 "The liquidity commitments for this market"
 type MarketDataCommitments {
@@ -8860,7 +9207,6 @@ type Query {
     pagination: OffsetPagination
   ): [OracleSpec!] @deprecated(reason: "Use oracleSpecsConnection instead")
 
-
   "All registered oracle specs"
   oracleSpecsConnection(
     "Pagination"
@@ -8868,19 +9214,19 @@ type Query {
   ): OracleSpecsConnection!
 
   "An oracle spec for a given oracle spec ID"
-  oracleSpec("ID for an oracle spec" oracleSpecID: String!): OracleSpec
+  oracleSpec("ID for an oracle spec" oracleSpecId: ID!): OracleSpec
 
   "All oracle data for a given oracle spec ID"
   oracleDataBySpec(
     "ID for an oracle spec"
-    oracleSpecID: String!
+    oracleSpecId: ID!
     "Pagination"
     pagination: OffsetPagination
   ): [OracleData!] @deprecated(reason: "Use oracleDataBySpecConnection instead")
 
   oracleDataBySpecConnection(
     "ID for an oracle spec"
-    oracleSpecID: String!
+    oracleSpecId: ID!
     "Pagination"
     pagination: Pagination
   ): OracleDataConnection!
@@ -8900,7 +9246,7 @@ type Query {
   "An order in the Vega network found by orderID"
   orderByID(
     "ID for an order"
-    orderId: ID!
+    id: ID!
 
     "version of the order (omitted or 0 for most recent; 1 for original; 2 for first amendment, etc)"
     version: Int
@@ -8952,7 +9298,7 @@ type Query {
     id: ID
     "Optionally, locate proposal by its reference. If ID is set, this parameter is ignored."
     reference: String
-  ): Proposal!
+  ): Proposal
 
   "Governance proposals that aim to create new markets"
   newMarketProposals(
@@ -8993,7 +9339,7 @@ type Query {
   nodeSignaturesConnection(resourceId: ID!, pagination: Pagination): NodeSignaturesConnection!
 
   "An asset which is used in the vega network"
-  asset("Id of the asset" assetId: ID!): Asset
+  asset("ID of the asset" id: ID!): Asset
 
   "The list of all assets in use in the Vega network"
   assets: [Asset!] @deprecated(reason: "Use assetsConnection instead")
@@ -9022,7 +9368,7 @@ type Query {
   ): OrderEstimate!
 
   "find a withdrawal using its ID"
-  withdrawal("id of the withdrawal" id: ID!): Withdrawal
+  withdrawal("ID of the withdrawal" id: ID!): Withdrawal
 
   "find an erc20 withdrawal approval using its withdrawal ID"
   erc20WithdrawalApproval(
@@ -9030,8 +9376,44 @@ type Query {
     withdrawalId: ID!
   ): Erc20WithdrawalApproval
 
+  "get the signature bundle to add a particular validator to the signer list of the multisig contract"
+  erc20MultiSigSignerAddedBundles(
+    "The node ID of the validator of which a signature bundle is required"
+    nodeId: ID!
+    "The ethereum address of the submitter"
+    submitter: String
+    "The epoch that generated the bundle i.e the epoch in which the node was promoted to tendermint validator"
+    epochSeq: String
+    "Pagination"
+    pagination: Pagination
+  ): ERC20MultiSigSignerAddedConnection!
+
+  "get the signatures bundle to remove a particular validator from signer list of the multisig contract"
+  erc20MultiSigSignerRemovedBundles(
+    "The node ID of the validator of which a signature bundle is required"
+    nodeId: ID!
+    "The ethereum address of the validator that will submit the bundle"
+    submitter: String
+    "The epoch that generated the bundle i.e the epoch in which the node was demoted from a tendermint validator"
+    epochSeq: String
+    "Pagination"
+    pagination: Pagination
+  ): ERC20MultiSigSignerRemovedConnection!
+
+  "get the signatures bundle to allowlist an ERC20 token in the collateral bridge"
+  erc20ListAssetBundle(
+    "ID of the asset"
+    assetId: ID!
+  ): Erc20ListAssetBundle!
+
+  "get the signature bundle to update the token limits (maxLifetimeDeposit and withdrawThreshold) for a given ERC20 token (already allowlisted) in the collateral bridge"
+  erc20SetAssetLimitsBundle(
+    "ID of the proposal to update an asset"
+    proposalId: ID!
+  ): ERC20SetAssetLimitsBundle!
+
   "find a deposit using its ID"
-  deposit("id of the Deposit" id: ID!): Deposit
+  deposit("ID of the Deposit" id: ID!): Deposit
 
   "return the full list of network parameters"
   networkParameters: [NetworkParameter!] @deprecated(reason: "Use networkParametersConnection instead")
@@ -9054,19 +9436,19 @@ type Query {
   nodesConnection(pagination: Pagination): NodesConnection!
 
   "specific node in network"
-  node("required id of node" id: String!): Node
+  node("required ID of node" id: ID!): Node
 
   "query for historic key rotations"
-  keyRotations(id: String): [KeyRotation!] @deprecated(reason: "use keyRotationsConnection instead")
+  keyRotations(id: ID): [KeyRotation!] @deprecated(reason: "use keyRotationsConnection instead")
 
   "query for historic key rotations"
-  keyRotationsConnection(id: String, pagination: Pagination): KeyRotationConnection!
+  keyRotationsConnection(id: ID, pagination: Pagination): KeyRotationConnection!
 
   "query for historic ethereum key rotations"
-  ethereumKeyRotations(nodeId: String): EthereumKeyRotationsConnection!
+  ethereumKeyRotations(nodeId: ID): EthereumKeyRotationsConnection!
 
   "get data for a specific epoch, if ID omitted it gets the current epoch. If the string is 'next', fetch the next epoch"
-  epoch(id: String): Epoch!
+  epoch(id: ID): Epoch!
 
   "get a list of all transfers for a public key"
   transfers(
@@ -9081,7 +9463,7 @@ type Query {
   "get a list of all transfers for a public key"
   transfersConnection(
     "the public key to look for"
-    partyId: String
+    partyId: ID
     "direction of the transfer with respect to the public key"
     direction: TransferDirection
     "Pagination information"
@@ -9103,7 +9485,7 @@ type Query {
 
   "get market data history for a specific market. If no dates are given, the latest snapshot will be returned. If only the start date is provided, all history from the given date will be provided, and if only the end date is provided, all history from the start up to and including the end date will be provided."
   getMarketDataHistoryByID(
-    id: String!
+    id: ID!
     """
     Optional start date time for the historic data query.
     If both the start and end date is not provided, only the latest snapshot will be returned.
@@ -9126,7 +9508,7 @@ type Query {
 
   "get market data history for a specific market. If no dates are given, the latest snapshot will be returned. If only the start date is provided all history from the given date will be provided, and if only the end date is provided, all history from the start up to and including the end date will be provided. Pagination is provided using a cursor based pagination model"
   getMarketDataHistoryConnectionByID(
-    id: String!
+    id: ID!
     """
     Optional start date time for the historic data query.
     If both the start and end date is not provided, only the latest snapshot will be returned.
@@ -9261,7 +9643,7 @@ type EpochTimestamps {
 
 type KeyRotation {
   "ID of node where rotation took place"
-  nodeId: String!
+  nodeId: ID!
   "Old public key rotated from"
   oldPubKey: String!
   "New public key rotated to"
@@ -9285,7 +9667,7 @@ type EthereumKeyRotationsConnection {
 # Describes the ethereum key rotations of nodes on the vega network
 type EthereumKeyRotation {
   "ID of node where rotation took place"
-  nodeId: String!
+  nodeId: ID!
   "Old ethereum address"
   oldAddress: String!
   "New ethereum address"
@@ -9296,7 +9678,7 @@ type EthereumKeyRotation {
 
 type Epoch {
   "Presumably this is an integer or something. If there's no such thing, disregard"
-  id: String!
+  id: ID!
 
   "Timestamps for start and end of epochs"
   timestamps: EpochTimestamps!
@@ -9309,9 +9691,9 @@ type Epoch {
 
   delegations(
     # Optional party ID to filter on
-    partyId: String
+    partyId: ID
     # Optional node ID to filter on
-    nodeId: String
+    nodeId: ID
     "Pagination skip"
     skip: Int
     "Pagination first element"
@@ -9321,9 +9703,9 @@ type Epoch {
 
   delegationsConnection(
     # Optional party ID to filter on
-    partyId: String
+    partyId: ID
     # Optional node ID to filter on
-    nodeId: String
+    nodeId: ID
     "Pagination information"
    pagination: Pagination
   ): DelegationsConnection!
@@ -9372,7 +9754,7 @@ type EpochData {
 
 type Node {
   "The node URL eg n01.vega.xyz"
-  id: String!
+  id: ID!
 
   "Public key of the node operator"
   pubkey: String!
@@ -9413,7 +9795,8 @@ type Node {
   status: NodeStatus!
 
   # All delegation for a node by a given party if specified, or all delegations.
-  delegations(partyId: String,
+  delegations(
+    partyId: ID,
     "Pagination skip"
     skip: Int
     "Pagination first element"
@@ -9422,7 +9805,7 @@ type Node {
     last: Int): [Delegation!] @deprecated(reason: "Use delegationsConnection instead")
 
   delegationsConnection(
-    partyId: String,
+    partyId: ID,
     pagination: Pagination
   ): DelegationsConnection!
 
@@ -9688,7 +10071,7 @@ type Statistics {
   blockDuration: String!
 
   "Current chain ID"
-  chainId: String!
+  chainId: ID!
 }
 
 "A mode where Vega tries to execute orders as soon as they are received"
@@ -9750,7 +10133,7 @@ type InstrumentMetadata {
 "An Ethereum oracle"
 type EthereumEvent {
   "The ID of the ethereum contract to use (string)"
-  contractId: String!
+  contractId: ID!
 
   "Name of the Ethereum event to listen to. (string)"
   event: String!
@@ -9791,7 +10174,7 @@ wants to get from the oracle engine.
 """
 type OracleSpec {
   "ID is a hash generated from the OracleSpec data."
-  id: String!
+  id: ID!
   "RFC3339Nano creation date time"
   createdAt: String!
   "RFC3339Nano last updated timestamp"
@@ -9908,7 +10291,7 @@ type OracleData {
   lists all the oracle specs that matched this oracle data.
   When the array is empty, it means no oracle spec matched this oracle data.
   """
-  matchedSpecIds: [String!]
+  matchedSpecIds: [ID!]
   """
   RFC3339Nano formatted date and time for when the data was broadcast to the markets
   with a matching oracle spec.
@@ -9930,7 +10313,7 @@ union Product = Future
 "Describes something that can be traded on Vega"
 type Instrument {
   "Uniquely identify an instrument across all instruments available on Vega (string)"
-  id: String!
+  id: ID!
 
   "A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18) (string)"
   code: String!
@@ -10205,13 +10588,13 @@ type Market {
   "The list of the liquidity provision commitments for this market"
   liquidityProvisions(
     "An optional party ID"
-    party: String
+    partyId: ID
   ): [LiquidityProvision!] @deprecated(reason: "Use liquidityProvisionsConnection instead")
 
   "The list of the liquidity provision commitments for this market"
    liquidityProvisionsConnection(
      "An optional party ID"
-     party: String
+     partyId: ID
      "Pagination information"
      pagination: Pagination
   ): LiquidityProvisionsConnection!
@@ -10228,7 +10611,7 @@ Market Depth is a measure of the number of open buy and sell orders for a securi
 The depth of market measure provides an indication of the liquidity and depth for the instrument.
 """
 type MarketDepth {
-  "Market ID"
+  "Market"
   market: Market!
 
   "Buy side price levels (if available)"
@@ -10250,7 +10633,7 @@ The depth of market measure provides an indication of the liquidity and depth fo
 """
 type ObservableMarketDepth {
   "Market ID"
-  marketId: String!
+  marketId: ID!
 
   "Buy side price levels (if available)"
   buy: [PriceLevel!]
@@ -10267,7 +10650,7 @@ type ObservableMarketDepth {
 
 type MarketDepthTrade {
   "ID of the trade for the given market (if available)"
-  id: String!
+  id: ID!
 
   "Price of the trade"
   price: String!
@@ -10302,8 +10685,8 @@ Market Depth Update is a delta to the current market depth which can be used to 
 market depth structure to keep it correct
 """
 type ObservableMarketDepthUpdate {
-  "Market id"
-  marketId: String!
+  "Market ID"
+  marketId: ID!
 
   "Buy side price levels (if available)"
   buy: [PriceLevel!]
@@ -10403,8 +10786,8 @@ type Party {
   accounts(
     "Market ID - specify what market accounts for the party to return"
     marketId: ID
-    "Asset (ETH, DAI etc)"
-    asset: String
+    "Asset ID"
+    assetId: ID
     "Filter accounts by type (General account, margin account, etc...)"
     type: AccountType
   ): [Account!] @deprecated(reason: "Use accountsConnection instead")
@@ -10413,8 +10796,8 @@ type Party {
   accountsConnection(
     "Market ID - specify what market accounts for the party to return"
     marketId: ID
-    "Asset (ETH, DAI etc)"
-    asset: String
+    "Asset ID"
+    assetId: ID
     "Filter accounts by type (General account, margin account, etc...)"
     type: AccountType
     "Cursor pagination information"
@@ -10480,7 +10863,7 @@ type Party {
 
   "The list of the liquidity provision commitment from this party"
   liquidityProvisions(
-    "An optional market id"
+    "An optional market"
     market: String
     "An optional reference"
     reference: String
@@ -10489,7 +10872,7 @@ type Party {
    "The list of the liquidity provision commitment for this party"
      liquidityProvisionsConnection(
        "An optional market ID"
-       market: String
+       marketId: ID
        "An optional reference"
        reference: String
        "Pagination information"
@@ -10498,8 +10881,8 @@ type Party {
 
   # All delegations for a party to a given node if node is specified, or all delegations if not
   delegations(
-    "Optional node"
-    nodeId: String
+    "Optional node ID"
+    nodeId: ID
     "Pagination skip"
     skip: Int
     "Pagination first element"
@@ -10508,8 +10891,8 @@ type Party {
     last: Int): [Delegation!] @deprecated(reason: "Use delegationsConnection instead")
 
   delegationsConnection(
-    "Optional node"
-    nodeId: String
+    "Optional node ID"
+    nodeId: ID
     "Pagination information"
     pagination: Pagination
   ): DelegationsConnection!
@@ -10522,8 +10905,8 @@ type Party {
 
   "Return individual reward information"
   rewards(
-    "An optional asset"
-    asset: String
+    "An optional asset ID"
+    assetId: ID
     "Pagination skip element"
     skip: Int
     "Pagination first element"
@@ -10533,16 +10916,16 @@ type Party {
   ): [Reward] @deprecated(reason: "Use rewardsConnection instead")
 
   rewardsConnection(
-    "An asset (optional)"
-    asset: String
+    "An asset ID (optional)"
+    assetId: ID
     "Cursor pagination information"
     pagination: Pagination
   ): RewardsConnection
 
   "Return net reward information"
   rewardSummaries(
-    "An asset (optional)"
-    asset: String
+    "An asset ID (optional)"
+    assetId: ID
   ): [RewardSummary]
 
   "return reward information"
@@ -10820,6 +11203,18 @@ type Account {
   market: Market
 }
 
+"An account record used for subscriptions"
+type AccountUpdate {
+  "Balance as string - current account balance (approx. as balances can be updated several times per second)"
+  balance: String!
+  "Asset id, the 'currency'"
+  assetId: ID!
+  "Account type (General, Margin, etc)"
+  type: AccountType!
+  "Market id (only relevant to margin accounts)"
+  marketId: ID
+}
+
 "All the data related to the approval of a withdrawal from the network"
 type Erc20WithdrawalApproval {
   "The source asset in the ethereum network"
@@ -10841,11 +11236,99 @@ type Erc20WithdrawalApproval {
   creation: String!
 }
 
+"Response for the signature bundle to add a particular validator to the signer list of the multisig contract"
+type ERC20MultiSigSignerAddedConnection {
+  edges: [ERC20MultiSigSignerAddedBundleEdge]
+  pageInfo: PageInfo
+}
+
+type ERC20MultiSigSignerAddedBundleEdge {
+  node: ERC20MultiSigSignerAddedBundle!
+  cursor: String!
+}
+
+type ERC20MultiSigSignerAddedBundle {
+  "The ethereum address of the signer to be added"
+  newSigner: String!
+  "The ethereum address of the submitter"
+  submitter: String!
+  "The nonce used in the signing operation"
+  nonce: String!
+  "Unix-nano timestamp for when the validator was added"
+  timestamp: String!
+  "The bundle of signatures from current validators to sign in the new signer"
+  signatures: String!
+  "The epoch in which the validator was added"
+  epochSeq: String!
+}
+
+"Response for the signature bundle to remove a particular validator from the signer list of the multisig contract"
+type ERC20MultiSigSignerRemovedConnection {
+  "The list of signer bundles for that validator"
+  edges: [ERC20MultiSigSignerRemovedBundleEdge]
+  "The pagination information"
+  pageInfo: PageInfo
+}
+
+type ERC20MultiSigSignerRemovedBundleEdge {
+  node: ERC20MultiSigSignerRemovedBundle!
+  cursor: String!
+}
+
+type ERC20MultiSigSignerRemovedBundle {
+  "The ethereum address of the signer to be removed"
+  oldSigner: String!
+  "The ethereum address of the submitter"
+  submitter: String!
+  "The nonce used in the signing operation"
+  nonce: String!
+  "Unix-nano timestamp for when the validator was added"
+  timestamp: String!
+  "The bundle of signatures from current validators to sign in the new signer"
+  signatures: String!
+  "The epoch in which the validator was removed"
+  epochSeq: String!
+}
+
+"Response for the signature bundle to allowlist an ERC20 token in the collateral bridge"
+type Erc20ListAssetBundle {
+  "The source asset in the ethereum network"
+  assetSource: String!
+  "The ID of the vega asset"
+  vegaAssetId: String!
+  "The nonce to be used in the request"
+  nonce: String!
+  """
+  Signature aggregate from the nodes, in the following format:
+  0x + sig1 + sig2 + ... + sigN
+  """
+  signatures: String!
+}
+
+"Response for the signature bundle to update the token limits (maxLifetimeDeposit and withdrawThreshold) for a given ERC20 token (already allowlisted) in the collateral bridge"
+type ERC20SetAssetLimitsBundle {
+  "The address of the asset on ethereum"
+  assetSource: String!
+  "The ID of the vega asset"
+  vegaAssetId: String!
+  "The nonce, which is actually the internal reference for the proposal"
+  nonce: String!
+  "The lifetime limit deposit for this asset"
+  lifetimeLimit: String!
+  "The threshold withdraw for this asset"
+  threshold: String!
+  """
+  The signatures bundle as hex encoded data, forward by 0x
+  e.g: 0x + sig1 + sig2 + ... + sixN
+  """
+  signatures: String!
+}
+
 "The details of a withdrawal processed by Vega"
 type Withdrawal {
   "The Vega internal ID of the withdrawal"
   id: ID!
-  "The PartyID (public key) initiating the withdrawal"
+  "The Party initiating the withdrawal"
   party: Party!
   "The amount to be withdrawn"
   amount: String!
@@ -10889,7 +11372,7 @@ enum WithdrawalStatus {
 type Deposit {
   "The Vega internal ID of the deposit"
   id: ID!
-  "The PartyID initiating the deposit"
+  "The Party initiating the deposit"
   party: Party!
   "The amount to be withdrawn"
   amount: String!
@@ -11192,7 +11675,6 @@ enum OrderRejectionReason {
 
   "Non-persistent order exceeds price bounds"
   ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS
-
 }
 
 enum OrderType {
@@ -11329,7 +11811,7 @@ enum AccountType {
 }
 
 type FutureProduct {
-  "Product asset ID"
+  "Product asset"
   settlementAsset: Asset!
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
@@ -11455,14 +11937,14 @@ type NewAsset {
   "The precision of the asset"
   decimals: Int!
 
-  "The minimum stake to become a liquidity provider for any market using this asset for settlement"
-  minLpStake: String!
+  "The minimum economically meaningful amount of this specific asset"
+  quantum: String!
 
   "The source of the new asset"
   source: AssetSource!
 }
 
-"A new asset proposal change"
+"A proposal to update an asset's details"
 type UpdateAsset {
   "The full name of the asset (e.g: Great British Pound)"
   name: String!
@@ -11470,8 +11952,8 @@ type UpdateAsset {
   "The symbol of the asset (e.g: GBP)"
   symbol: String!
 
-  "The minimum stake to become a liquidity provider for any market using this asset for settlement"
-  minLpStake: String!
+  "The minimum economically meaningful amount of this specific asset"
+  quantum: String!
 
   "The source of the updated asset"
   source: UpdateAssetSource!
@@ -11511,23 +11993,16 @@ union ProposalChange =
 type ProposalRationale {
   """
   Description to show a short title / something in case the link goes offline.
-  This is to be between 0 and 1024 unicode characters.
+  This is to be between 0 and 20k unicode characters.
   This is mandatory for all proposals.
   """
   description: String!
   """
-  Cryptographically secure hash (SHA3-512) of the text pointed by the ` + "`" + `url` + "`" + ` property
-  so that viewers can check that the text hasn't been changed over time.
-  Optional except for FreeFrom proposal where it's mandatory.
-  If set, the ` + "`" + `url` + "`" + ` property must be set.
+  Title to be used to give a short description of the proposal in lists.
+  This is to be between 0 and 100 unicode characters.
+  This is mandatory for all proposals.
   """
-  hash: String
-  """
-  Link to a text file describing the proposal in depth.
-  Optional except for FreeFrom proposal where it's mandatory.
-  If set, the ` + "`" + `url` + "`" + ` property must be set.
-  """
-  url: String
+  title: String!
 }
 
 "The rationale behind the proposal"
@@ -11664,7 +12139,7 @@ type Vote {
 type ProposalVote {
   "Cast vote"
   vote: Vote!
-  "Proposal the vote is cast on"
+  "Proposal ID the vote is cast on"
   proposalId: ID!
 }
 
@@ -11885,7 +12360,7 @@ union Event =
 
 type BusEvent {
   "the ID for this event"
-  eventId: ID!
+  id: ID!
   "the block hash"
   block: String!
   "the type of event"
@@ -11935,7 +12410,7 @@ enum LiquidityProvisionStatus {
 }
 
 type LiquidityOrderReference {
-  "The ID of the pegged order generated to fulfill this commitment"
+  "The pegged order generated to fulfill this commitment"
   order: Order
   "The liquidity order"
   liquidityOrder: LiquidityOrder!
@@ -11945,13 +12420,13 @@ type LiquidityOrderReference {
 type LiquidityProvision {
   "Unique identifier for the order (set by the system after consensus)"
   id: ID
-  "The Id of the party making this commitment"
+  "The party making this commitment"
   party: Party!
   "When the liquidity provision was initially created (formatted RFC3339)"
   createdAt: String!
   "RFC3339Nano time of when the liquidity provision was updated"
   updatedAt: String
-  "Market ID for the order"
+  "Market for the order"
   market: Market!
   "Specified as a unit-less number that represents the amount of settlement asset of the market."
   commitmentAmount: String!
@@ -11973,8 +12448,8 @@ type LiquidityProvision {
 type Reward {
   "The asset this reward is paid in"
   asset: Asset!
-  "The market for which this reward is paid if any"
-  marketID: String!
+  "The market ID for which this reward is paid if any"
+  marketId: ID!
   "The type of reward"
   rewardType: AccountType!
   "Party receiving the reward"
@@ -12004,8 +12479,8 @@ type RewardSummary {
     last: Int): [Reward] @deprecated(reason: "Use rewardsConnection instead")
   "List of individual reward payouts, ordered by epoch"
   rewardsConnection(
-    "An optional asset"
-    asset: String
+    "An optional asset ID"
+    assetId: ID
     "Cursor pagination information"
     pagination: Pagination
   ): RewardsConnection
@@ -12015,8 +12490,8 @@ type RewardSummary {
 type RewardPerAssetDetail {
   "Asset in which the reward was paid"
   asset: Asset!
-  "Id of asset in which the reward was paid"
-  assetId: String! @deprecated(reason: "Use asset{id} instead")
+  "ID of asset in which the reward was paid"
+  assetId: ID! @deprecated(reason: "Use asset{ID} instead")
   "A list of rewards received for this asset"
   rewards: [Reward]
   "The total amount of rewards received for this asset."
@@ -12032,13 +12507,13 @@ type AggregatedBalance {
   "Net balance of the accounts specified in the filter at this time"
   balance: String!
   "Account identifier, if query was grouped by account - else null"
-  accountId: String
+  accountId: ID
   "Party identifier, if query was grouped by party - else null"
-  partyId: String
+  partyId: ID
   "Asset identifier, if query was grouped by asset - else null"
-  assetId: String
+  assetId: ID
   "Market identifier, if query was grouped by market - else null"
-  marketId: String
+  marketId: ID
   "Account type, if query was grouped by account type - else null"
   accountType: AccountType
 }
@@ -12371,6 +12846,7 @@ type ProposalsConnection {
     "Page information for the connection"
     pageInfo: PageInfo!
 }
+
 type DelegationEdge {
   "The delegation information"
   node: Delegation!
@@ -12507,7 +12983,7 @@ func (ec *executionContext) field_Epoch_delegationsConnection_args(ctx context.C
 	var arg0 *string
 	if tmp, ok := rawArgs["partyId"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyId"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -12516,7 +12992,7 @@ func (ec *executionContext) field_Epoch_delegationsConnection_args(ctx context.C
 	var arg1 *string
 	if tmp, ok := rawArgs["nodeId"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeId"))
-		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -12540,7 +13016,7 @@ func (ec *executionContext) field_Epoch_delegations_args(ctx context.Context, ra
 	var arg0 *string
 	if tmp, ok := rawArgs["partyId"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyId"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -12549,7 +13025,7 @@ func (ec *executionContext) field_Epoch_delegations_args(ctx context.Context, ra
 	var arg1 *string
 	if tmp, ok := rawArgs["nodeId"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeId"))
-		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -12724,14 +13200,14 @@ func (ec *executionContext) field_Market_liquidityProvisionsConnection_args(ctx 
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
-	if tmp, ok := rawArgs["party"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("party"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+	if tmp, ok := rawArgs["partyId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyId"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["party"] = arg0
+	args["partyId"] = arg0
 	var arg1 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
@@ -12748,14 +13224,14 @@ func (ec *executionContext) field_Market_liquidityProvisions_args(ctx context.Co
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
-	if tmp, ok := rawArgs["party"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("party"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+	if tmp, ok := rawArgs["partyId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyId"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["party"] = arg0
+	args["partyId"] = arg0
 	return args, nil
 }
 
@@ -12879,7 +13355,7 @@ func (ec *executionContext) field_Node_delegationsConnection_args(ctx context.Co
 	var arg0 *string
 	if tmp, ok := rawArgs["partyId"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyId"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -12903,7 +13379,7 @@ func (ec *executionContext) field_Node_delegations_args(ctx context.Context, raw
 	var arg0 *string
 	if tmp, ok := rawArgs["partyId"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyId"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -12991,14 +13467,14 @@ func (ec *executionContext) field_Party_accountsConnection_args(ctx context.Cont
 	}
 	args["marketId"] = arg0
 	var arg1 *string
-	if tmp, ok := rawArgs["asset"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("asset"))
-		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+	if tmp, ok := rawArgs["assetId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("assetId"))
+		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["asset"] = arg1
+	args["assetId"] = arg1
 	var arg2 *vega.AccountType
 	if tmp, ok := rawArgs["type"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
@@ -13033,14 +13509,14 @@ func (ec *executionContext) field_Party_accounts_args(ctx context.Context, rawAr
 	}
 	args["marketId"] = arg0
 	var arg1 *string
-	if tmp, ok := rawArgs["asset"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("asset"))
-		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+	if tmp, ok := rawArgs["assetId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("assetId"))
+		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["asset"] = arg1
+	args["assetId"] = arg1
 	var arg2 *vega.AccountType
 	if tmp, ok := rawArgs["type"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
@@ -13059,7 +13535,7 @@ func (ec *executionContext) field_Party_delegationsConnection_args(ctx context.C
 	var arg0 *string
 	if tmp, ok := rawArgs["nodeId"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeId"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -13083,7 +13559,7 @@ func (ec *executionContext) field_Party_delegations_args(ctx context.Context, ra
 	var arg0 *string
 	if tmp, ok := rawArgs["nodeId"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeId"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -13147,14 +13623,14 @@ func (ec *executionContext) field_Party_liquidityProvisionsConnection_args(ctx c
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
-	if tmp, ok := rawArgs["market"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("market"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+	if tmp, ok := rawArgs["marketId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("marketId"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["market"] = arg0
+	args["marketId"] = arg0
 	var arg1 *string
 	if tmp, ok := rawArgs["reference"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("reference"))
@@ -13372,14 +13848,14 @@ func (ec *executionContext) field_Party_rewardSummaries_args(ctx context.Context
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
-	if tmp, ok := rawArgs["asset"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("asset"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+	if tmp, ok := rawArgs["assetId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("assetId"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["asset"] = arg0
+	args["assetId"] = arg0
 	return args, nil
 }
 
@@ -13387,14 +13863,14 @@ func (ec *executionContext) field_Party_rewardsConnection_args(ctx context.Conte
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
-	if tmp, ok := rawArgs["asset"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("asset"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+	if tmp, ok := rawArgs["assetId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("assetId"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["asset"] = arg0
+	args["assetId"] = arg0
 	var arg1 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
@@ -13411,14 +13887,14 @@ func (ec *executionContext) field_Party_rewards_args(ctx context.Context, rawArg
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
-	if tmp, ok := rawArgs["asset"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("asset"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+	if tmp, ok := rawArgs["assetId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("assetId"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["asset"] = arg0
+	args["assetId"] = arg0
 	var arg1 *int
 	if tmp, ok := rawArgs["skip"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("skip"))
@@ -13636,14 +14112,14 @@ func (ec *executionContext) field_Query_asset_args(ctx context.Context, rawArgs 
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["assetId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("assetId"))
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
 		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["assetId"] = arg0
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -13692,12 +14168,126 @@ func (ec *executionContext) field_Query_epoch_args(ctx context.Context, rawArgs 
 	var arg0 *string
 	if tmp, ok := rawArgs["id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_erc20ListAssetBundle_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["assetId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("assetId"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["assetId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_erc20MultiSigSignerAddedBundles_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["nodeId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeId"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["nodeId"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["submitter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("submitter"))
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["submitter"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["epochSeq"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("epochSeq"))
+		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["epochSeq"] = arg2
+	var arg3 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg3, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_erc20MultiSigSignerRemovedBundles_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["nodeId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeId"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["nodeId"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["submitter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("submitter"))
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["submitter"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["epochSeq"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("epochSeq"))
+		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["epochSeq"] = arg2
+	var arg3 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg3, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_erc20SetAssetLimitsBundle_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["proposalId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("proposalId"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["proposalId"] = arg0
 	return args, nil
 }
 
@@ -13800,7 +14390,7 @@ func (ec *executionContext) field_Query_ethereumKeyRotations_args(ctx context.Co
 	var arg0 *string
 	if tmp, ok := rawArgs["nodeId"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeId"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -13815,7 +14405,7 @@ func (ec *executionContext) field_Query_getMarketDataHistoryByID_args(ctx contex
 	var arg0 string
 	if tmp, ok := rawArgs["id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -13875,7 +14465,7 @@ func (ec *executionContext) field_Query_getMarketDataHistoryConnectionByID_args(
 	var arg0 string
 	if tmp, ok := rawArgs["id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -13959,7 +14549,7 @@ func (ec *executionContext) field_Query_keyRotationsConnection_args(ctx context.
 	var arg0 *string
 	if tmp, ok := rawArgs["id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -13983,7 +14573,7 @@ func (ec *executionContext) field_Query_keyRotations_args(ctx context.Context, r
 	var arg0 *string
 	if tmp, ok := rawArgs["id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -14181,7 +14771,7 @@ func (ec *executionContext) field_Query_node_args(ctx context.Context, rawArgs m
 	var arg0 string
 	if tmp, ok := rawArgs["id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -14209,14 +14799,14 @@ func (ec *executionContext) field_Query_oracleDataBySpecConnection_args(ctx cont
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["oracleSpecID"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("oracleSpecID"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+	if tmp, ok := rawArgs["oracleSpecId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("oracleSpecId"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["oracleSpecID"] = arg0
+	args["oracleSpecId"] = arg0
 	var arg1 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
@@ -14233,14 +14823,14 @@ func (ec *executionContext) field_Query_oracleDataBySpec_args(ctx context.Contex
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["oracleSpecID"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("oracleSpecID"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+	if tmp, ok := rawArgs["oracleSpecId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("oracleSpecId"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["oracleSpecID"] = arg0
+	args["oracleSpecId"] = arg0
 	var arg1 *OffsetPagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
@@ -14287,14 +14877,14 @@ func (ec *executionContext) field_Query_oracleSpec_args(ctx context.Context, raw
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["oracleSpecID"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("oracleSpecID"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+	if tmp, ok := rawArgs["oracleSpecId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("oracleSpecId"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["oracleSpecID"] = arg0
+	args["oracleSpecId"] = arg0
 	return args, nil
 }
 
@@ -14332,14 +14922,14 @@ func (ec *executionContext) field_Query_orderByID_args(ctx context.Context, rawA
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["orderId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderId"))
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
 		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["orderId"] = arg0
+	args["id"] = arg0
 	var arg1 *int
 	if tmp, ok := rawArgs["version"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("version"))
@@ -14565,7 +15155,7 @@ func (ec *executionContext) field_Query_transfersConnection_args(ctx context.Con
 	var arg0 *string
 	if tmp, ok := rawArgs["partyId"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyId"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -14668,14 +15258,14 @@ func (ec *executionContext) field_RewardSummary_rewardsConnection_args(ctx conte
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
-	if tmp, ok := rawArgs["asset"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("asset"))
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+	if tmp, ok := rawArgs["assetId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("assetId"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["asset"] = arg0
+	args["assetId"] = arg0
 	var arg1 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
@@ -14758,14 +15348,14 @@ func (ec *executionContext) field_Subscription_accounts_args(ctx context.Context
 	}
 	args["partyId"] = arg1
 	var arg2 *string
-	if tmp, ok := rawArgs["asset"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("asset"))
-		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+	if tmp, ok := rawArgs["assetId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("assetId"))
+		arg2, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["asset"] = arg2
+	args["assetId"] = arg2
 	var arg3 *vega.AccountType
 	if tmp, ok := rawArgs["type"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
@@ -14848,23 +15438,23 @@ func (ec *executionContext) field_Subscription_delegations_args(ctx context.Cont
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
-	if tmp, ok := rawArgs["party"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("party"))
+	if tmp, ok := rawArgs["partyId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyId"))
 		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["party"] = arg0
+	args["partyId"] = arg0
 	var arg1 *string
-	if tmp, ok := rawArgs["nodeID"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeID"))
+	if tmp, ok := rawArgs["nodeId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeId"))
 		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["nodeID"] = arg1
+	args["nodeId"] = arg1
 	return args, nil
 }
 
@@ -15058,14 +15648,14 @@ func (ec *executionContext) field_Subscription_rewards_args(ctx context.Context,
 	}
 	args["assetId"] = arg0
 	var arg1 *string
-	if tmp, ok := rawArgs["party"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("party"))
+	if tmp, ok := rawArgs["partyId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyId"))
 		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["party"] = arg1
+	args["partyId"] = arg1
 	return args, nil
 }
 
@@ -15362,6 +15952,143 @@ func (ec *executionContext) _AccountEdge_cursor(ctx context.Context, field graph
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _AccountUpdate_balance(ctx context.Context, field graphql.CollectedField, obj *vega.Account) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AccountUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Balance, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AccountUpdate_assetId(ctx context.Context, field graphql.CollectedField, obj *vega.Account) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AccountUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.AccountUpdate().AssetID(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AccountUpdate_type(ctx context.Context, field graphql.CollectedField, obj *vega.Account) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AccountUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(vega.AccountType)
+	fc.Result = res
+	return ec.marshalNAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AccountUpdate_marketId(ctx context.Context, field graphql.CollectedField, obj *vega.Account) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AccountUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MarketId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOID2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _AccountsConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.AccountsConnection) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -15528,7 +16255,7 @@ func (ec *executionContext) _AggregatedBalance_accountId(ctx context.Context, fi
 	}
 	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _AggregatedBalance_partyId(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedBalance) (ret graphql.Marshaler) {
@@ -15560,7 +16287,7 @@ func (ec *executionContext) _AggregatedBalance_partyId(ctx context.Context, fiel
 	}
 	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _AggregatedBalance_assetId(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedBalance) (ret graphql.Marshaler) {
@@ -15592,7 +16319,7 @@ func (ec *executionContext) _AggregatedBalance_assetId(ctx context.Context, fiel
 	}
 	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _AggregatedBalance_marketId(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedBalance) (ret graphql.Marshaler) {
@@ -15624,7 +16351,7 @@ func (ec *executionContext) _AggregatedBalance_marketId(ctx context.Context, fie
 	}
 	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _AggregatedBalance_accountType(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedBalance) (ret graphql.Marshaler) {
@@ -16720,7 +17447,7 @@ func (ec *executionContext) _BuiltinAsset_maxFaucetAmountMint(ctx context.Contex
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _BusEvent_eventId(ctx context.Context, field graphql.CollectedField, obj *BusEvent) (ret graphql.Marshaler) {
+func (ec *executionContext) _BusEvent_id(ctx context.Context, field graphql.CollectedField, obj *BusEvent) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -16738,7 +17465,7 @@ func (ec *executionContext) _BusEvent_eventId(ctx context.Context, field graphql
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.EventID, nil
+		return obj.ID, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -18583,6 +19310,904 @@ func (ec *executionContext) _ERC20_withdrawThreshold(ctx context.Context, field 
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _ERC20MultiSigSignerAddedBundle_newSigner(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerAddedBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerAddedBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NewSigner, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerAddedBundle_submitter(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerAddedBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerAddedBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Submitter, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerAddedBundle_nonce(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerAddedBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerAddedBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Nonce, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerAddedBundle_timestamp(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerAddedBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerAddedBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Timestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerAddedBundle_signatures(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerAddedBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerAddedBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Signatures, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerAddedBundle_epochSeq(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerAddedBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerAddedBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EpochSeq, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerAddedBundleEdge_node(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerAddedBundleEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerAddedBundleEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ERC20MultiSigSignerAddedBundle)
+	fc.Result = res
+	return ec.marshalNERC20MultiSigSignerAddedBundle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20MultiSigSignerAddedBundle(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerAddedBundleEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerAddedBundleEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerAddedBundleEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerAddedConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerAddedConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerAddedConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*ERC20MultiSigSignerAddedBundleEdge)
+	fc.Result = res
+	return ec.marshalOERC20MultiSigSignerAddedBundleEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20MultiSigSignerAddedBundleEdge(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerAddedConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerAddedConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerAddedConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v2.PageInfo)
+	fc.Result = res
+	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerRemovedBundle_oldSigner(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerRemovedBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerRemovedBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OldSigner, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerRemovedBundle_submitter(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerRemovedBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerRemovedBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Submitter, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerRemovedBundle_nonce(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerRemovedBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerRemovedBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Nonce, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerRemovedBundle_timestamp(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerRemovedBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerRemovedBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Timestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerRemovedBundle_signatures(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerRemovedBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerRemovedBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Signatures, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerRemovedBundle_epochSeq(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerRemovedBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerRemovedBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EpochSeq, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerRemovedBundleEdge_node(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerRemovedBundleEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerRemovedBundleEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ERC20MultiSigSignerRemovedBundle)
+	fc.Result = res
+	return ec.marshalNERC20MultiSigSignerRemovedBundle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20MultiSigSignerRemovedBundle(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerRemovedBundleEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerRemovedBundleEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerRemovedBundleEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerRemovedConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerRemovedConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerRemovedConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*ERC20MultiSigSignerRemovedBundleEdge)
+	fc.Result = res
+	return ec.marshalOERC20MultiSigSignerRemovedBundleEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20MultiSigSignerRemovedBundleEdge(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20MultiSigSignerRemovedConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *ERC20MultiSigSignerRemovedConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20MultiSigSignerRemovedConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v2.PageInfo)
+	fc.Result = res
+	return ec.marshalOPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20SetAssetLimitsBundle_assetSource(ctx context.Context, field graphql.CollectedField, obj *ERC20SetAssetLimitsBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20SetAssetLimitsBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AssetSource, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20SetAssetLimitsBundle_vegaAssetId(ctx context.Context, field graphql.CollectedField, obj *ERC20SetAssetLimitsBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20SetAssetLimitsBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.VegaAssetID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20SetAssetLimitsBundle_nonce(ctx context.Context, field graphql.CollectedField, obj *ERC20SetAssetLimitsBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20SetAssetLimitsBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Nonce, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20SetAssetLimitsBundle_lifetimeLimit(ctx context.Context, field graphql.CollectedField, obj *ERC20SetAssetLimitsBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20SetAssetLimitsBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LifetimeLimit, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20SetAssetLimitsBundle_threshold(ctx context.Context, field graphql.CollectedField, obj *ERC20SetAssetLimitsBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20SetAssetLimitsBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Threshold, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ERC20SetAssetLimitsBundle_signatures(ctx context.Context, field graphql.CollectedField, obj *ERC20SetAssetLimitsBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ERC20SetAssetLimitsBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Signatures, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Epoch_id(ctx context.Context, field graphql.CollectedField, obj *vega.Epoch) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -18615,7 +20240,7 @@ func (ec *executionContext) _Epoch_id(ctx context.Context, field graphql.Collect
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Epoch_timestamps(ctx context.Context, field graphql.CollectedField, obj *vega.Epoch) (ret graphql.Marshaler) {
@@ -19143,6 +20768,146 @@ func (ec *executionContext) _EpochTimestamps_end(ctx context.Context, field grap
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Erc20ListAssetBundle_assetSource(ctx context.Context, field graphql.CollectedField, obj *Erc20ListAssetBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Erc20ListAssetBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AssetSource, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Erc20ListAssetBundle_vegaAssetId(ctx context.Context, field graphql.CollectedField, obj *Erc20ListAssetBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Erc20ListAssetBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.VegaAssetID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Erc20ListAssetBundle_nonce(ctx context.Context, field graphql.CollectedField, obj *Erc20ListAssetBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Erc20ListAssetBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Nonce, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Erc20ListAssetBundle_signatures(ctx context.Context, field graphql.CollectedField, obj *Erc20ListAssetBundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Erc20ListAssetBundle",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Signatures, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Erc20WithdrawalApproval_assetSource(ctx context.Context, field graphql.CollectedField, obj *Erc20WithdrawalApproval) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -19455,7 +21220,7 @@ func (ec *executionContext) _EthereumEvent_contractId(ctx context.Context, field
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _EthereumEvent_event(ctx context.Context, field graphql.CollectedField, obj *EthereumEvent) (ret graphql.Marshaler) {
@@ -19525,7 +21290,7 @@ func (ec *executionContext) _EthereumKeyRotation_nodeId(ctx context.Context, fie
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _EthereumKeyRotation_oldAddress(ctx context.Context, field graphql.CollectedField, obj *v1.EthereumKeyRotation) (ret graphql.Marshaler) {
@@ -20356,7 +22121,7 @@ func (ec *executionContext) _Instrument_id(ctx context.Context, field graphql.Co
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Instrument_code(ctx context.Context, field graphql.CollectedField, obj *vega.Instrument) (ret graphql.Marshaler) {
@@ -20665,7 +22430,7 @@ func (ec *executionContext) _KeyRotation_nodeId(ctx context.Context, field graph
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _KeyRotation_oldPubKey(ctx context.Context, field graphql.CollectedField, obj *v1.KeyRotation) (ret graphql.Marshaler) {
@@ -23616,7 +25381,7 @@ func (ec *executionContext) _Market_liquidityProvisions(ctx context.Context, fie
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Market().LiquidityProvisions(rctx, obj, args["party"].(*string))
+		return ec.resolvers.Market().LiquidityProvisions(rctx, obj, args["partyId"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -23655,7 +25420,7 @@ func (ec *executionContext) _Market_liquidityProvisionsConnection(ctx context.Co
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Market().LiquidityProvisionsConnection(rctx, obj, args["party"].(*string), args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Market().LiquidityProvisionsConnection(rctx, obj, args["partyId"].(*string), args["pagination"].(*v2.Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -25129,7 +26894,7 @@ func (ec *executionContext) _MarketDepthTrade_id(ctx context.Context, field grap
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketDepthTrade_price(ctx context.Context, field graphql.CollectedField, obj *MarketDepthTrade) (ret graphql.Marshaler) {
@@ -26336,7 +28101,7 @@ func (ec *executionContext) _NewAsset_decimals(ctx context.Context, field graphq
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _NewAsset_minLpStake(ctx context.Context, field graphql.CollectedField, obj *vega.NewAsset) (ret graphql.Marshaler) {
+func (ec *executionContext) _NewAsset_quantum(ctx context.Context, field graphql.CollectedField, obj *vega.NewAsset) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -26354,7 +28119,7 @@ func (ec *executionContext) _NewAsset_minLpStake(ctx context.Context, field grap
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.NewAsset().MinLpStake(rctx, obj)
+		return ec.resolvers.NewAsset().Quantum(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -26805,7 +28570,7 @@ func (ec *executionContext) _Node_id(ctx context.Context, field graphql.Collecte
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Node_pubkey(ctx context.Context, field graphql.CollectedField, obj *vega.Node) (ret graphql.Marshaler) {
@@ -27985,7 +29750,7 @@ func (ec *executionContext) _ObservableLiquidityProviderFeeShare_partyId(ctx con
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ObservableLiquidityProviderFeeShare_equityLikeShare(ctx context.Context, field graphql.CollectedField, obj *ObservableLiquidityProviderFeeShare) (ret graphql.Marshaler) {
@@ -28090,7 +29855,7 @@ func (ec *executionContext) _ObservableMarketData_marketId(ctx context.Context, 
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ObservableMarketData_markPrice(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
@@ -28982,7 +30747,7 @@ func (ec *executionContext) _ObservableMarketDepth_marketId(ctx context.Context,
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ObservableMarketDepth_buy(ctx context.Context, field graphql.CollectedField, obj *vega.MarketDepth) (ret graphql.Marshaler) {
@@ -29151,7 +30916,7 @@ func (ec *executionContext) _ObservableMarketDepthUpdate_marketId(ctx context.Co
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ObservableMarketDepthUpdate_buy(ctx context.Context, field graphql.CollectedField, obj *vega.MarketDepthUpdate) (ret graphql.Marshaler) {
@@ -29413,7 +31178,7 @@ func (ec *executionContext) _OracleData_matchedSpecIds(ctx context.Context, fiel
 	}
 	res := resTmp.([]string)
 	fc.Result = res
-	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+	return ec.marshalOID2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OracleData_broadcastAt(ctx context.Context, field graphql.CollectedField, obj *v12.OracleData) (ret graphql.Marshaler) {
@@ -29620,7 +31385,7 @@ func (ec *executionContext) _OracleSpec_id(ctx context.Context, field graphql.Co
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OracleSpec_createdAt(ctx context.Context, field graphql.CollectedField, obj *v12.OracleSpec) (ret graphql.Marshaler) {
@@ -31421,7 +33186,7 @@ func (ec *executionContext) _Party_accounts(ctx context.Context, field graphql.C
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Party().Accounts(rctx, obj, args["marketId"].(*string), args["asset"].(*string), args["type"].(*vega.AccountType))
+		return ec.resolvers.Party().Accounts(rctx, obj, args["marketId"].(*string), args["assetId"].(*string), args["type"].(*vega.AccountType))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -31460,7 +33225,7 @@ func (ec *executionContext) _Party_accountsConnection(ctx context.Context, field
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Party().AccountsConnection(rctx, obj, args["marketId"].(*string), args["asset"].(*string), args["type"].(*vega.AccountType), args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Party().AccountsConnection(rctx, obj, args["marketId"].(*string), args["assetId"].(*string), args["type"].(*vega.AccountType), args["pagination"].(*v2.Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -31999,7 +33764,7 @@ func (ec *executionContext) _Party_liquidityProvisionsConnection(ctx context.Con
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Party().LiquidityProvisionsConnection(rctx, obj, args["market"].(*string), args["reference"].(*string), args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Party().LiquidityProvisionsConnection(rctx, obj, args["marketId"].(*string), args["reference"].(*string), args["pagination"].(*v2.Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -32199,7 +33964,7 @@ func (ec *executionContext) _Party_rewards(ctx context.Context, field graphql.Co
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Party().Rewards(rctx, obj, args["asset"].(*string), args["skip"].(*int), args["first"].(*int), args["last"].(*int))
+		return ec.resolvers.Party().Rewards(rctx, obj, args["assetId"].(*string), args["skip"].(*int), args["first"].(*int), args["last"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -32238,7 +34003,7 @@ func (ec *executionContext) _Party_rewardsConnection(ctx context.Context, field 
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Party().RewardsConnection(rctx, obj, args["asset"].(*string), args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Party().RewardsConnection(rctx, obj, args["assetId"].(*string), args["pagination"].(*v2.Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -32277,7 +34042,7 @@ func (ec *executionContext) _Party_rewardSummaries(ctx context.Context, field gr
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Party().RewardSummaries(rctx, obj, args["asset"].(*string))
+		return ec.resolvers.Party().RewardSummaries(rctx, obj, args["assetId"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -34226,7 +35991,7 @@ func (ec *executionContext) _ProposalRationale_description(ctx context.Context, 
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ProposalRationale_hash(ctx context.Context, field graphql.CollectedField, obj *vega.ProposalRationale) (ret graphql.Marshaler) {
+func (ec *executionContext) _ProposalRationale_title(ctx context.Context, field graphql.CollectedField, obj *vega.ProposalRationale) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -34244,50 +36009,21 @@ func (ec *executionContext) _ProposalRationale_hash(ctx context.Context, field g
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Hash, nil
+		return obj.Title, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ProposalRationale_url(ctx context.Context, field graphql.CollectedField, obj *vega.ProposalRationale) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
 		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "ProposalRationale",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Url, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
 		return graphql.Null
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ProposalTerms_closingDatetime(ctx context.Context, field graphql.CollectedField, obj *vega.ProposalTerms) (ret graphql.Marshaler) {
@@ -35280,7 +37016,7 @@ func (ec *executionContext) _Query_oracleSpec(ctx context.Context, field graphql
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().OracleSpec(rctx, args["oracleSpecID"].(string))
+		return ec.resolvers.Query().OracleSpec(rctx, args["oracleSpecId"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -35319,7 +37055,7 @@ func (ec *executionContext) _Query_oracleDataBySpec(ctx context.Context, field g
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().OracleDataBySpec(rctx, args["oracleSpecID"].(string), args["pagination"].(*OffsetPagination))
+		return ec.resolvers.Query().OracleDataBySpec(rctx, args["oracleSpecId"].(string), args["pagination"].(*OffsetPagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -35358,7 +37094,7 @@ func (ec *executionContext) _Query_oracleDataBySpecConnection(ctx context.Contex
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().OracleDataBySpecConnection(rctx, args["oracleSpecID"].(string), args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Query().OracleDataBySpecConnection(rctx, args["oracleSpecId"].(string), args["pagination"].(*v2.Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -35481,7 +37217,7 @@ func (ec *executionContext) _Query_orderByID(ctx context.Context, field graphql.
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().OrderByID(rctx, args["orderId"].(string), args["version"].(*int))
+		return ec.resolvers.Query().OrderByID(rctx, args["id"].(string), args["version"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -35734,14 +37470,11 @@ func (ec *executionContext) _Query_proposal(ctx context.Context, field graphql.C
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*vega.GovernanceData)
 	fc.Result = res
-	return ec.marshalNProposal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐGovernanceData(ctx, field.Selections, res)
+	return ec.marshalOProposal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐGovernanceData(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_newMarketProposals(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -36045,7 +37778,7 @@ func (ec *executionContext) _Query_asset(ctx context.Context, field graphql.Coll
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Asset(rctx, args["assetId"].(string))
+		return ec.resolvers.Query().Asset(rctx, args["id"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -36251,6 +37984,174 @@ func (ec *executionContext) _Query_erc20WithdrawalApproval(ctx context.Context, 
 	res := resTmp.(*Erc20WithdrawalApproval)
 	fc.Result = res
 	return ec.marshalOErc20WithdrawalApproval2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐErc20WithdrawalApproval(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_erc20MultiSigSignerAddedBundles(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_erc20MultiSigSignerAddedBundles_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Erc20MultiSigSignerAddedBundles(rctx, args["nodeId"].(string), args["submitter"].(*string), args["epochSeq"].(*string), args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ERC20MultiSigSignerAddedConnection)
+	fc.Result = res
+	return ec.marshalNERC20MultiSigSignerAddedConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20MultiSigSignerAddedConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_erc20MultiSigSignerRemovedBundles(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_erc20MultiSigSignerRemovedBundles_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Erc20MultiSigSignerRemovedBundles(rctx, args["nodeId"].(string), args["submitter"].(*string), args["epochSeq"].(*string), args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ERC20MultiSigSignerRemovedConnection)
+	fc.Result = res
+	return ec.marshalNERC20MultiSigSignerRemovedConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20MultiSigSignerRemovedConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_erc20ListAssetBundle(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_erc20ListAssetBundle_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Erc20ListAssetBundle(rctx, args["assetId"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*Erc20ListAssetBundle)
+	fc.Result = res
+	return ec.marshalNErc20ListAssetBundle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐErc20ListAssetBundle(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_erc20SetAssetLimitsBundle(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_erc20SetAssetLimitsBundle_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Erc20SetAssetLimitsBundle(rctx, args["proposalId"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ERC20SetAssetLimitsBundle)
+	fc.Result = res
+	return ec.marshalNERC20SetAssetLimitsBundle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20SetAssetLimitsBundle(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_deposit(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -37436,7 +39337,7 @@ func (ec *executionContext) _Reward_asset(ctx context.Context, field graphql.Col
 	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Reward_marketID(ctx context.Context, field graphql.CollectedField, obj *vega.Reward) (ret graphql.Marshaler) {
+func (ec *executionContext) _Reward_marketId(ctx context.Context, field graphql.CollectedField, obj *vega.Reward) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -37468,7 +39369,7 @@ func (ec *executionContext) _Reward_marketID(ctx context.Context, field graphql.
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Reward_rewardType(ctx context.Context, field graphql.CollectedField, obj *vega.Reward) (ret graphql.Marshaler) {
@@ -37818,7 +39719,7 @@ func (ec *executionContext) _RewardPerAssetDetail_assetId(ctx context.Context, f
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RewardPerAssetDetail_rewards(ctx context.Context, field graphql.CollectedField, obj *vega.RewardSummary) (ret graphql.Marshaler) {
@@ -38232,7 +40133,7 @@ func (ec *executionContext) _RewardSummary_rewardsConnection(ctx context.Context
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.RewardSummary().RewardsConnection(rctx, obj, args["asset"].(*string), args["pagination"].(*v2.Pagination))
+		return ec.resolvers.RewardSummary().RewardsConnection(rctx, obj, args["assetId"].(*string), args["pagination"].(*v2.Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -40402,7 +42303,7 @@ func (ec *executionContext) _Statistics_chainId(ctx context.Context, field graph
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Subscription_candles(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
@@ -40736,7 +42637,7 @@ func (ec *executionContext) _Subscription_accounts(ctx context.Context, field gr
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Subscription().Accounts(rctx, args["marketId"].(*string), args["partyId"].(*string), args["asset"].(*string), args["type"].(*vega.AccountType))
+		return ec.resolvers.Subscription().Accounts(rctx, args["marketId"].(*string), args["partyId"].(*string), args["assetId"].(*string), args["type"].(*vega.AccountType))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -40749,7 +42650,7 @@ func (ec *executionContext) _Subscription_accounts(ctx context.Context, field gr
 		return nil
 	}
 	return func() graphql.Marshaler {
-		res, ok := <-resTmp.(<-chan *vega.Account)
+		res, ok := <-resTmp.(<-chan []*vega.Account)
 		if !ok {
 			return nil
 		}
@@ -40757,7 +42658,7 @@ func (ec *executionContext) _Subscription_accounts(ctx context.Context, field gr
 			w.Write([]byte{'{'})
 			graphql.MarshalString(field.Alias).MarshalGQL(w)
 			w.Write([]byte{':'})
-			ec.marshalNAccount2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccount(ctx, field.Selections, res).MarshalGQL(w)
+			ec.marshalNAccountUpdate2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountᚄ(ctx, field.Selections, res).MarshalGQL(w)
 			w.Write([]byte{'}'})
 		})
 	}
@@ -41201,7 +43102,7 @@ func (ec *executionContext) _Subscription_delegations(ctx context.Context, field
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Subscription().Delegations(rctx, args["party"].(*string), args["nodeID"].(*string))
+		return ec.resolvers.Subscription().Delegations(rctx, args["partyId"].(*string), args["nodeId"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -41253,7 +43154,7 @@ func (ec *executionContext) _Subscription_rewards(ctx context.Context, field gra
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Subscription().Rewards(rctx, args["assetId"].(*string), args["party"].(*string))
+		return ec.resolvers.Subscription().Rewards(rctx, args["assetId"].(*string), args["partyId"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -43108,7 +45009,7 @@ func (ec *executionContext) _UpdateAsset_symbol(ctx context.Context, field graph
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UpdateAsset_minLpStake(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateAsset) (ret graphql.Marshaler) {
+func (ec *executionContext) _UpdateAsset_quantum(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateAsset) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -43126,7 +45027,7 @@ func (ec *executionContext) _UpdateAsset_minLpStake(ctx context.Context, field g
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.UpdateAsset().MinLpStake(rctx, obj)
+		return ec.resolvers.UpdateAsset().Quantum(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -46470,6 +48371,74 @@ func (ec *executionContext) _AccountEdge(ctx context.Context, sel ast.SelectionS
 	return out
 }
 
+var accountUpdateImplementors = []string{"AccountUpdate"}
+
+func (ec *executionContext) _AccountUpdate(ctx context.Context, sel ast.SelectionSet, obj *vega.Account) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, accountUpdateImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AccountUpdate")
+		case "balance":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._AccountUpdate_balance(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "assetId":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._AccountUpdate_assetId(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "type":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._AccountUpdate_type(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "marketId":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._AccountUpdate_marketId(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var accountsConnectionImplementors = []string{"AccountsConnection"}
 
 func (ec *executionContext) _AccountsConnection(ctx context.Context, sel ast.SelectionSet, obj *v2.AccountsConnection) graphql.Marshaler {
@@ -47178,9 +49147,9 @@ func (ec *executionContext) _BusEvent(ctx context.Context, sel ast.SelectionSet,
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("BusEvent")
-		case "eventId":
+		case "id":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._BusEvent_eventId(ctx, field, obj)
+				return ec._BusEvent_id(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -48137,6 +50106,401 @@ func (ec *executionContext) _ERC20(ctx context.Context, sel ast.SelectionSet, ob
 	return out
 }
 
+var eRC20MultiSigSignerAddedBundleImplementors = []string{"ERC20MultiSigSignerAddedBundle"}
+
+func (ec *executionContext) _ERC20MultiSigSignerAddedBundle(ctx context.Context, sel ast.SelectionSet, obj *ERC20MultiSigSignerAddedBundle) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, eRC20MultiSigSignerAddedBundleImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ERC20MultiSigSignerAddedBundle")
+		case "newSigner":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerAddedBundle_newSigner(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "submitter":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerAddedBundle_submitter(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "nonce":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerAddedBundle_nonce(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "timestamp":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerAddedBundle_timestamp(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "signatures":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerAddedBundle_signatures(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "epochSeq":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerAddedBundle_epochSeq(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var eRC20MultiSigSignerAddedBundleEdgeImplementors = []string{"ERC20MultiSigSignerAddedBundleEdge"}
+
+func (ec *executionContext) _ERC20MultiSigSignerAddedBundleEdge(ctx context.Context, sel ast.SelectionSet, obj *ERC20MultiSigSignerAddedBundleEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, eRC20MultiSigSignerAddedBundleEdgeImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ERC20MultiSigSignerAddedBundleEdge")
+		case "node":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerAddedBundleEdge_node(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cursor":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerAddedBundleEdge_cursor(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var eRC20MultiSigSignerAddedConnectionImplementors = []string{"ERC20MultiSigSignerAddedConnection"}
+
+func (ec *executionContext) _ERC20MultiSigSignerAddedConnection(ctx context.Context, sel ast.SelectionSet, obj *ERC20MultiSigSignerAddedConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, eRC20MultiSigSignerAddedConnectionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ERC20MultiSigSignerAddedConnection")
+		case "edges":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerAddedConnection_edges(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "pageInfo":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerAddedConnection_pageInfo(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var eRC20MultiSigSignerRemovedBundleImplementors = []string{"ERC20MultiSigSignerRemovedBundle"}
+
+func (ec *executionContext) _ERC20MultiSigSignerRemovedBundle(ctx context.Context, sel ast.SelectionSet, obj *ERC20MultiSigSignerRemovedBundle) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, eRC20MultiSigSignerRemovedBundleImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ERC20MultiSigSignerRemovedBundle")
+		case "oldSigner":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerRemovedBundle_oldSigner(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "submitter":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerRemovedBundle_submitter(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "nonce":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerRemovedBundle_nonce(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "timestamp":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerRemovedBundle_timestamp(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "signatures":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerRemovedBundle_signatures(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "epochSeq":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerRemovedBundle_epochSeq(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var eRC20MultiSigSignerRemovedBundleEdgeImplementors = []string{"ERC20MultiSigSignerRemovedBundleEdge"}
+
+func (ec *executionContext) _ERC20MultiSigSignerRemovedBundleEdge(ctx context.Context, sel ast.SelectionSet, obj *ERC20MultiSigSignerRemovedBundleEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, eRC20MultiSigSignerRemovedBundleEdgeImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ERC20MultiSigSignerRemovedBundleEdge")
+		case "node":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerRemovedBundleEdge_node(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cursor":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerRemovedBundleEdge_cursor(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var eRC20MultiSigSignerRemovedConnectionImplementors = []string{"ERC20MultiSigSignerRemovedConnection"}
+
+func (ec *executionContext) _ERC20MultiSigSignerRemovedConnection(ctx context.Context, sel ast.SelectionSet, obj *ERC20MultiSigSignerRemovedConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, eRC20MultiSigSignerRemovedConnectionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ERC20MultiSigSignerRemovedConnection")
+		case "edges":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerRemovedConnection_edges(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "pageInfo":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20MultiSigSignerRemovedConnection_pageInfo(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var eRC20SetAssetLimitsBundleImplementors = []string{"ERC20SetAssetLimitsBundle"}
+
+func (ec *executionContext) _ERC20SetAssetLimitsBundle(ctx context.Context, sel ast.SelectionSet, obj *ERC20SetAssetLimitsBundle) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, eRC20SetAssetLimitsBundleImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ERC20SetAssetLimitsBundle")
+		case "assetSource":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20SetAssetLimitsBundle_assetSource(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "vegaAssetId":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20SetAssetLimitsBundle_vegaAssetId(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "nonce":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20SetAssetLimitsBundle_nonce(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "lifetimeLimit":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20SetAssetLimitsBundle_lifetimeLimit(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "threshold":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20SetAssetLimitsBundle_threshold(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "signatures":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ERC20SetAssetLimitsBundle_signatures(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var epochImplementors = []string{"Epoch"}
 
 func (ec *executionContext) _Epoch(ctx context.Context, sel ast.SelectionSet, obj *vega.Epoch) graphql.Marshaler {
@@ -48409,6 +50773,67 @@ func (ec *executionContext) _EpochTimestamps(ctx context.Context, sel ast.Select
 				return innerFunc(ctx)
 
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var erc20ListAssetBundleImplementors = []string{"Erc20ListAssetBundle"}
+
+func (ec *executionContext) _Erc20ListAssetBundle(ctx context.Context, sel ast.SelectionSet, obj *Erc20ListAssetBundle) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, erc20ListAssetBundleImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Erc20ListAssetBundle")
+		case "assetSource":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Erc20ListAssetBundle_assetSource(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "vegaAssetId":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Erc20ListAssetBundle_vegaAssetId(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "nonce":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Erc20ListAssetBundle_nonce(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "signatures":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Erc20ListAssetBundle_signatures(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -52040,7 +54465,7 @@ func (ec *executionContext) _NewAsset(ctx context.Context, sel ast.SelectionSet,
 				return innerFunc(ctx)
 
 			})
-		case "minLpStake":
+		case "quantum":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -52049,7 +54474,7 @@ func (ec *executionContext) _NewAsset(ctx context.Context, sel ast.SelectionSet,
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._NewAsset_minLpStake(ctx, field, obj)
+				res = ec._NewAsset_quantum(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -56001,20 +58426,16 @@ func (ec *executionContext) _ProposalRationale(ctx context.Context, sel ast.Sele
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "hash":
+		case "title":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._ProposalRationale_hash(ctx, field, obj)
+				return ec._ProposalRationale_title(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
 
-		case "url":
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._ProposalRationale_url(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
 			}
-
-			out.Values[i] = innerFunc(ctx)
-
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -56831,9 +59252,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_proposal(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			}
 
@@ -57103,6 +59521,98 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_erc20WithdrawalApproval(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "erc20MultiSigSignerAddedBundles":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_erc20MultiSigSignerAddedBundles(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "erc20MultiSigSignerRemovedBundles":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_erc20MultiSigSignerRemovedBundles(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "erc20ListAssetBundle":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_erc20ListAssetBundle(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "erc20SetAssetLimitsBundle":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_erc20SetAssetLimitsBundle(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			}
 
@@ -57751,9 +60261,9 @@ func (ec *executionContext) _Reward(ctx context.Context, sel ast.SelectionSet, o
 				return innerFunc(ctx)
 
 			})
-		case "marketID":
+		case "marketId":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Reward_marketID(ctx, field, obj)
+				return ec._Reward_marketId(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -60283,7 +62793,7 @@ func (ec *executionContext) _UpdateAsset(ctx context.Context, sel ast.SelectionS
 				return innerFunc(ctx)
 
 			})
-		case "minLpStake":
+		case "quantum":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -60292,7 +62802,7 @@ func (ec *executionContext) _UpdateAsset(ctx context.Context, sel ast.SelectionS
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._UpdateAsset_minLpStake(ctx, field, obj)
+				res = ec._UpdateAsset_quantum(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -61633,6 +64143,60 @@ func (ec *executionContext) marshalNAccountType2codeᚗvegaprotocolᚗioᚋvega�
 	return res
 }
 
+func (ec *executionContext) marshalNAccountUpdate2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Account) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNAccountUpdate2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccount(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNAccountUpdate2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccount(ctx context.Context, sel ast.SelectionSet, v *vega.Account) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._AccountUpdate(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNAccountsConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountsConnection(ctx context.Context, sel ast.SelectionSet, v v2.AccountsConnection) graphql.Marshaler {
 	return ec._AccountsConnection(ctx, sel, &v)
 }
@@ -62076,6 +64640,68 @@ func (ec *executionContext) marshalNDispatchMetric2codeᚗvegaprotocolᚗioᚋve
 	return res
 }
 
+func (ec *executionContext) marshalNERC20MultiSigSignerAddedBundle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20MultiSigSignerAddedBundle(ctx context.Context, sel ast.SelectionSet, v *ERC20MultiSigSignerAddedBundle) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._ERC20MultiSigSignerAddedBundle(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNERC20MultiSigSignerAddedConnection2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20MultiSigSignerAddedConnection(ctx context.Context, sel ast.SelectionSet, v ERC20MultiSigSignerAddedConnection) graphql.Marshaler {
+	return ec._ERC20MultiSigSignerAddedConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNERC20MultiSigSignerAddedConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20MultiSigSignerAddedConnection(ctx context.Context, sel ast.SelectionSet, v *ERC20MultiSigSignerAddedConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._ERC20MultiSigSignerAddedConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNERC20MultiSigSignerRemovedBundle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20MultiSigSignerRemovedBundle(ctx context.Context, sel ast.SelectionSet, v *ERC20MultiSigSignerRemovedBundle) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._ERC20MultiSigSignerRemovedBundle(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNERC20MultiSigSignerRemovedConnection2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20MultiSigSignerRemovedConnection(ctx context.Context, sel ast.SelectionSet, v ERC20MultiSigSignerRemovedConnection) graphql.Marshaler {
+	return ec._ERC20MultiSigSignerRemovedConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNERC20MultiSigSignerRemovedConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20MultiSigSignerRemovedConnection(ctx context.Context, sel ast.SelectionSet, v *ERC20MultiSigSignerRemovedConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._ERC20MultiSigSignerRemovedConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNERC20SetAssetLimitsBundle2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20SetAssetLimitsBundle(ctx context.Context, sel ast.SelectionSet, v ERC20SetAssetLimitsBundle) graphql.Marshaler {
+	return ec._ERC20SetAssetLimitsBundle(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNERC20SetAssetLimitsBundle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20SetAssetLimitsBundle(ctx context.Context, sel ast.SelectionSet, v *ERC20SetAssetLimitsBundle) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._ERC20SetAssetLimitsBundle(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNEpoch2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐEpoch(ctx context.Context, sel ast.SelectionSet, v vega.Epoch) graphql.Marshaler {
 	return ec._Epoch(ctx, sel, &v)
 }
@@ -62098,6 +64724,20 @@ func (ec *executionContext) marshalNEpochTimestamps2ᚖcodeᚗvegaprotocolᚗio�
 		return graphql.Null
 	}
 	return ec._EpochTimestamps(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNErc20ListAssetBundle2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐErc20ListAssetBundle(ctx context.Context, sel ast.SelectionSet, v Erc20ListAssetBundle) graphql.Marshaler {
+	return ec._Erc20ListAssetBundle(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNErc20ListAssetBundle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐErc20ListAssetBundle(ctx context.Context, sel ast.SelectionSet, v *Erc20ListAssetBundle) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Erc20ListAssetBundle(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNEthereumKeyRotation2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐEthereumKeyRotation(ctx context.Context, sel ast.SelectionSet, v *v1.EthereumKeyRotation) graphql.Marshaler {
@@ -65347,6 +67987,102 @@ func (ec *executionContext) marshalODispatchStrategy2ᚖcodeᚗvegaprotocolᚗio
 		return graphql.Null
 	}
 	return ec._DispatchStrategy(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOERC20MultiSigSignerAddedBundleEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20MultiSigSignerAddedBundleEdge(ctx context.Context, sel ast.SelectionSet, v []*ERC20MultiSigSignerAddedBundleEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOERC20MultiSigSignerAddedBundleEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20MultiSigSignerAddedBundleEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOERC20MultiSigSignerAddedBundleEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20MultiSigSignerAddedBundleEdge(ctx context.Context, sel ast.SelectionSet, v *ERC20MultiSigSignerAddedBundleEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ERC20MultiSigSignerAddedBundleEdge(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOERC20MultiSigSignerRemovedBundleEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20MultiSigSignerRemovedBundleEdge(ctx context.Context, sel ast.SelectionSet, v []*ERC20MultiSigSignerRemovedBundleEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOERC20MultiSigSignerRemovedBundleEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20MultiSigSignerRemovedBundleEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOERC20MultiSigSignerRemovedBundleEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐERC20MultiSigSignerRemovedBundleEdge(ctx context.Context, sel ast.SelectionSet, v *ERC20MultiSigSignerRemovedBundleEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ERC20MultiSigSignerRemovedBundleEdge(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOEpoch2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐEpoch(ctx context.Context, sel ast.SelectionSet, v *vega.Epoch) graphql.Marshaler {

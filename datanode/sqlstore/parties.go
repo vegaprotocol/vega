@@ -50,8 +50,8 @@ func NewParties(connectionSource *ConnectionSource) *Parties {
 func (ps *Parties) Initialise() {
 	defer metrics.StartSQLQuery("Parties", "Initialise")()
 	_, err := ps.Connection.Exec(context.Background(),
-		`INSERT INTO parties(id) VALUES ($1) ON CONFLICT (id) DO NOTHING`,
-		entities.PartyID("network"))
+		`INSERT INTO parties(id, tx_hash) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING`,
+		entities.PartyID("network"), entities.TxHash("01"))
 	if err != nil {
 		panic(fmt.Errorf("Unable to add built-in network party: %w", err))
 	}
@@ -60,11 +60,13 @@ func (ps *Parties) Initialise() {
 func (ps *Parties) Add(ctx context.Context, p entities.Party) error {
 	defer metrics.StartSQLQuery("Parties", "Add")()
 	_, err := ps.Connection.Exec(ctx,
-		`INSERT INTO parties(id, vega_time)
-		 VALUES ($1, $2)
+		`INSERT INTO parties(id, tx_hash, vega_time)
+		 VALUES ($1, $2, $3)
 		 ON CONFLICT (id) DO NOTHING`,
 		p.ID,
-		p.VegaTime)
+		p.TxHash,
+		p.VegaTime,
+	)
 	return err
 }
 
@@ -72,7 +74,7 @@ func (ps *Parties) GetByID(ctx context.Context, id string) (entities.Party, erro
 	a := entities.Party{}
 	defer metrics.StartSQLQuery("Parties", "GetByID")()
 	err := pgxscan.Get(ctx, ps.Connection, &a,
-		`SELECT id, vega_time
+		`SELECT id, tx_hash, vega_time
 		 FROM parties WHERE id=$1`,
 		entities.PartyID(id))
 
@@ -91,7 +93,7 @@ func (ps *Parties) GetAll(ctx context.Context) ([]entities.Party, error) {
 	parties := []entities.Party{}
 	defer metrics.StartSQLQuery("Parties", "GetAll")()
 	err := pgxscan.Select(ctx, ps.Connection, &parties, `
-		SELECT id, vega_time
+		SELECT id, tx_hash, vega_time
 		FROM parties`)
 	return parties, err
 }
@@ -115,7 +117,7 @@ func (ps *Parties) GetAllPaged(ctx context.Context, partyID string, pagination e
 	args := make([]interface{}, 0)
 
 	query := `
-		SELECT id, vega_time
+		SELECT id, tx_hash, vega_time
 		FROM parties
 	`
 

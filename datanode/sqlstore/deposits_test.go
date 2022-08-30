@@ -100,7 +100,7 @@ func testAddDepositForNewBlock(t *testing.T) {
 
 	depositProto := getTestDeposit(testID, testID, testID, testAmount, testID, time.Now().UnixNano())
 
-	deposit, err := entities.DepositFromProto(depositProto, block.VegaTime)
+	deposit, err := entities.DepositFromProto(depositProto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
 
 	err = ds.Upsert(context.Background(), deposit)
@@ -126,7 +126,7 @@ func testErrorIfBlockDoesNotExist(t *testing.T) {
 	block := addTestBlock(t, bs)
 	depositProto := getTestDeposit(testID, testID, testID, testAmount, testID, time.Now().UnixNano())
 
-	deposit, err := entities.DepositFromProto(depositProto, block.VegaTime.Add(time.Second))
+	deposit, err := entities.DepositFromProto(depositProto, generateTxHash(), block.VegaTime.Add(time.Second))
 	require.NoError(t, err, "Converting market proto to database entity")
 
 	err = ds.Upsert(context.Background(), deposit)
@@ -149,7 +149,7 @@ func testUpdateDepositForBlockIfExists(t *testing.T) {
 	block := addTestBlock(t, bs)
 	depositProto := getTestDeposit(testID, testID, testID, testAmount, testID, time.Now().UnixNano())
 
-	deposit, err := entities.DepositFromProto(depositProto, block.VegaTime)
+	deposit, err := entities.DepositFromProto(depositProto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
 
 	err = ds.Upsert(context.Background(), deposit)
@@ -188,7 +188,7 @@ func testInsertDepositUpdatesIfNewBlock(t *testing.T) {
 	block := addTestBlock(t, bs)
 	depositProto := getTestDeposit(testID, testID, testID, testAmount, testID, time.Now().UnixNano())
 
-	deposit, err := entities.DepositFromProto(depositProto, block.VegaTime)
+	deposit, err := entities.DepositFromProto(depositProto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
 
 	err = ds.Upsert(context.Background(), deposit)
@@ -201,7 +201,7 @@ func testInsertDepositUpdatesIfNewBlock(t *testing.T) {
 
 	block = addTestBlock(t, bs)
 	depositProto.Status = vega.Deposit_STATUS_FINALIZED
-	deposit, err = entities.DepositFromProto(depositProto, block.VegaTime)
+	deposit, err = entities.DepositFromProto(depositProto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
 
 	err = ds.Upsert(context.Background(), deposit)
@@ -232,7 +232,7 @@ func testDepositsGetByID(t *testing.T) {
 	block := addTestBlock(t, bs)
 	depositProto := getTestDeposit(testID, testID, testID, testAmount, testID, time.Now().UnixNano())
 
-	deposit, err := entities.DepositFromProto(depositProto, block.VegaTime)
+	deposit, err := entities.DepositFromProto(depositProto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
 
 	err = ds.Upsert(context.Background(), deposit)
@@ -245,7 +245,7 @@ func testDepositsGetByID(t *testing.T) {
 
 	block = addTestBlock(t, bs)
 	depositProto.Status = vega.Deposit_STATUS_FINALIZED
-	deposit, err = entities.DepositFromProto(depositProto, block.VegaTime)
+	deposit, err = entities.DepositFromProto(depositProto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
 
 	err = ds.Upsert(context.Background(), deposit)
@@ -283,7 +283,7 @@ func testDepositsGetByParty(t *testing.T) {
 
 	want := make([]entities.Deposit, 0)
 
-	deposit, err := entities.DepositFromProto(depositProto1, block.VegaTime)
+	deposit, err := entities.DepositFromProto(depositProto1, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
 
 	err = ds.Upsert(context.Background(), deposit)
@@ -293,7 +293,7 @@ func testDepositsGetByParty(t *testing.T) {
 
 	block = addTestBlock(t, bs)
 	depositProto1.Status = vega.Deposit_STATUS_FINALIZED
-	deposit, err = entities.DepositFromProto(depositProto1, block.VegaTime)
+	deposit, err = entities.DepositFromProto(depositProto1, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
 
 	err = ds.Upsert(context.Background(), deposit)
@@ -307,7 +307,7 @@ func testDepositsGetByParty(t *testing.T) {
 	time.Sleep(time.Millisecond * 500)
 
 	block = addTestBlock(t, bs)
-	deposit, err = entities.DepositFromProto(depositProto2, block.VegaTime)
+	deposit, err = entities.DepositFromProto(depositProto2, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
 
 	err = ds.Upsert(context.Background(), deposit)
@@ -316,7 +316,7 @@ func testDepositsGetByParty(t *testing.T) {
 	time.Sleep(time.Millisecond * 500)
 
 	block = addTestBlock(t, bs)
-	deposit, err = entities.DepositFromProto(depositProto2, block.VegaTime)
+	deposit, err = entities.DepositFromProto(depositProto2, generateTxHash(), block.VegaTime)
 	depositProto2.Status = vega.Deposit_STATUS_FINALIZED
 	require.NoError(t, err, "Converting market proto to database entity")
 
@@ -356,7 +356,7 @@ func addDeposits(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, ds *sql
 
 		depositProto := getTestDeposit(fmt.Sprintf("deadbeef%02d", i+1), testID, testID,
 			strconv.FormatInt(amount, 10), generateID(), vegaTime.UnixNano())
-		deposit, err := entities.DepositFromProto(depositProto, vegaTime)
+		deposit, err := entities.DepositFromProto(depositProto, generateTxHash(), vegaTime)
 		require.NoError(t, err, "Converting deposit proto to database entity")
 		err = ds.Upsert(ctx, deposit)
 		deposits = append(deposits, *deposit)

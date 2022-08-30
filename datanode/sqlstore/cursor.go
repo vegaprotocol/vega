@@ -39,10 +39,17 @@ const (
 )
 
 type ColumnOrdering struct {
-	Name         string
-	Sorting      Sorting
+	// Name of the column in the database table to match to the struct field
+	Name string
+	// Sorting is the sorting order to use for the column
+	Sorting Sorting
+	// CursorColumn is a flag that indicates the column ordering is required for the pagination cursor
+	// If false the column is included in the as part of the order statement, but not included in the
+	// ordering predicate for the cursor sorting
 	CursorColumn bool
-	Prefix       string
+	// Prefix to apply to the column name in case the query involves multiple tables and ambiguities may
+	// occur when columns have the same name.
+	Prefix string
 }
 
 func NewColumnOrdering(name string, sorting Sorting, cursorColumn bool) ColumnOrdering {

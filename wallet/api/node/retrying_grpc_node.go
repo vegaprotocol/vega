@@ -24,7 +24,7 @@ func (n *RetryingGRPCNode) Host() string {
 }
 
 func (n *RetryingGRPCNode) HealthCheck(ctx context.Context) error {
-	n.log.Debug("verifying node health through core client", zap.String("host", n.client.Host()))
+	n.log.Debug("verifying the node health through the core client", zap.String("host", n.client.Host()))
 	if err := n.retry(func() error {
 		req := apipb.GetVegaTimeRequest{}
 		resp, err := n.client.GetVegaTime(ctx, &req)
@@ -37,7 +37,7 @@ func (n *RetryingGRPCNode) HealthCheck(ctx context.Context) error {
 		)
 		return nil
 	}); err != nil {
-		n.log.Error("couldn't get chainID",
+		n.log.Error("could not get the chain ID",
 			zap.String("host", n.client.Host()),
 			zap.Error(err),
 		)
@@ -46,35 +46,9 @@ func (n *RetryingGRPCNode) HealthCheck(ctx context.Context) error {
 	return nil
 }
 
-func (n *RetryingGRPCNode) NetworkChainID(ctx context.Context) (string, error) {
-	n.log.Debug("getting network chain ID from core client", zap.String("host", n.client.Host()))
-	chainID := ""
-	if err := n.retry(func() error {
-		req := apipb.StatisticsRequest{}
-		resp, err := n.client.Statistics(ctx, &req)
-		if err != nil {
-			return err
-		}
-		chainID = resp.Statistics.ChainId
-		n.log.Debug("response from Statistics",
-			zap.String("host", n.client.Host()),
-			zap.String("chainID", chainID),
-		)
-		return nil
-	}); err != nil {
-		n.log.Error("couldn't get chainID",
-			zap.String("host", n.client.Host()),
-			zap.Error(err),
-		)
-		return "", err
-	}
-
-	return chainID, nil
-}
-
 // LastBlock returns information about the last block acknowledged by the node.
 func (n *RetryingGRPCNode) LastBlock(ctx context.Context) (*apipb.LastBlockHeightResponse, error) {
-	n.log.Debug("getting last block from core client", zap.String("host", n.client.Host()))
+	n.log.Debug("getting the last block from the core client", zap.String("host", n.client.Host()))
 	var resp *apipb.LastBlockHeightResponse
 	if err := n.retry(func() error {
 		request := apipb.LastBlockHeightRequest{}
@@ -93,7 +67,7 @@ func (n *RetryingGRPCNode) LastBlock(ctx context.Context) (*apipb.LastBlockHeigh
 		)
 		return nil
 	}); err != nil {
-		n.log.Error("couldn't get last block",
+		n.log.Error("could not the get last block",
 			zap.String("host", n.client.Host()),
 			zap.Error(err),
 		)
@@ -104,7 +78,7 @@ func (n *RetryingGRPCNode) LastBlock(ctx context.Context) (*apipb.LastBlockHeigh
 }
 
 func (n *RetryingGRPCNode) CheckTransaction(ctx context.Context, tx *commandspb.Transaction) (*apipb.CheckTransactionResponse, error) {
-	n.log.Debug("checking transaction against core client", zap.String("host", n.client.Host()))
+	n.log.Debug("checking the transaction through the core client", zap.String("host", n.client.Host()))
 	req := apipb.CheckTransactionRequest{
 		Tx: tx,
 	}
@@ -120,7 +94,7 @@ func (n *RetryingGRPCNode) CheckTransaction(ctx context.Context, tx *commandspb.
 		resp = r
 		return nil
 	}); err != nil {
-		n.log.Error("couldn't check transaction",
+		n.log.Error("could not check the transaction",
 			zap.String("host", n.client.Host()),
 			zap.Error(err),
 		)
@@ -131,7 +105,7 @@ func (n *RetryingGRPCNode) CheckTransaction(ctx context.Context, tx *commandspb.
 }
 
 func (n *RetryingGRPCNode) SendTransaction(ctx context.Context, tx *commandspb.Transaction, ty apipb.SubmitTransactionRequest_Type) (string, error) {
-	n.log.Debug("sending transaction to core", zap.String("host", n.client.Host()))
+	n.log.Debug("sending the transaction to the core", zap.String("host", n.client.Host()))
 	var resp *apipb.SubmitTransactionResponse
 	if err := n.retry(func() error {
 		req := apipb.SubmitTransactionRequest{
@@ -157,15 +131,15 @@ func (n *RetryingGRPCNode) SendTransaction(ctx context.Context, tx *commandspb.T
 }
 
 func (n *RetryingGRPCNode) Stop() error {
-	n.log.Debug("closing core client", zap.String("host", n.client.Host()))
+	n.log.Debug("closing the core client", zap.String("host", n.client.Host()))
 	if err := n.client.Stop(); err != nil {
-		n.log.Warn("couldn't stop core client",
+		n.log.Warn("could not stop the core client",
 			zap.String("host", n.client.Host()),
 			zap.Error(err),
 		)
 		return err
 	}
-	n.log.Info("core client successfully closed", zap.String("host", n.client.Host()))
+	n.log.Info("the core client successfully closed", zap.String("host", n.client.Host()))
 	return nil
 }
 
@@ -173,7 +147,7 @@ func (n *RetryingGRPCNode) handleSubmissionError(err error) error {
 	statusErr := intoStatusError(err)
 
 	if statusErr == nil {
-		n.log.Error("couldn't submit transaction",
+		n.log.Error("could not submit the transaction",
 			zap.String("host", n.client.Host()),
 			zap.Error(err),
 		)
@@ -182,7 +156,7 @@ func (n *RetryingGRPCNode) handleSubmissionError(err error) error {
 
 	if statusErr.Code == codes.InvalidArgument {
 		n.log.Error(
-			"transaction has been rejected because of an invalid argument or state, skipping retry...",
+			"the transaction has been rejected because of an invalid argument or state, skipping retry...",
 			zap.String("host", n.client.Host()),
 			zap.Error(statusErr),
 		)
@@ -190,7 +164,7 @@ func (n *RetryingGRPCNode) handleSubmissionError(err error) error {
 		return backoff.Permanent(statusErr)
 	}
 
-	n.log.Error("couldn't submit transaction",
+	n.log.Error("could not submit the transaction",
 		zap.String("host", n.client.Host()),
 		zap.Error(statusErr),
 	)
@@ -204,7 +178,7 @@ func (n *RetryingGRPCNode) retry(o backoff.Operation) error {
 func NewGRPCNode(log *zap.Logger, host string, retries uint64) (*RetryingGRPCNode, error) {
 	client, err := NewInsecureGRPCClient(host)
 	if err != nil {
-		log.Error("couldn't initialise insecure gRPC client",
+		log.Error("could not initialise an insecure gRPC client",
 			zap.String("host", host),
 			zap.Error(err),
 		)

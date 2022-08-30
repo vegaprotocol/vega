@@ -373,7 +373,6 @@ func getEngine(t *testing.T) *testEngine {
 	engine := New(logger, conf, broker, delegation, epochEngine, collateral, ts, marketActivityTracker, topology)
 
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	marketActivityTracker.EXPECT().GetEligibleProposers(gomock.Any()).AnyTimes()
 
 	delegatorForVal1 := map[string]*num.Uint{}
 	delegatorForVal1["party1"] = num.NewUint(6000)

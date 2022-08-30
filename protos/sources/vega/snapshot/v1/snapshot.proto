@@ -408,6 +408,8 @@ message EquityShare {
 message FeeSplitter {
   int64  time_window_start = 1;
   string trade_value = 2;
+  string avg = 3;
+  uint64 window = 4;
 }
 
 message Market {
@@ -619,6 +621,7 @@ message PendingEthereumKeyRotation {
   uint64 block_height = 1;
   string node_id = 2;
   string new_address = 3;
+  string submitter = 4;
 }
 
 message Topology {
@@ -627,7 +630,23 @@ message Topology {
   repeated PendingKeyRotation pending_pub_key_rotations = 3;
   ValidatorPerformance validator_performance = 4;
   repeated PendingEthereumKeyRotation pending_ethereum_key_rotations = 5;
+  ToplogySignatures signatures = 6;
 }
+
+
+message ToplogySignatures {
+  repeated PendingERC20MultisigControlSignature pending_signatures = 1;
+  repeated string issued_signatures = 2;
+}
+
+message PendingERC20MultisigControlSignature {
+  string node_id = 1;
+  string ethereum_address = 2;
+  string nonce = 3;
+  uint64 epoch_seq = 4;
+  bool added = 5;
+}
+
 
 message ValidatorState {
   vega.events.v1.ValidatorUpdate validator_update = 1;

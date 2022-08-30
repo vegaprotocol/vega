@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/gorilla/rpc/json"
 )
@@ -100,6 +101,16 @@ func (s *Client) NodeWalletShow(ctx context.Context, chain string) (*Wallet, err
 
 	if err := s.call(ctx, "NodeWallet.Show", NodeWalletArgs{Chain: chain}, &reply); err != nil {
 		return nil, fmt.Errorf("failed to call NodeWallet.Show method: %w", err)
+	}
+
+	return &reply, nil
+}
+
+func (s *Client) UpgradeStatus(ctx context.Context) (*types.UpgradeStatus, error) {
+	var reply types.UpgradeStatus
+
+	if err := s.call(ctx, "protocolupgrade.UpgradeStatus", nil, &reply); err != nil {
+		return nil, fmt.Errorf("failed to call protocolupgrade.UpgradeStatus method: %w", err)
 	}
 
 	return &reply, nil

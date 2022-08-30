@@ -58,13 +58,13 @@ func (ts *TradeSubscriber) Push(ctx context.Context, evt events.Event) error {
 	return ts.consume(evt.(TradeEvent))
 }
 
-func (ts *TradeSubscriber) consume(ae TradeEvent) error {
-	trade := ae.Trade()
-	return errors.Wrap(ts.addTrade(&trade, ts.vegaTime, ae.Sequence()), "failed to consume trade")
+func (ts *TradeSubscriber) consume(te TradeEvent) error {
+	trade := te.Trade()
+	return errors.Wrap(ts.addTrade(&trade, entities.TxHash(te.TxHash()), ts.vegaTime, te.Sequence()), "failed to consume trade")
 }
 
-func (ts *TradeSubscriber) addTrade(t *types.Trade, vegaTime time.Time, blockSeqNumber uint64) error {
-	trade, err := entities.TradeFromProto(t, vegaTime, blockSeqNumber)
+func (ts *TradeSubscriber) addTrade(t *types.Trade, txHash entities.TxHash, vegaTime time.Time, blockSeqNumber uint64) error {
+	trade, err := entities.TradeFromProto(t, txHash, vegaTime, blockSeqNumber)
 	if err != nil {
 		return errors.Wrap(err, "converting event to trade")
 	}

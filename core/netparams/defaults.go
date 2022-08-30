@@ -13,6 +13,8 @@
 package netparams
 
 import (
+	"errors"
+	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
@@ -45,9 +47,10 @@ func defaultNetParams() map[string]value {
 		MarketTargetStakeTimeWindow:                     NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("1h0m0s"),
 		MarketTargetStakeScalingFactor:                  NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("10"),
 		MarketValueWindowLength:                         NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate(week),
-		MarketPriceMonitoringDefaultParameters:          NewJSON(&proto.PriceMonitoringParameters{}, JSONProtoValidator()).Mutable(true).MustUpdate(`{"triggers": []}`),
+		MarketPriceMonitoringDefaultParameters:          NewJSON(&proto.PriceMonitoringParameters{}).Mutable(true).MustUpdate(`{"triggers": []}`),
 		MarketLiquidityProvisionShapesMaxSize:           NewInt(IntGT(0)).Mutable(true).MustUpdate("100"),
 		MarketMinLpStakeQuantumMultiple:                 NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("1"),
+		RewardMarketCreationQuantumMultiple:             NewDecimal(DecimalGT(num.DecimalZero())).Mutable(true).MustUpdate("10000000"),
 
 		// governance market proposal
 		GovernanceProposalMarketMinClose:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("48h0m0s"),
@@ -190,4 +193,35 @@ func checkOptionalRFC3339Date(d string) error {
 	// now let's just try to parse and see
 	_, err := time.Parse(time.RFC3339, d)
 	return err
+}
+
+func PriceMonitoringParametersValidation(i interface{}) error {
+	pmp, ok := i.(*proto.PriceMonitoringParameters)
+	if !ok {
+		return errors.New("not a price monitoring parameters type")
+	}
+
+	for _, trigger := range pmp.Triggers {
+		if trigger.Horizon <= 0 {
+			return fmt.Errorf("triggers.horizon must be greater than `0`, got `%d`", trigger.Horizon)
+		}
+
+		probability, err := num.DecimalFromString(trigger.Probability)
+		if err != nil {
+			return fmt.Errorf("triggers.probability must be greater than `0`, got `%s`", trigger.Probability)
+		}
+
+		if probability.Cmp(num.DecimalZero()) <= 0 {
+			return fmt.Errorf("triggers.probability must be greater than `0`, got `%s`", trigger.Probability)
+		}
+		if probability.Cmp(num.DecimalFromInt64(1)) >= 0 {
+			return fmt.Errorf("triggers.probability must be lower than `1`, got `%s`", trigger.Probability)
+		}
+
+		if trigger.AuctionExtension <= 0 {
+			return fmt.Errorf("triggers.auction_extension must be greater than `0`, got `%d`", trigger.AuctionExtension)
+		}
+	}
+
+	return nil
 }

@@ -57,10 +57,11 @@ type LiquidityProvision struct {
 	Version          int64
 	Status           LiquidityProvisionStatus
 	Reference        string
+	TxHash           TxHash
 	VegaTime         time.Time
 }
 
-func LiquidityProvisionFromProto(lpProto *vega.LiquidityProvision, vegaTime time.Time) (LiquidityProvision, error) {
+func LiquidityProvisionFromProto(lpProto *vega.LiquidityProvision, txHash TxHash, vegaTime time.Time) (LiquidityProvision, error) {
 	lpID := LiquidityProvisionID(lpProto.Id)
 	partyID := PartyID(lpProto.PartyId)
 	marketID := MarketID(lpProto.MarketId)
@@ -99,6 +100,7 @@ func LiquidityProvisionFromProto(lpProto *vega.LiquidityProvision, vegaTime time
 		Version:          int64(lpProto.Version),
 		Status:           LiquidityProvisionStatus(lpProto.Status),
 		Reference:        lpProto.Reference,
+		TxHash:           txHash,
 		VegaTime:         vegaTime,
 	}, nil
 }
@@ -142,14 +144,14 @@ func (lp LiquidityProvision) Key() LiquidityProvisionKey {
 var LiquidityProvisionColumns = []string{
 	"id", "party_id", "created_at", "updated_at", "market_id",
 	"commitment_amount", "fee", "sells", "buys", "version",
-	"status", "reference", "vega_time",
+	"status", "reference", "tx_hash", "vega_time",
 }
 
 func (lp LiquidityProvision) ToRow() []interface{} {
 	return []interface{}{
 		lp.ID, lp.PartyID, lp.CreatedAt, lp.UpdatedAt, lp.MarketID,
 		lp.CommitmentAmount, lp.Fee, lp.Sells, lp.Buys, lp.Version,
-		lp.Status, lp.Reference, lp.VegaTime,
+		lp.Status, lp.Reference, lp.TxHash, lp.VegaTime,
 	}
 }
 

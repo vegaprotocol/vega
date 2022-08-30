@@ -40,24 +40,21 @@ var (
 )
 
 // Witness provide foreign chain resources validations
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/core/staking TimeService
+
 type TimeService interface {
 	GetTimeNow() time.Time
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_confirmations_mock.go -package mocks code.vegaprotocol.io/vega/core/staking EthConfirmations
 type EthConfirmations interface {
 	Check(uint64) error
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_on_chain_verifier_mock.go -package mocks code.vegaprotocol.io/vega/core/staking EthOnChainVerifier
 type EthOnChainVerifier interface {
 	CheckStakeDeposited(*types.StakeDeposited) error
 	CheckStakeRemoved(*types.StakeRemoved) error
 }
 
-// Witness provide foreign chain resources validations
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/witness_mock.go -package mocks code.vegaprotocol.io/vega/core/staking Witness
+// Witness provide foreign chain resources validations.
 type Witness interface {
 	StartCheck(validators.Resource, func(interface{}, bool), time.Time) error
 	RestoreResource(validators.Resource, func(interface{}, bool)) error

@@ -153,6 +153,10 @@ func (t tradeStub) Price() *num.Uint {
 	return t.price.Clone()
 }
 
+func (t tradeStub) MarketPrice() *num.Uint {
+	return t.price.Clone()
+}
+
 type marketPosition struct {
 	party  string
 	size   int64

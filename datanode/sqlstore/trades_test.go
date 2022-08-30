@@ -266,7 +266,7 @@ func insertTestData(t *testing.T, tradeStore *sqlstore.Trades) {
 			seqNum = 0
 			vegaTime = block2.VegaTime
 		}
-		trade, err := entities.TradeFromProto(&proto, vegaTime, seqNum)
+		trade, err := entities.TradeFromProto(&proto, generateTxHash(), vegaTime, seqNum)
 		if err != nil {
 			t.Fatalf("failed to get trade from proto:%s", err)
 		}

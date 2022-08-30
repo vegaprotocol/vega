@@ -35,6 +35,7 @@ func (nl *NetworkLimits) Add(ctx context.Context, limits entities.NetworkLimits)
 	defer metrics.StartSQLQuery("NetworkLimits", "Add")()
 	_, err := nl.Connection.Exec(ctx, `
 	INSERT INTO network_limits(
+		tx_hash,
 		vega_time,
 		can_propose_market,
 		can_propose_asset,
@@ -45,7 +46,7 @@ func (nl *NetworkLimits) Add(ctx context.Context, limits entities.NetworkLimits)
 		genesis_loaded,
 		propose_market_enabled_from,
 		propose_asset_enabled_from)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 	ON CONFLICT (vega_time) DO UPDATE SET
 		can_propose_market=EXCLUDED.can_propose_market,
 		can_propose_asset=EXCLUDED.can_propose_asset,
@@ -57,6 +58,7 @@ func (nl *NetworkLimits) Add(ctx context.Context, limits entities.NetworkLimits)
 		propose_market_enabled_from=EXCLUDED.propose_market_enabled_from,
 		propose_asset_enabled_from=EXCLUDED.propose_asset_enabled_from
 	`,
+		limits.TxHash,
 		limits.VegaTime,
 		limits.CanProposeMarket,
 		limits.CanProposeAsset,

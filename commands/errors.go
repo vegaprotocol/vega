@@ -9,28 +9,30 @@ import (
 )
 
 var (
-	ErrIsRequired             = errors.New("is required")
-	ErrMustBeValidDate        = errors.New("must be a RFC3339 date")
-	ErrMustBePositive         = errors.New("must be positive")
-	ErrMustBePositiveOrZero   = errors.New("must be positive or zero")
-	ErrMustBeNegative         = errors.New("must be negative")
-	ErrMustBeNegativeOrZero   = errors.New("must be negative or zero")
-	ErrMustBeLessThan150      = errors.New("must be less than 150")
-	ErrMustBeLessThan7        = errors.New("must be less than 7")
-	ErrIsNotValid             = errors.New("is not a valid value")
-	ErrIsNotValidNumber       = errors.New("is not a valid number")
-	ErrIsNotSupported         = errors.New("is not supported")
-	ErrIsUnauthorised         = errors.New("is unauthorised")
-	ErrCannotAmendToGFA       = errors.New("cannot amend to time in force GFA")
-	ErrCannotAmendToGFN       = errors.New("cannot amend to time in force GFN")
-	ErrNonGTTOrderWithExpiry  = errors.New("non GTT order with expiry")
-	ErrGTTOrderWithNoExpiry   = errors.New("GTT order without expiry")
-	ErrIsMismatching          = errors.New("is mismatching")
-	ErrReferenceTooLong       = errors.New("reference is too long")
-	ErrNotAValidInteger       = errors.New("not a valid integer")
-	ErrNotAValidFloat         = errors.New("not a valid float")
-	ErrMustBeLessThan100Chars = errors.New("must be less than 100 characters")
-	ErrMustNotExceed1024Chars = errors.New("must not exceed 1024 characters")
+	ErrIsRequired              = errors.New("is required")
+	ErrMustBePositive          = errors.New("must be positive")
+	ErrMustBePositiveOrZero    = errors.New("must be positive or zero")
+	ErrMustBeNegativeOrZero    = errors.New("must be negative or zero")
+	ErrMustBeLessThan150       = errors.New("must be less than 150")
+	ErrMustBeLessThan7         = errors.New("must be less than 7")
+	ErrIsNotValid              = errors.New("is not a valid value")
+	ErrIsNotValidNumber        = errors.New("is not a valid number")
+	ErrIsNotSupported          = errors.New("is not supported")
+	ErrIsUnauthorised          = errors.New("is unauthorised")
+	ErrCannotAmendToGFA        = errors.New("cannot amend to time in force GFA")
+	ErrCannotAmendToGFN        = errors.New("cannot amend to time in force GFN")
+	ErrNonGTTOrderWithExpiry   = errors.New("non GTT order with expiry")
+	ErrGTTOrderWithNoExpiry    = errors.New("GTT order without expiry")
+	ErrIsMismatching           = errors.New("is mismatching")
+	ErrReferenceTooLong        = errors.New("reference is too long")
+	ErrNotAValidInteger        = errors.New("not a valid integer")
+	ErrNotAValidFloat          = errors.New("not a valid float")
+	ErrMustBeLessThan100Chars  = errors.New("must be less than 100 characters")
+	ErrMustNotExceed20000Chars = errors.New("must not exceed 20000 characters")
+	ErrShouldBeHexEncoded      = errors.New("should be hex encoded")
+	ErrSignatureNotVerifiable  = errors.New("signature is not verifiable")
+	ErrInvalidSignature        = errors.New("invalid signature")
+	ErrUnsupportedAlgorithm    = errors.New("unsupported algorithm")
 )
 
 type Errors map[string][]error
@@ -46,7 +48,7 @@ func (e Errors) Error() string {
 
 	propMessages := []string{}
 	for prop, errs := range e {
-		errMessages := []string{}
+		errMessages := make([]string, 0, len(errs))
 		for _, err := range errs {
 			errMessages = append(errMessages, err.Error())
 		}

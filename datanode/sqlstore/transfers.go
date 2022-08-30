@@ -41,6 +41,7 @@ func (t *Transfers) Upsert(ctx context.Context, transfer *entities.Transfer) err
 	defer metrics.StartSQLQuery("Transfers", "Upsert")()
 	query := `insert into transfers(
 				id,
+				tx_hash,
 				vega_time,
 				from_account_id,
 				to_account_id,
@@ -57,7 +58,7 @@ func (t *Transfers) Upsert(ctx context.Context, transfer *entities.Transfer) err
 				dispatch_metric_asset,
 				dispatch_markets			
 			)
-					values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+					values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
 					on conflict (id, vega_time) do update
 					set 
 				from_account_id=EXCLUDED.from_account_id,
@@ -73,10 +74,11 @@ func (t *Transfers) Upsert(ctx context.Context, transfer *entities.Transfer) err
 				factor=EXCLUDED.factor,
 				dispatch_metric=EXCLUDED.dispatch_metric,
 				dispatch_metric_asset=EXCLUDED.dispatch_metric_asset,
-				dispatch_markets=EXCLUDED.dispatch_markets
+				dispatch_markets=EXCLUDED.dispatch_markets,
+				tx_hash=EXCLUDED.tx_hash
 				;`
 
-	if _, err := t.Connection.Exec(ctx, query, transfer.ID, transfer.VegaTime, transfer.FromAccountId, transfer.ToAccountId,
+	if _, err := t.Connection.Exec(ctx, query, transfer.ID, transfer.TxHash, transfer.VegaTime, transfer.FromAccountId, transfer.ToAccountId,
 		transfer.AssetId, transfer.Amount, transfer.Reference, transfer.Status, transfer.TransferType,
 		transfer.DeliverOn, transfer.StartEpoch, transfer.EndEpoch, transfer.Factor, transfer.DispatchMetric, transfer.DispatchMetricAsset, transfer.DispatchMarkets); err != nil {
 		err = fmt.Errorf("could not insert transfer into database: %w", err)

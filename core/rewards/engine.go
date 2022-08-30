@@ -39,9 +39,8 @@ type Broker interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/market_tracker_mock.go -package mocks code.vegaprotocol.io/vega/core/rewards MarketActivityTracker
 type MarketActivityTracker interface {
-	GetEligibleProposers(market string) []string
-	MarkPaidProposer(market string)
 	GetAllMarketIDs() []string
+	GetProposer(market string) string
 	GetFeePartyScores(asset string, feeType types.TransferType) []*types.PartyContibutionScore
 }
 
@@ -289,14 +288,13 @@ func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) 
 				continue
 			}
 			pos := []*payout{}
-			marketEligibleProposers := e.marketActivityTracker.GetEligibleProposers(account.MarketID)
 			if (rewardType == types.AccountTypeGlobalReward && account.Asset == e.global.asset) || rewardType == types.AccountTypeFeesInfrastructure {
 				e.log.Info("calculating reward for tendermint validators", logging.String("account-type", rewardType.String()))
-				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), account.Asset, account.MarketID, rewardType, account, tmValidatorsDelegation, tmValidatorsScores.NormalisedScores, epoch.EndTime, s_pFactor, marketEligibleProposers))
+				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), account.Asset, rewardType, account, tmValidatorsDelegation, tmValidatorsScores.NormalisedScores, epoch.EndTime, s_pFactor))
 				e.log.Info("calculating reward for ersatz validators", logging.String("account-type", rewardType.String()))
-				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), account.Asset, account.MarketID, rewardType, account, ersatzValidatorsDelegation, ersatzValidatorsScores.NormalisedScores, epoch.EndTime, s_eFactor, marketEligibleProposers))
+				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), account.Asset, rewardType, account, ersatzValidatorsDelegation, ersatzValidatorsScores.NormalisedScores, epoch.EndTime, s_eFactor))
 			} else {
-				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), account.Asset, account.MarketID, rewardType, account, tmValidatorsDelegation, tmValidatorsScores.NormalisedScores, epoch.EndTime, decimal1, marketEligibleProposers))
+				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), account.Asset, rewardType, account, tmValidatorsDelegation, tmValidatorsScores.NormalisedScores, epoch.EndTime, decimal1))
 			}
 			for _, po := range pos {
 				if po != nil && !po.totalReward.IsZero() && !po.totalReward.IsNegative() {
@@ -314,8 +312,14 @@ func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) 
 	return payouts
 }
 
+// isValidAccountForMarket checks if the market ID of the given account represents a particular market vs a global account.
+func (e *Engine) isValidAccountForMarket(account *types.Account) bool {
+	return len(account.MarketID) > 0 && account.MarketID != "!"
+}
+
 // calculateRewardTypeForAsset calculates the payout for a given asset and reward type.
-func (e *Engine) calculateRewardTypeForAsset(epochSeq, asset, market string, rewardType types.AccountType, account *types.Account, validatorData []*types.ValidatorData, validatorNormalisedScores map[string]num.Decimal, timestamp time.Time, factor num.Decimal, marketEligibleProposers []string) *payout {
+// for market based rewards, we only care about account for specific markets (as opposed to global account for an asset).
+func (e *Engine) calculateRewardTypeForAsset(epochSeq, asset string, rewardType types.AccountType, account *types.Account, validatorData []*types.ValidatorData, validatorNormalisedScores map[string]num.Decimal, timestamp time.Time, factor num.Decimal) *payout {
 	switch rewardType {
 	case types.AccountTypeGlobalReward: // given to delegator based on stake
 		if asset == e.global.asset {
@@ -327,17 +331,25 @@ func (e *Engine) calculateRewardTypeForAsset(epochSeq, asset, market string, rew
 	case types.AccountTypeFeesInfrastructure: // given to delegator based on stake
 		return calculateRewardsByStake(epochSeq, account.Asset, account.ID, account.Balance.Clone(), validatorNormalisedScores, validatorData, e.global.delegatorShare, num.UintZero(), e.global.minValStakeUInt, e.rng, e.log)
 	case types.AccountTypeMakerFeeReward: // given to receivers of maker fee in the asset based on their total received fee proportion
+		if !e.isValidAccountForMarket(account) {
+			return nil
+		}
 		return calculateRewardsByContribution(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.marketActivityTracker.GetFeePartyScores(account.MarketID, types.TransferTypeMakerFeeReceive), timestamp)
 	case types.AccountTypeTakerFeeReward: // given to payers of fee in the asset based on their total paid fee proportion
+		if !e.isValidAccountForMarket(account) {
+			return nil
+		}
 		return calculateRewardsByContribution(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.marketActivityTracker.GetFeePartyScores(account.MarketID, types.TransferTypeMakerFeePay), timestamp)
 	case types.AccountTypeLPFeeReward: // given to LP fee receivers in the asset based on their total received fee
+		if !e.isValidAccountForMarket(account) {
+			return nil
+		}
 		return calculateRewardsByContribution(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.marketActivityTracker.GetFeePartyScores(account.MarketID, types.TransferTypeLiquidityFeeDistribute), timestamp)
 	case types.AccountTypeMarketProposerReward:
-		p := calculateRewardForProposers(epochSeq, account.Asset, account.ID, rewardType, account.Balance, marketEligibleProposers, timestamp)
-		// if the reward is due, mark the proposer as paid
-		if p != nil && !p.totalReward.IsZero() {
-			e.marketActivityTracker.MarkPaidProposer(account.MarketID)
+		if !e.isValidAccountForMarket(account) {
+			return nil
 		}
+		p := calculateRewardForProposers(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.marketActivityTracker.GetProposer(account.MarketID), timestamp)
 		return p
 	}
 	return nil

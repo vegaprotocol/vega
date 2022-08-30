@@ -1,12 +1,11 @@
 package wallet_test
 
 import (
-	"context"
 	"encoding/base64"
 	"fmt"
-	"sort"
 	"testing"
 
+	"code.vegaprotocol.io/vega/commands"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
@@ -361,165 +360,6 @@ func testListKeysOfNonExistingWalletFails(t *testing.T) {
 	assert.Nil(t, resp)
 }
 
-func TestGetWalletInfo(t *testing.T) {
-	t.Run("Get wallet info succeeds", testGetWalletInfoSucceeds)
-	t.Run("Get wallet info of non-existing wallet fails", testGetWalletInfoOfNonExistingWalletFails)
-}
-
-func testGetWalletInfoSucceeds(t *testing.T) {
-	// given
-	w := newWallet(t)
-	expectedKeys := &wallet.GetWalletInfoResponse{
-		Type:    w.Type(),
-		Version: w.Version(),
-		ID:      w.ID(),
-	}
-
-	req := &wallet.GetWalletInfoRequest{
-		Wallet:     w.Name(),
-		Passphrase: "passphrase",
-	}
-
-	// setup
-	store := handlerMocks(t)
-	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(true, nil)
-	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(1).Return(w, nil)
-
-	// when
-	resp, err := wallet.GetWalletInfo(store, req)
-
-	// then
-	require.NoError(t, err)
-	require.NotNil(t, resp)
-	assert.Equal(t, expectedKeys, resp)
-}
-
-func testGetWalletInfoOfNonExistingWalletFails(t *testing.T) {
-	// given
-	req := &wallet.GetWalletInfoRequest{
-		Wallet:     vgrand.RandomStr(5),
-		Passphrase: "passphrase",
-	}
-
-	// setup
-	store := handlerMocks(t)
-	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(false, nil)
-	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(0)
-
-	// when
-	resp, err := wallet.GetWalletInfo(store, req)
-
-	// then
-	require.Error(t, err)
-	assert.Nil(t, resp)
-}
-
-func TestCreateWalletSucceeds(t *testing.T) {
-	// given
-	req := &wallet.CreateWalletRequest{
-		Wallet:     vgrand.RandomStr(5),
-		Passphrase: vgrand.RandomStr(5),
-	}
-
-	// setup
-	var createdWallet wallet.Wallet
-	captureWallet := func(_ context.Context, w wallet.Wallet, passphrase string) error {
-		createdWallet = w
-		return nil
-	}
-	fakePath := fmt.Sprintf("/path/to/wallets/%s", req.Wallet)
-	store := handlerMocks(t)
-	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(false, nil)
-	store.EXPECT().GetWalletPath(req.Wallet).Times(1).Return(fakePath)
-	store.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), req.Passphrase).Times(1).DoAndReturn(captureWallet)
-
-	// when
-	resp, err := wallet.CreateWallet(store, req)
-
-	// then
-	require.NoError(t, err)
-	require.NotNil(t, resp)
-	// verify generated wallet
-	assert.Equal(t, req.Wallet, createdWallet.Name())
-	assert.Len(t, createdWallet.ListKeyPairs(), 1)
-	keyPair := createdWallet.ListKeyPairs()[0]
-	assert.NotEmpty(t, keyPair.Meta())
-	// verify response
-	assert.Equal(t, req.Wallet, resp.Wallet.Name)
-	assert.NotEmpty(t, resp.Wallet.RecoveryPhrase)
-	assert.Equal(t, uint32(2), resp.Wallet.Version)
-	assert.Equal(t, fakePath, resp.Wallet.FilePath)
-	assert.Equal(t, keyPair.PublicKey(), resp.Key.PublicKey)
-	assert.Equal(t, keyPair.AlgorithmName(), resp.Key.Algorithm.Name)
-	assert.Equal(t, keyPair.AlgorithmVersion(), resp.Key.Algorithm.Version)
-	assert.Equal(t, keyPair.Meta(), resp.Key.Meta)
-}
-
-func TestImportWalletSucceeds(t *testing.T) {
-	// given
-	req := &wallet.ImportWalletRequest{
-		Wallet:         vgrand.RandomStr(5),
-		RecoveryPhrase: TestRecoveryPhrase1,
-		Version:        2,
-		Passphrase:     vgrand.RandomStr(5),
-	}
-
-	// setup
-	var importedWallet wallet.Wallet
-	captureWallet := func(_ context.Context, w wallet.Wallet, passphrase string) error {
-		importedWallet = w
-		return nil
-	}
-	fakePath := fmt.Sprintf("/path/to/wallets/%s", req.Wallet)
-	store := handlerMocks(t)
-	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(false, nil)
-	store.EXPECT().GetWalletPath(req.Wallet).Times(1).Return(fakePath)
-	store.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), req.Passphrase).Times(1).DoAndReturn(captureWallet)
-
-	// when
-	resp, err := wallet.ImportWallet(store, req)
-
-	// then
-	require.NoError(t, err)
-	require.NotNil(t, resp)
-	// verify generated wallet
-	assert.Equal(t, req.Wallet, importedWallet.Name())
-	assert.Len(t, importedWallet.ListKeyPairs(), 1)
-	keyPair := importedWallet.ListKeyPairs()[0]
-	assert.NotEmpty(t, keyPair.Meta())
-	// verify response
-	assert.Equal(t, req.Wallet, resp.Wallet.Name)
-	assert.Equal(t, fakePath, resp.Wallet.FilePath)
-	assert.Equal(t, keyPair.PublicKey(), resp.Key.PublicKey)
-	assert.Equal(t, keyPair.AlgorithmName(), resp.Key.Algorithm.Name)
-	assert.Equal(t, keyPair.AlgorithmVersion(), resp.Key.Algorithm.Version)
-	assert.Equal(t, keyPair.Meta(), resp.Key.Meta)
-}
-
-func TestListWalletsSucceeds(t *testing.T) {
-	// given
-	w1 := newWallet(t)
-	w2 := newWallet(t)
-	w3 := newWallet(t)
-	walletNames := []string{w1.Name(), w2.Name(), w3.Name()}
-	sort.Strings(walletNames)
-	expectedResp := &wallet.ListWalletsResponse{
-		Wallets: walletNames,
-	}
-
-	// setup
-	store := handlerMocks(t)
-	store.EXPECT().ListWallets(gomock.Any()).Times(1).Return(walletNames, nil)
-
-	// when
-	resp, err := wallet.ListWallets(store)
-
-	// then
-	require.NoError(t, err)
-	require.NotNil(t, resp)
-	assert.Equal(t, expectedResp, resp)
-}
-
 func TestSignCommand(t *testing.T) {
 	t.Run("Sign message succeeds", testSignCommandSucceeds)
 	t.Run("Sign message of non-existing wallet fails", testSignCommandWithNonExistingWalletFails)
@@ -650,12 +490,13 @@ func TestRotateKey(t *testing.T) {
 	t.Run("Rotate key with non existing wallet fails", testRotateWithNonExistingWalletFails)
 	t.Run("Rotate key with non existing new public key fails", testRotateKeyWithNonExistingNewPublicKeyFails)
 	t.Run("Rotate key with non existing current public key fails", testRotateKeyWithNonExistingCurrentPublicKeyFails)
-	t.Run("Rotate key tained public key fails", testRotateKeyWithTaintedPublicKeyFails)
+	t.Run("Rotate key tainted public key fails", testRotateKeyWithTaintedPublicKeyFails)
 }
 
 func testRotateKeySucceeds(t *testing.T) {
 	// given
 	w := importWalletWithTwoKeys(t)
+	chainID := vgrand.RandomStr(5)
 
 	currentPubKey := w.ListPublicKeys()[0]
 	newPubKey := w.ListPublicKeys()[1]
@@ -666,6 +507,7 @@ func testRotateKeySucceeds(t *testing.T) {
 	req := &wallet.RotateKeyRequest{
 		Wallet:            w.Name(),
 		Passphrase:        "passphrase",
+		ChainID:           chainID,
 		NewPublicKey:      newPubKey.Key(),
 		CurrentPublicKey:  currentPubKey.Key(),
 		TxBlockHeight:     20,
@@ -692,8 +534,7 @@ func testRotateKeySucceeds(t *testing.T) {
 	err = proto.Unmarshal(transactionRaw, transaction)
 	require.NoError(t, err)
 
-	inputData := &commandspb.InputData{}
-	err = proto.Unmarshal(transaction.InputData, inputData)
+	inputData, err := commands.UnmarshalInputData(transaction.Version, transaction.InputData, chainID)
 	require.NoError(t, err)
 
 	keyRotate, ok := inputData.Command.(*commandspb.InputData_KeyRotateSubmission)

@@ -30,7 +30,7 @@ message ERC20MultiSigSignerAdded {
   string epoch_seq = 7;
 }
 
-message ERC20MulistSigSignerRemovedSubmitter {
+message ERC20MultiSigSignerRemovedSubmitter {
   // The ID of this signature bundle
   string signature_id = 1;
   // The address of the submitter of the transaction
@@ -41,7 +41,7 @@ message ERC20MultiSigSignerRemoved {
   // A list containing all the IDs of bundle generated
   // There should be one bundle generated for every validators
   // in the validator set
-  repeated ERC20MulistSigSignerRemovedSubmitter signature_submitters = 1;
+  repeated ERC20MultiSigSignerRemovedSubmitter signature_submitters = 1;
   // The vega node ID of the node which is to be removed
   string validator_id = 2;
   // the time at which this happened
@@ -251,6 +251,7 @@ message TxErrorEvent {
     commands.v1.AnnounceNode announce_node = 115;
     commands.v1.OracleDataSubmission oracle_data_submission = 116;
     commands.v1.ProtocolUpgradeProposal protocol_upgrade_proposal = 117;
+    commands.v1.IssueSignatures issue_signatures = 118;
   }
 }
 
@@ -306,8 +307,10 @@ message LossSocialization {
 message TradeSettlement {
   // Size of trade settlement
   int64 size = 1;
-  // Price of settlement as string
+  // Price of settlement as string (in asset decimals)
   string price = 2;
+  // Price of settlement as a string (in market decimals)
+  string market_price = 3;
 }
 
 // A settle position event contains position settlement information for a party
@@ -407,6 +410,8 @@ message ValidatorUpdate {
   bool added = 10;
   // The epoch from which the validator was added or removed
   uint64 from_epoch = 11;
+  // Ethereum public key being used as the submitter to allow automatic signature generation
+  string submitter_address = 12;
 }
 
 // An event that explains the status of the validator for the coming epoch

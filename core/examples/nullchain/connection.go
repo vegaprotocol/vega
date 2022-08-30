@@ -16,7 +16,7 @@ import (
 	"context"
 	"time"
 
-	config "code.vegaprotocol.io/vega/core/examples/nullchain/config"
+	"code.vegaprotocol.io/vega/core/examples/nullchain/config"
 	"github.com/pkg/errors"
 
 	datanode "code.vegaprotocol.io/vega/protos/data-node/api/v1"
@@ -60,6 +60,18 @@ func (c *Connection) LastBlockHeight() (uint64, error) {
 		return 0, errors.WithStack(err)
 	}
 	return resp.Height, nil
+}
+
+func (c *Connection) NetworkChainID() (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
+	defer cancel()
+
+	bhReq := &api.StatisticsRequest{}
+	resp, err := c.core.Statistics(ctx, bhReq)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	return resp.Statistics.ChainId, nil
 }
 
 func (c *Connection) VegaTime() (time.Time, error) {

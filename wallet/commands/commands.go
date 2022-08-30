@@ -7,8 +7,6 @@ import (
 	"code.vegaprotocol.io/vega/commands"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
-
-	"github.com/golang/protobuf/proto"
 )
 
 func CheckSubmitTransactionRequest(req *walletpb.SubmitTransactionRequest) commands.Errors {
@@ -66,6 +64,8 @@ func CheckSubmitTransactionRequest(req *walletpb.SubmitTransactionRequest) comma
 		cmdErr = commands.CheckEthereumKeyRotateSubmission(cmd.EthereumKeyRotateSubmission)
 	case *walletpb.SubmitTransactionRequest_ProtocolUpgradeProposal:
 		cmdErr = commands.CheckProtocolUpgradeProposal(cmd.ProtocolUpgradeProposal)
+	case *walletpb.SubmitTransactionRequest_IssueSignatures:
+		cmdErr = commands.CheckIssueSignatures(cmd.IssueSignatures)
 	default:
 		errs.AddForProperty("input_data.command", commands.ErrIsNotSupported)
 	}
@@ -77,10 +77,10 @@ func CheckSubmitTransactionRequest(req *walletpb.SubmitTransactionRequest) comma
 	return errs
 }
 
-func ToMarshaledInputData(req *walletpb.SubmitTransactionRequest, height uint64) ([]byte, error) {
+func ToMarshaledInputData(req *walletpb.SubmitTransactionRequest, height uint64, chainID string) ([]byte, error) {
 	data := commands.NewInputData(height)
 	wrapRequestCommandIntoInputData(data, req)
-	return proto.Marshal(data)
+	return commands.MarshalInputData(chainID, data)
 }
 
 func wrapRequestCommandIntoInputData(data *commandspb.InputData, req *walletpb.SubmitTransactionRequest) {
@@ -168,6 +168,10 @@ func wrapRequestCommandIntoInputData(data *commandspb.InputData, req *walletpb.S
 	case *walletpb.SubmitTransactionRequest_ProtocolUpgradeProposal:
 		data.Command = &commandspb.InputData_ProtocolUpgradeProposal{
 			ProtocolUpgradeProposal: req.GetProtocolUpgradeProposal(),
+		}
+	case *walletpb.SubmitTransactionRequest_IssueSignatures:
+		data.Command = &commandspb.InputData_IssueSignatures{
+			IssueSignatures: req.GetIssueSignatures(),
 		}
 	default:
 		panic(fmt.Sprintf("command %v is not supported", cmd))

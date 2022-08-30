@@ -33,33 +33,71 @@ import (
 )
 
 func TestEquityShares(t *testing.T) {
-	t.Run("AverageEntryValuation", testAverageEntryValuation)
+	t.Run("AvgEntryValuation with trade value", testAvgEntryValuationGrowth)
 	t.Run("SharesExcept", testShares)
 	t.Run("WithinMarket", testWithinMarket)
 }
 
-// TestEquitySharesAverageEntryValuation is based on the spec example:
-// https://github.com/vegaprotocol/product/blob/02af55e048a92a204e9ee7b7ae6b4475a198c7ff/specs/0042-setting-fees-and-rewarding-lps.md#calculating-liquidity-provider-equity-like-share
-func testAverageEntryValuation(t *testing.T) {
-	es := execution.NewEquityShares(num.DecimalFromFloat(100))
+func testAvgEntryValuationGrowth(t *testing.T) {
+	es := execution.NewEquityShares(num.DecimalZero())
+	tradeVal := num.DecimalFromFloat(1000)
+	lps := []struct {
+		id  string
+		amt *num.Uint
+		avg num.Decimal
+	}{
+		{
+			id:  "LP1",
+			amt: num.NewUint(100),
+			avg: num.DecimalFromFloat(100),
+		},
+		{
+			id:  "LP2",
+			amt: num.NewUint(200),
+			avg: num.DecimalFromFloat(200),
+		},
+	}
 
-	es.SetPartyStake("LP1", num.NewUint(100))
-	require.EqualValues(t, num.DecimalFromFloat(100), es.AvgEntryValuation("LP1"))
+	for _, l := range lps {
+		es.SetPartyStake(l.id, l.amt)
+		require.True(t, l.avg.Equals(es.AvgEntryValuation(l.id)))
+	}
 	es.OpeningAuctionEnded()
 
-	es.SetPartyStake("LP1", num.NewUint(200))
-	require.True(t, num.DecimalFromFloat(100).Equal(es.AvgEntryValuation("LP1")))
+	// set trade value at auction end
+	es.AvgTradeValue(tradeVal)
+	for _, l := range lps {
+		aev := es.AvgEntryValuation(l.id)
+		require.True(t, l.avg.Equals(es.AvgEntryValuation(l.id)), fmt.Sprintf("FAIL ==> expected %s, got %s", l.avg, aev))
+	}
 
-	es.WithMVP(num.DecimalFromFloat(200)).SetPartyStake("LP2", num.NewUint(200))
-	require.True(t, num.DecimalFromFloat(200).Equal(es.AvgEntryValuation("LP2")))
-	require.True(t, num.DecimalFromFloat(100).Equal(es.AvgEntryValuation("LP1")))
-
-	es.WithMVP(num.DecimalFromFloat(400)).SetPartyStake("LP1", num.NewUint(300))
-	require.True(t, num.DecimalFromFloat(120).Equal(es.AvgEntryValuation("LP1")))
-
-	es.SetPartyStake("LP1", num.NewUint(1))
-	require.True(t, num.DecimalFromFloat(120).Equal(es.AvgEntryValuation("LP1")))
-	require.True(t, num.DecimalFromFloat(200).Equal(es.AvgEntryValuation("LP2")))
+	// growth
+	tradeVal = num.DecimalFromFloat(1100)
+	aev1, _ := num.DecimalFromString("100.000000000000001")
+	lps[0].avg = aev1
+	lps[1].avg = aev1.Add(aev1) // double
+	es.AvgTradeValue(tradeVal)
+	for _, l := range lps {
+		aev := es.AvgEntryValuation(l.id)
+		require.True(t, l.avg.Equals(es.AvgEntryValuation(l.id)), fmt.Sprintf("FAIL => expected %s, got %s", l.avg, aev))
+	}
+	lps[1].amt = num.NewUint(150) // reduce LP
+	aev1, _ = num.DecimalFromString("150.0000000000000015")
+	lps[1].avg = aev1
+	es.SetPartyStake(lps[1].id, lps[1].amt)
+	for _, l := range lps {
+		aev := es.AvgEntryValuation(l.id)
+		require.True(t, l.avg.Equals(es.AvgEntryValuation(l.id)), fmt.Sprintf("FAIL => expected %s, got %s", l.avg, aev))
+	}
+	// now simulate negative growth (ie r == 0)
+	tradeVal = num.DecimalFromFloat(1000)
+	es.AvgTradeValue(tradeVal)
+	// avg should line up with physical stake once more
+	// lps[1].avg = num.DecimalFromFloat(150)
+	for _, l := range lps {
+		aev := es.AvgEntryValuation(l.id)
+		require.True(t, l.avg.Equals(es.AvgEntryValuation(l.id)), fmt.Sprintf("FAIL => expected %s, got %s", l.avg, aev))
+	}
 }
 
 func testShares(t *testing.T) {

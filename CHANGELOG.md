@@ -1,6 +1,33 @@
 # Changelog
 
-## Unreleased 0.54.0
+## Unreleased 0.55.0
+
+### 🚨 Breaking changes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🗑️ Deprecation
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🛠 Improvements
+- [5807](https://github.com/vegaprotocol/vega/issues/5807) - Add Vega tools: `stream`, `snapshot` and `checkpoint`
+- [5678](https://github.com/vegaprotocol/vega/issues/5678) - Add GraphQL endpoints for Ethereum bundles: `listAsset`, `updateAsset`, `addSigner` and `removeSigner`
+- [5881](https://github.com/vegaprotocol/vega/issues/5881) - Return account subscription as a list
+- [5766](https://github.com/vegaprotocol/vega/issues/5766) - Better notification for version update on the wallet
+- [5841](https://github.com/vegaprotocol/vega/issues/5841) - Add transaction to request `multisigControl` signatures on demand
+- [5878](https://github.com/vegaprotocol/vega/issues/5878) - Add option to return only live orders in `ListOrders` `API`
+- [5937](https://github.com/vegaprotocol/vega/issues/5937) - Add more flexibility to market creation bonus 
+- [5708](https://github.com/vegaprotocol/vega/issues/5708) - Use market price when reporting average trade price
+- [5949](https://github.com/vegaprotocol/vega/issues/5949) - Transfers processed in the order they were received
+- [5675](https://github.com/vegaprotocol/vega/issues/5675) - Add transaction information to all database tables
+- [5999](https://github.com/vegaprotocol/vega/issues/5999) - Recalculate margins after risk parameters are updated.
+- [5684](https://github.com/vegaprotocol/vega/issues/5684) - Added date range to a number of historic balances, deposits, withdrawals, orders and trades queries
+
+### 🐛 Fixes
+- [5934](https://github.com/vegaprotocol/vega/issues/5934) - Ensure wallet without permissions can be read
+- [5950](https://github.com/vegaprotocol/vega/issues/5934) - Fix documentation for new wallet command
+- [5963](https://github.com/vegaprotocol/vega/issues/5963) - Check other nodes during version check if the first one is unavailable
+
+## 0.54.0
 
 ### 🚨 Breaking changes
 With this release a few breaking changes are introduced.
@@ -15,9 +42,9 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5624](https://github.com/vegaprotocol/vega/issues/5624) - Get rid of `updateFrequency` in price monitoring definition
 - [5601](https://github.com/vegaprotocol/vega/issues/5601) - Remove support for launching a proxy in front of console and token dApp
 - [5872](https://github.com/vegaprotocol/vega/issues/5872) - Remove console and token dApp from networks
+- [5802](https://github.com/vegaprotocol/vega/issues/5802) - Remove support for transaction version 1
 
 ### 🗑️ Deprecation
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 - [4655](https://github.com/vegaprotocol/vega/issues/4655) - Move Ethereum `RPC` endpoint configuration from `Nodewallet` section to `Ethereum` section
 
 ### 🛠 Improvements
@@ -59,7 +86,10 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5817](https://github.com/vegaprotocol/vega/issues/5817) - Add validation error on asset proposal when rejected
 - [5816](https://github.com/vegaprotocol/vega/issues/5816) - Set proper status to rejected asset proposal
 - [5893](https://github.com/vegaprotocol/vega/issues/5893) - Remove total supply from assets
-- [5684](https://github.com/vegaprotocol/vega/issues/5684) - Added date range to a number of historic balances, deposits, withdrawals, orders and trades queries
+- [5752](https://github.com/vegaprotocol/vega/issues/5752) - Remove URL and Hash from proposal rationale, add Title
+- [5802](https://github.com/vegaprotocol/vega/issues/5802) - Introduce transaction version 3 that encode the chain ID in its input data to protect against transaction replay
+- [5358](https://github.com/vegaprotocol/vega/issues/5358) - Port equity like shares update to new structure
+- [5926](https://github.com/vegaprotocol/vega/issues/5926) - Check for liquidity auction at the end of a block instead of after every trade
 
 ### 🐛 Fixes
 - [5571](https://github.com/vegaprotocol/vega/issues/5571) - Restore pending assets status correctly after snapshot restore
@@ -97,6 +127,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5867](https://github.com/vegaprotocol/vega/issues/5867) - Fix witness check for majority
 - [5853](https://github.com/vegaprotocol/vega/issues/5853) - Do not ignore market update proposals when loading from checkpoint
 - [5648](https://github.com/vegaprotocol/vega/issues/5648) - Ethereum key rotation - search validators by Vega pub key and listen to rotation events in core API
+- [5648](https://github.com/vegaprotocol/vega/issues/5648) - Search validator by vega pub key and update the core validators API
 
 ## 0.53.0
 

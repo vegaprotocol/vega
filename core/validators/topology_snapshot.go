@@ -62,16 +62,17 @@ func (t *Topology) serialiseNodes() []*snapshot.ValidatorState {
 		nodes = append(nodes,
 			&snapshot.ValidatorState{
 				ValidatorUpdate: &eventspb.ValidatorUpdate{
-					NodeId:          node.data.ID,
-					VegaPubKey:      node.data.VegaPubKey,
-					VegaPubKeyIndex: node.data.VegaPubKeyIndex,
-					EthereumAddress: node.data.EthereumAddress,
-					TmPubKey:        node.data.TmPubKey,
-					InfoUrl:         node.data.InfoURL,
-					Country:         node.data.Country,
-					Name:            node.data.Name,
-					AvatarUrl:       node.data.AvatarURL,
-					FromEpoch:       node.data.FromEpoch,
+					NodeId:           node.data.ID,
+					VegaPubKey:       node.data.VegaPubKey,
+					VegaPubKeyIndex:  node.data.VegaPubKeyIndex,
+					EthereumAddress:  node.data.EthereumAddress,
+					TmPubKey:         node.data.TmPubKey,
+					InfoUrl:          node.data.InfoURL,
+					Country:          node.data.Country,
+					Name:             node.data.Name,
+					AvatarUrl:        node.data.AvatarURL,
+					FromEpoch:        node.data.FromEpoch,
+					SubmitterAddress: node.data.SubmitterAddress,
 				},
 				BlockAdded:                   uint64(node.blockAdded),
 				Status:                       int32(node.status),
@@ -129,6 +130,7 @@ func (t *Topology) serialisePendingEthereumKeyRotation() []*snapshot.PendingEthe
 				BlockHeight: blockHeight,
 				NodeId:      r.NodeID,
 				NewAddress:  r.NewAddress,
+				Submitter:   r.SubmitterAddress,
 			})
 		}
 	}
@@ -163,6 +165,7 @@ func (t *Topology) serialise(k string) ([]byte, error) {
 				ValidatorData:               t.serialiseNodes(),
 				PendingPubKeyRotations:      t.serialisePendingKeyRotation(),
 				PendingEthereumKeyRotations: t.serialisePendingEthereumKeyRotation(),
+				Signatures:                  t.signatures.SerialisePendingSignatures(),
 				ValidatorPerformance:        t.validatorPerformance.Serialize(),
 			},
 		},
@@ -217,10 +220,12 @@ func (t *Topology) restorePendingKeyRotations(ctx context.Context, pkrs []*snaps
 
 func (t *Topology) restorePendingEthereumKeyRotations(ctx context.Context, pkrs []*snapshot.PendingEthereumKeyRotation) {
 	for _, pkr := range pkrs {
-		t.pendingEthKeyRotations.add(pkr.BlockHeight, PendingEthereumKeyRotation{
-			NodeID:     pkr.NodeId,
-			NewAddress: pkr.NewAddress,
-		})
+		t.pendingEthKeyRotations.add(pkr.BlockHeight,
+			PendingEthereumKeyRotation{
+				NodeID:           pkr.NodeId,
+				NewAddress:       pkr.NewAddress,
+				SubmitterAddress: pkr.Submitter,
+			})
 	}
 }
 
@@ -237,16 +242,17 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology, p *typ
 		t.log.Debug("restoring validator data snapshot", logging.String("nodeid", node.ValidatorUpdate.NodeId))
 		vs := &valState{
 			data: ValidatorData{
-				ID:              node.ValidatorUpdate.NodeId,
-				VegaPubKey:      node.ValidatorUpdate.VegaPubKey,
-				VegaPubKeyIndex: node.ValidatorUpdate.VegaPubKeyIndex,
-				EthereumAddress: node.ValidatorUpdate.EthereumAddress,
-				TmPubKey:        node.ValidatorUpdate.TmPubKey,
-				InfoURL:         node.ValidatorUpdate.InfoUrl,
-				Country:         node.ValidatorUpdate.Country,
-				Name:            node.ValidatorUpdate.Name,
-				AvatarURL:       node.ValidatorUpdate.AvatarUrl,
-				FromEpoch:       node.ValidatorUpdate.FromEpoch,
+				ID:               node.ValidatorUpdate.NodeId,
+				VegaPubKey:       node.ValidatorUpdate.VegaPubKey,
+				VegaPubKeyIndex:  node.ValidatorUpdate.VegaPubKeyIndex,
+				EthereumAddress:  node.ValidatorUpdate.EthereumAddress,
+				TmPubKey:         node.ValidatorUpdate.TmPubKey,
+				InfoURL:          node.ValidatorUpdate.InfoUrl,
+				Country:          node.ValidatorUpdate.Country,
+				Name:             node.ValidatorUpdate.Name,
+				AvatarURL:        node.ValidatorUpdate.AvatarUrl,
+				FromEpoch:        node.ValidatorUpdate.FromEpoch,
+				SubmitterAddress: node.ValidatorUpdate.SubmitterAddress,
 			},
 			blockAdded:                      int64(node.BlockAdded),
 			status:                          ValidatorStatus(node.Status),
@@ -299,6 +305,7 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology, p *typ
 	t.chainValidators = topology.ChainValidators[:]
 	t.restorePendingKeyRotations(ctx, topology.PendingPubKeyRotations)
 	t.restorePendingEthereumKeyRotations(ctx, topology.PendingEthereumKeyRotations)
+	t.signatures.RestorePendingSignatures(topology.Signatures)
 	t.validatorPerformance.Deserialize(topology.ValidatorPerformance)
 	t.tss.serialised, err = proto.Marshal(p.IntoProto())
 	t.rng = rand.New(rand.NewSource(t.timeService.GetTimeNow().Unix()))

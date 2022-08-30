@@ -51,21 +51,6 @@ func (mr *MockNodeForwardMockRecorder) CheckTx(arg0, arg1, arg2 interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckTx", reflect.TypeOf((*MockNodeForward)(nil).CheckTx), arg0, arg1, arg2)
 }
 
-// GetNetworkChainID mocks base method.
-func (m *MockNodeForward) GetNetworkChainID(arg0 context.Context) (string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNetworkChainID", arg0)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetNetworkChainID indicates an expected call of GetNetworkChainID.
-func (mr *MockNodeForwardMockRecorder) GetNetworkChainID(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNetworkChainID", reflect.TypeOf((*MockNodeForward)(nil).GetNetworkChainID), arg0)
-}
-
 // HealthCheck mocks base method.
 func (m *MockNodeForward) HealthCheck(arg0 context.Context) error {
 	m.ctrl.T.Helper()

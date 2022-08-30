@@ -12,9 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	TestRecoveryPhrase1 = "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render"
-)
+const TestRecoveryPhrase1 = "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render"
 
 func TestHDWallet(t *testing.T) {
 	t.Run("Creating wallet succeeds", testHDWalletCreateWalletSucceeds)
@@ -167,6 +165,10 @@ func testHDWalletGeneratingKeyPairSucceeds(t *testing.T) {
 			// given
 			name := vgrand.RandomStr(5)
 			meta := []wallet.Meta{{Key: "env", Value: "test"}}
+			expectedMeta := []wallet.Meta{meta[0], {
+				Key:   "name",
+				Value: fmt.Sprintf("%s key 1", name),
+			}}
 
 			// when
 			w, err := wallet.ImportHDWallet(name, TestRecoveryPhrase1, tc.version)
@@ -181,7 +183,7 @@ func testHDWalletGeneratingKeyPairSucceeds(t *testing.T) {
 			// then
 			require.NoError(tt, err)
 			assert.NotNil(tt, kp)
-			assert.Equal(tt, kp.Meta(), meta)
+			assert.Equal(tt, expectedMeta, kp.Meta())
 			assert.Equal(tt, tc.publicKey, kp.PublicKey())
 			assert.Equal(tt, tc.privateKey, kp.PrivateKey())
 		})
@@ -232,7 +234,7 @@ func testHDWalletGeneratingKeyPairOnIsolatedWalletFails(t *testing.T) {
 			keyPair, err := isolatedWallet.GenerateKeyPair([]wallet.Meta{})
 
 			// then
-			require.ErrorIs(tt, err, wallet.ErrIsolatedWalletCantGenerateKeyPairs)
+			require.ErrorIs(tt, err, wallet.ErrIsolatedWalletCantGenerateKeys)
 			require.Nil(tt, keyPair)
 		})
 	}
@@ -1169,18 +1171,18 @@ func testHDWalletMarshalingWalletSucceeds(t *testing.T) {
 		{
 			name:    "version 1",
 			version: 1,
-			result:  `{"version":1,"node":"PjI6zxEu4dtcTu92dYlB/2Da+rvSpg7KzvmLMQ9wv6i6n75/ftik1rPYiZ/nTfBzqVttvNnoswyldTjPCjV5kw==","id":"9df682a3c87d90567f260566a9c223ccbbb7529c38340cf163b8fe199dbf0f2e","keys":[{"index":1,"public_key":"30ebce58d94ad37c4ff6a9014c955c20e12468da956163228cc7ec9b98d3a371","private_key":"1bbd4efb460d0bf457251e866697d5d2e9b58c5dcb96a964cd9cfff1a712a2b930ebce58d94ad37c4ff6a9014c955c20e12468da956163228cc7ec9b98d3a371","meta":[],"tainted":false,"algorithm":{"name":"vega/ed25519","version":1}}],"permissions":{}}`,
+			result:  `{"version":1,"node":"PjI6zxEu4dtcTu92dYlB/2Da+rvSpg7KzvmLMQ9wv6i6n75/ftik1rPYiZ/nTfBzqVttvNnoswyldTjPCjV5kw==","id":"9df682a3c87d90567f260566a9c223ccbbb7529c38340cf163b8fe199dbf0f2e","keys":[{"index":1,"public_key":"30ebce58d94ad37c4ff6a9014c955c20e12468da956163228cc7ec9b98d3a371","private_key":"1bbd4efb460d0bf457251e866697d5d2e9b58c5dcb96a964cd9cfff1a712a2b930ebce58d94ad37c4ff6a9014c955c20e12468da956163228cc7ec9b98d3a371","meta":[{"key":"name","value":"test key 1"}],"tainted":false,"algorithm":{"name":"vega/ed25519","version":1}}],"permissions":{}}`,
 		}, {
 			name:    "version 2",
 			version: 2,
-			result:  `{"version":2,"node":"PjI6zxEu4dtcTu92dYlB/2Da+rvSpg7KzvmLMQ9wv6i6n75/ftik1rPYiZ/nTfBzqVttvNnoswyldTjPCjV5kw==","id":"9df682a3c87d90567f260566a9c223ccbbb7529c38340cf163b8fe199dbf0f2e","keys":[{"index":1,"public_key":"b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","private_key":"0bfdfb4a04e22d7252a4f24eb9d0f35a82efdc244cb0876d919361e61f6f56a2b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","meta":[],"tainted":false,"algorithm":{"name":"vega/ed25519","version":1}}],"permissions":{}}`,
+			result:  `{"version":2,"node":"PjI6zxEu4dtcTu92dYlB/2Da+rvSpg7KzvmLMQ9wv6i6n75/ftik1rPYiZ/nTfBzqVttvNnoswyldTjPCjV5kw==","id":"9df682a3c87d90567f260566a9c223ccbbb7529c38340cf163b8fe199dbf0f2e","keys":[{"index":1,"public_key":"b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","private_key":"0bfdfb4a04e22d7252a4f24eb9d0f35a82efdc244cb0876d919361e61f6f56a2b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","meta":[{"key":"name","value":"test key 1"}],"tainted":false,"algorithm":{"name":"vega/ed25519","version":1}}],"permissions":{}}`,
 		},
 	}
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
-			name := vgrand.RandomStr(5)
+			name := "test"
 
 			// when
 			w, err := wallet.ImportHDWallet(name, TestRecoveryPhrase1, tc.version)
@@ -1215,18 +1217,18 @@ func testHDWalletMarshalingIsolatedWalletSucceeds(t *testing.T) {
 		{
 			name:      "version 1",
 			version:   1,
-			marshaled: `{"version":1,"id":"9df682a3c87d90567f260566a9c223ccbbb7529c38340cf163b8fe199dbf0f2e","keys":[{"index":1,"public_key":"30ebce58d94ad37c4ff6a9014c955c20e12468da956163228cc7ec9b98d3a371","private_key":"1bbd4efb460d0bf457251e866697d5d2e9b58c5dcb96a964cd9cfff1a712a2b930ebce58d94ad37c4ff6a9014c955c20e12468da956163228cc7ec9b98d3a371","meta":[],"tainted":false,"algorithm":{"name":"vega/ed25519","version":1}}],"permissions":{}}`,
+			marshaled: `{"version":1,"id":"9df682a3c87d90567f260566a9c223ccbbb7529c38340cf163b8fe199dbf0f2e","keys":[{"index":1,"public_key":"30ebce58d94ad37c4ff6a9014c955c20e12468da956163228cc7ec9b98d3a371","private_key":"1bbd4efb460d0bf457251e866697d5d2e9b58c5dcb96a964cd9cfff1a712a2b930ebce58d94ad37c4ff6a9014c955c20e12468da956163228cc7ec9b98d3a371","meta":[{"key":"name","value":"test key 1"}],"tainted":false,"algorithm":{"name":"vega/ed25519","version":1}}],"permissions":{}}`,
 		}, {
 			name:      "version 2",
 			version:   2,
-			marshaled: `{"version":2,"id":"9df682a3c87d90567f260566a9c223ccbbb7529c38340cf163b8fe199dbf0f2e","keys":[{"index":1,"public_key":"b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","private_key":"0bfdfb4a04e22d7252a4f24eb9d0f35a82efdc244cb0876d919361e61f6f56a2b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","meta":[],"tainted":false,"algorithm":{"name":"vega/ed25519","version":1}}],"permissions":{}}`,
+			marshaled: `{"version":2,"id":"9df682a3c87d90567f260566a9c223ccbbb7529c38340cf163b8fe199dbf0f2e","keys":[{"index":1,"public_key":"b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","private_key":"0bfdfb4a04e22d7252a4f24eb9d0f35a82efdc244cb0876d919361e61f6f56a2b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","meta":[{"key":"name","value":"test key 1"}],"tainted":false,"algorithm":{"name":"vega/ed25519","version":1}}],"permissions":{}}`,
 		},
 	}
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
-			name := vgrand.RandomStr(5)
+			name := "test"
 
 			// when
 			w, err := wallet.ImportHDWallet(name, TestRecoveryPhrase1, tc.version)

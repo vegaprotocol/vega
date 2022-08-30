@@ -19,9 +19,9 @@ import (
 	"code.vegaprotocol.io/vega/core/snapshot"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/proto"
 	v1 "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
-	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/cosmos/iavl"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
@@ -277,8 +277,7 @@ func getDummyData() *types.Chunk {
 							},
 							Rationale: &types.ProposalRationale{
 								Description: "some description",
-								Hash:        "0xdeadbeef",
-								URL:         "example.com",
+								Title:       "0xdeadbeef",
 							},
 						},
 						Yes: []*types.Vote{
@@ -332,8 +331,7 @@ func getDummyData() *types.Chunk {
 							},
 							Rationale: &types.ProposalRationale{
 								Description: "some description",
-								Hash:        "0xdeadbeef",
-								URL:         "example.com",
+								Title:       "0xdeadbeef",
 							},
 						},
 					},
@@ -752,7 +750,7 @@ func TestSnapFromTree(t *testing.T) {
 		k := n.GetTreeKey()
 		serialised, err := proto.Marshal(n.IntoProto())
 		require.NoError(t, err)
-		_ = tree.Set([]byte(k), serialised)
+		_, _ = tree.Set([]byte(k), serialised)
 	}
 	// now get immutable tree
 	hash, v, err := tree.SaveVersion()
@@ -773,7 +771,7 @@ func TestListSnapFromTree(t *testing.T) {
 		k := n.GetTreeKey()
 		serialised, err := proto.Marshal(n.IntoProto())
 		require.NoError(t, err)
-		_ = tree.Set([]byte(k), serialised)
+		_, _ = tree.Set([]byte(k), serialised)
 	}
 	// now get immutable tree
 	hash, v, err := tree.SaveVersion()

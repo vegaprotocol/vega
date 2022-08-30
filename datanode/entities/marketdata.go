@@ -16,10 +16,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math"
-	"strconv"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/num"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	"github.com/shopspring/decimal"
@@ -36,20 +35,20 @@ type MarketData struct {
 	// formatted price of `1.23456` assuming market configured to 5 decimal places
 	BestBidPrice decimal.Decimal
 	// Aggregated volume being bid at the best bid price
-	BestBidVolume int64
+	BestBidVolume uint64
 	// Aggregated volume being bid at the best bid price
 	BestOfferPrice decimal.Decimal
 	// Aggregated volume being offered at the best offer price, as an integer, for example `123456` is a correctly
 	// formatted price of `1.23456` assuming market configured to 5 decimal places
-	BestOfferVolume int64
+	BestOfferVolume uint64
 	// Highest price on the order book for buy orders not including pegged orders
 	BestStaticBidPrice decimal.Decimal
 	// Total volume at the best static bid price excluding pegged orders
-	BestStaticBidVolume int64
+	BestStaticBidVolume uint64
 	// Lowest price on the order book for sell orders not including pegged orders
 	BestStaticOfferPrice decimal.Decimal
 	// Total volume at the best static offer price excluding pegged orders
-	BestStaticOfferVolume int64
+	BestStaticOfferVolume uint64
 	// Arithmetic average of the best bid price and best offer price, as an integer, for example `123456` is a correctly
 	// formatted price of `1.23456` assuming market configured to 5 decimal places
 	MidPrice decimal.Decimal
@@ -58,7 +57,7 @@ type MarketData struct {
 	// Market identifier for the data
 	Market MarketID
 	// The sum of the size of all positions greater than 0 on the market
-	OpenInterest int64
+	OpenInterest uint64
 	// Time in seconds until the end of the auction (0 if currently not in auction period)
 	AuctionEnd int64
 	// Time until next auction (used in FBA's) - currently always 0
@@ -66,7 +65,7 @@ type MarketData struct {
 	// Indicative price (zero if not in auction)
 	IndicativePrice decimal.Decimal
 	// Indicative volume (zero if not in auction)
-	IndicativeVolume int64
+	IndicativeVolume uint64
 	// The current trading mode for the market
 	MarketTradingMode string
 	// When a market is in an auction trading mode, this field indicates what triggered the auction
@@ -85,6 +84,8 @@ type MarketData struct {
 	LiquidityProviderFeeShares []*LiquidityProviderFeeShare
 	// A synthetic time created which is the sum of vega_time + (seq num * Microsecond)
 	SyntheticTime time.Time
+	// Transaction which caused this update
+	TxHash TxHash
 	// Vega Block time at which the data was received from Vega Node
 	VegaTime time.Time
 	// SeqNum is the order in which the market data was received in the block
@@ -112,16 +113,39 @@ func (trigger PriceMonitoringTrigger) ToProto() *types.PriceMonitoringTrigger {
 }
 
 type PriceMonitoringBound struct {
-	MinValidPrice  uint64                 `json:"minValidPrice"`
-	MaxValidPrice  uint64                 `json:"maxValidPrice"`
+	MinValidPrice  *num.Uint              `json:"minValidPrice"`
+	MaxValidPrice  *num.Uint              `json:"maxValidPrice"`
 	Trigger        PriceMonitoringTrigger `json:"trigger"`
-	ReferencePrice uint64                 `json:"referencePrice"`
+	ReferencePrice *num.Uint              `json:"referencePrice"`
 }
 
 func (bound PriceMonitoringBound) Equals(other PriceMonitoringBound) bool {
-	return bound.MinValidPrice == other.MinValidPrice &&
-		bound.MaxValidPrice == other.MaxValidPrice &&
-		bound.Trigger.Equals(other.Trigger)
+	minValidPricesMatch := false
+	maxValidPricesMatch := false
+	referencePricesMatch := false
+
+	if bound.MinValidPrice == nil && other.MinValidPrice == nil {
+		minValidPricesMatch = true
+	} else if bound.MinValidPrice != nil && other.MinValidPrice != nil {
+		minValidPricesMatch = bound.MinValidPrice.EQ(other.MinValidPrice)
+	}
+
+	if bound.MaxValidPrice == nil && other.MaxValidPrice == nil {
+		maxValidPricesMatch = true
+	} else if bound.MaxValidPrice != nil && other.MaxValidPrice != nil {
+		maxValidPricesMatch = bound.MaxValidPrice.EQ(other.MaxValidPrice)
+	}
+
+	if bound.ReferencePrice == nil && other.ReferencePrice == nil {
+		referencePricesMatch = true
+	} else if bound.ReferencePrice != nil && other.ReferencePrice != nil {
+		referencePricesMatch = bound.ReferencePrice.EQ(other.ReferencePrice)
+	}
+
+	return minValidPricesMatch &&
+		maxValidPricesMatch &&
+		bound.Trigger.Equals(other.Trigger) &&
+		referencePricesMatch
 }
 
 type LiquidityProviderFeeShare struct {
@@ -136,7 +160,7 @@ func (fee LiquidityProviderFeeShare) Equals(other LiquidityProviderFeeShare) boo
 		fee.AverageEntryValuation.Equals(other.AverageEntryValuation)
 }
 
-func MarketDataFromProto(data *types.MarketData) (*MarketData, error) {
+func MarketDataFromProto(data *types.MarketData, txHash TxHash) (*MarketData, error) {
 	var mark, bid, offer, staticBid, staticOffer, mid, staticMid, indicative, targetStake, suppliedStake decimal.Decimal
 	var err error
 
@@ -171,36 +195,24 @@ func MarketDataFromProto(data *types.MarketData) (*MarketData, error) {
 		return nil, err
 	}
 
-	if data.BestBidVolume > math.MaxInt64 || data.BestOfferVolume > math.MaxInt64 || data.BestStaticBidVolume > math.MaxInt64 ||
-		data.BestStaticOfferVolume > math.MaxInt64 || data.OpenInterest > math.MaxInt64 || data.IndicativeVolume > math.MaxInt64 {
-		return nil, ErrMarketDataIntegerOverflow
-	}
-
-	bestBidVolume := int64(data.BestBidVolume)
-	bestOfferVolume := int64(data.BestOfferVolume)
-	bestStaticBidVolume := int64(data.BestStaticBidVolume)
-	bestStaticOfferVolume := int64(data.BestStaticOfferVolume)
-	openInterest := int64(data.OpenInterest)
-	indicativeVolume := int64(data.IndicativeVolume)
-
 	marketData := &MarketData{
 		MarkPrice:                  mark,
 		BestBidPrice:               bid,
-		BestBidVolume:              bestBidVolume,
+		BestBidVolume:              data.BestBidVolume,
 		BestOfferPrice:             offer,
-		BestOfferVolume:            bestOfferVolume,
+		BestOfferVolume:            data.BestOfferVolume,
 		BestStaticBidPrice:         staticBid,
-		BestStaticBidVolume:        bestStaticBidVolume,
+		BestStaticBidVolume:        data.BestStaticBidVolume,
 		BestStaticOfferPrice:       staticOffer,
-		BestStaticOfferVolume:      bestStaticOfferVolume,
+		BestStaticOfferVolume:      data.BestStaticOfferVolume,
 		MidPrice:                   mid,
 		StaticMidPrice:             staticMid,
 		Market:                     MarketID(data.Market),
-		OpenInterest:               openInterest,
+		OpenInterest:               data.OpenInterest,
 		AuctionEnd:                 data.AuctionEnd,
 		AuctionStart:               data.AuctionStart,
 		IndicativePrice:            indicative,
-		IndicativeVolume:           indicativeVolume,
+		IndicativeVolume:           data.IndicativeVolume,
 		MarketTradingMode:          data.MarketTradingMode.String(),
 		AuctionTrigger:             data.Trigger.String(),
 		ExtensionTrigger:           data.ExtensionTrigger.String(),
@@ -209,6 +221,7 @@ func MarketDataFromProto(data *types.MarketData) (*MarketData, error) {
 		PriceMonitoringBounds:      parsePriceMonitoringBounds(data.PriceMonitoringBounds),
 		MarketValueProxy:           data.MarketValueProxy,
 		LiquidityProviderFeeShares: parseLiquidityProviderFeeShares(data.LiquidityProviderFeeShare),
+		TxHash:                     txHash,
 	}
 
 	return marketData, nil
@@ -260,10 +273,9 @@ func priceMonitoringBoundsFromProto(bounds *types.PriceMonitoringBounds) *PriceM
 		return nil
 	}
 
-	minValidPrice, _ := strconv.ParseUint(bounds.MinValidPrice, 10, 64)
-	maxValidPrice, _ := strconv.ParseUint(bounds.MaxValidPrice, 10, 64)
-
-	referencePrice, _ := strconv.ParseUint(bounds.ReferencePrice, 10, 64)
+	minValidPrice, _ := num.UintFromString(bounds.MinValidPrice, 10)
+	maxValidPrice, _ := num.UintFromString(bounds.MaxValidPrice, 10)
+	referencePrice, _ := num.UintFromString(bounds.ReferencePrice, 10)
 
 	return &PriceMonitoringBound{
 		MinValidPrice:  minValidPrice,
@@ -327,7 +339,8 @@ func (md MarketData) Equal(other MarketData) bool {
 		md.ExtensionTrigger == other.ExtensionTrigger &&
 		md.MarketValueProxy == other.MarketValueProxy &&
 		priceMonitoringBoundsMatches(md.PriceMonitoringBounds, other.PriceMonitoringBounds) &&
-		liquidityProviderFeeShareMatches(md.LiquidityProviderFeeShares, other.LiquidityProviderFeeShares)
+		liquidityProviderFeeShareMatches(md.LiquidityProviderFeeShares, other.LiquidityProviderFeeShares) &&
+		md.TxHash == other.TxHash
 }
 
 func priceMonitoringBoundsMatches(bounds, other []*PriceMonitoringBound) bool {
@@ -362,22 +375,22 @@ func (md MarketData) ToProto() *types.MarketData {
 	result := types.MarketData{
 		MarkPrice:                 md.MarkPrice.String(),
 		BestBidPrice:              md.BestBidPrice.String(),
-		BestBidVolume:             uint64(md.BestBidVolume),
+		BestBidVolume:             md.BestBidVolume,
 		BestOfferPrice:            md.BestOfferPrice.String(),
-		BestOfferVolume:           uint64(md.BestOfferVolume),
+		BestOfferVolume:           md.BestOfferVolume,
 		BestStaticBidPrice:        md.BestStaticBidPrice.String(),
-		BestStaticBidVolume:       uint64(md.BestStaticBidVolume),
+		BestStaticBidVolume:       md.BestStaticBidVolume,
 		BestStaticOfferPrice:      md.BestStaticOfferPrice.String(),
-		BestStaticOfferVolume:     uint64(md.BestStaticOfferVolume),
+		BestStaticOfferVolume:     md.BestStaticOfferVolume,
 		MidPrice:                  md.MidPrice.String(),
 		StaticMidPrice:            md.StaticMidPrice.String(),
 		Market:                    md.Market.String(),
 		Timestamp:                 md.VegaTime.UnixNano(),
-		OpenInterest:              uint64(md.OpenInterest),
+		OpenInterest:              md.OpenInterest,
 		AuctionEnd:                md.AuctionEnd,
 		AuctionStart:              md.AuctionStart,
 		IndicativePrice:           md.IndicativePrice.String(),
-		IndicativeVolume:          uint64(md.IndicativeVolume),
+		IndicativeVolume:          md.IndicativeVolume,
 		MarketTradingMode:         types.Market_TradingMode(types.Market_TradingMode_value[md.MarketTradingMode]),
 		Trigger:                   types.AuctionTrigger(types.AuctionTrigger_value[md.AuctionTrigger]),
 		ExtensionTrigger:          types.AuctionTrigger(types.AuctionTrigger_value[md.ExtensionTrigger]),
@@ -411,10 +424,10 @@ func priceMonitoringBoundsToProto(bounds []*PriceMonitoringBound) []*types.Price
 
 	for _, bound := range bounds {
 		protoBound := types.PriceMonitoringBounds{
-			MinValidPrice:  fmt.Sprintf("%d", bound.MinValidPrice),
-			MaxValidPrice:  fmt.Sprintf("%d", bound.MaxValidPrice),
+			MinValidPrice:  bound.MinValidPrice.String(),
+			MaxValidPrice:  bound.MaxValidPrice.String(),
 			Trigger:        priceMonitoringTriggerToProto(bound.Trigger),
-			ReferencePrice: fmt.Sprintf("%d", bound.ReferencePrice),
+			ReferencePrice: bound.ReferencePrice.String(),
 		}
 
 		results = append(results, &protoBound)

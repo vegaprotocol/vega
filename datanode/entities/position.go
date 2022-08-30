@@ -29,38 +29,44 @@ type positionSettlement interface {
 	Price() *num.Uint
 	PositionFactor() num.Decimal
 	Trades() []events.TradeSettlement
+	TxHash() string
 }
 
 type lossSocialization interface {
 	Amount() *num.Int
+	TxHash() string
 }
 
 type settleDestressed interface {
 	Margin() *num.Uint
+	TxHash() string
 }
 
 type Position struct {
-	MarketID          MarketID
-	PartyID           PartyID
-	OpenVolume        int64
-	RealisedPnl       decimal.Decimal
-	UnrealisedPnl     decimal.Decimal
-	AverageEntryPrice decimal.Decimal
-	Loss              decimal.Decimal // what the party lost because of loss socialization
-	Adjustment        decimal.Decimal // what a party was missing which triggered loss socialization
-	VegaTime          time.Time
+	MarketID                MarketID
+	PartyID                 PartyID
+	OpenVolume              int64
+	RealisedPnl             decimal.Decimal
+	UnrealisedPnl           decimal.Decimal
+	AverageEntryPrice       decimal.Decimal
+	AverageEntryMarketPrice decimal.Decimal
+	Loss                    decimal.Decimal // what the party lost because of loss socialization
+	Adjustment              decimal.Decimal // what a party was missing which triggered loss socialization
+	TxHash                  TxHash
+	VegaTime                time.Time
 }
 
 func NewEmptyPosition(marketID MarketID, partyID PartyID) Position {
 	return Position{
-		MarketID:          marketID,
-		PartyID:           partyID,
-		OpenVolume:        0,
-		RealisedPnl:       decimal.Zero,
-		UnrealisedPnl:     decimal.Zero,
-		AverageEntryPrice: decimal.Zero,
-		Loss:              decimal.Zero,
-		Adjustment:        decimal.Zero,
+		MarketID:                marketID,
+		PartyID:                 partyID,
+		OpenVolume:              0,
+		RealisedPnl:             decimal.Zero,
+		UnrealisedPnl:           decimal.Zero,
+		AverageEntryPrice:       decimal.Zero,
+		AverageEntryMarketPrice: decimal.Zero,
+		Loss:                    decimal.Zero,
+		Adjustment:              decimal.Zero,
 	}
 }
 
@@ -74,9 +80,11 @@ func (p *Position) UpdateWithPositionSettlement(e positionSettlement) {
 
 		// Then with any we have opened
 		p.AverageEntryPrice = updateVWAP(p.AverageEntryPrice, p.OpenVolume, openedVolume, t.Price())
+		p.AverageEntryMarketPrice = updateVWAP(p.AverageEntryMarketPrice, p.OpenVolume, openedVolume, t.MarketPrice())
 		p.OpenVolume += openedVolume
 	}
 	p.mtm(e.Price(), e.PositionFactor())
+	p.TxHash = TxHash(e.TxHash())
 }
 
 func (p *Position) UpdateWithLossSocialization(e lossSocialization) {
@@ -89,6 +97,7 @@ func (p *Position) UpdateWithLossSocialization(e lossSocialization) {
 	}
 
 	p.RealisedPnl = p.RealisedPnl.Add(amountLoss)
+	p.TxHash = TxHash(e.TxHash())
 }
 
 func (p *Position) UpdateWithSettleDestressed(e settleDestressed) {
@@ -99,6 +108,7 @@ func (p *Position) UpdateWithSettleDestressed(e settleDestressed) {
 	p.AverageEntryPrice = decimal.Zero // @TODO average entry price shouldn't be affected(?)
 	p.AverageEntryPrice = decimal.Zero
 	p.OpenVolume = 0
+	p.TxHash = TxHash(e.TxHash())
 }
 
 func (p *Position) ToProto() *vega.Position {
@@ -112,7 +122,7 @@ func (p *Position) ToProto() *vega.Position {
 		OpenVolume:        p.OpenVolume,
 		RealisedPnl:       p.RealisedPnl.Round(0).String(),
 		UnrealisedPnl:     p.UnrealisedPnl.Round(0).String(),
-		AverageEntryPrice: p.AverageEntryPrice.Round(0).String(),
+		AverageEntryPrice: p.AverageEntryMarketPrice.Round(0).String(),
 		UpdatedAt:         timestamp,
 	}
 }
@@ -197,13 +207,13 @@ func (p Position) Key() PositionKey {
 
 var PositionColumns = []string{
 	"market_id", "party_id", "open_volume", "realised_pnl", "unrealised_pnl",
-	"average_entry_price", "loss", "adjustment", "vega_time",
+	"average_entry_price", "average_entry_market_price", "loss", "adjustment", "tx_hash", "vega_time",
 }
 
 func (p Position) ToRow() []interface{} {
 	return []interface{}{
 		p.MarketID, p.PartyID, p.OpenVolume, p.RealisedPnl, p.UnrealisedPnl,
-		p.AverageEntryPrice, p.Loss, p.Adjustment, p.VegaTime,
+		p.AverageEntryPrice, p.AverageEntryMarketPrice, p.Loss, p.Adjustment, p.TxHash, p.VegaTime,
 	}
 }
 
@@ -214,8 +224,10 @@ func (p Position) Equal(q Position) bool {
 		p.RealisedPnl.Equal(q.RealisedPnl) &&
 		q.UnrealisedPnl.Equal(q.UnrealisedPnl) &&
 		q.AverageEntryPrice.Equal(q.AverageEntryPrice) &&
+		q.AverageEntryMarketPrice.Equal(q.AverageEntryMarketPrice) &&
 		q.Loss.Equal(q.Loss) &&
 		q.Adjustment.Equal(q.Adjustment) &&
+		q.TxHash == q.TxHash &&
 		q.VegaTime.Equal(q.VegaTime)
 }
 

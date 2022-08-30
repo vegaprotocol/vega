@@ -49,20 +49,6 @@ func (mr *MockMarketActivityTrackerMockRecorder) GetAllMarketIDs() *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllMarketIDs", reflect.TypeOf((*MockMarketActivityTracker)(nil).GetAllMarketIDs))
 }
 
-// GetEligibleProposers mocks base method.
-func (m *MockMarketActivityTracker) GetEligibleProposers(arg0 string) []string {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetEligibleProposers", arg0)
-	ret0, _ := ret[0].([]string)
-	return ret0
-}
-
-// GetEligibleProposers indicates an expected call of GetEligibleProposers.
-func (mr *MockMarketActivityTrackerMockRecorder) GetEligibleProposers(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEligibleProposers", reflect.TypeOf((*MockMarketActivityTracker)(nil).GetEligibleProposers), arg0)
-}
-
 // GetFeePartyScores mocks base method.
 func (m *MockMarketActivityTracker) GetFeePartyScores(arg0 string, arg1 vega.TransferType) []*types.PartyContibutionScore {
 	m.ctrl.T.Helper()
@@ -77,14 +63,16 @@ func (mr *MockMarketActivityTrackerMockRecorder) GetFeePartyScores(arg0, arg1 in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFeePartyScores", reflect.TypeOf((*MockMarketActivityTracker)(nil).GetFeePartyScores), arg0, arg1)
 }
 
-// MarkPaidProposer mocks base method.
-func (m *MockMarketActivityTracker) MarkPaidProposer(arg0 string) {
+// GetProposer mocks base method.
+func (m *MockMarketActivityTracker) GetProposer(arg0 string) string {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "MarkPaidProposer", arg0)
+	ret := m.ctrl.Call(m, "GetProposer", arg0)
+	ret0, _ := ret[0].(string)
+	return ret0
 }
 
-// MarkPaidProposer indicates an expected call of MarkPaidProposer.
-func (mr *MockMarketActivityTrackerMockRecorder) MarkPaidProposer(arg0 interface{}) *gomock.Call {
+// GetProposer indicates an expected call of GetProposer.
+func (mr *MockMarketActivityTrackerMockRecorder) GetProposer(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkPaidProposer", reflect.TypeOf((*MockMarketActivityTracker)(nil).MarkPaidProposer), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProposer", reflect.TypeOf((*MockMarketActivityTracker)(nil).GetProposer), arg0)
 }

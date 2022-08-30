@@ -222,6 +222,7 @@ type Topology struct {
 	ChainValidators             []string
 	PendingPubKeyRotations      []*snapshot.PendingKeyRotation
 	PendingEthereumKeyRotations []*snapshot.PendingEthereumKeyRotation
+	Signatures                  *snapshot.ToplogySignatures
 	ValidatorPerformance        *snapshot.ValidatorPerformance
 }
 
@@ -390,6 +391,8 @@ type AuctionState struct {
 type FeeSplitter struct {
 	TimeWindowStart time.Time
 	TradeValue      *num.Uint
+	Avg             num.Decimal
+	Window          uint64
 }
 
 type EpochState struct {
@@ -2810,9 +2813,12 @@ func (p PriceMonitor) IntoProto() *snapshot.PriceMonitor {
 
 func FeeSplitterFromProto(fs *snapshot.FeeSplitter) *FeeSplitter {
 	tv, _ := num.UintFromString(fs.TradeValue, 10)
+	avg, _ := num.DecimalFromString(fs.Avg)
 	ret := FeeSplitter{
 		TimeWindowStart: time.Unix(0, fs.TimeWindowStart),
 		TradeValue:      tv,
+		Avg:             avg,
+		Window:          fs.Window,
 	}
 
 	return &ret
@@ -2822,6 +2828,8 @@ func (f FeeSplitter) IntoProto() *snapshot.FeeSplitter {
 	ret := snapshot.FeeSplitter{
 		TimeWindowStart: f.TimeWindowStart.UnixNano(),
 		TradeValue:      f.TradeValue.String(),
+		Avg:             f.Avg.String(),
+		Window:          f.Window,
 	}
 
 	return &ret
@@ -3719,6 +3727,7 @@ func PayloadTopologyFromProto(t *snapshot.Payload_Topology) *PayloadTopology {
 			ValidatorData:               t.Topology.ValidatorData,
 			PendingPubKeyRotations:      t.Topology.PendingPubKeyRotations,
 			PendingEthereumKeyRotations: t.Topology.PendingEthereumKeyRotations,
+			Signatures:                  t.Topology.Signatures,
 			ValidatorPerformance:        t.Topology.ValidatorPerformance,
 		},
 	}
@@ -3731,6 +3740,7 @@ func (p *PayloadTopology) IntoProto() *snapshot.Payload_Topology {
 			ValidatorData:               p.Topology.ValidatorData,
 			PendingPubKeyRotations:      p.Topology.PendingPubKeyRotations,
 			PendingEthereumKeyRotations: p.Topology.PendingEthereumKeyRotations,
+			Signatures:                  p.Topology.Signatures,
 			ValidatorPerformance:        p.Topology.ValidatorPerformance,
 		},
 	}

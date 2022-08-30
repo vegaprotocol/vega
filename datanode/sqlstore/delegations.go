@@ -50,9 +50,10 @@ func (ds *Delegations) Add(ctx context.Context, d entities.Delegation) error {
 			node_id,
 			epoch_id,
 			amount,
+			tx_hash,
 			vega_time)
-		 VALUES ($1,  $2,  $3,  $4,  $5);`,
-		d.PartyID, d.NodeID, d.EpochID, d.Amount, d.VegaTime)
+		 VALUES ($1,  $2,  $3,  $4,  $5, $6);`,
+		d.PartyID, d.NodeID, d.EpochID, d.Amount, d.TxHash, d.VegaTime)
 	return err
 }
 

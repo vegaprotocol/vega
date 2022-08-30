@@ -60,7 +60,7 @@ func (h *Handler) CreateWallet(name, passphrase string) (string, error) {
 	defer h.mu.Unlock()
 
 	if exists, err := h.store.WalletExists(context.Background(), name); err != nil {
-		return "", fmt.Errorf("couldn't verify wallet existence: %w", err)
+		return "", fmt.Errorf("couldn't verify the wallet existence: %w", err)
 	} else if exists {
 		return "", wallet.ErrWalletAlreadyExists
 	}
@@ -207,7 +207,7 @@ func (h *Handler) SignAny(name string, inputData []byte, pubKey string) ([]byte,
 	return w.SignAny(pubKey, inputData)
 }
 
-func (h *Handler) SignTx(name string, req *walletpb.SubmitTransactionRequest, height uint64) (*commandspb.Transaction, error) {
+func (h *Handler) SignTx(name string, req *walletpb.SubmitTransactionRequest, height uint64, chainID string) (*commandspb.Transaction, error) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
@@ -216,7 +216,7 @@ func (h *Handler) SignTx(name string, req *walletpb.SubmitTransactionRequest, he
 		return nil, err
 	}
 
-	data, err := wcommands.ToMarshaledInputData(req, height)
+	data, err := wcommands.ToMarshaledInputData(req, height, chainID)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't marshal input data: %w", err)
 	}

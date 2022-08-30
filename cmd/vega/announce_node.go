@@ -43,11 +43,12 @@ type AnnounceNodeCmd struct {
 	config.OutputFlag
 	config.Passphrase `long:"passphrase-file"`
 
-	InfoURL   string `short:"i" long:"info-url" required:"true" description:"An url to the website / information about this validator"`
-	Country   string `short:"c" long:"country" required:"true" description:"The country from which the validator is operating"`
-	Name      string `short:"n" long:"name" required:"true" description:"The name of this validator"`
-	AvatarURL string `short:"a" long:"avatar-url" required:"true" description:"A link to an avatar picture for this validator"`
-	FromEpoch uint64 `short:"f" long:"from-epoch" required:"true" description:"The epoch from which this validator should be ready to validate blocks" `
+	InfoURL          string `short:"i" long:"info-url" required:"true" description:"An url to the website / information about this validator"`
+	Country          string `short:"c" long:"country" required:"true" description:"The country from which the validator is operating"`
+	Name             string `short:"n" long:"name" required:"true" description:"The name of this validator"`
+	AvatarURL        string `short:"a" long:"avatar-url" required:"true" description:"A link to an avatar picture for this validator"`
+	FromEpoch        uint64 `short:"f" long:"from-epoch" required:"true" description:"The epoch from which this validator should be ready to validate blocks" `
+	SubmitterAddress string `short:"s" long:"submitter-address" description:"Ethereum address to use as a submitter to contract changes" `
 }
 
 var announceNodeCmd AnnounceNodeCmd
@@ -83,16 +84,21 @@ func (opts *AnnounceNodeCmd) Execute(args []string) error {
 	}
 
 	cmd := commandspb.AnnounceNode{
-		Id:              nodeWallets.Vega.ID().Hex(),
-		VegaPubKey:      nodeWallets.Vega.PubKey().Hex(),
-		VegaPubKeyIndex: nodeWallets.Vega.Index(),
-		ChainPubKey:     nodeWallets.Tendermint.Pubkey,
-		EthereumAddress: crypto.EthereumChecksumAddress(nodeWallets.Ethereum.PubKey().Hex()),
-		FromEpoch:       opts.FromEpoch,
-		InfoUrl:         opts.InfoURL,
-		Name:            opts.Name,
-		AvatarUrl:       opts.AvatarURL,
-		Country:         opts.Country,
+		Id:               nodeWallets.Vega.ID().Hex(),
+		VegaPubKey:       nodeWallets.Vega.PubKey().Hex(),
+		VegaPubKeyIndex:  nodeWallets.Vega.Index(),
+		ChainPubKey:      nodeWallets.Tendermint.Pubkey,
+		EthereumAddress:  crypto.EthereumChecksumAddress(nodeWallets.Ethereum.PubKey().Hex()),
+		FromEpoch:        opts.FromEpoch,
+		InfoUrl:          opts.InfoURL,
+		Name:             opts.Name,
+		AvatarUrl:        opts.AvatarURL,
+		Country:          opts.Country,
+		SubmitterAddress: opts.SubmitterAddress,
+	}
+
+	if len(cmd.SubmitterAddress) != 0 {
+		cmd.SubmitterAddress = crypto.EthereumChecksumAddress(cmd.SubmitterAddress)
 	}
 
 	if err := validators.SignAnnounceNode(
@@ -196,12 +202,11 @@ func getNodeWalletCommander(log *logging.Logger, registryPass string, vegaPaths 
 		return nil, nil, nil, fmt.Errorf("couldn't get last block height: %w", err)
 	}
 
-	commander, err := nodewallets.NewCommander(cfg.NodeWallet, log, nil, vegaWallet, heightProvider{height: resp.Height})
+	commander, err := nodewallets.NewCommander(cfg.NodeWallet, log, blockchain.NewClientWithImpl(abciClient), vegaWallet, heightProvider{height: resp.Height})
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("couldn't initialise node wallet commander: %w", err)
 	}
 
-	commander.SetChain(blockchain.NewClientWithImpl(abciClient))
 	return commander, resp, cancel, nil
 }
 

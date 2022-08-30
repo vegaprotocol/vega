@@ -42,7 +42,7 @@ func NewMarketData(connectionSource *ConnectionSource) *MarketData {
 	return &MarketData{
 		ConnectionSource: connectionSource,
 		columns: []string{
-			"synthetic_time", "vega_time", "seq_num",
+			"synthetic_time", "tx_hash", "vega_time", "seq_num",
 			"market", "mark_price", "best_bid_price", "best_bid_volume",
 			"best_offer_price", "best_offer_volume", "best_static_bid_price", "best_static_bid_volume",
 			"best_static_offer_price", "best_static_offer_volume", "mid_price", "static_mid_price",
@@ -62,7 +62,7 @@ func (md *MarketData) Flush(ctx context.Context) ([]*entities.MarketData, error)
 	rows := make([][]interface{}, 0, len(md.marketData))
 	for _, data := range md.marketData {
 		rows = append(rows, []interface{}{
-			data.SyntheticTime, data.VegaTime, data.SeqNum,
+			data.SyntheticTime, data.TxHash, data.VegaTime, data.SeqNum,
 			data.Market, data.MarkPrice,
 			data.BestBidPrice, data.BestBidVolume, data.BestOfferPrice, data.BestOfferVolume,
 			data.BestStaticBidPrice, data.BestStaticBidVolume, data.BestStaticOfferPrice, data.BestStaticOfferVolume,

@@ -6,7 +6,7 @@
   },
   "methods": [
     {
-      "name": "connect_wallet",
+      "name": "session.connect_wallet",
       "summary": "Initiates a connection between a wallet and a third-party application.",
       "description": "This method initiates a connection between a wallet and a third-party application.\n\nThe client has to review the request, and, if they accept it, select the wallet they want to use for this connection.\n\nA connection token is generated and returned to the third-party application. This token is meant to be used in protected methods.\n\n**Supported connections:**\n- Multiple wallets connected for the same hostname. Each connection will have a different token.\n- A single wallet connected to multiple hostnames. Each connection will have a different token.\n- Combination of the above setups.\n\nHowever, it's not possible to have multiple connections on the same wallet for the same hostname. The previous connection will be terminated and a new token will be generated.\n\nThis method should be the entry point of every third-party application. Once connected, see the method `get_permissions`.",
       "tags": [
@@ -62,7 +62,7 @@
       ]
     },
     {
-      "name": "disconnect_wallet",
+      "name": "session.disconnect_wallet",
       "summary": "Ends the connection between the third-party application and the wallet.",
       "description": "This method ends the connection between the third-party application and the wallet. The token is, then, no longer valid.\n\nCalling this method with an invalid token doesn't fail.",
       "tags": [
@@ -102,7 +102,7 @@
       ]
     },
     {
-      "name": "get_permissions",
+      "name": "session.get_permissions",
       "summary": "Returns the permissions set on the wallet for the third-party application.",
       "description": "This method returns the permissions set on the wallet for the third-party application.\n\nThis method should be called, by the third-party application, right after it successfully connected to a wallet, to ensure it has sufficient permissions to call the method it relies on. If the third-party application doesn't have enough permissions, see the method `request_permissions`.",
       "tags": [
@@ -146,7 +146,7 @@
       ]
     },
     {
-      "name": "request_permissions",
+      "name": "session.request_permissions",
       "summary": "Requests permissions update for the third-party application.",
       "description": "This method allows a third-party application to request new permissions to access the methods it requires.\n\nAll permissions the third-party relies on have to be specified. If a permission is omitted, it will be considered as no longer required and, as a result, be automatically revoked.\n\nThe client has to review the permissions.",
       "tags": [
@@ -200,7 +200,7 @@
             {
               "name": "requestedPermissions",
               "value": {
-                "public_key": "read"
+                "public_keys": "read"
               }
             }
           ],
@@ -208,7 +208,7 @@
             "name": "Success",
             "value": {
               "permissions": {
-                "public_key": "read"
+                "public_keys": "read"
               }
             }
           }
@@ -230,7 +230,7 @@
             "name": "Success",
             "value": {
               "permissions": {
-                "public_key": "none"
+                "public_keys": "none"
               }
             }
           }
@@ -238,7 +238,7 @@
       ]
     },
     {
-      "name": "list_keys",
+      "name": "session.list_keys",
       "summary": "Returns the keys the client has allowed the third-party application to have access to.",
       "description": "This method returns the keys the client has allowed the third-party application to have access to.\n\nIt requires a `read` access on `public_keys`.",
       "paramStructure": "by-name",
@@ -286,7 +286,7 @@
       ]
     },
     {
-      "name": "send_transaction",
+      "name": "session.send_transaction",
       "summary": "Send a transaction to the network.",
       "description": "This method sends a transaction to the network.\n\nThe client has to review the transaction.",
       "tags": [
@@ -359,6 +359,15 @@
       },
       "errors": [
         {
+          "$ref": "#/components/errors/no_healthy_node"
+        },
+        {
+          "$ref": "#/components/errors/could_not_get_last_block"
+        },
+        {
+          "$ref": "#/components/errors/transaction_failed"
+        },
+        {
           "$ref": "#/components/errors/public_key_not_allowed"
         },
         {
@@ -373,49 +382,468 @@
       ],
       "examples": [
         {
-          "name": "Updating permissions for \"vega.xyz\"",
-          "description": "The third-party application \"vega.xyz\" requests an update of its permissions and the client accepts.",
+          "name": "Sending a transaction for \"vega.xyz\"",
+          "description": "The third-party application \"vega.xyz\" requests to send a transaction and the client accepts.",
           "params": [
             {
               "name": "token",
               "value": "hZKSx0snBvikp2NGMJdKPHU5qvloSeqpqbJg6BsMwCcqX4iZvvy99BV2l13oeyEG"
             },
             {
-              "name": "requestedPermissions",
-              "value": {
-                "public_key": "read"
-              }
+              "name": "publicKey",
+              "value": "3fd42fd5ceb22d99ac45086f1d82d516118a5cb7ad9a2e096cd78ca2c8960c80"
+            },
+            {
+              "name": "sendingMode",
+              "value": "TYPE_SYNC"
+            },
+            {
+              "name": "encodedTransaction",
+              "value": "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K"
             }
           ],
           "result": {
             "name": "Success",
             "value": {
-              "permissions": {
-                "public_key": "read"
-              }
+              "receivedAt": "2021-02-18T21:54:42.123Z",
+              "sentAt": "2021-02-18T21:54:42.123Z",
+              "txHash": "E8C167126D1FC8D92898AB9C07C318161DF68753A1316A69ABDC9ADC557723B3"
             }
+          }
+        }
+      ]
+    },
+    {
+      "name": "session.get_chain_id",
+      "summary": "Returns the chain ID of the network in use.",
+      "description": "This method returns the chain ID of the network in use.\n\nIt should be called by every third-party application to know from which network it should fetch data.",
+      "paramStructure": "by-name",
+      "params": [],
+      "result": {
+        "name": "chainID",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "chainID": {
+              "type": "string",
+              "description": "The identifier for the chain",
+              "examples": [
+                "test-chain-Thz9c6"
+              ]
+            }
+          }
+        }
+      },
+      "errors": [
+        {
+          "$ref": "#/components/errors/no_healthy_node"
+        },
+        {
+          "$ref": "#/components/errors/could_not_get_last_block"
+        }
+      ],
+      "examples": [
+        {
+          "name": "Fetching the chain ID",
+          "description": "An example of requesting the chain's ID",
+          "params": [],
+          "result": {
+            "name": "Success",
+            "value": {
+              "chainID": "test-chain-Thz9c6"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin.create_wallet",
+      "summary": "Creates a wallet with its first key-pair.",
+      "description": "This method creates a HD wallet (version 2) and generates its first key-pair the cryptographic algorithm ed25519.\n\nThe passphrase will be used to encrypt the wallet and its keys.\n\nIf successful, the wallet is ready to use for sending transaction.",
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "wallet",
+          "required": true,
+          "schema": {
+            "type": "string"
           }
         },
         {
-          "name": "Updating permissions for \"vega.xyz\" with omitted permission",
-          "description": "The third-party application \"vega.xyz\" omits a permission during the update and the client accepts. This automatically marks the omitted permission as revoked.",
+          "name": "passphrase",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "wallet": {
+              "type": "object",
+              "description": "the newly generated wallet",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "version": {
+                  "type": "number"
+                },
+                "recoveryPhrase": {
+                  "type": "string"
+                },
+                "filePath": {
+                  "type": "string"
+                }
+              }
+            },
+            "key": {
+              "type": "object",
+              "description": "the first public key generated",
+              "properties": {
+                "publicKey": {
+                  "type": "string"
+                },
+                "algorithm": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "meta": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "key": {
+                        "type": "string"
+                      },
+                      "value": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "examples": [
+        {
+          "name": "Creating a wallet",
           "params": [
             {
-              "name": "token",
-              "value": "hZKSx0snBvikp2NGMJdKPHU5qvloSeqpqbJg6BsMwCcqX4iZvvy99BV2l13oeyEG"
+              "name": "wallet",
+              "value": "my-wallet"
             },
             {
-              "name": "requestedPermissions",
-              "value": {}
+              "name": "passphrase",
+              "value": "this-is-not-a-good-passphrase"
             }
           ],
           "result": {
             "name": "Success",
             "value": {
-              "permissions": {
-                "public_key": "none"
+              "wallet": {
+                "name": "my-wallet",
+                "version": 2,
+                "recoveryPhrase": "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render",
+                "filePath": "some/path/to/my-wallet"
+              },
+              "key": {
+                "publicKey": "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
+                "algorithm": {
+                  "name": "vega/ed25519",
+                  "version": 1
+                },
+                "meta": [
+                  {
+                    "key": "name",
+                    "value": "my-wallet key 1"
+                  }
+                ]
               }
             }
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin.import_wallet",
+      "summary": "Import a wallet with its first key-pair with a recovery phrase and a version.",
+      "description": "This method imports a wallet using the specified recovery phrase and wallet version, and generates its first key-pair.\n\nThe passphrase will be used to encrypt the wallet and its keys.\n\nIf successful, the wallet is ready to use for sending transaction.",
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "wallet",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "passphrase",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "recoveryPhrase",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "version",
+          "required": true,
+          "schema": {
+            "type": "number"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "wallet": {
+              "type": "object",
+              "description": "the imported wallet",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "version": {
+                  "type": "number"
+                },
+                "filePath": {
+                  "type": "string"
+                }
+              }
+            },
+            "key": {
+              "type": "object",
+              "description": "the first public key generated",
+              "properties": {
+                "publicKey": {
+                  "type": "string"
+                },
+                "algorithm": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "meta": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "key": {
+                        "type": "string"
+                      },
+                      "value": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "examples": [
+        {
+          "name": "Importing a wallet",
+          "params": [
+            {
+              "name": "wallet",
+              "value": "my-wallet"
+            },
+            {
+              "name": "passphrase",
+              "value": "this-is-not-a-good-passphrase"
+            },
+            {
+              "name": "recoveryPhrase",
+              "value": "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render"
+            },
+            {
+              "name": "version",
+              "value": "2"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": {
+              "wallet": {
+                "name": "my-wallet",
+                "version": 2,
+                "filePath": "some/path/to/my-wallet"
+              },
+              "key": {
+                "publicKey": "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
+                "algorithm": {
+                  "name": "vega/ed25519",
+                  "version": 1
+                },
+                "meta": [
+                  {
+                    "key": "name",
+                    "value": "my-wallet key 1"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin.describe_wallet",
+      "summary": "Returns the wallet base information.",
+      "description": "This method returns the wallet base information such as its name, ID, type and version. It doesn't return the keys nor the permissions.",
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "wallet",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "passphrase",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "version": {
+              "type": "number"
+            },
+            "id": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "examples": [
+        {
+          "name": "Getting wallet base information",
+          "params": [
+            {
+              "name": "wallet",
+              "value": "my-wallet"
+            },
+            {
+              "name": "passphrase",
+              "value": "this-is-not-a-good-passphrase"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": {
+              "name": "my-wallet",
+              "version": 2,
+              "type": "HD Wallet",
+              "ID": "7ffa36b2fb99d8404e9448f0d2ce944055e64c36d895d1fde044c867bfdf779f"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin.list_wallets",
+      "summary": "Returns the list of the wallets present on the computer.",
+      "description": "This method returns the list of the wallets present on the computer. It is alphabetically sorted.",
+      "params": [],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "examples": [
+        {
+          "name": "Getting the list of wallets",
+          "params": [],
+          "result": {
+            "name": "Success",
+            "value": {
+              "wallets": [
+                "wallet-1",
+                "wallet-2"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin.remove_wallet",
+      "summary": "Removes a wallet from the computer.",
+      "description": "This method removes a wallet from the computer.",
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "wallet",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "null"
+        }
+      },
+      "examples": [
+        {
+          "name": "Remove a wallet",
+          "params": [
+            {
+              "name": "wallet",
+              "value": "my-wallet"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": {}
           }
         }
       ]
@@ -455,6 +883,21 @@
       }
     },
     "errors": {
+      "no_healthy_node": {
+        "code": 1000,
+        "message": "Network error",
+        "data": "no healthy node available"
+      },
+      "could_not_get_last_block": {
+        "code": 1000,
+        "message": "Network error",
+        "data": "could not get information about the last block on the network"
+      },
+      "transaction_failed": {
+        "code": 1000,
+        "message": "Network error",
+        "data": "the transaction failed"
+      },
       "read_access_public_keys": {
         "code": 2000,
         "message": "Application error",

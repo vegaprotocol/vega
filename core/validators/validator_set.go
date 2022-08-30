@@ -122,8 +122,9 @@ func (t *Topology) RecalcValidatorSet(ctx context.Context, epochSeq string, dele
 	currentState := make(map[string]StatusAddress, len(t.validators))
 	for k, vs := range t.validators {
 		currentState[k] = StatusAddress{
-			Status:     vs.status,
-			EthAddress: vs.data.EthereumAddress,
+			Status:           vs.status,
+			EthAddress:       vs.data.EthereumAddress,
+			SubmitterAddress: vs.data.SubmitterAddress,
 		}
 	}
 
@@ -147,12 +148,13 @@ func (t *Topology) RecalcValidatorSet(ctx context.Context, epochSeq string, dele
 	newState := make(map[string]StatusAddress, len(t.validators))
 	for k, vs := range t.validators {
 		newState[k] = StatusAddress{
-			Status:     vs.status,
-			EthAddress: vs.data.EthereumAddress,
+			Status:           vs.status,
+			EthAddress:       vs.data.EthereumAddress,
+			SubmitterAddress: vs.data.SubmitterAddress,
 		}
 	}
 
-	t.signatures.EmitPromotionsSignatures(ctx, t.timeService.GetTimeNow(), t.epochSeq, currentState, newState)
+	t.signatures.PreparePromotionsSignatures(ctx, t.timeService.GetTimeNow(), t.epochSeq, currentState, newState)
 
 	// prepare and send the events
 	evts := make([]events.Event, 0, len(currentState))
@@ -424,17 +426,17 @@ func handleSlotChanges(seriesA []*valState, seriesB []*valState, statusA Validat
 		}
 
 		for i := 0; i < nIncreased; i++ {
-			to_promote := seriesB[0]
+			toPromote := seriesB[0]
 
-			the_score := rankingScore[to_promote.data.ID]
-			if the_score.Equal(num.DecimalZero()) {
+			score := rankingScore[toPromote.data.ID]
+			if score.IsZero() {
 				break // the nodes are ordered by ranking score and we do not want to promote one with 0 score so we stop here
 			}
 
-			to_promote.status = statusA
-			to_promote.statusChangeBlock = nextBlockHeight
+			toPromote.status = statusA
+			toPromote.statusChangeBlock = nextBlockHeight
 			// add to the remaining validators so it can compete with the ersatzvalidators
-			seriesA = append(seriesA, to_promote)
+			seriesA = append(seriesA, toPromote)
 			seriesB = seriesB[1:]
 		}
 		return seriesA, seriesB, removedFromSeriesA

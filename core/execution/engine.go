@@ -126,6 +126,7 @@ type netParamsValues struct {
 	probabilityOfTradingTauScaling  num.Decimal
 	minProbabilityOfTradingLPOrders num.Decimal
 	minLpStakeQuantumMultiple       num.Decimal
+	marketCreationQuantumMultiple   num.Decimal
 }
 
 func defaultNetParamsValues() netParamsValues {
@@ -143,6 +144,7 @@ func defaultNetParamsValues() netParamsValues {
 		probabilityOfTradingTauScaling:  num.DecimalFromInt64(-1),
 		minProbabilityOfTradingLPOrders: num.DecimalFromInt64(-1),
 		minLpStakeQuantumMultiple:       num.DecimalFromInt64(-1),
+		marketCreationQuantumMultiple:   num.DecimalFromInt64(-1),
 	}
 }
 
@@ -269,7 +271,7 @@ func (e *Engine) IsEligibleForProposerBonus(marketID string, value *num.Uint) bo
 	if err != nil {
 		return false
 	}
-	return value.ToDecimal().GreaterThan(quantum.Mul(e.npv.minLpStakeQuantumMultiple))
+	return value.ToDecimal().GreaterThan(quantum.Mul(e.npv.marketCreationQuantumMultiple))
 }
 
 // SubmitMarketWithLiquidityProvision is submitting a market through
@@ -1086,6 +1088,16 @@ func (e *Engine) OnMinLpStakeQuantumMultipleUpdate(ctx context.Context, d num.De
 		mkt.OnMarketMinLpStakeQuantumMultipleUpdate(ctx, d)
 	}
 	e.npv.minLpStakeQuantumMultiple = d
+	return nil
+}
+
+func (e *Engine) OnMarketCreationQuantumMultipleUpdate(ctx context.Context, d num.Decimal) error {
+	if e.log.IsDebug() {
+		e.log.Debug("update market creation quantum multiple",
+			logging.Decimal("market-creation-quantum-multiple", d),
+		)
+	}
+	e.npv.marketCreationQuantumMultiple = d
 	return nil
 }
 

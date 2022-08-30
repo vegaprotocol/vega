@@ -40,7 +40,7 @@ type MarginLevels struct {
 }
 
 const (
-	sqlMarginLevelColumns = `account_id,timestamp,maintenance_margin,search_level,initial_margin,collateral_release_level,vega_time`
+	sqlMarginLevelColumns = `account_id,timestamp,maintenance_margin,search_level,initial_margin,collateral_release_level,tx_hash,vega_time`
 )
 
 func NewMarginLevels(connectionSource *ConnectionSource) *MarginLevels {

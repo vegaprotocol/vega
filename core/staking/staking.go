@@ -24,18 +24,18 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/staking EvtForwarder,EthereumClientConfirmations,EthereumEventSource,TimeService,EthConfirmations,EthOnChainVerifier,Witness
+
 type AllEthereumClient interface {
 	EthereumClient
 	EthereumClientConfirmations
 	EthereumClientCaller
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/ethereum_client_confirmations_mock.go -package mocks code.vegaprotocol.io/vega/core/staking EthereumClientConfirmations
 type EthereumClientConfirmations interface {
 	HeaderByNumber(context.Context, *big.Int) (*ethtypes.Header, error)
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/ethereum_event_source_mock.go -package mocks code.vegaprotocol.io/vega/core/staking EthereumEventSource
 type EthereumEventSource interface {
 	UpdateStakingStartingBlock(uint64)
 }

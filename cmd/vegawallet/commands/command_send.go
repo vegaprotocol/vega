@@ -15,9 +15,11 @@ import (
 	api "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
+	coreversion "code.vegaprotocol.io/vega/version"
 	wcommands "code.vegaprotocol.io/vega/wallet/commands"
 	"code.vegaprotocol.io/vega/wallet/network"
 	"code.vegaprotocol.io/vega/wallet/node"
+	"code.vegaprotocol.io/vega/wallet/version"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
 	"github.com/golang/protobuf/jsonpb"
@@ -54,10 +56,13 @@ var (
 
 		# Send a command with a maximum of 10 retries
 		{{.Software}} command send --network NETWORK --wallet WALLET --pubkey PUBKEY --retries 10 COMMAND
+
+		# Send a command to a registered network without verifying network version compatibility
+		{{.Software}} command send --network NETWORK --wallet WALLET --pubkey PUBKEY --no-version-check COMMAND
 	`)
 )
 
-type SendCommandHandler func(io.Writer, *RootFlags, *SendCommandRequest) error
+type SendCommandHandler func(io.Writer, *SendCommandFlags, *RootFlags, *SendCommandRequest) error
 
 func NewCmdCommandSend(w io.Writer, rf *RootFlags) *cobra.Command {
 	return BuildCmdCommandSend(w, SendCommand, rf)
@@ -84,7 +89,7 @@ func BuildCmdCommandSend(w io.Writer, handler SendCommandHandler, rf *RootFlags)
 				return err
 			}
 
-			if err := handler(w, rf, req); err != nil {
+			if err := handler(w, f, rf, req); err != nil {
 				return err
 			}
 
@@ -127,6 +132,11 @@ func BuildCmdCommandSend(w io.Writer, handler SendCommandHandler, rf *RootFlags)
 		DefaultForwarderRetryCount,
 		"Number of retries when contacting the Vega node",
 	)
+	cmd.Flags().BoolVar(&f.NoVersionCheck,
+		"no-version-check",
+		false,
+		"Do not check for network version compatibility",
+	)
 
 	autoCompleteNetwork(cmd, rf.Home)
 	autoCompleteWallet(cmd, rf.Home)
@@ -144,6 +154,7 @@ type SendCommandFlags struct {
 	Retries        uint64
 	LogLevel       string
 	RawCommand     string
+	NoVersionCheck bool
 }
 
 func (f *SendCommandFlags) Validate() (*SendCommandRequest, error) {
@@ -212,7 +223,16 @@ type SendCommandRequest struct {
 	Request     *walletpb.SubmitTransactionRequest
 }
 
-func SendCommand(w io.Writer, rf *RootFlags, req *SendCommandRequest) error {
+func SendCommand(w io.Writer, f *SendCommandFlags, rf *RootFlags, req *SendCommandRequest) error {
+	p := printer.NewInteractivePrinter(w)
+
+	if rf.Output == flags.InteractiveOutput && version.IsUnreleased() {
+		str := p.String()
+		str.CrossMark().DangerText("You are running an unreleased version of the Vega wallet (").DangerText(coreversion.Get()).DangerText(").").NextLine()
+		str.Pad().DangerText("Use it at your own risk!").NextSection()
+		p.Print(str)
+	}
+
 	log, err := BuildLogger(rf.Output, req.LogLevel)
 	if err != nil {
 		return err
@@ -241,6 +261,16 @@ func SendCommand(w io.Writer, rf *RootFlags, req *SendCommandRequest) error {
 		hosts = []string{req.NodeAddress}
 	}
 
+	if !f.NoVersionCheck {
+		networkVersion, err := getNetworkVersion(hosts)
+		if err != nil {
+			return err
+		}
+		if networkVersion != coreversion.Get() {
+			return fmt.Errorf("software is not compatible with this network: network is running version %s but wallet software has version %s", networkVersion, coreversion.Get())
+		}
+	}
+
 	forwarder, err := node.NewForwarder(log.Named("forwarder"), network.GRPCConfig{
 		Hosts:   hosts,
 		Retries: req.Retries,
@@ -257,7 +287,6 @@ func SendCommand(w io.Writer, rf *RootFlags, req *SendCommandRequest) error {
 		}
 	}()
 
-	p := printer.NewInteractivePrinter(w)
 	if rf.Output == flags.InteractiveOutput {
 		p.Print(p.String().BlueArrow().InfoText("Logs").NextLine())
 	}
@@ -273,7 +302,7 @@ func SendCommand(w io.Writer, rf *RootFlags, req *SendCommandRequest) error {
 
 	log.Info(fmt.Sprintf("last block height found: %d", blockData.Height))
 
-	tx, err := handler.SignTx(req.Wallet, req.Request, blockData.Height)
+	tx, err := handler.SignTx(req.Wallet, req.Request, blockData.Height, blockData.ChainId)
 	if err != nil {
 		log.Error("couldn't sign transaction", zap.Error(err))
 		return fmt.Errorf("couldn't sign transaction: %w", err)

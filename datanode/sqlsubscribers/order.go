@@ -60,7 +60,7 @@ func (os *Order) Flush(ctx context.Context) error {
 func (os *Order) consume(oe OrderEvent, seqNum uint64) error {
 	protoOrder := oe.Order()
 
-	order, err := entities.OrderFromProto(protoOrder, seqNum)
+	order, err := entities.OrderFromProto(protoOrder, seqNum, entities.TxHash(oe.TxHash()))
 	if err != nil {
 		return errors.Wrap(err, "deserializing order")
 	}

@@ -141,6 +141,7 @@ type ValidatorTopology interface {
 	ProcessAnnounceNode(ctx context.Context, nr *commandspb.AnnounceNode) error
 	ProcessValidatorHeartbeat(context.Context, *commandspb.ValidatorHeartbeat, func(message, signature, pubkey []byte) error, func(message, signature []byte, hexAddress string) error) error
 	AddForwarder(ID string)
+	IssueSignatures(ctx context.Context, submitter, nodeID string, kind types.NodeSignatureKind) error
 }
 
 // Broker - the event bus.

@@ -35,6 +35,7 @@ func TestSignCommand(t *testing.T) {
 		"--home", home,
 		"--output", "json",
 		"--wallet", walletName,
+		"--chain-id", vgrand.RandomStr(5),
 		"--pubkey", importWalletResp.Key.PublicKey,
 		"--passphrase-file", passphraseFilePath,
 		"--tx-height", "150",
@@ -87,6 +88,7 @@ func TestSignCommandWithTaintedKey(t *testing.T) {
 		"--home", home,
 		"--output", "json",
 		"--wallet", walletName,
+		"--chain-id", vgrand.RandomStr(5),
 		"--pubkey", importWalletResp.Key.PublicKey,
 		"--passphrase-file", passphraseFilePath,
 		"--tx-height", "150",
@@ -94,7 +96,7 @@ func TestSignCommandWithTaintedKey(t *testing.T) {
 	})
 
 	// then
-	require.EqualError(t, err, "couldn't sign transaction: public key is tainted")
+	require.EqualError(t, err, "couldn't sign transaction: the public key is tainted")
 	require.Nil(t, signResp)
 
 	// when
@@ -114,6 +116,7 @@ func TestSignCommandWithTaintedKey(t *testing.T) {
 		"--home", home,
 		"--output", "json",
 		"--wallet", walletName,
+		"--chain-id", vgrand.RandomStr(5),
 		"--pubkey", importWalletResp.Key.PublicKey,
 		"--passphrase-file", passphraseFilePath,
 		"--tx-height", "150",

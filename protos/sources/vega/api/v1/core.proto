@@ -2,30 +2,66 @@ syntax = "proto3";
 
 package vega.api.v1;
 
-option go_package = "code.vegaprotocol.io/vega/protos/vega/api/v1";
 
 import "vega/vega.proto";
 import "vega/events/v1/events.proto";
 import "vega/commands/v1/transaction.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "code.vegaprotocol.io/vega/protos/vega/api/v1";
+
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "Vega core APIs";
+    version: "0.55.0+dev";
+  }
+  schemes: [HTTP, HTTPS]
+  host: "lb.testnet.vega.xyz"
+};
+
 
 service CoreService {
+  // Submit Transaction
+  //
   // Submit a signed transaction
   rpc SubmitTransaction(SubmitTransactionRequest) returns (SubmitTransactionResponse);
+
+  // Chain event
+  //
   // Propagate a chain event
   rpc PropagateChainEvent(PropagateChainEventRequest) returns (PropagateChainEventResponse);
+
+  // Statistics
+  //
   // Get Statistics on Vega
   rpc Statistics(StatisticsRequest) returns (StatisticsResponse);
+
+  // Blockchain height
+  //
   // Get the height of the last tendermint block
   rpc LastBlockHeight(LastBlockHeightRequest) returns (LastBlockHeightResponse);
+
+  // Vega time
+  //
   // Get Time
   rpc GetVegaTime(GetVegaTimeRequest) returns (GetVegaTimeResponse);
+
   // Subscribe to a stream of events from the core
   rpc ObserveEventBus(stream ObserveEventBusRequest) returns (stream ObserveEventBusResponse);
+
+  // Submit raw transaction
+  //
   // Submit a version agnostic signed transaction
   rpc SubmitRawTransaction(SubmitRawTransactionRequest) returns (SubmitRawTransactionResponse);
+
+  // Check transaction
+  //
   // Check a signed transaction
   rpc CheckTransaction(CheckTransactionRequest) returns (CheckTransactionResponse);
-   // Check a raw signed transaction
+
+  // Check raw transaction
+  //
+  // Check a raw signed transaction
   rpc CheckRawTransaction(CheckRawTransactionRequest) returns (CheckRawTransactionResponse);
 }
 
@@ -288,4 +324,6 @@ message LastBlockHeightResponse {
   uint32 spam_pow_number_of_tx_per_block = 6;
   // is increasing difficulty allowed for using the same height for more than `spam_pow_number_of_past_blocks` transactions
   bool spam_pow_increasing_difficulty = 7;
+  // the network chain id from which the block comes from
+  string chain_id = 8;
 }

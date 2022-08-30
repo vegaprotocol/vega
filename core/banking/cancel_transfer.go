@@ -31,7 +31,7 @@ func (e *Engine) CancelTransferFunds(
 ) error {
 	// validation is simple, does the transfer
 	// exists
-	transfer, ok := e.recurringTransfers[cancel.TransferID]
+	transfer, ok := e.recurringTransfersMap[cancel.TransferID]
 	if !ok {
 		return ErrRecurringTransferDoesNotExists
 	}
@@ -43,7 +43,7 @@ func (e *Engine) CancelTransferFunds(
 	}
 
 	// all good, let's delete
-	delete(e.recurringTransfers, cancel.TransferID)
+	e.deleteTransfer(cancel.TransferID)
 	e.bss.changedRecurringTransfers = true
 
 	// send an event because we are nice with the data-node
