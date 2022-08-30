@@ -16,8 +16,8 @@ import (
 
 func TestGetChainID(t *testing.T) {
 	t.Run("Getting chain ID succeeds", testGettingChainIDSucceeds)
-	t.Run("No healthy node available doesn't return the chain ID", testNoHealthyNodeAvailableDoesNotReturnChainID)
-	t.Run("Failing to get the last block doesn't return the chain ID", testFailingToGetLastBlockDoesNotReturnChainID)
+	t.Run("No healthy node available does not return the chain ID", testNoHealthyNodeAvailableDoesNotReturnChainID)
+	t.Run("Failing to get the last block does not return the chain ID", testFailingToGetLastBlockDoesNotReturnChainID)
 }
 
 func testGettingChainIDSucceeds(t *testing.T) {
