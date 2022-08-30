@@ -10,7 +10,6 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
 	"code.vegaprotocol.io/vega/wallet/api"
-	"code.vegaprotocol.io/vega/wallet/wallet"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
 	"github.com/spf13/cobra"
@@ -36,8 +35,8 @@ func NewCmdDescribeKey(w io.Writer, rf *RootFlags) *cobra.Command {
 			return api.AdminDescribeKeyResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 
-		generateKey := api.NewAdminDescribeKey(s)
-		rawResult, errDetails := generateKey.Handle(context.Background(), params)
+		describeKey := api.NewAdminDescribeKey(s)
+		rawResult, errDetails := describeKey.Handle(context.Background(), params)
 		if errDetails != nil {
 			return api.AdminDescribeKeyResult{}, errors.New(errDetails.Data)
 		}
@@ -131,7 +130,7 @@ func PrintDescribeKeyResponse(w io.Writer, resp api.AdminDescribeKeyResult) {
 	str := p.String()
 	defer p.Print(str)
 
-	str.Text("Name:              ").WarningText(wallet.GetKeyName(resp.Metadata)).NextLine()
+	str.Text("Name:              ").WarningText(resp.Name).NextLine()
 	str.Text("Public key:        ").WarningText(resp.PublicKey).NextLine()
 	str.Text("Algorithm Name:    ").WarningText(resp.Algorithm.Name).NextLine()
 	str.Text("Algorithm Version: ").WarningText(fmt.Sprint(resp.Algorithm.Version)).NextSection()

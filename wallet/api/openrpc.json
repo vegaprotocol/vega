@@ -1081,6 +1081,76 @@
       ]
     },
     {
+      "name": "admin.list_keys",
+      "summary": "Returns all generated key of the specified wallet.",
+      "description": "This method returns all generated key of the specified wallet with their respective name.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "key"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "wallet",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "passphrase",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "keys": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/named_public_key"
+              }
+            }
+          }
+        }
+      },
+      "examples": [
+        {
+          "name": "Getting key base information",
+          "params": [
+            {
+              "name": "wallet",
+              "value": "my-wallet"
+            },
+            {
+              "name": "passphrase",
+              "value": "this-is-not-a-good-passphrase"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": {
+              "keys": [
+                {
+                  "name": "Key 1",
+                  "public_key": "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "admin.annotate_key",
       "summary": "Attaches metadata to a key.",
       "description": "This method attaches metadata to the specified key.\n\nA special metadata `name` can be provided to name the key. If no `name` is provided, a default name is generated.\n\nThis method **replaces** the existing metadata by the specified ones. It does **not** update in place.",
@@ -1209,6 +1279,18 @@
             "type": "string"
           },
           "value": {
+            "type": "string"
+          }
+        }
+      },
+      "named_public_key": {
+        "type": "object",
+        "description": "The public key with its name.",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "public_key": {
             "type": "string"
           }
         }

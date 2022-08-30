@@ -166,7 +166,7 @@ func AdminAPI(log *zap.Logger, walletStore WalletStore, netStore NetworkStore) (
 	walletAPI.RegisterMethod("admin.import_network", &UnimplementedMethod{})
 	walletAPI.RegisterMethod("admin.import_wallet", NewAdminImportWallet(walletStore))
 	walletAPI.RegisterMethod("admin.isolate_key", &UnimplementedMethod{})
-	walletAPI.RegisterMethod("admin.list_keys", &UnimplementedMethod{})
+	walletAPI.RegisterMethod("admin.list_keys", NewAdminListKeys(walletStore))
 	walletAPI.RegisterMethod("admin.list_networks", &UnimplementedMethod{})
 	walletAPI.RegisterMethod("admin.list_permissions", &UnimplementedMethod{})
 	walletAPI.RegisterMethod("admin.list_wallets", NewAdminListWallets(walletStore))

@@ -17,6 +17,7 @@ type AdminDescribeKeyParams struct {
 
 type AdminDescribeKeyResult struct {
 	PublicKey string            `json:"publicKey"`
+	Name      string            `json:"name"`
 	Algorithm wallet.Algorithm  `json:"algorithm"`
 	Metadata  []wallet.Metadata `json:"metadata"`
 	IsTainted bool              `json:"isTainted"`
@@ -55,6 +56,7 @@ func (h *AdminDescribeKey) Handle(ctx context.Context, rawParams jsonrpc.Params)
 
 	return AdminDescribeKeyResult{
 		PublicKey: publicKey.Key(),
+		Name:      publicKey.Name(),
 		Algorithm: wallet.Algorithm{
 			Name:    publicKey.AlgorithmName(),
 			Version: publicKey.AlgorithmVersion(),

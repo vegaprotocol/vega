@@ -31,6 +31,7 @@ type Wallet interface {
 type KeyPair interface {
 	PublicKey() string
 	PrivateKey() string
+	Name() string
 	IsTainted() bool
 	Metadata() []Metadata
 	UpdateMetadata([]Metadata) []Metadata
@@ -44,6 +45,7 @@ type KeyPair interface {
 
 type PublicKey interface {
 	Key() string
+	Name() string
 	IsTainted() bool
 	Metadata() []Metadata
 	Index() uint32

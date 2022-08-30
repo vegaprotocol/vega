@@ -181,69 +181,6 @@ func testIsolatingKeyOfNonExistingWalletFails(t *testing.T) {
 	assert.Nil(t, resp)
 }
 
-func TestListKeys(t *testing.T) {
-	t.Run("List keys succeeds", testListKeysSucceeds)
-	t.Run("List keys of non-existing wallet fails", testListKeysOfNonExistingWalletFails)
-}
-
-func testListKeysSucceeds(t *testing.T) {
-	// given
-	w := newWallet(t)
-	keyCount := 3
-	expectedKeys := &wallet.ListKeysResponse{
-		Keys: make([]wallet.NamedPubKey, 0, keyCount),
-	}
-	for i := 0; i < keyCount; i++ {
-		keyName := vgrand.RandomStr(5)
-		kp, err := w.GenerateKeyPair([]wallet.Metadata{{Key: "name", Value: keyName}})
-		if err != nil {
-			t.Fatalf("couldn't generate key: %v", err)
-		}
-		expectedKeys.Keys = append(expectedKeys.Keys, wallet.NamedPubKey{
-			Name:      keyName,
-			PublicKey: kp.PublicKey(),
-		})
-	}
-
-	req := &wallet.ListKeysRequest{
-		Wallet:     w.Name(),
-		Passphrase: "passphrase",
-	}
-
-	// setup
-	store := handlerMocks(t)
-	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(true, nil)
-	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(1).Return(w, nil)
-
-	// when
-	resp, err := wallet.ListKeys(store, req)
-
-	// then
-	require.NoError(t, err)
-	require.NotNil(t, resp)
-	assert.Equal(t, expectedKeys, resp)
-}
-
-func testListKeysOfNonExistingWalletFails(t *testing.T) {
-	// given
-	req := &wallet.ListKeysRequest{
-		Wallet:     vgrand.RandomStr(5),
-		Passphrase: "passphrase",
-	}
-
-	// setup
-	store := handlerMocks(t)
-	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(false, nil)
-	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(0)
-
-	// when
-	resp, err := wallet.ListKeys(store, req)
-
-	// then
-	require.Error(t, err)
-	assert.Nil(t, resp)
-}
-
 func TestSignCommand(t *testing.T) {
 	t.Run("Sign message succeeds", testSignCommandSucceeds)
 	t.Run("Sign message of non-existing wallet fails", testSignCommandWithNonExistingWalletFails)

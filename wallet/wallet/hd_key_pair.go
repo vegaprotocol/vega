@@ -65,6 +65,16 @@ func (k *HDKeyPair) IsTainted() bool {
 	return k.tainted
 }
 
+func (k *HDKeyPair) Name() string {
+	for _, m := range k.metadata {
+		if m.Key == KeyNameMeta {
+			return m.Value
+		}
+	}
+
+	return "<No name>"
+}
+
 func (k *HDKeyPair) Metadata() []Metadata {
 	return k.metadata
 }
@@ -157,6 +167,7 @@ func (k *HDKeyPair) DeepCopy() *HDKeyPair {
 func (k *HDKeyPair) ToPublicKey() HDPublicKey {
 	return HDPublicKey{
 		Idx:       k.Index(),
+		KeyName:   k.Name(),
 		PublicKey: k.PublicKey(),
 		Algorithm: Algorithm{
 			Name:    k.algo.Name(),

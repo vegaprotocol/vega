@@ -101,40 +101,6 @@ func IsolateKey(store Store, req *IsolateKeyRequest) (*IsolateKeyResponse, error
 	}, nil
 }
 
-type ListKeysRequest struct {
-	Wallet     string `json:"wallet"`
-	Passphrase string `json:"passphrase"`
-}
-
-type ListKeysResponse struct {
-	Keys []NamedPubKey `json:"keys"`
-}
-
-type NamedPubKey struct {
-	Name      string `json:"name"`
-	PublicKey string `json:"publicKey"`
-}
-
-func ListKeys(store Store, req *ListKeysRequest) (*ListKeysResponse, error) {
-	w, err := getWallet(store, req.Wallet, req.Passphrase)
-	if err != nil {
-		return nil, err
-	}
-
-	kps := w.ListKeyPairs()
-	keys := make([]NamedPubKey, 0, len(kps))
-	for _, kp := range kps {
-		keys = append(keys, NamedPubKey{
-			Name:      GetKeyName(kp.Metadata()),
-			PublicKey: kp.PublicKey(),
-		})
-	}
-
-	return &ListKeysResponse{
-		Keys: keys,
-	}, nil
-}
-
 type RotateKeyRequest struct {
 	Wallet            string `json:"wallet"`
 	Passphrase        string `json:"passphrase"`
