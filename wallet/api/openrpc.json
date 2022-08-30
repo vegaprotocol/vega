@@ -1222,7 +1222,6 @@
         "description": "The different access modes a permission can have.",
         "enum": [
           "read",
-          "write",
           "none"
         ]
       },
