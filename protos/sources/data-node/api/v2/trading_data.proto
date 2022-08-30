@@ -556,7 +556,7 @@ message GetBalanceHistoryRequest {
     // By default the net balances of all the accounts specified by the filter are returned.
     // If a list if fields is given in group_by, split out those balances by the supplied crietera.
     repeated AccountField group_by = 2;
-    optional Pagination Pagination = 3;
+    optional Pagination pagination = 3;
     optional DateRange date_range = 4;
 }
 
