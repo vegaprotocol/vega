@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -332,12 +331,8 @@ func SendCommand(w io.Writer, f *SendCommandFlags, rf *RootFlags, req *SendComma
 	}
 
 	if !resp.Success {
-		d, err := hex.DecodeString(resp.Data)
-		if err != nil {
-			log.Error("unable to decode resp error string")
-		}
-		log.Error("transaction failed", zap.String("err", string(d)), zap.Uint32("code", resp.Code))
-		return fmt.Errorf("transaction failed: %s", string(d))
+		log.Error("transaction failed", zap.String("err", resp.Data), zap.Uint32("code", resp.Code))
+		return fmt.Errorf("transaction failed: %s", resp.Data)
 	}
 
 	log.Info("transaction successfully sent", zap.String("hash", resp.TxHash))

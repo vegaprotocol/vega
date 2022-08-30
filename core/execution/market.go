@@ -445,6 +445,11 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 	config.State = m.mkt.State
 	config.MarketTimestamps = m.mkt.MarketTimestamps
 
+	recalcMargins := false
+	if !config.TradableInstrument.RiskModel.Equal(m.mkt.TradableInstrument.RiskModel) {
+		recalcMargins = true
+	}
+
 	asset, err := m.mkt.GetAsset()
 	if err != nil {
 		return err
@@ -467,8 +472,19 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 	m.tradableInstrument.Instrument.Product.NotifyOnSettlementPrice(m.settlementPrice)
 
 	m.updateLiquidityFee(ctx)
-
 	m.stateChanged = true
+	// risk model hasn't changed -> return
+	if !recalcMargins {
+		return nil
+	}
+	// We know the risk model has been updated, so we have to recalculate margin requirements
+	if err := m.recheckMargin(ctx, m.position.Positions()); err != nil {
+		m.log.Warn(
+			"Error encountered re-checking margin requirements after risk model update",
+			logging.Error(err),
+			logging.MarketID(m.mkt.ID),
+		)
+	}
 
 	return nil
 }
@@ -1314,8 +1330,6 @@ func (m *Market) SubmitOrder(
 	if !m.as.InAuction() {
 		m.checkForReferenceMoves(
 			ctx, allUpdatedOrders, false)
-		m.checkLiquidity(ctx, nil, true)
-		m.commandLiquidityAuction(ctx)
 	}
 
 	return conf, nil
@@ -1490,10 +1504,6 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 
 	if m.pMonitor.CheckPrice(ctx, m.as, trades, persistent) {
 		return nil, types.OrderErrorNonPersistentOrderOutOfPriceBounds
-	}
-
-	if m.checkLiquidity(ctx, trades, persistent) {
-		return nil, types.OrderErrorInvalidPersistance
 	}
 
 	if evt := m.as.AuctionExtended(ctx, m.timeService.GetTimeNow()); evt != nil {
@@ -2308,8 +2318,6 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 	}
 
 	m.checkForReferenceMoves(ctx, cancelledOrders, false)
-	m.checkLiquidity(ctx, nil, true)
-	m.commandLiquidityAuction(ctx)
 
 	return cancellations, nil
 }
@@ -2334,8 +2342,6 @@ func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string, deter
 
 	if !m.as.InAuction() {
 		m.checkForReferenceMoves(ctx, []*types.Order{conf.Order}, false)
-		m.checkLiquidity(ctx, nil, true)
-		m.commandLiquidityAuction(ctx)
 	}
 
 	return conf, nil
@@ -2448,10 +2454,7 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	)
 	if !m.as.InAuction() {
 		m.checkForReferenceMoves(ctx, allUpdatedOrders, false)
-		m.checkLiquidity(ctx, nil, true)
-		m.commandLiquidityAuction(ctx)
 	}
-
 	return conf, nil
 }
 
@@ -3019,8 +3022,6 @@ func (m *Market) removeExpiredOrders(
 	// or maybe notify the liquidity engine
 	if len(expired) > 0 && !m.as.InAuction() {
 		m.checkForReferenceMoves(ctx, expired, false)
-		m.checkLiquidity(ctx, nil, true)
-		m.commandLiquidityAuction(ctx)
 	}
 
 	return expired, nil

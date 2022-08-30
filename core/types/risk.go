@@ -120,6 +120,26 @@ func (TradableInstrumentLogNormalRiskModel) rmType() rmType {
 	return LogNormalRiskModelType
 }
 
+func (t TradableInstrumentLogNormalRiskModel) Equal(trm isTRM) bool {
+	var ct *TradableInstrumentLogNormalRiskModel
+	switch et := trm.(type) {
+	case *TradableInstrumentLogNormalRiskModel:
+		ct = et
+	case TradableInstrumentLogNormalRiskModel:
+		ct = &et
+	}
+	if ct == nil {
+		return false
+	}
+	if !t.LogNormalRiskModel.Tau.Equal(ct.LogNormalRiskModel.Tau) || !t.LogNormalRiskModel.RiskAversionParameter.Equal(ct.LogNormalRiskModel.RiskAversionParameter) {
+		return false
+	}
+	// check params
+	p, cp := t.LogNormalRiskModel.Params, ct.LogNormalRiskModel.Params
+	// check if all params match
+	return p.Mu.Equal(cp.Mu) && p.R.Equal(cp.R) && p.Sigma.Equal(cp.Sigma)
+}
+
 func MarginCalculatorFromProto(p *proto.MarginCalculator) *MarginCalculator {
 	if p == nil {
 		return nil
@@ -337,6 +357,33 @@ func (t TradableInstrumentSimpleRiskModel) trmIntoProto() interface{} {
 
 func (TradableInstrumentSimpleRiskModel) rmType() rmType {
 	return SimpleRiskModelType
+}
+
+// Equal returns true if the risk models match.
+func (t TradableInstrumentSimpleRiskModel) Equal(trm isTRM) bool {
+	var ct *TradableInstrumentSimpleRiskModel
+	switch et := trm.(type) {
+	case *TradableInstrumentSimpleRiskModel:
+		ct = et
+	case TradableInstrumentSimpleRiskModel:
+		ct = &et
+	}
+	if ct == nil {
+		return false
+	}
+	if !t.SimpleRiskModel.Params.FactorLong.Equal(ct.SimpleRiskModel.Params.FactorLong) {
+		return false
+	}
+	if !t.SimpleRiskModel.Params.FactorShort.Equal(ct.SimpleRiskModel.Params.FactorShort) {
+		return false
+	}
+	if !t.SimpleRiskModel.Params.MinMoveDown.Equal(ct.SimpleRiskModel.Params.MinMoveDown) {
+		return false
+	}
+	if !t.SimpleRiskModel.Params.MaxMoveUp.Equal(ct.SimpleRiskModel.Params.MaxMoveUp) {
+		return false
+	}
+	return t.SimpleRiskModel.Params.ProbabilityOfTrading.Equal(ct.SimpleRiskModel.Params.ProbabilityOfTrading)
 }
 
 func TradableInstrumentSimpleFromProto(p *proto.TradableInstrument_SimpleRiskModel) *TradableInstrumentSimpleRiskModel {
