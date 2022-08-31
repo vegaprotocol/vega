@@ -69,7 +69,7 @@ Feature: Test for issue 5460
 
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode                    | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 110000000  | TRADING_MODE_MONITORING_AUCTION | 43200   | 82757690  | 122741898 | 84115906     | 100000000      | 1410607       |
+      | 110000000  | TRADING_MODE_MONITORING_AUCTION | 43200   | 82757664  | 122741858 | 84107975     | 100000000      | 1410474       |
 
 Scenario: 002 replicate bug
 
@@ -138,9 +138,9 @@ Scenario: 002 replicate bug
       | buy  | 29977  | 100000      |
       | buy  | 29967  | 100000      |
       | buy  | 29957  | 100000      |
-      | buy  | 29795  | 1345237966  |
+      | buy  | 29795  | 2549836575  |
       | sell | 30002  | 100000      |
-      | sell | 30205  | 1326977824  |
+      | sell | 30205  | 2513432974  |
 
    And the parties place the following orders: 
      | party    | market id | side | volume  | price   |resulting trades | type       | tif     | 
@@ -153,11 +153,11 @@ Scenario: 002 replicate bug
       | buy  | 29977  | 100000      |
       | buy  | 29967  | 100000      |
       | buy  | 29957  | 100000      |
-      | buy  | 29795  | 1345237966  |
+      | buy  | 29795  | 2549836575  |
       | buy  | 400000 | 0           |
       | buy  | 29700  | 100000      |
       | sell | 30002  | 100000      |
-      | sell | 30205  | 1326977824  |
+      | sell | 30205  | 2513432974  |
 
    And the market data for the market "ETH/DEC21" should be:
      | trading mode            | auction trigger             | target stake | supplied stake | open interest |
