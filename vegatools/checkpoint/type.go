@@ -273,25 +273,6 @@ func dummy() *all {
 							},
 						},
 					},
-					LiquidityCommitment: &vega.NewMarketCommitment{
-						CommitmentAmount: "100",
-						Fee:              ".0001",
-						Sells: []*vega.LiquidityOrder{
-							{
-								Reference:  vega.PeggedReference_PEGGED_REFERENCE_BEST_BID,
-								Proportion: 10,
-								Offset:     "5",
-							},
-						},
-						Buys: []*vega.LiquidityOrder{
-							{
-								Reference:  vega.PeggedReference_PEGGED_REFERENCE_MID,
-								Proportion: 10,
-								Offset:     "5",
-							},
-						},
-						Reference: "dummy-LP",
-					},
 				},
 			},
 		},

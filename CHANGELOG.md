@@ -3,7 +3,7 @@
 ## Unreleased 0.55.0
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [5989](https://github.com/vegaprotocol/vega/issues/5989) - Remove liquidity commitment from market proposal 
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -

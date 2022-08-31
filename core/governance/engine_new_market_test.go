@@ -19,7 +19,6 @@ import (
 
 	"code.vegaprotocol.io/vega/core/governance"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/libs/num"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -30,7 +29,6 @@ func TestProposalForNewMarket(t *testing.T) {
 	t.Run("Submitting a proposal for new market succeeds", testSubmittingProposalForNewMarketSucceeds)
 	t.Run("Submitting a duplicated proposal for new market fails", testSubmittingDuplicatedProposalForNewMarketFails)
 	t.Run("Submitting a proposal for new market with bad risk parameter fails", testSubmittingProposalForNewMarketWithBadRiskParameterFails)
-	t.Run("Submitting a proposal for new market without valid commitment fails", testSubmittingProposalForNewMarketWithoutValidCommitmentFails)
 
 	t.Run("Rejecting a proposal for new market succeeds", testRejectingProposalForNewMarketSucceeds)
 
@@ -60,7 +58,6 @@ func testSubmittingProposalForNewMarketSucceeds(t *testing.T) {
 	require.NotNil(t, toSubmit)
 	assert.True(t, toSubmit.IsNewMarket())
 	require.NotNil(t, toSubmit.NewMarket().Market())
-	require.NotNil(t, toSubmit.NewMarket().LiquidityProvisionSubmission())
 }
 
 func testSubmittingDuplicatedProposalForNewMarketFails(t *testing.T) {
@@ -131,87 +128,6 @@ func testSubmittingProposalForNewMarketWithBadRiskParameterFails(t *testing.T) {
 	// then
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid risk parameter")
-}
-
-func testSubmittingProposalForNewMarketWithoutValidCommitmentFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
-
-	party := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(party, eng.tsvc.GetTimeNow(), nil, nil)
-
-	eng.ensureAllAssetEnabled(t)
-
-	// first we test with no commitment - this should not return an error
-	proposal.Terms.GetNewMarket().LiquidityCommitment = nil
-	eng.ensureTokenBalanceForParty(t, party, 1)
-	eng.expectOpenProposalEvent(t, party, proposal.ID)
-	_, err := eng.submitProposal(t, proposal)
-	require.NoError(t, err)
-	// assert.Contains(t, err.Error(), "market proposal is missing liquidity commitment")
-
-	// ensure unique ID
-	proposal.ID += "2"
-	// Then no amount
-	proposal.Terms.GetNewMarket().LiquidityCommitment = newMarketLiquidityCommitment()
-	proposal.Terms.GetNewMarket().LiquidityCommitment.CommitmentAmount = num.UintZero()
-	eng.ensureTokenBalanceForParty(t, party, 1)
-	eng.expectRejectedProposalEvent(t, party, proposal.ID, types.ProposalErrorMissingCommitmentAmount)
-	_, err = eng.submitProposal(t, proposal)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "proposal commitment amount is 0 or missing")
-
-	// Then empty fees
-	proposal.Terms.GetNewMarket().LiquidityCommitment = newMarketLiquidityCommitment()
-	proposal.Terms.GetNewMarket().LiquidityCommitment.Fee = num.DecimalZero()
-	eng.ensureTokenBalanceForParty(t, party, 1)
-	eng.expectRejectedProposalEvent(t, party, proposal.ID, types.ProposalErrorInvalidFeeAmount)
-	_, err = eng.submitProposal(t, proposal)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "invalid liquidity provision fee")
-
-	// Then negative fees
-	proposal.Terms.GetNewMarket().LiquidityCommitment = newMarketLiquidityCommitment()
-	proposal.Terms.GetNewMarket().LiquidityCommitment.Fee = num.DecimalFromFloat(-1)
-	eng.ensureTokenBalanceForParty(t, party, 1)
-	eng.expectRejectedProposalEvent(t, party, proposal.ID, types.ProposalErrorInvalidFeeAmount)
-	_, err = eng.submitProposal(t, proposal)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "invalid liquidity provision fee")
-
-	// Then empty shapes
-	proposal.Terms.GetNewMarket().LiquidityCommitment = newMarketLiquidityCommitment()
-	proposal.Terms.GetNewMarket().LiquidityCommitment.Buys = nil
-	eng.ensureTokenBalanceForParty(t, party, 1)
-	eng.expectRejectedProposalEvent(t, party, proposal.ID, types.ProposalErrorInvalidShape)
-	_, err = eng.submitProposal(t, proposal)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "empty SIDE_BUY shape")
-
-	proposal.Terms.GetNewMarket().LiquidityCommitment = newMarketLiquidityCommitment()
-	proposal.Terms.GetNewMarket().LiquidityCommitment.Sells = nil
-	eng.ensureTokenBalanceForParty(t, party, 1)
-	eng.expectRejectedProposalEvent(t, party, proposal.ID, types.ProposalErrorInvalidShape)
-	_, err = eng.submitProposal(t, proposal)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "empty SIDE_SELL shape")
-
-	// Then invalid shapes
-	proposal.Terms.GetNewMarket().LiquidityCommitment = newMarketLiquidityCommitment()
-	proposal.Terms.GetNewMarket().LiquidityCommitment.Buys[0].Reference = types.PeggedReferenceBestAsk
-	eng.ensureTokenBalanceForParty(t, party, 1)
-	eng.expectRejectedProposalEvent(t, party, proposal.ID, types.ProposalErrorInvalidShape)
-	_, err = eng.submitProposal(t, proposal)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "order in buy side shape with best ask price reference")
-
-	proposal.Terms.GetNewMarket().LiquidityCommitment = newMarketLiquidityCommitment()
-	proposal.Terms.GetNewMarket().LiquidityCommitment.Sells[0].Reference = types.PeggedReferenceBestBid
-	eng.ensureTokenBalanceForParty(t, party, 1)
-	eng.expectRejectedProposalEvent(t, party, proposal.ID, types.ProposalErrorInvalidShape)
-	_, err = eng.submitProposal(t, proposal)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "order in sell side shape with best bid price reference")
 }
 
 func testRejectingProposalForNewMarketSucceeds(t *testing.T) {
