@@ -453,20 +453,6 @@ func LiquidityMonitoringParametersFromProto(p *proto.LiquidityMonitoringParamete
 	}
 }
 
-func LiquidityProvisionSubmissionFromMarketCommitment(
-	nmc *NewMarketCommitment,
-	market string,
-) *LiquidityProvisionSubmission {
-	return &LiquidityProvisionSubmission{
-		MarketID:         market,
-		CommitmentAmount: nmc.CommitmentAmount,
-		Fee:              nmc.Fee,
-		Sells:            nmc.Sells,
-		Buys:             nmc.Buys,
-		Reference:        nmc.Reference,
-	}
-}
-
 type LiquidityProvisionAmendment struct {
 	// Market identifier for the order, required field
 	MarketID string

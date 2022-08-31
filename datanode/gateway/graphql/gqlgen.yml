@@ -217,8 +217,6 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.ProposalTerms
   NewMarket:
     model: code.vegaprotocol.io/vega/protos/vega.NewMarket
-  NewMarketCommitment:
-    model: code.vegaprotocol.io/vega/protos/vega.NewMarketCommitment
   NewAsset:
     model: code.vegaprotocol.io/vega/protos/vega.NewAsset
   UpdateAsset:

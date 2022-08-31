@@ -219,6 +219,7 @@ func (e *Engine) updateSizes(
 
 		if e.log.GetLevel() <= logging.DebugLevel {
 			e.log.Debug("$probability of trading$",
+				logging.String("market-id", e.marketID),
 				logging.String("best-bid", bestBidPrice.String()),
 				logging.String("best-ask", bestAskPrice.String()),
 				logging.String("min", min.Original().String()),
