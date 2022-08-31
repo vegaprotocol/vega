@@ -9458,7 +9458,7 @@ type Query {
   historicBalances(
     filter: AccountFilter,
     groupBy: [AccountField],
-    "Date Range to retrieve orders from/to. Start and end time should be expressed as an integer value of nano-seconds passed the Unix epoch"
+    "Date range to retrieve historical balances from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
     dateRange: DateRange,
     pagination: Pagination
   ) : AggregatedBalanceConnection!
@@ -10503,7 +10503,7 @@ type Market {
 
   "Orders on a market"
   ordersConnection(
-    "Date Range to retrieve orders from/to. Start and end time should be expressed as an integer value of nano-seconds passed the Unix epoch"
+    "Date range to retrieve orders from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
     dateRange: DateRange,
     "Pagination information"
     pagination: Pagination
@@ -10534,7 +10534,7 @@ type Market {
   ): [Trade!] @deprecated(reason: "Use tradesConnection for cursor based pagination instead")
 
   tradesConnection(
-    "Date Range to retrieve orders from/to. Start and end time should be expressed as an integer value of nano-seconds passed the Unix epoch"
+    "Date range to retrieve trades from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
     dateRange: DateRange,
     pagination: Pagination
   ): TradeConnection!
@@ -10741,7 +10741,7 @@ type Party {
 
   "Orders relating to a party"
   ordersConnection(
-    "Date Range to retrieve orders from/to. Start and end time should be expressed as an integer value of nano-seconds passed the Unix epoch"
+    "Date range to retrieve orders from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
     dateRange: DateRange
     "Pagination information"
     pagination: Pagination
@@ -10762,7 +10762,7 @@ type Party {
   tradesConnection(
     "ID of the market you want to get trades for"
     marketId: ID,
-    "Date Range to retrieve orders from/to. Start and end time should be expressed as an integer value of nano-seconds passed the Unix epoch"
+    "Date range to retrieve trades from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
     dataRange: DateRange,
     "Pagination information"
     pagination: Pagination
@@ -10834,7 +10834,7 @@ type Party {
 
   "The list of all withdrawals initiated by the party"
   withdrawalsConnection(
-    "Date Range to retrieve orders from/to. Start and end time should be expressed as an integer value of nano-seconds passed the Unix epoch"
+    "Date range to retrieve withdrawals from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
     dateRange: DateRange,
     pagination: Pagination
   ): WithdrawalsConnection!
@@ -10844,7 +10844,7 @@ type Party {
 
   "The list of all deposits for a party by the party"
   depositsConnection(
-    "Date Range to retrieve orders from/to. Start and end time should be expressed as an integer value of nano-seconds passed the Unix epoch"
+    "Date range to retrieve deposits from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
     dateRange: DateRange,
     pagination: Pagination
   ): DepositsConnection!
@@ -11072,7 +11072,7 @@ type Order {
 
   "Trades relating to this order"
   tradesConnection(
-    "Date Range to retrieve orders from/to. Start and end time should be expressed as an integer value of nano-seconds passed the Unix epoch"
+    "Date range to retrieve trades from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
     dateRange: DateRange,
     pagination: Pagination
   ): TradeConnection!
