@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"os/signal"
 	"strconv"
@@ -145,12 +144,12 @@ func ReadEvents(
 			for {
 				o, err := stream.Recv()
 				if err == io.EOF {
-					log.Printf("stream closed by server err=%v", err)
+					fmt.Printf("stream closed by server err=%v", err)
 					break
 				}
 
 				if err != nil {
-					log.Printf("stream closed err=%v", err)
+					fmt.Printf("stream closed err=%v", err)
 					break
 				}
 
@@ -160,7 +159,7 @@ func ReadEvents(
 
 				if batchSize > 0 {
 					if err := stream.SendMsg(poll); err != nil {
-						log.Printf("failed to poll next event batch err=%v", err)
+						fmt.Printf("failed to poll next event batch err=%v", err)
 						return
 					}
 				}
@@ -174,7 +173,7 @@ func ReadEvents(
 						return
 					default:
 						time.Sleep(time.Second * 5)
-						log.Printf("Attempting to reconnect to the node")
+						fmt.Printf("Attempting to reconnect to the node")
 						conn, stream, err = connect(ctx, batchSize, party, market, serverAddr, types)
 						if err == nil {
 							break
@@ -231,14 +230,14 @@ func NewLogEventToConsoleFn(logFormat string) (func(e *eventspb.BusEvent), error
 	var printEvent func(string)
 	switch logFormat {
 	case "raw":
-		printEvent = func(event string) { log.Printf("%v\n", event) }
+		printEvent = func(event string) { fmt.Printf("%v\n", event) }
 	case "text":
 		printEvent = func(event string) {
-			log.Printf("%v;%v", time.Now().UTC().Format(time.RFC3339Nano), event)
+			fmt.Printf("%v;%v", time.Now().UTC().Format(time.RFC3339Nano), event)
 		}
 	case "json":
 		printEvent = func(event string) {
-			log.Printf("{\"time\":\"%v\",%v\n", time.Now().UTC().Format(time.RFC3339Nano), event[1:])
+			fmt.Printf("{\"time\":\"%v\",%v\n", time.Now().UTC().Format(time.RFC3339Nano), event[1:])
 		}
 	default:
 		return nil, fmt.Errorf("error: unknown log-format: \"%v\". Allowed values: raw, text, json", logFormat)
@@ -248,7 +247,7 @@ func NewLogEventToConsoleFn(logFormat string) (func(e *eventspb.BusEvent), error
 	handleEvent := func(e *eventspb.BusEvent) {
 		estr, err := m.MarshalToString(e)
 		if err != nil {
-			log.Printf("unable to marshal event err=%v", err)
+			fmt.Printf("unable to marshal event err=%v", err)
 		}
 		printEvent(estr)
 	}
@@ -265,8 +264,8 @@ func WaitSig(ctx context.Context, cancel func()) {
 
 	select {
 	case sig := <-gracefulStop:
-		log.Printf("Caught signal name=%v", sig)
-		log.Printf("closing client connections")
+		fmt.Printf("Caught signal name=%v", sig)
+		fmt.Printf("closing client connections")
 		cancel()
 	case <-ctx.Done():
 		return

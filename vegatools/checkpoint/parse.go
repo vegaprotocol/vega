@@ -2,6 +2,7 @@ package checkpoint
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"os"
 
@@ -22,7 +23,7 @@ var (
 // Run ... the main entry point of the command.
 func Run(inFile, outFile string, generate, validate, dummy bool) error {
 	if generate && outFile == "" {
-		log.Println("No output file specified")
+		fmt.Println("No output file specified")
 		return ErrMissingOutFile
 	}
 	// generate some files to play with
@@ -35,7 +36,7 @@ func Run(inFile, outFile string, generate, validate, dummy bool) error {
 		return err
 	}
 
-	log.Printf("Read %d bytes from %s\n", len(data), inFile)
+	fmt.Printf("Read %d bytes from %s\n", len(data), inFile)
 
 	if len(data) == 0 {
 		return ErrCheckpointFileEmpty
@@ -116,15 +117,15 @@ func generateCheckpoint(data []byte, outF string) error {
 		return err
 	}
 
-	log.Printf("Successfully wrote %d bytes to file %s\n", n, outF)
-	log.Printf("hash for checkpoint is %s\n", h)
+	fmt.Printf("Successfully wrote %d bytes to file %s\n", n, outF)
+	fmt.Printf("hash for checkpoint is %s\n", h)
 	return nil
 }
 
 func writeCheckpoint(data []byte, h string, outF string) error {
 	of, err := os.Create(outF)
 	if err != nil {
-		log.Printf("Failed to create output file %s: %+v\n", outF, err)
+		fmt.Printf("Failed to create output file %s: %+v\n", outF, err)
 		return err
 	}
 
@@ -132,12 +133,12 @@ func writeCheckpoint(data []byte, h string, outF string) error {
 
 	n, err := of.Write(data)
 	if err != nil {
-		log.Printf("Failed to write output to file '%s': %+v\n", outF, err)
+		fmt.Printf("Failed to write output to file '%s': %+v\n", outF, err)
 		return err
 	}
 
-	log.Printf("Successfully wrote %d bytes to file %s\n", n, outF)
-	log.Printf("Checkpoint hash is %s\n", h)
+	fmt.Printf("Successfully wrote %d bytes to file %s\n", n, outF)
+	fmt.Printf("Checkpoint hash is %s\n", h)
 	return nil
 }
 
@@ -152,10 +153,10 @@ func printParsed(a *all, isErr bool) {
 		if _, err = os.Stderr.WriteString(string(data)); err == nil {
 			return
 		}
-		log.Printf("Could not write to stderr: %+v\n", err)
+		fmt.Printf("Could not write to stderr: %+v\n", err)
 	}
 
-	log.Printf("Output:\n%s\n", string(data))
+	fmt.Printf("Output:\n%s\n", string(data))
 }
 
 func writeOut(a *all, path string) error {
@@ -180,7 +181,7 @@ func writeOut(a *all, path string) error {
 		return err
 	}
 
-	log.Printf("Wrote %d bytes to %s\n", n, path)
+	fmt.Printf("Wrote %d bytes to %s\n", n, path)
 	return nil
 }
 
