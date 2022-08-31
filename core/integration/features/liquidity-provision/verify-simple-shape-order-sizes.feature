@@ -41,7 +41,6 @@ Feature: Verify the order size is correctly cumulated.
       | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | STATUS_ACTIVE |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
-
     And the orders should have the following states:
       | party      | market id | side | volume | price    | status        |
       | party-lp-1 | ETH/DEC19 | buy  | 167    | 11999990 | STATUS_ACTIVE |

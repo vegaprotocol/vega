@@ -134,7 +134,7 @@ func NewEngine(config Config,
 		timeService: timeService,
 		broker:      broker,
 		// tick size to be used by the supplied engine should actually be in asset decimal
-		suppliedEngine: supplied.NewEngine(riskModel, priceMonitor, asset, marketID, stateVarEngine, num.UintZero().Mul(tickSize, priceFactor), log, positionFactor),
+		suppliedEngine: supplied.NewEngine(riskModel, priceMonitor, asset, marketID, stateVarEngine, log, positionFactor),
 
 		// parameters
 		stakeToObligationFactor: num.DecimalFromInt64(1),
