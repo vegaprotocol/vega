@@ -1486,10 +1486,8 @@ type ComplexityRoot struct {
 	}
 
 	UpdateAsset struct {
-		Name    func(childComplexity int) int
 		Quantum func(childComplexity int) int
 		Source  func(childComplexity int) int
-		Symbol  func(childComplexity int) int
 	}
 
 	UpdateERC20 struct {
@@ -2058,8 +2056,6 @@ type TransferResolver interface {
 	Kind(ctx context.Context, obj *v1.Transfer) (TransferKind, error)
 }
 type UpdateAssetResolver interface {
-	Name(ctx context.Context, obj *vega.UpdateAsset) (string, error)
-	Symbol(ctx context.Context, obj *vega.UpdateAsset) (string, error)
 	Quantum(ctx context.Context, obj *vega.UpdateAsset) (string, error)
 	Source(ctx context.Context, obj *vega.UpdateAsset) (UpdateAssetSource, error)
 }
@@ -8436,13 +8432,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TransferResponses.Responses(childComplexity), true
 
-	case "UpdateAsset.name":
-		if e.complexity.UpdateAsset.Name == nil {
-			break
-		}
-
-		return e.complexity.UpdateAsset.Name(childComplexity), true
-
 	case "UpdateAsset.quantum":
 		if e.complexity.UpdateAsset.Quantum == nil {
 			break
@@ -8456,13 +8445,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.UpdateAsset.Source(childComplexity), true
-
-	case "UpdateAsset.symbol":
-		if e.complexity.UpdateAsset.Symbol == nil {
-			break
-		}
-
-		return e.complexity.UpdateAsset.Symbol(childComplexity), true
 
 	case "UpdateERC20.lifetimeLimit":
 		if e.complexity.UpdateERC20.LifetimeLimit == nil {
@@ -11946,12 +11928,6 @@ type NewAsset {
 
 "A proposal to update an asset's details"
 type UpdateAsset {
-  "The full name of the asset (e.g: Great British Pound)"
-  name: String!
-
-  "The symbol of the asset (e.g: GBP)"
-  symbol: String!
-
   "The minimum economically meaningful amount of this specific asset"
   quantum: String!
 
@@ -44939,76 +44915,6 @@ func (ec *executionContext) _TransferResponses_responses(ctx context.Context, fi
 	return ec.marshalOTransferResponse2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferResponseᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UpdateAsset_name(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateAsset) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "UpdateAsset",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.UpdateAsset().Name(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _UpdateAsset_symbol(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateAsset) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "UpdateAsset",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.UpdateAsset().Symbol(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _UpdateAsset_quantum(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateAsset) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -62753,46 +62659,6 @@ func (ec *executionContext) _UpdateAsset(ctx context.Context, sel ast.SelectionS
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("UpdateAsset")
-		case "name":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._UpdateAsset_name(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
-		case "symbol":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._UpdateAsset_symbol(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "quantum":
 			field := field
 
