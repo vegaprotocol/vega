@@ -15,6 +15,7 @@ package types
 import (
 	"fmt"
 
+	"code.vegaprotocol.io/vega/libs/num"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
@@ -183,15 +184,19 @@ func NewProposalSubmissionFromProto(p *commandspb.ProposalSubmission) (*Proposal
 }
 
 type Proposal struct {
-	ID           string
-	Reference    string
-	Party        string
-	State        ProposalState
-	Timestamp    int64
-	Terms        *ProposalTerms
-	Rationale    *ProposalRationale
-	Reason       ProposalError
-	ErrorDetails string
+	ID                      string
+	Reference               string
+	Party                   string
+	State                   ProposalState
+	Timestamp               int64
+	Terms                   *ProposalTerms
+	Rationale               *ProposalRationale
+	Reason                  ProposalError
+	ErrorDetails            string
+	RequiredMajority        num.Decimal
+	RequiredParticipation   num.Decimal
+	RequiredLPMajority      num.Decimal
+	RequiredLPParticipation num.Decimal
 }
 
 func (p *Proposal) IsMarketUpdate() bool {
@@ -251,7 +256,7 @@ func (p Proposal) DeepClone() *Proposal {
 
 func (p Proposal) String() string {
 	return fmt.Sprintf(
-		"id(%s) reference(%s) party(%s) state(%s) timestamp(%v) terms(%s) reason(%s) errorDetails(%s)",
+		"id(%s) reference(%s) party(%s) state(%s) timestamp(%v) terms(%s) reason(%s) errorDetails(%s) requireMajority(%s) requiredParticiption(%s) requireLPMajority(%s) requiredLPParticiption(%s)",
 		p.ID,
 		p.Reference,
 		p.Party,
@@ -260,6 +265,10 @@ func (p Proposal) String() string {
 		reflectPointerToString(p.Terms),
 		p.Reason.String(),
 		p.ErrorDetails,
+		p.RequiredMajority.String(),
+		p.RequiredParticipation.String(),
+		p.RequiredLPMajority.String(),
+		p.RequiredLPParticipation.String(),
 	)
 }
 
@@ -268,15 +277,29 @@ func (p Proposal) IntoProto() *vegapb.Proposal {
 	if p.Terms != nil {
 		terms = p.Terms.IntoProto()
 	}
+
+	var lpMajority *string
+	if !p.RequiredLPMajority.IsZero() {
+		lpMajority = toPtr(p.RequiredLPMajority.String())
+	}
+	var lpParticipation *string
+	if !p.RequiredLPParticipation.IsZero() {
+		lpParticipation = toPtr(p.RequiredLPParticipation.String())
+	}
+
 	proposal := &vegapb.Proposal{
-		Id:           p.ID,
-		Reference:    p.Reference,
-		PartyId:      p.Party,
-		State:        p.State,
-		Timestamp:    p.Timestamp,
-		Terms:        terms,
-		Reason:       p.Reason,
-		ErrorDetails: p.ErrorDetails,
+		Id:                                     p.ID,
+		Reference:                              p.Reference,
+		PartyId:                                p.Party,
+		State:                                  p.State,
+		Timestamp:                              p.Timestamp,
+		Terms:                                  terms,
+		Reason:                                 p.Reason,
+		ErrorDetails:                           p.ErrorDetails,
+		RequiredMajority:                       p.RequiredMajority.String(),
+		RequiredParticipation:                  p.RequiredParticipation.String(),
+		RequiredLiquidityProviderMajority:      lpMajority,
+		RequiredLiquidityProviderParticipation: lpParticipation,
 	}
 
 	if p.Rationale != nil {
@@ -295,16 +318,50 @@ func ProposalFromProto(pp *vegapb.Proposal) (*Proposal, error) {
 		return nil, err
 	}
 
+	// we check for all if the len == 0 just at first when reloading from
+	// proposal to make sure that proposal without those in handle well.
+	// TODO: this is to be removed later
+
+	var majority num.Decimal
+	if len(pp.RequiredMajority) <= 0 {
+		majority = num.DecimalZero()
+	} else if majority, err = num.DecimalFromString(pp.RequiredMajority); err != nil {
+		return nil, err
+	}
+
+	var participation num.Decimal
+	if len(pp.RequiredParticipation) <= 0 {
+		participation = num.DecimalZero()
+	} else if participation, err = num.DecimalFromString(pp.RequiredParticipation); err != nil {
+		return nil, err
+	}
+
+	lpMajority := num.DecimalZero()
+	if pp.RequiredLiquidityProviderMajority != nil && len(*pp.RequiredLiquidityProviderMajority) > 0 {
+		if lpMajority, err = num.DecimalFromString(*pp.RequiredLiquidityProviderMajority); err != nil {
+			return nil, err
+		}
+	}
+	lpParticipation := num.DecimalZero()
+	if pp.RequiredLiquidityProviderParticipation != nil && len(*pp.RequiredLiquidityProviderParticipation) > 0 {
+		if lpParticipation, err = num.DecimalFromString(*pp.RequiredLiquidityProviderParticipation); err != nil {
+			return nil, err
+		}
+	}
 	return &Proposal{
-		ID:           pp.Id,
-		Reference:    pp.Reference,
-		Party:        pp.PartyId,
-		State:        pp.State,
-		Timestamp:    pp.Timestamp,
-		Terms:        terms,
-		Reason:       pp.Reason,
-		Rationale:    ProposalRationaleFromProto(pp.Rationale),
-		ErrorDetails: pp.ErrorDetails,
+		ID:                      pp.Id,
+		Reference:               pp.Reference,
+		Party:                   pp.PartyId,
+		State:                   pp.State,
+		Timestamp:               pp.Timestamp,
+		Terms:                   terms,
+		Reason:                  pp.Reason,
+		Rationale:               ProposalRationaleFromProto(pp.Rationale),
+		ErrorDetails:            pp.ErrorDetails,
+		RequiredMajority:        majority,
+		RequiredParticipation:   participation,
+		RequiredLPMajority:      lpMajority,
+		RequiredLPParticipation: lpParticipation,
 	}, nil
 }
 
