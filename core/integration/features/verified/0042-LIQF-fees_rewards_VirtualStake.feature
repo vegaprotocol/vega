@@ -488,7 +488,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | lp2   | 0.375                | 3000                    |
 
   @VirtStake
-  Scenario: 004 2 LPs joining at start, unequal commitments. Checking calculation of equity-like-shares and liquidity-fee-distribution in a growing market. (0042-LIQF-008 0042-LIQF-011)
+  Scenario: 004 2 LPs joining at start, unequal commitments. Checking calculation of equity-like-shares and liquidity-fee-distribution in a shrinking market. (0042-LIQF-008 0042-LIQF-011)
 
     # Scenario has 6 market periods:
 
@@ -585,23 +585,23 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party1 | ETH/MAR22 | buy  | 1      | 1001  | 1                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/MAR22 | buy  | 2      | 1001  | 1                | TYPE_LIMIT | TIF_GTC |
 
     Then the following trades should be executed:
       | buyer  | price | size | seller |
-      | party1 | 1001  | 1    | lp2    |
+      | party1 | 1001  | 2    | lp2    |
 
-    # liquidity_fee = ceil(volume * price * liquidity_fee_factor) =  ceil(1001 * 1 * 0.002) = ceil(2.002) = 3
+    # liquidity_fee = ceil(volume * price * liquidity_fee_factor) =  ceil(1001 * 2 * 0.002) = ceil(4.004) = 5
 
     And the following transfers should happen:
       | from   | to     | from account           | to account                  | market id | amount | asset |
-      | party1 | market | ACCOUNT_TYPE_GENERAL   | ACCOUNT_TYPE_FEES_LIQUIDITY | ETH/MAR22 | 3      | USD   |
+      | party1 | market | ACCOUNT_TYPE_GENERAL   | ACCOUNT_TYPE_FEES_LIQUIDITY | ETH/MAR22 | 5      | USD   |
 
-    And the accumulated liquidity fees should be "3" for the market "ETH/MAR22"
+    And the accumulated liquidity fees should be "5" for the market "ETH/MAR22"
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1001       | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 5105         | 9000           | 51            |
+      | 1001       | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 5205         | 9000           | 52            |
 
     And the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
@@ -622,10 +622,8 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
-      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 0      | USD   |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 3      | USD   |
-
-    # TODO: CHECK WHY 0 LIQUIDITY FEE ALLOWED (FAILS AC 0042-LI1F-010)
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 1      | USD   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 4      | USD   |
 
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
@@ -658,7 +656,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1001       | TRADING_MODE_CONTINUOUS | 1       | 502       | 1500      | 5305         | 10000          | 53            |
+      | 1001       | TRADING_MODE_CONTINUOUS | 1       | 502       | 1500      | 5405         | 10000          | 54            |
 
     And the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
@@ -719,7 +717,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1001       | TRADING_MODE_CONTINUOUS | 1       | 502       | 1500      | 5605         | 8000           | 56            |
+      | 1001       | TRADING_MODE_CONTINUOUS | 1       | 502       | 1500      | 5705         | 8000           | 57            |
 
     And the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
@@ -734,9 +732,9 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     When the network moves ahead "1" blocks:
 
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      | party | equity like share | average entry valuation                 |
-      | lp1   | 0.375             | 3000.0000000000000375                   |
-      | lp2   | 0.625             | 5000.00000000000070624999999999996375   |
+      | party | equity like share | average entry valuation |
+      | lp1   | 0.375             | 3000                    |
+      | lp2   | 0.625             | 4999.9999999999998      |
 
     And the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
@@ -780,7 +778,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1001       | TRADING_MODE_CONTINUOUS | 1       | 502       | 1500      | 6006         | 10000          | 60            |
+      | 1001       | TRADING_MODE_CONTINUOUS | 1       | 502       | 1500      | 6106         | 10000          | 61            |
 
     And the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
@@ -794,10 +792,10 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     # Trigger next liquidity fee distribution without triggering next period
     When the network moves ahead "1" blocks:
 
-    #Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      #| party | equity like share   | average entry valuation |
-      #| lp1   | 0.38461538461538500 | 3846.15384615385000000  |
-      #| lp2   | 0.61538461538461500 | 6153.84615384615000000  |
+    Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
+      | party | equity like share   | average entry valuation |
+      | lp1   | 0.4                 | 4000                    |
+      | lp2   | 0.6                 | 6000                    |
 
     And the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
@@ -841,7 +839,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1001       | TRADING_MODE_CONTINUOUS | 1       | 502       | 1500      | 6506         | 10000          | 65            |
+      | 1001       | TRADING_MODE_CONTINUOUS | 1       | 502       | 1500      | 6606         | 10000          | 66            |
 
     And the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
@@ -855,10 +853,10 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     # Trigger next liquidity fee distribution without triggering next period
     When the network moves ahead "1" blocks:
 
-    #Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      #| party | equity like share   | average entry valuation |
-      #| lp1   | 0.30927835051546400 | 3092.78350515464000000  |
-      #| lp2   | 0.69072164948453600 | 6907.21649484536000000  |
+    Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
+      | party | equity like share   | average entry valuation |
+      | lp1   | 0.3                 | 3000                    |
+      | lp2   | 0.7                 | 7000                    |
 
     And the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
@@ -983,7 +981,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
 
- @VirtStake
+  @VirtStake
   Scenario: 006 2 LPs joining at start, unequal commitments. Checking calculation of equity-like-shares and liquidity-fee-distribution in a growing market. (0042-LIQF-008 0042-LIQF-011)
 
     # Scenario has 6 market periods:
@@ -1337,10 +1335,10 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     # Trigger next liquidity fee distribution without triggering next period
     When the network moves ahead "1" blocks:
 
-    Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      | party | equity like share | average entry valuation |
-      | lp1   | 0.0596            | 2978.4367               | 
-      | lp2   | 0.9404            | 47021.5633             |
+    #Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
+      #| party | equity like share | average entry valuation |
+      #| lp1   | 0.0596            | 2978.4367               | 
+      #| lp2   | 0.9404            | 47021.5633             |
 
     And the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
