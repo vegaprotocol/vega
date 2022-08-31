@@ -99,6 +99,7 @@ type ResolverRoot interface {
 	Subscription() SubscriptionResolver
 	TradableInstrument() TradableInstrumentResolver
 	Trade() TradeResolver
+	TradeUpdate() TradeUpdateResolver
 	Transfer() TransferResolver
 	UpdateAsset() UpdateAssetResolver
 	UpdateMarket() UpdateMarketResolver
@@ -1428,6 +1429,24 @@ type ComplexityRoot struct {
 		Size  func(childComplexity int) int
 	}
 
+	TradeUpdate struct {
+		Aggressor          func(childComplexity int) int
+		BuyOrder           func(childComplexity int) int
+		BuyerAuctionBatch  func(childComplexity int) int
+		BuyerFee           func(childComplexity int) int
+		BuyerID            func(childComplexity int) int
+		CreatedAt          func(childComplexity int) int
+		Id                 func(childComplexity int) int
+		MarketId           func(childComplexity int) int
+		Price              func(childComplexity int) int
+		SellOrder          func(childComplexity int) int
+		SellerAuctionBatch func(childComplexity int) int
+		SellerFee          func(childComplexity int) int
+		SellerID           func(childComplexity int) int
+		Size               func(childComplexity int) int
+		Type               func(childComplexity int) int
+	}
+
 	TransactionSubmitted struct {
 		Success func(childComplexity int) int
 	}
@@ -2029,6 +2048,18 @@ type TradeResolver interface {
 
 	Buyer(ctx context.Context, obj *vega.Trade) (*vega.Party, error)
 	Seller(ctx context.Context, obj *vega.Trade) (*vega.Party, error)
+
+	Size(ctx context.Context, obj *vega.Trade) (string, error)
+	CreatedAt(ctx context.Context, obj *vega.Trade) (string, error)
+
+	BuyerFee(ctx context.Context, obj *vega.Trade) (*TradeFee, error)
+	SellerFee(ctx context.Context, obj *vega.Trade) (*TradeFee, error)
+	BuyerAuctionBatch(ctx context.Context, obj *vega.Trade) (*int, error)
+	SellerAuctionBatch(ctx context.Context, obj *vega.Trade) (*int, error)
+}
+type TradeUpdateResolver interface {
+	BuyerID(ctx context.Context, obj *vega.Trade) (string, error)
+	SellerID(ctx context.Context, obj *vega.Trade) (string, error)
 
 	Size(ctx context.Context, obj *vega.Trade) (string, error)
 	CreatedAt(ctx context.Context, obj *vega.Trade) (string, error)
@@ -8235,6 +8266,111 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TradeSettlement.Size(childComplexity), true
 
+	case "TradeUpdate.aggressor":
+		if e.complexity.TradeUpdate.Aggressor == nil {
+			break
+		}
+
+		return e.complexity.TradeUpdate.Aggressor(childComplexity), true
+
+	case "TradeUpdate.buyOrder":
+		if e.complexity.TradeUpdate.BuyOrder == nil {
+			break
+		}
+
+		return e.complexity.TradeUpdate.BuyOrder(childComplexity), true
+
+	case "TradeUpdate.buyerAuctionBatch":
+		if e.complexity.TradeUpdate.BuyerAuctionBatch == nil {
+			break
+		}
+
+		return e.complexity.TradeUpdate.BuyerAuctionBatch(childComplexity), true
+
+	case "TradeUpdate.buyerFee":
+		if e.complexity.TradeUpdate.BuyerFee == nil {
+			break
+		}
+
+		return e.complexity.TradeUpdate.BuyerFee(childComplexity), true
+
+	case "TradeUpdate.buyerId":
+		if e.complexity.TradeUpdate.BuyerID == nil {
+			break
+		}
+
+		return e.complexity.TradeUpdate.BuyerID(childComplexity), true
+
+	case "TradeUpdate.createdAt":
+		if e.complexity.TradeUpdate.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.TradeUpdate.CreatedAt(childComplexity), true
+
+	case "TradeUpdate.id":
+		if e.complexity.TradeUpdate.Id == nil {
+			break
+		}
+
+		return e.complexity.TradeUpdate.Id(childComplexity), true
+
+	case "TradeUpdate.marketId":
+		if e.complexity.TradeUpdate.MarketId == nil {
+			break
+		}
+
+		return e.complexity.TradeUpdate.MarketId(childComplexity), true
+
+	case "TradeUpdate.price":
+		if e.complexity.TradeUpdate.Price == nil {
+			break
+		}
+
+		return e.complexity.TradeUpdate.Price(childComplexity), true
+
+	case "TradeUpdate.sellOrder":
+		if e.complexity.TradeUpdate.SellOrder == nil {
+			break
+		}
+
+		return e.complexity.TradeUpdate.SellOrder(childComplexity), true
+
+	case "TradeUpdate.sellerAuctionBatch":
+		if e.complexity.TradeUpdate.SellerAuctionBatch == nil {
+			break
+		}
+
+		return e.complexity.TradeUpdate.SellerAuctionBatch(childComplexity), true
+
+	case "TradeUpdate.sellerFee":
+		if e.complexity.TradeUpdate.SellerFee == nil {
+			break
+		}
+
+		return e.complexity.TradeUpdate.SellerFee(childComplexity), true
+
+	case "TradeUpdate.sellerId":
+		if e.complexity.TradeUpdate.SellerID == nil {
+			break
+		}
+
+		return e.complexity.TradeUpdate.SellerID(childComplexity), true
+
+	case "TradeUpdate.size":
+		if e.complexity.TradeUpdate.Size == nil {
+			break
+		}
+
+		return e.complexity.TradeUpdate.Size(childComplexity), true
+
+	case "TradeUpdate.type":
+		if e.complexity.TradeUpdate.Type == nil {
+			break
+		}
+
+		return e.complexity.TradeUpdate.Type(childComplexity), true
+
 	case "TransactionSubmitted.success":
 		if e.complexity.TransactionSubmitted.Success == nil {
 			break
@@ -8810,7 +8946,7 @@ type Subscription {
     marketId: ID
     "ID of the party from which you want trades updates"
     partyId: ID
-  ): [Trade!]
+  ): [TradeUpdate!]
 
   "Subscribe to the positions updates"
   positions(
@@ -11054,6 +11190,54 @@ type Trade {
 
   "The party that sold"
   seller: Party!
+
+  "The aggressor indicates whether this trade was related to a BUY or SELL"
+  aggressor: Side!
+
+  "The price of the trade (probably initially the passive order price, other determination algorithms are possible though) (uint64)"
+  price: String!
+
+  "The number of contracts trades, will always be <= the remaining size of both orders immediately before the trade (uint64)"
+  size: String!
+
+  "RFC3339Nano time for when the trade occurred"
+  createdAt: String!
+
+  "The type of trade"
+  type: TradeType!
+
+  "The fee paid by the buyer side of the trade"
+  buyerFee: TradeFee!
+
+  "The fee paid by the seller side of the trade"
+  sellerFee: TradeFee!
+
+  "The batch in which the buyer order was submitted (applies only for auction modes)"
+  buyerAuctionBatch: Int
+
+  "The batch in which the seller order was submitted (applies only for auction modes)"
+  sellerAuctionBatch: Int
+}
+
+"A trade on Vega, the result of two orders being 'matched' in the market"
+type TradeUpdate {
+  "The hash of the trade data"
+  id: ID!
+
+  "The market the trade occurred on"
+  marketId: ID!
+
+  "The order that bought"
+  buyOrder: String!
+
+  "The order that sold"
+  sellOrder: String!
+
+  "The party that bought"
+  buyerId: ID!
+
+  "The party that sold"
+  sellerId: ID!
 
   "The aggressor indicates whether this trade was related to a BUY or SELL"
   aggressor: Side!
@@ -42081,7 +42265,7 @@ func (ec *executionContext) _Subscription_trades(ctx context.Context, field grap
 			w.Write([]byte{'{'})
 			graphql.MarshalString(field.Alias).MarshalGQL(w)
 			w.Write([]byte{':'})
-			ec.marshalOTrade2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTradeᚄ(ctx, field.Selections, res).MarshalGQL(w)
+			ec.marshalOTradeUpdate2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTradeᚄ(ctx, field.Selections, res).MarshalGQL(w)
 			w.Write([]byte{'}'})
 		})
 	}
@@ -43851,6 +44035,525 @@ func (ec *executionContext) _TradeSettlement_price(ctx context.Context, field gr
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TradeUpdate_id(ctx context.Context, field graphql.CollectedField, obj *vega.Trade) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "TradeUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Id, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TradeUpdate_marketId(ctx context.Context, field graphql.CollectedField, obj *vega.Trade) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "TradeUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MarketId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TradeUpdate_buyOrder(ctx context.Context, field graphql.CollectedField, obj *vega.Trade) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "TradeUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.BuyOrder, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TradeUpdate_sellOrder(ctx context.Context, field graphql.CollectedField, obj *vega.Trade) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "TradeUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SellOrder, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TradeUpdate_buyerId(ctx context.Context, field graphql.CollectedField, obj *vega.Trade) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "TradeUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.TradeUpdate().BuyerID(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TradeUpdate_sellerId(ctx context.Context, field graphql.CollectedField, obj *vega.Trade) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "TradeUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.TradeUpdate().SellerID(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TradeUpdate_aggressor(ctx context.Context, field graphql.CollectedField, obj *vega.Trade) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "TradeUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Aggressor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(vega.Side)
+	fc.Result = res
+	return ec.marshalNSide2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐSide(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TradeUpdate_price(ctx context.Context, field graphql.CollectedField, obj *vega.Trade) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "TradeUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Price, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TradeUpdate_size(ctx context.Context, field graphql.CollectedField, obj *vega.Trade) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "TradeUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.TradeUpdate().Size(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TradeUpdate_createdAt(ctx context.Context, field graphql.CollectedField, obj *vega.Trade) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "TradeUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.TradeUpdate().CreatedAt(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TradeUpdate_type(ctx context.Context, field graphql.CollectedField, obj *vega.Trade) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "TradeUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(vega.Trade_Type)
+	fc.Result = res
+	return ec.marshalNTradeType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTrade_Type(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TradeUpdate_buyerFee(ctx context.Context, field graphql.CollectedField, obj *vega.Trade) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "TradeUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.TradeUpdate().BuyerFee(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*TradeFee)
+	fc.Result = res
+	return ec.marshalNTradeFee2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTradeFee(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TradeUpdate_sellerFee(ctx context.Context, field graphql.CollectedField, obj *vega.Trade) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "TradeUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.TradeUpdate().SellerFee(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*TradeFee)
+	fc.Result = res
+	return ec.marshalNTradeFee2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTradeFee(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TradeUpdate_buyerAuctionBatch(ctx context.Context, field graphql.CollectedField, obj *vega.Trade) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "TradeUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.TradeUpdate().BuyerAuctionBatch(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TradeUpdate_sellerAuctionBatch(ctx context.Context, field graphql.CollectedField, obj *vega.Trade) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "TradeUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.TradeUpdate().SellerAuctionBatch(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _TransactionSubmitted_success(ctx context.Context, field graphql.CollectedField, obj *TransactionSubmitted) (ret graphql.Marshaler) {
@@ -61856,6 +62559,251 @@ func (ec *executionContext) _TradeSettlement(ctx context.Context, sel ast.Select
 	return out
 }
 
+var tradeUpdateImplementors = []string{"TradeUpdate"}
+
+func (ec *executionContext) _TradeUpdate(ctx context.Context, sel ast.SelectionSet, obj *vega.Trade) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, tradeUpdateImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TradeUpdate")
+		case "id":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._TradeUpdate_id(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "marketId":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._TradeUpdate_marketId(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "buyOrder":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._TradeUpdate_buyOrder(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "sellOrder":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._TradeUpdate_sellOrder(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "buyerId":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._TradeUpdate_buyerId(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "sellerId":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._TradeUpdate_sellerId(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "aggressor":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._TradeUpdate_aggressor(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "price":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._TradeUpdate_price(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "size":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._TradeUpdate_size(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "createdAt":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._TradeUpdate_createdAt(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "type":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._TradeUpdate_type(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "buyerFee":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._TradeUpdate_buyerFee(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "sellerFee":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._TradeUpdate_sellerFee(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "buyerAuctionBatch":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._TradeUpdate_buyerAuctionBatch(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "sellerAuctionBatch":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._TradeUpdate_sellerAuctionBatch(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var transactionSubmittedImplementors = []string{"TransactionSubmitted"}
 
 func (ec *executionContext) _TransactionSubmitted(ctx context.Context, sel ast.SelectionSet, obj *TransactionSubmitted) graphql.Marshaler {
@@ -66187,6 +67135,16 @@ func (ec *executionContext) marshalNTradeType2codeᚗvegaprotocolᚗioᚋvegaᚋ
 	return res
 }
 
+func (ec *executionContext) marshalNTradeUpdate2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTrade(ctx context.Context, sel ast.SelectionSet, v *vega.Trade) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._TradeUpdate(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNTransfer2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐTransfer(ctx context.Context, sel ast.SelectionSet, v *v1.Transfer) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -70241,6 +71199,53 @@ func (ec *executionContext) marshalOTradeSettlement2ᚕᚖcodeᚗvegaprotocolᚗ
 				defer wg.Done()
 			}
 			ret[i] = ec.marshalNTradeSettlement2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTradeSettlement(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalOTradeUpdate2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTradeᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Trade) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNTradeUpdate2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTrade(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
