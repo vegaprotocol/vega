@@ -1038,7 +1038,6 @@ func newMarketTerms(termFilter *types.OracleSpecFilter, termBinding *types.Oracl
 				Metadata:      []string{"asset_class:fx/crypto", "product:futures"},
 				DecimalPlaces: 0,
 			},
-			LiquidityCommitment: newMarketLiquidityCommitment(),
 		},
 	}
 }
@@ -1103,19 +1102,6 @@ func updateMarketTerms(termFilter *types.OracleSpecFilter, termBinding *types.Or
 				},
 				Metadata: []string{"asset_class:fx/crypto", "product:futures"},
 			},
-		},
-	}
-}
-
-func newMarketLiquidityCommitment() *types.NewMarketCommitment {
-	return &types.NewMarketCommitment{
-		CommitmentAmount: num.NewUint(1000),
-		Fee:              num.DecimalFromFloat(0.5),
-		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 1, Offset: num.NewUint(10)},
-		},
-		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 1, Offset: num.NewUint(10)},
 		},
 	}
 }

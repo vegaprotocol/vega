@@ -335,77 +335,6 @@ func validateAuctionDuration(proposedDuration time.Duration, netp NetParams) (ty
 	return types.ProposalErrorUnspecified, nil
 }
 
-func validateCommitment(
-	commitment *types.NewMarketCommitment,
-	netp NetParams,
-) (types.ProposalError, error) {
-	maxShapesSize, _ := netp.GetInt(netparams.MarketLiquidityProvisionShapesMaxSize)
-	maxFee, _ := netp.GetDecimal(netparams.MarketLiquidityMaximumLiquidityFeeFactorLevel)
-
-	if commitment == nil {
-		return types.ProposalErrorUnspecified, nil
-	}
-	if commitment.CommitmentAmount.IsZero() {
-		return types.ProposalErrorMissingCommitmentAmount,
-			fmt.Errorf("proposal commitment amount is 0 or missing")
-	}
-	if commitment.Fee.LessThanOrEqual(num.DecimalZero()) || commitment.Fee.GreaterThan(maxFee) {
-		return types.ProposalErrorInvalidFeeAmount,
-			errors.New("invalid liquidity provision fee")
-	}
-
-	if perr, err := validateShape(commitment.Buys, types.SideBuy, uint64(maxShapesSize)); err != nil {
-		return perr, err
-	}
-	return validateShape(commitment.Sells, types.SideSell, uint64(maxShapesSize))
-}
-
-func validateShape(
-	sh []*types.LiquidityOrder,
-	side types.Side,
-	maxSize uint64,
-) (types.ProposalError, error) {
-	if len(sh) <= 0 {
-		return types.ProposalErrorInvalidShape, fmt.Errorf("empty %v shape", side)
-	}
-	if len(sh) > int(maxSize) {
-		return types.ProposalErrorInvalidShape, fmt.Errorf("%v shape size exceed max (%v)", side, maxSize)
-	}
-
-	for _, lo := range sh {
-		if lo.Reference == types.PeggedReferenceUnspecified {
-			// We must specify a valid reference
-			return types.ProposalErrorInvalidShape, errors.New("order in shape without reference")
-		}
-		if lo.Proportion == 0 {
-			return types.ProposalErrorInvalidShape, errors.New("order in shape without a proportion")
-		}
-
-		if side == types.SideBuy {
-			switch lo.Reference {
-			case types.PeggedReferenceBestAsk:
-				return types.ProposalErrorInvalidShape, errors.New("order in buy side shape with best ask price reference")
-			case types.PeggedReferenceBestBid:
-			case types.PeggedReferenceMid:
-				if lo.Offset.IsZero() {
-					return types.ProposalErrorInvalidShape, errors.New("order in buy side shape offset must be > 0")
-				}
-			}
-		} else {
-			switch lo.Reference {
-			case types.PeggedReferenceBestAsk:
-			case types.PeggedReferenceBestBid:
-				return types.ProposalErrorInvalidShape, errors.New("order in sell side shape with best bid price reference")
-			case types.PeggedReferenceMid:
-				if lo.Offset.IsZero() {
-					return types.ProposalErrorInvalidShape, errors.New("order in sell shape offset must be > 0")
-				}
-			}
-		}
-	}
-	return types.ProposalErrorUnspecified, nil
-}
-
 // ValidateNewMarket checks new market proposal terms.
 func validateNewMarketChange(
 	terms *types.NewMarket,
@@ -424,11 +353,6 @@ func validateNewMarketChange(
 	if perr, err := validateAuctionDuration(openingAuctionDuration, netp); err != nil {
 		return perr, err
 	}
-
-	if perr, err := validateCommitment(terms.LiquidityCommitment, netp); err != nil {
-		return perr, err
-	}
-
 	if terms.Changes.PriceMonitoringParameters != nil && len(terms.Changes.PriceMonitoringParameters.Triggers) > 5 {
 		return types.ProposalErrorTooManyPriceMonitoringTriggers,
 			fmt.Errorf("%v price monitoring triggers set, maximum allowed is 5", len(terms.Changes.PriceMonitoringParameters.Triggers) > 5)

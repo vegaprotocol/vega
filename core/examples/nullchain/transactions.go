@@ -26,13 +26,6 @@ import (
 )
 
 func MarketProposalTxn(now time.Time, oraclePubkey string) (*walletpb.SubmitTransactionRequest, string) {
-	buys := []*vega.LiquidityOrder{
-		{Reference: vega.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: "1600", Proportion: 25},
-	}
-	sells := []*vega.LiquidityOrder{
-		{Reference: vega.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: "1600", Proportion: 25},
-	}
-
 	reference := "ref-" + vgrand.RandomStr(10)
 	asset := config.NormalAsset
 
@@ -95,12 +88,6 @@ func MarketProposalTxn(now time.Time, oraclePubkey string) (*walletpb.SubmitTran
 									ProbabilityOfTrading: 0.1,
 								},
 							},
-						},
-						LiquidityCommitment: &vega.NewMarketCommitment{
-							Fee:              "0.01",
-							CommitmentAmount: "50000000",
-							Buys:             buys,
-							Sells:            sells,
 						},
 					},
 				},
