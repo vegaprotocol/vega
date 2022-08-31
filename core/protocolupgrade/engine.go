@@ -115,6 +115,25 @@ func (e *Engine) OnRequiredMajorityChanged(_ context.Context, requiredMajority n
 	return nil
 }
 
+func (e *Engine) IsValidProposal(ctx context.Context, pk string, upgradeBlockHeight uint64, vegaReleaseTag string) error {
+	if !e.topology.IsTendermintValidator(pk) {
+		// not a tendermint validator, so we don't care about their intention
+		return errors.New("only tendermint validator can propose a protocol upgrade")
+	}
+
+	if upgradeBlockHeight <= e.currentBlockHeight {
+		return errors.New("upgrade block earlier than current block height")
+	}
+
+	_, err := semver.Parse(TrimReleaseTag(vegaReleaseTag))
+	if err != nil {
+		err = fmt.Errorf("invalid protocol version for upgrade received: version (%s), %w", vegaReleaseTag, err)
+		e.log.Error("", logging.Error(err))
+		return err
+	}
+	return nil
+}
+
 // UpgradeProposal records the intention of a validator to upgrade the protocol to a release tag at block height.
 func (e *Engine) UpgradeProposal(ctx context.Context, pk string, upgradeBlockHeight uint64, vegaReleaseTag string) error {
 	e.lock.RLock()
@@ -126,19 +145,7 @@ func (e *Engine) UpgradeProposal(ctx context.Context, pk string, upgradeBlockHei
 		logging.String("vegaReleaseTag", vegaReleaseTag),
 	)
 
-	if !e.topology.IsTendermintValidator(pk) {
-		// not a tendermint validator, so we don't care about their intention
-		return nil
-	}
-
-	if upgradeBlockHeight <= e.currentBlockHeight {
-		return errors.New("upgrade block earlier than current block height")
-	}
-
-	_, err := semver.Parse(TrimReleaseTag(vegaReleaseTag))
-	if err != nil {
-		err = fmt.Errorf("invalid protocol version for upgrade received: version (%s), %w", vegaReleaseTag, err)
-		e.log.Error("", logging.Error(err))
+	if err := e.IsValidProposal(ctx, pk, upgradeBlockHeight, vegaReleaseTag); err != nil {
 		return err
 	}
 

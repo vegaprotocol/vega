@@ -116,6 +116,7 @@ type ProtocolUpgradeService interface {
 	GetUpgradeStatus() types.UpgradeStatus
 	SetReadyForUpgrade()
 	Cleanup(ctx context.Context)
+	IsValidProposal(ctx context.Context, pk string, upgradeBlockHeight uint64, vegaReleaseTag string) error
 }
 
 type App struct {
@@ -274,7 +275,7 @@ func NewApp(
 		HandleCheckTx(txn.StateVariableProposalCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.ValidatorHeartbeatCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.RotateEthereumKeySubmissionCommand, app.RequireValidatorPubKey).
-		HandleCheckTx(txn.ProtocolUpgradeCommand, app.RequireValidatorPubKey).
+		HandleCheckTx(txn.ProtocolUpgradeCommand, app.CheckProtocolUpgradeProposal).
 		HandleCheckTx(txn.IssueSignatures, app.RequireValidatorPubKey)
 
 	app.abci.
@@ -906,6 +907,17 @@ func (app *App) OnDeliverTx(ctx context.Context, req tmtypes.RequestDeliverTx, t
 	// we don't need to set trace ID on context, it's been handled with OnBeginBlock
 
 	return ctx, resp
+}
+
+func (app *App) CheckProtocolUpgradeProposal(ctx context.Context, tx abci.Tx) error {
+	if err := app.RequireValidatorPubKey(ctx, tx); err != nil {
+		return err
+	}
+	pu := &commandspb.ProtocolUpgradeProposal{}
+	if err := tx.Unmarshal(pu); err != nil {
+		return err
+	}
+	return app.protocolUpgradeService.IsValidProposal(ctx, tx.PubKeyHex(), pu.UpgradeBlockHeight, pu.VegaReleaseTag)
 }
 
 func (app *App) RequireValidatorPubKey(ctx context.Context, tx abci.Tx) error {
