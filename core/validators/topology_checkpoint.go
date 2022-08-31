@@ -45,6 +45,7 @@ func (t *Topology) Load(ctx context.Context, data []byte) error {
 		return err
 	}
 
+	toRemove := t.validators
 	t.validators = make(map[string]*valState, len(ckp.ValidatorState))
 	nextValidators := []string{}
 	for _, node := range ckp.ValidatorState {
@@ -79,6 +80,13 @@ func (t *Topology) Load(ctx context.Context, data []byte) error {
 		}
 		t.sendValidatorUpdateEvent(ctx, t.validators[node.ValidatorUpdate.NodeId].data, true)
 		t.checkpointLoaded = true
+
+		delete(toRemove, node.ValidatorUpdate.NodeId)
+	}
+
+	// send an update event to remove any validators that were in the genesis file, but not in the checkpoint
+	for _, v := range toRemove {
+		t.sendValidatorUpdateEvent(ctx, v.data, false)
 	}
 
 	t.restoreCheckpointPendingKeyRotations(ckp.PendingKeyRotations)
