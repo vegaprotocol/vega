@@ -56,6 +56,8 @@ func Main(ctx context.Context) error {
 			return (&walletCmd{}).Execute(nil)
 		case "datanode":
 			return (&datanodeCmd{}).Execute(nil)
+		case "tools":
+			return (&toolsCmd{}).Execute(nil)
 		}
 	}
 
@@ -70,6 +72,7 @@ func Main(ctx context.Context) error {
 		Version,
 		Wallet,
 		Datanode,
+		VegaTools,
 		Watch,
 		Tm,
 		Tendermint,
