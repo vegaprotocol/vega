@@ -69,17 +69,16 @@ type Engine struct {
 
 	changed bool
 
-	pot                 *probabilityOfTrading
-	potInitialised      bool
-	tickSizeD           num.Decimal
-	tickSize            *num.Uint
+	pot            *probabilityOfTrading
+	potInitialised bool
+
 	getBestStaticPrices func() (num.Decimal, num.Decimal, error)
 	log                 *logging.Logger
 	positionFactor      num.Decimal
 }
 
 // NewEngine returns a reference to a new supplied liquidity calculation engine.
-func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor, asset, marketID string, stateVarEngine StateVarEngine, tickSize *num.Uint, log *logging.Logger, positionFactor num.Decimal) *Engine {
+func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor, asset, marketID string, stateVarEngine StateVarEngine, log *logging.Logger, positionFactor num.Decimal) *Engine {
 	e := &Engine{
 		rm:                             riskModel,
 		pm:                             priceMonitor,
@@ -90,8 +89,6 @@ func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor, asset, marketID s
 		changed:                        true,
 		pot:                            &probabilityOfTrading{},
 		potInitialised:                 false,
-		tickSizeD:                      tickSize.ToDecimal(),
-		tickSize:                       tickSize,
 		log:                            log,
 		positionFactor:                 positionFactor,
 	}
@@ -173,7 +170,7 @@ func (e *Engine) calculateBuySellLiquidityWithMinMax(
 	for _, o := range orders {
 		if o.Side == types.SideBuy {
 			// float64(o.Price.Uint64()) * float64(o.Remaining) * prob
-			prob := getProbabilityOfTrading(bestBidPrice, bestAskPrice, min.Original(), max.Original(), e.pot, o.Price.ToDecimal(), true, e.minProbabilityOfTrading, e.tickSizeD)
+			prob := getProbabilityOfTrading(bestBidPrice, bestAskPrice, min.Original(), max.Original(), e.pot, o.Price.ToDecimal(), true, e.minProbabilityOfTrading)
 			if e.log.GetLevel() <= logging.DebugLevel {
 				e.log.Debug("probability of trading", logging.Decimal("order-price", o.Price.ToDecimal()), logging.Decimal("prob", prob))
 			}
@@ -183,7 +180,7 @@ func (e *Engine) calculateBuySellLiquidityWithMinMax(
 		}
 		if o.Side == types.SideSell {
 			// float64(o.Price.Uint64()) * float64(o.Remaining) * prob
-			prob := getProbabilityOfTrading(bestBidPrice, bestAskPrice, min.Original(), max.Original(), e.pot, o.Price.ToDecimal(), false, e.minProbabilityOfTrading, e.tickSizeD)
+			prob := getProbabilityOfTrading(bestBidPrice, bestAskPrice, min.Original(), max.Original(), e.pot, o.Price.ToDecimal(), false, e.minProbabilityOfTrading)
 			if e.log.GetLevel() <= logging.DebugLevel {
 				e.log.Debug("probability of trading", logging.Decimal("order-price", o.Price.ToDecimal()), logging.Decimal("prob", prob))
 			}
@@ -201,7 +198,7 @@ func (e *Engine) calculateBuySellLiquidityWithMinMax(
 
 func (e *Engine) updateSizes(
 	liquidityObligation *num.Uint,
-	bestBidPrice, bestAskprice num.Decimal,
+	bestBidPrice, bestAskPrice num.Decimal,
 	orders []*LiquidityOrder,
 	isBid bool,
 	minPrice, maxPrice num.WrappedDecimal,
@@ -218,17 +215,16 @@ func (e *Engine) updateSizes(
 	for _, o := range orders {
 		proportion := num.DecimalFromUint(num.NewUint(o.Proportion))
 
-		prob := getProbabilityOfTrading(bestBidPrice, bestAskprice, min.Original(), max.Original(), e.pot, o.Price.ToDecimal(), isBid, e.minProbabilityOfTrading, e.tickSizeD)
+		prob := getProbabilityOfTrading(bestBidPrice, bestAskPrice, min.Original(), max.Original(), e.pot, o.Price.ToDecimal(), isBid, e.minProbabilityOfTrading)
 
 		if e.log.GetLevel() <= logging.DebugLevel {
 			e.log.Debug("$probability of trading$",
 				logging.String("best-bid", bestBidPrice.String()),
-				logging.String("best-ask", bestBidPrice.String()),
+				logging.String("best-ask", bestAskPrice.String()),
 				logging.String("min", min.Original().String()),
 				logging.String("max", max.Original().String()),
 				logging.String("order-price", o.Price.String()),
 				logging.Bool("is-bid", isBid),
-				logging.String("tickSize", e.tickSize.String()),
 				logging.String("probability", prob.String()))
 		}
 		if prob.IsZero() || prob.IsNegative() {

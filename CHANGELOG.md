@@ -14,12 +14,16 @@
 - [5881](https://github.com/vegaprotocol/vega/issues/5881) - Return account subscription as a list
 - [5766](https://github.com/vegaprotocol/vega/issues/5766) - Better notification for version update on the wallet
 - [5841](https://github.com/vegaprotocol/vega/issues/5841) - Add transaction to request `multisigControl` signatures on demand
+- [5937](https://github.com/vegaprotocol/vega/issues/5937) - Add more flexibility to market creation bonus
 - [5932](https://github.com/vegaprotocol/vega/issues/5932) - Remove Name and Symbol from update asset proposal
 - [5878](https://github.com/vegaprotocol/vega/issues/5878) - Add option to return only live orders in `ListOrders` `API`
 - [5937](https://github.com/vegaprotocol/vega/issues/5937) - Add more flexibility to market creation bonus 
 - [5708](https://github.com/vegaprotocol/vega/issues/5708) - Use market price when reporting average trade price
 - [5949](https://github.com/vegaprotocol/vega/issues/5949) - Transfers processed in the order they were received
 - [5675](https://github.com/vegaprotocol/vega/issues/5675) - Add transaction information to all database tables
+- [6004](https://github.com/vegaprotocol/vega/issues/6004) - Probability of trading refactoring
+- [5849](https://github.com/vegaprotocol/vega/issues/5849) - Use network parameter from creation time of the proposal for requirements
+- [5846](https://github.com/vegaprotocol/vega/issues/5846) - Expose network parameter from creation time of the proposal through `APIs`.
 - [5999](https://github.com/vegaprotocol/vega/issues/5999) - Recalculate margins after risk parameters are updated.
 - [5684](https://github.com/vegaprotocol/vega/issues/5684) - Added date range to a number of historic balances, deposits, withdrawals, orders and trades queries
 
@@ -27,6 +31,7 @@
 - [5934](https://github.com/vegaprotocol/vega/issues/5934) - Ensure wallet without permissions can be read
 - [5950](https://github.com/vegaprotocol/vega/issues/5934) - Fix documentation for new wallet command
 - [5986](https://github.com/vegaprotocol/vega/issues/5986) - Error string on failed transaction is sent in the plain, no need to decode
+- [6023](https://github.com/vegaprotocol/vega/issues/6023) - Tell the `datanode` when a genesis validator does not exist in a `checkpoint`
 - [5963](https://github.com/vegaprotocol/vega/issues/5963) - Check other nodes during version check if the first one is unavailable
 - [6002](https://github.com/vegaprotocol/vega/issues/6002) - Do not emit events for unmatched oracle data and unsubscribe market as soon as oracle data is received
 - [6008](https://github.com/vegaprotocol/vega/issues/6008) - Fix equity like share and average trade value calculation with opening auctions

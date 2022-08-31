@@ -1150,11 +1150,11 @@ func TestSubmit(t *testing.T) {
 				size  uint64
 				found bool
 			}{
-				{139, false},
+				{124, false},
 				{2, false},
 				{2, false},
 				{3, false},
-				{194, false},
+				{114, false},
 			}
 
 			for _, v := range found {
@@ -2444,11 +2444,11 @@ func TestAmend(t *testing.T) {
 
 		buys := []*types.LiquidityOrder{
 			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 50),
-			newLiquidityOrder(types.PeggedReferenceBestBid, 6, 50),
+			newLiquidityOrder(types.PeggedReferenceBestBid, 2, 50),
 		}
 		sells := []*types.LiquidityOrder{
 			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 50),
-			newLiquidityOrder(types.PeggedReferenceMid, 6, 50),
+			newLiquidityOrder(types.PeggedReferenceMid, 2, 50),
 		}
 
 		// Submitting a correct entry

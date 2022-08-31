@@ -93,14 +93,14 @@ func writeToStd(tree *iavl.MutableTree, heightToOutput uint64, show Showing) err
 	printData := printFuncs[show]
 
 	if len(found) > 0 {
-		log.Println("Snapshots available:", len(found))
+		fmt.Println("Snapshots available:", len(found))
 		printData(found)
 	} else {
-		log.Println("No snapshots available")
+		fmt.Println("No snapshots available")
 	}
 
 	if len(invalidVersions) > 0 {
-		log.Println("Invalid versions:", len(invalidVersions))
+		fmt.Println("Invalid versions:", len(invalidVersions))
 		printData(invalidVersions)
 	}
 	return nil
@@ -172,32 +172,32 @@ var printFuncs = map[Showing]func([]SnapshotData){
 func printSnapshotDataAsList(snapshots []SnapshotData) {
 	for _, snap := range snapshots {
 		if snap.Height != nil {
-			log.Printf("\tHeight %d, ", *snap.Height)
+			fmt.Printf("\tHeight %d, ", *snap.Height)
 		} else {
-			log.Print("\t")
+			fmt.Print("\t")
 		}
-		log.Printf("Version: %d, Size %d, Hash: %s\n", snap.Version, snap.Size, snap.Hash)
+		fmt.Printf("Version: %d, Size %d, Hash: %s\n", snap.Version, snap.Size, snap.Hash)
 	}
 }
 
 func printSnapshotVersions(snapshots []SnapshotData) {
-	log.Printf("Block Heights: ")
+	fmt.Printf("Block Heights: ")
 
 	for i, snap := range snapshots {
 		if snap.Height == nil {
 			continue
 		}
-		log.Printf("%d", *snap.Height)
+		fmt.Printf("%d", *snap.Height)
 		if i < len(snapshots)-1 {
-			log.Printf(", ")
+			fmt.Printf(", ")
 		}
 	}
-	log.Println()
+	fmt.Println()
 }
 
 func printSnapshotDataAsJSON(snapshots []SnapshotData) {
 	b, _ := json.MarshalIndent(&snapshots, "", "	")
-	log.Println(string(b))
+	fmt.Println(string(b))
 }
 
 func SavePayloadsToFile(tree *iavl.MutableTree, heightToOutput uint64, outputPath string) error {
