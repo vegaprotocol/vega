@@ -56,9 +56,13 @@ func (ps *Proposals) Add(ctx context.Context, p entities.Proposal) error {
 			reason,
 			error_details,
 			proposal_time,
-			tx_hash,
-			vega_time)
-		 VALUES ($1,  $2,  $3,  $4,  $5,  $6, $7, $8, $9, $10, $11)
+			vega_time,
+			required_majority,
+			required_participation,
+			required_lp_majority,
+			required_lp_participation,
+			tx_hash)
+		 VALUES ($1,  $2,  $3,  $4,  $5,  $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
 		 ON CONFLICT (id, vega_time) DO UPDATE SET
 			reference = EXCLUDED.reference,
 			party_id = EXCLUDED.party_id,
@@ -71,7 +75,7 @@ func (ps *Proposals) Add(ctx context.Context, p entities.Proposal) error {
 			tx_hash = EXCLUDED.tx_hash
 			;
 		 `,
-		p.ID, p.Reference, p.PartyID, p.State, p.Terms, p.Rationale, p.Reason, p.ErrorDetails, p.ProposalTime, p.TxHash, p.VegaTime)
+		p.ID, p.Reference, p.PartyID, p.State, p.Terms, p.Rationale, p.Reason, p.ErrorDetails, p.ProposalTime, p.VegaTime, p.RequiredMajority, p.RequiredParticipation, p.RequiredLPMajority, p.RequiredLPParticipation, p.TxHash)
 	return err
 }
 
