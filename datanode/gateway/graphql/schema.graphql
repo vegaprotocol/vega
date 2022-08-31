@@ -45,7 +45,7 @@ type Subscription {
     partyId: ID
     "ID of the market from which you want position updates"
     marketId: ID
-  ): Position!
+  ): [Position!]!
 
   "Subscribe to the market depths update"
   marketDepth(
@@ -3137,12 +3137,6 @@ type NewAsset {
 
 "A proposal to update an asset's details"
 type UpdateAsset {
-  "The full name of the asset (e.g: Great British Pound)"
-  name: String!
-
-  "The symbol of the asset (e.g: GBP)"
-  symbol: String!
-
   "The minimum economically meaningful amount of this specific asset"
   quantum: String!
 
@@ -3280,6 +3274,14 @@ type Proposal {
   rejectionReason: ProposalRejectionReason
   "Error details of the rejectionReason"
   errorDetails: String
+  "Required majority for this proposal to succeed"
+  requiredMajority: String!
+  "Required participation for this proposal to succeed"
+  requiredParticipation: String!
+  "Required liquidity provider equity like share majority for this proposal to succeed"
+  requiredLpMajority: String
+  "Required liquidity provider equity like share participation for this proposal to succeed"
+  requiredLpParticipation: String
 }
 
 type ProposalVotes {
@@ -3298,6 +3300,8 @@ type ProposalVoteSide {
   totalWeight: String!
   "Total number of governance tokens from the votes cast for this side"
   totalTokens: String!
+  "Total equity like share weight for this side (only for UpdateMarket Proposals)"
+  totalEquityLikeShareWeight: String!
 }
 
 enum VoteValue {
@@ -3325,6 +3329,9 @@ type Vote {
 
   "The weight of this vote based on the total of governance token"
   governanceTokenWeight: String!
+
+  "The weight of this vote based on the total equity like share"
+  equityLikeShareWeight: String!
 }
 
 type ProposalVote {

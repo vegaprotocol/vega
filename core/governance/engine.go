@@ -444,13 +444,17 @@ func (e *Engine) SubmitProposal(
 	}
 
 	p := &types.Proposal{
-		ID:        id,
-		Timestamp: e.timeService.GetTimeNow().UnixNano(),
-		Party:     party,
-		State:     types.ProposalStateOpen,
-		Terms:     psub.Terms,
-		Reference: psub.Reference,
-		Rationale: psub.Rationale,
+		ID:                      id,
+		Timestamp:               e.timeService.GetTimeNow().UnixNano(),
+		Party:                   party,
+		State:                   types.ProposalStateOpen,
+		Terms:                   psub.Terms,
+		Reference:               psub.Reference,
+		Rationale:               psub.Rationale,
+		RequiredMajority:        num.DecimalZero(),
+		RequiredParticipation:   num.DecimalZero(),
+		RequiredLPMajority:      num.DecimalZero(),
+		RequiredLPParticipation: num.DecimalZero(),
 	}
 
 	defer func() {
@@ -616,6 +620,12 @@ func (e *Engine) validateOpenProposal(proposal *types.Proposal) (types.ProposalE
 	if err != nil {
 		return types.ProposalErrorUnknownType, err
 	}
+
+	// assign all requirement to the proposal itself.
+	proposal.RequiredMajority = params.RequiredMajority
+	proposal.RequiredParticipation = params.RequiredParticipation
+	proposal.RequiredLPMajority = params.RequiredMajorityLP
+	proposal.RequiredLPParticipation = params.RequiredParticipationLP
 
 	now := e.timeService.GetTimeNow()
 	closeTime := time.Unix(proposal.Terms.ClosingTimestamp, 0)
@@ -855,9 +865,7 @@ func (e *Engine) closeProposal(ctx context.Context, proposal *proposal) {
 		return
 	}
 
-	params := e.mustGetProposalParams(proposal)
-
-	proposal.Close(params, e.accs, e.markets)
+	proposal.Close(e.accs, e.markets)
 	e.gss.changedActive = true
 
 	if proposal.IsPassed() {
@@ -893,16 +901,6 @@ func newUpdatedProposalEvents(ctx context.Context, proposal *proposal) []events.
 	}
 
 	return evts
-}
-
-func (e *Engine) mustGetProposalParams(proposal *proposal) *ProposalParameters {
-	params, err := e.getProposalParams(proposal.Terms)
-	if err != nil {
-		e.log.Panic("failed to get the proposal parameters from the terms",
-			logging.Error(err),
-		)
-	}
-	return params
 }
 
 func (e *Engine) updateValidatorKey(ctx context.Context, m map[string]*types.Vote, oldKey, newKey string) {
@@ -987,8 +985,8 @@ func (e *Engine) updatedAssetFromProposal(p *proposal) (*types.Asset, types.Prop
 	newAsset := &types.Asset{
 		ID: a.AssetID,
 		Details: &types.AssetDetails{
-			Name:     a.Changes.Name,
-			Symbol:   a.Changes.Symbol,
+			Name:     existingAsset.ToAssetType().Details.Name,
+			Symbol:   existingAsset.ToAssetType().Details.Symbol,
 			Quantum:  a.Changes.Quantum,
 			Decimals: existingAsset.DecimalPlaces(),
 		},
@@ -1072,7 +1070,7 @@ func (p *proposal) AddVote(vote types.Vote) error {
 // vote balance and weight.
 // Warning: this method should only be called once. Use ShouldClose() to know
 // when to call.
-func (p *proposal) Close(params *ProposalParameters, accounts StakingAccounts, markets Markets) {
+func (p *proposal) Close(accounts StakingAccounts, markets Markets) {
 	if !p.IsOpen() {
 		return
 	}
@@ -1082,7 +1080,7 @@ func (p *proposal) Close(params *ProposalParameters, accounts StakingAccounts, m
 		p.purgeBlankVotes(p.no)
 	}()
 
-	tokenVoteState, tokenVoteError := p.computeVoteStateUsingTokens(params, accounts)
+	tokenVoteState, tokenVoteError := p.computeVoteStateUsingTokens(accounts)
 
 	p.State = tokenVoteState
 	p.Reason = tokenVoteError
@@ -1095,13 +1093,13 @@ func (p *proposal) Close(params *ProposalParameters, accounts StakingAccounts, m
 	}
 
 	if tokenVoteState == types.ProposalStateDeclined && tokenVoteError == types.ProposalErrorParticipationThresholdNotReached {
-		elsVoteState, elsVoteError := p.computeVoteStateUsingEquityLikeShare(params, markets)
+		elsVoteState, elsVoteError := p.computeVoteStateUsingEquityLikeShare(markets)
 		p.State = elsVoteState
 		p.Reason = elsVoteError
 	}
 }
 
-func (p *proposal) computeVoteStateUsingTokens(params *ProposalParameters, accounts StakingAccounts) (types.ProposalState, types.ProposalError) {
+func (p *proposal) computeVoteStateUsingTokens(accounts StakingAccounts) (types.ProposalState, types.ProposalError) {
 	totalStake := accounts.GetStakingAssetTotalSupply()
 
 	yes := p.countTokens(p.yes, accounts)
@@ -1111,9 +1109,9 @@ func (p *proposal) computeVoteStateUsingTokens(params *ProposalParameters, accou
 	totalTokensDec := num.DecimalFromUint(totalTokens)
 	p.weightVotesFromToken(p.yes, totalTokensDec)
 	p.weightVotesFromToken(p.no, totalTokensDec)
-	majorityThreshold := totalTokensDec.Mul(params.RequiredMajority)
+	majorityThreshold := totalTokensDec.Mul(p.Proposal.RequiredMajority)
 	totalStakeDec := num.DecimalFromUint(totalStake)
-	participationThreshold := totalStakeDec.Mul(params.RequiredParticipation)
+	participationThreshold := totalStakeDec.Mul(p.Proposal.RequiredParticipation)
 
 	if yesDec.GreaterThanOrEqual(majorityThreshold) && totalTokensDec.GreaterThanOrEqual(participationThreshold) {
 		return types.ProposalStatePassed, types.ProposalErrorUnspecified
@@ -1126,16 +1124,16 @@ func (p *proposal) computeVoteStateUsingTokens(params *ProposalParameters, accou
 	return types.ProposalStateDeclined, types.ProposalErrorMajorityThresholdNotReached
 }
 
-func (p *proposal) computeVoteStateUsingEquityLikeShare(params *ProposalParameters, markets Markets) (types.ProposalState, types.ProposalError) {
+func (p *proposal) computeVoteStateUsingEquityLikeShare(markets Markets) (types.ProposalState, types.ProposalError) {
 	yes := p.countEquityLikeShare(p.yes, markets)
 	no := p.countEquityLikeShare(p.no, markets)
 	totalEquityLikeShare := yes.Add(no)
 
-	if yes.GreaterThanOrEqual(params.RequiredMajorityLP) && totalEquityLikeShare.GreaterThanOrEqual(params.RequiredParticipationLP) {
+	if yes.GreaterThanOrEqual(p.Proposal.RequiredLPMajority) && totalEquityLikeShare.GreaterThanOrEqual(p.Proposal.RequiredLPParticipation) {
 		return types.ProposalStatePassed, types.ProposalErrorUnspecified
 	}
 
-	if totalEquityLikeShare.LessThan(params.RequiredParticipationLP) {
+	if totalEquityLikeShare.LessThan(p.Proposal.RequiredLPParticipation) {
 		return types.ProposalStateDeclined, types.ProposalErrorParticipationThresholdNotReached
 	}
 

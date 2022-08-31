@@ -2376,13 +2376,16 @@ func (r *mySubscriptionResolver) Margins(ctx context.Context, partyID string, ma
 
 func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string, partyID *string, asset *string, typeArg *types.AccountType) (<-chan []*types.Account, error) {
 	var (
-		mkt, pty string
-		ty       types.AccountType
+		mkt, pty, ast string
+		ty            types.AccountType
 	)
 
 	if marketID == nil && partyID == nil && asset == nil && typeArg == nil {
 		// Updates on every balance update, on every account, for everyone and shouldn't be allowed for GraphQL.
 		return nil, errors.New("at least one query filter must be applied for this subscription")
+	}
+	if asset != nil {
+		ast = *asset
 	}
 	if marketID != nil {
 		mkt = *marketID
@@ -2395,6 +2398,7 @@ func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 	}
 
 	req := &v2.ObserveAccountsRequest{
+		Asset:    ast,
 		MarketId: mkt,
 		PartyId:  pty,
 		Type:     ty,
@@ -2420,7 +2424,14 @@ func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 				r.log.Error("accounts: stream closed", logging.Error(err))
 				break
 			}
-			c <- a.Accounts
+
+			if snapshot := a.GetSnapshot(); snapshot != nil {
+				c <- snapshot.Accounts
+			}
+
+			if updates := a.GetUpdates(); updates != nil {
+				c <- updates.Accounts
+			}
 		}
 	}()
 
@@ -2453,7 +2464,12 @@ func (r *mySubscriptionResolver) Orders(ctx context.Context, market *string, par
 				r.log.Error("orders: stream closed", logging.Error(err))
 				break
 			}
-			c <- o.Orders
+			if snapshot := o.GetSnapshot(); snapshot != nil {
+				c <- snapshot.Orders
+			}
+			if updates := o.GetUpdates(); updates != nil {
+				c <- updates.Orders
+			}
 		}
 	}()
 
@@ -2493,7 +2509,7 @@ func (r *mySubscriptionResolver) Trades(ctx context.Context, market *string, par
 	return c, nil
 }
 
-func (r *mySubscriptionResolver) Positions(ctx context.Context, party, market *string) (<-chan *types.Position, error) {
+func (r *mySubscriptionResolver) Positions(ctx context.Context, party, market *string) (<-chan []*types.Position, error) {
 	req := &v2.ObservePositionsRequest{
 		PartyId:  party,
 		MarketId: market,
@@ -2503,7 +2519,7 @@ func (r *mySubscriptionResolver) Positions(ctx context.Context, party, market *s
 		return nil, customErrorFromStatus(err)
 	}
 
-	c := make(chan *types.Position)
+	c := make(chan []*types.Position)
 	go func() {
 		defer func() {
 			stream.CloseSend()
@@ -2519,7 +2535,13 @@ func (r *mySubscriptionResolver) Positions(ctx context.Context, party, market *s
 				r.log.Error("positions: stream closed", logging.Error(err))
 				break
 			}
-			c <- t.Position
+			if snapshot := t.GetSnapshot(); snapshot != nil {
+				c <- snapshot.Positions
+			}
+
+			if updates := t.GetUpdates(); updates != nil {
+				c <- updates.Positions
+			}
 		}
 	}()
 

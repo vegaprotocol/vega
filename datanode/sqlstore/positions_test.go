@@ -41,6 +41,7 @@ func addTestPosition(t *testing.T,
 	pos.RealisedPnl = decimal.New(0, 0)
 	pos.UnrealisedPnl = decimal.New(0, 0)
 	pos.AverageEntryPrice = decimal.New(0, 0)
+	pos.AverageEntryMarketPrice = decimal.New(0, 0)
 	pos.Adjustment = decimal.New(0, 0)
 	pos.Loss = decimal.New(0, 0)
 	err := ps.Add(context.Background(), pos)

@@ -1613,6 +1613,21 @@ func (mr *MockOraclesEngineMockRecorder) BroadcastData(arg0, arg1 interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BroadcastData", reflect.TypeOf((*MockOraclesEngine)(nil).BroadcastData), arg0, arg1)
 }
 
+// HasMatch mocks base method.
+func (m *MockOraclesEngine) HasMatch(arg0 oracles.OracleData) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HasMatch", arg0)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// HasMatch indicates an expected call of HasMatch.
+func (mr *MockOraclesEngineMockRecorder) HasMatch(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasMatch", reflect.TypeOf((*MockOraclesEngine)(nil).HasMatch), arg0)
+}
+
 // ListensToPubKeys mocks base method.
 func (m *MockOraclesEngine) ListensToPubKeys(arg0 oracles.OracleData) bool {
 	m.ctrl.T.Helper()

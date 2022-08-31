@@ -60,7 +60,7 @@ By default, data node will attempt to connect to a database called `vega` listen
 We are developing using `PostgreSQL 14.2` and `Timescale 2.7.1` and _strongly recommend_ that you also use the same versions.
 
 ```json
-​​[SQLStore]
+[SQLStore]
  UseEmbedded = false
  [SQLStore.ConnectionConfig]
    Host = "localhost"
@@ -134,7 +134,7 @@ Which will launch embedded postgres in it's own process or
 
 Or by setting
 ```json
-​​[SQLStore]
+[SQLStore]
   UseEmbedded = true
 ```
 
