@@ -23,7 +23,7 @@ import (
 )
 
 var aggregateBalancesOrdering = TableOrdering{
-	ColumnOrdering{Name: "vega_time", Sorting: ASC, CursorColumn: true, Prefix: "forward_filled_balances"},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC},
 }
 
 type Balances struct {
@@ -90,13 +90,19 @@ func (bs *Balances) Query(filter entities.AccountFilter, groupBy []entities.Acco
 
 	whereDate := ""
 	if dateRange.Start != nil {
-		whereDate = fmt.Sprintf("AND forward_filled_balances.vega_time >= %s", nextBindVar(&args, *dateRange.Start))
+		whereDate = fmt.Sprintf("WHERE vega_time >= %s", nextBindVar(&args, *dateRange.Start))
 	}
 
 	if dateRange.End != nil {
-		whereDate = fmt.Sprintf("%s AND forward_filled_balances.vega_time < %s", whereDate, nextBindVar(&args, *dateRange.End))
+		if whereDate != "" {
+			whereDate = fmt.Sprintf("%s AND", whereDate)
+		} else {
+			whereDate = "WHERE "
+		}
+		whereDate = fmt.Sprintf("%s vega_time < %s", whereDate, nextBindVar(&args, *dateRange.End))
 	}
 
+	// This query is the one that gives us our results
 	query := `
         WITH our_accounts AS (%s),
              timestamps AS (SELECT DISTINCT all_balances.vega_time
@@ -109,33 +115,36 @@ func (bs *Balances) Query(filter entities.AccountFilter, groupBy []entities.Acco
                                                      AND keys.vega_time=all_balances.vega_time),
              forward_filled_balances AS (SELECT vega_time, account_id, last(balance)
                                          OVER (partition by account_id order by vega_time) AS balance
-                                         FROM balances_with_nulls)
-        SELECT forward_filled_balances.vega_time %s, sum(balance) AS balance
-        FROM forward_filled_balances
-        JOIN our_accounts ON account_id=our_accounts.id
-        WHERE balance IS NOT NULL
-        %s`
+                                         FROM balances_with_nulls),
+        balances as (
+			SELECT forward_filled_balances.vega_time %s, sum(balance) AS balance
+	        FROM forward_filled_balances
+    	    JOIN our_accounts ON account_id=our_accounts.id
+        	WHERE balance IS NOT NULL
+	        GROUP BY forward_filled_balances.vega_time %s
+    	    ORDER BY forward_filled_balances.vega_time %s
+		)
+		%s`
 
 	groups := ""
-	ordering := make(TableOrdering, len(aggregateBalancesOrdering))
-	grouping := []string{"forward_filled_balances.vega_time"}
-	copy(ordering, aggregateBalancesOrdering)
 	for _, col := range groupBy {
 		groups = fmt.Sprintf("%s, %s", groups, col.String())
-		ordering = append(ordering, ColumnOrdering{
-			Name:         col.String(),
-			Sorting:      ASC,
-			CursorColumn: false,
-		})
-		grouping = append(grouping, col.String())
 	}
 
-	query = fmt.Sprintf(query, assetsQuery, groups, whereDate)
+	// This pageQuery is the part that gives us the results for the pagination. We will only pass this part of the query
+	// to the PaginateQuery function because the WHERE clause in the query above will cause an incorrect SQL statement
+	// to be generated
+	pageQuery := fmt.Sprintf(`SELECT vega_time %s, balance
+		FROM balances 
+		%s`, groups, whereDate)
 
-	query, args, err = PaginateQuery[entities.AggregatedBalanceCursor](query, args, aggregateBalancesOrdering, pagination, grouping)
+	pageQuery, args, err = PaginateQuery[entities.AggregatedBalanceCursor](pageQuery, args, aggregateBalancesOrdering, pagination)
 	if err != nil {
 		return nil, pageInfo, err
 	}
+
+	// Here we stitch together all parts of the balances sub-query and the pagination to get the results we want.
+	query = fmt.Sprintf(query, assetsQuery, groups, groups, groups, pageQuery)
 
 	defer metrics.StartSQLQuery("Balances", "Query")()
 	rows, err := bs.Connection.Query(context.Background(), query, args...)

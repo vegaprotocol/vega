@@ -37,7 +37,7 @@ func TestCursorPredicate(t *testing.T) {
 		{
 			name: "Single",
 			ordering: sqlstore.TableOrdering{
-				sqlstore.NewColumnOrdering("foo", sqlstore.ASC, true),
+				sqlstore.NewColumnOrdering("foo", sqlstore.ASC),
 			},
 			expectedPredicate: "(foo >= $1)",
 			expectedArgs:      []any{1},
@@ -45,7 +45,7 @@ func TestCursorPredicate(t *testing.T) {
 		{
 			name: "Reversed",
 			ordering: sqlstore.TableOrdering{
-				sqlstore.NewColumnOrdering("foo", sqlstore.DESC, true),
+				sqlstore.NewColumnOrdering("foo", sqlstore.DESC),
 			},
 			expectedPredicate: "(foo <= $1)",
 			expectedArgs:      []any{1},
@@ -53,8 +53,8 @@ func TestCursorPredicate(t *testing.T) {
 		{
 			name: "Composite",
 			ordering: sqlstore.TableOrdering{
-				sqlstore.NewColumnOrdering("foo", sqlstore.ASC, true),
-				sqlstore.NewColumnOrdering("baz", sqlstore.DESC, true),
+				sqlstore.NewColumnOrdering("foo", sqlstore.ASC),
+				sqlstore.NewColumnOrdering("baz", sqlstore.DESC),
 			},
 			expectedPredicate: "(foo > $1) OR (foo = $1 AND baz <= $2)",
 			expectedArgs:      []any{1, 2},

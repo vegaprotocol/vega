@@ -27,10 +27,10 @@ type KeyRotations struct {
 }
 
 var keyRotationsOrdering = TableOrdering{
-	ColumnOrdering{Name: "vega_time", Sorting: ASC, CursorColumn: true},
-	ColumnOrdering{Name: "node_id", Sorting: ASC, CursorColumn: true},
-	ColumnOrdering{Name: "old_pub_key", Sorting: ASC, CursorColumn: true},
-	ColumnOrdering{Name: "new_pub_key", Sorting: ASC, CursorColumn: true},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC},
+	ColumnOrdering{Name: "node_id", Sorting: ASC},
+	ColumnOrdering{Name: "old_pub_key", Sorting: ASC},
+	ColumnOrdering{Name: "new_pub_key", Sorting: ASC},
 }
 
 func NewKeyRotations(connectionSource *ConnectionSource) *KeyRotations {
@@ -64,7 +64,7 @@ func (store *KeyRotations) GetAllPubKeyRotations(ctx context.Context, pagination
 	var args []interface{}
 	var err error
 	query := `SELECT * FROM key_rotations`
-	query, args, err = PaginateQuery[entities.KeyRotationCursor](query, args, keyRotationsOrdering, pagination, nil)
+	query, args, err = PaginateQuery[entities.KeyRotationCursor](query, args, keyRotationsOrdering, pagination)
 	if err != nil {
 		return nil, pageInfo, err
 	}

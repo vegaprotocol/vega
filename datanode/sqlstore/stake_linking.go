@@ -36,8 +36,8 @@ foreign_tx_hash, log_index, ethereum_address, tx_hash, vega_time`
 )
 
 var stakeLinkingOrdering = TableOrdering{
-	ColumnOrdering{Name: "vega_time", Sorting: ASC, CursorColumn: true},
-	ColumnOrdering{Name: "id", Sorting: ASC, CursorColumn: true},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC},
+	ColumnOrdering{Name: "id", Sorting: ASC},
 }
 
 func NewStakeLinking(connectionSource *ConnectionSource) *StakeLinking {
@@ -124,7 +124,7 @@ func (s *StakeLinking) getStakeWithCursorPagination(ctx context.Context, partyID
 	// get the links from the database
 	query, bindVars := getStakeLinkingQuery(partyID)
 
-	query, bindVars, err = PaginateQuery[entities.StakeLinkingCursor](query, bindVars, stakeLinkingOrdering, pagination, nil)
+	query, bindVars, err = PaginateQuery[entities.StakeLinkingCursor](query, bindVars, stakeLinkingOrdering, pagination)
 	if err != nil {
 		return nil, nil, pageInfo, err
 	}

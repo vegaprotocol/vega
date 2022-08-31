@@ -22,10 +22,10 @@ import (
 )
 
 var ekrOrdering = TableOrdering{
-	ColumnOrdering{Name: "vega_time", Sorting: ASC, CursorColumn: true},
-	ColumnOrdering{Name: "node_id", Sorting: ASC, CursorColumn: true},
-	ColumnOrdering{Name: "old_address", Sorting: ASC, CursorColumn: true},
-	ColumnOrdering{Name: "new_address", Sorting: ASC, CursorColumn: true},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC},
+	ColumnOrdering{Name: "node_id", Sorting: ASC},
+	ColumnOrdering{Name: "old_address", Sorting: ASC},
+	ColumnOrdering{Name: "new_address", Sorting: ASC},
 }
 
 type EthereumKeyRotations struct {
@@ -64,7 +64,7 @@ func (store *EthereumKeyRotations) List(ctx context.Context,
 
 	query := `SELECT * FROM ethereum_key_rotations ` + whereClause
 
-	query, args, err := PaginateQuery[entities.EthereumKeyRotationCursor](query, args, ekrOrdering, pagination, nil)
+	query, args, err := PaginateQuery[entities.EthereumKeyRotationCursor](query, args, ekrOrdering, pagination)
 	if err != nil {
 		return nil, entities.PageInfo{}, err
 	}

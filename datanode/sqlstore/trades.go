@@ -33,7 +33,7 @@ type Trades struct {
 }
 
 var tradesOrdering = TableOrdering{
-	ColumnOrdering{Name: "synthetic_time", Sorting: ASC, CursorColumn: true},
+	ColumnOrdering{Name: "synthetic_time", Sorting: ASC},
 }
 
 func NewTrades(connectionSource *ConnectionSource) *Trades {
@@ -221,7 +221,7 @@ func (ts *Trades) queryTradesWithCursorPagination(ctx context.Context, query str
 		pageInfo entities.PageInfo
 	)
 
-	query, args, err = PaginateQuery[entities.TradeCursor](query, args, tradesOrdering, pagination, nil)
+	query, args, err = PaginateQuery[entities.TradeCursor](query, args, tradesOrdering, pagination)
 	if err != nil {
 		return nil, pageInfo, err
 	}

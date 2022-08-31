@@ -27,7 +27,7 @@ import (
 var (
 	ErrNodeNotFound = errors.New("node not found")
 	nodeOrdering    = TableOrdering{
-		ColumnOrdering{Name: "id", Sorting: ASC, CursorColumn: true},
+		ColumnOrdering{Name: "id", Sorting: ASC},
 	}
 )
 
@@ -356,7 +356,7 @@ func (store *Node) GetNodes(ctx context.Context, epochSeq uint64, pagination ent
 		epochSeq,
 	}
 
-	query, args, err = PaginateQuery[entities.NodeCursor](query, args, nodeOrdering, pagination, nil)
+	query, args, err = PaginateQuery[entities.NodeCursor](query, args, nodeOrdering, pagination)
 	if err != nil {
 		return nil, pageInfo, err
 	}

@@ -27,7 +27,7 @@ import (
 )
 
 var marketdataOrdering = TableOrdering{
-	ColumnOrdering{Name: "synthetic_time", Sorting: ASC, CursorColumn: true},
+	ColumnOrdering{Name: "synthetic_time", Sorting: ASC},
 }
 
 type MarketData struct {
@@ -214,7 +214,7 @@ func (md *MarketData) getBetweenDatesByID(ctx context.Context, marketID string, 
 			nextBindVar(&args, *end))
 	}
 
-	query, args, err = PaginateQuery[entities.MarketDataCursor](query, args, marketdataOrdering, pagination, nil)
+	query, args, err = PaginateQuery[entities.MarketDataCursor](query, args, marketdataOrdering, pagination)
 	if err != nil {
 		return nil, pageInfo, err
 	}

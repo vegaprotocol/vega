@@ -27,7 +27,7 @@ type Checkpoints struct {
 }
 
 var checkpointOrdering = TableOrdering{
-	ColumnOrdering{Name: "block_height", Sorting: ASC, CursorColumn: true},
+	ColumnOrdering{Name: "block_height", Sorting: ASC},
 }
 
 func NewCheckpoints(connectionSource *ConnectionSource) *Checkpoints {
@@ -60,7 +60,7 @@ func (np *Checkpoints) GetAll(ctx context.Context, pagination entities.CursorPag
 
 	query := `SELECT * FROM checkpoints`
 	var args []interface{}
-	query, args, err = PaginateQuery[entities.CheckpointCursor](query, args, checkpointOrdering, pagination, nil)
+	query, args, err = PaginateQuery[entities.CheckpointCursor](query, args, checkpointOrdering, pagination)
 	if err != nil {
 		return nps, pageInfo, err
 	}

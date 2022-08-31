@@ -23,8 +23,8 @@ import (
 )
 
 var mlOrdering = TableOrdering{
-	ColumnOrdering{Name: "vega_time", Sorting: ASC, CursorColumn: true},
-	ColumnOrdering{Name: "account_id", Sorting: ASC, CursorColumn: true},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC},
+	ColumnOrdering{Name: "account_id", Sorting: ASC},
 }
 
 type AccountSource interface {
@@ -117,7 +117,7 @@ func (ml *MarginLevels) GetMarginLevelsByIDWithCursorPagination(ctx context.Cont
 
 	var err error
 	var pageInfo entities.PageInfo
-	query, bindVars, err = PaginateQuery[entities.MarginCursor](query, bindVars, mlOrdering, pagination, nil)
+	query, bindVars, err = PaginateQuery[entities.MarginCursor](query, bindVars, mlOrdering, pagination)
 	if err != nil {
 		return nil, pageInfo, err
 	}

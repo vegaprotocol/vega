@@ -26,7 +26,7 @@ import (
 )
 
 var accountOrdering = TableOrdering{
-	ColumnOrdering{Name: "account_id", Sorting: ASC, CursorColumn: true},
+	ColumnOrdering{Name: "account_id", Sorting: ASC},
 }
 
 type Accounts struct {
@@ -203,7 +203,7 @@ func (as *Accounts) QueryBalances(ctx context.Context,
 		return nil, entities.PageInfo{}, fmt.Errorf("querying account balances: %w", err)
 	}
 
-	query, args, err = PaginateQuery[entities.AccountCursor](query, args, accountOrdering, pagination, nil)
+	query, args, err = PaginateQuery[entities.AccountCursor](query, args, accountOrdering, pagination)
 	if err != nil {
 		return nil, entities.PageInfo{}, fmt.Errorf("querying account balances: %w", err)
 	}

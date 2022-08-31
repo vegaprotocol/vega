@@ -24,7 +24,7 @@ import (
 )
 
 var assetOrdering = TableOrdering{
-	ColumnOrdering{Name: "id", Sorting: ASC, CursorColumn: true},
+	ColumnOrdering{Name: "id", Sorting: ASC},
 }
 
 type Assets struct {
@@ -121,7 +121,7 @@ func (as *Assets) GetAllWithCursorPagination(ctx context.Context, pagination ent
 	var err error
 
 	query := getAssetQuery()
-	query, args, err = PaginateQuery[entities.AssetCursor](query, args, assetOrdering, pagination, nil)
+	query, args, err = PaginateQuery[entities.AssetCursor](query, args, assetOrdering, pagination)
 	if err != nil {
 		return nil, pageInfo, err
 	}

@@ -41,8 +41,8 @@ type Orders struct {
 }
 
 var ordersOrdering = TableOrdering{
-	ColumnOrdering{Name: "vega_time", Sorting: ASC, CursorColumn: true},
-	ColumnOrdering{Name: "seq_num", Sorting: ASC, CursorColumn: true},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC},
+	ColumnOrdering{Name: "seq_num", Sorting: ASC},
 }
 
 func NewOrders(connectionSource *ConnectionSource, logger *logging.Logger) *Orders {
@@ -173,7 +173,7 @@ func (os *Orders) queryOrdersWithCursorPagination(ctx context.Context, query str
 		pageInfo entities.PageInfo
 	)
 
-	query, args, err = PaginateQuery[entities.OrderCursor](query, args, ordersOrdering, pagination, nil)
+	query, args, err = PaginateQuery[entities.OrderCursor](query, args, ordersOrdering, pagination)
 	if err != nil {
 		return orders, pageInfo, err
 	}

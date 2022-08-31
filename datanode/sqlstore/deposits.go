@@ -34,8 +34,8 @@ const (
 )
 
 var depositOrdering = TableOrdering{
-	ColumnOrdering{Name: "vega_time", Sorting: ASC, CursorColumn: true},
-	ColumnOrdering{Name: "id", Sorting: ASC, CursorColumn: true},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC},
+	ColumnOrdering{Name: "id", Sorting: ASC},
 }
 
 func NewDeposits(connectionSource *ConnectionSource) *Deposits {
@@ -127,7 +127,7 @@ func (d *Deposits) getByPartyCursorPagination(ctx context.Context, party string,
 	if openOnly {
 		query = fmt.Sprintf(`%s and status = %s`, query, nextBindVar(&args, entities.DepositStatusOpen))
 	}
-	query, args, err = PaginateQuery[entities.DepositCursor](query, args, depositOrdering, pagination, nil)
+	query, args, err = PaginateQuery[entities.DepositCursor](query, args, depositOrdering, pagination)
 	if err != nil {
 		return nil, pageInfo, err
 	}

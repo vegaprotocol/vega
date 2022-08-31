@@ -29,10 +29,10 @@ type Delegations struct {
 }
 
 var delegationsOrdering = TableOrdering{
-	ColumnOrdering{Name: "vega_time", Sorting: ASC, CursorColumn: true},
-	ColumnOrdering{Name: "party_id", Sorting: ASC, CursorColumn: true},
-	ColumnOrdering{Name: "node_id", Sorting: ASC, CursorColumn: true},
-	ColumnOrdering{Name: "epoch_id", Sorting: ASC, CursorColumn: true},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC},
+	ColumnOrdering{Name: "party_id", Sorting: ASC},
+	ColumnOrdering{Name: "node_id", Sorting: ASC},
+	ColumnOrdering{Name: "epoch_id", Sorting: ASC},
 }
 
 func NewDelegations(connectionSource *ConnectionSource) *Delegations {
@@ -106,7 +106,7 @@ func (ds *Delegations) Get(ctx context.Context,
 				query, args = orderAndPaginateQuery(query, order_cols, *p, args...)
 			}
 		case entities.CursorPagination:
-			query, args, err = PaginateQuery[entities.DelegationCursor](query, args, delegationsOrdering, p, nil)
+			query, args, err = PaginateQuery[entities.DelegationCursor](query, args, delegationsOrdering, p)
 			if err != nil {
 				return nil, pageInfo, err
 			}

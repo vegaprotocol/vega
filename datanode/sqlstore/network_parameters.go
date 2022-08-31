@@ -27,7 +27,7 @@ type NetworkParameters struct {
 }
 
 var networkParameterOrdering = TableOrdering{
-	ColumnOrdering{Name: "key", Sorting: ASC, CursorColumn: true},
+	ColumnOrdering{Name: "key", Sorting: ASC},
 }
 
 func NewNetworkParameters(connectionSource *ConnectionSource) *NetworkParameters {
@@ -70,7 +70,7 @@ func (np *NetworkParameters) GetAll(ctx context.Context, pagination entities.Cur
 		err  error
 	)
 	query := `SELECT * FROM network_parameters_current`
-	query, args, err = PaginateQuery[entities.NetworkParameterCursor](query, args, networkParameterOrdering, pagination, nil)
+	query, args, err = PaginateQuery[entities.NetworkParameterCursor](query, args, networkParameterOrdering, pagination)
 	if err != nil {
 		return nil, pageInfo, err
 	}

@@ -31,8 +31,8 @@ const (
 )
 
 var oracleDataOrdering = TableOrdering{
-	ColumnOrdering{Name: "vega_time", Sorting: ASC, CursorColumn: true},
-	ColumnOrdering{Name: "public_keys", Sorting: ASC, CursorColumn: true},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC},
+	ColumnOrdering{Name: "public_keys", Sorting: ASC},
 }
 
 func NewOracleData(connectionSource *ConnectionSource) *OracleData {
@@ -98,7 +98,7 @@ func getOracleDataBySpecIDCursorPagination(ctx context.Context, conn Connection,
 	query := fmt.Sprintf(`select %s
 	from oracle_data where %s = ANY(matched_spec_ids)`, sqlOracleDataColumns, nextBindVar(&bindVars, specID))
 
-	query, bindVars, err = PaginateQuery[entities.OracleDataCursor](query, bindVars, oracleDataOrdering, pagination, nil)
+	query, bindVars, err = PaginateQuery[entities.OracleDataCursor](query, bindVars, oracleDataOrdering, pagination)
 	if err != nil {
 		return oracleData, pageInfo, err
 	}
@@ -151,7 +151,7 @@ func listOracleDataCursorPagination(ctx context.Context, conn Connection, pagina
 
 	query := selectOracleData()
 
-	query, bindVars, err = PaginateQuery[entities.OracleDataCursor](query, bindVars, oracleDataOrdering, pagination, nil)
+	query, bindVars, err = PaginateQuery[entities.OracleDataCursor](query, bindVars, oracleDataOrdering, pagination)
 	if err != nil {
 		return data, pageInfo, err
 	}

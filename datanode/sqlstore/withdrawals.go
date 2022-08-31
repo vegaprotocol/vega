@@ -35,8 +35,8 @@ func NewWithdrawals(connectionSource *ConnectionSource) *Withdrawals {
 }
 
 var withdrawalsOrdering = TableOrdering{
-	ColumnOrdering{Name: "vega_time", Sorting: ASC, CursorColumn: true},
-	ColumnOrdering{Name: "id", Sorting: ASC, CursorColumn: true},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC},
+	ColumnOrdering{Name: "id", Sorting: ASC},
 }
 
 func (w *Withdrawals) Upsert(ctx context.Context, withdrawal *entities.Withdrawal) error {
@@ -137,7 +137,7 @@ func (w *Withdrawals) getByPartyCursor(ctx context.Context, partyID string, open
 	)
 
 	query, args := getWithdrawalsByPartyQuery(partyID, dateRange)
-	query, args, err = PaginateQuery[entities.WithdrawalCursor](query, args, withdrawalsOrdering, pagination, nil)
+	query, args, err = PaginateQuery[entities.WithdrawalCursor](query, args, withdrawalsOrdering, pagination)
 	if err != nil {
 		return withdrawals, pageInfo, err
 	}

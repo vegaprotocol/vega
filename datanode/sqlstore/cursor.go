@@ -43,17 +43,10 @@ type ColumnOrdering struct {
 	Name string
 	// Sorting is the sorting order to use for the column
 	Sorting Sorting
-	// CursorColumn is a flag that indicates the column ordering is required for the pagination cursor
-	// If false the column is included in the as part of the order statement, but not included in the
-	// ordering predicate for the cursor sorting
-	CursorColumn bool
-	// Prefix to apply to the column name in case the query involves multiple tables and ambiguities may
-	// occur when columns have the same name.
-	Prefix string
 }
 
-func NewColumnOrdering(name string, sorting Sorting, cursorColumn bool) ColumnOrdering {
-	return ColumnOrdering{Name: name, Sorting: sorting, CursorColumn: cursorColumn}
+func NewColumnOrdering(name string, sorting Sorting) ColumnOrdering {
+	return ColumnOrdering{Name: name, Sorting: sorting}
 }
 
 type TableOrdering []ColumnOrdering
@@ -74,10 +67,10 @@ func (t *TableOrdering) Reversed() TableOrdering {
 	reversed := make([]ColumnOrdering, len(*t))
 	for i, column := range *t {
 		if column.Sorting == DESC {
-			reversed[i] = ColumnOrdering{Name: column.Name, Sorting: ASC, CursorColumn: column.CursorColumn}
+			reversed[i] = ColumnOrdering{Name: column.Name, Sorting: ASC}
 		}
 		if column.Sorting == ASC {
-			reversed[i] = ColumnOrdering{Name: column.Name, Sorting: DESC, CursorColumn: column.CursorColumn}
+			reversed[i] = ColumnOrdering{Name: column.Name, Sorting: DESC}
 		}
 	}
 	return reversed
@@ -105,9 +98,6 @@ func CursorPredicate(args []interface{}, cursor interface{}, ordering TableOrder
 	equalPredicates := []string{}
 
 	for i, column := range ordering {
-		if !column.CursorColumn {
-			continue
-		}
 		// For the non-last columns, use LT/GT, so we don't include stuff before the cursor
 		var operator string
 		if column.Sorting == ASC {
@@ -130,18 +120,14 @@ func CursorPredicate(args []interface{}, cursor interface{}, ordering TableOrder
 		}
 
 		bindVar := nextBindVar(&args, value)
-		columnName := column.Name
-		if column.Prefix != "" {
-			columnName = fmt.Sprintf("%s.%s", column.Prefix, column.Name)
-		}
-		inequalityPredicate := fmt.Sprintf("%s %s %s", columnName, operator, bindVar)
+		inequalityPredicate := fmt.Sprintf("%s %s %s", column.Name, operator, bindVar)
 
 		colPredicates := append(equalPredicates, inequalityPredicate)
 		colPredicateString := strings.Join(colPredicates, " AND ")
 		colPredicateString = fmt.Sprintf("(%s)", colPredicateString)
 		cursorPredicates = append(cursorPredicates, colPredicateString)
 
-		equalityPredicate := fmt.Sprintf("%s = %s", columnName, bindVar)
+		equalityPredicate := fmt.Sprintf("%s = %s", column.Name, bindVar)
 		equalPredicates = append(equalPredicates, equalityPredicate)
 	}
 
@@ -200,7 +186,6 @@ func PaginateQuery[T any, PT parserPtr[T]](
 	args []interface{},
 	ordering TableOrdering,
 	pagination entities.CursorPagination,
-	grouping []string,
 ) (string, []interface{}, error) {
 	// Extract a cursor struct from the pagination struct
 	cursor, err := parseCursor[T, PT](pagination)
@@ -234,13 +219,6 @@ func PaginateQuery[T any, PT parserPtr[T]](
 		}
 		query = fmt.Sprintf("%s %s (%s)", query, whereOrAnd, predicate)
 	}
-
-	groupBy := ""
-	if len(grouping) > 0 {
-		groupBy = fmt.Sprintf(" GROUP BY %s", strings.Join(grouping, ","))
-	}
-
-	query = fmt.Sprintf("%s%s", query, groupBy)
 
 	// Add an ORDER BY clause
 	query = fmt.Sprintf("%s %s", query, ordering.OrderByClause())

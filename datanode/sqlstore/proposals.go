@@ -32,8 +32,8 @@ type Proposals struct {
 }
 
 var proposalsOrdering = TableOrdering{
-	ColumnOrdering{Name: "vega_time", Sorting: ASC, CursorColumn: true},
-	ColumnOrdering{Name: "id", Sorting: ASC, CursorColumn: true},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC},
+	ColumnOrdering{Name: "id", Sorting: ASC},
 }
 
 func NewProposals(connectionSource *ConnectionSource) *Proposals {
@@ -130,7 +130,7 @@ func getOpenStateProposalsQuery(inState *entities.ProposalState, conditions []st
 	}
 
 	var err error
-	query, args, err = PaginateQuery[entities.ProposalCursor](query, args, proposalsOrdering, pagination, nil)
+	query, args, err = PaginateQuery[entities.ProposalCursor](query, args, proposalsOrdering, pagination)
 	if err != nil {
 		return "", args, err
 	}
@@ -175,7 +175,7 @@ func getOtherStateProposalsQuery(inState *entities.ProposalState, conditions []s
 	}
 
 	var err error
-	query, args, err = PaginateQuery[entities.ProposalCursor](query, args, proposalsOrdering, pagination, nil)
+	query, args, err = PaginateQuery[entities.ProposalCursor](query, args, proposalsOrdering, pagination)
 	if err != nil {
 		return "", args, err
 	}

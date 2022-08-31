@@ -27,9 +27,9 @@ import (
 var (
 	ErrPositionNotFound = errors.New("party not found")
 	positionsOrdering   = TableOrdering{
-		ColumnOrdering{Name: "vega_time", Sorting: ASC, CursorColumn: true},
-		ColumnOrdering{Name: "party_id", Sorting: ASC, CursorColumn: true},
-		ColumnOrdering{Name: "market_id", Sorting: ASC, CursorColumn: true},
+		ColumnOrdering{Name: "vega_time", Sorting: ASC},
+		ColumnOrdering{Name: "party_id", Sorting: ASC},
+		ColumnOrdering{Name: "market_id", Sorting: ASC},
 	}
 )
 
@@ -116,7 +116,7 @@ func (ps *Positions) GetByPartyConnection(ctx context.Context, partyIDRaw string
 	}
 
 	query = fmt.Sprintf("%s %s", query, where)
-	query, args, err = PaginateQuery[entities.PositionCursor](query, args, positionsOrdering, pagination, nil)
+	query, args, err = PaginateQuery[entities.PositionCursor](query, args, positionsOrdering, pagination)
 	if err != nil {
 		return nil, pageInfo, err
 	}
