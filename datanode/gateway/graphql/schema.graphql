@@ -45,7 +45,7 @@ type Subscription {
     partyId: ID
     "ID of the market from which you want position updates"
     marketId: ID
-  ): Position!
+  ): [Position!]!
 
   "Subscribe to the market depths update"
   marketDepth(
