@@ -154,3 +154,19 @@ func (r *proposalResolver) ErrorDetails(_ context.Context, data *types.Governanc
 	}
 	return &data.Proposal.ErrorDetails, nil
 }
+
+func (r *proposalResolver) RequiredMajority(_ context.Context, data *types.GovernanceData) (string, error) {
+	return data.Proposal.RequiredMajority, nil
+}
+
+func (r *proposalResolver) RequiredParticipation(_ context.Context, data *types.GovernanceData) (string, error) {
+	return data.Proposal.RequiredParticipation, nil
+}
+
+func (r *proposalResolver) RequiredLpMajority(_ context.Context, data *types.GovernanceData) (*string, error) {
+	return data.Proposal.RequiredLiquidityProviderMajority, nil
+}
+
+func (r *proposalResolver) RequiredLpParticipation(_ context.Context, data *types.GovernanceData) (*string, error) {
+	return data.Proposal.RequiredLiquidityProviderParticipation, nil
+}

@@ -273,6 +273,14 @@ message Proposal {
   string error_details = 8;
   // The rationale behind a proposal
   ProposalRationale rationale = 9;
+  // The required vote participation for this proposal
+  string required_participation = 10;
+  // The required majority for this proposal
+  string required_majority = 11;
+  // The required participation from liquidity providers, optional (required for market update proposal)
+  optional string required_liquidity_provider_participation = 12;
+  // The require majority from liquidity providers, optional (required for market update proposal)
+  optional string required_liquidity_provider_majority = 13;
 }
 
 // A list of possible errors that can cause a proposal to be in state rejected or failed

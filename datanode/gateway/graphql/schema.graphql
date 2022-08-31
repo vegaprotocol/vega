@@ -3089,12 +3089,6 @@ type NewAsset {
 
 "A proposal to update an asset's details"
 type UpdateAsset {
-  "The full name of the asset (e.g: Great British Pound)"
-  name: String!
-
-  "The symbol of the asset (e.g: GBP)"
-  symbol: String!
-
   "The minimum economically meaningful amount of this specific asset"
   quantum: String!
 
@@ -3232,6 +3226,14 @@ type Proposal {
   rejectionReason: ProposalRejectionReason
   "Error details of the rejectionReason"
   errorDetails: String
+  "Required majority for this proposal to succeed"
+  requiredMajority: String!
+  "Required participation for this proposal to succeed"
+  requiredParticipation: String!
+  "Required liquidity provider equity like share majority for this proposal to succeed"
+  requiredLpMajority: String
+  "Required liquidity provider equity like share participation for this proposal to succeed"
+  requiredLpParticipation: String
 }
 
 type ProposalVotes {

@@ -458,6 +458,11 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 
 	m.mkt = config
 
+	if m.mkt.State == types.MarketStateTradingTerminated {
+		m.tradableInstrument.Instrument.UnsubscribeSettlementPrice(ctx)
+	} else {
+		m.tradableInstrument.Instrument.Unsubscribe(ctx)
+	}
 	if err := m.tradableInstrument.UpdateInstrument(ctx, m.log, m.mkt.TradableInstrument, oracleEngine); err != nil {
 		return err
 	}
@@ -870,7 +875,7 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 		return err
 	}
 
-	m.tradableInstrument.Instrument.Unsubscribe(ctx)
+	m.tradableInstrument.Instrument.UnsubscribeSettlementPrice(ctx)
 	// @TODO pass in correct context -> Previous or next block?
 	// Which is most appropriate here?
 	// this will be next block
@@ -3200,6 +3205,8 @@ func (m *Market) commandLiquidityAuction(ctx context.Context) {
 func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+
+	m.tradableInstrument.Instrument.Product.UnsubscribeTradingTerminated(ctx)
 
 	if m.mkt.State != types.MarketStateProposed && m.mkt.State != types.MarketStatePending {
 		m.mkt.State = types.MarketStateTradingTerminated
