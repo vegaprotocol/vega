@@ -57,6 +57,7 @@ var (
 	ErrNonValidatorTransactionDisabledDuringBootstrap = errors.New("non validator transaction disabled during bootstrap")
 	ErrCheckpointRestoreDisabledDuringBootstrap       = errors.New("checkpoint restore disabled during bootstrap")
 	ErrAwaitingCheckpointRestore                      = errors.New("transactions not allowed while waiting for checkpoint restore")
+	ErrOracleNoSubscribers                            = errors.New("there are no subscribes to the oracle data")
 	ErrOracleDataNormalization                        = func(err error) error {
 		return fmt.Errorf("error normalizing incoming oracle data: %w", err)
 	}
@@ -1312,6 +1313,13 @@ func (app *App) CheckSubmitOracleData(_ context.Context, tx abci.Tx) error {
 		return ErrUnexpectedTxPubKey
 	}
 
+	hasMatch, err := app.oracles.Engine.HasMatch(*oracleData)
+	if err != nil {
+		return err
+	}
+	if !hasMatch {
+		return ErrOracleNoSubscribers
+	}
 	return nil
 }
 

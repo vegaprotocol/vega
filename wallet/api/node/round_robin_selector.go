@@ -35,19 +35,19 @@ func (ns *RoundRobinSelector) Node(ctx context.Context) (walletapi.Node, error) 
 		nextAbsoluteIndex := atomic.AddUint64(&ns.currentAbsoluteIndex, 1)
 		nextRelativeIndex := (int(nextAbsoluteIndex) - 1) % len(ns.nodes)
 		nextNode := ns.nodes[nextRelativeIndex]
-		ns.log.Info("moved to next node",
+		ns.log.Info("moved to the next node",
 			zap.String("host", nextNode.Host()),
 			zap.Int("index", nextRelativeIndex),
 		)
 		err := nextNode.HealthCheck(ctx)
 		if err == nil {
-			ns.log.Info("selected node is healthy",
+			ns.log.Info("the selected node is healthy",
 				zap.String("host", nextNode.Host()),
 				zap.Int("index", nextRelativeIndex),
 			)
 			return nextNode, nil
 		}
-		ns.log.Error("selected node is unhealthy",
+		ns.log.Error("the selected node is unhealthy",
 			zap.String("host", nextNode.Host()),
 			zap.Int("index", nextRelativeIndex),
 		)

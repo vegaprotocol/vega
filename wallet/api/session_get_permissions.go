@@ -22,7 +22,7 @@ type GetPermissions struct {
 
 // Handle returns the permissions set on the given hostname.
 //
-// If a third-party application doesn't have enough permissions, it has to
+// If a third-party application does not have enough permissions, it has to
 // request them using `request_permissions` handler.
 //
 // Using this handler does not require permissions.

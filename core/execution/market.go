@@ -445,6 +445,11 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 	config.State = m.mkt.State
 	config.MarketTimestamps = m.mkt.MarketTimestamps
 
+	recalcMargins := false
+	if !config.TradableInstrument.RiskModel.Equal(m.mkt.TradableInstrument.RiskModel) {
+		recalcMargins = true
+	}
+
 	asset, err := m.mkt.GetAsset()
 	if err != nil {
 		return err
@@ -453,6 +458,11 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 
 	m.mkt = config
 
+	if m.mkt.State == types.MarketStateTradingTerminated {
+		m.tradableInstrument.Instrument.UnsubscribeSettlementPrice(ctx)
+	} else {
+		m.tradableInstrument.Instrument.Unsubscribe(ctx)
+	}
 	if err := m.tradableInstrument.UpdateInstrument(ctx, m.log, m.mkt.TradableInstrument, oracleEngine); err != nil {
 		return err
 	}
@@ -467,8 +477,19 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 	m.tradableInstrument.Instrument.Product.NotifyOnSettlementPrice(m.settlementPrice)
 
 	m.updateLiquidityFee(ctx)
-
 	m.stateChanged = true
+	// risk model hasn't changed -> return
+	if !recalcMargins {
+		return nil
+	}
+	// We know the risk model has been updated, so we have to recalculate margin requirements
+	if err := m.recheckMargin(ctx, m.position.Positions()); err != nil {
+		m.log.Warn(
+			"Error encountered re-checking margin requirements after risk model update",
+			logging.Error(err),
+			logging.MarketID(m.mkt.ID),
+		)
+	}
 
 	return nil
 }
@@ -854,7 +875,7 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 		return err
 	}
 
-	m.tradableInstrument.Instrument.Unsubscribe(ctx)
+	m.tradableInstrument.Instrument.UnsubscribeSettlementPrice(ctx)
 	// @TODO pass in correct context -> Previous or next block?
 	// Which is most appropriate here?
 	// this will be next block
@@ -3184,6 +3205,8 @@ func (m *Market) commandLiquidityAuction(ctx context.Context) {
 func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+
+	m.tradableInstrument.Instrument.Product.UnsubscribeTradingTerminated(ctx)
 
 	if m.mkt.State != types.MarketStateProposed && m.mkt.State != types.MarketStatePending {
 		m.mkt.State = types.MarketStateTradingTerminated

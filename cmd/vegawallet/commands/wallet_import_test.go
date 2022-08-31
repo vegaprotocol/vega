@@ -6,7 +6,7 @@ import (
 	cmd "code.vegaprotocol.io/vega/cmd/vegawallet/commands"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
-	"code.vegaprotocol.io/vega/wallet/wallet"
+	"code.vegaprotocol.io/vega/wallet/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -33,7 +33,7 @@ func testImportWalletFlagsValidFlagsSucceeds(t *testing.T) {
 		PassphraseFile:     passphraseFilePath,
 	}
 
-	expectedReq := &wallet.ImportWalletRequest{
+	expectedReq := api.ImportWalletParams{
 		Wallet:         walletName,
 		RecoveryPhrase: recoveryPhrase,
 		Passphrase:     passphrase,
@@ -44,7 +44,6 @@ func testImportWalletFlagsValidFlagsSucceeds(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
-	require.NotNil(t, req)
 	assert.Equal(t, expectedReq, req)
 }
 
@@ -60,7 +59,7 @@ func testImportWalletFlagsMissingWalletFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.FlagMustBeSpecifiedError("wallet"))
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func testImportWalletFlagsMissingRecoveryPhraseFileFails(t *testing.T) {
@@ -75,7 +74,7 @@ func testImportWalletFlagsMissingRecoveryPhraseFileFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.FlagMustBeSpecifiedError("recovery-phrase-file"))
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func newImportWalletFlags(t *testing.T, testDir string) *cmd.ImportWalletFlags {

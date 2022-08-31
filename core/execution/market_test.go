@@ -747,6 +747,49 @@ func TestMarketClosingAfterUpdate(t *testing.T) {
 	assert.Equal(t, types.MarketStateSettled.String(), tm.market.State().String())
 }
 
+func TestUnsubscribeTradingTerminatedOracle(t *testing.T) {
+	// given
+	party1 := "party1"
+	party2 := "party2"
+	now := time.Unix(10, 0)
+	tm := getTestMarket(t, now, nil, nil)
+	defer tm.ctrl.Finish()
+
+	// setup
+	addAccount(t, tm, party1)
+	addAccount(t, tm, party2)
+
+	// then
+	assert.Equal(t, types.MarketStateActive.String(), tm.market.State().String())
+
+	// when
+	err := tm.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
+		PubKeys: []string{"0xDEADBEEF"},
+		Data: map[string]string{
+			"trading.terminated": "true",
+		},
+	})
+
+	// then
+	require.NoError(t, err)
+
+	count := tm.eventCount
+
+	for i := 0; i < 10; i++ {
+		err := tm.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
+			PubKeys: []string{"0xDEADBEEF"},
+			Data: map[string]string{
+				"trading.terminated": "true",
+			},
+		})
+
+		// then
+		require.NoError(t, err)
+	}
+
+	require.Equal(t, count, tm.eventCount)
+}
+
 func TestMarketLiquidityFeeAfterUpdate(t *testing.T) {
 	// given
 	now := time.Unix(10, 0)

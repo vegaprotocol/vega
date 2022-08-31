@@ -240,6 +240,7 @@ type isTRM interface {
 	trmIntoProto() interface{}
 	rmType() rmType
 	String() string
+	Equal(isTRM) bool
 }
 
 func TradableInstrumentFromProto(ti *proto.TradableInstrument) *TradableInstrument {

@@ -60,7 +60,7 @@ func (h *Handler) CreateWallet(name, passphrase string) (string, error) {
 	defer h.mu.Unlock()
 
 	if exists, err := h.store.WalletExists(context.Background(), name); err != nil {
-		return "", fmt.Errorf("couldn't verify wallet existence: %w", err)
+		return "", fmt.Errorf("couldn't verify the wallet existence: %w", err)
 	} else if exists {
 		return "", wallet.ErrWalletAlreadyExists
 	}

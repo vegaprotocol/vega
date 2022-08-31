@@ -32,6 +32,7 @@ type MarketPosition interface {
 type TradeSettlement interface {
 	Size() int64
 	Price() *num.Uint
+	MarketPrice() *num.Uint
 }
 
 // LossSocialization ...
