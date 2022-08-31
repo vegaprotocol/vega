@@ -42,8 +42,8 @@ Feature: Verify the order size is correctly cumulated.
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the orders should have the following states:
       | party      | market id | side | volume | price    | status        |
-      | party-lp-1 | ETH/DEC19 | buy  | 170    | 11999990 | STATUS_ACTIVE |
-      | party-lp-1 | ETH/DEC19 | sell | 170    | 12000010 | STATUS_ACTIVE |
+      | party-lp-1 | ETH/DEC19 | buy  | 167    | 11999990 | STATUS_ACTIVE |
+      | party-lp-1 | ETH/DEC19 | sell | 167    | 12000010 | STATUS_ACTIVE |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
@@ -52,5 +52,5 @@ Feature: Verify the order size is correctly cumulated.
 
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price    | volume |
-      | buy  | 11999990 | 337    |
-      | sell | 12000010 | 337    |
+      | buy  | 11999990 | 334    |
+      | sell | 12000010 | 334    |

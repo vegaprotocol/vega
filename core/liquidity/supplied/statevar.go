@@ -34,9 +34,13 @@ var (
 	defaultInRangeProbabilityOfTrading = num.DecimalFromFloat(0.5)
 	defaultMinimumProbabilityOfTrading = num.DecimalFromFloat(1e-8)
 	tolerance                          = num.DecimalFromFloat(1e-6)
-	numberOfPricePoints                = num.NewUint(500)
+	incrementInPct                     = num.DecimalFromFloat(0.1)                     // we calculate the probability of trading in increments of 0.1% of the best bid/ask
+	IncrementFactor                    = incrementInPct.Div(num.DecimalFromFloat(100)) // we calculate the probability of trading in increments of 0.001 from of the best bid/ask
 	defaultProbability                 = num.DecimalFromFloat(0.05)
-	defaultTickDistance                = num.DecimalFromFloat(100)
+	maxDistanceWhenNoConsensusPct      = num.DecimalFromFloat(20)                                     // if there's no consensus yet and the price is within 20% of the best bid/ask it gets the default probability
+	maxDistanceWhenNoConsensusFactor   = maxDistanceWhenNoConsensusPct.Div(num.DecimalFromFloat(100)) // if there's no consensus yet and the price is within 0.2 of the best bid/ask it gets the default probability
+
+	maxAskMultiplier = num.DecimalFromFloat(6) // arbitrarily large factor on the best ask - 600%
 )
 
 func (probabilityOfTradingConverter) BundleToInterface(kvb *statevar.KeyValueBundle) statevar.StateVariableResult {
@@ -76,17 +80,9 @@ func (e *Engine) startCalcProbOfTrading(eventID string, endOfCalcCallback statev
 		return
 	}
 
-	// calculate how far from the best we want to calculate
-	distanceFromBest := e.tickSizeD.Mul(numberOfPricePoints.ToDecimal())
-
-	// we're calculating between the best ask up to ask+distanceFromBest
-	askTo := bestAsk.Add(distanceFromBest)
-	// we're calculating between the best bid down to the max(0, bid-distanceFromBest)
-	bidTo := num.MaxD(num.DecimalZero(), bestBid.Sub(distanceFromBest))
-
 	// calculate offsets and probabilities for the range
-	bidOffsets, bidProbabilities := calculateBidRange(bestBid, bidTo, e.tickSizeD, tauScaled, e.rm.ProbabilityOfTrading)
-	askOffsets, askProbabilities := calculateAskRange(bestAsk, askTo, e.tickSizeD, tauScaled, e.rm.ProbabilityOfTrading)
+	bidOffsets, bidProbabilities := calculateBidRange(bestBid, IncrementFactor, tauScaled, e.rm.ProbabilityOfTrading)
+	askOffsets, askProbabilities := calculateAskRange(bestAsk, IncrementFactor, tauScaled, e.rm.ProbabilityOfTrading)
 
 	res := &probabilityOfTrading{
 		bidOffset:      bidOffsets,
@@ -97,66 +93,56 @@ func (e *Engine) startCalcProbOfTrading(eventID string, endOfCalcCallback statev
 	endOfCalcCallback.CalculationFinished(eventID, res, nil)
 }
 
-// calculateBidRange calculates the probabilities of price between bestBid and the worst bid (minBid)
-// in increments of <tickSize> and records the offsets and probabilities
+// calculateBidRange calculates the probabilities of price between bestBid and the worst bid
+// in increments of incrementFactor of the best bid and records the offsets and probabilities
 // such that offset 0 is stored in offsets[0] which corresponds to the best bid
 // and similarly probabilities[0] corresponds to best bid trading probability
 // whereas the last entry in offset equals to the maximum distance from bid for which
-// probability is calculated, and the last entry in probabilities corresponds to
-// the probability of trading at the price implied by this offset from best bid.
-func calculateBidRange(bestBid, minBid, tickSize, tauScaled num.Decimal, probabilityFunc func(num.Decimal, num.Decimal, num.Decimal, num.Decimal, num.Decimal, bool, bool) num.Decimal) ([]num.Decimal, []num.Decimal) {
-	offsets := make([]num.Decimal, 0, int(numberOfPricePoints.Uint64()))
-	probabilities := make([]num.Decimal, 0, int(numberOfPricePoints.Uint64()))
+// probability is calculated and is greater than the default minimum acceptable probability of trading.
+func calculateBidRange(bestBid, incrementFactor, tauScaled num.Decimal, probabilityFunc func(num.Decimal, num.Decimal, num.Decimal, num.Decimal, num.Decimal, bool, bool) num.Decimal) ([]num.Decimal, []num.Decimal) {
+	offsets := []num.Decimal{}
+	probabilities := []num.Decimal{}
 
 	p := bestBid
 	offset := num.DecimalZero()
-	for p.GreaterThan(minBid) && !p.IsNegative() {
-		offsets = append(offsets, offset)
-		prob := probabilityFunc(bestBid, p, minBid, bestBid, tauScaled, true, true)
-		probabilities = append(probabilities, prob)
-		if p.Equal(minBid) {
+	increment := incrementFactor.Mul(bestBid)
+	for {
+		prob := probabilityFunc(bestBid, p, num.DecimalZero(), bestBid, tauScaled, true, true)
+		if prob.LessThanOrEqual(defaultMinimumProbabilityOfTrading) {
 			break
 		}
-		offset = offset.Add(tickSize)
-		p = p.Sub(tickSize)
-	}
-	if p.LessThanOrEqual(minBid) || p.IsNegative() {
-		p = minBid
 		offsets = append(offsets, offset)
-		prob := probabilityFunc(bestBid, p, minBid, bestBid, tauScaled, true, true)
 		probabilities = append(probabilities, prob)
+		offset = offset.Add(incrementFactor)
+		p = p.Sub(increment)
 	}
 	return offsets, probabilities
 }
 
 // calculateAskRange calculates the probabilities of price between bestAsk and the worst ask (maxAsk)
-// in increments of <tickSize> and records the offsets and probabilities
+// in increments of incrementFactor of the best ask and records the offsets and probabilities
 // such that offset 0 is stored in offsets[0] which corresponds to the best ask
 // and similarly probabilities[0] corresponds to best ask trading probability
 // whereas the last entry in offset equals to the maximum distance from ask for which
 // probability is calculated, and the last entry in probabilities corresponds to probability of trading
 // at the price implied by this offset from best ask.
-func calculateAskRange(bestAsk, maxAsk, tickSize, tauScaled num.Decimal, probabilityFunc func(num.Decimal, num.Decimal, num.Decimal, num.Decimal, num.Decimal, bool, bool) num.Decimal) ([]num.Decimal, []num.Decimal) {
-	offsets := make([]num.Decimal, 0, int(numberOfPricePoints.Uint64()))
-	probabilities := make([]num.Decimal, 0, int(numberOfPricePoints.Uint64()))
+func calculateAskRange(bestAsk, incrementFactor, tauScaled num.Decimal, probabilityFunc func(num.Decimal, num.Decimal, num.Decimal, num.Decimal, num.Decimal, bool, bool) num.Decimal) ([]num.Decimal, []num.Decimal) {
+	offsets := []num.Decimal{}
+	probabilities := []num.Decimal{}
 
+	maxAsk := bestAsk.Mul(maxAskMultiplier)
+	increment := incrementFactor.Mul(bestAsk)
 	p := bestAsk
 	offset := num.DecimalZero()
-	for p.LessThan(maxAsk) {
-		offsets = append(offsets, offset)
+	for {
 		prob := probabilityFunc(bestAsk, p, bestAsk, maxAsk, tauScaled, false, true)
-		probabilities = append(probabilities, prob)
-		if p.Equal(maxAsk) {
+		if prob.LessThanOrEqual(defaultMinimumProbabilityOfTrading) {
 			break
 		}
-		offset = offset.Add(tickSize)
-		p = p.Add(tickSize)
-	}
-	if p.GreaterThanOrEqual(maxAsk) {
-		p = maxAsk
 		offsets = append(offsets, offset)
-		prob := probabilityFunc(bestAsk, p, bestAsk, maxAsk, tauScaled, false, true)
 		probabilities = append(probabilities, prob)
+		offset = offset.Add(incrementFactor)
+		p = p.Add(increment)
 	}
 	return offsets, probabilities
 }
@@ -176,40 +162,38 @@ func (e *Engine) updateProbabilities(ctx context.Context, res statevar.StateVari
 // getProbabilityOfTrading returns the probability of trading for the given price
 // if the price is a bid order that is better than the best bid or an ask order better than the best and ask it returns <defaultInRangeProbabilityOfTrading>
 // if the price is a bid worse than min or an ask worse than max it returns minProbabilityOfTrading
-// otherwise if we've not seen a consensus value and the price is within 100 ticks from the best (by side)
+// otherwise if we've not seen a consensus value and the price is within 10% the best (by side)
 // it returns <defaultProbability> else if there is not yet consensus value it returns <minProbabilityOfTrading>.
 // If there is consensus value and the price is worse than the worse price, we extrapolate using the last 2 price points
 // If the price is within the range, the corresponding probability implied by the offset is returned, scaled, with lower bound of <minProbabilityOfTrading>.
-func getProbabilityOfTrading(bestBid, bestAsk, minPrice, maxPrice num.Decimal, pot *probabilityOfTrading, price num.Decimal, isBid bool, minProbabilityOfTrading num.Decimal, tickSize num.Decimal) num.Decimal {
+func getProbabilityOfTrading(bestBid, bestAsk, minPrice, maxPrice num.Decimal, pot *probabilityOfTrading, price num.Decimal, isBid bool, minProbabilityOfTrading num.Decimal) num.Decimal {
 	if (isBid && price.GreaterThanOrEqual(bestBid)) || (!isBid && price.LessThanOrEqual(bestAsk)) {
 		return defaultInRangeProbabilityOfTrading
 	}
-
-	// when we don't have consensus yet we'll allow prices that are within
-	// tickSize * defaultTickDistance from the best
-	maxDistanceWhenNoConsensus := defaultTickDistance.Mul(tickSize)
 
 	if isBid {
 		if price.LessThan(minPrice) {
 			return minProbabilityOfTrading
 		}
-		return getBidProbabilityOfTrading(bestBid, bestAsk, pot.bidOffset, pot.bidProbability, price, minProbabilityOfTrading, maxDistanceWhenNoConsensus)
+		return getBidProbabilityOfTrading(bestBid, bestAsk, pot.bidOffset, pot.bidProbability, price, minProbabilityOfTrading)
 	}
 	if price.GreaterThan(maxPrice) {
 		return minProbabilityOfTrading
 	}
-	return getAskProbabilityOfTrading(bestBid, bestAsk, pot.askOffset, pot.askProbability, price, minProbabilityOfTrading, maxDistanceWhenNoConsensus)
+	return getAskProbabilityOfTrading(bestBid, bestAsk, pot.askOffset, pot.askProbability, price, minProbabilityOfTrading)
 }
 
-func getAskProbabilityOfTrading(bestBid, bestAsk num.Decimal, offsets, probabilities []num.Decimal, price num.Decimal, minProbabilityOfTrading num.Decimal, maxDistance num.Decimal) num.Decimal {
+func getAskProbabilityOfTrading(bestBid, bestAsk num.Decimal, offsets, probabilities []num.Decimal, price num.Decimal, minProbabilityOfTrading num.Decimal) num.Decimal {
 	// no consensus yet
 	if len(offsets) == 0 {
+		maxDistance := maxDistanceWhenNoConsensusFactor.Mul(bestAsk)
 		if bestAsk.Sub(price).Abs().LessThanOrEqual(maxDistance) {
 			return defaultProbability
 		}
 		return minProbabilityOfTrading
 	}
-	offset := price.Sub(bestAsk)
+	offset := price.Sub(bestAsk).Div(bestAsk)
+
 	// if outside the range - extrapolate
 	if offset.GreaterThan(offsets[len(offsets)-1]) {
 		return lexterp(offsets, probabilities, offset, minProbabilityOfTrading)
@@ -217,22 +201,24 @@ func getAskProbabilityOfTrading(bestBid, bestAsk num.Decimal, offsets, probabili
 
 	// linear interpolation
 	interpolatedProbability := linterp(offsets, probabilities, offset, func(i int) bool {
-		r := bestAsk.Add(offsets[i]).GreaterThan(price)
+		r := offset.LessThan(offsets[i])
 		return r
 	}, minProbabilityOfTrading)
 	return interpolatedProbability
 }
 
-func getBidProbabilityOfTrading(bestBid, bestAsk num.Decimal, offsets, probabilities []num.Decimal, price num.Decimal, minProbabilityOfTrading, maxDistance num.Decimal) num.Decimal {
+func getBidProbabilityOfTrading(bestBid, bestAsk num.Decimal, offsets, probabilities []num.Decimal, price num.Decimal, minProbabilityOfTrading num.Decimal) num.Decimal {
 	// no consensus yet
 	if len(offsets) == 0 {
+		maxDistance := maxDistanceWhenNoConsensusFactor.Mul(bestBid)
 		if bestBid.Sub(price).Abs().LessThanOrEqual(maxDistance) {
 			return defaultProbability
 		}
 		return minProbabilityOfTrading
 	}
 
-	offset := bestBid.Sub(price)
+	offset := bestBid.Sub(price).Div(bestBid)
+
 	// if outside the range - extrapolate
 	if offset.GreaterThan(offsets[len(offsets)-1]) {
 		return lexterp(offsets, probabilities, offset, minProbabilityOfTrading)
@@ -240,7 +226,7 @@ func getBidProbabilityOfTrading(bestBid, bestAsk num.Decimal, offsets, probabili
 
 	// linear interpolation
 	interpolatedProbability := linterp(offsets, probabilities, offset, func(i int) bool {
-		r := bestBid.Sub(offsets[i]).LessThan(price)
+		r := offset.LessThan(offsets[i])
 		return r
 	}, minProbabilityOfTrading)
 	return interpolatedProbability

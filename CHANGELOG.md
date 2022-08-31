@@ -21,6 +21,7 @@
 - [5708](https://github.com/vegaprotocol/vega/issues/5708) - Use market price when reporting average trade price
 - [5949](https://github.com/vegaprotocol/vega/issues/5949) - Transfers processed in the order they were received
 - [5675](https://github.com/vegaprotocol/vega/issues/5675) - Add transaction information to all database tables
+- [6004](https://github.com/vegaprotocol/vega/issues/6004) - Probability of trading refactoring
 - [5849](https://github.com/vegaprotocol/vega/issues/5849) - Use network parameter from creation time of the proposal for requirements
 - [5846](https://github.com/vegaprotocol/vega/issues/5846) - Expose network parameter from creation time of the proposal through `APIs`.
 - [5999](https://github.com/vegaprotocol/vega/issues/5999) - Recalculate margins after risk parameters are updated.
