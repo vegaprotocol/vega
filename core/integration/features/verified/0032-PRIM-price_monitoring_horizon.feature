@@ -141,7 +141,7 @@ Scenario: 002, horizon set to 360000 in price monitoring model.  0032-PRIM-001, 
       | side | price      | volume    |
       | buy  | 10000000   | 100000    |
       | buy  | 90000000   | 500000    | 
-      | buy  | 89900000   | 917190999 | 
+      | buy  | 89900000   | 922950283 | 
       | sell | 120000000  | 500000    |  
       | sell | 121000000  | 0         | 
       | sell | 10000000000| 100000    |
@@ -149,12 +149,12 @@ Scenario: 002, horizon set to 360000 in price monitoring model.  0032-PRIM-001, 
     # check the requried balances
     And the parties should have the following account balances:
       | party  | asset | market id | margin      | general        | bond         |
-      | lp     | USD   | ETH/MAR22 | 53014429642 | 9556485570358  | 390500000000 |
+      | lp     | USD   | ETH/MAR22 | 53347321218 | 9556152678782  | 390500000000 |
 
     #check the margin levels
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search      | initial      | release      |
-      | lp     | ETH/MAR22 | 44178691369 | 48596560505 | 53014429642  | 61850167916  |
+      | lp     | ETH/MAR22 | 44456101015 | 48901711116 | 53347321218  | 62238541421  |
 
 Scenario: 003, horizon set to 360000 in price monitoring model.  0032-PRIM-001, 0032-PRIM-009; 0070-MKTD-003; 0070-MKTD-004; 0070-MKTD-005; 0070-MKTD-006; 0070-MKTD-007; 0070-MKTD-008
  # test different dps, asset: 6/market: 2/position: 1 
@@ -222,17 +222,17 @@ Scenario: 003, horizon set to 360000 in price monitoring model.  0032-PRIM-001, 
       | side | price  | volume |
       | buy  | 1000   | 1      |
       | buy  | 9000   | 5      | 
-      | buy  | 8990   | 91399  | 
+      | buy  | 8990   | 92296  | 
       | sell | 12000  | 5      |  
-      | sell | 12010  | 68569  | 
+      | sell | 12010  | 68060  | 
       | sell | 1000000| 1      |
      
     # check the requried balances
     And the parties should have the following account balances:
       | party  | asset | market id | margin      | general        | bond         |
-      | lp     | USD   | ETH/MAR22 | 52829409142 | 99556670590858 | 390500000000 |
+      | lp     | USD   | ETH/MAR22 | 53347882868 | 99556152117132 | 390500000000 |
 
     #check the margin levels
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search      | initial      | release      |
-      | lp     | ETH/MAR22 | 44024507619 | 48426958380 | 52829409142  | 61634310666  |
+      | lp     | ETH/MAR22 | 44456569057 | 48902225962 | 53347882868  | 62239196679  |

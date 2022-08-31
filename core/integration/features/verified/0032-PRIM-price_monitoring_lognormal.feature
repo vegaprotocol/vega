@@ -61,7 +61,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the accumulated infrastructure fees should be "0" for the asset "ETH"
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC20"
 
- And the market data for the market "ETH/DEC20" should be:
+    And the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 100000     | TRADING_MODE_CONTINUOUS | 60      | 99461     | 100541    | 148680        | 0       | 2             |
       | 100000     | TRADING_MODE_CONTINUOUS | 600     | 97776     | 102267    | 148680        | 0       | 2             |
@@ -428,5 +428,5 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000000    | TRADING_MODE_CONTINUOUS | 60      | 994606    | 1005415   | 7434000      | 0              | 10            |
-      | 1000000    | TRADING_MODE_CONTINUOUS | 600     | 977751    | 1022678   | 7434000      | 0              | 10            |
+      | 1000000    | TRADING_MODE_CONTINUOUS | 60      | 994606    | 1005415   |   7434000    | 90000000       | 10            |
+      | 1000000    | TRADING_MODE_CONTINUOUS | 600     | 977751    | 1022678   |   7434000    | 90000000       | 10            |
