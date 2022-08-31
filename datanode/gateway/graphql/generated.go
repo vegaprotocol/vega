@@ -441,6 +441,7 @@ type ComplexityRoot struct {
 		OracleSpecForTradingTermination func(childComplexity int) int
 		QuoteName                       func(childComplexity int) int
 		SettlementAsset                 func(childComplexity int) int
+		SettlementPriceDecimals         func(childComplexity int) int
 	}
 
 	Instrument struct {
@@ -3385,6 +3386,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.FutureProduct.SettlementAsset(childComplexity), true
+
+	case "FutureProduct.settlementPriceDecimals":
+		if e.complexity.FutureProduct.SettlementPriceDecimals == nil {
+			break
+		}
+
+		return e.complexity.FutureProduct.SettlementPriceDecimals(childComplexity), true
 
 	case "Instrument.code":
 		if e.complexity.Instrument.Code == nil {
@@ -11790,6 +11798,9 @@ type FutureProduct {
   used as settlement price.
   """
   oracleSpecBinding: OracleSpecToFutureBinding!
+
+  "The number of decimal places implied by the settlement price emitted by the settlement oracle"
+  settlementPriceDecimals: Int!
 }
 
 """
@@ -21842,6 +21853,41 @@ func (ec *executionContext) _FutureProduct_oracleSpecBinding(ctx context.Context
 	res := resTmp.(*vega.OracleSpecToFutureBinding)
 	fc.Result = res
 	return ec.marshalNOracleSpecToFutureBinding2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOracleSpecToFutureBinding(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FutureProduct_settlementPriceDecimals(ctx context.Context, field graphql.CollectedField, obj *vega.FutureProduct) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "FutureProduct",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SettlementPriceDecimals, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(uint32)
+	fc.Result = res
+	return ec.marshalNInt2uint32(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Instrument_id(ctx context.Context, field graphql.CollectedField, obj *vega.Instrument) (ret graphql.Marshaler) {
@@ -51129,6 +51175,16 @@ func (ec *executionContext) _FutureProduct(ctx context.Context, sel ast.Selectio
 		case "oracleSpecBinding":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._FutureProduct_oracleSpecBinding(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "settlementPriceDecimals":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._FutureProduct_settlementPriceDecimals(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
