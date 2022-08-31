@@ -2014,7 +2014,7 @@ type SubscriptionResolver interface {
 	Candles(ctx context.Context, marketID string, interval vega.Interval) (<-chan *vega.Candle, error)
 	Orders(ctx context.Context, marketID *string, partyID *string) (<-chan []*vega.Order, error)
 	Trades(ctx context.Context, marketID *string, partyID *string) (<-chan []*vega.Trade, error)
-	Positions(ctx context.Context, partyID *string, marketID *string) (<-chan *vega.Position, error)
+	Positions(ctx context.Context, partyID *string, marketID *string) (<-chan []*vega.Position, error)
 	MarketDepth(ctx context.Context, marketID string) (<-chan *vega.MarketDepth, error)
 	MarketDepthUpdate(ctx context.Context, marketID string) (<-chan *vega.MarketDepthUpdate, error)
 	Accounts(ctx context.Context, marketID *string, partyID *string, assetID *string, typeArg *vega.AccountType) (<-chan []*vega.Account, error)
@@ -8853,7 +8853,7 @@ type Subscription {
     partyId: ID
     "ID of the market from which you want position updates"
     marketId: ID
-  ): Position!
+  ): [Position!]!
 
   "Subscribe to the market depths update"
   marketDepth(
@@ -42337,7 +42337,7 @@ func (ec *executionContext) _Subscription_positions(ctx context.Context, field g
 		return nil
 	}
 	return func() graphql.Marshaler {
-		res, ok := <-resTmp.(<-chan *vega.Position)
+		res, ok := <-resTmp.(<-chan []*vega.Position)
 		if !ok {
 			return nil
 		}
@@ -42345,7 +42345,7 @@ func (ec *executionContext) _Subscription_positions(ctx context.Context, field g
 			w.Write([]byte{'{'})
 			graphql.MarshalString(field.Alias).MarshalGQL(w)
 			w.Write([]byte{':'})
-			ec.marshalNPosition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPosition(ctx, field.Selections, res).MarshalGQL(w)
+			ec.marshalNPosition2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPositionᚄ(ctx, field.Selections, res).MarshalGQL(w)
 			w.Write([]byte{'}'})
 		})
 	}
@@ -65765,8 +65765,48 @@ func (ec *executionContext) marshalNPeggedReference2codeᚗvegaprotocolᚗioᚋv
 	return res
 }
 
-func (ec *executionContext) marshalNPosition2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPosition(ctx context.Context, sel ast.SelectionSet, v vega.Position) graphql.Marshaler {
-	return ec._Position(ctx, sel, &v)
+func (ec *executionContext) marshalNPosition2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPositionᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Position) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNPosition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPosition(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalNPosition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPosition(ctx context.Context, sel ast.SelectionSet, v *vega.Position) graphql.Marshaler {
