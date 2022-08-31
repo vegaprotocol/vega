@@ -14,12 +14,12 @@ package broker_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"os"
 	"os/exec"
 	"sync"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -30,6 +30,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+	"github.com/stretchr/testify/require"
 	"go.nanomsg.org/mangos/v3/protocol/pull"
 
 	"github.com/golang/mock/gomock"
@@ -109,7 +110,7 @@ func TestSendEvent(t *testing.T) {
 	t.Run("Send batch to ack subscriber", testSendBatch)
 	t.Run("Stop sending if context is cancelled", testStopCtx)
 	t.Run("Stop sending if context is cancelled, even new events", testStopCtxSendAgain)
-	t.Run("Skip subscriber based on channel state", testSubscriberSkip)
+	t.Run("Skip subscriber based on channel state", testSkipSubscriberBasedOnChannelState)
 	t.Run("Send only to typed subscriber (also tests TxErrEvents are skipped)", testEventTypeSubscription)
 }
 
@@ -522,48 +523,83 @@ func testStopCtxSendAgain(t *testing.T) {
 	close(ch)
 }
 
-func testSubscriberSkip(t *testing.T) {
+func testSkipSubscriberBasedOnChannelState(t *testing.T) {
 	t.Parallel()
+
 	broker := getBroker(t)
 	defer broker.Finish()
+
+	// The Broker.Send() method launches a go routine. As a result, to control
+	// its state, we will use an unbuffered (blocking) channel to wait until
+	// we unblock it by sending a signal, or it timeouts.
+	waiter := newWaiter()
+	defer waiter.Terminate()
+
+	// First, we add the subscriber to the broker.
 	sub := mocks.NewMockSubscriber(broker.ctrl)
-	skipCh, closeCh := make(chan struct{}), make(chan struct{})
-	skip := int64(0)
-	events := []*evt{
-		broker.randomEvt(),
-		broker.randomEvt(),
-	}
-	wg := sync.WaitGroup{}
-	wg.Add(len(events))
-	sub.EXPECT().Closed().AnyTimes().Return(closeCh).Do(func() {
-		wg.Done()
+
+	// This tells the broker to treat the subscriber synchronously.
+	sub.EXPECT().Ack().Times(1).Return(true)
+	// This tells the broker the subscriber is listening to all even types.
+	sub.EXPECT().Types().AnyTimes().Return(nil)
+	sub.EXPECT().SetID(1).Times(1)
+
+	subID := broker.Subscribe(sub)
+	defer broker.Unsubscribe(subID)
+	require.Equal(t, 1, subID)
+
+	// Then, we send an event that should be skipped since the subscriber tell
+	// us to do so.
+	event1 := broker.randomEvt()
+
+	notClosedCh := make(chan struct{})
+	defer close(notClosedCh)
+
+	// We configure the subscriber to tell the broker to skip the sending.
+	sub.EXPECT().Closed().Times(1).Return(notClosedCh)
+	sub.EXPECT().Skip().Times(1).DoAndReturn(func() <-chan struct{} {
+		skipMeCh := make(chan struct{})
+		// Returning a closed channel is how the subscriber notifies the broker
+		// it wants to skip next events.
+		close(skipMeCh)
+
+		// We warn the test the method we are expecting to be called has been
+		// called.
+		waiter.Unblock()
+		return skipMeCh
 	})
-	sub.EXPECT().Skip().AnyTimes().DoAndReturn(func() <-chan struct{} {
-		// ensure at least all events + 1 skip are called
-		if s := atomic.AddInt64(&skip, 1); s == 1 {
-			// skip the first one
-			ch := make(chan struct{})
-			// return closed channel, so this subscriber is marked to skip events
-			close(ch)
-			return ch
-		}
-		return skipCh
-	})
-	// we expect this call once, and only for the SECOND call
-	sub.EXPECT().Push(events[1]).Times(1)
-	sub.EXPECT().Types().Times(2).Return(nil)
-	sub.EXPECT().Ack().AnyTimes().Return(true)
-	sub.EXPECT().SetID(gomock.Any()).Times(1)
-	k1 := broker.Subscribe(sub) // required sub
-	assert.NotZero(t, k1)
-	for _, e := range events {
-		broker.Send(e)
+	sub.EXPECT().Push(event1).Times(0)
+
+	// We send the first event. It should be ignored.
+	broker.Send(event1)
+
+	// Let's wait for a signal.
+	if err := waiter.Wait(); err != nil {
+		t.Fatalf("Subscriber.Skip() was never called: %v", err)
 	}
-	wg.Wait()
-	// calling unsubscribe acquires lock, so we can ensure the Send call has returned
-	broker.Unsubscribe(k1)
-	close(skipCh)
-	close(closeCh)
+
+	// To finish, we send another event, but, this time, the subscriber doesn't
+	// want to skip it. So, it should be pushed.
+	event2 := broker.randomEvt()
+
+	dontSkipCh := make(chan struct{})
+	defer close(dontSkipCh)
+
+	sub.EXPECT().Closed().Times(1).Return(notClosedCh)
+	sub.EXPECT().Skip().Times(1).Return(dontSkipCh)
+	sub.EXPECT().Push(event2).Times(1).Do(func(_ ...events.Event) {
+		// We warn the test the method we are expecting to be called has been
+		// called.
+		waiter.Unblock()
+	})
+
+	// We send the second event. It should be pushed.
+	broker.Send(event2)
+
+	// Let's wait for a signal.
+	if err := waiter.Wait(); err != nil {
+		t.Fatalf("Subscriber.Skip() was never called: %v", err)
+	}
 }
 
 // test making sure that events are sent only to subs that are interested in it.
@@ -749,4 +785,57 @@ func (e evt) BlockNr() int64 {
 
 func (e evt) StreamMessage() *eventspb.BusEvent {
 	return nil
+}
+
+type waiter struct {
+	ctx      context.Context
+	ch       chan struct{}
+	cancelFn context.CancelFunc
+}
+
+func (c *waiter) Unblock() {
+	c.ch <- struct{}{}
+}
+
+func (c *waiter) Wait() error {
+	for {
+		select {
+		case <-c.ch:
+			return nil
+		case <-c.ctx.Done():
+			return errors.New("waiter timed out")
+		}
+	}
+}
+
+func (c *waiter) Terminate() {
+	c.cancelFn()
+}
+
+// newWaiter waits until it's unblocked or after 30 seconds elapsed, so we
+// don't block the tests.
+func newWaiter() *waiter {
+	ch := make(chan struct{}, 1)
+	ctx, cancelFn := context.WithTimeout(context.Background(), 30*time.Second)
+
+	go func() {
+		running := true
+		for running {
+			select {
+			case <-ctx.Done():
+				// Timeout!
+				running = false
+			}
+		}
+		select {
+		// In case the channel is already closed.
+		case <-ch:
+			close(ch)
+		}
+	}()
+	return &waiter{
+		ch:       ch,
+		ctx:      ctx,
+		cancelFn: cancelFn,
+	}
 }
