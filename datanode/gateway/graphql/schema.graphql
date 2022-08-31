@@ -2336,7 +2336,7 @@ type TradeUpdate {
   "The price of the trade (probably initially the passive order price, other determination algorithms are possible though) (uint64)"
   price: String!
 
-  "The number of contracts trades, will always be <= the remaining size of both orders immediately before the trade (uint64)"
+  "The number of units traded, will always be <= the remaining size of both orders immediately before the trade (uint64)"
   size: String!
 
   "RFC3339Nano time for when the trade occurred"
