@@ -238,7 +238,7 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 	marketResolver := root.Market()
 	assert.NotNil(t, marketResolver)
 
-	orders, err := marketResolver.OrdersConnection(ctx, market, nil)
+	orders, err := marketResolver.OrdersConnection(ctx, market, nil, nil)
 	assert.NotNil(t, orders)
 	assert.Nil(t, err)
 	assert.Len(t, orders.Edges, 2)

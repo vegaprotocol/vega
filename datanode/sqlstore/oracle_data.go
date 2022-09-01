@@ -31,8 +31,8 @@ const (
 )
 
 var oracleDataOrdering = TableOrdering{
-	ColumnOrdering{"vega_time", ASC},
-	ColumnOrdering{"public_keys", ASC},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC},
+	ColumnOrdering{Name: "public_keys", Sorting: ASC},
 }
 
 func NewOracleData(connectionSource *ConnectionSource) *OracleData {

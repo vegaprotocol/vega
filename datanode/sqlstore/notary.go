@@ -27,8 +27,8 @@ type Notary struct {
 }
 
 var notaryOrdering = TableOrdering{
-	ColumnOrdering{"resource_id", ASC},
-	ColumnOrdering{"sig", ASC},
+	ColumnOrdering{Name: "resource_id", Sorting: ASC},
+	ColumnOrdering{Name: "sig", Sorting: ASC},
 }
 
 func NewNotary(connectionSource *ConnectionSource) *Notary {

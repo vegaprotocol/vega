@@ -27,7 +27,7 @@ import (
 var (
 	ErrNodeNotFound = errors.New("node not found")
 	nodeOrdering    = TableOrdering{
-		ColumnOrdering{"id", ASC},
+		ColumnOrdering{Name: "id", Sorting: ASC},
 	}
 )
 

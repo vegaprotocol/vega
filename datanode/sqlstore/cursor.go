@@ -39,7 +39,9 @@ const (
 )
 
 type ColumnOrdering struct {
-	Name    string
+	// Name of the column in the database table to match to the struct field
+	Name string
+	// Sorting is the sorting order to use for the column
 	Sorting Sorting
 }
 
@@ -200,7 +202,7 @@ func PaginateQuery[T any, PT parserPtr[T]](
 
 	// If the cursor wasn't empty, exclude rows preceding the cursor's row
 	var emptyCursor T
-	isEmpty, err := equals(cursor, emptyCursor)
+	isEmpty, err := equals[T](cursor, emptyCursor)
 	if err != nil {
 		return "", nil, fmt.Errorf("checking empty cursor: %w", err)
 	}

@@ -27,8 +27,8 @@ type OracleSpec struct {
 }
 
 var oracleSpecOrdering = TableOrdering{
-	ColumnOrdering{"id", ASC},
-	ColumnOrdering{"vega_time", ASC},
+	ColumnOrdering{Name: "id", Sorting: ASC},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC},
 }
 
 const (

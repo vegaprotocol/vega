@@ -27,10 +27,10 @@ type KeyRotations struct {
 }
 
 var keyRotationsOrdering = TableOrdering{
-	ColumnOrdering{"vega_time", ASC},
-	ColumnOrdering{"node_id", ASC},
-	ColumnOrdering{"old_pub_key", ASC},
-	ColumnOrdering{"new_pub_key", ASC},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC},
+	ColumnOrdering{Name: "node_id", Sorting: ASC},
+	ColumnOrdering{Name: "old_pub_key", Sorting: ASC},
+	ColumnOrdering{Name: "new_pub_key", Sorting: ASC},
 }
 
 func NewKeyRotations(connectionSource *ConnectionSource) *KeyRotations {

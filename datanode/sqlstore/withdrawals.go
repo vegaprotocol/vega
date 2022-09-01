@@ -26,6 +26,8 @@ type Withdrawals struct {
 	*ConnectionSource
 }
 
+const withdrawalsFilterDateColumn = "vega_time"
+
 func NewWithdrawals(connectionSource *ConnectionSource) *Withdrawals {
 	return &Withdrawals{
 		ConnectionSource: connectionSource,
@@ -33,8 +35,8 @@ func NewWithdrawals(connectionSource *ConnectionSource) *Withdrawals {
 }
 
 var withdrawalsOrdering = TableOrdering{
-	ColumnOrdering{"vega_time", ASC},
-	ColumnOrdering{"id", ASC},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC},
+	ColumnOrdering{Name: "id", Sorting: ASC},
 }
 
 func (w *Withdrawals) Upsert(ctx context.Context, withdrawal *entities.Withdrawal) error {
@@ -94,14 +96,14 @@ func (w *Withdrawals) GetByID(ctx context.Context, withdrawalID string) (entitie
 	return withdrawal, err
 }
 
-func (w *Withdrawals) GetByParty(ctx context.Context, partyID string, openOnly bool, pagination entities.Pagination) (
+func (w *Withdrawals) GetByParty(ctx context.Context, partyID string, openOnly bool, pagination entities.Pagination, dateRange entities.DateRange) (
 	[]entities.Withdrawal, entities.PageInfo, error,
 ) {
 	switch p := pagination.(type) {
 	case entities.OffsetPagination:
 		return w.getByPartyOffset(ctx, partyID, openOnly, p)
 	case entities.CursorPagination:
-		return w.getByPartyCursor(ctx, partyID, openOnly, p)
+		return w.getByPartyCursor(ctx, partyID, openOnly, p, dateRange)
 	default:
 		return w.getByPartyOffset(ctx, partyID, openOnly, entities.OffsetPagination{})
 	}
@@ -112,10 +114,9 @@ func (w *Withdrawals) getByPartyOffset(ctx context.Context, partyID string, open
 ) ([]entities.Withdrawal, entities.PageInfo, error) {
 	var withdrawals []entities.Withdrawal
 	var pageInfo entities.PageInfo
-	var args []interface{}
 
-	query := fmt.Sprintf("%s WHERE party_id = %s ORDER BY id, vega_time DESC",
-		getWithdrawalsByPartyQuery(), nextBindVar(&args, entities.PartyID(partyID)))
+	query, args := getWithdrawalsByPartyQuery(partyID, entities.DateRange{})
+	query = fmt.Sprintf("%s ORDER BY id, vega_time DESC", query)
 	query, args = orderAndPaginateQuery(query, nil, pagination, args...)
 
 	defer metrics.StartSQLQuery("Withdrawals", "GetByParty")()
@@ -127,16 +128,15 @@ func (w *Withdrawals) getByPartyOffset(ctx context.Context, partyID string, open
 }
 
 func (w *Withdrawals) getByPartyCursor(ctx context.Context, partyID string, openOnly bool,
-	pagination entities.CursorPagination,
+	pagination entities.CursorPagination, dateRange entities.DateRange,
 ) ([]entities.Withdrawal, entities.PageInfo, error) {
 	var (
 		withdrawals []entities.Withdrawal
 		pageInfo    entities.PageInfo
 		err         error
-		args        []interface{}
 	)
 
-	query := getWithdrawalsByPartyQuery()
+	query, args := getWithdrawalsByPartyQuery(partyID, dateRange)
 	query, args, err = PaginateQuery[entities.WithdrawalCursor](query, args, withdrawalsOrdering, pagination)
 	if err != nil {
 		return withdrawals, pageInfo, err
@@ -152,9 +152,13 @@ func (w *Withdrawals) getByPartyCursor(ctx context.Context, partyID string, open
 	return withdrawals, pageInfo, nil
 }
 
-func getWithdrawalsByPartyQuery() string {
-	return `SELECT
+func getWithdrawalsByPartyQuery(partyID string, dateRange entities.DateRange) (string, []interface{}) {
+	var args []interface{}
+
+	query := fmt.Sprintf(`SELECT
 		id, party_id, amount, asset, status, ref, expiry, foreign_tx_hash,
 		created_timestamp, withdrawn_timestamp, ext, tx_hash, vega_time
-		FROM withdrawals_current`
+		FROM withdrawals_current WHERE party_id = %s`, nextBindVar(&args, entities.PartyID(partyID)))
+
+	return filterDateRange(query, withdrawalsFilterDateColumn, dateRange, args...)
 }

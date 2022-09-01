@@ -23,7 +23,7 @@ import (
 type tradeStore interface {
 	Flush(ctx context.Context) ([]*entities.Trade, error)
 	Add(t *entities.Trade) error
-	List(context.Context, entities.MarketID, entities.PartyID, entities.OrderID, entities.CursorPagination) ([]entities.Trade, entities.PageInfo, error)
+	List(context.Context, entities.MarketID, entities.PartyID, entities.OrderID, entities.CursorPagination, entities.DateRange) ([]entities.Trade, entities.PageInfo, error)
 	GetByMarket(ctx context.Context, market string, p entities.OffsetPagination) ([]entities.Trade, error)
 	GetByParty(ctx context.Context, party string, market *string, pagination entities.OffsetPagination) ([]entities.Trade, error)
 	GetByOrderID(ctx context.Context, order string, market *string, pagination entities.OffsetPagination) ([]entities.Trade, error)
@@ -61,8 +61,9 @@ func (t *Trade) List(ctx context.Context,
 	partyID entities.PartyID,
 	orderID entities.OrderID,
 	pagination entities.CursorPagination,
+	dateRange entities.DateRange,
 ) ([]entities.Trade, entities.PageInfo, error) {
-	return t.store.List(ctx, marketID, partyID, orderID, pagination)
+	return t.store.List(ctx, marketID, partyID, orderID, pagination, dateRange)
 }
 
 func (t *Trade) GetByMarket(ctx context.Context, market string, p entities.OffsetPagination) ([]entities.Trade, error) {

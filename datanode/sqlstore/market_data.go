@@ -27,7 +27,7 @@ import (
 )
 
 var marketdataOrdering = TableOrdering{
-	ColumnOrdering{"synthetic_time", ASC},
+	ColumnOrdering{Name: "synthetic_time", Sorting: ASC},
 }
 
 type MarketData struct {

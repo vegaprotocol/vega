@@ -25,13 +25,15 @@ import (
 	"github.com/jackc/pgx/v4"
 )
 
+const tradesFilterDateColumn = "synthetic_time"
+
 type Trades struct {
 	*ConnectionSource
 	trades []*entities.Trade
 }
 
 var tradesOrdering = TableOrdering{
-	ColumnOrdering{"synthetic_time", ASC},
+	ColumnOrdering{Name: "synthetic_time", Sorting: ASC},
 }
 
 func NewTrades(connectionSource *ConnectionSource) *Trades {
@@ -109,6 +111,7 @@ func (ts *Trades) List(ctx context.Context,
 	partyID entities.PartyID,
 	orderID entities.OrderID,
 	pagination entities.CursorPagination,
+	dateRange entities.DateRange,
 ) ([]entities.Trade, entities.PageInfo, error) {
 	args := []interface{}{}
 
@@ -131,6 +134,7 @@ func (ts *Trades) List(ctx context.Context,
 	if len(conditions) > 0 {
 		query = fmt.Sprintf("%s WHERE %s", query, strings.Join(conditions, " AND "))
 	}
+	query, args = filterDateRange(query, tradesFilterDateColumn, dateRange, args...)
 
 	trades, pageInfo, err := ts.queryTradesWithCursorPagination(ctx, query, args, pagination)
 	if err != nil {

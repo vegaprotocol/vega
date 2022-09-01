@@ -110,7 +110,7 @@ func (r *myMarketResolver) Orders(ctx context.Context, market *types.Market,
 	return res.Orders, nil
 }
 
-func (r *myMarketResolver) OrdersConnection(ctx context.Context, market *types.Market, pagination *v2.Pagination) (*v2.OrderConnection, error) {
+func (r *myMarketResolver) OrdersConnection(ctx context.Context, market *types.Market, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.OrderConnection, error) {
 	req := v2.ListOrdersRequest{
 		MarketId:   &market.Id,
 		Pagination: pagination,
@@ -143,7 +143,7 @@ func (r *myMarketResolver) Trades(ctx context.Context, market *types.Market,
 	return res.Trades, nil
 }
 
-func (r *myMarketResolver) TradesConnection(ctx context.Context, market *types.Market, pagination *v2.Pagination) (*v2.TradeConnection, error) {
+func (r *myMarketResolver) TradesConnection(ctx context.Context, market *types.Market, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.TradeConnection, error) {
 	req := v2.ListTradesRequest{
 		MarketId:   &market.Id,
 		Pagination: pagination,

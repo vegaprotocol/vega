@@ -35,7 +35,7 @@ const (
 )
 
 var candleOrdering = TableOrdering{
-	ColumnOrdering{"period_start", ASC},
+	ColumnOrdering{Name: "period_start", Sorting: ASC},
 }
 
 type Candles struct {
