@@ -3,7 +3,7 @@
 ## Unreleased 0.55.0
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [5989](https://github.com/vegaprotocol/vega/issues/5989) - Remove liquidity commitment from market proposal 
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -17,6 +17,7 @@
 - [5841](https://github.com/vegaprotocol/vega/issues/5841) - Add transaction to request `multisigControl` signatures on demand
 - [5937](https://github.com/vegaprotocol/vega/issues/5937) - Add more flexibility to market creation bonus
 - [5932](https://github.com/vegaprotocol/vega/issues/5932) - Remove Name and Symbol from update asset proposal
+- [5880](https://github.com/vegaprotocol/vega/issues/5880) - Send initial image with subscriptions to positions, orders & accounts
 - [5878](https://github.com/vegaprotocol/vega/issues/5878) - Add option to return only live orders in `ListOrders` `API`
 - [5937](https://github.com/vegaprotocol/vega/issues/5937) - Add more flexibility to market creation bonus 
 - [5708](https://github.com/vegaprotocol/vega/issues/5708) - Use market price when reporting average trade price
@@ -26,6 +27,7 @@
 - [5849](https://github.com/vegaprotocol/vega/issues/5849) - Use network parameter from creation time of the proposal for requirements
 - [5846](https://github.com/vegaprotocol/vega/issues/5846) - Expose network parameter from creation time of the proposal through `APIs`.
 - [5999](https://github.com/vegaprotocol/vega/issues/5999) - Recalculate margins after risk parameters are updated.
+- [5682](https://github.com/vegaprotocol/vega/issues/5682) - Expose equity share weight in the API
 
 ### 🐛 Fixes
 - [5934](https://github.com/vegaprotocol/vega/issues/5934) - Ensure wallet without permissions can be read

@@ -62,7 +62,6 @@ type Markets interface {
 	GetMarketState(market string) (types.MarketState, error)
 	GetEquityLikeShareForMarketAndParty(market, party string) (num.Decimal, bool)
 	RestoreMarket(ctx context.Context, marketConfig *types.Market) error
-	RestoreMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *types.LiquidityProvisionSubmission, lpid, deterministicID string) error
 	StartOpeningAuction(ctx context.Context, marketID string) error
 	UpdateMarket(ctx context.Context, marketConfig *types.Market) error
 }
@@ -550,10 +549,6 @@ func (e *Engine) intoToSubmit(ctx context.Context, p *types.Proposal, enct *enac
 		}
 		tsb.m = &ToSubmitNewMarket{
 			m: mkt,
-		}
-		if newMarket.LiquidityCommitment != nil {
-			tsb.m.l = types.LiquidityProvisionSubmissionFromMarketCommitment(
-				newMarket.LiquidityCommitment, p.ID)
 		}
 	}
 

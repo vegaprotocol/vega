@@ -172,31 +172,9 @@ func (n NewMarketConfiguration) DeepClone() *NewMarketConfiguration {
 	return &n
 }
 
-func (n NewMarketCommitment) DeepClone() *NewMarketCommitment {
-	if len(n.Buys) > 0 {
-		buys := n.Buys
-		n.Buys = make([]*LiquidityOrder, len(buys))
-		for i, lo := range buys {
-			n.Buys[i] = lo.DeepClone()
-		}
-	}
-
-	if len(n.Sells) > 0 {
-		sells := n.Sells
-		n.Sells = make([]*LiquidityOrder, len(sells))
-		for i, lo := range sells {
-			n.Sells[i] = lo.DeepClone()
-		}
-	}
-	return &n
-}
-
 func (n NewMarket) DeepClone() *NewMarket {
 	if n.Changes != nil {
 		n.Changes = n.Changes.DeepClone()
-	}
-	if n.LiquidityCommitment != nil {
-		n.LiquidityCommitment = n.LiquidityCommitment.DeepClone()
 	}
 	return &n
 }
