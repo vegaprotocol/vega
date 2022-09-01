@@ -26,7 +26,7 @@ import (
 )
 
 var accountOrdering = TableOrdering{
-	ColumnOrdering{"account_id", ASC},
+	ColumnOrdering{Name: "account_id", Sorting: ASC},
 }
 
 type Accounts struct {

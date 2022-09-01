@@ -27,7 +27,7 @@ type Rewards struct {
 }
 
 var rewardsOrdering = TableOrdering{
-	ColumnOrdering{"epoch_id", ASC},
+	ColumnOrdering{Name: "epoch_id", Sorting: ASC},
 }
 
 func NewRewards(connectionSource *ConnectionSource) *Rewards {

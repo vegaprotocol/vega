@@ -447,3 +447,9 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AccountEdge
   AccountsConnection:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AccountsConnection
+  DateRange:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.DateRange
+  AggregatedBalanceEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AggregatedBalanceEdge
+  AggregatedBalanceConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AggregatedBalanceConnection

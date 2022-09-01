@@ -484,6 +484,7 @@ message ListOrdersRequest {
     optional Pagination pagination = 4;
     // If set to true, list only live orders
     optional bool live_only = 5;
+    optional DateRange date_range = 6;
 }
 
 message ListOrdersResponse {
@@ -602,10 +603,22 @@ message GetBalanceHistoryRequest {
     // By default the net balances of all the accounts specified by the filter are returned.
     // If a list if fields is given in group_by, split out those balances by the supplied crietera.
     repeated AccountField group_by = 2;
+    optional Pagination pagination = 3;
+    optional DateRange date_range = 4;
 }
 
 message GetBalanceHistoryResponse {
-    repeated AggregatedBalance balances = 1;
+    AggregatedBalanceConnection balances = 1;
+}
+
+message AggregatedBalanceEdge {
+    AggregatedBalance node = 1;
+    string cursor = 2;
+}
+
+message AggregatedBalanceConnection {
+    repeated AggregatedBalanceEdge edges = 1;
+    PageInfo page_info = 2;
 }
 
 message AccountFilter{
@@ -1126,6 +1139,7 @@ message ListTradesRequest {
     optional string order_id = 2;
     optional string party_id = 3;
     optional Pagination pagination = 4;
+    optional DateRange date_range = 5;
 }
 
 message ListTradesResponse {
@@ -1381,6 +1395,7 @@ message ListDepositsRequest {
     string party_id = 1;
     // Optional pagination control
     optional Pagination pagination = 2;
+    optional DateRange date_range = 3;
 }
 
 message ListDepositsResponse {
@@ -1416,6 +1431,7 @@ message ListWithdrawalsRequest {
     string party_id = 1;
     // Optional pagination information to limit the data that is returned
     optional Pagination pagination = 2;
+    optional DateRange date_range = 3;
 }
 
 // A paged connection with the requested withdrawal information
@@ -1513,7 +1529,7 @@ message ListGovernanceDataRequest {
         // Proposals for creating a new free form proposal
         TYPE_NEW_FREE_FORM = 6;
         // Update asset proposals
-      TYPE_UPDATE_ASSET = 7;
+        TYPE_UPDATE_ASSET = 7;
     }
     optional vega.Proposal.State proposal_state = 1;
     optional Type proposal_type = 2;
@@ -1845,4 +1861,15 @@ message GetVegaTimeResponse {
     // Timestamp representation of current VegaTime as represented in
     // Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2020-01-31T12:30:59.111222333Z`
     int64 timestamp = 1;
+}
+
+// A date range for queries that can return historical data
+// If only the start_timestamp is provided, results from the given start up to the most current timestamp should be returned.
+// If only the end_timestamp is provided, results up to the given end should be returned (exclusive).
+// If both the start_timestamp and end_timestamp are provided, results from within the date range should be returned (exclusive).
+message DateRange {
+    // Optional start timestamp in nanoseconds past the epoch
+    optional int64 start_timestamp = 1;
+    // Optional end timestamp in nanoseconds past the epoch
+    optional int64 end_timestamp = 2;
 }

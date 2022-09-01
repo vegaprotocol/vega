@@ -13,6 +13,8 @@
 package entities
 
 import (
+	"encoding/json"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -35,7 +37,7 @@ type AggregatedBalance struct {
 	Type      *types.AccountType
 }
 
-func (balance *AggregatedBalance) ToProto() v2.AggregatedBalance {
+func (balance *AggregatedBalance) ToProto() *v2.AggregatedBalance {
 	var accountType vega.AccountType
 	var accountID, partyID, assetID, marketID *string
 
@@ -63,7 +65,7 @@ func (balance *AggregatedBalance) ToProto() v2.AggregatedBalance {
 		accountType = *balance.Type
 	}
 
-	return v2.AggregatedBalance{
+	return &v2.AggregatedBalance{
 		Timestamp:   balance.VegaTime.UnixNano(),
 		Balance:     balance.Balance.String(),
 		AccountId:   accountID,
@@ -72,4 +74,36 @@ func (balance *AggregatedBalance) ToProto() v2.AggregatedBalance {
 		MarketId:    marketID,
 		AccountType: accountType,
 	}
+}
+
+func (balance AggregatedBalance) Cursor() *Cursor {
+	return NewCursor(AggregatedBalanceCursor{
+		VegaTime: balance.VegaTime,
+	}.String())
+}
+
+func (balance AggregatedBalance) ToProtoEdge(_ ...any) (*v2.AggregatedBalanceEdge, error) {
+	return &v2.AggregatedBalanceEdge{
+		Node:   balance.ToProto(),
+		Cursor: balance.Cursor().Encode(),
+	}, nil
+}
+
+type AggregatedBalanceCursor struct {
+	VegaTime time.Time `json:"vega_time"`
+}
+
+func (c AggregatedBalanceCursor) String() string {
+	bs, err := json.Marshal(c)
+	if err != nil {
+		panic(fmt.Errorf("could not marshal aggregate balance cursor: %w", err))
+	}
+	return string(bs)
+}
+
+func (c *AggregatedBalanceCursor) Parse(cursorString string) error {
+	if cursorString == "" {
+		return nil
+	}
+	return json.Unmarshal([]byte(cursorString), c)
 }

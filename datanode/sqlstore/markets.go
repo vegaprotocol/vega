@@ -30,7 +30,7 @@ type Markets struct {
 }
 
 var marketOrdering = TableOrdering{
-	ColumnOrdering{"vega_time", ASC},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC},
 }
 
 const (

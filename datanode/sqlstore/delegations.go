@@ -29,10 +29,10 @@ type Delegations struct {
 }
 
 var delegationsOrdering = TableOrdering{
-	ColumnOrdering{"vega_time", ASC},
-	ColumnOrdering{"party_id", ASC},
-	ColumnOrdering{"node_id", ASC},
-	ColumnOrdering{"epoch_id", ASC},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC},
+	ColumnOrdering{Name: "party_id", Sorting: ASC},
+	ColumnOrdering{Name: "node_id", Sorting: ASC},
+	ColumnOrdering{Name: "epoch_id", Sorting: ASC},
 }
 
 func NewDelegations(connectionSource *ConnectionSource) *Delegations {

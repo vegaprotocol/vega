@@ -1699,7 +1699,7 @@ func (t *tradingDataService) Deposits(ctx context.Context, req *protoapi.Deposit
 	}
 
 	// current API doesn't support pagination, but we will need to support it for v2
-	deposits, _, err := t.depositService.GetByParty(ctx, req.PartyId, false, entities.OffsetPagination{})
+	deposits, _, err := t.depositService.GetByParty(ctx, req.PartyId, false, entities.OffsetPagination{}, entities.DateRange{})
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -1931,7 +1931,7 @@ func (t *tradingDataService) Withdrawals(ctx context.Context, req *protoapi.With
 	}
 
 	// current API doesn't support pagination, but we will need to support it for v2
-	withdrawals, _, err := t.withdrawalService.GetByParty(ctx, req.PartyId, false, entities.OffsetPagination{})
+	withdrawals, _, err := t.withdrawalService.GetByParty(ctx, req.PartyId, false, entities.OffsetPagination{}, entities.DateRange{})
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}

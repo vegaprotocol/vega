@@ -29,7 +29,7 @@ type Votes struct {
 }
 
 var votesOrdering = TableOrdering{
-	ColumnOrdering{"vega_time", ASC},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC},
 }
 
 func NewVotes(connectionSource *ConnectionSource) *Votes {

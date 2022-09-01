@@ -22,10 +22,10 @@ import (
 )
 
 var ekrOrdering = TableOrdering{
-	ColumnOrdering{"vega_time", ASC},
-	ColumnOrdering{"node_id", ASC},
-	ColumnOrdering{"old_address", ASC},
-	ColumnOrdering{"new_address", ASC},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC},
+	ColumnOrdering{Name: "node_id", Sorting: ASC},
+	ColumnOrdering{Name: "old_address", Sorting: ASC},
+	ColumnOrdering{Name: "new_address", Sorting: ASC},
 }
 
 type EthereumKeyRotations struct {

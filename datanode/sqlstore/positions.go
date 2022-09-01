@@ -27,9 +27,9 @@ import (
 var (
 	ErrPositionNotFound = errors.New("party not found")
 	positionsOrdering   = TableOrdering{
-		ColumnOrdering{"vega_time", ASC},
-		ColumnOrdering{"party_id", ASC},
-		ColumnOrdering{"market_id", ASC},
+		ColumnOrdering{Name: "vega_time", Sorting: ASC},
+		ColumnOrdering{Name: "party_id", Sorting: ASC},
+		ColumnOrdering{Name: "market_id", Sorting: ASC},
 	}
 )
 
