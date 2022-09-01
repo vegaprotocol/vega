@@ -1,5 +1,5 @@
 /* groovylint-disable DuplicateStringLiteral, LineLength, NestedBlockDepth */
-@Library('vega-shared-library') _
+@Library('vega-shared-library@support-forks') _
 
 /* properties of scmVars (example):
     - GIT_BRANCH:PR-40-head
