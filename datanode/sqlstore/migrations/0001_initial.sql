@@ -1163,6 +1163,8 @@ create table if not exists stake_linking(
     stake_linking_status stake_linking_status not null,
     finalized_at timestamp with time zone,
     foreign_tx_hash text not null,
+    foreign_block_height bigint,
+    foreign_block_time bigint,
     log_index bigint,
     ethereum_address text not null,
     tx_hash bytea not null,
@@ -1172,7 +1174,7 @@ create table if not exists stake_linking(
 
 create view stake_linking_current as (
     select distinct on (id) id, stake_linking_type, ethereum_timestamp, party_id, amount, stake_linking_status, finalized_at,
-        foreign_tx_hash, log_index, ethereum_address, tx_hash, vega_time
+        foreign_tx_hash, foreign_block_height, foreign_block_time, log_index, ethereum_address, tx_hash, vega_time
     from stake_linking
     order by id, vega_time desc
 );

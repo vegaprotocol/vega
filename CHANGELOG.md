@@ -39,6 +39,7 @@
 - [5963](https://github.com/vegaprotocol/vega/issues/5963) - Check other nodes during version check if the first one is unavailable
 - [6002](https://github.com/vegaprotocol/vega/issues/6002) - Do not emit events for unmatched oracle data and unsubscribe market as soon as oracle data is received
 - [6008](https://github.com/vegaprotocol/vega/issues/6008) - Fix equity like share and average trade value calculation with opening auctions
+- [5977](https://github.com/vegaprotocol/vega/issues/5977) - Fix missing block height and block time on stake linking API
 
 ## 0.54.0
 

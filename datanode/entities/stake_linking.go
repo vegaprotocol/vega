@@ -36,6 +36,8 @@ type StakeLinking struct {
 	StakeLinkingStatus StakeLinkingStatus
 	FinalizedAt        time.Time
 	ForeignTxHash      string
+	ForeignBlockHeight int64
+	ForeignBlockTime   int64
 	LogIndex           int64
 	EthereumAddress    string
 	TxHash             TxHash
@@ -67,6 +69,8 @@ func StakeLinkingFromProto(stake *eventspb.StakeLinking, txHash TxHash, vegaTime
 		StakeLinkingStatus: StakeLinkingStatus(stake.Status),
 		FinalizedAt:        time.Unix(0, stake.FinalizedAt),
 		ForeignTxHash:      stake.TxHash,
+		ForeignBlockHeight: int64(stake.BlockHeight),
+		ForeignBlockTime:   stake.BlockTime,
 		LogIndex:           logIndex,
 		EthereumAddress:    stake.EthereumAddress,
 		TxHash:             txHash,
@@ -84,6 +88,8 @@ func (s *StakeLinking) ToProto() *eventspb.StakeLinking {
 		Status:          eventspb.StakeLinking_Status(s.StakeLinkingStatus),
 		FinalizedAt:     s.FinalizedAt.UnixNano(),
 		TxHash:          s.ForeignTxHash,
+		BlockHeight:     uint64(s.ForeignBlockHeight),
+		BlockTime:       s.ForeignBlockTime,
 		LogIndex:        uint64(s.LogIndex),
 		EthereumAddress: s.EthereumAddress,
 	}
