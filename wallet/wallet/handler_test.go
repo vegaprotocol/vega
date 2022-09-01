@@ -2,7 +2,6 @@ package wallet_test
 
 import (
 	"encoding/base64"
-	"fmt"
 	"testing"
 
 	"code.vegaprotocol.io/vega/commands"
@@ -122,63 +121,6 @@ func testUntaintingKeyOfNonExistingWalletFails(t *testing.T) {
 
 	// then
 	require.Error(t, err)
-}
-
-func TestIsolateKey(t *testing.T) {
-	t.Run("Isolating key succeeds", testIsolatingKeySucceeds)
-	t.Run("Isolating key of non-existing wallet fails", testIsolatingKeyOfNonExistingWalletFails)
-}
-
-func testIsolatingKeySucceeds(t *testing.T) {
-	// given
-	w := newWalletWithKey(t)
-	kp := w.ListKeyPairs()[0]
-	expectedResp := &wallet.IsolateKeyResponse{
-		Wallet:   fmt.Sprintf("%s.%s.isolated", w.Name(), kp.PublicKey()[0:8]),
-		FilePath: vgrand.RandomStr(10),
-	}
-	req := &wallet.IsolateKeyRequest{
-		Wallet:     w.Name(),
-		PubKey:     kp.PublicKey(),
-		Passphrase: "passphrase",
-	}
-
-	// setup
-	store := handlerMocks(t)
-	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(true, nil)
-	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(1).Return(w, nil)
-	store.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), req.Passphrase).Times(1).Return(nil)
-	store.EXPECT().GetWalletPath(gomock.Any()).Times(1).Return(expectedResp.FilePath)
-
-	// when
-	resp, err := wallet.IsolateKey(store, req)
-
-	// then
-	require.NoError(t, err)
-	require.NotNil(t, resp)
-	assert.Equal(t, expectedResp, resp)
-}
-
-func testIsolatingKeyOfNonExistingWalletFails(t *testing.T) {
-	// given
-	req := &wallet.IsolateKeyRequest{
-		Wallet:     vgrand.RandomStr(5),
-		PubKey:     vgrand.RandomStr(25),
-		Passphrase: "passphrase",
-	}
-
-	// setup
-	store := handlerMocks(t)
-	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(false, nil)
-	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(0)
-	store.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), req.Passphrase).Times(0)
-
-	// when
-	resp, err := wallet.IsolateKey(store, req)
-
-	// then
-	require.Error(t, err)
-	assert.Nil(t, resp)
 }
 
 func TestSignCommand(t *testing.T) {

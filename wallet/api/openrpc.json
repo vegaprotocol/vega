@@ -136,7 +136,7 @@
         }
       ],
       "result": {
-        "name": "permissions",
+        "name": "Success",
         "schema": {
           "$ref": "#/components/schemas/permissions"
         }
@@ -154,7 +154,7 @@
           "result": {
             "name": "Success",
             "value": {
-              "public_keys": "read"
+              "publicKeys": "read"
             }
           }
         }
@@ -190,7 +190,7 @@
         }
       ],
       "result": {
-        "name": "permissions",
+        "name": "Success",
         "schema": {
           "$ref": "#/components/schemas/permissions"
         }
@@ -218,7 +218,7 @@
             {
               "name": "requestedPermissions",
               "value": {
-                "public_keys": "read"
+                "publicKeys": "read"
               }
             }
           ],
@@ -226,7 +226,7 @@
             "name": "Success",
             "value": {
               "permissions": {
-                "public_keys": "read"
+                "publicKeys": "read"
               }
             }
           }
@@ -248,7 +248,7 @@
             "name": "Success",
             "value": {
               "permissions": {
-                "public_keys": "none"
+                "publicKeys": "none"
               }
             }
           }
@@ -278,7 +278,7 @@
         }
       ],
       "result": {
-        "name": "keys",
+        "name": "Success",
         "schema": {
           "type": "array",
           "items": {
@@ -361,7 +361,7 @@
         }
       ],
       "result": {
-        "name": "transaction_status",
+        "name": "Success",
         "schema": {
           "type": "object",
           "properties": {
@@ -454,7 +454,7 @@
       "paramStructure": "by-name",
       "params": [],
       "result": {
-        "name": "chainID",
+        "name": "Success",
         "schema": {
           "type": "object",
           "properties": {
@@ -534,7 +534,7 @@
                 "version": {
                   "type": "number"
                 },
-                "recoveryPhrase": {
+                "recoverPhrase": {
                   "type": "string"
                 },
                 "filePath": {
@@ -1011,7 +1011,7 @@
           }
         },
         {
-          "name": "public_key",
+          "name": "publicKey",
           "required": true,
           "schema": {
             "$ref": "#/components/schemas/public_key"
@@ -1052,7 +1052,7 @@
               "value": "this-is-not-a-good-passphrase"
             },
             {
-              "name": "public_key",
+              "name": "publicKey",
               "value": "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0"
             }
           ],
@@ -1125,7 +1125,7 @@
       },
       "examples": [
         {
-          "name": "Getting key base information",
+          "name": "Listing the keys",
           "params": [
             {
               "name": "wallet",
@@ -1142,7 +1142,7 @@
               "keys": [
                 {
                   "name": "Key 1",
-                  "public_key": "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0"
+                  "publicKey": "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0"
                 }
               ]
             }
@@ -1206,7 +1206,7 @@
       },
       "examples": [
         {
-          "name": "Getting wallet base information",
+          "name": "Annotating the key",
           "params": [
             {
               "name": "wallet",
@@ -1243,6 +1243,89 @@
                   "value": "Key 1"
                 }
               ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin.isolate_key",
+      "summary": "Isolate a key to a specific wallet.",
+      "description": "This method isolates a key in a specific wallet called an \"isolated wallet\". This isolated wallet contains a single key. It can't generate keys, and is stripped of the master key. Generally, it can only sign transactions.\n\nThis is a security feature that **lowers** the impact of having a wallet stolen. If a wallet is stolen and the attacker breaks into it, he has access to all keys. On an isolated wallet, it can only retrieve the isolated key.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "key"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "wallet",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "passphrase",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "public_key",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/public_key"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "wallet": {
+              "description": "Name of the generated isolated wallet",
+              "schema": {
+                "type": "string"
+              }
+            },
+            "filePath": {
+              "description": "Path to the isolated wallet file",
+              "schema": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "examples": [
+        {
+          "name": "Isolating a key",
+          "params": [
+            {
+              "name": "wallet",
+              "value": "my-wallet"
+            },
+            {
+              "name": "passphrase",
+              "value": "this-is-not-a-good-passphrase"
+            },
+            {
+              "name": "publicKey",
+              "value": "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": {
+              "wallet": "my-wallet.b5fd9d3c.isolated",
+              "filePath": "some/path/to/my-wallet.b5fd9d3c.isolated"
             }
           }
         }

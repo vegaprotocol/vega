@@ -227,7 +227,7 @@ func (w *HDWallet) UntaintKey(pubKey string) error {
 }
 
 // AnnotateKey replaces the key's metadata by the new ones.
-// If the `name` metadata is missing it's added automatically with a default
+// If the `name` metadata is missing it's added automatically with a default.
 func (w *HDWallet) AnnotateKey(pubKey string, meta []Metadata) ([]Metadata, error) {
 	keyPair, ok := w.keyRing.FindPair(pubKey)
 	if !ok {

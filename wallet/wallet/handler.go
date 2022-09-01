@@ -69,38 +69,6 @@ func UntaintKey(store Store, req *UntaintKeyRequest) error {
 	return nil
 }
 
-type IsolateKeyRequest struct {
-	Wallet     string `json:"wallet"`
-	PubKey     string `json:"pubKey"`
-	Passphrase string `json:"passphrase"`
-}
-
-type IsolateKeyResponse struct {
-	Wallet   string `json:"wallet"`
-	FilePath string `json:"filePath"`
-}
-
-func IsolateKey(store Store, req *IsolateKeyRequest) (*IsolateKeyResponse, error) {
-	w, err := getWallet(store, req.Wallet, req.Passphrase)
-	if err != nil {
-		return nil, err
-	}
-
-	isolatedWallet, err := w.IsolateWithKey(req.PubKey)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't isolate wallet %s: %w", req.Wallet, err)
-	}
-
-	if err := store.SaveWallet(context.Background(), isolatedWallet, req.Passphrase); err != nil {
-		return nil, fmt.Errorf("couldn't save isolated wallet %s: %w", isolatedWallet.Name(), err)
-	}
-
-	return &IsolateKeyResponse{
-		Wallet:   isolatedWallet.Name(),
-		FilePath: store.GetWalletPath(isolatedWallet.Name()),
-	}, nil
-}
-
 type RotateKeyRequest struct {
 	Wallet            string `json:"wallet"`
 	Passphrase        string `json:"passphrase"`
