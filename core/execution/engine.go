@@ -318,9 +318,7 @@ func (e *Engine) submitOrRestoreMarket(ctx context.Context, marketConfig *types.
 
 // UpdateMarket will update an existing market configuration.
 func (e *Engine) UpdateMarket(ctx context.Context, marketConfig *types.Market) error {
-	if e.log.IsDebug() {
-		e.log.Debug("update market", logging.Market(*marketConfig))
-	}
+	e.log.Info("update market", logging.Market(*marketConfig))
 
 	mkt := e.markets[marketConfig.ID]
 
