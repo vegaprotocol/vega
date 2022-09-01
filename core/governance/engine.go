@@ -843,6 +843,7 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 		closeTime := time.Unix(terms.ClosingTimestamp, 0)
 		return validateNewMarketChange(terms.GetNewMarket(), e.assets, true, e.netp, enactTime.Sub(closeTime), enct)
 	case types.ProposalTermsTypeUpdateMarket:
+		enct.shouldNotVerify = true
 		return validateUpdateMarketChange(terms.GetUpdateMarket(), enct)
 	case types.ProposalTermsTypeNewAsset:
 		return terms.GetNewAsset().Validate()

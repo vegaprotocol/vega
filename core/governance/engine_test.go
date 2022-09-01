@@ -62,7 +62,6 @@ func TestSubmitProposals(t *testing.T) {
 	t.Run("Submitting a proposal without enough stake fails", testSubmittingProposalWithoutEnoughStakeFails)
 
 	t.Run("Submitting a time-triggered proposal for new market with termination time before enactment time fails", testSumittingTimeTriggeredProposalNewMarketTerminationBeforeEnactmentFails)
-	t.Run("Submitting a time-triggered proposal for market update with termination time same as enactment time fails", testSubmittingTimeTriggeredProposalMarketUpdateTerminationEnactmentFails)
 
 	t.Run("Voting on non-existing proposal fails", testVotingOnNonExistingProposalFails)
 	t.Run("Voting with non-existing account fails", testVotingWithNonExistingAccountFails)
@@ -361,91 +360,6 @@ func testSumittingTimeTriggeredProposalNewMarketTerminationBeforeEnactmentFails(
 	eng.expectRejectedProposalEvent(t, proposer, proposal2.ID, types.ProposalErrorInvalidFutureProduct)
 
 	_, err = eng.submitProposal(t, proposal2)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "oracle spec termination time before enactment")
-}
-
-func testSubmittingTimeTriggeredProposalMarketUpdateTerminationEnactmentFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
-
-	proposer := vgrand.RandomStr(5)
-	now := eng.tsvc.GetTimeNow()
-
-	// Create new market with termination time 1 hour after enactment time
-	// Enactment time for new market is now + 96 hours
-	filter, binding := produceTimeTriggeredOracleSpec(now.Add(2 * 48 * time.Hour).Add(1 * time.Minute))
-	proposal1 := eng.newProposalForNewMarket(proposer, now, filter, binding)
-
-	eng.ensureTokenBalanceForParty(t, proposer, 1)
-	eng.ensureStakingAssetTotalSupply(t, 9)
-	eng.ensureAllAssetEnabled(t)
-
-	eng.expectOpenProposalEvent(t, proposer, proposal1.ID)
-
-	_, err := eng.submitProposal(t, proposal1)
-	require.NoError(t, err)
-
-	voter1 := vgrand.RandomStr(5)
-	eng.ensureTokenBalanceForParty(t, voter1, 7)
-	eng.expectVoteEvent(t, voter1, proposal1.ID)
-
-	err = eng.addYesVote(t, voter1, proposal1.ID)
-	require.NoError(t, err)
-
-	eng.ensureTokenBalanceForParty(t, voter1, 7)
-	eng.expectTotalGovernanceTokenFromVoteEvents(t, "1", "7")
-	eng.expectPassedProposalEvent(t, proposal1.ID)
-	eng.markets.EXPECT().GetMarketState(proposal1.ID).Return(types.MarketStateClosed, nil)
-
-	// Close the voting for proposal 1
-	afterClosing := time.Unix(proposal1.Terms.ClosingTimestamp, 0).Add(time.Second)
-	toBeEnacted, toBeClosed := eng.OnTick(context.Background(), afterClosing)
-	require.Len(t, toBeClosed, 1)
-	require.Len(t, toBeEnacted, 0)
-
-	afterEnactment := time.Unix(proposal1.Terms.EnactmentTimestamp, 0).Add(time.Second)
-	toBeEnacted, toBeClosed = eng.OnTick(context.Background(), afterEnactment)
-	require.Len(t, toBeEnacted, 1)
-	require.Len(t, toBeClosed, 0)
-	assert.Equal(t, proposal1.ID, toBeEnacted[0].Proposal().ID)
-
-	voter2 := vgrand.RandomStr(5)
-	err = eng.addNoVote(t, voter2, proposal1.ID)
-	require.Error(t, err)
-	assert.EqualError(t, err, governance.ErrProposalDoesNotExist.Error())
-
-	// Voting for proposal 1 is closed, we are able to place another proposal now
-	// Set termination timestamp 45 minutes before enactment time
-	// Enactment time for updating market is now + 192 hours
-	filter, binding = produceTimeTriggeredOracleSpec(now.Add(3 * 48 * time.Hour).Add(1 * 47 * time.Hour).Add(15 * time.Minute))
-	proposal2 := eng.newProposalForMarketUpdate("market-1", proposer, now, filter, binding)
-
-	eng.ensureTokenBalanceForParty(t, proposer, 1)
-	eng.ensureAllAssetEnabled(t)
-
-	marketID := proposal2.MarketUpdate().MarketID
-	eng.ensureExistingMarket(t, marketID)
-	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.1)
-
-	eng.expectRejectedProposalEvent(t, proposer, proposal2.ID, types.ProposalErrorInvalidFutureProduct)
-	_, err = eng.submitProposal(t, proposal2)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "oracle spec termination time before enactment")
-
-	// Set termination timestamp same as enactment timestamp
-	filter, binding = produceTimeTriggeredOracleSpec(now.Add(4 * 48 * time.Hour))
-	proposal3 := eng.newProposalForMarketUpdate("market-1", proposer, now, filter, binding)
-
-	eng.ensureTokenBalanceForParty(t, proposer, 1)
-	eng.ensureAllAssetEnabled(t)
-
-	marketID = proposal3.MarketUpdate().MarketID
-	eng.ensureExistingMarket(t, marketID)
-	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.1)
-
-	eng.expectRejectedProposalEvent(t, proposer, proposal3.ID, types.ProposalErrorInvalidFutureProduct)
-	_, err = eng.submitProposal(t, proposal3)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "oracle spec termination time before enactment")
 }

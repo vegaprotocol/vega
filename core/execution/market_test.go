@@ -123,6 +123,7 @@ type testMarket struct {
 	mktCfg           *types.Market
 	oracleEngine     *oracles.Engine
 	stateVar         *stubs.StateVarStub
+	builtinOracle    *oracles.Builtin
 
 	// Options
 	Assets []types.Asset
@@ -164,7 +165,7 @@ func newTestMarket(t *testing.T, now time.Time) *testMarket {
 
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes().Do(eventFn)
 	tm.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes().Do(eventsFn)
-
+	tm.builtinOracle = oracles.NewBuiltinOracle(tm.oracleEngine, tm.timeService)
 	return tm
 }
 
@@ -369,6 +370,7 @@ func getTestMarket2WithDP(
 
 	oracleEngine := oracles.NewEngine(log, oracles.NewDefaultConfig(), timeService, broker)
 	tm.oracleEngine = oracleEngine
+	tm.builtinOracle = oracles.NewBuiltinOracle(tm.oracleEngine, tm.timeService)
 
 	// add the token asset
 	tokAsset := types.Asset{
@@ -985,6 +987,116 @@ func TestMarketWithTradeClosing(t *testing.T) {
 
 	tm.now = futureTime
 	closed := tm.market.OnTick(ctx, futureTime)
+	assert.True(t, closed)
+}
+
+func TestUpdateMarketWithOracleSpecEarlyTermination(t *testing.T) {
+	party1 := "party1"
+	party2 := "party2"
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(20, 0)
+	tm := getTestMarket(t, now, nil, nil)
+	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+	defer tm.ctrl.Finish()
+	// add 2 parties to the party engine
+	// this will create 2 parties, credit their account
+	// and move some monies to the market
+	// this will also output the closed accounts
+	addAccount(t, tm, party1)
+	addAccount(t, tm, party2)
+
+	// submit orders
+	// party1 buys
+	// party2 sells
+	orderBuy := &types.Order{
+		Type:        types.OrderTypeLimit,
+		TimeInForce: types.OrderTimeInForceGTT,
+		Status:      types.OrderStatusActive,
+		ID:          "",
+		Side:        types.SideBuy,
+		Party:       party1,
+		MarketID:    tm.market.GetID(),
+		Size:        100,
+		Price:       num.NewUint(100),
+		Remaining:   100,
+		CreatedAt:   now.UnixNano(),
+		ExpiresAt:   closingAt.UnixNano(),
+		Reference:   "party1-buy-order",
+	}
+	orderSell := &types.Order{
+		Type:        types.OrderTypeLimit,
+		TimeInForce: types.OrderTimeInForceGTT,
+		Status:      types.OrderStatusActive,
+		ID:          "",
+		Side:        types.SideSell,
+		Party:       party2,
+		MarketID:    tm.market.GetID(),
+		Size:        100,
+		Price:       num.NewUint(100),
+		Remaining:   100,
+		CreatedAt:   now.UnixNano(),
+		ExpiresAt:   closingAt.UnixNano(),
+		Reference:   "party2-sell-order",
+	}
+
+	// submit orders
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
+
+	fmt.Printf("%s\n", orderBuy.String())
+	_, err := tm.market.SubmitOrder(ctx, orderBuy)
+	assert.Nil(t, err)
+	if err != nil {
+		t.Fail()
+	}
+	tm.now = tm.now.Add(time.Second)
+	tm.market.OnTick(ctx, tm.now)
+	fmt.Printf("%s\n", orderBuy.String())
+	require.Equal(t, types.MarketStateSuspended, tm.market.State()) // enter auction
+
+	_, err = tm.market.SubmitOrder(ctx, orderSell)
+	assert.Nil(t, err)
+	if err != nil {
+		t.Fail()
+	}
+	tm.now = tm.now.Add(time.Second)
+	tm.market.OnTick(ctx, tm.now)
+
+	// now update the market
+	updatedMkt := tm.mktCfg.DeepClone()
+
+	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecForTradingTermination.Filters = []*types.OracleSpecFilter{
+		{
+			Key: &types.OracleSpecPropertyKey{
+				Name: oracles.BuiltinOracleTimestamp,
+				Type: oraclespb.PropertyKey_TYPE_TIMESTAMP,
+			},
+			Conditions: []*types.OracleSpecCondition{
+				{
+					Operator: oraclespb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+					Value:    "0",
+				},
+			},
+		},
+	}
+	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecBinding.TradingTerminationProperty = oracles.BuiltinOracleTimestamp
+
+	err = tm.market.Update(context.Background(), updatedMkt, tm.oracleEngine)
+	require.NoError(t, err)
+	tm.builtinOracle.OnTick(ctx, tm.now)
+	tm.market.OnTick(ctx, tm.now)
+	require.Equal(t, types.MarketStateTradingTerminated, tm.market.State())
+
+	properties := map[string]string{}
+	properties["prices.ETH.value"] = "100"
+	err = tm.oracleEngine.BroadcastData(ctx, oracles.OracleData{
+		PubKeys: []string{"0xDEADBEEF"},
+		Data:    properties,
+	})
+	require.NoError(t, err)
+
+	tm.now = tm.now.Add(time.Second)
+	closed := tm.market.OnTick(ctx, tm.now)
 	assert.True(t, closed)
 }
 

@@ -240,6 +240,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5304](https://github.com/vegaprotocol/vega/issues/5304) - Fix bug causing trade events at auction end showing the wrong price.
 - [5345](https://github.com/vegaprotocol/vega/issues/5345) - Fix issue with state variable transactions assumed gone missing
 - [5351](https://github.com/vegaprotocol/vega/issues/5351) - Fix panic when node is interrupted before snapshot engine gets cleared and initialised
+- [5972](https://github.com/vegaprotocol/vega/issues/5972) - Allow submitting a market update with termination oracle ticking before enactment of the update
 
 ## 0.50.2
 
