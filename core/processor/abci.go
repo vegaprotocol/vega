@@ -116,6 +116,7 @@ type ProtocolUpgradeService interface {
 	GetUpgradeStatus() types.UpgradeStatus
 	SetReadyForUpgrade()
 	Cleanup(ctx context.Context)
+	IsValidProposal(ctx context.Context, pk string, upgradeBlockHeight uint64, vegaReleaseTag string) error
 }
 
 type App struct {
@@ -274,7 +275,7 @@ func NewApp(
 		HandleCheckTx(txn.StateVariableProposalCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.ValidatorHeartbeatCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.RotateEthereumKeySubmissionCommand, app.RequireValidatorPubKey).
-		HandleCheckTx(txn.ProtocolUpgradeCommand, app.RequireValidatorPubKey).
+		HandleCheckTx(txn.ProtocolUpgradeCommand, app.CheckProtocolUpgradeProposal).
 		HandleCheckTx(txn.IssueSignatures, app.RequireValidatorPubKey)
 
 	app.abci.
@@ -908,6 +909,17 @@ func (app *App) OnDeliverTx(ctx context.Context, req tmtypes.RequestDeliverTx, t
 	return ctx, resp
 }
 
+func (app *App) CheckProtocolUpgradeProposal(ctx context.Context, tx abci.Tx) error {
+	if err := app.RequireValidatorPubKey(ctx, tx); err != nil {
+		return err
+	}
+	pu := &commandspb.ProtocolUpgradeProposal{}
+	if err := tx.Unmarshal(pu); err != nil {
+		return err
+	}
+	return app.protocolUpgradeService.IsValidProposal(ctx, tx.PubKeyHex(), pu.UpgradeBlockHeight, pu.VegaReleaseTag)
+}
+
 func (app *App) RequireValidatorPubKey(ctx context.Context, tx abci.Tx) error {
 	if !app.top.IsValidatorVegaPubKey(tx.PubKeyHex()) {
 		return ErrNodeSignatureFromNonValidator
@@ -1128,16 +1140,8 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, deterministicId 
 	if toSubmit.IsNewMarket() {
 		nm := toSubmit.NewMarket()
 
-		// TODO(): for now we are using a hash of the market ID to create
-		// the lp provision ID (well it's still deterministic...)
-		lpid := hex.EncodeToString(vgcrypto.Hash([]byte(nm.Market().ID)))
 		var err error
-		if lp := nm.LiquidityProvisionSubmission(); lp != nil {
-			err = app.exec.SubmitMarketWithLiquidityProvision(
-				ctx, nm.Market(), nm.LiquidityProvisionSubmission(), party, lpid, deterministicId)
-		} else {
-			err = app.exec.SubmitMarket(ctx, nm.Market(), party)
-		}
+		err = app.exec.SubmitMarket(ctx, nm.Market(), party)
 		if err != nil {
 			app.log.Debug("unable to submit new market with liquidity submission",
 				logging.ProposalID(nm.Market().ID),

@@ -156,11 +156,10 @@ func (as *Accounts) Query(filter entities.AccountFilter) ([]entities.Account, er
 
 	defer metrics.StartSQLQuery("Accounts", "Query")()
 	rows, err := as.Connection.Query(context.Background(), query, args...)
-	defer rows.Close()
-
 	if err != nil {
 		return accs, fmt.Errorf("querying accounts: %w", err)
 	}
+	defer rows.Close()
 
 	if err = pgxscan.ScanAll(&accs, rows); err != nil {
 		return accs, fmt.Errorf("scanning account: %w", err)
@@ -181,11 +180,10 @@ func (as *Accounts) QueryBalancesV1(ctx context.Context, filter entities.Account
 
 	defer metrics.StartSQLQuery("Accounts", "QueryBalancesV1")()
 	rows, err := as.Connection.Query(ctx, query, args...)
-	defer rows.Close()
-
 	if err != nil {
 		return accountBalances, fmt.Errorf("querying account balances: %w", err)
 	}
+	defer rows.Close()
 
 	if err = pgxscan.ScanAll(&accountBalances, rows); err != nil {
 		return accountBalances, fmt.Errorf("parsing account balances: %w", err)
@@ -209,6 +207,7 @@ func (as *Accounts) QueryBalances(ctx context.Context,
 	}
 
 	defer metrics.StartSQLQuery("Accounts", "QueryBalances")()
+
 	accountBalances := make([]entities.AccountBalance, 0)
 	rows, err := as.Connection.Query(ctx, query, args...)
 	if err != nil {

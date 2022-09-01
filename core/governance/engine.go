@@ -62,7 +62,6 @@ type Markets interface {
 	GetMarketState(market string) (types.MarketState, error)
 	GetEquityLikeShareForMarketAndParty(market, party string) (num.Decimal, bool)
 	RestoreMarket(ctx context.Context, marketConfig *types.Market) error
-	RestoreMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *types.LiquidityProvisionSubmission, lpid, deterministicID string) error
 	StartOpeningAuction(ctx context.Context, marketID string) error
 	UpdateMarket(ctx context.Context, marketConfig *types.Market) error
 }
@@ -551,10 +550,6 @@ func (e *Engine) intoToSubmit(ctx context.Context, p *types.Proposal, enct *enac
 		tsb.m = &ToSubmitNewMarket{
 			m: mkt,
 		}
-		if newMarket.LiquidityCommitment != nil {
-			tsb.m.l = types.LiquidityProvisionSubmissionFromMarketCommitment(
-				newMarket.LiquidityCommitment, p.ID)
-		}
 	}
 
 	return tsb, nil
@@ -848,6 +843,7 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 		closeTime := time.Unix(terms.ClosingTimestamp, 0)
 		return validateNewMarketChange(terms.GetNewMarket(), e.assets, true, e.netp, enactTime.Sub(closeTime), enct)
 	case types.ProposalTermsTypeUpdateMarket:
+		enct.shouldNotVerify = true
 		return validateUpdateMarketChange(terms.GetUpdateMarket(), enct)
 	case types.ProposalTermsTypeNewAsset:
 		return terms.GetNewAsset().Validate()

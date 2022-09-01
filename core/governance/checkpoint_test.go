@@ -129,7 +129,7 @@ func testCheckpointSuccess(t *testing.T) {
 		return ret, nil
 	})
 	eng2.assets.EXPECT().IsEnabled(gomock.Any()).Return(true).AnyTimes()
-	eng2.markets.EXPECT().RestoreMarketWithLiquidityProvision(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	eng2.markets.EXPECT().RestoreMarket(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	eng2.markets.EXPECT().StartOpeningAuction(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	eng2.expectGetMarketState(t, proposal.ID)
 
@@ -224,7 +224,7 @@ func TestCheckpointSavingAndLoadingWithDroppedMarkets(t *testing.T) {
 		return ret, nil
 	})
 	eng2.assets.EXPECT().IsEnabled(gomock.Any()).Return(true).AnyTimes()
-	eng2.markets.EXPECT().RestoreMarketWithLiquidityProvision(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	eng2.markets.EXPECT().RestoreMarket(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	eng2.markets.EXPECT().StartOpeningAuction(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 	// Load checkpoint
@@ -388,7 +388,7 @@ func TestCheckpointWithMarketUpdateProposals(t *testing.T) {
 		return ret, nil
 	})
 	eng2.assets.EXPECT().IsEnabled(gomock.Any()).Return(true).AnyTimes()
-	eng2.markets.EXPECT().RestoreMarketWithLiquidityProvision(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	eng2.markets.EXPECT().RestoreMarket(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	eng2.markets.EXPECT().StartOpeningAuction(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 	// Load checkpoint

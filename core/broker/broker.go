@@ -24,6 +24,7 @@ import (
 
 // Subscriber interface allows pushing values to subscribers, can be set to
 // a Skip state (temporarily not receiving any events), or closed. Otherwise events are pushed
+//
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/subscriber_mock.go -package mocks code.vegaprotocol.io/vega/core/broker Subscriber
 type Subscriber interface {
 	Push(val ...events.Event)
@@ -39,6 +40,7 @@ type Subscriber interface {
 // BrokerI interface (horribly named) is declared here to provide a drop-in replacement for broker mocks used throughout
 // in addition to providing the classical mockgen functionality, this mock can be used to check the actual events that will be generated
 // so we don't have to rely on test-only helper functions
+//
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/broker_mock.go -package mocks code.vegaprotocol.io/vega/core/broker BrokerI
 type BrokerI interface {
 	Send(event events.Event)
@@ -50,6 +52,7 @@ type BrokerI interface {
 }
 
 // SocketClient is an interface to send serialized events over a socket.
+//
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/socket_client_mock.go -package mocks code.vegaprotocol.io/vega/core/broker SocketClient
 type SocketClient interface {
 	SendBatch(events []events.Event) error
@@ -225,7 +228,7 @@ func (b *Broker) startSending(t events.Type, evts []events.Event) {
 					default:
 						if sub.required {
 							sub.Push(evts...)
-						} else if rm := b.sendChannelSync(sub, evts); rm {
+						} else if shouldUnsubscribe := b.sendChannelSync(sub, evts); shouldUnsubscribe {
 							unsub = append(unsub, k)
 						}
 					}
