@@ -60,9 +60,9 @@ pipeline {
                 echo "params=${params}"
                 echo "isPRBuild=${isPRBuild()}"
                 script {
-                    params = pr.injectPRParams()
+                    prParams = pr.getPRParams()
                 }
-                echo "params (after injection)=${params}"
+                echo "prParams=${prParams}"
             }
         }
 
