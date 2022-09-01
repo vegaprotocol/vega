@@ -97,6 +97,7 @@ pipeline {
         }
 
         stage('Docker login') {
+            options { retry(3) }
             steps {
                 withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                     sh label: 'docker login ghcr.io', script: '''#!/bin/bash -e
