@@ -64,6 +64,9 @@ pipeline {
                     if (env.CHANGE_URL) {
                         prParams = pr.getData(url: env.CHANGE_URL, prFields:['headRepositoryOwner', 'headRepository'])
                         echo "prParams = ${prParams}"
+                        originRepo = "${prParams.headRepositoryOwner.login}/${prParams.headRepository.name}"
+                    } else {
+                        originRepo = "vegaprotocol/vega"
                     }
                 }
                 echo "params (after injection)=${params}"
@@ -217,6 +220,7 @@ pipeline {
                     steps {
                         script {
                             runApprobation ignoreFailure: !isPRBuild(),
+                                originRepo: originRepo,
                                 vegaVersion: commitHash
                         }
                     }
@@ -361,6 +365,7 @@ pipeline {
                         script {
                             vegaMarketSim ignoreFailure: true,
                                 timeout: 45,
+                                originRepo: originRepo,
                                 vegaVersion: commitHash,
                                 vegaMarketSim: params.VEGA_MARKET_SIM_BRANCH,
                                 jenkinsSharedLib: params.JENKINS_SHARED_LIB_BRANCH
@@ -372,6 +377,7 @@ pipeline {
                         script {
                             systemTestsCapsule ignoreFailure: !isPRBuild(),
                                 timeout: 30,
+                                originRepo: originRepo,
                                 vegaVersion: commitHash,
                                 systemTests: params.SYSTEM_TESTS_BRANCH,
                                 vegacapsule: params.VEGACAPSULE_BRANCH,
