@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"sync"
 
 	"code.vegaprotocol.io/vega/logging"
 
@@ -37,10 +38,12 @@ type Connection interface {
 }
 
 type ConnectionSource struct {
-	conf       ConnectionConfig
-	Connection Connection
-	pool       *pgxpool.Pool
-	log        *logging.Logger
+	conf            ConnectionConfig
+	Connection      Connection
+	pool            *pgxpool.Pool
+	log             *logging.Logger
+	postCommitHooks []func()
+	mu              sync.Mutex
 }
 
 type (
@@ -127,17 +130,38 @@ func (s *ConnectionSource) WithTransaction(ctx context.Context) (context.Context
 	}
 }
 
+func (s *ConnectionSource) AfterCommit(ctx context.Context, f func()) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// If we're in a transaction, defer calling f() until Commit() is called
+	if s.conf.UseTransactions {
+		if _, ok := ctx.Value(transactionContextKey{}).(pgx.Tx); ok {
+			s.postCommitHooks = append(s.postCommitHooks, f)
+			return
+		}
+	}
+
+	// If we're not in a transaction, call f() immediately
+	f()
+}
+
 func (s *ConnectionSource) Commit(ctx context.Context) error {
 	if s.conf.UseTransactions {
 		if tx, ok := ctx.Value(transactionContextKey{}).(pgx.Tx); ok {
 			if err := tx.Commit(ctx); err != nil {
 				return fmt.Errorf("failed to commit transaction for context:%s, error:%w", ctx, err)
 			}
+			s.mu.Lock()
+			defer s.mu.Unlock()
+			for _, f := range s.postCommitHooks {
+				f()
+			}
+			s.postCommitHooks = s.postCommitHooks[:0]
 		} else {
 			return fmt.Errorf("no transaction is associated with the context")
 		}
 	}
-
 	return nil
 }
 
