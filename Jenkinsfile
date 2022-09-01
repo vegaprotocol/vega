@@ -1,5 +1,5 @@
 /* groovylint-disable DuplicateStringLiteral, LineLength, NestedBlockDepth */
-@Library('vega-shared-library@support-forks') _
+@Library('vega-shared-library') _
 
 /* properties of scmVars (example):
     - GIT_BRANCH:PR-40-head
@@ -60,9 +60,13 @@ pipeline {
                 echo "params=${params}"
                 echo "isPRBuild=${isPRBuild()}"
                 script {
-                    prParams = pr.getPRParams()
+                    params = pr.injectPRParams()
+                    if (env.CHANGE_URL) {
+                        prParams = pr.getData(url: env.CHANGE_URL, prFields:['headRepositoryOwner', 'headRepository'])
+                        echo "prParams = ${prParams}"
+                    }
                 }
-                echo "prParams=${prParams}"
+                echo "params (after injection)=${params}"
             }
         }
 
