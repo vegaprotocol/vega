@@ -18,6 +18,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"strconv"
 	"sync"
 	"syscall"
@@ -70,8 +71,11 @@ func ensureBinaryVersion(binary, version string) error {
 	return nil
 }
 
-func (r *BinariesRunner) runBinary(ctx context.Context, binary string, args []string) error {
-	binPath := path.Join(r.binsFolder, binary)
+func (r *BinariesRunner) runBinary(ctx context.Context, binPath string, args []string) error {
+	if !filepath.IsAbs(binPath) {
+		binPath = path.Join(r.binsFolder, binPath)
+	}
+
 	if err := utils.EnsureBinary(binPath); err != nil {
 		return fmt.Errorf("failed to locate binary %s %v: %w", binPath, args, err)
 	}
@@ -142,7 +146,7 @@ func (r *BinariesRunner) Run(ctx context.Context, runConf *config.RunConfig) cha
 		// TODO consider moving this logic somewhere else
 		args := Args(runConf.Vega.Binary.Args)
 		if r.releaseInfo != nil {
-			args.Set(snapshotBlockHeightFlagName, strconv.FormatUint(r.releaseInfo.UpgradeBlockHeight+1, 10))
+			args.Set(snapshotBlockHeightFlagName, strconv.FormatUint(r.releaseInfo.UpgradeBlockHeight, 10))
 		}
 
 		return r.runBinary(ctx, runConf.Vega.Binary.Path, args)

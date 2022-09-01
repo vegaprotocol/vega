@@ -120,7 +120,7 @@ func (opts *InitCmd) Execute(args []string) error {
 		tmCfg := tmcfg.DefaultConfig()
 		tmCfg.SetRoot(os.ExpandEnv(initCmd.TendermintHome))
 		tmcfg.EnsureRoot(tmCfg.RootDir)
-		if err := initTendermintConfiguration(logger, tmCfg, initCmd.TendermintKey); err != nil {
+		if err := initTendermintConfiguration(output, logger, tmCfg, initCmd.TendermintKey); err != nil {
 			return fmt.Errorf("couldn't initialise tendermint %w", err)
 		}
 	}
@@ -146,6 +146,7 @@ func (opts *InitCmd) Execute(args []string) error {
 }
 
 func initTendermintConfiguration(
+	output config.Output,
 	logger *logging.Logger,
 	config *tmcfg.Config,
 	keyType string,
@@ -156,33 +157,43 @@ func initTendermintConfiguration(
 	var pv *privval.FilePV
 	if tmos.FileExists(privValKeyFile) {
 		pv = privval.LoadFilePV(privValKeyFile, privValStateFile)
-		logger.Info("Found private validator",
-			logging.String("keyFile", privValKeyFile),
-			logging.String("stateFile", privValStateFile),
-		)
+		if output.IsHuman() {
+			logger.Info("Found private validator",
+				logging.String("keyFile", privValKeyFile),
+				logging.String("stateFile", privValStateFile),
+			)
+		}
 	} else {
 		pv = privval.GenFilePV(privValKeyFile, privValStateFile)
 		pv.Save()
-		logger.Info("Generated private validator",
-			logging.String("keyFile", privValKeyFile),
-			logging.String("stateFile", privValStateFile),
-		)
+		if output.IsHuman() {
+			logger.Info("Generated private validator",
+				logging.String("keyFile", privValKeyFile),
+				logging.String("stateFile", privValStateFile),
+			)
+		}
 	}
 
 	nodeKeyFile := config.NodeKeyFile()
 	if tmos.FileExists(nodeKeyFile) {
-		logger.Info("Found node key", logging.String("path", nodeKeyFile))
+		if output.IsHuman() {
+			logger.Info("Found node key", logging.String("path", nodeKeyFile))
+		}
 	} else {
 		if _, err := p2p.LoadOrGenNodeKey(nodeKeyFile); err != nil {
 			return err
 		}
-		logger.Info("Generated node key", logging.String("path", nodeKeyFile))
+		if output.IsHuman() {
+			logger.Info("Generated node key", logging.String("path", nodeKeyFile))
+		}
 	}
 
 	// genesis file
 	genFile := config.GenesisFile()
 	if tmos.FileExists(genFile) {
-		logger.Info("Found genesis file", logging.String("path", genFile))
+		if output.IsHuman() {
+			logger.Info("Found genesis file", logging.String("path", genFile))
+		}
 	} else {
 		genDoc := types.GenesisDoc{
 			ChainID:         fmt.Sprintf("test-chain-%v", tmrand.Str(6)),
@@ -202,7 +213,9 @@ func initTendermintConfiguration(
 		if err := genDoc.SaveAs(genFile); err != nil {
 			return err
 		}
-		logger.Info("Generated genesis file", logging.String("path", genFile))
+		if output.IsHuman() {
+			logger.Info("Generated genesis file", logging.String("path", genFile))
+		}
 	}
 
 	return nil
