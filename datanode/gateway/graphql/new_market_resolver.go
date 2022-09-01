@@ -47,7 +47,3 @@ func (r *newMarketResolver) RiskParameters(ctx context.Context, obj *types.NewMa
 func (r *newMarketResolver) Metadata(ctx context.Context, obj *types.NewMarket) ([]string, error) {
 	return obj.Changes.Metadata, nil
 }
-
-func (r *newMarketResolver) Commitment(ctx context.Context, obj *types.NewMarket) (*types.NewMarketCommitment, error) {
-	return obj.LiquidityCommitment, nil
-}

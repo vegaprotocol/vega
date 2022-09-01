@@ -63,18 +63,10 @@ const (
 	ProposalErrorOpeningAuctionDurationTooSmall ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_SMALL
 	// ProposalErrorOpeningAuctionDurationTooLarge Opening auction duration is more than the network minimum opening auction time.
 	ProposalErrorOpeningAuctionDurationTooLarge ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_LARGE
-	// ProposalErrorMarketMissingLiquidityCommitment Market proposal is missing a liquidity commitment.
-	ProposalErrorMarketMissingLiquidityCommitment ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_MARKET_MISSING_LIQUIDITY_COMMITMENT
 	// ProposalErrorCouldNotInstantiateMarket Market proposal market could not be instantiated during execution.
 	ProposalErrorCouldNotInstantiateMarket ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET
 	// ProposalErrorInvalidFutureProduct Market proposal market contained invalid product definition.
 	ProposalErrorInvalidFutureProduct ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT
-	// ProposalErrorMissingCommitmentAmount Market proposal is missing commitment amount.
-	ProposalErrorMissingCommitmentAmount ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_MISSING_COMMITMENT_AMOUNT
-	// ProposalErrorInvalidFeeAmount Market proposal have invalid fee.
-	ProposalErrorInvalidFeeAmount ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_FEE_AMOUNT
-	// ProposalErrorInvalidShape Market proposal have invalid shape.
-	ProposalErrorInvalidShape ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE
 	// ProposalErrorInvalidRiskParameter Market proposal invalid risk parameter.
 	ProposalErrorInvalidRiskParameter ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_RISK_PARAMETER
 	// ProposalErrorMajorityThresholdNotReached Proposal was declined because vote didn't reach the majority threshold required.

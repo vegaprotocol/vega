@@ -440,6 +440,8 @@ type ProposalVoteSide struct {
 	TotalWeight string `json:"totalWeight"`
 	// Total number of governance tokens from the votes cast for this side
 	TotalTokens string `json:"totalTokens"`
+	// Total equity like share weight for this side (only for UpdateMarket Proposals)
+	TotalEquityLikeShareWeight string `json:"totalEquityLikeShareWeight"`
 }
 
 type ProposalVotes struct {

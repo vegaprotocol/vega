@@ -274,68 +274,6 @@ func (e *Engine) IsEligibleForProposerBonus(marketID string, value *num.Uint) bo
 	return value.ToDecimal().GreaterThan(quantum.Mul(e.npv.marketCreationQuantumMultiple))
 }
 
-// SubmitMarketWithLiquidityProvision is submitting a market through
-// the usual governance process.
-func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *types.LiquidityProvisionSubmission, party,
-	lpID,
-	deterministicId string,
-) error {
-	return e.submitOrRestoreMarketWithLiquidityProvision(ctx, marketConfig, lp, party, lpID, deterministicId, true)
-}
-
-// RestoreMarketWithLiquidityProvision is very similar to SubmitMarketWithLiquidityProvision without updating the market tracker as it is restored separately from checkpoint.
-func (e *Engine) RestoreMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *types.LiquidityProvisionSubmission, lpID, deterministicId string) error {
-	proposer := e.marketActivityTracker.GetProposer(marketConfig.ID)
-	if len(proposer) == 0 {
-		return ErrMarketDoesNotExist
-	}
-	return e.submitOrRestoreMarketWithLiquidityProvision(ctx, marketConfig, lp, proposer, lpID, deterministicId, false)
-}
-
-func (e *Engine) submitOrRestoreMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *types.LiquidityProvisionSubmission, party,
-	lpID,
-	deterministicId string,
-	isNewMarket bool,
-) error {
-	msg := "submit market with liquidity provision"
-	if !isNewMarket {
-		msg = "restore market with liquidity provision"
-	}
-	if e.log.IsDebug() {
-		e.log.Debug(msg,
-			logging.Market(*marketConfig),
-			logging.LiquidityProvisionSubmission(*lp),
-			logging.PartyID(party),
-			logging.LiquidityID(lpID),
-		)
-	}
-
-	if err := e.submitMarket(ctx, marketConfig); err != nil {
-		return err
-	}
-
-	mkt := e.markets[marketConfig.ID]
-
-	if isNewMarket {
-		asset, err := marketConfig.GetAsset()
-		if err != nil {
-			e.log.Panic("failed to get asset from market config", logging.String("market", mkt.GetID()), logging.String("error", err.Error()))
-		}
-		e.marketActivityTracker.MarketProposed(asset, marketConfig.ID, party)
-	}
-
-	// publish market data anyway initially
-	e.publishNewMarketInfos(ctx, mkt)
-
-	// now we try to submit the liquidity
-	if err := mkt.SubmitLiquidityProvision(ctx, lp, party, deterministicId); err != nil {
-		e.removeMarket(marketConfig.ID)
-		return err
-	}
-
-	return nil
-}
-
 // SubmitMarket submits a new market configuration to the network.
 func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market, proposer string) error {
 	return e.submitOrRestoreMarket(ctx, marketConfig, proposer, true)

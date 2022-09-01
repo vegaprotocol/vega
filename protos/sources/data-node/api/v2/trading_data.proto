@@ -427,6 +427,22 @@ message ObserveAccountsRequest {
 }
 
 message ObserveAccountsResponse {
+    oneof response {
+        // An 'initial image' snapshot containing current account balances
+        AccountSnapshotPage snapshot = 1;
+        // A list of account updates in the last block
+        AccountUpdates updates = 2;
+    }
+}
+
+// An 'initial image' snapshot containing current account balances - may be sent over several response messages
+message AccountSnapshotPage{
+    repeated vega.Account accounts = 1;
+    bool last_page = 2;
+}
+
+// A list of account updates in the last block
+message AccountUpdates{
     repeated vega.Account accounts = 1;
 }
 
@@ -504,7 +520,22 @@ message ObserveOrdersRequest {
 
 // Response sent over an orders stream
 message ObserveOrdersResponse {
-    // A list of 0 or more orders
+    oneof response {
+        // An 'initial image' snapshot containing current live orders
+        OrderSnapshotPage snapshot = 1;
+        // A list of order updates in the last block
+        OrderUpdates updates = 2;
+    }
+}
+
+// 'Initial image' of live orders, may be sent over multiple response messages
+message OrderSnapshotPage{
+    repeated vega.Order orders = 1;
+    bool last_page = 2;
+}
+
+// List of order updates in the last block
+message OrderUpdates{
     repeated vega.Order orders = 1;
 }
 
@@ -545,7 +576,23 @@ message ObservePositionsRequest {
 }
 
 message ObservePositionsResponse {
-    vega.Position position = 1;
+    oneof response {
+        // An 'initial image' snapshot containing current positions
+        PositionSnapshotPage snapshot = 1;
+        // A list of position updates in the last block
+        PositionUpdates updates = 2;
+    }
+}
+
+// 'Initial image' of current positions, may be sent over multiple response messages
+message PositionSnapshotPage{
+    repeated vega.Position positions = 1;
+    bool last_page = 2;
+}
+
+// A list of position updates in the last block
+message PositionUpdates{
+    repeated vega.Position positions = 1;
 }
 
 // -- Balances --

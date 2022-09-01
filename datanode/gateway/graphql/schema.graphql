@@ -37,7 +37,7 @@ type Subscription {
     marketId: ID
     "ID of the party from which you want trades updates"
     partyId: ID
-  ): [Trade!]
+  ): [TradeUpdate!]
 
   "Subscribe to the positions updates"
   positions(
@@ -45,7 +45,7 @@ type Subscription {
     partyId: ID
     "ID of the market from which you want position updates"
     marketId: ID
-  ): Position!
+  ): [Position!]!
 
   "Subscribe to the market depths update"
   marketDepth(
@@ -1321,6 +1321,9 @@ type Future {
 
   "The binding between the oracle spec and the settlement price"
   oracleSpecBinding: OracleSpecToFutureBinding!
+
+  "The number of decimal places implied by the settlement price emitted by the settlement oracle"
+  settlementPriceDecimals: Int!
 }
 
 """
@@ -2310,6 +2313,54 @@ type Trade {
   sellerAuctionBatch: Int
 }
 
+"A trade on Vega, the result of two orders being 'matched' in the market"
+type TradeUpdate {
+  "The hash of the trade data"
+  id: ID!
+
+  "The market the trade occurred on"
+  marketId: ID!
+
+  "The order that bought"
+  buyOrder: String!
+
+  "The order that sold"
+  sellOrder: String!
+
+  "The party that bought"
+  buyerId: ID!
+
+  "The party that sold"
+  sellerId: ID!
+
+  "The aggressor indicates whether this trade was related to a BUY or SELL"
+  aggressor: Side!
+
+  "The price of the trade (probably initially the passive order price, other determination algorithms are possible though) (uint64)"
+  price: String!
+
+  "The number of units traded, will always be <= the remaining size of both orders immediately before the trade (uint64)"
+  size: String!
+
+  "RFC3339Nano time for when the trade occurred"
+  createdAt: String!
+
+  "The type of trade"
+  type: TradeType!
+
+  "The fee paid by the buyer side of the trade"
+  buyerFee: TradeFee!
+
+  "The fee paid by the seller side of the trade"
+  sellerFee: TradeFee!
+
+  "The batch in which the buyer order was submitted (applies only for auction modes)"
+  buyerAuctionBatch: Int
+
+  "The batch in which the seller order was submitted (applies only for auction modes)"
+  sellerAuctionBatch: Int
+}
+
 "The fee paid by the party when a trade occurs"
 type TradeFee {
   "The maker fee, paid by the aggressive party to the other party (the one who had an order in the book)"
@@ -2971,6 +3022,9 @@ type FutureProduct {
   used as settlement price.
   """
   oracleSpecBinding: OracleSpecToFutureBinding!
+
+  "The number of decimal places implied by the settlement price emitted by the settlement oracle"
+  settlementPriceDecimals: Int!
 }
 
 """
@@ -3009,25 +3063,6 @@ type NewMarket {
   riskParameters: RiskModel!
   "Metadata for this instrument, tags"
   metadata: [String!]
-  "The liquidity commitment submitted with the new market"
-  commitment: NewMarketCommitment
-}
-
-"A commitment of liquidity to be made by the party that proposes a market"
-type NewMarketCommitment {
-  "Specified as a unit-less number that represents the amount of the settlement asset of the market"
-  commitmentAmount: String!
-  """
-  Nominated liquidity fee factor, which is an input to the calculation of
-  maker fees on the market, as per setting fees and rewarding liquidity provider
-  """
-  fee: String!
-  "A set of liquidity sell orders to meet the liquidity provision obligation"
-  sells: [LiquidityOrder!]
-  "A set of liquidity buy orders to meet the liquidity provision obligation"
-  buys: [LiquidityOrder!]
-  "A reference to be associated to all orders created from this commitment"
-  reference: String
 }
 
 """
@@ -3252,6 +3287,8 @@ type ProposalVoteSide {
   totalWeight: String!
   "Total number of governance tokens from the votes cast for this side"
   totalTokens: String!
+  "Total equity like share weight for this side (only for UpdateMarket Proposals)"
+  totalEquityLikeShareWeight: String!
 }
 
 enum VoteValue {
@@ -3279,6 +3316,9 @@ type Vote {
 
   "The weight of this vote based on the total of governance token"
   governanceTokenWeight: String!
+
+  "The weight of this vote based on the total equity like share"
+  equityLikeShareWeight: String!
 }
 
 type ProposalVote {

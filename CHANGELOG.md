@@ -3,12 +3,13 @@
 ## Unreleased 0.55.0
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [5989](https://github.com/vegaprotocol/vega/issues/5989) - Remove liquidity commitment from market proposal 
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
+- [5694](https://github.com/vegaprotocol/vega/issues/5694) - Add field `settlementPriceDecimals` to GraphQL `Future` and `FutureProduct` types
 - [5807](https://github.com/vegaprotocol/vega/issues/5807) - Add Vega tools: `stream`, `snapshot` and `checkpoint`
 - [5678](https://github.com/vegaprotocol/vega/issues/5678) - Add GraphQL endpoints for Ethereum bundles: `listAsset`, `updateAsset`, `addSigner` and `removeSigner`
 - [5881](https://github.com/vegaprotocol/vega/issues/5881) - Return account subscription as a list
@@ -16,6 +17,7 @@
 - [5841](https://github.com/vegaprotocol/vega/issues/5841) - Add transaction to request `multisigControl` signatures on demand
 - [5937](https://github.com/vegaprotocol/vega/issues/5937) - Add more flexibility to market creation bonus
 - [5932](https://github.com/vegaprotocol/vega/issues/5932) - Remove Name and Symbol from update asset proposal
+- [5880](https://github.com/vegaprotocol/vega/issues/5880) - Send initial image with subscriptions to positions, orders & accounts
 - [5878](https://github.com/vegaprotocol/vega/issues/5878) - Add option to return only live orders in `ListOrders` `API`
 - [5937](https://github.com/vegaprotocol/vega/issues/5937) - Add more flexibility to market creation bonus 
 - [5708](https://github.com/vegaprotocol/vega/issues/5708) - Use market price when reporting average trade price
@@ -25,11 +27,13 @@
 - [5849](https://github.com/vegaprotocol/vega/issues/5849) - Use network parameter from creation time of the proposal for requirements
 - [5846](https://github.com/vegaprotocol/vega/issues/5846) - Expose network parameter from creation time of the proposal through `APIs`.
 - [5999](https://github.com/vegaprotocol/vega/issues/5999) - Recalculate margins after risk parameters are updated.
+- [5682](https://github.com/vegaprotocol/vega/issues/5682) - Expose equity share weight in the API
 
 ### 🐛 Fixes
 - [5934](https://github.com/vegaprotocol/vega/issues/5934) - Ensure wallet without permissions can be read
 - [5950](https://github.com/vegaprotocol/vega/issues/5934) - Fix documentation for new wallet command
 - [5986](https://github.com/vegaprotocol/vega/issues/5986) - Error string on failed transaction is sent in the plain, no need to decode
+- [6023](https://github.com/vegaprotocol/vega/issues/6023) - Tell the `datanode` when a genesis validator does not exist in a `checkpoint`
 - [5963](https://github.com/vegaprotocol/vega/issues/5963) - Check other nodes during version check if the first one is unavailable
 - [6002](https://github.com/vegaprotocol/vega/issues/6002) - Do not emit events for unmatched oracle data and unsubscribe market as soon as oracle data is received
 - [6008](https://github.com/vegaprotocol/vega/issues/6008) - Fix equity like share and average trade value calculation with opening auctions
@@ -237,6 +241,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5304](https://github.com/vegaprotocol/vega/issues/5304) - Fix bug causing trade events at auction end showing the wrong price.
 - [5345](https://github.com/vegaprotocol/vega/issues/5345) - Fix issue with state variable transactions assumed gone missing
 - [5351](https://github.com/vegaprotocol/vega/issues/5351) - Fix panic when node is interrupted before snapshot engine gets cleared and initialised
+- [5972](https://github.com/vegaprotocol/vega/issues/5972) - Allow submitting a market update with termination oracle ticking before enactment of the update
 
 ## 0.50.2
 

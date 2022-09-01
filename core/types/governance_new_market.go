@@ -67,13 +67,6 @@ func NewNewMarketFromProto(p *vegapb.ProposalTerms_NewMarket) (*ProposalTermsNew
 		if p.NewMarket.Changes != nil {
 			newMarket.Changes = NewMarketConfigurationFromProto(p.NewMarket.Changes)
 		}
-		if p.NewMarket.LiquidityCommitment != nil {
-			var err error
-			newMarket.LiquidityCommitment, err = NewMarketCommitmentFromProto(p.NewMarket.LiquidityCommitment)
-			if err != nil {
-				return nil, err
-			}
-		}
 	}
 
 	return &ProposalTermsNewMarket{
@@ -82,8 +75,7 @@ func NewNewMarketFromProto(p *vegapb.ProposalTerms_NewMarket) (*ProposalTermsNew
 }
 
 type NewMarket struct {
-	Changes             *NewMarketConfiguration
-	LiquidityCommitment *NewMarketCommitment
+	Changes *NewMarketConfiguration
 }
 
 func (n NewMarket) IntoProto() *vegapb.NewMarket {
@@ -91,21 +83,13 @@ func (n NewMarket) IntoProto() *vegapb.NewMarket {
 	if n.Changes != nil {
 		changes = n.Changes.IntoProto()
 	}
-	var commitment *vegapb.NewMarketCommitment
-	if n.LiquidityCommitment != nil {
-		commitment = n.LiquidityCommitment.IntoProto()
-	}
 	return &vegapb.NewMarket{
-		Changes:             changes,
-		LiquidityCommitment: commitment,
+		Changes: changes,
 	}
 }
 
 func (n NewMarket) DeepClone() *NewMarket {
 	cpy := NewMarket{}
-	if n.LiquidityCommitment != nil {
-		cpy.LiquidityCommitment = n.LiquidityCommitment.DeepClone()
-	}
 	if n.Changes != nil {
 		cpy.Changes = n.Changes.DeepClone()
 	}
@@ -114,9 +98,8 @@ func (n NewMarket) DeepClone() *NewMarket {
 
 func (n NewMarket) String() string {
 	return fmt.Sprintf(
-		"changes(%s) liquidityCommitment(%s)",
+		"changes(%s)",
 		reflectPointerToString(n.Changes),
-		reflectPointerToString(n.LiquidityCommitment),
 	)
 }
 
@@ -247,34 +230,6 @@ func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) *NewMarke
 		}
 	}
 	return r
-}
-
-func (n NewMarketCommitment) IntoProto() *vegapb.NewMarketCommitment {
-	r := &vegapb.NewMarketCommitment{
-		CommitmentAmount: num.UintToString(n.CommitmentAmount),
-		Fee:              n.Fee.String(),
-		Sells:            make([]*vegapb.LiquidityOrder, 0, len(n.Sells)),
-		Buys:             make([]*vegapb.LiquidityOrder, 0, len(n.Buys)),
-		Reference:        n.Reference,
-	}
-	for _, s := range n.Sells {
-		r.Sells = append(r.Sells, s.IntoProto())
-	}
-	for _, b := range n.Buys {
-		r.Buys = append(r.Buys, b.IntoProto())
-	}
-	return r
-}
-
-func (n NewMarketCommitment) String() string {
-	return fmt.Sprintf(
-		"reference(%s) commitmentAmount(%s) fee(%s) sells(%v) buys(%v)",
-		n.Reference,
-		uintPointerToString(n.CommitmentAmount),
-		n.Fee.String(),
-		LiquidityOrders(n.Sells).String(),
-		LiquidityOrders(n.Buys).String(),
-	)
 }
 
 type newRiskParams interface {
@@ -520,72 +475,4 @@ func (m MetadataList) String() string {
 		return "[]"
 	}
 	return "[" + strings.Join(m, ", ") + "]"
-}
-
-type NewMarketCommitment struct {
-	CommitmentAmount *num.Uint
-	Fee              num.Decimal
-	Sells            []*LiquidityOrder
-	Buys             []*LiquidityOrder
-	Reference        string
-}
-
-func (n NewMarketCommitment) DeepClone() *NewMarketCommitment {
-	cpy := &NewMarketCommitment{
-		Fee:       n.Fee,
-		Sells:     make([]*LiquidityOrder, 0, len(n.Sells)),
-		Buys:      make([]*LiquidityOrder, 0, len(n.Buys)),
-		Reference: n.Reference,
-	}
-	if n.CommitmentAmount != nil {
-		cpy.CommitmentAmount = n.CommitmentAmount.Clone()
-	} else {
-		cpy.CommitmentAmount = num.UintZero()
-	}
-	for _, s := range n.Sells {
-		cpy.Sells = append(cpy.Sells, s.DeepClone())
-	}
-	for _, b := range n.Buys {
-		cpy.Buys = append(cpy.Buys, b.DeepClone())
-	}
-	return cpy
-}
-
-func NewMarketCommitmentFromProto(p *vegapb.NewMarketCommitment) (*NewMarketCommitment, error) {
-	fee, err := num.DecimalFromString(p.Fee)
-	if err != nil {
-		return nil, err
-	}
-	commitmentAmount, overflowed := num.UintFromString(p.CommitmentAmount, 10)
-	if overflowed {
-		return nil, ErrInvalidCommitmentAmount
-	}
-
-	l := NewMarketCommitment{
-		CommitmentAmount: commitmentAmount,
-		Fee:              fee,
-		Sells:            make([]*LiquidityOrder, 0, len(p.Sells)),
-		Buys:             make([]*LiquidityOrder, 0, len(p.Buys)),
-		Reference:        p.Reference,
-	}
-
-	for _, sell := range p.Sells {
-		order, err := LiquidityOrderFromProto(sell)
-		if err != nil {
-			return nil, err
-		}
-
-		l.Sells = append(l.Sells, order)
-	}
-
-	for _, buy := range p.Buys {
-		order, err := LiquidityOrderFromProto(buy)
-		if err != nil {
-			return nil, err
-		}
-
-		l.Buys = append(l.Buys, order)
-	}
-
-	return &l, nil
 }
