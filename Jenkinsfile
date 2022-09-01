@@ -61,13 +61,7 @@ pipeline {
                 echo "isPRBuild=${isPRBuild()}"
                 script {
                     params = pr.injectPRParams()
-                    if (env.CHANGE_URL) {
-                        prParams = pr.getData(url: env.CHANGE_URL, prFields:['headRepositoryOwner', 'headRepository'])
-                        echo "prParams = ${prParams}"
-                        originRepo = "${prParams.headRepositoryOwner.login}/${prParams.headRepository.name}"
-                    } else {
-                        originRepo = "vegaprotocol/vega"
-                    }
+                    originRepo = pr.getOriginRepo('vegaprotocol/vega')
                 }
                 echo "params (after injection)=${params}"
             }
