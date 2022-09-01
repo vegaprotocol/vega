@@ -29,11 +29,13 @@ type Deposits struct {
 const (
 	sqlDepositsColumns = `id, status, party_id, asset, amount, foreign_tx_hash,
 		credited_timestamp, created_timestamp, tx_hash, vega_time`
+
+	depositsFilterDateColumn = "vega_time"
 )
 
 var depositOrdering = TableOrdering{
-	ColumnOrdering{"vega_time", ASC},
-	ColumnOrdering{"id", ASC},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC},
+	ColumnOrdering{Name: "id", Sorting: ASC},
 }
 
 func NewDeposits(connectionSource *ConnectionSource) *Deposits {
@@ -78,14 +80,14 @@ func (d *Deposits) GetByID(ctx context.Context, depositID string) (entities.Depo
 	return deposit, err
 }
 
-func (d *Deposits) GetByParty(ctx context.Context, party string, openOnly bool, pagination entities.Pagination) (
+func (d *Deposits) GetByParty(ctx context.Context, party string, openOnly bool, pagination entities.Pagination, dateRange entities.DateRange) (
 	[]entities.Deposit, entities.PageInfo, error,
 ) {
 	switch p := pagination.(type) {
 	case entities.OffsetPagination:
 		return d.getByPartyOffsetPagination(ctx, party, openOnly, p)
 	case entities.CursorPagination:
-		return d.getByPartyCursorPagination(ctx, party, openOnly, p)
+		return d.getByPartyCursorPagination(ctx, party, openOnly, p, dateRange)
 	default:
 		return d.getByPartyOffsetPagination(ctx, party, openOnly, entities.OffsetPagination{})
 	}
@@ -97,7 +99,7 @@ func (d *Deposits) getByPartyOffsetPagination(ctx context.Context, party string,
 	var deposits []entities.Deposit
 	var pageInfo entities.PageInfo
 
-	query, args := getDepositsByPartyQuery(party)
+	query, args := getDepositsByPartyQuery(party, entities.DateRange{})
 	query = fmt.Sprintf("%s order by id, party_id, vega_time desc",
 		query)
 
@@ -115,13 +117,13 @@ func (d *Deposits) getByPartyOffsetPagination(ctx context.Context, party string,
 }
 
 func (d *Deposits) getByPartyCursorPagination(ctx context.Context, party string, openOnly bool,
-	pagination entities.CursorPagination,
+	pagination entities.CursorPagination, dateRange entities.DateRange,
 ) ([]entities.Deposit, entities.PageInfo, error) {
 	var deposits []entities.Deposit
 	var pageInfo entities.PageInfo
 	var err error
 
-	query, args := getDepositsByPartyQuery(party)
+	query, args := getDepositsByPartyQuery(party, dateRange)
 	if openOnly {
 		query = fmt.Sprintf(`%s and status = %s`, query, nextBindVar(&args, entities.DepositStatusOpen))
 	}
@@ -140,11 +142,11 @@ func (d *Deposits) getByPartyCursorPagination(ctx context.Context, party string,
 	return deposits, pageInfo, nil
 }
 
-func getDepositsByPartyQuery(party string) (string, []interface{}) {
+func getDepositsByPartyQuery(party string, dateRange entities.DateRange) (string, []interface{}) {
 	var args []interface{}
 
 	query := fmt.Sprintf(`select id, status, party_id, asset, amount, foreign_tx_hash, credited_timestamp, created_timestamp, tx_hash, vega_time
 		from deposits_current where party_id = %s`, nextBindVar(&args, entities.PartyID(party)))
 
-	return query, args
+	return filterDateRange(query, depositsFilterDateColumn, dateRange, args...)
 }

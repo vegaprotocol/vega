@@ -87,33 +87,92 @@ func TestBalances(t *testing.T) {
 
 	balanceStore.Flush(ctx)
 
-	// Query all the balances (they're all for the same asset)
-	bals, err := balanceStore.Query(entities.AccountFilter{AssetID: asset.ID}, []entities.AccountField{})
-	require.NoError(t, err)
+	dateRange := entities.DateRange{}
+	pagination := entities.CursorPagination{}
 
-	expected_blocks := []int{0, 1, 2, 3, 4}
-	expected_bals := []int64{2, 5, 5 + 10, 5 + 10 + 100, 30 + 10 + 100}
-	assertBalanceCorrect(t, expected_blocks, expected_bals, blocks[:], *bals)
+	t.Run("Query should return all balances", func(t *testing.T) {
+		// Query all the balances (they're all for the same asset)
+		bals, _, err := balanceStore.Query(entities.AccountFilter{AssetID: asset.ID}, []entities.AccountField{}, dateRange, pagination)
+		require.NoError(t, err)
 
-	// Try just for our first account/party
-	filter := entities.AccountFilter{
-		AssetID:  asset.ID,
-		PartyIDs: []entities.PartyID{parties[0].ID},
-	}
-	bals, err = balanceStore.Query(filter, []entities.AccountField{})
-	require.NoError(t, err)
+		expected_blocks := []int{0, 1, 2, 3, 4}
+		expected_bals := []int64{2, 5, 5 + 10, 5 + 10 + 100, 30 + 10 + 100}
+		assertBalanceCorrect(t, expected_blocks, expected_bals, blocks[:], *bals)
+	})
 
-	expected_blocks = []int{0, 1, 4}
-	expected_bals = []int64{2, 5, 30}
-	assertBalanceCorrect(t, expected_blocks, expected_bals, blocks[:], *bals)
+	t.Run("Query should return transactions for party", func(t *testing.T) {
+		// Try just for our first account/party
+		filter := entities.AccountFilter{
+			AssetID:  asset.ID,
+			PartyIDs: []entities.PartyID{parties[0].ID},
+		}
+		bals, _, err := balanceStore.Query(filter, []entities.AccountField{}, dateRange, pagination)
+		require.NoError(t, err)
 
-	// Now try grouping - if we do it by account id it should split out balances for each account.
-	bals, err = balanceStore.Query(entities.AccountFilter{AssetID: asset.ID}, []entities.AccountField{entities.AccountFieldID})
-	require.NoError(t, err)
+		expected_blocks := []int{0, 1, 4}
+		expected_bals := []int64{2, 5, 30}
+		assertBalanceCorrect(t, expected_blocks, expected_bals, blocks[:], *bals)
+	})
 
-	expected_blocks = []int{0, 1, 2, 2, 3, 3, 3, 4, 4, 4}
-	expected_bals = []int64{2, 5, 5, 10, 5, 10, 100, 30, 10, 100}
-	assertBalanceCorrect(t, expected_blocks, expected_bals, blocks[:], *bals)
+	t.Run("Query should group results", func(t *testing.T) {
+		// Now try grouping - if we do it by account id it should split out balances for each account.
+		bals, _, err := balanceStore.Query(entities.AccountFilter{AssetID: asset.ID}, []entities.AccountField{entities.AccountFieldID}, dateRange, pagination)
+		require.NoError(t, err)
+
+		expected_blocks := []int{0, 1, 2, 2, 3, 3, 3, 4, 4, 4}
+		expected_bals := []int64{2, 5, 5, 10, 5, 10, 100, 30, 10, 100}
+		assertBalanceCorrect(t, expected_blocks, expected_bals, blocks[:], *bals)
+	})
+
+	t.Run("Query should return results paged", func(t *testing.T) {
+		first := int32(3)
+		after := entities.NewCursor(entities.AggregatedBalanceCursor{
+			VegaTime: blocks[2].VegaTime,
+		}.String()).Encode()
+		p, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
+		require.NoError(t, err)
+		bals, _, err := balanceStore.Query(entities.AccountFilter{AssetID: asset.ID}, []entities.AccountField{entities.AccountFieldID}, dateRange, p)
+		require.NoError(t, err)
+
+		expected_blocks := []int{2, 3, 3}
+		expected_bals := []int64{10, 5, 10}
+		assertBalanceCorrect(t, expected_blocks, expected_bals, blocks[:], *bals)
+	})
+
+	t.Run("Query should return results between dates", func(t *testing.T) {
+		p, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+		require.NoError(t, err)
+		startTime := blocks[1].VegaTime
+		endTime := blocks[4].VegaTime
+		dateRange := entities.DateRange{
+			Start: &startTime,
+			End:   &endTime,
+		}
+		bals, _, err := balanceStore.Query(entities.AccountFilter{AssetID: asset.ID}, []entities.AccountField{entities.AccountFieldID}, dateRange, p)
+		require.NoError(t, err)
+
+		expected_blocks := []int{1, 2, 2, 3, 3, 3}
+		expected_bals := []int64{5, 5, 10, 5, 10, 100}
+		assertBalanceCorrect(t, expected_blocks, expected_bals, blocks[:], *bals)
+	})
+
+	t.Run("Query should return results paged between dates", func(t *testing.T) {
+		first := int32(3)
+		p, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
+		require.NoError(t, err)
+		startTime := blocks[1].VegaTime
+		endTime := blocks[4].VegaTime
+		dateRange := entities.DateRange{
+			Start: &startTime,
+			End:   &endTime,
+		}
+		bals, _, err := balanceStore.Query(entities.AccountFilter{AssetID: asset.ID}, []entities.AccountField{entities.AccountFieldID}, dateRange, p)
+		require.NoError(t, err)
+
+		expected_blocks := []int{1, 2, 2}
+		expected_bals := []int64{5, 5, 10}
+		assertBalanceCorrect(t, expected_blocks, expected_bals, blocks[:], *bals)
+	})
 }
 
 func TestBalancesDataRetention(t *testing.T) {
@@ -176,8 +235,11 @@ func TestBalancesDataRetention(t *testing.T) {
 	addTestBalance(t, balanceStore, blocks[4], accounts[0], 30)
 	balanceStore.Flush(ctx)
 
+	dateRange := entities.DateRange{}
+	pagination := entities.CursorPagination{}
+
 	// Query all the balances (they're all for the same asset)
-	bals, err := balanceStore.Query(entities.AccountFilter{AssetID: asset.ID}, []entities.AccountField{})
+	bals, _, err := balanceStore.Query(entities.AccountFilter{AssetID: asset.ID}, []entities.AccountField{}, dateRange, pagination)
 	require.NoError(t, err)
 
 	expected_blocks := []int{1, 2, 3, 4}

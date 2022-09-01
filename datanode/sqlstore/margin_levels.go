@@ -23,8 +23,8 @@ import (
 )
 
 var mlOrdering = TableOrdering{
-	ColumnOrdering{"vega_time", ASC},
-	ColumnOrdering{"account_id", ASC},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC},
+	ColumnOrdering{Name: "account_id", Sorting: ASC},
 }
 
 type AccountSource interface {

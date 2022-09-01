@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/vegatime"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
-	types "code.vegaprotocol.io/vega/protos/vega"
-	vega "code.vegaprotocol.io/vega/protos/vega"
+	"code.vegaprotocol.io/vega/protos/vega"
 )
 
-func handleCandleConnectionRequest(ctx context.Context, client TradingDataServiceClientV2, market *types.Market, sinceRaw string, toRaw *string,
+func handleCandleConnectionRequest(ctx context.Context, client TradingDataServiceClientV2, market *vega.Market, sinceRaw string, toRaw *string,
 	interval vega.Interval, pagination *v2.Pagination,
 ) (*v2.CandleDataConnection, error) {
 	since, err := vegatime.Parse(sinceRaw)
@@ -67,9 +67,9 @@ func handleCandleConnectionRequest(ctx context.Context, client TradingDataServic
 }
 
 func handleWithdrawalsConnectionRequest(ctx context.Context, client TradingDataServiceClientV2, party *types.Party,
-	pagination *v2.Pagination,
+	dateRange *v2.DateRange, pagination *v2.Pagination,
 ) (*v2.WithdrawalsConnection, error) {
-	req := v2.ListWithdrawalsRequest{PartyId: party.Id, Pagination: pagination}
+	req := v2.ListWithdrawalsRequest{PartyId: party.Id, Pagination: pagination, DateRange: dateRange}
 	resp, err := client.ListWithdrawals(ctx, &req)
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve withdrawals for party %s: %w", party.Id, err)
@@ -78,9 +78,9 @@ func handleWithdrawalsConnectionRequest(ctx context.Context, client TradingDataS
 }
 
 func handleDepositsConnectionRequest(ctx context.Context, client TradingDataServiceClientV2, party *types.Party,
-	pagination *v2.Pagination,
+	dateRange *v2.DateRange, pagination *v2.Pagination,
 ) (*v2.DepositsConnection, error) {
-	req := v2.ListDepositsRequest{PartyId: party.Id, Pagination: pagination}
+	req := v2.ListDepositsRequest{PartyId: party.Id, Pagination: pagination, DateRange: dateRange}
 	resp, err := client.ListDeposits(ctx, &req)
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve deposits for party %s: %w", party.Id, err)
@@ -92,7 +92,6 @@ func handleProposalsRequest(ctx context.Context, client TradingDataServiceClient
 	inState *vega.Proposal_State, pagination *v2.Pagination,
 ) (*v2.GovernanceDataConnection, error) {
 	var partyID *string
-	var proposalState *types.Proposal_State
 
 	if party != nil {
 		partyID = &party.Id
@@ -102,7 +101,7 @@ func handleProposalsRequest(ctx context.Context, client TradingDataServiceClient
 		ProposerPartyId:   partyID,
 		ProposalReference: ref,
 		ProposalType:      inType,
-		ProposalState:     proposalState,
+		ProposalState:     inState,
 		Pagination:        pagination,
 	}
 	resp, err := client.ListGovernanceData(ctx, &req)

@@ -18,8 +18,13 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
 )
+
+var aggregateBalancesOrdering = TableOrdering{
+	ColumnOrdering{Name: "vega_time", Sorting: ASC},
+}
 
 type Balances struct {
 	*ConnectionSource
@@ -54,7 +59,7 @@ func (bs *Balances) Add(b entities.AccountBalance) error {
 //
 // Optionally you can supply a list of fields to market by, which will break down the results by those fields.
 //
-// For example, if you have balances table that looks like
+// # For example, if you have balances table that looks like
 //
 // Time  Account   Balance
 // 1     a         1
@@ -74,13 +79,30 @@ func (bs *Balances) Add(b entities.AccountBalance) error {
 // 1     1          x
 // 2     11         x
 // 3     100        y.
-//
-func (bs *Balances) Query(filter entities.AccountFilter, groupBy []entities.AccountField) (*[]entities.AggregatedBalance, error) {
+func (bs *Balances) Query(filter entities.AccountFilter, groupBy []entities.AccountField, dateRange entities.DateRange,
+	pagination entities.CursorPagination,
+) (*[]entities.AggregatedBalance, entities.PageInfo, error) {
+	var pageInfo entities.PageInfo
 	assetsQuery, args, err := filterAccountsQuery(filter)
 	if err != nil {
-		return nil, err
+		return nil, pageInfo, err
 	}
 
+	whereDate := ""
+	if dateRange.Start != nil {
+		whereDate = fmt.Sprintf("WHERE vega_time >= %s", nextBindVar(&args, *dateRange.Start))
+	}
+
+	if dateRange.End != nil {
+		if whereDate != "" {
+			whereDate = fmt.Sprintf("%s AND", whereDate)
+		} else {
+			whereDate = "WHERE "
+		}
+		whereDate = fmt.Sprintf("%s vega_time < %s", whereDate, nextBindVar(&args, *dateRange.End))
+	}
+
+	// This query is the one that gives us our results
 	query := `
         WITH our_accounts AS (%s),
              timestamps AS (SELECT DISTINCT all_balances.vega_time
@@ -93,32 +115,51 @@ func (bs *Balances) Query(filter entities.AccountFilter, groupBy []entities.Acco
                                                      AND keys.vega_time=all_balances.vega_time),
              forward_filled_balances AS (SELECT vega_time, account_id, last(balance)
                                          OVER (partition by account_id order by vega_time) AS balance
-                                         FROM balances_with_nulls)
-        SELECT forward_filled_balances.vega_time %s, sum(balance) AS balance
-        FROM forward_filled_balances
-        JOIN our_accounts ON account_id=our_accounts.id
-        WHERE balance IS NOT NULL
-        GROUP BY forward_filled_balances.vega_time %s
-        ORDER BY forward_filled_balances.vega_time %s;`
+                                         FROM balances_with_nulls),
+        balances as (
+			SELECT forward_filled_balances.vega_time %s, sum(balance) AS balance
+	        FROM forward_filled_balances
+    	    JOIN our_accounts ON account_id=our_accounts.id
+        	WHERE balance IS NOT NULL
+	        GROUP BY forward_filled_balances.vega_time %s
+    	    ORDER BY forward_filled_balances.vega_time %s
+		)
+		%s`
 
 	groups := ""
 	for _, col := range groupBy {
 		groups = fmt.Sprintf("%s, %s", groups, col.String())
 	}
 
-	query = fmt.Sprintf(query, assetsQuery, groups, groups, groups)
+	// This pageQuery is the part that gives us the results for the pagination. We will only pass this part of the query
+	// to the PaginateQuery function because the WHERE clause in the query above will cause an incorrect SQL statement
+	// to be generated
+	pageQuery := fmt.Sprintf(`SELECT vega_time %s, balance
+		FROM balances 
+		%s`, groups, whereDate)
+
+	pageQuery, args, err = PaginateQuery[entities.AggregatedBalanceCursor](pageQuery, args, aggregateBalancesOrdering, pagination)
+	if err != nil {
+		return nil, pageInfo, err
+	}
+
+	// Here we stitch together all parts of the balances sub-query and the pagination to get the results we want.
+	query = fmt.Sprintf(query, assetsQuery, groups, groups, groups, pageQuery)
+
 	defer metrics.StartSQLQuery("Balances", "Query")()
 	rows, err := bs.Connection.Query(context.Background(), query, args...)
 	defer rows.Close()
 	if err != nil {
-		return nil, fmt.Errorf("querying balances: %w", err)
+		return nil, pageInfo, fmt.Errorf("querying balances: %w", err)
 	}
 
 	res := []entities.AggregatedBalance{}
 
 	if err = pgxscan.ScanAll(&res, rows); err != nil {
-		return nil, fmt.Errorf("scanning balances: %w", err)
+		return nil, pageInfo, fmt.Errorf("scanning balances: %w", err)
 	}
 
-	return &res, nil
+	res, pageInfo = entities.PageEntities[*v2.AggregatedBalanceEdge](res, pagination)
+
+	return &res, pageInfo, nil
 }

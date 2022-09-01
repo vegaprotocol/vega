@@ -27,7 +27,7 @@ type NetworkParameters struct {
 }
 
 var networkParameterOrdering = TableOrdering{
-	ColumnOrdering{"key", ASC},
+	ColumnOrdering{Name: "key", Sorting: ASC},
 }
 
 func NewNetworkParameters(connectionSource *ConnectionSource) *NetworkParameters {

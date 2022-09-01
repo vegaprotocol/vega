@@ -31,7 +31,8 @@ type orderStore interface {
 	GetAllVersionsByOrderID(ctx context.Context, id string, p entities.OffsetPagination) ([]entities.Order, error)
 	GetLiveOrders(ctx context.Context) ([]entities.Order, error)
 	ListOrderVersions(ctx context.Context, orderIDStr string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error)
-	ListOrders(ctx context.Context, party *string, market *string, reference *string, liveOnly bool, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error)
+	ListOrders(ctx context.Context, party *string, market *string, reference *string, liveOnly bool, p entities.CursorPagination,
+		dateRange entities.DateRange) ([]entities.Order, entities.PageInfo, error)
 }
 
 type Order struct {
@@ -100,8 +101,10 @@ func (o *Order) GetLiveOrders(ctx context.Context) ([]entities.Order, error) {
 	return o.store.GetLiveOrders(ctx)
 }
 
-func (o *Order) ListOrders(ctx context.Context, party *string, market *string, reference *string, liveOnly bool, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
-	return o.store.ListOrders(ctx, party, market, reference, liveOnly, p)
+func (o *Order) ListOrders(ctx context.Context, party *string, market *string, reference *string, liveOnly bool,
+	p entities.CursorPagination, dateRange entities.DateRange,
+) ([]entities.Order, entities.PageInfo, error) {
+	return o.store.ListOrders(ctx, party, market, reference, liveOnly, p, dateRange)
 }
 
 func (o *Order) ListOrderVersions(ctx context.Context, orderID string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {

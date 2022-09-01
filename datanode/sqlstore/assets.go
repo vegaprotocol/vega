@@ -24,7 +24,7 @@ import (
 )
 
 var assetOrdering = TableOrdering{
-	ColumnOrdering{"id", ASC},
+	ColumnOrdering{Name: "id", Sorting: ASC},
 }
 
 type Assets struct {

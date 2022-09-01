@@ -280,6 +280,10 @@ func (r *VegaResolverRoot) Delegation() DelegationResolver {
 	return (*delegationResolver)(r)
 }
 
+func (r *VegaResolverRoot) DateRange() DateRangeResolver {
+	return (*dateRangeResolver)(r)
+}
+
 func (r *VegaResolverRoot) Epoch() EpochResolver {
 	return (*epochResolver)(r)
 }
@@ -1180,7 +1184,7 @@ func (r *myQueryResolver) Statistics(ctx context.Context) (*vegaprotoapi.Statist
 	return resp.GetStatistics(), nil
 }
 
-func (r *myQueryResolver) HistoricBalances(ctx context.Context, filter *v2.AccountFilter, groupBy []*v2.AccountField) ([]*v2.AggregatedBalance, error) {
+func (r *myQueryResolver) HistoricBalances(ctx context.Context, filter *v2.AccountFilter, groupBy []*v2.AccountField, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.AggregatedBalanceConnection, error) {
 	gb := make([]v2.AccountField, len(groupBy))
 	for i, g := range groupBy {
 		if g == nil {
@@ -1188,9 +1192,12 @@ func (r *myQueryResolver) HistoricBalances(ctx context.Context, filter *v2.Accou
 		}
 		gb[i] = *g
 	}
+
 	req := &v2.GetBalanceHistoryRequest{}
 	req.GroupBy = gb
 	req.Filter = filter
+	req.DateRange = dateRange
+	req.Pagination = pagination
 
 	resp, err := r.tradingDataClientV2.GetBalanceHistory(ctx, req)
 	if err != nil {
@@ -1516,13 +1523,14 @@ func (r *myPartyResolver) Orders(ctx context.Context, party *types.Party,
 	return []*types.Order{}, nil
 }
 
-func (r *myPartyResolver) OrdersConnection(ctx context.Context, party *types.Party, pagination *v2.Pagination) (*v2.OrderConnection, error) {
+func (r *myPartyResolver) OrdersConnection(ctx context.Context, party *types.Party, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.OrderConnection, error) {
 	if party == nil {
 		return nil, errors.New("party is required")
 	}
 	req := v2.ListOrdersRequest{
 		PartyId:    &party.Id,
 		Pagination: pagination,
+		DateRange:  dateRange,
 	}
 	res, err := r.tradingDataClientV2.ListOrders(ctx, &req)
 	if err != nil {
@@ -1561,11 +1569,12 @@ func (r *myPartyResolver) Trades(ctx context.Context, party *types.Party,
 	return []*types.Trade{}, nil
 }
 
-func (r *myPartyResolver) TradesConnection(ctx context.Context, party *types.Party, market *string, pagination *v2.Pagination) (*v2.TradeConnection, error) {
+func (r *myPartyResolver) TradesConnection(ctx context.Context, party *types.Party, market *string, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.TradeConnection, error) {
 	req := v2.ListTradesRequest{
 		PartyId:    &party.Id,
 		MarketId:   market,
 		Pagination: pagination,
+		DateRange:  dateRange,
 	}
 
 	res, err := r.tradingDataClientV2.ListTrades(ctx, &req)
@@ -1768,8 +1777,8 @@ func (r *myPartyResolver) Withdrawals(ctx context.Context, party *types.Party) (
 	return res.Withdrawals, nil
 }
 
-func (r *myPartyResolver) WithdrawalsConnection(ctx context.Context, party *types.Party, pagination *v2.Pagination) (*v2.WithdrawalsConnection, error) {
-	return handleWithdrawalsConnectionRequest(ctx, r.tradingDataClientV2, party, pagination)
+func (r *myPartyResolver) WithdrawalsConnection(ctx context.Context, party *types.Party, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.WithdrawalsConnection, error) {
+	return handleWithdrawalsConnectionRequest(ctx, r.tradingDataClientV2, party, dateRange, pagination)
 }
 
 // Deprecated: Use DepositsConnection instead.
@@ -1784,8 +1793,8 @@ func (r *myPartyResolver) Deposits(ctx context.Context, party *types.Party) ([]*
 	return res.Deposits, nil
 }
 
-func (r *myPartyResolver) DepositsConnection(ctx context.Context, party *types.Party, pagination *v2.Pagination) (*v2.DepositsConnection, error) {
-	return handleDepositsConnectionRequest(ctx, r.tradingDataClientV2, party, pagination)
+func (r *myPartyResolver) DepositsConnection(ctx context.Context, party *types.Party, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.DepositsConnection, error) {
+	return handleDepositsConnectionRequest(ctx, r.tradingDataClientV2, party, dateRange, pagination)
 }
 
 // Deprecated: Use VotesConnection instead.
@@ -1983,11 +1992,11 @@ func (r *myOrderResolver) Trades(ctx context.Context, ord *types.Order) ([]*type
 	return res.Trades, nil
 }
 
-func (r *myOrderResolver) TradesConnection(ctx context.Context, ord *types.Order, pagination *v2.Pagination) (*v2.TradeConnection, error) {
+func (r *myOrderResolver) TradesConnection(ctx context.Context, ord *types.Order, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.TradeConnection, error) {
 	if ord == nil {
 		return nil, errors.New("nil order")
 	}
-	req := v2.ListTradesRequest{OrderId: &ord.Id, Pagination: pagination}
+	req := v2.ListTradesRequest{OrderId: &ord.Id, Pagination: pagination, DateRange: dateRange}
 	res, err := r.tradingDataClientV2.ListTrades(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
