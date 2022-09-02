@@ -608,7 +608,7 @@ func testMarginWithOrderInBookAfterParamsUpdate(t *testing.T) {
 		},
 	}
 	model.EXPECT().DefaultRiskFactors().Return(updatedRF).Times(1)
-	statevarEngine.EXPECT().NewEvent(asset, marketID, statevar.StateVarEventTypeMarketUpdated)
+	statevarEngine.EXPECT().NewEvent(asset, marketID, statevar.EventTypeMarketUpdated)
 	testE.UpdateModel(statevarEngine, updatedMC, model)
 
 	evt = testMargin{

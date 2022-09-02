@@ -432,7 +432,7 @@ func testAddNewPartySelfTrade(t *testing.T) {
 	}
 	// the first party is the seller
 	// so these are the new positions after the trade
-	t1.size -= 1
+	t1.size--
 	positions := []events.MarketPosition{
 		t1,
 		init[1],
@@ -476,7 +476,7 @@ func testAddNewParty(t *testing.T) {
 	}
 	// the first party is the seller
 	// so these are the new positions after the trade
-	t1.size -= 1
+	t1.size--
 	positions := []events.MarketPosition{
 		t1,
 		init[1],

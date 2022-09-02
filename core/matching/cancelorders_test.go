@@ -171,7 +171,7 @@ func TestOrderBookSimple_CancelOrderIncorrectNonCriticalFields(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
-	orderId := vgcrypto.RandomHash()
+	orderID := vgcrypto.RandomHash()
 	order := types.Order{
 		MarketID:    market,
 		Party:       "A",
@@ -181,7 +181,7 @@ func TestOrderBookSimple_CancelOrderIncorrectNonCriticalFields(t *testing.T) {
 		Remaining:   10,
 		TimeInForce: types.OrderTimeInForceGTC,
 		Type:        types.OrderTypeLimit,
-		ID:          orderId,
+		ID:          orderID,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -196,7 +196,7 @@ func TestOrderBookSimple_CancelOrderIncorrectNonCriticalFields(t *testing.T) {
 		Remaining:   10,                        // Does not matter
 		TimeInForce: types.OrderTimeInForceGTC, // Does not matter
 		Type:        types.OrderTypeLimit,      // Does not matter
-		ID:          orderId,                   // Must match
+		ID:          orderID,                   // Must match
 	}
 	_, err = book.CancelOrder(&order2)
 	assert.NoError(t, err)

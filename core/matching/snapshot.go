@@ -38,7 +38,7 @@ func (b OrderBook) Namespace() types.SnapshotNamespace {
 	return types.MatchingSnapshot
 }
 
-func (e *OrderBook) HasChanged(k string) bool {
+func (b *OrderBook) HasChanged(k string) bool {
 	return true
 }
 

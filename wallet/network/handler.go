@@ -36,7 +36,7 @@ func GetNetwork(store Store, name string) (*Network, error) {
 		return nil, fmt.Errorf("couldn't verify network existence: %w", err)
 	}
 	if !exists {
-		return nil, NewNetworkDoesNotExistError(name)
+		return nil, NewDoesNotExistError(name)
 	}
 	n, err := store.GetNetwork(name)
 	if err != nil {
@@ -52,7 +52,7 @@ func ImportNetwork(store Store, net *Network, overwrite bool) error {
 		return fmt.Errorf("couldn't verify network existence: %w", err)
 	}
 	if exists && !overwrite {
-		return NewNetworkAlreadyExistsError(net.Name)
+		return NewAlreadyExistsError(net.Name)
 	}
 
 	if err := store.SaveNetwork(net); err != nil {
@@ -170,7 +170,7 @@ func DeleteNetwork(store Store, req *DeleteNetworkRequest) error {
 		return fmt.Errorf("couldn't verify network existence: %w", err)
 	}
 	if !exists {
-		return NewNetworkDoesNotExistError(req.Name)
+		return NewDoesNotExistError(req.Name)
 	}
 	if err = store.DeleteNetwork(req.Name); err != nil {
 		return fmt.Errorf("couldn't delete network: %w", err)

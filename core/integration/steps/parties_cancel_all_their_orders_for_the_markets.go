@@ -42,8 +42,8 @@ func PartiesCancelAllTheirOrdersForTheMarkets(
 
 		for _, o := range dedupOrders {
 			cancel := types.OrderCancellation{
-				OrderId:  o.Id,
-				MarketId: o.MarketId,
+				OrderID:  o.Id,
+				MarketID: o.MarketId,
 			}
 			_, err := exec.CancelOrder(context.Background(), &cancel, party)
 			err = checkExpectedError(row, err, nil)

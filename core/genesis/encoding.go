@@ -21,7 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/core/validators"
 )
 
-type GenesisState struct {
+type State struct {
 	Assets             assets.GenesisState             `json:"assets"`
 	Validators         validators.GenesisState         `json:"validators"`
 	Network            abci.GenesisState               `json:"network"`
@@ -31,8 +31,8 @@ type GenesisState struct {
 	Checkpoint         checkpoint.GenesisState         `json:"checkpoint"`
 }
 
-func DefaultGenesisState() GenesisState {
-	return GenesisState{
+func DefaultState() State {
+	return State{
 		Limits:     limits.DefaultGenesisState(),
 		Assets:     assets.DefaultGenesisState(),
 		Validators: validators.DefaultGenesisState(),

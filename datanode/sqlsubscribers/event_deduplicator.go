@@ -21,24 +21,25 @@ import (
 type eventDeduplicator[K comparable, V any] struct {
 	lastFlushedEvents map[K]V
 	newEvents         map[K]V
-	getId             func(context.Context, V) K
+	getID             func(context.Context, V) K
 	compareFunc       func(V, V) bool
 }
 
+//revive:disable:unexported-return
 func NewEventDeduplicator[K comparable, V any](
-	getId func(context.Context, V) K,
+	getID func(context.Context, V) K,
 	compareFunc func(V, V) bool,
 ) *eventDeduplicator[K, V] {
 	return &eventDeduplicator[K, V]{
 		lastFlushedEvents: map[K]V{},
 		newEvents:         map[K]V{},
-		getId:             getId,
+		getID:             getID,
 		compareFunc:       compareFunc,
 	}
 }
 
 func (e *eventDeduplicator[K, V]) AddEvent(ctx context.Context, event V) error {
-	id := e.getId(ctx, event)
+	id := e.getID(ctx, event)
 	e.newEvents[id] = event
 	return nil
 }

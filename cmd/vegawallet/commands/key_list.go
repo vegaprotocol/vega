@@ -94,7 +94,7 @@ func (f *ListKeysFlags) Validate() (*wallet.ListKeysRequest, error) {
 	req := &wallet.ListKeysRequest{}
 
 	if len(f.Wallet) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("wallet")
+		return nil, flags.MustBeSpecifiedError("wallet")
 	}
 	req.Wallet = f.Wallet
 

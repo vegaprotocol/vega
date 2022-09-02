@@ -102,8 +102,8 @@ func (ds *Delegations) Get(ctx context.Context,
 		switch p := pagination.(type) {
 		case *entities.OffsetPagination:
 			if p != nil {
-				order_cols := []string{"epoch_id", "party_id", "node_id"}
-				query, args = orderAndPaginateQuery(query, order_cols, *p, args...)
+				orderCols := []string{"epoch_id", "party_id", "node_id"}
+				query, args = orderAndPaginateQuery(query, orderCols, *p, args...)
 			}
 		case entities.CursorPagination:
 			query, args, err = PaginateQuery[entities.DelegationCursor](query, args, delegationsOrdering, p)

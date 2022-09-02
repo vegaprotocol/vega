@@ -97,7 +97,7 @@ func NewTmNode(
 	return &TmNode{conf, node}, nil
 }
 
-func (s *TmNode) ReloadConf(cfg blockchain.Config) {
+func (*TmNode) ReloadConf(cfg blockchain.Config) {
 }
 
 func (t *TmNode) GetClient() (*LocalClient, error) {

@@ -176,9 +176,9 @@ func BufCap(bc uint32) InstrumentOption {
 	}
 }
 
-// AddInstrument  configure and register new metrics instrument
+// addInstrument  configure and register new metrics instrument
 // this will, over time, be moved to use custom Registries, etc...
-func AddInstrument(t instrument, name string, opts ...InstrumentOption) (*mi, error) {
+func addInstrument(t instrument, name string, opts ...InstrumentOption) (*mi, error) {
 	var col prometheus.Collector
 	ret := mi{}
 	opt := instrumentOpts{
@@ -346,7 +346,7 @@ func (m mi) SummaryVec() (*prometheus.SummaryVec, error) {
 
 func setupMetrics() error {
 	// instrument with time histogram for blocks
-	h, err := AddInstrument(
+	h, err := addInstrument(
 		Counter,
 		"engine_seconds_total",
 		Namespace("datanode"),
@@ -361,7 +361,7 @@ func setupMetrics() error {
 	}
 	engineTime = est
 
-	h, err = AddInstrument(
+	h, err = addInstrument(
 		Counter,
 		"flush_handling_seconds_total",
 		Namespace("datanode"),
@@ -377,7 +377,7 @@ func setupMetrics() error {
 	flushHandlingTime = fht
 
 	// eventHandlingTime
-	h, err = AddInstrument(
+	h, err = addInstrument(
 		Counter,
 		"event_handling_seconds_total",
 		Namespace("datanode"),
@@ -392,7 +392,7 @@ func setupMetrics() error {
 	}
 	eventHandlingTime = eht
 
-	h, err = AddInstrument(
+	h, err = addInstrument(
 		Counter,
 		"published_event_count_total",
 		Namespace("datanode"),
@@ -407,7 +407,7 @@ func setupMetrics() error {
 	}
 	publishedEventsCounter = sec
 
-	h, err = AddInstrument(
+	h, err = addInstrument(
 		Counter,
 		"event_bus_published_event_count_total",
 		Namespace("datanode"),
@@ -423,7 +423,7 @@ func setupMetrics() error {
 	eventBusPublishedEventsCounter = sec
 
 	// eventCount
-	h, err = AddInstrument(
+	h, err = addInstrument(
 		Counter,
 		"event_count_total",
 		Namespace("datanode"),
@@ -439,7 +439,7 @@ func setupMetrics() error {
 	eventCounter = ec
 
 	// sqlQueryTime
-	h, err = AddInstrument(
+	h, err = addInstrument(
 		Counter,
 		"sql_query_seconds_total",
 		Namespace("datanode"),
@@ -455,7 +455,7 @@ func setupMetrics() error {
 	sqlQueryTime = sqt
 
 	// sqlQueryCounter
-	h, err = AddInstrument(
+	h, err = addInstrument(
 		Counter,
 		"sql_query_count",
 		Namespace("datanode"),
@@ -470,7 +470,7 @@ func setupMetrics() error {
 	}
 	sqlQueryCounter = qc
 
-	h, err = AddInstrument(
+	h, err = addInstrument(
 		Counter,
 		"blocks_handling_time_seconds_total",
 		Namespace("datanode"),
@@ -486,7 +486,7 @@ func setupMetrics() error {
 	}
 	blockHandlingTime = bht
 
-	h, err = AddInstrument(
+	h, err = addInstrument(
 		Counter,
 		"blocks_total",
 		Namespace("datanode"),
@@ -502,7 +502,7 @@ func setupMetrics() error {
 	}
 	blockCounter = bt
 
-	h, err = AddInstrument(
+	h, err = addInstrument(
 		Gauge,
 		"block_height",
 		Namespace("datanode"),
@@ -522,7 +522,7 @@ func setupMetrics() error {
 	// API usage metrics start here
 	//
 
-	if h, err = AddInstrument(
+	if h, err = addInstrument(
 		Gauge,
 		"active_subscriptions",
 		Namespace("datanode"),
@@ -536,7 +536,7 @@ func setupMetrics() error {
 		return err
 	}
 
-	if h, err = AddInstrument(
+	if h, err = addInstrument(
 		Gauge,
 		"event_bus_active_subscriptions",
 		Namespace("datanode"),
@@ -550,7 +550,7 @@ func setupMetrics() error {
 		return err
 	}
 
-	if h, err = AddInstrument(
+	if h, err = addInstrument(
 		Gauge,
 		"event_bus_active_connections",
 		Namespace("datanode"),
@@ -565,7 +565,7 @@ func setupMetrics() error {
 	eventBusConnectionGauge = ac
 
 	// Number of calls to each request type
-	h, err = AddInstrument(
+	h, err = addInstrument(
 		Counter,
 		"request_count_total",
 		Namespace("datanode"),
@@ -582,7 +582,7 @@ func setupMetrics() error {
 	apiRequestCallCounter = rc
 
 	// Total time for calls to each request type for each api type
-	h, err = AddInstrument(
+	h, err = addInstrument(
 		Counter,
 		"request_time_total",
 		Namespace("datanode"),

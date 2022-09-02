@@ -50,7 +50,7 @@ func (f *DescribeNetworkFlags) Validate() (*network.DescribeNetworkRequest, erro
 	req := &network.DescribeNetworkRequest{}
 
 	if len(f.Network) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("network")
+		return nil, flags.MustBeSpecifiedError("network")
 	}
 	req.Name = f.Network
 

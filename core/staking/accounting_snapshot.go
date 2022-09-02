@@ -120,14 +120,14 @@ func (a *Accounting) LoadState(ctx context.Context, payload *types.Payload) ([]t
 }
 
 func (a *Accounting) restoreStakingAccounts(ctx context.Context, accounts *types.StakingAccounts, p *types.Payload) error {
-	a.hashableAccounts = make([]*StakingAccount, 0, len(accounts.Accounts))
+	a.hashableAccounts = make([]*Account, 0, len(accounts.Accounts))
 	a.log.Debug("restoring staking accounts",
 		logging.Int("n", len(accounts.Accounts)),
 	)
 	evts := []events.Event{}
 	pevts := []events.Event{}
 	for _, acc := range accounts.Accounts {
-		stakingAcc := &StakingAccount{
+		stakingAcc := &Account{
 			Party:   acc.Party,
 			Balance: acc.Balance,
 			Events:  acc.Events,

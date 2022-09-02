@@ -123,8 +123,8 @@ func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
 				Buys:             lp.Buys,
 				Reference:        lp.Reference,
 			}
-			deterministicId := hex.EncodeToString(crypto.Hash([]byte(id + party + lp.MarketID)))
-			err := exec.SubmitLiquidityProvision(context.Background(), sub, party, id, deterministicId)
+			deterministicID := hex.EncodeToString(crypto.Hash([]byte(id + party + lp.MarketID)))
+			err := exec.SubmitLiquidityProvision(context.Background(), sub, party, id, deterministicID)
 			if ceerr := checkExpectedError(errRow, err, errSubmittingLiquidityProvision(sub, party, id, err)); ceerr != nil {
 				return ceerr
 			}

@@ -326,7 +326,7 @@ func TestSubmit(t *testing.T) {
 
 		// Leave auction
 		tm.now = tm.now.Add(20 * block)
-		tm.market.LeaveAuctionWithIdGen(ctx, tm.now, newTestIdGenerator())
+		tm.market.LeaveAuctionWithIDGen(ctx, tm.now, newTestIDGenerator())
 
 		// Check we have an accepted LP submission
 		assert.Equal(t, 1, tm.market.GetLPSCount())
@@ -401,7 +401,7 @@ func TestSubmit(t *testing.T) {
 		// Leave auction
 		tm.now = tm.now.Add(40 * block)
 		tm.market.OnTick(ctx, tm.now)
-		tm.market.LeaveAuctionWithIdGen(ctx, tm.now, newTestIdGenerator())
+		tm.market.LeaveAuctionWithIDGen(ctx, tm.now, newTestIDGenerator())
 
 		// Check we have an accepted LP submission
 		assert.Equal(t, 1, tm.market.GetLPSCount())
@@ -594,7 +594,7 @@ func TestSubmit(t *testing.T) {
 
 		// Leave the auction so we can uncross the book
 		tm.now = tm.now.Add(20 * block)
-		tm.market.LeaveAuctionWithIdGen(ctx, tm.now, newTestIdGenerator())
+		tm.market.LeaveAuctionWithIDGen(ctx, tm.now, newTestIDGenerator())
 		tm.market.OnTick(ctx, tm.now)
 		assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
 		assert.Equal(t, 0, tm.market.GetParkedOrderCount())
@@ -2368,7 +2368,7 @@ func TestAmend(t *testing.T) {
 		require.NoError(t, err)
 
 		// Leave auction
-		tm.market.LeaveAuctionWithIdGen(ctx, now.Add(time.Second*20), newTestIdGenerator())
+		tm.market.LeaveAuctionWithIDGen(ctx, now.Add(time.Second*20), newTestIDGenerator())
 		// mark price is set at 10, orders on book
 
 		buys := []*types.LiquidityOrder{
@@ -2557,7 +2557,7 @@ func TestAmend(t *testing.T) {
 		require.NoError(t, err)
 
 		// Leave auction
-		tm.market.LeaveAuctionWithIdGen(ctx, now.Add(time.Second*20), newTestIdGenerator())
+		tm.market.LeaveAuctionWithIDGen(ctx, now.Add(time.Second*20), newTestIDGenerator())
 
 		// Check we have an accepted LP submission
 		assert.Equal(t, 1, tm.market.GetLPSCount())
@@ -2787,6 +2787,6 @@ func TestAmend(t *testing.T) {
 	})
 }
 
-func newTestIdGenerator() execution.IDGenerator {
+func newTestIDGenerator() execution.IDGenerator {
 	return idgeneration.New(vgcrypto.RandomHash())
 }

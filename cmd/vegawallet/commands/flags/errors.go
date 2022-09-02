@@ -13,19 +13,19 @@ func (f FlagError) Error() string {
 	return f.message
 }
 
-func FlagsMutuallyExclusiveError(n1, n2 string) error {
+func MutuallyExclusiveError(n1, n2 string) error {
 	return FlagError{
 		message: fmt.Sprintf("--%s and --%s flags are mutually exclusive", n1, n2),
 	}
 }
 
-func FlagMustBeSpecifiedError(name string) error {
+func MustBeSpecifiedError(name string) error {
 	return FlagError{
 		message: fmt.Sprintf("--%s flag must be specified", name),
 	}
 }
 
-func FlagRequireLessThanFlagError(less, greater string) error {
+func RequireLessThanFlagError(less, greater string) error {
 	return FlagError{
 		message: fmt.Sprintf("--%s flag must be greater than --%s", greater, less),
 	}

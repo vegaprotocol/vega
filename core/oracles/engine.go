@@ -30,6 +30,7 @@ type Broker interface {
 }
 
 // TimeService interface.
+//
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/core/oracles TimeService
 type TimeService interface {
 	GetTimeNow() time.Time

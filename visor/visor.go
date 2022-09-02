@@ -25,17 +25,17 @@ import (
 )
 
 const (
-	upgradeApiCallTickerDuration = time.Second * 2
+	upgradeAPICallTickerDuration = time.Second * 2
 	maxUpgradeStatusErrs         = 10
 )
 
 type Visor struct {
 	conf          *config.VisorConfig
-	clientFactory client.ClientFactory
+	clientFactory client.Factory
 	log           *logging.Logger
 }
 
-func NewVisor(ctx context.Context, log *logging.Logger, clientFactory client.ClientFactory, homePath string) (*Visor, error) {
+func NewVisor(ctx context.Context, log *logging.Logger, clientFactory client.Factory, homePath string) (*Visor, error) {
 	homePath, err := utils.AbsPath(homePath)
 	if err != nil {
 		return nil, err
@@ -90,7 +90,7 @@ func (v *Visor) Run(ctx context.Context) error {
 	numOfRestarts := 0
 	var currentReleaseInfo *types.ReleaseInfo
 
-	upgradeTicker := time.NewTicker(upgradeApiCallTickerDuration)
+	upgradeTicker := time.NewTicker(upgradeAPICallTickerDuration)
 	defer upgradeTicker.Stop()
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -104,7 +104,7 @@ func (v *Visor) Run(ctx context.Context) error {
 
 		client := v.clientFactory.GetClient(
 			runConf.Vega.RCP.SocketPath,
-			runConf.Vega.RCP.HttpPath,
+			runConf.Vega.RCP.HTTPPath,
 		)
 
 		numOfUpgradeStatusErrs := 0
@@ -120,7 +120,7 @@ func (v *Visor) Run(ctx context.Context) error {
 		)
 		binErrs := binRunner.Run(ctx, runConf)
 
-		upgradeTicker.Reset(upgradeApiCallTickerDuration)
+		upgradeTicker.Reset(upgradeAPICallTickerDuration)
 
 	CheckLoop:
 		for {

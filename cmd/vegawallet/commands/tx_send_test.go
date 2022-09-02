@@ -73,7 +73,7 @@ func testSendTxFlagsMissingLogLevelFails(t *testing.T) {
 	req, err := f.Validate()
 
 	// then
-	assert.ErrorIs(t, err, flags.FlagMustBeSpecifiedError("level"))
+	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("level"))
 	assert.Nil(t, req)
 }
 
@@ -114,7 +114,7 @@ func testSendTxFlagsBothNetworkAndNodeAddressSpecifiedFails(t *testing.T) {
 	req, err := f.Validate()
 
 	// then
-	assert.ErrorIs(t, err, flags.FlagsMutuallyExclusiveError("network", "node-address"))
+	assert.ErrorIs(t, err, flags.MutuallyExclusiveError("network", "node-address"))
 	assert.Nil(t, req)
 }
 

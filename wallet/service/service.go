@@ -395,6 +395,7 @@ type NetworkResponse struct {
 // WalletHandler ...
 //
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/wallet_handler_mock.go -package mocks code.vegaprotocol.io/vega/wallet/service WalletHandler
+//nolint:interfacebloat
 type WalletHandler interface {
 	CreateWallet(name, passphrase string) (string, error)
 	ImportWallet(name, passphrase, recoveryPhrase string, version uint32) error

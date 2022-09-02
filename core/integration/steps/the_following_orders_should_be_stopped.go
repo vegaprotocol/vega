@@ -33,7 +33,7 @@ func TheFollowingOrdersShouldBeStopped(broker *stubs.BrokerStub, table *godog.Ta
 			v := o.Order()
 			if v.PartyId == party && v.MarketId == marketID {
 				if v.Status == types.Order_STATUS_STOPPED && v.Reason.String() == reason {
-					count -= 1
+					count--
 					continue
 				}
 				orderNotStopped = append(orderNotStopped, v.Reference)

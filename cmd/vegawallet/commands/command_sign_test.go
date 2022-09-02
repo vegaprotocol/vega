@@ -85,7 +85,7 @@ func testSignCommandFlagsMissingWalletFails(t *testing.T) {
 	req, err := f.Validate()
 
 	// then
-	assert.ErrorIs(t, err, flags.FlagMustBeSpecifiedError("wallet"))
+	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("wallet"))
 	assert.Nil(t, req)
 }
 
@@ -100,7 +100,7 @@ func testSignCommandFlagsMissingChainIDFails(t *testing.T) {
 	req, err := f.Validate()
 
 	// then
-	assert.ErrorIs(t, err, flags.FlagMustBeSpecifiedError("chain-id"))
+	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("chain-id"))
 	assert.Nil(t, req)
 }
 
@@ -115,7 +115,7 @@ func testSignCommandFlagsMissingPubKeyFails(t *testing.T) {
 	req, err := f.Validate()
 
 	// then
-	assert.ErrorIs(t, err, flags.FlagMustBeSpecifiedError("pubkey"))
+	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("pubkey"))
 	assert.Nil(t, req)
 }
 
@@ -130,7 +130,7 @@ func testSignCommandFlagsMissingTxBlockHeightFails(t *testing.T) {
 	req, err := f.Validate()
 
 	// then
-	assert.ErrorIs(t, err, flags.FlagMustBeSpecifiedError("tx-height"))
+	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("tx-height"))
 	assert.Nil(t, req)
 }
 

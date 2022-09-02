@@ -49,13 +49,13 @@ type Engine struct {
 	accounting StakingAccounts
 	cfgMu      sync.Mutex
 
-	transactionTypeToPolicy map[txn.Command]SpamPolicy
+	transactionTypeToPolicy map[txn.Command]Policy
 	currentEpoch            *types.Epoch
-	policyNameToPolicy      map[string]SpamPolicy
+	policyNameToPolicy      map[string]Policy
 	hashKeys                []string
 }
 
-type SpamPolicy interface {
+type Policy interface {
 	Reset(epoch types.Epoch)
 	EndOfBlock(blockHeight uint64)
 	PreBlockAccept(tx abci.Tx) (bool, error)
@@ -90,7 +90,7 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 		config:                  config,
 		log:                     log,
 		accounting:              accounting,
-		transactionTypeToPolicy: map[txn.Command]SpamPolicy{},
+		transactionTypeToPolicy: map[txn.Command]Policy{},
 	}
 
 	proposalPolicy := NewSimpleSpamPolicy("proposal", netparams.SpamProtectionMinTokensForProposal, netparams.SpamProtectionMaxProposals, log, accounting)
@@ -100,7 +100,7 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 	transferPolicy := NewSimpleSpamPolicy("transfer", "", netparams.TransferMaxCommandsPerEpoch, log, accounting)
 
 	voteKey := (&types.PayloadVoteSpamPolicy{}).Key()
-	e.policyNameToPolicy = map[string]SpamPolicy{voteKey: votePolicy, proposalPolicy.policyName: proposalPolicy, delegationPolicy.policyName: delegationPolicy}
+	e.policyNameToPolicy = map[string]Policy{voteKey: votePolicy, proposalPolicy.policyName: proposalPolicy, delegationPolicy.policyName: delegationPolicy}
 	e.hashKeys = []string{voteKey, proposalPolicy.policyName, delegationPolicy.policyName}
 
 	e.transactionTypeToPolicy[txn.ProposeCommand] = proposalPolicy

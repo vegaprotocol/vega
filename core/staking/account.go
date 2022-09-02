@@ -31,21 +31,21 @@ var (
 	ErrInvalidParty       = errors.New("invalid party")
 )
 
-type StakingAccount struct {
+type Account struct {
 	Party   string
 	Balance *num.Uint
 	Events  []*types.StakeLinking
 }
 
-func NewStakingAccount(party string) *StakingAccount {
-	return &StakingAccount{
+func NewStakingAccount(party string) *Account {
+	return &Account{
 		Party:   party,
 		Balance: num.UintZero(),
 		Events:  []*types.StakeLinking{},
 	}
 }
 
-func (s *StakingAccount) validateEvent(evt *types.StakeLinking) error {
+func (s *Account) validateEvent(evt *types.StakeLinking) error {
 	if evt.Amount == nil || evt.Amount.IsZero() {
 		return ErrInvalidAmount
 	}
@@ -72,7 +72,7 @@ func (s *StakingAccount) validateEvent(evt *types.StakeLinking) error {
 }
 
 // AddEvent will add a new event to the account.
-func (s *StakingAccount) AddEvent(evt *types.StakeLinking) error {
+func (s *Account) AddEvent(evt *types.StakeLinking) error {
 	if err := s.validateEvent(evt); err != nil {
 		return err
 	}
@@ -83,11 +83,11 @@ func (s *StakingAccount) AddEvent(evt *types.StakeLinking) error {
 	return s.computeOngoingBalance()
 }
 
-func (s *StakingAccount) GetAvailableBalance() *num.Uint {
+func (s *Account) GetAvailableBalance() *num.Uint {
 	return s.Balance.Clone()
 }
 
-func (s *StakingAccount) GetAvailableBalanceAt(at time.Time) (*num.Uint, error) {
+func (s *Account) GetAvailableBalanceAt(at time.Time) (*num.Uint, error) {
 	atUnix := at.UnixNano()
 	return s.calculateBalance(func(evt *types.StakeLinking) bool {
 		return evt.TS <= atUnix
@@ -96,7 +96,7 @@ func (s *StakingAccount) GetAvailableBalanceAt(at time.Time) (*num.Uint, error) 
 
 // GetAvailableBalanceInRange could return a negative balance
 // if some event are still expected to be received from the bridge.
-func (s *StakingAccount) GetAvailableBalanceInRange(from, to time.Time) (*num.Uint, error) {
+func (s *Account) GetAvailableBalanceInRange(from, to time.Time) (*num.Uint, error) {
 	// first compute the balance before the from time.
 	balance, err := s.GetAvailableBalanceAt(from)
 	if err != nil {
@@ -137,7 +137,7 @@ func (s *StakingAccount) GetAvailableBalanceInRange(from, to time.Time) (*num.Ui
 // because of event being processed out of order but we can't
 // really prevent that, and would have to wait for the network
 // to have seen all events before getting a positive balance.
-func (s *StakingAccount) computeOngoingBalance() error {
+func (s *Account) computeOngoingBalance() error {
 	balance, err := s.calculateBalance(func(evt *types.StakeLinking) bool {
 		return true
 	})
@@ -145,7 +145,7 @@ func (s *StakingAccount) computeOngoingBalance() error {
 	return err
 }
 
-func (s *StakingAccount) insertSorted(evt *types.StakeLinking) {
+func (s *Account) insertSorted(evt *types.StakeLinking) {
 	s.Events = append(s.Events, evt)
 	// sort anyway, but we would expect the events to come in a sorted manner
 	sort.SliceStable(s.Events, func(i, j int) bool {
@@ -167,7 +167,7 @@ func (s *StakingAccount) insertSorted(evt *types.StakeLinking) {
 
 type timeFilter func(*types.StakeLinking) bool
 
-func (s *StakingAccount) calculateBalance(f timeFilter) (*num.Uint, error) {
+func (s *Account) calculateBalance(f timeFilter) (*num.Uint, error) {
 	balance := num.UintZero()
 	for _, evt := range s.Events {
 		if f(evt) {

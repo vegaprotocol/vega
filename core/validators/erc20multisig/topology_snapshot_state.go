@@ -41,15 +41,15 @@ type topologySnapshotState struct {
 	changedPendingState     bool
 }
 
-func (s *Topology) Namespace() types.SnapshotNamespace {
+func (t *Topology) Namespace() types.SnapshotNamespace {
 	return types.ERC20MultiSigTopologySnapshot
 }
 
-func (s *Topology) Keys() []string {
+func (t *Topology) Keys() []string {
 	return hashKeys
 }
 
-func (s *Topology) HasChanged(k string) bool {
+func (t *Topology) HasChanged(k string) bool {
 	// switch k {
 	// case verifiedStateKey:
 	// 	return s.tss.changedVerifiedState
@@ -61,25 +61,25 @@ func (s *Topology) HasChanged(k string) bool {
 	return true
 }
 
-func (s *Topology) GetState(k string) ([]byte, []types.StateProvider, error) {
-	data, err := s.serialise(k)
+func (t *Topology) GetState(k string) ([]byte, []types.StateProvider, error) {
+	data, err := t.serialise(k)
 	return data, nil, err
 }
 
-func (s *Topology) Stopped() bool {
+func (t *Topology) Stopped() bool {
 	return false
 }
 
-func (s *Topology) LoadState(ctx context.Context, payload *types.Payload) ([]types.StateProvider, error) {
-	if s.Namespace() != payload.Data.Namespace() {
+func (t *Topology) LoadState(ctx context.Context, payload *types.Payload) ([]types.StateProvider, error) {
+	if t.Namespace() != payload.Data.Namespace() {
 		return nil, types.ErrInvalidSnapshotNamespace
 	}
 
 	switch pl := payload.Data.(type) {
 	case *types.PayloadERC20MultiSigTopologyVerified:
-		return nil, s.restoreVerifiedState(ctx, pl.Verified, payload)
+		return nil, t.restoreVerifiedState(ctx, pl.Verified, payload)
 	case *types.PayloadERC20MultiSigTopologyPending:
-		return nil, s.restorePendingState(ctx, pl.Pending, payload)
+		return nil, t.restorePendingState(ctx, pl.Pending, payload)
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}

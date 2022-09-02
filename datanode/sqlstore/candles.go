@@ -54,12 +54,12 @@ func NewCandles(ctx context.Context, connectionSource *ConnectionSource, config 
 }
 
 // GetCandleDataForTimeSpan gets the candles for a given interval, from and to are optional.
-func (cs *Candles) GetCandleDataForTimeSpan(ctx context.Context, candleId string, from *time.Time, to *time.Time,
+func (cs *Candles) GetCandleDataForTimeSpan(ctx context.Context, candleID string, from *time.Time, to *time.Time,
 	p entities.CursorPagination) ([]entities.Candle, entities.PageInfo, error,
 ) {
 	pageInfo := entities.PageInfo{}
 
-	descriptor, err := candleDescriptorFromCandleId(candleId)
+	descriptor, err := candleDescriptorFromCandleID(candleID)
 	if err != nil {
 		return nil, pageInfo, fmt.Errorf("getting candle data for time span:%w", err)
 	}
@@ -70,7 +70,7 @@ func (cs *Candles) GetCandleDataForTimeSpan(ctx context.Context, candleId string
 	}
 
 	if !exists {
-		return nil, pageInfo, fmt.Errorf("no candle exists for candle id:%s", candleId)
+		return nil, pageInfo, fmt.Errorf("no candle exists for candle id:%s", candleID)
 	}
 
 	var candles []entities.Candle
@@ -125,7 +125,7 @@ func (cs *Candles) GetCandlesForMarket(ctx context.Context, market string) (map[
 	return candles, nil
 }
 
-func (cs *Candles) GetCandleIdForIntervalAndMarket(ctx context.Context, interval string, market string) (bool, string, error) {
+func (cs *Candles) GetCandleIDForIntervalAndMarket(ctx context.Context, interval string, market string) (bool, string, error) {
 	interval, err := cs.normaliseInterval(ctx, interval)
 	if err != nil {
 		return false, "", fmt.Errorf("invalid interval: %w", err)
@@ -175,8 +175,8 @@ func (cs *Candles) getIntervalToView(ctx context.Context) (map[string]string, er
 	return result, nil
 }
 
-func (cs *Candles) CandleExists(ctx context.Context, candleId string) (bool, error) {
-	descriptor, err := candleDescriptorFromCandleId(candleId)
+func (cs *Candles) CandleExists(ctx context.Context, candleID string) (bool, error) {
+	descriptor, err := candleDescriptorFromCandleID(candleID)
 	if err != nil {
 		return false, fmt.Errorf("candle exists:%w", err)
 	}
@@ -277,7 +277,7 @@ type candleDescriptor struct {
 	market   string
 }
 
-func candleDescriptorFromCandleId(id string) (candleDescriptor, error) {
+func candleDescriptorFromCandleID(id string) (candleDescriptor, error) {
 	idx := strings.LastIndex(id, "_")
 
 	if idx == -1 {

@@ -26,7 +26,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const testAssetId = "deadbeef"
+const testAssetID = "deadbeef"
 
 func TestMarginLevels(t *testing.T) {
 	t.Run("Add should insert margin levels that don't exist in the current block", testInsertMarginLevels)
@@ -81,7 +81,7 @@ func setupMarginLevelTests(t *testing.T, ctx context.Context) (*testBlockSource,
 	assets := sqlstore.NewAssets(connectionSource)
 
 	testAsset := entities.Asset{
-		ID:            testAssetId,
+		ID:            testAssetID,
 		Name:          "testAssetName",
 		Symbol:        "tan",
 		Decimals:      1,
@@ -175,15 +175,15 @@ func getMarginLevelProto() *vega.MarginLevels {
 	return getMarginLevelWithMaintenanceProto("1000", "deadbeef", "deadbeef", time.Now().UnixNano())
 }
 
-func getMarginLevelWithMaintenanceProto(maintenanceMargin, partyId, marketId string, timestamp int64) *vega.MarginLevels {
+func getMarginLevelWithMaintenanceProto(maintenanceMargin, partyID, marketID string, timestamp int64) *vega.MarginLevels {
 	return &vega.MarginLevels{
 		MaintenanceMargin:      maintenanceMargin,
 		SearchLevel:            "1000",
 		InitialMargin:          "1000",
 		CollateralReleaseLevel: "1000",
-		PartyId:                partyId,
-		MarketId:               marketId,
-		Asset:                  testAssetId,
+		PartyId:                partyID,
+		MarketId:               marketID,
+		Asset:                  testAssetID,
 		Timestamp:              timestamp,
 	}
 }

@@ -112,18 +112,6 @@ type ValidatorMapping map[string]ValidatorData
 
 type validators map[string]*valState
 
-func (vs validators) toNodeIDAdresses() []NodeIDAddress {
-	nodeIDAdresses := make([]NodeIDAddress, 0, len(vs))
-	for k, v := range vs {
-		nodeIDAdresses = append(nodeIDAdresses, NodeIDAddress{
-			NodeID:     k,
-			EthAddress: v.data.EthereumAddress,
-		})
-	}
-
-	return nodeIDAdresses
-}
-
 type Topology struct {
 	log                  *logging.Logger
 	cfg                  Config
@@ -306,7 +294,7 @@ func (t *Topology) Len() int {
 	count := 0
 	for _, v := range t.validators {
 		if v.status == ValidatorStatusTendermint {
-			count += 1
+			count++
 		}
 	}
 	return count
@@ -577,11 +565,12 @@ func (t *Topology) LoadValidatorsOnGenesis(ctx context.Context, rawstate []byte)
 // are a mapping of a tendermint pubkey to validator info.
 // in here we are going to check if:
 // - the tm pubkey is the same as the one stored in the nodewallet
-//  - if no we return straight away and consider ourself as non validator
-//  - if yes then we do the following checks
+//   - if no we return straight away and consider ourself as non validator
+//   - if yes then we do the following checks
+//
 // - check that all pubkeys / addresses matches what's in the node wallet
-//  - if they all match, we are a validator!
-//  - if they don't, we panic, that's a missconfiguration from the checkValidatorDataWithSelfWallets, ever the genesis or the node is misconfigured
+//   - if they all match, we are a validator!
+//   - if they don't, we panic, that's a missconfiguration from the checkValidatorDataWithSelfWallets, ever the genesis or the node is misconfigured
 func (t *Topology) checkValidatorDataWithSelfWallets(data ValidatorData) {
 	if data.TmPubKey != t.wallets.GetTendermintPubkey() {
 		return

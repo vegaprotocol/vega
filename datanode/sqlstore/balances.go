@@ -148,10 +148,10 @@ func (bs *Balances) Query(filter entities.AccountFilter, groupBy []entities.Acco
 
 	defer metrics.StartSQLQuery("Balances", "Query")()
 	rows, err := bs.Connection.Query(context.Background(), query, args...)
-	defer rows.Close()
 	if err != nil {
 		return nil, pageInfo, fmt.Errorf("querying balances: %w", err)
 	}
+	defer rows.Close()
 
 	res := []entities.AggregatedBalance{}
 

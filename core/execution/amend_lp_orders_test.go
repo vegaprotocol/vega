@@ -175,10 +175,10 @@ func TestAmendDeployedCommitment(t *testing.T) {
 				o.Status.String(),
 			)
 			if o.Status == types.OrderStatusCancelled {
-				totalCancelled += 1
+				totalCancelled++
 			}
 			if o.Status == types.OrderStatusActive {
-				totalActive += 1
+				totalActive++
 			}
 		}
 
@@ -263,10 +263,10 @@ func TestAmendDeployedCommitment(t *testing.T) {
 				o.Status.String(),
 			)
 			if o.Status == types.OrderStatusCancelled {
-				totalCancelled += 1
+				totalCancelled++
 			}
 			if o.Status == types.OrderStatusActive {
-				totalActive += 1
+				totalActive++
 			}
 		}
 
@@ -355,10 +355,10 @@ func TestAmendDeployedCommitment(t *testing.T) {
 				o.Status.String(),
 			)
 			if o.Status == types.OrderStatusCancelled {
-				totalCancelled += 1
+				totalCancelled++
 			}
 			if o.Status == types.OrderStatusActive {
-				totalActive += 1
+				totalActive++
 			}
 		}
 
@@ -626,7 +626,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 				expectedStatus.String(),
 				o.Status.String(),
 			)
-			i += 1
+			i++
 		}
 	})
 
@@ -767,7 +767,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 				expectedStatus.String(),
 				o.Status.String(),
 			)
-			i += 1
+			i++
 		}
 	})
 

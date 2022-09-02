@@ -313,5 +313,5 @@ func TestRotateKeyFailsWhenTargetHeighIsLessnThanTxHeight(t *testing.T) {
 
 	// then
 	require.Nil(t, keyRotateResp)
-	require.ErrorIs(t, err, flags.FlagRequireLessThanFlagError("tx-height", "target-height"))
+	require.ErrorIs(t, err, flags.RequireLessThanFlagError("tx-height", "target-height"))
 }

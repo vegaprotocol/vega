@@ -157,14 +157,14 @@ func cancelAllOrderForAParty(t *testing.T) {
 	market := "testMarket"
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
-	orderId1 := vgcrypto.RandomHash()
-	orderId2 := vgcrypto.RandomHash()
-	orderId3 := vgcrypto.RandomHash()
-	orderId4 := vgcrypto.RandomHash()
+	orderID1 := vgcrypto.RandomHash()
+	orderID2 := vgcrypto.RandomHash()
+	orderID3 := vgcrypto.RandomHash()
+	orderID4 := vgcrypto.RandomHash()
 
 	orders := []*types.Order{
 		{
-			ID:            orderId1,
+			ID:            orderID1,
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -177,7 +177,7 @@ func cancelAllOrderForAParty(t *testing.T) {
 			TimeInForce:   types.OrderTimeInForceGTC,
 		},
 		{
-			ID:            orderId2,
+			ID:            orderID2,
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -190,7 +190,7 @@ func cancelAllOrderForAParty(t *testing.T) {
 			TimeInForce:   types.OrderTimeInForceGTC,
 		},
 		{
-			ID:            orderId3,
+			ID:            orderID3,
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -203,7 +203,7 @@ func cancelAllOrderForAParty(t *testing.T) {
 			TimeInForce:   types.OrderTimeInForceGTC,
 		},
 		{
-			ID:            orderId4,
+			ID:            orderID4,
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -225,9 +225,9 @@ func cancelAllOrderForAParty(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, confs, 3)
 	expectedIDs := map[string]struct{}{
-		orderId1: {},
-		orderId2: {},
-		orderId4: {},
+		orderID1: {},
+		orderID2: {},
+		orderID4: {},
 	}
 	for _, conf := range confs {
 		if _, ok := expectedIDs[conf.Order.ID]; ok {
@@ -243,14 +243,14 @@ func getAllOrderForAParty(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
-	orderId1 := vgcrypto.RandomHash()
-	orderId2 := vgcrypto.RandomHash()
-	orderId3 := vgcrypto.RandomHash()
-	orderId4 := vgcrypto.RandomHash()
+	orderID1 := vgcrypto.RandomHash()
+	orderID2 := vgcrypto.RandomHash()
+	orderID3 := vgcrypto.RandomHash()
+	orderID4 := vgcrypto.RandomHash()
 
 	orders := []*types.Order{
 		{
-			ID:            orderId1,
+			ID:            orderID1,
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -263,7 +263,7 @@ func getAllOrderForAParty(t *testing.T) {
 			TimeInForce:   types.OrderTimeInForceGTC,
 		},
 		{
-			ID:            orderId2,
+			ID:            orderID2,
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -276,7 +276,7 @@ func getAllOrderForAParty(t *testing.T) {
 			TimeInForce:   types.OrderTimeInForceGTC,
 		},
 		{
-			ID:            orderId3,
+			ID:            orderID3,
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -289,7 +289,7 @@ func getAllOrderForAParty(t *testing.T) {
 			TimeInForce:   types.OrderTimeInForceGTC,
 		},
 		{
-			ID:            orderId4,
+			ID:            orderID4,
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -310,9 +310,9 @@ func getAllOrderForAParty(t *testing.T) {
 	ordersLs := book.ob.GetOrdersPerParty("A")
 	assert.Len(t, ordersLs, 3)
 	expectedIDs := map[string]struct{}{
-		orderId1: {},
-		orderId2: {},
-		orderId4: {},
+		orderID1: {},
+		orderID2: {},
+		orderID4: {},
 	}
 	for _, o := range ordersLs {
 		if _, ok := expectedIDs[o.ID]; ok {
@@ -806,7 +806,7 @@ func TestOrderBook_CancelReturnsTheOrderFromTheBook(t *testing.T) {
 	defer book.Finish()
 	currentTimestamp := getCurrentUtcTimestampNano()
 
-	orderId := vgcrypto.RandomHash()
+	orderID := vgcrypto.RandomHash()
 	order1 := types.Order{
 		Status:        types.OrderStatusActive,
 		Type:          types.OrderTypeLimit,
@@ -819,7 +819,7 @@ func TestOrderBook_CancelReturnsTheOrderFromTheBook(t *testing.T) {
 		Remaining:     100,
 		TimeInForce:   types.OrderTimeInForceGTC,
 		CreatedAt:     currentTimestamp,
-		ID:            orderId,
+		ID:            orderID,
 	}
 	order2 := types.Order{
 		Status:        types.OrderStatusActive,
@@ -833,7 +833,7 @@ func TestOrderBook_CancelReturnsTheOrderFromTheBook(t *testing.T) {
 		Remaining:     1, // use a wrong remaining here to get the order from the book
 		TimeInForce:   types.OrderTimeInForceGTC,
 		CreatedAt:     currentTimestamp,
-		ID:            orderId,
+		ID:            orderID,
 	}
 
 	trades, getErr := book.ob.GetTrades(&order1)
@@ -2182,9 +2182,9 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 	defer logger.Sync()
 	logger.Debug("BEGIN PARTIAL FILL IOC ORDER")
 
-	orderId := vgcrypto.RandomHash()
+	orderID := vgcrypto.RandomHash()
 	newOrder := &types.Order{
-		ID:            orderId,
+		ID:            orderID,
 		Status:        types.OrderStatusActive,
 		Type:          types.OrderTypeLimit,
 		MarketID:      market,
@@ -2204,7 +2204,7 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 
 	assert.Equal(t, nil, err)
 	assert.NotNil(t, confirmation)
-	assert.Equal(t, orderId, confirmation.Order.ID)
+	assert.Equal(t, orderID, confirmation.Order.ID)
 	assert.Equal(t, 0, len(confirmation.Trades))
 	assert.Equal(t, len(trades), len(confirmation.Trades))
 
@@ -3532,43 +3532,43 @@ func TestOrderBook_AuctionUncrossWashTrades2(t *testing.T) {
 	// Switch to auction mode
 	book.ob.EnterAuction()
 
-	tt_0_0 := getOrder(t, book, market, "tt_0_0", types.SideBuy, 90, "tt_0", 1000)
-	_, err := book.ob.SubmitOrder(tt_0_0)
+	tt0_0 := getOrder(t, book, market, "tt_0_0", types.SideBuy, 90, "tt_0", 1000)
+	_, err := book.ob.SubmitOrder(tt0_0)
 	require.NoError(t, err)
-	tt_0_1 := getOrder(t, book, market, "tt_0_1", types.SideSell, 200, "tt_0", 1000)
-	_, err = book.ob.SubmitOrder(tt_0_1)
+	tt0_1 := getOrder(t, book, market, "tt_0_1", types.SideSell, 200, "tt_0", 1000)
+	_, err = book.ob.SubmitOrder(tt0_1)
 	require.NoError(t, err)
 
-	tt_1_0 := getOrder(t, book, market, "tt_1_0", types.SideSell, 110, "tt_1", 50)
-	_, err = book.ob.SubmitOrder(tt_1_0)
+	tt1_0 := getOrder(t, book, market, "tt_1_0", types.SideSell, 110, "tt_1", 50)
+	_, err = book.ob.SubmitOrder(tt1_0)
 	require.NoError(t, err)
-	tt_2_0 := getOrder(t, book, market, "tt_2_0", types.SideBuy, 110, "tt_2", 20)
-	_, err = book.ob.SubmitOrder(tt_2_0)
+	tt2_0 := getOrder(t, book, market, "tt_2_0", types.SideBuy, 110, "tt_2", 20)
+	_, err = book.ob.SubmitOrder(tt2_0)
 	require.NoError(t, err)
-	tt_3_0 := getOrder(t, book, market, "tt_3_0", types.SideBuy, 110, "tt_3", 30)
-	_, err = book.ob.SubmitOrder(tt_3_0)
+	tt3_0 := getOrder(t, book, market, "tt_3_0", types.SideBuy, 110, "tt_3", 30)
+	_, err = book.ob.SubmitOrder(tt3_0)
 	require.NoError(t, err)
 
 	indicativeTrades, err := book.ob.GetIndicativeTrades()
 	require.NoError(t, err)
 	require.Equal(t, 2, len(indicativeTrades))
 
-	require.Equal(t, tt_1_0.Party, indicativeTrades[0].Seller)
-	require.Equal(t, tt_2_0.Party, indicativeTrades[0].Buyer)
-	require.Equal(t, tt_2_0.Size, indicativeTrades[0].Size)
-	require.Equal(t, tt_2_0.Price, indicativeTrades[0].Price)
+	require.Equal(t, tt1_0.Party, indicativeTrades[0].Seller)
+	require.Equal(t, tt2_0.Party, indicativeTrades[0].Buyer)
+	require.Equal(t, tt2_0.Size, indicativeTrades[0].Size)
+	require.Equal(t, tt2_0.Price, indicativeTrades[0].Price)
 
-	require.Equal(t, tt_1_0.Party, indicativeTrades[1].Seller)
-	require.Equal(t, tt_3_0.Party, indicativeTrades[1].Buyer)
-	require.Equal(t, tt_3_0.Size, indicativeTrades[1].Size)
-	require.Equal(t, tt_3_0.Price, indicativeTrades[1].Price)
+	require.Equal(t, tt1_0.Party, indicativeTrades[1].Seller)
+	require.Equal(t, tt3_0.Party, indicativeTrades[1].Buyer)
+	require.Equal(t, tt3_0.Size, indicativeTrades[1].Size)
+	require.Equal(t, tt3_0.Price, indicativeTrades[1].Price)
 
 	// Add wash trades
-	tt_4_0 := getOrder(t, book, market, "tt_4_0", types.SideSell, 110, "tt_4", 40)
-	_, err = book.ob.SubmitOrder(tt_4_0)
+	tt4_0 := getOrder(t, book, market, "tt_4_0", types.SideSell, 110, "tt_4", 40)
+	_, err = book.ob.SubmitOrder(tt4_0)
 	require.NoError(t, err)
-	tt_4_1 := getOrder(t, book, market, "tt_4_1", types.SideBuy, 110, "tt_4", 40)
-	_, err = book.ob.SubmitOrder(tt_4_1)
+	tt4_1 := getOrder(t, book, market, "tt_4_1", types.SideBuy, 110, "tt_4", 40)
+	_, err = book.ob.SubmitOrder(tt4_1)
 	require.NoError(t, err)
 
 	indicativeTrades, err = book.ob.GetIndicativeTrades()
@@ -3577,21 +3577,21 @@ func TestOrderBook_AuctionUncrossWashTrades2(t *testing.T) {
 	require.Equal(t, 3, len(indicativeTrades))
 
 	// The first two should stay as they were
-	require.Equal(t, tt_1_0.Party, indicativeTrades[0].Seller)
-	require.Equal(t, tt_2_0.Party, indicativeTrades[0].Buyer)
-	require.Equal(t, tt_2_0.Size, indicativeTrades[0].Size)
-	require.Equal(t, tt_2_0.Price, indicativeTrades[0].Price)
+	require.Equal(t, tt1_0.Party, indicativeTrades[0].Seller)
+	require.Equal(t, tt2_0.Party, indicativeTrades[0].Buyer)
+	require.Equal(t, tt2_0.Size, indicativeTrades[0].Size)
+	require.Equal(t, tt2_0.Price, indicativeTrades[0].Price)
 
-	require.Equal(t, tt_1_0.Party, indicativeTrades[1].Seller)
-	require.Equal(t, tt_3_0.Party, indicativeTrades[1].Buyer)
-	require.Equal(t, tt_3_0.Size, indicativeTrades[1].Size)
-	require.Equal(t, tt_3_0.Price, indicativeTrades[1].Price)
+	require.Equal(t, tt1_0.Party, indicativeTrades[1].Seller)
+	require.Equal(t, tt3_0.Party, indicativeTrades[1].Buyer)
+	require.Equal(t, tt3_0.Size, indicativeTrades[1].Size)
+	require.Equal(t, tt3_0.Price, indicativeTrades[1].Price)
 
 	// The third one should be the wash trade
-	require.Equal(t, tt_4_0.Party, indicativeTrades[2].Seller)
-	require.Equal(t, tt_4_1.Party, indicativeTrades[2].Buyer)
-	require.Equal(t, tt_4_0.Size, indicativeTrades[2].Size)
-	require.Equal(t, tt_4_0.Price, indicativeTrades[2].Price)
+	require.Equal(t, tt4_0.Party, indicativeTrades[2].Seller)
+	require.Equal(t, tt4_1.Party, indicativeTrades[2].Buyer)
+	require.Equal(t, tt4_0.Size, indicativeTrades[2].Size)
+	require.Equal(t, tt4_0.Price, indicativeTrades[2].Price)
 
 	confs, ordersToCancel, err := book.ob.LeaveAuction(time.Now())
 	require.NoError(t, err)

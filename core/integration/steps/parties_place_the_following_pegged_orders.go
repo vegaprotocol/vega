@@ -29,7 +29,7 @@ func PartiesPlaceTheFollowingPeggedOrders(exec Execution, table *godog.Table) er
 			Type:        types.OrderTypeLimit,
 			TimeInForce: types.OrderTimeInForceGTC,
 			Side:        row.Side(),
-			MarketId:    row.MarketID(),
+			MarketID:    row.MarketID(),
 			Size:        row.Volume(),
 			Reference:   row.Reference(),
 			PeggedOrder: &types.PeggedOrder{

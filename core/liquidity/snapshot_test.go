@@ -101,8 +101,8 @@ func TestSnapshotRoundTrip(t *testing.T) {
 	)
 
 	keys := e1.engine.Keys()
-	kToH := map[string][]byte{}
-	kToS := map[string][]byte{}
+	toH := map[string][]byte{}
+	toS := map[string][]byte{}
 
 	expectedHashes := map[string]string{
 		"parameters:market-id":             "d663375fd6843a0807d17b10ad8425a6ba45c8c2dd6339f400c5b2426f900c13",
@@ -116,17 +116,17 @@ func TestSnapshotRoundTrip(t *testing.T) {
 	for _, key := range keys {
 		s, _, err := e1.engine.GetState(key)
 		assert.NoError(t, err)
-		kToS[key] = s
+		toS[key] = s
 		h := crypto.Hash(s)
 		assert.NoError(t, err)
-		kToH[key] = h
+		toH[key] = h
 
 		// compare hashes to the expected ones
 		assert.Equalf(t, expectedHashes[key], hex.EncodeToString(h), "hashes for key %q does not match", key)
 	}
 
 	// now we reload the keys / state
-	for _, s := range kToS {
+	for _, s := range toS {
 		pl := snapshotpb.Payload{}
 		assert.NoError(t, proto.Unmarshal(s, &pl))
 		_, err := e2.engine.LoadState(ctx, types.PayloadFromProto(&pl))
@@ -134,7 +134,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 	}
 
 	// now ensure both are producing same hashes
-	for k, e1h := range kToH {
+	for k, e1h := range toH {
 		e2s, _, err := e2.engine.GetState(k)
 		e2h := crypto.Hash(e2s)
 		assert.NoError(t, err)

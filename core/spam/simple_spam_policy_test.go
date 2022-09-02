@@ -63,7 +63,7 @@ func testProposalEndBlockReset(t *testing.T) {
 	policy.Reset(types.Epoch{Seq: 0})
 
 	// in each block we vote once
-	var i uint64 = 0
+	var i uint64
 	for ; i < 3; i++ {
 		tx := &testTx{party: "party1", proposal: "proposal1"}
 		accept, err := policy.PreBlockAccept(tx)

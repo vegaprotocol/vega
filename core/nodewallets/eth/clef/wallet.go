@@ -38,7 +38,7 @@ type Client interface {
 	Close()
 }
 
-type wallet struct {
+type Wallet struct {
 	client   Client
 	endpoint string
 	name     string
@@ -56,8 +56,8 @@ func newAccount(accountAddr ethcommon.Address, endpoint string) *accounts.Accoun
 	}
 }
 
-func NewWallet(client Client, endpoint string, accountAddr ethcommon.Address) (*wallet, error) {
-	w := &wallet{
+func NewWallet(client Client, endpoint string, accountAddr ethcommon.Address) (*Wallet, error) {
+	w := &Wallet{
 		name:     fmt.Sprintf("clef-%s", endpoint),
 		client:   client,
 		endpoint: endpoint,
@@ -74,8 +74,8 @@ func NewWallet(client Client, endpoint string, accountAddr ethcommon.Address) (*
 
 // GenerateNewWallet new wallet will create new account in Clef and returns wallet.
 // Caveat: generating new wallet in Clef has to be manually approved and only key store backend is supported.
-func GenerateNewWallet(client Client, endpoint string) (*wallet, error) {
-	w := &wallet{
+func GenerateNewWallet(client Client, endpoint string) (*Wallet, error) {
+	w := &Wallet{
 		name:     fmt.Sprintf("clef-%s", endpoint),
 		client:   client,
 		endpoint: endpoint,
@@ -91,7 +91,7 @@ func GenerateNewWallet(client Client, endpoint string) (*wallet, error) {
 	return w, nil
 }
 
-func (w *wallet) generateAccount() (*accounts.Account, error) {
+func (w *Wallet) generateAccount() (*accounts.Account, error) {
 	// increase timeout here as generating new account has to be manually approved in Clef
 	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout*20)
 	defer cancel()
@@ -105,7 +105,7 @@ func (w *wallet) generateAccount() (*accounts.Account, error) {
 }
 
 // contains returns nil if account is found, otherwise returns an error.
-func (w *wallet) contains(testAddr ethcommon.Address) error {
+func (w *Wallet) contains(testAddr ethcommon.Address) error {
 	addresses, err := w.listAccounts()
 	if err != nil {
 		return fmt.Errorf("failed to list accounts: %w", err)
@@ -120,7 +120,7 @@ func (w *wallet) contains(testAddr ethcommon.Address) error {
 	return fmt.Errorf("wallet does not contain account %q", testAddr)
 }
 
-func (w *wallet) listAccounts() ([]ethcommon.Address, error) {
+func (w *Wallet) listAccounts() ([]ethcommon.Address, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
 	defer cancel()
 
@@ -131,20 +131,20 @@ func (w *wallet) listAccounts() ([]ethcommon.Address, error) {
 	return res, nil
 }
 
-func (w *wallet) Cleanup() error {
+func (w *Wallet) Cleanup() error {
 	w.client.Close()
 	return nil
 }
 
-func (w *wallet) Name() string {
+func (w *Wallet) Name() string {
 	return w.name
 }
 
-func (w *wallet) Chain() string {
+func (w *Wallet) Chain() string {
 	return "ethereum"
 }
 
-func (w *wallet) Sign(data []byte) ([]byte, error) {
+func (w *Wallet) Sign(data []byte) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
 	defer cancel()
 
@@ -165,11 +165,11 @@ func (w *wallet) Sign(data []byte) ([]byte, error) {
 	return res, nil
 }
 
-func (w *wallet) Algo() string {
+func (w *Wallet) Algo() string {
 	return ClefAlgoType
 }
 
-func (w *wallet) Version() (string, error) {
+func (w *Wallet) Version() (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
 	defer cancel()
 
@@ -181,11 +181,11 @@ func (w *wallet) Version() (string, error) {
 	return v, nil
 }
 
-func (w *wallet) PubKey() crypto.PublicKey {
+func (w *Wallet) PubKey() crypto.PublicKey {
 	return crypto.NewPublicKey(w.account.Address.Hex(), w.account.Address.Bytes())
 }
 
-func (w *wallet) Reload(details registry.EthereumWalletDetails) error {
+func (w *Wallet) Reload(details registry.EthereumWalletDetails) error {
 	d, ok := details.(registry.EthereumClefWallet)
 	if !ok {
 		// this would mean an implementation error

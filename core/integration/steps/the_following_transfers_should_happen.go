@@ -39,9 +39,8 @@ func TheFollowingTransfersShouldHappen(
 
 		if len(divergingAmounts) == 0 {
 			return errMissingTransfer(row)
-		} else {
-			return errTransferFoundButNotRightAmount(row, divergingAmounts)
 		}
+		return errTransferFoundButNotRightAmount(row, divergingAmounts)
 	}
 
 	broker.ResetType(events.TransferResponses)

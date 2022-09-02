@@ -63,10 +63,10 @@ func (s *Client) call(ctx context.Context, method string, args interface{}, repl
 	u := url.URL{
 		Scheme: "http",
 		Host:   "unix",
-		Path:   s.cfg.Server.HttpPath,
+		Path:   s.cfg.Server.HTTPPath,
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", u.String(), bytes.NewReader(req))
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), bytes.NewReader(req))
 	if err != nil {
 		return fmt.Errorf("failed to create HTTP request: %w", err)
 	}

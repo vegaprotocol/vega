@@ -46,7 +46,7 @@ var defaultPaginationV2 = entities.OffsetPagination{
 }
 
 // When returning an 'initial image' snapshot, how many updates to batch into each page.
-var snapshotPageSize int = 500
+var snapshotPageSize = 500
 
 type tradingDataServiceV2 struct {
 	v2.UnimplementedTradingDataServiceServer
@@ -257,12 +257,6 @@ func entityMarketDataListToProtoList(list []entities.MarketData) (*v2.MarketData
 		return nil, nil
 	}
 
-	results := make([]*vega.MarketData, 0, len(list))
-
-	for _, item := range list {
-		results = append(results, item.ToProto())
-	}
-
 	edges, err := makeEdges[*v2.MarketDataEdge](list)
 	if err != nil {
 		return nil, errors.Wrap(err, "making edges")
@@ -280,9 +274,9 @@ func (t *tradingDataServiceV2) ObserveMarketsDepth(req *v2.ObserveMarketsDepthRe
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
-	for _, marketId := range req.MarketIds {
-		if !t.marketExistsForId(ctx, marketId) {
-			return apiError(codes.InvalidArgument, ErrMalformedRequest, fmt.Errorf("no market found for id:%s", marketId))
+	for _, marketID := range req.MarketIds {
+		if !t.marketExistsForID(ctx, marketID) {
+			return apiError(codes.InvalidArgument, ErrMalformedRequest, fmt.Errorf("no market found for id:%s", marketID))
 		}
 	}
 
@@ -305,9 +299,9 @@ func (t *tradingDataServiceV2) ObserveMarketsDepthUpdates(req *v2.ObserveMarkets
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
-	for _, marketId := range req.MarketIds {
-		if !t.marketExistsForId(ctx, marketId) {
-			return apiError(codes.InvalidArgument, ErrMalformedRequest, fmt.Errorf("no market found for id:%s", marketId))
+	for _, marketID := range req.MarketIds {
+		if !t.marketExistsForID(ctx, marketID) {
+			return apiError(codes.InvalidArgument, ErrMalformedRequest, fmt.Errorf("no market found for id:%s", marketID))
 		}
 	}
 	depthChan, ref := t.marketDepthService.ObserveDepthUpdates(
@@ -329,9 +323,9 @@ func (t *tradingDataServiceV2) ObserveMarketsData(req *v2.ObserveMarketsDataRequ
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
-	for _, marketId := range req.MarketIds {
-		if !t.marketExistsForId(ctx, marketId) {
-			return apiError(codes.InvalidArgument, ErrMalformedRequest, fmt.Errorf("no market found for id:%s", marketId))
+	for _, marketID := range req.MarketIds {
+		if !t.marketExistsForID(ctx, marketID) {
+			return apiError(codes.InvalidArgument, ErrMalformedRequest, fmt.Errorf("no market found for id:%s", marketID))
 		}
 	}
 
@@ -350,7 +344,7 @@ func (t *tradingDataServiceV2) ObserveMarketsData(req *v2.ObserveMarketsDataRequ
 func (t *tradingDataServiceV2) GetLatestMarketData(ctx context.Context, req *v2.GetLatestMarketDataRequest) (*v2.GetLatestMarketDataResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetLatestMarketData")()
 
-	if !t.marketExistsForId(ctx, req.MarketId) {
+	if !t.marketExistsForID(ctx, req.MarketId) {
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, fmt.Errorf("no market found for id:%s", req.MarketId))
 	}
 
@@ -589,8 +583,8 @@ func (t *tradingDataServiceV2) ObserveCandleData(req *v2.ObserveCandleDataReques
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
-	subscriptionId, candlesChan, err := t.candleService.Subscribe(ctx, req.CandleId)
-	defer t.candleService.Unsubscribe(subscriptionId)
+	subscriptionID, candlesChan, err := t.candleService.Subscribe(ctx, req.CandleId)
+	defer t.candleService.Unsubscribe(subscriptionID)
 
 	if err != nil {
 		return apiError(codes.Internal, ErrCandleServiceSubscribeToCandles, err)
@@ -640,10 +634,10 @@ func (t *tradingDataServiceV2) ListCandleIntervals(ctx context.Context, req *v2.
 	}
 
 	intervalToCandleIds := make([]*v2.IntervalToCandleId, 0, len(mappings))
-	for interval, candleId := range mappings {
+	for interval, candleID := range mappings {
 		intervalToCandleIds = append(intervalToCandleIds, &v2.IntervalToCandleId{
 			Interval: interval,
-			CandleId: candleId,
+			CandleId: candleID,
 		})
 	}
 
@@ -2084,7 +2078,7 @@ func (t *tradingDataServiceV2) ObserveDelegations(req *v2.ObserveDelegationsRequ
 	})
 }
 
-func (t *tradingDataServiceV2) marketExistsForId(ctx context.Context, marketID string) bool {
+func (t *tradingDataServiceV2) marketExistsForID(ctx context.Context, marketID string) bool {
 	_, err := t.marketsService.GetByID(ctx, marketID)
 	return err == nil
 }
@@ -2481,7 +2475,11 @@ func (t *tradingDataServiceV2) ListCheckpoints(ctx context.Context, req *v2.List
 }
 
 func (t *tradingDataServiceV2) GetStake(ctx context.Context, req *v2.GetStakeRequest) (*v2.GetStakeResponse, error) {
-	if req == nil || len(req.PartyId) <= 0 {
+	if req == nil {
+		return nil, apiError(codes.InvalidArgument, errors.New("nil request"))
+	}
+
+	if len(req.PartyId) <= 0 {
 		return nil, apiError(codes.InvalidArgument, errors.New("missing party id"))
 	}
 
@@ -2489,7 +2487,7 @@ func (t *tradingDataServiceV2) GetStake(ctx context.Context, req *v2.GetStakeReq
 
 	partyID := entities.PartyID(req.PartyId)
 
-	if req != nil && req.Pagination != nil {
+	if req.Pagination != nil {
 		var err error
 		pagination, err = entities.CursorPaginationFromProto(req.Pagination)
 		if err != nil {
@@ -2525,7 +2523,7 @@ func (t *tradingDataServiceV2) GetRiskFactors(ctx context.Context, req *v2.GetRi
 
 	rfs, err := t.riskFactorService.GetMarketRiskFactors(ctx, req.MarketId)
 	if err != nil {
-		return nil, nil
+		return nil, nil //nolint:nilerr
 	}
 
 	return &v2.GetRiskFactorsResponse{

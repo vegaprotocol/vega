@@ -165,9 +165,9 @@ func BufCap(bc uint32) InstrumentOption {
 	}
 }
 
-// AddInstrument  configure and register new metrics instrument
+// addInstrument  configure and register new metrics instrument
 // this will, over time, be moved to use custom Registries, etc...
-func AddInstrument(t instrument, name string, opts ...InstrumentOption) (*mi, error) {
+func addInstrument(t instrument, name string, opts ...InstrumentOption) (*mi, error) {
 	var col prometheus.Collector
 	ret := mi{}
 	opt := instrumentOpts{
@@ -334,7 +334,7 @@ func (m mi) SummaryVec() (*prometheus.SummaryVec, error) {
 
 func setupMetrics() error {
 	// instrument with time histogram for blocks
-	h, err := AddInstrument(
+	h, err := addInstrument(
 		Counter,
 		"engine_seconds_total",
 		Namespace("vega"),
@@ -349,7 +349,7 @@ func setupMetrics() error {
 	}
 	engineTime = est
 
-	h, err = AddInstrument(
+	h, err = addInstrument(
 		Counter,
 		"orders_total",
 		Namespace("vega"),
@@ -365,7 +365,7 @@ func setupMetrics() error {
 	}
 	orderCounter = ot
 
-	h, err = AddInstrument(
+	h, err = addInstrument(
 		Counter,
 		"eth_calls_total",
 		Namespace("vega"),
@@ -381,7 +381,7 @@ func setupMetrics() error {
 	}
 	ethCallCounter = ethCalls
 
-	h, err = AddInstrument(
+	h, err = addInstrument(
 		Counter,
 		"evt_forward_total",
 		Namespace("vega"),
@@ -398,7 +398,7 @@ func setupMetrics() error {
 	evtForwardCounter = evtFwd
 
 	// now add the orders gauge
-	h, err = AddInstrument(
+	h, err = addInstrument(
 		Gauge,
 		"orders",
 		Namespace("vega"),
@@ -417,7 +417,7 @@ func setupMetrics() error {
 	// e.orderGauge.WithLabelValues(mkt.Name).Add(float64(len(orders)))
 	// e.orderGauge.WithLabelValues(mkt.Name).Sub(float64(len(completedOrders)))
 
-	h, err = AddInstrument(
+	h, err = addInstrument(
 		Gauge,
 		"unconfirmedtx",
 		Namespace("vega"),
@@ -437,7 +437,7 @@ func setupMetrics() error {
 	//
 
 	// Number of calls to each request type
-	h, err = AddInstrument(
+	h, err = addInstrument(
 		Counter,
 		"request_count_total",
 		Namespace("vega"),
@@ -454,7 +454,7 @@ func setupMetrics() error {
 	apiRequestCallCounter = rc
 
 	// Total time for calls to each request type for each api type
-	h, err = AddInstrument(
+	h, err = addInstrument(
 		Counter,
 		"request_time_total",
 		Namespace("vega"),
@@ -471,7 +471,7 @@ func setupMetrics() error {
 	apiRequestTimeCounter = rpac
 
 	// snapshots times
-	h, err = AddInstrument(
+	h, err = addInstrument(
 		Counter,
 		"snapshot_time_total",
 		Namespace("vega"),

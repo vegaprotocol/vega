@@ -468,11 +468,14 @@ func testDelegateInsufficientBalanceIncludingPendingDelegation(t *testing.T) {
 
 // setup committed deletations (delegations in effect in current epoch):
 // node1 -> 8
-// 		    party1 -> 6
-//			party2 -> 2
+//
+//	    party1 -> 6
+//		party2 -> 2
+//
 // node 2 -> 7
-// 			party1 -> 4
-//			party2 -> 3
+//
+//	party1 -> 4
+//	party2 -> 3
 func setupDefaultDelegationState(testEngine *testEngine, party1Balance uint64, party2Balance uint64) {
 	testEngine.topology.nodeToIsValidator["node1"] = true
 	testEngine.topology.nodeToIsValidator["node2"] = true
@@ -515,9 +518,12 @@ func setupDefaultDelegationState(testEngine *testEngine, party1Balance uint64, p
 
 // setup committed deletations (delegations in effect in current epoch):
 // node1 -> 6
-// 		    party1 -> 6
+//
+//	party1 -> 6
+//
 // node 2 -> 3
-// 			party2 -> 3
+//
+//	party2 -> 3
 func defaultSimpleDelegationState(testEngine *testEngine, party1Balance, party2Balance uint64) {
 	testEngine.topology.nodeToIsValidator["node1"] = true
 	testEngine.topology.nodeToIsValidator["node2"] = true
@@ -789,7 +795,7 @@ func testDelegateSuccessWithPreviousPendingUndelegateExactlyCovered(t *testing.T
 	require.Equal(t, 2, len(nextEpoch))
 }
 
-/// undelegate.
+// / undelegate.
 func testUndelegateInvalidNode(t *testing.T) {
 	testEngine := getEngine(t)
 	err := testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(10))

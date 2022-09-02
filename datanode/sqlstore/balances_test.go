@@ -39,14 +39,14 @@ func addTestBalance(t *testing.T, store *sqlstore.Balances, block entities.Block
 }
 
 func assertBalanceCorrect(t *testing.T,
-	expected_blocks []int, expected_bals []int64,
+	expectedBlocks []int, expectedBals []int64,
 	blocks []entities.Block, bals []entities.AggregatedBalance,
 ) {
 	t.Helper()
-	assert.Len(t, bals, len(expected_blocks))
-	for i := 0; i < len(expected_blocks); i++ {
-		assert.Equal(t, blocks[expected_blocks[i]].VegaTime, (bals)[i].VegaTime)
-		assert.Equal(t, decimal.NewFromInt(expected_bals[i]), (bals)[i].Balance)
+	assert.Len(t, bals, len(expectedBlocks))
+	for i := 0; i < len(expectedBlocks); i++ {
+		assert.Equal(t, blocks[expectedBlocks[i]].VegaTime, (bals)[i].VegaTime)
+		assert.Equal(t, decimal.NewFromInt(expectedBals[i]), (bals)[i].Balance)
 	}
 }
 
@@ -95,9 +95,9 @@ func TestBalances(t *testing.T) {
 		bals, _, err := balanceStore.Query(entities.AccountFilter{AssetID: asset.ID}, []entities.AccountField{}, dateRange, pagination)
 		require.NoError(t, err)
 
-		expected_blocks := []int{0, 1, 2, 3, 4}
-		expected_bals := []int64{2, 5, 5 + 10, 5 + 10 + 100, 30 + 10 + 100}
-		assertBalanceCorrect(t, expected_blocks, expected_bals, blocks[:], *bals)
+		expectedBlocks := []int{0, 1, 2, 3, 4}
+		expectedBals := []int64{2, 5, 5 + 10, 5 + 10 + 100, 30 + 10 + 100}
+		assertBalanceCorrect(t, expectedBlocks, expectedBals, blocks[:], *bals)
 	})
 
 	t.Run("Query should return transactions for party", func(t *testing.T) {
@@ -109,9 +109,9 @@ func TestBalances(t *testing.T) {
 		bals, _, err := balanceStore.Query(filter, []entities.AccountField{}, dateRange, pagination)
 		require.NoError(t, err)
 
-		expected_blocks := []int{0, 1, 4}
-		expected_bals := []int64{2, 5, 30}
-		assertBalanceCorrect(t, expected_blocks, expected_bals, blocks[:], *bals)
+		expectedBlocks := []int{0, 1, 4}
+		expectedBals := []int64{2, 5, 30}
+		assertBalanceCorrect(t, expectedBlocks, expectedBals, blocks[:], *bals)
 	})
 
 	t.Run("Query should group results", func(t *testing.T) {
@@ -119,9 +119,9 @@ func TestBalances(t *testing.T) {
 		bals, _, err := balanceStore.Query(entities.AccountFilter{AssetID: asset.ID}, []entities.AccountField{entities.AccountFieldID}, dateRange, pagination)
 		require.NoError(t, err)
 
-		expected_blocks := []int{0, 1, 2, 2, 3, 3, 3, 4, 4, 4}
-		expected_bals := []int64{2, 5, 5, 10, 5, 10, 100, 30, 10, 100}
-		assertBalanceCorrect(t, expected_blocks, expected_bals, blocks[:], *bals)
+		expectedBlocks := []int{0, 1, 2, 2, 3, 3, 3, 4, 4, 4}
+		expectedBals := []int64{2, 5, 5, 10, 5, 10, 100, 30, 10, 100}
+		assertBalanceCorrect(t, expectedBlocks, expectedBals, blocks[:], *bals)
 	})
 
 	t.Run("Query should return results paged", func(t *testing.T) {
@@ -134,9 +134,9 @@ func TestBalances(t *testing.T) {
 		bals, _, err := balanceStore.Query(entities.AccountFilter{AssetID: asset.ID}, []entities.AccountField{entities.AccountFieldID}, dateRange, p)
 		require.NoError(t, err)
 
-		expected_blocks := []int{2, 3, 3}
-		expected_bals := []int64{10, 5, 10}
-		assertBalanceCorrect(t, expected_blocks, expected_bals, blocks[:], *bals)
+		expectedBlocks := []int{2, 3, 3}
+		expectedBals := []int64{10, 5, 10}
+		assertBalanceCorrect(t, expectedBlocks, expectedBals, blocks[:], *bals)
 	})
 
 	t.Run("Query should return results between dates", func(t *testing.T) {
@@ -151,9 +151,9 @@ func TestBalances(t *testing.T) {
 		bals, _, err := balanceStore.Query(entities.AccountFilter{AssetID: asset.ID}, []entities.AccountField{entities.AccountFieldID}, dateRange, p)
 		require.NoError(t, err)
 
-		expected_blocks := []int{1, 2, 2, 3, 3, 3}
-		expected_bals := []int64{5, 5, 10, 5, 10, 100}
-		assertBalanceCorrect(t, expected_blocks, expected_bals, blocks[:], *bals)
+		expectedBlocks := []int{1, 2, 2, 3, 3, 3}
+		expectedBals := []int64{5, 5, 10, 5, 10, 100}
+		assertBalanceCorrect(t, expectedBlocks, expectedBals, blocks[:], *bals)
 	})
 
 	t.Run("Query should return results paged between dates", func(t *testing.T) {
@@ -169,9 +169,9 @@ func TestBalances(t *testing.T) {
 		bals, _, err := balanceStore.Query(entities.AccountFilter{AssetID: asset.ID}, []entities.AccountField{entities.AccountFieldID}, dateRange, p)
 		require.NoError(t, err)
 
-		expected_blocks := []int{1, 2, 2}
-		expected_bals := []int64{5, 5, 10}
-		assertBalanceCorrect(t, expected_blocks, expected_bals, blocks[:], *bals)
+		expectedBlocks := []int{1, 2, 2}
+		expectedBals := []int64{5, 5, 10}
+		assertBalanceCorrect(t, expectedBlocks, expectedBals, blocks[:], *bals)
 	})
 }
 
@@ -242,7 +242,7 @@ func TestBalancesDataRetention(t *testing.T) {
 	bals, _, err := balanceStore.Query(entities.AccountFilter{AssetID: asset.ID}, []entities.AccountField{}, dateRange, pagination)
 	require.NoError(t, err)
 
-	expected_blocks := []int{1, 2, 3, 4}
-	expected_bals := []int64{5, 5 + 10, 5 + 10 + 100, 30 + 10 + 100}
-	assertBalanceCorrect(t, expected_blocks, expected_bals, blocks[:], *bals)
+	expectedBlocks := []int{1, 2, 3, 4}
+	expectedBals := []int64{5, 5 + 10, 5 + 10 + 100, 30 + 10 + 100}
+	assertBalanceCorrect(t, expectedBlocks, expectedBals, blocks[:], *bals)
 }

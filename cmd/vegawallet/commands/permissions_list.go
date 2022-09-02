@@ -94,7 +94,7 @@ func (f *ListPermissionsFlags) Validate() (*wallet.ListPermissionsRequest, error
 	req := &wallet.ListPermissionsRequest{}
 
 	if len(f.Wallet) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("wallet")
+		return nil, flags.MustBeSpecifiedError("wallet")
 	}
 	req.Wallet = f.Wallet
 

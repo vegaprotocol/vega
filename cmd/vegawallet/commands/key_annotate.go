@@ -125,12 +125,12 @@ func (f *AnnotateKeyFlags) Validate() (*wallet.AnnotateKeyRequest, error) {
 	req := &wallet.AnnotateKeyRequest{}
 
 	if len(f.Wallet) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("wallet")
+		return nil, flags.MustBeSpecifiedError("wallet")
 	}
 	req.Wallet = f.Wallet
 
 	if len(f.PubKey) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("pubkey")
+		return nil, flags.MustBeSpecifiedError("pubkey")
 	}
 	req.PubKey = f.PubKey
 
@@ -138,7 +138,7 @@ func (f *AnnotateKeyFlags) Validate() (*wallet.AnnotateKeyRequest, error) {
 		return nil, flags.OneOfFlagsMustBeSpecifiedError("meta", "clear")
 	}
 	if len(f.RawMetadata) != 0 && f.Clear {
-		return nil, flags.FlagsMutuallyExclusiveError("meta", "clear")
+		return nil, flags.MutuallyExclusiveError("meta", "clear")
 	}
 
 	metadata, err := cli.ParseMetadata(f.RawMetadata)

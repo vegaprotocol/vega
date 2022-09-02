@@ -325,7 +325,7 @@ func (r *myMarketResolver) Proposal(ctx context.Context, obj *types.Market) (*ty
 	// some market are loaded at startup, without
 	// going through the proposal phase
 	if err != nil {
-		return nil, nil
+		return nil, nil //nolint:nilerr
 	}
 	return resp.Data, nil
 }

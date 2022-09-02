@@ -40,7 +40,7 @@ func testDeleteNetworkFlagsMissingNetworkFails(t *testing.T) {
 	req, err := f.Validate()
 
 	// then
-	assert.ErrorIs(t, err, flags.FlagMustBeSpecifiedError("network"))
+	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("network"))
 	assert.Nil(t, req)
 }
 

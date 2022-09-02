@@ -158,7 +158,7 @@ func (ts *TopologyStub) calculateTMScores(delegationState []*types.ValidatorData
 	return tmScores
 }
 
-func (t *TopologyStub) normaliseScores(scores map[string]num.Decimal) map[string]num.Decimal {
+func (ts *TopologyStub) normaliseScores(scores map[string]num.Decimal) map[string]num.Decimal {
 	totalScore := num.DecimalZero()
 	for _, v := range scores {
 		totalScore = totalScore.Add(v)

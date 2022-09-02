@@ -87,7 +87,7 @@ func NewService(log *logging.Logger, vegaPaths paths.Paths, cfg Config, passphra
 		return nil, fmt.Errorf("couldn't initialise faucet wallet loader: %w", err)
 	}
 
-	wallet, err := walletLoader.Load(cfg.WalletName, passphrase)
+	wallet, err := walletLoader.load(cfg.WalletName, passphrase)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't load faucet wallet %s: %w", cfg.WalletName, err)
 	}

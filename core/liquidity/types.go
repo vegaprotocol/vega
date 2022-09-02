@@ -42,15 +42,15 @@ func (c *ToCancel) Empty() bool {
 	return len(c.OrderIDs) <= 0
 }
 
-// LiquidityProvisions provides convenience functions to a slice of *vega/proto.LiquidityProvision.
-type LiquidityProvisions []*types.LiquidityProvision
+// Provisions provides convenience functions to a slice of *vega/proto.LiquidityProvision.
+type Provisions []*types.LiquidityProvision
 
 // feeForTarget returns the right fee given a group of sorted (by ascending fee) LiquidityProvisions.
 // To find the right fee we need to find smallest index k such that:
 // [target stake] < sum from i=1 to k of [MM-stake-i]. In other words we want in this
 // ordered list to find the liquidity providers that supply the liquidity
 // that's required. If no such k exists we set k=N.
-func (l LiquidityProvisions) feeForTarget(t *num.Uint) num.Decimal {
+func (l Provisions) feeForTarget(t *num.Uint) num.Decimal {
 	if len(l) == 0 {
 		return num.DecimalZero()
 	}
@@ -67,17 +67,17 @@ func (l LiquidityProvisions) feeForTarget(t *num.Uint) num.Decimal {
 	return l[len(l)-1].Fee
 }
 
-type lpsByFee LiquidityProvisions
+type lpsByFee Provisions
 
 func (l lpsByFee) Len() int           { return len(l) }
 func (l lpsByFee) Less(i, j int) bool { return l[i].Fee.LessThan(l[j].Fee) }
 func (l lpsByFee) Swap(i, j int)      { l[i], l[j] = l[j], l[i] }
 
 // sortByFee sorts in-place and returns the LiquidityProvisions for convenience.
-func (l LiquidityProvisions) sortByFee() LiquidityProvisions {
+func (l Provisions) sortByFee() Provisions {
 	byFee := lpsByFee(l)
 	sort.Sort(byFee)
-	return LiquidityProvisions(byFee)
+	return Provisions(byFee)
 }
 
 type SnapshotablePendingProvisions struct {
@@ -154,8 +154,8 @@ func (s *SnapshotableProvisionsPerParty) Set(key string, p *types.LiquidityProvi
 }
 
 // Slice returns the parties as a slice.
-func (l ProvisionsPerParty) Slice() LiquidityProvisions {
-	slice := make(LiquidityProvisions, 0, len(l))
+func (l ProvisionsPerParty) Slice() Provisions {
+	slice := make(Provisions, 0, len(l))
 	for _, p := range l {
 		slice = append(slice, p)
 	}

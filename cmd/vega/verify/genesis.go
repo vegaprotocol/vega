@@ -212,11 +212,6 @@ func verifyGenesis(r *reporter, bs []byte) string {
 		return ""
 	}
 
-	if appstate == nil {
-		r.Err("app_state is missing")
-		return ""
-	}
-
 	if appstate.NetworkLimits == nil {
 		r.Warn("app_state.network_limits are missing, default values will be used")
 	}

@@ -157,7 +157,7 @@ pipeline {
                     steps {
                         dir('vega') {
                             sh '''#!/bin/bash -e
-                                golangci-lint run -v --config .golangci.toml
+                                go run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.49.0 run -v --config .golangci.toml
                             '''
                         }
                     }

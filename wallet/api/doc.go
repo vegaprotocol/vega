@@ -7,17 +7,20 @@
 // # Terminology
 //
 // Client:
-//   The client is the actor behind the API that has the responsibility to
-//   review and validate the requests. It can be a human or a bot.
+//
+//	The client is the actor behind the API that has the responsibility to
+//	review and validate the requests. It can be a human or a bot.
 //
 // Client front-end:
-//   The client front-end is the interface through which the client interact
-//   with the API. It can be a command-line interface, a graphical
-//   user-interface, or a script.
+//
+//	The client front-end is the interface through which the client interact
+//	with the API. It can be a command-line interface, a graphical
+//	user-interface, or a script.
 //
 // Third-party application:
-//   The application that connects to the API (through HTTP or directly to
-//   JSON-RPC) to access wallets information, send transaction, etc.
+//
+//	The application that connects to the API (through HTTP or directly to
+//	JSON-RPC) to access wallets information, send transaction, etc.
 //
 // # Third-party application workflow
 //

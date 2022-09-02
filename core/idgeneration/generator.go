@@ -20,18 +20,18 @@ import (
 
 // idGenerator no mutex required, markets work deterministically, and sequentially.
 type idGenerator struct {
-	nextIdBytes []byte
+	nextIDBytes []byte
 }
 
 // New returns an idGenerator, and is used to abstract this type.
-func New(rootId string) *idGenerator {
-	nextIdBytes, err := hex.DecodeString(rootId)
+func New(rootID string) *idGenerator { //revive:disable:unexported-return
+	nextIDBytes, err := hex.DecodeString(rootID)
 	if err != nil {
 		panic("failed to create new deterministic id generator: " + err.Error())
 	}
 
 	return &idGenerator{
-		nextIdBytes: nextIdBytes,
+		nextIDBytes: nextIDBytes,
 	}
 }
 
@@ -40,7 +40,7 @@ func (i *idGenerator) NextID() string {
 		panic("id generator instance is not initialised")
 	}
 
-	nextId := hex.EncodeToString(i.nextIdBytes)
-	i.nextIdBytes = crypto.Hash(i.nextIdBytes)
-	return nextId
+	nextID := hex.EncodeToString(i.nextIDBytes)
+	i.nextIDBytes = crypto.Hash(i.nextIDBytes)
+	return nextID
 }

@@ -1,5 +1,6 @@
 package wallet
 
+// nolint: interfacebloat
 type Wallet interface {
 	Version() uint32
 	Name() string
