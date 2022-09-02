@@ -1578,7 +1578,13 @@ func testHDWalletUpdatingPermissionsWithInconsistentSetupFails(t *testing.T) {
 	require.NotNil(t, w)
 
 	// when
-	_, err = w.GenerateKeyPair(nil)
+	kp1, err := w.GenerateKeyPair(nil)
+
+	// then
+	require.NoError(t, err)
+
+	// when
+	kp2, err := w.GenerateKeyPair(nil)
 
 	// then
 	require.NoError(t, err)
@@ -1596,7 +1602,7 @@ func testHDWalletUpdatingPermissionsWithInconsistentSetupFails(t *testing.T) {
 			permissions: wallet.Permissions{
 				PublicKeys: wallet.PublicKeysPermission{
 					Access:         wallet.ReadAccess,
-					RestrictedKeys: []string{randomKey},
+					RestrictedKeys: []string{kp1.PublicKey(), kp2.PublicKey(), randomKey},
 				},
 			},
 			expectedError: fmt.Errorf("restricted key %s does not exist on wallet", randomKey),
@@ -1605,7 +1611,7 @@ func testHDWalletUpdatingPermissionsWithInconsistentSetupFails(t *testing.T) {
 			permissions: wallet.Permissions{
 				PublicKeys: wallet.PublicKeysPermission{
 					Access:         wallet.NoAccess,
-					RestrictedKeys: []string{w.ListKeyPairs()[0].PublicKey()},
+					RestrictedKeys: []string{kp1.PublicKey()},
 				},
 			},
 			expectedError: wallet.ErrCannotSetRestrictedKeysWithNoAccess,
@@ -1618,7 +1624,7 @@ func testHDWalletUpdatingPermissionsWithInconsistentSetupFails(t *testing.T) {
 			err = w.UpdatePermissions("vega.xyz", tc.permissions)
 
 			// then
-			require.Equal(tt, err, fmt.Errorf("inconsistent permissions setup: %w", tc.expectedError))
+			require.EqualError(tt, err, fmt.Sprintf("inconsistent permissions setup: %v", tc.expectedError))
 		})
 	}
 }

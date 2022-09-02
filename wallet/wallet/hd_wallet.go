@@ -471,16 +471,20 @@ func ensurePermissionsConsistency(w *HDWallet, perms Permissions) error {
 	if len(perms.PublicKeys.RestrictedKeys) != 0 {
 		existingKeys := w.ListKeyPairs()
 		for _, restrictedKey := range perms.PublicKeys.RestrictedKeys {
-			// Verify the restricted key exists in keys present in the wallet.
-			for _, k := range existingKeys {
-				// If it matches, we try the next one.
-				if k.PublicKey() == restrictedKey {
-					break
-				}
-				return fmt.Errorf("restricted key %s does not exist on wallet", restrictedKey)
+			if err := ensureRestrictedKeyExists(restrictedKey, existingKeys); err != nil {
+				return err
 			}
 		}
 	}
 
 	return nil
+}
+
+func ensureRestrictedKeyExists(restrictedKey string, existingKeys []KeyPair) error {
+	for _, k := range existingKeys {
+		if k.PublicKey() == restrictedKey {
+			return nil
+		}
+	}
+	return fmt.Errorf("restricted key %s does not exist on wallet", restrictedKey)
 }
