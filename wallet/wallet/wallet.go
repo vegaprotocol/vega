@@ -12,7 +12,7 @@ type Wallet interface {
 	DescribeKeyPair(pubKey string) (KeyPair, error)
 	ListPublicKeys() []PublicKey
 	ListKeyPairs() []KeyPair
-	GetMasterKeyPair() (MasterKeyPair, error)
+	MasterKey() (MasterKeyPair, error)
 	GenerateKeyPair(meta []Metadata) (KeyPair, error)
 	TaintKey(pubKey string) error
 	UntaintKey(pubKey string) error
@@ -20,6 +20,7 @@ type Wallet interface {
 	SignAny(pubKey string, data []byte) ([]byte, error)
 	VerifyAny(pubKey string, data, sig []byte) (bool, error)
 	SignTx(pubKey string, data []byte) (*Signature, error)
+	IsIsolated() bool
 	IsolateWithKey(pubKey string) (Wallet, error)
 	Permissions(hostname string) Permissions
 	PermittedHostnames() []string

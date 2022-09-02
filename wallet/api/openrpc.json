@@ -460,7 +460,7 @@
           "properties": {
             "chainID": {
               "type": "string",
-              "description": "The identifier for the chain",
+              "description": "The chain identifier",
               "examples": [
                 "test-chain-Thz9c6"
               ]
@@ -1326,6 +1326,138 @@
             "value": {
               "wallet": "my-wallet.b5fd9d3c.isolated",
               "filePath": "some/path/to/my-wallet.b5fd9d3c.isolated"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin.rotate_key",
+      "summary": "Builds a transaction to rotate key on the network.",
+      "description": "This method builds a transaction to rotate key on the network.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "key"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "wallet",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "passphrase",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "fromPublicKey",
+          "required": true,
+          "description": "The current public key",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "toPublicKey",
+          "required": true,
+          "description": "The next public key to rotate to",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "chainID",
+          "required": true,
+          "description": "The chain identifier",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "submissionBlockHeight",
+          "required": true,
+          "description": "The block height (approximation) at which the transaction will be submitted",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "enactmentBlockHeight",
+          "required": true,
+          "description": "The block height at which the rotation should happen",
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "masterPublicKey": {
+              "description": "The master public key of the wallet used to sign the transaction",
+              "schema": {
+                "type": "string"
+              }
+            },
+            "encodedTransaction": {
+              "description": "The base64-encoded key rotation transaction",
+              "schema": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "examples": [
+        {
+          "name": "Rotating a key",
+          "params": [
+            {
+              "name": "wallet",
+              "value": "my-wallet"
+            },
+            {
+              "name": "passphrase",
+              "value": "this-is-not-a-good-passphrase"
+            },
+            {
+              "name": "fromPublicKey",
+              "value": "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0"
+            },
+            {
+              "name": "toPublicKey",
+              "value": "988eae323a07f12363c17025c23ee58ea32ac3912398e16bb0b56969f57adc52"
+            },
+            {
+              "name": "chainID",
+              "value": "test-chain-Thz9c6"
+            },
+            {
+              "name": "submissionBlockHeight",
+              "value": 10
+            },
+            {
+              "name": "enactmentBlockHeight",
+              "value": 15
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": {
+              "masterPublicKey": "9df682a3c87d90567f260566a9c223ccbbb7529c38340cf163b8fe199dbf0f2e",
+              "filePath": "CqsBdGVzdC1jaGFpbi1UaHo5YzYACPfdurmpppHlogEQCqp9iAEIAhAPGkA5ODhlYWUzMjNhMDdmMTIzNjNjMTcwMjVjMjNlZTU4ZWEzMmFjMzkxMjM5OGUxNmJiMGI1Njk2OWY1N2FkYzUyIkA4MWFhZjk2NmU4ZjUxNDIzZjBiZDFkOTMzYWQ0NmY5NjJlMjNiY2Q3MTg4ZWQzZmUwZjUzZjRkYThhMzJhOWVlEpMBCoABYzg3NDVkODhlMWQ1YTBhOGE3NGI5YzRmN2QyMzQ3ZmQ5ZDY1NzIwYTQ3ZmYwNWU3YTZmZmYyOTA0NzhmOTU0M2NjM2E4MzJkNjBmYTJiNmY3ZTQ3YWJlMjE0MGIwOTEyNzBlNTAxZTA5MjVjNDg3NzEwMjViOTkyYTg1ZTAxMDQSDHZlZ2EvZWQyNTUxORgBgH0D0j5AOWRmNjgyYTNjODdkOTA1NjdmMjYwNTY2YTljMjIzY2NiYmI3NTI5YzM4MzQwY2YxNjNiOGZlMTk5ZGJmMGYyZQ=="
             }
           }
         }

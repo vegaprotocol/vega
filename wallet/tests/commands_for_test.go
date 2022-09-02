@@ -287,8 +287,8 @@ func KeyTaint(t *testing.T, args []string) error {
 }
 
 type KeyRotateResponse struct {
-	MasterPublicKey   string `json:"masterPublicKey"`
-	Base64Transaction string `json:"base64Transaction"`
+	MasterPublicKey    string `json:"masterPublicKey"`
+	EncodedTransaction string `json:"encodedTransaction"`
 }
 
 func KeyRotate(t *testing.T, args []string) (*KeyRotateResponse, error) {
@@ -315,7 +315,7 @@ func AssertKeyRotate(t *testing.T, resp *KeyRotateResponse) *KeyRotateAssertion 
 	t.Helper()
 
 	assert.NotNil(t, resp)
-	assert.NotEmpty(t, resp.Base64Transaction)
+	assert.NotEmpty(t, resp.EncodedTransaction)
 	assert.NotEmpty(t, resp.MasterPublicKey)
 
 	return &KeyRotateAssertion{

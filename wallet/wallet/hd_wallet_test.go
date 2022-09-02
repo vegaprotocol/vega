@@ -1551,7 +1551,7 @@ func testHDWalletGettingWalletMasterKeySucceeds(t *testing.T) {
 			require.NoError(tt, err)
 			require.NotNil(tt, w)
 
-			masterKeyPair, err := w.GetMasterKeyPair()
+			masterKeyPair, err := w.MasterKey()
 
 			// then
 			require.NoError(tt, err)

@@ -119,8 +119,8 @@ func (w *HDWallet) DescribeKeyPair(pubKey string) (KeyPair, error) {
 	return &keyPair, nil
 }
 
-// GetMasterKeyPair returns all the information associated to a master key pair.
-func (w *HDWallet) GetMasterKeyPair() (MasterKeyPair, error) {
+// MasterKey returns all the information associated to a master key pair.
+func (w *HDWallet) MasterKey() (MasterKeyPair, error) {
 	if w.IsIsolated() {
 		return nil, ErrIsolatedWalletDoesNotHaveMasterKey
 	}
@@ -128,7 +128,7 @@ func (w *HDWallet) GetMasterKeyPair() (MasterKeyPair, error) {
 	pubKey, priKey := w.node.Keypair()
 	keyPair, err := NewHDMasterKeyPair(pubKey, priKey)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get master key pair: %w", err)
+		return nil, err
 	}
 
 	return keyPair, nil

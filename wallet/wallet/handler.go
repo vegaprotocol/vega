@@ -69,98 +69,6 @@ func UntaintKey(store Store, req *UntaintKeyRequest) error {
 	return nil
 }
 
-type RotateKeyRequest struct {
-	Wallet            string `json:"wallet"`
-	Passphrase        string `json:"passphrase"`
-	NewPublicKey      string `json:"newPublicKey"`
-	ChainID           string `json:"chainId"`
-	CurrentPublicKey  string `json:"currentPublicKey"`
-	TxBlockHeight     uint64 `json:"txBlockHeight"`
-	TargetBlockHeight uint64 `json:"targetBlockHeight"`
-}
-
-type RotateKeyResponse struct {
-	MasterPublicKey   string `json:"masterPublicKey"`
-	Base64Transaction string `json:"base64Transaction"`
-}
-
-func RotateKey(store Store, req *RotateKeyRequest) (*RotateKeyResponse, error) {
-	w, err := getWallet(store, req.Wallet, req.Passphrase)
-	if err != nil {
-		return nil, err
-	}
-
-	mKeyPair, err := w.GetMasterKeyPair()
-	if errors.Is(err, ErrIsolatedWalletDoesNotHaveMasterKey) {
-		return nil, ErrCantRotateKeyInIsolatedWallet
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	pubKey, err := w.DescribePublicKey(req.NewPublicKey)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't get the public key: %w", err)
-	}
-
-	currentPubKey, err := w.DescribePublicKey(req.CurrentPublicKey)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't get the current public key: %w", err)
-	}
-
-	if pubKey.IsTainted() {
-		return nil, ErrPubKeyIsTainted
-	}
-
-	currentPubKeyHash, err := currentPubKey.Hash()
-	if err != nil {
-		return nil, fmt.Errorf("couldn't hash the current public key: %w", err)
-	}
-
-	inputData := commands.NewInputData(req.TxBlockHeight)
-	inputData.Command = &commandspb.InputData_KeyRotateSubmission{
-		KeyRotateSubmission: &commandspb.KeyRotateSubmission{
-			NewPubKeyIndex:    pubKey.Index(),
-			TargetBlock:       req.TargetBlockHeight,
-			NewPubKey:         pubKey.Key(),
-			CurrentPubKeyHash: currentPubKeyHash,
-		},
-	}
-
-	data, err := commands.MarshalInputData(req.ChainID, inputData)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't marshal key rotate submission input data: %w", err)
-	}
-
-	sign, err := mKeyPair.Sign(data)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't sign key rotate submission input data: %w", err)
-	}
-
-	protoSignature := &commandspb.Signature{
-		Value:   sign.Value,
-		Algo:    sign.Algo,
-		Version: sign.Version,
-	}
-
-	transaction := commands.NewTransaction(mKeyPair.PublicKey(), data, protoSignature)
-	transactionRaw, err := proto.Marshal(transaction)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't marshal transaction: %w", err)
-	}
-
-	return &RotateKeyResponse{
-		MasterPublicKey:   mKeyPair.PublicKey(),
-		Base64Transaction: base64.StdEncoding.EncodeToString(transactionRaw),
-	}, nil
-}
-
-type FirstPublicKey struct {
-	PublicKey string     `json:"publicKey"`
-	Algorithm Algorithm  `json:"algorithm"`
-	Meta      []Metadata `json:"meta"`
-}
-
 type SignCommandRequest struct {
 	Wallet        string `json:"wallet"`
 	Passphrase    string `json:"passphrase"`
@@ -322,7 +230,7 @@ func getWallet(store Store, wallet, passphrase string) (Wallet, error) {
 	if exist, err := store.WalletExists(context.Background(), wallet); err != nil {
 		return nil, fmt.Errorf("couldn't verify wallet existence: %w", err)
 	} else if !exist {
-		return nil, ErrWalletDoesNotExists
+		return nil, ErrWalletDoesNotExist
 	}
 
 	w, err := store.GetWallet(context.Background(), wallet, passphrase)
