@@ -37,9 +37,9 @@ type Transfer struct {
 	ID                  TransferID
 	TxHash              TxHash
 	VegaTime            time.Time
-	FromAccountId       int64
-	ToAccountId         int64
-	AssetId             AssetID
+	FromAccountID       int64
+	ToAccountID         int64
+	AssetID             AssetID
 	Amount              decimal.Decimal
 	Reference           string
 	Status              TransferStatus
@@ -54,12 +54,12 @@ type Transfer struct {
 }
 
 func (t *Transfer) ToProto(accountSource AccountSource) (*eventspb.Transfer, error) {
-	fromAcc, err := accountSource.GetByID(t.FromAccountId)
+	fromAcc, err := accountSource.GetByID(t.FromAccountID)
 	if err != nil {
 		return nil, fmt.Errorf("getting from account for transfer proto:%w", err)
 	}
 
-	toAcc, err := accountSource.GetByID(t.ToAccountId)
+	toAcc, err := accountSource.GetByID(t.ToAccountID)
 	if err != nil {
 		return nil, fmt.Errorf("getting to account for transfer proto:%w", err)
 	}
@@ -70,7 +70,7 @@ func (t *Transfer) ToProto(accountSource AccountSource) (*eventspb.Transfer, err
 		FromAccountType: fromAcc.Type,
 		To:              toAcc.PartyID.String(),
 		ToAccountType:   toAcc.Type,
-		Asset:           t.AssetId.String(),
+		Asset:           t.AssetID.String(),
 		Amount:          t.Amount.String(),
 		Reference:       t.Reference,
 		Status:          eventspb.Transfer_Status(t.Status),
@@ -148,10 +148,10 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, txHash TxHash,
 		ID:            TransferID(t.Id),
 		TxHash:        txHash,
 		VegaTime:      vegaTime,
-		FromAccountId: fromAcc.ID,
-		ToAccountId:   toAcc.ID,
+		FromAccountID: fromAcc.ID,
+		ToAccountID:   toAcc.ID,
 		Amount:        amount,
-		AssetId:       AssetID(t.Asset),
+		AssetID:       AssetID(t.Asset),
 		Reference:     t.Reference,
 		Status:        TransferStatus(t.Status),
 		TransferType:  0,

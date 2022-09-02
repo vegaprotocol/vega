@@ -240,7 +240,7 @@ func reverseOrderSlice(input []entities.Order) (output []entities.Order) {
 
 func generateTestBlocks(t *testing.T, numBlocks int, bs *sqlstore.Blocks) []entities.Block {
 	t.Helper()
-	blocks := make([]entities.Block, numBlocks, numBlocks)
+	blocks := make([]entities.Block, numBlocks)
 	for i := 0; i < numBlocks; i++ {
 		blocks[i] = addTestBlock(t, bs)
 		time.Sleep(time.Millisecond)
@@ -250,7 +250,7 @@ func generateTestBlocks(t *testing.T, numBlocks int, bs *sqlstore.Blocks) []enti
 
 func generateParties(t *testing.T, numParties int, block entities.Block, ps *sqlstore.Parties) []entities.Party {
 	t.Helper()
-	parties := make([]entities.Party, numParties, numParties)
+	parties := make([]entities.Party, numParties)
 	for i := 0; i < numParties; i++ {
 		parties[i] = addTestParty(t, ps, block)
 	}

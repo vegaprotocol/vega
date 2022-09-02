@@ -79,6 +79,8 @@ func walletWithPerms(t *testing.T, hostname string, perms wallet.Permissions) wa
 
 func contextWithTraceID() (context.Context, string) {
 	traceID := vgrand.RandomStr(5)
+	//revive:disable:context-keys-type
+	//nolint:staticcheck
 	return context.WithValue(context.Background(), "trace-id", traceID), traceID
 }
 

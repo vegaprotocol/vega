@@ -542,7 +542,7 @@ func testRecurringTransferInvalidTransfers(t *testing.T) {
 
 	var (
 		endEpoch100 uint64 = 100
-		endEpoch0   uint64 = 0
+		endEpoch0   uint64
 		endEpoch1   uint64 = 1
 	)
 	// now testing the recurring specific stuff

@@ -107,7 +107,7 @@ func (f *GenerateKeyFlags) Validate() (*wallet.GenerateKeyRequest, error) {
 	req := &wallet.GenerateKeyRequest{}
 
 	if len(f.Wallet) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("wallet")
+		return nil, flags.MustBeSpecifiedError("wallet")
 	}
 	req.Wallet = f.Wallet
 

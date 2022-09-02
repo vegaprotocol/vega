@@ -120,7 +120,7 @@ func (lp *LiquidityProvision) buildLiquidityProvisionsSelect(partyID entities.Pa
 ) (string, []interface{}) {
 	var bindVars []interface{}
 
-	selectSql := fmt.Sprintf(`select %s
+	selectSQL := fmt.Sprintf(`select %s
 from current_liquidity_provisions`, sqlOracleLiquidityProvisionColumns)
 
 	where := ""
@@ -147,6 +147,6 @@ from current_liquidity_provisions`, sqlOracleLiquidityProvisionColumns)
 		where = fmt.Sprintf("where %s", where)
 	}
 
-	query := fmt.Sprintf(`%s %s`, selectSql, where)
+	query := fmt.Sprintf(`%s %s`, selectSQL, where)
 	return query, bindVars
 }

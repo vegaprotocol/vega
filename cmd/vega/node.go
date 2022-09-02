@@ -75,7 +75,7 @@ func (cmd *StartCmd) Execute(args []string) error {
 		startCmd.TendermintHome = "$HOME/.tendermint"
 	}
 
-	return (&node.NodeCommand{
+	return (&node.Command{
 		Log: log,
 	}).Run(
 		confWatcher,

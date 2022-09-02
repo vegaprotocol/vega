@@ -38,9 +38,9 @@ import (
 var (
 	embeddedPostgres *embeddedpostgres.EmbeddedPostgres
 	connectionSource *sqlstore.ConnectionSource
-	sqlTestsEnabled  bool = true
-	minPort               = 30000
-	maxPort               = 40000
+	sqlTestsEnabled  = true
+	minPort          = 30000
+	maxPort          = 40000
 	testDBPort       int
 
 	tableNames = [...]string{
@@ -118,10 +118,10 @@ func DeleteEverything() {
 	sqlConfig := NewTestConfig(testDBPort)
 	connStr := connectionString(sqlConfig.ConnectionConfig)
 	conn, err := pgx.Connect(ctx, connStr)
-	defer conn.Close(context.Background())
 	if err != nil {
 		panic(fmt.Errorf("failed to delete everything:%w", err))
 	}
+	defer conn.Close(context.Background())
 
 	for _, table := range tableNames {
 		if _, err := conn.Exec(context.Background(), "truncate table "+table+" CASCADE"); err != nil {

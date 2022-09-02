@@ -111,17 +111,17 @@ func (f *SignMessageFlags) Validate() (*wallet.SignMessageRequest, error) {
 	req := &wallet.SignMessageRequest{}
 
 	if len(f.Wallet) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("wallet")
+		return nil, flags.MustBeSpecifiedError("wallet")
 	}
 	req.Wallet = f.Wallet
 
 	if len(f.PubKey) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("pubkey")
+		return nil, flags.MustBeSpecifiedError("pubkey")
 	}
 	req.PubKey = f.PubKey
 
 	if len(f.Message) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("message")
+		return nil, flags.MustBeSpecifiedError("message")
 	}
 	decodedMessage, err := base64.StdEncoding.DecodeString(f.Message)
 	if err != nil {

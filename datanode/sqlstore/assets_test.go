@@ -25,12 +25,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var testAssetCount int = 0
+var testAssetCount int
 
 func addTestAsset(t *testing.T, as *sqlstore.Assets, block entities.Block, idPrefix ...string) entities.Asset {
 	t.Helper()
 	// Make an asset
-	testAssetCount += 1
+	testAssetCount++
 	quantum, _ := decimal.NewFromString("10")
 	assetID := generateID()
 

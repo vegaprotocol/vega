@@ -150,11 +150,11 @@ func (e *Engine) EndOfBlock() {
 	}
 
 	for _, p := range e.activeParams {
-		outOfScopeBlock := e.currentBlock + 1 - p.spamPoWNumberOfPastBlocks
+		outOfScopeBlock := int64(e.currentBlock) + 1 - int64(p.spamPoWNumberOfPastBlocks)
 		if outOfScopeBlock < 0 {
 			continue
 		}
-		uOutOfScopeBlock := outOfScopeBlock
+		uOutOfScopeBlock := uint64(outOfScopeBlock)
 		b, ok := e.heightToTx[uOutOfScopeBlock]
 		if !ok {
 			continue

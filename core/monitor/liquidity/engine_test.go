@@ -80,7 +80,7 @@ func TestEngineWhenInLiquidityAuction(t *testing.T) {
 	})
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			var trades []*types.Trade = nil
+			var trades []*types.Trade
 			rf := types.RiskFactor{}
 			markPrice := num.NewUint(100)
 			if test.auctionShouldEnd {
@@ -127,7 +127,7 @@ func TestEngineWhenNotInLiquidityAuction(t *testing.T) {
 			if test.auctionShouldStart {
 				h.AuctionState.EXPECT().StartLiquidityAuction(now, gomock.Any()).Times(1)
 			}
-			var trades []*types.Trade = nil
+			var trades []*types.Trade
 			rf := types.RiskFactor{}
 			markPrice := num.NewUint(100)
 			h.TargetStakeCalculator.EXPECT().GetTheoreticalTargetStake(rf, now, markPrice.Clone(), trades).Return(test.target)
@@ -173,7 +173,7 @@ func TestEngineInOpeningAuction(t *testing.T) {
 				// opening auciton is flagged as ready to leave
 				h.AuctionState.EXPECT().SetReadyToLeave().Times(1)
 			}
-			var trades []*types.Trade = nil
+			var trades []*types.Trade
 			rf := types.RiskFactor{}
 			markPrice := num.NewUint(100)
 			h.TargetStakeCalculator.EXPECT().GetTheoreticalTargetStake(rf, now, markPrice.Clone(), trades).Return(test.target)

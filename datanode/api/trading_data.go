@@ -408,7 +408,7 @@ func (t *tradingDataService) Candles(ctx context.Context,
 			fmt.Errorf("failed to get candles:%w", err))
 	}
 
-	exists, candleId, err := t.candleService.GetCandleIdForIntervalAndMarket(ctx, interval, request.MarketId)
+	exists, candleID, err := t.candleService.GetCandleIDForIntervalAndMarket(ctx, interval, request.MarketId)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrCandleServiceGetCandleData,
 			fmt.Errorf("failed to get candles:%w", err))
@@ -419,7 +419,7 @@ func (t *tradingDataService) Candles(ctx context.Context,
 			fmt.Errorf("candle does not exist for interval %s and market %s", interval, request.MarketId))
 	}
 
-	candles, _, err := t.candleService.GetCandleDataForTimeSpan(ctx, candleId, &from, nil, entities.CursorPagination{})
+	candles, _, err := t.candleService.GetCandleDataForTimeSpan(ctx, candleID, &from, nil, entities.CursorPagination{})
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrCandleServiceGetCandleData,
 			fmt.Errorf("failed to get candles for interval:%w", err))
@@ -474,7 +474,7 @@ func (t *tradingDataService) CandlesSubscribe(req *protoapi.CandlesSubscribeRequ
 			fmt.Errorf("subscribing to candles:%w", err))
 	}
 
-	exists, candleId, err := t.candleService.GetCandleIdForIntervalAndMarket(ctx, interval, req.MarketId)
+	exists, candleID, err := t.candleService.GetCandleIDForIntervalAndMarket(ctx, interval, req.MarketId)
 	if err != nil {
 		return apiError(codes.InvalidArgument, ErrStreamInternal,
 			fmt.Errorf("subscribing to candles:%w", err))
@@ -485,7 +485,7 @@ func (t *tradingDataService) CandlesSubscribe(req *protoapi.CandlesSubscribeRequ
 			fmt.Errorf("candle does not exist for interval %s and market %s", interval, req.MarketId))
 	}
 
-	ref, candlesChan, err := t.candleService.Subscribe(ctx, candleId)
+	ref, candlesChan, err := t.candleService.Subscribe(ctx, candleID)
 	if err != nil {
 		return apiError(codes.Internal, ErrStreamInternal,
 			fmt.Errorf("subscribing to candles:%w", err))
@@ -1652,7 +1652,7 @@ func validateMarketSQL(ctx context.Context, marketID string, marketsStore *servi
 		// We return nil for error as we do not want
 		// to return an error when a market is not found
 		// but just a nil value.
-		return nil, nil
+		return nil, nil //nolint:nilerr
 	}
 
 	mkt := market.ToProto()
@@ -1902,7 +1902,7 @@ func (t *tradingDataService) GetRiskFactors(ctx context.Context, in *protoapi.Ge
 
 	rfs, err := t.riskFactorService.GetMarketRiskFactors(ctx, in.MarketId)
 	if err != nil {
-		return nil, nil
+		return nil, nil //nolint:nilerr
 	}
 
 	return &protoapi.GetRiskFactorsResponse{

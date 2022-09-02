@@ -33,7 +33,7 @@ func TheFollowingOrdersShouldBeRejected(broker *stubs.BrokerStub, table *godog.T
 			v := o.Order()
 			if v.PartyId == party && v.MarketId == marketID {
 				if v.Status == types.Order_STATUS_REJECTED && v.Reason.String() == reason {
-					count -= 1
+					count--
 					continue
 				}
 				orderNotRejected = append(orderNotRejected, v.Reference)

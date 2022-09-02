@@ -57,7 +57,7 @@ func testTaintKeyFlagsMissingWalletFails(t *testing.T) {
 	req, err := f.Validate()
 
 	// then
-	assert.ErrorIs(t, err, flags.FlagMustBeSpecifiedError("wallet"))
+	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("wallet"))
 	assert.Nil(t, req)
 }
 
@@ -72,7 +72,7 @@ func testTaintKeyFlagsMissingPubKeyFails(t *testing.T) {
 	req, err := f.Validate()
 
 	// then
-	assert.ErrorIs(t, err, flags.FlagMustBeSpecifiedError("pubkey"))
+	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("pubkey"))
 	assert.Nil(t, req)
 }
 

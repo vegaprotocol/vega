@@ -67,20 +67,20 @@ func (mr *MockCandleStoreMockRecorder) GetCandleDataForTimeSpan(arg0, arg1, arg2
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCandleDataForTimeSpan", reflect.TypeOf((*MockCandleStore)(nil).GetCandleDataForTimeSpan), arg0, arg1, arg2, arg3, arg4)
 }
 
-// GetCandleIdForIntervalAndMarket mocks base method.
-func (m *MockCandleStore) GetCandleIdForIntervalAndMarket(arg0 context.Context, arg1, arg2 string) (bool, string, error) {
+// GetCandleIDForIntervalAndMarket mocks base method.
+func (m *MockCandleStore) GetCandleIDForIntervalAndMarket(arg0 context.Context, arg1, arg2 string) (bool, string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCandleIdForIntervalAndMarket", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "GetCandleIDForIntervalAndMarket", arg0, arg1, arg2)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(string)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
-// GetCandleIdForIntervalAndMarket indicates an expected call of GetCandleIdForIntervalAndMarket.
-func (mr *MockCandleStoreMockRecorder) GetCandleIdForIntervalAndMarket(arg0, arg1, arg2 interface{}) *gomock.Call {
+// GetCandleIDForIntervalAndMarket indicates an expected call of GetCandleIDForIntervalAndMarket.
+func (mr *MockCandleStoreMockRecorder) GetCandleIDForIntervalAndMarket(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCandleIdForIntervalAndMarket", reflect.TypeOf((*MockCandleStore)(nil).GetCandleIdForIntervalAndMarket), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCandleIDForIntervalAndMarket", reflect.TypeOf((*MockCandleStore)(nil).GetCandleIDForIntervalAndMarket), arg0, arg1, arg2)
 }
 
 // GetCandlesForMarket mocks base method.

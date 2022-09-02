@@ -66,7 +66,7 @@ func testAnnotateKeyFlagsMissingWalletFails(t *testing.T) {
 	req, err := f.Validate()
 
 	// then
-	assert.ErrorIs(t, err, flags.FlagMustBeSpecifiedError("wallet"))
+	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("wallet"))
 	assert.Nil(t, req)
 }
 
@@ -81,7 +81,7 @@ func testAnnotateKeyFlagsMissingPubKeyFails(t *testing.T) {
 	req, err := f.Validate()
 
 	// then
-	assert.ErrorIs(t, err, flags.FlagMustBeSpecifiedError("pubkey"))
+	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("pubkey"))
 	assert.Nil(t, req)
 }
 
@@ -111,7 +111,7 @@ func testAnnotateKeyFlagsClearingWithMetadataFails(t *testing.T) {
 	req, err := f.Validate()
 
 	// then
-	assert.ErrorIs(t, err, flags.FlagsMutuallyExclusiveError("meta", "clear"))
+	assert.ErrorIs(t, err, flags.MutuallyExclusiveError("meta", "clear"))
 	assert.Nil(t, req)
 }
 

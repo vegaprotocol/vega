@@ -20,7 +20,7 @@ var (
 )
 
 func FetchStructuredFile(url string, v interface{}) error {
-	resp, err := http.Get(url)
+	resp, err := http.Get(url) //nolint:noctx
 	if err != nil {
 		return fmt.Errorf("couldn't load file: %w", err)
 	}

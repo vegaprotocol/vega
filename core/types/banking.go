@@ -148,24 +148,24 @@ func OneOffTransferFromEvent(p *eventspb.Transfer) *OneOffTransfer {
 	}
 }
 
-func (t *OneOffTransfer) IntoEvent() *eventspb.Transfer {
+func (o *OneOffTransfer) IntoEvent() *eventspb.Transfer {
 	out := &eventspb.Transfer{
-		Id:              t.ID,
-		From:            t.From,
-		FromAccountType: t.FromAccountType,
-		To:              t.To,
-		ToAccountType:   t.ToAccountType,
-		Asset:           t.Asset,
-		Amount:          t.Amount.String(),
-		Reference:       t.Reference,
-		Status:          t.Status,
-		Timestamp:       t.Timestamp.UnixNano(),
+		Id:              o.ID,
+		From:            o.From,
+		FromAccountType: o.FromAccountType,
+		To:              o.To,
+		ToAccountType:   o.ToAccountType,
+		Asset:           o.Asset,
+		Amount:          o.Amount.String(),
+		Reference:       o.Reference,
+		Status:          o.Status,
+		Timestamp:       o.Timestamp.UnixNano(),
 	}
 
-	if t.DeliverOn != nil {
+	if o.DeliverOn != nil {
 		out.Kind = &eventspb.Transfer_OneOff{
 			OneOff: &eventspb.OneOffTransfer{
-				DeliverOn: t.DeliverOn.Unix(),
+				DeliverOn: o.DeliverOn.Unix(),
 			},
 		}
 	}
@@ -204,29 +204,29 @@ func (r *RecurringTransfer) IsValid() error {
 	return nil
 }
 
-func (t *RecurringTransfer) IntoEvent() *eventspb.Transfer {
+func (r *RecurringTransfer) IntoEvent() *eventspb.Transfer {
 	var endEpoch *uint64
-	if t.EndEpoch != nil {
-		endEpoch = toPtr(*t.EndEpoch)
+	if r.EndEpoch != nil {
+		endEpoch = toPtr(*r.EndEpoch)
 	}
 
 	return &eventspb.Transfer{
-		Id:              t.ID,
-		From:            t.From,
-		FromAccountType: t.FromAccountType,
-		To:              t.To,
-		ToAccountType:   t.ToAccountType,
-		Asset:           t.Asset,
-		Amount:          t.Amount.String(),
-		Reference:       t.Reference,
-		Status:          t.Status,
-		Timestamp:       t.Timestamp.UnixNano(),
+		Id:              r.ID,
+		From:            r.From,
+		FromAccountType: r.FromAccountType,
+		To:              r.To,
+		ToAccountType:   r.ToAccountType,
+		Asset:           r.Asset,
+		Amount:          r.Amount.String(),
+		Reference:       r.Reference,
+		Status:          r.Status,
+		Timestamp:       r.Timestamp.UnixNano(),
 		Kind: &eventspb.Transfer_Recurring{
 			Recurring: &eventspb.RecurringTransfer{
-				StartEpoch:       t.StartEpoch,
+				StartEpoch:       r.StartEpoch,
 				EndEpoch:         endEpoch,
-				Factor:           t.Factor.String(),
-				DispatchStrategy: t.DispatchStrategy,
+				Factor:           r.Factor.String(),
+				DispatchStrategy: r.DispatchStrategy,
 			},
 		},
 	}

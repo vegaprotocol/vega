@@ -73,7 +73,7 @@ func NewPosition(
 	return t
 }
 
-func (t *Position) Types() []events.Type {
+func (p *Position) Types() []events.Type {
 	return []events.Type{
 		events.SettlePositionEvent,
 		events.SettleDistressedEvent,
@@ -81,53 +81,53 @@ func (t *Position) Types() []events.Type {
 	}
 }
 
-func (nl *Position) Flush(ctx context.Context) error {
-	err := nl.store.Flush(ctx)
+func (p *Position) Flush(ctx context.Context) error {
+	err := p.store.Flush(ctx)
 	return errors.Wrap(err, "flushing positions")
 }
 
-func (nl *Position) Push(ctx context.Context, evt events.Event) error {
+func (p *Position) Push(ctx context.Context, evt events.Event) error {
 	switch event := evt.(type) {
 	case positionSettlement:
-		return nl.handlePositionSettlement(ctx, event)
+		return p.handlePositionSettlement(ctx, event)
 	case lossSocialization:
-		return nl.handleLossSocialization(ctx, event)
+		return p.handleLossSocialization(ctx, event)
 	case settleDistressed:
-		return nl.handleSettleDestressed(ctx, event)
+		return p.handleSettleDestressed(ctx, event)
 	default:
 		return errors.Errorf("unknown event type %s", evt.Type().String())
 	}
 }
 
-func (ps *Position) handlePositionSettlement(ctx context.Context, event positionSettlement) error {
-	ps.mutex.Lock()
-	defer ps.mutex.Unlock()
-	pos := ps.getPosition(ctx, event)
+func (p *Position) handlePositionSettlement(ctx context.Context, event positionSettlement) error {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+	pos := p.getPosition(ctx, event)
 	pos.UpdateWithPositionSettlement(event)
-	return ps.updatePosition(ctx, pos)
+	return p.updatePosition(ctx, pos)
 }
 
-func (ps *Position) handleLossSocialization(ctx context.Context, event lossSocialization) error {
-	ps.mutex.Lock()
-	defer ps.mutex.Unlock()
-	pos := ps.getPosition(ctx, event)
+func (p *Position) handleLossSocialization(ctx context.Context, event lossSocialization) error {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+	pos := p.getPosition(ctx, event)
 	pos.UpdateWithLossSocialization(event)
-	return ps.updatePosition(ctx, pos)
+	return p.updatePosition(ctx, pos)
 }
 
-func (ps *Position) handleSettleDestressed(ctx context.Context, event settleDistressed) error {
-	ps.mutex.Lock()
-	defer ps.mutex.Unlock()
-	pos := ps.getPosition(ctx, event)
+func (p *Position) handleSettleDestressed(ctx context.Context, event settleDistressed) error {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+	pos := p.getPosition(ctx, event)
 	pos.UpdateWithSettleDestressed(event)
-	return ps.updatePosition(ctx, pos)
+	return p.updatePosition(ctx, pos)
 }
 
-func (ps *Position) getPosition(ctx context.Context, e positionEventBase) entities.Position {
+func (p *Position) getPosition(ctx context.Context, e positionEventBase) entities.Position {
 	mID := entities.MarketID(e.MarketID())
 	pID := entities.PartyID(e.PartyID())
 
-	position, err := ps.store.GetByMarketAndParty(ctx, mID.String(), pID.String())
+	position, err := p.store.GetByMarketAndParty(ctx, mID.String(), pID.String())
 	if errors.Is(err, sqlstore.ErrPositionNotFound) {
 		return entities.NewEmptyPosition(mID, pID)
 	}
@@ -141,9 +141,9 @@ func (ps *Position) getPosition(ctx context.Context, e positionEventBase) entiti
 	return position
 }
 
-func (ps *Position) updatePosition(ctx context.Context, pos entities.Position) error {
-	pos.VegaTime = ps.vegaTime
+func (p *Position) updatePosition(ctx context.Context, pos entities.Position) error {
+	pos.VegaTime = p.vegaTime
 
-	err := ps.store.Add(ctx, pos)
+	err := p.store.Add(ctx, pos)
 	return errors.Wrap(err, "error updating position")
 }

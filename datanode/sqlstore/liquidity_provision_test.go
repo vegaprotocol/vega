@@ -123,8 +123,6 @@ func testGetLPByReferenceAndParty(t *testing.T) {
 
 	lpProto := getTestLiquidityProvision()
 
-	want := make([]entities.LiquidityProvision, 0)
-
 	for _, lpp := range lpProto {
 		block := addTestBlock(t, bs)
 
@@ -136,8 +134,6 @@ func testGetLPByReferenceAndParty(t *testing.T) {
 
 		data.CreatedAt = data.CreatedAt.Truncate(time.Microsecond)
 		data.UpdatedAt = data.UpdatedAt.Truncate(time.Microsecond)
-
-		want = append(want, data)
 
 		time.Sleep(100 * time.Millisecond)
 	}

@@ -125,9 +125,8 @@ func (s *ConnectionSource) WithTransaction(ctx context.Context) (context.Context
 		}
 
 		return context.WithValue(ctx, transactionContextKey{}, tx), nil
-	} else {
-		return ctx, nil
 	}
+	return ctx, nil
 }
 
 func (s *ConnectionSource) AfterCommit(ctx context.Context, f func()) {

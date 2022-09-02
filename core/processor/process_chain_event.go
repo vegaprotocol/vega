@@ -136,7 +136,7 @@ func (app *App) processChainEvent(
 	}
 }
 
-func (app *App) processChainEventBuiltinAsset(ctx context.Context, ce *types.ChainEvent_Builtin, id string, nonce uint64) error {
+func (app *App) processChainEventBuiltinAsset(ctx context.Context, ce *types.ChainEventBuiltin, id string, nonce uint64) error {
 	evt := ce.Builtin // nolint
 	if evt == nil {
 		return ErrNotABuiltinAssetEvent

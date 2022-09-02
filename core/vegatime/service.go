@@ -39,9 +39,8 @@ type Svc struct {
 	previousTimestamp time.Time
 	currentTimestamp  time.Time
 
-	listeners      []func(context.Context, time.Time)
-	stateListeners []func(context.Context, time.Time)
-	mu             sync.RWMutex
+	listeners []func(context.Context, time.Time)
+	mu        sync.RWMutex
 
 	broker Broker
 }

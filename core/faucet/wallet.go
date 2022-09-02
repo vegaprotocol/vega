@@ -93,7 +93,7 @@ func (l *WalletLoader) GenerateWallet(passphrase string) (*WalletGenerationResul
 	}, nil
 }
 
-func (l *WalletLoader) Load(walletName, passphrase string) (*faucetWallet, error) {
+func (l *WalletLoader) load(walletName, passphrase string) (*faucetWallet, error) {
 	if err := l.handler.LoginWallet(walletName, passphrase); err != nil {
 		return nil, fmt.Errorf("couldn't login to wallet %s: %w", walletName, err)
 	}

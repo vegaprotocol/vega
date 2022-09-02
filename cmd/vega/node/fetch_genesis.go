@@ -26,7 +26,7 @@ import (
 func genesisDocHTTPFromURL(genesisFilePath string) (*tmtypes.GenesisDoc, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, "GET", genesisFilePath, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, genesisFilePath, nil)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't load genesis file from %s: %w", genesisFilePath, err)
 	}
@@ -40,7 +40,7 @@ func genesisDocHTTPFromURL(genesisFilePath string) (*tmtypes.GenesisDoc, error) 
 		return nil, err
 	}
 
-	doc, _, err := genesis.GenesisFromJSON(jsonGenesis)
+	doc, _, err := genesis.FromJSON(jsonGenesis)
 	if err != nil {
 		return nil, fmt.Errorf("invalid genesis file from %s: %w", genesisFilePath, err)
 	}
@@ -56,12 +56,12 @@ func httpGenesisDocProvider(networkSelect string) (*tmtypes.GenesisDoc, error) {
 	return doc, err
 }
 
-func getGenesisFromRemote(genesisFilesRootPath string) (*tmtypes.GenesisDoc, *genesis.GenesisState, error) {
+func getGenesisFromRemote(genesisFilesRootPath string) (*tmtypes.GenesisDoc, *genesis.State, error) {
 	jsonGenesis, err := fetchData(fmt.Sprintf("%s/genesis.json", genesisFilesRootPath))
 	if err != nil {
 		return nil, nil, fmt.Errorf("couldn't get remote genesis file: %w", err)
 	}
-	doc, state, err := genesis.GenesisFromJSON(jsonGenesis)
+	doc, state, err := genesis.FromJSON(jsonGenesis)
 	if err != nil {
 		return nil, nil, fmt.Errorf("couldn't parse genesis file: %w", err)
 	}
@@ -71,7 +71,7 @@ func getGenesisFromRemote(genesisFilesRootPath string) (*tmtypes.GenesisDoc, *ge
 func fetchData(path string) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, "GET", path, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't build request for %s: %w", path, err)
 	}

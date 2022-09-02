@@ -20,13 +20,14 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
+//nolint:interfacebloat
 type orderStore interface {
 	Flush(ctx context.Context) ([]entities.Order, error)
 	Add(o entities.Order) error
 	GetAll(ctx context.Context) ([]entities.Order, error)
-	GetOrder(ctx context.Context, orderIdStr string, version *int32) (entities.Order, error)
-	GetByMarket(ctx context.Context, marketIdStr string, p entities.OffsetPagination) ([]entities.Order, error)
-	GetByParty(ctx context.Context, partyIdStr string, p entities.OffsetPagination) ([]entities.Order, error)
+	GetOrder(ctx context.Context, orderID string, version *int32) (entities.Order, error)
+	GetByMarket(ctx context.Context, marketID string, p entities.OffsetPagination) ([]entities.Order, error)
+	GetByParty(ctx context.Context, partyID string, p entities.OffsetPagination) ([]entities.Order, error)
 	GetByReference(ctx context.Context, reference string, p entities.OffsetPagination) ([]entities.Order, error)
 	GetAllVersionsByOrderID(ctx context.Context, id string, p entities.OffsetPagination) ([]entities.Order, error)
 	GetLiveOrders(ctx context.Context) ([]entities.Order, error)

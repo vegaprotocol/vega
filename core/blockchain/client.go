@@ -28,6 +28,7 @@ import (
 
 var ErrClientNotReady = errors.New("tendermint client is not ready")
 
+// nolint: interfacebloat
 type ChainClientImpl interface {
 	GetGenesisTime(context.Context) (time.Time, error)
 	GetChainID(context.Context) (string, error)

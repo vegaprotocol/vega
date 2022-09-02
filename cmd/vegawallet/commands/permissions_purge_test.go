@@ -60,7 +60,7 @@ func testPurgePermissionsFlagsMissingFlagsFails(t *testing.T) {
 			req, err := tc.flags.Validate()
 
 			// then
-			assert.ErrorIs(t, err, flags.FlagMustBeSpecifiedError(tc.missingFlag))
+			assert.ErrorIs(t, err, flags.MustBeSpecifiedError(tc.missingFlag))
 			require.Nil(t, req)
 		})
 	}

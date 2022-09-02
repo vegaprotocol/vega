@@ -24,7 +24,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-type assetsFetcher struct {
+type AssetsFetcher struct {
 	repositoryOwner string
 	repository      string
 
@@ -36,8 +36,8 @@ type assetsFetcher struct {
 func NewAssetsFetcher(
 	repositoryOwner, repository string,
 	assetsNames []string,
-) *assetsFetcher {
-	return &assetsFetcher{
+) *AssetsFetcher {
+	return &AssetsFetcher{
 		repositoryOwner: repositoryOwner,
 		repository:      repository,
 		assetNames:      utils.ToLookupMap(assetsNames),
@@ -45,7 +45,7 @@ func NewAssetsFetcher(
 	}
 }
 
-func (af *assetsFetcher) GetReleaseID(ctx context.Context, releaseTag string) (int64, error) {
+func (af *AssetsFetcher) GetReleaseID(ctx context.Context, releaseTag string) (int64, error) {
 	releases, _, err := af.Client.Repositories.ListReleases(ctx, af.repositoryOwner, af.repository, nil)
 	if err != nil {
 		return 0, err
@@ -60,7 +60,7 @@ func (af *assetsFetcher) GetReleaseID(ctx context.Context, releaseTag string) (i
 	return 0, fmt.Errorf("release tag %q not found", releaseTag)
 }
 
-func (af *assetsFetcher) GetAssets(ctx context.Context, releaseID int64) ([]*github.ReleaseAsset, error) {
+func (af *AssetsFetcher) GetAssets(ctx context.Context, releaseID int64) ([]*github.ReleaseAsset, error) {
 	assets, _, err := af.Client.Repositories.ListReleaseAssets(ctx, af.repositoryOwner, af.repository, releaseID, nil)
 	if err != nil {
 		return nil, err
@@ -76,7 +76,7 @@ func (af *assetsFetcher) GetAssets(ctx context.Context, releaseID int64) ([]*git
 	return filteredAssets, nil
 }
 
-func (af *assetsFetcher) DownloadAsset(ctx context.Context, assetID int64, path string) error {
+func (af *AssetsFetcher) DownloadAsset(ctx context.Context, assetID int64, path string) error {
 	ra, _, err := af.Client.Repositories.DownloadReleaseAsset(ctx, af.repositoryOwner, af.repository, assetID)
 	if err != nil {
 		return fmt.Errorf("failed to download release asset: %w", err)
@@ -95,7 +95,7 @@ func (af *assetsFetcher) DownloadAsset(ctx context.Context, assetID int64, path 
 	return nil
 }
 
-func (af *assetsFetcher) Download(ctx context.Context, releaseTag, downloadDir string) error {
+func (af *AssetsFetcher) Download(ctx context.Context, releaseTag, downloadDir string) error {
 	releaseID, err := af.GetReleaseID(ctx, releaseTag)
 	if err != nil {
 		return fmt.Errorf("failed to get release ID for tag %q: %q", releaseTag, err)

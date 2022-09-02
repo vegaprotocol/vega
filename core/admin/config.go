@@ -27,7 +27,7 @@ const namedLogger = "admin.server"
 // ServerConfig represent the configuration of the server.
 type ServerConfig struct {
 	SocketPath string `long:"socket-path" description:"Listen for connection on UNIX socket path <file-path>"`
-	HttpPath   string `long:"http-path" description:"Http path of the socket HTTP RPC server"`
+	HTTPPath   string `long:"http-path" description:"Http path of the socket HTTP RPC server"`
 }
 
 // Config represents the configuration of the admin package.
@@ -43,7 +43,7 @@ func NewDefaultConfig() Config {
 		Level: encoding.LogLevel{Level: logging.InfoLevel},
 		Server: ServerConfig{
 			SocketPath: path.Join(os.TempDir(), "vega.sock"),
-			HttpPath:   "/rpc",
+			HTTPPath:   "/rpc",
 		},
 	}
 }

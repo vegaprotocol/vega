@@ -253,9 +253,8 @@ func sortValidatorDescRankingScoreAscBlockcompare(validators []*valState, rankin
 				return rng.Int31n(2) > 0
 			}
 			return blockComparator(validators[i], validators[j])
-		} else {
-			return rankingScore[validators[i].data.ID].GreaterThan(rankingScore[validators[j].data.ID])
 		}
+		return rankingScore[validators[i].data.ID].GreaterThan(rankingScore[validators[j].data.ID])
 	})
 }
 

@@ -24,8 +24,8 @@ import (
 	mangos "go.nanomsg.org/mangos/v3"
 	"go.nanomsg.org/mangos/v3/protocol"
 	"go.nanomsg.org/mangos/v3/protocol/push"
-	_ "go.nanomsg.org/mangos/v3/transport/inproc"
-	_ "go.nanomsg.org/mangos/v3/transport/tcp"
+	_ "go.nanomsg.org/mangos/v3/transport/inproc" // Does some nanomsg magic presumably
+	_ "go.nanomsg.org/mangos/v3/transport/tcp"    // Does some nanomsg magic presumably
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/logging"

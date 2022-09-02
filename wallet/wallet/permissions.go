@@ -84,7 +84,8 @@ func AccessModeToString(m AccessMode) string {
 //   - list_keys
 //
 // Methods requiring write access:
-//   Nothing requires this type of access for now.
+//
+//	Nothing requires this type of access for now.
 type PublicKeysPermission struct {
 	Access         AccessMode `json:"access"`
 	RestrictedKeys []string   `json:"restrictedKeys"`

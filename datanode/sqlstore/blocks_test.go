@@ -55,7 +55,7 @@ func TestBlock(t *testing.T) {
 	// See how many we have right now (it's possible that other tests added some)
 	blocks, err := bs.GetAll()
 	assert.NoError(t, err)
-	blocks_len := len(blocks)
+	blocksLen := len(blocks)
 
 	block1 := addTestBlock(t, bs)
 
@@ -66,7 +66,7 @@ func TestBlock(t *testing.T) {
 	// Query and check we've got back a block the same as the one we put in
 	blocks, err = bs.GetAll()
 	assert.NoError(t, err)
-	assert.Len(t, blocks, blocks_len+1)
+	assert.Len(t, blocks, blocksLen+1)
 	assert.Equal(t, blocks[0], block1)
 }
 

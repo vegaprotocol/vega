@@ -74,7 +74,7 @@ func testRotateKeyFlagsMissingWalletFails(t *testing.T) {
 	req, err := f.Validate()
 
 	// then
-	assert.ErrorIs(t, err, flags.FlagMustBeSpecifiedError("wallet"))
+	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("wallet"))
 	assert.Nil(t, req)
 }
 
@@ -89,7 +89,7 @@ func testRotateKeyFlagsMissingChainIDFails(t *testing.T) {
 	req, err := f.Validate()
 
 	// then
-	assert.ErrorIs(t, err, flags.FlagMustBeSpecifiedError("chain-id"))
+	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("chain-id"))
 	assert.Nil(t, req)
 }
 
@@ -104,7 +104,7 @@ func testRotateKeyFlagsMissingTxBlockHeightFails(t *testing.T) {
 	req, err := f.Validate()
 
 	// then
-	assert.ErrorIs(t, err, flags.FlagMustBeSpecifiedError("tx-height"))
+	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("tx-height"))
 	assert.Nil(t, req)
 }
 
@@ -119,7 +119,7 @@ func testRotateKeyFlagsMissingTargetBlockHeightFails(t *testing.T) {
 	req, err := f.Validate()
 
 	// then
-	assert.ErrorIs(t, err, flags.FlagMustBeSpecifiedError("target-height"))
+	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("target-height"))
 	assert.Nil(t, req)
 }
 
@@ -134,7 +134,7 @@ func testRotateKeyFlagsMissingNewPublicKeyFails(t *testing.T) {
 	req, err := f.Validate()
 
 	// then
-	assert.ErrorIs(t, err, flags.FlagMustBeSpecifiedError("new-pubkey"))
+	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("new-pubkey"))
 	assert.Nil(t, req)
 }
 
@@ -149,7 +149,7 @@ func testRotateKeyFlagsMissingCurrentPublicKeyFails(t *testing.T) {
 	req, err := f.Validate()
 
 	// then
-	assert.ErrorIs(t, err, flags.FlagMustBeSpecifiedError("current-pubkey"))
+	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("current-pubkey"))
 	assert.Nil(t, req)
 }
 

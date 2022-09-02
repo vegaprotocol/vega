@@ -194,13 +194,13 @@ func (ssp *SimpleSpamPolicy) PostBlockAccept(tx abci.Tx) (bool, error) {
 	defer ssp.lock.Unlock()
 
 	// get number of commands preceding the block in this epoch
-	var epochCommands uint64 = 0
+	var epochCommands uint64
 	if count, ok := ssp.partyToCount[party]; ok {
 		epochCommands = count
 	}
 
 	// get number of votes so far in current block
-	var blockCommands uint64 = 0
+	var blockCommands uint64
 	if count, ok := ssp.blockPartyToCount[party]; ok {
 		blockCommands += count
 	}

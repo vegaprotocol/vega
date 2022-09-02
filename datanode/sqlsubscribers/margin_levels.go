@@ -42,13 +42,13 @@ type MarginLevels struct {
 }
 
 type marginLevelEventKey struct {
-	PartyId  string
-	MarketId string
+	PartyID  string
+	MarketID string
 	AssetID  string
 }
 
 func NewMarginLevels(store MarginLevelsStore, accountSource AccountSource, log *logging.Logger) *MarginLevels {
-	getId := func(ctx context.Context, evt MarginLevelsEvent) marginLevelEventKey {
+	getID := func(ctx context.Context, evt MarginLevelsEvent) marginLevelEventKey {
 		ml := evt.MarginLevels()
 		return marginLevelEventKey{ml.PartyId, ml.MarketId, ml.Asset}
 	}
@@ -63,7 +63,7 @@ func NewMarginLevels(store MarginLevelsStore, accountSource AccountSource, log *
 		store:             store,
 		accountSource:     accountSource,
 		log:               log,
-		eventDeduplicator: NewEventDeduplicator(getId, compareEvents),
+		eventDeduplicator: NewEventDeduplicator(getID, compareEvents),
 	}
 }
 

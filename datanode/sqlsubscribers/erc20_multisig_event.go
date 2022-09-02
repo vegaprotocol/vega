@@ -49,7 +49,7 @@ func NewERC20MultiSigSignerEvent(store ERC20MultiSigSignerEventStore, log *loggi
 	}
 }
 
-func (t *ERC20MultiSigSignerEvent) Types() []events.Type {
+func (m *ERC20MultiSigSignerEvent) Types() []events.Type {
 	return []events.Type{
 		events.ERC20MultiSigSignerAddedEvent,
 		events.ERC20MultiSigSignerRemovedEvent,

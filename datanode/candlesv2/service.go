@@ -23,13 +23,14 @@ import (
 )
 
 // CandleStore ...
+//
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/candle_store_mock.go -package mocks code.vegaprotocol.io/vega/datanode/candlesv2 CandleStore
 type CandleStore interface {
-	GetCandleDataForTimeSpan(ctx context.Context, candleId string, from *time.Time, to *time.Time,
+	GetCandleDataForTimeSpan(ctx context.Context, candleID string, from *time.Time, to *time.Time,
 		p entities.CursorPagination) ([]entities.Candle, entities.PageInfo, error)
 	GetCandlesForMarket(ctx context.Context, market string) (map[string]string, error)
-	CandleExists(ctx context.Context, candleId string) (bool, error)
-	GetCandleIdForIntervalAndMarket(ctx context.Context, interval string, market string) (bool, string, error)
+	CandleExists(ctx context.Context, candleID string) (bool, error)
+	GetCandleIDForIntervalAndMarket(ctx context.Context, interval string, market string) (bool, string, error)
 }
 
 type Svc struct {
@@ -38,8 +39,8 @@ type Svc struct {
 	ctx context.Context
 	log *logging.Logger
 
-	candleIdToUpdatesStream  map[string]*candleUpdates
-	subscriptionIdToCandleId map[string]string
+	candleIDToUpdatesStream  map[string]*CandleUpdates
+	subscriptionIDToCandleID map[string]string
 	updatesSubscriptionMutex sync.Mutex
 }
 
@@ -52,51 +53,50 @@ func NewService(ctx context.Context, log *logging.Logger, config Config, candleS
 		log:                      log,
 		Config:                   config,
 		CandleStore:              candleStore,
-		candleIdToUpdatesStream:  map[string]*candleUpdates{},
-		subscriptionIdToCandleId: map[string]string{},
+		candleIDToUpdatesStream:  map[string]*CandleUpdates{},
+		subscriptionIDToCandleID: map[string]string{},
 	}
 }
 
 // Subscribe to a channel of new or updated candles. The subscriber id will be returned as an uint64 value
 // and must be retained for future reference and to Unsubscribe.
-func (cs *Svc) Subscribe(ctx context.Context, candleId string) (string, <-chan entities.Candle, error) {
+func (cs *Svc) Subscribe(ctx context.Context, candleID string) (string, <-chan entities.Candle, error) {
 	cs.updatesSubscriptionMutex.Lock()
 	defer cs.updatesSubscriptionMutex.Unlock()
 
-	exists, err := cs.CandleExists(ctx, candleId)
+	exists, err := cs.CandleExists(ctx, candleID)
 	if err != nil {
 		return "", nil, fmt.Errorf("subscribing to candles:%w", err)
 	}
 
 	if !exists {
-		return "", nil, fmt.Errorf("no candle exists for candle id:%s", candleId)
+		return "", nil, fmt.Errorf("no candle exists for candle id:%s", candleID)
 	}
 
-	if _, ok := cs.candleIdToUpdatesStream[candleId]; !ok {
-		updates, err := NewCandleUpdates(cs.ctx, cs.log, candleId, cs, cs.Config.CandleUpdates)
+	if _, ok := cs.candleIDToUpdatesStream[candleID]; !ok {
+		updates, err := NewCandleUpdates(cs.ctx, cs.log, candleID, cs, cs.Config.CandleUpdates)
 		if err != nil {
 			return "", nil, fmt.Errorf("subsribing to candle updates:%w", err)
 		}
 
-		cs.candleIdToUpdatesStream[candleId] = updates
+		cs.candleIDToUpdatesStream[candleID] = updates
 	}
 
-	updatesStream := cs.candleIdToUpdatesStream[candleId]
-	subscriptionId, out := updatesStream.Subscribe()
-	cs.subscriptionIdToCandleId[subscriptionId] = candleId
+	updatesStream := cs.candleIDToUpdatesStream[candleID]
+	subscriptionID, out := updatesStream.Subscribe()
+	cs.subscriptionIDToCandleID[subscriptionID] = candleID
 
-	return subscriptionId, out, nil
+	return subscriptionID, out, nil
 }
 
-func (cs *Svc) Unsubscribe(subscriptionId string) error {
+func (cs *Svc) Unsubscribe(subscriptionID string) error {
 	cs.updatesSubscriptionMutex.Lock()
 	defer cs.updatesSubscriptionMutex.Unlock()
 
-	if candleId, ok := cs.subscriptionIdToCandleId[subscriptionId]; ok {
-		updatesStream := cs.candleIdToUpdatesStream[candleId]
-		updatesStream.Unsubscribe(subscriptionId)
+	if candleID, ok := cs.subscriptionIDToCandleID[subscriptionID]; ok {
+		updatesStream := cs.candleIDToUpdatesStream[candleID]
+		updatesStream.Unsubscribe(subscriptionID)
 		return nil
-	} else {
-		return fmt.Errorf("no subscription found for id %s", subscriptionId)
 	}
+	return fmt.Errorf("no subscription found for id %s", subscriptionID)
 }

@@ -169,16 +169,6 @@ func NewMarketFromSnapshot(
 	return market, nil
 }
 
-func (m *Market) changed() bool {
-	return (m.stateChanged ||
-		m.pMonitor.Changed() ||
-		m.as.Changed() ||
-		m.peggedOrders.Changed() ||
-		m.expiringOrders.Changed() ||
-		m.equityShares.Changed() ||
-		m.feeSplitter.Changed())
-}
-
 func (m *Market) getState() *types.ExecMarket {
 	rf, _ := m.risk.GetRiskFactors()
 	var sp *num.Uint

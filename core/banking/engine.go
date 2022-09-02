@@ -18,7 +18,6 @@ import (
 	"math/big"
 	"sort"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -122,7 +121,7 @@ type Engine struct {
 	cfg         Config
 	log         *logging.Logger
 	timeService TimeService
-	broker      broker.BrokerI
+	broker      broker.Interface
 	col         Collateral
 	witness     Witness
 	notary      Notary
@@ -137,7 +136,6 @@ type Engine struct {
 	deposits      map[string]*types.Deposit
 
 	currentEpoch uint64
-	mu           sync.RWMutex
 	bss          *bankingSnapshotState
 
 	marketActivityTracker MarketActivityTracker
@@ -169,7 +167,7 @@ func New(
 	tsvc TimeService,
 	assets Assets,
 	notary Notary,
-	broker broker.BrokerI,
+	broker broker.Interface,
 	top Topology,
 	epoch EpochService,
 	marketActivityTracker MarketActivityTracker,

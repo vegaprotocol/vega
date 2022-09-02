@@ -134,12 +134,12 @@ func (f *ImportWalletFlags) Validate() (api.ImportWalletParams, error) {
 	}
 
 	if len(f.Wallet) == 0 {
-		return api.ImportWalletParams{}, flags.FlagMustBeSpecifiedError("wallet")
+		return api.ImportWalletParams{}, flags.MustBeSpecifiedError("wallet")
 	}
 	params.Wallet = f.Wallet
 
 	if len(f.RecoveryPhraseFile) == 0 {
-		return api.ImportWalletParams{}, flags.FlagMustBeSpecifiedError("recovery-phrase-file")
+		return api.ImportWalletParams{}, flags.MustBeSpecifiedError("recovery-phrase-file")
 	}
 	recoveryPhrase, err := vgfs.ReadFile(f.RecoveryPhraseFile)
 	if err != nil {

@@ -105,7 +105,7 @@ func (t *ToEnact) NewFreeform() *ToEnactFreeform {
 	return t.f
 }
 
-func (t *ToEnact) ProposalData() *proposal {
+func (t *ToEnact) ProposalData() *proposal { //revive:disable:unexported-return
 	return t.p
 }
 

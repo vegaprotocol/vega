@@ -26,12 +26,12 @@ import (
 
 func TestSnapshot(t *testing.T) {
 	engine1 := getTestEngine(t, now).engine
-	engine1.RegisterStateVariable("asset1", "market1", "var1", converter{}, defaultStartCalc(), []types.StateVarEventType{types.StateVarEventTypeMarketEnactment, types.StateVarEventTypeTimeTrigger}, defaultResultBack())
-	engine1.RegisterStateVariable("asset1", "market1", "var2", converter{}, defaultStartCalc(), []types.StateVarEventType{types.StateVarEventTypeMarketEnactment, types.StateVarEventTypeTimeTrigger}, defaultResultBack())
-	engine1.RegisterStateVariable("asset1", "market2", "var1", converter{}, defaultStartCalc(), []types.StateVarEventType{types.StateVarEventTypeMarketEnactment, types.StateVarEventTypeTimeTrigger}, defaultResultBack())
-	engine1.RegisterStateVariable("asset1", "market2", "var2", converter{}, defaultStartCalc(), []types.StateVarEventType{types.StateVarEventTypeMarketEnactment, types.StateVarEventTypeTimeTrigger}, defaultResultBack())
-	engine1.RegisterStateVariable("asset2", "market1", "var1", converter{}, defaultStartCalc(), []types.StateVarEventType{types.StateVarEventTypeMarketEnactment, types.StateVarEventTypeTimeTrigger}, defaultResultBack())
-	engine1.RegisterStateVariable("asset2", "market1", "var1", converter{}, defaultStartCalc(), []types.StateVarEventType{types.StateVarEventTypeMarketEnactment, types.StateVarEventTypeTimeTrigger}, defaultResultBack())
+	engine1.RegisterStateVariable("asset1", "market1", "var1", converter{}, defaultStartCalc(), []types.EventType{types.EventTypeMarketEnactment, types.EventTypeTimeTrigger}, defaultResultBack())
+	engine1.RegisterStateVariable("asset1", "market1", "var2", converter{}, defaultStartCalc(), []types.EventType{types.EventTypeMarketEnactment, types.EventTypeTimeTrigger}, defaultResultBack())
+	engine1.RegisterStateVariable("asset1", "market2", "var1", converter{}, defaultStartCalc(), []types.EventType{types.EventTypeMarketEnactment, types.EventTypeTimeTrigger}, defaultResultBack())
+	engine1.RegisterStateVariable("asset1", "market2", "var2", converter{}, defaultStartCalc(), []types.EventType{types.EventTypeMarketEnactment, types.EventTypeTimeTrigger}, defaultResultBack())
+	engine1.RegisterStateVariable("asset2", "market1", "var1", converter{}, defaultStartCalc(), []types.EventType{types.EventTypeMarketEnactment, types.EventTypeTimeTrigger}, defaultResultBack())
+	engine1.RegisterStateVariable("asset2", "market1", "var1", converter{}, defaultStartCalc(), []types.EventType{types.EventTypeMarketEnactment, types.EventTypeTimeTrigger}, defaultResultBack())
 
 	engine1.ReadyForTimeTrigger("asset1", "market1")
 	engine1.ReadyForTimeTrigger("asset1", "market2")
@@ -41,12 +41,12 @@ func TestSnapshot(t *testing.T) {
 	require.NoError(t, err)
 
 	engine2 := getTestEngine(t, now).engine
-	engine2.RegisterStateVariable("asset1", "market1", "var1", converter{}, defaultStartCalc(), []types.StateVarEventType{types.StateVarEventTypeMarketEnactment, types.StateVarEventTypeTimeTrigger}, defaultResultBack())
-	engine2.RegisterStateVariable("asset1", "market1", "var2", converter{}, defaultStartCalc(), []types.StateVarEventType{types.StateVarEventTypeMarketEnactment, types.StateVarEventTypeTimeTrigger}, defaultResultBack())
-	engine2.RegisterStateVariable("asset1", "market2", "var1", converter{}, defaultStartCalc(), []types.StateVarEventType{types.StateVarEventTypeMarketEnactment, types.StateVarEventTypeTimeTrigger}, defaultResultBack())
-	engine2.RegisterStateVariable("asset1", "market2", "var2", converter{}, defaultStartCalc(), []types.StateVarEventType{types.StateVarEventTypeMarketEnactment, types.StateVarEventTypeTimeTrigger}, defaultResultBack())
-	engine2.RegisterStateVariable("asset2", "market1", "var1", converter{}, defaultStartCalc(), []types.StateVarEventType{types.StateVarEventTypeMarketEnactment, types.StateVarEventTypeTimeTrigger}, defaultResultBack())
-	engine2.RegisterStateVariable("asset2", "market1", "var1", converter{}, defaultStartCalc(), []types.StateVarEventType{types.StateVarEventTypeMarketEnactment, types.StateVarEventTypeTimeTrigger}, defaultResultBack())
+	engine2.RegisterStateVariable("asset1", "market1", "var1", converter{}, defaultStartCalc(), []types.EventType{types.EventTypeMarketEnactment, types.EventTypeTimeTrigger}, defaultResultBack())
+	engine2.RegisterStateVariable("asset1", "market1", "var2", converter{}, defaultStartCalc(), []types.EventType{types.EventTypeMarketEnactment, types.EventTypeTimeTrigger}, defaultResultBack())
+	engine2.RegisterStateVariable("asset1", "market2", "var1", converter{}, defaultStartCalc(), []types.EventType{types.EventTypeMarketEnactment, types.EventTypeTimeTrigger}, defaultResultBack())
+	engine2.RegisterStateVariable("asset1", "market2", "var2", converter{}, defaultStartCalc(), []types.EventType{types.EventTypeMarketEnactment, types.EventTypeTimeTrigger}, defaultResultBack())
+	engine2.RegisterStateVariable("asset2", "market1", "var1", converter{}, defaultStartCalc(), []types.EventType{types.EventTypeMarketEnactment, types.EventTypeTimeTrigger}, defaultResultBack())
+	engine2.RegisterStateVariable("asset2", "market1", "var1", converter{}, defaultStartCalc(), []types.EventType{types.EventTypeMarketEnactment, types.EventTypeTimeTrigger}, defaultResultBack())
 
 	pl := snapshotpb.Payload{}
 	require.NoError(t, proto.Unmarshal(state1, &pl))
@@ -61,7 +61,7 @@ func TestSnapshotChangeFlagSet(t *testing.T) {
 	key := (&gtypes.PayloadFloatingPointConsensus{}).Key()
 	engine1 := getTestEngine(t, now).engine
 
-	engine1.RegisterStateVariable("asset1", "market1", "var1", converter{}, defaultStartCalc(), []types.StateVarEventType{types.StateVarEventTypeMarketEnactment, types.StateVarEventTypeTimeTrigger}, defaultResultBack())
+	engine1.RegisterStateVariable("asset1", "market1", "var1", converter{}, defaultStartCalc(), []types.EventType{types.EventTypeMarketEnactment, types.EventTypeTimeTrigger}, defaultResultBack())
 
 	state1, _, err := engine1.GetState(key)
 	require.NoError(t, err)

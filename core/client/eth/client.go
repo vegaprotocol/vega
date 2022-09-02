@@ -45,8 +45,9 @@ var ContractHashes = map[string]string{
 }
 
 // ETHClient ...
+//
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_client_mock.go -package mocks code.vegaprotocol.io/vega/core/client/eth ETHClient
-type ETHClient interface {
+type ETHClient interface { //revive:disable:exported
 	bind.ContractBackend
 	ChainID(context.Context) (*big.Int, error)
 	NetworkID(context.Context) (*big.Int, error)

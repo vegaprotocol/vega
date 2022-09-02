@@ -127,36 +127,36 @@ func (f *RotateKeyFlags) Validate() (*wallet.RotateKeyRequest, error) {
 	req := &wallet.RotateKeyRequest{}
 
 	if f.NewPublicKey == "" {
-		return nil, flags.FlagMustBeSpecifiedError("new-pubkey")
+		return nil, flags.MustBeSpecifiedError("new-pubkey")
 	}
 	req.NewPublicKey = f.NewPublicKey
 
 	if f.CurrentPubKey == "" {
-		return nil, flags.FlagMustBeSpecifiedError("current-pubkey")
+		return nil, flags.MustBeSpecifiedError("current-pubkey")
 	}
 	req.CurrentPublicKey = f.CurrentPubKey
 
 	if f.ChainID == "" {
-		return nil, flags.FlagMustBeSpecifiedError("chain-id")
+		return nil, flags.MustBeSpecifiedError("chain-id")
 	}
 	req.ChainID = f.ChainID
 
 	if f.TargetBlockHeight == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("target-height")
+		return nil, flags.MustBeSpecifiedError("target-height")
 	}
 	req.TargetBlockHeight = f.TargetBlockHeight
 
 	if f.TxBlockHeight == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("tx-height")
+		return nil, flags.MustBeSpecifiedError("tx-height")
 	}
 	req.TxBlockHeight = f.TxBlockHeight
 
 	if req.TargetBlockHeight <= req.TxBlockHeight {
-		return nil, flags.FlagRequireLessThanFlagError("tx-height", "target-height")
+		return nil, flags.RequireLessThanFlagError("tx-height", "target-height")
 	}
 
 	if len(f.Wallet) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("wallet")
+		return nil, flags.MustBeSpecifiedError("wallet")
 	}
 	req.Wallet = f.Wallet
 

@@ -29,28 +29,28 @@ import (
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
 
-// StateVarConsensusState trakcs the state transitions of a state variable.
-type StateVarConsensusState int
+// ConsensusState trakcs the state transitions of a state variable.
+type ConsensusState int
 
 const (
-	StateVarConsensusStateUnspecified StateVarConsensusState = iota
-	StateVarConsensusStateCalculationStarted
-	StateVarConsensusStatePerfectMatch
-	StateVarConsensusStateSeekingConsensus
-	StateVarConsensusStateconsensusReachedLocked
-	StateVarConsensusStateCalculationAborted
-	StateVarConsensusStateError
-	StateVarConsensusStateStale
+	ConsensusStateUnspecified ConsensusState = iota
+	ConsensusStateCalculationStarted
+	ConsensusStatePerfectMatch
+	ConsensusStateSeekingConsensus
+	ConsensusStateconsensusReachedLocked
+	ConsensusStateCalculationAborted
+	ConsensusStateError
+	ConsensusStateStale
 )
 
-var stateToName = map[StateVarConsensusState]string{
-	StateVarConsensusStateUnspecified:            "undefined",
-	StateVarConsensusStateCalculationStarted:     "consensus_calc_started",
-	StateVarConsensusStatePerfectMatch:           "perfect_match",
-	StateVarConsensusStateSeekingConsensus:       "seeking_consensus",
-	StateVarConsensusStateconsensusReachedLocked: "consensus_reached",
-	StateVarConsensusStateCalculationAborted:     "consensus_calc_aborted",
-	StateVarConsensusStateError:                  "error",
+var stateToName = map[ConsensusState]string{
+	ConsensusStateUnspecified:            "undefined",
+	ConsensusStateCalculationStarted:     "consensus_calc_started",
+	ConsensusStatePerfectMatch:           "perfect_match",
+	ConsensusStateSeekingConsensus:       "seeking_consensus",
+	ConsensusStateconsensusReachedLocked: "consensus_reached",
+	ConsensusStateCalculationAborted:     "consensus_calc_aborted",
+	ConsensusStateError:                  "error",
 }
 
 type StateVariable struct {
@@ -65,7 +65,7 @@ type StateVariable struct {
 	startCalculation func(string, statevar.FinaliseCalculation)                // a callback to the owner to start the calculation of the value of the state variable
 	result           func(context.Context, statevar.StateVariableResult) error // a callback to be called when the value reaches consensus
 
-	state                       StateVarConsensusState              // the current status of consensus
+	state                       ConsensusState                      // the current status of consensus
 	eventID                     string                              // the event ID triggering the calculation
 	validatorResults            map[string]*statevar.KeyValueBundle // the result of the calculation as received from validators
 	roundsSinceMeaningfulUpdate uint
@@ -89,7 +89,7 @@ func NewStateVar(
 	market string,
 	converter statevar.Converter,
 	startCalculation func(string, statevar.FinaliseCalculation),
-	trigger []statevar.StateVarEventType,
+	trigger []statevar.EventType,
 	result func(context.Context, statevar.StateVariableResult) error,
 ) *StateVariable {
 	sv := &StateVariable{
@@ -103,7 +103,7 @@ func NewStateVar(
 		converter:                   converter,
 		startCalculation:            startCalculation,
 		result:                      result,
-		state:                       StateVarConsensusStateUnspecified,
+		state:                       ConsensusStateUnspecified,
 		validatorResults:            map[string]*statevar.KeyValueBundle{},
 		roundsSinceMeaningfulUpdate: 0,
 	}
@@ -172,22 +172,22 @@ func (sv *StateVariable) eventTriggered(eventID string) error {
 
 		// if we got a new event and were not in consensus, increase the number of rounds with no consensus and if
 		// we've not had a meaningful update - send an event with stale state
-		if sv.state == StateVarConsensusStateSeekingConsensus {
+		if sv.state == ConsensusStateSeekingConsensus {
 			sv.roundsSinceMeaningfulUpdate++
 			if sv.roundsSinceMeaningfulUpdate >= 3 {
-				sv.state = StateVarConsensusStateStale
+				sv.state = ConsensusStateStale
 				sv.addEventLocked()
 			}
 		}
 
-		sv.state = StateVarConsensusStateCalculationAborted
+		sv.state = ConsensusStateCalculationAborted
 		sv.addEventLocked()
 	}
 
 	// reset any existing state
 	sv.eventID = eventID
 	sv.validatorResults = map[string]*statevar.KeyValueBundle{}
-	sv.state = StateVarConsensusStateCalculationStarted
+	sv.state = ConsensusStateCalculationStarted
 	sv.addEventLocked()
 
 	sv.lock.Unlock()
@@ -206,7 +206,7 @@ func (sv *StateVariable) CalculationFinished(eventID string, result statevar.Sta
 	}
 	if err != nil {
 		sv.log.Error("could not calculate state for", logging.String("id", sv.ID), logging.String("event-id", eventID))
-		sv.state = StateVarConsensusStateError
+		sv.state = ConsensusStateError
 		sv.addEventLocked()
 		sv.eventID = ""
 		sv.lock.Unlock()
@@ -292,7 +292,7 @@ func (sv *StateVariable) bundleReceived(ctx context.Context, t time.Time, node, 
 		sv.log.Debug("state var bundle received", logging.String("from-validator", node), logging.String("state-var", sv.ID), logging.String("event-id", eventID))
 	}
 
-	if sv.state == StateVarConsensusStatePerfectMatch || sv.state == StateVarConsensusStateconsensusReachedLocked {
+	if sv.state == ConsensusStatePerfectMatch || sv.state == ConsensusStateconsensusReachedLocked {
 		sv.log.Debug("state var bundle received, consensus already reached", logging.String("from-validator", node), logging.String("state-var", sv.ID), logging.String("event-id", eventID))
 		return
 	}
@@ -315,7 +315,7 @@ func (sv *StateVariable) bundleReceived(ctx context.Context, t time.Time, node, 
 	}
 
 	// if we're already in seeking consensus state, no point in checking if all match - suffice checking if there's a majority with matching within tolerance
-	if sv.state == StateVarConsensusStateSeekingConsensus {
+	if sv.state == ConsensusStateSeekingConsensus {
 		sv.tryConsensusLocked(ctx, t, rng, requiredNumberOfResults)
 		return
 	}
@@ -337,7 +337,7 @@ func (sv *StateVariable) bundleReceived(ctx context.Context, t time.Time, node, 
 			}
 
 			// initiate a round of voting
-			sv.state = StateVarConsensusStateSeekingConsensus
+			sv.state = ConsensusStateSeekingConsensus
 			sv.tryConsensusLocked(ctx, t, rng, validatorsNum.Mul(validatorVotesRequired))
 			return
 		}
@@ -347,7 +347,7 @@ func (sv *StateVariable) bundleReceived(ctx context.Context, t time.Time, node, 
 	if sv.log.GetLevel() <= logging.DebugLevel {
 		sv.log.Debug("state var consensus reached through perfect match", logging.String("state-var", sv.ID), logging.String("event-id", eventID), logging.Int("num-results", len(sv.validatorResults)))
 	}
-	sv.state = StateVarConsensusStatePerfectMatch
+	sv.state = ConsensusStatePerfectMatch
 	// convert the result to decimal and let the owner of the state variable know
 	sv.consensusReachedLocked(ctx, t, result)
 }
@@ -378,7 +378,7 @@ func (sv *StateVariable) tryConsensusLocked(ctx context.Context, t time.Time, rn
 			}
 		}
 		if num.DecimalFromInt64(countMatch).GreaterThanOrEqual(requiredMatches) {
-			sv.state = StateVarConsensusStateconsensusReachedLocked
+			sv.state = ConsensusStateconsensusReachedLocked
 			sv.consensusReachedLocked(ctx, t, candidateResult)
 			return
 		}

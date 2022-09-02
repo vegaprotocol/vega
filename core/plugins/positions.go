@@ -304,8 +304,8 @@ type Position struct {
 func seToProto(e SE) Position {
 	return Position{
 		Position: types.Position{
-			MarketId: e.MarketID(),
-			PartyId:  e.PartyID(),
+			MarketID: e.MarketID(),
+			PartyID:  e.PartyID(),
 		},
 		AverageEntryPriceFP: num.DecimalZero(),
 		RealisedPnlFP:       num.DecimalZero(),

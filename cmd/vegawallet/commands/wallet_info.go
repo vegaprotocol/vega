@@ -100,7 +100,7 @@ func (f *GetWalletInfoFlags) Validate() (api.DescribeWalletParams, error) {
 	req := api.DescribeWalletParams{}
 
 	if len(f.Wallet) == 0 {
-		return api.DescribeWalletParams{}, flags.FlagMustBeSpecifiedError("wallet")
+		return api.DescribeWalletParams{}, flags.MustBeSpecifiedError("wallet")
 	}
 	req.Wallet = f.Wallet
 

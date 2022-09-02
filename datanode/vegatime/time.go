@@ -26,9 +26,13 @@ func init() {
 
 // SetNowFunc exists for testing purpose
 // e.g: set the vegatime.Now function to return a specific time
-//   vegatime.SetNowFunc(func() time.T { vegatime.Unix(123423, 0) })
+//
+//	vegatime.SetNowFunc(func() time.T { vegatime.Unix(123423, 0) })
+//
 // reset the vegatime.Now function
-//   vegatime.SetNowFunc(nil)
+//
+//	vegatime.SetNowFunc(nil)
+//
 // this will reset the vegatime.Now function to use time.Now() again.
 func SetNowFunc(f func() time.Time) {
 	if f == nil {

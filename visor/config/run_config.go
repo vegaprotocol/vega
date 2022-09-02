@@ -25,7 +25,7 @@ type BinaryConfig struct {
 
 type RPCConfig struct {
 	SocketPath string `toml:"socketPath"`
-	HttpPath   string `toml:"httpPath"`
+	HTTPPath   string `toml:"httpPath"`
 }
 
 type VegaConfig struct {

@@ -152,7 +152,7 @@ func healthCheckMiddleware(f http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/health" {
 			w.Write([]byte("ok"))
-			w.WriteHeader(200)
+			w.WriteHeader(http.StatusOK)
 			return
 		}
 		f.ServeHTTP(w, r)

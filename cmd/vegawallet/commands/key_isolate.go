@@ -111,12 +111,12 @@ func (f *IsolateKeyFlags) Validate() (*wallet.IsolateKeyRequest, error) {
 	req := &wallet.IsolateKeyRequest{}
 
 	if len(f.Wallet) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("wallet")
+		return nil, flags.MustBeSpecifiedError("wallet")
 	}
 	req.Wallet = f.Wallet
 
 	if len(f.PubKey) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("pubkey")
+		return nil, flags.MustBeSpecifiedError("pubkey")
 	}
 	req.PubKey = f.PubKey
 

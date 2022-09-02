@@ -30,7 +30,6 @@ type testTx struct {
 	hash        []byte
 	signature   []byte
 	command     txn.Command
-	validateFn  func() error
 	blockHeight uint64
 	powNonce    uint64
 	powTxID     string

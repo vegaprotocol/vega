@@ -58,8 +58,8 @@ type Broker interface {
 }
 
 type StateVarEngine interface {
-	RegisterStateVariable(asset, market, name string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error) error
-	NewEvent(asset, market string, eventType statevar.StateVarEventType)
+	RegisterStateVariable(asset, market, name string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.EventType, result func(context.Context, statevar.StateVariableResult) error) error
+	NewEvent(asset, market string, eventType statevar.EventType)
 }
 
 type marginChange struct {
@@ -126,14 +126,14 @@ func NewEngine(log *logging.Logger,
 		riskFactorsInitialised: riskFactorsInitialised,
 		positionFactor:         positionFactor,
 	}
-	stateVarEngine.RegisterStateVariable(asset, mktID, RiskFactorStateVarName, RiskFactorConverter{}, e.startRiskFactorsCalculation, []statevar.StateVarEventType{statevar.StateVarEventTypeMarketEnactment, statevar.StateVarEventTypeMarketUpdated}, e.updateRiskFactor)
+	stateVarEngine.RegisterStateVariable(asset, mktID, RiskFactorStateVarName, FactorConverter{}, e.startRiskFactorsCalculation, []statevar.EventType{statevar.EventTypeMarketEnactment, statevar.EventTypeMarketUpdated}, e.updateRiskFactor)
 
 	if initialisedRiskFactors != nil {
 		e.factors = initialisedRiskFactors
 		// we've restored from snapshot, we don't need want to trigger a MarketEnactment event
 	} else {
 		// trigger the calculation of risk factors for the market
-		stateVarEngine.NewEvent(asset, mktID, statevar.StateVarEventTypeMarketEnactment)
+		stateVarEngine.NewEvent(asset, mktID, statevar.EventTypeMarketEnactment)
 	}
 
 	return e
@@ -152,7 +152,7 @@ func (e *Engine) OnMarginScalingFactorsUpdate(sf *types.ScalingFactors) error {
 func (e *Engine) UpdateModel(stateVarEngine StateVarEngine, calculator *types.MarginCalculator, model Model) {
 	e.scalingFactorsUint = scalingFactorsUintFromDecimals(calculator.ScalingFactors)
 	e.factors = model.DefaultRiskFactors()
-	stateVarEngine.NewEvent(e.asset, e.mktID, statevar.StateVarEventTypeMarketUpdated)
+	stateVarEngine.NewEvent(e.asset, e.mktID, statevar.EventTypeMarketUpdated)
 	e.model = model
 }
 
@@ -306,11 +306,15 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 
 // UpdateMarginsOnSettlement ensure the margin requirement over all positions.
 // margins updates are based on the following requirement
-//  ---------------------------------------------------------------------------------------
+//
+//	---------------------------------------------------------------------------------------
+//
 // | 1 | SearchLevel < CurMargin < InitialMargin | nothing to do / no risk for the network |
 // | 2 | CurMargin < SearchLevel                 | set margin to InitialLevel              |
 // | 3 | CurMargin > ReleaseLevel                | release up to the InitialLevel          |
-//  ---------------------------------------------------------------------------------------
+//
+//	---------------------------------------------------------------------------------------
+//
 // In the case where the CurMargin is smaller to the MaintenanceLevel after trying to
 // move monies later, we'll need to close out the party but that cannot be figured out
 // now only in later when we try to move monies from the general account.

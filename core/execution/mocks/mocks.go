@@ -118,7 +118,7 @@ func (m *MockStateVarEngine) EXPECT() *MockStateVarEngineMockRecorder {
 }
 
 // NewEvent mocks base method.
-func (m *MockStateVarEngine) NewEvent(arg0, arg1 string, arg2 statevar.StateVarEventType) {
+func (m *MockStateVarEngine) NewEvent(arg0, arg1 string, arg2 statevar.EventType) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "NewEvent", arg0, arg1, arg2)
 }
@@ -142,7 +142,7 @@ func (mr *MockStateVarEngineMockRecorder) ReadyForTimeTrigger(arg0, arg1 interfa
 }
 
 // RegisterStateVariable mocks base method.
-func (m *MockStateVarEngine) RegisterStateVariable(arg0, arg1, arg2 string, arg3 statevar.Converter, arg4 func(string, statevar.FinaliseCalculation), arg5 []statevar.StateVarEventType, arg6 func(context.Context, statevar.StateVariableResult) error) error {
+func (m *MockStateVarEngine) RegisterStateVariable(arg0, arg1, arg2 string, arg3 statevar.Converter, arg4 func(string, statevar.FinaliseCalculation), arg5 []statevar.EventType, arg6 func(context.Context, statevar.StateVariableResult) error) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RegisterStateVariable", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 	ret0, _ := ret[0].(error)

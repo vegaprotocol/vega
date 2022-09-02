@@ -57,7 +57,7 @@ func testVerifyMessageFlagsMissingPubKeyFails(t *testing.T) {
 	req, err := f.Validate()
 
 	// then
-	assert.ErrorIs(t, err, flags.FlagMustBeSpecifiedError("pubkey"))
+	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("pubkey"))
 	assert.Nil(t, req)
 }
 
@@ -70,7 +70,7 @@ func testVerifyMessageFlagsMissingMessageFails(t *testing.T) {
 	req, err := f.Validate()
 
 	// then
-	assert.ErrorIs(t, err, flags.FlagMustBeSpecifiedError("message"))
+	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("message"))
 	assert.Nil(t, req)
 }
 
@@ -96,7 +96,7 @@ func testVerifyMessageFlagsMissingSignatureFails(t *testing.T) {
 	req, err := f.Validate()
 
 	// then
-	assert.ErrorIs(t, err, flags.FlagMustBeSpecifiedError("signature"))
+	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("signature"))
 	assert.Nil(t, req)
 }
 

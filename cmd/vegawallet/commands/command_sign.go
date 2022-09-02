@@ -140,12 +140,12 @@ func (f *SignCommandFlags) Validate() (*wallet.SignCommandRequest, error) {
 	req := &wallet.SignCommandRequest{}
 
 	if len(f.Wallet) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("wallet")
+		return nil, flags.MustBeSpecifiedError("wallet")
 	}
 	req.Wallet = f.Wallet
 
 	if len(f.ChainID) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("chain-id")
+		return nil, flags.MustBeSpecifiedError("chain-id")
 	}
 	req.ChainID = f.ChainID
 
@@ -156,12 +156,12 @@ func (f *SignCommandFlags) Validate() (*wallet.SignCommandRequest, error) {
 	req.Passphrase = passphrase
 
 	if f.TxBlockHeight == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("tx-height")
+		return nil, flags.MustBeSpecifiedError("tx-height")
 	}
 	req.TxBlockHeight = f.TxBlockHeight
 
 	if len(f.PubKey) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("pubkey")
+		return nil, flags.MustBeSpecifiedError("pubkey")
 	}
 	if len(f.RawCommand) == 0 {
 		return nil, flags.ArgMustBeSpecifiedError("command")

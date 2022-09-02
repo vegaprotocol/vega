@@ -145,7 +145,7 @@ func (n *NodeValidation) removeProposal(id string) {
 }
 
 // OnTick returns validated proposal by all nodes.
-func (n *NodeValidation) OnTick(t time.Time) (accepted []*proposal, rejected []*proposal) {
+func (n *NodeValidation) OnTick(t time.Time) (accepted []*proposal, rejected []*proposal) { //revive:disable:unexported-return
 	n.currentTimestamp = t
 
 	toRemove := []string{} // id of proposals to remove
