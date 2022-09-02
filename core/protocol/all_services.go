@@ -171,7 +171,6 @@ func newServices(
 	svcs.genesisHandler.OnGenesisTimeLoaded(svcs.timeService.SetTimeNow)
 
 	svcs.eventService = subscribers.NewService(svcs.broker)
-	svcs.assets = assets.New(svcs.log, svcs.conf.Assets, nodeWallets, svcs.ethClient, svcs.broker, svcs.erc20BridgeView, svcs.conf.HaveEthClient())
 	svcs.collateral = collateral.New(svcs.log, svcs.conf.Collateral, svcs.timeService, svcs.broker)
 	svcs.oracle = oracles.NewEngine(svcs.log, svcs.conf.Oracles, svcs.timeService, svcs.broker)
 
@@ -217,6 +216,11 @@ func newServices(
 	svcs.statevar = statevar.New(svcs.log, svcs.conf.StateVar, svcs.broker, svcs.topology, svcs.commander)
 	svcs.marketActivityTracker = execution.NewMarketActivityTracker(svcs.log, svcs.epochService)
 
+	svcs.notary = notary.NewWithSnapshot(svcs.log, svcs.conf.Notary, svcs.topology, svcs.broker, svcs.commander)
+	svcs.assets = assets.New(svcs.log, svcs.conf.Assets, nodeWallets, svcs.ethClient, svcs.broker, svcs.erc20BridgeView, svcs.notary, svcs.conf.HaveEthClient())
+	// TODO(): this is not pretty
+	svcs.topology.SetNotary(svcs.notary)
+
 	// instantiate the execution engine
 	svcs.executionEngine = execution.NewEngine(
 		svcs.log, svcs.conf.Execution, svcs.timeService, svcs.collateral, svcs.oracle, svcs.broker, svcs.statevar, svcs.marketActivityTracker, svcs.assets,
@@ -234,11 +238,6 @@ func newServices(
 		svcs.governance = governance.NewEngine(svcs.log, svcs.conf.Governance, svcs.stakingAccounts, svcs.timeService, svcs.broker, svcs.assets, svcs.witness, svcs.executionEngine, svcs.netParams)
 		svcs.delegation = delegation.New(svcs.log, svcs.conf.Delegation, svcs.broker, svcs.topology, svcs.stakingAccounts, svcs.epochService, svcs.timeService)
 	}
-
-	svcs.notary = notary.NewWithSnapshot(svcs.log, svcs.conf.Notary, svcs.topology, svcs.broker, svcs.commander)
-
-	// TODO(): this is not pretty
-	svcs.topology.SetNotary(svcs.notary)
 
 	svcs.banking = banking.New(svcs.log, svcs.conf.Banking, svcs.collateral, svcs.witness, svcs.timeService, svcs.assets, svcs.notary, svcs.broker, svcs.topology, svcs.epochService, svcs.marketActivityTracker, svcs.erc20BridgeView)
 	svcs.rewards = rewards.New(svcs.log, svcs.conf.Rewards, svcs.broker, svcs.delegation, svcs.epochService, svcs.collateral, svcs.timeService, svcs.marketActivityTracker, svcs.topology)

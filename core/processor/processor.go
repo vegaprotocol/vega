@@ -127,6 +127,7 @@ type Assets interface {
 	StageAssetUpdate(*types.Asset) error
 	Get(assetID string) (*assets.Asset, error)
 	IsEnabled(string) bool
+	EnactPendingAsset(assetID string)
 }
 
 //nolint:interfacebloat

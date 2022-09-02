@@ -36,6 +36,7 @@
 - [5950](https://github.com/vegaprotocol/vega/issues/5934) - Fix documentation for new wallet command
 - [5687](https://github.com/vegaprotocol/vega/issues/5934) - Asset cache was returning stale data
 - [5986](https://github.com/vegaprotocol/vega/issues/5986) - Error string on failed transaction is sent in the plain, no need to decode
+- [5860](https://github.com/vegaprotocol/vega/issues/5860) - Enacted but unlisted new assets are now included in checkpoints
 - [6023](https://github.com/vegaprotocol/vega/issues/6023) - Tell the `datanode` when a genesis validator does not exist in a `checkpoint`
 - [5963](https://github.com/vegaprotocol/vega/issues/5963) - Check other nodes during version check if the first one is unavailable
 - [6002](https://github.com/vegaprotocol/vega/issues/6002) - Do not emit events for unmatched oracle data and unsubscribe market as soon as oracle data is received
