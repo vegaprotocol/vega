@@ -5,9 +5,6 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
     Given the log normal risk model named "log-normal-risk-model-1":
       | risk aversion | tau | mu | r | sigma |
       | 0.000001      | 0.1 | 0  | 0 | 1.0   |
-    # And the following assets are registered:
-    #   | id  | decimal places |
-    #   | USD | 18             |
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.004     | 0.001              |
@@ -34,7 +31,7 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
 
    And the average block duration is "1"
 
-   Scenario: LP vol seems wrong when a new best bit/ask price comes in
+   Scenario: 001, LP price at 0, check what's happening with LP volume 
 
    And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -88,18 +85,53 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | side | price | volume |
       | sell | 991   | 102    |
       | sell | 990   | 1      |
-      | sell | 901   | 0      |
-      | sell | 900   | 0      |
       | buy  | 900   | 1      |
-      | buy  | 899   | 112    | #ProbTrading = 0.56143099, LP_Vol=50000/(0.56143099*899) = 100, but acutal output LP_Vol is 112 from LP_Vol=50000/(0.5*899) = 112 by using ProbTrading in line 75
-      | buy  | 890   | 0      |
-      | buy  | 889   | 0      |
+      | buy  | 899   | 112    | 
       | buy  | 1     | 1      |
-      | buy  | 0     | 0      |
-
+  
     Then the market data for the market "ETH/MAR22" should be:
       | trading mode            | supplied stake | target stake |
       | TRADING_MODE_CONTINUOUS | 50000          | 374541       |
 
-  
+  Scenario: 002, market starts with a low best bid price 1 (ProbTrading is large), and then best bid goes to 899, LP is distressed 
 
+    And the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | sell | ASK              | 500        | 1      | submission |
+      | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | buy  | BID              | 500        | 1      | amendment  |
+
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
+      | party1 | ETH/MAR22 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
+      | party1 | ETH/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
+      | party2 | ETH/MAR22 | sell | 3      | 900   | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-1 |
+      | party2 | ETH/MAR22 | sell | 1      | 990   | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2 |
+
+    When the opening auction period ends for market "ETH/MAR22"
+    Then the auction ends with a traded volume of "1" at a price of "900"
+    # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000 x 10 x 1 x 0.1
+
+    Then the order book should have the following volumes for market "ETH/MAR22":
+      | side | price | volume |
+      | sell | 990   | 1      |
+      | sell | 901   | 112    |
+      | sell | 900   | 2      |
+      | buy  | 1     | 100001 |
+
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
+      | party3 | ETH/MAR22 | buy  | 20     | 899   | 0                | TYPE_LIMIT | TIF_GTC | party3-buy-1 |
+
+    Then the order book should have the following volumes for market "ETH/MAR22":
+      | side | price | volume |
+      | sell | 990   | 1      |
+      | sell | 901   | 0      |
+      | sell | 900   | 2      |
+      | buy  | 899   | 20     |
+      | buy  | 898   | 0      |
+      | buy  | 1     | 1      | 
+
+    # lp1 which is party0 is diestressed maybe for the same issue?
+    Then the market data for the market "ETH/MAR22" should be:
+      | trading mode            | supplied stake | target stake |
+      | TRADING_MODE_CONTINUOUS | 0              | 3201         |
