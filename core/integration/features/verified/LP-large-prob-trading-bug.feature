@@ -48,7 +48,6 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
 
     When the opening auction period ends for market "ETH/MAR22"
     Then the auction ends with a traded volume of "1" at a price of "900"
-    # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000 x 10 x 1 x 0.1
 
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
@@ -109,7 +108,6 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
 
     When the opening auction period ends for market "ETH/MAR22"
     Then the auction ends with a traded volume of "1" at a price of "900"
-    # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000 x 10 x 1 x 0.1
 
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
@@ -131,7 +129,7 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | buy  | 898   | 0      |
       | buy  | 1     | 1      | 
 
-    # lp1 which is party0 is diestressed maybe for the same issue?
+    # lp1 which is party0 is distressed maybe for the same issue?
     Then the market data for the market "ETH/MAR22" should be:
       | trading mode            | supplied stake | target stake |
       | TRADING_MODE_CONTINUOUS | 0              | 3201         |
