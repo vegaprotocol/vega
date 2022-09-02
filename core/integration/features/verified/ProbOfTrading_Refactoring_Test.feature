@@ -1,4 +1,4 @@
-Feature: Replicate LP getting distressed during continuous trading, check if penalty is implemented correctly
+Feature: test probability of trading used in LP vol when best bid/ask is changing 
 
   Background:
 
