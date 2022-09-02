@@ -166,6 +166,12 @@ func (e *Engine) UpgradeProposal(ctx context.Context, pk string, upgradeBlockHei
 		active := e.activeProposals[ID]
 		active.accepted[pk] = struct{}{}
 		e.sendAndKeepEvent(ctx, ID, active)
+
+		e.log.Debug("Successfully added protocol upgrade proposal",
+			logging.String("validatorPubKey", pk),
+			logging.Uint64("upgradeBlockHeight", upgradeBlockHeight),
+			logging.String("vegaReleaseTag", vegaReleaseTag),
+		)
 	}
 
 	activeIDs := make([]string, 0, len(e.activeProposals))
@@ -184,18 +190,24 @@ func (e *Engine) UpgradeProposal(ctx context.Context, pk string, upgradeBlockHei
 		if _, ok := activeProposal.accepted[pk]; ok {
 			delete(activeProposal.accepted, pk)
 			e.sendAndKeepEvent(ctx, activeID, activeProposal)
+
+			e.log.Debug("Removed validator vote from previous proposal",
+				logging.String("validatorPubKey", pk),
+				logging.Uint64("upgradeBlockHeight", activeProposal.blockHeight),
+				logging.String("vegaReleaseTag", activeProposal.vegaReleaseTag),
+			)
 		}
 		if len(activeProposal.accepted) == 0 {
 			delete(e.activeProposals, activeID)
 			delete(e.events, activeID)
+
+			e.log.Debug("Removed previous upgrade proposal",
+				logging.String("validatorPubKey", pk),
+				logging.Uint64("upgradeBlockHeight", activeProposal.blockHeight),
+				logging.String("vegaReleaseTag", activeProposal.vegaReleaseTag),
+			)
 		}
 	}
-
-	e.log.Debug("Successfully added protocol upgrade proposal",
-		logging.String("validatorPubKey", pk),
-		logging.Uint64("upgradeBlockHeight", upgradeBlockHeight),
-		logging.String("vegaReleaseTag", vegaReleaseTag),
-	)
 
 	return nil
 }
