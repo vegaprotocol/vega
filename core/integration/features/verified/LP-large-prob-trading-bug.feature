@@ -119,9 +119,8 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
     And the insurance pool balance should be "0" for the market "ETH/MAR22"
 
     Then the parties should have the following account balances:
-      | party  | asset | market id | margin    | general    |
-      | party0 | USD   | ETH/MAR22 | 86478646  | 4913471354 |
-
+      | party  | asset | market id | margin    | general    | bond |
+      | party0 | USD   | ETH/MAR22 | 86478646  | 4913471354 | 50000|
 
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
@@ -144,6 +143,6 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
     And the insurance pool balance should be "50000" for the market "ETH/MAR22"
 
     Then the parties should have the following account balances:
-      | party  | asset | market id | margin    | general    |
-      | party0 | USD   | ETH/MAR22 | 430243    | 4999519757 |
+      | party  | asset | market id | margin    | general    | bond |
+      | party0 | USD   | ETH/MAR22 | 430243    | 4999519757 | 0    |
 
