@@ -116,6 +116,13 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | sell | 900   | 2      |
       | buy  | 1     | 100001 |
 
+    And the insurance pool balance should be "0" for the market "ETH/MAR22"
+
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin    | general    |
+      | party0 | USD   | ETH/MAR22 | 86478646  | 4913471354 |
+
+
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
       | party3 | ETH/MAR22 | buy  | 20     | 899   | 0                | TYPE_LIMIT | TIF_GTC | party3-buy-1 |
@@ -129,7 +136,14 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | buy  | 898   | 0      |
       | buy  | 1     | 1      | 
 
-    # lp1 which is party0 is distressed maybe for the same issue?
+    # lp1 which is party0 is distressed, and bond account had been slashed 
     Then the market data for the market "ETH/MAR22" should be:
       | trading mode            | supplied stake | target stake |
       | TRADING_MODE_CONTINUOUS | 0              | 3201         |
+
+    And the insurance pool balance should be "50000" for the market "ETH/MAR22"
+
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin    | general    |
+      | party0 | USD   | ETH/MAR22 | 430243    | 4999519757 |
+
