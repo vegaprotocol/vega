@@ -135,7 +135,6 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | buy  | 898   | 112    |
       | buy  | 1     | 1      | 
 
-    # lp1 which is party0 used to be distressed before the bug fixed, and bond account had been slashed; and now lp1 is not distressed anymore
     Then the market data for the market "ETH/MAR22" should be:
       | trading mode            | supplied stake | target stake |
       | TRADING_MODE_CONTINUOUS | 50000          | 3201         |
