@@ -31,7 +31,7 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
 
    And the average block duration is "1"
 
-   Scenario: 001, LP price at 0, check what's happening with LP volume 
+   Scenario: 001, LP price at 0, check what's happening with LP volume; 0038-OLIQ-002
 
    And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -92,7 +92,7 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | trading mode            | supplied stake | target stake |
       | TRADING_MODE_CONTINUOUS | 50000          | 374541       |
 
-  Scenario: 002, market starts with a low best bid price 1 (ProbTrading is large), and then best bid goes to 899, LP is distressed 
+  Scenario: 002, market starts with a low best bid price 1 (ProbTrading is large), and then best bid goes to 899; test of the new ProbTrading is reasonable, and LP is not distressed; 0038-OLIQ-002 
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -119,8 +119,8 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
     And the insurance pool balance should be "0" for the market "ETH/MAR22"
 
     Then the parties should have the following account balances:
-      | party  | asset | market id | margin    | general    |
-      | party0 | USD   | ETH/MAR22 | 86478646  | 4913471354 |
+      | party  | asset | market id | margin    | general    | bond  |
+      | party0 | USD   | ETH/MAR22 | 86478646  | 4913471354 | 50000 |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
@@ -135,7 +135,7 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | buy  | 898   | 112    |
       | buy  | 1     | 1      | 
 
-    # lp1 which is party0 is distressed, and bond account had been slashed 
+    # lp1 which is party0 used to be distressed before the bug fixed, and bond account had been slashed; and now lp1 is not distressed anymore
     Then the market data for the market "ETH/MAR22" should be:
       | trading mode            | supplied stake | target stake |
       | TRADING_MODE_CONTINUOUS | 50000          | 3201         |
@@ -143,5 +143,6 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
     And the insurance pool balance should be "0" for the market "ETH/MAR22"
 
     Then the parties should have the following account balances:
-      | party  | asset | market id | margin    | general    |
-      | party0 | USD   | ETH/MAR22 | 430243    | 4999519757 |
+      | party  | asset | market id | margin    | general    | bond |
+      | party0 | USD   | ETH/MAR22 | 430243    | 4999519757 | 50000|
+
