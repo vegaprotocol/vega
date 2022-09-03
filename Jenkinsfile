@@ -153,15 +153,6 @@ pipeline {
         //
         stage('Linters') {
             parallel {
-                stage('linters') {
-                    steps {
-                        dir('vega') {
-                            sh '''#!/bin/bash -e
-                                go run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.49.0 run -v --config .golangci.toml
-                            '''
-                        }
-                    }
-                }
                 stage('shellcheck') {
                     options { retry(3) }
                     steps {
