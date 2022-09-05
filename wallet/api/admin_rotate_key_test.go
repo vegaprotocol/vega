@@ -88,8 +88,7 @@ func testRotatingKeyWithInvalidParamsFails(t *testing.T) {
 				EnactmentBlockHeight:  15,
 			},
 			expectedError: api.ErrCurrentPublicKeyIsRequired,
-		},
-		{
+		}, {
 			name: "with empty next public key",
 			params: api.AdminRotateKeyParams{
 				Wallet:                vgrand.RandomStr(5),
@@ -101,8 +100,7 @@ func testRotatingKeyWithInvalidParamsFails(t *testing.T) {
 				EnactmentBlockHeight:  15,
 			},
 			expectedError: api.ErrNextPublicKeyIsRequired,
-		},
-		{
+		}, {
 			name: "with unset submission block height",
 			params: api.AdminRotateKeyParams{
 				Wallet:                vgrand.RandomStr(5),
@@ -114,8 +112,7 @@ func testRotatingKeyWithInvalidParamsFails(t *testing.T) {
 				EnactmentBlockHeight:  15,
 			},
 			expectedError: api.ErrSubmissionBlockHeightIsRequired,
-		},
-		{
+		}, {
 			name: "with unset enactment block height",
 			params: api.AdminRotateKeyParams{
 				Wallet:                vgrand.RandomStr(5),
@@ -469,7 +466,6 @@ type rotateKeyHandler struct {
 	*api.AdminRotateKey
 	ctrl        *gomock.Controller
 	walletStore *mocks.MockWalletStore
-	pipeline    *mocks.MockPipeline
 }
 
 func (h *rotateKeyHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminRotateKeyResult, *jsonrpc.ErrorDetails) {

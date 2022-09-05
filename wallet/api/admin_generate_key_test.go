@@ -239,7 +239,6 @@ type generateKeyHandler struct {
 	*api.AdminGenerateKey
 	ctrl        *gomock.Controller
 	walletStore *mocks.MockWalletStore
-	pipeline    *mocks.MockPipeline
 }
 
 func (h *generateKeyHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminGenerateKeyResult, *jsonrpc.ErrorDetails) {

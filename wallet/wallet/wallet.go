@@ -29,6 +29,7 @@ type Wallet interface {
 	UpdatePermissions(hostname string, perms Permissions) error
 }
 
+// nolint: interfacebloat
 type KeyPair interface {
 	PublicKey() string
 	PrivateKey() string

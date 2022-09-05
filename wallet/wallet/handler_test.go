@@ -650,16 +650,6 @@ func newWalletWithKeys(t *testing.T, n int) *wallet.HDWallet {
 	return w
 }
 
-func importWalletWithTwoKeys(t *testing.T) *wallet.HDWallet {
-	t.Helper()
-	w := importWalletWithKey(t)
-	if _, err := w.GenerateKeyPair(nil); err != nil {
-		t.Fatalf("couldn't generate second key: %v", err)
-	}
-
-	return w
-}
-
 func importWalletWithKey(t *testing.T) *wallet.HDWallet {
 	t.Helper()
 	w, err := wallet.ImportHDWallet(

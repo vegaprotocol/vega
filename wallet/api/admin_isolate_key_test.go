@@ -271,7 +271,6 @@ type isolateKeyHandler struct {
 	*api.AdminIsolateKey
 	ctrl        *gomock.Controller
 	walletStore *mocks.MockWalletStore
-	pipeline    *mocks.MockPipeline
 }
 
 func (h *isolateKeyHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminIsolateKeyResult, *jsonrpc.ErrorDetails) {

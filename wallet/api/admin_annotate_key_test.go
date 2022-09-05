@@ -278,7 +278,6 @@ type annotateKeyHandler struct {
 	*api.AdminAnnotateKey
 	ctrl        *gomock.Controller
 	walletStore *mocks.MockWalletStore
-	pipeline    *mocks.MockPipeline
 }
 
 func (h *annotateKeyHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminAnnotateKeyResult, *jsonrpc.ErrorDetails) {

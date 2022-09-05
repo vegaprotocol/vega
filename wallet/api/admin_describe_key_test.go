@@ -246,7 +246,6 @@ type describeKeyHandler struct {
 	*api.AdminDescribeKey
 	ctrl        *gomock.Controller
 	walletStore *mocks.MockWalletStore
-	pipeline    *mocks.MockPipeline
 }
 
 func (h *describeKeyHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminDescribeKeyResult, *jsonrpc.ErrorDetails) {
