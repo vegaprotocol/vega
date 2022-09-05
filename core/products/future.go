@@ -45,10 +45,12 @@ type Future struct {
 }
 
 func (f *Future) UnsubscribeTradingTerminated(ctx context.Context) {
+	f.log.Info("unsubscribed trading terminated for", logging.String("quote-name", f.QuoteName))
 	f.oracle.unsubscribe(ctx, f.oracle.tradingTerminatedSubscriptionID)
 }
 
 func (f *Future) UnsubscribeSettlementPrice(ctx context.Context) {
+	f.log.Info("unsubscribed trading settlement price for", logging.String("quote-name", f.QuoteName))
 	f.oracle.unsubscribe(ctx, f.oracle.settlementPriceSubscriptionID)
 }
 
