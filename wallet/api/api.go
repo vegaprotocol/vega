@@ -179,7 +179,7 @@ func AdminAPI(log *zap.Logger, walletStore WalletStore, netStore NetworkStore) (
 	walletAPI.RegisterMethod("admin.send_transaction", &UnimplementedMethod{})
 	walletAPI.RegisterMethod("admin.sign_message", &UnimplementedMethod{})
 	walletAPI.RegisterMethod("admin.sign_transaction", &UnimplementedMethod{})
-	walletAPI.RegisterMethod("admin.taint_key", &UnimplementedMethod{})
+	walletAPI.RegisterMethod("admin.taint_key", NewAdminTaintKey(walletStore))
 	walletAPI.RegisterMethod("admin.untaint_key", &UnimplementedMethod{})
 	walletAPI.RegisterMethod("admin.update_permissions", &UnimplementedMethod{})
 

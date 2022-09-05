@@ -23,29 +23,6 @@ type Store interface {
 	ListWallets(ctx context.Context) ([]string, error)
 }
 
-type TaintKeyRequest struct {
-	Wallet     string `json:"wallet"`
-	PubKey     string `json:"pubKey"`
-	Passphrase string `json:"passphrase"`
-}
-
-func TaintKey(store Store, req *TaintKeyRequest) error {
-	w, err := getWallet(store, req.Wallet, req.Passphrase)
-	if err != nil {
-		return err
-	}
-
-	if err = w.TaintKey(req.PubKey); err != nil {
-		return fmt.Errorf("couldn't taint key: %w", err)
-	}
-
-	if err := store.SaveWallet(context.Background(), w, req.Passphrase); err != nil {
-		return fmt.Errorf("couldn't save wallet: %w", err)
-	}
-
-	return nil
-}
-
 type UntaintKeyRequest struct {
 	Wallet     string `json:"wallet"`
 	PubKey     string `json:"pubKey"`
@@ -59,11 +36,11 @@ func UntaintKey(store Store, req *UntaintKeyRequest) error {
 	}
 
 	if err = w.UntaintKey(req.PubKey); err != nil {
-		return fmt.Errorf("couldn't untaint key: %w", err)
+		return fmt.Errorf("could not untaint key: %w", err)
 	}
 
 	if err := store.SaveWallet(context.Background(), w, req.Passphrase); err != nil {
-		return fmt.Errorf("couldn't save wallet: %w", err)
+		return fmt.Errorf("could not save the wallet: %w", err)
 	}
 
 	return nil
@@ -90,13 +67,13 @@ func SignCommand(store Store, req *SignCommandRequest) (*SignCommandResponse, er
 
 	data, err := wcommands.ToMarshaledInputData(req.Request, req.TxBlockHeight, req.ChainID)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't marshal input data: %w", err)
+		return nil, fmt.Errorf("could not marshal the input data: %w", err)
 	}
 
 	pubKey := req.Request.GetPubKey()
 	signature, err := w.SignTx(pubKey, data)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't sign transaction: %w", err)
+		return nil, fmt.Errorf("could not sign the transaction: %w", err)
 	}
 
 	protoSignature := &commandspb.Signature{
@@ -109,7 +86,7 @@ func SignCommand(store Store, req *SignCommandRequest) (*SignCommandResponse, er
 
 	rawTx, err := proto.Marshal(tx)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't marshal transaction: %w", err)
+		return nil, fmt.Errorf("could not marshal the transaction: %w", err)
 	}
 
 	return &SignCommandResponse{
@@ -137,7 +114,7 @@ func SignMessage(store Store, req *SignMessageRequest) (*SignMessageResponse, er
 
 	sig, err := w.SignAny(req.PubKey, req.Message)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't sign message: %w", err)
+		return nil, fmt.Errorf("could not sign the message: %w", err)
 	}
 
 	return &SignMessageResponse{
@@ -202,7 +179,7 @@ func RevokePermissions(store Store, req *RevokePermissionsRequest) error {
 	w.RevokePermissions(req.Hostname)
 
 	if err := store.SaveWallet(context.Background(), w, req.Passphrase); err != nil {
-		return fmt.Errorf("couldn't save wallet: %w", err)
+		return fmt.Errorf("could not save the wallet: %w", err)
 	}
 	return nil
 }
@@ -221,14 +198,14 @@ func PurgePermissions(store Store, req *PurgePermissionsRequest) error {
 	w.PurgePermissions()
 
 	if err := store.SaveWallet(context.Background(), w, req.Passphrase); err != nil {
-		return fmt.Errorf("couldn't save wallet: %w", err)
+		return fmt.Errorf("could not save the wallet: %w", err)
 	}
 	return nil
 }
 
 func getWallet(store Store, wallet, passphrase string) (Wallet, error) {
 	if exist, err := store.WalletExists(context.Background(), wallet); err != nil {
-		return nil, fmt.Errorf("couldn't verify wallet existence: %w", err)
+		return nil, fmt.Errorf("could not verify the wallet existence: %w", err)
 	} else if !exist {
 		return nil, ErrWalletDoesNotExist
 	}
@@ -238,7 +215,7 @@ func getWallet(store Store, wallet, passphrase string) (Wallet, error) {
 		if errors.Is(err, ErrWrongPassphrase) {
 			return nil, err
 		}
-		return nil, fmt.Errorf("couldn't get wallet %s: %w", wallet, err)
+		return nil, fmt.Errorf("could not retrieve the wallet %s: %w", wallet, err)
 	}
 
 	return w, nil

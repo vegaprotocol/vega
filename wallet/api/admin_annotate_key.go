@@ -24,7 +24,9 @@ type AdminAnnotateKey struct {
 	walletStore WalletStore
 }
 
-// Handle creates a wallet and generates its first key.
+// Handle attaches metadata to the specified public key. It doesn't update in
+// place. It overwrites. All existing metadata have to be specified to not
+// lose them.
 func (h *AdminAnnotateKey) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateAnnotateKeyParams(rawParams)
 	if err != nil {

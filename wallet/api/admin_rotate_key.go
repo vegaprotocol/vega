@@ -31,7 +31,7 @@ type AdminRotateKey struct {
 	walletStore WalletStore
 }
 
-// Handle creates a wallet and generates its first key.
+// Handle create a transaction to rotate the keys.
 func (h *AdminRotateKey) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateAdminRotateKeyParams(rawParams)
 	if err != nil {

@@ -14,57 +14,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestTaintKey(t *testing.T) {
-	t.Run("Tainting key succeeds", testTaintingKeySucceeds)
-	t.Run("Tainting key of non-existing wallet fails", testTaintingKeyOfNonExistingWalletFails)
-}
-
-func testTaintingKeySucceeds(t *testing.T) {
-	// given
-	w := newWalletWithKey(t)
-	kp := w.ListKeyPairs()[0]
-
-	req := &wallet.TaintKeyRequest{
-		Wallet:     w.Name(),
-		PubKey:     kp.PublicKey(),
-		Passphrase: "passphrase",
-	}
-
-	// setup
-	store := handlerMocks(t)
-	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(true, nil)
-	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(1).Return(w, nil)
-	store.EXPECT().SaveWallet(gomock.Any(), w, req.Passphrase).Times(1).Return(nil)
-
-	// when
-	err := wallet.TaintKey(store, req)
-
-	// then
-	require.NoError(t, err)
-	assert.True(t, w.ListKeyPairs()[0].IsTainted())
-}
-
-func testTaintingKeyOfNonExistingWalletFails(t *testing.T) {
-	// given
-	req := &wallet.TaintKeyRequest{
-		Wallet:     vgrand.RandomStr(5),
-		PubKey:     vgrand.RandomStr(25),
-		Passphrase: "passphrase",
-	}
-
-	// setup
-	store := handlerMocks(t)
-	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(false, nil)
-	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(0)
-	store.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), req.Passphrase).Times(0)
-
-	// when
-	err := wallet.TaintKey(store, req)
-
-	// then
-	require.Error(t, err)
-}
-
 func TestUntaintKey(t *testing.T) {
 	t.Run("Untainting key succeeds", testUntaintingKeySucceeds)
 	t.Run("Untainting key of non-existing wallet fails", testUntaintingKeyOfNonExistingWalletFails)
