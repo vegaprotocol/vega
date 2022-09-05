@@ -323,6 +323,7 @@ func TestGetMarketsWithEligibleProposer(t *testing.T) {
 	tracker.MarketProposed("asset1", "market2", "me2")
 	tracker.MarketProposed("asset1", "market3", "me3")
 	tracker.MarketProposed("asset2", "market4", "me4")
+	tracker.MarketProposed("asset3", "market5", "me5")
 
 	tracker.AddValueTraded("market2", num.NewUint(1001))
 	tracker.AddValueTraded("market1", num.NewUint(4001))
@@ -335,6 +336,9 @@ func TestGetMarketsWithEligibleProposer(t *testing.T) {
 
 	// market1 goes above the threshold
 	tracker.AddValueTraded("market1", num.NewUint(1000))
+	tracker.AddValueTraded("market4", num.NewUint(5001))
+	require.Equal(t, 2, len(tracker.GetMarketsWithEligibleProposer("", []string{"market1", "market2", "market3", "market4"}, "VEGA", "zohar")))
+
 	expectedScoreMarket1Full := &types.MarketContributionScore{
 		Asset:  "asset1",
 		Market: "market1",
@@ -380,8 +384,12 @@ func TestGetMarketsWithEligibleProposer(t *testing.T) {
 	assertMarketContributionScore(t, expectedScoreMarket1Half, tracker.GetMarketsWithEligibleProposer("asset1", []string{"market1", "market2"}, "VEGA", "zohar")[0])
 	assertMarketContributionScore(t, expectedScoreMarket2Half, tracker.GetMarketsWithEligibleProposer("asset1", []string{"market1", "market2"}, "VEGA", "zohar")[1])
 
+	// all asset all markets
+	// markets 1, 2, 4
+	require.Equal(t, 3, len(tracker.GetMarketsWithEligibleProposer("", []string{}, "VEGA", "zohar")))
+
 	// asset with no markets
-	require.Equal(t, 0, len(tracker.GetMarketsWithEligibleProposer("asset2", []string{}, "VEGA", "zohar")))
+	require.Equal(t, 0, len(tracker.GetMarketsWithEligibleProposer("asset3", []string{}, "VEGA", "zohar")))
 }
 
 func assertMarketContributionScore(t *testing.T, expected, actual *types.MarketContributionScore) {

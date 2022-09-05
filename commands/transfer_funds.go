@@ -109,10 +109,11 @@ func checkTransfer(cmd *commandspb.Transfer) Errors {
 					cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS) {
 					errs.AddForProperty("transfer.kind.dispatch_strategy", ErrIsNotValid)
 				}
-				// check asset for metric is passed
-				if len(k.Recurring.DispatchStrategy.AssetForMetric) <= 0 {
+				// check asset for metric is passed unless it's a market proposer reward
+				if len(k.Recurring.DispatchStrategy.AssetForMetric) <= 0 && cmd.ToAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS {
 					errs.AddForProperty("transfer.kind.dispatch_strategy.asset_for_metric", ErrUnknownAsset)
-				} else if !IsVegaPubkey(k.Recurring.DispatchStrategy.AssetForMetric) {
+				}
+				if len(k.Recurring.DispatchStrategy.AssetForMetric) > 0 && !IsVegaPubkey(k.Recurring.DispatchStrategy.AssetForMetric) {
 					errs.AddForProperty("transfer.kind.dispatch_strategy.asset_for_metric", ErrShouldBeAValidVegaID)
 				}
 				// check that that the metric makes sense for the account type
