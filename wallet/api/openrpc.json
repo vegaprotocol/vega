@@ -1462,6 +1462,72 @@
           }
         }
       ]
+    },
+    {
+      "name": "admin.taint_key",
+      "summary": "Markd the specified public key as tainted.",
+      "description": "This method marks the specified public key as tainted. It makes it unusable for transaction signing.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "key"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "wallet",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "passphrase",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "publicKey",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/public_key"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "null"
+        }
+      },
+      "examples": [
+        {
+          "name": "Tainting a key",
+          "params": [
+            {
+              "name": "wallet",
+              "value": "my-wallet"
+            },
+            {
+              "name": "passphrase",
+              "value": "this-is-not-a-good-passphrase"
+            },
+            {
+              "name": "publicKey",
+              "value": "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": null
+          }
+        }
+      ]
     }
   ],
   "components": {
