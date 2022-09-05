@@ -42,7 +42,6 @@ func testTaintKeyFlagsValidFlagsSucceeds(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
-	require.NotNil(t, req)
 	assert.Equal(t, expectedReq, req)
 }
 

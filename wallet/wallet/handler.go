@@ -23,29 +23,6 @@ type Store interface {
 	ListWallets(ctx context.Context) ([]string, error)
 }
 
-type UntaintKeyRequest struct {
-	Wallet     string `json:"wallet"`
-	PubKey     string `json:"pubKey"`
-	Passphrase string `json:"passphrase"`
-}
-
-func UntaintKey(store Store, req *UntaintKeyRequest) error {
-	w, err := getWallet(store, req.Wallet, req.Passphrase)
-	if err != nil {
-		return err
-	}
-
-	if err = w.UntaintKey(req.PubKey); err != nil {
-		return fmt.Errorf("could not untaint key: %w", err)
-	}
-
-	if err := store.SaveWallet(context.Background(), w, req.Passphrase); err != nil {
-		return fmt.Errorf("could not save the wallet: %w", err)
-	}
-
-	return nil
-}
-
 type SignCommandRequest struct {
 	Wallet        string `json:"wallet"`
 	Passphrase    string `json:"passphrase"`

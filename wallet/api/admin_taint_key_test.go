@@ -19,9 +19,9 @@ func TestAdminTaintKey(t *testing.T) {
 	t.Run("Tainting a key with valid params succeeds", testTaintingKeyWithValidParamsSucceeds)
 	t.Run("Tainting a key on unknown wallet fails", testTaintingKeyOnUnknownWalletFails)
 	t.Run("Tainting a key on unknown key fails", testTaintingKeyOnUnknownKeyFails)
-	t.Run("Getting internal error during wallet verification doesn't import the wallet", testGettingInternalErrorDuringWalletVerificationDoesNotTaintKey)
-	t.Run("Getting internal error during wallet retrieval doesn't import the wallet", testGettingInternalErrorDuringWalletRetrievalDoesNotTaintKey)
-	t.Run("Getting internal error during wallet saving doesn't import the wallet", testGettingInternalErrorDuringWalletSavingDoesNotTaintKey)
+	t.Run("Getting internal error during wallet verification doesn't taint the key", testGettingInternalErrorDuringWalletVerificationDoesNotTaintKey)
+	t.Run("Getting internal error during wallet retrieval doesn't taint the key", testGettingInternalErrorDuringWalletRetrievalDoesNotTaintKey)
+	t.Run("Getting internal error during wallet saving doesn't taint the key", testGettingInternalErrorDuringWalletSavingDoesNotTaintKey)
 }
 
 func testTaintingKeyWithInvalidParamsFails(t *testing.T) {

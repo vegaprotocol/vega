@@ -19,9 +19,9 @@ func TestAdminGenerateKey(t *testing.T) {
 	t.Run("Generating a key with invalid params fails", testGeneratingKeyWithInvalidParamsFails)
 	t.Run("Generating a key with valid params succeeds", testGeneratingKeyWithValidParamsSucceeds)
 	t.Run("Generating a key on unknown wallet fails", testGeneratingKeyOnUnknownWalletFails)
-	t.Run("Getting internal error during wallet verification doesn't import the wallet", testGettingInternalErrorDuringWalletVerificationDoesNotGenerateKey)
-	t.Run("Getting internal error during wallet retrieval doesn't import the wallet", testGettingInternalErrorDuringWalletRetrievalDoesNotGenerateKey)
-	t.Run("Getting internal error during wallet saving doesn't import the wallet", testGettingInternalErrorDuringWalletSavingDoesNotGenerateKey)
+	t.Run("Getting internal error during wallet verification doesn't generate the key", testGettingInternalErrorDuringWalletVerificationDoesNotGenerateKey)
+	t.Run("Getting internal error during wallet retrieval doesn't generate the key", testGettingInternalErrorDuringWalletRetrievalDoesNotGenerateKey)
+	t.Run("Getting internal error during wallet saving doesn't generate the key", testGettingInternalErrorDuringWalletSavingDoesNotGenerateKey)
 }
 
 func testGeneratingKeyWithInvalidParamsFails(t *testing.T) {

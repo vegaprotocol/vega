@@ -14,61 +14,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestUntaintKey(t *testing.T) {
-	t.Run("Untainting key succeeds", testUntaintingKeySucceeds)
-	t.Run("Untainting key of non-existing wallet fails", testUntaintingKeyOfNonExistingWalletFails)
-}
-
-func testUntaintingKeySucceeds(t *testing.T) {
-	// given
-	w := newWalletWithKey(t)
-	kp := w.ListKeyPairs()[0]
-	err := w.TaintKey(kp.PublicKey())
-	if err != nil {
-		t.Fatalf("couldn't taint key: %v", err)
-	}
-
-	req := &wallet.UntaintKeyRequest{
-		Wallet:     w.Name(),
-		PubKey:     kp.PublicKey(),
-		Passphrase: "passphrase",
-	}
-
-	// setup
-	store := handlerMocks(t)
-	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(true, nil)
-	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(1).Return(w, nil)
-	store.EXPECT().SaveWallet(gomock.Any(), w, req.Passphrase).Times(1).Return(nil)
-
-	// when
-	err = wallet.UntaintKey(store, req)
-
-	// then
-	require.NoError(t, err)
-	assert.False(t, w.ListKeyPairs()[0].IsTainted())
-}
-
-func testUntaintingKeyOfNonExistingWalletFails(t *testing.T) {
-	// given
-	req := &wallet.UntaintKeyRequest{
-		Wallet:     vgrand.RandomStr(5),
-		PubKey:     vgrand.RandomStr(25),
-		Passphrase: "passphrase",
-	}
-
-	// setup
-	store := handlerMocks(t)
-	store.EXPECT().WalletExists(gomock.Any(), req.Wallet).Times(1).Return(false, nil)
-	store.EXPECT().GetWallet(gomock.Any(), req.Wallet, req.Passphrase).Times(0)
-	store.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), req.Passphrase).Times(0)
-
-	// when
-	err := wallet.UntaintKey(store, req)
-
-	// then
-	require.Error(t, err)
-}
-
 func TestSignCommand(t *testing.T) {
 	t.Run("Sign message succeeds", testSignCommandSucceeds)
 	t.Run("Sign message of non-existing wallet fails", testSignCommandWithNonExistingWalletFails)
@@ -580,23 +525,6 @@ func testPurgePermissionsWithExistingPermissionsSucceeds(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
-}
-
-func newWalletWithKey(t *testing.T) *wallet.HDWallet {
-	t.Helper()
-	return newWalletWithKeys(t, 1)
-}
-
-func newWalletWithKeys(t *testing.T, n int) *wallet.HDWallet {
-	t.Helper()
-	w := newWallet(t)
-
-	for i := 0; i < n; i++ {
-		if _, err := w.GenerateKeyPair(nil); err != nil {
-			t.Fatalf("couldn't generate key: %v", err)
-		}
-	}
-	return w
 }
 
 func importWalletWithKey(t *testing.T) *wallet.HDWallet {
