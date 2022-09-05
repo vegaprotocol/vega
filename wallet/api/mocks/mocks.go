@@ -86,7 +86,7 @@ func (mr *MockWalletStoreMockRecorder) GetWalletPath(arg0 interface{}) *gomock.C
 // ListWallets mocks base method.
 func (m *MockWalletStore) ListWallets(arg0 context.Context) ([]string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AdminListWallets", arg0)
+	ret := m.ctrl.Call(m, "ListWallets", arg0)
 	ret0, _ := ret[0].([]string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
@@ -95,7 +95,7 @@ func (m *MockWalletStore) ListWallets(arg0 context.Context) ([]string, error) {
 // ListWallets indicates an expected call of ListWallets.
 func (mr *MockWalletStoreMockRecorder) ListWallets(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AdminListWallets", reflect.TypeOf((*MockWalletStore)(nil).ListWallets), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListWallets", reflect.TypeOf((*MockWalletStore)(nil).ListWallets), arg0)
 }
 
 // SaveWallet mocks base method.
