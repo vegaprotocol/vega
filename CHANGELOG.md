@@ -42,6 +42,7 @@
 - [6008](https://github.com/vegaprotocol/vega/issues/6008) - Fix equity like share and average trade value calculation with opening auctions
 - [6040](https://github.com/vegaprotocol/vega/issues/6040) - Fix protocol upgrade transaction submission and small Visor improvements
 - [5977](https://github.com/vegaprotocol/vega/issues/5977) - Fix missing block height and block time on stake linking API
+- [6054](https://github.com/vegaprotocol/vega/issues/6054) - Fix panic on settlement
 
 ## 0.54.0
 
