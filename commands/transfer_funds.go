@@ -81,7 +81,7 @@ func checkTransfer(cmd *commandspb.Transfer) Errors {
 				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES ||
 				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES ||
 				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS {
-				errs.AddForProperty("transfer.account.to", errors.New("is not for the transfer type"))
+				errs.AddForProperty("transfer.account.to", errors.New("transfers to metric-based reward accounts must be recurring transfers that specify a distribution metric"))
 			}
 		case *commandspb.Transfer_Recurring:
 			if k.Recurring.EndEpoch != nil && *k.Recurring.EndEpoch <= 0 {

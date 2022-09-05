@@ -278,7 +278,7 @@ func TestTransferFunds(t *testing.T) {
 				Amount:    "1",
 				Reference: "testing",
 			},
-			errString: "transfer.account.to (is not for the transfer type)",
+			errString: "transfer.account.to (transfers to metric-based reward accounts must be recurring transfers that specify a distribution metric)",
 		},
 		{
 			transfer: commandspb.Transfer{
@@ -292,7 +292,7 @@ func TestTransferFunds(t *testing.T) {
 				Amount:    "1",
 				Reference: "testing",
 			},
-			errString: "transfer.account.to (is not for the transfer type)",
+			errString: "transfer.account.to (transfers to metric-based reward accounts must be recurring transfers that specify a distribution metric)",
 		},
 		{
 			transfer: commandspb.Transfer{
@@ -306,7 +306,7 @@ func TestTransferFunds(t *testing.T) {
 				Amount:    "1",
 				Reference: "testing",
 			},
-			errString: "transfer.account.to (is not for the transfer type)",
+			errString: "transfer.account.to (transfers to metric-based reward accounts must be recurring transfers that specify a distribution metric)",
 		},
 		{
 			transfer: commandspb.Transfer{
@@ -320,7 +320,7 @@ func TestTransferFunds(t *testing.T) {
 				Amount:    "1",
 				Reference: "testing",
 			},
-			errString: "transfer.account.to (is not for the transfer type)",
+			errString: "transfer.account.to (transfers to metric-based reward accounts must be recurring transfers that specify a distribution metric)",
 		},
 		{
 			transfer: commandspb.Transfer{
