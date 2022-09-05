@@ -131,7 +131,7 @@ func (f *SendTxFlags) Validate() (*SendTxRequest, error) {
 	}
 
 	if len(f.LogLevel) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("level")
+		return nil, flags.MustBeSpecifiedError("level")
 	}
 	if err := ValidateLogLevel(f.LogLevel); err != nil {
 		return nil, err
@@ -142,7 +142,7 @@ func (f *SendTxFlags) Validate() (*SendTxRequest, error) {
 		return nil, flags.OneOfFlagsMustBeSpecifiedError("network", "node-address")
 	}
 	if len(f.NodeAddress) != 0 && len(f.Network) != 0 {
-		return nil, flags.FlagsMutuallyExclusiveError("network", "node-address")
+		return nil, flags.MutuallyExclusiveError("network", "node-address")
 	}
 	req.NodeAddress = f.NodeAddress
 	req.Network = f.Network

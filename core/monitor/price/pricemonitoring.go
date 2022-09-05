@@ -45,6 +45,7 @@ var (
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/auction_state_mock.go -package mocks code.vegaprotocol.io/vega/core/monitor/price AuctionState
+//nolint:interfacebloat
 type AuctionState interface {
 	// What is the current trading mode of the market, is it in auction
 	Mode() types.MarketTradingMode
@@ -104,6 +105,7 @@ type currentPrice struct {
 }
 
 // RangeProvider provides the minimum and maximum future price corresponding to the current price level, horizon expressed as year fraction (e.g. 0.5 for 6 months) and probability level (e.g. 0.95 for 95%).
+//
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/price_range_provider_mock.go -package mocks code.vegaprotocol.io/vega/core/monitor/price RangeProvider
 type RangeProvider interface {
 	PriceRange(price, yearFraction, probability num.Decimal) (num.Decimal, num.Decimal)
@@ -111,7 +113,7 @@ type RangeProvider interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/state_var_mock.go -package mocks code.vegaprotocol.io/vega/core/monitor/price StateVarEngine
 type StateVarEngine interface {
-	RegisterStateVariable(asset, market, name string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error) error
+	RegisterStateVariable(asset, market, name string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.EventType, result func(context.Context, statevar.StateVariableResult) error) error
 }
 
 // Engine allows tracking price changes and verifying them against the theoretical levels implied by the RangeProvider (risk model).
@@ -180,7 +182,7 @@ func NewMonitor(asset, mktID string, riskModel RangeProvider, auctionState Aucti
 		asset:                   asset,
 	}
 
-	stateVarEngine.RegisterStateVariable(asset, mktID, "bound-factors", boundFactorsConverter{}, e.startCalcPriceRanges, []statevar.StateVarEventType{statevar.StateVarEventTypeTimeTrigger, statevar.StateVarEventTypeAuctionEnded, statevar.StateVarEventTypeOpeningAuctionFirstUncrossingPrice}, e.updatePriceBounds)
+	stateVarEngine.RegisterStateVariable(asset, mktID, "bound-factors", boundFactorsConverter{}, e.startCalcPriceRanges, []statevar.EventType{statevar.EventTypeTimeTrigger, statevar.EventTypeAuctionEnded, statevar.EventTypeOpeningAuctionFirstUncrossingPrice}, e.updatePriceBounds)
 	return e, nil
 }
 

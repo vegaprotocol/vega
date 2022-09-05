@@ -206,7 +206,6 @@ type describeWalletHandler struct {
 	*api.DescribeWallet
 	ctrl        *gomock.Controller
 	walletStore *mocks.MockWalletStore
-	pipeline    *mocks.MockPipeline
 }
 
 func (h *describeWalletHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.DescribeWalletResult, *jsonrpc.ErrorDetails) {

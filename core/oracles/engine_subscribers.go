@@ -205,7 +205,7 @@ func (s *specSubscriptions) getSubscription(id OracleSpecID) (int, *specSubscrip
 // nextSubscriptionID computes the next SubscriptionID
 // Internal usage.
 func (s *specSubscriptions) nextSubscriptionID() SubscriptionID {
-	s.lastSubscriptionID += 1
+	s.lastSubscriptionID++
 	return s.lastSubscriptionID
 }
 

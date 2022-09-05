@@ -78,7 +78,7 @@ func observeEventBus(log *logging.Logger, config Config, eventBusServer eventBus
 	req, err := recvEventRequest(eventBusServer)
 	if err != nil {
 		// client exited, nothing to do
-		return nil
+		return nil //nolint:nilerr
 	}
 
 	// now we will aggregate filter out of the initial request
@@ -218,8 +218,7 @@ func recvEventRequest(
 const maxEventTypeOrdinal = 299
 
 type eventStats struct {
-	eventCount    [maxEventTypeOrdinal + 1]int
-	ignoredEvents bool
+	eventCount [maxEventTypeOrdinal + 1]int
 }
 
 func (s *eventStats) updateStats(events []*eventspb.BusEvent) {

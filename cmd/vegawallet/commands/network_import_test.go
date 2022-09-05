@@ -94,7 +94,7 @@ func testImportNetworkFlagsBothURLAndFilePathSpecifiedFails(t *testing.T) {
 	req, err := f.Validate()
 
 	// then
-	assert.ErrorIs(t, err, flags.FlagsMutuallyExclusiveError("from-file", "from-url"))
+	assert.ErrorIs(t, err, flags.MutuallyExclusiveError("from-file", "from-url"))
 	assert.Nil(t, req)
 }
 

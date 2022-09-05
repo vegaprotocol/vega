@@ -27,6 +27,7 @@ import (
 )
 
 // MarketPosition ...
+//
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/market_position_mock.go -package mocks code.vegaprotocol.io/vega/core/settlement MarketPosition
 type MarketPosition interface {
 	Party() string
@@ -40,6 +41,7 @@ type MarketPosition interface {
 }
 
 // Product ...
+//
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/settlement_product_mock.go -package mocks code.vegaprotocol.io/vega/core/settlement Product
 type Product interface {
 	Settle(*num.Uint, uint32, num.Decimal) (*types.FinancialAmount, bool, error)
@@ -47,6 +49,7 @@ type Product interface {
 }
 
 // TimeService.
+//
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/core/settlement TimeService
 type TimeService interface {
 	GetTimeNow() time.Time

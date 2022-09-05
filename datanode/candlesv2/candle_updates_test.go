@@ -32,7 +32,7 @@ type testCandleSource struct {
 	candles chan []entities.Candle
 }
 
-func (t *testCandleSource) GetCandleDataForTimeSpan(ctx context.Context, candleId string, from *time.Time, to *time.Time,
+func (t *testCandleSource) GetCandleDataForTimeSpan(ctx context.Context, candleID string, from *time.Time, to *time.Time,
 	p entities.CursorPagination,
 ) ([]entities.Candle, entities.PageInfo, error) {
 	pageInfo := entities.PageInfo{}

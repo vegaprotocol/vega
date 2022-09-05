@@ -53,32 +53,32 @@ func (es *Epochs) Add(ctx context.Context, r entities.Epoch) error {
 	return err
 }
 
-func (rs *Epochs) GetAll(ctx context.Context) ([]entities.Epoch, error) {
+func (es *Epochs) GetAll(ctx context.Context) ([]entities.Epoch, error) {
 	defer metrics.StartSQLQuery("Epochs", "GetAll")()
 	epochs := []entities.Epoch{}
-	err := pgxscan.Select(ctx, rs.Connection, &epochs, `
+	err := pgxscan.Select(ctx, es.Connection, &epochs, `
 		SELECT DISTINCT ON (id) * from epochs ORDER BY id, vega_time desc;`)
 	return epochs, err
 }
 
-func (rs *Epochs) Get(ctx context.Context, ID int64) (entities.Epoch, error) {
+func (es *Epochs) Get(ctx context.Context, ID int64) (entities.Epoch, error) {
 	defer metrics.StartSQLQuery("Epochs", "Get")()
 	query := `SELECT DISTINCT ON (id) * FROM epochs WHERE id=$1 ORDER BY id, vega_time desc;`
 
 	epoch := entities.Epoch{}
-	err := pgxscan.Get(ctx, rs.Connection, &epoch, query, ID)
+	err := pgxscan.Get(ctx, es.Connection, &epoch, query, ID)
 	if err != nil {
 		return entities.Epoch{}, fmt.Errorf("querying epochs: %w", err)
 	}
 	return epoch, nil
 }
 
-func (rs *Epochs) GetCurrent(ctx context.Context) (entities.Epoch, error) {
+func (es *Epochs) GetCurrent(ctx context.Context) (entities.Epoch, error) {
 	query := `SELECT * FROM epochs ORDER BY id desc, vega_time desc FETCH FIRST ROW ONLY;`
 
 	epoch := entities.Epoch{}
 	defer metrics.StartSQLQuery("Epochs", "GetCurrent")()
-	err := pgxscan.Get(ctx, rs.Connection, &epoch, query)
+	err := pgxscan.Get(ctx, es.Connection, &epoch, query)
 	if err != nil {
 		return entities.Epoch{}, fmt.Errorf("querying epochs: %w", err)
 	}

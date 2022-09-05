@@ -101,7 +101,7 @@ func TestCalculateSuppliedLiquidity(t *testing.T) {
 		return num.DecimalFromFloat(0.5)
 	})
 
-	statevarEngine.NewEvent("asset1", "market1", statevar.StateVarEventTypeAuctionEnded)
+	statevarEngine.NewEvent("asset1", "market1", statevar.EventTypeAuctionEnded)
 	liquidity = engine.CalculateSuppliedLiquidity(MarkPriceD, MarkPriceD, []*types.Order{})
 	require.Equal(t, num.NewUint(0), liquidity)
 
@@ -200,14 +200,14 @@ func Test_InteralConsistency(t *testing.T) {
 	require.NotNil(t, engine)
 	f := func() (num.Decimal, num.Decimal, error) { return MarkPriceD, MarkPriceD, nil }
 	engine.SetGetStaticPricesFunc(f)
-	statevarEngine.NewEvent("asset1", "market1", statevar.StateVarEventTypeAuctionEnded)
+	statevarEngine.NewEvent("asset1", "market1", statevar.EventTypeAuctionEnded)
 
 	// Negative liquidity obligation -> 0 sizes on all orders
 	liquidityObligation := num.NewUint(100)
 	err := engine.CalculateLiquidityImpliedVolumes(MarkPriceD, MarkPriceD, liquidityObligation.Clone(), limitOrders, buyShapes, sellShapes)
 	require.NoError(t, err)
 
-	var zero uint64 = 0
+	var zero uint64
 	require.Less(t, zero, buy.LiquidityImpliedVolume)
 	require.Less(t, zero, sell.LiquidityImpliedVolume)
 
@@ -287,14 +287,14 @@ func TestCalculateLiquidityImpliedSizes_NoLimitOrders(t *testing.T) {
 	require.NotNil(t, engine)
 	f := func() (num.Decimal, num.Decimal, error) { return MarkPriceD, MarkPriceD, nil }
 	engine.SetGetStaticPricesFunc(f)
-	statevarEngine.NewEvent("asset1", "market1", statevar.StateVarEventTypeAuctionEnded)
+	statevarEngine.NewEvent("asset1", "market1", statevar.EventTypeAuctionEnded)
 
 	// No liquidity obligation -> 0 sizes on all orders
 	liquidityObligation := num.NewUint(0)
 	err := engine.CalculateLiquidityImpliedVolumes(MarkPriceD, MarkPriceD, liquidityObligation, limitOrders, buyShapes, sellShapes)
 	require.NoError(t, err)
 
-	var zero uint64 = 0
+	var zero uint64
 	require.Equal(t, zero, validBuy1.LiquidityImpliedVolume)
 	require.Equal(t, zero, validBuy2.LiquidityImpliedVolume)
 	require.Equal(t, zero, validSell1.LiquidityImpliedVolume)
@@ -451,7 +451,7 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 		}
 		return num.DecimalFromFloat(0.5)
 	})
-	statevarEngine.NewEvent("asset1", "market1", statevar.StateVarEventTypeAuctionEnded)
+	statevarEngine.NewEvent("asset1", "market1", statevar.EventTypeAuctionEnded)
 
 	limitOrdersSuppliedLiquidity := engine.CalculateSuppliedLiquidity(MarkPriceD, MarkPriceD, collateOrders(limitOrders, nil, nil))
 	require.True(t, limitOrdersSuppliedLiquidity.LT(liquidityObligation))
@@ -459,7 +459,7 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 	err := engine.CalculateLiquidityImpliedVolumes(MarkPriceD, MarkPriceD, liquidityObligation, limitOrders, buyShapes, sellShapes)
 	require.NoError(t, err)
 
-	var zero uint64 = 0
+	var zero uint64
 	require.Less(t, zero, validBuy1.LiquidityImpliedVolume)
 	require.Less(t, zero, validBuy2.LiquidityImpliedVolume)
 	require.Less(t, zero, validSell1.LiquidityImpliedVolume)
@@ -639,7 +639,7 @@ func TestCalculateLiquidityImpliedSizes_NoValidOrders(t *testing.T) {
 	require.NotNil(t, engine)
 	f := func() (num.Decimal, num.Decimal, error) { return MarkPriceD, MarkPriceD, nil }
 	engine.SetGetStaticPricesFunc(f)
-	statevarEngine.NewEvent("asset1", "market1", statevar.StateVarEventTypeAuctionEnded)
+	statevarEngine.NewEvent("asset1", "market1", statevar.EventTypeAuctionEnded)
 
 	liquidityObligation := num.NewUint(20)
 	// Expecting no error now (other component assures orders get shifted to valid price range, failsafe in place to safeguard against near-zero probability of trading)
@@ -700,7 +700,7 @@ func TestProbabilityOfTradingRecomputedAfterPriceRangeChange(t *testing.T) {
 	require.NotNil(t, engine)
 	f := func() (num.Decimal, num.Decimal, error) { return MarkPriceD, MarkPriceD, nil }
 	engine.SetGetStaticPricesFunc(f)
-	statevarEngine.NewEvent("asset1", "market1", statevar.StateVarEventTypeAuctionEnded)
+	statevarEngine.NewEvent("asset1", "market1", statevar.EventTypeAuctionEnded)
 	liquidity1 := engine.CalculateSuppliedLiquidity(MarkPriceD, MarkPriceD, orders)
 	require.True(t, liquidity1.GT(num.NewUint(0)))
 

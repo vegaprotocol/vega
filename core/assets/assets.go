@@ -42,7 +42,7 @@ type Service struct {
 	log *logging.Logger
 	cfg Config
 
-	broker broker.BrokerI
+	broker broker.Interface
 
 	// id to asset
 	// these assets exists and have been save
@@ -71,7 +71,7 @@ func New(
 	cfg Config,
 	nw *nodewallets.NodeWallets,
 	ethClient erc20.ETHClient,
-	broker broker.BrokerI,
+	broker broker.Interface,
 	bridgeView ERC20BridgeView,
 	isValidator bool,
 ) *Service {

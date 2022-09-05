@@ -2853,7 +2853,7 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 		lastMVP, _ = num.DecimalFromString(em.LastMarketValueProxy)
 	}
 
-	var sp *num.Uint = nil
+	var sp *num.Uint
 	if em.SettlementPrice != "" {
 		sp, _ = num.UintFromString(em.SettlementPrice, 10)
 	}

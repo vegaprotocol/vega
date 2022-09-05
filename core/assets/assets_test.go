@@ -20,7 +20,7 @@ import (
 
 type testService struct {
 	*assets.Service
-	broker     *bmocks.MockBrokerI
+	broker     *bmocks.MockInterface
 	bridgeView *mocks.MockERC20BridgeView
 	ctrl       *gomock.Controller
 }
@@ -63,7 +63,7 @@ func getTestService(t *testing.T) *testService {
 	logger := logging.NewTestLogger()
 	ctrl := gomock.NewController(t)
 	ethClient := erc20mocks.NewMockETHClient(ctrl)
-	broker := bmocks.NewMockBrokerI(ctrl)
+	broker := bmocks.NewMockInterface(ctrl)
 	bridgeView := mocks.NewMockERC20BridgeView(ctrl)
 	nodeWallets := &nodewallets.NodeWallets{
 		Vega:     &nwvega.Wallet{},

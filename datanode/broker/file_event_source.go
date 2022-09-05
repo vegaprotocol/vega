@@ -32,6 +32,7 @@ type fileEventSource struct {
 	sendChannelBufferSize int
 }
 
+//revive:disable:unexported-return
 func NewFileEventSource(file string, timeBetweenBlocks time.Duration,
 	sendChannelBufferSize int) (*fileEventSource, error,
 ) {
@@ -72,7 +73,7 @@ func sendAllEvents(ctx context.Context, out chan<- events.Event, file string,
 
 	sizeBytes := make([]byte, 4)
 	eventBlock := make([]*eventspb.BusEvent, 0)
-	var offset int64 = 0
+	var offset int64
 	currentBlock := ""
 
 	for {

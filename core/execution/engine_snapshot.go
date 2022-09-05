@@ -161,24 +161,6 @@ func (e *Engine) serialise() (snapshot []byte, providers []types.StateProvider, 
 	return s, pvds, nil
 }
 
-func (e *Engine) changed() bool {
-	if len(e.snapshotSerialised) == 0 {
-		return true
-	}
-
-	if e.stateChanged {
-		e.log.Debug("state-changed in execution engine itself")
-		return true
-	}
-	for _, m := range e.markets {
-		if m.changed() {
-			return true
-		}
-	}
-
-	return false
-}
-
 func (e *Engine) Namespace() types.SnapshotNamespace {
 	return types.ExecutionSnapshot
 }

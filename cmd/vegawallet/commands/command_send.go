@@ -162,12 +162,12 @@ func (f *SendCommandFlags) Validate() (*SendCommandRequest, error) {
 	}
 
 	if len(f.Wallet) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("wallet")
+		return nil, flags.MustBeSpecifiedError("wallet")
 	}
 	req.Wallet = f.Wallet
 
 	if len(f.LogLevel) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("level")
+		return nil, flags.MustBeSpecifiedError("level")
 	}
 	if err := ValidateLogLevel(f.LogLevel); err != nil {
 		return nil, err
@@ -178,7 +178,7 @@ func (f *SendCommandFlags) Validate() (*SendCommandRequest, error) {
 		return nil, flags.OneOfFlagsMustBeSpecifiedError("network", "node-address")
 	}
 	if len(f.NodeAddress) != 0 && len(f.Network) != 0 {
-		return nil, flags.FlagsMutuallyExclusiveError("network", "node-address")
+		return nil, flags.MutuallyExclusiveError("network", "node-address")
 	}
 	req.NodeAddress = f.NodeAddress
 	req.Network = f.Network
@@ -190,7 +190,7 @@ func (f *SendCommandFlags) Validate() (*SendCommandRequest, error) {
 	req.Passphrase = passphrase
 
 	if len(f.PubKey) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("pubkey")
+		return nil, flags.MustBeSpecifiedError("pubkey")
 	}
 	if len(f.RawCommand) == 0 {
 		return nil, flags.ArgMustBeSpecifiedError("command")

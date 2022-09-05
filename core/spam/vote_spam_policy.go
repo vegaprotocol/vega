@@ -154,7 +154,7 @@ func (vsp *VoteSpamPolicy) Serialise() ([]byte, error) {
 func (vsp *VoteSpamPolicy) Deserialise(p *types.Payload) error {
 	pl := p.Data.(*types.PayloadVoteSpamPolicy).VoteSpamPolicy
 
-	var i uint64 = 0
+	var i uint64
 	for ; i < numberOfBlocksForIncreaseCheck; i++ {
 		vsp.recentBlocksRejectStats[i] = nil
 	}
@@ -231,7 +231,7 @@ func (vsp *VoteSpamPolicy) Reset(epoch types.Epoch) {
 
 	// reset block stats
 	vsp.currentBlockIndex = 0
-	var i uint64 = 0
+	var i uint64
 	for ; i < numberOfBlocksForIncreaseCheck; i++ {
 		vsp.recentBlocksRejectStats[i] = nil
 	}
@@ -305,9 +305,9 @@ func (vsp *VoteSpamPolicy) EndOfBlock(blockHeight uint64) {
 
 // calculate the mean rejection rate in the last <numberOfBlocksForIncreaseCheck>.
 func (vsp *VoteSpamPolicy) calcRejectAverage() float64 {
-	var total uint64 = 0
-	var rejected uint64 = 0
-	var i uint64 = 0
+	var total uint64
+	var rejected uint64
+	var i uint64
 	for ; i < numberOfBlocksForIncreaseCheck; i++ {
 		if vsp.recentBlocksRejectStats[i] != nil {
 			total += vsp.recentBlocksRejectStats[i].total
@@ -332,7 +332,7 @@ func (vsp *VoteSpamPolicy) PostBlockAccept(tx abci.Tx) (bool, error) {
 	}
 
 	// get number of votes preceding the block in this epoch
-	var epochVotes uint64 = 0
+	var epochVotes uint64
 	if partyVotes, ok := vsp.partyToVote[party]; ok {
 		if voteCount, ok := partyVotes[vote.ProposalId]; ok {
 			epochVotes = voteCount
@@ -340,7 +340,7 @@ func (vsp *VoteSpamPolicy) PostBlockAccept(tx abci.Tx) (bool, error) {
 	}
 
 	// get number of votes so far in current block
-	var blockVotes uint64 = 0
+	var blockVotes uint64
 	if proposals, ok := vsp.blockPartyToVote[party]; ok {
 		if votes, ok := proposals[vote.ProposalId]; ok {
 			blockVotes += votes

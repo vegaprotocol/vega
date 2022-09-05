@@ -100,7 +100,7 @@ type ListEndpointsFlags struct {
 
 func (f *ListEndpointsFlags) Validate() error {
 	if len(f.Network) == 0 {
-		return flags.FlagMustBeSpecifiedError("network")
+		return flags.MustBeSpecifiedError("network")
 	}
 
 	return nil

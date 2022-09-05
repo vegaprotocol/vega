@@ -62,7 +62,7 @@ type Topology struct {
 	currentTime time.Time
 
 	witness Witness
-	broker  broker.BrokerI
+	broker  broker.Interface
 	ocv     MultiSigOnChainVerifier
 
 	// use to access both the pendingEvents and pendingThresholds maps
@@ -113,7 +113,7 @@ func NewTopology(
 	log *logging.Logger,
 	witness Witness,
 	ocv MultiSigOnChainVerifier,
-	broker broker.BrokerI,
+	broker broker.Interface,
 ) *Topology {
 	log = log.Named(namedLogger + ".topology")
 	log.SetLevel(config.Level.Get())

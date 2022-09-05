@@ -66,7 +66,7 @@ func printTable(role string, paths map[string]string) error {
 			name: name,
 			path: path,
 		}
-		i += 1
+		i++
 	}
 
 	sort.SliceStable(sortedPaths, func(i, j int) bool {

@@ -31,7 +31,7 @@ disable = [
     "wsl",
     "unparam",
     "scopelint",
-    "revive",
+    "nosnakecase",  # deprecated; replaced by revive
     "nestif",
     "maligned",
     "lll",
@@ -64,6 +64,11 @@ disable = [
     "ifshort",
     "predeclared",
     "nolintlint",
+    "nonamedreturns", # We don't mind named returns
+    "exhaustruct", # We often make incomplete structs
+    "structcheck", # deprecated since 1.49.0; replaced by 'unused'
+    "varcheck", # deprecated since 1.49.0; replaced by 'unused'
+    "deadcode", # deprecated since 1.49.0; replaced by 'unused'
 ]
 
 [[issues.exclude-rules]]
@@ -98,6 +103,16 @@ linters = ["forbidigo"]
 path = "libs/json/json.go"
 linters = ["forbidigo"]
 
+[[issues.exclude-rules]]
+path = "_test.go"
+linters = ["exhaustruct", "noctx"]
+
+# Don't complain about context not being first argument in tests (convention is to use *testing.T)
+[[issues.exclude-rules]]
+path = "_test.go"
+linters = ["revive"]
+text = "context-as-argument"
+
 [linters-settings.forbidigo]
 forbid = ["fmt\\.Print.*"]
 
@@ -107,3 +122,4 @@ forbid = ["fmt\\.Print.*"]
 [[issues.exclude-rules]]
 linters = ["govet"]
 text = "impl.MessageState contains sync.Mutex"
+

@@ -105,7 +105,7 @@ func (f *CreateWalletFlags) Validate() (api.CreateWalletParams, error) {
 	req := api.CreateWalletParams{}
 
 	if len(f.Wallet) == 0 {
-		return api.CreateWalletParams{}, flags.FlagMustBeSpecifiedError("wallet")
+		return api.CreateWalletParams{}, flags.MustBeSpecifiedError("wallet")
 	}
 	req.Wallet = f.Wallet
 

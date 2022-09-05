@@ -33,10 +33,7 @@ type AccountSource interface {
 
 type MarginLevels struct {
 	*ConnectionSource
-	columns       []string
-	marginLevels  []*entities.MarginLevels
-	batcher       MapBatcher[entities.MarginLevelsKey, entities.MarginLevels]
-	accountSource AccountSource
+	batcher MapBatcher[entities.MarginLevelsKey, entities.MarginLevels]
 }
 
 const (

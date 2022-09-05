@@ -1,5 +1,6 @@
 package paths
 
+// nolint: interfacebloat
 type Paths interface {
 	CreateCachePathFor(CachePath) (string, error)
 	CreateCacheDirFor(CachePath) (string, error)

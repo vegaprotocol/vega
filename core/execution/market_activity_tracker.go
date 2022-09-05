@@ -82,12 +82,12 @@ func (mat *MarketActivityTracker) SetEligibilityChecker(eligibilityChecker Eligi
 }
 
 // MarketProposed is called when the market is proposed and adds the market to the tracker.
-func (m *MarketActivityTracker) MarketProposed(asset, marketID, proposer string) {
+func (mat *MarketActivityTracker) MarketProposed(asset, marketID, proposer string) {
 	// if we already know about this market don't re-add it
-	if _, ok := m.marketToTracker[marketID]; ok {
+	if _, ok := mat.marketToTracker[marketID]; ok {
 		return
 	}
-	m.marketToTracker[marketID] = &marketTracker{
+	mat.marketToTracker[marketID] = &marketTracker{
 		asset:          asset,
 		proposer:       proposer,
 		proposersPaid:  map[string]struct{}{},
@@ -100,7 +100,7 @@ func (m *MarketActivityTracker) MarketProposed(asset, marketID, proposer string)
 		totalTakerFees: num.UintZero(),
 		totalLPFees:    num.UintZero(),
 	}
-	m.ss.changed = true
+	mat.ss.changed = true
 }
 
 // AddValueTraded records the value of a trade done in the given market.

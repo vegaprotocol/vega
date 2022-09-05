@@ -819,19 +819,10 @@ func newWaiter() *waiter {
 	ctx, cancelFn := context.WithTimeout(context.Background(), 30*time.Second)
 
 	go func() {
-		running := true
-		for running {
-			select {
-			case <-ctx.Done():
-				// Timeout!
-				running = false
-			}
-		}
-		select {
-		// In case the channel is already closed.
-		case <-ch:
-			close(ch)
-		}
+		// TODO - check with valentin, this is a bit suspect
+		<-ctx.Done()
+		<-ch
+		close(ch)
 	}()
 	return &waiter{
 		ch:       ch,

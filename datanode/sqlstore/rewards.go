@@ -100,8 +100,8 @@ func (rs *Rewards) GetByOffset(ctx context.Context,
 	}
 
 	if pagination != nil {
-		order_cols := []string{"epoch_id", "party_id", "asset_id"}
-		query, args = orderAndPaginateQuery(query, order_cols, *pagination, args...)
+		orderCols := []string{"epoch_id", "party_id", "asset_id"}
+		query, args = orderAndPaginateQuery(query, orderCols, *pagination, args...)
 	}
 
 	rewards := []entities.Reward{}

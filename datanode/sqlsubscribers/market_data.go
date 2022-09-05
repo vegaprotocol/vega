@@ -35,9 +35,8 @@ type MarketDataStore interface {
 
 type MarketData struct {
 	subscriber
-	log       *logging.Logger
-	store     MarketDataStore
-	dbTimeout time.Duration
+	log   *logging.Logger
+	store MarketDataStore
 }
 
 func (md *MarketData) Flush(ctx context.Context) error {

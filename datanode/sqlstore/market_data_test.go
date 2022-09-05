@@ -116,6 +116,7 @@ func shouldInsertAValidMarketDataRecord(t *testing.T) {
 }
 
 func connectionString(config sqlstore.ConnectionConfig) string {
+	//nolint:nosprintfhostport
 	return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s",
 		config.Username,
 		config.Password,

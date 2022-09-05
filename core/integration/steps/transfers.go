@@ -135,13 +135,13 @@ func rowToRecurringTransfer(r RowWrapper) (*types.RecurringTransfer, error) {
 	asset := r.MustStr("asset")
 	amount := r.MustStr("amount")
 	amountUint, _ := num.UintFromString(amount, 10)
-	start_epoch, _ := num.UintFromString(r.MustStr("start_epoch"), 10)
-	end_epoch := r.MustStr("end_epoch")
-	var end_epoch_ptr *uint64
-	if len(end_epoch) > 0 {
-		end_epoch_uint, _ := num.UintFromString(r.MustStr("end_epoch"), 10)
-		end_epoch_uint64 := end_epoch_uint.Uint64()
-		end_epoch_ptr = &end_epoch_uint64
+	startEpoch, _ := num.UintFromString(r.MustStr("start_epoch"), 10)
+	endEpoch := r.MustStr("end_epoch")
+	var endEpochPtr *uint64
+	if len(endEpoch) > 0 {
+		endEpochUint, _ := num.UintFromString(r.MustStr("end_epoch"), 10)
+		endEpochUint64 := endEpochUint.Uint64()
+		endEpochPtr = &endEpochUint64
 	}
 
 	var dispatchStrategy *proto.DispatchStrategy
@@ -168,8 +168,8 @@ func rowToRecurringTransfer(r RowWrapper) (*types.RecurringTransfer, error) {
 			Asset:           asset,
 			Amount:          amountUint,
 		},
-		StartEpoch:       start_epoch.Uint64(),
-		EndEpoch:         end_epoch_ptr,
+		StartEpoch:       startEpoch.Uint64(),
+		EndEpoch:         endEpochPtr,
 		Factor:           factor,
 		DispatchStrategy: dispatchStrategy,
 	}

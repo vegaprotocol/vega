@@ -53,6 +53,7 @@ const (
 )
 
 // Assets ...
+//
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/core/evtforward/ethereum Assets
 type Assets interface {
 	GetVegaIDFromEthereumAddress(string) string
@@ -202,7 +203,7 @@ func (f *LogFilterer) FilterStakingEvents(ctx context.Context, startAt, stopAt u
 	logs := f.filterLogs(ctx, query)
 
 	var event *types.ChainEvent
-	blockTimesFetcher := NewBlockTimeFetcher(f.log, f.client)
+	blockTimesFetcher := newBlockTimeFetcher(f.log, f.client)
 	for _, log := range logs {
 		blockTime := blockTimesFetcher.TimeForBlock(ctx, log.BlockNumber)
 		event = f.toStakingChainEvent(log, blockTime)
@@ -219,7 +220,7 @@ func (f *LogFilterer) FilterVestingEvents(ctx context.Context, startAt, stopAt u
 	logs := f.filterLogs(ctx, query)
 
 	var event *types.ChainEvent
-	blockTimesFetcher := NewBlockTimeFetcher(f.log, f.client)
+	blockTimesFetcher := newBlockTimeFetcher(f.log, f.client)
 	for _, log := range logs {
 		blockTime := blockTimesFetcher.TimeForBlock(ctx, log.BlockNumber)
 		event = f.toStakingChainEvent(log, blockTime)
@@ -232,7 +233,7 @@ func (f *LogFilterer) FilterMultisigControlEvents(ctx context.Context, startAt, 
 	logs := f.filterLogs(ctx, query)
 
 	var event *types.ChainEvent
-	blockTimesFetcher := NewBlockTimeFetcher(f.log, f.client)
+	blockTimesFetcher := newBlockTimeFetcher(f.log, f.client)
 	for _, log := range logs {
 		blockTime := blockTimesFetcher.TimeForBlock(ctx, log.BlockNumber)
 		event = f.toMultisigControlChainEvent(log, blockTime)
@@ -326,9 +327,10 @@ func (f *LogFilterer) newMultisigControlQuery(startAt uint64, stopAt uint64) eth
 
 // toCollateralChainEvent transform a log to a ChainEvent. It must succeed, otherwise
 // it raises a fatal error. At this point, if we can't parse the log, it means:
-// - a new event type as been added to the query without being adding support in
-//   this method,
-// - or, the log doesn't have a backward or forward compatible format.
+//   - a new event type as been added to the query without being adding support in
+//     this method,
+//   - or, the log doesn't have a backward or forward compatible format.
+//
 // Either way, this is a programming error.
 func (f *LogFilterer) toCollateralChainEvent(log ethtypes.Log) *types.ChainEvent {
 	switch log.Topics[0] {
@@ -584,9 +586,10 @@ func (f *LogFilterer) toERC20BridgeResumed(event *bridge.Erc20BridgeLogicRestric
 
 // toStakingChainEvent transform a log to a ChainEvent. It must succeed, otherwise
 // it raises a fatal error. At this point, if we can't parse the log, it means:
-// - a new event type as been added to the query without being adding support in
-//   this method,
-// - or, the log doesn't have a backward or forward compatible format.
+//   - a new event type as been added to the query without being adding support in
+//     this method,
+//   - or, the log doesn't have a backward or forward compatible format.
+//
 // Either way, this is a programming error.
 func (f *LogFilterer) toStakingChainEvent(log ethtypes.Log, blockTime uint64) *types.ChainEvent {
 	switch log.Topics[0] {
@@ -809,7 +812,7 @@ type blockTimeFetcher struct {
 	cachedTimes map[uint64]uint64
 }
 
-func NewBlockTimeFetcher(log *logging.Logger, client Client) *blockTimeFetcher {
+func newBlockTimeFetcher(log *logging.Logger, client Client) *blockTimeFetcher {
 	return &blockTimeFetcher{
 		log:         log,
 		client:      client,

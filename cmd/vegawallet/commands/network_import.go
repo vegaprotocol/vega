@@ -118,7 +118,7 @@ func (f *ImportNetworkFlags) Validate() (*network.ImportNetworkFromSourceRequest
 	}
 
 	if len(f.FilePath) != 0 && len(f.URL) != 0 {
-		return nil, flags.FlagsMutuallyExclusiveError("from-file", "from-url")
+		return nil, flags.MutuallyExclusiveError("from-file", "from-url")
 	}
 
 	return &network.ImportNetworkFromSourceRequest{

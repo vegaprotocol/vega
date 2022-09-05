@@ -42,6 +42,7 @@ var (
 )
 
 // ValidatorTopology...
+//
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/core/notary ValidatorTopology
 type ValidatorTopology interface {
 	IsValidator() bool

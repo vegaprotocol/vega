@@ -186,22 +186,6 @@ func (ts *Trades) queryTradesWithMarketFilter(ctx context.Context, query string,
 	return trades, nil
 }
 
-func (ts *Trades) queryTradesWithMarketFilterAndCursorPagination(ctx context.Context, query string, args []interface{},
-	market *string, cursor entities.CursorPagination,
-) ([]entities.Trade, entities.PageInfo, error) {
-	if market != nil && *market != "" {
-		marketID := nextBindVar(&args, entities.MarketID(*market))
-		query += ` AND market_id=` + marketID
-	}
-
-	trades, pageInfo, err := ts.queryTradesWithCursorPagination(ctx, query, args, cursor)
-	if err != nil {
-		return nil, pageInfo, fmt.Errorf("failed to query trades:%w", err)
-	}
-
-	return trades, pageInfo, nil
-}
-
 func (ts *Trades) queryTrades(ctx context.Context, query string, args []interface{}, p *entities.OffsetPagination) ([]entities.Trade, error) {
 	if p != nil {
 		query, args = orderAndPaginateQuery(query, []string{"synthetic_time"}, *p, args...)

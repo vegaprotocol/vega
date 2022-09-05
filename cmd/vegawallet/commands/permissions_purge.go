@@ -106,7 +106,7 @@ func (f *PurgePermissionsFlags) Validate() (*wallet.PurgePermissionsRequest, err
 	req := &wallet.PurgePermissionsRequest{}
 
 	if len(f.Wallet) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("wallet")
+		return nil, flags.MustBeSpecifiedError("wallet")
 	}
 	req.Wallet = f.Wallet
 

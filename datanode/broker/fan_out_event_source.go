@@ -32,6 +32,7 @@ type fanOutEventSource struct {
 	mutex                  sync.Mutex
 }
 
+//revive:disable:unexported-return
 func NewFanOutEventSource(source eventSource, sendChannelBufferSize int, expectedNumSubscribers int) *fanOutEventSource {
 	return &fanOutEventSource{
 		source:                 source,

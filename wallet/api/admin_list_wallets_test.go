@@ -82,7 +82,6 @@ type listWalletsHandler struct {
 	*api.ListWallets
 	ctrl        *gomock.Controller
 	walletStore *mocks.MockWalletStore
-	pipeline    *mocks.MockPipeline
 }
 
 func (h *listWalletsHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.ListWalletsResult, *jsonrpc.ErrorDetails) {

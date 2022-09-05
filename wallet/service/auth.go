@@ -43,7 +43,7 @@ type auth struct {
 	mu sync.Mutex
 }
 
-func NewAuth(log *zap.Logger, cfgStore RSAStore, tokenExpiry time.Duration) (*auth, error) {
+func NewAuth(log *zap.Logger, cfgStore RSAStore, tokenExpiry time.Duration) (*auth, error) { //revive:disable:unexported-return
 	keys, err := cfgStore.GetRsaKeys()
 	if err != nil {
 		return nil, err

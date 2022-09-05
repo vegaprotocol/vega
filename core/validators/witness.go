@@ -126,7 +126,7 @@ func (r *res) voteCount(t ValidatorTopology) int {
 	count := 0
 	for k := range r.votes {
 		if t.IsTendermintValidator(k) {
-			count += 1
+			count++
 		}
 	}
 	return count

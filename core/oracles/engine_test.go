@@ -422,8 +422,3 @@ func (b *testBroker) expectMatchedOracleDataEvent(currentTime time.Time, data or
 	data.BroadcastAt = currentTime.UnixNano()
 	b.EXPECT().Send(events.NewOracleDataEvent(b.ctx, data)).Times(1)
 }
-
-func (b *testBroker) expectUnmatchedOracleDataEvent(data oraclespb.OracleData) {
-	data.MatchedSpecIds = []string{}
-	b.EXPECT().Send(events.NewOracleDataEvent(b.ctx, data)).Times(1)
-}

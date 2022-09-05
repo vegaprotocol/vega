@@ -37,12 +37,12 @@ type Subscriber interface {
 	Ack() bool
 }
 
-// BrokerI interface (horribly named) is declared here to provide a drop-in replacement for broker mocks used throughout
+// Interface interface (horribly named) is declared here to provide a drop-in replacement for broker mocks used throughout
 // in addition to providing the classical mockgen functionality, this mock can be used to check the actual events that will be generated
 // so we don't have to rely on test-only helper functions
 //
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/broker_mock.go -package mocks code.vegaprotocol.io/vega/core/broker BrokerI
-type BrokerI interface {
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/broker_mock.go -package mocks code.vegaprotocol.io/vega/core/broker Interface
+type Interface interface {
 	Send(event events.Event)
 	SendBatch(events []events.Event)
 	Subscribe(s Subscriber) int

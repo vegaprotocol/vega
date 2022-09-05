@@ -244,6 +244,7 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 	assert.Len(t, orders.Edges, 2)
 }
 
+//nolint:interfacebloat
 type resolverRoot interface {
 	Query() gql.QueryResolver
 	Candle() gql.CandleResolver

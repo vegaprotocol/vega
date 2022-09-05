@@ -75,11 +75,11 @@ func (store *Node) UpsertNode(ctx context.Context, node *entities.Node) error {
 		node.PubKey,
 		node.TmPubKey,
 		node.EthereumAddress,
-		node.InfoUrl,
+		node.InfoURL,
 		node.Location,
 		node.Status,
 		node.Name,
-		node.AvatarUrl,
+		node.AvatarURL,
 		node.TxHash,
 		node.VegaTime,
 	)
@@ -128,7 +128,7 @@ func (store *Node) UpsertRanking(ctx context.Context, rs *entities.RankingScore,
 			vega_time)
 		VALUES
 			($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-		aux.NodeId,
+		aux.NodeID,
 		rs.EpochSeq,
 		rs.StakeScore,
 		rs.PerformanceScore,
@@ -160,7 +160,7 @@ func (store *Node) UpsertScore(ctx context.Context, rs *entities.RewardScore, au
 			vega_time)
 		VALUES
 			($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-		aux.NodeId,
+		aux.NodeID,
 		rs.EpochSeq,
 		rs.ValidatorNodeStatus,
 		rs.RawValidatorScore,
@@ -370,11 +370,11 @@ func (store *Node) GetNodes(ctx context.Context, epochSeq uint64, pagination ent
 	return nodes, pageInfo, nil
 }
 
-func (store *Node) GetNodeByID(ctx context.Context, nodeId string, epochSeq uint64) (entities.Node, error) {
+func (store *Node) GetNodeByID(ctx context.Context, nodeID string, epochSeq uint64) (entities.Node, error) {
 	defer metrics.StartSQLQuery("Node", "GetNodeById")()
 
 	var node entities.Node
-	id := entities.NodeID(nodeId)
+	id := entities.NodeID(nodeID)
 
 	query := `WITH
 	current_delegations AS (
@@ -452,7 +452,7 @@ func (store *Node) GetNodeByID(ctx context.Context, nodeId string, epochSeq uint
 
 	err := pgxscan.Get(ctx, store.pool, &node, query, epochSeq, id)
 	if pgxscan.NotFound(err) {
-		return node, fmt.Errorf("'%v': %w", nodeId, ErrNodeNotFound)
+		return node, fmt.Errorf("'%v': %w", nodeID, ErrNodeNotFound)
 	}
 	return node, err
 }

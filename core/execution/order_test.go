@@ -208,10 +208,10 @@ func TestCancelWithWrongPartyID(t *testing.T) {
 
 	// Now attempt to cancel it with the wrong partyID
 	cancelOrder := &types.OrderCancellation{
-		OrderId:  confirmation.Order.ID,
-		MarketId: confirmation.Order.MarketID,
+		OrderID:  confirmation.Order.ID,
+		MarketID: confirmation.Order.MarketID,
 	}
-	cancelconf, err := tm.market.CancelOrder(context.TODO(), party2, cancelOrder.OrderId, vgcrypto.RandomHash())
+	cancelconf, err := tm.market.CancelOrder(context.TODO(), party2, cancelOrder.OrderID, vgcrypto.RandomHash())
 	assert.Nil(t, cancelconf)
 	assert.Error(t, err, types.ErrInvalidPartyID)
 }
@@ -1374,7 +1374,7 @@ func testPeggedOrderUnparkAfterLeavingAuction(t *testing.T) {
 	require.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
-	tm.market.LeaveAuctionWithIdGen(ctx, closingAt, newTestIdGenerator())
+	tm.market.LeaveAuctionWithIDGen(ctx, closingAt, newTestIDGenerator())
 	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
 }
 
@@ -2628,7 +2628,7 @@ func TestPeggedOrderUnparkAfterLeavingAuctionWithNoFunds2772(t *testing.T) {
 	assert.NotNil(t, confirmation3)
 	assert.NoError(t, err)
 
-	tm.market.LeaveAuctionWithIdGen(ctx, closingAt, newTestIdGenerator())
+	tm.market.LeaveAuctionWithIDGen(ctx, closingAt, newTestIDGenerator())
 
 	buyOrder1 := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party3", 100, 6500)
 	confirmation4, err := tm.market.SubmitOrder(ctx, &buyOrder1)

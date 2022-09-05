@@ -24,9 +24,9 @@ import (
 )
 
 func randomEthAddress() entities.EthereumAddress {
-	hash_256bit := vgcrypto.RandomHash()
-	hash_160bit := hash_256bit[:40]
-	return entities.EthereumAddress("0x" + hash_160bit)
+	hash256bit := vgcrypto.RandomHash()
+	hash160bit := hash256bit[:40]
+	return entities.EthereumAddress("0x" + hash160bit)
 }
 
 func addTestEthereumKeyRotation(t *testing.T,

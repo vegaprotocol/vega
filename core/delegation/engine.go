@@ -51,7 +51,8 @@ var (
 	ErrAmountLTMinAmountForDelegation = errors.New("delegation amount is lower than the minimum amount for delegation for a validator")
 )
 
-//TimeService notifies the reward engine on time updates
+// TimeService notifies the reward engine on time updates
+//
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/core/rewards TimeService
 type TimeService interface {
 	GetTimeNow() time.Time
@@ -93,7 +94,9 @@ type partyDelegation struct {
 // 1. during epoch it is called with delegation requests that update the delegation balance of the party for the next epoch
 // 2. At the end of the epoch:
 // 2.1 updates the delegated balances to reconcile the epoch's staking account balance for each party such that if a party withdrew from their
-//     staking account during the epoch it will not count for them for rewarding
+//
+//	staking account during the epoch it will not count for them for rewarding
+//
 // 2.2 capture the state after 2.1 to be returned to the rewarding engine
 // 2.3 process all pending delegations.
 type Engine struct {

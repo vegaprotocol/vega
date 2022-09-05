@@ -30,7 +30,7 @@ func (m *Market) EnterAuction(ctx context.Context) {
 	m.enterAuction(ctx)
 }
 
-func (m *Market) LeaveAuctionWithIdGen(ctx context.Context, now time.Time, generator IDGenerator) {
+func (m *Market) LeaveAuctionWithIDGen(ctx context.Context, now time.Time, generator IDGenerator) {
 	m.idgen = generator
 	defer func() { m.idgen = nil }()
 	m.leaveAuction(ctx, now)

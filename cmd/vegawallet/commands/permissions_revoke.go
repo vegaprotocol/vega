@@ -112,12 +112,12 @@ func (f *RevokePermissionsFlags) Validate() (*wallet.RevokePermissionsRequest, e
 	req := &wallet.RevokePermissionsRequest{}
 
 	if len(f.Wallet) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("wallet")
+		return nil, flags.MustBeSpecifiedError("wallet")
 	}
 	req.Wallet = f.Wallet
 
 	if len(f.Hostname) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("hostname")
+		return nil, flags.MustBeSpecifiedError("hostname")
 	}
 	req.Hostname = f.Hostname
 

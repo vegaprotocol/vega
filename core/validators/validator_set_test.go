@@ -1064,7 +1064,7 @@ func testSwapAndErsatzSlotDecrease(t *testing.T) {
 	ezCount := 0
 	for _, v := range topology.validators {
 		if ValidatorStatusToName[v.status] == "ersatz" {
-			ezCount += 1
+			ezCount++
 		}
 	}
 

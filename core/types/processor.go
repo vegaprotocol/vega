@@ -31,35 +31,35 @@ type (
 )
 
 type OrderCancellation struct {
-	OrderId  string
-	MarketId string
+	OrderID  string
+	MarketID string
 }
 
 func OrderCancellationFromProto(p *commandspb.OrderCancellation) *OrderCancellation {
 	return &OrderCancellation{
-		OrderId:  p.OrderId,
-		MarketId: p.MarketId,
+		OrderID:  p.OrderId,
+		MarketID: p.MarketId,
 	}
 }
 
 func (o OrderCancellation) IntoProto() *commandspb.OrderCancellation {
 	return &commandspb.OrderCancellation{
-		OrderId:  o.OrderId,
-		MarketId: o.MarketId,
+		OrderId:  o.OrderID,
+		MarketId: o.MarketID,
 	}
 }
 
 func (o OrderCancellation) String() string {
 	return fmt.Sprintf(
 		"marketID(%s) orderID(%s)",
-		o.MarketId,
-		o.OrderId,
+		o.MarketID,
+		o.OrderID,
 	)
 }
 
 type OrderSubmission struct {
 	// Market identifier for the order, required field
-	MarketId string
+	MarketID string
 	// Price for the order, the price is an integer, for example `123456` is a correctly
 	// formatted price of `1.23456` assuming market configured to 5 decimal places,
 	// required field for limit orders, however it is not required for market orders
@@ -87,7 +87,7 @@ func (o OrderSubmission) IntoProto() *commandspb.OrderSubmission {
 		pegged = o.PeggedOrder.IntoProto()
 	}
 	return &commandspb.OrderSubmission{
-		MarketId: o.MarketId,
+		MarketId: o.MarketID,
 		// Need to update protobuf to use string TODO UINT
 		Price:       num.UintToString(o.Price),
 		Size:        o.Size,
@@ -116,7 +116,7 @@ func NewOrderSubmissionFromProto(p *commandspb.OrderSubmission) (*OrderSubmissio
 	}
 
 	return &OrderSubmission{
-		MarketId:    p.MarketId,
+		MarketID:    p.MarketId,
 		Price:       price,
 		Size:        p.Size,
 		Side:        p.Side,
@@ -131,7 +131,7 @@ func NewOrderSubmissionFromProto(p *commandspb.OrderSubmission) (*OrderSubmissio
 func (o OrderSubmission) String() string {
 	return fmt.Sprintf(
 		"marketID(%s) price(%s) size(%v) side(%s) timeInForce(%s) expiresAt(%v) type(%s) reference(%s) peggedOrder(%s)",
-		o.MarketId,
+		o.MarketID,
 		uintPointerToString(o.Price),
 		o.Size,
 		o.Side.String(),
@@ -145,7 +145,7 @@ func (o OrderSubmission) String() string {
 
 func (o OrderSubmission) IntoOrder(party string) *Order {
 	return &Order{
-		MarketID:    o.MarketId,
+		MarketID:    o.MarketID,
 		Party:       party,
 		Side:        o.Side,
 		Price:       o.Price,

@@ -118,7 +118,7 @@ type DeleteWalletFlags struct {
 
 func (f *DeleteWalletFlags) Validate() (api.RemoveWalletParams, error) {
 	if len(f.Wallet) == 0 {
-		return api.RemoveWalletParams{}, flags.FlagMustBeSpecifiedError("wallet")
+		return api.RemoveWalletParams{}, flags.MustBeSpecifiedError("wallet")
 	}
 
 	if !f.Force && vgterm.HasNoTTY() {

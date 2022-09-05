@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	orderIdLen = 64
+	orderIDLen = 64
 )
 
 func (b OrderBook) validateOrder(orderMessage *types.Order) (err error) {
@@ -68,7 +68,7 @@ func (b OrderBook) validateOrder(orderMessage *types.Order) (err error) {
 func validateOrderID(orderID string) error {
 	_, err := hex.DecodeString(orderID)
 	idLen := len(orderID)
-	if err != nil || idLen != orderIdLen {
+	if err != nil || idLen != orderIDLen {
 		return types.ErrInvalidOrderID
 	}
 	return nil

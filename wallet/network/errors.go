@@ -2,30 +2,30 @@ package network
 
 import "fmt"
 
-type NetworkAlreadyExistsError struct {
+type AlreadyExistsError struct {
 	Name string
 }
 
-func NewNetworkAlreadyExistsError(n string) NetworkAlreadyExistsError {
-	return NetworkAlreadyExistsError{
+func NewAlreadyExistsError(n string) AlreadyExistsError {
+	return AlreadyExistsError{
 		Name: n,
 	}
 }
 
-func (e NetworkAlreadyExistsError) Error() string {
+func (e AlreadyExistsError) Error() string {
 	return fmt.Sprintf("network \"%s\" already exists", e.Name)
 }
 
-type NetworkDoesNotExistError struct {
+type DoesNotExistError struct {
 	Name string
 }
 
-func NewNetworkDoesNotExistError(n string) NetworkDoesNotExistError {
-	return NetworkDoesNotExistError{
+func NewDoesNotExistError(n string) DoesNotExistError {
+	return DoesNotExistError{
 		Name: n,
 	}
 }
 
-func (e NetworkDoesNotExistError) Error() string {
+func (e DoesNotExistError) Error() string {
 	return fmt.Sprintf("network \"%s\" doesn't exist", e.Name)
 }

@@ -52,7 +52,7 @@ func (b *OrderBook) getNumberOfSellLevels() int {
 }
 
 func (b *OrderBook) getTotalBuyVolume() uint64 {
-	var volume uint64 = 0
+	var volume uint64
 
 	buys := b.buy.getLevels()
 	for _, pl := range buys {
@@ -77,7 +77,7 @@ func (b *OrderBook) getVolumeAtLevel(price uint64, side types.Side) uint64 {
 }
 
 func (b *OrderBook) getTotalSellVolume() uint64 {
-	var volume uint64 = 0
+	var volume uint64
 	sells := b.sell.getLevels()
 	for _, pl := range sells {
 		volume += pl.volume

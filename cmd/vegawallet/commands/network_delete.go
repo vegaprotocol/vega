@@ -102,7 +102,7 @@ func (f *DeleteNetworkFlags) Validate() (*network.DeleteNetworkRequest, error) {
 	req := &network.DeleteNetworkRequest{}
 
 	if len(f.Network) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("network")
+		return nil, flags.MustBeSpecifiedError("network")
 	}
 	req.Name = f.Network
 

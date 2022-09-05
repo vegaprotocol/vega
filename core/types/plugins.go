@@ -19,9 +19,9 @@ import (
 
 type Position struct {
 	// Market identifier
-	MarketId string
+	MarketID string
 	// Party identifier
-	PartyId string
+	PartyID string
 	// Open volume for the position, value is signed +ve for long and -ve for short
 	OpenVolume int64
 	// Realised profit and loss for the position, value is signed +ve for long and -ve for short
@@ -37,8 +37,8 @@ type Position struct {
 
 func (p *Position) IntoProto() *proto.Position {
 	return &proto.Position{
-		MarketId:          p.MarketId,
-		PartyId:           p.PartyId,
+		MarketId:          p.MarketID,
+		PartyId:           p.PartyID,
 		OpenVolume:        p.OpenVolume,
 		RealisedPnl:       p.RealisedPnl.BigInt().String(),
 		UnrealisedPnl:     p.UnrealisedPnl.BigInt().String(),

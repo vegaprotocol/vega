@@ -28,13 +28,13 @@ import (
 )
 
 func TestTransfers(t *testing.T) {
-	t.Run("Retrieve transfers to or from a party", testTransfers_GetTransferToOrFromParty)
-	t.Run("Retrieve transfer to and from a party ", testTransfers_GetTransfersByParty)
-	t.Run("Retrieve transfer to and from an account", testTransfers_GetFromAccountAndGetToAccount)
-	t.Run("Retrieves latest transfer version after updates in different block", testTransfers_UpdatesInDifferentBlocks)
-	t.Run("Retrieves latest transfer version after updates in different block", testTransfers_UpdateInSameBlock)
-	t.Run("Test add and retrieve of one off transfer", testTransfers_AddAndRetrieveOneOffTransfer)
-	t.Run("Test add and retrieve of recurring transfer", testTransfers_AddAndRetrieveRecurringTransfer)
+	t.Run("Retrieve transfers to or from a party", testTransfersGetTransferToOrFromParty)
+	t.Run("Retrieve transfer to and from a party ", testTransfersGetTransfersByParty)
+	t.Run("Retrieve transfer to and from an account", testTransfersGetFromAccountAndGetToAccount)
+	t.Run("Retrieves latest transfer version after updates in different block", testTransfersUpdatesInDifferentBlocks)
+	t.Run("Retrieves latest transfer version after updates in different block", testTransfersUpdateInSameBlock)
+	t.Run("Test add and retrieve of one off transfer", testTransfersAddAndRetrieveOneOffTransfer)
+	t.Run("Test add and retrieve of recurring transfer", testTransfersAddAndRetrieveRecurringTransfer)
 }
 
 func TestTransfersPagination(t *testing.T) {
@@ -45,7 +45,7 @@ func TestTransfersPagination(t *testing.T) {
 	t.Run("should return the specified page of results if last and before are provided", testTransferPaginationLastBefore)
 }
 
-func testTransfers_GetTransferToOrFromParty(t *testing.T) {
+func testTransfersGetTransferToOrFromParty(t *testing.T) {
 	defer DeleteEverything()
 
 	now := time.Now()
@@ -122,7 +122,7 @@ func testTransfers_GetTransferToOrFromParty(t *testing.T) {
 	assert.Equal(t, sourceTransferProto2, retrievedTransferProto)
 }
 
-func testTransfers_GetTransfersByParty(t *testing.T) {
+func testTransfersGetTransfersByParty(t *testing.T) {
 	defer DeleteEverything()
 
 	now := time.Now()
@@ -200,7 +200,7 @@ func testTransfers_GetTransfersByParty(t *testing.T) {
 	assert.Equal(t, sourceTransferProto2, retrievedTransferProto)
 }
 
-func testTransfers_GetFromAccountAndGetToAccount(t *testing.T) {
+func testTransfersGetFromAccountAndGetToAccount(t *testing.T) {
 	defer DeleteEverything()
 
 	now := time.Now()
@@ -280,7 +280,7 @@ func testTransfers_GetFromAccountAndGetToAccount(t *testing.T) {
 	assert.Equal(t, sourceTransferProto2, retrievedTransferProto)
 }
 
-func testTransfers_UpdatesInDifferentBlocks(t *testing.T) {
+func testTransfersUpdatesInDifferentBlocks(t *testing.T) {
 	defer DeleteEverything()
 
 	now := time.Now()
@@ -337,7 +337,7 @@ func testTransfers_UpdatesInDifferentBlocks(t *testing.T) {
 	assert.Equal(t, sourceTransferProto, retrievedTransferProto)
 }
 
-func testTransfers_UpdateInSameBlock(t *testing.T) {
+func testTransfersUpdateInSameBlock(t *testing.T) {
 	defer DeleteEverything()
 
 	now := time.Now()
@@ -393,7 +393,7 @@ func testTransfers_UpdateInSameBlock(t *testing.T) {
 	assert.Equal(t, sourceTransferProto, retrievedTransferProto)
 }
 
-func testTransfers_AddAndRetrieveOneOffTransfer(t *testing.T) {
+func testTransfersAddAndRetrieveOneOffTransfer(t *testing.T) {
 	defer DeleteEverything()
 
 	now := time.Now()
@@ -431,7 +431,7 @@ func testTransfers_AddAndRetrieveOneOffTransfer(t *testing.T) {
 	assert.Equal(t, sourceTransferProto, retrievedTransferProto)
 }
 
-func testTransfers_AddAndRetrieveRecurringTransfer(t *testing.T) {
+func testTransfersAddAndRetrieveRecurringTransfer(t *testing.T) {
 	defer DeleteEverything()
 
 	now := time.Now()
@@ -486,9 +486,9 @@ func getTestAccounts(t *testing.T, accounts *sqlstore.Accounts, block entities.B
 	t.Helper()
 	assets := sqlstore.NewAssets(connectionSource)
 
-	testAssetId := entities.AssetID(generateID())
+	testAssetID := entities.AssetID(generateID())
 	testAsset := entities.Asset{
-		ID:            testAssetId,
+		ID:            testAssetID,
 		Name:          "testAssetName",
 		Symbol:        "tan",
 		Decimals:      1,
@@ -505,7 +505,7 @@ func getTestAccounts(t *testing.T, accounts *sqlstore.Accounts, block entities.B
 
 	accountFrom = entities.Account{
 		PartyID:  entities.PartyID(generateID()),
-		AssetID:  testAssetId,
+		AssetID:  testAssetID,
 		Type:     vega.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
 		VegaTime: block.VegaTime,
 	}
@@ -516,7 +516,7 @@ func getTestAccounts(t *testing.T, accounts *sqlstore.Accounts, block entities.B
 
 	accountTo = entities.Account{
 		PartyID: entities.PartyID(generateID()),
-		AssetID: testAssetId,
+		AssetID: testAssetID,
 
 		Type:     vega.AccountType_ACCOUNT_TYPE_GENERAL,
 		VegaTime: block.VegaTime,
@@ -689,9 +689,9 @@ func addTransfers(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, transf
 		transfer := entities.Transfer{
 			ID:                  entities.TransferID(fmt.Sprintf("deadbeef%02d", i+1)),
 			VegaTime:            vegaTime,
-			FromAccountId:       accountFrom.ID,
-			ToAccountId:         accountTo.ID,
-			AssetId:             entities.AssetID(""),
+			FromAccountID:       accountFrom.ID,
+			ToAccountID:         accountTo.ID,
+			AssetID:             entities.AssetID(""),
 			Amount:              amount,
 			Reference:           "",
 			Status:              0,

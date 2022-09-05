@@ -195,7 +195,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 
 	eventSource = broker.NewFanOutEventSource(eventSource, l.conf.SQLStore.FanOutBufferSize, 2)
 
-	l.sqlBroker = broker.NewSqlStoreBroker(l.Log, l.conf.Broker, l.chainService, eventSource,
+	l.sqlBroker = broker.NewSQLStoreBroker(l.Log, l.conf.Broker, l.chainService, eventSource,
 		l.transactionalConnectionSource,
 		l.blockStore,
 		l.accountSub,

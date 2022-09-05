@@ -37,8 +37,8 @@ func PartiesCancelTheFollowingOrders(
 		}
 
 		cancel := types.OrderCancellation{
-			OrderId:  order.Id,
-			MarketId: order.MarketId,
+			OrderID:  order.Id,
+			MarketID: order.MarketId,
 		}
 
 		_, err = exec.CancelOrder(context.Background(), &cancel, party)

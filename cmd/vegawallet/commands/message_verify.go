@@ -96,12 +96,12 @@ func (f *VerifyMessageFlags) Validate() (*crypto.VerifyMessageRequest, error) {
 	req := &crypto.VerifyMessageRequest{}
 
 	if len(f.PubKey) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("pubkey")
+		return nil, flags.MustBeSpecifiedError("pubkey")
 	}
 	req.PubKey = f.PubKey
 
 	if len(f.Signature) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("signature")
+		return nil, flags.MustBeSpecifiedError("signature")
 	}
 	decodedSignature, err := base64.StdEncoding.DecodeString(f.Signature)
 	if err != nil {
@@ -110,7 +110,7 @@ func (f *VerifyMessageFlags) Validate() (*crypto.VerifyMessageRequest, error) {
 	req.Signature = decodedSignature
 
 	if len(f.Message) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("message")
+		return nil, flags.MustBeSpecifiedError("message")
 	}
 	decodedMessage, err := base64.StdEncoding.DecodeString(f.Message)
 	if err != nil {

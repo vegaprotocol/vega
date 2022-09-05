@@ -70,9 +70,9 @@ type Collateral interface {
 }
 
 type StateVarEngine interface {
-	RegisterStateVariable(asset, market, name string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error) error
+	RegisterStateVariable(asset, market, name string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.EventType, result func(context.Context, statevar.StateVariableResult) error) error
 	UnregisterStateVariable(asset, market string)
-	NewEvent(asset, market string, eventType statevar.StateVarEventType)
+	NewEvent(asset, market string, eventType statevar.EventType)
 	ReadyForTimeTrigger(asset, mktID string)
 }
 
@@ -500,9 +500,9 @@ func (e *Engine) SubmitOrder(
 	ctx context.Context,
 	submission *types.OrderSubmission,
 	party string,
-	deterministicId string,
+	deterministicID string,
 ) (confirmation *types.OrderConfirmation, returnedErr error) {
-	timer := metrics.NewTimeCounter(submission.MarketId, "execution", "SubmitOrder")
+	timer := metrics.NewTimeCounter(submission.MarketID, "execution", "SubmitOrder")
 	defer func() {
 		timer.EngineTimeCounterAdd()
 	}()
@@ -511,18 +511,18 @@ func (e *Engine) SubmitOrder(
 		e.log.Debug("submit order", logging.OrderSubmission(submission))
 	}
 
-	mkt, ok := e.markets[submission.MarketId]
+	mkt, ok := e.markets[submission.MarketID]
 	if !ok {
 		return nil, types.ErrInvalidMarketID
 	}
 
-	metrics.OrderGaugeAdd(1, submission.MarketId)
-	conf, err := mkt.SubmitOrder(ctx, submission, party, deterministicId)
+	metrics.OrderGaugeAdd(1, submission.MarketID)
+	conf, err := mkt.SubmitOrder(ctx, submission, party, deterministicID)
 	if err != nil {
 		return nil, err
 	}
 
-	e.decrementOrderGaugeMetrics(submission.MarketId, conf.Order, conf.PassiveOrdersAffected)
+	e.decrementOrderGaugeMetrics(submission.MarketID, conf.Order, conf.PassiveOrdersAffected)
 
 	return conf, nil
 }
@@ -530,7 +530,7 @@ func (e *Engine) SubmitOrder(
 // AmendOrder takes order amendment details and attempts to amend the order
 // if it exists and is in a editable state.
 func (e *Engine) AmendOrder(ctx context.Context, amendment *types.OrderAmendment, party string,
-	deterministicId string,
+	deterministicID string,
 ) (confirmation *types.OrderConfirmation, returnedErr error) {
 	timer := metrics.NewTimeCounter(amendment.MarketID, "execution", "AmendOrder")
 	defer func() {
@@ -546,7 +546,7 @@ func (e *Engine) AmendOrder(ctx context.Context, amendment *types.OrderAmendment
 		return nil, types.ErrInvalidMarketID
 	}
 
-	conf, err := mkt.AmendOrder(ctx, amendment, party, deterministicId)
+	conf, err := mkt.AmendOrder(ctx, amendment, party, deterministicID)
 	if err != nil {
 		return nil, err
 	}
@@ -568,7 +568,7 @@ func (e *Engine) decrementOrderGaugeMetrics(
 	var passiveCount int
 	for _, v := range passive {
 		if v.IsFinished() {
-			passiveCount += 1
+			passiveCount++
 		}
 	}
 	if passiveCount > 0 {
@@ -577,8 +577,8 @@ func (e *Engine) decrementOrderGaugeMetrics(
 }
 
 // CancelOrder takes order details and attempts to cancel if it exists in matching engine, stores etc.
-func (e *Engine) CancelOrder(ctx context.Context, cancel *types.OrderCancellation, party string, deterministicId string) (_ []*types.OrderCancellationConfirmation, returnedErr error) {
-	timer := metrics.NewTimeCounter(cancel.MarketId, "execution", "CancelOrder")
+func (e *Engine) CancelOrder(ctx context.Context, cancel *types.OrderCancellation, party string, deterministicID string) (_ []*types.OrderCancellationConfirmation, returnedErr error) {
+	timer := metrics.NewTimeCounter(cancel.MarketID, "execution", "CancelOrder")
 	defer func() {
 		timer.EngineTimeCounterAdd()
 	}()
@@ -588,25 +588,25 @@ func (e *Engine) CancelOrder(ctx context.Context, cancel *types.OrderCancellatio
 	}
 
 	// ensure that if orderID is specified marketId is as well
-	if len(cancel.OrderId) > 0 && len(cancel.MarketId) <= 0 {
+	if len(cancel.OrderID) > 0 && len(cancel.MarketID) <= 0 {
 		return nil, ErrInvalidOrderCancellation
 	}
 
-	if len(cancel.MarketId) > 0 {
-		if len(cancel.OrderId) > 0 {
-			return e.cancelOrder(ctx, party, cancel.MarketId, cancel.OrderId, deterministicId)
+	if len(cancel.MarketID) > 0 {
+		if len(cancel.OrderID) > 0 {
+			return e.cancelOrder(ctx, party, cancel.MarketID, cancel.OrderID, deterministicID)
 		}
-		return e.cancelOrderByMarket(ctx, party, cancel.MarketId)
+		return e.cancelOrderByMarket(ctx, party, cancel.MarketID)
 	}
 	return e.cancelAllPartyOrders(ctx, party)
 }
 
-func (e *Engine) cancelOrder(ctx context.Context, party, market, orderID string, deterministicId string) ([]*types.OrderCancellationConfirmation, error) {
+func (e *Engine) cancelOrder(ctx context.Context, party, market, orderID string, deterministicID string) ([]*types.OrderCancellationConfirmation, error) {
 	mkt, ok := e.markets[market]
 	if !ok {
 		return nil, types.ErrInvalidMarketID
 	}
-	conf, err := mkt.CancelOrder(ctx, party, orderID, deterministicId)
+	conf, err := mkt.CancelOrder(ctx, party, orderID, deterministicID)
 	if err != nil {
 		return nil, err
 	}
@@ -628,7 +628,7 @@ func (e *Engine) cancelOrderByMarket(ctx context.Context, party, market string) 
 	var confirmed int
 	for _, conf := range confirmations {
 		if conf.Order.Status == types.OrderStatusCancelled {
-			confirmed += 1
+			confirmed++
 		}
 	}
 	metrics.OrderGaugeAdd(-confirmed, market)
@@ -647,7 +647,7 @@ func (e *Engine) cancelAllPartyOrders(ctx context.Context, party string) ([]*typ
 		var confirmed int
 		for _, conf := range confs {
 			if conf.Order.Status == types.OrderStatusCancelled {
-				confirmed += 1
+				confirmed++
 			}
 		}
 		metrics.OrderGaugeAdd(-confirmed, mkt.GetID())
@@ -658,7 +658,7 @@ func (e *Engine) cancelAllPartyOrders(ctx context.Context, party string) ([]*typ
 func (e *Engine) SubmitLiquidityProvision(
 	ctx context.Context,
 	sub *types.LiquidityProvisionSubmission,
-	party, deterministicId string,
+	party, deterministicID string,
 ) (returnedErr error) {
 	timer := metrics.NewTimeCounter(sub.MarketID, "execution", "LiquidityProvisionSubmission")
 	defer func() {
@@ -669,7 +669,7 @@ func (e *Engine) SubmitLiquidityProvision(
 		e.log.Debug("submit liquidity provision",
 			logging.LiquidityProvisionSubmission(*sub),
 			logging.PartyID(party),
-			logging.LiquidityID(deterministicId),
+			logging.LiquidityID(deterministicID),
 		)
 	}
 
@@ -678,11 +678,11 @@ func (e *Engine) SubmitLiquidityProvision(
 		return types.ErrInvalidMarketID
 	}
 
-	return mkt.SubmitLiquidityProvision(ctx, sub, party, deterministicId)
+	return mkt.SubmitLiquidityProvision(ctx, sub, party, deterministicID)
 }
 
 func (e *Engine) AmendLiquidityProvision(ctx context.Context, lpa *types.LiquidityProvisionAmendment, party string,
-	deterministicId string,
+	deterministicID string,
 ) (returnedErr error) {
 	timer := metrics.NewTimeCounter(lpa.MarketID, "execution", "LiquidityProvisionAmendment")
 	defer func() {
@@ -702,7 +702,7 @@ func (e *Engine) AmendLiquidityProvision(ctx context.Context, lpa *types.Liquidi
 		return types.ErrInvalidMarketID
 	}
 
-	return mkt.AmendLiquidityProvision(ctx, lpa, party, deterministicId)
+	return mkt.AmendLiquidityProvision(ctx, lpa, party, deterministicID)
 }
 
 func (e *Engine) CancelLiquidityProvision(ctx context.Context, cancel *types.LiquidityProvisionCancellation, party string) (returnedErr error) {

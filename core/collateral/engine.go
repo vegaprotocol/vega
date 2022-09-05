@@ -75,6 +75,7 @@ type Broker interface {
 }
 
 // TimeService provide the time of the vega node.
+//
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/core/collateral TimeService
 type TimeService interface {
 	GetTimeNow() time.Time

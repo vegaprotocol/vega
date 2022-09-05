@@ -50,9 +50,9 @@ const (
 
 var (
 	client                  *graphql.Client
-	integrationTestsEnabled *bool = flag.Bool("integration", false, "run integration tests")
-	blockWhenDone                 = flag.Bool("block", false, "leave services running after tests are complete")
-	writeGolden             *bool = flag.Bool("golden", false, "write query results to 'golden' files for comparison")
+	integrationTestsEnabled = flag.Bool("integration", false, "run integration tests")
+	blockWhenDone           = flag.Bool("block", false, "leave services running after tests are complete")
+	writeGolden             = flag.Bool("golden", false, "write query results to 'golden' files for comparison")
 	goldenDir               string
 )
 
@@ -126,32 +126,32 @@ func compareResponses(t *testing.T, oldResp, newResp interface{}) {
 		if a.Type != b.Type {
 			return a.Type < b.Type
 		}
-		if a.Asset.Id != b.Asset.Id {
-			return a.Asset.Id < b.Asset.Id
+		if a.Asset.ID != b.Asset.ID {
+			return a.Asset.ID < b.Asset.ID
 		}
-		if a.Market.Id != b.Market.Id {
-			return a.Market.Id < b.Market.Id
+		if a.Market.ID != b.Market.ID {
+			return a.Market.ID < b.Market.ID
 		}
 		return a.Balance < b.Balance
 	})
-	sortTrades := cmpopts.SortSlices(func(a Trade, b Trade) bool { return a.Id < b.Id })
-	sortMarkets := cmpopts.SortSlices(func(a Market, b Market) bool { return a.Id < b.Id })
-	sortProposals := cmpopts.SortSlices(func(a Proposal, b Proposal) bool { return a.Id < b.Id })
+	sortTrades := cmpopts.SortSlices(func(a Trade, b Trade) bool { return a.ID < b.ID })
+	sortMarkets := cmpopts.SortSlices(func(a Market, b Market) bool { return a.ID < b.ID })
+	sortProposals := cmpopts.SortSlices(func(a Proposal, b Proposal) bool { return a.ID < b.ID })
 	sortNetParams := cmpopts.SortSlices(func(a NetworkParameter, b NetworkParameter) bool { return a.Key < b.Key })
-	sortParties := cmpopts.SortSlices(func(a Party, b Party) bool { return a.Id < b.Id })
+	sortParties := cmpopts.SortSlices(func(a Party, b Party) bool { return a.ID < b.ID })
 	sortDeposits := cmpopts.SortSlices(func(a Deposit, b Deposit) bool { return a.ID < b.ID })
 	sortSpecs := cmpopts.SortSlices(func(a, b OracleSpec) bool { return a.ID < b.ID })
 	sortPositions := cmpopts.SortSlices(func(a, b Position) bool {
-		if a.Party.Id != b.Party.Id {
-			return a.Party.Id < b.Party.Id
+		if a.Party.ID != b.Party.ID {
+			return a.Party.ID < b.Party.ID
 		}
-		return a.Market.Id < b.Market.Id
+		return a.Market.ID < b.Market.ID
 	})
-	sortTransfers := cmpopts.SortSlices(func(a Transfer, b Transfer) bool { return a.Id < b.Id })
+	sortTransfers := cmpopts.SortSlices(func(a Transfer, b Transfer) bool { return a.ID < b.ID })
 	sortWithdrawals := cmpopts.SortSlices(func(a, b Withdrawal) bool { return a.ID < b.ID })
-	sortOrders := cmpopts.SortSlices(func(a, b Order) bool { return a.Id < b.Id })
-	sortNodes := cmpopts.SortSlices(func(a, b Node) bool { return a.Id < b.Id })
-	sortDelegations := cmpopts.SortSlices(func(a, b Delegation) bool { return a.Party.Id < b.Party.Id })
+	sortOrders := cmpopts.SortSlices(func(a, b Order) bool { return a.ID < b.ID })
+	sortNodes := cmpopts.SortSlices(func(a, b Node) bool { return a.ID < b.ID })
+	sortDelegations := cmpopts.SortSlices(func(a, b Delegation) bool { return a.Party.ID < b.Party.ID })
 
 	// The old API has nulls for the 'UpdatedAt' field in positions
 	ignorePositionTimestamps := cmpopts.IgnoreFields(Position{}, "UpdatedAt")
@@ -188,7 +188,7 @@ func removeDupVotes() cmp.Option {
 	return cmp.Transformer("DuplicateVotes", func(in []Vote) []Vote {
 		m := make(map[string]Vote)
 		for _, vote := range in {
-			m[fmt.Sprintf("%v-%v", vote.ProposalId, vote.Party.Id)] = vote
+			m[fmt.Sprintf("%v-%v", vote.ProposalID, vote.Party.ID)] = vote
 		}
 
 		keys := make([]string, len(m))
@@ -310,14 +310,14 @@ func waitForEpoch(client *graphql.Client, epoch int, timeout time.Duration) erro
 
 func getCurrentEpoch(client *graphql.Client) (int, error) {
 	req := graphql.NewRequest("{ epoch{id} }")
-	resp := struct{ Epoch struct{ Id string } }{}
+	resp := struct{ Epoch struct{ ID string } }{}
 
 	if err := client.Run(context.Background(), req, &resp); err != nil {
 		return 0, err
 	}
-	if resp.Epoch.Id == "" {
+	if resp.Epoch.ID == "" {
 		return 0, fmt.Errorf("Empty epoch id")
 	}
 
-	return strconv.Atoi(resp.Epoch.Id)
+	return strconv.Atoi(resp.Epoch.ID)
 }

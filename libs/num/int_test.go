@@ -38,7 +38,7 @@ func TestInt256Constructors(t *testing.T) {
 	assert.Equal(t, false, n.IsZero())
 
 	// Zero
-	var value3 int64 = 0
+	var value3 int64
 	n = num.NewInt(value3)
 	assert.Equal(t, uint64(value3), n.U.Uint64())
 	assert.Equal(t, false, n.IsPositive())

@@ -110,7 +110,7 @@ func (s *Server) Start() {
 
 	logger.Info("Starting Server<>RPC based API",
 		logging.String("socket-path", s.cfg.Server.SocketPath),
-		logging.String("http-path", s.cfg.Server.HttpPath))
+		logging.String("http-path", s.cfg.Server.HTTPPath))
 
 	rs := rpc.NewServer()
 	rs.RegisterCodec(json.NewCodec(), "application/json")
@@ -126,7 +126,7 @@ func (s *Server) Start() {
 	}
 
 	r := mux.NewRouter()
-	r.Handle(s.cfg.Server.HttpPath, rs)
+	r.Handle(s.cfg.Server.HTTPPath, rs)
 
 	// Try to remove just in case
 	os.Remove(s.cfg.Server.SocketPath)

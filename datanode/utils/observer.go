@@ -29,7 +29,7 @@ type subscriber[T any] struct {
 
 type Observer[T any] struct {
 	subCount    int32
-	lastSubId   uint64
+	lastSubID   uint64
 	name        string
 	log         *logging.Logger
 	subscribers map[uint64]subscriber[T]
@@ -53,12 +53,12 @@ func (o *Observer[T]) Subscribe(ctx context.Context, filter func(T) bool) (chan 
 	defer o.mut.Unlock()
 
 	ch := make(chan []T, o.inChSize)
-	o.lastSubId++
-	o.subscribers[o.lastSubId] = subscriber[T]{ch}
+	o.lastSubID++
+	o.subscribers[o.lastSubID] = subscriber[T]{ch}
 
 	ip, _ := contextutil.RemoteIPAddrFromContext(ctx)
-	o.logDebug(ip, o.lastSubId, "new subscription")
-	return ch, o.lastSubId
+	o.logDebug(ip, o.lastSubID, "new subscription")
+	return ch, o.lastSubID
 }
 
 func (o *Observer[T]) Unsubscribe(ctx context.Context, ref uint64) error {

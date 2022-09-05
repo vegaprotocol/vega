@@ -141,6 +141,7 @@ type TargetStakeCalculator interface {
 	UpdateParameters(types.TargetStakeParameters)
 }
 
+//nolint:interfacebloat
 type MarketCollateral interface {
 	Deposit(ctx context.Context, party, asset string, amount *num.Uint) (*types.TransferResponse, error)
 	Withdraw(ctx context.Context, party, asset string, amount *num.Uint) (*types.TransferResponse, error)
@@ -170,6 +171,8 @@ type MarketCollateral interface {
 }
 
 // AuctionState ...
+//
+//nolint:interfacebloat
 type AuctionState interface {
 	price.AuctionState
 	lmon.AuctionState
@@ -1015,14 +1018,14 @@ func (m *Market) OnOpeningAuctionFirstUncrossingPrice() {
 	m.log.Info("OnOpeningAuctionFirstUncrossingPrice event fired", logging.String("market", m.mkt.ID))
 	asset, _ := m.mkt.GetAsset()
 	m.stateVarEngine.ReadyForTimeTrigger(asset, m.mkt.ID)
-	m.stateVarEngine.NewEvent(asset, m.mkt.ID, statevar.StateVarEventTypeOpeningAuctionFirstUncrossingPrice)
+	m.stateVarEngine.NewEvent(asset, m.mkt.ID, statevar.EventTypeOpeningAuctionFirstUncrossingPrice)
 }
 
 // OnAuctionEnded is called whenever an auction is ended and emits an event to the state var engine.
 func (m *Market) OnAuctionEnded() {
 	m.log.Info("OnAuctionEnded event fired", logging.String("market", m.mkt.ID))
 	asset, _ := m.mkt.GetAsset()
-	m.stateVarEngine.NewEvent(asset, m.mkt.ID, statevar.StateVarEventTypeAuctionEnded)
+	m.stateVarEngine.NewEvent(asset, m.mkt.ID, statevar.EventTypeAuctionEnded)
 }
 
 // leaveAuction : Return the orderbook and market to continuous trading.
@@ -1303,9 +1306,9 @@ func (m *Market) SubmitOrder(
 	ctx context.Context,
 	orderSubmission *types.OrderSubmission,
 	party string,
-	deterministicId string,
+	deterministicID string,
 ) (oc *types.OrderConfirmation, _ error) {
-	m.idgen = idgeneration.New(deterministicId)
+	m.idgen = idgeneration.New(deterministicID)
 	defer func() { m.idgen = nil }()
 
 	order := orderSubmission.IntoOrder(party)
@@ -1392,14 +1395,13 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 			// Maybe should return an orderConfirmation with order state PARKED
 			m.broker.Send(events.NewOrderEvent(ctx, order))
 			return &types.OrderConfirmation{Order: order}, nil, nil
-		} else {
-			// Reprice
-			err := m.repricePeggedOrder(order)
-			if err != nil {
-				m.peggedOrders.Park(order)
-				m.broker.Send(events.NewOrderEvent(ctx, order))
-				return &types.OrderConfirmation{Order: order}, nil, nil // nolint
-			}
+		}
+		// Reprice
+		err := m.repricePeggedOrder(order)
+		if err != nil {
+			m.peggedOrders.Park(order)
+			m.broker.Send(events.NewOrderEvent(ctx, order))
+			return &types.OrderConfirmation{Order: order}, nil, nil // nolint
 		}
 	}
 
@@ -2327,8 +2329,8 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 	return cancellations, nil
 }
 
-func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string, deterministicId string) (oc *types.OrderCancellationConfirmation, _ error) {
-	m.idgen = idgeneration.New(deterministicId)
+func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string, deterministicID string) (oc *types.OrderCancellationConfirmation, _ error) {
+	m.idgen = idgeneration.New(deterministicID)
 	defer func() { m.idgen = nil }()
 
 	if !m.canTrade() {
@@ -2431,9 +2433,9 @@ func (m *Market) parkOrder(ctx context.Context, orderID string) *types.Order {
 
 // AmendOrder amend an existing order from the order book.
 func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmendment, party string,
-	deterministicId string) (oc *types.OrderConfirmation, _ error,
+	deterministicID string) (oc *types.OrderConfirmation, _ error,
 ) {
-	m.idgen = idgeneration.New(deterministicId)
+	m.idgen = idgeneration.New(deterministicID)
 	defer func() { m.idgen = nil }()
 
 	if !m.canTrade() {
@@ -2536,9 +2538,9 @@ func (m *Market) amendOrder(
 
 	// If we have a pegged order that is no longer expiring, we need to remove it
 	var (
-		needToRemoveExpiry       = false
-		needToAddExpiry          = false
-		expiresAt          int64 = 0
+		needToRemoveExpiry = false
+		needToAddExpiry    = false
+		expiresAt          int64
 	)
 	defer func() {
 		// no errors, amend most likely happened properly
@@ -2648,21 +2650,20 @@ func (m *Market) amendOrder(
 			ret := m.orderAmendWhenParked(existingOrder, amendedOrder)
 			m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
 			return ret, nil, nil
-		} else {
-			// We got a new valid price, if we are parked we need to unpark
-			if amendedOrder.Status == types.OrderStatusParked {
-				// we were parked, need to unpark
-				m.peggedOrders.Unpark(amendedOrder.ID)
-				orderConf, orderUpdts, err := m.submitValidatedOrder(ctx, amendedOrder)
-				if err != nil {
-					// If we cannot submit a new order then the amend has failed, return the error
-					return nil, orderUpdts, err
-				}
-				// Update pegged order with new amended version
-				// FIXME: THIS SHOULD BE UNCESSARY
-				// m.peggedOrders.Amend(amendedOrder)
-				return orderConf, orderUpdts, err
+		}
+		// We got a new valid price, if we are parked we need to unpark
+		if amendedOrder.Status == types.OrderStatusParked {
+			// we were parked, need to unpark
+			m.peggedOrders.Unpark(amendedOrder.ID)
+			orderConf, orderUpdts, err := m.submitValidatedOrder(ctx, amendedOrder)
+			if err != nil {
+				// If we cannot submit a new order then the amend has failed, return the error
+				return nil, orderUpdts, err
 			}
+			// Update pegged order with new amended version
+			// FIXME: THIS SHOULD BE UNCESSARY
+			// m.peggedOrders.Amend(amendedOrder)
+			return orderConf, orderUpdts, err
 		}
 	}
 
@@ -2808,7 +2809,7 @@ func (m *Market) applyOrderAmendment(
 ) (order *types.Order, err error) {
 	order = existingOrder.Clone()
 	order.UpdatedAt = m.timeService.GetTimeNow().UnixNano()
-	order.Version += 1
+	order.Version++
 
 	if existingOrder.PeggedOrder != nil {
 		order.PeggedOrder = &types.PeggedOrder{
