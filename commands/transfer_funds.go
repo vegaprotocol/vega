@@ -76,6 +76,13 @@ func checkTransfer(cmd *commandspb.Transfer) Errors {
 			if k.OneOff.GetDeliverOn() < 0 {
 				errs.AddForProperty("transfer.kind.deliver_on", ErrMustBePositiveOrZero)
 			}
+			// do not allow for one off transfer to one of the metric based accounts
+			if cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES ||
+				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES ||
+				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES ||
+				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS {
+				errs.AddForProperty("transfer.account.to", errors.New("is not for the transfer type"))
+			}
 		case *commandspb.Transfer_Recurring:
 			if k.Recurring.EndEpoch != nil && *k.Recurring.EndEpoch <= 0 {
 				errs.AddForProperty("transfer.kind.end_epoch", ErrMustBePositive)
