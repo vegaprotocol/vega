@@ -1,13 +1,15 @@
 package cmd
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"io"
 
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
-	"code.vegaprotocol.io/vega/wallet/wallet"
+	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
 	"github.com/spf13/cobra"
@@ -35,16 +37,21 @@ var (
 	`)
 )
 
-type IsolateKeyHandler func(*wallet.IsolateKeyRequest) (*wallet.IsolateKeyResponse, error)
+type IsolateKeyHandler func(api.AdminIsolateKeyParams) (api.AdminIsolateKeyResult, error)
 
 func NewCmdIsolateKey(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(req *wallet.IsolateKeyRequest) (*wallet.IsolateKeyResponse, error) {
+	h := func(params api.AdminIsolateKeyParams) (api.AdminIsolateKeyResult, error) {
 		s, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
-			return nil, fmt.Errorf("couldn't initialise wallets store: %w", err)
+			return api.AdminIsolateKeyResult{}, fmt.Errorf("could not initialise wallets store: %w", err)
 		}
 
-		return wallet.IsolateKey(s, req)
+		isolateKey := api.NewAdminIsolateKey(s)
+		rawResult, errDetails := isolateKey.Handle(context.Background(), params)
+		if errDetails != nil {
+			return api.AdminIsolateKeyResult{}, errors.New(errDetails.Data)
+		}
+		return rawResult.(api.AdminIsolateKeyResult), nil
 	}
 
 	return BuildCmdIsolateKey(w, h, rf)
@@ -107,29 +114,28 @@ type IsolateKeyFlags struct {
 	PassphraseFile string
 }
 
-func (f *IsolateKeyFlags) Validate() (*wallet.IsolateKeyRequest, error) {
-	req := &wallet.IsolateKeyRequest{}
-
+func (f *IsolateKeyFlags) Validate() (api.AdminIsolateKeyParams, error) {
 	if len(f.Wallet) == 0 {
-		return nil, flags.MustBeSpecifiedError("wallet")
+		return api.AdminIsolateKeyParams{}, flags.MustBeSpecifiedError("wallet")
 	}
-	req.Wallet = f.Wallet
 
 	if len(f.PubKey) == 0 {
-		return nil, flags.MustBeSpecifiedError("pubkey")
+		return api.AdminIsolateKeyParams{}, flags.MustBeSpecifiedError("pubkey")
 	}
-	req.PubKey = f.PubKey
 
 	passphrase, err := flags.GetPassphrase(f.PassphraseFile)
 	if err != nil {
-		return nil, err
+		return api.AdminIsolateKeyParams{}, err
 	}
-	req.Passphrase = passphrase
 
-	return req, nil
+	return api.AdminIsolateKeyParams{
+		Wallet:     f.Wallet,
+		PublicKey:  f.PubKey,
+		Passphrase: passphrase,
+	}, nil
 }
 
-func PrintIsolateKeyResponse(w io.Writer, resp *wallet.IsolateKeyResponse) {
+func PrintIsolateKeyResponse(w io.Writer, resp api.AdminIsolateKeyResult) {
 	p := printer.NewInteractivePrinter(w)
 
 	str := p.String()

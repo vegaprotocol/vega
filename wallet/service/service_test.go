@@ -360,8 +360,8 @@ func testServiceGenKeypairOK(t *testing.T) {
 			Name:    ed25519.Name(),
 			Version: ed25519.Version(),
 		},
-		Tainted:  false,
-		MetaList: nil,
+		Tainted:      false,
+		MetadataList: nil,
 	}
 	walletName := vgrand.RandomStr(5)
 	passphrase := vgrand.RandomStr(5)
@@ -483,8 +483,8 @@ func testServiceGetPublicKeyOK(t *testing.T) {
 			Name:    "some/algo",
 			Version: 1,
 		},
-		Tainted:  false,
-		MetaList: []wallet.Meta{{Key: "a", Value: "b"}},
+		Tainted:      false,
+		MetadataList: []wallet.Metadata{{Key: "a", Value: "b"}},
 	}
 	headers := authHeaders(t, token)
 
@@ -646,7 +646,7 @@ func testServiceUpdateMetaOK(t *testing.T) {
 
 	// setup
 	s.auth.EXPECT().VerifyToken(token).Times(1).Return(walletName, nil)
-	s.handler.EXPECT().UpdateMeta(walletName, pubKey, passphrase, []wallet.Meta{{
+	s.handler.EXPECT().UpdateMeta(walletName, pubKey, passphrase, []wallet.Metadata{{
 		Key:   "role",
 		Value: metaRole,
 	}}).Times(1).Return(nil)

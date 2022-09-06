@@ -53,7 +53,7 @@ func TestListKeys(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	AssertGenerateKey(t, generateKeyResp).
-		WithMeta(map[string]string{"name": DefaultMetaName(t, walletName, 2)})
+		WithMetadata(map[string]string{"name": "Key 2"})
 
 	// when
 	listKeysResp2, err := KeyList(t, []string{

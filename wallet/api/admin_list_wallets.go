@@ -7,30 +7,30 @@ import (
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 )
 
-type ListWalletsResult struct {
+type AdminListWalletsResult struct {
 	Wallets []string `json:"wallets"`
 }
 
-type ListWallets struct {
+type AdminListWallets struct {
 	walletStore WalletStore
 }
 
 // Handle list all the wallets present on the computer.
-func (h *ListWallets) Handle(ctx context.Context, _ jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminListWallets) Handle(ctx context.Context, _ jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	wallets, err := h.walletStore.ListWallets(ctx)
 	if err != nil {
 		return nil, internalError(fmt.Errorf("could not list the wallets: %w", err))
 	}
 
-	return ListWalletsResult{
+	return AdminListWalletsResult{
 		Wallets: wallets,
 	}, nil
 }
 
-func NewListWallets(
+func NewAdminListWallets(
 	walletStore WalletStore,
-) *ListWallets {
-	return &ListWallets{
+) *AdminListWallets {
+	return &AdminListWallets{
 		walletStore: walletStore,
 	}
 }

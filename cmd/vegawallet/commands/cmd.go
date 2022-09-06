@@ -86,12 +86,12 @@ func autoCompleteWallet(cmd *cobra.Command, vegaHome string) {
 			return nil, cobra.ShellCompDirectiveDefault
 		}
 
-		listWallet := api.NewListWallets(s)
+		listWallet := api.NewAdminListWallets(s)
 		rawResult, errorDetails := listWallet.Handle(context.Background(), nil)
 		if errorDetails != nil {
 			return nil, cobra.ShellCompDirectiveDefault
 		}
-		return rawResult.(api.ListWalletsResult).Wallets, cobra.ShellCompDirectiveDefault
+		return rawResult.(api.AdminListWalletsResult).Wallets, cobra.ShellCompDirectiveDefault
 	})
 	if err != nil {
 		panic(err)

@@ -221,7 +221,7 @@ func newHDWalletWithKeys(t *testing.T) *wallet.HDWallet {
 		t.Fatalf("couldn't create wallet: %v", err)
 	}
 
-	_, err = w.GenerateKeyPair([]wallet.Meta{})
+	_, err = w.GenerateKeyPair([]wallet.Metadata{})
 	if err != nil {
 		t.Fatalf("couldn't generate key: %v", err)
 	}

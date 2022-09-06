@@ -235,7 +235,6 @@ func isSupportedPermissions(perm string) bool {
 var supportedAccessMode = []string{
 	wallet.AccessModeToString(wallet.NoAccess),
 	wallet.AccessModeToString(wallet.ReadAccess),
-	wallet.AccessModeToString(wallet.WriteAccess),
 }
 
 func isSupportedAccessMode(mode string) bool {
