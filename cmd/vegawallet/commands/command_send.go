@@ -299,6 +299,10 @@ func SendCommand(w io.Writer, f *SendCommandFlags, rf *RootFlags, req *SendComma
 		return fmt.Errorf("couldn't get last block height: %w", err)
 	}
 
+	if blockData.ChainId == "" {
+		return fmt.Errorf("network does not have a chainid")
+	}
+
 	log.Info(fmt.Sprintf("last block height found: %d", blockData.Height))
 
 	tx, err := handler.SignTx(req.Wallet, req.Request, blockData.Height, blockData.ChainId)

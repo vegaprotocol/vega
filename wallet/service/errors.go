@@ -12,6 +12,7 @@ var (
 	ErrInvalidOrMissingToken     = newErrorResponse("invalid or missing token")
 	ErrCouldNotReadRequest       = errors.New("couldn't read request")
 	ErrCouldNotGetBlockHeight    = errors.New("couldn't get last block height")
+	ErrCouldNotGetChainID        = errors.New("couldn't get chain-id")
 	ErrShouldBeBase64Encoded     = errors.New("should be base64 encoded")
 	ErrRSAKeysAlreadyExists      = errors.New("RSA keys already exist")
 	ErrRejectedSignRequest       = errors.New("user rejected sign request")
