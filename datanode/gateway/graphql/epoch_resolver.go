@@ -16,6 +16,11 @@ import (
 	"context"
 	"strconv"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
+
+	"code.vegaprotocol.io/vega/datanode/gateway"
+	"code.vegaprotocol.io/vega/logging"
 	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	proto "code.vegaprotocol.io/vega/protos/vega"
@@ -23,7 +28,7 @@ import (
 
 type epochResolver VegaResolverRoot
 
-func (r *epochResolver) ID(ctx context.Context, obj *proto.Epoch) (string, error) {
+func (r *epochResolver) ID(_ context.Context, obj *proto.Epoch) (string, error) {
 	id := strconv.FormatUint(obj.Seq, 10)
 
 	return id, nil
@@ -32,7 +37,7 @@ func (r *epochResolver) ID(ctx context.Context, obj *proto.Epoch) (string, error
 // Deprecated: Use DelegationsConnection instead.
 func (r *epochResolver) Delegations(
 	ctx context.Context,
-	obj *proto.Epoch,
+	_ *proto.Epoch,
 	partyID *string,
 	nodeID *string,
 	skip, first, last *int,
@@ -48,10 +53,14 @@ func (r *epochResolver) Delegations(
 	if nodeID != nil && *nodeID != "" {
 		req.NodeId = *nodeID
 	}
-
-	resp, err := r.tradingDataClient.Delegations(ctx, req)
+	header := metadata.MD{}
+	resp, err := r.tradingDataClient.Delegations(ctx, req, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return resp.Delegations, nil
@@ -62,16 +71,20 @@ func (r *epochResolver) ValidatorsConnection(ctx context.Context, epoch *proto.E
 	if epoch != nil {
 		epochSeq = &epoch.Seq
 	}
-
+	header := metadata.MD{}
 	resp, err := r.tradingDataClientV2.ListNodes(ctx, &v2.ListNodesRequest{
 		EpochSeq:   epochSeq,
 		Pagination: pagination,
-	})
+	}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
 	}
 
-	return resp.Nodes, err
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
+	return resp.Nodes, nil
 }
 
 func (r *epochResolver) DelegationsConnection(ctx context.Context, epoch *proto.Epoch, partyID *string, nodeID *string, pagination *v2.Pagination) (*v2.DelegationsConnection, error) {
@@ -82,5 +95,5 @@ func (r *epochResolver) DelegationsConnection(ctx context.Context, epoch *proto.
 		epochID = &seq
 	}
 
-	return handleDelegationConnectionRequest(ctx, r.tradingDataClientV2, partyID, nodeID, epochID, pagination)
+	return handleDelegationConnectionRequest(ctx, r.tradingDataClientV2, partyID, nodeID, epochID, pagination, r.log)
 }

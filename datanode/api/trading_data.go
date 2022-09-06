@@ -28,13 +28,14 @@ import (
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
+	"google.golang.org/grpc/codes"
+
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	"code.vegaprotocol.io/vega/protos/vega"
 	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
-	"google.golang.org/grpc/codes"
 )
 
 type tradingDataService struct {
@@ -58,7 +59,7 @@ type tradingDataService struct {
 	riskFactorService         *service.RiskFactor
 	riskService               *service.Risk
 	networkParameterService   *service.NetworkParameter
-	blockService              *service.Block
+	blockService              BlockService
 	checkpointService         *service.Checkpoint
 	partyService              *service.Party
 	candleService             *candlesv2.Svc
@@ -373,7 +374,7 @@ func (t *tradingDataService) Transfers(ctx context.Context, req *protoapi.Transf
 
 /****************************** Network Parameters **************************************/
 
-func (t *tradingDataService) NetworkParameters(ctx context.Context, req *protoapi.NetworkParametersRequest) (*protoapi.NetworkParametersResponse, error) {
+func (t *tradingDataService) NetworkParameters(ctx context.Context, _ *protoapi.NetworkParametersRequest) (*protoapi.NetworkParametersResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("NetworkParameters SQL")()
 	nps, _, err := t.networkParameterService.GetAll(ctx, entities.CursorPagination{})
 	if err != nil {
@@ -2130,7 +2131,7 @@ func (t *tradingDataService) PartyStake(ctx context.Context, req *protoapi.Party
 	}, nil
 }
 
-func (t *tradingDataService) GetKeyRotations(ctx context.Context, req *protoapi.GetKeyRotationsRequest) (*protoapi.GetKeyRotationsResponse, error) {
+func (t *tradingDataService) GetKeyRotations(ctx context.Context, _ *protoapi.GetKeyRotationsRequest) (*protoapi.GetKeyRotationsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetKeyRotations")()
 
 	rotations, _, err := t.keyRotationService.GetAllPubKeyRotations(ctx, entities.CursorPagination{})
@@ -2170,7 +2171,7 @@ func (t *tradingDataService) GetKeyRotationsByNode(ctx context.Context, req *pro
 	}, nil
 }
 
-func (t *tradingDataService) GetNodeData(ctx context.Context, req *protoapi.GetNodeDataRequest) (*protoapi.GetNodeDataResponse, error) {
+func (t *tradingDataService) GetNodeData(ctx context.Context, _ *protoapi.GetNodeDataRequest) (*protoapi.GetNodeDataResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetNodeData")()
 
 	nodeData, err := t.nodeService.GetNodeData(ctx)
@@ -2183,7 +2184,7 @@ func (t *tradingDataService) GetNodeData(ctx context.Context, req *protoapi.GetN
 	}, nil
 }
 
-func (t *tradingDataService) GetNodes(ctx context.Context, req *protoapi.GetNodesRequest) (*protoapi.GetNodesResponse, error) {
+func (t *tradingDataService) GetNodes(ctx context.Context, _ *protoapi.GetNodesRequest) (*protoapi.GetNodesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetNodes")()
 
 	epoch, err := t.epochService.GetCurrent(ctx)

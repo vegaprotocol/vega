@@ -15,13 +15,24 @@ package gql
 import (
 	"context"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
+
+	"code.vegaprotocol.io/vega/datanode/gateway"
+	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type myAssetResolver VegaResolverRoot
 
-func listAssetAccounts(ctx context.Context, client TradingDataServiceClientV2, asset *types.Asset, accountType types.AccountType) (*types.Account, error) {
+func listAssetAccounts(
+	ctx context.Context,
+	client TradingDataServiceClientV2,
+	asset *types.Asset,
+	accountType types.AccountType,
+	log *logging.Logger,
+) (*types.Account, error) {
 	if asset == nil || len(asset.Id) <= 0 {
 		return nil, ErrMissingIDOrReference
 	}
@@ -32,10 +43,14 @@ func listAssetAccounts(ctx context.Context, client TradingDataServiceClientV2, a
 			AccountTypes: []types.AccountType{accountType},
 		},
 	}
-
-	res, err := client.ListAccounts(ctx, req)
+	header := metadata.MD{}
+	res, err := client.ListAccounts(ctx, req, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		log.Errorf("could not add headers to context: %s", err)
 	}
 
 	var acc *types.Account
@@ -47,46 +62,46 @@ func listAssetAccounts(ctx context.Context, client TradingDataServiceClientV2, a
 }
 
 func (r *myAssetResolver) InfrastructureFeeAccount(ctx context.Context, asset *types.Asset) (*types.Account, error) {
-	return listAssetAccounts(ctx, r.tradingDataClientV2, asset, types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE)
+	return listAssetAccounts(ctx, r.tradingDataClientV2, asset, types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE, r.log)
 }
 
 func (r *myAssetResolver) GlobalRewardPoolAccount(ctx context.Context, asset *types.Asset) (*types.Account, error) {
-	return listAssetAccounts(ctx, r.tradingDataClientV2, asset, types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD)
+	return listAssetAccounts(ctx, r.tradingDataClientV2, asset, types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD, r.log)
 }
 
 func (r *myAssetResolver) TakerFeeRewardAccount(ctx context.Context, asset *types.Asset) (*types.Account, error) {
-	return listAssetAccounts(ctx, r.tradingDataClientV2, asset, types.AccountType_ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES)
+	return listAssetAccounts(ctx, r.tradingDataClientV2, asset, types.AccountType_ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES, r.log)
 }
 
 func (r *myAssetResolver) MakerFeeRewardAccount(ctx context.Context, asset *types.Asset) (*types.Account, error) {
-	return listAssetAccounts(ctx, r.tradingDataClientV2, asset, types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES)
+	return listAssetAccounts(ctx, r.tradingDataClientV2, asset, types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES, r.log)
 }
 
 func (r *myAssetResolver) LpFeeRewardAccount(ctx context.Context, asset *types.Asset) (*types.Account, error) {
-	return listAssetAccounts(ctx, r.tradingDataClientV2, asset, types.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES)
+	return listAssetAccounts(ctx, r.tradingDataClientV2, asset, types.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES, r.log)
 }
 
 func (r *myAssetResolver) MarketProposerRewardAccount(ctx context.Context, asset *types.Asset) (*types.Account, error) {
-	return listAssetAccounts(ctx, r.tradingDataClientV2, asset, types.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS)
+	return listAssetAccounts(ctx, r.tradingDataClientV2, asset, types.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS, r.log)
 }
 
-func (r myAssetResolver) Name(ctx context.Context, obj *types.Asset) (string, error) {
+func (r myAssetResolver) Name(_ context.Context, obj *types.Asset) (string, error) {
 	return obj.Details.Name, nil
 }
 
-func (r myAssetResolver) Symbol(ctx context.Context, obj *types.Asset) (string, error) {
+func (r myAssetResolver) Symbol(_ context.Context, obj *types.Asset) (string, error) {
 	return obj.Details.Symbol, nil
 }
 
-func (r *myAssetResolver) Decimals(ctx context.Context, obj *types.Asset) (int, error) {
+func (r *myAssetResolver) Decimals(_ context.Context, obj *types.Asset) (int, error) {
 	return int(obj.Details.Decimals), nil
 }
 
-func (r *myAssetResolver) Quantum(ctx context.Context, obj *types.Asset) (string, error) {
+func (r *myAssetResolver) Quantum(_ context.Context, obj *types.Asset) (string, error) {
 	return obj.Details.Quantum, nil
 }
 
-func (r *myAssetResolver) Source(ctx context.Context, obj *types.Asset) (AssetSource, error) {
+func (r *myAssetResolver) Source(_ context.Context, obj *types.Asset) (AssetSource, error) {
 	return AssetSourceFromProto(obj.Details)
 }
 

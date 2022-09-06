@@ -20,15 +20,19 @@ import (
 	"strconv"
 	"time"
 
+	"google.golang.org/grpc/connectivity"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
+	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/service"
 	"code.vegaprotocol.io/vega/datanode/subscribers"
 
-	"code.vegaprotocol.io/vega/datanode/contextutil"
-	"code.vegaprotocol.io/vega/logging"
 	"github.com/fullstorydev/grpcui/standalone"
 	"golang.org/x/sync/errgroup"
+
+	"code.vegaprotocol.io/vega/datanode/contextutil"
+	"code.vegaprotocol.io/vega/logging"
 
 	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	protoapi2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
@@ -46,6 +50,13 @@ import (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/event_service_mock.go -package mocks code.vegaprotocol.io/vega/datanode/api EventService
 type EventService interface {
 	ObserveEvents(ctx context.Context, retries int, eTypes []events.Type, batchSize int, filters ...subscribers.EventFilter) (<-chan []*eventspb.BusEvent, chan<- int)
+}
+
+// BlockService ...
+//
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/block_service_mock.go -package mocks code.vegaprotocol.io/vega/datanode/api BlockService
+type BlockService interface {
+	GetLastBlock(ctx context.Context) (entities.Block, error)
 }
 
 // GRPCServer represent the grpc api provided by the vega node.
@@ -75,7 +86,7 @@ type GRPCServer struct {
 	riskFactorService          *service.RiskFactor
 	riskService                *service.Risk
 	networkParameterService    *service.NetworkParameter
-	blockService               *service.Block
+	blockService               BlockService
 	partyService               *service.Party
 	checkpointService          *service.Checkpoint
 	oracleSpecService          *service.OracleSpec
@@ -121,7 +132,7 @@ func NewGRPCServer(
 	riskFactorService *service.RiskFactor,
 	riskService *service.Risk,
 	networkParameterService *service.NetworkParameter,
-	blockService *service.Block,
+	blockService BlockService,
 	checkpointService *service.Checkpoint,
 	partyService *service.Party,
 	candleService *candlesv2.Svc,
@@ -256,6 +267,59 @@ func remoteAddrInterceptor(log *logging.Logger) grpc.UnaryServerInterceptor {
 	}
 }
 
+func headersInterceptor(
+	getState func() connectivity.State,
+	getLastBlock func(context.Context) (entities.Block, error),
+	log *logging.Logger,
+) grpc.UnaryServerInterceptor {
+	return func(
+		ctx context.Context,
+		req interface{},
+		info *grpc.UnaryServerInfo,
+		handler grpc.UnaryHandler,
+	) (resp interface{}, err error) {
+		var (
+			height    int64
+			timestamp int64
+		)
+
+		block, bErr := getLastBlock(ctx)
+		if bErr != nil {
+			log.Error("failed to get last block", logging.Error(bErr))
+		} else {
+			height = block.Height
+			timestamp = block.VegaTime.Unix()
+		}
+
+		state := getState()
+
+		connState := "DISCONNECTED"
+		if state == connectivity.Ready {
+			connState = "CONNECTED"
+		}
+
+		for _, h := range []metadata.MD{
+			metadata.Pairs("X-Connection-State", connState),
+			metadata.Pairs("X-Block-Height", strconv.FormatInt(height, 10)),
+			metadata.Pairs("X-Block-Timestamp", strconv.FormatInt(timestamp, 10)),
+		} {
+			if errH := grpc.SetHeader(ctx, h); errH != nil {
+				log.Error("failed to set header", logging.Error(errH))
+			}
+		}
+
+		// Calls the handler
+		resp, err = handler(ctx, req)
+
+		log.Debug("Invoked RPC call",
+			logging.String("method", info.FullMethod),
+			logging.Error(err),
+		)
+
+		return
+	}
+}
+
 func (g *GRPCServer) getTCPListener() (net.Listener, error) {
 	ip := g.IP
 	port := strconv.Itoa(g.Port)
@@ -282,7 +346,11 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		lis = tpcLis
 	}
 
-	intercept := grpc.UnaryInterceptor(remoteAddrInterceptor(g.log))
+	intercept := grpc.ChainUnaryInterceptor(
+		remoteAddrInterceptor(g.log),
+		headersInterceptor(g.vegaCoreServiceClient.GetState, g.blockService.GetLastBlock, g.log),
+	)
+
 	g.srv = grpc.NewServer(intercept)
 
 	coreProxySvc := &coreProxyService{

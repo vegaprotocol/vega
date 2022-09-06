@@ -15,6 +15,11 @@ package gql
 import (
 	"context"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
+
+	"code.vegaprotocol.io/vega/datanode/gateway"
+	"code.vegaprotocol.io/vega/logging"
 	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	proto "code.vegaprotocol.io/vega/protos/vega"
@@ -38,20 +43,18 @@ func (r *nodeResolver) Delegations(
 		req.Party = *partyID
 	}
 
-	resp, err := r.tradingDataClient.Delegations(ctx, req)
+	header := metadata.MD{}
+
+	resp, err := r.tradingDataClient.Delegations(ctx, req, grpc.Header(&header))
 	if err != nil {
 		return nil, err
 	}
 
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add metadata headers to context", logging.Error(err))
+	}
+
 	return resp.Delegations, nil
-}
-
-func (r *nodeResolver) RankingScore(ctx context.Context, obj *proto.Node) (proto.RankingScore, error) {
-	return *obj.RankingScore, nil
-}
-
-func (r *nodeResolver) RewardScore(ctx context.Context, obj *proto.Node) (proto.RewardScore, error) {
-	return *obj.RewardScore, nil
 }
 
 func (r *nodeResolver) DelegationsConnection(ctx context.Context, node *proto.Node, partyID *string, pagination *v2.Pagination) (*v2.DelegationsConnection, error) {
@@ -59,5 +62,5 @@ func (r *nodeResolver) DelegationsConnection(ctx context.Context, node *proto.No
 	if node == nil {
 		nodeID = &node.Id
 	}
-	return handleDelegationConnectionRequest(ctx, r.tradingDataClientV2, partyID, nodeID, nil, pagination)
+	return handleDelegationConnectionRequest(ctx, r.tradingDataClientV2, partyID, nodeID, nil, pagination, r.log)
 }

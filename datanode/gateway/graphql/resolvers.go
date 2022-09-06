@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	"code.vegaprotocol.io/vega/datanode/vegatime"
@@ -343,7 +344,7 @@ func (r *VegaResolverRoot) TradeUpdate() TradeUpdateResolver {
 
 type accountUpdateResolver VegaResolverRoot
 
-func (r *accountUpdateResolver) AssetID(ctx context.Context, obj *types.Account) (string, error) {
+func (r *accountUpdateResolver) AssetID(_ context.Context, obj *types.Account) (string, error) {
 	return obj.Asset, nil
 }
 
@@ -366,21 +367,21 @@ func (r *myDepositResolver) Asset(ctx context.Context, obj *types.Deposit) (*typ
 	return r.r.getAssetByID(ctx, obj.Asset)
 }
 
-func (r *myDepositResolver) Party(ctx context.Context, obj *types.Deposit) (*types.Party, error) {
+func (r *myDepositResolver) Party(_ context.Context, obj *types.Deposit) (*types.Party, error) {
 	if len(obj.PartyId) <= 0 {
 		return nil, errors.New("missing party ID")
 	}
 	return &types.Party{Id: obj.PartyId}, nil
 }
 
-func (r *myDepositResolver) CreatedTimestamp(ctx context.Context, obj *types.Deposit) (string, error) {
+func (r *myDepositResolver) CreatedTimestamp(_ context.Context, obj *types.Deposit) (string, error) {
 	if obj.CreatedTimestamp == 0 {
 		return "", errors.New("invalid timestamp")
 	}
 	return vegatime.Format(vegatime.UnixNano(obj.CreatedTimestamp)), nil
 }
 
-func (r *myDepositResolver) CreditedTimestamp(ctx context.Context, obj *types.Deposit) (*string, error) {
+func (r *myDepositResolver) CreditedTimestamp(_ context.Context, obj *types.Deposit) (*string, error) {
 	if obj.CreditedTimestamp == 0 {
 		return nil, nil
 	}
@@ -407,13 +408,18 @@ func (r *myQueryResolver) Transfers(
 		to = *isTo
 	}
 
+	header := metadata.MD{}
 	response, err := r.tradingDataClient.Transfers(ctx, &protoapi.TransfersRequest{
 		Pubkey: pubkey,
 		IsFrom: from,
 		IsTo:   to,
-	})
+	}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return response.Transfers, nil
@@ -426,9 +432,14 @@ func (r *myQueryResolver) TransfersConnection(ctx context.Context, partyID *stri
 }
 
 func (r *myQueryResolver) LastBlockHeight(ctx context.Context) (string, error) {
-	resp, err := r.tradingProxyClient.LastBlockHeight(ctx, &vegaprotoapi.LastBlockHeightRequest{})
+	header := metadata.MD{}
+	resp, err := r.tradingProxyClient.LastBlockHeight(ctx, &vegaprotoapi.LastBlockHeightRequest{}, grpc.Header(&header))
 	if err != nil {
 		return "0", err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return strconv.FormatUint(resp.Height, 10), nil
@@ -440,13 +451,17 @@ func (r *myQueryResolver) OracleSpecs(ctx context.Context, pagination *OffsetPag
 	if err != nil {
 		return nil, fmt.Errorf("invalid pagination object: %w", err)
 	}
+	header := metadata.MD{}
 	res, err := r.tradingDataClient.OracleSpecs(
 		ctx, &protoapi.OracleSpecsRequest{
 			Pagination: &paginationProto,
-		},
-	)
+		}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return res.OracleSpecs, nil
@@ -456,20 +471,29 @@ func (r *myQueryResolver) OracleSpecsConnection(ctx context.Context, pagination 
 	req := v2.ListOracleSpecsRequest{
 		Pagination: pagination,
 	}
-	res, err := r.tradingDataClientV2.ListOracleSpecs(ctx, &req)
+	header := metadata.MD{}
+	res, err := r.tradingDataClientV2.ListOracleSpecs(ctx, &req, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return res.OracleSpecs, nil
 }
 
 func (r *myQueryResolver) OracleSpec(ctx context.Context, id string) (*oraclespb.OracleSpec, error) {
+	header := metadata.MD{}
 	res, err := r.tradingDataClientV2.GetOracleSpec(
-		ctx, &v2.GetOracleSpecRequest{OracleSpecId: id},
-	)
+		ctx, &v2.GetOracleSpecRequest{OracleSpecId: id}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return res.OracleSpec, nil
@@ -484,14 +508,18 @@ func (r *myQueryResolver) OracleDataBySpec(ctx context.Context, id string,
 		return nil, fmt.Errorf("invalid pagination object: %w", err)
 	}
 
+	header := metadata.MD{}
 	res, err := r.tradingDataClient.OracleDataBySpec(
 		ctx, &protoapi.OracleDataBySpecRequest{
 			Id:         id,
 			Pagination: &paginationProto,
-		},
-	)
+		}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return res.OracleData, nil
@@ -509,9 +537,14 @@ func (r *myQueryResolver) OracleDataBySpecConnection(ctx context.Context, oracle
 		Pagination:   pagination,
 	}
 
-	resp, err := r.tradingDataClientV2.ListOracleData(ctx, &req)
+	header := metadata.MD{}
+	resp, err := r.tradingDataClientV2.ListOracleData(ctx, &req, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return resp.OracleData, nil
@@ -524,13 +557,17 @@ func (r *myQueryResolver) OracleData(ctx context.Context, pagination *OffsetPagi
 		return nil, fmt.Errorf("invalid pagination object: %w", err)
 	}
 
+	header := metadata.MD{}
 	res, err := r.tradingDataClient.ListOracleData(
 		ctx, &protoapi.ListOracleDataRequest{
 			Pagination: &paginationProto,
-		},
-	)
+		}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return res.OracleData, nil
@@ -541,9 +578,14 @@ func (r *myQueryResolver) OracleDataConnection(ctx context.Context, pagination *
 		Pagination: pagination,
 	}
 
-	resp, err := r.tradingDataClientV2.ListOracleData(ctx, &req)
+	header := metadata.MD{}
+	resp, err := r.tradingDataClientV2.ListOracleData(ctx, &req, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return resp.OracleData, nil
@@ -551,43 +593,61 @@ func (r *myQueryResolver) OracleDataConnection(ctx context.Context, pagination *
 
 // Deprecated: Use NetworkParametersConnection instead.
 func (r *myQueryResolver) NetworkParameters(ctx context.Context) ([]*types.NetworkParameter, error) {
+	header := metadata.MD{}
 	res, err := r.tradingDataClient.NetworkParameters(
-		ctx, &protoapi.NetworkParametersRequest{},
-	)
+		ctx, &protoapi.NetworkParametersRequest{}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return res.NetworkParameters, nil
 }
 
 func (r *myQueryResolver) NetworkParametersConnection(ctx context.Context, pagination *v2.Pagination) (*v2.NetworkParameterConnection, error) {
+	header := metadata.MD{}
 	res, err := r.tradingDataClientV2.ListNetworkParameters(ctx, &v2.ListNetworkParametersRequest{
 		Pagination: pagination,
-	})
+	}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	return res.NetworkParameters, nil
 }
 
 func (r *myQueryResolver) NetworkParameter(ctx context.Context, key string) (*types.NetworkParameter, error) {
+	header := metadata.MD{}
 	res, err := r.tradingDataClientV2.GetNetworkParameter(
-		ctx, &v2.GetNetworkParameterRequest{Key: key},
-	)
+		ctx, &v2.GetNetworkParameterRequest{Key: key}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return res.NetworkParameter, nil
 }
 
 func (r *myQueryResolver) Erc20WithdrawalApproval(ctx context.Context, wid string) (*Erc20WithdrawalApproval, error) {
+	header := metadata.MD{}
 	res, err := r.tradingDataClientV2.GetERC20WithdrawalApproval(
-		ctx, &v2.GetERC20WithdrawalApprovalRequest{WithdrawalId: wid},
-	)
+		ctx, &v2.GetERC20WithdrawalApprovalRequest{WithdrawalId: wid}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return &Erc20WithdrawalApproval{
@@ -602,10 +662,15 @@ func (r *myQueryResolver) Erc20WithdrawalApproval(ctx context.Context, wid strin
 }
 
 func (r *myQueryResolver) Erc20ListAssetBundle(ctx context.Context, assetID string) (*Erc20ListAssetBundle, error) {
+	header := metadata.MD{}
 	res, err := r.tradingDataClientV2.GetERC20ListAssetBundle(
-		ctx, &v2.GetERC20ListAssetBundleRequest{AssetId: assetID})
+		ctx, &v2.GetERC20ListAssetBundleRequest{AssetId: assetID}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return &Erc20ListAssetBundle{
@@ -617,10 +682,15 @@ func (r *myQueryResolver) Erc20ListAssetBundle(ctx context.Context, assetID stri
 }
 
 func (r *myQueryResolver) Erc20SetAssetLimitsBundle(ctx context.Context, proposalID string) (*ERC20SetAssetLimitsBundle, error) {
+	header := metadata.MD{}
 	res, err := r.tradingDataClientV2.GetERC20SetAssetLimitsBundle(
-		ctx, &v2.GetERC20SetAssetLimitsBundleRequest{ProposalId: proposalID})
+		ctx, &v2.GetERC20SetAssetLimitsBundleRequest{ProposalId: proposalID}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return &ERC20SetAssetLimitsBundle{
@@ -634,15 +704,20 @@ func (r *myQueryResolver) Erc20SetAssetLimitsBundle(ctx context.Context, proposa
 }
 
 func (r *myQueryResolver) Erc20MultiSigSignerAddedBundles(ctx context.Context, nodeID string, submitter, epochSeq *string, pagination *v2.Pagination) (*ERC20MultiSigSignerAddedConnection, error) {
+	header := metadata.MD{}
 	res, err := r.tradingDataClientV2.GetERC20MultiSigSignerAddedBundles(
 		ctx, &v2.GetERC20MultiSigSignerAddedBundlesRequest{
 			NodeId:     nodeID,
 			Submitter:  fromPtr(submitter),
 			EpochSeq:   fromPtr(epochSeq),
 			Pagination: pagination,
-		})
+		}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	edges := make([]*ERC20MultiSigSignerAddedBundleEdge, 0, len(res.Bundles.Edges))
@@ -668,15 +743,20 @@ func (r *myQueryResolver) Erc20MultiSigSignerAddedBundles(ctx context.Context, n
 }
 
 func (r *myQueryResolver) Erc20MultiSigSignerRemovedBundles(ctx context.Context, nodeID string, submitter, epochSeq *string, pagination *v2.Pagination) (*ERC20MultiSigSignerRemovedConnection, error) {
+	header := metadata.MD{}
 	res, err := r.tradingDataClientV2.GetERC20MultiSigSignerRemovedBundles(
 		ctx, &v2.GetERC20MultiSigSignerRemovedBundlesRequest{
 			NodeId:     nodeID,
 			Submitter:  fromPtr(submitter),
 			EpochSeq:   fromPtr(epochSeq),
 			Pagination: pagination,
-		})
+		}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	edges := make([]*ERC20MultiSigSignerRemovedBundleEdge, 0, len(res.Bundles.Edges))
@@ -709,22 +789,30 @@ func fromPtr[T any](ptr *T) (ret T) {
 }
 
 func (r *myQueryResolver) Withdrawal(ctx context.Context, wid string) (*types.Withdrawal, error) {
+	header := metadata.MD{}
 	res, err := r.tradingDataClientV2.GetWithdrawal(
-		ctx, &v2.GetWithdrawalRequest{Id: wid},
-	)
+		ctx, &v2.GetWithdrawalRequest{Id: wid}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return res.Withdrawal, nil
 }
 
 func (r *myQueryResolver) Deposit(ctx context.Context, did string) (*types.Deposit, error) {
+	header := metadata.MD{}
 	res, err := r.tradingDataClientV2.GetDeposit(
-		ctx, &v2.GetDepositRequest{Id: did},
-	)
+		ctx, &v2.GetDepositRequest{Id: did}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return res.Deposit, nil
@@ -776,7 +864,8 @@ func (r *myQueryResolver) EstimateOrder(ctx context.Context, market, party strin
 	}
 
 	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
-	resp, err := r.tradingDataClientV2.EstimateFee(ctx, &req)
+	header := metadata.MD{}
+	resp, err := r.tradingDataClientV2.EstimateFee(ctx, &req, grpc.Header(&header))
 	if err != nil {
 		r.log.Error("Failed to get fee estimates using rpc client in graphQL resolver", logging.Error(err))
 		return nil, customErrorFromStatus(err)
@@ -797,10 +886,19 @@ func (r *myQueryResolver) EstimateOrder(ctx context.Context, market, party strin
 	}
 
 	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
-	respm, err := r.tradingDataClientV2.EstimateMargin(ctx, &reqm)
+	header1 := metadata.MD{}
+	respm, err := r.tradingDataClientV2.EstimateMargin(ctx, &reqm, grpc.Header(&header1))
 	if err != nil {
 		r.log.Error("Failed to get margin estimates using rpc client in graphQL resolver", logging.Error(err))
 		return nil, customErrorFromStatus(err)
+	}
+
+	for k, h := range header1 {
+		header[k] = h
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return &OrderEstimate{
@@ -823,10 +921,16 @@ func (r *myQueryResolver) AssetsConnection(ctx context.Context, id *string, pagi
 		AssetId:    id,
 		Pagination: pagination,
 	}
-	resp, err := r.tradingDataClientV2.ListAssets(ctx, req)
+	header := metadata.MD{}
+	resp, err := r.tradingDataClientV2.ListAssets(ctx, req, grpc.Header(&header))
 	if err != nil {
 		return nil, err
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	return resp.Assets, nil
 }
 
@@ -839,10 +943,16 @@ func (r *myQueryResolver) NodeSignatures(ctx context.Context, resourceID string)
 	req := &protoapi.GetNodeSignaturesAggregateRequest{
 		Id: resourceID,
 	}
-	res, err := r.tradingDataClient.GetNodeSignaturesAggregate(ctx, req)
+	header := metadata.MD{}
+	res, err := r.tradingDataClient.GetNodeSignaturesAggregate(ctx, req, grpc.Header(&header))
 	if err != nil {
 		return nil, err
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	return res.Signatures, nil
 }
 
@@ -855,10 +965,16 @@ func (r *myQueryResolver) NodeSignaturesConnection(ctx context.Context, resource
 		Id:         resourceID,
 		Pagination: pagination,
 	}
-	res, err := r.tradingDataClientV2.ListNodeSignatures(ctx, req)
+	header := metadata.MD{}
+	res, err := r.tradingDataClientV2.ListNodeSignatures(ctx, req, grpc.Header(&header))
 	if err != nil {
 		return nil, err
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	return res.Signatures, nil
 }
 
@@ -875,10 +991,16 @@ func (r *myQueryResolver) Market(ctx context.Context, id string) (*types.Market,
 func (r *myQueryResolver) Parties(ctx context.Context, name *string) ([]*types.Party, error) {
 	if name == nil {
 		var empty protoapi.PartiesRequest
-		resp, err := r.tradingDataClient.Parties(ctx, &empty)
+		header := metadata.MD{}
+		resp, err := r.tradingDataClient.Parties(ctx, &empty, grpc.Header(&header))
 		if err != nil {
 			return nil, err
 		}
+
+		if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+			r.log.Error("failed to add headers to context", logging.Error(err))
+		}
+
 		if resp.Parties == nil {
 			return []*types.Party{}, nil
 		}
@@ -911,15 +1033,22 @@ func (r *myQueryResolver) OrderVersions(
 	ctx context.Context, orderID string, skip, first, last *int,
 ) ([]*types.Order, error) {
 	p := makePagination(skip, first, last)
-	reqest := &protoapi.OrderVersionsByIDRequest{
+	req := &protoapi.OrderVersionsByIDRequest{
 		OrderId:    orderID,
 		Pagination: p,
 	}
-	res, err := r.tradingDataClient.OrderVersionsByID(ctx, reqest)
+	header := metadata.MD{}
+
+	res, err := r.tradingDataClient.OrderVersionsByID(ctx, req, grpc.Header(&header))
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	return res.Orders, nil
 }
 
@@ -932,11 +1061,17 @@ func (r *myQueryResolver) OrderVersionsConnection(ctx context.Context, orderID *
 		Pagination: pagination,
 	}
 
-	resp, err := r.tradingDataClientV2.ListOrderVersions(ctx, req)
+	header := metadata.MD{}
+	resp, err := r.tradingDataClientV2.ListOrderVersions(ctx, req, grpc.Header(&header))
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	return resp.Orders, nil
 }
 
@@ -944,7 +1079,8 @@ func (r *myQueryResolver) OrderByReference(ctx context.Context, reference string
 	req := &v2.ListOrdersRequest{
 		Reference: &reference,
 	}
-	res, err := r.tradingDataClientV2.ListOrders(ctx, req)
+	header := metadata.MD{}
+	res, err := r.tradingDataClientV2.ListOrders(ctx, req, grpc.Header(&header))
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
@@ -954,56 +1090,74 @@ func (r *myQueryResolver) OrderByReference(ctx context.Context, reference string
 		return nil, fmt.Errorf("order reference not found: %s", reference)
 	}
 
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	return res.Orders.Edges[0].Node, nil
 }
 
 // Deprecated: Use ProposalsConnection instead.
 func (r *myQueryResolver) Proposals(ctx context.Context, inState *vega.Proposal_State) ([]*types.GovernanceData, error) {
+	header := metadata.MD{}
 	resp, err := r.tradingDataClient.GetProposals(ctx, &protoapi.GetProposalsRequest{
 		SelectInState: inState,
-	})
+	}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	return resp.Data, nil
 }
 
 func (r *myQueryResolver) ProposalsConnection(ctx context.Context, proposalType *v2.ListGovernanceDataRequest_Type, inState *vega.Proposal_State,
 	pagination *v2.Pagination,
 ) (*v2.GovernanceDataConnection, error) {
-	return handleProposalsRequest(ctx, r.tradingDataClientV2, nil, nil, proposalType, inState, pagination)
+	return handleProposalsRequest(ctx, r.tradingDataClientV2, nil, nil, proposalType, inState, pagination, r.log)
 }
 
 func (r *myQueryResolver) Proposal(ctx context.Context, id *string, reference *string) (*types.GovernanceData, error) {
+	header := metadata.MD{}
+
+	req := &v2.GetGovernanceDataRequest{}
 	if id != nil {
-		resp, err := r.tradingDataClientV2.GetGovernanceData(ctx, &v2.GetGovernanceDataRequest{
-			ProposalId: id,
-		})
-		if err != nil {
-			return nil, err
-		}
-		return resp.Data, nil
+		req.ProposalId = id
 	} else if reference != nil {
-		resp, err := r.tradingDataClientV2.GetGovernanceData(ctx, &v2.GetGovernanceDataRequest{
-			Reference: reference,
-		})
-		if err != nil {
-			return nil, err
-		}
-		return resp.Data, nil
+		req.Reference = reference
+	} else {
+		return nil, nil
 	}
 
-	return nil, ErrMissingIDOrReference
+	resp, err := r.tradingDataClientV2.GetGovernanceData(ctx, req, grpc.Header(&header))
+	if err != nil {
+		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
+	return resp.Data, nil
 }
 
 // Deprecated: Use ProposalsConnection instead.
 func (r *myQueryResolver) NewMarketProposals(ctx context.Context, inState *vega.Proposal_State) ([]*types.GovernanceData, error) {
+	header := metadata.MD{}
 	resp, err := r.tradingDataClient.GetNewMarketProposals(ctx, &protoapi.GetNewMarketProposalsRequest{
 		SelectInState: inState,
-	})
+	}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	return resp.Data, nil
 }
 
@@ -1013,53 +1167,82 @@ func (r *myQueryResolver) UpdateMarketProposals(ctx context.Context, marketID *s
 	if marketID != nil {
 		market = *marketID
 	}
+	header := metadata.MD{}
 	resp, err := r.tradingDataClient.GetUpdateMarketProposals(ctx, &protoapi.GetUpdateMarketProposalsRequest{
 		MarketId:      market,
 		SelectInState: inState,
-	})
+	}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	return resp.Data, nil
 }
 
 // Deprecated: Use ProposalsConnection instead.
 func (r *myQueryResolver) NetworkParametersProposals(ctx context.Context, inState *vega.Proposal_State) ([]*types.GovernanceData, error) {
+	header := metadata.MD{}
 	resp, err := r.tradingDataClient.GetNetworkParametersProposals(ctx, &protoapi.GetNetworkParametersProposalsRequest{
 		SelectInState: inState,
-	})
+	}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	return resp.Data, nil
 }
 
 // Deprecated: Use ProposalsConnection instead.
 func (r *myQueryResolver) NewAssetProposals(ctx context.Context, inState *vega.Proposal_State) ([]*types.GovernanceData, error) {
+	header := metadata.MD{}
 	resp, err := r.tradingDataClient.GetNewAssetProposals(ctx, &protoapi.GetNewAssetProposalsRequest{
 		SelectInState: inState,
-	})
+	}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	return resp.Data, nil
 }
 
 // Deprecated: Use ProposalsConnection instead.
 func (r *myQueryResolver) NewFreeformProposals(ctx context.Context, inState *vega.Proposal_State) ([]*types.GovernanceData, error) {
+	header := metadata.MD{}
 	resp, err := r.tradingDataClient.GetNewFreeformProposals(ctx, &protoapi.GetNewFreeformProposalsRequest{
 		SelectInState: inState,
-	})
+	}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	return resp.Data, nil
 }
 
 func (r *myQueryResolver) NodeData(ctx context.Context) (*types.NodeData, error) {
-	resp, err := r.tradingDataClientV2.GetNetworkData(ctx, &v2.GetNetworkDataRequest{})
+	header := metadata.MD{}
+	resp, err := r.tradingDataClientV2.GetNetworkData(ctx, &v2.GetNetworkDataRequest{}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return resp.NodeData, nil
@@ -1067,9 +1250,14 @@ func (r *myQueryResolver) NodeData(ctx context.Context) (*types.NodeData, error)
 
 // Deprecated: Use NodesConnection instead.
 func (r *myQueryResolver) Nodes(ctx context.Context) ([]*types.Node, error) {
-	resp, err := r.tradingDataClient.GetNodes(ctx, &protoapi.GetNodesRequest{})
+	header := metadata.MD{}
+	resp, err := r.tradingDataClient.GetNodes(ctx, &protoapi.GetNodesRequest{}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return resp.Nodes, nil
@@ -1079,20 +1267,30 @@ func (r *myQueryResolver) NodesConnection(ctx context.Context, pagination *v2.Pa
 	req := &v2.ListNodesRequest{
 		Pagination: pagination,
 	}
-	resp, err := r.tradingDataClientV2.ListNodes(ctx, req)
+	header := metadata.MD{}
+	resp, err := r.tradingDataClientV2.ListNodes(ctx, req, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return resp.Nodes, nil
 }
 
 func (r *myQueryResolver) Node(ctx context.Context, id string) (*types.Node, error) {
+	header := metadata.MD{}
 	resp, err := r.tradingDataClientV2.GetNode(ctx, &v2.GetNodeRequest{
 		Id: id,
-	})
+	}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return resp.Node, nil
@@ -1101,7 +1299,8 @@ func (r *myQueryResolver) Node(ctx context.Context, id string) (*types.Node, err
 // Deprecated: Use KeyRotationConnection instead.
 func (r *myQueryResolver) KeyRotations(ctx context.Context, id *string) ([]*eventspb.KeyRotation, error) {
 	if id != nil {
-		resp, err := r.tradingDataClient.GetKeyRotationsByNode(ctx, &protoapi.GetKeyRotationsByNodeRequest{NodeId: *id})
+		header := metadata.MD{}
+		resp, err := r.tradingDataClient.GetKeyRotationsByNode(ctx, &protoapi.GetKeyRotationsByNodeRequest{NodeId: *id}, grpc.Header(&header))
 		if err != nil {
 			return nil, err
 		}
@@ -1109,9 +1308,14 @@ func (r *myQueryResolver) KeyRotations(ctx context.Context, id *string) ([]*even
 		return dataNodeV1KeyRotationsToVegaEvent(resp.Rotations...), nil
 	}
 
-	resp, err := r.tradingDataClient.GetKeyRotations(ctx, &protoapi.GetKeyRotationsRequest{})
+	header := metadata.MD{}
+	resp, err := r.tradingDataClient.GetKeyRotations(ctx, &protoapi.GetKeyRotationsRequest{}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return dataNodeV1KeyRotationsToVegaEvent(resp.Rotations...), nil
@@ -1131,18 +1335,28 @@ func dataNodeV1KeyRotationsToVegaEvent(rotations ...*protoapi.KeyRotation) []*ev
 }
 
 func (r *myQueryResolver) KeyRotationsConnection(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.KeyRotationConnection, error) {
-	resp, err := r.tradingDataClientV2.ListKeyRotations(ctx, &v2.ListKeyRotationsRequest{NodeId: id, Pagination: pagination})
+	header := metadata.MD{}
+	resp, err := r.tradingDataClientV2.ListKeyRotations(ctx, &v2.ListKeyRotationsRequest{NodeId: id, Pagination: pagination}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return resp.Rotations, nil
 }
 
 func (r *myQueryResolver) EthereumKeyRotations(ctx context.Context, nodeID *string) (*v2.EthereumKeyRotationsConnection, error) {
-	resp, err := r.tradingDataClientV2.ListEthereumKeyRotations(ctx, &v2.ListEthereumKeyRotationsRequest{NodeId: nodeID})
+	header := metadata.MD{}
+	resp, err := r.tradingDataClientV2.ListEthereumKeyRotations(ctx, &v2.ListEthereumKeyRotationsRequest{NodeId: nodeID}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return resp.KeyRotations, nil
@@ -1159,9 +1373,14 @@ func (r *myQueryResolver) Epoch(ctx context.Context, id *string) (*types.Epoch, 
 		epochID = &parsedID
 	}
 
-	resp, err := r.tradingDataClientV2.GetEpoch(ctx, &v2.GetEpochRequest{Id: epochID})
+	header := metadata.MD{}
+	resp, err := r.tradingDataClientV2.GetEpoch(ctx, &v2.GetEpochRequest{Id: epochID}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return resp.Epoch, nil
@@ -1169,10 +1388,16 @@ func (r *myQueryResolver) Epoch(ctx context.Context, id *string) (*types.Epoch, 
 
 func (r *myQueryResolver) Statistics(ctx context.Context) (*vegaprotoapi.Statistics, error) {
 	req := &vegaprotoapi.StatisticsRequest{}
-	resp, err := r.tradingProxyClient.Statistics(ctx, req)
+	header := metadata.MD{}
+	resp, err := r.tradingProxyClient.Statistics(ctx, req, grpc.Header(&header))
 	if err != nil {
 		return nil, err
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	return resp.GetStatistics(), nil
 }
 
@@ -1191,19 +1416,33 @@ func (r *myQueryResolver) HistoricBalances(ctx context.Context, filter *v2.Accou
 	req.DateRange = dateRange
 	req.Pagination = pagination
 
-	resp, err := r.tradingDataClientV2.GetBalanceHistory(ctx, req)
+	header := metadata.MD{}
+
+	resp, err := r.tradingDataClientV2.GetBalanceHistory(ctx, req, grpc.Header(&header))
 	if err != nil {
 		return nil, err
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	return resp.GetBalances(), nil
 }
 
 func (r *myQueryResolver) NetworkLimits(ctx context.Context) (*types.NetworkLimits, error) {
 	req := &v2.GetNetworkLimitsRequest{}
-	resp, err := r.tradingDataClientV2.GetNetworkLimits(ctx, req)
+	header := metadata.MD{}
+
+	resp, err := r.tradingDataClientV2.GetNetworkLimits(ctx, req, grpc.Header(&header))
 	if err != nil {
 		return nil, err
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	return resp.GetLimits(), nil
 }
 
@@ -1211,7 +1450,7 @@ func (r *myQueryResolver) NetworkLimits(ctx context.Context) (*types.NetworkLimi
 
 type myNodeSignatureResolver VegaResolverRoot
 
-func (r *myNodeSignatureResolver) Signature(ctx context.Context, obj *commandspb.NodeSignature) (*string, error) {
+func (r *myNodeSignatureResolver) Signature(_ context.Context, obj *commandspb.NodeSignature) (*string, error) {
 	sig := base64.StdEncoding.EncodeToString(obj.Sig)
 	return &sig, nil
 }
@@ -1271,8 +1510,18 @@ func (r *myPartyResolver) RewardDetails(
 	req := &protoapi.GetRewardSummariesRequest{
 		PartyId: party.Id,
 	}
-	resp, err := r.tradingDataClient.GetRewardSummaries(ctx, req)
-	return resp.Summaries, err
+	header := metadata.MD{}
+
+	resp, err := r.tradingDataClient.GetRewardSummaries(ctx, req, grpc.Header(&header))
+	if err != nil {
+		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
+	return resp.Summaries, nil
 }
 
 // Deprecated: Use RewardsConnection instead.
@@ -1294,8 +1543,18 @@ func (r *myPartyResolver) Rewards(
 		AssetId:    assetID,
 		Pagination: p,
 	}
-	resp, err := r.tradingDataClient.GetRewards(ctx, req)
-	return resp.Rewards, err
+	header := metadata.MD{}
+
+	resp, err := r.tradingDataClient.GetRewards(ctx, req, grpc.Header(&header))
+	if err != nil {
+		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
+	return resp.Rewards, nil
 }
 
 func (r *myPartyResolver) TransfersConnection(
@@ -1313,9 +1572,15 @@ func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *types.Pa
 		AssetId:    assetID,
 		Pagination: pagination,
 	}
-	resp, err := r.tradingDataClientV2.ListRewards(ctx, &req)
+	header := metadata.MD{}
+
+	resp, err := r.tradingDataClientV2.ListRewards(ctx, &req, grpc.Header(&header))
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve rewards information: %w", err)
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return resp.Rewards, nil
@@ -1336,8 +1601,17 @@ func (r *myPartyResolver) RewardSummaries(
 		AssetId: &assetID,
 	}
 
-	resp, err := r.tradingDataClientV2.ListRewardSummaries(ctx, req)
-	return resp.Summaries, err
+	header := metadata.MD{}
+	resp, err := r.tradingDataClientV2.ListRewardSummaries(ctx, req, grpc.Header(&header))
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve reward summaries: %w", err)
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
+	return resp.Summaries, nil
 }
 
 // Deprecated: Use StakingSummary instead.
@@ -1345,11 +1619,21 @@ func (r *myPartyResolver) Stake(
 	ctx context.Context,
 	party *types.Party,
 ) (*protoapi.PartyStakeResponse, error) {
-	return r.tradingDataClient.PartyStake(
+	header := metadata.MD{}
+	stake, err := r.tradingDataClient.PartyStake(
 		ctx, &protoapi.PartyStakeRequest{
 			Party: party.Id,
-		},
+		}, grpc.Header(&header),
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
+	return stake, nil
 }
 
 func (r *myPartyResolver) StakingSummary(ctx context.Context, party *types.Party, pagination *v2.Pagination) (*StakingSummary, error) {
@@ -1362,9 +1646,14 @@ func (r *myPartyResolver) StakingSummary(ctx context.Context, party *types.Party
 		Pagination: pagination,
 	}
 
-	resp, err := r.tradingDataClientV2.GetStake(ctx, req)
+	header := metadata.MD{}
+	resp, err := r.tradingDataClientV2.GetStake(ctx, req, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return &StakingSummary{
@@ -1388,10 +1677,15 @@ func (r *myPartyResolver) LiquidityProvisions(
 		Party:  party.Id,
 		Market: mid,
 	}
-	res, err := r.tradingDataClient.LiquidityProvisions(ctx, &req)
+	header := metadata.MD{}
+	res, err := r.tradingDataClient.LiquidityProvisions(ctx, &req, grpc.Header(&header))
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	var out []*types.LiquidityProvision
@@ -1435,10 +1729,15 @@ func (r *myPartyResolver) LiquidityProvisionsConnection(
 		Pagination: pagination,
 	}
 
-	res, err := r.tradingDataClientV2.ListLiquidityProvisions(ctx, &req)
+	header := metadata.MD{}
+	res, err := r.tradingDataClientV2.ListLiquidityProvisions(ctx, &req, grpc.Header(&header))
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return res.LiquidityProvisions, nil
@@ -1455,11 +1754,17 @@ func (r *myPartyResolver) Margins(ctx context.Context,
 		req.MarketId = *marketID
 	}
 
-	res, err := r.tradingDataClient.MarginLevels(ctx, &req)
+	header := metadata.MD{}
+	res, err := r.tradingDataClient.MarginLevels(ctx, &req, grpc.Header(&header))
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	out := make([]*types.MarginLevels, 0, len(res.MarginLevels))
 	out = append(out, res.MarginLevels...)
 	return out, nil
@@ -1484,10 +1789,15 @@ func (r *myPartyResolver) MarginsConnection(ctx context.Context, party *types.Pa
 		Pagination: pagination,
 	}
 
-	res, err := r.tradingDataClientV2.ListMarginLevels(ctx, &req)
+	header := metadata.MD{}
+	res, err := r.tradingDataClientV2.ListMarginLevels(ctx, &req, grpc.Header(&header))
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return res.MarginLevels, nil
@@ -1502,10 +1812,15 @@ func (r *myPartyResolver) Orders(ctx context.Context, party *types.Party,
 		PartyId:    party.Id,
 		Pagination: p,
 	}
-	res, err := r.tradingDataClient.OrdersByParty(ctx, &req)
+	header := metadata.MD{}
+	res, err := r.tradingDataClient.OrdersByParty(ctx, &req, grpc.Header(&header))
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	if len(res.Orders) > 0 {
@@ -1524,11 +1839,17 @@ func (r *myPartyResolver) OrdersConnection(ctx context.Context, party *types.Par
 		Pagination: pagination,
 		DateRange:  dateRange,
 	}
-	res, err := r.tradingDataClientV2.ListOrders(ctx, &req)
+	header := metadata.MD{}
+	res, err := r.tradingDataClientV2.ListOrders(ctx, &req, grpc.Header(&header))
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	return res.Orders, nil
 }
 
@@ -1548,10 +1869,15 @@ func (r *myPartyResolver) Trades(ctx context.Context, party *types.Party,
 		Pagination: p,
 	}
 
-	res, err := r.tradingDataClient.TradesByParty(ctx, &req)
+	header := metadata.MD{}
+	res, err := r.tradingDataClient.TradesByParty(ctx, &req, grpc.Header(&header))
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	if len(res.Trades) > 0 {
@@ -1569,11 +1895,17 @@ func (r *myPartyResolver) TradesConnection(ctx context.Context, party *types.Par
 		DateRange:  dateRange,
 	}
 
-	res, err := r.tradingDataClientV2.ListTrades(ctx, &req)
+	header := metadata.MD{}
+	res, err := r.tradingDataClientV2.ListTrades(ctx, &req, grpc.Header(&header))
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	return res.Trades, nil
 }
 
@@ -1583,11 +1915,17 @@ func (r *myPartyResolver) Positions(ctx context.Context, party *types.Party) ([]
 		return nil, errors.New("nil party")
 	}
 	req := protoapi.PositionsByPartyRequest{PartyId: party.Id}
-	res, err := r.tradingDataClient.PositionsByParty(ctx, &req)
+	header := metadata.MD{}
+	res, err := r.tradingDataClient.PositionsByParty(ctx, &req, grpc.Header(&header))
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	if len(res.Positions) > 0 {
 		return res.Positions, nil
 	}
@@ -1612,10 +1950,15 @@ func (r *myPartyResolver) PositionsConnection(ctx context.Context, party *types.
 		Pagination: pagination,
 	}
 
-	res, err := r.tradingDataClientV2.ListPositions(ctx, &req)
+	header := metadata.MD{}
+	res, err := r.tradingDataClientV2.ListPositions(ctx, &req, grpc.Header(&header))
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return res.Positions, nil
@@ -1663,7 +2006,8 @@ func (r *myPartyResolver) Accounts(ctx context.Context, party *types.Party,
 	}
 
 	req := v2.ListAccountsRequest{Filter: &filter}
-	res, err := r.tradingDataClientV2.ListAccounts(ctx, &req)
+	header := metadata.MD{}
+	res, err := r.tradingDataClientV2.ListAccounts(ctx, &req, grpc.Header(&header))
 	if err != nil {
 		r.log.Error("unable to get Party account",
 			logging.Error(err),
@@ -1672,6 +2016,10 @@ func (r *myPartyResolver) Accounts(ctx context.Context, party *types.Party,
 			logging.String("asset", asst),
 			logging.String("type", accTy.String()))
 		return nil, customErrorFromStatus(err)
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	if len(res.Accounts.Edges) == 0 {
@@ -1725,7 +2073,8 @@ func (r *myPartyResolver) AccountsConnection(ctx context.Context, party *types.P
 	}
 
 	req := v2.ListAccountsRequest{Filter: &filter, Pagination: pagination}
-	res, err := r.tradingDataClientV2.ListAccounts(ctx, &req)
+	header := metadata.MD{}
+	res, err := r.tradingDataClientV2.ListAccounts(ctx, &req, grpc.Header(&header))
 	if err != nil {
 		r.log.Error("unable to get Party account",
 			logging.Error(err),
@@ -1736,67 +2085,91 @@ func (r *myPartyResolver) AccountsConnection(ctx context.Context, party *types.P
 		return nil, customErrorFromStatus(err)
 	}
 
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	return res.Accounts, nil
 }
 
 // Deprecated: use ProposalsConnection instead.
 func (r *myPartyResolver) Proposals(ctx context.Context, party *types.Party, inState *vega.Proposal_State) ([]*types.GovernanceData, error) {
+	header := metadata.MD{}
 	resp, err := r.tradingDataClient.GetProposalsByParty(ctx, &protoapi.GetProposalsByPartyRequest{
 		PartyId:       party.Id,
 		SelectInState: inState,
-	})
+	}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	return resp.Data, nil
 }
 
 func (r *myPartyResolver) ProposalsConnection(ctx context.Context, party *types.Party, proposalType *v2.ListGovernanceDataRequest_Type, inState *vega.Proposal_State,
 	pagination *v2.Pagination,
 ) (*v2.GovernanceDataConnection, error) {
-	return handleProposalsRequest(ctx, r.tradingDataClientV2, party, nil, proposalType, inState, pagination)
+	return handleProposalsRequest(ctx, r.tradingDataClientV2, party, nil, proposalType, inState, pagination, r.log)
 }
 
 // Deprecated: Use WithdrawalsConnection instead.
 func (r *myPartyResolver) Withdrawals(ctx context.Context, party *types.Party) ([]*types.Withdrawal, error) {
+	header := metadata.MD{}
 	res, err := r.tradingDataClient.Withdrawals(
-		ctx, &protoapi.WithdrawalsRequest{PartyId: party.Id},
-	)
+		ctx, &protoapi.WithdrawalsRequest{PartyId: party.Id}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return res.Withdrawals, nil
 }
 
 func (r *myPartyResolver) WithdrawalsConnection(ctx context.Context, party *types.Party, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.WithdrawalsConnection, error) {
-	return handleWithdrawalsConnectionRequest(ctx, r.tradingDataClientV2, party, dateRange, pagination)
+	return handleWithdrawalsConnectionRequest(ctx, r.tradingDataClientV2, party, dateRange, pagination, r.log)
 }
 
 // Deprecated: Use DepositsConnection instead.
 func (r *myPartyResolver) Deposits(ctx context.Context, party *types.Party) ([]*types.Deposit, error) {
+	header := metadata.MD{}
 	res, err := r.tradingDataClient.Deposits(
-		ctx, &protoapi.DepositsRequest{PartyId: party.Id},
-	)
+		ctx, &protoapi.DepositsRequest{PartyId: party.Id}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return res.Deposits, nil
 }
 
 func (r *myPartyResolver) DepositsConnection(ctx context.Context, party *types.Party, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.DepositsConnection, error) {
-	return handleDepositsConnectionRequest(ctx, r.tradingDataClientV2, party, dateRange, pagination)
+	return handleDepositsConnectionRequest(ctx, r.tradingDataClientV2, party, dateRange, pagination, r.log)
 }
 
 // Deprecated: Use VotesConnection instead.
 func (r *myPartyResolver) Votes(ctx context.Context, party *types.Party) ([]*ProposalVote, error) {
+	header := metadata.MD{}
 	resp, err := r.tradingDataClient.GetVotesByParty(ctx, &protoapi.GetVotesByPartyRequest{
 		PartyId: party.Id,
-	})
+	}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	result := make([]*ProposalVote, len(resp.Votes))
 	for i, vote := range resp.Votes {
 		result[i] = ProposalVoteFromProto(vote)
@@ -1810,10 +2183,15 @@ func (r *myPartyResolver) VotesConnection(ctx context.Context, party *types.Part
 		Pagination: pagination,
 	}
 
-	res, err := r.tradingDataClientV2.ListVotes(ctx, &req)
+	header := metadata.MD{}
+	res, err := r.tradingDataClientV2.ListVotes(ctx, &req, grpc.Header(&header))
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	edges := make([]*ProposalVoteEdge, 0, len(res.Votes.Edges))
@@ -1849,9 +2227,14 @@ func (r *myPartyResolver) Delegations(
 		req.NodeId = *nodeID
 	}
 
-	resp, err := r.tradingDataClient.Delegations(ctx, req)
+	header := metadata.MD{}
+	resp, err := r.tradingDataClient.Delegations(ctx, req, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return resp.Delegations, nil
@@ -1863,7 +2246,7 @@ func (r *myPartyResolver) DelegationsConnection(ctx context.Context, party *type
 		partyID = &party.Id
 	}
 
-	return handleDelegationConnectionRequest(ctx, r.tradingDataClientV2, partyID, nodeID, nil, pagination)
+	return handleDelegationConnectionRequest(ctx, r.tradingDataClientV2, partyID, nodeID, nil, pagination, r.log)
 }
 
 // END: Party Resolver
@@ -1884,11 +2267,18 @@ func (r *myMarginLevelsResolver) Party(ctx context.Context, m *types.MarginLevel
 		return nil, errors.New("invalid party")
 	}
 	req := v2.GetPartyRequest{PartyId: m.PartyId}
-	res, err := r.tradingDataClientV2.GetParty(ctx, &req)
+	header := metadata.MD{}
+
+	res, err := r.tradingDataClientV2.GetParty(ctx, &req, grpc.Header(&header))
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	return res.Party, nil
 }
 
@@ -1929,7 +2319,7 @@ func (r *myOrderResolver) RejectionReason(_ context.Context, o *types.Order) (*v
 	return &o.Reason, nil
 }
 
-func (r *myOrderResolver) Price(ctx context.Context, obj *types.Order) (string, error) {
+func (r *myOrderResolver) Price(_ context.Context, obj *types.Order) (string, error) {
 	return obj.Price, nil
 }
 
@@ -1937,19 +2327,19 @@ func (r *myOrderResolver) Market(ctx context.Context, obj *types.Order) (*types.
 	return r.r.getMarketByID(ctx, obj.MarketId)
 }
 
-func (r *myOrderResolver) Size(ctx context.Context, obj *types.Order) (string, error) {
+func (r *myOrderResolver) Size(_ context.Context, obj *types.Order) (string, error) {
 	return strconv.FormatUint(obj.Size, 10), nil
 }
 
-func (r *myOrderResolver) Remaining(ctx context.Context, obj *types.Order) (string, error) {
+func (r *myOrderResolver) Remaining(_ context.Context, obj *types.Order) (string, error) {
 	return strconv.FormatUint(obj.Remaining, 10), nil
 }
 
-func (r *myOrderResolver) CreatedAt(ctx context.Context, obj *types.Order) (string, error) {
+func (r *myOrderResolver) CreatedAt(_ context.Context, obj *types.Order) (string, error) {
 	return vegatime.Format(vegatime.UnixNano(obj.CreatedAt)), nil
 }
 
-func (r *myOrderResolver) UpdatedAt(ctx context.Context, obj *types.Order) (*string, error) {
+func (r *myOrderResolver) UpdatedAt(_ context.Context, obj *types.Order) (*string, error) {
 	var updatedAt *string
 	if obj.UpdatedAt > 0 {
 		t := vegatime.Format(vegatime.UnixNano(obj.UpdatedAt))
@@ -1958,11 +2348,11 @@ func (r *myOrderResolver) UpdatedAt(ctx context.Context, obj *types.Order) (*str
 	return updatedAt, nil
 }
 
-func (r *myOrderResolver) Version(ctx context.Context, obj *types.Order) (string, error) {
+func (r *myOrderResolver) Version(_ context.Context, obj *types.Order) (string, error) {
 	return strconv.FormatUint(obj.Version, 10), nil
 }
 
-func (r *myOrderResolver) ExpiresAt(ctx context.Context, obj *types.Order) (*string, error) {
+func (r *myOrderResolver) ExpiresAt(_ context.Context, obj *types.Order) (*string, error) {
 	if obj.ExpiresAt <= 0 {
 		return nil, nil
 	}
@@ -1976,11 +2366,18 @@ func (r *myOrderResolver) Trades(ctx context.Context, ord *types.Order) ([]*type
 		return nil, errors.New("nil order")
 	}
 	req := protoapi.TradesByOrderRequest{OrderId: ord.Id}
-	res, err := r.tradingDataClient.TradesByOrder(ctx, &req)
+	header := metadata.MD{}
+
+	res, err := r.tradingDataClient.TradesByOrder(ctx, &req, grpc.Header(&header))
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	return res.Trades, nil
 }
 
@@ -1989,15 +2386,22 @@ func (r *myOrderResolver) TradesConnection(ctx context.Context, ord *types.Order
 		return nil, errors.New("nil order")
 	}
 	req := v2.ListTradesRequest{OrderId: &ord.Id, Pagination: pagination, DateRange: dateRange}
-	res, err := r.tradingDataClientV2.ListTrades(ctx, &req)
+	header := metadata.MD{}
+
+	res, err := r.tradingDataClientV2.ListTrades(ctx, &req, grpc.Header(&header))
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	return res.Trades, nil
 }
 
-func (r *myOrderResolver) Party(ctx context.Context, order *types.Order) (*types.Party, error) {
+func (r *myOrderResolver) Party(_ context.Context, order *types.Order) (*types.Party, error) {
 	if order == nil {
 		return nil, errors.New("nil order")
 	}
@@ -2007,7 +2411,7 @@ func (r *myOrderResolver) Party(ctx context.Context, order *types.Order) (*types
 	return &types.Party{Id: order.PartyId}, nil
 }
 
-func (r *myOrderResolver) PeggedOrder(ctx context.Context, order *types.Order) (*types.PeggedOrder, error) {
+func (r *myOrderResolver) PeggedOrder(_ context.Context, order *types.Order) (*types.PeggedOrder, error) {
 	return order.PeggedOrder, nil
 }
 
@@ -2020,10 +2424,16 @@ func (r *myOrderResolver) LiquidityProvision(ctx context.Context, obj *types.Ord
 		PartyId:  &obj.PartyId,
 		MarketId: &obj.MarketId,
 	}
-	res, err := r.tradingDataClientV2.ListLiquidityProvisions(ctx, &req)
+	header := metadata.MD{}
+
+	res, err := r.tradingDataClientV2.ListLiquidityProvisions(ctx, &req, grpc.Header(&header))
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	if len(res.LiquidityProvisions.Edges) <= 0 {
@@ -2043,15 +2453,15 @@ func (r *myTradeResolver) Market(ctx context.Context, obj *types.Trade) (*types.
 	return r.r.getMarketByID(ctx, obj.MarketId)
 }
 
-func (r *myTradeResolver) Price(ctx context.Context, obj *types.Trade) (string, error) {
+func (r *myTradeResolver) Price(_ context.Context, obj *types.Trade) (string, error) {
 	return obj.Price, nil
 }
 
-func (r *myTradeResolver) Size(ctx context.Context, obj *types.Trade) (string, error) {
+func (r *myTradeResolver) Size(_ context.Context, obj *types.Trade) (string, error) {
 	return strconv.FormatUint(obj.Size, 10), nil
 }
 
-func (r *myTradeResolver) CreatedAt(ctx context.Context, obj *types.Trade) (string, error) {
+func (r *myTradeResolver) CreatedAt(_ context.Context, obj *types.Trade) (string, error) {
 	return vegatime.Format(vegatime.UnixNano(obj.Timestamp)), nil
 }
 
@@ -2063,11 +2473,18 @@ func (r *myTradeResolver) Buyer(ctx context.Context, obj *types.Trade) (*types.P
 		return nil, errors.New("invalid buyer")
 	}
 	req := v2.GetPartyRequest{PartyId: obj.Buyer}
-	res, err := r.tradingDataClientV2.GetParty(ctx, &req)
+	header := metadata.MD{}
+
+	res, err := r.tradingDataClientV2.GetParty(ctx, &req, grpc.Header(&header))
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	return res.Party, nil
 }
 
@@ -2079,20 +2496,27 @@ func (r *myTradeResolver) Seller(ctx context.Context, obj *types.Trade) (*types.
 		return nil, errors.New("invalid seller")
 	}
 	req := v2.GetPartyRequest{PartyId: obj.Seller}
-	res, err := r.tradingDataClientV2.GetParty(ctx, &req)
+	header := metadata.MD{}
+
+	res, err := r.tradingDataClientV2.GetParty(ctx, &req, grpc.Header(&header))
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	return res.Party, nil
 }
 
-func (r *myTradeResolver) BuyerAuctionBatch(ctx context.Context, obj *types.Trade) (*int, error) {
+func (r *myTradeResolver) BuyerAuctionBatch(_ context.Context, obj *types.Trade) (*int, error) {
 	i := int(obj.BuyerAuctionBatch)
 	return &i, nil
 }
 
-func (r *myTradeResolver) BuyerFee(ctx context.Context, obj *types.Trade) (*TradeFee, error) {
+func (r *myTradeResolver) BuyerFee(_ context.Context, obj *types.Trade) (*TradeFee, error) {
 	fee := TradeFee{
 		MakerFee:          "0",
 		InfrastructureFee: "0",
@@ -2106,12 +2530,12 @@ func (r *myTradeResolver) BuyerFee(ctx context.Context, obj *types.Trade) (*Trad
 	return &fee, nil
 }
 
-func (r *myTradeResolver) SellerAuctionBatch(ctx context.Context, obj *types.Trade) (*int, error) {
+func (r *myTradeResolver) SellerAuctionBatch(_ context.Context, obj *types.Trade) (*int, error) {
 	i := int(obj.SellerAuctionBatch)
 	return &i, nil
 }
 
-func (r *myTradeResolver) SellerFee(ctx context.Context, obj *types.Trade) (*TradeFee, error) {
+func (r *myTradeResolver) SellerFee(_ context.Context, obj *types.Trade) (*TradeFee, error) {
 	fee := TradeFee{
 		MakerFee:          "0",
 		InfrastructureFee: "0",
@@ -2131,31 +2555,31 @@ func (r *myTradeResolver) SellerFee(ctx context.Context, obj *types.Trade) (*Tra
 
 type myCandleResolver VegaResolverRoot
 
-func (r *myCandleResolver) High(ctx context.Context, obj *types.Candle) (string, error) {
+func (r *myCandleResolver) High(_ context.Context, obj *types.Candle) (string, error) {
 	return obj.High, nil
 }
 
-func (r *myCandleResolver) Low(ctx context.Context, obj *types.Candle) (string, error) {
+func (r *myCandleResolver) Low(_ context.Context, obj *types.Candle) (string, error) {
 	return obj.Low, nil
 }
 
-func (r *myCandleResolver) Open(ctx context.Context, obj *types.Candle) (string, error) {
+func (r *myCandleResolver) Open(_ context.Context, obj *types.Candle) (string, error) {
 	return obj.Open, nil
 }
 
-func (r *myCandleResolver) Close(ctx context.Context, obj *types.Candle) (string, error) {
+func (r *myCandleResolver) Close(_ context.Context, obj *types.Candle) (string, error) {
 	return obj.Close, nil
 }
 
-func (r *myCandleResolver) Volume(ctx context.Context, obj *types.Candle) (string, error) {
+func (r *myCandleResolver) Volume(_ context.Context, obj *types.Candle) (string, error) {
 	return strconv.FormatUint(obj.Volume, 10), nil
 }
 
-func (r *myCandleResolver) Datetime(ctx context.Context, obj *types.Candle) (string, error) {
+func (r *myCandleResolver) Datetime(_ context.Context, obj *types.Candle) (string, error) {
 	return vegatime.Format(vegatime.UnixNano(obj.Timestamp)), nil
 }
 
-func (r *myCandleResolver) Timestamp(ctx context.Context, obj *types.Candle) (string, error) {
+func (r *myCandleResolver) Timestamp(_ context.Context, obj *types.Candle) (string, error) {
 	return strconv.FormatInt(obj.Timestamp, 10), nil
 }
 
@@ -2165,15 +2589,15 @@ func (r *myCandleResolver) Timestamp(ctx context.Context, obj *types.Candle) (st
 
 type myCandleNodeResolver VegaResolverRoot
 
-func (m *myCandleNodeResolver) Start(ctx context.Context, obj *v2.Candle) (string, error) {
+func (m *myCandleNodeResolver) Start(_ context.Context, obj *v2.Candle) (string, error) {
 	return strconv.FormatInt(obj.Start, 10), nil
 }
 
-func (m *myCandleNodeResolver) LastUpdate(ctx context.Context, obj *v2.Candle) (string, error) {
+func (m *myCandleNodeResolver) LastUpdate(_ context.Context, obj *v2.Candle) (string, error) {
 	return strconv.FormatInt(obj.LastUpdate, 10), nil
 }
 
-func (m *myCandleNodeResolver) Volume(ctx context.Context, obj *v2.Candle) (string, error) {
+func (m *myCandleNodeResolver) Volume(_ context.Context, obj *v2.Candle) (string, error) {
 	return strconv.FormatUint(obj.Volume, 10), nil
 }
 
@@ -2183,15 +2607,15 @@ func (m *myCandleNodeResolver) Volume(ctx context.Context, obj *v2.Candle) (stri
 
 type myPriceLevelResolver VegaResolverRoot
 
-func (r *myPriceLevelResolver) Price(ctx context.Context, obj *types.PriceLevel) (string, error) {
+func (r *myPriceLevelResolver) Price(_ context.Context, obj *types.PriceLevel) (string, error) {
 	return obj.Price, nil
 }
 
-func (r *myPriceLevelResolver) Volume(ctx context.Context, obj *types.PriceLevel) (string, error) {
+func (r *myPriceLevelResolver) Volume(_ context.Context, obj *types.PriceLevel) (string, error) {
 	return strconv.FormatUint(obj.Volume, 10), nil
 }
 
-func (r *myPriceLevelResolver) NumberOfOrders(ctx context.Context, obj *types.PriceLevel) (string, error) {
+func (r *myPriceLevelResolver) NumberOfOrders(_ context.Context, obj *types.PriceLevel) (string, error) {
 	return strconv.FormatUint(obj.NumberOfOrders, 10), nil
 }
 
@@ -2205,7 +2629,7 @@ func (r *myPositionResolver) Market(ctx context.Context, obj *types.Position) (*
 	return r.r.getMarketByID(ctx, obj.MarketId)
 }
 
-func (r *myPositionResolver) UpdatedAt(ctx context.Context, obj *types.Position) (*string, error) {
+func (r *myPositionResolver) UpdatedAt(_ context.Context, obj *types.Position) (*string, error) {
 	var updatedAt *string
 	if obj.UpdatedAt > 0 {
 		t := vegatime.Format(vegatime.UnixNano(obj.UpdatedAt))
@@ -2214,19 +2638,19 @@ func (r *myPositionResolver) UpdatedAt(ctx context.Context, obj *types.Position)
 	return updatedAt, nil
 }
 
-func (r *myPositionResolver) OpenVolume(ctx context.Context, obj *types.Position) (string, error) {
+func (r *myPositionResolver) OpenVolume(_ context.Context, obj *types.Position) (string, error) {
 	return strconv.FormatInt(obj.OpenVolume, 10), nil
 }
 
-func (r *myPositionResolver) RealisedPnl(ctx context.Context, obj *types.Position) (string, error) {
+func (r *myPositionResolver) RealisedPnl(_ context.Context, obj *types.Position) (string, error) {
 	return obj.RealisedPnl, nil
 }
 
-func (r *myPositionResolver) UnrealisedPnl(ctx context.Context, obj *types.Position) (string, error) {
+func (r *myPositionResolver) UnrealisedPnl(_ context.Context, obj *types.Position) (string, error) {
 	return obj.UnrealisedPnl, nil
 }
 
-func (r *myPositionResolver) AverageEntryPrice(ctx context.Context, obj *types.Position) (string, error) {
+func (r *myPositionResolver) AverageEntryPrice(_ context.Context, obj *types.Position) (string, error) {
 	return obj.AverageEntryPrice, nil
 }
 
@@ -2246,11 +2670,18 @@ func (r *myPositionResolver) Margins(ctx context.Context, obj *types.Position) (
 		PartyId:  obj.PartyId,
 		MarketId: obj.MarketId,
 	}
-	res, err := r.tradingDataClient.MarginLevels(ctx, &req)
+	header := metadata.MD{}
+
+	res, err := r.tradingDataClient.MarginLevels(ctx, &req, grpc.Header(&header))
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	return res.MarginLevels, nil
 }
 
@@ -2261,10 +2692,15 @@ func (r *myPositionResolver) MarginsConnection(ctx context.Context, pos *types.P
 		Pagination: pagination,
 	}
 
-	res, err := r.tradingDataClientV2.ListMarginLevels(ctx, &req)
+	header := metadata.MD{}
+	res, err := r.tradingDataClientV2.ListMarginLevels(ctx, &req, grpc.Header(&header))
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return res.MarginLevels, nil
@@ -2281,9 +2717,15 @@ func (r *mySubscriptionResolver) Delegations(ctx context.Context, party, nodeID 
 		PartyId: party,
 		NodeId:  nodeID,
 	}
-	stream, err := r.tradingDataClientV2.ObserveDelegations(ctx, req)
+	header := metadata.MD{}
+
+	stream, err := r.tradingDataClientV2.ObserveDelegations(ctx, req, grpc.Header(&header))
 	if err != nil {
 		return nil, customErrorFromStatus(err)
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	ch := make(chan *types.Delegation)
@@ -2314,9 +2756,15 @@ func (r *mySubscriptionResolver) Rewards(ctx context.Context, assetID, party *st
 		AssetId: assetID,
 		PartyId: party,
 	}
-	stream, err := r.tradingDataClientV2.ObserveRewards(ctx, req)
+	header := metadata.MD{}
+
+	stream, err := r.tradingDataClientV2.ObserveRewards(ctx, req, grpc.Header(&header))
 	if err != nil {
 		return nil, customErrorFromStatus(err)
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	ch := make(chan *types.Reward)
@@ -2347,9 +2795,15 @@ func (r *mySubscriptionResolver) Margins(ctx context.Context, partyID string, ma
 		MarketId: marketID,
 		PartyId:  partyID,
 	}
-	stream, err := r.tradingDataClientV2.ObserveMarginLevels(ctx, req)
+	header := metadata.MD{}
+
+	stream, err := r.tradingDataClientV2.ObserveMarginLevels(ctx, req, grpc.Header(&header))
 	if err != nil {
 		return nil, customErrorFromStatus(err)
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	ch := make(chan *types.MarginLevels)
@@ -2404,9 +2858,15 @@ func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 		PartyId:  pty,
 		Type:     ty,
 	}
-	stream, err := r.tradingDataClientV2.ObserveAccounts(ctx, req)
+	header := metadata.MD{}
+
+	stream, err := r.tradingDataClientV2.ObserveAccounts(ctx, req, grpc.Header(&header))
 	if err != nil {
 		return nil, customErrorFromStatus(err)
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	c := make(chan []*types.Account)
@@ -2444,9 +2904,15 @@ func (r *mySubscriptionResolver) Orders(ctx context.Context, market *string, par
 		MarketId: market,
 		PartyId:  party,
 	}
-	stream, err := r.tradingDataClientV2.ObserveOrders(ctx, req)
+	header := metadata.MD{}
+
+	stream, err := r.tradingDataClientV2.ObserveOrders(ctx, req, grpc.Header(&header))
 	if err != nil {
 		return nil, customErrorFromStatus(err)
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	c := make(chan []*types.Order)
@@ -2482,9 +2948,14 @@ func (r *mySubscriptionResolver) Trades(ctx context.Context, market *string, par
 		MarketId: market,
 		PartyId:  party,
 	}
-	stream, err := r.tradingDataClientV2.ObserveTrades(ctx, req)
+	header := metadata.MD{}
+	stream, err := r.tradingDataClientV2.ObserveTrades(ctx, req, grpc.Header(&header))
 	if err != nil {
 		return nil, customErrorFromStatus(err)
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	c := make(chan []*types.Trade)
@@ -2515,9 +2986,15 @@ func (r *mySubscriptionResolver) Positions(ctx context.Context, party, market *s
 		PartyId:  party,
 		MarketId: market,
 	}
-	stream, err := r.tradingDataClientV2.ObservePositions(ctx, req)
+	header := metadata.MD{}
+
+	stream, err := r.tradingDataClientV2.ObservePositions(ctx, req, grpc.Header(&header))
 	if err != nil {
 		return nil, customErrorFromStatus(err)
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	c := make(chan []*types.Position)
@@ -2550,9 +3027,10 @@ func (r *mySubscriptionResolver) Positions(ctx context.Context, party, market *s
 }
 
 func (r *mySubscriptionResolver) Candles(ctx context.Context, market string, interval vega.Interval) (<-chan *types.Candle, error) {
+	header := metadata.MD{}
 	intervalToCandleIDs, err := r.tradingDataClientV2.ListCandleIntervals(ctx, &v2.ListCandleIntervalsRequest{
 		MarketId: market,
-	})
+	}, grpc.Header(&header))
 	if err != nil {
 		return nil, customErrorFromStatus(err)
 	}
@@ -2578,9 +3056,19 @@ func (r *mySubscriptionResolver) Candles(ctx context.Context, market string, int
 	req := &v2.ObserveCandleDataRequest{
 		CandleId: candleID,
 	}
-	stream, err := r.tradingDataClientV2.ObserveCandleData(ctx, req)
+	header1 := metadata.MD{}
+
+	stream, err := r.tradingDataClientV2.ObserveCandleData(ctx, req, grpc.Header(&header1))
 	if err != nil {
 		return nil, customErrorFromStatus(err)
+	}
+
+	for k, h := range header1 {
+		header[k] = h
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("add headers to context failed", logging.Error(err))
 	}
 
 	c := make(chan *types.Candle)
@@ -2632,10 +3120,16 @@ func isStreamClosed(err error, log *logging.Logger) bool {
 }
 
 func (r *mySubscriptionResolver) subscribeAllProposals(ctx context.Context) (<-chan *types.GovernanceData, error) {
-	stream, err := r.tradingDataClientV2.ObserveGovernance(ctx, &v2.ObserveGovernanceRequest{})
+	header := metadata.MD{}
+	stream, err := r.tradingDataClientV2.ObserveGovernance(ctx, &v2.ObserveGovernanceRequest{}, grpc.Header(&header))
 	if err != nil {
 		return nil, customErrorFromStatus(err)
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	output := make(chan *types.GovernanceData)
 	go func() {
 		defer func() {
@@ -2650,12 +3144,18 @@ func (r *mySubscriptionResolver) subscribeAllProposals(ctx context.Context) (<-c
 }
 
 func (r *mySubscriptionResolver) subscribePartyProposals(ctx context.Context, partyID string) (<-chan *types.GovernanceData, error) {
+	header := metadata.MD{}
 	stream, err := r.tradingDataClientV2.ObserveGovernance(ctx, &v2.ObserveGovernanceRequest{
 		PartyId: &partyID,
-	})
+	}, grpc.Header(&header))
 	if err != nil {
 		return nil, customErrorFromStatus(err)
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	output := make(chan *types.GovernanceData)
 	go func() {
 		defer func() {
@@ -2678,12 +3178,18 @@ func (r *mySubscriptionResolver) Proposals(ctx context.Context, partyID *string)
 
 func (r *mySubscriptionResolver) subscribeProposalVotes(ctx context.Context, proposalID string) (<-chan *ProposalVote, error) {
 	output := make(chan *ProposalVote)
+	header := metadata.MD{}
 	stream, err := r.tradingDataClientV2.ObserveVotes(ctx, &v2.ObserveVotesRequest{
 		ProposalId: &proposalID,
-	})
+	}, grpc.Header(&header))
 	if err != nil {
 		return nil, customErrorFromStatus(err)
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	go func() {
 		defer func() {
 			stream.CloseSend()
@@ -2697,17 +3203,24 @@ func (r *mySubscriptionResolver) subscribeProposalVotes(ctx context.Context, pro
 			output <- ProposalVoteFromProto(data.Vote)
 		}
 	}()
+
 	return output, nil
 }
 
 func (r *mySubscriptionResolver) subscribePartyVotes(ctx context.Context, partyID string) (<-chan *ProposalVote, error) {
 	output := make(chan *ProposalVote)
+	header := metadata.MD{}
 	stream, err := r.tradingDataClientV2.ObserveVotes(ctx, &v2.ObserveVotesRequest{
 		PartyId: &partyID,
-	})
+	}, grpc.Header(&header))
 	if err != nil {
 		return nil, customErrorFromStatus(err)
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	go func() {
 		defer func() {
 			stream.CloseSend()
@@ -2721,6 +3234,7 @@ func (r *mySubscriptionResolver) subscribePartyVotes(ctx context.Context, partyI
 			output <- ProposalVoteFromProto(data.Vote)
 		}
 	}()
+
 	return output, nil
 }
 
@@ -2760,7 +3274,8 @@ func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEvent
 	msgSize := grpc.MaxCallRecvMsgSize(mb * 10e6)
 
 	// build the bidirectional stream connection
-	stream, err := r.tradingDataClientV2.ObserveEventBus(ctx, msgSize)
+	header := metadata.MD{}
+	stream, err := r.tradingDataClientV2.ObserveEventBus(ctx, msgSize, grpc.Header(&header))
 	if err != nil {
 		return nil, customErrorFromStatus(err)
 	}
@@ -2768,6 +3283,10 @@ func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEvent
 	// send our initial message to initialize the connection
 	if err := stream.Send(&req); err != nil {
 		return nil, customErrorFromStatus(err)
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	// we no longer buffer this channel. Client receives batch, then we request the next batch
@@ -2780,9 +3299,9 @@ func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEvent
 		}()
 
 		if batchSize == 0 {
-			r.busEvents(ctx, stream, out)
+			r.busEvents(stream, out)
 		} else {
-			r.busEventsWithBatch(ctx, int64(batchSize), stream, out)
+			r.busEventsWithBatch(int64(batchSize), stream, out)
 		}
 	}()
 
@@ -2790,7 +3309,6 @@ func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEvent
 }
 
 func (r *mySubscriptionResolver) busEvents(
-	ctx context.Context,
 	stream v2.TradingDataService_ObserveEventBusClient,
 	out chan []*BusEvent,
 ) {
@@ -2810,7 +3328,6 @@ func (r *mySubscriptionResolver) busEvents(
 }
 
 func (r *mySubscriptionResolver) busEventsWithBatch(
-	ctx context.Context,
 	batchSize int64, // always non-0 here
 	stream v2.TradingDataService_ObserveEventBusClient,
 	out chan []*BusEvent,
@@ -2842,7 +3359,7 @@ func (r *mySubscriptionResolver) busEventsWithBatch(
 
 type myAccountResolver VegaResolverRoot
 
-func (r *myAccountResolver) Balance(ctx context.Context, acc *types.Account) (string, error) {
+func (r *myAccountResolver) Balance(_ context.Context, acc *types.Account) (string, error) {
 	return acc.Balance, nil
 }
 
@@ -2863,11 +3380,17 @@ func getParty(ctx context.Context, log *logging.Logger, client TradingDataServic
 	if len(id) == 0 {
 		return nil, nil
 	}
-	res, err := client.GetParty(ctx, &v2.GetPartyRequest{PartyId: id})
+	header := metadata.MD{}
+	res, err := client.GetParty(ctx, &v2.GetPartyRequest{PartyId: id}, grpc.Header(&header))
 	if err != nil {
 		log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	return res.Party, nil
 }
 
@@ -2893,9 +3416,14 @@ func (r *myQueryResolver) GetMarketDataHistoryByID(ctx context.Context, id strin
 }
 
 func (r *myQueryResolver) getMarketData(ctx context.Context, req *v2.GetMarketDataHistoryByIDRequest) ([]*types.MarketData, error) {
-	resp, err := r.tradingDataClientV2.GetMarketDataHistoryByID(ctx, req)
+	header := metadata.MD{}
+	resp, err := r.tradingDataClientV2.GetMarketDataHistoryByID(ctx, req, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	if resp.MarketData == nil {
@@ -2954,10 +3482,15 @@ func (r *myQueryResolver) GetMarketDataHistoryConnectionByID(ctx context.Context
 		Pagination:     pagination,
 	}
 
-	resp, err := r.tradingDataClientV2.GetMarketDataHistoryByID(ctx, &req)
+	header := metadata.MD{}
+	resp, err := r.tradingDataClientV2.GetMarketDataHistoryByID(ctx, &req, grpc.Header(&header))
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return resp.GetMarketData(), nil
@@ -2966,10 +3499,19 @@ func (r *myQueryResolver) GetMarketDataHistoryConnectionByID(ctx context.Context
 func (r *myQueryResolver) MarketsConnection(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.MarketConnection, error) {
 	var marketID string
 
+	header := metadata.MD{}
+
+	defer func() {
+		if err := gateway.AddMDHeadersToContext(ctx, header); err != nil {
+			r.log.Error("failed to add headers to context", logging.Error(err))
+		}
+
+	}()
+
 	if id != nil {
 		marketID = *id
 
-		resp, err := r.tradingDataClientV2.GetMarket(ctx, &v2.GetMarketRequest{MarketId: marketID})
+		resp, err := r.tradingDataClientV2.GetMarket(ctx, &v2.GetMarketRequest{MarketId: marketID}, grpc.Header(&header))
 		if err != nil {
 			return nil, err
 		}
@@ -2994,7 +3536,7 @@ func (r *myQueryResolver) MarketsConnection(ctx context.Context, id *string, pag
 
 	resp, err := r.tradingDataClientV2.ListMarkets(ctx, &v2.ListMarketsRequest{
 		Pagination: pagination,
-	})
+	}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
 	}
@@ -3007,12 +3549,17 @@ func (r *myQueryResolver) PartiesConnection(ctx context.Context, id *string, pag
 	if id != nil {
 		partyID = *id
 	}
+	header := metadata.MD{}
 	resp, err := r.tradingDataClientV2.ListParties(ctx, &v2.ListPartiesRequest{
 		PartyId:    partyID,
 		Pagination: pagination,
-	})
+	}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return resp.Party, nil

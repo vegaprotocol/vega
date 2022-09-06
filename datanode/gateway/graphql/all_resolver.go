@@ -15,6 +15,10 @@ package gql
 import (
 	"context"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
+
+	"code.vegaprotocol.io/vega/datanode/gateway"
 	"code.vegaprotocol.io/vega/logging"
 	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
@@ -31,8 +35,16 @@ func (r *allResolver) getEpochByID(ctx context.Context, id uint64) (*types.Epoch
 	req := &v2.GetEpochRequest{
 		Id: &id,
 	}
-	resp, err := r.clt2.GetEpoch(ctx, req)
-	return resp.Epoch, err
+	header := metadata.MD{}
+	resp, err := r.clt2.GetEpoch(ctx, req, grpc.Header(&header))
+	if err != nil {
+		return nil, err
+	}
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
+	return resp.Epoch, nil
 }
 
 func (r *allResolver) getOrderByID(ctx context.Context, id string, version *int) (*types.Order, error) {
@@ -45,9 +57,14 @@ func (r *allResolver) getOrderByID(ctx context.Context, id string, version *int)
 		OrderId: id,
 		Version: &v,
 	}
-	order, err := r.clt2.GetOrder(ctx, orderReq)
+	header := metadata.MD{}
+	order, err := r.clt2.GetOrder(ctx, orderReq, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return order.Order, nil
@@ -60,10 +77,15 @@ func (r *allResolver) getAssetByID(ctx context.Context, id string) (*types.Asset
 	req := &protoapi.AssetByIDRequest{
 		Id: id,
 	}
-	res, err := r.clt.AssetByID(ctx, req)
+	header := metadata.MD{}
+	res, err := r.clt.AssetByID(ctx, req, grpc.Header(&header))
 	if err != nil {
 		return nil, err
 	}
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	return res.Asset, nil
 }
 
@@ -71,10 +93,14 @@ func (r *allResolver) getNodeByID(ctx context.Context, id string) (*types.Node, 
 	if len(id) <= 0 {
 		return nil, ErrMissingNodeID
 	}
-	resp, err := r.clt.GetNodeByID(
-		ctx, &protoapi.GetNodeByIDRequest{Id: id})
+	header := metadata.MD{}
+	resp, err := r.clt.GetNodeByID(ctx, &protoapi.GetNodeByIDRequest{Id: id}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return resp.Node, nil
@@ -82,16 +108,24 @@ func (r *allResolver) getNodeByID(ctx context.Context, id string) (*types.Node, 
 
 func (r allResolver) allAssets(ctx context.Context) ([]*types.Asset, error) {
 	req := &protoapi.AssetsRequest{}
-	res, err := r.clt.Assets(ctx, req)
+	header := metadata.MD{}
+
+	res, err := r.clt.Assets(ctx, req, grpc.Header(&header))
 	if err != nil {
 		return nil, err
 	}
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	return res.Assets, nil
 }
 
 func (r *allResolver) getMarketByID(ctx context.Context, id string) (*types.Market, error) {
 	req := v2.GetMarketRequest{MarketId: id}
-	res, err := r.clt2.GetMarket(ctx, &req)
+	header := metadata.MD{}
+
+	res, err := r.clt2.GetMarket(ctx, &req, grpc.Header(&header))
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
@@ -100,6 +134,10 @@ func (r *allResolver) getMarketByID(ctx context.Context, id string) (*types.Mark
 	if res.Market == nil {
 		return nil, nil
 	}
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	return res.Market, nil
 }
 
@@ -114,11 +152,16 @@ func (r *allResolver) allMarkets(ctx context.Context, id *string) ([]*types.Mark
 		}
 		return []*types.Market{mkt}, nil
 	}
-	res, err := r.clt.Markets(ctx, &protoapi.MarketsRequest{})
+	header := metadata.MD{}
+	res, err := r.clt.Markets(ctx, &protoapi.MarketsRequest{}, grpc.Header(&header))
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
 	}
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	return res.Markets, nil
 }
 
@@ -128,9 +171,14 @@ func (r *allResolver) allRewards(ctx context.Context, partyID, assetID string, s
 		AssetId:    assetID,
 		Pagination: makePagination(skip, first, last),
 	}
-	resp, err := r.clt.GetRewards(ctx, req)
+	header := metadata.MD{}
+	resp, err := r.clt.GetRewards(ctx, req, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return resp.Rewards, nil
@@ -158,13 +206,18 @@ func (r *allResolver) transfersConnection(
 		transferDirection = v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_TO_OR_FROM
 	}
 
+	header := metadata.MD{}
 	res, err := r.clt2.ListTransfers(ctx, &v2.ListTransfersRequest{
 		Pubkey:     partyID,
 		Direction:  transferDirection,
 		Pagination: pagination,
-	})
+	}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return res.Transfers, nil

@@ -6,12 +6,15 @@ import (
 	"io"
 	"strconv"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
+
+	"code.vegaprotocol.io/vega/datanode/gateway"
 	"code.vegaprotocol.io/vega/datanode/vegatime"
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	"code.vegaprotocol.io/vega/protos/vega"
 	types "code.vegaprotocol.io/vega/protos/vega"
-	vega "code.vegaprotocol.io/vega/protos/vega"
-	"google.golang.org/grpc"
 )
 
 // MarketDepth returns the market depth resolver.
@@ -126,10 +129,17 @@ func (r *myMarketDataResolver) Commitments(ctx context.Context, m *types.MarketD
 	req := v2.ListLiquidityProvisionsRequest{
 		MarketId: &m.Market,
 	}
-	res, err := r.tradingDataClientV2.ListLiquidityProvisions(ctx, &req)
+
+	header := metadata.MD{}
+
+	res, err := r.tradingDataClientV2.ListLiquidityProvisions(ctx, &req, grpc.Header(&header))
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("gateway", logging.Error(err))
 	}
 
 	// now we split all the sells and buys
@@ -147,7 +157,7 @@ func (r *myMarketDataResolver) Commitments(ctx context.Context, m *types.MarketD
 	}, nil
 }
 
-func (r *myMarketDataResolver) PriceMonitoringBounds(ctx context.Context, obj *types.MarketData) ([]*PriceMonitoringBounds, error) {
+func (r *myMarketDataResolver) PriceMonitoringBounds(_ context.Context, obj *types.MarketData) ([]*PriceMonitoringBounds, error) {
 	ret := make([]*PriceMonitoringBounds, 0, len(obj.PriceMonitoringBounds))
 	for _, b := range obj.PriceMonitoringBounds {
 		probability, err := strconv.ParseFloat(b.Trigger.Probability, 64)
@@ -192,7 +202,7 @@ func (r *myMarketDataResolver) LiquidityProviderFeeShare(_ context.Context, m *t
 
 type myObservableMarketDataResolver myMarketDataResolver
 
-func (r *myObservableMarketDataResolver) MarketID(ctx context.Context, m *types.MarketData) (string, error) {
+func (r *myObservableMarketDataResolver) MarketID(_ context.Context, m *types.MarketData) (string, error) {
 	return m.Market, nil
 }
 
@@ -269,7 +279,7 @@ func (r *myObservableMarketDataResolver) PriceMonitoringBounds(ctx context.Conte
 }
 
 // ExtensionTrigger same as Trigger.
-func (r *myObservableMarketDataResolver) ExtensionTrigger(ctx context.Context, m *types.MarketData) (vega.AuctionTrigger, error) {
+func (r *myObservableMarketDataResolver) ExtensionTrigger(_ context.Context, m *types.MarketData) (vega.AuctionTrigger, error) {
 	return m.ExtensionTrigger, nil
 }
 
@@ -277,7 +287,7 @@ func (r *myObservableMarketDataResolver) MarketValueProxy(ctx context.Context, m
 	return (*myMarketDataResolver)(r).MarketValueProxy(ctx, m)
 }
 
-func (r *myObservableMarketDataResolver) LiquidityProviderFeeShare(ctx context.Context, m *types.MarketData) ([]*ObservableLiquidityProviderFeeShare, error) {
+func (r *myObservableMarketDataResolver) LiquidityProviderFeeShare(_ context.Context, m *types.MarketData) ([]*ObservableLiquidityProviderFeeShare, error) {
 	out := make([]*ObservableLiquidityProviderFeeShare, 0, len(m.LiquidityProviderFeeShare))
 	for _, v := range m.LiquidityProviderFeeShare {
 		out = append(out, &ObservableLiquidityProviderFeeShare{
@@ -301,15 +311,21 @@ func (r *myMarketDepthResolver) LastTrade(ctx context.Context, md *types.MarketD
 	}
 
 	req := v2.GetLastTradeRequest{MarketId: md.MarketId}
-	res, err := r.tradingDataClientV2.GetLastTrade(ctx, &req)
+	header := metadata.MD{}
+	res, err := r.tradingDataClientV2.GetLastTrade(ctx, &req, grpc.Header(&header))
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("could not add headers to context", logging.Error(err))
+	}
+
 	return res.Trade, nil
 }
 
-func (r *myMarketDepthResolver) SequenceNumber(ctx context.Context, md *types.MarketDepth) (string, error) {
+func (r *myMarketDepthResolver) SequenceNumber(_ context.Context, md *types.MarketDepth) (string, error) {
 	return strconv.FormatUint(md.SequenceNumber, 10), nil
 }
 
@@ -325,11 +341,17 @@ func (r *myObservableMarketDepthResolver) LastTrade(ctx context.Context, md *typ
 	}
 
 	req := v2.GetLastTradeRequest{MarketId: md.MarketId}
-	res, err := r.tradingDataClientV2.GetLastTrade(ctx, &req)
+	header := metadata.MD{}
+	res, err := r.tradingDataClientV2.GetLastTrade(ctx, &req, grpc.Header(&header))
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("could not add headers to context", logging.Error(err))
+	}
+
 	return &MarketDepthTrade{ID: res.Trade.Id, Price: res.Trade.Price, Size: strconv.FormatUint(res.Trade.Size, 10)}, nil
 }
 
@@ -343,11 +365,11 @@ func (r *myObservableMarketDepthResolver) SequenceNumber(ctx context.Context, md
 
 type myMarketDepthUpdateResolver VegaResolverRoot
 
-func (r *myMarketDepthUpdateResolver) SequenceNumber(ctx context.Context, md *types.MarketDepthUpdate) (string, error) {
+func (r *myMarketDepthUpdateResolver) SequenceNumber(_ context.Context, md *types.MarketDepthUpdate) (string, error) {
 	return strconv.FormatUint(md.SequenceNumber, 10), nil
 }
 
-func (r *myMarketDepthUpdateResolver) PreviousSequenceNumber(ctx context.Context, md *types.MarketDepthUpdate) (string, error) {
+func (r *myMarketDepthUpdateResolver) PreviousSequenceNumber(_ context.Context, md *types.MarketDepthUpdate) (string, error) {
 	return strconv.FormatUint(md.PreviousSequenceNumber, 10), nil
 }
 
@@ -371,9 +393,16 @@ func (r *mySubscriptionResolver) MarketsDepth(ctx context.Context, marketIds []s
 	req := &v2.ObserveMarketsDepthRequest{
 		MarketIds: marketIds,
 	}
-	stream, err := r.tradingDataClientV2.ObserveMarketsDepth(ctx, req)
+
+	header := metadata.MD{}
+
+	stream, err := r.tradingDataClientV2.ObserveMarketsDepth(ctx, req, grpc.Header(&header))
 	if err != nil {
 		return nil, customErrorFromStatus(err)
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("could not add headers to context", logging.Error(err))
 	}
 
 	return grpcStreamToGraphQlChannel[*v2.ObserveMarketsDepthResponse, []*types.MarketDepth](r.log, "marketsDepth", stream,
@@ -386,9 +415,15 @@ func (r *mySubscriptionResolver) MarketDepth(ctx context.Context, market string)
 	req := &v2.ObserveMarketsDepthRequest{
 		MarketIds: []string{market},
 	}
-	stream, err := r.tradingDataClientV2.ObserveMarketsDepth(ctx, req)
+	header := metadata.MD{}
+
+	stream, err := r.tradingDataClientV2.ObserveMarketsDepth(ctx, req, grpc.Header(&header))
 	if err != nil {
 		return nil, customErrorFromStatus(err)
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("could not add headers to context", logging.Error(err))
 	}
 
 	return grpcStreamToGraphQlChannel[*v2.ObserveMarketsDepthResponse, *types.MarketDepth](r.log, "marketdepth", stream,
@@ -404,9 +439,15 @@ func (r *mySubscriptionResolver) MarketsDepthUpdate(ctx context.Context, marketI
 	req := &v2.ObserveMarketsDepthUpdatesRequest{
 		MarketIds: marketIDs,
 	}
-	stream, err := r.tradingDataClientV2.ObserveMarketsDepthUpdates(ctx, req)
+	header := metadata.MD{}
+
+	stream, err := r.tradingDataClientV2.ObserveMarketsDepthUpdates(ctx, req, grpc.Header(&header))
 	if err != nil {
 		return nil, customErrorFromStatus(err)
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("could not add headers to context", logging.Error(err))
 	}
 
 	return grpcStreamToGraphQlChannel[*v2.ObserveMarketsDepthUpdatesResponse, []*types.MarketDepthUpdate](r.log, "marketsDepthUpdate", stream,
@@ -419,9 +460,15 @@ func (r *mySubscriptionResolver) MarketDepthUpdate(ctx context.Context, market s
 	req := &v2.ObserveMarketsDepthUpdatesRequest{
 		MarketIds: []string{market},
 	}
-	stream, err := r.tradingDataClientV2.ObserveMarketsDepthUpdates(ctx, req)
+	header := metadata.MD{}
+
+	stream, err := r.tradingDataClientV2.ObserveMarketsDepthUpdates(ctx, req, grpc.Header(&header))
 	if err != nil {
 		return nil, customErrorFromStatus(err)
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("could not add headers to context", logging.Error(err))
 	}
 
 	return grpcStreamToGraphQlChannel[*v2.ObserveMarketsDepthUpdatesResponse, *types.MarketDepthUpdate](r.log, "marketDepthUpdate", stream,
@@ -437,9 +484,15 @@ func (r *mySubscriptionResolver) MarketsData(ctx context.Context, marketIds []st
 	req := &v2.ObserveMarketsDataRequest{
 		MarketIds: marketIds,
 	}
-	stream, err := r.tradingDataClientV2.ObserveMarketsData(ctx, req)
+	header := metadata.MD{}
+
+	stream, err := r.tradingDataClientV2.ObserveMarketsData(ctx, req, grpc.Header(&header))
 	if err != nil {
 		return nil, customErrorFromStatus(err)
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("could not add headers to context", logging.Error(err))
 	}
 
 	return grpcStreamToGraphQlChannel[*v2.ObserveMarketsDataResponse, []*types.MarketData](r.log, "marketsdata", stream,
@@ -456,9 +509,15 @@ func (r *mySubscriptionResolver) MarketData(ctx context.Context, marketID *strin
 	req := &v2.ObserveMarketsDataRequest{
 		MarketIds: marketIds,
 	}
-	stream, err := r.tradingDataClientV2.ObserveMarketsData(ctx, req)
+	header := metadata.MD{}
+
+	stream, err := r.tradingDataClientV2.ObserveMarketsData(ctx, req, grpc.Header(&header))
 	if err != nil {
 		return nil, customErrorFromStatus(err)
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("could not add headers to context", logging.Error(err))
 	}
 
 	return grpcStreamToGraphQlChannel[*v2.ObserveMarketsDataResponse, *types.MarketData](r.log, "marketdata", stream,
@@ -479,7 +538,7 @@ func grpcStreamToGraphQlChannel[T any, Y any](log *logging.Logger, observableTyp
 	c := make(chan Y)
 	go func() {
 		defer func() {
-			stream.CloseSend()
+			_ = stream.CloseSend()
 			close(c)
 		}()
 		for {

@@ -17,6 +17,9 @@ import (
 	"errors"
 	"testing"
 
+	"go.uber.org/zap"
+	"google.golang.org/grpc"
+
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	gql "code.vegaprotocol.io/vega/datanode/gateway/graphql"
 	"code.vegaprotocol.io/vega/datanode/gateway/graphql/mocks"
@@ -24,7 +27,6 @@ import (
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	oraclesv1 "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
-	"google.golang.org/grpc"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -158,7 +160,7 @@ func TestNewResolverRoot_Resolver(t *testing.T) {
 
 	root.tradingDataClient.EXPECT().GetAsset(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&v2.GetAssetResponse{Asset: &types.Asset{}}, nil)
 
-	root.tradingDataClient.EXPECT().GetMarket(gomock.Any(), gomock.Any()).Times(len(markets)).DoAndReturn(func(_ context.Context, req *v2.GetMarketRequest, _ ...grpc.CallOption) (*v2.GetMarketResponse, error) {
+	root.tradingDataClient.EXPECT().GetMarket(gomock.Any(), gomock.Any(), gomock.Any()).Times(len(markets)).DoAndReturn(func(_ context.Context, req *v2.GetMarketRequest, _ ...grpc.CallOption) (*v2.GetMarketResponse, error) {
 		m, ok := markets[req.MarketId]
 		assert.True(t, ok)
 		if m == nil {
@@ -179,7 +181,7 @@ func TestNewResolverRoot_Resolver(t *testing.T) {
 	assert.Nil(t, vMarkets)
 
 	name = "barney"
-	root.tradingDataClient.EXPECT().ListParties(gomock.Any(), gomock.Any()).Times(1).Return(&v2.ListPartiesResponse{
+	root.tradingDataClient.EXPECT().ListParties(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(&v2.ListPartiesResponse{
 		Party: &v2.PartyConnection{
 			Edges: []*v2.PartyEdge{
 				{
@@ -194,7 +196,7 @@ func TestNewResolverRoot_Resolver(t *testing.T) {
 	assert.NotNil(t, vParties)
 	assert.Len(t, vParties.Edges, 1)
 
-	root.tradingDataClient.EXPECT().ListParties(gomock.Any(), gomock.Any()).Times(1).Return(&v2.ListPartiesResponse{Party: &v2.PartyConnection{
+	root.tradingDataClient.EXPECT().ListParties(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(&v2.ListPartiesResponse{Party: &v2.PartyConnection{
 		Edges:    nil,
 		PageInfo: &v2.PageInfo{},
 	}}, nil)
@@ -214,7 +216,7 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 		Id: marketID,
 	}
 
-	root.tradingDataClient.EXPECT().ListOrders(gomock.Any(), gomock.Any()).Times(1).Return(&v2.ListOrdersResponse{Orders: &v2.OrderConnection{
+	root.tradingDataClient.EXPECT().ListOrders(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(&v2.ListOrdersResponse{Orders: &v2.OrderConnection{
 		Edges: []*v2.OrderEdge{
 			{
 				Node: &types.Order{
@@ -292,6 +294,8 @@ func buildTestResolverRoot(t *testing.T) *testResolver {
 }
 
 func (t *testResolver) Finish() {
-	t.log.Sync()
+	if err := t.log.Sync(); err != nil {
+		t.log.Error("failed to sync log", zap.Error(err))
+	}
 	t.ctrl.Finish()
 }

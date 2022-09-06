@@ -5,14 +5,19 @@ import (
 	"fmt"
 	"time"
 
-	"code.vegaprotocol.io/vega/core/types"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
+
+	"code.vegaprotocol.io/vega/datanode/gateway"
 	"code.vegaprotocol.io/vega/datanode/vegatime"
+	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
+	types "code.vegaprotocol.io/vega/protos/vega"
 )
 
 func handleCandleConnectionRequest(ctx context.Context, client TradingDataServiceClientV2, market *vega.Market, sinceRaw string, toRaw *string,
-	interval vega.Interval, pagination *v2.Pagination,
+	interval vega.Interval, pagination *v2.Pagination, log *logging.Logger,
 ) (*v2.CandleDataConnection, error) {
 	since, err := vegatime.Parse(sinceRaw)
 	if err != nil {
@@ -33,7 +38,8 @@ func handleCandleConnectionRequest(ctx context.Context, client TradingDataServic
 	}
 
 	candlesForMktReq := v2.ListCandleIntervalsRequest{MarketId: mkt}
-	candlesForMktResp, err := client.ListCandleIntervals(ctx, &candlesForMktReq)
+	header := metadata.MD{}
+	candlesForMktResp, err := client.ListCandleIntervals(ctx, &candlesForMktReq, grpc.Header(&header))
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve candles for market %s: %w", mkt, err)
 	}
@@ -58,38 +64,60 @@ func handleCandleConnectionRequest(ctx context.Context, client TradingDataServic
 		Interval:      interval,
 		Pagination:    pagination,
 	}
-	resp, err := client.ListCandleData(ctx, &req)
+
+	header1 := metadata.MD{}
+	resp, err := client.ListCandleData(ctx, &req, grpc.Header(&header1))
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve candles for market %s: %w", mkt, err)
+	}
+
+	for k, v := range header1 {
+		header[k] = v
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return resp.Candles, nil
 }
 
 func handleWithdrawalsConnectionRequest(ctx context.Context, client TradingDataServiceClientV2, party *types.Party,
-	dateRange *v2.DateRange, pagination *v2.Pagination,
+	dateRange *v2.DateRange, pagination *v2.Pagination, log *logging.Logger,
 ) (*v2.WithdrawalsConnection, error) {
 	req := v2.ListWithdrawalsRequest{PartyId: party.Id, Pagination: pagination, DateRange: dateRange}
-	resp, err := client.ListWithdrawals(ctx, &req)
+	header := metadata.MD{}
+	resp, err := client.ListWithdrawals(ctx, &req, grpc.Header(&header))
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve withdrawals for party %s: %w", party.Id, err)
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	return resp.Withdrawals, nil
 }
 
 func handleDepositsConnectionRequest(ctx context.Context, client TradingDataServiceClientV2, party *types.Party,
-	dateRange *v2.DateRange, pagination *v2.Pagination,
+	dateRange *v2.DateRange, pagination *v2.Pagination, log *logging.Logger,
 ) (*v2.DepositsConnection, error) {
 	req := v2.ListDepositsRequest{PartyId: party.Id, Pagination: pagination, DateRange: dateRange}
-	resp, err := client.ListDeposits(ctx, &req)
+	header := metadata.MD{}
+	resp, err := client.ListDeposits(ctx, &req, grpc.Header(&header))
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve deposits for party %s: %w", party.Id, err)
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	return resp.Deposits, nil
 }
 
 func handleProposalsRequest(ctx context.Context, client TradingDataServiceClientV2, party *types.Party, ref *string, inType *v2.ListGovernanceDataRequest_Type,
-	inState *vega.Proposal_State, pagination *v2.Pagination,
+	inState *vega.Proposal_State, pagination *v2.Pagination, log *logging.Logger,
 ) (*v2.GovernanceDataConnection, error) {
 	var partyID *string
 
@@ -104,15 +132,21 @@ func handleProposalsRequest(ctx context.Context, client TradingDataServiceClient
 		ProposalState:     inState,
 		Pagination:        pagination,
 	}
-	resp, err := client.ListGovernanceData(ctx, &req)
+	header := metadata.MD{}
+	resp, err := client.ListGovernanceData(ctx, &req, grpc.Header(&header))
 	if err != nil {
 		return nil, err
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	return resp.Connection, nil
 }
 
 func handleDelegationConnectionRequest(ctx context.Context, client TradingDataServiceClientV2,
-	partyID, nodeID, epochID *string, pagination *v2.Pagination,
+	partyID, nodeID, epochID *string, pagination *v2.Pagination, log *logging.Logger,
 ) (*v2.DelegationsConnection, error) {
 	req := v2.ListDelegationsRequest{
 		PartyId:    partyID,
@@ -121,9 +155,15 @@ func handleDelegationConnectionRequest(ctx context.Context, client TradingDataSe
 		Pagination: pagination,
 	}
 
-	resp, err := client.ListDelegations(ctx, &req)
+	header := metadata.MD{}
+	resp, err := client.ListDelegations(ctx, &req, grpc.Header(&header))
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve requested delegations: %w", err)
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		log.Error("failed to add headers to context", logging.Error(err))
+	}
+
 	return resp.Delegations, nil
 }

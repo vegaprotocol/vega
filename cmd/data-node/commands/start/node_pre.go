@@ -16,6 +16,8 @@ import (
 	"context"
 	"fmt"
 
+	"google.golang.org/grpc/connectivity"
+
 	"code.vegaprotocol.io/vega/datanode/broker"
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
 	"code.vegaprotocol.io/vega/datanode/config"
@@ -31,7 +33,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-func (l *NodeCommand) persistentPre(args []string) (err error) {
+func (l *NodeCommand) persistentPre(_ []string) (err error) {
 	// this shouldn't happen...
 	if l.cancel != nil {
 		l.cancel()
@@ -249,9 +251,21 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		return err
 	}
 
-	l.vegaCoreServiceClient = vegaprotoapi.NewCoreServiceClient(conn)
+	l.vegaCoreServiceClient = clientWrap{
+		CoreServiceClient: vegaprotoapi.NewCoreServiceClient(conn),
+		getState:          conn.GetState,
+	}
 
-	return nil
+	return
+}
+
+type clientWrap struct {
+	vegaprotoapi.CoreServiceClient
+	getState func() connectivity.State
+}
+
+func (c clientWrap) GetState() connectivity.State {
+	return c.getState()
 }
 
 func (l *NodeCommand) setupServices() error {

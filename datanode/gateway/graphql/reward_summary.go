@@ -16,6 +16,11 @@ import (
 	"context"
 	"fmt"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
+
+	"code.vegaprotocol.io/vega/datanode/gateway"
+	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
 )
@@ -36,9 +41,16 @@ func (r *rewardSummaryResolver) RewardsConnection(ctx context.Context, summary *
 		AssetId:    assetID,
 		Pagination: pagination,
 	}
-	resp, err := r.tradingDataClientV2.ListRewards(ctx, &req)
+
+	header := metadata.MD{}
+
+	resp, err := r.tradingDataClientV2.ListRewards(ctx, &req, grpc.Header(&header))
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve rewards information: %w", err)
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		r.log.Error("failed to add headers to context", logging.Error(err))
 	}
 
 	return resp.Rewards, nil

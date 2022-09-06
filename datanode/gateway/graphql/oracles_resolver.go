@@ -15,7 +15,12 @@ package gql
 import (
 	"context"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
+
+	"code.vegaprotocol.io/vega/datanode/gateway"
 	"code.vegaprotocol.io/vega/datanode/vegatime"
+	"code.vegaprotocol.io/vega/logging"
 	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	v1 "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
@@ -36,10 +41,17 @@ func (o *oracleSpecResolver) UpdatedAt(_ context.Context, obj *v1.OracleSpec) (*
 }
 
 func (o oracleSpecResolver) Data(ctx context.Context, obj *v1.OracleSpec) ([]*v1.OracleData, error) {
-	resp, err := o.tradingDataClient.OracleDataBySpec(ctx, &protoapi.OracleDataBySpecRequest{Id: obj.Id})
+	header := metadata.MD{}
+
+	resp, err := o.tradingDataClient.OracleDataBySpec(ctx, &protoapi.OracleDataBySpecRequest{Id: obj.Id}, grpc.Header(&header))
 	if err != nil {
 		return nil, err
 	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		o.log.Error("could not add headers to context", logging.Error(err))
+	}
+
 	return resp.OracleData, nil
 }
 
@@ -53,9 +65,15 @@ func (o oracleSpecResolver) DataConnection(ctx context.Context, spec *v1.OracleS
 		Pagination:   pagination,
 	}
 
-	resp, err := o.tradingDataClientV2.ListOracleData(ctx, &req)
+	header := metadata.MD{}
+
+	resp, err := o.tradingDataClientV2.ListOracleData(ctx, &req, grpc.Header(&header))
 	if err != nil {
 		return nil, err
+	}
+
+	if err = gateway.AddMDHeadersToContext(ctx, header); err != nil {
+		o.log.Error("could not add headers to context", logging.Error(err))
 	}
 
 	return resp.OracleData, nil

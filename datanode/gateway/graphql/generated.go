@@ -10022,7 +10022,7 @@ type Asset {
   "The symbol of the asset (e.g: GBP)"
   symbol: String!
 
-  "The precision of the asset. Should match the decimal precision of the asset on its native chain, e.g: for ERC20 assets, it is often 18"
+  "The precision of the asset. Should match the decimal precision of the asset on its native Chain, e.g: for ERC20 assets, it is often 18"
   decimals: Int!
 
   "The minimum economically meaningful amount in the asset"
@@ -10136,7 +10136,7 @@ type Statistics {
   "Total number of peers on the Vega network"
   totalPeers: String!
 
-  "RFC3339Nano genesis time of the chain"
+  "RFC3339Nano genesis time of the Chain"
   genesisTime: String!
 
   "RFC3339Nano current time (real)"
@@ -10145,10 +10145,10 @@ type Statistics {
   "RFC3339Nano uptime of the node"
   upTime: String!
 
-  "RFC3339Nano current time of the chain (decided through consensus)"
+  "RFC3339Nano current time of the Chain (decided through consensus)"
   vegaTime: String!
 
-  "Status of the Vega application connection with the chain"
+  "Status of the Vega application connection with the Chain"
   status: String!
 
   "Number of transaction processed per block"
@@ -10190,13 +10190,13 @@ type Statistics {
   "Version of the Vega node (semver)"
   appVersion: String!
 
-  "Version of the chain (semver)"
+  "Version of the Chain (semver)"
   chainVersion: String!
 
   "Duration of the last block, in nanoseconds"
   blockDuration: String!
 
-  "Current chain ID"
+  "Current Chain ID"
   chainId: ID!
 }
 
@@ -11108,7 +11108,7 @@ enum StakeLinkingStatus {
   """
   The stake linking is pending in the Vega network. This means that
   the Vega network have seen a stake linking, but is still to confirm
-  it's valid on the ethereum chain and accepted by all nodes of the network
+  it's valid on the ethereum Chain and accepted by all nodes of the network
   """
   STATUS_PENDING
   "The stake linking has been accepted and processed fully (balance updated) by the network"
@@ -11515,7 +11515,7 @@ type Withdrawal {
   asset: Asset!
   "The current status of the withdrawal"
   status: WithdrawalStatus!
-  "A reference the foreign chain can use to refer to when processing the withdrawal"
+  "A reference the foreign Chain can use to refer to when processing the withdrawal"
   ref: String!
   "RFC3339Nano time until the withdrawal will be invalid"
   expiry: String!
@@ -11523,9 +11523,9 @@ type Withdrawal {
   createdTimestamp: String!
   "RFC3339Nano time at which the withdrawal was finalised"
   withdrawnTimestamp: String
-  "Hash of the transaction on the foreign chain"
+  "Hash of the transaction on the foreign Chain"
   txHash: String
-  "Foreign chain specific details about the withdrawal"
+  "Foreign Chain specific details about the withdrawal"
   details: WithdrawalDetails
 }
 
@@ -11541,9 +11541,9 @@ type Erc20WithdrawalDetails {
 enum WithdrawalStatus {
   "The withdrawal is open and being processed by the network"
   STATUS_OPEN
-  "The withdrawal have been cancelled by the network, either because it expired, or something went wrong with the foreign chain"
+  "The withdrawal have been cancelled by the network, either because it expired, or something went wrong with the foreign Chain"
   STATUS_REJECTED
-  "The withdrawal was finalised, it was valid, the foreign chain has executed it and the network updated all accounts"
+  "The withdrawal was finalised, it was valid, the foreign Chain has executed it and the network updated all accounts"
   STATUS_FINALIZED
 }
 
@@ -11563,7 +11563,7 @@ type Deposit {
   createdTimestamp: String!
   "RFC3339Nano time at which the deposit was finalised"
   creditedTimestamp: String
-  "Hash of the transaction on the foreign chain"
+  "Hash of the transaction on the foreign Chain"
   txHash: String
 }
 
@@ -11571,9 +11571,9 @@ type Deposit {
 enum DepositStatus {
   "The deposit is open and being processed by the network"
   STATUS_OPEN
-  "The deposit have been cancelled by the network, either because it expired, or something went wrong with the foreign chain"
+  "The deposit have been cancelled by the network, either because it expired, or something went wrong with the foreign Chain"
   STATUS_CANCELLED
-  "The deposit was finalised, it was valid, the foreign chain has executed it and the network updated all accounts"
+  "The deposit was finalised, it was valid, the foreign Chain has executed it and the network updated all accounts"
   STATUS_FINALIZED
 }
 
@@ -12586,7 +12586,7 @@ type LiquidityOrderReference {
   liquidityOrder: LiquidityOrder!
 }
 
-"The command to be sent to the chain for a liquidity provision submission"
+"The command to be sent to the Chain for a liquidity provision submission"
 type LiquidityProvision {
   "Unique identifier for the order (set by the system after consensus)"
   id: ID
@@ -12715,11 +12715,11 @@ type NetworkLimits {
   canProposeAsset: Boolean!
   "True once block count > bootstrapBlockCount"
   bootstrapFinished: Boolean!
-  "Are market proposals enabled on this chain"
+  "Are market proposals enabled on this Chain"
   proposeMarketEnabled: Boolean!
-  "Are asset proposals enabled on this chain"
+  "Are asset proposals enabled on this Chain"
   proposeAssetEnabled: Boolean!
-  "How many blocks before the chain comes out of bootstrap mode"
+  "How many blocks before the Chain comes out of bootstrap mode"
   bootstrapBlockCount: Int!
   "True once the genesis file is loaded"
   genesisLoaded: Boolean!

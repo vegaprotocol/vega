@@ -13,9 +13,14 @@
 package gateway
 
 import (
+	"context"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/99designs/gqlgen/graphql"
+	"google.golang.org/grpc/metadata"
 
 	"code.vegaprotocol.io/vega/datanode/contextutil"
 	"code.vegaprotocol.io/vega/datanode/metrics"
@@ -41,7 +46,7 @@ func RemoteAddrMiddleware(log *logging.Logger, next http.Handler) http.Handler {
 }
 
 // MetricCollectionMiddleware records the request and the time taken to service it.
-func MetricCollectionMiddleware(log *logging.Logger, next http.Handler) http.Handler {
+func MetricCollectionMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		next.ServeHTTP(w, r)
@@ -63,4 +68,86 @@ func MetricCollectionMiddleware(log *logging.Logger, next http.Handler) http.Han
 
 		metrics.APIRequestAndTimeREST(uri, timetaken.Seconds())
 	})
+}
+
+func AddMDHeadersToContext(ctx context.Context, headers metadata.MD) error {
+	resctx := graphql.GetResolverContext(ctx)
+	if resctx == nil {
+		return fmt.Errorf("no resolver context")
+	}
+	resctx.Args = map[string]interface{}{"headers": headers}
+	return nil
+}
+
+func HeadersFromContext(ctx context.Context) (http.Header, bool) {
+	resctx := graphql.GetResolverContext(ctx)
+
+	args := resctx.Args
+	if args == nil {
+		return nil, false
+	}
+
+	headersRaw, ok := args["headers"]
+	if !ok {
+		return nil, false
+	}
+
+	mdHeader, ok := headersRaw.(metadata.MD)
+	if !ok {
+		return nil, false
+	}
+
+	return http.Header(mdHeader), true
+}
+
+// Chain builds the middleware Chain recursively, functions are first class
+func Chain(f http.Handler, m ...func(http.Handler) http.Handler) http.Handler {
+	// if our Chain is done, use the original handler func
+	if len(m) == 0 {
+		return f
+	}
+	// otherwise nest the handler funcs
+	return m[0](Chain(f, m[1:cap(m)]...))
+}
+
+func WithAddHeadersMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		iw := &InjectableResponseWriter{ResponseWriter: w}
+		ctx = context.WithValue(ctx, injectableWriterKey, iw)
+		next.ServeHTTP(iw, r.WithContext(ctx))
+	})
+}
+
+type InjectableResponseWriter struct {
+	http.ResponseWriter
+	headers http.Header
+}
+
+type key string
+
+const injectableWriterKey key = "injectable-writer-key"
+
+func InjectableWriterFromContext(ctx context.Context) (*InjectableResponseWriter, bool) {
+	if ctx == nil {
+		return nil, false
+	}
+	val := ctx.Value(injectableWriterKey)
+	if val == nil {
+		return nil, false
+	}
+	return val.(*InjectableResponseWriter), true
+}
+
+func (i *InjectableResponseWriter) Write(data []byte) (int, error) {
+	for k, v := range i.headers {
+		if len(v) > 0 {
+			i.ResponseWriter.Header().Add(k, v[0])
+		}
+	}
+	return i.ResponseWriter.Write(data)
+}
+
+func (i *InjectableResponseWriter) SetHeaders(headers http.Header) {
+	i.headers = headers
 }

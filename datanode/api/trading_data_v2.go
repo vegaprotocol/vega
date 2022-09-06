@@ -86,7 +86,7 @@ type tradingDataServiceV2 struct {
 	ledgerService              *service.Ledger
 	keyRotationService         *service.KeyRotations
 	ethereumKeyRotationService *service.EthereumKeyRotation
-	blockService               *service.Block
+	blockService               BlockService
 }
 
 func (t *tradingDataServiceV2) ListAccounts(ctx context.Context, req *v2.ListAccountsRequest) (*v2.ListAccountsResponse, error) {
@@ -201,14 +201,14 @@ func (t *tradingDataServiceV2) sendAccountsSnapshot(ctx context.Context, req *v2
 	return nil
 }
 
-func (t *tradingDataServiceV2) Info(ctx context.Context, _ *v2.InfoRequest) (*v2.InfoResponse, error) {
+func (t *tradingDataServiceV2) Info(context.Context, *v2.InfoRequest) (*v2.InfoResponse, error) {
 	return &v2.InfoResponse{
 		Version:    version.Get(),
 		CommitHash: version.GetCommitHash(),
 	}, nil
 }
 
-func (t *tradingDataServiceV2) GetBalanceHistory(ctx context.Context, req *v2.GetBalanceHistoryRequest) (*v2.GetBalanceHistoryResponse, error) {
+func (t *tradingDataServiceV2) GetBalanceHistory(_ context.Context, req *v2.GetBalanceHistoryRequest) (*v2.GetBalanceHistoryResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetBalanceHistoryV2")()
 	if t.accountService == nil {
 		return nil, fmt.Errorf("sql balance store not available")
@@ -219,7 +219,7 @@ func (t *tradingDataServiceV2) GetBalanceHistory(ctx context.Context, req *v2.Ge
 		return nil, fmt.Errorf("parsing filter: %w", err)
 	}
 
-	groupBy := []entities.AccountField{}
+	var groupBy []entities.AccountField
 	for _, field := range req.GroupBy {
 		field, err := entities.AccountFieldFromProto(field)
 		if err != nil {
@@ -358,7 +358,7 @@ func (t *tradingDataServiceV2) GetLatestMarketData(ctx context.Context, req *v2.
 }
 
 // ListLatestMarketData returns the latest market data for every market.
-func (t *tradingDataServiceV2) ListLatestMarketData(ctx context.Context, req *v2.ListLatestMarketDataRequest) (*v2.ListLatestMarketDataResponse, error) {
+func (t *tradingDataServiceV2) ListLatestMarketData(ctx context.Context, _ *v2.ListLatestMarketDataRequest) (*v2.ListLatestMarketDataResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListLatestMarketData")()
 	mds, _ := t.marketDataService.GetMarketsData(ctx)
 
@@ -521,7 +521,7 @@ func (t *tradingDataServiceV2) getMarketDataHistoryToDateByID(ctx context.Contex
 	return parseMarketDataResults(results)
 }
 
-func (t *tradingDataServiceV2) GetNetworkLimits(ctx context.Context, req *v2.GetNetworkLimitsRequest) (*v2.GetNetworkLimitsResponse, error) {
+func (t *tradingDataServiceV2) GetNetworkLimits(ctx context.Context, _ *v2.GetNetworkLimitsRequest) (*v2.GetNetworkLimitsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetNetworkLimitsV2")()
 	if t.networkLimitsService == nil {
 		return nil, errors.New("sql network limits store is not available")
@@ -1157,7 +1157,9 @@ func (t *tradingDataServiceV2) ObservePositions(req *v2.ObservePositionsRequest,
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
-	t.sendPositionsSnapshot(ctx, req, srv)
+	if err := t.sendPositionsSnapshot(ctx, req, srv); err != nil {
+		t.log.Error("Error sending positions snapshot", logging.Error(err))
+	}
 
 	var partyID, marketID string
 	if req.PartyId != nil {
@@ -2740,7 +2742,7 @@ func (t *tradingDataServiceV2) ListEthereumKeyRotations(ctx context.Context, req
 }
 
 // Get Time.
-func (t *tradingDataServiceV2) GetVegaTime(ctx context.Context, req *v2.GetVegaTimeRequest) (*v2.GetVegaTimeResponse, error) {
+func (t *tradingDataServiceV2) GetVegaTime(ctx context.Context, _ *v2.GetVegaTimeRequest) (*v2.GetVegaTimeResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetVegaTimeV2")()
 	b, err := t.blockService.GetLastBlock(ctx)
 	if err != nil {
