@@ -14,7 +14,6 @@ package assets
 
 import (
 	"context"
-	"sort"
 
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/proto"
@@ -55,7 +54,6 @@ func (s *Service) Stopped() bool {
 
 func (s *Service) serialiseActive() ([]byte, error) {
 	enabled := s.GetEnabledAssets()
-	sort.SliceStable(enabled, func(i, j int) bool { return enabled[i].ID < enabled[j].ID })
 	payload := types.Payload{
 		Data: &types.PayloadActiveAssets{
 			ActiveAssets: &types.ActiveAssets{
@@ -68,7 +66,6 @@ func (s *Service) serialiseActive() ([]byte, error) {
 
 func (s *Service) serialisePending() ([]byte, error) {
 	pending := s.getPendingAssets()
-	sort.SliceStable(pending, func(i, j int) bool { return pending[i].ID < pending[j].ID })
 	payload := types.Payload{
 		Data: &types.PayloadPendingAssets{
 			PendingAssets: &types.PendingAssets{
@@ -82,7 +79,6 @@ func (s *Service) serialisePending() ([]byte, error) {
 
 func (s *Service) serialisePendingUpdates() ([]byte, error) {
 	pendingUpdates := s.getPendingAssetUpdates()
-	sort.SliceStable(pendingUpdates, func(i, j int) bool { return pendingUpdates[i].ID < pendingUpdates[j].ID })
 	payload := types.Payload{
 		Data: &types.PayloadPendingAssetUpdates{
 			PendingAssetUpdates: &types.PendingAssetUpdates{
