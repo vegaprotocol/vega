@@ -100,45 +100,6 @@ func SignMessage(store Store, req *SignMessageRequest) (*SignMessageResponse, er
 	}, nil
 }
 
-type RevokePermissionsRequest struct {
-	Wallet     string `json:"wallet"`
-	Passphrase string `json:"passphrase"`
-	Hostname   string `json:"hostname"`
-}
-
-func RevokePermissions(store Store, req *RevokePermissionsRequest) error {
-	w, err := getWallet(store, req.Wallet, req.Passphrase)
-	if err != nil {
-		return err
-	}
-
-	w.RevokePermissions(req.Hostname)
-
-	if err := store.SaveWallet(context.Background(), w, req.Passphrase); err != nil {
-		return fmt.Errorf("could not save the wallet: %w", err)
-	}
-	return nil
-}
-
-type PurgePermissionsRequest struct {
-	Wallet     string `json:"wallet"`
-	Passphrase string `json:"passphrase"`
-}
-
-func PurgePermissions(store Store, req *PurgePermissionsRequest) error {
-	w, err := getWallet(store, req.Wallet, req.Passphrase)
-	if err != nil {
-		return err
-	}
-
-	w.PurgePermissions()
-
-	if err := store.SaveWallet(context.Background(), w, req.Passphrase); err != nil {
-		return fmt.Errorf("could not save the wallet: %w", err)
-	}
-	return nil
-}
-
 func getWallet(store Store, wallet, passphrase string) (Wallet, error) {
 	if exist, err := store.WalletExists(context.Background(), wallet); err != nil {
 		return nil, fmt.Errorf("could not verify the wallet existence: %w", err)

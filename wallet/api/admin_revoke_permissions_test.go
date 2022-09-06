@@ -15,16 +15,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAdminPurgePermissions(t *testing.T) {
-	t.Run("Purging permissions with invalid params fails", testPurgingPermissionsWithInvalidParamsFails)
-	t.Run("Purging permissions with valid params succeeds", testPurgingPermissionsWithValidParamsSucceeds)
-	t.Run("Purging permissions from wallet that does not exists fails", testPurgingPermissionsFromWalletThatDoesNotExistsFails)
-	t.Run("Getting internal error during wallet verification fails", testAdminPurgePermissionsGettingInternalErrorDuringWalletVerificationFails)
-	t.Run("Getting internal error during wallet retrieval fails", testAdminPurgePermissionsGettingInternalErrorDuringWalletRetrievalFails)
-	t.Run("Getting internal error during wallet saving fails", testAdminPurgePermissionsGettingInternalErrorDuringWalletSavingFails)
+func TestAdminRevokePermissions(t *testing.T) {
+	t.Run("Revoking permissions with invalid params fails", testRevokingPermissionsWithInvalidParamsFails)
+	t.Run("Revoking permissions with valid params succeeds", testRevokingPermissionsWithValidParamsSucceeds)
+	t.Run("Revoking permissions from wallet that does not exists fails", testRevokingPermissionsFromWalletThatDoesNotExistsFails)
+	t.Run("Getting internal error during wallet verification fails", testAdminRevokePermissionsGettingInternalErrorDuringWalletVerificationFails)
+	t.Run("Getting internal error during wallet retrieval fails", testAdminRevokePermissionsGettingInternalErrorDuringWalletRetrievalFails)
+	t.Run("Getting internal error during wallet saving fails", testAdminRevokePermissionsGettingInternalErrorDuringWalletSavingFails)
 }
 
-func testPurgingPermissionsWithInvalidParamsFails(t *testing.T) {
+func testRevokingPermissionsWithInvalidParamsFails(t *testing.T) {
 	tcs := []struct {
 		name          string
 		params        interface{}
@@ -40,18 +40,28 @@ func testPurgingPermissionsWithInvalidParamsFails(t *testing.T) {
 			expectedError: api.ErrParamsDoNotMatch,
 		}, {
 			name: "with empty name",
-			params: api.AdminPurgePermissionsParams{
+			params: api.AdminRevokePermissionsParams{
 				Wallet:     "",
 				Passphrase: vgrand.RandomStr(5),
+				Hostname:   vgrand.RandomStr(5),
 			},
 			expectedError: api.ErrWalletIsRequired,
 		}, {
 			name: "with empty passphrase",
-			params: api.AdminPurgePermissionsParams{
+			params: api.AdminRevokePermissionsParams{
 				Wallet:     vgrand.RandomStr(5),
 				Passphrase: "",
+				Hostname:   vgrand.RandomStr(5),
 			},
 			expectedError: api.ErrPassphraseIsRequired,
+		}, {
+			name: "with empty hostname",
+			params: api.AdminRevokePermissionsParams{
+				Wallet:     vgrand.RandomStr(5),
+				Passphrase: vgrand.RandomStr(5),
+				Hostname:   "",
+			},
+			expectedError: api.ErrHostnameIsRequired,
 		},
 	}
 
@@ -61,7 +71,7 @@ func testPurgingPermissionsWithInvalidParamsFails(t *testing.T) {
 			ctx, _ := contextWithTraceID()
 
 			// setup
-			handler := newPurgePermissionsHandler(tt)
+			handler := newRevokePermissionsHandler(tt)
 			// -- unexpected calls
 			handler.walletStore.EXPECT().WalletExists(gomock.Any(), gomock.Any()).Times(0)
 			handler.walletStore.EXPECT().ListWallets(gomock.Any()).Times(0)
@@ -78,7 +88,7 @@ func testPurgingPermissionsWithInvalidParamsFails(t *testing.T) {
 	}
 }
 
-func testPurgingPermissionsWithValidParamsSucceeds(t *testing.T) {
+func testRevokingPermissionsWithValidParamsSucceeds(t *testing.T) {
 	// given
 	ctx := context.Background()
 	passphrase := vgrand.RandomStr(5)
@@ -96,7 +106,7 @@ func testPurgingPermissionsWithValidParamsSucceeds(t *testing.T) {
 	}
 
 	// setup
-	handler := newPurgePermissionsHandler(t)
+	handler := newRevokePermissionsHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(expectedWallet, nil)
@@ -106,23 +116,24 @@ func testPurgingPermissionsWithValidParamsSucceeds(t *testing.T) {
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	errorDetails := handler.handle(t, ctx, api.AdminPurgePermissionsParams{
+	errorDetails := handler.handle(t, ctx, api.AdminRevokePermissionsParams{
 		Wallet:     expectedWallet.Name(),
 		Passphrase: passphrase,
+		Hostname:   hostname,
 	})
 
 	// then
 	require.Nil(t, errorDetails)
 }
 
-func testPurgingPermissionsFromWalletThatDoesNotExistsFails(t *testing.T) {
+func testRevokingPermissionsFromWalletThatDoesNotExistsFails(t *testing.T) {
 	// given
 	ctx := context.Background()
 	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
 	// setup
-	handler := newPurgePermissionsHandler(t)
+	handler := newRevokePermissionsHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(false, nil)
 	// -- unexpected calls
@@ -132,9 +143,10 @@ func testPurgingPermissionsFromWalletThatDoesNotExistsFails(t *testing.T) {
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	errorDetails := handler.handle(t, ctx, api.AdminPurgePermissionsParams{
+	errorDetails := handler.handle(t, ctx, api.AdminRevokePermissionsParams{
 		Wallet:     name,
 		Passphrase: passphrase,
+		Hostname:   vgrand.RandomStr(5),
 	})
 
 	// then
@@ -142,14 +154,14 @@ func testPurgingPermissionsFromWalletThatDoesNotExistsFails(t *testing.T) {
 	assertInvalidParams(t, errorDetails, api.ErrWalletDoesNotExist)
 }
 
-func testAdminPurgePermissionsGettingInternalErrorDuringWalletVerificationFails(t *testing.T) {
+func testAdminRevokePermissionsGettingInternalErrorDuringWalletVerificationFails(t *testing.T) {
 	// given
 	ctx := context.Background()
 	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
 	// setup
-	handler := newPurgePermissionsHandler(t)
+	handler := newRevokePermissionsHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(false, assert.AnError)
 	// -- unexpected calls
@@ -159,9 +171,10 @@ func testAdminPurgePermissionsGettingInternalErrorDuringWalletVerificationFails(
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	errorDetails := handler.handle(t, ctx, api.AdminPurgePermissionsParams{
+	errorDetails := handler.handle(t, ctx, api.AdminRevokePermissionsParams{
 		Wallet:     name,
 		Passphrase: passphrase,
+		Hostname:   vgrand.RandomStr(5),
 	})
 
 	// then
@@ -169,14 +182,14 @@ func testAdminPurgePermissionsGettingInternalErrorDuringWalletVerificationFails(
 	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet existence: %w", assert.AnError))
 }
 
-func testAdminPurgePermissionsGettingInternalErrorDuringWalletRetrievalFails(t *testing.T) {
+func testAdminRevokePermissionsGettingInternalErrorDuringWalletRetrievalFails(t *testing.T) {
 	// given
 	ctx := context.Background()
 	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
 	// setup
-	handler := newPurgePermissionsHandler(t)
+	handler := newRevokePermissionsHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, name, passphrase).Times(1).Return(nil, assert.AnError)
@@ -186,9 +199,10 @@ func testAdminPurgePermissionsGettingInternalErrorDuringWalletRetrievalFails(t *
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	errorDetails := handler.handle(t, ctx, api.AdminPurgePermissionsParams{
+	errorDetails := handler.handle(t, ctx, api.AdminRevokePermissionsParams{
 		Wallet:     name,
 		Passphrase: passphrase,
+		Hostname:   vgrand.RandomStr(5),
 	})
 
 	// then
@@ -196,7 +210,7 @@ func testAdminPurgePermissionsGettingInternalErrorDuringWalletRetrievalFails(t *
 	assertInternalError(t, errorDetails, fmt.Errorf("could not retrieve the wallet: %w", assert.AnError))
 }
 
-func testAdminPurgePermissionsGettingInternalErrorDuringWalletSavingFails(t *testing.T) {
+func testAdminRevokePermissionsGettingInternalErrorDuringWalletSavingFails(t *testing.T) {
 	// given
 	ctx := context.Background()
 	passphrase := vgrand.RandomStr(5)
@@ -216,9 +230,10 @@ func testAdminPurgePermissionsGettingInternalErrorDuringWalletSavingFails(t *tes
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.AdminPurgePermissionsParams{
+	result, errorDetails := handler.handle(t, ctx, api.AdminRevokePermissionsParams{
 		Wallet:     expectedWallet.Name(),
 		Passphrase: passphrase,
+		Hostname:   vgrand.RandomStr(5),
 	})
 
 	// then
@@ -227,13 +242,13 @@ func testAdminPurgePermissionsGettingInternalErrorDuringWalletSavingFails(t *tes
 	assertInternalError(t, errorDetails, fmt.Errorf("could not save the wallet: %w", assert.AnError))
 }
 
-type purgePermissionsHandler struct {
-	*api.AdminPurgePermissions
+type revokePermissionsHandler struct {
+	*api.AdminRevokePermissions
 	ctrl        *gomock.Controller
 	walletStore *mocks.MockWalletStore
 }
 
-func (h *purgePermissionsHandler) handle(t *testing.T, ctx context.Context, params interface{}) *jsonrpc.ErrorDetails {
+func (h *revokePermissionsHandler) handle(t *testing.T, ctx context.Context, params interface{}) *jsonrpc.ErrorDetails {
 	t.Helper()
 
 	rawResult, err := h.Handle(ctx, params)
@@ -241,15 +256,15 @@ func (h *purgePermissionsHandler) handle(t *testing.T, ctx context.Context, para
 	return err
 }
 
-func newPurgePermissionsHandler(t *testing.T) *purgePermissionsHandler {
+func newRevokePermissionsHandler(t *testing.T) *revokePermissionsHandler {
 	t.Helper()
 
 	ctrl := gomock.NewController(t)
 	walletStore := mocks.NewMockWalletStore(ctrl)
 
-	return &purgePermissionsHandler{
-		AdminPurgePermissions: api.NewAdminPurgePermissions(walletStore),
-		ctrl:                  ctrl,
-		walletStore:           walletStore,
+	return &revokePermissionsHandler{
+		AdminRevokePermissions: api.NewAdminRevokePermissions(walletStore),
+		ctrl:                   ctrl,
+		walletStore:            walletStore,
 	}
 }

@@ -173,7 +173,7 @@ func AdminAPI(log *zap.Logger, walletStore WalletStore, netStore NetworkStore) (
 	walletAPI.RegisterMethod("admin.purge_permissions", NewAdminPurgePermissions(walletStore))
 	walletAPI.RegisterMethod("admin.remove_network", &UnimplementedMethod{})
 	walletAPI.RegisterMethod("admin.remove_wallet", NewAdminRemoveWallet(walletStore))
-	walletAPI.RegisterMethod("admin.revoke_permissions", &UnimplementedMethod{})
+	walletAPI.RegisterMethod("admin.revoke_permissions", NewAdminRevokePermissions(walletStore))
 	walletAPI.RegisterMethod("admin.rotate_key", NewAdminRotateKey(walletStore))
 	walletAPI.RegisterMethod("admin.send_message", &UnimplementedMethod{})
 	walletAPI.RegisterMethod("admin.send_transaction", &UnimplementedMethod{})

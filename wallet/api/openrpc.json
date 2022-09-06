@@ -1751,6 +1751,72 @@
       ]
     },
     {
+      "name": "admin.revoke_permissions",
+      "summary": "Revokes the permissions set in the specified hostname.",
+      "description": "This method revokes the permissions set in the specified hostname.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "permissions"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "wallet",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "passphrase",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "hostname",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "null"
+        }
+      },
+      "examples": [
+        {
+          "name": "Revoke the permissions",
+          "params": [
+            {
+              "name": "wallet",
+              "value": "my-wallet"
+            },
+            {
+              "name": "passphrase",
+              "value": "this-is-not-a-good-passphrase"
+            },
+            {
+              "name": "hostname",
+              "value": "vega.xyz"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": null
+          }
+        }
+      ]
+    },
+    {
       "name": "admin.purge_permissions",
       "summary": "Purges all the permissions set for all hostname.",
       "description": "This method purges all the permissions set for all hostname.",
