@@ -841,6 +841,45 @@
       ]
     },
     {
+      "name": "admin.list_networks",
+      "summary": "Returns the list of all registered networks.",
+      "description": "This method returns the list of the registered networks.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "network"
+        }
+      ],
+      "params": [],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "examples": [
+        {
+          "name": "Getting the list of networks",
+          "params": [],
+          "result": {
+            "name": "Success",
+            "value": {
+              "wallets": [
+                "mainnet",
+                "fairground",
+                "local-network"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "admin.remove_wallet",
       "summary": "Removes a wallet from the computer.",
       "description": "This method removes a wallet from the computer.",
