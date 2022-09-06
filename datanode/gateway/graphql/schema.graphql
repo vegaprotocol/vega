@@ -47,18 +47,6 @@ type Subscription {
     marketId: ID
   ): [Position!]!
 
-  "Subscribe to the market depths update"
-  marketDepth(
-    "ID of the market to receive market depth updates for"
-    marketId: ID!
-  ): MarketDepth! @deprecated(reason: "Use marketsDepth instead")
-
-  "Subscribe to price level market depth updates"
-  marketDepthUpdate(
-    "ID of the market to receive market depth price level updates for"
-    marketId: ID!
-  ): MarketDepthUpdate! @deprecated(reason: "Use marketsDepthUpdate instead")
-
   "Subscribe to the accounts updates"
   accounts(
     "ID of the market from which to receive accounts updates for"
@@ -71,29 +59,23 @@ type Subscription {
     type: AccountType
   ): [AccountUpdate!]!
 
-  "Subscribe to the mark price changes"
-  marketData(
-    "ID of the market you want to subscribe to the market data changes"
-    marketId: ID
-  ): MarketData! @deprecated(reason: "Use marketsData instead")
-
   "Subscribe to the market depths update"
-    marketsDepth(
-      "ID of the market you want to receive market depth updates for"
-      marketIds: [ID!]!
-    ): [ObservableMarketDepth!]!
+  marketsDepth(
+    "ID of the market you want to receive market depth updates for"
+    marketIds: [ID!]!
+  ): [ObservableMarketDepth!]!
 
-    "Subscribe to price level market depth updates"
-    marketsDepthUpdate(
-      "ID of the market you want to receive market depth price level updates for"
-      marketIds: [ID!]!
-    ): [ObservableMarketDepthUpdate!]!
+  "Subscribe to price level market depth updates"
+  marketsDepthUpdate(
+    "ID of the market you want to receive market depth price level updates for"
+    marketIds: [ID!]!
+  ): [ObservableMarketDepthUpdate!]!
 
   "Subscribe to the mark price changes"
-    marketsData(
-      "ID of the market for which you want to subscribe to the market data changes"
-      marketIds: [ID!]!
-    ): [ObservableMarketData!]!
+  marketsData(
+    "ID of the market for which you want to subscribe to the market data changes"
+    marketIds: [ID!]!
+  ): [ObservableMarketData!]!
 
   "Subscribe to the margin changes"
   margins(
@@ -168,13 +150,11 @@ type MarginLevels {
   searchLevel: String!
   "this is the minimum margin required for a party to place a new order on the network (unsigned integer)"
   initialLevel: String!
-
   """
   If the margin of the party is greater than this level, then collateral will be released from the margin account into
   the general account of the party for the given asset.
   """
   collateralReleaseLevel: String!
-
   "RFC3339Nano time from at which this margin level was relevant"
   timestamp: String!
 }
@@ -2264,13 +2244,13 @@ type Order {
   "The market the order is trading on (probably stored internally as a hash of the market details)"
   market: Market!
 
-  "Total number of contracts that may be bought or sold (immutable) (uint64)"
+  "Total number of units that may be bought or sold (immutable) (uint64)"
   size: String!
 
-  "Number of contracts remaining of the total that have not yet been bought or sold (uint64)"
+  "Number of units remaining of the total that have not yet been bought or sold (uint64)"
   remaining: String!
 
-  "The party who place the order (probably stored internally as the party's public key)"
+  "The party that placed the order (probably stored internally as the party's public key)"
   party: Party!
 
   "RFC3339Nano formatted date and time for when the order was created (timestamp)"
@@ -2295,10 +2275,10 @@ type Order {
     pagination: Pagination
   ): TradeConnection
 
-  "Type the order type (defaults to PARTY)"
+  "The order type"
   type: OrderType
 
-  "Reason for the order to be rejected"
+  "Why the order was rejected"
   rejectionReason: OrderRejectionReason
 
   "Version of this order, counts the number of amends"
@@ -2331,13 +2311,13 @@ type OrderUpdate {
   "The market the order is trading on (probably stored internally as a hash of the market details)"
   marketId: ID!
 
-  "Total number of contracts that may be bought or sold (immutable) (uint64)"
+  "Total number of units that may be bought or sold (immutable) (uint64)"
   size: String!
 
-  "Number of contracts remaining of the total that have not yet been bought or sold (uint64)"
+  "Number of units remaining of the total that have not yet been bought or sold (uint64)"
   remaining: String!
 
-  "The party who place the order (probably stored internally as the party's public key)"
+  "The party that placed the order (probably stored internally as the party's public key)"
   partyId: ID!
 
   "RFC3339Nano formatted date and time for when the order was created (timestamp)"
@@ -2352,10 +2332,10 @@ type OrderUpdate {
   "The external reference (if available) for the order"
   reference: String!
 
-  "Type the order type (defaults to PARTY)"
+  "The order type"
   type: OrderType
 
-  "Reason for the order to be rejected"
+  "Why the order was rejected"
   rejectionReason: OrderRejectionReason
 
   "Version of this order, counts the number of amends"

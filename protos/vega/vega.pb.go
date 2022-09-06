@@ -4031,7 +4031,7 @@ type MarketData struct {
 	MarketValueProxy string `protobuf:"bytes,25,opt,name=market_value_proxy,json=marketValueProxy,proto3" json:"market_value_proxy,omitempty"`
 	// the equity like share of liquidity fee for each liquidity provider
 	LiquidityProviderFeeShare []*LiquidityProviderFeeShare `protobuf:"bytes,26,rep,name=liquidity_provider_fee_share,json=liquidityProviderFeeShare,proto3" json:"liquidity_provider_fee_share,omitempty"`
-	// The current state for the market
+	// The current state of the market
 	MarketState Market_State `protobuf:"varint,27,opt,name=market_state,json=marketState,proto3,enum=vega.Market_State" json:"market_state,omitempty"`
 }
 

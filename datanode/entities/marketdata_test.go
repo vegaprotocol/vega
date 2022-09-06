@@ -201,6 +201,7 @@ func testParseMarketDataSuccessfully(t *testing.T) {
 			},
 			want: &entities.MarketData{
 				AuctionTrigger:    "AUCTION_TRIGGER_UNSPECIFIED",
+				MarketState:       "STATE_UNSPECIFIED",
 				MarketTradingMode: "TRADING_MODE_UNSPECIFIED",
 				ExtensionTrigger:  "AUCTION_TRIGGER_UNSPECIFIED",
 				TxHash:            generateTxHash(),
@@ -215,6 +216,7 @@ func testParseMarketDataSuccessfully(t *testing.T) {
 			},
 			want: &entities.MarketData{
 				AuctionTrigger:    "AUCTION_TRIGGER_PRICE",
+				MarketState:       "STATE_UNSPECIFIED",
 				MarketTradingMode: "TRADING_MODE_UNSPECIFIED",
 				ExtensionTrigger:  "AUCTION_TRIGGER_UNSPECIFIED",
 				TxHash:            generateTxHash(),
@@ -231,6 +233,7 @@ func testParseMarketDataSuccessfully(t *testing.T) {
 			want: &entities.MarketData{
 				AuctionTrigger:    "AUCTION_TRIGGER_PRICE",
 				MarketTradingMode: "TRADING_MODE_CONTINUOUS",
+				MarketState:       "STATE_UNSPECIFIED",
 				ExtensionTrigger:  "AUCTION_TRIGGER_UNSPECIFIED",
 				TxHash:            generateTxHash(),
 			},
@@ -243,12 +246,14 @@ func testParseMarketDataSuccessfully(t *testing.T) {
 					BestOfferPrice:    "110.0",
 					Trigger:           types.AuctionTrigger_AUCTION_TRIGGER_PRICE,
 					MarketTradingMode: types.Market_TRADING_MODE_CONTINUOUS,
+					MarketState:       types.Market_STATE_ACTIVE,
 				},
 			},
 			want: &entities.MarketData{
 				BestBidPrice:      decimal.NewFromFloat(100.0),
 				BestOfferPrice:    decimal.NewFromFloat(110.0),
 				AuctionTrigger:    "AUCTION_TRIGGER_PRICE",
+				MarketState:       "STATE_ACTIVE",
 				MarketTradingMode: "TRADING_MODE_CONTINUOUS",
 				ExtensionTrigger:  "AUCTION_TRIGGER_UNSPECIFIED",
 				TxHash:            generateTxHash(),
@@ -275,6 +280,7 @@ func testParseMarketDataSuccessfully(t *testing.T) {
 				BestOfferPrice:    decimal.NewFromFloat(110.0),
 				AuctionTrigger:    "AUCTION_TRIGGER_PRICE",
 				MarketTradingMode: "TRADING_MODE_CONTINUOUS",
+				MarketState:       "STATE_UNSPECIFIED",
 				ExtensionTrigger:  "AUCTION_TRIGGER_UNSPECIFIED",
 				PriceMonitoringBounds: []*entities.PriceMonitoringBound{
 					{

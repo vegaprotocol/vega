@@ -176,9 +176,6 @@ func getLatestMarketData(t *testing.T) {
 	got, err := store.GetMarketDataByID(ctx, "8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8")
 	assert.NoError(t, err)
 
-	fmt.Printf("WANT: %#v\n", want)
-	fmt.Printf("\nGOT: %#v\n", got)
-
 	assert.True(t, want.Equal(got))
 }
 
@@ -1034,7 +1031,6 @@ func csvToMarketData(t *testing.T, line []string, seqNum int) *entities.MarketDa
 		AuctionStart:               mustParseInt64(t, line[csvColumnAuctionStart]),
 		IndicativePrice:            mustParseDecimal(t, line[csvColumnIndicativePrice]),
 		IndicativeVolume:           mustParseUInt64(t, line[csvColumnIndicativeVolume]),
-		MarketState:                line[csvColumnMarketState],
 		MarketTradingMode:          line[csvColumnMarketTradingMode],
 		AuctionTrigger:             line[csvColumnAuctionTrigger],
 		ExtensionTrigger:           line[csvColumnExtensionTrigger],
@@ -1043,6 +1039,7 @@ func csvToMarketData(t *testing.T, line []string, seqNum int) *entities.MarketDa
 		PriceMonitoringBounds:      mustParsePriceMonitoringBounds(t, line[csvColumnPriceMonitoringBounds]),
 		MarketValueProxy:           line[csvColumnMarketValueProxy],
 		LiquidityProviderFeeShares: mustParseLiquidity(t, line[csvColumnLiquidityProviderFeeShares]),
+		MarketState:                line[csvColumnMarketState],
 		VegaTime:                   vegaTime,
 		SeqNum:                     uint64(seqNum),
 		SyntheticTime:              syntheticTime,

@@ -1426,9 +1426,6 @@ type ComplexityRoot struct {
 		Delegations         func(childComplexity int, partyID *string, nodeID *string) int
 		LiquidityProvisions func(childComplexity int, partyID *string, marketID *string) int
 		Margins             func(childComplexity int, partyID string, marketID *string) int
-		MarketData          func(childComplexity int, marketID *string) int
-		MarketDepth         func(childComplexity int, marketID string) int
-		MarketDepthUpdate   func(childComplexity int, marketID string) int
 		MarketsData         func(childComplexity int, marketIds []string) int
 		MarketsDepth        func(childComplexity int, marketIds []string) int
 		MarketsDepthUpdate  func(childComplexity int, marketIds []string) int
@@ -2113,10 +2110,7 @@ type SubscriptionResolver interface {
 	Orders(ctx context.Context, marketID *string, partyID *string) (<-chan []*vega.Order, error)
 	Trades(ctx context.Context, marketID *string, partyID *string) (<-chan []*vega.Trade, error)
 	Positions(ctx context.Context, partyID *string, marketID *string) (<-chan []*vega.Position, error)
-	MarketDepth(ctx context.Context, marketID string) (<-chan *vega.MarketDepth, error)
-	MarketDepthUpdate(ctx context.Context, marketID string) (<-chan *vega.MarketDepthUpdate, error)
 	Accounts(ctx context.Context, marketID *string, partyID *string, assetID *string, typeArg *vega.AccountType) (<-chan []*vega.Account, error)
-	MarketData(ctx context.Context, marketID *string) (<-chan *vega.MarketData, error)
 	MarketsDepth(ctx context.Context, marketIds []string) (<-chan []*vega.MarketDepth, error)
 	MarketsDepthUpdate(ctx context.Context, marketIds []string) (<-chan []*vega.MarketDepthUpdate, error)
 	MarketsData(ctx context.Context, marketIds []string) (<-chan []*vega.MarketData, error)
@@ -8332,42 +8326,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Subscription.Margins(childComplexity, args["partyId"].(string), args["marketId"].(*string)), true
 
-	case "Subscription.marketData":
-		if e.complexity.Subscription.MarketData == nil {
-			break
-		}
-
-		args, err := ec.field_Subscription_marketData_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Subscription.MarketData(childComplexity, args["marketId"].(*string)), true
-
-	case "Subscription.marketDepth":
-		if e.complexity.Subscription.MarketDepth == nil {
-			break
-		}
-
-		args, err := ec.field_Subscription_marketDepth_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Subscription.MarketDepth(childComplexity, args["marketId"].(string)), true
-
-	case "Subscription.marketDepthUpdate":
-		if e.complexity.Subscription.MarketDepthUpdate == nil {
-			break
-		}
-
-		args, err := ec.field_Subscription_marketDepthUpdate_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Subscription.MarketDepthUpdate(childComplexity, args["marketId"].(string)), true
-
 	case "Subscription.marketsData":
 		if e.complexity.Subscription.MarketsData == nil {
 			break
@@ -9376,18 +9334,6 @@ type Subscription {
     marketId: ID
   ): [Position!]!
 
-  "Subscribe to the market depths update"
-  marketDepth(
-    "ID of the market to receive market depth updates for"
-    marketId: ID!
-  ): MarketDepth! @deprecated(reason: "Use marketsDepth instead")
-
-  "Subscribe to price level market depth updates"
-  marketDepthUpdate(
-    "ID of the market to receive market depth price level updates for"
-    marketId: ID!
-  ): MarketDepthUpdate! @deprecated(reason: "Use marketsDepthUpdate instead")
-
   "Subscribe to the accounts updates"
   accounts(
     "ID of the market from which to receive accounts updates for"
@@ -9400,29 +9346,23 @@ type Subscription {
     type: AccountType
   ): [AccountUpdate!]!
 
-  "Subscribe to the mark price changes"
-  marketData(
-    "ID of the market you want to subscribe to the market data changes"
-    marketId: ID
-  ): MarketData! @deprecated(reason: "Use marketsData instead")
-
   "Subscribe to the market depths update"
-    marketsDepth(
-      "ID of the market you want to receive market depth updates for"
-      marketIds: [ID!]!
-    ): [ObservableMarketDepth!]!
+  marketsDepth(
+    "ID of the market you want to receive market depth updates for"
+    marketIds: [ID!]!
+  ): [ObservableMarketDepth!]!
 
-    "Subscribe to price level market depth updates"
-    marketsDepthUpdate(
-      "ID of the market you want to receive market depth price level updates for"
-      marketIds: [ID!]!
-    ): [ObservableMarketDepthUpdate!]!
+  "Subscribe to price level market depth updates"
+  marketsDepthUpdate(
+    "ID of the market you want to receive market depth price level updates for"
+    marketIds: [ID!]!
+  ): [ObservableMarketDepthUpdate!]!
 
   "Subscribe to the mark price changes"
-    marketsData(
-      "ID of the market for which you want to subscribe to the market data changes"
-      marketIds: [ID!]!
-    ): [ObservableMarketData!]!
+  marketsData(
+    "ID of the market for which you want to subscribe to the market data changes"
+    marketIds: [ID!]!
+  ): [ObservableMarketData!]!
 
   "Subscribe to the margin changes"
   margins(
@@ -9497,13 +9437,11 @@ type MarginLevels {
   searchLevel: String!
   "this is the minimum margin required for a party to place a new order on the network (unsigned integer)"
   initialLevel: String!
-
   """
   If the margin of the party is greater than this level, then collateral will be released from the margin account into
   the general account of the party for the given asset.
   """
   collateralReleaseLevel: String!
-
   "RFC3339Nano time from at which this margin level was relevant"
   timestamp: String!
 }
@@ -11593,13 +11531,13 @@ type Order {
   "The market the order is trading on (probably stored internally as a hash of the market details)"
   market: Market!
 
-  "Total number of contracts that may be bought or sold (immutable) (uint64)"
+  "Total number of units that may be bought or sold (immutable) (uint64)"
   size: String!
 
-  "Number of contracts remaining of the total that have not yet been bought or sold (uint64)"
+  "Number of units remaining of the total that have not yet been bought or sold (uint64)"
   remaining: String!
 
-  "The party who place the order (probably stored internally as the party's public key)"
+  "The party that placed the order (probably stored internally as the party's public key)"
   party: Party!
 
   "RFC3339Nano formatted date and time for when the order was created (timestamp)"
@@ -11624,10 +11562,10 @@ type Order {
     pagination: Pagination
   ): TradeConnection
 
-  "Type the order type (defaults to PARTY)"
+  "The order type"
   type: OrderType
 
-  "Reason for the order to be rejected"
+  "Why the order was rejected"
   rejectionReason: OrderRejectionReason
 
   "Version of this order, counts the number of amends"
@@ -11660,13 +11598,13 @@ type OrderUpdate {
   "The market the order is trading on (probably stored internally as a hash of the market details)"
   marketId: ID!
 
-  "Total number of contracts that may be bought or sold (immutable) (uint64)"
+  "Total number of units that may be bought or sold (immutable) (uint64)"
   size: String!
 
-  "Number of contracts remaining of the total that have not yet been bought or sold (uint64)"
+  "Number of units remaining of the total that have not yet been bought or sold (uint64)"
   remaining: String!
 
-  "The party who place the order (probably stored internally as the party's public key)"
+  "The party that placed the order (probably stored internally as the party's public key)"
   partyId: ID!
 
   "RFC3339Nano formatted date and time for when the order was created (timestamp)"
@@ -11681,10 +11619,10 @@ type OrderUpdate {
   "The external reference (if available) for the order"
   reference: String!
 
-  "Type the order type (defaults to PARTY)"
+  "The order type"
   type: OrderType
 
-  "Reason for the order to be rejected"
+  "Why the order was rejected"
   rejectionReason: OrderRejectionReason
 
   "Version of this order, counts the number of amends"
@@ -13062,17 +13000,17 @@ type LiquidityProvision {
   market: Market!
   "Specified as a unit-less number that represents the amount of settlement asset of the market."
   commitmentAmount: String!
-  "Nominated liquidity fee factor, which is an input to the calculation of maker fees on the market, as per setting fees and rewarding liquidity providers."
+  "Nominated liquidity fee factor, which is an input to the calculation of liquidity fees on the market, as per setting fees and rewarding liquidity providers."
   fee: String!
   "a set of liquidity sell orders to meet the liquidity provision obligation."
   sells: [LiquidityOrderReference!]!
   "a set of liquidity buy orders to meet the liquidity provision obligation."
   buys: [LiquidityOrderReference!]!
-  "The version of this LiquidityProvision"
+  "The version of this liquidity provision"
   version: String!
   "The current status of this liquidity provision"
   status: LiquidityProvisionStatus!
-  "A reference for the orders created out of this Liquidity provision"
+  "A reference for the orders created out of this liquidity provision"
   reference: String
 }
 
@@ -13090,17 +13028,17 @@ type LiquidityProvisionUpdate {
   marketID: ID!
   "Specified as a unit-less number that represents the amount of settlement asset of the market."
   commitmentAmount: String!
-  "Nominated liquidity fee factor, which is an input to the calculation of maker fees on the market, as per setting fees and rewarding liquidity providers."
+  "Nominated liquidity fee factor, which is an input to the calculation of liquidity fees on the market, as per setting fees and rewarding liquidity providers."
   fee: String!
   "a set of liquidity sell orders to meet the liquidity provision obligation."
   sells: [LiquidityOrderReference!]!
   "a set of liquidity buy orders to meet the liquidity provision obligation."
   buys: [LiquidityOrderReference!]!
-  "The version of this LiquidityProvision"
+  "The version of this liquidity provision"
   version: String!
   "The current status of this liquidity provision"
   status: LiquidityProvisionStatus!
-  "A reference for the orders created out of this Liquidity provision"
+  "A reference for the orders created out of this liquidity provision"
   reference: String
 }
 
@@ -16163,51 +16101,6 @@ func (ec *executionContext) field_Subscription_margins_args(ctx context.Context,
 		}
 	}
 	args["marketId"] = arg1
-	return args, nil
-}
-
-func (ec *executionContext) field_Subscription_marketData_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *string
-	if tmp, ok := rawArgs["marketId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("marketId"))
-		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["marketId"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Subscription_marketDepthUpdate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["marketId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("marketId"))
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["marketId"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Subscription_marketDepth_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["marketId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("marketId"))
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["marketId"] = arg0
 	return args, nil
 }
 
@@ -44472,110 +44365,6 @@ func (ec *executionContext) _Subscription_positions(ctx context.Context, field g
 	}
 }
 
-func (ec *executionContext) _Subscription_marketDepth(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = nil
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Subscription",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Subscription_marketDepth_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return nil
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Subscription().MarketDepth(rctx, args["marketId"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return nil
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return nil
-	}
-	return func() graphql.Marshaler {
-		res, ok := <-resTmp.(<-chan *vega.MarketDepth)
-		if !ok {
-			return nil
-		}
-		return graphql.WriterFunc(func(w io.Writer) {
-			w.Write([]byte{'{'})
-			graphql.MarshalString(field.Alias).MarshalGQL(w)
-			w.Write([]byte{':'})
-			ec.marshalNMarketDepth2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketDepth(ctx, field.Selections, res).MarshalGQL(w)
-			w.Write([]byte{'}'})
-		})
-	}
-}
-
-func (ec *executionContext) _Subscription_marketDepthUpdate(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = nil
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Subscription",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Subscription_marketDepthUpdate_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return nil
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Subscription().MarketDepthUpdate(rctx, args["marketId"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return nil
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return nil
-	}
-	return func() graphql.Marshaler {
-		res, ok := <-resTmp.(<-chan *vega.MarketDepthUpdate)
-		if !ok {
-			return nil
-		}
-		return graphql.WriterFunc(func(w io.Writer) {
-			w.Write([]byte{'{'})
-			graphql.MarshalString(field.Alias).MarshalGQL(w)
-			w.Write([]byte{':'})
-			ec.marshalNMarketDepthUpdate2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketDepthUpdate(ctx, field.Selections, res).MarshalGQL(w)
-			w.Write([]byte{'}'})
-		})
-	}
-}
-
 func (ec *executionContext) _Subscription_accounts(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -44623,58 +44412,6 @@ func (ec *executionContext) _Subscription_accounts(ctx context.Context, field gr
 			graphql.MarshalString(field.Alias).MarshalGQL(w)
 			w.Write([]byte{':'})
 			ec.marshalNAccountUpdate2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountᚄ(ctx, field.Selections, res).MarshalGQL(w)
-			w.Write([]byte{'}'})
-		})
-	}
-}
-
-func (ec *executionContext) _Subscription_marketData(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = nil
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Subscription",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Subscription_marketData_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return nil
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Subscription().MarketData(rctx, args["marketId"].(*string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return nil
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return nil
-	}
-	return func() graphql.Marshaler {
-		res, ok := <-resTmp.(<-chan *vega.MarketData)
-		if !ok {
-			return nil
-		}
-		return graphql.WriterFunc(func(w io.Writer) {
-			w.Write([]byte{'{'})
-			graphql.MarshalString(field.Alias).MarshalGQL(w)
-			w.Write([]byte{':'})
-			ec.marshalNMarketData2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketData(ctx, field.Selections, res).MarshalGQL(w)
 			w.Write([]byte{'}'})
 		})
 	}
@@ -64753,14 +64490,8 @@ func (ec *executionContext) _Subscription(ctx context.Context, sel ast.Selection
 		return ec._Subscription_trades(ctx, fields[0])
 	case "positions":
 		return ec._Subscription_positions(ctx, fields[0])
-	case "marketDepth":
-		return ec._Subscription_marketDepth(ctx, fields[0])
-	case "marketDepthUpdate":
-		return ec._Subscription_marketDepthUpdate(ctx, fields[0])
 	case "accounts":
 		return ec._Subscription_accounts(ctx, fields[0])
-	case "marketData":
-		return ec._Subscription_marketData(ctx, fields[0])
 	case "marketsDepth":
 		return ec._Subscription_marketsDepth(ctx, fields[0])
 	case "marketsDepthUpdate":
@@ -68355,10 +68086,6 @@ func (ec *executionContext) marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋ
 	return ec._Market(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNMarketData2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketData(ctx context.Context, sel ast.SelectionSet, v vega.MarketData) graphql.Marshaler {
-	return ec._MarketData(ctx, sel, &v)
-}
-
 func (ec *executionContext) marshalNMarketData2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketData(ctx context.Context, sel ast.SelectionSet, v *vega.MarketData) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -68409,20 +68136,6 @@ func (ec *executionContext) marshalNMarketDepthTrade2ᚖcodeᚗvegaprotocolᚗio
 		return graphql.Null
 	}
 	return ec._MarketDepthTrade(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNMarketDepthUpdate2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketDepthUpdate(ctx context.Context, sel ast.SelectionSet, v vega.MarketDepthUpdate) graphql.Marshaler {
-	return ec._MarketDepthUpdate(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNMarketDepthUpdate2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketDepthUpdate(ctx context.Context, sel ast.SelectionSet, v *vega.MarketDepthUpdate) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._MarketDepthUpdate(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNMarketEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*v2.MarketEdge) graphql.Marshaler {
