@@ -1749,6 +1749,61 @@
           }
         }
       ]
+    },
+    {
+      "name": "admin.purge_permissions",
+      "summary": "Purges all the permissions set for all hostname.",
+      "description": "This method purges all the permissions set for all hostname.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "permissions"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "wallet",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "passphrase",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "null"
+        }
+      },
+      "examples": [
+        {
+          "name": "Purge the permissions",
+          "params": [
+            {
+              "name": "wallet",
+              "value": "my-wallet"
+            },
+            {
+              "name": "passphrase",
+              "value": "this-is-not-a-good-passphrase"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": null
+          }
+        }
+      ]
     }
   ],
   "components": {

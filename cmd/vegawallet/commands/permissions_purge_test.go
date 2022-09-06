@@ -30,7 +30,6 @@ func testPurgePermissionsFlagsValidFlagsSucceeds(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
-	require.NotNil(t, req)
 	assert.Equal(t, f.Wallet, req.Wallet)
 	assert.Equal(t, passphrase, req.Passphrase)
 }
@@ -61,7 +60,7 @@ func testPurgePermissionsFlagsMissingFlagsFails(t *testing.T) {
 
 			// then
 			assert.ErrorIs(t, err, flags.MustBeSpecifiedError(tc.missingFlag))
-			require.Nil(t, req)
+			require.Empty(t, req)
 		})
 	}
 }
