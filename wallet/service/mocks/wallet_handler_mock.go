@@ -122,7 +122,7 @@ func (mr *MockWalletHandlerMockRecorder) LogoutWallet(arg0 interface{}) *gomock.
 }
 
 // SecureGenerateKeyPair mocks base method.
-func (m *MockWalletHandler) SecureGenerateKeyPair(arg0, arg1 string, arg2 []wallet.Meta) (string, error) {
+func (m *MockWalletHandler) SecureGenerateKeyPair(arg0, arg1 string, arg2 []wallet.Metadata) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SecureGenerateKeyPair", arg0, arg1, arg2)
 	ret0, _ := ret[0].(string)
@@ -181,7 +181,7 @@ func (mr *MockWalletHandlerMockRecorder) TaintKey(arg0, arg1, arg2 interface{}) 
 }
 
 // UpdateMeta mocks base method.
-func (m *MockWalletHandler) UpdateMeta(arg0, arg1, arg2 string, arg3 []wallet.Meta) error {
+func (m *MockWalletHandler) UpdateMeta(arg0, arg1, arg2 string, arg3 []wallet.Metadata) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateMeta", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)

@@ -70,7 +70,7 @@ func TestImportWalletV1(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	AssertGenerateKey(t, generateKeyResp).
-		WithMeta(map[string]string{"name": "key-1", "role": "validation"}).
+		WithMetadata(map[string]string{"name": "key-1", "role": "validation"}).
 		WithPublicKey("de998bab8d15a6f6b9584251ff156c2424ccdf1de8ba00e4933595773e9e00dc")
 
 	// when
@@ -150,7 +150,7 @@ func TestImportWalletV2(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	AssertGenerateKey(t, generateKeyResp).
-		WithMeta(map[string]string{"name": "key-1", "role": "validation"}).
+		WithMetadata(map[string]string{"name": "key-1", "role": "validation"}).
 		WithPublicKey("988eae323a07f12363c17025c23ee58ea32ac3912398e16bb0b56969f57adc52")
 
 	// when

@@ -59,7 +59,7 @@ func testHDKeyPairNewKeyPairSucceeds(t *testing.T) {
 	assert.False(t, kp.IsTainted())
 	assert.Equal(t, "vega/ed25519", kp.AlgorithmName())
 	assert.Equal(t, uint32(1), kp.AlgorithmVersion())
-	assert.Empty(t, kp.Meta())
+	assert.Empty(t, kp.Metadata())
 }
 
 func testHDKeyPairDeepCopyingKeyPairSucceeds(t *testing.T) {
@@ -149,7 +149,7 @@ func testHDKeyPairToPublicKeyRemovesSensitiveInformation(t *testing.T) {
 	assert.Equal(t, kp.IsTainted(), secureKp.IsTainted())
 	assert.Equal(t, kp.AlgorithmName(), secureKp.AlgorithmName())
 	assert.Equal(t, kp.AlgorithmVersion(), secureKp.AlgorithmVersion())
-	assert.Equal(t, kp.Meta(), secureKp.Meta())
+	assert.Equal(t, kp.Metadata(), secureKp.Metadata())
 }
 
 func testHDKeyPairSigningTransactionSucceeds(t *testing.T) {
@@ -271,7 +271,7 @@ func testHDKeyPairUnmarshalingKeyPairSucceeds(t *testing.T) {
 	assert.Equal(t, uint32(1), kp.AlgorithmVersion())
 	assert.Equal(t, "vega/ed25519", kp.AlgorithmName())
 	assert.False(t, kp.IsTainted())
-	assert.Nil(t, kp.Meta())
+	assert.Nil(t, kp.Metadata())
 }
 
 func generateHDKeyPair(t *testing.T) *wallet.HDKeyPair {

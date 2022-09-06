@@ -39,16 +39,16 @@ var (
 	`)
 )
 
-type RemoveWalletHandler func(api.RemoveWalletParams) error
+type RemoveWalletHandler func(api.AdminRemoveWalletParams) error
 
 func NewCmdDeleteWallet(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(params api.RemoveWalletParams) error {
+	h := func(params api.AdminRemoveWalletParams) error {
 		s, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
 			return fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 
-		deleteWallet := api.NewRemoveWallet(s)
+		deleteWallet := api.NewAdminRemoveWallet(s)
 
 		_, errDetails := deleteWallet.Handle(context.Background(), params)
 		if errDetails != nil {
@@ -116,16 +116,16 @@ type DeleteWalletFlags struct {
 	Force  bool
 }
 
-func (f *DeleteWalletFlags) Validate() (api.RemoveWalletParams, error) {
+func (f *DeleteWalletFlags) Validate() (api.AdminRemoveWalletParams, error) {
 	if len(f.Wallet) == 0 {
-		return api.RemoveWalletParams{}, flags.MustBeSpecifiedError("wallet")
+		return api.AdminRemoveWalletParams{}, flags.MustBeSpecifiedError("wallet")
 	}
 
 	if !f.Force && vgterm.HasNoTTY() {
-		return api.RemoveWalletParams{}, ErrForceFlagIsRequiredWithoutTTY
+		return api.AdminRemoveWalletParams{}, ErrForceFlagIsRequiredWithoutTTY
 	}
 
-	return api.RemoveWalletParams{
+	return api.AdminRemoveWalletParams{
 		Wallet: f.Wallet,
 	}, nil
 }

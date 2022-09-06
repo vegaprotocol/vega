@@ -123,7 +123,7 @@ func testSignCommandFlagsMissingTxBlockHeightFails(t *testing.T) {
 	testDir := t.TempDir()
 
 	// given
-	f := newRotateKeyFlags(t, testDir)
+	f := newSignCommandFlags(t, testDir)
 	f.TxBlockHeight = 0
 
 	// when

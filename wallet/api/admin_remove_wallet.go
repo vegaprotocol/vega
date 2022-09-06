@@ -8,16 +8,16 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-type RemoveWalletParams struct {
+type AdminRemoveWalletParams struct {
 	Wallet string `json:"wallet"`
 }
 
-type RemoveWallet struct {
+type AdminRemoveWallet struct {
 	walletStore WalletStore
 }
 
 // Handle removes a wallet from the computer.
-func (h *RemoveWallet) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminRemoveWallet) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateRemoveWalletParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
@@ -36,27 +36,27 @@ func (h *RemoveWallet) Handle(ctx context.Context, rawParams jsonrpc.Params) (js
 	return nil, nil
 }
 
-func validateRemoveWalletParams(rawParams jsonrpc.Params) (RemoveWalletParams, error) {
+func validateRemoveWalletParams(rawParams jsonrpc.Params) (AdminRemoveWalletParams, error) {
 	if rawParams == nil {
-		return RemoveWalletParams{}, ErrParamsRequired
+		return AdminRemoveWalletParams{}, ErrParamsRequired
 	}
 
-	params := RemoveWalletParams{}
+	params := AdminRemoveWalletParams{}
 	if err := mapstructure.Decode(rawParams, &params); err != nil {
-		return RemoveWalletParams{}, ErrParamsDoNotMatch
+		return AdminRemoveWalletParams{}, ErrParamsDoNotMatch
 	}
 
 	if params.Wallet == "" {
-		return RemoveWalletParams{}, ErrWalletIsRequired
+		return AdminRemoveWalletParams{}, ErrWalletIsRequired
 	}
 
 	return params, nil
 }
 
-func NewRemoveWallet(
+func NewAdminRemoveWallet(
 	walletStore WalletStore,
-) *RemoveWallet {
-	return &RemoveWallet{
+) *AdminRemoveWallet {
+	return &AdminRemoveWallet{
 		walletStore: walletStore,
 	}
 }

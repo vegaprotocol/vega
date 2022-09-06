@@ -26,21 +26,21 @@ var (
 	`)
 )
 
-type ListWalletsHandler func() (api.ListWalletsResult, error)
+type ListWalletsHandler func() (api.AdminListWalletsResult, error)
 
 func NewCmdListWallets(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func() (api.ListWalletsResult, error) {
+	h := func() (api.AdminListWalletsResult, error) {
 		s, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
-			return api.ListWalletsResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
+			return api.AdminListWalletsResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 
-		listWallet := api.NewListWallets(s)
+		listWallet := api.NewAdminListWallets(s)
 		rawResult, errorDetails := listWallet.Handle(context.Background(), nil)
 		if errorDetails != nil {
-			return api.ListWalletsResult{}, errors.New(errorDetails.Data)
+			return api.AdminListWalletsResult{}, errors.New(errorDetails.Data)
 		}
-		return rawResult.(api.ListWalletsResult), nil
+		return rawResult.(api.AdminListWalletsResult), nil
 	}
 
 	return BuildCmdListWallets(w, h, rf)
@@ -72,7 +72,7 @@ func BuildCmdListWallets(w io.Writer, handler ListWalletsHandler, rf *RootFlags)
 	return cmd
 }
 
-func PrintListWalletsResult(w io.Writer, resp api.ListWalletsResult) {
+func PrintListWalletsResult(w io.Writer, resp api.AdminListWalletsResult) {
 	p := printer.NewInteractivePrinter(w)
 
 	str := p.String()
