@@ -27,11 +27,6 @@ func NewFile(t *testing.T, path, fileName, data string) string {
 	return filePath
 }
 
-func DefaultMetaName(t *testing.T, wallet string, index int) string {
-	t.Helper()
-	return fmt.Sprintf("%s key %d", wallet, index)
-}
-
 func FakeNetwork(name string) string {
 	return fmt.Sprintf(`
 Name = "%s"

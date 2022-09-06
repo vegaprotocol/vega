@@ -58,7 +58,7 @@ func (l *WalletLoader) Generate(passphrase string) (*Wallet, map[string]string, 
 	data["mnemonic"] = mnemonic
 	data["walletFilePath"] = store.GetWalletPath(walletName)
 
-	_, err = handler.GenerateKeyPair(walletName, passphrase, []wallet.Meta{})
+	_, err = handler.GenerateKeyPair(walletName, passphrase, []wallet.Metadata{})
 	if err != nil {
 		return nil, nil, err
 	}

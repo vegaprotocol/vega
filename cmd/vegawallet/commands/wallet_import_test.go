@@ -33,7 +33,7 @@ func testImportWalletFlagsValidFlagsSucceeds(t *testing.T) {
 		PassphraseFile:     passphraseFilePath,
 	}
 
-	expectedReq := api.ImportWalletParams{
+	expectedReq := api.AdminImportWalletParams{
 		Wallet:         walletName,
 		RecoveryPhrase: recoveryPhrase,
 		Passphrase:     passphrase,

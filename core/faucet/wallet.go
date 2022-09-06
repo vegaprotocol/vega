@@ -80,7 +80,7 @@ func (l *WalletLoader) GenerateWallet(passphrase string) (*WalletGenerationResul
 		return nil, fmt.Errorf("couldn't create wallet %s: %w", walletName, err)
 	}
 
-	keyPair, err := l.handler.GenerateKeyPair(walletName, passphrase, []wallet.Meta{})
+	keyPair, err := l.handler.GenerateKeyPair(walletName, passphrase, []wallet.Metadata{})
 	if err != nil {
 		return nil, fmt.Errorf("couldn't generate key pair for wallet %s: %w", walletName, err)
 	}

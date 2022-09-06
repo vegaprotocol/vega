@@ -135,17 +135,6 @@ func testRequestingPermissionsWithValidParamsSucceeds(t *testing.T) {
 				},
 			},
 		}, {
-			name: "With write access on public keys",
-			askedPermissions: wallet.PermissionsSummary{
-				"public_keys": "write",
-			},
-			expectedPermissions: wallet.Permissions{
-				PublicKeys: wallet.PublicKeysPermission{
-					Access:         wallet.WriteAccess,
-					RestrictedKeys: nil,
-				},
-			},
-		}, {
 			name: "With no access on public keys",
 			askedPermissions: wallet.PermissionsSummary{
 				"public_keys": "none",
@@ -716,7 +705,7 @@ func testUpdatingPermissionsDoesNotOverwriteUntrackedChanges(t *testing.T) {
 	if err != nil {
 		t.Fatal("could not import wallet for test: %w", err)
 	}
-	kp, _ := modifiedWallet.GenerateKeyPair([]wallet.Meta{{Key: "name", Value: "hello"}})
+	kp, _ := modifiedWallet.GenerateKeyPair([]wallet.Metadata{{Key: "name", Value: "hello"}})
 
 	passphrase := vgrand.RandomStr(5)
 	askedPermissions := wallet.PermissionsSummary{

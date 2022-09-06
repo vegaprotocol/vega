@@ -6,6 +6,7 @@ import (
 	cmd "code.vegaprotocol.io/vega/cmd/vegawallet/commands"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
+	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -36,10 +37,10 @@ func testAnnotateKeyFlagsValidFlagsSucceeds(t *testing.T) {
 		Clear:          false,
 	}
 
-	expectedReq := &wallet.AnnotateKeyRequest{
-		Wallet: walletName,
-		PubKey: pubKey,
-		Metadata: []wallet.Meta{
+	expectedReq := api.AdminAnnotateKeyParams{
+		Wallet:    walletName,
+		PublicKey: pubKey,
+		Metadata: []wallet.Metadata{
 			{Key: "name", Value: "my-wallet"},
 			{Key: "role", Value: "validation"},
 		},
@@ -67,7 +68,7 @@ func testAnnotateKeyFlagsMissingWalletFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("wallet"))
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func testAnnotateKeyFlagsMissingPubKeyFails(t *testing.T) {
@@ -82,7 +83,7 @@ func testAnnotateKeyFlagsMissingPubKeyFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("pubkey"))
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func testAnnotateKeyFlagsMissingMetadataAndClearFails(t *testing.T) {
@@ -97,7 +98,7 @@ func testAnnotateKeyFlagsMissingMetadataAndClearFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.OneOfFlagsMustBeSpecifiedError("meta", "clear"))
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func testAnnotateKeyFlagsClearingWithMetadataFails(t *testing.T) {
@@ -112,7 +113,7 @@ func testAnnotateKeyFlagsClearingWithMetadataFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.MutuallyExclusiveError("meta", "clear"))
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func testAnnotateKeyFlagsInvalidMetadataFails(t *testing.T) {
@@ -127,7 +128,7 @@ func testAnnotateKeyFlagsInvalidMetadataFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.InvalidFlagFormatError("meta"))
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func newAnnotateKeyFlags(t *testing.T, testDir string) *cmd.AnnotateKeyFlags {

@@ -186,8 +186,8 @@ func ParseTaintKeyRequest(r *http.Request, keyID string) (*TaintKeyRequest, comm
 
 // GenKeyPairRequest describes the request for GenerateKeyPair.
 type GenKeyPairRequest struct {
-	Passphrase string        `json:"passphrase"`
-	Meta       []wallet.Meta `json:"meta"`
+	Passphrase string            `json:"passphrase"`
+	Meta       []wallet.Metadata `json:"meta"`
 }
 
 func ParseGenKeyPairRequest(r *http.Request) (*GenKeyPairRequest, commands.Errors) {
@@ -209,10 +209,10 @@ func ParseGenKeyPairRequest(r *http.Request) (*GenKeyPairRequest, commands.Error
 	return req, errs
 }
 
-// UpdateMetaRequest describes the request for UpdateMeta.
+// UpdateMetaRequest describes the request for UpdateMetadata.
 type UpdateMetaRequest struct {
-	Passphrase string        `json:"passphrase"`
-	Meta       []wallet.Meta `json:"meta"`
+	Passphrase string            `json:"passphrase"`
+	Meta       []wallet.Metadata `json:"meta"`
 }
 
 func ParseUpdateMetaRequest(r *http.Request, keyID string) (*UpdateMetaRequest, commands.Errors) {
@@ -352,12 +352,21 @@ func ParseSubmitTransactionRequest(r *http.Request) (*walletpb.SubmitTransaction
 
 // KeyResponse describes the response to a request that returns a single key.
 type KeyResponse struct {
-	Key wallet.PublicKey `json:"key"`
+	Key KeyKeyResponse `json:"key"`
+}
+
+type KeyKeyResponse struct {
+	Idx          uint32            `json:"index"`
+	PublicKey    string            `json:"pub"`
+	KeyName      string            `json:"name"`
+	Algorithm    wallet.Algorithm  `json:"algorithm"`
+	Tainted      bool              `json:"tainted"`
+	MetadataList []wallet.Metadata `json:"meta"`
 }
 
 // KeysResponse describes the response to a request that returns a list of keys.
 type KeysResponse struct {
-	Keys []wallet.PublicKey `json:"keys"`
+	Keys []KeyKeyResponse `json:"keys"`
 }
 
 // SignAnyResponse describes the response for SignAny.
@@ -401,14 +410,14 @@ type WalletHandler interface {
 	ImportWallet(name, passphrase, recoveryPhrase string, version uint32) error
 	LoginWallet(name, passphrase string) error
 	LogoutWallet(name string)
-	SecureGenerateKeyPair(name, passphrase string, meta []wallet.Meta) (string, error)
+	SecureGenerateKeyPair(name, passphrase string, meta []wallet.Metadata) (string, error)
 	GetPublicKey(name, pubKey string) (wallet.PublicKey, error)
 	ListPublicKeys(name string) ([]wallet.PublicKey, error)
 	SignTx(name string, req *walletpb.SubmitTransactionRequest, height uint64, chainID string) (*commandspb.Transaction, error)
 	SignAny(name string, inputData []byte, pubKey string) ([]byte, error)
 	VerifyAny(inputData, sig []byte, pubKey string) (bool, error)
 	TaintKey(name, pubKey, passphrase string) error
-	UpdateMeta(name, pubKey, passphrase string, meta []wallet.Meta) error
+	UpdateMeta(name, pubKey, passphrase string, meta []wallet.Metadata) error
 }
 
 // Auth ...
@@ -598,7 +607,19 @@ func (s *Service) GenerateKeyPair(t string, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	s.writeSuccess(w, KeyResponse{Key: key})
+	s.writeSuccess(w, KeyResponse{
+		Key: KeyKeyResponse{
+			Idx:       key.Index(),
+			PublicKey: key.Key(),
+			KeyName:   key.Name(),
+			Algorithm: wallet.Algorithm{
+				Name:    key.AlgorithmName(),
+				Version: key.AlgorithmVersion(),
+			},
+			Tainted:      key.IsTainted(),
+			MetadataList: key.Metadata(),
+		},
+	})
 }
 
 func (s *Service) GetPublicKey(t string, w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
@@ -620,7 +641,19 @@ func (s *Service) GetPublicKey(t string, w http.ResponseWriter, _ *http.Request,
 		return
 	}
 
-	s.writeSuccess(w, KeyResponse{Key: key})
+	s.writeSuccess(w, KeyResponse{
+		Key: KeyKeyResponse{
+			Idx:       key.Index(),
+			PublicKey: key.Key(),
+			KeyName:   key.Name(),
+			Algorithm: wallet.Algorithm{
+				Name:    key.AlgorithmName(),
+				Version: key.AlgorithmVersion(),
+			},
+			Tainted:      key.IsTainted(),
+			MetadataList: key.Metadata(),
+		},
+	})
 }
 
 func (s *Service) ListPublicKeys(t string, w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
@@ -636,7 +669,22 @@ func (s *Service) ListPublicKeys(t string, w http.ResponseWriter, _ *http.Reques
 		return
 	}
 
-	s.writeSuccess(w, KeysResponse{Keys: keys})
+	res := make([]KeyKeyResponse, 0, len(keys))
+	for _, key := range keys {
+		res = append(res, KeyKeyResponse{
+			Idx:       key.Index(),
+			PublicKey: key.Key(),
+			KeyName:   key.Name(),
+			Algorithm: wallet.Algorithm{
+				Name:    key.AlgorithmName(),
+				Version: key.AlgorithmVersion(),
+			},
+			Tainted:      key.IsTainted(),
+			MetadataList: key.Metadata(),
+		})
+	}
+
+	s.writeSuccess(w, KeysResponse{Keys: res})
 }
 
 func (s *Service) TaintKey(t string, w http.ResponseWriter, r *http.Request, ps httprouter.Params) {

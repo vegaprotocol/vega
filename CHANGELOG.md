@@ -4,6 +4,7 @@
 
 ### 🚨 Breaking changes
 - [5989](https://github.com/vegaprotocol/vega/issues/5989) - Remove liquidity commitment from market proposal 
+- [6031](https://github.com/vegaprotocol/vega/issues/6031) - Remove market name from `graphql` market type
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
