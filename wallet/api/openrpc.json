@@ -1672,6 +1672,83 @@
           }
         }
       ]
+    },
+    {
+      "name": "admin.list_permissions",
+      "summary": "Returns the permissions summary for all set hostnames.",
+      "description": "This method returns the permissions summary for all set hostnames.\n\nFor a detailed description of the permissions on a given hostname, see `admin.describe_permissions`",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "permissions"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "wallet",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "passphrase",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "permissions": {
+              "type": "object",
+              "properties": {
+                "hostname1": {
+                  "$ref": "#/components/schemas/permissions_summary"
+                },
+                "hostname2": {
+                  "$ref": "#/components/schemas/permissions_summary"
+                }
+              }
+            }
+          }
+        }
+      },
+      "examples": [
+        {
+          "name": "List the permissions",
+          "params": [
+            {
+              "name": "wallet",
+              "value": "my-wallet"
+            },
+            {
+              "name": "passphrase",
+              "value": "this-is-not-a-good-passphrase"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": {
+              "permissions": {
+                "vega.xyz": {
+                  "public_keys": "read"
+                },
+                "token.vega.xyz": {
+                  "public_keys": "none"
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   ],
   "components": {

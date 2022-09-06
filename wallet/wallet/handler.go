@@ -100,26 +100,6 @@ func SignMessage(store Store, req *SignMessageRequest) (*SignMessageResponse, er
 	}, nil
 }
 
-type ListPermissionsRequest struct {
-	Wallet     string `json:"wallet"`
-	Passphrase string `json:"passphrase"`
-}
-
-type ListPermissionsResponse struct {
-	Hostnames []string `json:"hostnames"`
-}
-
-func ListPermissions(store Store, req *ListPermissionsRequest) (*ListPermissionsResponse, error) {
-	w, err := getWallet(store, req.Wallet, req.Passphrase)
-	if err != nil {
-		return nil, err
-	}
-
-	return &ListPermissionsResponse{
-		Hostnames: w.PermittedHostnames(),
-	}, nil
-}
-
 type RevokePermissionsRequest struct {
 	Wallet     string `json:"wallet"`
 	Passphrase string `json:"passphrase"`
