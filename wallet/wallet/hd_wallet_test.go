@@ -51,6 +51,7 @@ func TestHDWallet(t *testing.T) {
 	t.Run("Isolating wallet with non-existing key pair fails", testHDWalletIsolatingWalletWithNonExistingKeyPairFails)
 	t.Run("Getting master key pair succeeds", testHDWalletGettingWalletMasterKeySucceeds)
 	t.Run("Updating permissions with inconsistent setup fails", testHDWalletUpdatingPermissionsWithInconsistentSetupFails)
+	t.Run("Updating permissions with empty permission fallback to default", testHDWalletUpdatingPermissionsWithEmptyPermissionFallbackToDefaults)
 	t.Run("Revoking permissions succeeds", testHDWalletRevokingPermissionsSucceeds)
 	t.Run("Purging permissions succeeds", testHDWalletPurgingPermissionsSucceeds)
 }
@@ -1620,6 +1621,36 @@ func testHDWalletUpdatingPermissionsWithInconsistentSetupFails(t *testing.T) {
 			require.EqualError(tt, err, fmt.Sprintf("inconsistent permissions setup: %v", tc.expectedError))
 		})
 	}
+}
+
+func testHDWalletUpdatingPermissionsWithEmptyPermissionFallbackToDefaults(t *testing.T) {
+	// given
+	name := vgrand.RandomStr(5)
+
+	// when
+	w, err := wallet.ImportHDWallet(name, TestRecoveryPhrase1, 2)
+
+	// then
+	require.NoError(t, err)
+	require.NotNil(t, w)
+
+	// when
+	_, err = w.GenerateKeyPair(nil)
+
+	// then
+	require.NoError(t, err)
+
+	// when
+	err = w.UpdatePermissions("vega.xyz", wallet.Permissions{})
+
+	// then
+	require.NoError(t, err)
+
+	// when
+	permissions := w.Permissions("vega.xyz")
+
+	// then
+	assert.Equal(t, wallet.DefaultPermissions(), permissions)
 }
 
 func testHDWalletRevokingPermissionsSucceeds(t *testing.T) {

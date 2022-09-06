@@ -1597,8 +1597,8 @@
     },
     {
       "name": "admin.describe_permissions",
-      "summary": "Returns permissions set for the specified wallet and hostname.",
-      "description": "This method returns permissions set for the specified wallet and hostname.",
+      "summary": "Returns the permissions set for the specified wallet and hostname.",
+      "description": "This method returns the permissions set for the specified wallet and hostname.",
       "tags": [
         {
           "name": "admin"
@@ -1744,6 +1744,102 @@
                 "token.vega.xyz": {
                   "public_keys": "none"
                 }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin.update_permissions",
+      "summary": "Updates the permissions for the specified wallet and hostname.",
+      "description": "This method updates the permissions for the specified wallet and hostname.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "permissions"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "wallet",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "passphrase",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "hostname",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "permissions",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/permissions"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "permissions": {
+              "$ref": "#/components/schemas/permissions"
+            }
+          }
+        }
+      },
+      "examples": [
+        {
+          "name": "Update the permissions",
+          "params": [
+            {
+              "name": "wallet",
+              "value": "my-wallet"
+            },
+            {
+              "name": "passphrase",
+              "value": "this-is-not-a-good-passphrase"
+            },
+            {
+              "name": "hostname",
+              "value": "vega.xyz"
+            },
+            {
+              "name": "permissions",
+              "value": {
+                "publicKeys": {
+                  "access": "read",
+                  "restrictedKeys": [
+                    "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0"
+                  ]
+                }
+              }
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": {
+              "publicKeys": {
+                "access": "read",
+                "restrictedKeys": [
+                  "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0"
+                ]
               }
             }
           }

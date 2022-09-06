@@ -15,16 +15,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAdminRevokePermissions(t *testing.T) {
-	t.Run("Revoking permissions with invalid params fails", testRevokingPermissionsWithInvalidParamsFails)
-	t.Run("Revoking permissions with valid params succeeds", testRevokingPermissionsWithValidParamsSucceeds)
-	t.Run("Revoking permissions from wallet that does not exists fails", testRevokingPermissionsFromWalletThatDoesNotExistsFails)
-	t.Run("Getting internal error during wallet verification fails", testAdminRevokePermissionsGettingInternalErrorDuringWalletVerificationFails)
-	t.Run("Getting internal error during wallet retrieval fails", testAdminRevokePermissionsGettingInternalErrorDuringWalletRetrievalFails)
-	t.Run("Getting internal error during wallet saving fails", testAdminRevokePermissionsGettingInternalErrorDuringWalletSavingFails)
+func TestAdminUpdatePermissions(t *testing.T) {
+	t.Run("Updating permissions with invalid params fails", testUpdatingPermissionsWithInvalidParamsFails)
+	t.Run("Updating permissions with valid params succeeds", testUpdatingPermissionsWithValidParamsSucceeds)
+	t.Run("Updating permissions from wallet that does not exists fails", testUpdatingPermissionsFromWalletThatDoesNotExistsFails)
+	t.Run("Getting internal error during wallet verification fails", testAdminUpdatePermissionsGettingInternalErrorDuringWalletVerificationFails)
+	t.Run("Getting internal error during wallet retrieval fails", testAdminUpdatePermissionsGettingInternalErrorDuringWalletRetrievalFails)
+	t.Run("Getting internal error during wallet saving fails", testAdminUpdatePermissionsGettingInternalErrorDuringWalletSavingFails)
 }
 
-func testRevokingPermissionsWithInvalidParamsFails(t *testing.T) {
+func testUpdatingPermissionsWithInvalidParamsFails(t *testing.T) {
 	tcs := []struct {
 		name          string
 		params        interface{}
@@ -40,7 +40,7 @@ func testRevokingPermissionsWithInvalidParamsFails(t *testing.T) {
 			expectedError: api.ErrParamsDoNotMatch,
 		}, {
 			name: "with empty name",
-			params: api.AdminRevokePermissionsParams{
+			params: api.AdminUpdatePermissionsParams{
 				Wallet:     "",
 				Passphrase: vgrand.RandomStr(5),
 				Hostname:   vgrand.RandomStr(5),
@@ -48,7 +48,7 @@ func testRevokingPermissionsWithInvalidParamsFails(t *testing.T) {
 			expectedError: api.ErrWalletIsRequired,
 		}, {
 			name: "with empty passphrase",
-			params: api.AdminRevokePermissionsParams{
+			params: api.AdminUpdatePermissionsParams{
 				Wallet:     vgrand.RandomStr(5),
 				Passphrase: "",
 				Hostname:   vgrand.RandomStr(5),
@@ -56,7 +56,7 @@ func testRevokingPermissionsWithInvalidParamsFails(t *testing.T) {
 			expectedError: api.ErrPassphraseIsRequired,
 		}, {
 			name: "with empty hostname",
-			params: api.AdminRevokePermissionsParams{
+			params: api.AdminUpdatePermissionsParams{
 				Wallet:     vgrand.RandomStr(5),
 				Passphrase: vgrand.RandomStr(5),
 				Hostname:   "",
@@ -71,7 +71,7 @@ func testRevokingPermissionsWithInvalidParamsFails(t *testing.T) {
 			ctx, _ := contextWithTraceID()
 
 			// setup
-			handler := newRevokePermissionsHandler(tt)
+			handler := newUpdatePermissionsHandler(tt)
 			// -- unexpected calls
 			handler.walletStore.EXPECT().WalletExists(gomock.Any(), gomock.Any()).Times(0)
 			handler.walletStore.EXPECT().ListWallets(gomock.Any()).Times(0)
@@ -80,33 +80,32 @@ func testRevokingPermissionsWithInvalidParamsFails(t *testing.T) {
 			handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 			// when
-			errorDetails := handler.handle(t, ctx, tc.params)
+			result, errorDetails := handler.handle(t, ctx, tc.params)
 
 			// then
 			assertInvalidParams(tt, errorDetails, tc.expectedError)
+			assert.Empty(tt, result)
 		})
 	}
 }
 
-func testRevokingPermissionsWithValidParamsSucceeds(t *testing.T) {
+func testUpdatingPermissionsWithValidParamsSucceeds(t *testing.T) {
 	// given
 	ctx := context.Background()
 	passphrase := vgrand.RandomStr(5)
 	hostname := vgrand.RandomStr(5)
 	expectedWallet, firstKey := walletWithKey(t)
-	if err := expectedWallet.UpdatePermissions(hostname, wallet.Permissions{
+	permissions := wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access: "read",
 			RestrictedKeys: []string{
 				firstKey.PublicKey(),
 			},
 		},
-	}); err != nil {
-		t.Fatalf("could not update permissions for test: %v", err)
 	}
 
 	// setup
-	handler := newRevokePermissionsHandler(t)
+	handler := newUpdatePermissionsHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(expectedWallet, nil)
@@ -116,24 +115,27 @@ func testRevokingPermissionsWithValidParamsSucceeds(t *testing.T) {
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	errorDetails := handler.handle(t, ctx, api.AdminRevokePermissionsParams{
-		Wallet:     expectedWallet.Name(),
-		Passphrase: passphrase,
-		Hostname:   hostname,
+	result, errorDetails := handler.handle(t, ctx, api.AdminUpdatePermissionsParams{
+		Wallet:      expectedWallet.Name(),
+		Passphrase:  passphrase,
+		Hostname:    hostname,
+		Permissions: permissions,
 	})
 
 	// then
 	require.Nil(t, errorDetails)
+	assert.Equal(t, permissions, result.Permissions)
+	assert.Equal(t, permissions, expectedWallet.Permissions(hostname))
 }
 
-func testRevokingPermissionsFromWalletThatDoesNotExistsFails(t *testing.T) {
+func testUpdatingPermissionsFromWalletThatDoesNotExistsFails(t *testing.T) {
 	// given
 	ctx := context.Background()
 	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
 	// setup
-	handler := newRevokePermissionsHandler(t)
+	handler := newUpdatePermissionsHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(false, nil)
 	// -- unexpected calls
@@ -143,7 +145,7 @@ func testRevokingPermissionsFromWalletThatDoesNotExistsFails(t *testing.T) {
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	errorDetails := handler.handle(t, ctx, api.AdminRevokePermissionsParams{
+	result, errorDetails := handler.handle(t, ctx, api.AdminUpdatePermissionsParams{
 		Wallet:     name,
 		Passphrase: passphrase,
 		Hostname:   vgrand.RandomStr(5),
@@ -151,17 +153,18 @@ func testRevokingPermissionsFromWalletThatDoesNotExistsFails(t *testing.T) {
 
 	// then
 	require.NotNil(t, errorDetails)
+	require.Empty(t, result)
 	assertInvalidParams(t, errorDetails, api.ErrWalletDoesNotExist)
 }
 
-func testAdminRevokePermissionsGettingInternalErrorDuringWalletVerificationFails(t *testing.T) {
+func testAdminUpdatePermissionsGettingInternalErrorDuringWalletVerificationFails(t *testing.T) {
 	// given
 	ctx := context.Background()
 	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
 	// setup
-	handler := newRevokePermissionsHandler(t)
+	handler := newUpdatePermissionsHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(false, assert.AnError)
 	// -- unexpected calls
@@ -171,7 +174,7 @@ func testAdminRevokePermissionsGettingInternalErrorDuringWalletVerificationFails
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	errorDetails := handler.handle(t, ctx, api.AdminRevokePermissionsParams{
+	result, errorDetails := handler.handle(t, ctx, api.AdminUpdatePermissionsParams{
 		Wallet:     name,
 		Passphrase: passphrase,
 		Hostname:   vgrand.RandomStr(5),
@@ -179,17 +182,18 @@ func testAdminRevokePermissionsGettingInternalErrorDuringWalletVerificationFails
 
 	// then
 	require.NotNil(t, errorDetails)
+	require.Empty(t, result)
 	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet existence: %w", assert.AnError))
 }
 
-func testAdminRevokePermissionsGettingInternalErrorDuringWalletRetrievalFails(t *testing.T) {
+func testAdminUpdatePermissionsGettingInternalErrorDuringWalletRetrievalFails(t *testing.T) {
 	// given
 	ctx := context.Background()
 	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
 	// setup
-	handler := newRevokePermissionsHandler(t)
+	handler := newUpdatePermissionsHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, name, passphrase).Times(1).Return(nil, assert.AnError)
@@ -199,7 +203,7 @@ func testAdminRevokePermissionsGettingInternalErrorDuringWalletRetrievalFails(t 
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	errorDetails := handler.handle(t, ctx, api.AdminRevokePermissionsParams{
+	result, errorDetails := handler.handle(t, ctx, api.AdminUpdatePermissionsParams{
 		Wallet:     name,
 		Passphrase: passphrase,
 		Hostname:   vgrand.RandomStr(5),
@@ -207,10 +211,11 @@ func testAdminRevokePermissionsGettingInternalErrorDuringWalletRetrievalFails(t 
 
 	// then
 	require.NotNil(t, errorDetails)
+	require.Empty(t, result)
 	assertInternalError(t, errorDetails, fmt.Errorf("could not retrieve the wallet: %w", assert.AnError))
 }
 
-func testAdminRevokePermissionsGettingInternalErrorDuringWalletSavingFails(t *testing.T) {
+func testAdminUpdatePermissionsGettingInternalErrorDuringWalletSavingFails(t *testing.T) {
 	// given
 	ctx := context.Background()
 	passphrase := vgrand.RandomStr(5)
@@ -220,7 +225,7 @@ func testAdminRevokePermissionsGettingInternalErrorDuringWalletSavingFails(t *te
 	}
 
 	// setup
-	handler := newRevokePermissionsHandler(t)
+	handler := newUpdatePermissionsHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(expectedWallet, nil)
@@ -230,39 +235,47 @@ func testAdminRevokePermissionsGettingInternalErrorDuringWalletSavingFails(t *te
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	errorDetails := handler.handle(t, ctx, api.AdminRevokePermissionsParams{
-		Wallet:     expectedWallet.Name(),
-		Passphrase: passphrase,
-		Hostname:   vgrand.RandomStr(5),
+	result, errorDetails := handler.handle(t, ctx, api.AdminUpdatePermissionsParams{
+		Wallet:      expectedWallet.Name(),
+		Passphrase:  passphrase,
+		Hostname:    vgrand.RandomStr(5),
+		Permissions: wallet.Permissions{},
 	})
 
 	// then
 	require.NotNil(t, errorDetails)
+	require.Empty(t, result)
 	assertInternalError(t, errorDetails, fmt.Errorf("could not save the wallet: %w", assert.AnError))
 }
 
-type revokePermissionsHandler struct {
-	*api.AdminRevokePermissions
+type updatePermissionsHandler struct {
+	*api.AdminUpdatePermissions
 	ctrl        *gomock.Controller
 	walletStore *mocks.MockWalletStore
 }
 
-func (h *revokePermissionsHandler) handle(t *testing.T, ctx context.Context, params interface{}) *jsonrpc.ErrorDetails {
+func (h *updatePermissionsHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminUpdatePermissionsResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
 	rawResult, err := h.Handle(ctx, params)
-	require.Empty(t, rawResult)
-	return err
+	if rawResult != nil {
+		result, ok := rawResult.(api.AdminUpdatePermissionsResult)
+		if !ok {
+			t.Fatal("AdminUpdatePermissions handler result is not a AdminUpdatePermissionsResult")
+		}
+		return result, err
+	}
+	return api.AdminUpdatePermissionsResult{}, err
 }
 
-func newRevokePermissionsHandler(t *testing.T) *revokePermissionsHandler {
+func newUpdatePermissionsHandler(t *testing.T) *updatePermissionsHandler {
 	t.Helper()
 
 	ctrl := gomock.NewController(t)
 	walletStore := mocks.NewMockWalletStore(ctrl)
 
-	return &revokePermissionsHandler{
-		AdminRevokePermissions: api.NewAdminRevokePermissions(walletStore),
+	return &updatePermissionsHandler{
+		AdminUpdatePermissions: api.NewAdminUpdatePermissions(walletStore),
 		ctrl:                   ctrl,
 		walletStore:            walletStore,
 	}

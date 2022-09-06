@@ -206,7 +206,7 @@ func testAdminPurgePermissionsGettingInternalErrorDuringWalletSavingFails(t *tes
 	}
 
 	// setup
-	handler := newGenerateKeyHandler(t)
+	handler := newPurgePermissionsHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(expectedWallet, nil)
@@ -216,14 +216,13 @@ func testAdminPurgePermissionsGettingInternalErrorDuringWalletSavingFails(t *tes
 	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.AdminPurgePermissionsParams{
+	errorDetails := handler.handle(t, ctx, api.AdminPurgePermissionsParams{
 		Wallet:     expectedWallet.Name(),
 		Passphrase: passphrase,
 	})
 
 	// then
 	require.NotNil(t, errorDetails)
-	assert.Empty(t, result)
 	assertInternalError(t, errorDetails, fmt.Errorf("could not save the wallet: %w", assert.AnError))
 }
 

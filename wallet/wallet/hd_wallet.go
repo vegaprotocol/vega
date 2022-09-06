@@ -317,6 +317,11 @@ func (w *HDWallet) PurgePermissions() {
 }
 
 func (w *HDWallet) UpdatePermissions(hostname string, perms Permissions) error {
+	// Set defaults.
+	if perms.PublicKeys.Access == "" {
+		perms.PublicKeys.Access = NoAccess
+	}
+
 	if err := ensurePermissionsConsistency(w, perms); err != nil {
 		return fmt.Errorf("inconsistent permissions setup: %w", err)
 	}
