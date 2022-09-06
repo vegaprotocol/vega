@@ -1396,23 +1396,7 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 		}
 		return
 	}
-
-	var signature []byte
-	if app.top.IsValidator() {
-		switch {
-		case asset.IsERC20():
-			asset, _ := asset.ERC20()
-			_, signature, err = asset.SignListAsset()
-			if err != nil {
-				app.log.Panic("couldn't to sign transaction to list asset, is the node properly configured as a validator?",
-					logging.AssetID(prop.ID),
-					logging.Error(err))
-			}
-		}
-	}
-
-	// then instruct the notary to start getting signature from validators
-	app.notary.StartAggregate(prop.ID, types.NodeSignatureKindAssetNew, signature)
+	app.assets.EnactPendingAsset(prop.ID)
 }
 
 func (app *App) enactAssetUpdate(_ context.Context, prop *types.Proposal, updatedAsset *types.Asset) {

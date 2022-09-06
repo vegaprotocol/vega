@@ -925,6 +925,18 @@ func (m *MockAssets) EXPECT() *MockAssetsMockRecorder {
 	return m.recorder
 }
 
+// EnactPendingAsset mocks base method.
+func (m *MockAssets) EnactPendingAsset(arg0 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "EnactPendingAsset", arg0)
+}
+
+// EnactPendingAsset indicates an expected call of EnactPendingAsset.
+func (mr *MockAssetsMockRecorder) EnactPendingAsset(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnactPendingAsset", reflect.TypeOf((*MockAssets)(nil).EnactPendingAsset), arg0)
+}
+
 // Get mocks base method.
 func (m *MockAssets) Get(arg0 string) (*assets.Asset, error) {
 	m.ctrl.T.Helper()
