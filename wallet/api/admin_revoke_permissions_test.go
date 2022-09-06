@@ -92,9 +92,9 @@ func testRevokingPermissionsWithValidParamsSucceeds(t *testing.T) {
 	// given
 	ctx := context.Background()
 	passphrase := vgrand.RandomStr(5)
-	hostname := vgrand.RandomStr(5)
+	hostname1 := vgrand.RandomStr(5)
 	expectedWallet, firstKey := walletWithKey(t)
-	if err := expectedWallet.UpdatePermissions(hostname, wallet.Permissions{
+	if err := expectedWallet.UpdatePermissions(hostname1, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access: "read",
 			RestrictedKeys: []string{
@@ -102,6 +102,18 @@ func testRevokingPermissionsWithValidParamsSucceeds(t *testing.T) {
 			},
 		},
 	}); err != nil {
+		t.Fatalf("could not update permissions for test: %v", err)
+	}
+	hostname2 := vgrand.RandomStr(5)
+	permissions2 := wallet.Permissions{
+		PublicKeys: wallet.PublicKeysPermission{
+			Access: "read",
+			RestrictedKeys: []string{
+				firstKey.PublicKey(),
+			},
+		},
+	}
+	if err := expectedWallet.UpdatePermissions(hostname2, permissions2); err != nil {
 		t.Fatalf("could not update permissions for test: %v", err)
 	}
 
@@ -119,11 +131,13 @@ func testRevokingPermissionsWithValidParamsSucceeds(t *testing.T) {
 	errorDetails := handler.handle(t, ctx, api.AdminRevokePermissionsParams{
 		Wallet:     expectedWallet.Name(),
 		Passphrase: passphrase,
-		Hostname:   hostname,
+		Hostname:   hostname1,
 	})
 
 	// then
 	require.Nil(t, errorDetails)
+	assert.Equal(t, wallet.DefaultPermissions(), expectedWallet.Permissions(hostname1))
+	assert.Equal(t, permissions2, expectedWallet.Permissions(hostname2))
 }
 
 func testRevokingPermissionsFromWalletThatDoesNotExistsFails(t *testing.T) {

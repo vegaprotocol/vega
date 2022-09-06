@@ -82,9 +82,20 @@ func testPurgingPermissionsWithValidParamsSucceeds(t *testing.T) {
 	// given
 	ctx := context.Background()
 	passphrase := vgrand.RandomStr(5)
-	hostname := vgrand.RandomStr(5)
 	expectedWallet, firstKey := walletWithKey(t)
-	if err := expectedWallet.UpdatePermissions(hostname, wallet.Permissions{
+	hostname1 := vgrand.RandomStr(5)
+	if err := expectedWallet.UpdatePermissions(hostname1, wallet.Permissions{
+		PublicKeys: wallet.PublicKeysPermission{
+			Access: "read",
+			RestrictedKeys: []string{
+				firstKey.PublicKey(),
+			},
+		},
+	}); err != nil {
+		t.Fatalf("could not update permissions for test: %v", err)
+	}
+	hostname2 := vgrand.RandomStr(5)
+	if err := expectedWallet.UpdatePermissions(hostname2, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access: "read",
 			RestrictedKeys: []string{
@@ -113,6 +124,8 @@ func testPurgingPermissionsWithValidParamsSucceeds(t *testing.T) {
 
 	// then
 	require.Nil(t, errorDetails)
+	assert.Equal(t, wallet.DefaultPermissions(), expectedWallet.Permissions(hostname1))
+	assert.Equal(t, wallet.DefaultPermissions(), expectedWallet.Permissions(hostname2))
 }
 
 func testPurgingPermissionsFromWalletThatDoesNotExistsFails(t *testing.T) {
