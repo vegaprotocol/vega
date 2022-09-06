@@ -136,7 +136,7 @@ Feature: test risk model parameter change in margin calculation
       | buy  | 900   | 113    |
       | buy  | 880   | 0      |
 
-    # risk model 001: check the requried balances
+    # risk model 001: check the required balances
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
       | party0 | USD   | ETH/MAR21 | 19524  | 197849   | 50000 |
@@ -194,3 +194,4 @@ Feature: test risk model parameter change in margin calculation
 
 
   
+
