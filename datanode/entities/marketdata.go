@@ -68,6 +68,8 @@ type MarketData struct {
 	IndicativeVolume uint64
 	// The current trading mode for the market
 	MarketTradingMode string
+	// The current trading mode for the market
+	MarketState string
 	// When a market is in an auction trading mode, this field indicates what triggered the auction
 	AuctionTrigger string
 	// When a market auction is extended, this field indicates what caused the extension
@@ -340,7 +342,8 @@ func (md MarketData) Equal(other MarketData) bool {
 		md.MarketValueProxy == other.MarketValueProxy &&
 		priceMonitoringBoundsMatches(md.PriceMonitoringBounds, other.PriceMonitoringBounds) &&
 		liquidityProviderFeeShareMatches(md.LiquidityProviderFeeShares, other.LiquidityProviderFeeShares) &&
-		md.TxHash == other.TxHash
+		md.TxHash == other.TxHash &&
+		md.MarketState == other.MarketState
 }
 
 func priceMonitoringBoundsMatches(bounds, other []*PriceMonitoringBound) bool {

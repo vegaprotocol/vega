@@ -914,6 +914,8 @@ message MarketData {
   string market_value_proxy = 25;
   // the equity like share of liquidity fee for each liquidity provider
   repeated LiquidityProviderFeeShare liquidity_provider_fee_share = 26;
+  // The current state for the market
+  Market.State market_state = 27;
 }
 
 // The equity like share of liquidity fee for each liquidity provider

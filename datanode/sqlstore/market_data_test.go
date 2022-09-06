@@ -63,6 +63,7 @@ const (
 	csvColumnPriceMonitoringBounds
 	csvColumnMarketValueProxy
 	csvColumnLiquidityProviderFeeShares
+	csvColumnMarketState
 )
 
 func Test_MarketData(t *testing.T) {
@@ -101,6 +102,7 @@ func shouldInsertAValidMarketDataRecord(t *testing.T) {
 	err = md.Add(&entities.MarketData{
 		Market:            entities.MarketID("deadbeef"),
 		MarketTradingMode: "TRADING_MODE_MONITORING_AUCTION",
+		MarketState:       "STATE_ACTIVE",
 		AuctionTrigger:    "AUCTION_TRIGGER_LIQUIDITY",
 		ExtensionTrigger:  "AUCTION_TRIGGER_UNSPECIFIED",
 		VegaTime:          block.VegaTime,
@@ -154,6 +156,7 @@ func getLatestMarketData(t *testing.T) {
 		AuctionStart:          1644573911314794695,
 		IndicativePrice:       mustParseDecimal(t, "1000026624"),
 		IndicativeVolume:      3,
+		MarketState:           "STATE_ACTIVE",
 		MarketTradingMode:     "TRADING_MODE_MONITORING_AUCTION",
 		AuctionTrigger:        "AUCTION_TRIGGER_LIQUIDITY",
 		ExtensionTrigger:      "AUCTION_TRIGGER_UNSPECIFIED",
@@ -172,6 +175,9 @@ func getLatestMarketData(t *testing.T) {
 	}
 	got, err := store.GetMarketDataByID(ctx, "8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8")
 	assert.NoError(t, err)
+
+	fmt.Printf("WANT: %#v\n", want)
+	fmt.Printf("\nGOT: %#v\n", got)
 
 	assert.True(t, want.Equal(got))
 }
@@ -1028,6 +1034,7 @@ func csvToMarketData(t *testing.T, line []string, seqNum int) *entities.MarketDa
 		AuctionStart:               mustParseInt64(t, line[csvColumnAuctionStart]),
 		IndicativePrice:            mustParseDecimal(t, line[csvColumnIndicativePrice]),
 		IndicativeVolume:           mustParseUInt64(t, line[csvColumnIndicativeVolume]),
+		MarketState:                line[csvColumnMarketState],
 		MarketTradingMode:          line[csvColumnMarketTradingMode],
 		AuctionTrigger:             line[csvColumnAuctionTrigger],
 		ExtensionTrigger:           line[csvColumnExtensionTrigger],

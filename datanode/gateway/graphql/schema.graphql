@@ -217,8 +217,10 @@ type MarketData {
   indicativePrice: String!
   "indicative volume if the auction ended now, 0 if not in auction mode"
   indicativeVolume: String!
-  "what state the market is in (auction, continuous, etc)"
+  "what mode the market is in (auction, continuous, etc)"
   marketTradingMode: MarketTradingMode!
+  "current state of the market"
+  marketState: MarketState!
   "what triggered an auction (if an auction was started)"
   trigger: AuctionTrigger!
   "what extended the ongoing auction (if an auction was extended)"
@@ -275,8 +277,10 @@ type ObservableMarketData {
   indicativePrice: String!
   "indicative volume if the auction ended now, 0 if not in auction mode"
   indicativeVolume: String!
-  "what state the market is in (auction, continuous etc)"
+  "what mode the market is in (auction, continuous etc)"
   marketTradingMode: MarketTradingMode!
+  "current state of the market"
+  marketState: MarketState!
   "what triggered an auction (if an auction was started)"
   trigger: AuctionTrigger!
   "what extended the ongoing auction (if an auction was extended)"
