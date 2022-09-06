@@ -40,7 +40,9 @@ message AssetEntry {
 // Assets contains all the enabled assets as AssetEntries
 message Assets {
   repeated AssetEntry assets = 1;
+  repeated AssetEntry pending_listing_assets = 2;
 }
+
 
 // AssetBalance represents the total balance of a given asset for a party
 message AssetBalance {

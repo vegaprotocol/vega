@@ -128,7 +128,7 @@ func (mat *MarketActivityTracker) GetMarketsWithEligibleProposer(asset string, m
 
 	eligibleMarkets := []string{}
 	for _, v := range mkts {
-		if t, ok := mat.marketToTracker[v]; ok && t.asset == asset && mat.IsMarketEligibleForBonus(v, payoutAsset, markets, funder) {
+		if t, ok := mat.marketToTracker[v]; ok && (len(asset) == 0 || t.asset == asset) && mat.IsMarketEligibleForBonus(v, payoutAsset, markets, funder) {
 			eligibleMarkets = append(eligibleMarkets, v)
 		}
 	}

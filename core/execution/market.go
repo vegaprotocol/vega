@@ -839,7 +839,8 @@ func (m *Market) cleanMarketWithState(ctx context.Context, mktState types.Market
 }
 
 func (m *Market) closeCancelledMarket(ctx context.Context, t time.Time) error {
-	m.tradableInstrument.Instrument.Unsubscribe(ctx)
+	// we got here because trading was terminated so we've already unsubscribed that oracle data source.
+	m.tradableInstrument.Instrument.UnsubscribeSettlementPrice(ctx)
 
 	err := m.cleanMarketWithState(ctx, types.MarketStateCancelled)
 	if err != nil {
