@@ -346,7 +346,7 @@ type Query {
     id: ID
     "Optional pagination information"
     pagination: Pagination
-  ): MarketConnection!
+  ): MarketConnection
 
   "An instrument that is trading on the Vega network"
   market("Optional ID of a market" id: ID!): Market
@@ -359,7 +359,7 @@ type Query {
     id: ID
     "Optional pagination information"
     pagination: Pagination
-  ): PartyConnection!
+  ): PartyConnection
 
   "An entity that is trading on the Vega network"
   party("ID of a party" id: ID!): Party
@@ -377,7 +377,7 @@ type Query {
   oracleSpecsConnection(
     "Pagination"
     pagination: Pagination
-  ): OracleSpecsConnection!
+  ): OracleSpecsConnection
 
   "An oracle spec for a given oracle spec ID"
   oracleSpec("ID for an oracle spec" oracleSpecId: ID!): OracleSpec
@@ -395,7 +395,7 @@ type Query {
     oracleSpecId: ID!
     "Pagination"
     pagination: Pagination
-  ): OracleDataConnection!
+  ): OracleDataConnection
 
   "All registered oracle specs"
   oracleData(
@@ -407,7 +407,7 @@ type Query {
   oracleDataConnection(
     "Pagination"
     pagination: Pagination
-  ): OracleDataConnection!
+  ): OracleDataConnection
 
   "An order in the Vega network found by orderID"
   orderByID(
@@ -437,7 +437,7 @@ type Query {
     orderId: ID
     "Pagination information"
     pagination: Pagination
-  ): OrderConnection!
+  ): OrderConnection
 
   "An order in the Vega network found by referenceID"
   orderByReference("Reference for an order" reference: String!): Order!
@@ -456,7 +456,7 @@ type Query {
     inState: ProposalState
     "Optional Pagination information"
     pagination: Pagination
-  ): ProposalsConnection!
+  ): ProposalsConnection
 
   "A governance proposal located by either its ID or reference. If both are set, ID is used."
   proposal(
@@ -502,7 +502,7 @@ type Query {
   nodeSignatures(resourceId: ID!): [NodeSignature!] @deprecated(reason: "Use nodeSignaturesConnection instead")
 
   "Return a list of aggregated node signature for a given resource ID"
-  nodeSignaturesConnection(resourceId: ID!, pagination: Pagination): NodeSignaturesConnection!
+  nodeSignaturesConnection(resourceId: ID!, pagination: Pagination): NodeSignaturesConnection
 
   "An asset which is used in the vega network"
   asset("ID of the asset" id: ID!): Asset
@@ -511,7 +511,7 @@ type Query {
   assets: [Asset!] @deprecated(reason: "Use assetsConnection instead")
 
   "The list of all assets in use in the Vega network or the specified asset if ID is provided"
-  assetsConnection(id: ID, pagination: Pagination): AssetsConnection!
+  assetsConnection(id: ID, pagination: Pagination): AssetsConnection
 
   "return an estimation of the potential cost for a new order"
   estimateOrder(
@@ -634,7 +634,7 @@ type Query {
     direction: TransferDirection
     "Pagination information"
     pagination: Pagination
-  ): TransferConnection!
+  ): TransferConnection
 
   "get statistics about the Vega node"
   statistics: Statistics!
@@ -689,7 +689,7 @@ type Query {
     """
     end: Int
     "Optional Pagination"
-    pagination: Pagination): MarketDataConnection!
+    pagination: Pagination): MarketDataConnection
 }
 
 enum TransferStatus {
@@ -854,7 +854,7 @@ type Epoch {
   validators: [Node!]! @deprecated(reason: "Use validatorsConnection instead")
 
   "Validators that participated in this epoch"
-  validatorsConnection(pagination: Pagination): NodesConnection!
+  validatorsConnection(pagination: Pagination): NodesConnection
 
   delegations(
     # Optional party ID to filter on
@@ -875,7 +875,7 @@ type Epoch {
     nodeId: ID
     "Pagination information"
    pagination: Pagination
-  ): DelegationsConnection!
+  ): DelegationsConnection
 }
 
 type NodeData {
@@ -974,7 +974,7 @@ type Node {
   delegationsConnection(
     partyId: ID,
     pagination: Pagination
-  ): DelegationsConnection!
+  ): DelegationsConnection
 
   "Reward scores for the current epoch for the validator"
   rewardScore: RewardScore
@@ -1691,7 +1691,7 @@ type Market {
     dateRange: DateRange,
     "Pagination information"
     pagination: Pagination
-  ): OrderConnection!
+  ): OrderConnection
 
   "Get account for a party or market"
   accounts(
@@ -1705,7 +1705,7 @@ type Market {
     partyId: ID
     "Pagination information"
     pagination: Pagination
-  ): AccountsConnection!
+  ): AccountsConnection
 
   "Trades on a market"
   trades(
@@ -1721,7 +1721,7 @@ type Market {
     "Date range to retrieve trades from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
     dateRange: DateRange,
     pagination: Pagination
-  ): TradeConnection!
+  ): TradeConnection
 
   "Current depth on the order book for this market"
   depth(
@@ -1747,7 +1747,7 @@ type Market {
     interval: Interval!
     "Pagination information"
     pagination: Pagination
-  ): CandleDataConnection!
+  ): CandleDataConnection
 
   "marketData for the given market"
   data: MarketData
@@ -1764,7 +1764,7 @@ type Market {
      partyId: ID
      "Pagination information"
      pagination: Pagination
-  ): LiquidityProvisionsConnection!
+  ): LiquidityProvisionsConnection
 
   "timestamps for state changes in the market"
   marketTimestamps: MarketTimestamps!
@@ -1929,7 +1929,7 @@ type Party {
     dateRange: DateRange
     "Pagination information"
     pagination: Pagination
-  ): OrderConnection!
+  ): OrderConnection
 
   "Trades relating to a party (specifically where party is either buyer OR seller)"
   trades(
@@ -1950,7 +1950,7 @@ type Party {
     dataRange: DateRange,
     "Pagination information"
     pagination: Pagination
-  ): TradeConnection!
+  ): TradeConnection
 
   "Collateral accounts relating to a party"
   accounts(
@@ -1972,13 +1972,13 @@ type Party {
     type: AccountType
     "Cursor pagination information"
     pagination: Pagination
-  ): AccountsConnection!
+  ): AccountsConnection
 
   "Trading positions relating to a party"
   positions: [Position!] @deprecated(reason: "Use the 'positionsConnection' field instead")
 
   "Trading positions relating to a party"
-  positionsConnection(market: ID, pagination: Pagination): PositionConnection!
+  positionsConnection(market: ID, pagination: Pagination): PositionConnection
 
   "marginLevels"
   margins(
@@ -1992,7 +1992,7 @@ type Party {
     marketId: ID
     "Pagination information"
     pagination: Pagination
-  ): MarginConnection!
+  ): MarginConnection
 
   proposals(
     "Select only proposals in the specified state. Leave out to get all proposals"
@@ -2007,11 +2007,11 @@ type Party {
     inState: ProposalState
     "Optional Pagination information"
     pagination: Pagination
-  ): ProposalsConnection!
+  ): ProposalsConnection
 
   votes: [ProposalVote] @deprecated(reason: "Use votesConnection instead")
 
-  votesConnection(pagination: Pagination): ProposalVoteConnection!
+  votesConnection(pagination: Pagination): ProposalVoteConnection
 
   "The list of all withdrawals initiated by the party"
   withdrawals: [Withdrawal!] @deprecated(reason: "Use withdrawalsConnection instead")
@@ -2021,7 +2021,7 @@ type Party {
     "Date range to retrieve withdrawals from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
     dateRange: DateRange,
     pagination: Pagination
-  ): WithdrawalsConnection!
+  ): WithdrawalsConnection
 
   "The list of all deposits for a party by the party"
   deposits: [Deposit!] @deprecated(reason: "Use depositsConnection instead")
@@ -2031,7 +2031,7 @@ type Party {
     "Date range to retrieve deposits from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
     dateRange: DateRange,
     pagination: Pagination
-  ): DepositsConnection!
+  ): DepositsConnection
 
   "The list of the liquidity provision commitment from this party"
   liquidityProvisions(
@@ -2049,7 +2049,7 @@ type Party {
        reference: String
        "Pagination information"
        pagination: Pagination
-    ): LiquidityProvisionsConnection!
+    ): LiquidityProvisionsConnection
 
   # All delegations for a party to a given node if node is specified, or all delegations if not
   delegations(
@@ -2067,7 +2067,7 @@ type Party {
     nodeId: ID
     "Pagination information"
     pagination: Pagination
-  ): DelegationsConnection!
+  ): DelegationsConnection
 
   "The staking information for this Party"
   stake: PartyStake! @deprecated(reason: "Use stakingSummary instead")
@@ -2109,8 +2109,7 @@ type Party {
     direction: TransferDirection
     "Pagination information"
     pagination: Pagination
-  ): TransferConnection!
-
+  ): TransferConnection
 }
 
 """
@@ -2207,7 +2206,7 @@ type Position {
   margins: [MarginLevels!] @deprecated(reason: "Use marginsConnection instead")
 
   "Margins of the party for the given position"
-  marginsConnection(pagination: Pagination): MarginConnection!
+  marginsConnection(pagination: Pagination): MarginConnection
 
   "RFC3339Nano time the position was updated"
   updatedAt: String
@@ -2259,7 +2258,7 @@ type Order {
     "Date range to retrieve trades from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
     dateRange: DateRange,
     pagination: Pagination
-  ): TradeConnection!
+  ): TradeConnection
 
   "Type the order type (defaults to PARTY)"
   type: OrderType
