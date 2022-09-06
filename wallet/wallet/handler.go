@@ -120,27 +120,6 @@ func ListPermissions(store Store, req *ListPermissionsRequest) (*ListPermissions
 	}, nil
 }
 
-type DescribePermissionsRequest struct {
-	Wallet     string `json:"wallet"`
-	Passphrase string `json:"passphrase"`
-	Hostname   string `json:"hostname"`
-}
-
-type DescribePermissionsResponse struct {
-	Permissions Permissions `json:"permissions"`
-}
-
-func DescribePermissions(store Store, req *DescribePermissionsRequest) (*DescribePermissionsResponse, error) {
-	w, err := getWallet(store, req.Wallet, req.Passphrase)
-	if err != nil {
-		return nil, err
-	}
-
-	return &DescribePermissionsResponse{
-		Permissions: w.Permissions(req.Hostname),
-	}, nil
-}
-
 type RevokePermissionsRequest struct {
 	Wallet     string `json:"wallet"`
 	Passphrase string `json:"passphrase"`

@@ -6,7 +6,7 @@ import (
 	cmd "code.vegaprotocol.io/vega/cmd/vegawallet/commands"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
-	"code.vegaprotocol.io/vega/wallet/wallet"
+	"code.vegaprotocol.io/vega/wallet/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -29,7 +29,7 @@ func testDescribePermissionsValidFlagsSucceeds(t *testing.T) {
 		PassphraseFile: passphraseFilePath,
 	}
 
-	expectedReq := &wallet.DescribePermissionsRequest{
+	expectedReq := api.AdminDescribePermissionsParams{
 		Wallet:     walletName,
 		Hostname:   hostname,
 		Passphrase: passphrase,
@@ -39,7 +39,6 @@ func testDescribePermissionsValidFlagsSucceeds(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
-	require.NotNil(t, req)
 	assert.Equal(t, expectedReq, req)
 }
 
@@ -80,7 +79,7 @@ func testDescribePermissionsWithMissingFlagsFails(t *testing.T) {
 
 			// then
 			assert.ErrorIs(t, err, flags.MustBeSpecifiedError(tc.missingFlag))
-			require.Nil(t, req)
+			assert.Empty(t, req)
 		})
 	}
 }
