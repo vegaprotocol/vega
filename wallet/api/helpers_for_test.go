@@ -77,6 +77,34 @@ func walletWithPerms(t *testing.T, hostname string, perms wallet.Permissions) wa
 	return w
 }
 
+func walletWithKey(t *testing.T) (wallet.Wallet, wallet.KeyPair) {
+	t.Helper()
+
+	walletName := vgrand.RandomStr(5)
+
+	w, _, err := wallet.NewHDWallet(walletName)
+	if err != nil {
+		t.Fatal("could not create wallet for test: %w", err)
+	}
+
+	kp, err := w.GenerateKeyPair(nil)
+	if err != nil {
+		t.Fatal("could not update permissions on wallet for test: %w", err)
+	}
+
+	return w, kp
+}
+
+func generateKey(t *testing.T, w wallet.Wallet) wallet.KeyPair {
+	t.Helper()
+
+	kp, err := w.GenerateKeyPair(nil)
+	if err != nil {
+		t.Fatalf("could not generate key for test wallet: %v", err)
+	}
+	return kp
+}
+
 func contextWithTraceID() (context.Context, string) {
 	traceID := vgrand.RandomStr(5)
 	//revive:disable:context-keys-type

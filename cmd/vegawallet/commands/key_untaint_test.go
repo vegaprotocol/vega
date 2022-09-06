@@ -6,7 +6,7 @@ import (
 	cmd "code.vegaprotocol.io/vega/cmd/vegawallet/commands"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
-	"code.vegaprotocol.io/vega/wallet/wallet"
+	"code.vegaprotocol.io/vega/wallet/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -27,13 +27,13 @@ func testUntaintKeyFlagsValidFlagsSucceeds(t *testing.T) {
 
 	f := &cmd.UntaintKeyFlags{
 		Wallet:         walletName,
-		PubKey:         pubKey,
+		PublicKey:      pubKey,
 		PassphraseFile: passphraseFilePath,
 	}
 
-	expectedReq := &wallet.UntaintKeyRequest{
+	expectedReq := api.AdminUntaintKeyParams{
 		Wallet:     walletName,
-		PubKey:     pubKey,
+		PublicKey:  pubKey,
 		Passphrase: passphrase,
 	}
 
@@ -42,7 +42,6 @@ func testUntaintKeyFlagsValidFlagsSucceeds(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
-	require.NotNil(t, req)
 	assert.Equal(t, expectedReq, req)
 }
 
@@ -58,7 +57,7 @@ func testUntaintKeyFlagsMissingWalletFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("wallet"))
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func testUntaintKeyFlagsMissingPubKeyFails(t *testing.T) {
@@ -66,14 +65,14 @@ func testUntaintKeyFlagsMissingPubKeyFails(t *testing.T) {
 
 	// given
 	f := newUntaintKeyFlags(t, testDir)
-	f.PubKey = ""
+	f.PublicKey = ""
 
 	// when
 	req, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("pubkey"))
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func newUntaintKeyFlags(t *testing.T, testDir string) *cmd.UntaintKeyFlags {
@@ -85,7 +84,7 @@ func newUntaintKeyFlags(t *testing.T, testDir string) *cmd.UntaintKeyFlags {
 
 	return &cmd.UntaintKeyFlags{
 		Wallet:         walletName,
-		PubKey:         pubKey,
+		PublicKey:      pubKey,
 		PassphraseFile: passphraseFilePath,
 	}
 }

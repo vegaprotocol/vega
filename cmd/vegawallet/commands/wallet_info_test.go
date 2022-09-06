@@ -28,7 +28,7 @@ func testGetWalletInfoFlagsValidFlagsSucceeds(t *testing.T) {
 		PassphraseFile: passphraseFilePath,
 	}
 
-	expectedReq := api.DescribeWalletParams{
+	expectedReq := api.AdminDescribeWalletParams{
 		Wallet:     walletName,
 		Passphrase: passphrase,
 	}

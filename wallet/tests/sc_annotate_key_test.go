@@ -79,7 +79,7 @@ func TestAnnotateKey(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	AssertDescribeKey(t, descResp).
-		WithMeta(map[string]string{})
+		WithMeta(map[string]string{"name": "Key 1"})
 
 	// when
 	err = KeyAnnotate(t, []string{

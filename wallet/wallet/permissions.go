@@ -18,7 +18,7 @@ func (p Permissions) Summary() PermissionsSummary {
 }
 
 func (p Permissions) CanListKeys() bool {
-	return p.PublicKeys.Access == ReadAccess || p.PublicKeys.Access == WriteAccess
+	return p.PublicKeys.Access == ReadAccess
 }
 
 func (p Permissions) CanUseKey(pubKey string) bool {
@@ -50,17 +50,14 @@ type PermissionsSummary map[string]string
 type AccessMode string
 
 var (
-	NoAccess    AccessMode = "none"
-	ReadAccess  AccessMode = "read"
-	WriteAccess AccessMode = "write"
+	NoAccess   AccessMode = "none"
+	ReadAccess AccessMode = "read"
 )
 
 func ToAccessMode(mode string) (AccessMode, error) {
 	switch mode {
 	case "read":
 		return ReadAccess, nil
-	case "write":
-		return WriteAccess, nil
 	case "none":
 		return NoAccess, nil
 	default:
@@ -70,7 +67,7 @@ func ToAccessMode(mode string) (AccessMode, error) {
 
 func AccessModeToString(m AccessMode) string {
 	switch m {
-	case ReadAccess, WriteAccess, NoAccess:
+	case ReadAccess, NoAccess:
 		return string(m)
 	default:
 		return string(NoAccess)
@@ -82,10 +79,6 @@ func AccessModeToString(m AccessMode) string {
 //
 // Methods requiring read access:
 //   - list_keys
-//
-// Methods requiring write access:
-//
-//	Nothing requires this type of access for now.
 type PublicKeysPermission struct {
 	Access         AccessMode `json:"access"`
 	RestrictedKeys []string   `json:"restrictedKeys"`

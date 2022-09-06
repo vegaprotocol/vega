@@ -8,24 +8,24 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-type DescribeWalletParams struct {
+type AdminDescribeWalletParams struct {
 	Wallet     string `json:"wallet"`
 	Passphrase string `json:"passphrase"`
 }
 
-type DescribeWalletResult struct {
+type AdminDescribeWalletResult struct {
 	Name    string `json:"name"`
 	ID      string `json:"id"`
 	Type    string `json:"type"`
 	Version uint32 `json:"version"`
 }
 
-type DescribeWallet struct {
+type AdminDescribeWallet struct {
 	walletStore WalletStore
 }
 
 // Handle retrieve a wallet from its name and passphrase.
-func (h *DescribeWallet) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminDescribeWallet) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateDescribeWalletParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
@@ -42,7 +42,7 @@ func (h *DescribeWallet) Handle(ctx context.Context, rawParams jsonrpc.Params) (
 		return nil, internalError(fmt.Errorf("could not retrieve the wallet: %w", err))
 	}
 
-	return DescribeWalletResult{
+	return AdminDescribeWalletResult{
 		Name:    w.Name(),
 		ID:      w.ID(),
 		Type:    w.Type(),
@@ -50,31 +50,31 @@ func (h *DescribeWallet) Handle(ctx context.Context, rawParams jsonrpc.Params) (
 	}, nil
 }
 
-func validateDescribeWalletParams(rawParams jsonrpc.Params) (DescribeWalletParams, error) {
+func validateDescribeWalletParams(rawParams jsonrpc.Params) (AdminDescribeWalletParams, error) {
 	if rawParams == nil {
-		return DescribeWalletParams{}, ErrParamsRequired
+		return AdminDescribeWalletParams{}, ErrParamsRequired
 	}
 
-	params := DescribeWalletParams{}
+	params := AdminDescribeWalletParams{}
 	if err := mapstructure.Decode(rawParams, &params); err != nil {
-		return DescribeWalletParams{}, ErrParamsDoNotMatch
+		return AdminDescribeWalletParams{}, ErrParamsDoNotMatch
 	}
 
 	if params.Wallet == "" {
-		return DescribeWalletParams{}, ErrWalletIsRequired
+		return AdminDescribeWalletParams{}, ErrWalletIsRequired
 	}
 
 	if params.Passphrase == "" {
-		return DescribeWalletParams{}, ErrPassphraseIsRequired
+		return AdminDescribeWalletParams{}, ErrPassphraseIsRequired
 	}
 
 	return params, nil
 }
 
-func NewDescribeWallet(
+func NewAdminDescribeWallet(
 	walletStore WalletStore,
-) *DescribeWallet {
-	return &DescribeWallet{
+) *AdminDescribeWallet {
+	return &AdminDescribeWallet{
 		walletStore: walletStore,
 	}
 }

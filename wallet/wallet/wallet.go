@@ -7,18 +7,20 @@ type Wallet interface {
 	SetName(newName string)
 	ID() string
 	Type() string
+	HasPublicKey(pubKey string) bool
 	DescribePublicKey(pubKey string) (PublicKey, error)
 	DescribeKeyPair(pubKey string) (KeyPair, error)
 	ListPublicKeys() []PublicKey
 	ListKeyPairs() []KeyPair
-	GetMasterKeyPair() (MasterKeyPair, error)
-	GenerateKeyPair(meta []Meta) (KeyPair, error)
+	MasterKey() (MasterKeyPair, error)
+	GenerateKeyPair(meta []Metadata) (KeyPair, error)
 	TaintKey(pubKey string) error
 	UntaintKey(pubKey string) error
-	UpdateMeta(pubKey string, meta []Meta) error
+	AnnotateKey(pubKey string, meta []Metadata) ([]Metadata, error)
 	SignAny(pubKey string, data []byte) ([]byte, error)
 	VerifyAny(pubKey string, data, sig []byte) (bool, error)
 	SignTx(pubKey string, data []byte) (*Signature, error)
+	IsIsolated() bool
 	IsolateWithKey(pubKey string) (Wallet, error)
 	Permissions(hostname string) Permissions
 	PermittedHostnames() []string
@@ -27,11 +29,14 @@ type Wallet interface {
 	UpdatePermissions(hostname string, perms Permissions) error
 }
 
+// nolint: interfacebloat
 type KeyPair interface {
 	PublicKey() string
 	PrivateKey() string
+	Name() string
 	IsTainted() bool
-	Meta() []Meta
+	Metadata() []Metadata
+	UpdateMetadata([]Metadata) []Metadata
 	Index() uint32
 	AlgorithmVersion() uint32
 	AlgorithmName() string
@@ -42,8 +47,9 @@ type KeyPair interface {
 
 type PublicKey interface {
 	Key() string
+	Name() string
 	IsTainted() bool
-	Meta() []Meta
+	Metadata() []Metadata
 	Index() uint32
 	AlgorithmVersion() uint32
 	AlgorithmName() string

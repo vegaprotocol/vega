@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -8,7 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
-	"code.vegaprotocol.io/vega/wallet/wallet"
+	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
 	"github.com/spf13/cobra"
@@ -31,16 +33,21 @@ var (
 	`)
 )
 
-type GenerateKeyHandler func(*wallet.GenerateKeyRequest) (*wallet.GenerateKeyResponse, error)
+type GenerateKeyHandler func(params api.AdminGenerateKeyParams) (api.AdminGenerateKeyResult, error)
 
 func NewCmdGenerateKey(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(req *wallet.GenerateKeyRequest) (*wallet.GenerateKeyResponse, error) {
+	h := func(params api.AdminGenerateKeyParams) (api.AdminGenerateKeyResult, error) {
 		s, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
-			return nil, fmt.Errorf("couldn't initialise wallets store: %w", err)
+			return api.AdminGenerateKeyResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 
-		return wallet.GenerateKey(s, req)
+		generateKey := api.NewAdminGenerateKey(s)
+		rawResult, errDetails := generateKey.Handle(context.Background(), params)
+		if errDetails != nil {
+			return api.AdminGenerateKeyResult{}, errors.New(errDetails.Data)
+		}
+		return rawResult.(api.AdminGenerateKeyResult), nil
 	}
 
 	return BuildCmdGenerateKey(w, h, rf)
@@ -103,30 +110,30 @@ type GenerateKeyFlags struct {
 	RawMetadata    []string
 }
 
-func (f *GenerateKeyFlags) Validate() (*wallet.GenerateKeyRequest, error) {
-	req := &wallet.GenerateKeyRequest{}
+func (f *GenerateKeyFlags) Validate() (api.AdminGenerateKeyParams, error) {
+	req := api.AdminGenerateKeyParams{}
 
 	if len(f.Wallet) == 0 {
-		return nil, flags.MustBeSpecifiedError("wallet")
+		return api.AdminGenerateKeyParams{}, flags.MustBeSpecifiedError("wallet")
 	}
 	req.Wallet = f.Wallet
 
 	metadata, err := cli.ParseMetadata(f.RawMetadata)
 	if err != nil {
-		return nil, err
+		return api.AdminGenerateKeyParams{}, err
 	}
 	req.Metadata = metadata
 
 	passphrase, err := flags.GetPassphrase(f.PassphraseFile)
 	if err != nil {
-		return nil, err
+		return api.AdminGenerateKeyParams{}, err
 	}
 	req.Passphrase = passphrase
 
 	return req, nil
 }
 
-func PrintGenerateKeyResponse(w io.Writer, req *wallet.GenerateKeyRequest, resp *wallet.GenerateKeyResponse) {
+func PrintGenerateKeyResponse(w io.Writer, req api.AdminGenerateKeyParams, resp api.AdminGenerateKeyResult) {
 	p := printer.NewInteractivePrinter(w)
 
 	str := p.String()
@@ -137,7 +144,7 @@ func PrintGenerateKeyResponse(w io.Writer, req *wallet.GenerateKeyRequest, resp 
 	str.Text("Public key:").NextLine()
 	str.WarningText(resp.PublicKey).NextLine()
 	str.Text("Metadata:").NextLine()
-	printMeta(str, resp.Meta)
+	printMeta(str, resp.Metadata)
 	str.NextSection()
 	str.BlueArrow().InfoText("Run the service").NextLine()
 	str.Text("Now, you can run the service. See the following command:").NextSection()
