@@ -604,7 +604,6 @@ type ComplexityRoot struct {
 		LiquidityProvisions           func(childComplexity int, partyID *string) int
 		LiquidityProvisionsConnection func(childComplexity int, partyID *string, pagination *v2.Pagination) int
 		MarketTimestamps              func(childComplexity int) int
-		Name                          func(childComplexity int) int
 		OpeningAuction                func(childComplexity int) int
 		Orders                        func(childComplexity int, skip *int, first *int, last *int) int
 		OrdersConnection              func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination) int
@@ -1699,8 +1698,6 @@ type MarginLevelsResolver interface {
 	Timestamp(ctx context.Context, obj *vega.MarginLevels) (string, error)
 }
 type MarketResolver interface {
-	Name(ctx context.Context, obj *vega.Market) (string, error)
-
 	DecimalPlaces(ctx context.Context, obj *vega.Market) (int, error)
 	PositionDecimalPlaces(ctx context.Context, obj *vega.Market) (int, error)
 	OpeningAuction(ctx context.Context, obj *vega.Market) (*AuctionDuration, error)
@@ -4084,13 +4081,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Market.MarketTimestamps(childComplexity), true
-
-	case "Market.name":
-		if e.complexity.Market.Name == nil {
-			break
-		}
-
-		return e.complexity.Market.Name(childComplexity), true
 
 	case "Market.openingAuction":
 		if e.complexity.Market.OpeningAuction == nil {
@@ -10590,9 +10580,6 @@ type LiquidityMonitoringParameters {
 type Market {
   "Market ID"
   id: ID!
-
-  "Market full name"
-  name: String!
 
   "Fees related data"
   fees: Fees!
@@ -24821,41 +24808,6 @@ func (ec *executionContext) _Market_id(ctx context.Context, field graphql.Collec
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNID2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Market_name(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Market",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Market().Name(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Market_fees(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
@@ -53348,26 +53300,6 @@ func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, o
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "name":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Market_name(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "fees":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Market_fees(ctx, field, obj)

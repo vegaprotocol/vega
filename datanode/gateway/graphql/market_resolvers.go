@@ -292,10 +292,6 @@ func (r *myMarketResolver) PositionDecimalPlaces(ctx context.Context, obj *types
 	return int(obj.PositionDecimalPlaces), nil
 }
 
-func (r *myMarketResolver) Name(ctx context.Context, obj *types.Market) (string, error) {
-	return obj.TradableInstrument.Instrument.Name, nil
-}
-
 func (r *myMarketResolver) OpeningAuction(ctx context.Context, obj *types.Market) (*AuctionDuration, error) {
 	return &AuctionDuration{
 		DurationSecs: int(obj.OpeningAuction.Duration),
