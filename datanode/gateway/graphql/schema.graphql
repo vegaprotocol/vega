@@ -1622,9 +1622,6 @@ type Market {
   "Market ID"
   id: ID!
 
-  "Market full name"
-  name: String!
-
   "Fees related data"
   fees: Fees!
 
