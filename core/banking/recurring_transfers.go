@@ -186,7 +186,7 @@ func (e *Engine) distributeRecurringTransfers(
 					break
 				}
 				if v.DispatchStrategy.Metric == vegapb.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE && fms.Score.IsPositive() {
-					e.marketActivityTracker.MarkPaidProposer(fms.Market, v.DispatchStrategy.AssetForMetric, v.DispatchStrategy.Markets, v.From)
+					e.marketActivityTracker.MarkPaidProposer(fms.Market, v.Asset, v.DispatchStrategy.Markets, v.From)
 				}
 				resps = append(resps, r...)
 			}

@@ -49,6 +49,7 @@
 - [5977](https://github.com/vegaprotocol/vega/issues/5977) - Fix missing block height and block time on stake linking API
 - [6054](https://github.com/vegaprotocol/vega/issues/6054) - Fix panic on settlement
 - [6060](https://github.com/vegaprotocol/vega/issues/6060) - Fix connection results should not be declared as mandatory in GQL schema.
+- [6097](https://github.com/vegaprotocol/vega/issues/6067) - Fix incorrect asset (metric asset) used for checking market proposer eligibility
 
 ## 0.54.0
 
