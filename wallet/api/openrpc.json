@@ -138,7 +138,7 @@
       "result": {
         "name": "Success",
         "schema": {
-          "$ref": "#/components/schemas/permissions"
+          "$ref": "#/components/schemas/permissions_summary"
         }
       },
       "examples": [
@@ -185,14 +185,14 @@
           "name": "requestedPermissions",
           "required": true,
           "schema": {
-            "$ref": "#/components/schemas/permissions"
+            "$ref": "#/components/schemas/permissions_summary"
           }
         }
       ],
       "result": {
         "name": "Success",
         "schema": {
-          "$ref": "#/components/schemas/permissions"
+          "$ref": "#/components/schemas/permissions_summary"
         }
       },
       "errors": [
@@ -1594,6 +1594,378 @@
           }
         }
       ]
+    },
+    {
+      "name": "admin.describe_permissions",
+      "summary": "Returns the permissions set for the specified wallet and hostname.",
+      "description": "This method returns the permissions set for the specified wallet and hostname.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "permissions"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "wallet",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "passphrase",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "hostname",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "permissions": {
+              "$ref": "#/components/schemas/permissions"
+            }
+          }
+        }
+      },
+      "examples": [
+        {
+          "name": "Describe the permissions",
+          "params": [
+            {
+              "name": "wallet",
+              "value": "my-wallet"
+            },
+            {
+              "name": "passphrase",
+              "value": "this-is-not-a-good-passphrase"
+            },
+            {
+              "name": "hostname",
+              "value": "vega.xyz"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": {
+              "publicKeys": {
+                "access": "read",
+                "restrictedKeys": [
+                  "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin.list_permissions",
+      "summary": "Returns the permissions summary for all set hostnames.",
+      "description": "This method returns the permissions summary for all set hostnames.\n\nFor a detailed description of the permissions on a given hostname, see `admin.describe_permissions`",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "permissions"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "wallet",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "passphrase",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "permissions": {
+              "type": "object",
+              "properties": {
+                "hostname1": {
+                  "$ref": "#/components/schemas/permissions_summary"
+                },
+                "hostname2": {
+                  "$ref": "#/components/schemas/permissions_summary"
+                }
+              }
+            }
+          }
+        }
+      },
+      "examples": [
+        {
+          "name": "List the permissions",
+          "params": [
+            {
+              "name": "wallet",
+              "value": "my-wallet"
+            },
+            {
+              "name": "passphrase",
+              "value": "this-is-not-a-good-passphrase"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": {
+              "permissions": {
+                "vega.xyz": {
+                  "public_keys": "read"
+                },
+                "token.vega.xyz": {
+                  "public_keys": "none"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin.update_permissions",
+      "summary": "Updates the permissions for the specified wallet and hostname.",
+      "description": "This method updates the permissions for the specified wallet and hostname.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "permissions"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "wallet",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "passphrase",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "hostname",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "permissions",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/permissions"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "permissions": {
+              "$ref": "#/components/schemas/permissions"
+            }
+          }
+        }
+      },
+      "examples": [
+        {
+          "name": "Update the permissions",
+          "params": [
+            {
+              "name": "wallet",
+              "value": "my-wallet"
+            },
+            {
+              "name": "passphrase",
+              "value": "this-is-not-a-good-passphrase"
+            },
+            {
+              "name": "hostname",
+              "value": "vega.xyz"
+            },
+            {
+              "name": "permissions",
+              "value": {
+                "publicKeys": {
+                  "access": "read",
+                  "restrictedKeys": [
+                    "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0"
+                  ]
+                }
+              }
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": {
+              "publicKeys": {
+                "access": "read",
+                "restrictedKeys": [
+                  "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin.revoke_permissions",
+      "summary": "Revokes the permissions set in the specified hostname.",
+      "description": "This method revokes the permissions set in the specified hostname.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "permissions"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "wallet",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "passphrase",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "hostname",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "null"
+        }
+      },
+      "examples": [
+        {
+          "name": "Revoke the permissions",
+          "params": [
+            {
+              "name": "wallet",
+              "value": "my-wallet"
+            },
+            {
+              "name": "passphrase",
+              "value": "this-is-not-a-good-passphrase"
+            },
+            {
+              "name": "hostname",
+              "value": "vega.xyz"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin.purge_permissions",
+      "summary": "Purges all the permissions set for all hostname.",
+      "description": "This method purges all the permissions set for all hostname.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "permissions"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "wallet",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "passphrase",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "null"
+        }
+      },
+      "examples": [
+        {
+          "name": "Purge the permissions",
+          "params": [
+            {
+              "name": "wallet",
+              "value": "my-wallet"
+            },
+            {
+              "name": "passphrase",
+              "value": "this-is-not-a-good-passphrase"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": null
+          }
+        }
+      ]
     }
   ],
   "components": {
@@ -1654,12 +2026,34 @@
           "none"
         ]
       },
-      "permissions": {
+      "permissions_summary": {
         "type": "object",
         "description": "The description of the permissions a third-party application has.",
         "properties": {
           "public_keys": {
             "$ref": "#/components/schemas/access_mode"
+          }
+        }
+      },
+      "permissions": {
+        "type": "object",
+        "description": "The full description of the permissions a third-party application has.",
+        "properties": {
+          "publicKeys": {
+            "description": "The permissions related to public keys.",
+            "type": "object",
+            "properties": {
+              "access": {
+                "$ref": "#/components/schemas/access_mode"
+              },
+              "restrictedKeys": {
+                "type": "array",
+                "description": "The subset of public keys the user selected for this hostname. If empty, the wallet assumes all keys are accessible.",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
           }
         }
       }
