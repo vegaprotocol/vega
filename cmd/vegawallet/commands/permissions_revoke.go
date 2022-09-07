@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"io"
 
@@ -8,7 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
 	vgterm "code.vegaprotocol.io/vega/libs/term"
-	"code.vegaprotocol.io/vega/wallet/wallet"
+	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
 	"github.com/spf13/cobra"
@@ -29,16 +31,21 @@ var (
 	`)
 )
 
-type RevokePermissionsHandler func(*wallet.RevokePermissionsRequest) error
+type RevokePermissionsHandler func(api.AdminRevokePermissionsParams) error
 
 func NewCmdRevokePermissions(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(req *wallet.RevokePermissionsRequest) error {
+	h := func(params api.AdminRevokePermissionsParams) error {
 		s, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
 			return fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 
-		return wallet.RevokePermissions(s, req)
+		revokePermissions := api.NewAdminRevokePermissions(s)
+		_, errDetails := revokePermissions.Handle(context.Background(), params)
+		if errDetails != nil {
+			return errors.New(errDetails.Data)
+		}
+		return nil
 	}
 
 	return BuildCmdRevokePermissions(w, h, rf)
@@ -108,31 +115,30 @@ type RevokePermissionsFlags struct {
 	PassphraseFile string
 }
 
-func (f *RevokePermissionsFlags) Validate() (*wallet.RevokePermissionsRequest, error) {
-	req := &wallet.RevokePermissionsRequest{}
-
+func (f *RevokePermissionsFlags) Validate() (api.AdminRevokePermissionsParams, error) {
 	if len(f.Wallet) == 0 {
-		return nil, flags.MustBeSpecifiedError("wallet")
+		return api.AdminRevokePermissionsParams{}, flags.MustBeSpecifiedError("wallet")
 	}
-	req.Wallet = f.Wallet
 
 	if len(f.Hostname) == 0 {
-		return nil, flags.MustBeSpecifiedError("hostname")
+		return api.AdminRevokePermissionsParams{}, flags.MustBeSpecifiedError("hostname")
 	}
-	req.Hostname = f.Hostname
 
 	passphrase, err := flags.GetPassphrase(f.PassphraseFile)
 	if err != nil {
-		return nil, err
+		return api.AdminRevokePermissionsParams{}, err
 	}
-	req.Passphrase = passphrase
 
-	return req, nil
+	return api.AdminRevokePermissionsParams{
+		Wallet:     f.Wallet,
+		Passphrase: passphrase,
+		Hostname:   f.Hostname,
+	}, nil
 }
 
-func PrintRevokePermissionsResponse(w io.Writer, req *wallet.RevokePermissionsRequest) {
+func PrintRevokePermissionsResponse(w io.Writer, req api.AdminRevokePermissionsParams) {
 	p := printer.NewInteractivePrinter(w)
 	str := p.String()
 	defer p.Print(str)
-	str.CheckMark().SuccessText("Permissions for hostname ").SuccessBold(req.Hostname).SuccessText(" has been revoked from wallet ").SuccessBold(req.Wallet).NextLine()
+	str.CheckMark().SuccessText("Permissions for hostname ").SuccessBold(req.Hostname).SuccessText(" has been revoked from wallet ").SuccessBold(req.Wallet).SuccessText(".").NextLine()
 }

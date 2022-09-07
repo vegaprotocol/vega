@@ -112,6 +112,7 @@ func TestService(t *testing.T) {
 	t.Run("Requesting the chain id is successful", testGetNetworkChainIDSuccess)
 	t.Run("Requesting the chain id fails when node in available", testGetNetworkChainIDFailure)
 	t.Run("Signing transaction fails spam", testAcceptSigningTransactionFailsSpam)
+	t.Run("Empty chainid from network fails", TestEmptyChainIDFromNetworkFails)
 }
 
 func testServiceCreateWalletOK(t *testing.T) {
@@ -1175,6 +1176,32 @@ func testGetNetworkChainIDFailure(t *testing.T) {
 	// when
 	statusCode, _ := serveHTTP(t, s, chainIDRequest(t))
 	assert.Equal(t, http.StatusFailedDependency, statusCode)
+}
+
+func TestEmptyChainIDFromNetworkFails(t *testing.T) {
+	s := getTestService(t, "manual")
+	defer s.ctrl.Finish()
+
+	// given
+	walletName := vgrand.RandomStr(5)
+	token := vgrand.RandomStr(5)
+	headers := authHeaders(t, token)
+	pubKey := vgrand.RandomStr(5)
+	payload := fmt.Sprintf(`{"pubKey": "%s", "orderCancellation": {}}`, pubKey)
+
+	// setup
+	s.auth.EXPECT().VerifyToken(token).Times(1).Return(walletName, nil)
+	s.nodeForward.EXPECT().LastBlockHeightAndHash(gomock.Any()).Times(1).Return(&api.LastBlockHeightResponse{
+		Height:              42,
+		Hash:                "0292041e2f0cf741894503fb3ead4cb817bca2375e543aa70f7c4d938157b5a6",
+		SpamPowDifficulty:   2,
+		SpamPowHashFunction: "sha3_24_rounds",
+		ChainId:             "",
+	}, 0, nil)
+	// when
+
+	statusCode, _ := serveHTTP(t, s, checkTxRequest(t, payload, headers))
+	assert.Equal(t, http.StatusInternalServerError, statusCode)
 }
 
 func loginRequest(t *testing.T, payload string) *http.Request {

@@ -803,6 +803,11 @@ func (s *Service) CheckTx(token string, w http.ResponseWriter, r *http.Request, 
 		return
 	}
 
+	if blockData.ChainId == "" {
+		s.writeInternalError(w, ErrCouldNotGetChainID)
+		return
+	}
+
 	tx, err := s.handler.SignTx(name, req, blockData.Height, blockData.ChainId)
 	if err != nil {
 		s.writeInternalError(w, err)
@@ -892,6 +897,15 @@ func (s *Service) signTx(token string, w http.ResponseWriter, r *http.Request, _
 			Error: ErrCouldNotGetBlockHeight,
 		})
 		s.writeInternalError(w, ErrCouldNotGetBlockHeight)
+		return
+	}
+
+	if blockData.ChainId == "" {
+		s.policy.Report(SentTransaction{
+			TxID:  txID,
+			Error: ErrCouldNotGetChainID,
+		})
+		s.writeInternalError(w, ErrCouldNotGetChainID)
 		return
 	}
 
