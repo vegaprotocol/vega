@@ -92,7 +92,7 @@ func TestRewards(t *testing.T) {
 	asset2ID := asset2.ID.String()
 
 	now := time.Now()
-	reward1 := addTestReward(t, rs, party1, asset1, market1, 1, "RewardTakerPaidFees", now, block)
+	reward1 := addTestReward(t, rs, party1, asset1, market1, 1, "RewardMakerPaidFees", now, block)
 	reward2 := addTestReward(t, rs, party1, asset2, market1, 2, "RewardMakerReceivedFees", now, block)
 	reward3 := addTestReward(t, rs, party2, asset1, market2, 3, "GlobalReward", now, block)
 	reward4 := addTestReward(t, rs, party2, asset2, market2, 4, "GlobalReward", now, block)

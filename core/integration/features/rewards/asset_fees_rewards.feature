@@ -136,7 +136,7 @@ Feature: Fees reward calculations for a single asset, single market
 
     Then "trader3" should have general account balance of "10000" for asset "VEGA"
   
-  Scenario: Testing fees in continuous trading with two trades and no liquidity providers - testing maker fee received and taker fee paid
+  Scenario: Testing fees in continuous trading with two trades and no liquidity providers - testing maker fee received and maker fee paid
 
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
@@ -161,7 +161,7 @@ Feature: Fees reward calculations for a single asset, single market
     Given the parties submit the following recurring transfers:
       | id | from                                                             | from_account_type    | to                                                                | to_account_type                         | asset  | amount | start_epoch | end_epoch | factor |               metric                 | metric_asset | markets   |
       | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | VEGA   | 10000  |       1     |           |    1   |  DISPATCH_METRIC_MAKER_FEES_RECEIVED |      ETH     |           |  
-      | 2  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES     | VEGA   | 1234   |       1     |           |    2   |  DISPATCH_METRIC_TAKER_FEES_PAID     |      ETH     | ETH/DEC21 | 
+      | 2  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES     | VEGA   | 1234   |       1     |           |    2   |  DISPATCH_METRIC_MAKER_FEES_PAID     |      ETH     | ETH/DEC21 | 
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -309,7 +309,7 @@ Feature: Fees reward calculations for a single asset, single market
     Given the parties submit the following recurring transfers:
       | id | from                                                             | from_account_type    | to                                                                | to_account_type                         | asset  | amount | start_epoch | end_epoch | factor |               metric                 | metric_asset | markets   |
       | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | VEGA   | 10000  |       1     |           |    0.5 |  DISPATCH_METRIC_MAKER_FEES_RECEIVED |      ETH     |           |  
-      | 2  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES     | VEGA   | 1234   |       1     |           |    1   |  DISPATCH_METRIC_TAKER_FEES_PAID     |      ETH     | ETH/DEC21 |  
+      | 2  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES     | VEGA   | 1234   |       1     |           |    1   |  DISPATCH_METRIC_MAKER_FEES_PAID     |      ETH     | ETH/DEC21 |  
       | 3  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000  | ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES    | VEGA   | 500    |       1     |           |    2   |  DISPATCH_METRIC_LP_FEES_RECEIVED    |      ETH     |           |  
 
 

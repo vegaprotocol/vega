@@ -165,19 +165,19 @@ func TestGetMarketScores(t *testing.T) {
 	// no fees generated expect empty slice
 	require.Equal(t, 0, len(tracker.GetMarketScores("asset1", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED)))
 	require.Equal(t, 0, len(tracker.GetMarketScores("asset1", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED)))
-	require.Equal(t, 0, len(tracker.GetMarketScores("asset1", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID)))
+	require.Equal(t, 0, len(tracker.GetMarketScores("asset1", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID)))
 
 	require.Equal(t, 0, len(tracker.GetMarketScores("asset1", []string{"market1"}, vgproto.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED)))
 	require.Equal(t, 0, len(tracker.GetMarketScores("asset1", []string{"market1"}, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED)))
-	require.Equal(t, 0, len(tracker.GetMarketScores("asset1", []string{"market1"}, vgproto.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID)))
+	require.Equal(t, 0, len(tracker.GetMarketScores("asset1", []string{"market1"}, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID)))
 
 	require.Equal(t, 0, len(tracker.GetMarketScores("asset1", []string{"market2"}, vgproto.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED)))
 	require.Equal(t, 0, len(tracker.GetMarketScores("asset1", []string{"market2"}, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED)))
-	require.Equal(t, 0, len(tracker.GetMarketScores("asset1", []string{"market2"}, vgproto.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID)))
+	require.Equal(t, 0, len(tracker.GetMarketScores("asset1", []string{"market2"}, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID)))
 
 	require.Equal(t, 0, len(tracker.GetMarketScores("asset2", []string{"market3"}, vgproto.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED)))
 	require.Equal(t, 0, len(tracker.GetMarketScores("asset2", []string{"market3"}, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED)))
-	require.Equal(t, 0, len(tracker.GetMarketScores("asset2", []string{"market3"}, vgproto.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID)))
+	require.Equal(t, 0, len(tracker.GetMarketScores("asset2", []string{"market3"}, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID)))
 
 	// update with a few transfers
 	transfersM1 := []*types.Transfer{
@@ -282,38 +282,38 @@ func TestGetMarketScores(t *testing.T) {
 
 	// in market1: 1500
 	// in market2: 1500
-	require.Equal(t, 2, len(tracker.GetMarketScores("asset1", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID)))
+	require.Equal(t, 2, len(tracker.GetMarketScores("asset1", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID)))
 	LPMarket1 = &types.MarketContributionScore{
 		Asset:  "asset1",
 		Market: "market1",
-		Metric: vgproto.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID,
+		Metric: vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
 		Score:  num.MustDecimalFromString("0.5"),
 	}
 	LPMarket2 = &types.MarketContributionScore{
 		Asset:  "asset1",
 		Market: "market2",
-		Metric: vgproto.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID,
+		Metric: vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
 		Score:  num.MustDecimalFromString("0.5"),
 	}
-	require.Equal(t, 2, len(tracker.GetMarketScores("asset1", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID)))
-	assertMarketContributionScore(t, LPMarket1, tracker.GetMarketScores("asset1", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID)[0])
-	assertMarketContributionScore(t, LPMarket2, tracker.GetMarketScores("asset1", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID)[1])
+	require.Equal(t, 2, len(tracker.GetMarketScores("asset1", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID)))
+	assertMarketContributionScore(t, LPMarket1, tracker.GetMarketScores("asset1", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID)[0])
+	assertMarketContributionScore(t, LPMarket2, tracker.GetMarketScores("asset1", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID)[1])
 
 	// scope only market1:
-	require.Equal(t, 1, len(tracker.GetMarketScores("asset1", []string{"market1"}, vgproto.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID)))
+	require.Equal(t, 1, len(tracker.GetMarketScores("asset1", []string{"market1"}, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID)))
 	LPMarket1.Score = num.DecimalFromInt64(1)
-	assertMarketContributionScore(t, LPMarket1, tracker.GetMarketScores("asset1", []string{"market1"}, vgproto.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID)[0])
+	assertMarketContributionScore(t, LPMarket1, tracker.GetMarketScores("asset1", []string{"market1"}, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID)[0])
 
 	// scope only market2:
-	require.Equal(t, 1, len(tracker.GetMarketScores("asset1", []string{"market2"}, vgproto.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID)))
+	require.Equal(t, 1, len(tracker.GetMarketScores("asset1", []string{"market2"}, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID)))
 	LPMarket2.Score = num.DecimalFromInt64(1)
-	assertMarketContributionScore(t, LPMarket2, tracker.GetMarketScores("asset1", []string{"market2"}, vgproto.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID)[0])
+	assertMarketContributionScore(t, LPMarket2, tracker.GetMarketScores("asset1", []string{"market2"}, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID)[0])
 
 	// try to scope market3: doesn't exist in the asset
-	require.Equal(t, 0, len(tracker.GetMarketScores("asset1", []string{"market3"}, vgproto.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID)))
+	require.Equal(t, 0, len(tracker.GetMarketScores("asset1", []string{"market3"}, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID)))
 
 	// try to get the market from the wrong asset
-	require.Equal(t, 0, len(tracker.GetMarketScores("asset2", []string{"market1"}, vgproto.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID)))
+	require.Equal(t, 0, len(tracker.GetMarketScores("asset2", []string{"market1"}, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID)))
 }
 
 func TestGetMarketsWithEligibleProposer(t *testing.T) {

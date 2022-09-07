@@ -55,7 +55,7 @@ Scenario: invalid transfers (0057-TRAN-005, 0057-TRAN-006)
     | 14 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_GLOBAL_INSURANCE           | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  |  10000 | 2021-08-26T00:00:03Z  |  unsupported from account type |
     | 15 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_GLOBAL_REWARD              | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  |  10000 | 2021-08-26T00:00:03Z  |  unsupported from account type |
     | 16 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_PENDING_TRANSFERS          | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  |  10000 | 2021-08-26T00:00:03Z  |  unsupported from account type |
-    | 17 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES     | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  |  10000 | 2021-08-26T00:00:03Z  |  unsupported from account type |
+    | 17 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES     | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  |  10000 | 2021-08-26T00:00:03Z  |  unsupported from account type |
     | 18 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  |  10000 | 2021-08-26T00:00:03Z  |  unsupported from account type |
     | 19 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES    | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  |  10000 | 2021-08-26T00:00:03Z  |  unsupported from account type |
     | 20 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS    | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL             | VEGA  |  10000 | 2021-08-26T00:00:03Z  |  unsupported from account type |
@@ -102,7 +102,7 @@ Scenario: Transfer from general account to reward account (0057-TRAN-002, 0057-T
     | 2  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_GENERAL |    0000000000000000000000000000000000000000000000000000000000000000   | ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS    | VEGA  |  20000 | 2021-08-26T00:00:02Z  |
     | 3  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_GENERAL |    0000000000000000000000000000000000000000000000000000000000000000   | ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES    | VEGA  |  30000 | 2021-08-26T00:00:03Z  |
     | 4  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_GENERAL |    0000000000000000000000000000000000000000000000000000000000000000   | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | VEGA  |  40000 | 2021-08-26T00:00:03Z  |
-    | 5  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_GENERAL |    0000000000000000000000000000000000000000000000000000000000000000   | ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES     | VEGA  |  50000 | 2021-08-26T00:00:03Z  |
+    | 5  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_GENERAL |    0000000000000000000000000000000000000000000000000000000000000000   | ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES     | VEGA  |  50000 | 2021-08-26T00:00:03Z  |
 
     Then "f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c" should have general account balance of "9775000" for asset "VEGA"
 
@@ -111,7 +111,7 @@ Scenario: Transfer from general account to reward account (0057-TRAN-002, 0057-T
     And the reward account of type "ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS" should have balance of "0" for asset "VEGA"
     And the reward account of type "ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES" should have balance of "0" for asset "VEGA"
     And the reward account of type "ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES" should have balance of "0" for asset "VEGA"
-    And the reward account of type "ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES" should have balance of "0" for asset "VEGA"
+    And the reward account of type "ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES" should have balance of "0" for asset "VEGA"
 
     #  advance to the payout to ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS
     Given time is updated to "2021-08-26T00:00:02Z"
@@ -120,7 +120,7 @@ Scenario: Transfer from general account to reward account (0057-TRAN-002, 0057-T
     And the reward account of type "ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS" should have balance of "20000" for asset "VEGA"
     And the reward account of type "ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES" should have balance of "0" for asset "VEGA"
     And the reward account of type "ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES" should have balance of "0" for asset "VEGA"
-    And the reward account of type "ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES" should have balance of "0" for asset "VEGA"
+    And the reward account of type "ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES" should have balance of "0" for asset "VEGA"
 
     # advance to the payout to all other rewards,
     Given time is updated to "2021-08-26T00:00:03Z"
@@ -129,7 +129,7 @@ Scenario: Transfer from general account to reward account (0057-TRAN-002, 0057-T
     And the reward account of type "ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS" should have balance of "20000" for asset "VEGA"
     And the reward account of type "ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES" should have balance of "30000" for asset "VEGA"
     And the reward account of type "ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES" should have balance of "40000" for asset "VEGA"
-    And the reward account of type "ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES" should have balance of "50000" for asset "VEGA"
+    And the reward account of type "ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES" should have balance of "50000" for asset "VEGA"
     And the reward account of type "ACCOUNT_TYPE_FEES_INFRASTRUCTURE" should have balance of "75000" for asset "VEGA"
 
 Scenario: Insufficient funds to cover transfer + fees (0057-TRAN-007)

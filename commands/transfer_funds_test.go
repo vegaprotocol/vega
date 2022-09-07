@@ -297,7 +297,7 @@ func TestTransferFunds(t *testing.T) {
 		{
 			transfer: commandspb.Transfer{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES,
 				Kind: &commandspb.Transfer_OneOff{
 					OneOff: &commandspb.OneOffTransfer{},
 				},
