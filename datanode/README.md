@@ -215,6 +215,45 @@ Note that Linux systems generally require processes listening on ports under 102
   setcap cap_net_bind_service=ep data-node run
   ```
 
+#### GraphQL Complexity
+
+Currently the GraphQL complexity limit is globally set to 3750.
+This setting is theoretic at the moment and will be refined and have different levels for different queries/resolvers in the future.
+
+The intention behind this limit is to prevent the VEGA system from being anused by heavy queries (DOS).
+The complexity level is mostly affected by the number of objects a query contains. So the heaviest ones we currently have in the system (based on discussion with Matt) are:
+SimpleMarkets (embedded candles):
+1 candle: 151
+91 candles: 788
+
+MarketInfo (embedded candles):
+1 candle: 399
+91 candles: 1036
+
+Orders (embedded orders):
+Complexity for:
+1 order is: 163
+80 orders: 4003
+
+Trades (embedded trades):
+Complexity with
+1 trade is:
+118
+75 trades: 1393
+
+Positions (embedded positions):
+Complexity with 1 position is 129
+For 40 positions is:
+2500
+
+The approximate number of positions queries by customers is 40.
+
+At the moment we do not have a precise idea what limit would be appropriate to set for candles and orders. This would take some time and experience.
+So for 40 positions - complexity is 2500. A theoretical value of 3000 is set as a maximum + 25% -> 3750.
+The GraphQL will return error for queries that have complexity above the set limit: "GraphQL error: Query is too complex to execute" and will not proceed with execution.
+
+Further settings for GraphQL limits will be customized for specific evil queries and will be set for the specific GraphQL resolvers methods. That would also affect subscriptions and oneoff queries.
+
 ### REST
 
 REST provides a standard between computer systems on the web, making it easier for systems to communicate with each other. It is arguably simpler to work with than gRPC and GraphQL. In Vega the REST API is a reverse proxy to the gRPC API, however it does not support streaming.
