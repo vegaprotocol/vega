@@ -162,10 +162,13 @@ func (g *GraphServer) Start() error {
 			debug.PrintStack()
 			return errors.New("an internal error occurred")
 		}),
+
+		handler.ComplexityLimit(3750),
 	}
 	if g.GraphQL.ComplexityLimit > 0 {
 		options = append(options, handler.ComplexityLimit(g.GraphQL.ComplexityLimit))
 	}
+
 	// FIXME(jeremy): to be removed once everyone has move to the new endpoint
 	handlr.Handle("/query", gateway.RemoteAddrMiddleware(g.log, corz.Handler(
 		handler.GraphQL(NewExecutableSchema(config), options...),
