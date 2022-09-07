@@ -924,6 +924,82 @@
       ]
     },
     {
+      "name": "admin.describe_network",
+      "summary": "Returns the network information.",
+      "description": "This method returns the network information.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "network"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "network",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "level": {
+              "type": "number"
+            },
+            "tokenExpiry": {
+              "type": "string"
+            },
+            "port": {
+              "type": "integer"
+            },
+            "host": {
+              "type": "string"
+            },
+            "api": {
+              "type": "object",
+              "properties": {
+                "grpcConfig": {
+                "$ref": "#/components/schemas/network_grpc_config"
+                },
+                "restConfig": {
+                "$ref": "#/components/schemas/network_rest_config"
+                },
+                "gqlConfig": {
+                "$ref": "#/components/schemas/network_gql_config"
+                }
+              }
+            }
+          }
+        }
+      },
+      "examples": [
+        {
+          "name": "Getting the list of networks",
+          "params": [],
+          "result": {
+            "name": "Success",
+            "value": {
+              "wallets": [
+                "mainnet",
+                "fairground",
+                "local-network"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "admin.remove_wallet",
       "summary": "Removes a wallet from the computer.",
       "description": "This method removes a wallet from the computer.",
@@ -2136,6 +2212,45 @@
                   "type": "string"
                 }
               }
+            }
+          }
+        }
+      },
+      "network_grpc_config": {
+        "type": "object",
+        "description": "The gRPC configuration of a network.",
+        "properties": {
+          "hosts": {
+            "type": "array",
+            "items": {
+            "type": "string"
+          }
+          },
+          "retries": {
+            "type": "integer"
+          }
+        }
+      },
+      "network_rest_config": {
+        "type": "object",
+        "description": "The REST configuration of a network.",
+        "properties": {
+          "hosts": {
+            "type": "array",
+            "items": {
+            "type": "string"
+          }
+          }
+        }
+      },
+      "network_gql_config": {
+        "type": "object",
+        "description": "The GraphQL configuration of a network.",
+        "properties": {
+          "hosts": {
+            "type": "array",
+            "items": {
+            "type": "string"
             }
           }
         }
