@@ -74,6 +74,8 @@ var (
 	ErrWalletDoesNotExist                                 = errors.New("the wallet does not exist")
 	ErrWalletIsRequired                                   = errors.New("the wallet is required")
 	ErrWalletVersionIsRequired                            = errors.New("the wallet version is required")
+	ErrNetworkDoesNotExist                                = errors.New("the network does not exist")
+	ErrNetworkIsRequired                                  = errors.New("the network is required")
 )
 
 func applicationError(code jsonrpc.ErrorCode, err error) *jsonrpc.ErrorDetails {

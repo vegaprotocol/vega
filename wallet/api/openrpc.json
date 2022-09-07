@@ -841,6 +841,50 @@
       ]
     },
     {
+      "name": "admin.remove_network",
+      "summary": "Removes a network from the computer.",
+      "description": "This method removes a network from the computer.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "network"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "network",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "null"
+        }
+      },
+      "examples": [
+        {
+          "name": "Remove a network",
+          "params": [
+            {
+              "name": "network",
+              "value": "fairground"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": {}
+          }
+        }
+      ]
+    },
+    {
       "name": "admin.list_networks",
       "summary": "Returns the list of all registered networks.",
       "description": "This method returns the list of the registered networks.",
