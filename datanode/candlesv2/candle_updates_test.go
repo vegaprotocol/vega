@@ -47,7 +47,7 @@ func (t *testCandleSource) GetCandleDataForTimeSpan(ctx context.Context, candleI
 func TestSubscribe(t *testing.T) {
 	testCandleSource := &testCandleSource{candles: make(chan []entities.Candle)}
 
-	updates, _ := candlesv2.NewCandleUpdates(context.Background(), logging.NewTestLogger(), "testCandles",
+	updates := candlesv2.NewCandleUpdates(context.Background(), logging.NewTestLogger(), "testCandles",
 		testCandleSource, newTestCandleConfig(1).CandleUpdates)
 	startTime := time.Now()
 
@@ -76,7 +76,7 @@ func TestSubscribe(t *testing.T) {
 func TestUnsubscribe(t *testing.T) {
 	testCandleSource := &testCandleSource{candles: make(chan []entities.Candle)}
 
-	updates, _ := candlesv2.NewCandleUpdates(context.Background(), logging.NewTestLogger(), "testCandles",
+	updates := candlesv2.NewCandleUpdates(context.Background(), logging.NewTestLogger(), "testCandles",
 		testCandleSource, newTestCandleConfig(1).CandleUpdates)
 	startTime := time.Now()
 
@@ -97,7 +97,7 @@ func TestUnsubscribe(t *testing.T) {
 func TestNewSubscriberAlwaysGetsLastCandle(t *testing.T) {
 	testCandleSource := &testCandleSource{candles: make(chan []entities.Candle)}
 
-	updates, _ := candlesv2.NewCandleUpdates(context.Background(), logging.NewTestLogger(), "testCandles",
+	updates := candlesv2.NewCandleUpdates(context.Background(), logging.NewTestLogger(), "testCandles",
 		testCandleSource, newTestCandleConfig(1).CandleUpdates)
 	startTime := time.Now()
 

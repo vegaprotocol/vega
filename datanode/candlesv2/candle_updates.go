@@ -43,8 +43,7 @@ type CandleUpdates struct {
 }
 
 func NewCandleUpdates(ctx context.Context, log *logging.Logger, candleID string, candleSource candleSource,
-	config CandleUpdatesConfig) (*CandleUpdates, error,
-) {
+	config CandleUpdatesConfig) *CandleUpdates {
 	ces := &CandleUpdates{
 		log:             log,
 		candleSource:    candleSource,
@@ -56,7 +55,7 @@ func NewCandleUpdates(ctx context.Context, log *logging.Logger, candleID string,
 
 	go ces.run(ctx)
 
-	return ces, nil
+	return ces
 }
 
 func (s *CandleUpdates) run(ctx context.Context) {
@@ -66,6 +65,7 @@ func (s *CandleUpdates) run(ctx context.Context) {
 	ticker := time.NewTicker(s.config.CandleUpdatesStreamInterval.Duration)
 	var lastCandle *entities.Candle
 
+	errorGettingCandleUpdates := false
 	for {
 		select {
 		case <-ctx.Done():
@@ -74,8 +74,16 @@ func (s *CandleUpdates) run(ctx context.Context) {
 			if len(subscriptions) > 0 {
 				candles, err := s.getCandleUpdates(ctx, lastCandle)
 				if err != nil {
-					s.log.Errorf("failed to get candles, closing stream for candle id %s: %w", s.candleID, err)
-					return
+					if !errorGettingCandleUpdates {
+						s.log.Errorf("failed to get candles for candle id %s: %w", s.candleID, err)
+					}
+
+					errorGettingCandleUpdates = true
+				} else {
+					if errorGettingCandleUpdates {
+						s.log.Infof("successfully got candles for candle id %s", s.candleID)
+					}
+					errorGettingCandleUpdates = false
 				}
 
 				if len(candles) > 0 {
