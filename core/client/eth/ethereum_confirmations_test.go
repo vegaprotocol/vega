@@ -30,7 +30,9 @@ func TestEthereumConfirmations(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ethClient := mocks.NewMockEthereumClientConfirmations(ctrl)
 	tim := localMocks.NewMockTime(ctrl)
-	ethCfns := eth.NewEthereumConfirmations(ethClient, tim)
+	cfg := eth.NewDefaultConfig()
+	cfg.RetryDelay.Duration = 15 * time.Second
+	ethCfns := eth.NewEthereumConfirmations(cfg, ethClient, tim)
 	defer ctrl.Finish()
 
 	ethCfns.UpdateConfirmations(30)

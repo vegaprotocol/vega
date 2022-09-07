@@ -45,8 +45,6 @@ func NewDefaultConfig() Config {
 		Level:                    encoding.LogLevel{Level: logging.InfoLevel},
 		RetryRate:                encoding.Duration{Duration: defaultRetryRate},
 		BlockchainQueueAllowlist: []string{},
-		Ethereum: ethereum.Config{
-			Level: encoding.LogLevel{Level: logging.InfoLevel},
-		},
+		Ethereum:                 ethereum.NewDefaultConfig(),
 	}
 }

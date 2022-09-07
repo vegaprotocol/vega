@@ -13,6 +13,8 @@
 package eth
 
 import (
+	"time"
+
 	"code.vegaprotocol.io/vega/core/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
 )
@@ -20,6 +22,7 @@ import (
 type Config struct {
 	Level       encoding.LogLevel `long:"log-level"`
 	RPCEndpoint string
+	RetryDelay  encoding.Duration
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration,
@@ -28,5 +31,7 @@ type Config struct {
 func NewDefaultConfig() Config {
 	return Config{
 		Level: encoding.LogLevel{Level: logging.InfoLevel},
+		// default to a mainnet block time duration
+		RetryDelay: encoding.Duration{Duration: 15 * time.Second},
 	}
 }
