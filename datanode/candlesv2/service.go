@@ -40,7 +40,6 @@ type Svc struct {
 	log *logging.Logger
 
 	candleIDToUpdatesStream  map[string]*CandleUpdates
-	subscriptionIDToCandleID map[string]string
 	updatesSubscriptionMutex sync.Mutex
 }
 
@@ -49,54 +48,57 @@ func NewService(ctx context.Context, log *logging.Logger, config Config, candleS
 	log.SetLevel(config.Level.Get())
 
 	return &Svc{
-		ctx:                      ctx,
-		log:                      log,
-		Config:                   config,
-		CandleStore:              candleStore,
-		candleIDToUpdatesStream:  map[string]*CandleUpdates{},
-		subscriptionIDToCandleID: map[string]string{},
+		ctx:                     ctx,
+		log:                     log,
+		Config:                  config,
+		CandleStore:             candleStore,
+		candleIDToUpdatesStream: map[string]*CandleUpdates{},
 	}
 }
 
 // Subscribe to a channel of new or updated candles. The subscriber id will be returned as an uint64 value
 // and must be retained for future reference and to Unsubscribe.
-func (cs *Svc) Subscribe(ctx context.Context, candleID string) (string, <-chan entities.Candle, error) {
+func (cs *Svc) Subscribe(ctx context.Context, candleID string) (uint64, <-chan entities.Candle, error) {
 	cs.updatesSubscriptionMutex.Lock()
 	defer cs.updatesSubscriptionMutex.Unlock()
 
 	exists, err := cs.CandleExists(ctx, candleID)
 	if err != nil {
-		return "", nil, fmt.Errorf("subscribing to candles:%w", err)
+		return 0, nil, fmt.Errorf("subscribing to candles:%w", err)
 	}
 
 	if !exists {
-		return "", nil, fmt.Errorf("no candle exists for candle id:%s", candleID)
+		return 0, nil, fmt.Errorf("no candle exists for candle id:%s", candleID)
 	}
 
-	if _, ok := cs.candleIDToUpdatesStream[candleID]; !ok {
-		updates, err := NewCandleUpdates(cs.ctx, cs.log, candleID, cs, cs.Config.CandleUpdates)
+	updatesStream, ok := cs.candleIDToUpdatesStream[candleID]
+
+	// If we don't have a stream for this candle, or existing update stream has stopped running,
+	// (for example it errored, or quit because there were no remaining subscribers) -
+	// Then make a new one. There is a very small chance that the stream might stop in-between
+	// us checking here an subscribing below; there's no race there - the subscription will just
+	// fail with an `ErrCandleUpdatesStopped`
+	if !ok || (ok && !updatesStream.IsRunning()) {
+		updatesStream, err = NewCandleUpdates(cs.ctx, cs.log, candleID, cs, cs.Config.CandleUpdates)
 		if err != nil {
-			return "", nil, fmt.Errorf("subsribing to candle updates:%w", err)
+			return 0, nil, fmt.Errorf("subscribing to candle updates:%w", err)
 		}
-
-		cs.candleIDToUpdatesStream[candleID] = updates
+		cs.candleIDToUpdatesStream[candleID] = updatesStream
 	}
 
-	updatesStream := cs.candleIDToUpdatesStream[candleID]
-	subscriptionID, out := updatesStream.Subscribe()
-	cs.subscriptionIDToCandleID[subscriptionID] = candleID
-
+	out, subscriptionID, err := updatesStream.Subscribe()
+	if err != nil {
+		return 0, nil, fmt.Errorf("subscribing to candle updates:%w", err)
+	}
 	return subscriptionID, out, nil
 }
 
-func (cs *Svc) Unsubscribe(subscriptionID string) error {
+func (cs *Svc) Unsubscribe(candleID string, subscriptionID uint64) error {
 	cs.updatesSubscriptionMutex.Lock()
 	defer cs.updatesSubscriptionMutex.Unlock()
 
-	if candleID, ok := cs.subscriptionIDToCandleID[subscriptionID]; ok {
-		updatesStream := cs.candleIDToUpdatesStream[candleID]
-		updatesStream.Unsubscribe(subscriptionID)
-		return nil
+	if updatesStream, ok := cs.candleIDToUpdatesStream[candleID]; ok {
+		return updatesStream.Unsubscribe(subscriptionID)
 	}
-	return fmt.Errorf("no subscription found for id %s", subscriptionID)
+	return fmt.Errorf("no subscription found for id %s/%v", candleID, subscriptionID)
 }

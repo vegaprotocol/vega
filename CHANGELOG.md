@@ -47,6 +47,7 @@
 - [5934](https://github.com/vegaprotocol/vega/issues/5934) - Ensure wallet without permissions can be read
 - [5950](https://github.com/vegaprotocol/vega/issues/5934) - Fix documentation for new wallet command
 - [5687](https://github.com/vegaprotocol/vega/issues/5934) - Asset cache was returning stale data
+- [6111](https://github.com/vegaprotocol/vega/issues/6111) - Fix candle subscriptions not being removed under certain circumstances
 - [5986](https://github.com/vegaprotocol/vega/issues/5986) - Error string on failed transaction is sent in the plain, no need to decode
 - [5860](https://github.com/vegaprotocol/vega/issues/5860) - Enacted but unlisted new assets are now included in checkpoints
 - [6023](https://github.com/vegaprotocol/vega/issues/6023) - Tell the `datanode` when a genesis validator does not exist in a `checkpoint`

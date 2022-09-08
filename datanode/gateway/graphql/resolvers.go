@@ -2674,7 +2674,10 @@ func (r *mySubscriptionResolver) Candles(ctx context.Context, market string, int
 				break
 			}
 			if err != nil {
-				r.log.Error("candles: stream closed", logging.Error(err))
+				// No need to report an error if cancel is initiated by user
+				if !errors.Is(ctx.Err(), context.Canceled) {
+					r.log.Error("candles: stream closed", logging.Error(err))
+				}
 				break
 			}
 

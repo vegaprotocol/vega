@@ -494,7 +494,6 @@ func (t *tradingDataService) CandlesSubscribe(req *protoapi.CandlesSubscribeRequ
 	for {
 		select {
 		case candle, ok := <-candlesChan:
-
 			if !ok {
 				err = ErrChannelClosed
 				return apiError(codes.Internal, err)
@@ -511,7 +510,7 @@ func (t *tradingDataService) CandlesSubscribe(req *protoapi.CandlesSubscribeRequ
 				return apiError(codes.Internal, ErrStreamInternal, err)
 			}
 		case <-ctx.Done():
-			err := t.candleService.Unsubscribe(ref)
+			err := t.candleService.Unsubscribe(candleID, ref)
 			if err != nil {
 				t.log.Errorf("failed to unsubscribe from candle updates:%s", err)
 			}

@@ -14,118 +14,122 @@ package candlesv2
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"sync"
 	"sync/atomic"
 	"time"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/datanode/utils"
 	"code.vegaprotocol.io/vega/logging"
 )
+
+var ErrCandleUpdatesStopped = errors.New("candle updates stopped")
 
 type candleSource interface {
 	GetCandleDataForTimeSpan(ctx context.Context, candleID string, from *time.Time, to *time.Time,
 		p entities.CursorPagination) ([]entities.Candle, entities.PageInfo, error)
 }
 
-type subscribeRequest struct {
-	id  string
-	out chan entities.Candle
-}
-
 type CandleUpdates struct {
-	log                *logging.Logger
-	candleSource       candleSource
-	candleID           string
-	subscribeChan      chan subscribeRequest
-	unsubscribeChan    chan string
-	nextSubscriptionID uint64
-	config             CandleUpdatesConfig
+	log          *logging.Logger
+	candleSource candleSource
+	candleID     string
+	config       CandleUpdatesConfig
+	running      atomic.Bool
+	lastCandle   atomic.Pointer[entities.Candle]
+	notifier     utils.Notifier[entities.Candle]
+	stopping     sync.Mutex
 }
 
 func NewCandleUpdates(ctx context.Context, log *logging.Logger, candleID string, candleSource candleSource,
 	config CandleUpdatesConfig) (*CandleUpdates, error,
 ) {
+	observerName := fmt.Sprintf("candles(%s)", candleID)
 	ces := &CandleUpdates{
-		log:             log,
-		candleSource:    candleSource,
-		candleID:        candleID,
-		config:          config,
-		subscribeChan:   make(chan subscribeRequest),
-		unsubscribeChan: make(chan string),
+		log:          log,
+		candleSource: candleSource,
+		candleID:     candleID,
+		config:       config,
+		notifier:     utils.NewNotifier[entities.Candle](observerName, log, 10),
 	}
 
+	ces.running.Store(true)
 	go ces.run(ctx)
 
 	return ces, nil
 }
 
+func (s *CandleUpdates) IsRunning() bool {
+	return s.running.Load()
+}
+
 func (s *CandleUpdates) run(ctx context.Context) {
-	subscriptions := map[string]chan entities.Candle{}
-	defer closeAllSubscriptions(subscriptions)
+	// This is a little bit subtle: We need to ensure that once this goroutine exits, there are
+	// no active subscriptions on our observer, so we take a mutex in s.stop() that prevents
+	// the (unlikely) case that Subscribe() is called while we are shutting down; or else we will
+	// return a channel that will never be serviced.
+	defer s.stop()
 
 	ticker := time.NewTicker(s.config.CandleUpdatesStreamInterval.Duration)
-	var lastCandle *entities.Candle
 
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			if len(subscriptions) > 0 {
-				candles, err := s.getCandleUpdates(ctx, lastCandle)
+			if s.notifier.GetSubscribersCount() > 0 {
+				candles, err := s.getCandleUpdates(ctx, s.lastCandle.Load())
 				if err != nil {
 					s.log.Errorf("failed to get candles, closing stream for candle id %s: %w", s.candleID, err)
 					return
 				}
 
 				if len(candles) > 0 {
-					lastCandle = &candles[len(candles)-1]
+					s.lastCandle.Store(&candles[len(candles)-1])
 				}
 
-				s.sendCandles(candles, subscriptions)
+				for _, candle := range candles {
+					s.notifier.Notify(candle)
+				}
 			} else {
-				lastCandle = nil
+				s.lastCandle.Store(nil)
 			}
-		case subscription := <-s.subscribeChan:
-			subscriptions[subscription.id] = subscription.out
-			if lastCandle != nil {
-				s.sendCandles([]entities.Candle{*lastCandle}, map[string]chan entities.Candle{subscription.id: subscription.out})
-			}
-		case id := <-s.unsubscribeChan:
-			removeSubscription(subscriptions, id)
 		}
 	}
 }
 
-func removeSubscription(subscriptions map[string]chan entities.Candle, subscriptionID string) {
-	if _, ok := subscriptions[subscriptionID]; ok {
-		close(subscriptions[subscriptionID])
-		delete(subscriptions, subscriptionID)
-	}
+func (s *CandleUpdates) stop() {
+	s.stopping.Lock()
+	defer s.stopping.Unlock()
+	s.notifier.UnsubscribeAll()
+	s.running.Store(false)
 }
 
-func closeAllSubscriptions(subscribers map[string]chan entities.Candle) {
-	for _, subscriber := range subscribers {
-		close(subscriber)
-	}
-}
+func (s *CandleUpdates) Subscribe() (<-chan entities.Candle, uint64, error) {
+	s.stopping.Lock()
+	defer s.stopping.Unlock()
 
-// Subscribe returns a unique subscription id and channel on which updates will be sent.
-func (s *CandleUpdates) Subscribe() (string, <-chan entities.Candle) {
-	out := make(chan entities.Candle, s.config.CandleUpdatesStreamBufferSize)
-
-	nextID := atomic.AddUint64(&s.nextSubscriptionID, 1)
-	subscriptionID := fmt.Sprintf("%s-%d", s.candleID, nextID)
-	s.subscribeChan <- subscribeRequest{
-		id:  subscriptionID,
-		out: out,
+	if !s.IsRunning() {
+		return nil, 0, ErrCandleUpdatesStopped
 	}
 
-	return subscriptionID, out
+	if lastCandle := s.lastCandle.Load(); lastCandle != nil {
+		return s.notifier.SubscribeAndNotify(*lastCandle)
+	}
+
+	ch, id := s.notifier.Subscribe()
+	return ch, id, nil
 }
 
-func (s *CandleUpdates) Unsubscribe(subscriptionID string) {
-	s.unsubscribeChan <- subscriptionID
+func (s *CandleUpdates) Unsubscribe(subscriptionID uint64) error {
+	// If we're not running, will already have been unsubscribed
+	if !s.IsRunning() {
+		return nil
+	}
+
+	return s.notifier.Unsubscribe(subscriptionID)
 }
 
 func (s *CandleUpdates) getCandleUpdates(ctx context.Context, lastCandle *entities.Candle) ([]entities.Candle, error) {
@@ -162,17 +166,4 @@ func (s *CandleUpdates) getCandleUpdates(ctx context.Context, lastCandle *entiti
 	}
 
 	return updates, nil
-}
-
-func (s *CandleUpdates) sendCandles(candles []entities.Candle, subscriptions map[string]chan entities.Candle) {
-	for subscriptionID, outCh := range subscriptions {
-		for _, candle := range candles {
-			select {
-			case outCh <- candle:
-			default:
-				removeSubscription(subscriptions, subscriptionID)
-				break
-			}
-		}
-	}
 }

@@ -23,6 +23,7 @@ import (
 	"github.com/shopspring/decimal"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"code.vegaprotocol.io/vega/datanode/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
@@ -51,8 +52,10 @@ func TestSubscribe(t *testing.T) {
 		testCandleSource, newTestCandleConfig(1).CandleUpdates)
 	startTime := time.Now()
 
-	_, out1 := updates.Subscribe()
-	_, out2 := updates.Subscribe()
+	out1, _, err := updates.Subscribe()
+	require.NoError(t, err)
+	out2, _, err := updates.Subscribe()
+	require.NoError(t, err)
 
 	expectedCandle := createCandle(startTime, startTime, 1, 1, 1, 1, 10)
 	testCandleSource.candles <- []entities.Candle{expectedCandle}
@@ -80,7 +83,8 @@ func TestUnsubscribe(t *testing.T) {
 		testCandleSource, newTestCandleConfig(1).CandleUpdates)
 	startTime := time.Now()
 
-	id, out1 := updates.Subscribe()
+	out1, id, err := updates.Subscribe()
+	require.NoError(t, err)
 
 	expectedCandle := createCandle(startTime, startTime, 1, 1, 1, 1, 10)
 	testCandleSource.candles <- []entities.Candle{expectedCandle}
@@ -101,7 +105,8 @@ func TestNewSubscriberAlwaysGetsLastCandle(t *testing.T) {
 		testCandleSource, newTestCandleConfig(1).CandleUpdates)
 	startTime := time.Now()
 
-	_, out1 := updates.Subscribe()
+	out1, _, err := updates.Subscribe()
+	require.NoError(t, err)
 
 	expectedCandle := createCandle(startTime, startTime, 1, 1, 1, 1, 10)
 	testCandleSource.candles <- []entities.Candle{expectedCandle}
@@ -109,7 +114,9 @@ func TestNewSubscriberAlwaysGetsLastCandle(t *testing.T) {
 	candle1 := <-out1
 	assert.Equal(t, expectedCandle, candle1)
 
-	_, out2 := updates.Subscribe()
+	out2, _, err := updates.Subscribe()
+	require.NoError(t, err)
+
 	candle2 := <-out2
 	assert.Equal(t, expectedCandle, candle2)
 }

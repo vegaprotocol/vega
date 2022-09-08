@@ -584,7 +584,7 @@ func (t *tradingDataServiceV2) ObserveCandleData(req *v2.ObserveCandleDataReques
 	defer cancel()
 
 	subscriptionID, candlesChan, err := t.candleService.Subscribe(ctx, req.CandleId)
-	defer t.candleService.Unsubscribe(subscriptionID)
+	defer t.candleService.Unsubscribe(req.CandleId, subscriptionID)
 
 	if err != nil {
 		return apiError(codes.Internal, ErrCandleServiceSubscribeToCandles, err)

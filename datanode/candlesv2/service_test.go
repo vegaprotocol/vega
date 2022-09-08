@@ -74,12 +74,13 @@ func TestCandleUnsubscribe(t *testing.T) {
 	}
 
 	expectedCandle := createCandle(time.Now(), time.Now(), 1, 2, 2, 1, 10)
-	testStore.candles <- []entities.Candle{expectedCandle}
+	expectedCandles := []entities.Candle{expectedCandle}
+	testStore.candles <- expectedCandles
 
 	candle1 := <-out1
 	assert.Equal(t, expectedCandle, candle1)
 
-	svc.Unsubscribe(subscriptionID)
+	svc.Unsubscribe(candleID, subscriptionID)
 
 	_, ok := <-out1
 	assert.False(t, ok, "channel should be closed")
