@@ -1501,6 +1501,26 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) ObserveGovernance(arg0, ar
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObserveGovernance", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ObserveGovernance), varargs...)
 }
 
+// ObserveLiquidityProvisions mocks base method.
+func (m *MockTradingDataServiceClientV2) ObserveLiquidityProvisions(arg0 context.Context, arg1 *v2.ObserveLiquidityProvisionsRequest, arg2 ...grpc.CallOption) (v2.TradingDataService_ObserveLiquidityProvisionsClient, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ObserveLiquidityProvisions", varargs...)
+	ret0, _ := ret[0].(v2.TradingDataService_ObserveLiquidityProvisionsClient)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ObserveLiquidityProvisions indicates an expected call of ObserveLiquidityProvisions.
+func (mr *MockTradingDataServiceClientV2MockRecorder) ObserveLiquidityProvisions(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObserveLiquidityProvisions", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ObserveLiquidityProvisions), varargs...)
+}
+
 // ObserveMarginLevels mocks base method.
 func (m *MockTradingDataServiceClientV2) ObserveMarginLevels(arg0 context.Context, arg1 *v2.ObserveMarginLevelsRequest, arg2 ...grpc.CallOption) (v2.TradingDataService_ObserveMarginLevelsClient, error) {
 	m.ctrl.T.Helper()

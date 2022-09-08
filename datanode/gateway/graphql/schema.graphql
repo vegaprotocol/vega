@@ -144,6 +144,14 @@ type Subscription {
     "the party ID to subscribe for, empty if all"
     partyId: ID
   ): Reward!
+
+  "Subscribe to liquidity provisioning data"
+    liquidityProvisions(
+        "the party ID to subscribe for, empty if all"
+        partyId: ID
+        "the market ID to subscribe for, empty if all"
+        marketId: ID
+    ): [LiquidityProvision!]
 }
 
 "Margins for a given a party"
