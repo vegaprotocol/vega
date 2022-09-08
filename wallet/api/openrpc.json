@@ -913,7 +913,7 @@
           "result": {
             "name": "Success",
             "value": {
-              "wallets": [
+              "networks": [
                 "mainnet",
                 "fairground",
                 "local-network"
@@ -966,34 +966,125 @@
               "type": "string"
             },
             "api": {
-              "type": "object",
-              "properties": {
-                "grpcConfig": {
-                "$ref": "#/components/schemas/network_grpc_config"
-                },
-                "restConfig": {
-                "$ref": "#/components/schemas/network_rest_config"
-                },
-                "gqlConfig": {
-                "$ref": "#/components/schemas/network_gql_config"
-                }
-              }
+              "$ref": "#/components/schemas/network_api_config"
             }
           }
         }
       },
       "examples": [
         {
-          "name": "Getting the list of networks",
-          "params": [],
+          "name": "Describing a network",
+          "params": [
+            {
+              "name": "name",
+              "value": "local-network"
+            }
+          ],
           "result": {
             "name": "Success",
             "value": {
-              "wallets": [
-                "mainnet",
-                "fairground",
-                "local-network"
-              ]
+              "name": "local-network",
+              "level": "info",
+              "tokenExpiry": "168h0m0s",
+              "port": "1789",
+              "host": "localhost",
+              "api": {
+                "grpcConfig": {
+                  "hosts": [
+                    "localhost:3028"
+                  ],
+                  "retries": 5
+                },
+                "graphQLConfig": {
+                  "hosts": [
+                    "localhost:3028"
+                  ]
+                },
+                "restConfig": {
+                  "hosts": [
+                    "localhost:3029"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin.import_network",
+      "summary": "Import a network configuration from a file or an URL.",
+      "description": "Import a network configuration from a file or an URL.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "network"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "name",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "filePath",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "url",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "overwrite",
+          "required": true,
+          "schema": {
+            "type": "boolean"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "filePath": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "examples": [
+        {
+          "name": "Importing a network",
+          "params": [
+            {
+              "name": "name",
+              "value": "local-network"
+            },
+            {
+              "name": "filePath",
+              "value": "/Users/username/local-network.toml"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": {
+              "name": "local-network",
+              "filePath": "/Users/username/vega-home/wallet-service/networks/local-network.toml"
             }
           }
         }
@@ -2216,41 +2307,44 @@
           }
         }
       },
-      "network_grpc_config": {
+      "network_api_config": {
         "type": "object",
-        "description": "The gRPC configuration of a network.",
+        "description": "The API configuration for the network.",
         "properties": {
-          "hosts": {
-            "type": "array",
-            "items": {
-            "type": "string"
-          }
+          "grpcConfig": {
+            "type": "object",
+            "properties": {
+              "hosts": {
+                "type": "array",
+                "items": {
+                "type": "string"
+                }
+              }
+            }
           },
-          "retries": {
-            "type": "integer"
-          }
-        }
-      },
-      "network_rest_config": {
-        "type": "object",
-        "description": "The REST configuration of a network.",
-        "properties": {
-          "hosts": {
-            "type": "array",
-            "items": {
-            "type": "string"
-          }
-          }
-        }
-      },
-      "network_gql_config": {
-        "type": "object",
-        "description": "The GraphQL configuration of a network.",
-        "properties": {
-          "hosts": {
-            "type": "array",
-            "items": {
-            "type": "string"
+          "graphQLConfig": {
+            "type": "object",
+            "properties": {
+              "hosts": {
+                "type": "array",
+                "items": {
+                "type": "string"
+              }
+              },
+              "retries": {
+                "type": "integer"
+              }
+            }
+          },
+          "restConfig": {
+            "type": "object",
+            "properties": {
+              "hosts": {
+                "type": "array",
+                "items": {
+                "type": "string"
+                }
+              }
             }
           }
         }

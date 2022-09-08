@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"io"
 
@@ -8,7 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
 	"code.vegaprotocol.io/vega/paths"
-	"code.vegaprotocol.io/vega/wallet/network"
+	"code.vegaprotocol.io/vega/wallet/api"
 	netstore "code.vegaprotocol.io/vega/wallet/network/store/v1"
 
 	"github.com/spf13/cobra"
@@ -34,18 +36,23 @@ var (
 	`)
 )
 
-type ImportNetworkFromSourceHandler func(*network.ImportNetworkFromSourceRequest) (*network.ImportNetworkFromSourceResponse, error)
+type ImportNetworkFromSourceHandler func(api.AdminImportNetworkParams) (api.AdminImportNetworkResult, error)
 
 func NewCmdImportNetwork(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(req *network.ImportNetworkFromSourceRequest) (*network.ImportNetworkFromSourceResponse, error) {
+	h := func(params api.AdminImportNetworkParams) (api.AdminImportNetworkResult, error) {
 		vegaPaths := paths.New(rf.Home)
 
 		s, err := netstore.InitialiseStore(vegaPaths)
 		if err != nil {
-			return nil, fmt.Errorf("couldn't initialise networks store: %w", err)
+			return api.AdminImportNetworkResult{}, fmt.Errorf("couldn't initialise networks store: %w", err)
+		}
+		importNetwork := api.NewAdminImportNetwork(s)
+		rawResult, errorDetails := importNetwork.Handle(context.Background(), params)
+		if errorDetails != nil {
+			return api.AdminImportNetworkResult{}, errors.New(errorDetails.Data)
 		}
 
-		return network.ImportNetworkFromSource(s, network.NewReaders(), req)
+		return rawResult.(api.AdminImportNetworkResult), nil
 	}
 
 	return BuildCmdImportNetwork(w, h, rf)
@@ -112,24 +119,24 @@ type ImportNetworkFlags struct {
 	Force    bool
 }
 
-func (f *ImportNetworkFlags) Validate() (*network.ImportNetworkFromSourceRequest, error) {
+func (f *ImportNetworkFlags) Validate() (api.AdminImportNetworkParams, error) {
 	if len(f.FilePath) == 0 && len(f.URL) == 0 {
-		return nil, flags.OneOfFlagsMustBeSpecifiedError("from-file", "from-url")
+		return api.AdminImportNetworkParams{}, flags.OneOfFlagsMustBeSpecifiedError("from-file", "from-url")
 	}
 
 	if len(f.FilePath) != 0 && len(f.URL) != 0 {
-		return nil, flags.MutuallyExclusiveError("from-file", "from-url")
+		return api.AdminImportNetworkParams{}, flags.MutuallyExclusiveError("from-file", "from-url")
 	}
 
-	return &network.ImportNetworkFromSourceRequest{
-		FilePath: f.FilePath,
-		URL:      f.URL,
-		Name:     f.Name,
-		Force:    f.Force,
+	return api.AdminImportNetworkParams{
+		FilePath:  f.FilePath,
+		URL:       f.URL,
+		Name:      f.Name,
+		Overwrite: f.Force,
 	}, nil
 }
 
-func PrintImportNetworkResponse(w io.Writer, resp *network.ImportNetworkFromSourceResponse) {
+func PrintImportNetworkResponse(w io.Writer, resp api.AdminImportNetworkResult) {
 	p := printer.NewInteractivePrinter(w)
 
 	str := p.String()
