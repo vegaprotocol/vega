@@ -41,16 +41,17 @@ const (
 )
 
 var (
-	ErrMissingTransferKind        = errors.New("missing transfer kind")
-	ErrCannotTransferZeroFunds    = errors.New("cannot transfer zero funds")
-	ErrInvalidFromAccount         = errors.New("invalid from account")
-	ErrInvalidToAccount           = errors.New("invalid to account")
-	ErrUnsupportedFromAccountType = errors.New("unsupported from account type")
-	ErrUnsupportedToAccountType   = errors.New("unsupported to account type")
-	ErrEndEpochIsZero             = errors.New("end epoch is zero")
-	ErrStartEpochIsZero           = errors.New("start epoch is zero")
-	ErrInvalidFactor              = errors.New("invalid factor")
-	ErrStartEpochAfterEndEpoch    = errors.New("start epoch after end epoch")
+	ErrMissingTransferKind           = errors.New("missing transfer kind")
+	ErrCannotTransferZeroFunds       = errors.New("cannot transfer zero funds")
+	ErrInvalidFromAccount            = errors.New("invalid from account")
+	ErrInvalidToAccount              = errors.New("invalid to account")
+	ErrUnsupportedFromAccountType    = errors.New("unsupported from account type")
+	ErrUnsupportedToAccountType      = errors.New("unsupported to account type")
+	ErrEndEpochIsZero                = errors.New("end epoch is zero")
+	ErrStartEpochIsZero              = errors.New("start epoch is zero")
+	ErrInvalidFactor                 = errors.New("invalid factor")
+	ErrStartEpochAfterEndEpoch       = errors.New("start epoch after end epoch")
+	ErrInvalidToForRewardAccountType = errors.New("to party is invalid for reward account type")
 )
 
 type TransferCommandKind int
@@ -94,7 +95,12 @@ func (t *TransferBase) IsValid() error {
 	}
 
 	switch t.ToAccountType {
-	case AccountTypeGeneral, AccountTypeGlobalReward, AccountTypeLPFeeReward, AccountTypeMakerReceivedFeeReward, AccountTypeMakerPaidFeeReward, AccountTypeMarketProposerReward /*, AccountTypeLockedForStaking*/ :
+	case AccountTypeGlobalReward:
+		if t.To != "0000000000000000000000000000000000000000000000000000000000000000" {
+			return ErrInvalidToForRewardAccountType
+		}
+		break
+	case AccountTypeGeneral, AccountTypeLPFeeReward, AccountTypeMakerReceivedFeeReward, AccountTypeMakerPaidFeeReward, AccountTypeMarketProposerReward /*, AccountTypeLockedForStaking*/ :
 		break
 	default:
 		return ErrUnsupportedToAccountType
