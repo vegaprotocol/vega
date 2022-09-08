@@ -202,6 +202,7 @@ type TradingDataServiceClient interface {
 	//
 	// Get a liquidity provision list for a given market using a cursor based pagination
 	ListLiquidityProvisions(ctx context.Context, in *ListLiquidityProvisionsRequest, opts ...grpc.CallOption) (*ListLiquidityProvisionsResponse, error)
+	// Get a liquidity provision subscription for a given market and party
 	ObserveLiquidityProvisions(ctx context.Context, in *ObserveLiquidityProvisionsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveLiquidityProvisionsClient, error)
 	// Governance
 	//
@@ -1513,6 +1514,7 @@ type TradingDataServiceServer interface {
 	//
 	// Get a liquidity provision list for a given market using a cursor based pagination
 	ListLiquidityProvisions(context.Context, *ListLiquidityProvisionsRequest) (*ListLiquidityProvisionsResponse, error)
+	// Get a liquidity provision subscription for a given market and party
 	ObserveLiquidityProvisions(*ObserveLiquidityProvisionsRequest, TradingDataService_ObserveLiquidityProvisionsServer) error
 	// Governance
 	//

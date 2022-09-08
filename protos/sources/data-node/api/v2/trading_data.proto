@@ -250,7 +250,7 @@ service TradingDataService {
     //
     // Get a liquidity provision list for a given market using a cursor based pagination
     rpc ListLiquidityProvisions(ListLiquidityProvisionsRequest) returns (ListLiquidityProvisionsResponse);
-
+    // Get a liquidity provision subscription for a given market and party
     rpc ObserveLiquidityProvisions(ObserveLiquidityProvisionsRequest) returns (stream ObserveLiquidityProvisionsResponse);
 
     // Governance
