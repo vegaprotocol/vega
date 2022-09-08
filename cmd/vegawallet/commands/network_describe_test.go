@@ -6,7 +6,7 @@ import (
 	cmd "code.vegaprotocol.io/vega/cmd/vegawallet/commands"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
-	"code.vegaprotocol.io/vega/wallet/network"
+	"code.vegaprotocol.io/vega/wallet/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -24,8 +24,8 @@ func testDescribeNetworkValidFlagsWithNetworkSucceeds(t *testing.T) {
 		Network: networkName,
 	}
 
-	expectedReq := &network.DescribeNetworkRequest{
-		Name: networkName,
+	expectedReq := api.AdminDescribeNetworkParams{
+		Network: networkName,
 	}
 	// when
 	req, err := f.Validate()
@@ -45,5 +45,5 @@ func testDescribeNetworkInvalidFlagsWithoutNetworkFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("network"))
-	require.Nil(t, req)
+	require.Empty(t, req)
 }

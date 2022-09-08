@@ -12,7 +12,7 @@ import (
 
 func TestDeleteNetworkFlags(t *testing.T) {
 	t.Run("Valid flags succeeds", testDeleteNetworkFlagsValidFlagsSucceeds)
-	t.Run("Missing wallet fails", testDeleteNetworkFlagsMissingNetworkFails)
+	t.Run("Missing network fails", testDeleteNetworkFlagsMissingNetworkFails)
 }
 
 func testDeleteNetworkFlagsValidFlagsSucceeds(t *testing.T) {
@@ -28,7 +28,7 @@ func testDeleteNetworkFlagsValidFlagsSucceeds(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	require.NotNil(t, req)
-	assert.Equal(t, f.Network, req.Name)
+	assert.Equal(t, f.Network, req.Network)
 }
 
 func testDeleteNetworkFlagsMissingNetworkFails(t *testing.T) {
@@ -41,7 +41,7 @@ func testDeleteNetworkFlagsMissingNetworkFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("network"))
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func newDeleteNetworkFlags(t *testing.T) *cmd.DeleteNetworkFlags {
