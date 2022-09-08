@@ -1506,9 +1506,9 @@ message LiquidityProvisionsConnection {
 }
 
 message ObserveLiquidityProvisionsRequest {
-    // The target market for the liquidity provision orders
+    // The target market to observe for liquidity provision orders
     optional string market_id = 1;
-    // The party which submitted the liquidity provision orders
+    // The target party to observe for submitted liquidity provision orders
     optional string party_id = 2;
 }
 

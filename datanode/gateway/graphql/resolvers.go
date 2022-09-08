@@ -341,6 +341,10 @@ func (r *VegaResolverRoot) TradeUpdate() TradeUpdateResolver {
 	return (*tradeUpdateResolver)(r)
 }
 
+func (r *VegaResolverRoot) LiquidityProvisionUpdate() LiquidityProvisionUpdateResolver {
+	return (*liquidityProvisionUpdateResolver)(r)
+}
+
 type accountUpdateResolver VegaResolverRoot
 
 func (r *accountUpdateResolver) AssetID(ctx context.Context, obj *types.Account) (string, error) {
@@ -2838,7 +2842,7 @@ func (r *mySubscriptionResolver) busEventsWithBatch(
 	}
 }
 
-func (r *mySubscriptionResolver) LiquidityProvisions(ctx context.Context, partyID *string, marketID *string) (<-chan []*vega.LiquidityProvision, error) {
+func (r *mySubscriptionResolver) LiquidityProvisions(ctx context.Context, partyID *string, marketID *string) (<-chan []*types.LiquidityProvision, error) {
 	req := &v2.ObserveLiquidityProvisionsRequest{
 		MarketId: marketID,
 		PartyId:  partyID,

@@ -9491,9 +9491,9 @@ type ObserveLiquidityProvisionsRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The target market for the liquidity provision orders
+	// The target market to observe for liquidity provision orders
 	MarketId *string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3,oneof" json:"market_id,omitempty"`
-	// The party which submitted the liquidity provision orders
+	// The target party to observe for submitted liquidity provision orders
 	PartyId *string `protobuf:"bytes,2,opt,name=party_id,json=partyId,proto3,oneof" json:"party_id,omitempty"`
 }
 
