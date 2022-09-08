@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -8,7 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
-	"code.vegaprotocol.io/vega/wallet/wallet"
+	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
 	"github.com/spf13/cobra"
@@ -28,16 +30,21 @@ var (
 	`)
 )
 
-type TaintKeyHandler func(*wallet.TaintKeyRequest) error
+type TaintKeyHandler func(api.AdminTaintKeyParams) error
 
 func NewCmdTaintKey(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(req *wallet.TaintKeyRequest) error {
+	h := func(params api.AdminTaintKeyParams) error {
 		s, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
 			return fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 
-		return wallet.TaintKey(s, req)
+		taintKey := api.NewAdminTaintKey(s)
+		_, errDetails := taintKey.Handle(context.Background(), params)
+		if errDetails != nil {
+			return errors.New(errDetails.Data)
+		}
+		return nil
 	}
 
 	return BuildCmdTaintKey(w, h, rf)
@@ -77,7 +84,7 @@ func BuildCmdTaintKey(w io.Writer, handler TaintKeyHandler, rf *RootFlags) *cobr
 		"",
 		"Wallet holding the public key",
 	)
-	cmd.Flags().StringVarP(&f.PubKey,
+	cmd.Flags().StringVarP(&f.PublicKey,
 		"pubkey", "k",
 		"",
 		"Public key to taint (hex-encoded)",
@@ -95,30 +102,29 @@ func BuildCmdTaintKey(w io.Writer, handler TaintKeyHandler, rf *RootFlags) *cobr
 
 type TaintKeyFlags struct {
 	Wallet         string
-	PubKey         string
+	PublicKey      string
 	PassphraseFile string
 }
 
-func (f *TaintKeyFlags) Validate() (*wallet.TaintKeyRequest, error) {
-	req := &wallet.TaintKeyRequest{}
-
+func (f *TaintKeyFlags) Validate() (api.AdminTaintKeyParams, error) {
 	if len(f.Wallet) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("wallet")
+		return api.AdminTaintKeyParams{}, flags.MustBeSpecifiedError("wallet")
 	}
-	req.Wallet = f.Wallet
 
-	if len(f.PubKey) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("pubkey")
+	if len(f.PublicKey) == 0 {
+		return api.AdminTaintKeyParams{}, flags.MustBeSpecifiedError("pubkey")
 	}
-	req.PubKey = f.PubKey
 
 	passphrase, err := flags.GetPassphrase(f.PassphraseFile)
 	if err != nil {
-		return nil, err
+		return api.AdminTaintKeyParams{}, err
 	}
-	req.Passphrase = passphrase
 
-	return req, nil
+	return api.AdminTaintKeyParams{
+		Wallet:     f.Wallet,
+		PublicKey:  f.PublicKey,
+		Passphrase: passphrase,
+	}, nil
 }
 
 func PrintTaintKeyResponse(w io.Writer) {

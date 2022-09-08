@@ -883,16 +883,16 @@ func TestSubmittedOrderIdIsTheDeterministicId(t *testing.T) {
 	}
 	addAccount(t, tm, party1)
 
-	deterministicId := vgcrypto.RandomHash()
-	conf, err := tm.market.Market.SubmitOrder(context.Background(), order.IntoSubmission(), order.Party, deterministicId)
+	deterministicID := vgcrypto.RandomHash()
+	conf, err := tm.market.Market.SubmitOrder(context.Background(), order.IntoSubmission(), order.Party, deterministicID)
 	if err != nil {
 		t.Fatalf("failed to submit order:%s", err)
 	}
 
-	assert.Equal(t, deterministicId, conf.Order.ID)
+	assert.Equal(t, deterministicID, conf.Order.ID)
 
 	event := tm.orderEvents[0].(*events.Order)
-	assert.Equal(t, event.Order().Id, deterministicId)
+	assert.Equal(t, event.Order().Id, deterministicID)
 }
 
 func TestMarketWithTradeClosing(t *testing.T) {
@@ -1088,6 +1088,137 @@ func TestUpdateMarketWithOracleSpecEarlyTermination(t *testing.T) {
 	require.Equal(t, types.MarketStateTradingTerminated, tm.market.State())
 
 	properties := map[string]string{}
+	properties["prices.ETH.value"] = "100"
+	err = tm.oracleEngine.BroadcastData(ctx, oracles.OracleData{
+		PubKeys: []string{"0xDEADBEEF"},
+		Data:    properties,
+	})
+	require.NoError(t, err)
+
+	tm.now = tm.now.Add(time.Second)
+	closed := tm.market.OnTick(ctx, tm.now)
+	assert.True(t, closed)
+}
+
+func Test6056(t *testing.T) {
+	party1 := "party1"
+	party2 := "party2"
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(20, 0)
+	tm := getTestMarket(t, now, nil, nil)
+	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+	defer tm.ctrl.Finish()
+	// add 2 parties to the party engine
+	// this will create 2 parties, credit their account
+	// and move some monies to the market
+	// this will also output the closed accounts
+	addAccount(t, tm, party1)
+	addAccount(t, tm, party2)
+
+	// submit orders
+	// party1 buys
+	// party2 sells
+	orderBuy := &types.Order{
+		Type:        types.OrderTypeLimit,
+		TimeInForce: types.OrderTimeInForceGTT,
+		Status:      types.OrderStatusActive,
+		ID:          "",
+		Side:        types.SideBuy,
+		Party:       party1,
+		MarketID:    tm.market.GetID(),
+		Size:        100,
+		Price:       num.NewUint(100),
+		Remaining:   100,
+		CreatedAt:   now.UnixNano(),
+		ExpiresAt:   closingAt.UnixNano(),
+		Reference:   "party1-buy-order",
+	}
+	orderSell := &types.Order{
+		Type:        types.OrderTypeLimit,
+		TimeInForce: types.OrderTimeInForceGTT,
+		Status:      types.OrderStatusActive,
+		ID:          "",
+		Side:        types.SideSell,
+		Party:       party2,
+		MarketID:    tm.market.GetID(),
+		Size:        100,
+		Price:       num.NewUint(100),
+		Remaining:   100,
+		CreatedAt:   now.UnixNano(),
+		ExpiresAt:   closingAt.UnixNano(),
+		Reference:   "party2-sell-order",
+	}
+
+	// submit orders
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
+
+	fmt.Printf("%s\n", orderBuy.String())
+	_, err := tm.market.SubmitOrder(ctx, orderBuy)
+	assert.Nil(t, err)
+	if err != nil {
+		t.Fail()
+	}
+	tm.now = tm.now.Add(time.Second)
+	tm.market.OnTick(ctx, tm.now)
+	fmt.Printf("%s\n", orderBuy.String())
+	require.Equal(t, types.MarketStateSuspended, tm.market.State()) // enter auction
+
+	_, err = tm.market.SubmitOrder(ctx, orderSell)
+	assert.Nil(t, err)
+	if err != nil {
+		t.Fail()
+	}
+	tm.now = tm.now.Add(time.Second)
+	tm.market.OnTick(ctx, tm.now)
+
+	// now update the market
+	updatedMkt := tm.mktCfg.DeepClone()
+
+	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecForSettlementPrice.Filters = []*types.OracleSpecFilter{
+		{
+			Key: &types.OracleSpecPropertyKey{
+				Name: "prices.ETH.value",
+				Type: oraclespb.PropertyKey_TYPE_INTEGER,
+			},
+			Conditions: []*types.OracleSpecCondition{
+				{
+					Operator: oraclespb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+					Value:    "1",
+				},
+			},
+		},
+	}
+
+	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecForTradingTermination.Filters = []*types.OracleSpecFilter{
+		{
+			Key: &types.OracleSpecPropertyKey{
+				Name: "trading.terminated",
+				Type: oraclespb.PropertyKey_TYPE_BOOLEAN,
+			},
+			Conditions: []*types.OracleSpecCondition{
+				{
+					Operator: oraclespb.Condition_OPERATOR_EQUALS,
+					Value:    "false",
+				},
+			},
+		},
+	}
+
+	err = tm.market.Update(context.Background(), updatedMkt, tm.oracleEngine)
+	require.NoError(t, err)
+
+	properties := map[string]string{}
+	properties["trading.terminated"] = "false"
+	err = tm.oracleEngine.BroadcastData(ctx, oracles.OracleData{
+		PubKeys: []string{"0xDEADBEEF"},
+		Data:    properties,
+	})
+	require.NoError(t, err)
+	tm.market.OnTick(ctx, tm.now)
+	require.Equal(t, types.MarketStateTradingTerminated, tm.market.State())
+
+	properties = map[string]string{}
 	properties["prices.ETH.value"] = "100"
 	err = tm.oracleEngine.BroadcastData(ctx, oracles.OracleData{
 		PubKeys: []string{"0xDEADBEEF"},
@@ -3051,7 +3182,7 @@ func TestSubmitLiquidityProvisionWithNoOrdersOnBook(t *testing.T) {
 	lpOrderVolumeBid := mktData.BestBidVolume - mktData.BestStaticBidVolume
 	lpOrderVolumeOffer := mktData.BestOfferVolume - mktData.BestStaticOfferVolume
 
-	var zero uint64 = 0
+	var zero uint64
 	require.Greater(t, lpOrderVolumeBid, zero)
 	require.Greater(t, lpOrderVolumeOffer, zero)
 }
@@ -3120,7 +3251,7 @@ func TestSubmitLiquidityProvisionInOpeningAuction(t *testing.T) {
 	lpOrderVolumeOffer := mktData.BestOfferVolume - mktData.BestStaticOfferVolume
 
 	require.Equal(t, types.MarketTradingModeContinuous, mktData.MarketTradingMode)
-	var zero uint64 = 0
+	var zero uint64
 	require.Greater(t, lpOrderVolumeBid, zero)
 	require.Greater(t, lpOrderVolumeOffer, zero)
 }
@@ -3467,7 +3598,7 @@ func TestOrderBook_Crash2651(t *testing.T) {
 	require.NoError(t, err)
 
 	// Leave auction and uncross the book
-	tm.market.LeaveAuctionWithIdGen(ctx, now.Add(time.Second*20), newTestIdGenerator())
+	tm.market.LeaveAuctionWithIDGen(ctx, now.Add(time.Second*20), newTestIDGenerator())
 	require.Equal(t, 3, tm.market.GetPeggedOrderCount())
 	require.Equal(t, 3, tm.market.GetParkedOrderCount())
 	require.Equal(t, types.MarketStateSuspended, tm.market.State()) // still in auction
@@ -3959,8 +4090,8 @@ func TestOrderBook_Crash2718(t *testing.T) {
 	assert.True(t, o2Update.Price.IsZero())
 
 	// Flip out of auction to un-park it
-	tm.market.LeaveAuctionWithIdGen(ctx, now.Add(time.Second*20), newTestIdGenerator())
-	tm.market.LeaveAuctionWithIdGen(ctx, now.Add(time.Second*20), newTestIdGenerator())
+	tm.market.LeaveAuctionWithIDGen(ctx, now.Add(time.Second*20), newTestIDGenerator())
+	tm.market.LeaveAuctionWithIDGen(ctx, now.Add(time.Second*20), newTestIDGenerator())
 
 	o2Update = tm.lastOrderUpdate(o2.ID)
 	assert.Equal(t, types.OrderStatusActive, o2Update.Status)
@@ -4055,15 +4186,25 @@ func TestOrderBook_ExpiredOrderTriggersReprice(t *testing.T) {
 
 // This is a scenario to test issue: 2734
 // Party A - 100000000
-//  A - Buy 5@15000 GTC
+//
+//	A - Buy 5@15000 GTC
+//
 // Party B - 100000000
-//  B - Sell 10 IOC Market
+//
+//	B - Sell 10 IOC Market
+//
 // Party C - Deposit 100000
-//  C - Buy GTT 6@1001 (60s)
+//
+//	C - Buy GTT 6@1001 (60s)
+//
 // Party D- Fund 578
-//  D - Pegged 3@BA +1
+//
+//	D - Pegged 3@BA +1
+//
 // Party E - Deposit 100000
-//  E - Sell GTC 3@1002
+//
+//	E - Sell GTC 3@1002
+//
 // C amends order price=1002.
 func TestOrderBook_CrashWithDistressedPartyPeggedOrderNotRemovedFromPeggedList2734(t *testing.T) {
 	now := time.Unix(10, 0)
@@ -4179,7 +4320,7 @@ func TestOrderBook_Crash2733(t *testing.T) {
 	addAccountWithAmount(tm, "party-C", 100000000)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	for i := 1; i <= 10; i += 1 {
+	for i := 1; i <= 10; i++ {
 		o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, fmt.Sprintf("Order1%v", i), types.SideBuy, "party-A", uint64(i), 0)
 		o1.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, uint64(i*15))
 		o1conf, err := tm.market.SubmitOrder(ctx, o1)
@@ -4204,14 +4345,14 @@ func TestOrderBook_Crash2733(t *testing.T) {
 	tm.now = now
 	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
 
-	for i := 1; i <= 10; i += 1 {
+	for i := 1; i <= 10; i++ {
 		o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, fmt.Sprintf("Order4%v", i), types.SideSell, "party-B", uint64(i), uint64(i*150))
 		o1conf, err := tm.market.SubmitOrder(ctx, o1)
 		require.NotNil(t, o1conf)
 		require.NoError(t, err)
 	}
 
-	for i := 1; i <= 20; i += 1 {
+	for i := 1; i <= 20; i++ {
 		o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, fmt.Sprintf("Order5%v", i), types.SideBuy, "party-C", uint64(i), uint64(i*100))
 		o1conf, err := tm.market.SubmitOrder(ctx, o1)
 		require.NotNil(t, o1conf)
@@ -5012,7 +5153,7 @@ func TestMarket_LeaveAuctionAndRepricePeggedOrders(t *testing.T) {
 	require.NoError(t, err)
 
 	// Leave the auction so pegged orders are unparked
-	tm.market.LeaveAuctionWithIdGen(ctx, now.Add(time.Second*20), newTestIdGenerator())
+	tm.market.LeaveAuctionWithIDGen(ctx, now.Add(time.Second*20), newTestIDGenerator())
 
 	// 6 live orders, 2 normal and 4 pegged
 	require.Equal(t, int64(6), tm.market.GetOrdersOnBookCount())
@@ -5135,7 +5276,7 @@ func TestOrderBook_ClosingOutLPProviderShouldRemoveCommitment(t *testing.T) {
 	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
 
 	// Leave auction right away
-	tm.market.LeaveAuctionWithIdGen(ctx, now.Add(time.Second*20), newTestIdGenerator())
+	tm.market.LeaveAuctionWithIDGen(ctx, now.Add(time.Second*20), newTestIDGenerator())
 
 	// Create some normal orders to set the reference prices
 	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order01", types.SideBuy, "party-B", 10, 10)
@@ -5218,7 +5359,7 @@ func TestOrderBook_PartiallyFilledMarketOrderThatWouldWashIOC(t *testing.T) {
 	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
 
 	// Leave auction right away
-	tm.market.LeaveAuctionWithIdGen(ctx, now.Add(time.Second*20), newTestIdGenerator())
+	tm.market.LeaveAuctionWithIDGen(ctx, now.Add(time.Second*20), newTestIDGenerator())
 
 	// Create 2 buy orders that we will try to match against
 	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order01", types.SideBuy, "party-B", 10, 100)
@@ -5267,7 +5408,7 @@ func TestOrderBook_PartiallyFilledMarketOrderThatWouldWashFOKSell(t *testing.T) 
 	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
 
 	// Leave auction right away
-	tm.market.LeaveAuctionWithIdGen(ctx, now.Add(time.Second*20), newTestIdGenerator())
+	tm.market.LeaveAuctionWithIDGen(ctx, now.Add(time.Second*20), newTestIDGenerator())
 
 	// Create 2 buy orders that we will try to match against
 	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order01", types.SideBuy, "party-B", 10, 100)
@@ -5411,7 +5552,7 @@ func TestOrderBook_PartiallyFilledLimitOrderThatWouldWashFOK(t *testing.T) {
 	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
 
 	// Leave auction right away
-	tm.market.LeaveAuctionWithIdGen(ctx, now.Add(time.Second*20), newTestIdGenerator())
+	tm.market.LeaveAuctionWithIDGen(ctx, now.Add(time.Second*20), newTestIDGenerator())
 
 	md := tm.market.GetMarketData()
 	require.Equal(t, types.MarketTradingModeContinuous, md.MarketTradingMode)
@@ -7001,7 +7142,7 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	)
 
 	md = tm.market.GetMarketData()
-	var zero uint64 = 0
+	var zero uint64
 	require.Greater(t, md.BestStaticBidVolume, zero)
 
 	// Cancelling best_bid should start auction
@@ -7181,7 +7322,6 @@ func TestLiquidityMonitoring_BestBidAskExistAfterAuction(t *testing.T) {
 	require.Equal(t, types.OrderStatusActive, sellConf2.Order.Status)
 	require.Equal(t, 0, len(sellConf2.Trades))
 
-	now = now.Add(time.Second * time.Duration(openingDuration.Duration)).Add(time.Millisecond)
 	tm.now = tm.now.Add(time.Second * time.Duration(openingDuration.Duration)).Add(time.Millisecond)
 	closed := tm.market.OnTick(ctx, tm.now)
 	require.False(t, closed)

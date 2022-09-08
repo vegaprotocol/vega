@@ -125,10 +125,6 @@ func testListingKeysWithNotEnoughPermissionsFails(t *testing.T) {
 	if err != nil {
 		t.Fatal("could not generate key for tests: %w", err)
 	}
-	expectedPubKeys := make([]string, 0, len(w.ListPublicKeys()))
-	for _, key := range w.ListPublicKeys() {
-		expectedPubKeys = append(expectedPubKeys, key.Key())
-	}
 
 	// setup
 	handler := newListKeysHandler(t)

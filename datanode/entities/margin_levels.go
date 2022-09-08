@@ -139,8 +139,8 @@ type MarginLevelsKey struct {
 	VegaTime  time.Time
 }
 
-func (o MarginLevels) Key() MarginLevelsKey {
-	return MarginLevelsKey{o.AccountID, o.VegaTime}
+func (ml MarginLevels) Key() MarginLevelsKey {
+	return MarginLevelsKey{ml.AccountID, ml.VegaTime}
 }
 
 func (ml MarginLevels) ToRow() []interface{} {

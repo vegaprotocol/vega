@@ -95,10 +95,10 @@ func (c KeyRotationCursor) String() string {
 	return string(bs)
 }
 
-func (kr *KeyRotationCursor) Parse(cursorString string) error {
+func (c *KeyRotationCursor) Parse(cursorString string) error {
 	if cursorString == "" {
 		return nil
 	}
 
-	return json.Unmarshal([]byte(cursorString), kr)
+	return json.Unmarshal([]byte(cursorString), c)
 }

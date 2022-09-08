@@ -82,6 +82,7 @@ type PoWEngine interface {
 	DeliverTx(tx abci.Tx) error
 }
 
+//nolint:interfacebloat
 type Snapshot interface {
 	Info() ([]byte, int64, string)
 	Snapshot(ctx context.Context) ([]byte, error)
@@ -163,7 +164,6 @@ type App struct {
 	epoch                  EpochService
 	snapshot               Snapshot
 	stateVar               StateVarEngine
-	cpt                    abci.Tx
 	protocolUpgradeService ProtocolUpgradeService
 	erc20MultiSigTopology  ERC20MultiSigTopology
 
@@ -992,7 +992,7 @@ func (app *App) DeliverCancelTransferFunds(ctx context.Context, tx abci.Tx) erro
 	return app.banking.CancelTransferFunds(ctx, types.NewCancelTransferFromProto(tx.Party(), cancel))
 }
 
-func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx, deterministicId string) error {
+func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx, deterministicID string) error {
 	s := &commandspb.OrderSubmission{}
 	if err := tx.Unmarshal(s); err != nil {
 		return err
@@ -1006,7 +1006,7 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx, deterministi
 		return err
 	}
 	// Submit the create order request to the execution engine
-	conf, err := app.exec.SubmitOrder(ctx, os, tx.Party(), deterministicId)
+	conf, err := app.exec.SubmitOrder(ctx, os, tx.Party(), deterministicID)
 	if conf != nil {
 		if app.log.GetLevel() <= logging.DebugLevel {
 			app.log.Debug("Order confirmed",
@@ -1033,7 +1033,7 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx, deterministi
 	return err
 }
 
-func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx, deterministicId string) error {
+func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx, deterministicID string) error {
 	porder := &commandspb.OrderCancellation{}
 	if err := tx.Unmarshal(porder); err != nil {
 		return err
@@ -1044,9 +1044,9 @@ func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx, deterministi
 
 	order := types.OrderCancellationFromProto(porder)
 	// Submit the cancel new order request to the Vega trading core
-	msg, err := app.exec.CancelOrder(ctx, order, tx.Party(), deterministicId)
+	msg, err := app.exec.CancelOrder(ctx, order, tx.Party(), deterministicID)
 	if err != nil {
-		app.log.Error("error on cancelling order", logging.String("order-id", order.OrderId), logging.Error(err))
+		app.log.Error("error on cancelling order", logging.String("order-id", order.OrderID), logging.Error(err))
 		return err
 	}
 	if app.cfg.LogOrderCancelDebug {
@@ -1058,7 +1058,7 @@ func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx, deterministi
 	return nil
 }
 
-func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx, deterministicId string) (errl error) {
+func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx, deterministicID string) (errl error) {
 	order := &commandspb.OrderAmendment{}
 	if err := tx.Unmarshal(order); err != nil {
 		return err
@@ -1074,7 +1074,7 @@ func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx, deterministic
 	}
 
 	// Submit the cancel new order request to the Vega trading core
-	msg, err := app.exec.AmendOrder(ctx, oa, tx.Party(), deterministicId)
+	msg, err := app.exec.AmendOrder(ctx, oa, tx.Party(), deterministicID)
 	if err != nil {
 		app.log.Error("error on amending order", logging.String("order-id", order.OrderId), logging.Error(err))
 		return err
@@ -1109,7 +1109,7 @@ func (app *App) DeliverWithdraw(
 	return app.handleCheckpoint(snap)
 }
 
-func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, deterministicId string) error {
+func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, deterministicID string) error {
 	prop := &commandspb.ProposalSubmission{}
 	if err := tx.Unmarshal(prop); err != nil {
 		return err
@@ -1119,7 +1119,7 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, deterministicId 
 
 	if app.log.GetLevel() <= logging.DebugLevel {
 		app.log.Debug("submitting proposal",
-			logging.ProposalID(deterministicId),
+			logging.ProposalID(deterministicID),
 			logging.String("proposal-reference", prop.Reference),
 			logging.String("proposal-party", party),
 			logging.String("proposal-terms", prop.Terms.String()))
@@ -1129,10 +1129,10 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, deterministicId 
 	if err != nil {
 		return err
 	}
-	toSubmit, err := app.gov.SubmitProposal(ctx, *propSubmission, deterministicId, party)
+	toSubmit, err := app.gov.SubmitProposal(ctx, *propSubmission, deterministicID, party)
 	if err != nil {
 		app.log.Debug("could not submit proposal",
-			logging.ProposalID(deterministicId),
+			logging.ProposalID(deterministicID),
 			logging.Error(err))
 		return err
 	}
@@ -1140,9 +1140,7 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, deterministicId 
 	if toSubmit.IsNewMarket() {
 		nm := toSubmit.NewMarket()
 
-		var err error
-		err = app.exec.SubmitMarket(ctx, nm.Market(), party)
-		if err != nil {
+		if err := app.exec.SubmitMarket(ctx, nm.Market(), party); err != nil {
 			app.log.Debug("unable to submit new market with liquidity submission",
 				logging.ProposalID(nm.Market().ID),
 				logging.Error(err))
@@ -1191,7 +1189,7 @@ func (app *App) DeliverNodeSignature(ctx context.Context, tx abci.Tx) error {
 	return app.notary.RegisterSignature(ctx, tx.PubKeyHex(), *ns)
 }
 
-func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, deterministicId string) error {
+func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, deterministicID string) error {
 	sub := &commandspb.LiquidityProvisionSubmission{}
 	if err := tx.Unmarshal(sub); err != nil {
 		return err
@@ -1207,7 +1205,7 @@ func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, deter
 		return err
 	}
 
-	return app.exec.SubmitLiquidityProvision(ctx, lps, tx.Party(), deterministicId)
+	return app.exec.SubmitLiquidityProvision(ctx, lps, tx.Party(), deterministicID)
 }
 
 func (app *App) DeliverCancelLiquidityProvision(ctx context.Context, tx abci.Tx) error {
@@ -1239,7 +1237,7 @@ func (app *App) DeliverCancelLiquidityProvision(ctx context.Context, tx abci.Tx)
 	return nil
 }
 
-func (app *App) DeliverAmendLiquidityProvision(ctx context.Context, tx abci.Tx, deterministicId string) error {
+func (app *App) DeliverAmendLiquidityProvision(ctx context.Context, tx abci.Tx, deterministicID string) error {
 	lp := &commandspb.LiquidityProvisionAmendment{}
 	if err := tx.Unmarshal(lp); err != nil {
 		return err
@@ -1254,7 +1252,7 @@ func (app *App) DeliverAmendLiquidityProvision(ctx context.Context, tx abci.Tx, 
 	}
 
 	// Submit the amend liquidity provision request to the Vega trading core
-	err = app.exec.AmendLiquidityProvision(ctx, lpa, tx.Party(), deterministicId)
+	err = app.exec.AmendLiquidityProvision(ctx, lpa, tx.Party(), deterministicID)
 	if err != nil {
 		app.log.Error("error on amending Liquidity Provision", logging.String("liquidity-provision-market-id", lpa.MarketID), logging.Error(err))
 		return err
@@ -1398,23 +1396,7 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 		}
 		return
 	}
-
-	var signature []byte
-	if app.top.IsValidator() {
-		switch {
-		case asset.IsERC20():
-			asset, _ := asset.ERC20()
-			_, signature, err = asset.SignListAsset()
-			if err != nil {
-				app.log.Panic("couldn't to sign transaction to list asset, is the node properly configured as a validator?",
-					logging.AssetID(prop.ID),
-					logging.Error(err))
-			}
-		}
-	}
-
-	// then instruct the notary to start getting signature from validators
-	app.notary.StartAggregate(prop.ID, types.NodeSignatureKindAssetNew, signature)
+	app.assets.EnactPendingAsset(prop.ID)
 }
 
 func (app *App) enactAssetUpdate(_ context.Context, prop *types.Proposal, updatedAsset *types.Asset) {

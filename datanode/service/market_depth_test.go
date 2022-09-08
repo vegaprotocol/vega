@@ -28,7 +28,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func getTestMDS(t *testing.T, ctx context.Context, ack bool) *service.MarketDepth {
+func getTestMDS(ctx context.Context, t *testing.T, ack bool) *service.MarketDepth {
 	t.Helper()
 	return service.NewMarketDepth(nil, logging.NewTestLogger())
 }
@@ -51,7 +51,7 @@ func buildOrder(id string, side types.Side, orderType types.OrderType, price uin
 
 func TestBuyPriceLevels(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	order1 := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 9, 9)
@@ -85,7 +85,7 @@ func TestBuyPriceLevels(t *testing.T) {
 
 func TestSellPriceLevels(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	order1 := buildOrder("Order1", types.SideSell, types.OrderTypeLimit, 100, 9, 9)
@@ -119,7 +119,7 @@ func TestSellPriceLevels(t *testing.T) {
 
 func TestAddOrderToEmptyBook(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
@@ -135,7 +135,7 @@ func TestAddOrderToEmptyBook(t *testing.T) {
 
 func TestCancelOrder(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
@@ -155,7 +155,7 @@ func TestCancelOrder(t *testing.T) {
 
 func TestStoppedOrder(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
@@ -175,7 +175,7 @@ func TestStoppedOrder(t *testing.T) {
 
 func TestExpiredOrder(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
@@ -195,7 +195,7 @@ func TestExpiredOrder(t *testing.T) {
 
 func TestAmendOrderPrice(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
@@ -222,7 +222,7 @@ func TestAmendOrderPrice(t *testing.T) {
 
 func TestAmendOrderVolumeUp(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
@@ -243,7 +243,7 @@ func TestAmendOrderVolumeUp(t *testing.T) {
 
 func TestAmendOrderVolumeDown(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
@@ -264,7 +264,7 @@ func TestAmendOrderVolumeDown(t *testing.T) {
 
 func TestAmendOrderVolumeDownToZero(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
@@ -285,7 +285,7 @@ func TestAmendOrderVolumeDownToZero(t *testing.T) {
 
 func TestPartialFill(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
@@ -305,7 +305,7 @@ func TestPartialFill(t *testing.T) {
 
 func TestIOCPartialFill(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 5)
@@ -323,7 +323,7 @@ func TestIOCPartialFill(t *testing.T) {
 
 func TestFullyFill(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
@@ -344,7 +344,7 @@ func TestFullyFill(t *testing.T) {
 
 func TestMarketOrder(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	// market orders should not stay on the book
@@ -361,7 +361,7 @@ func TestMarketOrder(t *testing.T) {
 
 func TestFOKOrder(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	// FOK orders do not stay on the book
@@ -379,7 +379,7 @@ func TestFOKOrder(t *testing.T) {
 
 func TestIOCOrder(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	// IOC orders do not stay on the book
@@ -397,7 +397,7 @@ func TestIOCOrder(t *testing.T) {
 
 func TestRejectedOrder(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	// Rejected orders should be ignored
@@ -415,7 +415,7 @@ func TestRejectedOrder(t *testing.T) {
 
 func TestInvalidOrder(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	// Invalid orders should be ignored
@@ -433,7 +433,7 @@ func TestInvalidOrder(t *testing.T) {
 
 func TestPartialMatchOrders(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	order1 := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
@@ -456,7 +456,7 @@ func TestPartialMatchOrders(t *testing.T) {
 
 func TestFullyMatchOrders(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	order1 := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
@@ -480,7 +480,7 @@ func TestFullyMatchOrders(t *testing.T) {
 
 func TestRemovingPriceLevels(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	order1 := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 101, 10, 10)
@@ -504,7 +504,7 @@ func TestRemovingPriceLevels(t *testing.T) {
 
 func TestMarketDepthFields(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	order1 := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 101, 10, 10)
@@ -526,7 +526,7 @@ func TestMarketDepthFields(t *testing.T) {
 
 func TestParkingOrder(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	// Create a valid and live pegged order
@@ -563,7 +563,7 @@ func TestParkingOrder(t *testing.T) {
 
 func TestParkedOrder(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	// Create a parked pegged order which should not go on the depth book
@@ -582,7 +582,7 @@ func TestParkedOrder(t *testing.T) {
 
 func TestParkedOrder2(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	// Create parked pegged order

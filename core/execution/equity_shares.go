@@ -105,12 +105,12 @@ func (es *EquityShares) UpdateVStake() {
 
 func (es *EquityShares) AvgTradeValue(avg num.Decimal) *EquityShares {
 	if avg.IsZero() {
-		if es.openingAuctionEnded {
-			// this should not be possible IRL, however unit tests like amend_lp_orders
-			// rely on the EndOpeningAuction call and can end opening auction without setting a price
-			// ie -> end opening auction without a trade value
-			// panic("opening auction ended, and avg trade value hit zero somehow?")
-		}
+		// if es.openingAuctionEnded {
+		// 	// this should not be possible IRL, however unit tests like amend_lp_orders
+		// 	// rely on the EndOpeningAuction call and can end opening auction without setting a price
+		// 	// ie -> end opening auction without a trade value
+		// 	panic("opening auction ended, and avg trade value hit zero somehow?")
+		// }
 		return es
 	}
 	es.stateChanged = true
@@ -196,14 +196,6 @@ func (es *EquityShares) AvgEntryValuation(id string) num.Decimal {
 		return v.avg
 	}
 	return num.DecimalZero()
-}
-
-func (es *EquityShares) mustEquity(party string) num.Decimal {
-	eq, err := es.equity(party)
-	if err != nil {
-		panic(err)
-	}
-	return eq
 }
 
 // equity returns the following:

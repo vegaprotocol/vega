@@ -18,13 +18,13 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
-func GenesisFromJSON(rawGenesisDoc []byte) (*tmtypes.GenesisDoc, *GenesisState, error) {
+func FromJSON(rawGenesisDoc []byte) (*tmtypes.GenesisDoc, *State, error) {
 	genesisDoc, err := tmtypes.GenesisDocFromJSON(rawGenesisDoc)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	genesisState := &GenesisState{}
+	genesisState := &State{}
 	err = json.Unmarshal(genesisDoc.AppState, genesisState)
 	if err != nil {
 		return nil, nil, err

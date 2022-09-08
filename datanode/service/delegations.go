@@ -57,8 +57,8 @@ func (d *Delegation) Get(ctx context.Context, partyID *string, nodeID *string, e
 	return d.store.Get(ctx, partyID, nodeID, epoch, p)
 }
 
-func (r *Delegation) Observe(ctx context.Context, retries int, partyID, nodeID string) (rewardCh <-chan []entities.Delegation, ref uint64) {
-	ch, ref := r.observer.Observe(ctx,
+func (d *Delegation) Observe(ctx context.Context, retries int, partyID, nodeID string) (rewardCh <-chan []entities.Delegation, ref uint64) {
+	ch, ref := d.observer.Observe(ctx,
 		retries,
 		func(dele entities.Delegation) bool {
 			return (len(nodeID) == 0 || nodeID == dele.NodeID.String()) &&
@@ -67,6 +67,6 @@ func (r *Delegation) Observe(ctx context.Context, retries int, partyID, nodeID s
 	return ch, ref
 }
 
-func (r *Delegation) GetDelegationSubscribersCount() int32 {
-	return r.observer.GetSubscribersCount()
+func (d *Delegation) GetDelegationSubscribersCount() int32 {
+	return d.observer.GetSubscribersCount()
 }

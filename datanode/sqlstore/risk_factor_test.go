@@ -31,7 +31,7 @@ func TestRiskFactors(t *testing.T) {
 	t.Run("GetMarketRiskFactors returns the risk factors for the given market id", testGetMarketRiskFactors)
 }
 
-func setupRiskFactorTests(t *testing.T, ctx context.Context) (*sqlstore.Blocks, *sqlstore.RiskFactors, *pgx.Conn) {
+func setupRiskFactorTests(ctx context.Context, t *testing.T) (*sqlstore.Blocks, *sqlstore.RiskFactors, *pgx.Conn) {
 	t.Helper()
 	DeleteEverything()
 
@@ -50,7 +50,7 @@ func testAddRiskFactor(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
-	bs, rfStore, conn := setupRiskFactorTests(t, ctx)
+	bs, rfStore, conn := setupRiskFactorTests(ctx, t)
 
 	var rowCount int
 	err := conn.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)
@@ -74,7 +74,7 @@ func testUpsertDuplicateMarketInSameBlock(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
-	bs, rfStore, conn := setupRiskFactorTests(t, ctx)
+	bs, rfStore, conn := setupRiskFactorTests(ctx, t)
 
 	var rowCount int
 	err := conn.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)
@@ -113,7 +113,7 @@ func testGetMarketRiskFactors(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
-	bs, rfStore, conn := setupRiskFactorTests(t, ctx)
+	bs, rfStore, conn := setupRiskFactorTests(ctx, t)
 
 	var rowCount int
 	err := conn.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)

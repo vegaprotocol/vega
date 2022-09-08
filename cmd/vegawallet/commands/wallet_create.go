@@ -31,22 +31,22 @@ var (
 	`)
 )
 
-type CreateWalletHandler func(api.CreateWalletParams) (api.CreateWalletResult, error)
+type CreateWalletHandler func(api.AdminCreateWalletParams) (api.AdminCreateWalletResult, error)
 
 func NewCmdCreateWallet(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(params api.CreateWalletParams) (api.CreateWalletResult, error) {
+	h := func(params api.AdminCreateWalletParams) (api.AdminCreateWalletResult, error) {
 		s, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
-			return api.CreateWalletResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
+			return api.AdminCreateWalletResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 
-		createWallet := api.NewCreateWallet(s)
+		createWallet := api.NewAdminCreateWallet(s)
 
 		rawResult, errDetails := createWallet.Handle(context.Background(), params)
 		if errDetails != nil {
-			return api.CreateWalletResult{}, errors.New(errDetails.Data)
+			return api.AdminCreateWalletResult{}, errors.New(errDetails.Data)
 		}
-		return rawResult.(api.CreateWalletResult), nil
+		return rawResult.(api.AdminCreateWalletResult), nil
 	}
 
 	return BuildCmdCreateWallet(w, h, rf)
@@ -101,24 +101,24 @@ type CreateWalletFlags struct {
 	PassphraseFile string
 }
 
-func (f *CreateWalletFlags) Validate() (api.CreateWalletParams, error) {
-	req := api.CreateWalletParams{}
+func (f *CreateWalletFlags) Validate() (api.AdminCreateWalletParams, error) {
+	req := api.AdminCreateWalletParams{}
 
 	if len(f.Wallet) == 0 {
-		return api.CreateWalletParams{}, flags.FlagMustBeSpecifiedError("wallet")
+		return api.AdminCreateWalletParams{}, flags.MustBeSpecifiedError("wallet")
 	}
 	req.Wallet = f.Wallet
 
 	passphrase, err := flags.GetConfirmedPassphrase(f.PassphraseFile)
 	if err != nil {
-		return api.CreateWalletParams{}, err
+		return api.AdminCreateWalletParams{}, err
 	}
 	req.Passphrase = passphrase
 
 	return req, nil
 }
 
-func PrintCreateWalletResponse(w io.Writer, resp api.CreateWalletResult) {
+func PrintCreateWalletResponse(w io.Writer, resp api.AdminCreateWalletResult) {
 	p := printer.NewInteractivePrinter(w)
 
 	str := p.String()

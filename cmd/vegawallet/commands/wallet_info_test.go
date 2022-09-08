@@ -28,7 +28,7 @@ func testGetWalletInfoFlagsValidFlagsSucceeds(t *testing.T) {
 		PassphraseFile: passphraseFilePath,
 	}
 
-	expectedReq := api.DescribeWalletParams{
+	expectedReq := api.AdminDescribeWalletParams{
 		Wallet:     walletName,
 		Passphrase: passphrase,
 	}
@@ -53,7 +53,7 @@ func testGetWalletInfoFlagsMissingWalletFails(t *testing.T) {
 	req, err := f.Validate()
 
 	// then
-	assert.ErrorIs(t, err, flags.FlagMustBeSpecifiedError("wallet"))
+	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("wallet"))
 	assert.Empty(t, req)
 }
 

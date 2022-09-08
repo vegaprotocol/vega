@@ -42,8 +42,8 @@ func TestCandleSubscribe(t *testing.T) {
 
 	svc := candlesv2.NewService(context.Background(), logging.NewTestLogger(), candlesv2.NewDefaultConfig(), store)
 
-	candleId := "candle1"
-	_, out1, err := svc.Subscribe(context.Background(), candleId)
+	candleID := "candle1"
+	_, out1, err := svc.Subscribe(context.Background(), candleID)
 	if err != nil {
 		t.Fatalf("failed to Subscribe: %s", err)
 	}
@@ -67,8 +67,8 @@ func TestCandleUnsubscribe(t *testing.T) {
 
 	svc := candlesv2.NewService(context.Background(), logging.NewTestLogger(), candlesv2.NewDefaultConfig(), testStore)
 
-	candleId := "candle1"
-	subscriptionId, out1, err := svc.Subscribe(context.Background(), candleId)
+	candleID := "candle1"
+	subscriptionID, out1, err := svc.Subscribe(context.Background(), candleID)
 	if err != nil {
 		t.Fatalf("failed to Subscribe: %s", err)
 	}
@@ -79,7 +79,7 @@ func TestCandleUnsubscribe(t *testing.T) {
 	candle1 := <-out1
 	assert.Equal(t, expectedCandle, candle1)
 
-	svc.Unsubscribe(subscriptionId)
+	svc.Unsubscribe(subscriptionID)
 
 	_, ok := <-out1
 	assert.False(t, ok, "channel should be closed")
@@ -90,6 +90,6 @@ type testStore struct {
 	candles chan []entities.Candle
 }
 
-func (t *testStore) GetCandleDataForTimeSpan(ctx context.Context, candleId string, from *time.Time, to *time.Time, p entities.CursorPagination) ([]entities.Candle, entities.PageInfo, error) {
+func (t *testStore) GetCandleDataForTimeSpan(ctx context.Context, candleID string, from *time.Time, to *time.Time, p entities.CursorPagination) ([]entities.Candle, entities.PageInfo, error) {
 	return <-t.candles, entities.PageInfo{}, nil
 }

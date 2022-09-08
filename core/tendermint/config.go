@@ -58,7 +58,7 @@ func (c *Config) PublicValidatorKey() (tmcrypto.PubKey, error) {
 	return pubKey, nil
 }
 
-func (c *Config) Genesis() (*tmtypes.GenesisDoc, *genesis.GenesisState, error) {
+func (c *Config) Genesis() (*tmtypes.GenesisDoc, *genesis.State, error) {
 	path := c.config.GenesisFile()
 	data, err := vgfs.ReadFile(path)
 	if err != nil {
@@ -71,7 +71,7 @@ func (c *Config) Genesis() (*tmtypes.GenesisDoc, *genesis.GenesisState, error) {
 		return nil, nil, fmt.Errorf("couldn't unmarshal the genesis document: %w", err)
 	}
 
-	state := &genesis.GenesisState{}
+	state := &genesis.State{}
 
 	if len(doc.AppState) != 0 {
 		if err := json.Unmarshal(doc.AppState, state); err != nil {
@@ -92,7 +92,7 @@ func (c *Config) SaveGenesis(doc *tmtypes.GenesisDoc) error {
 	return nil
 }
 
-func AddAppStateToGenesis(doc *tmtypes.GenesisDoc, state *genesis.GenesisState) error {
+func AddAppStateToGenesis(doc *tmtypes.GenesisDoc, state *genesis.State) error {
 	rawGenesisState, err := json.Marshal(state)
 	if err != nil {
 		return fmt.Errorf("couldn't marshal the genesis state as JSON: %w", err)

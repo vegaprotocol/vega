@@ -105,6 +105,11 @@ func (w *HDWallet) SetName(newName string) {
 	w.name = newName
 }
 
+func (w *HDWallet) HasPublicKey(pubKey string) bool {
+	_, exists := w.keyRing.FindPair(pubKey)
+	return exists
+}
+
 // DescribeKeyPair returns all the information associated with a public key.
 func (w *HDWallet) DescribeKeyPair(pubKey string) (KeyPair, error) {
 	keyPair, ok := w.keyRing.FindPair(pubKey)
@@ -114,8 +119,8 @@ func (w *HDWallet) DescribeKeyPair(pubKey string) (KeyPair, error) {
 	return &keyPair, nil
 }
 
-// GetMasterKeyPair returns all the information associated to a master key pair.
-func (w *HDWallet) GetMasterKeyPair() (MasterKeyPair, error) {
+// MasterKey returns all the information associated to a master key pair.
+func (w *HDWallet) MasterKey() (MasterKeyPair, error) {
 	if w.IsIsolated() {
 		return nil, ErrIsolatedWalletDoesNotHaveMasterKey
 	}
@@ -123,7 +128,7 @@ func (w *HDWallet) GetMasterKeyPair() (MasterKeyPair, error) {
 	pubKey, priKey := w.node.Keypair()
 	keyPair, err := NewHDMasterKeyPair(pubKey, priKey)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get master key pair: %w", err)
+		return nil, err
 	}
 
 	return keyPair, nil
@@ -165,9 +170,7 @@ func (w *HDWallet) ListKeyPairs() []KeyPair {
 
 // GenerateKeyPair generates a new key pair from a node, that is derived from
 // the wallet node.
-func (w *HDWallet) GenerateKeyPair(meta []Meta) (KeyPair, error) {
-	meta = w.addDefaultKeyName(meta)
-
+func (w *HDWallet) GenerateKeyPair(meta []Metadata) (KeyPair, error) {
 	if w.IsIsolated() {
 		return nil, ErrIsolatedWalletCantGenerateKeys
 	}
@@ -184,7 +187,7 @@ func (w *HDWallet) GenerateKeyPair(meta []Meta) (KeyPair, error) {
 		return nil, err
 	}
 
-	keyPair.meta = meta
+	_ = keyPair.UpdateMetadata(meta)
 
 	w.keyRing.Upsert(*keyPair)
 
@@ -223,17 +226,19 @@ func (w *HDWallet) UntaintKey(pubKey string) error {
 	return nil
 }
 
-// UpdateMeta replaces the key's metadata by the new ones.
-func (w *HDWallet) UpdateMeta(pubKey string, meta []Meta) error {
+// AnnotateKey replaces the key's metadata by the new ones.
+// If the `name` metadata is missing it's added automatically with a default.
+func (w *HDWallet) AnnotateKey(pubKey string, meta []Metadata) ([]Metadata, error) {
 	keyPair, ok := w.keyRing.FindPair(pubKey)
 	if !ok {
-		return ErrPubKeyDoesNotExist
+		return nil, ErrPubKeyDoesNotExist
 	}
 
-	keyPair.meta = meta
+	updatedMeta := keyPair.UpdateMetadata(meta)
 
 	w.keyRing.Upsert(keyPair)
-	return nil
+
+	return updatedMeta, nil
 }
 
 func (w *HDWallet) SignAny(pubKey string, data []byte) ([]byte, error) {
@@ -312,6 +317,11 @@ func (w *HDWallet) PurgePermissions() {
 }
 
 func (w *HDWallet) UpdatePermissions(hostname string, perms Permissions) error {
+	// Set defaults.
+	if perms.PublicKeys.Access == "" {
+		perms.PublicKeys.Access = NoAccess
+	}
+
 	if err := ensurePermissionsConsistency(w, perms); err != nil {
 		return fmt.Errorf("inconsistent permissions setup: %w", err)
 	}
@@ -401,26 +411,6 @@ func (w *HDWallet) deriveKeyNodeV2(nextIndex uint32) (*slip10.Node, error) {
 	return keyNode, nil
 }
 
-func (w *HDWallet) addDefaultKeyName(meta []Meta) []Meta {
-	if len(meta) == 0 {
-		meta = []Meta{}
-	}
-
-	for _, m := range meta {
-		if m.Key == KeyNameMeta {
-			return meta
-		}
-	}
-
-	nextID := len(w.ListKeyPairs()) + 1
-
-	meta = append(meta, Meta{
-		Key:   KeyNameMeta,
-		Value: fmt.Sprintf("%s key %d", w.Name(), nextID),
-	})
-	return meta
-}
-
 type jsonHDWallet struct {
 	// The wallet name is retrieved from the file name it is stored in, so no
 	// need to serialize it.
@@ -471,16 +461,20 @@ func ensurePermissionsConsistency(w *HDWallet, perms Permissions) error {
 	if len(perms.PublicKeys.RestrictedKeys) != 0 {
 		existingKeys := w.ListKeyPairs()
 		for _, restrictedKey := range perms.PublicKeys.RestrictedKeys {
-			// Verify the restricted key exists in keys present in the wallet.
-			for _, k := range existingKeys {
-				// If it matches, we try the next one.
-				if k.PublicKey() == restrictedKey {
-					break
-				}
-				return fmt.Errorf("restricted key %s does not exist on wallet", restrictedKey)
+			if err := ensureRestrictedKeyExists(restrictedKey, existingKeys); err != nil {
+				return err
 			}
 		}
 	}
 
 	return nil
+}
+
+func ensureRestrictedKeyExists(restrictedKey string, existingKeys []KeyPair) error {
+	for _, k := range existingKeys {
+		if k.PublicKey() == restrictedKey {
+			return nil
+		}
+	}
+	return fmt.Errorf("restricted key %s does not exist on wallet", restrictedKey)
 }

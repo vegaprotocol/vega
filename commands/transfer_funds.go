@@ -76,6 +76,13 @@ func checkTransfer(cmd *commandspb.Transfer) Errors {
 			if k.OneOff.GetDeliverOn() < 0 {
 				errs.AddForProperty("transfer.kind.deliver_on", ErrMustBePositiveOrZero)
 			}
+			// do not allow for one off transfer to one of the metric based accounts
+			if cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES ||
+				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES ||
+				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES ||
+				cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS {
+				errs.AddForProperty("transfer.account.to", errors.New("transfers to metric-based reward accounts must be recurring transfers that specify a distribution metric"))
+			}
 		case *commandspb.Transfer_Recurring:
 			if k.Recurring.EndEpoch != nil && *k.Recurring.EndEpoch <= 0 {
 				errs.AddForProperty("transfer.kind.end_epoch", ErrMustBePositive)
@@ -98,14 +105,15 @@ func checkTransfer(cmd *commandspb.Transfer) Errors {
 				// check account type is one of the relevant reward accounts
 				if !(cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES ||
 					cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES ||
-					cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES ||
+					cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES ||
 					cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS) {
 					errs.AddForProperty("transfer.kind.dispatch_strategy", ErrIsNotValid)
 				}
-				// check asset for metric is passed
-				if len(k.Recurring.DispatchStrategy.AssetForMetric) <= 0 {
+				// check asset for metric is passed unless it's a market proposer reward
+				if len(k.Recurring.DispatchStrategy.AssetForMetric) <= 0 && cmd.ToAccountType != vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS {
 					errs.AddForProperty("transfer.kind.dispatch_strategy.asset_for_metric", ErrUnknownAsset)
-				} else if !IsVegaPubkey(k.Recurring.DispatchStrategy.AssetForMetric) {
+				}
+				if len(k.Recurring.DispatchStrategy.AssetForMetric) > 0 && !IsVegaPubkey(k.Recurring.DispatchStrategy.AssetForMetric) {
 					errs.AddForProperty("transfer.kind.dispatch_strategy.asset_for_metric", ErrShouldBeAValidVegaID)
 				}
 				// check that that the metric makes sense for the account type
@@ -115,7 +123,7 @@ func checkTransfer(cmd *commandspb.Transfer) Errors {
 				if cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES && k.Recurring.DispatchStrategy.Metric != vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED {
 					errs.AddForProperty("transfer.kind.dispatch_strategy.dispatch_metric", ErrIsNotValid)
 				}
-				if cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES && k.Recurring.DispatchStrategy.Metric != vega.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID {
+				if cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES && k.Recurring.DispatchStrategy.Metric != vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID {
 					errs.AddForProperty("transfer.kind.dispatch_strategy.dispatch_metric", ErrIsNotValid)
 				}
 				if cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS && k.Recurring.DispatchStrategy.Metric != vega.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE {

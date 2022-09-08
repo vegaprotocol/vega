@@ -16,6 +16,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"sync"
 
 	"code.vegaprotocol.io/vega/core/assets/builtin"
@@ -33,16 +34,20 @@ var (
 	ErrUnknownAssetSource = errors.New("unknown asset source")
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/erc20_bridge_view_mock.go -package mocks code.vegaprotocol.io/vega/core/assets ERC20BridgeView
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/assets ERC20BridgeView,Notary
 type ERC20BridgeView interface {
 	FindAsset(asset *types.AssetDetails) error
+}
+
+type Notary interface {
+	StartAggregate(resID string, kind types.NodeSignatureKind, signature []byte)
 }
 
 type Service struct {
 	log *logging.Logger
 	cfg Config
 
-	broker broker.BrokerI
+	broker broker.Interface
 
 	// id to asset
 	// these assets exists and have been save
@@ -58,6 +63,7 @@ type Service struct {
 
 	nodeWallets *nodewallets.NodeWallets
 	ethClient   erc20.ETHClient
+	notary      Notary
 	ass         *assetsSnapshotState
 
 	ethToVega   map[string]string
@@ -71,8 +77,9 @@ func New(
 	cfg Config,
 	nw *nodewallets.NodeWallets,
 	ethClient erc20.ETHClient,
-	broker broker.BrokerI,
+	broker broker.Interface,
 	bridgeView ERC20BridgeView,
+	notary Notary,
 	isValidator bool,
 ) *Service {
 	log = log.Named(namedLogger)
@@ -87,6 +94,7 @@ func New(
 		pendingAssetUpdates: map[string]*Asset{},
 		nodeWallets:         nw,
 		ethClient:           ethClient,
+		notary:              notary,
 		ass: &assetsSnapshotState{
 			changedActive:  true,
 			changedPending: true,
@@ -134,6 +142,29 @@ func (s *Service) Enable(ctx context.Context, assetID string) error {
 
 	s.broker.Send(events.NewAssetEvent(ctx, *asset.Type()))
 	return nil
+}
+
+// EnactPendingAsset the given id for an asset has just been enacted by the governance engine so we
+// now need to generate signatures so that the asset can be listed.
+func (s *Service) EnactPendingAsset(id string) {
+	pa, _ := s.Get(id)
+	var err error
+	var signature []byte
+	if s.isValidator {
+		switch {
+		case pa.IsERC20():
+			asset, _ := pa.ERC20()
+			_, signature, err = asset.SignListAsset()
+			if err != nil {
+				s.log.Panic("couldn't to sign transaction to list asset, is the node properly configured as a validator?",
+					logging.Error(err))
+			}
+		default:
+			s.log.Panic("trying to generate signatures for an unknown asset type")
+		}
+	}
+
+	s.notary.StartAggregate(id, types.NodeSignatureKindAssetNew, signature)
 }
 
 // SetPendingListing update the state of an asset from proposed
@@ -305,6 +336,7 @@ func (s *Service) GetEnabledAssets() []*types.Asset {
 	for _, a := range s.assets {
 		ret = append(ret, a.ToAssetType())
 	}
+	sort.SliceStable(ret, func(i, j int) bool { return ret[i].ID < ret[j].ID })
 	return ret
 }
 
@@ -315,6 +347,7 @@ func (s *Service) getPendingAssets() []*types.Asset {
 	for _, a := range s.pendingAssets {
 		ret = append(ret, a.ToAssetType())
 	}
+	sort.SliceStable(ret, func(i, j int) bool { return ret[i].ID < ret[j].ID })
 	return ret
 }
 
@@ -325,6 +358,7 @@ func (s *Service) getPendingAssetUpdates() []*types.Asset {
 	for _, a := range s.pendingAssetUpdates {
 		ret = append(ret, a.ToAssetType())
 	}
+	sort.SliceStable(ret, func(i, j int) bool { return ret[i].ID < ret[j].ID })
 	return ret
 }
 

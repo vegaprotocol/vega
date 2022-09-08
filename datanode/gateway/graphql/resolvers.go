@@ -347,14 +347,6 @@ func (r *accountUpdateResolver) AssetID(ctx context.Context, obj *types.Account)
 	return obj.Asset, nil
 }
 
-// LiquidityOrder resolver
-
-type myLiquidityOrderResolver VegaResolverRoot
-
-func (r *myLiquidityOrderResolver) Proportion(ctx context.Context, obj *types.LiquidityOrder) (int, error) {
-	return int(obj.Proportion), nil
-}
-
 // LiquidityOrderReference resolver
 
 type myLiquidityOrderReferenceResolver VegaResolverRoot
@@ -1250,7 +1242,7 @@ func makePagination(skip, first, last *int) *protoapi.Pagination {
 	}
 }
 
-func makeApiV2Pagination(skip, first, last *int) *v2.OffsetPagination {
+func makeAPIV2Pagination(skip, first, last *int) *v2.OffsetPagination {
 	var (
 		offset, limit uint64
 		descending    bool
@@ -1431,15 +1423,15 @@ func (r *myPartyResolver) LiquidityProvisionsConnection(
 		mid = *market
 	}
 
-	var refId string
+	var refID string
 	if ref != nil {
-		refId = *ref
+		refID = *ref
 	}
 
 	req := v2.ListLiquidityProvisionsRequest{
 		PartyId:    &partyID,
 		MarketId:   &mid,
-		Reference:  &refId,
+		Reference:  &refID,
 		Pagination: pagination,
 	}
 
@@ -1637,8 +1629,8 @@ func (r *myPartyResolver) Accounts(ctx context.Context, party *types.Party,
 		return nil, errors.New("a party must be specified when querying accounts")
 	}
 	var (
-		marketIds    = []string{}
-		mktId        = ""
+		marketIDs    = []string{}
+		mktID        = ""
 		asst         = ""
 		accountTypes = []types.AccountType{}
 		accTy        = types.AccountType_ACCOUNT_TYPE_UNSPECIFIED
@@ -1646,8 +1638,8 @@ func (r *myPartyResolver) Accounts(ctx context.Context, party *types.Party,
 	)
 
 	if marketID != nil {
-		marketIds = []string{*marketID}
-		mktId = *marketID
+		marketIDs = []string{*marketID}
+		mktID = *marketID
 	}
 
 	if asset != nil {
@@ -1666,7 +1658,7 @@ func (r *myPartyResolver) Accounts(ctx context.Context, party *types.Party,
 	filter := v2.AccountFilter{
 		AssetId:      asst,
 		PartyIds:     []string{party.Id},
-		MarketIds:    marketIds,
+		MarketIds:    marketIDs,
 		AccountTypes: accountTypes,
 	}
 
@@ -1676,7 +1668,7 @@ func (r *myPartyResolver) Accounts(ctx context.Context, party *types.Party,
 		r.log.Error("unable to get Party account",
 			logging.Error(err),
 			logging.String("party-id", party.Id),
-			logging.String("market-id", mktId),
+			logging.String("market-id", mktID),
 			logging.String("asset", asst),
 			logging.String("type", accTy.String()))
 		return nil, customErrorFromStatus(err)
@@ -1699,8 +1691,8 @@ func (r *myPartyResolver) AccountsConnection(ctx context.Context, party *types.P
 		return nil, errors.New("a party must be specified when querying accounts")
 	}
 	var (
-		marketIds    = []string{}
-		mktId        = ""
+		marketIDs    = []string{}
+		mktID        = ""
 		asst         = ""
 		accountTypes = []types.AccountType{}
 		accTy        = types.AccountType_ACCOUNT_TYPE_UNSPECIFIED
@@ -1708,8 +1700,8 @@ func (r *myPartyResolver) AccountsConnection(ctx context.Context, party *types.P
 	)
 
 	if marketID != nil {
-		marketIds = []string{*marketID}
-		mktId = *marketID
+		marketIDs = []string{*marketID}
+		mktID = *marketID
 	}
 
 	if asset != nil {
@@ -1728,7 +1720,7 @@ func (r *myPartyResolver) AccountsConnection(ctx context.Context, party *types.P
 	filter := v2.AccountFilter{
 		AssetId:      asst,
 		PartyIds:     []string{party.Id},
-		MarketIds:    marketIds,
+		MarketIds:    marketIDs,
 		AccountTypes: accountTypes,
 	}
 
@@ -1738,7 +1730,7 @@ func (r *myPartyResolver) AccountsConnection(ctx context.Context, party *types.P
 		r.log.Error("unable to get Party account",
 			logging.Error(err),
 			logging.String("party-id", party.Id),
-			logging.String("market-id", mktId),
+			logging.String("market-id", mktID),
 			logging.String("asset", asst),
 			logging.String("type", accTy.String()))
 		return nil, customErrorFromStatus(err)
@@ -2895,7 +2887,7 @@ func (r *myQueryResolver) GetMarketDataHistoryByID(ctx context.Context, id strin
 		endTime = &e
 	}
 
-	pagination := makeApiV2Pagination(skip, first, last)
+	pagination := makeAPIV2Pagination(skip, first, last)
 
 	return r.getMarketDataHistoryByID(ctx, id, startTime, endTime, pagination)
 }
@@ -2917,14 +2909,6 @@ func (r *myQueryResolver) getMarketData(ctx context.Context, req *v2.GetMarketDa
 	}
 
 	return results, nil
-}
-
-func (r *myQueryResolver) getMarketDataByID(ctx context.Context, id string) ([]*types.MarketData, error) {
-	req := v2.GetMarketDataHistoryByIDRequest{
-		MarketId: id,
-	}
-
-	return r.getMarketData(ctx, &req)
 }
 
 func (r *myQueryResolver) getMarketDataHistoryByID(ctx context.Context, id string, start, end *int64, pagination *v2.OffsetPagination) ([]*types.MarketData, error) {

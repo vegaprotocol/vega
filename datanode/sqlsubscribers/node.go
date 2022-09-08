@@ -60,7 +60,7 @@ func NewNode(store NodeStore, log *logging.Logger) *Node {
 	}
 }
 
-func (_ *Node) Types() []events.Type {
+func (*Node) Types() []events.Type {
 	return []events.Type{events.ValidatorUpdateEvent, events.ValidatorRankingEvent, events.ValidatorScoreEvent, events.KeyRotationEvent}
 }
 
@@ -112,8 +112,8 @@ func (n *Node) consumeRewardScore(ctx context.Context, event ValidatorRewardScor
 }
 
 func (n *Node) consumeKeyRotation(ctx context.Context, event KeyRotationEvent) error {
-	key_rotation := event.KeyRotation()
-	record, err := entities.KeyRotationFromProto(&key_rotation, entities.TxHash(event.TxHash()), n.vegaTime)
+	keyRotation := event.KeyRotation()
+	record, err := entities.KeyRotationFromProto(&keyRotation, entities.TxHash(event.TxHash()), n.vegaTime)
 	if err != nil {
 		return errors.Wrap(err, "converting key rotation proto to database entity failed")
 	}
@@ -122,8 +122,8 @@ func (n *Node) consumeKeyRotation(ctx context.Context, event KeyRotationEvent) e
 }
 
 func (n *Node) consumeEthereumKeyRotation(ctx context.Context, event EthereumKeyRotationEvent) error {
-	key_rotation := event.EthereumKeyRotation()
-	record, err := entities.EthereumKeyRotationFromProto(&key_rotation, entities.TxHash(event.TxHash()), n.vegaTime)
+	keyRotation := event.EthereumKeyRotation()
+	record, err := entities.EthereumKeyRotationFromProto(&keyRotation, entities.TxHash(event.TxHash()), n.vegaTime)
 	if err != nil {
 		return errors.Wrap(err, "converting ethereum key rotation proto to database entity failed")
 	}

@@ -30,7 +30,7 @@ func testDeleteWalletFlagsValidFlagsSucceeds(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
-	assert.Equal(t, api.RemoveWalletParams{
+	assert.Equal(t, api.AdminRemoveWalletParams{
 		Wallet: walletName,
 	}, params)
 }
@@ -44,7 +44,7 @@ func testDeleteWalletFlagsMissingWalletFails(t *testing.T) {
 	params, err := f.Validate()
 
 	// then
-	assert.ErrorIs(t, err, flags.FlagMustBeSpecifiedError("wallet"))
+	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("wallet"))
 	assert.Empty(t, params)
 }
 

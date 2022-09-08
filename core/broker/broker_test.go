@@ -533,7 +533,6 @@ func testSkipSubscriberBasedOnChannelState(t *testing.T) {
 	// its state, we will use an unbuffered (blocking) channel to wait until
 	// we unblock it by sending a signal, or it timeouts.
 	waiter := newWaiter()
-	defer waiter.Terminate()
 
 	// First, we add the subscriber to the broker.
 	sub := mocks.NewMockSubscriber(broker.ctrl)
@@ -788,9 +787,8 @@ func (e evt) StreamMessage() *eventspb.BusEvent {
 }
 
 type waiter struct {
-	ctx      context.Context
-	ch       chan struct{}
-	cancelFn context.CancelFunc
+	ch  chan struct{}
+	ctx context.Context
 }
 
 func (c *waiter) Unblock() {
@@ -808,34 +806,22 @@ func (c *waiter) Wait() error {
 	}
 }
 
-func (c *waiter) Terminate() {
-	c.cancelFn()
-}
-
 // newWaiter waits until it's unblocked or after 30 seconds elapsed, so we
 // don't block the tests.
 func newWaiter() *waiter {
 	ch := make(chan struct{}, 1)
-	ctx, cancelFn := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancelFn := context.WithCancel(context.Background())
+	ticker := time.NewTicker(30 * time.Second)
 
 	go func() {
-		running := true
-		for running {
-			select {
-			case <-ctx.Done():
-				// Timeout!
-				running = false
-			}
-		}
-		select {
-		// In case the channel is already closed.
-		case <-ch:
-			close(ch)
-		}
+		<-ticker.C
+		cancelFn()
+		ticker.Stop()
+		close(ch)
 	}()
+
 	return &waiter{
-		ch:       ch,
-		ctx:      ctx,
-		cancelFn: cancelFn,
+		ch:  ch,
+		ctx: ctx,
 	}
 }

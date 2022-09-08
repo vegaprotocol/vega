@@ -5,7 +5,7 @@ import (
 
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
-	"code.vegaprotocol.io/vega/wallet/wallet"
+	"code.vegaprotocol.io/vega/wallet/api"
 	"github.com/stretchr/testify/require"
 )
 
@@ -41,7 +41,7 @@ func TestRotateKeySucceeds(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	AssertGenerateKey(t, generateKeyResp).
-		WithMeta(map[string]string{"name": "key-2", "role": "validation"})
+		WithMetadata(map[string]string{"name": "key-2", "role": "validation"})
 
 	// when
 	resp, err := KeyRotate(t, []string{
@@ -93,7 +93,7 @@ func TestRotateKeyFailsOnTaintedPublicKey(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	AssertGenerateKey(t, generateKeyResp).
-		WithMeta(map[string]string{"name": "key-2", "role": "validation"})
+		WithMetadata(map[string]string{"name": "key-2", "role": "validation"})
 
 	// when
 	err = KeyTaint(t, []string{
@@ -122,7 +122,7 @@ func TestRotateKeyFailsOnTaintedPublicKey(t *testing.T) {
 
 	// then
 	require.Nil(t, resp)
-	require.ErrorIs(t, err, wallet.ErrPubKeyIsTainted)
+	require.EqualError(t, err, api.ErrNextPublicKeyIsTainted.Error())
 }
 
 func TestRotateKeyFailsInIsolatedWallet(t *testing.T) {
@@ -175,7 +175,7 @@ func TestRotateKeyFailsInIsolatedWallet(t *testing.T) {
 
 	// then
 	require.Nil(t, resp)
-	require.ErrorIs(t, err, wallet.ErrCantRotateKeyInIsolatedWallet)
+	require.EqualError(t, err, api.ErrCannotRotateKeysOnIsolatedWallet.Error())
 }
 
 func TestRotateKeyFailsOnNonExitingNewPublicKey(t *testing.T) {
@@ -205,7 +205,7 @@ func TestRotateKeyFailsOnNonExitingNewPublicKey(t *testing.T) {
 		"--wallet", walletName,
 		"--chain-id", "testnet",
 		"--passphrase-file", passphraseFilePath,
-		"--current-pubkey", "current-public-key",
+		"--current-pubkey", createWalletResp.Key.PublicKey,
 		"--new-pubkey", "nonexisting",
 		"--tx-height", "20",
 		"--target-height", "25",
@@ -213,7 +213,7 @@ func TestRotateKeyFailsOnNonExitingNewPublicKey(t *testing.T) {
 
 	// then
 	require.Nil(t, KeyRotateResp)
-	require.ErrorIs(t, err, wallet.ErrPubKeyDoesNotExist)
+	require.EqualError(t, err, api.ErrNextPublicKeyDoesNotExist.Error())
 }
 
 func TestRotateKeyFailsOnNonExitingCurrentPublicKey(t *testing.T) {
@@ -251,7 +251,7 @@ func TestRotateKeyFailsOnNonExitingCurrentPublicKey(t *testing.T) {
 
 	// then
 	require.Nil(t, keyRotateResp)
-	require.ErrorIs(t, err, wallet.ErrPubKeyDoesNotExist)
+	require.EqualError(t, err, api.ErrCurrentPublicKeyDoesNotExist.Error())
 }
 
 func TestRotateKeyFailsOnNonExitingWallet(t *testing.T) {
@@ -267,18 +267,18 @@ func TestRotateKeyFailsOnNonExitingWallet(t *testing.T) {
 		"--wallet", walletName,
 		"--chain-id", "testnet",
 		"--passphrase-file", passphraseFilePath,
-		"--new-pubkey", "nonexisting",
-		"--current-pubkey", "nonexisting",
+		"--new-pubkey", "nonexisting1",
+		"--current-pubkey", "nonexisting2",
 		"--tx-height", "20",
 		"--target-height", "25",
 	})
 
 	// then
 	require.Nil(t, keyRotateResp)
-	require.ErrorIs(t, err, wallet.ErrWalletDoesNotExists)
+	require.EqualError(t, err, api.ErrWalletDoesNotExist.Error())
 }
 
-func TestRotateKeyFailsWhenTargetHeighIsLessnThanTxHeight(t *testing.T) {
+func TestRotateKeyFailsWhenTargetHeightIsLessThanTxHeight(t *testing.T) {
 	// given
 	home := t.TempDir()
 	_, passphraseFilePath := NewPassphraseFile(t, home)
@@ -313,5 +313,5 @@ func TestRotateKeyFailsWhenTargetHeighIsLessnThanTxHeight(t *testing.T) {
 
 	// then
 	require.Nil(t, keyRotateResp)
-	require.ErrorIs(t, err, flags.FlagRequireLessThanFlagError("tx-height", "target-height"))
+	require.ErrorIs(t, err, flags.RequireLessThanFlagError("tx-height", "target-height"))
 }

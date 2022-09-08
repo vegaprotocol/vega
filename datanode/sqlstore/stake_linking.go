@@ -32,7 +32,7 @@ type StakeLinking struct {
 
 const (
 	sqlStakeLinkingColumns = `id, stake_linking_type, ethereum_timestamp, party_id, amount, stake_linking_status, finalized_at,
-foreign_tx_hash, log_index, ethereum_address, tx_hash, vega_time`
+foreign_tx_hash, foreign_block_height, foreign_block_time, log_index, ethereum_address, tx_hash, vega_time`
 )
 
 var stakeLinkingOrdering = TableOrdering{
@@ -49,7 +49,7 @@ func NewStakeLinking(connectionSource *ConnectionSource) *StakeLinking {
 func (s *StakeLinking) Upsert(ctx context.Context, stake *entities.StakeLinking) error {
 	defer metrics.StartSQLQuery("StakeLinking", "Upsert")()
 	query := fmt.Sprintf(`insert into stake_linking (%s)
-values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 on conflict (id, vega_time) do update
 set
 	stake_linking_type=EXCLUDED.stake_linking_type,
@@ -59,13 +59,15 @@ set
 	stake_linking_status=EXCLUDED.stake_linking_status,
 	finalized_at=EXCLUDED.finalized_at,
 	foreign_tx_hash=EXCLUDED.foreign_tx_hash,
+	foreign_block_height=EXCLUDED.foreign_block_height,
+	foreign_block_time=EXCLUDED.foreign_block_time,
 	log_index=EXCLUDED.log_index,
 	ethereum_address=EXCLUDED.ethereum_address,
 	tx_hash=EXCLUDED.tx_hash
 	`, sqlStakeLinkingColumns)
 
 	if _, err := s.Connection.Exec(ctx, query, stake.ID, stake.StakeLinkingType, stake.EthereumTimestamp, stake.PartyID, stake.Amount,
-		stake.StakeLinkingStatus, stake.FinalizedAt, stake.ForeignTxHash, stake.LogIndex,
+		stake.StakeLinkingStatus, stake.FinalizedAt, stake.ForeignTxHash, stake.ForeignBlockHeight, stake.ForeignBlockTime, stake.LogIndex,
 		stake.EthereumAddress, stake.TxHash, stake.VegaTime); err != nil {
 		return err
 	}

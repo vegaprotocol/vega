@@ -4,12 +4,15 @@
 
 ### 🚨 Breaking changes
 - [5989](https://github.com/vegaprotocol/vega/issues/5989) - Remove liquidity commitment from market proposal 
+- [6031](https://github.com/vegaprotocol/vega/issues/6031) - Remove market name from `graphql` market type
+- [6095](https://github.com/vegaprotocol/vega/issues/6095) - Rename taker fees to maker paid fees
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
 - [5694](https://github.com/vegaprotocol/vega/issues/5694) - Add field `settlementPriceDecimals` to GraphQL `Future` and `FutureProduct` types
+- [6048](https://github.com/vegaprotocol/vega/issues/6048) - Upgrade `golangci-lint` to `1.49.0` and implement its suggestions
 - [5807](https://github.com/vegaprotocol/vega/issues/5807) - Add Vega tools: `stream`, `snapshot` and `checkpoint`
 - [5678](https://github.com/vegaprotocol/vega/issues/5678) - Add GraphQL endpoints for Ethereum bundles: `listAsset`, `updateAsset`, `addSigner` and `removeSigner`
 - [5881](https://github.com/vegaprotocol/vega/issues/5881) - Return account subscription as a list
@@ -22,6 +25,7 @@
 - [5937](https://github.com/vegaprotocol/vega/issues/5937) - Add more flexibility to market creation bonus 
 - [5708](https://github.com/vegaprotocol/vega/issues/5708) - Use market price when reporting average trade price
 - [5949](https://github.com/vegaprotocol/vega/issues/5949) - Transfers processed in the order they were received
+- [5966](https://github.com/vegaprotocol/vega/issues/5966) - Do not send transaction from wallet if `chainID` is empty
 - [5675](https://github.com/vegaprotocol/vega/issues/5675) - Add transaction information to all database tables
 - [6004](https://github.com/vegaprotocol/vega/issues/6004) - Probability of trading refactoring
 - [5849](https://github.com/vegaprotocol/vega/issues/5849) - Use network parameter from creation time of the proposal for requirements
@@ -29,15 +33,25 @@
 - [5999](https://github.com/vegaprotocol/vega/issues/5999) - Recalculate margins after risk parameters are updated.
 - [5682](https://github.com/vegaprotocol/vega/issues/5682) - Expose equity share weight in the API
 - [5684](https://github.com/vegaprotocol/vega/issues/5684) - Added date range to a number of historic balances, deposits, withdrawals, orders and trades queries
+- [6071](https://github.com/vegaprotocol/vega/issues/6071) - Allow for empty settlement asset in recurring transfer metric definition for market proposer bonus
+- [6042](https://github.com/vegaprotocol/vega/issues/5270) - Set GraphQL query complexity limit
 
 ### 🐛 Fixes
 - [5934](https://github.com/vegaprotocol/vega/issues/5934) - Ensure wallet without permissions can be read
 - [5950](https://github.com/vegaprotocol/vega/issues/5934) - Fix documentation for new wallet command
+- [5687](https://github.com/vegaprotocol/vega/issues/5934) - Asset cache was returning stale data
 - [5986](https://github.com/vegaprotocol/vega/issues/5986) - Error string on failed transaction is sent in the plain, no need to decode
+- [5860](https://github.com/vegaprotocol/vega/issues/5860) - Enacted but unlisted new assets are now included in checkpoints
 - [6023](https://github.com/vegaprotocol/vega/issues/6023) - Tell the `datanode` when a genesis validator does not exist in a `checkpoint`
 - [5963](https://github.com/vegaprotocol/vega/issues/5963) - Check other nodes during version check if the first one is unavailable
 - [6002](https://github.com/vegaprotocol/vega/issues/6002) - Do not emit events for unmatched oracle data and unsubscribe market as soon as oracle data is received
 - [6008](https://github.com/vegaprotocol/vega/issues/6008) - Fix equity like share and average trade value calculation with opening auctions
+- [6040](https://github.com/vegaprotocol/vega/issues/6040) - Fix protocol upgrade transaction submission and small Visor improvements
+- [5977](https://github.com/vegaprotocol/vega/issues/5977) - Fix missing block height and block time on stake linking API
+- [6054](https://github.com/vegaprotocol/vega/issues/6054) - Fix panic on settlement
+- [6060](https://github.com/vegaprotocol/vega/issues/6060) - Fix connection results should not be declared as mandatory in GQL schema.
+- [6097](https://github.com/vegaprotocol/vega/issues/6067) - Fix incorrect asset (metric asset) used for checking market proposer eligibility
+- [6099](https://github.com/vegaprotocol/vega/issues/6099) - Allow recurring transfers with the same to and from but with different asset
 
 ## 0.54.0
 
@@ -1695,6 +1709,7 @@ This release contains a lot of groundwork for Fees and Auction mode.
 - [#1990](https://github.com/vegaprotocol/vega/pull/1990) Remove specified `tickSize` from market
 - [#2066](https://github.com/vegaprotocol/vega/pull/2066) Fix validation of proposal timestamps to ensure that datestamps specify events in the correct order
 - [#2043](https://github.com/vegaprotocol/vega/pull/2043) Track Event Queue events to avoid processing events from other chains twice
+
 ## 0.22.0
 
 ### 🐛 Bugfixes

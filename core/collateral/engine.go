@@ -75,6 +75,7 @@ type Broker interface {
 }
 
 // TimeService provide the time of the vega node.
+//
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/core/collateral TimeService
 type TimeService interface {
 	GetTimeNow() time.Time
@@ -1539,7 +1540,7 @@ func (e *Engine) getTransferFundsTransferRequest(
 			}
 
 		// this could not exists as well, let's just create in this case
-		case types.AccountTypeGlobalReward, types.AccountTypeLPFeeReward, types.AccountTypeMakerFeeReward, types.AccountTypeTakerFeeReward, types.AccountTypeMarketProposerReward:
+		case types.AccountTypeGlobalReward, types.AccountTypeLPFeeReward, types.AccountTypeMakerReceivedFeeReward, types.AccountTypeMakerPaidFeeReward, types.AccountTypeMarketProposerReward:
 			market := noMarket
 			if len(t.Market) > 0 {
 				market = t.Market

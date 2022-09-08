@@ -39,7 +39,7 @@ func TestGenerateKey(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	AssertDescribeKey(t, descResp).
-		WithMeta(map[string]string{"name": DefaultMetaName(t, walletName, 1)}).
+		WithMeta(map[string]string{"name": "Key 1"}).
 		WithAlgorithm("vega/ed25519", 1).
 		WithTainted(false)
 
@@ -55,7 +55,7 @@ func TestGenerateKey(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	AssertGenerateKey(t, generateKeyResp).
-		WithMeta(map[string]string{"name": "key-2", "role": "validation"})
+		WithMetadata(map[string]string{"name": "key-2", "role": "validation"})
 
 	// when
 	descResp, err = KeyDescribe(t, []string{

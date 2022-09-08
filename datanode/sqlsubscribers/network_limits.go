@@ -49,7 +49,7 @@ func NewNetworkLimitSub(
 	return t
 }
 
-func (t *NetworkLimits) Types() []events.Type {
+func (nl *NetworkLimits) Types() []events.Type {
 	return []events.Type{events.NetworkLimitsEvent}
 }
 

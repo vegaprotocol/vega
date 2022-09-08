@@ -151,8 +151,8 @@ func testSubmissionCRUD(t *testing.T) {
 	lps, err := types.LiquidityProvisionSubmissionFromProto(lps1)
 	require.NoError(t, err)
 
-	determisticId := crypto.RandomHash()
-	idGen := idgeneration.New(determisticId)
+	deterministicID := crypto.RandomHash()
+	idGen := idgeneration.New(deterministicID)
 
 	lpID := idGen.NextID()
 	order1 := &types.Order{}
@@ -184,7 +184,7 @@ func testSubmissionCRUD(t *testing.T) {
 		events.NewLiquidityProvisionEvent(ctx, expected),
 	).Times(1)
 
-	idgen := idgeneration.New(determisticId)
+	idgen := idgeneration.New(deterministicID)
 	require.NoError(t,
 		tng.engine.SubmitLiquidityProvision(ctx, lps, party, idgen))
 	got := tng.engine.LiquidityProvisionByPartyID(party)

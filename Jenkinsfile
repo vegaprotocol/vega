@@ -61,6 +61,7 @@ pipeline {
                 echo "isPRBuild=${isPRBuild()}"
                 script {
                     params = pr.injectPRParams()
+                    originRepo = pr.getOriginRepo('vegaprotocol/vega')
                 }
                 echo "params (after injection)=${params}"
             }
@@ -97,6 +98,7 @@ pipeline {
         }
 
         stage('Docker login') {
+            options { retry(3) }
             steps {
                 withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                     sh label: 'docker login ghcr.io', script: '''#!/bin/bash -e
@@ -151,15 +153,6 @@ pipeline {
         //
         stage('Linters') {
             parallel {
-                stage('linters') {
-                    steps {
-                        dir('vega') {
-                            sh '''#!/bin/bash -e
-                                golangci-lint run -v --config .golangci.toml
-                            '''
-                        }
-                    }
-                }
                 stage('shellcheck') {
                     options { retry(3) }
                     steps {
@@ -212,6 +205,7 @@ pipeline {
                     steps {
                         script {
                             runApprobation ignoreFailure: !isPRBuild(),
+                                originRepo: originRepo,
                                 vegaVersion: commitHash
                         }
                     }
@@ -356,6 +350,7 @@ pipeline {
                         script {
                             vegaMarketSim ignoreFailure: true,
                                 timeout: 45,
+                                originRepo: originRepo,
                                 vegaVersion: commitHash,
                                 vegaMarketSim: params.VEGA_MARKET_SIM_BRANCH,
                                 jenkinsSharedLib: params.JENKINS_SHARED_LIB_BRANCH
@@ -367,6 +362,7 @@ pipeline {
                         script {
                             systemTestsCapsule ignoreFailure: !isPRBuild(),
                                 timeout: 30,
+                                originRepo: originRepo,
                                 vegaVersion: commitHash,
                                 systemTests: params.SYSTEM_TESTS_BRANCH,
                                 vegacapsule: params.VEGACAPSULE_BRANCH,
@@ -470,6 +466,16 @@ pipeline {
                 DOCKER_IMAGE_TAG_VERSION = "${ env.TAG_NAME ?: versionHash }"
             }
             parallel {
+                stage('publish to vega-dev-releases') {
+                    when {
+                        branch 'develop'
+                    }
+                    options { retry(3) }
+                    steps {
+                        startVegaDevRelease vegaVersion: versionHash,
+                            jenkinsSharedLib: params.JENKINS_SHARED_LIB_BRANCH
+                    }
+                }
                 stage('vega docker image') {
                     when {
                         branch 'develop'

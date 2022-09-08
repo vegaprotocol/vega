@@ -20,7 +20,7 @@ var (
 
 func ValidateOutput(output string) error {
 	if len(output) == 0 {
-		return FlagMustBeSpecifiedError("output")
+		return MustBeSpecifiedError("output")
 	}
 
 	for _, o := range AvailableOutputs {

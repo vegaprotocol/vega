@@ -26,14 +26,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-type SqlBrokerSubscriber interface {
+type SQLBrokerSubscriber interface {
 	SetVegaTime(vegaTime time.Time)
 	Flush(ctx context.Context) error
 	Push(ctx context.Context, val events.Event) error
 	Types() []events.Type
 }
 
-type SqlStoreEventBroker interface {
+type SQLStoreEventBroker interface {
 	Receive(ctx context.Context) error
 }
 
@@ -52,8 +52,8 @@ type BlockStore interface {
 type sqlStoreBroker struct {
 	config             Config
 	log                *logging.Logger
-	subscribers        []SqlBrokerSubscriber
-	typeToSubs         map[events.Type][]SqlBrokerSubscriber
+	subscribers        []SQLBrokerSubscriber
+	typeToSubs         map[events.Type][]SQLBrokerSubscriber
 	eventSource        eventSource
 	transactionManager TransactionManager
 	blockStore         BlockStore
@@ -61,14 +61,15 @@ type sqlStoreBroker struct {
 	lastBlock          *entities.Block
 }
 
-func NewSqlStoreBroker(log *logging.Logger, config Config, chainInfo ChainInfoI,
-	eventsource eventSource, transactionManager TransactionManager, blockStore BlockStore, subs ...SqlBrokerSubscriber,
+//revive:disable:unexported-return
+func NewSQLStoreBroker(log *logging.Logger, config Config, chainInfo ChainInfoI,
+	eventsource eventSource, transactionManager TransactionManager, blockStore BlockStore, subs ...SQLBrokerSubscriber,
 ) *sqlStoreBroker {
 	b := &sqlStoreBroker{
 		config:             config,
 		log:                log,
 		subscribers:        subs,
-		typeToSubs:         map[events.Type][]SqlBrokerSubscriber{},
+		typeToSubs:         map[events.Type][]SQLBrokerSubscriber{},
 		eventSource:        eventsource,
 		transactionManager: transactionManager,
 		blockStore:         blockStore,
@@ -222,10 +223,9 @@ func (b *sqlStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 				}
 
 				return entities.BlockFromTimeUpdate(timeUpdate)
-			} else {
-				if err = b.handleEvent(blockCtx, e); err != nil {
-					return nil, err
-				}
+			}
+			if err = b.handleEvent(blockCtx, e); err != nil {
+				return nil, err
 			}
 		}
 	}
@@ -274,7 +274,7 @@ func (b *sqlStoreBroker) handleEvent(ctx context.Context, e events.Event) error 
 	return nil
 }
 
-func (b *sqlStoreBroker) push(ctx context.Context, sub SqlBrokerSubscriber, e events.Event) error {
+func (b *sqlStoreBroker) push(ctx context.Context, sub SQLBrokerSubscriber, e events.Event) error {
 	subName := reflect.TypeOf(sub).Elem().Name()
 	timer := metrics.NewTimeCounter("sql", subName, e.Type().String())
 	err := sub.Push(ctx, e)
@@ -303,7 +303,7 @@ func (t *blockTimer) startTimer() {
 
 func (t *blockTimer) stopTimer() {
 	if t.startTime != nil {
-		t.duration = t.duration + time.Now().Sub(*t.startTime)
+		t.duration = t.duration + time.Since(*t.startTime)
 		t.startTime = nil
 	}
 }

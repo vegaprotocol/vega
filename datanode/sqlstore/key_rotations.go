@@ -78,10 +78,10 @@ func (store *KeyRotations) GetAllPubKeyRotations(ctx context.Context, pagination
 	return keyRotations, pageInfo, nil
 }
 
-func (store *KeyRotations) GetPubKeyRotationsPerNode(ctx context.Context, nodeId string, pagination entities.CursorPagination) ([]entities.KeyRotation, entities.PageInfo, error) {
+func (store *KeyRotations) GetPubKeyRotationsPerNode(ctx context.Context, nodeID string, pagination entities.CursorPagination) ([]entities.KeyRotation, entities.PageInfo, error) {
 	defer metrics.StartSQLQuery("KeyRotations", "GetPubKeyRotationsPerNode")()
 	var pageInfo entities.PageInfo
-	id := entities.NodeID(nodeId)
+	id := entities.NodeID(nodeID)
 	keyRotations := []entities.KeyRotation{}
 
 	sorting, cmp, cursor := extractPaginationInfo(pagination)

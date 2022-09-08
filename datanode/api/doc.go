@@ -16,12 +16,12 @@
 // and response messages), then add the endpoint function implementation in
 // `api/somefile.go`. Example:
 //
-//     func (s *tradingService) SomeNewEndpoint(
-//         ctx context.Context, req *protoapi.SomeNewEndpointRequest,
-//     ) (*protoapi.SomeNewEndpointResponse, error) {
-//         /* Implementation goes here */
-//         return &protoapi.SomeNewEndpointResponse{/* ... */}, nil
-//     }
+//	func (s *tradingService) SomeNewEndpoint(
+//	    ctx context.Context, req *protoapi.SomeNewEndpointRequest,
+//	) (*protoapi.SomeNewEndpointResponse, error) {
+//	    /* Implementation goes here */
+//	    return &protoapi.SomeNewEndpointResponse{/* ... */}, nil
+//	}
 //
 // Add a test for the newly created endpoint in `api/trading_test.go`.
 package api

@@ -9,11 +9,12 @@ import (
 )
 
 type HDPublicKey struct {
-	Idx       uint32    `json:"index"`
-	PublicKey string    `json:"pub"`
-	Algorithm Algorithm `json:"algorithm"`
-	Tainted   bool      `json:"tainted"`
-	MetaList  []Meta    `json:"meta"`
+	Idx          uint32     `json:"index"`
+	PublicKey    string     `json:"key"`
+	KeyName      string     `json:"name"`
+	Algorithm    Algorithm  `json:"algorithm"`
+	Tainted      bool       `json:"tainted"`
+	MetadataList []Metadata `json:"metadata"`
 }
 
 func (k *HDPublicKey) Index() uint32 {
@@ -24,12 +25,16 @@ func (k *HDPublicKey) Key() string {
 	return k.PublicKey
 }
 
+func (k *HDPublicKey) Name() string {
+	return k.KeyName
+}
+
 func (k *HDPublicKey) IsTainted() bool {
 	return k.Tainted
 }
 
-func (k *HDPublicKey) Meta() []Meta {
-	return k.MetaList
+func (k *HDPublicKey) Metadata() []Metadata {
+	return k.MetadataList
 }
 
 func (k *HDPublicKey) AlgorithmVersion() uint32 {

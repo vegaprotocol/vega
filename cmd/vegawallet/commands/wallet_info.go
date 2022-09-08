@@ -26,21 +26,21 @@ var (
 	`)
 )
 
-type GetInfoWalletHandler func(params api.DescribeWalletParams) (api.DescribeWalletResult, error)
+type GetInfoWalletHandler func(params api.AdminDescribeWalletParams) (api.AdminDescribeWalletResult, error)
 
 func NewCmdGetInfoWallet(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(params api.DescribeWalletParams) (api.DescribeWalletResult, error) {
+	h := func(params api.AdminDescribeWalletParams) (api.AdminDescribeWalletResult, error) {
 		s, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
-			return api.DescribeWalletResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
+			return api.AdminDescribeWalletResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 
-		describeWallet := api.NewDescribeWallet(s)
+		describeWallet := api.NewAdminDescribeWallet(s)
 		rawResult, errorDetails := describeWallet.Handle(context.Background(), params)
 		if errorDetails != nil {
-			return api.DescribeWalletResult{}, errors.New(errorDetails.Data)
+			return api.AdminDescribeWalletResult{}, errors.New(errorDetails.Data)
 		}
-		return rawResult.(api.DescribeWalletResult), nil
+		return rawResult.(api.AdminDescribeWalletResult), nil
 	}
 	return BuildCmdGetInfoWallet(w, h, rf)
 }
@@ -96,24 +96,24 @@ type GetWalletInfoFlags struct {
 	PassphraseFile string
 }
 
-func (f *GetWalletInfoFlags) Validate() (api.DescribeWalletParams, error) {
-	req := api.DescribeWalletParams{}
+func (f *GetWalletInfoFlags) Validate() (api.AdminDescribeWalletParams, error) {
+	req := api.AdminDescribeWalletParams{}
 
 	if len(f.Wallet) == 0 {
-		return api.DescribeWalletParams{}, flags.FlagMustBeSpecifiedError("wallet")
+		return api.AdminDescribeWalletParams{}, flags.MustBeSpecifiedError("wallet")
 	}
 	req.Wallet = f.Wallet
 
 	passphrase, err := flags.GetPassphrase(f.PassphraseFile)
 	if err != nil {
-		return api.DescribeWalletParams{}, err
+		return api.AdminDescribeWalletParams{}, err
 	}
 	req.Passphrase = passphrase
 
 	return req, nil
 }
 
-func PrintGetWalletInfoResponse(w io.Writer, resp api.DescribeWalletResult) {
+func PrintGetWalletInfoResponse(w io.Writer, resp api.AdminDescribeWalletResult) {
 	p := printer.NewInteractivePrinter(w)
 
 	str := p.String()

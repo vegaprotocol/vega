@@ -6,7 +6,7 @@ import (
 	cmd "code.vegaprotocol.io/vega/cmd/vegawallet/commands"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
-	"code.vegaprotocol.io/vega/wallet/wallet"
+	"code.vegaprotocol.io/vega/wallet/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -27,13 +27,13 @@ func testKeyDescribeValidFlagsSucceeds(t *testing.T) {
 	f := &cmd.DescribeKeyFlags{
 		Wallet:         walletName,
 		PassphraseFile: passphraseFilePath,
-		PubKey:         pubKey,
+		PublicKey:      pubKey,
 	}
 
-	expectedReq := &wallet.DescribeKeyRequest{
+	expectedReq := api.AdminDescribeKeyParams{
 		Wallet:     walletName,
 		Passphrase: passphrase,
-		PubKey:     pubKey,
+		PublicKey:  pubKey,
 	}
 
 	// when
@@ -41,7 +41,6 @@ func testKeyDescribeValidFlagsSucceeds(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
-	require.NotNil(t, req)
 	assert.Equal(t, expectedReq, req)
 }
 
@@ -55,15 +54,15 @@ func testKeyMissingWalletFails(t *testing.T) {
 
 	f := &cmd.DescribeKeyFlags{
 		PassphraseFile: passphraseFilePath,
-		PubKey:         pubKey,
+		PublicKey:      pubKey,
 	}
 
 	// when
 	req, err := f.Validate()
 
 	// then
-	assert.ErrorIs(t, err, flags.FlagMustBeSpecifiedError("wallet"))
-	require.Nil(t, req)
+	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("wallet"))
+	require.Empty(t, req)
 }
 
 func testKeyMissingPublicKeyFails(t *testing.T) {
@@ -83,6 +82,6 @@ func testKeyMissingPublicKeyFails(t *testing.T) {
 	req, err := f.Validate()
 
 	// then
-	assert.ErrorIs(t, err, flags.FlagMustBeSpecifiedError("pubkey"))
-	require.Nil(t, req)
+	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("pubkey"))
+	require.Empty(t, req)
 }

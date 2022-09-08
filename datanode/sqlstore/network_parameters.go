@@ -37,9 +37,9 @@ func NewNetworkParameters(connectionSource *ConnectionSource) *NetworkParameters
 	return p
 }
 
-func (ps *NetworkParameters) Add(ctx context.Context, r entities.NetworkParameter) error {
+func (np *NetworkParameters) Add(ctx context.Context, r entities.NetworkParameter) error {
 	defer metrics.StartSQLQuery("NetworkParameters", "Add")()
-	_, err := ps.Connection.Exec(ctx,
+	_, err := np.Connection.Exec(ctx,
 		`INSERT INTO network_parameters(
 			key,
 			value,

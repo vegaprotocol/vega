@@ -33,22 +33,22 @@ const (
 	orderAId   = "787B72CB5DD7A5EA869E49F361CF957DF747F849B4ACE88ABC6DA0F9C450AFDD"
 	orderBId   = "83dc82be23c77daec384a239143f07f83c667acf60d734745b023c6567e7b57b"
 
-	tradeId1 = "0bd678723c33b059638953e0904d2ddbd78c2be72ab25a8753a622911c2d9c78"
-	tradeId2 = "af2bb48edd738353fcd7a2b6cea4821dd2382ec95497954535278dfbfff7b5b5"
-	tradeId3 = "3d4ed10064b7cedbc8a37316f7329f853c9588b6a55006ffb8bec3f1a4ccc88e"
-	tradeId4 = "8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8"
-	tradeId5 = "8b6be1a03cc4d529f682887a78b66e6879d17f81e2b37356ca0acbc5d5886eb8"
-	tradeId6 = "8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8"
+	tradeID1 = "0bd678723c33b059638953e0904d2ddbd78c2be72ab25a8753a622911c2d9c78"
+	tradeID2 = "af2bb48edd738353fcd7a2b6cea4821dd2382ec95497954535278dfbfff7b5b5"
+	tradeID3 = "3d4ed10064b7cedbc8a37316f7329f853c9588b6a55006ffb8bec3f1a4ccc88e"
+	tradeID4 = "8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8"
+	tradeID5 = "8b6be1a03cc4d529f682887a78b66e6879d17f81e2b37356ca0acbc5d5886eb8"
+	tradeID6 = "8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8"
 )
 
 func TestStorage_GetTradesByOrderId(t *testing.T) {
 	market := testMarket
 
-	GetTradesByOrderIdAndMarket(t, &market)
-	GetTradesByOrderIdAndMarket(t, nil)
+	GetTradesByOrderIDAndMarket(t, &market)
+	GetTradesByOrderIDAndMarket(t, nil)
 }
 
-func GetTradesByOrderIdAndMarket(t *testing.T, market *string) {
+func GetTradesByOrderIDAndMarket(t *testing.T, market *string) {
 	t.Helper()
 	defer DeleteEverything()
 
@@ -60,12 +60,12 @@ func GetTradesByOrderIdAndMarket(t *testing.T, market *string) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, 6, len(trades))
-	assert.Equal(t, tradeId1, trades[0].ID.String())
-	assert.Equal(t, tradeId2, trades[1].ID.String())
-	assert.Equal(t, tradeId3, trades[2].ID.String())
-	assert.Equal(t, tradeId4, trades[3].ID.String())
-	assert.Equal(t, tradeId5, trades[4].ID.String())
-	assert.Equal(t, tradeId6, trades[5].ID.String())
+	assert.Equal(t, tradeID1, trades[0].ID.String())
+	assert.Equal(t, tradeID2, trades[1].ID.String())
+	assert.Equal(t, tradeID3, trades[2].ID.String())
+	assert.Equal(t, tradeID4, trades[3].ID.String())
+	assert.Equal(t, tradeID5, trades[4].ID.String())
+	assert.Equal(t, tradeID6, trades[5].ID.String())
 }
 
 func TestStorage_GetTradesByPartyWithPagination(t *testing.T) {
@@ -91,9 +91,9 @@ func GetTradesByPartyAndMarketWithPagination(t *testing.T, market *string) {
 	trades, err := tradeStore.GetByParty(ctx, testPartyA, market, entities.OffsetPagination{Limit: last, Descending: true})
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
-	assert.Equal(t, tradeId6, trades[0].ID.String())
-	assert.Equal(t, tradeId5, trades[1].ID.String())
-	assert.Equal(t, tradeId4, trades[2].ID.String())
+	assert.Equal(t, tradeID6, trades[0].ID.String())
+	assert.Equal(t, tradeID5, trades[1].ID.String())
+	assert.Equal(t, tradeID4, trades[2].ID.String())
 
 	// Want last 3 trades (timestamp descending) and skip 2
 	skip := uint64(2)
@@ -102,9 +102,9 @@ func GetTradesByPartyAndMarketWithPagination(t *testing.T, market *string) {
 	trades, err = tradeStore.GetByParty(ctx, testPartyA, market, entities.OffsetPagination{Skip: skip, Limit: last, Descending: true})
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
-	assert.Equal(t, tradeId4, trades[0].ID.String())
-	assert.Equal(t, tradeId3, trades[1].ID.String())
-	assert.Equal(t, tradeId2, trades[2].ID.String())
+	assert.Equal(t, tradeID4, trades[0].ID.String())
+	assert.Equal(t, tradeID3, trades[1].ID.String())
+	assert.Equal(t, tradeID2, trades[2].ID.String())
 }
 
 func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
@@ -127,8 +127,8 @@ func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
 	trades, err = tradeStore.GetByMarket(ctx, testMarket, entities.OffsetPagination{Limit: first})
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(trades))
-	assert.Equal(t, tradeId1, trades[0].ID.String())
-	assert.Equal(t, tradeId2, trades[1].ID.String())
+	assert.Equal(t, tradeID1, trades[0].ID.String())
+	assert.Equal(t, tradeID2, trades[1].ID.String())
 
 	// Want last 3 trades (timestamp descending)
 	last := uint64(3)
@@ -136,9 +136,9 @@ func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
 	trades, err = tradeStore.GetByMarket(ctx, testMarket, entities.OffsetPagination{Limit: last, Descending: true})
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
-	assert.Equal(t, tradeId6, trades[0].ID.String())
-	assert.Equal(t, tradeId5, trades[1].ID.String())
-	assert.Equal(t, tradeId4, trades[2].ID.String())
+	assert.Equal(t, tradeID6, trades[0].ID.String())
+	assert.Equal(t, tradeID5, trades[1].ID.String())
+	assert.Equal(t, tradeID4, trades[2].ID.String())
 
 	// Want first 2 trades after skipping 2
 	skip := uint64(2)
@@ -146,15 +146,15 @@ func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
 	trades, err = tradeStore.GetByMarket(ctx, testMarket, entities.OffsetPagination{Skip: skip, Limit: first})
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(trades))
-	assert.Equal(t, tradeId3, trades[0].ID.String())
-	assert.Equal(t, tradeId4, trades[1].ID.String())
+	assert.Equal(t, tradeID3, trades[0].ID.String())
+	assert.Equal(t, tradeID4, trades[1].ID.String())
 
 	trades, err = tradeStore.GetByMarket(ctx, testMarket, entities.OffsetPagination{Skip: skip, Limit: last, Descending: true})
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
-	assert.Equal(t, tradeId4, trades[0].ID.String())
-	assert.Equal(t, tradeId3, trades[1].ID.String())
-	assert.Equal(t, tradeId2, trades[2].ID.String())
+	assert.Equal(t, tradeID4, trades[0].ID.String())
+	assert.Equal(t, tradeID3, trades[1].ID.String())
+	assert.Equal(t, tradeID2, trades[2].ID.String())
 
 	// Skip a large page size of trades (compared to our set)
 	// effectively skipping past the end of the set, so no
@@ -175,7 +175,7 @@ func insertTestData(t *testing.T, tradeStore *sqlstore.Trades) {
 
 	trade1 := &types.Trade{
 		Type:      types.Trade_TYPE_DEFAULT,
-		Id:        tradeId1,
+		Id:        tradeID1,
 		Price:     "100",
 		Size:      100,
 		MarketId:  testMarket,
@@ -189,7 +189,7 @@ func insertTestData(t *testing.T, tradeStore *sqlstore.Trades) {
 
 	trade2 := &types.Trade{
 		Type:      types.Trade_TYPE_DEFAULT,
-		Id:        tradeId2,
+		Id:        tradeID2,
 		Price:     "100",
 		Size:      100,
 		MarketId:  testMarket,
@@ -203,7 +203,7 @@ func insertTestData(t *testing.T, tradeStore *sqlstore.Trades) {
 
 	trade3 := &types.Trade{
 		Type:      types.Trade_TYPE_DEFAULT,
-		Id:        tradeId3,
+		Id:        tradeID3,
 		Price:     "100",
 		Size:      100,
 		MarketId:  testMarket,
@@ -217,7 +217,7 @@ func insertTestData(t *testing.T, tradeStore *sqlstore.Trades) {
 
 	trade4 := &types.Trade{
 		Type:      types.Trade_TYPE_DEFAULT,
-		Id:        tradeId4,
+		Id:        tradeID4,
 		Price:     "100",
 		Size:      100,
 		MarketId:  testMarket,
@@ -231,7 +231,7 @@ func insertTestData(t *testing.T, tradeStore *sqlstore.Trades) {
 
 	trade5 := &types.Trade{
 		Type:      types.Trade_TYPE_DEFAULT,
-		Id:        tradeId5,
+		Id:        tradeID5,
 		Price:     "100",
 		Size:      100,
 		MarketId:  testMarket,
@@ -245,7 +245,7 @@ func insertTestData(t *testing.T, tradeStore *sqlstore.Trades) {
 
 	trade6 := &types.Trade{
 		Type:      types.Trade_TYPE_DEFAULT,
-		Id:        tradeId6,
+		Id:        tradeID6,
 		Price:     "100",
 		Size:      100,
 		MarketId:  testMarket,

@@ -59,8 +59,8 @@ type Accounting struct {
 	cfg              Config
 	timeService      TimeService
 	broker           Broker
-	accounts         map[string]*StakingAccount
-	hashableAccounts []*StakingAccount
+	accounts         map[string]*Account
+	hashableAccounts []*Account
 	isValidator      bool
 
 	stakingAssetTotalSupply *num.Uint
@@ -104,7 +104,7 @@ func NewAccounting(
 		timeService:             ts,
 		broker:                  broker,
 		ethClient:               ethClient,
-		accounts:                map[string]*StakingAccount{},
+		accounts:                map[string]*Account{},
 		stakingAssetTotalSupply: num.UintZero(),
 		accState:                accountingSnapshotState{changed: true},
 		evtFwd:                  evtForward,

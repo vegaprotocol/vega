@@ -38,22 +38,22 @@ var (
 	`)
 )
 
-type ImportWalletHandler func(api.ImportWalletParams) (api.ImportWalletResult, error)
+type ImportWalletHandler func(api.AdminImportWalletParams) (api.AdminImportWalletResult, error)
 
 func NewCmdImportWallet(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(params api.ImportWalletParams) (api.ImportWalletResult, error) {
+	h := func(params api.AdminImportWalletParams) (api.AdminImportWalletResult, error) {
 		s, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
-			return api.ImportWalletResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
+			return api.AdminImportWalletResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 
-		importWallet := api.NewImportWallet(s)
+		importWallet := api.NewAdminImportWallet(s)
 
 		rawResult, errDetails := importWallet.Handle(context.Background(), params)
 		if errDetails != nil {
-			return api.ImportWalletResult{}, errors.New(errDetails.Data)
+			return api.AdminImportWalletResult{}, errors.New(errDetails.Data)
 		}
-		return rawResult.(api.ImportWalletResult), nil
+		return rawResult.(api.AdminImportWalletResult), nil
 	}
 
 	return BuildCmdImportWallet(w, h, rf)
@@ -128,35 +128,35 @@ type ImportWalletFlags struct {
 	Version            uint32
 }
 
-func (f *ImportWalletFlags) Validate() (api.ImportWalletParams, error) {
-	params := api.ImportWalletParams{
+func (f *ImportWalletFlags) Validate() (api.AdminImportWalletParams, error) {
+	params := api.AdminImportWalletParams{
 		Version: f.Version,
 	}
 
 	if len(f.Wallet) == 0 {
-		return api.ImportWalletParams{}, flags.FlagMustBeSpecifiedError("wallet")
+		return api.AdminImportWalletParams{}, flags.MustBeSpecifiedError("wallet")
 	}
 	params.Wallet = f.Wallet
 
 	if len(f.RecoveryPhraseFile) == 0 {
-		return api.ImportWalletParams{}, flags.FlagMustBeSpecifiedError("recovery-phrase-file")
+		return api.AdminImportWalletParams{}, flags.MustBeSpecifiedError("recovery-phrase-file")
 	}
 	recoveryPhrase, err := vgfs.ReadFile(f.RecoveryPhraseFile)
 	if err != nil {
-		return api.ImportWalletParams{}, fmt.Errorf("couldn't read recovery phrase file: %w", err)
+		return api.AdminImportWalletParams{}, fmt.Errorf("couldn't read recovery phrase file: %w", err)
 	}
 	params.RecoveryPhrase = strings.Trim(string(recoveryPhrase), "\n")
 
 	passphrase, err := flags.GetConfirmedPassphrase(f.PassphraseFile)
 	if err != nil {
-		return api.ImportWalletParams{}, err
+		return api.AdminImportWalletParams{}, err
 	}
 	params.Passphrase = passphrase
 
 	return params, nil
 }
 
-func PrintImportWalletResponse(w io.Writer, resp api.ImportWalletResult) {
+func PrintImportWalletResponse(w io.Writer, resp api.AdminImportWalletResult) {
 	p := printer.NewInteractivePrinter(w)
 
 	str := p.String()

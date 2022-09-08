@@ -222,13 +222,13 @@ func (p Position) Equal(q Position) bool {
 		p.PartyID == q.PartyID &&
 		p.OpenVolume == q.OpenVolume &&
 		p.RealisedPnl.Equal(q.RealisedPnl) &&
-		q.UnrealisedPnl.Equal(q.UnrealisedPnl) &&
-		q.AverageEntryPrice.Equal(q.AverageEntryPrice) &&
-		q.AverageEntryMarketPrice.Equal(q.AverageEntryMarketPrice) &&
-		q.Loss.Equal(q.Loss) &&
-		q.Adjustment.Equal(q.Adjustment) &&
-		q.TxHash == q.TxHash &&
-		q.VegaTime.Equal(q.VegaTime)
+		p.UnrealisedPnl.Equal(q.UnrealisedPnl) &&
+		p.AverageEntryPrice.Equal(q.AverageEntryPrice) &&
+		p.AverageEntryMarketPrice.Equal(q.AverageEntryMarketPrice) &&
+		p.Loss.Equal(q.Loss) &&
+		p.Adjustment.Equal(q.Adjustment) &&
+		p.TxHash == q.TxHash &&
+		p.VegaTime.Equal(q.VegaTime)
 }
 
 type PositionCursor struct {

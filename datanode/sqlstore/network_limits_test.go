@@ -52,7 +52,7 @@ func TestNetworkLimits(t *testing.T) {
 	err = nls.Add(ctx, nl2)
 	require.NoError(t, err)
 
-	fetched_nl, err := nls.GetLatest(ctx)
+	fetched, err := nls.GetLatest(ctx)
 	require.NoError(t, err)
-	assert.Equal(t, nl2, fetched_nl)
+	assert.Equal(t, nl2, fetched)
 }

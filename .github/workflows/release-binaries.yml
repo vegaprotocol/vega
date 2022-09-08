@@ -1,5 +1,5 @@
 ---
-name: Release vega, data-node and vegawallet binaries
+name: Release vega, data-node, vegawallet and visor binaries
 
 "on":
   push:
@@ -25,11 +25,12 @@ name: Release vega, data-node and vegawallet binaries
         required: false
         type: choice
         options:
-          - [vega, data-node, vegawallet]
+          - [vega, data-node, vegawallet, visor]
           - [vega]
           - [data-node]
           - [vegawallet]
-          - [vegavisor]
+          - [visor]
+          - [vegatools]
       archs:
         description: 'Architecture to build and publish'
         required: false
@@ -65,7 +66,7 @@ jobs:
       fail-fast: false
       matrix:
         arch: ${{ fromJson(inputs.archs || '["amd64", "arm64"]') }}
-        app: ${{ fromJson(inputs.apps || '["vega", "data-node", "vegawallet"]') }}
+        app: ${{ fromJson(inputs.apps || '["vega", "data-node", "vegawallet", "visor"]') }}
     env:
       GOOS: linux
       GOARCH: ${{ matrix.arch }}
@@ -90,9 +91,9 @@ jobs:
       - name: Get dependencies
         run: go get -v -t -d ./...
 
-      - name: Run tests
-        if: ${{ env.GOARCH == 'amd64' && inputs.disableTests != true }}
-        run: go test -v ./...
+      # - name: Run tests
+      #   if: ${{ env.GOARCH == 'amd64' && inputs.disableTests != true }}
+      #   run: go test -v ./...
 
       - name: Build binary
         run: go build -o build/${{ matrix.app }} ./cmd/${{ matrix.app }}
@@ -131,7 +132,7 @@ jobs:
       fail-fast: false
       matrix:
         arch: ${{ fromJson(inputs.archs || '["amd64", "arm64"]') }}
-        app: ${{ fromJson(inputs.apps || '["vega", "data-node", "vegawallet"]') }}
+        app: ${{ fromJson(inputs.apps || '["vega", "data-node", "vegawallet", "visor"]') }}
     env:
       GOOS: darwin
       GOARCH: ${{ matrix.arch }}
@@ -157,9 +158,9 @@ jobs:
       - name: Get dependencies
         run: go get -v -t -d ./...
 
-      - name: Run tests
-        if: ${{ env.GOARCH == 'amd64' && inputs.disableTests != true }}
-        run: go test -v ./...
+      # - name: Run tests
+      #   if: ${{ env.GOARCH == 'amd64' && inputs.disableTests != true }}
+      #   run: go test -v ./...
 
       - name: Build binary
         run: go build -o build/${{ matrix.app }} ./cmd/${{ matrix.app }}
@@ -253,6 +254,8 @@ jobs:
         exclude:
           - app: vega
           - app: data-node
+          - app: visor
+          - app: vegatools
     env:
       GOOS: windows
       GOARCH: ${{ matrix.arch }}
@@ -277,9 +280,9 @@ jobs:
       - name: Get dependencies
         run: go get -v -t -d ./...
 
-      - name: Run tests
-        if: ${{ env.GOARCH == 'amd64' && inputs.disableTests != true }}
-        run: go test -v ./...
+      # - name: Run tests
+      #   if: ${{ env.GOARCH == 'amd64' && inputs.disableTests != true }}
+      #   run: go test -v ./...
 
       - name: Build binary
         run: go build -o build/${{ matrix.app }}.exe ./cmd/${{ matrix.app }}

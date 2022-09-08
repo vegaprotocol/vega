@@ -36,7 +36,7 @@ func (m *MockStateVarEngine) EXPECT() *MockStateVarEngineMockRecorder {
 }
 
 // RegisterStateVariable mocks base method.
-func (m *MockStateVarEngine) RegisterStateVariable(arg0, arg1, arg2 string, arg3 statevar.Converter, arg4 func(string, statevar.FinaliseCalculation), arg5 []statevar.StateVarEventType, arg6 func(context.Context, statevar.StateVariableResult) error) error {
+func (m *MockStateVarEngine) RegisterStateVariable(arg0, arg1, arg2 string, arg3 statevar.Converter, arg4 func(string, statevar.FinaliseCalculation), arg5 []statevar.EventType, arg6 func(context.Context, statevar.StateVariableResult) error) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RegisterStateVariable", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 	ret0, _ := ret[0].(error)

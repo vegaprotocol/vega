@@ -136,35 +136,35 @@ func (addr *EthereumAddress) DecodeBinary(ci *pgtype.ConnInfo, src []byte) error
 
 type TxHash string
 
-func (pk *TxHash) Bytes() ([]byte, error) {
-	strPK := pk.String()
+func (h *TxHash) Bytes() ([]byte, error) {
+	strPK := h.String()
 
 	bytes, err := hex.DecodeString(strPK)
 	if err != nil {
-		return nil, fmt.Errorf("decoding '%v': %w", pk.String(), ErrInvalidID)
+		return nil, fmt.Errorf("decoding '%v': %w", h.String(), ErrInvalidID)
 	}
 	return bytes, nil
 }
 
-func (addr *TxHash) Error() error {
-	_, err := addr.Bytes()
+func (h *TxHash) Error() error {
+	_, err := h.Bytes()
 	return err
 }
 
-func (addr *TxHash) String() string {
-	return string(*addr)
+func (h *TxHash) String() string {
+	return string(*h)
 }
 
-func (addr TxHash) EncodeBinary(ci *pgtype.ConnInfo, buf []byte) ([]byte, error) {
-	bytes, err := addr.Bytes()
+func (h TxHash) EncodeBinary(ci *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	bytes, err := h.Bytes()
 	if err != nil {
 		return buf, err
 	}
 	return append(buf, bytes...), nil
 }
 
-func (addr *TxHash) DecodeBinary(ci *pgtype.ConnInfo, src []byte) error {
-	*addr = TxHash(hex.EncodeToString(src))
+func (h *TxHash) DecodeBinary(ci *pgtype.ConnInfo, src []byte) error {
+	*h = TxHash(hex.EncodeToString(src))
 	return nil
 }
 

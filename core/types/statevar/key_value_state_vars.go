@@ -163,25 +163,25 @@ type Converter interface {
 	InterfaceToBundle(StateVariableResult) *KeyValueBundle
 }
 
-// StateVarEventType enumeration for supported events triggering calculation.
-type StateVarEventType int
+// EventType enumeration for supported events triggering calculation.
+type EventType int
 
 const (
 	// sample events there may be many more.
 
-	StateVarEventTypeAuctionUnknown StateVarEventType = iota
-	StateVarEventTypeMarketEnactment
-	StateVarEventTypeOpeningAuctionFirstUncrossingPrice
-	StateVarEventTypeAuctionEnded
-	StateVarEventTypeTimeTrigger
-	StateVarEventTypeMarketUpdated
+	EventTypeAuctionUnknown EventType = iota
+	EventTypeMarketEnactment
+	EventTypeOpeningAuctionFirstUncrossingPrice
+	EventTypeAuctionEnded
+	EventTypeTimeTrigger
+	EventTypeMarketUpdated
 )
 
-var StateVarEventTypeToName = map[StateVarEventType]string{
-	StateVarEventTypeAuctionUnknown:                     "unknown",
-	StateVarEventTypeMarketEnactment:                    "market-enacted",
-	StateVarEventTypeOpeningAuctionFirstUncrossingPrice: "opening-auction-first-uncrossing-price",
-	StateVarEventTypeAuctionEnded:                       "auction-ended",
-	StateVarEventTypeTimeTrigger:                        "time-trigger",
-	StateVarEventTypeMarketUpdated:                      "market-updated",
+var StateVarEventTypeToName = map[EventType]string{
+	EventTypeAuctionUnknown:                     "unknown",
+	EventTypeMarketEnactment:                    "market-enacted",
+	EventTypeOpeningAuctionFirstUncrossingPrice: "opening-auction-first-uncrossing-price",
+	EventTypeAuctionEnded:                       "auction-ended",
+	EventTypeTimeTrigger:                        "time-trigger",
+	EventTypeMarketUpdated:                      "market-updated",
 }

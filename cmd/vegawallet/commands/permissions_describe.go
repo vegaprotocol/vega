@@ -1,13 +1,15 @@
 package cmd
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"io"
 
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
-	"code.vegaprotocol.io/vega/wallet/wallet"
+	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
 	"github.com/spf13/cobra"
@@ -24,16 +26,21 @@ var (
 	`)
 )
 
-type DescribePermissionsHandler func(*wallet.DescribePermissionsRequest) (*wallet.DescribePermissionsResponse, error)
+type DescribePermissionsHandler func(api.AdminDescribePermissionsParams) (api.AdminDescribePermissionsResult, error)
 
 func NewCmdDescribePermissions(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(req *wallet.DescribePermissionsRequest) (*wallet.DescribePermissionsResponse, error) {
+	h := func(params api.AdminDescribePermissionsParams) (api.AdminDescribePermissionsResult, error) {
 		s, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
-			return nil, fmt.Errorf("couldn't initialise wallets store: %w", err)
+			return api.AdminDescribePermissionsResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 
-		return wallet.DescribePermissions(s, req)
+		describePermissions := api.NewAdminDescribePermissions(s)
+		rawResult, errDetails := describePermissions.Handle(context.Background(), params)
+		if errDetails != nil {
+			return api.AdminDescribePermissionsResult{}, errors.New(errDetails.Data)
+		}
+		return rawResult.(api.AdminDescribePermissionsResult), nil
 	}
 
 	return BuildCmdDescribePermissions(w, h, rf)
@@ -58,7 +65,7 @@ func BuildCmdDescribePermissions(w io.Writer, handler DescribePermissionsHandler
 
 			switch rf.Output {
 			case flags.InteractiveOutput:
-				PrintDescribePermissionsResponse(w, resp)
+				PrintDescribePermissionsResult(w, resp)
 			case flags.JSONOutput:
 				return printer.FprintJSON(w, resp)
 			}
@@ -94,29 +101,28 @@ type DescribePermissionsFlags struct {
 	PassphraseFile string
 }
 
-func (f *DescribePermissionsFlags) Validate() (*wallet.DescribePermissionsRequest, error) {
-	req := &wallet.DescribePermissionsRequest{}
-
+func (f *DescribePermissionsFlags) Validate() (api.AdminDescribePermissionsParams, error) {
 	if len(f.Wallet) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("wallet")
+		return api.AdminDescribePermissionsParams{}, flags.MustBeSpecifiedError("wallet")
 	}
-	req.Wallet = f.Wallet
 
 	if len(f.Hostname) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("hostname")
+		return api.AdminDescribePermissionsParams{}, flags.MustBeSpecifiedError("hostname")
 	}
-	req.Hostname = f.Hostname
 
 	passphrase, err := flags.GetPassphrase(f.PassphraseFile)
 	if err != nil {
-		return nil, err
+		return api.AdminDescribePermissionsParams{}, err
 	}
-	req.Passphrase = passphrase
 
-	return req, nil
+	return api.AdminDescribePermissionsParams{
+		Wallet:     f.Wallet,
+		Passphrase: passphrase,
+		Hostname:   f.Hostname,
+	}, nil
 }
 
-func PrintDescribePermissionsResponse(w io.Writer, resp *wallet.DescribePermissionsResponse) {
+func PrintDescribePermissionsResult(w io.Writer, resp api.AdminDescribePermissionsResult) {
 	p := printer.NewInteractivePrinter(w)
 
 	str := p.String()

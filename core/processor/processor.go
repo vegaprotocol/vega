@@ -59,11 +59,12 @@ type DelegationEngine interface {
 	Hash() []byte
 }
 
+//nolint:interfacebloat
 type ExecutionEngine interface {
 	// orders stuff
-	SubmitOrder(ctx context.Context, orderSubmission *types.OrderSubmission, party string, deterministicId string) (*types.OrderConfirmation, error)
-	CancelOrder(ctx context.Context, order *types.OrderCancellation, party string, deterministicId string) ([]*types.OrderCancellationConfirmation, error)
-	AmendOrder(ctx context.Context, order *types.OrderAmendment, party string, deterministicId string) (*types.OrderConfirmation, error)
+	SubmitOrder(ctx context.Context, orderSubmission *types.OrderSubmission, party string, deterministicID string) (*types.OrderConfirmation, error)
+	CancelOrder(ctx context.Context, order *types.OrderCancellation, party string, deterministicID string) ([]*types.OrderCancellationConfirmation, error)
+	AmendOrder(ctx context.Context, order *types.OrderAmendment, party string, deterministicID string) (*types.OrderConfirmation, error)
 
 	// market stuff
 	SubmitMarket(ctx context.Context, marketConfig *types.Market, proposer string) error
@@ -72,9 +73,9 @@ type ExecutionEngine interface {
 	StartOpeningAuction(ctx context.Context, marketid string) error
 
 	// LP stuff
-	SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, deterministicId string) error
+	SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, deterministicID string) error
 	CancelLiquidityProvision(ctx context.Context, order *types.LiquidityProvisionCancellation, party string) error
-	AmendLiquidityProvision(ctx context.Context, order *types.LiquidityProvisionAmendment, party string, deterministicId string) error
+	AmendLiquidityProvision(ctx context.Context, order *types.LiquidityProvisionAmendment, party string, deterministicID string) error
 	Hash() []byte
 }
 
@@ -87,6 +88,7 @@ type GovernanceEngine interface {
 	Hash() []byte
 }
 
+//nolint:interfacebloat
 type Stats interface {
 	IncTotalCreateOrder()
 	AddCurrentTradesInBatch(i uint64)
@@ -125,8 +127,10 @@ type Assets interface {
 	StageAssetUpdate(*types.Asset) error
 	Get(assetID string) (*assets.Asset, error)
 	IsEnabled(string) bool
+	EnactPendingAsset(assetID string)
 }
 
+//nolint:interfacebloat
 type ValidatorTopology interface {
 	Len() int
 	IsValidatorVegaPubKey(pk string) bool
@@ -166,7 +170,9 @@ type EvtForwarder interface {
 	Ack(*commandspb.ChainEvent) bool
 }
 
-// Banking ...
+// Banking ..
+//
+//nolint:interfacebloat
 type Banking interface {
 	EnableBuiltinAsset(context.Context, string) error
 	DepositBuiltinAsset(context.Context, *types.BuiltinAssetDeposit, string, uint64) error

@@ -37,6 +37,7 @@ type Reset interface {
 	Reset()
 }
 
+//nolint:interfacebloat
 type value interface {
 	Validate(value string) error
 	Update(value string) error

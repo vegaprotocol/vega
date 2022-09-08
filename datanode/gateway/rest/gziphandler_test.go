@@ -25,7 +25,7 @@ import (
 
 func headerNotPresent(t *testing.T, x *httptest.ResponseRecorder, key string) {
 	t.Helper()
-	res := x.Result()
+	res := x.Result() //nolint:bodyclose
 	h, found := res.Header[key]
 	if found || len(h) > 0 {
 		t.Fatalf("Unexpected header: %s", key)
@@ -34,7 +34,7 @@ func headerNotPresent(t *testing.T, x *httptest.ResponseRecorder, key string) {
 
 func headerPresent(t *testing.T, x *httptest.ResponseRecorder, key string, expected []string) {
 	t.Helper()
-	res := x.Result()
+	res := x.Result() //nolint:bodyclose
 	h, found := res.Header[key]
 	if !found || len(h) == 0 {
 		t.Fatalf("Missing header: %s", key)
@@ -50,7 +50,7 @@ func headerPresent(t *testing.T, x *httptest.ResponseRecorder, key string, expec
 }
 
 func TestNoGzip(t *testing.T) {
-	req, err := http.NewRequest("GET", "http://example.com/", nil)
+	req, err := http.NewRequest(http.MethodGet, "http://example.com/", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,13 +74,13 @@ func TestNoGzip(t *testing.T) {
 	}
 
 	if testing.Verbose() {
-		b, _ := httputil.DumpResponse(rec.Result(), true)
+		b, _ := httputil.DumpResponse(rec.Result(), true) //nolint:bodyclose
 		t.Log("\n" + string(b))
 	}
 }
 
 func TestGzip(t *testing.T) {
-	req, err := http.NewRequest("GET", "http://example.com/", nil)
+	req, err := http.NewRequest(http.MethodGet, "http://example.com/", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -119,13 +119,13 @@ func TestGzip(t *testing.T) {
 	}
 
 	if testing.Verbose() {
-		b, _ := httputil.DumpResponse(rec.Result(), true)
+		b, _ := httputil.DumpResponse(rec.Result(), true) //nolint:bodyclose
 		t.Log("\n" + string(b))
 	}
 }
 
 func TestNoBody(t *testing.T) {
-	req, err := http.NewRequest("GET", "http://example.com/", nil)
+	req, err := http.NewRequest(http.MethodGet, "http://example.com/", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -151,7 +151,7 @@ func TestNoBody(t *testing.T) {
 	}
 
 	if testing.Verbose() {
-		b, _ := httputil.DumpResponse(rec.Result(), true)
+		b, _ := httputil.DumpResponse(rec.Result(), true) //nolint: bodyclose
 		t.Log("\n" + string(b))
 	}
 }
@@ -159,7 +159,7 @@ func TestNoBody(t *testing.T) {
 func BenchmarkGzip(b *testing.B) {
 	body := []byte("testtesttesttesttesttesttesttesttesttesttesttesttest")
 
-	req, err := http.NewRequest("GET", "http://example.com/", nil)
+	req, err := http.NewRequest(http.MethodGet, "http://example.com/", nil)
 	if err != nil {
 		b.Fatal(err)
 	}

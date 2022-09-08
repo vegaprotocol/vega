@@ -35,17 +35,17 @@ type EligibilityChecker interface {
 
 // marketTracker tracks the activity in the markets in terms of fees and value.
 type marketTracker struct {
-	asset          string
-	makerFees      map[string]*num.Uint
-	takerFees      map[string]*num.Uint
-	lpFees         map[string]*num.Uint
-	totalMakerFees *num.Uint
-	totalTakerFees *num.Uint
-	totalLPFees    *num.Uint
-	valueTraded    *num.Uint
-	proposersPaid  map[string]struct{} // identifier of payout_asset : funder : markets_in_scope
-	proposer       string
-	readyToDelete  bool
+	asset                  string
+	makerFeesReceived      map[string]*num.Uint
+	makerFeesPaid          map[string]*num.Uint
+	lpFees                 map[string]*num.Uint
+	totalMakerFeesReceived *num.Uint
+	totalMakerFeesPaid     *num.Uint
+	totalLPFees            *num.Uint
+	valueTraded            *num.Uint
+	proposersPaid          map[string]struct{} // identifier of payout_asset : funder : markets_in_scope
+	proposer               string
+	readyToDelete          bool
 }
 
 // MarketActivityTracker tracks how much fees are paid and received for a market by parties by epoch.
@@ -82,25 +82,25 @@ func (mat *MarketActivityTracker) SetEligibilityChecker(eligibilityChecker Eligi
 }
 
 // MarketProposed is called when the market is proposed and adds the market to the tracker.
-func (m *MarketActivityTracker) MarketProposed(asset, marketID, proposer string) {
+func (mat *MarketActivityTracker) MarketProposed(asset, marketID, proposer string) {
 	// if we already know about this market don't re-add it
-	if _, ok := m.marketToTracker[marketID]; ok {
+	if _, ok := mat.marketToTracker[marketID]; ok {
 		return
 	}
-	m.marketToTracker[marketID] = &marketTracker{
-		asset:          asset,
-		proposer:       proposer,
-		proposersPaid:  map[string]struct{}{},
-		readyToDelete:  false,
-		valueTraded:    num.UintZero(),
-		makerFees:      map[string]*num.Uint{},
-		takerFees:      map[string]*num.Uint{},
-		lpFees:         map[string]*num.Uint{},
-		totalMakerFees: num.UintZero(),
-		totalTakerFees: num.UintZero(),
-		totalLPFees:    num.UintZero(),
+	mat.marketToTracker[marketID] = &marketTracker{
+		asset:                  asset,
+		proposer:               proposer,
+		proposersPaid:          map[string]struct{}{},
+		readyToDelete:          false,
+		valueTraded:            num.UintZero(),
+		makerFeesReceived:      map[string]*num.Uint{},
+		makerFeesPaid:          map[string]*num.Uint{},
+		lpFees:                 map[string]*num.Uint{},
+		totalMakerFeesReceived: num.UintZero(),
+		totalMakerFeesPaid:     num.UintZero(),
+		totalLPFees:            num.UintZero(),
 	}
-	m.ss.changed = true
+	mat.ss.changed = true
 }
 
 // AddValueTraded records the value of a trade done in the given market.
@@ -128,7 +128,7 @@ func (mat *MarketActivityTracker) GetMarketsWithEligibleProposer(asset string, m
 
 	eligibleMarkets := []string{}
 	for _, v := range mkts {
-		if t, ok := mat.marketToTracker[v]; ok && t.asset == asset && mat.IsMarketEligibleForBonus(v, payoutAsset, markets, funder) {
+		if t, ok := mat.marketToTracker[v]; ok && (len(asset) == 0 || t.asset == asset) && mat.IsMarketEligibleForBonus(v, payoutAsset, markets, funder) {
 			eligibleMarkets = append(eligibleMarkets, v)
 		}
 	}
@@ -263,10 +263,10 @@ func (mat *MarketActivityTracker) clearFeeActivity() {
 		}
 		mt.lpFees = map[string]*num.Uint{}
 		mt.totalLPFees = num.UintZero()
-		mt.makerFees = map[string]*num.Uint{}
-		mt.totalMakerFees = num.UintZero()
-		mt.takerFees = map[string]*num.Uint{}
-		mt.totalTakerFees = num.UintZero()
+		mt.makerFeesReceived = map[string]*num.Uint{}
+		mt.totalMakerFeesReceived = num.UintZero()
+		mt.makerFeesPaid = map[string]*num.Uint{}
+		mt.totalMakerFeesReceived = num.UintZero()
 	}
 }
 
@@ -338,9 +338,9 @@ func (mat *MarketActivityTracker) GetFeePartyScores(market string, feeType types
 
 	switch feeType {
 	case types.TransferTypeMakerFeeReceive:
-		feesData = mat.marketToTracker[market].makerFees
+		feesData = mat.marketToTracker[market].makerFeesReceived
 	case types.TransferTypeMakerFeePay:
-		feesData = mat.marketToTracker[market].takerFees
+		feesData = mat.marketToTracker[market].makerFeesPaid
 	case types.TransferTypeLiquidityFeeDistribute:
 		feesData = mat.marketToTracker[market].lpFees
 	default:
@@ -373,9 +373,9 @@ func (mat *MarketActivityTracker) UpdateFeesFromTransfers(market string, transfe
 		}
 		switch t.Type {
 		case types.TransferTypeMakerFeePay:
-			mat.addFees(mt.takerFees, t.Owner, t.Amount.Amount, mt.totalTakerFees)
+			mat.addFees(mt.makerFeesPaid, t.Owner, t.Amount.Amount, mt.totalMakerFeesPaid)
 		case types.TransferTypeMakerFeeReceive:
-			mat.addFees(mt.makerFees, t.Owner, t.Amount.Amount, mt.totalMakerFees)
+			mat.addFees(mt.makerFeesReceived, t.Owner, t.Amount.Amount, mt.totalMakerFeesReceived)
 		case types.TransferTypeLiquidityFeeDistribute:
 			mat.addFees(mt.lpFees, t.Owner, t.Amount.Amount, mt.totalLPFees)
 		default:
@@ -398,9 +398,9 @@ func (mat *MarketActivityTracker) addFees(m map[string]*num.Uint, party string, 
 func (mt *marketTracker) totalFees(metric vega.DispatchMetric) *num.Uint {
 	switch metric {
 	case vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED:
-		return mt.totalMakerFees
-	case vega.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID:
-		return mt.totalTakerFees
+		return mt.totalMakerFeesReceived
+	case vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID:
+		return mt.totalMakerFeesPaid
 	case vega.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED:
 		return mt.totalLPFees
 	default:

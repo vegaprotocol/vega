@@ -23,7 +23,7 @@ import (
 )
 
 type candleSource interface {
-	GetCandleDataForTimeSpan(ctx context.Context, candleId string, from *time.Time, to *time.Time,
+	GetCandleDataForTimeSpan(ctx context.Context, candleID string, from *time.Time, to *time.Time,
 		p entities.CursorPagination) ([]entities.Candle, entities.PageInfo, error)
 }
 
@@ -32,23 +32,23 @@ type subscribeRequest struct {
 	out chan entities.Candle
 }
 
-type candleUpdates struct {
+type CandleUpdates struct {
 	log                *logging.Logger
 	candleSource       candleSource
-	candleId           string
+	candleID           string
 	subscribeChan      chan subscribeRequest
 	unsubscribeChan    chan string
-	nextSubscriptionId uint64
+	nextSubscriptionID uint64
 	config             CandleUpdatesConfig
 }
 
-func NewCandleUpdates(ctx context.Context, log *logging.Logger, candleId string, candleSource candleSource,
-	config CandleUpdatesConfig) (*candleUpdates, error,
+func NewCandleUpdates(ctx context.Context, log *logging.Logger, candleID string, candleSource candleSource,
+	config CandleUpdatesConfig) (*CandleUpdates, error,
 ) {
-	ces := &candleUpdates{
+	ces := &CandleUpdates{
 		log:             log,
 		candleSource:    candleSource,
-		candleId:        candleId,
+		candleID:        candleID,
 		config:          config,
 		subscribeChan:   make(chan subscribeRequest),
 		unsubscribeChan: make(chan string),
@@ -59,7 +59,7 @@ func NewCandleUpdates(ctx context.Context, log *logging.Logger, candleId string,
 	return ces, nil
 }
 
-func (s *candleUpdates) run(ctx context.Context) {
+func (s *CandleUpdates) run(ctx context.Context) {
 	subscriptions := map[string]chan entities.Candle{}
 	defer closeAllSubscriptions(subscriptions)
 
@@ -74,7 +74,7 @@ func (s *candleUpdates) run(ctx context.Context) {
 			if len(subscriptions) > 0 {
 				candles, err := s.getCandleUpdates(ctx, lastCandle)
 				if err != nil {
-					s.log.Errorf("failed to get candles, closing stream for candle id %s: %w", s.candleId, err)
+					s.log.Errorf("failed to get candles, closing stream for candle id %s: %w", s.candleID, err)
 					return
 				}
 
@@ -97,10 +97,10 @@ func (s *candleUpdates) run(ctx context.Context) {
 	}
 }
 
-func removeSubscription(subscriptions map[string]chan entities.Candle, subscriptionId string) {
-	if _, ok := subscriptions[subscriptionId]; ok {
-		close(subscriptions[subscriptionId])
-		delete(subscriptions, subscriptionId)
+func removeSubscription(subscriptions map[string]chan entities.Candle, subscriptionID string) {
+	if _, ok := subscriptions[subscriptionID]; ok {
+		close(subscriptions[subscriptionID])
+		delete(subscriptions, subscriptionID)
 	}
 }
 
@@ -111,24 +111,24 @@ func closeAllSubscriptions(subscribers map[string]chan entities.Candle) {
 }
 
 // Subscribe returns a unique subscription id and channel on which updates will be sent.
-func (s *candleUpdates) Subscribe() (string, <-chan entities.Candle) {
+func (s *CandleUpdates) Subscribe() (string, <-chan entities.Candle) {
 	out := make(chan entities.Candle, s.config.CandleUpdatesStreamBufferSize)
 
-	nextId := atomic.AddUint64(&s.nextSubscriptionId, 1)
-	subscriptionId := fmt.Sprintf("%s-%d", s.candleId, nextId)
+	nextID := atomic.AddUint64(&s.nextSubscriptionID, 1)
+	subscriptionID := fmt.Sprintf("%s-%d", s.candleID, nextID)
 	s.subscribeChan <- subscribeRequest{
-		id:  subscriptionId,
+		id:  subscriptionID,
 		out: out,
 	}
 
-	return subscriptionId, out
+	return subscriptionID, out
 }
 
-func (s *candleUpdates) Unsubscribe(subscriptionId string) {
-	s.unsubscribeChan <- subscriptionId
+func (s *CandleUpdates) Unsubscribe(subscriptionID string) {
+	s.unsubscribeChan <- subscriptionID
 }
 
-func (s *candleUpdates) getCandleUpdates(ctx context.Context, lastCandle *entities.Candle) ([]entities.Candle, error) {
+func (s *CandleUpdates) getCandleUpdates(ctx context.Context, lastCandle *entities.Candle) ([]entities.Candle, error) {
 	ctx, cancelFn := context.WithTimeout(ctx, s.config.CandlesFetchTimeout.Duration)
 	defer cancelFn()
 
@@ -137,7 +137,7 @@ func (s *candleUpdates) getCandleUpdates(ctx context.Context, lastCandle *entiti
 	if lastCandle != nil {
 		start := lastCandle.PeriodStart
 		var candles []entities.Candle
-		candles, _, err = s.candleSource.GetCandleDataForTimeSpan(ctx, s.candleId, &start, nil, entities.CursorPagination{})
+		candles, _, err = s.candleSource.GetCandleDataForTimeSpan(ctx, s.candleID, &start, nil, entities.CursorPagination{})
 
 		if err != nil {
 			return nil, fmt.Errorf("getting candle updates:%w", err)
@@ -154,7 +154,7 @@ func (s *candleUpdates) getCandleUpdates(ctx context.Context, lastCandle *entiti
 		if err != nil {
 			return nil, err
 		}
-		updates, _, err = s.candleSource.GetCandleDataForTimeSpan(ctx, s.candleId, nil, nil, pagination)
+		updates, _, err = s.candleSource.GetCandleDataForTimeSpan(ctx, s.candleID, nil, nil, pagination)
 
 		if err != nil {
 			return nil, fmt.Errorf("getting candle updates:%w", err)
@@ -164,13 +164,13 @@ func (s *candleUpdates) getCandleUpdates(ctx context.Context, lastCandle *entiti
 	return updates, nil
 }
 
-func (s *candleUpdates) sendCandles(candles []entities.Candle, subscriptions map[string]chan entities.Candle) {
-	for subscriptionId, outCh := range subscriptions {
+func (s *CandleUpdates) sendCandles(candles []entities.Candle, subscriptions map[string]chan entities.Candle) {
+	for subscriptionID, outCh := range subscriptions {
 		for _, candle := range candles {
 			select {
 			case outCh <- candle:
 			default:
-				removeSubscription(subscriptions, subscriptionId)
+				removeSubscription(subscriptions, subscriptionID)
 				break
 			}
 		}

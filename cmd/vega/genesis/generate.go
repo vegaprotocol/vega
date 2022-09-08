@@ -66,7 +66,7 @@ func (opts *generateCmd) Execute(_ []string) error {
 	}
 
 	b64TmPubKey := base64.StdEncoding.EncodeToString(pubKey.Bytes())
-	genesisState := genesis.DefaultGenesisState()
+	genesisState := genesis.DefaultState()
 	genesisState.Validators[base64.StdEncoding.EncodeToString(pubKey.Bytes())] = validators.ValidatorData{
 		ID:              walletID,
 		VegaPubKey:      vegaKey.value,

@@ -28,7 +28,7 @@ import (
 
 var (
 	decimal1, _        = num.DecimalFromString("1")
-	rewardAccountTypes = []types.AccountType{types.AccountTypeGlobalReward, types.AccountTypeFeesInfrastructure, types.AccountTypeMakerFeeReward, types.AccountTypeTakerFeeReward, types.AccountTypeLPFeeReward, types.AccountTypeMarketProposerReward}
+	rewardAccountTypes = []types.AccountType{types.AccountTypeGlobalReward, types.AccountTypeFeesInfrastructure, types.AccountTypeMakerReceivedFeeReward, types.AccountTypeMakerPaidFeeReward, types.AccountTypeLPFeeReward, types.AccountTypeMarketProposerReward}
 )
 
 // Broker for sending events.
@@ -49,7 +49,8 @@ type EpochEngine interface {
 	NotifyOnEpoch(f func(context.Context, types.Epoch), r func(context.Context, types.Epoch))
 }
 
-//Delegation engine for getting validation data
+// Delegation engine for getting validation data
+//
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/delegation_engine_mock.go -package mocks code.vegaprotocol.io/vega/core/rewards Delegation
 type Delegation interface {
 	ProcessEpochDelegations(ctx context.Context, epoch types.Epoch) []*types.ValidatorData
@@ -63,7 +64,8 @@ type Collateral interface {
 	GetRewardAccountsByType(rewardAcccountType types.AccountType) []*types.Account
 }
 
-//TimeService notifies the reward engine on time updates
+// TimeService notifies the reward engine on time updates
+//
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/core/rewards TimeService
 type TimeService interface {
 	GetTimeNow() time.Time
@@ -237,21 +239,21 @@ func calcTotalDelegation(d []*types.ValidatorData) num.Decimal {
 }
 
 // calculateRewardFactors calculates the fraction of the reward given to tendermint and ersatz validators based on their scaled stake.
-func (e *Engine) calculateRewardFactors(s_p, s_e num.Decimal) (num.Decimal, num.Decimal) {
-	s_t := s_p.Add(s_e)
-	s_pFactor := num.DecimalZero()
-	s_eFactor := num.DecimalZero()
+func (e *Engine) calculateRewardFactors(sp, se num.Decimal) (num.Decimal, num.Decimal) {
+	st := sp.Add(se)
+	spFactor := num.DecimalZero()
+	seFactor := num.DecimalZero()
 	// if there's stake calculate the factors of primary vs ersatz and make sure it's <= 1
-	if s_t.IsPositive() {
-		s_pFactor = s_p.Div(s_t)
-		s_eFactor = s_e.Div(s_t)
+	if st.IsPositive() {
+		spFactor = sp.Div(st)
+		seFactor = se.Div(st)
 		// if the factors add to more than 1, subtract the excess from the ersatz factors to make the total 1
-		overflow := num.MaxD(num.DecimalZero(), s_pFactor.Add(s_eFactor).Sub(decimal1))
-		s_eFactor = s_eFactor.Sub(overflow)
+		overflow := num.MaxD(num.DecimalZero(), spFactor.Add(seFactor).Sub(decimal1))
+		seFactor = seFactor.Sub(overflow)
 	}
 
-	e.log.Info("tendermint/ersatz fractions of the reward", logging.String("total-delegation", s_t.String()), logging.String("tenderming-total-delegation", s_p.String()), logging.String("ersatz-total-delegation", s_e.String()), logging.String("tenderming-factor", s_pFactor.String()), logging.String("ersatz-factor", s_eFactor.String()))
-	return s_pFactor, s_eFactor
+	e.log.Info("tendermint/ersatz fractions of the reward", logging.String("total-delegation", st.String()), logging.String("tenderming-total-delegation", sp.String()), logging.String("ersatz-total-delegation", se.String()), logging.String("tenderming-factor", spFactor.String()), logging.String("ersatz-factor", seFactor.String()))
+	return spFactor, seFactor
 }
 
 func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) []*payout {
@@ -269,9 +271,9 @@ func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) 
 	// performance data will be erased in the next block which is the first block of the new epoch
 	e.topology.RecalcValidatorSet(ctx, num.NewUint(epoch.Seq+1).String(), e.delegation.GetValidatorData(), stakeScoreParams)
 
-	s_p := calcTotalDelegation(tmValidatorsDelegation)
-	s_e := calcTotalDelegation(ersatzValidatorsDelegation).Mul(e.ersatzRewardFactor)
-	s_pFactor, s_eFactor := e.calculateRewardFactors(s_p, s_e)
+	sp := calcTotalDelegation(tmValidatorsDelegation)
+	se := calcTotalDelegation(ersatzValidatorsDelegation).Mul(e.ersatzRewardFactor)
+	spFactor, seFactor := e.calculateRewardFactors(sp, se)
 	for node, score := range tmValidatorsScores.NormalisedScores {
 		e.log.Info("Rewards: calculated normalised score for tendermint validators", logging.String("validator", node), logging.String("normalisedScore", score.String()))
 	}
@@ -290,9 +292,9 @@ func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) 
 			pos := []*payout{}
 			if (rewardType == types.AccountTypeGlobalReward && account.Asset == e.global.asset) || rewardType == types.AccountTypeFeesInfrastructure {
 				e.log.Info("calculating reward for tendermint validators", logging.String("account-type", rewardType.String()))
-				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), account.Asset, rewardType, account, tmValidatorsDelegation, tmValidatorsScores.NormalisedScores, epoch.EndTime, s_pFactor))
+				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), account.Asset, rewardType, account, tmValidatorsDelegation, tmValidatorsScores.NormalisedScores, epoch.EndTime, spFactor))
 				e.log.Info("calculating reward for ersatz validators", logging.String("account-type", rewardType.String()))
-				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), account.Asset, rewardType, account, ersatzValidatorsDelegation, ersatzValidatorsScores.NormalisedScores, epoch.EndTime, s_eFactor))
+				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), account.Asset, rewardType, account, ersatzValidatorsDelegation, ersatzValidatorsScores.NormalisedScores, epoch.EndTime, seFactor))
 			} else {
 				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), account.Asset, rewardType, account, tmValidatorsDelegation, tmValidatorsScores.NormalisedScores, epoch.EndTime, decimal1))
 			}
@@ -330,12 +332,12 @@ func (e *Engine) calculateRewardTypeForAsset(epochSeq, asset string, rewardType 
 		return nil
 	case types.AccountTypeFeesInfrastructure: // given to delegator based on stake
 		return calculateRewardsByStake(epochSeq, account.Asset, account.ID, account.Balance.Clone(), validatorNormalisedScores, validatorData, e.global.delegatorShare, num.UintZero(), e.global.minValStakeUInt, e.rng, e.log)
-	case types.AccountTypeMakerFeeReward: // given to receivers of maker fee in the asset based on their total received fee proportion
+	case types.AccountTypeMakerReceivedFeeReward: // given to receivers of maker fee in the asset based on their total received fee proportion
 		if !e.isValidAccountForMarket(account) {
 			return nil
 		}
 		return calculateRewardsByContribution(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.marketActivityTracker.GetFeePartyScores(account.MarketID, types.TransferTypeMakerFeeReceive), timestamp)
-	case types.AccountTypeTakerFeeReward: // given to payers of fee in the asset based on their total paid fee proportion
+	case types.AccountTypeMakerPaidFeeReward: // given to payers of fee in the asset based on their total paid fee proportion
 		if !e.isValidAccountForMarket(account) {
 			return nil
 		}

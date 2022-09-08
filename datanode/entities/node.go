@@ -34,7 +34,7 @@ type Node struct {
 	PubKey            VegaPublicKey       `db:"vega_pub_key"`
 	TmPubKey          TendermintPublicKey `db:"tendermint_pub_key"`
 	EthereumAddress   EthereumAddress
-	InfoUrl           string
+	InfoURL           string
 	Location          string
 	StakedByOperator  decimal.Decimal
 	StakedByDelegates decimal.Decimal
@@ -47,7 +47,7 @@ type Node struct {
 	RewardScore       *RewardScore  `json:""`
 	RankingScore      *RankingScore `json:""`
 	Name              string
-	AvatarUrl         string
+	AvatarURL         string
 	TxHash            TxHash
 	VegaTime          time.Time
 }
@@ -76,7 +76,7 @@ type RewardScore struct {
 }
 
 type RewardScoreAux struct {
-	NodeId   NodeID
+	NodeID   NodeID
 	EpochSeq uint64
 }
 
@@ -93,7 +93,7 @@ type RankingScore struct {
 }
 
 type RankingScoreAux struct {
-	NodeId   NodeID
+	NodeID   NodeID
 	EpochSeq uint64
 }
 
@@ -112,10 +112,10 @@ func NodeFromValidatorUpdateEvent(evt eventspb.ValidatorUpdate, txHash TxHash, v
 			PubKey:          VegaPublicKey(evt.VegaPubKey),
 			TmPubKey:        TendermintPublicKey(evt.TmPubKey),
 			EthereumAddress: EthereumAddress(evt.EthereumAddress),
-			InfoUrl:         evt.InfoUrl,
+			InfoURL:         evt.InfoUrl,
 			Location:        evt.Country,
 			Name:            evt.Name,
-			AvatarUrl:       evt.AvatarUrl,
+			AvatarURL:       evt.AvatarUrl,
 			TxHash:          txHash,
 			VegaTime:        vegaTime,
 
@@ -185,7 +185,7 @@ func RankingScoreFromRankingEvent(evt eventspb.ValidatorRankingEvent, txHash TxH
 			VegaTime:         vegaTime,
 			EpochSeq:         epochSeq,
 		}, RankingScoreAux{
-			NodeId:   NodeID(evt.NodeId),
+			NodeID:   NodeID(evt.NodeId),
 			EpochSeq: epochSeq,
 		}, nil
 }
@@ -243,7 +243,7 @@ func RewardScoreFromScoreEvent(evt eventspb.ValidatorScoreEvent, txHash TxHash, 
 			VegaTime:            vegaTime,
 			EpochSeq:            epochSeq,
 		}, RewardScoreAux{
-			NodeId:   NodeID(evt.NodeId),
+			NodeID:   NodeID(evt.NodeId),
 			EpochSeq: epochSeq,
 		}, nil
 }
@@ -298,7 +298,7 @@ func NodeFromProto(node *vega.Node, txHash TxHash, vegaTime time.Time) (Node, er
 		PubKey:            VegaPublicKey(node.PubKey),
 		TmPubKey:          TendermintPublicKey(node.TmPubKey),
 		EthereumAddress:   EthereumAddress(node.EthereumAddress),
-		InfoUrl:           node.InfoUrl,
+		InfoURL:           node.InfoUrl,
 		Location:          node.Location,
 		StakedByOperator:  stakedByOperator,
 		StakedByDelegates: stakedByDelegates,
@@ -311,7 +311,7 @@ func NodeFromProto(node *vega.Node, txHash TxHash, vegaTime time.Time) (Node, er
 		// RewardScore:       RewardScore{node.RewardScore},
 		// RankingScore:      RankingScore{node.RankingScore},
 		Name:      node.Name,
-		AvatarUrl: node.AvatarUrl,
+		AvatarURL: node.AvatarUrl,
 		TxHash:    txHash,
 		VegaTime:  vegaTime,
 	}, nil
@@ -328,7 +328,7 @@ func (node *Node) ToProto() *vega.Node {
 		PubKey:            node.PubKey.String(),
 		TmPubKey:          node.TmPubKey.String(),
 		EthereumAddress:   node.EthereumAddress.String(),
-		InfoUrl:           node.InfoUrl,
+		InfoUrl:           node.InfoURL,
 		Location:          node.Location,
 		StakedByOperator:  node.StakedByOperator.String(),
 		StakedByDelegates: node.StakedByDelegates.String(),
@@ -339,7 +339,7 @@ func (node *Node) ToProto() *vega.Node {
 		Status:            vega.NodeStatus(node.Status),
 		Delegations:       protoDelegations,
 		Name:              node.Name,
-		AvatarUrl:         node.AvatarUrl,
+		AvatarUrl:         node.AvatarURL,
 	}
 
 	if node.RewardScore != nil {

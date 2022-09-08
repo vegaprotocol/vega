@@ -24,11 +24,6 @@ import (
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
 
-type (
-	BuiltinAssetEvent_Deposit    = vegapb.BuiltinAssetEvent_Deposit
-	BuiltinAssetEvent_Withdrawal = vegapb.BuiltinAssetEvent_Withdrawal
-)
-
 type WithdrawExt struct {
 	Ext isWithdrawExtExt
 }
@@ -398,12 +393,12 @@ func (b BuiltinAssetWithdrawal) GetVegaAssetID() string {
 	return b.VegaAssetID
 }
 
-type ChainEvent_Builtin struct {
+type ChainEventBuiltin struct {
 	Builtin *BuiltinAssetEvent
 }
 
-func NewChainEventBuiltinFromProto(p *commandspb.ChainEvent_Builtin) (*ChainEvent_Builtin, error) {
-	c := ChainEvent_Builtin{}
+func NewChainEventBuiltinFromProto(p *commandspb.ChainEvent_Builtin) (*ChainEventBuiltin, error) {
+	c := ChainEventBuiltin{}
 	var err error
 	c.Builtin, err = NewBuiltinAssetEventFromProto(p.Builtin)
 	if err != nil {
@@ -412,14 +407,14 @@ func NewChainEventBuiltinFromProto(p *commandspb.ChainEvent_Builtin) (*ChainEven
 	return &c, nil
 }
 
-func (c ChainEvent_Builtin) IntoProto() *commandspb.ChainEvent_Builtin {
+func (c ChainEventBuiltin) IntoProto() *commandspb.ChainEvent_Builtin {
 	ceb := &commandspb.ChainEvent_Builtin{
 		Builtin: c.Builtin.IntoProto(),
 	}
 	return ceb
 }
 
-func (c ChainEvent_Builtin) String() string {
+func (c ChainEventBuiltin) String() string {
 	return fmt.Sprintf(
 		"builtin(%s)",
 		reflectPointerToString(c.Builtin),
@@ -666,23 +661,23 @@ func (e ERC20EventAssetDelist) IntoProto() *vegapb.ERC20Event_AssetDelist {
 
 type ERC20AssetDelist struct {
 	// The Vega network internal identifier of the asset
-	VegaAssetId string
+	VegaAssetID string
 }
 
 func NewERC20AssetDelistFromProto(p *vegapb.ERC20AssetDelist) *ERC20AssetDelist {
 	return &ERC20AssetDelist{
-		VegaAssetId: p.VegaAssetId,
+		VegaAssetID: p.VegaAssetId,
 	}
 }
 
 func (e ERC20AssetDelist) IntoProto() *vegapb.ERC20AssetDelist {
 	return &vegapb.ERC20AssetDelist{
-		VegaAssetId: e.VegaAssetId,
+		VegaAssetId: e.VegaAssetID,
 	}
 }
 
 func (e ERC20AssetDelist) String() string {
-	return fmt.Sprintf("vegaAssetID(%s)", e.VegaAssetId)
+	return fmt.Sprintf("vegaAssetID(%s)", e.VegaAssetID)
 }
 
 type ERC20EventAssetList struct {

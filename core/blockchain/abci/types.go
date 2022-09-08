@@ -19,6 +19,7 @@ import (
 	"github.com/tendermint/tendermint/abci/types"
 )
 
+//nolint:interfacebloat
 type Tx interface {
 	Command() txn.Command
 	Unmarshal(interface{}) error

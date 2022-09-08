@@ -231,9 +231,8 @@ func (s *coreService) PropagateChainEvent(ctx context.Context, req *protoapi.Pro
 			logging.Error(err))
 		if err == evtforward.ErrPubKeyNotAllowlisted {
 			return nil, apiError(codes.PermissionDenied, err)
-		} else {
-			return nil, apiError(codes.Internal, err)
 		}
+		return nil, apiError(codes.Internal, err)
 	}
 
 	return &protoapi.PropagateChainEventResponse{

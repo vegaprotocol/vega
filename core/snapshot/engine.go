@@ -37,8 +37,6 @@ import (
 	db "github.com/tendermint/tm-db"
 )
 
-type SnapshotSource int
-
 const (
 	SnapshotDBName = "snapshot"
 	numWorkers     = 1000

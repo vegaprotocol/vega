@@ -292,10 +292,6 @@ func (r *myMarketResolver) PositionDecimalPlaces(ctx context.Context, obj *types
 	return int(obj.PositionDecimalPlaces), nil
 }
 
-func (r *myMarketResolver) Name(ctx context.Context, obj *types.Market) (string, error) {
-	return obj.TradableInstrument.Instrument.Name, nil
-}
-
 func (r *myMarketResolver) OpeningAuction(ctx context.Context, obj *types.Market) (*AuctionDuration, error) {
 	return &AuctionDuration{
 		DurationSecs: int(obj.OpeningAuction.Duration),
@@ -325,7 +321,7 @@ func (r *myMarketResolver) Proposal(ctx context.Context, obj *types.Market) (*ty
 	// some market are loaded at startup, without
 	// going through the proposal phase
 	if err != nil {
-		return nil, nil
+		return nil, nil //nolint:nilerr
 	}
 	return resp.Data, nil
 }

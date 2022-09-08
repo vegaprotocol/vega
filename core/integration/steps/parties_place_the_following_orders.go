@@ -31,7 +31,7 @@ func PartiesPlaceTheFollowingOrders(
 		row := newSubmitOrderRow(r)
 
 		orderSubmission := types.OrderSubmission{
-			MarketId:    row.MarketID(),
+			MarketID:    row.MarketID(),
 			Side:        row.Side(),
 			Price:       row.Price(),
 			Size:        row.Volume(),
@@ -134,9 +134,8 @@ func (r submitOrderRow) ExpirationDate() int64 {
 	now := time.Now()
 	if r.TimeInForce() == types.OrderTimeInForceGTT {
 		return now.Add(r.row.MustDurationSec("expires in")).Local().UnixNano()
-	} else {
-		return now.Add(24 * time.Hour).UnixNano()
 	}
+	return now.Add(24 * time.Hour).UnixNano()
 }
 
 func (r submitOrderRow) ExpectResultingTrades() bool {

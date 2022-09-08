@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"io"
 
@@ -8,8 +10,8 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
 	"code.vegaprotocol.io/vega/paths"
-	"code.vegaprotocol.io/vega/wallet/network"
-	netstore "code.vegaprotocol.io/vega/wallet/network/store/v1"
+	"code.vegaprotocol.io/vega/wallet/api"
+	networkStore "code.vegaprotocol.io/vega/wallet/network/store/v1"
 
 	"github.com/spf13/cobra"
 )
@@ -25,18 +27,23 @@ var (
 	`)
 )
 
-type DescribeNetworkHandler func(*network.DescribeNetworkRequest) (*network.DescribeNetworkResponse, error)
+type DescribeNetworkHandler func(api.AdminDescribeNetworkParams) (api.AdminDescribeNetworkResult, error)
 
 func NewCmdDescribeNetwork(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(req *network.DescribeNetworkRequest) (*network.DescribeNetworkResponse, error) {
+	h := func(params api.AdminDescribeNetworkParams) (api.AdminDescribeNetworkResult, error) {
 		vegaPaths := paths.New(rf.Home)
 
-		netStore, err := netstore.InitialiseStore(vegaPaths)
+		networkStore, err := networkStore.InitialiseStore(vegaPaths)
 		if err != nil {
-			return nil, fmt.Errorf("couldn't initialise networks store: %w", err)
+			return api.AdminDescribeNetworkResult{}, fmt.Errorf("couldn't initialise network store: %w", err)
 		}
 
-		return network.DescribeNetwork(netStore, req)
+		describeNetwork := api.NewAdminDescribeNetwork(networkStore)
+		rawResult, errorDetails := describeNetwork.Handle(context.Background(), params)
+		if errorDetails != nil {
+			return api.AdminDescribeNetworkResult{}, errors.New(errorDetails.Data)
+		}
+		return rawResult.(api.AdminDescribeNetworkResult), nil
 	}
 
 	return BuildCmdDescribeNetwork(w, h, rf)
@@ -46,13 +53,13 @@ type DescribeNetworkFlags struct {
 	Network string
 }
 
-func (f *DescribeNetworkFlags) Validate() (*network.DescribeNetworkRequest, error) {
-	req := &network.DescribeNetworkRequest{}
+func (f *DescribeNetworkFlags) Validate() (api.AdminDescribeNetworkParams, error) {
+	req := api.AdminDescribeNetworkParams{}
 
 	if len(f.Network) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("network")
+		return api.AdminDescribeNetworkParams{}, flags.MustBeSpecifiedError("network")
 	}
-	req.Name = f.Network
+	req.Network = f.Network
 
 	return req, nil
 }
@@ -96,7 +103,7 @@ func BuildCmdDescribeNetwork(w io.Writer, handler DescribeNetworkHandler, rf *Ro
 	return cmd
 }
 
-func PrintDescribeNetworkResponse(w io.Writer, resp *network.DescribeNetworkResponse) {
+func PrintDescribeNetworkResponse(w io.Writer, resp api.AdminDescribeNetworkResult) {
 	p := printer.NewInteractivePrinter(w)
 
 	str := p.String()

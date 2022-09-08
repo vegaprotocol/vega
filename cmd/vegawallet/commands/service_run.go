@@ -131,7 +131,7 @@ type RunServiceFlags struct {
 
 func (f *RunServiceFlags) Validate() error {
 	if len(f.Network) == 0 {
-		return flags.FlagMustBeSpecifiedError("network")
+		return flags.MustBeSpecifiedError("network")
 	}
 
 	return nil
@@ -169,7 +169,7 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 		return fmt.Errorf("couldn't verify the network existence: %w", err)
 	}
 	if !exists {
-		return network.NewNetworkDoesNotExistError(f.Network)
+		return network.NewDoesNotExistError(f.Network)
 	}
 
 	cfg, err := netStore.GetNetwork(f.Network)

@@ -44,6 +44,7 @@ type RetentionPolicy struct {
 }
 
 func (conf ConnectionConfig) GetConnectionString() string {
+	//nolint:nosprintfhostport
 	return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s",
 		conf.Username,
 		conf.Password,

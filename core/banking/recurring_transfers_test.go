@@ -164,7 +164,7 @@ func testInvalidRecurringTransfersDuplicates(t *testing.T) {
 	}
 
 	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{quantum: num.DecimalFromFloat(10)}), nil)
-	e.tsvc.EXPECT().GetTimeNow().Times(2)
+	e.tsvc.EXPECT().GetTimeNow().Times(3)
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
 	assert.NoError(t, e.TransferFunds(ctx, transfer))
 
@@ -193,6 +193,27 @@ func testInvalidRecurringTransfersDuplicates(t *testing.T) {
 		e.TransferFunds(ctx, transfer2),
 		banking.ErrCannotSubmitDuplicateRecurringTransferWithSameFromAndTo.Error(),
 	)
+
+	// same from/to different asset - should pass
+	transfer3 := &types.TransferFunds{
+		Kind: types.TransferCommandKindRecurring,
+		Recurring: &types.RecurringTransfer{
+			TransferBase: &types.TransferBase{
+				ID:              "TRANSFERID3",
+				From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
+				FromAccountType: types.AccountTypeGeneral,
+				To:              "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0",
+				ToAccountType:   types.AccountTypeGlobalReward,
+				Asset:           "VEGA",
+				Amount:          num.NewUint(50),
+				Reference:       "someotherref",
+			},
+			StartEpoch: 15,
+			Factor:     num.MustDecimalFromString("0.9"),
+		},
+	}
+	e.broker.EXPECT().Send(gomock.Any()).Times(1)
+	assert.NoError(t, e.TransferFunds(ctx, transfer3))
 }
 
 func testForeverTransferCancelledNotEnoughFunds(t *testing.T) {
@@ -542,7 +563,7 @@ func testRecurringTransferInvalidTransfers(t *testing.T) {
 
 	var (
 		endEpoch100 uint64 = 100
-		endEpoch0   uint64 = 0
+		endEpoch0   uint64
 		endEpoch1   uint64 = 1
 	)
 	// now testing the recurring specific stuff

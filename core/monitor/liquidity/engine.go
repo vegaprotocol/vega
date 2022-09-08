@@ -34,6 +34,7 @@ type AuctionState interface {
 }
 
 // TargetStakeCalculator interface
+//
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/target_stake_calculator_mock.go -package mocks code.vegaprotocol.io/vega/core/monitor/liquidity TargetStakeCalculator
 type TargetStakeCalculator interface {
 	GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint, trades []*types.Trade) *num.Uint

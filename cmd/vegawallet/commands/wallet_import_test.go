@@ -33,7 +33,7 @@ func testImportWalletFlagsValidFlagsSucceeds(t *testing.T) {
 		PassphraseFile:     passphraseFilePath,
 	}
 
-	expectedReq := api.ImportWalletParams{
+	expectedReq := api.AdminImportWalletParams{
 		Wallet:         walletName,
 		RecoveryPhrase: recoveryPhrase,
 		Passphrase:     passphrase,
@@ -58,7 +58,7 @@ func testImportWalletFlagsMissingWalletFails(t *testing.T) {
 	req, err := f.Validate()
 
 	// then
-	assert.ErrorIs(t, err, flags.FlagMustBeSpecifiedError("wallet"))
+	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("wallet"))
 	assert.Empty(t, req)
 }
 
@@ -73,7 +73,7 @@ func testImportWalletFlagsMissingRecoveryPhraseFileFails(t *testing.T) {
 	req, err := f.Validate()
 
 	// then
-	assert.ErrorIs(t, err, flags.FlagMustBeSpecifiedError("recovery-phrase-file"))
+	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("recovery-phrase-file"))
 	assert.Empty(t, req)
 }
 

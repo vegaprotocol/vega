@@ -46,7 +46,7 @@ type Order struct {
 
 func (o Order) IntoSubmission() *OrderSubmission {
 	sub := &OrderSubmission{
-		MarketId:    o.MarketID,
+		MarketID:    o.MarketID,
 		Size:        o.Size,
 		Side:        o.Side,
 		TimeInForce: o.TimeInForce,
@@ -329,8 +329,8 @@ type Trade struct {
 	SellerAuctionBatch uint64
 }
 
-func (t *Trade) SetIDs(tradeId string, aggressive, passive *Order) {
-	t.ID = tradeId
+func (t *Trade) SetIDs(tradeID string, aggressive, passive *Order) {
+	t.ID = tradeID
 	if aggressive.Side == SideBuy {
 		t.BuyOrder = aggressive.ID
 		t.SellOrder = passive.ID

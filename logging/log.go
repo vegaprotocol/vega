@@ -389,24 +389,24 @@ func (log *Logger) Debugf(s string, args ...interface{}) {
 	}
 }
 
-type gooseLogger struct {
+type ZapGooseLogger struct {
 	zap.SugaredLogger
 }
 
-func (l *gooseLogger) Print(v ...interface{}) {
+func (l *ZapGooseLogger) Print(v ...interface{}) {
 	l.Info(v...)
 }
 
-func (l *gooseLogger) Println(v ...interface{}) {
+func (l *ZapGooseLogger) Println(v ...interface{}) {
 	l.Info(v...)
 }
 
-func (l *gooseLogger) Printf(format string, v ...interface{}) {
+func (l *ZapGooseLogger) Printf(format string, v ...interface{}) {
 	// l.Logger.WithOptions(zap.AddCallerSkip(2))
 	l.Infof(strings.TrimSpace(format), v...)
 }
 
-func (log *Logger) GooseLogger() *gooseLogger {
+func (log *Logger) GooseLogger() *ZapGooseLogger {
 	gl := log.Logger.WithOptions(zap.AddCallerSkip(2)).Sugar()
-	return &gooseLogger{SugaredLogger: *gl}
+	return &ZapGooseLogger{SugaredLogger: *gl}
 }

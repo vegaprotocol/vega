@@ -40,7 +40,9 @@ message AssetEntry {
 // Assets contains all the enabled assets as AssetEntries
 message Assets {
   repeated AssetEntry assets = 1;
+  repeated AssetEntry pending_listing_assets = 2;
 }
+
 
 // AssetBalance represents the total balance of a given asset for a party
 message AssetBalance {
@@ -187,8 +189,8 @@ message MarketTracker {
 message MarketActivityTracker {
   string market = 1;
   string asset = 2;
-  repeated PartyFees maker_fees = 3;
-  repeated PartyFees taker_fees = 4;
+  repeated PartyFees maker_fees_received = 3;
+  repeated PartyFees maker_fees_paid = 4;
   repeated PartyFees lp_fees = 5;
   string proposer = 6;
   repeated string bonus_paid = 7;

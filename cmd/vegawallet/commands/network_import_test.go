@@ -6,7 +6,7 @@ import (
 	cmd "code.vegaprotocol.io/vega/cmd/vegawallet/commands"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
-	"code.vegaprotocol.io/vega/wallet/network"
+	"code.vegaprotocol.io/vega/wallet/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -15,7 +15,7 @@ func TestImportNetworkFlags(t *testing.T) {
 	t.Run("Valid flags with URL succeeds", testImportNetworkFlagsValidFlagsWithURLSucceeds)
 	t.Run("Valid flags with file path succeeds", testImportNetworkFlagsValidFlagsWithFilePathSucceeds)
 	t.Run("Missing URL and file path fails", testImportNetworkFlagsMissingURLAndFilePathFails)
-	t.Run("Missing public key fails", testImportNetworkFlagsBothURLAndFilePathSpecifiedFails)
+	t.Run("Both URL and filePath specified", testImportNetworkFlagsBothURLAndFilePathSpecifiedFails)
 }
 
 func testImportNetworkFlagsValidFlagsWithURLSucceeds(t *testing.T) {
@@ -29,10 +29,10 @@ func testImportNetworkFlagsValidFlagsWithURLSucceeds(t *testing.T) {
 		Force: true,
 	}
 
-	expectedReq := &network.ImportNetworkFromSourceRequest{
-		Name:  networkName,
-		URL:   url,
-		Force: true,
+	expectedReq := api.AdminImportNetworkParams{
+		Name:      networkName,
+		URL:       url,
+		Overwrite: true,
 	}
 
 	// when
@@ -55,10 +55,10 @@ func testImportNetworkFlagsValidFlagsWithFilePathSucceeds(t *testing.T) {
 		Force:    true,
 	}
 
-	expectedReq := &network.ImportNetworkFromSourceRequest{
-		Name:     networkName,
-		FilePath: filePath,
-		Force:    true,
+	expectedReq := api.AdminImportNetworkParams{
+		Name:      networkName,
+		FilePath:  filePath,
+		Overwrite: true,
 	}
 
 	// when
@@ -81,7 +81,7 @@ func testImportNetworkFlagsMissingURLAndFilePathFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.OneOfFlagsMustBeSpecifiedError("from-file", "from-url"))
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func testImportNetworkFlagsBothURLAndFilePathSpecifiedFails(t *testing.T) {
@@ -94,8 +94,8 @@ func testImportNetworkFlagsBothURLAndFilePathSpecifiedFails(t *testing.T) {
 	req, err := f.Validate()
 
 	// then
-	assert.ErrorIs(t, err, flags.FlagsMutuallyExclusiveError("from-file", "from-url"))
-	assert.Nil(t, req)
+	assert.ErrorIs(t, err, flags.MutuallyExclusiveError("from-file", "from-url"))
+	assert.Empty(t, req)
 }
 
 func newImportNetworkFlags(t *testing.T) *cmd.ImportNetworkFlags {

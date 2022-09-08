@@ -25,6 +25,7 @@ import (
 const defaultRequestTimeout = time.Second * 5
 
 // CoreServiceClient ...
+//
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/core_service_client_mock.go -package mocks code.vegaprotocol.io/vega/datanode/api CoreServiceClient
 type CoreServiceClient interface {
 	protoapi.CoreServiceClient
