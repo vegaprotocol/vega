@@ -3649,17 +3649,17 @@ type LiquidityProvision {
   market: Market!
   "Specified as a unit-less number that represents the amount of settlement asset of the market."
   commitmentAmount: String!
-  "Nominated liquidity fee factor, which is an input to the calculation of maker fees on the market, as per setting fees and rewarding liquidity providers."
+  "Nominated liquidity fee factor, which is an input to the calculation of liquidity fees on the market, as per setting fees and rewarding liquidity providers."
   fee: String!
   "a set of liquidity sell orders to meet the liquidity provision obligation."
   sells: [LiquidityOrderReference!]!
   "a set of liquidity buy orders to meet the liquidity provision obligation."
   buys: [LiquidityOrderReference!]!
-  "The version of this LiquidityProvision"
+  "The version of this liquidity provision"
   version: String!
   "The current status of this liquidity provision"
   status: LiquidityProvisionStatus!
-  "A reference for the orders created out of this Liquidity provision"
+  "A reference for the orders created out of this liquidity provision"
   reference: String
 }
 
@@ -3677,17 +3677,17 @@ type LiquidityProvisionUpdate {
   marketID: ID!
   "Specified as a unit-less number that represents the amount of settlement asset of the market."
   commitmentAmount: String!
-  "Nominated liquidity fee factor, which is an input to the calculation of maker fees on the market, as per setting fees and rewarding liquidity providers."
+  "Nominated liquidity fee factor, which is an input to the calculation of liquidity fees on the market, as per setting fees and rewarding liquidity providers."
   fee: String!
   "a set of liquidity sell orders to meet the liquidity provision obligation."
   sells: [LiquidityOrderReference!]!
   "a set of liquidity buy orders to meet the liquidity provision obligation."
   buys: [LiquidityOrderReference!]!
-  "The version of this LiquidityProvision"
+  "The version of this liquidity provision"
   version: String!
   "The current status of this liquidity provision"
   status: LiquidityProvisionStatus!
-  "A reference for the orders created out of this Liquidity provision"
+  "A reference for the orders created out of this liquidity provision"
   reference: String
 }
 
