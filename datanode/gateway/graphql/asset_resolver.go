@@ -55,7 +55,7 @@ func (r *myAssetResolver) GlobalRewardPoolAccount(ctx context.Context, asset *ty
 }
 
 func (r *myAssetResolver) TakerFeeRewardAccount(ctx context.Context, asset *types.Asset) (*types.Account, error) {
-	return listAssetAccounts(ctx, r.tradingDataClientV2, asset, types.AccountType_ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES)
+	return listAssetAccounts(ctx, r.tradingDataClientV2, asset, types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES)
 }
 
 func (r *myAssetResolver) MakerFeeRewardAccount(ctx context.Context, asset *types.Asset) (*types.Account, error) {

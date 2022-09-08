@@ -101,7 +101,7 @@ func (e *Engine) ensureNoRecurringTransferDuplicates(
 		// NB: 2 transfers are identical and not allowed if they have the same from, to, type AND the same dispatch strategy.
 		// This is needed so that we can for example setup transfer of USDT from one PK to the reward account with type maker fees received with dispatch based on the asset ETH -
 		// and then a similar transfer of USDT from the same PK to the same reward type but with different dispatch strategy - one tracking markets for the asset DAI.
-		if v.From == transfer.From && v.To == transfer.To && v.FromAccountType == transfer.FromAccountType && v.ToAccountType == transfer.ToAccountType && isSimilar(v.DispatchStrategy, transfer.DispatchStrategy) {
+		if v.From == transfer.From && v.To == transfer.To && v.Asset == transfer.Asset && v.FromAccountType == transfer.FromAccountType && v.ToAccountType == transfer.ToAccountType && isSimilar(v.DispatchStrategy, transfer.DispatchStrategy) {
 			return ErrCannotSubmitDuplicateRecurringTransferWithSameFromAndTo
 		}
 	}
@@ -111,7 +111,7 @@ func (e *Engine) ensureNoRecurringTransferDuplicates(
 
 func (e *Engine) getMarketScores(ds *vegapb.DispatchStrategy, payoutAsset, funder string) []*types.MarketContributionScore {
 	switch ds.Metric {
-	case vegapb.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID, vegapb.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED, vegapb.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED:
+	case vegapb.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID, vegapb.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED, vegapb.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED:
 		return e.marketActivityTracker.GetMarketScores(ds.AssetForMetric, ds.Markets, ds.Metric)
 
 	case vegapb.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE:
@@ -186,7 +186,7 @@ func (e *Engine) distributeRecurringTransfers(
 					break
 				}
 				if v.DispatchStrategy.Metric == vegapb.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE && fms.Score.IsPositive() {
-					e.marketActivityTracker.MarkPaidProposer(fms.Market, v.DispatchStrategy.AssetForMetric, v.DispatchStrategy.Markets, v.From)
+					e.marketActivityTracker.MarkPaidProposer(fms.Market, v.Asset, v.DispatchStrategy.Markets, v.From)
 				}
 				resps = append(resps, r...)
 			}

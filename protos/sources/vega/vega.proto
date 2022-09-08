@@ -654,8 +654,8 @@ enum AccountType {
   // Per asset account used to store pending transfers (if any)
   ACCOUNT_TYPE_PENDING_TRANSFERS = 13;
 
-  // Per asset reward account for fees paid by takers
-  ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES = 14;
+  // Per asset reward account for fees paid to makers
+  ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES = 14;
 
   // Per asset reward account for fees received by makers
   ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES = 15;
@@ -766,8 +766,8 @@ message Transfer {
 
 enum DispatchMetric {
   DISPATCH_METRIC_UNSPECIFIED = 0;
-  // Dispatch metric that is using the total taker fees paid in the market
-  DISPATCH_METRIC_TAKER_FEES_PAID = 1;
+  // Dispatch metric that is using the total maker fees paid in the market
+  DISPATCH_METRIC_MAKER_FEES_PAID = 1;
   // Dispatch metric that is using the total maker fees received in the market
   DISPATCH_METRIC_MAKER_FEES_RECEIVED = 2;
   // Dispatch metric that is using the total LP fees received in the market

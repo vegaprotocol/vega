@@ -94,7 +94,7 @@ func (t *TransferBase) IsValid() error {
 	}
 
 	switch t.ToAccountType {
-	case AccountTypeGeneral, AccountTypeGlobalReward, AccountTypeLPFeeReward, AccountTypeMakerFeeReward, AccountTypeTakerFeeReward, AccountTypeMarketProposerReward /*, AccountTypeLockedForStaking*/ :
+	case AccountTypeGeneral, AccountTypeGlobalReward, AccountTypeLPFeeReward, AccountTypeMakerReceivedFeeReward, AccountTypeMakerPaidFeeReward, AccountTypeMarketProposerReward /*, AccountTypeLockedForStaking*/ :
 		break
 	default:
 		return ErrUnsupportedToAccountType
