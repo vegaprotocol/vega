@@ -1368,23 +1368,24 @@ type ComplexityRoot struct {
 	}
 
 	Subscription struct {
-		Accounts           func(childComplexity int, marketID *string, partyID *string, assetID *string, typeArg *vega.AccountType) int
-		BusEvents          func(childComplexity int, types []BusEventType, marketID *string, partyID *string, batchSize int) int
-		Candles            func(childComplexity int, marketID string, interval vega.Interval) int
-		Delegations        func(childComplexity int, partyID *string, nodeID *string) int
-		Margins            func(childComplexity int, partyID string, marketID *string) int
-		MarketData         func(childComplexity int, marketID *string) int
-		MarketDepth        func(childComplexity int, marketID string) int
-		MarketDepthUpdate  func(childComplexity int, marketID string) int
-		MarketsData        func(childComplexity int, marketIds []string) int
-		MarketsDepth       func(childComplexity int, marketIds []string) int
-		MarketsDepthUpdate func(childComplexity int, marketIds []string) int
-		Orders             func(childComplexity int, marketID *string, partyID *string) int
-		Positions          func(childComplexity int, partyID *string, marketID *string) int
-		Proposals          func(childComplexity int, partyID *string) int
-		Rewards            func(childComplexity int, assetID *string, partyID *string) int
-		Trades             func(childComplexity int, marketID *string, partyID *string) int
-		Votes              func(childComplexity int, proposalID *string, partyID *string) int
+		Accounts            func(childComplexity int, marketID *string, partyID *string, assetID *string, typeArg *vega.AccountType) int
+		BusEvents           func(childComplexity int, types []BusEventType, marketID *string, partyID *string, batchSize int) int
+		Candles             func(childComplexity int, marketID string, interval vega.Interval) int
+		Delegations         func(childComplexity int, partyID *string, nodeID *string) int
+		LiquidityProvisions func(childComplexity int, partyID *string, marketID *string) int
+		Margins             func(childComplexity int, partyID string, marketID *string) int
+		MarketData          func(childComplexity int, marketID *string) int
+		MarketDepth         func(childComplexity int, marketID string) int
+		MarketDepthUpdate   func(childComplexity int, marketID string) int
+		MarketsData         func(childComplexity int, marketIds []string) int
+		MarketsDepth        func(childComplexity int, marketIds []string) int
+		MarketsDepthUpdate  func(childComplexity int, marketIds []string) int
+		Orders              func(childComplexity int, marketID *string, partyID *string) int
+		Positions           func(childComplexity int, partyID *string, marketID *string) int
+		Proposals           func(childComplexity int, partyID *string) int
+		Rewards             func(childComplexity int, assetID *string, partyID *string) int
+		Trades              func(childComplexity int, marketID *string, partyID *string) int
+		Votes               func(childComplexity int, proposalID *string, partyID *string) int
 	}
 
 	TargetStakeParameters struct {
@@ -2049,6 +2050,7 @@ type SubscriptionResolver interface {
 	BusEvents(ctx context.Context, types []BusEventType, marketID *string, partyID *string, batchSize int) (<-chan []*BusEvent, error)
 	Delegations(ctx context.Context, partyID *string, nodeID *string) (<-chan *vega.Delegation, error)
 	Rewards(ctx context.Context, assetID *string, partyID *string) (<-chan *vega.Reward, error)
+	LiquidityProvisions(ctx context.Context, partyID *string, marketID *string) (<-chan []*vega.LiquidityProvision, error)
 }
 type TradableInstrumentResolver interface {
 	RiskModel(ctx context.Context, obj *vega.TradableInstrument) (RiskModel, error)
@@ -7950,6 +7952,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Subscription.Delegations(childComplexity, args["partyId"].(*string), args["nodeId"].(*string)), true
 
+	case "Subscription.liquidityProvisions":
+		if e.complexity.Subscription.LiquidityProvisions == nil {
+			break
+		}
+
+		args, err := ec.field_Subscription_liquidityProvisions_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Subscription.LiquidityProvisions(childComplexity, args["partyId"].(*string), args["marketId"].(*string)), true
+
 	case "Subscription.margins":
 		if e.complexity.Subscription.Margins == nil {
 			break
@@ -9103,6 +9117,14 @@ type Subscription {
     "the party ID to subscribe for, empty if all"
     partyId: ID
   ): Reward!
+
+  "Subscribe to liquidity provisioning data"
+    liquidityProvisions(
+        "the party ID to subscribe for, empty if all"
+        partyId: ID
+        "the market ID to subscribe for, empty if all"
+        marketId: ID
+    ): [LiquidityProvision!]
 }
 
 "Margins for a given a party"
@@ -15625,6 +15647,30 @@ func (ec *executionContext) field_Subscription_delegations_args(ctx context.Cont
 		}
 	}
 	args["nodeId"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Subscription_liquidityProvisions_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["partyId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyId"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["partyId"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["marketId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("marketId"))
+		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["marketId"] = arg1
 	return args, nil
 }
 
@@ -43258,6 +43304,55 @@ func (ec *executionContext) _Subscription_rewards(ctx context.Context, field gra
 	}
 }
 
+func (ec *executionContext) _Subscription_liquidityProvisions(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = nil
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Subscription",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Subscription_liquidityProvisions_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Subscription().LiquidityProvisions(rctx, args["partyId"].(*string), args["marketId"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	if resTmp == nil {
+		return nil
+	}
+	return func() graphql.Marshaler {
+		res, ok := <-resTmp.(<-chan []*vega.LiquidityProvision)
+		if !ok {
+			return nil
+		}
+		return graphql.WriterFunc(func(w io.Writer) {
+			w.Write([]byte{'{'})
+			graphql.MarshalString(field.Alias).MarshalGQL(w)
+			w.Write([]byte{':'})
+			ec.marshalOLiquidityProvision2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityProvisionᚄ(ctx, field.Selections, res).MarshalGQL(w)
+			w.Write([]byte{'}'})
+		})
+	}
+}
+
 func (ec *executionContext) _TargetStakeParameters_timeWindow(ctx context.Context, field graphql.CollectedField, obj *TargetStakeParameters) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -62277,6 +62372,8 @@ func (ec *executionContext) _Subscription(ctx context.Context, sel ast.Selection
 		return ec._Subscription_delegations(ctx, fields[0])
 	case "rewards":
 		return ec._Subscription_rewards(ctx, fields[0])
+	case "liquidityProvisions":
+		return ec._Subscription_liquidityProvisions(ctx, fields[0])
 	default:
 		panic("unknown field " + strconv.Quote(fields[0].Name))
 	}

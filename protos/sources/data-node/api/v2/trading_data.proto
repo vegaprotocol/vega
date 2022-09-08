@@ -251,6 +251,8 @@ service TradingDataService {
     // Get a liquidity provision list for a given market using a cursor based pagination
     rpc ListLiquidityProvisions(ListLiquidityProvisionsRequest) returns (ListLiquidityProvisionsResponse);
 
+    rpc ObserveLiquidityProvisions(ObserveLiquidityProvisionsRequest) returns (stream ObserveLiquidityProvisionsResponse);
+
     // Governance
     //
     // Get a single proposal details
@@ -1501,6 +1503,17 @@ message LiquidityProvisionsEdge {
 message LiquidityProvisionsConnection {
     repeated LiquidityProvisionsEdge edges = 1;
     PageInfo page_info = 2;
+}
+
+message ObserveLiquidityProvisionsRequest {
+    // The target market for the liquidity provision orders
+    optional string market_id = 1;
+    // The party which submitted the liquidity provision orders
+    optional string party_id = 2;
+}
+
+message ObserveLiquidityProvisionsResponse {
+    repeated vega.LiquidityProvision liquidity_provisions = 1;
 }
 
 // -- Governance Data --
