@@ -111,7 +111,7 @@ func (e *Engine) ensureNoRecurringTransferDuplicates(
 
 func (e *Engine) getMarketScores(ds *vegapb.DispatchStrategy, payoutAsset, funder string) []*types.MarketContributionScore {
 	switch ds.Metric {
-	case vegapb.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID, vegapb.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED, vegapb.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED:
+	case vegapb.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID, vegapb.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED, vegapb.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED:
 		return e.marketActivityTracker.GetMarketScores(ds.AssetForMetric, ds.Markets, ds.Metric)
 
 	case vegapb.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE:

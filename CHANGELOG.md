@@ -5,6 +5,7 @@
 ### 🚨 Breaking changes
 - [5989](https://github.com/vegaprotocol/vega/issues/5989) - Remove liquidity commitment from market proposal 
 - [6031](https://github.com/vegaprotocol/vega/issues/6031) - Remove market name from `graphql` market type
+- [6095](https://github.com/vegaprotocol/vega/issues/6095) - Rename taker fees to maker paid fees
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -1708,6 +1709,7 @@ This release contains a lot of groundwork for Fees and Auction mode.
 - [#1990](https://github.com/vegaprotocol/vega/pull/1990) Remove specified `tickSize` from market
 - [#2066](https://github.com/vegaprotocol/vega/pull/2066) Fix validation of proposal timestamps to ensure that datestamps specify events in the correct order
 - [#2043](https://github.com/vegaprotocol/vega/pull/2043) Track Event Queue events to avoid processing events from other chains twice
+
 ## 0.22.0
 
 ### 🐛 Bugfixes

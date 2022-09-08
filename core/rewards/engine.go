@@ -28,7 +28,7 @@ import (
 
 var (
 	decimal1, _        = num.DecimalFromString("1")
-	rewardAccountTypes = []types.AccountType{types.AccountTypeGlobalReward, types.AccountTypeFeesInfrastructure, types.AccountTypeMakerFeeReward, types.AccountTypeTakerFeeReward, types.AccountTypeLPFeeReward, types.AccountTypeMarketProposerReward}
+	rewardAccountTypes = []types.AccountType{types.AccountTypeGlobalReward, types.AccountTypeFeesInfrastructure, types.AccountTypeMakerReceivedFeeReward, types.AccountTypeMakerPaidFeeReward, types.AccountTypeLPFeeReward, types.AccountTypeMarketProposerReward}
 )
 
 // Broker for sending events.
@@ -332,12 +332,12 @@ func (e *Engine) calculateRewardTypeForAsset(epochSeq, asset string, rewardType 
 		return nil
 	case types.AccountTypeFeesInfrastructure: // given to delegator based on stake
 		return calculateRewardsByStake(epochSeq, account.Asset, account.ID, account.Balance.Clone(), validatorNormalisedScores, validatorData, e.global.delegatorShare, num.UintZero(), e.global.minValStakeUInt, e.rng, e.log)
-	case types.AccountTypeMakerFeeReward: // given to receivers of maker fee in the asset based on their total received fee proportion
+	case types.AccountTypeMakerReceivedFeeReward: // given to receivers of maker fee in the asset based on their total received fee proportion
 		if !e.isValidAccountForMarket(account) {
 			return nil
 		}
 		return calculateRewardsByContribution(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.marketActivityTracker.GetFeePartyScores(account.MarketID, types.TransferTypeMakerFeeReceive), timestamp)
-	case types.AccountTypeTakerFeeReward: // given to payers of fee in the asset based on their total paid fee proportion
+	case types.AccountTypeMakerPaidFeeReward: // given to payers of fee in the asset based on their total paid fee proportion
 		if !e.isValidAccountForMarket(account) {
 			return nil
 		}

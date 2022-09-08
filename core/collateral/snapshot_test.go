@@ -80,24 +80,24 @@ func TestCheckpoint(t *testing.T) {
 	}
 
 	// topup some reward accounts for markets
-	makerFeeReward1, err := eng.Engine.GetOrCreateRewardAccount(ctx, "VOTE", "market1", types.AccountTypeMakerFeeReward)
+	makerReceivedFeeReward1, err := eng.Engine.GetOrCreateRewardAccount(ctx, "VOTE", "market1", types.AccountTypeMakerReceivedFeeReward)
 	require.NoError(t, err)
-	err = eng.Engine.UpdateBalance(ctx, makerFeeReward1.ID, num.NewUint(11111))
-	require.NoError(t, err)
-
-	makerFeeReward2, err := eng.Engine.GetOrCreateRewardAccount(ctx, "VOTE", "market2", types.AccountTypeMakerFeeReward)
-	require.NoError(t, err)
-	err = eng.Engine.UpdateBalance(ctx, makerFeeReward2.ID, num.NewUint(22222))
+	err = eng.Engine.UpdateBalance(ctx, makerReceivedFeeReward1.ID, num.NewUint(11111))
 	require.NoError(t, err)
 
-	takerFeeReward1, err := eng.Engine.GetOrCreateRewardAccount(ctx, "VOTE", "market3", types.AccountTypeTakerFeeReward)
+	makerReceivedFeeReward2, err := eng.Engine.GetOrCreateRewardAccount(ctx, "VOTE", "market2", types.AccountTypeMakerReceivedFeeReward)
 	require.NoError(t, err)
-	err = eng.Engine.UpdateBalance(ctx, takerFeeReward1.ID, num.NewUint(33333))
+	err = eng.Engine.UpdateBalance(ctx, makerReceivedFeeReward2.ID, num.NewUint(22222))
 	require.NoError(t, err)
 
-	takerFeeReward2, err := eng.Engine.GetOrCreateRewardAccount(ctx, "VOTE", "market4", types.AccountTypeTakerFeeReward)
+	makerPaidFeeReward1, err := eng.Engine.GetOrCreateRewardAccount(ctx, "VOTE", "market3", types.AccountTypeMakerPaidFeeReward)
 	require.NoError(t, err)
-	err = eng.Engine.UpdateBalance(ctx, takerFeeReward2.ID, num.NewUint(44444))
+	err = eng.Engine.UpdateBalance(ctx, makerPaidFeeReward1.ID, num.NewUint(33333))
+	require.NoError(t, err)
+
+	makerPaidFeeReward2, err := eng.Engine.GetOrCreateRewardAccount(ctx, "VOTE", "market4", types.AccountTypeMakerPaidFeeReward)
+	require.NoError(t, err)
+	err = eng.Engine.UpdateBalance(ctx, makerPaidFeeReward2.ID, num.NewUint(44444))
 	require.NoError(t, err)
 
 	lpFeeReward1, err := eng.Engine.GetOrCreateRewardAccount(ctx, "VOTE", "market5", types.AccountTypeLPFeeReward)
@@ -120,7 +120,7 @@ func TestCheckpoint(t *testing.T) {
 	err = eng.Engine.UpdateBalance(ctx, marketBonusReward2.ID, num.NewUint(88888))
 	require.NoError(t, err)
 
-	rewardAccounts := []*types.Account{makerFeeReward1, makerFeeReward2, takerFeeReward1, takerFeeReward2, lpFeeReward1, lpFeeReward2, marketBonusReward1, marketBonusReward2}
+	rewardAccounts := []*types.Account{makerReceivedFeeReward1, makerReceivedFeeReward2, makerPaidFeeReward1, makerPaidFeeReward2, lpFeeReward1, lpFeeReward2, marketBonusReward1, marketBonusReward2}
 
 	checkpoint, err := eng.Checkpoint()
 	require.NoError(t, err)
