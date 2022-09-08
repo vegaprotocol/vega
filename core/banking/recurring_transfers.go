@@ -101,7 +101,7 @@ func (e *Engine) ensureNoRecurringTransferDuplicates(
 		// NB: 2 transfers are identical and not allowed if they have the same from, to, type AND the same dispatch strategy.
 		// This is needed so that we can for example setup transfer of USDT from one PK to the reward account with type maker fees received with dispatch based on the asset ETH -
 		// and then a similar transfer of USDT from the same PK to the same reward type but with different dispatch strategy - one tracking markets for the asset DAI.
-		if v.From == transfer.From && v.To == transfer.To && v.FromAccountType == transfer.FromAccountType && v.ToAccountType == transfer.ToAccountType && isSimilar(v.DispatchStrategy, transfer.DispatchStrategy) {
+		if v.From == transfer.From && v.To == transfer.To && v.Asset == transfer.Asset && v.FromAccountType == transfer.FromAccountType && v.ToAccountType == transfer.ToAccountType && isSimilar(v.DispatchStrategy, transfer.DispatchStrategy) {
 			return ErrCannotSubmitDuplicateRecurringTransferWithSameFromAndTo
 		}
 	}
