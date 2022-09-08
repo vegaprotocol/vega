@@ -86,7 +86,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party3 | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | t3-b-1    |
       | party4 | ETH/DEC19 | sell | 1      | 11000 | 0                | TYPE_LIMIT | TIF_GTC | t4-s-1    |
-      | party1 | ETH/DEC19 | buy  | 5      |  9999 | 0                | TYPE_LIMIT | TIF_GFA | t1-b-1    |
+      | party1 | ETH/DEC19 | buy  | 5      |  9999 | 0                | TYPE_LIMIT | TIF_GTC | t1-b-1    |
       | party2 | ETH/DEC19 | sell | 5      | 10000 | 0                | TYPE_LIMIT | TIF_GFA | t2-s-1    |
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
@@ -96,7 +96,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
     Then the network moves ahead "2" blocks
     And the parties amend the following orders:
       | party  | reference | price | size delta | tif     |
-      | party1 | t1-b-1    | 10000 | 2          | TIF_GFA |
+      | party1 | t1-b-1    | 10000 | 2          | TIF_GTC |
 
     Then the opening auction period ends for market "ETH/DEC19"
     And the market data for the market "ETH/DEC19" should be:
