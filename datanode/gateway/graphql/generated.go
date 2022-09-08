@@ -9723,7 +9723,7 @@ type RecurringTransfer {
 }
 
 enum DispatchMetric {
-  DISPATCH_METRIC_TAKER_FEES_PAID
+  DISPATCH_METRIC_MAKER_FEES_PAID
 
   DISPATCH_METRIC_MAKER_FEES_RECEIVED
 
@@ -11979,8 +11979,8 @@ enum AccountType {
   ACCOUNT_TYPE_GLOBAL_REWARD
   "PendingTransfers - a global account for the pending transfers pool"
   ACCOUNT_TYPE_PENDING_TRANSFERS
-  "RewardTakerPaidFees - an account holding rewards for taker paid fees"
-  ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES
+  "RewardMakerPaidFees - an account holding rewards for taker paid fees"
+  ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES
   "RewardMakerReceivedFees - an account holding rewards for maker received fees"
   ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES
   "RewardLpReceivedFees - an account holding rewards for a liquidity provider's received fees"

@@ -217,9 +217,9 @@ const (
 	// Global account to hold pending transfers.
 	AccountTypePendingTransfers AccountType = proto.AccountType_ACCOUNT_TYPE_PENDING_TRANSFERS
 	// Asset account for paid taker fees.
-	AccountTypeTakerFeeReward AccountType = proto.AccountType_ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES
+	AccountTypeMakerPaidFeeReward AccountType = proto.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES
 	// Asset account for received maker fees.
-	AccountTypeMakerFeeReward AccountType = proto.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES
+	AccountTypeMakerReceivedFeeReward AccountType = proto.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES
 	// Asset account for received LP fees.
 	AccountTypeLPFeeReward AccountType = proto.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES
 	// Asset account for market proposers.
