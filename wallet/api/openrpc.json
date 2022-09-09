@@ -382,6 +382,9 @@
             "transactionHash": {
               "type": "string",
               "description": "The hash of the transaction. It's used to uniquely identify the transaction and can be used in the block explorer to retrieve it."
+            },
+            "transaction": {
+              "$ref": "#/components/schemas/signed_transaction"
             }
           }
         }
@@ -835,6 +838,256 @@
                 "wallet-1",
                 "wallet-2"
               ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin.remove_network",
+      "summary": "Removes a network from the computer.",
+      "description": "This method removes a network from the computer.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "network"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "network",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "null"
+        }
+      },
+      "examples": [
+        {
+          "name": "Remove a network",
+          "params": [
+            {
+              "name": "network",
+              "value": "fairground"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": {}
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin.list_networks",
+      "summary": "Returns the list of all registered networks.",
+      "description": "This method returns the list of the registered networks.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "network"
+        }
+      ],
+      "params": [],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "examples": [
+        {
+          "name": "Getting the list of networks",
+          "params": [],
+          "result": {
+            "name": "Success",
+            "value": {
+              "networks": [
+                "mainnet",
+                "fairground",
+                "local-network"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin.describe_network",
+      "summary": "Returns the network information.",
+      "description": "This method returns the network information.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "network"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "network",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "level": {
+              "type": "number"
+            },
+            "tokenExpiry": {
+              "type": "string"
+            },
+            "port": {
+              "type": "integer"
+            },
+            "host": {
+              "type": "string"
+            },
+            "api": {
+              "$ref": "#/components/schemas/network_api_config"
+            }
+          }
+        }
+      },
+      "examples": [
+        {
+          "name": "Describing a network",
+          "params": [
+            {
+              "name": "name",
+              "value": "local-network"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": {
+              "name": "local-network",
+              "level": "info",
+              "tokenExpiry": "168h0m0s",
+              "port": "1789",
+              "host": "localhost",
+              "api": {
+                "grpcConfig": {
+                  "hosts": [
+                    "localhost:3028"
+                  ],
+                  "retries": 5
+                },
+                "graphQLConfig": {
+                  "hosts": [
+                    "localhost:3028"
+                  ]
+                },
+                "restConfig": {
+                  "hosts": [
+                    "localhost:3029"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin.import_network",
+      "summary": "Import a network configuration from a file or an URL.",
+      "description": "Import a network configuration from a file or an URL.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "network"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "name",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "filePath",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "url",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "overwrite",
+          "required": true,
+          "schema": {
+            "type": "boolean"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "filePath": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "examples": [
+        {
+          "name": "Importing a network",
+          "params": [
+            {
+              "name": "name",
+              "value": "local-network"
+            },
+            {
+              "name": "filePath",
+              "value": "/Users/username/local-network.toml"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": {
+              "name": "local-network",
+              "filePath": "/Users/username/vega-home/wallet-service/networks/local-network.toml"
             }
           }
         }
@@ -1970,6 +2223,54 @@
   ],
   "components": {
     "schemas": {
+      "signed_transaction": {
+        "type": "object",
+        "description": "A transaction that has been signed by the wallet.",
+        "properties": {
+          "inputData": {
+            "type": "string"
+          },
+          "signature": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "string"
+              },
+              "algo": {
+                "type": "string"
+              },
+              "version": {
+                "type": "number"
+              }
+            }
+          },
+          "from": {
+            "type": "object",
+            "properties": {
+              "publicKey": {
+                "type": "string"
+              },
+              "address": {
+                "type": "string"
+              }
+            }
+          },
+          "version": {
+            "type": "number"
+          },
+          "pow": {
+            "type": "object",
+            "properties": {
+              "tid": {
+                "type": "string"
+              },
+              "nonce": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      },
       "token": {
         "type": "string",
         "description": "A unique connection token randomly generated for each new connection. It's used to access the protected methods."
@@ -2049,6 +2350,48 @@
               "restrictedKeys": {
                 "type": "array",
                 "description": "The subset of public keys the user selected for this hostname. If empty, the wallet assumes all keys are accessible.",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "network_api_config": {
+        "type": "object",
+        "description": "The API configuration for the network.",
+        "properties": {
+          "grpcConfig": {
+            "type": "object",
+            "properties": {
+              "hosts": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "graphQLConfig": {
+            "type": "object",
+            "properties": {
+              "hosts": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "retries": {
+                "type": "integer"
+              }
+            }
+          },
+          "restConfig": {
+            "type": "object",
+            "properties": {
+              "hosts": {
+                "type": "array",
                 "items": {
                   "type": "string"
                 }

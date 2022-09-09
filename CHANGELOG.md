@@ -6,6 +6,7 @@
 - [5989](https://github.com/vegaprotocol/vega/issues/5989) - Remove liquidity commitment from market proposal 
 - [6031](https://github.com/vegaprotocol/vega/issues/6031) - Remove market name from `graphql` market type
 - [6095](https://github.com/vegaprotocol/vega/issues/6095) - Rename taker fees to maker paid fees
+- [5442](https://github.com/vegaprotocol/vega/issues/5442) - Default behaviour when starting to node is to use the latest local snapshot if it exists
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -34,7 +35,10 @@
 - [5682](https://github.com/vegaprotocol/vega/issues/5682) - Expose equity share weight in the API
 - [5684](https://github.com/vegaprotocol/vega/issues/5684) - Added date range to a number of historic balances, deposits, withdrawals, orders and trades queries
 - [6071](https://github.com/vegaprotocol/vega/issues/6071) - Allow for empty settlement asset in recurring transfer metric definition for market proposer bonus
+- [6042](https://github.com/vegaprotocol/vega/issues/6042) - Set GraphQL query complexity limit
+- [6106](https://github.com/vegaprotocol/vega/issues/6106) - Returned signed transaction in wallet API version 2 `session.send_transaction`
 - [6042](https://github.com/vegaprotocol/vega/issues/5270) - Set GraphQL query complexity limit
+- [5888](https://github.com/vegaprotocol/vega/issues/5888) - Add Liquidity Provision subscription to GraphQL
 
 ### 🐛 Fixes
 - [5934](https://github.com/vegaprotocol/vega/issues/5934) - Ensure wallet without permissions can be read
@@ -53,6 +57,7 @@
 - [6097](https://github.com/vegaprotocol/vega/issues/6067) - Fix incorrect asset (metric asset) used for checking market proposer eligibility
 - [6099](https://github.com/vegaprotocol/vega/issues/6099) - Allow recurring transfers with the same to and from but with different asset
 - [6067](https://github.com/vegaprotocol/vega/issues/6067) - Verify global reward is transferred to party address 0
+- [6119](https://github.com/vegaprotocol/vega/issues/6119) - Correct order in which market event is emitted
 
 ## 0.54.0
 

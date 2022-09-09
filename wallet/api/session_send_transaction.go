@@ -33,9 +33,10 @@ type ParsedSendTransactionParams struct {
 }
 
 type SendTransactionResult struct {
-	ReceivedAt time.Time `json:"receivedAt"`
-	SentAt     time.Time `json:"sentAt"`
-	TxHash     string    `json:"transactionHash"`
+	ReceivedAt time.Time               `json:"receivedAt"`
+	SentAt     time.Time               `json:"sentAt"`
+	TxHash     string                  `json:"transactionHash"`
+	Tx         *commandspb.Transaction `json:"transaction"`
 }
 
 type SendTransaction struct {
@@ -142,6 +143,7 @@ func (h *SendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) 
 		ReceivedAt: receivedAt,
 		SentAt:     sentAt,
 		TxHash:     txHash,
+		Tx:         tx,
 	}, nil
 }
 

@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"io"
 
@@ -8,8 +10,8 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
 	"code.vegaprotocol.io/vega/paths"
-	"code.vegaprotocol.io/vega/wallet/network"
-	netstore "code.vegaprotocol.io/vega/wallet/network/store/v1"
+	"code.vegaprotocol.io/vega/wallet/api"
+	networkStore "code.vegaprotocol.io/vega/wallet/network/store/v1"
 
 	"github.com/spf13/cobra"
 )
@@ -25,18 +27,23 @@ var (
 	`)
 )
 
-type ListNetworksHandler func() (*network.ListNetworksResponse, error)
+type ListNetworksHandler func() (api.AdminListNetworksResult, error)
 
 func NewCmdListNetworks(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func() (*network.ListNetworksResponse, error) {
+	h := func() (api.AdminListNetworksResult, error) {
 		vegaPaths := paths.New(rf.Home)
 
-		netStore, err := netstore.InitialiseStore(vegaPaths)
+		networkStore, err := networkStore.InitialiseStore(vegaPaths)
 		if err != nil {
-			return nil, fmt.Errorf("couldn't initialise networks store: %w", err)
+			return api.AdminListNetworksResult{}, fmt.Errorf("couldn't initialise network store: %w", err)
 		}
 
-		return network.ListNetworks(netStore)
+		listWallet := api.NewAdminListNetworks(networkStore)
+		rawResult, errorDetails := listWallet.Handle(context.Background(), nil)
+		if errorDetails != nil {
+			return api.AdminListNetworksResult{}, errors.New(errorDetails.Data)
+		}
+		return rawResult.(api.AdminListNetworksResult), nil
 	}
 
 	return BuildCmdListNetworks(w, h, rf)
@@ -56,7 +63,7 @@ func BuildCmdListNetworks(w io.Writer, handler ListNetworksHandler, rf *RootFlag
 
 			switch rf.Output {
 			case flags.InteractiveOutput:
-				PrintListNetworksResponse(w, resp)
+				PrintListNetworksResult(w, resp)
 			case flags.JSONOutput:
 				return printer.FprintJSON(w, resp)
 			}
@@ -68,7 +75,7 @@ func BuildCmdListNetworks(w io.Writer, handler ListNetworksHandler, rf *RootFlag
 	return cmd
 }
 
-func PrintListNetworksResponse(w io.Writer, resp *network.ListNetworksResponse) {
+func PrintListNetworksResult(w io.Writer, resp api.AdminListNetworksResult) {
 	p := printer.NewInteractivePrinter(w)
 
 	str := p.String()
