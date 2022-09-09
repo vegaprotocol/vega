@@ -730,12 +730,6 @@ func (e *Engine) CancelLiquidityProvision(ctx context.Context, cancel *types.Liq
 func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 	timer := metrics.NewTimeCounter("-", "execution", "OnTick")
 
-	evts := make([]events.Event, 0, len(e.marketsCpy))
-	for _, v := range e.marketsCpy {
-		evts = append(evts, events.NewMarketDataEvent(ctx, v.GetMarketData()))
-	}
-	e.broker.SendBatch(evts)
-
 	e.log.Debug("updating engine on new time update")
 
 	// notify markets of the time expiration
@@ -748,6 +742,11 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 				logging.MarketID(mkt.GetID()))
 			toDelete = append(toDelete, mkt.GetID())
 		}
+		evts := make([]events.Event, 0, len(e.marketsCpy))
+		for _, v := range e.marketsCpy {
+			evts = append(evts, events.NewMarketDataEvent(ctx, v.GetMarketData()))
+		}
+		e.broker.SendBatch(evts)
 	}
 
 	for _, id := range toDelete {
