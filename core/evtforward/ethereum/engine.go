@@ -22,8 +22,7 @@ import (
 )
 
 const (
-	engineLogger            = "engine"
-	durationBetweenTwoRetry = 20 * time.Second
+	engineLogger = "engine"
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/forwarder_mock.go -package mocks code.vegaprotocol.io/vega/core/evtforward/ethereum Forwarder
@@ -41,6 +40,7 @@ type Filterer interface {
 }
 
 type Engine struct {
+	cfg    Config
 	log    *logging.Logger
 	poller *poller
 
@@ -59,6 +59,7 @@ type Engine struct {
 }
 
 func NewEngine(
+	cfg Config,
 	log *logging.Logger,
 	filterer Filterer,
 	forwarder Forwarder,
@@ -69,8 +70,9 @@ func NewEngine(
 	l := log.Named(engineLogger)
 
 	return &Engine{
+		cfg:                            cfg,
 		log:                            l,
-		poller:                         newPoller(),
+		poller:                         newPoller(cfg.PollEventRetryDuration.Get()),
 		filterer:                       filterer,
 		forwarder:                      forwarder,
 		shouldFilterStakingBridge:      stakingDeployment.HasAddress(),
@@ -176,14 +178,16 @@ func (e *Engine) Stop() {
 
 // poller wraps a poller that ticks every durationBetweenTwoEventFiltering.
 type poller struct {
-	ticker *time.Ticker
-	done   chan bool
+	ticker                  *time.Ticker
+	done                    chan bool
+	durationBetweenTwoRetry time.Duration
 }
 
-func newPoller() *poller {
+func newPoller(durationBetweenTwoRetry time.Duration) *poller {
 	return &poller{
-		ticker: time.NewTicker(durationBetweenTwoRetry),
-		done:   make(chan bool, 1),
+		ticker:                  time.NewTicker(durationBetweenTwoRetry),
+		done:                    make(chan bool, 1),
+		durationBetweenTwoRetry: durationBetweenTwoRetry,
 	}
 }
 
@@ -191,7 +195,7 @@ func newPoller() *poller {
 func (s *poller) Loop(fn func()) {
 	defer func() {
 		s.ticker.Stop()
-		s.ticker.Reset(durationBetweenTwoRetry)
+		s.ticker.Reset(s.durationBetweenTwoRetry)
 	}()
 
 	for {

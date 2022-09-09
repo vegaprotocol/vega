@@ -39,6 +39,7 @@ type StdTime struct{}
 func (StdTime) Now() time.Time { return time.Now() }
 
 type EthereumConfirmations struct {
+	cfg       Config
 	ethClient EthereumClientConfirmations
 
 	time Time
@@ -50,6 +51,7 @@ type EthereumConfirmations struct {
 }
 
 func NewEthereumConfirmations(
+	cfg Config,
 	ethClient EthereumClientConfirmations,
 	time Time,
 ) *EthereumConfirmations {
@@ -57,6 +59,7 @@ func NewEthereumConfirmations(
 		time = StdTime{}
 	}
 	return &EthereumConfirmations{
+		cfg:       cfg,
 		ethClient: ethClient,
 		time:      time,
 	}
@@ -92,7 +95,7 @@ func (e *EthereumConfirmations) currentHeight(
 	// ~15 seconds
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	if now := e.time.Now(); e.curHeightLastUpdate.Add(15 * time.Second).Before(now) {
+	if now := e.time.Now(); e.curHeightLastUpdate.Add(e.cfg.RetryDelay.Get()).Before(now) {
 		// get the last block header
 		h, err := e.ethClient.HeaderByNumber(ctx, nil)
 		if err != nil {

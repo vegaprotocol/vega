@@ -12,10 +12,27 @@
 
 package ethereum
 
-import "code.vegaprotocol.io/vega/core/config/encoding"
+import (
+	"time"
+
+	"code.vegaprotocol.io/vega/core/config/encoding"
+	"code.vegaprotocol.io/vega/logging"
+)
+
+const (
+	defaultDurationBetweenTwoRetry = 20 * time.Second
+)
 
 type Config struct {
 	// Level specifies the logging level of the Ethereum implementation of the
 	// Event Forwarder.
-	Level encoding.LogLevel `long:"log-level"`
+	Level                  encoding.LogLevel `long:"log-level"`
+	PollEventRetryDuration encoding.Duration
+}
+
+func NewDefaultConfig() Config {
+	return Config{
+		Level:                  encoding.LogLevel{Level: logging.InfoLevel},
+		PollEventRetryDuration: encoding.Duration{Duration: defaultDurationBetweenTwoRetry},
+	}
 }
