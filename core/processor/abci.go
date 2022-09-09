@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"code.vegaprotocol.io/vega/commands"
@@ -347,7 +348,7 @@ func NewApp(
 }
 
 func (app *App) OnSpamProtectionMaxBatchSizeUpdate(ctx context.Context, u *num.Uint) error {
-	app.maxBatchSize = u.Uint64()
+	atomic.StoreUint64(&app.maxBatchSize, u.Uint64())
 	return nil
 }
 
@@ -953,9 +954,10 @@ func (app *App) CheckBatchMarketInstructions(ctx context.Context, tx abci.Tx) er
 		return err
 	}
 
+	maxBatchSize := atomic.LoadUint64(&app.maxBatchSize)
 	size := uint64(len(bmi.Cancellations) + len(bmi.Amendments) + len(bmi.Submissions))
-	if size > app.maxBatchSize {
-		return ErrMarketBatchInstructionTooBig(size, app.maxBatchSize)
+	if size > maxBatchSize {
+		return ErrMarketBatchInstructionTooBig(size, maxBatchSize)
 	}
 
 	return nil
