@@ -575,14 +575,6 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 	ctx = vgcontext.WithTraceID(ctx, hash)
 	app.blockCtx = ctx
 
-	// Start the snapshot engine letting it clear any pre-existing state so that if we are
-	// replaying a chain from block 0 we won't recreate snapshots for blocks as we revisit
-	// them
-	if err := app.snapshot.ClearAndInitialise(); err != nil {
-		app.cancel()
-		app.log.Fatal("couldn't start snapshot engine", logging.Error(err))
-	}
-
 	if err := app.ghandler.OnGenesis(ctx, req.Time, req.AppStateBytes); err != nil {
 		app.cancel()
 		app.log.Fatal("couldn't initialise vega with the genesis block", logging.Error(err))

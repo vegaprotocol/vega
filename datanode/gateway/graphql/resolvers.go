@@ -341,6 +341,10 @@ func (r *VegaResolverRoot) TradeUpdate() TradeUpdateResolver {
 	return (*tradeUpdateResolver)(r)
 }
 
+func (r *VegaResolverRoot) LiquidityProvisionUpdate() LiquidityProvisionUpdateResolver {
+	return (*liquidityProvisionUpdateResolver)(r)
+}
+
 type accountUpdateResolver VegaResolverRoot
 
 func (r *accountUpdateResolver) AssetID(ctx context.Context, obj *types.Account) (string, error) {
@@ -2836,6 +2840,41 @@ func (r *mySubscriptionResolver) busEventsWithBatch(
 			return
 		}
 	}
+}
+
+func (r *mySubscriptionResolver) LiquidityProvisions(ctx context.Context, partyID *string, marketID *string) (<-chan []*types.LiquidityProvision, error) {
+	req := &v2.ObserveLiquidityProvisionsRequest{
+		MarketId: marketID,
+		PartyId:  partyID,
+	}
+	stream, err := r.tradingDataClientV2.ObserveLiquidityProvisions(ctx, req)
+	if err != nil {
+		return nil, customErrorFromStatus(err)
+	}
+
+	c := make(chan []*types.LiquidityProvision)
+	go func() {
+		defer func() {
+			stream.CloseSend()
+			close(c)
+		}()
+		for {
+			received, err := stream.Recv()
+			if err == io.EOF {
+				r.log.Error("orders: stream closed by server", logging.Error(err))
+				break
+			}
+			if err != nil {
+				r.log.Error("orders: stream closed", logging.Error(err))
+				break
+			}
+			if lps := received.LiquidityProvisions; lps != nil {
+				c <- lps
+			}
+		}
+	}()
+
+	return c, nil
 }
 
 // START: Account Resolver

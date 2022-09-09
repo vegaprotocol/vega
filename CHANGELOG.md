@@ -6,6 +6,7 @@
 - [5989](https://github.com/vegaprotocol/vega/issues/5989) - Remove liquidity commitment from market proposal 
 - [6031](https://github.com/vegaprotocol/vega/issues/6031) - Remove market name from `graphql` market type
 - [6095](https://github.com/vegaprotocol/vega/issues/6095) - Rename taker fees to maker paid fees
+- [5442](https://github.com/vegaprotocol/vega/issues/5442) - Default behaviour when starting to node is to use the latest local snapshot if it exists
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -37,6 +38,8 @@
 - [6042](https://github.com/vegaprotocol/vega/issues/6042) - Set GraphQL query complexity limit
 - [6106](https://github.com/vegaprotocol/vega/issues/6106) - Returned signed transaction in wallet API version 2 `session.send_transaction`
 - [6105](https://github.com/vegaprotocol/vega/issues/6105) - Add `session.sign_transaction` endpoint on wallet API version 2
+- [6042](https://github.com/vegaprotocol/vega/issues/5270) - Set GraphQL query complexity limit
+- [5888](https://github.com/vegaprotocol/vega/issues/5888) - Add Liquidity Provision subscription to GraphQL
 
 ### 🐛 Fixes
 - [5934](https://github.com/vegaprotocol/vega/issues/5934) - Ensure wallet without permissions can be read
@@ -54,6 +57,7 @@
 - [6060](https://github.com/vegaprotocol/vega/issues/6060) - Fix connection results should not be declared as mandatory in GQL schema.
 - [6097](https://github.com/vegaprotocol/vega/issues/6067) - Fix incorrect asset (metric asset) used for checking market proposer eligibility
 - [6099](https://github.com/vegaprotocol/vega/issues/6099) - Allow recurring transfers with the same to and from but with different asset
+- [6119](https://github.com/vegaprotocol/vega/issues/6119) - Correct order in which market event is emitted
 
 ## 0.54.0
 
