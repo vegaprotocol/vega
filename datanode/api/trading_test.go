@@ -19,8 +19,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v4"
+	"google.golang.org/grpc/connectivity"
+
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
 	"code.vegaprotocol.io/vega/datanode/service"
+
+	"github.com/golang/protobuf/proto"
 
 	"code.vegaprotocol.io/vega/datanode/api"
 	"code.vegaprotocol.io/vega/datanode/api/mocks"
@@ -30,7 +35,6 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/subscribers"
 	"code.vegaprotocol.io/vega/logging"
-	"github.com/golang/protobuf/proto"
 
 	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
@@ -99,6 +103,8 @@ func getTestGRPCServer(
 
 	mockCoreServiceClient = mocks.NewMockCoreServiceClient(mockCtrl)
 
+	mockCoreServiceClient.EXPECT().GetState().Return(connectivity.Ready).Times(2)
+
 	eventSource, err := broker.NewEventSource(conf.Broker, logger)
 	if err != nil {
 		t.Fatalf("failed to create event source: %v", err)
@@ -106,17 +112,19 @@ func getTestGRPCServer(
 
 	conf.CandlesV2.CandleStore.DefaultCandleIntervals = ""
 
-	sqlConn := &sqlstore.ConnectionSource{}
+	sqlConn := &sqlstore.ConnectionSource{
+		Connection: dummyConnection{},
+	}
 	sqlChainStore := sqlstore.NewChain(sqlConn)
 	sqlChainService := service.NewChain(sqlChainStore, logger)
 
-	broker, err := broker.New(ctx, logger, conf.Broker, sqlChainService, eventSource)
+	bro, err := broker.New(ctx, logger, conf.Broker, sqlChainService, eventSource)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create broker")
 		return
 	}
 
-	eventService := subscribers.NewService(broker)
+	eventService := subscribers.NewService(bro)
 	sqlOrderStore := sqlstore.NewOrders(sqlConn, logger)
 	sqlOrderService := service.NewOrder(sqlOrderStore, logger)
 	sqlNetworkLimitsService := service.NewNetworkLimits(sqlstore.NewNetworkLimits(sqlConn), logger)
@@ -218,6 +226,14 @@ func getTestGRPCServer(
 	}
 
 	return tidy, conn, mockCoreServiceClient, err
+}
+
+type dummyConnection struct {
+	sqlstore.Connection
+}
+
+func (d dummyConnection) Query(context.Context, string, ...interface{}) (pgx.Rows, error) {
+	return nil, pgx.ErrNoRows
 }
 
 func TestSubmitTransaction(t *testing.T) {

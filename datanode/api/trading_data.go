@@ -28,13 +28,14 @@ import (
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
+	"google.golang.org/grpc/codes"
+
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	"code.vegaprotocol.io/vega/protos/vega"
 	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
-	"google.golang.org/grpc/codes"
 )
 
 type tradingDataService struct {
@@ -58,7 +59,7 @@ type tradingDataService struct {
 	riskFactorService         *service.RiskFactor
 	riskService               *service.Risk
 	networkParameterService   *service.NetworkParameter
-	blockService              *service.Block
+	blockService              BlockService
 	checkpointService         *service.Checkpoint
 	partyService              *service.Party
 	candleService             *candlesv2.Svc

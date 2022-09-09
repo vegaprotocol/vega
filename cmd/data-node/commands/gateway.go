@@ -20,12 +20,15 @@ import (
 	"os/signal"
 	"syscall"
 
+	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc/connectivity"
+
 	"code.vegaprotocol.io/vega/datanode/config"
+	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	"code.vegaprotocol.io/vega/datanode/gateway/server"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/jessevdk/go-flags"
 )
@@ -78,7 +81,13 @@ func (opts *gatewayCmd) Execute(_ []string) error {
 	})
 
 	eg.Go(func() error {
-		srv := server.New(opts.Config, log, vegaPaths)
+		lastBlockFn := func(ctx context.Context) (entities.Block, error) {
+			return entities.Block{}, nil
+		}
+		getStateFn := func() connectivity.State {
+			return connectivity.Ready
+		}
+		srv := server.New(opts.Config, log, vegaPaths, lastBlockFn, getStateFn) // TODO
 		if err := srv.Start(ctx); err != nil {
 			return err
 		}

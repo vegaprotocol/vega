@@ -33,7 +33,6 @@ import (
 	"code.vegaprotocol.io/vega/datanode/subscribers"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
-	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 	"golang.org/x/sync/errgroup"
@@ -120,7 +119,7 @@ type NodeCommand struct {
 	nodeService                 *service.Node
 	chainService                *service.Chain
 
-	vegaCoreServiceClient vegaprotoapi.CoreServiceClient
+	vegaCoreServiceClient api.CoreServiceClient
 
 	broker    *broker.Broker
 	sqlBroker broker.SQLStoreEventBroker
@@ -194,7 +193,7 @@ func (l *NodeCommand) Run(cfgwatchr *config.Watcher, vegaPaths paths.Paths, args
 }
 
 // runNode is the entry of node command.
-func (l *NodeCommand) runNode(args []string) error {
+func (l *NodeCommand) runNode([]string) error {
 	defer l.cancel()
 
 	ctx, cancel := context.WithCancel(l.ctx)
@@ -213,7 +212,7 @@ func (l *NodeCommand) runNode(args []string) error {
 
 	// start gateway
 	if l.conf.GatewayEnabled {
-		gty := server.New(l.conf.Gateway, l.Log, l.vegaPaths)
+		gty := server.New(l.conf.Gateway, l.Log, l.vegaPaths, l.blockService.GetLastBlock, l.vegaCoreServiceClient.GetState)
 		eg.Go(func() error { return gty.Start(ctx) })
 	}
 

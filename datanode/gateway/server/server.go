@@ -15,12 +15,14 @@ package server
 import (
 	"context"
 
+	"golang.org/x/sync/errgroup"
+
+	"code.vegaprotocol.io/vega/datanode/api"
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	gql "code.vegaprotocol.io/vega/datanode/gateway/graphql"
 	"code.vegaprotocol.io/vega/datanode/gateway/rest"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
-	"golang.org/x/sync/errgroup"
 )
 
 type Server struct {
@@ -28,15 +30,25 @@ type Server struct {
 	log       *logging.Logger
 	vegaPaths paths.Paths
 
-	rest *rest.ProxyServer
-	gql  *gql.GraphServer
+	rest         *rest.ProxyServer
+	gql          *gql.GraphServer
+	getCoreState api.GetStateFunc
+	getLastBlock api.GetBlockFunc
 }
 
-func New(cfg gateway.Config, log *logging.Logger, vegaPaths paths.Paths) *Server {
+func New(
+	cfg gateway.Config,
+	log *logging.Logger,
+	vegaPaths paths.Paths,
+	getLastBlock api.GetBlockFunc,
+	getCoreState api.GetStateFunc,
+) *Server {
 	return &Server{
-		log:       log,
-		cfg:       &cfg,
-		vegaPaths: vegaPaths,
+		log:          log,
+		cfg:          &cfg,
+		vegaPaths:    vegaPaths,
+		getCoreState: getCoreState,
+		getLastBlock: getLastBlock,
 	}
 }
 
@@ -45,7 +57,7 @@ func (srv *Server) Start(ctx context.Context) error {
 
 	if srv.cfg.GraphQL.Enabled {
 		var err error
-		srv.gql, err = gql.New(srv.log, *srv.cfg, srv.vegaPaths)
+		srv.gql, err = gql.New(srv.log, *srv.cfg, srv.vegaPaths, srv.getLastBlock, srv.getCoreState)
 		if err != nil {
 			return err
 		}

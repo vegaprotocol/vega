@@ -23,6 +23,11 @@ import (
 	"strconv"
 	"time"
 
+	"golang.org/x/crypto/acme/autocert"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/connectivity"
+
+	"code.vegaprotocol.io/vega/datanode/api"
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/logging"
@@ -30,8 +35,6 @@ import (
 	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
-	"golang.org/x/crypto/acme/autocert"
-	"google.golang.org/grpc"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/playground"
@@ -51,9 +54,11 @@ type GraphServer struct {
 	log       *logging.Logger
 	vegaPaths paths.Paths
 
-	coreProxyClient     vegaprotoapi.CoreServiceClient
+	coreProxyClient     CoreProxyServiceClient
 	tradingDataClient   protoapi.TradingDataServiceClient
 	tradingDataClientV2 v2.TradingDataServiceClient
+	getLastBlock        api.GetBlockFunc
+	getCoreState        api.GetStateFunc
 	srv                 *http.Server
 }
 
@@ -62,6 +67,8 @@ func New(
 	log *logging.Logger,
 	config gateway.Config,
 	vegaPaths paths.Paths,
+	getLastBlock api.GetBlockFunc,
+	getCoreState api.GetStateFunc,
 ) (*GraphServer, error) {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -80,15 +87,18 @@ func New(
 	if err != nil {
 		return nil, err
 	}
+
 	tradingClient := vegaprotoapi.NewCoreServiceClient(tconn)
 
 	return &GraphServer{
-		log:                 log,
 		Config:              config,
+		log:                 log,
 		vegaPaths:           vegaPaths,
 		coreProxyClient:     tradingClient,
 		tradingDataClient:   tradingDataClient,
 		tradingDataClientV2: tradingDataClientV2,
+		getLastBlock:        getLastBlock,
+		getCoreState:        getCoreState,
 	}, nil
 }
 
@@ -146,6 +156,45 @@ func (g *GraphServer) Start() error {
 		return res, err
 	})
 
+	// TODO: don't call the same thing in gRPC and GraphQL
+	headersMiddleware := handler.ResolverMiddleware(func(ctx context.Context, next graphql.Resolver) (res interface{}, err error) {
+		res, err = next(ctx)
+
+		headers := http.Header{}
+
+		var (
+			height    int64
+			timestamp int64
+		)
+
+		block, bErr := g.getLastBlock(ctx)
+		if bErr != nil {
+			g.log.Error("failed to get last block", logging.Error(bErr))
+		} else {
+			height = block.Height
+			timestamp = block.VegaTime.Unix()
+		}
+
+		state := g.getCoreState()
+
+		connState := "DISCONNECTED"
+		if state == connectivity.Ready {
+			connState = "CONNECTED"
+		}
+
+		headers["X-Block-Height"] = []string{strconv.FormatInt(height, 10)}
+		headers["X-Block-Timestamp"] = []string{strconv.FormatInt(timestamp, 10)}
+		headers["X-Vega-Connection"] = []string{connState}
+
+		rw, ok := gateway.InjectableWriterFromContext(ctx)
+		if !ok {
+			return
+		}
+
+		rw.SetHeaders(headers)
+		return
+	})
+
 	handlr := http.NewServeMux()
 
 	if g.GraphQLPlaygroundEnabled {
@@ -156,6 +205,7 @@ func (g *GraphServer) Start() error {
 		handler.WebsocketKeepAliveDuration(10 * time.Second),
 		handler.WebsocketUpgrader(up),
 		loggingMiddleware,
+		headersMiddleware,
 		handler.RecoverFunc(func(ctx context.Context, err interface{}) error {
 			g.log.Warn("Recovering from error on graphQL handler",
 				logging.String("error", fmt.Sprintf("%s", err)))
@@ -168,14 +218,19 @@ func (g *GraphServer) Start() error {
 	if g.GraphQL.ComplexityLimit > 0 {
 		options = append(options, handler.ComplexityLimit(g.GraphQL.ComplexityLimit))
 	}
-
 	// FIXME(jeremy): to be removed once everyone has move to the new endpoint
-	handlr.Handle("/query", gateway.RemoteAddrMiddleware(g.log, corz.Handler(
-		handler.GraphQL(NewExecutableSchema(config), options...),
-	)))
-	handlr.Handle(g.GraphQL.Endpoint, gateway.RemoteAddrMiddleware(g.log, corz.Handler(
-		handler.GraphQL(NewExecutableSchema(config), options...),
-	)))
+	handlr.Handle("/query",
+		corz.Handler(gateway.Chain(
+			gateway.RemoteAddrMiddleware(g.log, handler.GraphQL(NewExecutableSchema(config), options...)),
+			gateway.WithAddHeadersMiddleware,
+		)),
+	)
+	handlr.Handle(g.GraphQL.Endpoint,
+		corz.Handler(gateway.Chain(
+			gateway.RemoteAddrMiddleware(g.log, handler.GraphQL(NewExecutableSchema(config), options...)),
+			gateway.WithAddHeadersMiddleware,
+		)),
+	)
 
 	// Set up https if we are using it
 	var tlsConfig *tls.Config
