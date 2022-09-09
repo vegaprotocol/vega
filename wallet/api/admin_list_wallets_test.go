@@ -39,11 +39,6 @@ func testListingWalletsSucceeds(t *testing.T) {
 	expectedWallets := []string{expectedWallet1.Name(), expectedWallet2.Name()}
 	sort.Strings(expectedWallets)
 	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return(expectedWallets, nil)
-	// -- unexpected calls
-	handler.walletStore.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.walletStore.EXPECT().WalletExists(gomock.Any(), gomock.Any()).Times(0)
-	handler.walletStore.EXPECT().GetWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, nil)
@@ -61,11 +56,6 @@ func testGettingInternalErrorDuringListingFails(t *testing.T) {
 	handler := newListWalletHandlers(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().ListWallets(gomock.Any()).Times(1).Return(nil, assert.AnError)
-	// -- unexpected calls
-	handler.walletStore.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.walletStore.EXPECT().WalletExists(gomock.Any(), gomock.Any()).Times(0)
-	handler.walletStore.EXPECT().GetWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, nil)

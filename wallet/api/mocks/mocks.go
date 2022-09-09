@@ -486,19 +486,34 @@ func (mr *MockPipelineMockRecorder) RequestPermissionsReview(arg0, arg1, arg2, a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RequestPermissionsReview", reflect.TypeOf((*MockPipeline)(nil).RequestPermissionsReview), arg0, arg1, arg2, arg3, arg4)
 }
 
-// RequestTransactionReview mocks base method.
-func (m *MockPipeline) RequestTransactionReview(arg0 context.Context, arg1, arg2, arg3, arg4, arg5 string, arg6 time.Time) (bool, error) {
+// RequestTransactionSendingReview mocks base method.
+func (m *MockPipeline) RequestTransactionSendingReview(arg0 context.Context, arg1, arg2, arg3, arg4, arg5 string, arg6 time.Time) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RequestTransactionReview", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+	ret := m.ctrl.Call(m, "RequestTransactionSendingReview", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// RequestTransactionReview indicates an expected call of RequestTransactionReview.
-func (mr *MockPipelineMockRecorder) RequestTransactionReview(arg0, arg1, arg2, arg3, arg4, arg5, arg6 interface{}) *gomock.Call {
+// RequestTransactionSendingReview indicates an expected call of RequestTransactionSendingReview.
+func (mr *MockPipelineMockRecorder) RequestTransactionSendingReview(arg0, arg1, arg2, arg3, arg4, arg5, arg6 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RequestTransactionReview", reflect.TypeOf((*MockPipeline)(nil).RequestTransactionReview), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RequestTransactionSendingReview", reflect.TypeOf((*MockPipeline)(nil).RequestTransactionSendingReview), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+}
+
+// RequestTransactionSigningReview mocks base method.
+func (m *MockPipeline) RequestTransactionSigningReview(arg0 context.Context, arg1, arg2, arg3, arg4, arg5 string, arg6 time.Time) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RequestTransactionSigningReview", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RequestTransactionSigningReview indicates an expected call of RequestTransactionSigningReview.
+func (mr *MockPipelineMockRecorder) RequestTransactionSigningReview(arg0, arg1, arg2, arg3, arg4, arg5, arg6 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RequestTransactionSigningReview", reflect.TypeOf((*MockPipeline)(nil).RequestTransactionSigningReview), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 }
 
 // RequestWalletConnectionReview mocks base method.

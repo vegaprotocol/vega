@@ -10,7 +10,6 @@ import (
 	"code.vegaprotocol.io/vega/commands"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
-	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
 	wcommands "code.vegaprotocol.io/vega/wallet/commands"
@@ -18,37 +17,32 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-type SendTransactionParams struct {
+type SignTransactionParams struct {
 	Token              string `json:"token"`
 	PublicKey          string `json:"publicKey"`
-	SendingMode        string `json:"sendingMode"`
 	EncodedTransaction string `json:"encodedTransaction"`
 }
 
-type ParsedSendTransactionParams struct {
+type ParsedSignTransactionParams struct {
 	Token          string
 	PublicKey      string
-	SendingMode    apipb.SubmitTransactionRequest_Type
 	RawTransaction string
 }
 
-type SendTransactionResult struct {
-	ReceivedAt time.Time               `json:"receivedAt"`
-	SentAt     time.Time               `json:"sentAt"`
-	TxHash     string                  `json:"transactionHash"`
-	Tx         *commandspb.Transaction `json:"transaction"`
+type SignTransactionResult struct {
+	Tx *commandspb.Transaction `json:"transaction"`
 }
 
-type SendTransaction struct {
+type SignTransaction struct {
 	pipeline     Pipeline
 	nodeSelector NodeSelector
 	sessions     *Sessions
 }
 
-func (h *SendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *SignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	traceID := TraceIDFromContext(ctx)
 
-	params, err := validateSendTransactionParams(rawParams)
+	params, err := validateSignTransactionParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
 	}
@@ -74,13 +68,13 @@ func (h *SendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) 
 	}
 
 	receivedAt := time.Now()
-	approved, err := h.pipeline.RequestTransactionSendingReview(ctx, traceID, connectedWallet.Hostname, connectedWallet.Wallet.Name(), params.PublicKey, params.RawTransaction, receivedAt)
+	approved, err := h.pipeline.RequestTransactionSigningReview(ctx, traceID, connectedWallet.Hostname, connectedWallet.Wallet.Name(), params.PublicKey, params.RawTransaction, receivedAt)
 	if err != nil {
 		if errDetails := handleRequestFlowError(ctx, traceID, h.pipeline, err); errDetails != nil {
 			return nil, errDetails
 		}
 		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("requesting the transaction review failed: %w", err))
-		return nil, internalError(ErrCouldNotSendTransaction)
+		return nil, internalError(ErrCouldNotSignTransaction)
 	}
 	if !approved {
 		return nil, clientRejectionError()
@@ -102,13 +96,13 @@ func (h *SendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) 
 	inputData, err := wcommands.ToMarshaledInputData(request, lastBlockData.Height, lastBlockData.ChainId)
 	if err != nil {
 		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not marshal input data: %w", err))
-		return nil, internalError(ErrCouldNotSendTransaction)
+		return nil, internalError(ErrCouldNotSignTransaction)
 	}
 
 	signature, err := connectedWallet.Wallet.SignTx(params.PublicKey, inputData)
 	if err != nil {
 		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not sign command: %w", err))
-		return nil, internalError(ErrCouldNotSendTransaction)
+		return nil, internalError(ErrCouldNotSignTransaction)
 	}
 
 	// Build the transaction.
@@ -123,104 +117,58 @@ func (h *SendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) 
 	powNonce, _, err := vgcrypto.PoW(lastBlockData.Hash, txID, uint(lastBlockData.SpamPowDifficulty), vgcrypto.Sha3)
 	if err != nil {
 		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not compute the proof of work: %w", err))
-		return nil, internalError(ErrCouldNotSendTransaction)
+		return nil, internalError(ErrCouldNotSignTransaction)
 	}
 	tx.Pow = &commandspb.ProofOfWork{
 		Tid:   txID,
 		Nonce: powNonce,
 	}
 
-	sentAt := time.Now()
-	txHash, err := currentNode.SendTransaction(ctx, tx, params.SendingMode)
-	if err != nil {
-		h.notifyTransactionStatus(ctx, traceID, txHash, tx, err, sentAt)
-		return nil, networkError(ErrorCodeNodeRequestFailed, ErrTransactionFailed)
-	}
+	h.pipeline.NotifySuccessfulRequest(ctx, traceID)
 
-	h.notifyTransactionStatus(ctx, traceID, txHash, tx, err, sentAt)
-
-	return SendTransactionResult{
-		ReceivedAt: receivedAt,
-		SentAt:     sentAt,
-		TxHash:     txHash,
-		Tx:         tx,
+	return SignTransactionResult{
+		Tx: tx,
 	}, nil
 }
 
-func (h *SendTransaction) notifyTransactionStatus(ctx context.Context, traceID, txHash string, tx *commandspb.Transaction, err error, sentAt time.Time) {
-	m := jsonpb.Marshaler{
-		EmitDefaults: true,
-		Indent:       "  ",
-	}
-	humanReadableTx, mErr := m.MarshalToString(tx)
-	if mErr != nil {
-		// We ignore this error as it's not critical to have the transaction
-		// sent back. At least, we can transmit the transaction hash so the
-		// client front-end can redirect to the block explorer.
-		humanReadableTx = ""
-	}
-	h.pipeline.NotifyTransactionStatus(ctx, traceID, txHash, humanReadableTx, err, sentAt)
-}
-
-func NewSendTransaction(pipeline Pipeline, nodeSelector NodeSelector, sessions *Sessions) *SendTransaction {
-	return &SendTransaction{
+func NewSignTransaction(pipeline Pipeline, nodeSelector NodeSelector, sessions *Sessions) *SignTransaction {
+	return &SignTransaction{
 		pipeline:     pipeline,
 		nodeSelector: nodeSelector,
 		sessions:     sessions,
 	}
 }
 
-func validateSendTransactionParams(rawParams jsonrpc.Params) (ParsedSendTransactionParams, error) {
+func validateSignTransactionParams(rawParams jsonrpc.Params) (ParsedSignTransactionParams, error) {
 	if rawParams == nil {
-		return ParsedSendTransactionParams{}, ErrParamsRequired
+		return ParsedSignTransactionParams{}, ErrParamsRequired
 	}
 
-	params := SendTransactionParams{}
+	params := SignTransactionParams{}
 	if err := mapstructure.Decode(rawParams, &params); err != nil {
-		return ParsedSendTransactionParams{}, ErrParamsDoNotMatch
+		return ParsedSignTransactionParams{}, ErrParamsDoNotMatch
 	}
 
 	if params.Token == "" {
-		return ParsedSendTransactionParams{}, ErrConnectionTokenIsRequired
+		return ParsedSignTransactionParams{}, ErrConnectionTokenIsRequired
 	}
 
 	if params.PublicKey == "" {
-		return ParsedSendTransactionParams{}, ErrPublicKeyIsRequired
-	}
-
-	if params.SendingMode == "" {
-		return ParsedSendTransactionParams{}, ErrSendingModeIsRequired
-	}
-
-	isValidSendingMode := false
-	var sendingMode apipb.SubmitTransactionRequest_Type
-	for tp, sm := range apipb.SubmitTransactionRequest_Type_value {
-		if tp == params.SendingMode {
-			isValidSendingMode = true
-			sendingMode = apipb.SubmitTransactionRequest_Type(sm)
-		}
-	}
-	if !isValidSendingMode {
-		return ParsedSendTransactionParams{}, fmt.Errorf("sending mode %q is not a valid one", params.SendingMode)
-	}
-
-	if sendingMode == apipb.SubmitTransactionRequest_TYPE_UNSPECIFIED {
-		return ParsedSendTransactionParams{}, ErrSendingModeCannotBeTypeUnspecified
+		return ParsedSignTransactionParams{}, ErrPublicKeyIsRequired
 	}
 
 	if params.EncodedTransaction == "" {
-		return ParsedSendTransactionParams{}, ErrEncodedTransactionIsRequired
+		return ParsedSignTransactionParams{}, ErrEncodedTransactionIsRequired
 	}
 
 	tx, err := base64.StdEncoding.DecodeString(params.EncodedTransaction)
 	if err != nil {
-		return ParsedSendTransactionParams{}, ErrEncodedTransactionIsNotValidBase64String
+		return ParsedSignTransactionParams{}, ErrEncodedTransactionIsNotValidBase64String
 	}
 
-	return ParsedSendTransactionParams{
+	return ParsedSignTransactionParams{
 		Token:          params.Token,
 		PublicKey:      params.PublicKey,
 		RawTransaction: string(tx),
-		SendingMode:    sendingMode,
 	}, nil
 }

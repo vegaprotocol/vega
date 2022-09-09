@@ -463,18 +463,37 @@ func handleEnvelop(envelop pipeline.Envelope, responseChan chan<- pipeline.Envel
 				Approved: approved,
 			},
 		}
-	case pipeline.RequestTransactionReview:
+	case pipeline.RequestTransactionSendingReview:
 		str := p.String().BlueArrow().Text("The application \"").InfoText(content.Hostname).Text("\" wants to send the following transaction:").NextLine()
 		str.Pad().Text("Using the key: ").InfoText(content.PublicKey).NextLine()
 		str.Pad().Text("From the wallet: ").InfoText(content.Wallet).NextLine()
 		fmtCmd := strings.Replace("  "+content.Transaction, "\n", "\n  ", -1)
 		str.InfoText(fmtCmd).NextLine()
 		p.Print(str)
-		approved := yesOrNo(p.String().QuestionMark().Text("Do you approve this transaction?"), p)
+		approved := yesOrNo(p.String().QuestionMark().Text("Do you want to send this transaction?"), p)
 		if approved {
-			p.Print(p.String().CheckMark().Text("Transaction approved.").NextLine())
+			p.Print(p.String().CheckMark().Text("Sending approved.").NextLine())
 		} else {
-			p.Print(p.String().CrossMark().Text("Command rejected.").NextSection())
+			p.Print(p.String().CrossMark().Text("Sending rejected.").NextSection())
+		}
+		responseChan <- pipeline.Envelope{
+			TraceID: envelop.TraceID,
+			Content: pipeline.Decision{
+				Approved: approved,
+			},
+		}
+	case pipeline.RequestTransactionSigningReview:
+		str := p.String().BlueArrow().Text("The application \"").InfoText(content.Hostname).Text("\" wants to sign the following transaction:").NextLine()
+		str.Pad().Text("Using the key: ").InfoText(content.PublicKey).NextLine()
+		str.Pad().Text("From the wallet: ").InfoText(content.Wallet).NextLine()
+		fmtCmd := strings.Replace("  "+content.Transaction, "\n", "\n  ", -1)
+		str.InfoText(fmtCmd).NextLine()
+		p.Print(str)
+		approved := yesOrNo(p.String().QuestionMark().Text("Do you want to sign this transaction?"), p)
+		if approved {
+			p.Print(p.String().CheckMark().Text("Signing approved.").NextLine())
+		} else {
+			p.Print(p.String().CrossMark().Text("Signing rejected.").NextSection())
 		}
 		responseChan <- pipeline.Envelope{
 			TraceID: envelop.TraceID,
