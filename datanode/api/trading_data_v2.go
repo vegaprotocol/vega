@@ -1737,6 +1737,27 @@ func (t *tradingDataServiceV2) ListLiquidityProvisions(ctx context.Context, req 
 	return &v2.ListLiquidityProvisionsResponse{LiquidityProvisions: liquidityProvisionConnection}, nil
 }
 
+func (t *tradingDataServiceV2) ObserveLiquidityProvisions(request *v2.ObserveLiquidityProvisionsRequest, srv v2.TradingDataService_ObserveLiquidityProvisionsServer) error {
+	// Wrap context from the request into cancellable. We can close internal chan on error.
+	ctx, cancel := context.WithCancel(srv.Context())
+	defer cancel()
+
+	lpCh, ref := t.liquidityProvisionService.ObserveLiquidityProvisions(ctx, t.config.StreamRetries, request.PartyId, request.MarketId)
+
+	if t.log.GetLevel() == logging.DebugLevel {
+		t.log.Debug("Orders subscriber - new rpc stream", logging.Uint64("ref", ref))
+	}
+
+	return observeBatch(ctx, t.log, "Order", lpCh, ref, func(lps []entities.LiquidityProvision) error {
+		protos := make([]*vega.LiquidityProvision, 0, len(lps))
+		for _, v := range lps {
+			protos = append(protos, v.ToProto())
+		}
+		response := &v2.ObserveLiquidityProvisionsResponse{LiquidityProvisions: protos}
+		return srv.Send(response)
+	})
+}
+
 func (t *tradingDataServiceV2) GetGovernanceData(ctx context.Context, req *v2.GetGovernanceDataRequest) (*v2.GetGovernanceDataResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetGovernanceData")
 
