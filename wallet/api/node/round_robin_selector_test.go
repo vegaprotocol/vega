@@ -28,7 +28,6 @@ func testRoundRobinSelectorReturnsTheFirstHealthyNode(t *testing.T) {
 	healthyHost1.EXPECT().Host().AnyTimes().Return("healthy-host-1")
 
 	healthyHost2 := apimocks.NewMockNode(ctrl)
-	healthyHost2.EXPECT().HealthCheck(gomock.Any()).Times(0)
 	healthyHost2.EXPECT().Host().AnyTimes().Return("healthy-host-2")
 
 	unhealthyHost1 := apimocks.NewMockNode(ctrl)
@@ -40,7 +39,6 @@ func testRoundRobinSelectorReturnsTheFirstHealthyNode(t *testing.T) {
 	unhealthyHost2.EXPECT().Host().AnyTimes().Return("unhealthy-host-2")
 
 	unhealthyHost3 := apimocks.NewMockNode(ctrl)
-	unhealthyHost3.EXPECT().HealthCheck(gomock.Any()).Times(0)
 	unhealthyHost3.EXPECT().Host().AnyTimes().Return("unhealthy-host-3")
 
 	// when
