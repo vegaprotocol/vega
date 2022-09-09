@@ -64,13 +64,6 @@ func testImportingNetworkWithInvalidParamsFails(t *testing.T) {
 
 			// setup
 			handler := newImportNetworkHandler(tt)
-			// -- unexpected calls
-			handler.networkStore.EXPECT().ListNetworks().Times(0)
-			handler.networkStore.EXPECT().NetworkExists(gomock.Any()).Times(0)
-			handler.networkStore.EXPECT().GetNetwork(gomock.Any()).Times(0)
-			handler.networkStore.EXPECT().SaveNetwork(gomock.Any()).Times(0)
-			handler.networkStore.EXPECT().GetNetworkPath(gomock.Any()).Times(0)
-			handler.networkStore.EXPECT().DeleteNetwork(gomock.Any()).Times(0)
 
 			// when
 			result, errorDetails := handler.handle(t, ctx, tc.params)
@@ -96,12 +89,6 @@ func testImportingNetworkThatAlreadyExistsFails(t *testing.T) {
 
 	// -- expected calls
 	handler.networkStore.EXPECT().NetworkExists(gomock.Any()).Times(1).Return(true, nil)
-	// -- unexpected calls
-	handler.networkStore.EXPECT().ListNetworks().Times(0)
-	handler.networkStore.EXPECT().GetNetwork(gomock.Any()).Times(0)
-	handler.networkStore.EXPECT().SaveNetwork(gomock.Any()).Times(0)
-	handler.networkStore.EXPECT().GetNetworkPath(gomock.Any()).Times(0)
-	handler.networkStore.EXPECT().DeleteNetwork(gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminImportNetworkParams{
@@ -128,12 +115,6 @@ func testGettingInternalErrorDuringVerificationDoesNotImportNetwork(t *testing.T
 	handler := newImportNetworkHandler(t)
 	// -- expected calls
 	handler.networkStore.EXPECT().NetworkExists(gomock.Any()).Times(1).Return(false, assert.AnError)
-	// -- unexpected calls
-	handler.networkStore.EXPECT().ListNetworks().Times(0)
-	handler.networkStore.EXPECT().GetNetwork(gomock.Any()).Times(0)
-	handler.networkStore.EXPECT().SaveNetwork(gomock.Any()).Times(0)
-	handler.networkStore.EXPECT().GetNetworkPath(gomock.Any()).Times(0)
-	handler.networkStore.EXPECT().DeleteNetwork(gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminImportNetworkParams{
@@ -154,14 +135,6 @@ func testImportingANetworkFromAFileThatDoesntExistFails(t *testing.T) {
 
 	// setup
 	handler := newImportNetworkHandler(t)
-
-	// -- unexpected calls
-	handler.networkStore.EXPECT().NetworkExists(gomock.Any()).Times(0)
-	handler.networkStore.EXPECT().ListNetworks().Times(0)
-	handler.networkStore.EXPECT().GetNetwork(gomock.Any()).Times(0)
-	handler.networkStore.EXPECT().SaveNetwork(gomock.Any()).Times(0)
-	handler.networkStore.EXPECT().GetNetworkPath(gomock.Any()).Times(0)
-	handler.networkStore.EXPECT().DeleteNetwork(gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminImportNetworkParams{
@@ -192,11 +165,6 @@ func testImportingValidFailSaves(t *testing.T) {
 	handler.networkStore.EXPECT().NetworkExists(gomock.Any()).Times(1).Return(false, nil)
 	handler.networkStore.EXPECT().SaveNetwork(gomock.Any()).Times(1)
 	handler.networkStore.EXPECT().GetNetworkPath(gomock.Any()).Times(1).Return(resultFilePath)
-	// -- unexpected calls
-	handler.networkStore.EXPECT().ListNetworks().Times(0)
-	handler.networkStore.EXPECT().GetNetwork(gomock.Any()).Times(0)
-	handler.networkStore.EXPECT().GetNetworkPath(gomock.Any()).Times(0)
-	handler.networkStore.EXPECT().DeleteNetwork(gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminImportNetworkParams{

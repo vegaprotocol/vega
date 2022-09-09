@@ -48,13 +48,6 @@ func testDescribingNetworkWithInvalidParamsFails(t *testing.T) {
 
 			// setup
 			handler := newDescribeNetworkHandler(tt)
-			// -- unexpected calls
-			handler.networkStore.EXPECT().ListNetworks().Times(0)
-			handler.networkStore.EXPECT().NetworkExists(gomock.Any()).Times(0)
-			handler.networkStore.EXPECT().GetNetwork(gomock.Any()).Times(0)
-			handler.networkStore.EXPECT().SaveNetwork(gomock.Any()).Times(0)
-			handler.networkStore.EXPECT().GetNetworkPath(gomock.Any()).Times(0)
-			handler.networkStore.EXPECT().DeleteNetwork(gomock.Any()).Times(0)
 
 			// when
 			result, errorDetails := handler.handle(t, ctx, tc.params)
@@ -75,12 +68,6 @@ func testDescribingNetworkThatDoesNotExistsFails(t *testing.T) {
 	handler := newDescribeNetworkHandler(t)
 	// -- expected calls
 	handler.networkStore.EXPECT().NetworkExists(name).Times(1).Return(false, nil)
-	// -- unexpected calls
-	handler.networkStore.EXPECT().GetNetwork(gomock.Any()).Times(0)
-	handler.networkStore.EXPECT().ListNetworks().Times(0)
-	handler.networkStore.EXPECT().SaveNetwork(gomock.Any()).Times(0)
-	handler.networkStore.EXPECT().GetNetworkPath(gomock.Any()).Times(0)
-	handler.networkStore.EXPECT().DeleteNetwork(gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminDescribeNetworkParams{
@@ -103,14 +90,6 @@ func testGettingInternalErrorDuringNetworkVerificationFails(t *testing.T) {
 	// -- expected calls
 	handler.networkStore.EXPECT().NetworkExists(name).Times(1).Return(true, assert.AnError)
 
-	// -- unexpected calls
-	handler.networkStore.EXPECT().ListNetworks().Times(0)
-	handler.networkStore.EXPECT().NetworkExists(gomock.Any()).Times(0)
-	handler.networkStore.EXPECT().GetNetwork(gomock.Any()).Times(0)
-	handler.networkStore.EXPECT().SaveNetwork(gomock.Any()).Times(0)
-	handler.networkStore.EXPECT().GetNetworkPath(gomock.Any()).Times(0)
-	handler.networkStore.EXPECT().DeleteNetwork(gomock.Any()).Times(0)
-
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminDescribeNetworkParams{
 		Network: name,
@@ -132,11 +111,6 @@ func testGettingInternalErrorDuringNetworkRetrievalFails(t *testing.T) {
 	// -- expected calls
 	handler.networkStore.EXPECT().NetworkExists(name).Times(1).Return(true, nil)
 	handler.networkStore.EXPECT().GetNetwork(gomock.Any()).Times(1).Return(nil, assert.AnError)
-	// -- unexpected calls
-	handler.networkStore.EXPECT().ListNetworks().Times(0)
-	handler.networkStore.EXPECT().SaveNetwork(gomock.Any()).Times(0)
-	handler.networkStore.EXPECT().GetNetworkPath(gomock.Any()).Times(0)
-	handler.networkStore.EXPECT().DeleteNetwork(gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminDescribeNetworkParams{
