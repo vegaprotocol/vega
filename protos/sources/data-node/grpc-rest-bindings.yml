@@ -307,3 +307,5 @@ http:
       get: '/api/v2/stream/event/bus'
     - selector: datanode.api.v2.TradingDataService.ObserveTransferResponses
       get: '/api/v2/stream/transfer/responses'
+    - selector: datanode.api.v2.TradingDataService.ObserveLiquidityProvisions
+      get: '/api/v2/stream/liquidity-provisions'

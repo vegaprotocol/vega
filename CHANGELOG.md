@@ -3,9 +3,10 @@
 ## Unreleased 0.55.0
 
 ### 🚨 Breaking changes
-- [5989](https://github.com/vegaprotocol/vega/issues/5989) - Remove liquidity commitment from market proposal 
+- [5989](https://github.com/vegaprotocol/vega/issues/5989) - Remove liquidity commitment from market proposal
 - [6031](https://github.com/vegaprotocol/vega/issues/6031) - Remove market name from `graphql` market type
 - [6095](https://github.com/vegaprotocol/vega/issues/6095) - Rename taker fees to maker paid fees
+- [5442](https://github.com/vegaprotocol/vega/issues/5442) - Default behaviour when starting to node is to use the latest local snapshot if it exists
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -22,7 +23,7 @@
 - [5932](https://github.com/vegaprotocol/vega/issues/5932) - Remove Name and Symbol from update asset proposal
 - [5880](https://github.com/vegaprotocol/vega/issues/5880) - Send initial image with subscriptions to positions, orders & accounts
 - [5878](https://github.com/vegaprotocol/vega/issues/5878) - Add option to return only live orders in `ListOrders` `API`
-- [5937](https://github.com/vegaprotocol/vega/issues/5937) - Add more flexibility to market creation bonus 
+- [5937](https://github.com/vegaprotocol/vega/issues/5937) - Add more flexibility to market creation bonus
 - [5708](https://github.com/vegaprotocol/vega/issues/5708) - Use market price when reporting average trade price
 - [5949](https://github.com/vegaprotocol/vega/issues/5949) - Transfers processed in the order they were received
 - [5966](https://github.com/vegaprotocol/vega/issues/5966) - Do not send transaction from wallet if `chainID` is empty
@@ -36,6 +37,9 @@
 - [6071](https://github.com/vegaprotocol/vega/issues/6071) - Allow for empty settlement asset in recurring transfer metric definition for market proposer bonus
 - [6042](https://github.com/vegaprotocol/vega/issues/6042) - Set GraphQL query complexity limit
 - [6106](https://github.com/vegaprotocol/vega/issues/6106) - Returned signed transaction in wallet API version 2 `session.send_transaction`
+- [6042](https://github.com/vegaprotocol/vega/issues/5270) - Set GraphQL query complexity limit
+- [5888](https://github.com/vegaprotocol/vega/issues/5888) - Add Liquidity Provision subscription to GraphQL
+- [5961](https://github.com/vegaprotocol/vega/issues/5961) - Add batch market instructions command
 
 ### 🐛 Fixes
 - [5934](https://github.com/vegaprotocol/vega/issues/5934) - Ensure wallet without permissions can be read
@@ -53,6 +57,7 @@
 - [6060](https://github.com/vegaprotocol/vega/issues/6060) - Fix connection results should not be declared as mandatory in GQL schema.
 - [6097](https://github.com/vegaprotocol/vega/issues/6067) - Fix incorrect asset (metric asset) used for checking market proposer eligibility
 - [6099](https://github.com/vegaprotocol/vega/issues/6099) - Allow recurring transfers with the same to and from but with different asset
+- [6119](https://github.com/vegaprotocol/vega/issues/6119) - Correct order in which market event is emitted
 
 ## 0.54.0
 

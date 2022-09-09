@@ -307,7 +307,7 @@ func (e *Engine) populateLocalVersions(versions []int) {
 // via stat-sync we will already know if we are loading from local store, then we do that
 // node.
 func (e *Engine) CheckLoaded() (bool, error) {
-	// if the avl has been initialised we must have loaded it earlier via using state-sync
+	// if the avl has been initialised we must have loaded it earlier via state-sync
 	// we can go straight into loading the state into the providers
 	if e.avl != nil {
 		// OK, but let's make the engine aware of its local store versions
@@ -316,14 +316,27 @@ func (e *Engine) CheckLoaded() (bool, error) {
 		return true, e.applySnap(e.ctx)
 	}
 
+	e.initialiseTree()
+	versions := e.avl.AvailableVersions()
 	startHeight := e.Config.StartHeight
-	if startHeight == 0 {
-		// starting a new chain or replaying, not loading snapshot
+
+	if startHeight < 0 && len(versions) == 0 {
+		// we have no snapshots, and so this is a new chain there is nothing to load
 		return false, nil
 	}
 
-	e.initialiseTree()
-	versions := e.avl.AvailableVersions()
+	if startHeight == 0 && len(versions) == 0 {
+		// forced a replay. but there are no snapshots anyway so theres nothing to do
+		return false, nil
+	}
+
+	if startHeight == 0 {
+		// forced chain replay, we need to remove all old snapshots and start again
+		e.initialised = false
+		e.db.Close()
+		return false, e.ClearAndInitialise()
+	}
+
 	e.populateLocalVersions(versions)
 
 	e.log.Info("loading snapshot for height", logging.Int64("height", startHeight))

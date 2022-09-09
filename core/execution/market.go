@@ -1309,7 +1309,21 @@ func (m *Market) SubmitOrder(
 	party string,
 	deterministicID string,
 ) (oc *types.OrderConfirmation, _ error) {
-	m.idgen = idgeneration.New(deterministicID)
+	idgen := idgeneration.New(deterministicID)
+	return m.SubmitOrderWithIDGeneratorAndOrderID(
+		ctx, orderSubmission, party, idgen, idgen.NextID(),
+	)
+}
+
+// SubmitOrder submits the given order.
+func (m *Market) SubmitOrderWithIDGeneratorAndOrderID(
+	ctx context.Context,
+	orderSubmission *types.OrderSubmission,
+	party string,
+	idgen IDGenerator,
+	orderID string,
+) (oc *types.OrderConfirmation, _ error) {
+	m.idgen = idgen
 	defer func() { m.idgen = nil }()
 
 	order := orderSubmission.IntoOrder(party)
@@ -1318,6 +1332,7 @@ func (m *Market) SubmitOrder(
 		order.Price.Mul(order.Price, m.priceFactor)
 	}
 	order.CreatedAt = m.timeService.GetTimeNow().UnixNano()
+	order.ID = orderID
 
 	if !m.canTrade() {
 		order.Status = types.OrderStatusRejected
@@ -1326,7 +1341,6 @@ func (m *Market) SubmitOrder(
 		return nil, ErrTradingNotAllowed
 	}
 
-	order.ID = m.idgen.NextID()
 	conf, orderUpdates, err := m.submitOrder(ctx, order)
 	if err != nil {
 		return nil, err
@@ -2330,8 +2344,20 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 	return cancellations, nil
 }
 
-func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string, deterministicID string) (oc *types.OrderCancellationConfirmation, _ error) {
-	m.idgen = idgeneration.New(deterministicID)
+func (m *Market) CancelOrder(
+	ctx context.Context,
+	partyID, orderID string, deterministicID string,
+) (oc *types.OrderCancellationConfirmation, _ error) {
+	idgen := idgeneration.New(deterministicID)
+	return m.CancelOrderWithIDGenerator(ctx, partyID, orderID, idgen)
+}
+
+func (m *Market) CancelOrderWithIDGenerator(
+	ctx context.Context,
+	partyID, orderID string,
+	idgen IDGenerator,
+) (oc *types.OrderCancellationConfirmation, _ error) {
+	m.idgen = idgen
 	defer func() { m.idgen = nil }()
 
 	if !m.canTrade() {
@@ -2433,10 +2459,25 @@ func (m *Market) parkOrder(ctx context.Context, orderID string) *types.Order {
 }
 
 // AmendOrder amend an existing order from the order book.
-func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmendment, party string,
-	deterministicID string) (oc *types.OrderConfirmation, _ error,
+func (m *Market) AmendOrder(
+	ctx context.Context,
+	orderAmendment *types.OrderAmendment,
+	party string,
+	deterministicID string,
+) (oc *types.OrderConfirmation, _ error,
 ) {
-	m.idgen = idgeneration.New(deterministicID)
+	idgen := idgeneration.New(deterministicID)
+	return m.AmendOrderWithIDGenerator(ctx, orderAmendment, party, idgen)
+}
+
+func (m *Market) AmendOrderWithIDGenerator(
+	ctx context.Context,
+	orderAmendment *types.OrderAmendment,
+	party string,
+	idgen IDGenerator,
+) (oc *types.OrderConfirmation, _ error,
+) {
+	m.idgen = idgen
 	defer func() { m.idgen = nil }()
 
 	if !m.canTrade() {

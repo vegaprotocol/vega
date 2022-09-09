@@ -132,6 +132,8 @@ func (t Tx) Command() txn.Command {
 		return txn.ProtocolUpgradeCommand
 	case *commandspb.InputData_IssueSignatures:
 		return txn.IssueSignatures
+	case *commandspb.InputData_BatchMarketInstructions:
+		return txn.BatchMarketInstructions
 	default:
 		panic("unsupported command")
 	}
@@ -207,6 +209,8 @@ func (t Tx) GetCmd() interface{} {
 		return cmd.ProtocolUpgradeProposal
 	case *commandspb.InputData_IssueSignatures:
 		return cmd.IssueSignatures
+	case *commandspb.InputData_BatchMarketInstructions:
+		return cmd.BatchMarketInstructions
 	default:
 		return errors.New("unsupported command")
 	}
@@ -358,6 +362,12 @@ func (t Tx) Unmarshal(i interface{}) error {
 			return errors.New("failed to unmarshall to IssueSignatures")
 		}
 		*underlyingCmd = *cmd.IssueSignatures
+	case *commandspb.InputData_BatchMarketInstructions:
+		underlyingCmd, ok := i.(*commandspb.BatchMarketInstructions)
+		if !ok {
+			return errors.New("failed to unmarshall to BatchMarketInstructions")
+		}
+		*underlyingCmd = *cmd.BatchMarketInstructions
 	default:
 		return errors.New("unsupported command")
 	}
