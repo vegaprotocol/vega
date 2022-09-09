@@ -382,6 +382,9 @@
             "transactionHash": {
               "type": "string",
               "description": "The hash of the transaction. It's used to uniquely identify the transaction and can be used in the block explorer to retrieve it."
+            },
+            "transaction": {
+              "$ref": "#/components/schemas/signed_transaction"
             }
           }
         }
@@ -2220,6 +2223,54 @@
   ],
   "components": {
     "schemas": {
+      "signed_transaction": {
+        "type": "object",
+        "description": "A transaction that has been signed by the wallet.",
+        "properties": {
+          "inputData": {
+            "type": "string"
+          },
+          "signature": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "string"
+              },
+              "algo": {
+                "type": "string"
+              },
+              "version": {
+                "type": "number"
+              }
+            }
+          },
+          "from": {
+            "type": "object",
+            "properties": {
+              "publicKey": {
+                "type": "string"
+              },
+              "address": {
+                "type": "string"
+              }
+            }
+          },
+          "version": {
+            "type": "number"
+          },
+          "pow": {
+            "type": "object",
+            "properties": {
+              "tid": {
+                "type": "string"
+              },
+              "nonce": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      },
       "token": {
         "type": "string",
         "description": "A unique connection token randomly generated for each new connection. It's used to access the protected methods."
@@ -2317,7 +2368,7 @@
               "hosts": {
                 "type": "array",
                 "items": {
-                "type": "string"
+                  "type": "string"
                 }
               }
             }
@@ -2328,8 +2379,8 @@
               "hosts": {
                 "type": "array",
                 "items": {
-                "type": "string"
-              }
+                  "type": "string"
+                }
               },
               "retries": {
                 "type": "integer"
@@ -2342,7 +2393,7 @@
               "hosts": {
                 "type": "array",
                 "items": {
-                "type": "string"
+                  "type": "string"
                 }
               }
             }
