@@ -106,6 +106,8 @@ models:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.AuctionTrigger
   Order:
     model: code.vegaprotocol.io/vega/protos/vega.Order
+  OrderUpdate:
+    model: code.vegaprotocol.io/vega/protos/vega.Order
   PaginatedOrder:
     model: code.vegaprotocol.io/vega/protos/vega.Order
   TradeUpdate:
@@ -135,6 +137,8 @@ models:
   ObservableMarketData:
     model: code.vegaprotocol.io/vega/protos/vega.MarketData
   MarginLevels:
+    model: code.vegaprotocol.io/vega/protos/vega.MarginLevels
+  MarginLevelsUpdate:
     model: code.vegaprotocol.io/vega/protos/vega.MarginLevels
   NodeSignature:
     model: code.vegaprotocol.io/vega/protos/vega/commands/v1.NodeSignature
