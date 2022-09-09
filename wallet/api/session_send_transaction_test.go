@@ -191,6 +191,7 @@ func testSendingTransactionWithValidParamsSucceeds(t *testing.T) {
 	assert.Nil(t, errorDetails)
 	require.NotEmpty(t, result)
 	assert.Equal(t, txHash, result.TxHash)
+	assert.NotEmpty(t, result.Tx)
 }
 
 func testSendingTransactionWithInvalidTokenFails(t *testing.T) {
