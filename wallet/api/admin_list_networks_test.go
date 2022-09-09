@@ -26,12 +26,6 @@ func testListingNetworksSucceeds(t *testing.T) {
 	handler := newListNetworksHandler(t)
 	// -- expected calls
 	handler.networkStore.EXPECT().ListNetworks().Times(1).Return(expectedNetworks, nil)
-	// -- unexpected calls
-	handler.networkStore.EXPECT().NetworkExists(gomock.Any()).Times(0)
-	handler.networkStore.EXPECT().GetNetwork(gomock.Any()).Times(0)
-	handler.networkStore.EXPECT().SaveNetwork(gomock.Any()).Times(0)
-	handler.networkStore.EXPECT().GetNetworkPath(gomock.Any()).Times(0)
-	handler.networkStore.EXPECT().DeleteNetwork(gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, context.Background(), nil)
@@ -46,12 +40,6 @@ func testGettingInternalErrorDuringListingNetworksFails(t *testing.T) {
 	handler := newListNetworksHandler(t)
 	// -- expected calls
 	handler.networkStore.EXPECT().ListNetworks().Times(1).Return(nil, assert.AnError)
-	// -- unexpected calls
-	handler.networkStore.EXPECT().NetworkExists(gomock.Any()).Times(0)
-	handler.networkStore.EXPECT().GetNetwork(gomock.Any()).Times(0)
-	handler.networkStore.EXPECT().SaveNetwork(gomock.Any()).Times(0)
-	handler.networkStore.EXPECT().GetNetworkPath(gomock.Any()).Times(0)
-	handler.networkStore.EXPECT().DeleteNetwork(gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, context.Background(), nil)

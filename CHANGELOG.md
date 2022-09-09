@@ -37,6 +37,7 @@
 - [6071](https://github.com/vegaprotocol/vega/issues/6071) - Allow for empty settlement asset in recurring transfer metric definition for market proposer bonus
 - [6042](https://github.com/vegaprotocol/vega/issues/6042) - Set GraphQL query complexity limit
 - [6106](https://github.com/vegaprotocol/vega/issues/6106) - Returned signed transaction in wallet API version 2 `session.send_transaction`
+- [6105](https://github.com/vegaprotocol/vega/issues/6105) - Add `session.sign_transaction` endpoint on wallet API version 2
 - [6042](https://github.com/vegaprotocol/vega/issues/5270) - Set GraphQL query complexity limit
 - [5888](https://github.com/vegaprotocol/vega/issues/5888) - Add Liquidity Provision subscription to GraphQL
 - [5961](https://github.com/vegaprotocol/vega/issues/5961) - Add batch market instructions command
