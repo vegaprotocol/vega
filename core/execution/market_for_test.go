@@ -157,3 +157,7 @@ func (m *Market) ValidateOrder(order *types.Order) bool {
 	return (order.Price.EQ(order2.Price) && order.Size == order2.Size &&
 		order.Remaining == order2.Remaining && order.Status == order2.Status)
 }
+
+func (m *Market) DumpBook() {
+	m.matching.PrintState("test")
+}

@@ -61,6 +61,7 @@
 - [6097](https://github.com/vegaprotocol/vega/issues/6067) - Fix incorrect asset (metric asset) used for checking market proposer eligibility
 - [6099](https://github.com/vegaprotocol/vega/issues/6099) - Allow recurring transfers with the same to and from but with different asset
 - [6119](https://github.com/vegaprotocol/vega/issues/6119) - Correct order in which market event is emitted
+- [5890](https://github.com/vegaprotocol/vega/issues/5890) - Margin breach during amend doesn't cancel order
 
 ## 0.54.0
 
