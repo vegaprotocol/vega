@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"io"
 
@@ -9,8 +11,8 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
 	vgterm "code.vegaprotocol.io/vega/libs/term"
 	"code.vegaprotocol.io/vega/paths"
-	"code.vegaprotocol.io/vega/wallet/network"
-	netstore "code.vegaprotocol.io/vega/wallet/network/store/v1"
+	"code.vegaprotocol.io/vega/wallet/api"
+	networkStore "code.vegaprotocol.io/vega/wallet/network/store/v1"
 
 	"github.com/spf13/cobra"
 )
@@ -29,24 +31,30 @@ var (
 	`)
 )
 
-type DeleteNetworkHandler func(*network.DeleteNetworkRequest) error
+type RemoveNetworkHandler func(api.AdminRemoveNetworkParams) error
 
 func NewCmdDeleteNetwork(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(req *network.DeleteNetworkRequest) error {
+	h := func(params api.AdminRemoveNetworkParams) error {
 		vegaPaths := paths.New(rf.Home)
 
-		netStore, err := netstore.InitialiseStore(vegaPaths)
+		s, err := networkStore.InitialiseStore(vegaPaths)
 		if err != nil {
-			return fmt.Errorf("couldn't initialise networks store: %w", err)
+			return fmt.Errorf("couldn't initialise network store: %w", err)
 		}
 
-		return network.DeleteNetwork(netStore, req)
+		deleteNetwork := api.NewAdminRemoveNetwork(s)
+
+		_, errDetails := deleteNetwork.Handle(context.Background(), params)
+		if errDetails != nil {
+			return errors.New(errDetails.Data)
+		}
+		return nil
 	}
 
 	return BuildCmdDeleteNetwork(w, h, rf)
 }
 
-func BuildCmdDeleteNetwork(w io.Writer, handler DeleteNetworkHandler, rf *RootFlags) *cobra.Command {
+func BuildCmdDeleteNetwork(w io.Writer, handler RemoveNetworkHandler, rf *RootFlags) *cobra.Command {
 	f := &DeleteNetworkFlags{}
 	cmd := &cobra.Command{
 		Use:     "delete",
@@ -98,13 +106,13 @@ type DeleteNetworkFlags struct {
 	Force   bool
 }
 
-func (f *DeleteNetworkFlags) Validate() (*network.DeleteNetworkRequest, error) {
-	req := &network.DeleteNetworkRequest{}
+func (f *DeleteNetworkFlags) Validate() (api.AdminRemoveNetworkParams, error) {
+	req := api.AdminRemoveNetworkParams{}
 
 	if len(f.Network) == 0 {
-		return nil, flags.MustBeSpecifiedError("network")
+		return api.AdminRemoveNetworkParams{}, flags.MustBeSpecifiedError("network")
 	}
-	req.Name = f.Network
+	req.Network = f.Network
 
 	return req, nil
 }

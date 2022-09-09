@@ -2,6 +2,7 @@ package network
 
 import (
 	"errors"
+	"fmt"
 
 	"code.vegaprotocol.io/vega/wallet/service/encoding"
 )
@@ -41,4 +42,26 @@ func (n *Network) EnsureCanConnectGRPCNode() error {
 		return nil
 	}
 	return ErrNetworkDoesNotHaveGRPCHostConfigured
+}
+
+func GetNetwork(store Store, name string) (*Network, error) {
+	exists, err := store.NetworkExists(name)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't verify network existence: %w", err)
+	}
+	if !exists {
+		return nil, NewDoesNotExistError(name)
+	}
+	n, err := store.GetNetwork(name)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get network %s: %w", name, err)
+	}
+
+	return n, nil
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/store_mock.go -package mocks code.vegaprotocol.io/vega/wallet/network Store
+type Store interface {
+	NetworkExists(string) (bool, error)
+	GetNetwork(string) (*Network, error)
 }

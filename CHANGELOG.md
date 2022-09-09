@@ -34,6 +34,8 @@
 - [5682](https://github.com/vegaprotocol/vega/issues/5682) - Expose equity share weight in the API
 - [5684](https://github.com/vegaprotocol/vega/issues/5684) - Added date range to a number of historic balances, deposits, withdrawals, orders and trades queries
 - [6071](https://github.com/vegaprotocol/vega/issues/6071) - Allow for empty settlement asset in recurring transfer metric definition for market proposer bonus
+- [6042](https://github.com/vegaprotocol/vega/issues/6042) - Set GraphQL query complexity limit
+- [6106](https://github.com/vegaprotocol/vega/issues/6106) - Returned signed transaction in wallet API version 2 `session.send_transaction`
 - [6042](https://github.com/vegaprotocol/vega/issues/5270) - Set GraphQL query complexity limit
 - [5888](https://github.com/vegaprotocol/vega/issues/5888) - Add Liquidity Provision subscription to GraphQL
 
