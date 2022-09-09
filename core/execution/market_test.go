@@ -104,6 +104,18 @@ func (m *marketW) SubmitOrder(
 	return conf, err
 }
 
+func (m *marketW) SubmitOrderWithHash(
+	ctx context.Context,
+	order *types.Order,
+	hash string,
+) (*types.OrderConfirmation, error) {
+	conf, err := m.Market.SubmitOrder(ctx, order.IntoSubmission(), order.Party, hash)
+	if err == nil {
+		*order = *conf.Order.Clone()
+	}
+	return conf, err
+}
+
 type testMarket struct {
 	t *testing.T
 
@@ -830,11 +842,12 @@ func TestMarketNotActive(t *testing.T) {
 	party1 := "party1"
 	tm.WithAccountAndAmount(party1, 1000000)
 
+	hash := vgcrypto.RandomHash()
 	order := &types.Order{
+		ID:            hash,
 		Type:          types.OrderTypeLimit,
 		TimeInForce:   types.OrderTimeInForceGTT,
 		Status:        types.OrderStatusActive,
-		ID:            "",
 		Side:          types.SideBuy,
 		Party:         party1,
 		MarketID:      tm.market.GetID(),
@@ -853,7 +866,7 @@ func TestMarketNotActive(t *testing.T) {
 	cpy.Reason = types.OrderErrorMarketClosed
 	expectedEvent := events.NewOrderEvent(context.Background(), &cpy)
 
-	_, err := tm.market.SubmitOrder(context.Background(), order)
+	_, err := tm.market.SubmitOrderWithHash(context.Background(), order, hash)
 	require.Error(t, err)
 	tm.EventHasBeenEmitted(t, expectedEvent)
 }

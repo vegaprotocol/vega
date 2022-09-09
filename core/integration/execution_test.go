@@ -17,6 +17,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/execution"
+	"code.vegaprotocol.io/vega/core/idgeneration"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 	"code.vegaprotocol.io/vega/core/types"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
@@ -37,7 +38,8 @@ func newExEng(e *execution.Engine, broker *stubs.BrokerStub) *exEng {
 }
 
 func (e *exEng) SubmitOrder(ctx context.Context, submission *types.OrderSubmission, party string) (*types.OrderConfirmation, error) {
-	conf, err := e.Engine.SubmitOrder(ctx, submission, party, vgcrypto.RandomHash())
+	idgen := idgeneration.New(vgcrypto.RandomHash())
+	conf, err := e.Engine.SubmitOrder(ctx, submission, party, idgen, idgen.NextID())
 	if err != nil {
 		e.broker.Send(events.NewTxErrEvent(ctx, err, party, submission.IntoProto(), "submitOrder"))
 	}
@@ -45,7 +47,8 @@ func (e *exEng) SubmitOrder(ctx context.Context, submission *types.OrderSubmissi
 }
 
 func (e *exEng) AmendOrder(ctx context.Context, amendment *types.OrderAmendment, party string) (*types.OrderConfirmation, error) {
-	conf, err := e.Engine.AmendOrder(ctx, amendment, party, vgcrypto.RandomHash())
+	idgen := idgeneration.New(vgcrypto.RandomHash())
+	conf, err := e.Engine.AmendOrder(ctx, amendment, party, idgen)
 	if err != nil {
 		e.broker.Send(events.NewTxErrEvent(ctx, err, party, amendment.IntoProto(), "amendOrder"))
 	}
@@ -53,7 +56,8 @@ func (e *exEng) AmendOrder(ctx context.Context, amendment *types.OrderAmendment,
 }
 
 func (e *exEng) CancelOrder(ctx context.Context, cancel *types.OrderCancellation, party string) ([]*types.OrderCancellationConfirmation, error) {
-	conf, err := e.Engine.CancelOrder(ctx, cancel, party, vgcrypto.RandomHash())
+	idgen := idgeneration.New(vgcrypto.RandomHash())
+	conf, err := e.Engine.CancelOrder(ctx, cancel, party, idgen)
 	if err != nil {
 		e.broker.Send(events.NewTxErrEvent(ctx, err, party, cancel.IntoProto(), "cancelOrder"))
 	}
