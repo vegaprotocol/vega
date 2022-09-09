@@ -172,7 +172,7 @@ type App struct {
 	nilPow  bool
 	nilSpam bool
 
-	maxBatchSize uint64
+	maxBatchSize atomic.Uint64
 }
 
 func NewApp(
@@ -348,7 +348,7 @@ func NewApp(
 }
 
 func (app *App) OnSpamProtectionMaxBatchSizeUpdate(ctx context.Context, u *num.Uint) error {
-	atomic.StoreUint64(&app.maxBatchSize, u.Uint64())
+	app.maxBatchSize.Store(u.Uint64())
 	return nil
 }
 
@@ -954,7 +954,7 @@ func (app *App) CheckBatchMarketInstructions(ctx context.Context, tx abci.Tx) er
 		return err
 	}
 
-	maxBatchSize := atomic.LoadUint64(&app.maxBatchSize)
+	maxBatchSize := app.maxBatchSize.Load()
 	size := uint64(len(bmi.Cancellations) + len(bmi.Amendments) + len(bmi.Submissions))
 	if size > maxBatchSize {
 		return ErrMarketBatchInstructionTooBig(size, maxBatchSize)
