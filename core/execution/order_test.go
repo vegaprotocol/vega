@@ -30,6 +30,109 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestAmendMarginCheckFails(t *testing.T) {
+	lpparty := "lp-party-1"
+	lpparty2 := "lp-party-2"
+	lpparty3 := "lp-party-3"
+
+	p1 := "p1"
+	p2 := "p2"
+
+	party1 := "party1"
+
+	now := time.Unix(10, 0)
+	auctionEnd := now.Add(10001 * time.Second)
+	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+	mktCfg := getMarket(defaultPriceMonitorSettings, &types.AuctionDuration{
+		Duration: 10000,
+	})
+	tm := newTestMarket(t, now).Run(ctx, mktCfg)
+	tm.StartOpeningAuction().
+		// the liquidity provider
+		WithAccountAndAmount(lpparty, 500000000000).
+		WithAccountAndAmount(lpparty2, 500000000000).
+		WithAccountAndAmount(lpparty3, 500000000000).
+		WithAccountAndAmount(p1, 500000000000).
+		WithAccountAndAmount(p2, 500000000000)
+	addAccountWithAmount(tm, "lpprov", 10000000)
+
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(.2))
+	lp := &types.LiquidityProvisionSubmission{
+		MarketID:         tm.market.GetID(),
+		CommitmentAmount: num.NewUint(55000),
+		Fee:              num.DecimalFromFloat(0.01),
+		Sells: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 50),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 53),
+		},
+		Buys: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 50),
+			newLiquidityOrder(types.PeggedReferenceMid, 15, 53),
+		},
+	}
+	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
+	tm.EndOpeningAuction(t, auctionEnd, false)
+
+	addAccountWithAmount(tm, party1, 18001)
+
+	orderBuy := &types.Order{
+		Status:      types.OrderStatusActive,
+		Type:        types.OrderTypeLimit,
+		TimeInForce: types.OrderTimeInForceGTC,
+		ID:          "someid",
+		Side:        types.SideBuy,
+		Party:       party1,
+		MarketID:    tm.market.GetID(),
+		Size:        100,
+		Price:       num.NewUint(100),
+		Remaining:   100,
+		CreatedAt:   now.UnixNano(),
+		Reference:   "party1-buy-order",
+	}
+
+	// Submit the original order
+	confirmation, err := tm.market.SubmitOrder(context.TODO(), orderBuy)
+	assert.NotNil(t, confirmation)
+	assert.NoError(t, err)
+
+	orderID := confirmation.Order.ID
+
+	// Amend the price to force a cancel+resubmit to the order book
+
+	amend := &types.OrderAmendment{
+		OrderID:   orderID,
+		MarketID:  confirmation.Order.MarketID,
+		SizeDelta: 100000,
+	}
+
+	tm.events = nil
+	amended, err := tm.market.AmendOrder(context.TODO(), amend, confirmation.Order.Party, vgcrypto.RandomHash())
+	assert.Nil(t, amended)
+	assert.EqualError(t, err, "margin check failed")
+	// ensure no events for the update order were sent
+	assert.Len(t, tm.events, 2)
+	// first event was to update the positions
+	assert.Equal(t, int64(100100), tm.events[0].(*events.PositionState).PotentialBuys())
+	// second to restore to the initial size as margin check failed
+	assert.Equal(t, int64(100), tm.events[1].(*events.PositionState).PotentialBuys())
+
+	// now we just cancel it and see if all is fine.
+	tm.events = nil
+	cancelled, err := tm.market.CancelOrder(context.TODO(), confirmation.Order.Party, orderID, vgcrypto.RandomHash())
+	assert.NotNil(t, cancelled)
+	assert.NoError(t, err)
+	assert.Equal(t, cancelled.Order.Status, types.OrderStatusCancelled)
+
+	found := false
+	for _, v := range tm.events {
+		if o, ok := v.(*events.Order); ok && o.Order().Id == orderID {
+			assert.Equal(t, o.Order().Status, types.OrderStatusCancelled)
+			found = true
+		}
+	}
+	assert.True(t, found)
+}
+
 func TestOrderBufferOutputCount(t *testing.T) {
 	party1 := "party1"
 	now := time.Unix(10, 0)

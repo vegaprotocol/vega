@@ -2238,9 +2238,30 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 	if err != nil {
 		return err
 	}
+
 	// margins calculated, set about tranferring funds. At this point, if closed is not empty, those parties are distressed
 	// the risk slice are risk events, that we must use to transfer funds
 	return m.transferMargins(ctx, risk, closed)
+}
+
+func (m *Market) checkMarginForAmendOrder(ctx context.Context, existingOrder *types.Order, amendedOrder *types.Order) error {
+	origPos, ok := m.position.GetPositionByPartyID(existingOrder.Party)
+	if !ok {
+		m.log.Panic("could not get position for party", logging.PartyID(existingOrder.Party))
+	}
+
+	pos := origPos.Clone()
+
+	// if order was park we have nothing to do here
+	if existingOrder.Status != types.OrderStatusParked {
+		pos.UnregisterOrder(m.log, existingOrder)
+	}
+
+	pos.RegisterOrder(amendedOrder)
+
+	// we are just checking here if we can pass the margin calls.
+	_, _, err := m.calcMargins(ctx, pos, amendedOrder)
+	return err
 }
 
 func (m *Market) setMarkPrice(trade *types.Trade) {
@@ -2695,6 +2716,10 @@ func (m *Market) amendOrder(
 		}
 		// We got a new valid price, if we are parked we need to unpark
 		if amendedOrder.Status == types.OrderStatusParked {
+			// is we cann pass the margin calls, then do nothing
+			if err := m.checkMarginForAmendOrder(ctx, existingOrder, amendedOrder); err != nil {
+				return nil, nil, err
+			}
 			// we were parked, need to unpark
 			m.peggedOrders.Unpark(amendedOrder.ID)
 			orderConf, orderUpdts, err := m.submitValidatedOrder(ctx, amendedOrder)
@@ -2702,9 +2727,6 @@ func (m *Market) amendOrder(
 				// If we cannot submit a new order then the amend has failed, return the error
 				return nil, orderUpdts, err
 			}
-			// Update pegged order with new amended version
-			// FIXME: THIS SHOULD BE UNCESSARY
-			// m.peggedOrders.Amend(amendedOrder)
 			return orderConf, orderUpdts, err
 		}
 	}
@@ -2965,10 +2987,6 @@ func (m *Market) orderCancelReplace(
 	if m.peggedOrders.IsParked(newOrder.ID) {
 		m.peggedOrders.Unpark(newOrder.ID)
 	}
-	// order submitted successfully, update the pegged list
-	// if newOrder.PeggedOrder != nil {
-	// 	m.peggedOrders.Amend(newOrder)
-	// }
 
 	timer.EngineTimeCounterAdd()
 
@@ -2988,12 +3006,6 @@ func (m *Market) orderAmendInPlace(originalOrder, amendOrder *types.Order) (*typ
 		}
 		return nil, err
 	}
-
-	// FIXME: this should be unnecessary as not parked at this point
-	// order is successfully submitted, update the pegged list
-	// if amendOrder.PeggedOrder != nil {
-	// 	m.peggedOrders.Amend(amendOrder)
-	// }
 
 	return &types.OrderConfirmation{
 		Order: amendOrder,
