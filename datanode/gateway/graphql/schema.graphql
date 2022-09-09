@@ -29,7 +29,7 @@ type Subscription {
     marketId: ID
     "ID of the party from which you want orders updates"
     partyId: ID
-  ): [Order!]
+  ): [OrderUpdate!]
 
   "Subscribe to the trades updates"
   trades(
@@ -47,18 +47,6 @@ type Subscription {
     marketId: ID
   ): [Position!]!
 
-  "Subscribe to the market depths update"
-  marketDepth(
-    "ID of the market to receive market depth updates for"
-    marketId: ID!
-  ): MarketDepth! @deprecated(reason: "Use marketsDepth instead")
-
-  "Subscribe to price level market depth updates"
-  marketDepthUpdate(
-    "ID of the market to receive market depth price level updates for"
-    marketId: ID!
-  ): MarketDepthUpdate! @deprecated(reason: "Use marketsDepthUpdate instead")
-
   "Subscribe to the accounts updates"
   accounts(
     "ID of the market from which to receive accounts updates for"
@@ -71,29 +59,23 @@ type Subscription {
     type: AccountType
   ): [AccountUpdate!]!
 
-  "Subscribe to the mark price changes"
-  marketData(
-    "ID of the market you want to subscribe to the market data changes"
-    marketId: ID
-  ): MarketData! @deprecated(reason: "Use marketsData instead")
-
   "Subscribe to the market depths update"
-    marketsDepth(
-      "ID of the market you want to receive market depth updates for"
-      marketIds: [ID!]!
-    ): [ObservableMarketDepth!]!
+  marketsDepth(
+    "ID of the market you want to receive market depth updates for"
+    marketIds: [ID!]!
+  ): [ObservableMarketDepth!]!
 
-    "Subscribe to price level market depth updates"
-    marketsDepthUpdate(
-      "ID of the market you want to receive market depth price level updates for"
-      marketIds: [ID!]!
-    ): [ObservableMarketDepthUpdate!]!
+  "Subscribe to price level market depth updates"
+  marketsDepthUpdate(
+    "ID of the market you want to receive market depth price level updates for"
+    marketIds: [ID!]!
+  ): [ObservableMarketDepthUpdate!]!
 
   "Subscribe to the mark price changes"
-    marketsData(
-      "ID of the market for which you want to subscribe to the market data changes"
-      marketIds: [ID!]!
-    ): [ObservableMarketData!]!
+  marketsData(
+    "ID of the market for which you want to subscribe to the market data changes"
+    marketIds: [ID!]!
+  ): [ObservableMarketData!]!
 
   "Subscribe to the margin changes"
   margins(
@@ -101,7 +83,7 @@ type Subscription {
     partyId: ID!
     "ID of the market you want to listen to for margin updates (nil if you want updates for all markets)"
     marketId: ID
-  ): MarginLevels!
+  ): MarginLevelsUpdate!
 
   "Subscribe to proposals. Leave out all arguments to receive all proposals"
   proposals(
@@ -168,13 +150,34 @@ type MarginLevels {
   searchLevel: String!
   "this is the minimum margin required for a party to place a new order on the network (unsigned integer)"
   initialLevel: String!
-
   """
   If the margin of the party is greater than this level, then collateral will be released from the margin account into
   the general account of the party for the given asset.
   """
   collateralReleaseLevel: String!
+  "RFC3339Nano time from at which this margin level was relevant"
+  timestamp: String!
+}
 
+"Margins for a given a party"
+type MarginLevelsUpdate {
+  "market in which the margin is required for this party"
+  marketId: ID!
+  "asset for the current margins"
+  asset: ID!
+  "The party for this margin"
+  partyId: ID!
+  "minimal margin for the position to be maintained in the network (unsigned integer)"
+  maintenanceLevel: String!
+  "if the margin is between maintenance and search, the network will initiate a collateral search (unsigned integer)"
+  searchLevel: String!
+  "this is the minimum margin required for a party to place a new order on the network (unsigned integer)"
+  initialLevel: String!
+  """
+  If the margin of the party is greater than this level, then collateral will be released from the margin account into
+  the general account of the party for the given asset.
+  """
+  collateralReleaseLevel: String!
   "RFC3339Nano time from at which this margin level was relevant"
   timestamp: String!
 }
@@ -217,8 +220,10 @@ type MarketData {
   indicativePrice: String!
   "indicative volume if the auction ended now, 0 if not in auction mode"
   indicativeVolume: String!
-  "what state the market is in (auction, continuous, etc)"
+  "what mode the market is in (auction, continuous, etc)"
   marketTradingMode: MarketTradingMode!
+  "current state of the market"
+  marketState: MarketState!
   "what triggered an auction (if an auction was started)"
   trigger: AuctionTrigger!
   "what extended the ongoing auction (if an auction was extended)"
@@ -275,8 +280,10 @@ type ObservableMarketData {
   indicativePrice: String!
   "indicative volume if the auction ended now, 0 if not in auction mode"
   indicativeVolume: String!
-  "what state the market is in (auction, continuous etc)"
+  "what mode the market is in (auction, continuous etc)"
   marketTradingMode: MarketTradingMode!
+  "current state of the market"
+  marketState: MarketState!
   "what triggered an auction (if an auction was started)"
   trigger: AuctionTrigger!
   "what extended the ongoing auction (if an auction was extended)"
@@ -2237,13 +2244,13 @@ type Order {
   "The market the order is trading on (probably stored internally as a hash of the market details)"
   market: Market!
 
-  "Total number of contracts that may be bought or sold (immutable) (uint64)"
+  "Total number of units that may be bought or sold (immutable) (uint64)"
   size: String!
 
-  "Number of contracts remaining of the total that have not yet been bought or sold (uint64)"
+  "Number of units remaining of the total that have not yet been bought or sold (uint64)"
   remaining: String!
 
-  "The party who place the order (probably stored internally as the party's public key)"
+  "The party that placed the order (probably stored internally as the party's public key)"
   party: Party!
 
   "RFC3339Nano formatted date and time for when the order was created (timestamp)"
@@ -2268,10 +2275,10 @@ type Order {
     pagination: Pagination
   ): TradeConnection
 
-  "Type the order type (defaults to PARTY)"
+  "The order type"
   type: OrderType
 
-  "Reason for the order to be rejected"
+  "Why the order was rejected"
   rejectionReason: OrderRejectionReason
 
   "Version of this order, counts the number of amends"
@@ -2285,6 +2292,63 @@ type Order {
 
   "The liquidity provision this order was created from"
   liquidityProvision: LiquidityProvision
+}
+
+"An order update in Vega, if active it will be on the order book for the market"
+type OrderUpdate {
+  "Hash of the order data"
+  id: ID!
+
+  "The worst price the order will trade at (e.g. buy for price or less, sell for price or more) (uint64)"
+  price: String!
+
+  "The timeInForce of order (determines how and if it executes, and whether it persists on the book)"
+  timeInForce: OrderTimeInForce!
+
+  "Whether the order is to buy or sell"
+  side: Side!
+
+  "The market the order is trading on (probably stored internally as a hash of the market details)"
+  marketId: ID!
+
+  "Total number of units that may be bought or sold (immutable) (uint64)"
+  size: String!
+
+  "Number of units remaining of the total that have not yet been bought or sold (uint64)"
+  remaining: String!
+
+  "The party that placed the order (probably stored internally as the party's public key)"
+  partyId: ID!
+
+  "RFC3339Nano formatted date and time for when the order was created (timestamp)"
+  createdAt: String!
+
+  "Expiration time of this order (ISO-8601 RFC3339+Nano formatted date)"
+  expiresAt: String
+
+  "The status of an order, for example 'Active'"
+  status: OrderStatus!
+
+  "The external reference (if available) for the order"
+  reference: String!
+
+  "The order type"
+  type: OrderType
+
+  "Why the order was rejected"
+  rejectionReason: OrderRejectionReason
+
+  "Version of this order, counts the number of amends"
+  version: String!
+
+  "RFC3339Nano time the order was altered"
+  updatedAt: String
+
+  "PeggedOrder contains the details about a pegged order"
+  peggedOrder: PeggedOrder
+
+  "The liquidity provision this order was created from"
+  liquidityProvisionId: ID
 }
 
 "An estimate of the fee to be paid by the order"

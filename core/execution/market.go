@@ -603,6 +603,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		AuctionStart:              auctionStart,
 		AuctionEnd:                auctionEnd,
 		MarketTradingMode:         m.as.Mode(),
+		MarketState:               m.mkt.State,
 		Trigger:                   m.as.Trigger(),
 		ExtensionTrigger:          m.as.ExtensionTrigger(),
 		TargetStake:               targetStake,
