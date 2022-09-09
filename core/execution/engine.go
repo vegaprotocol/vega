@@ -734,6 +734,7 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 
 	// notify markets of the time expiration
 	toDelete := []string{}
+	evts := make([]events.Event, 0, len(e.marketsCpy))
 	for _, mkt := range e.marketsCpy {
 		mkt := mkt
 		closing := mkt.OnTick(ctx, t)
@@ -742,12 +743,9 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 				logging.MarketID(mkt.GetID()))
 			toDelete = append(toDelete, mkt.GetID())
 		}
-		evts := make([]events.Event, 0, len(e.marketsCpy))
-		for _, v := range e.marketsCpy {
-			evts = append(evts, events.NewMarketDataEvent(ctx, v.GetMarketData()))
-		}
-		e.broker.SendBatch(evts)
+		evts = append(evts, events.NewMarketDataEvent(ctx, mkt.GetMarketData()))
 	}
+	e.broker.SendBatch(evts)
 
 	for _, id := range toDelete {
 		e.removeMarket(id)
