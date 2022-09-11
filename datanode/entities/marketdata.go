@@ -68,6 +68,8 @@ type MarketData struct {
 	IndicativeVolume uint64
 	// The current trading mode for the market
 	MarketTradingMode string
+	// The current trading mode for the market
+	MarketState string
 	// When a market is in an auction trading mode, this field indicates what triggered the auction
 	AuctionTrigger string
 	// When a market auction is extended, this field indicates what caused the extension
@@ -213,6 +215,7 @@ func MarketDataFromProto(data *types.MarketData, txHash TxHash) (*MarketData, er
 		AuctionStart:               data.AuctionStart,
 		IndicativePrice:            indicative,
 		IndicativeVolume:           data.IndicativeVolume,
+		MarketState:                data.MarketState.String(),
 		MarketTradingMode:          data.MarketTradingMode.String(),
 		AuctionTrigger:             data.Trigger.String(),
 		ExtensionTrigger:           data.ExtensionTrigger.String(),
@@ -340,7 +343,8 @@ func (md MarketData) Equal(other MarketData) bool {
 		md.MarketValueProxy == other.MarketValueProxy &&
 		priceMonitoringBoundsMatches(md.PriceMonitoringBounds, other.PriceMonitoringBounds) &&
 		liquidityProviderFeeShareMatches(md.LiquidityProviderFeeShares, other.LiquidityProviderFeeShares) &&
-		md.TxHash == other.TxHash
+		md.TxHash == other.TxHash &&
+		md.MarketState == other.MarketState
 }
 
 func priceMonitoringBoundsMatches(bounds, other []*PriceMonitoringBound) bool {
@@ -391,6 +395,7 @@ func (md MarketData) ToProto() *types.MarketData {
 		AuctionStart:              md.AuctionStart,
 		IndicativePrice:           md.IndicativePrice.String(),
 		IndicativeVolume:          md.IndicativeVolume,
+		MarketState:               types.Market_State(types.Market_State_value[md.MarketState]),
 		MarketTradingMode:         types.Market_TradingMode(types.Market_TradingMode_value[md.MarketTradingMode]),
 		Trigger:                   types.AuctionTrigger(types.AuctionTrigger_value[md.AuctionTrigger]),
 		ExtensionTrigger:          types.AuctionTrigger(types.AuctionTrigger_value[md.ExtensionTrigger]),

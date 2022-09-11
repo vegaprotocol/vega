@@ -603,6 +603,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		AuctionStart:              auctionStart,
 		AuctionEnd:                auctionEnd,
 		MarketTradingMode:         m.as.Mode(),
+		MarketState:               m.mkt.State,
 		Trigger:                   m.as.Trigger(),
 		ExtensionTrigger:          m.as.ExtensionTrigger(),
 		TargetStake:               targetStake,
@@ -1309,7 +1310,21 @@ func (m *Market) SubmitOrder(
 	party string,
 	deterministicID string,
 ) (oc *types.OrderConfirmation, _ error) {
-	m.idgen = idgeneration.New(deterministicID)
+	idgen := idgeneration.New(deterministicID)
+	return m.SubmitOrderWithIDGeneratorAndOrderID(
+		ctx, orderSubmission, party, idgen, idgen.NextID(),
+	)
+}
+
+// SubmitOrder submits the given order.
+func (m *Market) SubmitOrderWithIDGeneratorAndOrderID(
+	ctx context.Context,
+	orderSubmission *types.OrderSubmission,
+	party string,
+	idgen IDGenerator,
+	orderID string,
+) (oc *types.OrderConfirmation, _ error) {
+	m.idgen = idgen
 	defer func() { m.idgen = nil }()
 
 	order := orderSubmission.IntoOrder(party)
@@ -1318,6 +1333,7 @@ func (m *Market) SubmitOrder(
 		order.Price.Mul(order.Price, m.priceFactor)
 	}
 	order.CreatedAt = m.timeService.GetTimeNow().UnixNano()
+	order.ID = orderID
 
 	if !m.canTrade() {
 		order.Status = types.OrderStatusRejected
@@ -1326,7 +1342,6 @@ func (m *Market) SubmitOrder(
 		return nil, ErrTradingNotAllowed
 	}
 
-	order.ID = m.idgen.NextID()
 	conf, orderUpdates, err := m.submitOrder(ctx, order)
 	if err != nil {
 		return nil, err
@@ -2224,9 +2239,30 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 	if err != nil {
 		return err
 	}
+
 	// margins calculated, set about tranferring funds. At this point, if closed is not empty, those parties are distressed
 	// the risk slice are risk events, that we must use to transfer funds
 	return m.transferMargins(ctx, risk, closed)
+}
+
+func (m *Market) checkMarginForAmendOrder(ctx context.Context, existingOrder *types.Order, amendedOrder *types.Order) error {
+	origPos, ok := m.position.GetPositionByPartyID(existingOrder.Party)
+	if !ok {
+		m.log.Panic("could not get position for party", logging.PartyID(existingOrder.Party))
+	}
+
+	pos := origPos.Clone()
+
+	// if order was park we have nothing to do here
+	if existingOrder.Status != types.OrderStatusParked {
+		pos.UnregisterOrder(m.log, existingOrder)
+	}
+
+	pos.RegisterOrder(amendedOrder)
+
+	// we are just checking here if we can pass the margin calls.
+	_, _, err := m.calcMargins(ctx, pos, amendedOrder)
+	return err
 }
 
 func (m *Market) setMarkPrice(trade *types.Trade) {
@@ -2330,8 +2366,20 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 	return cancellations, nil
 }
 
-func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string, deterministicID string) (oc *types.OrderCancellationConfirmation, _ error) {
-	m.idgen = idgeneration.New(deterministicID)
+func (m *Market) CancelOrder(
+	ctx context.Context,
+	partyID, orderID string, deterministicID string,
+) (oc *types.OrderCancellationConfirmation, _ error) {
+	idgen := idgeneration.New(deterministicID)
+	return m.CancelOrderWithIDGenerator(ctx, partyID, orderID, idgen)
+}
+
+func (m *Market) CancelOrderWithIDGenerator(
+	ctx context.Context,
+	partyID, orderID string,
+	idgen IDGenerator,
+) (oc *types.OrderCancellationConfirmation, _ error) {
+	m.idgen = idgen
 	defer func() { m.idgen = nil }()
 
 	if !m.canTrade() {
@@ -2433,10 +2481,25 @@ func (m *Market) parkOrder(ctx context.Context, orderID string) *types.Order {
 }
 
 // AmendOrder amend an existing order from the order book.
-func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmendment, party string,
-	deterministicID string) (oc *types.OrderConfirmation, _ error,
+func (m *Market) AmendOrder(
+	ctx context.Context,
+	orderAmendment *types.OrderAmendment,
+	party string,
+	deterministicID string,
+) (oc *types.OrderConfirmation, _ error,
 ) {
-	m.idgen = idgeneration.New(deterministicID)
+	idgen := idgeneration.New(deterministicID)
+	return m.AmendOrderWithIDGenerator(ctx, orderAmendment, party, idgen)
+}
+
+func (m *Market) AmendOrderWithIDGenerator(
+	ctx context.Context,
+	orderAmendment *types.OrderAmendment,
+	party string,
+	idgen IDGenerator,
+) (oc *types.OrderConfirmation, _ error,
+) {
+	m.idgen = idgen
 	defer func() { m.idgen = nil }()
 
 	if !m.canTrade() {
@@ -2654,6 +2717,10 @@ func (m *Market) amendOrder(
 		}
 		// We got a new valid price, if we are parked we need to unpark
 		if amendedOrder.Status == types.OrderStatusParked {
+			// is we cann pass the margin calls, then do nothing
+			if err := m.checkMarginForAmendOrder(ctx, existingOrder, amendedOrder); err != nil {
+				return nil, nil, err
+			}
 			// we were parked, need to unpark
 			m.peggedOrders.Unpark(amendedOrder.ID)
 			orderConf, orderUpdts, err := m.submitValidatedOrder(ctx, amendedOrder)
@@ -2661,9 +2728,6 @@ func (m *Market) amendOrder(
 				// If we cannot submit a new order then the amend has failed, return the error
 				return nil, orderUpdts, err
 			}
-			// Update pegged order with new amended version
-			// FIXME: THIS SHOULD BE UNCESSARY
-			// m.peggedOrders.Amend(amendedOrder)
 			return orderConf, orderUpdts, err
 		}
 	}
@@ -2924,10 +2988,6 @@ func (m *Market) orderCancelReplace(
 	if m.peggedOrders.IsParked(newOrder.ID) {
 		m.peggedOrders.Unpark(newOrder.ID)
 	}
-	// order submitted successfully, update the pegged list
-	// if newOrder.PeggedOrder != nil {
-	// 	m.peggedOrders.Amend(newOrder)
-	// }
 
 	timer.EngineTimeCounterAdd()
 
@@ -2947,12 +3007,6 @@ func (m *Market) orderAmendInPlace(originalOrder, amendOrder *types.Order) (*typ
 		}
 		return nil, err
 	}
-
-	// FIXME: this should be unnecessary as not parked at this point
-	// order is successfully submitted, update the pegged list
-	// if amendOrder.PeggedOrder != nil {
-	// 	m.peggedOrders.Amend(amendOrder)
-	// }
 
 	return &types.OrderConfirmation{
 		Order: amendOrder,

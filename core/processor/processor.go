@@ -14,10 +14,12 @@ package processor
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/execution"
 	"code.vegaprotocol.io/vega/core/governance"
 	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/types"
@@ -37,6 +39,9 @@ var (
 	ErrUnsupportedChainEvent                  = errors.New("unsupported chain event")
 	ErrNodeSignatureFromNonValidator          = errors.New("node signature not sent by validator")
 	ErrNodeSignatureWithNonValidatorMasterKey = errors.New("node signature not signed with validator master key")
+	ErrMarketBatchInstructionTooBig           = func(got, expected uint64) error {
+		return fmt.Errorf("market batch instructions too big, got(%d), expected(%d)", got, expected)
+	}
 )
 
 type TimeService interface {
@@ -62,9 +67,9 @@ type DelegationEngine interface {
 //nolint:interfacebloat
 type ExecutionEngine interface {
 	// orders stuff
-	SubmitOrder(ctx context.Context, orderSubmission *types.OrderSubmission, party string, deterministicID string) (*types.OrderConfirmation, error)
-	CancelOrder(ctx context.Context, order *types.OrderCancellation, party string, deterministicID string) ([]*types.OrderCancellationConfirmation, error)
-	AmendOrder(ctx context.Context, order *types.OrderAmendment, party string, deterministicID string) (*types.OrderConfirmation, error)
+	SubmitOrder(ctx context.Context, orderSubmission *types.OrderSubmission, party string, idgen execution.IDGenerator, orderID string) (*types.OrderConfirmation, error)
+	CancelOrder(ctx context.Context, order *types.OrderCancellation, party string, idgen execution.IDGenerator) ([]*types.OrderCancellationConfirmation, error)
+	AmendOrder(ctx context.Context, order *types.OrderAmendment, party string, idgen execution.IDGenerator) (*types.OrderConfirmation, error)
 
 	// market stuff
 	SubmitMarket(ctx context.Context, marketConfig *types.Market, proposer string) error

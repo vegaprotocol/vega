@@ -176,14 +176,49 @@ func (s *SequentialPipeline) RequestPermissionsReview(ctx context.Context, trace
 	}
 }
 
-func (s *SequentialPipeline) RequestTransactionReview(ctx context.Context, traceID, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error) {
+func (s *SequentialPipeline) RequestTransactionSendingReview(ctx context.Context, traceID, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error) {
 	if err := ctx.Err(); err != nil {
 		return false, api.ErrRequestInterrupted
 	}
 
 	s.receptionChan <- Envelope{
 		TraceID: traceID,
-		Content: RequestTransactionReview{
+		Content: RequestTransactionSendingReview{
+			Hostname:    hostname,
+			Wallet:      wallet,
+			PublicKey:   pubKey,
+			Transaction: transaction,
+			ReceivedAt:  receivedAt,
+		},
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			return false, api.ErrRequestInterrupted
+		case <-s.clientCtx.Done():
+			return false, api.ErrConnectionClosed
+		case response := <-s.responseChan:
+			if response.TraceID != traceID {
+				return false, ErrTraceIDMismatch
+			}
+			approval, ok := response.Content.(Decision)
+			if !ok {
+				return false, ErrWrongResponseType
+			}
+			return approval.Approved, nil
+		}
+	}
+}
+
+func (s *SequentialPipeline) RequestTransactionSigningReview(ctx context.Context, traceID, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error) {
+	if err := ctx.Err(); err != nil {
+		return false, api.ErrRequestInterrupted
+	}
+
+	s.receptionChan <- Envelope{
+		TraceID: traceID,
+		Content: RequestTransactionSigningReview{
 			Hostname:    hostname,
 			Wallet:      wallet,
 			PublicKey:   pubKey,
@@ -277,7 +312,15 @@ type Decision struct {
 	Approved bool `json:"approved"`
 }
 
-type RequestTransactionReview struct {
+type RequestTransactionSendingReview struct {
+	Hostname    string    `json:"hostname"`
+	Wallet      string    `json:"wallet"`
+	PublicKey   string    `json:"publicKey"`
+	Transaction string    `json:"transaction"`
+	ReceivedAt  time.Time `json:"receivedAt"`
+}
+
+type RequestTransactionSigningReview struct {
 	Hostname    string    `json:"hostname"`
 	Wallet      string    `json:"wallet"`
 	PublicKey   string    `json:"publicKey"`

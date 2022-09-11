@@ -228,6 +228,8 @@ func checkInputData(version commandspb.TxVersion, rawInputData []byte, expectedC
 			errs.Merge(checkProtocolUpgradeProposal(cmd.ProtocolUpgradeProposal))
 		case *commandspb.InputData_IssueSignatures:
 			errs.Merge(checkIssueSignatures(cmd.IssueSignatures))
+		case *commandspb.InputData_BatchMarketInstructions:
+			errs.Merge(checkBatchMarketInstructions(cmd.BatchMarketInstructions))
 		default:
 			errs.AddForProperty("tx.input_data.command", ErrIsNotSupported)
 		}
