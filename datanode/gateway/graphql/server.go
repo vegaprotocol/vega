@@ -23,11 +23,6 @@ import (
 	"strconv"
 	"time"
 
-	"golang.org/x/crypto/acme/autocert"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/connectivity"
-
-	"code.vegaprotocol.io/vega/datanode/api"
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/logging"
@@ -41,6 +36,9 @@ import (
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/websocket"
 	"github.com/rs/cors"
+	"golang.org/x/crypto/acme/autocert"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 const (
@@ -57,8 +55,6 @@ type GraphServer struct {
 	coreProxyClient     CoreProxyServiceClient
 	tradingDataClient   protoapi.TradingDataServiceClient
 	tradingDataClientV2 v2.TradingDataServiceClient
-	getLastBlock        api.GetBlockFunc
-	getCoreState        api.GetStateFunc
 	srv                 *http.Server
 }
 
@@ -67,8 +63,6 @@ func New(
 	log *logging.Logger,
 	config gateway.Config,
 	vegaPaths paths.Paths,
-	getLastBlock api.GetBlockFunc,
-	getCoreState api.GetStateFunc,
 ) (*GraphServer, error) {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -80,25 +74,23 @@ func New(
 	if err != nil {
 		return nil, err
 	}
-	tradingDataClient := protoapi.NewTradingDataServiceClient(tdconn)
-	tradingDataClientV2 := v2.NewTradingDataServiceClient(tdconn)
+	tradingDataClient := protoapi.NewTradingDataServiceClient(&clientConn{tdconn})
+	tradingDataClientV2 := v2.NewTradingDataServiceClient(&clientConn{tdconn})
 
 	tconn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
 	if err != nil {
 		return nil, err
 	}
 
-	tradingClient := vegaprotoapi.NewCoreServiceClient(tconn)
+	tradingClient := vegaprotoapi.NewCoreServiceClient(&clientConn{tconn})
 
 	return &GraphServer{
-		Config:              config,
 		log:                 log,
+		Config:              config,
 		vegaPaths:           vegaPaths,
 		coreProxyClient:     tradingClient,
 		tradingDataClient:   tradingDataClient,
 		tradingDataClientV2: tradingDataClientV2,
-		getLastBlock:        getLastBlock,
-		getCoreState:        getCoreState,
 	}, nil
 }
 
@@ -116,6 +108,21 @@ func (g *GraphServer) ReloadConf(cfg gateway.Config) {
 	// TODO(): not updating the the actual server for now, may need to look at this later
 	// e.g restart the http server on another port or whatever
 	g.Config = cfg
+}
+
+type (
+	clientConn struct {
+		*grpc.ClientConn
+	}
+	metadataKey struct{}
+)
+
+func (c *clientConn) Invoke(ctx context.Context, method string, args, reply interface{}, opts ...grpc.CallOption) error {
+	mdi := ctx.Value(metadataKey{})
+	if md, ok := mdi.(*metadata.MD); ok {
+		opts = append(opts, grpc.Header(md))
+	}
+	return c.ClientConn.Invoke(ctx, method, args, reply, opts...)
 }
 
 // Start start the server in order receive http request.
@@ -156,42 +163,15 @@ func (g *GraphServer) Start() error {
 		return res, err
 	})
 
-	// TODO: don't call the same thing in gRPC and GraphQL
 	headersMiddleware := handler.ResolverMiddleware(func(ctx context.Context, next graphql.Resolver) (res interface{}, err error) {
+		md := metadata.MD{}
+		ctx = context.WithValue(ctx, metadataKey{}, &md)
 		res, err = next(ctx)
-
-		headers := http.Header{}
-
-		var (
-			height    int64
-			timestamp int64
-		)
-
-		block, bErr := g.getLastBlock(ctx)
-		if bErr != nil {
-			g.log.Error("failed to get last block", logging.Error(bErr))
-		} else {
-			height = block.Height
-			timestamp = block.VegaTime.Unix()
-		}
-
-		state := g.getCoreState()
-
-		connState := "DISCONNECTED"
-		if state == connectivity.Ready {
-			connState = "CONNECTED"
-		}
-
-		headers["X-Block-Height"] = []string{strconv.FormatInt(height, 10)}
-		headers["X-Block-Timestamp"] = []string{strconv.FormatInt(timestamp, 10)}
-		headers["X-Vega-Connection"] = []string{connState}
-
 		rw, ok := gateway.InjectableWriterFromContext(ctx)
 		if !ok {
 			return
 		}
-
-		rw.SetHeaders(headers)
+		rw.SetHeaders(http.Header(md))
 		return
 	})
 
@@ -218,19 +198,15 @@ func (g *GraphServer) Start() error {
 	if g.GraphQL.ComplexityLimit > 0 {
 		options = append(options, handler.ComplexityLimit(g.GraphQL.ComplexityLimit))
 	}
+
 	// FIXME(jeremy): to be removed once everyone has move to the new endpoint
-	handlr.Handle("/query",
-		corz.Handler(gateway.Chain(
-			gateway.RemoteAddrMiddleware(g.log, handler.GraphQL(NewExecutableSchema(config), options...)),
-			gateway.WithAddHeadersMiddleware,
-		)),
-	)
-	handlr.Handle(g.GraphQL.Endpoint,
-		corz.Handler(gateway.Chain(
-			gateway.RemoteAddrMiddleware(g.log, handler.GraphQL(NewExecutableSchema(config), options...)),
-			gateway.WithAddHeadersMiddleware,
-		)),
-	)
+	middleware := corz.Handler(gateway.Chain(
+		gateway.RemoteAddrMiddleware(g.log, handler.GraphQL(NewExecutableSchema(config), options...)),
+		gateway.WithAddHeadersMiddleware,
+	))
+
+	handlr.Handle("/query", middleware)
+	handlr.Handle(g.GraphQL.Endpoint, middleware)
 
 	// Set up https if we are using it
 	var tlsConfig *tls.Config

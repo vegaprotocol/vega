@@ -212,7 +212,7 @@ func (l *NodeCommand) runNode([]string) error {
 
 	// start gateway
 	if l.conf.GatewayEnabled {
-		gty := server.New(l.conf.Gateway, l.Log, l.vegaPaths, l.blockService.GetLastBlock, l.vegaCoreServiceClient.GetState)
+		gty := server.New(l.conf.Gateway, l.Log, l.vegaPaths)
 		eg.Go(func() error { return gty.Start(ctx) })
 	}
 

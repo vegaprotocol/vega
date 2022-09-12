@@ -16,12 +16,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/pkg/errors"
-	"google.golang.org/grpc/connectivity"
-
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/logging"
 	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
+
+	"github.com/pkg/errors"
+	"google.golang.org/grpc/connectivity"
 )
 
 const defaultRequestTimeout = time.Second * 5

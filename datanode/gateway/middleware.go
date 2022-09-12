@@ -80,7 +80,7 @@ func WithAddHeadersMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		iw := &InjectableResponseWriter{ResponseWriter: w}
-		ctx = context.WithValue(ctx, injectableWriterKey, iw)
+		ctx = context.WithValue(ctx, injectableWriterKey{}, iw)
 		next.ServeHTTP(iw, r.WithContext(ctx))
 	})
 }
@@ -90,15 +90,13 @@ type InjectableResponseWriter struct {
 	headers http.Header
 }
 
-type key string
-
-const injectableWriterKey key = "injectable-writer-key"
+type injectableWriterKey struct{}
 
 func InjectableWriterFromContext(ctx context.Context) (*InjectableResponseWriter, bool) {
 	if ctx == nil {
 		return nil, false
 	}
-	val := ctx.Value(injectableWriterKey)
+	val := ctx.Value(injectableWriterKey{})
 	if val == nil {
 		return nil, false
 	}

@@ -21,10 +21,8 @@ import (
 	"syscall"
 
 	"golang.org/x/sync/errgroup"
-	"google.golang.org/grpc/connectivity"
 
 	"code.vegaprotocol.io/vega/datanode/config"
-	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	"code.vegaprotocol.io/vega/datanode/gateway/server"
 	"code.vegaprotocol.io/vega/logging"
@@ -81,13 +79,7 @@ func (opts *gatewayCmd) Execute(_ []string) error {
 	})
 
 	eg.Go(func() error {
-		lastBlockFn := func(ctx context.Context) (entities.Block, error) {
-			return entities.Block{}, nil
-		}
-		getStateFn := func() connectivity.State {
-			return connectivity.Ready
-		}
-		srv := server.New(opts.Config, log, vegaPaths, lastBlockFn, getStateFn) // TODO
+		srv := server.New(opts.Config, log, vegaPaths)
 		if err := srv.Start(ctx); err != nil {
 			return err
 		}

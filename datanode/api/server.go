@@ -20,26 +20,22 @@ import (
 	"strconv"
 	"time"
 
-	"google.golang.org/grpc/connectivity"
-
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
+	"code.vegaprotocol.io/vega/datanode/contextutil"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/service"
 	"code.vegaprotocol.io/vega/datanode/subscribers"
-
-	"github.com/fullstorydev/grpcui/standalone"
-	"golang.org/x/sync/errgroup"
-
-	"code.vegaprotocol.io/vega/datanode/contextutil"
 	"code.vegaprotocol.io/vega/logging"
-
 	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	protoapi2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
+	"github.com/fullstorydev/grpcui/standalone"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/reflection"
@@ -277,7 +273,7 @@ func headersInterceptor(
 		req interface{},
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
-	) (resp interface{}, err error) {
+	) (interface{}, error) {
 		var (
 			height    int64
 			timestamp int64
@@ -285,10 +281,10 @@ func headersInterceptor(
 
 		block, bErr := getLastBlock(ctx)
 		if bErr != nil {
-			log.Error("failed to get last block", logging.Error(bErr))
+			log.Debug("failed to get last block", logging.Error(bErr))
 		} else {
 			height = block.Height
-			timestamp = block.VegaTime.Unix()
+			timestamp = block.VegaTime.UnixNano()
 		}
 
 		state := getState()
@@ -308,15 +304,7 @@ func headersInterceptor(
 			}
 		}
 
-		// Calls the handler
-		resp, err = handler(ctx, req)
-
-		log.Debug("Invoked RPC call",
-			logging.String("method", info.FullMethod),
-			logging.Error(err),
-		)
-
-		return
+		return handler(ctx, req)
 	}
 }
 

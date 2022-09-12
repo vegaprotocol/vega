@@ -20,22 +20,21 @@ import (
 	"strconv"
 
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
+	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/datanode/service"
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/vegatime"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
+	"code.vegaprotocol.io/vega/protos/vega"
 	pbtypes "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 
 	"google.golang.org/grpc/codes"
-
-	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/datanode/metrics"
-	"code.vegaprotocol.io/vega/datanode/sqlstore"
-	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
-	"code.vegaprotocol.io/vega/protos/vega"
-	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 )
 
 type tradingDataService struct {

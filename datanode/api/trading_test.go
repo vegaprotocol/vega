@@ -19,31 +19,27 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jackc/pgx/v4"
-	"google.golang.org/grpc/connectivity"
-
-	"code.vegaprotocol.io/vega/datanode/candlesv2"
-	"code.vegaprotocol.io/vega/datanode/service"
-
-	"github.com/golang/protobuf/proto"
-
 	"code.vegaprotocol.io/vega/datanode/api"
 	"code.vegaprotocol.io/vega/datanode/api/mocks"
 	"code.vegaprotocol.io/vega/datanode/broker"
+	"code.vegaprotocol.io/vega/datanode/candlesv2"
 	"code.vegaprotocol.io/vega/datanode/config"
 	vgtesting "code.vegaprotocol.io/vega/datanode/libs/testing"
+	"code.vegaprotocol.io/vega/datanode/service"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/subscribers"
 	"code.vegaprotocol.io/vega/logging"
-
 	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
 	"github.com/golang/mock/gomock"
+	"github.com/golang/protobuf/proto"
+	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/test/bufconn"
 )
 
