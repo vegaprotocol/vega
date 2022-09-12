@@ -818,7 +818,6 @@ type Transfer struct {
 	Status          Transfer_Status  `protobuf:"varint,9,opt,name=status,proto3,enum=vega.events.v1.Transfer_Status" json:"status,omitempty"`
 	Timestamp       int64            `protobuf:"varint,10,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	// Types that are assignable to Kind:
-	//
 	//	*Transfer_OneOff
 	//	*Transfer_Recurring
 	Kind isTransfer_Kind `protobuf_oneof:"kind"`
@@ -1641,7 +1640,7 @@ func (x *RewardPayoutEvent) GetMarket() string {
 	return ""
 }
 
-// ValidatorScoreEvent is the score a validator gets for a given epoch
+//ValidatorScoreEvent is the score a validator gets for a given epoch
 type ValidatorScoreEvent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1745,7 +1744,7 @@ func (x *ValidatorScoreEvent) GetMultisigScore() string {
 	return ""
 }
 
-// DelegationBalanceEvent - updates on the delegation balance of a party to a node in the current epoch in effect
+//DelegationBalanceEvent - updates on the delegation balance of a party to a node in the current epoch in effect
 type DelegationBalanceEvent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1888,7 +1887,6 @@ type TxErrorEvent struct {
 	// The transaction that failed
 	//
 	// Types that are assignable to Transaction:
-	//
 	//	*TxErrorEvent_OrderSubmission
 	//	*TxErrorEvent_OrderAmendment
 	//	*TxErrorEvent_OrderCancellation
@@ -3506,7 +3504,7 @@ func (x *ProtocolUpgradeEvent) GetStatus() ProtocolUpgradeProposalStatus {
 	return ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_UNSPECIFIED
 }
 
-// StateVarEvent - updates on state changes in state variable consensus
+//StateVarEvent - updates on state changes in state variable consensus
 type StateVar struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -3583,7 +3581,6 @@ type BusEvent struct {
 	// The type of bus event (one of the list below)
 	Type BusEventType `protobuf:"varint,3,opt,name=type,proto3,enum=vega.events.v1.BusEventType" json:"type,omitempty"`
 	// Types that are assignable to Event:
-	//
 	//	*BusEvent_TimeUpdate
 	//	*BusEvent_TransferResponses
 	//	*BusEvent_PositionResolution

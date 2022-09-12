@@ -12,6 +12,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🐛 Fixes
+- [6148](https://github.com/vegaprotocol/vega/issues/6148) - Fix API descriptions for typos
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ## 0.55.0
