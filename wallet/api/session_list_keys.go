@@ -38,8 +38,10 @@ func (h *ListKeys) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.
 	}
 
 	keys := make([]string, 0, len(connectedWallet.RestrictedKeys))
-	for pubKey := range connectedWallet.RestrictedKeys {
-		keys = append(keys, pubKey)
+	for pubKey, kp := range connectedWallet.RestrictedKeys {
+		if !kp.IsTainted() {
+			keys = append(keys, pubKey)
+		}
 	}
 
 	return ListKeysResult{

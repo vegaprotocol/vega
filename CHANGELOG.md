@@ -61,6 +61,7 @@
 - [6099](https://github.com/vegaprotocol/vega/issues/6099) - Allow recurring transfers with the same to and from but with different asset
 - [6119](https://github.com/vegaprotocol/vega/issues/6119) - Correct order in which market event is emitted
 - [5890](https://github.com/vegaprotocol/vega/issues/5890) - Margin breach during amend doesn't cancel order
+- [5988](https://github.com/vegaprotocol/vega/issues/5988) - Exclude tainted keys from `session.list_keys` endpoint
 
 ## 0.54.0
 
