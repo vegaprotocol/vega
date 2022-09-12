@@ -207,8 +207,8 @@ func (e *Engine) ReloadConf(cfg Config) {
 func (e *Engine) Hash() []byte {
 	e.log.Debug("hashing markets")
 
-	hashes := make([]string, 0, len(e.markets))
-	for _, m := range e.markets {
+	hashes := make([]string, 0, len(e.marketsCpy))
+	for _, m := range e.marketsCpy {
 		hash := m.Hash()
 		e.log.Debug("market app state hash", logging.Hash(hash), logging.String("market-id", m.GetID()))
 		hashes = append(hashes, string(hash))
