@@ -7,23 +7,28 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-type ListKeysParams struct {
+type SessionListKeysParams struct {
 	Token string `json:"token"`
 }
 
-type ListKeysResult struct {
-	Keys []string `json:"keys"`
+type SessionListKeysResult struct {
+	Keys []SessionNamedPublicKey `json:"keys"`
 }
 
-type ListKeys struct {
+type SessionNamedPublicKey struct {
+	Name      string `json:"name"`
+	PublicKey string `json:"publicKey"`
+}
+
+type SessionListKeys struct {
 	sessions *Sessions
 }
 
 // Handle returns the public keys the third-party application has access to.
 //
 // This requires a "read" access on "public_keys".
-func (h *ListKeys) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
-	params, err := validateListKeysParams(rawParams)
+func (h *SessionListKeys) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+	params, err := validateSessionListKeysParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
 	}
@@ -37,35 +42,38 @@ func (h *ListKeys) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.
 		return nil, requestNotPermittedError(ErrReadAccessOnPublicKeysRequired)
 	}
 
-	keys := make([]string, 0, len(connectedWallet.RestrictedKeys))
-	for pubKey := range connectedWallet.RestrictedKeys {
-		keys = append(keys, pubKey)
+	keys := make([]SessionNamedPublicKey, 0, len(connectedWallet.RestrictedKeys))
+	for _, keyPair := range connectedWallet.RestrictedKeys {
+		keys = append(keys, SessionNamedPublicKey{
+			Name:      keyPair.Name(),
+			PublicKey: keyPair.PublicKey(),
+		})
 	}
 
-	return ListKeysResult{
+	return SessionListKeysResult{
 		Keys: keys,
 	}, nil
 }
 
-func validateListKeysParams(rawParams jsonrpc.Params) (ListKeysParams, error) {
+func validateSessionListKeysParams(rawParams jsonrpc.Params) (SessionListKeysParams, error) {
 	if rawParams == nil {
-		return ListKeysParams{}, ErrParamsRequired
+		return SessionListKeysParams{}, ErrParamsRequired
 	}
 
-	params := ListKeysParams{}
+	params := SessionListKeysParams{}
 	if err := mapstructure.Decode(rawParams, &params); err != nil {
-		return ListKeysParams{}, ErrParamsDoNotMatch
+		return SessionListKeysParams{}, ErrParamsDoNotMatch
 	}
 
 	if params.Token == "" {
-		return ListKeysParams{}, ErrConnectionTokenIsRequired
+		return SessionListKeysParams{}, ErrConnectionTokenIsRequired
 	}
 
 	return params, nil
 }
 
-func NewListKeys(sessions *Sessions) *ListKeys {
-	return &ListKeys{
+func NewListKeys(sessions *Sessions) *SessionListKeys {
+	return &SessionListKeys{
 		sessions: sessions,
 	}
 }

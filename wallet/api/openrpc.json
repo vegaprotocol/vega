@@ -280,9 +280,11 @@
       "result": {
         "name": "Success",
         "schema": {
-          "type": "array",
-          "items": {
-            "type": "string"
+          "keys": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/named_public_key"
+            }
           }
         }
       },
@@ -303,10 +305,18 @@
           ],
           "result": {
             "name": "Success",
-            "value": [
-              "0xdeadbeef",
-              "0xcafedude"
-            ]
+            "value": {
+              "keys": [
+                {
+                  "name": "Key 1",
+                  "publicKey": "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0"
+                },
+                {
+                  "name": "Key 2",
+                  "publicKey": "988eae323a07f12363c17025c23ee58ea32ac3912398e16bb0b56969f57adc52"
+                }
+              ]
+            }
           }
         }
       ]
