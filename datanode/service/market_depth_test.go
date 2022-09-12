@@ -24,11 +24,12 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/golang/mock/gomock"
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func getTestMDS(t *testing.T, ctx context.Context, ack bool) *service.MarketDepth {
+func getTestMDS(ctx context.Context, t *testing.T, ack bool) *service.MarketDepth {
 	t.Helper()
 	return service.NewMarketDepth(nil, logging.NewTestLogger())
 }
@@ -51,7 +52,7 @@ func buildOrder(id string, side types.Side, orderType types.OrderType, price uin
 
 func TestBuyPriceLevels(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	order1 := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 9, 9)
@@ -85,7 +86,7 @@ func TestBuyPriceLevels(t *testing.T) {
 
 func TestSellPriceLevels(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	order1 := buildOrder("Order1", types.SideSell, types.OrderTypeLimit, 100, 9, 9)
@@ -119,7 +120,7 @@ func TestSellPriceLevels(t *testing.T) {
 
 func TestAddOrderToEmptyBook(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
@@ -135,7 +136,7 @@ func TestAddOrderToEmptyBook(t *testing.T) {
 
 func TestCancelOrder(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
@@ -155,7 +156,7 @@ func TestCancelOrder(t *testing.T) {
 
 func TestStoppedOrder(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
@@ -175,7 +176,7 @@ func TestStoppedOrder(t *testing.T) {
 
 func TestExpiredOrder(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
@@ -195,7 +196,7 @@ func TestExpiredOrder(t *testing.T) {
 
 func TestAmendOrderPrice(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
@@ -222,7 +223,7 @@ func TestAmendOrderPrice(t *testing.T) {
 
 func TestAmendOrderVolumeUp(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
@@ -243,7 +244,7 @@ func TestAmendOrderVolumeUp(t *testing.T) {
 
 func TestAmendOrderVolumeDown(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
@@ -264,7 +265,7 @@ func TestAmendOrderVolumeDown(t *testing.T) {
 
 func TestAmendOrderVolumeDownToZero(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
@@ -285,7 +286,7 @@ func TestAmendOrderVolumeDownToZero(t *testing.T) {
 
 func TestPartialFill(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
@@ -305,7 +306,7 @@ func TestPartialFill(t *testing.T) {
 
 func TestIOCPartialFill(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 5)
@@ -323,7 +324,7 @@ func TestIOCPartialFill(t *testing.T) {
 
 func TestFullyFill(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
@@ -344,7 +345,7 @@ func TestFullyFill(t *testing.T) {
 
 func TestMarketOrder(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	// market orders should not stay on the book
@@ -361,7 +362,7 @@ func TestMarketOrder(t *testing.T) {
 
 func TestFOKOrder(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	// FOK orders do not stay on the book
@@ -379,7 +380,7 @@ func TestFOKOrder(t *testing.T) {
 
 func TestIOCOrder(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	// IOC orders do not stay on the book
@@ -397,7 +398,7 @@ func TestIOCOrder(t *testing.T) {
 
 func TestRejectedOrder(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	// Rejected orders should be ignored
@@ -415,7 +416,7 @@ func TestRejectedOrder(t *testing.T) {
 
 func TestInvalidOrder(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	// Invalid orders should be ignored
@@ -433,7 +434,7 @@ func TestInvalidOrder(t *testing.T) {
 
 func TestPartialMatchOrders(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	order1 := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
@@ -456,7 +457,7 @@ func TestPartialMatchOrders(t *testing.T) {
 
 func TestFullyMatchOrders(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	order1 := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
@@ -480,7 +481,7 @@ func TestFullyMatchOrders(t *testing.T) {
 
 func TestRemovingPriceLevels(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	order1 := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 101, 10, 10)
@@ -504,7 +505,7 @@ func TestRemovingPriceLevels(t *testing.T) {
 
 func TestMarketDepthFields(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	order1 := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 101, 10, 10)
@@ -526,7 +527,7 @@ func TestMarketDepthFields(t *testing.T) {
 
 func TestParkingOrder(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	// Create a valid and live pegged order
@@ -563,7 +564,7 @@ func TestParkingOrder(t *testing.T) {
 
 func TestParkedOrder(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	// Create a parked pegged order which should not go on the depth book
@@ -582,7 +583,7 @@ func TestParkedOrder(t *testing.T) {
 
 func TestParkedOrder2(t *testing.T) {
 	ctx := context.Background()
-	mds := getTestMDS(t, ctx, true)
+	mds := getTestMDS(ctx, t, true)
 	vegaTime := time.Now()
 
 	// Create parked pegged order
@@ -660,7 +661,7 @@ func TestInitFromSqlStore(t *testing.T) {
 				MarketID:        entities.MarketID("2EBD1AF4C84D5E004FD2797FF268258BFA21A37A6D0BCE289FB21151ACEF0F36"),
 				PartyID:         entities.PartyID("FB0C9F50787E5E090591E6600DBBEB5A4771D5A0C9B1AE09BC673AB9F471D210"),
 				Side:            2,
-				Price:           1200,
+				Price:           decimal.NewFromInt(1200),
 				Size:            5,
 				Remaining:       5,
 				TimeInForce:     1,
@@ -669,7 +670,7 @@ func TestInitFromSqlStore(t *testing.T) {
 				Reference:       "",
 				Reason:          0,
 				Version:         1,
-				PeggedOffset:    0,
+				PeggedOffset:    decimal.NewFromInt(0),
 				BatchID:         0,
 				PeggedReference: 0,
 				LpID:            nil,
@@ -684,7 +685,7 @@ func TestInitFromSqlStore(t *testing.T) {
 				MarketID:        entities.MarketID("52D3FCF2EFC15518EDFA25154E909348A2D7F45903C72CD88CB32EFD747CA001"),
 				PartyID:         entities.PartyID("29FE22227631DE06D9FBBCF2450DEA492E685E5953AEF60A76A95D0DA156806D"),
 				Side:            1,
-				Price:           22,
+				Price:           decimal.NewFromInt(22),
 				Size:            26,
 				Remaining:       26,
 				TimeInForce:     1,
@@ -693,7 +694,7 @@ func TestInitFromSqlStore(t *testing.T) {
 				Reference:       "",
 				Reason:          0,
 				Version:         2,
-				PeggedOffset:    0,
+				PeggedOffset:    decimal.NewFromInt(0),
 				BatchID:         1,
 				PeggedReference: 0,
 				LpID:            nil,
@@ -708,7 +709,7 @@ func TestInitFromSqlStore(t *testing.T) {
 				MarketID:        entities.MarketID("2EBD1AF4C84D5E004FD2797FF268258BFA21A37A6D0BCE289FB21151ACEF0F36"),
 				PartyID:         entities.PartyID("5F9A129B40E17BA0A17272697E3D521356AFC20BB56BF68C9242097AAFF879BF"),
 				Side:            1,
-				Price:           900,
+				Price:           decimal.NewFromInt(900),
 				Size:            5,
 				Remaining:       5,
 				TimeInForce:     1,
@@ -717,7 +718,7 @@ func TestInitFromSqlStore(t *testing.T) {
 				Reference:       "",
 				Reason:          0,
 				Version:         1,
-				PeggedOffset:    0,
+				PeggedOffset:    decimal.NewFromInt(0),
 				BatchID:         0,
 				PeggedReference: 0,
 				LpID:            nil,
@@ -732,7 +733,7 @@ func TestInitFromSqlStore(t *testing.T) {
 				MarketID:        entities.MarketID("2EBD1AF4C84D5E004FD2797FF268258BFA21A37A6D0BCE289FB21151ACEF0F36"),
 				PartyID:         entities.PartyID("5F9A129B40E17BA0A17272697E3D521356AFC20BB56BF68C9242097AAFF879BF"),
 				Side:            1,
-				Price:           100,
+				Price:           decimal.NewFromInt(100),
 				Size:            1,
 				Remaining:       1,
 				TimeInForce:     1,
@@ -741,7 +742,7 @@ func TestInitFromSqlStore(t *testing.T) {
 				Reference:       "",
 				Reason:          0,
 				Version:         1,
-				PeggedOffset:    0,
+				PeggedOffset:    decimal.NewFromInt(0),
 				BatchID:         0,
 				PeggedReference: 0,
 				LpID:            nil,
@@ -756,7 +757,7 @@ func TestInitFromSqlStore(t *testing.T) {
 				MarketID:        entities.MarketID("2EBD1AF4C84D5E004FD2797FF268258BFA21A37A6D0BCE289FB21151ACEF0F36"),
 				PartyID:         entities.PartyID("FB0C9F50787E5E090591E6600DBBEB5A4771D5A0C9B1AE09BC673AB9F471D210"),
 				Side:            2,
-				Price:           100000,
+				Price:           decimal.NewFromInt(100000),
 				Size:            1,
 				Remaining:       1,
 				TimeInForce:     1,
@@ -765,7 +766,7 @@ func TestInitFromSqlStore(t *testing.T) {
 				Reference:       "",
 				Reason:          0,
 				Version:         2,
-				PeggedOffset:    0,
+				PeggedOffset:    decimal.NewFromInt(0),
 				BatchID:         0,
 				PeggedReference: 0,
 				LpID:            nil,
@@ -780,7 +781,7 @@ func TestInitFromSqlStore(t *testing.T) {
 				MarketID:        entities.MarketID("2EBD1AF4C84D5E004FD2797FF268258BFA21A37A6D0BCE289FB21151ACEF0F36"),
 				PartyID:         entities.PartyID("076E3373D4F4197731A3161D2F50CE286B93278BF2B650705691514DD49EFDA1"),
 				Side:            2,
-				Price:           1201,
+				Price:           decimal.NewFromInt(1201),
 				Size:            1301,
 				Remaining:       1301,
 				TimeInForce:     1,
@@ -789,7 +790,7 @@ func TestInitFromSqlStore(t *testing.T) {
 				Reference:       "",
 				Reason:          0,
 				Version:         1,
-				PeggedOffset:    0,
+				PeggedOffset:    decimal.NewFromInt(0),
 				BatchID:         1,
 				PeggedReference: 0,
 				LpID:            nil,
@@ -804,7 +805,7 @@ func TestInitFromSqlStore(t *testing.T) {
 				MarketID:        entities.MarketID("2EBD1AF4C84D5E004FD2797FF268258BFA21A37A6D0BCE289FB21151ACEF0F36"),
 				PartyID:         entities.PartyID("076E3373D4F4197731A3161D2F50CE286B93278BF2B650705691514DD49EFDA1"),
 				Side:            1,
-				Price:           899,
+				Price:           decimal.NewFromInt(899),
 				Size:            1738,
 				Remaining:       1738,
 				TimeInForce:     1,
@@ -813,7 +814,7 @@ func TestInitFromSqlStore(t *testing.T) {
 				Reference:       "",
 				Reason:          0,
 				Version:         1,
-				PeggedOffset:    0,
+				PeggedOffset:    decimal.NewFromInt(0),
 				BatchID:         1,
 				PeggedReference: 0,
 				LpID:            nil,

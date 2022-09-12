@@ -453,20 +453,6 @@ func LiquidityMonitoringParametersFromProto(p *proto.LiquidityMonitoringParamete
 	}
 }
 
-func LiquidityProvisionSubmissionFromMarketCommitment(
-	nmc *NewMarketCommitment,
-	market string,
-) *LiquidityProvisionSubmission {
-	return &LiquidityProvisionSubmission{
-		MarketID:         market,
-		CommitmentAmount: nmc.CommitmentAmount,
-		Fee:              nmc.Fee,
-		Sells:            nmc.Sells,
-		Buys:             nmc.Buys,
-		Reference:        nmc.Reference,
-	}
-}
-
 type LiquidityProvisionAmendment struct {
 	// Market identifier for the order, required field
 	MarketID string
@@ -588,7 +574,7 @@ func (a LiquidityProvisionAmendment) String() string {
 	)
 }
 
-func (a LiquidityProvisionAmendment) GetMarketId() string {
+func (a LiquidityProvisionAmendment) GetMarketID() string {
 	return a.MarketID
 }
 
@@ -615,10 +601,10 @@ func (l LiquidityProvisionCancellation) IntoProto() *commandspb.LiquidityProvisi
 	}
 }
 
-func (o LiquidityProvisionCancellation) String() string {
-	return fmt.Sprintf("marketID(%s)", o.MarketID)
+func (l LiquidityProvisionCancellation) String() string {
+	return fmt.Sprintf("marketID(%s)", l.MarketID)
 }
 
-func (o LiquidityProvisionCancellation) GetMarketId() string {
-	return o.MarketID
+func (l LiquidityProvisionCancellation) GetMarketID() string {
+	return l.MarketID
 }

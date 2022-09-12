@@ -28,6 +28,7 @@ import (
 
 // StateProvider - not a huge fan of this interface being here, but it ensures that the state providers
 // don't have to import the snapshot package
+//
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/state_provider_mock.go -package mocks code.vegaprotocol.io/vega/core/types StateProvider
 type StateProvider interface {
 	Namespace() SnapshotNamespace
@@ -43,6 +44,7 @@ type StateProvider interface {
 // PostRestore is basically a StateProvider which, after the full core state is restored, expects a callback to finalise the state restore
 // Note that the order in which the calls to this OnStateLoaded functions are called is not pre-defined. As such, this method should only be used
 // for engine internals (upkeep, essentially)
+//
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/restore_state_provider_mock.go -package mocks code.vegaprotocol.io/vega/core/types PostRestore
 type PostRestore interface {
 	StateProvider
@@ -175,7 +177,7 @@ func AppStateFromTree(tree *iavl.ImmutableTree) (*PayloadAppState, error) {
 		Data: &PayloadAppState{AppState: &AppState{}},
 	}
 	key := appState.GetTreeKey()
-	_, data := tree.Get([]byte(key))
+	data, _ := tree.Get([]byte(key))
 	if data == nil {
 		return nil, ErrSnapshotKeyDoesNotExist
 	}
@@ -242,8 +244,12 @@ func (s *Snapshot) TreeFromSnapshot(tree *iavl.MutableTree) error {
 
 // SnapshotFromTree traverses the given avl tree and represents it as a Snapshot.
 func SnapshotFromTree(tree *iavl.ImmutableTree) (*Snapshot, error) {
+	hash, err := tree.Hash()
+	if err != nil {
+		return nil, err
+	}
 	snap := Snapshot{
-		Hash: tree.Hash(),
+		Hash: hash,
 		Meta: &Metadata{
 			Version:     tree.Version(),
 			NodeHashes:  []*NodeHash{}, // a slice of the data for each node in the tree without the payload value, just its hash
@@ -398,7 +404,7 @@ func (s *Snapshot) LoadChunk(chunk *RawChunk) error {
 	}
 	s.ByteChunks[i] = chunk.Data
 	s.byteLen += len(chunk.Data)
-	s.ChunksSeen += 1
+	s.ChunksSeen++
 	chunk.Height = s.Height
 	chunk.Format = s.Format
 	if s.Chunks == s.ChunksSeen {

@@ -13,8 +13,10 @@ import (
 	vglog "code.vegaprotocol.io/vega/libs/zap"
 	api "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	coreversion "code.vegaprotocol.io/vega/version"
 	"code.vegaprotocol.io/vega/wallet/network"
 	"code.vegaprotocol.io/vega/wallet/node"
+	"code.vegaprotocol.io/vega/wallet/version"
 	"github.com/golang/protobuf/proto"
 
 	"github.com/spf13/cobra"
@@ -42,10 +44,13 @@ var (
 
 		# Send a transaction with a maximum of 10 retries
 		{{.Software}} tx send --network NETWORK --retries 10 BASE64_TRANSACTION
+
+		# Send a transaction without verifying network version compatibility
+		{{.Software}} tx send --network NETWORK --retries 10 BASE64_TRANSACTION --no-version-check
 	`)
 )
 
-type SendTxHandler func(io.Writer, *RootFlags, *SendTxRequest) error
+type SendTxHandler func(io.Writer, *SendTxFlags, *RootFlags, *SendTxRequest) error
 
 func NewCmdTxSend(w io.Writer, rf *RootFlags) *cobra.Command {
 	return BuildCmdTxSend(w, SendTx, rf)
@@ -72,7 +77,7 @@ func BuildCmdTxSend(w io.Writer, handler SendTxHandler, rf *RootFlags) *cobra.Co
 				return err
 			}
 
-			if err := handler(w, rf, req); err != nil {
+			if err := handler(w, f, rf, req); err != nil {
 				return err
 			}
 
@@ -100,6 +105,11 @@ func BuildCmdTxSend(w io.Writer, handler SendTxHandler, rf *RootFlags) *cobra.Co
 		DefaultForwarderRetryCount,
 		"Number of retries when contacting the Vega node",
 	)
+	cmd.Flags().BoolVar(&f.NoVersionCheck,
+		"no-version-check",
+		false,
+		"Do not check for network version compatibility",
+	)
 
 	autoCompleteNetwork(cmd, rf.Home)
 	autoCompleteLogLevel(cmd)
@@ -107,11 +117,12 @@ func BuildCmdTxSend(w io.Writer, handler SendTxHandler, rf *RootFlags) *cobra.Co
 }
 
 type SendTxFlags struct {
-	Network     string
-	NodeAddress string
-	Retries     uint64
-	LogLevel    string
-	RawTx       string
+	Network        string
+	NodeAddress    string
+	Retries        uint64
+	LogLevel       string
+	RawTx          string
+	NoVersionCheck bool
 }
 
 func (f *SendTxFlags) Validate() (*SendTxRequest, error) {
@@ -120,7 +131,7 @@ func (f *SendTxFlags) Validate() (*SendTxRequest, error) {
 	}
 
 	if len(f.LogLevel) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("level")
+		return nil, flags.MustBeSpecifiedError("level")
 	}
 	if err := ValidateLogLevel(f.LogLevel); err != nil {
 		return nil, err
@@ -131,7 +142,7 @@ func (f *SendTxFlags) Validate() (*SendTxRequest, error) {
 		return nil, flags.OneOfFlagsMustBeSpecifiedError("network", "node-address")
 	}
 	if len(f.NodeAddress) != 0 && len(f.Network) != 0 {
-		return nil, flags.FlagsMutuallyExclusiveError("network", "node-address")
+		return nil, flags.MutuallyExclusiveError("network", "node-address")
 	}
 	req.NodeAddress = f.NodeAddress
 	req.Network = f.Network
@@ -160,7 +171,16 @@ type SendTxRequest struct {
 	Tx          *commandspb.Transaction
 }
 
-func SendTx(w io.Writer, rf *RootFlags, req *SendTxRequest) error {
+func SendTx(w io.Writer, f *SendTxFlags, rf *RootFlags, req *SendTxRequest) error {
+	p := printer.NewInteractivePrinter(w)
+	str := p.String()
+	defer p.Print(str)
+
+	if rf.Output == flags.InteractiveOutput && version.IsUnreleased() {
+		str.CrossMark().DangerText("You are running an unreleased version of the Vega wallet (").DangerText(coreversion.Get()).DangerText(").").NextLine()
+		str.Pad().DangerText("Use it at your own risk!").NextSection()
+	}
+
 	log, err := BuildLogger(rf.Output, req.LogLevel)
 	if err != nil {
 		return err
@@ -177,6 +197,16 @@ func SendTx(w io.Writer, rf *RootFlags, req *SendTxRequest) error {
 		hosts = []string{req.NodeAddress}
 	}
 
+	if !f.NoVersionCheck {
+		networkVersion, err := getNetworkVersion(hosts)
+		if err != nil {
+			return err
+		}
+		if networkVersion != coreversion.Get() {
+			return fmt.Errorf("software is not compatible with this network: network is running version %s but wallet software has version %s", networkVersion, coreversion.Get())
+		}
+	}
+
 	forwarder, err := node.NewForwarder(log.Named("forwarder"), network.GRPCConfig{
 		Hosts:   hosts,
 		Retries: req.Retries,
@@ -189,11 +219,6 @@ func SendTx(w io.Writer, rf *RootFlags, req *SendTxRequest) error {
 			log.Warn("Couldn't stop the forwarder", zap.Error(err))
 		}
 	}()
-
-	p := printer.NewInteractivePrinter(w)
-
-	str := p.String()
-	defer p.Print(str)
 
 	if rf.Output == flags.InteractiveOutput {
 		str.BlueArrow().InfoText("Logs").NextLine()

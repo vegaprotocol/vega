@@ -49,6 +49,18 @@ func TestWithdrawalsPagination(t *testing.T) {
 	t.Run("should return the last page of results if last is provided - newest first", testWithdrawalsPaginationLastNewestFirst)
 	t.Run("should return the specified page of results if first and after are provided - newest first", testWithdrawalsPaginationFirstAfterNewestFirst)
 	t.Run("should return the specified page of results if last and before are provided - newest first", testWithdrawalsPaginationLastBeforeNewestFirst)
+
+	t.Run("should return all withdrawals between dates if no pagination is specified", testWithdrawalsPaginationBetweenDatesNoPagination)
+	t.Run("should return the first page of results between dates if first is provided", testWithdrawalsPaginationBetweenDatesFirst)
+	t.Run("should return the last page of results between dates if last is provided", testWithdrawalsPaginationBetweenDatesLast)
+	t.Run("should return the specified page of results between dates if first and after are provided", testWithdrawalsPaginationBetweenDatesFirstAfter)
+	t.Run("should return the specified page of results between dates if last and before are provided", testWithdrawalsPaginationBetweenDatesLastBefore)
+
+	t.Run("should return all withdrawals between dates if no pagination is specified - newest first", testWithdrawalsPaginationBetweenDatesNoPaginationNewestFirst)
+	t.Run("should return the first page of results between dates if first is provided - newest first", testWithdrawalsPaginationBetweenDatesFirstNewestFirst)
+	t.Run("should return the last page of results between dates if last is provided - newest first", testWithdrawalsPaginationBetweenDatesLastNewestFirst)
+	t.Run("should return the specified page of results between dates if first and after are provided - newest first", testWithdrawalsPaginationBetweenDatesFirstAfterNewestFirst)
+	t.Run("should return the specified page of results between dates if last and before are provided - newest first", testWithdrawalsPaginationBetweenDatesLastBeforeNewestFirst)
 }
 
 func setupWithdrawalStoreTests(t *testing.T, ctx context.Context) (*sqlstore.Blocks, *sqlstore.Withdrawals, *pgx.Conn) {
@@ -82,7 +94,7 @@ func testAddWithdrawalForNewBlock(t *testing.T) {
 	block := addTestBlock(t, bs)
 	withdrawalProto := getTestWithdrawal(testID, testID, testID, testAmount, testID, block.VegaTime)
 
-	withdrawal, err := entities.WithdrawalFromProto(withdrawalProto, block.VegaTime)
+	withdrawal, err := entities.WithdrawalFromProto(withdrawalProto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting withdrawal proto to database entity")
 
 	err = ws.Upsert(context.Background(), withdrawal)
@@ -108,7 +120,7 @@ func testWithdrawalErrorIfBlockDoesNotExist(t *testing.T) {
 	block := addTestBlock(t, bs)
 	withdrawalProto := getTestWithdrawal(testID, testID, testID, testAmount, testID, block.VegaTime)
 
-	withdrawal, err := entities.WithdrawalFromProto(withdrawalProto, block.VegaTime.Add(time.Second))
+	withdrawal, err := entities.WithdrawalFromProto(withdrawalProto, generateTxHash(), block.VegaTime.Add(time.Second))
 	require.NoError(t, err, "Converting withdrawal proto to database entity")
 
 	err = ws.Upsert(context.Background(), withdrawal)
@@ -131,7 +143,7 @@ func testUpdateWithdrawalForBlockIfExists(t *testing.T) {
 	block := addTestBlock(t, bs)
 	withdrawalProto := getTestWithdrawal(testID, testID, testID, testAmount, testID, block.VegaTime)
 
-	withdrawal, err := entities.WithdrawalFromProto(withdrawalProto, block.VegaTime)
+	withdrawal, err := entities.WithdrawalFromProto(withdrawalProto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting withdrawal proto to database entity")
 
 	err = ws.Upsert(context.Background(), withdrawal)
@@ -170,7 +182,7 @@ func testInsertWithdrawalUpdatesIfNewBlock(t *testing.T) {
 	block := addTestBlock(t, bs)
 	withdrawalProto := getTestWithdrawal(testID, testID, testID, testAmount, testID, block.VegaTime)
 
-	withdrawal, err := entities.WithdrawalFromProto(withdrawalProto, block.VegaTime)
+	withdrawal, err := entities.WithdrawalFromProto(withdrawalProto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting withdrawal proto to database entity")
 
 	err = ws.Upsert(context.Background(), withdrawal)
@@ -183,7 +195,7 @@ func testInsertWithdrawalUpdatesIfNewBlock(t *testing.T) {
 
 	block = addTestBlock(t, bs)
 	withdrawalProto.Status = vega.Withdrawal_STATUS_FINALIZED
-	withdrawal, err = entities.WithdrawalFromProto(withdrawalProto, block.VegaTime)
+	withdrawal, err = entities.WithdrawalFromProto(withdrawalProto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting withdrawal proto to database entity")
 
 	err = ws.Upsert(context.Background(), withdrawal)
@@ -214,7 +226,7 @@ func testWithdrawalsGetByID(t *testing.T) {
 	block := addTestBlock(t, bs)
 	withdrawalProto := getTestWithdrawal(testID, testID, testID, testAmount, testID, block.VegaTime)
 
-	withdrawal, err := entities.WithdrawalFromProto(withdrawalProto, block.VegaTime)
+	withdrawal, err := entities.WithdrawalFromProto(withdrawalProto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting withdrawal proto to database entity")
 
 	err = ws.Upsert(context.Background(), withdrawal)
@@ -227,7 +239,7 @@ func testWithdrawalsGetByID(t *testing.T) {
 
 	block = addTestBlock(t, bs)
 	withdrawalProto.Status = vega.Withdrawal_STATUS_FINALIZED
-	withdrawal, err = entities.WithdrawalFromProto(withdrawalProto, block.VegaTime)
+	withdrawal, err = entities.WithdrawalFromProto(withdrawalProto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting withdrawal proto to database entity")
 
 	err = ws.Upsert(context.Background(), withdrawal)
@@ -266,7 +278,7 @@ func testWithdrawalsGetByParty(t *testing.T) {
 
 	want := make([]entities.Withdrawal, 0)
 
-	withdrawal, err := entities.WithdrawalFromProto(withdrawalProto1, block.VegaTime)
+	withdrawal, err := entities.WithdrawalFromProto(withdrawalProto1, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting withdrawal proto to database entity")
 
 	err = ws.Upsert(context.Background(), withdrawal)
@@ -276,7 +288,7 @@ func testWithdrawalsGetByParty(t *testing.T) {
 
 	block = addTestBlock(t, bs)
 	withdrawalProto1.Status = vega.Withdrawal_STATUS_FINALIZED
-	withdrawal, err = entities.WithdrawalFromProto(withdrawalProto1, block.VegaTime)
+	withdrawal, err = entities.WithdrawalFromProto(withdrawalProto1, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting withdrawal proto to database entity")
 
 	err = ws.Upsert(context.Background(), withdrawal)
@@ -291,7 +303,7 @@ func testWithdrawalsGetByParty(t *testing.T) {
 	time.Sleep(time.Millisecond * 500)
 
 	block = addTestBlock(t, bs)
-	withdrawal, err = entities.WithdrawalFromProto(withdrawalProto2, block.VegaTime)
+	withdrawal, err = entities.WithdrawalFromProto(withdrawalProto2, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting withdrawal proto to database entity")
 
 	err = ws.Upsert(context.Background(), withdrawal)
@@ -300,7 +312,7 @@ func testWithdrawalsGetByParty(t *testing.T) {
 	time.Sleep(time.Millisecond * 500)
 
 	block = addTestBlock(t, bs)
-	withdrawal, err = entities.WithdrawalFromProto(withdrawalProto2, block.VegaTime)
+	withdrawal, err = entities.WithdrawalFromProto(withdrawalProto2, generateTxHash(), block.VegaTime)
 	withdrawalProto2.Status = vega.Withdrawal_STATUS_FINALIZED
 	require.NoError(t, err, "Converting withdrawal proto to database entity")
 
@@ -313,7 +325,7 @@ func testWithdrawalsGetByParty(t *testing.T) {
 
 	want = append(want, *withdrawal)
 
-	got, _, _ := ws.GetByParty(ctx, withdrawalProto1.PartyId, false, entities.OffsetPagination{})
+	got, _, _ := ws.GetByParty(ctx, withdrawalProto1.PartyId, false, entities.OffsetPagination{}, entities.DateRange{})
 
 	assert.Equal(t, want, got)
 }
@@ -350,7 +362,7 @@ func addWithdrawals(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, ws *
 
 		withdrawalProto := getTestWithdrawal(fmt.Sprintf("deadbeef%02d", i+1), testID, testID,
 			strconv.FormatInt(amount, 10), generateID(), vegaTime)
-		withdrawal, err := entities.WithdrawalFromProto(withdrawalProto, vegaTime)
+		withdrawal, err := entities.WithdrawalFromProto(withdrawalProto, generateTxHash(), vegaTime)
 		require.NoError(t, err, "Converting withdrawal proto to database entity")
 		err = ws.Upsert(ctx, withdrawal)
 		withdrawals = append(withdrawals, *withdrawal)
@@ -372,7 +384,7 @@ func testWithdrawalsPaginationNoPagination(t *testing.T) {
 
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
-	got, pageInfo, err := ws.GetByParty(timeoutCtx, testID, false, pagination)
+	got, pageInfo, err := ws.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{})
 
 	require.NoError(t, err)
 	assert.Equal(t, testWithdrawals, got)
@@ -400,7 +412,7 @@ func testWithdrawalsPaginationFirst(t *testing.T) {
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	require.NoError(t, err)
-	got, pageInfo, err := ws.GetByParty(timeoutCtx, testID, false, pagination)
+	got, pageInfo, err := ws.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{})
 
 	require.NoError(t, err)
 	want := testWithdrawals[:3]
@@ -429,7 +441,7 @@ func testWithdrawalsPaginationLast(t *testing.T) {
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	require.NoError(t, err)
-	got, pageInfo, err := ws.GetByParty(timeoutCtx, testID, false, pagination)
+	got, pageInfo, err := ws.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{})
 
 	require.NoError(t, err)
 	want := testWithdrawals[7:]
@@ -459,7 +471,7 @@ func testWithdrawalsPaginationFirstAfter(t *testing.T) {
 	after := testWithdrawals[2].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	require.NoError(t, err)
-	got, pageInfo, err := ws.GetByParty(timeoutCtx, testID, false, pagination)
+	got, pageInfo, err := ws.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{})
 
 	require.NoError(t, err)
 	want := testWithdrawals[3:6]
@@ -492,7 +504,7 @@ func testWithdrawalsPaginationLastBefore(t *testing.T) {
 	}.String()).Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 	require.NoError(t, err)
-	got, pageInfo, err := ws.GetByParty(timeoutCtx, testID, false, pagination)
+	got, pageInfo, err := ws.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{})
 
 	require.NoError(t, err)
 	want := testWithdrawals[4:7]
@@ -520,7 +532,7 @@ func testWithdrawalsPaginationNoPaginationNewestFirst(t *testing.T) {
 
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	require.NoError(t, err)
-	got, pageInfo, err := ws.GetByParty(timeoutCtx, testID, false, pagination)
+	got, pageInfo, err := ws.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{})
 
 	require.NoError(t, err)
 	assert.Equal(t, testWithdrawals, got)
@@ -548,7 +560,7 @@ func testWithdrawalsPaginationFirstNewestFirst(t *testing.T) {
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
 	require.NoError(t, err)
-	got, pageInfo, err := ws.GetByParty(timeoutCtx, testID, false, pagination)
+	got, pageInfo, err := ws.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{})
 
 	require.NoError(t, err)
 	want := testWithdrawals[:3]
@@ -577,7 +589,7 @@ func testWithdrawalsPaginationLastNewestFirst(t *testing.T) {
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
 	require.NoError(t, err)
-	got, pageInfo, err := ws.GetByParty(timeoutCtx, testID, false, pagination)
+	got, pageInfo, err := ws.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{})
 
 	require.NoError(t, err)
 	want := testWithdrawals[7:]
@@ -607,7 +619,7 @@ func testWithdrawalsPaginationFirstAfterNewestFirst(t *testing.T) {
 	after := testWithdrawals[2].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
 	require.NoError(t, err)
-	got, pageInfo, err := ws.GetByParty(timeoutCtx, testID, false, pagination)
+	got, pageInfo, err := ws.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{})
 
 	require.NoError(t, err)
 	want := testWithdrawals[3:6]
@@ -640,7 +652,7 @@ func testWithdrawalsPaginationLastBeforeNewestFirst(t *testing.T) {
 	}.String()).Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
 	require.NoError(t, err)
-	got, pageInfo, err := ws.GetByParty(timeoutCtx, testID, false, pagination)
+	got, pageInfo, err := ws.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{})
 
 	require.NoError(t, err)
 	want := testWithdrawals[4:7]
@@ -655,6 +667,363 @@ func testWithdrawalsPaginationLastBeforeNewestFirst(t *testing.T) {
 		EndCursor: entities.NewCursor(entities.WithdrawalCursor{
 			VegaTime: testWithdrawals[6].VegaTime,
 			ID:       testWithdrawals[6].ID,
+		}.String()).Encode(),
+	}, pageInfo)
+}
+
+func testWithdrawalsPaginationBetweenDatesNoPagination(t *testing.T) {
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+	bs, ws, _ := setupWithdrawalStoreTests(t, timeoutCtx)
+
+	testWithdrawals := addWithdrawals(timeoutCtx, t, bs, ws)
+	want := testWithdrawals[2:8]
+
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+	startDate := testWithdrawals[2].VegaTime
+	endDate := testWithdrawals[8].VegaTime
+	got, pageInfo, err := ws.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{
+		Start: &startDate,
+		End:   &endDate,
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor: entities.NewCursor(entities.WithdrawalCursor{
+			VegaTime: want[0].VegaTime,
+			ID:       want[0].ID,
+		}.String()).Encode(),
+		EndCursor: entities.NewCursor(entities.WithdrawalCursor{
+			VegaTime: want[5].VegaTime,
+			ID:       want[5].ID,
+		}.String()).Encode(),
+	}, pageInfo)
+}
+
+func testWithdrawalsPaginationBetweenDatesFirst(t *testing.T) {
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+	bs, ws, _ := setupWithdrawalStoreTests(t, timeoutCtx)
+
+	testWithdrawals := addWithdrawals(timeoutCtx, t, bs, ws)
+	want := testWithdrawals[2:8]
+
+	first := int32(3)
+	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
+	require.NoError(t, err)
+	startDate := testWithdrawals[2].VegaTime
+	endDate := testWithdrawals[8].VegaTime
+	got, pageInfo, err := ws.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{
+		Start: &startDate,
+		End:   &endDate,
+	})
+
+	require.NoError(t, err)
+	want = want[:3]
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: false,
+		StartCursor: entities.NewCursor(entities.WithdrawalCursor{
+			VegaTime: want[0].VegaTime,
+			ID:       want[0].ID,
+		}.String()).Encode(),
+		EndCursor: entities.NewCursor(entities.WithdrawalCursor{
+			VegaTime: want[2].VegaTime,
+			ID:       want[2].ID,
+		}.String()).Encode(),
+	}, pageInfo)
+}
+
+func testWithdrawalsPaginationBetweenDatesLast(t *testing.T) {
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+	bs, ws, _ := setupWithdrawalStoreTests(t, timeoutCtx)
+
+	testWithdrawals := addWithdrawals(timeoutCtx, t, bs, ws)
+	want := testWithdrawals[2:8]
+
+	last := int32(3)
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
+	require.NoError(t, err)
+	startDate := testWithdrawals[2].VegaTime
+	endDate := testWithdrawals[8].VegaTime
+	got, pageInfo, err := ws.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{
+		Start: &startDate,
+		End:   &endDate,
+	})
+
+	require.NoError(t, err)
+	want = want[3:]
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: true,
+		StartCursor: entities.NewCursor(entities.WithdrawalCursor{
+			VegaTime: want[0].VegaTime,
+			ID:       want[0].ID,
+		}.String()).Encode(),
+		EndCursor: entities.NewCursor(entities.WithdrawalCursor{
+			VegaTime: want[2].VegaTime,
+			ID:       want[2].ID,
+		}.String()).Encode(),
+	}, pageInfo)
+}
+
+func testWithdrawalsPaginationBetweenDatesFirstAfter(t *testing.T) {
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+	bs, ws, _ := setupWithdrawalStoreTests(t, timeoutCtx)
+
+	testWithdrawals := addWithdrawals(timeoutCtx, t, bs, ws)
+	want := testWithdrawals[2:8]
+
+	first := int32(3)
+	after := want[1].Cursor().Encode()
+	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
+	require.NoError(t, err)
+	startDate := testWithdrawals[2].VegaTime
+	endDate := testWithdrawals[8].VegaTime
+	got, pageInfo, err := ws.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{
+		Start: &startDate,
+		End:   &endDate,
+	})
+
+	require.NoError(t, err)
+	want = want[2:5]
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor: entities.NewCursor(entities.WithdrawalCursor{
+			VegaTime: want[0].VegaTime,
+			ID:       want[0].ID,
+		}.String()).Encode(),
+		EndCursor: entities.NewCursor(entities.WithdrawalCursor{
+			VegaTime: want[2].VegaTime,
+			ID:       want[2].ID,
+		}.String()).Encode(),
+	}, pageInfo)
+}
+
+func testWithdrawalsPaginationBetweenDatesLastBefore(t *testing.T) {
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+	bs, ws, _ := setupWithdrawalStoreTests(t, timeoutCtx)
+
+	testWithdrawals := addWithdrawals(timeoutCtx, t, bs, ws)
+	want := testWithdrawals[2:8]
+
+	last := int32(3)
+	before := entities.NewCursor(entities.WithdrawalCursor{
+		VegaTime: want[4].VegaTime,
+		ID:       want[4].ID,
+	}.String()).Encode()
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
+	require.NoError(t, err)
+	startDate := testWithdrawals[2].VegaTime
+	endDate := testWithdrawals[8].VegaTime
+	got, pageInfo, err := ws.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{
+		Start: &startDate,
+		End:   &endDate,
+	})
+
+	require.NoError(t, err)
+	want = want[1:4]
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor: entities.NewCursor(entities.WithdrawalCursor{
+			VegaTime: want[0].VegaTime,
+			ID:       want[0].ID,
+		}.String()).Encode(),
+		EndCursor: entities.NewCursor(entities.WithdrawalCursor{
+			VegaTime: want[2].VegaTime,
+			ID:       want[2].ID,
+		}.String()).Encode(),
+	}, pageInfo)
+}
+
+func testWithdrawalsPaginationBetweenDatesNoPaginationNewestFirst(t *testing.T) {
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+	bs, ws, _ := setupWithdrawalStoreTests(t, timeoutCtx)
+
+	testWithdrawals := addWithdrawals(timeoutCtx, t, bs, ws)
+
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
+	require.NoError(t, err)
+	startDate := testWithdrawals[2].VegaTime
+	endDate := testWithdrawals[8].VegaTime
+	got, pageInfo, err := ws.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{
+		Start: &startDate,
+		End:   &endDate,
+	})
+
+	want := entities.ReverseSlice(testWithdrawals[2:8])
+
+	require.NoError(t, err)
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor: entities.NewCursor(entities.WithdrawalCursor{
+			VegaTime: want[0].VegaTime,
+			ID:       want[0].ID,
+		}.String()).Encode(),
+		EndCursor: entities.NewCursor(entities.WithdrawalCursor{
+			VegaTime: want[5].VegaTime,
+			ID:       want[5].ID,
+		}.String()).Encode(),
+	}, pageInfo)
+}
+
+func testWithdrawalsPaginationBetweenDatesFirstNewestFirst(t *testing.T) {
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+	bs, ws, _ := setupWithdrawalStoreTests(t, timeoutCtx)
+
+	testWithdrawals := addWithdrawals(timeoutCtx, t, bs, ws)
+	want := entities.ReverseSlice(testWithdrawals[2:8])
+
+	first := int32(3)
+	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
+	require.NoError(t, err)
+	startDate := testWithdrawals[2].VegaTime
+	endDate := testWithdrawals[8].VegaTime
+	got, pageInfo, err := ws.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{
+		Start: &startDate,
+		End:   &endDate,
+	})
+
+	require.NoError(t, err)
+	want = want[:3]
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: false,
+		StartCursor: entities.NewCursor(entities.WithdrawalCursor{
+			VegaTime: want[0].VegaTime,
+			ID:       want[0].ID,
+		}.String()).Encode(),
+		EndCursor: entities.NewCursor(entities.WithdrawalCursor{
+			VegaTime: want[2].VegaTime,
+			ID:       want[2].ID,
+		}.String()).Encode(),
+	}, pageInfo)
+}
+
+func testWithdrawalsPaginationBetweenDatesLastNewestFirst(t *testing.T) {
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+	bs, ws, _ := setupWithdrawalStoreTests(t, timeoutCtx)
+
+	testWithdrawals := addWithdrawals(timeoutCtx, t, bs, ws)
+	want := entities.ReverseSlice(testWithdrawals[2:8])
+
+	last := int32(3)
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
+	require.NoError(t, err)
+	startDate := testWithdrawals[2].VegaTime
+	endDate := testWithdrawals[8].VegaTime
+	got, pageInfo, err := ws.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{
+		Start: &startDate,
+		End:   &endDate,
+	})
+
+	require.NoError(t, err)
+	want = want[3:]
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: true,
+		StartCursor: entities.NewCursor(entities.WithdrawalCursor{
+			VegaTime: want[0].VegaTime,
+			ID:       want[0].ID,
+		}.String()).Encode(),
+		EndCursor: entities.NewCursor(entities.WithdrawalCursor{
+			VegaTime: want[2].VegaTime,
+			ID:       want[2].ID,
+		}.String()).Encode(),
+	}, pageInfo)
+}
+
+func testWithdrawalsPaginationBetweenDatesFirstAfterNewestFirst(t *testing.T) {
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+	bs, ws, _ := setupWithdrawalStoreTests(t, timeoutCtx)
+
+	testWithdrawals := addWithdrawals(timeoutCtx, t, bs, ws)
+	want := entities.ReverseSlice(testWithdrawals[2:8])
+
+	first := int32(3)
+	after := want[1].Cursor().Encode()
+	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
+	require.NoError(t, err)
+	startDate := testWithdrawals[2].VegaTime
+	endDate := testWithdrawals[8].VegaTime
+	got, pageInfo, err := ws.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{
+		Start: &startDate,
+		End:   &endDate,
+	})
+
+	require.NoError(t, err)
+	want = want[2:5]
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor: entities.NewCursor(entities.WithdrawalCursor{
+			VegaTime: want[0].VegaTime,
+			ID:       want[0].ID,
+		}.String()).Encode(),
+		EndCursor: entities.NewCursor(entities.WithdrawalCursor{
+			VegaTime: want[2].VegaTime,
+			ID:       want[2].ID,
+		}.String()).Encode(),
+	}, pageInfo)
+}
+
+func testWithdrawalsPaginationBetweenDatesLastBeforeNewestFirst(t *testing.T) {
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+	bs, ws, _ := setupWithdrawalStoreTests(t, timeoutCtx)
+
+	testWithdrawals := addWithdrawals(timeoutCtx, t, bs, ws)
+	want := entities.ReverseSlice(testWithdrawals[2:8])
+
+	last := int32(3)
+	before := entities.NewCursor(entities.WithdrawalCursor{
+		VegaTime: want[4].VegaTime,
+		ID:       want[4].ID,
+	}.String()).Encode()
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
+	require.NoError(t, err)
+	startDate := testWithdrawals[2].VegaTime
+	endDate := testWithdrawals[8].VegaTime
+	got, pageInfo, err := ws.GetByParty(timeoutCtx, testID, false, pagination, entities.DateRange{
+		Start: &startDate,
+		End:   &endDate,
+	})
+
+	require.NoError(t, err)
+	want = want[1:4]
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     true,
+		HasPreviousPage: true,
+		StartCursor: entities.NewCursor(entities.WithdrawalCursor{
+			VegaTime: want[0].VegaTime,
+			ID:       want[0].ID,
+		}.String()).Encode(),
+		EndCursor: entities.NewCursor(entities.WithdrawalCursor{
+			VegaTime: want[2].VegaTime,
+			ID:       want[2].ID,
 		}.String()).Encode(),
 	}, pageInfo)
 }

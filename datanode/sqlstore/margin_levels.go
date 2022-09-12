@@ -23,8 +23,8 @@ import (
 )
 
 var mlOrdering = TableOrdering{
-	ColumnOrdering{"vega_time", ASC},
-	ColumnOrdering{"account_id", ASC},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC},
+	ColumnOrdering{Name: "account_id", Sorting: ASC},
 }
 
 type AccountSource interface {
@@ -33,14 +33,11 @@ type AccountSource interface {
 
 type MarginLevels struct {
 	*ConnectionSource
-	columns       []string
-	marginLevels  []*entities.MarginLevels
-	batcher       MapBatcher[entities.MarginLevelsKey, entities.MarginLevels]
-	accountSource AccountSource
+	batcher MapBatcher[entities.MarginLevelsKey, entities.MarginLevels]
 }
 
 const (
-	sqlMarginLevelColumns = `account_id,timestamp,maintenance_margin,search_level,initial_margin,collateral_release_level,vega_time`
+	sqlMarginLevelColumns = `account_id,timestamp,maintenance_margin,search_level,initial_margin,collateral_release_level,tx_hash,vega_time`
 )
 
 func NewMarginLevels(connectionSource *ConnectionSource) *MarginLevels {

@@ -93,10 +93,9 @@ type StakeLinking struct {
 
 func (s StakeLinking) Hash() string {
 	bn, li := strconv.FormatUint(s.BlockHeight, 10), strconv.FormatUint(s.LogIndex, 10)
-	bt := strconv.FormatInt(s.BlockTime, 10)
 	return hex.EncodeToString(
 		crypto.Hash(
-			[]byte(bn + li + bt + s.TxHash + s.Party + s.EthereumAddress + s.Amount.String() + s.Type.String()),
+			[]byte(bn + li + s.TxHash + s.Party + s.EthereumAddress + s.Amount.String() + s.Type.String()),
 		),
 	)
 }

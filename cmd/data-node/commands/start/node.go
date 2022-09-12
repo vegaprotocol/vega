@@ -123,7 +123,7 @@ type NodeCommand struct {
 	vegaCoreServiceClient vegaprotoapi.CoreServiceClient
 
 	broker    *broker.Broker
-	sqlBroker broker.SqlStoreEventBroker
+	sqlBroker broker.SQLStoreEventBroker
 
 	accountSub              *sqlsubscribers.Account
 	assetSub                *sqlsubscribers.Asset

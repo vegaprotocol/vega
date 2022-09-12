@@ -14,13 +14,13 @@ package sqlsubscribers
 
 import (
 	"context"
-	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
 	"github.com/pkg/errors"
+	"google.golang.org/protobuf/proto"
 )
 
 type MarginLevelsEvent interface {
@@ -38,24 +38,32 @@ type MarginLevels struct {
 	store             MarginLevelsStore
 	accountSource     AccountSource
 	log               *logging.Logger
-	eventDeduplicator *eventDeduplicator[int64, *vega.MarginLevels]
+	eventDeduplicator *eventDeduplicator[marginLevelEventKey, MarginLevelsEvent]
+}
+
+type marginLevelEventKey struct {
+	PartyID  string
+	MarketID string
+	AssetID  string
 }
 
 func NewMarginLevels(store MarginLevelsStore, accountSource AccountSource, log *logging.Logger) *MarginLevels {
-	return &MarginLevels{
-		store:         store,
-		accountSource: accountSource,
-		log:           log,
-		eventDeduplicator: NewEventDeduplicator[int64, *vega.MarginLevels](func(ctx context.Context,
-			ml *vega.MarginLevels, vegaTime time.Time,
-		) (int64, error) {
-			a, err := entities.GetAccountFromMarginLevel(ctx, ml, accountSource, vegaTime)
-			if err != nil {
-				return 0, err
-			}
+	getID := func(ctx context.Context, evt MarginLevelsEvent) marginLevelEventKey {
+		ml := evt.MarginLevels()
+		return marginLevelEventKey{ml.PartyId, ml.MarketId, ml.Asset}
+	}
 
-			return a.ID, nil
-		}),
+	compareEvents := func(e1 MarginLevelsEvent, e2 MarginLevelsEvent) bool {
+		ml1 := e1.MarginLevels()
+		ml2 := e2.MarginLevels()
+		return proto.Equal(&ml1, &ml2)
+	}
+
+	return &MarginLevels{
+		store:             store,
+		accountSource:     accountSource,
+		log:               log,
+		eventDeduplicator: NewEventDeduplicator(getID, compareEvents),
 	}
 }
 
@@ -79,7 +87,8 @@ func (ml *MarginLevels) Push(ctx context.Context, evt events.Event) error {
 func (ml *MarginLevels) flush(ctx context.Context) error {
 	updates := ml.eventDeduplicator.Flush()
 	for _, update := range updates {
-		entity, err := entities.MarginLevelsFromProto(ctx, update, ml.accountSource, ml.vegaTime)
+		proto := update.MarginLevels()
+		entity, err := entities.MarginLevelsFromProto(ctx, &proto, ml.accountSource, entities.TxHash(update.TxHash()), ml.vegaTime)
 		if err != nil {
 			return errors.Wrap(err, "converting margin level to database entity failed")
 		}
@@ -97,7 +106,7 @@ func (ml *MarginLevels) flush(ctx context.Context) error {
 func (ml *MarginLevels) consume(ctx context.Context, event MarginLevelsEvent) error {
 	marginLevel := event.MarginLevels()
 	marginLevel.Timestamp = 0
-	ml.eventDeduplicator.AddEvent(ctx, &marginLevel, ml.vegaTime)
+	ml.eventDeduplicator.AddEvent(ctx, event)
 
 	return nil
 }

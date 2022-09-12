@@ -29,6 +29,7 @@ type Delegation struct {
 	NodeID   NodeID          `json:"node_id"`
 	EpochID  int64           `json:"epoch_id"`
 	Amount   decimal.Decimal `json:"amount"`
+	TxHash   TxHash
 	VegaTime time.Time
 }
 
@@ -64,7 +65,7 @@ func (d Delegation) ToProtoEdge(_ ...any) (*v2.DelegationEdge, error) {
 	}, nil
 }
 
-func DelegationFromProto(pd *vega.Delegation) (Delegation, error) {
+func DelegationFromProto(pd *vega.Delegation, txHash TxHash) (Delegation, error) {
 	epochID, err := strconv.ParseInt(pd.EpochSeq, 10, 64)
 	if err != nil {
 		return Delegation{}, fmt.Errorf("parsing epoch '%v': %w", pd.EpochSeq, err)
@@ -81,12 +82,13 @@ func DelegationFromProto(pd *vega.Delegation) (Delegation, error) {
 		NodeID:  NodeID(pd.NodeId),
 		EpochID: epochID,
 		Amount:  amount,
+		TxHash:  txHash,
 	}
 
 	return delegation, nil
 }
 
-func DelegationFromEventProto(pd *eventspb.DelegationBalanceEvent) (Delegation, error) {
+func DelegationFromEventProto(pd *eventspb.DelegationBalanceEvent, txHash TxHash) (Delegation, error) {
 	epochID, err := strconv.ParseInt(pd.EpochSeq, 10, 64)
 	if err != nil {
 		return Delegation{}, fmt.Errorf("parsing epoch '%v': %w", pd.EpochSeq, err)
@@ -103,6 +105,7 @@ func DelegationFromEventProto(pd *eventspb.DelegationBalanceEvent) (Delegation, 
 		NodeID:  NodeID(pd.NodeId),
 		EpochID: epochID,
 		Amount:  amount,
+		TxHash:  txHash,
 	}
 
 	return delegation, nil

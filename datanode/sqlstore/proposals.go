@@ -32,8 +32,8 @@ type Proposals struct {
 }
 
 var proposalsOrdering = TableOrdering{
-	ColumnOrdering{"vega_time", ASC},
-	ColumnOrdering{"id", ASC},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC},
+	ColumnOrdering{Name: "id", Sorting: ASC},
 }
 
 func NewProposals(connectionSource *ConnectionSource) *Proposals {
@@ -56,8 +56,13 @@ func (ps *Proposals) Add(ctx context.Context, p entities.Proposal) error {
 			reason,
 			error_details,
 			proposal_time,
-			vega_time)
-		 VALUES ($1,  $2,  $3,  $4,  $5,  $6, $7, $8, $9, $10)
+			vega_time,
+			required_majority,
+			required_participation,
+			required_lp_majority,
+			required_lp_participation,
+			tx_hash)
+		 VALUES ($1,  $2,  $3,  $4,  $5,  $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
 		 ON CONFLICT (id, vega_time) DO UPDATE SET
 			reference = EXCLUDED.reference,
 			party_id = EXCLUDED.party_id,
@@ -66,10 +71,11 @@ func (ps *Proposals) Add(ctx context.Context, p entities.Proposal) error {
 			rationale = EXCLUDED.rationale,
 			reason = EXCLUDED.reason,
 			error_details = EXCLUDED.error_details,
-			proposal_time = EXCLUDED.proposal_time
+			proposal_time = EXCLUDED.proposal_time,
+			tx_hash = EXCLUDED.tx_hash
 			;
 		 `,
-		p.ID, p.Reference, p.PartyID, p.State, p.Terms, p.Rationale, p.Reason, p.ErrorDetails, p.ProposalTime, p.VegaTime)
+		p.ID, p.Reference, p.PartyID, p.State, p.Terms, p.Rationale, p.Reason, p.ErrorDetails, p.ProposalTime, p.VegaTime, p.RequiredMajority, p.RequiredParticipation, p.RequiredLPMajority, p.RequiredLPParticipation, p.TxHash)
 	return err
 }
 

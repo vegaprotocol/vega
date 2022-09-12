@@ -34,7 +34,7 @@ type Config struct {
 	RetryLimit  int               `long:"max-retries" description:"Maximum number of times to try and apply snapshot chunk"`
 	Storage     string            `long:"storage" choice:"GOLevelDB" choice:"memory" description:"Storage type to use"`
 	DBPath      string            `long:"db-path" description:"Path to database"`
-	StartHeight int64             `long:"load-from-block-height" description:"Start the node by loading the snapshot taken at the given block-height. -1 for last snapshot, 0 for no reload (default: 0)"` // -1 for last snapshot, 0 for no reload
+	StartHeight int64             `long:"load-from-block-height" description:"Load from a local snapshot taken at the given block-height. Setting to -1 will load from the latest snapshot if it exists, 0 will force the chain to replay (default: -1)"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
@@ -45,7 +45,7 @@ func NewDefaultConfig() Config {
 		KeepRecent:  10,
 		RetryLimit:  5,
 		Storage:     goLevelDB,
-		StartHeight: 0,
+		StartHeight: -1,
 	}
 }
 

@@ -32,7 +32,7 @@ type Service struct {
 	log *logging.Logger
 
 	bmu    sync.RWMutex
-	broker broker.BrokerI
+	broker broker.Interface
 
 	accounts     *services.Accounts
 	assets       *services.Assets
@@ -49,7 +49,7 @@ type Service struct {
 }
 
 func NewService(
-	ctx context.Context, log *logging.Logger, cfg Config, broker broker.BrokerI,
+	ctx context.Context, log *logging.Logger, cfg Config, broker broker.Interface,
 ) *Service {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.LogLevel.Get())
@@ -125,7 +125,7 @@ func NewService(
 	return svc
 }
 
-func (s *Service) UpdateBroker(broker broker.BrokerI) {
+func (s *Service) UpdateBroker(broker broker.Interface) {
 	s.bmu.Lock()
 	defer s.bmu.Unlock()
 	s.broker = broker

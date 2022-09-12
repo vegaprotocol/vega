@@ -30,6 +30,7 @@ type MarketID = ID[_Market]
 
 type Market struct {
 	ID                            MarketID
+	TxHash                        TxHash
 	VegaTime                      time.Time
 	InstrumentID                  string
 	TradableInstrument            TradableInstrument
@@ -65,7 +66,7 @@ func (mc *MarketCursor) Parse(cursorString string) error {
 	return json.Unmarshal([]byte(cursorString), mc)
 }
 
-func NewMarketFromProto(market *vega.Market, vegaTime time.Time) (*Market, error) {
+func NewMarketFromProto(market *vega.Market, txHash TxHash, vegaTime time.Time) (*Market, error) {
 	var err error
 	var liquidityMonitoringParameters LiquidityMonitoringParameters
 	var marketTimestamps MarketTimestamps
@@ -107,6 +108,7 @@ func NewMarketFromProto(market *vega.Market, vegaTime time.Time) (*Market, error
 
 	return &Market{
 		ID:                            MarketID(market.Id),
+		TxHash:                        txHash,
 		VegaTime:                      vegaTime,
 		InstrumentID:                  market.TradableInstrument.Instrument.Id,
 		TradableInstrument:            TradableInstrument{market.TradableInstrument},

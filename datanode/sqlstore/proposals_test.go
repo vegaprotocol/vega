@@ -20,6 +20,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/protos/vega"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -31,14 +32,18 @@ func addTestProposal(t *testing.T, ps *sqlstore.Proposals, id string, party enti
 	t.Helper()
 	terms := entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{}}
 	p := entities.Proposal{
-		ID:           entities.ProposalID(id),
-		PartyID:      party.ID,
-		Reference:    reference,
-		Terms:        terms,
-		State:        state,
-		VegaTime:     block.VegaTime,
-		ProposalTime: block.VegaTime,
-		Rationale:    rationale,
+		ID:                      entities.ProposalID(id),
+		PartyID:                 party.ID,
+		Reference:               reference,
+		Terms:                   terms,
+		State:                   state,
+		VegaTime:                block.VegaTime,
+		ProposalTime:            block.VegaTime,
+		Rationale:               rationale,
+		RequiredMajority:        num.MustDecimalFromString("0.5"),
+		RequiredParticipation:   num.MustDecimalFromString("0.7"),
+		RequiredLPMajority:      nil,
+		RequiredLPParticipation: nil,
 	}
 	ps.Add(context.Background(), p)
 	return p

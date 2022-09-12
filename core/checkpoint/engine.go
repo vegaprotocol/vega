@@ -53,6 +53,7 @@ var (
 // Name returns the component name (key in engine map)
 // Hash returns, obviously, the state hash
 // @TODO adding func to get the actual data
+//
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/state_mock.go -package mocks code.vegaprotocol.io/vega/core/checkpoint State
 type State interface {
 	Name() types.CheckpointName
@@ -61,6 +62,7 @@ type State interface {
 }
 
 // AssetsState is a bit of a hacky way to get the assets that were enabled when checkpoint was reloaded, so we can enable them in the collateral engine
+//
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_state_mock.go -package mocks code.vegaprotocol.io/vega/core/checkpoint AssetsState
 type AssetsState interface {
 	State
@@ -68,6 +70,7 @@ type AssetsState interface {
 }
 
 // CollateralState is part 2 of the hacky way to enable the assets required to load the collateral state
+//
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/collateral_state_mock.go -package mocks code.vegaprotocol.io/vega/core/checkpoint CollateralState
 type CollateralState interface {
 	State

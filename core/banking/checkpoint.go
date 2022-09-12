@@ -107,7 +107,8 @@ func (e *Engine) loadRecurringTransfers(
 	evts := []events.Event{}
 	for _, v := range r.RecurringTransfers {
 		transfer := types.RecurringTransferFromEvent(v)
-		e.recurringTransfers[transfer.ID] = transfer
+		e.recurringTransfers = append(e.recurringTransfers, transfer)
+		e.recurringTransfersMap[transfer.ID] = transfer
 		evts = append(evts, events.NewRecurringTransferFundsEvent(ctx, transfer))
 	}
 	return evts
@@ -129,10 +130,6 @@ func (e *Engine) getRecurringTransfers() *checkpoint.RecurringTransfers {
 	for _, v := range e.recurringTransfers {
 		out.RecurringTransfers = append(out.RecurringTransfers, v.IntoEvent())
 	}
-
-	sort.SliceStable(out.RecurringTransfers, func(i, j int) bool {
-		return out.RecurringTransfers[i].Id < out.RecurringTransfers[j].Id
-	})
 
 	return out
 }

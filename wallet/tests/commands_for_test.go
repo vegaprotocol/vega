@@ -77,10 +77,10 @@ type GenerateKeyResponse struct {
 		Name    string `json:"name"`
 		Version uint32 `json:"version"`
 	} `json:"algorithm"`
-	Meta []struct {
+	Metadata []struct {
 		Key   string `json:"key"`
 		Value string `json:"value"`
-	} `json:"meta"`
+	} `json:"metadata"`
 }
 
 func KeyGenerate(t *testing.T, args []string) (*GenerateKeyResponse, error) {
@@ -117,9 +117,9 @@ func AssertGenerateKey(t *testing.T, resp *GenerateKeyResponse) *GenerateKeyAsse
 	}
 }
 
-func (a *GenerateKeyAssertion) WithMeta(expected map[string]string) *GenerateKeyAssertion {
+func (a *GenerateKeyAssertion) WithMetadata(expected map[string]string) *GenerateKeyAssertion {
 	meta := map[string]string{}
-	for _, m := range a.resp.Meta {
+	for _, m := range a.resp.Metadata {
 		meta[m.Key] = m.Value
 	}
 	assert.Equal(a.t, expected, meta)
@@ -160,10 +160,10 @@ type DescribeKeyResponse struct {
 		Name    string `json:"name"`
 		Version uint32 `json:"version"`
 	} `json:"algorithm"`
-	Meta []struct {
+	Metadata []struct {
 		Key   string `json:"key"`
 		Value string `json:"value"`
-	}
+	} `json:"metadata"`
 	IsTainted bool `json:"isTainted"`
 }
 
@@ -219,7 +219,7 @@ func (d *DescribeKeyAssertion) WithTainted(tainted bool) *DescribeKeyAssertion {
 
 func (d *DescribeKeyAssertion) WithMeta(expected map[string]string) *DescribeKeyAssertion {
 	meta := map[string]string{}
-	for _, m := range d.resp.Meta {
+	for _, m := range d.resp.Metadata {
 		meta[m.Key] = m.Value
 	}
 	assert.Equal(d.t, expected, meta)
@@ -287,8 +287,8 @@ func KeyTaint(t *testing.T, args []string) error {
 }
 
 type KeyRotateResponse struct {
-	MasterPublicKey   string `json:"masterPublicKey"`
-	Base64Transaction string `json:"base64Transaction"`
+	MasterPublicKey    string `json:"masterPublicKey"`
+	EncodedTransaction string `json:"encodedTransaction"`
 }
 
 func KeyRotate(t *testing.T, args []string) (*KeyRotateResponse, error) {
@@ -315,7 +315,7 @@ func AssertKeyRotate(t *testing.T, resp *KeyRotateResponse) *KeyRotateAssertion 
 	t.Helper()
 
 	assert.NotNil(t, resp)
-	assert.NotEmpty(t, resp.Base64Transaction)
+	assert.NotEmpty(t, resp.EncodedTransaction)
 	assert.NotEmpty(t, resp.MasterPublicKey)
 
 	return &KeyRotateAssertion{

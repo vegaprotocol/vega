@@ -22,10 +22,10 @@ import (
 )
 
 var ekrOrdering = TableOrdering{
-	ColumnOrdering{"vega_time", ASC},
-	ColumnOrdering{"node_id", ASC},
-	ColumnOrdering{"old_address", ASC},
-	ColumnOrdering{"new_address", ASC},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC},
+	ColumnOrdering{Name: "node_id", Sorting: ASC},
+	ColumnOrdering{Name: "old_address", Sorting: ASC},
+	ColumnOrdering{Name: "new_address", Sorting: ASC},
 }
 
 type EthereumKeyRotations struct {
@@ -40,10 +40,10 @@ func NewEthereumKeyRotations(connectionSource *ConnectionSource) *EthereumKeyRot
 
 func (store *EthereumKeyRotations) Add(ctx context.Context, kr entities.EthereumKeyRotation) error {
 	defer metrics.StartSQLQuery("EthereumKeyRotations", "Add")()
-	_, err := store.pool.Exec(ctx, `
-		INSERT INTO ethereum_key_rotations(node_id, old_address, new_address, block_height, vega_time)
-		VALUES ($1, $2, $3, $4, $5)
-	`, kr.NodeID, kr.OldAddress, kr.NewAddress, kr.BlockHeight, kr.VegaTime)
+	_, err := store.Connection.Exec(ctx, `
+		INSERT INTO ethereum_key_rotations(node_id, old_address, new_address, block_height, tx_hash, vega_time)
+		VALUES ($1, $2, $3, $4, $5, $6)
+	`, kr.NodeID, kr.OldAddress, kr.NewAddress, kr.BlockHeight, kr.TxHash, kr.VegaTime)
 
 	return err
 }

@@ -24,15 +24,7 @@ func (r *updateAssetResolver) Source(ctx context.Context, obj *types.UpdateAsset
 	return UpdateAssetSourceFromProto(obj.Changes)
 }
 
-func (r updateAssetResolver) Name(ctx context.Context, obj *types.UpdateAsset) (string, error) {
-	return obj.Changes.Name, nil
-}
-
-func (r updateAssetResolver) Symbol(ctx context.Context, obj *types.UpdateAsset) (string, error) {
-	return obj.Changes.Symbol, nil
-}
-
-func (r *updateAssetResolver) MinLpStake(ctx context.Context, obj *types.UpdateAsset) (string, error) {
+func (r *updateAssetResolver) Quantum(ctx context.Context, obj *types.UpdateAsset) (string, error) {
 	return obj.Changes.Quantum, nil
 }
 

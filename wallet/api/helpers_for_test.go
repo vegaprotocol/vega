@@ -67,18 +67,48 @@ func walletWithPerms(t *testing.T, hostname string, perms wallet.Permissions) wa
 
 	w, _, err := wallet.NewHDWallet(walletName)
 	if err != nil {
-		t.Fatal("couldn't create wallet for test: %w", err)
+		t.Fatal("could not create wallet for test: %w", err)
 	}
 
 	if err := w.UpdatePermissions(hostname, perms); err != nil {
-		t.Fatal("couldn't update permissions on wallet for test: %w", err)
+		t.Fatal("could not update permissions on wallet for test: %w", err)
 	}
 
 	return w
 }
 
+func walletWithKey(t *testing.T) (wallet.Wallet, wallet.KeyPair) {
+	t.Helper()
+
+	walletName := vgrand.RandomStr(5)
+
+	w, _, err := wallet.NewHDWallet(walletName)
+	if err != nil {
+		t.Fatal("could not create wallet for test: %w", err)
+	}
+
+	kp, err := w.GenerateKeyPair(nil)
+	if err != nil {
+		t.Fatal("could not update permissions on wallet for test: %w", err)
+	}
+
+	return w, kp
+}
+
+func generateKey(t *testing.T, w wallet.Wallet) wallet.KeyPair {
+	t.Helper()
+
+	kp, err := w.GenerateKeyPair(nil)
+	if err != nil {
+		t.Fatalf("could not generate key for test wallet: %v", err)
+	}
+	return kp
+}
+
 func contextWithTraceID() (context.Context, string) {
 	traceID := vgrand.RandomStr(5)
+	//revive:disable:context-keys-type
+	//nolint:staticcheck
 	return context.WithValue(context.Background(), "trace-id", traceID), traceID
 }
 
@@ -86,7 +116,7 @@ func connectWallet(t *testing.T, sessions *api.Sessions, hostname string, w wall
 	t.Helper()
 	token, err := sessions.ConnectWallet(hostname, w)
 	if err != nil {
-		t.Fatal("couldn't connect to a wallet for test: %w", err)
+		t.Fatal("could not connect to a wallet for test: %w", err)
 	}
 	return token
 }

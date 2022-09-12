@@ -35,9 +35,8 @@ type MarketDataStore interface {
 
 type MarketData struct {
 	subscriber
-	log       *logging.Logger
-	store     MarketDataStore
-	dbTimeout time.Duration
+	log   *logging.Logger
+	store MarketDataStore
 }
 
 func (md *MarketData) Flush(ctx context.Context) error {
@@ -64,15 +63,15 @@ func (md *MarketData) consume(event MarketDataEvent) error {
 	var err error
 	mdProto := event.MarketData()
 
-	if record, err = md.convertMarketDataProto(&mdProto, event.Sequence()); err != nil {
+	if record, err = md.convertMarketDataProto(&mdProto, event.Sequence(), entities.TxHash(event.TxHash())); err != nil {
 		errors.Wrap(err, "converting market data proto for persistence failed")
 	}
 
 	return errors.Wrap(md.store.Add(record), "inserting market data to SQL store failed")
 }
 
-func (md *MarketData) convertMarketDataProto(data *types.MarketData, seqNum uint64) (*entities.MarketData, error) {
-	record, err := entities.MarketDataFromProto(data)
+func (md *MarketData) convertMarketDataProto(data *types.MarketData, seqNum uint64, txHash entities.TxHash) (*entities.MarketData, error) {
+	record, err := entities.MarketDataFromProto(data, txHash)
 	if err != nil {
 		return nil, err
 	}

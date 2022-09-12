@@ -27,8 +27,8 @@ type Transfers struct {
 }
 
 var transfersOrdering = TableOrdering{
-	ColumnOrdering{"vega_time", ASC},
-	ColumnOrdering{"id", ASC},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC},
+	ColumnOrdering{Name: "id", Sorting: ASC},
 }
 
 func NewTransfers(connectionSource *ConnectionSource) *Transfers {
@@ -41,6 +41,7 @@ func (t *Transfers) Upsert(ctx context.Context, transfer *entities.Transfer) err
 	defer metrics.StartSQLQuery("Transfers", "Upsert")()
 	query := `insert into transfers(
 				id,
+				tx_hash,
 				vega_time,
 				from_account_id,
 				to_account_id,
@@ -57,7 +58,7 @@ func (t *Transfers) Upsert(ctx context.Context, transfer *entities.Transfer) err
 				dispatch_metric_asset,
 				dispatch_markets			
 			)
-					values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+					values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
 					on conflict (id, vega_time) do update
 					set 
 				from_account_id=EXCLUDED.from_account_id,
@@ -73,11 +74,12 @@ func (t *Transfers) Upsert(ctx context.Context, transfer *entities.Transfer) err
 				factor=EXCLUDED.factor,
 				dispatch_metric=EXCLUDED.dispatch_metric,
 				dispatch_metric_asset=EXCLUDED.dispatch_metric_asset,
-				dispatch_markets=EXCLUDED.dispatch_markets
+				dispatch_markets=EXCLUDED.dispatch_markets,
+				tx_hash=EXCLUDED.tx_hash
 				;`
 
-	if _, err := t.Connection.Exec(ctx, query, transfer.ID, transfer.VegaTime, transfer.FromAccountId, transfer.ToAccountId,
-		transfer.AssetId, transfer.Amount, transfer.Reference, transfer.Status, transfer.TransferType,
+	if _, err := t.Connection.Exec(ctx, query, transfer.ID, transfer.TxHash, transfer.VegaTime, transfer.FromAccountID, transfer.ToAccountID,
+		transfer.AssetID, transfer.Amount, transfer.Reference, transfer.Status, transfer.TransferType,
 		transfer.DeliverOn, transfer.StartEpoch, transfer.EndEpoch, transfer.Factor, transfer.DispatchMetric, transfer.DispatchMetricAsset, transfer.DispatchMarkets); err != nil {
 		err = fmt.Errorf("could not insert transfer into database: %w", err)
 		return err
@@ -86,13 +88,13 @@ func (t *Transfers) Upsert(ctx context.Context, transfer *entities.Transfer) err
 	return nil
 }
 
-func (t *Transfers) GetTransfersToOrFromParty(ctx context.Context, partyId entities.PartyID, pagination entities.CursorPagination) ([]entities.Transfer,
+func (t *Transfers) GetTransfersToOrFromParty(ctx context.Context, partyID entities.PartyID, pagination entities.CursorPagination) ([]entities.Transfer,
 	entities.PageInfo, error,
 ) {
 	defer metrics.StartSQLQuery("Transfers", "GetTransfersToOrFromParty")()
 	transfers, pageInfo, err := t.getTransfers(ctx, pagination,
 		"where transfers_current.from_account_id  in (select id from accounts where accounts.party_id=$1)"+
-			" or transfers_current.to_account_id  in (select id from accounts where accounts.party_id=$1)", partyId)
+			" or transfers_current.to_account_id  in (select id from accounts where accounts.party_id=$1)", partyID)
 	if err != nil {
 		return nil, entities.PageInfo{}, fmt.Errorf("getting transfers to or from party:%w", err)
 	}
@@ -100,12 +102,12 @@ func (t *Transfers) GetTransfersToOrFromParty(ctx context.Context, partyId entit
 	return transfers, pageInfo, nil
 }
 
-func (t *Transfers) GetTransfersFromParty(ctx context.Context, partyId entities.PartyID, pagination entities.CursorPagination) ([]entities.Transfer,
+func (t *Transfers) GetTransfersFromParty(ctx context.Context, partyID entities.PartyID, pagination entities.CursorPagination) ([]entities.Transfer,
 	entities.PageInfo, error,
 ) {
 	defer metrics.StartSQLQuery("Transfers", "GetTransfersFromParty")()
 	transfers, pageInfo, err := t.getTransfers(ctx, pagination,
-		"where transfers_current.from_account_id  in (select id from accounts where accounts.party_id=$1)", partyId)
+		"where transfers_current.from_account_id  in (select id from accounts where accounts.party_id=$1)", partyID)
 	if err != nil {
 		return nil, entities.PageInfo{}, fmt.Errorf("getting transfers from party:%w", err)
 	}
@@ -113,12 +115,12 @@ func (t *Transfers) GetTransfersFromParty(ctx context.Context, partyId entities.
 	return transfers, pageInfo, nil
 }
 
-func (t *Transfers) GetTransfersToParty(ctx context.Context, partyId entities.PartyID, pagination entities.CursorPagination) ([]entities.Transfer, entities.PageInfo,
+func (t *Transfers) GetTransfersToParty(ctx context.Context, partyID entities.PartyID, pagination entities.CursorPagination) ([]entities.Transfer, entities.PageInfo,
 	error,
 ) {
 	defer metrics.StartSQLQuery("Transfers", "GetTransfersToParty")()
 	transfers, pageInfo, err := t.getTransfers(ctx, pagination,
-		"where transfers_current.to_account_id  in (select id from accounts where accounts.party_id=$1)", partyId)
+		"where transfers_current.to_account_id  in (select id from accounts where accounts.party_id=$1)", partyID)
 	if err != nil {
 		return nil, entities.PageInfo{}, fmt.Errorf("getting transfers to party:%w", err)
 	}

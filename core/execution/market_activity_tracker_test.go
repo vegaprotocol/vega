@@ -54,32 +54,67 @@ func TestMarketTracker(t *testing.T) {
 	tracker.MarketProposed("asset1", "market1", "me")
 	tracker.MarketProposed("asset1", "market2", "me2")
 
-	require.Equal(t, 0, len(tracker.GetEligibleProposers("market1")))
-	require.Equal(t, 0, len(tracker.GetEligibleProposers("market2")))
+	require.Equal(t, false, tracker.IsMarketEligibleForBonus("market1", "VEGA", []string{}, "zohar"))
+	require.Equal(t, false, tracker.IsMarketEligibleForBonus("market2", "VEGA", []string{}, "zohar"))
 
 	tracker.AddValueTraded("market1", num.NewUint(1000))
-	require.Equal(t, 0, len(tracker.GetEligibleProposers("market1")))
-	require.Equal(t, 0, len(tracker.GetEligibleProposers("market2")))
+	require.Equal(t, false, tracker.IsMarketEligibleForBonus("market1", "VEGA", []string{}, "zohar"))
+	require.Equal(t, false, tracker.IsMarketEligibleForBonus("market2", "VEGA", []string{}, "zohar"))
 
 	tracker.AddValueTraded("market2", num.NewUint(4000))
-	require.Equal(t, 0, len(tracker.GetEligibleProposers("market1")))
-	require.Equal(t, 0, len(tracker.GetEligibleProposers("market2")))
+	require.Equal(t, false, tracker.IsMarketEligibleForBonus("market1", "VEGA", []string{}, "zohar"))
+	require.Equal(t, false, tracker.IsMarketEligibleForBonus("market2", "VEGA", []string{}, "zohar"))
 
 	tracker.AddValueTraded("market2", num.NewUint(1001))
 	tracker.AddValueTraded("market1", num.NewUint(4001))
 
-	proposers1 := tracker.GetEligibleProposers("market1")
-	require.Equal(t, 1, len(proposers1))
-	require.Equal(t, "me", proposers1[0])
-	proposers2 := tracker.GetEligibleProposers("market2")
-	require.Equal(t, 1, len(proposers2))
-	require.Equal(t, "me2", proposers2[0])
+	require.Equal(t, true, tracker.IsMarketEligibleForBonus("market1", "VEGA", []string{}, "zohar"))
+	require.Equal(t, true, tracker.IsMarketEligibleForBonus("market2", "VEGA", []string{}, "zohar"))
 
-	// ask again and expect nothing to be returned
-	tracker.MarkPaidProposer("market1")
-	tracker.MarkPaidProposer("market2")
-	require.Equal(t, 0, len(tracker.GetEligibleProposers("market1")))
-	require.Equal(t, 0, len(tracker.GetEligibleProposers("market2")))
+	// mark as paid
+	tracker.MarkPaidProposer("market1", "VEGA", []string{}, "zohar")
+	tracker.MarkPaidProposer("market2", "VEGA", []string{}, "zohar")
+
+	// check if eligible for the same combo, expect false
+	require.Equal(t, false, tracker.IsMarketEligibleForBonus("market1", "VEGA", []string{}, "zohar"))
+	require.Equal(t, false, tracker.IsMarketEligibleForBonus("market2", "VEGA", []string{}, "zohar"))
+
+	// now check for another funder
+	require.Equal(t, true, tracker.IsMarketEligibleForBonus("market1", "VEGA", []string{}, "jeremy"))
+	require.Equal(t, true, tracker.IsMarketEligibleForBonus("market2", "VEGA", []string{}, "jeremy"))
+
+	// mark as paid
+	tracker.MarkPaidProposer("market1", "VEGA", []string{}, "jeremy")
+	tracker.MarkPaidProposer("market2", "VEGA", []string{}, "jeremy")
+
+	require.Equal(t, false, tracker.IsMarketEligibleForBonus("market1", "VEGA", []string{}, "jeremy"))
+	require.Equal(t, false, tracker.IsMarketEligibleForBonus("market2", "VEGA", []string{}, "jeremy"))
+
+	// check for another payout asset
+	require.Equal(t, true, tracker.IsMarketEligibleForBonus("market1", "USDC", []string{}, "zohar"))
+	require.Equal(t, true, tracker.IsMarketEligibleForBonus("market2", "USDC", []string{}, "zohar"))
+
+	tracker.MarkPaidProposer("market1", "USDC", []string{}, "zohar")
+	tracker.MarkPaidProposer("market2", "USDC", []string{}, "zohar")
+
+	require.Equal(t, false, tracker.IsMarketEligibleForBonus("market1", "USDC", []string{}, "zohar"))
+	require.Equal(t, false, tracker.IsMarketEligibleForBonus("market2", "USDC", []string{}, "zohar"))
+
+	// check for another market scope
+	require.Equal(t, true, tracker.IsMarketEligibleForBonus("market1", "USDC", []string{"market1"}, "zohar"))
+	require.Equal(t, true, tracker.IsMarketEligibleForBonus("market2", "USDC", []string{"market2"}, "zohar"))
+	require.Equal(t, true, tracker.IsMarketEligibleForBonus("market1", "USDC", []string{"market1", "market2"}, "zohar"))
+	require.Equal(t, true, tracker.IsMarketEligibleForBonus("market2", "USDC", []string{"market2", "market2"}, "zohar"))
+
+	tracker.MarkPaidProposer("market1", "USDC", []string{"market1"}, "zohar")
+	tracker.MarkPaidProposer("market2", "USDC", []string{"market2"}, "zohar")
+	tracker.MarkPaidProposer("market1", "USDC", []string{"market1", "market2"}, "zohar")
+	tracker.MarkPaidProposer("market2", "USDC", []string{"market1", "market2"}, "zohar")
+
+	require.Equal(t, false, tracker.IsMarketEligibleForBonus("market1", "USDC", []string{"market1"}, "zohar"))
+	require.Equal(t, false, tracker.IsMarketEligibleForBonus("market2", "USDC", []string{"market2"}, "zohar"))
+	require.Equal(t, false, tracker.IsMarketEligibleForBonus("market1", "USDC", []string{"market1", "market2"}, "zohar"))
+	require.Equal(t, false, tracker.IsMarketEligibleForBonus("market2", "USDC", []string{"market1", "market2"}, "zohar"))
 
 	// take a snapshot
 	key := (&types.PayloadMarketActivityTracker{}).Key()
@@ -130,19 +165,19 @@ func TestGetMarketScores(t *testing.T) {
 	// no fees generated expect empty slice
 	require.Equal(t, 0, len(tracker.GetMarketScores("asset1", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED)))
 	require.Equal(t, 0, len(tracker.GetMarketScores("asset1", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED)))
-	require.Equal(t, 0, len(tracker.GetMarketScores("asset1", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID)))
+	require.Equal(t, 0, len(tracker.GetMarketScores("asset1", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID)))
 
 	require.Equal(t, 0, len(tracker.GetMarketScores("asset1", []string{"market1"}, vgproto.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED)))
 	require.Equal(t, 0, len(tracker.GetMarketScores("asset1", []string{"market1"}, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED)))
-	require.Equal(t, 0, len(tracker.GetMarketScores("asset1", []string{"market1"}, vgproto.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID)))
+	require.Equal(t, 0, len(tracker.GetMarketScores("asset1", []string{"market1"}, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID)))
 
 	require.Equal(t, 0, len(tracker.GetMarketScores("asset1", []string{"market2"}, vgproto.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED)))
 	require.Equal(t, 0, len(tracker.GetMarketScores("asset1", []string{"market2"}, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED)))
-	require.Equal(t, 0, len(tracker.GetMarketScores("asset1", []string{"market2"}, vgproto.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID)))
+	require.Equal(t, 0, len(tracker.GetMarketScores("asset1", []string{"market2"}, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID)))
 
 	require.Equal(t, 0, len(tracker.GetMarketScores("asset2", []string{"market3"}, vgproto.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED)))
 	require.Equal(t, 0, len(tracker.GetMarketScores("asset2", []string{"market3"}, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED)))
-	require.Equal(t, 0, len(tracker.GetMarketScores("asset2", []string{"market3"}, vgproto.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID)))
+	require.Equal(t, 0, len(tracker.GetMarketScores("asset2", []string{"market3"}, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID)))
 
 	// update with a few transfers
 	transfersM1 := []*types.Transfer{
@@ -247,38 +282,38 @@ func TestGetMarketScores(t *testing.T) {
 
 	// in market1: 1500
 	// in market2: 1500
-	require.Equal(t, 2, len(tracker.GetMarketScores("asset1", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID)))
+	require.Equal(t, 2, len(tracker.GetMarketScores("asset1", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID)))
 	LPMarket1 = &types.MarketContributionScore{
 		Asset:  "asset1",
 		Market: "market1",
-		Metric: vgproto.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID,
+		Metric: vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
 		Score:  num.MustDecimalFromString("0.5"),
 	}
 	LPMarket2 = &types.MarketContributionScore{
 		Asset:  "asset1",
 		Market: "market2",
-		Metric: vgproto.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID,
+		Metric: vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
 		Score:  num.MustDecimalFromString("0.5"),
 	}
-	require.Equal(t, 2, len(tracker.GetMarketScores("asset1", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID)))
-	assertMarketContributionScore(t, LPMarket1, tracker.GetMarketScores("asset1", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID)[0])
-	assertMarketContributionScore(t, LPMarket2, tracker.GetMarketScores("asset1", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID)[1])
+	require.Equal(t, 2, len(tracker.GetMarketScores("asset1", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID)))
+	assertMarketContributionScore(t, LPMarket1, tracker.GetMarketScores("asset1", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID)[0])
+	assertMarketContributionScore(t, LPMarket2, tracker.GetMarketScores("asset1", []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID)[1])
 
 	// scope only market1:
-	require.Equal(t, 1, len(tracker.GetMarketScores("asset1", []string{"market1"}, vgproto.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID)))
+	require.Equal(t, 1, len(tracker.GetMarketScores("asset1", []string{"market1"}, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID)))
 	LPMarket1.Score = num.DecimalFromInt64(1)
-	assertMarketContributionScore(t, LPMarket1, tracker.GetMarketScores("asset1", []string{"market1"}, vgproto.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID)[0])
+	assertMarketContributionScore(t, LPMarket1, tracker.GetMarketScores("asset1", []string{"market1"}, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID)[0])
 
 	// scope only market2:
-	require.Equal(t, 1, len(tracker.GetMarketScores("asset1", []string{"market2"}, vgproto.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID)))
+	require.Equal(t, 1, len(tracker.GetMarketScores("asset1", []string{"market2"}, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID)))
 	LPMarket2.Score = num.DecimalFromInt64(1)
-	assertMarketContributionScore(t, LPMarket2, tracker.GetMarketScores("asset1", []string{"market2"}, vgproto.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID)[0])
+	assertMarketContributionScore(t, LPMarket2, tracker.GetMarketScores("asset1", []string{"market2"}, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID)[0])
 
 	// try to scope market3: doesn't exist in the asset
-	require.Equal(t, 0, len(tracker.GetMarketScores("asset1", []string{"market3"}, vgproto.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID)))
+	require.Equal(t, 0, len(tracker.GetMarketScores("asset1", []string{"market3"}, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID)))
 
 	// try to get the market from the wrong asset
-	require.Equal(t, 0, len(tracker.GetMarketScores("asset2", []string{"market1"}, vgproto.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID)))
+	require.Equal(t, 0, len(tracker.GetMarketScores("asset2", []string{"market1"}, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID)))
 }
 
 func TestGetMarketsWithEligibleProposer(t *testing.T) {
@@ -286,31 +321,37 @@ func TestGetMarketsWithEligibleProposer(t *testing.T) {
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
 	tracker.MarketProposed("asset1", "market1", "me")
 	tracker.MarketProposed("asset1", "market2", "me2")
+	tracker.MarketProposed("asset1", "market3", "me3")
+	tracker.MarketProposed("asset2", "market4", "me4")
+	tracker.MarketProposed("asset3", "market5", "me5")
 
 	tracker.AddValueTraded("market2", num.NewUint(1001))
 	tracker.AddValueTraded("market1", num.NewUint(4001))
 
 	// the threshold is 5000 so expect at this point no market should be returned
-	require.Equal(t, 0, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{})))
-	require.Equal(t, 0, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{"market1"})))
-	require.Equal(t, 0, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{"market2"})))
-	require.Equal(t, 0, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{"market1", "market2"})))
+	require.Equal(t, 0, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{}, "VEGA", "zohar")))
+	require.Equal(t, 0, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{"market1"}, "VEGA", "zohar")))
+	require.Equal(t, 0, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{"market2"}, "VEGA", "zohar")))
+	require.Equal(t, 0, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{"market1", "market2"}, "VEGA", "zohar")))
 
 	// market1 goes above the threshold
 	tracker.AddValueTraded("market1", num.NewUint(1000))
+	tracker.AddValueTraded("market4", num.NewUint(5001))
+	require.Equal(t, 2, len(tracker.GetMarketsWithEligibleProposer("", []string{"market1", "market2", "market3", "market4"}, "VEGA", "zohar")))
+
 	expectedScoreMarket1Full := &types.MarketContributionScore{
 		Asset:  "asset1",
 		Market: "market1",
 		Score:  num.DecimalFromInt64(1),
 		Metric: vgproto.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
 	}
-	require.Equal(t, 1, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{})))
-	assertMarketContributionScore(t, expectedScoreMarket1Full, tracker.GetMarketsWithEligibleProposer("asset1", []string{})[0])
-	require.Equal(t, 1, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{"market1"})))
-	assertMarketContributionScore(t, expectedScoreMarket1Full, tracker.GetMarketsWithEligibleProposer("asset1", []string{"market1"})[0])
-	require.Equal(t, 0, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{"market2"})))
-	require.Equal(t, 1, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{"market1", "market2"})))
-	assertMarketContributionScore(t, expectedScoreMarket1Full, tracker.GetMarketsWithEligibleProposer("asset1", []string{"market1", "market2"})[0])
+	require.Equal(t, 1, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{}, "VEGA", "zohar")))
+	assertMarketContributionScore(t, expectedScoreMarket1Full, tracker.GetMarketsWithEligibleProposer("asset1", []string{}, "VEGA", "zohar")[0])
+	require.Equal(t, 1, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{"market1"}, "VEGA", "zohar")))
+	assertMarketContributionScore(t, expectedScoreMarket1Full, tracker.GetMarketsWithEligibleProposer("asset1", []string{"market1"}, "VEGA", "zohar")[0])
+	require.Equal(t, 0, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{"market2"}, "VEGA", "zohar")))
+	require.Equal(t, 1, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{"market1", "market2"}, "VEGA", "zohar")))
+	assertMarketContributionScore(t, expectedScoreMarket1Full, tracker.GetMarketsWithEligibleProposer("asset1", []string{"market1", "market2"}, "VEGA", "zohar")[0])
 
 	// now market 2 goes above the threshold as well so expect the scores to be 0.5 for each
 	tracker.AddValueTraded("market2", num.NewUint(4000))
@@ -332,19 +373,23 @@ func TestGetMarketsWithEligibleProposer(t *testing.T) {
 		Score:  num.DecimalFromInt64(1),
 		Metric: vgproto.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
 	}
-	require.Equal(t, 2, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{})))
-	assertMarketContributionScore(t, expectedScoreMarket1Half, tracker.GetMarketsWithEligibleProposer("asset1", []string{})[0])
-	assertMarketContributionScore(t, expectedScoreMarket2Half, tracker.GetMarketsWithEligibleProposer("asset1", []string{})[1])
-	require.Equal(t, 1, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{"market1"})))
-	assertMarketContributionScore(t, expectedScoreMarket1Full, tracker.GetMarketsWithEligibleProposer("asset1", []string{"market1"})[0])
-	require.Equal(t, 1, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{"market2"})))
-	assertMarketContributionScore(t, expectedScoreMarket2Full, tracker.GetMarketsWithEligibleProposer("asset1", []string{"market2"})[0])
-	require.Equal(t, 2, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{"market1", "market2"})))
-	assertMarketContributionScore(t, expectedScoreMarket1Half, tracker.GetMarketsWithEligibleProposer("asset1", []string{"market1", "market2"})[0])
-	assertMarketContributionScore(t, expectedScoreMarket2Half, tracker.GetMarketsWithEligibleProposer("asset1", []string{"market1", "market2"})[1])
+	require.Equal(t, 2, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{}, "VEGA", "zohar")))
+	assertMarketContributionScore(t, expectedScoreMarket1Half, tracker.GetMarketsWithEligibleProposer("asset1", []string{}, "VEGA", "zohar")[0])
+	assertMarketContributionScore(t, expectedScoreMarket2Half, tracker.GetMarketsWithEligibleProposer("asset1", []string{}, "VEGA", "zohar")[1])
+	require.Equal(t, 1, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{"market1"}, "VEGA", "zohar")))
+	assertMarketContributionScore(t, expectedScoreMarket1Full, tracker.GetMarketsWithEligibleProposer("asset1", []string{"market1"}, "VEGA", "zohar")[0])
+	require.Equal(t, 1, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{"market2"}, "VEGA", "zohar")))
+	assertMarketContributionScore(t, expectedScoreMarket2Full, tracker.GetMarketsWithEligibleProposer("asset1", []string{"market2"}, "VEGA", "zohar")[0])
+	require.Equal(t, 2, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{"market1", "market2"}, "VEGA", "zohar")))
+	assertMarketContributionScore(t, expectedScoreMarket1Half, tracker.GetMarketsWithEligibleProposer("asset1", []string{"market1", "market2"}, "VEGA", "zohar")[0])
+	assertMarketContributionScore(t, expectedScoreMarket2Half, tracker.GetMarketsWithEligibleProposer("asset1", []string{"market1", "market2"}, "VEGA", "zohar")[1])
+
+	// all asset all markets
+	// markets 1, 2, 4
+	require.Equal(t, 3, len(tracker.GetMarketsWithEligibleProposer("", []string{}, "VEGA", "zohar")))
 
 	// asset with no markets
-	require.Equal(t, 0, len(tracker.GetMarketsWithEligibleProposer("asset2", []string{})))
+	require.Equal(t, 0, len(tracker.GetMarketsWithEligibleProposer("asset3", []string{}, "VEGA", "zohar")))
 }
 
 func assertMarketContributionScore(t *testing.T, expected, actual *types.MarketContributionScore) {
@@ -372,8 +417,8 @@ func TestMarketTrackerStateChange(t *testing.T) {
 	require.False(t, bytes.Equal(state1, state2))
 
 	tracker.AddValueTraded("market1", num.NewUint(1000))
-	require.Equal(t, 0, len(tracker.GetEligibleProposers("market1")))
-	require.Equal(t, 0, len(tracker.GetEligibleProposers("market2")))
+	require.False(t, tracker.IsMarketEligibleForBonus("market1", "VEGA", []string{}, "zohar"))
+	require.False(t, tracker.IsMarketEligibleForBonus("market2", "VEGA", []string{}, "zohar"))
 
 	state3, _, err := tracker.GetState(key)
 	require.NoError(t, err)
@@ -632,4 +677,127 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 	bLoad, err = snapshotEngineLoad.Snapshot(ctx)
 	require.NoError(t, err)
 	require.True(t, bytes.Equal(b, bLoad))
+}
+
+func TestMarketProposerBonusScenarios(t *testing.T) {
+	tracker := execution.NewMarketActivityTracker(logging.NewTestLogger(), &TestEpochEngine{})
+	tracker.SetEligibilityChecker(&EligibilityChecker{})
+
+	// setup 4 market for settlement asset1 2 of them proposed by the same proposer, and 2 markets for settlement asset 2
+	tracker.MarketProposed("asset1", "market1", "me")
+	tracker.MarketProposed("asset1", "market2", "me")
+	tracker.MarketProposed("asset1", "market3", "me2")
+	tracker.MarketProposed("asset1", "market4", "me3")
+	tracker.MarketProposed("asset2", "market5", "me")
+	tracker.MarketProposed("asset2", "market6", "me2")
+
+	// no trading done so far so expect no one to be eligible for bonus
+	require.Equal(t, 0, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{}, "VEGA", "zohar")))
+	require.Equal(t, 0, len(tracker.GetMarketsWithEligibleProposer("asset2", []string{}, "VEGA", "zohar")))
+
+	// market1 goes above the threshold only it should be eligible
+	tracker.AddValueTraded("market1", num.NewUint(5001))
+	require.Equal(t, 1, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{"market1", "market2", "market3"}, "VEGA", "zohar")))
+	require.True(t, tracker.IsMarketEligibleForBonus("market1", "VEGA", []string{"market1", "market2", "market3"}, "zohar"))
+	require.False(t, tracker.IsMarketEligibleForBonus("market2", "VEGA", []string{"market1", "market2", "market3"}, "zohar"))
+	require.False(t, tracker.IsMarketEligibleForBonus("market3", "VEGA", []string{"market1", "market2", "market3"}, "zohar"))
+	require.False(t, tracker.IsMarketEligibleForBonus("market4", "VEGA", []string{"market1", "market2", "market3"}, "zohar"))
+	tracker.MarkPaidProposer("market1", "VEGA", []string{"market1", "market2", "market3"}, "zohar")
+
+	// now market 2 and 3 become eligible
+	tracker.AddValueTraded("market2", num.NewUint(5001))
+	tracker.AddValueTraded("market3", num.NewUint(5001))
+	require.Equal(t, 2, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{"market1", "market2", "market3"}, "VEGA", "zohar")))
+
+	// show that only markets 2 and 3 are now eligible with this combo
+	require.False(t, tracker.IsMarketEligibleForBonus("market1", "VEGA", []string{"market1", "market2", "market3"}, "zohar"))
+	require.True(t, tracker.IsMarketEligibleForBonus("market2", "VEGA", []string{"market1", "market2", "market3"}, "zohar"))
+	require.True(t, tracker.IsMarketEligibleForBonus("market3", "VEGA", []string{"market1", "market2", "market3"}, "zohar"))
+	require.False(t, tracker.IsMarketEligibleForBonus("market4", "VEGA", []string{"market1", "market2", "market3"}, "zohar"))
+	tracker.MarkPaidProposer("market2", "VEGA", []string{"market1", "market2", "market3"}, "zohar")
+	tracker.MarkPaidProposer("market3", "VEGA", []string{"market1", "market2", "market3"}, "zohar")
+
+	// now market4 goes above the threshold but no one gets paid by this combo
+	tracker.AddValueTraded("market4", num.NewUint(5001))
+	require.Equal(t, 0, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{"market1", "market2", "market3"}, "VEGA", "zohar")))
+	require.False(t, tracker.IsMarketEligibleForBonus("market1", "VEGA", []string{"market1", "market2", "market3"}, "zohar"))
+	require.False(t, tracker.IsMarketEligibleForBonus("market2", "VEGA", []string{"market1", "market2", "market3"}, "zohar"))
+	require.False(t, tracker.IsMarketEligibleForBonus("market3", "VEGA", []string{"market1", "market2", "market3"}, "zohar"))
+	require.False(t, tracker.IsMarketEligibleForBonus("market4", "VEGA", []string{"market1", "market2", "market3"}, "zohar"))
+
+	// now "all" is funded by zohar
+	require.Equal(t, 4, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{}, "VEGA", "zohar")))
+	require.True(t, tracker.IsMarketEligibleForBonus("market1", "VEGA", []string{}, "zohar"))
+	require.True(t, tracker.IsMarketEligibleForBonus("market2", "VEGA", []string{}, "zohar"))
+	require.True(t, tracker.IsMarketEligibleForBonus("market3", "VEGA", []string{}, "zohar"))
+	require.True(t, tracker.IsMarketEligibleForBonus("market4", "VEGA", []string{}, "zohar"))
+
+	tracker.MarkPaidProposer("market1", "VEGA", []string{}, "zohar")
+	tracker.MarkPaidProposer("market2", "VEGA", []string{}, "zohar")
+	tracker.MarkPaidProposer("market3", "VEGA", []string{}, "zohar")
+	tracker.MarkPaidProposer("market4", "VEGA", []string{}, "zohar")
+
+	// everyone were paid so next time no one is eligible
+	require.Equal(t, 0, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{}, "VEGA", "zohar")))
+
+	// a new market is proposed and gets over the limit
+	tracker.MarketProposed("asset1", "market7", "mememe")
+	tracker.AddValueTraded("market7", num.NewUint(5001))
+
+	// only the new market should be eligible for the "all" combo funded by zohar
+	require.Equal(t, 1, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{}, "VEGA", "zohar")))
+	require.False(t, tracker.IsMarketEligibleForBonus("market1", "VEGA", []string{}, "zohar"))
+	require.False(t, tracker.IsMarketEligibleForBonus("market2", "VEGA", []string{}, "zohar"))
+	require.False(t, tracker.IsMarketEligibleForBonus("market3", "VEGA", []string{}, "zohar"))
+	require.False(t, tracker.IsMarketEligibleForBonus("market4", "VEGA", []string{}, "zohar"))
+	require.True(t, tracker.IsMarketEligibleForBonus("market7", "VEGA", []string{}, "zohar"))
+	tracker.MarkPaidProposer("market7", "VEGA", []string{}, "zohar")
+
+	// check that they are no longer eligible for this combo of all
+	require.Equal(t, 0, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{}, "VEGA", "zohar")))
+
+	// check new combo
+	require.Equal(t, 3, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{"market1", "market3", "market7"}, "VEGA", "zohar")))
+	require.True(t, tracker.IsMarketEligibleForBonus("market1", "VEGA", []string{"market1", "market3", "market7"}, "zohar"))
+	require.False(t, tracker.IsMarketEligibleForBonus("market2", "VEGA", []string{"market1", "market3", "market7"}, "zohar"))
+	require.True(t, tracker.IsMarketEligibleForBonus("market3", "VEGA", []string{"market1", "market3", "market7"}, "zohar"))
+	require.False(t, tracker.IsMarketEligibleForBonus("market4", "VEGA", []string{"market1", "market3", "market7"}, "zohar"))
+	require.True(t, tracker.IsMarketEligibleForBonus("market7", "VEGA", []string{"market1", "market3", "market7"}, "zohar"))
+
+	tracker.MarkPaidProposer("market1", "VEGA", []string{"market1", "market3", "market7"}, "zohar")
+	tracker.MarkPaidProposer("market3", "VEGA", []string{"market1", "market3", "market7"}, "zohar")
+	tracker.MarkPaidProposer("market7", "VEGA", []string{"market1", "market3", "market7"}, "zohar")
+
+	// now that they're marked as paid check they're no longer eligible
+	require.Equal(t, 0, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{"market1", "market3", "market7"}, "VEGA", "zohar")))
+
+	// check new asset for the same combo
+	require.Equal(t, 3, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{"market1", "market3", "market7"}, "USDC", "zohar")))
+	require.True(t, tracker.IsMarketEligibleForBonus("market1", "USDC", []string{"market1", "market3", "market7"}, "zohar"))
+	require.False(t, tracker.IsMarketEligibleForBonus("market2", "USDC", []string{"market1", "market3", "market7"}, "zohar"))
+	require.True(t, tracker.IsMarketEligibleForBonus("market3", "USDC", []string{"market1", "market3", "market7"}, "zohar"))
+	require.False(t, tracker.IsMarketEligibleForBonus("market4", "USDC", []string{"market1", "market3", "market7"}, "zohar"))
+	require.True(t, tracker.IsMarketEligibleForBonus("market7", "USDC", []string{"market1", "market3", "market7"}, "zohar"))
+
+	tracker.MarkPaidProposer("market1", "USDC", []string{"market1", "market3", "market7"}, "zohar")
+	tracker.MarkPaidProposer("market3", "USDC", []string{"market1", "market3", "market7"}, "zohar")
+	tracker.MarkPaidProposer("market7", "USDC", []string{"market1", "market3", "market7"}, "zohar")
+
+	// now that they're marked as paid check they're no longer eligible
+	require.Equal(t, 0, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{"market1", "market3", "market7"}, "USDC", "zohar")))
+
+	// check new funder for the all combo
+	require.Equal(t, 5, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{}, "VEGA", "jeremy")))
+	require.True(t, tracker.IsMarketEligibleForBonus("market1", "VEGA", []string{}, "jeremy"))
+	require.True(t, tracker.IsMarketEligibleForBonus("market2", "VEGA", []string{}, "jeremy"))
+	require.True(t, tracker.IsMarketEligibleForBonus("market3", "VEGA", []string{}, "jeremy"))
+	require.True(t, tracker.IsMarketEligibleForBonus("market4", "VEGA", []string{}, "jeremy"))
+	require.True(t, tracker.IsMarketEligibleForBonus("market7", "VEGA", []string{}, "jeremy"))
+
+	tracker.MarkPaidProposer("market1", "VEGA", []string{}, "jeremy")
+	tracker.MarkPaidProposer("market2", "VEGA", []string{}, "jeremy")
+	tracker.MarkPaidProposer("market3", "VEGA", []string{}, "jeremy")
+	tracker.MarkPaidProposer("market4", "VEGA", []string{}, "jeremy")
+	tracker.MarkPaidProposer("market7", "VEGA", []string{}, "jeremy")
+	require.Equal(t, 0, len(tracker.GetMarketsWithEligibleProposer("asset1", []string{}, "VEGA", "jeremy")))
 }

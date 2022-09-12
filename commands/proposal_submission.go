@@ -279,13 +279,6 @@ func checkUpdateAssetChanges(change *types.ProposalTerms_UpdateAsset) Errors {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.update_asset.changes", ErrIsRequired)
 	}
 
-	if len(change.UpdateAsset.Changes.Name) == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.update_asset.changes.name", ErrIsRequired)
-	}
-	if len(change.UpdateAsset.Changes.Symbol) == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.update_asset.changes.symbol", ErrIsRequired)
-	}
-
 	if change.UpdateAsset.Changes.Source == nil {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.update_asset.changes.source", ErrIsRequired)
 	}
@@ -342,8 +335,6 @@ func checkNewMarketChanges(change *types.ProposalTerms_NewMarket) Errors {
 	if change.NewMarket == nil {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market", ErrIsRequired)
 	}
-
-	errs.Merge(checkLiquidityCommitment(change.NewMarket.LiquidityCommitment))
 
 	if change.NewMarket.Changes == nil {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes", ErrIsRequired)
@@ -843,140 +834,6 @@ func checkUpdateLogNormalRiskParameters(params *types.UpdateMarketConfiguration_
 
 	if math.IsNaN(params.LogNormal.Params.R) {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market.changes.risk_parameters.log_normal.params.r", ErrIsNotValidNumber)
-	}
-
-	return errs
-}
-
-func checkLiquidityCommitment(commitment *types.NewMarketCommitment) Errors {
-	errs := NewErrors()
-	if commitment == nil {
-		return errs
-	}
-
-	if len(commitment.CommitmentAmount) <= 0 {
-		errs.AddForProperty("proposal_submission.terms.change.new_market.liquidity_commitment.commitment_amount", ErrMustBePositive)
-	} else {
-		if commitmentAmount, ok := big.NewInt(0).SetString(commitment.CommitmentAmount, 10); !ok {
-			errs.AddForProperty("proposal_submission.terms.change.new_market.liquidity_commitment.commitment_amount", ErrNotAValidInteger)
-		} else {
-			if commitmentAmount.Cmp(big.NewInt(0)) != 1 {
-				errs.AddForProperty("proposal_submission.terms.change.new_market.liquidity_commitment.commitment_amount", ErrMustBePositive)
-			}
-		}
-	}
-	if len(commitment.Fee) == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.new_market.liquidity_commitment.fee", ErrIsRequired)
-	}
-	fee, err := strconv.ParseFloat(commitment.Fee, 64)
-	if err != nil {
-		errs.AddForProperty("proposal_submission.terms.change.new_market.liquidity_commitment.fee", ErrIsNotValidNumber)
-	} else if fee < 0 {
-		errs.AddForProperty("proposal_submission.terms.change.new_market.liquidity_commitment.fee", ErrMustBePositiveOrZero)
-	}
-
-	errs.Merge(checkShape(commitment.Buys, types.Side_SIDE_BUY))
-	errs.Merge(checkShape(commitment.Sells, types.Side_SIDE_SELL))
-
-	return errs
-}
-
-func checkShape(orders []*types.LiquidityOrder, side types.Side) Errors {
-	errs := NewErrors()
-
-	humanizedSide := "buys"
-	if side == types.Side_SIDE_SELL {
-		humanizedSide = "sells"
-	}
-
-	if len(orders) == 0 {
-		return errs.FinalAddForProperty(fmt.Sprintf("proposal_submission.terms.change.new_asset.liquidity_commitment.%s", humanizedSide), ErrIsRequired)
-	}
-
-	for i, order := range orders {
-		if order.Reference == types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED {
-			errs.AddForProperty(fmt.Sprintf("proposal_submission.terms.change.new_asset.liquidity_commitment.%s.reference.%d", humanizedSide, i), ErrIsRequired)
-		}
-		if _, ok := types.PeggedReference_name[int32(order.Reference)]; !ok {
-			errs.AddForProperty(fmt.Sprintf("proposal_submission.terms.change.new_asset.liquidity_commitment.%s.reference.%d", humanizedSide, i), ErrIsNotValid)
-		}
-
-		if order.Proportion == 0 {
-			errs.AddForProperty(fmt.Sprintf("proposal_submission.terms.change.new_asset.liquidity_commitment.%s.proportion.%d", humanizedSide, i), ErrIsRequired)
-		}
-
-		if side == types.Side_SIDE_BUY {
-			switch order.Reference {
-			case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
-				errs.AddForProperty(fmt.Sprintf("proposal_submission.terms.change.new_asset.liquidity_commitment.%s.reference.%d", humanizedSide, i),
-					errors.New("cannot have a reference of type BEST_ASK when on BUY side"),
-				)
-			case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
-				offset, ok := big.NewInt(0).SetString(order.Offset, 10)
-				if !ok {
-					errs.AddForProperty(
-						fmt.Sprintf("proposal_submission.terms.change.new_asset.liquidity_commitment.%s.offset.%d", humanizedSide, i),
-						ErrNotAValidInteger,
-					)
-
-					break
-				}
-
-				if offset.Cmp(big.NewInt(0)) == -1 {
-					errs.AddForProperty(fmt.Sprintf("proposal_submission.terms.change.new_asset.liquidity_commitment.%s.offset.%d", humanizedSide, i), ErrMustBePositiveOrZero)
-				}
-			case types.PeggedReference_PEGGED_REFERENCE_MID:
-				offset, ok := big.NewInt(0).SetString(order.Offset, 10)
-				if !ok {
-					errs.AddForProperty(
-						fmt.Sprintf("proposal_submission.terms.change.new_asset.liquidity_commitment.%s.offset.%d", humanizedSide, i),
-						ErrNotAValidInteger,
-					)
-
-					break
-				}
-
-				if offset.Cmp(big.NewInt(0)) == -1 || offset.Cmp(big.NewInt(0)) == 0 {
-					errs.AddForProperty(fmt.Sprintf("proposal_submission.terms.change.new_asset.liquidity_commitment.%s.offset.%d", humanizedSide, i), ErrMustBePositive)
-				}
-			}
-			continue
-		}
-
-		switch order.Reference {
-		case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
-			errs.AddForProperty(fmt.Sprintf("proposal_submission.terms.change.new_asset.liquidity_commitment.%s.reference.%d", humanizedSide, i),
-				errors.New("cannot have a reference of type BEST_BID when on SELL side"),
-			)
-		case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
-			offset, ok := big.NewInt(0).SetString(order.Offset, 10)
-			if !ok {
-				errs.AddForProperty(
-					fmt.Sprintf("proposal_submission.terms.change.new_asset.liquidity_commitment.%s.offset.%d", humanizedSide, i),
-					ErrNotAValidInteger,
-				)
-
-				break
-			}
-
-			if offset.Cmp(big.NewInt(0)) == -1 {
-				errs.AddForProperty(fmt.Sprintf("proposal_submission.terms.change.new_asset.liquidity_commitment.%s.offset.%d", humanizedSide, i), ErrMustBePositiveOrZero)
-			}
-		case types.PeggedReference_PEGGED_REFERENCE_MID:
-			offset, ok := big.NewInt(0).SetString(order.Offset, 10)
-			if !ok {
-				errs.AddForProperty(
-					fmt.Sprintf("proposal_submission.terms.change.new_asset.liquidity_commitment.%s.offset.%d", humanizedSide, i),
-					ErrNotAValidInteger,
-				)
-
-				break
-			}
-
-			if offset.Cmp(big.NewInt(0)) == -1 || offset.Cmp(big.NewInt(0)) == 0 {
-				errs.AddForProperty(fmt.Sprintf("proposal_submission.terms.change.new_asset.liquidity_commitment.%s.offset.%d", humanizedSide, i), ErrMustBePositive)
-			}
-		}
 	}
 
 	return errs

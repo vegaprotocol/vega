@@ -19,6 +19,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
+
 	"github.com/pkg/errors"
 )
 
@@ -54,7 +55,7 @@ func (m *MarketCreated) Push(ctx context.Context, evt events.Event) error {
 
 func (m *MarketCreated) consume(ctx context.Context, event MarketCreatedEvent) error {
 	market := event.Market()
-	record, err := entities.NewMarketFromProto(&market, m.vegaTime)
+	record, err := entities.NewMarketFromProto(&market, entities.TxHash(event.TxHash()), m.vegaTime)
 	if err != nil {
 		return errors.Wrap(err, "converting market proto to database entity failed")
 	}

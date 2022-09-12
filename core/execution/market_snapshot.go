@@ -147,7 +147,6 @@ func NewMarketFromSnapshot(
 		lastMidBuyPrice:            em.LastMidBid.Clone(),
 		lastMidSellPrice:           em.LastMidAsk.Clone(),
 		markPrice:                  em.CurrentMarkPrice.Clone(),
-		stateChanged:               true,
 		priceFactor:                priceFactor,
 		lastMarketValueProxy:       em.LastMarketValueProxy,
 		lastEquityShareDistributed: time.Unix(0, em.LastEquityShareDistributed),
@@ -167,16 +166,6 @@ func NewMarketFromSnapshot(
 		stateVarEngine.UnregisterStateVariable(asset, mkt.ID)
 	}
 	return market, nil
-}
-
-func (m *Market) changed() bool {
-	return (m.stateChanged ||
-		m.pMonitor.Changed() ||
-		m.as.Changed() ||
-		m.peggedOrders.Changed() ||
-		m.expiringOrders.Changed() ||
-		m.equityShares.Changed() ||
-		m.feeSplitter.Changed())
 }
 
 func (m *Market) getState() *types.ExecMarket {
@@ -205,8 +194,6 @@ func (m *Market) getState() *types.ExecMarket {
 		FeeSplitter:                m.feeSplitter.GetState(),
 		SettlementPrice:            sp,
 	}
-
-	m.stateChanged = false
 
 	return em
 }

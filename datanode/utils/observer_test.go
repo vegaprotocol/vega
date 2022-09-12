@@ -58,6 +58,7 @@ func TestNotifyDoesNotBlock(t *testing.T) {
 			}
 			t.Fail()
 		default:
+			time.Sleep(10 * time.Millisecond)
 		}
 	}
 }

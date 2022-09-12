@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"io"
 
@@ -8,7 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
 	vgterm "code.vegaprotocol.io/vega/libs/term"
-	"code.vegaprotocol.io/vega/wallet/wallet"
+	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
 	"github.com/spf13/cobra"
@@ -29,16 +31,21 @@ var (
 	`)
 )
 
-type PurgePermissionsHandler func(*wallet.PurgePermissionsRequest) error
+type PurgePermissionsHandler func(api.AdminPurgePermissionsParams) error
 
 func NewCmdPurgePermissions(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(req *wallet.PurgePermissionsRequest) error {
+	h := func(params api.AdminPurgePermissionsParams) error {
 		s, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
 			return fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 
-		return wallet.PurgePermissions(s, req)
+		purgePermissions := api.NewAdminPurgePermissions(s)
+		_, errDetails := purgePermissions.Handle(context.Background(), params)
+		if errDetails != nil {
+			return errors.New(errDetails.Data)
+		}
+		return nil
 	}
 
 	return BuildCmdPurgePermissions(w, h, rf)
@@ -102,26 +109,23 @@ type PurgePermissionsFlags struct {
 	Force          bool
 }
 
-func (f *PurgePermissionsFlags) Validate() (*wallet.PurgePermissionsRequest, error) {
-	req := &wallet.PurgePermissionsRequest{}
-
+func (f *PurgePermissionsFlags) Validate() (api.AdminPurgePermissionsParams, error) {
 	if len(f.Wallet) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("wallet")
+		return api.AdminPurgePermissionsParams{}, flags.MustBeSpecifiedError("wallet")
 	}
-	req.Wallet = f.Wallet
 
 	passphrase, err := flags.GetPassphrase(f.PassphraseFile)
 	if err != nil {
-		return nil, err
+		return api.AdminPurgePermissionsParams{}, err
 	}
-	req.Passphrase = passphrase
 
-	return req, nil
+	return api.AdminPurgePermissionsParams{
+		Wallet:     f.Wallet,
+		Passphrase: passphrase,
+	}, nil
 }
 
 func PrintPurgePermissionsResponse(w io.Writer, wallet string) {
 	p := printer.NewInteractivePrinter(w)
-	str := p.String()
-	defer p.Print(str)
-	str.CheckMark().SuccessText("All permissions on wallet ").SuccessBold(wallet).SuccessText(" have been purged").NextLine()
+	p.Print(p.String().CheckMark().SuccessText("All permissions on wallet ").SuccessBold(wallet).SuccessText(" have been purged.").NextLine())
 }

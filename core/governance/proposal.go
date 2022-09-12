@@ -105,7 +105,7 @@ func (t *ToEnact) NewFreeform() *ToEnactFreeform {
 	return t.f
 }
 
-func (t *ToEnact) ProposalData() *proposal {
+func (t *ToEnact) ProposalData() *proposal { //revive:disable:unexported-return
 	return t.p
 }
 
@@ -144,15 +144,10 @@ func (t *ToSubmit) NewMarket() *ToSubmitNewMarket {
 
 type ToSubmitNewMarket struct {
 	m *types.Market
-	l *types.LiquidityProvisionSubmission
 }
 
 func (t *ToSubmitNewMarket) Market() *types.Market {
 	return t.m
-}
-
-func (t *ToSubmitNewMarket) LiquidityProvisionSubmission() *types.LiquidityProvisionSubmission {
-	return t.l
 }
 
 type VoteClosed struct {

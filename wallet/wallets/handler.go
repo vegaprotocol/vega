@@ -60,7 +60,7 @@ func (h *Handler) CreateWallet(name, passphrase string) (string, error) {
 	defer h.mu.Unlock()
 
 	if exists, err := h.store.WalletExists(context.Background(), name); err != nil {
-		return "", fmt.Errorf("couldn't verify wallet existence: %w", err)
+		return "", fmt.Errorf("couldn't verify the wallet existence: %w", err)
 	} else if exists {
 		return "", wallet.ErrWalletAlreadyExists
 	}
@@ -123,7 +123,7 @@ func (h *Handler) LogoutWallet(name string) {
 	h.loggedWallets.Remove(name)
 }
 
-func (h *Handler) GenerateKeyPair(name, passphrase string, meta []wallet.Meta) (wallet.KeyPair, error) {
+func (h *Handler) GenerateKeyPair(name, passphrase string, meta []wallet.Metadata) (wallet.KeyPair, error) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
@@ -134,8 +134,6 @@ func (h *Handler) GenerateKeyPair(name, passphrase string, meta []wallet.Meta) (
 		}
 		return nil, fmt.Errorf("couldn't get wallet %s: %w", name, err)
 	}
-
-	meta = addDefaultAlias(meta, w)
 
 	kp, err := w.GenerateKeyPair(meta)
 	if err != nil {
@@ -150,7 +148,7 @@ func (h *Handler) GenerateKeyPair(name, passphrase string, meta []wallet.Meta) (
 	return kp, nil
 }
 
-func (h *Handler) SecureGenerateKeyPair(name, passphrase string, meta []wallet.Meta) (string, error) {
+func (h *Handler) SecureGenerateKeyPair(name, passphrase string, meta []wallet.Metadata) (string, error) {
 	kp, err := h.GenerateKeyPair(name, passphrase, meta)
 	if err != nil {
 		return "", err
@@ -286,7 +284,7 @@ func (h *Handler) UntaintKey(name string, pubKey string, passphrase string) erro
 	return h.saveWallet(w, passphrase)
 }
 
-func (h *Handler) UpdateMeta(name, pubKey, passphrase string, meta []wallet.Meta) error {
+func (h *Handler) UpdateMeta(name, pubKey, passphrase string, meta []wallet.Metadata) error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
@@ -298,7 +296,7 @@ func (h *Handler) UpdateMeta(name, pubKey, passphrase string, meta []wallet.Meta
 		return fmt.Errorf("couldn't get wallet %s: %w", name, err)
 	}
 
-	err = w.UpdateMeta(pubKey, meta)
+	_, err = w.AnnotateKey(pubKey, meta)
 	if err != nil {
 		return err
 	}
@@ -333,24 +331,6 @@ func (h *Handler) getLoggedWallet(name string) (wallet.Wallet, error) {
 		return nil, wallet.ErrWalletNotLoggedIn
 	}
 	return w, nil
-}
-
-func addDefaultAlias(meta []wallet.Meta, w wallet.Wallet) []wallet.Meta {
-	hasName := false
-	for _, m := range meta {
-		if m.Key == "name" {
-			hasName = true
-		}
-	}
-	if !hasName {
-		nextID := len(w.ListKeyPairs()) + 1
-
-		meta = append(meta, wallet.Meta{
-			Key:   "name",
-			Value: fmt.Sprintf("%s key %d", w.Name(), nextID),
-		})
-	}
-	return meta
 }
 
 type wallets map[string]wallet.Wallet

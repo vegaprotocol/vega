@@ -25,25 +25,26 @@ import (
 type AccountBalance struct {
 	*Account
 	Balance  decimal.Decimal
+	TxHash   TxHash
 	VegaTime time.Time
 }
 
 func (ab *AccountBalance) ToProto() *vega.Account {
-	marketId := ab.MarketID.String()
-	if marketId == noMarketStr {
-		marketId = ""
+	marketID := ab.MarketID.String()
+	if marketID == noMarketStr {
+		marketID = ""
 	}
 
-	ownerId := ab.PartyID.String()
-	if ownerId == systemOwnerStr {
-		ownerId = ""
+	ownerID := ab.PartyID.String()
+	if ownerID == systemOwnerStr {
+		ownerID = ""
 	}
 
 	return &vega.Account{
-		Owner:    ownerId,
+		Owner:    ownerID,
 		Balance:  ab.Balance.String(),
 		Asset:    ab.AssetID.String(),
-		MarketId: marketId,
+		MarketId: marketID,
 		Type:     ab.Account.Type,
 	}
 }
@@ -60,28 +61,28 @@ type AccountBalanceKey struct {
 	VegaTime  time.Time
 }
 
-func (b AccountBalance) Key() AccountBalanceKey {
-	return AccountBalanceKey{b.Account.ID, b.VegaTime}
+func (ab AccountBalance) Key() AccountBalanceKey {
+	return AccountBalanceKey{ab.Account.ID, ab.VegaTime}
 }
 
-func (b AccountBalance) ToRow() []interface{} {
-	return []interface{}{b.Account.ID, b.VegaTime, b.Balance}
+func (ab AccountBalance) ToRow() []interface{} {
+	return []interface{}{ab.Account.ID, ab.TxHash, ab.VegaTime, ab.Balance}
 }
 
-func (b AccountBalance) Cursor() *Cursor {
+func (ab AccountBalance) Cursor() *Cursor {
 	cursor := AccountCursor{
-		AccountID: b.Account.ID,
+		AccountID: ab.Account.ID,
 	}
 
 	return NewCursor(cursor.String())
 }
 
-func (b AccountBalance) Equal(other AccountBalance) bool {
-	return b.AssetID == other.AssetID &&
-		b.PartyID == other.PartyID &&
-		b.MarketID == other.MarketID &&
-		b.Type == other.Type &&
-		b.Balance.Equal(other.Balance)
+func (ab AccountBalance) Equal(other AccountBalance) bool {
+	return ab.AssetID == other.AssetID &&
+		ab.PartyID == other.PartyID &&
+		ab.MarketID == other.MarketID &&
+		ab.Type == other.Type &&
+		ab.Balance.Equal(other.Balance)
 }
 
 type AccountCursor struct {

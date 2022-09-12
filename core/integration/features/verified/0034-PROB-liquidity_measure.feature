@@ -73,23 +73,23 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price      | volume      |
       | buy  | 1199990000 | 1           |
-      | buy  | 1199970000 | 3087        |
-      | buy  | 1199960000 | 4630        |
-      | buy  | 1199950000 | 9260        |
-      | buy  | 1199940000 | 92597222454 |
-      | buy  | 1199930000 | 92597994143 |
-      | buy  | 1199920000 | 92598765844 |
-      | buy  | 1199910000 | 92599537558 |
-      | buy  | 1199900000 | 92600309286 |
+      | buy  | 1199970000 | 1859        |
+      | buy  | 1199960000 | 1863        |
+      | buy  | 1199950000 | 1867        |
+      | buy  | 1199940000 | 1870        |
+      | buy  | 1199930000 | 1874        |
+      | buy  | 1199920000 | 1877        |
+      | buy  | 1199910000 | 1881        |
+      | buy  | 1199900000 | 1885        |
       | sell | 1200010000 | 1           |
-      | sell | 1200030000 | 3087        |
-      | sell | 1200040000 | 4630        |
-      | sell | 1200050000 | 9260        |
-      | sell | 1200060000 | 92587963195 |
-      | sell | 1200070000 | 92587191674 |
-      | sell | 1200080000 | 92586420165 |
-      | sell | 1200090000 | 92585648669 |
-      | sell | 1200100000 | 92584877187 |
+      | sell | 1200030000 | 1859        |
+      | sell | 1200040000 | 1863        |
+      | sell | 1200050000 | 1866        |
+      | sell | 1200060000 | 1870        |
+      | sell | 1200070000 | 1874        |
+      | sell | 1200080000 | 1877        |
+      | sell | 1200090000 | 1881        |
+      | sell | 1200100000 | 1884        |
 
   Scenario:  LP pegged volume is pushed inside price monitoring bounds(0034-PROB-002, 0009-MRKP-003, 0009-MRKP-004, 0009-MRKP-005);
 
@@ -269,11 +269,11 @@ Feature: Tests confirming probability of trading acceptance criteria (0038-OLIQ-
 
     And the order book should have the following volumes for market "ETH2/MAR22":
       | side | price | volume    |
-      | sell | 1359  | 217206866 |
+      | sell | 1359  | 67560669  |
       | sell | 1109  | 1         |
       | sell | 909   | 0         |
       | buy  | 1000  | 0         |
-      | buy  | 728   | 48675135  |
+      | buy  | 728   | 175050882 |
       | buy  | 900   | 1         |
 
   Scenario:  LP Volume being pushed by limit of Probability of Trading (capped at 1e-8) (0034-PROB-004)

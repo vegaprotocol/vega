@@ -27,15 +27,17 @@ type KeyRotation struct {
 	OldPubKey   VegaPublicKey
 	NewPubKey   VegaPublicKey
 	BlockHeight uint64
+	TxHash      TxHash
 	VegaTime    time.Time
 }
 
-func KeyRotationFromProto(kr *eventspb.KeyRotation, vegaTime time.Time) (*KeyRotation, error) {
+func KeyRotationFromProto(kr *eventspb.KeyRotation, txHash TxHash, vegaTime time.Time) (*KeyRotation, error) {
 	return &KeyRotation{
 		NodeID:      NodeID(kr.NodeId),
 		OldPubKey:   VegaPublicKey(kr.OldPubKey),
 		NewPubKey:   VegaPublicKey(kr.NewPubKey),
 		BlockHeight: kr.BlockHeight,
+		TxHash:      txHash,
 		VegaTime:    vegaTime,
 	}, nil
 }
@@ -93,10 +95,10 @@ func (c KeyRotationCursor) String() string {
 	return string(bs)
 }
 
-func (kr *KeyRotationCursor) Parse(cursorString string) error {
+func (c *KeyRotationCursor) Parse(cursorString string) error {
 	if cursorString == "" {
 		return nil
 	}
 
-	return json.Unmarshal([]byte(cursorString), kr)
+	return json.Unmarshal([]byte(cursorString), c)
 }

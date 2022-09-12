@@ -16,6 +16,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/libs/num"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
@@ -42,7 +43,7 @@ func testParseAllValidPrices(t *testing.T) {
 		SuppliedStake:        "1",
 	}
 
-	md, err := entities.MarketDataFromProto(&marketdata)
+	md, err := entities.MarketDataFromProto(&marketdata, generateTxHash())
 	assert.NoError(t, err)
 	assert.NotNil(t, md.MarkPrice)
 	assert.NotNil(t, md.BestBidPrice)
@@ -70,7 +71,7 @@ func testParseAllValidPrices(t *testing.T) {
 
 func testParseEmptyPrices(t *testing.T) {
 	marketdata := types.MarketData{}
-	md, err := entities.MarketDataFromProto(&marketdata)
+	md, err := entities.MarketDataFromProto(&marketdata, generateTxHash())
 	assert.NoError(t, err)
 	assert.True(t, decimal.Zero.Equals(md.MarkPrice))
 	assert.True(t, decimal.Zero.Equals(md.BestBidPrice))
@@ -176,7 +177,7 @@ func testParseInvalidPriceString(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(tt *testing.T) {
-			md, err := entities.MarketDataFromProto(&tc.args.marketdata)
+			md, err := entities.MarketDataFromProto(&tc.args.marketdata, generateTxHash())
 			assert.Error(tt, err)
 			assert.Nil(tt, md)
 		})
@@ -200,8 +201,10 @@ func testParseMarketDataSuccessfully(t *testing.T) {
 			},
 			want: &entities.MarketData{
 				AuctionTrigger:    "AUCTION_TRIGGER_UNSPECIFIED",
+				MarketState:       "STATE_UNSPECIFIED",
 				MarketTradingMode: "TRADING_MODE_UNSPECIFIED",
 				ExtensionTrigger:  "AUCTION_TRIGGER_UNSPECIFIED",
+				TxHash:            generateTxHash(),
 			},
 		},
 		{
@@ -213,8 +216,10 @@ func testParseMarketDataSuccessfully(t *testing.T) {
 			},
 			want: &entities.MarketData{
 				AuctionTrigger:    "AUCTION_TRIGGER_PRICE",
+				MarketState:       "STATE_UNSPECIFIED",
 				MarketTradingMode: "TRADING_MODE_UNSPECIFIED",
 				ExtensionTrigger:  "AUCTION_TRIGGER_UNSPECIFIED",
+				TxHash:            generateTxHash(),
 			},
 		},
 		{
@@ -228,7 +233,9 @@ func testParseMarketDataSuccessfully(t *testing.T) {
 			want: &entities.MarketData{
 				AuctionTrigger:    "AUCTION_TRIGGER_PRICE",
 				MarketTradingMode: "TRADING_MODE_CONTINUOUS",
+				MarketState:       "STATE_UNSPECIFIED",
 				ExtensionTrigger:  "AUCTION_TRIGGER_UNSPECIFIED",
+				TxHash:            generateTxHash(),
 			},
 		},
 		{
@@ -239,14 +246,17 @@ func testParseMarketDataSuccessfully(t *testing.T) {
 					BestOfferPrice:    "110.0",
 					Trigger:           types.AuctionTrigger_AUCTION_TRIGGER_PRICE,
 					MarketTradingMode: types.Market_TRADING_MODE_CONTINUOUS,
+					MarketState:       types.Market_STATE_ACTIVE,
 				},
 			},
 			want: &entities.MarketData{
 				BestBidPrice:      decimal.NewFromFloat(100.0),
 				BestOfferPrice:    decimal.NewFromFloat(110.0),
 				AuctionTrigger:    "AUCTION_TRIGGER_PRICE",
+				MarketState:       "STATE_ACTIVE",
 				MarketTradingMode: "TRADING_MODE_CONTINUOUS",
 				ExtensionTrigger:  "AUCTION_TRIGGER_UNSPECIFIED",
+				TxHash:            generateTxHash(),
 			},
 		},
 		{
@@ -270,20 +280,23 @@ func testParseMarketDataSuccessfully(t *testing.T) {
 				BestOfferPrice:    decimal.NewFromFloat(110.0),
 				AuctionTrigger:    "AUCTION_TRIGGER_PRICE",
 				MarketTradingMode: "TRADING_MODE_CONTINUOUS",
+				MarketState:       "STATE_UNSPECIFIED",
 				ExtensionTrigger:  "AUCTION_TRIGGER_UNSPECIFIED",
 				PriceMonitoringBounds: []*entities.PriceMonitoringBound{
 					{
-						MinValidPrice: 100,
-						MaxValidPrice: 200,
+						MinValidPrice:  num.NewUint(100),
+						MaxValidPrice:  num.NewUint(200),
+						ReferencePrice: num.NewUint(0),
 					},
 				},
+				TxHash: generateTxHash(),
 			},
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(tt *testing.T) {
-			got, err := entities.MarketDataFromProto(&tc.args.marketdata)
+			got, err := entities.MarketDataFromProto(&tc.args.marketdata, tc.want.TxHash)
 			assert.NoError(tt, err)
 			assert.True(tt, tc.want.Equal(*got))
 		})

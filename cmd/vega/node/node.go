@@ -48,7 +48,7 @@ import (
 
 var ErrUnknownChainProvider = errors.New("unknown chain provider")
 
-type NodeCommand struct {
+type Command struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 
@@ -86,12 +86,17 @@ type NodeCommand struct {
 	tmNode *abci.TmNode
 }
 
-func (n *NodeCommand) Run(
+func (n *Command) Run(
 	confWatcher *config.Watcher,
 	vegaPaths paths.Paths,
 	nodeWalletPassphrase, tmHome, networkURL, network string,
 	args []string,
 ) error {
+	n.Log.Info("starting vega",
+		logging.String("version", version.Get()),
+		logging.String("commit-hash", version.GetCommitHash()),
+	)
+
 	n.confWatcher = confWatcher
 	n.nodeWalletPassphrase = nodeWalletPassphrase
 
@@ -147,7 +152,7 @@ func (n *NodeCommand) Run(
 	return nil
 }
 
-func (n *NodeCommand) wait() {
+func (n *Command) wait() {
 	gracefulStop := make(chan os.Signal, 1)
 	signal.Notify(gracefulStop, syscall.SIGTERM, syscall.SIGINT)
 
@@ -165,7 +170,7 @@ func (n *NodeCommand) wait() {
 	}
 }
 
-func (n *NodeCommand) startProtocolUpgrade(version string) {
+func (n *Command) startProtocolUpgrade(version string) {
 	semVersion, err := semver.Parse(protocolupgrade.TrimReleaseTag(version))
 	if err != nil {
 		n.Log.Error("invalid protocol version upgrade received, upgrade aborted",
@@ -199,7 +204,7 @@ func (n *NodeCommand) startProtocolUpgrade(version string) {
 	n.updateAPIsServices()
 }
 
-func (n *NodeCommand) Stop() error {
+func (n *Command) Stop() error {
 	if n.protocol != nil {
 		n.protocol.Stop()
 	}
@@ -239,7 +244,7 @@ func (n *NodeCommand) Stop() error {
 
 // updateAPIsServices is to be called when a new protocol is being loaded
 // so the API services bind to the proper engines / services.
-func (n *NodeCommand) updateAPIsServices() {
+func (n *Command) updateAPIsServices() {
 	n.grpcServer.UpdateProtocolServices(
 		n.protocol.GetEventForwarder(),
 		n.protocol.GetTimeService(),
@@ -250,7 +255,7 @@ func (n *NodeCommand) updateAPIsServices() {
 	n.coreService.UpdateBroker(n.protocol.GetBroker())
 }
 
-func (n *NodeCommand) startAPIs() error {
+func (n *Command) startAPIs() error {
 	n.grpcServer = api.NewGRPC(
 		n.Log,
 		n.conf.API,
@@ -298,7 +303,7 @@ func (n *NodeCommand) startAPIs() error {
 	return nil
 }
 
-func (n *NodeCommand) startBlockchain(tmHome, network, networkURL string) error {
+func (n *Command) startBlockchain(tmHome, network, networkURL string) error {
 	// make sure any env variable is resolved
 	tmHome = os.ExpandEnv(tmHome)
 	n.abciApp = newAppW(n.protocol.Abci())
@@ -346,7 +351,7 @@ func (n *NodeCommand) startBlockchain(tmHome, network, networkURL string) error 
 	return nil
 }
 
-func (n *NodeCommand) setupCommon(_ []string) (err error) {
+func (n *Command) setupCommon(_ []string) (err error) {
 	// this shouldn't happen, the context is initialized in here
 	if n.cancel != nil {
 		n.cancel()
@@ -388,7 +393,7 @@ func (n *NodeCommand) setupCommon(_ []string) (err error) {
 	return err
 }
 
-func (n *NodeCommand) loadNodeWallets(_ []string) (err error) {
+func (n *Command) loadNodeWallets(_ []string) (err error) {
 	// if we are a non-validator, nothing needs to be done here
 	if !n.conf.IsValidator() {
 		return nil
@@ -402,7 +407,7 @@ func (n *NodeCommand) loadNodeWallets(_ []string) (err error) {
 	return n.nodeWallets.Verify()
 }
 
-func (n *NodeCommand) startABCI(
+func (n *Command) startABCI(
 	ctx context.Context,
 	app types.Application,
 	tmHome string,
@@ -431,7 +436,7 @@ func (n *NodeCommand) startABCI(
 	)
 }
 
-func (n *NodeCommand) startBlockchainClients(_ []string) error {
+func (n *Command) startBlockchainClients(_ []string) error {
 	// just intantiate the client here, we'll setup the actual impl later on
 	// when the null blockchain or tendermint is started.
 	n.blockchainClient = blockchain.NewClient()
@@ -447,7 +452,7 @@ func (n *NodeCommand) startBlockchainClients(_ []string) error {
 		if err != nil {
 			return fmt.Errorf("could not instantiate ethereum client: %w", err)
 		}
-		n.ethConfirmations = ethclient.NewEthereumConfirmations(n.ethClient, nil)
+		n.ethConfirmations = ethclient.NewEthereumConfirmations(n.conf.Ethereum, n.ethClient, nil)
 	}
 
 	return nil

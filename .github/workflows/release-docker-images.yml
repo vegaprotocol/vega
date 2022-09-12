@@ -1,0 +1,126 @@
+---
+
+name: Release vega, data-node and vegawallet docker images
+
+"on":
+  push:
+    branches:
+      - develop
+    tags:
+      - "v*"
+
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish tag to Docker Hub & GitHub Registry'
+        required: false
+        type: boolean
+        default: false
+      tag:
+        description: 'Git Tag to build and publish'
+        required: false
+        type: string
+        default: ''
+      apps:
+        description: 'Applications to build and publish'
+        required: false
+        type: choice
+        options:
+          - [vega, data-node, vegawallet]
+          - [vega]
+          - [data-node]
+          - [vegawallet]
+      archs:
+        description: 'Architecture to build and publish'
+        required: false
+        type: choice
+        options:
+          - linux/amd64, linux/arm64
+          - linux/amd64
+          - linux/arm64
+
+jobs:
+  build:
+    name: Release ${{ matrix.app }} docker image
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ${{ fromJson(inputs.apps || '["vega", "data-node", "vegawallet"]') }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.tag }}
+
+      - name: Set up QEMU
+        id: quemu
+        uses: docker/setup-qemu-action@v2
+
+      - name: Available platforms
+        run: echo ${{ steps.qemu.outputs.platforms }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to DockerHub
+        if: ${{ inputs.publish || startsWith(github.ref, 'refs/tags/') }}
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Log in to the GitHub Container Registry
+        if: ${{ inputs.publish || startsWith(github.ref, 'refs/tags/') }}
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Collect images data
+        id: tags
+        run: |
+          hash=$(git rev-parse HEAD|cut -b1-8)
+          versionTag=${{ inputs.tag || startsWith(github.ref, 'refs/tags/') && github.ref_name || '${hash}' }}
+          echo ::set-output name=version::${versionTag}
+
+      - name: Print config
+        run: |
+          git rev-parse --verify HEAD
+          git status
+          echo "inputs.tag=${{ inputs.tag }}"
+          echo "inputs.publish=${{ inputs.publish }}"
+          echo "inputs.apps=${{ inputs.apps }}"
+          echo "inputs.archs=${{ inputs.archs }}"
+          echo "steps.tags.outputs.version=${{ steps.tags.outputs.version }}"
+
+      - name: Build and export to local Docker
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: false
+          file: ./docker/${{ matrix.app }}.dockerfile
+          load: true
+          tags: vegaprotocol/${{ matrix.app }}:local
+
+      - name: Sanity check docker image
+        run: |
+          docker run --rm vegaprotocol/${{ matrix.app }}:local version
+
+      - name: Build and push to Docker registries
+        id: docker_build
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: ${{ inputs.publish || startsWith(github.ref, 'refs/tags/') }}
+          file: ./docker/${{ matrix.app }}.dockerfile
+          platforms: ${{ inputs.archs || 'linux/amd64, linux/arm64' }}
+          tags: |
+            ghcr.io/vegaprotocol/vega/${{ matrix.app }}:latest
+            ghcr.io/vegaprotocol/vega/${{ matrix.app }}:${{ steps.tags.outputs.version }}
+            vegaprotocol/${{ matrix.app }}:latest
+            vegaprotocol/${{ matrix.app }}:${{ steps.tags.outputs.version }}
+
+      - name: Image digest
+        run: echo ${{ steps.docker_build.outputs.digest }}

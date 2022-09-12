@@ -111,6 +111,10 @@ func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {
 		return events.ERC20MultiSigSignerRemovedFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_STATE:
 		return events.PositionStateEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_ETHEREUM_KEY_ROTATION:
+		return events.EthereumKeyRotationEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_PROTOCOL_UPGRADE_PROPOSAL:
+		return events.ProtocolUpgradeProposalEventFromStream(ctx, be)
 	}
 
 	return nil

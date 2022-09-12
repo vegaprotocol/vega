@@ -18,29 +18,29 @@ import (
 	"code.vegaprotocol.io/vega/libs/crypto"
 )
 
-// idGenerator no mutex required, markets work deterministically, and sequentially.
-type idGenerator struct {
-	nextIdBytes []byte
+// IDGenerator no mutex required, markets work deterministically, and sequentially.
+type IDGenerator struct {
+	nextIDBytes []byte
 }
 
 // New returns an idGenerator, and is used to abstract this type.
-func New(rootId string) *idGenerator {
-	nextIdBytes, err := hex.DecodeString(rootId)
+func New(rootID string) *IDGenerator { //revive:disable:unexported-return
+	nextIDBytes, err := hex.DecodeString(rootID)
 	if err != nil {
 		panic("failed to create new deterministic id generator: " + err.Error())
 	}
 
-	return &idGenerator{
-		nextIdBytes: nextIdBytes,
+	return &IDGenerator{
+		nextIDBytes: nextIDBytes,
 	}
 }
 
-func (i *idGenerator) NextID() string {
+func (i *IDGenerator) NextID() string {
 	if i == nil {
 		panic("id generator instance is not initialised")
 	}
 
-	nextId := hex.EncodeToString(i.nextIdBytes)
-	i.nextIdBytes = crypto.Hash(i.nextIdBytes)
-	return nextId
+	nextID := hex.EncodeToString(i.nextIDBytes)
+	i.nextIDBytes = crypto.Hash(i.nextIDBytes)
+	return nextID
 }

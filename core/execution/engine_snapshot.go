@@ -156,27 +156,8 @@ func (e *Engine) serialise() (snapshot []byte, providers []types.StateProvider, 
 		return nil, nil, err
 	}
 	e.snapshotSerialised = s
-	e.stateChanged = false
 
 	return s, pvds, nil
-}
-
-func (e *Engine) changed() bool {
-	if len(e.snapshotSerialised) == 0 {
-		return true
-	}
-
-	if e.stateChanged {
-		e.log.Debug("state-changed in execution engine itself")
-		return true
-	}
-	for _, m := range e.markets {
-		if m.changed() {
-			return true
-		}
-	}
-
-	return false
 }
 
 func (e *Engine) Namespace() types.SnapshotNamespace {
@@ -213,7 +194,6 @@ func (e *Engine) LoadState(ctx context.Context, payload *types.Payload) ([]types
 			return nil, fmt.Errorf("failed to restore markets states: %w", err)
 		}
 		e.snapshotSerialised, err = proto.Marshal(payload.IntoProto())
-		e.stateChanged = false
 		return providers, err
 	default:
 		return nil, types.ErrUnknownSnapshotType

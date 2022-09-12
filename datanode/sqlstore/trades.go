@@ -25,13 +25,15 @@ import (
 	"github.com/jackc/pgx/v4"
 )
 
+const tradesFilterDateColumn = "synthetic_time"
+
 type Trades struct {
 	*ConnectionSource
 	trades []*entities.Trade
 }
 
 var tradesOrdering = TableOrdering{
-	ColumnOrdering{"synthetic_time", ASC},
+	ColumnOrdering{Name: "synthetic_time", Sorting: ASC},
 }
 
 func NewTrades(connectionSource *ConnectionSource) *Trades {
@@ -46,6 +48,7 @@ func (ts *Trades) Flush(ctx context.Context) ([]*entities.Trade, error) {
 	for _, t := range ts.trades {
 		rows = append(rows, []interface{}{
 			t.SyntheticTime,
+			t.TxHash,
 			t.VegaTime,
 			t.SeqNum,
 			t.ID,
@@ -76,7 +79,7 @@ func (ts *Trades) Flush(ctx context.Context) ([]*entities.Trade, error) {
 			ctx,
 			pgx.Identifier{"trades"},
 			[]string{
-				"synthetic_time", "vega_time", "seq_num", "id", "market_id", "price", "size", "buyer", "seller",
+				"synthetic_time", "tx_hash", "vega_time", "seq_num", "id", "market_id", "price", "size", "buyer", "seller",
 				"aggressor", "buy_order", "sell_order", "type", "buyer_maker_fee", "buyer_infrastructure_fee",
 				"buyer_liquidity_fee", "seller_maker_fee", "seller_infrastructure_fee", "seller_liquidity_fee",
 				"buyer_auction_batch", "seller_auction_batch",
@@ -108,6 +111,7 @@ func (ts *Trades) List(ctx context.Context,
 	partyID entities.PartyID,
 	orderID entities.OrderID,
 	pagination entities.CursorPagination,
+	dateRange entities.DateRange,
 ) ([]entities.Trade, entities.PageInfo, error) {
 	args := []interface{}{}
 
@@ -130,6 +134,7 @@ func (ts *Trades) List(ctx context.Context,
 	if len(conditions) > 0 {
 		query = fmt.Sprintf("%s WHERE %s", query, strings.Join(conditions, " AND "))
 	}
+	query, args = filterDateRange(query, tradesFilterDateColumn, dateRange, args...)
 
 	trades, pageInfo, err := ts.queryTradesWithCursorPagination(ctx, query, args, pagination)
 	if err != nil {
@@ -179,22 +184,6 @@ func (ts *Trades) queryTradesWithMarketFilter(ctx context.Context, query string,
 	}
 
 	return trades, nil
-}
-
-func (ts *Trades) queryTradesWithMarketFilterAndCursorPagination(ctx context.Context, query string, args []interface{},
-	market *string, cursor entities.CursorPagination,
-) ([]entities.Trade, entities.PageInfo, error) {
-	if market != nil && *market != "" {
-		marketID := nextBindVar(&args, entities.MarketID(*market))
-		query += ` AND market_id=` + marketID
-	}
-
-	trades, pageInfo, err := ts.queryTradesWithCursorPagination(ctx, query, args, cursor)
-	if err != nil {
-		return nil, pageInfo, fmt.Errorf("failed to query trades:%w", err)
-	}
-
-	return trades, pageInfo, nil
 }
 
 func (ts *Trades) queryTrades(ctx context.Context, query string, args []interface{}, p *entities.OffsetPagination) ([]entities.Trade, error) {

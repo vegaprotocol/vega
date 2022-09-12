@@ -110,7 +110,7 @@ func (r *myMarketResolver) Orders(ctx context.Context, market *types.Market,
 	return res.Orders, nil
 }
 
-func (r *myMarketResolver) OrdersConnection(ctx context.Context, market *types.Market, pagination *v2.Pagination) (*v2.OrderConnection, error) {
+func (r *myMarketResolver) OrdersConnection(ctx context.Context, market *types.Market, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.OrderConnection, error) {
 	req := v2.ListOrdersRequest{
 		MarketId:   &market.Id,
 		Pagination: pagination,
@@ -143,7 +143,7 @@ func (r *myMarketResolver) Trades(ctx context.Context, market *types.Market,
 	return res.Trades, nil
 }
 
-func (r *myMarketResolver) TradesConnection(ctx context.Context, market *types.Market, pagination *v2.Pagination) (*v2.TradeConnection, error) {
+func (r *myMarketResolver) TradesConnection(ctx context.Context, market *types.Market, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.TradeConnection, error) {
 	req := v2.ListTradesRequest{
 		MarketId:   &market.Id,
 		Pagination: pagination,
@@ -292,10 +292,6 @@ func (r *myMarketResolver) PositionDecimalPlaces(ctx context.Context, obj *types
 	return int(obj.PositionDecimalPlaces), nil
 }
 
-func (r *myMarketResolver) Name(ctx context.Context, obj *types.Market) (string, error) {
-	return obj.TradableInstrument.Instrument.Name, nil
-}
-
 func (r *myMarketResolver) OpeningAuction(ctx context.Context, obj *types.Market) (*AuctionDuration, error) {
 	return &AuctionDuration{
 		DurationSecs: int(obj.OpeningAuction.Duration),
@@ -325,7 +321,7 @@ func (r *myMarketResolver) Proposal(ctx context.Context, obj *types.Market) (*ty
 	// some market are loaded at startup, without
 	// going through the proposal phase
 	if err != nil {
-		return nil, nil
+		return nil, nil //nolint:nilerr
 	}
 	return resp.Data, nil
 }

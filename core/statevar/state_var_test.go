@@ -107,7 +107,7 @@ func generateStateVariableForValidator(t *testing.T, testEngine *testEngine, sta
 		Tolerance: num.DecimalFromInt64(1),
 	})
 
-	return testEngine.engine.RegisterStateVariable("asset", "market", "name", converter{}, startCalc, []types.StateVarEventType{types.StateVarEventTypeMarketEnactment, types.StateVarEventTypeTimeTrigger}, resultCallback)
+	return testEngine.engine.RegisterStateVariable("asset", "market", "name", converter{}, startCalc, []types.EventType{types.EventTypeMarketEnactment, types.EventTypeTimeTrigger}, resultCallback)
 }
 
 func defaultStartCalc() func(string, types.FinaliseCalculation) {
@@ -186,7 +186,7 @@ func testEventTriggeredNoPreviousEvent(t *testing.T) {
 	}
 
 	for _, v := range validators {
-		v.engine.NewEvent("asset", "market", types.StateVarEventTypeMarketEnactment)
+		v.engine.NewEvent("asset", "market", types.EventTypeMarketEnactment)
 	}
 
 	time.Sleep(10 * time.Millisecond)
@@ -213,7 +213,7 @@ func testEventTriggeredWithPreviousEvent(t *testing.T) {
 	}
 
 	for _, v := range validators {
-		v.engine.NewEvent("asset", "market", types.StateVarEventTypeMarketEnactment)
+		v.engine.NewEvent("asset", "market", types.EventTypeMarketEnactment)
 	}
 
 	time.Sleep(10 * time.Millisecond)
@@ -230,7 +230,7 @@ func testEventTriggeredWithPreviousEvent(t *testing.T) {
 	}
 
 	for _, v := range validators {
-		v.engine.NewEvent("asset", "market", types.StateVarEventTypeMarketEnactment)
+		v.engine.NewEvent("asset", "market", types.EventTypeMarketEnactment)
 	}
 
 	time.Sleep(100 * time.Millisecond)
@@ -266,7 +266,7 @@ func testEventTriggeredCalculationError(t *testing.T) {
 	}
 
 	for _, v := range validators {
-		v.engine.NewEvent("asset", "market", types.StateVarEventTypeMarketEnactment)
+		v.engine.NewEvent("asset", "market", types.EventTypeMarketEnactment)
 	}
 
 	time.Sleep(10 * time.Millisecond)
@@ -314,7 +314,7 @@ func testBundleReceivedPerfectMatchOfQuorum(t *testing.T) {
 
 	// event for the right asset/market
 	for _, v := range validators {
-		v.engine.NewEvent("asset", "market", types.StateVarEventTypeMarketEnactment)
+		v.engine.NewEvent("asset", "market", types.EventTypeMarketEnactment)
 	}
 
 	// send an unexpected results from all validators to all others, so that there would have been a quorum had it been the right event id
@@ -408,7 +408,7 @@ func testBundleReceivedReachingConsensusSuccessfuly(t *testing.T) {
 	}
 
 	for _, v := range validators {
-		v.engine.NewEvent("asset", "market", types.StateVarEventTypeMarketEnactment)
+		v.engine.NewEvent("asset", "market", types.EventTypeMarketEnactment)
 	}
 
 	c := converter{}
@@ -478,7 +478,7 @@ func testBundleReceivedReachingConsensusNotSuccessful(t *testing.T) {
 	}
 
 	for _, v := range validators {
-		v.engine.NewEvent("asset", "market", types.StateVarEventTypeMarketEnactment)
+		v.engine.NewEvent("asset", "market", types.EventTypeMarketEnactment)
 	}
 
 	// send an unexpected results from all validators to all others, so that there would have been a quorum had it been the right event id

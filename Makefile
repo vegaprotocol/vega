@@ -5,7 +5,7 @@ all: build
 
 .PHONY: lint
 lint: ## Lint the files
-	golangci-lint run -v --config .golangci.toml
+	go run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.49.0 run -v --config .golangci.toml
 
 .PHONY: retest
 retest: ## Re-run all unit tests
@@ -87,7 +87,7 @@ clean: ## Remove previous build
 proto: ## build proto definitions
 	buf generate
 
-.PHONY: proto_json
+.PHONY: proto_docs
 proto_docs: ## build proto definitions
 	rm -rf protos/generated
 	buf generate --template buf.gen.swagger.yaml

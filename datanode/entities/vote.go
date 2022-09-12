@@ -31,6 +31,7 @@ type Vote struct {
 	TotalGovernanceTokenWeight  decimal.Decimal
 	TotalEquityLikeShareWeight  decimal.Decimal
 	InitialTime                 time.Time // First vote for this party/proposal
+	TxHash                      TxHash
 	VegaTime                    time.Time // Time of last vote update
 }
 
@@ -46,7 +47,7 @@ func (v *Vote) ToProto() *vega.Vote {
 	}
 }
 
-func VoteFromProto(pv *vega.Vote) (Vote, error) {
+func VoteFromProto(pv *vega.Vote, txHash TxHash) (Vote, error) {
 	totalGovernanceTokenBalance, err := decimal.NewFromString(pv.TotalGovernanceTokenBalance)
 	if err != nil {
 		return Vote{}, err
@@ -70,22 +71,23 @@ func VoteFromProto(pv *vega.Vote) (Vote, error) {
 		TotalGovernanceTokenWeight:  totalGovernanceTokenWeight,
 		TotalEquityLikeShareWeight:  totalEquityLikeShareWeight,
 		InitialTime:                 NanosToPostgresTimestamp(pv.Timestamp),
+		TxHash:                      txHash,
 	}
 
 	return v, nil
 }
 
-func (p Vote) ToProtoEdge(_ ...any) (*v2.VoteEdge, error) {
+func (v Vote) ToProtoEdge(_ ...any) (*v2.VoteEdge, error) {
 	return &v2.VoteEdge{
-		Node:   p.ToProto(),
-		Cursor: p.Cursor().Encode(),
+		Node:   v.ToProto(),
+		Cursor: v.Cursor().Encode(),
 	}, nil
 }
 
-func (p Vote) Cursor() *Cursor {
+func (v Vote) Cursor() *Cursor {
 	pc := VoteCursor{
-		PartyID:  p.PartyID,
-		VegaTime: p.VegaTime,
+		PartyID:  v.PartyID,
+		VegaTime: v.VegaTime,
 	}
 
 	return NewCursor(pc.String())
@@ -96,8 +98,8 @@ type VoteCursor struct {
 	VegaTime time.Time `json:"vega_time"`
 }
 
-func (rc VoteCursor) String() string {
-	bs, err := json.Marshal(rc)
+func (vc VoteCursor) String() string {
+	bs, err := json.Marshal(vc)
 	if err != nil {
 		// This should never happen.
 		panic(fmt.Errorf("could not marshal order cursor: %w", err))
@@ -105,9 +107,9 @@ func (rc VoteCursor) String() string {
 	return string(bs)
 }
 
-func (rc *VoteCursor) Parse(cursorString string) error {
+func (vc *VoteCursor) Parse(cursorString string) error {
 	if cursorString == "" {
 		return nil
 	}
-	return json.Unmarshal([]byte(cursorString), rc)
+	return json.Unmarshal([]byte(cursorString), vc)
 }

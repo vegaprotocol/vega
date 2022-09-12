@@ -44,6 +44,7 @@ type Broker interface {
 }
 
 // TimeService provide the time of the vega node using the tm time.
+//
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/core/liquidity TimeService
 type TimeService interface {
 	GetTimeNow() time.Time
@@ -67,7 +68,7 @@ type IDGen interface {
 }
 
 type StateVarEngine interface {
-	RegisterStateVariable(asset, market, name string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error) error
+	RegisterStateVariable(asset, market, name string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.EventType, result func(context.Context, statevar.StateVariableResult) error) error
 }
 
 // RepricePeggedOrder reprices a pegged order.
@@ -134,7 +135,7 @@ func NewEngine(config Config,
 		timeService: timeService,
 		broker:      broker,
 		// tick size to be used by the supplied engine should actually be in asset decimal
-		suppliedEngine: supplied.NewEngine(riskModel, priceMonitor, asset, marketID, stateVarEngine, num.UintZero().Mul(tickSize, priceFactor), log, positionFactor),
+		suppliedEngine: supplied.NewEngine(riskModel, priceMonitor, asset, marketID, stateVarEngine, log, positionFactor),
 
 		// parameters
 		stakeToObligationFactor: num.DecimalFromInt64(1),
@@ -528,6 +529,49 @@ func (e *Engine) CreateInitialOrders(
 	creates, _, err := e.createOrUpdateForParty(ctx,
 		bestBidPrice, bestAskPrice, party, repriceFn)
 	return creates, err
+}
+
+// UndeployLPs is called when a reference price is no longer available. LP orders should all be parked/set to pending
+// and should be redeployed once possible. Pass in updated orders and update internal records first...
+func (e *Engine) UndeployLPs(ctx context.Context, orders []*types.Order) []*ToCancel {
+	// make sure internal data matches the latest version of all orders on the book
+	for _, po := range Orders(orders).ByParty() {
+		if !e.IsLiquidityProvider(po.Party) {
+			continue
+		}
+		e.updatePartyOrders(po.Party, po.Orders)
+	}
+
+	provisions := e.provisions.Slice()
+	cancels := make([]*ToCancel, 0, len(provisions)*2) // one for each side
+	for _, lp := range provisions {
+		if lp.Status != types.LiquidityProvisionStatusActive {
+			continue
+		}
+		buys := make([]*supplied.LiquidityOrder, 0, len(lp.Buys))
+		sells := make([]*supplied.LiquidityOrder, 0, len(lp.Sells))
+		for _, o := range lp.Buys {
+			buys = append(buys, &supplied.LiquidityOrder{
+				OrderID:    o.OrderID,
+				Proportion: uint64(o.LiquidityOrder.Proportion),
+			})
+		}
+		for _, o := range lp.Sells {
+			sells = append(sells, &supplied.LiquidityOrder{
+				OrderID:    o.OrderID,
+				Proportion: uint64(o.LiquidityOrder.Proportion),
+			})
+		}
+		if cb := e.undeployOrdersFromShape(lp.Party, buys, types.SideBuy); cb != nil {
+			cancels = append(cancels, cb)
+		}
+		if cs := e.undeployOrdersFromShape(lp.Party, sells, types.SideSell); cs != nil {
+			cancels = append(cancels, cs)
+		}
+		// set as undeployed so we can redeploy it once the pegs become available again
+		lp.Status = types.LiquidityProvisionStatusUndeployed
+	}
+	return cancels
 }
 
 // Update gets the order changes.

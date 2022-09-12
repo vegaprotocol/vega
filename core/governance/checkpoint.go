@@ -14,7 +14,6 @@ package governance
 
 import (
 	"context"
-	"encoding/hex"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/execution"
@@ -24,8 +23,6 @@ import (
 	"code.vegaprotocol.io/vega/protos/vega"
 	checkpointpb "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
 
-	"code.vegaprotocol.io/vega/libs/crypto"
-	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/proto"
 )
 
@@ -92,14 +89,7 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 				e.log.Panic("Failed to convert proposal into market")
 			}
 			nm := toSubmit.NewMarket()
-			lpid := hex.EncodeToString(vgcrypto.Hash([]byte(nm.Market().ID)))
-			if lp := nm.LiquidityProvisionSubmission(); lp != nil {
-				deterministicID := crypto.HashStr(nm.m.ID + lpid)
-				err = e.markets.RestoreMarketWithLiquidityProvision(
-					ctx, nm.Market(), nm.LiquidityProvisionSubmission(), lpid, deterministicID)
-			} else {
-				err = e.markets.RestoreMarket(ctx, nm.Market())
-			}
+			err = e.markets.RestoreMarket(ctx, nm.Market())
 			if err != nil {
 				if err == execution.ErrMarketDoesNotExist {
 					// market has been settled, we don't care

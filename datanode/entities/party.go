@@ -27,11 +27,15 @@ type PartyID = ID[_Party]
 
 type Party struct {
 	ID       PartyID
+	TxHash   TxHash
 	VegaTime *time.Time // Can be NULL for built-in party 'network'
 }
 
-func PartyFromProto(pp *types.Party) Party {
-	return Party{ID: PartyID(pp.Id)}
+func PartyFromProto(pp *types.Party, txHash TxHash) Party {
+	return Party{
+		ID:     PartyID(pp.Id),
+		TxHash: txHash,
+	}
 }
 
 func (p *Party) ToProto() *types.Party {

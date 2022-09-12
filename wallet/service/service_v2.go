@@ -19,6 +19,8 @@ var (
 	ErrRequestCannotBeBlank    = errors.New("request can't be blank")
 )
 
+type TraceIDKey struct{}
+
 type ListMethodsV2Response struct {
 	RegisteredMethods []string `json:"registeredMethods"`
 }
@@ -57,6 +59,8 @@ func (s *Service) HandleRequestV2(w http.ResponseWriter, r *http.Request, _ http
 		logging.String("trace-id", traceID),
 	)
 
+	//revive:disable:context-keys-type
+	//nolint:staticcheck
 	tracedCtx := context.WithValue(r.Context(), "trace-id", traceID)
 
 	lw := newLoggedResponseWriter(w, traceID)

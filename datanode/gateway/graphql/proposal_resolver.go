@@ -103,6 +103,7 @@ func (r *proposalResolver) Votes(_ context.Context, obj *types.GovernanceData) (
 
 	var yesWeight float64
 	yesToken := num.UintZero()
+	var yesLPWeight num.Decimal
 	for _, yes := range obj.Yes {
 		weight, err := strconv.ParseFloat(yes.TotalGovernanceTokenWeight, 64)
 		if err != nil {
@@ -114,9 +115,15 @@ func (r *proposalResolver) Votes(_ context.Context, obj *types.GovernanceData) (
 			continue
 		}
 		yesToken.Add(yesToken, yesUint)
+		weightLP, err := num.DecimalFromString(yes.TotalEquityLikeShareWeight)
+		if err != nil {
+			return nil, err
+		}
+		yesLPWeight = yesLPWeight.Add(weightLP)
 	}
 	var noWeight float64
 	noToken := num.UintZero()
+	var noLPWeight num.Decimal
 	for _, no := range obj.No {
 		weight, err := strconv.ParseFloat(no.TotalGovernanceTokenWeight, 64)
 		if err != nil {
@@ -128,20 +135,27 @@ func (r *proposalResolver) Votes(_ context.Context, obj *types.GovernanceData) (
 			continue
 		}
 		noToken.Add(noToken, noUint)
+		weightLP, err := num.DecimalFromString(no.TotalEquityLikeShareWeight)
+		if err != nil {
+			return nil, err
+		}
+		noLPWeight = noLPWeight.Add(weightLP)
 	}
 
 	votes := &ProposalVotes{
 		Yes: &ProposalVoteSide{
-			Votes:       obj.Yes,
-			TotalNumber: strconv.Itoa(len(obj.Yes)),
-			TotalWeight: strconv.FormatFloat(yesWeight, 'f', -1, 64),
-			TotalTokens: yesToken.String(),
+			Votes:                      obj.Yes,
+			TotalNumber:                strconv.Itoa(len(obj.Yes)),
+			TotalWeight:                strconv.FormatFloat(yesWeight, 'f', -1, 64),
+			TotalTokens:                yesToken.String(),
+			TotalEquityLikeShareWeight: yesLPWeight.String(),
 		},
 		No: &ProposalVoteSide{
-			Votes:       obj.No,
-			TotalNumber: strconv.Itoa(len(obj.No)),
-			TotalWeight: strconv.FormatFloat(noWeight, 'f', -1, 64),
-			TotalTokens: noToken.String(),
+			Votes:                      obj.No,
+			TotalNumber:                strconv.Itoa(len(obj.No)),
+			TotalWeight:                strconv.FormatFloat(noWeight, 'f', -1, 64),
+			TotalTokens:                noToken.String(),
+			TotalEquityLikeShareWeight: noLPWeight.String(),
 		},
 	}
 
@@ -153,4 +167,20 @@ func (r *proposalResolver) ErrorDetails(_ context.Context, data *types.Governanc
 		return nil, nil
 	}
 	return &data.Proposal.ErrorDetails, nil
+}
+
+func (r *proposalResolver) RequiredMajority(_ context.Context, data *types.GovernanceData) (string, error) {
+	return data.Proposal.RequiredMajority, nil
+}
+
+func (r *proposalResolver) RequiredParticipation(_ context.Context, data *types.GovernanceData) (string, error) {
+	return data.Proposal.RequiredParticipation, nil
+}
+
+func (r *proposalResolver) RequiredLpMajority(_ context.Context, data *types.GovernanceData) (*string, error) {
+	return data.Proposal.RequiredLiquidityProviderMajority, nil
+}
+
+func (r *proposalResolver) RequiredLpParticipation(_ context.Context, data *types.GovernanceData) (*string, error) {
+	return data.Proposal.RequiredLiquidityProviderParticipation, nil
 }

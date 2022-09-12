@@ -100,7 +100,7 @@ func (e *Engine) DepositERC20(
 	ctx context.Context,
 	d *types.ERC20Deposit,
 	id string,
-	blockNumber, txIndex uint64,
+	blockNumber, logIndex uint64,
 	txHash string,
 ) error {
 	dep := e.newDeposit(id, d.TargetPartyID, d.VegaAssetID, d.Amount, txHash)
@@ -128,7 +128,7 @@ func (e *Engine) DepositERC20(
 		erc20D:      d,
 		asset:       asset,
 		blockHeight: blockNumber,
-		logIndex:    txIndex,
+		logIndex:    logIndex,
 		txHash:      txHash,
 		bridgeView:  e.bridgeView,
 	}

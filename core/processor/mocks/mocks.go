@@ -10,6 +10,7 @@ import (
 	time "time"
 
 	assets "code.vegaprotocol.io/vega/core/assets"
+	execution "code.vegaprotocol.io/vega/core/execution"
 	governance "code.vegaprotocol.io/vega/core/governance"
 	oracles "code.vegaprotocol.io/vega/core/oracles"
 	types "code.vegaprotocol.io/vega/core/types"
@@ -278,7 +279,7 @@ func (mr *MockExecutionEngineMockRecorder) AmendLiquidityProvision(arg0, arg1, a
 }
 
 // AmendOrder mocks base method.
-func (m *MockExecutionEngine) AmendOrder(arg0 context.Context, arg1 *types.OrderAmendment, arg2, arg3 string) (*types.OrderConfirmation, error) {
+func (m *MockExecutionEngine) AmendOrder(arg0 context.Context, arg1 *types.OrderAmendment, arg2 string, arg3 execution.IDGenerator) (*types.OrderConfirmation, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AmendOrder", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(*types.OrderConfirmation)
@@ -307,7 +308,7 @@ func (mr *MockExecutionEngineMockRecorder) CancelLiquidityProvision(arg0, arg1, 
 }
 
 // CancelOrder mocks base method.
-func (m *MockExecutionEngine) CancelOrder(arg0 context.Context, arg1 *types.OrderCancellation, arg2, arg3 string) ([]*types.OrderCancellationConfirmation, error) {
+func (m *MockExecutionEngine) CancelOrder(arg0 context.Context, arg1 *types.OrderCancellation, arg2 string, arg3 execution.IDGenerator) ([]*types.OrderCancellationConfirmation, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CancelOrder", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].([]*types.OrderCancellationConfirmation)
@@ -391,33 +392,19 @@ func (mr *MockExecutionEngineMockRecorder) SubmitMarket(arg0, arg1, arg2 interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitMarket", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitMarket), arg0, arg1, arg2)
 }
 
-// SubmitMarketWithLiquidityProvision mocks base method.
-func (m *MockExecutionEngine) SubmitMarketWithLiquidityProvision(arg0 context.Context, arg1 *types.Market, arg2 *types.LiquidityProvisionSubmission, arg3, arg4, arg5 string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubmitMarketWithLiquidityProvision", arg0, arg1, arg2, arg3, arg4, arg5)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SubmitMarketWithLiquidityProvision indicates an expected call of SubmitMarketWithLiquidityProvision.
-func (mr *MockExecutionEngineMockRecorder) SubmitMarketWithLiquidityProvision(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitMarketWithLiquidityProvision", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitMarketWithLiquidityProvision), arg0, arg1, arg2, arg3, arg4, arg5)
-}
-
 // SubmitOrder mocks base method.
-func (m *MockExecutionEngine) SubmitOrder(arg0 context.Context, arg1 *types.OrderSubmission, arg2, arg3 string) (*types.OrderConfirmation, error) {
+func (m *MockExecutionEngine) SubmitOrder(arg0 context.Context, arg1 *types.OrderSubmission, arg2 string, arg3 execution.IDGenerator, arg4 string) (*types.OrderConfirmation, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubmitOrder", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "SubmitOrder", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(*types.OrderConfirmation)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SubmitOrder indicates an expected call of SubmitOrder.
-func (mr *MockExecutionEngineMockRecorder) SubmitOrder(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+func (mr *MockExecutionEngineMockRecorder) SubmitOrder(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitOrder", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitOrder), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitOrder", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitOrder), arg0, arg1, arg2, arg3, arg4)
 }
 
 // UpdateMarket mocks base method.
@@ -939,6 +926,18 @@ func (m *MockAssets) EXPECT() *MockAssetsMockRecorder {
 	return m.recorder
 }
 
+// EnactPendingAsset mocks base method.
+func (m *MockAssets) EnactPendingAsset(arg0 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "EnactPendingAsset", arg0)
+}
+
+// EnactPendingAsset indicates an expected call of EnactPendingAsset.
+func (mr *MockAssetsMockRecorder) EnactPendingAsset(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnactPendingAsset", reflect.TypeOf((*MockAssets)(nil).EnactPendingAsset), arg0)
+}
+
 // Get mocks base method.
 func (m *MockAssets) Get(arg0 string) (*assets.Asset, error) {
 	m.ctrl.T.Helper()
@@ -1126,6 +1125,20 @@ func (m *MockValidatorTopology) IsValidatorVegaPubKey(arg0 string) bool {
 func (mr *MockValidatorTopologyMockRecorder) IsValidatorVegaPubKey(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsValidatorVegaPubKey", reflect.TypeOf((*MockValidatorTopology)(nil).IsValidatorVegaPubKey), arg0)
+}
+
+// IssueSignatures mocks base method.
+func (m *MockValidatorTopology) IssueSignatures(arg0 context.Context, arg1, arg2 string, arg3 v1.NodeSignatureKind) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IssueSignatures", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// IssueSignatures indicates an expected call of IssueSignatures.
+func (mr *MockValidatorTopologyMockRecorder) IssueSignatures(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IssueSignatures", reflect.TypeOf((*MockValidatorTopology)(nil).IssueSignatures), arg0, arg1, arg2, arg3)
 }
 
 // Len mocks base method.
@@ -1597,6 +1610,21 @@ func (m *MockOraclesEngine) BroadcastData(arg0 context.Context, arg1 oracles.Ora
 func (mr *MockOraclesEngineMockRecorder) BroadcastData(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BroadcastData", reflect.TypeOf((*MockOraclesEngine)(nil).BroadcastData), arg0, arg1)
+}
+
+// HasMatch mocks base method.
+func (m *MockOraclesEngine) HasMatch(arg0 oracles.OracleData) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HasMatch", arg0)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// HasMatch indicates an expected call of HasMatch.
+func (mr *MockOraclesEngineMockRecorder) HasMatch(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasMatch", reflect.TypeOf((*MockOraclesEngine)(nil).HasMatch), arg0)
 }
 
 // ListensToPubKeys mocks base method.

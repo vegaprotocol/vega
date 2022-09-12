@@ -24,7 +24,7 @@ import (
 )
 
 var assetOrdering = TableOrdering{
-	ColumnOrdering{"id", ASC},
+	ColumnOrdering{Name: "id", Sorting: ASC},
 }
 
 type Assets struct {
@@ -44,8 +44,8 @@ func NewAssets(connectionSource *ConnectionSource) *Assets {
 func (as *Assets) Add(ctx context.Context, a entities.Asset) error {
 	defer metrics.StartSQLQuery("Assets", "Add")()
 	_, err := as.Connection.Exec(ctx,
-		`INSERT INTO assets(id, name, symbol, decimals, quantum, source, erc20_contract, lifetime_limit, withdraw_threshold, vega_time, status)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		`INSERT INTO assets(id, name, symbol, decimals, quantum, source, erc20_contract, lifetime_limit, withdraw_threshold, tx_hash, vega_time, status)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
          ON CONFLICT (id, vega_time) DO UPDATE SET
             name = EXCLUDED.name,
             symbol = EXCLUDED.symbol,
@@ -55,6 +55,7 @@ func (as *Assets) Add(ctx context.Context, a entities.Asset) error {
             erc20_contract = EXCLUDED.erc20_contract,
             lifetime_limit = EXCLUDED.lifetime_limit,
             withdraw_threshold = EXCLUDED.withdraw_threshold,
+			tx_hash = EXCLUDED.tx_hash,
             vega_time = EXCLUDED.vega_time,
             status = EXCLUDED.status
             ;`,
@@ -67,6 +68,7 @@ func (as *Assets) Add(ctx context.Context, a entities.Asset) error {
 		a.ERC20Contract,
 		a.LifetimeLimit,
 		a.WithdrawThreshold,
+		a.TxHash,
 		a.VegaTime,
 		a.Status,
 	)
@@ -74,11 +76,12 @@ func (as *Assets) Add(ctx context.Context, a entities.Asset) error {
 		return err
 	}
 
-	// delete cache
-	as.cacheLock.Lock()
-	defer as.cacheLock.Unlock()
-	delete(as.cache, a.ID.String())
-
+	as.AfterCommit(ctx, func() {
+		// delete cache
+		as.cacheLock.Lock()
+		defer as.cacheLock.Unlock()
+		delete(as.cache, a.ID.String())
+	})
 	return nil
 }
 

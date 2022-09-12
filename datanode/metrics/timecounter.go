@@ -34,6 +34,7 @@ func NewTimeCounter(labelValues ...string) *TimeCounter {
 /*
 EngineTimeCounterAdd is used to time a function.
 e.g.
+
 	func DoSomething() {
 		timer := metrics.NewTimeCounter("x", "y", "z")
 		// do something

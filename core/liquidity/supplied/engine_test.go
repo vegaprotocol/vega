@@ -48,7 +48,7 @@ func TestCalculateSuppliedLiquidity(t *testing.T) {
 	// No orders
 	priceMonitor.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice).AnyTimes()
 	statevarEngine := stubs.NewStateVar()
-	engine := supplied.NewEngine(riskModel, priceMonitor, "asset1", "market1", statevarEngine, TickSize, logging.NewTestLogger(), num.DecimalFromInt64(1))
+	engine := supplied.NewEngine(riskModel, priceMonitor, "asset1", "market1", statevarEngine, logging.NewTestLogger(), num.DecimalFromInt64(1))
 	require.NotNil(t, engine)
 
 	f := func() (num.Decimal, num.Decimal, error) { return MarkPriceD, MarkPriceD, nil }
@@ -83,21 +83,25 @@ func TestCalculateSuppliedLiquidity(t *testing.T) {
 	}
 
 	riskModel.EXPECT().ProbabilityOfTrading(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(best, order, min num.Decimal, max num.Decimal, yFrac num.Decimal, isBid bool, applyMinMax bool) num.Decimal {
-		if best.Equal(MarkPriceD) && order.Equal(buyOrder1.Price.ToDecimal()) && isBid {
+		if best.Equal(MarkPriceD) && order.Sub(buyOrder1.Price.ToDecimal()).Abs().LessThanOrEqual(num.DecimalFromFloat(0.1)) && isBid {
 			return buyOrder1Prob
 		}
-
-		if best.Equal(MarkPriceD) && order.Equal(sellOrder1.Price.ToDecimal()) && !isBid {
+		if best.Equal(MarkPriceD) && order.Sub(sellOrder1.Price.ToDecimal()).Abs().LessThanOrEqual(num.DecimalFromFloat(0.1)) && !isBid {
 			return sellOrder1Prob
 		}
-
-		if best.Equal(MarkPriceD) && order.Equal(sellOrder2.Price.ToDecimal()) && !isBid {
+		if best.Equal(MarkPriceD) && order.Sub(sellOrder2.Price.ToDecimal()).Abs().LessThanOrEqual(num.DecimalFromFloat(0.1)) && !isBid {
 			return sellOrder2Prob
 		}
-		return num.DecimalZero()
+		if order.LessThanOrEqual(num.DecimalZero()) {
+			return num.DecimalZero()
+		}
+		if order.GreaterThanOrEqual(num.DecimalFromInt64(2).Mul(best)) {
+			return num.DecimalZero()
+		}
+		return num.DecimalFromFloat(0.5)
 	})
 
-	statevarEngine.NewEvent("asset1", "market1", statevar.StateVarEventTypeAuctionEnded)
+	statevarEngine.NewEvent("asset1", "market1", statevar.EventTypeAuctionEnded)
 	liquidity = engine.CalculateSuppliedLiquidity(MarkPriceD, MarkPriceD, []*types.Order{})
 	require.Equal(t, num.NewUint(0), liquidity)
 
@@ -175,29 +179,35 @@ func Test_InteralConsistency(t *testing.T) {
 	validSell1Prob := num.DecimalFromFloat(0.22)
 
 	riskModel.EXPECT().ProbabilityOfTrading(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(best, order, min num.Decimal, max num.Decimal, yFrac num.Decimal, isBid bool, applyMinMax bool) num.Decimal {
-		if best.Equal(MarkPriceD) && order.Equal(buy.Price.ToDecimal()) && isBid {
+		if best.Equal(MarkPriceD) && order.Sub(buy.Price.ToDecimal()).Abs().LessThanOrEqual(num.DecimalFromFloat(0.05)) && isBid {
 			return validBuy1Prob
 		}
 
-		if best.Equal(MarkPriceD) && order.Equal(sell.Price.ToDecimal()) && !isBid {
+		if best.Equal(MarkPriceD) && order.Sub(sell.Price.ToDecimal()).Abs().LessThanOrEqual(num.DecimalFromFloat(0.05)) && !isBid {
 			return validSell1Prob
 		}
-		return num.DecimalZero()
+		if order.LessThanOrEqual(num.DecimalZero()) {
+			return num.DecimalZero()
+		}
+		if order.GreaterThanOrEqual(num.DecimalFromInt64(2).Mul(best)) {
+			return num.DecimalZero()
+		}
+		return num.DecimalFromFloat(0.5)
 	})
 
 	statevarEngine := stubs.NewStateVar()
-	engine := supplied.NewEngine(riskModel, priceMonitor, "asset1", "market1", statevarEngine, TickSize, logging.NewTestLogger(), num.DecimalFromInt64(1))
+	engine := supplied.NewEngine(riskModel, priceMonitor, "asset1", "market1", statevarEngine, logging.NewTestLogger(), num.DecimalFromInt64(1))
 	require.NotNil(t, engine)
 	f := func() (num.Decimal, num.Decimal, error) { return MarkPriceD, MarkPriceD, nil }
 	engine.SetGetStaticPricesFunc(f)
-	statevarEngine.NewEvent("asset1", "market1", statevar.StateVarEventTypeAuctionEnded)
+	statevarEngine.NewEvent("asset1", "market1", statevar.EventTypeAuctionEnded)
 
 	// Negative liquidity obligation -> 0 sizes on all orders
 	liquidityObligation := num.NewUint(100)
 	err := engine.CalculateLiquidityImpliedVolumes(MarkPriceD, MarkPriceD, liquidityObligation.Clone(), limitOrders, buyShapes, sellShapes)
 	require.NoError(t, err)
 
-	var zero uint64 = 0
+	var zero uint64
 	require.Less(t, zero, buy.LiquidityImpliedVolume)
 	require.Less(t, zero, sell.LiquidityImpliedVolume)
 
@@ -250,34 +260,41 @@ func TestCalculateLiquidityImpliedSizes_NoLimitOrders(t *testing.T) {
 	validSell2Prob := num.DecimalFromFloat(0.11)
 
 	riskModel.EXPECT().ProbabilityOfTrading(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(best, order, min num.Decimal, max num.Decimal, yFrac num.Decimal, isBid bool, applyMinMax bool) num.Decimal {
-		if best.Equal(MarkPriceD) && order.Equal(validBuy1.Price.ToDecimal()) && isBid {
+		println(best.String(), order.String(), MarkPriceD.String())
+		if best.Equal(MarkPriceD) && order.Sub(validBuy1.Price.ToDecimal()).Abs().LessThanOrEqual(num.DecimalFromFloat(0.1)) && isBid {
 			return validBuy1Prob
 		}
-		if best.Equal(MarkPriceD) && order.Equal(validBuy2.Price.ToDecimal()) && isBid {
+		if best.Equal(MarkPriceD) && order.Sub(validBuy2.Price.ToDecimal()).Abs().LessThanOrEqual(num.DecimalFromFloat(0.1)) && isBid {
 			return validBuy2Prob
 		}
-		if best.Equal(MarkPriceD) && order.Equal(validSell1.Price.ToDecimal()) && !isBid {
+		if best.Equal(MarkPriceD) && order.Sub(validSell1.Price.ToDecimal()).Abs().LessThanOrEqual(num.DecimalFromFloat(0.1)) && !isBid {
 			return validSell1Prob
 		}
-		if best.Equal(MarkPriceD) && order.Equal(validSell2.Price.ToDecimal()) && !isBid {
+		if best.Equal(MarkPriceD) && order.Sub(validSell2.Price.ToDecimal()).Abs().LessThanOrEqual(num.DecimalFromFloat(0.1)) && !isBid {
 			return validSell2Prob
 		}
-		return num.DecimalZero()
+		if order.LessThanOrEqual(num.DecimalZero()) {
+			return num.DecimalZero()
+		}
+		if order.GreaterThanOrEqual(num.DecimalFromInt64(2).Mul(best)) {
+			return num.DecimalZero()
+		}
+		return num.DecimalFromFloat(0.5)
 	})
 
 	statevarEngine := stubs.NewStateVar()
-	engine := supplied.NewEngine(riskModel, priceMonitor, "asset1", "market1", statevarEngine, TickSize, logging.NewTestLogger(), num.DecimalFromInt64(1))
+	engine := supplied.NewEngine(riskModel, priceMonitor, "asset1", "market1", statevarEngine, logging.NewTestLogger(), num.DecimalFromInt64(1))
 	require.NotNil(t, engine)
 	f := func() (num.Decimal, num.Decimal, error) { return MarkPriceD, MarkPriceD, nil }
 	engine.SetGetStaticPricesFunc(f)
-	statevarEngine.NewEvent("asset1", "market1", statevar.StateVarEventTypeAuctionEnded)
+	statevarEngine.NewEvent("asset1", "market1", statevar.EventTypeAuctionEnded)
 
 	// No liquidity obligation -> 0 sizes on all orders
 	liquidityObligation := num.NewUint(0)
 	err := engine.CalculateLiquidityImpliedVolumes(MarkPriceD, MarkPriceD, liquidityObligation, limitOrders, buyShapes, sellShapes)
 	require.NoError(t, err)
 
-	var zero uint64 = 0
+	var zero uint64
 	require.Equal(t, zero, validBuy1.LiquidityImpliedVolume)
 	require.Equal(t, zero, validBuy2.LiquidityImpliedVolume)
 	require.Equal(t, zero, validSell1.LiquidityImpliedVolume)
@@ -375,7 +392,7 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 	}
 
 	statevarEngine := stubs.NewStateVar()
-	engine := supplied.NewEngine(riskModel, priceMonitor, "asset1", "market1", statevarEngine, TickSize, logging.NewTestLogger(), num.DecimalFromInt64(1))
+	engine := supplied.NewEngine(riskModel, priceMonitor, "asset1", "market1", statevarEngine, logging.NewTestLogger(), num.DecimalFromInt64(1))
 	require.NotNil(t, engine)
 	f := func() (num.Decimal, num.Decimal, error) { return MarkPriceD, MarkPriceD, nil }
 	engine.SetGetStaticPricesFunc(f)
@@ -426,9 +443,15 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 		if best.Equal(MarkPriceD) && order.Equal(validSell2.Price.ToDecimal()) && isBid {
 			return num.DecimalFromFloat(0.11)
 		}
-		return num.DecimalZero()
+		if order.LessThanOrEqual(num.DecimalZero()) {
+			return num.DecimalZero()
+		}
+		if order.GreaterThanOrEqual(num.DecimalFromInt64(2).Mul(best)) {
+			return num.DecimalZero()
+		}
+		return num.DecimalFromFloat(0.5)
 	})
-	statevarEngine.NewEvent("asset1", "market1", statevar.StateVarEventTypeAuctionEnded)
+	statevarEngine.NewEvent("asset1", "market1", statevar.EventTypeAuctionEnded)
 
 	limitOrdersSuppliedLiquidity := engine.CalculateSuppliedLiquidity(MarkPriceD, MarkPriceD, collateOrders(limitOrders, nil, nil))
 	require.True(t, limitOrdersSuppliedLiquidity.LT(liquidityObligation))
@@ -436,7 +459,7 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 	err := engine.CalculateLiquidityImpliedVolumes(MarkPriceD, MarkPriceD, liquidityObligation, limitOrders, buyShapes, sellShapes)
 	require.NoError(t, err)
 
-	var zero uint64 = 0
+	var zero uint64
 	require.Less(t, zero, validBuy1.LiquidityImpliedVolume)
 	require.Less(t, zero, validBuy2.LiquidityImpliedVolume)
 	require.Less(t, zero, validSell1.LiquidityImpliedVolume)
@@ -602,15 +625,21 @@ func TestCalculateLiquidityImpliedSizes_NoValidOrders(t *testing.T) {
 		if best.Equal(MarkPriceD) && order.Equal(invalidSell.Price.ToDecimal()) && !isBid {
 			return num.DecimalZero()
 		}
+		if order.LessThanOrEqual(num.DecimalZero()) {
+			return num.DecimalZero()
+		}
+		if order.GreaterThanOrEqual(num.DecimalFromInt64(2).Mul(best)) {
+			return num.DecimalZero()
+		}
 		return num.DecimalFromFloat(0.1)
 	})
 
 	statevarEngine := stubs.NewStateVar()
-	engine := supplied.NewEngine(riskModel, priceMonitor, "asset1", "market1", statevarEngine, TickSize, logging.NewTestLogger(), num.DecimalFromInt64(1))
+	engine := supplied.NewEngine(riskModel, priceMonitor, "asset1", "market1", statevarEngine, logging.NewTestLogger(), num.DecimalFromInt64(1))
 	require.NotNil(t, engine)
 	f := func() (num.Decimal, num.Decimal, error) { return MarkPriceD, MarkPriceD, nil }
 	engine.SetGetStaticPricesFunc(f)
-	statevarEngine.NewEvent("asset1", "market1", statevar.StateVarEventTypeAuctionEnded)
+	statevarEngine.NewEvent("asset1", "market1", statevar.EventTypeAuctionEnded)
 
 	liquidityObligation := num.NewUint(20)
 	// Expecting no error now (other component assures orders get shifted to valid price range, failsafe in place to safeguard against near-zero probability of trading)
@@ -658,14 +687,20 @@ func TestProbabilityOfTradingRecomputedAfterPriceRangeChange(t *testing.T) {
 		if best.Equal(MarkPriceD) && order.Equal(order2.Price.ToDecimal()) && !isBid {
 			return num.DecimalFromFloat(0.234)
 		}
-		return num.DecimalZero()
+		if order.LessThanOrEqual(num.DecimalZero()) {
+			return num.DecimalZero()
+		}
+		if order.GreaterThanOrEqual(num.DecimalFromInt64(2).Mul(best)) {
+			return num.DecimalZero()
+		}
+		return num.DecimalFromFloat(0.5)
 	})
 	statevarEngine := stubs.NewStateVar()
-	engine := supplied.NewEngine(riskModel, priceMonitor, "asset1", "market1", statevarEngine, TickSize, logging.NewTestLogger(), num.DecimalFromInt64(1))
+	engine := supplied.NewEngine(riskModel, priceMonitor, "asset1", "market1", statevarEngine, logging.NewTestLogger(), num.DecimalFromInt64(1))
 	require.NotNil(t, engine)
 	f := func() (num.Decimal, num.Decimal, error) { return MarkPriceD, MarkPriceD, nil }
 	engine.SetGetStaticPricesFunc(f)
-	statevarEngine.NewEvent("asset1", "market1", statevar.StateVarEventTypeAuctionEnded)
+	statevarEngine.NewEvent("asset1", "market1", statevar.EventTypeAuctionEnded)
 	liquidity1 := engine.CalculateSuppliedLiquidity(MarkPriceD, MarkPriceD, orders)
 	require.True(t, liquidity1.GT(num.NewUint(0)))
 

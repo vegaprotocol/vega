@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
 	vgterm "code.vegaprotocol.io/vega/libs/term"
+	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
 	"github.com/spf13/cobra"
@@ -38,22 +39,28 @@ var (
 	`)
 )
 
-type DeleteWalletHandler func(wallet string) error
+type RemoveWalletHandler func(api.AdminRemoveWalletParams) error
 
 func NewCmdDeleteWallet(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(wallet string) error {
+	h := func(params api.AdminRemoveWalletParams) error {
 		s, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
 			return fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 
-		return s.DeleteWallet(context.Background(), wallet)
+		deleteWallet := api.NewAdminRemoveWallet(s)
+
+		_, errDetails := deleteWallet.Handle(context.Background(), params)
+		if errDetails != nil {
+			return errors.New(errDetails.Data)
+		}
+		return nil
 	}
 
 	return BuildCmdDeleteWallet(w, h, rf)
 }
 
-func BuildCmdDeleteWallet(w io.Writer, handler DeleteWalletHandler, rf *RootFlags) *cobra.Command {
+func BuildCmdDeleteWallet(w io.Writer, handler RemoveWalletHandler, rf *RootFlags) *cobra.Command {
 	f := &DeleteWalletFlags{}
 
 	cmd := &cobra.Command{
@@ -62,7 +69,8 @@ func BuildCmdDeleteWallet(w io.Writer, handler DeleteWalletHandler, rf *RootFlag
 		Long:    deleteWalletLong,
 		Example: deleteWalletExample,
 		RunE: func(_ *cobra.Command, _ []string) error {
-			if err := f.Validate(); err != nil {
+			params, err := f.Validate()
+			if err != nil {
 				return err
 			}
 
@@ -72,7 +80,7 @@ func BuildCmdDeleteWallet(w io.Writer, handler DeleteWalletHandler, rf *RootFlag
 				}
 			}
 
-			if err := handler(f.Wallet); err != nil {
+			if err := handler(params); err != nil {
 				return err
 			}
 
@@ -108,16 +116,18 @@ type DeleteWalletFlags struct {
 	Force  bool
 }
 
-func (f *DeleteWalletFlags) Validate() error {
+func (f *DeleteWalletFlags) Validate() (api.AdminRemoveWalletParams, error) {
 	if len(f.Wallet) == 0 {
-		return flags.FlagMustBeSpecifiedError("wallet")
+		return api.AdminRemoveWalletParams{}, flags.MustBeSpecifiedError("wallet")
 	}
 
 	if !f.Force && vgterm.HasNoTTY() {
-		return ErrForceFlagIsRequiredWithoutTTY
+		return api.AdminRemoveWalletParams{}, ErrForceFlagIsRequiredWithoutTTY
 	}
 
-	return nil
+	return api.AdminRemoveWalletParams{
+		Wallet: f.Wallet,
+	}, nil
 }
 
 func PrintDeleteWalletResponse(w io.Writer, walletName string) {

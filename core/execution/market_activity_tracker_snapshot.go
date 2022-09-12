@@ -63,16 +63,22 @@ func marketFeesToProto(partyFees map[string]*num.Uint) []*checkpoint.PartyFees {
 }
 
 func (mt *marketTracker) IntoProto(market string) *checkpoint.MarketActivityTracker {
+	paid := make([]string, 0, len(mt.proposersPaid))
+	for k := range mt.proposersPaid {
+		paid = append(paid, k)
+	}
+	sort.Strings(paid)
+
 	return &checkpoint.MarketActivityTracker{
-		Asset:         mt.asset,
-		Market:        market,
-		MakerFees:     marketFeesToProto(mt.makerFees),
-		TakerFees:     marketFeesToProto(mt.takerFees),
-		LpFees:        marketFeesToProto(mt.lpFees),
-		ValueTraded:   mt.valueTraded.String(),
-		Proposer:      mt.proposer,
-		BonusPaid:     mt.proposersPaid,
-		ReadyToDelete: mt.readyToDelete,
+		Asset:             mt.asset,
+		Market:            market,
+		MakerFeesReceived: marketFeesToProto(mt.makerFeesReceived),
+		MakerFeesPaid:     marketFeesToProto(mt.makerFeesPaid),
+		LpFees:            marketFeesToProto(mt.lpFees),
+		ValueTraded:       mt.valueTraded.String(),
+		Proposer:          mt.proposer,
+		BonusPaid:         paid,
+		ReadyToDelete:     mt.readyToDelete,
 	}
 }
 
@@ -149,25 +155,30 @@ func (mat *MarketActivityTracker) LoadState(ctx context.Context, p *types.Payloa
 func marketTrackerFromProto(data *checkpoint.MarketActivityTracker) *marketTracker {
 	valueTrades, _ := num.UintFromString(data.ValueTraded, 10)
 	mft := &marketTracker{
-		makerFees:      map[string]*num.Uint{},
-		takerFees:      map[string]*num.Uint{},
-		lpFees:         map[string]*num.Uint{},
-		totalMakerFees: num.UintZero(),
-		totalTakerFees: num.UintZero(),
-		totalLPFees:    num.UintZero(),
-		valueTraded:    valueTrades,
-		proposer:       data.Proposer,
-		proposersPaid:  data.BonusPaid,
-		asset:          data.Asset,
-		readyToDelete:  data.ReadyToDelete,
+		makerFeesReceived:      map[string]*num.Uint{},
+		makerFeesPaid:          map[string]*num.Uint{},
+		lpFees:                 map[string]*num.Uint{},
+		totalMakerFeesReceived: num.UintZero(),
+		totalMakerFeesPaid:     num.UintZero(),
+		totalLPFees:            num.UintZero(),
+		valueTraded:            valueTrades,
+		proposer:               data.Proposer,
+		proposersPaid:          map[string]struct{}{},
+		asset:                  data.Asset,
+		readyToDelete:          data.ReadyToDelete,
 	}
-	for _, mf := range data.MakerFees {
-		mft.makerFees[mf.Party], _ = num.UintFromString(mf.Fee, 10)
-		mft.totalMakerFees.AddSum(mft.makerFees[mf.Party])
+
+	for _, bpfpa := range data.BonusPaid {
+		mft.proposersPaid[bpfpa] = struct{}{}
 	}
-	for _, tf := range data.TakerFees {
-		mft.takerFees[tf.Party], _ = num.UintFromString(tf.Fee, 10)
-		mft.totalTakerFees.AddSum(mft.takerFees[tf.Party])
+
+	for _, mf := range data.MakerFeesReceived {
+		mft.makerFeesReceived[mf.Party], _ = num.UintFromString(mf.Fee, 10)
+		mft.totalMakerFeesReceived.AddSum(mft.makerFeesReceived[mf.Party])
+	}
+	for _, tf := range data.MakerFeesPaid {
+		mft.makerFeesPaid[tf.Party], _ = num.UintFromString(tf.Fee, 10)
+		mft.totalMakerFeesPaid.AddSum(mft.makerFeesPaid[tf.Party])
 	}
 	for _, lp := range data.LpFees {
 		mft.lpFees[lp.Party], _ = num.UintFromString(lp.Fee, 10)

@@ -29,7 +29,7 @@ type Votes struct {
 }
 
 var votesOrdering = TableOrdering{
-	ColumnOrdering{"vega_time", ASC},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC},
 }
 
 func NewVotes(connectionSource *ConnectionSource) *Votes {
@@ -46,20 +46,22 @@ func (vs *Votes) Add(ctx context.Context, v entities.Vote) error {
 			proposal_id,
 			party_id,
 			value,
+			tx_hash,
 			vega_time,
 			initial_time,
 			total_governance_token_balance,
 			total_governance_token_weight,
 			total_equity_like_share_weight
 		)
-		 VALUES ($1,  $2,  $3,  $4,  $5, $6, $7, $8)
+		 VALUES ($1,  $2,  $3,  $4,  $5, $6, $7, $8, $9)
 		 ON CONFLICT (proposal_id, party_id, vega_time) DO UPDATE SET
 			value = EXCLUDED.value,
 			total_governance_token_balance =EXCLUDED.total_governance_token_balance,
 			total_governance_token_weight = EXCLUDED.total_governance_token_weight,
-			total_equity_like_share_weight = EXCLUDED.total_equity_like_share_weight;
+			total_equity_like_share_weight = EXCLUDED.total_equity_like_share_weight,
+			tx_hash = EXCLUDED.tx_hash;
 		`,
-		v.ProposalID, v.PartyID, v.Value, v.VegaTime, v.InitialTime,
+		v.ProposalID, v.PartyID, v.Value, v.TxHash, v.VegaTime, v.InitialTime,
 		v.TotalGovernanceTokenBalance, v.TotalGovernanceTokenWeight, v.TotalEquityLikeShareWeight)
 	return err
 }

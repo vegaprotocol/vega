@@ -36,7 +36,6 @@ func TestOracleEngine(t *testing.T) {
 	t.Run("Subscribing to oracle engine succeeds", testOracleEngineSubscribingSucceeds)
 	t.Run("Subscribing to oracle engine with without callback fails", testOracleEngineSubscribingWithoutCallbackFails)
 	t.Run("Broadcasting to matching data succeeds", testOracleEngineBroadcastingMatchingDataSucceeds)
-	t.Run("Broadcasting to non-matching data succeeds", testOracleEngineBroadcastingNonMatchingDataSucceeds)
 	t.Run("Unsubscribing known ID from oracle engine succeeds", testOracleEngineUnsubscribingKnownIDSucceeds)
 	t.Run("Unsubscribing unknown ID from oracle engine panics", testOracleEngineUnsubscribingUnknownIDPanics)
 	t.Run("Updating current time succeeds", testOracleEngineUpdatingCurrentTimeSucceeds)
@@ -199,27 +198,6 @@ func testOracleEngineBroadcastingMatchingDataSucceeds(t *testing.T) {
 	assert.Nil(t, btcGreater100.subscriber.ReceivedData)
 }
 
-func testOracleEngineBroadcastingNonMatchingDataSucceeds(t *testing.T) {
-	// given
-	btcEquals42 := spec(t, "BTC", oraclespb.Condition_OPERATOR_EQUALS, "42")
-	dataBTC84 := dataWithPrice("BTC", "84")
-
-	// setup
-	ctx := context.Background()
-	currentTime := time.Now()
-	engine := newEngine(ctx, t, currentTime)
-	engine.broker.expectNewOracleSpecSubscription(currentTime, btcEquals42.spec.OriginalSpec)
-	engine.broker.expectUnmatchedOracleDataEvent(dataBTC84.proto)
-
-	// when
-	engine.Subscribe(ctx, btcEquals42.spec, btcEquals42.subscriber.Cb)
-	errB := engine.BroadcastData(context.Background(), dataBTC84.data)
-
-	// then
-	require.NoError(t, errB)
-	assert.NotEqual(t, &dataBTC84.data, btcEquals42.subscriber.ReceivedData)
-}
-
 func testOracleEngineUnsubscribingUnknownIDPanics(t *testing.T) {
 	// setup
 	ctx := context.Background()
@@ -275,19 +253,6 @@ func testOracleEngineUnsubscribingKnownIDSucceeds(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	assert.Equal(t, &dataETH42.data, ethEquals42.subscriber.ReceivedData)
-
-	// given
-	dataBTC42 := dataWithPrice("BTC", "42")
-
-	// expect
-	engine.broker.expectUnmatchedOracleDataEvent(dataBTC42.proto)
-
-	// when
-	err = engine.BroadcastData(context.Background(), dataBTC42.data)
-
-	// then
-	require.NoError(t, err)
-	assert.Nil(t, btcEquals42.subscriber.ReceivedData)
 }
 
 func testOracleEngineUpdatingCurrentTimeSucceeds(t *testing.T) {
@@ -455,10 +420,5 @@ func (b *testBroker) expectOracleSpecSubscriptionDeactivation(currentTime time.T
 func (b *testBroker) expectMatchedOracleDataEvent(currentTime time.Time, data oraclespb.OracleData, specIDs []string) {
 	data.MatchedSpecIds = specIDs
 	data.BroadcastAt = currentTime.UnixNano()
-	b.EXPECT().Send(events.NewOracleDataEvent(b.ctx, data)).Times(1)
-}
-
-func (b *testBroker) expectUnmatchedOracleDataEvent(data oraclespb.OracleData) {
-	data.MatchedSpecIds = []string{}
 	b.EXPECT().Send(events.NewOracleDataEvent(b.ctx, data)).Times(1)
 }

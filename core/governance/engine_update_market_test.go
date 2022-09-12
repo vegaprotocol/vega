@@ -21,6 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/types"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
+	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -49,6 +50,45 @@ func testSubmittingProposalForMarketUpdateSucceeds(t *testing.T) {
 	proposer := vgrand.RandomStr(5)
 	proposal := eng.newProposalForMarketUpdate("market-1", proposer, eng.tsvc.GetTimeNow(), nil, nil)
 	marketID := proposal.MarketUpdate().MarketID
+
+	// setup
+	eng.ensureTokenBalanceForParty(t, proposer, 1000)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.1)
+	eng.ensureExistingMarket(t, marketID)
+
+	// expect
+	eng.expectOpenProposalEvent(t, proposer, proposal.ID)
+
+	// when
+	toSubmit, err := eng.submitProposal(t, proposal)
+
+	// then
+	require.NoError(t, err)
+	require.NotNil(t, toSubmit)
+}
+
+func TestSubmittingProposalForMarketUpdateWithEarlyTerminationSucceeds(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// given
+	proposer := vgrand.RandomStr(5)
+	proposal := eng.newProposalForMarketUpdate("market-1", proposer, eng.tsvc.GetTimeNow(), nil, nil)
+	marketID := proposal.MarketUpdate().MarketID
+
+	proposal.Terms.Change.(*types.ProposalTermsUpdateMarket).UpdateMarket.Changes.Instrument.Product.(*types.UpdateInstrumentConfigurationFuture).Future.OracleSpecForTradingTermination.Filters = []*types.OracleSpecFilter{{
+		Key: &types.OracleSpecPropertyKey{
+			Name: "vegaprotocol.builtin.timestamp",
+			Type: oraclespb.PropertyKey_TYPE_TIMESTAMP,
+		},
+		Conditions: []*types.OracleSpecCondition{
+			{
+				Operator: oraclespb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+				Value:    "0",
+			},
+		},
+	}}
+	proposal.Terms.Change.(*types.ProposalTermsUpdateMarket).UpdateMarket.Changes.Instrument.Product.(*types.UpdateInstrumentConfigurationFuture).Future.OracleSpecBinding.TradingTerminationProperty = "vegaprotocol.builtin.timestamp"
 
 	// setup
 	eng.ensureTokenBalanceForParty(t, proposer, 1000)
@@ -627,6 +667,8 @@ func testVotingWithoutTokenAndMajorityOfYesFromEquityLikeShareHoldersMakesMarket
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
+	eng.ensureNetworkParameter(t, netparams.GovernanceProposalUpdateMarketRequiredParticipation, "0.5")
+
 	// Submit proposal.
 	// given
 	proposer := vgrand.RandomStr(5)
@@ -704,7 +746,6 @@ func testVotingWithoutTokenAndMajorityOfYesFromEquityLikeShareHoldersMakesMarket
 	afterClosing := time.Unix(proposal.Terms.ClosingTimestamp, 0).Add(time.Second)
 
 	// setup
-	eng.ensureNetworkParameter(t, netparams.GovernanceProposalUpdateMarketRequiredParticipation, "0.5")
 	eng.ensureStakingAssetTotalSupply(t, 13)
 	eng.ensureTokenBalanceForParty(t, voterWithToken, 2)
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voterWithToken, 0)
@@ -728,6 +769,9 @@ func testVotingWithoutTokenAndMajorityOfNoFromEquityLikeShareHoldersMakesMarketU
 
 	// Submit proposal.
 	// given
+
+	eng.ensureNetworkParameter(t, netparams.GovernanceProposalUpdateMarketRequiredParticipation, "0.5")
+
 	proposer := vgrand.RandomStr(5)
 	proposal := eng.newProposalForMarketUpdate("market-1", proposer, eng.tsvc.GetTimeNow(), nil, nil)
 	marketID := proposal.MarketUpdate().MarketID
@@ -803,7 +847,6 @@ func testVotingWithoutTokenAndMajorityOfNoFromEquityLikeShareHoldersMakesMarketU
 	afterClosing := time.Unix(proposal.Terms.ClosingTimestamp, 0).Add(time.Second)
 
 	// setup
-	eng.ensureNetworkParameter(t, netparams.GovernanceProposalUpdateMarketRequiredParticipation, "0.5")
 	eng.ensureStakingAssetTotalSupply(t, 13)
 	eng.ensureTokenBalanceForParty(t, voterWithToken, 2)
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voterWithToken, 0)
@@ -811,6 +854,9 @@ func testVotingWithoutTokenAndMajorityOfNoFromEquityLikeShareHoldersMakesMarketU
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voterWithELS1, 0.1)
 	eng.ensureTokenBalanceForParty(t, voterWithELS2, 0)
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voterWithELS2, 0.7)
+
+	// ensure setting again the values have no effect
+	eng.ensureNetworkParameter(t, netparams.GovernanceProposalUpdateMarketRequiredParticipation, "0")
 
 	// expect
 	eng.expectDeclinedProposalEvent(t, proposal.ID, types.ProposalErrorMajorityThresholdNotReached)

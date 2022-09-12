@@ -40,18 +40,22 @@ type EventService interface {
 }
 
 // TimeService ...
+//
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/core/api TimeService
 type TimeService interface {
 	GetTimeNow() time.Time
 }
 
 // EvtForwarder
+//
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/evt_forwarder_mock.go -package mocks code.vegaprotocol.io/vega/core/api  EvtForwarder
 type EvtForwarder interface {
 	Forward(ctx context.Context, e *commandspb.ChainEvent, pk string) error
 }
 
 // Blockchain ...
+//
+//nolint:interfacebloat
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_mock.go -package mocks code.vegaprotocol.io/vega/core/api  Blockchain
 type Blockchain interface {
 	SubmitTransactionSync(ctx context.Context, tx *commandspb.Transaction) (*tmctypes.ResultBroadcastTx, error)
@@ -132,7 +136,7 @@ func NewGRPC(
 	}
 }
 
-func (s *GRPC) UpdateProtocolServices(
+func (g *GRPC) UpdateProtocolServices(
 	evtforwarder EvtForwarder,
 	timesvc *vegatime.Svc,
 	evtsvc EventService,
@@ -140,13 +144,13 @@ func (s *GRPC) UpdateProtocolServices(
 ) {
 	// first save them, in case the core service is not started,
 	// it'll be used later
-	s.evtService = evtsvc
-	s.timesvc = timesvc
-	s.evtfwd = evtforwarder
-	s.powParams = powParams
+	g.evtService = evtsvc
+	g.timesvc = timesvc
+	g.evtfwd = evtforwarder
+	g.powParams = powParams
 
-	if s.core != nil {
-		s.core.UpdateProtocolServices(evtforwarder, timesvc, evtsvc, powParams)
+	if g.core != nil {
+		g.core.UpdateProtocolServices(evtforwarder, timesvc, evtsvc, powParams)
 	}
 }
 

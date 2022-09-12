@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased 0.54.0
+## Unreleased 0.56.0
 
 ### 🚨 Breaking changes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -13,6 +13,70 @@
 
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+## 0.55.0
+
+### 🚨 Breaking changes
+- [5989](https://github.com/vegaprotocol/vega/issues/5989) - Remove liquidity commitment from market proposal
+- [6031](https://github.com/vegaprotocol/vega/issues/6031) - Remove market name from `graphql` market type
+- [6095](https://github.com/vegaprotocol/vega/issues/6095) - Rename taker fees to maker paid fees
+- [5442](https://github.com/vegaprotocol/vega/issues/5442) - Default behaviour when starting to node is to use the latest local snapshot if it exists
+- [6139](https://github.com/vegaprotocol/vega/issues/6139) - Return the key on `session.list_keys` endpoint on wallet API version 2
+
+### 🛠 Improvements
+- [5694](https://github.com/vegaprotocol/vega/issues/5694) - Add field `settlementPriceDecimals` to GraphQL `Future` and `FutureProduct` types
+- [6048](https://github.com/vegaprotocol/vega/issues/6048) - Upgrade `golangci-lint` to `1.49.0` and implement its suggestions
+- [5807](https://github.com/vegaprotocol/vega/issues/5807) - Add Vega tools: `stream`, `snapshot` and `checkpoint`
+- [5678](https://github.com/vegaprotocol/vega/issues/5678) - Add GraphQL endpoints for Ethereum bundles: `listAsset`, `updateAsset`, `addSigner` and `removeSigner`
+- [5881](https://github.com/vegaprotocol/vega/issues/5881) - Return account subscription as a list
+- [5766](https://github.com/vegaprotocol/vega/issues/5766) - Better notification for version update on the wallet
+- [5841](https://github.com/vegaprotocol/vega/issues/5841) - Add transaction to request `multisigControl` signatures on demand
+- [5937](https://github.com/vegaprotocol/vega/issues/5937) - Add more flexibility to market creation bonus
+- [5932](https://github.com/vegaprotocol/vega/issues/5932) - Remove Name and Symbol from update asset proposal
+- [5880](https://github.com/vegaprotocol/vega/issues/5880) - Send initial image with subscriptions to positions, orders & accounts
+- [5878](https://github.com/vegaprotocol/vega/issues/5878) - Add option to return only live orders in `ListOrders` `API`
+- [5937](https://github.com/vegaprotocol/vega/issues/5937) - Add more flexibility to market creation bonus
+- [5708](https://github.com/vegaprotocol/vega/issues/5708) - Use market price when reporting average trade price
+- [5949](https://github.com/vegaprotocol/vega/issues/5949) - Transfers processed in the order they were received
+- [5966](https://github.com/vegaprotocol/vega/issues/5966) - Do not send transaction from wallet if `chainID` is empty
+- [5675](https://github.com/vegaprotocol/vega/issues/5675) - Add transaction information to all database tables
+- [6004](https://github.com/vegaprotocol/vega/issues/6004) - Probability of trading refactoring
+- [5849](https://github.com/vegaprotocol/vega/issues/5849) - Use network parameter from creation time of the proposal for requirements
+- [5846](https://github.com/vegaprotocol/vega/issues/5846) - Expose network parameter from creation time of the proposal through `APIs`.
+- [5999](https://github.com/vegaprotocol/vega/issues/5999) - Recalculate margins after risk parameters are updated.
+- [5682](https://github.com/vegaprotocol/vega/issues/5682) - Expose equity share weight in the API
+- [5684](https://github.com/vegaprotocol/vega/issues/5684) - Added date range to a number of historic balances, deposits, withdrawals, orders and trades queries
+- [6071](https://github.com/vegaprotocol/vega/issues/6071) - Allow for empty settlement asset in recurring transfer metric definition for market proposer bonus
+- [6042](https://github.com/vegaprotocol/vega/issues/6042) - Set GraphQL query complexity limit
+- [6106](https://github.com/vegaprotocol/vega/issues/6106) - Returned signed transaction in wallet API version 2 `session.send_transaction`
+- [6105](https://github.com/vegaprotocol/vega/issues/6105) - Add `session.sign_transaction` endpoint on wallet API version 2
+- [6042](https://github.com/vegaprotocol/vega/issues/5270) - Set GraphQL query complexity limit
+- [5888](https://github.com/vegaprotocol/vega/issues/5888) - Add Liquidity Provision subscription to GraphQL
+- [5961](https://github.com/vegaprotocol/vega/issues/5961) - Add batch market instructions command
+- [5974](https://github.com/vegaprotocol/vega/issues/5974) - Flatten subscription in `Graphql`
+- [6146](https://github.com/vegaprotocol/vega/issues/6146) - Add version command to Vega Visor
+
+### 🐛 Fixes
+- [5934](https://github.com/vegaprotocol/vega/issues/5934) - Ensure wallet without permissions can be read
+- [5950](https://github.com/vegaprotocol/vega/issues/5934) - Fix documentation for new wallet command
+- [5687](https://github.com/vegaprotocol/vega/issues/5934) - Asset cache was returning stale data
+- [5986](https://github.com/vegaprotocol/vega/issues/5986) - Error string on failed transaction is sent in the plain, no need to decode
+- [5860](https://github.com/vegaprotocol/vega/issues/5860) - Enacted but unlisted new assets are now included in checkpoints
+- [6023](https://github.com/vegaprotocol/vega/issues/6023) - Tell the `datanode` when a genesis validator does not exist in a `checkpoint`
+- [5963](https://github.com/vegaprotocol/vega/issues/5963) - Check other nodes during version check if the first one is unavailable
+- [6002](https://github.com/vegaprotocol/vega/issues/6002) - Do not emit events for unmatched oracle data and unsubscribe market as soon as oracle data is received
+- [6008](https://github.com/vegaprotocol/vega/issues/6008) - Fix equity like share and average trade value calculation with opening auctions
+- [6040](https://github.com/vegaprotocol/vega/issues/6040) - Fix protocol upgrade transaction submission and small Visor improvements
+- [5977](https://github.com/vegaprotocol/vega/issues/5977) - Fix missing block height and block time on stake linking API
+- [6054](https://github.com/vegaprotocol/vega/issues/6054) - Fix panic on settlement
+- [6060](https://github.com/vegaprotocol/vega/issues/6060) - Fix connection results should not be declared as mandatory in GQL schema.
+- [6097](https://github.com/vegaprotocol/vega/issues/6067) - Fix incorrect asset (metric asset) used for checking market proposer eligibility
+- [6099](https://github.com/vegaprotocol/vega/issues/6099) - Allow recurring transfers with the same to and from but with different asset
+- [6131](https://github.com/vegaprotocol/vega/issues/6131) - `nullblockchain` should call Tendermint Info `abci` to match real flow
+- [6119](https://github.com/vegaprotocol/vega/issues/6119) - Correct order in which market event is emitted
+- [5890](https://github.com/vegaprotocol/vega/issues/5890) - Margin breach during amend doesn't cancel order
+- [6144](https://github.com/vegaprotocol/vega/issues/6144) - Price and Pegged Offset in orders are Decimals
+- [6111](https://github.com/vegaprotocol/vega/issues/5890) - Handle candles transient failure and prevent subscription blocking
 
 ## 0.54.0
 
@@ -75,6 +139,8 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5893](https://github.com/vegaprotocol/vega/issues/5893) - Remove total supply from assets
 - [5752](https://github.com/vegaprotocol/vega/issues/5752) - Remove URL and Hash from proposal rationale, add Title
 - [5802](https://github.com/vegaprotocol/vega/issues/5802) - Introduce transaction version 3 that encode the chain ID in its input data to protect against transaction replay
+- [5358](https://github.com/vegaprotocol/vega/issues/5358) - Port equity like shares update to new structure
+- [5926](https://github.com/vegaprotocol/vega/issues/5926) - Check for liquidity auction at the end of a block instead of after every trade
 
 ### 🐛 Fixes
 - [5571](https://github.com/vegaprotocol/vega/issues/5571) - Restore pending assets status correctly after snapshot restore
@@ -215,6 +281,7 @@ The init command now also generate the configuration for tendermint, the flags `
 - [5304](https://github.com/vegaprotocol/vega/issues/5304) - Fix bug causing trade events at auction end showing the wrong price.
 - [5345](https://github.com/vegaprotocol/vega/issues/5345) - Fix issue with state variable transactions assumed gone missing
 - [5351](https://github.com/vegaprotocol/vega/issues/5351) - Fix panic when node is interrupted before snapshot engine gets cleared and initialised
+- [5972](https://github.com/vegaprotocol/vega/issues/5972) - Allow submitting a market update with termination oracle ticking before enactment of the update
 
 ## 0.50.2
 
@@ -1667,6 +1734,7 @@ This release contains a lot of groundwork for Fees and Auction mode.
 - [#1990](https://github.com/vegaprotocol/vega/pull/1990) Remove specified `tickSize` from market
 - [#2066](https://github.com/vegaprotocol/vega/pull/2066) Fix validation of proposal timestamps to ensure that datestamps specify events in the correct order
 - [#2043](https://github.com/vegaprotocol/vega/pull/2043) Track Event Queue events to avoid processing events from other chains twice
+
 ## 0.22.0
 
 ### 🐛 Bugfixes

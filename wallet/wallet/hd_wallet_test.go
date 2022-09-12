@@ -51,6 +51,7 @@ func TestHDWallet(t *testing.T) {
 	t.Run("Isolating wallet with non-existing key pair fails", testHDWalletIsolatingWalletWithNonExistingKeyPairFails)
 	t.Run("Getting master key pair succeeds", testHDWalletGettingWalletMasterKeySucceeds)
 	t.Run("Updating permissions with inconsistent setup fails", testHDWalletUpdatingPermissionsWithInconsistentSetupFails)
+	t.Run("Updating permissions with empty permission fallback to default", testHDWalletUpdatingPermissionsWithEmptyPermissionFallbackToDefaults)
 	t.Run("Revoking permissions succeeds", testHDWalletRevokingPermissionsSucceeds)
 	t.Run("Purging permissions succeeds", testHDWalletPurgingPermissionsSucceeds)
 }
@@ -164,7 +165,11 @@ func testHDWalletGeneratingKeyPairSucceeds(t *testing.T) {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
 			name := vgrand.RandomStr(5)
-			meta := []wallet.Meta{{Key: "env", Value: "test"}}
+			meta := []wallet.Metadata{{Key: "env", Value: "test"}}
+			expectedMeta := []wallet.Metadata{meta[0], {
+				Key:   "name",
+				Value: "Key 1",
+			}}
 
 			// when
 			w, err := wallet.ImportHDWallet(name, TestRecoveryPhrase1, tc.version)
@@ -179,7 +184,7 @@ func testHDWalletGeneratingKeyPairSucceeds(t *testing.T) {
 			// then
 			require.NoError(tt, err)
 			assert.NotNil(tt, kp)
-			assert.Equal(tt, kp.Meta(), meta)
+			assert.Equal(tt, expectedMeta, kp.Metadata())
 			assert.Equal(tt, tc.publicKey, kp.PublicKey())
 			assert.Equal(tt, tc.privateKey, kp.PrivateKey())
 		})
@@ -213,7 +218,7 @@ func testHDWalletGeneratingKeyPairOnIsolatedWalletFails(t *testing.T) {
 			assert.NotNil(tt, w)
 
 			// when
-			kp, err := w.GenerateKeyPair([]wallet.Meta{})
+			kp, err := w.GenerateKeyPair([]wallet.Metadata{})
 
 			// then
 			require.NoError(tt, err)
@@ -227,10 +232,10 @@ func testHDWalletGeneratingKeyPairOnIsolatedWalletFails(t *testing.T) {
 			assert.NotNil(tt, isolatedWallet)
 
 			// when
-			keyPair, err := isolatedWallet.GenerateKeyPair([]wallet.Meta{})
+			keyPair, err := isolatedWallet.GenerateKeyPair([]wallet.Metadata{})
 
 			// then
-			require.ErrorIs(tt, err, wallet.ErrIsolatedWalletCantGenerateKeyPairs)
+			require.ErrorIs(tt, err, wallet.ErrIsolatedWalletCantGenerateKeys)
 			require.Nil(tt, keyPair)
 		})
 	}
@@ -263,7 +268,7 @@ func testHDWalletTaintingKeyPairSucceeds(t *testing.T) {
 			assert.NotNil(tt, w)
 
 			// when
-			kp, err := w.GenerateKeyPair([]wallet.Meta{})
+			kp, err := w.GenerateKeyPair([]wallet.Metadata{})
 
 			// then
 			require.NoError(tt, err)
@@ -313,7 +318,7 @@ func testHDWalletTaintingKeyThatIsAlreadyTaintedFails(t *testing.T) {
 			assert.NotNil(tt, w)
 
 			// when
-			kp, err := w.GenerateKeyPair([]wallet.Meta{})
+			kp, err := w.GenerateKeyPair([]wallet.Metadata{})
 
 			// then
 			require.NoError(tt, err)
@@ -404,7 +409,7 @@ func testHDWalletUntaintingKeyPairSucceeds(t *testing.T) {
 			assert.NotNil(tt, w)
 
 			// when
-			kp, err := w.GenerateKeyPair([]wallet.Meta{})
+			kp, err := w.GenerateKeyPair([]wallet.Metadata{})
 
 			// then
 			require.NoError(tt, err)
@@ -468,7 +473,7 @@ func testHDWalletUntaintingKeyThatIsNotTaintedFails(t *testing.T) {
 			assert.NotNil(tt, w)
 
 			// when
-			kp, err := w.GenerateKeyPair([]wallet.Meta{})
+			kp, err := w.GenerateKeyPair([]wallet.Metadata{})
 
 			// then
 			require.NoError(tt, err)
@@ -544,7 +549,7 @@ func testHDWalletUpdatingKeyPairMetaSucceeds(t *testing.T) {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
 			name := vgrand.RandomStr(5)
-			meta := []wallet.Meta{{Key: "primary", Value: "yes"}}
+			meta := []wallet.Metadata{{Key: "primary", Value: "yes"}}
 
 			// when
 			w, err := wallet.ImportHDWallet(name, TestRecoveryPhrase1, tc.version)
@@ -554,25 +559,18 @@ func testHDWalletUpdatingKeyPairMetaSucceeds(t *testing.T) {
 			assert.NotNil(tt, w)
 
 			// when
-			kp, err := w.GenerateKeyPair([]wallet.Meta{})
+			kp, err := w.GenerateKeyPair([]wallet.Metadata{})
 
 			// then
 			require.NoError(tt, err)
 			assert.NotNil(tt, kp)
 
 			// when
-			err = w.UpdateMeta(kp.PublicKey(), meta)
+			updatedMeta, err := w.AnnotateKey(kp.PublicKey(), meta)
 
 			// then
 			require.NoError(tt, err)
-
-			// when
-			pubKey, err := w.DescribePublicKey(kp.PublicKey())
-
-			// then
-			require.NoError(tt, err)
-			assert.NotNil(tt, pubKey)
-			assert.Equal(tt, meta, pubKey.Meta())
+			assert.Equal(tt, []wallet.Metadata{{Key: "primary", Value: "yes"}, {Key: "name", Value: "Key 1"}}, updatedMeta)
 		})
 	}
 }
@@ -595,7 +593,7 @@ func testHDWalletUpdatingKeyPairMetaWithUnknownPublicKeyFails(t *testing.T) {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
 			name := vgrand.RandomStr(5)
-			meta := []wallet.Meta{{Key: "primary", Value: "yes"}}
+			meta := []wallet.Metadata{{Key: "primary", Value: "yes"}}
 
 			// when
 			w, err := wallet.ImportHDWallet(name, TestRecoveryPhrase1, tc.version)
@@ -605,7 +603,7 @@ func testHDWalletUpdatingKeyPairMetaWithUnknownPublicKeyFails(t *testing.T) {
 			assert.NotNil(tt, w)
 
 			// when
-			err = w.UpdateMeta("somekey", meta)
+			_, err = w.AnnotateKey("somekey", meta)
 
 			// then
 			require.Error(tt, err, wallets.ErrWalletDoesNotExists)
@@ -640,7 +638,7 @@ func testHDWalletDescribingPublicKeysSucceeds(t *testing.T) {
 			assert.NotNil(tt, w)
 
 			// when
-			kp1, err := w.GenerateKeyPair([]wallet.Meta{})
+			kp1, err := w.GenerateKeyPair([]wallet.Metadata{})
 
 			// then
 			require.NoError(tt, err)
@@ -652,7 +650,7 @@ func testHDWalletDescribingPublicKeysSucceeds(t *testing.T) {
 			// then
 			require.NoError(tt, err)
 			assert.Equal(tt, kp1.PublicKey(), pubKey.Key())
-			assert.Equal(tt, kp1.Meta(), pubKey.Meta())
+			assert.Equal(tt, kp1.Metadata(), pubKey.Metadata())
 			assert.Equal(tt, kp1.IsTainted(), pubKey.IsTainted())
 			assert.Equal(tt, kp1.AlgorithmName(), pubKey.AlgorithmName())
 			assert.Equal(tt, kp1.AlgorithmVersion(), pubKey.AlgorithmVersion())
@@ -723,14 +721,14 @@ func testHDWalletListingPublicKeysSucceeds(t *testing.T) {
 			assert.NotNil(tt, w)
 
 			// when
-			kp1, err := w.GenerateKeyPair([]wallet.Meta{})
+			kp1, err := w.GenerateKeyPair([]wallet.Metadata{})
 
 			// then
 			require.NoError(tt, err)
 			assert.NotNil(tt, kp1)
 
 			// when
-			kp2, err := w.GenerateKeyPair([]wallet.Meta{})
+			kp2, err := w.GenerateKeyPair([]wallet.Metadata{})
 
 			// then
 			require.NoError(tt, err)
@@ -774,14 +772,14 @@ func testHDWalletListingKeyPairsSucceeds(t *testing.T) {
 			assert.NotNil(tt, w)
 
 			// when
-			kp1, err := w.GenerateKeyPair([]wallet.Meta{})
+			kp1, err := w.GenerateKeyPair([]wallet.Metadata{})
 
 			// then
 			require.NoError(tt, err)
 			assert.NotNil(tt, kp1)
 
 			// when
-			kp2, err := w.GenerateKeyPair([]wallet.Meta{})
+			kp2, err := w.GenerateKeyPair([]wallet.Metadata{})
 
 			// then
 			require.NoError(tt, err)
@@ -827,7 +825,7 @@ func testHDWalletSigningTxSucceeds(t *testing.T) {
 			assert.NotNil(tt, w)
 
 			// when
-			kp, err := w.GenerateKeyPair([]wallet.Meta{})
+			kp, err := w.GenerateKeyPair([]wallet.Metadata{})
 
 			// then
 			require.NoError(tt, err)
@@ -873,7 +871,7 @@ func testHDWalletSigningTxWithTaintedKeyFails(t *testing.T) {
 			assert.NotNil(tt, w)
 
 			// when
-			kp, err := w.GenerateKeyPair([]wallet.Meta{})
+			kp, err := w.GenerateKeyPair([]wallet.Metadata{})
 
 			// then
 			require.NoError(tt, err)
@@ -923,7 +921,7 @@ func testHDWalletSigningTxWithUnknownKeyFails(t *testing.T) {
 			assert.NotNil(tt, w)
 
 			// when
-			kp, err := w.GenerateKeyPair([]wallet.Meta{})
+			kp, err := w.GenerateKeyPair([]wallet.Metadata{})
 
 			// then
 			require.NoError(tt, err)
@@ -970,7 +968,7 @@ func testHDWalletSigningAnyMessageSucceeds(t *testing.T) {
 			assert.NotNil(tt, w)
 
 			// when
-			kp, err := w.GenerateKeyPair([]wallet.Meta{})
+			kp, err := w.GenerateKeyPair([]wallet.Metadata{})
 
 			// then
 			require.NoError(tt, err)
@@ -1014,7 +1012,7 @@ func testHDWalletSigningAnyMessageWithTaintedKeyFails(t *testing.T) {
 			assert.NotNil(tt, w)
 
 			// when
-			kp, err := w.GenerateKeyPair([]wallet.Meta{})
+			kp, err := w.GenerateKeyPair([]wallet.Metadata{})
 
 			// then
 			require.NoError(tt, err)
@@ -1104,7 +1102,7 @@ func testHDWalletVerifyingAnyMessageSucceeds(t *testing.T) {
 			assert.NotNil(tt, w)
 
 			// when
-			kp, err := w.GenerateKeyPair([]wallet.Meta{})
+			kp, err := w.GenerateKeyPair([]wallet.Metadata{})
 
 			// then
 			require.NoError(tt, err)
@@ -1167,18 +1165,18 @@ func testHDWalletMarshalingWalletSucceeds(t *testing.T) {
 		{
 			name:    "version 1",
 			version: 1,
-			result:  `{"version":1,"node":"PjI6zxEu4dtcTu92dYlB/2Da+rvSpg7KzvmLMQ9wv6i6n75/ftik1rPYiZ/nTfBzqVttvNnoswyldTjPCjV5kw==","id":"9df682a3c87d90567f260566a9c223ccbbb7529c38340cf163b8fe199dbf0f2e","keys":[{"index":1,"public_key":"30ebce58d94ad37c4ff6a9014c955c20e12468da956163228cc7ec9b98d3a371","private_key":"1bbd4efb460d0bf457251e866697d5d2e9b58c5dcb96a964cd9cfff1a712a2b930ebce58d94ad37c4ff6a9014c955c20e12468da956163228cc7ec9b98d3a371","meta":[],"tainted":false,"algorithm":{"name":"vega/ed25519","version":1}}],"permissions":{}}`,
+			result:  `{"version":1,"node":"PjI6zxEu4dtcTu92dYlB/2Da+rvSpg7KzvmLMQ9wv6i6n75/ftik1rPYiZ/nTfBzqVttvNnoswyldTjPCjV5kw==","id":"9df682a3c87d90567f260566a9c223ccbbb7529c38340cf163b8fe199dbf0f2e","keys":[{"index":1,"public_key":"30ebce58d94ad37c4ff6a9014c955c20e12468da956163228cc7ec9b98d3a371","private_key":"1bbd4efb460d0bf457251e866697d5d2e9b58c5dcb96a964cd9cfff1a712a2b930ebce58d94ad37c4ff6a9014c955c20e12468da956163228cc7ec9b98d3a371","meta":[{"key":"name","value":"Key 1"}],"tainted":false,"algorithm":{"name":"vega/ed25519","version":1}}],"permissions":{}}`,
 		}, {
 			name:    "version 2",
 			version: 2,
-			result:  `{"version":2,"node":"PjI6zxEu4dtcTu92dYlB/2Da+rvSpg7KzvmLMQ9wv6i6n75/ftik1rPYiZ/nTfBzqVttvNnoswyldTjPCjV5kw==","id":"9df682a3c87d90567f260566a9c223ccbbb7529c38340cf163b8fe199dbf0f2e","keys":[{"index":1,"public_key":"b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","private_key":"0bfdfb4a04e22d7252a4f24eb9d0f35a82efdc244cb0876d919361e61f6f56a2b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","meta":[],"tainted":false,"algorithm":{"name":"vega/ed25519","version":1}}],"permissions":{}}`,
+			result:  `{"version":2,"node":"PjI6zxEu4dtcTu92dYlB/2Da+rvSpg7KzvmLMQ9wv6i6n75/ftik1rPYiZ/nTfBzqVttvNnoswyldTjPCjV5kw==","id":"9df682a3c87d90567f260566a9c223ccbbb7529c38340cf163b8fe199dbf0f2e","keys":[{"index":1,"public_key":"b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","private_key":"0bfdfb4a04e22d7252a4f24eb9d0f35a82efdc244cb0876d919361e61f6f56a2b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","meta":[{"key":"name","value":"Key 1"}],"tainted":false,"algorithm":{"name":"vega/ed25519","version":1}}],"permissions":{}}`,
 		},
 	}
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
-			name := vgrand.RandomStr(5)
+			name := "test"
 
 			// when
 			w, err := wallet.ImportHDWallet(name, TestRecoveryPhrase1, tc.version)
@@ -1188,7 +1186,7 @@ func testHDWalletMarshalingWalletSucceeds(t *testing.T) {
 			assert.NotNil(tt, w)
 
 			// when
-			kp, err := w.GenerateKeyPair([]wallet.Meta{})
+			kp, err := w.GenerateKeyPair([]wallet.Metadata{})
 
 			// then
 			require.NoError(tt, err)
@@ -1213,18 +1211,18 @@ func testHDWalletMarshalingIsolatedWalletSucceeds(t *testing.T) {
 		{
 			name:      "version 1",
 			version:   1,
-			marshaled: `{"version":1,"id":"9df682a3c87d90567f260566a9c223ccbbb7529c38340cf163b8fe199dbf0f2e","keys":[{"index":1,"public_key":"30ebce58d94ad37c4ff6a9014c955c20e12468da956163228cc7ec9b98d3a371","private_key":"1bbd4efb460d0bf457251e866697d5d2e9b58c5dcb96a964cd9cfff1a712a2b930ebce58d94ad37c4ff6a9014c955c20e12468da956163228cc7ec9b98d3a371","meta":[],"tainted":false,"algorithm":{"name":"vega/ed25519","version":1}}],"permissions":{}}`,
+			marshaled: `{"version":1,"id":"9df682a3c87d90567f260566a9c223ccbbb7529c38340cf163b8fe199dbf0f2e","keys":[{"index":1,"public_key":"30ebce58d94ad37c4ff6a9014c955c20e12468da956163228cc7ec9b98d3a371","private_key":"1bbd4efb460d0bf457251e866697d5d2e9b58c5dcb96a964cd9cfff1a712a2b930ebce58d94ad37c4ff6a9014c955c20e12468da956163228cc7ec9b98d3a371","meta":[{"key":"name","value":"Key 1"}],"tainted":false,"algorithm":{"name":"vega/ed25519","version":1}}],"permissions":{}}`,
 		}, {
 			name:      "version 2",
 			version:   2,
-			marshaled: `{"version":2,"id":"9df682a3c87d90567f260566a9c223ccbbb7529c38340cf163b8fe199dbf0f2e","keys":[{"index":1,"public_key":"b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","private_key":"0bfdfb4a04e22d7252a4f24eb9d0f35a82efdc244cb0876d919361e61f6f56a2b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","meta":[],"tainted":false,"algorithm":{"name":"vega/ed25519","version":1}}],"permissions":{}}`,
+			marshaled: `{"version":2,"id":"9df682a3c87d90567f260566a9c223ccbbb7529c38340cf163b8fe199dbf0f2e","keys":[{"index":1,"public_key":"b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","private_key":"0bfdfb4a04e22d7252a4f24eb9d0f35a82efdc244cb0876d919361e61f6f56a2b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","meta":[{"key":"name","value":"Key 1"}],"tainted":false,"algorithm":{"name":"vega/ed25519","version":1}}],"permissions":{}}`,
 		},
 	}
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
-			name := vgrand.RandomStr(5)
+			name := "test"
 
 			// when
 			w, err := wallet.ImportHDWallet(name, TestRecoveryPhrase1, tc.version)
@@ -1234,7 +1232,7 @@ func testHDWalletMarshalingIsolatedWalletSucceeds(t *testing.T) {
 			assert.NotNil(tt, w)
 
 			// when
-			kp, err := w.GenerateKeyPair([]wallet.Meta{})
+			kp, err := w.GenerateKeyPair([]wallet.Metadata{})
 
 			// then
 			require.NoError(tt, err)
@@ -1283,7 +1281,7 @@ func testHDWalletUnmarshalingWalletSucceeds(t *testing.T) {
 		}, {
 			name:               "version 2 with permissions",
 			expectedVersion:    2,
-			marshaled:          `{"version":2,"node":"CZ13XhuFZ8K7TxNTAdKmMXh+OIVX6TFxTToXgnAqGlcO5eTY/5AVqZkWRIU3zfr8hvE7i2yIYAB6HT28ibi1fg==","keys":[{"index":1,"public_key":"b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","private_key":"0bfdfb4a04e22d7252a4f24eb9d0f35a82efdc244cb0876d919361e61f6f56a2b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","meta":null,"tainted":false,"algorithm":{"name":"vega/ed25519","version":1}}],"permissions":{"vega.xyz":{"publicKeys":{"access":"read","restrictedKeys":["b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0"]},"transactions":{"access":"write"}}}}`,
+			marshaled:          `{"version":2,"node":"CZ13XhuFZ8K7TxNTAdKmMXh+OIVX6TFxTToXgnAqGlcO5eTY/5AVqZkWRIU3zfr8hvE7i2yIYAB6HT28ibi1fg==","keys":[{"index":1,"public_key":"b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","private_key":"0bfdfb4a04e22d7252a4f24eb9d0f35a82efdc244cb0876d919361e61f6f56a2b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0","meta":null,"tainted":false,"algorithm":{"name":"vega/ed25519","version":1}}],"permissions":{"vega.xyz":{"publicKeys":{"access":"read","restrictedKeys":["b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0"]}}}}`,
 			expectedPublicKey:  "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
 			expectedPrivateKey: "0bfdfb4a04e22d7252a4f24eb9d0f35a82efdc244cb0876d919361e61f6f56a2b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
 			expectedPermissions: wallet.Permissions{
@@ -1315,7 +1313,7 @@ func testHDWalletUnmarshalingWalletSucceeds(t *testing.T) {
 			assert.Equal(tt, uint32(1), keyPairs[0].AlgorithmVersion())
 			assert.Equal(tt, "vega/ed25519", keyPairs[0].AlgorithmName())
 			assert.False(tt, keyPairs[0].IsTainted())
-			assert.Nil(tt, keyPairs[0].Meta())
+			assert.Nil(tt, keyPairs[0].Metadata())
 			assert.NotEmpty(tt, w.ID())
 			assert.Equal(tt, tc.expectedPermissions, w.Permissions("vega.xyz"))
 		})
@@ -1381,7 +1379,7 @@ func testHDWalletGettingIsolatedWalletInfoSucceeds(t *testing.T) {
 			assert.NotNil(tt, w)
 
 			// when
-			kp1, err := w.GenerateKeyPair([]wallet.Meta{})
+			kp1, err := w.GenerateKeyPair([]wallet.Metadata{})
 
 			// then
 			require.NoError(tt, err)
@@ -1428,7 +1426,7 @@ func testHDWalletIsolatingWalletSucceeds(t *testing.T) {
 			assert.NotNil(tt, w)
 
 			// when
-			kp1, err := w.GenerateKeyPair([]wallet.Meta{})
+			kp1, err := w.GenerateKeyPair([]wallet.Metadata{})
 
 			// then
 			require.NoError(tt, err)
@@ -1472,7 +1470,7 @@ func testHDWalletIsolatingWalletWithTaintedKeyPairFails(t *testing.T) {
 			assert.NotNil(tt, w)
 
 			// when
-			kp1, err := w.GenerateKeyPair([]wallet.Meta{})
+			kp1, err := w.GenerateKeyPair([]wallet.Metadata{})
 
 			// then
 			require.NoError(tt, err)
@@ -1554,7 +1552,7 @@ func testHDWalletGettingWalletMasterKeySucceeds(t *testing.T) {
 			require.NoError(tt, err)
 			require.NotNil(tt, w)
 
-			masterKeyPair, err := w.GetMasterKeyPair()
+			masterKeyPair, err := w.MasterKey()
 
 			// then
 			require.NoError(tt, err)
@@ -1574,7 +1572,13 @@ func testHDWalletUpdatingPermissionsWithInconsistentSetupFails(t *testing.T) {
 	require.NotNil(t, w)
 
 	// when
-	_, err = w.GenerateKeyPair(nil)
+	kp1, err := w.GenerateKeyPair(nil)
+
+	// then
+	require.NoError(t, err)
+
+	// when
+	kp2, err := w.GenerateKeyPair(nil)
 
 	// then
 	require.NoError(t, err)
@@ -1592,7 +1596,7 @@ func testHDWalletUpdatingPermissionsWithInconsistentSetupFails(t *testing.T) {
 			permissions: wallet.Permissions{
 				PublicKeys: wallet.PublicKeysPermission{
 					Access:         wallet.ReadAccess,
-					RestrictedKeys: []string{randomKey},
+					RestrictedKeys: []string{kp1.PublicKey(), kp2.PublicKey(), randomKey},
 				},
 			},
 			expectedError: fmt.Errorf("restricted key %s does not exist on wallet", randomKey),
@@ -1601,7 +1605,7 @@ func testHDWalletUpdatingPermissionsWithInconsistentSetupFails(t *testing.T) {
 			permissions: wallet.Permissions{
 				PublicKeys: wallet.PublicKeysPermission{
 					Access:         wallet.NoAccess,
-					RestrictedKeys: []string{w.ListKeyPairs()[0].PublicKey()},
+					RestrictedKeys: []string{kp1.PublicKey()},
 				},
 			},
 			expectedError: wallet.ErrCannotSetRestrictedKeysWithNoAccess,
@@ -1614,9 +1618,39 @@ func testHDWalletUpdatingPermissionsWithInconsistentSetupFails(t *testing.T) {
 			err = w.UpdatePermissions("vega.xyz", tc.permissions)
 
 			// then
-			require.Equal(tt, err, fmt.Errorf("inconsistent permissions setup: %w", tc.expectedError))
+			require.EqualError(tt, err, fmt.Sprintf("inconsistent permissions setup: %v", tc.expectedError))
 		})
 	}
+}
+
+func testHDWalletUpdatingPermissionsWithEmptyPermissionFallbackToDefaults(t *testing.T) {
+	// given
+	name := vgrand.RandomStr(5)
+
+	// when
+	w, err := wallet.ImportHDWallet(name, TestRecoveryPhrase1, 2)
+
+	// then
+	require.NoError(t, err)
+	require.NotNil(t, w)
+
+	// when
+	_, err = w.GenerateKeyPair(nil)
+
+	// then
+	require.NoError(t, err)
+
+	// when
+	err = w.UpdatePermissions("vega.xyz", wallet.Permissions{})
+
+	// then
+	require.NoError(t, err)
+
+	// when
+	permissions := w.Permissions("vega.xyz")
+
+	// then
+	assert.Equal(t, wallet.DefaultPermissions(), permissions)
 }
 
 func testHDWalletRevokingPermissionsSucceeds(t *testing.T) {

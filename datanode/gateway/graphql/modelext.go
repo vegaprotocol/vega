@@ -122,10 +122,10 @@ func busEventFromProto(events ...*eventspb.BusEvent) []*BusEvent {
 			continue
 		}
 		be := BusEvent{
-			EventID: e.Id,
-			Type:    et,
-			Block:   e.Block,
-			Event:   evt,
+			ID:    e.Id,
+			Type:  et,
+			Block: e.Block,
+			Event: evt,
 		}
 		r = append(r, &be)
 	}

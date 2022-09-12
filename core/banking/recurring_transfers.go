@@ -16,7 +16,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sort"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
@@ -71,8 +70,9 @@ func (e *Engine) recurringTransfer(
 	}
 
 	// from here all sounds OK, we can add the transfer
-	// in the recurringTransfer map
-	e.recurringTransfers[transfer.ID] = transfer
+	// in the recurringTransfer map/slice
+	e.recurringTransfers = append(e.recurringTransfers, transfer)
+	e.recurringTransfersMap[transfer.ID] = transfer
 
 	return nil
 }
@@ -101,7 +101,7 @@ func (e *Engine) ensureNoRecurringTransferDuplicates(
 		// NB: 2 transfers are identical and not allowed if they have the same from, to, type AND the same dispatch strategy.
 		// This is needed so that we can for example setup transfer of USDT from one PK to the reward account with type maker fees received with dispatch based on the asset ETH -
 		// and then a similar transfer of USDT from the same PK to the same reward type but with different dispatch strategy - one tracking markets for the asset DAI.
-		if v.From == transfer.From && v.To == transfer.To && v.FromAccountType == transfer.FromAccountType && v.ToAccountType == transfer.ToAccountType && isSimilar(v.DispatchStrategy, transfer.DispatchStrategy) {
+		if v.From == transfer.From && v.To == transfer.To && v.Asset == transfer.Asset && v.FromAccountType == transfer.FromAccountType && v.ToAccountType == transfer.ToAccountType && isSimilar(v.DispatchStrategy, transfer.DispatchStrategy) {
 			return ErrCannotSubmitDuplicateRecurringTransferWithSameFromAndTo
 		}
 	}
@@ -109,13 +109,14 @@ func (e *Engine) ensureNoRecurringTransferDuplicates(
 	return nil
 }
 
-func (e *Engine) getMarketScores(ds *vegapb.DispatchStrategy) []*types.MarketContributionScore {
+func (e *Engine) getMarketScores(ds *vegapb.DispatchStrategy, payoutAsset, funder string) []*types.MarketContributionScore {
 	switch ds.Metric {
-	case vegapb.DispatchMetric_DISPATCH_METRIC_TAKER_FEES_PAID, vegapb.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED, vegapb.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED:
+	case vegapb.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID, vegapb.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED, vegapb.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED:
 		return e.marketActivityTracker.GetMarketScores(ds.AssetForMetric, ds.Markets, ds.Metric)
 
 	case vegapb.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE:
-		return e.marketActivityTracker.GetMarketsWithEligibleProposer(ds.AssetForMetric, ds.Markets)
+		// get a slice of markets for the metric asset that are eligible to be paid for proposer bonus and have not been paid for the specific markets in scope
+		return e.marketActivityTracker.GetMarketsWithEligibleProposer(ds.AssetForMetric, ds.Markets, payoutAsset, funder)
 	}
 	return nil
 }
@@ -130,16 +131,8 @@ func (e *Engine) distributeRecurringTransfers(
 		currentEpoch  = num.NewUint(newEpoch).ToDecimal()
 	)
 
-	allIDs := make([]string, 0, len(e.recurringTransfers))
-	for k := range e.recurringTransfers {
-		allIDs = append(allIDs, k)
-	}
-
-	sort.SliceStable(allIDs, func(i, j int) bool { return allIDs[i] < allIDs[j] })
-
 	// iterate over all transfers
-	for _, k := range allIDs {
-		v := e.recurringTransfers[k]
+	for _, v := range e.recurringTransfers {
 		if v.StartEpoch > newEpoch {
 			// not started
 			continue
@@ -168,7 +161,7 @@ func (e *Engine) distributeRecurringTransfers(
 			v.Status = types.TransferStatusStopped
 			transfersDone = append(transfersDone,
 				events.NewRecurringTransferFundsEvent(ctx, v))
-			delete(e.recurringTransfers, k)
+			e.deleteTransfer(v.ID)
 			continue
 		}
 
@@ -180,7 +173,7 @@ func (e *Engine) distributeRecurringTransfers(
 				ctx, v.From, v.To, v.Asset, "", v.FromAccountType, v.ToAccountType, amount, v.Reference, nil, // last is eventual oneoff, which this is not
 			)
 		} else {
-			marketScores := e.getMarketScores(v.DispatchStrategy)
+			marketScores := e.getMarketScores(v.DispatchStrategy, v.Asset, v.From)
 			for _, fms := range marketScores {
 				amt, _ := num.UintFromDecimal(amount.ToDecimal().Mul(fms.Score))
 				if amt.IsZero() {
@@ -192,6 +185,9 @@ func (e *Engine) distributeRecurringTransfers(
 				if err != nil {
 					break
 				}
+				if v.DispatchStrategy.Metric == vegapb.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE && fms.Score.IsPositive() {
+					e.marketActivityTracker.MarkPaidProposer(fms.Market, v.Asset, v.DispatchStrategy.Markets, v.From)
+				}
 				resps = append(resps, r...)
 			}
 		}
@@ -199,7 +195,7 @@ func (e *Engine) distributeRecurringTransfers(
 			v.Status = types.TransferStatusStopped
 			transfersDone = append(transfersDone,
 				events.NewRecurringTransferFundsEvent(ctx, v))
-			delete(e.recurringTransfers, k)
+			e.deleteTransfer(v.ID)
 			continue
 		}
 
@@ -209,7 +205,7 @@ func (e *Engine) distributeRecurringTransfers(
 		if v.EndEpoch != nil && *v.EndEpoch == e.currentEpoch {
 			v.Status = types.TransferStatusDone
 			transfersDone = append(transfersDone, events.NewRecurringTransferFundsEvent(ctx, v))
-			delete(e.recurringTransfers, k)
+			e.deleteTransfer(v.ID)
 		}
 	}
 
@@ -224,4 +220,18 @@ func (e *Engine) distributeRecurringTransfers(
 	}
 
 	return nil
+}
+
+func (e *Engine) deleteTransfer(ID string) {
+	index := -1
+	for i, rt := range e.recurringTransfers {
+		if rt.ID == ID {
+			index = i
+			break
+		}
+	}
+	if index >= 0 {
+		e.recurringTransfers = append(e.recurringTransfers[:index], e.recurringTransfers[index+1:]...)
+		delete(e.recurringTransfersMap, ID)
+	}
 }

@@ -149,19 +149,19 @@ func testCalcContinuousTradingAndCheckAmounts(t *testing.T) {
 	var pay, recv, infra, liquidity int
 	for _, v := range transfers {
 		if v.Type == types.TransferTypeLiquidityFeePay {
-			liquidity += 1
+			liquidity++
 			assert.Equal(t, num.NewUint(500), v.Amount.Amount)
 		}
 		if v.Type == types.TransferTypeInfrastructureFeePay {
-			infra += 1
+			infra++
 			assert.Equal(t, num.NewUint(250), v.Amount.Amount)
 		}
 		if v.Type == types.TransferTypeMakerFeeReceive {
-			recv += 1
+			recv++
 			assert.Equal(t, num.NewUint(125), v.Amount.Amount)
 		}
 		if v.Type == types.TransferTypeMakerFeePay {
-			pay += 1
+			pay++
 			assert.Equal(t, num.NewUint(125), v.Amount.Amount)
 		}
 	}
@@ -227,16 +227,16 @@ func testCalcContinuousTrading(t *testing.T) {
 	var pay, recv, infra, liquidity int
 	for _, v := range transfers {
 		if v.Type == types.TransferTypeLiquidityFeePay {
-			liquidity += 1
+			liquidity++
 		}
 		if v.Type == types.TransferTypeInfrastructureFeePay {
-			infra += 1
+			infra++
 		}
 		if v.Type == types.TransferTypeMakerFeeReceive {
-			recv += 1
+			recv++
 		}
 		if v.Type == types.TransferTypeMakerFeePay {
-			pay += 1
+			pay++
 		}
 	}
 
@@ -286,16 +286,16 @@ func testCalcAuctionTrading(t *testing.T) {
 	var pay, recv, infra, liquidity int
 	for _, v := range transfers {
 		if v.Type == types.TransferTypeLiquidityFeePay {
-			liquidity += 1
+			liquidity++
 		}
 		if v.Type == types.TransferTypeInfrastructureFeePay {
-			infra += 1
+			infra++
 		}
 		if v.Type == types.TransferTypeMakerFeeReceive {
-			recv += 1
+			recv++
 		}
 		if v.Type == types.TransferTypeMakerFeePay {
-			pay += 1
+			pay++
 		}
 	}
 
@@ -347,16 +347,16 @@ func testCalcBatchAuctionTradingSameBatch(t *testing.T) {
 	var pay, recv, infra, liquidity int
 	for _, v := range transfers {
 		if v.Type == types.TransferTypeLiquidityFeePay {
-			liquidity += 1
+			liquidity++
 		}
 		if v.Type == types.TransferTypeInfrastructureFeePay {
-			infra += 1
+			infra++
 		}
 		if v.Type == types.TransferTypeMakerFeeReceive {
-			recv += 1
+			recv++
 		}
 		if v.Type == types.TransferTypeMakerFeePay {
-			pay += 1
+			pay++
 		}
 	}
 
@@ -399,16 +399,16 @@ func testCalcBatchAuctionTradingDifferentBatches(t *testing.T) {
 	var pay, recv, infra, liquidity int
 	for _, v := range transfers {
 		if v.Type == types.TransferTypeLiquidityFeePay {
-			liquidity += 1
+			liquidity++
 		}
 		if v.Type == types.TransferTypeInfrastructureFeePay {
-			infra += 1
+			infra++
 		}
 		if v.Type == types.TransferTypeMakerFeeReceive {
-			recv += 1
+			recv++
 		}
 		if v.Type == types.TransferTypeMakerFeePay {
-			pay += 1
+			pay++
 		}
 	}
 
@@ -474,16 +474,16 @@ func testCalcPositionResolution(t *testing.T) {
 	var pay, recv, infra, liquidity int
 	for _, v := range transfers {
 		if v.Type == types.TransferTypeLiquidityFeePay {
-			liquidity += 1
+			liquidity++
 		}
 		if v.Type == types.TransferTypeInfrastructureFeePay {
-			infra += 1
+			infra++
 		}
 		if v.Type == types.TransferTypeMakerFeeReceive {
-			recv += 1
+			recv++
 		}
 		if v.Type == types.TransferTypeMakerFeePay {
-			pay += 1
+			pay++
 		}
 	}
 

@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"code.vegaprotocol.io/vega/commands"
@@ -28,6 +29,7 @@ import (
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/genesis"
+	"code.vegaprotocol.io/vega/core/idgeneration"
 	"code.vegaprotocol.io/vega/core/processor/ratelimit"
 	"code.vegaprotocol.io/vega/core/txn"
 	"code.vegaprotocol.io/vega/core/types"
@@ -57,6 +59,7 @@ var (
 	ErrNonValidatorTransactionDisabledDuringBootstrap = errors.New("non validator transaction disabled during bootstrap")
 	ErrCheckpointRestoreDisabledDuringBootstrap       = errors.New("checkpoint restore disabled during bootstrap")
 	ErrAwaitingCheckpointRestore                      = errors.New("transactions not allowed while waiting for checkpoint restore")
+	ErrOracleNoSubscribers                            = errors.New("there are no subscribes to the oracle data")
 	ErrOracleDataNormalization                        = func(err error) error {
 		return fmt.Errorf("error normalizing incoming oracle data: %w", err)
 	}
@@ -81,6 +84,7 @@ type PoWEngine interface {
 	DeliverTx(tx abci.Tx) error
 }
 
+//nolint:interfacebloat
 type Snapshot interface {
 	Info() ([]byte, int64, string)
 	Snapshot(ctx context.Context) ([]byte, error)
@@ -115,6 +119,7 @@ type ProtocolUpgradeService interface {
 	GetUpgradeStatus() types.UpgradeStatus
 	SetReadyForUpgrade()
 	Cleanup(ctx context.Context)
+	IsValidProposal(ctx context.Context, pk string, upgradeBlockHeight uint64, vegaReleaseTag string) error
 }
 
 type App struct {
@@ -161,12 +166,13 @@ type App struct {
 	epoch                  EpochService
 	snapshot               Snapshot
 	stateVar               StateVarEngine
-	cpt                    abci.Tx
 	protocolUpgradeService ProtocolUpgradeService
 	erc20MultiSigTopology  ERC20MultiSigTopology
 
 	nilPow  bool
 	nilSpam bool
+
+	maxBatchSize atomic.Uint64
 }
 
 func NewApp(
@@ -273,9 +279,13 @@ func NewApp(
 		HandleCheckTx(txn.StateVariableProposalCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.ValidatorHeartbeatCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.RotateEthereumKeySubmissionCommand, app.RequireValidatorPubKey).
-		HandleCheckTx(txn.ProtocolUpgradeCommand, app.RequireValidatorPubKey)
+		HandleCheckTx(txn.ProtocolUpgradeCommand, app.CheckProtocolUpgradeProposal).
+		HandleCheckTx(txn.IssueSignatures, app.RequireValidatorPubKey).
+		HandleCheckTx(txn.BatchMarketInstructions, app.CheckBatchMarketInstructions)
 
 	app.abci.
+		HandleDeliverTx(txn.IssueSignatures,
+			app.SendEventOnError(app.DeliverIssueSignatures)).
 		HandleDeliverTx(txn.ProtocolUpgradeCommand,
 			app.SendEventOnError(app.DeliverProtocolUpgradeCommand)).
 		HandleDeliverTx(txn.AnnounceNodeCommand,
@@ -305,7 +315,8 @@ func NewApp(
 		HandleDeliverTx(txn.CancelLiquidityProvisionCommand,
 			app.SendEventOnError(app.DeliverCancelLiquidityProvision)).
 		HandleDeliverTx(txn.AmendLiquidityProvisionCommand,
-			app.SendEventOnError(addDeterministicID(app.DeliverAmendLiquidityProvision))).
+			app.SendEventOnError(
+				addDeterministicID(app.DeliverAmendLiquidityProvision))).
 		HandleDeliverTx(txn.NodeVoteCommand,
 			app.RequireValidatorPubKeyW(app.DeliverNodeVote)).
 		HandleDeliverTx(txn.ChainEventCommand,
@@ -320,13 +331,25 @@ func NewApp(
 		HandleDeliverTx(txn.StateVariableProposalCommand,
 			app.RequireValidatorPubKeyW(app.DeliverStateVarProposal)).
 		HandleDeliverTx(txn.RotateEthereumKeySubmissionCommand,
-			app.RequireValidatorPubKeyW(app.DeliverEthereumKeyRotateSubmission))
+			app.RequireValidatorPubKeyW(app.DeliverEthereumKeyRotateSubmission)).
+		HandleDeliverTx(txn.BatchMarketInstructions,
+			app.SendEventOnError(
+				app.CheckBatchMarketInstructionsW(
+					addDeterministicID(app.DeliverBatchMarketInstructions),
+				),
+			),
+		)
 
 	app.time.NotifyOnTick(app.onTick)
 
 	app.nilPow = app.pow == nil || reflect.ValueOf(app.pow).IsNil()
 	app.nilSpam = app.spam == nil || reflect.ValueOf(app.spam).IsNil()
 	return app
+}
+
+func (app *App) OnSpamProtectionMaxBatchSizeUpdate(ctx context.Context, u *num.Uint) error {
+	app.maxBatchSize.Store(u.Uint64())
+	return nil
 }
 
 // addDeterministicID will build the command id and .
@@ -338,6 +361,17 @@ func addDeterministicID(
 ) func(context.Context, abci.Tx) error {
 	return func(ctx context.Context, tx abci.Tx) error {
 		return f(ctx, tx, hex.EncodeToString(vgcrypto.Hash(tx.Signature())))
+	}
+}
+
+func (app *App) CheckBatchMarketInstructionsW(
+	f func(context.Context, abci.Tx) error,
+) func(context.Context, abci.Tx) error {
+	return func(ctx context.Context, tx abci.Tx) error {
+		if err := app.CheckBatchMarketInstructions(ctx, tx); err != nil {
+			return err
+		}
+		return f(ctx, tx)
 	}
 }
 
@@ -433,6 +467,7 @@ func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
 		resp.LastBlockHeight = height
 		resp.LastBlockAppHash = hash
 		app.abci.SetChainID(chainID)
+		app.chainCtx = vgcontext.WithChainID(context.Background(), chainID)
 	}
 
 	app.log.Info("ABCI service INFO requested",
@@ -569,14 +604,6 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 	ctx = vgcontext.WithTraceID(ctx, hash)
 	app.blockCtx = ctx
 
-	// Start the snapshot engine letting it clear any pre-existing state so that if we are
-	// replaying a chain from block 0 we won't recreate snapshots for blocks as we revisit
-	// them
-	if err := app.snapshot.ClearAndInitialise(); err != nil {
-		app.cancel()
-		app.log.Fatal("couldn't start snapshot engine", logging.Error(err))
-	}
-
 	if err := app.ghandler.OnGenesis(ctx, req.Time, req.AppStateBytes); err != nil {
 		app.cancel()
 		app.log.Fatal("couldn't initialise vega with the genesis block", logging.Error(err))
@@ -641,9 +668,6 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 
 	app.stats.SetHash(hash)
 	app.stats.SetHeight(uint64(req.Header.Height))
-
-	app.chainCtx = vgcontext.WithChainID(context.Background(), app.abci.GetChainID())
-
 	ctx = vgcontext.WithBlockHeight(vgcontext.WithTraceID(app.chainCtx, hash), req.Header.Height)
 	app.blockCtx = ctx
 
@@ -906,6 +930,17 @@ func (app *App) OnDeliverTx(ctx context.Context, req tmtypes.RequestDeliverTx, t
 	return ctx, resp
 }
 
+func (app *App) CheckProtocolUpgradeProposal(ctx context.Context, tx abci.Tx) error {
+	if err := app.RequireValidatorPubKey(ctx, tx); err != nil {
+		return err
+	}
+	pu := &commandspb.ProtocolUpgradeProposal{}
+	if err := tx.Unmarshal(pu); err != nil {
+		return err
+	}
+	return app.protocolUpgradeService.IsValidProposal(ctx, tx.PubKeyHex(), pu.UpgradeBlockHeight, pu.VegaReleaseTag)
+}
+
 func (app *App) RequireValidatorPubKey(ctx context.Context, tx abci.Tx) error {
 	if !app.top.IsValidatorVegaPubKey(tx.PubKeyHex()) {
 		return ErrNodeSignatureFromNonValidator
@@ -913,11 +948,48 @@ func (app *App) RequireValidatorPubKey(ctx context.Context, tx abci.Tx) error {
 	return nil
 }
 
+func (app *App) CheckBatchMarketInstructions(ctx context.Context, tx abci.Tx) error {
+	bmi := &commandspb.BatchMarketInstructions{}
+	if err := tx.Unmarshal(bmi); err != nil {
+		return err
+	}
+
+	maxBatchSize := app.maxBatchSize.Load()
+	size := uint64(len(bmi.Cancellations) + len(bmi.Amendments) + len(bmi.Submissions))
+	if size > maxBatchSize {
+		return ErrMarketBatchInstructionTooBig(size, maxBatchSize)
+	}
+
+	return nil
+}
+
+func (app *App) DeliverBatchMarketInstructions(
+	ctx context.Context,
+	tx abci.Tx,
+	deterministicID string,
+) error {
+	batch := &commandspb.BatchMarketInstructions{}
+	if err := tx.Unmarshal(batch); err != nil {
+		return err
+	}
+
+	return NewBMIProcessor(app.log, app.exec).
+		ProcessBatch(ctx, batch, tx.Party(), deterministicID)
+}
+
 func (app *App) RequireValidatorMasterPubKey(ctx context.Context, tx abci.Tx) error {
 	if !app.top.IsValidatorNodeID(tx.PubKeyHex()) {
 		return ErrNodeSignatureWithNonValidatorMasterKey
 	}
 	return nil
+}
+
+func (app *App) DeliverIssueSignatures(ctx context.Context, tx abci.Tx) error {
+	is := &commandspb.IssueSignatures{}
+	if err := tx.Unmarshal(is); err != nil {
+		return err
+	}
+	return app.top.IssueSignatures(ctx, crypto.EthereumChecksumAddress(is.Submitter), is.ValidatorNodeId, is.Kind)
 }
 
 func (app *App) DeliverProtocolUpgradeCommand(ctx context.Context, tx abci.Tx) error {
@@ -970,7 +1042,7 @@ func (app *App) DeliverCancelTransferFunds(ctx context.Context, tx abci.Tx) erro
 	return app.banking.CancelTransferFunds(ctx, types.NewCancelTransferFromProto(tx.Party(), cancel))
 }
 
-func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx, deterministicId string) error {
+func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx, deterministicID string) error {
 	s := &commandspb.OrderSubmission{}
 	if err := tx.Unmarshal(s); err != nil {
 		return err
@@ -984,7 +1056,8 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx, deterministi
 		return err
 	}
 	// Submit the create order request to the execution engine
-	conf, err := app.exec.SubmitOrder(ctx, os, tx.Party(), deterministicId)
+	idgen := idgeneration.New(deterministicID)
+	conf, err := app.exec.SubmitOrder(ctx, os, tx.Party(), idgen, idgen.NextID())
 	if conf != nil {
 		if app.log.GetLevel() <= logging.DebugLevel {
 			app.log.Debug("Order confirmed",
@@ -1011,7 +1084,7 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx, deterministi
 	return err
 }
 
-func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx, deterministicId string) error {
+func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx, deterministicID string) error {
 	porder := &commandspb.OrderCancellation{}
 	if err := tx.Unmarshal(porder); err != nil {
 		return err
@@ -1022,9 +1095,10 @@ func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx, deterministi
 
 	order := types.OrderCancellationFromProto(porder)
 	// Submit the cancel new order request to the Vega trading core
-	msg, err := app.exec.CancelOrder(ctx, order, tx.Party(), deterministicId)
+	idgen := idgeneration.New(deterministicID)
+	msg, err := app.exec.CancelOrder(ctx, order, tx.Party(), idgen)
 	if err != nil {
-		app.log.Error("error on cancelling order", logging.String("order-id", order.OrderId), logging.Error(err))
+		app.log.Error("error on cancelling order", logging.String("order-id", order.OrderID), logging.Error(err))
 		return err
 	}
 	if app.cfg.LogOrderCancelDebug {
@@ -1036,7 +1110,11 @@ func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx, deterministi
 	return nil
 }
 
-func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx, deterministicId string) (errl error) {
+func (app *App) DeliverAmendOrder(
+	ctx context.Context,
+	tx abci.Tx,
+	deterministicID string,
+) (errl error) {
 	order := &commandspb.OrderAmendment{}
 	if err := tx.Unmarshal(order); err != nil {
 		return err
@@ -1052,7 +1130,8 @@ func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx, deterministic
 	}
 
 	// Submit the cancel new order request to the Vega trading core
-	msg, err := app.exec.AmendOrder(ctx, oa, tx.Party(), deterministicId)
+	idgen := idgeneration.New(deterministicID)
+	msg, err := app.exec.AmendOrder(ctx, oa, tx.Party(), idgen)
 	if err != nil {
 		app.log.Error("error on amending order", logging.String("order-id", order.OrderId), logging.Error(err))
 		return err
@@ -1087,7 +1166,7 @@ func (app *App) DeliverWithdraw(
 	return app.handleCheckpoint(snap)
 }
 
-func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, deterministicId string) error {
+func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, deterministicID string) error {
 	prop := &commandspb.ProposalSubmission{}
 	if err := tx.Unmarshal(prop); err != nil {
 		return err
@@ -1097,7 +1176,7 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, deterministicId 
 
 	if app.log.GetLevel() <= logging.DebugLevel {
 		app.log.Debug("submitting proposal",
-			logging.ProposalID(deterministicId),
+			logging.ProposalID(deterministicID),
 			logging.String("proposal-reference", prop.Reference),
 			logging.String("proposal-party", party),
 			logging.String("proposal-terms", prop.Terms.String()))
@@ -1107,10 +1186,10 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, deterministicId 
 	if err != nil {
 		return err
 	}
-	toSubmit, err := app.gov.SubmitProposal(ctx, *propSubmission, deterministicId, party)
+	toSubmit, err := app.gov.SubmitProposal(ctx, *propSubmission, deterministicID, party)
 	if err != nil {
 		app.log.Debug("could not submit proposal",
-			logging.ProposalID(deterministicId),
+			logging.ProposalID(deterministicID),
 			logging.Error(err))
 		return err
 	}
@@ -1118,17 +1197,7 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, deterministicId 
 	if toSubmit.IsNewMarket() {
 		nm := toSubmit.NewMarket()
 
-		// TODO(): for now we are using a hash of the market ID to create
-		// the lp provision ID (well it's still deterministic...)
-		lpid := hex.EncodeToString(vgcrypto.Hash([]byte(nm.Market().ID)))
-		var err error
-		if lp := nm.LiquidityProvisionSubmission(); lp != nil {
-			err = app.exec.SubmitMarketWithLiquidityProvision(
-				ctx, nm.Market(), nm.LiquidityProvisionSubmission(), party, lpid, deterministicId)
-		} else {
-			err = app.exec.SubmitMarket(ctx, nm.Market(), party)
-		}
-		if err != nil {
+		if err := app.exec.SubmitMarket(ctx, nm.Market(), party); err != nil {
 			app.log.Debug("unable to submit new market with liquidity submission",
 				logging.ProposalID(nm.Market().ID),
 				logging.Error(err))
@@ -1177,7 +1246,7 @@ func (app *App) DeliverNodeSignature(ctx context.Context, tx abci.Tx) error {
 	return app.notary.RegisterSignature(ctx, tx.PubKeyHex(), *ns)
 }
 
-func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, deterministicId string) error {
+func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, deterministicID string) error {
 	sub := &commandspb.LiquidityProvisionSubmission{}
 	if err := tx.Unmarshal(sub); err != nil {
 		return err
@@ -1193,7 +1262,7 @@ func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, deter
 		return err
 	}
 
-	return app.exec.SubmitLiquidityProvision(ctx, lps, tx.Party(), deterministicId)
+	return app.exec.SubmitLiquidityProvision(ctx, lps, tx.Party(), deterministicID)
 }
 
 func (app *App) DeliverCancelLiquidityProvision(ctx context.Context, tx abci.Tx) error {
@@ -1225,7 +1294,7 @@ func (app *App) DeliverCancelLiquidityProvision(ctx context.Context, tx abci.Tx)
 	return nil
 }
 
-func (app *App) DeliverAmendLiquidityProvision(ctx context.Context, tx abci.Tx, deterministicId string) error {
+func (app *App) DeliverAmendLiquidityProvision(ctx context.Context, tx abci.Tx, deterministicID string) error {
 	lp := &commandspb.LiquidityProvisionAmendment{}
 	if err := tx.Unmarshal(lp); err != nil {
 		return err
@@ -1240,7 +1309,7 @@ func (app *App) DeliverAmendLiquidityProvision(ctx context.Context, tx abci.Tx, 
 	}
 
 	// Submit the amend liquidity provision request to the Vega trading core
-	err = app.exec.AmendLiquidityProvision(ctx, lpa, tx.Party(), deterministicId)
+	err = app.exec.AmendLiquidityProvision(ctx, lpa, tx.Party(), deterministicID)
 	if err != nil {
 		app.log.Error("error on amending Liquidity Provision", logging.String("liquidity-provision-market-id", lpa.MarketID), logging.Error(err))
 		return err
@@ -1303,6 +1372,13 @@ func (app *App) CheckSubmitOracleData(_ context.Context, tx abci.Tx) error {
 		return ErrUnexpectedTxPubKey
 	}
 
+	hasMatch, err := app.oracles.Engine.HasMatch(*oracleData)
+	if err != nil {
+		return err
+	}
+	if !hasMatch {
+		return ErrOracleNoSubscribers
+	}
 	return nil
 }
 
@@ -1377,23 +1453,7 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 		}
 		return
 	}
-
-	var signature []byte
-	if app.top.IsValidator() {
-		switch {
-		case asset.IsERC20():
-			asset, _ := asset.ERC20()
-			_, signature, err = asset.SignListAsset()
-			if err != nil {
-				app.log.Panic("couldn't to sign transaction to list asset, is the node properly configured as a validator?",
-					logging.AssetID(prop.ID),
-					logging.Error(err))
-			}
-		}
-	}
-
-	// then instruct the notary to start getting signature from validators
-	app.notary.StartAggregate(prop.ID, types.NodeSignatureKindAssetNew, signature)
+	app.assets.EnactPendingAsset(prop.ID)
 }
 
 func (app *App) enactAssetUpdate(_ context.Context, prop *types.Proposal, updatedAsset *types.Asset) {

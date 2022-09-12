@@ -39,7 +39,9 @@ const (
 )
 
 type ColumnOrdering struct {
-	Name    string
+	// Name of the column in the database table to match to the struct field
+	Name string
+	// Sorting is the sorting order to use for the column
 	Sorting Sorting
 }
 
@@ -118,15 +120,15 @@ func CursorPredicate(args []interface{}, cursor interface{}, ordering TableOrder
 		}
 
 		bindVar := nextBindVar(&args, value)
-		inequlityPredicate := fmt.Sprintf("%s %s %s", column.Name, operator, bindVar)
+		inequalityPredicate := fmt.Sprintf("%s %s %s", column.Name, operator, bindVar)
 
-		colPredicates := append(equalPredicates, inequlityPredicate)
+		colPredicates := append(equalPredicates, inequalityPredicate)
 		colPredicateString := strings.Join(colPredicates, " AND ")
 		colPredicateString = fmt.Sprintf("(%s)", colPredicateString)
 		cursorPredicates = append(cursorPredicates, colPredicateString)
 
-		equlityPredicate := fmt.Sprintf("%s = %s", column.Name, bindVar)
-		equalPredicates = append(equalPredicates, equlityPredicate)
+		equalityPredicate := fmt.Sprintf("%s = %s", column.Name, bindVar)
+		equalPredicates = append(equalPredicates, equalityPredicate)
 	}
 
 	predicateString := strings.Join(cursorPredicates, " OR ")

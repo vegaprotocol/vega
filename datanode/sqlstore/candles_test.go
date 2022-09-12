@@ -57,8 +57,8 @@ func TestGetExistingCandles(t *testing.T) {
 	assert.Equal(t, len(intervals), len(candles))
 
 	for _, interval := range intervals {
-		candleId := candles[interval]
-		exists, _ := candleStore.CandleExists(context.Background(), candleId)
+		candleID := candles[interval]
+		exists, _ := candleStore.CandleExists(context.Background(), candleID)
 		assert.True(t, exists)
 	}
 }
@@ -73,12 +73,12 @@ func TestCandlesPagination(t *testing.T) {
 	startTime := time.Unix(StartTime, 0)
 	insertCandlesTestData(t, tradeStore, startTime, totalBlocks, tradesPerBlock, startPrice, priceIncrement, size, blockIntervalDur)
 
-	_, candleId, _ := candleStore.GetCandleIdForIntervalAndMarket(context.Background(), "1 Minute", testMarket)
+	_, candleID, _ := candleStore.GetCandleIDForIntervalAndMarket(context.Background(), "1 Minute", testMarket)
 	first := int32(10)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	require.NoError(t, err)
 
-	candles, _, err := candleStore.GetCandleDataForTimeSpan(context.Background(), candleId, nil,
+	candles, _, err := candleStore.GetCandleDataForTimeSpan(context.Background(), candleID, nil,
 		nil, pagination)
 	if err != nil {
 		t.Fatalf("failed to get candles with pagination:%s", err)
@@ -92,7 +92,7 @@ func TestCandlesPagination(t *testing.T) {
 
 	pagination, _ = entities.NewCursorPagination(&first, &after, nil, nil, false)
 
-	candles, _, err = candleStore.GetCandleDataForTimeSpan(context.Background(), candleId, nil,
+	candles, _, err = candleStore.GetCandleDataForTimeSpan(context.Background(), candleID, nil,
 		nil, pagination)
 
 	if err != nil {
@@ -121,13 +121,13 @@ func TestCandlesGetForEmptyInterval(t *testing.T) {
 	insertTestTrade(t, tradeStore, 3, 20, block, 0)
 	insertTestTrade(t, tradeStore, 4, 20, block, 5)
 
-	_, candleId, err := candleStore.GetCandleIdForIntervalAndMarket(context.Background(), "1 Minute", testMarket)
+	_, candleID, err := candleStore.GetCandleIDForIntervalAndMarket(context.Background(), "1 Minute", testMarket)
 	if err != nil {
 		t.Fatalf("getting existing candleDescriptor id:%s", err)
 	}
 
 	pagination, _ := entities.NewCursorPagination(nil, nil, nil, nil, false)
-	candles, _, err := candleStore.GetCandleDataForTimeSpan(context.Background(), candleId, &startTime,
+	candles, _, err := candleStore.GetCandleDataForTimeSpan(context.Background(), candleID, &startTime,
 		nil, pagination)
 	if err != nil {
 		t.Fatalf("failed to get candles:%s", err)
@@ -156,8 +156,8 @@ func TestCandlesGetLatest(t *testing.T) {
 
 	last := int32(1)
 	pagination, _ := entities.NewCursorPagination(nil, nil, &last, nil, false)
-	_, candleId, _ := candleStore.GetCandleIdForIntervalAndMarket(context.Background(), "1 Minute", testMarket)
-	candles, _, err := candleStore.GetCandleDataForTimeSpan(context.Background(), candleId, &startTime,
+	_, candleID, _ := candleStore.GetCandleIDForIntervalAndMarket(context.Background(), "1 Minute", testMarket)
+	candles, _, err := candleStore.GetCandleDataForTimeSpan(context.Background(), candleID, &startTime,
 		nil, pagination)
 	if err != nil {
 		t.Fatalf("failed to get candles:%s", err)
@@ -206,8 +206,8 @@ func testInterval(t *testing.T, tradeDataStartTime time.Time, fromTime *time.Tim
 
 	pagination, _ := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	// entities.OffsetPagination{}
-	_, candleId, _ := candleStore.GetCandleIdForIntervalAndMarket(context.Background(), interval, testMarket)
-	candles, _, err := candleStore.GetCandleDataForTimeSpan(context.Background(), candleId, fromTime,
+	_, candleID, _ := candleStore.GetCandleIDForIntervalAndMarket(context.Background(), interval, testMarket)
+	candles, _, err := candleStore.GetCandleDataForTimeSpan(context.Background(), candleID, fromTime,
 		toTime, pagination)
 	if err != nil {
 		t.Fatalf("failed to get candles:%s", err)
@@ -328,7 +328,7 @@ func createTestTrade(t *testing.T, price int, size int, block entities.Block, se
 		SellOrder: generateID(),
 	}
 
-	trade, err := entities.TradeFromProto(proto, block.VegaTime, uint64(seqNum))
+	trade, err := entities.TradeFromProto(proto, generateTxHash(), block.VegaTime, uint64(seqNum))
 	if err != nil {
 		t.Fatalf("failed to create trade from proto:%s", err)
 	}
@@ -344,14 +344,14 @@ func TestCandlesCursorPagination(t *testing.T) {
 	startTime := time.Unix(StartTime, 0)
 	insertCandlesTestData(t, tradeStore, startTime, totalBlocks, tradesPerBlock, startPrice, priceIncrement, size, blockIntervalDur)
 
-	_, candleId, err := candleStore.GetCandleIdForIntervalAndMarket(context.Background(), "1 Minute", testMarket)
+	_, candleID, err := candleStore.GetCandleIDForIntervalAndMarket(context.Background(), "1 Minute", testMarket)
 	if err != nil {
 		t.Fatalf("getting existing candleDescriptor id:%s", err)
 	}
 
 	pagination, _ := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	// retrieve all candles without pagination to use for test validation
-	allCandles, _, err := candleStore.GetCandleDataForTimeSpan(context.Background(), candleId, &startTime,
+	allCandles, _, err := candleStore.GetCandleDataForTimeSpan(context.Background(), candleID, &startTime,
 		nil, pagination)
 	if err != nil {
 		t.Fatalf("failed to get candles:%s", err)
@@ -363,7 +363,7 @@ func TestCandlesCursorPagination(t *testing.T) {
 		first := int32(10)
 		pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 		require.NoError(t, err)
-		candles, pageInfo, err := candleStore.GetCandleDataForTimeSpan(context.Background(), candleId, &startTime, nil, pagination)
+		candles, pageInfo, err := candleStore.GetCandleDataForTimeSpan(context.Background(), candleID, &startTime, nil, pagination)
 		require.NoError(t, err)
 		require.Equal(t, 10, len(candles))
 		assert.Equal(t, allCandles[0], candles[0])
@@ -380,7 +380,7 @@ func TestCandlesCursorPagination(t *testing.T) {
 		first := int32(10)
 		pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
 		require.NoError(t, err)
-		candles, pageInfo, err := candleStore.GetCandleDataForTimeSpan(context.Background(), candleId, &startTime, nil, pagination)
+		candles, pageInfo, err := candleStore.GetCandleDataForTimeSpan(context.Background(), candleID, &startTime, nil, pagination)
 		require.NoError(t, err)
 		lastIndex := len(allCandles) - 1
 		require.Equal(t, 10, len(candles))
@@ -398,7 +398,7 @@ func TestCandlesCursorPagination(t *testing.T) {
 		last := int32(10)
 		pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 		require.NoError(t, err)
-		candles, pageInfo, err := candleStore.GetCandleDataForTimeSpan(context.Background(), candleId, &startTime, nil, pagination)
+		candles, pageInfo, err := candleStore.GetCandleDataForTimeSpan(context.Background(), candleID, &startTime, nil, pagination)
 		require.NoError(t, err)
 		require.Equal(t, 10, len(candles))
 		assert.Equal(t, allCandles[157], candles[0])
@@ -415,7 +415,7 @@ func TestCandlesCursorPagination(t *testing.T) {
 		last := int32(10)
 		pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
 		require.NoError(t, err)
-		candles, pageInfo, err := candleStore.GetCandleDataForTimeSpan(context.Background(), candleId, &startTime, nil, pagination)
+		candles, pageInfo, err := candleStore.GetCandleDataForTimeSpan(context.Background(), candleID, &startTime, nil, pagination)
 		require.NoError(t, err)
 		require.Equal(t, 10, len(candles))
 		assert.Equal(t, allCandles[9], candles[0])
@@ -433,7 +433,7 @@ func TestCandlesCursorPagination(t *testing.T) {
 		after := allCandles[99].Cursor().Encode()
 		pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 		require.NoError(t, err)
-		candles, pageInfo, err := candleStore.GetCandleDataForTimeSpan(context.Background(), candleId, &startTime, nil, pagination)
+		candles, pageInfo, err := candleStore.GetCandleDataForTimeSpan(context.Background(), candleID, &startTime, nil, pagination)
 		require.NoError(t, err)
 		require.Equal(t, 10, len(candles))
 		assert.Equal(t, allCandles[100], candles[0])
@@ -451,7 +451,7 @@ func TestCandlesCursorPagination(t *testing.T) {
 		after := allCandles[99].Cursor().Encode()
 		pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
 		require.NoError(t, err)
-		candles, pageInfo, err := candleStore.GetCandleDataForTimeSpan(context.Background(), candleId, &startTime, nil, pagination)
+		candles, pageInfo, err := candleStore.GetCandleDataForTimeSpan(context.Background(), candleID, &startTime, nil, pagination)
 		require.NoError(t, err)
 		require.Equal(t, 10, len(candles))
 		assert.Equal(t, allCandles[98], candles[0])
@@ -469,7 +469,7 @@ func TestCandlesCursorPagination(t *testing.T) {
 		before := allCandles[100].Cursor().Encode()
 		pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 		require.NoError(t, err)
-		candles, pageInfo, err := candleStore.GetCandleDataForTimeSpan(context.Background(), candleId, &startTime, nil, pagination)
+		candles, pageInfo, err := candleStore.GetCandleDataForTimeSpan(context.Background(), candleID, &startTime, nil, pagination)
 		require.NoError(t, err)
 		require.Equal(t, 10, len(candles))
 		assert.Equal(t, allCandles[90], candles[0])
@@ -487,7 +487,7 @@ func TestCandlesCursorPagination(t *testing.T) {
 		before := allCandles[100].Cursor().Encode()
 		pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
 		require.NoError(t, err)
-		candles, pageInfo, err := candleStore.GetCandleDataForTimeSpan(context.Background(), candleId, &startTime, nil, pagination)
+		candles, pageInfo, err := candleStore.GetCandleDataForTimeSpan(context.Background(), candleID, &startTime, nil, pagination)
 		require.NoError(t, err)
 		require.Equal(t, 10, len(candles))
 		assert.Equal(t, allCandles[110], candles[0])

@@ -20,8 +20,9 @@ import (
 
 type testService struct {
 	*assets.Service
-	broker     *bmocks.MockBrokerI
+	broker     *bmocks.MockInterface
 	bridgeView *mocks.MockERC20BridgeView
+	notary     *mocks.MockNotary
 	ctrl       *gomock.Controller
 }
 
@@ -63,17 +64,19 @@ func getTestService(t *testing.T) *testService {
 	logger := logging.NewTestLogger()
 	ctrl := gomock.NewController(t)
 	ethClient := erc20mocks.NewMockETHClient(ctrl)
-	broker := bmocks.NewMockBrokerI(ctrl)
+	broker := bmocks.NewMockInterface(ctrl)
 	bridgeView := mocks.NewMockERC20BridgeView(ctrl)
+	notary := mocks.NewMockNotary(ctrl)
 	nodeWallets := &nodewallets.NodeWallets{
 		Vega:     &nwvega.Wallet{},
 		Ethereum: &nweth.Wallet{},
 	}
-	service := assets.New(logger, conf, nodeWallets, ethClient, broker, bridgeView, true)
+	service := assets.New(logger, conf, nodeWallets, ethClient, broker, bridgeView, notary, true)
 	return &testService{
 		Service:    service,
 		broker:     broker,
 		ctrl:       ctrl,
 		bridgeView: bridgeView,
+		notary:     notary,
 	}
 }

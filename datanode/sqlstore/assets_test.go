@@ -25,12 +25,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var testAssetCount int = 0
+var testAssetCount int
 
 func addTestAsset(t *testing.T, as *sqlstore.Assets, block entities.Block, idPrefix ...string) entities.Asset {
 	t.Helper()
 	// Make an asset
-	testAssetCount += 1
+	testAssetCount++
 	quantum, _ := decimal.NewFromString("10")
 	assetID := generateID()
 
@@ -55,6 +55,52 @@ func addTestAsset(t *testing.T, as *sqlstore.Assets, block entities.Block, idPre
 	err := as.Add(context.Background(), asset)
 	require.NoError(t, err)
 	return asset
+}
+
+// TestAssetCache tests for a bug which was discovered whereby fetching an asset by ID after
+// it had been updated but before the transaction was committed led to a poisoned cache that
+// returned stale values.
+func TestAssetCache(t *testing.T) {
+	defer DeleteEverything()
+
+	bs := sqlstore.NewBlocks(connectionSource)
+	as := sqlstore.NewAssets(connectionSource)
+	block := addTestBlock(t, bs)
+	ctx := context.Background()
+
+	// A make a lovely asset
+	asset := addTestAsset(t, as, block, "")
+
+	// Try updating the asset to have a new symbol *without* using a transaction
+	asset2 := asset
+	asset2.Symbol = "TEST2"
+	err := as.Add(ctx, asset2)
+	require.NoError(t, err)
+
+	// Should get new asset symbol immediately
+	fetched, err := as.GetByID(ctx, string(asset.ID))
+	require.NoError(t, err)
+	require.Equal(t, asset2, fetched)
+
+	// Now in a transaction, update the asset to have another different symbol
+	txCtx, err := connectionSource.WithTransaction(ctx)
+	require.NoError(t, err)
+	asset3 := asset
+	asset3.Symbol = "TEST3"
+	err = as.Add(txCtx, asset3)
+	require.NoError(t, err)
+
+	// Transaction hasn't committed yet, we should still get the old symbol when fetching that asset
+	fetched, err = as.GetByID(ctx, string(asset.ID))
+	require.NoError(t, err)
+	assert.Equal(t, asset2, fetched)
+
+	// Commit the transaction and fetch the asset, we should get the asset with the new symbol
+	err = connectionSource.Commit(txCtx)
+	require.NoError(t, err)
+	fetched, err = as.GetByID(ctx, string(asset.ID))
+	require.NoError(t, err)
+	assert.Equal(t, asset3, fetched)
 }
 
 func TestAsset(t *testing.T) {

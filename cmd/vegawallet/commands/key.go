@@ -27,7 +27,7 @@ func NewCmdKey(w io.Writer, rf *RootFlags) *cobra.Command {
 	return cmd
 }
 
-func printMeta(str *printer.FormattedString, meta []wallet.Meta) {
+func printMeta(str *printer.FormattedString, meta []wallet.Metadata) {
 	padding := 0
 	for _, m := range meta {
 		keyLen := len(m.Key)

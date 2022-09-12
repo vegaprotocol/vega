@@ -29,6 +29,7 @@ env:
 
 jobs:
   project-board-automation:
+    if: contains(github.event.pull_request.labels.*.name, 'no-issue') != true
     name: 'Linked Issues & Project Board Automation'
     runs-on: ubuntu-latest
     permissions: write-all

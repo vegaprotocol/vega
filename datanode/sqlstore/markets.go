@@ -30,11 +30,11 @@ type Markets struct {
 }
 
 var marketOrdering = TableOrdering{
-	ColumnOrdering{"vega_time", ASC},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC},
 }
 
 const (
-	sqlMarketsColumns = `id, vega_time, instrument_id, tradable_instrument, decimal_places,
+	sqlMarketsColumns = `id, tx_hash, vega_time, instrument_id, tradable_instrument, decimal_places,
 		fees, opening_auction, price_monitoring_settings, liquidity_monitoring_parameters,
 		trading_mode, state, market_timestamps, position_decimal_places`
 )
@@ -47,13 +47,10 @@ func NewMarkets(connectionSource *ConnectionSource) *Markets {
 }
 
 func (m *Markets) Upsert(ctx context.Context, market *entities.Market) error {
-	m.cacheLock.Lock()
-	defer m.cacheLock.Unlock()
-
-	query := fmt.Sprintf(`insert into markets(%s) 
-values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+	query := fmt.Sprintf(`insert into markets(%s)
+values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 on conflict (id, vega_time) do update
-set 
+set
 	instrument_id=EXCLUDED.instrument_id,
 	tradable_instrument=EXCLUDED.tradable_instrument,
 	decimal_places=EXCLUDED.decimal_places,
@@ -64,17 +61,24 @@ set
 	trading_mode=EXCLUDED.trading_mode,
 	state=EXCLUDED.state,
 	market_timestamps=EXCLUDED.market_timestamps,
-	position_decimal_places=EXCLUDED.position_decimal_places;`, sqlMarketsColumns)
+	position_decimal_places=EXCLUDED.position_decimal_places,
+	tx_hash=EXCLUDED.tx_hash;`, sqlMarketsColumns)
 
 	defer metrics.StartSQLQuery("Markets", "Upsert")()
-	if _, err := m.Connection.Exec(ctx, query, market.ID, market.VegaTime, market.InstrumentID, market.TradableInstrument, market.DecimalPlaces,
+	if _, err := m.Connection.Exec(ctx, query, market.ID, market.TxHash, market.VegaTime, market.InstrumentID, market.TradableInstrument, market.DecimalPlaces,
 		market.Fees, market.OpeningAuction, market.PriceMonitoringSettings, market.LiquidityMonitoringParameters,
 		market.TradingMode, market.State, market.MarketTimestamps, market.PositionDecimalPlaces); err != nil {
 		err = fmt.Errorf("could not insert market into database: %w", err)
 		return err
 	}
 
-	m.cache[market.ID.String()] = *market
+	m.AfterCommit(ctx, func() {
+		// delete cache
+		m.cacheLock.Lock()
+		defer m.cacheLock.Unlock()
+		delete(m.cache, market.ID.String())
+	})
+
 	return nil
 }
 
@@ -88,8 +92,8 @@ func (m *Markets) GetByID(ctx context.Context, marketID string) (entities.Market
 		return market, nil
 	}
 
-	query := fmt.Sprintf(`select distinct on (id) %s 
-from markets 
+	query := fmt.Sprintf(`select distinct on (id) %s
+from markets
 where id = $1
 order by id, vega_time desc
 `, sqlMarketsColumns)

@@ -267,7 +267,7 @@ func (a *AuctionState) Left(ctx context.Context, now time.Time) *events.Auction 
 	a.timer.EngineTimeCounterAdd()
 
 	// the end-of-auction event
-	var start int64 = 0
+	var start int64
 	if a.begin != nil {
 		start = a.begin.UnixNano()
 	}

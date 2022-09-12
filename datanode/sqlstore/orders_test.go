@@ -22,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/logging"
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -36,7 +37,7 @@ func addTestOrder(t *testing.T, os *sqlstore.Orders, id entities.OrderID, block 
 		MarketID:        market.ID,
 		PartyID:         party.ID,
 		Side:            side,
-		Price:           price,
+		Price:           decimal.NewFromInt(price),
 		Size:            size,
 		Remaining:       remaining,
 		TimeInForce:     timeInForce,
@@ -44,7 +45,7 @@ func addTestOrder(t *testing.T, os *sqlstore.Orders, id entities.OrderID, block 
 		Status:          status,
 		Reference:       reference,
 		Version:         version,
-		PeggedOffset:    0,
+		PeggedOffset:    decimal.NewFromInt(0),
 		PeggedReference: types.PeggedReferenceMid,
 		CreatedAt:       time.Now().Truncate(time.Microsecond),
 		UpdatedAt:       time.Now().Add(5 * time.Second).Truncate(time.Microsecond),
@@ -240,7 +241,7 @@ func reverseOrderSlice(input []entities.Order) (output []entities.Order) {
 
 func generateTestBlocks(t *testing.T, numBlocks int, bs *sqlstore.Blocks) []entities.Block {
 	t.Helper()
-	blocks := make([]entities.Block, numBlocks, numBlocks)
+	blocks := make([]entities.Block, numBlocks)
 	for i := 0; i < numBlocks; i++ {
 		blocks[i] = addTestBlock(t, bs)
 		time.Sleep(time.Millisecond)
@@ -250,7 +251,7 @@ func generateTestBlocks(t *testing.T, numBlocks int, bs *sqlstore.Blocks) []enti
 
 func generateParties(t *testing.T, numParties int, block entities.Block, ps *sqlstore.Parties) []entities.Party {
 	t.Helper()
-	parties := make([]entities.Party, numParties, numParties)
+	parties := make([]entities.Party, numParties)
 	for i := 0; i < numParties; i++ {
 		parties[i] = addTestParty(t, ps, block)
 	}
@@ -508,6 +509,10 @@ func TestOrders_CursorPagination(t *testing.T) {
 	t.Run("Should return the page of current orders for a given party when a last and before cursor is given - Newest First", testOrdersCursorPaginationByPartyLastAndBeforeCursorNewestFirst)
 	t.Run("Should return the page of order versions of a given order ID when a last and before cursor is given - Newest First", testOrdersCursorPaginationByOrderIDLastAndBeforeCursorNewestFirst)
 	t.Run("Should return the page of current orders for a given party and market when a last and before cursor is given - Newest First", testOrdersCursorPaginationByMarketAndPartyLastAndBeforeCursorNewestFirst)
+
+	t.Run("Should return all current orders between dates for a given market when no cursor is given", testOrdersCursorPaginationBetweenDatesByMarketNoCursor)
+	t.Run("Should return the first page of current orders between dates for a given market when a first cursor is given", testOrdersCursorPaginationBetweenDatesByMarketFirstCursor)
+	t.Run("Should return the page of current orders for a given market when a first and after cursor is given", testOrdersCursorPaginationBetweenDatesByMarketFirstAndAfterCursor)
 }
 
 type orderTestStores struct {
@@ -845,7 +850,7 @@ func testOrdersCursorPaginationByMarketNoCursor(t *testing.T) {
 	require.NoError(t, err)
 
 	marketID := testData.markets[0].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, pagination)
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{})
 
 	require.NoError(t, err)
 	assert.Len(t, got, 5)
@@ -872,7 +877,7 @@ func testOrdersCursorPaginationByPartyNoCursor(t *testing.T) {
 	require.NoError(t, err)
 
 	partyID := testData.parties[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, pagination)
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 6)
 	want := append([]entities.Order{}, testData.orders[3], testData.orders[5], testData.orders[7], testData.orders[9], testData.orders[12], testData.orders[13])
@@ -925,7 +930,7 @@ func testOrdersCursorPaginationByMarketAndPartyNoCursor(t *testing.T) {
 
 	partyID := testData.parties[1].ID.String()
 	marketID := testData.markets[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, pagination)
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, false, pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 3)
 	want := append([]entities.Order{}, testData.orders[5], testData.orders[9], testData.orders[12])
@@ -951,7 +956,7 @@ func testOrdersCursorPaginationByMarketNoCursorNewestFirst(t *testing.T) {
 	require.NoError(t, err)
 
 	marketID := testData.markets[0].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, pagination)
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 5)
 	want := append([]entities.Order{},
@@ -983,7 +988,7 @@ func testOrdersCursorPaginationByPartyNoCursorNewestFirst(t *testing.T) {
 	require.NoError(t, err)
 
 	partyID := testData.parties[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, pagination)
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 6)
 	want := append([]entities.Order{},
@@ -1050,7 +1055,7 @@ func testOrdersCursorPaginationByMarketAndPartyNoCursorNewestFirst(t *testing.T)
 
 	partyID := testData.parties[1].ID.String()
 	marketID := testData.markets[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, pagination)
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, false, pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 3)
 	want := append([]entities.Order{},
@@ -1083,7 +1088,7 @@ func testOrdersCursorPaginationByMarketFirstCursor(t *testing.T) {
 	require.NoError(t, err)
 
 	marketID := testData.markets[0].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, pagination)
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 3)
 	want := append([]entities.Order{}, testData.orders[0], testData.orders[3], testData.orders[7])
@@ -1110,7 +1115,7 @@ func testOrdersCursorPaginationByPartyFirstCursor(t *testing.T) {
 	require.NoError(t, err)
 
 	partyID := testData.parties[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, pagination)
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 3)
 	want := append([]entities.Order{}, testData.orders[3], testData.orders[5], testData.orders[7])
@@ -1165,7 +1170,7 @@ func testOrdersCursorPaginationByMarketAndPartyFirstCursor(t *testing.T) {
 
 	partyID := testData.parties[1].ID.String()
 	marketID := testData.markets[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, pagination)
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, false, pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	want := append([]entities.Order{}, testData.orders[5], testData.orders[9])
@@ -1192,7 +1197,7 @@ func testOrdersCursorPaginationByMarketFirstCursorNewestFirst(t *testing.T) {
 	require.NoError(t, err)
 
 	marketID := testData.markets[0].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, pagination)
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 3)
 	want := append([]entities.Order{},
@@ -1223,7 +1228,7 @@ func testOrdersCursorPaginationByPartyFirstCursorNewestFirst(t *testing.T) {
 	require.NoError(t, err)
 
 	partyID := testData.parties[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, pagination)
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 3)
 	want := append([]entities.Order{},
@@ -1286,7 +1291,7 @@ func testOrdersCursorPaginationByMarketAndPartyFirstCursorNewestFirst(t *testing
 
 	partyID := testData.parties[1].ID.String()
 	marketID := testData.markets[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, pagination)
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, false, pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	want := append([]entities.Order{},
@@ -1318,7 +1323,7 @@ func testOrdersCursorPaginationByMarketLastCursor(t *testing.T) {
 	require.NoError(t, err)
 
 	marketID := testData.markets[0].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, pagination)
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 3)
 	want := append([]entities.Order{}, testData.orders[7], testData.orders[13], testData.orders[14])
@@ -1345,7 +1350,7 @@ func testOrdersCursorPaginationByPartyLastCursor(t *testing.T) {
 	require.NoError(t, err)
 
 	partyID := testData.parties[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, pagination)
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 3)
 	want := append([]entities.Order{}, testData.orders[9], testData.orders[12], testData.orders[13])
@@ -1400,7 +1405,7 @@ func testOrdersCursorPaginationByMarketAndPartyLastCursor(t *testing.T) {
 
 	partyID := testData.parties[1].ID.String()
 	marketID := testData.markets[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, pagination)
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, false, pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	want := append([]entities.Order{}, testData.orders[9], testData.orders[12])
@@ -1427,7 +1432,7 @@ func testOrdersCursorPaginationByMarketLastCursorNewestFirst(t *testing.T) {
 	require.NoError(t, err)
 
 	marketID := testData.markets[0].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, pagination)
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 3)
 	want := append([]entities.Order{},
@@ -1458,7 +1463,7 @@ func testOrdersCursorPaginationByPartyLastCursorNewestFirst(t *testing.T) {
 	require.NoError(t, err)
 
 	partyID := testData.parties[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, pagination)
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 3)
 	want := append([]entities.Order{},
@@ -1521,7 +1526,7 @@ func testOrdersCursorPaginationByMarketAndPartyLastCursorNewestFirst(t *testing.
 
 	partyID := testData.parties[1].ID.String()
 	marketID := testData.markets[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, pagination)
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, false, pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	want := append([]entities.Order{},
@@ -1554,7 +1559,7 @@ func testOrdersCursorPaginationByMarketFirstAndAfterCursor(t *testing.T) {
 	require.NoError(t, err)
 
 	marketID := testData.markets[0].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, pagination)
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 3)
 	want := append([]entities.Order{}, testData.orders[3], testData.orders[7], testData.orders[13])
@@ -1582,7 +1587,7 @@ func testOrdersCursorPaginationByPartyFirstAndAfterCursor(t *testing.T) {
 	require.NoError(t, err)
 
 	partyID := testData.parties[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, pagination)
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 3)
 	want := append([]entities.Order{}, testData.orders[7], testData.orders[9], testData.orders[12])
@@ -1639,7 +1644,7 @@ func testOrdersCursorPaginationByMarketAndPartyFirstAndAfterCursor(t *testing.T)
 
 	partyID := testData.parties[1].ID.String()
 	marketID := testData.markets[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, pagination)
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, false, pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 1)
 	want := append([]entities.Order{}, testData.orders[9])
@@ -1667,7 +1672,7 @@ func testOrdersCursorPaginationByMarketFirstAndAfterCursorNewestFirst(t *testing
 	require.NoError(t, err)
 
 	marketID := testData.markets[0].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, pagination)
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 3)
 	want := append([]entities.Order{},
@@ -1699,7 +1704,7 @@ func testOrdersCursorPaginationByPartyFirstAndAfterCursorNewestFirst(t *testing.
 	require.NoError(t, err)
 
 	partyID := testData.parties[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, pagination)
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 3)
 	want := append([]entities.Order{},
@@ -1764,7 +1769,7 @@ func testOrdersCursorPaginationByMarketAndPartyFirstAndAfterCursorNewestFirst(t 
 
 	partyID := testData.parties[1].ID.String()
 	marketID := testData.markets[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, pagination)
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, false, pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 1)
 	want := append([]entities.Order{},
@@ -1796,7 +1801,7 @@ func testOrdersCursorPaginationByMarketLastAndBeforeCursor(t *testing.T) {
 	require.NoError(t, err)
 
 	marketID := testData.markets[0].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, pagination)
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 3)
 	want := append([]entities.Order{}, testData.orders[3], testData.orders[7], testData.orders[13])
@@ -1824,7 +1829,7 @@ func testOrdersCursorPaginationByPartyLastAndBeforeCursor(t *testing.T) {
 	require.NoError(t, err)
 
 	partyID := testData.parties[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, pagination)
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 3)
 	want := append([]entities.Order{}, testData.orders[5], testData.orders[7], testData.orders[9])
@@ -1881,7 +1886,7 @@ func testOrdersCursorPaginationByMarketAndPartyLastAndBeforeCursor(t *testing.T)
 
 	partyID := testData.parties[1].ID.String()
 	marketID := testData.markets[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, pagination)
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, false, pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 1)
 	want := append([]entities.Order{}, testData.orders[9])
@@ -1909,7 +1914,7 @@ func testOrdersCursorPaginationByMarketLastAndBeforeCursorNewestFirst(t *testing
 	require.NoError(t, err)
 
 	marketID := testData.markets[0].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, pagination)
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 3)
 	want := append([]entities.Order{},
@@ -1941,7 +1946,7 @@ func testOrdersCursorPaginationByPartyLastAndBeforeCursorNewestFirst(t *testing.
 	require.NoError(t, err)
 
 	partyID := testData.parties[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, pagination)
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, nil, nil, false, pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 3)
 	want := append([]entities.Order{},
@@ -2006,7 +2011,7 @@ func testOrdersCursorPaginationByMarketAndPartyLastAndBeforeCursorNewestFirst(t 
 
 	partyID := testData.parties[1].ID.String()
 	marketID := testData.markets[1].ID.String()
-	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, pagination)
+	got, pageInfo, err := stores.os.ListOrders(ctx, &partyID, &marketID, nil, false, pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 1)
 	want := append([]entities.Order{},
@@ -2018,5 +2023,102 @@ func testOrdersCursorPaginationByMarketAndPartyLastAndBeforeCursorNewestFirst(t 
 		HasPreviousPage: true,
 		StartCursor:     testData.cursors[9].Encode(),
 		EndCursor:       testData.cursors[9].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersCursorPaginationBetweenDatesByMarketNoCursor(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+
+	t.Logf("Test DB Port: %d", testDBPort)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	marketID := testData.markets[0].ID.String()
+	startDate := testData.orders[3].VegaTime
+	endDate := testData.orders[14].VegaTime
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{
+		Start: &startDate,
+		End:   &endDate,
+	})
+
+	require.NoError(t, err)
+	assert.Len(t, got, 2)
+	want := append([]entities.Order{}, testData.orders[3], testData.orders[7]) // order[13] and order[14] have the same block time
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[3].Encode(),
+		EndCursor:       testData.cursors[7].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersCursorPaginationBetweenDatesByMarketFirstCursor(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+
+	t.Logf("Test DB Port: %d", testDBPort)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	first := int32(3)
+	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	marketID := testData.markets[0].ID.String()
+	startDate := testData.orders[3].VegaTime
+	endDate := testData.orders[14].VegaTime
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{
+		Start: &startDate,
+		End:   &endDate,
+	})
+	require.NoError(t, err)
+	assert.Len(t, got, 2)
+	want := append([]entities.Order{}, testData.orders[3], testData.orders[7])
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     testData.cursors[3].Encode(),
+		EndCursor:       testData.cursors[7].Encode(),
+	}, pageInfo)
+}
+
+func testOrdersCursorPaginationBetweenDatesByMarketFirstAndAfterCursor(t *testing.T) {
+	stores, teardown := setupOrderCursorPaginationTests(t)
+	defer teardown(t)
+	testData := generateTestOrdersForCursorPagination(t, stores)
+
+	t.Logf("Test DB Port: %d", testDBPort)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	first := int32(3)
+	after := testData.cursors[0].Encode()
+	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
+	require.NoError(t, err)
+
+	marketID := testData.markets[0].ID.String()
+	startDate := testData.orders[0].VegaTime
+	endDate := testData.orders[14].VegaTime
+	got, pageInfo, err := stores.os.ListOrders(ctx, nil, &marketID, nil, false, pagination, entities.DateRange{
+		Start: &startDate,
+		End:   &endDate,
+	})
+	require.NoError(t, err)
+	assert.Len(t, got, 2)
+	want := append([]entities.Order{}, testData.orders[3], testData.orders[7])
+	assert.Equal(t, want, got)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: true,
+		StartCursor:     testData.cursors[3].Encode(),
+		EndCursor:       testData.cursors[7].Encode(),
 	}, pageInfo)
 }

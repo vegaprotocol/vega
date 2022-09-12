@@ -14,36 +14,33 @@ package sqlsubscribers
 
 import (
 	"context"
-	"time"
-
-	"github.com/pkg/errors"
-	"google.golang.org/protobuf/proto"
 )
 
 // Used to get the set of events that have changed between flushes.  If an event is the same when flushed as it was
 // on the previous Flush it will not be returned by the Flush method.
-type eventDeduplicator[K comparable, V proto.Message] struct {
+type eventDeduplicator[K comparable, V any] struct {
 	lastFlushedEvents map[K]V
 	newEvents         map[K]V
-	getId             func(context.Context, V, time.Time) (K, error)
+	getID             func(context.Context, V) K
+	compareFunc       func(V, V) bool
 }
 
-func NewEventDeduplicator[K comparable, V proto.Message](getId func(context.Context, V, time.Time) (K, error)) *eventDeduplicator[K, V] {
+//revive:disable:unexported-return
+func NewEventDeduplicator[K comparable, V any](
+	getID func(context.Context, V) K,
+	compareFunc func(V, V) bool,
+) *eventDeduplicator[K, V] {
 	return &eventDeduplicator[K, V]{
 		lastFlushedEvents: map[K]V{},
 		newEvents:         map[K]V{},
-		getId:             getId,
+		getID:             getID,
+		compareFunc:       compareFunc,
 	}
 }
 
-func (e *eventDeduplicator[K, V]) AddEvent(ctx context.Context, event V, vegaTime time.Time) error {
-	id, err := e.getId(ctx, event, vegaTime)
-	if err != nil {
-		return errors.Wrap(err, "failed to add event to deduplicator")
-	}
-
+func (e *eventDeduplicator[K, V]) AddEvent(ctx context.Context, event V) error {
+	id := e.getID(ctx, event)
 	e.newEvents[id] = event
-
 	return nil
 }
 
@@ -53,7 +50,7 @@ func (e *eventDeduplicator[K, V]) Flush() map[K]V {
 	for id, added := range e.newEvents {
 		updatedOrNew := false
 		if lastFlushed, exists := e.lastFlushedEvents[id]; exists {
-			if !proto.Equal(added, lastFlushed) {
+			if !e.compareFunc(added, lastFlushed) {
 				updatedOrNew = true
 			}
 		} else {

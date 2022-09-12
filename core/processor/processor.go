@@ -14,10 +14,12 @@ package processor
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/execution"
 	"code.vegaprotocol.io/vega/core/governance"
 	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/types"
@@ -37,6 +39,9 @@ var (
 	ErrUnsupportedChainEvent                  = errors.New("unsupported chain event")
 	ErrNodeSignatureFromNonValidator          = errors.New("node signature not sent by validator")
 	ErrNodeSignatureWithNonValidatorMasterKey = errors.New("node signature not signed with validator master key")
+	ErrMarketBatchInstructionTooBig           = func(got, expected uint64) error {
+		return fmt.Errorf("market batch instructions too big, got(%d), expected(%d)", got, expected)
+	}
 )
 
 type TimeService interface {
@@ -59,23 +64,23 @@ type DelegationEngine interface {
 	Hash() []byte
 }
 
+//nolint:interfacebloat
 type ExecutionEngine interface {
 	// orders stuff
-	SubmitOrder(ctx context.Context, orderSubmission *types.OrderSubmission, party string, deterministicId string) (*types.OrderConfirmation, error)
-	CancelOrder(ctx context.Context, order *types.OrderCancellation, party string, deterministicId string) ([]*types.OrderCancellationConfirmation, error)
-	AmendOrder(ctx context.Context, order *types.OrderAmendment, party string, deterministicId string) (*types.OrderConfirmation, error)
+	SubmitOrder(ctx context.Context, orderSubmission *types.OrderSubmission, party string, idgen execution.IDGenerator, orderID string) (*types.OrderConfirmation, error)
+	CancelOrder(ctx context.Context, order *types.OrderCancellation, party string, idgen execution.IDGenerator) ([]*types.OrderCancellationConfirmation, error)
+	AmendOrder(ctx context.Context, order *types.OrderAmendment, party string, idgen execution.IDGenerator) (*types.OrderConfirmation, error)
 
 	// market stuff
 	SubmitMarket(ctx context.Context, marketConfig *types.Market, proposer string) error
 	UpdateMarket(ctx context.Context, marketConfig *types.Market) error
-	SubmitMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *types.LiquidityProvisionSubmission, party, lpid, deterministicId string) error
 	RejectMarket(ctx context.Context, marketid string) error
 	StartOpeningAuction(ctx context.Context, marketid string) error
 
 	// LP stuff
-	SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, deterministicId string) error
+	SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, deterministicID string) error
 	CancelLiquidityProvision(ctx context.Context, order *types.LiquidityProvisionCancellation, party string) error
-	AmendLiquidityProvision(ctx context.Context, order *types.LiquidityProvisionAmendment, party string, deterministicId string) error
+	AmendLiquidityProvision(ctx context.Context, order *types.LiquidityProvisionAmendment, party string, deterministicID string) error
 	Hash() []byte
 }
 
@@ -88,6 +93,7 @@ type GovernanceEngine interface {
 	Hash() []byte
 }
 
+//nolint:interfacebloat
 type Stats interface {
 	IncTotalCreateOrder()
 	AddCurrentTradesInBatch(i uint64)
@@ -126,8 +132,10 @@ type Assets interface {
 	StageAssetUpdate(*types.Asset) error
 	Get(assetID string) (*assets.Asset, error)
 	IsEnabled(string) bool
+	EnactPendingAsset(assetID string)
 }
 
+//nolint:interfacebloat
 type ValidatorTopology interface {
 	Len() int
 	IsValidatorVegaPubKey(pk string) bool
@@ -141,6 +149,7 @@ type ValidatorTopology interface {
 	ProcessAnnounceNode(ctx context.Context, nr *commandspb.AnnounceNode) error
 	ProcessValidatorHeartbeat(context.Context, *commandspb.ValidatorHeartbeat, func(message, signature, pubkey []byte) error, func(message, signature []byte, hexAddress string) error) error
 	AddForwarder(ID string)
+	IssueSignatures(ctx context.Context, submitter, nodeID string, kind types.NodeSignatureKind) error
 }
 
 // Broker - the event bus.
@@ -166,7 +175,9 @@ type EvtForwarder interface {
 	Ack(*commandspb.ChainEvent) bool
 }
 
-// Banking ...
+// Banking ..
+//
+//nolint:interfacebloat
 type Banking interface {
 	EnableBuiltinAsset(context.Context, string) error
 	DepositBuiltinAsset(context.Context, *types.BuiltinAssetDeposit, string, uint64) error
@@ -196,6 +207,7 @@ type Oracle struct {
 type OraclesEngine interface {
 	BroadcastData(context.Context, oracles.OracleData) error
 	ListensToPubKeys(oracles.OracleData) bool
+	HasMatch(data oracles.OracleData) (bool, error)
 }
 
 type OracleAdaptors interface {

@@ -27,7 +27,7 @@ type Rewards struct {
 }
 
 var rewardsOrdering = TableOrdering{
-	ColumnOrdering{"epoch_id", ASC},
+	ColumnOrdering{Name: "epoch_id", Sorting: ASC},
 }
 
 func NewRewards(connectionSource *ConnectionSource) *Rewards {
@@ -49,9 +49,10 @@ func (rs *Rewards) Add(ctx context.Context, r entities.Reward) error {
 			amount,
 			percent_of_total,
 			timestamp,
+			tx_hash,
 			vega_time)
-		 VALUES ($1,  $2,  $3,  $4,  $5,  $6, $7, $8, $9);`,
-		r.PartyID, r.AssetID, r.MarketID, r.RewardType, r.EpochID, r.Amount, r.PercentOfTotal, r.Timestamp, r.VegaTime)
+		 VALUES ($1,  $2,  $3,  $4,  $5,  $6, $7, $8, $9, $10);`,
+		r.PartyID, r.AssetID, r.MarketID, r.RewardType, r.EpochID, r.Amount, r.PercentOfTotal, r.Timestamp, r.TxHash, r.VegaTime)
 	return err
 }
 
@@ -99,8 +100,8 @@ func (rs *Rewards) GetByOffset(ctx context.Context,
 	}
 
 	if pagination != nil {
-		order_cols := []string{"epoch_id", "party_id", "asset_id"}
-		query, args = orderAndPaginateQuery(query, order_cols, *pagination, args...)
+		orderCols := []string{"epoch_id", "party_id", "asset_id"}
+		query, args = orderAndPaginateQuery(query, orderCols, *pagination, args...)
 	}
 
 	rewards := []entities.Reward{}

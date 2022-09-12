@@ -34,10 +34,10 @@ var ErrCommitmentAmountTooLow = errors.New("commitment amount is too low")
 func (m *Market) SubmitLiquidityProvision(
 	ctx context.Context,
 	sub *types.LiquidityProvisionSubmission,
-	party, deterministicId string,
+	party, deterministicID string,
 ) (err error,
 ) {
-	m.idgen = idgeneration.New(deterministicId)
+	m.idgen = idgeneration.New(deterministicID)
 	defer func() { m.idgen = nil }()
 
 	if !m.canSubmitCommitment() {
@@ -80,7 +80,7 @@ func (m *Market) SubmitLiquidityProvision(
 		if newerr := m.liquidity.RejectLiquidityProvision(ctx, party); newerr != nil {
 			m.log.Debug("unable to submit cancel liquidity provision submission",
 				logging.String("party", party),
-				logging.String("id", deterministicId),
+				logging.String("id", deterministicID),
 				logging.Error(newerr))
 			err = fmt.Errorf("%v, %w", err, newerr)
 		}
@@ -171,11 +171,6 @@ func (m *Market) SubmitLiquidityProvision(
 			m.equityShares.SetPartyStake(party, sub.CommitmentAmount.Clone())
 			// force update of shares so they are updated for all
 			_ = m.equityShares.SharesExcept(m.liquidity.GetInactiveParties())
-
-			if !m.as.IsOpeningAuction() {
-				m.checkLiquidity(ctx, nil, true)
-				m.commandLiquidityAuction(ctx)
-			}
 		}
 	}()
 
@@ -235,8 +230,8 @@ func (m *Market) SubmitLiquidityProvision(
 }
 
 // AmendLiquidityProvision forwards a LiquidityProvisionAmendment to the Liquidity Engine.
-func (m *Market) AmendLiquidityProvision(ctx context.Context, lpa *types.LiquidityProvisionAmendment, party string, deterministicId string) (err error) {
-	m.idgen = idgeneration.New(deterministicId)
+func (m *Market) AmendLiquidityProvision(ctx context.Context, lpa *types.LiquidityProvisionAmendment, party string, deterministicID string) (err error) {
+	m.idgen = idgeneration.New(deterministicID)
 	defer func() { m.idgen = nil }()
 
 	if !m.canSubmitCommitment() {
@@ -972,10 +967,6 @@ func (m *Market) cancelLiquidityProvision(
 	_ = m.equityShares.SharesExcept(m.liquidity.GetInactiveParties())
 
 	m.checkForReferenceMoves(ctx, []*types.Order{}, true)
-	if !m.as.IsOpeningAuction() {
-		m.checkLiquidity(ctx, nil, true)
-		m.commandLiquidityAuction(ctx)
-	}
 	return nil
 }
 
@@ -1136,11 +1127,6 @@ func (m *Market) finalizeLiquidityProvisionAmendmentAuction(
 	// force update of shares so they are updated for all
 	_ = m.equityShares.SharesExcept(m.liquidity.GetInactiveParties())
 
-	if !m.as.IsOpeningAuction() {
-		m.checkLiquidity(ctx, nil, true)
-		m.commandLiquidityAuction(ctx)
-	}
-
 	return nil
 }
 
@@ -1239,10 +1225,6 @@ func (m *Market) finalizeLiquidityProvisionAmendmentContinuous(
 	// this workd but we definitely trigger some recursive loop which
 	// are unlikely to be fine.
 	m.checkForReferenceMoves(ctx, []*types.Order{}, true)
-	if !m.as.IsOpeningAuction() {
-		m.checkLiquidity(ctx, nil, true)
-		m.commandLiquidityAuction(ctx)
-	}
 
 	return nil
 }

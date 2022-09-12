@@ -226,6 +226,10 @@ func checkInputData(version commandspb.TxVersion, rawInputData []byte, expectedC
 			errs.Merge(checkEthereumKeyRotateSubmission(cmd.EthereumKeyRotateSubmission))
 		case *commandspb.InputData_ProtocolUpgradeProposal:
 			errs.Merge(checkProtocolUpgradeProposal(cmd.ProtocolUpgradeProposal))
+		case *commandspb.InputData_IssueSignatures:
+			errs.Merge(checkIssueSignatures(cmd.IssueSignatures))
+		case *commandspb.InputData_BatchMarketInstructions:
+			errs.Merge(checkBatchMarketInstructions(cmd.BatchMarketInstructions))
 		default:
 			errs.AddForProperty("tx.input_data.command", ErrIsNotSupported)
 		}

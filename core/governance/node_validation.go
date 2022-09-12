@@ -53,7 +53,6 @@ type NodeValidation struct {
 
 type nodeProposal struct {
 	*proposal
-	err     string
 	state   uint32
 	checker func() error
 }
@@ -66,11 +65,8 @@ func (n *nodeProposal) Check() error {
 	// always keep the last error
 	err := n.checker()
 	if err != nil {
-		n.err = err.Error()
 		return err
 	}
-
-	n.err = ""
 
 	return nil
 }
@@ -149,7 +145,7 @@ func (n *NodeValidation) removeProposal(id string) {
 }
 
 // OnTick returns validated proposal by all nodes.
-func (n *NodeValidation) OnTick(t time.Time) (accepted []*proposal, rejected []*proposal) {
+func (n *NodeValidation) OnTick(t time.Time) (accepted []*proposal, rejected []*proposal) { //revive:disable:unexported-return
 	n.currentTimestamp = t
 
 	toRemove := []string{} // id of proposals to remove
@@ -167,8 +163,6 @@ func (n *NodeValidation) OnTick(t time.Time) (accepted []*proposal, rejected []*
 		case okProposal:
 			accepted = append(accepted, prop.proposal)
 		case rejectedProposal:
-			// set the last error we got when checking
-			prop.proposal.ErrorDetails = prop.err
 			rejected = append(rejected, prop.proposal)
 		}
 		toRemove = append(toRemove, prop.ID)

@@ -76,7 +76,9 @@ func shouldUpdate(latestVersion *Version, newVersion *Version) bool {
 // For example, 0.9.0-pre1 is the non-development version of 0.9.0-pre1+dev.
 // In semantic versioning, we don't compare the `build` annotation, so verifying
 // equality between 0.9.0-pre1 and 0.9.0-pre1+dev results in comparing:
-//     0.9.0-pre1 <> 0.9.0-pre1
+//
+//	0.9.0-pre1 <> 0.9.0-pre1
+//
 // So if it's equal, it means we have a.
 func nonDevelopmentVersionAvailable(latestVersion *Version, comparedVersion *Version) bool {
 	return comparedVersion.Version.EQ(*latestVersion.Version)

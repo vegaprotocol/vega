@@ -115,6 +115,25 @@ func (e *Engine) OnRequiredMajorityChanged(_ context.Context, requiredMajority n
 	return nil
 }
 
+func (e *Engine) IsValidProposal(ctx context.Context, pk string, upgradeBlockHeight uint64, vegaReleaseTag string) error {
+	if !e.topology.IsTendermintValidator(pk) {
+		// not a tendermint validator, so we don't care about their intention
+		return errors.New("only tendermint validator can propose a protocol upgrade")
+	}
+
+	if upgradeBlockHeight <= e.currentBlockHeight {
+		return errors.New("upgrade block earlier than current block height")
+	}
+
+	_, err := semver.Parse(TrimReleaseTag(vegaReleaseTag))
+	if err != nil {
+		err = fmt.Errorf("invalid protocol version for upgrade received: version (%s), %w", vegaReleaseTag, err)
+		e.log.Error("", logging.Error(err))
+		return err
+	}
+	return nil
+}
+
 // UpgradeProposal records the intention of a validator to upgrade the protocol to a release tag at block height.
 func (e *Engine) UpgradeProposal(ctx context.Context, pk string, upgradeBlockHeight uint64, vegaReleaseTag string) error {
 	e.lock.RLock()
@@ -126,19 +145,7 @@ func (e *Engine) UpgradeProposal(ctx context.Context, pk string, upgradeBlockHei
 		logging.String("vegaReleaseTag", vegaReleaseTag),
 	)
 
-	if !e.topology.IsTendermintValidator(pk) {
-		// not a tendermint validator, so we don't care about their intention
-		return nil
-	}
-
-	if upgradeBlockHeight <= e.currentBlockHeight {
-		return errors.New("upgrade block earlier than current block height")
-	}
-
-	_, err := semver.Parse(TrimReleaseTag(vegaReleaseTag))
-	if err != nil {
-		err = fmt.Errorf("invalid protocol version for upgrade received: version (%s), %w", vegaReleaseTag, err)
-		e.log.Error("", logging.Error(err))
+	if err := e.IsValidProposal(ctx, pk, upgradeBlockHeight, vegaReleaseTag); err != nil {
 		return err
 	}
 
@@ -159,6 +166,12 @@ func (e *Engine) UpgradeProposal(ctx context.Context, pk string, upgradeBlockHei
 		active := e.activeProposals[ID]
 		active.accepted[pk] = struct{}{}
 		e.sendAndKeepEvent(ctx, ID, active)
+
+		e.log.Debug("Successfully added protocol upgrade proposal",
+			logging.String("validatorPubKey", pk),
+			logging.Uint64("upgradeBlockHeight", upgradeBlockHeight),
+			logging.String("vegaReleaseTag", vegaReleaseTag),
+		)
 	}
 
 	activeIDs := make([]string, 0, len(e.activeProposals))
@@ -177,18 +190,24 @@ func (e *Engine) UpgradeProposal(ctx context.Context, pk string, upgradeBlockHei
 		if _, ok := activeProposal.accepted[pk]; ok {
 			delete(activeProposal.accepted, pk)
 			e.sendAndKeepEvent(ctx, activeID, activeProposal)
+
+			e.log.Debug("Removed validator vote from previous proposal",
+				logging.String("validatorPubKey", pk),
+				logging.Uint64("upgradeBlockHeight", activeProposal.blockHeight),
+				logging.String("vegaReleaseTag", activeProposal.vegaReleaseTag),
+			)
 		}
 		if len(activeProposal.accepted) == 0 {
 			delete(e.activeProposals, activeID)
 			delete(e.events, activeID)
+
+			e.log.Debug("Removed previous upgrade proposal",
+				logging.String("validatorPubKey", pk),
+				logging.Uint64("upgradeBlockHeight", activeProposal.blockHeight),
+				logging.String("vegaReleaseTag", activeProposal.vegaReleaseTag),
+			)
 		}
 	}
-
-	e.log.Debug("Successfully added protocol upgrade proposal",
-		logging.String("validatorPubKey", pk),
-		logging.Uint64("upgradeBlockHeight", upgradeBlockHeight),
-		logging.String("vegaReleaseTag", vegaReleaseTag),
-	)
 
 	return nil
 }

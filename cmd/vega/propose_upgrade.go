@@ -95,7 +95,7 @@ func (opts *ProposeUpgradeCmd) Execute(args []string) error {
 	ch := make(chan error)
 	commander.CommandWithPoW(
 		context.Background(),
-		txn.AnnounceNodeCommand,
+		txn.ProtocolUpgradeCommand,
 		&cmd,
 		func(err error) {
 			if err != nil {

@@ -49,6 +49,7 @@ message InputData {
     Transfer transfer = 1012;
     CancelTransfer cancel_transfer = 1013;
     AnnounceNode announce_node = 1014;
+    BatchMarketInstructions batch_market_instructions = 1015;
 
     // Validator commands
     NodeVote node_vote = 2002;
@@ -59,6 +60,7 @@ message InputData {
     ValidatorHeartbeat validator_heartbeat = 2007;
     EthereumKeyRotateSubmission ethereum_key_rotate_submission = 2008;
     ProtocolUpgradeProposal protocol_upgrade_proposal = 2009;
+    IssueSignatures issue_signatures = 2010;
 
     // Oracles
     OracleDataSubmission oracle_data_submission = 3001;
@@ -79,7 +81,9 @@ enum TxVersion {
 
 // Represents a transaction to be sent to Vega.
 message Transaction {
-  // One of the set of Vega commands (proto marshalled).
+  // One of the set of Vega commands.
+  // These bytes are should be built as follow:
+  //   chain_id_as_bytes + \0 character as delimiter + proto_marshalled_command
   bytes input_data = 1;
 
   // The signature of the inputData.

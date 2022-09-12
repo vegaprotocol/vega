@@ -33,22 +33,22 @@ const (
 	orderAId   = "787B72CB5DD7A5EA869E49F361CF957DF747F849B4ACE88ABC6DA0F9C450AFDD"
 	orderBId   = "83dc82be23c77daec384a239143f07f83c667acf60d734745b023c6567e7b57b"
 
-	tradeId1 = "0bd678723c33b059638953e0904d2ddbd78c2be72ab25a8753a622911c2d9c78"
-	tradeId2 = "af2bb48edd738353fcd7a2b6cea4821dd2382ec95497954535278dfbfff7b5b5"
-	tradeId3 = "3d4ed10064b7cedbc8a37316f7329f853c9588b6a55006ffb8bec3f1a4ccc88e"
-	tradeId4 = "8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8"
-	tradeId5 = "8b6be1a03cc4d529f682887a78b66e6879d17f81e2b37356ca0acbc5d5886eb8"
-	tradeId6 = "8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8"
+	tradeID1 = "0bd678723c33b059638953e0904d2ddbd78c2be72ab25a8753a622911c2d9c78"
+	tradeID2 = "af2bb48edd738353fcd7a2b6cea4821dd2382ec95497954535278dfbfff7b5b5"
+	tradeID3 = "3d4ed10064b7cedbc8a37316f7329f853c9588b6a55006ffb8bec3f1a4ccc88e"
+	tradeID4 = "8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8"
+	tradeID5 = "8b6be1a03cc4d529f682887a78b66e6879d17f81e2b37356ca0acbc5d5886eb8"
+	tradeID6 = "8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8"
 )
 
 func TestStorage_GetTradesByOrderId(t *testing.T) {
 	market := testMarket
 
-	GetTradesByOrderIdAndMarket(t, &market)
-	GetTradesByOrderIdAndMarket(t, nil)
+	GetTradesByOrderIDAndMarket(t, &market)
+	GetTradesByOrderIDAndMarket(t, nil)
 }
 
-func GetTradesByOrderIdAndMarket(t *testing.T, market *string) {
+func GetTradesByOrderIDAndMarket(t *testing.T, market *string) {
 	t.Helper()
 	defer DeleteEverything()
 
@@ -60,12 +60,12 @@ func GetTradesByOrderIdAndMarket(t *testing.T, market *string) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, 6, len(trades))
-	assert.Equal(t, tradeId1, trades[0].ID.String())
-	assert.Equal(t, tradeId2, trades[1].ID.String())
-	assert.Equal(t, tradeId3, trades[2].ID.String())
-	assert.Equal(t, tradeId4, trades[3].ID.String())
-	assert.Equal(t, tradeId5, trades[4].ID.String())
-	assert.Equal(t, tradeId6, trades[5].ID.String())
+	assert.Equal(t, tradeID1, trades[0].ID.String())
+	assert.Equal(t, tradeID2, trades[1].ID.String())
+	assert.Equal(t, tradeID3, trades[2].ID.String())
+	assert.Equal(t, tradeID4, trades[3].ID.String())
+	assert.Equal(t, tradeID5, trades[4].ID.String())
+	assert.Equal(t, tradeID6, trades[5].ID.String())
 }
 
 func TestStorage_GetTradesByPartyWithPagination(t *testing.T) {
@@ -91,9 +91,9 @@ func GetTradesByPartyAndMarketWithPagination(t *testing.T, market *string) {
 	trades, err := tradeStore.GetByParty(ctx, testPartyA, market, entities.OffsetPagination{Limit: last, Descending: true})
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
-	assert.Equal(t, tradeId6, trades[0].ID.String())
-	assert.Equal(t, tradeId5, trades[1].ID.String())
-	assert.Equal(t, tradeId4, trades[2].ID.String())
+	assert.Equal(t, tradeID6, trades[0].ID.String())
+	assert.Equal(t, tradeID5, trades[1].ID.String())
+	assert.Equal(t, tradeID4, trades[2].ID.String())
 
 	// Want last 3 trades (timestamp descending) and skip 2
 	skip := uint64(2)
@@ -102,9 +102,9 @@ func GetTradesByPartyAndMarketWithPagination(t *testing.T, market *string) {
 	trades, err = tradeStore.GetByParty(ctx, testPartyA, market, entities.OffsetPagination{Skip: skip, Limit: last, Descending: true})
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
-	assert.Equal(t, tradeId4, trades[0].ID.String())
-	assert.Equal(t, tradeId3, trades[1].ID.String())
-	assert.Equal(t, tradeId2, trades[2].ID.String())
+	assert.Equal(t, tradeID4, trades[0].ID.String())
+	assert.Equal(t, tradeID3, trades[1].ID.String())
+	assert.Equal(t, tradeID2, trades[2].ID.String())
 }
 
 func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
@@ -127,8 +127,8 @@ func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
 	trades, err = tradeStore.GetByMarket(ctx, testMarket, entities.OffsetPagination{Limit: first})
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(trades))
-	assert.Equal(t, tradeId1, trades[0].ID.String())
-	assert.Equal(t, tradeId2, trades[1].ID.String())
+	assert.Equal(t, tradeID1, trades[0].ID.String())
+	assert.Equal(t, tradeID2, trades[1].ID.String())
 
 	// Want last 3 trades (timestamp descending)
 	last := uint64(3)
@@ -136,9 +136,9 @@ func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
 	trades, err = tradeStore.GetByMarket(ctx, testMarket, entities.OffsetPagination{Limit: last, Descending: true})
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
-	assert.Equal(t, tradeId6, trades[0].ID.String())
-	assert.Equal(t, tradeId5, trades[1].ID.String())
-	assert.Equal(t, tradeId4, trades[2].ID.String())
+	assert.Equal(t, tradeID6, trades[0].ID.String())
+	assert.Equal(t, tradeID5, trades[1].ID.String())
+	assert.Equal(t, tradeID4, trades[2].ID.String())
 
 	// Want first 2 trades after skipping 2
 	skip := uint64(2)
@@ -146,15 +146,15 @@ func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
 	trades, err = tradeStore.GetByMarket(ctx, testMarket, entities.OffsetPagination{Skip: skip, Limit: first})
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(trades))
-	assert.Equal(t, tradeId3, trades[0].ID.String())
-	assert.Equal(t, tradeId4, trades[1].ID.String())
+	assert.Equal(t, tradeID3, trades[0].ID.String())
+	assert.Equal(t, tradeID4, trades[1].ID.String())
 
 	trades, err = tradeStore.GetByMarket(ctx, testMarket, entities.OffsetPagination{Skip: skip, Limit: last, Descending: true})
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
-	assert.Equal(t, tradeId4, trades[0].ID.String())
-	assert.Equal(t, tradeId3, trades[1].ID.String())
-	assert.Equal(t, tradeId2, trades[2].ID.String())
+	assert.Equal(t, tradeID4, trades[0].ID.String())
+	assert.Equal(t, tradeID3, trades[1].ID.String())
+	assert.Equal(t, tradeID2, trades[2].ID.String())
 
 	// Skip a large page size of trades (compared to our set)
 	// effectively skipping past the end of the set, so no
@@ -175,7 +175,7 @@ func insertTestData(t *testing.T, tradeStore *sqlstore.Trades) {
 
 	trade1 := &types.Trade{
 		Type:      types.Trade_TYPE_DEFAULT,
-		Id:        tradeId1,
+		Id:        tradeID1,
 		Price:     "100",
 		Size:      100,
 		MarketId:  testMarket,
@@ -189,7 +189,7 @@ func insertTestData(t *testing.T, tradeStore *sqlstore.Trades) {
 
 	trade2 := &types.Trade{
 		Type:      types.Trade_TYPE_DEFAULT,
-		Id:        tradeId2,
+		Id:        tradeID2,
 		Price:     "100",
 		Size:      100,
 		MarketId:  testMarket,
@@ -203,7 +203,7 @@ func insertTestData(t *testing.T, tradeStore *sqlstore.Trades) {
 
 	trade3 := &types.Trade{
 		Type:      types.Trade_TYPE_DEFAULT,
-		Id:        tradeId3,
+		Id:        tradeID3,
 		Price:     "100",
 		Size:      100,
 		MarketId:  testMarket,
@@ -217,7 +217,7 @@ func insertTestData(t *testing.T, tradeStore *sqlstore.Trades) {
 
 	trade4 := &types.Trade{
 		Type:      types.Trade_TYPE_DEFAULT,
-		Id:        tradeId4,
+		Id:        tradeID4,
 		Price:     "100",
 		Size:      100,
 		MarketId:  testMarket,
@@ -231,7 +231,7 @@ func insertTestData(t *testing.T, tradeStore *sqlstore.Trades) {
 
 	trade5 := &types.Trade{
 		Type:      types.Trade_TYPE_DEFAULT,
-		Id:        tradeId5,
+		Id:        tradeID5,
 		Price:     "100",
 		Size:      100,
 		MarketId:  testMarket,
@@ -245,7 +245,7 @@ func insertTestData(t *testing.T, tradeStore *sqlstore.Trades) {
 
 	trade6 := &types.Trade{
 		Type:      types.Trade_TYPE_DEFAULT,
-		Id:        tradeId6,
+		Id:        tradeID6,
 		Price:     "100",
 		Size:      100,
 		MarketId:  testMarket,
@@ -266,7 +266,7 @@ func insertTestData(t *testing.T, tradeStore *sqlstore.Trades) {
 			seqNum = 0
 			vegaTime = block2.VegaTime
 		}
-		trade, err := entities.TradeFromProto(&proto, vegaTime, seqNum)
+		trade, err := entities.TradeFromProto(&proto, generateTxHash(), vegaTime, seqNum)
 		if err != nil {
 			t.Fatalf("failed to get trade from proto:%s", err)
 		}
@@ -312,6 +312,11 @@ func TestTrades_CursorPagination(t *testing.T) {
 	t.Run("Should return the page of trades for a given market when a last and before cursor is set - newest first", testTradesCursorPaginationByMarketWithCursorBackwardNewestFirst)
 	t.Run("Should return the page of trades for a given party when a last and before cursor is set but not market - newest first", testTradesCursorPaginationByPartyWithCursorNoMarketBackwardNewestFirst)
 	t.Run("Should return the page of trades for a given party and market when a last and before cursor is set - newest first", testTradesCursorPaginationByPartyAndMarketWithCursorBackwardNewestFirst)
+
+	t.Run("Should return all trades between dates for a given market when no cursor is given", testTradesCursorPaginationBetweenDatesByMarketNoCursor)
+	t.Run("Should return all trades between dates for a given market when no cursor is given - newest first", testTradesCursorPaginationBetweenDatesByMarketNoCursorNewestFirst)
+	t.Run("Should return the last page of trades between dates for a given market when a last cursor is set", testTradesCursorPaginationBetweenDatesByMarketWithCursorLast)
+	t.Run("Should return the page of trades between dates for a given market when a first and after cursor is set", testTradesCursorPaginationBetweenDatesByMarketWithCursorForward)
 }
 
 func setupTradesTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.Trades, sqlstore.Config, func(t *testing.T)) {
@@ -484,7 +489,7 @@ func testTradesCursorPaginationByMarketNoCursor(t *testing.T) {
 	require.NoError(t, err)
 
 	marketID := entities.MarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, "", "", pagination)
+	got, pageInfo, err := ts.List(ctx, marketID, "", "", pagination, entities.DateRange{})
 	require.NoError(t, err)
 
 	assert.Len(t, got, 4)
@@ -511,7 +516,7 @@ func testTradesCursorPaginationByPartyNoMarketNoCursor(t *testing.T) {
 	require.NoError(t, err)
 
 	partyID := entities.PartyID("dabbad00")
-	got, pageInfo, err := ts.List(ctx, entities.MarketID(""), partyID, entities.OrderID(""), pagination)
+	got, pageInfo, err := ts.List(ctx, entities.MarketID(""), partyID, entities.OrderID(""), pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 5)
 
@@ -539,7 +544,7 @@ func testTradesCursorPaginationByPartyAndMarketNoCursor(t *testing.T) {
 	require.NoError(t, err)
 	partyID := entities.PartyID("dabbad00")
 	marketID := entities.MarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID(""), pagination)
+	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID(""), pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 4)
 	assert.Equal(t, "02a16077", got[0].ID.String())
@@ -565,7 +570,7 @@ func testTradesCursorPaginationByMarketWithCursorFirst(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	require.NoError(t, err)
 	marketID := entities.MarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID(""), entities.OrderID(""), pagination)
+	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID(""), entities.OrderID(""), pagination, entities.DateRange{})
 	require.NoError(t, err)
 
 	assert.Len(t, got, 2)
@@ -592,7 +597,7 @@ func testTradesCursorPaginationByPartyWithCursorNoMarketFirst(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	require.NoError(t, err)
 	partyID := entities.PartyID("dabbad00")
-	got, pageInfo, err := ts.List(ctx, entities.MarketID(""), partyID, entities.OrderID(""), pagination)
+	got, pageInfo, err := ts.List(ctx, entities.MarketID(""), partyID, entities.OrderID(""), pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	assert.Equal(t, "02a16077", got[0].ID.String())
@@ -619,7 +624,7 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorFirst(t *testing.T) {
 	require.NoError(t, err)
 	partyID := entities.PartyID("dabbad00")
 	marketID := entities.MarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID(""), pagination)
+	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID(""), pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	assert.Equal(t, "02a16077", got[0].ID.String())
@@ -645,7 +650,7 @@ func testTradesCursorPaginationByMarketWithCursorLast(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	require.NoError(t, err)
 	marketID := entities.MarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID(""), entities.OrderID(""), pagination)
+	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID(""), entities.OrderID(""), pagination, entities.DateRange{})
 	require.NoError(t, err)
 
 	assert.Len(t, got, 2)
@@ -672,7 +677,7 @@ func testTradesCursorPaginationByPartyWithCursorNoMarketLast(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	require.NoError(t, err)
 	partyID := entities.PartyID("dabbad00")
-	got, pageInfo, err := ts.List(ctx, entities.MarketID(""), partyID, entities.OrderID(""), pagination)
+	got, pageInfo, err := ts.List(ctx, entities.MarketID(""), partyID, entities.OrderID(""), pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	assert.Equal(t, "7a797e0e", got[0].ID.String())
@@ -699,7 +704,7 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorLast(t *testing.T) {
 	require.NoError(t, err)
 	partyID := entities.PartyID("dabbad00")
 	marketID := entities.MarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID(""), pagination)
+	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID(""), pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	assert.Equal(t, "65be62cd", got[0].ID.String())
@@ -726,7 +731,7 @@ func testTradesCursorPaginationByMarketWithCursorForward(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	require.NoError(t, err)
 	marketID := entities.MarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID(""), entities.OrderID(""), pagination)
+	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID(""), entities.OrderID(""), pagination, entities.DateRange{})
 	require.NoError(t, err)
 
 	assert.Len(t, got, 2)
@@ -754,7 +759,7 @@ func testTradesCursorPaginationByPartyWithCursorNoMarketForward(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	require.NoError(t, err)
 	partyID := entities.PartyID("dabbad00")
-	got, pageInfo, err := ts.List(ctx, entities.MarketID(""), partyID, entities.OrderID(""), pagination)
+	got, pageInfo, err := ts.List(ctx, entities.MarketID(""), partyID, entities.OrderID(""), pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	assert.Equal(t, "65be62cd", got[0].ID.String())
@@ -782,7 +787,7 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorForward(t *testing.T) {
 	require.NoError(t, err)
 	partyID := entities.PartyID("dabbad00")
 	marketID := entities.MarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID(""), pagination)
+	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID(""), pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	assert.Equal(t, "44eea1bc", got[0].ID.String())
@@ -809,7 +814,7 @@ func testTradesCursorPaginationByMarketWithCursorBackward(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 	require.NoError(t, err)
 	marketID := entities.MarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID(""), entities.OrderID(""), pagination)
+	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID(""), entities.OrderID(""), pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	assert.Equal(t, "44eea1bc", got[0].ID.String())
@@ -836,7 +841,7 @@ func testTradesCursorPaginationByPartyWithCursorNoMarketBackward(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 	require.NoError(t, err)
 	partyID := entities.PartyID("dabbad00")
-	got, pageInfo, err := ts.List(ctx, entities.MarketID(""), partyID, entities.OrderID(""), pagination)
+	got, pageInfo, err := ts.List(ctx, entities.MarketID(""), partyID, entities.OrderID(""), pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	assert.Equal(t, "65be62cd", got[0].ID.String())
@@ -864,7 +869,7 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorBackward(t *testing.T) 
 	require.NoError(t, err)
 	partyID := entities.PartyID("dabbad00")
 	marketID := entities.MarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID(""), pagination)
+	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID(""), pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	assert.Equal(t, "44eea1bc", got[0].ID.String())
@@ -891,7 +896,7 @@ func testTradesCursorPaginationByMarketNoCursorNewestFirst(t *testing.T) {
 	require.NoError(t, err)
 
 	marketID := entities.MarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID(""), entities.OrderID(""), pagination)
+	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID(""), entities.OrderID(""), pagination, entities.DateRange{})
 	require.NoError(t, err)
 
 	assert.Len(t, got, 4)
@@ -918,7 +923,7 @@ func testTradesCursorPaginationByPartyNoMarketNoCursorNewestFirst(t *testing.T) 
 	require.NoError(t, err)
 
 	partyID := entities.PartyID("dabbad00")
-	got, pageInfo, err := ts.List(ctx, entities.MarketID(""), partyID, entities.OrderID(""), pagination)
+	got, pageInfo, err := ts.List(ctx, entities.MarketID(""), partyID, entities.OrderID(""), pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 5)
 
@@ -946,7 +951,7 @@ func testTradesCursorPaginationByPartyAndMarketNoCursorNewestFirst(t *testing.T)
 	require.NoError(t, err)
 	partyID := entities.PartyID("dabbad00")
 	marketID := entities.MarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID(""), pagination)
+	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID(""), pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 4)
 	assert.Equal(t, "7a797e0e", got[0].ID.String())
@@ -972,7 +977,7 @@ func testTradesCursorPaginationByMarketWithCursorFirstNewestFirst(t *testing.T) 
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
 	require.NoError(t, err)
 	marketID := entities.MarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID(""), entities.OrderID(""), pagination)
+	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID(""), entities.OrderID(""), pagination, entities.DateRange{})
 	require.NoError(t, err)
 
 	assert.Len(t, got, 2)
@@ -999,7 +1004,7 @@ func testTradesCursorPaginationByPartyWithCursorNoMarketFirstNewestFirst(t *test
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
 	require.NoError(t, err)
 	partyID := entities.PartyID("dabbad00")
-	got, pageInfo, err := ts.List(ctx, entities.MarketID(""), partyID, entities.OrderID(""), pagination)
+	got, pageInfo, err := ts.List(ctx, entities.MarketID(""), partyID, entities.OrderID(""), pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	assert.Equal(t, "7bb2356e", got[0].ID.String())
@@ -1026,7 +1031,7 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorFirstNewestFirst(t *tes
 	require.NoError(t, err)
 	partyID := entities.PartyID("dabbad00")
 	marketID := entities.MarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID(""), pagination)
+	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID(""), pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	assert.Equal(t, "7a797e0e", got[0].ID.String())
@@ -1052,7 +1057,7 @@ func testTradesCursorPaginationByMarketWithCursorLastNewestFirst(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
 	require.NoError(t, err)
 	marketID := entities.MarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID(""), entities.OrderID(""), pagination)
+	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID(""), entities.OrderID(""), pagination, entities.DateRange{})
 	require.NoError(t, err)
 
 	assert.Len(t, got, 2)
@@ -1079,7 +1084,7 @@ func testTradesCursorPaginationByPartyWithCursorNoMarketLastNewestFirst(t *testi
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
 	require.NoError(t, err)
 	partyID := entities.PartyID("dabbad00")
-	got, pageInfo, err := ts.List(ctx, entities.MarketID(""), partyID, entities.OrderID(""), pagination)
+	got, pageInfo, err := ts.List(ctx, entities.MarketID(""), partyID, entities.OrderID(""), pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	assert.Equal(t, "44eea1bc", got[0].ID.String())
@@ -1106,7 +1111,7 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorLastNewestFirst(t *test
 	require.NoError(t, err)
 	partyID := entities.PartyID("dabbad00")
 	marketID := entities.MarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID(""), pagination)
+	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID(""), pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	assert.Equal(t, "44eea1bc", got[0].ID.String())
@@ -1133,7 +1138,7 @@ func testTradesCursorPaginationByMarketWithCursorForwardNewestFirst(t *testing.T
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
 	require.NoError(t, err)
 	marketID := entities.MarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID(""), entities.OrderID(""), pagination)
+	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID(""), entities.OrderID(""), pagination, entities.DateRange{})
 	require.NoError(t, err)
 
 	assert.Len(t, got, 2)
@@ -1161,7 +1166,7 @@ func testTradesCursorPaginationByPartyWithCursorNoMarketForwardNewestFirst(t *te
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
 	require.NoError(t, err)
 	partyID := entities.PartyID("dabbad00")
-	got, pageInfo, err := ts.List(ctx, entities.MarketID(""), partyID, entities.OrderID(""), pagination)
+	got, pageInfo, err := ts.List(ctx, entities.MarketID(""), partyID, entities.OrderID(""), pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	assert.Equal(t, "65be62cd", got[0].ID.String())
@@ -1189,7 +1194,7 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorForwardNewestFirst(t *t
 	require.NoError(t, err)
 	partyID := entities.PartyID("dabbad00")
 	marketID := entities.MarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID(""), pagination)
+	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID(""), pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	assert.Equal(t, "65be62cd", got[0].ID.String())
@@ -1216,7 +1221,7 @@ func testTradesCursorPaginationByMarketWithCursorBackwardNewestFirst(t *testing.
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
 	require.NoError(t, err)
 	marketID := entities.MarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID(""), entities.OrderID(""), pagination)
+	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID(""), entities.OrderID(""), pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	assert.Equal(t, "65be62cd", got[0].ID.String())
@@ -1243,7 +1248,7 @@ func testTradesCursorPaginationByPartyWithCursorNoMarketBackwardNewestFirst(t *t
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
 	require.NoError(t, err)
 	partyID := entities.PartyID("dabbad00")
-	got, pageInfo, err := ts.List(ctx, entities.MarketID(""), partyID, entities.OrderID(""), pagination)
+	got, pageInfo, err := ts.List(ctx, entities.MarketID(""), partyID, entities.OrderID(""), pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	assert.Equal(t, "7a797e0e", got[0].ID.String())
@@ -1271,7 +1276,7 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorBackwardNewestFirst(t *
 	require.NoError(t, err)
 	partyID := entities.PartyID("dabbad00")
 	marketID := entities.MarketID("deadbeef")
-	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID(""), pagination)
+	got, pageInfo, err := ts.List(ctx, marketID, partyID, entities.OrderID(""), pagination, entities.DateRange{})
 	require.NoError(t, err)
 	assert.Len(t, got, 2)
 	assert.Equal(t, "65be62cd", got[0].ID.String())
@@ -1282,4 +1287,125 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorBackwardNewestFirst(t *
 	assert.True(t, pageInfo.HasPreviousPage)
 	assert.Equal(t, "65be62cd", got[0].ID.String())
 	assert.Equal(t, "44eea1bc", got[1].ID.String())
+}
+
+func testTradesCursorPaginationBetweenDatesByMarketNoCursor(t *testing.T) {
+	bs, ts, _, teardown := setupTradesTest(t)
+	t.Logf("DB Port: %d", testDBPort)
+
+	defer teardown(t)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	defer cancel()
+	blockTimes := make(map[string]time.Time)
+	populateTestTrades(ctx, t, bs, ts, blockTimes)
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	marketID := entities.MarketID("deadbeef")
+	startDate := blockTimes["44eea1bc"]
+	endDate := blockTimes["7a797e0e"]
+	got, pageInfo, err := ts.List(ctx, marketID, "", "", pagination, entities.DateRange{
+		Start: &startDate,
+		End:   &endDate,
+	})
+	require.NoError(t, err)
+
+	assert.Len(t, got, 2)
+	assert.Equal(t, "44eea1bc", got[0].ID.String())
+	assert.Equal(t, uint64(2), got[0].Size)
+	assert.Equal(t, "65be62cd", got[1].ID.String())
+	assert.Equal(t, uint64(3), got[1].Size)
+	assert.False(t, pageInfo.HasNextPage)
+	assert.False(t, pageInfo.HasPreviousPage)
+}
+
+func testTradesCursorPaginationBetweenDatesByMarketNoCursorNewestFirst(t *testing.T) {
+	bs, ts, _, teardown := setupTradesTest(t)
+	t.Logf("DB Port: %d", testDBPort)
+
+	defer teardown(t)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	defer cancel()
+	blockTimes := make(map[string]time.Time)
+	populateTestTrades(ctx, t, bs, ts, blockTimes)
+	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
+	require.NoError(t, err)
+
+	marketID := entities.MarketID("deadbeef")
+	startDate := blockTimes["44eea1bc"]
+	endDate := blockTimes["7a797e0e"]
+	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID(""), entities.OrderID(""), pagination, entities.DateRange{
+		Start: &startDate,
+		End:   &endDate,
+	})
+	require.NoError(t, err)
+
+	assert.Len(t, got, 2)
+	assert.Equal(t, "65be62cd", got[0].ID.String())
+	assert.Equal(t, uint64(3), got[0].Size)
+	assert.Equal(t, "44eea1bc", got[1].ID.String())
+	assert.Equal(t, uint64(2), got[1].Size)
+	assert.False(t, pageInfo.HasNextPage)
+	assert.False(t, pageInfo.HasPreviousPage)
+}
+
+func testTradesCursorPaginationBetweenDatesByMarketWithCursorLast(t *testing.T) {
+	bs, ts, _, teardown := setupTradesTest(t)
+	t.Logf("DB Port: %d", testDBPort)
+
+	defer teardown(t)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	defer cancel()
+	blockTimes := make(map[string]time.Time)
+	populateTestTrades(ctx, t, bs, ts, blockTimes)
+	last := int32(2)
+	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
+	require.NoError(t, err)
+	marketID := entities.MarketID("deadbeef")
+	startDate := blockTimes["02a16077"]
+	endDate := blockTimes["7a797e0e"]
+	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID(""), entities.OrderID(""), pagination, entities.DateRange{
+		Start: &startDate,
+		End:   &endDate,
+	})
+	require.NoError(t, err)
+
+	assert.Len(t, got, 2)
+	assert.Equal(t, "44eea1bc", got[0].ID.String())
+	assert.Equal(t, uint64(2), got[0].Size)
+	assert.Equal(t, "65be62cd", got[1].ID.String())
+	assert.Equal(t, uint64(3), got[1].Size)
+	assert.False(t, pageInfo.HasNextPage)
+	assert.True(t, pageInfo.HasPreviousPage)
+}
+
+func testTradesCursorPaginationBetweenDatesByMarketWithCursorForward(t *testing.T) {
+	bs, ts, _, teardown := setupTradesTest(t)
+	t.Logf("DB Port: %d", testDBPort)
+
+	defer teardown(t)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	defer cancel()
+	blockTimes := make(map[string]time.Time)
+	populateTestTrades(ctx, t, bs, ts, blockTimes)
+	first := int32(2)
+	after := entities.NewCursor(entities.TradeCursor{SyntheticTime: blockTimes["02a16077"]}.String()).Encode()
+	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
+	require.NoError(t, err)
+	marketID := entities.MarketID("deadbeef")
+	startDate := blockTimes["02a16077"]
+	endDate := blockTimes["7a797e0e"]
+	got, pageInfo, err := ts.List(ctx, marketID, entities.PartyID(""), entities.OrderID(""), pagination, entities.DateRange{
+		Start: &startDate,
+		End:   &endDate,
+	})
+	require.NoError(t, err)
+
+	assert.Len(t, got, 2)
+	assert.Equal(t, "44eea1bc", got[0].ID.String())
+	assert.Equal(t, uint64(2), got[0].Size)
+	assert.Equal(t, "65be62cd", got[1].ID.String())
+	assert.Equal(t, uint64(3), got[1].Size)
+	assert.False(t, pageInfo.HasNextPage)
+	assert.True(t, pageInfo.HasPreviousPage)
 }

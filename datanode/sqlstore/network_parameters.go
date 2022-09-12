@@ -27,7 +27,7 @@ type NetworkParameters struct {
 }
 
 var networkParameterOrdering = TableOrdering{
-	ColumnOrdering{"key", ASC},
+	ColumnOrdering{Name: "key", Sorting: ASC},
 }
 
 func NewNetworkParameters(connectionSource *ConnectionSource) *NetworkParameters {
@@ -37,18 +37,20 @@ func NewNetworkParameters(connectionSource *ConnectionSource) *NetworkParameters
 	return p
 }
 
-func (ps *NetworkParameters) Add(ctx context.Context, r entities.NetworkParameter) error {
+func (np *NetworkParameters) Add(ctx context.Context, r entities.NetworkParameter) error {
 	defer metrics.StartSQLQuery("NetworkParameters", "Add")()
-	_, err := ps.Connection.Exec(ctx,
+	_, err := np.Connection.Exec(ctx,
 		`INSERT INTO network_parameters(
 			key,
 			value,
+			tx_hash,
 			vega_time)
-		 VALUES ($1,  $2,  $3)
+		 VALUES ($1, $2, $3, $4)
 		 ON CONFLICT (key, vega_time) DO UPDATE SET
-			value = EXCLUDED.value;
+			value = EXCLUDED.value,
+			tx_hash = EXCLUDED.tx_hash;
 		 `,
-		r.Key, r.Value, r.VegaTime)
+		r.Key, r.Value, r.TxHash, r.VegaTime)
 	return err
 }
 

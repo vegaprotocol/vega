@@ -15,7 +15,6 @@ package assets
 import (
 	"bytes"
 	"context"
-	"sort"
 
 	"code.vegaprotocol.io/vega/core/types"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
@@ -31,7 +30,8 @@ func (*Service) Name() types.CheckpointName {
 
 func (s *Service) Checkpoint() ([]byte, error) {
 	t := &checkpoint.Assets{
-		Assets: s.getEnabled(),
+		Assets:               s.getEnabled(),
+		PendingListingAssets: s.getPendingListed(),
 	}
 	return proto.Marshal(t)
 }
@@ -64,47 +64,74 @@ func (s *Service) Load(ctx context.Context, cp []byte) error {
 		}
 
 		// asset didn't match anything, we need to go through the process to add it.
-
-		id, err := s.NewAsset(ctx, a.Id, details)
-		if err != nil {
+		s.restoreAsset(ctx, a.Id, details)
+		if err := s.Enable(ctx, a.Id); err != nil {
 			return err
 		}
-		pa, _ := s.Get(a.Id)
-		if s.isValidator {
-			if err := s.validateAsset(pa); err != nil {
-				return err
-			}
-		}
-		// always valid now
-		pa.SetValid()
+	}
 
-		if err := s.Enable(ctx, id); err != nil {
-			return err
-		}
+	// now do pending assets
+	for _, pa := range data.PendingListingAssets {
+		details, _ := types.AssetDetailsFromProto(pa.AssetDetails)
+
+		// restore it as valid
+		s.restoreAsset(ctx, pa.Id, details)
+
+		// set as pending and generate the signatures to list on the contract
+		s.SetPendingListing(ctx, pa.Id)
+		s.EnactPendingAsset(pa.Id)
 	}
 
 	return nil
 }
 
-func (s *Service) getEnabled() []*checkpoint.AssetEntry {
-	s.amu.RLock()
-	keys := make([]string, 0, len(s.assets))
-	vals := make(map[string]*checkpoint.AssetEntry, len(s.assets))
-	for k, a := range s.assets {
-		keys = append(keys, k)
-		vals[k] = &checkpoint.AssetEntry{
-			Id:           k,
-			AssetDetails: a.Type().Details.IntoProto(),
+func (s *Service) restoreAsset(ctx context.Context, id string, details *types.AssetDetails) error {
+	id, err := s.NewAsset(ctx, id, details)
+	if err != nil {
+		return err
+	}
+	pa, _ := s.Get(id)
+	if s.isValidator {
+		if err := s.validateAsset(pa); err != nil {
+			return err
 		}
 	}
-	s.amu.RUnlock()
-	if len(keys) == 0 {
+	// always valid now
+	pa.SetValid()
+	return nil
+}
+
+func (s *Service) getEnabled() []*checkpoint.AssetEntry {
+	aa := s.GetEnabledAssets()
+	if len(aa) == 0 {
 		return nil
 	}
-	ret := make([]*checkpoint.AssetEntry, 0, len(vals))
-	sort.Strings(keys)
-	for _, k := range keys {
-		ret = append(ret, vals[k])
+	ret := make([]*checkpoint.AssetEntry, 0, len(aa))
+	for _, a := range aa {
+		ret = append(ret, &checkpoint.AssetEntry{
+			Id:           a.ID,
+			AssetDetails: a.Details.IntoProto(),
+		})
+	}
+
+	return ret
+}
+
+func (s *Service) getPendingListed() []*checkpoint.AssetEntry {
+	pd := s.getPendingAssets()
+	if len(pd) == 0 {
+		return nil
+	}
+	ret := make([]*checkpoint.AssetEntry, 0, len(pd))
+	for _, a := range pd {
+		if a.Status != types.AssetStatusPendingListing {
+			// we only want enacted but not listed assets
+			continue
+		}
+		ret = append(ret, &checkpoint.AssetEntry{
+			Id:           a.ID,
+			AssetDetails: a.Details.IntoProto(),
+		})
 	}
 	return ret
 }

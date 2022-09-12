@@ -20,18 +20,20 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
+//nolint:interfacebloat
 type orderStore interface {
 	Flush(ctx context.Context) ([]entities.Order, error)
 	Add(o entities.Order) error
 	GetAll(ctx context.Context) ([]entities.Order, error)
-	GetOrder(ctx context.Context, orderIdStr string, version *int32) (entities.Order, error)
-	GetByMarket(ctx context.Context, marketIdStr string, p entities.OffsetPagination) ([]entities.Order, error)
-	GetByParty(ctx context.Context, partyIdStr string, p entities.OffsetPagination) ([]entities.Order, error)
+	GetOrder(ctx context.Context, orderID string, version *int32) (entities.Order, error)
+	GetByMarket(ctx context.Context, marketID string, p entities.OffsetPagination) ([]entities.Order, error)
+	GetByParty(ctx context.Context, partyID string, p entities.OffsetPagination) ([]entities.Order, error)
 	GetByReference(ctx context.Context, reference string, p entities.OffsetPagination) ([]entities.Order, error)
 	GetAllVersionsByOrderID(ctx context.Context, id string, p entities.OffsetPagination) ([]entities.Order, error)
 	GetLiveOrders(ctx context.Context) ([]entities.Order, error)
 	ListOrderVersions(ctx context.Context, orderIDStr string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error)
-	ListOrders(ctx context.Context, party *string, market *string, reference *string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error)
+	ListOrders(ctx context.Context, party *string, market *string, reference *string, liveOnly bool, p entities.CursorPagination,
+		dateRange entities.DateRange) ([]entities.Order, entities.PageInfo, error)
 }
 
 type Order struct {
@@ -100,8 +102,10 @@ func (o *Order) GetLiveOrders(ctx context.Context) ([]entities.Order, error) {
 	return o.store.GetLiveOrders(ctx)
 }
 
-func (o *Order) ListOrders(ctx context.Context, party *string, market *string, reference *string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
-	return o.store.ListOrders(ctx, party, market, reference, p)
+func (o *Order) ListOrders(ctx context.Context, party *string, market *string, reference *string, liveOnly bool,
+	p entities.CursorPagination, dateRange entities.DateRange,
+) ([]entities.Order, entities.PageInfo, error) {
+	return o.store.ListOrders(ctx, party, market, reference, liveOnly, p, dateRange)
 }
 
 func (o *Order) ListOrderVersions(ctx context.Context, orderID string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {

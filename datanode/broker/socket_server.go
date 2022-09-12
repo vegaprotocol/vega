@@ -28,8 +28,8 @@ import (
 	mangosErr "go.nanomsg.org/mangos/v3/errors"
 	"go.nanomsg.org/mangos/v3/protocol"
 	"go.nanomsg.org/mangos/v3/protocol/pull"
-	_ "go.nanomsg.org/mangos/v3/transport/inproc"
-	_ "go.nanomsg.org/mangos/v3/transport/tcp"
+	_ "go.nanomsg.org/mangos/v3/transport/inproc" // changes behavior of nanomsg
+	_ "go.nanomsg.org/mangos/v3/transport/tcp"    // changes behavior of nanomsg
 )
 
 // socketServer receives events from a remote broker.

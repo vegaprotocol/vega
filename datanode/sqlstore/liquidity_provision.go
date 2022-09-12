@@ -19,23 +19,25 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	"code.vegaprotocol.io/vega/datanode/utils"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
 var lpOrdering = TableOrdering{
-	ColumnOrdering{"vega_time", ASC},
-	ColumnOrdering{"id", ASC},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC},
+	ColumnOrdering{Name: "id", Sorting: ASC},
 }
 
 type LiquidityProvision struct {
 	*ConnectionSource
-	batcher MapBatcher[entities.LiquidityProvisionKey, entities.LiquidityProvision]
+	batcher  MapBatcher[entities.LiquidityProvisionKey, entities.LiquidityProvision]
+	observer utils.Observer[entities.LiquidityProvision]
 }
 
 const (
 	sqlOracleLiquidityProvisionColumns = `id, party_id, created_at, updated_at, market_id, 
-		commitment_amount, fee, sells, buys, version, status, reference, vega_time`
+		commitment_amount, fee, sells, buys, version, status, reference, tx_hash, vega_time`
 )
 
 func NewLiquidityProvision(connectionSource *ConnectionSource) *LiquidityProvision {
@@ -48,8 +50,27 @@ func NewLiquidityProvision(connectionSource *ConnectionSource) *LiquidityProvisi
 
 func (lp *LiquidityProvision) Flush(ctx context.Context) error {
 	defer metrics.StartSQLQuery("LiquidityProvision", "Flush")()
-	_, err := lp.batcher.Flush(ctx, lp.pool)
-	return err
+	flushed, err := lp.batcher.Flush(ctx, lp.pool)
+	if err != nil {
+		return err
+	}
+
+	lp.observer.Notify(flushed)
+	return nil
+}
+
+func (lp *LiquidityProvision) ObserveLiquidityProvisions(ctx context.Context, retries int,
+	market *string, party *string,
+) (<-chan []entities.LiquidityProvision, uint64) {
+	ch, ref := lp.observer.Observe(
+		ctx,
+		retries,
+		func(lp entities.LiquidityProvision) bool {
+			marketOk := market == nil || lp.MarketID.String() == *market
+			partyOk := party == nil || lp.PartyID.String() == *party
+			return marketOk && partyOk
+		})
+	return ch, ref
 }
 
 func (lp *LiquidityProvision) Upsert(ctx context.Context, liquidityProvision entities.LiquidityProvision) error {
@@ -120,7 +141,7 @@ func (lp *LiquidityProvision) buildLiquidityProvisionsSelect(partyID entities.Pa
 ) (string, []interface{}) {
 	var bindVars []interface{}
 
-	selectSql := fmt.Sprintf(`select %s
+	selectSQL := fmt.Sprintf(`select %s
 from current_liquidity_provisions`, sqlOracleLiquidityProvisionColumns)
 
 	where := ""
@@ -147,6 +168,6 @@ from current_liquidity_provisions`, sqlOracleLiquidityProvisionColumns)
 		where = fmt.Sprintf("where %s", where)
 	}
 
-	query := fmt.Sprintf(`%s %s`, selectSql, where)
+	query := fmt.Sprintf(`%s %s`, selectSQL, where)
 	return query, bindVars
 }

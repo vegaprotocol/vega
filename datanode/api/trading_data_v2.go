@@ -45,6 +45,9 @@ var defaultPaginationV2 = entities.OffsetPagination{
 	Descending: true,
 }
 
+// When returning an 'initial image' snapshot, how many updates to batch into each page.
+var snapshotPageSize = 500
+
 type tradingDataServiceV2 struct {
 	v2.UnimplementedTradingDataServiceServer
 	config                     Config
@@ -89,7 +92,7 @@ type tradingDataServiceV2 struct {
 func (t *tradingDataServiceV2) ListAccounts(ctx context.Context, req *v2.ListAccountsRequest) (*v2.ListAccountsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListAccountsV2")()
 	if t.accountService == nil {
-		return nil, apiError(codes.Internal, fmt.Errorf("Account service not available"))
+		return nil, apiError(codes.Internal, fmt.Errorf("account service not available"))
 	}
 
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
@@ -131,6 +134,10 @@ func (t *tradingDataServiceV2) ObserveAccounts(req *v2.ObserveAccountsRequest,
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
+	// First get the 'initial image' of accounts matching the request and send those
+	if err := t.sendAccountsSnapshot(ctx, req, srv); err != nil {
+		return err
+	}
 	accountsChan, ref := t.accountService.ObserveAccountBalances(
 		ctx, t.config.StreamRetries, req.MarketId, req.PartyId, req.Asset, req.Type)
 
@@ -138,11 +145,60 @@ func (t *tradingDataServiceV2) ObserveAccounts(req *v2.ObserveAccountsRequest,
 		t.log.Debug("Accounts subscriber - new rpc stream", logging.Uint64("ref", ref))
 	}
 
-	return observe(ctx, t.log, "Accounts", accountsChan, ref, func(account entities.AccountBalance) error {
-		return srv.Send(&v2.ObserveAccountsResponse{
-			Account: account.ToProto(),
-		})
+	return observeBatch(ctx, t.log, "Accounts", accountsChan, ref, func(accounts []entities.AccountBalance) error {
+		protos := make([]*vega.Account, len(accounts))
+		for i := 0; i < len(accounts); i++ {
+			protos[i] = accounts[i].ToProto()
+		}
+		updates := &v2.AccountUpdates{Accounts: protos}
+		responseUpdates := &v2.ObserveAccountsResponse_Updates{Updates: updates}
+		response := &v2.ObserveAccountsResponse{Response: responseUpdates}
+		return srv.Send(response)
 	})
+}
+
+func (t *tradingDataServiceV2) sendAccountsSnapshot(ctx context.Context, req *v2.ObserveAccountsRequest,
+	srv v2.TradingDataService_ObserveAccountsServer,
+) error {
+	filter := entities.AccountFilter{}
+	if req.Asset != "" {
+		filter.AssetID = entities.AssetID(req.Asset)
+	}
+	if req.PartyId != "" {
+		filter.PartyIDs = append(filter.PartyIDs, entities.PartyID(req.PartyId))
+	}
+	if req.MarketId != "" {
+		filter.MarketIDs = append(filter.MarketIDs, entities.MarketID(req.MarketId))
+	}
+	if req.Type != vega.AccountType_ACCOUNT_TYPE_UNSPECIFIED {
+		filter.AccountTypes = append(filter.AccountTypes, req.Type)
+	}
+
+	accounts, pageInfo, err := t.accountService.QueryBalances(ctx, filter, entities.CursorPagination{})
+	if err != nil {
+		return errors.Wrap(err, "fetching account balance initial image")
+	}
+
+	if pageInfo.HasNextPage {
+		return fmt.Errorf("initial image spans multiple pages")
+	}
+
+	protos := make([]*vega.Account, len(accounts))
+	for i := 0; i < len(accounts); i++ {
+		protos[i] = accounts[i].ToProto()
+	}
+
+	batches := batch(protos, snapshotPageSize)
+	for i, batch := range batches {
+		isLast := i == len(batches)-1
+		page := &v2.AccountSnapshotPage{Accounts: batch, LastPage: isLast}
+		snapshot := &v2.ObserveAccountsResponse_Snapshot{Snapshot: page}
+		response := &v2.ObserveAccountsResponse{Response: snapshot}
+		if err := srv.Send(response); err != nil {
+			return errors.Wrap(err, "sending account balance initial image")
+		}
+	}
+	return nil
 }
 
 func (t *tradingDataServiceV2) Info(ctx context.Context, _ *v2.InfoRequest) (*v2.InfoResponse, error) {
@@ -172,29 +228,33 @@ func (t *tradingDataServiceV2) GetBalanceHistory(ctx context.Context, req *v2.Ge
 		groupBy = append(groupBy, field)
 	}
 
-	balances, err := t.accountService.QueryAggregatedBalances(filter, groupBy)
+	dateRange := entities.DateRangeFromProto(req.DateRange)
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, apiError(codes.InvalidArgument, fmt.Errorf("invalid cursor: %w", err))
+	}
+
+	balances, pageInfo, err := t.accountService.QueryAggregatedBalances(filter, groupBy, dateRange, pagination)
 	if err != nil {
 		return nil, fmt.Errorf("querying balances: %w", err)
 	}
 
-	pbBalances := make([]*v2.AggregatedBalance, len(*balances))
-	for i, balance := range *balances {
-		pbBalance := balance.ToProto()
-		pbBalances[i] = &pbBalance
+	edges, err := makeEdges[*v2.AggregatedBalanceEdge](*balances)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrAccountServiceListAccounts, err)
 	}
 
-	return &v2.GetBalanceHistoryResponse{Balances: pbBalances}, nil
+	return &v2.GetBalanceHistoryResponse{
+		Balances: &v2.AggregatedBalanceConnection{
+			Edges:    edges,
+			PageInfo: pageInfo.ToProto(),
+		},
+	}, nil
 }
 
 func entityMarketDataListToProtoList(list []entities.MarketData) (*v2.MarketDataConnection, error) {
 	if len(list) == 0 {
 		return nil, nil
-	}
-
-	results := make([]*vega.MarketData, 0, len(list))
-
-	for _, item := range list {
-		results = append(results, item.ToProto())
 	}
 
 	edges, err := makeEdges[*v2.MarketDataEdge](list)
@@ -214,9 +274,9 @@ func (t *tradingDataServiceV2) ObserveMarketsDepth(req *v2.ObserveMarketsDepthRe
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
-	for _, marketId := range req.MarketIds {
-		if !t.marketExistsForId(ctx, marketId) {
-			return apiError(codes.InvalidArgument, ErrMalformedRequest, fmt.Errorf("no market found for id:%s", marketId))
+	for _, marketID := range req.MarketIds {
+		if !t.marketExistsForID(ctx, marketID) {
+			return apiError(codes.InvalidArgument, ErrMalformedRequest, fmt.Errorf("no market found for id:%s", marketID))
 		}
 	}
 
@@ -239,9 +299,9 @@ func (t *tradingDataServiceV2) ObserveMarketsDepthUpdates(req *v2.ObserveMarkets
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
-	for _, marketId := range req.MarketIds {
-		if !t.marketExistsForId(ctx, marketId) {
-			return apiError(codes.InvalidArgument, ErrMalformedRequest, fmt.Errorf("no market found for id:%s", marketId))
+	for _, marketID := range req.MarketIds {
+		if !t.marketExistsForID(ctx, marketID) {
+			return apiError(codes.InvalidArgument, ErrMalformedRequest, fmt.Errorf("no market found for id:%s", marketID))
 		}
 	}
 	depthChan, ref := t.marketDepthService.ObserveDepthUpdates(
@@ -263,9 +323,9 @@ func (t *tradingDataServiceV2) ObserveMarketsData(req *v2.ObserveMarketsDataRequ
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
-	for _, marketId := range req.MarketIds {
-		if !t.marketExistsForId(ctx, marketId) {
-			return apiError(codes.InvalidArgument, ErrMalformedRequest, fmt.Errorf("no market found for id:%s", marketId))
+	for _, marketID := range req.MarketIds {
+		if !t.marketExistsForID(ctx, marketID) {
+			return apiError(codes.InvalidArgument, ErrMalformedRequest, fmt.Errorf("no market found for id:%s", marketID))
 		}
 	}
 
@@ -284,7 +344,7 @@ func (t *tradingDataServiceV2) ObserveMarketsData(req *v2.ObserveMarketsDataRequ
 func (t *tradingDataServiceV2) GetLatestMarketData(ctx context.Context, req *v2.GetLatestMarketDataRequest) (*v2.GetLatestMarketDataResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetLatestMarketData")()
 
-	if !t.marketExistsForId(ctx, req.MarketId) {
+	if !t.marketExistsForID(ctx, req.MarketId) {
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, fmt.Errorf("no market found for id:%s", req.MarketId))
 	}
 
@@ -523,8 +583,8 @@ func (t *tradingDataServiceV2) ObserveCandleData(req *v2.ObserveCandleDataReques
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
-	subscriptionId, candlesChan, err := t.candleService.Subscribe(ctx, req.CandleId)
-	defer t.candleService.Unsubscribe(subscriptionId)
+	subscriptionID, candlesChan, err := t.candleService.Subscribe(ctx, req.CandleId)
+	defer t.candleService.Unsubscribe(subscriptionID)
 
 	if err != nil {
 		return apiError(codes.Internal, ErrCandleServiceSubscribeToCandles, err)
@@ -574,10 +634,10 @@ func (t *tradingDataServiceV2) ListCandleIntervals(ctx context.Context, req *v2.
 	}
 
 	intervalToCandleIds := make([]*v2.IntervalToCandleId, 0, len(mappings))
-	for interval, candleId := range mappings {
+	for interval, candleID := range mappings {
 		intervalToCandleIds = append(intervalToCandleIds, &v2.IntervalToCandleId{
 			Interval: interval,
-			CandleId: candleId,
+			CandleId: candleID,
 		})
 	}
 
@@ -595,11 +655,6 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerAddedBundles(ctx context.Co
 
 	if t.multiSigService == nil {
 		return nil, errors.New("sql multisig event store not available")
-	}
-
-	nodeID := req.GetNodeId()
-	if len(nodeID) == 0 {
-		return nil, apiError(codes.InvalidArgument, fmt.Errorf("node id must be supplied"))
 	}
 
 	var epochID *int64
@@ -620,7 +675,7 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerAddedBundles(ctx context.Co
 		}
 	}
 
-	res, pageInfo, err := t.multiSigService.GetAddedEvents(ctx, nodeID, epochID, p)
+	res, pageInfo, err := t.multiSigService.GetAddedEvents(ctx, req.GetNodeId(), req.GetSubmitter(), epochID, p)
 	if err != nil {
 		c := codes.Internal
 		if errors.Is(err, entities.ErrInvalidID) {
@@ -679,13 +734,6 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerRemovedBundles(ctx context.
 		return nil, errors.New("sql multisig event store not available")
 	}
 
-	nodeID := req.GetNodeId()
-	submitter := req.GetSubmitter()
-
-	if len(nodeID) == 0 || len(submitter) == 0 {
-		return nil, apiError(codes.InvalidArgument, fmt.Errorf("nodeId and submitter must be supplied"))
-	}
-
 	var epochID *int64
 	if len(req.EpochSeq) != 0 {
 		e, err := strconv.ParseInt(req.EpochSeq, 10, 64)
@@ -704,7 +752,7 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerRemovedBundles(ctx context.
 		}
 	}
 
-	res, pageInfo, err := t.multiSigService.GetRemovedEvents(ctx, nodeID, submitter, epochID, p)
+	res, pageInfo, err := t.multiSigService.GetRemovedEvents(ctx, req.GetNodeId(), req.GetSubmitter(), epochID, p)
 	if err != nil {
 		c := codes.Internal
 		if errors.Is(err, entities.ErrInvalidID) {
@@ -971,12 +1019,13 @@ func (t *tradingDataServiceV2) ListTrades(ctx context.Context, in *v2.ListTrades
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, err)
 	}
-
+	dateRange := entities.DateRangeFromProto(in.DateRange)
 	trades, pageInfo, err := t.tradeService.List(ctx,
 		entities.MarketID(in.GetMarketId()),
 		entities.PartyID(in.GetPartyId()),
 		entities.OrderID(in.GetOrderId()),
-		pagination)
+		pagination,
+		dateRange)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -1108,6 +1157,8 @@ func (t *tradingDataServiceV2) ObservePositions(req *v2.ObservePositionsRequest,
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
+	t.sendPositionsSnapshot(ctx, req, srv)
+
 	var partyID, marketID string
 	if req.PartyId != nil {
 		partyID = *req.PartyId
@@ -1123,11 +1174,71 @@ func (t *tradingDataServiceV2) ObservePositions(req *v2.ObservePositionsRequest,
 		t.log.Debug("Positions subscriber - new rpc stream", logging.Uint64("ref", ref))
 	}
 
-	return observe(ctx, t.log, "Position", positionsChan, ref, func(position entities.Position) error {
-		return srv.Send(&v2.ObservePositionsResponse{
-			Position: position.ToProto(),
-		})
+	return observeBatch(ctx, t.log, "Position", positionsChan, ref, func(positions []entities.Position) error {
+		protos := make([]*vega.Position, len(positions))
+		for i := 0; i < len(positions); i++ {
+			protos[i] = positions[i].ToProto()
+		}
+		updates := &v2.PositionUpdates{Positions: protos}
+		responseUpdates := &v2.ObservePositionsResponse_Updates{Updates: updates}
+		response := &v2.ObservePositionsResponse{Response: responseUpdates}
+		return srv.Send(response)
 	})
+}
+
+func (t *tradingDataServiceV2) sendPositionsSnapshot(ctx context.Context, req *v2.ObservePositionsRequest, srv v2.TradingDataService_ObservePositionsServer) error {
+	var positions []entities.Position
+	var err error
+
+	// By market and party
+	if req.PartyId != nil && req.MarketId != nil {
+		position, err := t.positionService.GetByMarketAndParty(ctx, *req.MarketId, *req.PartyId)
+		if err != nil {
+			return errors.Wrap(err, "getting initial positions by market+party")
+		}
+		positions = append(positions, position)
+	}
+
+	// By market
+	if req.PartyId == nil && req.MarketId != nil {
+		positions, err = t.positionService.GetByMarket(ctx, *req.MarketId)
+		if err != nil {
+			return errors.Wrap(err, "getting initial positions by market")
+		}
+	}
+
+	// By party
+	if req.PartyId != nil && req.MarketId == nil {
+		positions, err = t.positionService.GetByParty(ctx, entities.PartyID(*req.PartyId))
+		if err != nil {
+			return errors.Wrap(err, "getting initial positions by party")
+		}
+	}
+
+	// All the positions
+	if req.PartyId == nil && req.MarketId == nil {
+		positions, err = t.positionService.GetAll(ctx)
+		if err != nil {
+			return errors.Wrap(err, "getting initial positions by party")
+		}
+	}
+
+	protos := make([]*vega.Position, len(positions))
+	for i := 0; i < len(positions); i++ {
+		protos[i] = positions[i].ToProto()
+	}
+
+	batches := batch(protos, snapshotPageSize)
+	for i, batch := range batches {
+		isLast := i == len(batches)-1
+		positionList := &v2.PositionSnapshotPage{Positions: batch, LastPage: isLast}
+		snapshot := &v2.ObservePositionsResponse_Snapshot{Snapshot: positionList}
+		response := &v2.ObservePositionsResponse{Response: snapshot}
+		if err := srv.Send(response); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (t *tradingDataServiceV2) GetParty(ctx context.Context, req *v2.GetPartyRequest) (*v2.GetPartyResponse, error) {
@@ -1337,7 +1448,9 @@ func (t *tradingDataServiceV2) ListDeposits(ctx context.Context, req *v2.ListDep
 		return nil, apiError(codes.InvalidArgument, err)
 	}
 
-	deposits, pageInfo, err := t.depositService.GetByParty(ctx, req.PartyId, false, pagination)
+	dateRange := entities.DateRangeFromProto(req.DateRange)
+
+	deposits, pageInfo, err := t.depositService.GetByParty(ctx, req.PartyId, false, pagination, dateRange)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -1394,8 +1507,8 @@ func (t *tradingDataServiceV2) ListWithdrawals(ctx context.Context, req *v2.List
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, err)
 	}
-
-	withdrawals, pageInfo, err := t.withdrawalService.GetByParty(ctx, req.PartyId, false, pagination)
+	dateRange := entities.DateRangeFromProto(req.DateRange)
+	withdrawals, pageInfo, err := t.withdrawalService.GetByParty(ctx, req.PartyId, false, pagination, dateRange)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -1624,6 +1737,27 @@ func (t *tradingDataServiceV2) ListLiquidityProvisions(ctx context.Context, req 
 	return &v2.ListLiquidityProvisionsResponse{LiquidityProvisions: liquidityProvisionConnection}, nil
 }
 
+func (t *tradingDataServiceV2) ObserveLiquidityProvisions(request *v2.ObserveLiquidityProvisionsRequest, srv v2.TradingDataService_ObserveLiquidityProvisionsServer) error {
+	// Wrap context from the request into cancellable. We can close internal chan on error.
+	ctx, cancel := context.WithCancel(srv.Context())
+	defer cancel()
+
+	lpCh, ref := t.liquidityProvisionService.ObserveLiquidityProvisions(ctx, t.config.StreamRetries, request.PartyId, request.MarketId)
+
+	if t.log.GetLevel() == logging.DebugLevel {
+		t.log.Debug("Orders subscriber - new rpc stream", logging.Uint64("ref", ref))
+	}
+
+	return observeBatch(ctx, t.log, "Order", lpCh, ref, func(lps []entities.LiquidityProvision) error {
+		protos := make([]*vega.LiquidityProvision, 0, len(lps))
+		for _, v := range lps {
+			protos = append(protos, v.ToProto())
+		}
+		response := &v2.ObserveLiquidityProvisionsResponse{LiquidityProvisions: protos}
+		return srv.Send(response)
+	})
+}
+
 func (t *tradingDataServiceV2) GetGovernanceData(ctx context.Context, req *v2.GetGovernanceDataRequest) (*v2.GetGovernanceDataResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetGovernanceData")
 
@@ -1784,7 +1918,14 @@ func (t *tradingDataServiceV2) ListOrders(ctx context.Context, in *v2.ListOrders
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, err)
 	}
-	orders, pageInfo, err := t.orderService.ListOrders(ctx, in.PartyId, in.MarketId, in.Reference, pagination)
+
+	liveOnly := false
+	if in.LiveOnly != nil {
+		liveOnly = *in.LiveOnly
+	}
+	dateRange := entities.DateRangeFromProto(in.DateRange)
+
+	orders, pageInfo, err := t.orderService.ListOrders(ctx, in.PartyId, in.MarketId, in.Reference, liveOnly, pagination, dateRange)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -1841,6 +1982,9 @@ func (t *tradingDataServiceV2) ObserveOrders(req *v2.ObserveOrdersRequest, srv v
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
+	if err := t.sendOrdersSnapshot(ctx, req, srv); err != nil {
+		return err
+	}
 	ordersChan, ref := t.orderService.ObserveOrders(ctx, t.config.StreamRetries, req.MarketId, req.PartyId)
 
 	if t.log.GetLevel() == logging.DebugLevel {
@@ -1848,12 +1992,43 @@ func (t *tradingDataServiceV2) ObserveOrders(req *v2.ObserveOrdersRequest, srv v
 	}
 
 	return observeBatch(ctx, t.log, "Order", ordersChan, ref, func(orders []entities.Order) error {
-		out := make([]*vega.Order, 0, len(orders))
+		protos := make([]*vega.Order, 0, len(orders))
 		for _, v := range orders {
-			out = append(out, v.ToProto())
+			protos = append(protos, v.ToProto())
 		}
-		return srv.Send(&v2.ObserveOrdersResponse{Orders: out})
+		updates := &v2.OrderUpdates{Orders: protos}
+		responseUpdates := &v2.ObserveOrdersResponse_Updates{Updates: updates}
+		response := &v2.ObserveOrdersResponse{Response: responseUpdates}
+		return srv.Send(response)
 	})
+}
+
+func (t *tradingDataServiceV2) sendOrdersSnapshot(ctx context.Context, req *v2.ObserveOrdersRequest, srv v2.TradingDataService_ObserveOrdersServer) error {
+	orders, pageInfo, err := t.orderService.ListOrders(ctx, req.PartyId, req.MarketId, nil, true, entities.CursorPagination{}, entities.DateRange{})
+	if err != nil {
+		return errors.Wrap(err, "fetching orders initial image")
+	}
+
+	if pageInfo.HasNextPage {
+		return fmt.Errorf("orders initial image spans multiple pages")
+	}
+
+	protos := make([]*vega.Order, len(orders))
+	for i := 0; i < len(orders); i++ {
+		protos[i] = orders[i].ToProto()
+	}
+
+	batches := batch(protos, snapshotPageSize)
+	for i, batch := range batches {
+		isLast := i == len(batches)-1
+		positionList := &v2.OrderSnapshotPage{Orders: batch, LastPage: isLast}
+		responseSnapshot := &v2.ObserveOrdersResponse_Snapshot{Snapshot: positionList}
+		response := &v2.ObserveOrdersResponse{Response: responseSnapshot}
+		if err := srv.Send(response); err != nil {
+			return errors.Wrap(err, "sending account balance initial image")
+		}
+	}
+	return nil
 }
 
 func (t *tradingDataServiceV2) ListDelegations(ctx context.Context, in *v2.ListDelegationsRequest) (*v2.ListDelegationsResponse, error) {
@@ -1924,7 +2099,7 @@ func (t *tradingDataServiceV2) ObserveDelegations(req *v2.ObserveDelegationsRequ
 	})
 }
 
-func (t *tradingDataServiceV2) marketExistsForId(ctx context.Context, marketID string) bool {
+func (t *tradingDataServiceV2) marketExistsForID(ctx context.Context, marketID string) bool {
 	_, err := t.marketsService.GetByID(ctx, marketID)
 	return err == nil
 }
@@ -2321,7 +2496,11 @@ func (t *tradingDataServiceV2) ListCheckpoints(ctx context.Context, req *v2.List
 }
 
 func (t *tradingDataServiceV2) GetStake(ctx context.Context, req *v2.GetStakeRequest) (*v2.GetStakeResponse, error) {
-	if req == nil || len(req.PartyId) <= 0 {
+	if req == nil {
+		return nil, apiError(codes.InvalidArgument, errors.New("nil request"))
+	}
+
+	if len(req.PartyId) <= 0 {
 		return nil, apiError(codes.InvalidArgument, errors.New("missing party id"))
 	}
 
@@ -2329,7 +2508,7 @@ func (t *tradingDataServiceV2) GetStake(ctx context.Context, req *v2.GetStakeReq
 
 	partyID := entities.PartyID(req.PartyId)
 
-	if req != nil && req.Pagination != nil {
+	if req.Pagination != nil {
 		var err error
 		pagination, err = entities.CursorPaginationFromProto(req.Pagination)
 		if err != nil {
@@ -2365,7 +2544,7 @@ func (t *tradingDataServiceV2) GetRiskFactors(ctx context.Context, req *v2.GetRi
 
 	rfs, err := t.riskFactorService.GetMarketRiskFactors(ctx, req.MarketId)
 	if err != nil {
-		return nil, nil
+		return nil, nil //nolint:nilerr
 	}
 
 	return &v2.GetRiskFactorsResponse{
@@ -2592,4 +2771,13 @@ func (t *tradingDataServiceV2) GetVegaTime(ctx context.Context, req *v2.GetVegaT
 	return &v2.GetVegaTimeResponse{
 		Timestamp: b.VegaTime.UnixNano(),
 	}, nil
+}
+
+func batch[T any](in []T, batchSize int) [][]T {
+	batches := make([][]T, 0, (len(in)+batchSize-1)/batchSize)
+	for batchSize < len(in) {
+		in, batches = in[batchSize:], append(batches, in[0:batchSize:batchSize])
+	}
+	batches = append(batches, in)
+	return batches
 }

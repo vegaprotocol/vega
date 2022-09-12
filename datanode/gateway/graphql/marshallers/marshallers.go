@@ -284,7 +284,17 @@ func MarshalOrderType(s vega.Order_Type) graphql.Marshaler {
 }
 
 func UnmarshalOrderType(v interface{}) (vega.Order_Type, error) {
-	return vega.Order_TYPE_UNSPECIFIED, ErrUnimplemented
+	s, ok := v.(string)
+	if !ok {
+		return vega.Order_TYPE_UNSPECIFIED, fmt.Errorf("expected order type to be a string")
+	}
+
+	t, ok := vega.Order_Type_value[s]
+	if !ok {
+		return vega.Order_TYPE_UNSPECIFIED, fmt.Errorf("failed to convert OrderType from GraphQL to Proto: %v", s)
+	}
+
+	return vega.Order_Type(t), nil
 }
 
 func MarshalMarketState(s vega.Market_State) graphql.Marshaler {

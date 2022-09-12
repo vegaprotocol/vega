@@ -46,7 +46,7 @@ func addNodeAnnounced(t *testing.T, ps *sqlstore.Node, nodeID entities.NodeID, a
 		Added:     added,
 		FromEpoch: fromEpoch,
 	}
-	err := ps.AddNodeAnnoucedEvent(context.Background(), nodeID.String(), vegatime, &aux)
+	err := ps.AddNodeAnnouncedEvent(context.Background(), nodeID.String(), vegatime, &aux)
 	require.NoError(t, err)
 }
 
@@ -62,7 +62,7 @@ func addRankingScore(t *testing.T, ps *sqlstore.Node, block entities.Block, node
 	}
 
 	aux := entities.RankingScoreAux{
-		NodeId:   node.ID,
+		NodeID:   node.ID,
 		EpochSeq: epoch,
 	}
 
@@ -137,11 +137,11 @@ func TestGetNodesJoiningAndLeaving(t *testing.T) {
 	nodeID1 := node1.ID.String()
 	nodeID2 := node2.ID.String()
 
-	assertNodeExistence(t, ctx, ns, nodeID1, 1, false)
-	assertNodeExistence(t, ctx, ns, nodeID2, 1, true)
+	assertNodeExistence(ctx, t, ns, nodeID1, 1, false)
+	assertNodeExistence(ctx, t, ns, nodeID2, 1, true)
 	for i := 1; i < 10; i++ {
-		assertNodeExistence(t, ctx, ns, nodeID1, uint64(i), exists[i])
-		assertNodeExistence(t, ctx, ns, nodeID2, uint64(i), true)
+		assertNodeExistence(ctx, t, ns, nodeID1, uint64(i), exists[i])
+		assertNodeExistence(ctx, t, ns, nodeID2, uint64(i), true)
 	}
 }
 
@@ -190,7 +190,7 @@ func TestGetNodeData(t *testing.T) {
 	require.Equal(t, uint32(1), nodeData.TotalNodes)
 }
 
-func assertNodeExistence(t *testing.T, ctx context.Context, ns *sqlstore.Node, nodeID string, epoch uint64, exists bool) {
+func assertNodeExistence(ctx context.Context, t *testing.T, ns *sqlstore.Node, nodeID string, epoch uint64, exists bool) {
 	t.Helper()
 	nodes, _, err := ns.GetNodes(ctx, epoch, entities.CursorPagination{})
 	require.NoError(t, err)

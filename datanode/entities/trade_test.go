@@ -29,24 +29,24 @@ func TestProtoFromTrade(t *testing.T) {
 	price, _ := decimal.NewFromString(priceString)
 
 	idString := "BC2001BDDAC588F8AAAE0D9BEC3D6881A447B888447E5D0A9DE92D149BA4E877"
-	marketIdString := "8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8"
+	marketIDString := "8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8"
 	size := uint64(5)
-	buyerIdString := "2e4f34a38204a2a155be678e670903ed8df96e813700729deacd3daf7e55039e"
-	sellerIdString := "8b6be1a03cc4d529f682887a78b66e6879d17f81e2b37356ca0acbc5d5886eb8"
-	buyOrderIdString := "CF951606211775C43449807FE15F908704A85C514D65D549D67BBD6B5EEF66BB"
-	sellOrderIdString := "6A94947F724CDB7851BEE793ACA6888F68ABBF8D49DFD0F778424A7CE42E7B7D"
+	buyerIDString := "2e4f34a38204a2a155be678e670903ed8df96e813700729deacd3daf7e55039e"
+	sellerIDString := "8b6be1a03cc4d529f682887a78b66e6879d17f81e2b37356ca0acbc5d5886eb8"
+	buyOrderIDString := "CF951606211775C43449807FE15F908704A85C514D65D549D67BBD6B5EEF66BB"
+	sellOrderIDString := "6A94947F724CDB7851BEE793ACA6888F68ABBF8D49DFD0F778424A7CE42E7B7D"
 
 	trade := entities.Trade{
 		VegaTime:                vegaTime,
 		ID:                      entities.TradeID(idString),
-		MarketID:                entities.MarketID(marketIdString),
+		MarketID:                entities.MarketID(marketIDString),
 		Price:                   price,
 		Size:                    size,
-		Buyer:                   entities.PartyID(buyerIdString),
-		Seller:                  entities.PartyID(sellerIdString),
+		Buyer:                   entities.PartyID(buyerIDString),
+		Seller:                  entities.PartyID(sellerIDString),
 		Aggressor:               entities.SideBuy,
-		BuyOrder:                entities.OrderID(buyOrderIdString),
-		SellOrder:               entities.OrderID(sellOrderIdString),
+		BuyOrder:                entities.OrderID(buyOrderIDString),
+		SellOrder:               entities.OrderID(sellOrderIDString),
 		Type:                    entities.TradeTypeNetworkCloseOutGood,
 		BuyerMakerFee:           decimal.NewFromInt(2),
 		BuyerInfrastructureFee:  decimal.NewFromInt(3),
@@ -62,14 +62,14 @@ func TestProtoFromTrade(t *testing.T) {
 
 	assert.Equal(t, vegaTime.UnixNano(), p.Timestamp)
 	assert.Equal(t, idString, p.Id)
-	assert.Equal(t, marketIdString, p.MarketId)
+	assert.Equal(t, marketIDString, p.MarketId)
 	assert.Equal(t, priceString, p.Price)
 	assert.Equal(t, size, p.Size)
-	assert.Equal(t, buyerIdString, p.Buyer)
-	assert.Equal(t, sellerIdString, p.Seller)
+	assert.Equal(t, buyerIDString, p.Buyer)
+	assert.Equal(t, sellerIDString, p.Seller)
 	assert.Equal(t, vega.Side_SIDE_BUY, p.Aggressor)
-	assert.Equal(t, buyOrderIdString, p.BuyOrder)
-	assert.Equal(t, sellOrderIdString, p.SellOrder)
+	assert.Equal(t, buyOrderIDString, p.BuyOrder)
+	assert.Equal(t, sellOrderIDString, p.SellOrder)
 	assert.Equal(t, vega.Trade_TYPE_NETWORK_CLOSE_OUT_GOOD, p.Type)
 	assert.Equal(t, "2", p.BuyerFee.MakerFee)
 	assert.Equal(t, "3", p.BuyerFee.InfrastructureFee)
@@ -105,7 +105,7 @@ func TestTradeFromProto(t *testing.T) {
 	}
 
 	testVegaTime := time.Now()
-	trade, err := entities.TradeFromProto(&tradeEventProto, testVegaTime, 5)
+	trade, err := entities.TradeFromProto(&tradeEventProto, generateTxHash(), testVegaTime, 5)
 	if err != nil {
 		t.Fatalf("failed to convert proto to trade:%s", err)
 	}

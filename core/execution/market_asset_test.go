@@ -43,22 +43,22 @@ func (a isAssetStub) Type() *types.Asset {
 	}
 }
 
-func (_ isAssetStub) GetAssetClass() common.AssetClass {
+func (isAssetStub) GetAssetClass() common.AssetClass {
 	return common.Builtin
 }
 
-func (_ isAssetStub) IsValid() bool {
+func (isAssetStub) IsValid() bool {
 	return true
 }
 
-func (_ isAssetStub) Validate() error {
+func (isAssetStub) Validate() error {
 	return nil
 }
 
-func (_ isAssetStub) SetValid()          {}
-func (_ isAssetStub) SetPendingListing() {}
-func (_ isAssetStub) SetRejected()       {}
-func (_ isAssetStub) SetEnabled()        {}
+func (isAssetStub) SetValid()          {}
+func (isAssetStub) SetPendingListing() {}
+func (isAssetStub) SetRejected()       {}
+func (isAssetStub) SetEnabled()        {}
 
 func (a isAssetStub) String() string {
 	return a.ID

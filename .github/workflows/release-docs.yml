@@ -1,0 +1,67 @@
+---
+name: "Release Documentation"
+
+"on":
+  push:
+    tags:
+      - '**'
+
+jobs:
+  gen-docs:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Check out vega code
+        uses: actions/checkout@v3
+        with:
+          path: 'vega'
+          fetch-depth: '0'
+      -
+        name: "Setup ssh key for PR"
+        uses: webfactory/ssh-agent@v0.5.4
+        with:
+          ssh-private-key: ${{ secrets.DOCUMENTATION_KEY }}
+      -
+        name: Check out docs code
+        uses: actions/checkout@v3
+        with:
+          path: 'documentation'
+          repository: 'vegaprotocol/documentation'
+          ssh-key: ${{ secrets.DOCUMENTATION_KEY }}
+      -
+        name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.19
+      -
+        name: Get dependencies
+        run: cd vega; bash script/gettools.sh
+      -
+        name: Generate docs
+        run: cd vega; make proto_docs; echo "generated docs:"; find protos/generated -type f
+      -
+        name: Make PR to the docs repo
+        env:
+          GH_TOKEN: ${{ secrets.VEGA_CI_BOT_GITHUB_TOKEN }}
+        run: |
+          cd vega
+          ref="$(git describe --tags --abbrev=0)"
+          short_sha="$(git rev-parse --short HEAD)"
+          cd ..
+          mkdir -p "documentation/specs/${ref}"
+          cp -r vega/protos/generated/* "documentation/specs/${ref}/"
+          cp vega/datanode/gateway/graphql/schema.graphql "documentation/specs/${ref}/datanode-schema.graphql"
+          cd documentation
+          git config --global user.email "vega-ci-bot@vega.xyz"
+          git config --global user.name "vega-ci-bot"
+          branch_name="spec-update-${ref}"
+          git checkout -b "$branch_name"
+          commit_msg="Automated specs update from vegaprotocol/vega#${short_sha}"
+          git add specs
+          git commit -m "$commit_msg"  || exit 0
+          git push -u origin "$branch_name"
+          pr_url="$(gh pr create --title "${commit_msg} to ${ref}" --body 'This is automated pull request that will be merged after pipeline passes' --reviewer vegaprotocol/docs)"
+          echo $pr_url
+          # once auto merge get's enabled on documentation repo let's do follow up
+          # sleep 5
+          # gh pr merge "${pr_url}" --auto --delete-branch --squash

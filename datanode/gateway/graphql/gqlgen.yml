@@ -106,8 +106,12 @@ models:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.AuctionTrigger
   Order:
     model: code.vegaprotocol.io/vega/protos/vega.Order
+  OrderUpdate:
+    model: code.vegaprotocol.io/vega/protos/vega.Order
   PaginatedOrder:
     model: code.vegaprotocol.io/vega/protos/vega.Order
+  TradeUpdate:
+    model: code.vegaprotocol.io/vega/protos/vega.Trade
   Trade:
     model: code.vegaprotocol.io/vega/protos/vega.Trade
   PriceLevel:
@@ -126,11 +130,15 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.Position
   Account:
     model: code.vegaprotocol.io/vega/protos/vega.Account
+  AccountUpdate:
+    model: code.vegaprotocol.io/vega/protos/vega.Account
   MarketData:
     model: code.vegaprotocol.io/vega/protos/vega.MarketData
   ObservableMarketData:
     model: code.vegaprotocol.io/vega/protos/vega.MarketData
   MarginLevels:
+    model: code.vegaprotocol.io/vega/protos/vega.MarginLevels
+  MarginLevelsUpdate:
     model: code.vegaprotocol.io/vega/protos/vega.MarginLevels
   NodeSignature:
     model: code.vegaprotocol.io/vega/protos/vega/commands/v1.NodeSignature
@@ -143,6 +151,8 @@ models:
   LiquidityOrder:
     model: code.vegaprotocol.io/vega/protos/vega.LiquidityOrder
   LiquidityProvision:
+    model: code.vegaprotocol.io/vega/protos/vega.LiquidityProvision
+  LiquidityProvisionUpdate:
     model: code.vegaprotocol.io/vega/protos/vega.LiquidityProvision
   LiquidityOrderReference:
     model: code.vegaprotocol.io/vega/protos/vega.LiquidityOrderReference
@@ -213,8 +223,6 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.ProposalTerms
   NewMarket:
     model: code.vegaprotocol.io/vega/protos/vega.NewMarket
-  NewMarketCommitment:
-    model: code.vegaprotocol.io/vega/protos/vega.NewMarketCommitment
   NewAsset:
     model: code.vegaprotocol.io/vega/protos/vega.NewAsset
   UpdateAsset:
@@ -445,3 +453,9 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AccountEdge
   AccountsConnection:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AccountsConnection
+  DateRange:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.DateRange
+  AggregatedBalanceEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AggregatedBalanceEdge
+  AggregatedBalanceConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AggregatedBalanceConnection

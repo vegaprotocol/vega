@@ -23,17 +23,17 @@ import (
 	db "github.com/tendermint/tm-db"
 )
 
-// SnapshotData is a representation of the information we an scrape from the avl tree.
-type SnapshotData struct {
+// Data is a representation of the information we an scrape from the avl tree.
+type Data struct {
 	Version int64  `json:"version"`
 	Hash    []byte `json:"hash"`
 	Height  uint64 `json:"height"`
 	Size    int64  `json:"size"`
 }
 
-func SnapshotsHeightsFromTree(tree *iavl.MutableTree) ([]SnapshotData, []SnapshotData, error) {
-	trees := make([]SnapshotData, 0, 4)
-	invalidVersions := make([]SnapshotData, 0, 4)
+func SnapshotsHeightsFromTree(tree *iavl.MutableTree) ([]Data, []Data, error) {
+	trees := make([]Data, 0, 4)
+	invalidVersions := make([]Data, 0, 4)
 	versions := tree.AvailableVersions()
 
 	for _, version := range versions {
@@ -44,9 +44,10 @@ func SnapshotsHeightsFromTree(tree *iavl.MutableTree) ([]SnapshotData, []Snapsho
 
 		app, err := types.AppStateFromTree(tree.ImmutableTree)
 		if err != nil {
-			invalidVersions = append(invalidVersions, SnapshotData{
+			hash, _ := tree.Hash()
+			invalidVersions = append(invalidVersions, Data{
 				Version: v,
-				Hash:    tree.Hash(),
+				Hash:    hash,
 			})
 			continue
 		}
@@ -56,7 +57,7 @@ func SnapshotsHeightsFromTree(tree *iavl.MutableTree) ([]SnapshotData, []Snapsho
 			return nil, nil, err
 		}
 
-		trees = append(trees, SnapshotData{
+		trees = append(trees, Data{
 			Version: v,
 			Height:  app.AppState.Height,
 			Hash:    snap.Hash,
@@ -70,7 +71,7 @@ func SnapshotsHeightsFromTree(tree *iavl.MutableTree) ([]SnapshotData, []Snapsho
 	return trees, invalidVersions, nil
 }
 
-func AvailableSnapshotsHeights(dbpath string) ([]SnapshotData, []SnapshotData, error) {
+func AvailableSnapshotsHeights(dbpath string) ([]Data, []Data, error) {
 	options := &opt.Options{
 		ErrorIfMissing: true,
 		ReadOnly:       true,

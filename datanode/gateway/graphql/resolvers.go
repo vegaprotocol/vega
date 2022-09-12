@@ -28,8 +28,8 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	"code.vegaprotocol.io/vega/protos/vega"
 	types "code.vegaprotocol.io/vega/protos/vega"
-	vega "code.vegaprotocol.io/vega/protos/vega"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
@@ -111,6 +111,11 @@ func (r *VegaResolverRoot) MarginLevels() MarginLevelsResolver {
 	return (*myMarginLevelsResolver)(r)
 }
 
+// MarginLevelsUpdate returns the market levels resolver.
+func (r *VegaResolverRoot) MarginLevelsUpdate() MarginLevelsUpdateResolver {
+	return (*myMarginLevelsUpdateResolver)(r)
+}
+
 // PriceLevel returns the price levels resolver.
 func (r *VegaResolverRoot) PriceLevel() PriceLevelResolver {
 	return (*myPriceLevelResolver)(r)
@@ -124,6 +129,11 @@ func (r *VegaResolverRoot) Market() MarketResolver {
 // Order returns the order resolver.
 func (r *VegaResolverRoot) Order() OrderResolver {
 	return (*myOrderResolver)(r)
+}
+
+// OrderUpdate returns the order resolver.
+func (r *VegaResolverRoot) OrderUpdate() OrderUpdateResolver {
+	return (*myOrderUpdateResolver)(r)
 }
 
 // Trade returns the trades resolver.
@@ -280,6 +290,10 @@ func (r *VegaResolverRoot) Delegation() DelegationResolver {
 	return (*delegationResolver)(r)
 }
 
+func (r *VegaResolverRoot) DateRange() DateRangeResolver {
+	return (*dateRangeResolver)(r)
+}
+
 func (r *VegaResolverRoot) Epoch() EpochResolver {
 	return (*epochResolver)(r)
 }
@@ -329,12 +343,22 @@ func (r *VegaResolverRoot) UpdateMarketConfiguration() UpdateMarketConfiguration
 	return (*updateMarketConfigurationResolver)(r)
 }
 
-// LiquidityOrder resolver
+func (r *VegaResolverRoot) AccountUpdate() AccountUpdateResolver {
+	return (*accountUpdateResolver)(r)
+}
 
-type myLiquidityOrderResolver VegaResolverRoot
+func (r *VegaResolverRoot) TradeUpdate() TradeUpdateResolver {
+	return (*tradeUpdateResolver)(r)
+}
 
-func (r *myLiquidityOrderResolver) Proportion(ctx context.Context, obj *types.LiquidityOrder) (int, error) {
-	return int(obj.Proportion), nil
+func (r *VegaResolverRoot) LiquidityProvisionUpdate() LiquidityProvisionUpdateResolver {
+	return (*liquidityProvisionUpdateResolver)(r)
+}
+
+type accountUpdateResolver VegaResolverRoot
+
+func (r *accountUpdateResolver) AssetID(ctx context.Context, obj *types.Account) (string, error) {
+	return obj.Asset, nil
 }
 
 // LiquidityOrderReference resolver
@@ -589,6 +613,113 @@ func (r *myQueryResolver) Erc20WithdrawalApproval(ctx context.Context, wid strin
 		TargetAddress: res.TargetAddress,
 		Creation:      fmt.Sprintf("%d", res.Creation),
 	}, nil
+}
+
+func (r *myQueryResolver) Erc20ListAssetBundle(ctx context.Context, assetID string) (*Erc20ListAssetBundle, error) {
+	res, err := r.tradingDataClientV2.GetERC20ListAssetBundle(
+		ctx, &v2.GetERC20ListAssetBundleRequest{AssetId: assetID})
+	if err != nil {
+		return nil, err
+	}
+
+	return &Erc20ListAssetBundle{
+		AssetSource: res.AssetSource,
+		VegaAssetID: res.VegaAssetId,
+		Nonce:       res.Nonce,
+		Signatures:  res.Signatures,
+	}, nil
+}
+
+func (r *myQueryResolver) Erc20SetAssetLimitsBundle(ctx context.Context, proposalID string) (*ERC20SetAssetLimitsBundle, error) {
+	res, err := r.tradingDataClientV2.GetERC20SetAssetLimitsBundle(
+		ctx, &v2.GetERC20SetAssetLimitsBundleRequest{ProposalId: proposalID})
+	if err != nil {
+		return nil, err
+	}
+
+	return &ERC20SetAssetLimitsBundle{
+		AssetSource:   res.AssetSource,
+		VegaAssetID:   res.VegaAssetId,
+		Nonce:         res.Nonce,
+		LifetimeLimit: res.LifetimeLimit,
+		Threshold:     res.Threshold,
+		Signatures:    res.Signatures,
+	}, nil
+}
+
+func (r *myQueryResolver) Erc20MultiSigSignerAddedBundles(ctx context.Context, nodeID string, submitter, epochSeq *string, pagination *v2.Pagination) (*ERC20MultiSigSignerAddedConnection, error) {
+	res, err := r.tradingDataClientV2.GetERC20MultiSigSignerAddedBundles(
+		ctx, &v2.GetERC20MultiSigSignerAddedBundlesRequest{
+			NodeId:     nodeID,
+			Submitter:  fromPtr(submitter),
+			EpochSeq:   fromPtr(epochSeq),
+			Pagination: pagination,
+		})
+	if err != nil {
+		return nil, err
+	}
+
+	edges := make([]*ERC20MultiSigSignerAddedBundleEdge, 0, len(res.Bundles.Edges))
+
+	for _, edge := range res.Bundles.Edges {
+		edges = append(edges, &ERC20MultiSigSignerAddedBundleEdge{
+			Node: &ERC20MultiSigSignerAddedBundle{
+				NewSigner:  edge.Node.NewSigner,
+				Submitter:  edge.Node.Submitter,
+				Nonce:      edge.Node.Nonce,
+				Timestamp:  fmt.Sprint(edge.Node.Timestamp),
+				Signatures: edge.Node.Signatures,
+				EpochSeq:   edge.Node.EpochSeq,
+			},
+			Cursor: edge.Cursor,
+		})
+	}
+
+	return &ERC20MultiSigSignerAddedConnection{
+		Edges:    edges,
+		PageInfo: res.Bundles.PageInfo,
+	}, nil
+}
+
+func (r *myQueryResolver) Erc20MultiSigSignerRemovedBundles(ctx context.Context, nodeID string, submitter, epochSeq *string, pagination *v2.Pagination) (*ERC20MultiSigSignerRemovedConnection, error) {
+	res, err := r.tradingDataClientV2.GetERC20MultiSigSignerRemovedBundles(
+		ctx, &v2.GetERC20MultiSigSignerRemovedBundlesRequest{
+			NodeId:     nodeID,
+			Submitter:  fromPtr(submitter),
+			EpochSeq:   fromPtr(epochSeq),
+			Pagination: pagination,
+		})
+	if err != nil {
+		return nil, err
+	}
+
+	edges := make([]*ERC20MultiSigSignerRemovedBundleEdge, 0, len(res.Bundles.Edges))
+
+	for _, edge := range res.Bundles.Edges {
+		edges = append(edges, &ERC20MultiSigSignerRemovedBundleEdge{
+			Node: &ERC20MultiSigSignerRemovedBundle{
+				OldSigner:  edge.Node.OldSigner,
+				Submitter:  edge.Node.Submitter,
+				Nonce:      edge.Node.Nonce,
+				Timestamp:  fmt.Sprint(edge.Node.Timestamp),
+				Signatures: edge.Node.Signatures,
+				EpochSeq:   edge.Node.EpochSeq,
+			},
+			Cursor: edge.Cursor,
+		})
+	}
+
+	return &ERC20MultiSigSignerRemovedConnection{
+		Edges:    edges,
+		PageInfo: res.Bundles.PageInfo,
+	}, nil
+}
+
+func fromPtr[T any](ptr *T) (ret T) {
+	if ptr != nil {
+		ret = *ptr
+	}
+	return
 }
 
 func (r *myQueryResolver) Withdrawal(ctx context.Context, wid string) (*types.Withdrawal, error) {
@@ -1059,7 +1190,7 @@ func (r *myQueryResolver) Statistics(ctx context.Context) (*vegaprotoapi.Statist
 	return resp.GetStatistics(), nil
 }
 
-func (r *myQueryResolver) HistoricBalances(ctx context.Context, filter *v2.AccountFilter, groupBy []*v2.AccountField) ([]*v2.AggregatedBalance, error) {
+func (r *myQueryResolver) HistoricBalances(ctx context.Context, filter *v2.AccountFilter, groupBy []*v2.AccountField, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.AggregatedBalanceConnection, error) {
 	gb := make([]v2.AccountField, len(groupBy))
 	for i, g := range groupBy {
 		if g == nil {
@@ -1067,9 +1198,12 @@ func (r *myQueryResolver) HistoricBalances(ctx context.Context, filter *v2.Accou
 		}
 		gb[i] = *g
 	}
+
 	req := &v2.GetBalanceHistoryRequest{}
 	req.GroupBy = gb
 	req.Filter = filter
+	req.DateRange = dateRange
+	req.Pagination = pagination
 
 	resp, err := r.tradingDataClientV2.GetBalanceHistory(ctx, req)
 	if err != nil {
@@ -1122,7 +1256,7 @@ func makePagination(skip, first, last *int) *protoapi.Pagination {
 	}
 }
 
-func makeApiV2Pagination(skip, first, last *int) *v2.OffsetPagination {
+func makeAPIV2Pagination(skip, first, last *int) *v2.OffsetPagination {
 	var (
 		offset, limit uint64
 		descending    bool
@@ -1303,15 +1437,15 @@ func (r *myPartyResolver) LiquidityProvisionsConnection(
 		mid = *market
 	}
 
-	var refId string
+	var refID string
 	if ref != nil {
-		refId = *ref
+		refID = *ref
 	}
 
 	req := v2.ListLiquidityProvisionsRequest{
 		PartyId:    &partyID,
 		MarketId:   &mid,
-		Reference:  &refId,
+		Reference:  &refID,
 		Pagination: pagination,
 	}
 
@@ -1395,13 +1529,14 @@ func (r *myPartyResolver) Orders(ctx context.Context, party *types.Party,
 	return []*types.Order{}, nil
 }
 
-func (r *myPartyResolver) OrdersConnection(ctx context.Context, party *types.Party, pagination *v2.Pagination) (*v2.OrderConnection, error) {
+func (r *myPartyResolver) OrdersConnection(ctx context.Context, party *types.Party, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.OrderConnection, error) {
 	if party == nil {
 		return nil, errors.New("party is required")
 	}
 	req := v2.ListOrdersRequest{
 		PartyId:    &party.Id,
 		Pagination: pagination,
+		DateRange:  dateRange,
 	}
 	res, err := r.tradingDataClientV2.ListOrders(ctx, &req)
 	if err != nil {
@@ -1440,11 +1575,12 @@ func (r *myPartyResolver) Trades(ctx context.Context, party *types.Party,
 	return []*types.Trade{}, nil
 }
 
-func (r *myPartyResolver) TradesConnection(ctx context.Context, party *types.Party, market *string, pagination *v2.Pagination) (*v2.TradeConnection, error) {
+func (r *myPartyResolver) TradesConnection(ctx context.Context, party *types.Party, market *string, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.TradeConnection, error) {
 	req := v2.ListTradesRequest{
 		PartyId:    &party.Id,
 		MarketId:   market,
 		Pagination: pagination,
+		DateRange:  dateRange,
 	}
 
 	res, err := r.tradingDataClientV2.ListTrades(ctx, &req)
@@ -1507,8 +1643,8 @@ func (r *myPartyResolver) Accounts(ctx context.Context, party *types.Party,
 		return nil, errors.New("a party must be specified when querying accounts")
 	}
 	var (
-		marketIds    = []string{}
-		mktId        = ""
+		marketIDs    = []string{}
+		mktID        = ""
 		asst         = ""
 		accountTypes = []types.AccountType{}
 		accTy        = types.AccountType_ACCOUNT_TYPE_UNSPECIFIED
@@ -1516,8 +1652,8 @@ func (r *myPartyResolver) Accounts(ctx context.Context, party *types.Party,
 	)
 
 	if marketID != nil {
-		marketIds = []string{*marketID}
-		mktId = *marketID
+		marketIDs = []string{*marketID}
+		mktID = *marketID
 	}
 
 	if asset != nil {
@@ -1536,7 +1672,7 @@ func (r *myPartyResolver) Accounts(ctx context.Context, party *types.Party,
 	filter := v2.AccountFilter{
 		AssetId:      asst,
 		PartyIds:     []string{party.Id},
-		MarketIds:    marketIds,
+		MarketIds:    marketIDs,
 		AccountTypes: accountTypes,
 	}
 
@@ -1546,7 +1682,7 @@ func (r *myPartyResolver) Accounts(ctx context.Context, party *types.Party,
 		r.log.Error("unable to get Party account",
 			logging.Error(err),
 			logging.String("party-id", party.Id),
-			logging.String("market-id", mktId),
+			logging.String("market-id", mktID),
 			logging.String("asset", asst),
 			logging.String("type", accTy.String()))
 		return nil, customErrorFromStatus(err)
@@ -1569,8 +1705,8 @@ func (r *myPartyResolver) AccountsConnection(ctx context.Context, party *types.P
 		return nil, errors.New("a party must be specified when querying accounts")
 	}
 	var (
-		marketIds    = []string{}
-		mktId        = ""
+		marketIDs    = []string{}
+		mktID        = ""
 		asst         = ""
 		accountTypes = []types.AccountType{}
 		accTy        = types.AccountType_ACCOUNT_TYPE_UNSPECIFIED
@@ -1578,8 +1714,8 @@ func (r *myPartyResolver) AccountsConnection(ctx context.Context, party *types.P
 	)
 
 	if marketID != nil {
-		marketIds = []string{*marketID}
-		mktId = *marketID
+		marketIDs = []string{*marketID}
+		mktID = *marketID
 	}
 
 	if asset != nil {
@@ -1598,7 +1734,7 @@ func (r *myPartyResolver) AccountsConnection(ctx context.Context, party *types.P
 	filter := v2.AccountFilter{
 		AssetId:      asst,
 		PartyIds:     []string{party.Id},
-		MarketIds:    marketIds,
+		MarketIds:    marketIDs,
 		AccountTypes: accountTypes,
 	}
 
@@ -1608,7 +1744,7 @@ func (r *myPartyResolver) AccountsConnection(ctx context.Context, party *types.P
 		r.log.Error("unable to get Party account",
 			logging.Error(err),
 			logging.String("party-id", party.Id),
-			logging.String("market-id", mktId),
+			logging.String("market-id", mktID),
 			logging.String("asset", asst),
 			logging.String("type", accTy.String()))
 		return nil, customErrorFromStatus(err)
@@ -1647,8 +1783,8 @@ func (r *myPartyResolver) Withdrawals(ctx context.Context, party *types.Party) (
 	return res.Withdrawals, nil
 }
 
-func (r *myPartyResolver) WithdrawalsConnection(ctx context.Context, party *types.Party, pagination *v2.Pagination) (*v2.WithdrawalsConnection, error) {
-	return handleWithdrawalsConnectionRequest(ctx, r.tradingDataClientV2, party, pagination)
+func (r *myPartyResolver) WithdrawalsConnection(ctx context.Context, party *types.Party, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.WithdrawalsConnection, error) {
+	return handleWithdrawalsConnectionRequest(ctx, r.tradingDataClientV2, party, dateRange, pagination)
 }
 
 // Deprecated: Use DepositsConnection instead.
@@ -1663,8 +1799,8 @@ func (r *myPartyResolver) Deposits(ctx context.Context, party *types.Party) ([]*
 	return res.Deposits, nil
 }
 
-func (r *myPartyResolver) DepositsConnection(ctx context.Context, party *types.Party, pagination *v2.Pagination) (*v2.DepositsConnection, error) {
-	return handleDepositsConnectionRequest(ctx, r.tradingDataClientV2, party, pagination)
+func (r *myPartyResolver) DepositsConnection(ctx context.Context, party *types.Party, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.DepositsConnection, error) {
+	return handleDepositsConnectionRequest(ctx, r.tradingDataClientV2, party, dateRange, pagination)
 }
 
 // Deprecated: Use VotesConnection instead.
@@ -1746,6 +1882,24 @@ func (r *myPartyResolver) DelegationsConnection(ctx context.Context, party *type
 
 // END: Party Resolver
 
+type myMarginLevelsUpdateResolver VegaResolverRoot
+
+func (r *myMarginLevelsUpdateResolver) InitialLevel(_ context.Context, m *types.MarginLevels) (string, error) {
+	return m.InitialMargin, nil
+}
+
+func (r *myMarginLevelsUpdateResolver) SearchLevel(_ context.Context, m *types.MarginLevels) (string, error) {
+	return m.SearchLevel, nil
+}
+
+func (r *myMarginLevelsUpdateResolver) MaintenanceLevel(_ context.Context, m *types.MarginLevels) (string, error) {
+	return m.MaintenanceMargin, nil
+}
+
+func (r *myMarginLevelsUpdateResolver) Timestamp(_ context.Context, m *types.MarginLevels) (string, error) {
+	return vegatime.Format(vegatime.UnixNano(m.Timestamp)), nil
+}
+
 // BEGIN: MarginLevels Resolver
 
 type myMarginLevelsResolver VegaResolverRoot
@@ -1795,6 +1949,52 @@ func (r *myMarginLevelsResolver) Timestamp(_ context.Context, m *types.MarginLev
 }
 
 // END: MarginLevels Resolver
+
+type myOrderUpdateResolver VegaResolverRoot
+
+func (r *myOrderUpdateResolver) Price(ctx context.Context, obj *types.Order) (string, error) {
+	return obj.Price, nil
+}
+
+func (r *myOrderUpdateResolver) Size(ctx context.Context, obj *types.Order) (string, error) {
+	return strconv.FormatUint(obj.Size, 10), nil
+}
+
+func (r *myOrderUpdateResolver) Remaining(ctx context.Context, obj *types.Order) (string, error) {
+	return strconv.FormatUint(obj.Remaining, 10), nil
+}
+
+func (r *myOrderUpdateResolver) CreatedAt(ctx context.Context, obj *types.Order) (string, error) {
+	return vegatime.Format(vegatime.UnixNano(obj.CreatedAt)), nil
+}
+
+func (r *myOrderUpdateResolver) UpdatedAt(ctx context.Context, obj *types.Order) (*string, error) {
+	var updatedAt *string
+	if obj.UpdatedAt > 0 {
+		t := vegatime.Format(vegatime.UnixNano(obj.UpdatedAt))
+		updatedAt = &t
+	}
+	return updatedAt, nil
+}
+
+func (r *myOrderUpdateResolver) Version(ctx context.Context, obj *types.Order) (string, error) {
+	return strconv.FormatUint(obj.Version, 10), nil
+}
+
+func (r *myOrderUpdateResolver) ExpiresAt(ctx context.Context, obj *types.Order) (*string, error) {
+	if obj.ExpiresAt <= 0 {
+		return nil, nil
+	}
+	expiresAt := vegatime.Format(vegatime.UnixNano(obj.ExpiresAt))
+	return &expiresAt, nil
+}
+
+func (r *myOrderUpdateResolver) RejectionReason(_ context.Context, o *types.Order) (*vega.OrderError, error) {
+	if o.Reason == types.OrderError_ORDER_ERROR_UNSPECIFIED {
+		return nil, nil
+	}
+	return &o.Reason, nil
+}
 
 // BEGIN: Order Resolver
 
@@ -1862,11 +2062,11 @@ func (r *myOrderResolver) Trades(ctx context.Context, ord *types.Order) ([]*type
 	return res.Trades, nil
 }
 
-func (r *myOrderResolver) TradesConnection(ctx context.Context, ord *types.Order, pagination *v2.Pagination) (*v2.TradeConnection, error) {
+func (r *myOrderResolver) TradesConnection(ctx context.Context, ord *types.Order, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.TradeConnection, error) {
 	if ord == nil {
 		return nil, errors.New("nil order")
 	}
-	req := v2.ListTradesRequest{OrderId: &ord.Id, Pagination: pagination}
+	req := v2.ListTradesRequest{OrderId: &ord.Id, Pagination: pagination, DateRange: dateRange}
 	res, err := r.tradingDataClientV2.ListTrades(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
@@ -2253,15 +2453,18 @@ func (r *mySubscriptionResolver) Margins(ctx context.Context, partyID string, ma
 	return ch, nil
 }
 
-func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string, partyID *string, asset *string, typeArg *types.AccountType) (<-chan *types.Account, error) {
+func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string, partyID *string, asset *string, typeArg *types.AccountType) (<-chan []*types.Account, error) {
 	var (
-		mkt, pty string
-		ty       types.AccountType
+		mkt, pty, ast string
+		ty            types.AccountType
 	)
 
 	if marketID == nil && partyID == nil && asset == nil && typeArg == nil {
 		// Updates on every balance update, on every account, for everyone and shouldn't be allowed for GraphQL.
 		return nil, errors.New("at least one query filter must be applied for this subscription")
+	}
+	if asset != nil {
+		ast = *asset
 	}
 	if marketID != nil {
 		mkt = *marketID
@@ -2274,6 +2477,7 @@ func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 	}
 
 	req := &v2.ObserveAccountsRequest{
+		Asset:    ast,
 		MarketId: mkt,
 		PartyId:  pty,
 		Type:     ty,
@@ -2283,7 +2487,7 @@ func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 		return nil, customErrorFromStatus(err)
 	}
 
-	c := make(chan *types.Account)
+	c := make(chan []*types.Account)
 	go func() {
 		defer func() {
 			stream.CloseSend()
@@ -2299,7 +2503,14 @@ func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 				r.log.Error("accounts: stream closed", logging.Error(err))
 				break
 			}
-			c <- a.Account
+
+			if snapshot := a.GetSnapshot(); snapshot != nil {
+				c <- snapshot.Accounts
+			}
+
+			if updates := a.GetUpdates(); updates != nil {
+				c <- updates.Accounts
+			}
 		}
 	}()
 
@@ -2332,7 +2543,12 @@ func (r *mySubscriptionResolver) Orders(ctx context.Context, market *string, par
 				r.log.Error("orders: stream closed", logging.Error(err))
 				break
 			}
-			c <- o.Orders
+			if snapshot := o.GetSnapshot(); snapshot != nil {
+				c <- snapshot.Orders
+			}
+			if updates := o.GetUpdates(); updates != nil {
+				c <- updates.Orders
+			}
 		}
 	}()
 
@@ -2372,7 +2588,7 @@ func (r *mySubscriptionResolver) Trades(ctx context.Context, market *string, par
 	return c, nil
 }
 
-func (r *mySubscriptionResolver) Positions(ctx context.Context, party, market *string) (<-chan *types.Position, error) {
+func (r *mySubscriptionResolver) Positions(ctx context.Context, party, market *string) (<-chan []*types.Position, error) {
 	req := &v2.ObservePositionsRequest{
 		PartyId:  party,
 		MarketId: market,
@@ -2382,7 +2598,7 @@ func (r *mySubscriptionResolver) Positions(ctx context.Context, party, market *s
 		return nil, customErrorFromStatus(err)
 	}
 
-	c := make(chan *types.Position)
+	c := make(chan []*types.Position)
 	go func() {
 		defer func() {
 			stream.CloseSend()
@@ -2398,7 +2614,13 @@ func (r *mySubscriptionResolver) Positions(ctx context.Context, party, market *s
 				r.log.Error("positions: stream closed", logging.Error(err))
 				break
 			}
-			c <- t.Position
+			if snapshot := t.GetSnapshot(); snapshot != nil {
+				c <- snapshot.Positions
+			}
+
+			if updates := t.GetUpdates(); updates != nil {
+				c <- updates.Positions
+			}
 		}
 	}()
 
@@ -2694,6 +2916,41 @@ func (r *mySubscriptionResolver) busEventsWithBatch(
 	}
 }
 
+func (r *mySubscriptionResolver) LiquidityProvisions(ctx context.Context, partyID *string, marketID *string) (<-chan []*types.LiquidityProvision, error) {
+	req := &v2.ObserveLiquidityProvisionsRequest{
+		MarketId: marketID,
+		PartyId:  partyID,
+	}
+	stream, err := r.tradingDataClientV2.ObserveLiquidityProvisions(ctx, req)
+	if err != nil {
+		return nil, customErrorFromStatus(err)
+	}
+
+	c := make(chan []*types.LiquidityProvision)
+	go func() {
+		defer func() {
+			stream.CloseSend()
+			close(c)
+		}()
+		for {
+			received, err := stream.Recv()
+			if err == io.EOF {
+				r.log.Error("orders: stream closed by server", logging.Error(err))
+				break
+			}
+			if err != nil {
+				r.log.Error("orders: stream closed", logging.Error(err))
+				break
+			}
+			if lps := received.LiquidityProvisions; lps != nil {
+				c <- lps
+			}
+		}
+	}()
+
+	return c, nil
+}
+
 // START: Account Resolver
 
 type myAccountResolver VegaResolverRoot
@@ -2743,7 +3000,7 @@ func (r *myQueryResolver) GetMarketDataHistoryByID(ctx context.Context, id strin
 		endTime = &e
 	}
 
-	pagination := makeApiV2Pagination(skip, first, last)
+	pagination := makeAPIV2Pagination(skip, first, last)
 
 	return r.getMarketDataHistoryByID(ctx, id, startTime, endTime, pagination)
 }
@@ -2765,14 +3022,6 @@ func (r *myQueryResolver) getMarketData(ctx context.Context, req *v2.GetMarketDa
 	}
 
 	return results, nil
-}
-
-func (r *myQueryResolver) getMarketDataByID(ctx context.Context, id string) ([]*types.MarketData, error) {
-	req := v2.GetMarketDataHistoryByIDRequest{
-		MarketId: id,
-	}
-
-	return r.getMarketData(ctx, &req)
 }
 
 func (r *myQueryResolver) getMarketDataHistoryByID(ctx context.Context, id string, start, end *int64, pagination *v2.OffsetPagination) ([]*types.MarketData, error) {

@@ -27,6 +27,7 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 
+	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/cenkalti/backoff/v4"
@@ -37,9 +38,9 @@ import (
 var (
 	embeddedPostgres *embeddedpostgres.EmbeddedPostgres
 	connectionSource *sqlstore.ConnectionSource
-	sqlTestsEnabled  bool = true
-	minPort               = 30000
-	maxPort               = 40000
+	sqlTestsEnabled  = true
+	minPort          = 30000
+	maxPort          = 40000
 	testDBPort       int
 
 	tableNames = [...]string{
@@ -117,10 +118,10 @@ func DeleteEverything() {
 	sqlConfig := NewTestConfig(testDBPort)
 	connStr := connectionString(sqlConfig.ConnectionConfig)
 	conn, err := pgx.Connect(ctx, connStr)
-	defer conn.Close(context.Background())
 	if err != nil {
 		panic(fmt.Errorf("failed to delete everything:%w", err))
 	}
+	defer conn.Close(context.Background())
 
 	for _, table := range tableNames {
 		if _, err := conn.Exec(context.Background(), "truncate table "+table+" CASCADE"); err != nil {
@@ -129,11 +130,15 @@ func DeleteEverything() {
 	}
 }
 
-// Generate a 256 bit pseudo-random hash ID based on the time.
+// Generate a 256 bit pseudo-random hash ID.
 func generateID() string {
 	randomString := strconv.FormatInt(rand.Int63(), 10)
 	hash := sha256.Sum256([]byte(randomString))
 	return hex.EncodeToString(hash[:])
+}
+
+func generateTxHash() entities.TxHash {
+	return entities.TxHash(generateID())
 }
 
 func generateEthereumAddress() string {

@@ -20,6 +20,7 @@ import (
 
 type Balance struct {
 	AccountID int64
+	TxHash    TxHash
 	VegaTime  time.Time
 	Balance   decimal.Decimal
 }
@@ -33,8 +34,8 @@ func (b Balance) Key() BalanceKey {
 	return BalanceKey{b.AccountID, b.VegaTime}
 }
 
-var BalanceColumns = []string{"account_id", "vega_time", "balance"}
+var BalanceColumns = []string{"account_id", "tx_hash", "vega_time", "balance"}
 
 func (b Balance) ToRow() []interface{} {
-	return []interface{}{b.AccountID, b.VegaTime, b.Balance}
+	return []interface{}{b.AccountID, b.TxHash, b.VegaTime, b.Balance}
 }

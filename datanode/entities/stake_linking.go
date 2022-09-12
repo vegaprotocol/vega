@@ -35,13 +35,16 @@ type StakeLinking struct {
 	Amount             decimal.Decimal
 	StakeLinkingStatus StakeLinkingStatus
 	FinalizedAt        time.Time
-	TxHash             string
+	ForeignTxHash      string
+	ForeignBlockHeight int64
+	ForeignBlockTime   int64
 	LogIndex           int64
 	EthereumAddress    string
+	TxHash             TxHash
 	VegaTime           time.Time
 }
 
-func StakeLinkingFromProto(stake *eventspb.StakeLinking, vegaTime time.Time) (*StakeLinking, error) {
+func StakeLinkingFromProto(stake *eventspb.StakeLinking, txHash TxHash, vegaTime time.Time) (*StakeLinking, error) {
 	id := StakeLinkingID(stake.Id)
 	partyID := PartyID(stake.Party)
 	amount, err := decimal.NewFromString(stake.Amount)
@@ -65,9 +68,12 @@ func StakeLinkingFromProto(stake *eventspb.StakeLinking, vegaTime time.Time) (*S
 		Amount:             amount,
 		StakeLinkingStatus: StakeLinkingStatus(stake.Status),
 		FinalizedAt:        time.Unix(0, stake.FinalizedAt),
-		TxHash:             stake.TxHash,
+		ForeignTxHash:      stake.TxHash,
+		ForeignBlockHeight: int64(stake.BlockHeight),
+		ForeignBlockTime:   stake.BlockTime,
 		LogIndex:           logIndex,
 		EthereumAddress:    stake.EthereumAddress,
+		TxHash:             txHash,
 		VegaTime:           vegaTime,
 	}, nil
 }
@@ -81,7 +87,9 @@ func (s *StakeLinking) ToProto() *eventspb.StakeLinking {
 		Amount:          s.Amount.String(),
 		Status:          eventspb.StakeLinking_Status(s.StakeLinkingStatus),
 		FinalizedAt:     s.FinalizedAt.UnixNano(),
-		TxHash:          s.TxHash,
+		TxHash:          s.ForeignTxHash,
+		BlockHeight:     uint64(s.ForeignBlockHeight),
+		BlockTime:       s.ForeignBlockTime,
 		LogIndex:        uint64(s.LogIndex),
 		EthereumAddress: s.EthereumAddress,
 	}

@@ -56,7 +56,7 @@ func (r *HDKeyRing) ListKeyPairs() []HDKeyPair {
 	i := 0
 	for _, key := range r.keys {
 		keysList[i] = key
-		i += 1
+		i++
 	}
 	sort.SliceStable(keysList, func(i, j int) bool {
 		return keysList[i].Index() < keysList[j].Index()

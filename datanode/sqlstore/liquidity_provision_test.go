@@ -73,7 +73,7 @@ func testInsertNewInCurrentBlock(t *testing.T) {
 	block := addTestBlock(t, bs)
 	lpProto := getTestLiquidityProvision()
 
-	data, err := entities.LiquidityProvisionFromProto(lpProto[0], block.VegaTime)
+	data, err := entities.LiquidityProvisionFromProto(lpProto[0], generateTxHash(), block.VegaTime)
 	require.NoError(t, err)
 	assert.NoError(t, lp.Upsert(context.Background(), data))
 	err = lp.Flush(ctx)
@@ -97,7 +97,7 @@ func testUpdateExistingInCurrentBlock(t *testing.T) {
 	block := addTestBlock(t, bs)
 	lpProto := getTestLiquidityProvision()
 
-	data, err := entities.LiquidityProvisionFromProto(lpProto[0], block.VegaTime)
+	data, err := entities.LiquidityProvisionFromProto(lpProto[0], generateTxHash(), block.VegaTime)
 	require.NoError(t, err)
 	assert.NoError(t, lp.Upsert(context.Background(), data))
 
@@ -123,12 +123,10 @@ func testGetLPByReferenceAndParty(t *testing.T) {
 
 	lpProto := getTestLiquidityProvision()
 
-	want := make([]entities.LiquidityProvision, 0)
-
 	for _, lpp := range lpProto {
 		block := addTestBlock(t, bs)
 
-		data, err := entities.LiquidityProvisionFromProto(lpp, block.VegaTime)
+		data, err := entities.LiquidityProvisionFromProto(lpp, generateTxHash(), block.VegaTime)
 		require.NoError(t, err)
 		assert.NoError(t, lp.Upsert(context.Background(), data))
 		err = lp.Flush(ctx)
@@ -136,8 +134,6 @@ func testGetLPByReferenceAndParty(t *testing.T) {
 
 		data.CreatedAt = data.CreatedAt.Truncate(time.Microsecond)
 		data.UpdatedAt = data.UpdatedAt.Truncate(time.Microsecond)
-
-		want = append(want, data)
 
 		time.Sleep(100 * time.Millisecond)
 	}
@@ -171,7 +167,7 @@ func testGetLPByPartyOnly(t *testing.T) {
 	for _, lpp := range lpProto {
 		block := addTestBlock(t, bs)
 
-		data, err := entities.LiquidityProvisionFromProto(lpp, block.VegaTime)
+		data, err := entities.LiquidityProvisionFromProto(lpp, generateTxHash(), block.VegaTime)
 		require.NoError(t, err)
 		assert.NoError(t, lp.Upsert(context.Background(), data))
 		err = lp.Flush(ctx)
@@ -216,7 +212,7 @@ func testGetLPByPartyAndMarket(t *testing.T) {
 	for _, lpp := range lpProto {
 		block := addTestBlock(t, bs)
 
-		data, err := entities.LiquidityProvisionFromProto(lpp, block.VegaTime)
+		data, err := entities.LiquidityProvisionFromProto(lpp, generateTxHash(), block.VegaTime)
 		require.NoError(t, err)
 		assert.NoError(t, lp.Upsert(context.Background(), data))
 		err = lp.Flush(ctx)
@@ -273,7 +269,7 @@ func testGetLPNoPartyWithMarket(t *testing.T) {
 	for _, lpp := range lpProto {
 		block := addTestBlock(t, bs)
 
-		data, err := entities.LiquidityProvisionFromProto(lpp, block.VegaTime)
+		data, err := entities.LiquidityProvisionFromProto(lpp, generateTxHash(), block.VegaTime)
 		require.NoError(t, err)
 		assert.NoError(t, lp.Upsert(context.Background(), data))
 		err = lp.Flush(ctx)
@@ -502,7 +498,7 @@ func addLiquidityProvisions(ctx context.Context, t *testing.T, bs *sqlstore.Bloc
 			Reference:        "TEST1",
 		}
 
-		withdrawal, err := entities.LiquidityProvisionFromProto(lp, vegaTime)
+		withdrawal, err := entities.LiquidityProvisionFromProto(lp, generateTxHash(), vegaTime)
 		require.NoError(t, err, "Converting withdrawal proto to database entity")
 		err = lpstore.Upsert(ctx, withdrawal)
 		require.NoError(t, err)

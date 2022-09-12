@@ -153,40 +153,6 @@ func (t tradeStub) Price() *num.Uint {
 	return t.price.Clone()
 }
 
-type marketPosition struct {
-	party  string
-	size   int64
-	buy    int64
-	sell   int64
-	price  *num.Uint
-	vwBuy  *num.Uint
-	vwSell *num.Uint
-}
-
-func (mp marketPosition) Buy() int64 {
-	return mp.buy
-}
-
-func (mp marketPosition) Sell() int64 {
-	return mp.sell
-}
-
-func (mp marketPosition) Party() string {
-	return mp.party
-}
-
-func (mp marketPosition) Size() int64 {
-	return mp.size
-}
-
-func (mp marketPosition) Price() *num.Uint {
-	return mp.price
-}
-
-func (mp marketPosition) VWBuy() *num.Uint {
-	return mp.vwBuy
-}
-
-func (mp marketPosition) VWSell() *num.Uint {
-	return mp.vwSell
+func (t tradeStub) MarketPrice() *num.Uint {
+	return t.price.Clone()
 }

@@ -11,7 +11,7 @@ import (
 // We're only overriding the Send and SendBatch functions. The way in which this is done shouldn't be a problem, even when using DoAndReturn, but you never know...
 type MockBroker struct {
 	// embed the broker mock here... this is how we can end up with a drop-in replacement
-	*MockBrokerI
+	*MockInterface
 
 	// settlement has a TestConcurrent test, which causes data race on this wrapped mock
 	mu *sync.Mutex
@@ -24,20 +24,20 @@ type MockBroker struct {
 }
 
 func NewMockBroker(ctrl *gomock.Controller) *MockBroker {
-	mbi := NewMockBrokerI(ctrl)
+	mbi := NewMockInterface(ctrl)
 	return &MockBroker{
-		MockBrokerI: mbi,
-		mu:          &sync.Mutex{},
-		allEvts:     map[events.Type][]events.Event{},
-		lastEvts:    map[events.Type]events.Event{},
-		lastEvtsID:  map[events.Type]map[string]events.Event{},
+		MockInterface: mbi,
+		mu:            &sync.Mutex{},
+		allEvts:       map[events.Type][]events.Event{},
+		lastEvts:      map[events.Type]events.Event{},
+		lastEvtsID:    map[events.Type]map[string]events.Event{},
 	}
 }
 
 // Send - first call Send on the underlying mock, then add the argument to the various maps.
 func (b *MockBroker) Send(event events.Event) {
 	// first call the regular mock
-	b.MockBrokerI.Send(event)
+	b.MockInterface.Send(event)
 	b.mu.Lock()
 	t := event.Type()
 	s, ok := b.allEvts[t]
@@ -60,7 +60,7 @@ func (b *MockBroker) Send(event events.Event) {
 
 // SendBatch - same as Send: call mock first, then add arguments to the maps.
 func (b *MockBroker) SendBatch(evts []events.Event) {
-	b.MockBrokerI.SendBatch(evts)
+	b.MockInterface.SendBatch(evts)
 	if len(evts) == 0 {
 		return
 	}
@@ -107,20 +107,20 @@ func (b *MockBroker) GetLastByType(t events.Type) events.Event {
 
 // GetLastByTypeAndID returns the last event of a given type, for a specific identified (party, market, order, etc...)
 // list of implemented events - and ID's used:
-//  * Order (by order ID)
-//  * Account (by account ID)
-//  * Asset (by asset ID)
-//  * Auction (by market ID)
-//  * Deposit (party ID)
-//  * Proposal (proposal ID)
-//  * LP (by party ID)
-//  * MarginLevels (party ID)
-//  * MarketData (market ID)
-//  * PosRes (market ID)
-//  * RiskFactor (market ID)
-//  * SettleDistressed (party ID)
-//  * Vote (currently PartyID, might want to use proposalID, too?)
-//  * Withdrawal (PartyID)
+//   - Order (by order ID)
+//   - Account (by account ID)
+//   - Asset (by asset ID)
+//   - Auction (by market ID)
+//   - Deposit (party ID)
+//   - Proposal (proposal ID)
+//   - LP (by party ID)
+//   - MarginLevels (party ID)
+//   - MarketData (market ID)
+//   - PosRes (market ID)
+//   - RiskFactor (market ID)
+//   - SettleDistressed (party ID)
+//   - Vote (currently PartyID, might want to use proposalID, too?)
+//   - Withdrawal (PartyID)
 func (b *MockBroker) GetLastByTypeAndID(t events.Type, id string) events.Event {
 	b.mu.Lock()
 	m, ok := b.lastEvtsID[t]
@@ -134,23 +134,24 @@ func (b *MockBroker) GetLastByTypeAndID(t events.Type, id string) events.Event {
 // @TODO loss socialization. Given that this is something that would impact several parties, there's most likely
 // no real point to filtering by ID.
 // Not implemented yet, but worth considering:
-//  * Trade
-//  * TransferResponse
+//   - Trade
+//   - TransferResponse
+//
 // Implemented events:
-//  * Order (by order ID)
-//  * Account (by account ID)
-//  * Asset (by asset ID)
-//  * Auction (by market ID)
-//  * Deposit (party ID)
-//  * Proposal (proposal ID)
-//  * LP (by party ID)
-//  * MarginLevels (party ID)
-//  * MarketData (market ID)
-//  * PosRes (market ID)
-//  * RiskFactor (market ID)
-//  * SettleDistressed (party ID)
-//  * Vote (currently PartyID, might want to use proposalID, too?)
-//  * Withdrawal (PartyID)
+//   - Order (by order ID)
+//   - Account (by account ID)
+//   - Asset (by asset ID)
+//   - Auction (by market ID)
+//   - Deposit (party ID)
+//   - Proposal (proposal ID)
+//   - LP (by party ID)
+//   - MarginLevels (party ID)
+//   - MarketData (market ID)
+//   - PosRes (market ID)
+//   - RiskFactor (market ID)
+//   - SettleDistressed (party ID)
+//   - Vote (currently PartyID, might want to use proposalID, too?)
+//   - Withdrawal (PartyID)
 func isIDEvt(e events.Event) (bool, string) {
 	switch et := e.(type) {
 	case *events.Order:

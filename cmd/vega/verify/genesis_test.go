@@ -31,12 +31,12 @@ func Test(t *testing.T) {
 	t.Run("verify ERC20 assets", testVerifyERC20Assets)
 	t.Run("verify builtin assets", testVerifyBuiltinAssets)
 	t.Run("verify netparams", testVerifyNetworkParams)
-	t.Run("verify validators", testVerifyValidators)
+	t.Run("verify validators", TestVerifyValidators)
 	t.Run("verify unknown appstate field", testUnknownAppstateField)
 }
 
 func testVerifyDefaultGenesis(t *testing.T) {
-	testFile := getFileFromAppstate(t, genesis.DefaultGenesisState())
+	testFile := getFileFromAppstate(t, genesis.DefaultState())
 
 	cmd := verify.GenesisCmd{}
 	assert.NoError(t, cmd.Execute([]string{testFile}))
@@ -46,7 +46,7 @@ func testVerifyBuiltinAssets(t *testing.T) {
 	cmd := verify.GenesisCmd{}
 
 	// LP stake not a bignum
-	gs := genesis.DefaultGenesisState()
+	gs := genesis.DefaultState()
 	gs.Assets["FAILURE"] = assets.AssetDetails{
 		Quantum: "FAILURE",
 		Source: &assets.Source{
@@ -59,7 +59,7 @@ func testVerifyBuiltinAssets(t *testing.T) {
 	assert.Error(t, cmd.Execute([]string{getFileFromAppstate(t, gs)}))
 
 	// Max faucet amount not a bignum
-	gs = genesis.DefaultGenesisState()
+	gs = genesis.DefaultState()
 	gs.Assets["FAILURE"] = assets.AssetDetails{
 		Quantum: "100",
 		Source: &assets.Source{
@@ -72,7 +72,7 @@ func testVerifyBuiltinAssets(t *testing.T) {
 	assert.Error(t, cmd.Execute([]string{getFileFromAppstate(t, gs)}))
 
 	// Completely Valid
-	gs = genesis.DefaultGenesisState()
+	gs = genesis.DefaultState()
 	gs.Assets["FAILURE"] = assets.AssetDetails{
 		Quantum: "100",
 		Source: &assets.Source{
@@ -89,7 +89,7 @@ func testVerifyERC20Assets(t *testing.T) {
 	cmd := verify.GenesisCmd{}
 
 	// Invalid ID
-	gs := genesis.DefaultGenesisState()
+	gs := genesis.DefaultState()
 	gs.Assets["tooshort"] = assets.AssetDetails{
 		Quantum: "100",
 		Source: &assets.Source{
@@ -101,7 +101,7 @@ func testVerifyERC20Assets(t *testing.T) {
 	assert.Error(t, cmd.Execute([]string{getFileFromAppstate(t, gs)}))
 
 	// Invalid contract address
-	gs = genesis.DefaultGenesisState()
+	gs = genesis.DefaultState()
 	gs.Assets["b4f2726571fbe8e33b442dc92ed2d7f0d810e21835b7371a7915a365f07ccd9b"] = assets.AssetDetails{
 		Quantum: "100",
 		Source: &assets.Source{
@@ -113,7 +113,7 @@ func testVerifyERC20Assets(t *testing.T) {
 	assert.Error(t, cmd.Execute([]string{getFileFromAppstate(t, gs)}))
 
 	// Completely valid
-	gs = genesis.DefaultGenesisState()
+	gs = genesis.DefaultState()
 	gs.Assets["b4f2726571fbe8e33b442dc92ed2d7f0d810e21835b7371a7915a365f07ccd9b"] = assets.AssetDetails{
 		Quantum: "100",
 		Source: &assets.Source{
@@ -130,22 +130,22 @@ func testVerifyNetworkParams(t *testing.T) {
 	cmd := verify.GenesisCmd{}
 
 	// Check for invalid network parameter
-	gs := genesis.DefaultGenesisState()
+	gs := genesis.DefaultState()
 	gs.NetParams["NOTREAL"] = "something"
 	assert.Error(t, cmd.Execute([]string{getFileFromAppstate(t, gs)}))
 
 	// Check for network parameter with bad value
-	gs = genesis.DefaultGenesisState()
+	gs = genesis.DefaultState()
 	gs.NetParams["snapshot.interval.length"] = "always"
 	assert.Error(t, cmd.Execute([]string{getFileFromAppstate(t, gs)}))
 
 	// Check for invalid checkpoint overwrite network parameter
-	gs = genesis.DefaultGenesisState()
+	gs = genesis.DefaultState()
 	gs.NetParamsOverwrite = []string{"NOTREAL"}
 	assert.Error(t, cmd.Execute([]string{getFileFromAppstate(t, gs)}))
 }
 
-func testVerifyValidators(t *testing.T) {
+func TestVerifyValidators(t *testing.T) {
 	cmd := verify.GenesisCmd{}
 
 	valid := validators.ValidatorData{
@@ -156,31 +156,31 @@ func testVerifyValidators(t *testing.T) {
 		TmPubKey:        "2D2TXGN2GD4GTCQV9sbrXw7RVb3td7S4pWq6v3wIpvI=",
 	}
 	// Valid validator information
-	gs := genesis.DefaultGenesisState()
+	gs := genesis.DefaultState()
 	gs.Validators[valid.TmPubKey] = valid
 	assert.NoError(t, cmd.Execute([]string{getFileFromAppstate(t, gs)}))
 
 	// Mismatch TM key
-	gs = genesis.DefaultGenesisState()
+	gs = genesis.DefaultState()
 	gs.Validators["WRONG"] = valid
 	assert.Error(t, cmd.Execute([]string{getFileFromAppstate(t, gs)}))
 
 	// Invalid pubkey index
-	gs = genesis.DefaultGenesisState()
+	gs = genesis.DefaultState()
 	invalid := valid
 	invalid.VegaPubKeyIndex = 0
 	gs.Validators[valid.TmPubKey] = invalid
 	assert.Error(t, cmd.Execute([]string{getFileFromAppstate(t, gs)}))
 
 	// invalid ID
-	gs = genesis.DefaultGenesisState()
+	gs = genesis.DefaultState()
 	invalid = valid
 	invalid.ID = "too short"
 	gs.Validators[valid.TmPubKey] = invalid
 	assert.Error(t, cmd.Execute([]string{getFileFromAppstate(t, gs)}))
 
 	// invalid pubkey
-	gs = genesis.DefaultGenesisState()
+	gs = genesis.DefaultState()
 	invalid = valid
 	invalid.VegaPubKey = "too short"
 	gs.Validators[valid.TmPubKey] = invalid
@@ -189,7 +189,7 @@ func testVerifyValidators(t *testing.T) {
 
 func testUnknownAppstateField(t *testing.T) {
 	cmd := verify.GenesisCmd{}
-	gs := genesis.DefaultGenesisState()
+	gs := genesis.DefaultState()
 
 	// Marshall and unmarshal unstructured so we can add an unknown field
 	var unstructured map[string]interface{}
@@ -218,13 +218,13 @@ func testUnknownAppstateField(t *testing.T) {
 	assert.Error(t, cmd.Execute([]string{testFile}))
 }
 
-func getFileFromAppstate(t *testing.T, gs genesis.GenesisState) string {
+func getFileFromAppstate(t *testing.T, gs genesis.State) string {
 	t.Helper()
 
 	testFile := filepath.Join(t.TempDir(), "genesistest.json")
 
 	genesis := struct {
-		AppState genesis.GenesisState `json:"app_state"`
+		AppState genesis.State `json:"app_state"`
 	}{AppState: gs}
 	// marshall it
 	file, _ := json.MarshalIndent(genesis, "", " ")

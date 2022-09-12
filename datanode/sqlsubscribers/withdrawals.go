@@ -54,7 +54,7 @@ func (w *Withdrawal) Push(ctx context.Context, evt events.Event) error {
 
 func (w *Withdrawal) consume(ctx context.Context, event WithdrawalEvent) error {
 	withdrawal := event.Withdrawal()
-	record, err := entities.WithdrawalFromProto(&withdrawal, w.vegaTime)
+	record, err := entities.WithdrawalFromProto(&withdrawal, entities.TxHash(event.TxHash()), w.vegaTime)
 	if err != nil {
 		return errors.Wrap(err, "converting withdrawal proto to database entity failed")
 	}

@@ -49,7 +49,7 @@ func NewNetworkLimitSub(
 	return t
 }
 
-func (t *NetworkLimits) Types() []events.Type {
+func (nl *NetworkLimits) Types() []events.Type {
 	return []events.Type{events.NetworkLimitsEvent}
 }
 
@@ -59,7 +59,7 @@ func (nl *NetworkLimits) Push(ctx context.Context, evt events.Event) error {
 
 func (nl *NetworkLimits) consume(ctx context.Context, event NetworkLimitsEvent) error {
 	protoLimits := event.NetworkLimits()
-	limits := entities.NetworkLimitsFromProto(protoLimits)
+	limits := entities.NetworkLimitsFromProto(protoLimits, entities.TxHash(event.TxHash()))
 	limits.VegaTime = nl.vegaTime
 
 	return errors.Wrap(nl.store.Add(ctx, limits), "error adding network limits")

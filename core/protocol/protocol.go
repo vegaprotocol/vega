@@ -21,6 +21,7 @@ import (
 	ethclient "code.vegaprotocol.io/vega/core/client/eth"
 	"code.vegaprotocol.io/vega/core/config"
 	"code.vegaprotocol.io/vega/core/evtforward"
+	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	"code.vegaprotocol.io/vega/core/processor"
 	"code.vegaprotocol.io/vega/core/protocolupgrade"
@@ -76,7 +77,7 @@ func New(
 		return nil, err
 	}
 
-	return &Protocol{
+	proto := &Protocol{
 		App: processor.NewApp(
 			log,
 			svcs.vegaPaths,
@@ -118,7 +119,16 @@ func New(
 		log:         log,
 		confWatcher: confWatcher,
 		services:    svcs,
-	}, nil
+	}
+
+	proto.services.netParams.Watch(
+		netparams.WatchParam{
+			Param:   netparams.SpamProtectionMaxBatchSize,
+			Watcher: proto.App.OnSpamProtectionMaxBatchSizeUpdate,
+		},
+	)
+
+	return proto, nil
 }
 
 // Start will start the protocol, this means it's ready to process

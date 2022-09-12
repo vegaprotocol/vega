@@ -16,6 +16,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 const (
@@ -50,6 +51,9 @@ func (m *Market) checkForReferenceMoves(
 		return
 	}
 
+	// will be set to non-nil if a peg is missing
+	_, _, err := m.getBestStaticPricesDecimal()
+
 	newBestBid, _ := m.getBestStaticBidPrice()
 	newBestAsk, _ := m.getBestStaticAskPrice()
 	newMidBuy, _ := m.getStaticMidPrice(types.SideBuy)
@@ -72,7 +76,17 @@ func (m *Market) checkForReferenceMoves(
 	}
 
 	// now we can start all special order repricing...
-	orderUpdates = m.repriceAllSpecialOrders(ctx, changes, orderUpdates)
+	if err == nil {
+		orderUpdates = m.repriceAllSpecialOrders(ctx, changes, orderUpdates)
+	} else {
+		cancels := m.liquidity.UndeployLPs(ctx, orderUpdates)
+		orderUpdates, err = m.updateAndCreateLPOrders(ctx, nil, cancels, nil)
+		if err != nil {
+			m.log.Panic("missing static prices and error canceling LP orders",
+				logging.MarketID(m.mkt.GetID()),
+				logging.Error(err))
+		}
+	}
 
 	// Update the last price values
 	// no need to clone the prices, they're not used in calculations anywhere in this function
@@ -80,7 +94,6 @@ func (m *Market) checkForReferenceMoves(
 	m.lastMidSellPrice = newMidSell
 	m.lastBestBidPrice = newBestBid
 	m.lastBestAskPrice = newBestAsk
-	m.stateChanged = true
 
 	// now we had new orderUpdates while processing those,
 	// that would means someone got distressed, so some order

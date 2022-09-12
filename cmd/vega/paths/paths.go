@@ -18,15 +18,15 @@ import (
 	"github.com/jessevdk/go-flags"
 )
 
-type PathsCmd struct {
+type Cmd struct {
 	List    ListCmd    `command:"list" description:"List the location where files used by the Vega applications are stored"`
 	Explain ExplainCmd `command:"explain" description:"Explain what a path is about"`
 }
 
-var pathsCmd PathsCmd
+var pathsCmd Cmd
 
 func Paths(ctx context.Context, parser *flags.Parser) error {
-	pathsCmd = PathsCmd{
+	pathsCmd = Cmd{
 		List:    ListCmd{},
 		Explain: ExplainCmd{},
 	}

@@ -50,7 +50,7 @@ type GRPCServer interface {
 	Stop()
 }
 
-func waitForNode(t *testing.T, ctx context.Context, conn *grpc.ClientConn) {
+func waitForNode(ctx context.Context, t *testing.T, conn *grpc.ClientConn) {
 	t.Helper()
 	const maxSleep = 2000 // milliseconds
 
@@ -214,7 +214,7 @@ func getTestGRPCServer(
 			t.Fatalf("Failed to create connection to gRPC server")
 		}
 
-		waitForNode(t, ctx, conn)
+		waitForNode(ctx, t, conn)
 	}
 
 	return tidy, conn, mockCoreServiceClient, err

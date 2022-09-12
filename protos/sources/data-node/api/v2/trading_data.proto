@@ -17,7 +17,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/data-node/api/v2";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Vega data node APIs";
-    version: "42.0";
+    version: "0.55.0";
   }
   schemes: [HTTP, HTTPS]
   host: "lb.testnet.vega.xyz/datanode/rest"
@@ -114,7 +114,7 @@ service TradingDataService {
 
     // Candle intervals list
     //
-    // Gets all available intervals for a given market along with the corresponding candle id
+    // Get all available intervals for a given market along with the corresponding candle id
     rpc ListCandleIntervals(ListCandleIntervalsRequest) returns (ListCandleIntervalsResponse);
 
     // Votes list
@@ -126,22 +126,22 @@ service TradingDataService {
 
     // ERC20 add signer bundle
     //
-    // Gets the signature bundles that add a particular validator to the multisig contract
+    // Get the signature bundle to add a particular validator to the signer list of the multisig contract
     rpc GetERC20MultiSigSignerAddedBundles(GetERC20MultiSigSignerAddedBundlesRequest) returns (GetERC20MultiSigSignerAddedBundlesResponse);
 
     // ERC20 remove signer bundle
     //
-    // Gets the signature bundles that remove a particular validator to the multisig contract
+    // Get the signatures bundle to remove a particular validator from signer list of the multisig contract
     rpc GetERC20MultiSigSignerRemovedBundles(GetERC20MultiSigSignerRemovedBundlesRequest) returns (GetERC20MultiSigSignerRemovedBundlesResponse);
 
     // ERC20 list asset bundle
     //
-    // Gets the signature bundles that remove a particular validator to the multisig contract
+    // Get the signatures bundle to allowlist an ERC20 token in the collateral bridge
     rpc GetERC20ListAssetBundle(GetERC20ListAssetBundleRequest) returns (GetERC20ListAssetBundleResponse);
 
     // ERC20 set asset limit bundle
     //
-    // Gets the signature bundles that remove a particular validator to the multisig contract
+    // Get the signature bundle to update the token limits (maxLifetimeDeposit and withdrawThreshold) for a given ERC20 token (already allowlisted) in the collateral bridge
     rpc GetERC20SetAssetLimitsBundle(GetERC20SetAssetLimitsBundleRequest) returns (GetERC20SetAssetLimitsBundleResponse);
 
     // ERC20 withdrawal bundle
@@ -250,6 +250,8 @@ service TradingDataService {
     //
     // Get a liquidity provision list for a given market using a cursor based pagination
     rpc ListLiquidityProvisions(ListLiquidityProvisionsRequest) returns (ListLiquidityProvisionsResponse);
+    // Get a liquidity provision subscription for a given market and party
+    rpc ObserveLiquidityProvisions(ObserveLiquidityProvisionsRequest) returns (stream ObserveLiquidityProvisionsResponse);
 
     // Governance
     //
@@ -427,7 +429,23 @@ message ObserveAccountsRequest {
 }
 
 message ObserveAccountsResponse {
-    vega.Account account = 1;
+    oneof response {
+        // An 'initial image' snapshot containing current account balances
+        AccountSnapshotPage snapshot = 1;
+        // A list of account updates in the last block
+        AccountUpdates updates = 2;
+    }
+}
+
+// An 'initial image' snapshot containing current account balances - may be sent over several response messages
+message AccountSnapshotPage{
+    repeated vega.Account accounts = 1;
+    bool last_page = 2;
+}
+
+// A list of account updates in the last block
+message AccountUpdates{
+    repeated vega.Account accounts = 1;
 }
 
 // -- Info --
@@ -466,7 +484,9 @@ message ListOrdersRequest {
     optional string reference = 3;
     // Optional pagination control
     optional Pagination pagination = 4;
-
+    // If set to true, list only live orders
+    optional bool live_only = 5;
+    optional DateRange date_range = 6;
 }
 
 message ListOrdersResponse {
@@ -503,7 +523,22 @@ message ObserveOrdersRequest {
 
 // Response sent over an orders stream
 message ObserveOrdersResponse {
-    // A list of 0 or more orders
+    oneof response {
+        // An 'initial image' snapshot containing current live orders
+        OrderSnapshotPage snapshot = 1;
+        // A list of order updates in the last block
+        OrderUpdates updates = 2;
+    }
+}
+
+// 'Initial image' of live orders, may be sent over multiple response messages
+message OrderSnapshotPage{
+    repeated vega.Order orders = 1;
+    bool last_page = 2;
+}
+
+// List of order updates in the last block
+message OrderUpdates{
     repeated vega.Order orders = 1;
 }
 
@@ -544,7 +579,23 @@ message ObservePositionsRequest {
 }
 
 message ObservePositionsResponse {
-    vega.Position position = 1;
+    oneof response {
+        // An 'initial image' snapshot containing current positions
+        PositionSnapshotPage snapshot = 1;
+        // A list of position updates in the last block
+        PositionUpdates updates = 2;
+    }
+}
+
+// 'Initial image' of current positions, may be sent over multiple response messages
+message PositionSnapshotPage{
+    repeated vega.Position positions = 1;
+    bool last_page = 2;
+}
+
+// A list of position updates in the last block
+message PositionUpdates{
+    repeated vega.Position positions = 1;
 }
 
 // -- Balances --
@@ -554,10 +605,22 @@ message GetBalanceHistoryRequest {
     // By default the net balances of all the accounts specified by the filter are returned.
     // If a list if fields is given in group_by, split out those balances by the supplied crietera.
     repeated AccountField group_by = 2;
+    optional Pagination pagination = 3;
+    optional DateRange date_range = 4;
 }
 
 message GetBalanceHistoryResponse {
-    repeated AggregatedBalance balances = 1;
+    AggregatedBalanceConnection balances = 1;
+}
+
+message AggregatedBalanceEdge {
+    AggregatedBalance node = 1;
+    string cursor = 2;
+}
+
+message AggregatedBalanceConnection {
+    repeated AggregatedBalanceEdge edges = 1;
+    PageInfo page_info = 2;
 }
 
 message AccountFilter{
@@ -873,19 +936,23 @@ message ObserveVotesResponse {
     vega.Vote vote = 1;
 }
 
-// -- ERC20 Multi Sig --
+// Request for the signature bundle to add a particular validator to the signer list of the multisig contract
 message GetERC20MultiSigSignerAddedBundlesRequest {
 
     // The node id of the validator of which a signature bundle is required
     string node_id = 1;
 
-    // The epoch which generated the bundle i.e the epoch in which the node became a tendermint validator
-    string epoch_seq = 2;
+    // The ethereum address of the validator which will submit the bundle
+    string submitter = 2;
+
+    // The epoch which generated the bundle i.e the epoch in which the node was promoted to tendermint validator
+    string epoch_seq = 3;
 
     // Pagination controls
-    Pagination pagination = 3;
+    Pagination pagination = 4;
 }
 
+// Response for the signature bundle to add a particular validator to the signer list of the multisig contract
 message GetERC20MultiSigSignerAddedBundlesResponse {
 
     // list of bundles for that validator, it may have been added multiple times if removed in between
@@ -929,6 +996,7 @@ message ERC20MultiSigSignerAddedBundle {
 
 }
 
+// Request for the signature bundle to remove a particular validator from the signer list of the multisig contract
 message GetERC20MultiSigSignerRemovedBundlesRequest {
     // The node id of the validator of which a signature bundle is required
     string node_id = 1;
@@ -943,6 +1011,7 @@ message GetERC20MultiSigSignerRemovedBundlesRequest {
     Pagination pagination = 4;
 }
 
+// Response for the signature bundle to remove a particular validator from the signer list of the multisig contract
 message GetERC20MultiSigSignerRemovedBundlesResponse {
     // list of signer bundles for that validator
     ERC20MultiSigSignerRemovedConnection bundles = 1;
@@ -985,13 +1054,13 @@ message ERC20MultiSigSignerRemovedBundle {
 
 }
 
-// A request to get an asset bundle details
+// Request for the signature bundle to allowlist an ERC20 token in the collateral bridge
 message GetERC20ListAssetBundleRequest {
   // The ID of the asset requested
   string asset_id = 1;
 }
 
-// The response with all information required to bundle the call to propose an erc20 asset
+// Response for the signature bundle to allowlist an ERC20 token in the collateral bridge
 message GetERC20ListAssetBundleResponse {
   // The address of the asset on ethereum
   string asset_source = 1;
@@ -1004,13 +1073,13 @@ message GetERC20ListAssetBundleResponse {
   string signatures = 4;
 }
 
-// A request to get an asset bundle details
+// Request for the signature bundle to update the token limits (maxLifetimeDeposit and withdrawThreshold) for a given ERC20 token (already allowlisted) in the collateral bridge
 message GetERC20SetAssetLimitsBundleRequest {
   // The ID of the proposal to update an asset
   string proposal_id = 1;
 }
 
-// The response with all information required to bundle the call to propose an erc20 asset
+// Response for the signature bundle to update the token limits (maxLifetimeDeposit and withdrawThreshold) for a given ERC20 token (already allowlisted) in the collateral bridge
 message GetERC20SetAssetLimitsBundleResponse {
   // The address of the asset on ethereum
   string asset_source = 1;
@@ -1072,6 +1141,7 @@ message ListTradesRequest {
     optional string order_id = 2;
     optional string party_id = 3;
     optional Pagination pagination = 4;
+    optional DateRange date_range = 5;
 }
 
 message ListTradesResponse {
@@ -1327,6 +1397,7 @@ message ListDepositsRequest {
     string party_id = 1;
     // Optional pagination control
     optional Pagination pagination = 2;
+    optional DateRange date_range = 3;
 }
 
 message ListDepositsResponse {
@@ -1362,6 +1433,7 @@ message ListWithdrawalsRequest {
     string party_id = 1;
     // Optional pagination information to limit the data that is returned
     optional Pagination pagination = 2;
+    optional DateRange date_range = 3;
 }
 
 // A paged connection with the requested withdrawal information
@@ -1433,6 +1505,17 @@ message LiquidityProvisionsConnection {
     PageInfo page_info = 2;
 }
 
+message ObserveLiquidityProvisionsRequest {
+    // The target market to observe for liquidity provision orders
+    optional string market_id = 1;
+    // The target party to observe for submitted liquidity provision orders
+    optional string party_id = 2;
+}
+
+message ObserveLiquidityProvisionsResponse {
+    repeated vega.LiquidityProvision liquidity_provisions = 1;
+}
+
 // -- Governance Data --
 message GetGovernanceDataRequest {
     optional string proposal_id = 1;
@@ -1459,7 +1542,7 @@ message ListGovernanceDataRequest {
         // Proposals for creating a new free form proposal
         TYPE_NEW_FREE_FORM = 6;
         // Update asset proposals
-      TYPE_UPDATE_ASSET = 7;
+        TYPE_UPDATE_ASSET = 7;
     }
     optional vega.Proposal.State proposal_state = 1;
     optional Type proposal_type = 2;
@@ -1791,4 +1874,15 @@ message GetVegaTimeResponse {
     // Timestamp representation of current VegaTime as represented in
     // Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2020-01-31T12:30:59.111222333Z`
     int64 timestamp = 1;
+}
+
+// A date range for queries that can return historical data
+// If only the start_timestamp is provided, results from the given start up to the most current timestamp should be returned.
+// If only the end_timestamp is provided, results up to the given end should be returned (exclusive).
+// If both the start_timestamp and end_timestamp are provided, results from within the date range should be returned (exclusive).
+message DateRange {
+    // Optional start timestamp in nanoseconds past the epoch
+    optional int64 start_timestamp = 1;
+    // Optional end timestamp in nanoseconds past the epoch
+    optional int64 end_timestamp = 2;
 }

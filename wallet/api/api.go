@@ -2,27 +2,43 @@ package api
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	"code.vegaprotocol.io/vega/wallet/network"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"go.uber.org/zap"
 )
 
+// Generates mocks
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/wallet/api WalletStore,NetworkStore,Node,NodeSelector,Pipeline
+
 // WalletStore is the component used to retrieve and update wallets from the
 // computer.
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/wallet_store_mock.go -package mocks code.vegaprotocol.io/vega/wallet/api WalletStore
 type WalletStore interface {
 	WalletExists(ctx context.Context, name string) (bool, error)
 	GetWallet(ctx context.Context, name, passphrase string) (wallet.Wallet, error)
 	ListWallets(ctx context.Context) ([]string, error)
 	SaveWallet(ctx context.Context, w wallet.Wallet, passphrase string) error
+	DeleteWallet(ctx context.Context, name string) error
+	GetWalletPath(name string) string
+}
+
+// NetworkStore is the component used to retrieve and update the networks from the
+// computer.
+type NetworkStore interface {
+	NetworkExists(string) (bool, error)
+	GetNetwork(string) (*network.Network, error)
+	SaveNetwork(*network.Network) error
+	ListNetworks() ([]string, error)
+	GetNetworkPath(string) string
+	DeleteNetwork(string) error
 }
 
 // Node is the component used to get network information and send transactions.
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/node_mock.go -package mocks code.vegaprotocol.io/vega/wallet/api Node
 type Node interface {
 	Host() string
 	Stop() error
@@ -33,7 +49,6 @@ type Node interface {
 }
 
 // NodeSelector implementing the strategy for node selection.
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/node_selector_mock.go -package mocks code.vegaprotocol.io/vega/wallet/api NodeSelector
 type NodeSelector interface {
 	Node(ctx context.Context) (Node, error)
 	Stop()
@@ -43,7 +58,6 @@ type NodeSelector interface {
 // Convention:
 //   - Notify* functions do not expect a response.
 //   - Request* functions are expecting a client intervention.
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/pipeline_mock.go -package mocks code.vegaprotocol.io/vega/wallet/api Pipeline
 type Pipeline interface {
 	// NotifyError is used to report errors to the client.
 	NotifyError(ctx context.Context, traceID string, t ErrorType, err error)
@@ -73,11 +87,18 @@ type Pipeline interface {
 	// otherwise.
 	RequestPermissionsReview(ctx context.Context, traceID, hostname, wallet string, perms map[string]string) (bool, error)
 
-	// RequestTransactionReview is used to trigger a client review of the
+	// RequestTransactionSendingReview is used to trigger a client review of the
 	// transaction a third-party application wants to send.
 	// It returns true if the client approved the sending of the transaction,
 	// false otherwise.
-	RequestTransactionReview(ctx context.Context, traceID, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error)
+	RequestTransactionSendingReview(ctx context.Context, traceID, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error)
+
+	// RequestTransactionSigningReview is used to trigger a client review of the
+	// transaction a third-party application wants to sign. The wallet doesn't
+	// send the transaction.
+	// It returns true if the client approved the signing of the transaction,
+	// false otherwise.
+	RequestTransactionSigningReview(ctx context.Context, traceID, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error)
 
 	// NotifyTransactionStatus is used to report the transaction status once
 	// sent.
@@ -113,23 +134,70 @@ type SelectedWallet struct {
 	Passphrase string `json:"passphrase"`
 }
 
-// RestrictedAPI builds a JSON-RPC API of the wallet with a subset of the requests
-// that are intended to be exposed to external services, such as bots, apps,
-// scripts.
-// The reason is that we don't want external clients to be able to call
-// administration capabilities that should only be exposed to the user.
-func RestrictedAPI(log *zap.Logger, walletStore WalletStore, pipeline Pipeline, nodeSelector NodeSelector) (*jsonrpc.API, error) {
+// SessionAPI builds the wallet JSON-RPC API with specific methods that are
+// intended to be publicly exposed to third-party applications in a
+// non-trustable environment.
+// Because of the nature of the environment from where these methods are called,
+// no administration methods are exposed. We don't want malicious third-party
+// applications to leverage administration capabilities that could expose to the
+// user and compromise his wallets.
+func SessionAPI(log *zap.Logger, walletStore WalletStore, pipeline Pipeline, nodeSelector NodeSelector) (*jsonrpc.API, error) {
 	sessions := NewSessions()
 
 	walletAPI := jsonrpc.New(log)
-	walletAPI.RegisterMethod("connect_wallet", NewConnectWallet(walletStore, pipeline, sessions))
-	walletAPI.RegisterMethod("disconnect_wallet", NewDisconnectWallet(sessions))
-	walletAPI.RegisterMethod("get_permissions", NewGetPermissions(sessions))
-	walletAPI.RegisterMethod("request_permissions", NewRequestPermissions(walletStore, pipeline, sessions))
-	walletAPI.RegisterMethod("list_keys", NewListKeys(sessions))
-	walletAPI.RegisterMethod("send_transaction", NewSendTransaction(pipeline, nodeSelector, sessions))
+	walletAPI.RegisterMethod("session.connect_wallet", NewConnectWallet(walletStore, pipeline, sessions))
+	walletAPI.RegisterMethod("session.disconnect_wallet", NewDisconnectWallet(sessions))
+	walletAPI.RegisterMethod("session.get_chain_id", NewGetChainID(nodeSelector))
+	walletAPI.RegisterMethod("session.get_permissions", NewGetPermissions(sessions))
+	walletAPI.RegisterMethod("session.list_keys", NewListKeys(sessions))
+	walletAPI.RegisterMethod("session.request_permissions", NewRequestPermissions(walletStore, pipeline, sessions))
+	walletAPI.RegisterMethod("session.sign_transaction", NewSignTransaction(pipeline, nodeSelector, sessions))
+	walletAPI.RegisterMethod("session.send_transaction", NewSendTransaction(pipeline, nodeSelector, sessions))
 
-	log.Info("restricted JSON-RPC API initialised")
+	log.Info("the restricted JSON-RPC API has been initialised")
 
 	return walletAPI, nil
+}
+
+// AdminAPI builds the JSON-RPC API of the wallet with all the methods available.
+// This API exposes highly-sensitive methods, and, as a result, it should be
+// only exposed to highly-trustable applications.
+func AdminAPI(log *zap.Logger, walletStore WalletStore, netStore NetworkStore) (*jsonrpc.API, error) {
+	walletAPI := jsonrpc.New(log)
+	walletAPI.RegisterMethod("admin.annotate_key", NewAdminAnnotateKey(walletStore))
+	walletAPI.RegisterMethod("admin.create_wallet", NewAdminCreateWallet(walletStore))
+	walletAPI.RegisterMethod("admin.describe_key", NewAdminDescribeKey(walletStore))
+	walletAPI.RegisterMethod("admin.describe_network", NewAdminDescribeNetwork(netStore))
+	walletAPI.RegisterMethod("admin.describe_permissions", NewAdminDescribePermissions(walletStore))
+	walletAPI.RegisterMethod("admin.describe_wallet", NewAdminDescribeWallet(walletStore))
+	walletAPI.RegisterMethod("admin.generate_key", NewAdminGenerateKey(walletStore))
+	walletAPI.RegisterMethod("admin.import_network", NewAdminImportNetwork(netStore))
+	walletAPI.RegisterMethod("admin.import_wallet", NewAdminImportWallet(walletStore))
+	walletAPI.RegisterMethod("admin.isolate_key", NewAdminIsolateKey(walletStore))
+	walletAPI.RegisterMethod("admin.list_keys", NewAdminListKeys(walletStore))
+	walletAPI.RegisterMethod("admin.list_networks", NewAdminListNetworks(netStore))
+	walletAPI.RegisterMethod("admin.list_permissions", NewAdminListPermissions(walletStore))
+	walletAPI.RegisterMethod("admin.list_wallets", NewAdminListWallets(walletStore))
+	walletAPI.RegisterMethod("admin.purge_permissions", NewAdminPurgePermissions(walletStore))
+	walletAPI.RegisterMethod("admin.remove_network", NewAdminRemoveNetwork(netStore))
+	walletAPI.RegisterMethod("admin.remove_wallet", NewAdminRemoveWallet(walletStore))
+	walletAPI.RegisterMethod("admin.revoke_permissions", NewAdminRevokePermissions(walletStore))
+	walletAPI.RegisterMethod("admin.rotate_key", NewAdminRotateKey(walletStore))
+	walletAPI.RegisterMethod("admin.send_message", &UnimplementedMethod{})
+	walletAPI.RegisterMethod("admin.send_transaction", &UnimplementedMethod{})
+	walletAPI.RegisterMethod("admin.sign_message", &UnimplementedMethod{})
+	walletAPI.RegisterMethod("admin.sign_transaction", &UnimplementedMethod{})
+	walletAPI.RegisterMethod("admin.taint_key", NewAdminTaintKey(walletStore))
+	walletAPI.RegisterMethod("admin.untaint_key", NewAdminUntaintKey(walletStore))
+	walletAPI.RegisterMethod("admin.update_permissions", NewAdminUpdatePermissions(walletStore))
+
+	log.Info("the admin JSON-RPC API has been initialised")
+
+	return walletAPI, nil
+}
+
+type UnimplementedMethod struct{}
+
+func (u UnimplementedMethod) Handle(_ context.Context, _ jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+	return nil, internalError(errors.New("this method is not implemented yet"))
 }

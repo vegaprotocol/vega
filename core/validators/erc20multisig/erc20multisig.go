@@ -26,7 +26,7 @@ func NewERC20MultisigTopology(
 	config Config,
 	log *logging.Logger,
 	witness Witness,
-	broker broker.BrokerI,
+	broker broker.Interface,
 	ethClient EthereumClient,
 	ethConfirmation EthConfirmations,
 	netp *netparams.Store,

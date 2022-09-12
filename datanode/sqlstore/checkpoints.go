@@ -27,7 +27,7 @@ type Checkpoints struct {
 }
 
 var checkpointOrdering = TableOrdering{
-	ColumnOrdering{"block_height", ASC},
+	ColumnOrdering{Name: "block_height", Sorting: ASC},
 }
 
 func NewCheckpoints(connectionSource *ConnectionSource) *Checkpoints {
@@ -37,21 +37,22 @@ func NewCheckpoints(connectionSource *ConnectionSource) *Checkpoints {
 	return p
 }
 
-func (ps *Checkpoints) Add(ctx context.Context, r entities.Checkpoint) error {
+func (c *Checkpoints) Add(ctx context.Context, r entities.Checkpoint) error {
 	defer metrics.StartSQLQuery("Checkpoints", "Add")()
-	_, err := ps.Connection.Exec(ctx,
+	_, err := c.Connection.Exec(ctx,
 		`INSERT INTO checkpoints(
 			hash,
 			block_hash,
 			block_height,
+			tx_hash,
 			vega_time)
-		 VALUES ($1, $2, $3, $4)
+		 VALUES ($1, $2, $3, $4, $5)
 		 `,
-		r.Hash, r.BlockHash, r.BlockHeight, r.VegaTime)
+		r.Hash, r.BlockHash, r.BlockHeight, r.TxHash, r.VegaTime)
 	return err
 }
 
-func (np *Checkpoints) GetAll(ctx context.Context, pagination entities.CursorPagination) ([]entities.Checkpoint, entities.PageInfo, error) {
+func (c *Checkpoints) GetAll(ctx context.Context, pagination entities.CursorPagination) ([]entities.Checkpoint, entities.PageInfo, error) {
 	defer metrics.StartSQLQuery("Checkpoints", "GetAll")()
 	var nps []entities.Checkpoint
 	var pageInfo entities.PageInfo
@@ -64,7 +65,7 @@ func (np *Checkpoints) GetAll(ctx context.Context, pagination entities.CursorPag
 		return nps, pageInfo, err
 	}
 
-	if err = pgxscan.Select(ctx, np.Connection, &nps, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, c.Connection, &nps, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("could not get checkpoint data: %w", err)
 	}
 

@@ -1,13 +1,15 @@
 package cmd
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"io"
 
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
-	"code.vegaprotocol.io/vega/wallet/wallet"
+	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
 	"github.com/spf13/cobra"
@@ -20,20 +22,25 @@ var (
 
 	describeKeyExample = cli.Examples(`
 		# Describe a key
-		{{.Software}} key describe --wallet WALLET --pubkey PUBKEY
+		{{.Software}} key describe --wallet WALLET --pubkey PUBLIC_KEY
 	`)
 )
 
-type DescribeKeyHandler func(*wallet.DescribeKeyRequest) (*wallet.DescribeKeyResponse, error)
+type DescribeKeyHandler func(api.AdminDescribeKeyParams) (api.AdminDescribeKeyResult, error)
 
 func NewCmdDescribeKey(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(req *wallet.DescribeKeyRequest) (*wallet.DescribeKeyResponse, error) {
+	h := func(params api.AdminDescribeKeyParams) (api.AdminDescribeKeyResult, error) {
 		s, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
-			return nil, fmt.Errorf("couldn't initialise wallets store: %w", err)
+			return api.AdminDescribeKeyResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 
-		return wallet.DescribeKey(s, req)
+		describeKey := api.NewAdminDescribeKey(s)
+		rawResult, errDetails := describeKey.Handle(context.Background(), params)
+		if errDetails != nil {
+			return api.AdminDescribeKeyResult{}, errors.New(errDetails.Data)
+		}
+		return rawResult.(api.AdminDescribeKeyResult), nil
 	}
 
 	return BuildCmdDescribeKey(w, h, rf)
@@ -74,7 +81,7 @@ func BuildCmdDescribeKey(w io.Writer, handler DescribeKeyHandler, rf *RootFlags)
 		"",
 		"Name of the wallet to use",
 	)
-	cmd.Flags().StringVarP(&f.PubKey,
+	cmd.Flags().StringVarP(&f.PublicKey,
 		"pubkey", "k",
 		"",
 		"Public key to describe (hex-encoded)",
@@ -93,38 +100,37 @@ func BuildCmdDescribeKey(w io.Writer, handler DescribeKeyHandler, rf *RootFlags)
 type DescribeKeyFlags struct {
 	Wallet         string
 	PassphraseFile string
-	PubKey         string
+	PublicKey      string
 }
 
-func (f *DescribeKeyFlags) Validate() (*wallet.DescribeKeyRequest, error) {
-	req := &wallet.DescribeKeyRequest{}
-
+func (f *DescribeKeyFlags) Validate() (api.AdminDescribeKeyParams, error) {
 	if len(f.Wallet) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("wallet")
+		return api.AdminDescribeKeyParams{}, flags.MustBeSpecifiedError("wallet")
 	}
-	req.Wallet = f.Wallet
 
-	if len(f.PubKey) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("pubkey")
+	if len(f.PublicKey) == 0 {
+		return api.AdminDescribeKeyParams{}, flags.MustBeSpecifiedError("pubkey")
 	}
-	req.PubKey = f.PubKey
 
 	passphrase, err := flags.GetPassphrase(f.PassphraseFile)
 	if err != nil {
-		return nil, err
+		return api.AdminDescribeKeyParams{}, err
 	}
-	req.Passphrase = passphrase
 
-	return req, nil
+	return api.AdminDescribeKeyParams{
+		Wallet:     f.Wallet,
+		Passphrase: passphrase,
+		PublicKey:  f.PublicKey,
+	}, nil
 }
 
-func PrintDescribeKeyResponse(w io.Writer, resp *wallet.DescribeKeyResponse) {
+func PrintDescribeKeyResponse(w io.Writer, resp api.AdminDescribeKeyResult) {
 	p := printer.NewInteractivePrinter(w)
 
 	str := p.String()
 	defer p.Print(str)
 
-	str.Text("Name:              ").WarningText(wallet.GetKeyName(resp.Meta)).NextLine()
+	str.Text("Name:              ").WarningText(resp.Name).NextLine()
 	str.Text("Public key:        ").WarningText(resp.PublicKey).NextLine()
 	str.Text("Algorithm Name:    ").WarningText(resp.Algorithm.Name).NextLine()
 	str.Text("Algorithm Version: ").WarningText(fmt.Sprint(resp.Algorithm.Version)).NextSection()
@@ -136,9 +142,9 @@ func PrintDescribeKeyResponse(w io.Writer, resp *wallet.DescribeKeyResponse) {
 	case false:
 		str.SuccessText("not tainted").NextLine()
 	}
-	str.Text("Tainting a key pair marks it as unsafe to use and ensures it will not be used to sign transactions.").NextLine()
+	str.Text("Tainting a key marks it as unsafe to use and ensures it will not be used to sign transactions.").NextLine()
 	str.Text("This mechanism is useful when the key pair has been compromised.").NextSection()
 
 	str.Text("Metadata:").NextLine()
-	printMeta(str, resp.Meta)
+	printMeta(str, resp.Metadata)
 }

@@ -76,10 +76,11 @@ func TestTopologySnapshot(t *testing.T) {
 	ctx := context.Background()
 
 	nr1 := commandspb.AnnounceNode{
-		Id:              "vega-master-pubkey",
-		ChainPubKey:     tmPubKeys[0],
-		VegaPubKey:      hexEncode("vega-key"),
-		EthereumAddress: "0x6d53C489bbda35B8096C8b4Cb362e2889F82E19B",
+		Id:               "vega-master-pubkey",
+		ChainPubKey:      tmPubKeys[0],
+		VegaPubKey:       hexEncode("vega-key"),
+		EthereumAddress:  "0x6d53C489bbda35B8096C8b4Cb362e2889F82E19B",
+		SubmitterAddress: "0x6d53C489bbda35B8096C8b4Cb362e2889F82E19B",
 	}
 	err = top.AddNewNode(ctx, &nr1, validators.ValidatorStatusTendermint)
 	assert.NoError(t, err)

@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -15,9 +14,11 @@ import (
 	api "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
+	coreversion "code.vegaprotocol.io/vega/version"
 	wcommands "code.vegaprotocol.io/vega/wallet/commands"
 	"code.vegaprotocol.io/vega/wallet/network"
 	"code.vegaprotocol.io/vega/wallet/node"
+	"code.vegaprotocol.io/vega/wallet/version"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
 	"github.com/golang/protobuf/jsonpb"
@@ -54,10 +55,13 @@ var (
 
 		# Send a command with a maximum of 10 retries
 		{{.Software}} command send --network NETWORK --wallet WALLET --pubkey PUBKEY --retries 10 COMMAND
+
+		# Send a command to a registered network without verifying network version compatibility
+		{{.Software}} command send --network NETWORK --wallet WALLET --pubkey PUBKEY --no-version-check COMMAND
 	`)
 )
 
-type SendCommandHandler func(io.Writer, *RootFlags, *SendCommandRequest) error
+type SendCommandHandler func(io.Writer, *SendCommandFlags, *RootFlags, *SendCommandRequest) error
 
 func NewCmdCommandSend(w io.Writer, rf *RootFlags) *cobra.Command {
 	return BuildCmdCommandSend(w, SendCommand, rf)
@@ -84,7 +88,7 @@ func BuildCmdCommandSend(w io.Writer, handler SendCommandHandler, rf *RootFlags)
 				return err
 			}
 
-			if err := handler(w, rf, req); err != nil {
+			if err := handler(w, f, rf, req); err != nil {
 				return err
 			}
 
@@ -127,6 +131,11 @@ func BuildCmdCommandSend(w io.Writer, handler SendCommandHandler, rf *RootFlags)
 		DefaultForwarderRetryCount,
 		"Number of retries when contacting the Vega node",
 	)
+	cmd.Flags().BoolVar(&f.NoVersionCheck,
+		"no-version-check",
+		false,
+		"Do not check for network version compatibility",
+	)
 
 	autoCompleteNetwork(cmd, rf.Home)
 	autoCompleteWallet(cmd, rf.Home)
@@ -144,6 +153,7 @@ type SendCommandFlags struct {
 	Retries        uint64
 	LogLevel       string
 	RawCommand     string
+	NoVersionCheck bool
 }
 
 func (f *SendCommandFlags) Validate() (*SendCommandRequest, error) {
@@ -152,12 +162,12 @@ func (f *SendCommandFlags) Validate() (*SendCommandRequest, error) {
 	}
 
 	if len(f.Wallet) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("wallet")
+		return nil, flags.MustBeSpecifiedError("wallet")
 	}
 	req.Wallet = f.Wallet
 
 	if len(f.LogLevel) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("level")
+		return nil, flags.MustBeSpecifiedError("level")
 	}
 	if err := ValidateLogLevel(f.LogLevel); err != nil {
 		return nil, err
@@ -168,7 +178,7 @@ func (f *SendCommandFlags) Validate() (*SendCommandRequest, error) {
 		return nil, flags.OneOfFlagsMustBeSpecifiedError("network", "node-address")
 	}
 	if len(f.NodeAddress) != 0 && len(f.Network) != 0 {
-		return nil, flags.FlagsMutuallyExclusiveError("network", "node-address")
+		return nil, flags.MutuallyExclusiveError("network", "node-address")
 	}
 	req.NodeAddress = f.NodeAddress
 	req.Network = f.Network
@@ -180,7 +190,7 @@ func (f *SendCommandFlags) Validate() (*SendCommandRequest, error) {
 	req.Passphrase = passphrase
 
 	if len(f.PubKey) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("pubkey")
+		return nil, flags.MustBeSpecifiedError("pubkey")
 	}
 	if len(f.RawCommand) == 0 {
 		return nil, flags.ArgMustBeSpecifiedError("command")
@@ -212,7 +222,16 @@ type SendCommandRequest struct {
 	Request     *walletpb.SubmitTransactionRequest
 }
 
-func SendCommand(w io.Writer, rf *RootFlags, req *SendCommandRequest) error {
+func SendCommand(w io.Writer, f *SendCommandFlags, rf *RootFlags, req *SendCommandRequest) error {
+	p := printer.NewInteractivePrinter(w)
+
+	if rf.Output == flags.InteractiveOutput && version.IsUnreleased() {
+		str := p.String()
+		str.CrossMark().DangerText("You are running an unreleased version of the Vega wallet (").DangerText(coreversion.Get()).DangerText(").").NextLine()
+		str.Pad().DangerText("Use it at your own risk!").NextSection()
+		p.Print(str)
+	}
+
 	log, err := BuildLogger(rf.Output, req.LogLevel)
 	if err != nil {
 		return err
@@ -241,6 +260,16 @@ func SendCommand(w io.Writer, rf *RootFlags, req *SendCommandRequest) error {
 		hosts = []string{req.NodeAddress}
 	}
 
+	if !f.NoVersionCheck {
+		networkVersion, err := getNetworkVersion(hosts)
+		if err != nil {
+			return err
+		}
+		if networkVersion != coreversion.Get() {
+			return fmt.Errorf("software is not compatible with this network: network is running version %s but wallet software has version %s", networkVersion, coreversion.Get())
+		}
+	}
+
 	forwarder, err := node.NewForwarder(log.Named("forwarder"), network.GRPCConfig{
 		Hosts:   hosts,
 		Retries: req.Retries,
@@ -257,7 +286,6 @@ func SendCommand(w io.Writer, rf *RootFlags, req *SendCommandRequest) error {
 		}
 	}()
 
-	p := printer.NewInteractivePrinter(w)
 	if rf.Output == flags.InteractiveOutput {
 		p.Print(p.String().BlueArrow().InfoText("Logs").NextLine())
 	}
@@ -269,6 +297,10 @@ func SendCommand(w io.Writer, rf *RootFlags, req *SendCommandRequest) error {
 	blockData, cltIdx, err := forwarder.LastBlockHeightAndHash(ctx)
 	if err != nil {
 		return fmt.Errorf("couldn't get last block height: %w", err)
+	}
+
+	if blockData.ChainId == "" {
+		return fmt.Errorf("network does not have a chainid")
 	}
 
 	log.Info(fmt.Sprintf("last block height found: %d", blockData.Height))
@@ -303,12 +335,8 @@ func SendCommand(w io.Writer, rf *RootFlags, req *SendCommandRequest) error {
 	}
 
 	if !resp.Success {
-		d, err := hex.DecodeString(resp.Data)
-		if err != nil {
-			log.Error("unable to decode resp error string")
-		}
-		log.Error("transaction failed", zap.String("err", string(d)), zap.Uint32("code", resp.Code))
-		return fmt.Errorf("transaction failed: %s", string(d))
+		log.Error("transaction failed", zap.String("err", resp.Data), zap.Uint32("code", resp.Code))
+		return fmt.Errorf("transaction failed: %s", resp.Data)
 	}
 
 	log.Info("transaction successfully sent", zap.String("hash", resp.TxHash))

@@ -28,6 +28,7 @@ import (
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+
 	"github.com/pkg/errors"
 )
 
@@ -44,6 +45,8 @@ var (
 	ErrExpectedERC20Asset                        = errors.New("expected an ERC20 asset but was not")
 )
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/governance Markets,StakingAccounts,Assets,TimeService,Witness,NetParams
+
 // Broker - event bus.
 type Broker interface {
 	Send(e events.Event)
@@ -52,26 +55,24 @@ type Broker interface {
 
 // Markets allows to get the market data for use in the market update proposal
 // computation.
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/markets_mock.go -package mocks code.vegaprotocol.io/vega/core/governance Markets
+
 type Markets interface {
 	MarketExists(market string) bool
 	GetMarket(market string) (types.Market, bool)
 	GetMarketState(market string) (types.MarketState, error)
 	GetEquityLikeShareForMarketAndParty(market, party string) (num.Decimal, bool)
 	RestoreMarket(ctx context.Context, marketConfig *types.Market) error
-	RestoreMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *types.LiquidityProvisionSubmission, lpid, deterministicID string) error
 	StartOpeningAuction(ctx context.Context, marketID string) error
 	UpdateMarket(ctx context.Context, marketConfig *types.Market) error
 }
 
 // StakingAccounts ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/staking_accounts_mock.go -package mocks code.vegaprotocol.io/vega/core/governance StakingAccounts
+
 type StakingAccounts interface {
 	GetAvailableBalance(party string) (*num.Uint, error)
 	GetStakingAssetTotalSupply() *num.Uint
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/core/governance Assets
 type Assets interface {
 	NewAsset(ctx context.Context, ref string, assetDetails *types.AssetDetails) (string, error)
 	Get(assetID string) (*assets.Asset, error)
@@ -82,19 +83,16 @@ type Assets interface {
 }
 
 // TimeService ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/core/governance TimeService
 type TimeService interface {
 	GetTimeNow() time.Time
 }
 
 // Witness ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/witness_mock.go -package mocks code.vegaprotocol.io/vega/core/governance Witness
 type Witness interface {
 	StartCheck(validators.Resource, func(interface{}, bool), time.Time) error
 	RestoreResource(validators.Resource, func(interface{}, bool)) error
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/netparams_mock.go -package mocks code.vegaprotocol.io/vega/core/governance NetParams
 type NetParams interface {
 	Validate(string, string) error
 	Update(context.Context, string, string) error
@@ -445,13 +443,17 @@ func (e *Engine) SubmitProposal(
 	}
 
 	p := &types.Proposal{
-		ID:        id,
-		Timestamp: e.timeService.GetTimeNow().UnixNano(),
-		Party:     party,
-		State:     types.ProposalStateOpen,
-		Terms:     psub.Terms,
-		Reference: psub.Reference,
-		Rationale: psub.Rationale,
+		ID:                      id,
+		Timestamp:               e.timeService.GetTimeNow().UnixNano(),
+		Party:                   party,
+		State:                   types.ProposalStateOpen,
+		Terms:                   psub.Terms,
+		Reference:               psub.Reference,
+		Rationale:               psub.Rationale,
+		RequiredMajority:        num.DecimalZero(),
+		RequiredParticipation:   num.DecimalZero(),
+		RequiredLPMajority:      num.DecimalZero(),
+		RequiredLPParticipation: num.DecimalZero(),
 	}
 
 	defer func() {
@@ -548,10 +550,6 @@ func (e *Engine) intoToSubmit(ctx context.Context, p *types.Proposal, enct *enac
 		tsb.m = &ToSubmitNewMarket{
 			m: mkt,
 		}
-		if newMarket.LiquidityCommitment != nil {
-			tsb.m.l = types.LiquidityProvisionSubmissionFromMarketCommitment(
-				newMarket.LiquidityCommitment, p.ID)
-		}
 	}
 
 	return tsb, nil
@@ -617,6 +615,12 @@ func (e *Engine) validateOpenProposal(proposal *types.Proposal) (types.ProposalE
 	if err != nil {
 		return types.ProposalErrorUnknownType, err
 	}
+
+	// assign all requirement to the proposal itself.
+	proposal.RequiredMajority = params.RequiredMajority
+	proposal.RequiredParticipation = params.RequiredParticipation
+	proposal.RequiredLPMajority = params.RequiredMajorityLP
+	proposal.RequiredLPParticipation = params.RequiredParticipationLP
 
 	now := e.timeService.GetTimeNow()
 	closeTime := time.Unix(proposal.Terms.ClosingTimestamp, 0)
@@ -839,6 +843,7 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 		closeTime := time.Unix(terms.ClosingTimestamp, 0)
 		return validateNewMarketChange(terms.GetNewMarket(), e.assets, true, e.netp, enactTime.Sub(closeTime), enct)
 	case types.ProposalTermsTypeUpdateMarket:
+		enct.shouldNotVerify = true
 		return validateUpdateMarketChange(terms.GetUpdateMarket(), enct)
 	case types.ProposalTermsTypeNewAsset:
 		return terms.GetNewAsset().Validate()
@@ -856,9 +861,7 @@ func (e *Engine) closeProposal(ctx context.Context, proposal *proposal) {
 		return
 	}
 
-	params := e.mustGetProposalParams(proposal)
-
-	proposal.Close(params, e.accs, e.markets)
+	proposal.Close(e.accs, e.markets)
 	e.gss.changedActive = true
 
 	if proposal.IsPassed() {
@@ -894,16 +897,6 @@ func newUpdatedProposalEvents(ctx context.Context, proposal *proposal) []events.
 	}
 
 	return evts
-}
-
-func (e *Engine) mustGetProposalParams(proposal *proposal) *ProposalParameters {
-	params, err := e.getProposalParams(proposal.Terms)
-	if err != nil {
-		e.log.Panic("failed to get the proposal parameters from the terms",
-			logging.Error(err),
-		)
-	}
-	return params
 }
 
 func (e *Engine) updateValidatorKey(ctx context.Context, m map[string]*types.Vote, oldKey, newKey string) {
@@ -988,8 +981,8 @@ func (e *Engine) updatedAssetFromProposal(p *proposal) (*types.Asset, types.Prop
 	newAsset := &types.Asset{
 		ID: a.AssetID,
 		Details: &types.AssetDetails{
-			Name:     a.Changes.Name,
-			Symbol:   a.Changes.Symbol,
+			Name:     existingAsset.ToAssetType().Details.Name,
+			Symbol:   existingAsset.ToAssetType().Details.Symbol,
 			Quantum:  a.Changes.Quantum,
 			Decimals: existingAsset.DecimalPlaces(),
 		},
@@ -1073,7 +1066,7 @@ func (p *proposal) AddVote(vote types.Vote) error {
 // vote balance and weight.
 // Warning: this method should only be called once. Use ShouldClose() to know
 // when to call.
-func (p *proposal) Close(params *ProposalParameters, accounts StakingAccounts, markets Markets) {
+func (p *proposal) Close(accounts StakingAccounts, markets Markets) {
 	if !p.IsOpen() {
 		return
 	}
@@ -1083,7 +1076,7 @@ func (p *proposal) Close(params *ProposalParameters, accounts StakingAccounts, m
 		p.purgeBlankVotes(p.no)
 	}()
 
-	tokenVoteState, tokenVoteError := p.computeVoteStateUsingTokens(params, accounts)
+	tokenVoteState, tokenVoteError := p.computeVoteStateUsingTokens(accounts)
 
 	p.State = tokenVoteState
 	p.Reason = tokenVoteError
@@ -1096,13 +1089,13 @@ func (p *proposal) Close(params *ProposalParameters, accounts StakingAccounts, m
 	}
 
 	if tokenVoteState == types.ProposalStateDeclined && tokenVoteError == types.ProposalErrorParticipationThresholdNotReached {
-		elsVoteState, elsVoteError := p.computeVoteStateUsingEquityLikeShare(params, markets)
+		elsVoteState, elsVoteError := p.computeVoteStateUsingEquityLikeShare(markets)
 		p.State = elsVoteState
 		p.Reason = elsVoteError
 	}
 }
 
-func (p *proposal) computeVoteStateUsingTokens(params *ProposalParameters, accounts StakingAccounts) (types.ProposalState, types.ProposalError) {
+func (p *proposal) computeVoteStateUsingTokens(accounts StakingAccounts) (types.ProposalState, types.ProposalError) {
 	totalStake := accounts.GetStakingAssetTotalSupply()
 
 	yes := p.countTokens(p.yes, accounts)
@@ -1112,9 +1105,9 @@ func (p *proposal) computeVoteStateUsingTokens(params *ProposalParameters, accou
 	totalTokensDec := num.DecimalFromUint(totalTokens)
 	p.weightVotesFromToken(p.yes, totalTokensDec)
 	p.weightVotesFromToken(p.no, totalTokensDec)
-	majorityThreshold := totalTokensDec.Mul(params.RequiredMajority)
+	majorityThreshold := totalTokensDec.Mul(p.Proposal.RequiredMajority)
 	totalStakeDec := num.DecimalFromUint(totalStake)
-	participationThreshold := totalStakeDec.Mul(params.RequiredParticipation)
+	participationThreshold := totalStakeDec.Mul(p.Proposal.RequiredParticipation)
 
 	if yesDec.GreaterThanOrEqual(majorityThreshold) && totalTokensDec.GreaterThanOrEqual(participationThreshold) {
 		return types.ProposalStatePassed, types.ProposalErrorUnspecified
@@ -1127,16 +1120,16 @@ func (p *proposal) computeVoteStateUsingTokens(params *ProposalParameters, accou
 	return types.ProposalStateDeclined, types.ProposalErrorMajorityThresholdNotReached
 }
 
-func (p *proposal) computeVoteStateUsingEquityLikeShare(params *ProposalParameters, markets Markets) (types.ProposalState, types.ProposalError) {
+func (p *proposal) computeVoteStateUsingEquityLikeShare(markets Markets) (types.ProposalState, types.ProposalError) {
 	yes := p.countEquityLikeShare(p.yes, markets)
 	no := p.countEquityLikeShare(p.no, markets)
 	totalEquityLikeShare := yes.Add(no)
 
-	if yes.GreaterThanOrEqual(params.RequiredMajorityLP) && totalEquityLikeShare.GreaterThanOrEqual(params.RequiredParticipationLP) {
+	if yes.GreaterThanOrEqual(p.Proposal.RequiredLPMajority) && totalEquityLikeShare.GreaterThanOrEqual(p.Proposal.RequiredLPParticipation) {
 		return types.ProposalStatePassed, types.ProposalErrorUnspecified
 	}
 
-	if totalEquityLikeShare.LessThan(params.RequiredParticipationLP) {
+	if totalEquityLikeShare.LessThan(p.Proposal.RequiredLPParticipation) {
 		return types.ProposalStateDeclined, types.ProposalErrorParticipationThresholdNotReached
 	}
 

@@ -54,7 +54,7 @@ const (
 	ErrorCodeRequestHasBeenInterrupted ErrorCode = -32001
 )
 
-// 	ErrorDetails is returned when an RPC call encounters an error.
+// ErrorDetails is returned when an RPC call encounters an error.
 type ErrorDetails struct {
 	// Code indicates the error type that occurred.
 	Code ErrorCode `json:"code"`

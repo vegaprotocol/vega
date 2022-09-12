@@ -22,9 +22,9 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	tmocks "code.vegaprotocol.io/vega/core/types/mocks"
 	vegactx "code.vegaprotocol.io/vega/libs/context"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 
-	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/cosmos/iavl"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -141,7 +141,8 @@ func testTreeExportImport(t *testing.T) {
 	// export the tree into snapshot data
 	snap, err := types.SnapshotFromTree(tree.ImmutableTree)
 	require.NoError(t, err)
-	require.Equal(t, snap.Hash, tree.Hash())
+	hash, _ := tree.Hash()
+	require.Equal(t, snap.Hash, hash)
 	require.Equal(t, snap.Meta.Version, tree.Version())
 	require.Equal(t, len(snap.Nodes), int(tree.Size()))
 	// We expect more nodehashes than nodes since nodes only contain the leaf nodes
@@ -161,7 +162,10 @@ func testTreeExportImport(t *testing.T) {
 	require.NoError(t, err)
 
 	// The new tree should be identical to the previous
-	assert.Equal(t, tree.Hash(), importedTree.Hash())
+	treeHash, _ := tree.Hash()
+	importedTreeHash, _ := importedTree.Hash()
+
+	assert.Equal(t, treeHash, importedTreeHash)
 	assert.Equal(t, tree.Size(), importedTree.Size())
 	assert.Equal(t, tree.Height(), importedTree.Height())
 	assert.Equal(t, tree.Version(), importedTree.Version())

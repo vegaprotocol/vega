@@ -44,9 +44,19 @@ type Future struct {
 	settlementPriceListener    func(context.Context, *num.Uint)
 }
 
-func (f *Future) Unsubscribe(ctx context.Context) {
-	f.oracle.unsubscribe(ctx, f.oracle.settlementPriceSubscriptionID)
+func (f *Future) UnsubscribeTradingTerminated(ctx context.Context) {
+	f.log.Info("unsubscribed trading terminated for", logging.String("quote-name", f.QuoteName))
 	f.oracle.unsubscribe(ctx, f.oracle.tradingTerminatedSubscriptionID)
+}
+
+func (f *Future) UnsubscribeSettlementPrice(ctx context.Context) {
+	f.log.Info("unsubscribed trading settlement price for", logging.String("quote-name", f.QuoteName))
+	f.oracle.unsubscribe(ctx, f.oracle.settlementPriceSubscriptionID)
+}
+
+func (f *Future) Unsubscribe(ctx context.Context) {
+	f.UnsubscribeTradingTerminated(ctx)
+	f.UnsubscribeSettlementPrice(ctx)
 }
 
 type oracle struct {

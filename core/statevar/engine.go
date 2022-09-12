@@ -50,6 +50,7 @@ type Broker interface {
 }
 
 // Topology the topology service.
+//
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/topology_mock.go -package mocks code.vegaprotocol.io/vega/core/statevar Topology
 type Topology interface {
 	IsValidatorVegaPubKey(node string) bool
@@ -72,7 +73,7 @@ type Engine struct {
 	top                    Topology
 	rng                    *rand.Rand
 	cmd                    Commander
-	eventTypeToStateVar    map[statevar.StateVarEventType][]*StateVariable
+	eventTypeToStateVar    map[statevar.EventType][]*StateVariable
 	stateVars              map[string]*StateVariable
 	currentTime            time.Time
 	validatorVotesRequired num.Decimal
@@ -93,7 +94,7 @@ func New(log *logging.Logger, config Config, broker Broker, top Topology, cmd Co
 		broker:              broker,
 		top:                 top,
 		cmd:                 cmd,
-		eventTypeToStateVar: map[statevar.StateVarEventType][]*StateVariable{},
+		eventTypeToStateVar: map[statevar.EventType][]*StateVariable{},
 		stateVars:           map[string]*StateVariable{},
 		seq:                 0,
 		readyForTimeTrigger: map[string]struct{}{},
@@ -137,7 +138,7 @@ func (e *Engine) OnDefaultValidatorsVoteRequiredUpdate(ctx context.Context, d nu
 }
 
 // NewEvent triggers calculation of state variables that depend on the event type.
-func (e *Engine) NewEvent(asset, market string, eventType statevar.StateVarEventType) {
+func (e *Engine) NewEvent(asset, market string, eventType statevar.EventType) {
 	// disabling for now until wiring all state variables
 	// if _, ok := e.eventTypeToStateVar[eventType]; !ok {
 	// 	e.log.Panic("Unexpected event received", logging.Int("event-type", int(eventType)), logging.String("asset", asset), logging.String("market", market))
@@ -218,7 +219,7 @@ func (e *Engine) ReadyForTimeTrigger(asset, mktID string) {
 	}
 	if _, ok := e.readyForTimeTrigger[asset+mktID]; !ok {
 		e.readyForTimeTrigger[asset+mktID] = struct{}{}
-		for _, sv := range e.eventTypeToStateVar[statevar.StateVarEventTypeTimeTrigger] {
+		for _, sv := range e.eventTypeToStateVar[statevar.EventTypeTimeTrigger] {
 			if sv.asset == asset && sv.market == mktID {
 				e.stateVarToNextCalc[sv.ID] = e.currentTime.Add(e.updateFrequency)
 			}
@@ -232,7 +233,7 @@ func (e *Engine) ReadyForTimeTrigger(asset, mktID string) {
 // trigger - a slice of events that should trigger the calculation of the state variable
 // frequency - if time based triggering the frequency to trigger, Duration(0) for no time based trigger
 // result - a callback for returning the result converted to the native structure.
-func (e *Engine) RegisterStateVariable(asset, market, name string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error) error {
+func (e *Engine) RegisterStateVariable(asset, market, name string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.EventType, result func(context.Context, statevar.StateVariableResult) error) error {
 	ID := e.generateID(asset, market, name)
 	if _, ok := e.stateVars[ID]; ok {
 		return ErrNameAlreadyExist

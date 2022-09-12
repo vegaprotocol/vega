@@ -47,18 +47,18 @@ func NewNotary(store NotaryStore, log *logging.Logger) *Notary {
 	}
 }
 
-func (w *Notary) Push(ctx context.Context, evt events.Event) error {
-	return w.consume(ctx, evt.(NodeSignatureEvent))
+func (n *Notary) Push(ctx context.Context, evt events.Event) error {
+	return n.consume(ctx, evt.(NodeSignatureEvent))
 }
 
-func (w *Notary) consume(ctx context.Context, event NodeSignatureEvent) error {
+func (n *Notary) consume(ctx context.Context, event NodeSignatureEvent) error {
 	ns := event.NodeSignature()
-	record, err := entities.NodeSignatureFromProto(&ns)
+	record, err := entities.NodeSignatureFromProto(&ns, entities.TxHash(event.TxHash()), n.vegaTime)
 	if err != nil {
 		return errors.Wrap(err, "converting node-signature proto to database entity failed")
 	}
 
-	return errors.Wrap(w.store.Add(ctx, record), "inserting node-signature to SQL store failed")
+	return errors.Wrap(n.store.Add(ctx, record), "inserting node-signature to SQL store failed")
 }
 
 func (n *Notary) Types() []events.Type {

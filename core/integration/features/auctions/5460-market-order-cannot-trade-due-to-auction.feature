@@ -37,7 +37,7 @@ Feature: Test for issue 5460
 
   Scenario: 001 post market order
 
-    And the parties submit the following liquidity provision:
+    Given the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp1 | party0 | ETH/DEC21 | 100000000         | 0.001 | buy  | BID              | 1          | 200000 | submission |
       | lp1 | party0 | ETH/DEC21 | 100000000         | 0.001 | buy  | MID              | 2          | 100000 | submission |
@@ -62,17 +62,18 @@ Feature: Test for issue 5460
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 100000000  | TRADING_MODE_CONTINUOUS | 43200   | 82056031  | 121701233 | 54210000     | 100000000      | 1000000       |
 
-    Then the parties place the following orders:
+    When the parties place the following orders:
       | party  | market id | side | volume | price     | resulting trades | type        | tif     | reference | 
       | party1 | ETH/DEC21 | buy  | 2000000| 101000000 | 4                | TYPE_MARKET | TIF_GFN | ref-ref   | 
+    And the network moves ahead "1" blocks
 
-    And the market data for the market "ETH/DEC21" should be:
+    Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode                    | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 110000000  | TRADING_MODE_MONITORING_AUCTION | 43200   | 82056031  | 121701233 | 84115906     | 100000000      | 1410607       |
+      | 110000000  | TRADING_MODE_MONITORING_AUCTION | 43200   | 82757664  | 122741858 | 84107975     | 100000000      | 1410474       |
 
 Scenario: 002 replicate bug
 
-    And the parties submit the following liquidity provision:
+    When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp1 | party0 | ETH/DEC21 | 200000000         | 0.001 | buy  | MID              | 2          | 205    | submission |
       | lp1 | party0 | ETH/DEC21 | 200000000         | 0.001 | sell | MID              | 2          | 205    | submission |
@@ -84,14 +85,14 @@ Scenario: 002 replicate bug
       | party_r  | ETH/DEC21 | buy  | 100000 | 29998    | 0                | TYPE_LIMIT | TIF_GTC |
       | party_r  | ETH/DEC21 | sell | 100000 | 30002    | 0                | TYPE_LIMIT | TIF_GTC |
       
-    When the opening auction period ends for market "ETH/DEC21"
-    Then the auction ends with a traded volume of "100000" at a price of "30000"
+    Then the opening auction period ends for market "ETH/DEC21"
+    And the auction ends with a traded volume of "100000" at a price of "30000"
 
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 30000      | TRADING_MODE_CONTINUOUS | 43200   | 24617     | 36510     | 1626        | 200000000      | 100000        |
+      | 30000      | TRADING_MODE_CONTINUOUS | 43200   | 24617     | 36510     | 1626         | 200000000      | 100000        |
 
-   And the parties place the following orders: 
+   When the parties place the following orders: 
      | party    | market id | side | volume | price    | resulting trades | type       | tif     |
      | party_r  | ETH/DEC21 | buy  | 100000 | 29987    | 0                | TYPE_LIMIT | TIF_GTC |
      | party_r  | ETH/DEC21 | buy  | 100000 | 29977    | 0                | TYPE_LIMIT | TIF_GTC |
@@ -118,6 +119,7 @@ Scenario: 002 replicate bug
       | buy  | 29795  | 0           |
       | sell | 30002  | 0           |
       | sell | 30205  | 0           |
+    When the network moves ahead "1" blocks
     
     Then the market state should be "STATE_SUSPENDED" for the market "ETH/DEC21"
 
@@ -136,9 +138,9 @@ Scenario: 002 replicate bug
       | buy  | 29977  | 100000      |
       | buy  | 29967  | 100000      |
       | buy  | 29957  | 100000      |
-      | buy  | 29795  | 1345237966  |
+      | buy  | 29795  | 2549836575  |
       | sell | 30002  | 100000      |
-      | sell | 30205  | 1326977824  |
+      | sell | 30205  | 2513432974  |
 
    And the parties place the following orders: 
      | party    | market id | side | volume  | price   |resulting trades | type       | tif     | 
@@ -151,11 +153,11 @@ Scenario: 002 replicate bug
       | buy  | 29977  | 100000      |
       | buy  | 29967  | 100000      |
       | buy  | 29957  | 100000      |
-      | buy  | 29795  | 1345237966  |
+      | buy  | 29795  | 2549836575  |
       | buy  | 400000 | 0           |
       | buy  | 29700  | 100000      |
       | sell | 30002  | 100000      |
-      | sell | 30205  | 1326977824  |
+      | sell | 30205  | 2513432974  |
 
    And the market data for the market "ETH/DEC21" should be:
      | trading mode            | auction trigger             | target stake | supplied stake | open interest |

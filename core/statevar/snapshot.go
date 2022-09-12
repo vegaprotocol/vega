@@ -165,7 +165,7 @@ func (e *Engine) postRestore(stateVariablesInternalState []*snapshot.StateVarInt
 			continue
 		}
 		sv.eventID = svis.EventId
-		sv.state = StateVarConsensusState(svis.State)
+		sv.state = ConsensusState(svis.State)
 		sv.roundsSinceMeaningfulUpdate = uint(svis.RoundsSinceMeaningfulUpdate)
 		if len(svis.ValidatorsResults) > 0 {
 			sv.validatorResults = make(map[string]*statevar.KeyValueBundle, len(svis.ValidatorsResults))

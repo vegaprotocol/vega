@@ -115,7 +115,7 @@ func TestSignMessageWithTaintedKey(t *testing.T) {
 	})
 
 	// then
-	require.EqualError(t, err, "couldn't sign message: public key is tainted")
+	require.EqualError(t, err, "could not sign the message: the public key is tainted")
 	require.Nil(t, signResp)
 
 	// when

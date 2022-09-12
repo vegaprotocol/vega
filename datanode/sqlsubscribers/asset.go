@@ -53,12 +53,12 @@ func (a *Asset) Types() []events.Type {
 	return []events.Type{events.AssetEvent}
 }
 
-func (as *Asset) Push(ctx context.Context, evt events.Event) error {
-	return as.consume(ctx, evt.(AssetEvent))
+func (a *Asset) Push(ctx context.Context, evt events.Event) error {
+	return a.consume(ctx, evt.(AssetEvent))
 }
 
-func (as *Asset) consume(ctx context.Context, ae AssetEvent) error {
-	err := as.addAsset(ctx, ae.Asset(), as.vegaTime)
+func (a *Asset) consume(ctx context.Context, ae AssetEvent) error {
+	err := a.addAsset(ctx, ae.Asset(), ae.TxHash(), a.vegaTime)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -66,7 +66,7 @@ func (as *Asset) consume(ctx context.Context, ae AssetEvent) error {
 	return nil
 }
 
-func (as *Asset) addAsset(ctx context.Context, va vega.Asset, vegaTime time.Time) error {
+func (a *Asset) addAsset(ctx context.Context, va vega.Asset, txHash string, vegaTime time.Time) error {
 	quantum, err := decimal.NewFromString(va.Details.Quantum)
 	if err != nil {
 		return errors.Errorf("bad quantum '%v'", va.Details.Quantum)
@@ -112,11 +112,12 @@ func (as *Asset) addAsset(ctx context.Context, va vega.Asset, vegaTime time.Time
 		Quantum:           quantum,
 		Source:            source,
 		ERC20Contract:     erc20Contract,
+		TxHash:            entities.TxHash(txHash),
 		VegaTime:          vegaTime,
 		LifetimeLimit:     lifetimeLimit,
 		WithdrawThreshold: withdrawalThreshold,
 		Status:            entities.AssetStatus(va.Status),
 	}
 
-	return errors.WithStack(as.store.Add(ctx, asset))
+	return errors.WithStack(a.store.Add(ctx, asset))
 }

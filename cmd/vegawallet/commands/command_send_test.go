@@ -90,7 +90,7 @@ func testSendCommandFlagsMissingWalletFails(t *testing.T) {
 	req, err := f.Validate()
 
 	// then
-	assert.ErrorIs(t, err, flags.FlagMustBeSpecifiedError("wallet"))
+	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("wallet"))
 	assert.Nil(t, req)
 }
 
@@ -105,7 +105,7 @@ func testSendCommandFlagsMissingLogLevelFails(t *testing.T) {
 	req, err := f.Validate()
 
 	// then
-	assert.ErrorIs(t, err, flags.FlagMustBeSpecifiedError("level"))
+	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("level"))
 	assert.Nil(t, req)
 }
 
@@ -152,7 +152,7 @@ func testSendCommandFlagsBothNetworkAndNodeAddressSpecifiedFails(t *testing.T) {
 	req, err := f.Validate()
 
 	// then
-	assert.ErrorIs(t, err, flags.FlagsMutuallyExclusiveError("network", "node-address"))
+	assert.ErrorIs(t, err, flags.MutuallyExclusiveError("network", "node-address"))
 	assert.Nil(t, req)
 }
 
@@ -167,7 +167,7 @@ func testSendCommandFlagsMissingPubKeyFails(t *testing.T) {
 	req, err := f.Validate()
 
 	// then
-	assert.ErrorIs(t, err, flags.FlagMustBeSpecifiedError("pubkey"))
+	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("pubkey"))
 	assert.Nil(t, req)
 }
 

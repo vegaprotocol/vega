@@ -6,7 +6,7 @@ import (
 	cmd "code.vegaprotocol.io/vega/cmd/vegawallet/commands"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
-	"code.vegaprotocol.io/vega/wallet/wallet"
+	"code.vegaprotocol.io/vega/wallet/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -28,7 +28,7 @@ func testGetWalletInfoFlagsValidFlagsSucceeds(t *testing.T) {
 		PassphraseFile: passphraseFilePath,
 	}
 
-	expectedReq := &wallet.GetWalletInfoRequest{
+	expectedReq := api.AdminDescribeWalletParams{
 		Wallet:     walletName,
 		Passphrase: passphrase,
 	}
@@ -53,8 +53,8 @@ func testGetWalletInfoFlagsMissingWalletFails(t *testing.T) {
 	req, err := f.Validate()
 
 	// then
-	assert.ErrorIs(t, err, flags.FlagMustBeSpecifiedError("wallet"))
-	assert.Nil(t, req)
+	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("wallet"))
+	assert.Empty(t, req)
 }
 
 func newGetWalletInfoFlags(t *testing.T, testDir string) *cmd.GetWalletInfoFlags {

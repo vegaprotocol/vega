@@ -22,22 +22,38 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CoreServiceClient interface {
+	// Submit Transaction
+	//
 	// Submit a signed transaction
 	SubmitTransaction(ctx context.Context, in *SubmitTransactionRequest, opts ...grpc.CallOption) (*SubmitTransactionResponse, error)
+	// Chain event
+	//
 	// Propagate a chain event
 	PropagateChainEvent(ctx context.Context, in *PropagateChainEventRequest, opts ...grpc.CallOption) (*PropagateChainEventResponse, error)
+	// Statistics
+	//
 	// Get Statistics on Vega
 	Statistics(ctx context.Context, in *StatisticsRequest, opts ...grpc.CallOption) (*StatisticsResponse, error)
+	// Blockchain height
+	//
 	// Get the height of the last tendermint block
 	LastBlockHeight(ctx context.Context, in *LastBlockHeightRequest, opts ...grpc.CallOption) (*LastBlockHeightResponse, error)
+	// Vega time
+	//
 	// Get Time
 	GetVegaTime(ctx context.Context, in *GetVegaTimeRequest, opts ...grpc.CallOption) (*GetVegaTimeResponse, error)
 	// Subscribe to a stream of events from the core
 	ObserveEventBus(ctx context.Context, opts ...grpc.CallOption) (CoreService_ObserveEventBusClient, error)
+	// Submit raw transaction
+	//
 	// Submit a version agnostic signed transaction
 	SubmitRawTransaction(ctx context.Context, in *SubmitRawTransactionRequest, opts ...grpc.CallOption) (*SubmitRawTransactionResponse, error)
+	// Check transaction
+	//
 	// Check a signed transaction
 	CheckTransaction(ctx context.Context, in *CheckTransactionRequest, opts ...grpc.CallOption) (*CheckTransactionResponse, error)
+	// Check raw transaction
+	//
 	// Check a raw signed transaction
 	CheckRawTransaction(ctx context.Context, in *CheckRawTransactionRequest, opts ...grpc.CallOption) (*CheckRawTransactionResponse, error)
 }
@@ -157,22 +173,38 @@ func (c *coreServiceClient) CheckRawTransaction(ctx context.Context, in *CheckRa
 // All implementations must embed UnimplementedCoreServiceServer
 // for forward compatibility
 type CoreServiceServer interface {
+	// Submit Transaction
+	//
 	// Submit a signed transaction
 	SubmitTransaction(context.Context, *SubmitTransactionRequest) (*SubmitTransactionResponse, error)
+	// Chain event
+	//
 	// Propagate a chain event
 	PropagateChainEvent(context.Context, *PropagateChainEventRequest) (*PropagateChainEventResponse, error)
+	// Statistics
+	//
 	// Get Statistics on Vega
 	Statistics(context.Context, *StatisticsRequest) (*StatisticsResponse, error)
+	// Blockchain height
+	//
 	// Get the height of the last tendermint block
 	LastBlockHeight(context.Context, *LastBlockHeightRequest) (*LastBlockHeightResponse, error)
+	// Vega time
+	//
 	// Get Time
 	GetVegaTime(context.Context, *GetVegaTimeRequest) (*GetVegaTimeResponse, error)
 	// Subscribe to a stream of events from the core
 	ObserveEventBus(CoreService_ObserveEventBusServer) error
+	// Submit raw transaction
+	//
 	// Submit a version agnostic signed transaction
 	SubmitRawTransaction(context.Context, *SubmitRawTransactionRequest) (*SubmitRawTransactionResponse, error)
+	// Check transaction
+	//
 	// Check a signed transaction
 	CheckTransaction(context.Context, *CheckTransactionRequest) (*CheckTransactionResponse, error)
+	// Check raw transaction
+	//
 	// Check a raw signed transaction
 	CheckRawTransaction(context.Context, *CheckRawTransactionRequest) (*CheckRawTransactionResponse, error)
 	mustEmbedUnimplementedCoreServiceServer()

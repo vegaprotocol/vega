@@ -53,11 +53,11 @@ func (dv *DecimalScalar) withinTolerance(other *DecimalScalar, tolerance num.Dec
 }
 
 // ToProto converts the state variable value to protobuf.
-func (fv *DecimalScalar) ToProto() *vega.StateVarValue {
+func (dv *DecimalScalar) ToProto() *vega.StateVarValue {
 	return &vega.StateVarValue{
 		Value: &vega.StateVarValue_ScalarVal{
 			ScalarVal: &vega.ScalarValue{
-				Value: fv.Val.String(),
+				Value: dv.Val.String(),
 			},
 		},
 	}

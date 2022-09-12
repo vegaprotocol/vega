@@ -16,11 +16,13 @@ import (
 	"sort"
 
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 )
 
 func NewEquitySharesFromSnapshot(state *types.EquityShare) *EquityShares {
 	lps := map[string]*lp{}
 
+	totalPStake, totalVStake := num.DecimalZero(), num.DecimalZero()
 	for _, slp := range state.Lps {
 		lps[slp.ID] = &lp{
 			stake:  slp.Stake,
@@ -28,20 +30,22 @@ func NewEquitySharesFromSnapshot(state *types.EquityShare) *EquityShares {
 			avg:    slp.Avg,
 			vStake: slp.VStake,
 		}
+		totalPStake = totalPStake.Add(slp.Stake)
+		totalVStake = totalVStake.Add(slp.VStake)
 	}
 
 	return &EquityShares{
 		mvp:                 state.Mvp,
-		pMvp:                state.PMvp,
 		r:                   state.R,
+		totalVStake:         totalVStake,
+		totalPStake:         totalPStake,
 		openingAuctionEnded: state.OpeningAuctionEnded,
 		lps:                 lps,
-		stateChanged:        true,
 	}
 }
 
 func (es EquityShares) Changed() bool {
-	return es.stateChanged
+	return true
 }
 
 func (es *EquityShares) GetState() *types.EquityShare {
@@ -61,11 +65,8 @@ func (es *EquityShares) GetState() *types.EquityShare {
 		return lps[i].ID < lps[j].ID
 	})
 
-	es.stateChanged = false
-
 	return &types.EquityShare{
 		Mvp:                 es.mvp,
-		PMvp:                es.pMvp,
 		R:                   es.r,
 		OpeningAuctionEnded: es.openingAuctionEnded,
 		Lps:                 lps,

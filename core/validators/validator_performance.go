@@ -35,7 +35,7 @@ type validatorPerformance struct {
 	log       *logging.Logger
 }
 
-func NewValidatorPerformance(log *logging.Logger) *validatorPerformance {
+func NewValidatorPerformance(log *logging.Logger) *validatorPerformance { //revive:disable:unexported-return
 	return &validatorPerformance{
 		proposals: map[string]int64{},
 		total:     0,

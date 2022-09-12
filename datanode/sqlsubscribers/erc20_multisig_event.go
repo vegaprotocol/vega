@@ -49,7 +49,7 @@ func NewERC20MultiSigSignerEvent(store ERC20MultiSigSignerEventStore, log *loggi
 	}
 }
 
-func (t *ERC20MultiSigSignerEvent) Types() []events.Type {
+func (m *ERC20MultiSigSignerEvent) Types() []events.Type {
 	return []events.Type{
 		events.ERC20MultiSigSignerAddedEvent,
 		events.ERC20MultiSigSignerRemovedEvent,
@@ -69,7 +69,7 @@ func (m *ERC20MultiSigSignerEvent) Push(ctx context.Context, evt events.Event) e
 
 func (m *ERC20MultiSigSignerEvent) consumeAddedEvent(ctx context.Context, event ERC20MultiSigSignerAddedEvent) error {
 	e := event.Proto()
-	record, err := entities.ERC20MultiSigSignerEventFromAddedProto(&e)
+	record, err := entities.ERC20MultiSigSignerEventFromAddedProto(&e, entities.TxHash(event.TxHash()))
 	if err != nil {
 		return errors.Wrap(err, "converting signer-added proto to database entity failed")
 	}
@@ -78,7 +78,7 @@ func (m *ERC20MultiSigSignerEvent) consumeAddedEvent(ctx context.Context, event 
 
 func (m *ERC20MultiSigSignerEvent) consumeRemovedEvent(ctx context.Context, event ERC20MultiSigSignerRemovedEvent) error {
 	e := event.Proto()
-	records, err := entities.ERC20MultiSigSignerEventFromRemovedProto(&e)
+	records, err := entities.ERC20MultiSigSignerEventFromRemovedProto(&e, entities.TxHash(event.TxHash()))
 	if err != nil {
 		return errors.Wrap(err, "converting signer-added proto to database entity failed")
 	}

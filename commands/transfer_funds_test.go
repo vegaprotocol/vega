@@ -266,6 +266,118 @@ func TestTransferFunds(t *testing.T) {
 				Reference: "testing",
 			},
 		},
+		{
+			transfer: commandspb.Transfer{
+				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES,
+				Kind: &commandspb.Transfer_OneOff{
+					OneOff: &commandspb.OneOffTransfer{},
+				},
+				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
+				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
+				Amount:    "1",
+				Reference: "testing",
+			},
+			errString: "transfer.account.to (transfers to metric-based reward accounts must be recurring transfers that specify a distribution metric)",
+		},
+		{
+			transfer: commandspb.Transfer{
+				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES,
+				Kind: &commandspb.Transfer_OneOff{
+					OneOff: &commandspb.OneOffTransfer{},
+				},
+				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
+				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
+				Amount:    "1",
+				Reference: "testing",
+			},
+			errString: "transfer.account.to (transfers to metric-based reward accounts must be recurring transfers that specify a distribution metric)",
+		},
+		{
+			transfer: commandspb.Transfer{
+				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES,
+				Kind: &commandspb.Transfer_OneOff{
+					OneOff: &commandspb.OneOffTransfer{},
+				},
+				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
+				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
+				Amount:    "1",
+				Reference: "testing",
+			},
+			errString: "transfer.account.to (transfers to metric-based reward accounts must be recurring transfers that specify a distribution metric)",
+		},
+		{
+			transfer: commandspb.Transfer{
+				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS,
+				Kind: &commandspb.Transfer_OneOff{
+					OneOff: &commandspb.OneOffTransfer{},
+				},
+				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
+				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
+				Amount:    "1",
+				Reference: "testing",
+			},
+			errString: "transfer.account.to (transfers to metric-based reward accounts must be recurring transfers that specify a distribution metric)",
+		},
+		{
+			transfer: commandspb.Transfer{
+				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
+				Kind: &commandspb.Transfer_OneOff{
+					OneOff: &commandspb.OneOffTransfer{},
+				},
+				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
+				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
+				Amount:    "1",
+				Reference: "testing",
+			},
+		},
+		{
+			transfer: commandspb.Transfer{
+				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES,
+				Kind: &commandspb.Transfer_Recurring{
+					Recurring: &commandspb.RecurringTransfer{
+						StartEpoch: 10,
+						EndEpoch:   Uint64Ptr(11),
+						Factor:     "1",
+						DispatchStrategy: &vega.DispatchStrategy{
+							AssetForMetric: "",
+							Metric:         vega.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED,
+						},
+					},
+				},
+				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
+				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
+				Amount:    "1",
+				Reference: "testing",
+			},
+			errString: "transfer.kind.dispatch_strategy.asset_for_metric (unknown asset)",
+		},
+		{
+			transfer: commandspb.Transfer{
+				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS,
+				Kind: &commandspb.Transfer_Recurring{
+					Recurring: &commandspb.RecurringTransfer{
+						StartEpoch: 10,
+						EndEpoch:   Uint64Ptr(11),
+						Factor:     "1",
+						DispatchStrategy: &vega.DispatchStrategy{
+							AssetForMetric: "",
+							Metric:         vega.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
+						},
+					},
+				},
+				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
+				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
+				Amount:    "1",
+				Reference: "testing",
+			},
+		},
 	}
 
 	for _, c := range cases {

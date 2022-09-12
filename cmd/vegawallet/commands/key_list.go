@@ -1,13 +1,15 @@
 package cmd
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"io"
 
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
-	"code.vegaprotocol.io/vega/wallet/wallet"
+	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
 	"github.com/spf13/cobra"
@@ -24,16 +26,21 @@ var (
 	`)
 )
 
-type ListKeysHandler func(*wallet.ListKeysRequest) (*wallet.ListKeysResponse, error)
+type ListKeysHandler func(api.AdminListKeysParams) (api.AdminListKeysResult, error)
 
 func NewCmdListKeys(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(req *wallet.ListKeysRequest) (*wallet.ListKeysResponse, error) {
+	h := func(params api.AdminListKeysParams) (api.AdminListKeysResult, error) {
 		s, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
-			return nil, fmt.Errorf("couldn't initialise wallets store: %w", err)
+			return api.AdminListKeysResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 
-		return wallet.ListKeys(s, req)
+		listKeys := api.NewAdminListKeys(s)
+		rawResult, errDetails := listKeys.Handle(context.Background(), params)
+		if errDetails != nil {
+			return api.AdminListKeysResult{}, errors.New(errDetails.Data)
+		}
+		return rawResult.(api.AdminListKeysResult), nil
 	}
 
 	return BuildCmdListKeys(w, h, rf)
@@ -90,30 +97,29 @@ type ListKeysFlags struct {
 	PassphraseFile string
 }
 
-func (f *ListKeysFlags) Validate() (*wallet.ListKeysRequest, error) {
-	req := &wallet.ListKeysRequest{}
-
+func (f *ListKeysFlags) Validate() (api.AdminListKeysParams, error) {
 	if len(f.Wallet) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("wallet")
+		return api.AdminListKeysParams{}, flags.MustBeSpecifiedError("wallet")
 	}
-	req.Wallet = f.Wallet
 
 	passphrase, err := flags.GetPassphrase(f.PassphraseFile)
 	if err != nil {
-		return nil, err
+		return api.AdminListKeysParams{}, err
 	}
-	req.Passphrase = passphrase
 
-	return req, nil
+	return api.AdminListKeysParams{
+		Wallet:     f.Wallet,
+		Passphrase: passphrase,
+	}, nil
 }
 
-func PrintListKeysResponse(w io.Writer, resp *wallet.ListKeysResponse) {
+func PrintListKeysResponse(w io.Writer, resp api.AdminListKeysResult) {
 	p := printer.NewInteractivePrinter(w)
 
 	str := p.String()
 	defer p.Print(str)
 
-	for i, key := range resp.Keys {
+	for i, key := range resp.PublicKeys {
 		if i != 0 {
 			str.NextLine()
 		}

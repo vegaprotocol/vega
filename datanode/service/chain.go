@@ -40,12 +40,14 @@ func NewChain(store ChainStore, log *logging.Logger) *Chain {
 	}
 }
 
-/* GetChainID returns the current chain ID stored in the database (if one is set).
-   If one is not set, return empty string and no error. If an error occurs,
-   return empty string and an that error.
+/*
+GetChainID returns the current chain ID stored in the database (if one is set).
 
-   It caches the result of calling to the store, so that once we have successfully
-   retrieved a chain ID, we don't ask again.
+	If one is not set, return empty string and no error. If an error occurs,
+	return empty string and an that error.
+
+	It caches the result of calling to the store, so that once we have successfully
+	retrieved a chain ID, we don't ask again.
 */
 func (c *Chain) GetChainID() (string, error) {
 	c.mu.Lock()

@@ -25,12 +25,16 @@ type FeeSplitter struct {
 	currentTime     time.Time
 	tradeValue      *num.Uint
 	changed         bool
+	avg             num.Decimal
+	window          uint64
 }
 
 func NewFeeSplitter() *FeeSplitter {
 	return &FeeSplitter{
 		tradeValue: num.UintZero(),
 		changed:    true,
+		window:     1, // initialise as 1 otherwise the average value calculation ends up being borked
+		avg:        num.DecimalZero(),
 	}
 }
 
@@ -38,6 +42,7 @@ func (fs *FeeSplitter) SetCurrentTime(t time.Time) error {
 	if t.Before(fs.timeWindowStart) {
 		return errors.New("current time can't be before current window time")
 	}
+	// we're past the opening auction, or we have a trade value (ie we're leaving opening auction)
 	fs.currentTime = t
 	return nil
 }
@@ -45,6 +50,16 @@ func (fs *FeeSplitter) SetCurrentTime(t time.Time) error {
 // TimeWindowStart starts or restarts (if active) a current time window.
 // This sets the internal timers to `t` and resets the accumulated trade values.
 func (fs *FeeSplitter) TimeWindowStart(t time.Time) {
+	// if we have an average value, that means we left the opening auction
+	// and we can increase the window to the next value
+	if !fs.avg.IsZero() {
+		fs.window++
+	} else if !fs.tradeValue.IsZero() {
+		// if tradeValue is set, but the average hasn't been updated, it means we're currently leaving opening auction
+		// we should set the average accordingly: avg == trade_value, but keep the window as-is.
+		// next time we calculate the avg for window == 1, the value should be avg + trade_val (opening auction + trade value)
+		fs.avg = num.DecimalFromUint(fs.tradeValue)
+	}
 	// reset the trade value for this window
 	fs.tradeValue = num.UintZero()
 
@@ -80,6 +95,27 @@ func (fs *FeeSplitter) MarketValueProxy(mvwl time.Duration, totalStakeU *num.Uin
 	return totalStake
 }
 
+func (fs *FeeSplitter) AvgTradeValue() num.Decimal {
+	tv := num.DecimalFromUint(fs.tradeValue)
+	// end of 1st window after opening auction
+	if fs.window == 1 {
+		fs.avg = fs.avg.Add(tv)
+		if !tv.IsZero() {
+			fs.changed = true
+		}
+		return fs.avg
+	}
+	fs.changed = true
+	// n == 2 or more
+	n := num.NewDecimalFromFloat(float64(fs.window))
+	// nmin == 1 or more
+	nmin := num.NewDecimalFromFloat(float64(fs.window - 1))
+	// avg = avg * ((n-1)/n) + tv/n
+	fs.avg = fs.avg.Mul(nmin.Div(n)).Add(tv.Div(n))
+	return fs.avg
+	// return tv
+}
+
 func (fs *FeeSplitter) AddTradeValue(v *num.Uint) {
 	fs.tradeValue.AddSum(v)
 	fs.changed = true
@@ -91,6 +127,8 @@ func NewFeeSplitterFromSnapshot(fs *types.FeeSplitter, now time.Time) *FeeSplitt
 		currentTime:     now,
 		tradeValue:      fs.TradeValue,
 		changed:         true,
+		avg:             fs.Avg,
+		window:          fs.Window,
 	}
 }
 
@@ -99,6 +137,8 @@ func (fs *FeeSplitter) GetState() *types.FeeSplitter {
 	return &types.FeeSplitter{
 		TimeWindowStart: fs.timeWindowStart,
 		TradeValue:      fs.tradeValue,
+		Avg:             fs.avg,
+		Window:          fs.window,
 	}
 }
 

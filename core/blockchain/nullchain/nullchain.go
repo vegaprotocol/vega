@@ -52,6 +52,7 @@ type ApplicationService interface {
 	EndBlock(req abci.RequestEndBlock) (resp abci.ResponseEndBlock)
 	Commit() (resp abci.ResponseCommit)
 	DeliverTx(req abci.RequestDeliverTx) (resp abci.ResponseDeliverTx)
+	Info(req abci.RequestInfo) (resp abci.ResponseInfo)
 }
 
 type NullBlockchain struct {
@@ -121,6 +122,9 @@ func (n *NullBlockchain) ReloadConf(cfg blockchain.Config) {
 }
 
 func (n *NullBlockchain) StartChain() error {
+	// call info to keep the flow the same, and allow things like snapshots to initialise
+	n.app.Info(abci.RequestInfo{})
+
 	err := n.InitChain(n.genesisFile)
 	if err != nil {
 		return err

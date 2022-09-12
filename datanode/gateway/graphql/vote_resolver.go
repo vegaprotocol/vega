@@ -36,3 +36,7 @@ func (r *voteResolver) GovernanceTokenBalance(_ context.Context, obj *proto.Vote
 func (r *voteResolver) GovernanceTokenWeight(_ context.Context, obj *proto.Vote) (string, error) {
 	return obj.TotalGovernanceTokenWeight, nil
 }
+
+func (r *voteResolver) EquityLikeShareWeight(_ context.Context, obj *proto.Vote) (string, error) {
+	return obj.TotalEquityLikeShareWeight, nil
+}

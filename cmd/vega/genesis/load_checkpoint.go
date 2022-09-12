@@ -65,7 +65,7 @@ func (opts *loadCheckpointCmd) Execute(_ []string) error {
 		return fmt.Errorf("couldn't get genesis file: %w", err)
 	}
 
-	appState := genesis.GenesisState{}
+	appState := genesis.State{}
 	err = json.Unmarshal(genesisDoc.AppState, &appState)
 	if err != nil {
 		return err
@@ -125,7 +125,7 @@ func (opts *loadCheckpointCmd) Execute(_ []string) error {
 	return nil
 }
 
-func readGenesisFile(path string) (*tmtypes.GenesisDoc, *genesis.GenesisState, error) {
+func readGenesisFile(path string) (*tmtypes.GenesisDoc, *genesis.State, error) {
 	data, err := vgfs.ReadFile(path)
 	if err != nil {
 		return nil, nil, fmt.Errorf("couldn't read genesis file: %w", err)
@@ -137,7 +137,7 @@ func readGenesisFile(path string) (*tmtypes.GenesisDoc, *genesis.GenesisState, e
 		return nil, nil, fmt.Errorf("couldn't unmarshal the genesis document: %w", err)
 	}
 
-	state := &genesis.GenesisState{}
+	state := &genesis.State{}
 
 	if len(doc.AppState) != 0 {
 		if err := json.Unmarshal(doc.AppState, state); err != nil {

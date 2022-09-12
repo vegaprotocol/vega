@@ -31,6 +31,7 @@ var (
 )
 
 // OracleEngine ...
+//
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/oracle_engine_mock.go -package mocks code.vegaprotocol.io/vega/core/products OracleEngine
 type OracleEngine interface {
 	ListensToPubKeys(oracles.OracleData) bool
@@ -47,7 +48,8 @@ type Product interface {
 	ScaleSettlementPriceToDecimalPlaces(price *num.Uint, dp uint32) (*num.Uint, error)
 	NotifyOnTradingTerminated(listener func(context.Context, bool))
 	NotifyOnSettlementPrice(listener func(context.Context, *num.Uint))
-	Unsubscribe(context.Context)
+	UnsubscribeTradingTerminated(ctx context.Context)
+	UnsubscribeSettlementPrice(ctx context.Context)
 }
 
 // New instance a new product from a Market framework product configuration.

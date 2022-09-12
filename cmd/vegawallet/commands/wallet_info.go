@@ -1,13 +1,15 @@
 package cmd
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"io"
 
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
-	"code.vegaprotocol.io/vega/wallet/wallet"
+	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
 	"github.com/spf13/cobra"
@@ -24,18 +26,22 @@ var (
 	`)
 )
 
-type GetInfoWalletHandler func(*wallet.GetWalletInfoRequest) (*wallet.GetWalletInfoResponse, error)
+type GetInfoWalletHandler func(params api.AdminDescribeWalletParams) (api.AdminDescribeWalletResult, error)
 
 func NewCmdGetInfoWallet(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(req *wallet.GetWalletInfoRequest) (*wallet.GetWalletInfoResponse, error) {
+	h := func(params api.AdminDescribeWalletParams) (api.AdminDescribeWalletResult, error) {
 		s, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
-			return nil, fmt.Errorf("couldn't initialise wallets store: %w", err)
+			return api.AdminDescribeWalletResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 
-		return wallet.GetWalletInfo(s, req)
+		describeWallet := api.NewAdminDescribeWallet(s)
+		rawResult, errorDetails := describeWallet.Handle(context.Background(), params)
+		if errorDetails != nil {
+			return api.AdminDescribeWalletResult{}, errors.New(errorDetails.Data)
+		}
+		return rawResult.(api.AdminDescribeWalletResult), nil
 	}
-
 	return BuildCmdGetInfoWallet(w, h, rf)
 }
 
@@ -90,24 +96,24 @@ type GetWalletInfoFlags struct {
 	PassphraseFile string
 }
 
-func (f *GetWalletInfoFlags) Validate() (*wallet.GetWalletInfoRequest, error) {
-	req := &wallet.GetWalletInfoRequest{}
+func (f *GetWalletInfoFlags) Validate() (api.AdminDescribeWalletParams, error) {
+	req := api.AdminDescribeWalletParams{}
 
 	if len(f.Wallet) == 0 {
-		return nil, flags.FlagMustBeSpecifiedError("wallet")
+		return api.AdminDescribeWalletParams{}, flags.MustBeSpecifiedError("wallet")
 	}
 	req.Wallet = f.Wallet
 
 	passphrase, err := flags.GetPassphrase(f.PassphraseFile)
 	if err != nil {
-		return nil, err
+		return api.AdminDescribeWalletParams{}, err
 	}
 	req.Passphrase = passphrase
 
 	return req, nil
 }
 
-func PrintGetWalletInfoResponse(w io.Writer, resp *wallet.GetWalletInfoResponse) {
+func PrintGetWalletInfoResponse(w io.Writer, resp api.AdminDescribeWalletResult) {
 	p := printer.NewInteractivePrinter(w)
 
 	str := p.String()

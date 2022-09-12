@@ -15,6 +15,7 @@ package sqlstore
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
@@ -23,8 +24,8 @@ import (
 )
 
 var erc20MultSigSignerOrdering = TableOrdering{
-	ColumnOrdering{"vega_time", ASC},
-	ColumnOrdering{"id", ASC},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC},
+	ColumnOrdering{Name: "id", Sorting: ASC},
 }
 
 type ERC20MultiSigSignerEvent struct {
@@ -39,17 +40,18 @@ func NewERC20MultiSigSignerEvent(connectionSource *ConnectionSource) *ERC20Multi
 
 func (m *ERC20MultiSigSignerEvent) Add(ctx context.Context, e *entities.ERC20MultiSigSignerEvent) error {
 	defer metrics.StartSQLQuery("ERC20MultiSigSignerEvent", "Add")()
-	query := `INSERT INTO erc20_multisig_signer_events (id, validator_id, signer_change, submitter, nonce, event, vega_time, epoch_id)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+	query := `INSERT INTO erc20_multisig_signer_events (id, validator_id, signer_change, submitter, nonce, event, tx_hash, vega_time, epoch_id)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		ON CONFLICT (id) DO NOTHING`
 
-	if _, err := m.pool.Exec(ctx, query,
+	if _, err := m.Connection.Exec(ctx, query,
 		e.ID,
 		e.ValidatorID,
 		e.SignerChange,
 		e.Submitter,
 		e.Nonce,
 		e.Event,
+		e.TxHash,
 		e.VegaTime,
 		e.EpochID,
 	); err != nil {
@@ -60,24 +62,35 @@ func (m *ERC20MultiSigSignerEvent) Add(ctx context.Context, e *entities.ERC20Mul
 	return nil
 }
 
-func (m *ERC20MultiSigSignerEvent) GetAddedEvents(ctx context.Context, validatorID string, epochID *int64, pagination entities.CursorPagination) (
+func (m *ERC20MultiSigSignerEvent) GetAddedEvents(ctx context.Context, validatorID string, submitter string, epochID *int64, pagination entities.CursorPagination) (
 	[]entities.ERC20MultiSigSignerEvent, entities.PageInfo, error,
 ) {
 	var pageInfo entities.PageInfo
 	out := []entities.ERC20MultiSigSignerAddedEvent{}
 
 	var args []interface{}
-	var err error
-	query := fmt.Sprintf(`SELECT * FROM erc20_multisig_signer_events WHERE validator_id=%s AND event=%s`,
-		nextBindVar(&args, entities.NodeID(validatorID)),
-		nextBindVar(&args, entities.ERC20MultiSigSignerEventTypeAdded),
-	)
 
-	if epochID != nil {
-		query = fmt.Sprintf(`%s AND epoch_id=%s`, query, nextBindVar(&args, *epochID))
+	conditions := []string{}
+	if validatorID != "" {
+		conditions = append(conditions, fmt.Sprintf("validator_id=%s", nextBindVar(&args, entities.NodeID(validatorID))))
 	}
 
-	query, args, err = PaginateQuery[entities.ERC20MultiSigSignerEventCursor](query, args, erc20MultSigSignerOrdering, pagination)
+	if submitter != "" {
+		conditions = append(conditions, fmt.Sprintf("submitter=%s", nextBindVar(&args, entities.EthereumAddress(submitter))))
+	}
+
+	if epochID != nil {
+		conditions = append(conditions, fmt.Sprintf("epoch_id=%s", nextBindVar(&args, *epochID)))
+	}
+
+	conditions = append(conditions, fmt.Sprintf("event=%s", nextBindVar(&args, entities.ERC20MultiSigSignerEventTypeAdded)))
+
+	query := `SELECT * FROM erc20_multisig_signer_events`
+	if len(conditions) > 0 {
+		query = fmt.Sprintf("%s WHERE %s", query, strings.Join(conditions, " AND "))
+	}
+
+	query, args, err := PaginateQuery[entities.ERC20MultiSigSignerEventCursor](query, args, erc20MultSigSignerOrdering, pagination)
 	if err != nil {
 		return nil, pageInfo, err
 	}
@@ -98,6 +111,7 @@ func (m *ERC20MultiSigSignerEvent) GetAddedEvents(ctx context.Context, validator
 			Submitter:    e.Submitter,
 			Nonce:        e.Nonce,
 			VegaTime:     e.VegaTime,
+			TxHash:       e.TxHash,
 			EpochID:      e.EpochID,
 			Event:        e.Event,
 		}
@@ -110,14 +124,25 @@ func (m *ERC20MultiSigSignerEvent) GetRemovedEvents(ctx context.Context, validat
 	var err error
 	out := []entities.ERC20MultiSigSignerRemovedEvent{}
 	var args []interface{}
-	query := fmt.Sprintf(`SELECT * FROM erc20_multisig_signer_events WHERE validator_id=%s AND submitter=%s AND event=%s`,
-		nextBindVar(&args, entities.NodeID(validatorID)),
-		nextBindVar(&args, entities.EthereumAddress(submitter)),
-		nextBindVar(&args, entities.ERC20MultiSigSignerEventTypeRemoved),
-	)
+
+	conditions := []string{}
+	if validatorID != "" {
+		conditions = append(conditions, fmt.Sprintf("validator_id=%s", nextBindVar(&args, entities.NodeID(validatorID))))
+	}
+
+	if submitter != "" {
+		conditions = append(conditions, fmt.Sprintf("submitter=%s", nextBindVar(&args, entities.EthereumAddress(submitter))))
+	}
 
 	if epochID != nil {
-		query = fmt.Sprintf(`%s AND epoch_id=%s`, query, nextBindVar(&args, *epochID))
+		conditions = append(conditions, fmt.Sprintf("epoch_id=%s", nextBindVar(&args, *epochID)))
+	}
+
+	conditions = append(conditions, fmt.Sprintf("event=%s", nextBindVar(&args, entities.ERC20MultiSigSignerEventTypeRemoved)))
+
+	query := `SELECT * FROM erc20_multisig_signer_events`
+	if len(conditions) > 0 {
+		query = fmt.Sprintf("%s WHERE %s", query, strings.Join(conditions, " AND "))
 	}
 
 	query, args, err = PaginateQuery[entities.ERC20MultiSigSignerEventCursor](query, args, erc20MultSigSignerOrdering, pagination)
@@ -140,6 +165,7 @@ func (m *ERC20MultiSigSignerEvent) GetRemovedEvents(ctx context.Context, validat
 			SignerChange: e.SignerChange,
 			Submitter:    e.Submitter,
 			Nonce:        e.Nonce,
+			TxHash:       e.TxHash,
 			VegaTime:     e.VegaTime,
 			EpochID:      e.EpochID,
 			Event:        e.Event,

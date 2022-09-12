@@ -376,27 +376,9 @@ func (r *mySubscriptionResolver) MarketsDepth(ctx context.Context, marketIds []s
 		return nil, customErrorFromStatus(err)
 	}
 
-	return grpcStreamToGraphQlChannel[*v2.ObserveMarketsDepthResponse, []*types.MarketDepth](r.log, "marketsDepth", stream,
+	return grpcStreamToGraphQlChannel[*v2.ObserveMarketsDepthResponse](r.log, "marketsDepth", stream,
 		func(md *v2.ObserveMarketsDepthResponse) []*types.MarketDepth {
 			return md.MarketDepth
-		}), nil
-}
-
-func (r *mySubscriptionResolver) MarketDepth(ctx context.Context, market string) (<-chan *types.MarketDepth, error) {
-	req := &v2.ObserveMarketsDepthRequest{
-		MarketIds: []string{market},
-	}
-	stream, err := r.tradingDataClientV2.ObserveMarketsDepth(ctx, req)
-	if err != nil {
-		return nil, customErrorFromStatus(err)
-	}
-
-	return grpcStreamToGraphQlChannel[*v2.ObserveMarketsDepthResponse, *types.MarketDepth](r.log, "marketdepth", stream,
-		func(md *v2.ObserveMarketsDepthResponse) *types.MarketDepth {
-			if len(md.MarketDepth) > 0 {
-				return md.MarketDepth[0]
-			}
-			return nil
 		}), nil
 }
 
@@ -409,27 +391,9 @@ func (r *mySubscriptionResolver) MarketsDepthUpdate(ctx context.Context, marketI
 		return nil, customErrorFromStatus(err)
 	}
 
-	return grpcStreamToGraphQlChannel[*v2.ObserveMarketsDepthUpdatesResponse, []*types.MarketDepthUpdate](r.log, "marketsDepthUpdate", stream,
+	return grpcStreamToGraphQlChannel[*v2.ObserveMarketsDepthUpdatesResponse](r.log, "marketsDepthUpdate", stream,
 		func(md *v2.ObserveMarketsDepthUpdatesResponse) []*types.MarketDepthUpdate {
 			return md.Update
-		}), nil
-}
-
-func (r *mySubscriptionResolver) MarketDepthUpdate(ctx context.Context, market string) (<-chan *types.MarketDepthUpdate, error) {
-	req := &v2.ObserveMarketsDepthUpdatesRequest{
-		MarketIds: []string{market},
-	}
-	stream, err := r.tradingDataClientV2.ObserveMarketsDepthUpdates(ctx, req)
-	if err != nil {
-		return nil, customErrorFromStatus(err)
-	}
-
-	return grpcStreamToGraphQlChannel[*v2.ObserveMarketsDepthUpdatesResponse, *types.MarketDepthUpdate](r.log, "marketDepthUpdate", stream,
-		func(md *v2.ObserveMarketsDepthUpdatesResponse) *types.MarketDepthUpdate {
-			if len(md.Update) > 0 {
-				return md.Update[0]
-			}
-			return nil
 		}), nil
 }
 
@@ -442,31 +406,9 @@ func (r *mySubscriptionResolver) MarketsData(ctx context.Context, marketIds []st
 		return nil, customErrorFromStatus(err)
 	}
 
-	return grpcStreamToGraphQlChannel[*v2.ObserveMarketsDataResponse, []*types.MarketData](r.log, "marketsdata", stream,
+	return grpcStreamToGraphQlChannel[*v2.ObserveMarketsDataResponse](r.log, "marketsdata", stream,
 		func(md *v2.ObserveMarketsDataResponse) []*types.MarketData {
 			return md.MarketData
-		}), nil
-}
-
-func (r *mySubscriptionResolver) MarketData(ctx context.Context, marketID *string) (<-chan *types.MarketData, error) {
-	var marketIds []string
-	if marketID != nil {
-		marketIds = append(marketIds, *marketID)
-	}
-	req := &v2.ObserveMarketsDataRequest{
-		MarketIds: marketIds,
-	}
-	stream, err := r.tradingDataClientV2.ObserveMarketsData(ctx, req)
-	if err != nil {
-		return nil, customErrorFromStatus(err)
-	}
-
-	return grpcStreamToGraphQlChannel[*v2.ObserveMarketsDataResponse, *types.MarketData](r.log, "marketdata", stream,
-		func(md *v2.ObserveMarketsDataResponse) *types.MarketData {
-			if len(md.MarketData) > 0 {
-				return md.MarketData[0]
-			}
-			return nil
 		}), nil
 }
 

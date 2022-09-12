@@ -30,7 +30,7 @@ func (m *Market) EnterAuction(ctx context.Context) {
 	m.enterAuction(ctx)
 }
 
-func (m *Market) LeaveAuctionWithIdGen(ctx context.Context, now time.Time, generator IDGenerator) {
+func (m *Market) LeaveAuctionWithIDGen(ctx context.Context, now time.Time, generator IDGenerator) {
 	m.idgen = generator
 	defer func() { m.idgen = nil }()
 	m.leaveAuction(ctx, now)
@@ -156,4 +156,8 @@ func (m *Market) ValidateOrder(order *types.Order) bool {
 	}
 	return (order.Price.EQ(order2.Price) && order.Size == order2.Size &&
 		order.Remaining == order2.Remaining && order.Status == order2.Status)
+}
+
+func (m *Market) DumpBook() {
+	m.matching.PrintState("test")
 }

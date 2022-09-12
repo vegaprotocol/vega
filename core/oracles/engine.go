@@ -30,6 +30,7 @@ type Broker interface {
 }
 
 // TimeService interface.
+//
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/core/oracles TimeService
 type TimeService interface {
 	GetTimeNow() time.Time
@@ -72,6 +73,16 @@ func (e *Engine) ListensToPubKeys(data OracleData) bool {
 	})
 }
 
+func (e *Engine) HasMatch(data OracleData) (bool, error) {
+	result, err := e.subscriptions.filterSubscribers(func(spec OracleSpec) (bool, error) {
+		return spec.MatchData(data)
+	})
+	if err != nil {
+		return false, err
+	}
+	return result.hasMatched(), nil
+}
+
 // BroadcastData broadcasts data to products and risk models that are interested
 // in it. If no one is listening to this OracleData, it is discarded.
 func (e *Engine) BroadcastData(ctx context.Context, data OracleData) error {
@@ -97,7 +108,6 @@ func (e *Engine) BroadcastData(ctx context.Context, data OracleData) error {
 				logging.String("data", strings.Join(strs, ", ")),
 			)
 		}
-		e.sendUnmatchedOracleData(ctx, data)
 		return nil
 	}
 
@@ -178,31 +188,6 @@ func (e *Engine) sendMatchedOracleData(ctx context.Context, data OracleData, spe
 		Data:           payload,
 		MatchedSpecIds: ids,
 		BroadcastAt:    e.timeService.GetTimeNow().UnixNano(),
-	}
-	e.broker.Send(events.NewOracleDataEvent(ctx, dataProto))
-}
-
-// sendUnmatchedOracleData send an event to the broker to inform of
-// an unmatched oracle data.
-// If the oracle data has been emitted by an internal oracle, the sending
-// is skipped.
-func (e *Engine) sendUnmatchedOracleData(ctx context.Context, data OracleData) {
-	if data.FromInternalOracle() {
-		return
-	}
-
-	payload := make([]*oraclespb.Property, 0, len(data.Data))
-	for name, value := range data.Data {
-		payload = append(payload, &oraclespb.Property{
-			Name:  name,
-			Value: value,
-		})
-	}
-
-	dataProto := oraclespb.OracleData{
-		PubKeys:        data.PubKeys,
-		Data:           payload,
-		MatchedSpecIds: []string{},
 	}
 	e.broker.Send(events.NewOracleDataEvent(ctx, dataProto))
 }
