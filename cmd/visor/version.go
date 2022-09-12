@@ -23,7 +23,7 @@ import (
 
 const (
 	outputFlagName     = "output"
-	outputFlagValJson  = "json"
+	outputFlagValJSON  = "json"
 	outputFlagValHuman = "human"
 )
 
@@ -46,7 +46,7 @@ var versionCmd = &cobra.Command{
 		case outputFlagValHuman:
 			fmt.Printf("Vega Visor CLI %s (%s)\n", version.Get(), version.GetCommitHash())
 			return nil
-		case outputFlagValJson:
+		case outputFlagValJSON:
 			return vgjson.Print(struct {
 				Version string `json:"version"`
 				Hash    string `json:"hash"`
@@ -55,7 +55,7 @@ var versionCmd = &cobra.Command{
 				Hash:    version.GetCommitHash(),
 			})
 		default:
-			return fmt.Errorf("%s flag must be either %q or %q", outputFlagName, outputFlagValHuman, outputFlagValJson)
+			return fmt.Errorf("%s flag must be either %q or %q", outputFlagName, outputFlagValHuman, outputFlagValJSON)
 		}
 	},
 }
