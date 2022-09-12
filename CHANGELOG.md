@@ -43,6 +43,7 @@
 - [5888](https://github.com/vegaprotocol/vega/issues/5888) - Add Liquidity Provision subscription to GraphQL
 - [5961](https://github.com/vegaprotocol/vega/issues/5961) - Add batch market instructions command
 - [5974](https://github.com/vegaprotocol/vega/issues/5974) - Flatten subscription in `Graphql`
+- [6146](https://github.com/vegaprotocol/vega/issues/6146) - Add version command to Vega Visor
 
 ### 🐛 Fixes
 - [5934](https://github.com/vegaprotocol/vega/issues/5934) - Ensure wallet without permissions can be read
