@@ -22,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/logging"
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -36,7 +37,7 @@ func addTestOrder(t *testing.T, os *sqlstore.Orders, id entities.OrderID, block 
 		MarketID:        market.ID,
 		PartyID:         party.ID,
 		Side:            side,
-		Price:           price,
+		Price:           decimal.NewFromInt(price),
 		Size:            size,
 		Remaining:       remaining,
 		TimeInForce:     timeInForce,
@@ -44,7 +45,7 @@ func addTestOrder(t *testing.T, os *sqlstore.Orders, id entities.OrderID, block 
 		Status:          status,
 		Reference:       reference,
 		Version:         version,
-		PeggedOffset:    0,
+		PeggedOffset:    decimal.NewFromInt(0),
 		PeggedReference: types.PeggedReferenceMid,
 		CreatedAt:       time.Now().Truncate(time.Microsecond),
 		UpdatedAt:       time.Now().Add(5 * time.Second).Truncate(time.Microsecond),
