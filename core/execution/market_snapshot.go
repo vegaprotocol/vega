@@ -147,7 +147,6 @@ func NewMarketFromSnapshot(
 		lastMidBuyPrice:            em.LastMidBid.Clone(),
 		lastMidSellPrice:           em.LastMidAsk.Clone(),
 		markPrice:                  em.CurrentMarkPrice.Clone(),
-		stateChanged:               true,
 		priceFactor:                priceFactor,
 		lastMarketValueProxy:       em.LastMarketValueProxy,
 		lastEquityShareDistributed: time.Unix(0, em.LastEquityShareDistributed),
@@ -195,8 +194,6 @@ func (m *Market) getState() *types.ExecMarket {
 		FeeSplitter:                m.feeSplitter.GetState(),
 		SettlementPrice:            sp,
 	}
-
-	m.stateChanged = false
 
 	return em
 }
