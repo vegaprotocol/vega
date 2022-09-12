@@ -27,36 +27,43 @@ type candleSource interface {
 		p entities.CursorPagination) ([]entities.Candle, entities.PageInfo, error)
 }
 
-type subscribeRequest struct {
-	id  string
-	out chan entities.Candle
+type subscriptionMsg struct {
+	subscribe bool
+	id        string
+	out       chan entities.Candle
+}
+
+func (m subscriptionMsg) String() string {
+	if m.subscribe {
+		return fmt.Sprintf("unsubscribe, subscription id:%s", m.id)
+	}
+
+	return "subscribe"
 }
 
 type CandleUpdates struct {
-	log                *logging.Logger
-	candleSource       candleSource
-	candleID           string
-	subscribeChan      chan subscribeRequest
-	unsubscribeChan    chan string
-	nextSubscriptionID uint64
-	config             CandleUpdatesConfig
+	log                 *logging.Logger
+	candleSource        candleSource
+	candleID            string
+	subscriptionMsgChan chan subscriptionMsg
+	nextSubscriptionID  uint64
+	config              CandleUpdatesConfig
 }
 
 func NewCandleUpdates(ctx context.Context, log *logging.Logger, candleID string, candleSource candleSource,
-	config CandleUpdatesConfig) (*CandleUpdates, error,
-) {
+	config CandleUpdatesConfig,
+) *CandleUpdates {
 	ces := &CandleUpdates{
-		log:             log,
-		candleSource:    candleSource,
-		candleID:        candleID,
-		config:          config,
-		subscribeChan:   make(chan subscribeRequest),
-		unsubscribeChan: make(chan string),
+		log:                 log,
+		candleSource:        candleSource,
+		candleID:            candleID,
+		config:              config,
+		subscriptionMsgChan: make(chan subscriptionMsg, config.CandleUpdatesStreamSubscriptionMsgBufferSize),
 	}
 
 	go ces.run(ctx)
 
-	return ces, nil
+	return ces
 }
 
 func (s *CandleUpdates) run(ctx context.Context) {
@@ -66,34 +73,60 @@ func (s *CandleUpdates) run(ctx context.Context) {
 	ticker := time.NewTicker(s.config.CandleUpdatesStreamInterval.Duration)
 	var lastCandle *entities.Candle
 
+	errorGettingCandleUpdates := false
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case <-ticker.C:
-			if len(subscriptions) > 0 {
-				candles, err := s.getCandleUpdates(ctx, lastCandle)
-				if err != nil {
-					s.log.Errorf("failed to get candles, closing stream for candle id %s: %w", s.candleID, err)
-					return
-				}
+		case subscriptionMsg := <-s.subscriptionMsgChan:
+			s.handleSubscription(subscriptions, subscriptionMsg, lastCandle)
+		default:
+			select {
+			case <-ctx.Done():
+				return
+			case subscription := <-s.subscriptionMsgChan:
+				s.handleSubscription(subscriptions, subscription, lastCandle)
+			case <-ticker.C:
+				if len(subscriptions) > 0 {
+					candles, err := s.getCandleUpdates(ctx, lastCandle)
+					if err != nil {
+						if !errorGettingCandleUpdates {
+							s.log.Errorf("failed to get candles for candle id %s: %w", s.candleID, err)
+						}
 
-				if len(candles) > 0 {
-					lastCandle = &candles[len(candles)-1]
-				}
+						errorGettingCandleUpdates = true
+					} else {
+						if errorGettingCandleUpdates {
+							s.log.Infof("successfully got candles for candle id %s", s.candleID)
+						}
+						errorGettingCandleUpdates = false
 
-				s.sendCandles(candles, subscriptions)
-			} else {
-				lastCandle = nil
+						if len(candles) > 0 {
+							lastCandle = &candles[len(candles)-1]
+						}
+
+						s.sendCandlesToSubscribers(candles, subscriptions)
+					}
+				} else {
+					lastCandle = nil
+				}
 			}
-		case subscription := <-s.subscribeChan:
-			subscriptions[subscription.id] = subscription.out
-			if lastCandle != nil {
-				s.sendCandles([]entities.Candle{*lastCandle}, map[string]chan entities.Candle{subscription.id: subscription.out})
-			}
-		case id := <-s.unsubscribeChan:
-			removeSubscription(subscriptions, id)
 		}
+	}
+}
+
+func (s *CandleUpdates) handleSubscription(subscriptions map[string]chan entities.Candle, subscription subscriptionMsg, lastCandle *entities.Candle) {
+	if subscription.subscribe {
+		s.addSubscription(subscriptions, subscription, lastCandle)
+	} else {
+		removeSubscription(subscriptions, subscription.id)
+	}
+}
+
+func (s *CandleUpdates) addSubscription(subscriptions map[string]chan entities.Candle, subscription subscriptionMsg, lastCandle *entities.Candle) {
+	subscriptions[subscription.id] = subscription.out
+	if lastCandle != nil {
+		s.sendCandlesToSubscribers([]entities.Candle{*lastCandle}, map[string]chan entities.Candle{subscription.id: subscription.out})
 	}
 }
 
@@ -111,21 +144,46 @@ func closeAllSubscriptions(subscribers map[string]chan entities.Candle) {
 }
 
 // Subscribe returns a unique subscription id and channel on which updates will be sent.
-func (s *CandleUpdates) Subscribe() (string, <-chan entities.Candle) {
+func (s *CandleUpdates) Subscribe() (string, <-chan entities.Candle, error) {
 	out := make(chan entities.Candle, s.config.CandleUpdatesStreamBufferSize)
 
 	nextID := atomic.AddUint64(&s.nextSubscriptionID, 1)
 	subscriptionID := fmt.Sprintf("%s-%d", s.candleID, nextID)
-	s.subscribeChan <- subscribeRequest{
-		id:  subscriptionID,
-		out: out,
+
+	msg := subscriptionMsg{
+		subscribe: true,
+		id:        subscriptionID,
+		out:       out,
 	}
 
-	return subscriptionID, out
+	err := s.sendSubscriptionMessage(msg)
+	if err != nil {
+		return "", nil, err
+	}
+
+	return subscriptionID, out, nil
 }
 
-func (s *CandleUpdates) Unsubscribe(subscriptionID string) {
-	s.unsubscribeChan <- subscriptionID
+func (s *CandleUpdates) Unsubscribe(subscriptionID string) error {
+	msg := subscriptionMsg{
+		subscribe: false,
+		id:        subscriptionID,
+	}
+
+	return s.sendSubscriptionMessage(msg)
+}
+
+func (s *CandleUpdates) sendSubscriptionMessage(msg subscriptionMsg) error {
+	if s.config.CandleUpdatesStreamSubscriptionMsgBufferSize == 0 {
+		s.subscriptionMsgChan <- msg
+	} else {
+		select {
+		case s.subscriptionMsgChan <- msg:
+		default:
+			return fmt.Errorf("failed to send subscription message \"%s\", subscription message buffer is full, try again later", msg)
+		}
+	}
+	return nil
 }
 
 func (s *CandleUpdates) getCandleUpdates(ctx context.Context, lastCandle *entities.Candle) ([]entities.Candle, error) {
@@ -164,7 +222,7 @@ func (s *CandleUpdates) getCandleUpdates(ctx context.Context, lastCandle *entiti
 	return updates, nil
 }
 
-func (s *CandleUpdates) sendCandles(candles []entities.Candle, subscriptions map[string]chan entities.Candle) {
+func (s *CandleUpdates) sendCandlesToSubscribers(candles []entities.Candle, subscriptions map[string]chan entities.Candle) {
 	for subscriptionID, outCh := range subscriptions {
 		for _, candle := range candles {
 			select {
