@@ -79,9 +79,11 @@ Feature: Amend orders
  
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
-      | party1 | ETH/DEC19 | 0           | 0      | 0       | 0  |
-      | party2 | ETH/DEC19 | 0           | 0      | 0       | 0   |
-      | party3 | ETH/DEC19 | 0           | 0      | 0       | 0   |
+      | party1 | ETH/DEC19 | 0           | 0      | 0       | 0       |
+      | party2 | ETH/DEC19 | 0           | 0      | 0       | 0       |
+      | party3 | ETH/DEC19 | 0           | 0      | 0       | 0       |
+
+    And the insurance pool balance should be "0" for the market "ETH/DEC19"
     # trigger a new mark price 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
@@ -127,12 +129,14 @@ Feature: Amend orders
       | party1 | -2     | 0              | 0            |
       | party2 | 0      | 0              | 0            |
       | party3 | 2      | 0              | 0            |
+
+    And the insurance pool balance should be "0" for the market "ETH/DEC19"
     # trigger a new trade
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party3 | ETH/DEC19 | buy  | 1      | 2100  | 1                | TYPE_LIMIT | TIF_GTC | party3-ref-1 |
 
-      And the parties should have the following account balances:
+    And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
       | party1 | USD   | ETH/DEC19 | 0      | 10000    | 0     |
       | party2 | USD   | ETH/DEC19 | 0      | 10000    | 0     |
@@ -149,5 +153,6 @@ Feature: Amend orders
       | party1 | -3     | 0              | 0            |
       | party2 | 0      | 0              | 0            |
       | party3 | 3      | 0              | 0            |
+    And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
 
