@@ -19,14 +19,12 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
+	"code.vegaprotocol.io/vega/datanode/config/encoding"
 	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/shopspring/decimal"
-
 	"github.com/stretchr/testify/assert"
-
-	"code.vegaprotocol.io/vega/datanode/config/encoding"
-	"code.vegaprotocol.io/vega/logging"
 )
 
 type nonReturningCandleSource struct{}
@@ -37,8 +35,6 @@ func (t *nonReturningCandleSource) GetCandleDataForTimeSpan(ctx context.Context,
 	for {
 		time.Sleep(1 * time.Second)
 	}
-
-	return nil, entities.PageInfo{}, nil
 }
 
 type errorsAlwaysCandleSource struct{}
@@ -271,11 +267,11 @@ func TestSubscribeAndUnSubscribeWithNonReturningSource(t *testing.T) {
 	updates := candlesv2.NewCandleUpdates(context.Background(), logging.NewTestLogger(), "testCandles",
 		testCandleSource, newTestCandleConfig(1, 100).CandleUpdates)
 
-	subId1, _, _ := updates.Subscribe()
-	subId2, _, _ := updates.Subscribe()
+	subID1, _, _ := updates.Subscribe()
+	subID2, _, _ := updates.Subscribe()
 
-	updates.Unsubscribe(subId1)
-	updates.Unsubscribe(subId2)
+	updates.Unsubscribe(subID1)
+	updates.Unsubscribe(subID2)
 }
 
 func newTestCandleConfig(bufferSize int, subscribeBufferSize int) candlesv2.Config {

@@ -36,9 +36,9 @@ type subscriptionMsg struct {
 func (m subscriptionMsg) String() string {
 	if m.subscribe {
 		return fmt.Sprintf("unsubscribe, subscription id:%s", m.id)
-	} else {
-		return fmt.Sprintf("subscribe")
 	}
+
+	return "subscribe"
 }
 
 type CandleUpdates struct {
