@@ -63,6 +63,7 @@
 - [6131](https://github.com/vegaprotocol/vega/issues/6131) - `nullblockchain` should call Tendermint Info `abci` to match real flow
 - [6119](https://github.com/vegaprotocol/vega/issues/6119) - Correct order in which market event is emitted
 - [5890](https://github.com/vegaprotocol/vega/issues/5890) - Margin breach during amend doesn't cancel order
+- [6144](https://github.com/vegaprotocol/vega/issues/6144) - Price and Pegged Offset in orders are Decimals
 
 ## 0.54.0
 
