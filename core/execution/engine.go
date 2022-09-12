@@ -103,8 +103,6 @@ type Engine struct {
 
 	npv netParamsValues
 
-	// Snapshot
-	stateChanged          bool
 	snapshotSerialised    []byte
 	newGeneratedProviders []types.StateProvider // new providers generated during the last state change
 
@@ -480,7 +478,6 @@ func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *Market) err
 
 func (e *Engine) removeMarket(mktID string) {
 	e.log.Debug("removing market", logging.String("id", mktID))
-	e.stateChanged = true
 
 	delete(e.markets, mktID)
 	for i, mkt := range e.marketsCpy {

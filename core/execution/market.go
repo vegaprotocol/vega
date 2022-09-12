@@ -262,7 +262,6 @@ type Market struct {
 	minLPStakeQuantumMultiple  num.Decimal
 
 	stateVarEngine        StateVarEngine
-	stateChanged          bool
 	marketActivityTracker *MarketActivityTracker
 	positionFactor        num.Decimal // 10^pdp
 	assetDP               uint32
@@ -400,7 +399,6 @@ func NewMarket(
 		lastMidSellPrice:          num.UintZero(),
 		lastMidBuyPrice:           num.UintZero(),
 		lastBestBidPrice:          num.UintZero(),
-		stateChanged:              true,
 		stateVarEngine:            stateVarEngine,
 		marketActivityTracker:     marketActivityTracker,
 		priceFactor:               priceFactor,
@@ -449,7 +447,6 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 	m.tradableInstrument.Instrument.Product.NotifyOnSettlementPrice(m.settlementPrice)
 
 	m.updateLiquidityFee(ctx)
-	m.stateChanged = true
 	// risk model hasn't changed -> return
 	if !recalcMargins {
 		return nil
@@ -597,7 +594,6 @@ func (m *Market) Reject(ctx context.Context) error {
 	m.mkt.State = types.MarketStateRejected
 	m.mkt.TradingMode = types.MarketTradingModeNoTrading
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-	m.stateChanged = true
 
 	return nil
 }
@@ -699,8 +695,6 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 	m.pMonitor.OnTimeUpdate(t)
 	m.feeSplitter.SetCurrentTime(t)
 
-	m.stateChanged = true
-
 	// TODO(): This also assume that the market is not
 	// being closed before the market is leaving
 	// the opening auction, but settlement at expiry is
@@ -720,7 +714,6 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 	// distribute liquidity fees each `m.lpFeeDistributionTimeStep`
 	if t.Sub(m.lastEquityShareDistributed) > m.lpFeeDistributionTimeStep {
 		m.lastEquityShareDistributed = t
-		m.stateChanged = true
 
 		if err := m.distributeLiquidityFees(ctx); err != nil {
 			m.log.Panic("liquidity fee distribution error", logging.Error(err))
@@ -753,7 +746,6 @@ func (m *Market) updateMarketValueProxy() {
 	ts := m.liquidity.ProvisionsPerParty().TotalStake()
 	m.lastMarketValueProxy = m.feeSplitter.MarketValueProxy(
 		m.marketValueWindowLength, ts)
-	m.stateChanged = true
 }
 
 func (m *Market) removeOrders(ctx context.Context) {
@@ -812,7 +804,6 @@ func (m *Market) closeCancelledMarket(ctx context.Context, t time.Time) error {
 	}
 
 	m.closed = true
-	m.stateChanged = true
 
 	return nil
 }
@@ -849,7 +840,6 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 
 	m.removeOrders(ctx)
 
-	m.stateChanged = true
 	return nil
 }
 
@@ -966,7 +956,6 @@ func (m *Market) enterAuction(ctx context.Context) {
 		m.mkt.State = types.MarketStateSuspended
 		m.mkt.TradingMode = types.MarketTradingModeMonitoringAuction
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-		m.stateChanged = true
 	}
 }
 
@@ -999,7 +988,6 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 			m.mkt.State = types.MarketStateActive
 			m.mkt.TradingMode = types.MarketTradingModeContinuous
 			m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-			m.stateChanged = true
 
 			m.updateLiquidityFee(ctx)
 			m.OnAuctionEnded()
@@ -1700,7 +1688,6 @@ func (m *Market) updateLiquidityFee(ctx context.Context) {
 		m.broker.Send(
 			events.NewMarketUpdatedEvent(ctx, *m.mkt),
 		)
-		m.stateChanged = true
 	}
 }
 
@@ -2222,7 +2209,6 @@ func (m *Market) setMarkPrice(trade *types.Trade) {
 	// in the future this will use varying logic based on market config
 	// the responsibility for calculation could be elsewhere for testability
 	m.markPrice = trade.Price.Clone()
-	m.stateChanged = true
 }
 
 // this function handles moving money after settle MTM + risk margin updates
@@ -3210,7 +3196,6 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 		m.mkt.State = types.MarketStateTradingTerminated
 		m.mkt.TradingMode = types.MarketTradingModeNoTrading
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-		m.stateChanged = true
 
 		if m.settlementPriceInMarket == nil {
 			m.log.Debug("no settlement price", logging.MarketID(m.GetID()))
@@ -3239,7 +3224,6 @@ func (m *Market) settlementPrice(ctx context.Context, settlementPrice *num.Uint)
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	m.stateChanged = true
 	m.settlementPriceInMarket = settlementPrice
 	m.settlementPriceWithLock(ctx)
 }

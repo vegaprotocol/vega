@@ -41,12 +41,11 @@ func NewEquitySharesFromSnapshot(state *types.EquityShare) *EquityShares {
 		totalPStake:         totalPStake,
 		openingAuctionEnded: state.OpeningAuctionEnded,
 		lps:                 lps,
-		stateChanged:        true,
 	}
 }
 
 func (es EquityShares) Changed() bool {
-	return es.stateChanged
+	return true
 }
 
 func (es *EquityShares) GetState() *types.EquityShare {
@@ -65,8 +64,6 @@ func (es *EquityShares) GetState() *types.EquityShare {
 	sort.Slice(lps, func(i, j int) bool {
 		return lps[i].ID < lps[j].ID
 	})
-
-	es.stateChanged = false
 
 	return &types.EquityShare{
 		Mvp:                 es.mvp,
