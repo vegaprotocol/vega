@@ -215,8 +215,13 @@ func (e *Engine) Hash() []byte {
 	}
 
 	sort.Strings(hashes)
+
+	// get the accounts hash + add it at end of all markets hash
+	accountsHash := e.collateral.Hash()
+	e.log.Debug("accounts state hash", logging.Hash(accountsHash))
+
 	bytes := []byte{}
-	for _, h := range hashes {
+	for _, h := range append(hashes, string(accountsHash)) {
 		bytes = append(bytes, []byte(h)...)
 	}
 	return crypto.Hash(bytes)
