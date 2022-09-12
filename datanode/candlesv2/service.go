@@ -58,8 +58,7 @@ func NewService(ctx context.Context, log *logging.Logger, config Config, candleS
 	}
 }
 
-// Subscribe to a channel of new or updated candles. The subscriber id will be returned as an uint64 value
-// and must be retained for future reference and to Unsubscribe.
+// Subscribe to a channel of new or updated candles. The subscriber id will must be retained for future reference and to Unsubscribe.
 func (cs *Svc) Subscribe(ctx context.Context, candleID string) (string, <-chan entities.Candle, error) {
 	cs.updatesSubscriptionMutex.Lock()
 	defer cs.updatesSubscriptionMutex.Unlock()
@@ -74,16 +73,16 @@ func (cs *Svc) Subscribe(ctx context.Context, candleID string) (string, <-chan e
 	}
 
 	if _, ok := cs.candleIDToUpdatesStream[candleID]; !ok {
-		updates, err := NewCandleUpdates(cs.ctx, cs.log, candleID, cs, cs.Config.CandleUpdates)
-		if err != nil {
-			return "", nil, fmt.Errorf("subsribing to candle updates:%w", err)
-		}
-
+		updates := NewCandleUpdates(cs.ctx, cs.log, candleID, cs, cs.Config.CandleUpdates)
 		cs.candleIDToUpdatesStream[candleID] = updates
 	}
 
 	updatesStream := cs.candleIDToUpdatesStream[candleID]
-	subscriptionID, out := updatesStream.Subscribe()
+	subscriptionID, out, err := updatesStream.Subscribe()
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to subscribe to candle %s: %w", candleID, err)
+	}
+
 	cs.subscriptionIDToCandleID[subscriptionID] = candleID
 
 	return subscriptionID, out, nil
@@ -95,7 +94,10 @@ func (cs *Svc) Unsubscribe(subscriptionID string) error {
 
 	if candleID, ok := cs.subscriptionIDToCandleID[subscriptionID]; ok {
 		updatesStream := cs.candleIDToUpdatesStream[candleID]
-		updatesStream.Unsubscribe(subscriptionID)
+		err := updatesStream.Unsubscribe(subscriptionID)
+		if err != nil {
+			return fmt.Errorf("failed to unsubscribe from candle %s: %w", candleID, err)
+		}
 		return nil
 	}
 	return fmt.Errorf("no subscription found for id %s", subscriptionID)
