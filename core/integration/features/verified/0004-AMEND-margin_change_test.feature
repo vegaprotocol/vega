@@ -63,7 +63,10 @@ Feature: Amend orders
       | aux2   | ETH/DEC19 | buy  | 1      | 2000 | 0                | TYPE_LIMIT | TIF_GTC |
       | aux    | ETH/DEC19 | sell | 1      | 2000 | 0                | TYPE_LIMIT | TIF_GTC |
     Then the opening auction period ends for market "ETH/DEC19"
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+  
+    And the market data for the market "ETH/DEC19" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest |
+      | 2000       | TRADING_MODE_CONTINUOUS | 0            | 50000          | 1             |
     # party 123 plalces orders on the book
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
@@ -88,6 +91,10 @@ Feature: Amend orders
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party3 | ETH/DEC19 | buy  | 2      | 2100  | 1                | TYPE_LIMIT | TIF_GTC | party3-ref-1 |
+
+    And the market data for the market "ETH/DEC19" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest |
+      | 2100       | TRADING_MODE_CONTINUOUS | 0            | 50000          | 3             |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
@@ -134,26 +141,31 @@ Feature: Amend orders
     # trigger a new trade
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-      | party3 | ETH/DEC19 | buy  | 1      | 2100  | 1                | TYPE_LIMIT | TIF_GTC | party3-ref-1 |
+      | party3 | ETH/DEC19 | buy  | 6      | 2200  | 2                | TYPE_LIMIT | TIF_GTC | party3-ref-1 |
+
+    And the market data for the market "ETH/DEC19" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest |
+      | 2101       | TRADING_MODE_CONTINUOUS | 0            | 50000          | 8             |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
-      | party1 | USD   | ETH/DEC19 | 0      | 1000000  | 0     |
+      | party1 | USD   | ETH/DEC19 | 0      | 999995   | 0     |
       | party2 | USD   | ETH/DEC19 | 0      | 1000000  | 0     |
-      | party3 | USD   | ETH/DEC19 | 2400   | 997592   | 0     |
+      | party3 | USD   | ETH/DEC19 | 6464   | 993522   | 0     |
  
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
       | party1 | ETH/DEC19 | 0           | 0      | 0       | 0       |
       | party2 | ETH/DEC19 | 0           | 0      | 0       | 0       |
-      | party3 | ETH/DEC19 | 600         | 1920   | 2400    | 3000    |
+      | party3 | ETH/DEC19 | 1616        | 5171   | 6464    | 8080    |
   
     Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | party1 | -3     | 0              | 0            |
+      | party1 | -5     | -5             | 0            |
       | party2 | 0      | 0              | 0            |
-      | party3 | 3      | 0              | 0            |
+      | party3 | 8      | 5              | 0            |
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
+
 
 
 
