@@ -96,6 +96,10 @@ Feature: Amend orders
       | mark price | trading mode            | target stake | supplied stake | open interest |
       | 2100       | TRADING_MODE_CONTINUOUS | 0            | 50000          | 3             |
 
+    Then the following trades should be executed:
+      | buyer  | price  | size | seller |
+      | party3 | 2100   | 2    | party1 |
+
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
       | party1 | USD   | ETH/DEC19 | 0      | 1000000  | 0     |
