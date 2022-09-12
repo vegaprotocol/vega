@@ -43,12 +43,12 @@ Feature: Amend orders
   Scenario: 002 Reduce size success and not loosing position in order book
 # setup accounts
     Given the parties deposit on asset's general account the following amount:
-      | party | asset | amount |
-      | party1  | USD   | 10000  |
-      | party2 | USD   | 10000  |
-      | party3 | USD   | 10000  |
-      | aux    | USD   | 100000 |
-      | aux2   | USD   | 100000 |
+      | party  | asset | amount   |
+      | party1 | USD   | 1000000  |
+      | party2 | USD   | 1000000  |
+      | party3 | USD   | 1000000  |
+      | aux    | USD   | 1000000  |
+      | aux2   | USD   | 1000000  |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -73,9 +73,9 @@ Feature: Amend orders
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
-      | party1 | USD   | ETH/DEC19 | 0      | 10000    | 0     |
-      | party2 | USD   | ETH/DEC19 | 0      | 10000    | 0     |
-      | party3 | USD   | ETH/DEC19 | 0      | 10000    | 0     |
+      | party1 | USD   | ETH/DEC19 | 0      | 1000000    | 0     |
+      | party2 | USD   | ETH/DEC19 | 0      | 1000000    | 0     |
+      | party3 | USD   | ETH/DEC19 | 0      | 1000000    | 0     |
  
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
@@ -91,9 +91,9 @@ Feature: Amend orders
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
-      | party1 | USD   | ETH/DEC19 | 0      | 10000    | 0     |
-      | party2 | USD   | ETH/DEC19 | 0      | 10000    | 0     |
-      | party3 | USD   | ETH/DEC19 | 1600   | 8395     | 0     |
+      | party1 | USD   | ETH/DEC19 | 0      | 1000000  | 0     |
+      | party2 | USD   | ETH/DEC19 | 0      | 1000000  | 0     |
+      | party3 | USD   | ETH/DEC19 | 1600   | 998395   | 0     |
  
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
@@ -114,9 +114,9 @@ Feature: Amend orders
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
-      | party1 | USD   | ETH/DEC19 | 0      | 10000    | 0     |
-      | party2 | USD   | ETH/DEC19 | 0      | 10000    | 0     |
-      | party3 | USD   | ETH/DEC19 | 1600   | 8395     | 0     |
+      | party1 | USD   | ETH/DEC19 | 0      | 1000000  | 0     |
+      | party2 | USD   | ETH/DEC19 | 0      | 1000000  | 0     |
+      | party3 | USD   | ETH/DEC19 | 1600   | 998395   | 0     |
  
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
@@ -138,9 +138,9 @@ Feature: Amend orders
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
-      | party1 | USD   | ETH/DEC19 | 0      | 10000    | 0     |
-      | party2 | USD   | ETH/DEC19 | 0      | 10000    | 0     |
-      | party3 | USD   | ETH/DEC19 | 2400   | 7592     | 0     |
+      | party1 | USD   | ETH/DEC19 | 0      | 1000000  | 0     |
+      | party2 | USD   | ETH/DEC19 | 0      | 1000000  | 0     |
+      | party3 | USD   | ETH/DEC19 | 2400   | 997592   | 0     |
  
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
@@ -154,5 +154,6 @@ Feature: Amend orders
       | party2 | 0      | 0              | 0            |
       | party3 | 3      | 0              | 0            |
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
+
 
 
