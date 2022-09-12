@@ -989,11 +989,20 @@ func (m *Market) OnAuctionEnded() {
 // leaveAuction : Return the orderbook and market to continuous trading.
 func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 	defer func() {
-		if !m.as.InAuction() && m.mkt.State == types.MarketStateSuspended {
+		if !m.as.InAuction() && (m.mkt.State == types.MarketStateSuspended || m.mkt.State == types.MarketStatePending) {
+			if m.mkt.State == types.MarketStatePending {
+				// the market is now properly open,
+				// so set the timestamp to when the opening auction actually ended
+				m.mkt.MarketTimestamps.Open = now.UnixNano()
+			}
+
 			m.mkt.State = types.MarketStateActive
 			m.mkt.TradingMode = types.MarketTradingModeContinuous
 			m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 			m.stateChanged = true
+
+			m.updateLiquidityFee(ctx)
+			m.OnAuctionEnded()
 		}
 	}()
 
@@ -1067,8 +1076,6 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 	m.checkForReferenceMoves(ctx, updatedOrders, true)
 	m.checkLiquidity(ctx, nil, true)
 	m.commandLiquidityAuction(ctx)
-	m.updateLiquidityFee(ctx)
-	m.OnAuctionEnded()
 }
 
 func (m *Market) validatePeggedOrder(order *types.Order) types.OrderError {

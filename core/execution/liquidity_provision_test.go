@@ -2336,7 +2336,7 @@ func TestAmend(t *testing.T) {
 		ctx := context.Background()
 
 		// Create a new party account with very little funding
-		addAccountWithAmount(tm, "party-A", 10000000)
+		addAccountWithAmount(tm, "party-A", 10000000000)
 		addAccountWithAmount(tm, "party-B", 10000000)
 		addAccountWithAmount(tm, "party-C", 10000000)
 		tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()

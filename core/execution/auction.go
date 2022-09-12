@@ -16,7 +16,6 @@ import (
 	"context"
 	"time"
 
-	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
 )
@@ -82,13 +81,6 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 		}
 		m.log.Info("leaving opening auction for market", logging.String("market-id", m.mkt.ID))
 		m.leaveAuction(ctx, now)
-		// the market is now in a ACTIVE state
-		m.mkt.State = types.MarketStateActive
-		m.mkt.TradingMode = types.MarketTradingModeContinuous
-
-		// the market is now properly open, so set the timestamp to when the opening auction actually ended
-		m.mkt.MarketTimestamps.Open = now.UnixNano()
-		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 
 		m.equityShares.OpeningAuctionEnded()
 		// start the market fee window
