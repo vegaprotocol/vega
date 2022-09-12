@@ -199,6 +199,7 @@ func getTestNullChain(t *testing.T, txnPerBlock uint64, d time.Duration) *testNu
 	n.SetABCIApp(app)
 	require.NotNil(t, n)
 
+	app.EXPECT().Info(gomock.Any()).Times(1)
 	app.EXPECT().InitChain(gomock.Any()).Times(1)
 	app.EXPECT().BeginBlock(gomock.Any()).Times(1)
 
