@@ -15,13 +15,12 @@ package server
 import (
 	"context"
 
-	"golang.org/x/sync/errgroup"
-
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	gql "code.vegaprotocol.io/vega/datanode/gateway/graphql"
 	"code.vegaprotocol.io/vega/datanode/gateway/rest"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
+	"golang.org/x/sync/errgroup"
 )
 
 type Server struct {
