@@ -35,7 +35,7 @@ func testListingKeysWithInvalidParamsFails(t *testing.T) {
 			expectedError: api.ErrParamsDoNotMatch,
 		}, {
 			name: "with empty connection token",
-			params: api.ListKeysParams{
+			params: api.SessionListKeysParams{
 				Token: "",
 			},
 			expectedError: api.ErrConnectionTokenIsRequired,
@@ -74,9 +74,12 @@ func testListingKeysWithValidParamsSucceeds(t *testing.T) {
 	if err != nil {
 		t.Fatal("could not generate key for tests: %w", err)
 	}
-	expectedPubKeys := make([]string, 0, len(w.ListPublicKeys()))
+	expectedPubKeys := make([]api.SessionNamedPublicKey, 0, len(w.ListPublicKeys()))
 	for _, key := range w.ListPublicKeys() {
-		expectedPubKeys = append(expectedPubKeys, key.Key())
+		expectedPubKeys = append(expectedPubKeys, api.SessionNamedPublicKey{
+			Name:      key.Name(),
+			PublicKey: key.Key(),
+		})
 	}
 
 	// setup
@@ -84,7 +87,7 @@ func testListingKeysWithValidParamsSucceeds(t *testing.T) {
 	token := connectWallet(t, handler.sessions, hostname, w)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.ListKeysParams{
+	result, errorDetails := handler.handle(t, ctx, api.SessionListKeysParams{
 		Token: token,
 	})
 
@@ -101,7 +104,7 @@ func testListingKeysWithInvalidTokenFails(t *testing.T) {
 	handler := newListKeysHandler(t)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.ListKeysParams{
+	result, errorDetails := handler.handle(t, ctx, api.SessionListKeysParams{
 		Token: vgrand.RandomStr(5),
 	})
 
@@ -131,7 +134,7 @@ func testListingKeysWithNotEnoughPermissionsFails(t *testing.T) {
 	token := connectWallet(t, handler.sessions, hostname, w)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.ListKeysParams{
+	result, errorDetails := handler.handle(t, ctx, api.SessionListKeysParams{
 		Token: token,
 	})
 
@@ -141,22 +144,22 @@ func testListingKeysWithNotEnoughPermissionsFails(t *testing.T) {
 }
 
 type listKeysHandler struct {
-	*api.ListKeys
+	*api.SessionListKeys
 	sessions *api.Sessions
 }
 
-func (h *listKeysHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.ListKeysResult, *jsonrpc.ErrorDetails) {
+func (h *listKeysHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.SessionListKeysResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
 	rawResult, err := h.Handle(ctx, params)
 	if rawResult != nil {
-		result, ok := rawResult.(api.ListKeysResult)
+		result, ok := rawResult.(api.SessionListKeysResult)
 		if !ok {
-			t.Fatal("ListKeys handler result is not a ListKeysResult")
+			t.Fatal("SessionListKeys handler result is not a SessionListKeysResult")
 		}
 		return result, err
 	}
-	return api.ListKeysResult{}, err
+	return api.SessionListKeysResult{}, err
 }
 
 func newListKeysHandler(t *testing.T) *listKeysHandler {
@@ -165,7 +168,7 @@ func newListKeysHandler(t *testing.T) *listKeysHandler {
 	sessions := api.NewSessions()
 
 	return &listKeysHandler{
-		ListKeys: api.NewListKeys(sessions),
-		sessions: sessions,
+		SessionListKeys: api.NewListKeys(sessions),
+		sessions:        sessions,
 	}
 }
