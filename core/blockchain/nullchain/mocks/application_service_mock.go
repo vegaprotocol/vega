@@ -90,6 +90,20 @@ func (mr *MockApplicationServiceMockRecorder) EndBlock(arg0 interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EndBlock", reflect.TypeOf((*MockApplicationService)(nil).EndBlock), arg0)
 }
 
+// Info mocks base method.
+func (m *MockApplicationService) Info(arg0 types.RequestInfo) types.ResponseInfo {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Info", arg0)
+	ret0, _ := ret[0].(types.ResponseInfo)
+	return ret0
+}
+
+// Info indicates an expected call of Info.
+func (mr *MockApplicationServiceMockRecorder) Info(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Info", reflect.TypeOf((*MockApplicationService)(nil).Info), arg0)
+}
+
 // InitChain mocks base method.
 func (m *MockApplicationService) InitChain(arg0 types.RequestInitChain) types.ResponseInitChain {
 	m.ctrl.T.Helper()
