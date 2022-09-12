@@ -99,7 +99,6 @@ func (t *TransferBase) IsValid() error {
 		if t.To != "0000000000000000000000000000000000000000000000000000000000000000" {
 			return ErrInvalidToForRewardAccountType
 		}
-		break
 	case AccountTypeGeneral, AccountTypeLPFeeReward, AccountTypeMakerReceivedFeeReward, AccountTypeMakerPaidFeeReward, AccountTypeMarketProposerReward /*, AccountTypeLockedForStaking*/ :
 		break
 	default:
