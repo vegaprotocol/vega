@@ -251,7 +251,7 @@ func (l *NodeCommand) preRun([]string) (err error) {
 
 	coreClient := vegaprotoapi.NewCoreServiceClient(conn)
 	l.vegaCoreServiceClient = api.NewVegaCoreServiceClient(coreClient, conn.GetState)
-	return
+	return nil
 }
 
 func (l *NodeCommand) setupServices() error {

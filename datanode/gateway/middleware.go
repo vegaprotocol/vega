@@ -66,7 +66,7 @@ func MetricCollectionMiddleware(log *logging.Logger, next http.Handler) http.Han
 	})
 }
 
-// Chain builds the middleware Chain recursively, functions are first class
+// Chain builds the middleware Chain recursively, functions are first class.
 func Chain(f http.Handler, m ...func(http.Handler) http.Handler) http.Handler {
 	// if our Chain is done, use the original handler func
 	if len(m) == 0 {
