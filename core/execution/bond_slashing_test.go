@@ -203,7 +203,7 @@ func TestRejectLiquidityProvisionWithInsufficientFundsForInitialMargin(t *testin
 
 	mainPartyInitialDeposit := uint64(199) // 199 is the minimum required amount to meet the commitment amount and maintenance margin on resulting orders
 	transferResp := addAccountWithAmount(tm, mainParty, mainPartyInitialDeposit)
-	mainPartyGenAccID := transferResp.Transfers[0].ToAccount
+	mainPartyGenAccID := transferResp.Entries[0].ToAccount
 
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
@@ -256,7 +256,7 @@ func TestRejectLiquidityProvisionWithInsufficientFundsForInitialMargin(t *testin
 	require.NotNil(t, marginAcc)
 
 	exp := num.UintZero().Sub(num.NewUint(mainPartyInitialDeposit), marginAcc.Balance)
-	genAcc, err := tm.collateralEngine.GetAccountByID(mainPartyGenAccID)
+	genAcc, err := tm.collateralEngine.GetAccountByID(mainPartyGenAccID.ID())
 	require.NoError(t, err)
 	require.NotNil(t, genAcc)
 	require.Equal(t, genAcc.Balance, exp)
@@ -280,7 +280,7 @@ func TestCloseoutLPWhenCannotCoverMargin(t *testing.T) {
 
 	var mainPartyInitialDeposit uint64 = 527 // 794 is the minimum amount to cover additional orders after orderBuyAux1 fills
 	transferResp := addAccountWithAmount(tm, mainParty, mainPartyInitialDeposit)
-	mainPartyGenAccID := transferResp.Transfers[0].ToAccount
+	mainPartyGenAccID := transferResp.Entries[0].ToAccount.ID()
 	addAccount(t, tm, auxParty1)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
@@ -378,7 +378,7 @@ func TestBondAccountNotUsedForMarginShortageWhenEnoughMoneyInGeneral(t *testing.
 
 	var mainPartyInitialDeposit uint64 = 1020 // 1020 is the minimum required amount to cover margin without dipping into the bond account
 	transferResp := addAccountWithAmount(tm, mainParty, mainPartyInitialDeposit)
-	mainPartyGenAccID := transferResp.Transfers[0].ToAccount
+	mainPartyGenAccID := transferResp.Entries[0].ToAccount.ID()
 	addAccount(t, tm, auxParty1)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
@@ -472,7 +472,7 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromBondAccount(t *testing.
 
 	var mainPartyInitialDeposit uint64 = 1000 // 1020 is the minimum required amount to cover margin without dipping into the bond account
 	transferResp := addAccountWithAmount(tm, mainParty, mainPartyInitialDeposit)
-	mainPartyGenAccID := transferResp.Transfers[0].ToAccount
+	mainPartyGenAccID := transferResp.Entries[0].ToAccount.ID()
 	mainPartyMarginAccID := fmt.Sprintf("%smainParty%s3", tm.market.GetID(), tm.asset)
 	addAccount(t, tm, auxParty1)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -604,7 +604,7 @@ func TestBondAccountUsedForMarginShortagePenaltyPaidFromMarginAccount_NoCloseout
 
 	var mainPartyInitialDeposit uint64 = 800
 	transferResp := addAccountWithAmount(tm, mainParty, mainPartyInitialDeposit)
-	mainPartyGenAccID := transferResp.Transfers[0].ToAccount
+	mainPartyGenAccID := transferResp.Entries[0].ToAccount.ID()
 	mainPartyMarginAccID := fmt.Sprintf("%smainParty%s3", tm.market.GetID(), tm.asset)
 	addAccount(t, tm, auxParty1)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -716,7 +716,7 @@ func TestBondAccountUsedForMarginShortagePenaltyNotPaidOnTransitionFromAuction(t
 
 	var mainPartyInitialDeposit uint64 = 784 // 794 is the minimum required amount to cover margin without dipping into the bond account
 	transferResp := addAccountWithAmount(tm, mainParty, mainPartyInitialDeposit)
-	mainPartyGenAccID := transferResp.Transfers[0].ToAccount
+	mainPartyGenAccID := transferResp.Entries[0].ToAccount.ID()
 	addAccount(t, tm, auxParty1)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 

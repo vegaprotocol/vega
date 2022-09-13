@@ -340,7 +340,7 @@ service TradingDataService {
     // Transfer Responses
     //
     // Subscribe to a stream of Transfer Responses
-    rpc ObserveTransferResponses(ObserveTransferResponsesRequest) returns (stream ObserveTransferResponsesResponse);
+    rpc ObserveLedgerMovements(ObserveLedgerMovementsRequest) returns (stream ObserveLedgerMovementsResponse);
 
     // Key Rotations list
     //
@@ -1814,10 +1814,10 @@ message ObserveEventBusResponse {
 }
 
 // -- Transfer Responses --
-message ObserveTransferResponsesRequest {}
+message ObserveLedgerMovementsRequest {}
 
-message ObserveTransferResponsesResponse {
-    vega.TransferResponse response = 1;
+message ObserveLedgerMovementsResponse {
+    vega.LedgerMovement ledger_movement = 1;
 }
 
 // -- Key Rotations --

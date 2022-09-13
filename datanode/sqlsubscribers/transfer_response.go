@@ -57,7 +57,7 @@ func NewTransferResponse(
 }
 
 func (t *TransferResponse) Types() []events.Type {
-	return []events.Type{events.TransferResponses}
+	return []events.Type{events.LedgerMovementsEvent}
 }
 
 func (t *TransferResponse) Flush(ctx context.Context) error {

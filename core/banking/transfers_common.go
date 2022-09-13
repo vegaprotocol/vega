@@ -76,7 +76,7 @@ func (e *Engine) processTransfer(
 	// optional oneoff transfer
 	// in case we need to schedule the delivery
 	oneoff *types.OneOffTransfer,
-) ([]*types.TransferResponse, error) {
+) ([]*types.LedgerMovement, error) {
 	// ensure the party have enough funds for both the
 	// amount and the fee for the transfer
 	feeTransfer, err := e.ensureFeeForTransferFunds(amount, from, asset, fromAcc)

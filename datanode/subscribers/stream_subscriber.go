@@ -61,7 +61,7 @@ func getBufSize(batch int, types []events.Type) int {
 	for _, t := range types {
 		// each one of these events are high volume, and ought to double the buffer size
 		switch t {
-		case events.TradeEvent, events.TransferResponses, events.AccountEvent, events.OrderEvent:
+		case events.TradeEvent, events.LedgerMovementsEvent, events.AccountEvent, events.OrderEvent:
 			multipliers++
 		}
 	}

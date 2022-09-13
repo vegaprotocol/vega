@@ -20,28 +20,28 @@ import (
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
-type TransferResponse struct {
+type LedgerMovements struct {
 	*Base
-	responses []*ptypes.TransferResponse
+	ledgerMovements []*ptypes.LedgerMovement
 }
 
 // NewTransferResponse returns an event with transfer responses - this is the replacement of the transfer buffer.
-func NewTransferResponse(ctx context.Context, responses []*types.TransferResponse) *TransferResponse {
-	return &TransferResponse{
-		Base:      newBase(ctx, TransferResponses),
-		responses: types.TransferResponses(responses).IntoProto(),
+func NewTransferResponse(ctx context.Context, ledgerMovements []*types.LedgerMovement) *LedgerMovements {
+	return &LedgerMovements{
+		Base:            newBase(ctx, LedgerMovementsEvent),
+		ledgerMovements: types.LedgerMovements(ledgerMovements).IntoProto(),
 	}
 }
 
-// TransferResponses returns the actual event payload.
-func (t *TransferResponse) TransferResponses() []*ptypes.TransferResponse {
-	return t.responses
+// LedgerMovements returns the actual event payload.
+func (t *LedgerMovements) LedgerMovements() []*ptypes.LedgerMovement {
+	return t.ledgerMovements
 }
 
-func (t TransferResponse) IsParty(id string) bool {
-	for _, r := range t.responses {
-		for _, e := range r.Transfers {
-			if e.FromAccount == id || e.ToAccount == id {
+func (t LedgerMovements) IsParty(id string) bool {
+	for _, r := range t.ledgerMovements {
+		for _, e := range r.Entries {
+			if *e.FromAccount.Owner == id || *e.ToAccount.Owner == id {
 				return true
 			}
 		}
@@ -49,25 +49,25 @@ func (t TransferResponse) IsParty(id string) bool {
 	return false
 }
 
-func (t *TransferResponse) Proto() eventspb.TransferResponses {
-	return eventspb.TransferResponses{
-		Responses: t.responses,
+func (t *LedgerMovements) Proto() eventspb.LedgerMovements {
+	return eventspb.LedgerMovements{
+		LedgerMovements: t.ledgerMovements,
 	}
 }
 
-func (t TransferResponse) StreamMessage() *eventspb.BusEvent {
+func (t LedgerMovements) StreamMessage() *eventspb.BusEvent {
 	p := t.Proto()
 	busEvent := newBusEventFromBase(t.Base)
-	busEvent.Event = &eventspb.BusEvent_TransferResponses{
-		TransferResponses: &p,
+	busEvent.Event = &eventspb.BusEvent_LedgerMovements{
+		LedgerMovements: &p,
 	}
 
 	return busEvent
 }
 
-func TransferResponseEventFromStream(ctx context.Context, be *eventspb.BusEvent) *TransferResponse {
-	return &TransferResponse{
-		Base:      newBaseFromBusEvent(ctx, TransferResponses, be),
-		responses: be.GetTransferResponses().Responses,
+func TransferResponseEventFromStream(ctx context.Context, be *eventspb.BusEvent) *LedgerMovements {
+	return &LedgerMovements{
+		Base:            newBaseFromBusEvent(ctx, LedgerMovementsEvent, be),
+		ledgerMovements: be.GetLedgerMovements().LedgerMovements,
 	}
 }

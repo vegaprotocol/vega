@@ -127,7 +127,7 @@ func (e *Engine) distributeRecurringTransfers(
 ) error {
 	var (
 		transfersDone = []events.Event{}
-		tresps        = []*types.TransferResponse{}
+		tresps        = []*types.LedgerMovement{}
 		currentEpoch  = num.NewUint(newEpoch).ToDecimal()
 	)
 
@@ -167,7 +167,7 @@ func (e *Engine) distributeRecurringTransfers(
 
 		// NB: if no dispatch strategy is defined - the transfer is made to the account as defined in the transfer.
 		// If a dispatch strategy is defined but there are no relevant markets in scope or no fees in scope then no transfer is made!
-		var resps []*types.TransferResponse
+		var resps []*types.LedgerMovement
 		if v.DispatchStrategy == nil {
 			resps, err = e.processTransfer(
 				ctx, v.From, v.To, v.Asset, "", v.FromAccountType, v.ToAccountType, amount, v.Reference, nil, // last is eventual oneoff, which this is not
