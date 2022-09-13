@@ -74,6 +74,7 @@
 - [6060](https://github.com/vegaprotocol/vega/issues/6060) - Fix connection results should not be declared as mandatory in GQL schema.
 - [6097](https://github.com/vegaprotocol/vega/issues/6067) - Fix incorrect asset (metric asset) used for checking market proposer eligibility
 - [6099](https://github.com/vegaprotocol/vega/issues/6099) - Allow recurring transfers with the same to and from but with different asset
+- [6067](https://github.com/vegaprotocol/vega/issues/6067) - Verify global reward is transferred to party address 0
 - [6131](https://github.com/vegaprotocol/vega/issues/6131) - `nullblockchain` should call Tendermint Info `abci` to match real flow
 - [6119](https://github.com/vegaprotocol/vega/issues/6119) - Correct order in which market event is emitted
 - [5890](https://github.com/vegaprotocol/vega/issues/5890) - Margin breach during amend doesn't cancel order
