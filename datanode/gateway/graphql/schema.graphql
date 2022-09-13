@@ -103,7 +103,7 @@ type Subscription {
     partyId: ID
     "ID of the market from which you want position updates"
     marketId: ID
-  ): [Position!]!
+  ): [PositionUpdate!]!
 
   "Subscribe to proposals. Leave out all arguments to receive all proposals"
   proposals(
@@ -2249,6 +2249,35 @@ type Position {
 
   "Margins of the party for the given position"
   marginsConnection(pagination: Pagination): MarginConnection
+
+  "RFC3339Nano time the position was updated"
+  updatedAt: String
+}
+
+"""
+An individual party at any point in time is considered net long or net short. This refers to their Open Volume,
+calculated using FIFO. This volume is signed as either negative for LONG positions and positive for SHORT positions. A
+single trade may end up "splitting" with some of its volume matched into closed volume and some of its volume
+remaining as open volume. This is why we don't refer to positions being comprised of trades, rather of volume.
+"""
+type PositionUpdate {
+  "Market relating to this position"
+  marketId: ID!
+
+  "The party holding this position"
+  partyId: ID!
+
+  "Open volume (uint64)"
+  openVolume: String!
+
+  "Realised Profit and Loss (int64)"
+  realisedPNL: String!
+
+  "Unrealised Profit and Loss (int64)"
+  unrealisedPNL: String!
+
+  "Average entry price for this position"
+  averageEntryPrice: String!
 
   "RFC3339Nano time the position was updated"
   updatedAt: String
