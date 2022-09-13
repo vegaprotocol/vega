@@ -44,6 +44,7 @@ var (
 	ErrCouldNotGetLastBlockInformation                    = errors.New("could not get information about the last block on the network")
 	ErrCouldNotRequestPermissions                         = errors.New("could not request permissions")
 	ErrCouldNotSendTransaction                            = errors.New("could not send transaction")
+	ErrCouldNotSignTransaction                            = errors.New("could not sign transaction")
 	ErrCurrentPublicKeyDoesNotExist                       = errors.New("the current public key does not exist")
 	ErrCurrentPublicKeyIsRequired                         = errors.New("the next public key is required")
 	ErrEnactmentBlockHeightIsRequired                     = errors.New("the enactment block height is required")

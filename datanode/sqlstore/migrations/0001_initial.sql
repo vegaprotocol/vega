@@ -149,7 +149,7 @@ CREATE TABLE orders_history (
     market_id         BYTEA                     NOT NULL,
     party_id          BYTEA                     NOT NULL, -- at some point add REFERENCES parties(id),
     side              SMALLINT                  NOT NULL,
-    price             BIGINT                    NOT NULL,
+    price             HUGEINT                    NOT NULL,
     size              BIGINT                    NOT NULL,
     remaining         BIGINT                    NOT NULL,
     time_in_force     SMALLINT                  NOT NULL,
@@ -159,7 +159,7 @@ CREATE TABLE orders_history (
     reason            SMALLINT,
     version           INT                       NOT NULL,
     batch_id          INT                       NOT NULL,
-    pegged_offset     INT,
+    pegged_offset     HUGEINT,
     pegged_reference  SMALLINT,
     lp_id             BYTEA,
     created_at        TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -182,7 +182,7 @@ CREATE TABLE orders_live (
     market_id         BYTEA                     NOT NULL,
     party_id          BYTEA                     NOT NULL, -- at some point add REFERENCES parties(id),
     side              SMALLINT                  NOT NULL,
-    price             BIGINT                    NOT NULL,
+    price             HUGEINT                    NOT NULL,
     size              BIGINT                    NOT NULL,
     remaining         BIGINT                    NOT NULL,
     time_in_force     SMALLINT                  NOT NULL,
@@ -192,7 +192,7 @@ CREATE TABLE orders_live (
     reason            SMALLINT,
     version           INT                       NOT NULL,
     batch_id          INT                       NOT NULL,
-    pegged_offset     INT,
+    pegged_offset     HUGEINT,
     pegged_reference  SMALLINT,
     lp_id             BYTEA,
     created_at        TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -493,7 +493,8 @@ create table market_data (
     supplied_stake HUGEINT,
     price_monitoring_bounds jsonb,
     market_value_proxy text,
-    liquidity_provider_fee_shares jsonb
+    liquidity_provider_fee_shares jsonb,
+    market_state market_state_type
 );
 
 select create_hypertable('market_data', 'synthetic_time', chunk_time_interval => INTERVAL '1 day');
@@ -510,7 +511,7 @@ select md.market, md.tx_hash, md.vega_time, seq_num, mark_price, best_bid_price,
        best_static_bid_price, best_static_bid_volume, best_static_offer_price, best_static_offer_volume,
        mid_price, static_mid_price, open_interest, auction_end, auction_start, indicative_price, indicative_volume,
        market_trading_mode, auction_trigger, extension_trigger, target_stake, supplied_stake, price_monitoring_bounds,
-       market_value_proxy, liquidity_provider_fee_shares
+       market_value_proxy, liquidity_provider_fee_shares, market_state
 from market_data md
 join cte_market_data_latest mx
 on md.market = mx.market

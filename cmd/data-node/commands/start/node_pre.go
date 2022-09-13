@@ -212,7 +212,6 @@ func (l *NodeCommand) preRun([]string) (err error) {
 		l.marketCreatedSub,
 		l.marketUpdatedSub,
 		l.epochSub,
-		l.marketUpdatedSub,
 		l.depositSub,
 		l.withdrawalSub,
 		l.proposalsSub,

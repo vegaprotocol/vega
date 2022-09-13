@@ -252,6 +252,7 @@ message TxErrorEvent {
     commands.v1.OracleDataSubmission oracle_data_submission = 116;
     commands.v1.ProtocolUpgradeProposal protocol_upgrade_proposal = 117;
     commands.v1.IssueSignatures issue_signatures = 118;
+    commands.v1.BatchMarketInstructions batch_market_instructions = 119;
   }
 }
 

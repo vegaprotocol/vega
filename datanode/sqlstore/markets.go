@@ -47,13 +47,10 @@ func NewMarkets(connectionSource *ConnectionSource) *Markets {
 }
 
 func (m *Markets) Upsert(ctx context.Context, market *entities.Market) error {
-	m.cacheLock.Lock()
-	defer m.cacheLock.Unlock()
-
-	query := fmt.Sprintf(`insert into markets(%s) 
+	query := fmt.Sprintf(`insert into markets(%s)
 values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 on conflict (id, vega_time) do update
-set 
+set
 	instrument_id=EXCLUDED.instrument_id,
 	tradable_instrument=EXCLUDED.tradable_instrument,
 	decimal_places=EXCLUDED.decimal_places,
@@ -75,7 +72,13 @@ set
 		return err
 	}
 
-	m.cache[market.ID.String()] = *market
+	m.AfterCommit(ctx, func() {
+		// delete cache
+		m.cacheLock.Lock()
+		defer m.cacheLock.Unlock()
+		delete(m.cache, market.ID.String())
+	})
+
 	return nil
 }
 
@@ -89,8 +92,8 @@ func (m *Markets) GetByID(ctx context.Context, marketID string) (entities.Market
 		return market, nil
 	}
 
-	query := fmt.Sprintf(`select distinct on (id) %s 
-from markets 
+	query := fmt.Sprintf(`select distinct on (id) %s
+from markets
 where id = $1
 order by id, vega_time desc
 `, sqlMarketsColumns)

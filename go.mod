@@ -1,6 +1,6 @@
 module code.vegaprotocol.io/vega
 
-go 1.18
+go 1.19
 
 require (
 	code.vegaprotocol.io/oracles-relay v0.0.0-20220819135656-783260e20264

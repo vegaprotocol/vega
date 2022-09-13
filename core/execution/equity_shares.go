@@ -39,18 +39,15 @@ type EquityShares struct {
 	lps map[string]*lp
 
 	openingAuctionEnded bool
-
-	stateChanged bool
 }
 
 func NewEquityShares(mvp num.Decimal) *EquityShares {
 	return &EquityShares{
-		mvp:          mvp,
-		r:            num.DecimalZero(),
-		totalPStake:  num.DecimalZero(),
-		totalVStake:  num.DecimalZero(),
-		lps:          map[string]*lp{},
-		stateChanged: true,
+		mvp:         mvp,
+		r:           num.DecimalZero(),
+		totalPStake: num.DecimalZero(),
+		totalVStake: num.DecimalZero(),
+		lps:         map[string]*lp{},
 	}
 }
 
@@ -62,7 +59,6 @@ func (es *EquityShares) OpeningAuctionEnded() {
 		panic("market already left opening auction")
 	}
 	es.openingAuctionEnded = true
-	es.stateChanged = true
 	es.setOpeningAuctionAVG()
 	es.r = num.DecimalZero()
 }
@@ -82,7 +78,6 @@ func (es *EquityShares) setOpeningAuctionAVG() {
 		v.avg = v.vStake.Mul(factor) // perhaps we ought to move this to a separate loop once the totals have all been updated
 		// v.avg = es.mvp
 	}
-	es.stateChanged = true
 }
 
 func (es *EquityShares) UpdateVStake() {
@@ -113,7 +108,6 @@ func (es *EquityShares) AvgTradeValue(avg num.Decimal) *EquityShares {
 		// }
 		return es
 	}
-	es.stateChanged = true
 	if !es.mvp.IsZero() {
 		es.r = avg.Sub(es.mvp).Div(es.mvp)
 	} else {
@@ -133,7 +127,6 @@ func (es *EquityShares) SetPartyStake(id string, newStakeU *num.Uint) {
 			es.totalPStake = es.totalPStake.Sub(v.stake)
 		}
 		delete(es.lps, id)
-		es.stateChanged = (es.stateChanged || found)
 		return
 	}
 	newStake := num.DecimalFromUint(newStakeU)
@@ -141,9 +134,6 @@ func (es *EquityShares) SetPartyStake(id string, newStakeU *num.Uint) {
 		// stake didn't change? there's nothing to do really
 		return
 	}
-	defer func() {
-		es.stateChanged = true
-	}()
 	// first time we set the newStake and mvp as avg.
 	if !found {
 		avg := es.mvp
@@ -191,7 +181,6 @@ func (es *EquityShares) AvgEntryValuation(id string) num.Decimal {
 		avg := v.vStake.Mul(es.totalPStake.Div(es.totalVStake))
 		if !avg.Equal(v.avg) {
 			v.avg = avg
-			es.stateChanged = true
 		}
 		return v.avg
 	}
@@ -268,7 +257,6 @@ func (es *EquityShares) SharesExcept(except map[string]struct{}) map[string]num.
 		shares[id] = eq
 		if all && !v.share.Equals(eq) {
 			v.share = eq
-			es.stateChanged = true
 		}
 	}
 	if !all {

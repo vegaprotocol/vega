@@ -26,6 +26,7 @@ const (
 )
 
 type Engine struct {
+	cfg Config
 	log *logging.Logger
 
 	ethEngine *ethereum.Engine
@@ -39,6 +40,7 @@ func NewEngine(log *logging.Logger, config Config) *Engine {
 	topEngineLogger.SetLevel(config.Level.Get())
 
 	return &Engine{
+		cfg: config,
 		log: topEngineLogger,
 	}
 }
@@ -94,6 +96,7 @@ func (e *Engine) SetupEthereumEngine(
 	ethLogger.SetLevel(config.Level.Get())
 
 	filterer, err := ethereum.NewLogFilterer(
+		e.cfg.Ethereum,
 		ethLogger,
 		client,
 		ethCfg.CollateralBridge(),
@@ -107,6 +110,7 @@ func (e *Engine) SetupEthereumEngine(
 	}
 
 	e.ethEngine = ethereum.NewEngine(
+		e.cfg.Ethereum,
 		ethLogger,
 		filterer,
 		forwarder,

@@ -94,7 +94,6 @@ func (m *Market) checkForReferenceMoves(
 	m.lastMidSellPrice = newMidSell
 	m.lastBestBidPrice = newBestBid
 	m.lastBestAskPrice = newBestAsk
-	m.stateChanged = true
 
 	// now we had new orderUpdates while processing those,
 	// that would means someone got distressed, so some order

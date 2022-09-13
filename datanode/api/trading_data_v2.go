@@ -92,7 +92,7 @@ type tradingDataServiceV2 struct {
 func (t *tradingDataServiceV2) ListAccounts(ctx context.Context, req *v2.ListAccountsRequest) (*v2.ListAccountsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListAccountsV2")()
 	if t.accountService == nil {
-		return nil, apiError(codes.Internal, fmt.Errorf("Account service not available"))
+		return nil, apiError(codes.Internal, fmt.Errorf("account service not available"))
 	}
 
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)

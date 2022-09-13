@@ -161,6 +161,7 @@ type BuiltinAssetEvent struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Action:
+	//
 	//	*BuiltinAssetEvent_Deposit
 	//	*BuiltinAssetEvent_Withdrawal
 	Action isBuiltinAssetEvent_Action `protobuf_oneof:"action"`
@@ -575,6 +576,7 @@ type ERC20Event struct {
 	// The action
 	//
 	// Types that are assignable to Action:
+	//
 	//	*ERC20Event_AssetList
 	//	*ERC20Event_AssetDelist
 	//	*ERC20Event_Deposit
@@ -960,6 +962,7 @@ type ERC20MultiSigEvent struct {
 	// The action
 	//
 	// Types that are assignable to Action:
+	//
 	//	*ERC20MultiSigEvent_SignerAdded
 	//	*ERC20MultiSigEvent_SignerRemoved
 	//	*ERC20MultiSigEvent_ThresholdSet
@@ -1075,6 +1078,7 @@ type StakingEvent struct {
 	// The block in which the transaction was added
 	Block uint64 `protobuf:"varint,2,opt,name=block,proto3" json:"block,omitempty"`
 	// Types that are assignable to Action:
+	//
 	//	*StakingEvent_StakeDeposited
 	//	*StakingEvent_StakeRemoved
 	//	*StakingEvent_TotalSupply
