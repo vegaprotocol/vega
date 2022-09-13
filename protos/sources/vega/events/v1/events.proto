@@ -487,6 +487,18 @@ message StateVar {
   string state = 3;
 }
 
+// BeginBlock
+message BeginBlock {
+  uint64 height = 1;
+  int64 timestamp = 2;
+  string hash = 3;
+}
+
+// EndBlock
+message EndBlock {
+  uint64 height = 1;
+}
+
 // An (event) bus event type is used to specify a type of event
 // It has 2 styles of event:
 // Single values (e.g. BUS_EVENT_TYPE_ORDER) where they represent one data item
@@ -590,6 +602,10 @@ enum BusEventType {
   BUS_EVENT_TYPE_ETHEREUM_KEY_ROTATION = 47;
   // Event indicating protocol upgrade proposal updates
   BUS_EVENT_TYPE_PROTOCOL_UPGRADE_PROPOSAL = 48;
+  // The core is starting to process a new block
+  BUS_EVENT_TYPE_BEGIN_BLOCK = 49;
+  // The core finished to process a block
+  BUS_EVENT_TYPE_END_BLOCK = 50;
 
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
@@ -698,6 +714,11 @@ message BusEvent {
     EthereumKeyRotation ethereum_key_rotation = 146;
     // Protocol upgrade proposal updates
     ProtocolUpgradeEvent protocol_upgrade_event = 147;
+    // The core is starting to process a new block
+    BeginBlock begin_block= 148;
+    // The core finished to process a block
+    EndBlock end_block = 149;
+
 
     // Market tick events - See [MarketEvent](#vega.MarketEvent)
     MarketEvent market = 1001;

@@ -45,6 +45,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 	tmtypesint "github.com/tendermint/tendermint/types"
@@ -626,6 +627,12 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 		logging.String("previous-datetime", vegatime.Format(app.previousTimestamp)),
 	)
 
+	app.broker.Send(
+		events.NewEndBlock(ctx, eventspb.EndBlock{
+			Height: uint64(req.Height),
+		}),
+	)
+
 	app.epoch.OnBlockEnd(ctx)
 	if !app.nilPow {
 		app.pow.EndOfBlock()
@@ -647,7 +654,9 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 }
 
 // OnBeginBlock updates the internal lastBlockTime value with each new block.
-func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context, resp tmtypes.ResponseBeginBlock) {
+func (app *App) OnBeginBlock(
+	req tmtypes.RequestBeginBlock,
+) (ctx context.Context, resp tmtypes.ResponseBeginBlock) {
 	app.log.Debug("entering begin block", logging.Time("at", time.Now()), logging.Uint64("height", uint64(req.Header.Height)))
 	defer func() { app.log.Debug("leaving begin block", logging.Time("at", time.Now())) }()
 
@@ -660,6 +669,15 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 	}
 
 	hash := hex.EncodeToString(req.Hash)
+
+	app.broker.Send(
+		events.NewBeginBlock(ctx, eventspb.BeginBlock{
+			Height:    uint64(req.Header.Height),
+			Timestamp: req.Header.Time.UnixNano(),
+			Hash:      hash,
+		}),
+	)
+
 	app.cBlock = hash
 
 	// update pow engine on a new block
