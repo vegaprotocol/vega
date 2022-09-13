@@ -9,7 +9,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [6170](https://github.com/vegaprotocol/vega/pull/6170) - Order GraphQL schema (query and subscription types) alphabetically
 
 ### 🐛 Fixes
 - [6148](https://github.com/vegaprotocol/vega/issues/6148) - Fix API descriptions for typos
