@@ -7,14 +7,14 @@ import "vega/governance.proto";
 import "vega/vega.proto";
 
 // A batch of order instructions.
-// This command accept only the following batches of commands
+// This command accepts only the following batches of commands
 // and will be processed in the following order:
 // - OrderCancellation
 // - OrderAmendment
 // - OrderSubmission
-// The total amount of commands in the batch accros all three list of
-// instructions is restricted by the following network paramter:
-// "spam.rotection.max.batchSize"
+// The total amount of commands in the batch across all three lists of
+// instructions is restricted by the following network parameter:
+// "spam.protection.max.batchSize"
 message BatchMarketInstructions {
   // A list of order cancellations to be processed sequentially
   repeated OrderCancellation cancellations = 1;
@@ -32,7 +32,7 @@ message OrderSubmission {
   // formatted price of `1.23456` assuming market configured to 5 decimal places,
   // , required field for limit orders, however it is not required for market orders
   string price = 2;
-  // Size for the order, for example, in a futures market the size equals the number of contracts, cannot be negative
+  // Size for the order, for example, in a futures market the size equals the number of units, cannot be negative
   uint64 size = 3;
   // Side for the order, e.g. SIDE_BUY or SIDE_SELL, required field
   // - See `Side`

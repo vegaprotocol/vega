@@ -11676,7 +11676,7 @@ type Trade {
   "The price of the trade (probably initially the passive order price, other determination algorithms are possible though) (uint64)"
   price: String!
 
-  "The number of contracts trades, will always be <= the remaining size of both orders immediately before the trade (uint64)"
+  "The number of units traded, will always be <= the remaining size of both orders immediately before the trade (uint64)"
   size: String!
 
   "RFC3339Nano time for when the trade occurred"
@@ -12041,7 +12041,7 @@ enum OrderStatus {
   STATUS_PARKED
 }
 
-"Reason for the proposal being rejected by the core node"
+"Why the proposal was rejected by the core node"
 enum ProposalRejectionReason {
   "The specified close time is too early based on network parameters"
   PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON
@@ -12121,7 +12121,7 @@ enum ProposalRejectionReason {
   PROPOSAL_ERROR_INVALID_FREEFORM
 }
 
-"Reason for the order being rejected by the core node"
+"Why the order was rejected by the core node"
 enum OrderRejectionReason {
   "Market ID is invalid"
   ORDER_ERROR_INVALID_MARKET_ID
@@ -12379,7 +12379,7 @@ enum AccountType {
   ACCOUNT_TYPE_GLOBAL_REWARD
   "PendingTransfers - a global account for the pending transfers pool"
   ACCOUNT_TYPE_PENDING_TRANSFERS
-  "RewardMakerPaidFees - an account holding rewards for taker paid fees"
+  "RewardMakerPaidFees - an account holding rewards for maker paid fees"
   ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES
   "RewardMakerReceivedFees - an account holding rewards for maker received fees"
   ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES
@@ -12642,7 +12642,7 @@ type Proposal {
   terms: ProposalTerms!
   "Votes cast for this proposal"
   votes: ProposalVotes!
-  "Reason for the proposal to be rejected by the core"
+  "Why the proposal was rejected by the core"
   rejectionReason: ProposalRejectionReason
   "Error details of the rejectionReason"
   errorDetails: String
