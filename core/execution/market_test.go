@@ -560,7 +560,7 @@ func addAccount(t *testing.T, market *testMarket, party string) {
 	}
 }
 
-func addAccountWithAmount(market *testMarket, party string, amnt uint64) *types.TransferResponse {
+func addAccountWithAmount(market *testMarket, party string, amnt uint64) *types.TransferInstructionResponse {
 	r, _ := market.collateralEngine.Deposit(context.Background(), party, market.asset, num.NewUint(amnt))
 	return r
 }
@@ -959,7 +959,7 @@ func TestMarketWithTradeClosing(t *testing.T) {
 
 	// submit orders
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	// tm.transferInstructionResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
 	fmt.Printf("%s\n", orderBuy.String())
 	_, err := tm.market.SubmitOrder(ctx, orderBuy)
@@ -1054,7 +1054,7 @@ func TestUpdateMarketWithOracleSpecEarlyTermination(t *testing.T) {
 
 	// submit orders
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	// tm.transferInstructionResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
 	fmt.Printf("%s\n", orderBuy.String())
 	_, err := tm.market.SubmitOrder(ctx, orderBuy)
@@ -1164,7 +1164,7 @@ func Test6056(t *testing.T) {
 
 	// submit orders
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	// tm.transferInstructionResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
 	fmt.Printf("%s\n", orderBuy.String())
 	_, err := tm.market.SubmitOrder(ctx, orderBuy)
@@ -1277,7 +1277,7 @@ func TestMarketGetMarginOnNewOrderEmptyBook(t *testing.T) {
 
 	// submit orders
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	// tm.transferInstructionResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
 	_, err := tm.market.SubmitOrder(context.Background(), orderBuy)
 	assert.Nil(t, err)
@@ -1409,7 +1409,7 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 
 	// submit orders
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	// tm.transferInstructionResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
 	_, err = tm.market.SubmitOrder(context.Background(), orderBuy)
 	assert.NotNil(t, err)
@@ -1448,7 +1448,7 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 
 	// submit orders
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	// tm.transferInstructionResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
 	_, err := tm.market.SubmitOrder(context.Background(), orderBuy)
 	assert.Nil(t, err)
@@ -6282,17 +6282,17 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 	tm.market.OnTick(ctx, tm.now)
 
 	t.Run("Fee are distribute to party-2 only", func(t *testing.T) {
-		var found []*vegapb.TransferResponse
+		var found []*vegapb.TransferInstructionResponse
 		for _, e := range tm.events {
 			switch evt := e.(type) {
-			case *events.TransferResponse:
-				found = append(found, evt.TransferResponses()...)
+			case *events.TransferInstructionResponse:
+				found = append(found, evt.TransferInstructionResponses()...)
 			}
 		}
 		// a single transfer response is required
 		require.Len(t, found, 1)
 		require.Len(t, found[0].Transfers, 1)
-		require.Equal(t, found[0].Transfers[0].Reference, types.TransferTypeLiquidityFeeDistribute.String())
+		require.Equal(t, found[0].Transfers[0].Reference, types.TransferInstructionTypeLiquidityFeeDistribute.String())
 		require.Len(t, found[0].Balances, 1)
 		require.Equal(t, found[0].Balances[0].Account.Owner, "party-2")
 	})
@@ -6710,17 +6710,17 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 	tm.market.OnTick(ctx, tm.now)
 
 	t.Run("Fee are distributed", func(t *testing.T) {
-		var found []*vegapb.TransferResponse
+		var found []*vegapb.TransferInstructionResponse
 		for _, e := range tm.events {
 			switch evt := e.(type) {
-			case *events.TransferResponse:
-				found = append(found, evt.TransferResponses()...)
+			case *events.TransferInstructionResponse:
+				found = append(found, evt.TransferInstructionResponses()...)
 			}
 		}
 		// a single transfer response is required
 		require.Len(t, found, 2)
 		// require.Len(t, found[0].Transfers, 1)
-		// require.Equal(t, found[0].Transfers[0].Reference, types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_DISTRIBUTE.String())
+		// require.Equal(t, found[0].Transfers[0].Reference, types.TransferInstructionType_TRANSFER_TYPE_LIQUIDITY_FEE_DISTRIBUTE.String())
 		// require.Len(t, found[0].Balances, 1)
 		// require.Equal(t, found[0].Balances[0].Account.Owner, "party-2")
 	})

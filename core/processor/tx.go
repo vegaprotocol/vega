@@ -333,13 +333,13 @@ func (t Tx) Unmarshal(i interface{}) error {
 		}
 		*underlyingCmd = *cmd.StateVariableProposal
 	case *commandspb.InputData_Transfer:
-		underlyingCmd, ok := i.(*commandspb.Transfer)
+		underlyingCmd, ok := i.(*commandspb.TransferInstruction)
 		if !ok {
 			return errors.New("failed to unmarshal TransferFunds")
 		}
 		*underlyingCmd = *cmd.Transfer
 	case *commandspb.InputData_CancelTransfer:
-		underlyingCmd, ok := i.(*commandspb.CancelTransfer)
+		underlyingCmd, ok := i.(*commandspb.CancelTransferInstruction)
 		if !ok {
 			return errors.New("failed to unmarshal CancelTransferFunds")
 		}

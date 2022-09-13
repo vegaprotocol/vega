@@ -20,25 +20,25 @@ import (
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
-type TransferResponse struct {
+type TransferInstructionResponse struct {
 	*Base
-	responses []*ptypes.TransferResponse
+	responses []*ptypes.TransferInstructionResponse
 }
 
-// NewTransferResponse returns an event with transfer responses - this is the replacement of the transfer buffer.
-func NewTransferResponse(ctx context.Context, responses []*types.TransferResponse) *TransferResponse {
-	return &TransferResponse{
-		Base:      newBase(ctx, TransferResponses),
-		responses: types.TransferResponses(responses).IntoProto(),
+// NewTransferInstructionResponse returns an event with transfer responses - this is the replacement of the transfer buffer.
+func NewTransferInstructionResponse(ctx context.Context, responses []*types.TransferInstructionResponse) *TransferInstructionResponse {
+	return &TransferInstructionResponse{
+		Base:      newBase(ctx, TransferInstructionResponses),
+		responses: types.TransferInstructionResponses(responses).IntoProto(),
 	}
 }
 
-// TransferResponses returns the actual event payload.
-func (t *TransferResponse) TransferResponses() []*ptypes.TransferResponse {
+// TransferInstructionResponses returns the actual event payload.
+func (t *TransferInstructionResponse) TransferInstructionResponses() []*ptypes.TransferInstructionResponse {
 	return t.responses
 }
 
-func (t TransferResponse) IsParty(id string) bool {
+func (t TransferInstructionResponse) IsParty(id string) bool {
 	for _, r := range t.responses {
 		for _, e := range r.Transfers {
 			if e.FromAccount == id || e.ToAccount == id {
@@ -49,25 +49,25 @@ func (t TransferResponse) IsParty(id string) bool {
 	return false
 }
 
-func (t *TransferResponse) Proto() eventspb.TransferResponses {
-	return eventspb.TransferResponses{
+func (t *TransferInstructionResponse) Proto() eventspb.TransferInstructionResponses {
+	return eventspb.TransferInstructionResponses{
 		Responses: t.responses,
 	}
 }
 
-func (t TransferResponse) StreamMessage() *eventspb.BusEvent {
+func (t TransferInstructionResponse) StreamMessage() *eventspb.BusEvent {
 	p := t.Proto()
 	busEvent := newBusEventFromBase(t.Base)
-	busEvent.Event = &eventspb.BusEvent_TransferResponses{
-		TransferResponses: &p,
+	busEvent.Event = &eventspb.BusEvent_TransferInstructionResponses{
+		TransferInstructionResponses: &p,
 	}
 
 	return busEvent
 }
 
-func TransferResponseEventFromStream(ctx context.Context, be *eventspb.BusEvent) *TransferResponse {
-	return &TransferResponse{
-		Base:      newBaseFromBusEvent(ctx, TransferResponses, be),
-		responses: be.GetTransferResponses().Responses,
+func TransferInstructionResponseEventFromStream(ctx context.Context, be *eventspb.BusEvent) *TransferInstructionResponse {
+	return &TransferInstructionResponse{
+		Base:      newBaseFromBusEvent(ctx, TransferInstructionResponses, be),
+		responses: be.GetTransferInstructionResponses().Responses,
 	}
 }

@@ -24,11 +24,11 @@ import (
 
 type TransferEvent interface {
 	events.Event
-	TransferFunds() eventspb.Transfer
+	TransferFunds() eventspb.TransferInstruction
 }
 
 type TransferStore interface {
-	Upsert(ctx context.Context, transfer *entities.Transfer) error
+	Upsert(ctx context.Context, transfer *entities.TransferInstruction) error
 }
 
 type AccountSource interface {
@@ -52,7 +52,7 @@ func NewTransfer(store TransferStore, accountSource AccountSource, log *logging.
 }
 
 func (rf *Transfer) Types() []events.Type {
-	return []events.Type{events.TransferEvent}
+	return []events.Type{events.TransferInstructionEvent}
 }
 
 func (rf *Transfer) Push(ctx context.Context, evt events.Event) error {
@@ -61,7 +61,7 @@ func (rf *Transfer) Push(ctx context.Context, evt events.Event) error {
 
 func (rf *Transfer) consume(ctx context.Context, event TransferEvent) error {
 	transfer := event.TransferFunds()
-	record, err := entities.TransferFromProto(ctx, &transfer, entities.TxHash(event.TxHash()), rf.vegaTime, rf.accountSource)
+	record, err := entities.TransferInstructionFromProto(ctx, &transfer, entities.TxHash(event.TxHash()), rf.vegaTime, rf.accountSource)
 	if err != nil {
 		return errors.Wrap(err, "converting transfer proto to database entity failed")
 	}

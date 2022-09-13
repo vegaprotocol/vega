@@ -78,13 +78,13 @@ func NewTxErrEvent(ctx context.Context, err error, partyID string, tx interface{
 		evt.evt.Transaction = &eventspb.TxErrorEvent_UndelegateSubmission{
 			UndelegateSubmission: tv,
 		}
-	case *commandspb.Transfer:
-		evt.evt.Transaction = &eventspb.TxErrorEvent_Transfer{
-			Transfer: tv,
+	case *commandspb.TransferInstruction:
+		evt.evt.Transaction = &eventspb.TxErrorEvent_TransferInstruction{
+			TransferInstruction: tv,
 		}
-	case *commandspb.CancelTransfer:
-		evt.evt.Transaction = &eventspb.TxErrorEvent_CancelTransfer{
-			CancelTransfer: tv,
+	case *commandspb.CancelTransferInstruction:
+		evt.evt.Transaction = &eventspb.TxErrorEvent_CancelTransferInstruction{
+			CancelTransferInstruction: tv,
 		}
 	case *commandspb.AnnounceNode:
 		evt.evt.Transaction = &eventspb.TxErrorEvent_AnnounceNode{

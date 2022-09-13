@@ -163,9 +163,9 @@ http:
     - selector: datanode.api.v1.TradingDataService.GetKeyRotations
       get: "/key-rotations"
 
-    # Transfers
-    - selector: datanode.api.v1.TradingDataService.Transfers
-      get: "/transfers"
+    # Transfer instructions
+    - selector: datanode.api.v1.TradingDataService.TransferInstructions
+      get: "/transfer-instructions"
 
     ## v2 APIs from this point
     ## Defined in order relative to the proto service
@@ -192,8 +192,8 @@ http:
       get: "/api/v2/market/depth/{market_id}/latest"
     - selector: datanode.api.v2.TradingDataService.GetMarketDataHistoryByID
       get: "/api/v2/market/data/{market_id}"
-    - selector: datanode.api.v2.TradingDataService.ListTransfers
-      get: "/api/v2/transfers"
+    - selector: datanode.api.v2.TradingDataService.ListTransferInstructions
+      get: "/api/v2/transfer-instructions"
     - selector: datanode.api.v2.TradingDataService.GetNetworkLimits
       get: "/api/v2/network/limits"
     - selector: datanode.api.v2.TradingDataService.ListCandleData
@@ -305,7 +305,7 @@ http:
       get: '/api/v2/stream/delegations'
     - selector: datanode.api.v2.TradingDataService.ObserveEventBus
       get: '/api/v2/stream/event/bus'
-    - selector: datanode.api.v2.TradingDataService.ObserveTransferResponses
-      get: '/api/v2/stream/transfer/responses'
+    - selector: datanode.api.v2.TradingDataService.ObserveTransferInstructionResponses
+      get: '/api/v2/stream/transfer-instruction/responses'
     - selector: datanode.api.v2.TradingDataService.ObserveLiquidityProvisions
       get: '/api/v2/stream/liquidity-provisions'

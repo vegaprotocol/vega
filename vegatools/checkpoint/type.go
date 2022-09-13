@@ -331,8 +331,8 @@ func dummy() *all {
 				Height: 1,
 			},
 			"banking": &checkpoint.Banking{
-				RecurringTransfers: &checkpoint.RecurringTransfers{
-					RecurringTransfers: []*events.Transfer{
+				RecurringTransferInstructions: &checkpoint.RecurringTransferInstructions{
+					RecurringTransferInstructions: []*events.TransferInstruction{
 						{
 							Id:              "someid",
 							From:            "somefrom",
@@ -342,9 +342,9 @@ func dummy() *all {
 							Asset:           "someasset",
 							Amount:          "100",
 							Reference:       "someref",
-							Status:          events.Transfer_STATUS_PENDING,
-							Kind: &events.Transfer_Recurring{
-								Recurring: &events.RecurringTransfer{
+							Status:          events.TransferInstruction_STATUS_PENDING,
+							Kind: &events.TransferInstruction_Recurring{
+								Recurring: &events.RecurringTransferInstruction{
 									StartEpoch: 10,
 									EndEpoch:   func() *uint64 { e := uint64(100); return &e }(),
 									Factor:     "1",

@@ -1019,13 +1019,13 @@ func (app *App) DeliverValidatorHeartbeat(ctx context.Context, tx abci.Tx) error
 }
 
 func (app *App) DeliverTransferFunds(ctx context.Context, tx abci.Tx, id string) error {
-	tfr := &commandspb.Transfer{}
+	tfr := &commandspb.TransferInstruction{}
 	if err := tx.Unmarshal(tfr); err != nil {
 		return err
 	}
 
 	party := tx.Party()
-	transferFunds, err := types.NewTransferFromProto(id, party, tfr)
+	transferFunds, err := types.NewTransferInstructionFromProto(id, party, tfr)
 	if err != nil {
 		return err
 	}
@@ -1034,12 +1034,12 @@ func (app *App) DeliverTransferFunds(ctx context.Context, tx abci.Tx, id string)
 }
 
 func (app *App) DeliverCancelTransferFunds(ctx context.Context, tx abci.Tx) error {
-	cancel := &commandspb.CancelTransfer{}
+	cancel := &commandspb.CancelTransferInstruction{}
 	if err := tx.Unmarshal(cancel); err != nil {
 		return err
 	}
 
-	return app.banking.CancelTransferFunds(ctx, types.NewCancelTransferFromProto(tx.Party(), cancel))
+	return app.banking.CancelTransferFunds(ctx, types.NewCancelTransferInstructionFromProto(tx.Party(), cancel))
 }
 
 func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx, deterministicID string) error {

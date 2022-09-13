@@ -65,14 +65,14 @@ func testMTMWithNetworkNoLossSoc(t *testing.T) {
 	err = eng.Engine.UpdateBalance(context.Background(), marginMoneyParty, num.UintZero().Mul(num.NewUint(5), price))
 	assert.Nil(t, err)
 
-	pos := []*types.Transfer{
+	pos := []*types.TransferInstruction{
 		{
 			Owner: types.NetworkParty,
 			Amount: &types.FinancialAmount{
 				Amount: price,
 				Asset:  testMarketAsset,
 			},
-			Type: types.TransferTypeMTMLoss,
+			Type: types.TransferInstructionTypeMTMLoss,
 		},
 		{
 			Owner: moneyParty,
@@ -80,7 +80,7 @@ func testMTMWithNetworkNoLossSoc(t *testing.T) {
 				Amount: price,
 				Asset:  testMarketAsset,
 			},
-			Type: types.TransferTypeMTMLoss,
+			Type: types.TransferInstructionTypeMTMLoss,
 		},
 		{
 			Owner: party,
@@ -88,7 +88,7 @@ func testMTMWithNetworkNoLossSoc(t *testing.T) {
 				Amount: num.Sum(price, price), // one winning party
 				Asset:  testMarketAsset,
 			},
-			Type: types.TransferTypeMTMWin,
+			Type: types.TransferInstructionTypeMTMWin,
 		},
 	}
 
@@ -122,7 +122,7 @@ func testMTMWithNetworkNoLossSoc(t *testing.T) {
 	}
 	found := false // we should see a transfer from insurance to settlement
 	for _, r := range raw {
-		for _, tr := range r.Transfers {
+		for _, tr := range r.TransferInstructions {
 			if tr.FromAccount == insurancePool.ID {
 				to, _ := eng.GetAccountByID(tr.ToAccount)
 				require.Equal(t, types.AccountTypeSettlement, to.Type)
@@ -167,14 +167,14 @@ func testMTMWithNetworkLossSoc(t *testing.T) {
 	err = eng.Engine.UpdateBalance(context.Background(), marginMoneyParty, num.UintZero().Mul(num.NewUint(5), price))
 	assert.Nil(t, err)
 
-	pos := []*types.Transfer{
+	pos := []*types.TransferInstruction{
 		{
 			Owner: types.NetworkParty,
 			Amount: &types.FinancialAmount{
 				Amount: price,
 				Asset:  testMarketAsset,
 			},
-			Type: types.TransferTypeMTMLoss,
+			Type: types.TransferInstructionTypeMTMLoss,
 		},
 		{
 			Owner: moneyParty,
@@ -182,7 +182,7 @@ func testMTMWithNetworkLossSoc(t *testing.T) {
 				Amount: price,
 				Asset:  testMarketAsset,
 			},
-			Type: types.TransferTypeMTMLoss,
+			Type: types.TransferInstructionTypeMTMLoss,
 		},
 		{
 			Owner: party,
@@ -190,7 +190,7 @@ func testMTMWithNetworkLossSoc(t *testing.T) {
 				Amount: num.Sum(price, price), // one winning party
 				Asset:  testMarketAsset,
 			},
-			Type: types.TransferTypeMTMWin,
+			Type: types.TransferInstructionTypeMTMWin,
 		},
 	}
 
@@ -224,7 +224,7 @@ func testMTMWithNetworkLossSoc(t *testing.T) {
 	}
 	found := false // we should see a transfer from insurance to settlement
 	for _, r := range raw {
-		for _, tr := range r.Transfers {
+		for _, tr := range r.TransferInstructions {
 			if tr.FromAccount == insurancePool.ID {
 				to, _ := eng.GetAccountByID(tr.ToAccount)
 				require.Equal(t, types.AccountTypeSettlement, to.Type)

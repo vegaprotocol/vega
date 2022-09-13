@@ -80,7 +80,7 @@ func (l *NodeCommand) setupSQLSubscribers() {
 	l.accountSub = sqlsubscribers.NewAccount(l.accountService, l.Log)
 	l.assetSub = sqlsubscribers.NewAsset(l.assetService, l.Log)
 	l.partySub = sqlsubscribers.NewParty(l.partyService, l.Log)
-	l.transferResponseSub = sqlsubscribers.NewTransferResponse(l.ledgerService, l.accountService, l.Log)
+	l.transferInstructionResponseSub = sqlsubscribers.NewTransferInstructionResponse(l.ledgerService, l.accountService, l.Log)
 	l.orderSub = sqlsubscribers.NewOrder(l.orderService, l.Log)
 	l.networkLimitsSub = sqlsubscribers.NewNetworkLimitSub(l.ctx, l.networkLimitsService, l.Log)
 	l.marketDataSub = sqlsubscribers.NewMarketData(l.marketDataService, l.Log)
@@ -102,7 +102,7 @@ func (l *NodeCommand) setupSQLSubscribers() {
 	l.oracleSpecSub = sqlsubscribers.NewOracleSpec(l.oracleSpecService, l.Log)
 	l.oracleDataSub = sqlsubscribers.NewOracleData(l.oracleDataService, l.Log)
 	l.liquidityProvisionSub = sqlsubscribers.NewLiquidityProvision(l.liquidityProvisionService, l.Log)
-	l.transferSub = sqlsubscribers.NewTransfer(l.transfersStore, l.accountService, l.Log)
+	l.transferSub = sqlsubscribers.NewTransferInstruction(l.transfersStore, l.accountService, l.Log)
 	l.stakeLinkingSub = sqlsubscribers.NewStakeLinking(l.stakeLinkingService, l.Log)
 	l.notarySub = sqlsubscribers.NewNotary(l.notaryService, l.Log)
 	l.multiSigSignerEventSub = sqlsubscribers.NewERC20MultiSigSignerEvent(l.multiSigService, l.Log)
@@ -166,7 +166,7 @@ func (l *NodeCommand) setupStoresSQL() error {
 	l.oracleSpecStore = sqlstore.NewOracleSpec(transactionalConnectionSource)
 	l.oracleDataStore = sqlstore.NewOracleData(transactionalConnectionSource)
 	l.liquidityProvisionStore = sqlstore.NewLiquidityProvision(transactionalConnectionSource)
-	l.transfersStore = sqlstore.NewTransfers(transactionalConnectionSource)
+	l.transfersStore = sqlstore.NewTransferInstructions(transactionalConnectionSource)
 	l.stakeLinkingStore = sqlstore.NewStakeLinking(transactionalConnectionSource)
 	l.notaryStore = sqlstore.NewNotary(transactionalConnectionSource)
 	l.multiSigSignerAddedStore = sqlstore.NewERC20MultiSigSignerEvent(transactionalConnectionSource)
@@ -201,7 +201,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		l.accountSub,
 		l.assetSub,
 		l.partySub,
-		l.transferResponseSub,
+		l.transferInstructionResponseSub,
 		l.orderSub,
 		l.networkLimitsSub,
 		l.marketDataSub,
@@ -289,7 +289,7 @@ func (l *NodeCommand) setupServices() error {
 	l.riskService = service.NewRisk(l.marginLevelsStore, l.accountStore, log)
 	l.stakeLinkingService = service.NewStakeLinking(l.stakeLinkingStore, log)
 	l.tradeService = service.NewTrade(l.tradeStore, log)
-	l.transferService = service.NewTransfer(l.transfersStore, log)
+	l.transferService = service.NewTransferInstruction(l.transfersStore, log)
 	l.withdrawalService = service.NewWithdrawal(l.withdrawalsStore, log)
 	l.chainService = service.NewChain(l.chainStore, log)
 

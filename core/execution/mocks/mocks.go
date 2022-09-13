@@ -205,10 +205,10 @@ func (mr *MockCollateralMockRecorder) AssetExists(arg0 interface{}) *gomock.Call
 }
 
 // BondUpdate mocks base method.
-func (m *MockCollateral) BondUpdate(arg0 context.Context, arg1 string, arg2 *types.Transfer) (*types.TransferResponse, error) {
+func (m *MockCollateral) BondUpdate(arg0 context.Context, arg1 string, arg2 *types.TransferInstruction) (*types.TransferInstructionResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BondUpdate", arg0, arg1, arg2)
-	ret0, _ := ret[0].(*types.TransferResponse)
+	ret0, _ := ret[0].(*types.TransferInstructionResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -234,10 +234,10 @@ func (mr *MockCollateralMockRecorder) CanCoverBond(arg0, arg1, arg2, arg3 interf
 }
 
 // ClearMarket mocks base method.
-func (m *MockCollateral) ClearMarket(arg0 context.Context, arg1, arg2 string, arg3 []string) ([]*types.TransferResponse, error) {
+func (m *MockCollateral) ClearMarket(arg0 context.Context, arg1, arg2 string, arg3 []string) ([]*types.TransferInstructionResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ClearMarket", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].([]*types.TransferResponse)
+	ret0, _ := ret[0].([]*types.TransferInstructionResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -249,10 +249,10 @@ func (mr *MockCollateralMockRecorder) ClearMarket(arg0, arg1, arg2, arg3 interfa
 }
 
 // ClearPartyMarginAccount mocks base method.
-func (m *MockCollateral) ClearPartyMarginAccount(arg0 context.Context, arg1, arg2, arg3 string) (*types.TransferResponse, error) {
+func (m *MockCollateral) ClearPartyMarginAccount(arg0 context.Context, arg1, arg2, arg3 string) (*types.TransferInstructionResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ClearPartyMarginAccount", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(*types.TransferResponse)
+	ret0, _ := ret[0].(*types.TransferInstructionResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -295,10 +295,10 @@ func (mr *MockCollateralMockRecorder) CreatePartyMarginAccount(arg0, arg1, arg2,
 }
 
 // Deposit mocks base method.
-func (m *MockCollateral) Deposit(arg0 context.Context, arg1, arg2 string, arg3 *num.Uint) (*types.TransferResponse, error) {
+func (m *MockCollateral) Deposit(arg0 context.Context, arg1, arg2 string, arg3 *num.Uint) (*types.TransferInstructionResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Deposit", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(*types.TransferResponse)
+	ret0, _ := ret[0].(*types.TransferInstructionResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -324,10 +324,10 @@ func (mr *MockCollateralMockRecorder) EnableAsset(arg0, arg1 interface{}) *gomoc
 }
 
 // FinalSettlement mocks base method.
-func (m *MockCollateral) FinalSettlement(arg0 context.Context, arg1 string, arg2 []*types.Transfer) ([]*types.TransferResponse, error) {
+func (m *MockCollateral) FinalSettlement(arg0 context.Context, arg1 string, arg2 []*types.TransferInstruction) ([]*types.TransferInstructionResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FinalSettlement", arg0, arg1, arg2)
-	ret0, _ := ret[0].([]*types.TransferResponse)
+	ret0, _ := ret[0].([]*types.TransferInstructionResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -472,10 +472,10 @@ func (mr *MockCollateralMockRecorder) Hash() *gomock.Call {
 }
 
 // MarginUpdate mocks base method.
-func (m *MockCollateral) MarginUpdate(arg0 context.Context, arg1 string, arg2 []events.Risk) ([]*types.TransferResponse, []events.Margin, []events.Margin, error) {
+func (m *MockCollateral) MarginUpdate(arg0 context.Context, arg1 string, arg2 []events.Risk) ([]*types.TransferInstructionResponse, []events.Margin, []events.Margin, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "MarginUpdate", arg0, arg1, arg2)
-	ret0, _ := ret[0].([]*types.TransferResponse)
+	ret0, _ := ret[0].([]*types.TransferInstructionResponse)
 	ret1, _ := ret[1].([]events.Margin)
 	ret2, _ := ret[2].([]events.Margin)
 	ret3, _ := ret[3].(error)
@@ -489,10 +489,10 @@ func (mr *MockCollateralMockRecorder) MarginUpdate(arg0, arg1, arg2 interface{})
 }
 
 // MarginUpdateOnOrder mocks base method.
-func (m *MockCollateral) MarginUpdateOnOrder(arg0 context.Context, arg1 string, arg2 events.Risk) (*types.TransferResponse, events.Margin, error) {
+func (m *MockCollateral) MarginUpdateOnOrder(arg0 context.Context, arg1 string, arg2 events.Risk) (*types.TransferInstructionResponse, events.Margin, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "MarginUpdateOnOrder", arg0, arg1, arg2)
-	ret0, _ := ret[0].(*types.TransferResponse)
+	ret0, _ := ret[0].(*types.TransferInstructionResponse)
 	ret1, _ := ret[1].(events.Margin)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -505,11 +505,11 @@ func (mr *MockCollateralMockRecorder) MarginUpdateOnOrder(arg0, arg1, arg2 inter
 }
 
 // MarkToMarket mocks base method.
-func (m *MockCollateral) MarkToMarket(arg0 context.Context, arg1 string, arg2 []events.Transfer, arg3 string) ([]events.Margin, []*types.TransferResponse, error) {
+func (m *MockCollateral) MarkToMarket(arg0 context.Context, arg1 string, arg2 []events.TransferInstruction, arg3 string) ([]events.Margin, []*types.TransferInstructionResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "MarkToMarket", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].([]events.Margin)
-	ret1, _ := ret[1].([]*types.TransferResponse)
+	ret1, _ := ret[1].([]*types.TransferInstructionResponse)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
@@ -521,10 +521,10 @@ func (mr *MockCollateralMockRecorder) MarkToMarket(arg0, arg1, arg2, arg3 interf
 }
 
 // RemoveDistressed mocks base method.
-func (m *MockCollateral) RemoveDistressed(arg0 context.Context, arg1 []events.MarketPosition, arg2, arg3 string) (*types.TransferResponse, error) {
+func (m *MockCollateral) RemoveDistressed(arg0 context.Context, arg1 []events.MarketPosition, arg2, arg3 string) (*types.TransferInstructionResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RemoveDistressed", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(*types.TransferResponse)
+	ret0, _ := ret[0].(*types.TransferInstructionResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -536,10 +536,10 @@ func (mr *MockCollateralMockRecorder) RemoveDistressed(arg0, arg1, arg2, arg3 in
 }
 
 // RollbackMarginUpdateOnOrder mocks base method.
-func (m *MockCollateral) RollbackMarginUpdateOnOrder(arg0 context.Context, arg1, arg2 string, arg3 *types.Transfer) (*types.TransferResponse, error) {
+func (m *MockCollateral) RollbackMarginUpdateOnOrder(arg0 context.Context, arg1, arg2 string, arg3 *types.TransferInstruction) (*types.TransferInstructionResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RollbackMarginUpdateOnOrder", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(*types.TransferResponse)
+	ret0, _ := ret[0].(*types.TransferInstructionResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -551,10 +551,10 @@ func (mr *MockCollateralMockRecorder) RollbackMarginUpdateOnOrder(arg0, arg1, ar
 }
 
 // TransferFees mocks base method.
-func (m *MockCollateral) TransferFees(arg0 context.Context, arg1, arg2 string, arg3 events.FeesTransfer) ([]*types.TransferResponse, error) {
+func (m *MockCollateral) TransferFees(arg0 context.Context, arg1, arg2 string, arg3 events.FeesTransfer) ([]*types.TransferInstructionResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TransferFees", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].([]*types.TransferResponse)
+	ret0, _ := ret[0].([]*types.TransferInstructionResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -566,10 +566,10 @@ func (mr *MockCollateralMockRecorder) TransferFees(arg0, arg1, arg2, arg3 interf
 }
 
 // TransferFeesContinuousTrading mocks base method.
-func (m *MockCollateral) TransferFeesContinuousTrading(arg0 context.Context, arg1, arg2 string, arg3 events.FeesTransfer) ([]*types.TransferResponse, error) {
+func (m *MockCollateral) TransferFeesContinuousTrading(arg0 context.Context, arg1, arg2 string, arg3 events.FeesTransfer) ([]*types.TransferInstructionResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TransferFeesContinuousTrading", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].([]*types.TransferResponse)
+	ret0, _ := ret[0].([]*types.TransferInstructionResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -581,10 +581,10 @@ func (mr *MockCollateralMockRecorder) TransferFeesContinuousTrading(arg0, arg1, 
 }
 
 // Withdraw mocks base method.
-func (m *MockCollateral) Withdraw(arg0 context.Context, arg1, arg2 string, arg3 *num.Uint) (*types.TransferResponse, error) {
+func (m *MockCollateral) Withdraw(arg0 context.Context, arg1, arg2 string, arg3 *num.Uint) (*types.TransferInstructionResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Withdraw", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(*types.TransferResponse)
+	ret0, _ := ret[0].(*types.TransferInstructionResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

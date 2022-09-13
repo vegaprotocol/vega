@@ -110,8 +110,8 @@ func (e *Engine) CalculateForContinuousMode(
 		totalLiquidityFeeAmount      = num.UintZero()
 		// we allocate the len of the trades + 2
 		// len(trade) = number of makerFee + 1 infra fee + 1 liquidity fee
-		transfers     = make([]*types.Transfer, 0, (len(trades)*2)+2)
-		transfersRecv = make([]*types.Transfer, 0, len(trades)+2)
+		transfers     = make([]*types.TransferInstruction, 0, (len(trades)*2)+2)
+		transfersRecv = make([]*types.TransferInstruction, 0, len(trades)+2)
 	)
 
 	for _, v := range trades {
@@ -134,42 +134,42 @@ func (e *Engine) CalculateForContinuousMode(
 		totalLiquidityFeeAmount.AddSum(fee.LiquidityFee)
 
 		// create a transfer for the aggressor
-		transfers = append(transfers, &types.Transfer{
+		transfers = append(transfers, &types.TransferInstruction{
 			Owner: aggressor,
 			Amount: &types.FinancialAmount{
 				Asset:  e.asset,
 				Amount: fee.MakerFee.Clone(),
 			},
-			Type: types.TransferTypeMakerFeePay,
+			Type: types.TransferInstructionTypeMakerFeePay,
 		})
 		// create a transfer for the maker
-		transfersRecv = append(transfersRecv, &types.Transfer{
+		transfersRecv = append(transfersRecv, &types.TransferInstruction{
 			Owner: maker,
 			Amount: &types.FinancialAmount{
 				Asset:  e.asset,
 				Amount: fee.MakerFee.Clone(),
 			},
-			Type: types.TransferTypeMakerFeeReceive,
+			Type: types.TransferInstructionTypeMakerFeeReceive,
 		})
 	}
 
 	// now create transfer for the infrastructure
-	transfers = append(transfers, &types.Transfer{
+	transfers = append(transfers, &types.TransferInstruction{
 		Owner: aggressor,
 		Amount: &types.FinancialAmount{
 			Asset:  e.asset,
 			Amount: totalInfrastructureFeeAmount,
 		},
-		Type: types.TransferTypeInfrastructureFeePay,
+		Type: types.TransferInstructionTypeInfrastructureFeePay,
 	})
 	// now create transfer for the liquidity
-	transfers = append(transfers, &types.Transfer{
+	transfers = append(transfers, &types.TransferInstruction{
 		Owner: aggressor,
 		Amount: &types.FinancialAmount{
 			Asset:  e.asset,
 			Amount: totalLiquidityFeeAmount,
 		},
-		Type: types.TransferTypeLiquidityFeePay,
+		Type: types.TransferInstructionTypeLiquidityFeePay,
 	})
 
 	return &feesTransfer{
@@ -193,7 +193,7 @@ func (e *Engine) CalculateForAuctionMode(
 		totalFeesAmounts = map[string]*num.Uint{}
 		// we allocate for len of trades *4 as all trades generate
 		// 2 fees per party
-		transfers = make([]*types.Transfer, 0, len(trades)*4)
+		transfers = make([]*types.TransferInstruction, 0, len(trades)*4)
 	)
 
 	// we iterate over all trades
@@ -242,7 +242,7 @@ func (e *Engine) CalculateForFrequentBatchesAuctionMode(
 		totalFeesAmounts = map[string]*num.Uint{}
 		// we allocate for len of trades *4 as all trades generate
 		// at lest2 fees per party
-		transfers = make([]*types.Transfer, 0, len(trades)*4)
+		transfers = make([]*types.TransferInstruction, 0, len(trades)*4)
 	)
 
 	// we iterate over all trades
@@ -253,7 +253,7 @@ func (e *Engine) CalculateForFrequentBatchesAuctionMode(
 	for _, v := range trades {
 		var (
 			sellerTotalFee, buyerTotalFee *num.Uint
-			newTransfers                  []*types.Transfer
+			newTransfers                  []*types.TransferInstruction
 		)
 		// we are in the same auction, normal auction fees applies
 		if v.BuyerAuctionBatch == v.SellerAuctionBatch {
@@ -311,7 +311,7 @@ func (e *Engine) CalculateFeeForPositionResolution(
 		// this is the share of each party to be paid
 		partiesShare     = map[string]*feeShare{}
 		totalAbsolutePos uint64
-		transfers        = []*types.Transfer{}
+		transfers        = []*types.TransferInstruction{}
 	)
 
 	// first calculate the share of all distressedParties
@@ -371,13 +371,13 @@ func (e *Engine) CalculateFeeForPositionResolution(
 		}
 
 		// then 1 receive transfer for the good party
-		transfers = append(transfers, &types.Transfer{
+		transfers = append(transfers, &types.TransferInstruction{
 			Owner: goodParty,
 			Amount: &types.FinancialAmount{
 				Asset:  e.asset,
 				Amount: fees.MakerFee,
 			},
-			Type: types.TransferTypeMakerFeeReceive,
+			Type: types.TransferInstructionTypeMakerFeeReceive,
 		})
 	}
 
@@ -400,7 +400,7 @@ func (e *Engine) BuildLiquidityFeeDistributionTransfer(shares map[string]num.Dec
 
 	ft := &feesTransfer{
 		totalFeesAmountsPerParty: map[string]*num.Uint{},
-		transfers:                make([]*types.Transfer, 0, len(shares)),
+		transfers:                make([]*types.TransferInstruction, 0, len(shares)),
 	}
 
 	// Get all the map keys
@@ -421,14 +421,14 @@ func (e *Engine) BuildLiquidityFeeDistributionTransfer(shares map[string]num.Dec
 		amount, _ := num.UintFromDecimal(cs)
 		// populate the return value
 		ft.totalFeesAmountsPerParty[key].AddSum(amount)
-		ft.transfers = append(ft.transfers, &types.Transfer{
+		ft.transfers = append(ft.transfers, &types.TransferInstruction{
 			Owner: key,
 			Amount: &types.FinancialAmount{
 				Amount: amount.Clone(),
 				Asset:  acc.Asset,
 			},
 			MinAmount: amount.Clone(),
-			Type:      types.TransferTypeLiquidityFeeDistribute,
+			Type:      types.TransferInstructionTypeLiquidityFeeDistribute,
 		})
 	}
 
@@ -445,19 +445,19 @@ func (e *Engine) BuildLiquidityFeeDistributionTransfer(shares map[string]num.Dec
 // to do.
 func (e *Engine) getPositionResolutionFeesTransfers(
 	party string, share num.Decimal, fees *types.Fee,
-) ([]*types.Transfer, *types.Fee, *num.Uint) {
+) ([]*types.TransferInstruction, *types.Fee, *num.Uint) {
 	makerFee, _ := num.UintFromDecimal(fees.MakerFee.ToDecimal().Mul(share).Ceil())
 	infraFee, _ := num.UintFromDecimal(fees.InfrastructureFee.ToDecimal().Mul(share).Ceil())
 	liquiFee, _ := num.UintFromDecimal(fees.LiquidityFee.ToDecimal().Mul(share).Ceil())
 
-	return []*types.Transfer{
+	return []*types.TransferInstruction{
 			{
 				Owner: party,
 				Amount: &types.FinancialAmount{
 					Asset:  e.asset,
 					Amount: makerFee.Clone(),
 				},
-				Type: types.TransferTypeMakerFeePay,
+				Type: types.TransferInstructionTypeMakerFeePay,
 			},
 			{
 				Owner: party,
@@ -465,7 +465,7 @@ func (e *Engine) getPositionResolutionFeesTransfers(
 					Asset:  e.asset,
 					Amount: infraFee.Clone(),
 				},
-				Type: types.TransferTypeInfrastructureFeePay,
+				Type: types.TransferInstructionTypeInfrastructureFeePay,
 			},
 			{
 				Owner: party,
@@ -473,7 +473,7 @@ func (e *Engine) getPositionResolutionFeesTransfers(
 					Asset:  e.asset,
 					Amount: liquiFee.Clone(),
 				},
-				Type: types.TransferTypeLiquidityFeePay,
+				Type: types.TransferInstructionTypeLiquidityFeePay,
 			},
 		},
 		&types.Fee{
@@ -490,9 +490,9 @@ type feeShare struct {
 	share num.Decimal
 }
 
-func (e *Engine) getAuctionModeFeesAndTransfers(t *types.Trade) (*types.Fee, []*types.Transfer) {
+func (e *Engine) getAuctionModeFeesAndTransfers(t *types.Trade) (*types.Fee, []*types.TransferInstruction) {
 	fee := e.calculateAuctionModeFees(t)
-	transfers := make([]*types.Transfer, 0, 4)
+	transfers := make([]*types.TransferInstruction, 0, 4)
 	transfers = append(transfers,
 		e.getAuctionModeFeeTransfers(
 			fee.InfrastructureFee, fee.LiquidityFee, t.Seller)...)
@@ -528,17 +528,17 @@ func (e *Engine) calculateAuctionModeFees(trade *types.Trade) *types.Fee {
 	}
 }
 
-func (e *Engine) getAuctionModeFeeTransfers(infraFee, liquiFee *num.Uint, p string) []*types.Transfer {
+func (e *Engine) getAuctionModeFeeTransfers(infraFee, liquiFee *num.Uint, p string) []*types.TransferInstruction {
 	// we return both transfer for the party in a slice
 	// always the infrastructure fee first
-	return []*types.Transfer{
+	return []*types.TransferInstruction{
 		{
 			Owner: p,
 			Amount: &types.FinancialAmount{
 				Asset:  e.asset,
 				Amount: infraFee.Clone(),
 			},
-			Type: types.TransferTypeInfrastructureFeePay,
+			Type: types.TransferInstructionTypeInfrastructureFeePay,
 		},
 		{
 			Owner: p,
@@ -546,14 +546,14 @@ func (e *Engine) getAuctionModeFeeTransfers(infraFee, liquiFee *num.Uint, p stri
 				Asset:  e.asset,
 				Amount: liquiFee.Clone(),
 			},
-			Type: types.TransferTypeLiquidityFeePay,
+			Type: types.TransferInstructionTypeLiquidityFeePay,
 		},
 	}
 }
 
 type feesTransfer struct {
 	totalFeesAmountsPerParty map[string]*num.Uint
-	transfers                []*types.Transfer
+	transfers                []*types.TransferInstruction
 }
 
 func (f *feesTransfer) TotalFeesAmountPerParty() map[string]*num.Uint {
@@ -563,7 +563,7 @@ func (f *feesTransfer) TotalFeesAmountPerParty() map[string]*num.Uint {
 	}
 	return ret
 }
-func (f *feesTransfer) Transfers() []*types.Transfer { return f.transfers }
+func (f *feesTransfer) Transfers() []*types.TransferInstruction { return f.transfers }
 
 func (e *Engine) OnFeeFactorsMakerFeeUpdate(f num.Decimal) {
 	e.feeCfg.Factors.MakerFee = f

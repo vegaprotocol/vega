@@ -71,9 +71,9 @@ models:
   StakeLinkingStatus:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.StakeLinkingStatus
-  TransferStatus:
+  TransferInstructionStatus:
     model:
-      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.TransferStatus
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.TransferInstructionStatus
   DispatchMetric:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.DispatchMetric
@@ -318,12 +318,12 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.EthereumKeyRotationEdge
   EthereumKeyRotation:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.EthereumKeyRotation
-  Transfer:
-    model: code.vegaprotocol.io/vega/protos/vega/events/v1.Transfer
-  OneOffTransfer:
-    model: code.vegaprotocol.io/vega/protos/vega/events/v1.OneOffTransfer
-  RecurringTransfer:
-    model: code.vegaprotocol.io/vega/protos/vega/events/v1.RecurringTransfer
+  TransferInstruction:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.TransferInstruction
+  OneOffTransferInstruction:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.OneOffTransferInstruction
+  RecurringTransferInstruction:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.RecurringTransferInstruction
   Statistics:
     model: code.vegaprotocol.io/vega/protos/vega/api/v1.Statistics
   AccountType:
@@ -417,10 +417,10 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.LiquidityProvisionsEdge
   LiquidityProvisionsConnection:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.LiquidityProvisionsConnection
-  TransferEdge:
-    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TransferEdge
-  TransferConnection:
-    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TransferConnection
+  TransferInstructionEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TransferInstructionEdge
+  TransferInstructionConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TransferInstructionConnection
   ProposalEdge:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.GovernanceDataEdge
   ProposalsConnection:

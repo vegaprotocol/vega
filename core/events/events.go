@@ -54,8 +54,8 @@ type SettlePosition interface {
 
 // FeeTransfer is a transfer initiated after trade occurs.
 type FeesTransfer interface {
-	// The list of transfers to be made by the collateral
-	Transfers() []*types.Transfer
+	// The list of transfers instructions to be made by the collateral
+	Transfers() []*types.TransferInstruction
 	// The total amount of fees to be paid (all cumulated)
 	// per party if all the  transfers are to be executed
 	// map is party id -> total amount of fees to be transferred
@@ -65,9 +65,9 @@ type FeesTransfer interface {
 // Transfer is an event passed on by settlement engine, contains position
 // and the resulting transfer for the collateral engine to use. We need MarketPosition
 // because we can't loose the long/short status of the open positions.
-type Transfer interface {
+type TransferInstruction interface {
 	MarketPosition
-	Transfer() *types.Transfer
+	TransferInstruction() *types.TransferInstruction
 }
 
 // Margin is an event with a change to balances after settling e.g. MTM.
@@ -85,6 +85,6 @@ type Margin interface {
 type Risk interface {
 	Margin
 	Amount() *num.Uint
-	Transfer() *types.Transfer // I know, it's included in the Transfer interface, but this is to make it clear that this particular func is masked at this level
+	TransferInstruction() *types.TransferInstruction // I know, it's included in the Transfer interface, but this is to make it clear that this particular func is masked at this level
 	MarginLevels() *types.MarginLevels
 }

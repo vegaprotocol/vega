@@ -17,7 +17,7 @@ import "google.golang.org/protobuf/proto"
 type PagedEntity[T proto.Message] interface {
 	Market | Party | Trade | Order | MarginLevels | MarketData | Reward | Candle | Deposit |
 		Withdrawal | Asset | OracleSpec | OracleData | Position | LiquidityProvision | Vote |
-		Transfer | AccountBalance | Proposal | Delegation | Node | NetworkParameter | Checkpoint |
+		TransferInstruction | AccountBalance | Proposal | Delegation | Node | NetworkParameter | Checkpoint |
 		StakeLinking | NodeSignature | KeyRotation | ERC20MultiSigSignerAddedEvent |
 		ERC20MultiSigSignerRemovedEvent | EthereumKeyRotation | AggregatedBalance
 	// ToProtoEdge may need some optional arguments in order to generate the proto, for example margin levels

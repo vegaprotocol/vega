@@ -170,10 +170,10 @@ func (m *MockCollateral) EXPECT() *MockCollateralMockRecorder {
 }
 
 // Deposit mocks base method.
-func (m *MockCollateral) Deposit(arg0 context.Context, arg1, arg2 string, arg3 *num.Uint) (*types.TransferResponse, error) {
+func (m *MockCollateral) Deposit(arg0 context.Context, arg1, arg2 string, arg3 *num.Uint) (*types.TransferInstructionResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Deposit", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(*types.TransferResponse)
+	ret0, _ := ret[0].(*types.TransferInstructionResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -228,10 +228,10 @@ func (mr *MockCollateralMockRecorder) PropagateAssetUpdate(arg0, arg1 interface{
 }
 
 // TransferFunds mocks base method.
-func (m *MockCollateral) TransferFunds(arg0 context.Context, arg1 []*types.Transfer, arg2 []vega.AccountType, arg3 []string, arg4 []*types.Transfer, arg5 []vega.AccountType) ([]*types.TransferResponse, error) {
+func (m *MockCollateral) TransferFunds(arg0 context.Context, arg1 []*types.TransferInstruction, arg2 []vega.AccountType, arg3 []string, arg4 []*types.TransferInstruction, arg5 []vega.AccountType) ([]*types.TransferInstructionResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TransferFunds", arg0, arg1, arg2, arg3, arg4, arg5)
-	ret0, _ := ret[0].([]*types.TransferResponse)
+	ret0, _ := ret[0].([]*types.TransferInstructionResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -243,10 +243,10 @@ func (mr *MockCollateralMockRecorder) TransferFunds(arg0, arg1, arg2, arg3, arg4
 }
 
 // Withdraw mocks base method.
-func (m *MockCollateral) Withdraw(arg0 context.Context, arg1, arg2 string, arg3 *num.Uint) (*types.TransferResponse, error) {
+func (m *MockCollateral) Withdraw(arg0 context.Context, arg1, arg2 string, arg3 *num.Uint) (*types.TransferInstructionResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Withdraw", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(*types.TransferResponse)
+	ret0, _ := ret[0].(*types.TransferInstructionResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

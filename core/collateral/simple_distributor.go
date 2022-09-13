@@ -24,7 +24,7 @@ import (
 type request struct {
 	amount  num.Decimal
 	amt     *num.Uint
-	request *types.Transfer
+	request *types.TransferInstruction
 }
 
 type simpleDistributor struct {
@@ -40,7 +40,7 @@ func (s *simpleDistributor) LossSocializationEnabled() bool {
 	return s.collected.LT(s.expectCollected)
 }
 
-func (s *simpleDistributor) Add(req *types.Transfer) {
+func (s *simpleDistributor) Add(req *types.TransferInstruction) {
 	col, exp := num.DecimalFromUint(s.collected), num.DecimalFromUint(s.expectCollected)
 	amount := num.DecimalFromUint(req.Amount.Amount).Mul(col.Div(exp)).Floor()
 	amt, _ := num.UintFromBig(amount.BigInt())

@@ -43,7 +43,7 @@ func TheFollowingTransfersShouldHappen(
 		return errTransferFoundButNotRightAmount(row, divergingAmounts)
 	}
 
-	broker.ResetType(events.TransferResponses)
+	broker.ResetType(events.TransferInstructionResponses)
 
 	return nil
 }
@@ -80,10 +80,10 @@ func matchTransfers(transfers []*types.LedgerEntry, row transferRow) (bool, []ui
 }
 
 func getTransfers(broker *stubs.BrokerStub) []*types.LedgerEntry {
-	transferEvents := broker.GetTransferResponses()
+	transferEvents := broker.GetTransferInstructionResponses()
 	transfers := []*types.LedgerEntry{}
 	for _, e := range transferEvents {
-		for _, response := range e.TransferResponses() {
+		for _, response := range e.TransferInstructionResponses() {
 			transfers = append(transfers, response.GetTransfers()...)
 		}
 	}

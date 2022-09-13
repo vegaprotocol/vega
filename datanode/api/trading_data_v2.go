@@ -73,7 +73,7 @@ type tradingDataServiceV2 struct {
 	oracleDataService          *service.OracleData
 	liquidityProvisionService  *service.LiquidityProvision
 	governanceService          *service.Governance
-	transfersService           *service.Transfer
+	transfersService           *service.TransferInstruction
 	delegationService          *service.Delegation
 	marketService              *service.Markets
 	marketDepthService         *service.MarketDepth
@@ -1860,26 +1860,26 @@ func (t *tradingDataServiceV2) ListVotes(ctx context.Context, in *v2.ListVotesRe
 	return resp, nil
 }
 
-func (t *tradingDataServiceV2) ListTransfers(ctx context.Context, req *v2.ListTransfersRequest) (*v2.ListTransfersResponse, error) {
-	defer metrics.StartAPIRequestAndTimeGRPC("ListTransfersV2")()
+func (t *tradingDataServiceV2) ListTransferInstructions(ctx context.Context, req *v2.ListTransferInstructionsRequest) (*v2.ListTransferInstructionsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListTransferInstructionsV2")()
 
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, err)
 	}
 
-	var transfers []entities.Transfer
+	var transfers []entities.TransferInstruction
 	var pageInfo entities.PageInfo
 	if req.Pubkey == nil {
 		transfers, pageInfo, err = t.transfersService.GetAll(ctx, pagination)
 	} else {
 		switch req.Direction {
-		case v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_FROM:
-			transfers, pageInfo, err = t.transfersService.GetTransfersFromParty(ctx, entities.PartyID(*req.Pubkey), pagination)
-		case v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_TO:
-			transfers, pageInfo, err = t.transfersService.GetTransfersToParty(ctx, entities.PartyID(*req.Pubkey), pagination)
-		case v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_TO_OR_FROM:
-			transfers, pageInfo, err = t.transfersService.GetTransfersToOrFromParty(ctx, entities.PartyID(*req.Pubkey), pagination)
+		case v2.TransferInstructionDirection_TRANSFER_INSTRUCTION_DIRECTION_TRANSFER_FROM:
+			transfers, pageInfo, err = t.transfersService.GetTransferInstructionsFromParty(ctx, entities.PartyID(*req.Pubkey), pagination)
+		case v2.TransferInstructionDirection_TRANSFER_INSTRUCTION_DIRECTION_TRANSFER_TO:
+			transfers, pageInfo, err = t.transfersService.GetTransferInstructionsToParty(ctx, entities.PartyID(*req.Pubkey), pagination)
+		case v2.TransferInstructionDirection_TRANSFER_INSTRUCTION_DIRECTION_TRANSFER_TO_OR_FROM:
+			transfers, pageInfo, err = t.transfersService.GetTransferInstructionsToOrFromParty(ctx, entities.PartyID(*req.Pubkey), pagination)
 		default:
 			return nil, apiError(codes.InvalidArgument, fmt.Errorf("transfer direction not supported:%v", req.Direction))
 		}
@@ -1889,12 +1889,12 @@ func (t *tradingDataServiceV2) ListTransfers(ctx context.Context, req *v2.ListTr
 		return nil, apiError(codes.Internal, err)
 	}
 
-	edges, err := makeEdges[*v2.TransferEdge](transfers, t.accountService)
+	edges, err := makeEdges[*v2.TransferInstructionEdge](transfers, t.accountService)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
 
-	return &v2.ListTransfersResponse{Transfers: &v2.TransferConnection{
+	return &v2.ListTransferInstructionsResponse{TransferInstructions: &v2.TransferInstructionConnection{
 		Edges:    edges,
 		PageInfo: pageInfo.ToProto(),
 	}}, nil
@@ -2661,7 +2661,7 @@ func (t *tradingDataServiceV2) ObserveEventBus(stream v2.TradingDataService_Obse
 }
 
 // Subscribe to a stream of Transfer Responses.
-func (t *tradingDataServiceV2) ObserveTransferResponses(_ *v2.ObserveTransferResponsesRequest, srv v2.TradingDataService_ObserveTransferResponsesServer) error {
+func (t *tradingDataServiceV2) ObserveTransferInstructionResponses(_ *v2.ObserveTransferInstructionResponsesRequest, srv v2.TradingDataService_ObserveTransferInstructionResponsesServer) error {
 	// Wrap context from the request into cancellable. We can close internal chan in error.
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
@@ -2669,11 +2669,11 @@ func (t *tradingDataServiceV2) ObserveTransferResponses(_ *v2.ObserveTransferRes
 	transferResponsesChan, ref := t.ledgerService.Observe(ctx, t.config.StreamRetries)
 
 	if t.log.GetLevel() == logging.DebugLevel {
-		t.log.Debug("TransferResponses subscriber - new rpc stream", logging.Uint64("ref", ref))
+		t.log.Debug("TransferInstructionResponses subscriber - new rpc stream", logging.Uint64("ref", ref))
 	}
 
-	return observe(ctx, t.log, "TransferResponse", transferResponsesChan, ref, func(tr *vega.TransferResponse) error {
-		return srv.Send(&v2.ObserveTransferResponsesResponse{
+	return observe(ctx, t.log, "TransferInstructionResponse", transferResponsesChan, ref, func(tr *vega.TransferInstructionResponse) error {
+		return srv.Send(&v2.ObserveTransferInstructionResponsesResponse{
 			Response: tr,
 		})
 	})

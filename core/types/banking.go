@@ -23,44 +23,44 @@ import (
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
-type TransferStatus = eventspb.Transfer_Status
+type TransferInstructionStatus = eventspb.TransferInstruction_Status
 
 const (
 	// Default value.
-	TransferStatsUnspecified TransferStatus = eventspb.Transfer_STATUS_UNSPECIFIED
+	TransferInstructionStatsUnspecified TransferInstructionStatus = eventspb.TransferInstruction_STATUS_UNSPECIFIED
 	// A pending transfer.
-	TransferStatusPending TransferStatus = eventspb.Transfer_STATUS_PENDING
+	TransferInstructionStatusPending TransferInstructionStatus = eventspb.TransferInstruction_STATUS_PENDING
 	// A finished transfer.
-	TransferStatusDone TransferStatus = eventspb.Transfer_STATUS_DONE
+	TransferInstructionStatusDone TransferInstructionStatus = eventspb.TransferInstruction_STATUS_DONE
 	// A rejected transfer.
-	TransferStatusRejected TransferStatus = eventspb.Transfer_STATUS_REJECTED
+	TransferInstructionStatusRejected TransferInstructionStatus = eventspb.TransferInstruction_STATUS_REJECTED
 	// A stopped transfer.
-	TransferStatusStopped TransferStatus = eventspb.Transfer_STATUS_STOPPED
+	TransferInstructionStatusStopped TransferInstructionStatus = eventspb.TransferInstruction_STATUS_STOPPED
 	// A cancelled transfer.
-	TransferStatusCancelled TransferStatus = eventspb.Transfer_STATUS_CANCELLED
+	TransferInstructionStatusCancelled TransferInstructionStatus = eventspb.TransferInstruction_STATUS_CANCELLED
 )
 
 var (
-	ErrMissingTransferKind        = errors.New("missing transfer kind")
-	ErrCannotTransferZeroFunds    = errors.New("cannot transfer zero funds")
-	ErrInvalidFromAccount         = errors.New("invalid from account")
-	ErrInvalidToAccount           = errors.New("invalid to account")
-	ErrUnsupportedFromAccountType = errors.New("unsupported from account type")
-	ErrUnsupportedToAccountType   = errors.New("unsupported to account type")
-	ErrEndEpochIsZero             = errors.New("end epoch is zero")
-	ErrStartEpochIsZero           = errors.New("start epoch is zero")
-	ErrInvalidFactor              = errors.New("invalid factor")
-	ErrStartEpochAfterEndEpoch    = errors.New("start epoch after end epoch")
+	ErrMissingTransferInstructionKind     = errors.New("missing transfer instruction kind")
+	ErrCannotTransferInstructionZeroFunds = errors.New("cannot transfer zero funds")
+	ErrInvalidFromAccount                 = errors.New("invalid from account")
+	ErrInvalidToAccount                   = errors.New("invalid to account")
+	ErrUnsupportedFromAccountType         = errors.New("unsupported from account type")
+	ErrUnsupportedToAccountType           = errors.New("unsupported to account type")
+	ErrEndEpochIsZero                     = errors.New("end epoch is zero")
+	ErrStartEpochIsZero                   = errors.New("start epoch is zero")
+	ErrInvalidFactor                      = errors.New("invalid factor")
+	ErrStartEpochAfterEndEpoch            = errors.New("start epoch after end epoch")
 )
 
-type TransferCommandKind int
+type TransferInstructionCommandKind int
 
 const (
-	TransferCommandKindOneOff TransferCommandKind = iota
-	TransferCommandKindRecurring
+	TransferInstructionCommandKindOneOff TransferInstructionCommandKind = iota
+	TransferInstructionCommandKindRecurring
 )
 
-type TransferBase struct {
+type TransferInstructionBase struct {
 	ID              string
 	From            string
 	FromAccountType AccountType
@@ -69,11 +69,11 @@ type TransferBase struct {
 	Asset           string
 	Amount          *num.Uint
 	Reference       string
-	Status          TransferStatus
+	Status          TransferInstructionStatus
 	Timestamp       time.Time
 }
 
-func (t *TransferBase) IsValid() error {
+func (t *TransferInstructionBase) IsValid() error {
 	if !vgcrypto.IsValidVegaPubKey(t.From) {
 		return ErrInvalidFromAccount
 	}
@@ -83,7 +83,7 @@ func (t *TransferBase) IsValid() error {
 
 	// ensure amount makes senses
 	if t.Amount.IsZero() {
-		return ErrCannotTransferZeroFunds
+		return ErrCannotTransferInstructionZeroFunds
 	}
 
 	switch t.FromAccountType {
@@ -103,20 +103,20 @@ func (t *TransferBase) IsValid() error {
 	return nil
 }
 
-type OneOffTransfer struct {
-	*TransferBase
+type OneOffTransferInstruction struct {
+	*TransferInstructionBase
 	DeliverOn *time.Time
 }
 
-func (o *OneOffTransfer) IsValid() error {
-	if err := o.TransferBase.IsValid(); err != nil {
+func (o *OneOffTransferInstruction) IsValid() error {
+	if err := o.TransferInstructionBase.IsValid(); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func OneOffTransferFromEvent(p *eventspb.Transfer) *OneOffTransfer {
+func OneOffTransferInstructionFromEvent(p *eventspb.TransferInstruction) *OneOffTransferInstruction {
 	var deliverOn *time.Time
 	if t := p.GetOneOff().GetDeliverOn(); t > 0 {
 		d := time.Unix(t, 0)
@@ -128,11 +128,11 @@ func OneOffTransferFromEvent(p *eventspb.Transfer) *OneOffTransfer {
 		// panic is alright here, this should come only from
 		// a checkpoint, and it would mean the checkpoint is fucked
 		// so executions is not possible.
-		panic("invalid transfer amount")
+		panic("invalid transfer instruction amount")
 	}
 
-	return &OneOffTransfer{
-		TransferBase: &TransferBase{
+	return &OneOffTransferInstruction{
+		TransferInstructionBase: &TransferInstructionBase{
 			ID:              p.Id,
 			From:            p.From,
 			FromAccountType: p.FromAccountType,
@@ -148,8 +148,8 @@ func OneOffTransferFromEvent(p *eventspb.Transfer) *OneOffTransfer {
 	}
 }
 
-func (o *OneOffTransfer) IntoEvent() *eventspb.Transfer {
-	out := &eventspb.Transfer{
+func (o *OneOffTransferInstruction) IntoEvent() *eventspb.TransferInstruction {
+	out := &eventspb.TransferInstruction{
 		Id:              o.ID,
 		From:            o.From,
 		FromAccountType: o.FromAccountType,
@@ -163,8 +163,8 @@ func (o *OneOffTransfer) IntoEvent() *eventspb.Transfer {
 	}
 
 	if o.DeliverOn != nil {
-		out.Kind = &eventspb.Transfer_OneOff{
-			OneOff: &eventspb.OneOffTransfer{
+		out.Kind = &eventspb.TransferInstruction_OneOff{
+			OneOff: &eventspb.OneOffTransferInstruction{
 				DeliverOn: o.DeliverOn.Unix(),
 			},
 		}
@@ -173,16 +173,16 @@ func (o *OneOffTransfer) IntoEvent() *eventspb.Transfer {
 	return out
 }
 
-type RecurringTransfer struct {
-	*TransferBase
+type RecurringTransferInstruction struct {
+	*TransferInstructionBase
 	StartEpoch       uint64
 	EndEpoch         *uint64
 	Factor           num.Decimal
 	DispatchStrategy *vegapb.DispatchStrategy
 }
 
-func (r *RecurringTransfer) IsValid() error {
-	if err := r.TransferBase.IsValid(); err != nil {
+func (r *RecurringTransferInstruction) IsValid() error {
+	if err := r.TransferInstructionBase.IsValid(); err != nil {
 		return err
 	}
 
@@ -204,13 +204,13 @@ func (r *RecurringTransfer) IsValid() error {
 	return nil
 }
 
-func (r *RecurringTransfer) IntoEvent() *eventspb.Transfer {
+func (r *RecurringTransferInstruction) IntoEvent() *eventspb.TransferInstruction {
 	var endEpoch *uint64
 	if r.EndEpoch != nil {
 		endEpoch = toPtr(*r.EndEpoch)
 	}
 
-	return &eventspb.Transfer{
+	return &eventspb.TransferInstruction{
 		Id:              r.ID,
 		From:            r.From,
 		FromAccountType: r.FromAccountType,
@@ -221,8 +221,8 @@ func (r *RecurringTransfer) IntoEvent() *eventspb.Transfer {
 		Reference:       r.Reference,
 		Status:          r.Status,
 		Timestamp:       r.Timestamp.UnixNano(),
-		Kind: &eventspb.Transfer_Recurring{
-			Recurring: &eventspb.RecurringTransfer{
+		Kind: &eventspb.TransferInstruction_Recurring{
+			Recurring: &eventspb.RecurringTransferInstruction{
 				StartEpoch:       r.StartEpoch,
 				EndEpoch:         endEpoch,
 				Factor:           r.Factor.String(),
@@ -234,45 +234,45 @@ func (r *RecurringTransfer) IntoEvent() *eventspb.Transfer {
 
 // Just a wrapper, use the Kind on a
 // switch to access the proper value.
-type TransferFunds struct {
-	Kind      TransferCommandKind
-	OneOff    *OneOffTransfer
-	Recurring *RecurringTransfer
+type TransferInstructionFunds struct {
+	Kind      TransferInstructionCommandKind
+	OneOff    *OneOffTransferInstruction
+	Recurring *RecurringTransferInstruction
 }
 
-func NewTransferFromProto(id, from string, tf *commandspb.Transfer) (*TransferFunds, error) {
-	base, err := newTransferBase(id, from, tf)
+func NewTransferInstructionFromProto(id, from string, tf *commandspb.TransferInstruction) (*TransferInstructionFunds, error) {
+	base, err := newTransferInstructionBase(id, from, tf)
 	if err != nil {
 		return nil, err
 	}
 	switch tf.Kind.(type) {
-	case *commandspb.Transfer_OneOff:
-		return newOneOffTransfer(base, tf)
-	case *commandspb.Transfer_Recurring:
-		return newRecurringTransfer(base, tf)
+	case *commandspb.TransferInstruction_OneOff:
+		return newOneOffTransferInstruction(base, tf)
+	case *commandspb.TransferInstruction_Recurring:
+		return newRecurringTransferInstruction(base, tf)
 	default:
-		return nil, ErrMissingTransferKind
+		return nil, ErrMissingTransferInstructionKind
 	}
 }
 
-func (t *TransferFunds) IntoEvent() *eventspb.Transfer {
+func (t *TransferInstructionFunds) IntoEvent() *eventspb.TransferInstruction {
 	switch t.Kind {
-	case TransferCommandKindOneOff:
+	case TransferInstructionCommandKindOneOff:
 		return t.OneOff.IntoEvent()
-	case TransferCommandKindRecurring:
+	case TransferInstructionCommandKindRecurring:
 		return t.Recurring.IntoEvent()
 	default:
 		panic("invalid transfer kind")
 	}
 }
 
-func newTransferBase(id, from string, tf *commandspb.Transfer) (*TransferBase, error) {
+func newTransferInstructionBase(id, from string, tf *commandspb.TransferInstruction) (*TransferInstructionBase, error) {
 	amount, overflowed := num.UintFromString(tf.Amount, 10)
 	if overflowed {
 		return nil, errors.New("invalid transfer amount")
 	}
 
-	return &TransferBase{
+	return &TransferInstructionBase{
 		ID:              id,
 		From:            from,
 		FromAccountType: tf.FromAccountType,
@@ -281,27 +281,27 @@ func newTransferBase(id, from string, tf *commandspb.Transfer) (*TransferBase, e
 		Asset:           tf.Asset,
 		Amount:          amount,
 		Reference:       tf.Reference,
-		Status:          TransferStatusPending,
+		Status:          TransferInstructionStatusPending,
 	}, nil
 }
 
-func newOneOffTransfer(base *TransferBase, tf *commandspb.Transfer) (*TransferFunds, error) {
+func newOneOffTransferInstruction(base *TransferInstructionBase, tf *commandspb.TransferInstruction) (*TransferInstructionFunds, error) {
 	var t *time.Time
 	if tf.GetOneOff().GetDeliverOn() > 0 {
 		tmpt := time.Unix(tf.GetOneOff().GetDeliverOn(), 0)
 		t = &tmpt
 	}
 
-	return &TransferFunds{
-		Kind: TransferCommandKindOneOff,
-		OneOff: &OneOffTransfer{
-			TransferBase: base,
-			DeliverOn:    t,
+	return &TransferInstructionFunds{
+		Kind: TransferInstructionCommandKindOneOff,
+		OneOff: &OneOffTransferInstruction{
+			TransferInstructionBase: base,
+			DeliverOn:               t,
 		},
 	}, nil
 }
 
-func newRecurringTransfer(base *TransferBase, tf *commandspb.Transfer) (*TransferFunds, error) {
+func newRecurringTransferInstruction(base *TransferInstructionBase, tf *commandspb.TransferInstruction) (*TransferInstructionFunds, error) {
 	factor, err := num.DecimalFromString(tf.GetRecurring().GetFactor())
 	if err != nil {
 		return nil, err
@@ -312,19 +312,19 @@ func newRecurringTransfer(base *TransferBase, tf *commandspb.Transfer) (*Transfe
 		endEpoch = &ee
 	}
 
-	return &TransferFunds{
-		Kind: TransferCommandKindRecurring,
-		Recurring: &RecurringTransfer{
-			TransferBase:     base,
-			StartEpoch:       tf.GetRecurring().GetStartEpoch(),
-			EndEpoch:         endEpoch,
-			Factor:           factor,
-			DispatchStrategy: tf.GetRecurring().DispatchStrategy,
+	return &TransferInstructionFunds{
+		Kind: TransferInstructionCommandKindRecurring,
+		Recurring: &RecurringTransferInstruction{
+			TransferInstructionBase: base,
+			StartEpoch:              tf.GetRecurring().GetStartEpoch(),
+			EndEpoch:                endEpoch,
+			Factor:                  factor,
+			DispatchStrategy:        tf.GetRecurring().DispatchStrategy,
 		},
 	}, nil
 }
 
-func RecurringTransferFromEvent(p *eventspb.Transfer) *RecurringTransfer {
+func RecurringTransferInstructionFromEvent(p *eventspb.TransferInstruction) *RecurringTransferInstruction {
 	var endEpoch *uint64
 	if p.GetRecurring().EndEpoch != nil {
 		ee := p.GetRecurring().GetEndEpoch()
@@ -344,8 +344,8 @@ func RecurringTransferFromEvent(p *eventspb.Transfer) *RecurringTransfer {
 		panic("invalid transfer amount")
 	}
 
-	return &RecurringTransfer{
-		TransferBase: &TransferBase{
+	return &RecurringTransferInstruction{
+		TransferInstructionBase: &TransferInstructionBase{
 			ID:              p.Id,
 			From:            p.From,
 			FromAccountType: p.FromAccountType,
@@ -364,13 +364,13 @@ func RecurringTransferFromEvent(p *eventspb.Transfer) *RecurringTransfer {
 	}
 }
 
-type CancelTransferFunds struct {
+type CancelTransferInstructionFunds struct {
 	Party      string
 	TransferID string
 }
 
-func NewCancelTransferFromProto(party string, p *commandspb.CancelTransfer) *CancelTransferFunds {
-	return &CancelTransferFunds{
+func NewCancelTransferInstructionFromProto(party string, p *commandspb.CancelTransferInstruction) *CancelTransferInstructionFunds {
+	return &CancelTransferInstructionFunds{
 		Party:      party,
 		TransferID: p.TransferId,
 	}

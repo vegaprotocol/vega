@@ -95,10 +95,10 @@ service TradingDataService {
     // Get Market Data History for a Market ID between given dates using a cursor based pagination model
     rpc GetMarketDataHistoryByID(GetMarketDataHistoryByIDRequest) returns (GetMarketDataHistoryByIDResponse);
 
-    // Transfers list
+    // Transfer instructions list
     //
-    // List Transfers to/from/either a public key using a cursor based pagination model
-    rpc ListTransfers(ListTransfersRequest) returns (ListTransfersResponse);
+    // List Transfer instructions to/from/either a public key using a cursor based pagination model
+    rpc ListTransferInstructions(ListTransferInstructionsRequest) returns (ListTransferInstructionsResponse);
 
     // Network Limits
     //
@@ -337,10 +337,10 @@ service TradingDataService {
     // Subscribe to a stream of events from the core
     rpc ObserveEventBus(stream ObserveEventBusRequest) returns (stream ObserveEventBusResponse);
 
-    // Transfer Responses
+    // TransferInstruction Responses
     //
-    // Subscribe to a stream of Transfer Responses
-    rpc ObserveTransferResponses(ObserveTransferResponsesRequest) returns (stream ObserveTransferResponsesResponse);
+    // Subscribe to a stream of TransferInstruction Responses
+    rpc ObserveTransferInstructionResponses(ObserveTransferInstructionResponsesRequest) returns (stream ObserveTransferInstructionResponsesResponse);
 
     // Key Rotations list
     //
@@ -769,36 +769,36 @@ message MarketsDataSubscribeResponse {
     repeated vega.MarketData market_data = 1;
 }
 
-// -- Transfers --
-enum TransferDirection {
-    TRANSFER_DIRECTION_UNSPECIFIED = 0;
-    TRANSFER_DIRECTION_TRANSFER_FROM = 1;
-    TRANSFER_DIRECTION_TRANSFER_TO = 2;
-    TRANSFER_DIRECTION_TRANSFER_TO_OR_FROM = 3;
+// -- Transfer Instructions --
+enum TransferInstructionDirection {
+    TRANSFER_INSTRUCTION_DIRECTION_UNSPECIFIED = 0;
+    TRANSFER_INSTRUCTION_DIRECTION_TRANSFER_FROM = 1;
+    TRANSFER_INSTRUCTION_DIRECTION_TRANSFER_TO = 2;
+    TRANSFER_INSTRUCTION_DIRECTION_TRANSFER_TO_OR_FROM = 3;
 }
 
 // Request for transfers
-message ListTransfersRequest {
-    // Public key of which transfers to request
+message ListTransferInstructionsRequest {
+    // Public key of which transfer instructions to request
     optional string pubkey = 1;
     // Directions to include in the response data
-    TransferDirection direction = 2;
+    TransferInstructionDirection direction = 2;
     // Optional pagination cntrol
     optional Pagination pagination = 3;
 }
 
-// Response for transfers
-message ListTransfersResponse {
-    TransferConnection transfers = 1;
+// Response for transfer instructions
+message ListTransferInstructionsResponse {
+    TransferInstructionConnection transfer_instructions = 1;
 }
 
-message TransferEdge {
-    vega.events.v1.Transfer node = 1;
+message TransferInstructionEdge {
+    vega.events.v1.TransferInstruction node = 1;
     string cursor = 2;
 }
 
-message TransferConnection {
-    repeated TransferEdge edges = 1;
+message TransferInstructionConnection {
+    repeated TransferInstructionEdge edges = 1;
     PageInfo page_info = 2;
 }
 
@@ -1813,11 +1813,11 @@ message ObserveEventBusResponse {
     repeated vega.events.v1.BusEvent events = 1;
 }
 
-// -- Transfer Responses --
-message ObserveTransferResponsesRequest {}
+// -- Transfer Instruction Responses --
+message ObserveTransferInstructionResponsesRequest {}
 
-message ObserveTransferResponsesResponse {
-    vega.TransferResponse response = 1;
+message ObserveTransferInstructionResponsesResponse {
+    vega.TransferInstructionResponse response = 1;
 }
 
 // -- Key Rotations --

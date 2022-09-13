@@ -143,7 +143,7 @@ func getTestGRPCServer(
 	sqlOracleSpecService := service.NewOracleSpec(sqlstore.NewOracleSpec(sqlConn), logger)
 	sqlOracleDataService := service.NewOracleData(sqlstore.NewOracleData(sqlConn), logger)
 	sqlLPDataService := service.NewLiquidityProvision(sqlstore.NewLiquidityProvision(sqlConn), logger)
-	sqlTransferService := service.NewTransfer(sqlstore.NewTransfers(sqlConn), logger)
+	sqlTransferService := service.NewTransfer(sqlstore.NewTransferInstructions(sqlConn), logger)
 	sqlStakeLinkingService := service.NewStakeLinking(sqlstore.NewStakeLinking(sqlConn), logger)
 	sqlNotaryService := service.NewNotary(sqlstore.NewNotary(sqlConn), logger)
 	sqlMultiSigService := service.NewMultiSig(sqlstore.NewERC20MultiSigSignerEvent(sqlConn), logger)

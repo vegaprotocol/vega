@@ -31,11 +31,11 @@ var (
 
 func (e *Engine) recurringTransfer(
 	ctx context.Context,
-	transfer *types.RecurringTransfer,
+	transfer *types.RecurringTransferInstruction,
 ) (err error) {
 	defer func() {
 		if err == nil {
-			e.bss.changedRecurringTransfers = true
+			e.bss.changedRecurringTransferInstructions = true
 		}
 		e.broker.Send(events.NewRecurringTransferFundsEvent(ctx, transfer))
 	}()
@@ -43,36 +43,36 @@ func (e *Engine) recurringTransfer(
 	// ensure asset exists
 	a, err := e.assets.Get(transfer.Asset)
 	if err != nil {
-		transfer.Status = types.TransferStatusRejected
+		transfer.Status = types.TransferInstructionStatusRejected
 		e.log.Debug("cannot transfer funds, invalid asset", logging.Error(err))
 		return fmt.Errorf("could not transfer funds: %w", err)
 	}
 
 	if err := transfer.IsValid(); err != nil {
-		transfer.Status = types.TransferStatusRejected
+		transfer.Status = types.TransferInstructionStatusRejected
 		return err
 	}
 
 	if err := e.ensureMinimalTransferAmount(a, transfer.Amount); err != nil {
-		transfer.Status = types.TransferStatusRejected
+		transfer.Status = types.TransferInstructionStatusRejected
 		return err
 	}
 
 	if err := e.ensureNoRecurringTransferDuplicates(transfer); err != nil {
-		transfer.Status = types.TransferStatusRejected
+		transfer.Status = types.TransferInstructionStatusRejected
 		return err
 	}
 
 	// can't create transfer with start epoch in the past
 	if transfer.StartEpoch < e.currentEpoch {
-		transfer.Status = types.TransferStatusRejected
+		transfer.Status = types.TransferInstructionStatusRejected
 		return ErrStartEpochInThePast
 	}
 
 	// from here all sounds OK, we can add the transfer
 	// in the recurringTransfer map/slice
-	e.recurringTransfers = append(e.recurringTransfers, transfer)
-	e.recurringTransfersMap[transfer.ID] = transfer
+	e.recurringTransferInstructions = append(e.recurringTransferInstructions, transfer)
+	e.recurringTransferInstructionsMap[transfer.ID] = transfer
 
 	return nil
 }
@@ -95,9 +95,9 @@ func isSimilar(dispatchStrategy1, dispatchStrategy2 *vegapb.DispatchStrategy) bo
 }
 
 func (e *Engine) ensureNoRecurringTransferDuplicates(
-	transfer *types.RecurringTransfer,
+	transfer *types.RecurringTransferInstruction,
 ) error {
-	for _, v := range e.recurringTransfers {
+	for _, v := range e.recurringTransferInstructions {
 		// NB: 2 transfers are identical and not allowed if they have the same from, to, type AND the same dispatch strategy.
 		// This is needed so that we can for example setup transfer of USDT from one PK to the reward account with type maker fees received with dispatch based on the asset ETH -
 		// and then a similar transfer of USDT from the same PK to the same reward type but with different dispatch strategy - one tracking markets for the asset DAI.
@@ -127,12 +127,12 @@ func (e *Engine) distributeRecurringTransfers(
 ) error {
 	var (
 		transfersDone = []events.Event{}
-		tresps        = []*types.TransferResponse{}
+		tresps        = []*types.TransferInstructionResponse{}
 		currentEpoch  = num.NewUint(newEpoch).ToDecimal()
 	)
 
 	// iterate over all transfers
-	for _, v := range e.recurringTransfers {
+	for _, v := range e.recurringTransferInstructions {
 		if v.StartEpoch > newEpoch {
 			// not started
 			continue
@@ -158,7 +158,7 @@ func (e *Engine) distributeRecurringTransfers(
 		}
 
 		if err := e.ensureMinimalTransferAmount(a, amount); err != nil {
-			v.Status = types.TransferStatusStopped
+			v.Status = types.TransferInstructionStatusStopped
 			transfersDone = append(transfersDone,
 				events.NewRecurringTransferFundsEvent(ctx, v))
 			e.deleteTransfer(v.ID)
@@ -167,7 +167,7 @@ func (e *Engine) distributeRecurringTransfers(
 
 		// NB: if no dispatch strategy is defined - the transfer is made to the account as defined in the transfer.
 		// If a dispatch strategy is defined but there are no relevant markets in scope or no fees in scope then no transfer is made!
-		var resps []*types.TransferResponse
+		var resps []*types.TransferInstructionResponse
 		if v.DispatchStrategy == nil {
 			resps, err = e.processTransfer(
 				ctx, v.From, v.To, v.Asset, "", v.FromAccountType, v.ToAccountType, amount, v.Reference, nil, // last is eventual oneoff, which this is not
@@ -192,7 +192,7 @@ func (e *Engine) distributeRecurringTransfers(
 			}
 		}
 		if err != nil {
-			v.Status = types.TransferStatusStopped
+			v.Status = types.TransferInstructionStatusStopped
 			transfersDone = append(transfersDone,
 				events.NewRecurringTransferFundsEvent(ctx, v))
 			e.deleteTransfer(v.ID)
@@ -203,7 +203,7 @@ func (e *Engine) distributeRecurringTransfers(
 
 		// if we don't have anymore
 		if v.EndEpoch != nil && *v.EndEpoch == e.currentEpoch {
-			v.Status = types.TransferStatusDone
+			v.Status = types.TransferInstructionStatusDone
 			transfersDone = append(transfersDone, events.NewRecurringTransferFundsEvent(ctx, v))
 			e.deleteTransfer(v.ID)
 		}
@@ -211,11 +211,11 @@ func (e *Engine) distributeRecurringTransfers(
 
 	// send events
 	if len(tresps) > 0 {
-		e.broker.Send(events.NewTransferResponse(ctx, tresps))
+		e.broker.Send(events.NewTransferInstructionResponse(ctx, tresps))
 	}
 	if len(transfersDone) > 0 {
 		// also set the state change
-		e.bss.changedRecurringTransfers = true
+		e.bss.changedRecurringTransferInstructions = true
 		e.broker.SendBatch(transfersDone)
 	}
 
@@ -224,14 +224,14 @@ func (e *Engine) distributeRecurringTransfers(
 
 func (e *Engine) deleteTransfer(ID string) {
 	index := -1
-	for i, rt := range e.recurringTransfers {
+	for i, rt := range e.recurringTransferInstructions {
 		if rt.ID == ID {
 			index = i
 			break
 		}
 	}
 	if index >= 0 {
-		e.recurringTransfers = append(e.recurringTransfers[:index], e.recurringTransfers[index+1:]...)
-		delete(e.recurringTransfersMap, ID)
+		e.recurringTransferInstructions = append(e.recurringTransferInstructions[:index], e.recurringTransferInstructions[index+1:]...)
+		delete(e.recurringTransferInstructionsMap, ID)
 	}
 }

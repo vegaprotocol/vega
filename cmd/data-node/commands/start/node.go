@@ -74,7 +74,7 @@ type NodeCommand struct {
 	oracleDataStore           *sqlstore.OracleData
 	liquidityProvisionStore   *sqlstore.LiquidityProvision
 	positionStore             *sqlstore.Positions
-	transfersStore            *sqlstore.Transfers
+	transfersStore            *sqlstore.TransferInstructions
 	stakeLinkingStore         *sqlstore.StakeLinking
 	notaryStore               *sqlstore.Notary
 	multiSigSignerAddedStore  *sqlstore.ERC20MultiSigSignerEvent
@@ -111,7 +111,7 @@ type NodeCommand struct {
 	oracleSpecService           *service.OracleSpec
 	oracleDataService           *service.OracleData
 	liquidityProvisionService   *service.LiquidityProvision
-	transferService             *service.Transfer
+	transferService             *service.TransferInstruction
 	stakeLinkingService         *service.StakeLinking
 	notaryService               *service.Notary
 	multiSigService             *service.MultiSig
@@ -125,39 +125,39 @@ type NodeCommand struct {
 	broker    *broker.Broker
 	sqlBroker broker.SQLStoreEventBroker
 
-	accountSub              *sqlsubscribers.Account
-	assetSub                *sqlsubscribers.Asset
-	partySub                *sqlsubscribers.Party
-	transferResponseSub     *sqlsubscribers.TransferResponse
-	orderSub                *sqlsubscribers.Order
-	networkLimitsSub        *sqlsubscribers.NetworkLimits
-	marketDataSub           *sqlsubscribers.MarketData
-	tradesSub               *sqlsubscribers.TradeSubscriber
-	rewardsSub              *sqlsubscribers.Reward
-	delegationsSub          *sqlsubscribers.Delegation
-	marketCreatedSub        *sqlsubscribers.MarketCreated
-	marketUpdatedSub        *sqlsubscribers.MarketUpdated
-	epochSub                *sqlsubscribers.Epoch
-	depositSub              *sqlsubscribers.Deposit
-	withdrawalSub           *sqlsubscribers.Withdrawal
-	proposalsSub            *sqlsubscribers.Proposal
-	votesSub                *sqlsubscribers.Vote
-	marginLevelsSub         *sqlsubscribers.MarginLevels
-	riskFactorSub           *sqlsubscribers.RiskFactor
-	netParamSub             *sqlsubscribers.NetworkParameter
-	checkpointSub           *sqlsubscribers.Checkpoint
-	oracleSpecSub           *sqlsubscribers.OracleSpec
-	oracleDataSub           *sqlsubscribers.OracleData
-	liquidityProvisionSub   *sqlsubscribers.LiquidityProvision
-	positionsSub            *sqlsubscribers.Position
-	transferSub             *sqlsubscribers.Transfer
-	stakeLinkingSub         *sqlsubscribers.StakeLinking
-	notarySub               *sqlsubscribers.Notary
-	multiSigSignerEventSub  *sqlsubscribers.ERC20MultiSigSignerEvent
-	keyRotationsSub         *sqlsubscribers.KeyRotation
-	ethereumKeyRotationsSub *sqlsubscribers.EthereumKeyRotation
-	nodeSub                 *sqlsubscribers.Node
-	marketDepthSub          *sqlsubscribers.MarketDepth
+	accountSub                     *sqlsubscribers.Account
+	assetSub                       *sqlsubscribers.Asset
+	partySub                       *sqlsubscribers.Party
+	transferInstructionResponseSub *sqlsubscribers.TransferInstructionResponse
+	orderSub                       *sqlsubscribers.Order
+	networkLimitsSub               *sqlsubscribers.NetworkLimits
+	marketDataSub                  *sqlsubscribers.MarketData
+	tradesSub                      *sqlsubscribers.TradeSubscriber
+	rewardsSub                     *sqlsubscribers.Reward
+	delegationsSub                 *sqlsubscribers.Delegation
+	marketCreatedSub               *sqlsubscribers.MarketCreated
+	marketUpdatedSub               *sqlsubscribers.MarketUpdated
+	epochSub                       *sqlsubscribers.Epoch
+	depositSub                     *sqlsubscribers.Deposit
+	withdrawalSub                  *sqlsubscribers.Withdrawal
+	proposalsSub                   *sqlsubscribers.Proposal
+	votesSub                       *sqlsubscribers.Vote
+	marginLevelsSub                *sqlsubscribers.MarginLevels
+	riskFactorSub                  *sqlsubscribers.RiskFactor
+	netParamSub                    *sqlsubscribers.NetworkParameter
+	checkpointSub                  *sqlsubscribers.Checkpoint
+	oracleSpecSub                  *sqlsubscribers.OracleSpec
+	oracleDataSub                  *sqlsubscribers.OracleData
+	liquidityProvisionSub          *sqlsubscribers.LiquidityProvision
+	positionsSub                   *sqlsubscribers.Position
+	transferSub                    *sqlsubscribers.TransferInstruction
+	stakeLinkingSub                *sqlsubscribers.StakeLinking
+	notarySub                      *sqlsubscribers.Notary
+	multiSigSignerEventSub         *sqlsubscribers.ERC20MultiSigSignerEvent
+	keyRotationsSub                *sqlsubscribers.KeyRotation
+	ethereumKeyRotationsSub        *sqlsubscribers.EthereumKeyRotation
+	nodeSub                        *sqlsubscribers.Node
+	marketDepthSub                 *sqlsubscribers.MarketDepth
 
 	eventService *subscribers.Service
 

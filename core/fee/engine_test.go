@@ -148,19 +148,19 @@ func testCalcContinuousTradingAndCheckAmounts(t *testing.T) {
 	transfers := ft.Transfers()
 	var pay, recv, infra, liquidity int
 	for _, v := range transfers {
-		if v.Type == types.TransferTypeLiquidityFeePay {
+		if v.Type == types.TransferInstructionTypeLiquidityFeePay {
 			liquidity++
 			assert.Equal(t, num.NewUint(500), v.Amount.Amount)
 		}
-		if v.Type == types.TransferTypeInfrastructureFeePay {
+		if v.Type == types.TransferInstructionTypeInfrastructureFeePay {
 			infra++
 			assert.Equal(t, num.NewUint(250), v.Amount.Amount)
 		}
-		if v.Type == types.TransferTypeMakerFeeReceive {
+		if v.Type == types.TransferInstructionTypeMakerFeeReceive {
 			recv++
 			assert.Equal(t, num.NewUint(125), v.Amount.Amount)
 		}
-		if v.Type == types.TransferTypeMakerFeePay {
+		if v.Type == types.TransferInstructionTypeMakerFeePay {
 			pay++
 			assert.Equal(t, num.NewUint(125), v.Amount.Amount)
 		}
@@ -226,16 +226,16 @@ func testCalcContinuousTrading(t *testing.T) {
 	transfers := ft.Transfers()
 	var pay, recv, infra, liquidity int
 	for _, v := range transfers {
-		if v.Type == types.TransferTypeLiquidityFeePay {
+		if v.Type == types.TransferInstructionTypeLiquidityFeePay {
 			liquidity++
 		}
-		if v.Type == types.TransferTypeInfrastructureFeePay {
+		if v.Type == types.TransferInstructionTypeInfrastructureFeePay {
 			infra++
 		}
-		if v.Type == types.TransferTypeMakerFeeReceive {
+		if v.Type == types.TransferInstructionTypeMakerFeeReceive {
 			recv++
 		}
-		if v.Type == types.TransferTypeMakerFeePay {
+		if v.Type == types.TransferInstructionTypeMakerFeePay {
 			pay++
 		}
 	}
@@ -285,16 +285,16 @@ func testCalcAuctionTrading(t *testing.T) {
 	transfers := ft.Transfers()
 	var pay, recv, infra, liquidity int
 	for _, v := range transfers {
-		if v.Type == types.TransferTypeLiquidityFeePay {
+		if v.Type == types.TransferInstructionTypeLiquidityFeePay {
 			liquidity++
 		}
-		if v.Type == types.TransferTypeInfrastructureFeePay {
+		if v.Type == types.TransferInstructionTypeInfrastructureFeePay {
 			infra++
 		}
-		if v.Type == types.TransferTypeMakerFeeReceive {
+		if v.Type == types.TransferInstructionTypeMakerFeeReceive {
 			recv++
 		}
-		if v.Type == types.TransferTypeMakerFeePay {
+		if v.Type == types.TransferInstructionTypeMakerFeePay {
 			pay++
 		}
 	}
@@ -346,16 +346,16 @@ func testCalcBatchAuctionTradingSameBatch(t *testing.T) {
 	transfers := ft.Transfers()
 	var pay, recv, infra, liquidity int
 	for _, v := range transfers {
-		if v.Type == types.TransferTypeLiquidityFeePay {
+		if v.Type == types.TransferInstructionTypeLiquidityFeePay {
 			liquidity++
 		}
-		if v.Type == types.TransferTypeInfrastructureFeePay {
+		if v.Type == types.TransferInstructionTypeInfrastructureFeePay {
 			infra++
 		}
-		if v.Type == types.TransferTypeMakerFeeReceive {
+		if v.Type == types.TransferInstructionTypeMakerFeeReceive {
 			recv++
 		}
-		if v.Type == types.TransferTypeMakerFeePay {
+		if v.Type == types.TransferInstructionTypeMakerFeePay {
 			pay++
 		}
 	}
@@ -398,16 +398,16 @@ func testCalcBatchAuctionTradingDifferentBatches(t *testing.T) {
 	transfers := ft.Transfers()
 	var pay, recv, infra, liquidity int
 	for _, v := range transfers {
-		if v.Type == types.TransferTypeLiquidityFeePay {
+		if v.Type == types.TransferInstructionTypeLiquidityFeePay {
 			liquidity++
 		}
-		if v.Type == types.TransferTypeInfrastructureFeePay {
+		if v.Type == types.TransferInstructionTypeInfrastructureFeePay {
 			infra++
 		}
-		if v.Type == types.TransferTypeMakerFeeReceive {
+		if v.Type == types.TransferInstructionTypeMakerFeeReceive {
 			recv++
 		}
-		if v.Type == types.TransferTypeMakerFeePay {
+		if v.Type == types.TransferInstructionTypeMakerFeePay {
 			pay++
 		}
 	}
@@ -473,16 +473,16 @@ func testCalcPositionResolution(t *testing.T) {
 	transfers := ft.Transfers()
 	var pay, recv, infra, liquidity int
 	for _, v := range transfers {
-		if v.Type == types.TransferTypeLiquidityFeePay {
+		if v.Type == types.TransferInstructionTypeLiquidityFeePay {
 			liquidity++
 		}
-		if v.Type == types.TransferTypeInfrastructureFeePay {
+		if v.Type == types.TransferInstructionTypeInfrastructureFeePay {
 			infra++
 		}
-		if v.Type == types.TransferTypeMakerFeeReceive {
+		if v.Type == types.TransferInstructionTypeMakerFeeReceive {
 			recv++
 		}
-		if v.Type == types.TransferTypeMakerFeePay {
+		if v.Type == types.TransferInstructionTypeMakerFeePay {
 			pay++
 		}
 	}

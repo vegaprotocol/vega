@@ -41,7 +41,7 @@ type Broker interface {
 type MarketActivityTracker interface {
 	GetAllMarketIDs() []string
 	GetProposer(market string) string
-	GetFeePartyScores(asset string, feeType types.TransferType) []*types.PartyContibutionScore
+	GetFeePartyScores(asset string, feeType types.TransferInstructionType) []*types.PartyContibutionScore
 }
 
 // TimeService notifies the reward engine at the end of an epoch.
@@ -60,7 +60,7 @@ type Delegation interface {
 // Collateral engine provides access to account data and transferring rewards.
 type Collateral interface {
 	GetAccountByID(id string) (*types.Account, error)
-	TransferRewards(ctx context.Context, rewardAccountID string, transfers []*types.Transfer) ([]*types.TransferResponse, error)
+	TransferRewards(ctx context.Context, rewardAccountID string, transfers []*types.TransferInstruction) ([]*types.TransferInstructionResponse, error)
 	GetRewardAccountsByType(rewardAcccountType types.AccountType) []*types.Account
 }
 
@@ -336,17 +336,17 @@ func (e *Engine) calculateRewardTypeForAsset(epochSeq, asset string, rewardType 
 		if !e.isValidAccountForMarket(account) {
 			return nil
 		}
-		return calculateRewardsByContribution(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.marketActivityTracker.GetFeePartyScores(account.MarketID, types.TransferTypeMakerFeeReceive), timestamp)
+		return calculateRewardsByContribution(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.marketActivityTracker.GetFeePartyScores(account.MarketID, types.TransferInstructionTypeMakerFeeReceive), timestamp)
 	case types.AccountTypeMakerPaidFeeReward: // given to payers of fee in the asset based on their total paid fee proportion
 		if !e.isValidAccountForMarket(account) {
 			return nil
 		}
-		return calculateRewardsByContribution(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.marketActivityTracker.GetFeePartyScores(account.MarketID, types.TransferTypeMakerFeePay), timestamp)
+		return calculateRewardsByContribution(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.marketActivityTracker.GetFeePartyScores(account.MarketID, types.TransferInstructionTypeMakerFeePay), timestamp)
 	case types.AccountTypeLPFeeReward: // given to LP fee receivers in the asset based on their total received fee
 		if !e.isValidAccountForMarket(account) {
 			return nil
 		}
-		return calculateRewardsByContribution(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.marketActivityTracker.GetFeePartyScores(account.MarketID, types.TransferTypeLiquidityFeeDistribute), timestamp)
+		return calculateRewardsByContribution(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.marketActivityTracker.GetFeePartyScores(account.MarketID, types.TransferInstructionTypeLiquidityFeeDistribute), timestamp)
 	case types.AccountTypeMarketProposerReward:
 		if !e.isValidAccountForMarket(account) {
 			return nil
@@ -384,16 +384,16 @@ func (e *Engine) distributePayout(ctx context.Context, po *payout) {
 	}
 
 	sort.Strings(partyIDs)
-	transfers := make([]*types.Transfer, 0, len(partyIDs))
+	transfers := make([]*types.TransferInstruction, 0, len(partyIDs))
 	for _, party := range partyIDs {
 		amt := po.partyToAmount[party]
-		transfers = append(transfers, &types.Transfer{
+		transfers = append(transfers, &types.TransferInstruction{
 			Owner: party,
 			Amount: &types.FinancialAmount{
 				Asset:  po.asset,
 				Amount: amt.Clone(),
 			},
-			Type:      types.TransferTypeRewardPayout,
+			Type:      types.TransferInstructionTypeRewardPayout,
 			MinAmount: amt.Clone(),
 		})
 	}
@@ -403,5 +403,5 @@ func (e *Engine) distributePayout(ctx context.Context, po *payout) {
 		e.log.Error("error in transfer rewards", logging.Error(err))
 		return
 	}
-	e.broker.Send(events.NewTransferResponse(ctx, responses))
+	e.broker.Send(events.NewTransferInstructionResponse(ctx, responses))
 }

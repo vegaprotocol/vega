@@ -131,7 +131,7 @@ func (e *Engine) Update(positions []events.MarketPosition) {
 }
 
 // Settle run settlement over all the positions.
-func (e *Engine) Settle(t time.Time, assetDecimals uint32) ([]*types.Transfer, error) {
+func (e *Engine) Settle(t time.Time, assetDecimals uint32) ([]*types.TransferInstruction, error) {
 	e.log.Debugf("Settling market, closed at %s", t.Format(time.RFC3339))
 	positions, err := e.settleAll(assetDecimals)
 	if err != nil {
@@ -195,13 +195,13 @@ func (e *Engine) getMtmTransfer(mtmShare *num.Uint, neg bool, mpos events.Market
 			transfer:       nil,
 		}
 	}
-	typ := types.TransferTypeMTMWin
+	typ := types.TransferInstructionTypeMTMWin
 	if neg {
-		typ = types.TransferTypeMTMLoss
+		typ = types.TransferInstructionTypeMTMLoss
 	}
 	return &mtmTransfer{
 		MarketPosition: mpos,
-		transfer: &types.Transfer{
+		transfer: &types.TransferInstruction{
 			Type:  typ,
 			Owner: owner,
 			Amount: &types.FinancialAmount{
@@ -217,8 +217,8 @@ func (e *Engine) winSocialisationUpdate(transfer *mtmTransfer, amt *num.Uint) {
 		return
 	}
 	if transfer.transfer == nil {
-		transfer.transfer = &types.Transfer{
-			Type:  types.TransferTypeMTMWin,
+		transfer.transfer = &types.TransferInstruction{
+			Type:  types.TransferInstructionTypeMTMWin,
 			Owner: transfer.Party(),
 			Amount: &types.FinancialAmount{
 				Amount: num.UintZero(),
@@ -229,13 +229,13 @@ func (e *Engine) winSocialisationUpdate(transfer *mtmTransfer, amt *num.Uint) {
 	transfer.transfer.Amount.Amount.AddSum(amt)
 }
 
-func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions []events.MarketPosition) []events.Transfer {
+func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions []events.MarketPosition) []events.TransferInstruction {
 	timer := metrics.NewTimeCounter("-", "settlement", "SettleOrder")
 	e.mu.Lock()
 	tCap := e.transferCap(positions)
-	transfers := make([]events.Transfer, 0, tCap)
+	transfers := make([]events.TransferInstruction, 0, tCap)
 	// roughly half of the transfers should be wins, half losses
-	wins := make([]events.Transfer, 0, tCap/2)
+	wins := make([]events.TransferInstruction, 0, tCap/2)
 	trades := e.trades
 	e.trades = map[string][]*settlementTrade{} // remove here, once we've processed it all here, we're done
 	evts := make([]events.Event, 0, len(positions))
@@ -401,14 +401,14 @@ func (e *Engine) RemoveDistressed(ctx context.Context, evts []events.Margin) {
 }
 
 // simplified settle call.
-func (e *Engine) settleAll(assetDecimals uint32) ([]*types.Transfer, error) {
+func (e *Engine) settleAll(assetDecimals uint32) ([]*types.TransferInstruction, error) {
 	e.mu.Lock()
 
 	// there should be as many positions as there are parties (obviously)
-	aggregated := make([]*types.Transfer, 0, len(e.pos))
+	aggregated := make([]*types.TransferInstruction, 0, len(e.pos))
 	// parties who are in profit should be appended (collect first).
 	// The split won't always be 50-50, but it's a reasonable approximation
-	owed := make([]*types.Transfer, 0, len(e.pos)/2)
+	owed := make([]*types.TransferInstruction, 0, len(e.pos)/2)
 	// ensure we iterate over the positions in the same way by getting all the parties (keys)
 	// and sort them
 	keys := make([]string, 0, len(e.pos))
@@ -437,7 +437,7 @@ func (e *Engine) settleAll(assetDecimals uint32) ([]*types.Transfer, error) {
 			e.mu.Unlock()
 			return nil, err
 		}
-		settlePos := &types.Transfer{
+		settlePos := &types.TransferInstruction{
 			Owner:  party,
 			Amount: amt,
 		}
@@ -448,10 +448,10 @@ func (e *Engine) settleAll(assetDecimals uint32) ([]*types.Transfer, error) {
 		)
 
 		if neg { // this is a loss transfer
-			settlePos.Type = types.TransferTypeLoss
+			settlePos.Type = types.TransferInstructionTypeLoss
 			aggregated = append(aggregated, settlePos)
 		} else { // this is a win transfer
-			settlePos.Type = types.TransferTypeWin
+			settlePos.Type = types.TransferInstructionTypeWin
 			owed = append(owed, settlePos)
 		}
 	}

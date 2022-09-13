@@ -23,8 +23,8 @@ func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {
 	switch be.Type {
 	case eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE:
 		return events.TimeEventFromStream(ctx, be)
-	case eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES:
-		return events.TransferResponseEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_INSTRUCTION_RESPONSES:
+		return events.TransferInstructionResponseEventFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION:
 		return events.PositionResolutionEventFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_ORDER:
@@ -97,7 +97,7 @@ func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {
 		return events.StateVarEventFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_NETWORK_LIMITS:
 		return events.NetworkLimitsEventFromStream(ctx, be)
-	case eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_INSTRUCTION:
 		return events.TransferFundsEventFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_RANKING:
 		return events.ValidatorRankingEventFromStream(ctx, be)

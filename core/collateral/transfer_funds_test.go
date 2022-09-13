@@ -50,14 +50,14 @@ func testDistributeScheduleFunds(t *testing.T) {
 	// now we create the transfers:
 	resps, err := e.TransferFunds(
 		context.Background(),
-		[]*types.Transfer{
+		[]*types.TransferInstruction{
 			{
 				Owner: party1,
 				Amount: &types.FinancialAmount{
 					Asset:  testMarketAsset,
 					Amount: num.NewUint(90), // we assume the transfer to the other party is 90
 				},
-				Type:      types.TransferTypeTransferFundsDistribute,
+				Type:      types.TransferInstructionTypeTransferFundsDistribute,
 				MinAmount: num.NewUint(90),
 			},
 		},
@@ -69,7 +69,7 @@ func testDistributeScheduleFunds(t *testing.T) {
 			"pending-transfer-account-to-party1",
 		},
 		// no fees, they are paid before
-		[]*types.Transfer{},
+		[]*types.TransferInstruction{},
 		[]types.AccountType{},
 	)
 
@@ -110,14 +110,14 @@ func testTakeFromGeneralDoNotDistribute(t *testing.T) {
 	// now we create the transfers:
 	resps, err := e.TransferFunds(
 		context.Background(),
-		[]*types.Transfer{
+		[]*types.TransferInstruction{
 			{
 				Owner: party1,
 				Amount: &types.FinancialAmount{
 					Asset:  testMarketAsset,
 					Amount: num.NewUint(90), // we assume the transfer to the other party is 90
 				},
-				Type:      types.TransferTypeTransferFundsSend,
+				Type:      types.TransferInstructionTypeTransferFundsSend,
 				MinAmount: num.NewUint(90),
 			},
 		},
@@ -129,14 +129,14 @@ func testTakeFromGeneralDoNotDistribute(t *testing.T) {
 			"party1-to-party2",
 		},
 		// fee transfer
-		[]*types.Transfer{
+		[]*types.TransferInstruction{
 			{
 				Owner: party1,
 				Amount: &types.FinancialAmount{
 					Asset:  testMarketAsset,
 					Amount: num.NewUint(10), // we should have just enough to pay the fee
 				},
-				Type:      types.TransferTypeInfrastructureFeePay,
+				Type:      types.TransferInstructionTypeInfrastructureFeePay,
 				MinAmount: num.NewUint(10),
 			},
 		},
@@ -183,14 +183,14 @@ func testTransferFundsFromGeneralToGeneral(t *testing.T) {
 	// now we create the transfers:
 	resps, err := e.TransferFunds(
 		context.Background(),
-		[]*types.Transfer{
+		[]*types.TransferInstruction{
 			{
 				Owner: party1,
 				Amount: &types.FinancialAmount{
 					Asset:  testMarketAsset,
 					Amount: num.NewUint(90), // we assume the transfer to the other party is 90
 				},
-				Type:      types.TransferTypeTransferFundsSend,
+				Type:      types.TransferInstructionTypeTransferFundsSend,
 				MinAmount: num.NewUint(90),
 			},
 			{
@@ -199,7 +199,7 @@ func testTransferFundsFromGeneralToGeneral(t *testing.T) {
 					Asset:  testMarketAsset,
 					Amount: num.NewUint(90),
 				},
-				Type:      types.TransferTypeTransferFundsDistribute,
+				Type:      types.TransferInstructionTypeTransferFundsDistribute,
 				MinAmount: num.NewUint(90),
 			},
 		},
@@ -213,14 +213,14 @@ func testTransferFundsFromGeneralToGeneral(t *testing.T) {
 			"party1-to-party2",
 		},
 		// fee transfer
-		[]*types.Transfer{
+		[]*types.TransferInstruction{
 			{
 				Owner: party1,
 				Amount: &types.FinancialAmount{
 					Asset:  testMarketAsset,
 					Amount: num.NewUint(10), // we should have just enough to pay the fee
 				},
-				Type:      types.TransferTypeInfrastructureFeePay,
+				Type:      types.TransferInstructionTypeInfrastructureFeePay,
 				MinAmount: num.NewUint(10),
 			},
 		},
@@ -270,14 +270,14 @@ func testTransferFundsFromGeneralToRewardPool(t *testing.T) {
 	// now we create the transfers:
 	resps, err := e.TransferFunds(
 		context.Background(),
-		[]*types.Transfer{
+		[]*types.TransferInstruction{
 			{
 				Owner: party1,
 				Amount: &types.FinancialAmount{
 					Asset:  testMarketAsset,
 					Amount: num.NewUint(90), // we assume the transfer to the other party is 90
 				},
-				Type:      types.TransferTypeTransferFundsSend,
+				Type:      types.TransferInstructionTypeTransferFundsSend,
 				MinAmount: num.NewUint(90),
 			},
 			{
@@ -286,7 +286,7 @@ func testTransferFundsFromGeneralToRewardPool(t *testing.T) {
 					Asset:  testMarketAsset,
 					Amount: num.NewUint(90),
 				},
-				Type:      types.TransferTypeTransferFundsDistribute,
+				Type:      types.TransferInstructionTypeTransferFundsDistribute,
 				MinAmount: num.NewUint(90),
 			},
 		},
@@ -300,14 +300,14 @@ func testTransferFundsFromGeneralToRewardPool(t *testing.T) {
 			"party1-to-reward",
 		},
 		// fee transfer
-		[]*types.Transfer{
+		[]*types.TransferInstruction{
 			{
 				Owner: party1,
 				Amount: &types.FinancialAmount{
 					Asset:  testMarketAsset,
 					Amount: num.NewUint(10), // we should have just enough to pay the fee
 				},
-				Type:      types.TransferTypeInfrastructureFeePay,
+				Type:      types.TransferInstructionTypeInfrastructureFeePay,
 				MinAmount: num.NewUint(10),
 			},
 		},
@@ -340,30 +340,30 @@ func testInvalidNumberOfParameters(t *testing.T) {
 	assert.Panics(t, func() {
 		e.TransferFunds(
 			context.Background(),
-			make([]*types.Transfer, 3),
+			make([]*types.TransferInstruction, 3),
 			make([]types.AccountType, 2),
 			make([]string, 3),
-			make([]*types.Transfer, 1),
+			make([]*types.TransferInstruction, 1),
 			make([]types.AccountType, 1),
 		)
 	})
 	assert.Panics(t, func() {
 		e.TransferFunds(
 			context.Background(),
-			make([]*types.Transfer, 3),
+			make([]*types.TransferInstruction, 3),
 			make([]types.AccountType, 3),
 			make([]string, 1),
-			make([]*types.Transfer, 1),
+			make([]*types.TransferInstruction, 1),
 			make([]types.AccountType, 1),
 		)
 	})
 	assert.Panics(t, func() {
 		e.TransferFunds(
 			context.Background(),
-			make([]*types.Transfer, 3),
+			make([]*types.TransferInstruction, 3),
 			make([]types.AccountType, 3),
 			make([]string, 3),
-			make([]*types.Transfer, 2),
+			make([]*types.TransferInstruction, 2),
 			make([]types.AccountType, 1),
 		)
 	})

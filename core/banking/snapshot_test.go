@@ -94,7 +94,7 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(testAsset, nil)
-	eng.col.EXPECT().Withdraw(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&types.TransferResponse{}, nil)
+	eng.col.EXPECT().Withdraw(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&types.TransferInstructionResponse{}, nil)
 	// setup some withdrawals
 	err = eng.WithdrawBuiltinAsset(context.Background(), "VGT1", "someparty1", "VGT1", num.NewUint(2))
 	require.Nil(t, err)
@@ -115,10 +115,10 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 	eng.OnTick(ctx, now)
 
 	// setup one time transfer
-	oneoff := &types.TransferFunds{
-		Kind: types.TransferCommandKindOneOff,
-		OneOff: &types.OneOffTransfer{
-			TransferBase: &types.TransferBase{
+	oneoff := &types.TransferInstructionFunds{
+		Kind: types.TransferInstructionCommandKindOneOff,
+		OneOff: &types.OneOffTransferInstruction{
+			TransferInstructionBase: &types.TransferInstructionBase{
 				From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
 				FromAccountType: types.AccountTypeGeneral,
 				To:              "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0",
@@ -139,10 +139,10 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 	eng.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
 	// setup recurring transfer
-	recurring := &types.TransferFunds{
-		Kind: types.TransferCommandKindRecurring,
-		Recurring: &types.RecurringTransfer{
-			TransferBase: &types.TransferBase{
+	recurring := &types.TransferInstructionFunds{
+		Kind: types.TransferInstructionCommandKindRecurring,
+		Recurring: &types.RecurringTransferInstruction{
+			TransferInstructionBase: &types.TransferInstructionBase{
 				From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
 				FromAccountType: types.AccountTypeGeneral,
 				To:              "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0",
@@ -192,7 +192,7 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 	require.NoError(t, err)
 
 	// setup some withdrawals
-	engineLoad.col.EXPECT().Withdraw(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&types.TransferResponse{}, nil)
+	engineLoad.col.EXPECT().Withdraw(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&types.TransferInstructionResponse{}, nil)
 	err = eng.WithdrawBuiltinAsset(context.Background(), "VGT1", "someparty1", "VGT1", num.NewUint(10))
 	require.Nil(t, err)
 	err = engineLoad.WithdrawBuiltinAsset(context.Background(), "VGT1", "someparty1", "VGT1", num.NewUint(10))
@@ -212,10 +212,10 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 	eng.OnTick(ctx, now)
 
 	// setup one time transfer
-	oneoff = &types.TransferFunds{
-		Kind: types.TransferCommandKindOneOff,
-		OneOff: &types.OneOffTransfer{
-			TransferBase: &types.TransferBase{
+	oneoff = &types.TransferInstructionFunds{
+		Kind: types.TransferInstructionCommandKindOneOff,
+		OneOff: &types.OneOffTransferInstruction{
+			TransferInstructionBase: &types.TransferInstructionBase{
 				From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
 				FromAccountType: types.AccountTypeGeneral,
 				To:              "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0",
@@ -237,10 +237,10 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 	engineLoad.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
 	// setup recurring transfer
-	recurring = &types.TransferFunds{
-		Kind: types.TransferCommandKindRecurring,
-		Recurring: &types.RecurringTransfer{
-			TransferBase: &types.TransferBase{
+	recurring = &types.TransferInstructionFunds{
+		Kind: types.TransferInstructionCommandKindRecurring,
+		Recurring: &types.RecurringTransferInstruction{
+			TransferInstructionBase: &types.TransferInstructionBase{
 				From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
 				FromAccountType: types.AccountTypeGeneral,
 				To:              "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccee",
@@ -303,7 +303,7 @@ func TestSeenSnapshotRoundTrip(t *testing.T) {
 		eng.tsvc.EXPECT().GetTimeNow().Times(1)
 		state1, _, err := eng.GetState(seenKey)
 		require.Nil(t, err)
-		eng.col.EXPECT().Deposit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&types.TransferResponse{}, nil)
+		eng.col.EXPECT().Deposit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&types.TransferInstructionResponse{}, nil)
 
 		d1 := deposit(eng, "VGT1", "someparty1", num.NewUint(42))
 		err = eng.DepositBuiltinAsset(context.Background(), d1, "depositid1", 42)
@@ -358,7 +358,7 @@ func TestWithdrawalsSnapshotRoundTrip(t *testing.T) {
 
 		eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 		eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(testAsset, nil)
-		eng.col.EXPECT().Withdraw(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&types.TransferResponse{}, nil)
+		eng.col.EXPECT().Withdraw(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&types.TransferInstructionResponse{}, nil)
 		err = eng.WithdrawBuiltinAsset(context.Background(), "VGT"+strconv.Itoa(i*2), "someparty"+strconv.Itoa(i*2), "VGT"+strconv.Itoa(i*2), num.NewUint(2))
 		require.Nil(t, err)
 		err = eng.WithdrawBuiltinAsset(context.Background(), "VGT"+strconv.Itoa(i*2+1), "someparty"+strconv.Itoa(i*2), "VGT"+strconv.Itoa(i*2), num.NewUint(10))
@@ -422,7 +422,7 @@ func TestDepositSnapshotRoundTrip(t *testing.T) {
 
 func TestOneOffTransfersSnapshotRoundTrip(t *testing.T) {
 	ctx := context.Background()
-	key := (&types.PayloadBankingScheduledTransfers{}).Key()
+	key := (&types.PayloadBankingScheduledTransferInstructions{}).Key()
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
@@ -443,10 +443,10 @@ func TestOneOffTransfersSnapshotRoundTrip(t *testing.T) {
 	deliver := now.Add(time.Hour)
 	eng.OnTick(ctx, now)
 
-	oneoff := &types.TransferFunds{
-		Kind: types.TransferCommandKindOneOff,
-		OneOff: &types.OneOffTransfer{
-			TransferBase: &types.TransferBase{
+	oneoff := &types.TransferInstructionFunds{
+		Kind: types.TransferInstructionCommandKindOneOff,
+		OneOff: &types.OneOffTransferInstruction{
+			TransferInstructionBase: &types.TransferInstructionBase{
 				From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
 				FromAccountType: types.AccountTypeGeneral,
 				To:              "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0",
@@ -479,7 +479,7 @@ func TestOneOffTransfersSnapshotRoundTrip(t *testing.T) {
 
 func TestRecurringransfersSnapshotRoundTrip(t *testing.T) {
 	ctx := context.Background()
-	key := (&types.PayloadBankingRecurringTransfers{}).Key()
+	key := (&types.PayloadBankingRecurringTransferInstructions{}).Key()
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
@@ -496,10 +496,10 @@ func TestRecurringransfersSnapshotRoundTrip(t *testing.T) {
 	state, _, err := eng.GetState(key)
 	require.Nil(t, err)
 
-	recurring := &types.TransferFunds{
-		Kind: types.TransferCommandKindRecurring,
-		Recurring: &types.RecurringTransfer{
-			TransferBase: &types.TransferBase{
+	recurring := &types.TransferInstructionFunds{
+		Kind: types.TransferInstructionCommandKindRecurring,
+		Recurring: &types.RecurringTransferInstruction{
+			TransferInstructionBase: &types.TransferInstructionBase{
 				From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
 				FromAccountType: types.AccountTypeGeneral,
 				To:              "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0",

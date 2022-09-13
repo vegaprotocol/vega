@@ -421,11 +421,11 @@ func TestSubmit(t *testing.T) {
 
 		t.Run("expect bond slashing transfer", func(t *testing.T) {
 			// First collect all the orders events
-			found := []*proto.TransferResponse{}
+			found := []*proto.TransferInstructionResponse{}
 			for _, e := range tm.events {
 				switch evt := e.(type) {
-				case *events.TransferResponse:
-					for _, v := range evt.TransferResponses() {
+				case *events.TransferInstructionResponse:
+					for _, v := range evt.TransferInstructionResponses() {
 						for _, t := range v.Transfers {
 							if t.Reference == "TRANSFER_TYPE_BOND_SLASHING" {
 								found = append(found, v)
@@ -1927,10 +1927,10 @@ func TestSubmit(t *testing.T) {
 
 		for _, e := range tm.events {
 			switch evt := e.(type) {
-			case *events.TransferResponse:
-				for _, v := range evt.TransferResponses() {
+			case *events.TransferInstructionResponse:
+				for _, v := range evt.TransferInstructionResponses() {
 					// ensure no transfer is a LIQUIDITY_FEE_DISTRIBUTE
-					assert.NotEqual(t, types.TransferTypeLiquidityFeeDistribute, v.Transfers[0].Type)
+					assert.NotEqual(t, types.TransferInstructionTypeLiquidityFeeDistribute, v.Transfers[0].Type)
 				}
 			}
 		}

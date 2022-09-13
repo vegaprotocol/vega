@@ -39,7 +39,7 @@ type pos struct {
 
 type mtmTransfer struct {
 	events.MarketPosition
-	transfer *types.Transfer
+	transfer *types.TransferInstruction
 }
 
 type settlementTrade struct {
@@ -98,8 +98,8 @@ func (p pos) Price() *num.Uint {
 	return p.price.Clone()
 }
 
-// Transfer - part of the Transfer interface.
-func (m mtmTransfer) Transfer() *types.Transfer {
+// TransferInstruction - part of the TransferInstruction interface.
+func (m mtmTransfer) TransferInstruction() *types.TransferInstruction {
 	if m.transfer == nil {
 		return nil
 	}

@@ -10,22 +10,22 @@ import (
 )
 
 func TestNilTransferFundsFails(t *testing.T) {
-	err := checkTransfer(nil)
+	err := checkTransferInstruction(nil)
 
 	assert.Contains(t, err.Get("transfer"), commands.ErrIsRequired)
 }
 
-func TestTransferFunds(t *testing.T) {
+func TestTransferInstructionFunds(t *testing.T) {
 	cases := []struct {
-		transfer  commandspb.Transfer
-		errString string
+		transferInstruction commandspb.TransferInstruction
+		errString           string
 	}{
 		{
-			transfer: commandspb.Transfer{
+			transferInstruction: commandspb.TransferInstruction{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
 				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				Kind: &commandspb.Transfer_OneOff{
-					OneOff: &commandspb.OneOffTransfer{},
+				Kind: &commandspb.TransferInstruction_OneOff{
+					OneOff: &commandspb.OneOffTransferInstruction{},
 				},
 				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
 				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
@@ -34,11 +34,11 @@ func TestTransferFunds(t *testing.T) {
 			},
 		},
 		{
-			transfer: commandspb.Transfer{
+			transferInstruction: commandspb.TransferInstruction{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
 				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				Kind: &commandspb.Transfer_OneOff{
-					OneOff: &commandspb.OneOffTransfer{},
+				Kind: &commandspb.TransferInstruction_OneOff{
+					OneOff: &commandspb.OneOffTransferInstruction{},
 				},
 				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
 				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
@@ -47,104 +47,104 @@ func TestTransferFunds(t *testing.T) {
 			},
 		},
 		{
-			transfer: commandspb.Transfer{
+			transferInstruction: commandspb.TransferInstruction{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
 				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				Kind: &commandspb.Transfer_OneOff{
-					OneOff: &commandspb.OneOffTransfer{},
+				Kind: &commandspb.TransferInstruction_OneOff{
+					OneOff: &commandspb.OneOffTransferInstruction{},
 				},
 				To:        "",
 				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
 				Amount:    "1",
 				Reference: "testing",
 			},
-			errString: "transfer.to (is required)",
+			errString: "transfer_instruction.to (is required)",
 		},
 		{
-			transfer: commandspb.Transfer{
+			transferInstruction: commandspb.TransferInstruction{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
 				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				Kind: &commandspb.Transfer_OneOff{
-					OneOff: &commandspb.OneOffTransfer{},
+				Kind: &commandspb.TransferInstruction_OneOff{
+					OneOff: &commandspb.OneOffTransferInstruction{},
 				},
 				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
 				Asset:     "",
 				Amount:    "1",
 				Reference: "testing",
 			},
-			errString: "transfer.asset (is required)",
+			errString: "transfer_instruction.asset (is required)",
 		},
 		{
-			transfer: commandspb.Transfer{
+			transferInstruction: commandspb.TransferInstruction{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
 				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				Kind: &commandspb.Transfer_OneOff{
-					OneOff: &commandspb.OneOffTransfer{},
+				Kind: &commandspb.TransferInstruction_OneOff{
+					OneOff: &commandspb.OneOffTransferInstruction{},
 				},
 				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
 				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
 				Amount:    "",
 				Reference: "testing",
 			},
-			errString: "transfer.amount (is required)",
+			errString: "transfer_instruction.amount (is required)",
 		},
 		{
-			transfer: commandspb.Transfer{
+			transferInstruction: commandspb.TransferInstruction{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
 				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				Kind: &commandspb.Transfer_OneOff{
-					OneOff: &commandspb.OneOffTransfer{},
+				Kind: &commandspb.TransferInstruction_OneOff{
+					OneOff: &commandspb.OneOffTransferInstruction{},
 				},
 				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
 				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
 				Amount:    "-1",
 				Reference: "testing",
 			},
-			errString: "transfer.amount (must be positive)",
+			errString: "transfer_instruction.amount (must be positive)",
 		},
 		{
-			transfer: commandspb.Transfer{
+			transferInstruction: commandspb.TransferInstruction{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
 				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				Kind: &commandspb.Transfer_OneOff{
-					OneOff: &commandspb.OneOffTransfer{},
+				Kind: &commandspb.TransferInstruction_OneOff{
+					OneOff: &commandspb.OneOffTransferInstruction{},
 				},
 				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
 				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
 				Amount:    "0",
 				Reference: "testing",
 			},
-			errString: "transfer.amount (is required)",
+			errString: "transfer_instruction.amount (is required)",
 		},
 		{
-			transfer: commandspb.Transfer{
+			transferInstruction: commandspb.TransferInstruction{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
 				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				Kind: &commandspb.Transfer_OneOff{
-					OneOff: &commandspb.OneOffTransfer{},
+				Kind: &commandspb.TransferInstruction_OneOff{
+					OneOff: &commandspb.OneOffTransferInstruction{},
 				},
 				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
 				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
 				Amount:    "1",
 				Reference: "testingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtest",
 			},
-			errString: "transfer.reference (must be less than 100 characters)",
+			errString: "transfer_instruction.reference (must be less than 100 characters)",
 		},
 		{
-			transfer: commandspb.Transfer{
+			transferInstruction: commandspb.TransferInstruction{
 				To:        "",
 				Asset:     "",
 				Amount:    "",
 				Reference: "",
 			},
-			errString: "transfer.amount (is required), transfer.asset (is required), transfer.from_account_type (is not a valid value), transfer.kind (is required), transfer.to (is required), transfer.to_account_type (is not a valid value)",
+			errString: "transfer_instruction.amount (is required), transfer_instruction.asset (is required), transfer_instruction.from_account_type (is not a valid value), transfer_instruction.kind (is required), transfer_instruction.to (is required), transfer_instruction.to_account_type (is not a valid value)",
 		},
 		{
-			transfer: commandspb.Transfer{
+			transferInstruction: commandspb.TransferInstruction{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
 				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				Kind: &commandspb.Transfer_OneOff{
-					OneOff: &commandspb.OneOffTransfer{
+				Kind: &commandspb.TransferInstruction_OneOff{
+					OneOff: &commandspb.OneOffTransferInstruction{
 						DeliverOn: -1,
 					},
 				},
@@ -153,54 +153,54 @@ func TestTransferFunds(t *testing.T) {
 				Amount:    "1",
 				Reference: "testing",
 			},
-			errString: "transfer.kind.deliver_on (must be positive or zero)",
+			errString: "transfer_instruction.kind.deliver_on (must be positive or zero)",
 		},
 		{
-			transfer: commandspb.Transfer{
+			transferInstruction: commandspb.TransferInstruction{
 				ToAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				Kind: &commandspb.Transfer_OneOff{
-					OneOff: &commandspb.OneOffTransfer{},
+				Kind: &commandspb.TransferInstruction_OneOff{
+					OneOff: &commandspb.OneOffTransferInstruction{},
 				},
 				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
 				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
 				Amount:    "1",
 				Reference: "testing",
 			},
-			errString: "transfer.from_account_type (is not a valid value)",
+			errString: "transfer_instruction.from_account_type (is not a valid value)",
 		},
 		{
-			transfer: commandspb.Transfer{
+			transferInstruction: commandspb.TransferInstruction{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				Kind: &commandspb.Transfer_OneOff{
-					OneOff: &commandspb.OneOffTransfer{},
+				Kind: &commandspb.TransferInstruction_OneOff{
+					OneOff: &commandspb.OneOffTransferInstruction{},
 				},
 				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
 				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
 				Amount:    "1",
 				Reference: "testing",
 			},
-			errString: "transfer.to_account_type (is not a valid value)",
+			errString: "transfer_instruction.to_account_type (is not a valid value)",
 		},
 		{
-			transfer: commandspb.Transfer{
-				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				Kind: &commandspb.Transfer_Recurring{
-					Recurring: &commandspb.RecurringTransfer{},
-				},
-				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
-				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
-				Amount:    "1",
-				Reference: "testing",
-			},
-			errString: "transfer.kind.factor (not a valid float), transfer.kind.start_epoch (must be positive)",
-		},
-		{
-			transfer: commandspb.Transfer{
+			transferInstruction: commandspb.TransferInstruction{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
 				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				Kind: &commandspb.Transfer_Recurring{
-					Recurring: &commandspb.RecurringTransfer{
+				Kind: &commandspb.TransferInstruction_Recurring{
+					Recurring: &commandspb.RecurringTransferInstruction{},
+				},
+				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
+				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
+				Amount:    "1",
+				Reference: "testing",
+			},
+			errString: "transfer_instruction.kind.factor (not a valid float), transfer_instruction.kind.start_epoch (must be positive)",
+		},
+		{
+			transferInstruction: commandspb.TransferInstruction{
+				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_GENERAL,
+				Kind: &commandspb.TransferInstruction_Recurring{
+					Recurring: &commandspb.RecurringTransferInstruction{
 						StartEpoch: 0,
 						EndEpoch:   Uint64Ptr(10),
 						Factor:     "1",
@@ -211,14 +211,14 @@ func TestTransferFunds(t *testing.T) {
 				Amount:    "1",
 				Reference: "testing",
 			},
-			errString: "transfer.kind.start_epoch (must be positive)",
+			errString: "transfer_instruction.kind.start_epoch (must be positive)",
 		},
 		{
-			transfer: commandspb.Transfer{
+			transferInstruction: commandspb.TransferInstruction{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
 				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				Kind: &commandspb.Transfer_Recurring{
-					Recurring: &commandspb.RecurringTransfer{
+				Kind: &commandspb.TransferInstruction_Recurring{
+					Recurring: &commandspb.RecurringTransferInstruction{
 						StartEpoch: 10,
 						EndEpoch:   Uint64Ptr(0),
 						Factor:     "1",
@@ -229,14 +229,14 @@ func TestTransferFunds(t *testing.T) {
 				Amount:    "1",
 				Reference: "testing",
 			},
-			errString: "transfer.kind.end_epoch (must be positive, must be after start_epoch)",
+			errString: "transfer_instruction.kind.end_epoch (must be positive, must be after start_epoch)",
 		},
 		{
-			transfer: commandspb.Transfer{
+			transferInstruction: commandspb.TransferInstruction{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
 				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				Kind: &commandspb.Transfer_Recurring{
-					Recurring: &commandspb.RecurringTransfer{
+				Kind: &commandspb.TransferInstruction_Recurring{
+					Recurring: &commandspb.RecurringTransferInstruction{
 						StartEpoch: 10,
 						EndEpoch:   Uint64Ptr(11),
 						Factor:     "-1",
@@ -247,14 +247,14 @@ func TestTransferFunds(t *testing.T) {
 				Amount:    "1",
 				Reference: "testing",
 			},
-			errString: "transfer.kind.factor (must be positive)",
+			errString: "transfer_instruction.kind.factor (must be positive)",
 		},
 		{
-			transfer: commandspb.Transfer{
+			transferInstruction: commandspb.TransferInstruction{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
 				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_GENERAL,
-				Kind: &commandspb.Transfer_Recurring{
-					Recurring: &commandspb.RecurringTransfer{
+				Kind: &commandspb.TransferInstruction_Recurring{
+					Recurring: &commandspb.RecurringTransferInstruction{
 						StartEpoch: 10,
 						EndEpoch:   Uint64Ptr(11),
 						Factor:     "0.01",
@@ -267,67 +267,67 @@ func TestTransferFunds(t *testing.T) {
 			},
 		},
 		{
-			transfer: commandspb.Transfer{
+			transferInstruction: commandspb.TransferInstruction{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
 				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES,
-				Kind: &commandspb.Transfer_OneOff{
-					OneOff: &commandspb.OneOffTransfer{},
+				Kind: &commandspb.TransferInstruction_OneOff{
+					OneOff: &commandspb.OneOffTransferInstruction{},
 				},
 				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
 				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
 				Amount:    "1",
 				Reference: "testing",
 			},
-			errString: "transfer.account.to (transfers to metric-based reward accounts must be recurring transfers that specify a distribution metric)",
+			errString: "transfer_instruction.account.to (transfer instructions to metric-based reward accounts must be recurring transfer instructions that specify a distribution metric)",
 		},
 		{
-			transfer: commandspb.Transfer{
+			transferInstruction: commandspb.TransferInstruction{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
 				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES,
-				Kind: &commandspb.Transfer_OneOff{
-					OneOff: &commandspb.OneOffTransfer{},
+				Kind: &commandspb.TransferInstruction_OneOff{
+					OneOff: &commandspb.OneOffTransferInstruction{},
 				},
 				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
 				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
 				Amount:    "1",
 				Reference: "testing",
 			},
-			errString: "transfer.account.to (transfers to metric-based reward accounts must be recurring transfers that specify a distribution metric)",
+			errString: "transfer_instruction.account.to (transfer instructions to metric-based reward accounts must be recurring transfer instructions that specify a distribution metric)",
 		},
 		{
-			transfer: commandspb.Transfer{
+			transferInstruction: commandspb.TransferInstruction{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
 				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES,
-				Kind: &commandspb.Transfer_OneOff{
-					OneOff: &commandspb.OneOffTransfer{},
+				Kind: &commandspb.TransferInstruction_OneOff{
+					OneOff: &commandspb.OneOffTransferInstruction{},
 				},
 				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
 				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
 				Amount:    "1",
 				Reference: "testing",
 			},
-			errString: "transfer.account.to (transfers to metric-based reward accounts must be recurring transfers that specify a distribution metric)",
+			errString: "transfer_instruction.account.to (transfers to metric-based reward accounts must be recurring transfers that specify a distribution metric)",
 		},
 		{
-			transfer: commandspb.Transfer{
+			transferInstruction: commandspb.TransferInstruction{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
 				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS,
-				Kind: &commandspb.Transfer_OneOff{
-					OneOff: &commandspb.OneOffTransfer{},
+				Kind: &commandspb.TransferInstruction_OneOff{
+					OneOff: &commandspb.OneOffTransferInstruction{},
 				},
 				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
 				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
 				Amount:    "1",
 				Reference: "testing",
 			},
-			errString: "transfer.account.to (transfers to metric-based reward accounts must be recurring transfers that specify a distribution metric)",
+			errString: "transfer_instruction.account.to (transfer instructions to metric-based reward accounts must be recurring transfer instructions that specify a distribution metric)",
 		},
 		{
-			transfer: commandspb.Transfer{
+			transferInstruction: commandspb.TransferInstruction{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
 				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
-				Kind: &commandspb.Transfer_OneOff{
-					OneOff: &commandspb.OneOffTransfer{},
+				Kind: &commandspb.TransferInstruction_OneOff{
+					OneOff: &commandspb.OneOffTransferInstruction{},
 				},
 				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
 				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
@@ -336,11 +336,11 @@ func TestTransferFunds(t *testing.T) {
 			},
 		},
 		{
-			transfer: commandspb.Transfer{
+			transferInstruction: commandspb.TransferInstruction{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
 				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES,
-				Kind: &commandspb.Transfer_Recurring{
-					Recurring: &commandspb.RecurringTransfer{
+				Kind: &commandspb.TransferInstruction_Recurring{
+					Recurring: &commandspb.RecurringTransferInstruction{
 						StartEpoch: 10,
 						EndEpoch:   Uint64Ptr(11),
 						Factor:     "1",
@@ -355,14 +355,14 @@ func TestTransferFunds(t *testing.T) {
 				Amount:    "1",
 				Reference: "testing",
 			},
-			errString: "transfer.kind.dispatch_strategy.asset_for_metric (unknown asset)",
+			errString: "transfer_instruction.kind.dispatch_strategy.asset_for_metric (unknown asset)",
 		},
 		{
-			transfer: commandspb.Transfer{
+			transferInstruction: commandspb.TransferInstruction{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
 				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS,
-				Kind: &commandspb.Transfer_Recurring{
-					Recurring: &commandspb.RecurringTransfer{
+				Kind: &commandspb.TransferInstruction_Recurring{
+					Recurring: &commandspb.RecurringTransferInstruction{
 						StartEpoch: 10,
 						EndEpoch:   Uint64Ptr(11),
 						Factor:     "1",
@@ -381,7 +381,7 @@ func TestTransferFunds(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		err := commands.CheckTransfer(&c.transfer)
+		err := commands.CheckTransferInstruction(&c.transferInstruction)
 		if len(c.errString) <= 0 {
 			assert.NoError(t, err)
 			continue
@@ -390,8 +390,8 @@ func TestTransferFunds(t *testing.T) {
 	}
 }
 
-func checkTransfer(cmd *commandspb.Transfer) commands.Errors {
-	err := commands.CheckTransfer(cmd)
+func checkTransferInstruction(cmd *commandspb.TransferInstruction) commands.Errors {
+	err := commands.CheckTransferInstruction(cmd)
 
 	e, ok := err.(commands.Errors)
 	if !ok {

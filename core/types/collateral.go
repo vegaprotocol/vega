@@ -79,7 +79,7 @@ func (a Accounts) IntoProto() []*proto.Account {
 	return out
 }
 
-type TransferRequest struct {
+type TransferInstructionRequest struct {
 	FromAccount []*Account
 	ToAccount   []*Account
 	Amount      *num.Uint
@@ -88,8 +88,8 @@ type TransferRequest struct {
 	Reference   string
 }
 
-func (t *TransferRequest) IntoProto() *proto.TransferRequest {
-	return &proto.TransferRequest{
+func (t *TransferInstructionRequest) IntoProto() *proto.TransferInstructionRequest {
+	return &proto.TransferInstructionRequest{
 		FromAccount: Accounts(t.FromAccount).IntoProto(),
 		ToAccount:   Accounts(t.ToAccount).IntoProto(),
 		Amount:      num.UintToString(t.Amount),
@@ -99,48 +99,48 @@ func (t *TransferRequest) IntoProto() *proto.TransferRequest {
 	}
 }
 
-type TransferResponse struct {
-	Transfers []*LedgerEntry
-	Balances  []*TransferBalance
+type TransferInstructionResponse struct {
+	TransferInstructions []*LedgerEntry
+	Balances             []*TransferInstructionBalance
 }
 
-func (t *TransferResponse) IntoProto() *proto.TransferResponse {
-	return &proto.TransferResponse{
-		Transfers: LedgerEntries(t.Transfers).IntoProto(),
-		Balances:  TransferBalances(t.Balances).IntoProto(),
+func (t *TransferInstructionResponse) IntoProto() *proto.TransferInstructionResponse {
+	return &proto.TransferInstructionResponse{
+		Transfers: LedgerEntries(t.TransferInstructions).IntoProto(),
+		Balances:  TransferInstructionBalances(t.Balances).IntoProto(),
 	}
 }
 
-type TransferResponses []*TransferResponse
+type TransferInstructionResponses []*TransferInstructionResponse
 
-func (a TransferResponses) IntoProto() []*proto.TransferResponse {
-	out := make([]*proto.TransferResponse, 0, len(a))
+func (a TransferInstructionResponses) IntoProto() []*proto.TransferInstructionResponse {
+	out := make([]*proto.TransferInstructionResponse, 0, len(a))
 	for _, v := range a {
 		out = append(out, v.IntoProto())
 	}
 	return out
 }
 
-type TransferBalance struct {
+type TransferInstructionBalance struct {
 	Account *Account
 	Balance *num.Uint
 }
 
-func (t *TransferBalance) IntoProto() *proto.TransferBalance {
+func (t *TransferInstructionBalance) IntoProto() *proto.TransferInstructionBalance {
 	var acc *proto.Account
 	if t.Account != nil {
 		acc = t.Account.IntoProto()
 	}
-	return &proto.TransferBalance{
+	return &proto.TransferInstructionBalance{
 		Account: acc,
 		Balance: t.Balance.String(),
 	}
 }
 
-type TransferBalances []*TransferBalance
+type TransferInstructionBalances []*TransferInstructionBalance
 
-func (a TransferBalances) IntoProto() []*proto.TransferBalance {
-	out := make([]*proto.TransferBalance, 0, len(a))
+func (a TransferInstructionBalances) IntoProto() []*proto.TransferInstructionBalance {
+	out := make([]*proto.TransferInstructionBalance, 0, len(a))
 	for _, v := range a {
 		out = append(out, v.IntoProto())
 	}
@@ -215,7 +215,7 @@ const (
 	// Global reward accounts contain rewards per asset.
 	AccountTypeGlobalReward AccountType = proto.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD
 	// Global account to hold pending transfers.
-	AccountTypePendingTransfers AccountType = proto.AccountType_ACCOUNT_TYPE_PENDING_TRANSFERS
+	AccountTypePendingTransfers AccountType = proto.AccountType_ACCOUNT_TYPE_PENDING_TRANSFER_INSTRUCTIONS
 	// Asset account for paid taker fees.
 	AccountTypeMakerPaidFeeReward AccountType = proto.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES
 	// Asset account for received maker fees.

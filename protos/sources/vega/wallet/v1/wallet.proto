@@ -26,8 +26,8 @@ message SubmitTransactionRequest {
     commands.v1.UndelegateSubmission undelegate_submission = 1009;
     commands.v1.LiquidityProvisionCancellation liquidity_provision_cancellation = 1010;
     commands.v1.LiquidityProvisionAmendment liquidity_provision_amendment = 1011;
-    commands.v1.Transfer transfer = 1012;
-    commands.v1.CancelTransfer cancel_transfer = 1013;
+    commands.v1.TransferInstruction transfer_instruction = 1012;
+    commands.v1.CancelTransferInstruction cancel_transfer_instruction = 1013;
     commands.v1.AnnounceNode announce_node = 1014;
     commands.v1.BatchMarketInstructions batch_market_instructions = 1015;
 

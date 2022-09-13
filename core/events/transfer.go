@@ -22,60 +22,60 @@ import (
 // Transfer ...
 type TransferFunds struct {
 	*Base
-	transfer *eventspb.Transfer
+	transferInstruction *eventspb.TransferInstruction
 }
 
-func NewOneOffTransferFundsEvent(
+func NewOneOffTransferInstructionFundsEvent(
 	ctx context.Context,
-	t *types.OneOffTransfer,
+	t *types.OneOffTransferInstruction,
 ) *TransferFunds {
 	return &TransferFunds{
-		Base:     newBase(ctx, TransferEvent),
-		transfer: t.IntoEvent(),
+		Base:                newBase(ctx, TransferInstructionEvent),
+		transferInstruction: t.IntoEvent(),
 	}
 }
 
 func NewRecurringTransferFundsEvent(
 	ctx context.Context,
-	t *types.RecurringTransfer,
+	t *types.RecurringTransferInstruction,
 ) *TransferFunds {
 	return &TransferFunds{
-		Base:     newBase(ctx, TransferEvent),
-		transfer: t.IntoEvent(),
+		Base:                newBase(ctx, TransferInstructionEvent),
+		transferInstruction: t.IntoEvent(),
 	}
 }
 
 func (t TransferFunds) PartyID() string {
-	return t.transfer.From
+	return t.transferInstruction.From
 }
 
-func (t TransferFunds) TransferFunds() eventspb.Transfer {
+func (t TransferFunds) TransferFunds() eventspb.TransferInstruction {
 	return t.Proto()
 }
 
-func (t TransferFunds) Proto() eventspb.Transfer {
-	return *t.transfer
+func (t TransferFunds) Proto() eventspb.TransferInstruction {
+	return *t.transferInstruction
 }
 
 func (t TransferFunds) StreamMessage() *eventspb.BusEvent {
 	p := t.Proto()
 
 	busEvent := newBusEventFromBase(t.Base)
-	busEvent.Event = &eventspb.BusEvent_Transfer{
-		Transfer: &p,
+	busEvent.Event = &eventspb.BusEvent_TransferInstruction{
+		TransferInstruction: &p,
 	}
 
 	return busEvent
 }
 
 func TransferFundsEventFromStream(ctx context.Context, be *eventspb.BusEvent) *TransferFunds {
-	event := be.GetTransfer()
+	event := be.GetTransferInstruction()
 	if event == nil {
 		return nil
 	}
 
 	return &TransferFunds{
-		Base:     newBaseFromBusEvent(ctx, TransferEvent, be),
-		transfer: event,
+		Base:                newBaseFromBusEvent(ctx, TransferInstructionEvent, be),
+		transferInstruction: event,
 	}
 }

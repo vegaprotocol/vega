@@ -30,9 +30,9 @@ func (e *Engine) Name() types.CheckpointName {
 
 func (e *Engine) Checkpoint() ([]byte, error) {
 	msg := &checkpoint.Banking{
-		TransfersAtTime:    e.getScheduledTransfers(),
-		RecurringTransfers: e.getRecurringTransfers(),
-		BridgeState:        e.getBridgeState(),
+		TransferInstructionsAtTime:    e.getScheduledTransferInstructions(),
+		RecurringTransferInstructions: e.getRecurringTransferInstructions(),
+		BridgeState:                   e.getBridgeState(),
 	}
 	ret, err := proto.Marshal(msg)
 	if err != nil {
@@ -47,12 +47,12 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 		return err
 	}
 
-	evts, err := e.loadScheduledTransfers(ctx, b.TransfersAtTime)
+	evts, err := e.loadScheduledTransferInstructions(ctx, b.TransferInstructionsAtTime)
 	if err != nil {
 		return err
 	}
 
-	evts = append(evts, e.loadRecurringTransfers(ctx, b.RecurringTransfers)...)
+	evts = append(evts, e.loadRecurringTransferInstructions(ctx, b.RecurringTransferInstructions)...)
 
 	e.loadBridgeState(b.BridgeState)
 
@@ -81,35 +81,35 @@ func (e *Engine) loadBridgeState(state *checkpoint.BridgeState) {
 	}
 }
 
-func (e *Engine) loadScheduledTransfers(
-	ctx context.Context, r []*checkpoint.ScheduledTransferAtTime,
+func (e *Engine) loadScheduledTransferInstructions(
+	ctx context.Context, r []*checkpoint.ScheduledTransferInstructionAtTime,
 ) ([]events.Event, error) {
 	evts := []events.Event{}
 	for _, v := range r {
-		transfers := make([]scheduledTransfer, 0, len(v.Transfers))
-		for _, v := range v.Transfers {
-			transfer, err := scheduledTransferFromProto(v)
+		transferInstructions := make([]scheduledTransferInstruction, 0, len(v.TransferInstructions))
+		for _, v := range v.TransferInstructions {
+			transferInstruction, err := scheduledTransferInstructionFromProto(v)
 			if err != nil {
 				return nil, err
 			}
-			evts = append(evts, events.NewOneOffTransferFundsEvent(ctx, transfer.oneoff))
-			transfers = append(transfers, transfer)
+			evts = append(evts, events.NewOneOffTransferInstructionFundsEvent(ctx, transferInstruction.oneoff))
+			transferInstructions = append(transferInstructions, transferInstruction)
 		}
-		e.scheduledTransfers[time.Unix(v.DeliverOn, 0)] = transfers
+		e.scheduledTransferInstructions[time.Unix(v.DeliverOn, 0)] = transferInstructions
 	}
 
 	return evts, nil
 }
 
-func (e *Engine) loadRecurringTransfers(
-	ctx context.Context, r *checkpoint.RecurringTransfers,
+func (e *Engine) loadRecurringTransferInstructions(
+	ctx context.Context, r *checkpoint.RecurringTransferInstructions,
 ) []events.Event {
 	evts := []events.Event{}
-	for _, v := range r.RecurringTransfers {
-		transfer := types.RecurringTransferFromEvent(v)
-		e.recurringTransfers = append(e.recurringTransfers, transfer)
-		e.recurringTransfersMap[transfer.ID] = transfer
-		evts = append(evts, events.NewRecurringTransferFundsEvent(ctx, transfer))
+	for _, v := range r.RecurringTransferInstructions {
+		transferInstruction := types.RecurringTransferInstructionFromEvent(v)
+		e.recurringTransferInstructions = append(e.recurringTransferInstructions, transferInstruction)
+		e.recurringTransferInstructionsMap[transferInstruction.ID] = transferInstruction
+		evts = append(evts, events.NewRecurringTransferFundsEvent(ctx, transferInstruction))
 	}
 	return evts
 }
@@ -122,28 +122,28 @@ func (e *Engine) getBridgeState() *checkpoint.BridgeState {
 	}
 }
 
-func (e *Engine) getRecurringTransfers() *checkpoint.RecurringTransfers {
-	out := &checkpoint.RecurringTransfers{
-		RecurringTransfers: make([]*eventspb.Transfer, 0, len(e.recurringTransfers)),
+func (e *Engine) getRecurringTransferInstructions() *checkpoint.RecurringTransferInstructions {
+	out := &checkpoint.RecurringTransferInstructions{
+		RecurringTransferInstructions: make([]*eventspb.TransferInstruction, 0, len(e.recurringTransferInstructions)),
 	}
 
-	for _, v := range e.recurringTransfers {
-		out.RecurringTransfers = append(out.RecurringTransfers, v.IntoEvent())
+	for _, v := range e.recurringTransferInstructions {
+		out.RecurringTransferInstructions = append(out.RecurringTransferInstructions, v.IntoEvent())
 	}
 
 	return out
 }
 
-func (e *Engine) getScheduledTransfers() []*checkpoint.ScheduledTransferAtTime {
-	out := []*checkpoint.ScheduledTransferAtTime{}
+func (e *Engine) getScheduledTransferInstructions() []*checkpoint.ScheduledTransferInstructionAtTime {
+	out := []*checkpoint.ScheduledTransferInstructionAtTime{}
 
-	for k, v := range e.scheduledTransfers {
-		transfers := make([]*checkpoint.ScheduledTransfer, 0, len(v))
+	for k, v := range e.scheduledTransferInstructions {
+		transferInstructions := make([]*checkpoint.ScheduledTransferInstruction, 0, len(v))
 		for _, v := range v {
-			transfers = append(transfers, v.ToProto())
+			transferInstructions = append(transferInstructions, v.ToProto())
 		}
 
-		out = append(out, &checkpoint.ScheduledTransferAtTime{DeliverOn: k.Unix(), Transfers: transfers})
+		out = append(out, &checkpoint.ScheduledTransferInstructionAtTime{DeliverOn: k.Unix(), TransferInstructions: transferInstructions})
 	}
 
 	sort.SliceStable(out, func(i, j int) bool { return out[i].DeliverOn < out[j].DeliverOn })

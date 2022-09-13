@@ -329,7 +329,7 @@ func (mat *MarketActivityTracker) GetMarketScores(asset string, markets []string
 }
 
 // GetFeePartyScores returns the fraction each of the participants paid/received in the given fee of the market in the relevant period.
-func (mat *MarketActivityTracker) GetFeePartyScores(market string, feeType types.TransferType) []*types.PartyContibutionScore {
+func (mat *MarketActivityTracker) GetFeePartyScores(market string, feeType types.TransferInstructionType) []*types.PartyContibutionScore {
 	if _, ok := mat.marketToTracker[market]; !ok {
 		return []*types.PartyContibutionScore{}
 	}
@@ -337,11 +337,11 @@ func (mat *MarketActivityTracker) GetFeePartyScores(market string, feeType types
 	feesData := map[string]*num.Uint{}
 
 	switch feeType {
-	case types.TransferTypeMakerFeeReceive:
+	case types.TransferInstructionTypeMakerFeeReceive:
 		feesData = mat.marketToTracker[market].makerFeesReceived
-	case types.TransferTypeMakerFeePay:
+	case types.TransferInstructionTypeMakerFeePay:
 		feesData = mat.marketToTracker[market].makerFeesPaid
-	case types.TransferTypeLiquidityFeeDistribute:
+	case types.TransferInstructionTypeLiquidityFeeDistribute:
 		feesData = mat.marketToTracker[market].lpFees
 	default:
 	}
@@ -365,18 +365,18 @@ func (mat *MarketActivityTracker) GetFeePartyScores(market string, feeType types
 
 // UpdateFeesFromTransfers takes a slice of transfers and if they represent fees it updates the market fee tracker.
 // market is guaranteed to exist in the mapping as it is added when proposed.
-func (mat *MarketActivityTracker) UpdateFeesFromTransfers(market string, transfers []*types.Transfer) {
+func (mat *MarketActivityTracker) UpdateFeesFromTransfers(market string, transfers []*types.TransferInstruction) {
 	for _, t := range transfers {
 		mt := mat.marketToTracker[market]
 		if mt == nil {
 			continue
 		}
 		switch t.Type {
-		case types.TransferTypeMakerFeePay:
+		case types.TransferInstructionTypeMakerFeePay:
 			mat.addFees(mt.makerFeesPaid, t.Owner, t.Amount.Amount, mt.totalMakerFeesPaid)
-		case types.TransferTypeMakerFeeReceive:
+		case types.TransferInstructionTypeMakerFeeReceive:
 			mat.addFees(mt.makerFeesReceived, t.Owner, t.Amount.Amount, mt.totalMakerFeesReceived)
-		case types.TransferTypeLiquidityFeeDistribute:
+		case types.TransferInstructionTypeLiquidityFeeDistribute:
 			mat.addFees(mt.lpFees, t.Owner, t.Amount.Amount, mt.totalLPFees)
 		default:
 		}

@@ -1387,7 +1387,7 @@ func (mr *MockBankingMockRecorder) BridgeStopped(arg0, arg1, arg2, arg3, arg4, a
 }
 
 // CancelTransferFunds mocks base method.
-func (m *MockBanking) CancelTransferFunds(arg0 context.Context, arg1 *types.CancelTransferFunds) error {
+func (m *MockBanking) CancelTransferFunds(arg0 context.Context, arg1 *types.CancelTransferInstructionFunds) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CancelTransferFunds", arg0, arg1)
 	ret0, _ := ret[0].(error)
@@ -1471,7 +1471,7 @@ func (mr *MockBankingMockRecorder) EnableERC20(arg0, arg1, arg2, arg3, arg4, arg
 }
 
 // TransferFunds mocks base method.
-func (m *MockBanking) TransferFunds(arg0 context.Context, arg1 *types.TransferFunds) error {
+func (m *MockBanking) TransferFunds(arg0 context.Context, arg1 *types.TransferInstructionFunds) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TransferFunds", arg0, arg1)
 	ret0, _ := ret[0].(error)

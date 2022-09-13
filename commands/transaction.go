@@ -216,10 +216,10 @@ func checkInputData(version commandspb.TxVersion, rawInputData []byte, expectedC
 			errs.Merge(checkKeyRotateSubmission(cmd.KeyRotateSubmission))
 		case *commandspb.InputData_StateVariableProposal:
 			errs.Merge(checkStateVariableProposal(cmd.StateVariableProposal))
-		case *commandspb.InputData_Transfer:
-			errs.Merge(checkTransfer(cmd.Transfer))
-		case *commandspb.InputData_CancelTransfer:
-			errs.Merge(checkCancelTransfer(cmd.CancelTransfer))
+		case *commandspb.InputData_TransferInstruction:
+			errs.Merge(checkTransfeInstructionr(cmd.TransferInstruction))
+		case *commandspb.InputData_CancelTransferInstruction:
+			errs.Merge(checkCancelTransferInstruction(cmd.CancelTransferInstruction))
 		case *commandspb.InputData_ValidatorHeartbeat:
 			errs.Merge(checkValidatorHeartbeat(cmd.ValidatorHeartbeat))
 		case *commandspb.InputData_EthereumKeyRotateSubmission:

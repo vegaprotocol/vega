@@ -46,8 +46,8 @@ message InputData {
     UndelegateSubmission undelegate_submission = 1009;
     LiquidityProvisionCancellation liquidity_provision_cancellation = 1010;
     LiquidityProvisionAmendment liquidity_provision_amendment = 1011;
-    Transfer transfer = 1012;
-    CancelTransfer cancel_transfer = 1013;
+    TransferInstruction transfer = 1012;
+    CancelTransferInstruction cancel_transfer = 1013;
     AnnounceNode announce_node = 1014;
     BatchMarketInstructions batch_market_instructions = 1015;
 

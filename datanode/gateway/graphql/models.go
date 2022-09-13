@@ -37,8 +37,8 @@ type RiskModel interface {
 	IsRiskModel()
 }
 
-type TransferKind interface {
-	IsTransferKind()
+type TransferInstructionKind interface {
+	IsTransferInstructionKind()
 }
 
 // One of the possible asset sources for update assets proposals
@@ -265,7 +265,7 @@ type LedgerEntry struct {
 	Reference string `json:"reference"`
 	// Type of ledger entry
 	Type string `json:"type"`
-	// RFC3339Nano time at which the transfer was made
+	// RFC3339Nano time at which the transfer instruction was made
 	Timestamp string `json:"timestamp"`
 }
 
@@ -537,26 +537,26 @@ type TransactionSubmitted struct {
 	Success bool `json:"success"`
 }
 
-type TransferBalance struct {
-	// Account involved in transfer
+type TransferInstructionBalance struct {
+	// Account involved in transfer instruction
 	Account *vega.Account `json:"account"`
 	// The new balance of the account
 	Balance string `json:"balance"`
 }
 
-type TransferResponse struct {
-	// The ledger entries and balances resulting from a transfer request
-	Transfers []*LedgerEntry `json:"transfers"`
+type TransferInstructionResponse struct {
+	// The ledger entries and balances resulting from a transfer instruction request
+	TransferInstructions []*LedgerEntry `json:"transferInstructions"`
 	// The balances of accounts involved in the transfer
-	Balances []*TransferBalance `json:"balances"`
+	Balances []*TransferInstructionBalance `json:"balances"`
 }
 
-type TransferResponses struct {
-	// A group of transfer responses - events from core
-	Responses []*TransferResponse `json:"responses"`
+type TransferInstructionResponses struct {
+	// A group of transfer instruction responses - events from core
+	Responses []*TransferInstructionResponse `json:"responses"`
 }
 
-func (TransferResponses) IsEvent() {}
+func (TransferInstructionResponses) IsEvent() {}
 
 // An asset originated from an Ethereum ERC20 Token
 type UpdateErc20 struct {
@@ -581,7 +581,7 @@ const (
 	// Vega Time has changed
 	BusEventTypeTimeUpdate BusEventType = "TimeUpdate"
 	// A balance has been transferred between accounts
-	BusEventTypeTransferResponses BusEventType = "TransferResponses"
+	BusEventTypeTransferInstructionResponses BusEventType = "TransferInstructionResponses"
 	// A position resolution event has occurred
 	BusEventTypePositionResolution BusEventType = "PositionResolution"
 	// An order has been created or updated
@@ -634,7 +634,7 @@ const (
 
 var AllBusEventType = []BusEventType{
 	BusEventTypeTimeUpdate,
-	BusEventTypeTransferResponses,
+	BusEventTypeTransferInstructionResponses,
 	BusEventTypePositionResolution,
 	BusEventTypeOrder,
 	BusEventTypeAccount,
@@ -663,7 +663,7 @@ var AllBusEventType = []BusEventType{
 
 func (e BusEventType) IsValid() bool {
 	switch e {
-	case BusEventTypeTimeUpdate, BusEventTypeTransferResponses, BusEventTypePositionResolution, BusEventTypeOrder, BusEventTypeAccount, BusEventTypeParty, BusEventTypeTrade, BusEventTypeMarginLevels, BusEventTypeProposal, BusEventTypeVote, BusEventTypeMarketData, BusEventTypeNodeSignature, BusEventTypeLossSocialization, BusEventTypeSettlePosition, BusEventTypeSettleDistressed, BusEventTypeMarketCreated, BusEventTypeMarketUpdated, BusEventTypeAsset, BusEventTypeMarketTick, BusEventTypeAuction, BusEventTypeRiskFactor, BusEventTypeLiquidityProvision, BusEventTypeDeposit, BusEventTypeWithdrawal, BusEventTypeOracleSpec, BusEventTypeMarket:
+	case BusEventTypeTimeUpdate, BusEventTypeTransferInstructionResponses, BusEventTypePositionResolution, BusEventTypeOrder, BusEventTypeAccount, BusEventTypeParty, BusEventTypeTrade, BusEventTypeMarginLevels, BusEventTypeProposal, BusEventTypeVote, BusEventTypeMarketData, BusEventTypeNodeSignature, BusEventTypeLossSocialization, BusEventTypeSettlePosition, BusEventTypeSettleDistressed, BusEventTypeMarketCreated, BusEventTypeMarketUpdated, BusEventTypeAsset, BusEventTypeMarketTick, BusEventTypeAuction, BusEventTypeRiskFactor, BusEventTypeLiquidityProvision, BusEventTypeDeposit, BusEventTypeWithdrawal, BusEventTypeOracleSpec, BusEventTypeMarket:
 		return true
 	}
 	return false
@@ -690,45 +690,45 @@ func (e BusEventType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-type TransferDirection string
+type TransferInstructionDirection string
 
 const (
-	TransferDirectionTo       TransferDirection = "To"
-	TransferDirectionFrom     TransferDirection = "From"
-	TransferDirectionToOrFrom TransferDirection = "ToOrFrom"
+	TransferInstructionDirectionTo       TransferInstructionDirection = "To"
+	TransferInstructionDirectionFrom     TransferInstructionDirection = "From"
+	TransferInstructionDirectionToOrFrom TransferInstructionDirection = "ToOrFrom"
 )
 
-var AllTransferDirection = []TransferDirection{
-	TransferDirectionTo,
-	TransferDirectionFrom,
-	TransferDirectionToOrFrom,
+var AllTransferInstructionDirection = []TransferInstructionDirection{
+	TransferInstructionDirectionTo,
+	TransferInstructionDirectionFrom,
+	TransferInstructionDirectionToOrFrom,
 }
 
-func (e TransferDirection) IsValid() bool {
+func (e TransferInstructionDirection) IsValid() bool {
 	switch e {
-	case TransferDirectionTo, TransferDirectionFrom, TransferDirectionToOrFrom:
+	case TransferInstructionDirectionTo, TransferInstructionDirectionFrom, TransferInstructionDirectionToOrFrom:
 		return true
 	}
 	return false
 }
 
-func (e TransferDirection) String() string {
+func (e TransferInstructionDirection) String() string {
 	return string(e)
 }
 
-func (e *TransferDirection) UnmarshalGQL(v interface{}) error {
+func (e *TransferInstructionDirection) UnmarshalGQL(v interface{}) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
 	}
 
-	*e = TransferDirection(str)
+	*e = TransferInstructionDirection(str)
 	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid TransferDirection", str)
+		return fmt.Errorf("%s is not a valid TransferInstructionDirection", str)
 	}
 	return nil
 }
 
-func (e TransferDirection) MarshalGQL(w io.Writer) {
+func (e TransferInstructionDirection) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }

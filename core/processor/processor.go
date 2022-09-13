@@ -187,8 +187,8 @@ type Banking interface {
 	DepositERC20(context.Context, *types.ERC20Deposit, string, uint64, uint64, string) error
 	WithdrawERC20(context.Context, string, string, string, *num.Uint, *types.Erc20WithdrawExt) error
 	ERC20WithdrawalEvent(context.Context, *types.ERC20Withdrawal, uint64, uint64, string) error
-	TransferFunds(context.Context, *types.TransferFunds) error
-	CancelTransferFunds(context.Context, *types.CancelTransferFunds) error
+	TransferFunds(context.Context, *types.TransferInstructionFunds) error
+	CancelTransferFunds(context.Context, *types.CancelTransferInstructionFunds) error
 	BridgeStopped(context.Context, bool, string, uint64, uint64, string) error
 	BridgeResumed(context.Context, bool, string, uint64, uint64, string) error
 }

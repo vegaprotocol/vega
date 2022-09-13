@@ -407,8 +407,8 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		steps.ClearAllEvents(execsetup.broker)
 		return nil
 	})
-	s.Step(`^clear transfer response events$`, func() error {
-		steps.ClearTransferResponseEvents(execsetup.broker)
+	s.Step(`^clear transfer instructions response events$`, func() error {
+		steps.ClearTransferInstructionResponseEvents(execsetup.broker)
 		return nil
 	})
 	s.Step(`^the following events should be emitted:$`, func(table *godog.Table) error {

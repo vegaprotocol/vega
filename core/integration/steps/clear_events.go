@@ -18,6 +18,6 @@ func ClearAllEvents(broker *stubs.BrokerStub) {
 	broker.ClearAllEvents()
 }
 
-func ClearTransferResponseEvents(broker *stubs.BrokerStub) {
-	broker.ClearTransferResponseEvents()
+func ClearTransferInstructionResponseEvents(broker *stubs.BrokerStub) {
+	broker.ClearTransferInstructionResponseEvents()
 }

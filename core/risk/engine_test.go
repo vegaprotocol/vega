@@ -57,7 +57,7 @@ type testMargin struct {
 	buy             int64
 	sell            int64
 	price           uint64
-	transfer        *types.Transfer
+	transfer        *types.TransferInstruction
 	asset           string
 	margin          uint64
 	general         uint64
@@ -126,11 +126,11 @@ func testMarginLevelsTS(t *testing.T) {
 	resp := eng.UpdateMarginsOnSettlement(ctx, evts, markPrice)
 	assert.Equal(t, 1, len(resp))
 	// ensure we get the correct transfer request back, correct amount etc...
-	trans := resp[0].Transfer()
+	trans := resp[0].TransferInstruction()
 	assert.EqualValues(t, 20, trans.Amount.Amount.Uint64())
 	// min = 15 so we go back to maintenance level
 	assert.EqualValues(t, 15, trans.MinAmount.Uint64())
-	assert.Equal(t, types.TransferTypeMarginLow, trans.Type)
+	assert.Equal(t, types.TransferInstructionTypeMarginLow, trans.Type)
 }
 
 func testMarginTopup(t *testing.T) {
@@ -158,11 +158,11 @@ func testMarginTopup(t *testing.T) {
 	resp := eng.UpdateMarginsOnSettlement(ctx, evts, markPrice)
 	assert.Equal(t, 1, len(resp))
 	// ensure we get the correct transfer request back, correct amount etc...
-	trans := resp[0].Transfer()
+	trans := resp[0].TransferInstruction()
 	assert.EqualValues(t, 20, trans.Amount.Amount.Uint64())
 	// min = 15 so we go back to maintenance level
 	assert.EqualValues(t, 15, trans.MinAmount.Uint64())
-	assert.Equal(t, types.TransferTypeMarginLow, trans.Type)
+	assert.Equal(t, types.TransferInstructionTypeMarginLow, trans.Type)
 }
 
 func testMarginTopupOnOrderFailInsufficientFunds(t *testing.T) {
@@ -244,10 +244,10 @@ func testMarginOverflow(t *testing.T) {
 	assert.Equal(t, 1, len(resp))
 
 	// ensure we get the correct transfer request back, correct amount etc...
-	trans := resp[0].Transfer()
+	trans := resp[0].TransferInstruction()
 	assert.EqualValues(t, 470, trans.Amount.Amount.Uint64())
 	// assert.Equal(t, riskMinamount-int64(evt.margin), trans.Amount.MinAmount)
-	assert.Equal(t, types.TransferTypeMarginHigh, trans.Type)
+	assert.Equal(t, types.TransferInstructionTypeMarginHigh, trans.Type)
 }
 
 func testMarginOverflowAuctionEnd(t *testing.T) {
@@ -280,10 +280,10 @@ func testMarginOverflowAuctionEnd(t *testing.T) {
 	assert.Equal(t, 1, len(resp))
 
 	// ensure we get the correct transfer request back, correct amount etc...
-	trans := resp[0].Transfer()
+	trans := resp[0].TransferInstruction()
 	assert.EqualValues(t, 470, trans.Amount.Amount.Uint64())
 	// assert.Equal(t, riskMinamount-int64(evt.margin), trans.Amount.MinAmount)
-	assert.Equal(t, types.TransferTypeMarginHigh, trans.Type)
+	assert.Equal(t, types.TransferInstructionTypeMarginHigh, trans.Type)
 }
 
 func testMarginWithOrderInBook(t *testing.T) {
@@ -740,7 +740,7 @@ func (m testMargin) VWSell() *num.Uint {
 
 func (m testMargin) ClearPotentials() {}
 
-func (m testMargin) Transfer() *types.Transfer {
+func (m testMargin) Transfer() *types.TransferInstruction {
 	return m.transfer
 }
 

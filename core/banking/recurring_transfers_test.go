@@ -40,10 +40,10 @@ func testInvalidRecurringTransfersBadAmount(t *testing.T) {
 	defer e.ctrl.Finish()
 
 	ctx := context.Background()
-	transfer := &types.TransferFunds{
-		Kind: types.TransferCommandKindRecurring,
-		Recurring: &types.RecurringTransfer{
-			TransferBase: &types.TransferBase{
+	transfer := &types.TransferInstructionFunds{
+		Kind: types.TransferInstructionCommandKindRecurring,
+		Recurring: &types.RecurringTransferInstruction{
+			TransferInstructionBase: &types.TransferInstructionBase{
 				ID:              "TRANSFERID",
 				From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
 				FromAccountType: types.AccountTypeGeneral,
@@ -80,10 +80,10 @@ func testInvalidRecurringTransfersInThePast(t *testing.T) {
 
 	var endEpoch13 uint64 = 11
 	ctx := context.Background()
-	transfer := &types.TransferFunds{
-		Kind: types.TransferCommandKindRecurring,
-		Recurring: &types.RecurringTransfer{
-			TransferBase: &types.TransferBase{
+	transfer := &types.TransferInstructionFunds{
+		Kind: types.TransferInstructionCommandKindRecurring,
+		Recurring: &types.RecurringTransferInstruction{
+			TransferInstructionBase: &types.TransferInstructionBase{
 				ID:              "TRANSFERID",
 				From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
 				FromAccountType: types.AccountTypeGeneral,
@@ -109,10 +109,10 @@ func testInvalidRecurringTransfersInThePast(t *testing.T) {
 
 	// now all should be fine, let's try to start another same transfer use the current epoch
 
-	transfer2 := &types.TransferFunds{
-		Kind: types.TransferCommandKindRecurring,
-		Recurring: &types.RecurringTransfer{
-			TransferBase: &types.TransferBase{
+	transfer2 := &types.TransferInstructionFunds{
+		Kind: types.TransferInstructionCommandKindRecurring,
+		Recurring: &types.RecurringTransferInstruction{
+			TransferInstructionBase: &types.TransferInstructionBase{
 				ID:              "TRANSFERID2",
 				From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
 				FromAccountType: types.AccountTypeGeneral,
@@ -144,10 +144,10 @@ func testInvalidRecurringTransfersDuplicates(t *testing.T) {
 
 	var endEpoch13 uint64 = 11
 	ctx := context.Background()
-	transfer := &types.TransferFunds{
-		Kind: types.TransferCommandKindRecurring,
-		Recurring: &types.RecurringTransfer{
-			TransferBase: &types.TransferBase{
+	transfer := &types.TransferInstructionFunds{
+		Kind: types.TransferInstructionCommandKindRecurring,
+		Recurring: &types.RecurringTransferInstruction{
+			TransferInstructionBase: &types.TransferInstructionBase{
 				ID:              "TRANSFERID",
 				From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
 				FromAccountType: types.AccountTypeGeneral,
@@ -170,10 +170,10 @@ func testInvalidRecurringTransfersDuplicates(t *testing.T) {
 
 	// now all should be fine, let's try to start another same transfer
 
-	transfer2 := &types.TransferFunds{
-		Kind: types.TransferCommandKindRecurring,
-		Recurring: &types.RecurringTransfer{
-			TransferBase: &types.TransferBase{
+	transfer2 := &types.TransferInstructionFunds{
+		Kind: types.TransferInstructionCommandKindRecurring,
+		Recurring: &types.RecurringTransferInstruction{
+			TransferInstructionBase: &types.TransferInstructionBase{
 				ID:              "TRANSFERID2",
 				From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
 				FromAccountType: types.AccountTypeGeneral,
@@ -195,10 +195,10 @@ func testInvalidRecurringTransfersDuplicates(t *testing.T) {
 	)
 
 	// same from/to different asset - should pass
-	transfer3 := &types.TransferFunds{
-		Kind: types.TransferCommandKindRecurring,
-		Recurring: &types.RecurringTransfer{
-			TransferBase: &types.TransferBase{
+	transfer3 := &types.TransferInstructionFunds{
+		Kind: types.TransferInstructionCommandKindRecurring,
+		Recurring: &types.RecurringTransferInstruction{
+			TransferInstructionBase: &types.TransferInstructionBase{
 				ID:              "TRANSFERID3",
 				From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
 				FromAccountType: types.AccountTypeGeneral,
@@ -226,10 +226,10 @@ func testForeverTransferCancelledNotEnoughFunds(t *testing.T) {
 	e.OnEpoch(context.Background(), types.Epoch{Seq: 7, Action: vega.EpochAction_EPOCH_ACTION_END})
 
 	ctx := context.Background()
-	transfer := &types.TransferFunds{
-		Kind: types.TransferCommandKindRecurring,
-		Recurring: &types.RecurringTransfer{
-			TransferBase: &types.TransferBase{
+	transfer := &types.TransferInstructionFunds{
+		Kind: types.TransferInstructionCommandKindRecurring,
+		Recurring: &types.RecurringTransferInstruction{
+			TransferInstructionBase: &types.TransferInstructionBase{
 				ID:              "TRANSFERID",
 				From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
 				FromAccountType: types.AccountTypeGeneral,
@@ -268,12 +268,12 @@ func testForeverTransferCancelledNotEnoughFunds(t *testing.T) {
 	// assert the calculation of fees and transfer request are correct
 	e.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
 		func(ctx context.Context,
-			transfers []*types.Transfer,
+			transfers []*types.TransferInstruction,
 			accountTypes []types.AccountType,
 			references []string,
-			feeTransfers []*types.Transfer,
+			feeTransfers []*types.TransferInstruction,
 			feeTransfersAccountTypes []types.AccountType,
-		) ([]*types.TransferResponse, error,
+		) ([]*types.TransferInstructionResponse, error,
 		) {
 			t.Run("ensure transfers are correct", func(t *testing.T) {
 				// transfer is done fully instantly, we should have 2 transfer
@@ -316,7 +316,7 @@ func testForeverTransferCancelledNotEnoughFunds(t *testing.T) {
 			assert.Len(t, evts, 1)
 			e, ok := evts[0].(*events.TransferFunds)
 			assert.True(t, ok, "unexpected event from the bus")
-			assert.Equal(t, e.Proto().Status, types.TransferStatusStopped)
+			assert.Equal(t, e.Proto().Status, types.TransferInstructionStatusStopped)
 		})
 	})
 
@@ -342,10 +342,10 @@ func testValidRecurringTransfer(t *testing.T) {
 
 	var endEpoch13 uint64 = 11
 	ctx := context.Background()
-	transfer := &types.TransferFunds{
-		Kind: types.TransferCommandKindRecurring,
-		Recurring: &types.RecurringTransfer{
-			TransferBase: &types.TransferBase{
+	transfer := &types.TransferInstructionFunds{
+		Kind: types.TransferInstructionCommandKindRecurring,
+		Recurring: &types.RecurringTransferInstruction{
+			TransferInstructionBase: &types.TransferInstructionBase{
 				ID:              "TRANSFERID",
 				From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
 				FromAccountType: types.AccountTypeGeneral,
@@ -384,12 +384,12 @@ func testValidRecurringTransfer(t *testing.T) {
 	// assert the calculation of fees and transfer request are correct
 	e.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
 		func(ctx context.Context,
-			transfers []*types.Transfer,
+			transfers []*types.TransferInstruction,
 			accountTypes []types.AccountType,
 			references []string,
-			feeTransfers []*types.Transfer,
+			feeTransfers []*types.TransferInstruction,
 			feeTransfersAccountTypes []types.AccountType,
-		) ([]*types.TransferResponse, error,
+		) ([]*types.TransferInstructionResponse, error,
 		) {
 			t.Run("ensure transfers are correct", func(t *testing.T) {
 				// transfer is done fully instantly, we should have 2 transfer
@@ -426,12 +426,12 @@ func testValidRecurringTransfer(t *testing.T) {
 	// assert the calculation of fees and transfer request are correct
 	e.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
 		func(ctx context.Context,
-			transfers []*types.Transfer,
+			transfers []*types.TransferInstruction,
 			accountTypes []types.AccountType,
 			references []string,
-			feeTransfers []*types.Transfer,
+			feeTransfers []*types.TransferInstruction,
 			feeTransfersAccountTypes []types.AccountType,
-		) ([]*types.TransferResponse, error,
+		) ([]*types.TransferInstructionResponse, error,
 		) {
 			t.Run("ensure transfers are correct", func(t *testing.T) {
 				// transfer is done fully instantly, we should have 2 transfer
@@ -464,7 +464,7 @@ func testValidRecurringTransfer(t *testing.T) {
 			assert.Len(t, evts, 1)
 			e, ok := evts[0].(*events.TransferFunds)
 			assert.True(t, ok, "unexpected event from the bus")
-			assert.Equal(t, e.Proto().Status, types.TransferStatusDone)
+			assert.Equal(t, e.Proto().Status, types.TransferInstructionStatusDone)
 		})
 	})
 
@@ -481,12 +481,12 @@ func testRecurringTransferInvalidTransfers(t *testing.T) {
 	defer e.ctrl.Finish()
 
 	ctx := context.Background()
-	transfer := types.TransferFunds{
-		Kind:      types.TransferCommandKindRecurring,
-		Recurring: &types.RecurringTransfer{},
+	transfer := types.TransferInstructionFunds{
+		Kind:      types.TransferInstructionCommandKindRecurring,
+		Recurring: &types.RecurringTransferInstruction{},
 	}
 
-	transferBase := types.TransferBase{
+	transferBase := types.TransferInstructionBase{
 		From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
 		FromAccountType: types.AccountTypeGeneral,
 		To:              "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0",
@@ -499,13 +499,13 @@ func testRecurringTransferInvalidTransfers(t *testing.T) {
 	// asset exists
 	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(1)}), nil)
 
-	var baseCpy types.TransferBase
+	var baseCpy types.TransferInstructionBase
 
 	t.Run("invalid from account", func(t *testing.T) {
 		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 		baseCpy := transferBase
-		transfer.Recurring.TransferBase = &baseCpy
+		transfer.Recurring.TransferInstructionBase = &baseCpy
 		transfer.Recurring.From = ""
 		assert.EqualError(t,
 			e.TransferFunds(ctx, &transfer),
@@ -517,7 +517,7 @@ func testRecurringTransferInvalidTransfers(t *testing.T) {
 		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 		baseCpy = transferBase
-		transfer.Recurring.TransferBase = &baseCpy
+		transfer.Recurring.TransferInstructionBase = &baseCpy
 		transfer.Recurring.To = ""
 		assert.EqualError(t,
 			e.TransferFunds(ctx, &transfer),
@@ -529,7 +529,7 @@ func testRecurringTransferInvalidTransfers(t *testing.T) {
 		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 		baseCpy = transferBase
-		transfer.Recurring.TransferBase = &baseCpy
+		transfer.Recurring.TransferInstructionBase = &baseCpy
 		transfer.Recurring.FromAccountType = types.AccountTypeBond
 		assert.EqualError(t,
 			e.TransferFunds(ctx, &transfer),
@@ -541,7 +541,7 @@ func testRecurringTransferInvalidTransfers(t *testing.T) {
 		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 		baseCpy = transferBase
-		transfer.Recurring.TransferBase = &baseCpy
+		transfer.Recurring.TransferInstructionBase = &baseCpy
 		transfer.Recurring.ToAccountType = types.AccountTypeBond
 		assert.EqualError(t,
 			e.TransferFunds(ctx, &transfer),
@@ -553,11 +553,11 @@ func testRecurringTransferInvalidTransfers(t *testing.T) {
 		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 		baseCpy = transferBase
-		transfer.Recurring.TransferBase = &baseCpy
+		transfer.Recurring.TransferInstructionBase = &baseCpy
 		transfer.Recurring.Amount = num.UintZero()
 		assert.EqualError(t,
 			e.TransferFunds(ctx, &transfer),
-			types.ErrCannotTransferZeroFunds.Error(),
+			types.ErrCannotTransferInstructionZeroFunds.Error(),
 		)
 	})
 
@@ -568,7 +568,7 @@ func testRecurringTransferInvalidTransfers(t *testing.T) {
 	)
 	// now testing the recurring specific stuff
 	baseCpy = transferBase
-	transfer.Recurring.TransferBase = &baseCpy
+	transfer.Recurring.TransferInstructionBase = &baseCpy
 	transfer.Recurring.EndEpoch = &endEpoch100
 	transfer.Recurring.StartEpoch = 90
 	transfer.Recurring.Factor = num.MustDecimalFromString("0.1")

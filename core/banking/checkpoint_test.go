@@ -43,10 +43,10 @@ func testSimpledScheduledTransfer(t *testing.T) {
 
 	deliverOn := time.Unix(12, 0)
 	ctx := context.Background()
-	transfer := &types.TransferFunds{
-		Kind: types.TransferCommandKindOneOff,
-		OneOff: &types.OneOffTransfer{
-			TransferBase: &types.TransferBase{
+	transferInstruction := &types.TransferInstructionFunds{
+		Kind: types.TransferInstructionCommandKindOneOff,
+		OneOff: &types.OneOffTransferInstruction{
+			TransferInstructionBase: &types.TransferInstructionBase{
 				From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
 				FromAccountType: types.AccountTypeGeneral,
 				To:              "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0",
@@ -70,19 +70,19 @@ func testSimpledScheduledTransfer(t *testing.T) {
 	// assert the calculation of fees and transfer request are correct
 	e.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
 		func(ctx context.Context,
-			transfers []*types.Transfer,
+			transferInstructions []*types.TransferInstruction,
 			accountTypes []types.AccountType,
 			references []string,
-			feeTransfers []*types.Transfer,
+			feeTransferInstructions []*types.TransferInstruction,
 			feeTransfersAccountTypes []types.AccountType,
-		) ([]*types.TransferResponse, error,
+		) ([]*types.TransferInstructionResponse, error,
 		) {
 			t.Run("ensure transfers are correct", func(t *testing.T) {
 				// transfer is done fully instantly, we should have 2 transfer
-				assert.Len(t, transfers, 1)
-				assert.Equal(t, transfers[0].Owner, "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301")
-				assert.Equal(t, transfers[0].Amount.Amount, num.NewUint(10))
-				assert.Equal(t, transfers[0].Amount.Asset, "eth")
+				assert.Len(t, transferInstructions, 1)
+				assert.Equal(t, transferInstructions[0].Owner, "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301")
+				assert.Equal(t, transferInstructions[0].Amount.Amount, num.NewUint(10))
+				assert.Equal(t, transferInstructions[0].Amount.Asset, "eth")
 
 				// 2 account types too
 				assert.Len(t, accountTypes, 1)
@@ -90,10 +90,10 @@ func testSimpledScheduledTransfer(t *testing.T) {
 			})
 
 			t.Run("ensure fee transfers are correct", func(t *testing.T) {
-				assert.Len(t, feeTransfers, 1)
-				assert.Equal(t, feeTransfers[0].Owner, "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301")
-				assert.Equal(t, feeTransfers[0].Amount.Amount, num.NewUint(10))
-				assert.Equal(t, feeTransfers[0].Amount.Asset, "eth")
+				assert.Len(t, feeTransferInstructions, 1)
+				assert.Equal(t, feeTransferInstructions[0].Owner, "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301")
+				assert.Equal(t, feeTransferInstructions[0].Amount.Amount, num.NewUint(10))
+				assert.Equal(t, feeTransferInstructions[0].Amount.Asset, "eth")
 
 				// then the fees account types
 				assert.Len(t, feeTransfersAccountTypes, 1)
@@ -103,7 +103,7 @@ func testSimpledScheduledTransfer(t *testing.T) {
 		})
 
 	e.broker.EXPECT().Send(gomock.Any()).Times(2)
-	assert.NoError(t, e.TransferFunds(ctx, transfer))
+	assert.NoError(t, e.TransferFunds(ctx, transferInstruction))
 
 	checkp, err := e.Checkpoint()
 	assert.NoError(t, err)
@@ -126,18 +126,18 @@ func testSimpledScheduledTransfer(t *testing.T) {
 	e2.broker.EXPECT().Send(gomock.Any()).Times(1)
 	e2.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
 		func(ctx context.Context,
-			transfers []*types.Transfer,
+			transferInstructions []*types.TransferInstruction,
 			accountTypes []types.AccountType,
 			references []string,
-			feeTransfers []*types.Transfer,
-			feeTransfersAccountTypes []types.AccountType,
-		) ([]*types.TransferResponse, error,
+			feeTransferInstructions []*types.TransferInstruction,
+			feeTransferInstructionsAccountTypes []types.AccountType,
+		) ([]*types.TransferInstructionResponse, error,
 		) {
 			t.Run("ensure transfers are correct", func(t *testing.T) {
 				// transfer is done fully instantly, we should have 2 transfer
-				assert.Equal(t, transfers[0].Owner, "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0")
-				assert.Equal(t, transfers[0].Amount.Amount, num.NewUint(10))
-				assert.Equal(t, transfers[0].Amount.Asset, "eth")
+				assert.Equal(t, transferInstructions[0].Owner, "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0")
+				assert.Equal(t, transferInstructions[0].Amount.Amount, num.NewUint(10))
+				assert.Equal(t, transferInstructions[0].Amount.Asset, "eth")
 
 				// 1 account types too
 				assert.Len(t, accountTypes, 1)
@@ -145,7 +145,7 @@ func testSimpledScheduledTransfer(t *testing.T) {
 			})
 
 			t.Run("ensure fee transfers are correct", func(t *testing.T) {
-				assert.Len(t, feeTransfers, 0)
+				assert.Len(t, feeTransferInstructions, 0)
 			})
 			return nil, nil
 		})

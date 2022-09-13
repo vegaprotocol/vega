@@ -174,7 +174,7 @@ func testMTMWinNoZero(t *testing.T) {
 			fmt.Println("NIL")
 			continue
 		}
-		t := tr.Transfer()
+		t := tr.TransferInstruction()
 		if t == nil {
 			fmt.Println("NIL TRANSFER")
 			continue
@@ -281,7 +281,7 @@ func testMTMWinOneExcess(t *testing.T) {
 			fmt.Println("NIL")
 			continue
 		}
-		t := tr.Transfer()
+		t := tr.TransferInstruction()
 		if t == nil {
 			fmt.Println("NIL TRANSFER")
 			continue
@@ -313,27 +313,27 @@ func testSettleExpiredSuccess(t *testing.T) {
 		},
 	}
 	half := num.NewUint(500)
-	expect := []*types.Transfer{
+	expect := []*types.TransferInstruction{
 		{
 			Owner: data[1].party,
 			Amount: &types.FinancialAmount{
 				Amount: half,
 			},
-			Type: types.TransferTypeLoss,
+			Type: types.TransferInstructionTypeLoss,
 		},
 		{
 			Owner: data[2].party,
 			Amount: &types.FinancialAmount{
 				Amount: half,
 			},
-			Type: types.TransferTypeLoss,
+			Type: types.TransferInstructionTypeLoss,
 		},
 		{
 			Owner: data[0].party,
 			Amount: &types.FinancialAmount{
 				Amount: pr,
 			},
-			Type: types.TransferTypeWin,
+			Type: types.TransferInstructionTypeWin,
 		},
 	} // }}}
 	oraclePrice := num.NewUint(1100)
@@ -446,7 +446,7 @@ func testAddNewPartySelfTrade(t *testing.T) {
 	engine.AddTrade(trade)
 	noTransfers := engine.SettleMTM(context.Background(), markPrice, positions)
 	assert.Len(t, noTransfers, 1)
-	assert.Nil(t, noTransfers[0].Transfer())
+	assert.Nil(t, noTransfers[0].TransferInstruction())
 }
 
 func testAddNewParty(t *testing.T) {
@@ -491,7 +491,7 @@ func testAddNewParty(t *testing.T) {
 	noTransfers := engine.SettleMTM(context.Background(), markPrice, positions)
 	assert.Len(t, noTransfers, 2)
 	for _, v := range noTransfers {
-		assert.Nil(t, v.Transfer())
+		assert.Nil(t, v.TransferInstruction())
 	}
 }
 
@@ -595,8 +595,8 @@ func testMarkToMarketOrdered(t *testing.T) {
 		assert.NotEmpty(t, transfers)
 		assert.Equal(t, 3, len(transfers))
 		// start with losses, end with wins
-		assert.Equal(t, types.TransferTypeMTMLoss, transfers[0].Transfer().Type)
-		assert.Equal(t, types.TransferTypeMTMWin, transfers[len(transfers)-1].Transfer().Type)
+		assert.Equal(t, types.TransferInstructionTypeMTMLoss, transfers[0].TransferInstruction().Type)
+		assert.Equal(t, types.TransferInstructionTypeMTMWin, transfers[len(transfers)-1].TransferInstruction().Type)
 		assert.Equal(t, "party2", transfers[0].Party()) // we expect party2 to have a loss
 	}
 }
@@ -675,10 +675,10 @@ func testMTMNetworkZero(t *testing.T) {
 	assert.Len(t, noTransfers, 3)
 	hasNetwork := false
 	for i, v := range noTransfers {
-		assert.NotNil(t, v.Transfer())
+		assert.NotNil(t, v.TransferInstruction())
 		if v.Party() == types.NetworkParty {
 			// network hás to lose
-			require.Equal(t, types.TransferTypeMTMLoss, v.Transfer().Type)
+			require.Equal(t, types.TransferInstructionTypeMTMLoss, v.TransferInstruction().Type)
 			// network loss should be at the start of the slice
 			require.Equal(t, 0, i)
 			hasNetwork = true

@@ -178,7 +178,7 @@ message UndelegateSubmission {
 }
 
 // A transfer initiated by a party
-message Transfer {
+message TransferInstruction {
   // The account type from which the funds of the party
   // should be taken
   vega.AccountType from_account_type = 1;
@@ -192,22 +192,22 @@ message Transfer {
   string amount = 5;
   // The reference to be attached to the transfer
   string reference = 6;
-  // Specific details of the transfer
+  // Specific details of the transfer instruction
   oneof kind {
-    OneOffTransfer one_off = 101;
-    RecurringTransfer recurring = 102;
+    OneOffTransferInstruction one_off = 101;
+    RecurringTransferInstruction recurring = 102;
   }
 }
 
 // Specific details for a one off transfer
-message OneOffTransfer {
+message OneOffTransferInstruction {
   // A unix timestamp in second. Time at which the
-  // transfer should be delivered in the to account
+  // transfer instruction should be delivered in the to account
   int64 deliver_on = 1;
 }
 
-// Specific details for a recurring transfer
-message RecurringTransfer {
+// Specific details for a recurring transfer instruction
+message RecurringTransferInstruction {
   // The first epoch from which this transfer shall be paid
   uint64 start_epoch = 1;
   // The last epoch at which this transfer shall be paid
@@ -219,7 +219,7 @@ message RecurringTransfer {
 }
 
 // A request for cancelling a recurring transfer
-message CancelTransfer {
-  // The ID of the transfer to cancel
+message CancelTransferInstruction {
+  // The ID of the transfer instruction to cancel
   string transfer_id = 1;
 }

@@ -21,19 +21,19 @@ import (
 )
 
 var (
-	ErrRecurringTransferDoesNotExists             = errors.New("recurring transfer does not exists")
+	ErrRecurringTransferInstructionDoesNotExists  = errors.New("recurring transfer instruction does not exists")
 	ErrCannotCancelOtherPartiesRecurringTransfers = errors.New("cannot cancel other parties recurring transfers")
 )
 
 func (e *Engine) CancelTransferFunds(
 	ctx context.Context,
-	cancel *types.CancelTransferFunds,
+	cancel *types.CancelTransferInstructionFunds,
 ) error {
 	// validation is simple, does the transfer
 	// exists
-	transfer, ok := e.recurringTransfersMap[cancel.TransferID]
+	transfer, ok := e.recurringTransferInstructionsMap[cancel.TransferInstructionID]
 	if !ok {
-		return ErrRecurringTransferDoesNotExists
+		return ErrRecurringTransferInstructionDoesNotExists
 	}
 
 	// Is the From party of the transfer
@@ -43,11 +43,11 @@ func (e *Engine) CancelTransferFunds(
 	}
 
 	// all good, let's delete
-	e.deleteTransfer(cancel.TransferID)
-	e.bss.changedRecurringTransfers = true
+	e.deleteTransferInstruction(cancel.TransferInstructionID)
+	e.bss.changedRecurringTransferInstructions = true
 
 	// send an event because we are nice with the data-node
-	transfer.Status = types.TransferStatusCancelled
+	transfer.Status = types.TransferInstructionStatusCancelled
 	e.broker.Send(events.NewRecurringTransferFundsEvent(ctx, transfer))
 
 	return nil

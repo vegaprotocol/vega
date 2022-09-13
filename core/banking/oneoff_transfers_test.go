@@ -27,11 +27,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTransfers(t *testing.T) {
-	t.Run("invalid transfer kind", testInvalidTransferKind)
+func TestTransferInstructions(t *testing.T) {
+	t.Run("invalid transfer instruction kind", testInvalidTransferKind)
 	t.Run("onefoff not enough funds to transfer", testOneOffTransferNotEnoughFundsToTransfer)
-	t.Run("onefoff invalid transfers", testOneOffTransferInvalidTransfers)
-	t.Run("valid oneoff transfer", testValidOneOffTransfer)
+	t.Run("onefoff invalid transfer instructions", testOneOffTransferInvalidTransfers)
+	t.Run("valid oneoff transfer instruction", testValidOneOffTransfer)
 	t.Run("valid oneoff with deliverOn", testValidOneOffTransferWithDeliverOn)
 	t.Run("valid oneoff with deliverOn in the past is done straight away", testValidOneOffTransferWithDeliverOnInThePastStraightAway)
 	t.Run("rejected if doesn't reach minimal amount", testRejectedIfDoesntReachMinimalAmount)
@@ -42,10 +42,10 @@ func testRejectedIfDoesntReachMinimalAmount(t *testing.T) {
 	defer e.ctrl.Finish()
 
 	ctx := context.Background()
-	transfer := &types.TransferFunds{
-		Kind: types.TransferCommandKindOneOff,
-		OneOff: &types.OneOffTransfer{
-			TransferBase: &types.TransferBase{
+	transferInstruction := &types.TransferInstructionFunds{
+		Kind: types.TransferInstructionCommandKindOneOff,
+		OneOff: &types.OneOffTransferInstruction{
+			TransferInstructionBase: &types.TransferInstructionBase{
 				From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
 				FromAccountType: types.AccountTypeGeneral,
 				To:              "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0",
@@ -64,7 +64,7 @@ func testRejectedIfDoesntReachMinimalAmount(t *testing.T) {
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
 
 	assert.EqualError(t,
-		e.TransferFunds(ctx, transfer),
+		e.TransferFunds(ctx, transferInstruction),
 		"could not transfer funds, less than minimal amount requested to transfer",
 	)
 }
@@ -74,12 +74,12 @@ func testInvalidTransferKind(t *testing.T) {
 	defer e.ctrl.Finish()
 
 	ctx := context.Background()
-	transfer := &types.TransferFunds{
-		Kind: types.TransferCommandKind(-1),
+	transferInstruction := &types.TransferInstructionFunds{
+		Kind: types.TransferInstructionCommandKind(-1),
 	}
 	e.tsvc.EXPECT().GetTimeNow().Times(1)
 	assert.EqualError(t,
-		e.TransferFunds(ctx, transfer),
+		e.TransferFunds(ctx, transferInstruction),
 		banking.ErrUnsupportedTransferKind.Error(),
 	)
 }
@@ -90,10 +90,10 @@ func testOneOffTransferNotEnoughFundsToTransfer(t *testing.T) {
 	e.tsvc.EXPECT().GetTimeNow().Times(1)
 
 	ctx := context.Background()
-	transfer := &types.TransferFunds{
-		Kind: types.TransferCommandKindOneOff,
-		OneOff: &types.OneOffTransfer{
-			TransferBase: &types.TransferBase{
+	transferInstruction := &types.TransferInstructionFunds{
+		Kind: types.TransferInstructionCommandKindOneOff,
+		OneOff: &types.OneOffTransferInstruction{
+			TransferInstructionBase: &types.TransferInstructionBase{
 				From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
 				FromAccountType: types.AccountTypeGeneral,
 				To:              "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0",
@@ -115,7 +115,7 @@ func testOneOffTransferNotEnoughFundsToTransfer(t *testing.T) {
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
 
 	assert.EqualError(t,
-		e.TransferFunds(ctx, transfer),
+		e.TransferFunds(ctx, transferInstruction),
 		fmt.Errorf("could not pay the fee for transfer: %w", banking.ErrNotEnoughFundsToTransfer).Error(),
 	)
 }
@@ -125,12 +125,12 @@ func testOneOffTransferInvalidTransfers(t *testing.T) {
 	defer e.ctrl.Finish()
 
 	ctx := context.Background()
-	transfer := types.TransferFunds{
-		Kind:   types.TransferCommandKindOneOff,
-		OneOff: &types.OneOffTransfer{},
+	transferInstruction := types.TransferInstructionFunds{
+		Kind:   types.TransferInstructionCommandKindOneOff,
+		OneOff: &types.OneOffTransferInstruction{},
 	}
 
-	transferBase := types.TransferBase{
+	transferInstructionBase := types.TransferInstructionBase{
 		From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
 		FromAccountType: types.AccountTypeGeneral,
 		To:              "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0",
@@ -142,16 +142,16 @@ func testOneOffTransferInvalidTransfers(t *testing.T) {
 
 	// asset exists
 	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
-	var baseCpy types.TransferBase
+	var baseCpy types.TransferInstructionBase
 
 	t.Run("invalid from account", func(t *testing.T) {
 		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
-		baseCpy := transferBase
-		transfer.OneOff.TransferBase = &baseCpy
-		transfer.OneOff.From = ""
+		baseCpy := transferInstructionBase
+		transferInstruction.OneOff.TransferInstructionBase = &baseCpy
+		transferInstruction.OneOff.From = ""
 		assert.EqualError(t,
-			e.TransferFunds(ctx, &transfer),
+			e.TransferFunds(ctx, &transferInstruction),
 			types.ErrInvalidFromAccount.Error(),
 		)
 	})
@@ -159,11 +159,11 @@ func testOneOffTransferInvalidTransfers(t *testing.T) {
 	t.Run("invalid to account", func(t *testing.T) {
 		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
-		baseCpy = transferBase
-		transfer.OneOff.TransferBase = &baseCpy
-		transfer.OneOff.To = ""
+		baseCpy = transferInstructionBase
+		transferInstruction.OneOff.TransferInstructionBase = &baseCpy
+		transferInstruction.OneOff.To = ""
 		assert.EqualError(t,
-			e.TransferFunds(ctx, &transfer),
+			e.TransferFunds(ctx, &transferInstruction),
 			types.ErrInvalidToAccount.Error(),
 		)
 	})
@@ -171,11 +171,11 @@ func testOneOffTransferInvalidTransfers(t *testing.T) {
 	t.Run("unsupported from account type", func(t *testing.T) {
 		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
-		baseCpy = transferBase
-		transfer.OneOff.TransferBase = &baseCpy
-		transfer.OneOff.FromAccountType = types.AccountTypeBond
+		baseCpy = transferInstructionBase
+		transferInstruction.OneOff.TransferInstructionBase = &baseCpy
+		transferInstruction.OneOff.FromAccountType = types.AccountTypeBond
 		assert.EqualError(t,
-			e.TransferFunds(ctx, &transfer),
+			e.TransferFunds(ctx, &transferInstruction),
 			types.ErrUnsupportedFromAccountType.Error(),
 		)
 	})
@@ -183,11 +183,11 @@ func testOneOffTransferInvalidTransfers(t *testing.T) {
 	t.Run("unsuported to account type", func(t *testing.T) {
 		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
-		baseCpy = transferBase
-		transfer.OneOff.TransferBase = &baseCpy
-		transfer.OneOff.ToAccountType = types.AccountTypeBond
+		baseCpy = transferInstructionBase
+		transferInstruction.OneOff.TransferInstructionBase = &baseCpy
+		transferInstruction.OneOff.ToAccountType = types.AccountTypeBond
 		assert.EqualError(t,
-			e.TransferFunds(ctx, &transfer),
+			e.TransferFunds(ctx, &transferInstruction),
 			types.ErrUnsupportedToAccountType.Error(),
 		)
 	})
@@ -195,12 +195,12 @@ func testOneOffTransferInvalidTransfers(t *testing.T) {
 	t.Run("zero funds transfer", func(t *testing.T) {
 		e.tsvc.EXPECT().GetTimeNow().Times(1)
 		e.broker.EXPECT().Send(gomock.Any()).Times(1)
-		baseCpy = transferBase
-		transfer.OneOff.TransferBase = &baseCpy
-		transfer.OneOff.Amount = num.UintZero()
+		baseCpy = transferInstructionBase
+		transferInstruction.OneOff.TransferInstructionBase = &baseCpy
+		transferInstruction.OneOff.Amount = num.UintZero()
 		assert.EqualError(t,
-			e.TransferFunds(ctx, &transfer),
-			types.ErrCannotTransferZeroFunds.Error(),
+			e.TransferFunds(ctx, &transferInstruction),
+			types.ErrCannotTransferInstructionZeroFunds.Error(),
 		)
 	})
 }
@@ -213,10 +213,10 @@ func testValidOneOffTransfer(t *testing.T) {
 	e.OnTransferFeeFactorUpdate(context.Background(), num.NewDecimalFromFloat(1))
 
 	ctx := context.Background()
-	transfer := &types.TransferFunds{
-		Kind: types.TransferCommandKindOneOff,
-		OneOff: &types.OneOffTransfer{
-			TransferBase: &types.TransferBase{
+	transferInstruction := &types.TransferInstructionFunds{
+		Kind: types.TransferInstructionCommandKindOneOff,
+		OneOff: &types.OneOffTransferInstruction{
+			TransferInstructionBase: &types.TransferInstructionBase{
 				From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
 				FromAccountType: types.AccountTypeGeneral,
 				To:              "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0",
@@ -241,22 +241,22 @@ func testValidOneOffTransfer(t *testing.T) {
 	// assert the calculation of fees and transfer request are correct
 	e.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
 		func(ctx context.Context,
-			transfers []*types.Transfer,
+			transferInstructions []*types.TransferInstruction,
 			accountTypes []types.AccountType,
 			references []string,
-			feeTransfers []*types.Transfer,
+			feeTransfers []*types.TransferInstruction,
 			feeTransfersAccountTypes []types.AccountType,
-		) ([]*types.TransferResponse, error,
+		) ([]*types.TransferInstructionResponse, error,
 		) {
 			t.Run("ensure transfers are correct", func(t *testing.T) {
 				// transfer is done fully instantly, we should have 2 transfer
-				assert.Len(t, transfers, 2)
-				assert.Equal(t, transfers[0].Owner, "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301")
-				assert.Equal(t, transfers[0].Amount.Amount, num.NewUint(10))
-				assert.Equal(t, transfers[0].Amount.Asset, "eth")
-				assert.Equal(t, transfers[1].Owner, "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0")
-				assert.Equal(t, transfers[1].Amount.Amount, num.NewUint(10))
-				assert.Equal(t, transfers[1].Amount.Asset, "eth")
+				assert.Len(t, transferInstructions, 2)
+				assert.Equal(t, transferInstructions[0].Owner, "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301")
+				assert.Equal(t, transferInstructions[0].Amount.Amount, num.NewUint(10))
+				assert.Equal(t, transferInstructions[0].Amount.Asset, "eth")
+				assert.Equal(t, transferInstructions[1].Owner, "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0")
+				assert.Equal(t, transferInstructions[1].Amount.Amount, num.NewUint(10))
+				assert.Equal(t, transferInstructions[1].Amount.Asset, "eth")
 
 				// 2 account types too
 				assert.Len(t, accountTypes, 2)
@@ -279,7 +279,7 @@ func testValidOneOffTransfer(t *testing.T) {
 
 	e.broker.EXPECT().Send(gomock.Any()).Times(2)
 	e.tsvc.EXPECT().GetTimeNow().AnyTimes()
-	assert.NoError(t, e.TransferFunds(ctx, transfer))
+	assert.NoError(t, e.TransferFunds(ctx, transferInstruction))
 }
 
 func testValidOneOffTransferWithDeliverOnInThePastStraightAway(t *testing.T) {
@@ -297,10 +297,10 @@ func testValidOneOffTransferWithDeliverOnInThePastStraightAway(t *testing.T) {
 
 	deliverOn := time.Unix(9, 0)
 	ctx := context.Background()
-	transfer := &types.TransferFunds{
-		Kind: types.TransferCommandKindOneOff,
-		OneOff: &types.OneOffTransfer{
-			TransferBase: &types.TransferBase{
+	transferInstruction := &types.TransferInstructionFunds{
+		Kind: types.TransferInstructionCommandKindOneOff,
+		OneOff: &types.OneOffTransferInstruction{
+			TransferInstructionBase: &types.TransferInstructionBase{
 				From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
 				FromAccountType: types.AccountTypeGeneral,
 				To:              "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0",
@@ -324,22 +324,22 @@ func testValidOneOffTransferWithDeliverOnInThePastStraightAway(t *testing.T) {
 	// assert the calculation of fees and transfer request are correct
 	e.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
 		func(ctx context.Context,
-			transfers []*types.Transfer,
+			transferInstructions []*types.TransferInstruction,
 			accountTypes []types.AccountType,
 			references []string,
-			feeTransfers []*types.Transfer,
+			feeTransfers []*types.TransferInstruction,
 			feeTransfersAccountTypes []types.AccountType,
-		) ([]*types.TransferResponse, error,
+		) ([]*types.TransferInstructionResponse, error,
 		) {
 			t.Run("ensure transfers are correct", func(t *testing.T) {
 				// transfer is done fully instantly, we should have 2 transfer
-				assert.Len(t, transfers, 2)
-				assert.Equal(t, transfers[0].Owner, "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301")
-				assert.Equal(t, transfers[0].Amount.Amount, num.NewUint(10))
-				assert.Equal(t, transfers[0].Amount.Asset, "eth")
-				assert.Equal(t, transfers[1].Owner, "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0")
-				assert.Equal(t, transfers[1].Amount.Amount, num.NewUint(10))
-				assert.Equal(t, transfers[1].Amount.Asset, "eth")
+				assert.Len(t, transferInstructions, 2)
+				assert.Equal(t, transferInstructions[0].Owner, "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301")
+				assert.Equal(t, transferInstructions[0].Amount.Amount, num.NewUint(10))
+				assert.Equal(t, transferInstructions[0].Amount.Asset, "eth")
+				assert.Equal(t, transferInstructions[1].Owner, "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0")
+				assert.Equal(t, transferInstructions[1].Amount.Amount, num.NewUint(10))
+				assert.Equal(t, transferInstructions[1].Amount.Asset, "eth")
 
 				// 2 account types too
 				assert.Len(t, accountTypes, 2)
@@ -361,7 +361,7 @@ func testValidOneOffTransferWithDeliverOnInThePastStraightAway(t *testing.T) {
 		})
 
 	e.broker.EXPECT().Send(gomock.Any()).Times(2)
-	assert.NoError(t, e.TransferFunds(ctx, transfer))
+	assert.NoError(t, e.TransferFunds(ctx, transferInstruction))
 }
 
 func testValidOneOffTransferWithDeliverOn(t *testing.T) {
@@ -380,10 +380,10 @@ func testValidOneOffTransferWithDeliverOn(t *testing.T) {
 
 	deliverOn := time.Unix(12, 0)
 	ctx := context.Background()
-	transfer := &types.TransferFunds{
-		Kind: types.TransferCommandKindOneOff,
-		OneOff: &types.OneOffTransfer{
-			TransferBase: &types.TransferBase{
+	transferInstruction := &types.TransferInstructionFunds{
+		Kind: types.TransferInstructionCommandKindOneOff,
+		OneOff: &types.OneOffTransferInstruction{
+			TransferInstructionBase: &types.TransferInstructionBase{
 				From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
 				FromAccountType: types.AccountTypeGeneral,
 				To:              "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0",
@@ -413,19 +413,19 @@ func testValidOneOffTransferWithDeliverOn(t *testing.T) {
 	// assert the calculation of fees and transfer request are correct
 	e.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
 		func(ctx context.Context,
-			transfers []*types.Transfer,
+			transferInstructions []*types.TransferInstruction,
 			accountTypes []types.AccountType,
 			references []string,
-			feeTransfers []*types.Transfer,
+			feeTransfers []*types.TransferInstruction,
 			feeTransfersAccountTypes []types.AccountType,
-		) ([]*types.TransferResponse, error,
+		) ([]*types.TransferInstructionResponse, error,
 		) {
 			t.Run("ensure transfers are correct", func(t *testing.T) {
 				// transfer is done fully instantly, we should have 2 transfer
-				assert.Len(t, transfers, 1)
-				assert.Equal(t, transfers[0].Owner, "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301")
-				assert.Equal(t, transfers[0].Amount.Amount, num.NewUint(10))
-				assert.Equal(t, transfers[0].Amount.Asset, "eth")
+				assert.Len(t, transferInstructions, 1)
+				assert.Equal(t, transferInstructions[0].Owner, "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301")
+				assert.Equal(t, transferInstructions[0].Amount.Amount, num.NewUint(10))
+				assert.Equal(t, transferInstructions[0].Amount.Asset, "eth")
 
 				// 2 account types too
 				assert.Len(t, accountTypes, 1)
@@ -446,7 +446,7 @@ func testValidOneOffTransferWithDeliverOn(t *testing.T) {
 		})
 
 	e.broker.EXPECT().Send(gomock.Any()).Times(2)
-	assert.NoError(t, e.TransferFunds(ctx, transfer))
+	assert.NoError(t, e.TransferFunds(ctx, transferInstruction))
 
 	// Run OnTick with time.Unix(11, 0) and expect nothing.
 	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
@@ -466,18 +466,18 @@ func testValidOneOffTransferWithDeliverOn(t *testing.T) {
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
 	e.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
 		func(ctx context.Context,
-			transfers []*types.Transfer,
+			transferInstructions []*types.TransferInstruction,
 			accountTypes []types.AccountType,
 			references []string,
-			feeTransfers []*types.Transfer,
+			feeTransfers []*types.TransferInstruction,
 			feeTransfersAccountTypes []types.AccountType,
-		) ([]*types.TransferResponse, error,
+		) ([]*types.TransferInstructionResponse, error,
 		) {
 			t.Run("ensure transfers are correct", func(t *testing.T) {
 				// transfer is done fully instantly, we should have 2 transfer
-				assert.Equal(t, transfers[0].Owner, "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0")
-				assert.Equal(t, transfers[0].Amount.Amount, num.NewUint(10))
-				assert.Equal(t, transfers[0].Amount.Asset, "eth")
+				assert.Equal(t, transferInstructions[0].Owner, "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0")
+				assert.Equal(t, transferInstructions[0].Amount.Amount, num.NewUint(10))
+				assert.Equal(t, transferInstructions[0].Amount.Asset, "eth")
 
 				// 1 account types too
 				assert.Len(t, accountTypes, 1)

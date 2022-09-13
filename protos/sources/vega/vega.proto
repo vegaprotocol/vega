@@ -651,8 +651,8 @@ enum AccountType {
   // Global reward account for the asset
   ACCOUNT_TYPE_GLOBAL_REWARD = 12;
 
-  // Per asset account used to store pending transfers (if any)
-  ACCOUNT_TYPE_PENDING_TRANSFERS = 13;
+  // Per asset account used to store pending transfer instructions (if any)
+  ACCOUNT_TYPE_PENDING_TRANSFER_INSTRUCTIONS = 13;
 
   // Per asset reward account for fees paid to makers
   ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES = 14;
@@ -698,66 +698,67 @@ message FinancialAmount {
   string asset = 2;
 }
 
-// Transfers can occur between parties on Vega, these are the types that indicate why a transfer took place
-enum TransferType {
+// Transfers can occur between parties on Vega, 
+// these are the types that indicate why a transfer instruction took place
+enum TransferInstructionType {
   // Default value, always invalid
-  TRANSFER_TYPE_UNSPECIFIED = 0;
+  TRANSFER_INSTRUCTION_TYPE_UNSPECIFIED = 0;
   // Loss
-  TRANSFER_TYPE_LOSS = 1;
+  TRANSFER_INSTRUCTION_TYPE_LOSS = 1;
   // Win
-  TRANSFER_TYPE_WIN = 2;
+  TRANSFER_INSTRUCTION_TYPE_WIN = 2;
   // Close
-  TRANSFER_TYPE_CLOSE = 3;
+  TRANSFER_INSTRUCTION_TYPE_CLOSE = 3;
   // Mark to market loss
-  TRANSFER_TYPE_MTM_LOSS = 4;
+  TRANSFER_INSTRUCTION_TYPE_MTM_LOSS = 4;
   // Mark to market win
-  TRANSFER_TYPE_MTM_WIN = 5;
+  TRANSFER_INSTRUCTION_TYPE_MTM_WIN = 5;
   // Margin too low
-  TRANSFER_TYPE_MARGIN_LOW = 6;
+  TRANSFER_INSTRUCTION_TYPE_MARGIN_LOW = 6;
   // Margin too high
-  TRANSFER_TYPE_MARGIN_HIGH = 7;
+  TRANSFER_INSTRUCTION_TYPE_MARGIN_HIGH = 7;
   // Margin was confiscated
-  TRANSFER_TYPE_MARGIN_CONFISCATED = 8;
+  TRANSFER_INSTRUCTION_TYPE_MARGIN_CONFISCATED = 8;
   // Pay maker fee
-  TRANSFER_TYPE_MAKER_FEE_PAY = 9;
+  TRANSFER_INSTRUCTION_TYPE_MAKER_FEE_PAY = 9;
   // Receive maker fee
-  TRANSFER_TYPE_MAKER_FEE_RECEIVE = 10;
+  TRANSFER_INSTRUCTION_TYPE_MAKER_FEE_RECEIVE = 10;
   // Pay infrastructure fee
-  TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY = 11;
+  TRANSFER_INSTRUCTION_TYPE_INFRASTRUCTURE_FEE_PAY = 11;
   // Receive infrastructure fee
-  TRANSFER_TYPE_INFRASTRUCTURE_FEE_DISTRIBUTE = 12;
+  TRANSFER_INSTRUCTION_TYPE_INFRASTRUCTURE_FEE_DISTRIBUTE = 12;
   // Pay liquidity fee
-  TRANSFER_TYPE_LIQUIDITY_FEE_PAY = 13;
+  TRANSFER_INSTRUCTION_TYPE_LIQUIDITY_FEE_PAY = 13;
   // Receive liquidity fee
-  TRANSFER_TYPE_LIQUIDITY_FEE_DISTRIBUTE = 14;
+  TRANSFER_INSTRUCTION_TYPE_LIQUIDITY_FEE_DISTRIBUTE = 14;
   // Bond too low
-  TRANSFER_TYPE_BOND_LOW = 15;
+  TRANSFER_INSTRUCTION_TYPE_BOND_LOW = 15;
   // Bond too high
-  TRANSFER_TYPE_BOND_HIGH = 16;
+  TRANSFER_INSTRUCTION_TYPE_BOND_HIGH = 16;
   // Lock amount for withdraw
-  TRANSFER_TYPE_WITHDRAW_LOCK = 17;
+  TRANSFER_INSTRUCTION_TYPE_WITHDRAW_LOCK = 17;
   // Actual withdraw from system
-  TRANSFER_TYPE_WITHDRAW = 18;
+  TRANSFER_INSTRUCTION_TYPE_WITHDRAW = 18;
   // Deposit funds
-  TRANSFER_TYPE_DEPOSIT = 19;
+  TRANSFER_INSTRUCTION_TYPE_DEPOSIT = 19;
   // Bond slashing
-  TRANSFER_TYPE_BOND_SLASHING = 20;
+  TRANSFER_INSTRUCTION_TYPE_BOND_SLASHING = 20;
   // Stake reward
-  TRANSFER_TYPE_STAKE_REWARD = 21;
+  TRANSFER_INSTRUCTION_TYPE_STAKE_REWARD = 21;
   // Transfer funds
-  TRANSFER_TYPE_TRANSFER_FUNDS_SEND = 22;
+  TRANSFER_INSTRUCTION_TYPE_TRANSFER_FUNDS_SEND = 22;
   // Transfer funds
-  TRANSFER_TYPE_TRANSFER_FUNDS_DISTRIBUTE = 23;
+  TRANSFER_INSTRUCTION_TYPE_TRANSFER_FUNDS_DISTRIBUTE = 23;
 }
 
-// Represents a financial transfer within Vega
-message Transfer {
+// Represents a financial transfer instruction within Vega
+message TransferInstruction {
   // Party identifier for the owner of the transfer
   string owner = 1;
   // A financial amount (of an asset) to transfer
   FinancialAmount amount = 2;
   // The type of transfer, gives the reason for the transfer
-  TransferType type = 3;
+  TransferInstructionType type = 3;
   // A minimum amount
   string min_amount = 4;
   // optional dispatch strategy
@@ -785,8 +786,8 @@ message DispatchStrategy {
   repeated string markets = 3;
 }
 
-// Represents a request to transfer from one set of accounts to another
-message TransferRequest {
+// Represents a request to transfer instruction from one set of accounts to another
+message TransferInstructionRequest {
   // One or more accounts to transfer from
   repeated Account from_account = 1;
   // One or more accounts to transfer to
@@ -819,7 +820,7 @@ message LedgerEntry {
 }
 
 // Represents the balance for an account during a transfer
-message TransferBalance {
+message TransferInstructionBalance {
   // The account relating to the transfer
   Account account = 1;
   // The balance relating to the transfer
@@ -827,11 +828,11 @@ message TransferBalance {
 }
 
 // Represents the response from a transfer
-message TransferResponse {
+message TransferInstructionResponse {
   // One or more ledger entries representing the transfers
   repeated LedgerEntry transfers = 1;
   // One or more account balances
-  repeated TransferBalance balances = 2;
+  repeated TransferInstructionBalance balances = 2;
 }
 
 // Represents the margin levels for a party on a market at a given time

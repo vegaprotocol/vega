@@ -80,7 +80,7 @@ type ResolverRoot interface {
 	ObservableMarketData() ObservableMarketDataResolver
 	ObservableMarketDepth() ObservableMarketDepthResolver
 	ObservableMarketDepthUpdate() ObservableMarketDepthUpdateResolver
-	OneOffTransfer() OneOffTransferResolver
+	OneOffTransferInstruction() OneOffTransferInstructionResolver
 	OracleData() OracleDataResolver
 	OracleSpec() OracleSpecResolver
 	Order() OrderResolver
@@ -93,7 +93,7 @@ type ResolverRoot interface {
 	ProposalTerms() ProposalTermsResolver
 	Query() QueryResolver
 	RankingScore() RankingScoreResolver
-	RecurringTransfer() RecurringTransferResolver
+	RecurringTransferInstruction() RecurringTransferInstructionResolver
 	Reward() RewardResolver
 	RewardPerAssetDetail() RewardPerAssetDetailResolver
 	RewardSummary() RewardSummaryResolver
@@ -103,7 +103,7 @@ type ResolverRoot interface {
 	TradableInstrument() TradableInstrumentResolver
 	Trade() TradeResolver
 	TradeUpdate() TradeUpdateResolver
-	Transfer() TransferResolver
+	TransferInstruction() TransferInstructionResolver
 	UpdateAsset() UpdateAssetResolver
 	UpdateMarket() UpdateMarketResolver
 	UpdateMarketConfiguration() UpdateMarketConfigurationResolver
@@ -895,7 +895,7 @@ type ComplexityRoot struct {
 		SequenceNumber         func(childComplexity int) int
 	}
 
-	OneOffTransfer struct {
+	OneOffTransferInstruction struct {
 		DeliverOn func(childComplexity int) int
 	}
 
@@ -1015,36 +1015,36 @@ type ComplexityRoot struct {
 	}
 
 	Party struct {
-		Accounts                      func(childComplexity int, marketID *string, assetID *string, typeArg *vega.AccountType) int
-		AccountsConnection            func(childComplexity int, marketID *string, assetID *string, typeArg *vega.AccountType, pagination *v2.Pagination) int
-		Delegations                   func(childComplexity int, nodeID *string, skip *int, first *int, last *int) int
-		DelegationsConnection         func(childComplexity int, nodeID *string, pagination *v2.Pagination) int
-		Deposits                      func(childComplexity int) int
-		DepositsConnection            func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination) int
-		Id                            func(childComplexity int) int
-		LiquidityProvisions           func(childComplexity int, market *string, reference *string) int
-		LiquidityProvisionsConnection func(childComplexity int, marketID *string, reference *string, pagination *v2.Pagination) int
-		Margins                       func(childComplexity int, marketID *string) int
-		MarginsConnection             func(childComplexity int, marketID *string, pagination *v2.Pagination) int
-		Orders                        func(childComplexity int, skip *int, first *int, last *int) int
-		OrdersConnection              func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination) int
-		Positions                     func(childComplexity int) int
-		PositionsConnection           func(childComplexity int, market *string, pagination *v2.Pagination) int
-		Proposals                     func(childComplexity int, inState *vega.Proposal_State) int
-		ProposalsConnection           func(childComplexity int, proposalType *v2.ListGovernanceDataRequest_Type, inState *vega.Proposal_State, pagination *v2.Pagination) int
-		RewardDetails                 func(childComplexity int) int
-		RewardSummaries               func(childComplexity int, assetID *string) int
-		Rewards                       func(childComplexity int, assetID *string, skip *int, first *int, last *int) int
-		RewardsConnection             func(childComplexity int, assetID *string, pagination *v2.Pagination) int
-		Stake                         func(childComplexity int) int
-		StakingSummary                func(childComplexity int, pagination *v2.Pagination) int
-		Trades                        func(childComplexity int, marketID *string, skip *int, first *int, last *int) int
-		TradesConnection              func(childComplexity int, marketID *string, dataRange *v2.DateRange, pagination *v2.Pagination) int
-		TransfersConnection           func(childComplexity int, direction *TransferDirection, pagination *v2.Pagination) int
-		Votes                         func(childComplexity int) int
-		VotesConnection               func(childComplexity int, pagination *v2.Pagination) int
-		Withdrawals                   func(childComplexity int) int
-		WithdrawalsConnection         func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination) int
+		Accounts                       func(childComplexity int, marketID *string, assetID *string, typeArg *vega.AccountType) int
+		AccountsConnection             func(childComplexity int, marketID *string, assetID *string, typeArg *vega.AccountType, pagination *v2.Pagination) int
+		Delegations                    func(childComplexity int, nodeID *string, skip *int, first *int, last *int) int
+		DelegationsConnection          func(childComplexity int, nodeID *string, pagination *v2.Pagination) int
+		Deposits                       func(childComplexity int) int
+		DepositsConnection             func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination) int
+		Id                             func(childComplexity int) int
+		LiquidityProvisions            func(childComplexity int, market *string, reference *string) int
+		LiquidityProvisionsConnection  func(childComplexity int, marketID *string, reference *string, pagination *v2.Pagination) int
+		Margins                        func(childComplexity int, marketID *string) int
+		MarginsConnection              func(childComplexity int, marketID *string, pagination *v2.Pagination) int
+		Orders                         func(childComplexity int, skip *int, first *int, last *int) int
+		OrdersConnection               func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination) int
+		Positions                      func(childComplexity int) int
+		PositionsConnection            func(childComplexity int, market *string, pagination *v2.Pagination) int
+		Proposals                      func(childComplexity int, inState *vega.Proposal_State) int
+		ProposalsConnection            func(childComplexity int, proposalType *v2.ListGovernanceDataRequest_Type, inState *vega.Proposal_State, pagination *v2.Pagination) int
+		RewardDetails                  func(childComplexity int) int
+		RewardSummaries                func(childComplexity int, assetID *string) int
+		Rewards                        func(childComplexity int, assetID *string, skip *int, first *int, last *int) int
+		RewardsConnection              func(childComplexity int, assetID *string, pagination *v2.Pagination) int
+		Stake                          func(childComplexity int) int
+		StakingSummary                 func(childComplexity int, pagination *v2.Pagination) int
+		Trades                         func(childComplexity int, marketID *string, skip *int, first *int, last *int) int
+		TradesConnection               func(childComplexity int, marketID *string, dataRange *v2.DateRange, pagination *v2.Pagination) int
+		TransferInstructionsConnection func(childComplexity int, direction *TransferInstructionDirection, pagination *v2.Pagination) int
+		Votes                          func(childComplexity int) int
+		VotesConnection                func(childComplexity int, pagination *v2.Pagination) int
+		Withdrawals                    func(childComplexity int) int
+		WithdrawalsConnection          func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination) int
 	}
 
 	PartyConnection struct {
@@ -1254,8 +1254,8 @@ type ComplexityRoot struct {
 		Proposals                          func(childComplexity int, inState *vega.Proposal_State) int
 		ProposalsConnection                func(childComplexity int, proposalType *v2.ListGovernanceDataRequest_Type, inState *vega.Proposal_State, pagination *v2.Pagination) int
 		Statistics                         func(childComplexity int) int
-		Transfers                          func(childComplexity int, pubkey string, isFrom *bool, isTo *bool) int
-		TransfersConnection                func(childComplexity int, partyID *string, direction *TransferDirection, pagination *v2.Pagination) int
+		TransferInstructions               func(childComplexity int, pubkey string, isFrom *bool, isTo *bool) int
+		TransferInstructionsConnection     func(childComplexity int, partyID *string, direction *TransferInstructionDirection, pagination *v2.Pagination) int
 		UpdateMarketProposals              func(childComplexity int, marketID *string, inState *vega.Proposal_State) int
 		Withdrawal                         func(childComplexity int, id string) int
 	}
@@ -1269,7 +1269,7 @@ type ComplexityRoot struct {
 		VotingPower      func(childComplexity int) int
 	}
 
-	RecurringTransfer struct {
+	RecurringTransferInstruction struct {
 		DispatchStrategy func(childComplexity int) int
 		EndEpoch         func(childComplexity int) int
 		Factor           func(childComplexity int) int
@@ -1513,7 +1513,7 @@ type ComplexityRoot struct {
 		Success func(childComplexity int) int
 	}
 
-	Transfer struct {
+	TransferInstruction struct {
 		Amount          func(childComplexity int) int
 		Asset           func(childComplexity int) int
 		From            func(childComplexity int) int
@@ -1527,27 +1527,27 @@ type ComplexityRoot struct {
 		ToAccountType   func(childComplexity int) int
 	}
 
-	TransferBalance struct {
+	TransferInstructionBalance struct {
 		Account func(childComplexity int) int
 		Balance func(childComplexity int) int
 	}
 
-	TransferConnection struct {
+	TransferInstructionConnection struct {
 		Edges    func(childComplexity int) int
 		PageInfo func(childComplexity int) int
 	}
 
-	TransferEdge struct {
+	TransferInstructionEdge struct {
 		Cursor func(childComplexity int) int
 		Node   func(childComplexity int) int
 	}
 
-	TransferResponse struct {
-		Balances  func(childComplexity int) int
-		Transfers func(childComplexity int) int
+	TransferInstructionResponse struct {
+		Balances             func(childComplexity int) int
+		TransferInstructions func(childComplexity int) int
 	}
 
-	TransferResponses struct {
+	TransferInstructionResponses struct {
 		Responses func(childComplexity int) int
 	}
 
@@ -1879,8 +1879,8 @@ type ObservableMarketDepthUpdateResolver interface {
 	SequenceNumber(ctx context.Context, obj *vega.MarketDepthUpdate) (string, error)
 	PreviousSequenceNumber(ctx context.Context, obj *vega.MarketDepthUpdate) (string, error)
 }
-type OneOffTransferResolver interface {
-	DeliverOn(ctx context.Context, obj *v1.OneOffTransfer) (*string, error)
+type OneOffTransferInstructionResolver interface {
+	DeliverOn(ctx context.Context, obj *v1.OneOffTransferInstruction) (*string, error)
 }
 type OracleDataResolver interface {
 	BroadcastAt(ctx context.Context, obj *v12.OracleData) (string, error)
@@ -1949,7 +1949,7 @@ type PartyResolver interface {
 	RewardsConnection(ctx context.Context, obj *vega.Party, assetID *string, pagination *v2.Pagination) (*v2.RewardsConnection, error)
 	RewardSummaries(ctx context.Context, obj *vega.Party, assetID *string) ([]*vega.RewardSummary, error)
 	RewardDetails(ctx context.Context, obj *vega.Party) ([]*vega.RewardSummary, error)
-	TransfersConnection(ctx context.Context, obj *vega.Party, direction *TransferDirection, pagination *v2.Pagination) (*v2.TransferConnection, error)
+	TransferInstructionsConnection(ctx context.Context, obj *vega.Party, direction *TransferInstructionDirection, pagination *v2.Pagination) (*v2.TransferInstructionConnection, error)
 }
 type PartyStakeResolver interface {
 	Linkings(ctx context.Context, obj *v13.PartyStakeResponse) ([]*v1.StakeLinking, error)
@@ -2040,8 +2040,8 @@ type QueryResolver interface {
 	KeyRotationsConnection(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.KeyRotationConnection, error)
 	EthereumKeyRotations(ctx context.Context, nodeID *string) (*v2.EthereumKeyRotationsConnection, error)
 	Epoch(ctx context.Context, id *string) (*vega.Epoch, error)
-	Transfers(ctx context.Context, pubkey string, isFrom *bool, isTo *bool) ([]*v1.Transfer, error)
-	TransfersConnection(ctx context.Context, partyID *string, direction *TransferDirection, pagination *v2.Pagination) (*v2.TransferConnection, error)
+	TransferInstructions(ctx context.Context, pubkey string, isFrom *bool, isTo *bool) ([]*v1.TransferInstruction, error)
+	TransferInstructionsConnection(ctx context.Context, partyID *string, direction *TransferInstructionDirection, pagination *v2.Pagination) (*v2.TransferInstructionConnection, error)
 	Statistics(ctx context.Context) (*v14.Statistics, error)
 	HistoricBalances(ctx context.Context, filter *v2.AccountFilter, groupBy []*v2.AccountField, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.AggregatedBalanceConnection, error)
 	NetworkLimits(ctx context.Context) (*vega.NetworkLimits, error)
@@ -2051,11 +2051,11 @@ type QueryResolver interface {
 type RankingScoreResolver interface {
 	VotingPower(ctx context.Context, obj *vega.RankingScore) (string, error)
 }
-type RecurringTransferResolver interface {
-	StartEpoch(ctx context.Context, obj *v1.RecurringTransfer) (int, error)
-	EndEpoch(ctx context.Context, obj *v1.RecurringTransfer) (*int, error)
+type RecurringTransferInstructionResolver interface {
+	StartEpoch(ctx context.Context, obj *v1.RecurringTransferInstruction) (int, error)
+	EndEpoch(ctx context.Context, obj *v1.RecurringTransferInstruction) (*int, error)
 
-	DispatchStrategy(ctx context.Context, obj *v1.RecurringTransfer) (*DispatchStrategy, error)
+	DispatchStrategy(ctx context.Context, obj *v1.RecurringTransferInstruction) (*DispatchStrategy, error)
 }
 type RewardResolver interface {
 	Asset(ctx context.Context, obj *vega.Reward) (*vega.Asset, error)
@@ -2151,11 +2151,11 @@ type TradeUpdateResolver interface {
 	BuyerAuctionBatch(ctx context.Context, obj *vega.Trade) (*int, error)
 	SellerAuctionBatch(ctx context.Context, obj *vega.Trade) (*int, error)
 }
-type TransferResolver interface {
-	Asset(ctx context.Context, obj *v1.Transfer) (*vega.Asset, error)
+type TransferInstructionResolver interface {
+	Asset(ctx context.Context, obj *v1.TransferInstruction) (*vega.Asset, error)
 
-	Timestamp(ctx context.Context, obj *v1.Transfer) (string, error)
-	Kind(ctx context.Context, obj *v1.Transfer) (TransferKind, error)
+	Timestamp(ctx context.Context, obj *v1.TransferInstruction) (string, error)
+	Kind(ctx context.Context, obj *v1.TransferInstruction) (TransferInstructionKind, error)
 }
 type UpdateAssetResolver interface {
 	Quantum(ctx context.Context, obj *vega.UpdateAsset) (string, error)
@@ -5514,12 +5514,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ObservableMarketDepthUpdate.SequenceNumber(childComplexity), true
 
-	case "OneOffTransfer.deliverOn":
-		if e.complexity.OneOffTransfer.DeliverOn == nil {
+	case "OneOffTransferInstruction.deliverOn":
+		if e.complexity.OneOffTransferInstruction.DeliverOn == nil {
 			break
 		}
 
-		return e.complexity.OneOffTransfer.DeliverOn(childComplexity), true
+		return e.complexity.OneOffTransferInstruction.DeliverOn(childComplexity), true
 
 	case "OracleData.broadcastAt":
 		if e.complexity.OracleData.BroadcastAt == nil {
@@ -6317,17 +6317,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Party.TradesConnection(childComplexity, args["marketId"].(*string), args["dataRange"].(*v2.DateRange), args["pagination"].(*v2.Pagination)), true
 
-	case "Party.transfersConnection":
-		if e.complexity.Party.TransfersConnection == nil {
+	case "Party.transferInstructionsConnection":
+		if e.complexity.Party.TransferInstructionsConnection == nil {
 			break
 		}
 
-		args, err := ec.field_Party_transfersConnection_args(context.TODO(), rawArgs)
+		args, err := ec.field_Party_transferInstructionsConnection_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Party.TransfersConnection(childComplexity, args["direction"].(*TransferDirection), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Party.TransferInstructionsConnection(childComplexity, args["direction"].(*TransferInstructionDirection), args["pagination"].(*v2.Pagination)), true
 
 	case "Party.votes":
 		if e.complexity.Party.Votes == nil {
@@ -7519,29 +7519,29 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Statistics(childComplexity), true
 
-	case "Query.transfers":
-		if e.complexity.Query.Transfers == nil {
+	case "Query.transferInstructions":
+		if e.complexity.Query.TransferInstructions == nil {
 			break
 		}
 
-		args, err := ec.field_Query_transfers_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_transferInstructions_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.Transfers(childComplexity, args["pubkey"].(string), args["isFrom"].(*bool), args["isTo"].(*bool)), true
+		return e.complexity.Query.TransferInstructions(childComplexity, args["pubkey"].(string), args["isFrom"].(*bool), args["isTo"].(*bool)), true
 
-	case "Query.transfersConnection":
-		if e.complexity.Query.TransfersConnection == nil {
+	case "Query.transferInstructionsConnection":
+		if e.complexity.Query.TransferInstructionsConnection == nil {
 			break
 		}
 
-		args, err := ec.field_Query_transfersConnection_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_transferInstructionsConnection_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.TransfersConnection(childComplexity, args["partyId"].(*string), args["direction"].(*TransferDirection), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Query.TransferInstructionsConnection(childComplexity, args["partyId"].(*string), args["direction"].(*TransferInstructionDirection), args["pagination"].(*v2.Pagination)), true
 
 	case "Query.updateMarketProposals":
 		if e.complexity.Query.UpdateMarketProposals == nil {
@@ -7609,33 +7609,33 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RankingScore.VotingPower(childComplexity), true
 
-	case "RecurringTransfer.dispatchStrategy":
-		if e.complexity.RecurringTransfer.DispatchStrategy == nil {
+	case "RecurringTransferInstruction.dispatchStrategy":
+		if e.complexity.RecurringTransferInstruction.DispatchStrategy == nil {
 			break
 		}
 
-		return e.complexity.RecurringTransfer.DispatchStrategy(childComplexity), true
+		return e.complexity.RecurringTransferInstruction.DispatchStrategy(childComplexity), true
 
-	case "RecurringTransfer.endEpoch":
-		if e.complexity.RecurringTransfer.EndEpoch == nil {
+	case "RecurringTransferInstruction.endEpoch":
+		if e.complexity.RecurringTransferInstruction.EndEpoch == nil {
 			break
 		}
 
-		return e.complexity.RecurringTransfer.EndEpoch(childComplexity), true
+		return e.complexity.RecurringTransferInstruction.EndEpoch(childComplexity), true
 
-	case "RecurringTransfer.factor":
-		if e.complexity.RecurringTransfer.Factor == nil {
+	case "RecurringTransferInstruction.factor":
+		if e.complexity.RecurringTransferInstruction.Factor == nil {
 			break
 		}
 
-		return e.complexity.RecurringTransfer.Factor(childComplexity), true
+		return e.complexity.RecurringTransferInstruction.Factor(childComplexity), true
 
-	case "RecurringTransfer.startEpoch":
-		if e.complexity.RecurringTransfer.StartEpoch == nil {
+	case "RecurringTransferInstruction.startEpoch":
+		if e.complexity.RecurringTransferInstruction.StartEpoch == nil {
 			break
 		}
 
-		return e.complexity.RecurringTransfer.StartEpoch(childComplexity), true
+		return e.complexity.RecurringTransferInstruction.StartEpoch(childComplexity), true
 
 	case "Reward.amount":
 		if e.complexity.Reward.Amount == nil {
@@ -8756,145 +8756,145 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TransactionSubmitted.Success(childComplexity), true
 
-	case "Transfer.amount":
-		if e.complexity.Transfer.Amount == nil {
+	case "TransferInstruction.amount":
+		if e.complexity.TransferInstruction.Amount == nil {
 			break
 		}
 
-		return e.complexity.Transfer.Amount(childComplexity), true
+		return e.complexity.TransferInstruction.Amount(childComplexity), true
 
-	case "Transfer.asset":
-		if e.complexity.Transfer.Asset == nil {
+	case "TransferInstruction.asset":
+		if e.complexity.TransferInstruction.Asset == nil {
 			break
 		}
 
-		return e.complexity.Transfer.Asset(childComplexity), true
+		return e.complexity.TransferInstruction.Asset(childComplexity), true
 
-	case "Transfer.from":
-		if e.complexity.Transfer.From == nil {
+	case "TransferInstruction.from":
+		if e.complexity.TransferInstruction.From == nil {
 			break
 		}
 
-		return e.complexity.Transfer.From(childComplexity), true
+		return e.complexity.TransferInstruction.From(childComplexity), true
 
-	case "Transfer.fromAccountType":
-		if e.complexity.Transfer.FromAccountType == nil {
+	case "TransferInstruction.fromAccountType":
+		if e.complexity.TransferInstruction.FromAccountType == nil {
 			break
 		}
 
-		return e.complexity.Transfer.FromAccountType(childComplexity), true
+		return e.complexity.TransferInstruction.FromAccountType(childComplexity), true
 
-	case "Transfer.id":
-		if e.complexity.Transfer.Id == nil {
+	case "TransferInstruction.id":
+		if e.complexity.TransferInstruction.Id == nil {
 			break
 		}
 
-		return e.complexity.Transfer.Id(childComplexity), true
+		return e.complexity.TransferInstruction.Id(childComplexity), true
 
-	case "Transfer.kind":
-		if e.complexity.Transfer.Kind == nil {
+	case "TransferInstruction.kind":
+		if e.complexity.TransferInstruction.Kind == nil {
 			break
 		}
 
-		return e.complexity.Transfer.Kind(childComplexity), true
+		return e.complexity.TransferInstruction.Kind(childComplexity), true
 
-	case "Transfer.reference":
-		if e.complexity.Transfer.Reference == nil {
+	case "TransferInstruction.reference":
+		if e.complexity.TransferInstruction.Reference == nil {
 			break
 		}
 
-		return e.complexity.Transfer.Reference(childComplexity), true
+		return e.complexity.TransferInstruction.Reference(childComplexity), true
 
-	case "Transfer.status":
-		if e.complexity.Transfer.Status == nil {
+	case "TransferInstruction.status":
+		if e.complexity.TransferInstruction.Status == nil {
 			break
 		}
 
-		return e.complexity.Transfer.Status(childComplexity), true
+		return e.complexity.TransferInstruction.Status(childComplexity), true
 
-	case "Transfer.timestamp":
-		if e.complexity.Transfer.Timestamp == nil {
+	case "TransferInstruction.timestamp":
+		if e.complexity.TransferInstruction.Timestamp == nil {
 			break
 		}
 
-		return e.complexity.Transfer.Timestamp(childComplexity), true
+		return e.complexity.TransferInstruction.Timestamp(childComplexity), true
 
-	case "Transfer.to":
-		if e.complexity.Transfer.To == nil {
+	case "TransferInstruction.to":
+		if e.complexity.TransferInstruction.To == nil {
 			break
 		}
 
-		return e.complexity.Transfer.To(childComplexity), true
+		return e.complexity.TransferInstruction.To(childComplexity), true
 
-	case "Transfer.toAccountType":
-		if e.complexity.Transfer.ToAccountType == nil {
+	case "TransferInstruction.toAccountType":
+		if e.complexity.TransferInstruction.ToAccountType == nil {
 			break
 		}
 
-		return e.complexity.Transfer.ToAccountType(childComplexity), true
+		return e.complexity.TransferInstruction.ToAccountType(childComplexity), true
 
-	case "TransferBalance.account":
-		if e.complexity.TransferBalance.Account == nil {
+	case "TransferInstructionBalance.account":
+		if e.complexity.TransferInstructionBalance.Account == nil {
 			break
 		}
 
-		return e.complexity.TransferBalance.Account(childComplexity), true
+		return e.complexity.TransferInstructionBalance.Account(childComplexity), true
 
-	case "TransferBalance.balance":
-		if e.complexity.TransferBalance.Balance == nil {
+	case "TransferInstructionBalance.balance":
+		if e.complexity.TransferInstructionBalance.Balance == nil {
 			break
 		}
 
-		return e.complexity.TransferBalance.Balance(childComplexity), true
+		return e.complexity.TransferInstructionBalance.Balance(childComplexity), true
 
-	case "TransferConnection.edges":
-		if e.complexity.TransferConnection.Edges == nil {
+	case "TransferInstructionConnection.edges":
+		if e.complexity.TransferInstructionConnection.Edges == nil {
 			break
 		}
 
-		return e.complexity.TransferConnection.Edges(childComplexity), true
+		return e.complexity.TransferInstructionConnection.Edges(childComplexity), true
 
-	case "TransferConnection.pageInfo":
-		if e.complexity.TransferConnection.PageInfo == nil {
+	case "TransferInstructionConnection.pageInfo":
+		if e.complexity.TransferInstructionConnection.PageInfo == nil {
 			break
 		}
 
-		return e.complexity.TransferConnection.PageInfo(childComplexity), true
+		return e.complexity.TransferInstructionConnection.PageInfo(childComplexity), true
 
-	case "TransferEdge.cursor":
-		if e.complexity.TransferEdge.Cursor == nil {
+	case "TransferInstructionEdge.cursor":
+		if e.complexity.TransferInstructionEdge.Cursor == nil {
 			break
 		}
 
-		return e.complexity.TransferEdge.Cursor(childComplexity), true
+		return e.complexity.TransferInstructionEdge.Cursor(childComplexity), true
 
-	case "TransferEdge.node":
-		if e.complexity.TransferEdge.Node == nil {
+	case "TransferInstructionEdge.node":
+		if e.complexity.TransferInstructionEdge.Node == nil {
 			break
 		}
 
-		return e.complexity.TransferEdge.Node(childComplexity), true
+		return e.complexity.TransferInstructionEdge.Node(childComplexity), true
 
-	case "TransferResponse.balances":
-		if e.complexity.TransferResponse.Balances == nil {
+	case "TransferInstructionResponse.balances":
+		if e.complexity.TransferInstructionResponse.Balances == nil {
 			break
 		}
 
-		return e.complexity.TransferResponse.Balances(childComplexity), true
+		return e.complexity.TransferInstructionResponse.Balances(childComplexity), true
 
-	case "TransferResponse.transfers":
-		if e.complexity.TransferResponse.Transfers == nil {
+	case "TransferInstructionResponse.transferInstructions":
+		if e.complexity.TransferInstructionResponse.TransferInstructions == nil {
 			break
 		}
 
-		return e.complexity.TransferResponse.Transfers(childComplexity), true
+		return e.complexity.TransferInstructionResponse.TransferInstructions(childComplexity), true
 
-	case "TransferResponses.responses":
-		if e.complexity.TransferResponses.Responses == nil {
+	case "TransferInstructionResponses.responses":
+		if e.complexity.TransferInstructionResponses.Responses == nil {
 			break
 		}
 
-		return e.complexity.TransferResponses.Responses(childComplexity), true
+		return e.complexity.TransferInstructionResponses.Responses(childComplexity), true
 
 	case "UpdateAsset.quantum":
 		if e.complexity.UpdateAsset.Quantum == nil {
@@ -9918,25 +9918,25 @@ type Query {
   "get data for a specific epoch, if ID omitted it gets the current epoch. If the string is 'next', fetch the next epoch"
   epoch(id: ID): Epoch!
 
-  "get a list of all transfers for a public key"
-  transfers(
+  "get a list of all transfer instructions for a public key"
+  transferInstructions(
     "the pubkey to look for"
     pubkey: String!
-    "is the pubkey on the sending part of the transfer"
+    "is the pubkey on the sending part of the transfer instruction"
     isFrom: Boolean
-    "is the pubkey in the receiving part of the transfer"
+    "is the pubkey in the receiving part of the transfer instruction"
     isTo: Boolean
-  ): [Transfer!] @deprecated(reason: "Use transfersConnection instead")
+  ): [TransferInstruction!] @deprecated(reason: "Use transfersInstructionConnection instead")
 
-  "get a list of all transfers for a public key"
-  transfersConnection(
+  "get a list of all transfer instructions for a public key"
+  transferInstructionsConnection(
     "the public key to look for"
     partyId: ID
-    "direction of the transfer with respect to the public key"
-    direction: TransferDirection
+    "direction of the transfer instruction with respect to the public key"
+    direction: TransferInstructionDirection
     "Pagination information"
     pagination: Pagination
-  ): TransferConnection
+  ): TransferInstructionConnection
 
   "get statistics about the Vega node"
   statistics: Statistics!
@@ -9994,28 +9994,28 @@ type Query {
     pagination: Pagination): MarketDataConnection
 }
 
-enum TransferStatus {
-  "Indicates a transfer still being processed"
+enum TransferInstructionStatus {
+  "Indicates a transfer instruction is still being processed"
   STATUS_PENDING
-  "Indicates a transfer accepted by the Vega network"
+  "Indicates a transfer instruction is accepted by the Vega network"
   STATUS_DONE
-  "Indicates a transfer rejected by the Vega network"
+  "Indicates a transfer instruction is rejected by the Vega network"
   STATUS_REJECTED
   """
-  Indicates a transfer stopped by the Vega network
+  Indicates a transfer instruction is stopped by the Vega network
   e.g: no funds left to cover the transfer
   """
   STATUS_STOPPED
-  "Indication of a transfer cancelled by the user"
+  "Indication of a transfer instruction is cancelled by the user"
   STATUS_CANCELLED
 }
 
 "A user initiated transfer"
-type Transfer {
-  "ID of this transfer"
+type TransferInstruction {
+  "ID of this transfer instruction"
   id: ID!
 
-  "The public key of the sender in this transfer"
+  "The public key of the sender in this transfer instruction"
   from: String!
 
   "The account type from which funds have been sent"
@@ -10036,32 +10036,32 @@ type Transfer {
   "An optional reference"
   reference: String
 
-  "The status of this transfer"
-  status: TransferStatus!
+  "The status of this transfer instruction"
+  status: TransferInstructionStatus!
 
-  "The time at which the transfer was submitted"
+  "The time at which the transfer instruction was submitted"
   timestamp: String!
 
-  kind: TransferKind!
+  kind: TransferInstructionKind!
 }
 
-union TransferKind = OneOffTransfer | RecurringTransfer
+union TransferInstructionKind = OneOffTransferInstruction | RecurringTransferInstruction
 
-"The specific details for a one-off transfer"
-type OneOffTransfer {
-  "An optional time when the transfer should be delivered"
+"The specific details for a one-off transfer instruction"
+type OneOffTransferInstruction {
+  "An optional time when the transfer instruction should be delivered"
   deliverOn: String
 }
 
-"The specific details for a recurring transfer"
-type RecurringTransfer {
-  "The epoch at which this recurring transfer will start"
+"The specific details for a recurring transfer instruction"
+type RecurringTransferInstruction {
+  "The epoch at which this recurring transfer instrcution will start"
   startEpoch: Int!
-  "An optional epoch at which this transfer will stop"
+  "An optional epoch at which this transfer instruction will stop"
   endEpoch: Int
   "The factor of the initial amount to be distributed"
   factor: String!
-  "An optional dispatch strategy for the recurring transfer"
+  "An optional dispatch strategy for the recurring transfer instruction"
   dispatchStrategy: DispatchStrategy
 }
 
@@ -11405,13 +11405,13 @@ type Party {
   "return reward information"
   rewardDetails: [RewardPerAssetDetail] @deprecated(reason: "Use rewardSummaries or rewards instead.")
 
-  "get a list of all transfers for a public key"
-  transfersConnection(
-    "direction of the transfer with respect to the public key"
-    direction: TransferDirection
+  "get a list of all transfer instructions for a public key"
+  transferInstructionsConnection(
+    "direction of the transfer instruction with respect to the public key"
+    direction: TransferInstructionDirection
     "Pagination information"
     pagination: Pagination
-  ): TransferConnection
+  ): TransferInstructionConnection
 }
 
 """
@@ -12377,8 +12377,8 @@ enum AccountType {
   ACCOUNT_TYPE_EXTERNAL
   "GlobalReward - a global account for the reward pool"
   ACCOUNT_TYPE_GLOBAL_REWARD
-  "PendingTransfers - a global account for the pending transfers pool"
-  ACCOUNT_TYPE_PENDING_TRANSFERS
+  "PendingTransferInstructions - a global account for the pending transfer instructions pool"
+  ACCOUNT_TYPE_PENDING_TRANSFER_INSTRUCTIONS
   "RewardMakerPaidFees - an account holding rewards for taker paid fees"
   ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES
   "RewardMakerReceivedFees - an account holding rewards for maker received fees"
@@ -12725,8 +12725,8 @@ type MarketEvent {
   payload: String!
 }
 
-type TransferBalance {
-  "Account involved in transfer"
+type TransferInstructionBalance {
+  "Account involved in transfer instruction"
   account: Account!
   "The new balance of the account"
   balance: String!
@@ -12743,20 +12743,20 @@ type LedgerEntry {
   reference: String!
   "Type of ledger entry"
   type: String!
-  "RFC3339Nano time at which the transfer was made"
+  "RFC3339Nano time at which the transfer instruction was made"
   timestamp: String!
 }
 
-type TransferResponse {
-  "The ledger entries and balances resulting from a transfer request"
-  transfers: [LedgerEntry!]
+type TransferInstructionResponse {
+  "The ledger entries and balances resulting from a transfer instruction request"
+  transferInstructions: [LedgerEntry!]
   "The balances of accounts involved in the transfer"
-  balances: [TransferBalance!]
+  balances: [TransferInstructionBalance!]
 }
 
-type TransferResponses {
-  "A group of transfer responses - events from core"
-  responses: [TransferResponse!]
+type TransferInstructionResponses {
+  "A group of transfer instruction responses - events from core"
+  responses: [TransferInstructionResponse!]
 }
 
 type PositionResolution {
@@ -12849,7 +12849,7 @@ enum BusEventType {
   "Vega Time has changed"
   TimeUpdate
   "A balance has been transferred between accounts"
-  TransferResponses
+  TransferInstructionResponses
   "A position resolution event has occurred"
   PositionResolution
   "An order has been created or updated"
@@ -12904,7 +12904,7 @@ enum BusEventType {
 union Event =
   TimeUpdate
   | MarketEvent
-  | TransferResponses
+  | TransferInstructionResponses
   | PositionResolution
   | Order
   | Trade
@@ -13415,17 +13415,17 @@ type LiquidityProvisionsConnection {
     pageInfo: PageInfo!
 }
 
-type TransferEdge {
-  node: Transfer!
+type TransferInstructionEdge {
+  node: TransferInstruction!
   cursor: String!
 }
 
-type TransferConnection {
-    edges: [TransferEdge]
+type TransferInstructionConnection {
+    edges: [TransferInstructionEdge]
     pageInfo: PageInfo!
 }
 
-enum TransferDirection {
+enum TransferInstructionDirection {
   To
   From
   ToOrFrom
@@ -14613,13 +14613,13 @@ func (ec *executionContext) field_Party_trades_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
-func (ec *executionContext) field_Party_transfersConnection_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Party_transferInstructionsConnection_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *TransferDirection
+	var arg0 *TransferInstructionDirection
 	if tmp, ok := rawArgs["direction"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("direction"))
-		arg0, err = ec.unmarshalOTransferDirection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferDirection(ctx, tmp)
+		arg0, err = ec.unmarshalOTransferInstructionDirection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferInstructionDirection(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -15747,7 +15747,7 @@ func (ec *executionContext) field_Query_proposals_args(ctx context.Context, rawA
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_transfersConnection_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_transferInstructionsConnection_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
@@ -15759,10 +15759,10 @@ func (ec *executionContext) field_Query_transfersConnection_args(ctx context.Con
 		}
 	}
 	args["partyId"] = arg0
-	var arg1 *TransferDirection
+	var arg1 *TransferInstructionDirection
 	if tmp, ok := rawArgs["direction"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("direction"))
-		arg1, err = ec.unmarshalOTransferDirection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferDirection(ctx, tmp)
+		arg1, err = ec.unmarshalOTransferInstructionDirection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferInstructionDirection(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -15780,7 +15780,7 @@ func (ec *executionContext) field_Query_transfersConnection_args(ctx context.Con
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_transfers_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_transferInstructions_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -32204,7 +32204,7 @@ func (ec *executionContext) _ObservableMarketDepthUpdate_previousSequenceNumber(
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OneOffTransfer_deliverOn(ctx context.Context, field graphql.CollectedField, obj *v1.OneOffTransfer) (ret graphql.Marshaler) {
+func (ec *executionContext) _OneOffTransferInstruction_deliverOn(ctx context.Context, field graphql.CollectedField, obj *v1.OneOffTransferInstruction) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -32212,7 +32212,7 @@ func (ec *executionContext) _OneOffTransfer_deliverOn(ctx context.Context, field
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "OneOffTransfer",
+		Object:     "OneOffTransferInstruction",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   true,
@@ -32222,7 +32222,7 @@ func (ec *executionContext) _OneOffTransfer_deliverOn(ctx context.Context, field
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.OneOffTransfer().DeliverOn(rctx, obj)
+		return ec.resolvers.OneOffTransferInstruction().DeliverOn(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -35815,7 +35815,7 @@ func (ec *executionContext) _Party_rewardDetails(ctx context.Context, field grap
 	return ec.marshalORewardPerAssetDetail2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐRewardSummary(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Party_transfersConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
+func (ec *executionContext) _Party_transferInstructionsConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Party) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -35832,7 +35832,7 @@ func (ec *executionContext) _Party_transfersConnection(ctx context.Context, fiel
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Party_transfersConnection_args(ctx, rawArgs)
+	args, err := ec.field_Party_transferInstructionsConnection_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -35840,7 +35840,7 @@ func (ec *executionContext) _Party_transfersConnection(ctx context.Context, fiel
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Party().TransfersConnection(rctx, obj, args["direction"].(*TransferDirection), args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Party().TransferInstructionsConnection(rctx, obj, args["direction"].(*TransferInstructionDirection), args["pagination"].(*v2.Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -35849,9 +35849,9 @@ func (ec *executionContext) _Party_transfersConnection(ctx context.Context, fiel
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*v2.TransferConnection)
+	res := resTmp.(*v2.TransferInstructionConnection)
 	fc.Result = res
-	return ec.marshalOTransferConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTransferConnection(ctx, field.Selections, res)
+	return ec.marshalOTransferInstructionConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTransferInstructionConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PartyConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.PartyConnection) (ret graphql.Marshaler) {
@@ -40479,7 +40479,7 @@ func (ec *executionContext) _Query_epoch(ctx context.Context, field graphql.Coll
 	return ec.marshalNEpoch2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐEpoch(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_transfers(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_transferInstructions(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -40496,7 +40496,7 @@ func (ec *executionContext) _Query_transfers(ctx context.Context, field graphql.
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_transfers_args(ctx, rawArgs)
+	args, err := ec.field_Query_transferInstructions_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -40504,7 +40504,7 @@ func (ec *executionContext) _Query_transfers(ctx context.Context, field graphql.
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Transfers(rctx, args["pubkey"].(string), args["isFrom"].(*bool), args["isTo"].(*bool))
+		return ec.resolvers.Query().TransferInstructions(rctx, args["pubkey"].(string), args["isFrom"].(*bool), args["isTo"].(*bool))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -40513,12 +40513,12 @@ func (ec *executionContext) _Query_transfers(ctx context.Context, field graphql.
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*v1.Transfer)
+	res := resTmp.([]*v1.TransferInstruction)
 	fc.Result = res
-	return ec.marshalOTransfer2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐTransferᚄ(ctx, field.Selections, res)
+	return ec.marshalOTransferInstruction2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐTransferInstructionᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_transfersConnection(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_transferInstructionsConnection(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -40535,7 +40535,7 @@ func (ec *executionContext) _Query_transfersConnection(ctx context.Context, fiel
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_transfersConnection_args(ctx, rawArgs)
+	args, err := ec.field_Query_transferInstructionsConnection_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -40543,7 +40543,7 @@ func (ec *executionContext) _Query_transfersConnection(ctx context.Context, fiel
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().TransfersConnection(rctx, args["partyId"].(*string), args["direction"].(*TransferDirection), args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Query().TransferInstructionsConnection(rctx, args["partyId"].(*string), args["direction"].(*TransferInstructionDirection), args["pagination"].(*v2.Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -40552,9 +40552,9 @@ func (ec *executionContext) _Query_transfersConnection(ctx context.Context, fiel
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*v2.TransferConnection)
+	res := resTmp.(*v2.TransferInstructionConnection)
 	fc.Result = res
-	return ec.marshalOTransferConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTransferConnection(ctx, field.Selections, res)
+	return ec.marshalOTransferInstructionConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTransferInstructionConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_statistics(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -41025,7 +41025,7 @@ func (ec *executionContext) _RankingScore_votingPower(ctx context.Context, field
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _RecurringTransfer_startEpoch(ctx context.Context, field graphql.CollectedField, obj *v1.RecurringTransfer) (ret graphql.Marshaler) {
+func (ec *executionContext) _RecurringTransferInstruction_startEpoch(ctx context.Context, field graphql.CollectedField, obj *v1.RecurringTransferInstruction) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -41033,7 +41033,7 @@ func (ec *executionContext) _RecurringTransfer_startEpoch(ctx context.Context, f
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "RecurringTransfer",
+		Object:     "RecurringTransferInstruction",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   true,
@@ -41043,7 +41043,7 @@ func (ec *executionContext) _RecurringTransfer_startEpoch(ctx context.Context, f
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.RecurringTransfer().StartEpoch(rctx, obj)
+		return ec.resolvers.RecurringTransferInstruction().StartEpoch(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -41060,7 +41060,7 @@ func (ec *executionContext) _RecurringTransfer_startEpoch(ctx context.Context, f
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _RecurringTransfer_endEpoch(ctx context.Context, field graphql.CollectedField, obj *v1.RecurringTransfer) (ret graphql.Marshaler) {
+func (ec *executionContext) _RecurringTransferInstruction_endEpoch(ctx context.Context, field graphql.CollectedField, obj *v1.RecurringTransferInstruction) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -41068,7 +41068,7 @@ func (ec *executionContext) _RecurringTransfer_endEpoch(ctx context.Context, fie
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "RecurringTransfer",
+		Object:     "RecurringTransferInstruction",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   true,
@@ -41078,7 +41078,7 @@ func (ec *executionContext) _RecurringTransfer_endEpoch(ctx context.Context, fie
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.RecurringTransfer().EndEpoch(rctx, obj)
+		return ec.resolvers.RecurringTransferInstruction().EndEpoch(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -41092,7 +41092,7 @@ func (ec *executionContext) _RecurringTransfer_endEpoch(ctx context.Context, fie
 	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _RecurringTransfer_factor(ctx context.Context, field graphql.CollectedField, obj *v1.RecurringTransfer) (ret graphql.Marshaler) {
+func (ec *executionContext) _RecurringTransferInstruction_factor(ctx context.Context, field graphql.CollectedField, obj *v1.RecurringTransferInstruction) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -41100,7 +41100,7 @@ func (ec *executionContext) _RecurringTransfer_factor(ctx context.Context, field
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "RecurringTransfer",
+		Object:     "RecurringTransferInstruction",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -41127,7 +41127,7 @@ func (ec *executionContext) _RecurringTransfer_factor(ctx context.Context, field
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _RecurringTransfer_dispatchStrategy(ctx context.Context, field graphql.CollectedField, obj *v1.RecurringTransfer) (ret graphql.Marshaler) {
+func (ec *executionContext) _RecurringTransferInstruction_dispatchStrategy(ctx context.Context, field graphql.CollectedField, obj *v1.RecurringTransferInstruction) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -41135,7 +41135,7 @@ func (ec *executionContext) _RecurringTransfer_dispatchStrategy(ctx context.Cont
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "RecurringTransfer",
+		Object:     "RecurringTransferInstruction",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   true,
@@ -41145,7 +41145,7 @@ func (ec *executionContext) _RecurringTransfer_dispatchStrategy(ctx context.Cont
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.RecurringTransfer().DispatchStrategy(rctx, obj)
+		return ec.resolvers.RecurringTransferInstruction().DispatchStrategy(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -46526,7 +46526,7 @@ func (ec *executionContext) _TransactionSubmitted_success(ctx context.Context, f
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Transfer_id(ctx context.Context, field graphql.CollectedField, obj *v1.Transfer) (ret graphql.Marshaler) {
+func (ec *executionContext) _TransferInstruction_id(ctx context.Context, field graphql.CollectedField, obj *v1.TransferInstruction) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -46534,7 +46534,7 @@ func (ec *executionContext) _Transfer_id(ctx context.Context, field graphql.Coll
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "Transfer",
+		Object:     "TransferInstruction",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -46561,7 +46561,7 @@ func (ec *executionContext) _Transfer_id(ctx context.Context, field graphql.Coll
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Transfer_from(ctx context.Context, field graphql.CollectedField, obj *v1.Transfer) (ret graphql.Marshaler) {
+func (ec *executionContext) _TransferInstruction_from(ctx context.Context, field graphql.CollectedField, obj *v1.TransferInstruction) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -46569,7 +46569,7 @@ func (ec *executionContext) _Transfer_from(ctx context.Context, field graphql.Co
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "Transfer",
+		Object:     "TransferInstruction",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -46596,7 +46596,7 @@ func (ec *executionContext) _Transfer_from(ctx context.Context, field graphql.Co
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Transfer_fromAccountType(ctx context.Context, field graphql.CollectedField, obj *v1.Transfer) (ret graphql.Marshaler) {
+func (ec *executionContext) _TransferInstruction_fromAccountType(ctx context.Context, field graphql.CollectedField, obj *v1.TransferInstruction) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -46604,7 +46604,7 @@ func (ec *executionContext) _Transfer_fromAccountType(ctx context.Context, field
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "Transfer",
+		Object:     "TransferInstruction",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -46631,7 +46631,7 @@ func (ec *executionContext) _Transfer_fromAccountType(ctx context.Context, field
 	return ec.marshalNAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountType(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Transfer_to(ctx context.Context, field graphql.CollectedField, obj *v1.Transfer) (ret graphql.Marshaler) {
+func (ec *executionContext) _TransferInstruction_to(ctx context.Context, field graphql.CollectedField, obj *v1.TransferInstruction) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -46639,7 +46639,7 @@ func (ec *executionContext) _Transfer_to(ctx context.Context, field graphql.Coll
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "Transfer",
+		Object:     "TransferInstruction",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -46666,7 +46666,7 @@ func (ec *executionContext) _Transfer_to(ctx context.Context, field graphql.Coll
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Transfer_toAccountType(ctx context.Context, field graphql.CollectedField, obj *v1.Transfer) (ret graphql.Marshaler) {
+func (ec *executionContext) _TransferInstruction_toAccountType(ctx context.Context, field graphql.CollectedField, obj *v1.TransferInstruction) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -46674,7 +46674,7 @@ func (ec *executionContext) _Transfer_toAccountType(ctx context.Context, field g
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "Transfer",
+		Object:     "TransferInstruction",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -46701,7 +46701,7 @@ func (ec *executionContext) _Transfer_toAccountType(ctx context.Context, field g
 	return ec.marshalNAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountType(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Transfer_asset(ctx context.Context, field graphql.CollectedField, obj *v1.Transfer) (ret graphql.Marshaler) {
+func (ec *executionContext) _TransferInstruction_asset(ctx context.Context, field graphql.CollectedField, obj *v1.TransferInstruction) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -46709,7 +46709,7 @@ func (ec *executionContext) _Transfer_asset(ctx context.Context, field graphql.C
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "Transfer",
+		Object:     "TransferInstruction",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   true,
@@ -46719,7 +46719,7 @@ func (ec *executionContext) _Transfer_asset(ctx context.Context, field graphql.C
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Transfer().Asset(rctx, obj)
+		return ec.resolvers.TransferInstruction().Asset(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -46733,7 +46733,7 @@ func (ec *executionContext) _Transfer_asset(ctx context.Context, field graphql.C
 	return ec.marshalOAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Transfer_amount(ctx context.Context, field graphql.CollectedField, obj *v1.Transfer) (ret graphql.Marshaler) {
+func (ec *executionContext) _TransferInstruction_amount(ctx context.Context, field graphql.CollectedField, obj *v1.TransferInstruction) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -46741,7 +46741,7 @@ func (ec *executionContext) _Transfer_amount(ctx context.Context, field graphql.
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "Transfer",
+		Object:     "TransferInstruction",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -46768,7 +46768,7 @@ func (ec *executionContext) _Transfer_amount(ctx context.Context, field graphql.
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Transfer_reference(ctx context.Context, field graphql.CollectedField, obj *v1.Transfer) (ret graphql.Marshaler) {
+func (ec *executionContext) _TransferInstruction_reference(ctx context.Context, field graphql.CollectedField, obj *v1.TransferInstruction) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -46776,7 +46776,7 @@ func (ec *executionContext) _Transfer_reference(ctx context.Context, field graph
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "Transfer",
+		Object:     "TransferInstruction",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -46800,7 +46800,7 @@ func (ec *executionContext) _Transfer_reference(ctx context.Context, field graph
 	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Transfer_status(ctx context.Context, field graphql.CollectedField, obj *v1.Transfer) (ret graphql.Marshaler) {
+func (ec *executionContext) _TransferInstruction_status(ctx context.Context, field graphql.CollectedField, obj *v1.TransferInstruction) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -46808,7 +46808,7 @@ func (ec *executionContext) _Transfer_status(ctx context.Context, field graphql.
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "Transfer",
+		Object:     "TransferInstruction",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -46830,12 +46830,12 @@ func (ec *executionContext) _Transfer_status(ctx context.Context, field graphql.
 		}
 		return graphql.Null
 	}
-	res := resTmp.(v1.Transfer_Status)
+	res := resTmp.(v1.TransferInstruction_Status)
 	fc.Result = res
-	return ec.marshalNTransferStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐTransfer_Status(ctx, field.Selections, res)
+	return ec.marshalNTransferInstructionStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐTransferInstruction_Status(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Transfer_timestamp(ctx context.Context, field graphql.CollectedField, obj *v1.Transfer) (ret graphql.Marshaler) {
+func (ec *executionContext) _TransferInstruction_timestamp(ctx context.Context, field graphql.CollectedField, obj *v1.TransferInstruction) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -46843,7 +46843,7 @@ func (ec *executionContext) _Transfer_timestamp(ctx context.Context, field graph
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "Transfer",
+		Object:     "TransferInstruction",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   true,
@@ -46853,7 +46853,7 @@ func (ec *executionContext) _Transfer_timestamp(ctx context.Context, field graph
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Transfer().Timestamp(rctx, obj)
+		return ec.resolvers.TransferInstruction().Timestamp(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -46870,7 +46870,7 @@ func (ec *executionContext) _Transfer_timestamp(ctx context.Context, field graph
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Transfer_kind(ctx context.Context, field graphql.CollectedField, obj *v1.Transfer) (ret graphql.Marshaler) {
+func (ec *executionContext) _TransferInstruction_kind(ctx context.Context, field graphql.CollectedField, obj *v1.TransferInstruction) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -46878,7 +46878,7 @@ func (ec *executionContext) _Transfer_kind(ctx context.Context, field graphql.Co
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "Transfer",
+		Object:     "TransferInstruction",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   true,
@@ -46888,7 +46888,7 @@ func (ec *executionContext) _Transfer_kind(ctx context.Context, field graphql.Co
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Transfer().Kind(rctx, obj)
+		return ec.resolvers.TransferInstruction().Kind(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -46900,12 +46900,12 @@ func (ec *executionContext) _Transfer_kind(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.(TransferKind)
+	res := resTmp.(TransferInstructionKind)
 	fc.Result = res
-	return ec.marshalNTransferKind2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferKind(ctx, field.Selections, res)
+	return ec.marshalNTransferInstructionKind2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferInstructionKind(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _TransferBalance_account(ctx context.Context, field graphql.CollectedField, obj *TransferBalance) (ret graphql.Marshaler) {
+func (ec *executionContext) _TransferInstructionBalance_account(ctx context.Context, field graphql.CollectedField, obj *TransferInstructionBalance) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -46913,7 +46913,7 @@ func (ec *executionContext) _TransferBalance_account(ctx context.Context, field 
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "TransferBalance",
+		Object:     "TransferInstructionBalance",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -46940,7 +46940,7 @@ func (ec *executionContext) _TransferBalance_account(ctx context.Context, field 
 	return ec.marshalNAccount2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccount(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _TransferBalance_balance(ctx context.Context, field graphql.CollectedField, obj *TransferBalance) (ret graphql.Marshaler) {
+func (ec *executionContext) _TransferInstructionBalance_balance(ctx context.Context, field graphql.CollectedField, obj *TransferInstructionBalance) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -46948,7 +46948,7 @@ func (ec *executionContext) _TransferBalance_balance(ctx context.Context, field 
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "TransferBalance",
+		Object:     "TransferInstructionBalance",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -46975,7 +46975,7 @@ func (ec *executionContext) _TransferBalance_balance(ctx context.Context, field 
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _TransferConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.TransferConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _TransferInstructionConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.TransferInstructionConnection) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -46983,7 +46983,7 @@ func (ec *executionContext) _TransferConnection_edges(ctx context.Context, field
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "TransferConnection",
+		Object:     "TransferInstructionConnection",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -47002,12 +47002,12 @@ func (ec *executionContext) _TransferConnection_edges(ctx context.Context, field
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*v2.TransferEdge)
+	res := resTmp.([]*v2.TransferInstructionEdge)
 	fc.Result = res
-	return ec.marshalOTransferEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTransferEdge(ctx, field.Selections, res)
+	return ec.marshalOTransferInstructionEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTransferInstructionEdge(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _TransferConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.TransferConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _TransferInstructionConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.TransferInstructionConnection) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -47015,7 +47015,7 @@ func (ec *executionContext) _TransferConnection_pageInfo(ctx context.Context, fi
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "TransferConnection",
+		Object:     "TransferInstructionConnection",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -47042,7 +47042,7 @@ func (ec *executionContext) _TransferConnection_pageInfo(ctx context.Context, fi
 	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _TransferEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.TransferEdge) (ret graphql.Marshaler) {
+func (ec *executionContext) _TransferInstructionEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.TransferInstructionEdge) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -47050,7 +47050,7 @@ func (ec *executionContext) _TransferEdge_node(ctx context.Context, field graphq
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "TransferEdge",
+		Object:     "TransferInstructionEdge",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -47072,12 +47072,12 @@ func (ec *executionContext) _TransferEdge_node(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*v1.Transfer)
+	res := resTmp.(*v1.TransferInstruction)
 	fc.Result = res
-	return ec.marshalNTransfer2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐTransfer(ctx, field.Selections, res)
+	return ec.marshalNTransferInstruction2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐTransferInstruction(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _TransferEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.TransferEdge) (ret graphql.Marshaler) {
+func (ec *executionContext) _TransferInstructionEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.TransferInstructionEdge) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -47085,7 +47085,7 @@ func (ec *executionContext) _TransferEdge_cursor(ctx context.Context, field grap
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "TransferEdge",
+		Object:     "TransferInstructionEdge",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -47112,7 +47112,7 @@ func (ec *executionContext) _TransferEdge_cursor(ctx context.Context, field grap
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _TransferResponse_transfers(ctx context.Context, field graphql.CollectedField, obj *TransferResponse) (ret graphql.Marshaler) {
+func (ec *executionContext) _TransferInstructionResponse_transferInstructions(ctx context.Context, field graphql.CollectedField, obj *TransferInstructionResponse) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -47120,7 +47120,7 @@ func (ec *executionContext) _TransferResponse_transfers(ctx context.Context, fie
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "TransferResponse",
+		Object:     "TransferInstructionResponse",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -47130,7 +47130,7 @@ func (ec *executionContext) _TransferResponse_transfers(ctx context.Context, fie
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Transfers, nil
+		return obj.TransferInstructions, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -47144,7 +47144,7 @@ func (ec *executionContext) _TransferResponse_transfers(ctx context.Context, fie
 	return ec.marshalOLedgerEntry2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐLedgerEntryᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _TransferResponse_balances(ctx context.Context, field graphql.CollectedField, obj *TransferResponse) (ret graphql.Marshaler) {
+func (ec *executionContext) _TransferInstructionResponse_balances(ctx context.Context, field graphql.CollectedField, obj *TransferInstructionResponse) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -47152,7 +47152,7 @@ func (ec *executionContext) _TransferResponse_balances(ctx context.Context, fiel
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "TransferResponse",
+		Object:     "TransferInstructionResponse",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -47171,12 +47171,12 @@ func (ec *executionContext) _TransferResponse_balances(ctx context.Context, fiel
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*TransferBalance)
+	res := resTmp.([]*TransferInstructionBalance)
 	fc.Result = res
-	return ec.marshalOTransferBalance2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferBalanceᚄ(ctx, field.Selections, res)
+	return ec.marshalOTransferInstructionBalance2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferInstructionBalanceᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _TransferResponses_responses(ctx context.Context, field graphql.CollectedField, obj *TransferResponses) (ret graphql.Marshaler) {
+func (ec *executionContext) _TransferInstructionResponses_responses(ctx context.Context, field graphql.CollectedField, obj *TransferInstructionResponses) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -47184,7 +47184,7 @@ func (ec *executionContext) _TransferResponses_responses(ctx context.Context, fi
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "TransferResponses",
+		Object:     "TransferInstructionResponses",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -47203,9 +47203,9 @@ func (ec *executionContext) _TransferResponses_responses(ctx context.Context, fi
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*TransferResponse)
+	res := resTmp.([]*TransferInstructionResponse)
 	fc.Result = res
-	return ec.marshalOTransferResponse2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferResponseᚄ(ctx, field.Selections, res)
+	return ec.marshalOTransferInstructionResponse2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferInstructionResponseᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _UpdateAsset_quantum(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateAsset) (ret graphql.Marshaler) {
@@ -50122,13 +50122,13 @@ func (ec *executionContext) _Event(ctx context.Context, sel ast.SelectionSet, ob
 			return graphql.Null
 		}
 		return ec._MarketEvent(ctx, sel, obj)
-	case TransferResponses:
-		return ec._TransferResponses(ctx, sel, &obj)
-	case *TransferResponses:
+	case TransferInstructionResponses:
+		return ec._TransferInstructionResponses(ctx, sel, &obj)
+	case *TransferInstructionResponses:
 		if obj == nil {
 			return graphql.Null
 		}
-		return ec._TransferResponses(ctx, sel, obj)
+		return ec._TransferInstructionResponses(ctx, sel, obj)
 	case PositionResolution:
 		return ec._PositionResolution(ctx, sel, &obj)
 	case *PositionResolution:
@@ -50394,24 +50394,24 @@ func (ec *executionContext) _RiskModel(ctx context.Context, sel ast.SelectionSet
 	}
 }
 
-func (ec *executionContext) _TransferKind(ctx context.Context, sel ast.SelectionSet, obj TransferKind) graphql.Marshaler {
+func (ec *executionContext) _TransferInstructionKind(ctx context.Context, sel ast.SelectionSet, obj TransferInstructionKind) graphql.Marshaler {
 	switch obj := (obj).(type) {
 	case nil:
 		return graphql.Null
-	case v1.OneOffTransfer:
-		return ec._OneOffTransfer(ctx, sel, &obj)
-	case *v1.OneOffTransfer:
+	case v1.OneOffTransferInstruction:
+		return ec._OneOffTransferInstruction(ctx, sel, &obj)
+	case *v1.OneOffTransferInstruction:
 		if obj == nil {
 			return graphql.Null
 		}
-		return ec._OneOffTransfer(ctx, sel, obj)
-	case v1.RecurringTransfer:
-		return ec._RecurringTransfer(ctx, sel, &obj)
-	case *v1.RecurringTransfer:
+		return ec._OneOffTransferInstruction(ctx, sel, obj)
+	case v1.RecurringTransferInstruction:
+		return ec._RecurringTransferInstruction(ctx, sel, &obj)
+	case *v1.RecurringTransferInstruction:
 		if obj == nil {
 			return graphql.Null
 		}
-		return ec._RecurringTransfer(ctx, sel, obj)
+		return ec._RecurringTransferInstruction(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -58272,16 +58272,16 @@ func (ec *executionContext) _ObservableMarketDepthUpdate(ctx context.Context, se
 	return out
 }
 
-var oneOffTransferImplementors = []string{"OneOffTransfer", "TransferKind"}
+var oneOffTransferInstructionImplementors = []string{"OneOffTransferInstruction", "TransferInstructionKind"}
 
-func (ec *executionContext) _OneOffTransfer(ctx context.Context, sel ast.SelectionSet, obj *v1.OneOffTransfer) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, oneOffTransferImplementors)
+func (ec *executionContext) _OneOffTransferInstruction(ctx context.Context, sel ast.SelectionSet, obj *v1.OneOffTransferInstruction) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, oneOffTransferInstructionImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("OneOffTransfer")
+			out.Values[i] = graphql.MarshalString("OneOffTransferInstruction")
 		case "deliverOn":
 			field := field
 
@@ -58291,7 +58291,7 @@ func (ec *executionContext) _OneOffTransfer(ctx context.Context, sel ast.Selecti
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._OneOffTransfer_deliverOn(ctx, field, obj)
+				res = ec._OneOffTransferInstruction_deliverOn(ctx, field, obj)
 				return res
 			}
 
@@ -59995,7 +59995,7 @@ func (ec *executionContext) _Party(ctx context.Context, sel ast.SelectionSet, ob
 				return innerFunc(ctx)
 
 			})
-		case "transfersConnection":
+		case "transferInstructionsConnection":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -60004,7 +60004,7 @@ func (ec *executionContext) _Party(ctx context.Context, sel ast.SelectionSet, ob
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Party_transfersConnection(ctx, field, obj)
+				res = ec._Party_transferInstructionsConnection(ctx, field, obj)
 				return res
 			}
 
@@ -62590,7 +62590,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
-		case "transfers":
+		case "transferInstructions":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -62599,7 +62599,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_transfers(ctx, field)
+				res = ec._Query_transferInstructions(ctx, field)
 				return res
 			}
 
@@ -62610,7 +62610,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
-		case "transfersConnection":
+		case "transferInstructionsConnection":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -62619,7 +62619,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_transfersConnection(ctx, field)
+				res = ec._Query_transferInstructionsConnection(ctx, field)
 				return res
 			}
 
@@ -62852,16 +62852,16 @@ func (ec *executionContext) _RankingScore(ctx context.Context, sel ast.Selection
 	return out
 }
 
-var recurringTransferImplementors = []string{"RecurringTransfer", "TransferKind"}
+var recurringTransferInstructionImplementors = []string{"RecurringTransferInstruction", "TransferInstructionKind"}
 
-func (ec *executionContext) _RecurringTransfer(ctx context.Context, sel ast.SelectionSet, obj *v1.RecurringTransfer) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, recurringTransferImplementors)
+func (ec *executionContext) _RecurringTransferInstruction(ctx context.Context, sel ast.SelectionSet, obj *v1.RecurringTransferInstruction) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, recurringTransferInstructionImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("RecurringTransfer")
+			out.Values[i] = graphql.MarshalString("RecurringTransferInstruction")
 		case "startEpoch":
 			field := field
 
@@ -62871,7 +62871,7 @@ func (ec *executionContext) _RecurringTransfer(ctx context.Context, sel ast.Sele
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._RecurringTransfer_startEpoch(ctx, field, obj)
+				res = ec._RecurringTransferInstruction_startEpoch(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -62891,7 +62891,7 @@ func (ec *executionContext) _RecurringTransfer(ctx context.Context, sel ast.Sele
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._RecurringTransfer_endEpoch(ctx, field, obj)
+				res = ec._RecurringTransferInstruction_endEpoch(ctx, field, obj)
 				return res
 			}
 
@@ -62901,7 +62901,7 @@ func (ec *executionContext) _RecurringTransfer(ctx context.Context, sel ast.Sele
 			})
 		case "factor":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._RecurringTransfer_factor(ctx, field, obj)
+				return ec._RecurringTransferInstruction_factor(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -62918,7 +62918,7 @@ func (ec *executionContext) _RecurringTransfer(ctx context.Context, sel ast.Sele
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._RecurringTransfer_dispatchStrategy(ctx, field, obj)
+				res = ec._RecurringTransferInstruction_dispatchStrategy(ctx, field, obj)
 				return res
 			}
 
@@ -65352,19 +65352,19 @@ func (ec *executionContext) _TransactionSubmitted(ctx context.Context, sel ast.S
 	return out
 }
 
-var transferImplementors = []string{"Transfer"}
+var transferInstructionImplementors = []string{"TransferInstruction"}
 
-func (ec *executionContext) _Transfer(ctx context.Context, sel ast.SelectionSet, obj *v1.Transfer) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, transferImplementors)
+func (ec *executionContext) _TransferInstruction(ctx context.Context, sel ast.SelectionSet, obj *v1.TransferInstruction) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, transferInstructionImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("Transfer")
+			out.Values[i] = graphql.MarshalString("TransferInstruction")
 		case "id":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Transfer_id(ctx, field, obj)
+				return ec._TransferInstruction_id(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -65374,7 +65374,7 @@ func (ec *executionContext) _Transfer(ctx context.Context, sel ast.SelectionSet,
 			}
 		case "from":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Transfer_from(ctx, field, obj)
+				return ec._TransferInstruction_from(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -65384,7 +65384,7 @@ func (ec *executionContext) _Transfer(ctx context.Context, sel ast.SelectionSet,
 			}
 		case "fromAccountType":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Transfer_fromAccountType(ctx, field, obj)
+				return ec._TransferInstruction_fromAccountType(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -65394,7 +65394,7 @@ func (ec *executionContext) _Transfer(ctx context.Context, sel ast.SelectionSet,
 			}
 		case "to":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Transfer_to(ctx, field, obj)
+				return ec._TransferInstruction_to(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -65404,7 +65404,7 @@ func (ec *executionContext) _Transfer(ctx context.Context, sel ast.SelectionSet,
 			}
 		case "toAccountType":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Transfer_toAccountType(ctx, field, obj)
+				return ec._TransferInstruction_toAccountType(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -65421,7 +65421,7 @@ func (ec *executionContext) _Transfer(ctx context.Context, sel ast.SelectionSet,
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Transfer_asset(ctx, field, obj)
+				res = ec._TransferInstruction_asset(ctx, field, obj)
 				return res
 			}
 
@@ -65431,7 +65431,7 @@ func (ec *executionContext) _Transfer(ctx context.Context, sel ast.SelectionSet,
 			})
 		case "amount":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Transfer_amount(ctx, field, obj)
+				return ec._TransferInstruction_amount(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -65441,14 +65441,14 @@ func (ec *executionContext) _Transfer(ctx context.Context, sel ast.SelectionSet,
 			}
 		case "reference":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Transfer_reference(ctx, field, obj)
+				return ec._TransferInstruction_reference(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
 
 		case "status":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Transfer_status(ctx, field, obj)
+				return ec._TransferInstruction_status(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -65465,7 +65465,7 @@ func (ec *executionContext) _Transfer(ctx context.Context, sel ast.SelectionSet,
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Transfer_timestamp(ctx, field, obj)
+				res = ec._TransferInstruction_timestamp(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -65485,7 +65485,7 @@ func (ec *executionContext) _Transfer(ctx context.Context, sel ast.SelectionSet,
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Transfer_kind(ctx, field, obj)
+				res = ec._TransferInstruction_kind(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -65507,19 +65507,19 @@ func (ec *executionContext) _Transfer(ctx context.Context, sel ast.SelectionSet,
 	return out
 }
 
-var transferBalanceImplementors = []string{"TransferBalance"}
+var transferInstructionBalanceImplementors = []string{"TransferInstructionBalance"}
 
-func (ec *executionContext) _TransferBalance(ctx context.Context, sel ast.SelectionSet, obj *TransferBalance) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, transferBalanceImplementors)
+func (ec *executionContext) _TransferInstructionBalance(ctx context.Context, sel ast.SelectionSet, obj *TransferInstructionBalance) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, transferInstructionBalanceImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("TransferBalance")
+			out.Values[i] = graphql.MarshalString("TransferInstructionBalance")
 		case "account":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._TransferBalance_account(ctx, field, obj)
+				return ec._TransferInstructionBalance_account(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -65529,7 +65529,7 @@ func (ec *executionContext) _TransferBalance(ctx context.Context, sel ast.Select
 			}
 		case "balance":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._TransferBalance_balance(ctx, field, obj)
+				return ec._TransferInstructionBalance_balance(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -65548,26 +65548,26 @@ func (ec *executionContext) _TransferBalance(ctx context.Context, sel ast.Select
 	return out
 }
 
-var transferConnectionImplementors = []string{"TransferConnection"}
+var transferInstructionConnectionImplementors = []string{"TransferInstructionConnection"}
 
-func (ec *executionContext) _TransferConnection(ctx context.Context, sel ast.SelectionSet, obj *v2.TransferConnection) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, transferConnectionImplementors)
+func (ec *executionContext) _TransferInstructionConnection(ctx context.Context, sel ast.SelectionSet, obj *v2.TransferInstructionConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, transferInstructionConnectionImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("TransferConnection")
+			out.Values[i] = graphql.MarshalString("TransferInstructionConnection")
 		case "edges":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._TransferConnection_edges(ctx, field, obj)
+				return ec._TransferInstructionConnection_edges(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
 
 		case "pageInfo":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._TransferConnection_pageInfo(ctx, field, obj)
+				return ec._TransferInstructionConnection_pageInfo(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -65586,19 +65586,19 @@ func (ec *executionContext) _TransferConnection(ctx context.Context, sel ast.Sel
 	return out
 }
 
-var transferEdgeImplementors = []string{"TransferEdge"}
+var transferInstructionEdgeImplementors = []string{"TransferInstructionEdge"}
 
-func (ec *executionContext) _TransferEdge(ctx context.Context, sel ast.SelectionSet, obj *v2.TransferEdge) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, transferEdgeImplementors)
+func (ec *executionContext) _TransferInstructionEdge(ctx context.Context, sel ast.SelectionSet, obj *v2.TransferInstructionEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, transferInstructionEdgeImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("TransferEdge")
+			out.Values[i] = graphql.MarshalString("TransferInstructionEdge")
 		case "node":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._TransferEdge_node(ctx, field, obj)
+				return ec._TransferInstructionEdge_node(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -65608,7 +65608,7 @@ func (ec *executionContext) _TransferEdge(ctx context.Context, sel ast.Selection
 			}
 		case "cursor":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._TransferEdge_cursor(ctx, field, obj)
+				return ec._TransferInstructionEdge_cursor(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -65627,26 +65627,26 @@ func (ec *executionContext) _TransferEdge(ctx context.Context, sel ast.Selection
 	return out
 }
 
-var transferResponseImplementors = []string{"TransferResponse"}
+var transferInstructionResponseImplementors = []string{"TransferInstructionResponse"}
 
-func (ec *executionContext) _TransferResponse(ctx context.Context, sel ast.SelectionSet, obj *TransferResponse) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, transferResponseImplementors)
+func (ec *executionContext) _TransferInstructionResponse(ctx context.Context, sel ast.SelectionSet, obj *TransferInstructionResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, transferInstructionResponseImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("TransferResponse")
-		case "transfers":
+			out.Values[i] = graphql.MarshalString("TransferInstructionResponse")
+		case "transferInstructions":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._TransferResponse_transfers(ctx, field, obj)
+				return ec._TransferInstructionResponse_transferInstructions(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
 
 		case "balances":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._TransferResponse_balances(ctx, field, obj)
+				return ec._TransferInstructionResponse_balances(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -65662,19 +65662,19 @@ func (ec *executionContext) _TransferResponse(ctx context.Context, sel ast.Selec
 	return out
 }
 
-var transferResponsesImplementors = []string{"TransferResponses", "Event"}
+var transferInstructionResponsesImplementors = []string{"TransferInstructionResponses", "Event"}
 
-func (ec *executionContext) _TransferResponses(ctx context.Context, sel ast.SelectionSet, obj *TransferResponses) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, transferResponsesImplementors)
+func (ec *executionContext) _TransferInstructionResponses(ctx context.Context, sel ast.SelectionSet, obj *TransferInstructionResponses) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, transferInstructionResponsesImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("TransferResponses")
+			out.Values[i] = graphql.MarshalString("TransferInstructionResponses")
 		case "responses":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._TransferResponses_responses(ctx, field, obj)
+				return ec._TransferInstructionResponses_responses(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -69444,53 +69444,53 @@ func (ec *executionContext) marshalNTradeUpdate2ᚖcodeᚗvegaprotocolᚗioᚋve
 	return ec._TradeUpdate(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNTransfer2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐTransfer(ctx context.Context, sel ast.SelectionSet, v *v1.Transfer) graphql.Marshaler {
+func (ec *executionContext) marshalNTransferInstruction2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐTransferInstruction(ctx context.Context, sel ast.SelectionSet, v *v1.TransferInstruction) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
 		}
 		return graphql.Null
 	}
-	return ec._Transfer(ctx, sel, v)
+	return ec._TransferInstruction(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNTransferBalance2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferBalance(ctx context.Context, sel ast.SelectionSet, v *TransferBalance) graphql.Marshaler {
+func (ec *executionContext) marshalNTransferInstructionBalance2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferInstructionBalance(ctx context.Context, sel ast.SelectionSet, v *TransferInstructionBalance) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
 		}
 		return graphql.Null
 	}
-	return ec._TransferBalance(ctx, sel, v)
+	return ec._TransferInstructionBalance(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNTransferKind2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferKind(ctx context.Context, sel ast.SelectionSet, v TransferKind) graphql.Marshaler {
+func (ec *executionContext) marshalNTransferInstructionKind2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferInstructionKind(ctx context.Context, sel ast.SelectionSet, v TransferInstructionKind) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
 		}
 		return graphql.Null
 	}
-	return ec._TransferKind(ctx, sel, v)
+	return ec._TransferInstructionKind(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNTransferResponse2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferResponse(ctx context.Context, sel ast.SelectionSet, v *TransferResponse) graphql.Marshaler {
+func (ec *executionContext) marshalNTransferInstructionResponse2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferInstructionResponse(ctx context.Context, sel ast.SelectionSet, v *TransferInstructionResponse) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
 		}
 		return graphql.Null
 	}
-	return ec._TransferResponse(ctx, sel, v)
+	return ec._TransferInstructionResponse(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNTransferStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐTransfer_Status(ctx context.Context, v interface{}) (v1.Transfer_Status, error) {
-	res, err := marshallers.UnmarshalTransferStatus(v)
+func (ec *executionContext) unmarshalNTransferInstructionStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐTransferInstruction_Status(ctx context.Context, v interface{}) (v1.TransferInstruction_Status, error) {
+	res, err := marshallers.UnmarshalTransferInstructionStatus(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNTransferStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐTransfer_Status(ctx context.Context, sel ast.SelectionSet, v v1.Transfer_Status) graphql.Marshaler {
-	res := marshallers.MarshalTransferStatus(v)
+func (ec *executionContext) marshalNTransferInstructionStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐTransferInstruction_Status(ctx context.Context, sel ast.SelectionSet, v v1.TransferInstruction_Status) graphql.Marshaler {
+	res := marshallers.MarshalTransferInstructionStatus(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -73794,7 +73794,7 @@ func (ec *executionContext) marshalOTradeUpdate2ᚕᚖcodeᚗvegaprotocolᚗio�
 	return ret
 }
 
-func (ec *executionContext) marshalOTransfer2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐTransferᚄ(ctx context.Context, sel ast.SelectionSet, v []*v1.Transfer) graphql.Marshaler {
+func (ec *executionContext) marshalOTransferInstruction2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐTransferInstructionᚄ(ctx context.Context, sel ast.SelectionSet, v []*v1.TransferInstruction) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -73821,7 +73821,7 @@ func (ec *executionContext) marshalOTransfer2ᚕᚖcodeᚗvegaprotocolᚗioᚋve
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNTransfer2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐTransfer(ctx, sel, v[i])
+			ret[i] = ec.marshalNTransferInstruction2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐTransferInstruction(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -73841,7 +73841,7 @@ func (ec *executionContext) marshalOTransfer2ᚕᚖcodeᚗvegaprotocolᚗioᚋve
 	return ret
 }
 
-func (ec *executionContext) marshalOTransferBalance2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferBalanceᚄ(ctx context.Context, sel ast.SelectionSet, v []*TransferBalance) graphql.Marshaler {
+func (ec *executionContext) marshalOTransferInstructionBalance2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferInstructionBalanceᚄ(ctx context.Context, sel ast.SelectionSet, v []*TransferInstructionBalance) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -73868,7 +73868,7 @@ func (ec *executionContext) marshalOTransferBalance2ᚕᚖcodeᚗvegaprotocolᚗ
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNTransferBalance2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferBalance(ctx, sel, v[i])
+			ret[i] = ec.marshalNTransferInstructionBalance2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferInstructionBalance(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -73888,30 +73888,30 @@ func (ec *executionContext) marshalOTransferBalance2ᚕᚖcodeᚗvegaprotocolᚗ
 	return ret
 }
 
-func (ec *executionContext) marshalOTransferConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTransferConnection(ctx context.Context, sel ast.SelectionSet, v *v2.TransferConnection) graphql.Marshaler {
+func (ec *executionContext) marshalOTransferInstructionConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTransferInstructionConnection(ctx context.Context, sel ast.SelectionSet, v *v2.TransferInstructionConnection) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec._TransferConnection(ctx, sel, v)
+	return ec._TransferInstructionConnection(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOTransferDirection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferDirection(ctx context.Context, v interface{}) (*TransferDirection, error) {
+func (ec *executionContext) unmarshalOTransferInstructionDirection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferInstructionDirection(ctx context.Context, v interface{}) (*TransferInstructionDirection, error) {
 	if v == nil {
 		return nil, nil
 	}
-	var res = new(TransferDirection)
+	var res = new(TransferInstructionDirection)
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOTransferDirection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferDirection(ctx context.Context, sel ast.SelectionSet, v *TransferDirection) graphql.Marshaler {
+func (ec *executionContext) marshalOTransferInstructionDirection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferInstructionDirection(ctx context.Context, sel ast.SelectionSet, v *TransferInstructionDirection) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return v
 }
 
-func (ec *executionContext) marshalOTransferEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTransferEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.TransferEdge) graphql.Marshaler {
+func (ec *executionContext) marshalOTransferInstructionEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTransferInstructionEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.TransferInstructionEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -73938,7 +73938,7 @@ func (ec *executionContext) marshalOTransferEdge2ᚕᚖcodeᚗvegaprotocolᚗio�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOTransferEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTransferEdge(ctx, sel, v[i])
+			ret[i] = ec.marshalOTransferInstructionEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTransferInstructionEdge(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -73952,14 +73952,14 @@ func (ec *executionContext) marshalOTransferEdge2ᚕᚖcodeᚗvegaprotocolᚗio�
 	return ret
 }
 
-func (ec *executionContext) marshalOTransferEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTransferEdge(ctx context.Context, sel ast.SelectionSet, v *v2.TransferEdge) graphql.Marshaler {
+func (ec *executionContext) marshalOTransferInstructionEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTransferInstructionEdge(ctx context.Context, sel ast.SelectionSet, v *v2.TransferInstructionEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec._TransferEdge(ctx, sel, v)
+	return ec._TransferInstructionEdge(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOTransferResponse2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferResponseᚄ(ctx context.Context, sel ast.SelectionSet, v []*TransferResponse) graphql.Marshaler {
+func (ec *executionContext) marshalOTransferInstructionResponse2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferInstructionResponseᚄ(ctx context.Context, sel ast.SelectionSet, v []*TransferInstructionResponse) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -73986,7 +73986,7 @@ func (ec *executionContext) marshalOTransferResponse2ᚕᚖcodeᚗvegaprotocol�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNTransferResponse2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferResponse(ctx, sel, v[i])
+			ret[i] = ec.marshalNTransferInstructionResponse2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferInstructionResponse(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)

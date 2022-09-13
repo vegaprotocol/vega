@@ -28,51 +28,51 @@ import (
 
 type Ledger interface {
 	AddLedgerEntry(entities.LedgerEntry) error
-	AddTransferResponse(*vega.TransferResponse)
+	AddTransferInstructionResponse(*vega.TransferInstructionResponse)
 	Flush(ctx context.Context) error
 }
 
-type TransferResponseEvent interface {
+type TransferInstructionResponseEvent interface {
 	events.Event
-	TransferResponses() []*vega.TransferResponse
+	TransferInstructionResponses() []*vega.TransferInstructionResponse
 }
 
-type TransferResponse struct {
+type TransferInstructionResponse struct {
 	subscriber
 	ledger   Ledger
 	accounts AccountService
 	log      *logging.Logger
 }
 
-func NewTransferResponse(
+func NewTransferInstructionResponse(
 	ledger Ledger,
 	accounts AccountService,
 	log *logging.Logger,
-) *TransferResponse {
-	return &TransferResponse{
+) *TransferInstructionResponse {
+	return &TransferInstructionResponse{
 		ledger:   ledger,
 		accounts: accounts,
 		log:      log,
 	}
 }
 
-func (t *TransferResponse) Types() []events.Type {
-	return []events.Type{events.TransferResponses}
+func (t *TransferInstructionResponse) Types() []events.Type {
+	return []events.Type{events.TransferInstructionResponses}
 }
 
-func (t *TransferResponse) Flush(ctx context.Context) error {
+func (t *TransferInstructionResponse) Flush(ctx context.Context) error {
 	err := t.ledger.Flush(ctx)
 	return errors.Wrap(err, "flushing ledger")
 }
 
-func (t *TransferResponse) Push(ctx context.Context, evt events.Event) error {
-	return t.consume(ctx, evt.(TransferResponseEvent))
+func (t *TransferInstructionResponse) Push(ctx context.Context, evt events.Event) error {
+	return t.consume(ctx, evt.(TransferInstructionResponseEvent))
 }
 
-func (t *TransferResponse) consume(ctx context.Context, e TransferResponseEvent) error {
+func (t *TransferInstructionResponse) consume(ctx context.Context, e TransferInstructionResponseEvent) error {
 	var errs strings.Builder
-	for _, tr := range e.TransferResponses() {
-		t.ledger.AddTransferResponse(tr)
+	for _, tr := range e.TransferInstructionResponses() {
+		t.ledger.AddTransferInstructionResponse(tr)
 		for _, vle := range tr.Transfers {
 			if err := t.addLedgerEntry(ctx, vle, e.TxHash(), t.vegaTime); err != nil {
 				errs.WriteString(fmt.Sprintf("couldn't add ledger entry: %v, error:%s\n", vle, err))
@@ -87,7 +87,7 @@ func (t *TransferResponse) consume(ctx context.Context, e TransferResponseEvent)
 	return nil
 }
 
-func (t *TransferResponse) addLedgerEntry(ctx context.Context, vle *vega.LedgerEntry, txHash string, vegaTime time.Time) error {
+func (t *TransferInstructionResponse) addLedgerEntry(ctx context.Context, vle *vega.LedgerEntry, txHash string, vegaTime time.Time) error {
 	accFrom, err := t.obtainAccountWithID(ctx, vle.FromAccount, txHash, vegaTime)
 	if err != nil {
 		return errors.Wrap(err, "obtaining 'from' account")
@@ -122,7 +122,7 @@ func (t *TransferResponse) addLedgerEntry(ctx context.Context, vle *vega.LedgerE
 }
 
 // Parse the vega account ID; if that account already exists in the db, fetch it; else create it.
-func (t *TransferResponse) obtainAccountWithID(ctx context.Context, id string, txHash string, vegaTime time.Time) (entities.Account, error) {
+func (t *TransferInstructionResponse) obtainAccountWithID(ctx context.Context, id string, txHash string, vegaTime time.Time) (entities.Account, error) {
 	a, err := entities.AccountFromAccountID(id, entities.TxHash(txHash))
 	if err != nil {
 		return entities.Account{}, errors.Wrapf(err, "parsing account id: %s", id)

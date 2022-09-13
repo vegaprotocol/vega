@@ -82,7 +82,7 @@ type GRPCServer struct {
 	oracleDataService          *service.OracleData
 	liquidityProvisionService  *service.LiquidityProvision
 	positionService            *service.Position
-	transferService            *service.Transfer
+	transferService            *service.TransferInstruction
 	stakeLinkingService        *service.StakeLinking
 	notaryService              *service.Notary
 	multiSigService            *service.MultiSig
@@ -129,7 +129,7 @@ func NewGRPCServer(
 	oracleDataService *service.OracleData,
 	liquidityProvisionService *service.LiquidityProvision,
 	positionService *service.Position,
-	transferService *service.Transfer,
+	transferService *service.TransferInstruction,
 	stakeLinkingService *service.StakeLinking,
 	notaryService *service.Notary,
 	multiSigService *service.MultiSig,

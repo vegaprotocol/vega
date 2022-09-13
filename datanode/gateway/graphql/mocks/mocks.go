@@ -1341,24 +1341,24 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) ListTrades(arg0, arg1 inte
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListTrades", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ListTrades), varargs...)
 }
 
-// ListTransfers mocks base method.
-func (m *MockTradingDataServiceClientV2) ListTransfers(arg0 context.Context, arg1 *v2.ListTransfersRequest, arg2 ...grpc.CallOption) (*v2.ListTransfersResponse, error) {
+// ListTransferInstructions mocks base method.
+func (m *MockTradingDataServiceClientV2) ListTransferInstructions(arg0 context.Context, arg1 *v2.ListTransferInstructionsRequest, arg2 ...grpc.CallOption) (*v2.ListTransferInstructionsResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "ListTransfers", varargs...)
-	ret0, _ := ret[0].(*v2.ListTransfersResponse)
+	ret := m.ctrl.Call(m, "ListTransferInstructions", varargs...)
+	ret0, _ := ret[0].(*v2.ListTransferInstructionsResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// ListTransfers indicates an expected call of ListTransfers.
-func (mr *MockTradingDataServiceClientV2MockRecorder) ListTransfers(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+// ListTransferInstructions indicates an expected call of ListTransferInstructions.
+func (mr *MockTradingDataServiceClientV2MockRecorder) ListTransferInstructions(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListTransfers", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ListTransfers), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListTransferInstructions", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ListTransferInstructions), varargs...)
 }
 
 // ListVotes mocks base method.
@@ -1681,24 +1681,24 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) ObserveTrades(arg0, arg1 i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObserveTrades", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ObserveTrades), varargs...)
 }
 
-// ObserveTransferResponses mocks base method.
-func (m *MockTradingDataServiceClientV2) ObserveTransferResponses(arg0 context.Context, arg1 *v2.ObserveTransferResponsesRequest, arg2 ...grpc.CallOption) (v2.TradingDataService_ObserveTransferResponsesClient, error) {
+// ObserveTransferInstructionResponses mocks base method.
+func (m *MockTradingDataServiceClientV2) ObserveTransferInstructionResponses(arg0 context.Context, arg1 *v2.ObserveTransferInstructionResponsesRequest, arg2 ...grpc.CallOption) (v2.TradingDataService_ObserveTransferInstructionResponsesClient, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "ObserveTransferResponses", varargs...)
-	ret0, _ := ret[0].(v2.TradingDataService_ObserveTransferResponsesClient)
+	ret := m.ctrl.Call(m, "ObserveTransferInstructionResponses", varargs...)
+	ret0, _ := ret[0].(v2.TradingDataService_ObserveTransferInstructionResponsesClient)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// ObserveTransferResponses indicates an expected call of ObserveTransferResponses.
-func (mr *MockTradingDataServiceClientV2MockRecorder) ObserveTransferResponses(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+// ObserveTransferInstructionResponses indicates an expected call of ObserveTransferInstructionResponses.
+func (mr *MockTradingDataServiceClientV2MockRecorder) ObserveTransferInstructionResponses(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObserveTransferResponses", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ObserveTransferResponses), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObserveTransferInstructionResponses", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ObserveTransferInstructionResponses), varargs...)
 }
 
 // ObserveVotes mocks base method.
@@ -3284,44 +3284,44 @@ func (mr *MockTradingDataServiceClientMockRecorder) TradesSubscribe(arg0, arg1 i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TradesSubscribe", reflect.TypeOf((*MockTradingDataServiceClient)(nil).TradesSubscribe), varargs...)
 }
 
-// TransferResponsesSubscribe mocks base method.
-func (m *MockTradingDataServiceClient) TransferResponsesSubscribe(arg0 context.Context, arg1 *v1.TransferResponsesSubscribeRequest, arg2 ...grpc.CallOption) (v1.TradingDataService_TransferResponsesSubscribeClient, error) {
+// TransferInstructionResponsesSubscribe mocks base method.
+func (m *MockTradingDataServiceClient) TransferInstructionResponsesSubscribe(arg0 context.Context, arg1 *v1.TransferInstructionResponsesSubscribeRequest, arg2 ...grpc.CallOption) (v1.TradingDataService_TransferInstructionResponsesSubscribeClient, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "TransferResponsesSubscribe", varargs...)
-	ret0, _ := ret[0].(v1.TradingDataService_TransferResponsesSubscribeClient)
+	ret := m.ctrl.Call(m, "TransferInstructionResponsesSubscribe", varargs...)
+	ret0, _ := ret[0].(v1.TradingDataService_TransferInstructionResponsesSubscribeClient)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// TransferResponsesSubscribe indicates an expected call of TransferResponsesSubscribe.
-func (mr *MockTradingDataServiceClientMockRecorder) TransferResponsesSubscribe(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+// TransferInstructionResponsesSubscribe indicates an expected call of TransferInstructionResponsesSubscribe.
+func (mr *MockTradingDataServiceClientMockRecorder) TransferInstructionResponsesSubscribe(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TransferResponsesSubscribe", reflect.TypeOf((*MockTradingDataServiceClient)(nil).TransferResponsesSubscribe), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TransferInstructionResponsesSubscribe", reflect.TypeOf((*MockTradingDataServiceClient)(nil).TransferInstructionResponsesSubscribe), varargs...)
 }
 
-// Transfers mocks base method.
-func (m *MockTradingDataServiceClient) Transfers(arg0 context.Context, arg1 *v1.TransfersRequest, arg2 ...grpc.CallOption) (*v1.TransfersResponse, error) {
+// TransferInstructions mocks base method.
+func (m *MockTradingDataServiceClient) TransferInstructions(arg0 context.Context, arg1 *v1.TransferInstructionsRequest, arg2 ...grpc.CallOption) (*v1.TransferInstructionsResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "Transfers", varargs...)
-	ret0, _ := ret[0].(*v1.TransfersResponse)
+	ret := m.ctrl.Call(m, "TransferInstructions", varargs...)
+	ret0, _ := ret[0].(*v1.TransferInstructionsResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// Transfers indicates an expected call of Transfers.
-func (mr *MockTradingDataServiceClientMockRecorder) Transfers(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+// TransferInstructions indicates an expected call of TransferInstructions.
+func (mr *MockTradingDataServiceClientMockRecorder) TransferInstructions(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Transfers", reflect.TypeOf((*MockTradingDataServiceClient)(nil).Transfers), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TransferInstructions", reflect.TypeOf((*MockTradingDataServiceClient)(nil).TransferInstructions), varargs...)
 }
 
 // Withdrawal mocks base method.

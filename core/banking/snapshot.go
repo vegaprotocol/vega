@@ -29,8 +29,8 @@ var (
 	depositsKey           = (&types.PayloadBankingDeposits{}).Key()
 	seenKey               = (&types.PayloadBankingSeen{}).Key()
 	assetActionsKey       = (&types.PayloadBankingAssetActions{}).Key()
-	recurringTransfersKey = (&types.PayloadBankingRecurringTransfers{}).Key()
-	scheduledTransfersKey = (&types.PayloadBankingScheduledTransfers{}).Key()
+	recurringTransfersKey = (&types.PayloadBankingRecurringTransferInstructions{}).Key()
+	scheduledTransfersKey = (&types.PayloadBankingScheduledTransferInstructions{}).Key()
 	bridgeStateKey        = (&types.PayloadBankingBridgeState{}).Key()
 
 	hashKeys = []string{
@@ -45,20 +45,20 @@ var (
 )
 
 type bankingSnapshotState struct {
-	changedWithdrawals           bool
-	changedDeposits              bool
-	changedSeen                  bool
-	changedAssetActions          bool
-	changedRecurringTransfers    bool
-	changedScheduledTransfers    bool
-	changedBridgeState           bool
-	serialisedWithdrawals        []byte
-	serialisedDeposits           []byte
-	serialisedSeen               []byte
-	serialisedAssetActions       []byte
-	serialisedRecurringTransfers []byte
-	serialisedScheduledTransfers []byte
-	serialisedBridgeState        []byte
+	changedWithdrawals                      bool
+	changedDeposits                         bool
+	changedSeen                             bool
+	changedAssetActions                     bool
+	changedRecurringTransferInstructions    bool
+	changedScheduledTransferInstructions    bool
+	changedBridgeState                      bool
+	serialisedWithdrawals                   []byte
+	serialisedDeposits                      []byte
+	serialisedSeen                          []byte
+	serialisedAssetActions                  []byte
+	serialisedRecurringTransferInstructions []byte
+	serialisedScheduledTransferInstructions []byte
+	serialisedBridgeState                   []byte
 }
 
 func (e *Engine) Namespace() types.SnapshotNamespace {
@@ -89,18 +89,18 @@ func (e *Engine) serialiseBridgeState() ([]byte, error) {
 
 func (e *Engine) serialiseRecurringTransfers() ([]byte, error) {
 	payload := types.Payload{
-		Data: &types.PayloadBankingRecurringTransfers{
-			BankingRecurringTransfers: e.getRecurringTransfers(),
+		Data: &types.PayloadBankingRecurringTransferInstructions{
+			BankingRecurringTransferInstructions: e.getRecurringTransferInstructions(),
 		},
 	}
 
 	return proto.Marshal(payload.IntoProto())
 }
 
-func (e *Engine) serialiseScheduledTransfers() ([]byte, error) {
+func (e *Engine) serialiseScheduledTransferInstructions() ([]byte, error) {
 	payload := types.Payload{
-		Data: &types.PayloadBankingScheduledTransfers{
-			BankingScheduledTransfers: e.getScheduledTransfers(),
+		Data: &types.PayloadBankingScheduledTransferInstructions{
+			BankingScheduledTransferInstructions: e.getScheduledTransferInstructions(),
 		},
 	}
 
@@ -238,9 +238,9 @@ func (e *Engine) serialise(k string) ([]byte, error) {
 	case assetActionsKey:
 		return e.serialiseK(k, e.serialiseAssetActions, &e.bss.serialisedAssetActions, &e.bss.changedAssetActions)
 	case recurringTransfersKey:
-		return e.serialiseK(k, e.serialiseRecurringTransfers, &e.bss.serialisedRecurringTransfers, &e.bss.changedRecurringTransfers)
+		return e.serialiseK(k, e.serialiseRecurringTransfers, &e.bss.serialisedRecurringTransferInstructions, &e.bss.changedRecurringTransferInstructions)
 	case scheduledTransfersKey:
-		return e.serialiseK(k, e.serialiseScheduledTransfers, &e.bss.serialisedScheduledTransfers, &e.bss.changedScheduledTransfers)
+		return e.serialiseK(k, e.serialiseScheduledTransferInstructions, &e.bss.serialisedScheduledTransferInstructions, &e.bss.changedScheduledTransferInstructions)
 	case bridgeStateKey:
 		return e.serialiseK(k, e.serialiseBridgeState, &e.bss.serialisedBridgeState, &e.bss.changedBridgeState)
 	default:
@@ -287,10 +287,10 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 		return nil, e.restoreSeen(ctx, pl.BankingSeen, p)
 	case *types.PayloadBankingAssetActions:
 		return nil, e.restoreAssetActions(ctx, pl.BankingAssetActions, p)
-	case *types.PayloadBankingRecurringTransfers:
-		return nil, e.restoreRecurringTransfers(ctx, pl.BankingRecurringTransfers, p)
-	case *types.PayloadBankingScheduledTransfers:
-		return nil, e.restoreScheduledTransfers(ctx, pl.BankingScheduledTransfers, p)
+	case *types.PayloadBankingRecurringTransferInstructions:
+		return nil, e.restoreRecurringTransferInstructions(ctx, pl.BankingRecurringTransferInstructions, p)
+	case *types.PayloadBankingScheduledTransferInstructions:
+		return nil, e.restoreScheduledTransferInstructions(ctx, pl.BankingScheduledTransferInstructions, p)
 	case *types.PayloadBankingBridgeState:
 		return nil, e.restoreBridgeState(ctx, pl.BankingBridgeState, p)
 	default:
@@ -298,26 +298,26 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 	}
 }
 
-func (e *Engine) restoreRecurringTransfers(ctx context.Context, transfers *checkpoint.RecurringTransfers, p *types.Payload) error {
+func (e *Engine) restoreRecurringTransferInstructions(ctx context.Context, transfers *checkpoint.RecurringTransferInstructions, p *types.Payload) error {
 	var err error
 	// ignore events here as we don't need to send them
-	_ = e.loadRecurringTransfers(ctx, transfers)
-	e.bss.changedRecurringTransfers = false
-	e.bss.serialisedRecurringTransfers, err = proto.Marshal(p.IntoProto())
+	_ = e.loadRecurringTransferInstructions(ctx, transfers)
+	e.bss.changedRecurringTransferInstructions = false
+	e.bss.serialisedRecurringTransferInstructions, err = proto.Marshal(p.IntoProto())
 
 	return err
 }
 
-func (e *Engine) restoreScheduledTransfers(ctx context.Context, transfers []*checkpoint.ScheduledTransferAtTime, p *types.Payload) error {
+func (e *Engine) restoreScheduledTransferInstructions(ctx context.Context, transfers []*checkpoint.ScheduledTransferInstructionAtTime, p *types.Payload) error {
 	var err error
 
 	// ignore events
-	_, err = e.loadScheduledTransfers(ctx, transfers)
+	_, err = e.loadScheduledTransferInstructions(ctx, transfers)
 	if err != nil {
 		return err
 	}
-	e.bss.changedScheduledTransfers = false
-	e.bss.serialisedScheduledTransfers, err = proto.Marshal(p.IntoProto())
+	e.bss.changedScheduledTransferInstructions = false
+	e.bss.serialisedScheduledTransferInstructions, err = proto.Marshal(p.IntoProto())
 	return err
 }
 

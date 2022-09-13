@@ -483,7 +483,7 @@ func (a Account) DeepClone() *Account {
 	return &a
 }
 
-func (t TransferBalance) DeepClone() *TransferBalance {
+func (t TransferInstructionBalance) DeepClone() *TransferInstructionBalance {
 	if t.Account != nil {
 		t.Account = t.Account.DeepClone()
 	}
@@ -494,10 +494,10 @@ func (l LedgerEntry) DeepClone() *LedgerEntry {
 	return &l
 }
 
-func (t TransferResponse) DeepClone() *TransferResponse {
+func (t TransferInstructionResponse) DeepClone() *TransferInstructionResponse {
 	if len(t.Balances) > 0 {
 		bs := t.Balances
-		t.Balances = make([]*TransferBalance, len(bs))
+		t.Balances = make([]*TransferInstructionBalance, len(bs))
 		for i, b := range bs {
 			t.Balances[i] = b.DeepClone()
 		}

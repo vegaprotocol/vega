@@ -136,29 +136,29 @@ func (r *allResolver) allRewards(ctx context.Context, partyID, assetID string, s
 	return resp.Rewards, nil
 }
 
-func (r *allResolver) transfersConnection(
+func (r *allResolver) transferInstructionsConnection(
 	ctx context.Context,
 	partyID *string,
-	direction *TransferDirection,
+	direction *TransferInstructionDirection,
 	pagination *v2.Pagination,
-) (*v2.TransferConnection, error) {
+) (*v2.TransferInstructionConnection, error) {
 	// if direction is nil just default to ToOrFrom
 	if direction == nil {
-		d := TransferDirectionToOrFrom
+		d := TransferInstructionDirectionToOrFrom
 		direction = &d
 	}
 
-	var transferDirection v2.TransferDirection
+	var transferDirection v2.TransferInstructionDirection
 	switch *direction {
-	case TransferDirectionFrom:
-		transferDirection = v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_FROM
-	case TransferDirectionTo:
-		transferDirection = v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_TO
-	case TransferDirectionToOrFrom:
-		transferDirection = v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_TO_OR_FROM
+	case TransferInstructionDirectionFrom:
+		transferDirection = v2.TransferInstructionDirection_TRANSFER_INSTRUCTION_DIRECTION_TRANSFER_FROM
+	case TransferInstructionDirectionTo:
+		transferDirection = v2.TransferInstructionDirection_TRANSFER_INSTRUCTION_DIRECTION_TRANSFER_TO
+	case TransferInstructionDirectionToOrFrom:
+		transferDirection = v2.TransferInstructionDirection_TRANSFER_INSTRUCTION_DIRECTION_TRANSFER_TO_OR_FROM
 	}
 
-	res, err := r.clt2.ListTransfers(ctx, &v2.ListTransfersRequest{
+	res, err := r.clt2.ListTransferInstructions(ctx, &v2.ListTransferInstructionsRequest{
 		Pubkey:     partyID,
 		Direction:  transferDirection,
 		Pagination: pagination,
@@ -167,5 +167,5 @@ func (r *allResolver) transfersConnection(
 		return nil, err
 	}
 
-	return res.Transfers, nil
+	return res.TransferInstructions, nil
 }

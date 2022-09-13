@@ -117,12 +117,12 @@ type PayloadBankingAssetActions struct {
 	BankingAssetActions *BankingAssetActions
 }
 
-type PayloadBankingRecurringTransfers struct {
-	BankingRecurringTransfers *checkpointpb.RecurringTransfers
+type PayloadBankingRecurringTransferInstructions struct {
+	BankingRecurringTransferInstructions *checkpointpb.RecurringTransferInstructions
 }
 
-type PayloadBankingScheduledTransfers struct {
-	BankingScheduledTransfers []*checkpointpb.ScheduledTransferAtTime
+type PayloadBankingScheduledTransferInstructions struct {
+	BankingScheduledTransferInstructions []*checkpointpb.ScheduledTransferInstructionAtTime
 }
 
 type PayloadCheckpoint struct {
@@ -764,10 +764,10 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadFloatingPointConsensusFromProto(dt)
 	case *snapshot.Payload_MarketTracker:
 		ret.Data = PayloadMarketActivityTrackerFromProto(dt)
-	case *snapshot.Payload_BankingRecurringTransfers:
-		ret.Data = PayloadBankingRecurringTransfersFromProto(dt)
-	case *snapshot.Payload_BankingScheduledTransfers:
-		ret.Data = PayloadBankingScheduledTransfersFromProto(dt)
+	case *snapshot.Payload_BankingRecurringTransferInstructions:
+		ret.Data = PayloadBankingRecurringTransferInstructionsFromProto(dt)
+	case *snapshot.Payload_BankingScheduledTransferInstructions:
+		ret.Data = PayloadBankingScheduledTransferInstructionsFromProto(dt)
 	case *snapshot.Payload_Erc20MultisigTopologyPending:
 		ret.Data = PayloadERC20MultiSigTopologyPendingFromProto(dt)
 	case *snapshot.Payload_Erc20MultisigTopologyVerified:
@@ -901,9 +901,9 @@ func (p Payload) IntoProto() *snapshot.Payload {
 		ret.Data = dt
 	case *snapshot.Payload_MarketTracker:
 		ret.Data = dt
-	case *snapshot.Payload_BankingRecurringTransfers:
+	case *snapshot.Payload_BankingRecurringTransferInstructions:
 		ret.Data = dt
-	case *snapshot.Payload_BankingScheduledTransfers:
+	case *snapshot.Payload_BankingScheduledTransferInstructions:
 		ret.Data = dt
 	case *snapshot.Payload_Erc20MultisigTopologyPending:
 		ret.Data = dt
@@ -1295,59 +1295,59 @@ func (*PayloadBankingDeposits) Namespace() SnapshotNamespace {
 	return BankingSnapshot
 }
 
-func PayloadBankingRecurringTransfersFromProto(pbd *snapshot.Payload_BankingRecurringTransfers) *PayloadBankingRecurringTransfers {
-	return &PayloadBankingRecurringTransfers{
-		BankingRecurringTransfers: pbd.BankingRecurringTransfers.RecurringTranfers,
+func PayloadBankingRecurringTransferInstructionsFromProto(pbd *snapshot.Payload_BankingRecurringTransferInstructions) *PayloadBankingRecurringTransferInstructions {
+	return &PayloadBankingRecurringTransferInstructions{
+		BankingRecurringTransferInstructions: pbd.BankingRecurringTransferInstructions.RecurringTranferInstructions,
 	}
 }
 
-func (p PayloadBankingRecurringTransfers) IntoProto() *snapshot.Payload_BankingRecurringTransfers {
-	return &snapshot.Payload_BankingRecurringTransfers{
-		BankingRecurringTransfers: &snapshot.BankingRecurringTransfers{
-			RecurringTranfers: p.BankingRecurringTransfers,
+func (p PayloadBankingRecurringTransferInstructions) IntoProto() *snapshot.Payload_BankingRecurringTransferInstructions {
+	return &snapshot.Payload_BankingRecurringTransferInstructions{
+		BankingRecurringTransferInstructions: &snapshot.BankingRecurringTransferInstructions{
+			RecurringTranferInstructions: p.BankingRecurringTransferInstructions,
 		},
 	}
 }
 
-func (*PayloadBankingRecurringTransfers) isPayload() {}
+func (*PayloadBankingRecurringTransferInstructions) isPayload() {}
 
-func (p *PayloadBankingRecurringTransfers) plToProto() interface{} {
+func (p *PayloadBankingRecurringTransferInstructions) plToProto() interface{} {
 	return p.IntoProto()
 }
 
-func (*PayloadBankingRecurringTransfers) Key() string {
+func (*PayloadBankingRecurringTransferInstructions) Key() string {
 	return "recurringTransfers"
 }
 
-func (*PayloadBankingRecurringTransfers) Namespace() SnapshotNamespace {
+func (*PayloadBankingRecurringTransferInstructions) Namespace() SnapshotNamespace {
 	return BankingSnapshot
 }
 
-func PayloadBankingScheduledTransfersFromProto(pbd *snapshot.Payload_BankingScheduledTransfers) *PayloadBankingScheduledTransfers {
-	return &PayloadBankingScheduledTransfers{
-		BankingScheduledTransfers: pbd.BankingScheduledTransfers.TransfersAtTime,
+func PayloadBankingScheduledTransferInstructionsFromProto(pbd *snapshot.Payload_BankingScheduledTransferInstructions) *PayloadBankingScheduledTransferInstructions {
+	return &PayloadBankingScheduledTransferInstructions{
+		BankingScheduledTransferInstructions: pbd.BankingScheduledTransferInstructions.TransferInstructionsAtTime,
 	}
 }
 
-func (p PayloadBankingScheduledTransfers) IntoProto() *snapshot.Payload_BankingScheduledTransfers {
-	return &snapshot.Payload_BankingScheduledTransfers{
-		BankingScheduledTransfers: &snapshot.BankingScheduledTransfers{
-			TransfersAtTime: p.BankingScheduledTransfers,
+func (p PayloadBankingScheduledTransferInstructions) IntoProto() *snapshot.Payload_BankingScheduledTransferInstructions {
+	return &snapshot.Payload_BankingScheduledTransferInstructions{
+		BankingScheduledTransferInstructions: &snapshot.BankingScheduledTransferInstructions{
+			TransferInstructionsAtTime: p.BankingScheduledTransferInstructions,
 		},
 	}
 }
 
-func (*PayloadBankingScheduledTransfers) isPayload() {}
+func (*PayloadBankingScheduledTransferInstructions) isPayload() {}
 
-func (p *PayloadBankingScheduledTransfers) plToProto() interface{} {
+func (p *PayloadBankingScheduledTransferInstructions) plToProto() interface{} {
 	return p.IntoProto()
 }
 
-func (*PayloadBankingScheduledTransfers) Key() string {
+func (*PayloadBankingScheduledTransferInstructions) Key() string {
 	return "scheduledTransfers"
 }
 
-func (*PayloadBankingScheduledTransfers) Namespace() SnapshotNamespace {
+func (*PayloadBankingScheduledTransferInstructions) Namespace() SnapshotNamespace {
 	return BankingSnapshot
 }
 

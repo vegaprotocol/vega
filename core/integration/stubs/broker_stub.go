@@ -156,18 +156,18 @@ func (b *BrokerStub) GetImmBatch(t events.Type) []events.Event {
 	return r
 }
 
-func (b *BrokerStub) GetTransferResponses() []events.TransferResponse {
-	batch := b.GetBatch(events.TransferResponses)
+func (b *BrokerStub) GetTransferInstructionResponses() []events.TransferInstructionResponse {
+	batch := b.GetBatch(events.TransferInstructionResponses)
 	if len(batch) == 0 {
 		return nil
 	}
 	b.mu.Lock()
-	ret := make([]events.TransferResponse, 0, len(batch))
+	ret := make([]events.TransferInstructionResponse, 0, len(batch))
 	for _, e := range batch {
 		switch et := e.(type) {
-		case *events.TransferResponse:
+		case *events.TransferInstructionResponse:
 			ret = append(ret, *et)
-		case events.TransferResponse:
+		case events.TransferInstructionResponse:
 			ret = append(ret, et)
 		}
 	}
@@ -181,10 +181,10 @@ func (b *BrokerStub) ClearAllEvents() {
 	b.mu.Unlock()
 }
 
-func (b *BrokerStub) ClearTransferResponseEvents() {
+func (b *BrokerStub) ClearTransferInstructionResponseEvents() {
 	b.mu.Lock()
-	cs := make([]events.Event, 0, len(b.data[events.TransferResponses]))
-	b.data[events.TransferResponses] = cs
+	cs := make([]events.Event, 0, len(b.data[events.TransferInstructionResponses]))
+	b.data[events.TransferInstructionResponses] = cs
 	b.mu.Unlock()
 }
 

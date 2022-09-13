@@ -105,11 +105,11 @@ func (m *Market) SubmitLiquidityProvision(
 	// now we calculate the amount that needs to be moved into the account
 
 	amount, neg := num.UintZero().Delta(sub.CommitmentAmount, bondAcc.Balance)
-	ty := types.TransferTypeBondLow
+	ty := types.TransferInstructionTypeBondLow
 	if neg {
-		ty = types.TransferTypeBondHigh
+		ty = types.TransferInstructionTypeBondHigh
 	}
-	transfer := &types.Transfer{
+	transfer := &types.TransferInstruction{
 		Owner: party,
 		Amount: &types.FinancialAmount{
 			Amount: amount.Clone(), // clone here, we're using amount again in case of rollback
@@ -130,7 +130,7 @@ func (m *Market) SubmitLiquidityProvision(
 		m.log.Debug("bond update error", logging.Error(err))
 		return err
 	}
-	m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tresp}))
+	m.broker.Send(events.NewTransferInstructionResponse(ctx, []*types.TransferInstructionResponse{tresp}))
 
 	// if something happen, rollback the transfer
 	defer func() {
@@ -140,10 +140,10 @@ func (m *Market) SubmitLiquidityProvision(
 		// ensure the amount is correct
 		transfer.Amount.Amount = amount
 		transfer.MinAmount = amount.Clone()
-		if transfer.Type == types.TransferTypeBondHigh {
-			transfer.Type = types.TransferTypeBondLow
+		if transfer.Type == types.TransferInstructionTypeBondHigh {
+			transfer.Type = types.TransferInstructionTypeBondLow
 		} else {
-			transfer.Type = types.TransferTypeBondHigh
+			transfer.Type = types.TransferInstructionTypeBondHigh
 		}
 
 		tresp, newerr := m.collateral.BondUpdate(ctx, m.GetID(), transfer)
@@ -154,7 +154,7 @@ func (m *Market) SubmitLiquidityProvision(
 				logging.Error(err))
 			err = fmt.Errorf("%v, %w", err, newerr)
 		}
-		m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tresp}))
+		m.broker.Send(events.NewTransferInstructionResponse(ctx, []*types.TransferInstructionResponse{tresp}))
 	}()
 
 	defer func() {
@@ -665,13 +665,13 @@ func (m *Market) rollBackMargin(
 
 	amount := num.UintZero().Sub(marginAcc.Balance, initialMargin)
 	// now create the rollback to transfer
-	transfer := types.Transfer{
+	transfer := types.TransferInstruction{
 		Owner: party,
 		Amount: &types.FinancialAmount{
 			Amount: amount,
 			Asset:  asset,
 		},
-		Type:      types.TransferTypeMarginHigh,
+		Type:      types.TransferInstructionTypeMarginHigh,
 		MinAmount: amount.Clone(),
 	}
 
@@ -687,8 +687,8 @@ func (m *Market) rollBackMargin(
 	}
 
 	// then send the event for the transfer request
-	m.broker.Send(events.NewTransferResponse(
-		ctx, []*types.TransferResponse{resp}))
+	m.broker.Send(events.NewTransferInstructionResponse(
+		ctx, []*types.TransferInstructionResponse{resp}))
 	return nil
 }
 
@@ -941,13 +941,13 @@ func (m *Market) cancelLiquidityProvision(
 	// also if the balance is already 0, let's not bother create a
 	// transfer request
 	if err == nil && !bondAcc.Balance.IsZero() {
-		transfer := &types.Transfer{
+		transfer := &types.TransferInstruction{
 			Owner: party,
 			Amount: &types.FinancialAmount{
 				Amount: bondAcc.Balance,
 				Asset:  asset,
 			},
-			Type:      types.TransferTypeBondHigh,
+			Type:      types.TransferInstructionTypeBondHigh,
 			MinAmount: bondAcc.Balance.Clone(),
 		}
 
@@ -956,7 +956,7 @@ func (m *Market) cancelLiquidityProvision(
 			m.log.Debug("bond update error", logging.Error(err))
 			return err
 		}
-		m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tresp}))
+		m.broker.Send(events.NewTransferInstructionResponse(ctx, []*types.TransferInstructionResponse{tresp}))
 	}
 
 	// now let's update the fee selection
@@ -998,8 +998,8 @@ func (m *Market) amendLiquidityProvision(
 				err = fmt.Errorf("%v: %w", err, newerr)
 			}
 			if tresp != nil {
-				m.broker.Send(events.NewTransferResponse(
-					ctx, []*types.TransferResponse{tresp}))
+				m.broker.Send(events.NewTransferInstructionResponse(
+					ctx, []*types.TransferInstructionResponse{tresp}))
 			}
 		}
 	}()
@@ -1232,7 +1232,7 @@ func (m *Market) finalizeLiquidityProvisionAmendmentContinuous(
 // returns the rollback transfer in case of error.
 func (m *Market) ensureLiquidityProvisionBond(
 	ctx context.Context, sub *types.LiquidityProvisionAmendment, party string,
-) (*types.Transfer, error) {
+) (*types.TransferInstruction, error) {
 	asset, _ := m.mkt.GetAsset()
 	bondAcc, err := m.collateral.GetOrCreatePartyBondAccount(
 		ctx, party, m.GetID(), asset)
@@ -1248,11 +1248,11 @@ func (m *Market) ensureLiquidityProvisionBond(
 
 	// build our transfer to be sent to collateral
 	amount, neg := num.UintZero().Delta(sub.CommitmentAmount, bondAcc.Balance)
-	ty := types.TransferTypeBondLow
+	ty := types.TransferInstructionTypeBondLow
 	if neg {
-		ty = types.TransferTypeBondHigh
+		ty = types.TransferInstructionTypeBondHigh
 	}
-	transfer := &types.Transfer{
+	transfer := &types.TransferInstruction{
 		Owner: party,
 		Amount: &types.FinancialAmount{
 			Amount: amount,
@@ -1267,15 +1267,15 @@ func (m *Market) ensureLiquidityProvisionBond(
 	if err != nil {
 		return nil, err
 	}
-	m.broker.Send(events.NewTransferResponse(
-		ctx, []*types.TransferResponse{tresp}))
+	m.broker.Send(events.NewTransferInstructionResponse(
+		ctx, []*types.TransferInstructionResponse{tresp}))
 
 	// now we will use the actuall transfer as a rollback later on eventually
 	// so let's just change from HIGH to LOW and inverse
-	if transfer.Type == types.TransferTypeBondHigh {
-		transfer.Type = types.TransferTypeBondLow
+	if transfer.Type == types.TransferInstructionTypeBondHigh {
+		transfer.Type = types.TransferInstructionTypeBondLow
 	} else {
-		transfer.Type = types.TransferTypeBondHigh
+		transfer.Type = types.TransferInstructionTypeBondHigh
 	}
 
 	return transfer, nil

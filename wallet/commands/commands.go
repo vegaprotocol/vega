@@ -54,10 +54,10 @@ func CheckSubmitTransactionRequest(req *walletpb.SubmitTransactionRequest) comma
 		cmdErr = commands.CheckLiquidityProvisionCancellation(cmd.LiquidityProvisionCancellation)
 	case *walletpb.SubmitTransactionRequest_LiquidityProvisionAmendment:
 		cmdErr = commands.CheckLiquidityProvisionAmendment(cmd.LiquidityProvisionAmendment)
-	case *walletpb.SubmitTransactionRequest_Transfer:
-		cmdErr = commands.CheckTransfer(cmd.Transfer)
-	case *walletpb.SubmitTransactionRequest_CancelTransfer:
-		cmdErr = commands.CheckCancelTransfer(cmd.CancelTransfer)
+	case *walletpb.SubmitTransactionRequest_TransferInstruction:
+		cmdErr = commands.CheckTransfer(cmd.TransferInstruction)
+	case *walletpb.SubmitTransactionRequest_CancelTransferInstruction:
+		cmdErr = commands.CheckCancelTransfer(cmd.CancelTransferInstruction)
 	case *walletpb.SubmitTransactionRequest_KeyRotateSubmission:
 		cmdErr = commands.CheckKeyRotateSubmission(cmd.KeyRotateSubmission)
 	case *walletpb.SubmitTransactionRequest_EthereumKeyRotateSubmission:
@@ -149,13 +149,13 @@ func wrapRequestCommandIntoInputData(data *commandspb.InputData, req *walletpb.S
 		data.Command = &commandspb.InputData_LiquidityProvisionAmendment{
 			LiquidityProvisionAmendment: req.GetLiquidityProvisionAmendment(),
 		}
-	case *walletpb.SubmitTransactionRequest_Transfer:
+	case *walletpb.SubmitTransactionRequest_TransferInstruction:
 		data.Command = &commandspb.InputData_Transfer{
-			Transfer: req.GetTransfer(),
+			Transfer: req.GetTransferInstruction(),
 		}
-	case *walletpb.SubmitTransactionRequest_CancelTransfer:
+	case *walletpb.SubmitTransactionRequest_CancelTransferInstruction:
 		data.Command = &commandspb.InputData_CancelTransfer{
-			CancelTransfer: req.GetCancelTransfer(),
+			CancelTransfer: req.GetCancelTransferInstruction(),
 		}
 	case *walletpb.SubmitTransactionRequest_KeyRotateSubmission:
 		data.Command = &commandspb.InputData_KeyRotateSubmission{

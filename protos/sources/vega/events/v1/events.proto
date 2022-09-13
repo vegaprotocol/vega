@@ -54,20 +54,20 @@ message ERC20MultiSigSignerRemoved {
   string epoch_seq = 6;
 }
 
-message Transfer {
+message TransferInstruction {
   enum Status {
     // Default value
     STATUS_UNSPECIFIED = 0;
-    // Indicate a transfer still being processed
+    // Indicate a transfer instruction is still being processed
     STATUS_PENDING = 1;
-    // Indicate of an transfer accepted by the vega network
+    // Indicate of an transfer instruction is accepted by the vega network
     STATUS_DONE = 2;
-    // Indicate of an transfer rejected by the vega network
+    // Indicate of an transfer instruction is rejected by the vega network
     STATUS_REJECTED = 3;
-    // Indicate of a transfer stopped by the vega network
-    // e.g: no funds left to cover the transfer
+    // Indicate of a transfer instruction is stopped by the vega network
+    // e.g: no funds left to cover the transfer instruction
     STATUS_STOPPED = 4;
-    // Indicate of a transfer cancel by the user
+    // Indicate of a transfer instruction cancelled by the user
     STATUS_CANCELLED = 5;
   }
 
@@ -83,16 +83,16 @@ message Transfer {
   int64 timestamp = 10;
 
   oneof kind {
-    OneOffTransfer one_off = 101;
-    RecurringTransfer recurring = 102;
+    OneOffTransferInstruction one_off = 101;
+    RecurringTransferInstruction recurring = 102;
   }
 }
 
-message OneOffTransfer {
+message OneOffTransferInstruction {
   int64 deliver_on = 1;
 }
 
-message RecurringTransfer {
+message RecurringTransferInstruction {
   uint64 start_epoch = 1;
   optional uint64 end_epoch = 2;
   string factor = 3;
@@ -246,8 +246,8 @@ message TxErrorEvent {
     commands.v1.UndelegateSubmission undelegate_submission = 109;
     commands.v1.LiquidityProvisionCancellation liquidity_provision_cancellation = 111;
     commands.v1.LiquidityProvisionAmendment liquidity_provision_amendment = 112;
-    commands.v1.Transfer transfer = 113;
-    commands.v1.CancelTransfer cancel_transfer = 114;
+    commands.v1.TransferInstruction transfer_instruction = 113;
+    commands.v1.CancelTransferInstruction cancel_transfer_instruction = 114;
     commands.v1.AnnounceNode announce_node = 115;
     commands.v1.OracleDataSubmission oracle_data_submission = 116;
     commands.v1.ProtocolUpgradeProposal protocol_upgrade_proposal = 117;
@@ -276,10 +276,10 @@ message EpochEvent {
   int64  end_time = 5;
 }
 
-// A transfer responses event contains a collection of transfer information
-message TransferResponses {
-  // One or more entries containing internal transfer information
-  repeated TransferResponse responses = 1;
+// A transfer instruction responses event contains a collection of transfer instruction information
+message TransferInstructionResponses {
+  // One or more entries containing internal transfer instruction information
+  repeated TransferInstructionResponse responses = 1;
 }
 
 // A position resolution event contains information on distressed trades
@@ -498,8 +498,8 @@ enum BusEventType {
   BUS_EVENT_TYPE_ALL = 1;
   // Event for blockchain time updates
   BUS_EVENT_TYPE_TIME_UPDATE = 2;
-  // Event for when a transfer happens internally, contains the transfer information
-  BUS_EVENT_TYPE_TRANSFER_RESPONSES = 3;
+  // Event for when a transfer instruction happens internally, contains the transfer instruction information
+  BUS_EVENT_TYPE_TRANSFER_INSTRUCTION_RESPONSES = 3;
   // Event indicating position resolution has occurred
   BUS_EVENT_TYPE_POSITION_RESOLUTION = 4;
   // Event for order updates, both new and existing orders
@@ -572,8 +572,8 @@ enum BusEventType {
   BUS_EVENT_TYPE_STATE_VAR = 38;
   // Event indicating network limits set or updated
   BUS_EVENT_TYPE_NETWORK_LIMITS = 39;
-  // Event indicating a update for a transfert
-  BUS_EVENT_TYPE_TRANSFER = 40;
+  // Event indicating a update for a transfer instruction
+  BUS_EVENT_TYPE_TRANSFER_INSTRUCTION = 40;
   // Event indicating the ranking of validator and their status in vega
   BUS_EVENT_TYPE_VALIDATOR_RANKING = 41;
   // Event indicating a new multi sig signer event have been processed
@@ -608,8 +608,8 @@ message BusEvent {
   oneof event {
     // Time update events - See [TimeUpdate](#vega.TimeUpdate)
     TimeUpdate time_update = 101;
-    // Transfer responses update events - See [TransferResponses](#vega.TransferResponses)
-    TransferResponses transfer_responses = 102;
+    // Transfer instruction responses update events - See [TransferInstructionResponses](#vega.TransferInstructionResponses)
+    TransferInstructionResponses transfer_instruction_responses = 102;
     // Position resolution events - See [PositionResolution](#vega.PositionResolution)
     PositionResolution position_resolution = 103;
     // Order events
@@ -680,8 +680,8 @@ message BusEvent {
     StateVar state_var = 137;
     // Network limits events
     NetworkLimits network_limits = 138;
-    // Transfer event
-    Transfer transfer = 139;
+    // Transfer instruction event
+    TransferInstruction transfer_instruction = 139;
     // Ranking event
     ValidatorRankingEvent ranking_event = 140;
     // ERC20 multi sig signer event

@@ -129,25 +129,25 @@ message PendingEthereumKeyRotation {
   string new_address = 3;
 }
 
-message ScheduledTransfer {
-  vega.Transfer transfer = 1;
+message ScheduledTransferInstruction {
+  vega.TransferInstruction transfer_instruction = 1;
   vega.AccountType account_type = 2;
   string reference = 3;
-  vega.events.v1.Transfer oneoff_transfer = 4;
+  vega.events.v1.TransferInstruction oneoff_transfer_instruction = 4;
 }
 
-message ScheduledTransferAtTime {
+message ScheduledTransferInstructionAtTime {
   int64 deliver_on = 1;
-  repeated ScheduledTransfer transfers = 2;
+  repeated ScheduledTransferInstruction transfer_instructions = 2;
 }
 
-message RecurringTransfers {
-  repeated vega.events.v1.Transfer recurring_transfers = 1;
+message RecurringTransferInstructions {
+  repeated vega.events.v1.TransferInstruction recurring_transfer_instructions = 1;
 }
 
 message Banking {
-  repeated ScheduledTransferAtTime transfers_at_time = 1;
-  RecurringTransfers recurring_transfers = 2;
+  repeated ScheduledTransferInstructionAtTime transfer_instructions_at_time = 1;
+  RecurringTransferInstructions recurring_transfer_instructions = 2;
   BridgeState bridge_state = 3;
 }
 

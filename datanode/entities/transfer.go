@@ -29,12 +29,12 @@ type AccountSource interface {
 	GetByID(id int64) (Account, error)
 }
 
-type _Transfer struct{}
+type _TransferInstruction struct{}
 
-type TransferID = ID[_Transfer]
+type TransferInstructionID = ID[_TransferInstruction]
 
-type Transfer struct {
-	ID                  TransferID
+type TransferInstruction struct {
+	ID                  TransferInstructionID
 	TxHash              TxHash
 	VegaTime            time.Time
 	FromAccountID       int64
@@ -42,8 +42,8 @@ type Transfer struct {
 	AssetID             AssetID
 	Amount              decimal.Decimal
 	Reference           string
-	Status              TransferStatus
-	TransferType        TransferType
+	Status              TransferInstructionStatus
+	TransferInstructionType        TransferInstructionType
 	DeliverOn           *time.Time
 	StartEpoch          *uint64
 	EndEpoch            *uint64
@@ -53,7 +53,7 @@ type Transfer struct {
 	DispatchMarkets     []string
 }
 
-func (t *Transfer) ToProto(accountSource AccountSource) (*eventspb.Transfer, error) {
+func (t *TransferInstruction) ToProto(accountSource AccountSource) (*eventspb.TransferInstruction, error) {
 	fromAcc, err := accountSource.GetByID(t.FromAccountID)
 	if err != nil {
 		return nil, fmt.Errorf("getting from account for transfer proto:%w", err)
@@ -64,7 +64,7 @@ func (t *Transfer) ToProto(accountSource AccountSource) (*eventspb.Transfer, err
 		return nil, fmt.Errorf("getting to account for transfer proto:%w", err)
 	}
 
-	proto := eventspb.Transfer{
+	proto := eventspb.TransferInstruction{
 		Id:              t.ID.String(),
 		From:            fromAcc.PartyID.String(),
 		FromAccountType: fromAcc.Type,
@@ -73,17 +73,17 @@ func (t *Transfer) ToProto(accountSource AccountSource) (*eventspb.Transfer, err
 		Asset:           t.AssetID.String(),
 		Amount:          t.Amount.String(),
 		Reference:       t.Reference,
-		Status:          eventspb.Transfer_Status(t.Status),
+		Status:          eventspb.TransferInstruction_Status(t.Status),
 		Timestamp:       t.VegaTime.UnixNano(),
 		Kind:            nil,
 	}
 
-	switch t.TransferType {
+	switch t.TransferInstructionType {
 	case OneOff:
-		proto.Kind = &eventspb.Transfer_OneOff{OneOff: &eventspb.OneOffTransfer{DeliverOn: t.DeliverOn.Unix()}}
+		proto.Kind = &eventspb.TransferInstruction_OneOff{OneOff: &eventspb.OneOffTransferInstruction{DeliverOn: t.DeliverOn.Unix()}}
 	case Recurring:
 
-		recurringTransfer := &eventspb.RecurringTransfer{
+		recurringTransfer := &eventspb.RecurringTransferInstruction{
 			StartEpoch: *t.StartEpoch,
 			Factor:     t.Factor.String(),
 		}
@@ -100,7 +100,7 @@ func (t *Transfer) ToProto(accountSource AccountSource) (*eventspb.Transfer, err
 			recurringTransfer.EndEpoch = &endEpoch
 		}
 
-		proto.Kind = &eventspb.Transfer_Recurring{Recurring: recurringTransfer}
+		proto.Kind = &eventspb.TransferInstruction_Recurring{Recurring: recurringTransfer}
 
 	case Unknown:
 		// leave Kind as nil
@@ -109,7 +109,7 @@ func (t *Transfer) ToProto(accountSource AccountSource) (*eventspb.Transfer, err
 	return &proto, nil
 }
 
-func TransferFromProto(ctx context.Context, t *eventspb.Transfer, txHash TxHash, vegaTime time.Time, accountSource AccountSource) (*Transfer, error) {
+func TransferInstructionFromProto(ctx context.Context, t *eventspb.TransferInstruction, txHash TxHash, vegaTime time.Time, accountSource AccountSource) (*TransferInstruction, error) {
 	fromAcc := Account{
 		ID:       0,
 		PartyID:  PartyID(t.From),
@@ -144,8 +144,8 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, txHash TxHash,
 		return nil, fmt.Errorf("getting amount for transfer:%w", err)
 	}
 
-	transfer := Transfer{
-		ID:            TransferID(t.Id),
+	transfer := TransferInstruction{
+		ID:            TransferInstructionID(t.Id),
 		TxHash:        txHash,
 		VegaTime:      vegaTime,
 		FromAccountID: fromAcc.ID,
@@ -153,8 +153,8 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, txHash TxHash,
 		Amount:        amount,
 		AssetID:       AssetID(t.Asset),
 		Reference:     t.Reference,
-		Status:        TransferStatus(t.Status),
-		TransferType:  0,
+		Status:        TransferInstructionStatus(t.Status),
+		TransferInstructionType:  0,
 		DeliverOn:     nil,
 		StartEpoch:    nil,
 		EndEpoch:      nil,
@@ -162,12 +162,12 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, txHash TxHash,
 	}
 
 	switch v := t.Kind.(type) {
-	case *eventspb.Transfer_OneOff:
-		transfer.TransferType = OneOff
+	case *eventspb.TransferInstruction_OneOff:
+		transfer.TransferInstructionType = OneOff
 		deliverOn := time.Unix(v.OneOff.DeliverOn, 0)
 		transfer.DeliverOn = &deliverOn
-	case *eventspb.Transfer_Recurring:
-		transfer.TransferType = Recurring
+	case *eventspb.TransferInstruction_Recurring:
+		transfer.TransferInstructionType = Recurring
 		transfer.StartEpoch = &v.Recurring.StartEpoch
 		if v.Recurring.DispatchStrategy != nil {
 			transfer.DispatchMetric = &v.Recurring.DispatchStrategy.Metric
@@ -186,21 +186,21 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, txHash TxHash,
 
 		transfer.Factor = &factor
 	default:
-		transfer.TransferType = Unknown
+		transfer.TransferInstructionType = Unknown
 	}
 
 	return &transfer, nil
 }
 
-func (t Transfer) Cursor() *Cursor {
-	wc := TransferCursor{
+func (t TransferInstruction) Cursor() *Cursor {
+	wc := TransferInstructionCursor{
 		VegaTime: t.VegaTime,
 		ID:       t.ID,
 	}
 	return NewCursor(wc.String())
 }
 
-func (t Transfer) ToProtoEdge(input ...any) (*v2.TransferEdge, error) {
+func (t TransferInstruction) ToProtoEdge(input ...any) (*v2.TransferInstructionEdge, error) {
 	if len(input) == 0 {
 		return nil, fmt.Errorf("expected account source argument")
 	}
@@ -211,7 +211,7 @@ func (t Transfer) ToProtoEdge(input ...any) (*v2.TransferEdge, error) {
 		if err != nil {
 			return nil, err
 		}
-		return &v2.TransferEdge{
+		return &v2.TransferInstructionEdge{
 			Node:   transferProto,
 			Cursor: t.Cursor().Encode(),
 		}, nil
@@ -220,12 +220,12 @@ func (t Transfer) ToProtoEdge(input ...any) (*v2.TransferEdge, error) {
 	}
 }
 
-type TransferCursor struct {
+type TransferInstructionCursor struct {
 	VegaTime time.Time  `json:"vegaTime"`
-	ID       TransferID `json:"id"`
+	ID       TransferInstructionID `json:"id"`
 }
 
-func (tc TransferCursor) String() string {
+func (tc TransferInstructionCursor) String() string {
 	bs, err := json.Marshal(tc)
 	if err != nil {
 		// This should never happen
@@ -234,7 +234,7 @@ func (tc TransferCursor) String() string {
 	return string(bs)
 }
 
-func (tc *TransferCursor) Parse(cursorString string) error {
+func (tc *TransferInstructionCursor) Parse(cursorString string) error {
 	if cursorString == "" {
 		return nil
 	}

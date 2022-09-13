@@ -132,10 +132,10 @@ func busEventFromProto(events ...*eventspb.BusEvent) []*BusEvent {
 	return r
 }
 
-func balancesFromProto(balances []*types.TransferBalance) []*TransferBalance {
-	gql := make([]*TransferBalance, 0, len(balances))
+func balancesFromProto(balances []*types.TransferInstructionBalance) []*TransferInstructionBalance {
+	gql := make([]*TransferInstructionBalance, 0, len(balances))
 	for _, b := range balances {
-		gql = append(gql, &TransferBalance{
+		gql = append(gql, &TransferInstructionBalance{
 			Account: b.Account,
 			Balance: b.Balance,
 		})
@@ -167,16 +167,16 @@ func eventFromProto(e *eventspb.BusEvent) Event {
 		return &TimeUpdate{
 			Timestamp: secondsTSToDatetime(e.GetTimeUpdate().Timestamp),
 		}
-	case eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES:
-		tr := e.GetTransferResponses()
-		responses := make([]*TransferResponse, 0, len(tr.Responses))
+	case eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_INSTRUCTION_RESPONSES:
+		tr := e.GetTransferInstructionResponses()
+		responses := make([]*TransferInstructionResponse, 0, len(tr.Responses))
 		for _, r := range tr.Responses {
-			responses = append(responses, &TransferResponse{
-				Transfers: transfersFromProto(r.Transfers),
-				Balances:  balancesFromProto(r.Balances),
+			responses = append(responses, &TransferInstructionResponse{
+				TransferInstructions: transfersFromProto(r.Transfers), // ledger Entry
+				Balances:             balancesFromProto(r.Balances),
 			})
 		}
-		return &TransferResponses{
+		return &TransferInstructionResponses{
 			Responses: responses,
 		}
 	case eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION:
@@ -284,8 +284,8 @@ func eventTypeToProto(btypes ...BusEventType) []eventspb.BusEventType {
 		switch t {
 		case BusEventTypeTimeUpdate:
 			r = append(r, eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE)
-		case BusEventTypeTransferResponses:
-			r = append(r, eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES)
+		case BusEventTypeTransferInstructionResponses:
+			r = append(r, eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_INSTRUCTION_RESPONSES)
 		case BusEventTypePositionResolution:
 			r = append(r, eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION)
 		case BusEventTypeOrder:
@@ -343,8 +343,8 @@ func eventTypeFromProto(t eventspb.BusEventType) (BusEventType, error) {
 	switch t {
 	case eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE:
 		return BusEventTypeTimeUpdate, nil
-	case eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES:
-		return BusEventTypeTransferResponses, nil
+	case eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_INSTRUCTION_RESPONSES:
+		return BusEventTypeTransferInstructionResponses, nil
 	case eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION:
 		return BusEventTypePositionResolution, nil
 	case eventspb.BusEventType_BUS_EVENT_TYPE_ORDER:

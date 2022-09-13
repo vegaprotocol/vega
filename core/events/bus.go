@@ -80,7 +80,7 @@ const (
 	All Type = iota
 	// other event types that DO have corresponding event types.
 	TimeUpdate
-	TransferResponses
+	TransferInstructionResponses
 	PositionResolution
 	MarketEvent // this event is not used for any specific event, but by subscribers that aggregate all market events (e.g. for logging)
 	OrderEvent
@@ -118,7 +118,7 @@ const (
 	KeyRotationEvent
 	StateVarEvent
 	NetworkLimitsEvent
-	TransferEvent
+	TransferInstructionEvent
 	ValidatorRankingEvent
 	ERC20MultiSigThresholdSetEvent
 	ERC20MultiSigSignerEvent
@@ -141,7 +141,7 @@ var (
 	protoMap = map[eventspb.BusEventType]Type{
 		eventspb.BusEventType_BUS_EVENT_TYPE_ALL:                            All,
 		eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE:                    TimeUpdate,
-		eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES:             TransferResponses,
+		eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_INSTRUCTION_RESPONSES: TransferInstructionResponses,
 		eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION:            PositionResolution,
 		eventspb.BusEventType_BUS_EVENT_TYPE_MARKET:                         MarketEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_ORDER:                          OrderEvent,
@@ -179,7 +179,7 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_KEY_ROTATION:                   KeyRotationEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_STATE_VAR:                      StateVarEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_NETWORK_LIMITS:                 NetworkLimitsEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER:                       TransferEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_INSTRUCTION:           TransferInstructionEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_RANKING:              ValidatorRankingEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_ERC20_MULTI_SIG_SET_THRESHOLD:  ERC20MultiSigThresholdSetEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_ERC20_MULTI_SIG_SIGNER_EVENT:   ERC20MultiSigSignerEvent,
@@ -195,7 +195,7 @@ var (
 	toProto = map[Type]eventspb.BusEventType{
 		ValidatorRankingEvent:           eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_RANKING,
 		TimeUpdate:                      eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE,
-		TransferResponses:               eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES,
+		TransferInstructionResponses:    eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_INSTRUCTION_RESPONSES,
 		PositionResolution:              eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION,
 		MarketEvent:                     eventspb.BusEventType_BUS_EVENT_TYPE_MARKET,
 		OrderEvent:                      eventspb.BusEventType_BUS_EVENT_TYPE_ORDER,
@@ -233,7 +233,7 @@ var (
 		KeyRotationEvent:                eventspb.BusEventType_BUS_EVENT_TYPE_KEY_ROTATION,
 		StateVarEvent:                   eventspb.BusEventType_BUS_EVENT_TYPE_STATE_VAR,
 		NetworkLimitsEvent:              eventspb.BusEventType_BUS_EVENT_TYPE_NETWORK_LIMITS,
-		TransferEvent:                   eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER,
+		TransferInstructionEvent:        eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_INSTRUCTION,
 		ERC20MultiSigThresholdSetEvent:  eventspb.BusEventType_BUS_EVENT_TYPE_ERC20_MULTI_SIG_SET_THRESHOLD,
 		ERC20MultiSigSignerEvent:        eventspb.BusEventType_BUS_EVENT_TYPE_ERC20_MULTI_SIG_SIGNER_EVENT,
 		ERC20MultiSigSignerAddedEvent:   eventspb.BusEventType_BUS_EVENT_TYPE_ERC20_MULTI_SIG_SIGNER_ADDED,
@@ -246,7 +246,7 @@ var (
 	eventStrings = map[Type]string{
 		All:                             "ALL",
 		TimeUpdate:                      "TimeUpdate",
-		TransferResponses:               "TransferResponses",
+		TransferInstructionResponses:    "TransferInstructionResponses",
 		PositionResolution:              "PositionResolution",
 		MarketEvent:                     "MarketEvent",
 		OrderEvent:                      "OrderEvent",
@@ -284,7 +284,7 @@ var (
 		KeyRotationEvent:                "KeyRotationEvent",
 		StateVarEvent:                   "StateVarEvent",
 		NetworkLimitsEvent:              "NetworkLimitsEvent",
-		TransferEvent:                   "TransferEvent",
+		TransferInstructionEvent:        "TransferInstructionEvent",
 		ValidatorRankingEvent:           "ValidatorRankingEvent",
 		ERC20MultiSigSignerEvent:        "ERC20MultiSigSignerEvent",
 		ERC20MultiSigThresholdSetEvent:  "ERC20MultiSigThresholdSetEvent",

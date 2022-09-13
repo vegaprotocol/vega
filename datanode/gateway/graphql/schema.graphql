@@ -631,25 +631,25 @@ type Query {
   "get data for a specific epoch, if ID omitted it gets the current epoch. If the string is 'next', fetch the next epoch"
   epoch(id: ID): Epoch!
 
-  "get a list of all transfers for a public key"
-  transfers(
+  "get a list of all transfer instructions for a public key"
+  transferInstructions(
     "the pubkey to look for"
     pubkey: String!
-    "is the pubkey on the sending part of the transfer"
+    "is the pubkey on the sending part of the transfer instruction"
     isFrom: Boolean
-    "is the pubkey in the receiving part of the transfer"
+    "is the pubkey in the receiving part of the transfer instruction"
     isTo: Boolean
-  ): [Transfer!] @deprecated(reason: "Use transfersConnection instead")
+  ): [TransferInstruction!] @deprecated(reason: "Use transfersInstructionConnection instead")
 
-  "get a list of all transfers for a public key"
-  transfersConnection(
+  "get a list of all transfer instructions for a public key"
+  transferInstructionsConnection(
     "the public key to look for"
     partyId: ID
-    "direction of the transfer with respect to the public key"
-    direction: TransferDirection
+    "direction of the transfer instruction with respect to the public key"
+    direction: TransferInstructionDirection
     "Pagination information"
     pagination: Pagination
-  ): TransferConnection
+  ): TransferInstructionConnection
 
   "get statistics about the Vega node"
   statistics: Statistics!
@@ -707,28 +707,28 @@ type Query {
     pagination: Pagination): MarketDataConnection
 }
 
-enum TransferStatus {
-  "Indicates a transfer still being processed"
+enum TransferInstructionStatus {
+  "Indicates a transfer instruction is still being processed"
   STATUS_PENDING
-  "Indicates a transfer accepted by the Vega network"
+  "Indicates a transfer instruction is accepted by the Vega network"
   STATUS_DONE
-  "Indicates a transfer rejected by the Vega network"
+  "Indicates a transfer instruction is rejected by the Vega network"
   STATUS_REJECTED
   """
-  Indicates a transfer stopped by the Vega network
+  Indicates a transfer instruction is stopped by the Vega network
   e.g: no funds left to cover the transfer
   """
   STATUS_STOPPED
-  "Indication of a transfer cancelled by the user"
+  "Indication of a transfer instruction is cancelled by the user"
   STATUS_CANCELLED
 }
 
 "A user initiated transfer"
-type Transfer {
-  "ID of this transfer"
+type TransferInstruction {
+  "ID of this transfer instruction"
   id: ID!
 
-  "The public key of the sender in this transfer"
+  "The public key of the sender in this transfer instruction"
   from: String!
 
   "The account type from which funds have been sent"
@@ -749,32 +749,32 @@ type Transfer {
   "An optional reference"
   reference: String
 
-  "The status of this transfer"
-  status: TransferStatus!
+  "The status of this transfer instruction"
+  status: TransferInstructionStatus!
 
-  "The time at which the transfer was submitted"
+  "The time at which the transfer instruction was submitted"
   timestamp: String!
 
-  kind: TransferKind!
+  kind: TransferInstructionKind!
 }
 
-union TransferKind = OneOffTransfer | RecurringTransfer
+union TransferInstructionKind = OneOffTransferInstruction | RecurringTransferInstruction
 
-"The specific details for a one-off transfer"
-type OneOffTransfer {
-  "An optional time when the transfer should be delivered"
+"The specific details for a one-off transfer instruction"
+type OneOffTransferInstruction {
+  "An optional time when the transfer instruction should be delivered"
   deliverOn: String
 }
 
-"The specific details for a recurring transfer"
-type RecurringTransfer {
-  "The epoch at which this recurring transfer will start"
+"The specific details for a recurring transfer instruction"
+type RecurringTransferInstruction {
+  "The epoch at which this recurring transfer instrcution will start"
   startEpoch: Int!
-  "An optional epoch at which this transfer will stop"
+  "An optional epoch at which this transfer instruction will stop"
   endEpoch: Int
   "The factor of the initial amount to be distributed"
   factor: String!
-  "An optional dispatch strategy for the recurring transfer"
+  "An optional dispatch strategy for the recurring transfer instruction"
   dispatchStrategy: DispatchStrategy
 }
 
@@ -2118,13 +2118,13 @@ type Party {
   "return reward information"
   rewardDetails: [RewardPerAssetDetail] @deprecated(reason: "Use rewardSummaries or rewards instead.")
 
-  "get a list of all transfers for a public key"
-  transfersConnection(
-    "direction of the transfer with respect to the public key"
-    direction: TransferDirection
+  "get a list of all transfer instructions for a public key"
+  transferInstructionsConnection(
+    "direction of the transfer instruction with respect to the public key"
+    direction: TransferInstructionDirection
     "Pagination information"
     pagination: Pagination
-  ): TransferConnection
+  ): TransferInstructionConnection
 }
 
 """
@@ -3090,8 +3090,8 @@ enum AccountType {
   ACCOUNT_TYPE_EXTERNAL
   "GlobalReward - a global account for the reward pool"
   ACCOUNT_TYPE_GLOBAL_REWARD
-  "PendingTransfers - a global account for the pending transfers pool"
-  ACCOUNT_TYPE_PENDING_TRANSFERS
+  "PendingTransferInstructions - a global account for the pending transfer instructions pool"
+  ACCOUNT_TYPE_PENDING_TRANSFER_INSTRUCTIONS
   "RewardMakerPaidFees - an account holding rewards for taker paid fees"
   ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES
   "RewardMakerReceivedFees - an account holding rewards for maker received fees"
@@ -3438,8 +3438,8 @@ type MarketEvent {
   payload: String!
 }
 
-type TransferBalance {
-  "Account involved in transfer"
+type TransferInstructionBalance {
+  "Account involved in transfer instruction"
   account: Account!
   "The new balance of the account"
   balance: String!
@@ -3456,20 +3456,20 @@ type LedgerEntry {
   reference: String!
   "Type of ledger entry"
   type: String!
-  "RFC3339Nano time at which the transfer was made"
+  "RFC3339Nano time at which the transfer instruction was made"
   timestamp: String!
 }
 
-type TransferResponse {
-  "The ledger entries and balances resulting from a transfer request"
-  transfers: [LedgerEntry!]
+type TransferInstructionResponse {
+  "The ledger entries and balances resulting from a transfer instruction request"
+  transferInstructions: [LedgerEntry!]
   "The balances of accounts involved in the transfer"
-  balances: [TransferBalance!]
+  balances: [TransferInstructionBalance!]
 }
 
-type TransferResponses {
-  "A group of transfer responses - events from core"
-  responses: [TransferResponse!]
+type TransferInstructionResponses {
+  "A group of transfer instruction responses - events from core"
+  responses: [TransferInstructionResponse!]
 }
 
 type PositionResolution {
@@ -3562,7 +3562,7 @@ enum BusEventType {
   "Vega Time has changed"
   TimeUpdate
   "A balance has been transferred between accounts"
-  TransferResponses
+  TransferInstructionResponses
   "A position resolution event has occurred"
   PositionResolution
   "An order has been created or updated"
@@ -3617,7 +3617,7 @@ enum BusEventType {
 union Event =
   TimeUpdate
   | MarketEvent
-  | TransferResponses
+  | TransferInstructionResponses
   | PositionResolution
   | Order
   | Trade
@@ -4128,17 +4128,17 @@ type LiquidityProvisionsConnection {
     pageInfo: PageInfo!
 }
 
-type TransferEdge {
-  node: Transfer!
+type TransferInstructionEdge {
+  node: TransferInstruction!
   cursor: String!
 }
 
-type TransferConnection {
-    edges: [TransferEdge]
+type TransferInstructionConnection {
+    edges: [TransferInstructionEdge]
     pageInfo: PageInfo!
 }
 
-enum TransferDirection {
+enum TransferInstructionDirection {
   To
   From
   ToOrFrom

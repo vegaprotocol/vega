@@ -63,9 +63,9 @@ type StateVarEngine interface {
 }
 
 type marginChange struct {
-	events.Margin // previous event that caused this change
-	transfer      *types.Transfer
-	margins       *types.MarginLevels
+	events.Margin       // previous event that caused this change
+	transferInstruction *types.TransferInstruction
+	margins             *types.MarginLevels
 }
 
 // Engine is the risk engine.
@@ -213,9 +213,9 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 			minAmount.Sub(levels.MaintenanceMargin, curMargin)
 		}
 		amt := num.UintZero().Sub(levels.InitialMargin, curMargin) // we know curBalace is less than initial
-		t := &types.Transfer{
+		t := &types.TransferInstruction{
 			Owner: evt.Party(),
-			Type:  types.TransferTypeMarginLow,
+			Type:  types.TransferInstructionTypeMarginLow,
 			Amount: &types.FinancialAmount{
 				Asset:  e.asset,
 				Amount: amt,
@@ -223,9 +223,9 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 			MinAmount: minAmount,
 		}
 		revts = append(revts, &marginChange{
-			Margin:   evt,
-			transfer: t,
-			margins:  levels,
+			Margin:              evt,
+			transferInstruction: t,
+			margins:             levels,
 		})
 	}
 	e.broker.SendBatch(eventBatch)
@@ -279,9 +279,9 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 	}
 
 	// margin is < that InitialMargin so we create a transfer request to top it up.
-	trnsfr := &types.Transfer{
+	trnsfr := &types.TransferInstruction{
 		Owner: evt.Party(),
-		Type:  types.TransferTypeMarginLow,
+		Type:  types.TransferInstructionTypeMarginLow,
 		Amount: &types.FinancialAmount{
 			Asset:  evt.Asset(),
 			Amount: num.UintZero().Sub(margins.InitialMargin, curMarginBalance),
@@ -290,9 +290,9 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 	}
 
 	change := &marginChange{
-		Margin:   evt,
-		transfer: trnsfr,
-		margins:  margins,
+		Margin:              evt,
+		transferInstruction: trnsfr,
+		margins:             margins,
 	}
 	// we don't have enough in general + margin accounts to cover initial margin level, so we'll be dipping into our bond account
 	// we have to return the margin event to signal that
@@ -332,9 +332,9 @@ func (e *Engine) UpdateMarginsOnSettlement(
 		// in which case the only response is to release the margin balance.
 		if evt.Size() == 0 && evt.Buy() == 0 && evt.Sell() == 0 && !evt.MarginBalance().IsZero() {
 			amt := evt.MarginBalance()
-			trnsfr := &types.Transfer{
+			trnsfr := &types.TransferInstruction{
 				Owner: evt.Party(),
-				Type:  types.TransferTypeMarginHigh,
+				Type:  types.TransferInstructionTypeMarginHigh,
 				Amount: &types.FinancialAmount{
 					Asset:  evt.Asset(),
 					Amount: amt,
@@ -353,9 +353,9 @@ func (e *Engine) UpdateMarginsOnSettlement(
 			}
 			e.broker.Send(events.NewMarginLevelsEvent(ctx, margins))
 			ret = append(ret, &marginChange{
-				Margin:   evt,
-				transfer: trnsfr,
-				margins:  &margins,
+				Margin:              evt,
+				transferInstruction: trnsfr,
+				margins:             &margins,
 			})
 			continue
 		}
@@ -393,7 +393,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 			continue
 		}
 
-		var trnsfr *types.Transfer
+		var trnsfr *types.TransferInstruction
 		minAmount := num.UintZero()
 		// case 2 -> not enough margin
 		if curMargin.LT(margins.SearchLevel) {
@@ -405,9 +405,9 @@ func (e *Engine) UpdateMarginsOnSettlement(
 
 			// then the rest is common if we are before or after MaintenanceLevel,
 			// we try to reach the InitialMargin level
-			trnsfr = &types.Transfer{
+			trnsfr = &types.TransferInstruction{
 				Owner: evt.Party(),
-				Type:  types.TransferTypeMarginLow,
+				Type:  types.TransferInstructionTypeMarginLow,
 				Amount: &types.FinancialAmount{
 					Asset:  evt.Asset(),
 					Amount: num.UintZero().Sub(margins.InitialMargin, curMargin),
@@ -415,9 +415,9 @@ func (e *Engine) UpdateMarginsOnSettlement(
 				MinAmount: minAmount,
 			}
 		} else { // case 3 -> release some collateral
-			trnsfr = &types.Transfer{
+			trnsfr = &types.TransferInstruction{
 				Owner: evt.Party(),
-				Type:  types.TransferTypeMarginHigh,
+				Type:  types.TransferInstructionTypeMarginHigh,
 				Amount: &types.FinancialAmount{
 					Asset:  evt.Asset(),
 					Amount: num.UintZero().Sub(curMargin, margins.InitialMargin),
@@ -430,9 +430,9 @@ func (e *Engine) UpdateMarginsOnSettlement(
 		e.broker.Send(events.NewMarginLevelsEvent(ctx, *margins))
 
 		risk := &marginChange{
-			Margin:   evt,
-			transfer: trnsfr,
-			margins:  margins,
+			Margin:              evt,
+			transferInstruction: trnsfr,
+			margins:             margins,
 		}
 		ret = append(ret, risk)
 	}
@@ -478,15 +478,15 @@ func (e *Engine) ExpectMargins(
 }
 
 func (m marginChange) Amount() *num.Uint {
-	if m.transfer == nil {
+	if m.transferInstruction == nil {
 		return nil
 	}
-	return m.transfer.Amount.Amount.Clone()
+	return m.transferInstruction.Amount.Amount.Clone()
 }
 
-// Transfer - it's actually part of the embedded interface already, but we have to mask it, because this type contains another transfer.
-func (m marginChange) Transfer() *types.Transfer {
-	return m.transfer
+// TransferInstruction - it's actually part of the embedded interface already, but we have to mask it, because this type contains another transfer.
+func (m marginChange) TransferInstruction() *types.TransferInstruction {
+	return m.transferInstruction
 }
 
 func (m marginChange) MarginLevels() *types.MarginLevels {

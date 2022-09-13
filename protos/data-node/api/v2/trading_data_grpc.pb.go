@@ -76,10 +76,10 @@ type TradingDataServiceClient interface {
 	//
 	// Get Market Data History for a Market ID between given dates using a cursor based pagination model
 	GetMarketDataHistoryByID(ctx context.Context, in *GetMarketDataHistoryByIDRequest, opts ...grpc.CallOption) (*GetMarketDataHistoryByIDResponse, error)
-	// Transfers list
+	// Transfer instructions list
 	//
-	// List Transfers to/from/either a public key using a cursor based pagination model
-	ListTransfers(ctx context.Context, in *ListTransfersRequest, opts ...grpc.CallOption) (*ListTransfersResponse, error)
+	// List Transfer instructions to/from/either a public key using a cursor based pagination model
+	ListTransferInstructions(ctx context.Context, in *ListTransferInstructionsRequest, opts ...grpc.CallOption) (*ListTransferInstructionsResponse, error)
 	// Network Limits
 	//
 	// Get the current network limits (is bootstrapping finished, are proposals enabled etc..)
@@ -271,10 +271,10 @@ type TradingDataServiceClient interface {
 	//
 	// Subscribe to a stream of events from the core
 	ObserveEventBus(ctx context.Context, opts ...grpc.CallOption) (TradingDataService_ObserveEventBusClient, error)
-	// Transfer Responses
+	// TransferInstruction Responses
 	//
-	// Subscribe to a stream of Transfer Responses
-	ObserveTransferResponses(ctx context.Context, in *ObserveTransferResponsesRequest, opts ...grpc.CallOption) (TradingDataService_ObserveTransferResponsesClient, error)
+	// Subscribe to a stream of TransferInstruction Responses
+	ObserveTransferInstructionResponses(ctx context.Context, in *ObserveTransferInstructionResponsesRequest, opts ...grpc.CallOption) (TradingDataService_ObserveTransferInstructionResponsesClient, error)
 	// Key Rotations list
 	//
 	// List all key rotation applied for a given party
@@ -588,9 +588,9 @@ func (c *tradingDataServiceClient) GetMarketDataHistoryByID(ctx context.Context,
 	return out, nil
 }
 
-func (c *tradingDataServiceClient) ListTransfers(ctx context.Context, in *ListTransfersRequest, opts ...grpc.CallOption) (*ListTransfersResponse, error) {
-	out := new(ListTransfersResponse)
-	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListTransfers", in, out, opts...)
+func (c *tradingDataServiceClient) ListTransferInstructions(ctx context.Context, in *ListTransferInstructionsRequest, opts ...grpc.CallOption) (*ListTransferInstructionsResponse, error) {
+	out := new(ListTransferInstructionsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListTransferInstructions", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1271,12 +1271,12 @@ func (x *tradingDataServiceObserveEventBusClient) Recv() (*ObserveEventBusRespon
 	return m, nil
 }
 
-func (c *tradingDataServiceClient) ObserveTransferResponses(ctx context.Context, in *ObserveTransferResponsesRequest, opts ...grpc.CallOption) (TradingDataService_ObserveTransferResponsesClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[15], "/datanode.api.v2.TradingDataService/ObserveTransferResponses", opts...)
+func (c *tradingDataServiceClient) ObserveTransferInstructionResponses(ctx context.Context, in *ObserveTransferInstructionResponsesRequest, opts ...grpc.CallOption) (TradingDataService_ObserveTransferInstructionResponsesClient, error) {
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[15], "/datanode.api.v2.TradingDataService/ObserveTransferInstructionResponses", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &tradingDataServiceObserveTransferResponsesClient{stream}
+	x := &tradingDataServiceObserveTransferInstructionResponsesClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -1286,17 +1286,17 @@ func (c *tradingDataServiceClient) ObserveTransferResponses(ctx context.Context,
 	return x, nil
 }
 
-type TradingDataService_ObserveTransferResponsesClient interface {
-	Recv() (*ObserveTransferResponsesResponse, error)
+type TradingDataService_ObserveTransferInstructionResponsesClient interface {
+	Recv() (*ObserveTransferInstructionResponsesResponse, error)
 	grpc.ClientStream
 }
 
-type tradingDataServiceObserveTransferResponsesClient struct {
+type tradingDataServiceObserveTransferInstructionResponsesClient struct {
 	grpc.ClientStream
 }
 
-func (x *tradingDataServiceObserveTransferResponsesClient) Recv() (*ObserveTransferResponsesResponse, error) {
-	m := new(ObserveTransferResponsesResponse)
+func (x *tradingDataServiceObserveTransferInstructionResponsesClient) Recv() (*ObserveTransferInstructionResponsesResponse, error) {
+	m := new(ObserveTransferInstructionResponsesResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -1388,10 +1388,10 @@ type TradingDataServiceServer interface {
 	//
 	// Get Market Data History for a Market ID between given dates using a cursor based pagination model
 	GetMarketDataHistoryByID(context.Context, *GetMarketDataHistoryByIDRequest) (*GetMarketDataHistoryByIDResponse, error)
-	// Transfers list
+	// Transfer instructions list
 	//
-	// List Transfers to/from/either a public key using a cursor based pagination model
-	ListTransfers(context.Context, *ListTransfersRequest) (*ListTransfersResponse, error)
+	// List Transfer instructions to/from/either a public key using a cursor based pagination model
+	ListTransferInstructions(context.Context, *ListTransferInstructionsRequest) (*ListTransferInstructionsResponse, error)
 	// Network Limits
 	//
 	// Get the current network limits (is bootstrapping finished, are proposals enabled etc..)
@@ -1583,10 +1583,10 @@ type TradingDataServiceServer interface {
 	//
 	// Subscribe to a stream of events from the core
 	ObserveEventBus(TradingDataService_ObserveEventBusServer) error
-	// Transfer Responses
+	// TransferInstruction Responses
 	//
-	// Subscribe to a stream of Transfer Responses
-	ObserveTransferResponses(*ObserveTransferResponsesRequest, TradingDataService_ObserveTransferResponsesServer) error
+	// Subscribe to a stream of TransferInstruction Responses
+	ObserveTransferInstructionResponses(*ObserveTransferInstructionResponsesRequest, TradingDataService_ObserveTransferInstructionResponsesServer) error
 	// Key Rotations list
 	//
 	// List all key rotation applied for a given party
@@ -1657,8 +1657,8 @@ func (UnimplementedTradingDataServiceServer) ObserveMarketsData(*ObserveMarketsD
 func (UnimplementedTradingDataServiceServer) GetMarketDataHistoryByID(context.Context, *GetMarketDataHistoryByIDRequest) (*GetMarketDataHistoryByIDResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetMarketDataHistoryByID not implemented")
 }
-func (UnimplementedTradingDataServiceServer) ListTransfers(context.Context, *ListTransfersRequest) (*ListTransfersResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListTransfers not implemented")
+func (UnimplementedTradingDataServiceServer) ListTransferInstructions(context.Context, *ListTransferInstructionsRequest) (*ListTransferInstructionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListTransferInstructions not implemented")
 }
 func (UnimplementedTradingDataServiceServer) GetNetworkLimits(context.Context, *GetNetworkLimitsRequest) (*GetNetworkLimitsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetNetworkLimits not implemented")
@@ -1816,8 +1816,8 @@ func (UnimplementedTradingDataServiceServer) GetRiskFactors(context.Context, *Ge
 func (UnimplementedTradingDataServiceServer) ObserveEventBus(TradingDataService_ObserveEventBusServer) error {
 	return status.Errorf(codes.Unimplemented, "method ObserveEventBus not implemented")
 }
-func (UnimplementedTradingDataServiceServer) ObserveTransferResponses(*ObserveTransferResponsesRequest, TradingDataService_ObserveTransferResponsesServer) error {
-	return status.Errorf(codes.Unimplemented, "method ObserveTransferResponses not implemented")
+func (UnimplementedTradingDataServiceServer) ObserveTransferInstructionResponses(*ObserveTransferInstructionResponsesRequest, TradingDataService_ObserveTransferInstructionResponsesServer) error {
+	return status.Errorf(codes.Unimplemented, "method ObserveTransferInstructionResponses not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ListKeyRotations(context.Context, *ListKeyRotationsRequest) (*ListKeyRotationsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListKeyRotations not implemented")
@@ -2165,20 +2165,20 @@ func _TradingDataService_GetMarketDataHistoryByID_Handler(srv interface{}, ctx c
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TradingDataService_ListTransfers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListTransfersRequest)
+func _TradingDataService_ListTransferInstructions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTransferInstructionsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TradingDataServiceServer).ListTransfers(ctx, in)
+		return srv.(TradingDataServiceServer).ListTransferInstructions(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/datanode.api.v2.TradingDataService/ListTransfers",
+		FullMethod: "/datanode.api.v2.TradingDataService/ListTransferInstructions",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingDataServiceServer).ListTransfers(ctx, req.(*ListTransfersRequest))
+		return srv.(TradingDataServiceServer).ListTransferInstructions(ctx, req.(*ListTransferInstructionsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -3151,24 +3151,24 @@ func (x *tradingDataServiceObserveEventBusServer) Recv() (*ObserveEventBusReques
 	return m, nil
 }
 
-func _TradingDataService_ObserveTransferResponses_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(ObserveTransferResponsesRequest)
+func _TradingDataService_ObserveTransferInstructionResponses_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ObserveTransferInstructionResponsesRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(TradingDataServiceServer).ObserveTransferResponses(m, &tradingDataServiceObserveTransferResponsesServer{stream})
+	return srv.(TradingDataServiceServer).ObserveTransferInstructionResponses(m, &tradingDataServiceObserveTransferInstructionResponsesServer{stream})
 }
 
-type TradingDataService_ObserveTransferResponsesServer interface {
-	Send(*ObserveTransferResponsesResponse) error
+type TradingDataService_ObserveTransferInstructionResponsesServer interface {
+	Send(*ObserveTransferInstructionResponsesResponse) error
 	grpc.ServerStream
 }
 
-type tradingDataServiceObserveTransferResponsesServer struct {
+type tradingDataServiceObserveTransferInstructionResponsesServer struct {
 	grpc.ServerStream
 }
 
-func (x *tradingDataServiceObserveTransferResponsesServer) Send(m *ObserveTransferResponsesResponse) error {
+func (x *tradingDataServiceObserveTransferInstructionResponsesServer) Send(m *ObserveTransferInstructionResponsesResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -3278,8 +3278,8 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TradingDataService_GetMarketDataHistoryByID_Handler,
 		},
 		{
-			MethodName: "ListTransfers",
-			Handler:    _TradingDataService_ListTransfers_Handler,
+			MethodName: "ListTransferInstructions",
+			Handler:    _TradingDataService_ListTransferInstructions_Handler,
 		},
 		{
 			MethodName: "GetNetworkLimits",
@@ -3544,8 +3544,8 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 		{
-			StreamName:    "ObserveTransferResponses",
-			Handler:       _TradingDataService_ObserveTransferResponses_Handler,
+			StreamName:    "ObserveTransferInstructionResponses",
+			Handler:       _TradingDataService_ObserveTransferInstructionResponses_Handler,
 			ServerStreams: true,
 		},
 	},

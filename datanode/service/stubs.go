@@ -18,23 +18,23 @@ import (
 )
 
 type (
-	Asset              struct{ *sqlstore.Assets }
-	Block              struct{ *sqlstore.Blocks }
-	Party              struct{ *sqlstore.Parties }
-	NetworkLimits      struct{ *sqlstore.NetworkLimits }
-	Epoch              struct{ *sqlstore.Epochs }
-	Deposit            struct{ *sqlstore.Deposits }
-	Withdrawal         struct{ *sqlstore.Withdrawals }
-	RiskFactor         struct{ *sqlstore.RiskFactors }
-	NetworkParameter   struct{ *sqlstore.NetworkParameters }
-	Checkpoint         struct{ *sqlstore.Checkpoints }
-	OracleSpec         struct{ *sqlstore.OracleSpec }
-	OracleData         struct{ *sqlstore.OracleData }
-	LiquidityProvision struct{ *sqlstore.LiquidityProvision }
-	Transfer           struct{ *sqlstore.Transfers }
-	StakeLinking       struct{ *sqlstore.StakeLinking }
-	Notary             struct{ *sqlstore.Notary }
-	MultiSig           struct {
+	Asset               struct{ *sqlstore.Assets }
+	Block               struct{ *sqlstore.Blocks }
+	Party               struct{ *sqlstore.Parties }
+	NetworkLimits       struct{ *sqlstore.NetworkLimits }
+	Epoch               struct{ *sqlstore.Epochs }
+	Deposit             struct{ *sqlstore.Deposits }
+	Withdrawal          struct{ *sqlstore.Withdrawals }
+	RiskFactor          struct{ *sqlstore.RiskFactors }
+	NetworkParameter    struct{ *sqlstore.NetworkParameters }
+	Checkpoint          struct{ *sqlstore.Checkpoints }
+	OracleSpec          struct{ *sqlstore.OracleSpec }
+	OracleData          struct{ *sqlstore.OracleData }
+	LiquidityProvision  struct{ *sqlstore.LiquidityProvision }
+	TransferInstruction struct{ *sqlstore.TransferInstructions }
+	StakeLinking        struct{ *sqlstore.StakeLinking }
+	Notary              struct{ *sqlstore.Notary }
+	MultiSig            struct {
 		*sqlstore.ERC20MultiSigSignerEvent
 	}
 )
@@ -96,8 +96,8 @@ func NewLiquidityProvision(store *sqlstore.LiquidityProvision, log *logging.Logg
 	return &LiquidityProvision{LiquidityProvision: store}
 }
 
-func NewTransfer(store *sqlstore.Transfers, log *logging.Logger) *Transfer {
-	return &Transfer{Transfers: store}
+func NewTransferInstruction(store *sqlstore.TransferInstructions, log *logging.Logger) *TransferInstruction {
+	return &TransferInstruction{TransferInstructions: store}
 }
 
 func NewStakeLinking(store *sqlstore.StakeLinking, log *logging.Logger) *StakeLinking {

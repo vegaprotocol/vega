@@ -327,16 +327,16 @@ func (r *VegaResolverRoot) Statistics() StatisticsResolver {
 	return (*statisticsResolver)(r)
 }
 
-func (r *VegaResolverRoot) Transfer() TransferResolver {
-	return (*transferResolver)(r)
+func (r *VegaResolverRoot) TransferInstruction() TransferInstructionResolver {
+	return (*transferInstructionResolver)(r)
 }
 
-func (r *VegaResolverRoot) OneOffTransfer() OneOffTransferResolver {
-	return (*oneoffTransferResolver)(r)
+func (r *VegaResolverRoot) OneOffTransferInstruction() OneOffTransferInstructionResolver {
+	return (*oneoffTransferInstructionResolver)(r)
 }
 
-func (r *VegaResolverRoot) RecurringTransfer() RecurringTransferResolver {
-	return (*recurringTransferResolver)(r)
+func (r *VegaResolverRoot) RecurringTransferInstruction() RecurringTransferInstructionResolver {
+	return (*recurringTransferInstructionResolver)(r)
 }
 
 func (r *VegaResolverRoot) UpdateMarketConfiguration() UpdateMarketConfigurationResolver {
@@ -407,9 +407,9 @@ func (r *myDepositResolver) CreditedTimestamp(ctx context.Context, obj *types.De
 type myQueryResolver VegaResolverRoot
 
 // Deprecated: Use TransfersConnection instead.
-func (r *myQueryResolver) Transfers(
+func (r *myQueryResolver) TransferInstructions(
 	ctx context.Context, pubkey string, isFrom *bool, isTo *bool,
-) ([]*eventspb.Transfer, error) {
+) ([]*eventspb.TransferInstruction, error) {
 	from := false
 	to := false
 
@@ -421,7 +421,7 @@ func (r *myQueryResolver) Transfers(
 		to = *isTo
 	}
 
-	response, err := r.tradingDataClient.Transfers(ctx, &protoapi.TransfersRequest{
+	response, err := r.tradingDataClient.TransferInstructions(ctx, &protoapi.TransferInstructionsRequest{
 		Pubkey: pubkey,
 		IsFrom: from,
 		IsTo:   to,
@@ -430,13 +430,13 @@ func (r *myQueryResolver) Transfers(
 		return nil, err
 	}
 
-	return response.Transfers, nil
+	return response.TransferInstructions, nil
 }
 
-func (r *myQueryResolver) TransfersConnection(ctx context.Context, partyID *string, direction *TransferDirection,
+func (r *myQueryResolver) TransferInstructionsConnection(ctx context.Context, partyID *string, direction *TransferInstructionDirection,
 	pagination *v2.Pagination,
-) (*v2.TransferConnection, error) {
-	return r.r.transfersConnection(ctx, partyID, direction, pagination)
+) (*v2.TransferInstructionConnection, error) {
+	return r.r.transferInstructionsConnection(ctx, partyID, direction, pagination)
 }
 
 func (r *myQueryResolver) LastBlockHeight(ctx context.Context) (string, error) {
@@ -1312,13 +1312,13 @@ func (r *myPartyResolver) Rewards(
 	return resp.Rewards, err
 }
 
-func (r *myPartyResolver) TransfersConnection(
+func (r *myPartyResolver) TransferInstructionsConnection(
 	ctx context.Context,
 	party *types.Party,
-	direction *TransferDirection,
+	direction *TransferInstructionDirection,
 	pagination *v2.Pagination,
-) (*v2.TransferConnection, error) {
-	return r.r.transfersConnection(ctx, &party.Id, direction, pagination)
+) (*v2.TransferInstructionConnection, error) {
+	return r.r.transferInstructionsConnection(ctx, &party.Id, direction, pagination)
 }
 
 func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *types.Party, assetID *string, pagination *v2.Pagination) (*v2.RewardsConnection, error) {

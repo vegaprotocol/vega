@@ -31,15 +31,15 @@ func (f *FinancialAmount) Clone() *FinancialAmount {
 	return &cpy
 }
 
-type Transfer struct {
+type TransferInstruction struct {
 	Owner     string
 	Amount    *FinancialAmount
-	Type      TransferType
+	Type      TransferInstructionType
 	MinAmount *num.Uint
 	Market    string
 }
 
-func (t *Transfer) Clone() *Transfer {
+func (t *TransferInstruction) Clone() *TransferInstruction {
 	cpy := *t
 	cpy.Amount = t.Amount.Clone()
 	cpy.MinAmount = t.MinAmount.Clone()
@@ -47,24 +47,24 @@ func (t *Transfer) Clone() *Transfer {
 }
 
 // Merge creates a new Transfer.
-func (t *Transfer) Merge(oth *Transfer) *Transfer {
+func (t *TransferInstruction) Merge(oth *TransferInstruction) *TransferInstruction {
 	if t.Owner != oth.Owner {
-		panic(fmt.Sprintf("invalid transfer merge, different owner specified, this should never happen: %v, %v", t.String(), oth.String()))
+		panic(fmt.Sprintf("invalid transfer instruction merge, different owner specified, this should never happen: %v, %v", t.String(), oth.String()))
 	}
 
 	if t.Amount.Asset != oth.Amount.Asset {
-		panic(fmt.Sprintf("invalid transfer merge, different assets specified, this should never happen: %v, %v", t.String(), oth.String()))
+		panic(fmt.Sprintf("invalid transfer instruction merge, different assets specified, this should never happen: %v, %v", t.String(), oth.String()))
 	}
 
 	if t.Type != oth.Type {
-		panic(fmt.Sprintf("invalid transfer merge, different types specified, this should never happen: %v, %v", t.String(), oth.String()))
+		panic(fmt.Sprintf("invalid transfer instruction merge, different types specified, this should never happen: %v, %v", t.String(), oth.String()))
 	}
 
 	if t.Market != oth.Market {
-		panic(fmt.Sprintf("invalid transfer merge, different markets specified, this should never happen: %v, %v", t.String(), oth.String()))
+		panic(fmt.Sprintf("invalid transfer instruction merge, different markets specified, this should never happen: %v, %v", t.String(), oth.String()))
 	}
 
-	return &Transfer{
+	return &TransferInstruction{
 		Owner: t.Owner,
 		Amount: &FinancialAmount{
 			Asset:  t.Amount.Asset,
@@ -103,8 +103,8 @@ func FinancialAmountFromProto(p *proto.FinancialAmount) (*FinancialAmount, error
 	}, nil
 }
 
-func (t *Transfer) IntoProto() *proto.Transfer {
-	return &proto.Transfer{
+func (t *TransferInstruction) IntoProto() *proto.TransferInstruction {
+	return &proto.TransferInstruction{
 		Owner:     t.Owner,
 		Amount:    t.Amount.IntoProto(),
 		Type:      t.Type,
@@ -113,7 +113,7 @@ func (t *Transfer) IntoProto() *proto.Transfer {
 	}
 }
 
-func TransferFromProto(p *proto.Transfer) (*Transfer, error) {
+func TransferFromProto(p *proto.TransferInstruction) (*TransferInstruction, error) {
 	amount, err := FinancialAmountFromProto(p.Amount)
 	if err != nil {
 		return nil, err
@@ -124,7 +124,7 @@ func TransferFromProto(p *proto.Transfer) (*Transfer, error) {
 		return nil, errors.New("invalid min amount")
 	}
 
-	return &Transfer{
+	return &TransferInstruction{
 		Owner:     p.Owner,
 		Amount:    amount,
 		Type:      p.Type,
@@ -133,7 +133,7 @@ func TransferFromProto(p *proto.Transfer) (*Transfer, error) {
 	}, nil
 }
 
-func (t *Transfer) String() string {
+func (t *TransferInstruction) String() string {
 	return fmt.Sprintf(
 		"owner(%s) amount(%s) type(%s) minAmount(%s)",
 		t.Owner,
@@ -143,53 +143,53 @@ func (t *Transfer) String() string {
 	)
 }
 
-type TransferType = proto.TransferType
+type TransferInstructionType = proto.TransferInstructionType
 
 const (
 	// Default value, always invalid.
-	TransferTypeUnspecified TransferType = proto.TransferType_TRANSFER_TYPE_UNSPECIFIED
+	TransferInstructionTypeUnspecified TransferInstructionType = proto.TransferInstructionType_TRANSFER_INSTRUCTION_TYPE_UNSPECIFIED
 	// Loss.
-	TransferTypeLoss TransferType = proto.TransferType_TRANSFER_TYPE_LOSS
+	TransferInstructionTypeLoss TransferInstructionType = proto.TransferInstructionType_TRANSFER_INSTRUCTION_TYPE_LOSS
 	// Win.
-	TransferTypeWin TransferType = proto.TransferType_TRANSFER_TYPE_WIN
+	TransferInstructionTypeWin TransferInstructionType = proto.TransferInstructionType_TRANSFER_INSTRUCTION_TYPE_WIN
 	// Close.
-	TransferTypeClose TransferType = proto.TransferType_TRANSFER_TYPE_CLOSE
+	TransferInstructionTypeClose TransferInstructionType = proto.TransferInstructionType_TRANSFER_INSTRUCTION_TYPE_CLOSE
 	// Mark to market loss.
-	TransferTypeMTMLoss TransferType = proto.TransferType_TRANSFER_TYPE_MTM_LOSS
+	TransferInstructionTypeMTMLoss TransferInstructionType = proto.TransferInstructionType_TRANSFER_INSTRUCTION_TYPE_MTM_LOSS
 	// Mark to market win.
-	TransferTypeMTMWin TransferType = proto.TransferType_TRANSFER_TYPE_MTM_WIN
+	TransferInstructionTypeMTMWin TransferInstructionType = proto.TransferInstructionType_TRANSFER_INSTRUCTION_TYPE_MTM_WIN
 	// Margin too low.
-	TransferTypeMarginLow TransferType = proto.TransferType_TRANSFER_TYPE_MARGIN_LOW
+	TransferInstructionTypeMarginLow TransferInstructionType = proto.TransferInstructionType_TRANSFER_INSTRUCTION_TYPE_MARGIN_LOW
 	// Margin too high.
-	TransferTypeMarginHigh TransferType = proto.TransferType_TRANSFER_TYPE_MARGIN_HIGH
+	TransferInstructionTypeMarginHigh TransferInstructionType = proto.TransferInstructionType_TRANSFER_INSTRUCTION_TYPE_MARGIN_HIGH
 	// Margin was confiscated.
-	TransferTypeMarginConfiscated TransferType = proto.TransferType_TRANSFER_TYPE_MARGIN_CONFISCATED
+	TransferInstructionTypeMarginConfiscated TransferInstructionType = proto.TransferInstructionType_TRANSFER_INSTRUCTION_TYPE_MARGIN_CONFISCATED
 	// Pay maker fee.
-	TransferTypeMakerFeePay TransferType = proto.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY
+	TransferInstructionTypeMakerFeePay TransferInstructionType = proto.TransferInstructionType_TRANSFER_INSTRUCTION_TYPE_MAKER_FEE_PAY
 	// Receive maker fee.
-	TransferTypeMakerFeeReceive TransferType = proto.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE
+	TransferInstructionTypeMakerFeeReceive TransferInstructionType = proto.TransferInstructionType_TRANSFER_INSTRUCTION_TYPE_MAKER_FEE_RECEIVE
 	// Pay infrastructure fee.
-	TransferTypeInfrastructureFeePay TransferType = proto.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY
+	TransferInstructionTypeInfrastructureFeePay TransferInstructionType = proto.TransferInstructionType_TRANSFER_INSTRUCTION_TYPE_INFRASTRUCTURE_FEE_PAY
 	// Receive infrastructure fee.
-	TransferTypeInfrastructureFeeDistribute TransferType = proto.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_DISTRIBUTE
+	TransferInstructionTypeInfrastructureFeeDistribute TransferInstructionType = proto.TransferInstructionType_TRANSFER_INSTRUCTION_TYPE_INFRASTRUCTURE_FEE_DISTRIBUTE
 	// Pay liquidity fee.
-	TransferTypeLiquidityFeePay TransferType = proto.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY
+	TransferInstructionTypeLiquidityFeePay TransferInstructionType = proto.TransferInstructionType_TRANSFER_INSTRUCTION_TYPE_LIQUIDITY_FEE_PAY
 	// Receive liquidity fee.
-	TransferTypeLiquidityFeeDistribute TransferType = proto.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_DISTRIBUTE
+	TransferInstructionTypeLiquidityFeeDistribute TransferInstructionType = proto.TransferInstructionType_TRANSFER_INSTRUCTION_TYPE_LIQUIDITY_FEE_DISTRIBUTE
 	// Bond too low.
-	TransferTypeBondLow TransferType = proto.TransferType_TRANSFER_TYPE_BOND_LOW
+	TransferInstructionTypeBondLow TransferInstructionType = proto.TransferInstructionType_TRANSFER_INSTRUCTION_TYPE_BOND_LOW
 	// Bond too high.
-	TransferTypeBondHigh TransferType = proto.TransferType_TRANSFER_TYPE_BOND_HIGH
+	TransferInstructionTypeBondHigh TransferInstructionType = proto.TransferInstructionType_TRANSFER_INSTRUCTION_TYPE_BOND_HIGH
 	// Lock amount for withdraw.
-	TransferTypeWithdrawLock TransferType = proto.TransferType_TRANSFER_TYPE_WITHDRAW_LOCK
+	TransferInstructionTypeWithdrawLock TransferInstructionType = proto.TransferInstructionType_TRANSFER_INSTRUCTION_TYPE_WITHDRAW_LOCK
 	// Actual withdraw from system.
-	TransferTypeWithdraw TransferType = proto.TransferType_TRANSFER_TYPE_WITHDRAW
+	TransferInstructionTypeWithdraw TransferInstructionType = proto.TransferInstructionType_TRANSFER_INSTRUCTION_TYPE_WITHDRAW
 	// Deposit funds.
-	TransferTypeDeposit TransferType = proto.TransferType_TRANSFER_TYPE_DEPOSIT
+	TransferInstructionTypeDeposit TransferInstructionType = proto.TransferInstructionType_TRANSFER_INSTRUCTION_TYPE_DEPOSIT
 	// Bond slashing.
-	TransferTypeBondSlashing TransferType = proto.TransferType_TRANSFER_TYPE_BOND_SLASHING
+	TransferInstructionTypeBondSlashing TransferInstructionType = proto.TransferInstructionType_TRANSFER_INSTRUCTION_TYPE_BOND_SLASHING
 	// Stake reward.
-	TransferTypeRewardPayout            TransferType = proto.TransferType_TRANSFER_TYPE_STAKE_REWARD
-	TransferTypeTransferFundsSend       TransferType = proto.TransferType_TRANSFER_TYPE_TRANSFER_FUNDS_SEND
-	TransferTypeTransferFundsDistribute TransferType = proto.TransferType_TRANSFER_TYPE_TRANSFER_FUNDS_DISTRIBUTE
+	TransferInstructionTypeRewardPayout            TransferInstructionType = proto.TransferInstructionType_TRANSFER_INSTRUCTION_TYPE_STAKE_REWARD
+	TransferInstructionTypeTransferFundsSend       TransferInstructionType = proto.TransferInstructionType_TRANSFER_INSTRUCTION_TYPE_TRANSFER_FUNDS_SEND
+	TransferInstructionTypeTransferFundsDistribute TransferInstructionType = proto.TransferInstructionType_TRANSFER_INSTRUCTION_TYPE_TRANSFER_FUNDS_DISTRIBUTE
 )

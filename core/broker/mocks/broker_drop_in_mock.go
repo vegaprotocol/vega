@@ -135,7 +135,7 @@ func (b *MockBroker) GetLastByTypeAndID(t events.Type, id string) events.Event {
 // no real point to filtering by ID.
 // Not implemented yet, but worth considering:
 //   - Trade
-//   - TransferResponse
+//   - TransferInstructionResponse
 //
 // Implemented events:
 //   - Order (by order ID)

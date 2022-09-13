@@ -136,8 +136,8 @@ type TradingDataServiceClient interface {
 	PositionsSubscribe(ctx context.Context, in *PositionsSubscribeRequest, opts ...grpc.CallOption) (TradingDataService_PositionsSubscribeClient, error)
 	// Subscribe to a stream of Trades
 	TradesSubscribe(ctx context.Context, in *TradesSubscribeRequest, opts ...grpc.CallOption) (TradingDataService_TradesSubscribeClient, error)
-	// Subscribe to a stream of Transfer Responses
-	TransferResponsesSubscribe(ctx context.Context, in *TransferResponsesSubscribeRequest, opts ...grpc.CallOption) (TradingDataService_TransferResponsesSubscribeClient, error)
+	// Subscribe to a stream of TransferInstructon Responses
+	TransferInstructionResponsesSubscribe(ctx context.Context, in *TransferInstructionResponsesSubscribeRequest, opts ...grpc.CallOption) (TradingDataService_TransferInstructionResponsesSubscribeClient, error)
 	// Get an aggregate of signatures from all the nodes of the network
 	GetNodeSignaturesAggregate(ctx context.Context, in *GetNodeSignaturesAggregateRequest, opts ...grpc.CallOption) (*GetNodeSignaturesAggregateResponse, error)
 	// Get an asset by its identifier
@@ -183,7 +183,7 @@ type TradingDataServiceClient interface {
 	// subscribe to delegation events
 	ObserveDelegations(ctx context.Context, in *ObserveDelegationsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveDelegationsClient, error)
 	PartyStake(ctx context.Context, in *PartyStakeRequest, opts ...grpc.CallOption) (*PartyStakeResponse, error)
-	Transfers(ctx context.Context, in *TransfersRequest, opts ...grpc.CallOption) (*TransfersResponse, error)
+	TransferInstructions(ctx context.Context, in *TransferInstructionsRequest, opts ...grpc.CallOption) (*TransferInstructionsResponse, error)
 	// Get Risk Factor data for a given market
 	GetRiskFactors(ctx context.Context, in *GetRiskFactorsRequest, opts ...grpc.CallOption) (*GetRiskFactorsResponse, error)
 }
@@ -1012,12 +1012,12 @@ func (x *tradingDataServiceTradesSubscribeClient) Recv() (*TradesSubscribeRespon
 	return m, nil
 }
 
-func (c *tradingDataServiceClient) TransferResponsesSubscribe(ctx context.Context, in *TransferResponsesSubscribeRequest, opts ...grpc.CallOption) (TradingDataService_TransferResponsesSubscribeClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[14], "/datanode.api.v1.TradingDataService/TransferResponsesSubscribe", opts...)
+func (c *tradingDataServiceClient) TransferInstructionResponsesSubscribe(ctx context.Context, in *TransferInstructionResponsesSubscribeRequest, opts ...grpc.CallOption) (TradingDataService_TransferInstructionResponsesSubscribeClient, error) {
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[14], "/datanode.api.v1.TradingDataService/TransferInstructionResponsesSubscribe", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &tradingDataServiceTransferResponsesSubscribeClient{stream}
+	x := &tradingDataServiceTransferInstructionResponsesSubscribeClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -1027,17 +1027,17 @@ func (c *tradingDataServiceClient) TransferResponsesSubscribe(ctx context.Contex
 	return x, nil
 }
 
-type TradingDataService_TransferResponsesSubscribeClient interface {
-	Recv() (*TransferResponsesSubscribeResponse, error)
+type TradingDataService_TransferInstructionResponsesSubscribeClient interface {
+	Recv() (*TransferInstructionResponsesSubscribeResponse, error)
 	grpc.ClientStream
 }
 
-type tradingDataServiceTransferResponsesSubscribeClient struct {
+type tradingDataServiceTransferInstructionResponsesSubscribeClient struct {
 	grpc.ClientStream
 }
 
-func (x *tradingDataServiceTransferResponsesSubscribeClient) Recv() (*TransferResponsesSubscribeResponse, error) {
-	m := new(TransferResponsesSubscribeResponse)
+func (x *tradingDataServiceTransferInstructionResponsesSubscribeClient) Recv() (*TransferInstructionResponsesSubscribeResponse, error) {
+	m := new(TransferInstructionResponsesSubscribeResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -1297,9 +1297,9 @@ func (c *tradingDataServiceClient) PartyStake(ctx context.Context, in *PartyStak
 	return out, nil
 }
 
-func (c *tradingDataServiceClient) Transfers(ctx context.Context, in *TransfersRequest, opts ...grpc.CallOption) (*TransfersResponse, error) {
-	out := new(TransfersResponse)
-	err := c.cc.Invoke(ctx, "/datanode.api.v1.TradingDataService/Transfers", in, out, opts...)
+func (c *tradingDataServiceClient) TransferInstructions(ctx context.Context, in *TransferInstructionsRequest, opts ...grpc.CallOption) (*TransferInstructionsResponse, error) {
+	out := new(TransferInstructionsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v1.TradingDataService/TransferInstructions", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1433,8 +1433,8 @@ type TradingDataServiceServer interface {
 	PositionsSubscribe(*PositionsSubscribeRequest, TradingDataService_PositionsSubscribeServer) error
 	// Subscribe to a stream of Trades
 	TradesSubscribe(*TradesSubscribeRequest, TradingDataService_TradesSubscribeServer) error
-	// Subscribe to a stream of Transfer Responses
-	TransferResponsesSubscribe(*TransferResponsesSubscribeRequest, TradingDataService_TransferResponsesSubscribeServer) error
+	// Subscribe to a stream of TransferInstructon Responses
+	TransferInstructionResponsesSubscribe(*TransferInstructionResponsesSubscribeRequest, TradingDataService_TransferInstructionResponsesSubscribeServer) error
 	// Get an aggregate of signatures from all the nodes of the network
 	GetNodeSignaturesAggregate(context.Context, *GetNodeSignaturesAggregateRequest) (*GetNodeSignaturesAggregateResponse, error)
 	// Get an asset by its identifier
@@ -1480,7 +1480,7 @@ type TradingDataServiceServer interface {
 	// subscribe to delegation events
 	ObserveDelegations(*ObserveDelegationsRequest, TradingDataService_ObserveDelegationsServer) error
 	PartyStake(context.Context, *PartyStakeRequest) (*PartyStakeResponse, error)
-	Transfers(context.Context, *TransfersRequest) (*TransfersResponse, error)
+	TransferInstructions(context.Context, *TransferInstructionsRequest) (*TransferInstructionsResponse, error)
 	// Get Risk Factor data for a given market
 	GetRiskFactors(context.Context, *GetRiskFactorsRequest) (*GetRiskFactorsResponse, error)
 	mustEmbedUnimplementedTradingDataServiceServer()
@@ -1655,8 +1655,8 @@ func (UnimplementedTradingDataServiceServer) PositionsSubscribe(*PositionsSubscr
 func (UnimplementedTradingDataServiceServer) TradesSubscribe(*TradesSubscribeRequest, TradingDataService_TradesSubscribeServer) error {
 	return status.Errorf(codes.Unimplemented, "method TradesSubscribe not implemented")
 }
-func (UnimplementedTradingDataServiceServer) TransferResponsesSubscribe(*TransferResponsesSubscribeRequest, TradingDataService_TransferResponsesSubscribeServer) error {
-	return status.Errorf(codes.Unimplemented, "method TransferResponsesSubscribe not implemented")
+func (UnimplementedTradingDataServiceServer) TransferInstructionResponsesSubscribe(*TransferInstructionResponsesSubscribeRequest, TradingDataService_TransferInstructionResponsesSubscribeServer) error {
+	return status.Errorf(codes.Unimplemented, "method TransferInstructionResponsesSubscribe not implemented")
 }
 func (UnimplementedTradingDataServiceServer) GetNodeSignaturesAggregate(context.Context, *GetNodeSignaturesAggregateRequest) (*GetNodeSignaturesAggregateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetNodeSignaturesAggregate not implemented")
@@ -1727,8 +1727,8 @@ func (UnimplementedTradingDataServiceServer) ObserveDelegations(*ObserveDelegati
 func (UnimplementedTradingDataServiceServer) PartyStake(context.Context, *PartyStakeRequest) (*PartyStakeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PartyStake not implemented")
 }
-func (UnimplementedTradingDataServiceServer) Transfers(context.Context, *TransfersRequest) (*TransfersResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Transfers not implemented")
+func (UnimplementedTradingDataServiceServer) TransferInstructions(context.Context, *TransferInstructionsRequest) (*TransferInstructionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TransferInstructions not implemented")
 }
 func (UnimplementedTradingDataServiceServer) GetRiskFactors(context.Context, *GetRiskFactorsRequest) (*GetRiskFactorsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRiskFactors not implemented")
@@ -2783,24 +2783,24 @@ func (x *tradingDataServiceTradesSubscribeServer) Send(m *TradesSubscribeRespons
 	return x.ServerStream.SendMsg(m)
 }
 
-func _TradingDataService_TransferResponsesSubscribe_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(TransferResponsesSubscribeRequest)
+func _TradingDataService_TransferInstructionResponsesSubscribe_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(TransferInstructionResponsesSubscribeRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(TradingDataServiceServer).TransferResponsesSubscribe(m, &tradingDataServiceTransferResponsesSubscribeServer{stream})
+	return srv.(TradingDataServiceServer).TransferInstructionResponsesSubscribe(m, &tradingDataServiceTransferInstructionResponsesSubscribeServer{stream})
 }
 
-type TradingDataService_TransferResponsesSubscribeServer interface {
-	Send(*TransferResponsesSubscribeResponse) error
+type TradingDataService_TransferInstructionResponsesSubscribeServer interface {
+	Send(*TransferInstructionResponsesSubscribeResponse) error
 	grpc.ServerStream
 }
 
-type tradingDataServiceTransferResponsesSubscribeServer struct {
+type tradingDataServiceTransferInstructionResponsesSubscribeServer struct {
 	grpc.ServerStream
 }
 
-func (x *tradingDataServiceTransferResponsesSubscribeServer) Send(m *TransferResponsesSubscribeResponse) error {
+func (x *tradingDataServiceTransferInstructionResponsesSubscribeServer) Send(m *TransferInstructionResponsesSubscribeResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -3224,20 +3224,20 @@ func _TradingDataService_PartyStake_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TradingDataService_Transfers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TransfersRequest)
+func _TradingDataService_TransferInstructions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TransferInstructionsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TradingDataServiceServer).Transfers(ctx, in)
+		return srv.(TradingDataServiceServer).TransferInstructions(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/datanode.api.v1.TradingDataService/Transfers",
+		FullMethod: "/datanode.api.v1.TradingDataService/TransferInstructions",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingDataServiceServer).Transfers(ctx, req.(*TransfersRequest))
+		return srv.(TradingDataServiceServer).TransferInstructions(ctx, req.(*TransferInstructionsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -3516,8 +3516,8 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TradingDataService_PartyStake_Handler,
 		},
 		{
-			MethodName: "Transfers",
-			Handler:    _TradingDataService_Transfers_Handler,
+			MethodName: "TransferInstructions",
+			Handler:    _TradingDataService_TransferInstructions_Handler,
 		},
 		{
 			MethodName: "GetRiskFactors",
@@ -3597,8 +3597,8 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 		{
-			StreamName:    "TransferResponsesSubscribe",
-			Handler:       _TradingDataService_TransferResponsesSubscribe_Handler,
+			StreamName:    "TransferInstructionResponsesSubscribe",
+			Handler:       _TradingDataService_TransferInstructionResponsesSubscribe_Handler,
 			ServerStreams: true,
 		},
 		{

@@ -77,14 +77,14 @@ func UnmarshalProposalState(v interface{}) (vega.Proposal_State, error) {
 	return vega.Proposal_State(side), nil
 }
 
-func MarshalTransferStatus(s eventspb.Transfer_Status) graphql.Marshaler {
+func MarshalTransferInstructionStatus(s eventspb.TransferInstruction_Status) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
 		w.Write([]byte(strconv.Quote(s.String())))
 	})
 }
 
-func UnmarshalTransferStatus(v interface{}) (eventspb.Transfer_Status, error) {
-	return eventspb.Transfer_STATUS_UNSPECIFIED, ErrUnimplemented
+func UnmarshalTransferInstructionStatus(v interface{}) (eventspb.TransferInstruction_Status, error) {
+	return eventspb.TransferInstruction_STATUS_UNSPECIFIED, ErrUnimplemented
 }
 
 func MarshalDispatchMetric(s vega.DispatchMetric) graphql.Marshaler {

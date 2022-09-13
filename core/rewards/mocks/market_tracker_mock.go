@@ -50,7 +50,7 @@ func (mr *MockMarketActivityTrackerMockRecorder) GetAllMarketIDs() *gomock.Call 
 }
 
 // GetFeePartyScores mocks base method.
-func (m *MockMarketActivityTracker) GetFeePartyScores(arg0 string, arg1 vega.TransferType) []*types.PartyContibutionScore {
+func (m *MockMarketActivityTracker) GetFeePartyScores(arg0 string, arg1 vega.TransferInstructionType) []*types.PartyContibutionScore {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetFeePartyScores", arg0, arg1)
 	ret0, _ := ret[0].([]*types.PartyContibutionScore)

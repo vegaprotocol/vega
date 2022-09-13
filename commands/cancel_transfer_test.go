@@ -8,30 +8,30 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNilCancelTransferFails(t *testing.T) {
-	err := checkCancelTransfer(nil)
+func TestNilCancelTransferInstructionFails(t *testing.T) {
+	err := checkCancelTransferInstruction(nil)
 
-	assert.Contains(t, err.Get("cancel_transfer"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("cancel_transfer_instruction"), commands.ErrIsRequired)
 }
 
-func TestCancelTransfer(t *testing.T) {
+func TestCancelTransferInstruction(t *testing.T) {
 	cases := []struct {
-		ctransfer commandspb.CancelTransfer
+		ctransfer commandspb.CancelTransferInstruction
 		errString string
 	}{
 		{
-			ctransfer: commandspb.CancelTransfer{
-				TransferId: "18f8b607aad9ef2cd57f2d233766b0c576b27a3e0c50c9db713c00e518c0bbdc",
+			ctransfer: commandspb.CancelTransferInstruction{
+				TransferInstructionId: "18f8b607aad9ef2cd57f2d233766b0c576b27a3e0c50c9db713c00e518c0bbdc",
 			},
 		},
 		{
-			ctransfer: commandspb.CancelTransfer{},
-			errString: "cancel_transfer.transfer_id (is required)",
+			ctransfer: commandspb.CancelTransferInstruction{},
+			errString: "cancel_transfer_instruction.transfer_id (is required)",
 		},
 	}
 
 	for _, c := range cases {
-		err := commands.CheckCancelTransfer(&c.ctransfer)
+		err := commands.CheckCancelTransferInstruction(&c.ctransfer)
 		if len(c.errString) <= 0 {
 			assert.NoError(t, err)
 			continue
@@ -40,8 +40,8 @@ func TestCancelTransfer(t *testing.T) {
 	}
 }
 
-func checkCancelTransfer(cmd *commandspb.CancelTransfer) commands.Errors {
-	err := commands.CheckCancelTransfer(cmd)
+func checkCancelTransferInstruction(cmd *commandspb.CancelTransferInstruction) commands.Errors {
+	err := commands.CheckCancelTransferInstruction(cmd)
 
 	e, ok := err.(commands.Errors)
 	if !ok {

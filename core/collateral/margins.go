@@ -30,7 +30,7 @@ type marginUpdate struct {
 	marginShortFall *num.Uint
 }
 
-func (n marginUpdate) Transfer() *types.Transfer {
+func (n marginUpdate) Transfer() *types.TransferInstruction {
 	return nil
 }
 

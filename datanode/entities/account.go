@@ -56,7 +56,7 @@ func AccountFromProto(va *vega.Account, txHash TxHash) (Account, error) {
 // asset id, account type) with '!' indicating no market, and "*" indicating the system owner party.
 // (see collateral/engine.go). It's a bit unfortunate that this internal detail leaks out of core,
 // but it's required for now as it's the only way we can extract all the required account information
-// out of an TransferResponse message.
+// out of an TransferInstructionResponse message.
 func AccountFromAccountID(id string, txHash TxHash) (Account, error) {
 	var a Account
 	var offset int

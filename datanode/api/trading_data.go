@@ -66,7 +66,7 @@ type tradingDataService struct {
 	oracleDataService         *service.OracleData
 	liquidityProvisionService *service.LiquidityProvision
 	positionService           *service.Position
-	transferService           *service.Transfer
+	transferService           *service.TransferInstruction
 	stakeLinkingService       *service.StakeLinking
 	notaryService             *service.Notary
 	keyRotationService        *service.KeyRotations
@@ -82,9 +82,9 @@ var defaultEntityPagination = entities.OffsetPagination{
 }
 
 /****************************** Ledger **************************************/
-// TransferResponsesSubscribe opens a subscription to transfer response data provided by the transfer response service.
-func (t *tradingDataService) TransferResponsesSubscribe(
-	_ *protoapi.TransferResponsesSubscribeRequest, srv protoapi.TradingDataService_TransferResponsesSubscribeServer,
+// TransferInstructionResponsesSubscribe opens a subscription to transfer instruction response data provided by the transfer response service.
+func (t *tradingDataService) TransferInstructionResponsesSubscribe(
+	_ *protoapi.TransferInstructionResponsesSubscribeRequest, srv protoapi.TradingDataService_TransferInstructionResponsesSubscribeServer,
 ) error {
 	// Wrap context from the request into cancellable. We can close internal chan in error.
 	ctx, cancel := context.WithCancel(srv.Context())
@@ -93,11 +93,11 @@ func (t *tradingDataService) TransferResponsesSubscribe(
 	transferResponsesChan, ref := t.ledgerService.Observe(ctx, t.Config.StreamRetries)
 
 	if t.log.GetLevel() == logging.DebugLevel {
-		t.log.Debug("TransferResponses subscriber - new rpc stream", logging.Uint64("ref", ref))
+		t.log.Debug("TransferInstructionResponses subscriber - new rpc stream", logging.Uint64("ref", ref))
 	}
 
-	return observe(ctx, t.log, "TransferResponse", transferResponsesChan, ref, func(tr *vega.TransferResponse) error {
-		return srv.Send(&protoapi.TransferResponsesSubscribeResponse{
+	return observe(ctx, t.log, "TransferInstructionResponse", transferResponsesChan, ref, func(tr *vega.TransferInstructionResponse) error {
+		return srv.Send(&protoapi.TransferInstructionResponsesSubscribeResponse{
 			Response: tr,
 		})
 	})
@@ -323,7 +323,7 @@ func (t *tradingDataService) Checkpoints(ctx context.Context, _ *protoapi.Checkp
 
 /****************************** Transfers **************************************/
 
-func (t *tradingDataService) Transfers(ctx context.Context, req *protoapi.TransfersRequest) (*protoapi.TransfersResponse, error) {
+func (t *tradingDataService) Transfers(ctx context.Context, req *protoapi.TransferInstructionsRequest) (*protoapi.TransferInstructionsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("Transfers-SQL")()
 
 	if len(req.Pubkey) <= 0 && (req.IsFrom || req.IsTo) {
@@ -334,7 +334,7 @@ func (t *tradingDataService) Transfers(ctx context.Context, req *protoapi.Transf
 		return nil, apiError(codes.InvalidArgument, errors.New("request is for transfers to and from the same party"))
 	}
 
-	var transfers []entities.Transfer
+	var transfers []entities.TransferInstruction
 	var err error
 	if !req.IsFrom && !req.IsTo {
 		transfers, _, err = t.transferService.GetAll(ctx, entities.CursorPagination{})
@@ -343,21 +343,21 @@ func (t *tradingDataService) Transfers(ctx context.Context, req *protoapi.Transf
 		}
 	} else if req.IsFrom || req.IsTo {
 		if req.IsFrom {
-			transfers, _, err = t.transferService.GetTransfersFromParty(ctx, entities.PartyID(req.Pubkey), entities.CursorPagination{})
+			transfers, _, err = t.transferService.GetTransferInstructionsFromParty(ctx, entities.PartyID(req.Pubkey), entities.CursorPagination{})
 			if err != nil {
 				return nil, apiError(codes.Internal, err)
 			}
 		}
 
 		if req.IsTo {
-			transfers, _, err = t.transferService.GetTransfersToParty(ctx, entities.PartyID(req.Pubkey), entities.CursorPagination{})
+			transfers, _, err = t.transferService.GetTransferInstructionsToParty(ctx, entities.PartyID(req.Pubkey), entities.CursorPagination{})
 			if err != nil {
 				return nil, apiError(codes.Internal, err)
 			}
 		}
 	}
 
-	protoTransfers := make([]*eventspb.Transfer, 0, len(transfers))
+	protoTransfers := make([]*eventspb.TransferInstruction, 0, len(transfers))
 	for _, transfer := range transfers {
 		proto, err := transfer.ToProto(t.accountService)
 		if err != nil {
@@ -366,8 +366,8 @@ func (t *tradingDataService) Transfers(ctx context.Context, req *protoapi.Transf
 		protoTransfers = append(protoTransfers, proto)
 	}
 
-	return &protoapi.TransfersResponse{
-		Transfers: protoTransfers,
+	return &protoapi.TransferInstructionsResponse{
+		TransferInstructions: protoTransfers,
 	}, nil
 }
 

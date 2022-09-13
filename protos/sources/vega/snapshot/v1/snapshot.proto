@@ -107,8 +107,8 @@ message Payload {
     LiquidityTarget liquidity_target = 44;
     FloatingPointConsensus floating_point_consensus = 46;
     MarketTracker market_tracker = 47;
-    BankingRecurringTransfers banking_recurring_transfers = 49;
-    BankingScheduledTransfers banking_scheduled_transfers = 50;
+    BankingRecurringTransferInstructions banking_recurring_transfer_instructions = 49;
+    BankingScheduledTransferInstructions banking_scheduled_transfer_instructions = 50;
     ERC20MultiSigTopologyVerified erc20_multisig_topology_verified = 51;
     ERC20MultiSigTopologyPending erc20_multisig_topology_pending = 52;
     ProofOfWork proof_of_work = 53;
@@ -243,12 +243,12 @@ message BankingAssetActions {
   repeated AssetAction asset_action = 1;
 }
 
-message BankingRecurringTransfers {
-  vega.checkpoint.v1.RecurringTransfers recurring_tranfers = 1;
+message BankingRecurringTransferInstructions {
+  vega.checkpoint.v1.RecurringTransferInstructions recurring_tranfer_instructions = 1;
 }
 
-message BankingScheduledTransfers {
-  repeated vega.checkpoint.v1.ScheduledTransferAtTime transfers_at_time = 1;
+message BankingScheduledTransferInstructions {
+  repeated vega.checkpoint.v1.ScheduledTransferInstructionAtTime transfer_instructions_at_time = 1;
 }
 
 message BankingBridgeState {

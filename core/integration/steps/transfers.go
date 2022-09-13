@@ -32,8 +32,8 @@ func PartiesSubmitTransfers(
 	errs := []error{}
 	for _, r := range parseOneOffTransferTable(table) {
 		transfer, _ := rowToOneOffTransfer(r)
-		err := engine.TransferFunds(context.Background(), &types.TransferFunds{
-			Kind:   types.TransferCommandKindOneOff,
+		err := engine.TransferFunds(context.Background(), &types.TransferInstructionFunds{
+			Kind:   types.TransferInstructionCommandKindOneOff,
 			OneOff: transfer,
 		})
 		if len(r.Str("error")) > 0 || err != nil {
@@ -59,7 +59,7 @@ func parseOneOffTransferTable(table *godog.Table) []RowWrapper {
 	}, []string{"market", "error"})
 }
 
-func rowToOneOffTransfer(r RowWrapper) (*types.OneOffTransfer, error) {
+func rowToOneOffTransfer(r RowWrapper) (*types.OneOffTransferInstruction, error) {
 	id := r.MustStr("id")
 	from := r.MustStr("from")
 	fromAccountType := r.MustStr("from_account_type")
@@ -75,8 +75,8 @@ func rowToOneOffTransfer(r RowWrapper) (*types.OneOffTransfer, error) {
 		return nil, err
 	}
 
-	oneOff := &types.OneOffTransfer{
-		TransferBase: &types.TransferBase{
+	oneOff := &types.OneOffTransferInstruction{
+		TransferInstructionBase: &types.TransferInstructionBase{
 			ID:              id,
 			From:            from,
 			FromAccountType: types.AccountType(fromAT),
@@ -97,8 +97,8 @@ func PartiesSubmitRecurringTransfers(
 	errs := []error{}
 	for _, r := range parseRecurringTransferTable(table) {
 		transfer, _ := rowToRecurringTransfer(r)
-		err := engine.TransferFunds(context.Background(), &types.TransferFunds{
-			Kind:      types.TransferCommandKindRecurring,
+		err := engine.TransferFunds(context.Background(), &types.TransferInstructionFunds{
+			Kind:      types.TransferInstructionCommandKindRecurring,
 			Recurring: transfer,
 		})
 		if len(r.Str("error")) > 0 || err != nil {
@@ -124,7 +124,7 @@ func parseRecurringTransferTable(table *godog.Table) []RowWrapper {
 	}, []string{"metric", "metric_asset", "markets", "error"})
 }
 
-func rowToRecurringTransfer(r RowWrapper) (*types.RecurringTransfer, error) {
+func rowToRecurringTransfer(r RowWrapper) (*types.RecurringTransferInstruction, error) {
 	id := r.MustStr("id")
 	from := r.MustStr("from")
 	fromAccountType := r.MustStr("from_account_type")
@@ -158,8 +158,8 @@ func rowToRecurringTransfer(r RowWrapper) (*types.RecurringTransfer, error) {
 	}
 
 	factor := num.MustDecimalFromString(r.MustStr("factor"))
-	recurring := &types.RecurringTransfer{
-		TransferBase: &types.TransferBase{
+	recurring := &types.RecurringTransferInstruction{
+		TransferInstructionBase: &types.TransferInstructionBase{
 			ID:              id,
 			From:            from,
 			FromAccountType: types.AccountType(fromAT),
@@ -182,7 +182,7 @@ func PartiesCancelTransfers(
 ) error {
 	errs := []error{}
 	for _, r := range parseOneOffCancellationTable(table) {
-		err := engine.CancelTransferFunds(context.Background(), &types.CancelTransferFunds{
+		err := engine.CancelTransferFunds(context.Background(), &types.CancelTransferInstructionFunds{
 			Party:      r.MustStr("party"),
 			TransferID: r.MustStr("transfer_id"),
 		})

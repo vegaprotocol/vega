@@ -23,34 +23,34 @@ import (
 
 var ErrUnsupportedTransferKind = errors.New("unsupported transfer kind")
 
-type transferResolver VegaResolverRoot
+type transferInstructionResolver VegaResolverRoot
 
-func (r *transferResolver) Asset(ctx context.Context, obj *eventspb.Transfer) (*vega.Asset, error) {
+func (r *transferInstructionResolver) Asset(ctx context.Context, obj *eventspb.TransferInstruction) (*vega.Asset, error) {
 	return r.r.getAssetByID(ctx, obj.Asset)
 }
 
-func (r *transferResolver) Timestamp(ctx context.Context, obj *eventspb.Transfer) (string, error) {
+func (r *transferInstructionResolver) Timestamp(ctx context.Context, obj *eventspb.TransferInstruction) (string, error) {
 	return vegatime.Format(vegatime.UnixNano(obj.Timestamp)), nil
 }
 
-func (r *transferResolver) Kind(ctx context.Context, obj *eventspb.Transfer) (TransferKind, error) {
+func (r *transferInstructionResolver) Kind(ctx context.Context, obj *eventspb.TransferInstruction) (TransferInstructionKind, error) {
 	switch obj.GetKind().(type) {
-	case *eventspb.Transfer_OneOff:
+	case *eventspb.TransferInstruction_OneOff:
 		return obj.GetOneOff(), nil
-	case *eventspb.Transfer_Recurring:
+	case *eventspb.TransferInstruction_Recurring:
 		return obj.GetRecurring(), nil
 	default:
 		return nil, ErrUnsupportedTransferKind
 	}
 }
 
-type recurringTransferResolver VegaResolverRoot
+type recurringTransferInstructionResolver VegaResolverRoot
 
-func (r *recurringTransferResolver) StartEpoch(ctx context.Context, obj *eventspb.RecurringTransfer) (int, error) {
+func (r *recurringTransferInstructionResolver) StartEpoch(ctx context.Context, obj *eventspb.RecurringTransferInstruction) (int, error) {
 	return int(obj.StartEpoch), nil
 }
 
-func (r *recurringTransferResolver) EndEpoch(ctx context.Context, obj *eventspb.RecurringTransfer) (*int, error) {
+func (r *recurringTransferInstructionResolver) EndEpoch(ctx context.Context, obj *eventspb.RecurringTransferInstruction) (*int, error) {
 	if obj.EndEpoch != nil {
 		i := int(*obj.EndEpoch)
 		return &i, nil
@@ -58,7 +58,7 @@ func (r *recurringTransferResolver) EndEpoch(ctx context.Context, obj *eventspb.
 	return nil, nil
 }
 
-func (r *recurringTransferResolver) DispatchStrategy(ctx context.Context, obj *eventspb.RecurringTransfer) (*DispatchStrategy, error) {
+func (r *recurringTransferInstructionResolver) DispatchStrategy(ctx context.Context, obj *eventspb.RecurringTransferInstruction) (*DispatchStrategy, error) {
 	if obj.DispatchStrategy != nil {
 		return &DispatchStrategy{
 			DispatchMetric:        obj.DispatchStrategy.Metric,
@@ -69,9 +69,9 @@ func (r *recurringTransferResolver) DispatchStrategy(ctx context.Context, obj *e
 	return nil, nil
 }
 
-type oneoffTransferResolver VegaResolverRoot
+type oneoffTransferInstructionResolver VegaResolverRoot
 
-func (r *oneoffTransferResolver) DeliverOn(ctx context.Context, obj *eventspb.OneOffTransfer) (*string, error) {
+func (r *oneoffTransferInstructionResolver) DeliverOn(ctx context.Context, obj *eventspb.OneOffTransferInstruction) (*string, error) {
 	if obj.DeliverOn > 0 {
 		t := vegatime.Format(vegatime.UnixNano(obj.DeliverOn))
 		return &t, nil

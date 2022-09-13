@@ -68,17 +68,17 @@ type Notary interface {
 
 // Collateral engine.
 type Collateral interface {
-	Deposit(ctx context.Context, party, asset string, amount *num.Uint) (*types.TransferResponse, error)
-	Withdraw(ctx context.Context, party, asset string, amount *num.Uint) (*types.TransferResponse, error)
+	Deposit(ctx context.Context, party, asset string, amount *num.Uint) (*types.TransferInstructionResponse, error)
+	Withdraw(ctx context.Context, party, asset string, amount *num.Uint) (*types.TransferInstructionResponse, error)
 	EnableAsset(ctx context.Context, asset types.Asset) error
 	GetPartyGeneralAccount(party, asset string) (*types.Account, error)
 	TransferFunds(ctx context.Context,
-		transfers []*types.Transfer,
+		transfers []*types.TransferInstruction,
 		accountTypes []types.AccountType,
 		references []string,
-		feeTransfers []*types.Transfer,
+		feeTransfers []*types.TransferInstruction,
 		feeTransfersAccountTypes []types.AccountType,
-	) ([]*types.TransferResponse, error)
+	) ([]*types.TransferInstructionResponse, error)
 	PropagateAssetUpdate(ctx context.Context, asset types.Asset) error
 }
 
@@ -141,13 +141,13 @@ type Engine struct {
 	marketActivityTracker MarketActivityTracker
 
 	// transfer fee related stuff
-	scheduledTransfers         map[time.Time][]scheduledTransfer
-	transferFeeFactor          num.Decimal
-	minTransferQuantumMultiple num.Decimal
+	scheduledTransferInstructions map[time.Time][]scheduledTransferInstruction
+	transferFeeFactor             num.Decimal
+	minTransferQuantumMultiple    num.Decimal
 	// recurring transfers in the order they were created
-	recurringTransfers []*types.RecurringTransfer
+	recurringTransferInstructions []*types.RecurringTransferInstruction
 	// transfer id to recurringTransfers
-	recurringTransfersMap map[string]*types.RecurringTransfer
+	recurringTransferInstructionsMap map[string]*types.RecurringTransferInstruction
 
 	bridgeState *bridgeState
 
@@ -196,20 +196,20 @@ func New(
 		deposits:      map[string]*types.Deposit{},
 		withdrawalCnt: big.NewInt(0),
 		bss: &bankingSnapshotState{
-			changedWithdrawals:        true,
-			changedDeposits:           true,
-			changedSeen:               true,
-			changedAssetActions:       true,
-			changedRecurringTransfers: true,
-			changedScheduledTransfers: true,
-			changedBridgeState:        true,
+			changedWithdrawals:                   true,
+			changedDeposits:                      true,
+			changedSeen:                          true,
+			changedAssetActions:                  true,
+			changedRecurringTransferInstructions: true,
+			changedScheduledTransferInstructions: true,
+			changedBridgeState:                   true,
 		},
-		scheduledTransfers:         map[time.Time][]scheduledTransfer{},
-		recurringTransfers:         []*types.RecurringTransfer{},
-		recurringTransfersMap:      map[string]*types.RecurringTransfer{},
-		transferFeeFactor:          num.DecimalZero(),
-		minTransferQuantumMultiple: num.DecimalZero(),
-		marketActivityTracker:      marketActivityTracker,
+		scheduledTransferInstructions:    map[time.Time][]scheduledTransferInstruction{},
+		recurringTransferInstructions:    []*types.RecurringTransferInstruction{},
+		recurringTransferInstructionsMap: map[string]*types.RecurringTransferInstruction{},
+		transferFeeFactor:                num.DecimalZero(),
+		minTransferQuantumMultiple:       num.DecimalZero(),
+		marketActivityTracker:            marketActivityTracker,
 		bridgeState: &bridgeState{
 			active: true,
 		},
@@ -306,7 +306,7 @@ func (e *Engine) OnTick(ctx context.Context, _ time.Time) {
 		types.NodeSignatureKindAssetWithdrawal, e.offerERC20NotarySignatures)
 
 	// then process all scheduledTransfers
-	if err := e.distributeScheduledTransfers(ctx); err != nil {
+	if err := e.distributeScheduledTransferInstructions(ctx); err != nil {
 		e.log.Error("could not process scheduled transfers",
 			logging.Error(err),
 		)
@@ -415,7 +415,7 @@ func (e *Engine) finalizeDeposit(ctx context.Context, d *types.Deposit) error {
 
 	d.Status = types.DepositStatusFinalized
 	d.CreditDate = e.timeService.GetTimeNow().UnixNano()
-	e.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{res}))
+	e.broker.Send(events.NewTransferInstructionResponse(ctx, []*types.TransferInstructionResponse{res}))
 	e.bss.changedDeposits = true
 	return nil
 }
@@ -437,7 +437,7 @@ func (e *Engine) finalizeWithdraw(
 
 	w.Status = types.WithdrawalStatusFinalized
 	e.bss.changedWithdrawals = true
-	e.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{res}))
+	e.broker.Send(events.NewTransferInstructionResponse(ctx, []*types.TransferInstructionResponse{res}))
 	return nil
 }
 

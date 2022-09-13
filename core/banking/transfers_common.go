@@ -34,15 +34,15 @@ func (e *Engine) OnMinTransferQuantumMultiple(ctx context.Context, f num.Decimal
 
 func (e *Engine) TransferFunds(
 	ctx context.Context,
-	transfer *types.TransferFunds,
+	transfer *types.TransferInstructionFunds,
 ) error {
 	now := e.timeService.GetTimeNow()
 	// add timestamps straight away
 	switch transfer.Kind {
-	case types.TransferCommandKindOneOff:
+	case types.TransferInstructionCommandKindOneOff:
 		transfer.OneOff.Timestamp = now
-		return e.oneOffTransfer(ctx, transfer.OneOff)
-	case types.TransferCommandKindRecurring:
+		return e.oneOffTransferInstruction(ctx, transfer.OneOff)
+	case types.TransferInstructionCommandKindRecurring:
 		transfer.Recurring.Timestamp = now
 		return e.recurringTransfer(ctx, transfer.Recurring)
 	default:
@@ -75,8 +75,8 @@ func (e *Engine) processTransfer(
 	reference string,
 	// optional oneoff transfer
 	// in case we need to schedule the delivery
-	oneoff *types.OneOffTransfer,
-) ([]*types.TransferResponse, error) {
+	oneoff *types.OneOffTransferInstruction,
+) ([]*types.TransferInstructionResponse, error) {
 	// ensure the party have enough funds for both the
 	// amount and the fee for the transfer
 	feeTransfer, err := e.ensureFeeForTransferFunds(amount, from, asset, fromAcc)
@@ -86,7 +86,7 @@ func (e *Engine) processTransfer(
 	feeTransferAccountType := []types.AccountType{fromAcc}
 
 	fromTransfer, toTransfer := e.makeTransfers(from, to, asset, market, amount)
-	transfers := []*types.Transfer{fromTransfer}
+	transfers := []*types.TransferInstruction{fromTransfer}
 	accountTypes := []types.AccountType{fromAcc}
 	references := []string{reference}
 
@@ -100,7 +100,7 @@ func (e *Engine) processTransfer(
 		// so we can set it to the proper status
 	} else {
 		// schedule the transfer
-		e.scheduleTransfer(
+		e.scheduleTransferInstruction(
 			oneoff,
 			toTransfer,
 			toAcc,
@@ -111,7 +111,7 @@ func (e *Engine) processTransfer(
 
 	// process the transfer
 	tresps, err := e.col.TransferFunds(
-		ctx, transfers, accountTypes, references, []*types.Transfer{feeTransfer}, feeTransferAccountType,
+		ctx, transfers, accountTypes, references, []*types.TransferInstruction{feeTransfer}, feeTransferAccountType,
 	)
 	if err != nil {
 		return nil, err
@@ -123,23 +123,23 @@ func (e *Engine) processTransfer(
 func (e *Engine) makeTransfers(
 	from, to, asset, market string,
 	amount *num.Uint,
-) (*types.Transfer, *types.Transfer) {
-	return &types.Transfer{
+) (*types.TransferInstruction, *types.TransferInstruction) {
+	return &types.TransferInstruction{
 			Owner: from,
 			Amount: &types.FinancialAmount{
 				Amount: amount.Clone(),
 				Asset:  asset,
 			},
-			Type:      types.TransferTypeTransferFundsSend,
+			Type:      types.TransferInstructionTypeTransferFundsSend,
 			MinAmount: amount.Clone(),
 			Market:    market,
-		}, &types.Transfer{
+		}, &types.TransferInstruction{
 			Owner: to,
 			Amount: &types.FinancialAmount{
 				Amount: amount.Clone(),
 				Asset:  asset,
 			},
-			Type:      types.TransferTypeTransferFundsDistribute,
+			Type:      types.TransferInstructionTypeTransferFundsDistribute,
 			MinAmount: amount.Clone(),
 			Market:    market,
 		}
@@ -149,7 +149,7 @@ func (e *Engine) makeFeeTransferForTransferFunds(
 	amount *num.Uint,
 	from, asset string,
 	fromAccountType types.AccountType,
-) *types.Transfer {
+) *types.TransferInstruction {
 	// first we calculate the fee
 	feeAmount, _ := num.UintFromDecimal(amount.ToDecimal().Mul(e.transferFeeFactor))
 
@@ -163,13 +163,13 @@ func (e *Engine) makeFeeTransferForTransferFunds(
 		)
 	}
 
-	return &types.Transfer{
+	return &types.TransferInstruction{
 		Owner: from,
 		Amount: &types.FinancialAmount{
 			Amount: feeAmount.Clone(),
 			Asset:  asset,
 		},
-		Type:      types.TransferTypeInfrastructureFeePay,
+		Type:      types.TransferInstructionTypeInfrastructureFeePay,
 		MinAmount: feeAmount,
 	}
 }
@@ -178,7 +178,7 @@ func (e *Engine) ensureFeeForTransferFunds(
 	amount *num.Uint,
 	from, asset string,
 	fromAccountType types.AccountType,
-) (*types.Transfer, error) {
+) (*types.TransferInstruction, error) {
 	transfer := e.makeFeeTransferForTransferFunds(
 		amount, from, asset, fromAccountType,
 	)

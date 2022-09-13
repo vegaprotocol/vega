@@ -206,8 +206,8 @@ service TradingDataService {
   // Subscribe to a stream of Trades
   rpc TradesSubscribe(TradesSubscribeRequest) returns (stream TradesSubscribeResponse);
 
-  // Subscribe to a stream of Transfer Responses
-  rpc TransferResponsesSubscribe(TransferResponsesSubscribeRequest) returns (stream TransferResponsesSubscribeResponse);
+  // Subscribe to a stream of TransferInstructon Responses
+  rpc TransferInstructionResponsesSubscribe(TransferInstructionResponsesSubscribeRequest) returns (stream TransferInstructionResponsesSubscribeResponse);
 
   // Get an aggregate of signatures from all the nodes of the network
   rpc GetNodeSignaturesAggregate(GetNodeSignaturesAggregateRequest) returns (GetNodeSignaturesAggregateResponse);
@@ -281,20 +281,20 @@ service TradingDataService {
 
   rpc PartyStake(PartyStakeRequest) returns (PartyStakeResponse);
 
-  rpc Transfers(TransfersRequest) returns (TransfersResponse);
+  rpc TransferInstructions(TransferInstructionsRequest) returns (TransferInstructionsResponse);
 
   // Get Risk Factor data for a given market
   rpc GetRiskFactors(GetRiskFactorsRequest) returns (GetRiskFactorsResponse);
 }
 
-message TransfersRequest {
+message TransferInstructionsRequest {
   string pubkey = 1;
   bool is_from = 2;
   bool is_to = 3;
 }
 
-message TransfersResponse {
-  repeated vega.events.v1.Transfer transfers = 1;
+message TransferInstructionsResponse {
+  repeated vega.events.v1.TransferInstruction transfer_instructions = 1;
 }
 
 // both fields optional but 1 of them required at least
@@ -977,10 +977,10 @@ message TradesSubscribeResponse {
   repeated vega.Trade trades = 1;
 }
 
-message TransferResponsesSubscribeRequest {}
+message TransferInstructionResponsesSubscribeRequest {}
 
-message TransferResponsesSubscribeResponse {
-  vega.TransferResponse response = 1;
+message TransferInstructionResponsesSubscribeResponse {
+  vega.TransferInstructionResponse response = 1;
 }
 
 // Request for a list of accounts for a party

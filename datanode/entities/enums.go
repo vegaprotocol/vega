@@ -216,10 +216,10 @@ const (
 	OrderErrorNonPersistentOrderOutOfPriceBounds OrderError = vega.OrderError_ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS
 )
 
-type TransferType int
+type TransferInstructionType int
 
 const (
-	Unknown TransferType = iota
+	Unknown TransferInstructionType = iota
 	OneOff
 	Recurring
 )
@@ -230,7 +230,7 @@ const (
 	UnknownStr   = "Unknown"
 )
 
-func (m TransferType) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+func (m TransferInstructionType) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
 	mode := UnknownStr
 	switch m {
 	case OneOff:
@@ -242,7 +242,7 @@ func (m TransferType) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error)
 	return append(buf, []byte(mode)...), nil
 }
 
-func (m *TransferType) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+func (m *TransferInstructionType) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
 	val := Unknown
 	switch string(src) {
 	case OneOffStr:
@@ -255,32 +255,32 @@ func (m *TransferType) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
 	return nil
 }
 
-type TransferStatus eventspb.Transfer_Status
+type TransferInstructionStatus eventspb.TransferInstruction_Status
 
 const (
-	TransferStatusUnspecified = TransferStatus(eventspb.Transfer_STATUS_UNSPECIFIED)
-	TransferStatusPending     = TransferStatus(eventspb.Transfer_STATUS_PENDING)
-	TransferStatusDone        = TransferStatus(eventspb.Transfer_STATUS_DONE)
-	TransferStatusRejected    = TransferStatus(eventspb.Transfer_STATUS_REJECTED)
-	TransferStatusStopped     = TransferStatus(eventspb.Transfer_STATUS_STOPPED)
-	TransferStatusCancelled   = TransferStatus(eventspb.Transfer_STATUS_CANCELLED)
+	TransferInstructionStatusUnspecified = TransferInstructionStatus(eventspb.TransferInstruction_STATUS_UNSPECIFIED)
+	TransferInstructionStatusPending     = TransferInstructionStatus(eventspb.TransferInstruction_STATUS_PENDING)
+	TransferInstructionStatusDone        = TransferInstructionStatus(eventspb.TransferInstruction_STATUS_DONE)
+	TransferInstructionStatusRejected    = TransferInstructionStatus(eventspb.TransferInstruction_STATUS_REJECTED)
+	TransferInstructionStatusStopped     = TransferInstructionStatus(eventspb.TransferInstruction_STATUS_STOPPED)
+	TransferInstructionStatusCancelled   = TransferInstructionStatus(eventspb.TransferInstruction_STATUS_CANCELLED)
 )
 
-func (m TransferStatus) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
-	mode, ok := eventspb.Transfer_Status_name[int32(m)]
+func (m TransferInstructionStatus) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	mode, ok := eventspb.TransferInstruction_Status_name[int32(m)]
 	if !ok {
 		return buf, fmt.Errorf("unknown transfer status: %s", mode)
 	}
 	return append(buf, []byte(mode)...), nil
 }
 
-func (m *TransferStatus) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
-	val, ok := eventspb.Transfer_Status_value[string(src)]
+func (m *TransferInstructionStatus) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	val, ok := eventspb.TransferInstruction_Status_value[string(src)]
 	if !ok {
 		return fmt.Errorf("unknown transfer status: %s", src)
 	}
 
-	*m = TransferStatus(val)
+	*m = TransferInstructionStatus(val)
 	return nil
 }
 

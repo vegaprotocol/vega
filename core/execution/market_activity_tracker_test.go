@@ -180,32 +180,32 @@ func TestGetMarketScores(t *testing.T) {
 	require.Equal(t, 0, len(tracker.GetMarketScores("asset2", []string{"market3"}, vgproto.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID)))
 
 	// update with a few transfers
-	transfersM1 := []*types.Transfer{
-		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(100)}},
-		{Owner: "party1", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
-		{Owner: "party1", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
-		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(400)}},
-		{Owner: "party1", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(300)}},
-		{Owner: "party1", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(600)}},
-		{Owner: "party2", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(900)}},
-		{Owner: "party2", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(800)}},
-		{Owner: "party2", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(700)}},
-		{Owner: "party2", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(600)}},
-		{Owner: "party2", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
-		{Owner: "party2", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(1000)}},
+	transfersM1 := []*types.TransferInstruction{
+		{Owner: "party1", Type: types.TransferInstructionTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(100)}},
+		{Owner: "party1", Type: types.TransferInstructionTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
+		{Owner: "party1", Type: types.TransferInstructionTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
+		{Owner: "party1", Type: types.TransferInstructionTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(400)}},
+		{Owner: "party1", Type: types.TransferInstructionTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(300)}},
+		{Owner: "party1", Type: types.TransferInstructionTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(600)}},
+		{Owner: "party2", Type: types.TransferInstructionTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(900)}},
+		{Owner: "party2", Type: types.TransferInstructionTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(800)}},
+		{Owner: "party2", Type: types.TransferInstructionTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(700)}},
+		{Owner: "party2", Type: types.TransferInstructionTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(600)}},
+		{Owner: "party2", Type: types.TransferInstructionTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
+		{Owner: "party2", Type: types.TransferInstructionTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(1000)}},
 	}
 	tracker.UpdateFeesFromTransfers("market1", transfersM1)
 
-	transfersM2 := []*types.Transfer{
-		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(500)}},
-		{Owner: "party2", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(1500)}},
-		{Owner: "party2", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(1500)}},
+	transfersM2 := []*types.TransferInstruction{
+		{Owner: "party1", Type: types.TransferInstructionTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(500)}},
+		{Owner: "party2", Type: types.TransferInstructionTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(1500)}},
+		{Owner: "party2", Type: types.TransferInstructionTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(1500)}},
 	}
 	tracker.UpdateFeesFromTransfers("market2", transfersM2)
 
-	transfersM3 := []*types.Transfer{
-		{Owner: "party1", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset2", Amount: num.NewUint(500)}},
-		{Owner: "party2", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset2", Amount: num.NewUint(450)}},
+	transfersM3 := []*types.TransferInstruction{
+		{Owner: "party1", Type: types.TransferInstructionTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset2", Amount: num.NewUint(500)}},
+		{Owner: "party2", Type: types.TransferInstructionTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset2", Amount: num.NewUint(450)}},
 	}
 	tracker.UpdateFeesFromTransfers("market3", transfersM3)
 
@@ -430,7 +430,7 @@ func TestFeesTracker(t *testing.T) {
 	tracker := execution.NewMarketActivityTracker(logging.NewTestLogger(), epochEngine)
 	epochEngine.target(context.Background(), types.Epoch{Seq: 1})
 
-	partyScores := tracker.GetFeePartyScores("does not exist", types.TransferTypeMakerFeeReceive)
+	partyScores := tracker.GetFeePartyScores("does not exist", types.TransferInstructionTypeMakerFeeReceive)
 	require.Equal(t, 0, len(partyScores))
 
 	key := (&types.PayloadMarketActivityTracker{}).Key()
@@ -441,63 +441,63 @@ func TestFeesTracker(t *testing.T) {
 	tracker.MarketProposed("asset1", "market2", "me2")
 
 	// update with a few transfers
-	transfersM1 := []*types.Transfer{
-		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(100)}},
-		{Owner: "party1", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
-		{Owner: "party1", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
-		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(400)}},
-		{Owner: "party1", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(300)}},
-		{Owner: "party1", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(600)}},
-		{Owner: "party2", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(900)}},
-		{Owner: "party2", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(800)}},
-		{Owner: "party2", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(700)}},
-		{Owner: "party2", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(600)}},
-		{Owner: "party2", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
-		{Owner: "party2", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(1000)}},
+	transfersM1 := []*types.TransferInstruction{
+		{Owner: "party1", Type: types.TransferInstructionTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(100)}},
+		{Owner: "party1", Type: types.TransferInstructionTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
+		{Owner: "party1", Type: types.TransferInstructionTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
+		{Owner: "party1", Type: types.TransferInstructionTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(400)}},
+		{Owner: "party1", Type: types.TransferInstructionTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(300)}},
+		{Owner: "party1", Type: types.TransferInstructionTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(600)}},
+		{Owner: "party2", Type: types.TransferInstructionTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(900)}},
+		{Owner: "party2", Type: types.TransferInstructionTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(800)}},
+		{Owner: "party2", Type: types.TransferInstructionTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(700)}},
+		{Owner: "party2", Type: types.TransferInstructionTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(600)}},
+		{Owner: "party2", Type: types.TransferInstructionTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
+		{Owner: "party2", Type: types.TransferInstructionTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(1000)}},
 	}
 	tracker.UpdateFeesFromTransfers("market1", transfersM1)
 
-	transfersM2 := []*types.Transfer{
-		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset2", Amount: num.NewUint(150)}},
-		{Owner: "party2", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset2", Amount: num.NewUint(150)}},
+	transfersM2 := []*types.TransferInstruction{
+		{Owner: "party1", Type: types.TransferInstructionTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset2", Amount: num.NewUint(150)}},
+		{Owner: "party2", Type: types.TransferInstructionTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset2", Amount: num.NewUint(150)}},
 	}
 	tracker.UpdateFeesFromTransfers("market2", transfersM2)
 
-	// asset1, types.TransferTypeMakerFeeReceive
+	// asset1, types.TransferInstructionTypeMakerFeeReceive
 	// party1 received 500
 	// party2 received 1500
-	scores := tracker.GetFeePartyScores("market1", types.TransferTypeMakerFeeReceive)
+	scores := tracker.GetFeePartyScores("market1", types.TransferInstructionTypeMakerFeeReceive)
 	require.Equal(t, "0.25", scores[0].Score.String())
 	require.Equal(t, "party1", scores[0].Party)
 	require.Equal(t, "0.75", scores[1].Score.String())
 	require.Equal(t, "party2", scores[1].Party)
 
-	// asset1 TransferTypeMakerFeePay
+	// asset1 TransferInstructionTypeMakerFeePay
 	// party1 paid 500
 	// party2 paid 1000
-	scores = tracker.GetFeePartyScores("market1", types.TransferTypeMakerFeePay)
+	scores = tracker.GetFeePartyScores("market1", types.TransferInstructionTypeMakerFeePay)
 	require.Equal(t, "0.3333333333333333", scores[0].Score.String())
 	require.Equal(t, "party1", scores[0].Party)
 	require.Equal(t, "0.6666666666666667", scores[1].Score.String())
 	require.Equal(t, "party2", scores[1].Party)
 
-	// asset1 TransferTypeLiquidityFeeDistribute
+	// asset1 TransferInstructionTypeLiquidityFeeDistribute
 	// party1 paid 800
 	// party2 paid 1700
-	scores = tracker.GetFeePartyScores("market1", types.TransferTypeLiquidityFeeDistribute)
+	scores = tracker.GetFeePartyScores("market1", types.TransferInstructionTypeLiquidityFeeDistribute)
 	require.Equal(t, "0.32", scores[0].Score.String())
 	require.Equal(t, "party1", scores[0].Party)
 	require.Equal(t, "0.68", scores[1].Score.String())
 	require.Equal(t, "party2", scores[1].Party)
 
-	// asset2 TransferTypeMakerFeePay
-	scores = tracker.GetFeePartyScores("market2", types.TransferTypeMakerFeeReceive)
+	// asset2 TransferInstructionTypeMakerFeePay
+	scores = tracker.GetFeePartyScores("market2", types.TransferInstructionTypeMakerFeeReceive)
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "1", scores[0].Score.String())
 	require.Equal(t, "party1", scores[0].Party)
 
-	// asset2 TransferTypeMakerFeePay
-	scores = tracker.GetFeePartyScores("market2", types.TransferTypeMakerFeePay)
+	// asset2 TransferInstructionTypeMakerFeePay
+	scores = tracker.GetFeePartyScores("market2", types.TransferInstructionTypeMakerFeePay)
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "1", scores[0].Score.String())
 	require.Equal(t, "party2", scores[0].Party)
@@ -520,7 +520,7 @@ func TestFeesTracker(t *testing.T) {
 	require.True(t, bytes.Equal(state2, state3))
 
 	// check a restored party exist in the restored engine
-	scores = trackerLoad.GetFeePartyScores("market2", types.TransferTypeMakerFeeReceive)
+	scores = trackerLoad.GetFeePartyScores("market2", types.TransferInstructionTypeMakerFeeReceive)
 	require.Equal(t, 1, len(scores))
 	require.Equal(t, "1", scores[0].Score.String())
 	require.Equal(t, "party1", scores[0].Party)
@@ -532,7 +532,7 @@ func TestFeesTracker(t *testing.T) {
 	require.False(t, bytes.Equal(state3, state4))
 
 	// new epoch, we expect the metrics to have been reset
-	for _, metric := range []types.TransferType{types.TransferTypeMakerFeePay, types.TransferTypeMakerFeeReceive, types.TransferTypeLiquidityFeeDistribute} {
+	for _, metric := range []types.TransferInstructionType{types.TransferInstructionTypeMakerFeePay, types.TransferInstructionTypeMakerFeeReceive, types.TransferInstructionTypeLiquidityFeeDistribute} {
 		require.Equal(t, 0, len(trackerLoad.GetFeePartyScores("market1", metric)))
 		require.Equal(t, 0, len(trackerLoad.GetFeePartyScores("market2", metric)))
 	}
@@ -581,32 +581,32 @@ func setupDefaultTrackerForTest(t *testing.T) *execution.MarketActivityTracker {
 	tracker.MarketProposed("asset2", "market3", "me3")
 
 	// update with a few transfers
-	transfersM1 := []*types.Transfer{
-		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(100)}},
-		{Owner: "party1", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
-		{Owner: "party1", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
-		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(400)}},
-		{Owner: "party1", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(300)}},
-		{Owner: "party1", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(600)}},
-		{Owner: "party2", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(900)}},
-		{Owner: "party2", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(800)}},
-		{Owner: "party2", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(700)}},
-		{Owner: "party2", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(600)}},
-		{Owner: "party2", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
-		{Owner: "party2", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(1000)}},
+	transfersM1 := []*types.TransferInstruction{
+		{Owner: "party1", Type: types.TransferInstructionTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(100)}},
+		{Owner: "party1", Type: types.TransferInstructionTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
+		{Owner: "party1", Type: types.TransferInstructionTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
+		{Owner: "party1", Type: types.TransferInstructionTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(400)}},
+		{Owner: "party1", Type: types.TransferInstructionTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(300)}},
+		{Owner: "party1", Type: types.TransferInstructionTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(600)}},
+		{Owner: "party2", Type: types.TransferInstructionTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(900)}},
+		{Owner: "party2", Type: types.TransferInstructionTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(800)}},
+		{Owner: "party2", Type: types.TransferInstructionTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(700)}},
+		{Owner: "party2", Type: types.TransferInstructionTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(600)}},
+		{Owner: "party2", Type: types.TransferInstructionTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
+		{Owner: "party2", Type: types.TransferInstructionTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(1000)}},
 	}
 	tracker.UpdateFeesFromTransfers("market1", transfersM1)
 
-	transfersM2 := []*types.Transfer{
-		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(500)}},
-		{Owner: "party2", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(1500)}},
-		{Owner: "party2", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(1500)}},
+	transfersM2 := []*types.TransferInstruction{
+		{Owner: "party1", Type: types.TransferInstructionTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(500)}},
+		{Owner: "party2", Type: types.TransferInstructionTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(1500)}},
+		{Owner: "party2", Type: types.TransferInstructionTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(1500)}},
 	}
 	tracker.UpdateFeesFromTransfers("market2", transfersM2)
 
-	transfersM3 := []*types.Transfer{
-		{Owner: "party1", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset2", Amount: num.NewUint(500)}},
-		{Owner: "party2", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset2", Amount: num.NewUint(450)}},
+	transfersM3 := []*types.TransferInstruction{
+		{Owner: "party1", Type: types.TransferInstructionTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset2", Amount: num.NewUint(500)}},
+		{Owner: "party2", Type: types.TransferInstructionTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset2", Amount: num.NewUint(450)}},
 	}
 	tracker.UpdateFeesFromTransfers("market3", transfersM3)
 	return tracker
@@ -656,18 +656,18 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 	trackerLoad.MarketProposed("asset1", "market5", "meeeee")
 	trackerLoad.MarketProposed("asset2", "market6", "meeeeeee")
 
-	transfersM5 := []*types.Transfer{
-		{Owner: "party3", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(100)}},
-		{Owner: "party3", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
-		{Owner: "party3", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
+	transfersM5 := []*types.TransferInstruction{
+		{Owner: "party3", Type: types.TransferInstructionTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(100)}},
+		{Owner: "party3", Type: types.TransferInstructionTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
+		{Owner: "party3", Type: types.TransferInstructionTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
 	}
 	tracker.UpdateFeesFromTransfers("market5", transfersM5)
 	trackerLoad.UpdateFeesFromTransfers("market5", transfersM5)
 
-	transfersM6 := []*types.Transfer{
-		{Owner: "party4", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset2", Amount: num.NewUint(500)}},
-		{Owner: "party4", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset2", Amount: num.NewUint(1500)}},
-		{Owner: "party4", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset2", Amount: num.NewUint(1500)}},
+	transfersM6 := []*types.TransferInstruction{
+		{Owner: "party4", Type: types.TransferInstructionTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset2", Amount: num.NewUint(500)}},
+		{Owner: "party4", Type: types.TransferInstructionTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset2", Amount: num.NewUint(1500)}},
+		{Owner: "party4", Type: types.TransferInstructionTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset2", Amount: num.NewUint(1500)}},
 	}
 	tracker.UpdateFeesFromTransfers("market6", transfersM6)
 	trackerLoad.UpdateFeesFromTransfers("market6", transfersM6)
