@@ -83,7 +83,7 @@ func (h *SendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) 
 		return nil, internalError(ErrCouldNotSendTransaction)
 	}
 	if !approved {
-		return nil, clientRejectionError()
+		return nil, userRejectionError()
 	}
 
 	currentNode, err := h.nodeSelector.Node(ctx)

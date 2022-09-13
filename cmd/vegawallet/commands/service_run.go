@@ -438,7 +438,7 @@ func handleEnvelop(envelop pipeline.Envelope, responseChan chan<- pipeline.Envel
 			str := p.String().DangerBangMark().DangerText("An internal error occurred: ").DangerText(content.Error).NextLine()
 			str.DangerBangMark().DangerText("The request has been canceled.").NextSection()
 			p.Print(str)
-		} else if content.Type == string(walletapi.ClientError) {
+		} else if content.Type == string(walletapi.UserError) {
 			p.Print(p.String().DangerBangMark().DangerText(content.Error).NextLine())
 		} else {
 			p.Print(p.String().DangerBangMark().DangerText(fmt.Sprintf("Error: %s (%s)", content.Error, content.Type)).NextLine())

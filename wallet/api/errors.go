@@ -22,23 +22,23 @@ const (
 	// that is not permitted to do.
 	ErrorCodeRequestNotPermitted jsonrpc.ErrorCode = 2000
 
-	// Client error codes are errors that results from the client. It ranges
+	// User error codes are errors that results from the user. It ranges
 	// from 2000 to 2999, included.
 
 	// ErrorCodeConnectionHasBeenClosed refers to an interruption of the service triggered
-	// by the client.
+	// by the user.
 	ErrorCodeConnectionHasBeenClosed jsonrpc.ErrorCode = 3000
 
 	// ErrorCodeRequestHasBeenRejected refers to an explicit rejection of a request by the
-	// client.
+	// user.
 	ErrorCodeRequestHasBeenRejected jsonrpc.ErrorCode = 3001
 )
 
 var (
 	ErrCannotRotateKeysOnIsolatedWallet                   = errors.New("cannot rotate keys on an isolated wallet")
 	ErrChainIDIsRequired                                  = errors.New("the chain ID is required")
-	ErrClientRejectedTheRequest                           = errors.New("the client rejected the request")
-	ErrConnectionClosed                                   = errors.New("the client closed the connection")
+	ErrUserRejectedTheRequest                             = errors.New("the user rejected the request")
+	ErrUserCloseTheConnection                             = errors.New("the user closed the connection")
 	ErrConnectionTokenIsRequired                          = errors.New("the connection token is required")
 	ErrCouldNotConnectToWallet                            = errors.New("could not connect to the wallet")
 	ErrCouldNotGetLastBlockInformation                    = errors.New("could not get information about the last block on the network")
@@ -84,16 +84,16 @@ var (
 
 func applicationError(code jsonrpc.ErrorCode, err error) *jsonrpc.ErrorDetails {
 	if code <= -32000 {
-		panic("client error code should be greater than -32000")
+		panic("application error code should be greater than -32000")
 	}
 	return jsonrpc.NewCustomError(code, "Application error", err)
 }
 
-func clientError(code jsonrpc.ErrorCode, err error) *jsonrpc.ErrorDetails {
+func userError(code jsonrpc.ErrorCode, err error) *jsonrpc.ErrorDetails {
 	if code <= -32000 {
-		panic("client error code should be greater than -32000")
+		panic("user error code should be greater than -32000")
 	}
-	return jsonrpc.NewCustomError(code, "Client error", err)
+	return jsonrpc.NewCustomError(code, "User error", err)
 }
 
 func networkError(code jsonrpc.ErrorCode, err error) *jsonrpc.ErrorDetails {
@@ -112,15 +112,15 @@ func requestNotPermittedError(err error) *jsonrpc.ErrorDetails {
 }
 
 func connectionClosedError(err error) *jsonrpc.ErrorDetails {
-	return clientError(ErrorCodeConnectionHasBeenClosed, err)
+	return userError(ErrorCodeConnectionHasBeenClosed, err)
 }
 
 func requestInterruptedError(err error) *jsonrpc.ErrorDetails {
 	return jsonrpc.NewServerError(jsonrpc.ErrorCodeRequestHasBeenInterrupted, err)
 }
 
-func clientRejectionError() *jsonrpc.ErrorDetails {
-	return clientError(ErrorCodeRequestHasBeenRejected, ErrClientRejectedTheRequest)
+func userRejectionError() *jsonrpc.ErrorDetails {
+	return userError(ErrorCodeRequestHasBeenRejected, ErrUserRejectedTheRequest)
 }
 
 func internalError(err error) *jsonrpc.ErrorDetails {
@@ -131,10 +131,10 @@ func internalError(err error) *jsonrpc.ErrorDetails {
 // API error response based on the underlying error.
 // If none of them matches, the error handling is delegating to the caller.
 func handleRequestFlowError(ctx context.Context, traceID string, pipeline Pipeline, err error) *jsonrpc.ErrorDetails {
-	if errors.Is(err, ErrConnectionClosed) {
-		// This error means the client closed the connection by stopping the
-		// client front-end application. As a result, there is no notification
-		// to be sent to the client.
+	if errors.Is(err, ErrUserCloseTheConnection) {
+		// This error means the user closed the connection by stopping the
+		// wallet front-end application. As a result, there is no notification
+		// to be sent to the user.
 		return connectionClosedError(err)
 	}
 	if errors.Is(err, ErrRequestInterrupted) {
