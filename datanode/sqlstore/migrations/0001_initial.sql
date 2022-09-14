@@ -862,6 +862,10 @@ create table if not exists risk_factors (
     primary key (market_id, vega_time)
 );
 
+CREATE VIEW risk_factors_current AS (
+    SELECT DISTINCT ON (market_id) * FROM risk_factors ORDER BY market_id, vega_time DESC
+);
+
 CREATE TABLE network_parameters (
     key          TEXT                     NOT NULL,
     value        TEXT                     NOT NULL,
@@ -1254,6 +1258,7 @@ DROP TABLE IF EXISTS network_limits;
 DROP VIEW IF EXISTS orders_current;
 DROP VIEW IF EXISTS orders_current_versions;
 
+DROP VIEW IF EXISTS risk_factors_current;
 drop table if exists risk_factors;
 drop table if exists margin_levels cascade;
 DROP TRIGGER IF EXISTS update_current_margin_levels ON margin_levels;
