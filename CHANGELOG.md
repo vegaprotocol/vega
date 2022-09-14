@@ -14,6 +14,7 @@
 ### 🐛 Fixes
 - [6148](https://github.com/vegaprotocol/vega/issues/6148) - Fix API descriptions for typos
 - [6156](https://github.com/vegaprotocol/vega/issues/6156) - Return only delegations for the specific node in `graphql` node delegation query
+- [6109](https://github.com/vegaprotocol/vega/issues/6109) - Candle query returns unexpected data.
 
 ## 0.55.0
 
