@@ -1890,10 +1890,10 @@ type PriceLevel {
 
 "Candle stick representation of trading"
 type Candle {
-  "Unix epoch+nanoseconds for when the candle occurred"
+  "RFC3339Nano formatted date and time for the candle start time"
   periodStart: String!
 
-  "RFC3339Nano formatted date and time for the candle"
+  "RFC3339Nano formatted date and time for the candle end time, or last updated time if the candle is still open"
   lastUpdateInPeriod: String!
 
   "High price (uint64)"
