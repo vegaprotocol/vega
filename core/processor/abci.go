@@ -627,13 +627,7 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 		logging.String("previous-datetime", vegatime.Format(app.previousTimestamp)),
 	)
 
-	app.broker.Send(
-		events.NewEndBlock(ctx, eventspb.EndBlock{
-			Height: uint64(req.Height),
-		}),
-	)
-
-	app.epoch.OnBlockEnd(ctx)
+	app.epoch.OnBlockEnd(app.blockCtx)
 	if !app.nilPow {
 		app.pow.EndOfBlock()
 	}
@@ -650,6 +644,13 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 			ValidatorUpdates: powerUpdates,
 		}
 	}
+
+	app.broker.Send(
+		events.NewEndBlock(app.blockCtx, eventspb.EndBlock{
+			Height: uint64(req.Height),
+		}),
+	)
+
 	return ctx, resp
 }
 
@@ -660,15 +661,21 @@ func (app *App) OnBeginBlock(
 	app.log.Debug("entering begin block", logging.Time("at", time.Now()), logging.Uint64("height", uint64(req.Header.Height)))
 	defer func() { app.log.Debug("leaving begin block", logging.Time("at", time.Now())) }()
 
+	hash := hex.EncodeToString(req.Hash)
+	ctx = vgcontext.WithBlockHeight(vgcontext.WithTraceID(app.chainCtx, hash), req.Header.Height)
+
 	if app.protocolUpgradeService.GetUpgradeStatus().ReadyToUpgrade {
+		app.broker.Send(
+			events.NewProtocolUpgradeStarted(ctx, eventspb.ProtocolUpgradeStarted{
+				LastBlockHeight: app.stats.Height(),
+			}),
+		)
 		// wait until killed
 		for {
 			time.Sleep(1 * time.Second)
 			app.log.Info("application is ready for shutdown")
 		}
 	}
-
-	hash := hex.EncodeToString(req.Hash)
 
 	app.broker.Send(
 		events.NewBeginBlock(ctx, eventspb.BeginBlock{
@@ -687,7 +694,6 @@ func (app *App) OnBeginBlock(
 
 	app.stats.SetHash(hash)
 	app.stats.SetHeight(uint64(req.Header.Height))
-	ctx = vgcontext.WithBlockHeight(vgcontext.WithTraceID(app.chainCtx, hash), req.Header.Height)
 	app.blockCtx = ctx
 
 	now := req.Header.Time

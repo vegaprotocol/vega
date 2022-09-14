@@ -129,6 +129,7 @@ const (
 	ProtocolUpgradeEvent
 	BeginBlockEvent
 	EndBlockEvent
+	ProtocolUpgradeStartedEvent
 )
 
 var (
@@ -192,6 +193,7 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_PROTOCOL_UPGRADE_PROPOSAL:      ProtocolUpgradeEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_BEGIN_BLOCK:                    BeginBlockEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_END_BLOCK:                      EndBlockEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_PROTOCOL_UPGRADE_STARTED:       ProtocolUpgradeStartedEvent,
 
 		// If adding a type here, please also add it to data-node/broker/convert.go
 	}
@@ -246,7 +248,8 @@ var (
 		EthereumKeyRotationEvent:        eventspb.BusEventType_BUS_EVENT_TYPE_ETHEREUM_KEY_ROTATION,
 		ProtocolUpgradeEvent:            eventspb.BusEventType_BUS_EVENT_TYPE_PROTOCOL_UPGRADE_PROPOSAL,
 		BeginBlockEvent:                 eventspb.BusEventType_BUS_EVENT_TYPE_BEGIN_BLOCK,
-		EndBlockEvent:                   eventspb.BusEventType_BUS_EVENT_TYPE_BEGIN_BLOCK,
+		EndBlockEvent:                   eventspb.BusEventType_BUS_EVENT_TYPE_END_BLOCK,
+		ProtocolUpgradeStartedEvent:     eventspb.BusEventType_BUS_EVENT_TYPE_PROTOCOL_UPGRADE_STARTED,
 	}
 
 	eventStrings = map[Type]string{
@@ -301,6 +304,7 @@ var (
 		ProtocolUpgradeEvent:            "ProtocolUpgradeEvent",
 		BeginBlockEvent:                 "BeginBlockEvent",
 		EndBlockEvent:                   "EndBlockEvent",
+		ProtocolUpgradeStartedEvent:     "ProtocolUpgradeSartedEvent",
 	}
 )
 

@@ -499,6 +499,12 @@ message EndBlock {
   uint64 height = 1;
 }
 
+// The core is starting a protocol upgrade
+message ProtocolUpgradeStarted {
+  uint64 last_block_height = 1;
+}
+
+
 // An (event) bus event type is used to specify a type of event
 // It has 2 styles of event:
 // Single values (e.g. BUS_EVENT_TYPE_ORDER) where they represent one data item
@@ -606,6 +612,8 @@ enum BusEventType {
   BUS_EVENT_TYPE_BEGIN_BLOCK = 49;
   // The core finished to process a block
   BUS_EVENT_TYPE_END_BLOCK = 50;
+  // The core is starting a protocol upgrade
+  BUS_EVENT_TYPE_PROTOCOL_UPGRADE_STARTED = 51;
 
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
@@ -718,7 +726,8 @@ message BusEvent {
     BeginBlock begin_block= 148;
     // The core finished to process a block
     EndBlock end_block = 149;
-
+    // The core is starting a protocol upgrade
+    ProtocolUpgradeStarted protocol_upgrade_started = 150;
 
     // Market tick events - See [MarketEvent](#vega.MarketEvent)
     MarketEvent market = 1001;
