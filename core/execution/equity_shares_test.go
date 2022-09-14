@@ -32,20 +32,109 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 )
 
+// just a convenience type used in some tests
+type lpdata struct {
+	id  string
+	amt *num.Uint
+	avg num.Decimal
+}
+
 func TestEquityShares(t *testing.T) {
 	t.Run("AvgEntryValuation with trade value", testAvgEntryValuationGrowth)
 	t.Run("SharesExcept", testShares)
-	t.Run("WithinMarket", testWithinMarket)
+	// t.Run("WithinMarket", testWithinMarket)
+	t.Run("Average entry valuation after 6063 spec change", testAvgEntryUpdate)
+}
+
+// replicate the example given in spec file (protocol/0042-LIQF-setting_fees_and_rewarding_lps.md)
+func testAvgEntryUpdate(t *testing.T) {
+	es := execution.NewEquityShares(num.DecimalZero())
+	initial := lpdata{
+		id:  "initial",
+		amt: num.NewUint(1000),
+		avg: num.DecimalFromFloat(1000),
+	}
+	es.SetPartyStake(initial.id, initial.amt)
+	require.True(t, initial.avg.Equals(es.AvgEntryValuation(initial.id)), es.AvgEntryValuation(initial.id).String())
+	// step 1 from the example: LP commitment of 100 with an existing commitment of 1k:
+	step1 := lpdata{
+		id:  "step1",
+		amt: num.NewUint(100),
+		avg: initial.avg, // the AEV is 1k
+	}
+	es.SetPartyStake(step1.id, step1.amt)
+	require.True(t, step1.avg.Equals(es.AvgEntryValuation(step1.id)), es.AvgEntryValuation(step1.id).String())
+	// get sum of all vStake to 2K as per example in the spec
+	// total vStake == 1.1k => avg is now 1.1k
+	inc := lpdata{
+		id:  "topup",
+		amt: num.NewUint(900),
+		avg: num.DecimalFromFloat(1100),
+	}
+	es.SetPartyStake(inc.id, inc.amt)
+	require.True(t, inc.avg.Equals(es.AvgEntryValuation(inc.id)), es.AvgEntryValuation(inc.id).String())
+	// Example 2: We have a total vStake of 2k -> step1 party increases the commitment amount to 110 (so +10)
+	step1.amt = num.NewUint(110)
+	step1.avg, _ = num.DecimalFromString("1090.9090909090909091")
+	es.SetPartyStake(step1.id, step1.amt)
+	require.True(t, step1.avg.Equals(es.AvgEntryValuation(step1.id)), es.AvgEntryValuation(step1.id).String())
+	// increase total vStake to be 3k using a new LP party
+	testAvgEntryUpdateStep3New(t, es)
+	// example 3 when total vStake is 3k -> decrease commitment by 20
+	step1.amt = num.NewUint(90)
+	es.SetPartyStake(step1.id, step1.amt)
+	require.True(t, step1.avg.Equals(es.AvgEntryValuation(step1.id)), es.AvgEntryValuation(step1.id).String())
+	// set up example 3 again, this time by increasing the commitment of an existing party, their AEV should be updated accordingly
+	testAvgEntryUpdateStep3Add(t, es, &initial)
+	step1.amt = num.NewUint(70) // decrease by another 20
+	es.SetPartyStake(step1.id, step1.amt)
+	require.True(t, step1.avg.Equals(es.AvgEntryValuation(step1.id)), es.AvgEntryValuation(step1.id).String())
+	// set up for example 3, this time by increasing the total vStake to 3k using growth
+	testAvgEntryUpdateStep3Growth(t, es)
+	step1.amt = num.NewUint(50) // decrease by another 20
+	es.SetPartyStake(step1.id, step1.amt)
+	require.True(t, step1.avg.Equals(es.AvgEntryValuation(step1.id)), es.AvgEntryValuation(step1.id).String())
+}
+
+// continue based on testAvgEntryUpdate setup, just add new LP to get the total up to 3k
+func testAvgEntryUpdateStep3New(t *testing.T, es *execution.EquityShares) {
+	// we have 1000 + 110 + 900 (2010)
+	// AEV == 2010
+	inc := lpdata{
+		id:  "another",
+		amt: num.NewUint(990),
+		avg: num.DecimalFromFloat(2010),
+	}
+	es.SetPartyStake(inc.id, inc.amt)
+	require.True(t, inc.avg.Equals(es.AvgEntryValuation(inc.id)), es.AvgEntryValuation(inc.id).String())
+}
+
+func testAvgEntryUpdateStep3Add(t *testing.T, es *execution.EquityShares, inc *lpdata) {
+	// at this point, the total vStake is 2990, get it back up to 3k
+	// calc for delta 10: (average entry valuation) x S / (S + Delta S) + (entry valuation) x (Delta S) / (S + Delta S)
+	// using LP0 => 1000 * 1000 / 1020 + 2980 * 20 / 1020 == 1038.8235294117647059
+	inc.amt.Add(inc.amt, num.NewUint(20))
+	inc.avg, _ = num.DecimalFromString("1038.8235294117647059")
+	es.SetPartyStake(inc.id, inc.amt)
+	require.True(t, inc.avg.Equals(es.AvgEntryValuation(inc.id)), es.AvgEntryValuation(inc.id).String())
+}
+
+func testAvgEntryUpdateStep3Growth(t *testing.T, es *execution.EquityShares) {
+	// first, set the initial avg trade value
+	val := num.DecimalFromFloat(1000000) // 1 million
+	es.AvgTradeValue(val)
+	vStake := num.DecimalFromFloat(2980)
+	delta := num.DecimalFromFloat(20)
+	factor := delta.Div(vStake)
+	val = val.Add(factor.Mul(val)) // increase the value by 20/total_v_stake * previous value => growth rate should increase vStake back up to 3k
+	// this actually is going to set total vStake to 3000.000000000000136. Not perfect, but it's pretty close
+	es.AvgTradeValue(val)
 }
 
 func testAvgEntryValuationGrowth(t *testing.T) {
 	es := execution.NewEquityShares(num.DecimalZero())
 	tradeVal := num.DecimalFromFloat(1000)
-	lps := []struct {
-		id  string
-		amt *num.Uint
-		avg num.Decimal
-	}{
+	lps := []lpdata{
 		{
 			id:  "LP1",
 			amt: num.NewUint(100),
@@ -54,7 +143,7 @@ func testAvgEntryValuationGrowth(t *testing.T) {
 		{
 			id:  "LP2",
 			amt: num.NewUint(200),
-			avg: num.DecimalFromFloat(200),
+			avg: num.DecimalFromFloat(100),
 		},
 	}
 
@@ -64,6 +153,7 @@ func testAvgEntryValuationGrowth(t *testing.T) {
 	}
 	es.OpeningAuctionEnded()
 
+	lps[1].avg = num.DecimalFromFloat(200)
 	// set trade value at auction end
 	es.AvgTradeValue(tradeVal)
 	for _, l := range lps {
@@ -73,17 +163,14 @@ func testAvgEntryValuationGrowth(t *testing.T) {
 
 	// growth
 	tradeVal = num.DecimalFromFloat(1100)
-	aev1, _ := num.DecimalFromString("100.000000000000001")
-	lps[0].avg = aev1
-	lps[1].avg = aev1.Add(aev1) // double
+	// aev1, _ := num.DecimalFromString("100.000000000000001")
+	// lps[1].avg = aev1.Add(aev1) // double
 	es.AvgTradeValue(tradeVal)
 	for _, l := range lps {
 		aev := es.AvgEntryValuation(l.id)
 		require.True(t, l.avg.Equals(es.AvgEntryValuation(l.id)), fmt.Sprintf("FAIL => expected %s, got %s", l.avg, aev))
 	}
 	lps[1].amt = num.NewUint(150) // reduce LP
-	aev1, _ = num.DecimalFromString("150.0000000000000015")
-	lps[1].avg = aev1
 	es.SetPartyStake(lps[1].id, lps[1].amt)
 	for _, l := range lps {
 		aev := es.AvgEntryValuation(l.id)
@@ -340,6 +427,11 @@ func testWithinMarket(t *testing.T) {
 	curTime = curTime.Add(1 * time.Second)
 	tm.now = curTime
 	tm.market.OnTick(ctx, curTime)
+
+	md = esm.tm.market.GetMarketData()
+	require.NotNil(t, md)
+	fmt.Printf("Target stake: %s\nSupplied: %s\n\n", md.TargetStake, md.SuppliedStake)
+	require.Equal(t, types.MarketTradingModeContinuous, md.MarketTradingMode)
 
 	assert.True(t, esm.LiquidityFeeAccount().Balance.IsZero(),
 		"LiquidityFeeAccount should be empty after a fee distribution")

@@ -67,15 +67,11 @@ func (es *EquityShares) OpeningAuctionEnded() {
 // for every LP during opening auction.
 func (es *EquityShares) setOpeningAuctionAVG() {
 	// now set average entry valuation for all of them.
-	factor := num.DecimalFromFloat(1.0)
-	if !es.totalVStake.IsZero() && !es.totalPStake.IsZero() {
-		factor = es.totalPStake.Div(es.totalVStake)
-	}
 	for _, v := range es.lps {
 		if v.stake.GreaterThan(v.vStake) {
 			v.vStake = v.stake
 		}
-		v.avg = v.vStake.Mul(factor) // perhaps we ought to move this to a separate loop once the totals have all been updated
+		// v.avg = v.vStake.Mul(factor) // perhaps we ought to move this to a separate loop once the totals have all been updated
 		// v.avg = es.mvp
 	}
 }
@@ -96,6 +92,10 @@ func (es *EquityShares) UpdateVStake() {
 		total = total.Add(vStake)
 	}
 	es.totalVStake = total
+}
+
+func (es *EquityShares) GetTotalVStake() num.Decimal {
+	return es.totalVStake
 }
 
 func (es *EquityShares) AvgTradeValue(avg num.Decimal) *EquityShares {
@@ -179,7 +179,7 @@ func (es *EquityShares) updateAvgPosDelta(v *lp, delta, newStake num.Decimal) {
 	v.avg = v.avg.Mul(v.vStake).Div(newStake).Add(es.totalVStake.Mul(delta).Div(newStake))
 	if v.avg.IsZero() {
 		// this indicates there was no total stake yet (ie first LP)
-		v.avg = newStake
+		v.avg = es.totalVStake
 	}
 	v.vStake = v.vStake.Add(delta)
 	v.stake = newStake
@@ -188,10 +188,6 @@ func (es *EquityShares) updateAvgPosDelta(v *lp, delta, newStake num.Decimal) {
 // AvgEntryValuation returns the Average Entry Valuation for a given party.
 func (es *EquityShares) AvgEntryValuation(id string) num.Decimal {
 	if v, ok := es.lps[id]; ok {
-		avg := v.vStake.Mul(es.totalPStake.Div(es.totalVStake))
-		if !avg.Equal(v.avg) {
-			v.avg = avg
-		}
 		return v.avg
 	}
 	return num.DecimalZero()
