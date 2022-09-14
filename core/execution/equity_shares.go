@@ -136,17 +136,10 @@ func (es *EquityShares) SetPartyStake(id string, newStakeU *num.Uint) {
 	}
 	// first time we set the newStake and mvp as avg.
 	if !found {
-		avg := es.mvp
-		es.lps[id] = &lp{
-			stake:  newStake,
-			avg:    avg,
-			vStake: newStake,
-		}
-		es.totalPStake = es.totalPStake.Add(newStake)
-		es.totalVStake = es.totalVStake.Add(newStake)
-		if es.openingAuctionEnded {
-			es.lps[id].avg = es.AvgEntryValuation(id)
-		}
+		// this is technically a delta == new stake -> calculate avg accordingly
+		v = &lp{}
+		es.lps[id] = v
+		es.updateAvgPosDelta(v, newStake, newStake) // delta == new stake
 		return
 	}
 
@@ -161,18 +154,35 @@ func (es *EquityShares) SetPartyStake(id string, newStakeU *num.Uint) {
 		v.stake = newStake
 		es.totalVStake = es.totalVStake.Add(v.vStake)
 		es.totalPStake = es.totalPStake.Add(v.stake)
-		v.avg = v.vStake.Mul(es.totalPStake.Div(es.totalVStake))
+		// average entry valuation should not be changed when reducing the physical stake
+		// v.avg = v.vStake.Mul(es.totalPStake.Div(es.totalVStake))
 		return
 	}
 
-	es.totalVStake = es.totalVStake.Add(delta)
-	es.totalPStake = es.totalPStake.Sub(v.stake).Add(newStake)
+	es.updateAvgPosDelta(v, delta, newStake)
+	// es.totalVStake = es.totalVStake.Add(delta)
+	// es.totalPStake = es.totalPStake.Sub(v.stake).Add(newStake)
 	// stakes were originally assigned _after_ the mustEquity call
 	// average was calculated in the if es.openingAuctionEnded bit
 	// v.avg = v.vStake.Mul(es.totalPStake.Div(es.totalVStake))
-	v.vStake = v.vStake.Add(delta) // increase
+	// v.vStake = v.vStake.Add(delta) // increase
+	// v.stake = newStake
+	// v.avg = v.vStake.Mul(es.totalPStake.Div(es.totalVStake))
+}
+
+func (es *EquityShares) updateAvgPosDelta(v *lp, delta, newStake num.Decimal) {
+	// entry valuation == total Virtual stake (before delta is applied)
+	// (average entry valuation) <- (average entry valuation) x S / (S + Delta S) + (entry valuation) x (Delta S) / (S + Delta S)
+	// S being the LP's physical stake, Delta S being the amount by which the stake is increased
+	es.totalVStake = es.totalVStake.Add(delta)
+	es.totalPStake = es.totalPStake.Sub(v.stake).Add(newStake)
+	v.avg = v.avg.Mul(v.vStake).Div(newStake).Add(es.totalVStake.Mul(delta).Div(newStake))
+	if v.avg.IsZero() {
+		// this indicates there was no total stake yet (ie first LP)
+		v.avg = newStake
+	}
+	v.vStake = v.vStake.Add(delta)
 	v.stake = newStake
-	v.avg = v.vStake.Mul(es.totalPStake.Div(es.totalVStake))
 }
 
 // AvgEntryValuation returns the Average Entry Valuation for a given party.
