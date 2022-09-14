@@ -159,6 +159,7 @@ func testSendingTransactionWithValidParamsSucceeds(t *testing.T) {
 	}, nil)
 	handler.node.EXPECT().SendTransaction(ctx, gomock.Any(), apipb.SubmitTransactionRequest_TYPE_SYNC).Times(1).Return(txHash, nil)
 	handler.pipeline.EXPECT().NotifyTransactionStatus(ctx, traceID, txHash, gomock.Any(), nil, gomock.Any()).Times(1)
+	handler.pipeline.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.SendTransactionParams{
@@ -386,6 +387,7 @@ func testNoHealthyNodeAvailableDoesNotSendTransaction(t *testing.T) {
 	handler.pipeline.EXPECT().RequestTransactionSendingReview(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx).Times(1).Return(nil, assert.AnError)
 	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.NetworkError, fmt.Errorf("could not find an healthy node: %w", assert.AnError)).Times(1)
+	handler.pipeline.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.SendTransactionParams{
@@ -425,7 +427,8 @@ func testFailingToGetLastBlockDoesNotSendTransaction(t *testing.T) {
 	handler.pipeline.EXPECT().RequestTransactionSendingReview(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx).Times(1).Return(handler.node, nil)
 	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(nil, assert.AnError)
-	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.NetworkError, fmt.Errorf("could not get last block from node: %w", assert.AnError)).Times(1)
+	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.NetworkError, fmt.Errorf("could not get latest block from node: %w", assert.AnError)).Times(1)
+	handler.pipeline.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.SendTransactionParams{
@@ -471,6 +474,7 @@ func testFailureWhenSendingTransactionReturnsAnError(t *testing.T) {
 	}, nil)
 	handler.node.EXPECT().SendTransaction(ctx, gomock.Any(), apipb.SubmitTransactionRequest_TYPE_SYNC).Times(1).Return("", assert.AnError)
 	handler.pipeline.EXPECT().NotifyTransactionStatus(ctx, traceID, "", gomock.Any(), assert.AnError, gomock.Any()).Times(1)
+	handler.pipeline.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.SendTransactionParams{

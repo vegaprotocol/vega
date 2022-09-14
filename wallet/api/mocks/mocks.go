@@ -420,6 +420,18 @@ func (m *MockPipeline) EXPECT() *MockPipelineMockRecorder {
 	return m.recorder
 }
 
+// Log mocks base method.
+func (m *MockPipeline) Log(arg0 context.Context, arg1 string, arg2 api.LogType, arg3 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Log", arg0, arg1, arg2, arg3)
+}
+
+// Log indicates an expected call of Log.
+func (mr *MockPipelineMockRecorder) Log(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Log", reflect.TypeOf((*MockPipeline)(nil).Log), arg0, arg1, arg2, arg3)
+}
+
 // NotifyError mocks base method.
 func (m *MockPipeline) NotifyError(arg0 context.Context, arg1 string, arg2 api.ErrorType, arg3 error) {
 	m.ctrl.T.Helper()

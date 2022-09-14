@@ -60,7 +60,16 @@ type NodeSelector interface {
 //   - Request* functions are expecting a user intervention.
 type Pipeline interface {
 	// NotifyError is used to report errors to the user.
+	// This is a terminal message. Nothing should be expected on the request
+	// after receiving this.
 	NotifyError(ctx context.Context, traceID string, t ErrorType, err error)
+
+	// Log is used to report information of any kind to the user. This is just
+	// to log internal activity to provide feedback to the wallet front-end.
+	// The log should be displayed without triggering any actions.
+	// Receiving a success or an error log shouldn't be confused with the
+	// NotifyError and NotifySuccessfulRequest that send terminal messages.
+	Log(ctx context.Context, traceID string, t LogType, msg string)
 
 	// RequestWalletConnectionReview is used to trigger a user review of
 	// the wallet connection requested by the specified hostname.
@@ -70,6 +79,8 @@ type Pipeline interface {
 
 	// NotifySuccessfulRequest is used to notify the user the request is
 	// successful.
+	// This is a terminal message. Nothing should be expected on the request
+	// after receiving this.
 	NotifySuccessfulRequest(ctx context.Context, traceID string)
 
 	// RequestWalletSelection is used to trigger selection of the wallet the
@@ -102,6 +113,8 @@ type Pipeline interface {
 
 	// NotifyTransactionStatus is used to report the transaction status once
 	// sent.
+	// This is a terminal message. Nothing should be expected on the request
+	// after receiving this.
 	NotifyTransactionStatus(ctx context.Context, traceID, txHash, tx string, err error, sentAt time.Time)
 }
 
@@ -126,6 +139,16 @@ var (
 	// requires its intervention to correct it.
 	// It can be raised if a passphrase is invalid, for example.
 	UserError ErrorType = "User Error"
+)
+
+// LogType defines the type of log that is sent to the user.
+type LogType string
+
+var (
+	InfoLog    LogType = "Info"
+	WarningLog LogType = "Warning"
+	ErrorLog   LogType = "Error"
+	SuccessLog LogType = "Success"
 )
 
 // SelectedWallet holds the result of the wallet selection from the user.

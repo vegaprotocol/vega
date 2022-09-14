@@ -443,6 +443,21 @@ func handleEnvelop(envelop pipeline.Envelope, responseChan chan<- pipeline.Envel
 		} else {
 			p.Print(p.String().DangerBangMark().DangerText(fmt.Sprintf("Error: %s (%s)", content.Error, content.Type)).NextLine())
 		}
+	case pipeline.Log:
+		str := p.String()
+		switch content.Type {
+		case string(walletapi.InfoLog):
+			str.BlueArrow()
+		case string(walletapi.ErrorLog):
+			str.CrossMark()
+		case string(walletapi.WarningLog):
+			str.WarningBangMark()
+		case string(walletapi.SuccessLog):
+			str.CheckMark()
+		default:
+			str.Text("- ")
+		}
+		p.Print(str.Text(content.Message).NextLine())
 	case pipeline.RequestSucceeded:
 		p.Print(p.String().CheckMark().SuccessText("Request succeeded").NextSection())
 	case pipeline.RequestPermissionsReview:

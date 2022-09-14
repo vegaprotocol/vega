@@ -38,6 +38,16 @@ func (s *SequentialPipeline) NotifyError(ctx context.Context, traceID string, t 
 	}
 }
 
+func (s *SequentialPipeline) Log(ctx context.Context, traceID string, t api.LogType, msg string) {
+	s.receptionChan <- Envelope{
+		TraceID: traceID,
+		Content: Log{
+			Type:    string(t),
+			Message: msg,
+		},
+	}
+}
+
 func (s *SequentialPipeline) NotifySuccessfulRequest(ctx context.Context, traceID string) {
 	if err := ctx.Err(); err != nil {
 		return
@@ -283,6 +293,11 @@ type Envelope struct {
 type ErrorOccurred struct {
 	Type  string `json:"type"`
 	Error string `json:"error"`
+}
+
+type Log struct {
+	Type    string `json:"type"`
+	Message string `json:"message"`
 }
 
 type RequestWalletConnectionReview struct {
