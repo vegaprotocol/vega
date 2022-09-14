@@ -1,10 +1,6 @@
-Feature: Closeout-cascades
-# This is a test case to demonstrate that closeout cascade does NOT happen. In this test case, trader3 gets closed
-# out first after buying volume 50 at price 100, and then trader3's position is sold (via the network counterparty) to trader2 whose order is first in the order book
-# (volume 50 price 50)
-# At this moment, trader2 is under margin but the fuse breaks (if the mark price is actually updated from 100 to 50)
-# however, the design of the system is like a fuse and circuit breaker, the mark price will NOT update, so trader2 will not be closed out
-# till a new trade happens, and new mark price is set.
+Feature: Closeout-cascades-1
+# This is a test case to demonstrate an order can be rejected when the trader (who places an initial order) does not have enouge collateral to cover the initial margin level
+
   Background:
 
     Given the log normal risk model named "log-normal-risk-model-1":
@@ -81,18 +77,16 @@ Feature: Closeout-cascades
     When the parties place the following orders:
       | party      | market id | side | volume| price | resulting trades | type       | tif     | reference      |
       | trader3    | ETH/DEC19 | buy  | 10    | 100   | 0                | TYPE_LIMIT | TIF_GTC | buy-position-31 |
-      | auxiliary1 | ETH/DEC19 | sell | 10    | 100   | 1                | TYPE_LIMIT | TIF_GTC | sell-provider-1|
+      #| auxiliary1 | ETH/DEC19 | sell | 10    | 100   | 1                | TYPE_LIMIT | TIF_GTC | sell-provider-1|
 
     And the parties should have the following margin levels:
       | party     | market id  | maintenance | search | initial | release |
-      | trader2   | ETH/DEC19  | 0           | 0      | 0       | 0       |
-      | trader3   | ETH/DEC19  | 0           | 0      | 0       | 0       |
+      | trader3   | ETH/DEC19  | 81          | 121    | 162     | 243     |
 
-    # how come trader2's order is canceled?
+    # how come trader3's order is not rejected? they only have 90 in the collateral and the initial margin level is 162
     Then the parties should have the following account balances:
       | party   | asset | market id | margin   | general |
-      | trader2 | USD   | ETH/DEC19 | 0        | 2000    |
-      | trader3 | USD   | ETH/DEC19 | 0        | 0       |
+      | trader3 | USD   | ETH/DEC19 | 90       | 0       |
   
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price  | volume   |
