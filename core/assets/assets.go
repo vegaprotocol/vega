@@ -318,6 +318,7 @@ func (s *Service) ApplyAssetUpdate(ctx context.Context, assetID string) error {
 	if !ok {
 		return ErrAssetDoesNotExist
 	}
+	updatedAsset.SetEnabled()
 	if err := currentAsset.Update(updatedAsset); err != nil {
 		s.log.Panic("couldn't update the asset", logging.Error(err))
 	}
