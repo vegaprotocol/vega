@@ -216,7 +216,7 @@ func testRefusingSigningOfTransactionDoesNotSignTransaction(t *testing.T) {
 	})
 
 	// then
-	assertClientRejectionError(t, errorDetails)
+	assertUserRejectionError(t, errorDetails)
 	assert.Empty(t, result)
 }
 
@@ -239,7 +239,7 @@ func testCancellingTheReviewDoesNotSignTransaction(t *testing.T) {
 	handler := newSignTransactionHandler(t)
 	token := connectWallet(t, handler.sessions, hostname, wallet1)
 	// -- expected calls
-	handler.pipeline.EXPECT().RequestTransactionSigningReview(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(false, api.ErrConnectionClosed)
+	handler.pipeline.EXPECT().RequestTransactionSigningReview(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(false, api.ErrUserCloseTheConnection)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.SignTransactionParams{
