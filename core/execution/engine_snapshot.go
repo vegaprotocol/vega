@@ -156,7 +156,6 @@ func (e *Engine) serialise() (snapshot []byte, providers []types.StateProvider, 
 		return nil, nil, err
 	}
 	e.snapshotSerialised = s
-	e.stateChanged = false
 
 	return s, pvds, nil
 }
@@ -195,7 +194,6 @@ func (e *Engine) LoadState(ctx context.Context, payload *types.Payload) ([]types
 			return nil, fmt.Errorf("failed to restore markets states: %w", err)
 		}
 		e.snapshotSerialised, err = proto.Marshal(payload.IntoProto())
-		e.stateChanged = false
 		return providers, err
 	default:
 		return nil, types.ErrUnknownSnapshotType

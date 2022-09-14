@@ -329,7 +329,7 @@ func TestTransferFunds(t *testing.T) {
 				Kind: &commandspb.Transfer_OneOff{
 					OneOff: &commandspb.OneOffTransfer{},
 				},
-				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
+				To:        "0000000000000000000000000000000000000000000000000000000000000000",
 				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
 				Amount:    "1",
 				Reference: "testing",

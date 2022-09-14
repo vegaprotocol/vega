@@ -6,6 +6,23 @@ option go_package = "code.vegaprotocol.io/vega/protos/vega/commands/v1";
 import "vega/governance.proto";
 import "vega/vega.proto";
 
+// A batch of order instructions.
+// This command accepts only the following batches of commands
+// and will be processed in the following order:
+// - OrderCancellation
+// - OrderAmendment
+// - OrderSubmission
+// The total amount of commands in the batch across all three lists of
+// instructions is restricted by the following network parameter:
+// "spam.protection.max.batchSize"
+message BatchMarketInstructions {
+  // A list of order cancellations to be processed sequentially
+  repeated OrderCancellation cancellations = 1;
+  // A list of order amendments to be processed sequentially
+  repeated OrderAmendment amendments = 2;
+  // A list of order submissions to be processed sequentially
+  repeated OrderSubmission submissions = 3;
+}
 
 // An order submission is a request to submit or create a new order on Vega
 message OrderSubmission {
@@ -15,7 +32,7 @@ message OrderSubmission {
   // formatted price of `1.23456` assuming market configured to 5 decimal places,
   // , required field for limit orders, however it is not required for market orders
   string price = 2;
-  // Size for the order, for example, in a futures market the size equals the number of contracts, cannot be negative
+  // Size for the order, for example, in a futures market the size equals the number of units, cannot be negative
   uint64 size = 3;
   // Side for the order, e.g. SIDE_BUY or SIDE_SELL, required field
   // - See `Side`

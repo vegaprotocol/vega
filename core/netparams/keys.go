@@ -116,6 +116,7 @@ const (
 	SpamProtectionMinTokensForProposal   = "spam.protection.proposal.min.tokens"
 	SpamProtectionMaxDelegations         = "spam.protection.max.delegations"
 	SpamProtectionMinTokensForDelegation = "spam.protection.delegation.min.tokens"
+	SpamProtectionMaxBatchSize           = "spam.protection.max.batchSize"
 
 	// blockchain specifics?
 	BlockchainsEthereumConfig = "blockchains.ethereumConfig"
@@ -271,4 +272,5 @@ var AllKeys = map[string]struct{}{
 	GovernanceProposalUpdateAssetRequiredMajority:            {},
 	GovernanceProposalUpdateAssetMinProposerBalance:          {},
 	GovernanceProposalUpdateAssetMinVoterBalance:             {},
+	SpamProtectionMaxBatchSize:                               {},
 }

@@ -15,50 +15,6 @@ type PeggedOrder {
 
 "Subscriptions allow a caller to receive new information as it is available from the Vega network."
 type Subscription {
-  "Subscribe to the candles updates"
-  candles(
-    "ID of the market to listen to for candles"
-    marketId: ID!
-    "Interval of the candles to listen for"
-    interval: Interval!
-  ): Candle!
-
-  "Subscribe to orders updates"
-  orders(
-    "ID of the market from which you want orders updates"
-    marketId: ID
-    "ID of the party from which you want orders updates"
-    partyId: ID
-  ): [Order!]
-
-  "Subscribe to the trades updates"
-  trades(
-    "ID of the market from which you want trades updates"
-    marketId: ID
-    "ID of the party from which you want trades updates"
-    partyId: ID
-  ): [TradeUpdate!]
-
-  "Subscribe to the positions updates"
-  positions(
-    "ID of the party from you want updates for"
-    partyId: ID
-    "ID of the market from which you want position updates"
-    marketId: ID
-  ): [Position!]!
-
-  "Subscribe to the market depths update"
-  marketDepth(
-    "ID of the market to receive market depth updates for"
-    marketId: ID!
-  ): MarketDepth! @deprecated(reason: "Use marketsDepth instead")
-
-  "Subscribe to price level market depth updates"
-  marketDepthUpdate(
-    "ID of the market to receive market depth price level updates for"
-    marketId: ID!
-  ): MarketDepthUpdate! @deprecated(reason: "Use marketsDepthUpdate instead")
-
   "Subscribe to the accounts updates"
   accounts(
     "ID of the market from which to receive accounts updates for"
@@ -70,52 +26,6 @@ type Subscription {
     "Type of the account"
     type: AccountType
   ): [AccountUpdate!]!
-
-  "Subscribe to the mark price changes"
-  marketData(
-    "ID of the market you want to subscribe to the market data changes"
-    marketId: ID
-  ): MarketData! @deprecated(reason: "Use marketsData instead")
-
-  "Subscribe to the market depths update"
-    marketsDepth(
-      "ID of the market you want to receive market depth updates for"
-      marketIds: [ID!]!
-    ): [ObservableMarketDepth!]!
-
-    "Subscribe to price level market depth updates"
-    marketsDepthUpdate(
-      "ID of the market you want to receive market depth price level updates for"
-      marketIds: [ID!]!
-    ): [ObservableMarketDepthUpdate!]!
-
-  "Subscribe to the mark price changes"
-    marketsData(
-      "ID of the market for which you want to subscribe to the market data changes"
-      marketIds: [ID!]!
-    ): [ObservableMarketData!]!
-
-  "Subscribe to the margin changes"
-  margins(
-    "ID of the party you want to subscribe to for margin updates"
-    partyId: ID!
-    "ID of the market you want to listen to for margin updates (nil if you want updates for all markets)"
-    marketId: ID
-  ): MarginLevels!
-
-  "Subscribe to proposals. Leave out all arguments to receive all proposals"
-  proposals(
-    "Optional party ID whose proposals are to be streamed"
-    partyId: ID
-  ): Proposal!
-
-  "Subscribe to votes, either by proposal ID or party ID"
-  votes(
-    "Optional proposal ID which votes are to be streamed"
-    proposalId: ID
-    "Optional party ID whose votes are to be streamed"
-    partyId: ID
-  ): ProposalVote!
 
   "Subscribe to event data from the event bus"
   busEvents(
@@ -129,6 +39,14 @@ type Subscription {
     batchSize: Int!
   ): [BusEvent!]
 
+  "Subscribe to the candles updates"
+  candles(
+    "ID of the market to listen to for candles"
+    marketId: ID!
+    "Interval of the candles to listen for"
+    interval: Interval!
+  ): Candle!
+
   "Subscribe to delegation data"
   delegations(
     "the party to subscribe for, empty if all"
@@ -137,6 +55,62 @@ type Subscription {
     nodeId: ID
   ): Delegation!
 
+  "Subscribe to liquidity provisioning data"
+    liquidityProvisions(
+        "the party ID to subscribe for, empty if all"
+        partyId: ID
+        "the market ID to subscribe for, empty if all"
+        marketId: ID
+  ): [LiquidityProvisionUpdate!]
+
+  "Subscribe to the margin changes"
+  margins(
+    "ID of the party you want to subscribe to for margin updates"
+    partyId: ID!
+    "ID of the market you want to listen to for margin updates (nil if you want updates for all markets)"
+    marketId: ID
+  ): MarginLevelsUpdate!
+
+  "Subscribe to the mark price changes"
+  marketsData(
+    "ID of the market for which you want to subscribe to the market data changes"
+    marketIds: [ID!]!
+  ): [ObservableMarketData!]!
+
+  "Subscribe to the market depths update"
+  marketsDepth(
+    "ID of the market you want to receive market depth updates for"
+    marketIds: [ID!]!
+  ): [ObservableMarketDepth!]!
+
+  "Subscribe to price level market depth updates"
+  marketsDepthUpdate(
+    "ID of the market you want to receive market depth price level updates for"
+    marketIds: [ID!]!
+  ): [ObservableMarketDepthUpdate!]!
+
+  "Subscribe to orders updates"
+  orders(
+    "ID of the market from which you want orders updates"
+    marketId: ID
+    "ID of the party from which you want orders updates"
+    partyId: ID
+  ): [OrderUpdate!]
+
+  "Subscribe to the positions updates"
+  positions(
+    "ID of the party from you want updates for"
+    partyId: ID
+    "ID of the market from which you want position updates"
+    marketId: ID
+  ): [Position!]!
+
+  "Subscribe to proposals. Leave out all arguments to receive all proposals"
+  proposals(
+    "Optional party ID whose proposals are to be streamed"
+    partyId: ID
+  ): Proposal!
+
   "Subscribe to reward details data"
   rewards(
     "the asset to subscribe for, empty if all"
@@ -144,6 +118,22 @@ type Subscription {
     "the party ID to subscribe for, empty if all"
     partyId: ID
   ): Reward!
+
+  "Subscribe to the trades updates"
+  trades(
+    "ID of the market from which you want trades updates"
+    marketId: ID
+    "ID of the party from which you want trades updates"
+    partyId: ID
+  ): [TradeUpdate!]
+
+  "Subscribe to votes, either by proposal ID or party ID"
+  votes(
+    "Optional proposal ID which votes are to be streamed"
+    proposalId: ID
+    "Optional party ID whose votes are to be streamed"
+    partyId: ID
+  ): ProposalVote!
 }
 
 "Margins for a given a party"
@@ -160,13 +150,34 @@ type MarginLevels {
   searchLevel: String!
   "this is the minimum margin required for a party to place a new order on the network (unsigned integer)"
   initialLevel: String!
-
   """
   If the margin of the party is greater than this level, then collateral will be released from the margin account into
   the general account of the party for the given asset.
   """
   collateralReleaseLevel: String!
+  "RFC3339Nano time from at which this margin level was relevant"
+  timestamp: String!
+}
 
+"Margins for a given a party"
+type MarginLevelsUpdate {
+  "market in which the margin is required for this party"
+  marketId: ID!
+  "asset for the current margins"
+  asset: ID!
+  "The party for this margin"
+  partyId: ID!
+  "minimal margin for the position to be maintained in the network (unsigned integer)"
+  maintenanceLevel: String!
+  "if the margin is between maintenance and search, the network will initiate a collateral search (unsigned integer)"
+  searchLevel: String!
+  "this is the minimum margin required for a party to place a new order on the network (unsigned integer)"
+  initialLevel: String!
+  """
+  If the margin of the party is greater than this level, then collateral will be released from the margin account into
+  the general account of the party for the given asset.
+  """
+  collateralReleaseLevel: String!
   "RFC3339Nano time from at which this margin level was relevant"
   timestamp: String!
 }
@@ -209,8 +220,10 @@ type MarketData {
   indicativePrice: String!
   "indicative volume if the auction ended now, 0 if not in auction mode"
   indicativeVolume: String!
-  "what state the market is in (auction, continuous, etc)"
+  "what mode the market is in (auction, continuous, etc)"
   marketTradingMode: MarketTradingMode!
+  "current state of the market"
+  marketState: MarketState!
   "what triggered an auction (if an auction was started)"
   trigger: AuctionTrigger!
   "what extended the ongoing auction (if an auction was extended)"
@@ -267,8 +280,10 @@ type ObservableMarketData {
   indicativePrice: String!
   "indicative volume if the auction ended now, 0 if not in auction mode"
   indicativeVolume: String!
-  "what state the market is in (auction, continuous etc)"
+  "what mode the market is in (auction, continuous etc)"
   marketTradingMode: MarketTradingMode!
+  "current state of the market"
+  marketState: MarketState!
   "what triggered an auction (if an auction was started)"
   trigger: AuctionTrigger!
   "what extended the ongoing auction (if an auction was extended)"
@@ -338,172 +353,6 @@ input AccountFilter {
 
 "Queries allow a caller to read data and filter data via GraphQL."
 type Query {
-  "One or more instruments that are trading on the VEGA network"
-  markets("ID of the market" id: ID): [Market!] @deprecated(reason: "Use marketsConnection instead")
-
-  marketsConnection(
-    "Optional ID of a market"
-    id: ID
-    "Optional pagination information"
-    pagination: Pagination
-  ): MarketConnection
-
-  "An instrument that is trading on the Vega network"
-  market("Optional ID of a market" id: ID!): Market
-
-  "One or more entities that are trading on the Vega network"
-  parties("Optional ID of a party" id: ID): [Party!] @deprecated(reason: "Use partiesConnection instead.")
-
-  partiesConnection(
-    "Optional ID of a party to retrieve"
-    id: ID
-    "Optional pagination information"
-    pagination: Pagination
-  ): PartyConnection
-
-  "An entity that is trading on the Vega network"
-  party("ID of a party" id: ID!): Party
-
-  "The last block process by the blockchain"
-  lastBlockHeight: String!
-
-  "All registered oracle specs"
-  oracleSpecs(
-    "Pagination"
-    pagination: OffsetPagination
-  ): [OracleSpec!] @deprecated(reason: "Use oracleSpecsConnection instead")
-
-  "All registered oracle specs"
-  oracleSpecsConnection(
-    "Pagination"
-    pagination: Pagination
-  ): OracleSpecsConnection
-
-  "An oracle spec for a given oracle spec ID"
-  oracleSpec("ID for an oracle spec" oracleSpecId: ID!): OracleSpec
-
-  "All oracle data for a given oracle spec ID"
-  oracleDataBySpec(
-    "ID for an oracle spec"
-    oracleSpecId: ID!
-    "Pagination"
-    pagination: OffsetPagination
-  ): [OracleData!] @deprecated(reason: "Use oracleDataBySpecConnection instead")
-
-  oracleDataBySpecConnection(
-    "ID for an oracle spec"
-    oracleSpecId: ID!
-    "Pagination"
-    pagination: Pagination
-  ): OracleDataConnection
-
-  "All registered oracle specs"
-  oracleData(
-    "Pagination"
-    pagination: OffsetPagination
-  ): [OracleData!] @deprecated(reason: "Use oracleDataConnection instead")
-
-  "All registered oracle specs"
-  oracleDataConnection(
-    "Pagination"
-    pagination: Pagination
-  ): OracleDataConnection
-
-  "An order in the Vega network found by orderID"
-  orderByID(
-    "ID for an order"
-    id: ID!
-
-    "version of the order (omitted or 0 for most recent; 1 for original; 2 for first amendment, etc)"
-    version: Int
-  ): Order!
-
-  "Order versions (created via amendments if any) found by orderID"
-  orderVersions(
-    "ID for an order"
-    orderId: ID!
-
-    "Pagination skip"
-    skip: Int
-    "Pagination first element"
-    first: Int
-    "Pagination last element"
-    last: Int
-  ): [Order!] @deprecated(reason: "Use orderVersionsConnection instead")
-
-  "Order versions (created via amendments if any) found by orderID"
-  orderVersionsConnection(
-    "ID for an order"
-    orderId: ID
-    "Pagination information"
-    pagination: Pagination
-  ): OrderConnection
-
-  "An order in the Vega network found by referenceID"
-  orderByReference("Reference for an order" reference: String!): Order!
-
-  "All governance proposals in the Vega network"
-  proposals(
-    "Returns only proposals in the specified state. Leave out to get all proposals"
-    inState: ProposalState
-  ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
-
-  "All governance proposals in the Vega network"
-  proposalsConnection(
-    "Optional type of proposal to retrieve data for"
-    proposalType: ProposalType
-    "Returns only proposals in the specified state. Leave out to get all proposals"
-    inState: ProposalState
-    "Optional Pagination information"
-    pagination: Pagination
-  ): ProposalsConnection
-
-  "A governance proposal located by either its ID or reference. If both are set, ID is used."
-  proposal(
-    "Optionally, locate proposal by its ID"
-    id: ID
-    "Optionally, locate proposal by its reference. If ID is set, this parameter is ignored."
-    reference: String
-  ): Proposal
-
-  "Governance proposals that aim to create new markets"
-  newMarketProposals(
-    "Returns only proposals in the specified state. Leave out to get all proposals"
-    inState: ProposalState
-  ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
-
-  "Governance proposals that aim to update existing markets"
-  updateMarketProposals(
-    "Optionally, select proposals for a specific market. Leave out for all"
-    marketId: ID
-    "Returns only proposals in the specified state. Leave out to get all proposals"
-    inState: ProposalState
-  ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
-
-  "Governance proposals that aim to update Vega network parameters"
-  networkParametersProposals(
-    "Returns only proposals in the specified state. Leave out to get all proposals"
-    inState: ProposalState
-  ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
-
-  "Governance proposals that aim to create new assets in Vega"
-  newAssetProposals(
-    "Returns only proposals in the specified state. Leave out to get all proposals"
-    inState: ProposalState
-  ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
-
-  "Freeform governance proposals, which can be voted on but do not change the behaviour of the system, and can be used to gauge community sentiment in Vega"
-  newFreeformProposals(
-    "Returns only proposals in the specified state. Leave out to get all proposals"
-    inState: ProposalState
-  ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
-
-  "Return a list of aggregated node signature for a given resource ID"
-  nodeSignatures(resourceId: ID!): [NodeSignature!] @deprecated(reason: "Use nodeSignaturesConnection instead")
-
-  "Return a list of aggregated node signature for a given resource ID"
-  nodeSignaturesConnection(resourceId: ID!, pagination: Pagination): NodeSignaturesConnection
-
   "An asset which is used in the vega network"
   asset("ID of the asset" id: ID!): Asset
 
@@ -513,34 +362,17 @@ type Query {
   "The list of all assets in use in the Vega network or the specified asset if ID is provided"
   assetsConnection(id: ID, pagination: Pagination): AssetsConnection
 
-  "return an estimation of the potential cost for a new order"
-  estimateOrder(
-    "ID of the market to place the order"
-    marketId: ID!
-    "ID of the party placing the order"
-    partyId: ID!
-    "Price of the asset"
-    price: String
-    "Size of the order"
-    size: String!
-    "Side of the order (Buy or Sell)"
-    side: Side!
-    "TimeInForce of the order"
-    timeInForce: OrderTimeInForce!
-    "expiration of the the order"
-    expiration: String
-    "type of the order"
-    type: OrderType!
-  ): OrderEstimate!
+  "find a deposit using its ID"
+  deposit("ID of the Deposit" id: ID!): Deposit
 
-  "find a withdrawal using its ID"
-  withdrawal("ID of the withdrawal" id: ID!): Withdrawal
+  "get data for a specific epoch, if ID omitted it gets the current epoch. If the string is 'next', fetch the next epoch"
+  epoch(id: ID): Epoch!
 
-  "find an erc20 withdrawal approval using its withdrawal ID"
-  erc20WithdrawalApproval(
-    "ID of the withdrawal"
-    withdrawalId: ID!
-  ): Erc20WithdrawalApproval
+  "get the signatures bundle to allowlist an ERC20 token in the collateral bridge"
+  erc20ListAssetBundle(
+    "ID of the asset"
+    assetId: ID!
+  ): Erc20ListAssetBundle!
 
   "get the signature bundle to add a particular validator to the signer list of the multisig contract"
   erc20MultiSigSignerAddedBundles(
@@ -566,89 +398,40 @@ type Query {
     pagination: Pagination
   ): ERC20MultiSigSignerRemovedConnection!
 
-  "get the signatures bundle to allowlist an ERC20 token in the collateral bridge"
-  erc20ListAssetBundle(
-    "ID of the asset"
-    assetId: ID!
-  ): Erc20ListAssetBundle!
-
   "get the signature bundle to update the token limits (maxLifetimeDeposit and withdrawThreshold) for a given ERC20 token (already allowlisted) in the collateral bridge"
   erc20SetAssetLimitsBundle(
     "ID of the proposal to update an asset"
     proposalId: ID!
   ): ERC20SetAssetLimitsBundle!
 
-  "find a deposit using its ID"
-  deposit("ID of the Deposit" id: ID!): Deposit
+  "find an erc20 withdrawal approval using its withdrawal ID"
+  erc20WithdrawalApproval(
+    "ID of the withdrawal"
+    withdrawalId: ID!
+  ): Erc20WithdrawalApproval
 
-  "return the full list of network parameters"
-  networkParameters: [NetworkParameter!] @deprecated(reason: "Use networkParametersConnection instead")
-
-  networkParametersConnection(pagination: Pagination): NetworkParametersConnection!
-
-  "return a single network parameter"
-  networkParameter(
-    "key of the network parameter"
-    key: String!
-  ): NetworkParameter
-
-  "returns information about nodes"
-  nodeData: NodeData
-
-  "all known network nodes"
-  nodes: [Node!] @deprecated(reason: "use nodesConnection instead")
-
-  "all known network nodes"
-  nodesConnection(pagination: Pagination): NodesConnection!
-
-  "specific node in network"
-  node("required ID of node" id: ID!): Node
-
-  "query for historic key rotations"
-  keyRotations(id: ID): [KeyRotation!] @deprecated(reason: "use keyRotationsConnection instead")
-
-  "query for historic key rotations"
-  keyRotationsConnection(id: ID, pagination: Pagination): KeyRotationConnection!
+  "return an estimation of the potential cost for a new order"
+  estimateOrder(
+    "ID of the market to place the order"
+    marketId: ID!
+    "ID of the party placing the order"
+    partyId: ID!
+    "Price of the asset"
+    price: String
+    "Size of the order"
+    size: String!
+    "Side of the order (Buy or Sell)"
+    side: Side!
+    "TimeInForce of the order"
+    timeInForce: OrderTimeInForce!
+    "expiration of the the order"
+    expiration: String
+    "type of the order"
+    type: OrderType!
+  ): OrderEstimate!
 
   "query for historic ethereum key rotations"
   ethereumKeyRotations(nodeId: ID): EthereumKeyRotationsConnection!
-
-  "get data for a specific epoch, if ID omitted it gets the current epoch. If the string is 'next', fetch the next epoch"
-  epoch(id: ID): Epoch!
-
-  "get a list of all transfers for a public key"
-  transfers(
-    "the pubkey to look for"
-    pubkey: String!
-    "is the pubkey on the sending part of the transfer"
-    isFrom: Boolean
-    "is the pubkey in the receiving part of the transfer"
-    isTo: Boolean
-  ): [Transfer!] @deprecated(reason: "Use transfersConnection instead")
-
-  "get a list of all transfers for a public key"
-  transfersConnection(
-    "the public key to look for"
-    partyId: ID
-    "direction of the transfer with respect to the public key"
-    direction: TransferDirection
-    "Pagination information"
-    pagination: Pagination
-  ): TransferConnection
-
-  "get statistics about the Vega node"
-  statistics: Statistics!
-
-  historicBalances(
-    filter: AccountFilter,
-    groupBy: [AccountField],
-    "Date range to retrieve historical balances from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
-    dateRange: DateRange,
-    pagination: Pagination
-  ) : AggregatedBalanceConnection!
-
-  "Current network limits"
-  networkLimits: NetworkLimits
 
   "get market data history for a specific market. If no dates are given, the latest snapshot will be returned. If only the start date is provided, all history from the given date will be provided, and if only the end date is provided, all history from the start up to and including the end date will be provided."
   getMarketDataHistoryByID(
@@ -690,6 +473,238 @@ type Query {
     end: Int
     "Optional Pagination"
     pagination: Pagination): MarketDataConnection
+
+  historicBalances(
+    filter: AccountFilter,
+    groupBy: [AccountField],
+    "Date range to retrieve historical balances from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
+    dateRange: DateRange,
+    pagination: Pagination
+  ) : AggregatedBalanceConnection!
+
+  "query for historic key rotations"
+  keyRotations(id: ID): [KeyRotation!] @deprecated(reason: "use keyRotationsConnection instead")
+
+  "query for historic key rotations"
+  keyRotationsConnection(id: ID, pagination: Pagination): KeyRotationConnection!
+
+  "The last block process by the blockchain"
+  lastBlockHeight: String!
+
+  "An instrument that is trading on the Vega network"
+  market("Optional ID of a market" id: ID!): Market
+
+  "One or more instruments that are trading on the VEGA network"
+  markets("ID of the market" id: ID): [Market!] @deprecated(reason: "Use marketsConnection instead")
+
+  marketsConnection(
+    "Optional ID of a market"
+    id: ID
+    "Optional pagination information"
+    pagination: Pagination
+  ): MarketConnection
+
+  "Current network limits"
+  networkLimits: NetworkLimits
+
+  "return a single network parameter"
+  networkParameter(
+    "key of the network parameter"
+    key: String!
+  ): NetworkParameter
+
+  "return the full list of network parameters"
+  networkParameters: [NetworkParameter!] @deprecated(reason: "Use networkParametersConnection instead")
+
+  networkParametersConnection(pagination: Pagination): NetworkParametersConnection!
+
+  "Governance proposals that aim to update Vega network parameters"
+  networkParametersProposals(
+    "Returns only proposals in the specified state. Leave out to get all proposals"
+    inState: ProposalState
+  ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
+
+  "Governance proposals that aim to create new assets in Vega"
+  newAssetProposals(
+    "Returns only proposals in the specified state. Leave out to get all proposals"
+    inState: ProposalState
+  ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
+
+  "Freeform governance proposals, which can be voted on but do not change the behaviour of the system, and can be used to gauge community sentiment in Vega"
+  newFreeformProposals(
+    "Returns only proposals in the specified state. Leave out to get all proposals"
+    inState: ProposalState
+  ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
+
+  "Governance proposals that aim to create new markets"
+  newMarketProposals(
+    "Returns only proposals in the specified state. Leave out to get all proposals"
+    inState: ProposalState
+  ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
+
+  "specific node in network"
+  node("required ID of node" id: ID!): Node
+
+  "returns information about nodes"
+  nodeData: NodeData
+
+  "all known network nodes"
+  nodes: [Node!] @deprecated(reason: "use nodesConnection instead")
+
+  "all known network nodes"
+  nodesConnection(pagination: Pagination): NodesConnection!
+
+  "Return a list of aggregated node signature for a given resource ID"
+  nodeSignatures(resourceId: ID!): [NodeSignature!] @deprecated(reason: "Use nodeSignaturesConnection instead")
+
+  "Return a list of aggregated node signature for a given resource ID"
+  nodeSignaturesConnection(resourceId: ID!, pagination: Pagination): NodeSignaturesConnection
+
+  "All registered oracle specs"
+  oracleData(
+    "Pagination"
+    pagination: OffsetPagination
+  ): [OracleData!] @deprecated(reason: "Use oracleDataConnection instead")
+
+  "All oracle data for a given oracle spec ID"
+  oracleDataBySpec(
+    "ID for an oracle spec"
+    oracleSpecId: ID!
+    "Pagination"
+    pagination: OffsetPagination
+  ): [OracleData!] @deprecated(reason: "Use oracleDataBySpecConnection instead")
+
+  oracleDataBySpecConnection(
+    "ID for an oracle spec"
+    oracleSpecId: ID!
+    "Pagination"
+    pagination: Pagination
+  ): OracleDataConnection
+
+  "All registered oracle specs"
+  oracleDataConnection(
+    "Pagination"
+    pagination: Pagination
+  ): OracleDataConnection
+
+  "An oracle spec for a given oracle spec ID"
+  oracleSpec("ID for an oracle spec" oracleSpecId: ID!): OracleSpec
+
+  "All registered oracle specs"
+  oracleSpecs(
+    "Pagination"
+    pagination: OffsetPagination
+  ): [OracleSpec!] @deprecated(reason: "Use oracleSpecsConnection instead")
+
+  "All registered oracle specs"
+  oracleSpecsConnection(
+    "Pagination"
+    pagination: Pagination
+  ): OracleSpecsConnection
+
+  "An order in the Vega network found by orderID"
+  orderByID(
+    "ID for an order"
+    id: ID!
+
+    "version of the order (omitted or 0 for most recent; 1 for original; 2 for first amendment, etc)"
+    version: Int
+  ): Order!
+
+  "An order in the Vega network found by referenceID"
+  orderByReference("Reference for an order" reference: String!): Order!
+
+  "Order versions (created via amendments if any) found by orderID"
+  orderVersions(
+    "ID for an order"
+    orderId: ID!
+
+    "Pagination skip"
+    skip: Int
+    "Pagination first element"
+    first: Int
+    "Pagination last element"
+    last: Int
+  ): [Order!] @deprecated(reason: "Use orderVersionsConnection instead")
+
+  "Order versions (created via amendments if any) found by orderID"
+  orderVersionsConnection(
+    "ID for an order"
+    orderId: ID
+    "Pagination information"
+    pagination: Pagination
+  ): OrderConnection
+
+  "One or more entities that are trading on the Vega network"
+  parties("Optional ID of a party" id: ID): [Party!] @deprecated(reason: "Use partiesConnection instead.")
+
+  partiesConnection(
+    "Optional ID of a party to retrieve"
+    id: ID
+    "Optional pagination information"
+    pagination: Pagination
+  ): PartyConnection
+
+  "An entity that is trading on the Vega network"
+  party("ID of a party" id: ID!): Party
+
+  "A governance proposal located by either its ID or reference. If both are set, ID is used."
+  proposal(
+    "Optionally, locate proposal by its ID"
+    id: ID
+    "Optionally, locate proposal by its reference. If ID is set, this parameter is ignored."
+    reference: String
+  ): Proposal
+
+  "All governance proposals in the Vega network"
+  proposals(
+    "Returns only proposals in the specified state. Leave out to get all proposals"
+    inState: ProposalState
+  ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
+
+  "All governance proposals in the Vega network"
+  proposalsConnection(
+    "Optional type of proposal to retrieve data for"
+    proposalType: ProposalType
+    "Returns only proposals in the specified state. Leave out to get all proposals"
+    inState: ProposalState
+    "Optional Pagination information"
+    pagination: Pagination
+  ): ProposalsConnection
+
+  "Governance proposals that aim to update existing markets"
+  updateMarketProposals(
+    "Optionally, select proposals for a specific market. Leave out for all"
+    marketId: ID
+    "Returns only proposals in the specified state. Leave out to get all proposals"
+    inState: ProposalState
+  ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
+
+  "get statistics about the Vega node"
+  statistics: Statistics!
+
+  "get a list of all transfers for a public key"
+  transfers(
+    "the pubkey to look for"
+    pubkey: String!
+    "is the pubkey on the sending part of the transfer"
+    isFrom: Boolean
+    "is the pubkey in the receiving part of the transfer"
+    isTo: Boolean
+  ): [Transfer!] @deprecated(reason: "Use transfersConnection instead")
+
+  "get a list of all transfers for a public key"
+  transfersConnection(
+    "the public key to look for"
+    partyId: ID
+    "direction of the transfer with respect to the public key"
+    direction: TransferDirection
+    "Pagination information"
+    pagination: Pagination
+  ): TransferConnection
+
+  "find a withdrawal using its ID"
+  withdrawal("ID of the withdrawal" id: ID!): Withdrawal
 }
 
 enum TransferStatus {
@@ -2229,13 +2244,13 @@ type Order {
   "The market the order is trading on (probably stored internally as a hash of the market details)"
   market: Market!
 
-  "Total number of contracts that may be bought or sold (immutable) (uint64)"
+  "Total number of units that may be bought or sold (immutable) (uint64)"
   size: String!
 
-  "Number of contracts remaining of the total that have not yet been bought or sold (uint64)"
+  "Number of units remaining of the total that have not yet been bought or sold (uint64)"
   remaining: String!
 
-  "The party who place the order (probably stored internally as the party's public key)"
+  "The party that placed the order (probably stored internally as the party's public key)"
   party: Party!
 
   "RFC3339Nano formatted date and time for when the order was created (timestamp)"
@@ -2260,10 +2275,10 @@ type Order {
     pagination: Pagination
   ): TradeConnection
 
-  "Type the order type (defaults to PARTY)"
+  "The order type"
   type: OrderType
 
-  "Reason for the order to be rejected"
+  "Why the order was rejected"
   rejectionReason: OrderRejectionReason
 
   "Version of this order, counts the number of amends"
@@ -2277,6 +2292,63 @@ type Order {
 
   "The liquidity provision this order was created from"
   liquidityProvision: LiquidityProvision
+}
+
+"An order update in Vega, if active it will be on the order book for the market"
+type OrderUpdate {
+  "Hash of the order data"
+  id: ID!
+
+  "The worst price the order will trade at (e.g. buy for price or less, sell for price or more) (uint64)"
+  price: String!
+
+  "The timeInForce of order (determines how and if it executes, and whether it persists on the book)"
+  timeInForce: OrderTimeInForce!
+
+  "Whether the order is to buy or sell"
+  side: Side!
+
+  "The market the order is trading on (probably stored internally as a hash of the market details)"
+  marketId: ID!
+
+  "Total number of units that may be bought or sold (immutable) (uint64)"
+  size: String!
+
+  "Number of units remaining of the total that have not yet been bought or sold (uint64)"
+  remaining: String!
+
+  "The party that placed the order (probably stored internally as the party's public key)"
+  partyId: ID!
+
+  "RFC3339Nano formatted date and time for when the order was created (timestamp)"
+  createdAt: String!
+
+  "Expiration time of this order (ISO-8601 RFC3339+Nano formatted date)"
+  expiresAt: String
+
+  "The status of an order, for example 'Active'"
+  status: OrderStatus!
+
+  "The external reference (if available) for the order"
+  reference: String!
+
+  "The order type"
+  type: OrderType
+
+  "Why the order was rejected"
+  rejectionReason: OrderRejectionReason
+
+  "Version of this order, counts the number of amends"
+  version: String!
+
+  "RFC3339Nano time the order was altered"
+  updatedAt: String
+
+  "PeggedOrder contains the details about a pegged order"
+  peggedOrder: PeggedOrder
+
+  "The liquidity provision this order was created from"
+  liquidityProvisionId: ID
 }
 
 "An estimate of the fee to be paid by the order"
@@ -2317,7 +2389,7 @@ type Trade {
   "The price of the trade (probably initially the passive order price, other determination algorithms are possible though) (uint64)"
   price: String!
 
-  "The number of contracts trades, will always be <= the remaining size of both orders immediately before the trade (uint64)"
+  "The number of units traded, will always be <= the remaining size of both orders immediately before the trade (uint64)"
   size: String!
 
   "RFC3339Nano time for when the trade occurred"
@@ -2682,7 +2754,7 @@ enum OrderStatus {
   STATUS_PARKED
 }
 
-"Reason for the proposal being rejected by the core node"
+"Why the proposal was rejected by the core node"
 enum ProposalRejectionReason {
   "The specified close time is too early based on network parameters"
   PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON
@@ -2762,7 +2834,7 @@ enum ProposalRejectionReason {
   PROPOSAL_ERROR_INVALID_FREEFORM
 }
 
-"Reason for the order being rejected by the core node"
+"Why the order was rejected by the core node"
 enum OrderRejectionReason {
   "Market ID is invalid"
   ORDER_ERROR_INVALID_MARKET_ID
@@ -3020,7 +3092,7 @@ enum AccountType {
   ACCOUNT_TYPE_GLOBAL_REWARD
   "PendingTransfers - a global account for the pending transfers pool"
   ACCOUNT_TYPE_PENDING_TRANSFERS
-  "RewardMakerPaidFees - an account holding rewards for taker paid fees"
+  "RewardMakerPaidFees - an account holding rewards for maker paid fees"
   ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES
   "RewardMakerReceivedFees - an account holding rewards for maker received fees"
   ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES
@@ -3283,7 +3355,7 @@ type Proposal {
   terms: ProposalTerms!
   "Votes cast for this proposal"
   votes: ProposalVotes!
-  "Reason for the proposal to be rejected by the core"
+  "Why the proposal was rejected by the core"
   rejectionReason: ProposalRejectionReason
   "Error details of the rejectionReason"
   errorDetails: String
@@ -3641,17 +3713,45 @@ type LiquidityProvision {
   market: Market!
   "Specified as a unit-less number that represents the amount of settlement asset of the market."
   commitmentAmount: String!
-  "Nominated liquidity fee factor, which is an input to the calculation of maker fees on the market, as per setting fees and rewarding liquidity providers."
+  "Nominated liquidity fee factor, which is an input to the calculation of liquidity fees on the market, as per setting fees and rewarding liquidity providers."
   fee: String!
   "a set of liquidity sell orders to meet the liquidity provision obligation."
   sells: [LiquidityOrderReference!]!
   "a set of liquidity buy orders to meet the liquidity provision obligation."
   buys: [LiquidityOrderReference!]!
-  "The version of this LiquidityProvision"
+  "The version of this liquidity provision"
   version: String!
   "The current status of this liquidity provision"
   status: LiquidityProvisionStatus!
-  "A reference for the orders created out of this Liquidity provision"
+  "A reference for the orders created out of this liquidity provision"
+  reference: String
+}
+
+"The command to be sent to the chain for a liquidity provision submission"
+type LiquidityProvisionUpdate {
+  "Unique identifier for the order (set by the system after consensus)"
+  id: ID
+  "The party making this commitment"
+  partyID: ID!
+  "When the liquidity provision was initially created (formatted RFC3339)"
+  createdAt: String!
+  "RFC3339Nano time of when the liquidity provision was updated"
+  updatedAt: String
+  "Market for the order"
+  marketID: ID!
+  "Specified as a unit-less number that represents the amount of settlement asset of the market."
+  commitmentAmount: String!
+  "Nominated liquidity fee factor, which is an input to the calculation of liquidity fees on the market, as per setting fees and rewarding liquidity providers."
+  fee: String!
+  "a set of liquidity sell orders to meet the liquidity provision obligation."
+  sells: [LiquidityOrderReference!]!
+  "a set of liquidity buy orders to meet the liquidity provision obligation."
+  buys: [LiquidityOrderReference!]!
+  "The version of this liquidity provision"
+  version: String!
+  "The current status of this liquidity provision"
+  status: LiquidityProvisionStatus!
+  "A reference for the orders created out of this liquidity provision"
   reference: String
 }
 

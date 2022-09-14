@@ -87,11 +87,18 @@ type Pipeline interface {
 	// otherwise.
 	RequestPermissionsReview(ctx context.Context, traceID, hostname, wallet string, perms map[string]string) (bool, error)
 
-	// RequestTransactionReview is used to trigger a client review of the
+	// RequestTransactionSendingReview is used to trigger a client review of the
 	// transaction a third-party application wants to send.
 	// It returns true if the client approved the sending of the transaction,
 	// false otherwise.
-	RequestTransactionReview(ctx context.Context, traceID, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error)
+	RequestTransactionSendingReview(ctx context.Context, traceID, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error)
+
+	// RequestTransactionSigningReview is used to trigger a client review of the
+	// transaction a third-party application wants to sign. The wallet doesn't
+	// send the transaction.
+	// It returns true if the client approved the signing of the transaction,
+	// false otherwise.
+	RequestTransactionSigningReview(ctx context.Context, traceID, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error)
 
 	// NotifyTransactionStatus is used to report the transaction status once
 	// sent.
@@ -144,6 +151,7 @@ func SessionAPI(log *zap.Logger, walletStore WalletStore, pipeline Pipeline, nod
 	walletAPI.RegisterMethod("session.get_permissions", NewGetPermissions(sessions))
 	walletAPI.RegisterMethod("session.list_keys", NewListKeys(sessions))
 	walletAPI.RegisterMethod("session.request_permissions", NewRequestPermissions(walletStore, pipeline, sessions))
+	walletAPI.RegisterMethod("session.sign_transaction", NewSignTransaction(pipeline, nodeSelector, sessions))
 	walletAPI.RegisterMethod("session.send_transaction", NewSendTransaction(pipeline, nodeSelector, sessions))
 
 	log.Info("the restricted JSON-RPC API has been initialised")

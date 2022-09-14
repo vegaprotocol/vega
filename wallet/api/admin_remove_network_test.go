@@ -51,12 +51,6 @@ func testRemovingNetworkWithInvalidParamsFails(t *testing.T) {
 
 			// setup
 			handler := newRemoveNetworkHandler(tt)
-			handler.networkStore.EXPECT().ListNetworks().Times(0)
-			handler.networkStore.EXPECT().NetworkExists(gomock.Any()).Times(0)
-			handler.networkStore.EXPECT().GetNetwork(gomock.Any()).Times(0)
-			handler.networkStore.EXPECT().SaveNetwork(gomock.Any()).Times(0)
-			handler.networkStore.EXPECT().GetNetworkPath(gomock.Any()).Times(0)
-			handler.networkStore.EXPECT().DeleteNetwork(gomock.Any()).Times(0)
 
 			// when
 			result, errorDetails := handler.handle(t, ctx, tc.params)
@@ -78,11 +72,6 @@ func testRemovingNetworkWithValidParamsSucceeds(t *testing.T) {
 	// -- expected calls
 	handler.networkStore.EXPECT().NetworkExists(name).Times(1).Return(true, nil)
 	handler.networkStore.EXPECT().DeleteNetwork(name).Times(1).Return(nil)
-	// -- unexpected calls
-	handler.networkStore.EXPECT().ListNetworks().Times(0)
-	handler.networkStore.EXPECT().GetNetwork(gomock.Any()).Times(0)
-	handler.networkStore.EXPECT().SaveNetwork(gomock.Any()).Times(0)
-	handler.networkStore.EXPECT().GetNetworkPath(gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminRemoveNetworkParams{
@@ -103,12 +92,6 @@ func testRemovingNetworkThatDoesNotExistsFails(t *testing.T) {
 	handler := newRemoveNetworkHandler(t)
 	// -- expected calls
 	handler.networkStore.EXPECT().NetworkExists(name).Times(1).Return(false, nil)
-	// -- unexpected calls
-	handler.networkStore.EXPECT().ListNetworks().Times(0)
-	handler.networkStore.EXPECT().GetNetwork(gomock.Any()).Times(0)
-	handler.networkStore.EXPECT().SaveNetwork(gomock.Any()).Times(0)
-	handler.networkStore.EXPECT().GetNetworkPath(gomock.Any()).Times(0)
-	handler.networkStore.EXPECT().DeleteNetwork(name).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminRemoveNetworkParams{
@@ -130,12 +113,6 @@ func testGettingInternalErrorDuringVerificationDoesNotRemoveNetwork(t *testing.T
 	handler := newRemoveNetworkHandler(t)
 	// -- expected calls
 	handler.networkStore.EXPECT().NetworkExists(name).Times(1).Return(false, assert.AnError)
-	// -- unexpected calls
-	handler.networkStore.EXPECT().ListNetworks().Times(0)
-	handler.networkStore.EXPECT().GetNetwork(gomock.Any()).Times(0)
-	handler.networkStore.EXPECT().SaveNetwork(gomock.Any()).Times(0)
-	handler.networkStore.EXPECT().GetNetworkPath(gomock.Any()).Times(0)
-	handler.networkStore.EXPECT().DeleteNetwork(name).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminRemoveNetworkParams{

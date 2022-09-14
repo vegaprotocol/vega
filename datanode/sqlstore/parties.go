@@ -53,7 +53,7 @@ func (ps *Parties) Initialise() {
 		`INSERT INTO parties(id, tx_hash) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING`,
 		entities.PartyID("network"), entities.TxHash("01"))
 	if err != nil {
-		panic(fmt.Errorf("Unable to add built-in network party: %w", err))
+		panic(fmt.Errorf("unable to add built-in network party: %w", err))
 	}
 }
 

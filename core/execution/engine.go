@@ -103,8 +103,6 @@ type Engine struct {
 
 	npv netParamsValues
 
-	// Snapshot
-	stateChanged          bool
 	snapshotSerialised    []byte
 	newGeneratedProviders []types.StateProvider // new providers generated during the last state change
 
@@ -207,16 +205,21 @@ func (e *Engine) ReloadConf(cfg Config) {
 func (e *Engine) Hash() []byte {
 	e.log.Debug("hashing markets")
 
-	hashes := make([]string, 0, len(e.markets))
-	for _, m := range e.markets {
+	hashes := make([]string, 0, len(e.marketsCpy))
+	for _, m := range e.marketsCpy {
 		hash := m.Hash()
 		e.log.Debug("market app state hash", logging.Hash(hash), logging.String("market-id", m.GetID()))
 		hashes = append(hashes, string(hash))
 	}
 
 	sort.Strings(hashes)
+
+	// get the accounts hash + add it at end of all markets hash
+	accountsHash := e.collateral.Hash()
+	e.log.Debug("accounts state hash", logging.Hash(accountsHash))
+
 	bytes := []byte{}
-	for _, h := range hashes {
+	for _, h := range append(hashes, string(accountsHash)) {
 		bytes = append(bytes, []byte(h)...)
 	}
 	return crypto.Hash(bytes)
@@ -475,7 +478,6 @@ func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *Market) err
 
 func (e *Engine) removeMarket(mktID string) {
 	e.log.Debug("removing market", logging.String("id", mktID))
-	e.stateChanged = true
 
 	delete(e.markets, mktID)
 	for i, mkt := range e.marketsCpy {
@@ -500,7 +502,8 @@ func (e *Engine) SubmitOrder(
 	ctx context.Context,
 	submission *types.OrderSubmission,
 	party string,
-	deterministicID string,
+	idgen IDGenerator,
+	orderID string,
 ) (confirmation *types.OrderConfirmation, returnedErr error) {
 	timer := metrics.NewTimeCounter(submission.MarketID, "execution", "SubmitOrder")
 	defer func() {
@@ -517,7 +520,8 @@ func (e *Engine) SubmitOrder(
 	}
 
 	metrics.OrderGaugeAdd(1, submission.MarketID)
-	conf, err := mkt.SubmitOrder(ctx, submission, party, deterministicID)
+	conf, err := mkt.SubmitOrderWithIDGeneratorAndOrderID(
+		ctx, submission, party, idgen, orderID)
 	if err != nil {
 		return nil, err
 	}
@@ -529,8 +533,11 @@ func (e *Engine) SubmitOrder(
 
 // AmendOrder takes order amendment details and attempts to amend the order
 // if it exists and is in a editable state.
-func (e *Engine) AmendOrder(ctx context.Context, amendment *types.OrderAmendment, party string,
-	deterministicID string,
+func (e *Engine) AmendOrder(
+	ctx context.Context,
+	amendment *types.OrderAmendment,
+	party string,
+	idgen IDGenerator,
 ) (confirmation *types.OrderConfirmation, returnedErr error) {
 	timer := metrics.NewTimeCounter(amendment.MarketID, "execution", "AmendOrder")
 	defer func() {
@@ -546,7 +553,7 @@ func (e *Engine) AmendOrder(ctx context.Context, amendment *types.OrderAmendment
 		return nil, types.ErrInvalidMarketID
 	}
 
-	conf, err := mkt.AmendOrder(ctx, amendment, party, deterministicID)
+	conf, err := mkt.AmendOrderWithIDGenerator(ctx, amendment, party, idgen)
 	if err != nil {
 		return nil, err
 	}
@@ -577,7 +584,12 @@ func (e *Engine) decrementOrderGaugeMetrics(
 }
 
 // CancelOrder takes order details and attempts to cancel if it exists in matching engine, stores etc.
-func (e *Engine) CancelOrder(ctx context.Context, cancel *types.OrderCancellation, party string, deterministicID string) (_ []*types.OrderCancellationConfirmation, returnedErr error) {
+func (e *Engine) CancelOrder(
+	ctx context.Context,
+	cancel *types.OrderCancellation,
+	party string,
+	idgen IDGenerator,
+) (_ []*types.OrderCancellationConfirmation, returnedErr error) {
 	timer := metrics.NewTimeCounter(cancel.MarketID, "execution", "CancelOrder")
 	defer func() {
 		timer.EngineTimeCounterAdd()
@@ -594,19 +606,23 @@ func (e *Engine) CancelOrder(ctx context.Context, cancel *types.OrderCancellatio
 
 	if len(cancel.MarketID) > 0 {
 		if len(cancel.OrderID) > 0 {
-			return e.cancelOrder(ctx, party, cancel.MarketID, cancel.OrderID, deterministicID)
+			return e.cancelOrder(ctx, party, cancel.MarketID, cancel.OrderID, idgen)
 		}
 		return e.cancelOrderByMarket(ctx, party, cancel.MarketID)
 	}
 	return e.cancelAllPartyOrders(ctx, party)
 }
 
-func (e *Engine) cancelOrder(ctx context.Context, party, market, orderID string, deterministicID string) ([]*types.OrderCancellationConfirmation, error) {
+func (e *Engine) cancelOrder(
+	ctx context.Context,
+	party, market, orderID string,
+	idgen IDGenerator,
+) ([]*types.OrderCancellationConfirmation, error) {
 	mkt, ok := e.markets[market]
 	if !ok {
 		return nil, types.ErrInvalidMarketID
 	}
-	conf, err := mkt.CancelOrder(ctx, party, orderID, deterministicID)
+	conf, err := mkt.CancelOrderWithIDGenerator(ctx, party, orderID, idgen)
 	if err != nil {
 		return nil, err
 	}
@@ -730,16 +746,11 @@ func (e *Engine) CancelLiquidityProvision(ctx context.Context, cancel *types.Liq
 func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 	timer := metrics.NewTimeCounter("-", "execution", "OnTick")
 
-	evts := make([]events.Event, 0, len(e.marketsCpy))
-	for _, v := range e.marketsCpy {
-		evts = append(evts, events.NewMarketDataEvent(ctx, v.GetMarketData()))
-	}
-	e.broker.SendBatch(evts)
-
 	e.log.Debug("updating engine on new time update")
 
 	// notify markets of the time expiration
 	toDelete := []string{}
+	evts := make([]events.Event, 0, len(e.marketsCpy))
 	for _, mkt := range e.marketsCpy {
 		mkt := mkt
 		closing := mkt.OnTick(ctx, t)
@@ -748,7 +759,9 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 				logging.MarketID(mkt.GetID()))
 			toDelete = append(toDelete, mkt.GetID())
 		}
+		evts = append(evts, events.NewMarketDataEvent(ctx, mkt.GetMarketData()))
 	}
+	e.broker.SendBatch(evts)
 
 	for _, id := range toDelete {
 		e.removeMarket(id)

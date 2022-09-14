@@ -21,17 +21,19 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/protos/vega"
 	"github.com/jackc/pgx/v4"
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestRiskFactors(t *testing.T) {
+	t.Run("Make sure you can update risk factors for a market and get latest values", testUpdateMarketRiskFactors)
 	t.Run("Upsert should insert risk factor", testAddRiskFactor)
 	t.Run("Upsert should update the risk factor if the market already exists in the same block", testUpsertDuplicateMarketInSameBlock)
 	t.Run("GetMarketRiskFactors returns the risk factors for the given market id", testGetMarketRiskFactors)
 }
 
-func setupRiskFactorTests(ctx context.Context, t *testing.T) (*sqlstore.Blocks, *sqlstore.RiskFactors, *pgx.Conn) {
+func setupRiskFactorTests(t *testing.T, ctx context.Context) (*sqlstore.Blocks, *sqlstore.RiskFactors, *pgx.Conn) {
 	t.Helper()
 	DeleteEverything()
 
@@ -45,12 +47,51 @@ func setupRiskFactorTests(ctx context.Context, t *testing.T) (*sqlstore.Blocks, 
 	return bs, rfStore, conn
 }
 
+func testUpdateMarketRiskFactors(t *testing.T) {
+	ctx := context.Background()
+	bs, rfStore, _ := setupRiskFactorTests(t, ctx)
+
+	// Add a risk factor for market 'aa' in one block
+	block := addTestBlock(t, bs)
+	marketID := entities.MarketID("aa")
+	rf := entities.RiskFactor{
+		MarketID: marketID,
+		Short:    decimal.NewFromInt(100),
+		Long:     decimal.NewFromInt(200),
+		TxHash:   generateTxHash(),
+		VegaTime: block.VegaTime,
+	}
+	rfStore.Upsert(ctx, &rf)
+
+	// Check we get the same data back as we put in
+	fetched, err := rfStore.GetMarketRiskFactors(ctx, string(marketID))
+	require.NoError(t, err)
+	assert.Equal(t, fetched, rf)
+
+	// Upsert a new risk factor for the same in a different block
+	time.Sleep(5 * time.Microsecond) // Ensure we get a different vega time
+	block2 := addTestBlock(t, bs)
+	rf2 := entities.RiskFactor{
+		MarketID: marketID,
+		Short:    decimal.NewFromInt(101),
+		Long:     decimal.NewFromInt(202),
+		TxHash:   generateTxHash(),
+		VegaTime: block2.VegaTime,
+	}
+	rfStore.Upsert(ctx, &rf2)
+
+	// Check we get back the updated version
+	fetched, err = rfStore.GetMarketRiskFactors(ctx, string(marketID))
+	require.NoError(t, err)
+	assert.Equal(t, fetched, rf2)
+}
+
 func testAddRiskFactor(t *testing.T) {
 	testTimeout := time.Second * 10
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
-	bs, rfStore, conn := setupRiskFactorTests(ctx, t)
+	bs, rfStore, conn := setupRiskFactorTests(t, ctx)
 
 	var rowCount int
 	err := conn.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)
@@ -74,7 +115,7 @@ func testUpsertDuplicateMarketInSameBlock(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
-	bs, rfStore, conn := setupRiskFactorTests(ctx, t)
+	bs, rfStore, conn := setupRiskFactorTests(t, ctx)
 
 	var rowCount int
 	err := conn.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)
@@ -113,7 +154,7 @@ func testGetMarketRiskFactors(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
-	bs, rfStore, conn := setupRiskFactorTests(ctx, t)
+	bs, rfStore, conn := setupRiskFactorTests(t, ctx)
 
 	var rowCount int
 	err := conn.QueryRow(ctx, `select count(*) from risk_factors`).Scan(&rowCount)

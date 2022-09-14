@@ -170,12 +170,6 @@ func testRotatingKeyWithInvalidParamsFails(t *testing.T) {
 
 			// setup
 			handler := newRotateKeyHandler(tt)
-			// -- unexpected calls
-			handler.walletStore.EXPECT().WalletExists(gomock.Any(), gomock.Any()).Times(0)
-			handler.walletStore.EXPECT().ListWallets(gomock.Any()).Times(0)
-			handler.walletStore.EXPECT().GetWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-			handler.walletStore.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-			handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 			// when
 			result, errorDetails := handler.handle(t, ctx, tc.params)
@@ -199,11 +193,6 @@ func testRotatingKeyWithValidParamsSucceeds(t *testing.T) {
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(expectedWallet, nil)
-	// -- unexpected calls
-	handler.walletStore.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.walletStore.EXPECT().GetWalletPath(gomock.Any()).Times(0)
-	handler.walletStore.EXPECT().ListWallets(gomock.Any()).Times(0)
-	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminRotateKeyParams{
@@ -231,11 +220,6 @@ func testRotatingKeyFromWalletThatDoesNotExistsFails(t *testing.T) {
 	handler := newRotateKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(false, nil)
-	// -- unexpected calls
-	handler.walletStore.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.walletStore.EXPECT().GetWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.walletStore.EXPECT().ListWallets(gomock.Any()).Times(0)
-	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminRotateKeyParams{
@@ -264,11 +248,6 @@ func testRotatingKeyGettingInternalErrorDuringWalletVerificationFails(t *testing
 	handler := newRotateKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(false, assert.AnError)
-	// -- unexpected calls
-	handler.walletStore.EXPECT().GetWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.walletStore.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.walletStore.EXPECT().ListWallets(gomock.Any()).Times(0)
-	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminRotateKeyParams{
@@ -298,10 +277,6 @@ func testRotatingKeyGettingInternalErrorDuringWalletRetrievalFails(t *testing.T)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, name, passphrase).Times(1).Return(nil, assert.AnError)
-	// -- unexpected calls
-	handler.walletStore.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.walletStore.EXPECT().ListWallets(gomock.Any()).Times(0)
-	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminRotateKeyParams{
@@ -336,10 +311,6 @@ func testRotatingKeyWithIsolatedWalletFails(t *testing.T) {
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, isolatedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, isolatedWallet.Name(), passphrase).Times(1).Return(isolatedWallet, nil)
-	// -- unexpected calls
-	handler.walletStore.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.walletStore.EXPECT().ListWallets(gomock.Any()).Times(0)
-	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminRotateKeyParams{
@@ -370,10 +341,6 @@ func testRotatingKeyFromPublicKeyThatDoesNotExistsFails(t *testing.T) {
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(expectedWallet, nil)
-	// -- unexpected calls
-	handler.walletStore.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.walletStore.EXPECT().ListWallets(gomock.Any()).Times(0)
-	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminRotateKeyParams{
@@ -403,10 +370,6 @@ func testRotatingKeyToPublicKeyThatDoesNotExistsFails(t *testing.T) {
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(expectedWallet, nil)
-	// -- unexpected calls
-	handler.walletStore.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.walletStore.EXPECT().ListWallets(gomock.Any()).Times(0)
-	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminRotateKeyParams{
@@ -440,10 +403,6 @@ func testRotatingKeyToTaintedPublicKeyDoesNotExistsFails(t *testing.T) {
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(expectedWallet, nil)
-	// -- unexpected calls
-	handler.walletStore.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.walletStore.EXPECT().ListWallets(gomock.Any()).Times(0)
-	handler.walletStore.EXPECT().DeleteWallet(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminRotateKeyParams{

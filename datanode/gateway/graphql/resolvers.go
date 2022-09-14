@@ -111,6 +111,11 @@ func (r *VegaResolverRoot) MarginLevels() MarginLevelsResolver {
 	return (*myMarginLevelsResolver)(r)
 }
 
+// MarginLevelsUpdate returns the market levels resolver.
+func (r *VegaResolverRoot) MarginLevelsUpdate() MarginLevelsUpdateResolver {
+	return (*myMarginLevelsUpdateResolver)(r)
+}
+
 // PriceLevel returns the price levels resolver.
 func (r *VegaResolverRoot) PriceLevel() PriceLevelResolver {
 	return (*myPriceLevelResolver)(r)
@@ -124,6 +129,11 @@ func (r *VegaResolverRoot) Market() MarketResolver {
 // Order returns the order resolver.
 func (r *VegaResolverRoot) Order() OrderResolver {
 	return (*myOrderResolver)(r)
+}
+
+// OrderUpdate returns the order resolver.
+func (r *VegaResolverRoot) OrderUpdate() OrderUpdateResolver {
+	return (*myOrderUpdateResolver)(r)
 }
 
 // Trade returns the trades resolver.
@@ -339,6 +349,10 @@ func (r *VegaResolverRoot) AccountUpdate() AccountUpdateResolver {
 
 func (r *VegaResolverRoot) TradeUpdate() TradeUpdateResolver {
 	return (*tradeUpdateResolver)(r)
+}
+
+func (r *VegaResolverRoot) LiquidityProvisionUpdate() LiquidityProvisionUpdateResolver {
+	return (*liquidityProvisionUpdateResolver)(r)
 }
 
 type accountUpdateResolver VegaResolverRoot
@@ -1868,6 +1882,24 @@ func (r *myPartyResolver) DelegationsConnection(ctx context.Context, party *type
 
 // END: Party Resolver
 
+type myMarginLevelsUpdateResolver VegaResolverRoot
+
+func (r *myMarginLevelsUpdateResolver) InitialLevel(_ context.Context, m *types.MarginLevels) (string, error) {
+	return m.InitialMargin, nil
+}
+
+func (r *myMarginLevelsUpdateResolver) SearchLevel(_ context.Context, m *types.MarginLevels) (string, error) {
+	return m.SearchLevel, nil
+}
+
+func (r *myMarginLevelsUpdateResolver) MaintenanceLevel(_ context.Context, m *types.MarginLevels) (string, error) {
+	return m.MaintenanceMargin, nil
+}
+
+func (r *myMarginLevelsUpdateResolver) Timestamp(_ context.Context, m *types.MarginLevels) (string, error) {
+	return vegatime.Format(vegatime.UnixNano(m.Timestamp)), nil
+}
+
 // BEGIN: MarginLevels Resolver
 
 type myMarginLevelsResolver VegaResolverRoot
@@ -1917,6 +1949,52 @@ func (r *myMarginLevelsResolver) Timestamp(_ context.Context, m *types.MarginLev
 }
 
 // END: MarginLevels Resolver
+
+type myOrderUpdateResolver VegaResolverRoot
+
+func (r *myOrderUpdateResolver) Price(ctx context.Context, obj *types.Order) (string, error) {
+	return obj.Price, nil
+}
+
+func (r *myOrderUpdateResolver) Size(ctx context.Context, obj *types.Order) (string, error) {
+	return strconv.FormatUint(obj.Size, 10), nil
+}
+
+func (r *myOrderUpdateResolver) Remaining(ctx context.Context, obj *types.Order) (string, error) {
+	return strconv.FormatUint(obj.Remaining, 10), nil
+}
+
+func (r *myOrderUpdateResolver) CreatedAt(ctx context.Context, obj *types.Order) (string, error) {
+	return vegatime.Format(vegatime.UnixNano(obj.CreatedAt)), nil
+}
+
+func (r *myOrderUpdateResolver) UpdatedAt(ctx context.Context, obj *types.Order) (*string, error) {
+	var updatedAt *string
+	if obj.UpdatedAt > 0 {
+		t := vegatime.Format(vegatime.UnixNano(obj.UpdatedAt))
+		updatedAt = &t
+	}
+	return updatedAt, nil
+}
+
+func (r *myOrderUpdateResolver) Version(ctx context.Context, obj *types.Order) (string, error) {
+	return strconv.FormatUint(obj.Version, 10), nil
+}
+
+func (r *myOrderUpdateResolver) ExpiresAt(ctx context.Context, obj *types.Order) (*string, error) {
+	if obj.ExpiresAt <= 0 {
+		return nil, nil
+	}
+	expiresAt := vegatime.Format(vegatime.UnixNano(obj.ExpiresAt))
+	return &expiresAt, nil
+}
+
+func (r *myOrderUpdateResolver) RejectionReason(_ context.Context, o *types.Order) (*vega.OrderError, error) {
+	if o.Reason == types.OrderError_ORDER_ERROR_UNSPECIFIED {
+		return nil, nil
+	}
+	return &o.Reason, nil
+}
 
 // BEGIN: Order Resolver
 
@@ -2836,6 +2914,41 @@ func (r *mySubscriptionResolver) busEventsWithBatch(
 			return
 		}
 	}
+}
+
+func (r *mySubscriptionResolver) LiquidityProvisions(ctx context.Context, partyID *string, marketID *string) (<-chan []*types.LiquidityProvision, error) {
+	req := &v2.ObserveLiquidityProvisionsRequest{
+		MarketId: marketID,
+		PartyId:  partyID,
+	}
+	stream, err := r.tradingDataClientV2.ObserveLiquidityProvisions(ctx, req)
+	if err != nil {
+		return nil, customErrorFromStatus(err)
+	}
+
+	c := make(chan []*types.LiquidityProvision)
+	go func() {
+		defer func() {
+			stream.CloseSend()
+			close(c)
+		}()
+		for {
+			received, err := stream.Recv()
+			if err == io.EOF {
+				r.log.Error("orders: stream closed by server", logging.Error(err))
+				break
+			}
+			if err != nil {
+				r.log.Error("orders: stream closed", logging.Error(err))
+				break
+			}
+			if lps := received.LiquidityProvisions; lps != nil {
+				c <- lps
+			}
+		}
+	}()
+
+	return c, nil
 }
 
 // START: Account Resolver

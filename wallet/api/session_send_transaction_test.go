@@ -119,17 +119,6 @@ func testSendingTransactionWithInvalidParamsFails(t *testing.T) {
 
 			// setup
 			handler := newSendTransactionHandler(tt)
-			// -- unexpected calls
-			handler.nodeSelector.EXPECT().Node(gomock.Any()).Times(0)
-			handler.nodeSelector.EXPECT().Stop().Times(0)
-			handler.pipeline.EXPECT().RequestWalletConnectionReview(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-			handler.pipeline.EXPECT().RequestWalletSelection(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-			handler.pipeline.EXPECT().RequestTransactionReview(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-			handler.pipeline.EXPECT().RequestPermissionsReview(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-			handler.pipeline.EXPECT().NotifySuccessfulRequest(gomock.Any(), gomock.Any()).Times(0)
-			handler.pipeline.EXPECT().NotifyError(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-			handler.pipeline.EXPECT().NotifyTransactionStatus(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-			handler.pipeline.EXPECT().RequestPassphrase(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 
 			// when
 			result, errorDetails := handler.handle(t, ctx, tc.params)
@@ -161,7 +150,7 @@ func testSendingTransactionWithValidParamsSucceeds(t *testing.T) {
 	handler := newSendTransactionHandler(t)
 	token := connectWallet(t, handler.sessions, hostname, wallet1)
 	// -- expected calls
-	handler.pipeline.EXPECT().RequestTransactionReview(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(true, nil)
+	handler.pipeline.EXPECT().RequestTransactionSendingReview(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx).Times(1).Return(handler.node, nil)
 	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(&apipb.LastBlockHeightResponse{
 		Height:            100,
@@ -170,14 +159,6 @@ func testSendingTransactionWithValidParamsSucceeds(t *testing.T) {
 	}, nil)
 	handler.node.EXPECT().SendTransaction(ctx, gomock.Any(), apipb.SubmitTransactionRequest_TYPE_SYNC).Times(1).Return(txHash, nil)
 	handler.pipeline.EXPECT().NotifyTransactionStatus(ctx, traceID, txHash, gomock.Any(), nil, gomock.Any()).Times(1)
-	// -- unexpected calls
-	handler.nodeSelector.EXPECT().Stop().Times(0)
-	handler.pipeline.EXPECT().RequestPassphrase(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().RequestPermissionsReview(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().RequestWalletConnectionReview(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().RequestWalletSelection(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().NotifyError(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().NotifySuccessfulRequest(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.SendTransactionParams{
@@ -191,6 +172,7 @@ func testSendingTransactionWithValidParamsSucceeds(t *testing.T) {
 	assert.Nil(t, errorDetails)
 	require.NotEmpty(t, result)
 	assert.Equal(t, txHash, result.TxHash)
+	assert.NotEmpty(t, result.Tx)
 }
 
 func testSendingTransactionWithInvalidTokenFails(t *testing.T) {
@@ -204,19 +186,6 @@ func testSendingTransactionWithInvalidTokenFails(t *testing.T) {
 
 	// setup
 	handler := newSendTransactionHandler(t)
-	// -- unexpected calls
-	handler.pipeline.EXPECT().RequestTransactionReview(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.nodeSelector.EXPECT().Node(gomock.Any()).Times(0)
-	handler.node.EXPECT().LastBlock(gomock.Any()).Times(0)
-	handler.node.EXPECT().SendTransaction(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().NotifyTransactionStatus(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.nodeSelector.EXPECT().Stop().Times(0)
-	handler.pipeline.EXPECT().RequestPassphrase(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().RequestPermissionsReview(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().RequestWalletConnectionReview(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().RequestWalletSelection(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().NotifyError(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().NotifySuccessfulRequest(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.SendTransactionParams{
@@ -243,19 +212,6 @@ func testSendingTransactionWithoutNeededPermissionsDoesNotSendTransaction(t *tes
 	// setup
 	handler := newSendTransactionHandler(t)
 	token := connectWallet(t, handler.sessions, hostname, wallet1)
-	// -- unexpected calls
-	handler.pipeline.EXPECT().RequestTransactionReview(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.nodeSelector.EXPECT().Node(gomock.Any()).Times(0)
-	handler.node.EXPECT().LastBlock(gomock.Any()).Times(0)
-	handler.node.EXPECT().SendTransaction(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().NotifyTransactionStatus(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.nodeSelector.EXPECT().Stop().Times(0)
-	handler.pipeline.EXPECT().RequestPassphrase(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().RequestPermissionsReview(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().RequestWalletConnectionReview(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().RequestWalletSelection(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().NotifyError(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().NotifySuccessfulRequest(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.SendTransactionParams{
@@ -289,19 +245,7 @@ func testRefusingSendingOfTransactionDoesNotSendTransaction(t *testing.T) {
 	handler := newSendTransactionHandler(t)
 	token := connectWallet(t, handler.sessions, hostname, wallet1)
 	// -- expected calls
-	handler.pipeline.EXPECT().RequestTransactionReview(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(false, nil)
-	// -- unexpected calls
-	handler.nodeSelector.EXPECT().Node(gomock.Any()).Times(0)
-	handler.node.EXPECT().LastBlock(gomock.Any()).Times(0)
-	handler.node.EXPECT().SendTransaction(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().NotifyTransactionStatus(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.nodeSelector.EXPECT().Stop().Times(0)
-	handler.pipeline.EXPECT().RequestPassphrase(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().RequestPermissionsReview(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().RequestWalletConnectionReview(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().RequestWalletSelection(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().NotifyError(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().NotifySuccessfulRequest(gomock.Any(), gomock.Any()).Times(0)
+	handler.pipeline.EXPECT().RequestTransactionSendingReview(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(false, nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.SendTransactionParams{
@@ -335,19 +279,7 @@ func testCancellingTheReviewDoesNotSendTransaction(t *testing.T) {
 	handler := newSendTransactionHandler(t)
 	token := connectWallet(t, handler.sessions, hostname, wallet1)
 	// -- expected calls
-	handler.pipeline.EXPECT().RequestTransactionReview(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(false, api.ErrConnectionClosed)
-	// -- unexpected calls
-	handler.nodeSelector.EXPECT().Node(gomock.Any()).Times(0)
-	handler.node.EXPECT().LastBlock(gomock.Any()).Times(0)
-	handler.node.EXPECT().SendTransaction(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().NotifyTransactionStatus(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.nodeSelector.EXPECT().Stop().Times(0)
-	handler.pipeline.EXPECT().RequestPassphrase(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().RequestPermissionsReview(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().RequestWalletConnectionReview(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().RequestWalletSelection(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().NotifyError(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().NotifySuccessfulRequest(gomock.Any(), gomock.Any()).Times(0)
+	handler.pipeline.EXPECT().RequestTransactionSendingReview(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(false, api.ErrConnectionClosed)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.SendTransactionParams{
@@ -381,20 +313,8 @@ func testInterruptingTheRequestDoesNotSendTransaction(t *testing.T) {
 	handler := newSendTransactionHandler(t)
 	token := connectWallet(t, handler.sessions, hostname, wallet1)
 	// -- expected calls
-	handler.pipeline.EXPECT().RequestTransactionReview(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(false, api.ErrRequestInterrupted)
+	handler.pipeline.EXPECT().RequestTransactionSendingReview(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(false, api.ErrRequestInterrupted)
 	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.ServerError, api.ErrRequestInterrupted).Times(1)
-	// -- unexpected calls
-	handler.nodeSelector.EXPECT().Node(gomock.Any()).Times(0)
-	handler.node.EXPECT().LastBlock(gomock.Any()).Times(0)
-	handler.node.EXPECT().SendTransaction(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().NotifyTransactionStatus(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.nodeSelector.EXPECT().Stop().Times(0)
-	handler.pipeline.EXPECT().RequestPassphrase(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().RequestPermissionsReview(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().RequestWalletConnectionReview(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().RequestWalletSelection(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().NotifyError(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().NotifySuccessfulRequest(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.SendTransactionParams{
@@ -428,20 +348,8 @@ func testGettingInternalErrorDuringReviewDoesNotSendTransaction(t *testing.T) {
 	handler := newSendTransactionHandler(t)
 	token := connectWallet(t, handler.sessions, hostname, wallet1)
 	// -- expected calls
-	handler.pipeline.EXPECT().RequestTransactionReview(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(false, assert.AnError)
+	handler.pipeline.EXPECT().RequestTransactionSendingReview(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(false, assert.AnError)
 	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("requesting the transaction review failed: %w", assert.AnError)).Times(1)
-	// -- unexpected calls
-	handler.nodeSelector.EXPECT().Node(gomock.Any()).Times(0)
-	handler.node.EXPECT().LastBlock(gomock.Any()).Times(0)
-	handler.node.EXPECT().SendTransaction(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().NotifyTransactionStatus(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.nodeSelector.EXPECT().Stop().Times(0)
-	handler.pipeline.EXPECT().RequestPassphrase(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().RequestPermissionsReview(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().RequestWalletConnectionReview(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().RequestWalletSelection(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().NotifyError(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().NotifySuccessfulRequest(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.SendTransactionParams{
@@ -475,20 +383,9 @@ func testNoHealthyNodeAvailableDoesNotSendTransaction(t *testing.T) {
 	handler := newSendTransactionHandler(t)
 	token := connectWallet(t, handler.sessions, hostname, wallet1)
 	// -- expected calls
-	handler.pipeline.EXPECT().RequestTransactionReview(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(true, nil)
+	handler.pipeline.EXPECT().RequestTransactionSendingReview(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx).Times(1).Return(nil, assert.AnError)
 	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.NetworkError, fmt.Errorf("could not find an healthy node: %w", assert.AnError)).Times(1)
-	// -- unexpected calls
-	handler.node.EXPECT().LastBlock(gomock.Any()).Times(0)
-	handler.node.EXPECT().SendTransaction(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().NotifyTransactionStatus(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.nodeSelector.EXPECT().Stop().Times(0)
-	handler.pipeline.EXPECT().RequestPassphrase(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().RequestPermissionsReview(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().RequestWalletConnectionReview(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().RequestWalletSelection(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().NotifyError(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().NotifySuccessfulRequest(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.SendTransactionParams{
@@ -525,21 +422,10 @@ func testFailingToGetLastBlockDoesNotSendTransaction(t *testing.T) {
 	handler := newSendTransactionHandler(t)
 	token := connectWallet(t, handler.sessions, hostname, wallet1)
 	// -- expected calls
-	handler.pipeline.EXPECT().RequestTransactionReview(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(true, nil)
+	handler.pipeline.EXPECT().RequestTransactionSendingReview(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx).Times(1).Return(handler.node, nil)
 	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(nil, assert.AnError)
 	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.NetworkError, fmt.Errorf("could not get last block from node: %w", assert.AnError)).Times(1)
-	// -- unexpected calls
-	handler.node.EXPECT().LastBlock(gomock.Any()).Times(0)
-	handler.node.EXPECT().SendTransaction(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().NotifyTransactionStatus(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.nodeSelector.EXPECT().Stop().Times(0)
-	handler.pipeline.EXPECT().RequestPassphrase(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().RequestPermissionsReview(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().RequestWalletConnectionReview(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().RequestWalletSelection(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().NotifyError(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().NotifySuccessfulRequest(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.SendTransactionParams{
@@ -576,7 +462,7 @@ func testFailureWhenSendingTransactionReturnsAnError(t *testing.T) {
 	handler := newSendTransactionHandler(t)
 	token := connectWallet(t, handler.sessions, hostname, wallet1)
 	// -- expected calls
-	handler.pipeline.EXPECT().RequestTransactionReview(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(true, nil)
+	handler.pipeline.EXPECT().RequestTransactionSendingReview(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx).Times(1).Return(handler.node, nil)
 	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(&apipb.LastBlockHeightResponse{
 		Height:            100,
@@ -585,17 +471,6 @@ func testFailureWhenSendingTransactionReturnsAnError(t *testing.T) {
 	}, nil)
 	handler.node.EXPECT().SendTransaction(ctx, gomock.Any(), apipb.SubmitTransactionRequest_TYPE_SYNC).Times(1).Return("", assert.AnError)
 	handler.pipeline.EXPECT().NotifyTransactionStatus(ctx, traceID, "", gomock.Any(), assert.AnError, gomock.Any()).Times(1)
-	// -- unexpected calls
-	handler.node.EXPECT().LastBlock(gomock.Any()).Times(0)
-	handler.node.EXPECT().SendTransaction(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().NotifyError(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.nodeSelector.EXPECT().Stop().Times(0)
-	handler.pipeline.EXPECT().RequestPassphrase(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().RequestPermissionsReview(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().RequestWalletConnectionReview(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().RequestWalletSelection(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().NotifyError(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	handler.pipeline.EXPECT().NotifySuccessfulRequest(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.SendTransactionParams{

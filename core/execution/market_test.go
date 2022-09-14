@@ -104,6 +104,18 @@ func (m *marketW) SubmitOrder(
 	return conf, err
 }
 
+func (m *marketW) SubmitOrderWithHash(
+	ctx context.Context,
+	order *types.Order,
+	hash string,
+) (*types.OrderConfirmation, error) {
+	conf, err := m.Market.SubmitOrder(ctx, order.IntoSubmission(), order.Party, hash)
+	if err == nil {
+		*order = *conf.Order.Clone()
+	}
+	return conf, err
+}
+
 type testMarket struct {
 	t *testing.T
 
@@ -451,6 +463,7 @@ func getMarket(pMonitorSettings *types.PriceMonitoringSettings, openingAuctionDu
 
 func getMarketWithDP(pMonitorSettings *types.PriceMonitoringSettings, openingAuctionDuration *types.AuctionDuration, decimalPlaces uint64) types.Market {
 	mkt := types.Market{
+		ID:            vgcrypto.RandomHash(),
 		DecimalPlaces: decimalPlaces,
 		Fees: &types.Fees{
 			Factors: &types.FeeFactors{
@@ -536,7 +549,6 @@ func getMarketWithDP(pMonitorSettings *types.PriceMonitoringSettings, openingAuc
 		},
 	}
 
-	execution.SetMarketID(&mkt, 0)
 	return mkt
 }
 
@@ -830,11 +842,12 @@ func TestMarketNotActive(t *testing.T) {
 	party1 := "party1"
 	tm.WithAccountAndAmount(party1, 1000000)
 
+	hash := vgcrypto.RandomHash()
 	order := &types.Order{
+		ID:            hash,
 		Type:          types.OrderTypeLimit,
 		TimeInForce:   types.OrderTimeInForceGTT,
 		Status:        types.OrderStatusActive,
-		ID:            "",
 		Side:          types.SideBuy,
 		Party:         party1,
 		MarketID:      tm.market.GetID(),
@@ -853,7 +866,7 @@ func TestMarketNotActive(t *testing.T) {
 	cpy.Reason = types.OrderErrorMarketClosed
 	expectedEvent := events.NewOrderEvent(context.Background(), &cpy)
 
-	_, err := tm.market.SubmitOrder(context.Background(), order)
+	_, err := tm.market.SubmitOrderWithHash(context.Background(), order, hash)
 	require.Error(t, err)
 	tm.EventHasBeenEmitted(t, expectedEvent)
 }
@@ -1462,93 +1475,6 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 	}
 	tm.now = tm.now.Add(time.Second)
 	tm.market.OnTick(ctx, tm.now)
-}
-
-func TestSetMarketID(t *testing.T) {
-	t.Run("nil market config", func(t *testing.T) {
-		marketcfg := &types.Market{}
-		err := execution.SetMarketID(marketcfg, 0)
-		assert.Error(t, err)
-	})
-
-	t.Run("good market config", func(t *testing.T) {
-		marketcfg := &types.Market{
-			ID: "", // ID will be generated
-			TradableInstrument: &types.TradableInstrument{
-				Instrument: &types.Instrument{
-					ID:   "Crypto/ETHUSD/Futures/Dec19",
-					Code: "FX:ETHUSD/DEC19",
-					Name: "December 2019 ETH vs USD future",
-					Metadata: &types.InstrumentMetadata{
-						Tags: []string{
-							"asset_class:fx/crypto",
-							"product:futures",
-						},
-					},
-					Product: &types.InstrumentFuture{
-						Future: &types.Future{
-							SettlementAsset: "Ethereum/Ether",
-							OracleSpecForSettlementPrice: &types.OracleSpec{
-								ID:      "1",
-								PubKeys: []string{"0xDEADBEEF"},
-								Filters: []*types.OracleSpecFilter{
-									{
-										Key: &types.OracleSpecPropertyKey{
-											Name: "prices.ETH.value",
-											Type: oraclespb.PropertyKey_TYPE_INTEGER,
-										},
-										Conditions: []*types.OracleSpecCondition{},
-									},
-								},
-							},
-							OracleSpecForTradingTermination: &types.OracleSpec{
-								ID:      "2",
-								PubKeys: []string{"0xDEADBEEF"},
-								Filters: []*types.OracleSpecFilter{
-									{
-										Key: &types.OracleSpecPropertyKey{
-											Name: "trading.terminated",
-											Type: oraclespb.PropertyKey_TYPE_BOOLEAN,
-										},
-										Conditions: []*types.OracleSpecCondition{},
-									},
-								},
-							},
-							OracleSpecBinding: &types.OracleSpecBindingForFuture{
-								SettlementPriceProperty:    "prices.ETH.value",
-								TradingTerminationProperty: "trading.terminated",
-							},
-						},
-					},
-				},
-				RiskModel: &types.TradableInstrumentLogNormalRiskModel{
-					LogNormalRiskModel: &types.LogNormalRiskModel{
-						RiskAversionParameter: num.DecimalFromFloat(0.01),
-						Tau:                   num.DecimalFromFloat(1.0 / 365.25 / 24),
-						Params: &types.LogNormalModelParams{
-							Mu:    num.DecimalZero(),
-							R:     num.DecimalFromFloat(0.016),
-							Sigma: num.DecimalFromFloat(0.09),
-						},
-					},
-				},
-			},
-		}
-
-		err := execution.SetMarketID(marketcfg, 0)
-		assert.NoError(t, err)
-		fmt.Println(marketcfg.ID)
-		id := marketcfg.ID
-
-		err = execution.SetMarketID(marketcfg, 0)
-		assert.NoError(t, err)
-		assert.Equal(t, id, marketcfg.ID)
-
-		err = execution.SetMarketID(marketcfg, 1)
-		assert.NoError(t, err)
-		fmt.Println(marketcfg.ID)
-		assert.NotEqual(t, id, marketcfg.ID)
-	})
 }
 
 func TestTriggerByPriceNoTradesInAuction(t *testing.T) {

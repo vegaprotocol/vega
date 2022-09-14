@@ -10,6 +10,7 @@ import (
 	time "time"
 
 	assets "code.vegaprotocol.io/vega/core/assets"
+	execution "code.vegaprotocol.io/vega/core/execution"
 	governance "code.vegaprotocol.io/vega/core/governance"
 	oracles "code.vegaprotocol.io/vega/core/oracles"
 	types "code.vegaprotocol.io/vega/core/types"
@@ -278,7 +279,7 @@ func (mr *MockExecutionEngineMockRecorder) AmendLiquidityProvision(arg0, arg1, a
 }
 
 // AmendOrder mocks base method.
-func (m *MockExecutionEngine) AmendOrder(arg0 context.Context, arg1 *types.OrderAmendment, arg2, arg3 string) (*types.OrderConfirmation, error) {
+func (m *MockExecutionEngine) AmendOrder(arg0 context.Context, arg1 *types.OrderAmendment, arg2 string, arg3 execution.IDGenerator) (*types.OrderConfirmation, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AmendOrder", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(*types.OrderConfirmation)
@@ -307,7 +308,7 @@ func (mr *MockExecutionEngineMockRecorder) CancelLiquidityProvision(arg0, arg1, 
 }
 
 // CancelOrder mocks base method.
-func (m *MockExecutionEngine) CancelOrder(arg0 context.Context, arg1 *types.OrderCancellation, arg2, arg3 string) ([]*types.OrderCancellationConfirmation, error) {
+func (m *MockExecutionEngine) CancelOrder(arg0 context.Context, arg1 *types.OrderCancellation, arg2 string, arg3 execution.IDGenerator) ([]*types.OrderCancellationConfirmation, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CancelOrder", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].([]*types.OrderCancellationConfirmation)
@@ -392,18 +393,18 @@ func (mr *MockExecutionEngineMockRecorder) SubmitMarket(arg0, arg1, arg2 interfa
 }
 
 // SubmitOrder mocks base method.
-func (m *MockExecutionEngine) SubmitOrder(arg0 context.Context, arg1 *types.OrderSubmission, arg2, arg3 string) (*types.OrderConfirmation, error) {
+func (m *MockExecutionEngine) SubmitOrder(arg0 context.Context, arg1 *types.OrderSubmission, arg2 string, arg3 execution.IDGenerator, arg4 string) (*types.OrderConfirmation, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubmitOrder", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "SubmitOrder", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(*types.OrderConfirmation)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SubmitOrder indicates an expected call of SubmitOrder.
-func (mr *MockExecutionEngineMockRecorder) SubmitOrder(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+func (mr *MockExecutionEngineMockRecorder) SubmitOrder(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitOrder", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitOrder), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitOrder", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitOrder), arg0, arg1, arg2, arg3, arg4)
 }
 
 // UpdateMarket mocks base method.

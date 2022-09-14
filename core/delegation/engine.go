@@ -408,11 +408,10 @@ func (e *Engine) UndelegateNow(ctx context.Context, party string, nodeID string,
 		e.decreaseBalanceAndFireEvent(ctx, party, nodeID, undelegateFromCurrentEpoch, e.currentEpoch.Seq, e.partyDelegationState, true, true)
 	}
 
-	undelegateFromNextEpoch := amt
-	if e.nextPartyDelegationState[party].totalDelegated.LT(amt) {
-		undelegateFromNextEpoch = e.nextPartyDelegationState[party].totalDelegated.Sub(amt, e.nextPartyDelegationState[party].totalDelegated)
+	undelegateFromNextEpoch := num.Min(nextEpochBalanceOnNode, amt)
+	if !undelegateFromNextEpoch.IsZero() {
+		e.decreaseBalanceAndFireEvent(ctx, party, nodeID, undelegateFromNextEpoch, e.currentEpoch.Seq+1, e.nextPartyDelegationState, true, true)
 	}
-	e.decreaseBalanceAndFireEvent(ctx, party, nodeID, undelegateFromNextEpoch, e.currentEpoch.Seq+1, e.nextPartyDelegationState, true, true)
 
 	// get out of auto delegation mode
 	delete(e.autoDelegationMode, party)

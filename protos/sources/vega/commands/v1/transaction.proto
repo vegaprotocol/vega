@@ -49,6 +49,7 @@ message InputData {
     Transfer transfer = 1012;
     CancelTransfer cancel_transfer = 1013;
     AnnounceNode announce_node = 1014;
+    BatchMarketInstructions batch_market_instructions = 1015;
 
     // Validator commands
     NodeVote node_vote = 2002;

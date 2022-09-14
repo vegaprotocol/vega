@@ -509,6 +509,7 @@ type MarketData struct {
 	IndicativePrice           *num.Uint
 	IndicativeVolume          uint64
 	MarketTradingMode         MarketTradingMode
+	MarketState               MarketState
 	Trigger                   AuctionTrigger
 	ExtensionTrigger          AuctionTrigger
 	TargetStake               string
@@ -562,6 +563,7 @@ func (m MarketData) IntoProto() *proto.MarketData {
 		IndicativePrice:           num.UintToString(m.IndicativePrice),
 		IndicativeVolume:          m.IndicativeVolume,
 		MarketTradingMode:         m.MarketTradingMode,
+		MarketState:               m.MarketState,
 		Trigger:                   m.Trigger,
 		ExtensionTrigger:          m.ExtensionTrigger,
 		TargetStake:               m.TargetStake,
@@ -581,7 +583,7 @@ func (m MarketData) IntoProto() *proto.MarketData {
 
 func (m MarketData) String() string {
 	return fmt.Sprintf(
-		"markPrice(%s) bestBidPrice(%s) bestBidVolume(%v) bestOfferPrice(%s) bestOfferVolume(%v) bestStaticBidPrice(%s) bestStaticBidVolume(%v) bestStaticOfferPrice(%s) bestStaticOfferVolume(%v) midPrice(%s) staticMidPrice(%s) market(%s) timestamp(%v) openInterest(%v) auctionEnd(%v) auctionStart(%v) indicativePrice(%s) indicativeVolume(%v) marketTradingMode(%s) trigger(%s) extensionTrigger(%s) targetStake(%s) suppliedStake(%s) priceMonitoringBounds(%s) marketValueProxy(%s) liquidityProviderFeeShare(%v)",
+		"markPrice(%s) bestBidPrice(%s) bestBidVolume(%v) bestOfferPrice(%s) bestOfferVolume(%v) bestStaticBidPrice(%s) bestStaticBidVolume(%v) bestStaticOfferPrice(%s) bestStaticOfferVolume(%v) midPrice(%s) staticMidPrice(%s) market(%s) timestamp(%v) openInterest(%v) auctionEnd(%v) auctionStart(%v) indicativePrice(%s) indicativeVolume(%v) marketTradingMode(%s) marketState(%s) trigger(%s) extensionTrigger(%s) targetStake(%s) suppliedStake(%s) priceMonitoringBounds(%s) marketValueProxy(%s) liquidityProviderFeeShare(%v)",
 		uintPointerToString(m.MarkPrice),
 		m.BestBidPrice.String(),
 		m.BestBidVolume,
@@ -601,6 +603,7 @@ func (m MarketData) String() string {
 		uintPointerToString(m.IndicativePrice),
 		m.IndicativeVolume,
 		m.MarketTradingMode.String(),
+		m.MarketState.String(),
 		m.Trigger.String(),
 		m.ExtensionTrigger.String(),
 		m.TargetStake,

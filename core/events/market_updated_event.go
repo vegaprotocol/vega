@@ -24,7 +24,6 @@ import (
 
 type MarketUpdated struct {
 	*Base
-	m  types.Market
 	pm proto.Market
 }
 
@@ -32,18 +31,17 @@ func NewMarketUpdatedEvent(ctx context.Context, m types.Market) *MarketUpdated {
 	pm := m.IntoProto()
 	return &MarketUpdated{
 		Base: newBase(ctx, MarketUpdatedEvent),
-		m:    m,
 		pm:   *pm,
 	}
 }
 
 // MarketEvent -> is needs to be logged as a market event.
 func (m MarketUpdated) MarketEvent() string {
-	return fmt.Sprintf("Market ID %s updated (%s)", m.m.ID, m.pm.String())
+	return fmt.Sprintf("Market ID %s updated (%s)", m.pm.Id, m.pm.String())
 }
 
 func (m MarketUpdated) MarketID() string {
-	return m.m.ID
+	return m.pm.Id
 }
 
 func (m MarketUpdated) Market() proto.Market {
@@ -56,7 +54,7 @@ func (m MarketUpdated) Proto() proto.Market {
 
 func (m MarketUpdated) MarketProto() eventspb.MarketEvent {
 	return eventspb.MarketEvent{
-		MarketId: m.m.ID,
+		MarketId: m.pm.Id,
 		Payload:  m.MarketEvent(),
 	}
 }
@@ -79,7 +77,6 @@ func MarketUpdatedEventFromStream(ctx context.Context, be *eventspb.BusEvent) *M
 	m := be.GetMarketUpdated()
 	return &MarketUpdated{
 		Base: newBaseFromBusEvent(ctx, MarketUpdatedEvent, be),
-		m:    types.Market{ID: m.Id},
 		pm:   *m,
 	}
 }

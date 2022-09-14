@@ -35,9 +35,10 @@ type CandleStoreConfig struct {
 }
 
 type CandleUpdatesConfig struct {
-	CandleUpdatesStreamBufferSize int               `long:"candle-updates-stream-buffer-size" description:"buffer size used by the candle events stream for the per client per candle channel"`
-	CandleUpdatesStreamInterval   encoding.Duration `long:"candle-updates-stream-interval" description:"The time between sending updated candles"`
-	CandlesFetchTimeout           encoding.Duration `long:"candles-fetch-timeout" description:"Maximum time permissible to fetch candles"`
+	CandleUpdatesStreamBufferSize                int               `long:"candle-updates-stream-buffer-size" description:"buffer size used by the candle events stream for the per client per candle channel"`
+	CandleUpdatesStreamInterval                  encoding.Duration `long:"candle-updates-stream-interval" description:"The time between sending updated candles"`
+	CandlesFetchTimeout                          encoding.Duration `long:"candles-fetch-timeout" description:"Maximum time permissible to fetch candles"`
+	CandleUpdatesStreamSubscriptionMsgBufferSize int               `long:"candle-updates-stream-subscription-buffer-size" description:"size of the buffer used to hold pending subcribe/unsubscribe requests"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
@@ -46,9 +47,10 @@ func NewDefaultConfig() Config {
 	return Config{
 		Level: encoding.LogLevel{Level: logging.InfoLevel},
 		CandleUpdates: CandleUpdatesConfig{
-			CandleUpdatesStreamBufferSize: 100,
-			CandleUpdatesStreamInterval:   encoding.Duration{Duration: time.Second},
-			CandlesFetchTimeout:           encoding.Duration{Duration: 10 * time.Second},
+			CandleUpdatesStreamBufferSize:                100,
+			CandleUpdatesStreamInterval:                  encoding.Duration{Duration: time.Second},
+			CandlesFetchTimeout:                          encoding.Duration{Duration: 10 * time.Second},
+			CandleUpdatesStreamSubscriptionMsgBufferSize: 100,
 		},
 	}
 }

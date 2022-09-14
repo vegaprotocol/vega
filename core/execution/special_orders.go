@@ -63,7 +63,6 @@ func (m *Market) repricePeggedOrders(
 				}
 
 				// Remove it from the party position
-				// _ = m.position.UnregisterOrder(ctx, cancellation.Order)
 				_ = m.position.UnregisterOrder(ctx, order)
 			} else {
 				// unpark before it's reparked next eventually

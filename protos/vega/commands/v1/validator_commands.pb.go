@@ -442,6 +442,7 @@ type ChainEvent struct {
 	// The event
 	//
 	// Types that are assignable to Event:
+	//
 	//	*ChainEvent_Builtin
 	//	*ChainEvent_Erc20
 	//	*ChainEvent_StakingEvent
