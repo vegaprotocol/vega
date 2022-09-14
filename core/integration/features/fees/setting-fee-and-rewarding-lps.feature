@@ -327,9 +327,9 @@ Feature: Test liquidity provider reward distribution
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
-      | lp1     | ETH   | 1000000000 |
-      | lp2     | ETH   | 1000000000 |
-      | lp3     | ETH   | 1000000000 |
+      | lp1    | ETH   | 1000000000 |
+      | lp2    | ETH   | 1000000000 |
+      | lp3    | ETH   | 1000000000 |
       | party1 | ETH   | 100000000  |
       | party2 | ETH   | 100000000  |
 
@@ -356,7 +356,7 @@ Feature: Test liquidity provider reward distribution
     Then the opening auction period ends for market "ETH/DEC21"
 
     And the following trades should be executed:
-      | buyer   | price | size | seller  |
+      | buyer  | price | size | seller |
       | party1 | 1000  | 60   | party2 |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
@@ -415,7 +415,7 @@ Feature: Test liquidity provider reward distribution
       | party | equity like share  | average entry valuation |
       | lp1   | 0.4                | 8000                    |
       | lp2   | 0.1                | 2000                    |
-      | lp3   | 0.5                | 10000                   |
+      | lp3   | 0.5                | 20000                   |
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
