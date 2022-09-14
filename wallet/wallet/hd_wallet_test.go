@@ -1583,6 +1583,18 @@ func testHDWalletUpdatingPermissionsWithInconsistentSetupFails(t *testing.T) {
 	// then
 	require.NoError(t, err)
 
+	// when
+	taintedKey, err := w.GenerateKeyPair(nil)
+
+	// then
+	require.NoError(t, err)
+
+	// when
+	err = w.TaintKey(taintedKey.PublicKey())
+
+	// then
+	require.NoError(t, err)
+
 	// given
 	randomKey := vgrand.RandomStr(5)
 
@@ -1599,7 +1611,7 @@ func testHDWalletUpdatingPermissionsWithInconsistentSetupFails(t *testing.T) {
 					RestrictedKeys: []string{kp1.PublicKey(), kp2.PublicKey(), randomKey},
 				},
 			},
-			expectedError: fmt.Errorf("restricted key %s does not exist on wallet", randomKey),
+			expectedError: fmt.Errorf("this restricted key %s does not exist on wallet", randomKey),
 		}, {
 			name: "with restricted keys and no access",
 			permissions: wallet.Permissions{
@@ -1609,6 +1621,15 @@ func testHDWalletUpdatingPermissionsWithInconsistentSetupFails(t *testing.T) {
 				},
 			},
 			expectedError: wallet.ErrCannotSetRestrictedKeysWithNoAccess,
+		}, {
+			name: "with tainted key",
+			permissions: wallet.Permissions{
+				PublicKeys: wallet.PublicKeysPermission{
+					Access:         wallet.ReadAccess,
+					RestrictedKeys: []string{taintedKey.PublicKey()},
+				},
+			},
+			expectedError: fmt.Errorf("this restricted key %s is tainted", taintedKey.PublicKey()),
 		},
 	}
 

@@ -207,6 +207,8 @@ func (w *HDWallet) TaintKey(pubKey string) error {
 
 	w.keyRing.Upsert(keyPair)
 
+	// w.removeTaintedKeyFromPermissions(keyPair)
+
 	return nil
 }
 
@@ -411,6 +413,37 @@ func (w *HDWallet) deriveKeyNodeV2(nextIndex uint32) (*slip10.Node, error) {
 	return keyNode, nil
 }
 
+func (w *HDWallet) removeTaintedKeyFromPermissions(keyPair HDKeyPair) {
+	for s, permissions := range w.permissions {
+		if !permissions.PublicKeys.Enabled() || !permissions.PublicKeys.HasRestrictedKeys() {
+			continue
+		}
+
+		restrictedKeys := permissions.PublicKeys.RestrictedKeys
+		// Look for the tainted key.
+		taintedKeyIdx := -1
+		for i, restrictedKey := range restrictedKeys {
+			if restrictedKey == keyPair.PublicKey() {
+				taintedKeyIdx = i
+				break
+			}
+		}
+
+		// If a tainted key is found, we remove it from the slice.
+		if taintedKeyIdx != -1 {
+			lastItemIdx := len(restrictedKeys) - 1
+			if taintedKeyIdx < lastItemIdx {
+				copy(restrictedKeys[taintedKeyIdx:], restrictedKeys[taintedKeyIdx+1:])
+			}
+			restrictedKeys[lastItemIdx] = ""
+			restrictedKeys = restrictedKeys[:lastItemIdx]
+
+			permissions.PublicKeys.RestrictedKeys = restrictedKeys
+			w.permissions[s] = permissions
+		}
+	}
+}
+
 type jsonHDWallet struct {
 	// The wallet name is retrieved from the file name it is stored in, so no
 	// need to serialize it.
@@ -461,7 +494,7 @@ func ensurePermissionsConsistency(w *HDWallet, perms Permissions) error {
 	if len(perms.PublicKeys.RestrictedKeys) != 0 {
 		existingKeys := w.ListKeyPairs()
 		for _, restrictedKey := range perms.PublicKeys.RestrictedKeys {
-			if err := ensureRestrictedKeyExists(restrictedKey, existingKeys); err != nil {
+			if err := ensureRestrictedKeyIsValid(restrictedKey, existingKeys); err != nil {
 				return err
 			}
 		}
@@ -470,11 +503,14 @@ func ensurePermissionsConsistency(w *HDWallet, perms Permissions) error {
 	return nil
 }
 
-func ensureRestrictedKeyExists(restrictedKey string, existingKeys []KeyPair) error {
+func ensureRestrictedKeyIsValid(restrictedKey string, existingKeys []KeyPair) error {
 	for _, k := range existingKeys {
 		if k.PublicKey() == restrictedKey {
+			if k.IsTainted() {
+				return fmt.Errorf("this restricted key %s is tainted", restrictedKey)
+			}
 			return nil
 		}
 	}
-	return fmt.Errorf("restricted key %s does not exist on wallet", restrictedKey)
+	return fmt.Errorf("this restricted key %s does not exist on wallet", restrictedKey)
 }
