@@ -3,13 +3,14 @@
 ## Unreleased 0.56.0
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [6155](https://github.com/vegaprotocol/vega/issues/6155) - Rename "Client" to "User" in wallet API version 2
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
 - [6170](https://github.com/vegaprotocol/vega/pull/6170) - Order GraphQL schema (query and subscription types) alphabetically
+- [6153](https://github.com/vegaprotocol/vega/issues/6153) - Display UI friendly logs when calling `session.send_transaction`
 
 ### 🐛 Fixes
 - [6148](https://github.com/vegaprotocol/vega/issues/6148) - Fix API descriptions for typos

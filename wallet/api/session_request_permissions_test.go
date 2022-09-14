@@ -213,7 +213,7 @@ func testRefusingPermissionsUpdateDoesNotUpdatePermissions(t *testing.T) {
 	})
 
 	// then
-	assertClientRejectionError(t, errorDetails)
+	assertUserRejectionError(t, errorDetails)
 	assert.Empty(t, result)
 	// Verifying the connected wallet is updated.
 	connectedWallet, err := handler.sessions.GetConnectedWallet(token)
@@ -235,7 +235,7 @@ func testCancellingTheReviewDoesNotUpdatePermissions(t *testing.T) {
 	handler := newRequestPermissionsHandler(t)
 	token := connectWallet(t, handler.sessions, hostname, wallet1)
 	// -- expected calls
-	handler.pipeline.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(false, api.ErrConnectionClosed)
+	handler.pipeline.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(false, api.ErrUserCloseTheConnection)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.RequestPermissionsParams{
@@ -331,7 +331,7 @@ func testCancellingThePassphraseRequestDoesNotUpdatePermissions(t *testing.T) {
 	token := connectWallet(t, handler.sessions, hostname, wallet1)
 	// -- expected calls
 	handler.pipeline.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(true, nil)
-	handler.pipeline.EXPECT().RequestPassphrase(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return("", api.ErrConnectionClosed)
+	handler.pipeline.EXPECT().RequestPassphrase(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return("", api.ErrUserCloseTheConnection)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.RequestPermissionsParams{
@@ -433,7 +433,7 @@ func testUsingWrongPassphraseDoesNotUpdatePermissions(t *testing.T) {
 	handler.pipeline.EXPECT().RequestPermissionsReview(cancelCtx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(true, nil)
 	handler.pipeline.EXPECT().RequestPassphrase(cancelCtx, traceID, wallet1.Name()).Times(1).Return(passphrase, nil)
 	handler.walletStore.EXPECT().GetWallet(cancelCtx, wallet1.Name(), passphrase).Times(1).Return(nil, wallet.ErrWrongPassphrase)
-	handler.pipeline.EXPECT().NotifyError(cancelCtx, traceID, api.ClientError, wallet.ErrWrongPassphrase).Times(1).Do(func(_ context.Context, _ string, _ api.ErrorType, _ error) {
+	handler.pipeline.EXPECT().NotifyError(cancelCtx, traceID, api.UserError, wallet.ErrWrongPassphrase).Times(1).Do(func(_ context.Context, _ string, _ api.ErrorType, _ error) {
 		// Once everything has been called once, we cancel the handler to break the loop.
 		cancelFn()
 	})

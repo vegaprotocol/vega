@@ -8,7 +8,7 @@
     {
       "name": "session.connect_wallet",
       "summary": "Initiates a connection between a wallet and a third-party application.",
-      "description": "This method initiates a connection between a wallet and a third-party application.\n\nThe client has to review the request, and, if they accept it, select the wallet they want to use for this connection.\n\nA connection token is generated and returned to the third-party application. This token is meant to be used in protected methods.\n\n**Supported connections:**\n- Multiple wallets connected for the same hostname. Each connection will have a different token.\n- A single wallet connected to multiple hostnames. Each connection will have a different token.\n- Combination of the above setups.\n\nHowever, it's not possible to have multiple connections on the same wallet for the same hostname. The previous connection will be terminated and a new token will be generated.\n\nThis method should be the entry point of every third-party application. Once connected, see the method `get_permissions`.",
+      "description": "This method initiates a connection between a wallet and a third-party application.\n\nThe user has to review the request, and, if they accept it, select the wallet they want to use for this connection.\n\nA connection token is generated and returned to the third-party application. This token is meant to be used in protected methods.\n\n**Supported connections:**\n- Multiple wallets connected for the same hostname. Each connection will have a different token.\n- A single wallet connected to multiple hostnames. Each connection will have a different token.\n- Combination of the above setups.\n\nHowever, it's not possible to have multiple connections on the same wallet for the same hostname. The previous connection will be terminated and a new token will be generated.\n\nThis method should be the entry point of every third-party application. Once connected, see the method `get_permissions`.",
       "tags": [
         {
           "name": "session"
@@ -51,7 +51,7 @@
       "examples": [
         {
           "name": "Accepting a connection from \"vega.xyz\"",
-          "description": "The third-party application \"vega.xyz\" requests a connection to a wallet and the client accepts.",
+          "description": "The third-party application \"vega.xyz\" requests a connection to a wallet and the user accepts.",
           "params": [
             {
               "name": "hostname",
@@ -163,7 +163,7 @@
     {
       "name": "session.request_permissions",
       "summary": "Requests permissions update for the third-party application.",
-      "description": "This method allows a third-party application to request new permissions to access the methods it requires.\n\nAll permissions the third-party relies on have to be specified. If a permission is omitted, it will be considered as no longer required and, as a result, be automatically revoked.\n\nThe client has to review the permissions.",
+      "description": "This method allows a third-party application to request new permissions to access the methods it requires.\n\nAll permissions the third-party relies on have to be specified. If a permission is omitted, it will be considered as no longer required and, as a result, be automatically revoked.\n\nThe user has to review the permissions.",
       "tags": [
         {
           "name": "session"
@@ -209,7 +209,7 @@
       "examples": [
         {
           "name": "Updating permissions for \"vega.xyz\"",
-          "description": "The third-party application \"vega.xyz\" requests an update of its permissions and the client accepts.",
+          "description": "The third-party application \"vega.xyz\" requests an update of its permissions and the user accepts.",
           "params": [
             {
               "name": "token",
@@ -233,7 +233,7 @@
         },
         {
           "name": "Updating permissions for \"vega.xyz\" with omitted permission",
-          "description": "The third-party application \"vega.xyz\" omits a permission during the update and the client accepts. This automatically marks the omitted permission as revoked.",
+          "description": "The third-party application \"vega.xyz\" omits a permission during the update and the user accepts. This automatically marks the omitted permission as revoked.",
           "params": [
             {
               "name": "token",
@@ -257,8 +257,8 @@
     },
     {
       "name": "session.list_keys",
-      "summary": "Returns the keys the client has allowed the third-party application to have access to.",
-      "description": "This method returns the keys the client has allowed the third-party application to have access to.\n\nIt requires a `read` access on `public_keys`.",
+      "summary": "Returns the keys the user has allowed the third-party application to have access to.",
+      "description": "This method returns the keys the user has allowed the third-party application to have access to.\n\nIt requires a `read` access on `public_keys`.",
       "tags": [
         {
           "name": "session"
@@ -324,7 +324,7 @@
     {
       "name": "session.sign_transaction",
       "summary": "Sign a transaction without sending it.",
-      "description": "This method signs a transaction and returns it to the third-party application, without sending it to the network. What happens with the transaction is up to the third-party application.\n\nThe client has to review the transaction.",
+      "description": "This method signs a transaction and returns it to the third-party application, without sending it to the network. What happens with the transaction is up to the third-party application.\n\nThe user has to review the transaction.",
       "tags": [
         {
           "name": "session"
@@ -391,7 +391,7 @@
       "examples": [
         {
           "name": "Signing a transaction for \"vega.xyz\"",
-          "description": "The third-party application \"vega.xyz\" requests to sign a transaction and the client accepts.",
+          "description": "The third-party application \"vega.xyz\" requests to sign a transaction and the user accepts.",
           "params": [
             {
               "name": "token",
@@ -424,7 +424,7 @@
     {
       "name": "session.send_transaction",
       "summary": "Send a transaction to the network.",
-      "description": "This method sends a transaction to the network.\n\nThe client has to review the transaction.",
+      "description": "This method sends a transaction to the network.\n\nThe user has to review the transaction.",
       "tags": [
         {
           "name": "session"
@@ -525,7 +525,7 @@
       "examples": [
         {
           "name": "Sending a transaction for \"vega.xyz\"",
-          "description": "The third-party application \"vega.xyz\" requests to send a transaction and the client accepts.",
+          "description": "The third-party application \"vega.xyz\" requests to send a transaction and the user accepts.",
           "params": [
             {
               "name": "token",
@@ -2540,12 +2540,12 @@
       "connection_closed": {
         "code": 3000,
         "message": "Client error",
-        "data": "the client closed the connection"
+        "data": "the user closed the connection"
       },
       "request_rejected": {
         "code": 3001,
         "message": "Client error",
-        "data": "the client rejected the request"
+        "data": "the user rejected the request"
       },
       "request_interrupted": {
         "code": -32001,
