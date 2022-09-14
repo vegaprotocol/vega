@@ -238,7 +238,7 @@ Feature:
 
     # ERROR:
     # - "equity-like-share" values calculated incorrectly.
-    # - "average-entry-valuation" values calculated incorrectly, sum of "average-entry-valuation" values does not match sum of "physical-stake" values.
+    # - "average-entry-valuation" values calculated incorrectly.
     # - possible "virtual-stakes" are incorrect prior to liquidity amendment but impossible to check this.
 
     # EXPECTED:
@@ -354,7 +354,7 @@ Feature:
 
     # ERROR:
     # - "equity-like-share" values calculated incorrectly.
-    # - "average-entry-valuation" values calculated incorrectly, sum of "average-entry-valuation" values does not match sum of "physical-stake" values.
+    # - - "average-entry-valuation" values calculated incorrectly..
     # - possible "virtual-stakes" are incorrect prior to liquidity amendment but impossible to check this.
 
     # EXPECTED:
@@ -466,7 +466,7 @@ Feature:
 
     # ERROR:
     # - "equity-like-share" values calculated incorrectly.
-    # - "average-entry-valuation" values calculated incorrectly, sum of "average-entry-valuation" values does not match sum of "physical-stake" values.
+    # - "average-entry-valuation" values calculated incorrectly.
     # - possible "virtual-stakes" are incorrect prior to liquidity amendment but impossible to check this.
 
     # EXPECTED:
@@ -578,7 +578,7 @@ Feature:
 
     # ERROR:
     # - "equity-like-share" values calculated incorrectly.
-    # - "average-entry-valuation" values calculated incorrectly, sum of "average-entry-valuation" values does not match sum of "physical-stake" values.
+    # - "average-entry-valuation" values calculated incorrectly.
     # - possible "virtual-stakes" are incorrect prior to liquidity amendment but impossible to check this.
 
     # EXPECTED:
@@ -853,7 +853,7 @@ Feature:
 
     # ERROR:
     # - "equity-like-share" values calculated incorrectly.
-    # - "average-entry-valuation" values calculated incorrectly, sum of "average-entry-valuation" values does not match sum of "physical-stake" values.
+    # - "average-entry-valuation" values calculated incorrectly.
     # - possible "virtual-stakes" are incorrect prior to liquidity amendment but impossible to check this.
 
     # EXPECTED:
