@@ -106,6 +106,15 @@ Feature:
       | lp1   | 0.08              | 4000                    |
       | lp2   | 0.92              | 46000                   |
 
+    # ERROR:
+    # - "average-entry-valuation" values calculated incorrectly.
+
+    # EXPECTED:
+    # Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
+    #  | party | equity like share | average entry valuation |
+    #  | lp1   | 0.08              | 4000                    |
+    #  | lp2   | 0.92              | 50000                   |
+
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
 
@@ -136,6 +145,15 @@ Feature:
       | party | equity like share  | average entry valuation |
       | lp1   | 0.0612244897959184 | 3000                    |
       | lp2   | 0.9387755102040816 | 46000                   |
+
+    # ERROR:
+    # - "average-entry-valuation" values calculated incorrectly.
+
+    # EXPECTED:
+    # Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
+    #  | party | equity like share | average entry valuation |
+    #  | lp1   | 0.08              | 4000                    |
+    #  | lp2   | 0.92              | 50000                   |
 
     # -------------------------------------------------------------------------------------------------------------------
 
@@ -244,8 +262,8 @@ Feature:
     # EXPECTED:
     # Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
     #  | party | equity like share | average entry valuation |
-    #  | lp1   | 0.079809          | 3990.429376             |
-    #  | lp2   | 0.920191          | 46009.570624            |
+    #  | lp1   | 0.079809          | 15628.748               |
+    #  | lp2   | 0.920191          | 50000.000               |
 
     # -------------------------------------------------------------------------------------------------------------------
 
@@ -354,14 +372,14 @@ Feature:
 
     # ERROR:
     # - "equity-like-share" values calculated incorrectly.
-    # - - "average-entry-valuation" values calculated incorrectly..
+    # - "average-entry-valuation" values calculated incorrectly.
     # - possible "virtual-stakes" are incorrect prior to liquidity amendment but impossible to check this.
 
     # EXPECTED:
     # Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
     #  | party | equity like share | average entry valuation |
-    #  | lp1   | 0.062348          | 2992.685827             |
-    #  | lp2   | 0.937652          | 45007.314173            |
+    #  | lp1   | 0.062348          | 15628.748               |
+    #  | lp2   | 0.937652          | 50000.000               |
 
     # -------------------------------------------------------------------------------------------------------------------
 
@@ -472,8 +490,8 @@ Feature:
     # EXPECTED:
     # Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
     #  | party | equity like share | average entry valuation |
-    #  | lp1   | 0.079354          | 3967.696760             |
-    #  | lp2   | 0.920646          | 46032.303240            |
+    #  | lp1   | 0.079354          | 24588.910               |
+    #  | lp2   | 0.920646          | 50031.943               |
 
     # ------------------------------------------------------------------------------------------------------------------- 
 
@@ -584,8 +602,8 @@ Feature:
     # EXPECTED:
     # Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
     #  | party | equity like share | average entry valuation |
-    #  | lp1   | 0.059551          | 2977.550913             |
-    #  | lp2   | 0.940449          | 47022.449087            |
+    #  | lp1   | 0.059551          | 24588.910               |
+    #  | lp2   | 0.940449          | 50072.555               |
 
     # -------------------------------------------------------------------------------------------------------------------
 
@@ -730,6 +748,16 @@ Feature:
       | lp1   | 0.3333333333333333 | 10000                   |
       | lp2   | 0.6666666666666667 | 20000                   |
 
+    # ERROR:
+    # - "average-entry-valuation" values calculated incorrectly.
+
+    # EXPECTED:
+    # Confirm equity-like-shares updated immediately after liquidity amendment
+    # Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
+    #  | party | equity like share  | average entry valuation |
+    #  | lp1   | 0.3333333333333333 | 10000                   |
+    #  | lp2   | 0.6666666666666667 | 30000                   |
+
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
 
@@ -760,6 +788,16 @@ Feature:
       | party | equity like share  | average entry valuation |
       | lp1   | 0.3548387096774194 | 11000                   |
       | lp2   | 0.6451612903225806 | 20000                   |
+
+    # ERROR:
+    # - "average-entry-valuation" values calculated incorrectly.
+
+    # EXPECTED:
+    # Confirm equity-like-shares updated immediately after liquidity amendment
+    # Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
+    #  | party | equity like share  | average entry valuation |
+    #  | lp1   | 0.3548387096774194 | 11909.091               |
+    #  | lp2   | 0.6451612903225806 | 30000                   |
 
     # -------------------------------------------------------------------------------------------------------------------
 
@@ -859,8 +897,8 @@ Feature:
     # EXPECTED:
     # Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
     #  | party | equity like share  | average entry valuation |
-    #  | lp1   | 0.3704506736874710 | 11854.4215579991000000  |
-    #  | lp2   | 0.6295493263125290 | 20145.5784420009000000  |
+    #  | lp1   | 0.3704506736874710 | 14360.400               |
+    #  | lp2   | 0.6295493263125290 | 30000.000               |
 
     # -------------------------------------------------------------------------------------------------------------------
 
