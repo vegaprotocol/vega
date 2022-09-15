@@ -6,14 +6,14 @@
 //
 // # Terminology
 //
-// Client:
+// User:
 //
-//	The client is the actor behind the API that has the responsibility to
+//	The user is the actor behind the API that has the responsibility to
 //	review and validate the requests. It can be a human or a bot.
 //
-// Client front-end:
+// Wallet front-end:
 //
-//	The client front-end is the interface through which the client interact
+//	The wallet front-end is the interface through which the user interact
 //	with the API. It can be a command-line interface, a graphical
 //	user-interface, or a script.
 //
@@ -29,7 +29,7 @@
 //  1. connect_wallet: it allows the third-party application to initiate the
 //     connection with the API.
 //
-//  2. get_permissions: the application requires permissions from the client to
+//  2. get_permissions: the application requires permissions from the user to
 //     consume the API. As a result, it should check if it has enough.
 //
 //  3. request_permissions: if the application doesn't have enough permissions

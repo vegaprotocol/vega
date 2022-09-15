@@ -2,13 +2,11 @@ Feature: Set up a market, with an opening auction, then uncross the book
 
   Background:
 
-    And the markets:
+    Given the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
       | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-4 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
-
-  Scenario: set up 2 parties with balance
     # setup accounts
-    Given the parties deposit on asset's general account the following amount:
+    And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
       | party1 | BTC   | 100000000 |
       | party2 | BTC   | 100000000 |
@@ -16,6 +14,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | party4 | BTC   | 100000000 |
       | lpprov | BTC   | 100000000 |
 
+  Scenario: set up 2 parties with balance
     # place orders and generate trades
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -80,3 +79,30 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | party1 | BTC   | ETH/DEC19 | 30240  | 0       |
       # values before uint
       #| party1 | BTC   | ETH/DEC19 | 30241  | 0       |
+
+  Scenario: Uncross auction via order amendment
+    # place orders and generate trades
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party3 | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | t3-b-1    |
+      | party4 | ETH/DEC19 | sell | 1      | 11000 | 0                | TYPE_LIMIT | TIF_GTC | t4-s-1    |
+      | party1 | ETH/DEC19 | buy  | 5      |  9999 | 0                | TYPE_LIMIT | TIF_GTC | t1-b-1    |
+      | party2 | ETH/DEC19 | sell | 5      | 10000 | 0                | TYPE_LIMIT | TIF_GFA | t2-s-1    |
+    And the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | buy  | MID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | sell | MID              | 50         | 100    | submission |
+
+    Then the network moves ahead "2" blocks
+    And the parties amend the following orders:
+      | party  | reference | price | size delta | tif     |
+      | party1 | t1-b-1    | 10000 | 2          | TIF_GTC |
+
+    Then the opening auction period ends for market "ETH/DEC19"
+    And the market data for the market "ETH/DEC19" should be:
+      | trading mode            | auction trigger             |
+      | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
+    And the mark price should be "10000" for the market "ETH/DEC19"
+    And the following trades should be executed:
+      | buyer  | price | size | seller |
+      | party1 | 10000 | 5    | party2 |

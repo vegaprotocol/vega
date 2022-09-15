@@ -3,17 +3,21 @@
 ## Unreleased 0.56.0
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [6155](https://github.com/vegaprotocol/vega/issues/6155) - Rename "Client" to "User" in wallet API version 2
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
+- [6103](hhttps://github.com/vegaprotocol/vega/issues/6103) - Verify that order amendment has the desired effect on opening auction
 - [6170](https://github.com/vegaprotocol/vega/pull/6170) - Order GraphQL schema (query and subscription types) alphabetically
+- [6153](https://github.com/vegaprotocol/vega/issues/6153) - Display UI friendly logs when calling `session.send_transaction`
 
 ### 🐛 Fixes
+- [6183](https://github.com/vegaprotocol/vega/issues/6183) - Shutdown blockchain before protocol services
 - [6148](https://github.com/vegaprotocol/vega/issues/6148) - Fix API descriptions for typos
 - [6156](https://github.com/vegaprotocol/vega/issues/6156) - Return only delegations for the specific node in `graphql` node delegation query
+- [6175](https://github.com/vegaprotocol/vega/issues/6175) - Fix `datanode` updating node public key on key rotation
 - [6109](https://github.com/vegaprotocol/vega/issues/6109) - Candle query returns unexpected data.
 
 ## 0.55.0
