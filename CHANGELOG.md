@@ -3,6 +3,7 @@
 ## Unreleased 0.56.0
 
 ### 🚨 Breaking changes
+- [6196](https://github.com/vegaprotocol/vega/pull/6196) - Remove unused network parameters networkEOL and marketFreezeDate
 - [6155](https://github.com/vegaprotocol/vega/issues/6155) - Rename "Client" to "User" in wallet API version 2
 
 ### 🗑️ Deprecation
