@@ -169,7 +169,7 @@ func NewMarketFromSnapshot(
 }
 
 func (m *Market) getState() *types.ExecMarket {
-	rf, _ := m.risk.GetRiskFactors()
+	rf := m.risk.GetRiskFactors()
 	var sp *num.Uint
 	if m.settlementPriceInMarket != nil {
 		sp = m.settlementPriceInMarket.Clone()

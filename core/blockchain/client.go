@@ -22,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/proto"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
+	"github.com/tendermint/tendermint/libs/bytes"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
@@ -99,7 +100,9 @@ func (c *Client) CheckTransaction(ctx context.Context, tx *commandspb.Transactio
 	}
 
 	if _, err := commands.CheckTransaction(tx, chainID); err != nil {
-		return nil, err
+		return &tmctypes.ResultCheckTx{
+			ResponseCheckTx: NewResponseCheckTxError(AbciTxnDecodingFailure, err),
+		}, nil
 	}
 
 	marshalledTx, err := proto.Marshal(tx)
@@ -124,7 +127,10 @@ func (c *Client) SubmitTransactionSync(ctx context.Context, tx *commandspb.Trans
 	}
 
 	if _, err := commands.CheckTransaction(tx, chainID); err != nil {
-		return nil, err
+		return &tmctypes.ResultBroadcastTx{ //nolint:nilerr
+			Code: AbciTxnDecodingFailure,
+			Data: []byte(err.Error()),
+		}, nil
 	}
 
 	marshalledTx, err := proto.Marshal(tx)
@@ -151,7 +157,9 @@ func (c *Client) SubmitTransactionCommit(ctx context.Context, tx *commandspb.Tra
 	}
 
 	if _, err := commands.CheckTransaction(tx, chainID); err != nil {
-		return nil, err
+		return &tmctypes.ResultBroadcastTxCommit{
+			CheckTx: NewResponseCheckTxError(AbciTxnDecodingFailure, err),
+		}, nil
 	}
 
 	marshalledTx, err := proto.Marshal(tx)
@@ -178,7 +186,10 @@ func (c *Client) SubmitTransactionAsync(ctx context.Context, tx *commandspb.Tran
 	}
 
 	if _, err := commands.CheckTransaction(tx, chainID); err != nil {
-		return nil, err
+		return &tmctypes.ResultBroadcastTx{ //nolint:nilerr
+			Code: AbciTxnDecodingFailure,
+			Data: bytes.HexBytes(err.Error()),
+		}, nil
 	}
 
 	marshalledTx, err := proto.Marshal(tx)

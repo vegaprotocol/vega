@@ -77,7 +77,7 @@ func (h *SignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) 
 		return nil, internalError(ErrCouldNotSignTransaction)
 	}
 	if !approved {
-		return nil, clientRejectionError()
+		return nil, userRejectionError()
 	}
 
 	currentNode, err := h.nodeSelector.Node(ctx)
