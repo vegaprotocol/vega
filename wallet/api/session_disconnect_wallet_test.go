@@ -62,7 +62,7 @@ func testDisconnectingWalletWithValidParamsSucceeds(t *testing.T) {
 	// given
 	ctx := context.Background()
 	hostname := "vega.xyz"
-	w := walletWithPerms(t, hostname, wallet.Permissions{
+	w, _ := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access:         wallet.ReadAccess,
 			RestrictedKeys: []string{},

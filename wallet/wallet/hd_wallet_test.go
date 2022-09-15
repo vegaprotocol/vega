@@ -22,6 +22,8 @@ func TestHDWallet(t *testing.T) {
 	t.Run("Generating key pair succeeds", testHDWalletGeneratingKeyPairSucceeds)
 	t.Run("Generating key pair on isolated wallet fails", testHDWalletGeneratingKeyPairOnIsolatedWalletFails)
 	t.Run("Tainting key pair succeeds", testHDWalletTaintingKeyPairSucceeds)
+	t.Run("Tainting key pair removes the key from the restricted keys", testHDWalletTaintingKeyPairRemovesTheKeyFromRestrictedKeys)
+	t.Run("Tainting the last key pair voids the permissions", testHDWalletTaintingLastKeyPairVoidsThePermissions)
 	t.Run("Tainting key pair that is already tainted fails", testHDWalletTaintingKeyThatIsAlreadyTaintedFails)
 	t.Run("Tainting unknown key pair fails", testHDWalletTaintingUnknownKeyFails)
 	t.Run("Untainting key pair succeeds", testHDWalletUntaintingKeyPairSucceeds)
@@ -52,6 +54,8 @@ func TestHDWallet(t *testing.T) {
 	t.Run("Getting master key pair succeeds", testHDWalletGettingWalletMasterKeySucceeds)
 	t.Run("Updating permissions with inconsistent setup fails", testHDWalletUpdatingPermissionsWithInconsistentSetupFails)
 	t.Run("Updating permissions with empty permission fallback to default", testHDWalletUpdatingPermissionsWithEmptyPermissionFallbackToDefaults)
+	t.Run("Updating public keys permissions without keys in wallet fails", testHDWalletUpdatingPermissionsWithoutKeysInWalletFails)
+	t.Run("Updating public keys permissions with tainted keys only fails", testHDWalletUpdatingPermissionsWithTaintedKeysOnlyFails)
 	t.Run("Revoking permissions succeeds", testHDWalletRevokingPermissionsSucceeds)
 	t.Run("Purging permissions succeeds", testHDWalletPurgingPermissionsSucceeds)
 }
@@ -289,6 +293,144 @@ func testHDWalletTaintingKeyPairSucceeds(t *testing.T) {
 			assert.True(tt, pubKey.IsTainted())
 		})
 	}
+}
+
+func testHDWalletTaintingKeyPairRemovesTheKeyFromRestrictedKeys(t *testing.T) {
+	// given
+	name := vgrand.RandomStr(5)
+
+	// when
+	w, err := wallet.ImportHDWallet(name, TestRecoveryPhrase1, 2)
+
+	// then
+	require.NoError(t, err)
+	assert.NotNil(t, w)
+
+	// when
+	kp1, err := w.GenerateKeyPair([]wallet.Metadata{})
+
+	// then
+	require.NoError(t, err)
+	assert.NotNil(t, kp1)
+
+	// when
+	kp2, err := w.GenerateKeyPair([]wallet.Metadata{})
+
+	// then
+	require.NoError(t, err)
+	assert.NotNil(t, kp1)
+
+	// given
+	hostname := vgrand.RandomStr(5)
+
+	// when
+	err = w.UpdatePermissions(hostname, wallet.Permissions{
+		PublicKeys: wallet.PublicKeysPermission{
+			Access: wallet.ReadAccess,
+			RestrictedKeys: []string{
+				kp1.PublicKey(),
+				kp2.PublicKey(),
+			},
+		},
+	})
+
+	// then
+	require.NoError(t, err)
+
+	// when
+	err = w.TaintKey(kp1.PublicKey())
+
+	// then
+	require.NoError(t, err)
+
+	// when
+	pubKey1, err := w.DescribePublicKey(kp1.PublicKey())
+
+	// then
+	require.NoError(t, err)
+	assert.NotNil(t, pubKey1)
+	assert.True(t, pubKey1.IsTainted())
+
+	// when
+	permissions := w.Permissions(hostname)
+
+	// then
+	require.NotContains(t, permissions.PublicKeys.RestrictedKeys, kp1.PublicKey())
+
+	// when
+	err = w.TaintKey(kp2.PublicKey())
+
+	// then
+	require.NoError(t, err)
+
+	// when
+	pubKey2, err := w.DescribePublicKey(kp2.PublicKey())
+
+	// then
+	require.NoError(t, err)
+	assert.NotNil(t, pubKey2)
+	assert.True(t, pubKey2.IsTainted())
+
+	// when
+	permissions = w.Permissions(hostname)
+
+	// then
+	require.Equal(t, permissions.PublicKeys, wallet.NoPublicKeysPermission())
+}
+
+func testHDWalletTaintingLastKeyPairVoidsThePermissions(t *testing.T) {
+	// given
+	name := vgrand.RandomStr(5)
+
+	// when
+	w, err := wallet.ImportHDWallet(name, TestRecoveryPhrase1, 2)
+
+	// then
+	require.NoError(t, err)
+	assert.NotNil(t, w)
+
+	// when
+	kp1, err := w.GenerateKeyPair([]wallet.Metadata{})
+
+	// then
+	require.NoError(t, err)
+	assert.NotNil(t, kp1)
+
+	// given
+	hostname := vgrand.RandomStr(5)
+
+	// when
+	err = w.UpdatePermissions(hostname, wallet.Permissions{
+		PublicKeys: wallet.PublicKeysPermission{
+			Access: wallet.ReadAccess,
+			RestrictedKeys: []string{
+				kp1.PublicKey(),
+			},
+		},
+	})
+
+	// then
+	require.NoError(t, err)
+
+	// when
+	err = w.TaintKey(kp1.PublicKey())
+
+	// then
+	require.NoError(t, err)
+
+	// when
+	pubKey1, err := w.DescribePublicKey(kp1.PublicKey())
+
+	// then
+	require.NoError(t, err)
+	assert.NotNil(t, pubKey1)
+	assert.True(t, pubKey1.IsTainted())
+
+	// when
+	permissions := w.Permissions(hostname)
+
+	// then
+	require.Equal(t, permissions.PublicKeys, wallet.NoPublicKeysPermission())
 }
 
 func testHDWalletTaintingKeyThatIsAlreadyTaintedFails(t *testing.T) {
@@ -1666,6 +1808,74 @@ func testHDWalletUpdatingPermissionsWithEmptyPermissionFallbackToDefaults(t *tes
 
 	// then
 	require.NoError(t, err)
+
+	// when
+	permissions := w.Permissions("vega.xyz")
+
+	// then
+	assert.Equal(t, wallet.DefaultPermissions(), permissions)
+}
+
+func testHDWalletUpdatingPermissionsWithoutKeysInWalletFails(t *testing.T) {
+	// given
+	name := vgrand.RandomStr(5)
+
+	// when
+	w, err := wallet.ImportHDWallet(name, TestRecoveryPhrase1, 2)
+
+	// then
+	require.NoError(t, err)
+	require.NotNil(t, w)
+
+	// when
+	err = w.UpdatePermissions("vega.xyz", wallet.Permissions{
+		PublicKeys: wallet.PublicKeysPermission{
+			Access: wallet.ReadAccess,
+		},
+	})
+
+	// then
+	require.ErrorIs(t, err, wallet.ErrWalletDoesNotHaveKeys)
+
+	// when
+	permissions := w.Permissions("vega.xyz")
+
+	// then
+	assert.Equal(t, wallet.DefaultPermissions(), permissions)
+}
+
+func testHDWalletUpdatingPermissionsWithTaintedKeysOnlyFails(t *testing.T) {
+	// given
+	name := vgrand.RandomStr(5)
+
+	// when
+	w, err := wallet.ImportHDWallet(name, TestRecoveryPhrase1, 2)
+
+	// then
+	require.NoError(t, err)
+	require.NotNil(t, w)
+
+	// when
+	kp, err := w.GenerateKeyPair(nil)
+
+	// then
+	require.NoError(t, err)
+
+	// when
+	err = w.TaintKey(kp.PublicKey())
+
+	// then
+	require.NoError(t, err)
+
+	// when
+	err = w.UpdatePermissions("vega.xyz", wallet.Permissions{
+		PublicKeys: wallet.PublicKeysPermission{
+			Access: wallet.ReadAccess,
+		},
+	})
+
+	// then
+	require.ErrorIs(t, err, wallet.ErrAllKeysInWalletAreTainted)
 
 	// when
 	permissions := w.Permissions("vega.xyz")

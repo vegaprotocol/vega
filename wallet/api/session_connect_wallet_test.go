@@ -84,8 +84,8 @@ func testConnectingToWalletWithValidParamsSucceeds(t *testing.T) {
 		},
 	}
 	expectedHostname := "vega.xyz"
-	expectedSelectedWallet := walletWithPerms(t, expectedHostname, expectedPermissions)
-	nonSelectedWallet := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	expectedSelectedWallet, _ := walletWithPerms(t, expectedHostname, expectedPermissions)
+	nonSelectedWallet, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
 
 	passphrase := vgrand.RandomStr(5)
 	availableWallets := []string{
@@ -126,8 +126,8 @@ func testConnectingToConnectedWalletDisconnectsPreviousOneAndGeneratesNewToken(t
 		},
 	}
 	expectedHostname := "vega.xyz"
-	expectedSelectedWallet := walletWithPerms(t, expectedHostname, expectedPermissions)
-	nonSelectedWallet := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	expectedSelectedWallet, _ := walletWithPerms(t, expectedHostname, expectedPermissions)
+	nonSelectedWallet, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
 
 	passphrase := vgrand.RandomStr(5)
 	availableWallets := []string{
@@ -287,8 +287,8 @@ func testCancellingTheWalletSelectionDoesNotConnectToWallet(t *testing.T) {
 	// given
 	ctx, traceID := contextWithTraceID()
 	expectedHostname := "vega.xyz"
-	wallet1 := walletWithPerms(t, expectedHostname, wallet.Permissions{})
-	wallet2 := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallet1, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallet2, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
 
 	// setup
 	handler := newConnectWalletHandler(t)
@@ -311,8 +311,8 @@ func testInterruptingTheRequestDuringWalletSelectionDoesNotConnectToWallet(t *te
 	// given
 	ctx, traceID := contextWithTraceID()
 	expectedHostname := "vega.xyz"
-	wallet1 := walletWithPerms(t, expectedHostname, wallet.Permissions{})
-	wallet2 := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallet1, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallet2, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
 
 	// setup
 	handler := newConnectWalletHandler(t)
@@ -336,8 +336,8 @@ func testGettingInternalErrorDuringWalletSelectionDoesNotConnectToWallet(t *test
 	// given
 	ctx, traceID := contextWithTraceID()
 	expectedHostname := "vega.xyz"
-	wallet1 := walletWithPerms(t, expectedHostname, wallet.Permissions{})
-	wallet2 := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallet1, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallet2, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
 
 	// setup
 	handler := newConnectWalletHandler(t)
@@ -362,8 +362,8 @@ func testSelectingNonExistingWalletDoesNotConnectToWallet(t *testing.T) {
 	ctx, traceID := contextWithTraceID()
 	cancelCtx, cancelFn := context.WithCancel(ctx)
 	expectedHostname := "vega.xyz"
-	wallet1 := walletWithPerms(t, expectedHostname, wallet.Permissions{})
-	wallet2 := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallet1, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallet2, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
 	nonExistingWallet := vgrand.RandomStr(5)
 
 	// setup
@@ -395,8 +395,8 @@ func testGettingInternalErrorDuringWalletRetrievalDoesNotConnectToWallet(t *test
 	// given
 	ctx, traceID := contextWithTraceID()
 	expectedHostname := "vega.xyz"
-	wallet1 := walletWithPerms(t, expectedHostname, wallet.Permissions{})
-	wallet2 := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallet1, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallet2, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
 
 	// setup
 	handler := newConnectWalletHandler(t)
@@ -425,8 +425,8 @@ func testUsingWrongPassphraseDoesNotConnectToWallet(t *testing.T) {
 	ctx, traceID := contextWithTraceID()
 	cancelCtx, cancelFn := context.WithCancel(ctx)
 	expectedHostname := "vega.xyz"
-	wallet1 := walletWithPerms(t, expectedHostname, wallet.Permissions{})
-	wallet2 := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallet1, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallet2, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
 	passphrase := vgrand.RandomStr(4)
 
 	// setup
@@ -459,8 +459,8 @@ func testGettingInternalErrorDuringWalletVerificationDoesNotConnectToWallet(t *t
 	// given
 	ctx, traceID := contextWithTraceID()
 	expectedHostname := "vega.xyz"
-	wallet1 := walletWithPerms(t, expectedHostname, wallet.Permissions{})
-	wallet2 := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallet1, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallet2, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
 	passphrase := vgrand.RandomStr(5)
 
 	// setup

@@ -1829,7 +1829,7 @@
     {
       "name": "admin.taint_key",
       "summary": "Marks the specified public key as tainted.",
-      "description": "This method marks the specified public key as tainted. It makes it unusable for transaction signing.",
+      "description": "This method marks the specified public key as tainted. It makes it unusable for transaction signing.\n\nWhen a key is tainted, it is automatically removed from the restricted keys if specified. If the key is the only one to be set, the permission to access the public keys is revoked. If no restricted key is specified, but all keys in the wallet are tainted, the permission of the public keys is revoked as well.",
       "tags": [
         {
           "name": "admin"

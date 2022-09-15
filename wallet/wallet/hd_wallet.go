@@ -207,7 +207,7 @@ func (w *HDWallet) TaintKey(pubKey string) error {
 
 	w.keyRing.Upsert(keyPair)
 
-	// w.removeTaintedKeyFromPermissions(keyPair)
+	w.removeTaintedKeyFromRestrictedKeys(keyPair)
 
 	return nil
 }
@@ -324,7 +324,7 @@ func (w *HDWallet) UpdatePermissions(hostname string, perms Permissions) error {
 		perms.PublicKeys.Access = NoAccess
 	}
 
-	if err := ensurePermissionsConsistency(w, perms); err != nil {
+	if err := ensurePublicKeysPermissionsConsistency(w, perms); err != nil {
 		return fmt.Errorf("inconsistent permissions setup: %w", err)
 	}
 
@@ -367,7 +367,7 @@ func (w *HDWallet) UnmarshalJSON(data []byte) error {
 	}
 
 	for hostname, perms := range w.permissions {
-		if err := ensurePermissionsConsistency(w, perms); err != nil {
+		if err := ensurePublicKeysPermissionsConsistency(w, perms); err != nil {
 			return fmt.Errorf("inconsistent permissions setup for hostname %q: %w", hostname, err)
 		}
 	}
@@ -413,35 +413,71 @@ func (w *HDWallet) deriveKeyNodeV2(nextIndex uint32) (*slip10.Node, error) {
 	return keyNode, nil
 }
 
-func (w *HDWallet) removeTaintedKeyFromPermissions(keyPair HDKeyPair) {
-	for s, permissions := range w.permissions {
-		if !permissions.PublicKeys.Enabled() || !permissions.PublicKeys.HasRestrictedKeys() {
+func (w *HDWallet) removeTaintedKeyFromRestrictedKeys(taintedKeyPair HDKeyPair) {
+	allKeysAreTainted := w.areAllKeysTainted()
+
+	for hostname, permissions := range w.permissions {
+		if !permissions.PublicKeys.Enabled() {
+			continue
+		}
+
+		if !permissions.PublicKeys.HasRestrictedKeys() {
+			// If all the keys in the wallet are tainted, we revoke the
+			// permission.
+			if allKeysAreTainted {
+				permissions.PublicKeys = NoPublicKeysPermission()
+				w.permissions[hostname] = permissions
+			}
 			continue
 		}
 
 		restrictedKeys := permissions.PublicKeys.RestrictedKeys
+
 		// Look for the tainted key.
 		taintedKeyIdx := -1
 		for i, restrictedKey := range restrictedKeys {
-			if restrictedKey == keyPair.PublicKey() {
+			if restrictedKey == taintedKeyPair.PublicKey() {
 				taintedKeyIdx = i
 				break
 			}
 		}
 
-		// If a tainted key is found, we remove it from the slice.
-		if taintedKeyIdx != -1 {
-			lastItemIdx := len(restrictedKeys) - 1
+		// No tainted key was found, next.
+		if taintedKeyIdx == -1 {
+			continue
+		}
+
+		lastItemIdx := len(restrictedKeys) - 1
+
+		// If lastItemIdx is 0, it means we have a single restricted key, and it
+		// is tainted. Removing it will make the slice empty.
+		// The user had a clear intent to restrict the access to this single
+		// key, we should void the access to public keys and let the third-party
+		// application request new permissions.
+		// This seems to be the least surprising behavior.
+		if lastItemIdx == 0 {
+			permissions.PublicKeys = NoPublicKeysPermission()
+		} else {
+			// We remove the key from the slice.
 			if taintedKeyIdx < lastItemIdx {
 				copy(restrictedKeys[taintedKeyIdx:], restrictedKeys[taintedKeyIdx+1:])
 			}
 			restrictedKeys[lastItemIdx] = ""
 			restrictedKeys = restrictedKeys[:lastItemIdx]
-
 			permissions.PublicKeys.RestrictedKeys = restrictedKeys
-			w.permissions[s] = permissions
+		}
+
+		w.permissions[hostname] = permissions
+	}
+}
+
+func (w *HDWallet) areAllKeysTainted() bool {
+	for _, keyPair := range w.keyRing.ListKeyPairs() {
+		if !keyPair.IsTainted() {
+			return false
 		}
 	}
+	return true
 }
 
 type jsonHDWallet struct {
@@ -486,17 +522,26 @@ func walletID(walletNode *slip10.Node) string {
 	return hex.EncodeToString(pubKey)
 }
 
-func ensurePermissionsConsistency(w *HDWallet, perms Permissions) error {
-	if perms.PublicKeys.Access == NoAccess && len(perms.PublicKeys.RestrictedKeys) != 0 {
-		return ErrCannotSetRestrictedKeysWithNoAccess
+func ensurePublicKeysPermissionsConsistency(w *HDWallet, perms Permissions) error {
+	if perms.PublicKeys.Access == NoAccess {
+		if perms.PublicKeys.HasRestrictedKeys() {
+			return ErrCannotSetRestrictedKeysWithNoAccess
+		}
+		return nil
 	}
 
-	if len(perms.PublicKeys.RestrictedKeys) != 0 {
-		existingKeys := w.ListKeyPairs()
-		for _, restrictedKey := range perms.PublicKeys.RestrictedKeys {
-			if err := ensureRestrictedKeyIsValid(restrictedKey, existingKeys); err != nil {
-				return err
-			}
+	existingKeys := w.ListKeyPairs()
+	if len(existingKeys) == 0 {
+		return ErrWalletDoesNotHaveKeys
+	}
+
+	if !perms.PublicKeys.HasRestrictedKeys() && w.areAllKeysTainted() {
+		return ErrAllKeysInWalletAreTainted
+	}
+
+	for _, restrictedKey := range perms.PublicKeys.RestrictedKeys {
+		if err := ensureRestrictedKeyIsValid(restrictedKey, existingKeys); err != nil {
+			return err
 		}
 	}
 
