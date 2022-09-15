@@ -249,7 +249,7 @@ type Future struct {
 	OracleSpecForTradingTermination *v1.OracleSpec `protobuf:"bytes,6,opt,name=oracle_spec_for_trading_termination,json=oracleSpecForTradingTermination,proto3" json:"oracle_spec_for_trading_termination,omitempty"`
 	// The binding between the oracle spec and the oracle data
 	OracleSpecBinding *OracleSpecToFutureBinding `protobuf:"bytes,7,opt,name=oracle_spec_binding,json=oracleSpecBinding,proto3" json:"oracle_spec_binding,omitempty"`
-	// the number of decimal places implied by the settlement data emitted by the settlement oracle
+	// The number of decimal places implied by the settlement data (such as price) emitted by the settlement oracle
 	SettlementDataDecimals uint32 `protobuf:"varint,8,opt,name=settlement_data_decimals,json=settlementDataDecimals,proto3" json:"settlement_data_decimals,omitempty"`
 }
 
