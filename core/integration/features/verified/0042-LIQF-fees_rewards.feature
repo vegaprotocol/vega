@@ -543,3 +543,83 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
+  Scenario: 2 LP distribution at settlement
+
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount     |
+      | lp1    | USD   | 1000000000 |
+      | lp2    | USD   | 1000000000 |
+      | lp3    | USD   | 1000000000 |
+      | party1 | USD   | 100000000  |
+      | party2 | USD   | 100000000  |
+
+    And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lp1   | ETH/MAR22 | 8000000           | 0.001 | buy  | BID              | 1          | 2      | submission |
+      | lp1 | lp1   | ETH/MAR22 | 8000000           | 0.001 | buy  | MID              | 2          | 1      | amendment  |
+      | lp1 | lp1   | ETH/MAR22 | 8000000           | 0.001 | sell | ASK              | 1          | 2      | amendment  |
+      | lp1 | lp1   | ETH/MAR22 | 8000000           | 0.001 | sell | MID              | 2          | 1      | amendment  |
+    And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp2 | lp2   | ETH/MAR22 | 1                 | 0.002 | buy  | BID              | 1          | 2      | submission |
+      | lp2 | lp2   | ETH/MAR22 | 1                 | 0.002 | buy  | MID              | 2          | 1      | amendment  |
+      | lp2 | lp2   | ETH/MAR22 | 1                 | 0.002 | sell | ASK              | 1          | 2      | amendment  |
+      | lp2 | lp2   | ETH/MAR22 | 1                 | 0.002 | sell | MID              | 2          | 1      | amendment  |
+
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/MAR22 | buy  | 60     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/MAR22 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/MAR22 | sell | 60     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Then the opening auction period ends for market "ETH/MAR22"
+
+    And the following trades should be executed:
+      | buyer  | price | size | seller |
+      | party1 | 1000  | 60   | party2 |
+
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR22"
+    And the mark price should be "1000" for the market "ETH/MAR22"
+    And the open interest should be "60" for the market "ETH/MAR22"
+    And the target stake should be "6000" for the market "ETH/MAR22"
+    And the supplied stake should be "8000001" for the market "ETH/MAR22"
+
+    And the liquidity provider fee shares for the market "ETH/MAR22" should be:
+      | party | equity like share  | average entry valuation |
+      | lp1   | 0.9999998750000156 | 8000000                 |
+      | lp2   | 0.0000001249999844 | 8000001                 |
+
+    And the price monitoring bounds for the market "ETH/MAR22" should be:
+      | min bound | max bound |
+      | 500       | 1500      |
+
+    And the liquidity fee factor should "0.001" for the market "ETH/MAR22"
+
+    # no fees in auction
+    And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
+
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
+      | party1 | ETH/MAR22 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
+      | party2 | ETH/MAR22 | buy  | 20     | 1000  | 1                | TYPE_LIMIT | TIF_GTC | party2-buy  |
+
+    And the accumulated liquidity fees should be "20" for the market "ETH/MAR22"
+
+    # settle the market 
+    When the oracles broadcast data signed with "0xDEADBEEF":
+    | name               | value |
+    | trading.terminated | true  |
+
+    Then the oracles broadcast data signed with "0xDEADBEEF":
+      | name             | value |
+      | prices.ETH.value | 1200 |
+
+    # check lp fee distribution at s
+
+    And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
+
+    Then the following transfers should happen:
+      | from   | to  | from account                | to account           | market id | amount | asset |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 19     | USD   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 1      | USD   |
