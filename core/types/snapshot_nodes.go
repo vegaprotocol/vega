@@ -2112,6 +2112,10 @@ func AssetActionFromProto(a *snapshot.AssetAction) *AssetAction {
 		aa.Erc20AL = NewERC20AssetListFromProto(a.AssetList)
 	}
 
+	if a.Erc20AssetLimitsUpdated != nil {
+		aa.ERC20AssetLimitsUpdated = NewERC20AssetLimitsUpdatedFromProto(a.Erc20AssetLimitsUpdated)
+	}
+
 	return aa
 }
 
