@@ -12,6 +12,8 @@
 
 package blockchain
 
+import "code.vegaprotocol.io/vega/logging"
+
 type ChainServerImpl interface {
 	ReloadConf(cfg Config)
 	Stop() error
@@ -21,12 +23,14 @@ type ChainServerImpl interface {
 // Server abstraction for the abci server.
 type Server struct {
 	*Config
+	log *logging.Logger
 	srv ChainServerImpl
 }
 
 // NewServer instantiate a new blockchain server.
-func NewServer(srv ChainServerImpl) *Server {
+func NewServer(log *logging.Logger, srv ChainServerImpl) *Server {
 	return &Server{
+		log: log,
 		srv: srv,
 	}
 }
@@ -37,6 +41,7 @@ func (s *Server) Start() error {
 
 // Stop gracefully shutdowns down the blockchain provider's server.
 func (s *Server) Stop() error {
+	s.log.Info("Stopping blockchain server")
 	return s.srv.Stop()
 }
 

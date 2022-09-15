@@ -74,14 +74,14 @@ func (UndelegateSubmission_Method) EnumDescriptor() ([]byte, []int) {
 }
 
 // A batch of order instructions.
-// This command accept only the following batches of commands
+// This command accepts only the following batches of commands
 // and will be processed in the following order:
 // - OrderCancellation
 // - OrderAmendment
 // - OrderSubmission
-// The total amount of commands in the batch accros all three list of
-// instructions is restricted by the following network paramter:
-// "spam.rotection.max.batchSize"
+// The total amount of commands in the batch across all three lists of
+// instructions is restricted by the following network parameter:
+// "spam.protection.max.batchSize"
 type BatchMarketInstructions struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -160,7 +160,7 @@ type OrderSubmission struct {
 	// formatted price of `1.23456` assuming market configured to 5 decimal places,
 	// , required field for limit orders, however it is not required for market orders
 	Price string `protobuf:"bytes,2,opt,name=price,proto3" json:"price,omitempty"`
-	// Size for the order, for example, in a futures market the size equals the number of contracts, cannot be negative
+	// Size for the order, for example, in a futures market the size equals the number of units, cannot be negative
 	Size uint64 `protobuf:"varint,3,opt,name=size,proto3" json:"size,omitempty"`
 	// Side for the order, e.g. SIDE_BUY or SIDE_SELL, required field
 	// - See `Side`

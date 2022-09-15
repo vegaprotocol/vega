@@ -140,9 +140,9 @@ func (n *Protocol) Start() error {
 // Stop will stop all services of the protocol.
 func (n *Protocol) Stop() error {
 	// unregister conf listeners
+	n.log.Info("Stopping protocol services")
 	n.confWatcher.Unregister(n.confListenerIDs)
 	n.services.Stop()
-
 	return nil
 }
 

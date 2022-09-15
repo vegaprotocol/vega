@@ -82,6 +82,7 @@ func Test(t *testing.T) {
 	t.Run("Undelegate an amount with both active and pending delegation - sufficient cover in pending succeeds", testUndelegateNowPendingCovers)
 	t.Run("Undelegate an amount with both active and pending delegation - insufficient cover in pending succeeds", testUndelegateNowCommittedCovers)
 	t.Run("Undelegate an amount with both active and pending delegation - all delegation removed", testUndelegateNowAllCleared)
+	t.Run("Undelegate twice", testUndelegateNowTwice)
 
 	// test preprocess
 	t.Run("preprocess with no forced undelegation needed", testPreprocessForRewardingNoForcedUndelegationNeeded)
@@ -1716,6 +1717,27 @@ func testUndelegateNowCommittedCovers(t *testing.T) {
 	require.Equal(t, num.NewUint(2), testEngine.engine.nextPartyDelegationState["party1"].nodeToAmount["node1"])
 	require.Equal(t, num.NewUint(4), testEngine.engine.partyDelegationState["party1"].nodeToAmount["node2"])
 	require.Equal(t, num.NewUint(4), testEngine.engine.nextPartyDelegationState["party1"].nodeToAmount["node2"])
+}
+
+func testUndelegateNowTwice(t *testing.T) {
+	testEngine := getEngine(t)
+	// setup delegation state
+	setupDefaultDelegationState(testEngine, 13, 7)
+
+	err := testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(3))
+	require.Nil(t, err)
+
+	// undelegate now for party1 node1
+	err = testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", num.NewUint(0))
+	require.Nil(t, err)
+
+	// undelegate now for party1 node2
+	err = testEngine.engine.UndelegateNow(context.Background(), "party1", "node2", num.NewUint(0))
+	require.Nil(t, err)
+
+	// undelegate now for party1 node1
+	err = testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", num.NewUint(0))
+	require.Nil(t, err)
 }
 
 // undelegate now with an amount equals to the total delegated (pending + committed).

@@ -424,6 +424,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		stakeLinkingService:        g.stakeLinkingService,
 		eventService:               g.eventService,
 		ledgerService:              g.ledgerService,
+		keyRotationService:         g.keyRotationService,
 		ethereumKeyRotationService: g.ethereumKeyRotationService,
 		blockService:               g.blockService,
 	}
