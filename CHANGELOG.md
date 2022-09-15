@@ -89,6 +89,7 @@
 - [5890](https://github.com/vegaprotocol/vega/issues/5890) - Margin breach during amend doesn't cancel order
 - [6144](https://github.com/vegaprotocol/vega/issues/6144) - Price and Pegged Offset in orders are Decimals
 - [6111](https://github.com/vegaprotocol/vega/issues/5890) - Handle candles transient failure and prevent subscription blocking
+- [6204](https://github.com/vegaprotocol/vega/issues/6204) - Data Node add Ethereum Key Rotations subscriber and rest binding
 
 ## 0.54.0
 
