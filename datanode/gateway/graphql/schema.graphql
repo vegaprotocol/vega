@@ -1744,14 +1744,6 @@ type Market {
     maxDepth: Int
   ): MarketDepth!
 
-  "Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by parameters"
-  candles(
-    "RFC3339Nano encoded time from when to get candles"
-    since: String!
-    "Interval of the candles"
-    interval: Interval!
-  ): [Candle] @deprecated(reason: "Use the 'candlesConnection' field instead")
-
   "Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by parameters using cursor based pagination"
   candlesConnection(
     "RFC3339Nano encoded time to get candles from"
@@ -1898,11 +1890,11 @@ type PriceLevel {
 
 "Candle stick representation of trading"
 type Candle {
-  "Unix epoch+nanoseconds for when the candle occurred"
-  timestamp: String!
+  "RFC3339Nano formatted date and time for the candle start time"
+  periodStart: String!
 
-  "RFC3339Nano formatted date and time for the candle"
-  datetime: String!
+  "RFC3339Nano formatted date and time for the candle end time, or last updated time if the candle is still open"
+  lastUpdateInPeriod: String!
 
   "High price (uint64)"
   high: String!
@@ -1918,9 +1910,6 @@ type Candle {
 
   "Volume price (uint64)"
   volume: String!
-
-  "Interval price (string)"
-  interval: Interval!
 }
 
 "Represents a party on Vega, could be an ethereum wallet address in the future"
@@ -4019,31 +4008,8 @@ type RewardsConnection {
   pageInfo: PageInfo
 }
 
-type CandleNode {
-  "Unix epoch+nanoseconds for when the candle occurred"
-  start: String!
-
-  "RFC3339Nano formatted date and time for the candle"
-  lastUpdate: String!
-
-  "High price (uint64)"
-  high: String!
-
-  "Low price (uint64)"
-  low: String!
-
-  "Open price (uint64)"
-  open: String!
-
-  "Close price (uint64)"
-  close: String!
-
-  "Volume price (uint64)"
-  volume: String!
-}
-
 type CandleEdge {
-  node: CandleNode!
+  node: Candle!
   cursor: String!
 }
 
