@@ -144,18 +144,17 @@ func (n *Command) Run(
 		if err := n.startBlockchain(tmHome, network, networkURL); err != nil {
 			errCh <- err
 		}
+		// start the nullblockchain if we are in that mode, it *needs* to be after we've started the gRPC server
+		// otherwise it'll start calling init-chain and all the way before we're ready.
+		if n.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
+			n.nullBlockchain.StartServer()
+		}
 	}()
 
 	// at this point all is good, and we should be started, we can
 	// just wait for signals or whatever
 	n.Log.Info("Vega startup complete",
 		logging.String("node-mode", string(n.conf.NodeMode)))
-
-	// start the nullblockchain if we are in that mode, it *needs* to be after we've started the gRPC server
-	// otherwise it'll start calling init-chain and all the way before we're ready.
-	if n.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
-		n.nullBlockchain.StartServer()
-	}
 
 	// wait for possible protocol upgrade, or user exist
 

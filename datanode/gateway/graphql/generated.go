@@ -50,7 +50,6 @@ type ResolverRoot interface {
 	Asset() AssetResolver
 	AuctionEvent() AuctionEventResolver
 	Candle() CandleResolver
-	CandleNode() CandleNodeResolver
 	Delegation() DelegationResolver
 	Deposit() DepositResolver
 	Epoch() EpochResolver
@@ -214,14 +213,13 @@ type ComplexityRoot struct {
 	}
 
 	Candle struct {
-		Close     func(childComplexity int) int
-		Datetime  func(childComplexity int) int
-		High      func(childComplexity int) int
-		Interval  func(childComplexity int) int
-		Low       func(childComplexity int) int
-		Open      func(childComplexity int) int
-		Timestamp func(childComplexity int) int
-		Volume    func(childComplexity int) int
+		Close              func(childComplexity int) int
+		High               func(childComplexity int) int
+		LastUpdateInPeriod func(childComplexity int) int
+		Low                func(childComplexity int) int
+		Open               func(childComplexity int) int
+		PeriodStart        func(childComplexity int) int
+		Volume             func(childComplexity int) int
 	}
 
 	CandleDataConnection struct {
@@ -232,16 +230,6 @@ type ComplexityRoot struct {
 	CandleEdge struct {
 		Cursor func(childComplexity int) int
 		Node   func(childComplexity int) int
-	}
-
-	CandleNode struct {
-		Close      func(childComplexity int) int
-		High       func(childComplexity int) int
-		LastUpdate func(childComplexity int) int
-		Low        func(childComplexity int) int
-		Open       func(childComplexity int) int
-		Start      func(childComplexity int) int
-		Volume     func(childComplexity int) int
 	}
 
 	Condition struct {
@@ -622,7 +610,6 @@ type ComplexityRoot struct {
 	Market struct {
 		Accounts                      func(childComplexity int, partyID *string) int
 		AccountsConnection            func(childComplexity int, partyID *string, pagination *v2.Pagination) int
-		Candles                       func(childComplexity int, since string, interval vega.Interval) int
 		CandlesConnection             func(childComplexity int, since string, to *string, interval vega.Interval, pagination *v2.Pagination) int
 		Data                          func(childComplexity int) int
 		DecimalPlaces                 func(childComplexity int) int
@@ -1673,13 +1660,8 @@ type AuctionEventResolver interface {
 	AuctionEnd(ctx context.Context, obj *v1.AuctionEvent) (string, error)
 }
 type CandleResolver interface {
-	Timestamp(ctx context.Context, obj *vega.Candle) (string, error)
-
-	Volume(ctx context.Context, obj *vega.Candle) (string, error)
-}
-type CandleNodeResolver interface {
-	Start(ctx context.Context, obj *v2.Candle) (string, error)
-	LastUpdate(ctx context.Context, obj *v2.Candle) (string, error)
+	PeriodStart(ctx context.Context, obj *v2.Candle) (string, error)
+	LastUpdateInPeriod(ctx context.Context, obj *v2.Candle) (string, error)
 
 	Volume(ctx context.Context, obj *v2.Candle) (string, error)
 }
@@ -1775,7 +1757,6 @@ type MarketResolver interface {
 	Trades(ctx context.Context, obj *vega.Market, skip *int, first *int, last *int) ([]*vega.Trade, error)
 	TradesConnection(ctx context.Context, obj *vega.Market, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.TradeConnection, error)
 	Depth(ctx context.Context, obj *vega.Market, maxDepth *int) (*vega.MarketDepth, error)
-	Candles(ctx context.Context, obj *vega.Market, since string, interval vega.Interval) ([]*vega.Candle, error)
 	CandlesConnection(ctx context.Context, obj *vega.Market, since string, to *string, interval vega.Interval, pagination *v2.Pagination) (*v2.CandleDataConnection, error)
 	Data(ctx context.Context, obj *vega.Market) (*vega.MarketData, error)
 	LiquidityProvisions(ctx context.Context, obj *vega.Market, partyID *string) ([]*vega.LiquidityProvision, error)
@@ -2108,7 +2089,7 @@ type StatisticsResolver interface {
 type SubscriptionResolver interface {
 	Accounts(ctx context.Context, marketID *string, partyID *string, assetID *string, typeArg *vega.AccountType) (<-chan []*vega.Account, error)
 	BusEvents(ctx context.Context, types []BusEventType, marketID *string, partyID *string, batchSize int) (<-chan []*BusEvent, error)
-	Candles(ctx context.Context, marketID string, interval vega.Interval) (<-chan *vega.Candle, error)
+	Candles(ctx context.Context, marketID string, interval vega.Interval) (<-chan *v2.Candle, error)
 	Delegations(ctx context.Context, partyID *string, nodeID *string) (<-chan *vega.Delegation, error)
 	LiquidityProvisions(ctx context.Context, partyID *string, marketID *string) (<-chan []*vega.LiquidityProvision, error)
 	Margins(ctx context.Context, partyID string, marketID *string) (<-chan *vega.MarginLevels, error)
@@ -2599,13 +2580,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Candle.Close(childComplexity), true
 
-	case "Candle.datetime":
-		if e.complexity.Candle.Datetime == nil {
-			break
-		}
-
-		return e.complexity.Candle.Datetime(childComplexity), true
-
 	case "Candle.high":
 		if e.complexity.Candle.High == nil {
 			break
@@ -2613,12 +2587,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Candle.High(childComplexity), true
 
-	case "Candle.interval":
-		if e.complexity.Candle.Interval == nil {
+	case "Candle.lastUpdateInPeriod":
+		if e.complexity.Candle.LastUpdateInPeriod == nil {
 			break
 		}
 
-		return e.complexity.Candle.Interval(childComplexity), true
+		return e.complexity.Candle.LastUpdateInPeriod(childComplexity), true
 
 	case "Candle.low":
 		if e.complexity.Candle.Low == nil {
@@ -2634,12 +2608,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Candle.Open(childComplexity), true
 
-	case "Candle.timestamp":
-		if e.complexity.Candle.Timestamp == nil {
+	case "Candle.periodStart":
+		if e.complexity.Candle.PeriodStart == nil {
 			break
 		}
 
-		return e.complexity.Candle.Timestamp(childComplexity), true
+		return e.complexity.Candle.PeriodStart(childComplexity), true
 
 	case "Candle.volume":
 		if e.complexity.Candle.Volume == nil {
@@ -2675,55 +2649,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.CandleEdge.Node(childComplexity), true
-
-	case "CandleNode.close":
-		if e.complexity.CandleNode.Close == nil {
-			break
-		}
-
-		return e.complexity.CandleNode.Close(childComplexity), true
-
-	case "CandleNode.high":
-		if e.complexity.CandleNode.High == nil {
-			break
-		}
-
-		return e.complexity.CandleNode.High(childComplexity), true
-
-	case "CandleNode.lastUpdate":
-		if e.complexity.CandleNode.LastUpdate == nil {
-			break
-		}
-
-		return e.complexity.CandleNode.LastUpdate(childComplexity), true
-
-	case "CandleNode.low":
-		if e.complexity.CandleNode.Low == nil {
-			break
-		}
-
-		return e.complexity.CandleNode.Low(childComplexity), true
-
-	case "CandleNode.open":
-		if e.complexity.CandleNode.Open == nil {
-			break
-		}
-
-		return e.complexity.CandleNode.Open(childComplexity), true
-
-	case "CandleNode.start":
-		if e.complexity.CandleNode.Start == nil {
-			break
-		}
-
-		return e.complexity.CandleNode.Start(childComplexity), true
-
-	case "CandleNode.volume":
-		if e.complexity.CandleNode.Volume == nil {
-			break
-		}
-
-		return e.complexity.CandleNode.Volume(childComplexity), true
 
 	case "Condition.operator":
 		if e.complexity.Condition.Operator == nil {
@@ -4191,18 +4116,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Market.AccountsConnection(childComplexity, args["partyId"].(*string), args["pagination"].(*v2.Pagination)), true
-
-	case "Market.candles":
-		if e.complexity.Market.Candles == nil {
-			break
-		}
-
-		args, err := ec.field_Market_candles_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Market.Candles(childComplexity, args["since"].(string), args["interval"].(vega.Interval)), true
 
 	case "Market.candlesConnection":
 		if e.complexity.Market.CandlesConnection == nil {
@@ -11031,14 +10944,6 @@ type Market {
     maxDepth: Int
   ): MarketDepth!
 
-  "Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by parameters"
-  candles(
-    "RFC3339Nano encoded time from when to get candles"
-    since: String!
-    "Interval of the candles"
-    interval: Interval!
-  ): [Candle] @deprecated(reason: "Use the 'candlesConnection' field instead")
-
   "Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by parameters using cursor based pagination"
   candlesConnection(
     "RFC3339Nano encoded time to get candles from"
@@ -11185,11 +11090,11 @@ type PriceLevel {
 
 "Candle stick representation of trading"
 type Candle {
-  "Unix epoch+nanoseconds for when the candle occurred"
-  timestamp: String!
+  "RFC3339Nano formatted date and time for the candle start time"
+  periodStart: String!
 
-  "RFC3339Nano formatted date and time for the candle"
-  datetime: String!
+  "RFC3339Nano formatted date and time for the candle end time, or last updated time if the candle is still open"
+  lastUpdateInPeriod: String!
 
   "High price (uint64)"
   high: String!
@@ -11205,9 +11110,6 @@ type Candle {
 
   "Volume price (uint64)"
   volume: String!
-
-  "Interval price (string)"
-  interval: Interval!
 }
 
 "Represents a party on Vega, could be an ethereum wallet address in the future"
@@ -13306,31 +13208,8 @@ type RewardsConnection {
   pageInfo: PageInfo
 }
 
-type CandleNode {
-  "Unix epoch+nanoseconds for when the candle occurred"
-  start: String!
-
-  "RFC3339Nano formatted date and time for the candle"
-  lastUpdate: String!
-
-  "High price (uint64)"
-  high: String!
-
-  "Low price (uint64)"
-  low: String!
-
-  "Open price (uint64)"
-  open: String!
-
-  "Close price (uint64)"
-  close: String!
-
-  "Volume price (uint64)"
-  volume: String!
-}
-
 type CandleEdge {
-  node: CandleNode!
+  node: Candle!
   cursor: String!
 }
 
@@ -13752,30 +13631,6 @@ func (ec *executionContext) field_Market_candlesConnection_args(ctx context.Cont
 		}
 	}
 	args["pagination"] = arg3
-	return args, nil
-}
-
-func (ec *executionContext) field_Market_candles_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["since"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("since"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["since"] = arg0
-	var arg1 vega.Interval
-	if tmp, ok := rawArgs["interval"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("interval"))
-		arg1, err = ec.unmarshalNInterval2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐInterval(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["interval"] = arg1
 	return args, nil
 }
 
@@ -18164,7 +18019,7 @@ func (ec *executionContext) _BusEvent_event(ctx context.Context, field graphql.C
 	return ec.marshalNEvent2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐEvent(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Candle_timestamp(ctx context.Context, field graphql.CollectedField, obj *vega.Candle) (ret graphql.Marshaler) {
+func (ec *executionContext) _Candle_periodStart(ctx context.Context, field graphql.CollectedField, obj *v2.Candle) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -18182,7 +18037,7 @@ func (ec *executionContext) _Candle_timestamp(ctx context.Context, field graphql
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Candle().Timestamp(rctx, obj)
+		return ec.resolvers.Candle().PeriodStart(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -18199,7 +18054,7 @@ func (ec *executionContext) _Candle_timestamp(ctx context.Context, field graphql
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Candle_datetime(ctx context.Context, field graphql.CollectedField, obj *vega.Candle) (ret graphql.Marshaler) {
+func (ec *executionContext) _Candle_lastUpdateInPeriod(ctx context.Context, field graphql.CollectedField, obj *v2.Candle) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -18210,14 +18065,14 @@ func (ec *executionContext) _Candle_datetime(ctx context.Context, field graphql.
 		Object:     "Candle",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Datetime, nil
+		return ec.resolvers.Candle().LastUpdateInPeriod(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -18234,7 +18089,7 @@ func (ec *executionContext) _Candle_datetime(ctx context.Context, field graphql.
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Candle_high(ctx context.Context, field graphql.CollectedField, obj *vega.Candle) (ret graphql.Marshaler) {
+func (ec *executionContext) _Candle_high(ctx context.Context, field graphql.CollectedField, obj *v2.Candle) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -18269,7 +18124,7 @@ func (ec *executionContext) _Candle_high(ctx context.Context, field graphql.Coll
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Candle_low(ctx context.Context, field graphql.CollectedField, obj *vega.Candle) (ret graphql.Marshaler) {
+func (ec *executionContext) _Candle_low(ctx context.Context, field graphql.CollectedField, obj *v2.Candle) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -18304,7 +18159,7 @@ func (ec *executionContext) _Candle_low(ctx context.Context, field graphql.Colle
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Candle_open(ctx context.Context, field graphql.CollectedField, obj *vega.Candle) (ret graphql.Marshaler) {
+func (ec *executionContext) _Candle_open(ctx context.Context, field graphql.CollectedField, obj *v2.Candle) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -18339,7 +18194,7 @@ func (ec *executionContext) _Candle_open(ctx context.Context, field graphql.Coll
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Candle_close(ctx context.Context, field graphql.CollectedField, obj *vega.Candle) (ret graphql.Marshaler) {
+func (ec *executionContext) _Candle_close(ctx context.Context, field graphql.CollectedField, obj *v2.Candle) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -18374,7 +18229,7 @@ func (ec *executionContext) _Candle_close(ctx context.Context, field graphql.Col
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Candle_volume(ctx context.Context, field graphql.CollectedField, obj *vega.Candle) (ret graphql.Marshaler) {
+func (ec *executionContext) _Candle_volume(ctx context.Context, field graphql.CollectedField, obj *v2.Candle) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -18407,41 +18262,6 @@ func (ec *executionContext) _Candle_volume(ctx context.Context, field graphql.Co
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Candle_interval(ctx context.Context, field graphql.CollectedField, obj *vega.Candle) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Candle",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Interval, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(vega.Interval)
-	fc.Result = res
-	return ec.marshalNInterval2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐInterval(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _CandleDataConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.CandleDataConnection) (ret graphql.Marshaler) {
@@ -18540,7 +18360,7 @@ func (ec *executionContext) _CandleEdge_node(ctx context.Context, field graphql.
 	}
 	res := resTmp.(*v2.Candle)
 	fc.Result = res
-	return ec.marshalNCandleNode2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐCandle(ctx, field.Selections, res)
+	return ec.marshalNCandle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐCandle(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _CandleEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.CandleEdge) (ret graphql.Marshaler) {
@@ -18562,251 +18382,6 @@ func (ec *executionContext) _CandleEdge_cursor(ctx context.Context, field graphq
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Cursor, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _CandleNode_start(ctx context.Context, field graphql.CollectedField, obj *v2.Candle) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "CandleNode",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.CandleNode().Start(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _CandleNode_lastUpdate(ctx context.Context, field graphql.CollectedField, obj *v2.Candle) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "CandleNode",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.CandleNode().LastUpdate(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _CandleNode_high(ctx context.Context, field graphql.CollectedField, obj *v2.Candle) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "CandleNode",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.High, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _CandleNode_low(ctx context.Context, field graphql.CollectedField, obj *v2.Candle) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "CandleNode",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Low, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _CandleNode_open(ctx context.Context, field graphql.CollectedField, obj *v2.Candle) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "CandleNode",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Open, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _CandleNode_close(ctx context.Context, field graphql.CollectedField, obj *v2.Candle) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "CandleNode",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Close, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _CandleNode_volume(ctx context.Context, field graphql.CollectedField, obj *v2.Candle) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "CandleNode",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.CandleNode().Volume(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -26529,45 +26104,6 @@ func (ec *executionContext) _Market_depth(ctx context.Context, field graphql.Col
 	res := resTmp.(*vega.MarketDepth)
 	fc.Result = res
 	return ec.marshalNMarketDepth2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketDepth(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Market_candles(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Market",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Market_candles_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Market().Candles(rctx, obj, args["since"].(string), args["interval"].(vega.Interval))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*vega.Candle)
-	fc.Result = res
-	return ec.marshalOCandle2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐCandle(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Market_candlesConnection(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
@@ -44302,7 +43838,7 @@ func (ec *executionContext) _Subscription_candles(ctx context.Context, field gra
 		return nil
 	}
 	return func() graphql.Marshaler {
-		res, ok := <-resTmp.(<-chan *vega.Candle)
+		res, ok := <-resTmp.(<-chan *v2.Candle)
 		if !ok {
 			return nil
 		}
@@ -44310,7 +43846,7 @@ func (ec *executionContext) _Subscription_candles(ctx context.Context, field gra
 			w.Write([]byte{'{'})
 			graphql.MarshalString(field.Alias).MarshalGQL(w)
 			w.Write([]byte{':'})
-			ec.marshalNCandle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐCandle(ctx, field.Selections, res).MarshalGQL(w)
+			ec.marshalNCandle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐCandle(ctx, field.Selections, res).MarshalGQL(w)
 			w.Write([]byte{'}'})
 		})
 	}
@@ -51434,7 +50970,7 @@ func (ec *executionContext) _BusEvent(ctx context.Context, sel ast.SelectionSet,
 
 var candleImplementors = []string{"Candle"}
 
-func (ec *executionContext) _Candle(ctx context.Context, sel ast.SelectionSet, obj *vega.Candle) graphql.Marshaler {
+func (ec *executionContext) _Candle(ctx context.Context, sel ast.SelectionSet, obj *v2.Candle) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, candleImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -51442,7 +50978,7 @@ func (ec *executionContext) _Candle(ctx context.Context, sel ast.SelectionSet, o
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Candle")
-		case "timestamp":
+		case "periodStart":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -51451,7 +50987,7 @@ func (ec *executionContext) _Candle(ctx context.Context, sel ast.SelectionSet, o
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Candle_timestamp(ctx, field, obj)
+				res = ec._Candle_periodStart(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -51462,16 +50998,26 @@ func (ec *executionContext) _Candle(ctx context.Context, sel ast.SelectionSet, o
 				return innerFunc(ctx)
 
 			})
-		case "datetime":
+		case "lastUpdateInPeriod":
+			field := field
+
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Candle_datetime(ctx, field, obj)
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Candle_lastUpdateInPeriod(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
 			}
 
-			out.Values[i] = innerFunc(ctx)
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
 
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
+			})
 		case "high":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Candle_high(ctx, field, obj)
@@ -51532,16 +51078,6 @@ func (ec *executionContext) _Candle(ctx context.Context, sel ast.SelectionSet, o
 				return innerFunc(ctx)
 
 			})
-		case "interval":
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Candle_interval(ctx, field, obj)
-			}
-
-			out.Values[i] = innerFunc(ctx)
-
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -51618,127 +51154,6 @@ func (ec *executionContext) _CandleEdge(ctx context.Context, sel ast.SelectionSe
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var candleNodeImplementors = []string{"CandleNode"}
-
-func (ec *executionContext) _CandleNode(ctx context.Context, sel ast.SelectionSet, obj *v2.Candle) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, candleNodeImplementors)
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("CandleNode")
-		case "start":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._CandleNode_start(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
-		case "lastUpdate":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._CandleNode_lastUpdate(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
-		case "high":
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._CandleNode_high(ctx, field, obj)
-			}
-
-			out.Values[i] = innerFunc(ctx)
-
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		case "low":
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._CandleNode_low(ctx, field, obj)
-			}
-
-			out.Values[i] = innerFunc(ctx)
-
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		case "open":
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._CandleNode_open(ctx, field, obj)
-			}
-
-			out.Values[i] = innerFunc(ctx)
-
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		case "close":
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._CandleNode_close(ctx, field, obj)
-			}
-
-			out.Values[i] = innerFunc(ctx)
-
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		case "volume":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._CandleNode_volume(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -55538,23 +54953,6 @@ func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, o
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
-				return res
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
-		case "candles":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Market_candles(ctx, field, obj)
 				return res
 			}
 
@@ -67350,11 +66748,11 @@ func (ec *executionContext) marshalNBusEventType2ᚕcodeᚗvegaprotocolᚗioᚋv
 	return ret
 }
 
-func (ec *executionContext) marshalNCandle2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐCandle(ctx context.Context, sel ast.SelectionSet, v vega.Candle) graphql.Marshaler {
+func (ec *executionContext) marshalNCandle2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐCandle(ctx context.Context, sel ast.SelectionSet, v v2.Candle) graphql.Marshaler {
 	return ec._Candle(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNCandle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐCandle(ctx context.Context, sel ast.SelectionSet, v *vega.Candle) graphql.Marshaler {
+func (ec *executionContext) marshalNCandle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐCandle(ctx context.Context, sel ast.SelectionSet, v *v2.Candle) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -67362,16 +66760,6 @@ func (ec *executionContext) marshalNCandle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋ
 		return graphql.Null
 	}
 	return ec._Candle(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNCandleNode2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐCandle(ctx context.Context, sel ast.SelectionSet, v *v2.Candle) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._CandleNode(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNCondition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋoraclesᚋv1ᚐCondition(ctx context.Context, sel ast.SelectionSet, v *v12.Condition) graphql.Marshaler {
@@ -70369,54 +69757,6 @@ func (ec *executionContext) marshalOBusEvent2ᚕᚖcodeᚗvegaprotocolᚗioᚋve
 	}
 
 	return ret
-}
-
-func (ec *executionContext) marshalOCandle2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐCandle(ctx context.Context, sel ast.SelectionSet, v []*vega.Candle) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOCandle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐCandle(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	return ret
-}
-
-func (ec *executionContext) marshalOCandle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐCandle(ctx context.Context, sel ast.SelectionSet, v *vega.Candle) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._Candle(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOCandleDataConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐCandleDataConnection(ctx context.Context, sel ast.SelectionSet, v *v2.CandleDataConnection) graphql.Marshaler {

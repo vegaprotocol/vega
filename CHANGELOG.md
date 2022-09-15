@@ -16,10 +16,12 @@
 ### 🐛 Fixes
 - [6183](https://github.com/vegaprotocol/vega/issues/6183) - Shutdown blockchain before protocol services
 - [6148](https://github.com/vegaprotocol/vega/issues/6148) - Fix API descriptions for typos
+- [6187](https://github.com/vegaprotocol/vega/issues/6187) - Not not hash message before signing if using clef for validator heartbeats
 - [6138](https://github.com/vegaprotocol/vega/issues/6138) - Return more useful information when a transaction submitted to a node contains validation errors
 - [6156](https://github.com/vegaprotocol/vega/issues/6156) - Return only delegations for the specific node in `graphql` node delegation query
 - [6175](https://github.com/vegaprotocol/vega/issues/6175) - Fix `datanode` updating node public key on key rotation
 - [5948](https://github.com/vegaprotocol/vega/issues/5948) - Shutdown node gracefully when panics or `sigterm` during chain-replay
+- [6109](https://github.com/vegaprotocol/vega/issues/6109) - Candle query returns unexpected data.
 
 ## 0.55.0
 
