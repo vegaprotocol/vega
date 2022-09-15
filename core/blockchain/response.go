@@ -10,9 +10,26 @@
 // of this software will be governed by version 3 or later of the GNU General
 // Public License.
 
-package abci
+package blockchain
 
 import "github.com/tendermint/tendermint/abci/types"
+
+const (
+	// AbciTxnValidationFailure ...
+	AbciTxnValidationFailure uint32 = 51
+
+	// AbciTxnDecodingFailure code is returned when CheckTx or DeliverTx fail to decode the Txn.
+	AbciTxnDecodingFailure uint32 = 60
+
+	// AbciTxnInternalError code is returned when CheckTx or DeliverTx fail to process the Txn.
+	AbciTxnInternalError uint32 = 70
+
+	// AbciUnknownCommandError code is returned when the app doesn't know how to handle a given command.
+	AbciUnknownCommandError uint32 = 80
+
+	// AbciSpamError code is returned when CheckTx or DeliverTx fail spam protection tests.
+	AbciSpamError uint32 = 89
+)
 
 func NewResponseCheckTx(code uint32, info string) types.ResponseCheckTx {
 	return types.ResponseCheckTx{
