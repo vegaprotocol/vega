@@ -224,14 +224,14 @@ func (n *Command) startProtocolUpgrade(version string) {
 }
 
 func (n *Command) Stop() error {
+	if n.blockchainServer != nil {
+		n.blockchainServer.Stop()
+	}
 	if n.protocol != nil {
 		n.protocol.Stop()
 	}
 	if n.grpcServer != nil {
 		n.grpcServer.Stop()
-	}
-	if n.blockchainServer != nil {
-		n.blockchainServer.Stop()
 	}
 	if n.proxyServer != nil {
 		n.proxyServer.Stop()
@@ -335,7 +335,7 @@ func (n *Command) startBlockchain(tmHome, network, networkURL string) error {
 		if err != nil {
 			return err
 		}
-		n.blockchainServer = blockchain.NewServer(n.tmNode)
+		n.blockchainServer = blockchain.NewServer(n.Log, n.tmNode)
 		// initialise the client
 		client, err := n.tmNode.GetClient()
 		if err != nil {
@@ -347,7 +347,7 @@ func (n *Command) startBlockchain(tmHome, network, networkURL string) error {
 		// nullchain acts as both the client and the server because its does everything
 		n.nullBlockchain = nullchain.NewClient(n.Log, n.conf.Blockchain.Null)
 		n.nullBlockchain.SetABCIApp(n.abciApp)
-		n.blockchainServer = blockchain.NewServer(n.nullBlockchain)
+		n.blockchainServer = blockchain.NewServer(n.Log, n.nullBlockchain)
 		// n.blockchainClient = blockchain.NewClient(n.nullBlockchain)
 		n.blockchainClient.Set(n.nullBlockchain)
 
