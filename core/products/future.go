@@ -65,7 +65,7 @@ type oracle struct {
 	unsubscribe                     oracles.Unsubscriber
 	binding                         oracleBinding
 	data                            oracleData
-	settlementPriceDecimals         uint32
+	settlementDataDecimals          uint32
 }
 
 type oracleData struct {
@@ -103,7 +103,7 @@ func (f *Future) ScaleSettlementPriceToDecimalPlaces(price *num.Uint, dp uint32)
 	// if assetDP > oracleDP - this scales up the decimals of settlement price
 	// if assetDP < oracleDP - this scaled down the decimals of settlement price and can lead to loss of accuracy
 	// if there're equal - no scaling happens
-	scalingFactor := num.DecimalFromInt64(10).Pow(num.DecimalFromInt64(int64(dp) - int64(f.oracle.settlementPriceDecimals)))
+	scalingFactor := num.DecimalFromInt64(10).Pow(num.DecimalFromInt64(int64(dp) - int64(f.oracle.settlementDataDecimals)))
 	r, overflow := num.UintFromDecimal(price.ToDecimal().Mul(scalingFactor))
 	if overflow {
 		return nil, errors.New("failed to scale settlement price, overflow occurred")
@@ -239,8 +239,8 @@ func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 		SettlementAsset: f.SettlementAsset,
 		QuoteName:       f.QuoteName,
 		oracle: oracle{
-			binding:                 oracleBinding,
-			settlementPriceDecimals: f.SettlementPriceDecimals,
+			binding:                oracleBinding,
+			settlementDataDecimals: f.SettlementDataDecimals,
 		},
 	}
 

@@ -18,7 +18,7 @@ import (
 	"code.vegaprotocol.io/vega/core/integration/steps/market"
 )
 
-func OracleSpecSettlementPriceDecimals(config *market.Config, name string, settlementDP string) error {
+func OracleSpecSettlementDataDecimals(config *market.Config, name string, settlementDP string) error {
 	dp, err := strconv.ParseUint(settlementDP, 10, 0)
 	if err != nil {
 		return err
