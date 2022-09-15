@@ -32,7 +32,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 )
 
-// just a convenience type used in some tests
+// just a convenience type used in some tests.
 type lpdata struct {
 	id  string
 	amt *num.Uint
@@ -46,7 +46,7 @@ func TestEquityShares(t *testing.T) {
 	t.Run("Average entry valuation after 6063 spec change", testAvgEntryUpdate)
 }
 
-// replicate the example given in spec file (protocol/0042-LIQF-setting_fees_and_rewarding_lps.md)
+// replicate the example given in spec file (protocol/0042-LIQF-setting_fees_and_rewarding_lps.md).
 func testAvgEntryUpdate(t *testing.T) {
 	es := execution.NewEquityShares(num.DecimalZero())
 	es.OpeningAuctionEnded()
@@ -97,7 +97,7 @@ func testAvgEntryUpdate(t *testing.T) {
 	require.True(t, step1.avg.Equals(es.AvgEntryValuation(step1.id)), es.AvgEntryValuation(step1.id).String())
 }
 
-// continue based on testAvgEntryUpdate setup, just add new LP to get the total up to 3k
+// continue based on testAvgEntryUpdate setup, just add new LP to get the total up to 3k.
 func testAvgEntryUpdateStep3New(t *testing.T, es *execution.EquityShares) {
 	t.Helper()
 	// we have 1000 + 110 + 990 (2000)
