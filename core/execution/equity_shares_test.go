@@ -52,8 +52,8 @@ func testAvgEntryUpdate(t *testing.T) {
 	es.OpeningAuctionEnded()
 	initial := lpdata{
 		id:  "initial",
-		amt: num.NewUint(1000),
-		avg: num.DecimalFromFloat(1000),
+		amt: num.NewUint(900),
+		avg: num.DecimalFromFloat(900),
 	}
 	es.SetPartyStake(initial.id, initial.amt)
 	require.True(t, initial.avg.Equals(es.AvgEntryValuation(initial.id)), es.AvgEntryValuation(initial.id).String())
@@ -61,7 +61,7 @@ func testAvgEntryUpdate(t *testing.T) {
 	step1 := lpdata{
 		id:  "step1",
 		amt: num.NewUint(100),
-		avg: num.NewDecimalFromFloat(1100),
+		avg: num.NewDecimalFromFloat(1000),
 	}
 	es.SetPartyStake(step1.id, step1.amt)
 	require.True(t, step1.avg.Equals(es.AvgEntryValuation(step1.id)), es.AvgEntryValuation(step1.id).String())
@@ -69,16 +69,14 @@ func testAvgEntryUpdate(t *testing.T) {
 	// total vStake == 1.1k => avg is now 1.1k
 	inc := lpdata{
 		id:  "topup",
-		amt: num.NewUint(900),
-		avg: num.DecimalFromFloat(2000),
+		amt: num.NewUint(990),
+		avg: num.DecimalFromFloat(1990),
 	}
 	es.SetPartyStake(inc.id, inc.amt)
 	require.True(t, inc.avg.Equals(es.AvgEntryValuation(inc.id)), es.AvgEntryValuation(inc.id).String())
 	// Example 2: We have a total vStake of 2k -> step1 party increases the commitment amount to 110 (so +10)
 	step1.amt = num.NewUint(110)
-	// 1182.7272727272727273
-	// step1.avg, _ = num.DecimalFromString("1090.9090909090909091")
-	step1.avg, _ = num.DecimalFromString("1182.7272727272727273")
+	step1.avg, _ = num.DecimalFromString("1090.9090909090909091")
 	es.SetPartyStake(step1.id, step1.amt)
 	require.True(t, step1.avg.Equals(es.AvgEntryValuation(step1.id)), es.AvgEntryValuation(step1.id).String())
 	// increase total vStake to be 3k using a new LP party
@@ -102,11 +100,11 @@ func testAvgEntryUpdate(t *testing.T) {
 // continue based on testAvgEntryUpdate setup, just add new LP to get the total up to 3k
 func testAvgEntryUpdateStep3New(t *testing.T, es *execution.EquityShares) {
 	t.Helper()
-	// we have 1000 + 110 + 900 (2010)
-	// AEV == 2010
+	// we have 1000 + 110 + 990 (2000)
+	// AEV == 2000
 	inc := lpdata{
 		id:  "another",
-		amt: num.NewUint(990),
+		amt: num.NewUint(1000),
 		avg: num.DecimalFromFloat(3000),
 	}
 	es.SetPartyStake(inc.id, inc.amt)
@@ -115,13 +113,11 @@ func testAvgEntryUpdateStep3New(t *testing.T, es *execution.EquityShares) {
 
 func testAvgEntryUpdateStep3Add(t *testing.T, es *execution.EquityShares, inc *lpdata) {
 	t.Helper()
-	// at this point, the total vStake is 2990, get it back up to 3k
+	// at this point, the total vStake is 2980, get it back up to 3k
 	// calc for delta 10: (average entry valuation) x S / (S + Delta S) + (entry valuation) x (Delta S) / (S + Delta S)
-	// using LP0 => 1000 * 1000 / 1020 + 2980 * 20 / 1020 == 1038.8235294117647059
-	// 1039.2156862745098039
+	// using LP0 => 900 * 900 / 920 + 2980 * 20 / 920 == 945.6521739130434783
 	inc.amt.Add(inc.amt, num.NewUint(20))
-	// inc.avg, _ = num.DecimalFromString("1038.8235294117647059")
-	inc.avg, _ = num.DecimalFromString("1039.2156862745098039")
+	inc.avg, _ = num.DecimalFromString("945.6521739130434783")
 	es.SetPartyStake(inc.id, inc.amt)
 	require.True(t, inc.avg.Equals(es.AvgEntryValuation(inc.id)), es.AvgEntryValuation(inc.id).String())
 }
@@ -160,7 +156,6 @@ func testAvgEntryValuationGrowth(t *testing.T) {
 		require.True(t, l.avg.Equals(es.AvgEntryValuation(l.id)), es.AvgEntryValuation(l.id).String())
 	}
 	es.OpeningAuctionEnded()
-	lps[1].avg = num.DecimalFromFloat(200)
 
 	// lps[1].avg = num.DecimalFromFloat(100)
 	// set trade value at auction end
