@@ -10540,7 +10540,7 @@ type Future {
   "The binding between the oracle spec and the settlement price"
   oracleSpecBinding: OracleSpecToFutureBinding!
 
-  "The number of decimal places implied by the settlement data emitted by the settlement oracle"
+  "The number of decimal places implied by the settlement data (such as price) emitted by the settlement oracle"
   settlementDataDecimals: Int!
 }
 
@@ -12310,7 +12310,7 @@ type FutureProduct {
   """
   oracleSpecBinding: OracleSpecToFutureBinding!
 
-  "The number of decimal places implied by the settlement data emitted by the settlement oracle"
+  "The number of decimal places implied by the settlement data (such as price) emitted by the settlement oracle"
   settlementDataDecimals: Int!
 }
 
