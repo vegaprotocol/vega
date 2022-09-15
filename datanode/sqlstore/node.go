@@ -178,7 +178,7 @@ func (store *Node) UpsertScore(ctx context.Context, rs *entities.RewardScore, au
 func (store *Node) UpdatePublicKey(ctx context.Context, kr *entities.KeyRotation) error {
 	defer metrics.StartSQLQuery("Node", "UpdatePublicKey")()
 
-	_, err := store.Connection.Exec(ctx, `UPDATE nodes SET pub_key = $1 WHERE id = $2`, kr.NewPubKey, kr.NodeID)
+	_, err := store.Connection.Exec(ctx, `UPDATE nodes SET vega_pub_key = $1 WHERE id = $2`, kr.NewPubKey, kr.NodeID)
 
 	return err
 }

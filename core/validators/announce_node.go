@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 
+	"code.vegaprotocol.io/vega/core/nodewallets/eth/clef"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	signatures "code.vegaprotocol.io/vega/libs/crypto/signature"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
@@ -104,7 +105,10 @@ func SignAnnounceNode(
 		return err
 	}
 
-	ethereumSignature, err := ethSigner.Sign(crypto.Keccak256(buf))
+	if ethSigner.Algo() != clef.ClefAlgoType {
+		buf = crypto.Keccak256(buf)
+	}
+	ethereumSignature, err := ethSigner.Sign(buf)
 	if err != nil {
 		return err
 	}

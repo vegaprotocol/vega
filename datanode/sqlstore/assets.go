@@ -76,7 +76,7 @@ func (as *Assets) Add(ctx context.Context, a entities.Asset) error {
 		return err
 	}
 
-	as.ConnectionSource.AfterCommit(ctx, func() {
+	as.AfterCommit(ctx, func() {
 		// delete cache
 		as.cacheLock.Lock()
 		defer as.cacheLock.Unlock()

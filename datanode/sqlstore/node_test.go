@@ -71,6 +71,32 @@ func addRankingScore(t *testing.T, ps *sqlstore.Node, block entities.Block, node
 	return r
 }
 
+func TestUpdateNodePubKey(t *testing.T) {
+	DeleteEverything()
+	defer DeleteEverything()
+	ctx := context.Background()
+	bs := sqlstore.NewBlocks(connectionSource)
+	ns := sqlstore.NewNode(connectionSource)
+	block := addTestBlock(t, bs)
+
+	now := time.Now()
+	node1 := addTestNode(t, ns, block, generateID())
+	addNodeAnnounced(t, ns, node1.ID, true, 0, now)
+
+	kr := entities.KeyRotation{
+		NodeID:    node1.ID,
+		OldPubKey: node1.PubKey,
+		NewPubKey: entities.VegaPublicKey(generateID()),
+		VegaTime:  block.VegaTime,
+	}
+
+	ns.UpdatePublicKey(ctx, &kr)
+
+	fetched, err := ns.GetNodeByID(ctx, node1.ID.String(), 1)
+	assert.NoError(t, err)
+	assert.Equal(t, fetched.PubKey, kr.NewPubKey)
+}
+
 func TestGetNodes(t *testing.T) {
 	DeleteEverything()
 	defer DeleteEverything()

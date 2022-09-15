@@ -103,8 +103,6 @@ type Engine struct {
 
 	npv netParamsValues
 
-	// Snapshot
-	stateChanged          bool
 	snapshotSerialised    []byte
 	newGeneratedProviders []types.StateProvider // new providers generated during the last state change
 
@@ -207,16 +205,21 @@ func (e *Engine) ReloadConf(cfg Config) {
 func (e *Engine) Hash() []byte {
 	e.log.Debug("hashing markets")
 
-	hashes := make([]string, 0, len(e.markets))
-	for _, m := range e.markets {
+	hashes := make([]string, 0, len(e.marketsCpy))
+	for _, m := range e.marketsCpy {
 		hash := m.Hash()
 		e.log.Debug("market app state hash", logging.Hash(hash), logging.String("market-id", m.GetID()))
 		hashes = append(hashes, string(hash))
 	}
 
 	sort.Strings(hashes)
+
+	// get the accounts hash + add it at end of all markets hash
+	accountsHash := e.collateral.Hash()
+	e.log.Debug("accounts state hash", logging.Hash(accountsHash))
+
 	bytes := []byte{}
-	for _, h := range hashes {
+	for _, h := range append(hashes, string(accountsHash)) {
 		bytes = append(bytes, []byte(h)...)
 	}
 	return crypto.Hash(bytes)
@@ -475,7 +478,6 @@ func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *Market) err
 
 func (e *Engine) removeMarket(mktID string) {
 	e.log.Debug("removing market", logging.String("id", mktID))
-	e.stateChanged = true
 
 	delete(e.markets, mktID)
 	for i, mkt := range e.marketsCpy {

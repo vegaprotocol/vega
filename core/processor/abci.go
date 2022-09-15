@@ -26,6 +26,7 @@ import (
 
 	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/core/api"
+	"code.vegaprotocol.io/vega/core/blockchain"
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/genesis"
@@ -787,7 +788,7 @@ func (app *App) OnCheckTxSpam(tx abci.Tx) tmtypes.ResponseCheckTx {
 			if app.log.IsDebug() {
 				app.log.Debug(err.Error())
 			}
-			resp.Code = abci.AbciSpamError
+			resp.Code = blockchain.AbciSpamError
 			resp.Data = []byte(err.Error())
 			return resp
 		}
@@ -796,7 +797,7 @@ func (app *App) OnCheckTxSpam(tx abci.Tx) tmtypes.ResponseCheckTx {
 	if !app.nilSpam {
 		if _, err := app.spam.PreBlockAccept(tx); err != nil {
 			app.log.Error(err.Error())
-			resp.Code = abci.AbciSpamError
+			resp.Code = blockchain.AbciSpamError
 			resp.Data = []byte(err.Error())
 			return resp
 		}
@@ -813,7 +814,7 @@ func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci
 	}
 
 	if err := app.canSubmitTx(tx); err != nil {
-		resp.Code = abci.AbciTxnValidationFailure
+		resp.Code = blockchain.AbciTxnValidationFailure
 		resp.Data = []byte(err.Error())
 		return ctx, resp
 	}
@@ -897,7 +898,7 @@ func (app *App) OnDeliverTXSpam(ctx context.Context, tx abci.Tx) tmtypes.Respons
 	if !app.nilPow {
 		if err := app.pow.DeliverTx(tx); err != nil {
 			app.log.Error(err.Error())
-			resp.Code = abci.AbciSpamError
+			resp.Code = blockchain.AbciSpamError
 			resp.Data = []byte(err.Error())
 			app.broker.Send(events.NewTxErrEvent(ctxWithHash, err, tx.Party(), tx.GetCmd(), tx.Command().String()))
 			return resp
@@ -906,7 +907,7 @@ func (app *App) OnDeliverTXSpam(ctx context.Context, tx abci.Tx) tmtypes.Respons
 	if !app.nilSpam {
 		if _, err := app.spam.PostBlockAccept(tx); err != nil {
 			app.log.Error(err.Error())
-			resp.Code = abci.AbciSpamError
+			resp.Code = blockchain.AbciSpamError
 			resp.Data = []byte(err.Error())
 			evt := events.NewTxErrEvent(ctxWithHash, err, tx.Party(), tx.GetCmd(), tx.Command().String())
 			app.broker.Send(evt)
@@ -921,7 +922,7 @@ func (app *App) OnDeliverTx(ctx context.Context, req tmtypes.RequestDeliverTx, t
 	app.setTxStats(len(req.Tx))
 	var resp tmtypes.ResponseDeliverTx
 	if err := app.canSubmitTx(tx); err != nil {
-		resp.Code = abci.AbciTxnValidationFailure
+		resp.Code = blockchain.AbciTxnValidationFailure
 		resp.Data = []byte(err.Error())
 	}
 

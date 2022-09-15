@@ -102,10 +102,6 @@ func (r *VegaResolverRoot) Candle() CandleResolver {
 	return (*myCandleResolver)(r)
 }
 
-func (r *VegaResolverRoot) CandleNode() CandleNodeResolver {
-	return (*myCandleNodeResolver)(r)
-}
-
 // MarginLevels returns the market levels resolver.
 func (r *VegaResolverRoot) MarginLevels() MarginLevelsResolver {
 	return (*myMarginLevelsResolver)(r)
@@ -2209,53 +2205,19 @@ func (r *myTradeResolver) SellerFee(ctx context.Context, obj *types.Trade) (*Tra
 
 type myCandleResolver VegaResolverRoot
 
-func (r *myCandleResolver) High(ctx context.Context, obj *types.Candle) (string, error) {
-	return obj.High, nil
+func (r *myCandleResolver) PeriodStart(_ context.Context, obj *v2.Candle) (string, error) {
+	return vegatime.Format(vegatime.UnixNano(obj.Start)), nil
 }
 
-func (r *myCandleResolver) Low(ctx context.Context, obj *types.Candle) (string, error) {
-	return obj.Low, nil
+func (r *myCandleResolver) LastUpdateInPeriod(_ context.Context, obj *v2.Candle) (string, error) {
+	return vegatime.Format(vegatime.UnixNano(obj.LastUpdate)), nil
 }
 
-func (r *myCandleResolver) Open(ctx context.Context, obj *types.Candle) (string, error) {
-	return obj.Open, nil
-}
-
-func (r *myCandleResolver) Close(ctx context.Context, obj *types.Candle) (string, error) {
-	return obj.Close, nil
-}
-
-func (r *myCandleResolver) Volume(ctx context.Context, obj *types.Candle) (string, error) {
+func (r *myCandleResolver) Volume(_ context.Context, obj *v2.Candle) (string, error) {
 	return strconv.FormatUint(obj.Volume, 10), nil
-}
-
-func (r *myCandleResolver) Datetime(ctx context.Context, obj *types.Candle) (string, error) {
-	return vegatime.Format(vegatime.UnixNano(obj.Timestamp)), nil
-}
-
-func (r *myCandleResolver) Timestamp(ctx context.Context, obj *types.Candle) (string, error) {
-	return strconv.FormatInt(obj.Timestamp, 10), nil
 }
 
 // END: Candle Resolver
-
-// BEGIN: CandleNode Resolver
-
-type myCandleNodeResolver VegaResolverRoot
-
-func (m *myCandleNodeResolver) Start(ctx context.Context, obj *v2.Candle) (string, error) {
-	return strconv.FormatInt(obj.Start, 10), nil
-}
-
-func (m *myCandleNodeResolver) LastUpdate(ctx context.Context, obj *v2.Candle) (string, error) {
-	return strconv.FormatInt(obj.LastUpdate, 10), nil
-}
-
-func (m *myCandleNodeResolver) Volume(ctx context.Context, obj *v2.Candle) (string, error) {
-	return strconv.FormatUint(obj.Volume, 10), nil
-}
-
-// END: CandleNode Resolver
 
 // BEGIN: Price Level Resolver
 
@@ -2627,7 +2589,7 @@ func (r *mySubscriptionResolver) Positions(ctx context.Context, party, market *s
 	return c, nil
 }
 
-func (r *mySubscriptionResolver) Candles(ctx context.Context, market string, interval vega.Interval) (<-chan *types.Candle, error) {
+func (r *mySubscriptionResolver) Candles(ctx context.Context, market string, interval vega.Interval) (<-chan *v2.Candle, error) {
 	intervalToCandleIDs, err := r.tradingDataClientV2.ListCandleIntervals(ctx, &v2.ListCandleIntervalsRequest{
 		MarketId: market,
 	})
@@ -2661,7 +2623,7 @@ func (r *mySubscriptionResolver) Candles(ctx context.Context, market string, int
 		return nil, customErrorFromStatus(err)
 	}
 
-	c := make(chan *types.Candle)
+	c := make(chan *v2.Candle)
 	go func() {
 		defer func() {
 			stream.CloseSend()
@@ -2678,20 +2640,7 @@ func (r *mySubscriptionResolver) Candles(ctx context.Context, market string, int
 				break
 			}
 
-			// TODO: Check with Matt P why the data-node v2 API defines a different Candle message
-			// and see if we need to do this, or if we have to update the ObserveCandleData API to
-			// deliver a v2 Candle which may be a breaking change.
-			vegaCandle := &types.Candle{
-				Timestamp: cdl.Candle.Start,
-				Datetime:  time.Unix(0, cdl.Candle.LastUpdate).Format(time.RFC3339Nano),
-				High:      cdl.Candle.High,
-				Low:       cdl.Candle.Low,
-				Open:      cdl.Candle.Open,
-				Close:     cdl.Candle.Close,
-				Volume:    cdl.Candle.Volume,
-				Interval:  candleInterval,
-			}
-			c <- vegaCandle
+			c <- cdl.Candle
 		}
 	}()
 	return c, nil

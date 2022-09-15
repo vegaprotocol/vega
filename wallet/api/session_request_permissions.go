@@ -63,7 +63,7 @@ func (h *RequestPermissions) Handle(ctx context.Context, rawParams jsonrpc.Param
 		return nil, internalError(ErrCouldNotRequestPermissions)
 	}
 	if !approved {
-		return nil, clientRejectionError()
+		return nil, userRejectionError()
 	}
 
 	perms, err := h.parsePermissions(params)
@@ -90,7 +90,7 @@ func (h *RequestPermissions) Handle(ctx context.Context, rawParams jsonrpc.Param
 		w, err := h.walletStore.GetWallet(ctx, connectedWallet.Wallet.Name(), enteredPassphrase)
 		if err != nil {
 			if errors.Is(err, wallet.ErrWrongPassphrase) {
-				h.pipeline.NotifyError(ctx, traceID, ClientError, wallet.ErrWrongPassphrase)
+				h.pipeline.NotifyError(ctx, traceID, UserError, wallet.ErrWrongPassphrase)
 				continue
 			}
 			h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not retrieve the wallet: %w", err))

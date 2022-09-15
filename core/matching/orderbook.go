@@ -747,10 +747,7 @@ func (b *OrderBook) ReplaceOrder(rm, rpl *types.Order) (*types.OrderConfirmation
 	if _, err := b.CancelOrder(rm); err != nil {
 		return nil, err
 	}
-	// Because other collections might be pointing at the original order
-	// use it's memory when inserting the new version
-	*rm = *rpl
-	return b.SubmitOrder(rm)
+	return b.SubmitOrder(rpl)
 }
 
 // SubmitOrder Add an order and attempt to uncross the book, returns a TradeSet protobuf message object.

@@ -56,7 +56,7 @@ func (r *nodeResolver) RewardScore(ctx context.Context, obj *proto.Node) (proto.
 
 func (r *nodeResolver) DelegationsConnection(ctx context.Context, node *proto.Node, partyID *string, pagination *v2.Pagination) (*v2.DelegationsConnection, error) {
 	var nodeID *string
-	if node == nil {
+	if node != nil {
 		nodeID = &node.Id
 	}
 	return handleDelegationConnectionRequest(ctx, r.tradingDataClientV2, partyID, nodeID, nil, pagination)

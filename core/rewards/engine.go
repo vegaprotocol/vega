@@ -304,8 +304,8 @@ func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) 
 					po.market = account.MarketID
 					po.timestamp = now.UnixNano()
 					payouts = append(payouts, po)
-					e.emitEventsForPayout(ctx, now, po)
 					e.distributePayout(ctx, po)
+					e.emitEventsForPayout(ctx, now, po)
 				}
 			}
 		}
