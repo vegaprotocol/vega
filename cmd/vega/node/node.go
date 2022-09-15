@@ -128,9 +128,23 @@ func (n *Command) Run(
 		return err
 	}
 
-	if err := n.startBlockchain(tmHome, network, networkURL); err != nil {
-		return err
-	}
+	// if a chain is being replayed tendermint does this during the initial handshake with the
+	// app and does so synchronously. We to need to set this off in a goroutine so we can catch any
+	// SIGTERM during that replay and shutdown properly
+	errCh := make(chan error)
+	go func() {
+		defer func() {
+			// if a consensus failure happens during replay tendermint panics
+			// we need to catch it so we can call shutdown and then re-panic
+			if r := recover(); r != nil {
+				n.Stop()
+				panic(r)
+			}
+		}()
+		if err := n.startBlockchain(tmHome, network, networkURL); err != nil {
+			errCh <- err
+		}
+	}()
 
 	// at this point all is good, and we should be started, we can
 	// just wait for signals or whatever
@@ -144,7 +158,10 @@ func (n *Command) Run(
 	}
 
 	// wait for possible protocol upgrade, or user exist
-	n.wait()
+
+	if err := n.wait(errCh); err != nil {
+		return err
+	}
 
 	// cleanup
 	n.Stop()
@@ -152,20 +169,22 @@ func (n *Command) Run(
 	return nil
 }
 
-func (n *Command) wait() {
+func (n *Command) wait(errCh <-chan error) error {
 	gracefulStop := make(chan os.Signal, 1)
 	signal.Notify(gracefulStop, syscall.SIGTERM, syscall.SIGINT)
-
 	for {
 		select {
 		case version := <-n.protocolUpgrade:
 			n.startProtocolUpgrade(version)
 		case sig := <-gracefulStop:
 			n.Log.Info("Caught signal", logging.String("name", fmt.Sprintf("%+v", sig)))
-			return
+			return nil
+		case e := <-errCh:
+			n.Log.Error("problem starting blockchain", logging.Error(e))
+			return e
 		case <-n.ctx.Done():
 			// nothing to do
-			return
+			return nil
 		}
 	}
 }
