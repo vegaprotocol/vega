@@ -1,175 +1,94 @@
-Feature: Amend orders
+Feature: test margin during amending orders
 
   Background:
 
+    Given the log normal risk model named "log-normal-risk-model-1":
+      | risk aversion | tau | mu | r | sigma |
+      | 0.000001      | 0.1 | 0  | 0 | 1.0   |
+    And the fees configuration named "fees-config-1":
+      | maker fee | infrastructure fee |
+      | 0.004     | 0.001              |
+    And the price monitoring named "price-monitoring-1":
+      | horizon | probability | auction extension |
+      | 1       | 0.99        | 300               |
     And the markets:
-      | id        | quote name | asset | risk model                  | margin calculator                  | auction duration | fees         | price monitoring | oracle config          |
-      | ETH/DEC19 | BTC        | USD   | default-simple-risk-model-2 | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
-    And the following network parameters are set:
-      | name                           | value |
-      | market.auction.minimumDuration | 1     |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | oracle config          |
+      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
+    And the parties deposit on asset's general account the following amount:
+      | party  | asset | amount    |
+      | party0 | USD   | 500000    |
+      | party1 | USD   | 100000000 |
+      | party2 | USD   | 100000000 |
+      | party3 | USD   | 100000000 |
+      | party4 | USD   | 100000000 |
 
-  Scenario: 001 Amend rejected for non existing order
-# setup accounts
-    Given the parties deposit on asset's general account the following amount:
-      | party  | asset | amount |
-      | party1 | USD   | 10000  |
-      | aux    | USD   | 100000 |
-      | aux2   | USD   | 100000 |
+   Scenario: 001, reduce order size 
 
-    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux    | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux    | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2   | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux    | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
-    Then the opening auction period ends for market "ETH/DEC19"
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+   Given the following network parameters are set:
+      | name                                          | value |
+      | market.stake.target.timeWindow                | 24h   |
+      | market.stake.target.scalingFactor             | 1     |
+      | market.liquidity.bondPenaltyParameter         | 0.2   |
+      | market.liquidity.targetstake.triggering.ratio | 0.1   |
 
-    And the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-      | party1  | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC | party1-ref-1 |
+   And the average block duration is "1"
 
-# cancel the order, so we cannot edit it.
+   And the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | sell | ASK              | 500        | 20     | submission |
+      | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | buy  | BID              | 500        | 20    | amendment  |
+
+      And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
+      | party1 | ETH/MAR22 | buy  | 20     | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
+      | party2 | ETH/MAR22 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-2  |
+      | party3 | ETH/MAR22 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-3 |
+      | party4 | ETH/MAR22 | sell | 20     | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-4 |
+
+    When the opening auction period ends for market "ETH/MAR22"
+    Then the auction ends with a traded volume of "10" at a price of "1000"
+    # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000 x 10 x 1 x 0.1
+    And the insurance pool balance should be "0" for the market "ETH/MAR22"
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 1000      | 1000      | 35569        | 50000          | 10            |
+
+    # check the requried balances
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin | general  | bond  |
+      | party1 | USD   | ETH/MAR22 | 19218  | 99980782 | 0     |
+      | party4 | USD   | ETH/MAR22 | 85366  | 99914634 | 0     |
+    #check the margin levels
+    Then the parties should have the following margin levels:
+      | party  | market id | maintenance | search | initial | release |
+      | party1 | ETH/MAR22 | 16015       | 17616  | 19218   | 22421   |
+      | party4 | ETH/MAR22 | 71139       | 78252  | 85366   | 99594   |
+
+    Then the parties amend the following orders:
+      | party  | reference   | price | size delta | tif     | 
+      | party1 | buy-ref-1   | 900   | -18        | TIF_GTC | 
+      | party4 | sell-ref-4  | 1100  | 20         | TIF_GTC | 
+
+    # bug: order size for party1 has been reduced from 20 to 2, but no change on margin
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin | general  | bond  |
+      | party1 | USD   | ETH/MAR22 | 19218  | 99980782 | 0     |
+      | party4 | USD   | ETH/MAR22 | 170732  | 99829268 | 0    |
+    #check the margin levels
+    Then the parties should have the following margin levels:
+      | party  | market id | maintenance | search | initial | release |
+      | party1 | ETH/MAR22 | 16015       | 17616  | 19218   | 22421   |
+      | party4 | ETH/MAR22 | 142277      | 156504 | 170732  | 199187  |
+
     And the parties cancel the following orders:
       | party | reference   |
-      | party1  | party1-ref-1 |
-
-    Then the parties amend the following orders:
-      | party | reference   | price | size delta | tif     | error                        |
-      | party1  | party1-ref-1 | 2     | 3          | TIF_GTC | OrderError: Invalid Order ID |
-
-  Scenario: 002 Reduce size success and not loosing position in order book
-# setup accounts
-    Given the parties deposit on asset's general account the following amount:
-      | party  | asset | amount   |
-      | party1 | USD   | 1000000  |
-      | party2 | USD   | 1000000  |
-      | party3 | USD   | 1000000  |
-      | aux    | USD   | 1000000  |
-      | aux2   | USD   | 1000000  |
-
-    And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | aux2   | ETH/DEC19 | 50000             | 0.001 | sell | ASK              | 500        | 1      | submission |
-      | lp1 | aux2   | ETH/DEC19 | 50000             | 0.001 | buy  | BID              | 500        | 1      | amendment  |
-
-    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux    | ETH/DEC19 | buy  | 1      | 1    | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux    | ETH/DEC19 | sell | 1      | 50001| 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2   | ETH/DEC19 | buy  | 1      | 2000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux    | ETH/DEC19 | sell | 1      | 2000 | 0                | TYPE_LIMIT | TIF_GTC |
-    Then the opening auction period ends for market "ETH/DEC19"
-  
-    And the market data for the market "ETH/DEC19" should be:
-      | mark price | trading mode            | target stake | supplied stake | open interest |
-      | 2000       | TRADING_MODE_CONTINUOUS | 0            | 50000          | 1             |
-    # party 123 plalces orders on the book
-    And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-      | party1 | ETH/DEC19 | sell | 5      | 2100  | 0                | TYPE_LIMIT | TIF_GTC | party1-ref-1 |
-      | party2 | ETH/DEC19 | sell | 7      | 2200  | 0                | TYPE_LIMIT | TIF_GTC | party2-ref-2 |
-      | party3 | ETH/DEC19 | buy  | 4      | 1900  | 0                | TYPE_LIMIT | TIF_GTC | party3-ref-3 |
+      | party1| buy-ref-1   |
+      | party4| sell-ref-4  |
 
     And the parties should have the following account balances:
-      | party  | asset | market id | margin | general  | bond  |
-      | party1 | USD   | ETH/DEC19 | 0      | 1000000    | 0     |
-      | party2 | USD   | ETH/DEC19 | 0      | 1000000    | 0     |
-      | party3 | USD   | ETH/DEC19 | 0      | 1000000    | 0     |
- 
-    Then the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release |
-      | party1 | ETH/DEC19 | 0           | 0      | 0       | 0       |
-      | party2 | ETH/DEC19 | 0           | 0      | 0       | 0       |
-      | party3 | ETH/DEC19 | 0           | 0      | 0       | 0       |
-
-    And the insurance pool balance should be "0" for the market "ETH/DEC19"
-    # trigger a new mark price 
-    And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-      | party3 | ETH/DEC19 | buy  | 2      | 2100  | 1                | TYPE_LIMIT | TIF_GTC | party3-ref-1 |
-
-    And the market data for the market "ETH/DEC19" should be:
-      | mark price | trading mode            | target stake | supplied stake | open interest |
-      | 2100       | TRADING_MODE_CONTINUOUS | 0            | 50000          | 3             |
-
-    Then the following trades should be executed:
-      | buyer  | price  | size | seller |
-      | party3 | 2100   | 2    | party1 |
-
-    And the parties should have the following account balances:
-      | party  | asset | market id | margin | general  | bond  |
-      | party1 | USD   | ETH/DEC19 | 0      | 1000000  | 0     |
-      | party2 | USD   | ETH/DEC19 | 0      | 1000000  | 0     |
-      | party3 | USD   | ETH/DEC19 | 1600   | 998395   | 0     |
- 
-    Then the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release |
-      | party1 | ETH/DEC19 | 0           | 0      | 0       | 0       |
-      | party2 | ETH/DEC19 | 0           | 0      | 0       | 0       |
-      | party3 | ETH/DEC19 | 400         | 1280   | 1600    | 2000    |
-
-    Then the parties should have the following profit and loss:
-      | party  | volume | unrealised pnl | realised pnl |
-      | party1 | -2     | 0              | 0            |
-      | party2 | 0      | 0              | 0            |
-      | party3 | 2      | 0              | 0            |
-
-    # reducing size
-    Then the parties amend the following orders:
-      | party | reference    | price | size delta | tif     |
-      | party3| party3-ref-3 | 0     | -1         | TIF_GTC |
-
-    And the parties should have the following account balances:
-      | party  | asset | market id | margin | general  | bond  |
-      | party1 | USD   | ETH/DEC19 | 0      | 1000000  | 0     |
-      | party2 | USD   | ETH/DEC19 | 0      | 1000000  | 0     |
-      | party3 | USD   | ETH/DEC19 | 1600   | 998395   | 0     |
- 
-    Then the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release |
-      | party1 | ETH/DEC19 | 0           | 0      | 0       | 0       |
-      | party2 | ETH/DEC19 | 0           | 0      | 0       | 0       |
-      | party3 | ETH/DEC19 | 400         | 1280   | 1600    | 2000    |
-   
-    Then the parties should have the following profit and loss:
-      | party  | volume | unrealised pnl | realised pnl |
-      | party1 | -2     | 0              | 0            |
-      | party2 | 0      | 0              | 0            |
-      | party3 | 2      | 0              | 0            |
-
-    And the insurance pool balance should be "0" for the market "ETH/DEC19"
-    # trigger a new trade
-    And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-      | party3 | ETH/DEC19 | buy  | 6      | 2200  | 2                | TYPE_LIMIT | TIF_GTC | party3-ref-1 |
-
-    And the market data for the market "ETH/DEC19" should be:
-      | mark price | trading mode            | target stake | supplied stake | open interest |
-      | 2101       | TRADING_MODE_CONTINUOUS | 0            | 50000          | 8             |
-
-    And the parties should have the following account balances:
-      | party  | asset | market id | margin | general  | bond  |
-      | party1 | USD   | ETH/DEC19 | 0      | 999995   | 0     |
-      | party2 | USD   | ETH/DEC19 | 0      | 1000000  | 0     |
-      | party3 | USD   | ETH/DEC19 | 6464   | 993522   | 0     |
- 
-    Then the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release |
-      | party1 | ETH/DEC19 | 0           | 0      | 0       | 0       |
-      | party2 | ETH/DEC19 | 0           | 0      | 0       | 0       |
-      | party3 | ETH/DEC19 | 1616        | 5171   | 6464    | 8080    |
-  
-    Then the parties should have the following profit and loss:
-      | party  | volume | unrealised pnl | realised pnl |
-      | party1 | -5     | -5             | 0            |
-      | party2 | 0      | 0              | 0            |
-      | party3 | 8      | 5              | 0            |
-    And the insurance pool balance should be "0" for the market "ETH/DEC19"
-
+      | party  | asset | market id | margin | general   | bond  |
+      | party1 | USD   | ETH/MAR22 | 0      | 100000000 | 0     |
+      | party4 | USD   | ETH/MAR22 | 0      | 100000000 | 0     |
 
 
 
