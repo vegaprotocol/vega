@@ -211,7 +211,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share | average entry valuation |
       | lp1   | 0.5               | 5000                    |
-      | lp2   | 0.5               | 5000                    |
+      | lp2   | 0.5               | 10000                   |
 
     And the price monitoring bounds for the market "ETH/MAR22" should be:
       | min bound | max bound |
@@ -310,7 +310,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share | average entry valuation |
       | lp1   | 0.8               | 8000                    |
-      | lp2   | 0.2               | 2000                    |
+      | lp2   | 0.2               | 10000                   |
 
     # no fees in auction
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
@@ -344,7 +344,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share    | average entry valuation |
       | lp1   | 0.7142857142857143   | 8000                    |
-      | lp2   | 0.2857142857142857   | 2000                    |
+      | lp2   | 0.2857142857142857   | 10000                   |
 
     #timewindow2
     Then the network moves ahead "2" blocks
@@ -376,7 +376,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share    | average entry valuation |
       | lp1   | 0.7163323782234957   | 8000                    |
-      | lp2   | 0.2836676217765043   | 2000                    |
+      | lp2   | 0.2836676217765043   | 10000                   |
   
     #timewindow3
     Then the network moves ahead "2" blocks
@@ -408,7 +408,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share    | average entry valuation |
       | lp1   | 0.7267441860465116   | 8000                    |
-      | lp2   | 0.2732558139534884   | 2000                    |
+      | lp2   | 0.2732558139534884   | 10000                   |
 
     #Then time is updated to "2019-11-30T08:22:10Z"
     #timewindow4
@@ -434,7 +434,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share    | average entry valuation |
       | lp1   | 0.7267441860465116   | 8000                    |
-      | lp2   | 0.2732558139534884   | 2000                    |
+      | lp2   | 0.2732558139534884   | 10000                   |
 
     #Then time is updated to "2019-11-30T10:22:10Z"
     #timewindow5
@@ -453,7 +453,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share    | average entry valuation |
       | lp1   | 0.7142857142857143   | 8000                    |
-      | lp2   | 0.2857142857142857   | 2300                    |
+      | lp2   | 0.2857142857142857   | 9820                    |
 
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
@@ -485,7 +485,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share    | average entry valuation |
       | lp1   | 0.625                | 8000                    |
-      | lp2   | 0.375                | 4200                    |
+      | lp2   | 0.375                | 9213.3333333333333334   |
 
   @VirtStake
   Scenario: 004 2 LPs joining at start, unequal commitments. Checking calculation of equity-like-shares and liquidity-fee-distribution in a shrinking market. (0042-LIQF-008 0042-LIQF-011)
@@ -568,7 +568,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share | average entry valuation |
       | lp1   | 0.4               | 4000                    |
-      | lp2   | 0.6               | 6000                    |
+      | lp2   | 0.6               | 10000                   |
 
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
@@ -618,7 +618,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
       | lp1   | 0.3333333333333333 | 4000                    |
-      | lp2   | 0.6666666666666667 | 6000                    |
+      | lp2   | 0.6666666666666667 | 10000                   |
 
     And the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
@@ -673,7 +673,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
       | lp1   | 0.4                | 5500                    |
-      | lp2   | 0.6                | 6000                    |
+      | lp2   | 0.6                | 10000                   |
 
     And the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
@@ -734,7 +734,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share | average entry valuation |
       | lp1   | 0.375             | 5500                    |
-      | lp2   | 0.625             | 6000                    |
+      | lp2   | 0.625             | 10000                   |
 
     And the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
@@ -795,7 +795,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share   | average entry valuation |
       | lp1   | 0.4                 | 6375                    |
-      | lp2   | 0.6                 | 6666.6666666666666667   |
+      | lp2   | 0.6                 | 10000                   |
 
     And the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
@@ -856,7 +856,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share   | average entry valuation |
       | lp1   | 0.3                 | 6375                    |
-      | lp2   | 0.7                 | 7142.8571428571428571   |
+      | lp2   | 0.7                 | 10000                   |
 
     And the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
@@ -928,7 +928,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share | average entry valuation |
       | lp1   | 0.1               | 1000                    |
-      | lp2   | 0.9               | 9000                    |
+      | lp2   | 0.9               | 10000                   |
 
     # Trigger liquidity distribution
     When the network moves ahead "1" blocks:
@@ -968,7 +968,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share | average entry valuation |
-      | lp2   | 1                 | 9000                    |
+      | lp2   | 1                 | 10000                   |
 
     # Trigger liquidity distribution
     When the network moves ahead "1" blocks:
