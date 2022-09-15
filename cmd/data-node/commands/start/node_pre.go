@@ -231,6 +231,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		l.keyRotationsSub,
 		l.nodeSub,
 		l.marketDepthSub,
+		l.ethereumKeyRotationsSub,
 	)
 
 	l.broker, err = broker.New(l.ctx, l.Log, l.conf.Broker, l.chainService, eventSource)
