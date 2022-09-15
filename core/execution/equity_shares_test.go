@@ -101,6 +101,7 @@ func testAvgEntryUpdate(t *testing.T) {
 
 // continue based on testAvgEntryUpdate setup, just add new LP to get the total up to 3k
 func testAvgEntryUpdateStep3New(t *testing.T, es *execution.EquityShares) {
+	t.Helper()
 	// we have 1000 + 110 + 900 (2010)
 	// AEV == 2010
 	inc := lpdata{
@@ -113,6 +114,7 @@ func testAvgEntryUpdateStep3New(t *testing.T, es *execution.EquityShares) {
 }
 
 func testAvgEntryUpdateStep3Add(t *testing.T, es *execution.EquityShares, inc *lpdata) {
+	t.Helper()
 	// at this point, the total vStake is 2990, get it back up to 3k
 	// calc for delta 10: (average entry valuation) x S / (S + Delta S) + (entry valuation) x (Delta S) / (S + Delta S)
 	// using LP0 => 1000 * 1000 / 1020 + 2980 * 20 / 1020 == 1038.8235294117647059
@@ -125,6 +127,7 @@ func testAvgEntryUpdateStep3Add(t *testing.T, es *execution.EquityShares, inc *l
 }
 
 func testAvgEntryUpdateStep3Growth(t *testing.T, es *execution.EquityShares) {
+	t.Helper()
 	// first, set the initial avg trade value
 	val := num.DecimalFromFloat(1000000) // 1 million
 	es.AvgTradeValue(val)

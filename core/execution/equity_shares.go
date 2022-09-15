@@ -158,20 +158,10 @@ func (es *EquityShares) SetPartyStake(id string, newStakeU *num.Uint) {
 		v.stake = newStake
 		es.totalVStake = es.totalVStake.Add(v.vStake)
 		es.totalPStake = es.totalPStake.Add(v.stake)
-		// average entry valuation should not be changed when reducing the physical stake
-		// v.avg = v.vStake.Mul(es.totalPStake.Div(es.totalVStake))
 		return
 	}
 
 	es.updateAvgPosDelta(v, delta, newStake)
-	// es.totalVStake = es.totalVStake.Add(delta)
-	// es.totalPStake = es.totalPStake.Sub(v.stake).Add(newStake)
-	// stakes were originally assigned _after_ the mustEquity call
-	// average was calculated in the if es.openingAuctionEnded bit
-	// v.avg = v.vStake.Mul(es.totalPStake.Div(es.totalVStake))
-	// v.vStake = v.vStake.Add(delta) // increase
-	// v.stake = newStake
-	// v.avg = v.vStake.Mul(es.totalPStake.Div(es.totalVStake))
 }
 
 func (es *EquityShares) updateAvgPosDelta(v *lp, delta, newStake num.Decimal) {
