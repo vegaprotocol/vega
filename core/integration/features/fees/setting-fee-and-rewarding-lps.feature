@@ -151,7 +151,7 @@ Feature: Test liquidity provider reward distribution
     Then the opening auction period ends for market "ETH/DEC21"
 
     And the following trades should be executed:
-      | buyer  | price | size | seller  |
+      | buyer  | price | size | seller |
       | party1 | 1000  | 90   | party2 |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
@@ -163,7 +163,7 @@ Feature: Test liquidity provider reward distribution
     And the liquidity provider fee shares for the market "ETH/DEC21" should be:
       | party | equity like share | average entry valuation |
       | lp1   | 0.5               | 5000                    |
-      | lp2   | 0.5               | 5000                    |
+      | lp2   | 0.5               | 10000                   |
 
     And the price monitoring bounds for the market "ETH/DEC21" should be:
       | min bound | max bound |
@@ -175,14 +175,14 @@ Feature: Test liquidity provider reward distribution
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
     Then the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/DEC21 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
       | party2 | ETH/DEC21 | buy  | 20     | 1000  | 3                | TYPE_LIMIT | TIF_GTC | party2-buy  |
 
     And the following trades should be executed:
-      | buyer  | price | size | seller  |
-      | party2 | 951   | 8    | lp1     |
-      | party2 | 951   | 8    | lp2     |
+      | buyer  | price | size | seller |
+      | party2 | 951   | 8    | lp1    |
+      | party2 | 951   | 8    | lp2    |
       | party2 | 1000  | 4    | party1 |
 
     And the accumulated liquidity fees should be "40" for the market "ETH/DEC21"
@@ -198,12 +198,12 @@ Feature: Test liquidity provider reward distribution
 
 
     Then the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/DEC21 | buy  | 40     | 1100  | 2                | TYPE_LIMIT | TIF_GTC | party1-buy  |
       | party2 | ETH/DEC21 | sell | 40     | 1100  | 0                | TYPE_LIMIT | TIF_GTC | party2-sell |
 
     And the following trades should be executed:
-      | buyer   | price | size | seller |
+      | buyer  | price | size | seller |
       | party1 | 951   | 8    | lp1    |
       | party1 | 951   | 8    | lp2    |
 
@@ -262,7 +262,7 @@ Feature: Test liquidity provider reward distribution
     And the liquidity provider fee shares for the market "ETH/DEC21" should be:
       | party | equity like share | average entry valuation |
       | lp1   | 0.8               | 8000                    |
-      | lp2   | 0.2               | 2000                    |
+      | lp2   | 0.2               | 10000                   |
 
     And the price monitoring bounds for the market "ETH/DEC21" should be:
       | min bound | max bound |
@@ -301,7 +301,7 @@ Feature: Test liquidity provider reward distribution
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
     Then the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | party1 | ETH/DEC21 | buy  | 40     | 1000  | 2                | TYPE_LIMIT | TIF_GTC | party1-buy  |
       | party2 | ETH/DEC21 | sell | 40     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party2-sell |
 
@@ -367,8 +367,8 @@ Feature: Test liquidity provider reward distribution
 
     And the liquidity provider fee shares for the market "ETH/DEC21" should be:
       | party | equity like share | average entry valuation |
-      | lp1   | 0.8               | 8000                   |
-      | lp2   | 0.2               | 2000                   |
+      | lp1   | 0.8               | 8000                    |
+      | lp2   | 0.2               | 10000                   |
 
     And the price monitoring bounds for the market "ETH/DEC21" should be:
       | min bound | max bound |
@@ -405,16 +405,16 @@ Feature: Test liquidity provider reward distribution
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
-      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 2      | submission|
-      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | 1      | amendment |
-      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      | amendment |
-      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      | amendment |
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 2      | submission |
+      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | 1      | submission |
+      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      | submission |
+      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      | submission |
 
     And the liquidity provider fee shares for the market "ETH/DEC21" should be:
       | party | equity like share  | average entry valuation |
       | lp1   | 0.4                | 8000                    |
-      | lp2   | 0.1                | 2000                    |
+      | lp2   | 0.1                | 10000                   |
       | lp3   | 0.5                | 20000                   |
 
     Then the parties place the following orders:
