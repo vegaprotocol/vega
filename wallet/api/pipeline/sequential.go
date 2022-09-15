@@ -16,9 +16,9 @@ var (
 // SequentialPipeline is a pipeline built to handle one request at a time.
 // Concurrent requests are not supported and will result in errors.
 type SequentialPipeline struct {
-	// clientCtx is the context used to listen to the client-side cancellation
+	// userCtx is the context used to listen to the user-side cancellation
 	// requests. It interrupts the wait on responses.
-	clientCtx context.Context
+	userCtx context.Context
 
 	receptionChan chan<- Envelope
 	responseChan  <-chan Envelope
@@ -34,6 +34,16 @@ func (s *SequentialPipeline) NotifyError(ctx context.Context, traceID string, t 
 		Content: ErrorOccurred{
 			Type:  string(t),
 			Error: err.Error(),
+		},
+	}
+}
+
+func (s *SequentialPipeline) Log(ctx context.Context, traceID string, t api.LogType, msg string) {
+	s.receptionChan <- Envelope{
+		TraceID: traceID,
+		Content: Log{
+			Type:    string(t),
+			Message: msg,
 		},
 	}
 }
@@ -65,8 +75,8 @@ func (s *SequentialPipeline) RequestWalletConnectionReview(ctx context.Context, 
 		select {
 		case <-ctx.Done():
 			return false, api.ErrRequestInterrupted
-		case <-s.clientCtx.Done():
-			return false, api.ErrConnectionClosed
+		case <-s.userCtx.Done():
+			return false, api.ErrUserCloseTheConnection
 		case response := <-s.responseChan:
 			if response.TraceID != traceID {
 				return false, ErrTraceIDMismatch
@@ -97,8 +107,8 @@ func (s *SequentialPipeline) RequestWalletSelection(ctx context.Context, traceID
 		select {
 		case <-ctx.Done():
 			return api.SelectedWallet{}, api.ErrRequestInterrupted
-		case <-s.clientCtx.Done():
-			return api.SelectedWallet{}, api.ErrConnectionClosed
+		case <-s.userCtx.Done():
+			return api.SelectedWallet{}, api.ErrUserCloseTheConnection
 		case response := <-s.responseChan:
 			if response.TraceID != traceID {
 				return api.SelectedWallet{}, ErrTraceIDMismatch
@@ -128,8 +138,8 @@ func (s *SequentialPipeline) RequestPassphrase(ctx context.Context, traceID, wal
 		select {
 		case <-ctx.Done():
 			return "", api.ErrRequestInterrupted
-		case <-s.clientCtx.Done():
-			return "", api.ErrConnectionClosed
+		case <-s.userCtx.Done():
+			return "", api.ErrUserCloseTheConnection
 		case response := <-s.responseChan:
 			if response.TraceID != traceID {
 				return "", ErrTraceIDMismatch
@@ -161,8 +171,8 @@ func (s *SequentialPipeline) RequestPermissionsReview(ctx context.Context, trace
 		select {
 		case <-ctx.Done():
 			return false, api.ErrRequestInterrupted
-		case <-s.clientCtx.Done():
-			return false, api.ErrConnectionClosed
+		case <-s.userCtx.Done():
+			return false, api.ErrUserCloseTheConnection
 		case response := <-s.responseChan:
 			if response.TraceID != traceID {
 				return false, ErrTraceIDMismatch
@@ -196,8 +206,8 @@ func (s *SequentialPipeline) RequestTransactionSendingReview(ctx context.Context
 		select {
 		case <-ctx.Done():
 			return false, api.ErrRequestInterrupted
-		case <-s.clientCtx.Done():
-			return false, api.ErrConnectionClosed
+		case <-s.userCtx.Done():
+			return false, api.ErrUserCloseTheConnection
 		case response := <-s.responseChan:
 			if response.TraceID != traceID {
 				return false, ErrTraceIDMismatch
@@ -231,8 +241,8 @@ func (s *SequentialPipeline) RequestTransactionSigningReview(ctx context.Context
 		select {
 		case <-ctx.Done():
 			return false, api.ErrRequestInterrupted
-		case <-s.clientCtx.Done():
-			return false, api.ErrConnectionClosed
+		case <-s.userCtx.Done():
+			return false, api.ErrUserCloseTheConnection
 		case response := <-s.responseChan:
 			if response.TraceID != traceID {
 				return false, ErrTraceIDMismatch
@@ -262,9 +272,9 @@ func (s *SequentialPipeline) NotifyTransactionStatus(ctx context.Context, traceI
 	}
 }
 
-func NewSequentialPipeline(clientCtx context.Context, receptionChan chan<- Envelope, responseChan <-chan Envelope) *SequentialPipeline {
+func NewSequentialPipeline(userCtx context.Context, receptionChan chan<- Envelope, responseChan <-chan Envelope) *SequentialPipeline {
 	return &SequentialPipeline{
-		clientCtx:     clientCtx,
+		userCtx:       userCtx,
 		receptionChan: receptionChan,
 		responseChan:  responseChan,
 	}
@@ -283,6 +293,11 @@ type Envelope struct {
 type ErrorOccurred struct {
 	Type  string `json:"type"`
 	Error string `json:"error"`
+}
+
+type Log struct {
+	Type    string `json:"type"`
+	Message string `json:"message"`
 }
 
 type RequestWalletConnectionReview struct {

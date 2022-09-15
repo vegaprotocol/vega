@@ -83,20 +83,24 @@ func (h *SendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) 
 		return nil, internalError(ErrCouldNotSendTransaction)
 	}
 	if !approved {
-		return nil, clientRejectionError()
+		return nil, userRejectionError()
 	}
 
+	h.pipeline.Log(ctx, traceID, InfoLog, "Looking for a healthy node...")
 	currentNode, err := h.nodeSelector.Node(ctx)
 	if err != nil {
 		h.pipeline.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not find an healthy node: %w", err))
 		return nil, networkError(ErrorCodeNodeRequestFailed, ErrNoHealthyNodeAvailable)
 	}
+	h.pipeline.Log(ctx, traceID, SuccessLog, "A healthy node has been found.")
 
+	h.pipeline.Log(ctx, traceID, InfoLog, "Retrieving latest block information...")
 	lastBlockData, err := currentNode.LastBlock(ctx)
 	if err != nil {
-		h.pipeline.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not get last block from node: %w", err))
+		h.pipeline.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not get latest block from node: %w", err))
 		return nil, networkError(ErrorCodeNodeRequestFailed, ErrCouldNotGetLastBlockInformation)
 	}
+	h.pipeline.Log(ctx, traceID, SuccessLog, "Latest block information has been retrieved.")
 
 	// Sign the payload.
 	inputData, err := wcommands.ToMarshaledInputData(request, lastBlockData.Height, lastBlockData.ChainId)
@@ -105,11 +109,13 @@ func (h *SendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) 
 		return nil, internalError(ErrCouldNotSendTransaction)
 	}
 
+	h.pipeline.Log(ctx, traceID, InfoLog, "Signing the transaction...")
 	signature, err := connectedWallet.Wallet.SignTx(params.PublicKey, inputData)
 	if err != nil {
 		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not sign command: %w", err))
 		return nil, internalError(ErrCouldNotSendTransaction)
 	}
+	h.pipeline.Log(ctx, traceID, SuccessLog, "The transaction has been signed.")
 
 	// Build the transaction.
 	tx := commands.NewTransaction(params.PublicKey, inputData, &commandspb.Signature{
@@ -119,6 +125,7 @@ func (h *SendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) 
 	})
 
 	// Generate the proof of work for the transaction.
+	h.pipeline.Log(ctx, traceID, InfoLog, "Computing proof-of-work...")
 	txID := vgcrypto.RandomHash()
 	powNonce, _, err := vgcrypto.PoW(lastBlockData.Hash, txID, uint(lastBlockData.SpamPowDifficulty), vgcrypto.Sha3)
 	if err != nil {
@@ -129,8 +136,10 @@ func (h *SendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) 
 		Tid:   txID,
 		Nonce: powNonce,
 	}
+	h.pipeline.Log(ctx, traceID, SuccessLog, "The proof-of-work has been computed.")
 
 	sentAt := time.Now()
+	h.pipeline.Log(ctx, traceID, InfoLog, "Sending the transaction...")
 	txHash, err := currentNode.SendTransaction(ctx, tx, params.SendingMode)
 	if err != nil {
 		h.notifyTransactionStatus(ctx, traceID, txHash, tx, err, sentAt)
