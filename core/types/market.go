@@ -341,7 +341,7 @@ type Future struct {
 	OracleSpecForSettlementPrice    *OracleSpec
 	OracleSpecForTradingTermination *OracleSpec
 	OracleSpecBinding               *OracleSpecBindingForFuture
-	SettlementPriceDecimals         uint32
+	SettlementDataDecimals          uint32
 }
 
 func FutureFromProto(f *proto.Future) *Future {
@@ -351,7 +351,7 @@ func FutureFromProto(f *proto.Future) *Future {
 		OracleSpecForSettlementPrice:    OracleSpecFromProto(f.OracleSpecForSettlementPrice),
 		OracleSpecForTradingTermination: OracleSpecFromProto(f.OracleSpecForTradingTermination),
 		OracleSpecBinding:               OracleSpecBindingForFutureFromProto(f.OracleSpecBinding),
-		SettlementPriceDecimals:         f.SettlementPriceDecimals,
+		SettlementDataDecimals:          f.SettlementDataDecimals,
 	}
 }
 
@@ -362,16 +362,16 @@ func (f Future) IntoProto() *proto.Future {
 		OracleSpecForSettlementPrice:    f.OracleSpecForSettlementPrice.IntoProto(),
 		OracleSpecForTradingTermination: f.OracleSpecForTradingTermination.IntoProto(),
 		OracleSpecBinding:               f.OracleSpecBinding.IntoProto(),
-		SettlementPriceDecimals:         f.SettlementPriceDecimals,
+		SettlementDataDecimals:          f.SettlementDataDecimals,
 	}
 }
 
 func (f Future) String() string {
 	return fmt.Sprintf(
-		"quoteName(%s) settlementAsset(%s) settlementPriceDecimals(%v) oracleSpec(settlementPrice(%s) tradingTermination(%s) binding(%s))",
+		"quoteName(%s) settlementAsset(%s) SettlementDataDecimals(%v) oracleSpec(settlementPrice(%s) tradingTermination(%s) binding(%s))",
 		f.QuoteName,
 		f.SettlementAsset,
-		f.SettlementPriceDecimals,
+		f.SettlementDataDecimals,
 		reflectPointerToString(f.OracleSpecForSettlementPrice),
 		reflectPointerToString(f.OracleSpecForTradingTermination),
 		reflectPointerToString(f.OracleSpecBinding),

@@ -20,8 +20,8 @@ message FutureProduct {
   oracles.v1.OracleSpecConfiguration oracle_spec_for_trading_termination = 6;
   // The binding between the oracle spec and the settlement price
   OracleSpecToFutureBinding oracle_spec_binding = 7;
-  // The number of decimal places implied by the settlement price emitted by the settlement oracle
-  uint32 settlement_price_decimals = 8;
+  // The number of decimal places implied by the settlement data emitted by the settlement oracle
+  uint32 settlement_data_decimals = 8;
 }
 
 // Instrument configuration
@@ -114,8 +114,8 @@ message UpdateFutureProduct {
   oracles.v1.OracleSpecConfiguration oracle_spec_for_trading_termination = 3;
   // The binding between the oracle spec and the settlement price
   OracleSpecToFutureBinding oracle_spec_binding = 4;
-  // The number of decimal places implied by the settlement price emitted by the settlement oracle
-  uint32 settlement_price_decimals = 5;
+  // The number of decimal places implied by the settlement data emitted by the settlement oracle
+  uint32 settlement_data_decimals = 5;
 }
 
 // Update network configuration on Vega
