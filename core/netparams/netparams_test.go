@@ -334,18 +334,11 @@ func testNonEmptyCheckpointWithOverWrite(t *testing.T) {
 	defer netp.ctrl.Finish()
 	ctx := context.Background()
 
-	newEOL := "2030-12-31"
-
 	// get the original default value
 	ov, err := netp.Get(netparams.GovernanceProposalMarketMinClose)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, ov)
 	assert.NotEqual(t, ov, "10h")
-
-	ovEOL, err := netp.Get(netparams.NetworkCheckpointNetworkEOLDate)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, ovEOL)
-	assert.NotEqual(t, ov, newEOL)
 
 	netp.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
@@ -357,13 +350,6 @@ func testNonEmptyCheckpointWithOverWrite(t *testing.T) {
 	assert.NotEmpty(t, nv)
 	assert.NotEqual(t, nv, ov)
 	assert.Equal(t, nv, "10h")
-
-	err = netp.Update(ctx, netparams.NetworkCheckpointNetworkEOLDate, newEOL)
-	assert.NoError(t, err)
-	nvEOL, err := netp.Get(netparams.NetworkCheckpointNetworkEOLDate)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, nvEOL)
-	assert.NotEqual(t, ov, newEOL)
 
 	data, err := netp.Checkpoint()
 	require.NoError(t, err)
@@ -377,9 +363,9 @@ func testNonEmptyCheckpointWithOverWrite(t *testing.T) {
 
 	genesis := map[string]interface{}{
 		"network_parameters": map[string]string{
-			"network.checkpoint.networkEndOfLifeDate": "2040-12-31",
+			"market.stake.target.timeWindow": "1h",
 		},
-		"network_parameters_checkpoint_overwrite": []string{"network.checkpoint.networkEndOfLifeDate"},
+		"network_parameters_checkpoint_overwrite": []string{"market.stake.target.timeWindow"},
 	}
 
 	buf, err := json.Marshal(genesis)
@@ -394,12 +380,6 @@ func testNonEmptyCheckpointWithOverWrite(t *testing.T) {
 	assert.NotEqual(t, ov2, "10h")
 	require.Equal(t, ov, ov2)
 
-	// ensure the state != checkpoint we took
-	ovEOL2, err := netp2.Get(netparams.NetworkCheckpointNetworkEOLDate)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, ovEOL2)
-	assert.Equal(t, ovEOL2, "2040-12-31")
-
 	require.NoError(t, netp2.Load(ctx, data))
 
 	nv2, err := netp2.Get(netparams.GovernanceProposalMarketMinClose)
@@ -411,11 +391,4 @@ func testNonEmptyCheckpointWithOverWrite(t *testing.T) {
 	// make sure that, once restored, the same checkpoint data is restored
 	_, err = netp2.Checkpoint()
 	require.NoError(t, err)
-
-	// after checkpoint value is still the same
-	// ensure the state != checkpoint we took
-	ovEOL2, err = netp2.Get(netparams.NetworkCheckpointNetworkEOLDate)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, ovEOL2)
-	assert.Equal(t, ovEOL2, "2040-12-31")
 }
