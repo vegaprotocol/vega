@@ -34,7 +34,7 @@ message Future {
   // The binding between the oracle spec and the oracle data
   OracleSpecToFutureBinding oracle_spec_binding = 7;
 
-  // the number of decimal places implied by the settlement data emitted by the settlement oracle
+  // The number of decimal places implied by the settlement data (such as price) emitted by the settlement oracle
   uint32 settlement_data_decimals = 8;
 }
 
