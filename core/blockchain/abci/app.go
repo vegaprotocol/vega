@@ -15,6 +15,7 @@ package abci
 import (
 	"context"
 
+	"code.vegaprotocol.io/vega/core/blockchain"
 	"code.vegaprotocol.io/vega/core/txn"
 	"code.vegaprotocol.io/vega/core/types"
 
@@ -101,7 +102,7 @@ func (app *App) HandleDeliverTx(cmd txn.Command, fn TxHandler) *App {
 func (app *App) decodeTx(bytes []byte) (Tx, uint32, error) {
 	tx, err := app.codec.Decode(bytes, app.chainID)
 	if err != nil {
-		return nil, AbciTxnDecodingFailure, err
+		return nil, blockchain.AbciTxnDecodingFailure, err
 	}
 	return tx, 0, nil
 }
