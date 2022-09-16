@@ -60,21 +60,26 @@ func assertUserRejectionError(t *testing.T, errorDetails *jsonrpc.ErrorDetails) 
 	assert.Equal(t, "User error", errorDetails.Message)
 }
 
-func walletWithPerms(t *testing.T, hostname string, perms wallet.Permissions) wallet.Wallet {
+func walletWithPerms(t *testing.T, hostname string, perms wallet.Permissions) (wallet.Wallet, wallet.KeyPair) {
 	t.Helper()
 
 	walletName := vgrand.RandomStr(5)
 
 	w, _, err := wallet.NewHDWallet(walletName)
 	if err != nil {
-		t.Fatal("could not create wallet for test: %w", err)
+		t.Fatalf("could not create wallet for test: %v", err)
+	}
+
+	kp, err := w.GenerateKeyPair(nil)
+	if err != nil {
+		t.Fatalf("could not generate a key on the wallet for test: %v", err)
 	}
 
 	if err := w.UpdatePermissions(hostname, perms); err != nil {
-		t.Fatal("could not update permissions on wallet for test: %w", err)
+		t.Fatalf("could not update permissions on wallet for test: %v", err)
 	}
 
-	return w
+	return w, kp
 }
 
 func walletWithKey(t *testing.T) (wallet.Wallet, wallet.KeyPair) {
@@ -84,12 +89,12 @@ func walletWithKey(t *testing.T) (wallet.Wallet, wallet.KeyPair) {
 
 	w, _, err := wallet.NewHDWallet(walletName)
 	if err != nil {
-		t.Fatal("could not create wallet for test: %w", err)
+		t.Fatalf("could not create wallet for test: %v", err)
 	}
 
 	kp, err := w.GenerateKeyPair(nil)
 	if err != nil {
-		t.Fatal("could not update permissions on wallet for test: %w", err)
+		t.Fatalf("could not update permissions on wallet for test: %v", err)
 	}
 
 	return w, kp
@@ -116,7 +121,7 @@ func connectWallet(t *testing.T, sessions *api.Sessions, hostname string, w wall
 	t.Helper()
 	token, err := sessions.ConnectWallet(hostname, w)
 	if err != nil {
-		t.Fatal("could not connect to a wallet for test: %w", err)
+		t.Fatalf("could not connect to a wallet for test: %v", err)
 	}
 	return token
 }

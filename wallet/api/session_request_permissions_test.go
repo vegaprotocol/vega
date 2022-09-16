@@ -139,7 +139,7 @@ func testRequestingPermissionsWithValidParamsSucceeds(t *testing.T) {
 			// given
 			ctx, traceID := contextWithTraceID()
 			hostname := "vega.xyz"
-			wallet1 := walletWithPerms(tt, hostname, wallet.Permissions{})
+			wallet1, _ := walletWithPerms(tt, hostname, wallet.Permissions{})
 			passphrase := vgrand.RandomStr(5)
 
 			// setup
@@ -195,7 +195,7 @@ func testRefusingPermissionsUpdateDoesNotUpdatePermissions(t *testing.T) {
 	ctx, traceID := contextWithTraceID()
 	hostname := "vega.xyz"
 	originalPermissions := wallet.Permissions{}
-	wallet1 := walletWithPerms(t, hostname, originalPermissions)
+	wallet1, _ := walletWithPerms(t, hostname, originalPermissions)
 	requestedPermissions := map[string]string{
 		"public_keys": "read",
 	}
@@ -226,7 +226,7 @@ func testCancellingTheReviewDoesNotUpdatePermissions(t *testing.T) {
 	ctx, traceID := contextWithTraceID()
 	hostname := "vega.xyz"
 	originalPermissions := wallet.Permissions{}
-	wallet1 := walletWithPerms(t, hostname, originalPermissions)
+	wallet1, _ := walletWithPerms(t, hostname, originalPermissions)
 	requestedPermissions := map[string]string{
 		"public_keys": "read",
 	}
@@ -257,7 +257,7 @@ func testInterruptingTheRequestDoesNotUpdatePermissions(t *testing.T) {
 	ctx, traceID := contextWithTraceID()
 	hostname := "vega.xyz"
 	originalPermissions := wallet.Permissions{}
-	wallet1 := walletWithPerms(t, hostname, originalPermissions)
+	wallet1, _ := walletWithPerms(t, hostname, originalPermissions)
 	requestedPermissions := map[string]string{
 		"public_keys": "read",
 	}
@@ -289,7 +289,7 @@ func testGettingInternalErrorDuringReviewDoesNotUpdatePermissions(t *testing.T) 
 	ctx, traceID := contextWithTraceID()
 	hostname := "vega.xyz"
 	originalPermissions := wallet.Permissions{}
-	wallet1 := walletWithPerms(t, hostname, originalPermissions)
+	wallet1, _ := walletWithPerms(t, hostname, originalPermissions)
 	requestedPermissions := map[string]string{
 		"public_keys": "read",
 	}
@@ -321,7 +321,7 @@ func testCancellingThePassphraseRequestDoesNotUpdatePermissions(t *testing.T) {
 	ctx, traceID := contextWithTraceID()
 	hostname := "vega.xyz"
 	originalPermissions := wallet.Permissions{}
-	wallet1 := walletWithPerms(t, hostname, originalPermissions)
+	wallet1, _ := walletWithPerms(t, hostname, originalPermissions)
 	requestedPermissions := map[string]string{
 		"public_keys": "read",
 	}
@@ -353,7 +353,7 @@ func testInterruptingTheRequestDuringPassphraseRequestDoesNotUpdatePermissions(t
 	ctx, traceID := contextWithTraceID()
 	hostname := "vega.xyz"
 	originalPermissions := wallet.Permissions{}
-	wallet1 := walletWithPerms(t, hostname, originalPermissions)
+	wallet1, _ := walletWithPerms(t, hostname, originalPermissions)
 	requestedPermissions := map[string]string{
 		"public_keys": "read",
 	}
@@ -386,7 +386,7 @@ func testGettingInternalErrorDuringPassphraseRequestDoesNotUpdatePermissions(t *
 	ctx, traceID := contextWithTraceID()
 	hostname := "vega.xyz"
 	originalPermissions := wallet.Permissions{}
-	wallet1 := walletWithPerms(t, hostname, originalPermissions)
+	wallet1, _ := walletWithPerms(t, hostname, originalPermissions)
 	requestedPermissions := map[string]string{
 		"public_keys": "read",
 	}
@@ -420,7 +420,7 @@ func testUsingWrongPassphraseDoesNotUpdatePermissions(t *testing.T) {
 	cancelCtx, cancelFn := context.WithCancel(ctx)
 	hostname := "vega.xyz"
 	originalPermissions := wallet.Permissions{}
-	wallet1 := walletWithPerms(t, hostname, originalPermissions)
+	wallet1, _ := walletWithPerms(t, hostname, originalPermissions)
 	requestedPermissions := map[string]string{
 		"public_keys": "read",
 	}
@@ -458,7 +458,7 @@ func testGettingInternalErrorDuringWalletRetrievalDoesNotUpdatePermissions(t *te
 	ctx, traceID := contextWithTraceID()
 	hostname := "vega.xyz"
 	originalPermissions := wallet.Permissions{}
-	wallet1 := walletWithPerms(t, hostname, originalPermissions)
+	wallet1, _ := walletWithPerms(t, hostname, originalPermissions)
 	passphrase := vgrand.RandomStr(5)
 	requestedPermissions := map[string]string{
 		"public_keys": "read",
@@ -496,14 +496,20 @@ func testGettingInternalErrorDuringWalletSavingDoesNotUpdatePermissions(t *testi
 	originalPermissions := wallet.Permissions{}
 	wallet1, recoveryPhrase, err := wallet.NewHDWallet(walletName)
 	if err != nil {
-		t.Fatal("could not create wallet for test: %w", err)
+		t.Fatalf("could not create wallet for test: %v", err)
+	}
+	if _, err := wallet1.GenerateKeyPair(nil); err != nil {
+		t.Fatalf("could not generate key for test: %v", err)
 	}
 
 	// Clone the wallet1, so we can emulate a different instance returned by
 	// the wallet store.
 	loadedWallet, err := wallet.ImportHDWallet(walletName, recoveryPhrase, 2)
 	if err != nil {
-		t.Fatal("could not import wallet for test: %w", err)
+		t.Fatalf("could not import wallet for test: %v", err)
+	}
+	if _, err := loadedWallet.GenerateKeyPair(nil); err != nil {
+		t.Fatalf("could not generate key for test: %v", err)
 	}
 	passphrase := vgrand.RandomStr(5)
 	requestedPermissions := map[string]string{
@@ -529,7 +535,7 @@ func testGettingInternalErrorDuringWalletSavingDoesNotUpdatePermissions(t *testi
 	// then
 	assertInternalError(t, errorDetails, api.ErrCouldNotRequestPermissions)
 	assert.Empty(t, result)
-	// Verifying the connected wallet is updated.
+	// Verifying the connected wallet is not updated.
 	connectedWallet, err := handler.sessions.GetConnectedWallet(token)
 	require.NoError(t, err)
 	assert.Equal(t, originalPermissions.Summary(), connectedWallet.Permissions().Summary())
@@ -542,13 +548,13 @@ func testUpdatingPermissionsDoesNotOverwriteUntrackedChanges(t *testing.T) {
 	walletName := vgrand.RandomStr(5)
 	wallet1, recoveryPhrase, err := wallet.NewHDWallet(walletName)
 	if err != nil {
-		t.Fatal("could not create wallet for test: %w", err)
+		t.Fatalf("could not create wallet for test: %v", err)
 	}
 
 	// Clone the wallet1, so we can modify the clone without tempering with wallet1.
 	modifiedWallet, err := wallet.ImportHDWallet(walletName, recoveryPhrase, 2)
 	if err != nil {
-		t.Fatal("could not import wallet for test: %w", err)
+		t.Fatalf("could not import wallet for test: %v", err)
 	}
 	kp, _ := modifiedWallet.GenerateKeyPair([]wallet.Metadata{{Key: "name", Value: "hello"}})
 

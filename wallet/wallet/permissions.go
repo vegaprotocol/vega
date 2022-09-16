@@ -80,8 +80,10 @@ func AccessModeToString(m AccessMode) string {
 // Methods requiring read access:
 //   - list_keys
 type PublicKeysPermission struct {
-	Access         AccessMode `json:"access"`
-	RestrictedKeys []string   `json:"restrictedKeys"`
+	Access AccessMode `json:"access"`
+	// RestrictedKeys lists all the keys a third-party application has access to.
+	// All keys are valid and usable (no tainted key).
+	RestrictedKeys []string `json:"restrictedKeys"`
 }
 
 func (p PublicKeysPermission) Enabled() bool {
