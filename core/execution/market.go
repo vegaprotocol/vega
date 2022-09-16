@@ -833,6 +833,9 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 	// this will be next block
 	m.broker.Send(events.NewTransferResponse(ctx, transfers))
 
+	// final distribution of liquidity fees
+	m.distributeLiquidityFees(ctx)
+
 	err = m.cleanMarketWithState(ctx, types.MarketStateSettled)
 	if err != nil {
 		return err
