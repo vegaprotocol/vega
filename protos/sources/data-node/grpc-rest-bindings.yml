@@ -274,6 +274,8 @@ http:
       get: "/api/v2/vega/time"
     - selector: datanode.api.v2.TradingDataService.GetNetworkParameter
       get: '/api/v2/network/parameters/{key}'
+    - selector: datanode.api.v2.TradingDataService.ListEthereumKeyRotations
+      get: '/api/v2/vega/keys/ethereum/rotations'
 
     # websockets
 

@@ -113,7 +113,7 @@ func testFuture(t *testing.T) *tstFuture {
 			SettlementPriceProperty:    "price.ETH.value",
 			TradingTerminationProperty: "trading.termination",
 		},
-		SettlementPriceDecimals: 5,
+		SettlementDataDecimals: 5,
 	}
 
 	ctx := context.Background()

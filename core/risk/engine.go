@@ -172,9 +172,9 @@ func (e *Engine) ReloadConf(cfg Config) {
 	e.cfgMu.Unlock()
 }
 
-// GetRiskFactors returns risk factors per specified asset if available and an error otherwise.
-func (e *Engine) GetRiskFactors() (*types.RiskFactor, error) {
-	return e.factors, nil
+// GetRiskFactors returns risk factors per specified asset.
+func (e *Engine) GetRiskFactors() *types.RiskFactor {
+	return e.factors
 }
 
 func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, price *num.Uint) ([]events.Risk, []events.Margin) {

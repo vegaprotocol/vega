@@ -435,7 +435,7 @@ type ComplexityRoot struct {
 		OracleSpecForTradingTermination func(childComplexity int) int
 		QuoteName                       func(childComplexity int) int
 		SettlementAsset                 func(childComplexity int) int
-		SettlementPriceDecimals         func(childComplexity int) int
+		SettlementDataDecimals          func(childComplexity int) int
 	}
 
 	FutureProduct struct {
@@ -444,7 +444,7 @@ type ComplexityRoot struct {
 		OracleSpecForTradingTermination func(childComplexity int) int
 		QuoteName                       func(childComplexity int) int
 		SettlementAsset                 func(childComplexity int) int
-		SettlementPriceDecimals         func(childComplexity int) int
+		SettlementDataDecimals          func(childComplexity int) int
 	}
 
 	Instrument struct {
@@ -3407,12 +3407,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Future.SettlementAsset(childComplexity), true
 
-	case "Future.settlementPriceDecimals":
-		if e.complexity.Future.SettlementPriceDecimals == nil {
+	case "Future.settlementDataDecimals":
+		if e.complexity.Future.SettlementDataDecimals == nil {
 			break
 		}
 
-		return e.complexity.Future.SettlementPriceDecimals(childComplexity), true
+		return e.complexity.Future.SettlementDataDecimals(childComplexity), true
 
 	case "FutureProduct.oracleSpecBinding":
 		if e.complexity.FutureProduct.OracleSpecBinding == nil {
@@ -3449,12 +3449,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.FutureProduct.SettlementAsset(childComplexity), true
 
-	case "FutureProduct.settlementPriceDecimals":
-		if e.complexity.FutureProduct.SettlementPriceDecimals == nil {
+	case "FutureProduct.settlementDataDecimals":
+		if e.complexity.FutureProduct.SettlementDataDecimals == nil {
 			break
 		}
 
-		return e.complexity.FutureProduct.SettlementPriceDecimals(childComplexity), true
+		return e.complexity.FutureProduct.SettlementDataDecimals(childComplexity), true
 
 	case "Instrument.code":
 		if e.complexity.Instrument.Code == nil {
@@ -10540,8 +10540,8 @@ type Future {
   "The binding between the oracle spec and the settlement price"
   oracleSpecBinding: OracleSpecToFutureBinding!
 
-  "The number of decimal places implied by the settlement price emitted by the settlement oracle"
-  settlementPriceDecimals: Int!
+  "The number of decimal places implied by the settlement data (such as price) emitted by the settlement oracle"
+  settlementDataDecimals: Int!
 }
 
 """
@@ -12310,8 +12310,8 @@ type FutureProduct {
   """
   oracleSpecBinding: OracleSpecToFutureBinding!
 
-  "The number of decimal places implied by the settlement price emitted by the settlement oracle"
-  settlementPriceDecimals: Int!
+  "The number of decimal places implied by the settlement data (such as price) emitted by the settlement oracle"
+  settlementDataDecimals: Int!
 }
 
 """
@@ -22060,7 +22060,7 @@ func (ec *executionContext) _Future_oracleSpecBinding(ctx context.Context, field
 	return ec.marshalNOracleSpecToFutureBinding2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOracleSpecToFutureBinding(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Future_settlementPriceDecimals(ctx context.Context, field graphql.CollectedField, obj *vega.Future) (ret graphql.Marshaler) {
+func (ec *executionContext) _Future_settlementDataDecimals(ctx context.Context, field graphql.CollectedField, obj *vega.Future) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -22078,7 +22078,7 @@ func (ec *executionContext) _Future_settlementPriceDecimals(ctx context.Context,
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.SettlementPriceDecimals, nil
+		return obj.SettlementDataDecimals, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -22270,7 +22270,7 @@ func (ec *executionContext) _FutureProduct_oracleSpecBinding(ctx context.Context
 	return ec.marshalNOracleSpecToFutureBinding2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOracleSpecToFutureBinding(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _FutureProduct_settlementPriceDecimals(ctx context.Context, field graphql.CollectedField, obj *vega.FutureProduct) (ret graphql.Marshaler) {
+func (ec *executionContext) _FutureProduct_settlementDataDecimals(ctx context.Context, field graphql.CollectedField, obj *vega.FutureProduct) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -22288,7 +22288,7 @@ func (ec *executionContext) _FutureProduct_settlementPriceDecimals(ctx context.C
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.SettlementPriceDecimals, nil
+		return obj.SettlementDataDecimals, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -52988,9 +52988,9 @@ func (ec *executionContext) _Future(ctx context.Context, sel ast.SelectionSet, o
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "settlementPriceDecimals":
+		case "settlementDataDecimals":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Future_settlementPriceDecimals(ctx, field, obj)
+				return ec._Future_settlementDataDecimals(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -53079,9 +53079,9 @@ func (ec *executionContext) _FutureProduct(ctx context.Context, sel ast.Selectio
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "settlementPriceDecimals":
+		case "settlementDataDecimals":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._FutureProduct_settlementPriceDecimals(ctx, field, obj)
+				return ec._FutureProduct_settlementDataDecimals(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
