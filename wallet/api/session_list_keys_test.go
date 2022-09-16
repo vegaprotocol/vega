@@ -15,6 +15,7 @@ import (
 func TestListKeys(t *testing.T) {
 	t.Run("Listing keys with invalid params fails", testListingKeysWithInvalidParamsFails)
 	t.Run("Listing keys with valid params succeeds", testListingKeysWithValidParamsSucceeds)
+	t.Run("Listing keys excludes tainted keys", testListingKeysExcludesTaintedKeys)
 	t.Run("Listing keys with invalid token fails", testListingKeysWithInvalidTokenFails)
 	t.Run("Listing keys with not enough permissions fails", testListingKeysWithNotEnoughPermissionsFails)
 }
@@ -64,7 +65,7 @@ func testListingKeysWithValidParamsSucceeds(t *testing.T) {
 	// given
 	ctx := context.Background()
 	hostname := "vega.xyz"
-	w := walletWithPerms(t, hostname, wallet.Permissions{
+	w, _ := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access:         wallet.ReadAccess,
 			RestrictedKeys: []string{},
@@ -72,7 +73,7 @@ func testListingKeysWithValidParamsSucceeds(t *testing.T) {
 	})
 	_, err := w.GenerateKeyPair(nil)
 	if err != nil {
-		t.Fatal("could not generate key for tests: %w", err)
+		t.Fatalf("could not generate key for tests: %v", err)
 	}
 	expectedPubKeys := make([]api.SessionNamedPublicKey, 0, len(w.ListPublicKeys()))
 	for _, key := range w.ListPublicKeys() {
@@ -94,6 +95,43 @@ func testListingKeysWithValidParamsSucceeds(t *testing.T) {
 	// then
 	require.Nil(t, errorDetails)
 	assert.Equal(t, expectedPubKeys, result.Keys)
+}
+
+func testListingKeysExcludesTaintedKeys(t *testing.T) {
+	// given
+	ctx := context.Background()
+	hostname := "vega.xyz"
+	w, kp1 := walletWithPerms(t, hostname, wallet.Permissions{
+		PublicKeys: wallet.PublicKeysPermission{
+			Access:         wallet.ReadAccess,
+			RestrictedKeys: []string{},
+		},
+	})
+	kp2, err := w.GenerateKeyPair(nil)
+	if err != nil {
+		t.Fatalf("could not generate key for tests: %v", err)
+	}
+	if err = w.TaintKey(kp2.PublicKey()); err != nil {
+		t.Fatalf("could not taint key for tests: %v", err)
+	}
+
+	// setup
+	handler := newListKeysHandler(t)
+	token := connectWallet(t, handler.sessions, hostname, w)
+
+	// when
+	result, errorDetails := handler.handle(t, ctx, api.SessionListKeysParams{
+		Token: token,
+	})
+
+	// then
+	require.Nil(t, errorDetails)
+	assert.Equal(t, []api.SessionNamedPublicKey{
+		{
+			Name:      kp1.Name(),
+			PublicKey: kp1.PublicKey(),
+		},
+	}, result.Keys)
 }
 
 func testListingKeysWithInvalidTokenFails(t *testing.T) {
@@ -123,10 +161,10 @@ func testListingKeysWithNotEnoughPermissionsFails(t *testing.T) {
 		},
 	}
 	hostname := "vega.xyz"
-	w := walletWithPerms(t, hostname, expectedPermissions)
+	w, _ := walletWithPerms(t, hostname, expectedPermissions)
 	_, err := w.GenerateKeyPair(nil)
 	if err != nil {
-		t.Fatal("could not generate key for tests: %w", err)
+		t.Fatalf("could not generate key for tests: %v", err)
 	}
 
 	// setup
