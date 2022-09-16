@@ -101,6 +101,7 @@ type DiscreteTrading struct {
 	TickSize string `json:"tickSize"`
 }
 
+// Dispatch strategy for a recurring transfer
 type DispatchStrategy struct {
 	// Defines the data that will be used to compare markets so as to distribute rewards appropriately
 	DispatchMetric vega.DispatchMetric `json:"dispatchMetric"`
@@ -195,6 +196,7 @@ type ERC20SetAssetLimitsBundle struct {
 	Signatures string `json:"signatures"`
 }
 
+// Summary of a node's rewards for a given epoch
 type EpochParticipation struct {
 	Epoch *vega.Epoch `json:"epoch"`
 	// RFC3339 timestamp

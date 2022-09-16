@@ -15,6 +15,7 @@
 - [6153](https://github.com/vegaprotocol/vega/issues/6153) - Display UI friendly logs when calling `session.send_transaction`
 - [6063](https://github.com/vegaprotocol/vega/pull/6063) - Update average entry valuation calculation according to spec change.
 - [6191](https://github.com/vegaprotocol/vega/pull/6191) - Remove the retry on node health check in the wallet API version 2
+- [6221](https://github.com/vegaprotocol/vega/pull/6221) - Add documentation for new `GraphQL endpoints`
 
 ### 🐛 Fixes
 - [6183](https://github.com/vegaprotocol/vega/issues/6183) - Shutdown blockchain before protocol services

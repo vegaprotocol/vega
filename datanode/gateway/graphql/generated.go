@@ -9544,6 +9544,7 @@ type TransactionSubmitted {
   success: Boolean!
 }
 
+"Filter input for historical balance queries"
 input AccountFilter {
   assetId: ID
   partyIds: [ID!]
@@ -9674,11 +9675,15 @@ type Query {
     "Optional Pagination"
     pagination: Pagination): MarketDataConnection
 
+  "get historical balances for an account or specific asset within the given date range."
   historicBalances(
+    "Optional filter to restrict the result to a specific account or asset"
     filter: AccountFilter,
+    "Optional grouping clause for the results"
     groupBy: [AccountField],
     "Date range to retrieve historical balances from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
     dateRange: DateRange,
+    "Optional pagination information"
     pagination: Pagination
   ) : AggregatedBalanceConnection!
 
@@ -9697,6 +9702,7 @@ type Query {
   "One or more instruments that are trading on the VEGA network"
   markets("ID of the market" id: ID): [Market!] @deprecated(reason: "Use marketsConnection instead")
 
+  "One or more instruments that are trading on the VEGA network"
   marketsConnection(
     "Optional ID of a market"
     id: ID
@@ -9716,6 +9722,7 @@ type Query {
   "return the full list of network parameters"
   networkParameters: [NetworkParameter!] @deprecated(reason: "Use networkParametersConnection instead")
 
+  "return the full list of network parameters"
   networkParametersConnection(pagination: Pagination): NetworkParametersConnection!
 
   "Governance proposals that aim to update Vega network parameters"
@@ -9774,6 +9781,7 @@ type Query {
     pagination: OffsetPagination
   ): [OracleData!] @deprecated(reason: "Use oracleDataBySpecConnection instead")
 
+  "All oracle data for a given oracle spec ID"
   oracleDataBySpecConnection(
     "ID for an oracle spec"
     oracleSpecId: ID!
@@ -9838,6 +9846,7 @@ type Query {
   "One or more entities that are trading on the Vega network"
   parties("Optional ID of a party" id: ID): [Party!] @deprecated(reason: "Use partiesConnection instead.")
 
+  "One or more entities that are trading on the Vega network"
   partiesConnection(
     "Optional ID of a party to retrieve"
     id: ID
@@ -9907,6 +9916,7 @@ type Query {
   withdrawal("ID of the withdrawal" id: ID!): Withdrawal
 }
 
+"All the states a transfer can transition between"
 enum TransferStatus {
   "Indicates a transfer still being processed"
   STATUS_PENDING
@@ -9978,16 +9988,19 @@ type RecurringTransfer {
   dispatchStrategy: DispatchStrategy
 }
 
+"The type of metric to use for a dispatch strategy"
 enum DispatchMetric {
+  "Dispatch metric that is using the total maker fees paid in the market"
   DISPATCH_METRIC_MAKER_FEES_PAID
-
+  "Dispatch metric that is using the total maker fees received in the market"
   DISPATCH_METRIC_MAKER_FEES_RECEIVED
-
+  "Dispatch metric that is using the total LP fees received in the market"
   DISPATCH_METRIC_LP_FEES_RECEIVED
-
+  "Dispatch metric that is using total value of the market if above the required threshold and not paid given proposer bonus yet"
   DISPATCH_METRIC_MARKET_VALUE
 }
 
+"Dispatch strategy for a recurring transfer"
 type DispatchStrategy {
   "Defines the data that will be used to compare markets so as to distribute rewards appropriately"
   dispatchMetric: DispatchMetric!
@@ -9999,6 +10012,7 @@ type DispatchStrategy {
   marketIdsInScope: [ID!]
 }
 
+"Validating status of a node, i.e. Validator or non-validator"
 enum NodeStatus {
   "The node is non-validating"
   NODE_STATUS_NON_VALIDATOR
@@ -10007,7 +10021,7 @@ enum NodeStatus {
   NODE_STATUS_VALIDATOR
 }
 
-# Describes in both human readable and block time when an epoch spans.
+"Describes in both human readable and block time when an epoch spans."
 type EpochTimestamps {
   "RFC3339 timestamp - Vega time of epoch start, null if not started"
   start: String
@@ -10023,6 +10037,7 @@ type EpochTimestamps {
   # lastBlock: String
 }
 
+"A node's key rotation event"
 type KeyRotation {
   "ID of node where rotation took place"
   nodeId: ID!
@@ -10034,11 +10049,13 @@ type KeyRotation {
   blockHeight: String!
 }
 
+"An Ethereum key rotation record that is returned in a paginated Ethereum key rotation connection"
 type EthereumKeyRotationEdge {
   ethereumKeyRotation: EthereumKeyRotation!
   cursor: String
 }
 
+"A paginated type for returning Ethereum key rotation records"
 type EthereumKeyRotationsConnection {
   "The ethereum key rotations in this connection"
   edges: [EthereumKeyRotationEdge!]!
@@ -10046,7 +10063,7 @@ type EthereumKeyRotationsConnection {
   pageInfo: PageInfo
 }
 
-# Describes the ethereum key rotations of nodes on the vega network
+"Describes the ethereum key rotations of nodes on the vega network"
 type EthereumKeyRotation {
   "ID of node where rotation took place"
   nodeId: ID!
@@ -10058,6 +10075,7 @@ type EthereumKeyRotation {
   blockHeight: String!
 }
 
+"Epoch describes a specific period of time in the Vega network"
 type Epoch {
   "Presumably this is an integer or something. If there's no such thing, disregard"
   id: ID!
@@ -10071,6 +10089,7 @@ type Epoch {
   "Validators that participated in this epoch"
   validatorsConnection(pagination: Pagination): NodesConnection
 
+  "Delegations data for this epoch"
   delegations(
     # Optional party ID to filter on
     partyId: ID
@@ -10083,6 +10102,7 @@ type Epoch {
     "Pagination last element"
     last: Int): [Delegation!]! @deprecated(reason: "Use delegationsConnection instead")
 
+  "Delegations data for this epoch"
   delegationsConnection(
     # Optional party ID to filter on
     partyId: ID
@@ -10093,6 +10113,7 @@ type Epoch {
   ): DelegationsConnection
 }
 
+"Summary of data across all nodes"
 type NodeData {
   "Total staked amount across all nodes"
   stakedTotal: String!
@@ -10111,6 +10132,7 @@ type NodeData {
   uptime: Float!
 }
 
+"Summary of a node's rewards for a given epoch"
 type EpochParticipation {
   epoch: Epoch
 
@@ -10123,6 +10145,7 @@ type EpochParticipation {
   totalRewards: Float
 }
 
+"Summary of all epochs for a node"
 type EpochData {
   "Total number of epochs since node was created"
   total: Int!
@@ -10134,6 +10157,7 @@ type EpochData {
   online: Int!
 }
 
+"Information available for a node"
 type Node {
   "The node URL eg n01.vega.xyz"
   id: ID!
@@ -10186,6 +10210,7 @@ type Node {
     "Pagination last element"
     last: Int): [Delegation!] @deprecated(reason: "Use delegationsConnection instead")
 
+  # All delegation for a node by a given party if specified, or all delegations.
   delegationsConnection(
     partyId: ID,
     pagination: Pagination
@@ -11266,6 +11291,7 @@ type Party {
     "Pagination last element"
     last: Int): [Delegation!] @deprecated(reason: "Use delegationsConnection instead")
 
+  # All delegations for a party to a given node if node is specified, or all delegations if not
   delegationsConnection(
     "Optional node ID"
     nodeId: ID
