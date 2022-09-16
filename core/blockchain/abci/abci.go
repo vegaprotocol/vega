@@ -211,6 +211,8 @@ func getBaseTxEvents(tx Tx) []types.Event {
 		},
 	}
 
+	commandAttributes := []types.EventAttribute{}
+
 	var market string
 	if m, ok := tx.(interface{ GetMarketId() string }); ok {
 		market = m.GetMarketId()
@@ -218,16 +220,13 @@ func getBaseTxEvents(tx Tx) []types.Event {
 	if m, ok := tx.(interface{ GetMarket() string }); ok {
 		market = m.GetMarket()
 	}
-	base = append(base, types.Event{
-		Type: "command",
-		Attributes: []types.EventAttribute{
-			{
-				Key:   []byte("market"),
-				Value: []byte(market),
-				Index: true,
-			},
-		},
-	})
+	if len(market) > 0 {
+		commandAttributes = append(commandAttributes, types.EventAttribute{
+			Key:   []byte("market"),
+			Value: []byte(market),
+			Index: true,
+		})
+	}
 
 	var asset string
 	if m, ok := tx.(interface{ GetAssetId() string }); ok {
@@ -236,46 +235,41 @@ func getBaseTxEvents(tx Tx) []types.Event {
 	if m, ok := tx.(interface{ GetAsset() string }); ok {
 		asset = m.GetAsset()
 	}
-	base = append(base, types.Event{
-		Type: "command",
-		Attributes: []types.EventAttribute{
-			{
-				Key:   []byte("asset"),
-				Value: []byte(asset),
-				Index: true,
-			},
-		},
-	})
+	if len(asset) > 0 {
+		commandAttributes = append(commandAttributes, types.EventAttribute{
+			Key:   []byte("asset"),
+			Value: []byte(asset),
+			Index: true,
+		})
+	}
 
 	var reference string
 	if m, ok := tx.(interface{ GetReference() string }); ok {
 		reference = m.GetReference()
 	}
-	base = append(base, types.Event{
-		Type: "command",
-		Attributes: []types.EventAttribute{
-			{
-				Key:   []byte("reference"),
-				Value: []byte(reference),
-				Index: true,
-			},
-		},
-	})
+	if len(reference) > 0 {
+		commandAttributes = append(commandAttributes, types.EventAttribute{
+			Key:   []byte("reference"),
+			Value: []byte(reference),
+			Index: true,
+		})
+	}
 
 	var proposal string
 	if m, ok := tx.(interface{ GetProposalId() string }); ok {
 		proposal = m.GetProposalId()
 	}
-	base = append(base, types.Event{
-		Type: "command",
-		Attributes: []types.EventAttribute{
-			{
-				Key:   []byte("proposal"),
-				Value: []byte(proposal),
-				Index: true,
-			},
-		},
-	})
+	if len(proposal) > 0 {
+		commandAttributes = append(commandAttributes, types.EventAttribute{
+			Key:   []byte("proposal"),
+			Value: []byte(proposal),
+			Index: true,
+		})
+	}
+
+	if len(commandAttributes) > 0 {
+		base[1].Attributes = append(base[1].Attributes, commandAttributes...)
+	}
 
 	return base
 }
