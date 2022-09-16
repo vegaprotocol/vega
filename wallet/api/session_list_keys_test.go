@@ -2,6 +2,7 @@ package api_test
 
 import (
 	"context"
+	"sort"
 	"testing"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
@@ -13,11 +14,13 @@ import (
 )
 
 func TestListKeys(t *testing.T) {
-	t.Run("Listing keys with invalid params fails", testListingKeysWithInvalidParamsFails)
-	t.Run("Listing keys with valid params succeeds", testListingKeysWithValidParamsSucceeds)
-	t.Run("Listing keys excludes tainted keys", testListingKeysExcludesTaintedKeys)
-	t.Run("Listing keys with invalid token fails", testListingKeysWithInvalidTokenFails)
-	t.Run("Listing keys with not enough permissions fails", testListingKeysWithNotEnoughPermissionsFails)
+	for i := 0; i < 100; i++ {
+		t.Run("Listing keys with invalid params fails", testListingKeysWithInvalidParamsFails)
+		t.Run("Listing keys with valid params succeeds", testListingKeysWithValidParamsSucceeds)
+		t.Run("Listing keys excludes tainted keys", testListingKeysExcludesTaintedKeys)
+		t.Run("Listing keys with invalid token fails", testListingKeysWithInvalidTokenFails)
+		t.Run("Listing keys with not enough permissions fails", testListingKeysWithNotEnoughPermissionsFails)
+	}
 }
 
 func testListingKeysWithInvalidParamsFails(t *testing.T) {
@@ -82,6 +85,8 @@ func testListingKeysWithValidParamsSucceeds(t *testing.T) {
 			PublicKey: key.Key(),
 		})
 	}
+
+	sort.Slice(expectedPubKeys, func(i, j int) bool { return expectedPubKeys[i].PublicKey < expectedPubKeys[j].PublicKey })
 
 	// setup
 	handler := newListKeysHandler(t)
