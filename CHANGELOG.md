@@ -26,6 +26,7 @@
 - [6109](https://github.com/vegaprotocol/vega/issues/6109) - Candle query returns unexpected data.
 - [5988](https://github.com/vegaprotocol/vega/issues/5988) - Exclude tainted keys from `session.list_keys` endpoint
 - [5164](https://github.com/vegaprotocol/vega/issues/5164) - Distribute LP fees on settlement
+- [6212](https://github.com/vegaprotocol/vega/issues/6212) - Change the error for protocol upgrade request for block 0
 
 ## 0.55.0
 
