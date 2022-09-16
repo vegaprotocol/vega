@@ -45,6 +45,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 	tmtypesint "github.com/tendermint/tendermint/types"
@@ -626,7 +627,7 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 		logging.String("previous-datetime", vegatime.Format(app.previousTimestamp)),
 	)
 
-	app.epoch.OnBlockEnd(ctx)
+	app.epoch.OnBlockEnd(app.blockCtx)
 	if !app.nilPow {
 		app.pow.EndOfBlock()
 	}
@@ -643,15 +644,32 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 			ValidatorUpdates: powerUpdates,
 		}
 	}
+
+	app.broker.Send(
+		events.NewEndBlock(app.blockCtx, eventspb.EndBlock{
+			Height: uint64(req.Height),
+		}),
+	)
+
 	return ctx, resp
 }
 
 // OnBeginBlock updates the internal lastBlockTime value with each new block.
-func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context, resp tmtypes.ResponseBeginBlock) {
+func (app *App) OnBeginBlock(
+	req tmtypes.RequestBeginBlock,
+) (ctx context.Context, resp tmtypes.ResponseBeginBlock) {
 	app.log.Debug("entering begin block", logging.Time("at", time.Now()), logging.Uint64("height", uint64(req.Header.Height)))
 	defer func() { app.log.Debug("leaving begin block", logging.Time("at", time.Now())) }()
 
+	hash := hex.EncodeToString(req.Hash)
+	ctx = vgcontext.WithBlockHeight(vgcontext.WithTraceID(app.chainCtx, hash), req.Header.Height)
+
 	if app.protocolUpgradeService.GetUpgradeStatus().ReadyToUpgrade {
+		app.broker.Send(
+			events.NewProtocolUpgradeStarted(ctx, eventspb.ProtocolUpgradeStarted{
+				LastBlockHeight: app.stats.Height(),
+			}),
+		)
 		// wait until killed
 		for {
 			time.Sleep(1 * time.Second)
@@ -659,7 +677,14 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 		}
 	}
 
-	hash := hex.EncodeToString(req.Hash)
+	app.broker.Send(
+		events.NewBeginBlock(ctx, eventspb.BeginBlock{
+			Height:    uint64(req.Header.Height),
+			Timestamp: req.Header.Time.UnixNano(),
+			Hash:      hash,
+		}),
+	)
+
 	app.cBlock = hash
 
 	// update pow engine on a new block
@@ -669,7 +694,6 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 
 	app.stats.SetHash(hash)
 	app.stats.SetHeight(uint64(req.Header.Height))
-	ctx = vgcontext.WithBlockHeight(vgcontext.WithTraceID(app.chainCtx, hash), req.Header.Height)
 	app.blockCtx = ctx
 
 	now := req.Header.Time

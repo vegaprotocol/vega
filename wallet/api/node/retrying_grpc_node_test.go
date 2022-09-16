@@ -15,11 +15,11 @@ import (
 )
 
 func TestRetryingGRPCNode_HealthCheck(t *testing.T) {
-	t.Run("Retrying with one successful call succeeds", testRetryingGRPCNodeHealthCheckRetryingWithOneSuccessfulCallSucceeds)
-	t.Run("Retrying without successful calls fails", testRetryingGRPCNodeHealthCheckRetryingWithoutSuccessfulCallsFails)
+	t.Run("Checking health node does not retry", testRetryingGRPCNodeHealthCheckDoesNotRetry)
+	t.Run("Retrying without successful calls fails", testRetryingGRPCNodeHealthCheckSucceeds)
 }
 
-func testRetryingGRPCNodeHealthCheckRetryingWithOneSuccessfulCallSucceeds(t *testing.T) {
+func testRetryingGRPCNodeHealthCheckDoesNotRetry(t *testing.T) {
 	// given
 	ctx := context.Background()
 	log := newTestLogger(t)
@@ -28,11 +28,28 @@ func testRetryingGRPCNodeHealthCheckRetryingWithOneSuccessfulCallSucceeds(t *tes
 	client := newClientMock(t)
 	client.EXPECT().Host().AnyTimes().Return("test-client")
 	request := &apipb.GetVegaTimeRequest{}
-	unsuccessfulCalls := client.EXPECT().GetVegaTime(ctx, request).Times(2).Return(nil, assert.AnError)
-	successfulCall := client.EXPECT().GetVegaTime(ctx, request).Times(1).Return(&apipb.GetVegaTimeResponse{
+	client.EXPECT().GetVegaTime(ctx, request).Times(1).Return(nil, assert.AnError)
+
+	// when
+	grpcNode := node.BuildGRPCNode(log, client, 3)
+	err := grpcNode.HealthCheck(ctx)
+
+	// then
+	require.ErrorIs(t, err, assert.AnError)
+}
+
+func testRetryingGRPCNodeHealthCheckSucceeds(t *testing.T) {
+	// given
+	ctx := context.Background()
+	log := newTestLogger(t)
+
+	// setup
+	client := newClientMock(t)
+	client.EXPECT().Host().AnyTimes().Return("test-client")
+	request := &apipb.GetVegaTimeRequest{}
+	client.EXPECT().GetVegaTime(ctx, request).Times(1).Return(&apipb.GetVegaTimeResponse{
 		Timestamp: 1234,
 	}, nil)
-	gomock.InOrder(unsuccessfulCalls, successfulCall)
 
 	// when
 	grpcNode := node.BuildGRPCNode(log, client, 3)
@@ -40,25 +57,6 @@ func testRetryingGRPCNodeHealthCheckRetryingWithOneSuccessfulCallSucceeds(t *tes
 
 	// then
 	require.NoError(t, err)
-}
-
-func testRetryingGRPCNodeHealthCheckRetryingWithoutSuccessfulCallsFails(t *testing.T) {
-	// given
-	ctx := context.Background()
-	log := newTestLogger(t)
-
-	// setup
-	ctrl := gomock.NewController(t)
-	client := mocks.NewMockCoreClient(ctrl)
-	client.EXPECT().Host().AnyTimes().Return("test-client")
-	client.EXPECT().GetVegaTime(ctx, &apipb.GetVegaTimeRequest{}).Times(4).Return(nil, assert.AnError)
-
-	// when
-	grpcNode := node.BuildGRPCNode(log, client, 3)
-	err := grpcNode.HealthCheck(ctx)
-
-	// then
-	require.Error(t, err, assert.AnError)
 }
 
 func TestRetryingGRPCNode_LastBlock(t *testing.T) {

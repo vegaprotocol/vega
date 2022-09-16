@@ -23,26 +23,24 @@ func (n *RetryingGRPCNode) Host() string {
 	return n.client.Host()
 }
 
+// HealthCheck returns an error if the node is not healthy.
+// Contrary to the other calls, it doesn't retry if the call ends up in error
+// to avoid useless delay in during node selection.
 func (n *RetryingGRPCNode) HealthCheck(ctx context.Context) error {
 	n.log.Debug("verifying the node health through the core client", zap.String("host", n.client.Host()))
-	if err := n.retry(func() error {
-		req := apipb.GetVegaTimeRequest{}
-		resp, err := n.client.GetVegaTime(ctx, &req)
-		if err != nil {
-			return err
-		}
-		n.log.Debug("response from GetVegaTime",
-			zap.String("host", n.client.Host()),
-			zap.Int64("timestamp", resp.Timestamp),
-		)
-		return nil
-	}); err != nil {
-		n.log.Error("could not get the chain ID",
+	req := apipb.GetVegaTimeRequest{}
+	resp, err := n.client.GetVegaTime(ctx, &req)
+	if err != nil {
+		n.log.Error("could not get the vega time",
 			zap.String("host", n.client.Host()),
 			zap.Error(err),
 		)
 		return err
 	}
+	n.log.Debug("response from GetVegaTime",
+		zap.String("host", n.client.Host()),
+		zap.Int64("timestamp", resp.Timestamp),
+	)
 	return nil
 }
 

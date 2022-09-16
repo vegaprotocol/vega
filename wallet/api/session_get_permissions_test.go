@@ -69,7 +69,7 @@ func testGettingPermissionsWithValidParamsSucceeds(t *testing.T) {
 		},
 	}
 	hostname := "vega.xyz"
-	w := walletWithPerms(t, hostname, expectedPermissions)
+	w, _ := walletWithPerms(t, hostname, expectedPermissions)
 
 	// setup
 	handler := newGetPermissionsHandler(t)
