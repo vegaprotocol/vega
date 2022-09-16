@@ -7,7 +7,7 @@ import (
 	cmd "code.vegaprotocol.io/vega/cmd/vegawallet/commands"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
-	"code.vegaprotocol.io/vega/wallet/crypto"
+	"code.vegaprotocol.io/vega/wallet/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -33,10 +33,10 @@ func testVerifyMessageFlagsValidFlagsSucceeds(t *testing.T) {
 		Signature: base64.StdEncoding.EncodeToString(decodedSignature),
 	}
 
-	expectedReq := &crypto.VerifyMessageRequest{
-		PubKey:    pubKey,
-		Signature: decodedSignature,
-		Message:   decodedMessage,
+	expectedReq := api.AdminVerifyMessageParams{
+		PubKey:           pubKey,
+		EncodedMessage:   f.Message,
+		EncodedSignature: f.Signature,
 	}
 
 	// when
@@ -58,7 +58,7 @@ func testVerifyMessageFlagsMissingPubKeyFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("pubkey"))
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func testVerifyMessageFlagsMissingMessageFails(t *testing.T) {
@@ -71,7 +71,7 @@ func testVerifyMessageFlagsMissingMessageFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("message"))
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func testVerifyMessageFlagsMalformedMessageFails(t *testing.T) {
@@ -84,7 +84,7 @@ func testVerifyMessageFlagsMalformedMessageFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBase64EncodedError("message"))
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func testVerifyMessageFlagsMissingSignatureFails(t *testing.T) {
@@ -97,7 +97,7 @@ func testVerifyMessageFlagsMissingSignatureFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("signature"))
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func testVerifyMessageFlagsMalformedSignatureFails(t *testing.T) {
@@ -110,7 +110,7 @@ func testVerifyMessageFlagsMalformedSignatureFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBase64EncodedError("signature"))
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func newVerifyMessageFlags(t *testing.T) *cmd.VerifyMessageFlags {

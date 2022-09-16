@@ -2,19 +2,19 @@ package api
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
-	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
-	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	"code.vegaprotocol.io/vega/wallet/api/node"
 	"code.vegaprotocol.io/vega/wallet/network"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"go.uber.org/zap"
 )
 
 // Generates mocks
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/wallet/api WalletStore,NetworkStore,Node,NodeSelector,Pipeline
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/wallet/api WalletStore,NetworkStore,Pipeline
+
+type NodeSelectorBuilder func(hosts []string, retries uint64) (node.Selector, error)
 
 // WalletStore is the component used to retrieve and update wallets from the
 // computer.
@@ -36,22 +36,6 @@ type NetworkStore interface {
 	ListNetworks() ([]string, error)
 	GetNetworkPath(string) string
 	DeleteNetwork(string) error
-}
-
-// Node is the component used to get network information and send transactions.
-type Node interface {
-	Host() string
-	Stop() error
-	SendTransaction(context.Context, *commandspb.Transaction, apipb.SubmitTransactionRequest_Type) (string, error)
-	CheckTransaction(context.Context, *commandspb.Transaction) (*apipb.CheckTransactionResponse, error)
-	HealthCheck(context.Context) error
-	LastBlock(context.Context) (*apipb.LastBlockHeightResponse, error)
-}
-
-// NodeSelector implementing the strategy for node selection.
-type NodeSelector interface {
-	Node(ctx context.Context) (Node, error)
-	Stop()
 }
 
 // Pipeline is the component connecting the wallet front-end and the JSON-RPC API.
@@ -164,7 +148,7 @@ type SelectedWallet struct {
 // no administration methods are exposed. We don't want malicious third-party
 // applications to leverage administration capabilities that could expose to the
 // user and compromise his wallets.
-func SessionAPI(log *zap.Logger, walletStore WalletStore, pipeline Pipeline, nodeSelector NodeSelector) (*jsonrpc.API, error) {
+func SessionAPI(log *zap.Logger, walletStore WalletStore, pipeline Pipeline, nodeSelector node.Selector) (*jsonrpc.API, error) {
 	sessions := NewSessions()
 
 	walletAPI := jsonrpc.New(log)
@@ -185,7 +169,7 @@ func SessionAPI(log *zap.Logger, walletStore WalletStore, pipeline Pipeline, nod
 // AdminAPI builds the JSON-RPC API of the wallet with all the methods available.
 // This API exposes highly-sensitive methods, and, as a result, it should be
 // only exposed to highly-trustable applications.
-func AdminAPI(log *zap.Logger, walletStore WalletStore, netStore NetworkStore) (*jsonrpc.API, error) {
+func AdminAPI(log *zap.Logger, walletStore WalletStore, netStore NetworkStore, nodeSelectorBuilder NodeSelectorBuilder) (*jsonrpc.API, error) {
 	walletAPI := jsonrpc.New(log)
 	walletAPI.RegisterMethod("admin.annotate_key", NewAdminAnnotateKey(walletStore))
 	walletAPI.RegisterMethod("admin.create_wallet", NewAdminCreateWallet(walletStore))
@@ -206,21 +190,16 @@ func AdminAPI(log *zap.Logger, walletStore WalletStore, netStore NetworkStore) (
 	walletAPI.RegisterMethod("admin.remove_wallet", NewAdminRemoveWallet(walletStore))
 	walletAPI.RegisterMethod("admin.revoke_permissions", NewAdminRevokePermissions(walletStore))
 	walletAPI.RegisterMethod("admin.rotate_key", NewAdminRotateKey(walletStore))
-	walletAPI.RegisterMethod("admin.send_message", &UnimplementedMethod{})
-	walletAPI.RegisterMethod("admin.send_transaction", &UnimplementedMethod{})
-	walletAPI.RegisterMethod("admin.sign_message", &UnimplementedMethod{})
-	walletAPI.RegisterMethod("admin.sign_transaction", &UnimplementedMethod{})
+	walletAPI.RegisterMethod("admin.send_command", NewAdminSendTransaction(netStore, nodeSelectorBuilder))
+	walletAPI.RegisterMethod("admin.send_transaction", NewAdminSendTransaction(netStore, nodeSelectorBuilder))
+	walletAPI.RegisterMethod("admin.sign_message", NewAdminSignMessage(walletStore))
+	walletAPI.RegisterMethod("admin.sign_transaction", NewAdminSignTransaction(walletStore, netStore, nodeSelectorBuilder))
 	walletAPI.RegisterMethod("admin.taint_key", NewAdminTaintKey(walletStore))
 	walletAPI.RegisterMethod("admin.untaint_key", NewAdminUntaintKey(walletStore))
 	walletAPI.RegisterMethod("admin.update_permissions", NewAdminUpdatePermissions(walletStore))
+	walletAPI.RegisterMethod("admin.verify_message", NewAdminVerifyMessage())
 
 	log.Info("the admin JSON-RPC API has been initialised")
 
 	return walletAPI, nil
-}
-
-type UnimplementedMethod struct{}
-
-func (u UnimplementedMethod) Handle(_ context.Context, _ jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
-	return nil, internalError(errors.New("this method is not implemented yet"))
 }

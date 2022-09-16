@@ -5,8 +5,6 @@ import (
 	"errors"
 	"sync/atomic"
 
-	walletapi "code.vegaprotocol.io/vega/wallet/api"
-
 	"go.uber.org/zap"
 )
 
@@ -27,10 +25,10 @@ type RoundRobinSelector struct {
 	currentAbsoluteIndex uint64
 
 	// nodes is the list of the nodes we are connected to.
-	nodes []walletapi.Node
+	nodes []Node
 }
 
-func (ns *RoundRobinSelector) Node(ctx context.Context) (walletapi.Node, error) {
+func (ns *RoundRobinSelector) Node(ctx context.Context) (Node, error) {
 	for i := 0; i < len(ns.nodes); i++ {
 		nextAbsoluteIndex := atomic.AddUint64(&ns.currentAbsoluteIndex, 1)
 		nextRelativeIndex := (int(nextAbsoluteIndex) - 1) % len(ns.nodes)
@@ -66,7 +64,7 @@ func (ns *RoundRobinSelector) Stop() {
 	ns.log.Info("Stopped all the nodes")
 }
 
-func NewRoundRobinSelector(log *zap.Logger, nodes ...walletapi.Node) (*RoundRobinSelector, error) {
+func NewRoundRobinSelector(log *zap.Logger, nodes ...Node) (*RoundRobinSelector, error) {
 	if len(nodes) == 0 {
 		return nil, ErrNoNodeConfigured
 	}
