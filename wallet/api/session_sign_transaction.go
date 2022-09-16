@@ -52,7 +52,7 @@ func (h *SignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) 
 		return nil, invalidParams(err)
 	}
 
-	if !connectedWallet.Permissions().CanUseKey(params.PublicKey) {
+	if !connectedWallet.CanUseKey(params.PublicKey) {
 		return nil, requestNotPermittedError(ErrPublicKeyIsNotAllowedToBeUsed)
 	}
 
