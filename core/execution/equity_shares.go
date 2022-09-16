@@ -148,7 +148,7 @@ func (es *EquityShares) updateAvgPosDelta(v *lp, delta, newStake num.Decimal) {
 	// S being the LP's physical stake, Delta S being the amount by which the stake is increased
 	es.totalVStake = es.totalVStake.Add(delta)
 	es.totalPStake = es.totalPStake.Sub(v.stake).Add(newStake)
-	v.avg = v.avg.Mul(v.vStake).Div(newStake).Add(es.totalVStake.Mul(delta).Div(newStake))
+	v.avg = v.avg.Mul(v.stake).Div(newStake).Add(es.totalVStake.Mul(delta).Div(newStake))
 	// this is the first LP -> no vStake yet
 	v.vStake = v.vStake.Add(delta)
 	v.stake = newStake
