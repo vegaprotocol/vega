@@ -4,6 +4,7 @@
 
 ### 🚨 Breaking changes
 - [6155](https://github.com/vegaprotocol/vega/issues/6155) - Rename "Client" to "User" in wallet API version 2
+- [5641](https://github.com/vegaprotocol/vega/issues/5641) - Rename `SettlementPriceDecimals` to `SettlementDataDecimals`
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -23,6 +24,7 @@
 - [6175](https://github.com/vegaprotocol/vega/issues/6175) - Fix `datanode` updating node public key on key rotation
 - [5948](https://github.com/vegaprotocol/vega/issues/5948) - Shutdown node gracefully when panics or `sigterm` during chain-replay
 - [6109](https://github.com/vegaprotocol/vega/issues/6109) - Candle query returns unexpected data.
+- [5164](https://github.com/vegaprotocol/vega/issues/5164) - Distribute LP fees on settlement
 
 ## 0.55.0
 

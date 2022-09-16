@@ -956,7 +956,7 @@ func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.Pr
 				OracleSpecForSettlementPrice:    product.Future.OracleSpecForSettlementPrice,
 				OracleSpecForTradingTermination: product.Future.OracleSpecForTradingTermination,
 				OracleSpecBinding:               product.Future.OracleSpecBinding,
-				SettlementPriceDecimalPlaces:    product.Future.SettlementPriceDecimals,
+				SettlementDataDecimalPlaces:     product.Future.SettlementDataDecimals,
 			},
 		}
 	default:

@@ -402,7 +402,7 @@ func InstrumentConfigurationFromProto(
 				QuoteName:                       pr.Future.QuoteName,
 				OracleSpecForSettlementPrice:    OracleSpecConfigurationFromProto(pr.Future.OracleSpecForSettlementPrice),
 				OracleSpecForTradingTermination: OracleSpecConfigurationFromProto(pr.Future.OracleSpecForTradingTermination),
-				SettlementPriceDecimalPlaces:    pr.Future.SettlementPriceDecimals,
+				SettlementDataDecimalPlaces:     pr.Future.SettlementDataDecimals,
 				OracleSpecBinding:               OracleSpecBindingForFutureFromProto(pr.Future.OracleSpecBinding),
 			},
 		}
@@ -428,7 +428,7 @@ type FutureProduct struct {
 	OracleSpecForSettlementPrice    *OracleSpecConfiguration
 	OracleSpecForTradingTermination *OracleSpecConfiguration
 	OracleSpecBinding               *OracleSpecBindingForFuture
-	SettlementPriceDecimalPlaces    uint32
+	SettlementDataDecimalPlaces     uint32
 }
 
 func (f FutureProduct) IntoProto() *vegapb.FutureProduct {
@@ -437,7 +437,7 @@ func (f FutureProduct) IntoProto() *vegapb.FutureProduct {
 		QuoteName:                       f.QuoteName,
 		OracleSpecForSettlementPrice:    f.OracleSpecForSettlementPrice.IntoProto(),
 		OracleSpecForTradingTermination: f.OracleSpecForTradingTermination.IntoProto(),
-		SettlementPriceDecimals:         f.SettlementPriceDecimalPlaces,
+		SettlementDataDecimals:          f.SettlementDataDecimalPlaces,
 		OracleSpecBinding:               f.OracleSpecBinding.IntoProto(),
 	}
 }
@@ -454,10 +454,10 @@ func (f FutureProduct) DeepClone() *FutureProduct {
 
 func (f FutureProduct) String() string {
 	return fmt.Sprintf(
-		"quote(%s) settlementAsset(%s) settlementPriceDecimalPlaces(%v) oracleSpec(settlementPrice(%s) tradingTermination(%s) binding(%s))",
+		"quote(%s) settlementAsset(%s) settlementDataDecimalPlaces(%v) oracleSpec(settlementData(%s) tradingTermination(%s) binding(%s))",
 		f.QuoteName,
 		f.SettlementAsset,
-		f.SettlementPriceDecimalPlaces,
+		f.SettlementDataDecimalPlaces,
 		reflectPointerToString(f.OracleSpecForSettlementPrice),
 		reflectPointerToString(f.OracleSpecForTradingTermination),
 		reflectPointerToString(f.OracleSpecBinding),
