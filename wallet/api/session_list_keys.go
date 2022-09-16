@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"sort"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	"github.com/mitchellh/mapstructure"
@@ -43,12 +44,15 @@ func (h *SessionListKeys) Handle(_ context.Context, rawParams jsonrpc.Params) (j
 	}
 
 	keys := make([]SessionNamedPublicKey, 0, len(connectedWallet.RestrictedKeys))
+
 	for _, keyPair := range connectedWallet.RestrictedKeys {
 		keys = append(keys, SessionNamedPublicKey{
 			Name:      keyPair.Name(),
 			PublicKey: keyPair.PublicKey(),
 		})
 	}
+
+	sort.Slice(keys, func(i, j int) bool { return keys[i].PublicKey < keys[j].PublicKey })
 
 	return SessionListKeysResult{
 		Keys: keys,
