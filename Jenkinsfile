@@ -560,46 +560,6 @@ pipeline {
                         }
                     }
                 }
-
-                stage('development binary for vegacapsule') {
-                    when {
-                        branch 'develop'
-                    }
-                    environment {
-                        AWS_REGION = 'eu-west-2'
-                    }
-                    steps {
-                        dir('build-linux-amd64') {
-                            script {
-                                vegaS3Ops = usernamePassword(
-                                    credentialsId: 'vegacapsule-s3-operations',
-                                    passwordVariable: 'AWS_ACCESS_KEY_ID',
-                                    usernameVariable: 'AWS_SECRET_ACCESS_KEY'
-                                )
-                                bucketName = string(
-                                    credentialsId: 'vegacapsule-s3-bucket-name',
-                                    variable: 'VEGACAPSULE_S3_BUCKET_NAME'
-                                )
-                                withCredentials([vegaS3Ops, bucketName]) {
-                                    try {
-                                        sh label: 'Upload vega binary to S3', script: '''
-                                            aws s3 cp ./vega s3://''' + env.VEGACAPSULE_S3_BUCKET_NAME + '''/bin/vega-linux-amd64-''' + versionHash + '''
-                                        '''
-                                    } catch(err) {
-                                        print(err)
-                                    }
-                                    try {
-                                        sh label: 'Upload data-node binary to S3', script: '''
-                                            aws s3 cp ./data-node s3://''' + env.VEGACAPSULE_S3_BUCKET_NAME + '''/bin/data-node-linux-amd64-''' + versionHash + '''
-                                        '''
-                                    } catch(err) {
-                                        print(err)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
             }
         }
         //
