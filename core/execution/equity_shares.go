@@ -64,10 +64,6 @@ func (es *EquityShares) OpeningAuctionEnded() {
 
 func (es *EquityShares) UpdateVStake() {
 	if es.r.IsZero() {
-		for _, v := range es.lps {
-			v.vStake = v.stake
-		}
-		es.totalVStake = es.totalPStake
 		return
 	}
 	total := num.DecimalZero()
