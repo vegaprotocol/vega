@@ -213,11 +213,16 @@ func getBaseTxEvents(tx Tx) []types.Event {
 
 	commandAttributes := []types.EventAttribute{}
 
+	cmd := tx.GetCmd()
+	if cmd == nil {
+		return base
+	}
+
 	var market string
-	if m, ok := tx.(interface{ GetMarketId() string }); ok {
+	if m, ok := cmd.(interface{ GetMarketId() string }); ok {
 		market = m.GetMarketId()
 	}
-	if m, ok := tx.(interface{ GetMarket() string }); ok {
+	if m, ok := cmd.(interface{ GetMarket() string }); ok {
 		market = m.GetMarket()
 	}
 	if len(market) > 0 {
@@ -229,10 +234,10 @@ func getBaseTxEvents(tx Tx) []types.Event {
 	}
 
 	var asset string
-	if m, ok := tx.(interface{ GetAssetId() string }); ok {
+	if m, ok := cmd.(interface{ GetAssetId() string }); ok {
 		asset = m.GetAssetId()
 	}
-	if m, ok := tx.(interface{ GetAsset() string }); ok {
+	if m, ok := cmd.(interface{ GetAsset() string }); ok {
 		asset = m.GetAsset()
 	}
 	if len(asset) > 0 {
@@ -244,7 +249,7 @@ func getBaseTxEvents(tx Tx) []types.Event {
 	}
 
 	var reference string
-	if m, ok := tx.(interface{ GetReference() string }); ok {
+	if m, ok := cmd.(interface{ GetReference() string }); ok {
 		reference = m.GetReference()
 	}
 	if len(reference) > 0 {
@@ -256,7 +261,7 @@ func getBaseTxEvents(tx Tx) []types.Event {
 	}
 
 	var proposal string
-	if m, ok := tx.(interface{ GetProposalId() string }); ok {
+	if m, ok := cmd.(interface{ GetProposalId() string }); ok {
 		proposal = m.GetProposalId()
 	}
 	if len(proposal) > 0 {
