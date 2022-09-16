@@ -232,19 +232,9 @@ Feature:
 
     # Confirm equity-like-shares updated immediately after liquidity amendment
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      | party | equity like share    | average entry valuation |
-      | lp1   | 0.0794314813996635   | 15985.90375384367775    |
-      | lp2   | 0.9205685186003365   | 50000                   |
-
-    # ERROR:
-    # - "equity-like-share" values calculated incorrectly.
-    # - "average-entry-valuation" values calculated incorrectly.
-
-    # EXPECTED:
-    # Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-    #  | party | equity like share | average entry valuation |
-    #  | lp1   | 0.079809          | 15628.748               |
-    #  | lp2   | 0.920191          | 50000.000               |
+      | party | equity like share  | average entry valuation |
+      | lp1   | 0.0798085875103608 | 15628.7475              |
+      | lp2   | 0.9201914124896392 | 50000                   |
 
     # -------------------------------------------------------------------------------------------------------------------
 
@@ -282,38 +272,18 @@ Feature:
 
     # Check equity-like-shares before network moves forward
     Given the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      | party | equity like share    | average entry valuation           |
-      | lp1   | 0.0794314813996635   | 15985.90375384367775              |
-      | lp2   | 0.9205685186003365   | 50000                             |
-
-    # ERROR:
-    # - "equity-like-share" values calculated incorrectly.
-    # - "average-entry-valuation" values calculated incorrectly.
-
-    # EXPECTED:
-    # Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-    #  | party | equity like share | average entry valuation |
-    #  | lp1   | 0.079809          | 15628.748               |
-    #  | lp2   | 0.920191          | 50000.000               |
+      | party | equity like share  | average entry valuation |
+      | lp1   | 0.0798085875103608 | 15628.7475              |
+      | lp2   | 0.9201914124896392 | 50000                   |
 
     # Trigger next liquidity fee distribution without triggering next period
     When the network moves ahead "1" blocks:
 
     # Confirm equity-like-shares are unchanged by network moving forwards (as new market period not entered)
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      | party | equity like share    | average entry valuation           |
-      | lp1   | 0.0794314813996635   | 15985.90375384367775              |
-      | lp2   | 0.9205685186003365   | 50000                             |
-
-    # ERROR:
-    # - "equity-like-share" values calculated incorrectly.
-    # - "average-entry-valuation" values calculated incorrectly.
-
-    # EXPECTED:
-    # Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-    #  | party | equity like share | average entry valuation |
-    #  | lp1   | 0.079809          | 15628.748               |
-    #  | lp2   | 0.920191          | 50000.000               |
+      | party | equity like share  | average entry valuation |
+      | lp1   | 0.0798085875103608 | 15628.7475              |
+      | lp2   | 0.9201914124896392 | 50000                   |
 
     And the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
@@ -326,38 +296,18 @@ Feature:
 
     # Check equity-like-shares before network moves forward
     When the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      | party | equity like share    | average entry valuation           |
-      | lp1   | 0.0794314813996635   | 15985.90375384367775              |
-      | lp2   | 0.9205685186003365   | 50000                             |
-
-    # ERROR:
-    # - "equity-like-share" values calculated incorrectly.
-    # - "average-entry-valuation" values calculated incorrectly.
-
-    # EXPECTED:
-    # Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-    #  | party | equity like share | average entry valuation |
-    #  | lp1   | 0.079809          | 15628.748               |
-    #  | lp2   | 0.920191          | 50000.000               |
+      | party | equity like share  | average entry valuation |
+      | lp1   | 0.0798085875103608 | 15628.7475              |
+      | lp2   | 0.9201914124896392 | 50000                   |
     
     # Trigger entry into next market period
     And the network moves ahead "1" blocks:
 
     # Confirm equity-like-shares are unchanged by the network moving forwards (as virtual-stakes scaled by same factor, r)
     When the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      | party | equity like share    | average entry valuation           |
-      | lp1   | 0.0794314813996635   | 15985.90375384367775              |
-      | lp2   | 0.9205685186003365   | 50000                             |
-
-    # ERROR:
-    # - "equity-like-share" values calculated incorrectly.
-    # - "average-entry-valuation" values calculated incorrectly.
-
-    # EXPECTED:
-    # Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-    #  | party | equity like share | average entry valuation |
-    #  | lp1   | 0.079809          | 15628.748               |
-    #  | lp2   | 0.920191          | 50000.000               |
+      | party | equity like share  | average entry valuation |
+      | lp1   | 0.0798085875103608 | 15628.7475              |
+      | lp2   | 0.9201914124896392 | 50000                   |
 
     # -------------------------------------------------------------------------------------------------------------------
     # -------------------------------------------------------------------------------------------------------------------
@@ -368,19 +318,9 @@ Feature:
 
     # Check equity-like-shares before liquidity amendment
     Given the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      | party | equity like share    | average entry valuation           |
-      | lp1   | 0.0794314813996635   | 15985.90375384367775              |
-      | lp2   | 0.9205685186003365   | 50000                             |
-
-    # ERROR:
-    # - "equity-like-share" values calculated incorrectly.
-    # - "average-entry-valuation" values calculated incorrectly.
-
-    # EXPECTED:
-    # Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-    #  | party | equity like share | average entry valuation |
-    #  | lp1   | 0.079809          | 15628.748               |
-    #  | lp2   | 0.920191          | 50000.000               |
+      | party | equity like share  | average entry valuation |
+      | lp1   | 0.0798085875103608 | 15628.7475              |
+      | lp2   | 0.9201914124896392 | 50000                   |
 
     When the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
@@ -397,19 +337,9 @@ Feature:
 
     # Confirm equity-like-shares updated immediately after liquidity amendment
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      | party | equity like share  | average entry valuation |
-      | lp1   | 0.0620474574136127 | 15985.90375384367775    |
-      | lp2   | 0.9379525425863873 | 50000                   |
-
-    # ERROR:
-    # - "equity-like-share" values calculated incorrectly.
-    # - "average-entry-valuation" values calculated incorrectly.
-
-    # EXPECTED:
-    # Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-    #  | party | equity like share | average entry valuation |
-    #  | lp1   | 0.062348          | 15628.748               |
-    #  | lp2   | 0.937652          | 50000.000               |
+      | party | equity like share | average entry valuation |
+      | lp1   | 0.062347621397563 | 15628.7475              |
+      | lp2   | 0.937652378602437 | 50000                   |
 
     # -------------------------------------------------------------------------------------------------------------------
 
@@ -443,38 +373,18 @@ Feature:
 
     # Check equity-like-shares before the network moves forward
     Given the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      | party | equity like share  | average entry valuation |
-      | lp1   | 0.0620474574136127 | 15985.90375384367775    |
-      | lp2   | 0.9379525425863873 | 50000                   |
-
-    # ERROR:
-    # - "equity-like-share" values calculated incorrectly.
-    # - "average-entry-valuation" values calculated incorrectly.
-
-    # EXPECTED:
-    # Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-    #  | party | equity like share | average entry valuation |
-    #  | lp1   | 0.062348          | 15628.748               |
-    #  | lp2   | 0.937652          | 50000.000               |
+      | party | equity like share | average entry valuation |
+      | lp1   | 0.062347621397563 | 15628.7475              |
+      | lp2   | 0.937652378602437 | 50000                   |
 
     # Trigger next liquidity fee distribution without triggering next period
     When the network moves ahead "1" blocks:
 
     # Confirm equity-like-shares are unchanged by network moving forwards (as new market period not entered)
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      | party | equity like share  | average entry valuation |
-      | lp1   | 0.0620474574136127 | 15985.90375384367775    |
-      | lp2   | 0.9379525425863873 | 50000                   |
-
-    # ERROR:
-    # - "equity-like-share" values calculated incorrectly.
-    # - "average-entry-valuation" values calculated incorrectly.
-
-    # EXPECTED:
-    # Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-    #  | party | equity like share | average entry valuation |
-    #  | lp1   | 0.062348          | 15628.748               |
-    #  | lp2   | 0.937652          | 50000.000               |
+      | party | equity like share | average entry valuation |
+      | lp1   | 0.062347621397563 | 15628.7475              |
+      | lp2   | 0.937652378602437 | 50000                   |
 
     And the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
@@ -487,38 +397,18 @@ Feature:
     
     # Check equity-like-shares before network moves forward
     Given the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      | party | equity like share  | average entry valuation |
-      | lp1   | 0.0620474574136127 | 15985.90375384367775    |
-      | lp2   | 0.9379525425863873 | 50000                   |
-
-    # ERROR:
-    # - "equity-like-share" values calculated incorrectly.
-    # - "average-entry-valuation" values calculated incorrectly.
-
-    # EXPECTED:
-    # Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-    #  | party | equity like share | average entry valuation |
-    #  | lp1   | 0.062348          | 15628.748               |
-    #  | lp2   | 0.937652          | 50000.000               |
+      | party | equity like share | average entry valuation |
+      | lp1   | 0.062347621397563 | 15628.7475              |
+      | lp2   | 0.937652378602437 | 50000                   |
     
     # Trigger entry into next market period
     When the network moves ahead "1" blocks:
 
     # Confirm equity-like-shares are unchanged by the network moving forwards (as virtual-stakes scaled by same factor, r)
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      | party | equity like share  | average entry valuation |
-      | lp1   | 0.0620474574136127 | 15985.90375384367775    |
-      | lp2   | 0.9379525425863873 | 50000                   |
-
-    # ERROR:
-    # - "equity-like-share" values calculated incorrectly.
-    # - "average-entry-valuation" values calculated incorrectly.
-
-    # EXPECTED:
-    # Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-    #  | party | equity like share | average entry valuation |
-    #  | lp1   | 0.062348          | 15628.748               |
-    #  | lp2   | 0.937652          | 50000.000               |
+      | party | equity like share | average entry valuation |
+      | lp1   | 0.062347621397563 | 15628.7475              |
+      | lp2   | 0.937652378602437 | 50000                   |
 
     # -------------------------------------------------------------------------------------------------------------------
     # -------------------------------------------------------------------------------------------------------------------    
@@ -529,19 +419,9 @@ Feature:
 
     # Check equity-like-shares before liquidity amendment
     Given the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      | party | equity like share  | average entry valuation |
-      | lp1   | 0.0620474574136127 | 15985.90375384367775    |
-      | lp2   | 0.9379525425863873 | 50000                   |
-
-    # ERROR:
-    # - "equity-like-share" values calculated incorrectly.
-    # - "average-entry-valuation" values calculated incorrectly.
-
-    # EXPECTED:
-    # Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-    #  | party | equity like share | average entry valuation |
-    #  | lp1   | 0.062348          | 15628.748               |
-    #  | lp2   | 0.937652          | 50000.000               |
+      | party | equity like share | average entry valuation |
+      | lp1   | 0.062347621397563 | 15628.7475              |
+      | lp2   | 0.937652378602437 | 50000                   |
 
     When the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
@@ -559,18 +439,8 @@ Feature:
     # Confirm equity-like-shares updated immediately after liquidity amendment
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   | 0.0776542975507553 | 27226.0319392486111616  |
-      | lp2   | 0.9223457024492447 | 57008.0995559105993146  |
-
-    # ERROR:
-    # - "equity-like-share" values calculated incorrectly.
-    # - "average-entry-valuation" values calculated incorrectly.
-
-    # EXPECTED:
-    # Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-    #  | party | equity like share | average entry valuation |
-    #  | lp1   | 0.079354          | 24588.910               |
-    #  | lp2   | 0.920646          | 50031.943               |
+      | lp1   | 0.0793539352012749 | 24338.910470882276956   |
+      | lp2   | 0.9206460647987251 | 50031.9434648593284309  |
 
     # ------------------------------------------------------------------------------------------------------------------- 
 
@@ -605,18 +475,8 @@ Feature:
     # Check equity-like-shares before network moves forward
     Given the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   | 0.0776542975507553 | 27226.0319392486111616  |
-      | lp2   | 0.9223457024492447 | 57008.0995559105993146  |
-
-    # ERROR:
-    # - "equity-like-share" values calculated incorrectly.
-    # - "average-entry-valuation" values calculated incorrectly.
-
-    # EXPECTED:
-    # Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-    #  | party | equity like share | average entry valuation |
-    #  | lp1   | 0.079354          | 24588.910               |
-    #  | lp2   | 0.920646          | 50031.943               |
+      | lp1   | 0.0793539352012749 | 24338.910470882276956   |
+      | lp2   | 0.9206460647987251 | 50031.9434648593284309  |
 
     # Trigger next liquidity fee distribution without triggering next period
     When the network moves ahead "1" blocks:
@@ -624,18 +484,8 @@ Feature:
     # Confirm equity-like-shares are unchanged by network moving forwards (as new market period not entered)
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   | 0.0776542975507553 | 27226.0319392486111616  |
-      | lp2   | 0.9223457024492447 | 57008.0995559105993146  |
-
-    # ERROR:
-    # - "equity-like-share" values calculated incorrectly.
-    # - "average-entry-valuation" values calculated incorrectly.
-
-    # EXPECTED:
-    # Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-    #  | party | equity like share | average entry valuation |
-    #  | lp1   | 0.079354          | 24588.910               |
-    #  | lp2   | 0.920646          | 50031.943               |
+      | lp1   | 0.0793539352012749 | 24338.910470882276956   |
+      | lp2   | 0.9206460647987251 | 50031.9434648593284309  |
 
     And the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
@@ -649,18 +499,8 @@ Feature:
     # Check equity-like-shares before network moves forward
     Given the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   | 0.0776542975507553 | 27226.0319392486111616  |
-      | lp2   | 0.9223457024492447 | 57008.0995559105993146  |
-
-    # ERROR:
-    # - "equity-like-share" values calculated incorrectly.
-    # - "average-entry-valuation" values calculated incorrectly.
-
-    # EXPECTED:
-    # Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-    #  | party | equity like share | average entry valuation |
-    #  | lp1   | 0.079354          | 24588.910               |
-    #  | lp2   | 0.920646          | 50031.943               |
+      | lp1   | 0.0793539352012749 | 24338.910470882276956   |
+      | lp2   | 0.9206460647987251 | 50031.9434648593284309  |
     
     # Trigger entry into next market period
     When the network moves ahead "1" blocks:
@@ -668,18 +508,8 @@ Feature:
     # Confirm equity-like-shares are unchanged by the network moving forwards (as virtual-stakes scaled by same factor, r)
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   | 0.0776542975507553 | 27226.0319392486111616  |
-      | lp2   | 0.9223457024492447 | 57008.0995559105993146  |
-
-    # ERROR:
-    # - "equity-like-share" values calculated incorrectly.
-    # - "average-entry-valuation" values calculated incorrectly.
-
-    # EXPECTED:
-    # Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-    #  | party | equity like share | average entry valuation |
-    #  | lp1   | 0.079354          | 24588.910               |
-    #  | lp2   | 0.920646          | 50031.943               |
+      | lp1   | 0.0793539352012749 | 24338.910470882276956   |
+      | lp2   | 0.9206460647987251 | 50031.9434648593284309  |
 
     # -------------------------------------------------------------------------------------------------------------------
     # ------------------------------------------------------------------------------------------------------------------- 
@@ -691,18 +521,8 @@ Feature:
     # Check equity-like-shares before liquidity amendment
     Given the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   | 0.0776542975507553 | 27226.0319392486111616  |
-      | lp2   | 0.9223457024492447 | 57008.0995559105993146  |
-
-    # ERROR:
-    # - "equity-like-share" values calculated incorrectly.
-    # - "average-entry-valuation" values calculated incorrectly.
-
-    # EXPECTED:
-    # Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-    #  | party | equity like share | average entry valuation |
-    #  | lp1   | 0.079354          | 24588.910               |
-    #  | lp2   | 0.920646          | 50031.943               |
+      | lp1   | 0.0793539352012749 | 24338.910470882276956   |
+      | lp2   | 0.9206460647987251 | 50031.9434648593284309  |
 
     When the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
@@ -720,18 +540,8 @@ Feature:
     # Confirm equity-like-shares updated immediately after liquidity amendment
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   | 0.0583937269090908 | 27226.0319392486111616  |
-      | lp2   | 0.9416062730909092 | 67882.1196053417321887  |
-
-    # ERROR:
-    # - "equity-like-share" values calculated incorrectly.
-    # - "average-entry-valuation" values calculated incorrectly.
-
-    # EXPECTED:
-    # Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-    #  | party | equity like share | average entry valuation |
-    #  | lp1   | 0.059551          | 24588.910               |
-    #  | lp2   | 0.940449          | 50072.555               |
+      | lp1   | 0.0595510182668165 | 24338.910470882276956   |
+      | lp2   | 0.9404489817331835 | 50072.5548801159555759  |
 
     # -------------------------------------------------------------------------------------------------------------------
 
@@ -766,18 +576,8 @@ Feature:
     # Check equity-like-shares before network moves forward
     Given the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   | 0.0583937269090908 | 27226.0319392486111616  |
-      | lp2   | 0.9416062730909092 | 67882.1196053417321887  |
-
-    # ERROR:
-    # - "equity-like-share" values calculated incorrectly.
-    # - "average-entry-valuation" values calculated incorrectly.
-
-    # EXPECTED:
-    # Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-    #  | party | equity like share | average entry valuation |
-    #  | lp1   | 0.059551          | 24588.910               |
-    #  | lp2   | 0.940449          | 50072.555               |
+      | lp1   | 0.0595510182668165 | 24338.910470882276956   |
+      | lp2   | 0.9404489817331835 | 50072.5548801159555759  |
 
     # Trigger next liquidity fee distribution without triggering next period
     When the network moves ahead "1" blocks:
@@ -785,18 +585,8 @@ Feature:
     # Confirm equity-like-shares are unchanged by network moving forwards (as new market period not entered)
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   | 0.0583937269090908 | 27226.0319392486111616  |
-      | lp2   | 0.9416062730909092 | 67882.1196053417321887  |
-
-    # ERROR:
-    # - "equity-like-share" values calculated incorrectly.
-    # - "average-entry-valuation" values calculated incorrectly.
-
-    # EXPECTED:
-    # Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-    #  | party | equity like share | average entry valuation |
-    #  | lp1   | 0.059551          | 24588.910               |
-    #  | lp2   | 0.940449          | 50072.555               |
+      | lp1   | 0.0595510182668165 | 24338.910470882276956   |
+      | lp2   | 0.9404489817331835 | 50072.5548801159555759  |
 
     And the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
@@ -810,18 +600,8 @@ Feature:
     # Check equity-like-shares before network moves forward
     Given the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   | 0.0583937269090908 | 27226.0319392486111616  |
-      | lp2   | 0.9416062730909092 | 67882.1196053417321887  |
-
-    # ERROR:
-    # - "equity-like-share" values calculated incorrectly.
-    # - "average-entry-valuation" values calculated incorrectly.
-
-    # EXPECTED:
-    # Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-    #  | party | equity like share | average entry valuation |
-    #  | lp1   | 0.059551          | 24588.910               |
-    #  | lp2   | 0.940449          | 50072.555               |
+      | lp1   | 0.0595510182668165 | 24338.910470882276956   |
+      | lp2   | 0.9404489817331835 | 50072.5548801159555759  |
     
     # Trigger entry into next market period
     When the network moves ahead "1" blocks:
@@ -829,18 +609,8 @@ Feature:
     # Confirm equity-like-shares are unchanged by the network moving forwards (as virtual-stakes scaled by same factor, r)
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   | 0.0583937269090908 | 27226.0319392486111616  |
-      | lp2   | 0.9416062730909092 | 67882.1196053417321887  |
-
-    # ERROR:
-    # - "equity-like-share" values calculated incorrectly.
-    # - "average-entry-valuation" values calculated incorrectly.
-
-    # EXPECTED:
-    # Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-    #  | party | equity like share | average entry valuation |
-    #  | lp1   | 0.059551          | 24588.910               |
-    #  | lp2   | 0.940449          | 50072.555               |
+      | lp1   | 0.0595510182668165 | 24338.910470882276956   |
+      | lp2   | 0.9404489817331835 | 50072.5548801159555759  |
 
     # -------------------------------------------------------------------------------------------------------------------
     # -------------------------------------------------------------------------------------------------------------------
@@ -848,7 +618,7 @@ Feature:
   @VirtStake
   Scenario: 002 2 LPs joining at start, unequal commitments. Checking calculation of equity-like-shares and liquidity-fee-distribution in a market with large growth (0042-LIQF-008 0042-LIQF-011)
 
-  # Scenario has 6 market periods:
+    # Scenario has 6 market periods:
 
     # - 0th period (bootstrap period): no LP changes, no trades
     # - 1st period: 1 LPs increase commitment, some trades occur
@@ -1034,18 +804,8 @@ Feature:
     # Confirm equity-like-shares updated immediately after liquidity amendment
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   | 0.3641574309414367 | 29797.6230362453333333  |
-      | lp2   | 0.6358425690585633 | 30000                   |         
-
-    # ERROR:
-    # - "equity-like-share" values calculated incorrectly.
-    # - "average-entry-valuation" values calculated incorrectly.
-
-    # EXPECTED:
-    # Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-    #  | party | equity like share  | average entry valuation |
-    #  | lp1   | 0.3704506736874710 | 14360.400               |
-    #  | lp2   | 0.6295493263125290 | 30000.000               |
+      | lp1   | 0.370450673687471 | 14360.4                  |
+      | lp2   | 0.629549326312529 | 30000                    |         
 
     # -------------------------------------------------------------------------------------------------------------------
 
@@ -1074,38 +834,18 @@ Feature:
 
     # Check equity-like-shares before network moves forward
     Given the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      | party | equity like share  | average entry valuation        |
-      | lp1   | 0.3641574309414367 | 29797.6230362453333333         |
-      | lp2   | 0.6358425690585633 | 30000                          |
-
-    # ERROR:
-    # - "equity-like-share" values calculated incorrectly.
-    # - "average-entry-valuation" values calculated incorrectly.
-
-    # EXPECTED:
-    # Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-    #  | party | equity like share  | average entry valuation |
-    #  | lp1   | 0.3704506736874710 | 14360.400               |
-    #  | lp2   | 0.6295493263125290 | 30000.000               |  
+      | party | equity like share  | average entry valuation |
+      | lp1   | 0.370450673687471 | 14360.4                  |
+      | lp2   | 0.629549326312529 | 30000                    |
 
     # Trigger next liquidity fee distribution without triggering next period
     When the network moves ahead "1" blocks:
 
     # Confirm equity-like-shares are unchanged by network moving forwards (as new market period not entered)
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      | party | equity like share  | average entry valuation        |
-      | lp1   | 0.3641574309414367 | 29797.6230362453333333         |
-      | lp2   | 0.6358425690585633 | 30000                          |
-
-    # ERROR:
-    # - "equity-like-share" values calculated incorrectly.
-    # - "average-entry-valuation" values calculated incorrectly.
-
-    # EXPECTED:
-    # Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-    #  | party | equity like share  | average entry valuation |
-    #  | lp1   | 0.3704506736874710 | 14360.400               |
-    #  | lp2   | 0.6295493263125290 | 30000.000               |  
+      | party | equity like share  | average entry valuation |
+      | lp1   | 0.370450673687471 | 14360.4                  |
+      | lp2   | 0.629549326312529 | 30000                    |
 
     And the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
@@ -1118,38 +858,18 @@ Feature:
 
     # Check equity-like-shares before network moves forward
     When the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      | party | equity like share  | average entry valuation        |
-      | lp1   | 0.3641574309414367 | 29797.6230362453333333         |
-      | lp2   | 0.6358425690585633 | 30000                          |
-
-    # ERROR:
-    # - "equity-like-share" values calculated incorrectly.
-    # - "average-entry-valuation" values calculated incorrectly.
-
-    # EXPECTED:
-    # Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-    #  | party | equity like share  | average entry valuation |
-    #  | lp1   | 0.3704506736874710 | 14360.400               |
-    #  | lp2   | 0.6295493263125290 | 30000.000               |  
+      | party | equity like share  | average entry valuation |
+      | lp1   | 0.370450673687471 | 14360.4                  |
+      | lp2   | 0.629549326312529 | 30000                    |
     
     # Trigger entry into next market period
     And the network moves ahead "1" blocks:
 
     # Confirm equity-like-shares are unchanged by the network moving forwards (as virtual-stakes scaled by same factor, r)
     When the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      | party | equity like share  | average entry valuation        |
-      | lp1   | 0.3641574309414367 | 29797.6230362453333333         |
-      | lp2   | 0.6358425690585633 | 30000                          |
-
-    # ERROR:
-    # - "equity-like-share" values calculated incorrectly.
-    # - "average-entry-valuation" values calculated incorrectly.
-
-    # EXPECTED:
-    # Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-    #  | party | equity like share  | average entry valuation |
-    #  | lp1   | 0.3704506736874710 | 14360.400               |
-    #  | lp2   | 0.6295493263125290 | 30000.000               |  
+      | party | equity like share  | average entry valuation |
+      | lp1   | 0.370450673687471 | 14360.4                  |
+      | lp2   | 0.629549326312529 | 30000                    |
 
     # -------------------------------------------------------------------------------------------------------------------
     # -------------------------------------------------------------------------------------------------------------------
