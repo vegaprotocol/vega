@@ -96,8 +96,13 @@ func (app *appW) ApplySnapshotChunk(
 	return app.impl.ApplySnapshotChunk(req)
 }
 
-func (app *appW) SetOption(
-	req types.RequestSetOption,
-) types.ResponseSetOption {
-	return app.impl.SetOption(req)
+func (app *appW) PrepareProposal(
+	req types.RequestPrepareProposal,
+) types.ResponsePrepareProposal {
+	return app.impl.PrepareProposal(req)
+}
+func (app *appW) ProcessProposal(
+	req types.RequestProcessProposal,
+) types.ResponseProcessProposal {
+	return app.impl.ProcessProposal(req)
 }
