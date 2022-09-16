@@ -16,26 +16,10 @@ import (
 	"encoding/hex"
 	"errors"
 
+	"code.vegaprotocol.io/vega/core/blockchain"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 
 	"github.com/tendermint/tendermint/abci/types"
-)
-
-const (
-	// AbciTxnValidationFailure ...
-	AbciTxnValidationFailure uint32 = 51
-
-	// AbciTxnDecodingFailure code is returned when CheckTx or DeliverTx fail to decode the Txn.
-	AbciTxnDecodingFailure uint32 = 60
-
-	// AbciTxnInternalError code is returned when CheckTx or DeliverTx fail to process the Txn.
-	AbciTxnInternalError uint32 = 70
-
-	// AbciUnknownCommandError code is returned when the app doesn't know how to handle a given command.
-	AbciUnknownCommandError uint32 = 80
-
-	// AbciSpamError code is returned when CheckTx or DeliverTx fail spam protection tests.
-	AbciSpamError uint32 = 89
 )
 
 func (app *App) Info(req types.RequestInfo) types.ResponseInfo {
@@ -82,7 +66,7 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 	// first, only decode the transaction but don't validate
 	tx, code, err := app.getTx(req.GetTx())
 	if err != nil {
-		return NewResponseCheckTxError(code, err)
+		return blockchain.NewResponseCheckTxError(code, err)
 	}
 
 	// check for spam and replay
@@ -105,7 +89,7 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 	if fn, ok := app.checkTxs[tx.Command()]; ok {
 		if err := fn(ctx, tx); err != nil {
 			println("transaction failed command validation", tx.Command().String(), "tid", tx.GetPoWTID(), err.Error())
-			return AddCommonCheckTxEvents(NewResponseCheckTxError(AbciTxnInternalError, err), tx)
+			return AddCommonCheckTxEvents(blockchain.NewResponseCheckTxError(blockchain.AbciTxnInternalError, err), tx)
 		}
 	}
 
@@ -122,7 +106,7 @@ func (app *App) DeliverTx(req types.RequestDeliverTx) (resp types.ResponseDelive
 	// first, only decode the transaction but don't validate
 	tx, code, err := app.getTx(req.GetTx())
 	if err != nil {
-		return NewResponseDeliverTxError(code, err)
+		return blockchain.NewResponseDeliverTxError(code, err)
 	}
 	app.removeTxFromCache(req.GetTx())
 
@@ -147,7 +131,7 @@ func (app *App) DeliverTx(req types.RequestDeliverTx) (resp types.ResponseDelive
 	fn := app.deliverTxs[tx.Command()]
 	if fn == nil {
 		return AddCommonDeliverTxEvents(
-			NewResponseDeliverTxError(AbciUnknownCommandError, errors.New("invalid vega command")), tx,
+			blockchain.NewResponseDeliverTxError(blockchain.AbciUnknownCommandError, errors.New("invalid vega command")), tx,
 		)
 	}
 
@@ -156,12 +140,12 @@ func (app *App) DeliverTx(req types.RequestDeliverTx) (resp types.ResponseDelive
 
 	if err := fn(ctx, tx); err != nil {
 		return AddCommonDeliverTxEvents(
-			NewResponseDeliverTxError(AbciTxnInternalError, err), tx,
+			blockchain.NewResponseDeliverTxError(blockchain.AbciTxnInternalError, err), tx,
 		)
 	}
 
 	return AddCommonDeliverTxEvents(
-		NewResponseDeliverTx(types.CodeTypeOK, ""), tx,
+		blockchain.NewResponseDeliverTx(types.CodeTypeOK, ""), tx,
 	)
 }
 

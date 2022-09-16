@@ -20,8 +20,8 @@ Feature: Test settlement at expiry (0016-PFUT-012)
       | property           | type         | binding             |
       | trading.terminated | TYPE_BOOLEAN | trading termination |
 
-    And the settlement price decimals for the oracle named "ethDec20Oracle" is given in "0" decimal places
-    And the settlement price decimals for the oracle named "ethDec21Oracle" is given in "0" decimal places
+    And the settlement data decimals for the oracle named "ethDec20Oracle" is given in "0" decimal places
+    And the settlement data decimals for the oracle named "ethDec21Oracle" is given in "0" decimal places
 
     And the following network parameters are set:
       | name                           | value |

@@ -16,7 +16,6 @@ import (
 	"context"
 	"errors"
 
-	"code.vegaprotocol.io/vega/datanode/vegatime"
 	"code.vegaprotocol.io/vega/logging"
 	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
@@ -184,33 +183,6 @@ func (r *myMarketResolver) Depth(ctx context.Context, market *types.Market, maxD
 		Sell:           res.Sell,
 		SequenceNumber: res.SequenceNumber,
 	}, nil
-}
-
-// Deprecated: Use CandlesConnection instead.
-func (r *myMarketResolver) Candles(ctx context.Context, market *types.Market,
-	sinceRaw string, interval vega.Interval,
-) ([]*types.Candle, error) {
-	since, err := vegatime.Parse(sinceRaw)
-	if err != nil {
-		return nil, err
-	}
-
-	var mkt string
-	if market != nil {
-		mkt = market.Id
-	}
-
-	req := protoapi.CandlesRequest{
-		MarketId:       mkt,
-		SinceTimestamp: since.UnixNano(),
-		Interval:       interval,
-	}
-	res, err := r.tradingDataClient.Candles(ctx, &req)
-	if err != nil {
-		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
-	}
-	return res.Candles, nil
 }
 
 // Accounts ...

@@ -833,6 +833,9 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 	// this will be next block
 	m.broker.Send(events.NewTransferResponse(ctx, transfers))
 
+	// final distribution of liquidity fees
+	m.distributeLiquidityFees(ctx)
+
 	err = m.cleanMarketWithState(ctx, types.MarketStateSettled)
 	if err != nil {
 		return err
@@ -3108,12 +3111,7 @@ func (m *Market) getOrderByID(orderID string) (*types.Order, bool, error) {
 }
 
 func (m *Market) getTheoreticalTargetStake() *num.Uint {
-	rf, err := m.risk.GetRiskFactors()
-	if err != nil {
-		logging.Error(err)
-		m.log.Debug("unable to get risk factors, can't calculate target")
-		return num.UintZero()
-	}
+	rf := m.risk.GetRiskFactors()
 
 	// Ignoring the error as GetTheoreticalTargetStake handles trades==nil and len(trades)==0
 	trades, _ := m.matching.GetIndicativeTrades()
@@ -3123,13 +3121,7 @@ func (m *Market) getTheoreticalTargetStake() *num.Uint {
 }
 
 func (m *Market) getTargetStake() *num.Uint {
-	rf, err := m.risk.GetRiskFactors()
-	if err != nil {
-		logging.Error(err)
-		m.log.Debug("unable to get risk factors, can't calculate target")
-		return num.UintZero()
-	}
-	return m.tsCalc.GetTargetStake(*rf, m.timeService.GetTimeNow(), m.getCurrentMarkPrice())
+	return m.tsCalc.GetTargetStake(*m.risk.GetRiskFactors(), m.timeService.GetTimeNow(), m.getCurrentMarkPrice())
 }
 
 func (m *Market) getSuppliedStake() *num.Uint {
@@ -3147,18 +3139,11 @@ func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade, pers
 		_, vAsk, _ = m.getBestStaticAskPriceAndVolume()
 	}
 
-	rf, err := m.risk.GetRiskFactors()
-	if err != nil {
-		m.log.Panic("unable to get risk factors, can't check liquidity",
-			logging.String("market-id", m.GetID()),
-			logging.Error(err))
-	}
-
 	return m.lMonitor.CheckLiquidity(
 		m.as, m.timeService.GetTimeNow(),
 		m.getSuppliedStake(),
 		trades,
-		*rf,
+		*m.risk.GetRiskFactors(),
 		m.getReferencePrice(),
 		vBid, vAsk,
 		persistentOrder)

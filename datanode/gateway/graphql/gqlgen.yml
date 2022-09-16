@@ -125,7 +125,7 @@ models:
   ObservableMarketDepthUpdate:
     model: code.vegaprotocol.io/vega/protos/vega.MarketDepthUpdate
   Candle:
-    model: code.vegaprotocol.io/vega/protos/vega.Candle
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.Candle
   Position:
     model: code.vegaprotocol.io/vega/protos/vega.Position
   Account:
@@ -387,8 +387,6 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.RewardEdge
   RewardsConnection:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.RewardsConnection
-  CandleNode:
-    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.Candle
   CandleEdge:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.CandleEdge
   CandleDataConnection:

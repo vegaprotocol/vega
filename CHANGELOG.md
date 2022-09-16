@@ -5,6 +5,7 @@
 ### 🚨 Breaking changes
 - [6196](https://github.com/vegaprotocol/vega/pull/6196) - Remove unused network parameters network end of life and market freeze date
 - [6155](https://github.com/vegaprotocol/vega/issues/6155) - Rename "Client" to "User" in wallet API version 2
+- [5641](https://github.com/vegaprotocol/vega/issues/5641) - Rename `SettlementPriceDecimals` to `SettlementDataDecimals`
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -13,12 +14,19 @@
 - [6103](hhttps://github.com/vegaprotocol/vega/issues/6103) - Verify that order amendment has the desired effect on opening auction
 - [6170](https://github.com/vegaprotocol/vega/pull/6170) - Order GraphQL schema (query and subscription types) alphabetically
 - [6153](https://github.com/vegaprotocol/vega/issues/6153) - Display UI friendly logs when calling `session.send_transaction`
+- [6063](https://github.com/vegaprotocol/vega/pull/6063) - Update average entry valuation calculation according to spec change.
 
 ### 🐛 Fixes
 - [6183](https://github.com/vegaprotocol/vega/issues/6183) - Shutdown blockchain before protocol services
 - [6148](https://github.com/vegaprotocol/vega/issues/6148) - Fix API descriptions for typos
+- [6187](https://github.com/vegaprotocol/vega/issues/6187) - Not not hash message before signing if using clef for validator heartbeats
+- [6138](https://github.com/vegaprotocol/vega/issues/6138) - Return more useful information when a transaction submitted to a node contains validation errors
 - [6156](https://github.com/vegaprotocol/vega/issues/6156) - Return only delegations for the specific node in `graphql` node delegation query
 - [6175](https://github.com/vegaprotocol/vega/issues/6175) - Fix `datanode` updating node public key on key rotation
+- [5948](https://github.com/vegaprotocol/vega/issues/5948) - Shutdown node gracefully when panics or `sigterm` during chain-replay
+- [6109](https://github.com/vegaprotocol/vega/issues/6109) - Candle query returns unexpected data.
+- [5164](https://github.com/vegaprotocol/vega/issues/5164) - Distribute LP fees on settlement
+
 ## 0.55.0
 
 ### 🚨 Breaking changes
@@ -84,6 +92,7 @@
 - [5890](https://github.com/vegaprotocol/vega/issues/5890) - Margin breach during amend doesn't cancel order
 - [6144](https://github.com/vegaprotocol/vega/issues/6144) - Price and Pegged Offset in orders are Decimals
 - [6111](https://github.com/vegaprotocol/vega/issues/5890) - Handle candles transient failure and prevent subscription blocking
+- [6204](https://github.com/vegaprotocol/vega/issues/6204) - Data Node add Ethereum Key Rotations subscriber and rest binding
 
 ## 0.54.0
 

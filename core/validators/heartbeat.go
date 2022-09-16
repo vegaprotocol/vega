@@ -20,6 +20,7 @@ import (
 	"sort"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/nodewallets/eth/clef"
 	"code.vegaprotocol.io/vega/core/txn"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/logging"
@@ -177,7 +178,12 @@ func (t *Topology) prepareHeartbeat(blockHash string) *commandspb.ValidatorHeart
 		return nil
 	}
 
-	ethereumSignature, err := t.wallets.GetEthereum().Sign(ecrypto.Keccak256(blockHashBytes))
+	signer := t.wallets.GetEthereum()
+	if signer.Algo() != clef.ClefAlgoType {
+		// hash our message before signing it
+		blockHashBytes = ecrypto.Keccak256(blockHashBytes)
+	}
+	ethereumSignature, err := signer.Sign(blockHashBytes)
 	if err != nil {
 		t.log.Error("could not sign heartbeat with ethereum wallet",
 			logging.String("block-hash", blockHash),
@@ -194,6 +200,7 @@ func (t *Topology) prepareHeartbeat(blockHash string) *commandspb.ValidatorHeart
 		},
 		EthereumSignature: &commandspb.Signature{
 			Value: hex.EncodeToString(ethereumSignature),
+			Algo:  signer.Algo(),
 		},
 	}
 }

@@ -31,6 +31,11 @@ func VerifyEthereumSignature(message, signature []byte, hexAddress string) error
 	address := common.HexToAddress(hexAddress)
 	hash := ecrypto.Keccak256(message)
 
+	// see reference in multisig control signature verification for more details
+	if signature[ecrypto.RecoveryIDOffset] == 27 || signature[ecrypto.RecoveryIDOffset] == 28 {
+		signature[ecrypto.RecoveryIDOffset] -= 27
+	}
+
 	// get the pubkey from the signature
 	pubkey, err := ecrypto.SigToPub(hash, signature)
 	if err != nil {
