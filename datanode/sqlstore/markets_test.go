@@ -30,6 +30,60 @@ import (
 func TestMarkets_Add(t *testing.T) {
 	t.Run("Add should insert a valid market record", shouldInsertAValidMarketRecord)
 	t.Run("Add should update a valid market record if the block number already exists", shouldUpdateAValidMarketRecord)
+	t.Run("Add should reset positions for the market if the market state becomes settled", shouldResetPositionsForMarket)
+}
+
+func shouldResetPositionsForMarket(t *testing.T) {
+	bs, md, _ := setupMarketsTest(t)
+	ps := sqlstore.NewPositions(connectionSource)
+	qs := sqlstore.NewParties(connectionSource)
+
+	block := addTestBlock(t, bs)
+
+	marketProto := getTestMarket()
+
+	market, err := entities.NewMarketFromProto(marketProto, generateTxHash(), block.VegaTime)
+	require.NoError(t, err, "Converting market proto to database entity")
+
+	err = md.Upsert(context.Background(), market)
+	require.NoError(t, err, "Saving market entity to database")
+
+	party1 := addTestParty(t, qs, block)
+	party2 := addTestParty(t, qs, block)
+
+	pos1 := addTestPosition(t, ps, *market, party1, 100, block)
+	pos2 := addTestPosition(t, ps, *market, party2, 200, block)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+
+	ps.Flush(ctx)
+
+	// Check that the positions have been flushed
+	want := []entities.Position{pos1, pos2}
+	got, err := ps.GetAll(ctx)
+	require.NoError(t, err)
+	assertPositionsMatch(t, want, got)
+
+	block2 := addTestBlock(t, bs)
+	market2, err := entities.NewMarketFromProto(marketProto, generateTxHash(), block2.VegaTime)
+	require.NoError(t, err, "Converting market proto to database entity")
+	market2.State = entities.MarketStateSettled
+	err = md.Upsert(context.Background(), market2)
+	require.NoError(t, err, "Saving market entity to database")
+
+	pos3 := entities.NewEmptyPosition(market2.ID, party1.ID)
+	pos3.VegaTime = block2.VegaTime
+	pos3.TxHash = market2.TxHash
+
+	pos4 := entities.NewEmptyPosition(market2.ID, party2.ID)
+	pos4.VegaTime = block2.VegaTime
+	pos4.TxHash = market2.TxHash
+
+	want = []entities.Position{pos3, pos4}
+	got, err = ps.GetAll(ctx)
+	require.NoError(t, err)
+	assertPositionsMatch(t, want, got)
 }
 
 func shouldInsertAValidMarketRecord(t *testing.T) {
@@ -167,7 +221,7 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 
 func getTestMarket() *vega.Market {
 	return &vega.Market{
-		Id: "DEADBEEF",
+		Id: "deadbeef",
 		TradableInstrument: &vega.TradableInstrument{
 			Instrument: &vega.Instrument{
 				Id:   "TEST_INSTRUMENT",

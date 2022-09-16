@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
@@ -72,6 +73,18 @@ set
 		return err
 	}
 
+	if market.State == entities.MarketStateSettled {
+		// we need to update the positions for this market to reset everything to 0 as the market is now settled
+		// and there should no longer be any positions. As we don't receive any position events or updates from
+		// core, we need to rely on the market update event and reset the positions if we receive a market update
+		// where the market state is set to settled.
+		// As we're not receiving a position event for this, we need to set the tx hash to the market tx hash
+		// and use the vega time from the market event.
+		if err := resetPositions(ctx, m.Connection, market.ID, market.TxHash, market.VegaTime); err != nil {
+			return err
+		}
+	}
+
 	m.AfterCommit(ctx, func() {
 		// delete cache
 		m.cacheLock.Lock()
@@ -80,6 +93,16 @@ set
 	})
 
 	return nil
+}
+
+func resetPositions(ctx context.Context, conn Connection, marketID entities.MarketID, txHash entities.TxHash, vegaTime time.Time) error {
+	query := `insert into positions(market_id, party_id, open_volume, realised_pnl, unrealised_pnl, average_entry_price, average_entry_market_price, loss, adjustment, tx_hash, vega_time)
+		select market_id, party_id, 0, 0, 0, 0, 0, 0, 0, $1, $2
+		from positions
+		where market_id = $3`
+	_, err := conn.Exec(ctx, query, txHash, vegaTime, marketID)
+
+	return err
 }
 
 func (m *Markets) GetByID(ctx context.Context, marketID string) (entities.Market, error) {

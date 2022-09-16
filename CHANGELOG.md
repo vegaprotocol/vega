@@ -25,6 +25,7 @@
 - [5948](https://github.com/vegaprotocol/vega/issues/5948) - Shutdown node gracefully when panics or `sigterm` during chain-replay
 - [6109](https://github.com/vegaprotocol/vega/issues/6109) - Candle query returns unexpected data.
 - [5164](https://github.com/vegaprotocol/vega/issues/5164) - Distribute LP fees on settlement
+- [5998](https://github.com/vegaprotocol/vega/issues/5998) - Data node returns non-zero position data for settled markets
 
 ## 0.55.0
 
