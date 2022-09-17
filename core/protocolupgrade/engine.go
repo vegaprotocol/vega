@@ -121,6 +121,10 @@ func (e *Engine) IsValidProposal(ctx context.Context, pk string, upgradeBlockHei
 		return errors.New("only tendermint validator can propose a protocol upgrade")
 	}
 
+	if upgradeBlockHeight == 0 {
+		return errors.New("upgrade block out of range")
+	}
+
 	if upgradeBlockHeight <= e.currentBlockHeight {
 		return errors.New("upgrade block earlier than current block height")
 	}
