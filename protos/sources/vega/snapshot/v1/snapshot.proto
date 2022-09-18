@@ -244,7 +244,7 @@ message BankingAssetActions {
 }
 
 message BankingRecurringTransfers {
-  vega.checkpoint.v1.RecurringTransfers recurring_tranfers = 1;
+  vega.checkpoint.v1.RecurringTransfers recurring_transfers = 1;
 }
 
 message BankingScheduledTransfers {
