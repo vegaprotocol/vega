@@ -12,6 +12,7 @@ import (
 	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/api/mocks"
+	nodemocks "code.vegaprotocol.io/vega/wallet/api/node/mocks"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -90,7 +91,7 @@ func testSendingTransactionWithInvalidParamsFails(t *testing.T) {
 				SendingMode:        "TYPE_MANY_FAST",
 				EncodedTransaction: "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K",
 			},
-			expectedError: errors.New(`sending mode "TYPE_MANY_FAST" is not a valid one`),
+			expectedError: errors.New(`the sending mode "TYPE_MANY_FAST" is not a valid one`),
 		}, {
 			name: "with empty encoded transaction",
 			params: api.SendTransactionParams{
@@ -156,6 +157,7 @@ func testSendingTransactionWithValidParamsSucceeds(t *testing.T) {
 		Height:            100,
 		Hash:              vgrand.RandomStr(64),
 		SpamPowDifficulty: 1,
+		ChainId:           "chain-id",
 	}, nil)
 	handler.node.EXPECT().SendTransaction(ctx, gomock.Any(), apipb.SubmitTransactionRequest_TYPE_SYNC).Times(1).Return(txHash, nil)
 	handler.pipeline.EXPECT().NotifyTransactionStatus(ctx, traceID, txHash, gomock.Any(), nil, gomock.Any()).Times(1)
@@ -386,7 +388,7 @@ func testNoHealthyNodeAvailableDoesNotSendTransaction(t *testing.T) {
 	// -- expected calls
 	handler.pipeline.EXPECT().RequestTransactionSendingReview(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx).Times(1).Return(nil, assert.AnError)
-	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.NetworkError, fmt.Errorf("could not find an healthy node: %w", assert.AnError)).Times(1)
+	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.NetworkError, fmt.Errorf("could not find a healthy node: %w", assert.AnError)).Times(1)
 	handler.pipeline.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
 
 	// when
@@ -427,7 +429,7 @@ func testFailingToGetLastBlockDoesNotSendTransaction(t *testing.T) {
 	handler.pipeline.EXPECT().RequestTransactionSendingReview(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx).Times(1).Return(handler.node, nil)
 	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(nil, assert.AnError)
-	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.NetworkError, fmt.Errorf("could not get latest block from node: %w", assert.AnError)).Times(1)
+	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.NetworkError, fmt.Errorf("could not get the latest block from node: %w", assert.AnError)).Times(1)
 	handler.pipeline.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
 
 	// when
@@ -471,6 +473,7 @@ func testFailureWhenSendingTransactionReturnsAnError(t *testing.T) {
 		Height:            100,
 		Hash:              vgrand.RandomStr(64),
 		SpamPowDifficulty: 1,
+		ChainId:           "chain-id",
 	}, nil)
 	handler.node.EXPECT().SendTransaction(ctx, gomock.Any(), apipb.SubmitTransactionRequest_TYPE_SYNC).Times(1).Return("", assert.AnError)
 	handler.pipeline.EXPECT().NotifyTransactionStatus(ctx, traceID, "", gomock.Any(), assert.AnError, gomock.Any()).Times(1)
@@ -497,8 +500,8 @@ type sendTransactionHandler struct {
 	ctrl         *gomock.Controller
 	pipeline     *mocks.MockPipeline
 	sessions     *api.Sessions
-	nodeSelector *mocks.MockNodeSelector
-	node         *mocks.MockNode
+	nodeSelector *nodemocks.MockSelector
+	node         *nodemocks.MockNode
 }
 
 func (h *sendTransactionHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.SendTransactionResult, *jsonrpc.ErrorDetails) {
@@ -519,11 +522,11 @@ func newSendTransactionHandler(t *testing.T) *sendTransactionHandler {
 	t.Helper()
 
 	ctrl := gomock.NewController(t)
-	nodeSelector := mocks.NewMockNodeSelector(ctrl)
+	nodeSelector := nodemocks.NewMockSelector(ctrl)
 	pipeline := mocks.NewMockPipeline(ctrl)
 
 	sessions := api.NewSessions()
-	node := mocks.NewMockNode(ctrl)
+	node := nodemocks.NewMockNode(ctrl)
 
 	return &sendTransactionHandler{
 		SendTransaction: api.NewSendTransaction(pipeline, nodeSelector, sessions),

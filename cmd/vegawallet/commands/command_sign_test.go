@@ -1,16 +1,12 @@
 package cmd_test
 
 import (
-	"encoding/json"
 	"testing"
 
 	cmd "code.vegaprotocol.io/vega/cmd/vegawallet/commands"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
-	"code.vegaprotocol.io/vega/protos/vega"
-	v1 "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
-	wcommands "code.vegaprotocol.io/vega/wallet/wallet"
+	"code.vegaprotocol.io/vega/wallet/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -21,10 +17,10 @@ func TestSignCommandFlags(t *testing.T) {
 	t.Run("Missing chain ID fails", testSignCommandFlagsMissingChainIDFails)
 	t.Run("Missing public key fails", testSignCommandFlagsMissingPubKeyFails)
 	t.Run("Missing tx height fails", testSignCommandFlagsMissingTxBlockHeightFails)
+	t.Run("Missing tx height fails", testSignCommandFlagsMissingTxBlockHashFails)
+	t.Run("Missing pow difficulty fails", testSignCommandFlagsMissingPoWDifficultyFails)
 	t.Run("Missing request fails", testSignCommandFlagsMissingRequestFails)
-	t.Run("Malformed request fails", testSignCommandFlagsMalformedRequestFails)
-	t.Run("Invalid request fails", testSignCommandFlagsInvalidRequestFails)
-	t.Run("Request with public key set in it fails", testSignCommandFlagsRequestWithPubKeyFails)
+	t.Run("Network and PoW mutually exclusive", testSignCommandFlagsNetworkPoWMutuallyExclusive)
 }
 
 func testSignCommandFlagsValidFlagsSucceeds(t *testing.T) {
@@ -34,32 +30,21 @@ func testSignCommandFlagsValidFlagsSucceeds(t *testing.T) {
 	passphrase, passphraseFilePath := NewPassphraseFile(t, testDir)
 	walletName := vgrand.RandomStr(10)
 	pubKey := vgrand.RandomStr(20)
-	chainID := vgrand.RandomStr(20)
 
 	f := &cmd.SignCommandFlags{
 		Wallet:         walletName,
 		PubKey:         pubKey,
 		PassphraseFile: passphraseFilePath,
-		ChainID:        chainID,
-		TxBlockHeight:  150,
+		Network:        "fairground",
 		RawCommand:     `{"voteSubmission": {"proposalId": "ec066610abbd1736b69cadcb059b9efdfdd9e3e33560fc46b2b8b62764edf33f", "value": "VALUE_YES"}}`,
 	}
 
-	expectedReq := &wcommands.SignCommandRequest{
-		Wallet:        walletName,
-		Passphrase:    passphrase,
-		TxBlockHeight: 150,
-		ChainID:       chainID,
-		Request: &walletpb.SubmitTransactionRequest{
-			PubKey:    pubKey,
-			Propagate: true,
-			Command: &walletpb.SubmitTransactionRequest_VoteSubmission{
-				VoteSubmission: &v1.VoteSubmission{
-					ProposalId: "ec066610abbd1736b69cadcb059b9efdfdd9e3e33560fc46b2b8b62764edf33f",
-					Value:      vega.Vote_VALUE_YES,
-				},
-			},
-		},
+	expectedReq := api.AdminSignTransactionParams{
+		Wallet:         walletName,
+		Passphrase:     passphrase,
+		Network:        "fairground",
+		PublicKey:      pubKey,
+		EncodedCommand: "eyJ2b3RlU3VibWlzc2lvbiI6IHsicHJvcG9zYWxJZCI6ICJlYzA2NjYxMGFiYmQxNzM2YjY5Y2FkY2IwNTliOWVmZGZkZDllM2UzMzU2MGZjNDZiMmI4YjYyNzY0ZWRmMzNmIiwgInZhbHVlIjogIlZBTFVFX1lFUyJ9fQ==",
 	}
 
 	// when
@@ -69,9 +54,7 @@ func testSignCommandFlagsValidFlagsSucceeds(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, req)
 
-	expectedJSON, _ := json.Marshal(expectedReq)
-	actualJSON, _ := json.Marshal(req)
-	assert.Equal(t, expectedJSON, actualJSON)
+	assert.Equal(t, expectedReq, req)
 }
 
 func testSignCommandFlagsMissingWalletFails(t *testing.T) {
@@ -86,7 +69,7 @@ func testSignCommandFlagsMissingWalletFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("wallet"))
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func testSignCommandFlagsMissingChainIDFails(t *testing.T) {
@@ -101,7 +84,7 @@ func testSignCommandFlagsMissingChainIDFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("chain-id"))
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func testSignCommandFlagsMissingPubKeyFails(t *testing.T) {
@@ -116,7 +99,7 @@ func testSignCommandFlagsMissingPubKeyFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("pubkey"))
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func testSignCommandFlagsMissingTxBlockHeightFails(t *testing.T) {
@@ -131,7 +114,52 @@ func testSignCommandFlagsMissingTxBlockHeightFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("tx-height"))
-	assert.Nil(t, req)
+	assert.Empty(t, req)
+}
+
+func testSignCommandFlagsMissingTxBlockHashFails(t *testing.T) {
+	testDir := t.TempDir()
+
+	// given
+	f := newSignCommandFlags(t, testDir)
+	f.TxBlockHash = ""
+
+	// when
+	req, err := f.Validate()
+
+	// then
+	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("tx-block-hash"))
+	assert.Empty(t, req)
+}
+
+func testSignCommandFlagsMissingPoWDifficultyFails(t *testing.T) {
+	testDir := t.TempDir()
+
+	// given
+	f := newSignCommandFlags(t, testDir)
+	f.PowDifficulty = 0
+
+	// when
+	req, err := f.Validate()
+
+	// then
+	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("pow-difficulty"))
+	assert.Empty(t, req)
+}
+
+func testSignCommandFlagsNetworkPoWMutuallyExclusive(t *testing.T) {
+	testDir := t.TempDir()
+
+	// given
+	f := newSignCommandFlags(t, testDir)
+	f.Network = "fairground"
+
+	// when
+	req, err := f.Validate()
+
+	// then
+	assert.ErrorIs(t, err, flags.MutuallyExclusiveError("network", "tx-height"))
+	assert.Empty(t, req)
 }
 
 func testSignCommandFlagsMissingRequestFails(t *testing.T) {
@@ -146,52 +174,7 @@ func testSignCommandFlagsMissingRequestFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.ArgMustBeSpecifiedError("command"))
-	assert.Nil(t, req)
-}
-
-func testSignCommandFlagsMalformedRequestFails(t *testing.T) {
-	testDir := t.TempDir()
-
-	// given
-	f := newSignCommandFlags(t, testDir)
-	f.RawCommand = vgrand.RandomStr(5)
-
-	// when
-	req, err := f.Validate()
-
-	// then
-	assert.Error(t, err)
-	assert.Nil(t, req)
-}
-
-func testSignCommandFlagsInvalidRequestFails(t *testing.T) {
-	testDir := t.TempDir()
-
-	// given
-	f := newSignCommandFlags(t, testDir)
-	f.RawCommand = `{"voteSubmission": {}}`
-
-	// when
-	req, err := f.Validate()
-
-	// then
-	assert.Error(t, err)
-	assert.Nil(t, req)
-}
-
-func testSignCommandFlagsRequestWithPubKeyFails(t *testing.T) {
-	testDir := t.TempDir()
-
-	// given
-	f := newSignCommandFlags(t, testDir)
-	f.RawCommand = `{"pubKey": "qwerty123456", "voteSubmission": {"proposalId": "some-id", "value": "VALUE_YES"}}`
-
-	// when
-	req, err := f.Validate()
-
-	// then
-	assert.ErrorIs(t, err, cmd.ErrDoNotSetPubKeyInCommand)
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func newSignCommandFlags(t *testing.T, testDir string) *cmd.SignCommandFlags {
@@ -207,6 +190,8 @@ func newSignCommandFlags(t *testing.T, testDir string) *cmd.SignCommandFlags {
 		PubKey:         pubKey,
 		TxBlockHeight:  150,
 		ChainID:        vgrand.RandomStr(5),
+		TxBlockHash:    "hashhash",
+		PowDifficulty:  12,
 		PassphraseFile: passphraseFilePath,
 	}
 }

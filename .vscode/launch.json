@@ -6,7 +6,7 @@
             "type": "go",
             "request": "launch",
             "mode": "test",
-            "program": "${workspaceFolder}/integration/main_test.go",
+            "program": "${workspaceFolder}/core/integration/main_test.go",
             "_comment": "  * * *  change to your .feature file  * * *  ",
             "args": [
                 "--godog.format",

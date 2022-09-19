@@ -8,7 +8,7 @@ import (
 
 func TestLocateNetworks(t *testing.T) {
 	// given
-	home := RandomPath()
+	home := t.TempDir()
 
 	// when
 	locateNetworkResp, err := NetworkLocate(t, []string{

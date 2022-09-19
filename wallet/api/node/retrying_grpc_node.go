@@ -173,7 +173,7 @@ func (n *RetryingGRPCNode) retry(o backoff.Operation) error {
 	return backoff.Retry(o, backoff.WithMaxRetries(backoff.NewExponentialBackOff(), n.retries))
 }
 
-func NewGRPCNode(log *zap.Logger, host string, retries uint64) (*RetryingGRPCNode, error) {
+func NewRetryingGRPCNode(log *zap.Logger, host string, retries uint64) (*RetryingGRPCNode, error) {
 	client, err := NewInsecureGRPCClient(host)
 	if err != nil {
 		log.Error("could not initialise an insecure gRPC client",
@@ -183,10 +183,10 @@ func NewGRPCNode(log *zap.Logger, host string, retries uint64) (*RetryingGRPCNod
 		return nil, err
 	}
 
-	return BuildGRPCNode(log, client, retries), nil
+	return BuildRetryingGRPCNode(log, client, retries), nil
 }
 
-func BuildGRPCNode(log *zap.Logger, client CoreClient, retries uint64) *RetryingGRPCNode {
+func BuildRetryingGRPCNode(log *zap.Logger, client CoreClient, retries uint64) *RetryingGRPCNode {
 	return &RetryingGRPCNode{
 		log:     log,
 		client:  client,
