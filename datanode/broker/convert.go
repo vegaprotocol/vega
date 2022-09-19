@@ -115,6 +115,12 @@ func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {
 		return events.EthereumKeyRotationEventFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_PROTOCOL_UPGRADE_PROPOSAL:
 		return events.ProtocolUpgradeProposalEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_BEGIN_BLOCK:
+		return events.BeginBlockEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_END_BLOCK:
+		return events.EndBlockEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_PROTOCOL_UPGRADE_STARTED:
+		return events.ProtocolUpgradeStartedEventFromStream(ctx, be)
 	}
 
 	return nil

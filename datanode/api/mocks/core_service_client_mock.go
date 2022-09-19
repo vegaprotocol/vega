@@ -11,6 +11,7 @@ import (
 	v1 "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	gomock "github.com/golang/mock/gomock"
 	grpc "google.golang.org/grpc"
+	connectivity "google.golang.org/grpc/connectivity"
 )
 
 // MockCoreServiceClient is a mock of CoreServiceClient interface.
@@ -74,6 +75,20 @@ func (mr *MockCoreServiceClientMockRecorder) CheckTransaction(arg0, arg1 interfa
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckTransaction", reflect.TypeOf((*MockCoreServiceClient)(nil).CheckTransaction), varargs...)
+}
+
+// GetState mocks base method.
+func (m *MockCoreServiceClient) GetState() connectivity.State {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetState")
+	ret0, _ := ret[0].(connectivity.State)
+	return ret0
+}
+
+// GetState indicates an expected call of GetState.
+func (mr *MockCoreServiceClientMockRecorder) GetState() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetState", reflect.TypeOf((*MockCoreServiceClient)(nil).GetState))
 }
 
 // GetVegaTime mocks base method.

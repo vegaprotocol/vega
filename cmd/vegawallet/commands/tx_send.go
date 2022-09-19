@@ -3,7 +3,7 @@ package cmd
 import (
 	"context"
 	"encoding/base64"
-	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 
@@ -11,12 +11,11 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
 	vglog "code.vegaprotocol.io/vega/libs/zap"
-	api "code.vegaprotocol.io/vega/protos/vega/api/v1"
+	"code.vegaprotocol.io/vega/paths"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-	coreversion "code.vegaprotocol.io/vega/version"
-	"code.vegaprotocol.io/vega/wallet/network"
-	"code.vegaprotocol.io/vega/wallet/node"
-	"code.vegaprotocol.io/vega/wallet/version"
+	"code.vegaprotocol.io/vega/wallet/api"
+	walletnode "code.vegaprotocol.io/vega/wallet/api/node"
+	networkStore "code.vegaprotocol.io/vega/wallet/network/store/v1"
 	"github.com/golang/protobuf/proto"
 
 	"github.com/spf13/cobra"
@@ -50,10 +49,27 @@ var (
 	`)
 )
 
-type SendTxHandler func(io.Writer, *SendTxFlags, *RootFlags, *SendTxRequest) error
+type SendTxHandler func(api.AdminSendTransactionParams, *zap.Logger) (api.AdminSendTransactionResult, error)
 
 func NewCmdTxSend(w io.Writer, rf *RootFlags) *cobra.Command {
-	return BuildCmdTxSend(w, SendTx, rf)
+	h := func(params api.AdminSendTransactionParams, log *zap.Logger) (api.AdminSendTransactionResult, error) {
+		vegaPaths := paths.New(rf.Home)
+
+		netStore, err := networkStore.InitialiseStore(vegaPaths)
+		if err != nil {
+			return api.AdminSendTransactionResult{}, fmt.Errorf("couldn't initialise network store: %w", err)
+		}
+
+		sendTransaction := api.NewAdminSendTransaction(netStore, func(hosts []string, retries uint64) (walletnode.Selector, error) {
+			return walletnode.BuildRoundRobinSelectorWithRetryingNodes(log, hosts, retries)
+		})
+		rawResult, errorDetails := sendTransaction.Handle(context.Background(), params)
+		if errorDetails != nil {
+			return api.AdminSendTransactionResult{}, errors.New(errorDetails.Data)
+		}
+		return rawResult.(api.AdminSendTransactionResult), nil
+	}
+	return BuildCmdTxSend(w, h, rf)
 }
 
 func BuildCmdTxSend(w io.Writer, handler SendTxHandler, rf *RootFlags) *cobra.Command {
@@ -77,8 +93,22 @@ func BuildCmdTxSend(w io.Writer, handler SendTxHandler, rf *RootFlags) *cobra.Co
 				return err
 			}
 
-			if err := handler(w, f, rf, req); err != nil {
+			log, err := BuildLogger(rf.Output, f.LogLevel)
+			if err != nil {
+				return fmt.Errorf("couldn't initialise logger: %w", err)
+			}
+			defer vglog.Sync(log)
+
+			resp, err := handler(req, log)
+			if err != nil {
 				return err
+			}
+
+			switch rf.Output {
+			case flags.InteractiveOutput:
+				PrintTXSendResponse(w, resp)
+			case flags.JSONOutput:
+				return printer.FprintJSON(w, resp)
 			}
 
 			return nil
@@ -125,127 +155,49 @@ type SendTxFlags struct {
 	NoVersionCheck bool
 }
 
-func (f *SendTxFlags) Validate() (*SendTxRequest, error) {
-	req := &SendTxRequest{
+func (f *SendTxFlags) Validate() (api.AdminSendTransactionParams, error) {
+	req := api.AdminSendTransactionParams{
 		Retries: f.Retries,
 	}
 
 	if len(f.LogLevel) == 0 {
-		return nil, flags.MustBeSpecifiedError("level")
+		return api.AdminSendTransactionParams{}, flags.MustBeSpecifiedError("level")
 	}
 	if err := ValidateLogLevel(f.LogLevel); err != nil {
-		return nil, err
+		return api.AdminSendTransactionParams{}, err
 	}
-	req.LogLevel = f.LogLevel
 
 	if len(f.NodeAddress) == 0 && len(f.Network) == 0 {
-		return nil, flags.OneOfFlagsMustBeSpecifiedError("network", "node-address")
+		return api.AdminSendTransactionParams{}, flags.OneOfFlagsMustBeSpecifiedError("network", "node-address")
 	}
 	if len(f.NodeAddress) != 0 && len(f.Network) != 0 {
-		return nil, flags.MutuallyExclusiveError("network", "node-address")
+		return api.AdminSendTransactionParams{}, flags.MutuallyExclusiveError("network", "node-address")
 	}
 	req.NodeAddress = f.NodeAddress
 	req.Network = f.Network
+	req.SendingMode = "TYPE_ASYNC"
 
 	if len(f.RawTx) == 0 {
-		return nil, flags.ArgMustBeSpecifiedError("transaction")
+		return api.AdminSendTransactionParams{}, flags.ArgMustBeSpecifiedError("transaction")
 	}
 	decodedTx, err := base64.StdEncoding.DecodeString(f.RawTx)
 	if err != nil {
-		return nil, flags.MustBase64EncodedError("transaction")
+		return api.AdminSendTransactionParams{}, flags.MustBase64EncodedError("transaction")
 	}
 	tx := &commandspb.Transaction{}
 	if err := proto.Unmarshal(decodedTx, tx); err != nil {
-		return nil, fmt.Errorf("couldn't unmarshal transaction: %w", err)
+		return api.AdminSendTransactionParams{}, fmt.Errorf("couldn't unmarshal transaction: %w", err)
 	}
-	req.Tx = tx
+	req.EncodedTransaction = f.RawTx
 
 	return req, nil
 }
 
-type SendTxRequest struct {
-	Network     string
-	NodeAddress string
-	Retries     uint64
-	LogLevel    string
-	Tx          *commandspb.Transaction
-}
-
-func SendTx(w io.Writer, f *SendTxFlags, rf *RootFlags, req *SendTxRequest) error {
+func PrintTXSendResponse(w io.Writer, resp api.AdminSendTransactionResult) {
 	p := printer.NewInteractivePrinter(w)
+
 	str := p.String()
 	defer p.Print(str)
-
-	if rf.Output == flags.InteractiveOutput && version.IsUnreleased() {
-		str.CrossMark().DangerText("You are running an unreleased version of the Vega wallet (").DangerText(coreversion.Get()).DangerText(").").NextLine()
-		str.Pad().DangerText("Use it at your own risk!").NextSection()
-	}
-
-	log, err := BuildLogger(rf.Output, req.LogLevel)
-	if err != nil {
-		return err
-	}
-	defer vglog.Sync(log)
-
-	var hosts []string
-	if len(req.Network) != 0 {
-		hosts, err = getHostsFromNetwork(rf, req.Network)
-		if err != nil {
-			return err
-		}
-	} else {
-		hosts = []string{req.NodeAddress}
-	}
-
-	if !f.NoVersionCheck {
-		networkVersion, err := getNetworkVersion(hosts)
-		if err != nil {
-			return err
-		}
-		if networkVersion != coreversion.Get() {
-			return fmt.Errorf("software is not compatible with this network: network is running version %s but wallet software has version %s", networkVersion, coreversion.Get())
-		}
-	}
-
-	forwarder, err := node.NewForwarder(log.Named("forwarder"), network.GRPCConfig{
-		Hosts:   hosts,
-		Retries: req.Retries,
-	})
-	if err != nil {
-		return fmt.Errorf("couldn't initialise the node forwarder: %w", err)
-	}
-	defer func() {
-		if err = forwarder.Stop(); err != nil {
-			log.Warn("Couldn't stop the forwarder", zap.Error(err))
-		}
-	}()
-
-	if rf.Output == flags.InteractiveOutput {
-		str.BlueArrow().InfoText("Logs").NextLine()
-	}
-
-	ctx, cancelFn := context.WithTimeout(context.Background(), ForwarderRequestTimeout)
-	defer cancelFn()
-
-	resp, err := forwarder.SendTx(ctx, req.Tx, api.SubmitTransactionRequest_TYPE_ASYNC, -1)
-	if err != nil {
-		log.Error("couldn't send transaction", zap.Error(err))
-		return fmt.Errorf("couldn't send transaction: %w", err)
-	}
-
-	if !resp.Success {
-		d, err := hex.DecodeString(resp.Data)
-		if err != nil {
-			log.Error("unable to decode resp error string")
-		}
-		log.Error("transaction failed", zap.String("err", string(d)), zap.Uint32("code", resp.Code))
-		return fmt.Errorf("transaction failed: %s", resp.Data)
-	}
-
-	log.Info("transaction successfully sent", zap.String("hash", resp.TxHash))
-	if rf.Output == flags.InteractiveOutput {
-		str.NextLine().CheckMark().Text("Transaction sent: ").SuccessText(resp.TxHash).NextLine()
-	}
-
-	return nil
+	str.CheckMark().SuccessText("Transaction successfully sent").NextSection()
+	str.Text("Transaction Hash:").NextLine().WarningText(resp.TxHash).NextSection()
 }
