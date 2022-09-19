@@ -16,7 +16,7 @@ type AssetSource interface {
 	IsAssetSource()
 }
 
-// union type for wrapped events in stream PROPOSAL is mapped to governance data, something to keep in mind
+// Union type for wrapped events in stream PROPOSAL is mapped to governance data, something to keep in mind
 type Event interface {
 	IsEvent()
 }
@@ -77,13 +77,13 @@ type BuiltinAsset struct {
 func (BuiltinAsset) IsAssetSource() {}
 
 type BusEvent struct {
-	// the ID for this event
+	// The ID for this event
 	ID string `json:"id"`
-	// the block hash
+	// The block hash
 	Block string `json:"block"`
-	// the type of event
+	// The type of event
 	Type BusEventType `json:"type"`
-	// the payload - the wrapped event
+	// The payload - the wrapped event
 	Event Event `json:"event"`
 }
 
@@ -202,7 +202,8 @@ type EpochParticipation struct {
 	// RFC3339 timestamp
 	Offline *string `json:"offline"`
 	// RFC3339 timestamp
-	Online       *string  `json:"online"`
+	Online *string `json:"online"`
+	// Total amount rewarded for participation in the given epoch
 	TotalRewards *float64 `json:"totalRewards"`
 }
 
@@ -290,11 +291,11 @@ type LiquidityProviderFeeShare struct {
 }
 
 type LossSocialization struct {
-	// the market ID where loss socialization happened
+	// The market ID where loss socialization happened
 	MarketID string `json:"marketId"`
-	// the party that was part of the loss socialization
+	// The party that was part of the loss socialization
 	PartyID string `json:"partyId"`
-	// the amount lost
+	// The amount lost
 	Amount string `json:"amount"`
 }
 
@@ -302,9 +303,9 @@ func (LossSocialization) IsEvent() {}
 
 // The liquidity commitments for this market
 type MarketDataCommitments struct {
-	// a set of liquidity sell orders to meet the liquidity provision obligation.
+	// A set of liquidity sell orders to meet the liquidity provision obligation.
 	Sells []*vega.LiquidityOrderReference `json:"sells"`
-	// a set of liquidity buy orders to meet the liquidity provision obligation.
+	// A set of liquidity buy orders to meet the liquidity provision obligation.
 	Buys []*vega.LiquidityOrderReference `json:"buys"`
 }
 
@@ -318,18 +319,18 @@ type MarketDepthTrade struct {
 }
 
 type MarketEvent struct {
-	// the market ID
+	// The market ID
 	MarketID string `json:"marketId"`
-	// the message - market events are used for logging
+	// The message - market events are used for logging
 	Payload string `json:"payload"`
 }
 
 func (MarketEvent) IsEvent() {}
 
 type MarketTick struct {
-	// the market ID
+	// The market ID
 	MarketID string `json:"marketId"`
-	// the block time
+	// The block time
 	Time string `json:"time"`
 }
 
@@ -421,6 +422,7 @@ type ProposalVote struct {
 	ProposalID string `json:"proposalId"`
 }
 
+// Connection type for retrieving cursor-based paginated proposal vote information
 type ProposalVoteConnection struct {
 	// The proposal votes in this connection
 	Edges []*ProposalVoteEdge `json:"edges"`
@@ -428,9 +430,12 @@ type ProposalVoteConnection struct {
 	PageInfo *v2.PageInfo `json:"pageInfo"`
 }
 
+// Edge type containing the proposal vote and cursor information returned by a ProposalVoteConnection
 type ProposalVoteEdge struct {
-	Node   *ProposalVote `json:"node"`
-	Cursor *string       `json:"cursor"`
+	// The proposal vote
+	Node *ProposalVote `json:"node"`
+	// The cursor for this proposal vote
+	Cursor *string `json:"cursor"`
 }
 
 type ProposalVoteSide struct {
@@ -453,6 +458,7 @@ type ProposalVotes struct {
 	No *ProposalVoteSide `json:"no"`
 }
 
+// Connection type for retrieving cursor-based paginated reward summary information
 type RewardSummaryConnection struct {
 	// List of reward summaries available for the connection
 	Edges []*RewardSummaryEdge `json:"edges"`
@@ -460,6 +466,7 @@ type RewardSummaryConnection struct {
 	PageInfo *v2.PageInfo `json:"pageInfo"`
 }
 
+// Edge type containing the reward summary and cursor information returned by a RewardSummaryConnection
 type RewardSummaryEdge struct {
 	// The reward summary
 	Node *vega.RewardSummary `json:"node"`
@@ -468,26 +475,26 @@ type RewardSummaryEdge struct {
 }
 
 type SettleDistressed struct {
-	// the market in which a position was closed out
+	// The market in which a position was closed out
 	MarketID string `json:"marketId"`
-	// the party that was closed out
+	// The party that was closed out
 	PartyID string `json:"partyId"`
-	// the margin taken from distressed party
+	// The margin taken from distressed party
 	Margin string `json:"margin"`
-	// the price at which the position was closed out
+	// The price at which the position was closed out
 	Price string `json:"price"`
 }
 
 func (SettleDistressed) IsEvent() {}
 
 type SettlePosition struct {
-	// the market in which a position was settled
+	// The market in which a position was settled
 	MarketID string `json:"marketId"`
-	// the party who settled a position
+	// The party who settled a position
 	PartyID string `json:"partyId"`
-	// the settle price
+	// The settle price
 	Price string `json:"price"`
-	// the trades that were settled to close the overall position
+	// The trades that were settled to close the overall position
 	TradeSettlements []*TradeSettlement `json:"tradeSettlements"`
 }
 
@@ -529,9 +536,9 @@ type TradeFee struct {
 }
 
 type TradeSettlement struct {
-	// the size of the trade
+	// The size of the trade
 	Size int `json:"size"`
-	// the price of the trade
+	// The price of the trade
 	Price string `json:"price"`
 }
 
@@ -630,7 +637,7 @@ const (
 	BusEventTypeWithdrawal BusEventType = "Withdrawal"
 	// An oracle spec has been registered
 	BusEventTypeOracleSpec BusEventType = "OracleSpec"
-	// constant for market events - mainly used for logging
+	// Constant for market events - mainly used for logging
 	BusEventTypeMarket BusEventType = "Market"
 )
 
@@ -692,6 +699,7 @@ func (e BusEventType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+// Filter type for specifying the types of transfers to filter for
 type TransferDirection string
 
 const (
