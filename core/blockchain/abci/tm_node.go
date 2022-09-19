@@ -131,9 +131,16 @@ func loadConfig(homeDir string) (*config.Config, error) {
 	}
 
 	conf.SetRoot(homeDir)
-
+	overwriteConfig(conf)
 	if err := conf.ValidateBasic(); err != nil {
 		return nil, fmt.Errorf("error in config file: %w", err)
 	}
+
 	return conf, nil
+}
+
+// we want to force validators to skip timeout on commit so they don't wait after consensus has been reached.
+func overwriteConfig(config *config.Config) {
+	config.Consensus.SkipTimeoutCommit = true
+	config.Consensus.CreateEmptyBlocks = true
 }

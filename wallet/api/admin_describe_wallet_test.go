@@ -79,7 +79,7 @@ func testDescribingWalletWithValidParamsSucceeds(t *testing.T) {
 	name := vgrand.RandomStr(5)
 	expectedWallet, _, err := wallet.NewHDWallet(name)
 	if err != nil {
-		t.Fatal(fmt.Errorf("could not create wallet for test: %w", err))
+		t.Fatalf("could not create wallet for test: %v", err)
 	}
 
 	// setup

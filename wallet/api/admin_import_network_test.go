@@ -145,7 +145,7 @@ func testImportingANetworkFromAFileThatDoesntExistFails(t *testing.T) {
 	// then
 	require.NotNil(t, errorDetails)
 	assert.Empty(t, result)
-	assertInvalidParams(t, errorDetails, fmt.Errorf("network source file does not exist: %w", api.ErrInvalidNetworkSource))
+	assertInvalidParams(t, errorDetails, fmt.Errorf("the network source file does not exist: %w", api.ErrInvalidNetworkSource))
 }
 
 func testImportingValidFailSaves(t *testing.T) {
