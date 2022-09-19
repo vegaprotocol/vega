@@ -42,6 +42,7 @@
 - [6139](https://github.com/vegaprotocol/vega/issues/6139) - Return the key on `session.list_keys` endpoint on wallet API version 2
 
 ### 🛠 Improvements
+- [5971](https://github.com/vegaprotocol/vega/issues/5971) - Add headers `X-Block-Height`, `X-Block-Timestamp` and `X-Vega-Connection` to all API responses
 - [5694](https://github.com/vegaprotocol/vega/issues/5694) - Add field `settlementPriceDecimals` to GraphQL `Future` and `FutureProduct` types
 - [6048](https://github.com/vegaprotocol/vega/issues/6048) - Upgrade `golangci-lint` to `1.49.0` and implement its suggestions
 - [5807](https://github.com/vegaprotocol/vega/issues/5807) - Add Vega tools: `stream`, `snapshot` and `checkpoint`
