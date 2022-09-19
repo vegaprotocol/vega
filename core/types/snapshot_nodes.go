@@ -1297,14 +1297,14 @@ func (*PayloadBankingDeposits) Namespace() SnapshotNamespace {
 
 func PayloadBankingRecurringTransfersFromProto(pbd *snapshot.Payload_BankingRecurringTransfers) *PayloadBankingRecurringTransfers {
 	return &PayloadBankingRecurringTransfers{
-		BankingRecurringTransfers: pbd.BankingRecurringTransfers.RecurringTranfers,
+		BankingRecurringTransfers: pbd.BankingRecurringTransfers.RecurringTransfers,
 	}
 }
 
 func (p PayloadBankingRecurringTransfers) IntoProto() *snapshot.Payload_BankingRecurringTransfers {
 	return &snapshot.Payload_BankingRecurringTransfers{
 		BankingRecurringTransfers: &snapshot.BankingRecurringTransfers{
-			RecurringTranfers: p.BankingRecurringTransfers,
+			RecurringTransfers: p.BankingRecurringTransfers,
 		},
 	}
 }
