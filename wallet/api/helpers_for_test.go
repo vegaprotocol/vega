@@ -7,6 +7,8 @@ import (
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/wallet/api"
+	"code.vegaprotocol.io/vega/wallet/api/node"
+	"code.vegaprotocol.io/vega/wallet/network"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -49,6 +51,14 @@ func assertInternalError(t *testing.T, errorDetails *jsonrpc.ErrorDetails, expec
 	require.NotNil(t, errorDetails)
 	assert.Equal(t, jsonrpc.ErrorCodeInternalError, errorDetails.Code)
 	assert.Equal(t, "Internal error", errorDetails.Message)
+	assert.Equal(t, expectedErr.Error(), errorDetails.Data)
+}
+
+func assertNetworkError(t *testing.T, errorDetails *jsonrpc.ErrorDetails, expectedErr error) {
+	t.Helper()
+	require.NotNil(t, errorDetails)
+	assert.Equal(t, api.ErrorCodeNodeRequestFailed, errorDetails.Code)
+	assert.Equal(t, "Network error", errorDetails.Message)
 	assert.Equal(t, expectedErr.Error(), errorDetails.Data)
 }
 
@@ -100,6 +110,22 @@ func walletWithKey(t *testing.T) (wallet.Wallet, wallet.KeyPair) {
 	return w, kp
 }
 
+func newNetwork(t *testing.T) network.Network {
+	t.Helper()
+
+	return network.Network{
+		Name: vgrand.RandomStr(5),
+		API: network.APIConfig{
+			GRPC: network.GRPCConfig{
+				Hosts: []string{
+					"n01.localtest.vega.xyz:3007",
+				},
+				Retries: 5,
+			},
+		},
+	}
+}
+
 func generateKey(t *testing.T, w wallet.Wallet) wallet.KeyPair {
 	t.Helper()
 
@@ -124,4 +150,13 @@ func connectWallet(t *testing.T, sessions *api.Sessions, hostname string, w wall
 		t.Fatalf("could not connect to a wallet for test: %v", err)
 	}
 	return token
+}
+
+func unexpectedNodeSelectorCall(t *testing.T) api.NodeSelectorBuilder {
+	t.Helper()
+
+	return func(hosts []string, retries uint64) (node.Selector, error) {
+		t.Fatalf("node selector shouldn't be called")
+		return nil, nil
+	}
 }

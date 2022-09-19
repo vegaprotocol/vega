@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 
+	"code.vegaprotocol.io/vega/datanode/api"
 	"code.vegaprotocol.io/vega/datanode/broker"
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
 	"code.vegaprotocol.io/vega/datanode/config"
@@ -31,7 +32,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-func (l *NodeCommand) persistentPre(args []string) (err error) {
+func (l *NodeCommand) persistentPre([]string) (err error) {
 	// this shouldn't happen...
 	if l.cancel != nil {
 		l.cancel()
@@ -179,7 +180,7 @@ func (l *NodeCommand) setupStoresSQL() error {
 }
 
 // we've already set everything up WRT arguments etc... just bootstrap the node.
-func (l *NodeCommand) preRun(_ []string) (err error) {
+func (l *NodeCommand) preRun([]string) (err error) {
 	// ensure that context is cancelled if we return an error here
 	defer func() {
 		if err != nil {
@@ -249,8 +250,8 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		return err
 	}
 
-	l.vegaCoreServiceClient = vegaprotoapi.NewCoreServiceClient(conn)
-
+	coreClient := vegaprotoapi.NewCoreServiceClient(conn)
+	l.vegaCoreServiceClient = api.NewVegaCoreServiceClient(coreClient, conn.GetState)
 	return nil
 }
 

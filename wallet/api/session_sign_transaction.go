@@ -12,6 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
+	"code.vegaprotocol.io/vega/wallet/api/node"
 	wcommands "code.vegaprotocol.io/vega/wallet/commands"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/mitchellh/mapstructure"
@@ -35,7 +36,7 @@ type SignTransactionResult struct {
 
 type SignTransaction struct {
 	pipeline     Pipeline
-	nodeSelector NodeSelector
+	nodeSelector node.Selector
 	sessions     *Sessions
 }
 
@@ -56,10 +57,9 @@ func (h *SignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) 
 		return nil, requestNotPermittedError(ErrPublicKeyIsNotAllowedToBeUsed)
 	}
 
-	txReader := strings.NewReader(params.RawTransaction)
 	request := &walletpb.SubmitTransactionRequest{}
-	if err := jsonpb.Unmarshal(txReader, request); err != nil {
-		return nil, invalidParams(fmt.Errorf("could not parse the transaction: %w", err))
+	if err := jsonpb.Unmarshal(strings.NewReader(params.RawTransaction), request); err != nil {
+		return nil, invalidParams(ErrTransactionIsMalformed)
 	}
 
 	request.PubKey = params.PublicKey
@@ -82,13 +82,13 @@ func (h *SignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) 
 
 	currentNode, err := h.nodeSelector.Node(ctx)
 	if err != nil {
-		h.pipeline.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not find an healthy node: %w", err))
+		h.pipeline.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not find a healthy node: %w", err))
 		return nil, networkError(ErrorCodeNodeRequestFailed, ErrNoHealthyNodeAvailable)
 	}
 
 	lastBlockData, err := currentNode.LastBlock(ctx)
 	if err != nil {
-		h.pipeline.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not get last block from node: %w", err))
+		h.pipeline.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not get the latest block from the node: %w", err))
 		return nil, networkError(ErrorCodeNodeRequestFailed, ErrCouldNotGetLastBlockInformation)
 	}
 
@@ -114,9 +114,9 @@ func (h *SignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) 
 
 	// Generate the proof of work for the transaction.
 	txID := vgcrypto.RandomHash()
-	powNonce, _, err := vgcrypto.PoW(lastBlockData.Hash, txID, uint(lastBlockData.SpamPowDifficulty), vgcrypto.Sha3)
+	powNonce, _, err := vgcrypto.PoW(lastBlockData.Hash, txID, uint(lastBlockData.SpamPowDifficulty), lastBlockData.SpamPowHashFunction)
 	if err != nil {
-		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not compute the proof of work: %w", err))
+		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not compute the proof-of-work: %w", err))
 		return nil, internalError(ErrCouldNotSignTransaction)
 	}
 	tx.Pow = &commandspb.ProofOfWork{
@@ -131,7 +131,7 @@ func (h *SignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) 
 	}, nil
 }
 
-func NewSignTransaction(pipeline Pipeline, nodeSelector NodeSelector, sessions *Sessions) *SignTransaction {
+func NewSignTransaction(pipeline Pipeline, nodeSelector node.Selector, sessions *Sessions) *SignTransaction {
 	return &SignTransaction{
 		pipeline:     pipeline,
 		nodeSelector: nodeSelector,

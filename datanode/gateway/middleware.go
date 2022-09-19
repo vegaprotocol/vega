@@ -13,6 +13,7 @@
 package gateway
 
 import (
+	"context"
 	"net/http"
 	"strings"
 	"time"
@@ -63,4 +64,54 @@ func MetricCollectionMiddleware(log *logging.Logger, next http.Handler) http.Han
 
 		metrics.APIRequestAndTimeREST(uri, timetaken.Seconds())
 	})
+}
+
+// Chain builds the middleware Chain recursively, functions are first class.
+func Chain(f http.Handler, m ...func(http.Handler) http.Handler) http.Handler {
+	// if our Chain is done, use the original handler func
+	if len(m) == 0 {
+		return f
+	}
+	// otherwise nest the handler funcs
+	return m[0](Chain(f, m[1:cap(m)]...))
+}
+
+func WithAddHeadersMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		iw := &InjectableResponseWriter{ResponseWriter: w}
+		ctx = context.WithValue(ctx, injectableWriterKey{}, iw)
+		next.ServeHTTP(iw, r.WithContext(ctx))
+	})
+}
+
+type InjectableResponseWriter struct {
+	http.ResponseWriter
+	headers http.Header
+}
+
+type injectableWriterKey struct{}
+
+func InjectableWriterFromContext(ctx context.Context) (*InjectableResponseWriter, bool) {
+	if ctx == nil {
+		return nil, false
+	}
+	val := ctx.Value(injectableWriterKey{})
+	if val == nil {
+		return nil, false
+	}
+	return val.(*InjectableResponseWriter), true
+}
+
+func (i *InjectableResponseWriter) Write(data []byte) (int, error) {
+	for k, v := range i.headers {
+		if len(v) > 0 {
+			i.ResponseWriter.Header().Add(k, v[0])
+		}
+	}
+	return i.ResponseWriter.Write(data)
+}
+
+func (i *InjectableResponseWriter) SetHeaders(headers http.Header) {
+	i.headers = headers
 }

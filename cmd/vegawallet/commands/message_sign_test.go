@@ -7,7 +7,7 @@ import (
 	cmd "code.vegaprotocol.io/vega/cmd/vegawallet/commands"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
-	"code.vegaprotocol.io/vega/wallet/wallet"
+	"code.vegaprotocol.io/vega/wallet/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -27,20 +27,20 @@ func testSignMessageFlagsValidFlagsSucceeds(t *testing.T) {
 	passphrase, passphraseFilePath := NewPassphraseFile(t, testDir)
 	walletName := vgrand.RandomStr(10)
 	pubKey := vgrand.RandomStr(20)
-	decodedMessage := []byte(vgrand.RandomStr(20))
+	encodedMessage := vgrand.RandomStr(20)
 
 	f := &cmd.SignMessageFlags{
 		Wallet:         walletName,
 		PubKey:         pubKey,
-		Message:        base64.StdEncoding.EncodeToString(decodedMessage),
+		Message:        encodedMessage,
 		PassphraseFile: passphraseFilePath,
 	}
 
-	expectedReq := &wallet.SignMessageRequest{
-		Wallet:     walletName,
-		PubKey:     pubKey,
-		Message:    decodedMessage,
-		Passphrase: passphrase,
+	expectedReq := api.AdminSignMessageParams{
+		Wallet:         walletName,
+		PubKey:         pubKey,
+		EncodedMessage: encodedMessage,
+		Passphrase:     passphrase,
 	}
 
 	// when
@@ -64,7 +64,7 @@ func testSignMessageFlagsMissingWalletFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("wallet"))
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func testSignMessageFlagsMissingPubKeyFails(t *testing.T) {
@@ -79,7 +79,7 @@ func testSignMessageFlagsMissingPubKeyFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("pubkey"))
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func testSignMessageFlagsMissingMessageFails(t *testing.T) {
@@ -94,7 +94,7 @@ func testSignMessageFlagsMissingMessageFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("message"))
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func testSignMessageFlagsMalformedMessageFails(t *testing.T) {
@@ -109,7 +109,7 @@ func testSignMessageFlagsMalformedMessageFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBase64EncodedError("message"))
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func newSignMessageFlags(t *testing.T, testDir string) *cmd.SignMessageFlags {
