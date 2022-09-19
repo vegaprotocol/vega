@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -9,7 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
-	"code.vegaprotocol.io/vega/wallet/crypto"
+	"code.vegaprotocol.io/vega/wallet/api"
 
 	"github.com/spf13/cobra"
 )
@@ -27,10 +29,18 @@ var (
 	`)
 )
 
-type VerifyMessageHandler func(*crypto.VerifyMessageRequest) (bool, error)
+type VerifyMessageHandler func(api.AdminVerifyMessageParams) (api.AdminVerifyMessageResult, error)
 
 func NewCmdVerifyMessage(w io.Writer, rf *RootFlags) *cobra.Command {
-	return BuildCmdVerifyMessage(w, crypto.VerifyMessage, rf)
+	h := func(params api.AdminVerifyMessageParams) (api.AdminVerifyMessageResult, error) {
+		verifyMessage := api.NewAdminVerifyMessage()
+		rawResult, errorDetails := verifyMessage.Handle(context.Background(), params)
+		if errorDetails != nil {
+			return api.AdminVerifyMessageResult{}, errors.New(errorDetails.Data)
+		}
+		return rawResult.(api.AdminVerifyMessageResult), nil
+	}
+	return BuildCmdVerifyMessage(w, h, rf)
 }
 
 func BuildCmdVerifyMessage(w io.Writer, handler VerifyMessageHandler, rf *RootFlags) *cobra.Command {
@@ -47,19 +57,19 @@ func BuildCmdVerifyMessage(w io.Writer, handler VerifyMessageHandler, rf *RootFl
 				return err
 			}
 
-			isValid, err := handler(req)
+			resp, err := handler(req)
 			if err != nil {
 				return err
 			}
 
 			switch rf.Output {
 			case flags.InteractiveOutput:
-				PrintVerifyMessageResponse(w, isValid)
+				PrintVerifyMessageResponse(w, resp.IsValid)
 			case flags.JSONOutput:
 				return printer.FprintJSON(w, struct {
 					IsValid bool `json:"isValid"`
 				}{
-					IsValid: isValid,
+					IsValid: resp.IsValid,
 				})
 			}
 
@@ -92,31 +102,31 @@ type VerifyMessageFlags struct {
 	PubKey    string
 }
 
-func (f *VerifyMessageFlags) Validate() (*crypto.VerifyMessageRequest, error) {
-	req := &crypto.VerifyMessageRequest{}
+func (f *VerifyMessageFlags) Validate() (api.AdminVerifyMessageParams, error) {
+	req := api.AdminVerifyMessageParams{}
 
 	if len(f.PubKey) == 0 {
-		return nil, flags.MustBeSpecifiedError("pubkey")
+		return api.AdminVerifyMessageParams{}, flags.MustBeSpecifiedError("pubkey")
 	}
 	req.PubKey = f.PubKey
 
 	if len(f.Signature) == 0 {
-		return nil, flags.MustBeSpecifiedError("signature")
+		return api.AdminVerifyMessageParams{}, flags.MustBeSpecifiedError("signature")
 	}
-	decodedSignature, err := base64.StdEncoding.DecodeString(f.Signature)
+	_, err := base64.StdEncoding.DecodeString(f.Signature)
 	if err != nil {
-		return nil, flags.MustBase64EncodedError("signature")
+		return api.AdminVerifyMessageParams{}, flags.MustBase64EncodedError("signature")
 	}
-	req.Signature = decodedSignature
+	req.EncodedSignature = f.Signature
 
 	if len(f.Message) == 0 {
-		return nil, flags.MustBeSpecifiedError("message")
+		return api.AdminVerifyMessageParams{}, flags.MustBeSpecifiedError("message")
 	}
-	decodedMessage, err := base64.StdEncoding.DecodeString(f.Message)
+	_, err = base64.StdEncoding.DecodeString(f.Message)
 	if err != nil {
-		return nil, flags.MustBase64EncodedError("message")
+		return api.AdminVerifyMessageParams{}, flags.MustBase64EncodedError("message")
 	}
-	req.Message = decodedMessage
+	req.EncodedMessage = f.Message
 
 	return req, nil
 }

@@ -13,6 +13,7 @@ import (
 	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
+	walletnode "code.vegaprotocol.io/vega/wallet/api/node"
 	wcommands "code.vegaprotocol.io/vega/wallet/commands"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/mitchellh/mapstructure"
@@ -41,7 +42,7 @@ type SendTransactionResult struct {
 
 type SendTransaction struct {
 	pipeline     Pipeline
-	nodeSelector NodeSelector
+	nodeSelector walletnode.Selector
 	sessions     *Sessions
 }
 
@@ -65,7 +66,7 @@ func (h *SendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) 
 	txReader := strings.NewReader(params.RawTransaction)
 	request := &walletpb.SubmitTransactionRequest{}
 	if err := jsonpb.Unmarshal(txReader, request); err != nil {
-		return nil, invalidParams(fmt.Errorf("could not parse the transaction: %w", err))
+		return nil, invalidParams(ErrTransactionIsMalformed)
 	}
 
 	request.PubKey = params.PublicKey
@@ -89,7 +90,7 @@ func (h *SendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) 
 	h.pipeline.Log(ctx, traceID, InfoLog, "Looking for a healthy node...")
 	currentNode, err := h.nodeSelector.Node(ctx)
 	if err != nil {
-		h.pipeline.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not find an healthy node: %w", err))
+		h.pipeline.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not find a healthy node: %w", err))
 		return nil, networkError(ErrorCodeNodeRequestFailed, ErrNoHealthyNodeAvailable)
 	}
 	h.pipeline.Log(ctx, traceID, SuccessLog, "A healthy node has been found.")
@@ -97,10 +98,15 @@ func (h *SendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) 
 	h.pipeline.Log(ctx, traceID, InfoLog, "Retrieving latest block information...")
 	lastBlockData, err := currentNode.LastBlock(ctx)
 	if err != nil {
-		h.pipeline.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not get latest block from node: %w", err))
+		h.pipeline.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not get the latest block from node: %w", err))
 		return nil, networkError(ErrorCodeNodeRequestFailed, ErrCouldNotGetLastBlockInformation)
 	}
 	h.pipeline.Log(ctx, traceID, SuccessLog, "Latest block information has been retrieved.")
+
+	if lastBlockData.ChainId == "" {
+		h.pipeline.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not get chainID from node: %w", err))
+		return nil, networkError(ErrorCodeNodeRequestFailed, ErrCouldNotGetChainIDFromNode)
+	}
 
 	// Sign the payload.
 	inputData, err := wcommands.ToMarshaledInputData(request, lastBlockData.Height, lastBlockData.ChainId)
@@ -129,7 +135,7 @@ func (h *SendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) 
 	txID := vgcrypto.RandomHash()
 	powNonce, _, err := vgcrypto.PoW(lastBlockData.Hash, txID, uint(lastBlockData.SpamPowDifficulty), vgcrypto.Sha3)
 	if err != nil {
-		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not compute the proof of work: %w", err))
+		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not compute the proof-of-work: %w", err))
 		return nil, internalError(ErrCouldNotSendTransaction)
 	}
 	tx.Pow = &commandspb.ProofOfWork{
@@ -171,7 +177,7 @@ func (h *SendTransaction) notifyTransactionStatus(ctx context.Context, traceID, 
 	h.pipeline.NotifyTransactionStatus(ctx, traceID, txHash, humanReadableTx, err, sentAt)
 }
 
-func NewSendTransaction(pipeline Pipeline, nodeSelector NodeSelector, sessions *Sessions) *SendTransaction {
+func NewSendTransaction(pipeline Pipeline, nodeSelector walletnode.Selector, sessions *Sessions) *SendTransaction {
 	return &SendTransaction{
 		pipeline:     pipeline,
 		nodeSelector: nodeSelector,
@@ -210,7 +216,7 @@ func validateSendTransactionParams(rawParams jsonrpc.Params) (ParsedSendTransact
 		}
 	}
 	if !isValidSendingMode {
-		return ParsedSendTransactionParams{}, fmt.Errorf("sending mode %q is not a valid one", params.SendingMode)
+		return ParsedSendTransactionParams{}, fmt.Errorf("the sending mode %q is not a valid one", params.SendingMode)
 	}
 
 	if sendingMode == apipb.SubmitTransactionRequest_TYPE_UNSPECIFIED {

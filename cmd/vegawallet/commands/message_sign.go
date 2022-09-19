@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -9,7 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
-	"code.vegaprotocol.io/vega/wallet/wallet"
+	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
 	"github.com/spf13/cobra"
@@ -26,16 +28,21 @@ var (
 	`)
 )
 
-type SignMessageHandler func(*wallet.SignMessageRequest) (*wallet.SignMessageResponse, error)
+type SignMessageHandler func(api.AdminSignMessageParams) (api.AdminSignMessageResult, error)
 
 func NewCmdSignMessage(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(req *wallet.SignMessageRequest) (*wallet.SignMessageResponse, error) {
+	h := func(params api.AdminSignMessageParams) (api.AdminSignMessageResult, error) {
 		s, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
-			return nil, fmt.Errorf("couldn't initialise wallets store: %w", err)
+			return api.AdminSignMessageResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 
-		return wallet.SignMessage(s, req)
+		signMessage := api.NewAdminSignMessage(s)
+		rawResult, errorDetails := signMessage.Handle(context.Background(), params)
+		if errorDetails != nil {
+			return api.AdminSignMessageResult{}, errors.New(errorDetails.Data)
+		}
+		return rawResult.(api.AdminSignMessageResult), nil
 	}
 	return BuildCmdSignMessage(w, h, rf)
 }
@@ -66,7 +73,7 @@ func BuildCmdSignMessage(w io.Writer, handler SignMessageHandler, rf *RootFlags)
 				return printer.FprintJSON(w, struct {
 					Signature string `json:"signature"`
 				}{
-					Signature: resp.Base64,
+					Signature: resp.Base64Signature,
 				})
 			}
 
@@ -107,45 +114,45 @@ type SignMessageFlags struct {
 	PassphraseFile string
 }
 
-func (f *SignMessageFlags) Validate() (*wallet.SignMessageRequest, error) {
-	req := &wallet.SignMessageRequest{}
+func (f *SignMessageFlags) Validate() (api.AdminSignMessageParams, error) {
+	req := api.AdminSignMessageParams{}
 
 	if len(f.Wallet) == 0 {
-		return nil, flags.MustBeSpecifiedError("wallet")
+		return api.AdminSignMessageParams{}, flags.MustBeSpecifiedError("wallet")
 	}
 	req.Wallet = f.Wallet
 
 	if len(f.PubKey) == 0 {
-		return nil, flags.MustBeSpecifiedError("pubkey")
+		return api.AdminSignMessageParams{}, flags.MustBeSpecifiedError("pubkey")
 	}
 	req.PubKey = f.PubKey
 
 	if len(f.Message) == 0 {
-		return nil, flags.MustBeSpecifiedError("message")
+		return api.AdminSignMessageParams{}, flags.MustBeSpecifiedError("message")
 	}
-	decodedMessage, err := base64.StdEncoding.DecodeString(f.Message)
+	_, err := base64.StdEncoding.DecodeString(f.Message)
 	if err != nil {
-		return nil, flags.MustBase64EncodedError("message")
+		return api.AdminSignMessageParams{}, flags.MustBase64EncodedError("message")
 	}
-	req.Message = decodedMessage
+	req.EncodedMessage = f.Message
 
 	passphrase, err := flags.GetPassphrase(f.PassphraseFile)
 	if err != nil {
-		return nil, err
+		return api.AdminSignMessageParams{}, err
 	}
 	req.Passphrase = passphrase
 
 	return req, nil
 }
 
-func PrintSignMessageResponse(w io.Writer, req *wallet.SignMessageResponse) {
+func PrintSignMessageResponse(w io.Writer, req api.AdminSignMessageResult) {
 	p := printer.NewInteractivePrinter(w)
 
 	str := p.String()
 	defer p.Print(str)
 
 	str.CheckMark().SuccessText("Message signature successful").NextSection()
-	str.Text("Signature (base64-encoded):").NextLine().WarningText(req.Base64).NextSection()
+	str.Text("Signature (base64-encoded):").NextLine().WarningText(req.Base64Signature).NextSection()
 
 	str.BlueArrow().InfoText("Sign a message").NextLine()
 	str.Text("To verify a message, see the following command:").NextSection()
