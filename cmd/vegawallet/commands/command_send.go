@@ -183,12 +183,6 @@ func (f *SendCommandFlags) Validate() (*SendCommandRequest, error) {
 	req.NodeAddress = f.NodeAddress
 	req.Network = f.Network
 
-	passphrase, err := flags.GetPassphrase(f.PassphraseFile)
-	if err != nil {
-		return nil, err
-	}
-	req.Passphrase = passphrase
-
 	if len(f.PubKey) == 0 {
 		return nil, flags.MustBeSpecifiedError("pubkey")
 	}
@@ -208,6 +202,12 @@ func (f *SendCommandFlags) Validate() (*SendCommandRequest, error) {
 	if errs := wcommands.CheckSubmitTransactionRequest(req.Request); !errs.Empty() {
 		return nil, fmt.Errorf("invalid request: %w", errs)
 	}
+
+	passphrase, err := flags.GetPassphrase(f.PassphraseFile)
+	if err != nil {
+		return nil, err
+	}
+	req.Passphrase = passphrase
 
 	return req, nil
 }

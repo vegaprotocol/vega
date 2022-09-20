@@ -8,7 +8,7 @@ import (
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	"code.vegaprotocol.io/vega/wallet/api"
-	"code.vegaprotocol.io/vega/wallet/api/mocks"
+	nodemocks "code.vegaprotocol.io/vega/wallet/api/node/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -82,8 +82,8 @@ func testFailingToGetLastBlockDoesNotReturnChainID(t *testing.T) {
 
 type GetChainIDHandler struct {
 	*api.GetChainID
-	nodeSelector *mocks.MockNodeSelector
-	node         *mocks.MockNode
+	nodeSelector *nodemocks.MockSelector
+	node         *nodemocks.MockNode
 }
 
 func (h *GetChainIDHandler) handle(t *testing.T, ctx context.Context) (api.GetChainIDResult, *jsonrpc.ErrorDetails) {
@@ -104,8 +104,8 @@ func newGetChainIDHandler(t *testing.T) *GetChainIDHandler {
 	t.Helper()
 
 	ctrl := gomock.NewController(t)
-	nodeSelector := mocks.NewMockNodeSelector(ctrl)
-	node := mocks.NewMockNode(ctrl)
+	nodeSelector := nodemocks.NewMockSelector(ctrl)
+	node := nodemocks.NewMockNode(ctrl)
 
 	return &GetChainIDHandler{
 		GetChainID:   api.NewGetChainID(nodeSelector),

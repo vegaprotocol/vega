@@ -110,10 +110,10 @@ func readImportNetworkSource(params AdminImportNetworkParams) (*network.Network,
 	if len(params.FilePath) != 0 {
 		exists, err := vgfs.FileExists(params.FilePath)
 		if err != nil {
-			return nil, fmt.Errorf("couldn't check file's existence at %s: %w", params.FilePath, err)
+			return nil, fmt.Errorf("could not check file's existence at %q: %w", params.FilePath, err)
 		}
 		if !exists {
-			return nil, fmt.Errorf("network source file does not exist: %w", ErrInvalidNetworkSource)
+			return nil, fmt.Errorf("the network source file does not exist: %w", ErrInvalidNetworkSource)
 		}
 
 		err = rs.ReadFromFile(params.FilePath, net)
@@ -121,7 +121,7 @@ func readImportNetworkSource(params AdminImportNetworkParams) (*network.Network,
 			return nil, fmt.Errorf("network source file is empty: %w", ErrInvalidNetworkSource)
 		}
 		if err != nil {
-			return nil, fmt.Errorf("couldn't read network configuration at %s: %w", params.FilePath, err)
+			return nil, fmt.Errorf("could not read the network configuration at %q: %w", params.FilePath, err)
 		}
 
 		return net, nil
@@ -133,7 +133,7 @@ func readImportNetworkSource(params AdminImportNetworkParams) (*network.Network,
 			return nil, fmt.Errorf("network source url points to an empty file: %w", ErrInvalidNetworkSource)
 		}
 		if err != nil {
-			return nil, fmt.Errorf("couldn't fetch network configuration from %s: %w", params.URL, err)
+			return nil, fmt.Errorf("could not fetch the network configuration from %q: %w", params.URL, err)
 		}
 		return net, nil
 	}

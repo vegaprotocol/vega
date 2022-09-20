@@ -11,6 +11,7 @@ import (
 	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/api/mocks"
+	nodemock "code.vegaprotocol.io/vega/wallet/api/node/mocks"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -103,7 +104,7 @@ func testSigningTransactionWithValidParamsSucceeds(t *testing.T) {
 	hostname := "vega.xyz"
 	encodedTransaction := "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K"
 	decodedTransaction, _ := base64.StdEncoding.DecodeString(encodedTransaction)
-	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{
+	wallet1, _ := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access:         wallet.ReadAccess,
 			RestrictedKeys: nil,
@@ -119,9 +120,10 @@ func testSigningTransactionWithValidParamsSucceeds(t *testing.T) {
 	handler.pipeline.EXPECT().RequestTransactionSigningReview(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx).Times(1).Return(handler.node, nil)
 	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(&apipb.LastBlockHeightResponse{
-		Height:            100,
-		Hash:              vgrand.RandomStr(64),
-		SpamPowDifficulty: 1,
+		Height:              100,
+		Hash:                vgrand.RandomStr(64),
+		SpamPowHashFunction: "sha3_24_rounds",
+		SpamPowDifficulty:   1,
 	}, nil)
 	handler.pipeline.EXPECT().NotifySuccessfulRequest(ctx, traceID).Times(1)
 
@@ -143,7 +145,7 @@ func testSigningTransactionWithInvalidTokenFails(t *testing.T) {
 	ctx, _ := contextWithTraceID()
 	hostname := "vega.xyz"
 	encodedTransaction := "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K"
-	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{})
+	wallet1, _ := walletWithPerms(t, hostname, wallet.Permissions{})
 	_, _ = wallet1.GenerateKeyPair(nil)
 	pubKey := wallet1.ListPublicKeys()[0].Key()
 
@@ -167,7 +169,7 @@ func testSigningTransactionWithoutNeededPermissionsDoesNotSignTransaction(t *tes
 	ctx, _ := contextWithTraceID()
 	hostname := "vega.xyz"
 	encodedTransaction := "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K"
-	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{})
+	wallet1, _ := walletWithPerms(t, hostname, wallet.Permissions{})
 	_, _ = wallet1.GenerateKeyPair(nil)
 	pubKey := wallet1.ListPublicKeys()[0].Key()
 
@@ -193,7 +195,7 @@ func testRefusingSigningOfTransactionDoesNotSignTransaction(t *testing.T) {
 	hostname := "vega.xyz"
 	encodedTransaction := "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K"
 	decodedTransaction, _ := base64.StdEncoding.DecodeString(encodedTransaction)
-	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{
+	wallet1, _ := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access:         wallet.ReadAccess,
 			RestrictedKeys: nil,
@@ -226,7 +228,7 @@ func testCancellingTheReviewDoesNotSignTransaction(t *testing.T) {
 	hostname := "vega.xyz"
 	encodedTransaction := "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K"
 	decodedTransaction, _ := base64.StdEncoding.DecodeString(encodedTransaction)
-	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{
+	wallet1, _ := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access:         wallet.ReadAccess,
 			RestrictedKeys: nil,
@@ -259,7 +261,7 @@ func testInterruptingTheRequestDoesNotSignTransaction(t *testing.T) {
 	hostname := "vega.xyz"
 	encodedTransaction := "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K"
 	decodedTransaction, _ := base64.StdEncoding.DecodeString(encodedTransaction)
-	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{
+	wallet1, _ := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access:         wallet.ReadAccess,
 			RestrictedKeys: nil,
@@ -293,7 +295,7 @@ func testGettingInternalErrorDuringReviewDoesNotSignTransaction(t *testing.T) {
 	hostname := "vega.xyz"
 	encodedTransaction := "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K"
 	decodedTransaction, _ := base64.StdEncoding.DecodeString(encodedTransaction)
-	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{
+	wallet1, _ := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access:         wallet.ReadAccess,
 			RestrictedKeys: nil,
@@ -327,7 +329,7 @@ func testNoHealthyNodeAvailableDoesNotSignTransaction(t *testing.T) {
 	hostname := "vega.xyz"
 	encodedTransaction := "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K"
 	decodedTransaction, _ := base64.StdEncoding.DecodeString(encodedTransaction)
-	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{
+	wallet1, _ := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access:         wallet.ReadAccess,
 			RestrictedKeys: nil,
@@ -342,7 +344,7 @@ func testNoHealthyNodeAvailableDoesNotSignTransaction(t *testing.T) {
 	// -- expected calls
 	handler.pipeline.EXPECT().RequestTransactionSigningReview(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx).Times(1).Return(nil, assert.AnError)
-	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.NetworkError, fmt.Errorf("could not find an healthy node: %w", assert.AnError)).Times(1)
+	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.NetworkError, fmt.Errorf("could not find a healthy node: %w", assert.AnError)).Times(1)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.SignTransactionParams{
@@ -365,7 +367,7 @@ func testFailingToGetLastBlockDoesNotSignTransaction(t *testing.T) {
 	hostname := "vega.xyz"
 	encodedTransaction := "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K"
 	decodedTransaction, _ := base64.StdEncoding.DecodeString(encodedTransaction)
-	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{
+	wallet1, _ := walletWithPerms(t, hostname, wallet.Permissions{
 		PublicKeys: wallet.PublicKeysPermission{
 			Access:         wallet.ReadAccess,
 			RestrictedKeys: nil,
@@ -381,7 +383,7 @@ func testFailingToGetLastBlockDoesNotSignTransaction(t *testing.T) {
 	handler.pipeline.EXPECT().RequestTransactionSigningReview(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx).Times(1).Return(handler.node, nil)
 	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(nil, assert.AnError)
-	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.NetworkError, fmt.Errorf("could not get last block from node: %w", assert.AnError)).Times(1)
+	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.NetworkError, fmt.Errorf("could not get the latest block from the node: %w", assert.AnError)).Times(1)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.SignTransactionParams{
@@ -403,8 +405,8 @@ type signTransactionHandler struct {
 	ctrl         *gomock.Controller
 	pipeline     *mocks.MockPipeline
 	sessions     *api.Sessions
-	nodeSelector *mocks.MockNodeSelector
-	node         *mocks.MockNode
+	nodeSelector *nodemock.MockSelector
+	node         *nodemock.MockNode
 }
 
 func (h *signTransactionHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.SignTransactionResult, *jsonrpc.ErrorDetails) {
@@ -425,11 +427,11 @@ func newSignTransactionHandler(t *testing.T) *signTransactionHandler {
 	t.Helper()
 
 	ctrl := gomock.NewController(t)
-	nodeSelector := mocks.NewMockNodeSelector(ctrl)
+	nodeSelector := nodemock.NewMockSelector(ctrl)
 	pipeline := mocks.NewMockPipeline(ctrl)
 
 	sessions := api.NewSessions()
-	node := mocks.NewMockNode(ctrl)
+	node := nodemock.NewMockNode(ctrl)
 
 	return &signTransactionHandler{
 		SignTransaction: api.NewSignTransaction(pipeline, nodeSelector, sessions),

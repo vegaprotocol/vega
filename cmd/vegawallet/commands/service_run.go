@@ -67,7 +67,7 @@ var (
 		# Start the service
 		{{.Software}} service run --network NETWORK
 
-		# Start the service with automatic consent of incoming transactions for API v1.
+		# Start the service with automatic consent of incoming transactions
 		{{.Software}} service run --network NETWORK --automatic-consent
 
 		# Start the service without verifying network version compatibility
@@ -110,7 +110,7 @@ func BuildCmdRunService(w io.Writer, handler RunServiceHandler, rf *RootFlags) *
 	cmd.Flags().BoolVar(&f.EnableAutomaticConsent,
 		"automatic-consent",
 		false,
-		"Automatically approve incoming transaction. Only use this flag when you have absolute trust in incoming transactions! No logs on standard output. Only works for API v1.",
+		"Automatically approve incoming transaction. Only use this flag when you have absolute trust in incoming transactions!",
 	)
 	cmd.PersistentFlags().BoolVar(&f.NoVersionCheck,
 		"no-version-check",
@@ -303,7 +303,7 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 		p.Print(p.String().CheckMark().Text("HTTP service stopped").NextLine())
 	}()
 
-	waitSig(ctx, cancel, cliLog, consentRequests, sentTransactions, receptionChan, responseChan, p)
+	waitSig(ctx, cancel, cliLog, consentRequests, sentTransactions, receptionChan, responseChan, f.EnableAutomaticConsent, p)
 
 	return nil
 }
@@ -317,6 +317,7 @@ func waitSig(
 	sentTransactions chan service.SentTransaction,
 	receptionChan <-chan pipeline.Envelope,
 	responseChan chan<- pipeline.Envelope,
+	enableAutomaticConsent bool,
 	p *printer.InteractivePrinter,
 ) {
 	gracefulStop := make(chan os.Signal, 1)
@@ -327,7 +328,7 @@ func waitSig(
 	signal.Notify(gracefulStop, syscall.SIGQUIT)
 
 	go func() {
-		if err := handleConsentRequests(ctx, log, consentRequests, sentTransactions, receptionChan, responseChan, p); err != nil {
+		if err := handleRequests(ctx, log, consentRequests, sentTransactions, receptionChan, responseChan, enableAutomaticConsent, p); err != nil {
 			cancelFunc()
 		}
 	}()
@@ -346,7 +347,7 @@ func waitSig(
 	}
 }
 
-func handleConsentRequests(ctx context.Context, log *zap.Logger, consentRequests chan service.ConsentRequest, sentTransactions chan service.SentTransaction, receptionChan <-chan pipeline.Envelope, responseChan chan<- pipeline.Envelope, p *printer.InteractivePrinter) error {
+func handleRequests(ctx context.Context, log *zap.Logger, consentRequests chan service.ConsentRequest, sentTransactions chan service.SentTransaction, receptionChan <-chan pipeline.Envelope, responseChan chan<- pipeline.Envelope, enableAutomaticConsent bool, p *printer.InteractivePrinter) error {
 	p.Print(p.String().NextSection())
 	for {
 		select {
@@ -354,47 +355,54 @@ func handleConsentRequests(ctx context.Context, log *zap.Logger, consentRequests
 			// nothing to do
 			return nil
 		case envelop := <-receptionChan:
-			if err := handleEnvelop(envelop, responseChan, p); err != nil {
+			if err := handleAPIv2Request(envelop, responseChan, enableAutomaticConsent, p); err != nil {
 				return err
 			}
 		case consentRequest := <-consentRequests:
-			m := jsonpb.Marshaler{Indent: "    "}
-			marshalledTx, err := m.MarshalToString(consentRequest.Tx)
-			if err != nil {
-				log.Error("couldn't marshal transaction from consent request", zap.Error(err))
+			if err := handleAPIv1Request(consentRequest, log, p, sentTransactions); err != nil {
 				return err
-			}
-
-			str := p.String()
-			str.BlueArrow().Text("New transaction received: ").NextLine()
-			str.InfoText(marshalledTx).NextLine()
-			p.Print(str)
-
-			if flags.DoYouApproveTx() {
-				log.Info("user approved the signing of the transaction", zap.Any("transaction", marshalledTx))
-				consentRequest.Confirmation <- service.ConsentConfirmation{Decision: true}
-				p.Print(p.String().CheckMark().SuccessText("Transaction approved").NextLine())
-
-				sentTx := <-sentTransactions
-				log.Info("transaction sent", zap.Any("ID", sentTx.TxID), zap.Any("hash", sentTx.TxHash))
-				if sentTx.Error != nil {
-					log.Error("transaction failed", zap.Any("transaction", marshalledTx))
-					p.Print(p.String().DangerBangMark().DangerText("Transaction failed").NextLine())
-					p.Print(p.String().DangerBangMark().DangerText("Error: ").DangerText(sentTx.Error.Error()).NextSection())
-				} else {
-					log.Info("transaction sent", zap.Any("hash", sentTx.TxHash))
-					p.Print(p.String().CheckMark().Text("Transaction with hash ").SuccessText(sentTx.TxHash).Text(" sent!").NextSection())
-				}
-			} else {
-				log.Info("user rejected the signing of the transaction", zap.Any("transaction", marshalledTx))
-				consentRequest.Confirmation <- service.ConsentConfirmation{Decision: false}
-				p.Print(p.String().DangerBangMark().DangerText("Transaction rejected").NextSection())
 			}
 		}
 	}
 }
 
-func handleEnvelop(envelop pipeline.Envelope, responseChan chan<- pipeline.Envelope, p *printer.InteractivePrinter) error {
+func handleAPIv1Request(consentRequest service.ConsentRequest, log *zap.Logger, p *printer.InteractivePrinter, sentTransactions chan service.SentTransaction) error {
+	m := jsonpb.Marshaler{Indent: "    "}
+	marshalledTx, err := m.MarshalToString(consentRequest.Tx)
+	if err != nil {
+		log.Error("couldn't marshal transaction from consent request", zap.Error(err))
+		return err
+	}
+
+	str := p.String()
+	str.BlueArrow().Text("New transaction received: ").NextLine()
+	str.InfoText(marshalledTx).NextLine()
+	p.Print(str)
+
+	if flags.DoYouApproveTx() {
+		log.Info("user approved the signing of the transaction", zap.Any("transaction", marshalledTx))
+		consentRequest.Confirmation <- service.ConsentConfirmation{Decision: true}
+		p.Print(p.String().CheckMark().SuccessText("Transaction approved").NextLine())
+
+		sentTx := <-sentTransactions
+		log.Info("transaction sent", zap.Any("ID", sentTx.TxID), zap.Any("hash", sentTx.TxHash))
+		if sentTx.Error != nil {
+			log.Error("transaction failed", zap.Any("transaction", marshalledTx))
+			p.Print(p.String().DangerBangMark().DangerText("Transaction failed").NextLine())
+			p.Print(p.String().DangerBangMark().DangerText("Error: ").DangerText(sentTx.Error.Error()).NextSection())
+		} else {
+			log.Info("transaction sent", zap.Any("hash", sentTx.TxHash))
+			p.Print(p.String().CheckMark().Text("Transaction with hash ").SuccessText(sentTx.TxHash).Text(" sent!").NextSection())
+		}
+	} else {
+		log.Info("user rejected the signing of the transaction", zap.Any("transaction", marshalledTx))
+		consentRequest.Confirmation <- service.ConsentConfirmation{Decision: false}
+		p.Print(p.String().DangerBangMark().DangerText("Transaction rejected").NextSection())
+	}
+	return nil
+}
+
+func handleAPIv2Request(envelop pipeline.Envelope, responseChan chan<- pipeline.Envelope, enableAutomaticConsent bool, p *printer.InteractivePrinter) error {
 	switch content := envelop.Content.(type) {
 	case pipeline.RequestWalletConnectionReview:
 		p.Print(p.String().BlueArrow().Text("The application \"").InfoText(content.Hostname).Text("\" wants to connect to your wallet.").NextLine())
@@ -439,9 +447,9 @@ func handleEnvelop(envelop pipeline.Envelope, responseChan chan<- pipeline.Envel
 			str.DangerBangMark().DangerText("The request has been canceled.").NextSection()
 			p.Print(str)
 		} else if content.Type == string(walletapi.UserError) {
-			p.Print(p.String().DangerBangMark().DangerText(content.Error).NextLine())
+			p.Print(p.String().DangerBangMark().DangerText(content.Error).NextSection())
 		} else {
-			p.Print(p.String().DangerBangMark().DangerText(fmt.Sprintf("Error: %s (%s)", content.Error, content.Type)).NextLine())
+			p.Print(p.String().DangerBangMark().DangerText(fmt.Sprintf("Error: %s (%s)", content.Error, content.Type)).NextSection())
 		}
 	case pipeline.Log:
 		str := p.String()
@@ -485,7 +493,10 @@ func handleEnvelop(envelop pipeline.Envelope, responseChan chan<- pipeline.Envel
 		fmtCmd := strings.Replace("  "+content.Transaction, "\n", "\n  ", -1)
 		str.InfoText(fmtCmd).NextLine()
 		p.Print(str)
-		approved := yesOrNo(p.String().QuestionMark().Text("Do you want to send this transaction?"), p)
+		approved := true
+		if !enableAutomaticConsent {
+			approved = yesOrNo(p.String().QuestionMark().Text("Do you want to send this transaction?"), p)
+		}
 		if approved {
 			p.Print(p.String().CheckMark().Text("Sending approved.").NextLine())
 		} else {
@@ -504,7 +515,10 @@ func handleEnvelop(envelop pipeline.Envelope, responseChan chan<- pipeline.Envel
 		fmtCmd := strings.Replace("  "+content.Transaction, "\n", "\n  ", -1)
 		str.InfoText(fmtCmd).NextLine()
 		p.Print(str)
-		approved := yesOrNo(p.String().QuestionMark().Text("Do you want to sign this transaction?"), p)
+		approved := true
+		if !enableAutomaticConsent {
+			approved = yesOrNo(p.String().QuestionMark().Text("Do you want to sign this transaction?"), p)
+		}
 		if approved {
 			p.Print(p.String().CheckMark().Text("Signing approved.").NextLine())
 		} else {
@@ -603,14 +617,14 @@ func readPassphrase(question *printer.FormattedString, p *printer.InteractivePri
 	return string(passphrase)
 }
 
-func buildNodeSelector(log *zap.Logger, nodesConfig network.GRPCConfig) (walletapi.NodeSelector, error) {
+func buildNodeSelector(log *zap.Logger, nodesConfig network.GRPCConfig) (walletnode.Selector, error) {
 	if len(nodesConfig.Hosts) == 0 {
 		return nil, ErrNoHostSpecified
 	}
 
-	nodes := make([]walletapi.Node, 0, len(nodesConfig.Hosts))
+	nodes := make([]walletnode.Node, 0, len(nodesConfig.Hosts))
 	for _, host := range nodesConfig.Hosts {
-		n, err := walletnode.NewGRPCNode(log.Named("grpc-node"), host, nodesConfig.Retries)
+		n, err := walletnode.NewRetryingGRPCNode(log.Named("grpc-node"), host, nodesConfig.Retries)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't initialize node for %q: %w", host, err)
 		}

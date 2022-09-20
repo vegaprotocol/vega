@@ -86,7 +86,7 @@ type tradingDataServiceV2 struct {
 	ledgerService              *service.Ledger
 	keyRotationService         *service.KeyRotations
 	ethereumKeyRotationService *service.EthereumKeyRotation
-	blockService               *service.Block
+	blockService               BlockService
 }
 
 func (t *tradingDataServiceV2) ListAccounts(ctx context.Context, req *v2.ListAccountsRequest) (*v2.ListAccountsResponse, error) {

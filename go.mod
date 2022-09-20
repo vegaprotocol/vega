@@ -82,15 +82,12 @@ require (
 	github.com/creachadair/taskgroup v0.3.2 // indirect
 	github.com/go-kit/log v0.2.1 // indirect
 	github.com/go-logfmt/logfmt v0.5.1 // indirect
-	github.com/golang/glog v1.0.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/gtank/merlin v0.1.1 // indirect
 	github.com/gtank/ristretto255 v0.1.2 // indirect
 	github.com/matryer/is v1.4.0 // indirect
 	github.com/mimoo/StrobeGo v0.0.0-20181016162300-f8f6d4d2b643 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
-	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.2.0 // indirect
-	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
 require (

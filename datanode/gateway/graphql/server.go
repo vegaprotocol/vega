@@ -30,14 +30,15 @@ import (
 	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
-	"golang.org/x/crypto/acme/autocert"
-	"google.golang.org/grpc"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/websocket"
 	"github.com/rs/cors"
+	"golang.org/x/crypto/acme/autocert"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 const (
@@ -51,7 +52,7 @@ type GraphServer struct {
 	log       *logging.Logger
 	vegaPaths paths.Paths
 
-	coreProxyClient     vegaprotoapi.CoreServiceClient
+	coreProxyClient     CoreProxyServiceClient
 	tradingDataClient   protoapi.TradingDataServiceClient
 	tradingDataClientV2 v2.TradingDataServiceClient
 	srv                 *http.Server
@@ -73,14 +74,15 @@ func New(
 	if err != nil {
 		return nil, err
 	}
-	tradingDataClient := protoapi.NewTradingDataServiceClient(tdconn)
-	tradingDataClientV2 := v2.NewTradingDataServiceClient(tdconn)
+	tradingDataClient := protoapi.NewTradingDataServiceClient(&clientConn{tdconn})
+	tradingDataClientV2 := v2.NewTradingDataServiceClient(&clientConn{tdconn})
 
 	tconn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
 	if err != nil {
 		return nil, err
 	}
-	tradingClient := vegaprotoapi.NewCoreServiceClient(tconn)
+
+	tradingClient := vegaprotoapi.NewCoreServiceClient(&clientConn{tconn})
 
 	return &GraphServer{
 		log:                 log,
@@ -106,6 +108,21 @@ func (g *GraphServer) ReloadConf(cfg gateway.Config) {
 	// TODO(): not updating the the actual server for now, may need to look at this later
 	// e.g restart the http server on another port or whatever
 	g.Config = cfg
+}
+
+type (
+	clientConn struct {
+		*grpc.ClientConn
+	}
+	metadataKey struct{}
+)
+
+func (c *clientConn) Invoke(ctx context.Context, method string, args, reply interface{}, opts ...grpc.CallOption) error {
+	mdi := ctx.Value(metadataKey{})
+	if md, ok := mdi.(*metadata.MD); ok {
+		opts = append(opts, grpc.Header(md))
+	}
+	return c.ClientConn.Invoke(ctx, method, args, reply, opts...)
 }
 
 // Start start the server in order receive http request.
@@ -146,6 +163,18 @@ func (g *GraphServer) Start() error {
 		return res, err
 	})
 
+	headersMiddleware := handler.ResolverMiddleware(func(ctx context.Context, next graphql.Resolver) (res interface{}, err error) {
+		md := metadata.MD{}
+		ctx = context.WithValue(ctx, metadataKey{}, &md)
+		res, err = next(ctx)
+		rw, ok := gateway.InjectableWriterFromContext(ctx)
+		if !ok {
+			return
+		}
+		rw.SetHeaders(http.Header(md))
+		return
+	})
+
 	handlr := http.NewServeMux()
 
 	if g.GraphQLPlaygroundEnabled {
@@ -156,6 +185,7 @@ func (g *GraphServer) Start() error {
 		handler.WebsocketKeepAliveDuration(10 * time.Second),
 		handler.WebsocketUpgrader(up),
 		loggingMiddleware,
+		headersMiddleware,
 		handler.RecoverFunc(func(ctx context.Context, err interface{}) error {
 			g.log.Warn("Recovering from error on graphQL handler",
 				logging.String("error", fmt.Sprintf("%s", err)))
@@ -170,12 +200,13 @@ func (g *GraphServer) Start() error {
 	}
 
 	// FIXME(jeremy): to be removed once everyone has move to the new endpoint
-	handlr.Handle("/query", gateway.RemoteAddrMiddleware(g.log, corz.Handler(
-		handler.GraphQL(NewExecutableSchema(config), options...),
-	)))
-	handlr.Handle(g.GraphQL.Endpoint, gateway.RemoteAddrMiddleware(g.log, corz.Handler(
-		handler.GraphQL(NewExecutableSchema(config), options...),
-	)))
+	middleware := corz.Handler(gateway.Chain(
+		gateway.RemoteAddrMiddleware(g.log, handler.GraphQL(NewExecutableSchema(config), options...)),
+		gateway.WithAddHeadersMiddleware,
+	))
+
+	handlr.Handle("/query", middleware)
+	handlr.Handle(g.GraphQL.Endpoint, middleware)
 
 	// Set up https if we are using it
 	var tlsConfig *tls.Config
