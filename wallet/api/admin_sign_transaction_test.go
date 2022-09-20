@@ -246,7 +246,7 @@ func testAdminSigningTransactionWithValidParamsSucceeds(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		nodeSelector := nodemocks.NewMockSelector(ctrl)
 		node := nodemocks.NewMockNode(ctrl)
-		nodeSelector.EXPECT().Node(ctx).Times(1).Return(node, nil)
+		nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(node, nil)
 		node.EXPECT().LastBlock(ctx).Times(1).Return(&apipb.LastBlockHeightResponse{
 			Height:              150,
 			Hash:                vgrand.RandomStr(64),
@@ -291,7 +291,7 @@ func testAdminSignTransactionGettingInternalErrorDuringWalletVerificationFails(t
 		ctrl := gomock.NewController(t)
 		nodeSelector := nodemocks.NewMockSelector(ctrl)
 		node := nodemocks.NewMockNode(ctrl)
-		nodeSelector.EXPECT().Node(ctx).Times(1).Return(node, nil)
+		nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(node, nil)
 		node.EXPECT().LastBlock(ctx).Times(1).Return(&apipb.LastBlockHeightResponse{
 			Height:              150,
 			Hash:                vgrand.RandomStr(64),
@@ -351,7 +351,7 @@ func testAdminSignTransactionGettingInternalErrorDuringWalletRetrievalFails(t *t
 		ctrl := gomock.NewController(t)
 		nodeSelector := nodemocks.NewMockSelector(ctrl)
 		node := nodemocks.NewMockNode(ctrl)
-		nodeSelector.EXPECT().Node(ctx).Times(1).Return(node, nil)
+		nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(node, nil)
 		node.EXPECT().LastBlock(ctx).Times(1).Return(&apipb.LastBlockHeightResponse{
 			Height:              150,
 			Hash:                vgrand.RandomStr(64),

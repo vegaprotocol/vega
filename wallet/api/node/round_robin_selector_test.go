@@ -54,7 +54,7 @@ func testRoundRobinSelectorReturnsTheFirstHealthyNode(t *testing.T) {
 	require.NoError(t, err)
 
 	// when
-	selectedNode, err := selector.Node(ctx)
+	selectedNode, err := selector.Node(ctx, noReporting)
 
 	// then
 	require.NoError(t, err)
@@ -91,7 +91,7 @@ func testRoundRobinSelectorReturnsErrorWhenNoHealthyNodeAvailable(t *testing.T) 
 	require.NoError(t, err)
 
 	// when
-	selectedNode, err := selector.Node(ctx)
+	selectedNode, err := selector.Node(ctx, noReporting)
 
 	// then
 	require.ErrorIs(t, err, node.ErrNoHealthyNodeAvailable)

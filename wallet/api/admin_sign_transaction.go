@@ -152,7 +152,7 @@ func (h *AdminSignTransaction) getLastBlockDataFromNetwork(ctx context.Context, 
 		return nil, internalError(fmt.Errorf("could not initializing the node selector: %w", err))
 	}
 
-	node, err := nodeSelector.Node(ctx)
+	node, err := nodeSelector.Node(ctx, noNodeSelectionReporting)
 	if err != nil {
 		return nil, networkError(ErrorCodeNodeRequestFailed, ErrNoHealthyNodeAvailable)
 	}

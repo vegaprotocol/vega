@@ -80,16 +80,27 @@ func (h *SignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) 
 		return nil, userRejectionError()
 	}
 
-	currentNode, err := h.nodeSelector.Node(ctx)
+	h.pipeline.Log(ctx, traceID, InfoLog, "Looking for a healthy node...")
+	currentNode, err := h.nodeSelector.Node(ctx, func(reportType node.ReportType, msg string) {
+		h.pipeline.Log(ctx, traceID, LogType(reportType), msg)
+	})
 	if err != nil {
 		h.pipeline.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not find a healthy node: %w", err))
 		return nil, networkError(ErrorCodeNodeRequestFailed, ErrNoHealthyNodeAvailable)
 	}
+	h.pipeline.Log(ctx, traceID, SuccessLog, "A healthy node has been found.")
 
+	h.pipeline.Log(ctx, traceID, InfoLog, "Retrieving latest block information...")
 	lastBlockData, err := currentNode.LastBlock(ctx)
 	if err != nil {
 		h.pipeline.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not get the latest block from the node: %w", err))
 		return nil, networkError(ErrorCodeNodeRequestFailed, ErrCouldNotGetLastBlockInformation)
+	}
+	h.pipeline.Log(ctx, traceID, SuccessLog, "Latest block information has been retrieved.")
+
+	if lastBlockData.ChainId == "" {
+		h.pipeline.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not get chainID from node: %w", err))
+		return nil, networkError(ErrorCodeNodeRequestFailed, ErrCouldNotGetChainIDFromNode)
 	}
 
 	// Sign the payload.
@@ -99,11 +110,13 @@ func (h *SignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) 
 		return nil, internalError(ErrCouldNotSignTransaction)
 	}
 
+	h.pipeline.Log(ctx, traceID, InfoLog, "Signing the transaction...")
 	signature, err := connectedWallet.Wallet.SignTx(params.PublicKey, inputData)
 	if err != nil {
 		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not sign command: %w", err))
 		return nil, internalError(ErrCouldNotSignTransaction)
 	}
+	h.pipeline.Log(ctx, traceID, SuccessLog, "The transaction has been signed.")
 
 	// Build the transaction.
 	tx := commands.NewTransaction(params.PublicKey, inputData, &commandspb.Signature{
@@ -113,6 +126,7 @@ func (h *SignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) 
 	})
 
 	// Generate the proof of work for the transaction.
+	h.pipeline.Log(ctx, traceID, InfoLog, "Computing proof-of-work...")
 	txID := vgcrypto.RandomHash()
 	powNonce, _, err := vgcrypto.PoW(lastBlockData.Hash, txID, uint(lastBlockData.SpamPowDifficulty), lastBlockData.SpamPowHashFunction)
 	if err != nil {
@@ -123,6 +137,7 @@ func (h *SignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) 
 		Tid:   txID,
 		Nonce: powNonce,
 	}
+	h.pipeline.Log(ctx, traceID, SuccessLog, "The proof-of-work has been computed.")
 
 	h.pipeline.NotifySuccessfulRequest(ctx, traceID)
 

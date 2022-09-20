@@ -118,14 +118,16 @@ func testSigningTransactionWithValidParamsSucceeds(t *testing.T) {
 	token := connectWallet(t, handler.sessions, hostname, wallet1)
 	// -- expected calls
 	handler.pipeline.EXPECT().RequestTransactionSigningReview(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(true, nil)
-	handler.nodeSelector.EXPECT().Node(ctx).Times(1).Return(handler.node, nil)
+	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
 	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(&apipb.LastBlockHeightResponse{
 		Height:              100,
 		Hash:                vgrand.RandomStr(64),
 		SpamPowHashFunction: "sha3_24_rounds",
 		SpamPowDifficulty:   1,
+		ChainId:             vgrand.RandomStr(5),
 	}, nil)
 	handler.pipeline.EXPECT().NotifySuccessfulRequest(ctx, traceID).Times(1)
+	handler.pipeline.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.SignTransactionParams{
@@ -343,8 +345,9 @@ func testNoHealthyNodeAvailableDoesNotSignTransaction(t *testing.T) {
 	token := connectWallet(t, handler.sessions, hostname, wallet1)
 	// -- expected calls
 	handler.pipeline.EXPECT().RequestTransactionSigningReview(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(true, nil)
-	handler.nodeSelector.EXPECT().Node(ctx).Times(1).Return(nil, assert.AnError)
+	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(nil, assert.AnError)
 	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.NetworkError, fmt.Errorf("could not find a healthy node: %w", assert.AnError)).Times(1)
+	handler.pipeline.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.SignTransactionParams{
@@ -381,9 +384,10 @@ func testFailingToGetLastBlockDoesNotSignTransaction(t *testing.T) {
 	token := connectWallet(t, handler.sessions, hostname, wallet1)
 	// -- expected calls
 	handler.pipeline.EXPECT().RequestTransactionSigningReview(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(true, nil)
-	handler.nodeSelector.EXPECT().Node(ctx).Times(1).Return(handler.node, nil)
+	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
 	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(nil, assert.AnError)
 	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.NetworkError, fmt.Errorf("could not get the latest block from the node: %w", assert.AnError)).Times(1)
+	handler.pipeline.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.SignTransactionParams{
