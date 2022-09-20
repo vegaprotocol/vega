@@ -86,7 +86,6 @@ Feature: Closeout-cascades, 2 parties get close-out at the same time
       | party     | market id  | maintenance | search | initial | release |
       | trader3   | ETH/DEC19  | 81          | 121    | 162     | 243     |
 
-    # how come trader3's order is not rejected? they only have 90 in the collateral and the initial margin level is 162
     Then the parties should have the following account balances:
       | party   | asset | market id | margin   | general |
       | trader2 | USD   | ETH/DEC19 | 642      | 1358    |
@@ -98,10 +97,11 @@ Feature: Closeout-cascades, 2 parties get close-out at the same time
       | party      | volume | unrealised pnl | realised pnl |
       | auxiliary1 | -10    | 0              | 0            |
       | auxiliary2 | 10     | 0              | 0            |
-   # setup trader3 position and close it out
+    #setup trader3 position and close it out
     When the parties place the following orders:
-      | party   | market id | side | volume| price | resulting trades | type       | tif     | reference      |
-      | trader2 | ETH/DEC19 | sell | 10    | 100   | 1                | TYPE_LIMIT | TIF_GTC | sell-provider-1|
+      | party      | market id | side | volume| price | resulting trades | type       | tif     | reference      |
+      | auxiliary2 | ETH/DEC19 | sell | 10    | 100   | 1                | TYPE_LIMIT | TIF_GTC | sell-provider-1|
+
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price  | volume   |
       | buy  | 5      | 40005    |
@@ -110,21 +110,23 @@ Feature: Closeout-cascades, 2 parties get close-out at the same time
       | buy  | 100    | 0        | 
       | sell | 1000   | 10       | 
       | sell | 1055   | 223      | 
-
+    #trader3 is closed out
+    #why trader2's order is canceled?
     And the parties should have the following margin levels:
       | party     | market id  | maintenance | search | initial | release |
-      | trader2   | ETH/DEC19  | 12557       | 18835  | 25114   | 37671   |
-      | trader3   | ETH/DEC19  | 1301        | 1951   | 2602    | 3903    | 
+      | trader2   | ETH/DEC19  | 0           | 0      | 0       | 0       |
+      | trader3   | ETH/DEC19  | 0           | 0      | 0       | 0       | 
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin  | general |
-      | trader2 | USD   | ETH/DEC19 | 0       | 0       |
+      | trader2 | USD   | ETH/DEC19 | 0       | 2000    |
       | trader3 | USD   | ETH/DEC19 | 0       | 0       |
-    And the insurance pool balance should be "2089" for the market "ETH/DEC19"
+    And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
      Then the parties should have the following profit and loss:
       | party      | volume | unrealised pnl | realised pnl |
       | auxiliary1 | -10    | -900           | 0            |
-      | auxiliary2 | 10     | 900            | 0            |
-      | trader2    | 0      | 0              | -1999        |
+      | auxiliary2 | 0      | 0              | 900          |
+      | trader2    | 0      | 0              | 0            |
       | trader3    | 0      | 0              | -90          |
+
