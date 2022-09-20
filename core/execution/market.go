@@ -2676,11 +2676,10 @@ func (m *Market) amendOrder(
 	}
 
 	// from here these are the normal amendment
-	var priceIncrease, priceShift, sizeIncrease, sizeDecrease, expiryChange, timeInForceChange bool
+	var priceShift, sizeIncrease, sizeDecrease, expiryChange, timeInForceChange bool
 
 	if amendedOrder.Price.NEQ(existingOrder.Price) {
 		priceShift = true
-		priceIncrease = existingOrder.Price.LT(amendedOrder.Price)
 	}
 
 	if amendedOrder.Size > existingOrder.Size {
@@ -2716,7 +2715,6 @@ func (m *Market) amendOrder(
 	// will be updated later on for sure.
 
 	// akways update margin, even for price/size decrease
-	// if priceIncrease || sizeIncrease {
 	if err = m.checkMarginForOrder(ctx, pos, amendedOrder); err != nil {
 		// Undo the position registering
 		_ = m.position.AmendOrder(ctx, amendedOrder, existingOrder)
@@ -2728,7 +2726,6 @@ func (m *Market) amendOrder(
 		}
 		return nil, nil, ErrMarginCheckFailed
 	}
-	// }
 
 	// if increase in size or change in price
 	// ---> DO atomic cancel and submit
@@ -2754,6 +2751,10 @@ func (m *Market) amendOrder(
 		// amended in place. Maybe a panic would be better
 		ret, err := m.orderAmendInPlace(existingOrder, amendedOrder)
 		if err == nil {
+			if sizeDecrease {
+				// ensure we release excess if party reduced the size of their order
+				m.recheckMargin(ctx, m.position.GetPositionsByParty(amendedOrder.Party))
+			}
 			m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
 		}
 		return ret, nil, err
