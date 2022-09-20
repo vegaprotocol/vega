@@ -29,15 +29,15 @@ type ledgerStore interface {
 type Ledger struct {
 	store             ledgerStore
 	log               *logging.Logger
-	transferResponses []*vega.TransferResponse
-	observer          utils.Observer[*vega.TransferResponse]
+	transferResponses []*vega.LedgerMovement
+	observer          utils.Observer[*vega.LedgerMovement]
 }
 
 func NewLedger(store ledgerStore, log *logging.Logger) *Ledger {
 	return &Ledger{
 		store:    store,
 		log:      log,
-		observer: utils.NewObserver[*vega.TransferResponse]("ledger", log, 0, 0),
+		observer: utils.NewObserver[*vega.LedgerMovement]("ledger", log, 0, 0),
 	}
 }
 
@@ -47,7 +47,7 @@ func (l *Ledger) Flush(ctx context.Context) error {
 		return err
 	}
 	l.observer.Notify(l.transferResponses)
-	l.transferResponses = []*vega.TransferResponse{}
+	l.transferResponses = []*vega.LedgerMovement{}
 	return nil
 }
 
@@ -55,14 +55,14 @@ func (l *Ledger) AddLedgerEntry(le entities.LedgerEntry) error {
 	return l.store.Add(le)
 }
 
-func (l *Ledger) AddTransferResponse(le *vega.TransferResponse) {
+func (l *Ledger) AddTransferResponse(le *vega.LedgerMovement) {
 	l.transferResponses = append(l.transferResponses, le)
 }
 
-func (l *Ledger) Observe(ctx context.Context, retries int) (<-chan []*vega.TransferResponse, uint64) {
+func (l *Ledger) Observe(ctx context.Context, retries int) (<-chan []*vega.LedgerMovement, uint64) {
 	ch, ref := l.observer.Observe(ctx,
 		retries,
-		func(tr *vega.TransferResponse) bool {
+		func(tr *vega.LedgerMovement) bool {
 			return true
 		})
 	return ch, ref

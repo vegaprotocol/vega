@@ -30,8 +30,8 @@ func TestTransferResponseDeepClone(t *testing.T) {
 		{
 			Entries: []*types.LedgerEntry{
 				{
-					FromAccount: &types.AD{Owner: "FromAccount"},
-					ToAccount:   &types.AD{Owner: "ToAccount"},
+					FromAccount: &types.AccountDetails{Owner: "FromAccount"},
+					ToAccount:   &types.AccountDetails{Owner: "ToAccount"},
 					Amount:      num.NewUint(1000),
 					Type:        types.TransferTypeBondLow,
 					Timestamp:   2000,
@@ -58,9 +58,9 @@ func TestTransferResponseDeepClone(t *testing.T) {
 
 	// Change the original values
 	tr[0].Entries[0].Amount = num.NewUint(999)
-	tr[0].Entries[0].FromAccount = &types.AD{Owner: "Changed"}
+	tr[0].Entries[0].FromAccount = &types.AccountDetails{Owner: "Changed"}
 	tr[0].Entries[0].Timestamp = 999
-	tr[0].Entries[0].ToAccount = &types.AD{Owner: "Changed"}
+	tr[0].Entries[0].ToAccount = &types.AccountDetails{Owner: "Changed"}
 	tr[0].Entries[0].Type = types.TransferTypeBondHigh
 	tr[0].Balances[0].Account.Asset = "Changed"
 	tr[0].Balances[0].Account.Balance = num.NewUint(999)

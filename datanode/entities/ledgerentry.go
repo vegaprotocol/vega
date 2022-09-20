@@ -13,8 +13,11 @@
 package entities
 
 import (
+	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/vega/protos/vega"
+	"github.com/jackc/pgtype"
 	"github.com/shopspring/decimal"
 )
 
@@ -26,13 +29,12 @@ type LedgerEntry struct {
 	TxHash        TxHash
 	VegaTime      time.Time
 	TransferTime  time.Time
-	Reference     string
-	Type          string
+	Type          LedgerMovementType
 }
 
 var LedgerEntryColumns = []string{
 	"account_from_id", "account_to_id", "quantity",
-	"tx_hash", "vega_time", "transfer_time", "reference", "type",
+	"tx_hash", "vega_time", "transfer_time", "type",
 }
 
 func (le LedgerEntry) ToRow() []any {
@@ -43,7 +45,76 @@ func (le LedgerEntry) ToRow() []any {
 		le.TxHash,
 		le.VegaTime,
 		le.TransferTime,
-		le.Reference,
 		le.Type,
 	}
+}
+
+type LedgerMovementType vega.TransferType
+
+const (
+	// Default value, always invalid.
+	LedgerMovementTypeUnspecified = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_UNSPECIFIED)
+	// Loss.
+	LedgerMovementTypeLoss = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_LOSS)
+	// Win.
+	LedgerMovementTypeWin = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_WIN)
+	// Close.
+	LedgerMovementTypeClose = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_CLOSE)
+	// Mark to market loss.
+	LedgerMovementTypeMTMLoss = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_MTM_LOSS)
+	// Mark to market win.
+	LedgerMovementTypeMTMWin = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_MTM_WIN)
+	// Margin too low.
+	LedgerMovementTypeMarginLow = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_MARGIN_LOW)
+	// Margin too high.
+	LedgerMovementTypeMarginHigh = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_MARGIN_HIGH)
+	// Margin was confiscated.
+	LedgerMovementTypeMarginConfiscated = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_MARGIN_CONFISCATED)
+	// Pay maker fee.
+	LedgerMovementTypeMakerFeePay = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY)
+	// Receive maker fee.
+	LedgerMovementTypeMakerFeeReceive = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE)
+	// Pay infrastructure fee.
+	LedgerMovementTypeInfrastructureFeePay = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY)
+	// Receive infrastructure fee.
+	LedgerMovementTypeInfrastructureFeeDistribute = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_DISTRIBUTE)
+	// Pay liquidity fee.
+	LedgerMovementTypeLiquidityFeePay = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY)
+	// Receive liquidity fee.
+	LedgerMovementTypeLiquidityFeeDistribute = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_DISTRIBUTE)
+	// Bond too low.
+	LedgerMovementTypeBondLow = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_BOND_LOW)
+	// Bond too high.
+	LedgerMovementTypeBondHigh = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_BOND_HIGH)
+	// Lock amount for withdraw.
+	LedgerMovementTypeWithdrawLock = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_WITHDRAW_LOCK)
+	// Actual withdraw from system.
+	LedgerMovementTypeWithdraw = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_WITHDRAW)
+	// Deposit funds.
+	LedgerMovementTypeDeposit = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_DEPOSIT)
+	// Bond slashing.
+	LedgerMovementTypeBondSlashing = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_BOND_SLASHING)
+	// Stake reward.
+	LedgerMovementTypeRewardPayout            = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_STAKE_REWARD)
+	LedgerMovementTypeTransferFundsSend       = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_TRANSFER_FUNDS_SEND)
+	LedgerMovementTypeTransferFundsDistribute = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_TRANSFER_FUNDS_DISTRIBUTE)
+	LedgerMovementTypeClearAccount            = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_CLEAR_ACCOUNT)
+)
+
+func (l LedgerMovementType) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	ty, ok := vega.TransferType_name[int32(l)]
+	if !ok {
+		return buf, fmt.Errorf("unknown transfer status: %s", ty)
+	}
+	return append(buf, []byte(ty)...), nil
+}
+
+func (l *LedgerMovementType) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	val, ok := vega.TransferType_value[string(src)]
+	if !ok {
+		return fmt.Errorf("unknown transfer status: %s", src)
+	}
+
+	*l = LedgerMovementType(val)
+	return nil
 }

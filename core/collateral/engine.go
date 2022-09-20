@@ -2611,7 +2611,7 @@ func (e *Engine) removeAccount(id string) {
 	e.removeAccountFromHashableSlice(id)
 }
 
-func (e *Engine) ADtoID(ad *types.AD) string {
+func (e *Engine) ADtoID(ad *types.AccountDetails) string {
 	return e.accountID(ad.MarketID, ad.Owner, ad.AssetID, ad.Type)
 }
 

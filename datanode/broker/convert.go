@@ -23,7 +23,7 @@ func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {
 	switch be.Type {
 	case eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE:
 		return events.TimeEventFromStream(ctx, be)
-	case eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_LEDGER_MOVEMENTS:
 		return events.TransferResponseEventFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION:
 		return events.PositionResolutionEventFromStream(ctx, be)

@@ -25,16 +25,16 @@ const (
 	noMarket    = "!"
 )
 
-type AD struct {
+type AccountDetails struct {
 	Owner    string
 	AssetID  string
 	MarketID string
 	Type     AccountType
 }
 
-func (ad *AD) ID() string {
+func (ad *AccountDetails) ID() string {
 	idbuf := make([]byte, 256)
-	var marketID, partyID = ad.MarketID, ad.Owner
+	marketID, partyID := ad.MarketID, ad.Owner
 	if len(marketID) <= 0 {
 		marketID = noMarket
 	}
@@ -54,7 +54,7 @@ func (ad *AD) ID() string {
 	return string(idbuf[:ln+1])
 }
 
-func (ad *AD) IntoProto() *proto.AccountDetails {
+func (ad *AccountDetails) IntoProto() *proto.AccountDetails {
 	var marketID, owner *string
 	if ad.Owner != systemOwner {
 		owner = ptr.From(ad.Owner)
@@ -80,8 +80,8 @@ type Account struct {
 	Type     AccountType
 }
 
-func (a Account) ToDetails() *AD {
-	return &AD{
+func (a Account) ToDetails() *AccountDetails {
+	return &AccountDetails{
 		Owner:    a.Owner,
 		MarketID: a.MarketID,
 		AssetID:  a.Asset,
@@ -210,8 +210,8 @@ func (a PostTransferBalances) IntoProto() []*proto.PostTransferBalance {
 }
 
 type LedgerEntry struct {
-	FromAccount *AD
-	ToAccount   *AD
+	FromAccount *AccountDetails
+	ToAccount   *AccountDetails
 	Amount      *num.Uint
 	Type        TransferType
 	Timestamp   int64

@@ -259,13 +259,11 @@ func (EthereumEvent) IsOracle() {}
 
 type LedgerEntry struct {
 	// Account from which the asset was taken
-	FromAccount string `json:"fromAccount"`
+	FromAccount *vega.AccountDetails `json:"fromAccount"`
 	// Account to which the balance was transferred
-	ToAccount string `json:"toAccount"`
+	ToAccount *vega.AccountDetails `json:"toAccount"`
 	// The amount transferred
 	Amount string `json:"amount"`
-	// The transfer reference
-	Reference string `json:"reference"`
 	// Type of ledger entry
 	Type string `json:"type"`
 	// RFC3339Nano time at which the transfer was made
@@ -548,7 +546,7 @@ type TransactionSubmitted struct {
 
 type TransferBalance struct {
 	// Account involved in transfer
-	Account *vega.Account `json:"account"`
+	Account *vega.AccountDetails `json:"account"`
 	// The new balance of the account
 	Balance string `json:"balance"`
 }
