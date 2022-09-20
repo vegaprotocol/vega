@@ -111,7 +111,7 @@ Feature: Closeout-cascades, 2 parties get close-out at the same time
       | sell | 1000   | 10       | 
       | sell | 1055   | 223      | 
     #trader3 is closed out
-    #why trader2's order is canceled?
+    #trader2's order is canceled since mark price has moved from 10 to 100, hence margin level has increased by 10 times
     And the parties should have the following margin levels:
       | party     | market id  | maintenance | search | initial | release |
       | trader2   | ETH/DEC19  | 0           | 0      | 0       | 0       |
