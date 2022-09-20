@@ -563,7 +563,7 @@ func (d *DescribeNetworkAssertion) WithRESTConfig(hosts []string) *DescribeNetwo
 }
 
 type SignCommandResponse struct {
-	Transaction string `json:"base64Transaction"`
+	EncodedTransaction string `json:"encodedTransaction"`
 }
 
 func SignCommand(t *testing.T, args []string) (*SignCommandResponse, error) {
@@ -590,7 +590,8 @@ func AssertSignCommand(t *testing.T, resp *SignCommandResponse) *SignCommandAsse
 	t.Helper()
 
 	assert.NotNil(t, resp)
-	assert.NotEmpty(t, resp.Transaction)
+	assert.NotEmpty(t, resp.EncodedTransaction)
+	assert.NotEmpty(t, resp.EncodedTransaction)
 
 	return &SignCommandAssertion{
 		t:    t,

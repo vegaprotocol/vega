@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	apimocks "code.vegaprotocol.io/vega/wallet/api/mocks"
 	"code.vegaprotocol.io/vega/wallet/api/node"
+	nodemocks "code.vegaprotocol.io/vega/wallet/api/node/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -23,22 +23,22 @@ func testRoundRobinSelectorReturnsTheFirstHealthyNode(t *testing.T) {
 	log := newTestLogger(t)
 	ctrl := gomock.NewController(t)
 
-	healthyHost1 := apimocks.NewMockNode(ctrl)
+	healthyHost1 := nodemocks.NewMockNode(ctrl)
 	healthyHost1.EXPECT().HealthCheck(ctx).Times(1).Return(nil)
 	healthyHost1.EXPECT().Host().AnyTimes().Return("healthy-host-1")
 
-	healthyHost2 := apimocks.NewMockNode(ctrl)
+	healthyHost2 := nodemocks.NewMockNode(ctrl)
 	healthyHost2.EXPECT().Host().AnyTimes().Return("healthy-host-2")
 
-	unhealthyHost1 := apimocks.NewMockNode(ctrl)
+	unhealthyHost1 := nodemocks.NewMockNode(ctrl)
 	unhealthyHost1.EXPECT().HealthCheck(ctx).Times(1).Return(assert.AnError)
 	unhealthyHost1.EXPECT().Host().AnyTimes().Return("unhealthy-host-1")
 
-	unhealthyHost2 := apimocks.NewMockNode(ctrl)
+	unhealthyHost2 := nodemocks.NewMockNode(ctrl)
 	unhealthyHost2.EXPECT().HealthCheck(gomock.Any()).Times(1).Return(assert.AnError)
 	unhealthyHost2.EXPECT().Host().AnyTimes().Return("unhealthy-host-2")
 
-	unhealthyHost3 := apimocks.NewMockNode(ctrl)
+	unhealthyHost3 := nodemocks.NewMockNode(ctrl)
 	unhealthyHost3.EXPECT().Host().AnyTimes().Return("unhealthy-host-3")
 
 	// when
@@ -68,15 +68,15 @@ func testRoundRobinSelectorReturnsErrorWhenNoHealthyNodeAvailable(t *testing.T) 
 	log := newTestLogger(t)
 	ctrl := gomock.NewController(t)
 
-	unhealthyHost1 := apimocks.NewMockNode(ctrl)
+	unhealthyHost1 := nodemocks.NewMockNode(ctrl)
 	unhealthyHost1.EXPECT().HealthCheck(ctx).Times(1).Return(assert.AnError)
 	unhealthyHost1.EXPECT().Host().AnyTimes().Return("unhealthy-host-1")
 
-	unhealthyHost2 := apimocks.NewMockNode(ctrl)
+	unhealthyHost2 := nodemocks.NewMockNode(ctrl)
 	unhealthyHost2.EXPECT().HealthCheck(gomock.Any()).Times(1).Return(assert.AnError)
 	unhealthyHost2.EXPECT().Host().AnyTimes().Return("unhealthy-host-2")
 
-	unhealthyHost3 := apimocks.NewMockNode(ctrl)
+	unhealthyHost3 := nodemocks.NewMockNode(ctrl)
 	unhealthyHost3.EXPECT().HealthCheck(gomock.Any()).Times(1).Return(assert.AnError)
 	unhealthyHost3.EXPECT().Host().AnyTimes().Return("unhealthy-host-3")
 
@@ -103,13 +103,13 @@ func testRoundRobinSelectorStoppingTheSelectorStopsAllNodes(t *testing.T) {
 	log := newTestLogger(t)
 	ctrl := gomock.NewController(t)
 
-	closingHost1 := apimocks.NewMockNode(ctrl)
+	closingHost1 := nodemocks.NewMockNode(ctrl)
 	closingHost1.EXPECT().Stop().Times(1).Return(nil)
 
-	failedClosingHost := apimocks.NewMockNode(ctrl)
+	failedClosingHost := nodemocks.NewMockNode(ctrl)
 	failedClosingHost.EXPECT().Stop().Times(1).Return(assert.AnError)
 
-	closingHost2 := apimocks.NewMockNode(ctrl)
+	closingHost2 := nodemocks.NewMockNode(ctrl)
 	closingHost2.EXPECT().Stop().Times(1).Return(nil)
 
 	// when

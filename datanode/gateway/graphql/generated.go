@@ -9229,11 +9229,11 @@ type Subscription {
 
   "Subscribe to event data from the event bus"
   busEvents(
-    "the types to subscribe to has to be an array"
+    "The types to subscribe to has to be an array"
     types: [BusEventType!]!
-    "optional filter by market ID"
+    "Optional filter by market ID"
     marketId: ID
-    "optional filter by party ID"
+    "Optional filter by party ID"
     partyId: ID
     "Specifies the size that the client will receive events in. Using 0 results in a variable batch size being sent. The stream will be closed if the client fails to read a batch within 5 seconds"
     batchSize: Int!
@@ -9249,17 +9249,17 @@ type Subscription {
 
   "Subscribe to delegation data"
   delegations(
-    "the party to subscribe for, empty if all"
+    "The party to subscribe for, empty if all"
     partyId: ID
-    "the node to subscribe for, empty if all"
+    "The node to subscribe for, empty if all"
     nodeId: ID
   ): Delegation!
 
   "Subscribe to liquidity provisioning data"
     liquidityProvisions(
-        "the party ID to subscribe for, empty if all"
+        "The party ID to subscribe for, empty if all"
         partyId: ID
-        "the market ID to subscribe for, empty if all"
+        "The market ID to subscribe for, empty if all"
         marketId: ID
   ): [LiquidityProvisionUpdate!]
 
@@ -9313,9 +9313,9 @@ type Subscription {
 
   "Subscribe to reward details data"
   rewards(
-    "the asset to subscribe for, empty if all"
+    "The asset to subscribe for, empty if all"
     assetId: ID
-    "the party ID to subscribe for, empty if all"
+    "The party ID to subscribe for, empty if all"
     partyId: ID
   ): Reward!
 
@@ -9338,17 +9338,17 @@ type Subscription {
 
 "Margins for a given a party"
 type MarginLevels {
-  "market in which the margin is required for this party"
+  "Market in which the margin is required for this party"
   market: Market!
-  "asset for the current margins"
+  "Asset for the current margins"
   asset: Asset!
   "The party for this margin"
   party: Party!
-  "minimal margin for the position to be maintained in the network (unsigned integer)"
+  "Minimal margin for the position to be maintained in the network (unsigned integer)"
   maintenanceLevel: String!
-  "if the margin is between maintenance and search, the network will initiate a collateral search (unsigned integer)"
+  "If the margin is between maintenance and search, the network will initiate a collateral search (unsigned integer)"
   searchLevel: String!
-  "this is the minimum margin required for a party to place a new order on the network (unsigned integer)"
+  "This is the minimum margin required for a party to place a new order on the network (unsigned integer)"
   initialLevel: String!
   """
   If the margin of the party is greater than this level, then collateral will be released from the margin account into
@@ -9361,17 +9361,17 @@ type MarginLevels {
 
 "Margins for a given a party"
 type MarginLevelsUpdate {
-  "market in which the margin is required for this party"
+  "Market in which the margin is required for this party"
   marketId: ID!
-  "asset for the current margins"
+  "Asset for the current margins"
   asset: ID!
   "The party for this margin"
   partyId: ID!
-  "minimal margin for the position to be maintained in the network (unsigned integer)"
+  "Minimal margin for the position to be maintained in the network (unsigned integer)"
   maintenanceLevel: String!
-  "if the margin is between maintenance and search, the network will initiate a collateral search (unsigned integer)"
+  "If the margin is between maintenance and search, the network will initiate a collateral search (unsigned integer)"
   searchLevel: String!
-  "this is the minimum margin required for a party to place a new order on the network (unsigned integer)"
+  "This is the minimum margin required for a party to place a new order on the network (unsigned integer)"
   initialLevel: String!
   """
   If the margin of the party is greater than this level, then collateral will be released from the margin account into
@@ -9384,123 +9384,123 @@ type MarginLevelsUpdate {
 
 "Live data of a Market"
 type MarketData {
-  "market of the associated mark price"
+  "Market of the associated mark price"
   market: Market!
-  "the mark price (an unsigned integer)"
+  "The mark price (an unsigned integer)"
   markPrice: String!
-  "the highest price level on an order book for buy orders."
+  "The highest price level on an order book for buy orders."
   bestBidPrice: String!
-  "the aggregated volume being bid at the best bid price."
+  "The aggregated volume being bid at the best bid price."
   bestBidVolume: String!
-  "the lowest price level on an order book for offer orders."
+  "The lowest price level on an order book for offer orders."
   bestOfferPrice: String!
-  "the aggregated volume being offered at the best offer price."
+  "The aggregated volume being offered at the best offer price."
   bestOfferVolume: String!
-  "the highest price level on an order book for buy orders not including pegged orders."
+  "The highest price level on an order book for buy orders not including pegged orders."
   bestStaticBidPrice: String!
-  "the aggregated volume being offered at the best static bid price, excluding pegged orders"
+  "The aggregated volume being offered at the best static bid price, excluding pegged orders"
   bestStaticBidVolume: String!
-  "the lowest price level on an order book for offer orders not including pegged orders."
+  "The lowest price level on an order book for offer orders not including pegged orders."
   bestStaticOfferPrice: String!
-  "the aggregated volume being offered at the best static offer price, excluding pegged orders."
+  "The aggregated volume being offered at the best static offer price, excluding pegged orders."
   bestStaticOfferVolume: String!
-  "the arithmetic average of the best bid price and best offer price."
+  "The arithmetic average of the best bid price and best offer price."
   midPrice: String!
-  "the arithmetic average of the best static bid price and best static offer price"
+  "The arithmetic average of the best static bid price and best static offer price"
   staticMidPrice: String!
   "RFC3339Nano time at which this market price was relevant"
   timestamp: String!
-  "the sum of the size of all positions greater than 0."
+  "The sum of the size of all positions greater than 0."
   openInterest: String!
   "RFC3339Nano time at which the auction will stop (null if not in auction mode)"
   auctionEnd: String
   "RFC3339Nano time at which the next auction will start (null if none is scheduled)"
   auctionStart: String
-  "indicative price if the auction ended now, 0 if not in auction mode"
+  "Indicative price if the auction ended now, 0 if not in auction mode"
   indicativePrice: String!
-  "indicative volume if the auction ended now, 0 if not in auction mode"
+  "Indicative volume if the auction ended now, 0 if not in auction mode"
   indicativeVolume: String!
-  "what mode the market is in (auction, continuous, etc)"
+  "What mode the market is in (auction, continuous, etc)"
   marketTradingMode: MarketTradingMode!
-  "current state of the market"
+  "Current state of the market"
   marketState: MarketState!
-  "what triggered an auction (if an auction was started)"
+  "What triggered an auction (if an auction was started)"
   trigger: AuctionTrigger!
-  "what extended the ongoing auction (if an auction was extended)"
+  "What extended the ongoing auction (if an auction was extended)"
   extensionTrigger: AuctionTrigger!
-  "the amount of stake targeted for this market"
+  "The amount of stake targeted for this market"
   targetStake: String
-  "the supplied stake for the market"
+  "The supplied stake for the market"
   suppliedStake: String
-  "the liquidity commitments for a given market"
+  "The liquidity commitments for a given market"
   commitments: MarketDataCommitments!
-  "a list of valid price ranges per associated trigger"
+  "A list of valid price ranges per associated trigger"
   priceMonitoringBounds: [PriceMonitoringBounds!]
-  "the market value proxy"
+  "The market value proxy"
   marketValueProxy: String!
-  "the equity like share of liquidity fee for each liquidity provider"
+  "The equity like share of liquidity fee for each liquidity provider"
   liquidityProviderFeeShare: [LiquidityProviderFeeShare!]
 }
 
 "Live data of a Market"
 type ObservableMarketData {
-  "market ID of the associated mark price"
+  "Market ID of the associated mark price"
   marketId: ID!
-  "the mark price (an unsigned integer)"
+  "The mark price (an unsigned integer)"
   markPrice: String!
-  "the highest price level on an order book for buy orders."
+  "The highest price level on an order book for buy orders."
   bestBidPrice: String!
-  "the aggregated volume being bid at the best bid price."
+  "The aggregated volume being bid at the best bid price."
   bestBidVolume: String!
-  "the lowest price level on an order book for offer orders."
+  "The lowest price level on an order book for offer orders."
   bestOfferPrice: String!
-  "the aggregated volume being offered at the best offer price."
+  "The aggregated volume being offered at the best offer price."
   bestOfferVolume: String!
-  "the highest price level on an order book for buy orders not including pegged orders."
+  "The highest price level on an order book for buy orders not including pegged orders."
   bestStaticBidPrice: String!
-  "the aggregated volume being offered at the best static bid price, excluding pegged orders"
+  "The aggregated volume being offered at the best static bid price, excluding pegged orders"
   bestStaticBidVolume: String!
-  "the lowest price level on an order book for offer orders not including pegged orders"
+  "The lowest price level on an order book for offer orders not including pegged orders"
   bestStaticOfferPrice: String!
-  "the aggregated volume being offered at the best static offer price, excluding pegged orders"
+  "The aggregated volume being offered at the best static offer price, excluding pegged orders"
   bestStaticOfferVolume: String!
-  "the arithmetic average of the best bid price and best offer price"
+  "The arithmetic average of the best bid price and best offer price"
   midPrice: String!
-  "the arithmetic average of the best static bid price and best static offer price"
+  "The arithmetic average of the best static bid price and best static offer price"
   staticMidPrice: String!
   "RFC3339Nano time at which this market price was relevant"
   timestamp: String!
-  "the sum of the size of all positions greater than 0"
+  "The sum of the size of all positions greater than 0"
   openInterest: String!
   "RFC3339Nano time at which the auction will stop (null if not in auction mode)"
   auctionEnd: String
   "RFC3339Nano time at which the next auction will start (null if none is scheduled)"
   auctionStart: String
-  "indicative price if the auction ended now, 0 if not in auction mode"
+  "Indicative price if the auction ended now, 0 if not in auction mode"
   indicativePrice: String!
-  "indicative volume if the auction ended now, 0 if not in auction mode"
+  "Indicative volume if the auction ended now, 0 if not in auction mode"
   indicativeVolume: String!
-  "what mode the market is in (auction, continuous etc)"
+  "What mode the market is in (auction, continuous etc)"
   marketTradingMode: MarketTradingMode!
-  "current state of the market"
+  "Current state of the market"
   marketState: MarketState!
-  "what triggered an auction (if an auction was started)"
+  "What triggered an auction (if an auction was started)"
   trigger: AuctionTrigger!
-  "what extended the ongoing auction (if an auction was extended)"
+  "What extended the ongoing auction (if an auction was extended)"
   extensionTrigger: AuctionTrigger!
-  "the amount of stake targeted for this market"
+  "The amount of stake targeted for this market"
   targetStake: String
-  "the supplied stake for the market"
+  "The supplied stake for the market"
   suppliedStake: String
   "A list of valid price ranges per associated trigger"
   priceMonitoringBounds: [PriceMonitoringBounds!]
-  "the market value proxy"
+  "The market value proxy"
   marketValueProxy: String!
-  "the equity like share of liquidity fee for each liquidity provider"
+  "The equity like share of liquidity fee for each liquidity provider"
   liquidityProviderFeeShare: [ObservableLiquidityProviderFeeShare!]
 }
 
-"timestamps for when the market changes state"
+"Timestamps for when the market changes state"
 type MarketTimestamps {
   "Time when the market is first proposed"
   proposed: String
@@ -9534,9 +9534,9 @@ type ObservableLiquidityProviderFeeShare {
 
 "The liquidity commitments for this market"
 type MarketDataCommitments {
-  "a set of liquidity sell orders to meet the liquidity provision obligation."
+  "A set of liquidity sell orders to meet the liquidity provision obligation."
   sells: [LiquidityOrderReference!]
-  "a set of liquidity buy orders to meet the liquidity provision obligation."
+  "A set of liquidity buy orders to meet the liquidity provision obligation."
   buys: [LiquidityOrderReference!]
 }
 
@@ -9544,6 +9544,7 @@ type TransactionSubmitted {
   success: Boolean!
 }
 
+"Filter input for historical balance queries"
 input AccountFilter {
   assetId: ID
   partyIds: [ID!]
@@ -9562,19 +9563,19 @@ type Query {
   "The list of all assets in use in the Vega network or the specified asset if ID is provided"
   assetsConnection(id: ID, pagination: Pagination): AssetsConnection
 
-  "find a deposit using its ID"
+  "Find a deposit using its ID"
   deposit("ID of the Deposit" id: ID!): Deposit
 
-  "get data for a specific epoch, if ID omitted it gets the current epoch. If the string is 'next', fetch the next epoch"
+  "Get data for a specific epoch, if ID omitted it gets the current epoch. If the string is 'next', fetch the next epoch"
   epoch(id: ID): Epoch!
 
-  "get the signatures bundle to allowlist an ERC20 token in the collateral bridge"
+  "Get the signatures bundle to allowlist an ERC20 token in the collateral bridge"
   erc20ListAssetBundle(
     "ID of the asset"
     assetId: ID!
   ): Erc20ListAssetBundle!
 
-  "get the signature bundle to add a particular validator to the signer list of the multisig contract"
+  "Get the signature bundle to add a particular validator to the signer list of the multisig contract"
   erc20MultiSigSignerAddedBundles(
     "The node ID of the validator of which a signature bundle is required"
     nodeId: ID!
@@ -9586,7 +9587,7 @@ type Query {
     pagination: Pagination
   ): ERC20MultiSigSignerAddedConnection!
 
-  "get the signatures bundle to remove a particular validator from signer list of the multisig contract"
+  "Get the signatures bundle to remove a particular validator from signer list of the multisig contract"
   erc20MultiSigSignerRemovedBundles(
     "The node ID of the validator of which a signature bundle is required"
     nodeId: ID!
@@ -9598,19 +9599,19 @@ type Query {
     pagination: Pagination
   ): ERC20MultiSigSignerRemovedConnection!
 
-  "get the signature bundle to update the token limits (maxLifetimeDeposit and withdrawThreshold) for a given ERC20 token (already allowlisted) in the collateral bridge"
+  "Get the signature bundle to update the token limits (maxLifetimeDeposit and withdrawThreshold) for a given ERC20 token (already allowlisted) in the collateral bridge"
   erc20SetAssetLimitsBundle(
     "ID of the proposal to update an asset"
     proposalId: ID!
   ): ERC20SetAssetLimitsBundle!
 
-  "find an erc20 withdrawal approval using its withdrawal ID"
+  "Find an erc20 withdrawal approval using its withdrawal ID"
   erc20WithdrawalApproval(
     "ID of the withdrawal"
     withdrawalId: ID!
   ): Erc20WithdrawalApproval
 
-  "return an estimation of the potential cost for a new order"
+  "Return an estimation of the potential cost for a new order"
   estimateOrder(
     "ID of the market to place the order"
     marketId: ID!
@@ -9624,16 +9625,16 @@ type Query {
     side: Side!
     "TimeInForce of the order"
     timeInForce: OrderTimeInForce!
-    "expiration of the the order"
+    "Expiration of the the order"
     expiration: String
-    "type of the order"
+    "Type of the order"
     type: OrderType!
   ): OrderEstimate!
 
-  "query for historic ethereum key rotations"
+  "Query for historic ethereum key rotations"
   ethereumKeyRotations(nodeId: ID): EthereumKeyRotationsConnection!
 
-  "get market data history for a specific market. If no dates are given, the latest snapshot will be returned. If only the start date is provided, all history from the given date will be provided, and if only the end date is provided, all history from the start up to and including the end date will be provided."
+  "Get market data history for a specific market. If no dates are given, the latest snapshot will be returned. If only the start date is provided, all history from the given date will be provided, and if only the end date is provided, all history from the start up to and including the end date will be provided."
   getMarketDataHistoryByID(
     id: ID!
     """
@@ -9656,7 +9657,7 @@ type Query {
     last: Int): [MarketData] @deprecated(reason: "Use getMarketDataHistoryConnectionByID instead")
 
 
-  "get market data history for a specific market. If no dates are given, the latest snapshot will be returned. If only the start date is provided all history from the given date will be provided, and if only the end date is provided, all history from the start up to and including the end date will be provided. Pagination is provided using a cursor based pagination model"
+  "Get market data history for a specific market. If no dates are given, the latest snapshot will be returned. If only the start date is provided all history from the given date will be provided, and if only the end date is provided, all history from the start up to and including the end date will be provided. Pagination is provided using a cursor based pagination model"
   getMarketDataHistoryConnectionByID(
     id: ID!
     """
@@ -9674,18 +9675,22 @@ type Query {
     "Optional Pagination"
     pagination: Pagination): MarketDataConnection
 
+  "Get historical balances for an account or specific asset within the given date range."
   historicBalances(
+    "Optional filter to restrict the result to a specific account or asset"
     filter: AccountFilter,
+    "Optional grouping clause for the results"
     groupBy: [AccountField],
     "Date range to retrieve historical balances from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
     dateRange: DateRange,
+    "Optional pagination information"
     pagination: Pagination
   ) : AggregatedBalanceConnection!
 
-  "query for historic key rotations"
+  "Query for historic key rotations"
   keyRotations(id: ID): [KeyRotation!] @deprecated(reason: "use keyRotationsConnection instead")
 
-  "query for historic key rotations"
+  "Query for historic key rotations"
   keyRotationsConnection(id: ID, pagination: Pagination): KeyRotationConnection!
 
   "The last block process by the blockchain"
@@ -9697,6 +9702,7 @@ type Query {
   "One or more instruments that are trading on the VEGA network"
   markets("ID of the market" id: ID): [Market!] @deprecated(reason: "Use marketsConnection instead")
 
+  "One or more instruments that are trading on the Vega network"
   marketsConnection(
     "Optional ID of a market"
     id: ID
@@ -9707,15 +9713,16 @@ type Query {
   "Current network limits"
   networkLimits: NetworkLimits
 
-  "return a single network parameter"
+  "Return a single network parameter"
   networkParameter(
     "key of the network parameter"
     key: String!
   ): NetworkParameter
 
-  "return the full list of network parameters"
+  "Return the full list of network parameters"
   networkParameters: [NetworkParameter!] @deprecated(reason: "Use networkParametersConnection instead")
 
+  "Return the full list of network parameters"
   networkParametersConnection(pagination: Pagination): NetworkParametersConnection!
 
   "Governance proposals that aim to update Vega network parameters"
@@ -9742,16 +9749,16 @@ type Query {
     inState: ProposalState
   ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
 
-  "specific node in network"
+  "Specific node in network"
   node("required ID of node" id: ID!): Node
 
-  "returns information about nodes"
+  "Returns information about nodes"
   nodeData: NodeData
 
-  "all known network nodes"
+  "All known network nodes"
   nodes: [Node!] @deprecated(reason: "use nodesConnection instead")
 
-  "all known network nodes"
+  "All known network nodes"
   nodesConnection(pagination: Pagination): NodesConnection!
 
   "Return a list of aggregated node signature for a given resource ID"
@@ -9774,6 +9781,7 @@ type Query {
     pagination: OffsetPagination
   ): [OracleData!] @deprecated(reason: "Use oracleDataBySpecConnection instead")
 
+  "All oracle data for a given oracle spec ID"
   oracleDataBySpecConnection(
     "ID for an oracle spec"
     oracleSpecId: ID!
@@ -9807,7 +9815,7 @@ type Query {
     "ID for an order"
     id: ID!
 
-    "version of the order (omitted or 0 for most recent; 1 for original; 2 for first amendment, etc)"
+    "Version of the order (omitted or 0 for most recent; 1 for original; 2 for first amendment, etc)"
     version: Int
   ): Order!
 
@@ -9838,6 +9846,7 @@ type Query {
   "One or more entities that are trading on the Vega network"
   parties("Optional ID of a party" id: ID): [Party!] @deprecated(reason: "Use partiesConnection instead.")
 
+  "One or more entities that are trading on the Vega network"
   partiesConnection(
     "Optional ID of a party to retrieve"
     id: ID
@@ -9880,33 +9889,34 @@ type Query {
     inState: ProposalState
   ): [Proposal!] @deprecated(reason: "Use proposalsConnection instead")
 
-  "get statistics about the Vega node"
+  "Get statistics about the Vega node"
   statistics: Statistics!
 
-  "get a list of all transfers for a public key"
+  "Get a list of all transfers for a public key"
   transfers(
-    "the pubkey to look for"
+    "The pubkey to look for"
     pubkey: String!
-    "is the pubkey on the sending part of the transfer"
+    "Is the pubkey on the sending part of the transfer"
     isFrom: Boolean
-    "is the pubkey in the receiving part of the transfer"
+    "Is the pubkey in the receiving part of the transfer"
     isTo: Boolean
   ): [Transfer!] @deprecated(reason: "Use transfersConnection instead")
 
-  "get a list of all transfers for a public key"
+  "Get a list of all transfers for a public key"
   transfersConnection(
-    "the public key to look for"
+    "The public key to look for"
     partyId: ID
-    "direction of the transfer with respect to the public key"
+    "Direction of the transfer with respect to the public key"
     direction: TransferDirection
     "Pagination information"
     pagination: Pagination
   ): TransferConnection
 
-  "find a withdrawal using its ID"
+  "Find a withdrawal using its ID"
   withdrawal("ID of the withdrawal" id: ID!): Withdrawal
 }
 
+"All the states a transfer can transition between"
 enum TransferStatus {
   "Indicates a transfer still being processed"
   STATUS_PENDING
@@ -9955,6 +9965,7 @@ type Transfer {
   "The time at which the transfer was submitted"
   timestamp: String!
 
+  "The type of transfer being made, i.e. a one-off or recurring transfer"
   kind: TransferKind!
 }
 
@@ -9978,16 +9989,19 @@ type RecurringTransfer {
   dispatchStrategy: DispatchStrategy
 }
 
+"The type of metric to use for a reward dispatch strategy"
 enum DispatchMetric {
+  "Dispatch metric that uses the total maker fees paid in the market"
   DISPATCH_METRIC_MAKER_FEES_PAID
-
+  "Dispatch metric that uses the total maker fees received in the market"
   DISPATCH_METRIC_MAKER_FEES_RECEIVED
-
+  "Dispatch metric that uses the total LP fees received in the market"
   DISPATCH_METRIC_LP_FEES_RECEIVED
-
+  "Dispatch metric that uses the total value of the market if above the required threshold and not paid given proposer bonus yet"
   DISPATCH_METRIC_MARKET_VALUE
 }
 
+"Dispatch strategy for a recurring transfer"
 type DispatchStrategy {
   "Defines the data that will be used to compare markets so as to distribute rewards appropriately"
   dispatchMetric: DispatchMetric!
@@ -9999,6 +10013,7 @@ type DispatchStrategy {
   marketIdsInScope: [ID!]
 }
 
+"Validating status of a node, i.e. validator or non-validator"
 enum NodeStatus {
   "The node is non-validating"
   NODE_STATUS_NON_VALIDATOR
@@ -10007,7 +10022,7 @@ enum NodeStatus {
   NODE_STATUS_VALIDATOR
 }
 
-# Describes in both human readable and block time when an epoch spans.
+"Describes in both human readable and block time when an epoch spans."
 type EpochTimestamps {
   "RFC3339 timestamp - Vega time of epoch start, null if not started"
   start: String
@@ -10023,6 +10038,7 @@ type EpochTimestamps {
   # lastBlock: String
 }
 
+"A node's key rotation event"
 type KeyRotation {
   "ID of node where rotation took place"
   nodeId: ID!
@@ -10034,11 +10050,13 @@ type KeyRotation {
   blockHeight: String!
 }
 
+"An Ethereum key rotation record that is returned in a paginated Ethereum key rotation connection"
 type EthereumKeyRotationEdge {
   ethereumKeyRotation: EthereumKeyRotation!
   cursor: String
 }
 
+"A paginated type for returning Ethereum key rotation records"
 type EthereumKeyRotationsConnection {
   "The ethereum key rotations in this connection"
   edges: [EthereumKeyRotationEdge!]!
@@ -10046,7 +10064,7 @@ type EthereumKeyRotationsConnection {
   pageInfo: PageInfo
 }
 
-# Describes the ethereum key rotations of nodes on the vega network
+"Describes the ethereum key rotations of nodes on the vega network"
 type EthereumKeyRotation {
   "ID of node where rotation took place"
   nodeId: ID!
@@ -10058,8 +10076,9 @@ type EthereumKeyRotation {
   blockHeight: String!
 }
 
+"Epoch describes a specific period of time in the Vega network"
 type Epoch {
-  "Presumably this is an integer or something. If there's no such thing, disregard"
+  "Numeric sequence number used to identify the epoch"
   id: ID!
 
   "Timestamps for start and end of epochs"
@@ -10071,10 +10090,11 @@ type Epoch {
   "Validators that participated in this epoch"
   validatorsConnection(pagination: Pagination): NodesConnection
 
+  "Delegations data for this epoch"
   delegations(
-    # Optional party ID to filter on
+    "Optional party ID to filter on"
     partyId: ID
-    # Optional node ID to filter on
+    "Optional node ID to filter on"
     nodeId: ID
     "Pagination skip"
     skip: Int
@@ -10083,16 +10103,18 @@ type Epoch {
     "Pagination last element"
     last: Int): [Delegation!]! @deprecated(reason: "Use delegationsConnection instead")
 
+  "Delegations data for this epoch"
   delegationsConnection(
-    # Optional party ID to filter on
+    "Optional party ID to filter on"
     partyId: ID
-    # Optional node ID to filter on
+    "Optional node ID to filter on"
     nodeId: ID
     "Pagination information"
    pagination: Pagination
   ): DelegationsConnection
 }
 
+"Summary of data across all nodes"
 type NodeData {
   "Total staked amount across all nodes"
   stakedTotal: String!
@@ -10111,6 +10133,7 @@ type NodeData {
   uptime: Float!
 }
 
+"Summary of a node's rewards for a given epoch"
 type EpochParticipation {
   epoch: Epoch
 
@@ -10120,9 +10143,11 @@ type EpochParticipation {
   "RFC3339 timestamp"
   online: String
 
+  "Total amount rewarded for participation in the given epoch"
   totalRewards: Float
 }
 
+"Summary of all epochs for a node"
 type EpochData {
   "Total number of epochs since node was created"
   total: Int!
@@ -10134,6 +10159,7 @@ type EpochData {
   online: Int!
 }
 
+"Information available for a node"
 type Node {
   "The node URL eg n01.vega.xyz"
   id: ID!
@@ -10169,14 +10195,16 @@ type Node {
   "Amount of stake on the next epoch"
   pendingStake: String!
 
+  "Summary of epoch data across all nodes"
   epochData: EpochData
 
   # @TODO implement this filter
   # epochs(last: Int, since: String): [EpochParticipation!]!
 
+  "Validator status of the node"
   status: NodeStatus!
 
-  # All delegation for a node by a given party if specified, or all delegations.
+  "All delegation for a node by a given party if specified, or all delegations."
   delegations(
     partyId: ID,
     "Pagination skip"
@@ -10186,6 +10214,7 @@ type Node {
     "Pagination last element"
     last: Int): [Delegation!] @deprecated(reason: "Use delegationsConnection instead")
 
+  "All delegation for a node by a given party if specified, or all delegations."
   delegationsConnection(
     partyId: ID,
     pagination: Pagination
@@ -10371,7 +10400,7 @@ enum NodeSignatureKind {
   "A signature to add a new validator to the ERC20 bridge"
   NODE_SIGNATURE_KIND_ERC20_MULTISIG_SIGNER_ADDED
 
-  "A siganture to remove a validator from the ERC20 bridge"
+  "A signature to remove a validator from the ERC20 bridge"
   NODE_SIGNATURE_KIND_ERC20_MULTISIG_SIGNER_REMOVED
 
   "A signature to update limits of an ERC20 asset"
@@ -10472,11 +10501,11 @@ type DiscreteTrading {
 
 "Parameters for the log normal risk model"
 type LogNormalModelParams {
-  "mu parameter, annualised growth rate of the underlying asset"
+  "Mu parameter, annualised growth rate of the underlying asset"
   mu: Float!
-  "r parameter"
+  "R parameter"
   r: Float!
-  "sigma parameter, annualised volatility of the underlying asset, must be a strictly non-negative real number"
+  "Sigma parameter, annualised volatility of the underlying asset, must be a strictly non-negative real number"
   sigma: Float!
 }
 
@@ -10565,30 +10594,30 @@ type OracleSpec {
   "RFC3339Nano last updated timestamp"
   updatedAt: String
   """
-  pubKeys is the list of authorized public keys that signed the data for this
+  The list of authorized public keys that signed the data for this
   oracle. All the public keys in the oracle data should be contained in these
   public keys.
   """
   pubKeys: [String!]
   """
-  filters describes which oracle data are considered of interest or not for
+  Filters describes which oracle data are considered of interest or not for
   the product (or the risk model).
   """
   filters: [Filter!]
-  "status describes the status of the oracle spec"
+  "Status describes the status of the oracle spec"
   status: OracleSpecStatus!
-  "data list all the oracle data broadcast to this spec"
+  "Data list all the oracle data broadcast to this spec"
   data: [OracleData!]! @deprecated(reason: "Use dataConnection instead")
-  "data list all the oracle data broadcast to this spec"
+  "Data list all the oracle data broadcast to this spec"
   dataConnection(pagination: Pagination): OracleDataConnection!
 }
 
 "Status describe the status of the oracle spec"
 enum OracleSpecStatus {
-  "describes an active oracle spec."
+  "Describes an active oracle spec."
   STATUS_ACTIVE
   """
-  describes an oracle spec that is not listening to data
+  Describes an oracle spec that is not listening to data
   anymore.
   """
   STATUS_DEACTIVATED
@@ -10599,10 +10628,10 @@ Filter describes the conditions under which oracle data is considered of
 interest or not.
 """
 type Filter {
-  "key is the oracle data property key targeted by the filter."
+  "The oracle data property key targeted by the filter."
   key: PropertyKey!
   """
-  conditions are the conditions that should be matched by the data to be
+  The conditions that should be matched by the data to be
   considered of interest.
   """
   conditions: [Condition!]
@@ -10610,9 +10639,9 @@ type Filter {
 
 "PropertyKey describes the property key contained in an oracle data."
 type PropertyKey {
-  "name is the name of the property."
+  "The name of the property."
   name: String
-  "type is the type of the property."
+  "The type of the property."
   type: PropertyKeyType!
 }
 
@@ -10639,9 +10668,9 @@ enum PropertyKeyType {
 Condition describes the condition that must be validated by the oracle engine
 """
 type Condition {
-  "comparator is the type of comparison to make on the value."
+  "The type of comparison to make on the value."
   operator: ConditionOperator!
-  "value is used by the comparator."
+  "The value to compare against."
   value: String
 }
 
@@ -10667,13 +10696,13 @@ enum ConditionOperator {
 
 "An oracle data contains the data sent by an oracle"
 type OracleData {
-  "pubKeys is the list of public keys that signed the data"
+  "The list of public keys that signed the data"
   pubKeys: [String!]
-  "data contains all the properties send by an oracle"
+  "All the properties sent by an oracle"
   data: [Property!]
 
   """
-  lists all the oracle specs that matched this oracle data.
+  Lists of all the oracle specs that matched this oracle data.
   When the array is empty, it means no oracle spec matched this oracle data.
   """
   matchedSpecIds: [ID!]
@@ -10687,9 +10716,9 @@ type OracleData {
 
 "A property associates a name to a value"
 type Property {
-  "name of the property"
+  "Name of the property"
   name: String!
-  "value of the property"
+  "Value of the property"
   value: String!
 }
 
@@ -10719,13 +10748,13 @@ type MarginCalculator {
 }
 
 type ScalingFactors {
-  "the scaling factor that determines the margin level at which Vega has to search for more money"
+  "The scaling factor that determines the margin level at which Vega has to search for more money"
   searchLevel: Float!
 
-  "the scaling factor that determines the optimal margin level"
+  "The scaling factor that determines the optimal margin level"
   initialMargin: Float!
 
-  "the scaling factor that determines the overflow margin level"
+  "The scaling factor that determines the overflow margin level"
   collateralRelease: Float!
 }
 
@@ -10844,7 +10873,7 @@ type Market {
   tradableInstrument: TradableInstrument!
 
   """
-  decimalPlaces indicates the number of decimal places that an integer must be shifted by in order to get a correct
+  The number of decimal places that an integer must be shifted by in order to get a correct
   number denominated in the currency of the market. (uint64)
 
   Examples:
@@ -10862,7 +10891,7 @@ type Market {
   decimalPlaces: Int!
 
   """
-  positionDecimalPlaces indicates the number of decimal places that an integer must be shifted in order to get a correct size (uint64).
+  The number of decimal places that an integer must be shifted in order to get a correct size (uint64).
   i.e. 0 means there are no fractional orders for the market, and order sizes are always whole sizes.
   2 means sizes given as 10^2 * desired size, e.g. a desired size of 1.23 is represented as 123 in this market.
   This sets how big the smallest order / position on the market can be.
@@ -10935,6 +10964,7 @@ type Market {
   tradesConnection(
     "Date range to retrieve trades from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
     dateRange: DateRange,
+    "Pagination information"
     pagination: Pagination
   ): TradeConnection
 
@@ -10973,10 +11003,10 @@ type Market {
      pagination: Pagination
   ): LiquidityProvisionsConnection
 
-  "timestamps for state changes in the market"
+  "Timestamps for state changes in the market"
   marketTimestamps: MarketTimestamps!
 
-  "risk factors for the market"
+  "Risk factors for the market"
   riskFactors: RiskFactor
 }
 
@@ -11184,7 +11214,7 @@ type Party {
   "Trading positions relating to a party"
   positionsConnection(market: ID, pagination: Pagination): PositionConnection
 
-  "marginLevels"
+  "Margin Levels"
   margins(
     "market ID off the margin to get, nil if all markets"
     marketId: ID
@@ -11194,7 +11224,7 @@ type Party {
   marginsConnection(
     "market ID for the requested margin levels, nil if all markets"
     marketId: ID
-    "Pagination information"
+    "Optional Pagination information"
     pagination: Pagination
   ): MarginConnection
 
@@ -11203,7 +11233,7 @@ type Party {
     inState: ProposalState
   ): [Proposal] @deprecated(reason: "Use proposalsConnection instead")
 
-  "All governance proposals in the VEGA network"
+  "All governance proposals in the Vega network"
   proposalsConnection(
     "Optional type of proposal to retrieve data for"
     proposalType: ProposalType
@@ -11215,7 +11245,11 @@ type Party {
 
   votes: [ProposalVote] @deprecated(reason: "Use votesConnection instead")
 
-  votesConnection(pagination: Pagination): ProposalVoteConnection
+  "All votes on proposals in the Vega network by the given party"
+  votesConnection(
+    "Optional Pagination information"
+    pagination: Pagination
+  ): ProposalVoteConnection
 
   "The list of all withdrawals initiated by the party"
   withdrawals: [Withdrawal!] @deprecated(reason: "Use withdrawalsConnection instead")
@@ -11224,6 +11258,7 @@ type Party {
   withdrawalsConnection(
     "Date range to retrieve withdrawals from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
     dateRange: DateRange,
+    "Optional Pagination information"
     pagination: Pagination
   ): WithdrawalsConnection
 
@@ -11234,6 +11269,7 @@ type Party {
   depositsConnection(
     "Date range to retrieve deposits from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
     dateRange: DateRange,
+    "Optional Pagination information"
     pagination: Pagination
   ): DepositsConnection
 
@@ -11251,7 +11287,7 @@ type Party {
        marketId: ID
        "An optional reference"
        reference: String
-       "Pagination information"
+       "Optional Pagination information"
        pagination: Pagination
     ): LiquidityProvisionsConnection
 
@@ -11266,6 +11302,7 @@ type Party {
     "Pagination last element"
     last: Int): [Delegation!] @deprecated(reason: "Use delegationsConnection instead")
 
+  # All delegations for a party to a given node if node is specified, or all delegations if not
   delegationsConnection(
     "Optional node ID"
     nodeId: ID
@@ -11291,10 +11328,11 @@ type Party {
     last: Int
   ): [Reward] @deprecated(reason: "Use rewardsConnection instead")
 
+  "Rewards information for the party"
   rewardsConnection(
     "An asset ID (optional)"
     assetId: ID
-    "Cursor pagination information"
+    "Optional pagination information"
     pagination: Pagination
   ): RewardsConnection
 
@@ -11304,10 +11342,10 @@ type Party {
     assetId: ID
   ): [RewardSummary]
 
-  "return reward information"
+  "Return reward information"
   rewardDetails: [RewardPerAssetDetail] @deprecated(reason: "Use rewardSummaries or rewards instead.")
 
-  "get a list of all transfers for a public key"
+  "All transfers for a public key"
   transfersConnection(
     "direction of the transfer with respect to the public key"
     direction: TransferDirection
@@ -11973,7 +12011,7 @@ enum ProposalRejectionReason {
   PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS
   "The specified asset for the market proposal is invalid"
   PROPOSAL_ERROR_INVALID_ASSET
-  "proposal terms timestamps are not compatible (Validation < Closing < Enactment)"
+  "Proposal terms timestamps are not compatible (Validation < Closing < Enactment)"
   PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS
   "Risk parameters are missing from the market proposal"
   PROPOSAL_ERROR_NO_RISK_PARAMETERS
@@ -12017,7 +12055,7 @@ enum ProposalRejectionReason {
   PROPOSAL_ERROR_INSUFFICIENT_EQUITY_LIKE_SHARE
   "Unknown proposal type"
   PROPOSAL_ERROR_UNKNOWN_TYPE
-  "Unknow risk paramters"
+  "Unknown risk parameters"
   PROPOSAL_ERROR_UNKNOWN_RISK_PARAMETER_TYPE
   "Freeform proposal is invalid"
   PROPOSAL_ERROR_INVALID_FREEFORM
@@ -12320,13 +12358,13 @@ oracle engine.
 """
 type OracleSpecConfiguration {
   """
-  pubKeys is the list of authorised public keys that signed the data for this
+  The list of authorised public keys that signed the data for this
   oracle. All the public keys in the oracle data should be contained in these
   public keys.
   """
   pubKeys: [String!]
   """
-  filters describes which oracle data are considered of interest or not for
+  Filters describes which oracle data are considered of interest or not for
   the product (or the risk model).
   """
   filters: [Filter!]
@@ -12621,9 +12659,9 @@ type TimeUpdate {
 }
 
 type MarketEvent {
-  "the market ID"
+  "The market ID"
   marketId: ID!
-  "the message - market events are used for logging"
+  "The message - market events are used for logging"
   payload: String!
 }
 
@@ -12673,47 +12711,47 @@ type PositionResolution {
 }
 
 type LossSocialization {
-  "the market ID where loss socialization happened"
+  "The market ID where loss socialization happened"
   marketId: ID!
-  "the party that was part of the loss socialization"
+  "The party that was part of the loss socialization"
   partyId: ID!
-  "the amount lost"
+  "The amount lost"
   amount: String!
 }
 
 type TradeSettlement {
-  "the size of the trade"
+  "The size of the trade"
   size: Int!
-  "the price of the trade"
+  "The price of the trade"
   price: String!
 }
 
 type SettlePosition {
-  "the market in which a position was settled"
+  "The market in which a position was settled"
   marketId: ID!
-  "the party who settled a position"
+  "The party who settled a position"
   partyId: ID!
-  "the settle price"
+  "The settle price"
   price: String!
-  "the trades that were settled to close the overall position"
+  "The trades that were settled to close the overall position"
   tradeSettlements: [TradeSettlement!]
 }
 
 type SettleDistressed {
-  "the market in which a position was closed out"
+  "The market in which a position was closed out"
   marketId: ID!
-  "the party that was closed out"
+  "The party that was closed out"
   partyId: ID!
-  "the margin taken from distressed party"
+  "The margin taken from distressed party"
   margin: String!
-  "the price at which the position was closed out"
+  "The price at which the position was closed out"
   price: String!
 }
 
 type MarketTick {
-  "the market ID"
+  "The market ID"
   marketId: ID!
-  "the block time"
+  "The block time"
   time: String!
 }
 
@@ -12798,11 +12836,11 @@ enum BusEventType {
   Withdrawal
   "An oracle spec has been registered"
   OracleSpec
-  "constant for market events - mainly used for logging"
+  "Constant for market events - mainly used for logging"
   Market
 }
 
-"union type for wrapped events in stream PROPOSAL is mapped to governance data, something to keep in mind"
+"Union type for wrapped events in stream PROPOSAL is mapped to governance data, something to keep in mind"
 union Event =
   TimeUpdate
   | MarketEvent
@@ -12831,23 +12869,23 @@ union Event =
   | LiquidityProvision
 
 type BusEvent {
-  "the ID for this event"
+  "The ID for this event"
   id: ID!
-  "the block hash"
+  "The block hash"
   block: String!
-  "the type of event"
+  "The type of event"
   type: BusEventType!
-  "the payload - the wrapped event"
+  "The payload - the wrapped event"
   event: Event!
 }
 
 "A risk factor emitted by the risk model for a given market"
 type RiskFactor {
-  "market the risk factor was emitted for"
+  "Market the risk factor was emitted for"
   market: String!
-  "short factor"
+  "Short factor"
   short: String!
-  "long factor"
+  "Long factor"
   long: String!
 }
 
@@ -12904,9 +12942,9 @@ type LiquidityProvision {
   commitmentAmount: String!
   "Nominated liquidity fee factor, which is an input to the calculation of liquidity fees on the market, as per setting fees and rewarding liquidity providers."
   fee: String!
-  "a set of liquidity sell orders to meet the liquidity provision obligation."
+  "A set of liquidity sell orders to meet the liquidity provision obligation."
   sells: [LiquidityOrderReference!]!
-  "a set of liquidity buy orders to meet the liquidity provision obligation."
+  "A set of liquidity buy orders to meet the liquidity provision obligation."
   buys: [LiquidityOrderReference!]!
   "The version of this liquidity provision"
   version: String!
@@ -12932,9 +12970,9 @@ type LiquidityProvisionUpdate {
   commitmentAmount: String!
   "Nominated liquidity fee factor, which is an input to the calculation of liquidity fees on the market, as per setting fees and rewarding liquidity providers."
   fee: String!
-  "a set of liquidity sell orders to meet the liquidity provision obligation."
+  "A set of liquidity sell orders to meet the liquidity provision obligation."
   sells: [LiquidityOrderReference!]!
-  "a set of liquidity buy orders to meet the liquidity provision obligation."
+  "A set of liquidity buy orders to meet the liquidity provision obligation."
   buys: [LiquidityOrderReference!]!
   "The version of this liquidity provision"
   version: String!
@@ -12977,6 +13015,7 @@ type RewardSummary {
     first: Int
     "Pagination last element"
     last: Int): [Reward] @deprecated(reason: "Use rewardsConnection instead")
+
   "List of individual reward payouts, ordered by epoch"
   rewardsConnection(
     "An optional asset ID"
@@ -13075,24 +13114,37 @@ input OffsetPagination {
 Pagination constructs to support cursor based pagination in the API
 """
 input Pagination {
+  "The number of items to fetch in the next page traversing forward through the connection"
   first: Int
+  "The cursor to start fetching items after. If empty, data will be fetched from the beginning of the connection"
   after: String
+  "The number of items to fetch in the next page traversing backward through the connection"
   last: Int
+  "The cursor to start fetching items before. If empty data will be fetched from the end of the connection"
   before: String
 }
 
+"Paging information returned with each page of a connection"
 type PageInfo {
+  "The connection has more pages to fetch when traversing forward through the connection"
   hasNextPage: Boolean!
+  "The connection has more pages to fetch when traversing backward through the connection"
   hasPreviousPage: Boolean!
+  "The first cursor in the current page"
   startCursor: String!
+  "The last cursor in the current page"
   endCursor: String!
 }
 
+"Edge type containing the trade and cursor information returned by a TradeConnection"
 type TradeEdge {
+  "The trade"
   node: Trade!
+  "The cursor for this trade"
   cursor: String!
 }
 
+"Connection type for retrieving cursor-based paginated trade information"
 type TradeConnection {
   "The trade in this connection"
   edges: [TradeEdge!]!
@@ -13100,11 +13152,15 @@ type TradeConnection {
   pageInfo: PageInfo!
 }
 
+"Edge type containing the party and cursor information returned by a PartyConnection"
 type PartyEdge {
+  "The party"
   node: Party!
+  "The cursor for this party"
   cursor: String!
 }
 
+"Connection type for retrieving cursor-based paginated party information"
 type PartyConnection {
   "The parties in this connection"
   edges: [PartyEdge!]!
@@ -13112,11 +13168,15 @@ type PartyConnection {
   pageInfo: PageInfo!
 }
 
+"Edge type containing the order and cursor information returned by a OrderConnection"
 type MarketEdge {
+  "The market"
   node: Market!
+    "The cursor for this market"
   cursor: String!
 }
 
+"Connection type for retrieving cursor-based paginated market information"
 type MarketConnection {
   "The markets in this connection"
   edges: [MarketEdge!]!
@@ -13124,11 +13184,15 @@ type MarketConnection {
   pageInfo: PageInfo!
 }
 
+"Edge type containing the order and cursor information returned by a OrderConnection"
 type OrderEdge {
+  "The order"
   node: Order!
+  "The cursor for this order"
   cursor: String
 }
 
+"Connection type for retrieving cursor-based paginated order information"
 type OrderConnection {
   "The orders in this connection"
   edges: [OrderEdge!]
@@ -13136,11 +13200,15 @@ type OrderConnection {
   pageInfo: PageInfo
 }
 
+"Edge type containing the position and cursor information returned by a PositionConnection"
 type PositionEdge {
+  "The position"
   node: Position!
+    "The cursor for this position"
   cursor: String
 }
 
+"Connection type for retrieving cursor-based paginated position information"
 type PositionConnection {
   "The positions in this connection"
   edges: [PositionEdge!]
@@ -13148,11 +13216,15 @@ type PositionConnection {
   pageInfo: PageInfo
 }
 
+"Edge type containing the vote and cursor information returned by a VoteConnection"
 type VoteEdge {
+  "The vote"
   node: Vote!
+  "The cursor for this vote"
   cursor: String
 }
 
+"Connection type for retrieving cursor-based paginated vote information"
 type VoteConnection {
   "The votes in this connection"
   edges: [VoteEdge!]
@@ -13160,11 +13232,15 @@ type VoteConnection {
   pageInfo: PageInfo
 }
 
+"Edge type containing the proposal vote and cursor information returned by a ProposalVoteConnection"
 type ProposalVoteEdge {
+  "The proposal vote"
   node: ProposalVote!
+  "The cursor for this proposal vote"
   cursor: String
 }
 
+"Connection type for retrieving cursor-based paginated proposal vote information"
 type ProposalVoteConnection {
   "The proposal votes in this connection"
   edges: [ProposalVoteEdge!]
@@ -13172,11 +13248,13 @@ type ProposalVoteConnection {
   pageInfo: PageInfo
 }
 
+"Edge type containing the margin and cursor information returned by a MarginConnection"
 type MarginEdge {
   node: MarginLevels!
   cursor: String
 }
 
+"Connection type for retrieving cursor-based paginated margin information"
 type MarginConnection {
   "The margin levels in this connection"
   edges: [MarginEdge!]
@@ -13184,11 +13262,13 @@ type MarginConnection {
   pageInfo: PageInfo
 }
 
+"Edge type containing the reward and cursor information returned by a MarketDataConnection"
 type MarketDataEdge {
   node: MarketData!
   cursor: String
 }
 
+"Connection type for retrieving cursor-based paginated market data information"
 type MarketDataConnection {
   "The market data elements for the requested page"
   edges: [MarketDataEdge]
@@ -13196,11 +13276,15 @@ type MarketDataConnection {
   pageInfo: PageInfo
 }
 
+"Edge type containing the reward and cursor information returned by a RewardsConnection"
 type RewardEdge {
+  "The reward information"
   node: Reward!
+  "The cursor for this reward"
   cursor: String!
 }
 
+"Connection type for retrieving cursor-based paginated rewards information"
 type RewardsConnection {
   "The rewards"
   edges: [RewardEdge]
@@ -13208,11 +13292,15 @@ type RewardsConnection {
   pageInfo: PageInfo
 }
 
+"Edge type containing the candle and cursor information returned by a CandleDataConnection"
 type CandleEdge {
+  "The candle"
   node: Candle!
+  "The cursor for the candle"
   cursor: String!
 }
 
+"Connection type for retrieving cursor-based paginated candle information"
 type CandleDataConnection {
   "The candles"
   edges: [CandleEdge]
@@ -13220,11 +13308,15 @@ type CandleDataConnection {
   pageInfo: PageInfo
 }
 
+"Edge type containing the withdrawal and cursor information returned by a WithdrawalsConnection"
 type WithdrawalEdge {
+  "The withdrawal"
   node: Withdrawal!
+  "The cursor for the withdrawal"
   cursor: String!
 }
 
+"Connection type for retrieving cursor-based paginated withdrawals information"
 type WithdrawalsConnection {
   "The withdrawals"
   edges: [WithdrawalEdge]
@@ -13232,11 +13324,13 @@ type WithdrawalsConnection {
   pageInfo: PageInfo
 }
 
+"Edge type containing the deposit and cursor information returned by a DepositsConnection"
 type DepositEdge {
   node: Deposit!
   cursor: String!
 }
 
+"Connection type for retrieving cursor-based paginated deposits information"
 type DepositsConnection {
   "The deposits"
   edges: [DepositEdge]
@@ -13244,11 +13338,15 @@ type DepositsConnection {
   pageInfo: PageInfo
 }
 
+"Edge type containing the asset and cursor information returned by a AssetsConnection"
 type AssetEdge {
+  "The asset information"
   node: Asset!
+  "The cursor for the asset"
   cursor: String!
 }
 
+"Connection type for retrieving cursor-based paginated assets information"
 type AssetsConnection {
     "The assets"
     edges: [AssetEdge]
@@ -13256,13 +13354,15 @@ type AssetsConnection {
     pageInfo: PageInfo
 }
 
+"Edge type containing the oracle spec and cursor information returned by a OracleSpecsConnection"
 type OracleSpecEdge {
   "The oracle spec"
   node: OracleSpec!
-  "The cursor for the data item"
+  "The cursor for the spec item"
   cursor: String!
 }
 
+"Connection type for retrieving cursor-based paginated oracle specs information"
 type OracleSpecsConnection {
     "The oracle specs"
     edges: [OracleSpecEdge]
@@ -13270,6 +13370,7 @@ type OracleSpecsConnection {
     pageInfo: PageInfo!
 }
 
+"Edge type containing the oracle data and cursor information returned by a OracleDataConnection"
 type OracleDataEdge {
   "The oracle data"
   node: OracleData!
@@ -13277,6 +13378,7 @@ type OracleDataEdge {
   cursor: String!
 }
 
+"Connection type for retrieving cursor-based paginated oracle data information"
 type OracleDataConnection {
     "The oracle data"
     edges: [OracleDataEdge]
@@ -13284,32 +13386,38 @@ type OracleDataConnection {
     pageInfo: PageInfo!
 }
 
+"Edge type containing the liquidity provision and cursor information returned by a LiquidityProvisionsConnection"
 type LiquidityProvisionsEdge {
   node: LiquidityProvision!
   cursor: String!
 }
 
+"Connection type for retrieving cursor-based paginated liquidity provision information"
 type LiquidityProvisionsConnection {
     edges: [LiquidityProvisionsEdge]
     pageInfo: PageInfo!
 }
 
+"Edge type containing the transfer and cursor information returned by a TransferConnection"
 type TransferEdge {
   node: Transfer!
   cursor: String!
 }
 
+"Connection type for retrieving cursor-based paginated transfers information"
 type TransferConnection {
     edges: [TransferEdge]
     pageInfo: PageInfo!
 }
 
+"Filter type for specifying the types of transfers to filter for"
 enum TransferDirection {
   To
   From
   ToOrFrom
 }
 
+"Edge type containing the proposals and cursor information returned by a ProposalsConnection"
 type ProposalEdge {
   "The proposal data"
   node: Proposal!
@@ -13317,6 +13425,7 @@ type ProposalEdge {
   cursor: String!
 }
 
+"Connection type for retrieving cursor-based paginated proposals information"
 type ProposalsConnection {
     "List of proposals available for the connection"
     edges: [ProposalEdge]
@@ -13324,6 +13433,7 @@ type ProposalsConnection {
     pageInfo: PageInfo!
 }
 
+"Edge type containing the delegation and cursor information returned by a DelegationsConnection"
 type DelegationEdge {
   "The delegation information"
   node: Delegation!
@@ -13331,6 +13441,7 @@ type DelegationEdge {
   cursor: String!
 }
 
+"Connection type for retrieving cursor-based paginated delegation information"
 type DelegationsConnection {
   "The delegation information available on this connection"
   edges: [DelegationEdge]
@@ -13338,6 +13449,7 @@ type DelegationsConnection {
   pageInfo: PageInfo!
 }
 
+"Edge type containing the node and cursor information returned by a NodesConnection"
 type NodeEdge {
   "The node"
   node: Node!
@@ -13345,6 +13457,7 @@ type NodeEdge {
   cursor: String!
 }
 
+"Connection type for retrieving cursor-based paginated node information"
 type NodesConnection {
   "List of nodes available for the connection"
   edges: [NodeEdge]
@@ -13352,6 +13465,7 @@ type NodesConnection {
   pageInfo: PageInfo!
 }
 
+"Edge type containing the network parameter and cursor information returned by a NetworkParametersConnection"
 type NetworkParameterEdge {
   "The network parameter"
   node: NetworkParameter!
@@ -13359,6 +13473,7 @@ type NetworkParameterEdge {
   cursor: String!
 }
 
+"Connection type for retrieving cursor-based paginated network parameters information"
 type NetworkParametersConnection {
   "List of network parameters available for the connection"
   edges: [NetworkParameterEdge]
@@ -13366,6 +13481,7 @@ type NetworkParametersConnection {
   pageInfo: PageInfo!
 }
 
+"Edge type containing the node signature and cursor information returned by a NodeSignatureConnection"
 type NodeSignatureEdge {
   "The node signature"
   node: NodeSignature!
@@ -13373,6 +13489,7 @@ type NodeSignatureEdge {
   cursor: String!
 }
 
+"Connection type for retrieving cursor-based paginated node signature information"
 type NodeSignaturesConnection {
   "List of node signatures available for the connection"
   edges: [NodeSignatureEdge]
@@ -13380,6 +13497,7 @@ type NodeSignaturesConnection {
   pageInfo: PageInfo!
 }
 
+"Edge type containing the key rotation and cursor information returned by a KeyRotationConnection"
 type KeyRotationEdge {
   "The key rotation"
   node: KeyRotation!
@@ -13387,6 +13505,7 @@ type KeyRotationEdge {
   cursor: String!
 }
 
+"Connection type for retrieving cursor-based paginated key rotation information"
 type KeyRotationConnection {
   "List of key rotations available for the connection"
   edges: [KeyRotationEdge]
@@ -13394,6 +13513,7 @@ type KeyRotationConnection {
   pageInfo: PageInfo!
 }
 
+"Edge type containing the reward summary and cursor information returned by a RewardSummaryConnection"
 type RewardSummaryEdge {
   "The reward summary"
   node: RewardSummary!
@@ -13401,6 +13521,7 @@ type RewardSummaryEdge {
   cursor: String!
 }
 
+"Connection type for retrieving cursor-based paginated reward summary information"
 type RewardSummaryConnection {
   "List of reward summaries available for the connection"
   edges: [RewardSummaryEdge]
@@ -13408,6 +13529,7 @@ type RewardSummaryConnection {
   pageInfo: PageInfo!
 }
 
+"Edge type containing the stake linking and cursor information returned by a StakesConnection"
 type StakeLinkingEdge {
   "The stake linking"
   node: StakeLinking!
@@ -13415,6 +13537,7 @@ type StakeLinkingEdge {
   cursor: String!
 }
 
+"Connection type for retrieving cursor-based paginated stake linking information"
 type StakesConnection {
   "List of stake links available for the connection"
   edges: [StakeLinkingEdge]
@@ -13422,6 +13545,7 @@ type StakesConnection {
   pageInfo: PageInfo!
 }
 
+"Edge type containing the account and cursor information returned by an AccountsConnection"
 type AccountEdge {
   "The account"
   node: Account!
@@ -13429,6 +13553,7 @@ type AccountEdge {
   cursor: String!
 }
 
+"Connection type for retrieving cursor-based paginated list of account"
 type AccountsConnection {
   "List of accounts available for the connection"
   edges: [AccountEdge]
@@ -13443,7 +13568,9 @@ If start is provided without end, the end date will be the latest time available
 If end is provided without start, the start time will be the earliest time available in the data set.
 """
 input DateRange {
+  "The start timestamp for the date range (inclusive). RFC3339Nano format"
   start: Timestamp
+  "The end timestamp for the date range (exclusive). RFC3339Nano format"
   end: Timestamp
 }
 `, BuiltIn: false},
