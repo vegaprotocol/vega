@@ -35,6 +35,10 @@ type NodeWallets struct {
 	Tendermint *TendermintPubkey
 }
 
+func (w *NodeWallets) SetEthereumWallet(ethWallet *eth.Wallet) {
+	w.Ethereum = ethWallet
+}
+
 func (w *NodeWallets) Verify() error {
 	if w.Vega == nil {
 		return ErrVegaWalletIsMissing

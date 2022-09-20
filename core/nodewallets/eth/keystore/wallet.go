@@ -25,6 +25,8 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 )
 
+const KeyStoreAlgoType = "eth"
+
 type loader interface {
 	Load(walletName, passphrase string) (*Wallet, error)
 }
@@ -84,7 +86,7 @@ func (w *Wallet) Sign(data []byte) ([]byte, error) {
 }
 
 func (w *Wallet) Algo() string {
-	return "eth"
+	return KeyStoreAlgoType
 }
 
 func (w *Wallet) Version() (string, error) {
