@@ -22,7 +22,7 @@ import (
 )
 
 type AccountStore interface {
-	GetByID(id int64) (entities.Account, error)
+	GetByID(id entities.AccountID) (entities.Account, error)
 	GetAll() ([]entities.Account, error)
 	Obtain(ctx context.Context, a *entities.Account) error
 	Query(filter entities.AccountFilter) ([]entities.Account, error)
@@ -52,7 +52,7 @@ func NewAccount(aStore AccountStore, bStore BalanceStore, log *logging.Logger) *
 	}
 }
 
-func (a *Account) GetByID(id int64) (entities.Account, error) {
+func (a *Account) GetByID(id entities.AccountID) (entities.Account, error) {
 	return a.aStore.GetByID(id)
 }
 

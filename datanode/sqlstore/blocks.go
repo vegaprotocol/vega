@@ -26,6 +26,7 @@ import (
 )
 
 var (
+	ErrNoHistoryBlock    = errors.New("No history block")
 	ErrNoLastBlock       = errors.New("No last block")
 	ErrBlockWaitTimedout = errors.New("Timed out waiting for TimeUpdate event")
 	BlockWaitTimeout     = 5 * time.Second
@@ -96,7 +97,7 @@ func (bs *Blocks) GetLastBlock(ctx context.Context) (entities.Block, error) {
 	defer metrics.StartSQLQuery("Blocks", "GetLastBlock")()
 	err := pgxscan.Get(ctx, bs.Connection, block,
 		`SELECT vega_time, height, hash
-		FROM blocks order by vega_time desc limit 1`)
+		FROM last_block`)
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		return entities.Block{}, ErrNoLastBlock
@@ -114,4 +115,22 @@ func (bs *Blocks) setLastBlock(b entities.Block) {
 	bs.mu.Lock()
 	defer bs.mu.Unlock()
 	bs.lastBlock = &b
+}
+
+func (bs *Blocks) GetOldestHistoryBlock(ctx context.Context) (entities.Block, error) {
+	block := &entities.Block{}
+	defer metrics.StartSQLQuery("Blocks", "GetOldestHistoryBlock")()
+
+	err := pgxscan.Get(ctx, bs.Connection, block, `SELECT vega_time, height, hash
+		FROM blocks order by height asc limit 1`)
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		return entities.Block{}, ErrNoHistoryBlock
+	}
+
+	if err != nil {
+		return entities.Block{}, err
+	}
+
+	return *block, nil
 }

@@ -111,22 +111,19 @@ func (s *ConnectionSource) WithConnection(ctx context.Context) (context.Context,
 }
 
 func (s *ConnectionSource) WithTransaction(ctx context.Context) (context.Context, error) {
-	if s.conf.UseTransactions {
-		var tx pgx.Tx
-		var err error
-		if conn, ok := ctx.Value(connectionContextKey{}).(*pgx.Conn); ok {
-			tx, err = conn.Begin(ctx)
-		} else {
-			tx, err = s.pool.Begin(ctx)
-		}
-
-		if err != nil {
-			return context.Background(), errors.Errorf("failed to start transaction:%s", err)
-		}
-
-		return context.WithValue(ctx, transactionContextKey{}, tx), nil
+	var tx pgx.Tx
+	var err error
+	if conn, ok := ctx.Value(connectionContextKey{}).(*pgx.Conn); ok {
+		tx, err = conn.Begin(ctx)
+	} else {
+		tx, err = s.pool.Begin(ctx)
 	}
-	return ctx, nil
+
+	if err != nil {
+		return context.Background(), errors.Errorf("failed to start transaction:%s", err)
+	}
+
+	return context.WithValue(ctx, transactionContextKey{}, tx), nil
 }
 
 func (s *ConnectionSource) AfterCommit(ctx context.Context, f func()) {
@@ -134,11 +131,10 @@ func (s *ConnectionSource) AfterCommit(ctx context.Context, f func()) {
 	defer s.mu.Unlock()
 
 	// If we're in a transaction, defer calling f() until Commit() is called
-	if s.conf.UseTransactions {
-		if _, ok := ctx.Value(transactionContextKey{}).(pgx.Tx); ok {
-			s.postCommitHooks = append(s.postCommitHooks, f)
-			return
-		}
+
+	if _, ok := ctx.Value(transactionContextKey{}).(pgx.Tx); ok {
+		s.postCommitHooks = append(s.postCommitHooks, f)
+		return
 	}
 
 	// If we're not in a transaction, call f() immediately
@@ -146,21 +142,20 @@ func (s *ConnectionSource) AfterCommit(ctx context.Context, f func()) {
 }
 
 func (s *ConnectionSource) Commit(ctx context.Context) error {
-	if s.conf.UseTransactions {
-		if tx, ok := ctx.Value(transactionContextKey{}).(pgx.Tx); ok {
-			if err := tx.Commit(ctx); err != nil {
-				return fmt.Errorf("failed to commit transaction for context:%s, error:%w", ctx, err)
-			}
-			s.mu.Lock()
-			defer s.mu.Unlock()
-			for _, f := range s.postCommitHooks {
-				f()
-			}
-			s.postCommitHooks = s.postCommitHooks[:0]
-		} else {
-			return fmt.Errorf("no transaction is associated with the context")
+	if tx, ok := ctx.Value(transactionContextKey{}).(pgx.Tx); ok {
+		if err := tx.Commit(ctx); err != nil {
+			return fmt.Errorf("failed to commit transaction for context:%s, error:%w", ctx, err)
 		}
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		for _, f := range s.postCommitHooks {
+			f()
+		}
+		s.postCommitHooks = s.postCommitHooks[:0]
+	} else {
+		return fmt.Errorf("no transaction is associated with the context")
 	}
+
 	return nil
 }
 

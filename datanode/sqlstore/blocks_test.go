@@ -85,6 +85,29 @@ func TestGetLastBlock(t *testing.T) {
 	assert.Equal(t, block2, block)
 }
 
+func TestGetOldestHistoryBlock(t *testing.T) {
+	defer DeleteEverything()
+	bs := sqlstore.NewBlocks(connectionSource)
+
+	now := time.Now()
+
+	block1 := addTestBlockForTime(t, bs, now)
+	addTestBlockForTime(t, bs, now.Add(1*time.Second))
+
+	// Query the first block
+	block, err := bs.GetOldestHistoryBlock(context.Background())
+	assert.NoError(t, err)
+	assert.Equal(t, block1, block)
+}
+
+func TestGetOldestHistoryBlockWhenNoHistoryBlocks(t *testing.T) {
+	defer DeleteEverything()
+	bs := sqlstore.NewBlocks(connectionSource)
+	// Query the first block
+	_, err := bs.GetOldestHistoryBlock(context.Background())
+	assert.Equal(t, sqlstore.ErrNoHistoryBlock, err)
+}
+
 func TestGetLastBlockAfterRecovery(t *testing.T) {
 	defer DeleteEverything()
 	bs := sqlstore.NewBlocks(connectionSource)

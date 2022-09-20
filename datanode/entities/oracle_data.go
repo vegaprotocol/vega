@@ -34,9 +34,10 @@ type OracleData struct {
 	BroadcastAt    time.Time
 	TxHash         TxHash
 	VegaTime       time.Time
+	SeqNum         uint64
 }
 
-func OracleDataFromProto(data *oraclespb.OracleData, txHash TxHash, vegaTime time.Time) (*OracleData, error) {
+func OracleDataFromProto(data *oraclespb.OracleData, txHash TxHash, vegaTime time.Time, seqNum uint64) (*OracleData, error) {
 	properties := make([]Property, 0, len(data.Data))
 	specIDs := make([][]byte, 0, len(data.MatchedSpecIds))
 
@@ -68,6 +69,7 @@ func OracleDataFromProto(data *oraclespb.OracleData, txHash TxHash, vegaTime tim
 		BroadcastAt:    NanosToPostgresTimestamp(data.BroadcastAt),
 		TxHash:         txHash,
 		VegaTime:       vegaTime,
+		SeqNum:         seqNum,
 	}, nil
 }
 

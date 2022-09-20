@@ -29,7 +29,11 @@ func randomEthAddress() entities.EthereumAddress {
 	return entities.EthereumAddress("0x" + hash160bit)
 }
 
-func addTestEthereumKeyRotation(t *testing.T, store *sqlstore.EthereumKeyRotations, block entities.Block) entities.EthereumKeyRotation {
+func addTestEthereumKeyRotation(t *testing.T,
+	store *sqlstore.EthereumKeyRotations,
+	block entities.Block,
+	seqNum uint64,
+) entities.EthereumKeyRotation {
 	t.Helper()
 	kr := entities.EthereumKeyRotation{
 		NodeID:      entities.NodeID("beef"),
@@ -37,6 +41,7 @@ func addTestEthereumKeyRotation(t *testing.T, store *sqlstore.EthereumKeyRotatio
 		NewAddress:  randomEthAddress(),
 		VegaTime:    block.VegaTime,
 		BlockHeight: 42,
+		SeqNum:      seqNum,
 	}
 	err := store.Add(context.Background(), kr)
 	require.NoError(t, err)
@@ -56,7 +61,7 @@ func TestEthereumKeyRotations(t *testing.T) {
 
 	var kr entities.EthereumKeyRotation
 	t.Run("adding", func(t *testing.T) {
-		kr = addTestEthereumKeyRotation(t, krStore, block)
+		kr = addTestEthereumKeyRotation(t, krStore, block, 0)
 	})
 
 	t.Run("fetching all", func(t *testing.T) {
@@ -81,7 +86,7 @@ func TestEthereumKeyRotations(t *testing.T) {
 
 	t.Run("adding more", func(t *testing.T) {
 		for i := 0; i < 10; i++ {
-			addTestEthereumKeyRotation(t, krStore, block)
+			addTestEthereumKeyRotation(t, krStore, block, uint64(i+1))
 		}
 	})
 

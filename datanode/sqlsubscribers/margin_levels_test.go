@@ -27,36 +27,11 @@ import (
 	"github.com/golang/mock/gomock"
 )
 
-func TestMarginLevelsDuplicate_Push(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	store := mocks.NewMockMarginLevelsStore(ctrl)
-
-	store.EXPECT().Add(gomock.Any()).Times(2)
-	store.EXPECT().Flush(gomock.Any()).Times(4)
-
-	accountSource := TestAccountSource{}
-
-	subscriber := sqlsubscribers.NewMarginLevels(store, accountSource, logging.NewTestLogger())
-	subscriber.Flush(context.Background())
-	subscriber.Push(context.Background(), events.NewMarginLevelsEvent(context.Background(), types.MarginLevels{}))
-	subscriber.Flush(context.Background())
-	subscriber.Push(context.Background(), events.NewMarginLevelsEvent(context.Background(), types.MarginLevels{}))
-	subscriber.Flush(context.Background())
-
-	// Now push a non duplicate
-
-	subscriber.Push(context.Background(), events.NewMarginLevelsEvent(context.Background(), types.MarginLevels{InitialMargin: num.NewUint(6)}))
-	subscriber.Flush(context.Background())
-}
-
 func TestMarginLevels_Push(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	accountSource := mocks.NewMockAccountSource(ctrl)
-	accountSource.EXPECT().Obtain(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+	accountSource := TestNullAccountSource{}
 
 	store := mocks.NewMockMarginLevelsStore(ctrl)
 
@@ -81,10 +56,20 @@ func TestMarginLevels_Push(t *testing.T) {
 type TestAccountSource struct{}
 
 func (TestAccountSource) Obtain(ctx context.Context, a *entities.Account) error {
-	a.ID = 1
+	a.ID = "1"
 	return nil
 }
 
-func (TestAccountSource) GetByID(id int64) (entities.Account, error) {
+func (TestAccountSource) GetByID(id entities.AccountID) (entities.Account, error) {
+	panic("implement me")
+}
+
+type TestNullAccountSource struct{}
+
+func (TestNullAccountSource) Obtain(ctx context.Context, a *entities.Account) error {
+	return nil
+}
+
+func (TestNullAccountSource) GetByID(id entities.AccountID) (entities.Account, error) {
 	panic("implement me")
 }
