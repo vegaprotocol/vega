@@ -157,13 +157,13 @@ func (nw *NodeWallet) Reload(r *http.Request, args *NodeWalletArgs, reply *NodeW
 	return fmt.Errorf("failed to reload wallet for non existing chain %q", args.Chain)
 }
 
-func (h *NodeWallet) Show(r *http.Request, args *NodeWalletArgs, reply *Wallet) error {
+func (nw *NodeWallet) Show(r *http.Request, args *NodeWalletArgs, reply *Wallet) error {
 	switch args.Chain {
 	case "vega":
-		*reply = newWallet(h.nodeWallets.Vega)
+		*reply = newWallet(nw.nodeWallets.Vega)
 		return nil
 	case "ethereum":
-		*reply = newWallet(h.nodeWallets.Ethereum)
+		*reply = newWallet(nw.nodeWallets.Ethereum)
 		return nil
 	}
 
