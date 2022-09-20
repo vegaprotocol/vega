@@ -2715,19 +2715,20 @@ func (m *Market) amendOrder(
 	// is already on the book, not rollback will be needed, the margin
 	// will be updated later on for sure.
 
-	if priceIncrease || sizeIncrease {
-		if err = m.checkMarginForOrder(ctx, pos, amendedOrder); err != nil {
-			// Undo the position registering
-			_ = m.position.AmendOrder(ctx, amendedOrder, existingOrder)
+	// akways update margin, even for price/size decrease
+	// if priceIncrease || sizeIncrease {
+	if err = m.checkMarginForOrder(ctx, pos, amendedOrder); err != nil {
+		// Undo the position registering
+		_ = m.position.AmendOrder(ctx, amendedOrder, existingOrder)
 
-			if m.log.GetLevel() == logging.DebugLevel {
-				m.log.Debug("Unable to check/add margin for party",
-					logging.String("market-id", m.GetID()),
-					logging.Error(err))
-			}
-			return nil, nil, ErrMarginCheckFailed
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Unable to check/add margin for party",
+				logging.String("market-id", m.GetID()),
+				logging.Error(err))
 		}
+		return nil, nil, ErrMarginCheckFailed
 	}
+	// }
 
 	// if increase in size or change in price
 	// ---> DO atomic cancel and submit
