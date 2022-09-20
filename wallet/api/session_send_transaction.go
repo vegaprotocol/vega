@@ -13,7 +13,7 @@ import (
 	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
-	walletnode "code.vegaprotocol.io/vega/wallet/api/node"
+	"code.vegaprotocol.io/vega/wallet/api/node"
 	wcommands "code.vegaprotocol.io/vega/wallet/commands"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/mitchellh/mapstructure"
@@ -42,7 +42,7 @@ type SendTransactionResult struct {
 
 type SendTransaction struct {
 	pipeline     Pipeline
-	nodeSelector walletnode.Selector
+	nodeSelector node.Selector
 	sessions     *Sessions
 }
 
@@ -88,7 +88,9 @@ func (h *SendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) 
 	}
 
 	h.pipeline.Log(ctx, traceID, InfoLog, "Looking for a healthy node...")
-	currentNode, err := h.nodeSelector.Node(ctx)
+	currentNode, err := h.nodeSelector.Node(ctx, func(reportType node.ReportType, msg string) {
+		h.pipeline.Log(ctx, traceID, LogType(reportType), msg)
+	})
 	if err != nil {
 		h.pipeline.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not find a healthy node: %w", err))
 		return nil, networkError(ErrorCodeNodeRequestFailed, ErrNoHealthyNodeAvailable)
@@ -177,7 +179,7 @@ func (h *SendTransaction) notifyTransactionStatus(ctx context.Context, traceID, 
 	h.pipeline.NotifyTransactionStatus(ctx, traceID, txHash, humanReadableTx, err, sentAt)
 }
 
-func NewSendTransaction(pipeline Pipeline, nodeSelector walletnode.Selector, sessions *Sessions) *SendTransaction {
+func NewSendTransaction(pipeline Pipeline, nodeSelector node.Selector, sessions *Sessions) *SendTransaction {
 	return &SendTransaction{
 		pipeline:     pipeline,
 		nodeSelector: nodeSelector,

@@ -203,3 +203,7 @@ func AdminAPI(log *zap.Logger, walletStore WalletStore, netStore NetworkStore, n
 
 	return walletAPI, nil
 }
+
+func noNodeSelectionReporting(_ node.ReportType, _ string) {
+	// Nothing to do.
+}

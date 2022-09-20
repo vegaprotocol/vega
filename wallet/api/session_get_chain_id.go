@@ -16,7 +16,7 @@ type GetChainID struct {
 }
 
 func (h *GetChainID) Handle(ctx context.Context, _ jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
-	currentNode, err := h.nodeSelector.Node(ctx)
+	currentNode, err := h.nodeSelector.Node(ctx, noNodeSelectionReporting)
 	if err != nil {
 		return nil, networkError(ErrorCodeNodeRequestFailed, ErrNoHealthyNodeAvailable)
 	}

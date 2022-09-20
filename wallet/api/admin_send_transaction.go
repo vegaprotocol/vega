@@ -84,7 +84,7 @@ func (h *AdminSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Par
 		return nil, internalError(fmt.Errorf("could not initializing the node selector: %w", err))
 	}
 
-	currentNode, err := nodeSelector.Node(ctx)
+	currentNode, err := nodeSelector.Node(ctx, noNodeSelectionReporting)
 	if err != nil {
 		return nil, networkError(ErrorCodeNodeRequestFailed, ErrNoHealthyNodeAvailable)
 	}

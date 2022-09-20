@@ -148,18 +148,18 @@ func (m *MockSelector) EXPECT() *MockSelectorMockRecorder {
 }
 
 // Node mocks base method.
-func (m *MockSelector) Node(arg0 context.Context) (node.Node, error) {
+func (m *MockSelector) Node(arg0 context.Context, arg1 node.SelectionReporter) (node.Node, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Node", arg0)
+	ret := m.ctrl.Call(m, "Node", arg0, arg1)
 	ret0, _ := ret[0].(node.Node)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Node indicates an expected call of Node.
-func (mr *MockSelectorMockRecorder) Node(arg0 interface{}) *gomock.Call {
+func (mr *MockSelectorMockRecorder) Node(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Node", reflect.TypeOf((*MockSelector)(nil).Node), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Node", reflect.TypeOf((*MockSelector)(nil).Node), arg0, arg1)
 }
 
 // Stop mocks base method.

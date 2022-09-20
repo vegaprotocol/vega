@@ -27,7 +27,7 @@ func testGettingChainIDSucceeds(t *testing.T) {
 
 	// setup
 	handler := newGetChainIDHandler(t)
-	handler.nodeSelector.EXPECT().Node(ctx).Times(1).Return(handler.node, nil)
+	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
 	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(&apipb.LastBlockHeightResponse{
 		ChainId: expectedChainID,
 	}, nil)
@@ -47,7 +47,7 @@ func testNoHealthyNodeAvailableDoesNotReturnChainID(t *testing.T) {
 
 	// setup
 	handler := newGetChainIDHandler(t)
-	handler.nodeSelector.EXPECT().Node(ctx).Times(1).Return(nil, assert.AnError)
+	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(nil, assert.AnError)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx)
@@ -66,7 +66,7 @@ func testFailingToGetLastBlockDoesNotReturnChainID(t *testing.T) {
 
 	// setup
 	handler := newGetChainIDHandler(t)
-	handler.nodeSelector.EXPECT().Node(ctx).Times(1).Return(handler.node, nil)
+	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
 	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(nil, assert.AnError)
 
 	// when

@@ -20,8 +20,20 @@ type Node interface {
 	LastBlock(context.Context) (*apipb.LastBlockHeightResponse, error)
 }
 
+// ReportType defines the type of event that occurred.
+type ReportType string
+
+var (
+	InfoEvent    ReportType = "Info"
+	WarningEvent ReportType = "Warning"
+	ErrorEvent   ReportType = "Error"
+	SuccessEvent ReportType = "Success"
+)
+
+type SelectionReporter func(ReportType, string)
+
 // Selector implementing the strategy for node selection.
 type Selector interface {
-	Node(ctx context.Context) (Node, error)
+	Node(ctx context.Context, reporterFn SelectionReporter) (Node, error)
 	Stop()
 }

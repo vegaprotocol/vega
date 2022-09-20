@@ -152,7 +152,7 @@ func testSendingTransactionWithValidParamsSucceeds(t *testing.T) {
 	token := connectWallet(t, handler.sessions, hostname, wallet1)
 	// -- expected calls
 	handler.pipeline.EXPECT().RequestTransactionSendingReview(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(true, nil)
-	handler.nodeSelector.EXPECT().Node(ctx).Times(1).Return(handler.node, nil)
+	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
 	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(&apipb.LastBlockHeightResponse{
 		Height:            100,
 		Hash:              vgrand.RandomStr(64),
@@ -387,7 +387,7 @@ func testNoHealthyNodeAvailableDoesNotSendTransaction(t *testing.T) {
 	token := connectWallet(t, handler.sessions, hostname, wallet1)
 	// -- expected calls
 	handler.pipeline.EXPECT().RequestTransactionSendingReview(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(true, nil)
-	handler.nodeSelector.EXPECT().Node(ctx).Times(1).Return(nil, assert.AnError)
+	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(nil, assert.AnError)
 	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.NetworkError, fmt.Errorf("could not find a healthy node: %w", assert.AnError)).Times(1)
 	handler.pipeline.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
 
@@ -427,7 +427,7 @@ func testFailingToGetLastBlockDoesNotSendTransaction(t *testing.T) {
 	token := connectWallet(t, handler.sessions, hostname, wallet1)
 	// -- expected calls
 	handler.pipeline.EXPECT().RequestTransactionSendingReview(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(true, nil)
-	handler.nodeSelector.EXPECT().Node(ctx).Times(1).Return(handler.node, nil)
+	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
 	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(nil, assert.AnError)
 	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.NetworkError, fmt.Errorf("could not get the latest block from node: %w", assert.AnError)).Times(1)
 	handler.pipeline.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
@@ -468,7 +468,7 @@ func testFailureWhenSendingTransactionReturnsAnError(t *testing.T) {
 	token := connectWallet(t, handler.sessions, hostname, wallet1)
 	// -- expected calls
 	handler.pipeline.EXPECT().RequestTransactionSendingReview(ctx, traceID, hostname, wallet1.Name(), pubKey, string(decodedTransaction), gomock.Any()).Times(1).Return(true, nil)
-	handler.nodeSelector.EXPECT().Node(ctx).Times(1).Return(handler.node, nil)
+	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
 	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(&apipb.LastBlockHeightResponse{
 		Height:            100,
 		Hash:              vgrand.RandomStr(64),
