@@ -17,6 +17,9 @@ import (
 	"net/http"
 
 	"code.vegaprotocol.io/vega/core/nodewallets"
+	"code.vegaprotocol.io/vega/core/nodewallets/eth"
+	"code.vegaprotocol.io/vega/core/nodewallets/eth/clef"
+	"code.vegaprotocol.io/vega/core/nodewallets/eth/keystore"
 	"code.vegaprotocol.io/vega/core/nodewallets/registry"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
@@ -58,6 +61,7 @@ type NodeWallet struct {
 	nodeWallets          *nodewallets.NodeWallets
 	registryLoader       *registry.Loader
 	nodeWalletPassphrase string
+	vegaPaths            paths.Paths
 }
 
 func NewNodeWallet(
@@ -76,65 +80,90 @@ func NewNodeWallet(
 		nodeWallets:          nodeWallets,
 		registryLoader:       registryLoader,
 		nodeWalletPassphrase: nodeWalletPassphrase,
+		vegaPaths:            vegaPaths,
 	}, nil
 }
 
-func (h *NodeWallet) Reload(r *http.Request, args *NodeWalletArgs, reply *NodeWalletReloadReply) error {
-	h.log.Info("Reloading node wallet", logging.String("chain", args.Chain))
+func (nw *NodeWallet) Reload(r *http.Request, args *NodeWalletArgs, reply *NodeWalletReloadReply) error {
+	nw.log.Info("Reloading node wallet", logging.String("chain", args.Chain))
 
 	switch args.Chain {
 	case "vega":
-		oW := newWallet(h.nodeWallets.Vega)
+		oW := newWallet(nw.nodeWallets.Vega)
 
-		reg, err := h.registryLoader.Get(h.nodeWalletPassphrase)
+		reg, err := nw.registryLoader.Get(nw.nodeWalletPassphrase)
 		if err != nil {
 			return fmt.Errorf("couldn't load node wallet registry: %v", err)
 		}
 
-		if err := h.nodeWallets.Vega.Reload(*reg.Vega); err != nil {
-			h.log.Error("Reloading node wallet failed", logging.Error(err))
+		if err := nw.nodeWallets.Vega.Reload(*reg.Vega); err != nil {
+			nw.log.Error("Reloading node wallet failed", logging.Error(err))
 			return fmt.Errorf("failed to reload Vega wallet: %w", err)
 		}
 
-		nW := newWallet(h.nodeWallets.Vega)
+		nW := newWallet(nw.nodeWallets.Vega)
 
 		reply.NewWallet = nW
 		reply.OldWallet = oW
 
-		h.log.Info("Reloaded node wallet", logging.String("chain", args.Chain))
+		nw.log.Info("Reloaded node wallet", logging.String("chain", args.Chain))
 		return nil
 	case "ethereum":
-		oW := newWallet(h.nodeWallets.Ethereum)
+		oW := newWallet(nw.nodeWallets.Ethereum)
 
-		reg, err := h.registryLoader.Get(h.nodeWalletPassphrase)
+		reg, err := nw.registryLoader.Get(nw.nodeWalletPassphrase)
 		if err != nil {
 			return fmt.Errorf("couldn't load node wallet registry: %v", err)
 		}
 
-		if err := h.nodeWallets.Ethereum.Reload(reg.Ethereum.Details); err != nil {
-			h.log.Error("Reloading node wallet failed", logging.Error(err))
-			return fmt.Errorf("failed to reload Ethereum wallet: %w", err)
+		algoType := nw.nodeWallets.Ethereum.Algo()
+		_, isKeyStoreWallet := reg.Ethereum.Details.(registry.EthereumKeyStoreWallet)
+		clefWalletReg, isClefWallet := reg.Ethereum.Details.(registry.EthereumClefWallet)
+
+		if isKeyStoreWallet && algoType != keystore.KeyStoreAlgoType {
+			w, err := nodewallets.GetEthereumWalletWithRegistry(eth.Config{}, nw.vegaPaths, reg)
+			if err != nil {
+				return fmt.Errorf("failed reload key: %w", err)
+			}
+
+			nw.nodeWallets.SetEthereumWallet(w)
+		} else if isClefWallet && algoType != clef.ClefAlgoType {
+			w, err := nodewallets.GetEthereumWalletWithRegistry(
+				eth.Config{ClefAddress: clefWalletReg.ClefAddress},
+				nw.vegaPaths,
+				reg,
+			)
+			if err != nil {
+				return fmt.Errorf("failed reload key: %w", err)
+			}
+
+			nw.nodeWallets.SetEthereumWallet(w)
+		} else {
+			if err := nw.nodeWallets.Ethereum.Reload(reg.Ethereum.Details); err != nil {
+				nw.log.Error("Reloading node wallet failed", logging.Error(err))
+				return fmt.Errorf("failed to reload Ethereum wallet: %w", err)
+			}
 		}
 
-		nW := newWallet(h.nodeWallets.Ethereum)
+		nW := newWallet(nw.nodeWallets.Ethereum)
 
 		reply.NewWallet = nW
 		reply.OldWallet = oW
 
-		h.log.Info("Reloaded node wallet", logging.String("chain", args.Chain))
+		nw.log.Info("Reloaded node wallet", logging.String("chain", args.Chain))
 		return nil
 	}
 
 	return fmt.Errorf("failed to reload wallet for non existing chain %q", args.Chain)
 }
 
-func (h *NodeWallet) Show(r *http.Request, args *NodeWalletArgs, reply *Wallet) error {
+func (nw *NodeWallet) Show(r *http.Request, args *NodeWalletArgs, reply *Wallet) error {
 	switch args.Chain {
 	case "vega":
-		*reply = newWallet(h.nodeWallets.Vega)
+		*reply = newWallet(nw.nodeWallets.Vega)
 		return nil
 	case "ethereum":
-		*reply = newWallet(h.nodeWallets.Ethereum)
+		*reply = newWallet(nw.nodeWallets.Ethereum)
 		return nil
 	}
 

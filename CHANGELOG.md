@@ -34,6 +34,7 @@
 - [5988](https://github.com/vegaprotocol/vega/issues/5988) - Exclude tainted keys from `session.list_keys` endpoint
 - [5164](https://github.com/vegaprotocol/vega/issues/5164) - Distribute LP fees on settlement
 - [6212](https://github.com/vegaprotocol/vega/issues/6212) - Change the error for protocol upgrade request for block 0
+- [6242](https://github.com/vegaprotocol/vega/issues/6242) - Allow migrate between wallet types during Ethereum key rotation reload
 
 ## 0.55.0
 
