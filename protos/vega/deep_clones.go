@@ -1,5 +1,7 @@
 package vega
 
+import "code.vegaprotocol.io/vega/libs/ptr"
+
 func (b BuiltinAsset) DeepClone() *BuiltinAsset {
 	return &b
 }
@@ -483,32 +485,48 @@ func (a Account) DeepClone() *Account {
 	return &a
 }
 
-func (t TransferBalance) DeepClone() *TransferBalance {
-	if t.Account != nil {
-		t.Account = t.Account.DeepClone()
+func (a AccountDetails) DeepClone() *AccountDetails {
+	if a.MarketId != nil {
+		a.MarketId = ptr.From(*a.MarketId)
 	}
-	return &t
+	if a.Owner != nil {
+		a.Owner = ptr.From(*a.Owner)
+	}
+	return &a
+}
+
+func (p PostTransferBalance) DeepClone() *PostTransferBalance {
+	if p.Account != nil {
+		p.Account = p.Account.DeepClone()
+	}
+	return &p
 }
 
 func (l LedgerEntry) DeepClone() *LedgerEntry {
+	if l.FromAccount != nil {
+		l.FromAccount = l.FromAccount.DeepClone()
+	}
+	if l.ToAccount != nil {
+		l.ToAccount = l.ToAccount.DeepClone()
+	}
 	return &l
 }
 
-func (t TransferResponse) DeepClone() *TransferResponse {
-	if len(t.Balances) > 0 {
-		bs := t.Balances
-		t.Balances = make([]*TransferBalance, len(bs))
+func (l LedgerMovement) DeepClone() *LedgerMovement {
+	if len(l.Balances) > 0 {
+		bs := l.Balances
+		l.Balances = make([]*PostTransferBalance, len(bs))
 		for i, b := range bs {
-			t.Balances[i] = b.DeepClone()
+			l.Balances[i] = b.DeepClone()
 		}
 	}
 
-	if len(t.Transfers) > 0 {
-		ts := t.Transfers
-		t.Transfers = make([]*LedgerEntry, len(ts))
+	if len(l.Entries) > 0 {
+		ts := l.Entries
+		l.Entries = make([]*LedgerEntry, len(ts))
 		for i, tr := range ts {
-			t.Transfers[i] = tr.DeepClone()
+			l.Entries[i] = tr.DeepClone()
 		}
 	}
-	return &t
+	return &l
 }

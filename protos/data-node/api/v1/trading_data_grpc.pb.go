@@ -137,7 +137,7 @@ type TradingDataServiceClient interface {
 	// Subscribe to a stream of Trades
 	TradesSubscribe(ctx context.Context, in *TradesSubscribeRequest, opts ...grpc.CallOption) (TradingDataService_TradesSubscribeClient, error)
 	// Subscribe to a stream of Transfer Responses
-	TransferResponsesSubscribe(ctx context.Context, in *TransferResponsesSubscribeRequest, opts ...grpc.CallOption) (TradingDataService_TransferResponsesSubscribeClient, error)
+	LedgerMovementsSubscribe(ctx context.Context, in *LedgerMovementsSubscribeRequest, opts ...grpc.CallOption) (TradingDataService_LedgerMovementsSubscribeClient, error)
 	// Get an aggregate of signatures from all the nodes of the network
 	GetNodeSignaturesAggregate(ctx context.Context, in *GetNodeSignaturesAggregateRequest, opts ...grpc.CallOption) (*GetNodeSignaturesAggregateResponse, error)
 	// Get an asset by its identifier
@@ -1012,12 +1012,12 @@ func (x *tradingDataServiceTradesSubscribeClient) Recv() (*TradesSubscribeRespon
 	return m, nil
 }
 
-func (c *tradingDataServiceClient) TransferResponsesSubscribe(ctx context.Context, in *TransferResponsesSubscribeRequest, opts ...grpc.CallOption) (TradingDataService_TransferResponsesSubscribeClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[14], "/datanode.api.v1.TradingDataService/TransferResponsesSubscribe", opts...)
+func (c *tradingDataServiceClient) LedgerMovementsSubscribe(ctx context.Context, in *LedgerMovementsSubscribeRequest, opts ...grpc.CallOption) (TradingDataService_LedgerMovementsSubscribeClient, error) {
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[14], "/datanode.api.v1.TradingDataService/LedgerMovementsSubscribe", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &tradingDataServiceTransferResponsesSubscribeClient{stream}
+	x := &tradingDataServiceLedgerMovementsSubscribeClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -1027,17 +1027,17 @@ func (c *tradingDataServiceClient) TransferResponsesSubscribe(ctx context.Contex
 	return x, nil
 }
 
-type TradingDataService_TransferResponsesSubscribeClient interface {
-	Recv() (*TransferResponsesSubscribeResponse, error)
+type TradingDataService_LedgerMovementsSubscribeClient interface {
+	Recv() (*LedgerMovementsSubscribeResponse, error)
 	grpc.ClientStream
 }
 
-type tradingDataServiceTransferResponsesSubscribeClient struct {
+type tradingDataServiceLedgerMovementsSubscribeClient struct {
 	grpc.ClientStream
 }
 
-func (x *tradingDataServiceTransferResponsesSubscribeClient) Recv() (*TransferResponsesSubscribeResponse, error) {
-	m := new(TransferResponsesSubscribeResponse)
+func (x *tradingDataServiceLedgerMovementsSubscribeClient) Recv() (*LedgerMovementsSubscribeResponse, error) {
+	m := new(LedgerMovementsSubscribeResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -1434,7 +1434,7 @@ type TradingDataServiceServer interface {
 	// Subscribe to a stream of Trades
 	TradesSubscribe(*TradesSubscribeRequest, TradingDataService_TradesSubscribeServer) error
 	// Subscribe to a stream of Transfer Responses
-	TransferResponsesSubscribe(*TransferResponsesSubscribeRequest, TradingDataService_TransferResponsesSubscribeServer) error
+	LedgerMovementsSubscribe(*LedgerMovementsSubscribeRequest, TradingDataService_LedgerMovementsSubscribeServer) error
 	// Get an aggregate of signatures from all the nodes of the network
 	GetNodeSignaturesAggregate(context.Context, *GetNodeSignaturesAggregateRequest) (*GetNodeSignaturesAggregateResponse, error)
 	// Get an asset by its identifier
@@ -1655,8 +1655,8 @@ func (UnimplementedTradingDataServiceServer) PositionsSubscribe(*PositionsSubscr
 func (UnimplementedTradingDataServiceServer) TradesSubscribe(*TradesSubscribeRequest, TradingDataService_TradesSubscribeServer) error {
 	return status.Errorf(codes.Unimplemented, "method TradesSubscribe not implemented")
 }
-func (UnimplementedTradingDataServiceServer) TransferResponsesSubscribe(*TransferResponsesSubscribeRequest, TradingDataService_TransferResponsesSubscribeServer) error {
-	return status.Errorf(codes.Unimplemented, "method TransferResponsesSubscribe not implemented")
+func (UnimplementedTradingDataServiceServer) LedgerMovementsSubscribe(*LedgerMovementsSubscribeRequest, TradingDataService_LedgerMovementsSubscribeServer) error {
+	return status.Errorf(codes.Unimplemented, "method LedgerMovementsSubscribe not implemented")
 }
 func (UnimplementedTradingDataServiceServer) GetNodeSignaturesAggregate(context.Context, *GetNodeSignaturesAggregateRequest) (*GetNodeSignaturesAggregateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetNodeSignaturesAggregate not implemented")
@@ -2783,24 +2783,24 @@ func (x *tradingDataServiceTradesSubscribeServer) Send(m *TradesSubscribeRespons
 	return x.ServerStream.SendMsg(m)
 }
 
-func _TradingDataService_TransferResponsesSubscribe_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(TransferResponsesSubscribeRequest)
+func _TradingDataService_LedgerMovementsSubscribe_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(LedgerMovementsSubscribeRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(TradingDataServiceServer).TransferResponsesSubscribe(m, &tradingDataServiceTransferResponsesSubscribeServer{stream})
+	return srv.(TradingDataServiceServer).LedgerMovementsSubscribe(m, &tradingDataServiceLedgerMovementsSubscribeServer{stream})
 }
 
-type TradingDataService_TransferResponsesSubscribeServer interface {
-	Send(*TransferResponsesSubscribeResponse) error
+type TradingDataService_LedgerMovementsSubscribeServer interface {
+	Send(*LedgerMovementsSubscribeResponse) error
 	grpc.ServerStream
 }
 
-type tradingDataServiceTransferResponsesSubscribeServer struct {
+type tradingDataServiceLedgerMovementsSubscribeServer struct {
 	grpc.ServerStream
 }
 
-func (x *tradingDataServiceTransferResponsesSubscribeServer) Send(m *TransferResponsesSubscribeResponse) error {
+func (x *tradingDataServiceLedgerMovementsSubscribeServer) Send(m *LedgerMovementsSubscribeResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -3597,8 +3597,8 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 		{
-			StreamName:    "TransferResponsesSubscribe",
-			Handler:       _TradingDataService_TransferResponsesSubscribe_Handler,
+			StreamName:    "LedgerMovementsSubscribe",
+			Handler:       _TradingDataService_LedgerMovementsSubscribe_Handler,
 			ServerStreams: true,
 		},
 		{

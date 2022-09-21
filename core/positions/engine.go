@@ -385,6 +385,17 @@ func (e *Engine) GetPositionByPartyID(partyID string) (*MarketPosition, bool) {
 	return cpy, true
 }
 
+func (e *Engine) GetPositionsByParty(ids ...string) []events.MarketPosition {
+	ret := make([]events.MarketPosition, 0, len(ids))
+	for _, id := range ids {
+		pos, ok := e.positions[id]
+		if ok {
+			ret = append(ret, pos.Clone())
+		}
+	}
+	return ret
+}
+
 // Parties returns a list of all the parties in the position engine.
 func (e *Engine) Parties() []string {
 	parties := make([]string, 0, len(e.positions))

@@ -48,7 +48,7 @@ func (ls *Ledger) GetByID(id int64) (entities.LedgerEntry, error) {
 	le := entities.LedgerEntry{}
 	ctx := context.Background()
 	err := pgxscan.Get(ctx, ls.Connection, &le,
-		`SELECT id, account_from_id, account_to_id, quantity, tx_hash, vega_time, transfer_time, reference, type
+		`SELECT id, account_from_id, account_to_id, quantity, tx_hash, vega_time, transfer_time, type
 		 FROM ledger WHERE id=$1`,
 		id)
 	return le, err
@@ -59,7 +59,7 @@ func (ls *Ledger) GetAll() ([]entities.LedgerEntry, error) {
 	ctx := context.Background()
 	ledgerEntries := []entities.LedgerEntry{}
 	err := pgxscan.Select(ctx, ls.Connection, &ledgerEntries, `
-		SELECT id, account_from_id, account_to_id, quantity, tx_hash, vega_time, transfer_time, reference, type
+		SELECT id, account_from_id, account_to_id, quantity, tx_hash, vega_time, transfer_time, type
 		FROM ledger`)
 	return ledgerEntries, err
 }

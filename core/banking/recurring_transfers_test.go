@@ -273,7 +273,7 @@ func testForeverTransferCancelledNotEnoughFunds(t *testing.T) {
 			references []string,
 			feeTransfers []*types.Transfer,
 			feeTransfersAccountTypes []types.AccountType,
-		) ([]*types.TransferResponse, error,
+		) ([]*types.LedgerMovement, error,
 		) {
 			t.Run("ensure transfers are correct", func(t *testing.T) {
 				// transfer is done fully instantly, we should have 2 transfer
@@ -389,7 +389,7 @@ func testValidRecurringTransfer(t *testing.T) {
 			references []string,
 			feeTransfers []*types.Transfer,
 			feeTransfersAccountTypes []types.AccountType,
-		) ([]*types.TransferResponse, error,
+		) ([]*types.LedgerMovement, error,
 		) {
 			t.Run("ensure transfers are correct", func(t *testing.T) {
 				// transfer is done fully instantly, we should have 2 transfer
@@ -431,7 +431,7 @@ func testValidRecurringTransfer(t *testing.T) {
 			references []string,
 			feeTransfers []*types.Transfer,
 			feeTransfersAccountTypes []types.AccountType,
-		) ([]*types.TransferResponse, error,
+		) ([]*types.LedgerMovement, error,
 		) {
 			t.Run("ensure transfers are correct", func(t *testing.T) {
 				// transfer is done fully instantly, we should have 2 transfer

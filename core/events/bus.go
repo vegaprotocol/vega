@@ -80,7 +80,7 @@ const (
 	All Type = iota
 	// other event types that DO have corresponding event types.
 	TimeUpdate
-	TransferResponses
+	LedgerMovementsEvent
 	PositionResolution
 	MarketEvent // this event is not used for any specific event, but by subscribers that aggregate all market events (e.g. for logging)
 	OrderEvent
@@ -144,7 +144,7 @@ var (
 	protoMap = map[eventspb.BusEventType]Type{
 		eventspb.BusEventType_BUS_EVENT_TYPE_ALL:                            All,
 		eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE:                    TimeUpdate,
-		eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES:             TransferResponses,
+		eventspb.BusEventType_BUS_EVENT_TYPE_LEDGER_MOVEMENTS:               LedgerMovementsEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION:            PositionResolution,
 		eventspb.BusEventType_BUS_EVENT_TYPE_MARKET:                         MarketEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_ORDER:                          OrderEvent,
@@ -201,7 +201,7 @@ var (
 	toProto = map[Type]eventspb.BusEventType{
 		ValidatorRankingEvent:           eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_RANKING,
 		TimeUpdate:                      eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE,
-		TransferResponses:               eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES,
+		LedgerMovementsEvent:            eventspb.BusEventType_BUS_EVENT_TYPE_LEDGER_MOVEMENTS,
 		PositionResolution:              eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION,
 		MarketEvent:                     eventspb.BusEventType_BUS_EVENT_TYPE_MARKET,
 		OrderEvent:                      eventspb.BusEventType_BUS_EVENT_TYPE_ORDER,
@@ -255,7 +255,7 @@ var (
 	eventStrings = map[Type]string{
 		All:                             "ALL",
 		TimeUpdate:                      "TimeUpdate",
-		TransferResponses:               "TransferResponses",
+		LedgerMovementsEvent:            "LedgerMovements",
 		PositionResolution:              "PositionResolution",
 		MarketEvent:                     "MarketEvent",
 		OrderEvent:                      "OrderEvent",

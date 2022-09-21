@@ -83,8 +83,8 @@ var defaultEntityPagination = entities.OffsetPagination{
 
 /****************************** Ledger **************************************/
 // TransferResponsesSubscribe opens a subscription to transfer response data provided by the transfer response service.
-func (t *tradingDataService) TransferResponsesSubscribe(
-	_ *protoapi.TransferResponsesSubscribeRequest, srv protoapi.TradingDataService_TransferResponsesSubscribeServer,
+func (t *tradingDataService) LedgerMovementsSubscribe(
+	_ *protoapi.LedgerMovementsSubscribeRequest, srv protoapi.TradingDataService_LedgerMovementsSubscribeServer,
 ) error {
 	// Wrap context from the request into cancellable. We can close internal chan in error.
 	ctx, cancel := context.WithCancel(srv.Context())
@@ -96,9 +96,9 @@ func (t *tradingDataService) TransferResponsesSubscribe(
 		t.log.Debug("TransferResponses subscriber - new rpc stream", logging.Uint64("ref", ref))
 	}
 
-	return observe(ctx, t.log, "TransferResponse", transferResponsesChan, ref, func(tr *vega.TransferResponse) error {
-		return srv.Send(&protoapi.TransferResponsesSubscribeResponse{
-			Response: tr,
+	return observe(ctx, t.log, "LedgerMovements", transferResponsesChan, ref, func(tr *vega.LedgerMovement) error {
+		return srv.Send(&protoapi.LedgerMovementsSubscribeResponse{
+			LedgerMovement: tr,
 		})
 	})
 }

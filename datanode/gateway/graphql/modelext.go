@@ -132,7 +132,7 @@ func busEventFromProto(events ...*eventspb.BusEvent) []*BusEvent {
 	return r
 }
 
-func balancesFromProto(balances []*types.TransferBalance) []*TransferBalance {
+func balancesFromProto(balances []*types.PostTransferBalance) []*TransferBalance {
 	gql := make([]*TransferBalance, 0, len(balances))
 	for _, b := range balances {
 		gql = append(gql, &TransferBalance{
@@ -150,8 +150,7 @@ func transfersFromProto(transfers []*types.LedgerEntry) []*LedgerEntry {
 			FromAccount: t.FromAccount,
 			ToAccount:   t.ToAccount,
 			Amount:      t.Amount,
-			Reference:   t.Reference,
-			Type:        t.Type,
+			Type:        t.Type.String(),
 			Timestamp:   nanoTSToDatetime(t.Timestamp),
 		})
 	}
@@ -167,12 +166,12 @@ func eventFromProto(e *eventspb.BusEvent) Event {
 		return &TimeUpdate{
 			Timestamp: secondsTSToDatetime(e.GetTimeUpdate().Timestamp),
 		}
-	case eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES:
-		tr := e.GetTransferResponses()
-		responses := make([]*TransferResponse, 0, len(tr.Responses))
-		for _, r := range tr.Responses {
+	case eventspb.BusEventType_BUS_EVENT_TYPE_LEDGER_MOVEMENTS:
+		tr := e.GetLedgerMovements()
+		responses := make([]*TransferResponse, 0, len(tr.LedgerMovements))
+		for _, r := range tr.LedgerMovements {
 			responses = append(responses, &TransferResponse{
-				Transfers: transfersFromProto(r.Transfers),
+				Transfers: transfersFromProto(r.Entries),
 				Balances:  balancesFromProto(r.Balances),
 			})
 		}
@@ -285,7 +284,7 @@ func eventTypeToProto(btypes ...BusEventType) []eventspb.BusEventType {
 		case BusEventTypeTimeUpdate:
 			r = append(r, eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE)
 		case BusEventTypeTransferResponses:
-			r = append(r, eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES)
+			r = append(r, eventspb.BusEventType_BUS_EVENT_TYPE_LEDGER_MOVEMENTS)
 		case BusEventTypePositionResolution:
 			r = append(r, eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION)
 		case BusEventTypeOrder:
@@ -343,7 +342,7 @@ func eventTypeFromProto(t eventspb.BusEventType) (BusEventType, error) {
 	switch t {
 	case eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE:
 		return BusEventTypeTimeUpdate, nil
-	case eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_LEDGER_MOVEMENTS:
 		return BusEventTypeTransferResponses, nil
 	case eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION:
 		return BusEventTypePositionResolution, nil

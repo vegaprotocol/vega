@@ -26,19 +26,18 @@ import (
 func TestTransferResponseDeepClone(t *testing.T) {
 	ctx := context.Background()
 
-	tr := []*types.TransferResponse{
+	tr := []*types.LedgerMovement{
 		{
-			Transfers: []*types.LedgerEntry{
+			Entries: []*types.LedgerEntry{
 				{
-					FromAccount: "FromAccount",
-					ToAccount:   "ToAccount",
+					FromAccount: &types.AccountDetails{Owner: "FromAccount"},
+					ToAccount:   &types.AccountDetails{Owner: "ToAccount"},
 					Amount:      num.NewUint(1000),
-					Reference:   "Reference",
-					Type:        "Type",
+					Type:        types.TransferTypeBondLow,
 					Timestamp:   2000,
 				},
 			},
-			Balances: []*types.TransferBalance{
+			Balances: []*types.PostTransferBalance{
 				{
 					Account: &types.Account{
 						ID:       "Id",
@@ -55,15 +54,14 @@ func TestTransferResponseDeepClone(t *testing.T) {
 	}
 
 	trEvent := events.NewTransferResponse(ctx, tr)
-	tr2 := trEvent.TransferResponses()
+	tr2 := trEvent.LedgerMovements()
 
 	// Change the original values
-	tr[0].Transfers[0].Amount = num.NewUint(999)
-	tr[0].Transfers[0].FromAccount = "Changed"
-	tr[0].Transfers[0].Reference = "Changed"
-	tr[0].Transfers[0].Timestamp = 999
-	tr[0].Transfers[0].ToAccount = "Changed"
-	tr[0].Transfers[0].Type = "Changed"
+	tr[0].Entries[0].Amount = num.NewUint(999)
+	tr[0].Entries[0].FromAccount = &types.AccountDetails{Owner: "Changed"}
+	tr[0].Entries[0].Timestamp = 999
+	tr[0].Entries[0].ToAccount = &types.AccountDetails{Owner: "Changed"}
+	tr[0].Entries[0].Type = types.TransferTypeBondHigh
 	tr[0].Balances[0].Account.Asset = "Changed"
 	tr[0].Balances[0].Account.Balance = num.NewUint(999)
 	tr[0].Balances[0].Account.ID = "Changed"
@@ -73,15 +71,13 @@ func TestTransferResponseDeepClone(t *testing.T) {
 	tr[0].Balances[0].Balance = num.NewUint(999)
 
 	// Check things have changed
-	assert.NotEqual(t, tr[0].Transfers[0].Amount, tr2[0].Transfers[0].Amount)
-	assert.NotEqual(t, tr[0].Transfers[0].FromAccount, tr2[0].Transfers[0].FromAccount)
-	assert.NotEqual(t, tr[0].Transfers[0].Reference, tr2[0].Transfers[0].Reference)
-	assert.NotEqual(t, tr[0].Transfers[0].Timestamp, tr2[0].Transfers[0].Timestamp)
-	assert.NotEqual(t, tr[0].Transfers[0].ToAccount, tr2[0].Transfers[0].ToAccount)
-	assert.NotEqual(t, tr[0].Transfers[0].Type, tr2[0].Transfers[0].Type)
-	assert.NotEqual(t, tr[0].Balances[0].Account.Asset, tr2[0].Balances[0].Account.Asset)
-	assert.NotEqual(t, tr[0].Balances[0].Account.Balance, tr2[0].Balances[0].Account.Balance)
-	assert.NotEqual(t, tr[0].Balances[0].Account.ID, tr2[0].Balances[0].Account.Id)
+	assert.NotEqual(t, tr[0].Entries[0].Amount, tr2[0].Entries[0].Amount)
+	assert.NotEqual(t, tr[0].Entries[0].FromAccount, tr2[0].Entries[0].FromAccount)
+	assert.NotEqual(t, tr[0].Entries[0].Timestamp, tr2[0].Entries[0].Timestamp)
+	assert.NotEqual(t, tr[0].Entries[0].ToAccount, tr2[0].Entries[0].ToAccount)
+	assert.NotEqual(t, tr[0].Entries[0].Type, tr2[0].Entries[0].Type)
+	assert.NotEqual(t, tr[0].Balances[0].Account.Asset, tr2[0].Balances[0].Account.AssetId)
+	assert.NotEqual(t, tr[0].Balances[0].Balance, tr2[0].Balances[0].Balance)
 	assert.NotEqual(t, tr[0].Balances[0].Account.MarketID, tr2[0].Balances[0].Account.MarketId)
 	assert.NotEqual(t, tr[0].Balances[0].Account.Owner, tr2[0].Balances[0].Account.Owner)
 	assert.NotEqual(t, tr[0].Balances[0].Account.Type, tr2[0].Balances[0].Account.Type)

@@ -43,7 +43,7 @@ func TheFollowingTransfersShouldHappen(
 		return errTransferFoundButNotRightAmount(row, divergingAmounts)
 	}
 
-	broker.ResetType(events.TransferResponses)
+	broker.ResetType(events.LedgerMovementsEvent)
 
 	return nil
 }
@@ -66,10 +66,10 @@ func errMissingTransfer(row transferRow) error {
 	)
 }
 
-func matchTransfers(transfers []*types.LedgerEntry, row transferRow) (bool, []uint64) {
+func matchTransfers(ledgerEntries []*types.LedgerEntry, row transferRow) (bool, []uint64) {
 	divergingAmounts := []uint64{}
-	for _, transfer := range transfers {
-		if transfer.FromAccount == row.FromAccountID() && transfer.ToAccount == row.ToAccountID() {
+	for _, transfer := range ledgerEntries {
+		if transfer.FromAccount.ID() == row.FromAccountID() && transfer.ToAccount.ID() == row.ToAccountID() {
 			if stringToU64(transfer.Amount) == row.Amount() {
 				return true, nil
 			}
@@ -80,11 +80,11 @@ func matchTransfers(transfers []*types.LedgerEntry, row transferRow) (bool, []ui
 }
 
 func getTransfers(broker *stubs.BrokerStub) []*types.LedgerEntry {
-	transferEvents := broker.GetTransferResponses()
+	transferEvents := broker.GetLedgerMovements()
 	transfers := []*types.LedgerEntry{}
 	for _, e := range transferEvents {
-		for _, response := range e.TransferResponses() {
-			transfers = append(transfers, response.GetTransfers()...)
+		for _, response := range e.LedgerMovements() {
+			transfers = append(transfers, response.GetEntries()...)
 		}
 	}
 	return transfers
