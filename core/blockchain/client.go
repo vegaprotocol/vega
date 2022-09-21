@@ -121,18 +121,6 @@ func (c *Client) SubmitTransactionSync(ctx context.Context, tx *commandspb.Trans
 		return nil, ErrClientNotReady
 	}
 
-	chainID, err := c.clt.GetChainID(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if _, err := commands.CheckTransaction(tx, chainID); err != nil {
-		return &tmctypes.ResultBroadcastTx{ //nolint:nilerr
-			Code: AbciTxnDecodingFailure,
-			Data: []byte(err.Error()),
-		}, nil
-	}
-
 	marshalledTx, err := proto.Marshal(tx)
 	if err != nil {
 		return nil, err
