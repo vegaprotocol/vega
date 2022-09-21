@@ -211,7 +211,7 @@ func (e *Engine) distributeRecurringTransfers(
 
 	// send events
 	if len(tresps) > 0 {
-		e.broker.Send(events.NewTransferResponse(ctx, tresps))
+		e.broker.Send(events.NewLedgerMovements(ctx, tresps))
 	}
 	if len(transfersDone) > 0 {
 		// also set the state change
