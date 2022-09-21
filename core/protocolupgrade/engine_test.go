@@ -50,6 +50,17 @@ func Test(t *testing.T) {
 	t.Run("Multiple upgrade proposal get accepted, earliest is chosen", testMultiProposalApproved)
 	t.Run("Snapshot roundtrip test", testSnapshotRoundtrip)
 	t.Run("Revert a proposal", testRevertProposal)
+	t.Run("Downgrade is not allowed", testDowngradeVersionNotAllowed)
+}
+
+func testDowngradeVersionNotAllowed(t *testing.T) {
+	e, _, broker := testEngine(t)
+	var evts []events.Event
+	broker.EXPECT().Send(gomock.Any()).DoAndReturn(func(event events.Event) {
+		evts = append(evts, event)
+	}).AnyTimes()
+	// validator1 proposed an upgrade to v1 at block height 100
+	require.EqualError(t, e.UpgradeProposal(context.Background(), "pk1", 100, "0.53.0"), "upgrade version is too old")
 }
 
 func testRevertProposal(t *testing.T) {
@@ -65,7 +76,9 @@ func testRevertProposal(t *testing.T) {
 
 	// validator1 proposed an upgrade to v1 at block height 100
 	require.NoError(t, e.UpgradeProposal(context.Background(), "pk1", 100, "0.54.0"))
+
 	require.Equal(t, eventspb.ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_PENDING, evts[1].StreamMessage().GetProtocolUpgradeEvent().Status)
+
 	require.Equal(t, 0, len(evts[1].StreamMessage().GetProtocolUpgradeEvent().Approvers))
 }
 
