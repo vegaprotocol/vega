@@ -757,7 +757,7 @@ func testTransferLoss(t *testing.T) {
 	// total balance of settlement account should be 2 times price
 	assert.Equal(t, num.Sum(price, price), num.Sum(resp.Balances[0].Balance, responses[1].Balances[0].Balance))
 	// there should be 1 ledger moves
-	assert.Equal(t, 1, len(resp.Transfers))
+	assert.Equal(t, 1, len(resp.Entries))
 }
 
 func testTransferComplexLoss(t *testing.T) {
@@ -821,7 +821,7 @@ func testTransferComplexLoss(t *testing.T) {
 	// total balance should equal price (only 1 call after all)
 	assert.Equal(t, price, resp.Balances[0].Balance)
 	// there should be 2 ledger moves, one from party account, one from insurance acc
-	assert.Equal(t, 2, len(resp.Transfers))
+	assert.Equal(t, 2, len(resp.Entries))
 }
 
 func testTransferLossMissingPartyAccounts(t *testing.T) {
@@ -933,7 +933,7 @@ func testProcessBoth(t *testing.T) {
 	}
 	// resp = responses[1]
 	// there should be 3 ledger moves -> settle to party 1, settle to party 2, insurance to party 2
-	assert.Equal(t, 1, len(responses[1].Transfers))
+	assert.Equal(t, 1, len(responses[1].Entries))
 }
 
 func TestLossSocialization(t *testing.T) {
@@ -1144,7 +1144,7 @@ func testProcessBothProRated(t *testing.T) {
 	assert.NoError(t, err)
 
 	// there should be 3 ledger moves -> settle to party 1, settle to party 2, insurance to party 2
-	assert.Equal(t, 1, len(responses[1].Transfers))
+	assert.Equal(t, 1, len(responses[1].Entries))
 }
 
 func testProcessBothProRatedMTM(t *testing.T) {
@@ -1220,7 +1220,7 @@ func testProcessBothProRatedMTM(t *testing.T) {
 	assert.NotEmpty(t, raw)
 
 	// there should be 3 ledger moves -> settle to party 1, settle to party 2, insurance to party 2
-	assert.Equal(t, 1, len(raw[1].Transfers))
+	assert.Equal(t, 1, len(raw[1].Entries))
 }
 
 func testRemoveDistressedBalance(t *testing.T) {
@@ -1266,7 +1266,7 @@ func testRemoveDistressedBalance(t *testing.T) {
 	})
 	resp, err := eng.RemoveDistressed(context.Background(), data, testMarketID, testMarketAsset)
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(resp.Transfers))
+	assert.Equal(t, 1, len(resp.Entries))
 
 	// check if account was deleted
 	_, err = eng.GetAccountByID(marginID)
@@ -1302,7 +1302,7 @@ func testRemoveDistressedNoBalance(t *testing.T) {
 	}
 	resp, err := eng.RemoveDistressed(context.Background(), data, testMarketID, testMarketAsset)
 	assert.NoError(t, err)
-	assert.Equal(t, 0, len(resp.Transfers))
+	assert.Equal(t, 0, len(resp.Entries))
 
 	// check if account was deleted
 	_, err = eng.GetAccountByID(marginID)
@@ -2147,7 +2147,7 @@ func TestMarginUpdates(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, len(margin), 0)
 	assert.Equal(t, len(resp), 1)
-	assert.Equal(t, resp[0].Transfers[0].Amount, num.NewUint(100))
+	assert.Equal(t, resp[0].Entries[0].Amount, num.NewUint(100))
 }
 
 func TestClearMarket(t *testing.T) {

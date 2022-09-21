@@ -157,6 +157,11 @@ func (r *VegaResolverRoot) Account() AccountResolver {
 	return (*myAccountResolver)(r)
 }
 
+// Account returns the accounts resolver.
+func (r *VegaResolverRoot) AccountDetails() AccountDetailsResolver {
+	return (*myAccountDetailsResolver)(r)
+}
+
 func (r *VegaResolverRoot) AccountEdge() AccountEdgeResolver {
 	return (*myAccountEdgeResolver)(r)
 }
@@ -2900,6 +2905,15 @@ func (r *mySubscriptionResolver) LiquidityProvisions(ctx context.Context, partyI
 	return c, nil
 }
 
+type myAccountDetailsResolver VegaResolverRoot
+
+func (r *myAccountDetailsResolver) PartyID(ctx context.Context, acc *types.AccountDetails) (*string, error) {
+	if acc.Owner != nil {
+		return acc.Owner, nil
+	}
+	return nil, nil
+}
+
 // START: Account Resolver
 
 type myAccountResolver VegaResolverRoot
@@ -2913,6 +2927,13 @@ func (r *myAccountResolver) Market(ctx context.Context, acc *types.Account) (*ty
 		return nil, nil
 	}
 	return r.r.getMarketByID(ctx, acc.MarketId)
+}
+
+func (r *myAccountResolver) Party(ctx context.Context, acc *types.Account) (*types.Party, error) {
+	if acc.Owner == "" {
+		return nil, nil
+	}
+	return getParty(ctx, r.log, r.r.clt2, acc.Owner)
 }
 
 func (r *myAccountResolver) Asset(ctx context.Context, obj *types.Account) (*types.Asset, error) {

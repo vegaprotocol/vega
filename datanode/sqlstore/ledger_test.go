@@ -36,8 +36,7 @@ func addTestLedgerEntry(t *testing.T, ledger *sqlstore.Ledger,
 		Quantity:      decimal.NewFromInt(100),
 		VegaTime:      block.VegaTime,
 		TransferTime:  block.VegaTime.Add(-time.Second),
-		Reference:     "some reference",
-		Type:          "some string",
+		Type:          entities.LedgerMovementTypeBondSlashing,
 	}
 
 	err := ledger.Add(ledgerEntry)

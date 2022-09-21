@@ -16,8 +16,60 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 )
+
+const (
+	systemOwner = "*"
+	noMarket    = "!"
+)
+
+type AccountDetails struct {
+	Owner    string
+	AssetID  string
+	MarketID string
+	Type     AccountType
+}
+
+func (ad *AccountDetails) ID() string {
+	idbuf := make([]byte, 256)
+	marketID, partyID := ad.MarketID, ad.Owner
+	if len(marketID) <= 0 {
+		marketID = noMarket
+	}
+
+	// market account
+	if len(partyID) <= 0 {
+		partyID = systemOwner
+	}
+
+	copy(idbuf, marketID)
+	ln := len(marketID)
+	copy(idbuf[ln:], partyID)
+	ln += len(partyID)
+	copy(idbuf[ln:], []byte(ad.AssetID))
+	ln += len(ad.AssetID)
+	idbuf[ln] = byte(ad.Type + 48)
+	return string(idbuf[:ln+1])
+}
+
+func (ad *AccountDetails) IntoProto() *proto.AccountDetails {
+	var marketID, owner *string
+	if ad.Owner != systemOwner {
+		owner = ptr.From(ad.Owner)
+	}
+	if ad.MarketID != noMarket {
+		marketID = ptr.From(ad.MarketID)
+	}
+
+	return &proto.AccountDetails{
+		Owner:    owner,
+		MarketId: marketID,
+		AssetId:  ad.AssetID,
+		Type:     ad.Type,
+	}
+}
 
 type Account struct {
 	ID       string
@@ -26,6 +78,15 @@ type Account struct {
 	Asset    string
 	MarketID string
 	Type     AccountType
+}
+
+func (a Account) ToDetails() *AccountDetails {
+	return &AccountDetails{
+		Owner:    a.Owner,
+		MarketID: a.MarketID,
+		AssetID:  a.Asset,
+		Type:     a.Type,
+	}
 }
 
 func (a Account) String() string {
@@ -85,7 +146,8 @@ type TransferRequest struct {
 	Amount      *num.Uint
 	MinAmount   *num.Uint
 	Asset       string
-	Reference   string
+	// Reference   string
+	Type TransferType
 }
 
 func (t *TransferRequest) IntoProto() *proto.TransferRequest {
@@ -95,52 +157,52 @@ func (t *TransferRequest) IntoProto() *proto.TransferRequest {
 		Amount:      num.UintToString(t.Amount),
 		MinAmount:   num.UintToString(t.MinAmount),
 		Asset:       t.Asset,
-		Reference:   t.Reference,
+		// Reference:   t.Reference,
 	}
 }
 
-type TransferResponse struct {
-	Transfers []*LedgerEntry
-	Balances  []*TransferBalance
+type LedgerMovement struct {
+	Entries  []*LedgerEntry
+	Balances []*PostTransferBalance
 }
 
-func (t *TransferResponse) IntoProto() *proto.TransferResponse {
-	return &proto.TransferResponse{
-		Transfers: LedgerEntries(t.Transfers).IntoProto(),
-		Balances:  TransferBalances(t.Balances).IntoProto(),
+func (t *LedgerMovement) IntoProto() *proto.LedgerMovement {
+	return &proto.LedgerMovement{
+		Entries:  LedgerEntries(t.Entries).IntoProto(),
+		Balances: PostTransferBalances(t.Balances).IntoProto(),
 	}
 }
 
-type TransferResponses []*TransferResponse
+type LedgerMovements []*LedgerMovement
 
-func (a TransferResponses) IntoProto() []*proto.TransferResponse {
-	out := make([]*proto.TransferResponse, 0, len(a))
+func (a LedgerMovements) IntoProto() []*proto.LedgerMovement {
+	out := make([]*proto.LedgerMovement, 0, len(a))
 	for _, v := range a {
 		out = append(out, v.IntoProto())
 	}
 	return out
 }
 
-type TransferBalance struct {
+type PostTransferBalance struct {
 	Account *Account
 	Balance *num.Uint
 }
 
-func (t *TransferBalance) IntoProto() *proto.TransferBalance {
-	var acc *proto.Account
+func (t *PostTransferBalance) IntoProto() *proto.PostTransferBalance {
+	var acc *proto.AccountDetails
 	if t.Account != nil {
-		acc = t.Account.IntoProto()
+		acc = t.Account.ToDetails().IntoProto()
 	}
-	return &proto.TransferBalance{
+	return &proto.PostTransferBalance{
 		Account: acc,
 		Balance: t.Balance.String(),
 	}
 }
 
-type TransferBalances []*TransferBalance
+type PostTransferBalances []*PostTransferBalance
 
-func (a TransferBalances) IntoProto() []*proto.TransferBalance {
-	out := make([]*proto.TransferBalance, 0, len(a))
+func (a PostTransferBalances) IntoProto() []*proto.PostTransferBalance {
+	out := make([]*proto.PostTransferBalance, 0, len(a))
 	for _, v := range a {
 		out = append(out, v.IntoProto())
 	}
@@ -148,20 +210,18 @@ func (a TransferBalances) IntoProto() []*proto.TransferBalance {
 }
 
 type LedgerEntry struct {
-	FromAccount string
-	ToAccount   string
+	FromAccount *AccountDetails
+	ToAccount   *AccountDetails
 	Amount      *num.Uint
-	Reference   string
-	Type        string
+	Type        TransferType
 	Timestamp   int64
 }
 
 func (l *LedgerEntry) IntoProto() *proto.LedgerEntry {
 	return &proto.LedgerEntry{
-		FromAccount: l.FromAccount,
-		ToAccount:   l.ToAccount,
+		FromAccount: l.FromAccount.IntoProto(),
+		ToAccount:   l.ToAccount.IntoProto(),
 		Amount:      num.UintToString(l.Amount),
-		Reference:   l.Reference,
 		Type:        l.Type,
 		Timestamp:   l.Timestamp,
 	}

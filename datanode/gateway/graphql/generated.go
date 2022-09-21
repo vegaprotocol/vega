@@ -45,6 +45,7 @@ type Config struct {
 
 type ResolverRoot interface {
 	Account() AccountResolver
+	AccountDetails() AccountDetailsResolver
 	AccountEdge() AccountEdgeResolver
 	AccountUpdate() AccountUpdateResolver
 	Asset() AssetResolver
@@ -120,7 +121,15 @@ type ComplexityRoot struct {
 		Asset   func(childComplexity int) int
 		Balance func(childComplexity int) int
 		Market  func(childComplexity int) int
+		Party   func(childComplexity int) int
 		Type    func(childComplexity int) int
+	}
+
+	AccountDetails struct {
+		AssetId  func(childComplexity int) int
+		MarketId func(childComplexity int) int
+		PartyID  func(childComplexity int) int
+		Type     func(childComplexity int) int
 	}
 
 	AccountEdge struct {
@@ -485,7 +494,6 @@ type ComplexityRoot struct {
 	LedgerEntry struct {
 		Amount      func(childComplexity int) int
 		FromAccount func(childComplexity int) int
-		Reference   func(childComplexity int) int
 		Timestamp   func(childComplexity int) int
 		ToAccount   func(childComplexity int) int
 		Type        func(childComplexity int) int
@@ -1634,6 +1642,10 @@ type AccountResolver interface {
 	Asset(ctx context.Context, obj *vega.Account) (*vega.Asset, error)
 
 	Market(ctx context.Context, obj *vega.Account) (*vega.Market, error)
+	Party(ctx context.Context, obj *vega.Account) (*vega.Party, error)
+}
+type AccountDetailsResolver interface {
+	PartyID(ctx context.Context, obj *vega.AccountDetails) (*string, error)
 }
 type AccountEdgeResolver interface {
 	Node(ctx context.Context, obj *v2.AccountEdge) (*vega.Account, error)
@@ -2216,12 +2228,47 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Account.Market(childComplexity), true
 
+	case "Account.party":
+		if e.complexity.Account.Party == nil {
+			break
+		}
+
+		return e.complexity.Account.Party(childComplexity), true
+
 	case "Account.type":
 		if e.complexity.Account.Type == nil {
 			break
 		}
 
 		return e.complexity.Account.Type(childComplexity), true
+
+	case "AccountDetails.assetId":
+		if e.complexity.AccountDetails.AssetId == nil {
+			break
+		}
+
+		return e.complexity.AccountDetails.AssetId(childComplexity), true
+
+	case "AccountDetails.marketId":
+		if e.complexity.AccountDetails.MarketId == nil {
+			break
+		}
+
+		return e.complexity.AccountDetails.MarketId(childComplexity), true
+
+	case "AccountDetails.partyId":
+		if e.complexity.AccountDetails.PartyID == nil {
+			break
+		}
+
+		return e.complexity.AccountDetails.PartyID(childComplexity), true
+
+	case "AccountDetails.type":
+		if e.complexity.AccountDetails.Type == nil {
+			break
+		}
+
+		return e.complexity.AccountDetails.Type(childComplexity), true
 
 	case "AccountEdge.cursor":
 		if e.complexity.AccountEdge.Cursor == nil {
@@ -3588,13 +3635,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.LedgerEntry.FromAccount(childComplexity), true
-
-	case "LedgerEntry.reference":
-		if e.complexity.LedgerEntry.Reference == nil {
-			break
-		}
-
-		return e.complexity.LedgerEntry.Reference(childComplexity), true
 
 	case "LedgerEntry.timestamp":
 		if e.complexity.LedgerEntry.Timestamp == nil {
@@ -11720,6 +11760,20 @@ type Account {
   type: AccountType!
   "Market (only relevant to margin accounts)"
   market: Market
+  "Owner of the account"
+  party: Party
+}
+
+"An account record"
+type AccountDetails {
+  "Asset, the 'currency'"
+  assetId: ID!
+  "Account type (General, Margin, etc)"
+  type: AccountType!
+  "Market (only relevant to margin accounts)"
+  marketId: ID
+  "Owner of the account"
+  partyId: ID
 }
 
 "An account record used for subscriptions"
@@ -12667,20 +12721,18 @@ type MarketEvent {
 
 type TransferBalance {
   "Account involved in transfer"
-  account: Account!
+  account: AccountDetails!
   "The new balance of the account"
   balance: String!
 }
 
 type LedgerEntry {
   "Account from which the asset was taken"
-  fromAccount: String!
+  fromAccount: AccountDetails!
   "Account to which the balance was transferred"
-  toAccount: String!
+  toAccount: AccountDetails!
   "The amount transferred"
   amount: String!
-  "The transfer reference"
-  reference: String!
   "Type of ledger entry"
   type: String!
   "RFC3339Nano time at which the transfer was made"
@@ -16439,6 +16491,172 @@ func (ec *executionContext) _Account_market(ctx context.Context, field graphql.C
 	res := resTmp.(*vega.Market)
 	fc.Result = res
 	return ec.marshalOMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarket(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Account_party(ctx context.Context, field graphql.CollectedField, obj *vega.Account) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Account",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Account().Party(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*vega.Party)
+	fc.Result = res
+	return ec.marshalOParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AccountDetails_assetId(ctx context.Context, field graphql.CollectedField, obj *vega.AccountDetails) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AccountDetails",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AssetId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AccountDetails_type(ctx context.Context, field graphql.CollectedField, obj *vega.AccountDetails) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AccountDetails",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(vega.AccountType)
+	fc.Result = res
+	return ec.marshalNAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AccountDetails_marketId(ctx context.Context, field graphql.CollectedField, obj *vega.AccountDetails) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AccountDetails",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MarketId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AccountDetails_partyId(ctx context.Context, field graphql.CollectedField, obj *vega.AccountDetails) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AccountDetails",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.AccountDetails().PartyID(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _AccountEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.AccountEdge) (ret graphql.Marshaler) {
@@ -23048,9 +23266,9 @@ func (ec *executionContext) _LedgerEntry_fromAccount(ctx context.Context, field 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*vega.AccountDetails)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNAccountDetails2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountDetails(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _LedgerEntry_toAccount(ctx context.Context, field graphql.CollectedField, obj *LedgerEntry) (ret graphql.Marshaler) {
@@ -23083,9 +23301,9 @@ func (ec *executionContext) _LedgerEntry_toAccount(ctx context.Context, field gr
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*vega.AccountDetails)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNAccountDetails2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountDetails(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _LedgerEntry_amount(ctx context.Context, field graphql.CollectedField, obj *LedgerEntry) (ret graphql.Marshaler) {
@@ -23107,41 +23325,6 @@ func (ec *executionContext) _LedgerEntry_amount(ctx context.Context, field graph
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Amount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _LedgerEntry_reference(ctx context.Context, field graphql.CollectedField, obj *LedgerEntry) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "LedgerEntry",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Reference, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -46598,9 +46781,9 @@ func (ec *executionContext) _TransferBalance_account(ctx context.Context, field 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*vega.Account)
+	res := resTmp.(*vega.AccountDetails)
 	fc.Result = res
-	return ec.marshalNAccount2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccount(ctx, field.Selections, res)
+	return ec.marshalNAccountDetails2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountDetails(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _TransferBalance_balance(ctx context.Context, field graphql.CollectedField, obj *TransferBalance) (ret graphql.Marshaler) {
@@ -50206,6 +50389,88 @@ func (ec *executionContext) _Account(ctx context.Context, sel ast.SelectionSet, 
 				return innerFunc(ctx)
 
 			})
+		case "party":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Account_party(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var accountDetailsImplementors = []string{"AccountDetails"}
+
+func (ec *executionContext) _AccountDetails(ctx context.Context, sel ast.SelectionSet, obj *vega.AccountDetails) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, accountDetailsImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AccountDetails")
+		case "assetId":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._AccountDetails_assetId(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "type":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._AccountDetails_type(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "marketId":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._AccountDetails_marketId(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "partyId":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._AccountDetails_partyId(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -53577,16 +53842,6 @@ func (ec *executionContext) _LedgerEntry(ctx context.Context, sel ast.SelectionS
 		case "amount":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._LedgerEntry_amount(ctx, field, obj)
-			}
-
-			out.Values[i] = innerFunc(ctx)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "reference":
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._LedgerEntry_reference(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -66578,6 +66833,16 @@ func (ec *executionContext) marshalNAccount2ᚖcodeᚗvegaprotocolᚗioᚋvega�
 		return graphql.Null
 	}
 	return ec._Account(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNAccountDetails2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountDetails(ctx context.Context, sel ast.SelectionSet, v *vega.AccountDetails) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._AccountDetails(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountType(ctx context.Context, v interface{}) (vega.AccountType, error) {

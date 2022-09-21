@@ -404,10 +404,10 @@ func testWithinMarket(t *testing.T) {
 		tm.market.OnTick(ctx, curTime)
 
 		// Assert the event
-		var evt *events.TransferResponse
+		var evt *events.LedgerMovements
 		for _, e := range tm.events {
-			if e.Type() == events.TransferResponses {
-				evt = e.(*events.TransferResponse)
+			if e.Type() == events.LedgerMovementsEvent {
+				evt = e.(*events.LedgerMovements)
 			}
 		}
 		require.Nil(t, evt, "should receive no TransferEvent")

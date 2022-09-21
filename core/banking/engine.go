@@ -68,8 +68,8 @@ type Notary interface {
 
 // Collateral engine.
 type Collateral interface {
-	Deposit(ctx context.Context, party, asset string, amount *num.Uint) (*types.TransferResponse, error)
-	Withdraw(ctx context.Context, party, asset string, amount *num.Uint) (*types.TransferResponse, error)
+	Deposit(ctx context.Context, party, asset string, amount *num.Uint) (*types.LedgerMovement, error)
+	Withdraw(ctx context.Context, party, asset string, amount *num.Uint) (*types.LedgerMovement, error)
 	EnableAsset(ctx context.Context, asset types.Asset) error
 	GetPartyGeneralAccount(party, asset string) (*types.Account, error)
 	TransferFunds(ctx context.Context,
@@ -78,7 +78,7 @@ type Collateral interface {
 		references []string,
 		feeTransfers []*types.Transfer,
 		feeTransfersAccountTypes []types.AccountType,
-	) ([]*types.TransferResponse, error)
+	) ([]*types.LedgerMovement, error)
 	PropagateAssetUpdate(ctx context.Context, asset types.Asset) error
 }
 
@@ -415,7 +415,7 @@ func (e *Engine) finalizeDeposit(ctx context.Context, d *types.Deposit) error {
 
 	d.Status = types.DepositStatusFinalized
 	d.CreditDate = e.timeService.GetTimeNow().UnixNano()
-	e.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{res}))
+	e.broker.Send(events.NewTransferResponse(ctx, []*types.LedgerMovement{res}))
 	e.bss.changedDeposits = true
 	return nil
 }
@@ -437,7 +437,7 @@ func (e *Engine) finalizeWithdraw(
 
 	w.Status = types.WithdrawalStatusFinalized
 	e.bss.changedWithdrawals = true
-	e.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{res}))
+	e.broker.Send(events.NewTransferResponse(ctx, []*types.LedgerMovement{res}))
 	return nil
 }
 

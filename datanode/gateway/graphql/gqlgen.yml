@@ -130,6 +130,8 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.Position
   Account:
     model: code.vegaprotocol.io/vega/protos/vega.Account
+  AccountDetails:
+    model: code.vegaprotocol.io/vega/protos/vega.AccountDetails
   AccountUpdate:
     model: code.vegaprotocol.io/vega/protos/vega.Account
   MarketData:
