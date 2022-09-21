@@ -283,7 +283,8 @@ func NewApp(
 		HandleCheckTx(txn.RotateEthereumKeySubmissionCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.ProtocolUpgradeCommand, app.CheckProtocolUpgradeProposal).
 		HandleCheckTx(txn.IssueSignatures, app.RequireValidatorPubKey).
-		HandleCheckTx(txn.BatchMarketInstructions, app.CheckBatchMarketInstructions)
+		HandleCheckTx(txn.BatchMarketInstructions, app.CheckBatchMarketInstructions).
+		HandleCheckTx(txn.ProposeCommand, app.CheckPropose)
 
 	app.abci.
 		HandleDeliverTx(txn.IssueSignatures,
@@ -307,7 +308,12 @@ func NewApp(
 		HandleDeliverTx(txn.WithdrawCommand,
 			app.SendEventOnError(addDeterministicID(app.DeliverWithdraw))).
 		HandleDeliverTx(txn.ProposeCommand,
-			app.SendEventOnError(addDeterministicID(app.DeliverPropose))).
+			app.SendEventOnError(
+				app.CheckProposeW(
+					addDeterministicID(app.DeliverPropose),
+				),
+			),
+		).
 		HandleDeliverTx(txn.VoteCommand,
 			app.SendEventOnError(app.DeliverVote)).
 		HandleDeliverTx(txn.NodeSignatureCommand,
@@ -363,6 +369,17 @@ func addDeterministicID(
 ) func(context.Context, abci.Tx) error {
 	return func(ctx context.Context, tx abci.Tx) error {
 		return f(ctx, tx, hex.EncodeToString(vgcrypto.Hash(tx.Signature())))
+	}
+}
+
+func (app *App) CheckProposeW(
+	f func(context.Context, abci.Tx) error,
+) func(context.Context, abci.Tx) error {
+	return func(ctx context.Context, tx abci.Tx) error {
+		if err := app.CheckPropose(ctx, tx); err != nil {
+			return err
+		}
+		return f(ctx, tx)
 	}
 }
 
@@ -1189,6 +1206,26 @@ func (app *App) DeliverWithdraw(
 		return err
 	}
 	return app.handleCheckpoint(snap)
+}
+
+func (app *App) CheckPropose(ctx context.Context, tx abci.Tx) error {
+	p := &commandspb.ProposalSubmission{}
+	if err := tx.Unmarshal(p); err != nil {
+		return err
+	}
+
+	propSubmission, err := types.NewProposalSubmissionFromProto(p)
+	if err != nil {
+		return err
+	}
+
+	terms := propSubmission.Terms
+	switch terms.Change.GetTermType() {
+	case types.ProposalTermsTypeUpdateNetworkParameter:
+		return app.netp.IsUpdateAllowed(terms.GetUpdateNetworkParameter().Changes.Key)
+	default:
+		return nil
+	}
 }
 
 func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, deterministicID string) error {

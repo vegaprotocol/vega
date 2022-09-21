@@ -22,6 +22,7 @@
 - [6203](https://github.com/vegaprotocol/vega/issues/6203) - Support automatic consent for transactions sent through the wallet API version 2
 - [6203](https://github.com/vegaprotocol/vega/issues/6203) - Log node selection process on the wallet CLI
 - [5925](https://github.com/vegaprotocol/vega/issues/5925) - Clean transfer response API, now ledger movements
+- [6254](https://github.com/vegaprotocol/vega/issues/6254) - Reject Ethereum configuration update via proposals
 
 ### 🐛 Fixes
 - [6101](https://github.com/vegaprotocol/vega/issues/6101) - Fix Nodes API not returning new `ethereumAdress` after `EthereumKeyRotation` event.
