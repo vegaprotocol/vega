@@ -13,7 +13,6 @@
 package processor
 
 import (
-	"bytes"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -39,17 +38,8 @@ func DecodeTxNoValidation(payload []byte) (*Tx, error) {
 		return nil, fmt.Errorf("unable to unmarshal transaction: %w", err)
 	}
 
-	// We ignore the chain ID, as the null chain is meant to be use for simulation.
-	var rawInputData []byte
-	idx := bytes.IndexByte(tx.InputData, commands.ChainIDDelimiter)
-	if idx == -1 {
-		rawInputData = tx.InputData
-	} else {
-		rawInputData = tx.InputData[idx+1:]
-	}
-
 	inputData := &commandspb.InputData{}
-	if err := proto.Unmarshal(rawInputData, inputData); err != nil {
+	if err := proto.Unmarshal(tx.InputData, inputData); err != nil {
 		return nil, fmt.Errorf("unable to unmarshal input data: %w", err)
 	}
 

@@ -91,18 +91,18 @@ func (h *AdminSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Par
 		params.LastBlockData = lastBlockData
 	}
 
-	inputData, err := wcommands.ToMarshaledInputData(request, params.LastBlockData.BlockHeight, params.LastBlockData.ChainID)
+	marshaledInputData, err := wcommands.ToMarshaledInputData(request, params.LastBlockData.BlockHeight)
 	if err != nil {
 		return nil, internalError(fmt.Errorf("could not marshal the input data: %w", err))
 	}
 
-	signature, err := w.SignTx(params.PublicKey, inputData)
+	signature, err := w.SignTx(params.PublicKey, commands.BundleInputDataForSigning(marshaledInputData, params.LastBlockData.ChainID))
 	if err != nil {
 		return nil, internalError(fmt.Errorf("could not sign the transaction: %w", err))
 	}
 
 	// Build the transaction.
-	tx := commands.NewTransaction(params.PublicKey, inputData, &commandspb.Signature{
+	tx := commands.NewTransaction(params.PublicKey, marshaledInputData, &commandspb.Signature{
 		Value:   signature.Value,
 		Algo:    signature.Algo,
 		Version: signature.Version,
