@@ -24,7 +24,7 @@
 - [5925](https://github.com/vegaprotocol/vega/issues/5925) - Clean transfer response API, now ledger movements
 
 ### 🐛 Fixes
-- [6255](https://github.com/vegaprotocol/vega/issues/6255) - Fix websocket upgrading on set headers http middleware.
+- [6255](https://github.com/vegaprotocol/vega/issues/6255) - Fix `WebSocket` upgrading when setting headers in HTTP middleware.
 - [6101](https://github.com/vegaprotocol/vega/issues/6101) - Fix Nodes API not returning new `ethereumAdress` after `EthereumKeyRotation` event.
 - [6183](https://github.com/vegaprotocol/vega/issues/6183) - Shutdown blockchain before protocol services
 - [6148](https://github.com/vegaprotocol/vega/issues/6148) - Fix API descriptions for typos
