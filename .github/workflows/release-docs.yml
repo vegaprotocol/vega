@@ -49,8 +49,10 @@ jobs:
           short_sha="$(git rev-parse --short HEAD)"
           cd ..
           mkdir -p "documentation/specs/${ref}"
+          mkdir -p "documentation/specs/${ref}/wallet/api"
           cp -r vega/protos/generated/* "documentation/specs/${ref}/"
-          cp vega/datanode/gateway/graphql/schema.graphql "documentation/specs/${ref}/datanode-schema.graphql"
+          cp "vega/datanode/gateway/graphql/schema.graphql" "documentation/specs/${ref}/datanode-schema.graphql"
+          cp "vega/wallet/api/openrpc.json" "documentation/specs/${ref}/wallet/api/openrpc.json"
           cd documentation
           git config --global user.email "vega-ci-bot@vega.xyz"
           git config --global user.name "vega-ci-bot"
