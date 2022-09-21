@@ -197,6 +197,7 @@ type Banking interface {
 type NetworkParameters interface {
 	Update(ctx context.Context, key, value string) error
 	DispatchChanges(ctx context.Context)
+	IsUpdateAllowed(key string) error
 }
 
 type Oracle struct {
