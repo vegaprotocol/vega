@@ -60,7 +60,7 @@ type Delegation interface {
 // Collateral engine provides access to account data and transferring rewards.
 type Collateral interface {
 	GetAccountByID(id string) (*types.Account, error)
-	TransferRewards(ctx context.Context, rewardAccountID string, transfers []*types.Transfer) ([]*types.TransferResponse, error)
+	TransferRewards(ctx context.Context, rewardAccountID string, transfers []*types.Transfer) ([]*types.LedgerMovement, error)
 	GetRewardAccountsByType(rewardAcccountType types.AccountType) []*types.Account
 }
 

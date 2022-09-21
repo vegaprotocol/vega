@@ -261,7 +261,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | PositionStateEvent                 |
       | MarginLevelsEvent                  |
       | AccountEvent                       |
-      | TransferResponses                  |
+      | LedgerMovements                    |
       | LiquidityProvisionEvent            |
       | OrderEvent                         |
       | AuctionEvent                       |

@@ -274,7 +274,7 @@ type TradingDataServiceClient interface {
 	// Transfer Responses
 	//
 	// Subscribe to a stream of Transfer Responses
-	ObserveTransferResponses(ctx context.Context, in *ObserveTransferResponsesRequest, opts ...grpc.CallOption) (TradingDataService_ObserveTransferResponsesClient, error)
+	ObserveLedgerMovements(ctx context.Context, in *ObserveLedgerMovementsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveLedgerMovementsClient, error)
 	// Key Rotations list
 	//
 	// List all key rotation applied for a given party
@@ -1271,12 +1271,12 @@ func (x *tradingDataServiceObserveEventBusClient) Recv() (*ObserveEventBusRespon
 	return m, nil
 }
 
-func (c *tradingDataServiceClient) ObserveTransferResponses(ctx context.Context, in *ObserveTransferResponsesRequest, opts ...grpc.CallOption) (TradingDataService_ObserveTransferResponsesClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[15], "/datanode.api.v2.TradingDataService/ObserveTransferResponses", opts...)
+func (c *tradingDataServiceClient) ObserveLedgerMovements(ctx context.Context, in *ObserveLedgerMovementsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveLedgerMovementsClient, error) {
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[15], "/datanode.api.v2.TradingDataService/ObserveLedgerMovements", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &tradingDataServiceObserveTransferResponsesClient{stream}
+	x := &tradingDataServiceObserveLedgerMovementsClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -1286,17 +1286,17 @@ func (c *tradingDataServiceClient) ObserveTransferResponses(ctx context.Context,
 	return x, nil
 }
 
-type TradingDataService_ObserveTransferResponsesClient interface {
-	Recv() (*ObserveTransferResponsesResponse, error)
+type TradingDataService_ObserveLedgerMovementsClient interface {
+	Recv() (*ObserveLedgerMovementsResponse, error)
 	grpc.ClientStream
 }
 
-type tradingDataServiceObserveTransferResponsesClient struct {
+type tradingDataServiceObserveLedgerMovementsClient struct {
 	grpc.ClientStream
 }
 
-func (x *tradingDataServiceObserveTransferResponsesClient) Recv() (*ObserveTransferResponsesResponse, error) {
-	m := new(ObserveTransferResponsesResponse)
+func (x *tradingDataServiceObserveLedgerMovementsClient) Recv() (*ObserveLedgerMovementsResponse, error) {
+	m := new(ObserveLedgerMovementsResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -1586,7 +1586,7 @@ type TradingDataServiceServer interface {
 	// Transfer Responses
 	//
 	// Subscribe to a stream of Transfer Responses
-	ObserveTransferResponses(*ObserveTransferResponsesRequest, TradingDataService_ObserveTransferResponsesServer) error
+	ObserveLedgerMovements(*ObserveLedgerMovementsRequest, TradingDataService_ObserveLedgerMovementsServer) error
 	// Key Rotations list
 	//
 	// List all key rotation applied for a given party
@@ -1816,8 +1816,8 @@ func (UnimplementedTradingDataServiceServer) GetRiskFactors(context.Context, *Ge
 func (UnimplementedTradingDataServiceServer) ObserveEventBus(TradingDataService_ObserveEventBusServer) error {
 	return status.Errorf(codes.Unimplemented, "method ObserveEventBus not implemented")
 }
-func (UnimplementedTradingDataServiceServer) ObserveTransferResponses(*ObserveTransferResponsesRequest, TradingDataService_ObserveTransferResponsesServer) error {
-	return status.Errorf(codes.Unimplemented, "method ObserveTransferResponses not implemented")
+func (UnimplementedTradingDataServiceServer) ObserveLedgerMovements(*ObserveLedgerMovementsRequest, TradingDataService_ObserveLedgerMovementsServer) error {
+	return status.Errorf(codes.Unimplemented, "method ObserveLedgerMovements not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ListKeyRotations(context.Context, *ListKeyRotationsRequest) (*ListKeyRotationsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListKeyRotations not implemented")
@@ -3151,24 +3151,24 @@ func (x *tradingDataServiceObserveEventBusServer) Recv() (*ObserveEventBusReques
 	return m, nil
 }
 
-func _TradingDataService_ObserveTransferResponses_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(ObserveTransferResponsesRequest)
+func _TradingDataService_ObserveLedgerMovements_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ObserveLedgerMovementsRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(TradingDataServiceServer).ObserveTransferResponses(m, &tradingDataServiceObserveTransferResponsesServer{stream})
+	return srv.(TradingDataServiceServer).ObserveLedgerMovements(m, &tradingDataServiceObserveLedgerMovementsServer{stream})
 }
 
-type TradingDataService_ObserveTransferResponsesServer interface {
-	Send(*ObserveTransferResponsesResponse) error
+type TradingDataService_ObserveLedgerMovementsServer interface {
+	Send(*ObserveLedgerMovementsResponse) error
 	grpc.ServerStream
 }
 
-type tradingDataServiceObserveTransferResponsesServer struct {
+type tradingDataServiceObserveLedgerMovementsServer struct {
 	grpc.ServerStream
 }
 
-func (x *tradingDataServiceObserveTransferResponsesServer) Send(m *ObserveTransferResponsesResponse) error {
+func (x *tradingDataServiceObserveLedgerMovementsServer) Send(m *ObserveLedgerMovementsResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -3544,8 +3544,8 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 		{
-			StreamName:    "ObserveTransferResponses",
-			Handler:       _TradingDataService_ObserveTransferResponses_Handler,
+			StreamName:    "ObserveLedgerMovements",
+			Handler:       _TradingDataService_ObserveLedgerMovements_Handler,
 			ServerStreams: true,
 		},
 	},

@@ -21,6 +21,7 @@
 - [6077](https://github.com/vegaprotocol/vega/issues/6077) - Add proof-of-work to transaction when using `vegawallet command sign`
 - [6203](https://github.com/vegaprotocol/vega/issues/6203) - Support automatic consent for transactions sent through the wallet API version 2
 - [6203](https://github.com/vegaprotocol/vega/issues/6203) - Log node selection process on the wallet CLI
+- [5925](https://github.com/vegaprotocol/vega/issues/5925) - Clean transfer response API, now ledger movements
 
 ### 🐛 Fixes
 - [6183](https://github.com/vegaprotocol/vega/issues/6183) - Shutdown blockchain before protocol services

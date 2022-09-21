@@ -122,9 +122,9 @@ func testMTMWithNetworkNoLossSoc(t *testing.T) {
 	}
 	found := false // we should see a transfer from insurance to settlement
 	for _, r := range raw {
-		for _, tr := range r.Transfers {
-			if tr.FromAccount == insurancePool.ID {
-				to, _ := eng.GetAccountByID(tr.ToAccount)
+		for _, tr := range r.Entries {
+			if eng.ADtoID(tr.FromAccount) == insurancePool.ID {
+				to, _ := eng.GetAccountByID(eng.ADtoID(tr.ToAccount))
 				require.Equal(t, types.AccountTypeSettlement, to.Type)
 				require.True(t, tr.Amount.EQ(price))
 				found = true
@@ -224,9 +224,9 @@ func testMTMWithNetworkLossSoc(t *testing.T) {
 	}
 	found := false // we should see a transfer from insurance to settlement
 	for _, r := range raw {
-		for _, tr := range r.Transfers {
-			if tr.FromAccount == insurancePool.ID {
-				to, _ := eng.GetAccountByID(tr.ToAccount)
+		for _, tr := range r.Entries {
+			if eng.ADtoID(tr.FromAccount) == insurancePool.ID {
+				to, _ := eng.GetAccountByID(eng.ADtoID(tr.ToAccount))
 				require.Equal(t, types.AccountTypeSettlement, to.Type)
 				found = true
 				require.False(t, tr.Amount.EQ(price)) // there wasn't enough balance to pay the full MTM share

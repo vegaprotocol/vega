@@ -139,7 +139,6 @@ create table ledger
     tx_hash         BYTEA                    NOT NULL,
     vega_time       TIMESTAMP WITH TIME ZONE NOT NULL,
     transfer_time   TIMESTAMP WITH TIME ZONE NOT NULL,
-    reference       TEXT,
     type            TEXT
 );
 SELECT create_hypertable('ledger', 'vega_time', chunk_time_interval => INTERVAL '1 day');

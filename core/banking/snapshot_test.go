@@ -94,7 +94,7 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(testAsset, nil)
-	eng.col.EXPECT().Withdraw(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&types.TransferResponse{}, nil)
+	eng.col.EXPECT().Withdraw(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&types.LedgerMovement{}, nil)
 	// setup some withdrawals
 	err = eng.WithdrawBuiltinAsset(context.Background(), "VGT1", "someparty1", "VGT1", num.NewUint(2))
 	require.Nil(t, err)
@@ -192,7 +192,7 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 	require.NoError(t, err)
 
 	// setup some withdrawals
-	engineLoad.col.EXPECT().Withdraw(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&types.TransferResponse{}, nil)
+	engineLoad.col.EXPECT().Withdraw(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&types.LedgerMovement{}, nil)
 	err = eng.WithdrawBuiltinAsset(context.Background(), "VGT1", "someparty1", "VGT1", num.NewUint(10))
 	require.Nil(t, err)
 	err = engineLoad.WithdrawBuiltinAsset(context.Background(), "VGT1", "someparty1", "VGT1", num.NewUint(10))
@@ -303,7 +303,7 @@ func TestSeenSnapshotRoundTrip(t *testing.T) {
 		eng.tsvc.EXPECT().GetTimeNow().Times(1)
 		state1, _, err := eng.GetState(seenKey)
 		require.Nil(t, err)
-		eng.col.EXPECT().Deposit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&types.TransferResponse{}, nil)
+		eng.col.EXPECT().Deposit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&types.LedgerMovement{}, nil)
 
 		d1 := deposit(eng, "VGT1", "someparty1", num.NewUint(42))
 		err = eng.DepositBuiltinAsset(context.Background(), d1, "depositid1", 42)
@@ -358,7 +358,7 @@ func TestWithdrawalsSnapshotRoundTrip(t *testing.T) {
 
 		eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 		eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(testAsset, nil)
-		eng.col.EXPECT().Withdraw(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&types.TransferResponse{}, nil)
+		eng.col.EXPECT().Withdraw(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&types.LedgerMovement{}, nil)
 		err = eng.WithdrawBuiltinAsset(context.Background(), "VGT"+strconv.Itoa(i*2), "someparty"+strconv.Itoa(i*2), "VGT"+strconv.Itoa(i*2), num.NewUint(2))
 		require.Nil(t, err)
 		err = eng.WithdrawBuiltinAsset(context.Background(), "VGT"+strconv.Itoa(i*2+1), "someparty"+strconv.Itoa(i*2), "VGT"+strconv.Itoa(i*2), num.NewUint(10))

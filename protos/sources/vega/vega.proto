@@ -748,6 +748,8 @@ enum TransferType {
   TRANSFER_TYPE_TRANSFER_FUNDS_SEND = 22;
   // Transfer funds
   TRANSFER_TYPE_TRANSFER_FUNDS_DISTRIBUTE = 23;
+  // Market is closed, accounts are cleared
+  TRANSFER_TYPE_CLEAR_ACCOUNT = 24;
 }
 
 // Represents a financial transfer within Vega
@@ -797,41 +799,44 @@ message TransferRequest {
   string min_amount = 4;
   // Asset identifier
   string asset = 5;
-  // A reference for auditing purposes
-  string reference = 6;
+  // The type of the request for transfer
+  TransferType type = 7;
+}
+
+message AccountDetails {
+  string asset_id = 1;
+  AccountType type = 2;
+  // not specified if network account
+  optional string owner = 3;
+  // not specified is account is not related to a market
+  optional string market_id = 4;
 }
 
 // Represents a ledger entry on Vega
 message LedgerEntry {
   // One or more accounts to transfer from
-  string from_account = 1;
+  AccountDetails from_account = 1;
   // One or more accounts to transfer to
-  string to_account = 2;
+  AccountDetails to_account = 2;
   // An amount to transfer
   string amount = 3;
-  // A reference for auditing purposes
-  string reference = 4;
-  // Type of ledger entry
-  string type = 5;
-  // Timestamp for the time the ledger entry was created, in nanoseconds since the epoch
-  // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
-  int64 timestamp = 6;
+  // Transfer type for this entry
+  TransferType type = 4;
+  // Timestamps
+  int64 timestamp = 5;
 }
 
 // Represents the balance for an account during a transfer
-message TransferBalance {
+message PostTransferBalance {
   // The account relating to the transfer
-  Account account = 1;
+  AccountDetails account = 1;
   // The balance relating to the transfer
   string balance = 2;
 }
 
-// Represents the response from a transfer
-message TransferResponse {
-  // One or more ledger entries representing the transfers
-  repeated LedgerEntry transfers = 1;
-  // One or more account balances
-  repeated TransferBalance balances = 2;
+message LedgerMovement {
+  repeated LedgerEntry entries = 1;
+  repeated PostTransferBalance balances = 2;
 }
 
 // Represents the margin levels for a party on a market at a given time

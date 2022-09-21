@@ -139,29 +139,29 @@ type TargetStakeCalculator interface {
 
 //nolint:interfacebloat
 type MarketCollateral interface {
-	Deposit(ctx context.Context, party, asset string, amount *num.Uint) (*types.TransferResponse, error)
-	Withdraw(ctx context.Context, party, asset string, amount *num.Uint) (*types.TransferResponse, error)
+	Deposit(ctx context.Context, party, asset string, amount *num.Uint) (*types.LedgerMovement, error)
+	Withdraw(ctx context.Context, party, asset string, amount *num.Uint) (*types.LedgerMovement, error)
 	EnableAsset(ctx context.Context, asset types.Asset) error
 	GetPartyGeneralAccount(party, asset string) (*types.Account, error)
 	GetPartyBondAccount(market, partyID, asset string) (*types.Account, error)
-	BondUpdate(ctx context.Context, market string, transfer *types.Transfer) (*types.TransferResponse, error)
-	MarginUpdateOnOrder(ctx context.Context, marketID string, update events.Risk) (*types.TransferResponse, events.Margin, error)
+	BondUpdate(ctx context.Context, market string, transfer *types.Transfer) (*types.LedgerMovement, error)
+	MarginUpdateOnOrder(ctx context.Context, marketID string, update events.Risk) (*types.LedgerMovement, events.Margin, error)
 	GetPartyMargin(pos events.MarketPosition, asset, marketID string) (events.Margin, error)
 	GetPartyMarginAccount(market, party, asset string) (*types.Account, error)
-	RollbackMarginUpdateOnOrder(ctx context.Context, marketID string, assetID string, transfer *types.Transfer) (*types.TransferResponse, error)
+	RollbackMarginUpdateOnOrder(ctx context.Context, marketID string, assetID string, transfer *types.Transfer) (*types.LedgerMovement, error)
 	GetOrCreatePartyBondAccount(ctx context.Context, partyID, marketID, asset string) (*types.Account, error)
 	CreatePartyMarginAccount(ctx context.Context, partyID, marketID, asset string) (string, error)
-	FinalSettlement(ctx context.Context, marketID string, transfers []*types.Transfer) ([]*types.TransferResponse, error)
-	ClearMarket(ctx context.Context, mktID, asset string, parties []string) ([]*types.TransferResponse, error)
+	FinalSettlement(ctx context.Context, marketID string, transfers []*types.Transfer) ([]*types.LedgerMovement, error)
+	ClearMarket(ctx context.Context, mktID, asset string, parties []string) ([]*types.LedgerMovement, error)
 	HasGeneralAccount(party, asset string) bool
-	ClearPartyMarginAccount(ctx context.Context, party, market, asset string) (*types.TransferResponse, error)
+	ClearPartyMarginAccount(ctx context.Context, party, market, asset string) (*types.LedgerMovement, error)
 	CanCoverBond(market, party, asset string, amount *num.Uint) bool
 	Hash() []byte
-	TransferFeesContinuousTrading(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.TransferResponse, error)
-	TransferFees(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.TransferResponse, error)
-	MarginUpdate(ctx context.Context, marketID string, updates []events.Risk) ([]*types.TransferResponse, []events.Margin, []events.Margin, error)
-	MarkToMarket(ctx context.Context, marketID string, transfers []events.Transfer, asset string) ([]events.Margin, []*types.TransferResponse, error)
-	RemoveDistressed(ctx context.Context, parties []events.MarketPosition, marketID, asset string) (*types.TransferResponse, error)
+	TransferFeesContinuousTrading(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.LedgerMovement, error)
+	TransferFees(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.LedgerMovement, error)
+	MarginUpdate(ctx context.Context, marketID string, updates []events.Risk) ([]*types.LedgerMovement, []events.Margin, []events.Margin, error)
+	MarkToMarket(ctx context.Context, marketID string, transfers []events.Transfer, asset string) ([]events.Margin, []*types.LedgerMovement, error)
+	RemoveDistressed(ctx context.Context, parties []events.MarketPosition, marketID, asset string) (*types.LedgerMovement, error)
 	GetMarketLiquidityFeeAccount(market, asset string) (*types.Account, error)
 	GetAssetQuantum(asset string) (num.Decimal, error)
 }
@@ -1237,7 +1237,7 @@ func (m *Market) releaseMarginExcess(ctx context.Context, partyID string) {
 		return
 	}
 	evt := events.NewTransferResponse(
-		ctx, []*types.TransferResponse{transfers})
+		ctx, []*types.LedgerMovement{transfers})
 	m.broker.Send(evt)
 }
 
@@ -1516,7 +1516,7 @@ func (m *Market) applyFees(ctx context.Context, order *types.Order, trades []*ty
 	}
 
 	var (
-		transfers []*types.TransferResponse
+		transfers []*types.LedgerMovement
 		asset, _  = m.mkt.GetAsset()
 	)
 
@@ -2001,10 +2001,10 @@ func (m *Market) finalizePartiesCloseOut(
 			logging.Error(err))
 	}
 
-	if len(movements.Transfers) > 0 {
+	if len(movements.Entries) > 0 {
 		m.broker.Send(
 			events.NewTransferResponse(
-				ctx, []*types.TransferResponse{movements}),
+				ctx, []*types.LedgerMovement{movements}),
 		)
 	}
 }
@@ -2037,7 +2037,7 @@ func (m *Market) confiscateBondAccount(ctx context.Context, partyID string) erro
 	if err != nil {
 		return err
 	}
-	m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tresp}))
+	m.broker.Send(events.NewTransferResponse(ctx, []*types.LedgerMovement{tresp}))
 
 	return nil
 }

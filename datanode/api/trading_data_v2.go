@@ -2665,7 +2665,7 @@ func (t *tradingDataServiceV2) ObserveEventBus(stream v2.TradingDataService_Obse
 }
 
 // Subscribe to a stream of Transfer Responses.
-func (t *tradingDataServiceV2) ObserveTransferResponses(_ *v2.ObserveTransferResponsesRequest, srv v2.TradingDataService_ObserveTransferResponsesServer) error {
+func (t *tradingDataServiceV2) ObserveLedgerMovements(_ *v2.ObserveLedgerMovementsRequest, srv v2.TradingDataService_ObserveLedgerMovementsServer) error {
 	// Wrap context from the request into cancellable. We can close internal chan in error.
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
@@ -2676,9 +2676,9 @@ func (t *tradingDataServiceV2) ObserveTransferResponses(_ *v2.ObserveTransferRes
 		t.log.Debug("TransferResponses subscriber - new rpc stream", logging.Uint64("ref", ref))
 	}
 
-	return observe(ctx, t.log, "TransferResponse", transferResponsesChan, ref, func(tr *vega.TransferResponse) error {
-		return srv.Send(&v2.ObserveTransferResponsesResponse{
-			Response: tr,
+	return observe(ctx, t.log, "TransferResponse", transferResponsesChan, ref, func(tr *vega.LedgerMovement) error {
+		return srv.Send(&v2.ObserveLedgerMovementsResponse{
+			LedgerMovement: tr,
 		})
 	})
 }

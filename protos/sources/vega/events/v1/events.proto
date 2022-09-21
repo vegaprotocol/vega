@@ -277,9 +277,9 @@ message EpochEvent {
 }
 
 // A transfer responses event contains a collection of transfer information
-message TransferResponses {
+message LedgerMovements {
   // One or more entries containing internal transfer information
-  repeated TransferResponse responses = 1;
+  repeated LedgerMovement ledger_movements = 1;
 }
 
 // A position resolution event contains information on distressed trades
@@ -517,7 +517,7 @@ enum BusEventType {
   // Event for blockchain time updates
   BUS_EVENT_TYPE_TIME_UPDATE = 2;
   // Event for when a transfer happens internally, contains the transfer information
-  BUS_EVENT_TYPE_TRANSFER_RESPONSES = 3;
+  BUS_EVENT_TYPE_LEDGER_MOVEMENTS = 3;
   // Event indicating position resolution has occurred
   BUS_EVENT_TYPE_POSITION_RESOLUTION = 4;
   // Event for order updates, both new and existing orders
@@ -633,7 +633,7 @@ message BusEvent {
     // Time update events - See [TimeUpdate](#vega.TimeUpdate)
     TimeUpdate time_update = 101;
     // Transfer responses update events - See [TransferResponses](#vega.TransferResponses)
-    TransferResponses transfer_responses = 102;
+    LedgerMovements ledger_movements = 102;
     // Position resolution events - See [PositionResolution](#vega.PositionResolution)
     PositionResolution position_resolution = 103;
     // Order events

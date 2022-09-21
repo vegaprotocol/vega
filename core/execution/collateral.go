@@ -38,7 +38,7 @@ func (m *Market) transferMarginsLiquidityProvisionAmendAuction(
 		return err
 	}
 
-	m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tsfr}))
+	m.broker.Send(events.NewTransferResponse(ctx, []*types.LedgerMovement{tsfr}))
 	return nil
 }
 
@@ -59,7 +59,7 @@ func (m *Market) transferMarginsAuction(ctx context.Context, risk []events.Risk,
 			// @TODO handle this
 			return err
 		}
-		evts = append(evts, events.NewTransferResponse(ctx, []*types.TransferResponse{tr}))
+		evts = append(evts, events.NewTransferResponse(ctx, []*types.LedgerMovement{tr}))
 	}
 	m.broker.SendBatch(evts)
 	rmorders, err := m.matching.RemoveDistressedOrders(distressed)
@@ -87,7 +87,7 @@ func (m *Market) transferRecheckMargins(ctx context.Context, risk []events.Risk)
 	mID := m.GetID()
 	evts := make([]events.Event, 0, len(risk))
 	for _, r := range risk {
-		responses := make([]*types.TransferResponse, 0, 1)
+		responses := make([]*types.LedgerMovement, 0, 1)
 		tr, closed, err := m.collateral.MarginUpdateOnOrder(ctx, mID, r)
 		if err != nil {
 			return err
@@ -126,7 +126,7 @@ func (m *Market) transferMarginsContinuous(ctx context.Context, risk []events.Ri
 		return err
 	}
 	// if LP shortfall is not empty, this party will have to pay the LP penalty
-	responses := make([]*types.TransferResponse, 0, len(risk))
+	responses := make([]*types.LedgerMovement, 0, len(risk))
 	if tr != nil {
 		responses = append(responses, tr)
 	}
@@ -146,10 +146,10 @@ func (m *Market) transferMarginsContinuous(ctx context.Context, risk []events.Ri
 	return nil
 }
 
-func (m *Market) bondSlashing(ctx context.Context, closed ...events.Margin) ([]*types.TransferResponse, error) {
+func (m *Market) bondSlashing(ctx context.Context, closed ...events.Margin) ([]*types.LedgerMovement, error) {
 	mID := m.GetID()
 	asset, _ := m.mkt.GetAsset()
-	ret := make([]*types.TransferResponse, 0, len(closed))
+	ret := make([]*types.LedgerMovement, 0, len(closed))
 	for _, c := range closed {
 		penalty, _ := num.UintFromDecimal(
 			num.DecimalFromUint(c.MarginShortFall()).Mul(m.bondPenaltyFactor).Floor(),

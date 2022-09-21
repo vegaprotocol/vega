@@ -2520,6 +2520,20 @@ type Account {
   type: AccountType!
   "Market (only relevant to margin accounts)"
   market: Market
+  "Owner of the account"
+  party: Party
+}
+
+"An account record"
+type AccountDetails {
+  "Asset, the 'currency'"
+  assetId: ID!
+  "Account type (General, Margin, etc)"
+  type: AccountType!
+  "Market (only relevant to margin accounts)"
+  marketId: ID
+  "Owner of the account"
+  partyId: ID
 }
 
 "An account record used for subscriptions"
@@ -3467,20 +3481,18 @@ type MarketEvent {
 
 type TransferBalance {
   "Account involved in transfer"
-  account: Account!
+  account: AccountDetails!
   "The new balance of the account"
   balance: String!
 }
 
 type LedgerEntry {
   "Account from which the asset was taken"
-  fromAccount: String!
+  fromAccount: AccountDetails!
   "Account to which the balance was transferred"
-  toAccount: String!
+  toAccount: AccountDetails!
   "The amount transferred"
   amount: String!
-  "The transfer reference"
-  reference: String!
   "Type of ledger entry"
   type: String!
   "RFC3339Nano time at which the transfer was made"

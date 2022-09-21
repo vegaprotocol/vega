@@ -22,19 +22,20 @@ import (
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
+
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 )
 
 type Ledger interface {
 	AddLedgerEntry(entities.LedgerEntry) error
-	AddTransferResponse(*vega.TransferResponse)
+	AddTransferResponse(*vega.LedgerMovement)
 	Flush(ctx context.Context) error
 }
 
 type TransferResponseEvent interface {
 	events.Event
-	TransferResponses() []*vega.TransferResponse
+	LedgerMovements() []*vega.LedgerMovement
 }
 
 type TransferResponse struct {
@@ -57,7 +58,7 @@ func NewTransferResponse(
 }
 
 func (t *TransferResponse) Types() []events.Type {
-	return []events.Type{events.TransferResponses}
+	return []events.Type{events.LedgerMovementsEvent}
 }
 
 func (t *TransferResponse) Flush(ctx context.Context) error {
@@ -71,9 +72,9 @@ func (t *TransferResponse) Push(ctx context.Context, evt events.Event) error {
 
 func (t *TransferResponse) consume(ctx context.Context, e TransferResponseEvent) error {
 	var errs strings.Builder
-	for _, tr := range e.TransferResponses() {
+	for _, tr := range e.LedgerMovements() {
 		t.ledger.AddTransferResponse(tr)
-		for _, vle := range tr.Transfers {
+		for _, vle := range tr.Entries {
 			if err := t.addLedgerEntry(ctx, vle, e.TxHash(), t.vegaTime); err != nil {
 				errs.WriteString(fmt.Sprintf("couldn't add ledger entry: %v, error:%s\n", vle, err))
 			}
@@ -88,12 +89,12 @@ func (t *TransferResponse) consume(ctx context.Context, e TransferResponseEvent)
 }
 
 func (t *TransferResponse) addLedgerEntry(ctx context.Context, vle *vega.LedgerEntry, txHash string, vegaTime time.Time) error {
-	accFrom, err := t.obtainAccountWithID(ctx, vle.FromAccount, txHash, vegaTime)
+	accFrom, err := t.obtainAccountWithAccountDetails(ctx, vle.FromAccount, txHash, vegaTime)
 	if err != nil {
 		return errors.Wrap(err, "obtaining 'from' account")
 	}
 
-	accTo, err := t.obtainAccountWithID(ctx, vle.ToAccount, txHash, vegaTime)
+	accTo, err := t.obtainAccountWithAccountDetails(ctx, vle.ToAccount, txHash, vegaTime)
 	if err != nil {
 		return errors.Wrap(err, "obtaining 'to' account")
 	}
@@ -110,8 +111,7 @@ func (t *TransferResponse) addLedgerEntry(ctx context.Context, vle *vega.LedgerE
 		TxHash:        entities.TxHash(txHash),
 		VegaTime:      vegaTime,
 		TransferTime:  time.Unix(0, vle.Timestamp),
-		Reference:     vle.Reference,
-		Type:          vle.Type,
+		Type:          entities.LedgerMovementType(vle.Type),
 	}
 
 	err = t.ledger.AddLedgerEntry(le)
@@ -122,15 +122,15 @@ func (t *TransferResponse) addLedgerEntry(ctx context.Context, vle *vega.LedgerE
 }
 
 // Parse the vega account ID; if that account already exists in the db, fetch it; else create it.
-func (t *TransferResponse) obtainAccountWithID(ctx context.Context, id string, txHash string, vegaTime time.Time) (entities.Account, error) {
-	a, err := entities.AccountFromAccountID(id, entities.TxHash(txHash))
+func (t *TransferResponse) obtainAccountWithAccountDetails(ctx context.Context, ad *vega.AccountDetails, txHash string, vegaTime time.Time) (entities.Account, error) {
+	a, err := entities.AccountProtoFromDetails(ad, entities.TxHash(txHash))
 	if err != nil {
-		return entities.Account{}, errors.Wrapf(err, "parsing account id: %s", id)
+		return entities.Account{}, errors.Wrapf(err, "parsing account id: %s", ad.String())
 	}
 	a.VegaTime = vegaTime
 	err = t.accounts.Obtain(ctx, &a)
 	if err != nil {
-		return entities.Account{}, errors.Wrapf(err, "obtaining account for id: %s", id)
+		return entities.Account{}, errors.Wrapf(err, "obtaining account for id: %s", ad.String())
 	}
 	return a, nil
 }
