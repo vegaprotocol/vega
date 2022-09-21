@@ -17,6 +17,7 @@ import (
 	"sort"
 	"strings"
 
+	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
@@ -67,6 +68,9 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 	if err := proto.Unmarshal(data, &msg); err != nil {
 		return err
 	}
+
+	ledgerMovements := []*types.LedgerMovement{}
+
 	for _, balance := range msg.Balances {
 		ub, _ := num.UintFromString(balance.Balance, 10)
 		partyComponents := strings.Split(balance.Party, separator)
@@ -86,18 +90,32 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 			if _, ok := tradingRewardAccountTypes[tp]; ok {
 				e.GetOrCreateRewardAccount(ctx, balance.Asset, market, tp)
 			}
-			acc, err := e.GetAccountByID(accID)
+			_, err := e.GetAccountByID(accID)
 			if err != nil {
 				return err
 			}
-			e.UpdateBalance(ctx, accID, num.Sum(ub, acc.Balance))
+			lm, err := e.RestoreCheckpointBalance(
+				ctx, market, systemOwner, balance.Asset, tp, ub.Clone())
+			if err != nil {
+				return err
+			}
+			ledgerMovements = append(ledgerMovements, lm)
 			continue
 		}
 		accID := e.accountID(market, balance.Party, balance.Asset, types.AccountTypeGeneral)
 		if _, err := e.GetAccountByID(accID); err != nil {
-			accID, _ = e.CreatePartyGeneralAccount(ctx, balance.Party, balance.Asset)
+			_, _ = e.CreatePartyGeneralAccount(ctx, balance.Party, balance.Asset)
 		}
-		e.UpdateBalance(ctx, accID, ub)
+		lm, err := e.RestoreCheckpointBalance(
+			ctx, noMarket, balance.Party, balance.Asset, types.AccountTypeGeneral, ub.Clone())
+		if err != nil {
+			return err
+		}
+		ledgerMovements = append(ledgerMovements, lm)
+	}
+
+	if len(ledgerMovements) > 0 {
+		e.broker.Send(events.NewLedgerMovements(ctx, ledgerMovements))
 	}
 	return nil
 }

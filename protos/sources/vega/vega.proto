@@ -750,6 +750,8 @@ enum TransferType {
   TRANSFER_TYPE_TRANSFER_FUNDS_DISTRIBUTE = 23;
   // Market is closed, accounts are cleared
   TRANSFER_TYPE_CLEAR_ACCOUNT = 24;
+  // Restore a balance from a checkpoint
+  TRANSFER_TYPE_CHECKPOINT_BALANCE_RESTORE = 25;
 }
 
 // Represents a financial transfer within Vega

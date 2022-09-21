@@ -2486,6 +2486,55 @@ func (e *Engine) Withdraw(ctx context.Context, partyID, asset string, amount *nu
 	return res, nil
 }
 
+// RestoreCheckpointBalance will credit account with a balance from
+// a checkpoint. This function assume the accounts have been created
+// before.
+func (e *Engine) RestoreCheckpointBalance(
+	ctx context.Context,
+	market, party, asset string,
+	typ types.AccountType,
+	amount *num.Uint,
+) (*types.LedgerMovement, error) {
+	treq := &types.TransferRequest{
+		Amount:    amount.Clone(),
+		MinAmount: amount.Clone(),
+		Asset:     asset,
+		Type:      types.TransferTypeCheckpointBalanceRestore,
+	}
+
+	// first get the external account and ensure the funds there are OK
+	eacc, err := e.GetAccountByID(
+		e.accountID(noMarket, systemOwner, asset, types.AccountTypeExternal))
+	if err != nil {
+		e.log.Panic(
+			"Failed to get the asset external account",
+			logging.String("asset", asset),
+			logging.Error(err),
+		)
+	}
+	eacc.Balance = eacc.Balance.Add(eacc.Balance, amount.Clone())
+	treq.FromAccount = []*types.Account{
+		eacc,
+	}
+
+	// get our destination account
+	acc, _ := e.GetAccountByID(e.accountID(market, party, asset, typ))
+	treq.ToAccount = []*types.Account{
+		acc,
+	}
+
+	lms, err := e.getLedgerEntries(ctx, treq)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := e.IncrementBalance(ctx, acc.ID, amount); err != nil {
+		return nil, err
+	}
+
+	return lms, nil
+}
+
 // Deposit will deposit the given amount into the party account.
 func (e *Engine) Deposit(ctx context.Context, partyID, asset string, amount *num.Uint) (*types.LedgerMovement, error) {
 	if !e.AssetExists(asset) {

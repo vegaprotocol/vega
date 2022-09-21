@@ -25,8 +25,8 @@ type LedgerMovements struct {
 	ledgerMovements []*ptypes.LedgerMovement
 }
 
-// NewTransferResponse returns an event with transfer responses - this is the replacement of the transfer buffer.
-func NewTransferResponse(ctx context.Context, ledgerMovements []*types.LedgerMovement) *LedgerMovements {
+// NewLedgerMovements returns an event with transfer responses - this is the replacement of the transfer buffer.
+func NewLedgerMovements(ctx context.Context, ledgerMovements []*types.LedgerMovement) *LedgerMovements {
 	return &LedgerMovements{
 		Base:            newBase(ctx, LedgerMovementsEvent),
 		ledgerMovements: types.LedgerMovements(ledgerMovements).IntoProto(),

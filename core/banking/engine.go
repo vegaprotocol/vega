@@ -415,7 +415,7 @@ func (e *Engine) finalizeDeposit(ctx context.Context, d *types.Deposit) error {
 
 	d.Status = types.DepositStatusFinalized
 	d.CreditDate = e.timeService.GetTimeNow().UnixNano()
-	e.broker.Send(events.NewTransferResponse(ctx, []*types.LedgerMovement{res}))
+	e.broker.Send(events.NewLedgerMovements(ctx, []*types.LedgerMovement{res}))
 	e.bss.changedDeposits = true
 	return nil
 }
@@ -437,7 +437,7 @@ func (e *Engine) finalizeWithdraw(
 
 	w.Status = types.WithdrawalStatusFinalized
 	e.bss.changedWithdrawals = true
-	e.broker.Send(events.NewTransferResponse(ctx, []*types.LedgerMovement{res}))
+	e.broker.Send(events.NewLedgerMovements(ctx, []*types.LedgerMovement{res}))
 	return nil
 }
 

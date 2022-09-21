@@ -189,8 +189,9 @@ const (
 	// Bond slashing.
 	TransferTypeBondSlashing TransferType = proto.TransferType_TRANSFER_TYPE_BOND_SLASHING
 	// Stake reward.
-	TransferTypeRewardPayout            TransferType = proto.TransferType_TRANSFER_TYPE_STAKE_REWARD
-	TransferTypeTransferFundsSend       TransferType = proto.TransferType_TRANSFER_TYPE_TRANSFER_FUNDS_SEND
-	TransferTypeTransferFundsDistribute TransferType = proto.TransferType_TRANSFER_TYPE_TRANSFER_FUNDS_DISTRIBUTE
-	TransferTypeClearAccount            TransferType = proto.TransferType_TRANSFER_TYPE_CLEAR_ACCOUNT
+	TransferTypeRewardPayout             TransferType = proto.TransferType_TRANSFER_TYPE_STAKE_REWARD
+	TransferTypeTransferFundsSend        TransferType = proto.TransferType_TRANSFER_TYPE_TRANSFER_FUNDS_SEND
+	TransferTypeTransferFundsDistribute  TransferType = proto.TransferType_TRANSFER_TYPE_TRANSFER_FUNDS_DISTRIBUTE
+	TransferTypeClearAccount             TransferType = proto.TransferType_TRANSFER_TYPE_CLEAR_ACCOUNT
+	TransferTypeCheckpointBalanceRestore TransferType = proto.TransferType_TRANSFER_TYPE_CHECKPOINT_BALANCE_RESTORE
 )

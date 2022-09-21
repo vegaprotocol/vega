@@ -24,6 +24,7 @@
 - [5925](https://github.com/vegaprotocol/vega/issues/5925) - Clean transfer response API, now ledger movements
 
 ### 🐛 Fixes
+- [6101](https://github.com/vegaprotocol/vega/issues/6101) - Fix Nodes API not returning new `ethereumAdress` after `EthereumKeyRotation` event.
 - [6183](https://github.com/vegaprotocol/vega/issues/6183) - Shutdown blockchain before protocol services
 - [6148](https://github.com/vegaprotocol/vega/issues/6148) - Fix API descriptions for typos
 - [6187](https://github.com/vegaprotocol/vega/issues/6187) - Not hash message before signing if using clef for validator heartbeats
