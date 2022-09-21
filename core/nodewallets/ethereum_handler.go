@@ -40,10 +40,10 @@ func GetEthereumWallet(config eth.Config, vegaPaths paths.Paths, registryPassphr
 		return nil, ErrEthereumWalletIsMissing
 	}
 
-	return getEthereumWalletWithRegistry(config, vegaPaths, registry)
+	return GetEthereumWalletWithRegistry(config, vegaPaths, registry)
 }
 
-func getEthereumWalletWithRegistry(config eth.Config, vegaPaths paths.Paths, reg *registry.Registry) (*eth.Wallet, error) {
+func GetEthereumWalletWithRegistry(config eth.Config, vegaPaths paths.Paths, reg *registry.Registry) (*eth.Wallet, error) {
 	switch walletRegistry := reg.Ethereum.Details.(type) {
 	case registry.EthereumClefWallet:
 		ethAddress := ethcommon.HexToAddress(walletRegistry.AccountAddress)

@@ -119,7 +119,7 @@ func testAdminSendingTransactionWithValidParamsSucceeds(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		nodeSelector := nodemocks.NewMockSelector(ctrl)
 		node := nodemocks.NewMockNode(ctrl)
-		nodeSelector.EXPECT().Node(ctx).Times(1).Return(node, nil)
+		nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(node, nil)
 		node.EXPECT().SendTransaction(ctx, gomock.Any(), apipb.SubmitTransactionRequest_TYPE_SYNC).Times(1).Return(txHash, nil)
 		return nodeSelector, nil
 	})
@@ -246,7 +246,7 @@ func testAdminSendingTransactionWithoutHealthyNodeFails(t *testing.T) {
 	handler := newAdminSendTransactionHandler(t, func(hosts []string, retries uint64) (walletnode.Selector, error) {
 		ctrl := gomock.NewController(t)
 		nodeSelector := nodemocks.NewMockSelector(ctrl)
-		nodeSelector.EXPECT().Node(ctx).Times(1).Return(nil, assert.AnError)
+		nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(nil, assert.AnError)
 		return nodeSelector, nil
 	})
 
@@ -277,7 +277,7 @@ func testAdminSendingTransactionWithFailedSendingFails(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		nodeSelector := nodemocks.NewMockSelector(ctrl)
 		node := nodemocks.NewMockNode(ctrl)
-		nodeSelector.EXPECT().Node(ctx).Times(1).Return(node, nil)
+		nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(node, nil)
 		node.EXPECT().SendTransaction(ctx, gomock.Any(), apipb.SubmitTransactionRequest_TYPE_SYNC).Times(1).Return("", assert.AnError)
 		return nodeSelector, nil
 	})

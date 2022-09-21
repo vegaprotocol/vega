@@ -20,6 +20,7 @@
 - [5600](https://github.com/vegaprotocol/vega/issues/5600) - Migrate all wallet capabilities to V2 api
 - [6077](https://github.com/vegaprotocol/vega/issues/6077) - Add proof-of-work to transaction when using `vegawallet command sign`
 - [6203](https://github.com/vegaprotocol/vega/issues/6203) - Support automatic consent for transactions sent through the wallet API version 2
+- [6203](https://github.com/vegaprotocol/vega/issues/6203) - Log node selection process on the wallet CLI
 
 ### 🐛 Fixes
 - [6183](https://github.com/vegaprotocol/vega/issues/6183) - Shutdown blockchain before protocol services
@@ -27,12 +28,14 @@
 - [6187](https://github.com/vegaprotocol/vega/issues/6187) - Not hash message before signing if using clef for validator heartbeats
 - [6138](https://github.com/vegaprotocol/vega/issues/6138) - Return more useful information when a transaction submitted to a node contains validation errors
 - [6156](https://github.com/vegaprotocol/vega/issues/6156) - Return only delegations for the specific node in `graphql` node delegation query
+- [6233](https://github.com/vegaprotocol/vega/issues/6233) - Fix `GetNodeSignatures` GRPC api
 - [6175](https://github.com/vegaprotocol/vega/issues/6175) - Fix `datanode` updating node public key on key rotation
 - [5948](https://github.com/vegaprotocol/vega/issues/5948) - Shutdown node gracefully when panics or `sigterm` during chain-replay
 - [6109](https://github.com/vegaprotocol/vega/issues/6109) - Candle query returns unexpected data.
 - [5988](https://github.com/vegaprotocol/vega/issues/5988) - Exclude tainted keys from `session.list_keys` endpoint
 - [5164](https://github.com/vegaprotocol/vega/issues/5164) - Distribute LP fees on settlement
 - [6212](https://github.com/vegaprotocol/vega/issues/6212) - Change the error for protocol upgrade request for block 0
+- [6242](https://github.com/vegaprotocol/vega/issues/6242) - Allow migrate between wallet types during Ethereum key rotation reload
 
 ## 0.55.0
 

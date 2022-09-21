@@ -2191,7 +2191,11 @@ func (t *tradingDataServiceV2) ListNodes(ctx context.Context, req *v2.ListNodesR
 
 func (t *tradingDataServiceV2) ListNodeSignatures(ctx context.Context, req *v2.ListNodeSignaturesRequest) (*v2.ListNodeSignaturesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListNodeSignatures")()
-	if req != nil || len(req.Id) <= 0 {
+	if req == nil {
+		return nil, apiError(codes.InvalidArgument, errors.New("request is nil"))
+	}
+
+	if len(req.Id) <= 0 {
 		return nil, apiError(codes.InvalidArgument, errors.New("missing ID"))
 	}
 

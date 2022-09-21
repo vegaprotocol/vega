@@ -3,6 +3,7 @@ package node
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync/atomic"
 
 	"go.uber.org/zap"
@@ -28,24 +29,27 @@ type RoundRobinSelector struct {
 	nodes []Node
 }
 
-func (ns *RoundRobinSelector) Node(ctx context.Context) (Node, error) {
+func (ns *RoundRobinSelector) Node(ctx context.Context, reporterFn SelectionReporter) (Node, error) {
 	for i := 0; i < len(ns.nodes); i++ {
 		nextAbsoluteIndex := atomic.AddUint64(&ns.currentAbsoluteIndex, 1)
 		nextRelativeIndex := (int(nextAbsoluteIndex) - 1) % len(ns.nodes)
 		nextNode := ns.nodes[nextRelativeIndex]
-		ns.log.Info("moved to the next node",
+		reporterFn(InfoEvent, fmt.Sprintf("Trying the node %q...", nextNode.Host()))
+		ns.log.Info("trying a new node",
 			zap.String("host", nextNode.Host()),
 			zap.Int("index", nextRelativeIndex),
 		)
 		err := nextNode.HealthCheck(ctx)
 		if err == nil {
-			ns.log.Info("the selected node is healthy",
+			reporterFn(SuccessEvent, fmt.Sprintf("The node %q is healthy.", nextNode.Host()))
+			ns.log.Info("this node is healthy",
 				zap.String("host", nextNode.Host()),
 				zap.Int("index", nextRelativeIndex),
 			)
 			return nextNode, nil
 		}
-		ns.log.Error("the selected node is unhealthy",
+		reporterFn(WarningEvent, fmt.Sprintf("The node %q is unhealthy.", nextNode.Host()))
+		ns.log.Error("this node is unhealthy",
 			zap.String("host", nextNode.Host()),
 			zap.Int("index", nextRelativeIndex),
 		)
