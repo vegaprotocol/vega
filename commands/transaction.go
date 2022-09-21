@@ -155,6 +155,7 @@ func checkSignature(signature *commandspb.Signature, pubKey string, rawInputData
 
 	if !isValid {
 		errs.AddForProperty("tx.signature.value", ErrInvalidSignature)
+		return errs
 	}
 
 	return nil
