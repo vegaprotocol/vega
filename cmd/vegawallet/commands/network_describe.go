@@ -112,8 +112,8 @@ func PrintDescribeNetworkResponse(w io.Writer, resp api.AdminDescribeNetworkResu
 	str.NextLine().Text("Network").NextLine()
 	str.Text("  Name:         ").WarningText(resp.Name).NextLine()
 	str.Text("  Address:      ").WarningText(resp.Host).WarningText(":").WarningText(fmt.Sprint(resp.Port)).NextLine()
-	str.Text("  Token expiry: ").WarningText(resp.TokenExpiry).NextLine()
-	str.Text("  Level:        ").WarningText(resp.Level)
+	str.Text("  Token expiry: ").WarningText(resp.TokenExpiry.String()).NextLine()
+	str.Text("  Level:        ").WarningText(resp.LogLevel.String())
 	str.NextSection()
 
 	str.Text("API.GRPC").NextLine()
