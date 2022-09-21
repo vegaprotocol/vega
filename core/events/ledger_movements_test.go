@@ -53,7 +53,7 @@ func TestTransferResponseDeepClone(t *testing.T) {
 		},
 	}
 
-	trEvent := events.NewTransferResponse(ctx, tr)
+	trEvent := events.NewLedgerMovements(ctx, tr)
 	tr2 := trEvent.LedgerMovements()
 
 	// Change the original values

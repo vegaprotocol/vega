@@ -65,6 +65,6 @@ func (m *Market) checkBondBalance(ctx context.Context) {
 		}
 	}
 	if len(transfers) > 0 {
-		m.broker.Send(events.NewTransferResponse(ctx, transfers))
+		m.broker.Send(events.NewLedgerMovements(ctx, transfers))
 	}
 }

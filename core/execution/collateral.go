@@ -38,7 +38,7 @@ func (m *Market) transferMarginsLiquidityProvisionAmendAuction(
 		return err
 	}
 
-	m.broker.Send(events.NewTransferResponse(ctx, []*types.LedgerMovement{tsfr}))
+	m.broker.Send(events.NewLedgerMovements(ctx, []*types.LedgerMovement{tsfr}))
 	return nil
 }
 
@@ -59,7 +59,7 @@ func (m *Market) transferMarginsAuction(ctx context.Context, risk []events.Risk,
 			// @TODO handle this
 			return err
 		}
-		evts = append(evts, events.NewTransferResponse(ctx, []*types.LedgerMovement{tr}))
+		evts = append(evts, events.NewLedgerMovements(ctx, []*types.LedgerMovement{tr}))
 	}
 	m.broker.SendBatch(evts)
 	rmorders, err := m.matching.RemoveDistressedOrders(distressed)
@@ -107,7 +107,7 @@ func (m *Market) transferRecheckMargins(ctx context.Context, risk []events.Risk)
 				responses = append(responses, resp...)
 			}
 		}
-		evts = append(evts, events.NewTransferResponse(ctx, responses))
+		evts = append(evts, events.NewLedgerMovements(ctx, responses))
 	}
 	m.broker.SendBatch(evts)
 	return nil
@@ -142,7 +142,7 @@ func (m *Market) transferMarginsContinuous(ctx context.Context, risk []events.Ri
 			responses = append(responses, resp...)
 		}
 	}
-	m.broker.Send(events.NewTransferResponse(ctx, responses))
+	m.broker.Send(events.NewLedgerMovements(ctx, responses))
 	return nil
 }
 

@@ -778,7 +778,7 @@ func (m *Market) cleanMarketWithState(ctx context.Context, mktState types.Market
 	// unregister state-variables
 	m.stateVarEngine.UnregisterStateVariable(asset, m.mkt.ID)
 
-	m.broker.Send(events.NewTransferResponse(ctx, clearMarketTransfers))
+	m.broker.Send(events.NewLedgerMovements(ctx, clearMarketTransfers))
 	m.mkt.State = mktState
 	m.mkt.TradingMode = types.MarketTradingModeNoTrading
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
@@ -830,7 +830,7 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 	// @TODO pass in correct context -> Previous or next block?
 	// Which is most appropriate here?
 	// this will be next block
-	m.broker.Send(events.NewTransferResponse(ctx, transfers))
+	m.broker.Send(events.NewLedgerMovements(ctx, transfers))
 
 	// final distribution of liquidity fees
 	m.distributeLiquidityFees(ctx)
@@ -1236,7 +1236,7 @@ func (m *Market) releaseMarginExcess(ctx context.Context, partyID string) {
 		m.log.Error("unable to clear party margin account", logging.Error(err))
 		return
 	}
-	evt := events.NewTransferResponse(
+	evt := events.NewLedgerMovements(
 		ctx, []*types.LedgerMovement{transfers})
 	m.broker.Send(evt)
 }
@@ -1540,7 +1540,7 @@ func (m *Market) applyFees(ctx context.Context, order *types.Order, trades []*ty
 
 	// send transfers through the broker
 	if len(transfers) > 0 {
-		m.broker.Send(events.NewTransferResponse(ctx, transfers))
+		m.broker.Send(events.NewLedgerMovements(ctx, transfers))
 	}
 
 	m.marketActivityTracker.UpdateFeesFromTransfers(m.GetID(), fees.Transfers())
@@ -1654,7 +1654,7 @@ func (m *Market) confirmMTM(
 	if len(margins) > 0 {
 		transfers, closed, bondPenalties, err := m.collateral.MarginUpdate(ctx, m.GetID(), margins)
 		if err == nil && len(transfers) > 0 {
-			evt := events.NewTransferResponse(ctx, transfers)
+			evt := events.NewLedgerMovements(ctx, transfers)
 			m.broker.Send(evt)
 		}
 		if len(bondPenalties) > 0 {
@@ -1663,7 +1663,7 @@ func (m *Market) confirmMTM(
 				m.log.Error("Failed to perform bond slashing",
 					logging.Error(err))
 			}
-			m.broker.Send(events.NewTransferResponse(ctx, transfers))
+			m.broker.Send(events.NewLedgerMovements(ctx, transfers))
 		}
 		if len(closed) > 0 {
 			orderUpdates, err = m.resolveClosedOutParties(ctx, closed, order)
@@ -1912,7 +1912,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 		return orderUpdates, err
 	}
 	// send transfer to buffer
-	m.broker.Send(events.NewTransferResponse(ctx, tresps))
+	m.broker.Send(events.NewLedgerMovements(ctx, tresps))
 
 	if len(confirmation.Trades) > 0 {
 		// Insert all trades resulted from the executed order
@@ -1974,7 +1974,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 
 	// send transfer to buffer
 	if len(responses) > 0 {
-		m.broker.Send(events.NewTransferResponse(ctx, responses))
+		m.broker.Send(events.NewLedgerMovements(ctx, responses))
 	}
 
 	// Only check margins if MTM was successful.
@@ -2003,7 +2003,7 @@ func (m *Market) finalizePartiesCloseOut(
 
 	if len(movements.Entries) > 0 {
 		m.broker.Send(
-			events.NewTransferResponse(
+			events.NewLedgerMovements(
 				ctx, []*types.LedgerMovement{movements}),
 		)
 	}
@@ -2037,7 +2037,7 @@ func (m *Market) confiscateBondAccount(ctx context.Context, partyID string) erro
 	if err != nil {
 		return err
 	}
-	m.broker.Send(events.NewTransferResponse(ctx, []*types.LedgerMovement{tresp}))
+	m.broker.Send(events.NewLedgerMovements(ctx, []*types.LedgerMovement{tresp}))
 
 	return nil
 }
@@ -2229,7 +2229,7 @@ func (m *Market) collateralAndRisk(ctx context.Context, settle []events.Transfer
 	}
 	// sending response to buffer
 	if response != nil {
-		m.broker.Send(events.NewTransferResponse(ctx, response))
+		m.broker.Send(events.NewLedgerMovements(ctx, response))
 	}
 
 	// let risk engine do its thing here - it returns a slice of money that needs
@@ -3283,7 +3283,7 @@ func (m *Market) cleanupOnReject(ctx context.Context) {
 	m.stateVarEngine.UnregisterStateVariable(asset, m.mkt.ID)
 
 	// then send the responses
-	m.broker.Send(events.NewTransferResponse(ctx, tresps))
+	m.broker.Send(events.NewLedgerMovements(ctx, tresps))
 }
 
 func (m *Market) stopAllLiquidityProvisionOnReject(ctx context.Context) error {
@@ -3353,7 +3353,7 @@ func (m *Market) distributeLiquidityFees(ctx context.Context) error {
 		return fmt.Errorf("failed to transfer fees: %w", err)
 	}
 
-	m.broker.Send(events.NewTransferResponse(ctx, resp))
+	m.broker.Send(events.NewLedgerMovements(ctx, resp))
 	return nil
 }
 
