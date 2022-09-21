@@ -118,6 +118,14 @@ Feature: Position resolution case 5 lognormal risk model
       | aux2             | -1     | 10             | 0            |
       | lpprov           | 0      | 0              | 0            |
 
+    Then the parties should have the following account balances:
+      | party            | asset | market id | margin  | general            |
+      | designatedLooser | USD   | ETH/DEC19 | 0       | 0                  |
+      | sellSideProvider | USD   | ETH/DEC19 | 839594  | 999999163306       |
+      | buySideProvider  | USD   | ETH/DEC19 | 81259   | 999999953541       |
+      | aux              | USD   | ETH/DEC19 | 1088    | 999999998902       |
+      | aux2             | USD   | ETH/DEC19 | 2896    | 999999997114       |
+
 # check margin levels
     Then the parties should have the following margin levels:
       | party            | market id | maintenance | search  | initial  | release |
@@ -129,5 +137,39 @@ Feature: Position resolution case 5 lognormal risk model
 
 # then we make sure the insurance pool collected the funds
     And the insurance pool balance should be "73900" for the market "ETH/DEC19"
+
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | aux   | ETH/DEC19 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | aux2  | ETH/DEC19 | buy  | 1      | 120   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+
+    And the market data for the market "ETH/DEC19" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest |
+      | 120        | TRADING_MODE_CONTINUOUS | 340728       | 0              |     291       |
+
+    Then the following transfers should happen:
+      | from            | to              | from account            | to account              | market id | amount | asset |
+      | market          | buySideProvider | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 34800  | USD   |
+      | buySideProvider | market          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 5820   | USD   |
+
+    Then the parties should have the following profit and loss:
+      | party            | volume | unrealised pnl | realised pnl |
+      | designatedLooser | 0      | 0              | -21600       |
+      | sellSideProvider | -291   | 8720           | 0            |
+      | buySideProvider  | 291    | 28980          | 0            |
+      | aux              | 0      | 0              | -30          |
+      | aux2             | 0      | 0              | 30           |
+      | lpprov           | 0      | 0              | 0            |
+
+    # MTM: buySideProvider's unrealised pnl has been updated from 34800 to 28980, which is 291*(140-120)=5820=34800-28980,
+    # MTM: buySideProvider's margin account has been updated from 81259 to 75439, which is 291*(140-120)=5820
+
+     Then the parties should have the following account balances:
+      | party            | asset | market id | margin  | general            |
+      | designatedLooser | USD   | ETH/DEC19 | 0       | 0                  |
+      | sellSideProvider | USD   | ETH/DEC19 | 845414  | 999999163306       |
+      | buySideProvider  | USD   | ETH/DEC19 | 75439   | 999999953541       |
+      | aux              | USD   | ETH/DEC19 | 1108    | 999999998862       |
+      | aux2             | USD   | ETH/DEC19 | 0       | 1000000000030      |
 
 
