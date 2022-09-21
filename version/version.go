@@ -14,6 +14,8 @@ package version
 
 import (
 	"runtime/debug"
+
+	"github.com/blang/semver"
 )
 
 var (
@@ -36,6 +38,10 @@ func init() {
 	if modified {
 		cLIVersionHash += "-modified"
 	}
+}
+
+func SemverGet() semver.Version {
+	return semver.MustParse(cLIVersion[1:])
 }
 
 func Get() string {

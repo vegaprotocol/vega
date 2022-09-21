@@ -39,6 +39,7 @@
 - [6212](https://github.com/vegaprotocol/vega/issues/6212) - Change the error for protocol upgrade request for block 0
 - [6242](https://github.com/vegaprotocol/vega/issues/6242) - Allow migrate between wallet types during Ethereum key rotation reload
 - [6202](https://github.com/vegaprotocol/vega/issues/6202) - Always update margins for parties on amend
+- [6228](https://github.com/vegaprotocol/vega/issues/6228) - Reject protocol upgrade downgrades
 
 ## 0.55.0
 
