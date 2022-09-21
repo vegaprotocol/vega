@@ -197,6 +197,7 @@ func AdminAPI(log *zap.Logger, walletStore WalletStore, netStore NetworkStore, n
 	walletAPI.RegisterMethod("admin.taint_key", NewAdminTaintKey(walletStore))
 	walletAPI.RegisterMethod("admin.untaint_key", NewAdminUntaintKey(walletStore))
 	walletAPI.RegisterMethod("admin.update_permissions", NewAdminUpdatePermissions(walletStore))
+	walletAPI.RegisterMethod("admin.update_network", NewAdminUpdateNetwork(netStore))
 	walletAPI.RegisterMethod("admin.verify_message", NewAdminVerifyMessage())
 
 	log.Info("the admin JSON-RPC API has been initialised")

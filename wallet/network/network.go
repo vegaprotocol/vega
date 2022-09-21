@@ -4,18 +4,18 @@ import (
 	"errors"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/wallet/service/encoding"
+	vgencoding "code.vegaprotocol.io/vega/libs/encoding"
 )
 
 var ErrNetworkDoesNotHaveGRPCHostConfigured = errors.New("network configuration does not have any gRPC host set")
 
 type Network struct {
-	Name        string            `json:"name"`
-	Level       encoding.LogLevel `json:"level"`
-	TokenExpiry encoding.Duration `json:"tokenExpiry"`
-	Port        int               `json:"port"`
-	Host        string            `json:"host"`
-	API         APIConfig         `json:"api"`
+	Name        string              `json:"name"`
+	LogLevel    vgencoding.LogLevel `json:"level"`
+	TokenExpiry vgencoding.Duration `json:"tokenExpiry"`
+	Port        int                 `json:"port"`
+	Host        string              `json:"host"`
+	API         APIConfig           `json:"api"`
 }
 
 type APIConfig struct {
