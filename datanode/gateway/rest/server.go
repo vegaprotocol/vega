@@ -114,7 +114,7 @@ func (s *ProxyServer) Start() error {
 	// Gzip encoding support
 	handler = newGzipHandler(*logger, handler.(http.HandlerFunc))
 	// Metric support
-	handler = gateway.MetricCollectionMiddleware(logger, handler)
+	handler = gateway.MetricCollectionMiddleware(handler)
 	handler = wsproxy.WebsocketProxy(handler)
 
 	// APM
