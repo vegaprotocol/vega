@@ -16,11 +16,12 @@ import (
 	"context"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/logging"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
-	"github.com/pkg/errors"
 )
 
 type ValidatorUpdateEvent interface {
@@ -61,7 +62,13 @@ func NewNode(store NodeStore, log *logging.Logger) *Node {
 }
 
 func (*Node) Types() []events.Type {
-	return []events.Type{events.ValidatorUpdateEvent, events.ValidatorRankingEvent, events.ValidatorScoreEvent, events.KeyRotationEvent}
+	return []events.Type{
+		events.ValidatorUpdateEvent,
+		events.ValidatorRankingEvent,
+		events.ValidatorScoreEvent,
+		events.KeyRotationEvent,
+		events.EthereumKeyRotationEvent,
+	}
 }
 
 func (n *Node) Push(ctx context.Context, evt events.Event) error {
