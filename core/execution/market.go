@@ -3232,6 +3232,7 @@ func (m *Market) settlementPriceWithLock(ctx context.Context) {
 
 			// send the market data with all updated stuff
 			m.broker.Send(events.NewMarketDataEvent(ctx, m.GetMarketData()))
+			m.broker.Send(events.NewMarketSettled(ctx, m.GetID(), m.timeService.GetTimeNow().UnixNano(), m.markPrice, m.positionFactor))
 		} else {
 			m.log.Error(err.Error())
 		}
