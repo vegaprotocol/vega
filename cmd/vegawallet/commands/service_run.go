@@ -191,7 +191,7 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 		}
 	}
 
-	svcLog, svcLogPath, err := BuildJSONLogger(cfg.Level.String(), vegaPaths, paths.WalletServiceLogsHome)
+	svcLog, svcLogPath, err := BuildJSONLogger(cfg.LogLevel.String(), vegaPaths, paths.WalletServiceLogsHome)
 	if err != nil {
 		return err
 	}
@@ -223,7 +223,7 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 		return fmt.Errorf("couldn't initialise the node forwarder: %w", err)
 	}
 
-	cliLog, cliLogPath, err := BuildJSONLogger(cfg.Level.String(), vegaPaths, paths.WalletCLILogsHome)
+	cliLog, cliLogPath, err := BuildJSONLogger(cfg.LogLevel.String(), vegaPaths, paths.WalletCLILogsHome)
 	if err != nil {
 		return err
 	}
