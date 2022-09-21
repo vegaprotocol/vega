@@ -403,5 +403,5 @@ func (e *Engine) distributePayout(ctx context.Context, po *payout) {
 		e.log.Error("error in transfer rewards", logging.Error(err))
 		return
 	}
-	e.broker.Send(events.NewTransferResponse(ctx, responses))
+	e.broker.Send(events.NewLedgerMovements(ctx, responses))
 }
