@@ -185,7 +185,8 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 	case *types.PayloadGovernanceActive:
 		return nil, e.restoreActiveProposals(ctx, pl.GovernanceActive, p)
 	case *types.PayloadGovernanceEnacted:
-		return nil, e.restoreEnactedProposals(ctx, pl.GovernanceEnacted, p)
+		e.restoreEnactedProposals(ctx, pl.GovernanceEnacted, p)
+		return nil, nil
 	case *types.PayloadGovernanceNode:
 		return nil, e.restoreNodeProposals(ctx, pl.GovernanceNode, p)
 	default:
@@ -234,7 +235,7 @@ func (e *Engine) restoreActiveProposals(ctx context.Context, active *types.Gover
 	return err
 }
 
-func (e *Engine) restoreEnactedProposals(ctx context.Context, enacted *types.GovernanceEnacted, p *types.Payload) error {
+func (e *Engine) restoreEnactedProposals(ctx context.Context, enacted *types.GovernanceEnacted, p *types.Payload) {
 	evts := []events.Event{}
 	vevts := []events.Event{}
 	e.log.Debug("restoring enacted proposals snapshot", logging.Int("nproposals", len(enacted.Proposals)))
@@ -265,13 +266,10 @@ func (e *Engine) restoreEnactedProposals(ctx context.Context, enacted *types.Gov
 			vevts = append(vevts, events.NewVoteEvent(ctx, *v))
 		}
 	}
-	var err error
 	e.gss.changedEnacted = false
 	e.gss.serialisedEnacted, _ = proto.Marshal(p.IntoProto())
 	e.broker.SendBatch(evts)
 	e.broker.SendBatch(vevts)
-
-	return err
 }
 
 func (e *Engine) restoreNodeProposals(ctx context.Context, node *types.GovernanceNode, p *types.Payload) error {

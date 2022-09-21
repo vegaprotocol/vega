@@ -2832,20 +2832,16 @@ func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEvent
 		}()
 
 		if batchSize == 0 {
-			r.busEvents(ctx, stream, out)
+			r.busEvents(stream, out)
 		} else {
-			r.busEventsWithBatch(ctx, int64(batchSize), stream, out)
+			r.busEventsWithBatch(int64(batchSize), stream, out)
 		}
 	}()
 
 	return out, nil
 }
 
-func (r *mySubscriptionResolver) busEvents(
-	ctx context.Context,
-	stream v2.TradingDataService_ObserveEventBusClient,
-	out chan []*BusEvent,
-) {
+func (r *mySubscriptionResolver) busEvents(stream v2.TradingDataService_ObserveEventBusClient, out chan []*BusEvent) {
 	for {
 		// receive batch
 		data, err := stream.Recv()
@@ -2861,12 +2857,7 @@ func (r *mySubscriptionResolver) busEvents(
 	}
 }
 
-func (r *mySubscriptionResolver) busEventsWithBatch(
-	ctx context.Context,
-	batchSize int64, // always non-0 here
-	stream v2.TradingDataService_ObserveEventBusClient,
-	out chan []*BusEvent,
-) {
+func (r *mySubscriptionResolver) busEventsWithBatch(batchSize int64, stream v2.TradingDataService_ObserveEventBusClient, out chan []*BusEvent) {
 	poll := &protoapi.ObserveEventBusRequest{
 		BatchSize: batchSize,
 	}

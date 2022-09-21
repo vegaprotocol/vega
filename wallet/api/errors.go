@@ -114,11 +114,8 @@ func userError(code jsonrpc.ErrorCode, err error) *jsonrpc.ErrorDetails {
 	return jsonrpc.NewCustomError(code, "User error", err)
 }
 
-func networkError(code jsonrpc.ErrorCode, err error) *jsonrpc.ErrorDetails {
-	if code <= -32000 {
-		panic("network error code should be greater than -32000")
-	}
-	return jsonrpc.NewCustomError(code, "Network error", err)
+func networkError(err error) *jsonrpc.ErrorDetails {
+	return jsonrpc.NewCustomError(ErrorCodeNodeRequestFailed, "Network error", err)
 }
 
 func invalidParams(err error) *jsonrpc.ErrorDetails {

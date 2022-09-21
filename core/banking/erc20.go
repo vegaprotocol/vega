@@ -225,15 +225,10 @@ func (e *Engine) WithdrawERC20(
 	erc20asset, _ := asset.ERC20()
 
 	// startup aggregating signature for the bundle
-	return e.startERC20Signatures(ctx, w, erc20asset, ref)
+	return e.startERC20Signatures(w, erc20asset, ref)
 }
 
-func (e *Engine) startERC20Signatures(
-	ctx context.Context,
-	w *types.Withdrawal,
-	asset *erc20.ERC20,
-	ref *big.Int,
-) error {
+func (e *Engine) startERC20Signatures(w *types.Withdrawal, asset *erc20.ERC20, ref *big.Int) error {
 	var (
 		signature []byte
 		err       error

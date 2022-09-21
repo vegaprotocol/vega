@@ -205,7 +205,7 @@ func (t *Topology) LoadState(ctx context.Context, p *types.Payload) ([]types.Sta
 	}
 }
 
-func (t *Topology) restorePendingKeyRotations(ctx context.Context, pkrs []*snapshot.PendingKeyRotation) {
+func (t *Topology) restorePendingKeyRotations(pkrs []*snapshot.PendingKeyRotation) {
 	for _, pkr := range pkrs {
 		if _, ok := t.pendingPubKeyRotations[pkr.BlockHeight]; !ok {
 			t.pendingPubKeyRotations[pkr.BlockHeight] = map[string]pendingKeyRotation{}
@@ -218,7 +218,7 @@ func (t *Topology) restorePendingKeyRotations(ctx context.Context, pkrs []*snaps
 	}
 }
 
-func (t *Topology) restorePendingEthereumKeyRotations(ctx context.Context, pkrs []*snapshot.PendingEthereumKeyRotation) {
+func (t *Topology) restorePendingEthereumKeyRotations(pkrs []*snapshot.PendingEthereumKeyRotation) {
 	for _, pkr := range pkrs {
 		t.pendingEthKeyRotations.add(pkr.BlockHeight,
 			PendingEthereumKeyRotation{
@@ -303,8 +303,8 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology, p *typ
 	t.currentBlockHeight = uint64(bh)
 	t.validatorPowerUpdates = vUpdates
 	t.chainValidators = topology.ChainValidators[:]
-	t.restorePendingKeyRotations(ctx, topology.PendingPubKeyRotations)
-	t.restorePendingEthereumKeyRotations(ctx, topology.PendingEthereumKeyRotations)
+	t.restorePendingKeyRotations(topology.PendingPubKeyRotations)
+	t.restorePendingEthereumKeyRotations(topology.PendingEthereumKeyRotations)
 	t.signatures.RestorePendingSignatures(topology.Signatures)
 	t.validatorPerformance.Deserialize(topology.ValidatorPerformance)
 	t.tss.serialised, err = proto.Marshal(p.IntoProto())

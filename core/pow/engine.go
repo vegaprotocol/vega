@@ -362,7 +362,7 @@ func (e *Engine) verify(tx abci.Tx) (byte, error) {
 	return diff, nil
 }
 
-func (e *Engine) updateParam(netParamName, netParamValue string, p *params) error {
+func (e *Engine) updateParam(netParamName, netParamValue string, p *params) {
 	switch netParamName {
 	case "spamPoWNumberOfPastBlocks":
 		spamPoWNumberOfPastBlock, _ := num.UintFromString(netParamValue, 10)
@@ -382,7 +382,6 @@ func (e *Engine) updateParam(netParamName, netParamValue string, p *params) erro
 			p.spamPoWIncreasingDifficulty = true
 		}
 	}
-	return nil
 }
 
 func (e *Engine) updateWithLock(netParamName, netParamValue string) {

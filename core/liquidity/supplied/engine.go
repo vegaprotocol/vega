@@ -124,8 +124,7 @@ func (e *Engine) CalculateSuppliedLiquidity(
 	bestBidPrice, bestAskPrice num.Decimal,
 	orders []*types.Order,
 ) *num.Uint {
-	minPrice, maxPrice := e.pm.GetValidPriceRange()
-	bLiq, sLiq := e.calculateBuySellLiquidityWithMinMax(bestBidPrice, bestAskPrice, orders, minPrice, maxPrice)
+	bLiq, sLiq := e.calculateBuySellLiquidityWithMinMax(bestBidPrice, bestAskPrice, orders)
 
 	return num.Min(bLiq, sLiq)
 }
@@ -139,21 +138,17 @@ func (e *Engine) CalculateLiquidityImpliedVolumes(
 	orders []*types.Order,
 	buyShapes, sellShapes []*LiquidityOrder,
 ) error {
-	// Update this to return *Uint as part of monitor refactor PETE TODO
-	minPrice, maxPrice := e.pm.GetValidPriceRange()
-
-	buySupplied, sellSupplied := e.calculateBuySellLiquidityWithMinMax(
-		bestBidPrice, bestAskPrice, orders, minPrice, maxPrice)
+	buySupplied, sellSupplied := e.calculateBuySellLiquidityWithMinMax(bestBidPrice, bestAskPrice, orders)
 
 	buyRemaining := liquidityObligation.Clone()
 	buyRemaining.Sub(buyRemaining, buySupplied)
-	if err := e.updateSizes(buyRemaining, bestBidPrice, bestAskPrice, buyShapes, true, minPrice, maxPrice); err != nil {
+	if err := e.updateSizes(buyRemaining, bestBidPrice, bestAskPrice, buyShapes, true); err != nil {
 		return err
 	}
 
 	sellRemaining := liquidityObligation.Clone()
 	sellRemaining.Sub(sellRemaining, sellSupplied)
-	if err := e.updateSizes(sellRemaining, bestBidPrice, bestAskPrice, sellShapes, false, minPrice, maxPrice); err != nil {
+	if err := e.updateSizes(sellRemaining, bestBidPrice, bestAskPrice, sellShapes, false); err != nil {
 		return err
 	}
 
@@ -161,11 +156,7 @@ func (e *Engine) CalculateLiquidityImpliedVolumes(
 }
 
 // calculateBuySellLiquidityWithMinMax returns the current supplied liquidity per market specified in the constructor.
-func (e *Engine) calculateBuySellLiquidityWithMinMax(
-	bestBidPrice, bestAskPrice num.Decimal,
-	orders []*types.Order,
-	minPrice, maxPrice num.WrappedDecimal,
-) (*num.Uint, *num.Uint) {
+func (e *Engine) calculateBuySellLiquidityWithMinMax(bestBidPrice, bestAskPrice num.Decimal, orders []*types.Order) (*num.Uint, *num.Uint) {
 	bLiq := num.DecimalZero()
 	sLiq := num.DecimalZero()
 	min, max := e.pm.GetValidPriceRange()
@@ -198,13 +189,7 @@ func (e *Engine) calculateBuySellLiquidityWithMinMax(
 	return bl, sl
 }
 
-func (e *Engine) updateSizes(
-	liquidityObligation *num.Uint,
-	bestBidPrice, bestAskPrice num.Decimal,
-	orders []*LiquidityOrder,
-	isBid bool,
-	minPrice, maxPrice num.WrappedDecimal,
-) error {
+func (e *Engine) updateSizes(liquidityObligation *num.Uint, bestBidPrice, bestAskPrice num.Decimal, orders []*LiquidityOrder, isBid bool) error {
 	if liquidityObligation.IsZero() || liquidityObligation.IsNegative() {
 		setSizesTo0(orders)
 		return nil

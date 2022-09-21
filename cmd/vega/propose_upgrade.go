@@ -40,7 +40,7 @@ type ProposeUpgradeCmd struct {
 
 var proposeUpgradeCmd ProposeUpgradeCmd
 
-func (opts *ProposeUpgradeCmd) Execute(args []string) error {
+func (opts *ProposeUpgradeCmd) Execute(_ []string) error {
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer log.AtExit()
 

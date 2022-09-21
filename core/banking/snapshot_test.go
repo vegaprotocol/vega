@@ -38,10 +38,10 @@ import (
 
 func deposit(eng *testEngine, asset, party string, amount *num.Uint) *types.BuiltinAssetDeposit {
 	eng.OnTick(context.Background(), time.Now())
-	return depositAt(eng, asset, party, amount, time.Now())
+	return depositAt(eng, asset, party, amount)
 }
 
-func depositAt(eng *testEngine, asset, party string, amount *num.Uint, t time.Time) *types.BuiltinAssetDeposit {
+func depositAt(eng *testEngine, asset, party string, amount *num.Uint) *types.BuiltinAssetDeposit {
 	eng.tsvc.EXPECT().GetTimeNow().AnyTimes()
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(testAsset, nil)
@@ -84,11 +84,11 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 	now := time.Now()
 
 	// setup some deposits
-	d1 := depositAt(eng, "VGT1", "someparty1", num.NewUint(42), now)
+	d1 := depositAt(eng, "VGT1", "someparty1", num.NewUint(42))
 	err := eng.DepositBuiltinAsset(context.Background(), d1, "depositid1", 42)
 	assert.NoError(t, err)
 
-	d2 := depositAt(eng, "VGT1", "someparty2", num.NewUint(24), now)
+	d2 := depositAt(eng, "VGT1", "someparty2", num.NewUint(24))
 	err = eng.DepositBuiltinAsset(context.Background(), d2, "depositid2", 24)
 	assert.NoError(t, err)
 
@@ -185,7 +185,7 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 	engineLoad.OnTick(ctx, now)
 
 	// setup some more deposits
-	d3 := depositAt(eng, "VGT1", "someparty3", num.NewUint(29), now)
+	d3 := depositAt(eng, "VGT1", "someparty3", num.NewUint(29))
 	err = eng.DepositBuiltinAsset(context.Background(), d3, "depositid3", 29)
 	require.NoError(t, err)
 	err = engineLoad.DepositBuiltinAsset(context.Background(), d3, "depositid3", 29)

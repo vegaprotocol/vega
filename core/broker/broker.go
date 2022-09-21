@@ -118,7 +118,7 @@ func New(ctx context.Context, log *logging.Logger, config Config) (*Broker, erro
 	}
 
 	if config.File.Enabled {
-		fc, err := newFileClient(ctx, log, &config.File)
+		fc, err := newFileClient(log, &config.File)
 		if err != nil {
 			return nil, fmt.Errorf("failed to initialize file client: %w", err)
 		}

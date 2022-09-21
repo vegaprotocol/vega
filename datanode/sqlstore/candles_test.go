@@ -270,6 +270,7 @@ func createCandle(periodStart time.Time, lastUpdate time.Time, open int, close i
 	}
 }
 
+//nolint:unparam
 func insertCandlesTestData(t *testing.T, tradeStore *sqlstore.Trades, startTime time.Time, numBlocks int,
 	tradePerBlock int, startPrice int, priceIncrement int, size int, blockIntervalDur time.Duration,
 ) {
@@ -296,10 +297,10 @@ func insertCandlesTestData(t *testing.T, tradeStore *sqlstore.Trades, startTime 
 	assert.NoError(t, err)
 }
 
-func insertTestTrade(t *testing.T, tradeStore *sqlstore.Trades, price int, size int, block entities.Block, seqNum int) *entities.Trade {
+func insertTestTrade(t *testing.T, tradeStore *sqlstore.Trades, price int, size int, block entities.Block, seqNum int) {
 	t.Helper()
 	trade := createTestTrade(t, price, size, block, seqNum)
-	return insertTrade(t, tradeStore, trade)
+	insertTrade(t, tradeStore, trade)
 }
 
 func insertTrade(t *testing.T, tradeStore *sqlstore.Trades, trade *entities.Trade) *entities.Trade {

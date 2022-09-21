@@ -71,7 +71,7 @@ func TestParty(t *testing.T) {
 	assert.ErrorIs(t, err, sqlstore.ErrPartyNotFound)
 }
 
-func setupPartyTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.Parties, sqlstore.Config, func(t *testing.T)) {
+func setupPartyTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.Parties, func(t *testing.T)) {
 	t.Helper()
 	bs := sqlstore.NewBlocks(connectionSource)
 	pt := sqlstore.NewParties(connectionSource)
@@ -81,7 +81,7 @@ func setupPartyTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.Parties, sqlstore
 	config := sqlstore.NewDefaultConfig()
 	config.ConnectionConfig.Port = testDBPort
 
-	return bs, pt, config, func(t *testing.T) {
+	return bs, pt, func(t *testing.T) {
 		t.Helper()
 		DeleteEverything()
 	}
@@ -149,7 +149,7 @@ func TestPartyPagination(t *testing.T) {
 }
 
 func testPartyPaginationReturnsTheSpecifiedParty(t *testing.T) {
-	bs, pt, _, cleanup := setupPartyTest(t)
+	bs, pt, cleanup := setupPartyTest(t)
 	defer cleanup(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -179,7 +179,7 @@ func testPartyPaginationReturnsTheSpecifiedParty(t *testing.T) {
 }
 
 func testPartyPaginationReturnAllParties(t *testing.T) {
-	bs, pt, _, cleanup := setupPartyTest(t)
+	bs, pt, cleanup := setupPartyTest(t)
 	defer cleanup(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -215,7 +215,7 @@ func testPartyPaginationReturnAllParties(t *testing.T) {
 }
 
 func testPartyPaginationReturnsFirstPage(t *testing.T) {
-	bs, pt, _, cleanup := setupPartyTest(t)
+	bs, pt, cleanup := setupPartyTest(t)
 	defer cleanup(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -253,7 +253,7 @@ func testPartyPaginationReturnsFirstPage(t *testing.T) {
 }
 
 func testPartyPaginationReturnsLastPage(t *testing.T) {
-	bs, pt, _, cleanup := setupPartyTest(t)
+	bs, pt, cleanup := setupPartyTest(t)
 	defer cleanup(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -291,7 +291,7 @@ func testPartyPaginationReturnsLastPage(t *testing.T) {
 }
 
 func testPartyPaginationReturnsPageTraversingForward(t *testing.T) {
-	bs, pt, _, cleanup := setupPartyTest(t)
+	bs, pt, cleanup := setupPartyTest(t)
 	defer cleanup(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -335,7 +335,7 @@ func testPartyPaginationReturnsPageTraversingForward(t *testing.T) {
 }
 
 func testPartyPaginationReturnsPageTraversingBackward(t *testing.T) {
-	bs, pt, _, cleanup := setupPartyTest(t)
+	bs, pt, cleanup := setupPartyTest(t)
 	defer cleanup(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -379,7 +379,7 @@ func testPartyPaginationReturnsPageTraversingBackward(t *testing.T) {
 }
 
 func testPartyPaginationReturnsTheSpecifiedPartyNewestFirst(t *testing.T) {
-	bs, pt, _, cleanup := setupPartyTest(t)
+	bs, pt, cleanup := setupPartyTest(t)
 	defer cleanup(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -414,7 +414,7 @@ func testPartyPaginationReturnsTheSpecifiedPartyNewestFirst(t *testing.T) {
 }
 
 func testPartyPaginationReturnAllPartiesNewestFirst(t *testing.T) {
-	bs, pt, _, cleanup := setupPartyTest(t)
+	bs, pt, cleanup := setupPartyTest(t)
 	defer cleanup(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -450,7 +450,7 @@ func testPartyPaginationReturnAllPartiesNewestFirst(t *testing.T) {
 }
 
 func testPartyPaginationReturnsFirstPageNewestFirst(t *testing.T) {
-	bs, pt, _, cleanup := setupPartyTest(t)
+	bs, pt, cleanup := setupPartyTest(t)
 	defer cleanup(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -488,7 +488,7 @@ func testPartyPaginationReturnsFirstPageNewestFirst(t *testing.T) {
 }
 
 func testPartyPaginationReturnsLastPageNewestFirst(t *testing.T) {
-	bs, pt, _, cleanup := setupPartyTest(t)
+	bs, pt, cleanup := setupPartyTest(t)
 	defer cleanup(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -526,7 +526,7 @@ func testPartyPaginationReturnsLastPageNewestFirst(t *testing.T) {
 }
 
 func testPartyPaginationReturnsPageTraversingForwardNewestFirst(t *testing.T) {
-	bs, pt, _, cleanup := setupPartyTest(t)
+	bs, pt, cleanup := setupPartyTest(t)
 	defer cleanup(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -570,7 +570,7 @@ func testPartyPaginationReturnsPageTraversingForwardNewestFirst(t *testing.T) {
 }
 
 func testPartyPaginationReturnsPageTraversingBackwardNewestFirst(t *testing.T) {
-	bs, pt, _, cleanup := setupPartyTest(t)
+	bs, pt, cleanup := setupPartyTest(t)
 	defer cleanup(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

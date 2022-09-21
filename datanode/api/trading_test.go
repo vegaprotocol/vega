@@ -74,23 +74,13 @@ func waitForNode(ctx context.Context, t *testing.T, conn *grpc.ClientConn) {
 	}
 }
 
-func getTestGRPCServer(
-	t *testing.T,
-	ctx context.Context,
-	port int,
-	startAndWait bool,
-) (
-	tidy func(),
-	conn *grpc.ClientConn,
-	mockCoreServiceClient *mocks.MockCoreServiceClient,
-	err error,
-) {
+func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *grpc.ClientConn, mockCoreServiceClient *mocks.MockCoreServiceClient, err error) {
 	t.Helper()
 	_, cleanupFn := vgtesting.NewVegaPaths()
 
 	conf := config.NewDefaultConfig()
 	conf.API.IP = "127.0.0.1"
-	conf.API.Port = port
+	conf.API.Port = 64201
 
 	logger := logging.NewTestLogger()
 
@@ -209,17 +199,19 @@ func getTestGRPCServer(
 	lis := bufconn.Listen(connBufSize)
 	ctxDialer := func(context.Context, string) (net.Conn, error) { return lis.Dial() }
 
-	if startAndWait {
-		// Start the gRPC server, then wait for it to be ready.
-		go g.Start(ctx, lis)
-
-		conn, err = grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(ctxDialer), grpc.WithInsecure())
-		if err != nil {
-			t.Fatalf("Failed to create connection to gRPC server")
+	// Start the gRPC server, then wait for it to be ready.
+	go func() {
+		if err := g.Start(ctx, lis); err != nil {
+			t.Logf("coud not start the gRPC server: %v", err)
 		}
+	}()
 
-		waitForNode(ctx, t, conn)
+	conn, err = grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(ctxDialer), grpc.WithInsecure())
+	if err != nil {
+		t.Fatalf("Failed to create connection to gRPC server")
 	}
+
+	waitForNode(ctx, t, conn)
 
 	return tidy, conn, mockCoreServiceClient, err
 }
@@ -237,7 +229,7 @@ func TestSubmitTransaction(t *testing.T) {
 	defer cancel()
 
 	t.Run("proxy call is successful", func(t *testing.T) {
-		tidy, conn, mockTradingServiceClient, err := getTestGRPCServer(t, ctx, 64201, true)
+		tidy, conn, mockTradingServiceClient, err := getTestGRPCServer(t, ctx)
 		if err != nil {
 			t.Fatalf("Failed to get test gRPC server: %s", err.Error())
 		}
@@ -285,7 +277,7 @@ func TestSubmitTransaction(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		tidy, conn, mockTradingServiceClient, err := getTestGRPCServer(t, ctx, 64201, true)
+		tidy, conn, mockTradingServiceClient, err := getTestGRPCServer(t, ctx)
 		if err != nil {
 			t.Fatalf("Failed to get test gRPC server: %s", err.Error())
 		}
@@ -334,7 +326,7 @@ func TestSubmitRawTransaction(t *testing.T) {
 	defer cancel()
 
 	t.Run("proxy call is successful", func(t *testing.T) {
-		tidy, conn, mockTradingServiceClient, err := getTestGRPCServer(t, ctx, 64201, true)
+		tidy, conn, mockTradingServiceClient, err := getTestGRPCServer(t, ctx)
 		if err != nil {
 			t.Fatalf("Failed to get test gRPC server: %s", err.Error())
 		}
@@ -380,7 +372,7 @@ func TestSubmitRawTransaction(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		tidy, conn, mockTradingServiceClient, err := getTestGRPCServer(t, ctx, 64201, true)
+		tidy, conn, mockTradingServiceClient, err := getTestGRPCServer(t, ctx)
 		if err != nil {
 			t.Fatalf("Failed to get test gRPC server: %s", err.Error())
 		}
@@ -426,7 +418,7 @@ func TestLastBlockHeight(t *testing.T) {
 	defer cancel()
 
 	t.Run("proxy call is successful", func(t *testing.T) {
-		tidy, conn, mockTradingServiceClient, err := getTestGRPCServer(t, ctx, 64201, true)
+		tidy, conn, mockTradingServiceClient, err := getTestGRPCServer(t, ctx)
 		if err != nil {
 			t.Fatalf("Failed to get test gRPC server: %s", err.Error())
 		}
@@ -450,7 +442,7 @@ func TestLastBlockHeight(t *testing.T) {
 	})
 
 	t.Run("proxy propagates an error", func(t *testing.T) {
-		tidy, conn, mockTradingServiceClient, err := getTestGRPCServer(t, ctx, 64201, true)
+		tidy, conn, mockTradingServiceClient, err := getTestGRPCServer(t, ctx)
 		if err != nil {
 			t.Fatalf("Failed to get test gRPC server: %s", err.Error())
 		}

@@ -121,10 +121,7 @@ func (e *Engine) getMarketScores(ds *vegapb.DispatchStrategy, payoutAsset, funde
 	return nil
 }
 
-func (e *Engine) distributeRecurringTransfers(
-	ctx context.Context,
-	newEpoch uint64,
-) error {
+func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint64) {
 	var (
 		transfersDone = []events.Event{}
 		tresps        = []*types.LedgerMovement{}
@@ -218,8 +215,6 @@ func (e *Engine) distributeRecurringTransfers(
 		e.bss.changedRecurringTransfers = true
 		e.broker.SendBatch(transfersDone)
 	}
-
-	return nil
 }
 
 func (e *Engine) deleteTransfer(ID string) {
