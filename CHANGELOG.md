@@ -46,6 +46,7 @@
 - [6260](https://github.com/vegaprotocol/vega/issues/6260) - Prepend `chainID` to input data only when signing the transaction
 - [6036](https://github.com/vegaprotocol/vega/issues/6036) - Fix `protobuf<->swagger` generation
 - [6248](https://github.com/vegaprotocol/vega/issues/6245) - Candles connection is not returning any candle data
+- [6178](https://github.com/vegaprotocol/vega/issues/6178) - Historical balances fails with `scany` error
 
 ## 0.55.0
 
