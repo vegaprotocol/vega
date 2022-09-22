@@ -295,7 +295,9 @@ func (a *AuctionState) UpdateMinDuration(ctx context.Context, d time.Duration) *
 		// no need to check for nil, we already have
 		if newMin.After(*oldExp) {
 			a.stateChanged = true
-			a.end.Duration += int64(newMin.Sub(*oldExp) / time.Second) // we have to divide by seconds as we're using seconds in AuctionDuration type
+			a.end.Duration = int64(d / time.Second)
+			// this would increase the duration by delta new - old, effectively setting duration == new min. Instead, we can just assign new min duraiton.
+			// a.end.Duration += int64(newMin.Sub(*oldExp) / time.Second) // we have to divide by seconds as we're using seconds in AuctionDuration type
 			return events.NewAuctionEvent(ctx, a.m.ID, false, a.begin.UnixNano(), newMin.UnixNano(), a.trigger)
 		}
 	}
