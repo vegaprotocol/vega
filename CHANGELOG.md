@@ -43,6 +43,7 @@
 - [6202](https://github.com/vegaprotocol/vega/issues/6202) - Always update margins for parties on amend
 - [6228](https://github.com/vegaprotocol/vega/issues/6228) - Reject protocol upgrade downgrades
 - [6245](https://github.com/vegaprotocol/vega/issues/6245) - Recalculate equity values when virtual stake changes
+- [6260](https://github.com/vegaprotocol/vega/issues/6260) - Prepend `chainID` to input data only when signing the transaction
 
 ## 0.55.0
 
