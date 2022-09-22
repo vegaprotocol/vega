@@ -13,64 +13,68 @@ max-same-issues = 0
 [linters]
 enable-all = true
 disable = [
-    "promlinter",
-    "wrapcheck",
-    "tagliatelle",
-    "paralleltest",
-    "nlreturn",
-    "gomnd",
-    "goerr113",
-    "tparallel",
-    "testpackage",
-    "gochecknoglobals",
-    "forcetypeassert",
-    "exhaustivestruct",
-    "exhaustive",
-    "errorlint",
-    "cyclop",
-    "wsl",
-    "scopelint",
-    "nestif",
-    "maligned",
-    "lll",
-    "interfacer",
-    "gosec",
-    "gomoddirectives",
-    "golint",
-    "goimports",
-    "godox",
-    "gocritic",
-    "goconst",
-    "gocognit",
-    "gochecknoinits",
-    "stylecheck",
-    "gci",
-    "errcheck",
-    "dupl",
-    "dogsled",
-    "funlen",
-    "gocyclo",
-    "errname",
-    "maintidx",
-    "contextcheck",
     "containedctx",
-    "varnamelen",
-    "ireturn",
-    "nilnil",
+    "contextcheck",
+    "cyclop",
+    "dogsled",
+    "dupl",
+    "errcheck",
     "errchkjson",
+    "errname",
+    "errorlint",
+    "exhaustive",
+    "exhaustivestruct",
+    "forcetypeassert",
+    "funlen",
+    "gochecknoglobals",
+    "gochecknoinits",
+    "gocognit",
+    "goconst",
+    "gocritic",
+    "gocyclo",
+    "godox",
+    "goerr113",
+    "goimports",
+    "gomnd",
+    "gomoddirectives",
+    "gosec",
     "ifshort",
-    "predeclared",
+    "ireturn",
+    "maintidx",
+    "nestif",
+    "nilnil",
     "nolintlint",
+    "paralleltest",
+    "predeclared",
+    "promlinter",
+    "stylecheck",
+    "tagliatelle",
+    "testpackage",
+    "tparallel",
+    "varnamelen",
+    "wrapcheck",
+    "wsl",
+    ## Disabled on-pupose.
+    "exhaustruct", # We often make incomplete structs.
+    "gci", # Doesn't match our code style.
+    "lll", # We don't have a line length.
+    "nlreturn", # Doesn't match our code style.
+    "nonamedreturns", # We don't mind named returns.
 
-    ## Disabled on-pupose
-    "nonamedreturns", # We don't mind named returns
-    "exhaustruct", # We often make incomplete structs
+    ## Deprecated linters.
+    "deadcode", # Replaced by 'unused'.
+    "golint", # Replaced by 'revive'.
+    "interfacer", # Not replaced.
+    "maligned", # Replaced by 'go vet fieldalignment'.
+    "nosnakecase", # Replaced by 'revive'.
+    "scopelint", # Replace by 'looppointer' or 'exportloopref'
+    "structcheck", # Replaced by 'unused'.
+    "varcheck", # Replaced by 'unused'.
+]
 
-    ## Deprecated linters
-    "nosnakecase", # deprecated; replaced by revive
-    "structcheck", # deprecated since 1.49.0; replaced by 'unused'
-    "varcheck", # deprecated since 1.49.0; replaced by 'unused'
-    "deadcode", # deprecated since 1.49.0; replaced by 'unused'
+[linters-settings.govet]
+enable = [
+    # "fieldalignment", to enable one day
 ]
 
 [[issues.exclude-rules]]
