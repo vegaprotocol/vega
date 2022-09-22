@@ -22,6 +22,7 @@
 - [6203](https://github.com/vegaprotocol/vega/issues/6203) - Support automatic consent for transactions sent through the wallet API version 2
 - [6203](https://github.com/vegaprotocol/vega/issues/6203) - Log node selection process on the wallet CLI
 - [5925](https://github.com/vegaprotocol/vega/issues/5925) - Clean transfer response API, now ledger movements
+- [6254](https://github.com/vegaprotocol/vega/issues/6254) - Reject Ethereum configuration update via proposals
 
 ### 🐛 Fixes
 - [6255](https://github.com/vegaprotocol/vega/issues/6255) - Fix `WebSocket` upgrading when setting headers in HTTP middleware.
@@ -40,6 +41,7 @@
 - [6212](https://github.com/vegaprotocol/vega/issues/6212) - Change the error for protocol upgrade request for block 0
 - [6242](https://github.com/vegaprotocol/vega/issues/6242) - Allow migrate between wallet types during Ethereum key rotation reload
 - [6202](https://github.com/vegaprotocol/vega/issues/6202) - Always update margins for parties on amend
+- [6228](https://github.com/vegaprotocol/vega/issues/6228) - Reject protocol upgrade downgrades
 
 ## 0.55.0
 
