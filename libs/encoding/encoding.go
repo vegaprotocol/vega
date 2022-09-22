@@ -6,7 +6,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// Duration is a wrapper over an actual duration so we can represent
+// Duration is a wrapper over an actual duration, so we can represent
 // them as string in the toml configuration.
 type Duration struct {
 	time.Duration
@@ -29,7 +29,7 @@ func (d Duration) MarshalText() ([]byte, error) {
 	return []byte(d.String()), nil
 }
 
-// LogLevel is wrapper over the actual log level
+// LogLevel is wrapper over the actual log level,
 // so they can be specified as strings in the toml configuration.
 type LogLevel struct {
 	zapcore.Level

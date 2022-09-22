@@ -25,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+
 	"github.com/blang/semver"
 	"github.com/cenkalti/backoff"
 	"github.com/golang/protobuf/proto"
@@ -129,12 +130,17 @@ func (e *Engine) IsValidProposal(ctx context.Context, pk string, upgradeBlockHei
 		return errors.New("upgrade block earlier than current block height")
 	}
 
-	_, err := semver.Parse(TrimReleaseTag(vegaReleaseTag))
+	newv, err := semver.Parse(TrimReleaseTag(vegaReleaseTag))
 	if err != nil {
 		err = fmt.Errorf("invalid protocol version for upgrade received: version (%s), %w", vegaReleaseTag, err)
 		e.log.Error("", logging.Error(err))
 		return err
 	}
+
+	if semver.MustParse(e.currentVersion).GT(newv) {
+		return errors.New("upgrade version is too old")
+	}
+
 	return nil
 }
 

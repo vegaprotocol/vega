@@ -1561,6 +1561,20 @@ func (mr *MockNetworkParametersMockRecorder) DispatchChanges(arg0 interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DispatchChanges", reflect.TypeOf((*MockNetworkParameters)(nil).DispatchChanges), arg0)
 }
 
+// IsUpdateAllowed mocks base method.
+func (m *MockNetworkParameters) IsUpdateAllowed(arg0 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsUpdateAllowed", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// IsUpdateAllowed indicates an expected call of IsUpdateAllowed.
+func (mr *MockNetworkParametersMockRecorder) IsUpdateAllowed(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsUpdateAllowed", reflect.TypeOf((*MockNetworkParameters)(nil).IsUpdateAllowed), arg0)
+}
+
 // Update mocks base method.
 func (m *MockNetworkParameters) Update(arg0 context.Context, arg1, arg2 string) error {
 	m.ctrl.T.Helper()

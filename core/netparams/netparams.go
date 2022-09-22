@@ -25,7 +25,16 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
-var ErrUnknownKey = errors.New("unknown key")
+var (
+	ErrUnknownKey                        = errors.New("unknown key")
+	ErrNetworkParameterUpdateDisabledFor = func(key string) error {
+		return fmt.Errorf("network parameter update disabled for %v", key)
+	}
+	// a list of network parameter which cannot be updated.
+	updateDisallowed = []string{
+		BlockchainsEthereumConfig,
+	}
+)
 
 // Broker - event bus.
 type Broker interface {
@@ -406,6 +415,23 @@ func (s *Store) AddRules(params ...AddParamRules) error {
 			return err
 		}
 	}
+	return nil
+}
+
+func (s *Store) IsUpdateAllowed(key string) error {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	_, ok := s.store[key]
+	if !ok {
+		return ErrUnknownKey
+	}
+
+	for _, v := range updateDisallowed {
+		if v == key {
+			return ErrNetworkParameterUpdateDisabledFor(key)
+		}
+	}
+
 	return nil
 }
 

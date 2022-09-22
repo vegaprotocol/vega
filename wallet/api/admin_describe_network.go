@@ -4,20 +4,21 @@ import (
 	"context"
 	"fmt"
 
+	vgencoding "code.vegaprotocol.io/vega/libs/encoding"
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	"github.com/mitchellh/mapstructure"
 )
 
 type AdminDescribeNetworkParams struct {
-	Network string `json:"Network"`
+	Network string `json:"network"`
 }
 
 type AdminDescribeNetworkResult struct {
-	Name        string `json:"name"`
-	Level       string `json:"logLevel"`
-	TokenExpiry string `json:"tokenExpiry"`
-	Port        int    `json:"port"`
-	Host        string `json:"host"`
+	Name        string              `json:"name"`
+	LogLevel    vgencoding.LogLevel `json:"logLevel"`
+	TokenExpiry vgencoding.Duration `json:"tokenExpiry"`
+	Port        int                 `json:"port"`
+	Host        string              `json:"host"`
 	API         struct {
 		GRPCConfig struct {
 			Hosts   []string `json:"hosts"`
@@ -37,7 +38,7 @@ type AdminDescribeNetwork struct {
 }
 
 // Handle retrieve a wallet from its name and passphrase.
-func (h *AdminDescribeNetwork) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminDescribeNetwork) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateDescribeNetworkParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
@@ -56,8 +57,8 @@ func (h *AdminDescribeNetwork) Handle(ctx context.Context, rawParams jsonrpc.Par
 
 	resp := AdminDescribeNetworkResult{
 		Name:        n.Name,
-		Level:       n.Level.String(),
-		TokenExpiry: n.TokenExpiry.String(),
+		LogLevel:    n.LogLevel,
+		TokenExpiry: n.TokenExpiry,
 		Port:        n.Port,
 		Host:        n.Host,
 	}
