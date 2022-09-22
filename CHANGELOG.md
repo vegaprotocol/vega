@@ -42,6 +42,7 @@
 - [6242](https://github.com/vegaprotocol/vega/issues/6242) - Allow migrate between wallet types during Ethereum key rotation reload
 - [6202](https://github.com/vegaprotocol/vega/issues/6202) - Always update margins for parties on amend
 - [6228](https://github.com/vegaprotocol/vega/issues/6228) - Reject protocol upgrade downgrades
+- [6245](https://github.com/vegaprotocol/vega/issues/6245) - Recalculate equity values when virtual stake changes
 
 ## 0.55.0
 
