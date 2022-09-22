@@ -58,8 +58,8 @@ func handleCandleConnectionRequest(ctx context.Context, client TradingDataServic
 
 	req := v2.ListCandleDataRequest{
 		CandleId:      candleID,
-		FromTimestamp: since.Unix(),
-		ToTimestamp:   to.Unix(),
+		FromTimestamp: since.UnixNano(),
+		ToTimestamp:   to.UnixNano(),
 		Interval:      interval,
 		Pagination:    pagination,
 	}
