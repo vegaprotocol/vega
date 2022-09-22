@@ -68,12 +68,20 @@ func (es *EquityShares) UpdateVStake() {
 	}
 	total := num.DecimalZero()
 	factor := num.DecimalFromFloat(1.0).Add(es.r)
+	recalc := false
 	for _, v := range es.lps {
 		vStake := num.MaxD(v.stake, v.vStake.Mul(factor))
 		v.vStake = vStake
 		total = total.Add(vStake)
 	}
+	// some vStake changed, force recalc of ELS values.
+	if !es.totalVStake.Equals(total) {
+		recalc = true
+	}
 	es.totalVStake = total
+	if recalc {
+		es.updateAllELS()
+	}
 }
 
 func (es *EquityShares) GetTotalVStake() num.Decimal {
@@ -239,4 +247,16 @@ func (es *EquityShares) SharesExcept(except map[string]struct{}) map[string]num.
 		es.totalVStake = allTotalV
 	}
 	return shares
+}
+
+func (es *EquityShares) updateAllELS() {
+	for id, v := range es.lps {
+		eq, err := es.equity(id)
+		if err != nil {
+			panic(err)
+		}
+		if !v.share.Equals(eq) {
+			v.share = eq
+		}
+	}
 }
