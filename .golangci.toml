@@ -29,9 +29,7 @@ disable = [
     "errorlint",
     "cyclop",
     "wsl",
-    "unparam",
     "scopelint",
-    "nosnakecase",  # deprecated; replaced by revive
     "nestif",
     "maligned",
     "lll",
@@ -53,7 +51,6 @@ disable = [
     "funlen",
     "gocyclo",
     "errname",
-    # New in golangci-lint 1.45 but would be nice to address
     "maintidx",
     "contextcheck",
     "containedctx",
@@ -64,8 +61,13 @@ disable = [
     "ifshort",
     "predeclared",
     "nolintlint",
+
+    ## Disabled on-pupose
     "nonamedreturns", # We don't mind named returns
     "exhaustruct", # We often make incomplete structs
+
+    ## Deprecated linters
+    "nosnakecase", # deprecated; replaced by revive
     "structcheck", # deprecated since 1.49.0; replaced by 'unused'
     "varcheck", # deprecated since 1.49.0; replaced by 'unused'
     "deadcode", # deprecated since 1.49.0; replaced by 'unused'

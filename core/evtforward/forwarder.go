@@ -155,7 +155,7 @@ func (f *Forwarder) Ack(evt *commandspb.ChainEvent) bool {
 		f.log.Error("could not get event key", logging.Error(err))
 		return false
 	}
-	_, ok, acked := f.getEvt(key)
+	ok, acked := f.getEvt(key)
 	if ok && acked {
 		f.log.Error("event already acknowledged", logging.String("event", evt.String()))
 		res = "alreadyacked"
@@ -209,7 +209,7 @@ func (f *Forwarder) Forward(ctx context.Context, evt *commandspb.ChainEvent, pub
 	if err != nil {
 		return err
 	}
-	_, ok, ack := f.getEvt(key)
+	ok, ack := f.getEvt(key)
 	if ok {
 		f.log.Error("event already processed",
 			logging.String("evt", evt.String()),
@@ -244,7 +244,7 @@ func (f *Forwarder) ForwardFromSelf(evt *commandspb.ChainEvent) {
 		)
 	}
 
-	_, ok, ack := f.getEvt(key)
+	ok, ack := f.getEvt(key)
 	if ok {
 		f.log.Error("event already processed",
 			logging.String("event", evt.String()),
@@ -269,16 +269,16 @@ func (f *Forwarder) updateValidatorsList() {
 }
 
 // getEvt assumes the lock is acquired before being called.
-func (f *Forwarder) getEvt(key string) (evt *commandspb.ChainEvent, ok bool, acked bool) {
-	if evt, ok = f.ackedEvts[key]; ok {
-		return evt, true, true
+func (f *Forwarder) getEvt(key string) (ok bool, acked bool) {
+	if _, ok = f.ackedEvts[key]; ok {
+		return true, true
 	}
 
-	if tsEvt, ok := f.evts[key]; ok {
-		return tsEvt.evt, true, false
+	if _, ok := f.evts[key]; ok {
+		return true, false
 	}
 
-	return nil, false, false
+	return false, false
 }
 
 func (f *Forwarder) send(ctx context.Context, evt *commandspb.ChainEvent) {

@@ -29,7 +29,8 @@ import (
 	types1 "github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
-func addNodes(top *testTop, number int) {
+func addTwoNodes(top *testTop) {
+	number := 2
 	tmPubKeys := make([]string, 0, number)
 
 	for i := 0; i < number; i++ {
@@ -81,7 +82,7 @@ func testTopologyCheckpointSuccess(t *testing.T) {
 	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	ctx := context.Background()
-	addNodes(top, 2)
+	addTwoNodes(top)
 
 	kr1 := &commandspb.KeyRotateSubmission{
 		NewPubKeyIndex:    1,
@@ -127,7 +128,7 @@ func testTopologyCheckpointSuccess(t *testing.T) {
 	newTop := getTestTopWithDefaultValidator(t)
 	defer newTop.ctrl.Finish()
 
-	addNodes(newTop, 2)
+	addTwoNodes(newTop)
 	newTop.Load(ctx, ckp)
 
 	newPkrs := newTop.GetAllPendingKeyRotations()
@@ -144,7 +145,7 @@ func testTopologyCheckpointUsesRelativeBlockHeight(t *testing.T) {
 	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	ctx := context.Background()
-	addNodes(top, 2)
+	addTwoNodes(top)
 
 	kr1 := &commandspb.KeyRotateSubmission{
 		NewPubKeyIndex:    1,
@@ -191,7 +192,7 @@ func testTopologyCheckpointUsesRelativeBlockHeight(t *testing.T) {
 	defer newTop.ctrl.Finish()
 	newTop.timeService.EXPECT().GetTimeNow().AnyTimes()
 
-	addNodes(newTop, 2)
+	addTwoNodes(newTop)
 
 	var newNetworkBlockHeight uint64 = 100
 

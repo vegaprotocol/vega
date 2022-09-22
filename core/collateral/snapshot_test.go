@@ -37,7 +37,7 @@ import (
 )
 
 func TestCheckpoint(t *testing.T) {
-	eng := getTestEngine(t, "market1")
+	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 	ctx := context.Background()
 
@@ -195,7 +195,7 @@ func testSnapshotConsistentHash(t *testing.T) {
 			},
 		},
 	}
-	eng := getTestEngine(t, mkt)
+	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 	// create assets, accounts, and update balances
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -290,7 +290,7 @@ func testSnapshotRestore(t *testing.T) {
 			Source:   erc20,
 		},
 	}
-	eng := getTestEngine(t, mkt)
+	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 	// create assets, accounts, and update balances
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -350,7 +350,7 @@ func testSnapshotRestore(t *testing.T) {
 		require.NoError(t, err)
 		data[k] = s
 	}
-	newEng := getTestEngine(t, mkt)
+	newEng := getTestEngine(t)
 	defer newEng.ctrl.Finish()
 	// we expect 2 batches of events to be sent
 
@@ -415,7 +415,7 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 				Source:   erc20,
 			},
 		}
-		eng := getTestEngine(t, mkt)
+		eng := getTestEngine(t)
 		defer eng.ctrl.Finish()
 		// create assets, accounts, and update balances
 		eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -481,7 +481,7 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 		require.NoError(t, err)
 		snap1 := snaps[0]
 
-		engLoad := getTestEngine(t, mkt)
+		engLoad := getTestEngine(t)
 		engLoad.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 		engLoad.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 		snapshotEngineLoad, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)

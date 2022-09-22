@@ -38,7 +38,7 @@ func testMTMWithNetworkNoLossSoc(t *testing.T) {
 	moneyParty := "money-party"
 	price := num.NewUint(1000)
 
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
@@ -140,7 +140,7 @@ func testMTMWithNetworkLossSoc(t *testing.T) {
 	moneyParty := "money-party"
 	price := num.NewUint(1000)
 
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)

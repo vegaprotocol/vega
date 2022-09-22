@@ -154,16 +154,16 @@ func (h *AdminSignTransaction) getLastBlockDataFromNetwork(ctx context.Context, 
 
 	node, err := nodeSelector.Node(ctx, noNodeSelectionReporting)
 	if err != nil {
-		return nil, networkError(ErrorCodeNodeRequestFailed, ErrNoHealthyNodeAvailable)
+		return nil, networkError(ErrNoHealthyNodeAvailable)
 	}
 
 	lastBlockData, err := node.LastBlock(ctx)
 	if err != nil {
-		return nil, networkError(ErrorCodeNodeRequestFailed, ErrCouldNotGetLastBlockInformation)
+		return nil, networkError(ErrCouldNotGetLastBlockInformation)
 	}
 
 	if lastBlockData.ChainId == "" {
-		return nil, networkError(ErrorCodeNodeRequestFailed, ErrCouldNotGetChainIDFromNode)
+		return nil, networkError(ErrCouldNotGetChainIDFromNode)
 	}
 
 	return &AdminLastBlockData{

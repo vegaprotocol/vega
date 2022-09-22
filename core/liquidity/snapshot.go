@@ -391,7 +391,7 @@ func (e *SnapshotEngine) serialiseParameters() ([]byte, bool, error) {
 		},
 	}
 
-	return e.marshalPayload(key, payload)
+	return e.marshalPayload(payload)
 }
 
 func (e *SnapshotEngine) serialisePartiesLiquidityOrders() ([]byte, bool, error) {
@@ -409,7 +409,7 @@ func (e *SnapshotEngine) serialisePartiesLiquidityOrders() ([]byte, bool, error)
 			},
 		},
 	}
-	return e.marshalPayload(key, payload)
+	return e.marshalPayload(payload)
 }
 
 func partyOrdersToProto(m map[string]map[string]*types.Order) []*snapshotpb.PartyOrders {
@@ -443,7 +443,7 @@ func (e *SnapshotEngine) serialisePartiesOrders() ([]byte, bool, error) {
 		},
 	}
 
-	return e.marshalPayload(key, payload)
+	return e.marshalPayload(payload)
 }
 
 func (e *SnapshotEngine) serialisePendingProvisions() ([]byte, bool, error) {
@@ -469,7 +469,7 @@ func (e *SnapshotEngine) serialisePendingProvisions() ([]byte, bool, error) {
 		},
 	}
 
-	return e.marshalPayload(key, payload)
+	return e.marshalPayload(payload)
 }
 
 func (e *SnapshotEngine) serialiseProvisions() ([]byte, bool, error) {
@@ -496,7 +496,7 @@ func (e *SnapshotEngine) serialiseProvisions() ([]byte, bool, error) {
 		},
 	}
 
-	return e.marshalPayload(key, payload)
+	return e.marshalPayload(payload)
 }
 
 func (e *SnapshotEngine) serialiseSupplied() ([]byte, bool, error) {
@@ -508,10 +508,10 @@ func (e *SnapshotEngine) serialiseSupplied() ([]byte, bool, error) {
 	e.suppliedEngine.ResetUpdated()
 
 	payload := e.suppliedEngine.Payload()
-	return e.marshalPayload(key, payload)
+	return e.marshalPayload(payload)
 }
 
-func (e *SnapshotEngine) marshalPayload(key string, payload *snapshotpb.Payload) ([]byte, bool, error) {
+func (e *SnapshotEngine) marshalPayload(payload *snapshotpb.Payload) ([]byte, bool, error) {
 	buf, err := proto.Marshal(payload)
 	if err != nil {
 		return nil, false, err

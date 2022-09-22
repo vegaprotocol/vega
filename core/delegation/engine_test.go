@@ -525,7 +525,7 @@ func setupDefaultDelegationState(testEngine *testEngine, party1Balance uint64, p
 // node 2 -> 3
 //
 //	party2 -> 3
-func defaultSimpleDelegationState(testEngine *testEngine, party1Balance, party2Balance uint64) {
+func defaultSimpleDelegationState(testEngine *testEngine) {
 	testEngine.topology.nodeToIsValidator["node1"] = true
 	testEngine.topology.nodeToIsValidator["node2"] = true
 	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(12)
@@ -691,7 +691,7 @@ func testDelegateSuccesNoCommitted(t *testing.T) {
 func testDelegateSuccessWithPreviousPendingUndelegateFullyCovered(t *testing.T) {
 	// setup committed delegated state
 	testEngine := getEngine(t)
-	defaultSimpleDelegationState(testEngine, 12, 7)
+	defaultSimpleDelegationState(testEngine)
 
 	// setup pending undelegation
 	err := testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(2))
@@ -729,7 +729,7 @@ func testDelegateSuccessWithPreviousPendingUndelegateFullyCovered(t *testing.T) 
 func testDelegateSuccessWithPreviousPendingUndelegatePartiallyCovered(t *testing.T) {
 	// setup committed delegated state
 	testEngine := getEngine(t)
-	defaultSimpleDelegationState(testEngine, 12, 7)
+	defaultSimpleDelegationState(testEngine)
 
 	// setup pending undelegation
 	err := testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(4))
@@ -764,7 +764,7 @@ func testDelegateSuccessWithPreviousPendingUndelegatePartiallyCovered(t *testing
 func testDelegateSuccessWithPreviousPendingUndelegateExactlyCovered(t *testing.T) {
 	// setup committed delegated state
 	testEngine := getEngine(t)
-	defaultSimpleDelegationState(testEngine, 12, 7)
+	defaultSimpleDelegationState(testEngine)
 
 	// setup pending undelegation
 	err := testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(4))
@@ -827,7 +827,7 @@ func testUndelegateInvalidAmount(t *testing.T) {
 func testUndelegateSuccessNoPreviousPending(t *testing.T) {
 	// setup committed delegated state
 	testEngine := getEngine(t)
-	defaultSimpleDelegationState(testEngine, 12, 7)
+	defaultSimpleDelegationState(testEngine)
 
 	// setup pending undelegation
 	err := testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(2))
@@ -988,7 +988,7 @@ func testPreprocessForRewardingNoForcedUndelegationNeeded(t *testing.T) {
 // from a single available node.
 func testPreprocessForRewardingWithForceUndelegateSingleValidator(t *testing.T) {
 	testEngine := getEngine(t)
-	defaultSimpleDelegationState(testEngine, 12, 10)
+	defaultSimpleDelegationState(testEngine)
 	epochStart := time.Now()
 	epochEnd := time.Now()
 	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart] = make(map[string]*num.Uint)

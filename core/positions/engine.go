@@ -361,6 +361,7 @@ func (e *Engine) GetOpenInterestGivenTrades(trades []*types.Trade) uint64 {
 	return oi + uint64(d)
 }
 
+//nolint:unparam
 func max(a int64, b int64) int64 {
 	if a >= b {
 		return a
