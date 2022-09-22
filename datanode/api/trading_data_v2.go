@@ -28,6 +28,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/vegatime"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
@@ -545,13 +546,11 @@ func (t *tradingDataServiceV2) ListCandleData(ctx context.Context, req *v2.ListC
 
 	var from, to *time.Time
 	if req.FromTimestamp != 0 {
-		fromTimestamp := vegatime.UnixNano(req.FromTimestamp)
-		from = &fromTimestamp
+		from = ptr.From(vegatime.UnixNano(req.FromTimestamp))
 	}
 
 	if req.ToTimestamp != 0 {
-		toTimestamp := vegatime.UnixNano(req.ToTimestamp)
-		to = &toTimestamp
+		to = ptr.From(vegatime.UnixNano(req.ToTimestamp))
 	}
 
 	pagination := entities.CursorPagination{}
