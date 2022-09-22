@@ -67,12 +67,12 @@ func NewEmptyPosition(marketID MarketID, partyID PartyID) Position {
 		MarketID:                marketID,
 		PartyID:                 partyID,
 		OpenVolume:              0,
-		RealisedPnl:             decimal.Zero,
-		UnrealisedPnl:           decimal.Zero,
-		AverageEntryPrice:       decimal.Zero,
-		AverageEntryMarketPrice: decimal.Zero,
-		Loss:                    decimal.Zero,
-		Adjustment:              decimal.Zero,
+		RealisedPnl:             num.DecimalZero(),
+		UnrealisedPnl:           num.DecimalZero(),
+		AverageEntryPrice:       num.DecimalZero(),
+		AverageEntryMarketPrice: num.DecimalZero(),
+		Loss:                    num.DecimalZero(),
+		Adjustment:              num.DecimalZero(),
 	}
 }
 
@@ -110,9 +110,9 @@ func (p *Position) UpdateWithSettleDistressed(e settleDistressed) {
 	margin := num.DecimalFromUint(e.Margin())
 	p.RealisedPnl = p.RealisedPnl.Add(p.UnrealisedPnl)
 	p.RealisedPnl = p.RealisedPnl.Sub(margin) // realised P&L includes whatever we had in margin account at this point
-	p.UnrealisedPnl = decimal.Zero
-	p.AverageEntryPrice = decimal.Zero // @TODO average entry price shouldn't be affected(?)
-	p.AverageEntryPrice = decimal.Zero
+	p.UnrealisedPnl = num.DecimalZero()
+	p.AverageEntryPrice = num.DecimalZero() // @TODO average entry price shouldn't be affected(?)
+	p.AverageEntryPrice = num.DecimalZero()
 	p.OpenVolume = 0
 	p.TxHash = TxHash(e.TxHash())
 }
@@ -123,7 +123,7 @@ func (p *Position) UpdateWithSettleMarket(e settleMarket) {
 
 	unrealisedPnl := openVolumeDec.Mul(markPriceDec.Sub(p.AverageEntryPrice)).Div(e.PositionFactor())
 	p.RealisedPnl = p.RealisedPnl.Add(unrealisedPnl)
-	p.UnrealisedPnl = decimal.Zero
+	p.UnrealisedPnl = num.DecimalZero()
 	p.OpenVolume = 0
 	p.TxHash = TxHash(e.TxHash())
 }

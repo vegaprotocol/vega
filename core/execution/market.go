@@ -3227,15 +3227,16 @@ func (m *Market) settlementPriceWithLock(ctx context.Context) {
 		}
 		m.closed = m.mkt.State == types.MarketStateSettled
 		settlementPriceInAsset, err := m.tradableInstrument.Instrument.Product.ScaleSettlementPriceToDecimalPlaces(m.settlementPriceInMarket, m.assetDP)
-		if err == nil {
-			m.markPrice = settlementPriceInAsset.Clone()
-
-			// send the market data with all updated stuff
-			m.broker.Send(events.NewMarketDataEvent(ctx, m.GetMarketData()))
-			m.broker.Send(events.NewMarketSettled(ctx, m.GetID(), m.timeService.GetTimeNow().UnixNano(), m.markPrice, m.positionFactor))
-		} else {
+		if err != nil {
 			m.log.Error(err.Error())
+			return
 		}
+
+		m.markPrice = settlementPriceInAsset.Clone()
+
+		// send the market data with all updated stuff
+		m.broker.Send(events.NewMarketDataEvent(ctx, m.GetMarketData()))
+		m.broker.Send(events.NewMarketSettled(ctx, m.GetID(), m.timeService.GetTimeNow().UnixNano(), m.markPrice, m.positionFactor))
 	}
 }
 
