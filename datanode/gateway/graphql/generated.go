@@ -88,6 +88,7 @@ type ResolverRoot interface {
 	Party() PartyResolver
 	PartyStake() PartyStakeResolver
 	Position() PositionResolver
+	PositionUpdate() PositionUpdateResolver
 	PriceLevel() PriceLevelResolver
 	Proposal() ProposalResolver
 	ProposalTerms() ProposalTermsResolver
@@ -1091,6 +1092,16 @@ type ComplexityRoot struct {
 		MarketID   func(childComplexity int) int
 	}
 
+	PositionUpdate struct {
+		AverageEntryPrice func(childComplexity int) int
+		MarketId          func(childComplexity int) int
+		OpenVolume        func(childComplexity int) int
+		PartyId           func(childComplexity int) int
+		RealisedPnl       func(childComplexity int) int
+		UnrealisedPnl     func(childComplexity int) int
+		UpdatedAt         func(childComplexity int) int
+	}
+
 	PriceLevel struct {
 		NumberOfOrders func(childComplexity int) int
 		Price          func(childComplexity int) int
@@ -1954,6 +1965,11 @@ type PositionResolver interface {
 
 	Margins(ctx context.Context, obj *vega.Position) ([]*vega.MarginLevels, error)
 	MarginsConnection(ctx context.Context, obj *vega.Position, pagination *v2.Pagination) (*v2.MarginConnection, error)
+	UpdatedAt(ctx context.Context, obj *vega.Position) (*string, error)
+}
+type PositionUpdateResolver interface {
+	OpenVolume(ctx context.Context, obj *vega.Position) (string, error)
+
 	UpdatedAt(ctx context.Context, obj *vega.Position) (*string, error)
 }
 type PriceLevelResolver interface {
@@ -6500,6 +6516,55 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PositionResolution.MarketID(childComplexity), true
 
+	case "PositionUpdate.averageEntryPrice":
+		if e.complexity.PositionUpdate.AverageEntryPrice == nil {
+			break
+		}
+
+		return e.complexity.PositionUpdate.AverageEntryPrice(childComplexity), true
+
+	case "PositionUpdate.marketId":
+		if e.complexity.PositionUpdate.MarketId == nil {
+			break
+		}
+
+		return e.complexity.PositionUpdate.MarketId(childComplexity), true
+
+	case "PositionUpdate.openVolume":
+		if e.complexity.PositionUpdate.OpenVolume == nil {
+			break
+		}
+
+		return e.complexity.PositionUpdate.OpenVolume(childComplexity), true
+
+	case "PositionUpdate.partyId":
+		if e.complexity.PositionUpdate.PartyId == nil {
+			break
+		}
+
+		return e.complexity.PositionUpdate.PartyId(childComplexity), true
+
+	case "PositionUpdate.realisedPNL":
+		if e.complexity.PositionUpdate.RealisedPnl == nil {
+			break
+		}
+
+		return e.complexity.PositionUpdate.RealisedPnl(childComplexity), true
+
+	case "PositionUpdate.unrealisedPNL":
+		if e.complexity.PositionUpdate.UnrealisedPnl == nil {
+			break
+		}
+
+		return e.complexity.PositionUpdate.UnrealisedPnl(childComplexity), true
+
+	case "PositionUpdate.updatedAt":
+		if e.complexity.PositionUpdate.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.PositionUpdate.UpdatedAt(childComplexity), true
+
 	case "PriceLevel.numberOfOrders":
 		if e.complexity.PriceLevel.NumberOfOrders == nil {
 			break
@@ -9343,7 +9408,7 @@ type Subscription {
     partyId: ID
     "ID of the market from which you want position updates"
     marketId: ID
-  ): [Position!]!
+  ): [PositionUpdate!]!
 
   "Subscribe to proposals. Leave out all arguments to receive all proposals"
   proposals(
@@ -11489,6 +11554,35 @@ type Position {
 
   "Margins of the party for the given position"
   marginsConnection(pagination: Pagination): MarginConnection
+
+  "RFC3339Nano time the position was updated"
+  updatedAt: String
+}
+
+"""
+An individual party at any point in time is considered net long or net short. This refers to their Open Volume,
+calculated using FIFO. This volume is signed as either negative for LONG positions and positive for SHORT positions. A
+single trade may end up "splitting" with some of its volume matched into closed volume and some of its volume
+remaining as open volume. This is why we don't refer to positions being comprised of trades, rather of volume.
+"""
+type PositionUpdate {
+  "Market relating to this position"
+  marketId: ID!
+
+  "The party holding this position"
+  partyId: ID!
+
+  "Open volume (uint64)"
+  openVolume: String!
+
+  "Realised Profit and Loss (int64)"
+  realisedPNL: String!
+
+  "Unrealised Profit and Loss (int64)"
+  unrealisedPNL: String!
+
+  "Average entry price for this position"
+  averageEntryPrice: String!
 
   "RFC3339Nano time the position was updated"
   updatedAt: String
@@ -36561,6 +36655,248 @@ func (ec *executionContext) _PositionResolution_markPrice(ctx context.Context, f
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _PositionUpdate_marketId(ctx context.Context, field graphql.CollectedField, obj *vega.Position) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PositionUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MarketId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PositionUpdate_partyId(ctx context.Context, field graphql.CollectedField, obj *vega.Position) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PositionUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PartyId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PositionUpdate_openVolume(ctx context.Context, field graphql.CollectedField, obj *vega.Position) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PositionUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PositionUpdate().OpenVolume(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PositionUpdate_realisedPNL(ctx context.Context, field graphql.CollectedField, obj *vega.Position) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PositionUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RealisedPnl, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PositionUpdate_unrealisedPNL(ctx context.Context, field graphql.CollectedField, obj *vega.Position) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PositionUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UnrealisedPnl, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PositionUpdate_averageEntryPrice(ctx context.Context, field graphql.CollectedField, obj *vega.Position) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PositionUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AverageEntryPrice, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PositionUpdate_updatedAt(ctx context.Context, field graphql.CollectedField, obj *vega.Position) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PositionUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PositionUpdate().UpdatedAt(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _PriceLevel_price(ctx context.Context, field graphql.CollectedField, obj *vega.PriceLevel) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -44566,7 +44902,7 @@ func (ec *executionContext) _Subscription_positions(ctx context.Context, field g
 			w.Write([]byte{'{'})
 			graphql.MarshalString(field.Alias).MarshalGQL(w)
 			w.Write([]byte{':'})
-			ec.marshalNPosition2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPositionᚄ(ctx, field.Selections, res).MarshalGQL(w)
+			ec.marshalNPositionUpdate2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPositionᚄ(ctx, field.Selections, res).MarshalGQL(w)
 			w.Write([]byte{'}'})
 		})
 	}
@@ -60270,6 +60606,114 @@ func (ec *executionContext) _PositionResolution(ctx context.Context, sel ast.Sel
 	return out
 }
 
+var positionUpdateImplementors = []string{"PositionUpdate"}
+
+func (ec *executionContext) _PositionUpdate(ctx context.Context, sel ast.SelectionSet, obj *vega.Position) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, positionUpdateImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PositionUpdate")
+		case "marketId":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._PositionUpdate_marketId(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "partyId":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._PositionUpdate_partyId(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "openVolume":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PositionUpdate_openVolume(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "realisedPNL":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._PositionUpdate_realisedPNL(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "unrealisedPNL":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._PositionUpdate_unrealisedPNL(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "averageEntryPrice":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._PositionUpdate_averageEntryPrice(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "updatedAt":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PositionUpdate_updatedAt(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var priceLevelImplementors = []string{"PriceLevel"}
 
 func (ec *executionContext) _PriceLevel(ctx context.Context, sel ast.SelectionSet, obj *vega.PriceLevel) graphql.Marshaler {
@@ -68622,7 +69066,27 @@ func (ec *executionContext) marshalNPeggedReference2codeᚗvegaprotocolᚗioᚋv
 	return res
 }
 
-func (ec *executionContext) marshalNPosition2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPositionᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Position) graphql.Marshaler {
+func (ec *executionContext) marshalNPosition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPosition(ctx context.Context, sel ast.SelectionSet, v *vega.Position) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Position(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNPositionEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPositionEdge(ctx context.Context, sel ast.SelectionSet, v *v2.PositionEdge) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._PositionEdge(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNPositionUpdate2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPositionᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Position) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -68646,7 +69110,7 @@ func (ec *executionContext) marshalNPosition2ᚕᚖcodeᚗvegaprotocolᚗioᚋve
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNPosition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPosition(ctx, sel, v[i])
+			ret[i] = ec.marshalNPositionUpdate2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPosition(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -68666,24 +69130,14 @@ func (ec *executionContext) marshalNPosition2ᚕᚖcodeᚗvegaprotocolᚗioᚋve
 	return ret
 }
 
-func (ec *executionContext) marshalNPosition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPosition(ctx context.Context, sel ast.SelectionSet, v *vega.Position) graphql.Marshaler {
+func (ec *executionContext) marshalNPositionUpdate2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPosition(ctx context.Context, sel ast.SelectionSet, v *vega.Position) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
 		}
 		return graphql.Null
 	}
-	return ec._Position(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNPositionEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPositionEdge(ctx context.Context, sel ast.SelectionSet, v *v2.PositionEdge) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._PositionEdge(ctx, sel, v)
+	return ec._PositionUpdate(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNPriceLevel2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPriceLevel(ctx context.Context, sel ast.SelectionSet, v *vega.PriceLevel) graphql.Marshaler {

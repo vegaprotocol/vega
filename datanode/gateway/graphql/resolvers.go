@@ -142,6 +142,11 @@ func (r *VegaResolverRoot) Position() PositionResolver {
 	return (*myPositionResolver)(r)
 }
 
+// PositionUpdate returns the positionUpdate resolver.
+func (r *VegaResolverRoot) PositionUpdate() PositionUpdateResolver {
+	return (*positionUpdateResolver)(r)
+}
+
 // Party returns the parties resolver.
 func (r *VegaResolverRoot) Party() PartyResolver {
 	return (*myPartyResolver)(r)
@@ -2241,6 +2246,21 @@ func (r *myPriceLevelResolver) NumberOfOrders(ctx context.Context, obj *types.Pr
 }
 
 // END: Price Level Resolver
+
+type positionUpdateResolver VegaResolverRoot
+
+func (r *positionUpdateResolver) OpenVolume(ctx context.Context, obj *types.Position) (string, error) {
+	return strconv.FormatInt(obj.OpenVolume, 10), nil
+}
+
+func (r *positionUpdateResolver) UpdatedAt(ctx context.Context, obj *types.Position) (*string, error) {
+	var updatedAt *string
+	if obj.UpdatedAt > 0 {
+		t := vegatime.Format(vegatime.UnixNano(obj.UpdatedAt))
+		updatedAt = &t
+	}
+	return updatedAt, nil
+}
 
 // BEGIN: Position Resolver
 
