@@ -214,13 +214,13 @@ func (h *Handler) SignTx(name string, req *walletpb.SubmitTransactionRequest, he
 		return nil, err
 	}
 
-	data, err := wcommands.ToMarshaledInputData(req, height, chainID)
+	marshaledInputData, err := wcommands.ToMarshaledInputData(req, height)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't marshal input data: %w", err)
 	}
 
 	pubKey := req.GetPubKey()
-	signature, err := w.SignTx(pubKey, data)
+	signature, err := w.SignTx(pubKey, commands.BundleInputDataForSigning(marshaledInputData, chainID))
 	if err != nil {
 		return nil, fmt.Errorf("couldn't sign transaction: %w", err)
 	}
@@ -230,7 +230,7 @@ func (h *Handler) SignTx(name string, req *walletpb.SubmitTransactionRequest, he
 		Algo:    signature.Algo,
 		Version: signature.Version,
 	}
-	return commands.NewTransaction(pubKey, data, protoSignature), nil
+	return commands.NewTransaction(pubKey, marshaledInputData, protoSignature), nil
 }
 
 func (h *Handler) VerifyAny(inputData, sig []byte, pubKey string) (bool, error) {

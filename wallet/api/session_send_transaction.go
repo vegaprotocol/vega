@@ -111,14 +111,14 @@ func (h *SendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) 
 	}
 
 	// Sign the payload.
-	inputData, err := wcommands.ToMarshaledInputData(request, lastBlockData.Height, lastBlockData.ChainId)
+	inputData, err := wcommands.ToMarshaledInputData(request, lastBlockData.Height)
 	if err != nil {
 		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not marshal input data: %w", err))
 		return nil, internalError(ErrCouldNotSendTransaction)
 	}
 
 	h.pipeline.Log(ctx, traceID, InfoLog, "Signing the transaction...")
-	signature, err := connectedWallet.Wallet.SignTx(params.PublicKey, inputData)
+	signature, err := connectedWallet.Wallet.SignTx(params.PublicKey, commands.BundleInputDataForSigning(inputData, lastBlockData.ChainId))
 	if err != nil {
 		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not sign command: %w", err))
 		return nil, internalError(ErrCouldNotSendTransaction)

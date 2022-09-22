@@ -77,10 +77,10 @@ func CheckSubmitTransactionRequest(req *walletpb.SubmitTransactionRequest) comma
 	return errs
 }
 
-func ToMarshaledInputData(req *walletpb.SubmitTransactionRequest, height uint64, chainID string) ([]byte, error) {
+func ToMarshaledInputData(req *walletpb.SubmitTransactionRequest, height uint64) ([]byte, error) {
 	data := commands.NewInputData(height)
 	wrapRequestCommandIntoInputData(data, req)
-	return commands.MarshalInputData(chainID, data)
+	return commands.MarshalInputData(data)
 }
 
 func wrapRequestCommandIntoInputData(data *commandspb.InputData, req *walletpb.SubmitTransactionRequest) {
