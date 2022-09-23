@@ -96,7 +96,7 @@ func TestSequenceIDGen(t *testing.T) {
 func TestSubscribe(t *testing.T) {
 	t.Run("Subscribe and unsubscribe required - success", testSubUnsubSuccess)
 	t.Run("Subscribe reuses keys", testSubReuseKey)
-	t.Run("Unsubscribe automatically if subscriber is closed", testAutoUnsubscribe)
+	t.Run("Unsubscribe automatically if subscriber is closed", testUnsubscribeAutomaticallyIfSubscriberIsClosed)
 }
 
 func TestStream(t *testing.T) {
@@ -256,40 +256,80 @@ func testSubReuseKey(t *testing.T) {
 	broker.Unsubscribe(k1)
 }
 
-func testAutoUnsubscribe(t *testing.T) {
+func testUnsubscribeAutomaticallyIfSubscriberIsClosed(t *testing.T) {
 	t.Parallel()
-	broker := getBroker(t)
-	defer broker.Finish()
-	sub := mocks.NewMockSubscriber(broker.ctrl)
-	// sub, auto-unsub, sub again
-	sub.EXPECT().Types().Times(3).Return(nil)
+
+	testedBroker := getBroker(t)
+	defer testedBroker.Finish()
+
+	// The Broker.Send() method launches a go routine. As a result, to control
+	// its state, we will use an unbuffered (blocking) channel to wait until
+	// we unblock it by sending a signal, or it timeouts.
+	waiter := newWaiter()
+
+	// First, we add the subscriber to the broker.
+	sub := mocks.NewMockSubscriber(testedBroker.ctrl)
+
+	// This tells the broker to treat the subscriber synchronously.
 	sub.EXPECT().Ack().Times(1).Return(true)
-	sub.EXPECT().SetID(gomock.Any()).Times(2)
-	k1 := broker.Subscribe(sub)
-	assert.NotZero(t, k1)
-	// set up sub to be closed
-	skipCh := make(chan struct{})
-	closedCh := make(chan struct{})
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-	defer func() {
-		close(skipCh)
-	}()
-	close(closedCh) // close the closed channel, so the subscriber is marked as closed when we try to send an event
-	sub.EXPECT().Skip().AnyTimes().Return(skipCh)
-	sub.EXPECT().Closed().AnyTimes().Return(closedCh).Do(func() {
-		// indicator this function has been called already
-		wg.Done()
+	// This tells the broker the subscriber is listening to all even types.
+	sub.EXPECT().Types().AnyTimes().Return(nil)
+	sub.EXPECT().SetID(1).Times(1)
+
+	subID := testedBroker.Subscribe(sub)
+	defer testedBroker.Unsubscribe(subID)
+	require.Equal(t, 1, subID)
+
+	// Then, we send an event that should be pushed since the subscriber is not
+	// closed and doesn't want this event to be skipped.
+	event1 := testedBroker.randomEvt()
+
+	notClosedCh := make(chan struct{})
+	defer close(notClosedCh)
+	dontSkipCh := make(chan struct{})
+	defer close(dontSkipCh)
+
+	// We configure the subscriber to tell the broker to push the event.
+	sub.EXPECT().Closed().Times(1).Return(notClosedCh)
+	sub.EXPECT().Skip().Times(1).Return(dontSkipCh)
+	sub.EXPECT().Push(event1).Times(1).Do(func(_ *evt) {
+		// When the event is pushed, we tell the test to continue.
+		waiter.Unblock()
 	})
-	// send an event, the subscriber should be marked as closed, and automatically unsubscribed
-	broker.Send(broker.randomEvt())
-	// introduce some wait mechanism here, because the unsubscribe call acquires its own lock now
-	// so it's possible we haven't unsubscribed yet... the waitgroup should introduce enough time
-	wg.Wait()
-	// now try and subscribe again, the key should be reused
-	sub.EXPECT().Ack().Times(1).Return(false)
-	k2 := broker.Subscribe(sub)
-	assert.Equal(t, k1, k2)
+
+	// We send the first event.
+	testedBroker.Send(event1)
+
+	// Let's wait for a signal.
+	if err := waiter.Wait(); err != nil {
+		t.Fatalf("Subscriber.Skip() was never called: %v", err)
+	}
+
+	// To finish, we send another event, but, this time, the subscriber is
+	// closed, so the broker does not push the event.
+	event2 := testedBroker.randomEvt()
+
+	sub.EXPECT().Closed().Times(1).DoAndReturn(func() <-chan struct{} {
+		iAmClosed := make(chan struct{})
+		// Returning a closed channel is how the subscriber notifies the broker
+		// it is closed.
+		close(iAmClosed)
+
+		// We warn the test the method we are expecting to be called has been
+		// called.
+		waiter.Unblock()
+		return iAmClosed
+	})
+	sub.EXPECT().Skip().AnyTimes().Return(dontSkipCh)
+	sub.EXPECT().Push(gomock.Any()).Times(0)
+
+	// We send the second event. It should be pushed.
+	testedBroker.Send(event2)
+
+	// Let's wait for a signal.
+	if err := waiter.Wait(); err != nil {
+		t.Fatalf("Subscriber.Skip() was never called: %v", err)
+	}
 }
 
 func testSendBatch(t *testing.T) {
@@ -526,8 +566,8 @@ func testStopCtxSendAgain(t *testing.T) {
 func testSkipSubscriberBasedOnChannelState(t *testing.T) {
 	t.Parallel()
 
-	broker := getBroker(t)
-	defer broker.Finish()
+	testedBroker := getBroker(t)
+	defer testedBroker.Finish()
 
 	// The Broker.Send() method launches a go routine. As a result, to control
 	// its state, we will use an unbuffered (blocking) channel to wait until
@@ -535,7 +575,7 @@ func testSkipSubscriberBasedOnChannelState(t *testing.T) {
 	waiter := newWaiter()
 
 	// First, we add the subscriber to the broker.
-	sub := mocks.NewMockSubscriber(broker.ctrl)
+	sub := mocks.NewMockSubscriber(testedBroker.ctrl)
 
 	// This tells the broker to treat the subscriber synchronously.
 	sub.EXPECT().Ack().Times(1).Return(true)
@@ -543,19 +583,19 @@ func testSkipSubscriberBasedOnChannelState(t *testing.T) {
 	sub.EXPECT().Types().AnyTimes().Return(nil)
 	sub.EXPECT().SetID(1).Times(1)
 
-	subID := broker.Subscribe(sub)
-	defer broker.Unsubscribe(subID)
+	subID := testedBroker.Subscribe(sub)
+	defer testedBroker.Unsubscribe(subID)
 	require.Equal(t, 1, subID)
 
 	// Then, we send an event that should be skipped since the subscriber tell
 	// us to do so.
-	event1 := broker.randomEvt()
+	event1 := testedBroker.randomEvt()
 
 	notClosedCh := make(chan struct{})
 	defer close(notClosedCh)
 
 	// We configure the subscriber to tell the broker to skip the sending.
-	sub.EXPECT().Closed().Times(1).Return(notClosedCh)
+	sub.EXPECT().Closed().AnyTimes().Return(notClosedCh)
 	sub.EXPECT().Skip().Times(1).DoAndReturn(func() <-chan struct{} {
 		skipMeCh := make(chan struct{})
 		// Returning a closed channel is how the subscriber notifies the broker
@@ -570,7 +610,7 @@ func testSkipSubscriberBasedOnChannelState(t *testing.T) {
 	sub.EXPECT().Push(event1).Times(0)
 
 	// We send the first event. It should be ignored.
-	broker.Send(event1)
+	testedBroker.Send(event1)
 
 	// Let's wait for a signal.
 	if err := waiter.Wait(); err != nil {
@@ -579,13 +619,13 @@ func testSkipSubscriberBasedOnChannelState(t *testing.T) {
 
 	// To finish, we send another event, but, this time, the subscriber doesn't
 	// want to skip it. So, it should be pushed.
-	event2 := broker.randomEvt()
+	event2 := testedBroker.randomEvt()
 
 	dontSkipCh := make(chan struct{})
 	defer close(dontSkipCh)
 
-	sub.EXPECT().Closed().Times(1).Return(notClosedCh)
-	sub.EXPECT().Skip().Times(1).Return(dontSkipCh)
+	sub.EXPECT().Closed().AnyTimes().Return(notClosedCh)
+	sub.EXPECT().Skip().AnyTimes().Return(dontSkipCh)
 	sub.EXPECT().Push(event2).Times(1).Do(func(_ ...events.Event) {
 		// We warn the test the method we are expecting to be called has been
 		// called.
@@ -593,7 +633,7 @@ func testSkipSubscriberBasedOnChannelState(t *testing.T) {
 	})
 
 	// We send the second event. It should be pushed.
-	broker.Send(event2)
+	testedBroker.Send(event2)
 
 	// Let's wait for a signal.
 	if err := waiter.Wait(); err != nil {
