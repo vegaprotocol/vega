@@ -73,6 +73,14 @@ func JoinConfigPathStr(p ConfigPath, elem ...string) string {
 }
 
 var (
+	// BlockExplorerConfigHome is the folder containing the configuration files
+	// used by the block explorer.
+	BlockExplorerConfigHome = ConfigPath("blockexplorer")
+
+	// BlockExplorerDefaultConfigFile is the default configuration file for the
+	// block explorer.
+	BlockExplorerDefaultConfigFile = JoinConfigPath(DataNodeConfigHome, "config.toml")
+
 	// DataNodeConfigHome is the folder containing the configuration files
 	// used by the node.
 	DataNodeConfigHome = ConfigPath("data-node")

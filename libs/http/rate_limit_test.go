@@ -17,7 +17,7 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/core/config/encoding"
+	"code.vegaprotocol.io/vega/libs/config/encoding"
 	vghttp "code.vegaprotocol.io/vega/libs/http"
 
 	"github.com/stretchr/testify/assert"

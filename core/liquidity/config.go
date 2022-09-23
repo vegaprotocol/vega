@@ -13,7 +13,7 @@
 package liquidity
 
 import (
-	cfgencoding "code.vegaprotocol.io/vega/core/config/encoding"
+	cfgencoding "code.vegaprotocol.io/vega/libs/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
 )
 

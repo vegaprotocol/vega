@@ -17,7 +17,7 @@ import (
 	"os"
 	"time"
 
-	"code.vegaprotocol.io/vega/core/config/encoding"
+	"code.vegaprotocol.io/vega/libs/config/encoding"
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	vghttp "code.vegaprotocol.io/vega/libs/http"
 	"code.vegaprotocol.io/vega/logging"
