@@ -1295,7 +1295,7 @@ func (t *tradingDataServiceV2) ListParties(ctx context.Context, in *v2.ListParti
 	}
 
 	resp := &v2.ListPartiesResponse{
-		Party: partyConnection,
+		Parties: partyConnection,
 	}
 	return resp, nil
 }

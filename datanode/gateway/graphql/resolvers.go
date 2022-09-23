@@ -3109,5 +3109,5 @@ func (r *myQueryResolver) PartiesConnection(ctx context.Context, id *string, pag
 		return nil, err
 	}
 
-	return resp.Party, nil
+	return resp.Parties, nil
 }
