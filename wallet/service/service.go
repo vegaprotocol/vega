@@ -953,7 +953,7 @@ func (s *Service) signTx(token string, w http.ResponseWriter, r *http.Request, _
 		s.policy.Report(SentTransaction{
 			Tx:     tx,
 			TxID:   txID,
-			Error:  err,
+			Error:  errors.New(resp.Data),
 			SentAt: sentAt,
 		})
 		s.writeTxError(w, resp)
