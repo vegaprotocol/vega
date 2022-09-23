@@ -4333,7 +4333,7 @@ type NodeSignatureEdge {
 "Connection type for retrieving cursor-based paginated node signature information"
 type NodeSignaturesConnection {
   "List of node signatures available for the connection"
-  edges: [NodeSignatureEdge]!
+  edges: [NodeSignatureEdge!]!
   "Page information for the connection"
   pageInfo: PageInfo!
 }
