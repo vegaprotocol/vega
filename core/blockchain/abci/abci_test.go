@@ -60,9 +60,8 @@ func newTestCodec() *testCodec {
 	}
 }
 
-func (c *testCodec) addTx(in []byte, tx abci.Tx) *testCodec {
+func (c *testCodec) addTx(in []byte, tx abci.Tx) {
 	c.txs[string(in)] = tx
-	return c
 }
 
 func (c *testCodec) Decode(in []byte, chainID string) (abci.Tx, error) {

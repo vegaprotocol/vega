@@ -32,7 +32,7 @@ func TestCollateralTransferFunds(t *testing.T) {
 }
 
 func testDistributeScheduleFunds(t *testing.T) {
-	e := getTestEngine(t, "test-market")
+	e := getTestEngine(t)
 	defer e.Finish()
 
 	party1 := "party1"
@@ -87,7 +87,7 @@ func testDistributeScheduleFunds(t *testing.T) {
 }
 
 func testTakeFromGeneralDoNotDistribute(t *testing.T) {
-	e := getTestEngine(t, "test-market")
+	e := getTestEngine(t)
 	defer e.Finish()
 
 	party1 := "party1"
@@ -159,7 +159,7 @@ func testTakeFromGeneralDoNotDistribute(t *testing.T) {
 }
 
 func testTransferFundsFromGeneralToGeneral(t *testing.T) {
-	e := getTestEngine(t, "test-market")
+	e := getTestEngine(t)
 	defer e.Finish()
 
 	party1 := "party1"
@@ -247,7 +247,7 @@ func testTransferFundsFromGeneralToGeneral(t *testing.T) {
 }
 
 func testTransferFundsFromGeneralToRewardPool(t *testing.T) {
-	e := getTestEngine(t, "test-market")
+	e := getTestEngine(t)
 	defer e.Finish()
 
 	party1 := "party1"
@@ -334,7 +334,7 @@ func testTransferFundsFromGeneralToRewardPool(t *testing.T) {
 }
 
 func testInvalidNumberOfParameters(t *testing.T) {
-	e := getTestEngine(t, "test-market")
+	e := getTestEngine(t)
 	defer e.Finish()
 
 	assert.Panics(t, func() {

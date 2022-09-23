@@ -264,7 +264,7 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, trades []*type
 	}
 	// market is not in auction, or in batch auction
 	if fba := as.IsFBA(); !as.InAuction() || fba {
-		bounds := e.checkBounds(ctx, trades)
+		bounds := e.checkBounds(trades)
 		// no bounds violations - update price, and we're done (unless we initialised as part of this call, then price has alrady been updated)
 		if len(bounds) == 0 {
 			if wasInitialised {
@@ -301,7 +301,7 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, trades []*type
 		return false
 	}
 
-	bounds := e.checkBounds(ctx, trades)
+	bounds := e.checkBounds(trades)
 	if len(bounds) == 0 {
 		// current auction is price monitoring
 		// check for end of auction, reset monitoring, and end auction
@@ -414,7 +414,7 @@ func (e *Engine) recordTimeChange(now time.Time) {
 }
 
 // checkBounds checks if the price is within price range for each of the bound and return trigger for each bound that it's not.
-func (e *Engine) checkBounds(ctx context.Context, trades []*types.Trade) []*types.PriceMonitoringTrigger {
+func (e *Engine) checkBounds(trades []*types.Trade) []*types.PriceMonitoringTrigger {
 	ret := []*types.PriceMonitoringTrigger{} // returned price projections, empty if all good
 	if len(trades) == 0 {
 		return ret // volume 0 so no bounds violated

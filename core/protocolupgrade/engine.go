@@ -137,7 +137,7 @@ func (e *Engine) IsValidProposal(ctx context.Context, pk string, upgradeBlockHei
 		return err
 	}
 
-	if semver.MustParse(e.currentVersion).GT(newv) {
+	if semver.MustParse(TrimReleaseTag(e.currentVersion)).GT(newv) {
 		return errors.New("upgrade version is too old")
 	}
 

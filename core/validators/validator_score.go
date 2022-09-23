@@ -30,7 +30,7 @@ type valScore struct {
 
 // getStakeScore returns a score for the validator based on their relative score of the total score.
 // No anti-whaling is applied.
-func getStakeScore(delegationState []*types.ValidatorData, minimumStake *num.Uint) map[string]num.Decimal {
+func getStakeScore(delegationState []*types.ValidatorData) map[string]num.Decimal {
 	totalStake := num.UintZero()
 	for _, ds := range delegationState {
 		totalStake.AddSum(num.Sum(ds.SelfStake, ds.StakeByDelegators))
@@ -92,7 +92,7 @@ func (t *Topology) getPerformanceScore(delegationState []*types.ValidatorData) m
 // getRankingScore returns the score for ranking as stake_score x performance_score.
 // for validators in ersatz or tendermint it is scaled by 1+incumbent factor.
 func (t *Topology) getRankingScore(delegationState []*types.ValidatorData) (map[string]num.Decimal, map[string]num.Decimal, map[string]num.Decimal) {
-	stakeScores := getStakeScore(delegationState, t.minimumStake)
+	stakeScores := getStakeScore(delegationState)
 	performanceScores := t.getPerformanceScore(delegationState)
 	rankingScores := t.getRankingScoreInternal(stakeScores, performanceScores)
 	return stakeScores, performanceScores, rankingScores

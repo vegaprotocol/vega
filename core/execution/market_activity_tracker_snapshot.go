@@ -142,7 +142,7 @@ func (mat *MarketActivityTracker) LoadState(ctx context.Context, p *types.Payloa
 	// see what we're reloading
 	switch pl := p.Data.(type) {
 	case *types.PayloadMarketActivityTracker:
-		mat.restore(ctx, pl.MarketActivityData)
+		mat.restore(pl.MarketActivityData)
 		var err error
 		mat.ss.changed = false
 		mat.ss.serialised, err = proto.Marshal(p.IntoProto())
@@ -188,7 +188,7 @@ func marketTrackerFromProto(data *checkpoint.MarketActivityTracker) *marketTrack
 	return mft
 }
 
-func (mat *MarketActivityTracker) restore(ctx context.Context, data *snapshot.MarketTracker) {
+func (mat *MarketActivityTracker) restore(data *snapshot.MarketTracker) {
 	for _, data := range data.MarketActivity {
 		mat.marketToTracker[data.Market] = marketTrackerFromProto(data)
 	}

@@ -61,6 +61,7 @@ func (b *OrderBook) getTotalBuyVolume() uint64 {
 	return volume
 }
 
+//nolint:unparam
 func (b *OrderBook) getVolumeAtLevel(price uint64, side types.Side) uint64 {
 	if side == types.SideBuy {
 		priceLevel := b.buy.getPriceLevel(num.NewUint(price))

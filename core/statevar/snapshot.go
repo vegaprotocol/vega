@@ -138,13 +138,13 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 	// see what we're reloading
 	switch pl := p.Data.(type) {
 	case *types.PayloadFloatingPointConsensus:
-		return nil, e.restore(ctx, pl.ConsensusData, p)
+		return nil, e.restore(pl.ConsensusData, p)
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
 }
 
-func (e *Engine) restore(ctx context.Context, nextTimeTrigger []*snapshot.NextTimeTrigger, p *types.Payload) error {
+func (e *Engine) restore(nextTimeTrigger []*snapshot.NextTimeTrigger, p *types.Payload) error {
 	e.log.Debug("restoring statevar snapshot", logging.Int("n_triggers", len(nextTimeTrigger)))
 	for _, data := range nextTimeTrigger {
 		e.readyForTimeTrigger[data.Asset+data.Market] = struct{}{}

@@ -142,6 +142,11 @@ func (r *VegaResolverRoot) Position() PositionResolver {
 	return (*myPositionResolver)(r)
 }
 
+// PositionUpdate returns the positionUpdate resolver.
+func (r *VegaResolverRoot) PositionUpdate() PositionUpdateResolver {
+	return (*positionUpdateResolver)(r)
+}
+
 // Party returns the parties resolver.
 func (r *VegaResolverRoot) Party() PartyResolver {
 	return (*myPartyResolver)(r)
@@ -2242,6 +2247,21 @@ func (r *myPriceLevelResolver) NumberOfOrders(ctx context.Context, obj *types.Pr
 
 // END: Price Level Resolver
 
+type positionUpdateResolver VegaResolverRoot
+
+func (r *positionUpdateResolver) OpenVolume(ctx context.Context, obj *types.Position) (string, error) {
+	return strconv.FormatInt(obj.OpenVolume, 10), nil
+}
+
+func (r *positionUpdateResolver) UpdatedAt(ctx context.Context, obj *types.Position) (*string, error) {
+	var updatedAt *string
+	if obj.UpdatedAt > 0 {
+		t := vegatime.Format(vegatime.UnixNano(obj.UpdatedAt))
+		updatedAt = &t
+	}
+	return updatedAt, nil
+}
+
 // BEGIN: Position Resolver
 
 type myPositionResolver VegaResolverRoot
@@ -2812,20 +2832,16 @@ func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEvent
 		}()
 
 		if batchSize == 0 {
-			r.busEvents(ctx, stream, out)
+			r.busEvents(stream, out)
 		} else {
-			r.busEventsWithBatch(ctx, int64(batchSize), stream, out)
+			r.busEventsWithBatch(int64(batchSize), stream, out)
 		}
 	}()
 
 	return out, nil
 }
 
-func (r *mySubscriptionResolver) busEvents(
-	ctx context.Context,
-	stream v2.TradingDataService_ObserveEventBusClient,
-	out chan []*BusEvent,
-) {
+func (r *mySubscriptionResolver) busEvents(stream v2.TradingDataService_ObserveEventBusClient, out chan []*BusEvent) {
 	for {
 		// receive batch
 		data, err := stream.Recv()
@@ -2841,12 +2857,7 @@ func (r *mySubscriptionResolver) busEvents(
 	}
 }
 
-func (r *mySubscriptionResolver) busEventsWithBatch(
-	ctx context.Context,
-	batchSize int64, // always non-0 here
-	stream v2.TradingDataService_ObserveEventBusClient,
-	out chan []*BusEvent,
-) {
+func (r *mySubscriptionResolver) busEventsWithBatch(batchSize int64, stream v2.TradingDataService_ObserveEventBusClient, out chan []*BusEvent) {
 	poll := &protoapi.ObserveEventBusRequest{
 		BatchSize: batchSize,
 	}

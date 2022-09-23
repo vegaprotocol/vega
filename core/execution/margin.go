@@ -97,7 +97,7 @@ func (m *Market) calcMargins(ctx context.Context, pos *positions.MarketPosition,
 	return m.margins(ctx, pos, order)
 }
 
-func (m *Market) updateMargin(ctx context.Context, pos []events.MarketPosition) ([]events.Risk, error) {
+func (m *Market) updateMargin(ctx context.Context, pos []events.MarketPosition) []events.Risk {
 	price := m.getCurrentMarkPrice()
 	asset, _ := m.mkt.GetAsset()
 	mID := m.GetID()
@@ -116,7 +116,7 @@ func (m *Market) updateMargin(ctx context.Context, pos []events.MarketPosition) 
 	}
 	// we should get any and all risk events we need here
 	risk := m.risk.UpdateMarginsOnSettlement(ctx, margins, price)
-	return risk, nil
+	return risk
 }
 
 func (m *Market) marginsAuction(ctx context.Context, order *types.Order) ([]events.Risk, []events.MarketPosition, error) {

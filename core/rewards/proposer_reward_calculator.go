@@ -15,12 +15,11 @@ package rewards
 import (
 	"time"
 
-	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 )
 
 // calculateRewardForProposers calculates the reward given to proposers of markets that crossed the trading threshold for the first time.
-func calculateRewardForProposers(epochSeq, asset, accountID string, rewardType types.AccountType, balance *num.Uint, proposer string, timestamp time.Time) *payout {
+func calculateRewardForProposers(epochSeq, asset, accountID string, balance *num.Uint, proposer string, timestamp time.Time) *payout {
 	if balance.IsZero() || balance.IsNegative() {
 		return nil
 	}

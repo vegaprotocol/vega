@@ -595,7 +595,7 @@ func (e *Engine) FinalSettlement(ctx context.Context, marketID string, transfers
 			break
 		}
 
-		req, err := e.getTransferRequest(ctx, transfer, settle, insurance, &marginUpdate{})
+		req, err := e.getTransferRequest(transfer, settle, insurance, &marginUpdate{})
 		if err != nil {
 			e.log.Error(
 				"Failed to build transfer request for event",
@@ -700,7 +700,7 @@ func (e *Engine) FinalSettlement(ctx context.Context, marketID string, transfers
 			continue
 		}
 
-		req, err := e.getTransferRequest(ctx, transfer, settle, insurance, &marginUpdate{})
+		req, err := e.getTransferRequest(transfer, settle, insurance, &marginUpdate{})
 		if err != nil {
 			e.log.Error(
 				"Failed to build transfer request for event",
@@ -822,7 +822,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 			break
 		}
 
-		req, err := e.getTransferRequest(ctx, transfer, settle, insurance, marginEvt)
+		req, err := e.getTransferRequest(transfer, settle, insurance, marginEvt)
 		if err != nil {
 			e.log.Error(
 				"Failed to build transfer request for event",
@@ -959,7 +959,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 			}
 		}
 
-		req, err := e.getTransferRequest(ctx, transfer, settle, insurance, marginEvt)
+		req, err := e.getTransferRequest(transfer, settle, insurance, marginEvt)
 		if err != nil {
 			e.log.Error(
 				"Failed to build transfer request for event",
@@ -1064,7 +1064,7 @@ func (e *Engine) MarginUpdate(ctx context.Context, marketID string, updates []ev
 			marginShortFall: num.UintZero(),
 		}
 
-		req, err := e.getTransferRequest(ctx, transfer, settle, nil, mevt)
+		req, err := e.getTransferRequest(transfer, settle, nil, mevt)
 		if err != nil {
 			return nil, nil, nil, err
 		}
@@ -1213,12 +1213,11 @@ func (e *Engine) TransferFunds(
 		transfer, accType := allTransfers[i], allAccountTypes[i]
 		switch allTransfers[i].Type {
 		case types.TransferTypeInfrastructureFeePay:
-			req, err = e.getTransferFundsFeesTransferRequest(ctx, transfer, accType)
+			req, err = e.getTransferFundsFeesTransferRequest(transfer, accType)
 
 		case types.TransferTypeTransferFundsDistribute,
 			types.TransferTypeTransferFundsSend:
-			req, err = e.getTransferFundsTransferRequest(
-				ctx, transfer, accType, references[i])
+			req, err = e.getTransferFundsTransferRequest(ctx, transfer, accType)
 
 		default:
 			e.log.Panic("unsupported transfer type",
@@ -1301,7 +1300,7 @@ func (e *Engine) MarginUpdateOnOrder(ctx context.Context, marketID string, updat
 		marginShortFall: num.UintZero(),
 	}
 
-	req, err := e.getTransferRequest(ctx, transfer, settle, nil, &mevt)
+	req, err := e.getTransferRequest(transfer, settle, nil, &mevt)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1503,12 +1502,7 @@ func (e *Engine) getBondTransferRequest(t *types.Transfer, market string) (*type
 	}
 }
 
-func (e *Engine) getTransferFundsTransferRequest(
-	ctx context.Context,
-	t *types.Transfer,
-	accountType types.AccountType,
-	reference string,
-) (*types.TransferRequest, error) {
+func (e *Engine) getTransferFundsTransferRequest(ctx context.Context, t *types.Transfer, accountType types.AccountType) (*types.TransferRequest, error) {
 	var (
 		fromAcc, toAcc *types.Account
 		err            error
@@ -1588,11 +1582,7 @@ func (e *Engine) getTransferFundsTransferRequest(
 	}, nil
 }
 
-func (e *Engine) getTransferFundsFeesTransferRequest(
-	ctx context.Context,
-	t *types.Transfer,
-	accountType types.AccountType,
-) (*types.TransferRequest, error) {
+func (e *Engine) getTransferFundsFeesTransferRequest(t *types.Transfer, accountType types.AccountType) (*types.TransferRequest, error) {
 	// only type supported here
 	if t.Type != types.TransferTypeInfrastructureFeePay {
 		return nil, errors.New("only infrastructure fee distribute type supported")
@@ -1641,7 +1631,7 @@ func (e *Engine) getTransferFundsFeesTransferRequest(
 }
 
 // getTransferRequest builds the request, and sets the required accounts based on the type of the Transfer argument.
-func (e *Engine) getTransferRequest(ctx context.Context, p *types.Transfer, settle, insurance *types.Account, mEvt *marginUpdate) (*types.TransferRequest, error) {
+func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.Account, mEvt *marginUpdate) (*types.TransferRequest, error) {
 	var (
 		asset = p.Amount.Asset
 		err   error
@@ -2468,7 +2458,7 @@ func (e *Engine) Withdraw(ctx context.Context, partyID, asset string, amount *nu
 	mEvt := marginUpdate{
 		general: acc,
 	}
-	req, err := e.getTransferRequest(ctx, &transf, nil, nil, &mEvt)
+	req, err := e.getTransferRequest(&transf, nil, nil, &mEvt)
 	if err != nil {
 		return nil, err
 	}
@@ -2572,7 +2562,7 @@ func (e *Engine) Deposit(ctx context.Context, partyID, asset string, amount *num
 		general: acc,
 	}
 
-	req, err := e.getTransferRequest(ctx, &transf, nil, nil, &mEvt)
+	req, err := e.getTransferRequest(&transf, nil, nil, &mEvt)
 	if err != nil {
 		return nil, err
 	}

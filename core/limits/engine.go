@@ -146,7 +146,7 @@ func (e *Engine) OnLimitsProposeAssetEnabledFromUpdate(ctx context.Context, date
 		}
 	}
 
-	e.onUpdate(ctx, e.timeService.GetTimeNow())
+	e.onUpdate(e.timeService.GetTimeNow())
 	e.sendEvent(ctx)
 
 	return nil
@@ -159,10 +159,10 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 			e.sendEvent(ctx)
 		}
 	}()
-	e.onUpdate(ctx, t)
+	e.onUpdate(t)
 }
 
-func (e *Engine) onUpdate(ctx context.Context, t time.Time) {
+func (e *Engine) onUpdate(t time.Time) {
 	//  if propose market enabled in genesis
 	if e.proposeMarketEnabled {
 		// we can propose a market and a new date have been set in the future

@@ -45,7 +45,7 @@ func TestStakingRewards(t *testing.T) {
 
 func testCalcRewardNoBalance(t *testing.T) {
 	delegatorShare, _ := num.DecimalFromString("0.3")
-	res := calculateRewardsByStake("1", "asset", "rewardsAccountID", num.UintZero(), map[string]num.Decimal{}, []*types.ValidatorData{}, delegatorShare, num.UintZero(), num.UintZero(), rng, logging.NewTestLogger())
+	res := calculateRewardsByStake("1", "asset", "rewardsAccountID", num.UintZero(), map[string]num.Decimal{}, []*types.ValidatorData{}, delegatorShare, num.UintZero(), rng, logging.NewTestLogger())
 	require.Equal(t, num.UintZero(), res.totalReward)
 	require.Equal(t, 0, len(res.partyToAmount))
 }
@@ -58,12 +58,12 @@ func testCalcRewardsZeroScores(t *testing.T) {
 	scores["node3"] = num.DecimalZero()
 	scores["node4"] = num.DecimalZero()
 
-	res := calculateRewardsByStake("1", "asset", "rewardsAccountID", num.NewUint(100000), scores, []*types.ValidatorData{}, delegatorShare, num.UintZero(), num.UintZero(), rng, logging.NewTestLogger())
+	res := calculateRewardsByStake("1", "asset", "rewardsAccountID", num.NewUint(100000), scores, []*types.ValidatorData{}, delegatorShare, num.UintZero(), rng, logging.NewTestLogger())
 	require.Equal(t, num.UintZero(), res.totalReward)
 	require.Equal(t, 0, len(res.partyToAmount))
 }
 
-//nolint
+// nolint
 func testCalcRewardsMaxPayoutRepsected(t *testing.T, maxPayout *num.Uint) {
 	delegatorShare, _ := num.DecimalFromString("0.3")
 	ctrl := gomock.NewController(t)
@@ -110,7 +110,7 @@ func testCalcRewardsMaxPayoutRepsected(t *testing.T, maxPayout *num.Uint) {
 
 	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
 	valScores := map[string]num.Decimal{"node1": num.DecimalFromFloat(0.25), "node2": num.DecimalFromFloat(0.5), "node3": num.DecimalFromFloat(0.25), "node4": num.DecimalZero()}
-	res := calculateRewardsByStake("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, maxPayout, num.UintZero(), rng, logging.NewTestLogger())
+	res := calculateRewardsByStake("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, maxPayout, rng, logging.NewTestLogger())
 
 	// the normalised scores are as follows (from the test above)
 	// node1 - 0.25
@@ -199,7 +199,7 @@ func testCalcRewardSmallMaxPayoutBreached(t *testing.T) {
 
 	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
 	valScores := map[string]num.Decimal{"node1": num.DecimalFromFloat(0.2), "node2": num.DecimalFromFloat(0.4), "node3": num.DecimalFromFloat(0.4), "node4": num.DecimalZero()}
-	res := calculateRewardsByStake("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, num.NewUint(20000), num.UintZero(), rng, logging.NewTestLogger())
+	res := calculateRewardsByStake("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, num.NewUint(20000), rng, logging.NewTestLogger())
 
 	// the normalised scores are as follows (from the test above)
 	// node1 - 0.2
@@ -280,7 +280,7 @@ func testCalcRewardsMaxPayoutBreachedPartyCanTakeMore(t *testing.T) {
 	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
 
 	valScores := map[string]num.Decimal{"node1": num.DecimalFromFloat(0.25), "node2": num.DecimalFromFloat(0.5), "node3": num.DecimalFromFloat(0.25), "node4": num.DecimalZero()}
-	res := calculateRewardsByStake("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, num.NewUint(40000), num.UintZero(), rng, logging.NewTestLogger())
+	res := calculateRewardsByStake("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, num.NewUint(40000), rng, logging.NewTestLogger())
 
 	// the normalised scores are as follows (from the test above)
 	// node1 - 0.25
@@ -372,7 +372,7 @@ func testEarlyStopCalcRewardsMaxPayoutBreachedPartyCanTakeMore(t *testing.T) {
 
 	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
 	valScores := map[string]num.Decimal{"node1": num.DecimalFromFloat(0.25), "node2": num.DecimalFromFloat(0.5), "node3": num.DecimalFromFloat(0.25), "node4": num.DecimalZero()}
-	res := calculateRewardsByStake("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, num.NewUint(1000000000), num.UintZero(), rng, logging.NewTestLogger())
+	res := calculateRewardsByStake("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, num.NewUint(1000000000), rng, logging.NewTestLogger())
 
 	// 0.1% of 1000000000 = 1000000 - this test is demonstrating that regardless of the remaining balance to give to delegators is less than 0.1% of the max
 	// payout per participant, we still run one round and then stop.

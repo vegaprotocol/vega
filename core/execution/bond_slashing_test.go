@@ -28,6 +28,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+//nolint:unparam
 func setMarkPrice(t *testing.T, mkt *testMarket, duration *types.AuctionDuration, now time.Time, price uint64) {
 	t.Helper()
 	// all parties

@@ -26,7 +26,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func getMarket(closingAt time.Time, openingAuctionDuration *types.AuctionDuration) types.Market {
+func getMarket(openingAuctionDuration *types.AuctionDuration) types.Market {
 	mkt := types.Market{
 		Fees: &types.Fees{
 			Factors: &types.FeeFactors{
@@ -93,7 +93,7 @@ func createAuctionState() *monitor.AuctionState {
 		Duration: 100,
 		Volume:   100,
 	}
-	mktCfg := getMarket(time.Now(), ad)
+	mktCfg := getMarket(ad)
 	return monitor.NewAuctionState(&mktCfg, time.Now())
 }
 
@@ -121,7 +121,7 @@ func TestEmpty(t *testing.T) {
 		Duration: 100,
 		Volume:   100,
 	}
-	mktCfg := getMarket(time.Now(), ad)
+	mktCfg := getMarket(ad)
 	as2 := monitor.NewAuctionStateFromSnapshot(&mktCfg, state1)
 
 	// Check the new hash matches the old hash

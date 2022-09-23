@@ -120,7 +120,7 @@ func (opts *InitCmd) Execute(args []string) error {
 		tmCfg := tmcfg.DefaultConfig()
 		tmCfg.SetRoot(os.ExpandEnv(initCmd.TendermintHome))
 		tmcfg.EnsureRoot(tmCfg.RootDir)
-		if err := initTendermintConfiguration(output, logger, tmCfg, initCmd.TendermintKey); err != nil {
+		if err := initTendermintConfiguration(output, logger, tmCfg); err != nil {
 			return fmt.Errorf("couldn't initialise tendermint %w", err)
 		}
 	}
@@ -145,12 +145,7 @@ func (opts *InitCmd) Execute(args []string) error {
 	return nil
 }
 
-func initTendermintConfiguration(
-	output config.Output,
-	logger *logging.Logger,
-	config *tmcfg.Config,
-	keyType string,
-) error {
+func initTendermintConfiguration(output config.Output, logger *logging.Logger, config *tmcfg.Config) error {
 	// private validator
 	privValKeyFile := config.PrivValidatorKeyFile()
 	privValStateFile := config.PrivValidatorStateFile()

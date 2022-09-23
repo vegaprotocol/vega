@@ -257,7 +257,7 @@ func (e *Engine) preEnactProposal(ctx context.Context, p *proposal) (te *ToEnact
 	case types.ProposalTermsTypeNewFreeform:
 		te.f = &ToEnactFreeform{}
 	}
-	return // nolint:nakedret
+	return //nolint:nakedret
 }
 
 func (e *Engine) preVoteClosedProposal(p *proposal) *VoteClosed {

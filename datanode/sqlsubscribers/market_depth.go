@@ -42,12 +42,12 @@ func (m *MarketDepth) Types() []events.Type {
 	return []events.Type{events.OrderEvent}
 }
 
-func (m *MarketDepth) Push(ctx context.Context, evt events.Event) error {
-	m.consume(ctx, evt.(OrderEvent))
+func (m *MarketDepth) Push(_ context.Context, evt events.Event) error {
+	m.consume(evt.(OrderEvent))
 	return nil
 }
 
-func (m *MarketDepth) consume(ctx context.Context, event OrderEvent) {
+func (m *MarketDepth) consume(event OrderEvent) {
 	order, err := types.OrderFromProto(event.Order())
 	if err != nil {
 		panic(err)

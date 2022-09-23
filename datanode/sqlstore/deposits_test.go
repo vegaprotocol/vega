@@ -14,6 +14,7 @@ package sqlstore_test
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"strconv"
 	"testing"
@@ -21,6 +22,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/protos/vega"
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgx/v4"
@@ -28,10 +30,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	testID     = "deadbeef"
-	testAmount = "1000"
-)
+const testAmount = "1000"
+
+var testID = hex.EncodeToString([]byte(vgrand.RandomStr(5)))
 
 func TestDeposits(t *testing.T) {
 	t.Run("Upsert should insert deposits if one doesn't exist for the block", testAddDepositForNewBlock)

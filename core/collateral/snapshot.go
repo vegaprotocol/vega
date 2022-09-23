@@ -73,7 +73,7 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 	// see what we're reloading
 	switch pl := p.Data.(type) {
 	case *types.PayloadCollateralAssets:
-		err := e.restoreAssets(ctx, pl.CollateralAssets, p)
+		err := e.restoreAssets(pl.CollateralAssets, p)
 		return nil, err
 	case *types.PayloadCollateralAccounts:
 		err := e.restoreAccounts(ctx, pl.CollateralAccounts, p)
@@ -116,7 +116,7 @@ func (e *Engine) restoreAccounts(ctx context.Context, accs *types.CollateralAcco
 	return err
 }
 
-func (e *Engine) restoreAssets(ctx context.Context, assets *types.CollateralAssets, p *types.Payload) error {
+func (e *Engine) restoreAssets(assets *types.CollateralAssets, p *types.Payload) error {
 	// @TODO the ID and name might not be the same, perhaps we need
 	// to wrap the asset details to preserve that data
 	e.log.Debug("restoring assets snapshot", logging.Int("n_assets", len(assets.Assets)))
