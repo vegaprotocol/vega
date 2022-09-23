@@ -13638,7 +13638,7 @@ type NodeSignatureEdge {
 "Connection type for retrieving cursor-based paginated node signature information"
 type NodeSignaturesConnection {
   "List of node signatures available for the connection"
-  edges: [NodeSignatureEdge]
+  edges: [NodeSignatureEdge!]!
   "Page information for the connection"
   pageInfo: PageInfo!
 }
@@ -30665,11 +30665,14 @@ func (ec *executionContext) _NodeSignaturesConnection_edges(ctx context.Context,
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.([]*v2.NodeSignatureEdge)
 	fc.Result = res
-	return ec.marshalONodeSignatureEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodeSignatureEdge(ctx, field.Selections, res)
+	return ec.marshalNNodeSignatureEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodeSignatureEdgeᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _NodeSignaturesConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.NodeSignaturesConnection) (ret graphql.Marshaler) {
@@ -57715,6 +57718,9 @@ func (ec *executionContext) _NodeSignaturesConnection(ctx context.Context, sel a
 
 			out.Values[i] = innerFunc(ctx)
 
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "pageInfo":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._NodeSignaturesConnection_pageInfo(ctx, field, obj)
@@ -68552,6 +68558,60 @@ func (ec *executionContext) marshalNNodeSignature2ᚖcodeᚗvegaprotocolᚗioᚋ
 	return ec._NodeSignature(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNNodeSignatureEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodeSignatureEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*v2.NodeSignatureEdge) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNNodeSignatureEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodeSignatureEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNNodeSignatureEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodeSignatureEdge(ctx context.Context, sel ast.SelectionSet, v *v2.NodeSignatureEdge) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._NodeSignatureEdge(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNNodeStatus2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐNodeStatus(ctx context.Context, v interface{}) (vega.NodeStatus, error) {
 	res, err := marshallers.UnmarshalNodeStatus(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -72150,54 +72210,6 @@ func (ec *executionContext) marshalONodeSignature2ᚕᚖcodeᚗvegaprotocolᚗio
 	}
 
 	return ret
-}
-
-func (ec *executionContext) marshalONodeSignatureEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodeSignatureEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.NodeSignatureEdge) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalONodeSignatureEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodeSignatureEdge(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	return ret
-}
-
-func (ec *executionContext) marshalONodeSignatureEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodeSignatureEdge(ctx context.Context, sel ast.SelectionSet, v *v2.NodeSignatureEdge) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._NodeSignatureEdge(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalONodeSignatureKind2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋcommandsᚋv1ᚐNodeSignatureKind(ctx context.Context, v interface{}) (v11.NodeSignatureKind, error) {
