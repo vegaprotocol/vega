@@ -15,11 +15,14 @@ package sqlstore
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	"code.vegaprotocol.io/vega/protos/vega"
 	"github.com/georgysavva/scany/pgxscan"
+	"github.com/shopspring/decimal"
 )
 
 var aggregateBalancesOrdering = TableOrdering{
@@ -153,13 +156,53 @@ func (bs *Balances) Query(filter entities.AccountFilter, groupBy []entities.Acco
 	}
 	defer rows.Close()
 
-	res := []entities.AggregatedBalance{}
+	// Scany won't let us scan strings to a pointer field, so we use an anonymous struct
+	// here to work around that.
+	results := []struct {
+		VegaTime  time.Time
+		Balance   decimal.Decimal
+		AccountID int64
+		PartyID   entities.PartyID
+		AssetID   entities.AssetID
+		MarketID  entities.MarketID
+		Type      *vega.AccountType
+	}{}
 
-	if err = pgxscan.ScanAll(&res, rows); err != nil {
+	if err = pgxscan.ScanAll(&results, rows); err != nil {
 		return nil, pageInfo, fmt.Errorf("scanning balances: %w", err)
 	}
 
-	res, pageInfo = entities.PageEntities[*v2.AggregatedBalanceEdge](res, pagination)
+	balances := []entities.AggregatedBalance{}
+	for _, res := range results {
+		bal := entities.AggregatedBalance{
+			VegaTime: res.VegaTime,
+			Balance:  res.Balance,
+			Type:     res.Type,
+		}
+		if res.AccountID != 0 {
+			bal.AccountID = &res.AccountID
+		}
 
-	return &res, pageInfo, nil
+		if res.PartyID != "" {
+			bal.PartyID = &res.PartyID
+		}
+
+		if res.AssetID != "" {
+			bal.AssetID = &res.AssetID
+		}
+
+		if res.MarketID != "" {
+			bal.MarketID = &res.MarketID
+		}
+
+		if res.AssetID != "" {
+			bal.AssetID = &res.AssetID
+		}
+
+		balances = append(balances, bal)
+	}
+
+	balances, pageInfo = entities.PageEntities[*v2.AggregatedBalanceEdge](balances, pagination)
+
+	return &balances, pageInfo, nil
 }

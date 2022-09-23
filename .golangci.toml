@@ -1,7 +1,7 @@
 [run]
 allow-parallel-runners = true
 print-linter-name = true
-timeout = '5m0s'
+timeout = '15m0s'
 skip-dirs = [
     'protos',
 ]
