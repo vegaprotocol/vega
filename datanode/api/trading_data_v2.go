@@ -2218,7 +2218,7 @@ func (t *tradingDataServiceV2) ListNodeSignatures(ctx context.Context, req *v2.L
 
 	sigs, pageInfo, err := t.notaryService.GetByResourceID(ctx, req.Id, pagination)
 	if err != nil {
-		return nil, apiError(codes.NotFound, err)
+		return nil, fmt.Errorf("could not retrieve resource: %w", err)
 	}
 
 	edges, err := makeEdges[*v2.NodeSignatureEdge](sigs)

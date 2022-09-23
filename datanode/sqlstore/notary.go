@@ -66,8 +66,15 @@ func (n *Notary) GetByResourceID(ctx context.Context, id string, pagination enti
 		ns       []entities.NodeSignature
 	)
 
+	resourceID := entities.NodeSignatureID(id)
+	// make sure the resourceID is valid HexID
+	err = resourceID.Error()
+	if err != nil {
+		return nil, pageInfo, err
+	}
+
 	query := fmt.Sprintf(`SELECT resource_id, sig, kind, tx_hash, vega_time FROM node_signatures where resource_id=%s`,
-		nextBindVar(&args, entities.NodeID(id)))
+		nextBindVar(&args, entities.NodeSignatureID(id)))
 	query, args, err = PaginateQuery[entities.NodeSignatureCursor](query, args, notaryOrdering, pagination)
 	if err != nil {
 		return ns, pageInfo, err

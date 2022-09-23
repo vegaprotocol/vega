@@ -49,6 +49,7 @@
 - [6061](https://github.com/vegaprotocol/vega/issues/6061) - Attempt at stabilizing the tests on the broker in the core
 - [6178](https://github.com/vegaprotocol/vega/issues/6178) - Historical balances fails with `scany` error
 - [6193](https://github.com/vegaprotocol/vega/issues/6193) - Use Data field from transaction successfully sent but that were rejected
+- [6230](https://github.com/vegaprotocol/vega/issues/6230) - Node Signature Connection should return a list or an appropriate error message
 
 ## 0.55.0
 
