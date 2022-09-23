@@ -201,9 +201,7 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 
 	// Start the gRPC server, then wait for it to be ready.
 	go func() {
-		if err := g.Start(ctx, lis); err != nil {
-			t.Logf("coud not start the gRPC server: %v", err)
-		}
+		_ = g.Start(ctx, lis)
 	}()
 
 	conn, err = grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(ctxDialer), grpc.WithInsecure())
