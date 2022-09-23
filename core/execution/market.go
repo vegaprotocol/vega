@@ -2654,12 +2654,7 @@ func (m *Market) amendOrder(
 			}
 			// we were parked, need to unpark
 			m.peggedOrders.Unpark(amendedOrder.ID)
-			orderConf, orderUpdts, err := m.submitValidatedOrder(ctx, amendedOrder)
-			if err != nil {
-				// If we cannot submit a new order then the amend has failed, return the error
-				return nil, orderUpdts, err
-			}
-			return orderConf, orderUpdts, err
+			return m.submitValidatedOrder(ctx, amendedOrder)
 		}
 	}
 
@@ -2734,6 +2729,13 @@ func (m *Market) amendOrder(
 	if m.log.GetLevel() == logging.DebugLevel {
 		m.log.Debug("Order amendment not allowed", logging.Order(*existingOrder))
 	}
+
+	// for some reason, we got here without doing anything to the order,
+	// or we would have returned earlier.
+	// should we panic, as that doesn't seems right,
+	// or just update back the position?
+	_ = m.position.AmendOrder(ctx, amendedOrder, existingOrder)
+
 	return nil, nil, types.ErrEditNotAllowed
 }
 
