@@ -130,6 +130,7 @@ const (
 	BeginBlockEvent
 	EndBlockEvent
 	ProtocolUpgradeStartedEvent
+	SettleMarketEvent
 )
 
 var (
@@ -194,6 +195,7 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_BEGIN_BLOCK:                    BeginBlockEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_END_BLOCK:                      EndBlockEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_PROTOCOL_UPGRADE_STARTED:       ProtocolUpgradeStartedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_SETTLE_MARKET:                  SettleMarketEvent,
 
 		// If adding a type here, please also add it to data-node/broker/convert.go
 	}
@@ -250,6 +252,7 @@ var (
 		BeginBlockEvent:                 eventspb.BusEventType_BUS_EVENT_TYPE_BEGIN_BLOCK,
 		EndBlockEvent:                   eventspb.BusEventType_BUS_EVENT_TYPE_END_BLOCK,
 		ProtocolUpgradeStartedEvent:     eventspb.BusEventType_BUS_EVENT_TYPE_PROTOCOL_UPGRADE_STARTED,
+		SettleMarketEvent:               eventspb.BusEventType_BUS_EVENT_TYPE_SETTLE_MARKET,
 	}
 
 	eventStrings = map[Type]string{
@@ -304,7 +307,8 @@ var (
 		ProtocolUpgradeEvent:            "ProtocolUpgradeEvent",
 		BeginBlockEvent:                 "BeginBlockEvent",
 		EndBlockEvent:                   "EndBlockEvent",
-		ProtocolUpgradeStartedEvent:     "ProtocolUpgradeSartedEvent",
+		ProtocolUpgradeStartedEvent:     "ProtocolUpgradeStartedEvent",
+		SettleMarketEvent:               "SettleMarketEvent",
 	}
 )
 
