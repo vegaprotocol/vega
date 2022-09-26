@@ -2932,6 +2932,7 @@ func (m *Market) orderAmendInPlace(
 		// panic here, no good reason for a failure at this point
 		m.log.Panic("Failure after amend order from matching engine (amend-in-place)",
 			logging.OrderWithTag(*amendOrder, "new-order"),
+			logging.OrderWithTag(*originalOrder, "old-order"),
 			logging.Error(err))
 	}
 
