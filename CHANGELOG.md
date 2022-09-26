@@ -12,6 +12,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🐛 Fixes
+- [6296](https://github.com/vegaprotocol/vega/issues/6296) - Add `assetId` as a field to the `GraphQL UpdateAsset` type
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 
