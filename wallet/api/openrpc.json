@@ -948,50 +948,6 @@
       ]
     },
     {
-      "name": "admin.remove_network",
-      "summary": "Removes a network from the computer.",
-      "description": "This method removes a network from the computer.",
-      "tags": [
-        {
-          "name": "admin"
-        },
-        {
-          "name": "network"
-        }
-      ],
-      "paramStructure": "by-name",
-      "params": [
-        {
-          "name": "network",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "result": {
-        "name": "Success",
-        "schema": {
-          "type": "null"
-        }
-      },
-      "examples": [
-        {
-          "name": "Remove a network",
-          "params": [
-            {
-              "name": "network",
-              "value": "fairground"
-            }
-          ],
-          "result": {
-            "name": "Success",
-            "value": {}
-          }
-        }
-      ]
-    },
-    {
       "name": "admin.list_networks",
       "summary": "Returns the list of all registered networks.",
       "description": "This method returns the list of the registered networks.",
@@ -1060,8 +1016,8 @@
             "name": {
               "type": "string"
             },
-            "level": {
-              "type": "number"
+            "logLevel": {
+              "type": "string"
             },
             "tokenExpiry": {
               "type": "string"
@@ -1114,6 +1070,166 @@
                 }
               }
             }
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin.update_network",
+      "summary": "Update an existing network.",
+      "description": "This method updates the network configuration.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "network"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "name",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "logLevel",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "tokenExpiry",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "port",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          }
+        },
+        {
+          "name": "host",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "api",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/network_api_config"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "null"
+        }
+      },
+      "examples": [
+        {
+          "name": "Update a network",
+          "params": [
+            {
+              "name": "name",
+              "value": "local-network"
+            },
+            {
+              "name": "level",
+              "value": "info"
+            },
+            {
+              "name": "tokenExpiry",
+              "value": "168h0m0s"
+            },
+            {
+              "name": "port",
+              "value": "1789"
+            },
+            {
+              "name": "host",
+              "value": "localhost"
+            },
+            {
+              "name": "api",
+              "value": {
+                "grpcConfig": {
+                  "hosts": [
+                    "localhost:3028"
+                  ],
+                  "retries": 5
+                },
+                "graphQLConfig": {
+                  "hosts": [
+                    "localhost:3028"
+                  ]
+                },
+                "restConfig": {
+                  "hosts": [
+                    "localhost:3029"
+                  ]
+                }
+              }
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": {}
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin.remove_network",
+      "summary": "Removes a network from the computer.",
+      "description": "This method removes a network from the computer.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "network"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "network",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "null"
+        }
+      },
+      "examples": [
+        {
+          "name": "Remove a network",
+          "params": [
+            {
+              "name": "network",
+              "value": "fairground"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": {}
           }
         }
       ]
