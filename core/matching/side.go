@@ -160,7 +160,7 @@ func (s *OrderBookSide) amendOrder(orderAmend *types.Order) (uint64, error) {
 		return 0, types.ErrOrderAmendFailure
 	}
 
-	if oldOrder.Size != orderAmend.Size &&
+	if oldOrder.Size < orderAmend.Size &&
 		oldOrder.Remaining < orderAmend.Size {
 		return 0, types.ErrOrderAmendFailure
 	}
@@ -169,7 +169,7 @@ func (s *OrderBookSide) amendOrder(orderAmend *types.Order) (uint64, error) {
 		return 0, types.ErrOrderAmendFailure
 	}
 
-	reduceBy := oldOrder.Remaining - orderAmend.Size
+	reduceBy := oldOrder.Remaining - orderAmend.Remaining
 	s.levels[priceLevelIndex].orders[orderIndex] = orderAmend
 	s.levels[priceLevelIndex].reduceVolume(reduceBy)
 	return reduceBy, nil
