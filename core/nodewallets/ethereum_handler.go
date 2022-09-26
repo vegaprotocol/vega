@@ -48,12 +48,12 @@ func GetEthereumWalletWithRegistry(config eth.Config, vegaPaths paths.Paths, reg
 	case registry.EthereumClefWallet:
 		ethAddress := ethcommon.HexToAddress(walletRegistry.AccountAddress)
 
-		client, err := rpc.Dial(config.ClefAddress)
+		client, err := rpc.Dial(walletRegistry.ClefAddress)
 		if err != nil {
 			return nil, fmt.Errorf("failed to dial Clef daemon: %w", err)
 		}
 
-		w, err := clef.NewWallet(client, config.ClefAddress, ethAddress)
+		w, err := clef.NewWallet(client, walletRegistry.ClefAddress, ethAddress)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't initialise Ethereum Clef node wallet: %w", err)
 		}
