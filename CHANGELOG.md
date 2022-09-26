@@ -22,7 +22,8 @@
 - [6203](https://github.com/vegaprotocol/vega/issues/6203) - Support automatic consent for transactions sent through the wallet API version 2
 - [6203](https://github.com/vegaprotocol/vega/issues/6203) - Log node selection process on the wallet CLI
 - [5925](https://github.com/vegaprotocol/vega/issues/5925) - Clean transfer response API, now ledger movements
-- [6254](https://github.com/vegaprotocol/vega/issues/6254) - Reject Ethereum configuration update via proposals
+- [5925](https://github.com/vegaprotocol/vega/issues/5925) - Clean transfer response API, now ledger movements
+- [6254](https://github.com/vegaprotocol/vega/issues/6291) - Once imported always use the clef address save in the registry
 
 ### 🐛 Fixes
 - [6255](https://github.com/vegaprotocol/vega/issues/6255) - Fix `WebSocket` upgrading when setting headers in HTTP middleware.
