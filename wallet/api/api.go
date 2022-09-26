@@ -151,7 +151,7 @@ type SelectedWallet struct {
 func SessionAPI(log *zap.Logger, walletStore WalletStore, pipeline Pipeline, nodeSelector node.Selector) (*jsonrpc.API, error) {
 	sessions := NewSessions()
 
-	walletAPI := jsonrpc.New(log)
+	walletAPI := jsonrpc.New(log, true)
 	walletAPI.RegisterMethod("session.connect_wallet", NewConnectWallet(walletStore, pipeline, sessions))
 	walletAPI.RegisterMethod("session.disconnect_wallet", NewDisconnectWallet(sessions))
 	walletAPI.RegisterMethod("session.get_chain_id", NewGetChainID(nodeSelector))
@@ -170,7 +170,7 @@ func SessionAPI(log *zap.Logger, walletStore WalletStore, pipeline Pipeline, nod
 // This API exposes highly-sensitive methods, and, as a result, it should be
 // only exposed to highly-trustable applications.
 func AdminAPI(log *zap.Logger, walletStore WalletStore, netStore NetworkStore, nodeSelectorBuilder NodeSelectorBuilder) (*jsonrpc.API, error) {
-	walletAPI := jsonrpc.New(log)
+	walletAPI := jsonrpc.New(log, false)
 	walletAPI.RegisterMethod("admin.annotate_key", NewAdminAnnotateKey(walletStore))
 	walletAPI.RegisterMethod("admin.create_wallet", NewAdminCreateWallet(walletStore))
 	walletAPI.RegisterMethod("admin.describe_key", NewAdminDescribeKey(walletStore))
