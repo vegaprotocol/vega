@@ -288,7 +288,7 @@ func (t *Topology) applyPromotion(performanceScore, rankingScore map[string]num.
 	sortValidatorDescRankingScoreAscBlockcompare(remainingValidators, rankingScore, byBlockAdded, t.rng)
 
 	// apply promotions and demotions from tendermint to ersatz and vice versa
-	_, remainingValidators, demotedFromTM := promote(tendermintValidators, remainingValidators, ValidatorStatusTendermint, ValidatorStatusErsatz, t.numberOfTendermintValidators, rankingScore, int64(t.currentBlockHeight+1))
+	remainingValidators, demotedFromTM := promote(tendermintValidators, remainingValidators, ValidatorStatusTendermint, ValidatorStatusErsatz, t.numberOfTendermintValidators, rankingScore, int64(t.currentBlockHeight+1))
 	removedFromTM = append(removedFromTM, demotedFromTM...)
 
 	// by this point we're done with promotions to tendermint. check if any validator from the waiting list can join the ersatz list
@@ -445,7 +445,7 @@ func handleSlotChanges(seriesA []*valState, seriesB []*valState, statusA Validat
 }
 
 // promote returns seriesA and seriesB updated with promotions moved from B to A and a slice of removed from series A in case of swap-promotion.
-func promote(seriesA []*valState, seriesB []*valState, statusA ValidatorStatus, statusB ValidatorStatus, maxForSeriesA int, rankingScore map[string]num.Decimal, nextBlockHeight int64) ([]*valState, []*valState, []string) {
+func promote(seriesA []*valState, seriesB []*valState, statusA ValidatorStatus, statusB ValidatorStatus, maxForSeriesA int, rankingScore map[string]num.Decimal, nextBlockHeight int64) ([]*valState, []string) {
 	removedFromSeriesA := []string{}
 
 	if maxForSeriesA > 0 && maxForSeriesA == len(seriesA) && len(seriesB) > 0 {
@@ -459,7 +459,6 @@ func promote(seriesA []*valState, seriesB []*valState, statusA ValidatorStatus, 
 			vd = seriesB[0]
 			vd.status = statusA
 			vd.statusChangeBlock = nextBlockHeight
-			seriesA = append(seriesA, seriesB[0])
 			if len(seriesB) > 1 {
 				seriesB = seriesB[1:]
 			} else {
@@ -467,7 +466,7 @@ func promote(seriesA []*valState, seriesB []*valState, statusA ValidatorStatus, 
 			}
 		}
 	}
-	return seriesA, seriesB, removedFromSeriesA
+	return seriesB, removedFromSeriesA
 }
 
 // calculateVotingPower returns the voting powers as the normalised ranking scores scaled by VotingPowerScalingFactor with a minimum of 1.

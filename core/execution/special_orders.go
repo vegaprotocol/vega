@@ -247,8 +247,7 @@ func (m *Market) enterAuctionSpecialOrders(
 	// method always return nil anyway
 	// TODO: API to be changed someday as we don't need to cancel anything
 	// now, we assume that all that were required to be cancelled already are.
-	orderUpdates, _ := m.updateAndCreateLPOrders(
-		ctx, []*types.Order{}, cancels, []*types.Order{})
+	orderUpdates := m.updateAndCreateLPOrders(ctx, []*types.Order{}, cancels, []*types.Order{})
 	return orderUpdates
 }
 
@@ -320,7 +319,6 @@ func (m *Market) updateLPOrders(
 	// method always return nil anyway
 	// TODO: API to be changed someday as we don't need to cancel anything
 	// now, we assume that all that were required to be cancelled already are.
-	orderUpdates, _ := m.updateAndCreateLPOrders(
-		ctx, submits, []*liquidity.ToCancel{}, distressedOrders)
+	orderUpdates := m.updateAndCreateLPOrders(ctx, submits, []*liquidity.ToCancel{}, distressedOrders)
 	return orderUpdates
 }

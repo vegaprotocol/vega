@@ -786,17 +786,15 @@ func (m *Market) cleanMarketWithState(ctx context.Context, mktState types.Market
 	return nil
 }
 
-func (m *Market) closeCancelledMarket(ctx context.Context, t time.Time) error {
-	// we got here because trading was terminated so we've already unsubscribed that oracle data source.
+func (m *Market) closeCancelledMarket(ctx context.Context) error {
+	// we got here because trading was terminated, so we've already unsubscribed that oracle data source.
 	m.tradableInstrument.Instrument.UnsubscribeSettlementPrice(ctx)
 
-	err := m.cleanMarketWithState(ctx, types.MarketStateCancelled)
-	if err != nil {
+	if err := m.cleanMarketWithState(ctx, types.MarketStateCancelled); err != nil {
 		return err
 	}
 
-	err = m.stopAllLiquidityProvisionOnReject(ctx)
-	if err != nil {
+	if err := m.stopAllLiquidityProvisionOnReject(ctx); err != nil {
 		m.log.Debug("could not stop all liquidity provision on market rejection",
 			logging.MarketID(m.GetID()),
 			logging.Error(err))
@@ -2163,10 +2161,7 @@ func (m *Market) zeroOutNetwork(ctx context.Context, parties []events.MarketPosi
 }
 
 func (m *Market) recheckMargin(ctx context.Context, pos []events.MarketPosition) error {
-	risk, err := m.updateMargin(ctx, pos)
-	if err != nil {
-		return err
-	}
+	risk := m.updateMargin(ctx, pos)
 	if len(risk) == 0 {
 		return nil
 	}
@@ -2643,7 +2638,7 @@ func (m *Market) amendOrder(
 	if existingOrder.PeggedOrder != nil {
 		// Amend in place during an auction
 		if m.as.InAuction() {
-			ret := m.orderAmendWhenParked(existingOrder, amendedOrder)
+			ret := m.orderAmendWhenParked(amendedOrder)
 			m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
 			return ret, nil, nil
 		}
@@ -2654,7 +2649,7 @@ func (m *Market) amendOrder(
 				// If we are live then park
 				m.parkOrder(ctx, existingOrder.ID)
 			}
-			ret := m.orderAmendWhenParked(existingOrder, amendedOrder)
+			ret := m.orderAmendWhenParked(amendedOrder)
 			m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
 			return ret, nil, nil
 		}
@@ -2953,7 +2948,7 @@ func (m *Market) orderAmendInPlace(originalOrder, amendOrder *types.Order) (*typ
 	}, nil
 }
 
-func (m *Market) orderAmendWhenParked(originalOrder, amendOrder *types.Order) *types.OrderConfirmation {
+func (m *Market) orderAmendWhenParked(amendOrder *types.Order) *types.OrderConfirmation {
 	amendOrder.Status = types.OrderStatusParked
 	amendOrder.Price = num.UintZero()
 	amendOrder.OriginalPrice = num.UintZero()
@@ -3129,6 +3124,7 @@ func (m *Market) getSuppliedStake() *num.Uint {
 	return m.liquidity.CalculateSuppliedStake()
 }
 
+//nolint:unparam
 func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade, persistentOrder bool) bool {
 	// before we check liquidity, ensure we've moved all funds that can go towards
 	// provided stake to the bond accounts so we don't trigger liquidity auction for no reason
@@ -3195,7 +3191,7 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 				m.log.Debug("could not cancel orders for party", logging.PartyID(party), logging.Error(err))
 			}
 		}
-		err := m.closeCancelledMarket(ctx, m.timeService.GetTimeNow())
+		err := m.closeCancelledMarket(ctx)
 		if err != nil {
 			m.log.Debug("could not close market", logging.MarketID(m.GetID()))
 			return

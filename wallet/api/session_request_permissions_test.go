@@ -138,7 +138,7 @@ func testRequestingPermissionsWithValidParamsSucceeds(t *testing.T) {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
 			ctx, traceID := contextWithTraceID()
-			hostname := "vega.xyz"
+			hostname := vgrand.RandomStr(5)
 			wallet1, _ := walletWithPerms(tt, hostname, wallet.Permissions{})
 			passphrase := vgrand.RandomStr(5)
 
@@ -193,7 +193,7 @@ func testRequestingPermissionsWithInvalidTokenFails(t *testing.T) {
 func testRefusingPermissionsUpdateDoesNotUpdatePermissions(t *testing.T) {
 	// given
 	ctx, traceID := contextWithTraceID()
-	hostname := "vega.xyz"
+	hostname := vgrand.RandomStr(5)
 	originalPermissions := wallet.Permissions{}
 	wallet1, _ := walletWithPerms(t, hostname, originalPermissions)
 	requestedPermissions := map[string]string{
@@ -224,7 +224,7 @@ func testRefusingPermissionsUpdateDoesNotUpdatePermissions(t *testing.T) {
 func testCancellingTheReviewDoesNotUpdatePermissions(t *testing.T) {
 	// given
 	ctx, traceID := contextWithTraceID()
-	hostname := "vega.xyz"
+	hostname := vgrand.RandomStr(5)
 	originalPermissions := wallet.Permissions{}
 	wallet1, _ := walletWithPerms(t, hostname, originalPermissions)
 	requestedPermissions := map[string]string{
@@ -255,7 +255,7 @@ func testCancellingTheReviewDoesNotUpdatePermissions(t *testing.T) {
 func testInterruptingTheRequestDoesNotUpdatePermissions(t *testing.T) {
 	// given
 	ctx, traceID := contextWithTraceID()
-	hostname := "vega.xyz"
+	hostname := vgrand.RandomStr(5)
 	originalPermissions := wallet.Permissions{}
 	wallet1, _ := walletWithPerms(t, hostname, originalPermissions)
 	requestedPermissions := map[string]string{
@@ -287,7 +287,7 @@ func testInterruptingTheRequestDoesNotUpdatePermissions(t *testing.T) {
 func testGettingInternalErrorDuringReviewDoesNotUpdatePermissions(t *testing.T) {
 	// given
 	ctx, traceID := contextWithTraceID()
-	hostname := "vega.xyz"
+	hostname := vgrand.RandomStr(5)
 	originalPermissions := wallet.Permissions{}
 	wallet1, _ := walletWithPerms(t, hostname, originalPermissions)
 	requestedPermissions := map[string]string{
@@ -319,7 +319,7 @@ func testGettingInternalErrorDuringReviewDoesNotUpdatePermissions(t *testing.T) 
 func testCancellingThePassphraseRequestDoesNotUpdatePermissions(t *testing.T) {
 	// given
 	ctx, traceID := contextWithTraceID()
-	hostname := "vega.xyz"
+	hostname := vgrand.RandomStr(5)
 	originalPermissions := wallet.Permissions{}
 	wallet1, _ := walletWithPerms(t, hostname, originalPermissions)
 	requestedPermissions := map[string]string{
@@ -351,7 +351,7 @@ func testCancellingThePassphraseRequestDoesNotUpdatePermissions(t *testing.T) {
 func testInterruptingTheRequestDuringPassphraseRequestDoesNotUpdatePermissions(t *testing.T) {
 	// given
 	ctx, traceID := contextWithTraceID()
-	hostname := "vega.xyz"
+	hostname := vgrand.RandomStr(5)
 	originalPermissions := wallet.Permissions{}
 	wallet1, _ := walletWithPerms(t, hostname, originalPermissions)
 	requestedPermissions := map[string]string{
@@ -384,7 +384,7 @@ func testInterruptingTheRequestDuringPassphraseRequestDoesNotUpdatePermissions(t
 func testGettingInternalErrorDuringPassphraseRequestDoesNotUpdatePermissions(t *testing.T) {
 	// given
 	ctx, traceID := contextWithTraceID()
-	hostname := "vega.xyz"
+	hostname := vgrand.RandomStr(5)
 	originalPermissions := wallet.Permissions{}
 	wallet1, _ := walletWithPerms(t, hostname, originalPermissions)
 	requestedPermissions := map[string]string{
@@ -418,7 +418,7 @@ func testUsingWrongPassphraseDoesNotUpdatePermissions(t *testing.T) {
 	// given
 	ctx, traceID := contextWithTraceID()
 	cancelCtx, cancelFn := context.WithCancel(ctx)
-	hostname := "vega.xyz"
+	hostname := vgrand.RandomStr(5)
 	originalPermissions := wallet.Permissions{}
 	wallet1, _ := walletWithPerms(t, hostname, originalPermissions)
 	requestedPermissions := map[string]string{
@@ -456,7 +456,7 @@ func testUsingWrongPassphraseDoesNotUpdatePermissions(t *testing.T) {
 func testGettingInternalErrorDuringWalletRetrievalDoesNotUpdatePermissions(t *testing.T) {
 	// given
 	ctx, traceID := contextWithTraceID()
-	hostname := "vega.xyz"
+	hostname := vgrand.RandomStr(5)
 	originalPermissions := wallet.Permissions{}
 	wallet1, _ := walletWithPerms(t, hostname, originalPermissions)
 	passphrase := vgrand.RandomStr(5)
@@ -491,7 +491,7 @@ func testGettingInternalErrorDuringWalletRetrievalDoesNotUpdatePermissions(t *te
 func testGettingInternalErrorDuringWalletSavingDoesNotUpdatePermissions(t *testing.T) {
 	// given
 	ctx, traceID := contextWithTraceID()
-	hostname := "vega.xyz"
+	hostname := vgrand.RandomStr(5)
 	walletName := vgrand.RandomStr(5)
 	originalPermissions := wallet.Permissions{}
 	wallet1, recoveryPhrase, err := wallet.NewHDWallet(walletName)
@@ -544,7 +544,7 @@ func testGettingInternalErrorDuringWalletSavingDoesNotUpdatePermissions(t *testi
 func testUpdatingPermissionsDoesNotOverwriteUntrackedChanges(t *testing.T) {
 	// given
 	ctx, traceID := contextWithTraceID()
-	hostname := "vega.xyz"
+	hostname := vgrand.RandomStr(5)
 	walletName := vgrand.RandomStr(5)
 	wallet1, recoveryPhrase, err := wallet.NewHDWallet(walletName)
 	if err != nil {

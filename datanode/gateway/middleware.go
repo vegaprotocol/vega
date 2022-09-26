@@ -42,7 +42,7 @@ func RemoteAddrMiddleware(log *logging.Logger, next http.Handler) http.Handler {
 }
 
 // MetricCollectionMiddleware records the request and the time taken to service it.
-func MetricCollectionMiddleware(log *logging.Logger, next http.Handler) http.Handler {
+func MetricCollectionMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		next.ServeHTTP(w, r)
@@ -79,7 +79,15 @@ func Chain(f http.Handler, m ...func(http.Handler) http.Handler) http.Handler {
 func WithAddHeadersMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		iw := &InjectableResponseWriter{ResponseWriter: w}
+		hijacker, ok := w.(http.Hijacker)
+		if !ok {
+			next.ServeHTTP(w, r)
+			return
+		}
+		iw := &InjectableResponseWriter{
+			ResponseWriter: w,
+			Hijacker:       hijacker,
+		}
 		ctx = context.WithValue(ctx, injectableWriterKey{}, iw)
 		next.ServeHTTP(iw, r.WithContext(ctx))
 	})
@@ -87,6 +95,7 @@ func WithAddHeadersMiddleware(next http.Handler) http.Handler {
 
 type InjectableResponseWriter struct {
 	http.ResponseWriter
+	http.Hijacker
 	headers http.Header
 }
 

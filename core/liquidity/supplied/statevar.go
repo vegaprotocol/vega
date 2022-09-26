@@ -175,15 +175,15 @@ func getProbabilityOfTrading(bestBid, bestAsk, minPrice, maxPrice num.Decimal, p
 		if price.LessThan(minPrice) {
 			return minProbabilityOfTrading
 		}
-		return getBidProbabilityOfTrading(bestBid, bestAsk, pot.bidOffset, pot.bidProbability, price, minProbabilityOfTrading)
+		return getBidProbabilityOfTrading(bestBid, pot.bidOffset, pot.bidProbability, price, minProbabilityOfTrading)
 	}
 	if price.GreaterThan(maxPrice) {
 		return minProbabilityOfTrading
 	}
-	return getAskProbabilityOfTrading(bestBid, bestAsk, pot.askOffset, pot.askProbability, price, minProbabilityOfTrading)
+	return getAskProbabilityOfTrading(bestAsk, pot.askOffset, pot.askProbability, price, minProbabilityOfTrading)
 }
 
-func getAskProbabilityOfTrading(bestBid, bestAsk num.Decimal, offsets, probabilities []num.Decimal, price num.Decimal, minProbabilityOfTrading num.Decimal) num.Decimal {
+func getAskProbabilityOfTrading(bestAsk num.Decimal, offsets, probabilities []num.Decimal, price, minProbabilityOfTrading num.Decimal) num.Decimal {
 	// no consensus yet
 	if len(offsets) == 0 {
 		maxDistance := maxDistanceWhenNoConsensusFactor.Mul(bestAsk)
@@ -207,7 +207,7 @@ func getAskProbabilityOfTrading(bestBid, bestAsk num.Decimal, offsets, probabili
 	return interpolatedProbability
 }
 
-func getBidProbabilityOfTrading(bestBid, bestAsk num.Decimal, offsets, probabilities []num.Decimal, price num.Decimal, minProbabilityOfTrading num.Decimal) num.Decimal {
+func getBidProbabilityOfTrading(bestBid num.Decimal, offsets, probabilities []num.Decimal, price, minProbabilityOfTrading num.Decimal) num.Decimal {
 	// no consensus yet
 	if len(offsets) == 0 {
 		maxDistance := maxDistanceWhenNoConsensusFactor.Mul(bestBid)

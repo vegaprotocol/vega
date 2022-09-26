@@ -68,7 +68,7 @@ func TestSubscribeAndUnsubscribeWhenCandleSourceErrorsAlways(t *testing.T) {
 	errorsAlwaysCandleSource := &errorsAlwaysCandleSource{}
 
 	updates := candlesv2.NewCandleUpdates(context.Background(), logging.NewTestLogger(), "testCandles",
-		errorsAlwaysCandleSource, newTestCandleConfig(1, 0).CandleUpdates)
+		errorsAlwaysCandleSource, newTestCandleConfig(0).CandleUpdates)
 
 	sub1Id, _, _ := updates.Subscribe()
 	sub2Id, _, _ := updates.Subscribe()
@@ -81,7 +81,7 @@ func TestUnsubscribeAfterTransientFailure(t *testing.T) {
 	testCandleSource := &testCandleSource{candles: make(chan []entities.Candle), errorCh: make(chan error)}
 
 	updates := candlesv2.NewCandleUpdates(context.Background(), logging.NewTestLogger(), "testCandles",
-		testCandleSource, newTestCandleConfig(1, 0).CandleUpdates)
+		testCandleSource, newTestCandleConfig(0).CandleUpdates)
 	startTime := time.Now()
 
 	sub1Id, out1, _ := updates.Subscribe()
@@ -106,7 +106,7 @@ func TestSubscribeAfterTransientFailure(t *testing.T) {
 	testCandleSource := &testCandleSource{candles: make(chan []entities.Candle), errorCh: make(chan error)}
 
 	updates := candlesv2.NewCandleUpdates(context.Background(), logging.NewTestLogger(), "testCandles",
-		testCandleSource, newTestCandleConfig(1, 0).CandleUpdates)
+		testCandleSource, newTestCandleConfig(0).CandleUpdates)
 	startTime := time.Now()
 
 	_, out1, _ := updates.Subscribe()
@@ -145,7 +145,7 @@ func TestSubscribe(t *testing.T) {
 	testCandleSource := &testCandleSource{candles: make(chan []entities.Candle)}
 
 	updates := candlesv2.NewCandleUpdates(context.Background(), logging.NewTestLogger(), "testCandles",
-		testCandleSource, newTestCandleConfig(1, 0).CandleUpdates)
+		testCandleSource, newTestCandleConfig(0).CandleUpdates)
 	startTime := time.Now()
 
 	_, out1, _ := updates.Subscribe()
@@ -174,7 +174,7 @@ func TestUnsubscribe(t *testing.T) {
 	testCandleSource := &testCandleSource{candles: make(chan []entities.Candle)}
 
 	updates := candlesv2.NewCandleUpdates(context.Background(), logging.NewTestLogger(), "testCandles",
-		testCandleSource, newTestCandleConfig(1, 0).CandleUpdates)
+		testCandleSource, newTestCandleConfig(0).CandleUpdates)
 	startTime := time.Now()
 
 	id, out1, _ := updates.Subscribe()
@@ -195,7 +195,7 @@ func TestNewSubscriberAlwaysGetsLastCandle(t *testing.T) {
 	testCandleSource := &testCandleSource{candles: make(chan []entities.Candle)}
 
 	updates := candlesv2.NewCandleUpdates(context.Background(), logging.NewTestLogger(), "testCandles",
-		testCandleSource, newTestCandleConfig(1, 0).CandleUpdates)
+		testCandleSource, newTestCandleConfig(0).CandleUpdates)
 	startTime := time.Now()
 
 	_, out1, _ := updates.Subscribe()
@@ -215,7 +215,7 @@ func TestSubscribeWithNonZeroSubscribeBuffer(t *testing.T) {
 	testCandleSource := &testCandleSource{candles: make(chan []entities.Candle)}
 
 	updates := candlesv2.NewCandleUpdates(context.Background(), logging.NewTestLogger(), "testCandles",
-		testCandleSource, newTestCandleConfig(1, 100).CandleUpdates)
+		testCandleSource, newTestCandleConfig(100).CandleUpdates)
 	startTime := time.Now()
 
 	_, out1, _ := updates.Subscribe()
@@ -244,7 +244,7 @@ func TestUnsubscribeWithNonZeroSubscribeBuffer(t *testing.T) {
 	testCandleSource := &testCandleSource{candles: make(chan []entities.Candle)}
 
 	updates := candlesv2.NewCandleUpdates(context.Background(), logging.NewTestLogger(), "testCandles",
-		testCandleSource, newTestCandleConfig(1, 100).CandleUpdates)
+		testCandleSource, newTestCandleConfig(100).CandleUpdates)
 	startTime := time.Now()
 
 	id, out1, _ := updates.Subscribe()
@@ -265,7 +265,7 @@ func TestSubscribeAndUnSubscribeWithNonReturningSource(t *testing.T) {
 	testCandleSource := &nonReturningCandleSource{}
 
 	updates := candlesv2.NewCandleUpdates(context.Background(), logging.NewTestLogger(), "testCandles",
-		testCandleSource, newTestCandleConfig(1, 100).CandleUpdates)
+		testCandleSource, newTestCandleConfig(100).CandleUpdates)
 
 	subID1, _, _ := updates.Subscribe()
 	subID2, _, _ := updates.Subscribe()
@@ -274,10 +274,10 @@ func TestSubscribeAndUnSubscribeWithNonReturningSource(t *testing.T) {
 	updates.Unsubscribe(subID2)
 }
 
-func newTestCandleConfig(bufferSize int, subscribeBufferSize int) candlesv2.Config {
+func newTestCandleConfig(subscribeBufferSize int) candlesv2.Config {
 	conf := candlesv2.NewDefaultConfig()
 	conf.CandleUpdates = candlesv2.CandleUpdatesConfig{
-		CandleUpdatesStreamBufferSize:                bufferSize,
+		CandleUpdatesStreamBufferSize:                1,
 		CandleUpdatesStreamInterval:                  encoding.Duration{Duration: 1 * time.Microsecond},
 		CandlesFetchTimeout:                          encoding.Duration{Duration: 2 * time.Minute},
 		CandleUpdatesStreamSubscriptionMsgBufferSize: subscribeBufferSize,

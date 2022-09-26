@@ -137,7 +137,7 @@ func (sv *StateVariable) endBlock(ctx context.Context) {
 	sv.broker.SendBatch(evts)
 }
 
-func (sv *StateVariable) startBlock(ctx context.Context, t time.Time) {
+func (sv *StateVariable) startBlock(t time.Time) {
 	sv.lock.Lock()
 	sv.currentTime = t
 
@@ -155,7 +155,7 @@ func (sv *StateVariable) startBlock(ctx context.Context, t time.Time) {
 }
 
 // calculation is required for the state variable for the given event id.
-func (sv *StateVariable) eventTriggered(eventID string) error {
+func (sv *StateVariable) eventTriggered(eventID string) {
 	sv.lock.Lock()
 
 	if sv.log.IsDebug() {
@@ -194,8 +194,6 @@ func (sv *StateVariable) eventTriggered(eventID string) error {
 
 	// kickoff calculation
 	sv.startCalculation(sv.eventID, sv)
-
-	return nil
 }
 
 // CalculationFinished is called from the owner when the calculation is completed to kick off consensus.
@@ -266,7 +264,7 @@ func (sv *StateVariable) logAndRetry(err error, svp *commandspb.StateVariablePro
 }
 
 // bundleReceived is called when we get a result from another validator corresponding to a given event ID.
-func (sv *StateVariable) bundleReceived(ctx context.Context, t time.Time, node, eventID string, bundle *statevar.KeyValueBundle, rng *rand.Rand, validatorVotesRequired num.Decimal) {
+func (sv *StateVariable) bundleReceived(ctx context.Context, node, eventID string, bundle *statevar.KeyValueBundle, rng *rand.Rand, validatorVotesRequired num.Decimal) {
 	sv.lock.Lock()
 	defer sv.lock.Unlock()
 
@@ -316,7 +314,7 @@ func (sv *StateVariable) bundleReceived(ctx context.Context, t time.Time, node, 
 
 	// if we're already in seeking consensus state, no point in checking if all match - suffice checking if there's a majority with matching within tolerance
 	if sv.state == ConsensusStateSeekingConsensus {
-		sv.tryConsensusLocked(ctx, t, rng, requiredNumberOfResults)
+		sv.tryConsensusLocked(ctx, rng, requiredNumberOfResults)
 		return
 	}
 
@@ -338,7 +336,7 @@ func (sv *StateVariable) bundleReceived(ctx context.Context, t time.Time, node, 
 
 			// initiate a round of voting
 			sv.state = ConsensusStateSeekingConsensus
-			sv.tryConsensusLocked(ctx, t, rng, validatorsNum.Mul(validatorVotesRequired))
+			sv.tryConsensusLocked(ctx, rng, validatorsNum.Mul(validatorVotesRequired))
 			return
 		}
 	}
@@ -349,12 +347,12 @@ func (sv *StateVariable) bundleReceived(ctx context.Context, t time.Time, node, 
 	}
 	sv.state = ConsensusStatePerfectMatch
 	// convert the result to decimal and let the owner of the state variable know
-	sv.consensusReachedLocked(ctx, t, result)
+	sv.consensusReachedLocked(ctx, result)
 }
 
 // if the bundles are not all equal to each other, choose one at random and verify that all others are within tolerance.
 // NB: assumes lock has already been acquired.
-func (sv *StateVariable) tryConsensusLocked(ctx context.Context, t time.Time, rng *rand.Rand, requiredMatches num.Decimal) {
+func (sv *StateVariable) tryConsensusLocked(ctx context.Context, rng *rand.Rand, requiredMatches num.Decimal) {
 	// sort the node IDs for determinism
 	nodeIDs := make([]string, 0, len(sv.validatorResults))
 	for nodeID := range sv.validatorResults {
@@ -379,7 +377,7 @@ func (sv *StateVariable) tryConsensusLocked(ctx context.Context, t time.Time, rn
 		}
 		if num.DecimalFromInt64(countMatch).GreaterThanOrEqual(requiredMatches) {
 			sv.state = ConsensusStateconsensusReachedLocked
-			sv.consensusReachedLocked(ctx, t, candidateResult)
+			sv.consensusReachedLocked(ctx, candidateResult)
 			return
 		}
 	}
@@ -391,7 +389,7 @@ func (sv *StateVariable) tryConsensusLocked(ctx context.Context, t time.Time, rn
 
 // consensus was reached either through a vote or through perfect matching of all of 2/3 of the validators.
 // NB: assumes lock has already been acquired.
-func (sv *StateVariable) consensusReachedLocked(ctx context.Context, t time.Time, acceptedValue *statevar.KeyValueBundle) {
+func (sv *StateVariable) consensusReachedLocked(ctx context.Context, acceptedValue *statevar.KeyValueBundle) {
 	if sv.log.GetLevel() <= logging.DebugLevel {
 		sv.log.Debug("consensus reached", logging.String("state-var", sv.ID), logging.String("event-id", sv.eventID))
 	}

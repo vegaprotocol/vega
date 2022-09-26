@@ -25,6 +25,7 @@
 - [6254](https://github.com/vegaprotocol/vega/issues/6254) - Reject Ethereum configuration update via proposals
 
 ### 🐛 Fixes
+- [6255](https://github.com/vegaprotocol/vega/issues/6255) - Fix `WebSocket` upgrading when setting headers in HTTP middleware.
 - [6101](https://github.com/vegaprotocol/vega/issues/6101) - Fix Nodes API not returning new `ethereumAdress` after `EthereumKeyRotation` event.
 - [6183](https://github.com/vegaprotocol/vega/issues/6183) - Shutdown blockchain before protocol services
 - [6148](https://github.com/vegaprotocol/vega/issues/6148) - Fix API descriptions for typos
@@ -41,6 +42,14 @@
 - [6242](https://github.com/vegaprotocol/vega/issues/6242) - Allow migrate between wallet types during Ethereum key rotation reload
 - [6202](https://github.com/vegaprotocol/vega/issues/6202) - Always update margins for parties on amend
 - [6228](https://github.com/vegaprotocol/vega/issues/6228) - Reject protocol upgrade downgrades
+- [6245](https://github.com/vegaprotocol/vega/issues/6245) - Recalculate equity values when virtual stake changes
+- [6260](https://github.com/vegaprotocol/vega/issues/6260) - Prepend `chainID` to input data only when signing the transaction
+- [6036](https://github.com/vegaprotocol/vega/issues/6036) - Fix `protobuf<->swagger` generation
+- [6248](https://github.com/vegaprotocol/vega/issues/6245) - Candles connection is not returning any candle data
+- [6061](https://github.com/vegaprotocol/vega/issues/6061) - Attempt at stabilizing the tests on the broker in the core
+- [6178](https://github.com/vegaprotocol/vega/issues/6178) - Historical balances fails with `scany` error
+- [6193](https://github.com/vegaprotocol/vega/issues/6193) - Use Data field from transaction successfully sent but that were rejected
+- [6230](https://github.com/vegaprotocol/vega/issues/6230) - Node Signature Connection should return a list or an appropriate error message
 - [5998](https://github.com/vegaprotocol/vega/issues/5998) - Positions should be zero when markets are closed and settled
 
 ## 0.55.0

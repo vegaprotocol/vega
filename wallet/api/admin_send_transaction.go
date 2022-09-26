@@ -86,13 +86,13 @@ func (h *AdminSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Par
 
 	currentNode, err := nodeSelector.Node(ctx, noNodeSelectionReporting)
 	if err != nil {
-		return nil, networkError(ErrorCodeNodeRequestFailed, ErrNoHealthyNodeAvailable)
+		return nil, networkError(ErrNoHealthyNodeAvailable)
 	}
 
 	sentAt := time.Now()
 	txHash, err := currentNode.SendTransaction(ctx, tx, params.SendingMode)
 	if err != nil {
-		return nil, networkError(ErrorCodeNodeRequestFailed, fmt.Errorf("the transaction failed: %w", err))
+		return nil, networkError(fmt.Errorf("the transaction failed: %w", err))
 	}
 
 	return AdminSendTransactionResult{

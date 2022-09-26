@@ -98,7 +98,7 @@ func getValidators(t *testing.T, now time.Time, numValidators int) []*testEngine
 	return validators
 }
 
-func generateStateVariableForValidator(t *testing.T, testEngine *testEngine, startTime time.Time, startCalc func(string, types.FinaliseCalculation), resultCallback func(context.Context, types.StateVariableResult) error) error {
+func generateStateVariableForValidator(t *testing.T, testEngine *testEngine, startCalc func(string, types.FinaliseCalculation), resultCallback func(context.Context, types.StateVariableResult) error) error {
 	t.Helper()
 	kvb1 := &types.KeyValueBundle{}
 	kvb1.KVT = append(kvb1.KVT, types.KeyValueTol{
@@ -118,12 +118,12 @@ func defaultResultBack() func(context.Context, types.StateVariableResult) error 
 	return func(context.Context, types.StateVariableResult) error { return nil }
 }
 
-func setupValidators(t *testing.T, offset int, numValidators int, startCalc func(string, types.FinaliseCalculation), resultCallback func(context.Context, types.StateVariableResult) error) []*testEngine {
+func setupValidators(t *testing.T, numValidators int, startCalc func(string, types.FinaliseCalculation), resultCallback func(context.Context, types.StateVariableResult) error) []*testEngine {
 	t.Helper()
 	validators := getValidators(t, now, numValidators)
 	allNodeIds := []string{"0", "1", "2", "3", "4"}
 	for i, v := range validators {
-		err := generateStateVariableForValidator(t, v, now, startCalc, resultCallback)
+		err := generateStateVariableForValidator(t, v, startCalc, resultCallback)
 		require.NoError(t, err)
 		v.topology.EXPECT().IsValidator().Return(true).AnyTimes()
 		v.topology.EXPECT().IsValidatorVegaPubKey(gomock.Any()).DoAndReturn(func(nodeID string) bool {
@@ -177,7 +177,7 @@ func testConverters(t *testing.T) {
 }
 
 func testEventTriggeredNoPreviousEvent(t *testing.T) {
-	validators := setupValidators(t, 0, 4, defaultStartCalc(), defaultResultBack())
+	validators := setupValidators(t, 4, defaultStartCalc(), defaultResultBack())
 	brokerEvents := make([]events.Event, 0, len(validators))
 	for _, v := range validators {
 		v.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes().Do(func(events []events.Event) {
@@ -203,7 +203,7 @@ func testEventTriggeredNoPreviousEvent(t *testing.T) {
 }
 
 func testEventTriggeredWithPreviousEvent(t *testing.T) {
-	validators := setupValidators(t, 0, 4, defaultStartCalc(), defaultResultBack())
+	validators := setupValidators(t, 4, defaultStartCalc(), defaultResultBack())
 
 	brokerEvents := make([]events.Event, 0, len(validators))
 	for _, v := range validators {
@@ -256,7 +256,7 @@ func testEventTriggeredCalculationError(t *testing.T) {
 	startCalc := func(eventID string, f types.FinaliseCalculation) {
 		f.CalculationFinished(eventID, nil, errors.New("error"))
 	}
-	validators := setupValidators(t, 0, 4, startCalc, defaultResultBack())
+	validators := setupValidators(t, 4, startCalc, defaultResultBack())
 
 	brokerEvents := make([]events.Event, 0, len(validators))
 	for _, v := range validators {
@@ -304,7 +304,7 @@ func testBundleReceivedPerfectMatchOfQuorum(t *testing.T) {
 	}
 
 	// start sending publishing the results from each validators (they all would match so after 2/3+1 we should get the result back)
-	validators := setupValidators(t, 0, 5, startCalc, resultCallback)
+	validators := setupValidators(t, 5, startCalc, resultCallback)
 	brokerEvents := make([]events.Event, 0, len(validators))
 	for _, v := range validators {
 		v.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes().Do(func(events []events.Event) {
@@ -396,7 +396,7 @@ func testBundleReceivedReachingConsensusSuccessfuly(t *testing.T) {
 
 	validators := make([]*testEngine, 0, 5)
 	for i := range startCalcFuncs {
-		validators = append(validators, setupValidators(t, i, 1, startCalcFuncs[i], resultCallback)[0])
+		validators = append(validators, setupValidators(t, 1, startCalcFuncs[i], resultCallback)[0])
 	}
 
 	// start sending publishing the results from each validators (they all would match so after 2/3+1 we should get the result back)
@@ -466,7 +466,7 @@ func testBundleReceivedReachingConsensusNotSuccessful(t *testing.T) {
 
 	validators := make([]*testEngine, 0, 5)
 	for i := range startCalcFuncs {
-		validators = append(validators, setupValidators(t, i, 1, startCalcFuncs[i], resultCallback)[0])
+		validators = append(validators, setupValidators(t, 1, startCalcFuncs[i], resultCallback)[0])
 	}
 
 	// start sending publishing the results from each validators (they all would match so after 2/3+1 we should get the result back)
@@ -535,7 +535,7 @@ func testTimeBasedEvent(t *testing.T) {
 
 	validators := make([]*testEngine, 0, 5)
 	for i := range startCalcFuncs {
-		validators = append(validators, setupValidators(t, i, 1, startCalcFuncs[i], resultCallback)[0])
+		validators = append(validators, setupValidators(t, 1, startCalcFuncs[i], resultCallback)[0])
 	}
 
 	for _, validator := range validators {

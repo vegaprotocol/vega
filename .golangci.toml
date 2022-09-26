@@ -1,7 +1,7 @@
 [run]
 allow-parallel-runners = true
 print-linter-name = true
-timeout = '5m0s'
+timeout = '15m0s'
 skip-dirs = [
     'protos',
 ]
@@ -13,62 +13,68 @@ max-same-issues = 0
 [linters]
 enable-all = true
 disable = [
-    "promlinter",
-    "wrapcheck",
-    "tagliatelle",
-    "paralleltest",
-    "nlreturn",
-    "gomnd",
-    "goerr113",
-    "tparallel",
-    "testpackage",
-    "gochecknoglobals",
-    "forcetypeassert",
-    "exhaustivestruct",
-    "exhaustive",
-    "errorlint",
-    "cyclop",
-    "wsl",
-    "unparam",
-    "scopelint",
-    "nosnakecase",  # deprecated; replaced by revive
-    "nestif",
-    "maligned",
-    "lll",
-    "interfacer",
-    "gosec",
-    "gomoddirectives",
-    "golint",
-    "goimports",
-    "godox",
-    "gocritic",
-    "goconst",
-    "gocognit",
-    "gochecknoinits",
-    "stylecheck",
-    "gci",
-    "errcheck",
-    "dupl",
-    "dogsled",
-    "funlen",
-    "gocyclo",
-    "errname",
-    # New in golangci-lint 1.45 but would be nice to address
-    "maintidx",
-    "contextcheck",
     "containedctx",
-    "varnamelen",
-    "ireturn",
-    "nilnil",
+    "contextcheck",
+    "cyclop",
+    "dogsled",
+    "dupl",
+    "errcheck",
     "errchkjson",
+    "errname",
+    "errorlint",
+    "exhaustive",
+    "exhaustivestruct",
+    "forcetypeassert",
+    "funlen",
+    "gochecknoglobals",
+    "gochecknoinits",
+    "gocognit",
+    "goconst",
+    "gocritic",
+    "gocyclo",
+    "godox",
+    "goerr113",
+    "goimports",
+    "gomnd",
+    "gomoddirectives",
+    "gosec",
     "ifshort",
-    "predeclared",
+    "ireturn",
+    "maintidx",
+    "nestif",
+    "nilnil",
     "nolintlint",
-    "nonamedreturns", # We don't mind named returns
-    "exhaustruct", # We often make incomplete structs
-    "structcheck", # deprecated since 1.49.0; replaced by 'unused'
-    "varcheck", # deprecated since 1.49.0; replaced by 'unused'
-    "deadcode", # deprecated since 1.49.0; replaced by 'unused'
+    "paralleltest",
+    "predeclared",
+    "promlinter",
+    "stylecheck",
+    "tagliatelle",
+    "testpackage",
+    "tparallel",
+    "varnamelen",
+    "wrapcheck",
+    "wsl",
+    ## Disabled on-pupose.
+    "exhaustruct", # We often make incomplete structs.
+    "gci", # Doesn't match our code style.
+    "lll", # We don't have a line length.
+    "nlreturn", # Doesn't match our code style.
+    "nonamedreturns", # We don't mind named returns.
+
+    ## Deprecated linters.
+    "deadcode", # Replaced by 'unused'.
+    "golint", # Replaced by 'revive'.
+    "interfacer", # Not replaced.
+    "maligned", # Replaced by 'go vet fieldalignment'.
+    "nosnakecase", # Replaced by 'revive'.
+    "scopelint", # Replace by 'looppointer' or 'exportloopref'
+    "structcheck", # Replaced by 'unused'.
+    "varcheck", # Replaced by 'unused'.
+]
+
+[linters-settings.govet]
+enable = [
+    # "fieldalignment", to enable one day
 ]
 
 [[issues.exclude-rules]]

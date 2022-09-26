@@ -163,7 +163,7 @@ func (n *Forwarder) SendTx(ctx context.Context, tx *commandspb.Transaction, ty a
 		},
 		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), n.nodeCfgs.Retries),
 	); err != nil {
-		return resp, err
+		return nil, err
 	}
 
 	return resp, nil

@@ -347,12 +347,7 @@ func (m *Market) CancelLiquidityProvision(ctx context.Context, cancel *types.Liq
 // then place the new orders.
 // this is done this way just so we maximise the changes for the margin
 // calls to succeed.
-func (m *Market) updateAndCreateLPOrders(
-	ctx context.Context,
-	newOrders []*types.Order,
-	cancels []*liquidity.ToCancel,
-	distressed []*types.Order,
-) ([]*types.Order, error) {
+func (m *Market) updateAndCreateLPOrders(ctx context.Context, newOrders []*types.Order, cancels []*liquidity.ToCancel, distressed []*types.Order) []*types.Order {
 	market := m.GetID()
 
 	for _, cancel := range cancels {
@@ -499,7 +494,7 @@ func (m *Market) updateAndCreateLPOrders(
 		orderUpdates = nil
 	}
 
-	return orderUpdates, nil
+	return orderUpdates
 }
 
 func (m *Market) cancelPendingLiquidityProvision(

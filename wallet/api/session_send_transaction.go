@@ -93,7 +93,7 @@ func (h *SendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) 
 	})
 	if err != nil {
 		h.pipeline.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not find a healthy node: %w", err))
-		return nil, networkError(ErrorCodeNodeRequestFailed, ErrNoHealthyNodeAvailable)
+		return nil, networkError(ErrNoHealthyNodeAvailable)
 	}
 	h.pipeline.Log(ctx, traceID, SuccessLog, "A healthy node has been found.")
 
@@ -101,24 +101,24 @@ func (h *SendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) 
 	lastBlockData, err := currentNode.LastBlock(ctx)
 	if err != nil {
 		h.pipeline.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not get the latest block from node: %w", err))
-		return nil, networkError(ErrorCodeNodeRequestFailed, ErrCouldNotGetLastBlockInformation)
+		return nil, networkError(ErrCouldNotGetLastBlockInformation)
 	}
 	h.pipeline.Log(ctx, traceID, SuccessLog, "Latest block information has been retrieved.")
 
 	if lastBlockData.ChainId == "" {
 		h.pipeline.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not get chainID from node: %w", err))
-		return nil, networkError(ErrorCodeNodeRequestFailed, ErrCouldNotGetChainIDFromNode)
+		return nil, networkError(ErrCouldNotGetChainIDFromNode)
 	}
 
 	// Sign the payload.
-	inputData, err := wcommands.ToMarshaledInputData(request, lastBlockData.Height, lastBlockData.ChainId)
+	inputData, err := wcommands.ToMarshaledInputData(request, lastBlockData.Height)
 	if err != nil {
 		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not marshal input data: %w", err))
 		return nil, internalError(ErrCouldNotSendTransaction)
 	}
 
 	h.pipeline.Log(ctx, traceID, InfoLog, "Signing the transaction...")
-	signature, err := connectedWallet.Wallet.SignTx(params.PublicKey, inputData)
+	signature, err := connectedWallet.Wallet.SignTx(params.PublicKey, commands.BundleInputDataForSigning(inputData, lastBlockData.ChainId))
 	if err != nil {
 		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not sign command: %w", err))
 		return nil, internalError(ErrCouldNotSendTransaction)
@@ -151,7 +151,7 @@ func (h *SendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) 
 	txHash, err := currentNode.SendTransaction(ctx, tx, params.SendingMode)
 	if err != nil {
 		h.notifyTransactionStatus(ctx, traceID, txHash, tx, err, sentAt)
-		return nil, networkError(ErrorCodeNodeRequestFailed, ErrTransactionFailed)
+		return nil, networkError(ErrTransactionFailed)
 	}
 
 	h.notifyTransactionStatus(ctx, traceID, txHash, tx, err, sentAt)

@@ -175,7 +175,7 @@ func (e *Engine) OnBlockEnd(ctx context.Context) {
 }
 
 // OnTick triggers the calculation of state variables whose next scheduled calculation is due.
-func (e *Engine) OnTick(ctx context.Context, t time.Time) {
+func (e *Engine) OnTick(_ context.Context, t time.Time) {
 	e.currentTime = t
 	e.rng = rand.New(rand.NewSource(t.Unix()))
 
@@ -187,7 +187,7 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 	sort.Strings(allStateVarIDs)
 
 	for _, ID := range allStateVarIDs {
-		e.stateVars[ID].startBlock(ctx, t)
+		e.stateVars[ID].startBlock(t)
 	}
 
 	// get all the state var with time triggers whose time to tick has come and call them
@@ -285,7 +285,7 @@ func (e *Engine) ProposedValueReceived(ctx context.Context, ID, nodeID, eventID 
 	}
 
 	if sv, ok := e.stateVars[ID]; ok {
-		sv.bundleReceived(ctx, e.currentTime, nodeID, eventID, bundle, e.rng, e.validatorVotesRequired)
+		sv.bundleReceived(ctx, nodeID, eventID, bundle, e.rng, e.validatorVotesRequired)
 		return nil
 	}
 	e.log.Error("ProposedValueReceived called with unknown var", logging.String("id", ID), logging.String("from-node", nodeID))

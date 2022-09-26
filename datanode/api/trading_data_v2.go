@@ -28,6 +28,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/vegatime"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
@@ -543,8 +544,14 @@ func (t *tradingDataServiceV2) ListCandleData(ctx context.Context, req *v2.ListC
 		return nil, errors.New("sql candle service not available")
 	}
 
-	from := vegatime.UnixNano(req.FromTimestamp)
-	to := vegatime.UnixNano(req.ToTimestamp)
+	var from, to *time.Time
+	if req.FromTimestamp != 0 {
+		from = ptr.From(vegatime.UnixNano(req.FromTimestamp))
+	}
+
+	if req.ToTimestamp != 0 {
+		to = ptr.From(vegatime.UnixNano(req.ToTimestamp))
+	}
 
 	pagination := entities.CursorPagination{}
 	if req.Pagination != nil {
@@ -554,7 +561,7 @@ func (t *tradingDataServiceV2) ListCandleData(ctx context.Context, req *v2.ListC
 		}
 	}
 
-	candles, pageInfo, err := t.candleService.GetCandleDataForTimeSpan(ctx, req.CandleId, &from, &to, pagination)
+	candles, pageInfo, err := t.candleService.GetCandleDataForTimeSpan(ctx, req.CandleId, from, to, pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrCandleServiceGetCandleData, err)
 	}
@@ -1288,7 +1295,7 @@ func (t *tradingDataServiceV2) ListParties(ctx context.Context, in *v2.ListParti
 	}
 
 	resp := &v2.ListPartiesResponse{
-		Party: partyConnection,
+		Parties: partyConnection,
 	}
 	return resp, nil
 }
@@ -2211,7 +2218,7 @@ func (t *tradingDataServiceV2) ListNodeSignatures(ctx context.Context, req *v2.L
 
 	sigs, pageInfo, err := t.notaryService.GetByResourceID(ctx, req.Id, pagination)
 	if err != nil {
-		return nil, apiError(codes.NotFound, err)
+		return nil, fmt.Errorf("could not retrieve resource: %w", err)
 	}
 
 	edges, err := makeEdges[*v2.NodeSignatureEdge](sigs)

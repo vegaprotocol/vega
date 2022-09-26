@@ -117,20 +117,20 @@ func (w *Witness) GetState(k string) ([]byte, []types.StateProvider, error) {
 	return state, nil, err
 }
 
-func (w *Witness) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {
+func (w *Witness) LoadState(_ context.Context, p *types.Payload) ([]types.StateProvider, error) {
 	if w.Namespace() != p.Data.Namespace() {
 		return nil, types.ErrInvalidSnapshotNamespace
 	}
 	// see what we're reloading
 	switch pl := p.Data.(type) {
 	case *types.PayloadWitness:
-		return nil, w.restore(ctx, pl.Witness, p)
+		return nil, w.restore(pl.Witness, p)
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
 }
 
-func (w *Witness) restore(ctx context.Context, witness *types.Witness, p *types.Payload) error {
+func (w *Witness) restore(witness *types.Witness, p *types.Payload) error {
 	w.resources = map[string]*res{}
 	w.needResendRes = map[string]struct{}{}
 

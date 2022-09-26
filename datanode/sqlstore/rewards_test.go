@@ -146,7 +146,7 @@ func TestRewards(t *testing.T) {
 	})
 }
 
-func setupRewardsTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.Rewards, *sqlstore.Parties, *sqlstore.Assets, sqlstore.Config) {
+func setupRewardsTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.Rewards, *sqlstore.Parties, *sqlstore.Assets) {
 	t.Helper()
 	bs := sqlstore.NewBlocks(connectionSource)
 	rs := sqlstore.NewRewards(connectionSource)
@@ -157,7 +157,7 @@ func setupRewardsTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.Rewards, *sqlst
 	config := sqlstore.NewDefaultConfig()
 	config.ConnectionConfig.Port = testDBPort
 
-	return bs, rs, ps, as, config
+	return bs, rs, ps, as
 }
 
 func populateTestRewards(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, ps *sqlstore.Parties, as *sqlstore.Assets, rs *sqlstore.Rewards) {
@@ -297,7 +297,7 @@ func TestRewardsPagination(t *testing.T) {
 }
 
 func testRewardsCursorPaginationNoPagination(t *testing.T) {
-	bs, rs, ps, as, _ := setupRewardsTest(t)
+	bs, rs, ps, as := setupRewardsTest(t)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	populateTestRewards(ctx, t, bs, ps, as, rs)
@@ -320,7 +320,7 @@ func testRewardsCursorPaginationNoPagination(t *testing.T) {
 }
 
 func testRewardsCursorPaginationFirstPage(t *testing.T) {
-	bs, rs, ps, as, _ := setupRewardsTest(t)
+	bs, rs, ps, as := setupRewardsTest(t)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	populateTestRewards(ctx, t, bs, ps, as, rs)
@@ -344,7 +344,7 @@ func testRewardsCursorPaginationFirstPage(t *testing.T) {
 }
 
 func testRewardsCursorPaginationLastPage(t *testing.T) {
-	bs, rs, ps, as, _ := setupRewardsTest(t)
+	bs, rs, ps, as := setupRewardsTest(t)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	populateTestRewards(ctx, t, bs, ps, as, rs)
@@ -368,7 +368,7 @@ func testRewardsCursorPaginationLastPage(t *testing.T) {
 }
 
 func testRewardsCursorPaginationFirstPageAfter(t *testing.T) {
-	bs, rs, ps, as, _ := setupRewardsTest(t)
+	bs, rs, ps, as := setupRewardsTest(t)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	populateTestRewards(ctx, t, bs, ps, as, rs)
@@ -394,7 +394,7 @@ func testRewardsCursorPaginationFirstPageAfter(t *testing.T) {
 }
 
 func testRewardsCursorPaginationLastPageBefore(t *testing.T) {
-	bs, rs, ps, as, _ := setupRewardsTest(t)
+	bs, rs, ps, as := setupRewardsTest(t)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	populateTestRewards(ctx, t, bs, ps, as, rs)
@@ -419,7 +419,7 @@ func testRewardsCursorPaginationLastPageBefore(t *testing.T) {
 }
 
 func testRewardsCursorPaginationNoPaginationNewestFirst(t *testing.T) {
-	bs, rs, ps, as, _ := setupRewardsTest(t)
+	bs, rs, ps, as := setupRewardsTest(t)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	populateTestRewards(ctx, t, bs, ps, as, rs)
@@ -442,7 +442,7 @@ func testRewardsCursorPaginationNoPaginationNewestFirst(t *testing.T) {
 }
 
 func testRewardsCursorPaginationFirstPageNewestFirst(t *testing.T) {
-	bs, rs, ps, as, _ := setupRewardsTest(t)
+	bs, rs, ps, as := setupRewardsTest(t)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	populateTestRewards(ctx, t, bs, ps, as, rs)
@@ -466,7 +466,7 @@ func testRewardsCursorPaginationFirstPageNewestFirst(t *testing.T) {
 }
 
 func testRewardsCursorPaginationLastPageNewestFirst(t *testing.T) {
-	bs, rs, ps, as, _ := setupRewardsTest(t)
+	bs, rs, ps, as := setupRewardsTest(t)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	populateTestRewards(ctx, t, bs, ps, as, rs)
@@ -490,7 +490,7 @@ func testRewardsCursorPaginationLastPageNewestFirst(t *testing.T) {
 }
 
 func testRewardsCursorPaginationFirstPageAfterNewestFirst(t *testing.T) {
-	bs, rs, ps, as, _ := setupRewardsTest(t)
+	bs, rs, ps, as := setupRewardsTest(t)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	populateTestRewards(ctx, t, bs, ps, as, rs)
@@ -516,7 +516,7 @@ func testRewardsCursorPaginationFirstPageAfterNewestFirst(t *testing.T) {
 }
 
 func testRewardsCursorPaginationLastPageBeforeNewestFirst(t *testing.T) {
-	bs, rs, ps, as, _ := setupRewardsTest(t)
+	bs, rs, ps, as := setupRewardsTest(t)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	populateTestRewards(ctx, t, bs, ps, as, rs)

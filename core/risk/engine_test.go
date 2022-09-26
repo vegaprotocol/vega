@@ -89,7 +89,7 @@ func TestUpdateMargins(t *testing.T) {
 }
 
 func testMarginLevelsTS(t *testing.T) {
-	eng := getTestEngine(t, nil)
+	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 	ctx, cfunc := context.WithCancel(context.Background())
 	defer cfunc()
@@ -134,7 +134,7 @@ func testMarginLevelsTS(t *testing.T) {
 }
 
 func testMarginTopup(t *testing.T) {
-	eng := getTestEngine(t, nil)
+	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 	ctx, cfunc := context.WithCancel(context.Background())
 	defer cfunc()
@@ -166,7 +166,7 @@ func testMarginTopup(t *testing.T) {
 }
 
 func testMarginTopupOnOrderFailInsufficientFunds(t *testing.T) {
-	eng := getTestEngine(t, nil)
+	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 	_, cfunc := context.WithCancel(context.Background())
 	defer cfunc()
@@ -192,7 +192,7 @@ func testMarginTopupOnOrderFailInsufficientFunds(t *testing.T) {
 }
 
 func testMarginNoop(t *testing.T) {
-	eng := getTestEngine(t, nil)
+	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	ctx, cfunc := context.WithCancel(context.Background())
@@ -219,7 +219,7 @@ func testMarginNoop(t *testing.T) {
 }
 
 func testMarginOverflow(t *testing.T) {
-	eng := getTestEngine(t, nil)
+	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	ctx, cfunc := context.WithCancel(context.Background())
@@ -251,7 +251,7 @@ func testMarginOverflow(t *testing.T) {
 }
 
 func testMarginOverflowAuctionEnd(t *testing.T) {
-	eng := getTestEngine(t, nil)
+	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	ctx, cfunc := context.WithCancel(context.Background())
@@ -636,12 +636,10 @@ func testMarginWithOrderInBookAfterParamsUpdate(t *testing.T) {
 	assert.Equal(t, uint64(562*colRelease), margins.CollateralReleaseLevel.Uint64())
 }
 
-func getTestEngine(t *testing.T, initialRisk *types.RiskFactor) *testEngine {
+func getTestEngine(t *testing.T) *testEngine {
 	t.Helper()
-	if initialRisk == nil {
-		cpy := riskFactors
-		initialRisk = &cpy // this is just a shallow copy, so might be worth creating a deep copy depending on the test
-	}
+	cpy := riskFactors
+	cpyPtr := &cpy
 	ctrl := gomock.NewController(t)
 	model := mocks.NewMockModel(ctrl)
 	conf := risk.NewDefaultConfig()
@@ -649,7 +647,7 @@ func getTestEngine(t *testing.T, initialRisk *types.RiskFactor) *testEngine {
 	ts := mocks.NewMockTimeService(ctrl)
 	broker := bmocks.NewMockBroker(ctrl)
 	as := mocks.NewMockAuctionState(ctrl)
-	model.EXPECT().DefaultRiskFactors().Return(initialRisk).Times(1)
+	model.EXPECT().DefaultRiskFactors().Return(cpyPtr).Times(1)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 	statevar.EXPECT().NewEvent(gomock.Any(), gomock.Any(), gomock.Any())

@@ -70,12 +70,9 @@ func (rs *Rewards) GetByCursor(ctx context.Context,
 	pagination entities.CursorPagination,
 ) ([]entities.Reward, entities.PageInfo, error) {
 	var pageInfo entities.PageInfo
-	query, args, err := selectRewards(partyIDHex, assetIDHex)
-	if err != nil {
-		return nil, pageInfo, err
-	}
+	query, args := selectRewards(partyIDHex, assetIDHex)
 
-	query, args, err = PaginateQuery[entities.RewardCursor](query, args, rewardsOrdering, pagination)
+	query, args, err := PaginateQuery[entities.RewardCursor](query, args, rewardsOrdering, pagination)
 	if err != nil {
 		return nil, pageInfo, err
 	}
@@ -94,10 +91,7 @@ func (rs *Rewards) GetByOffset(ctx context.Context,
 	assetIDHex *string,
 	pagination *entities.OffsetPagination,
 ) ([]entities.Reward, error) {
-	query, args, err := selectRewards(partyIDHex, assetIDHex)
-	if err != nil {
-		return nil, err
-	}
+	query, args := selectRewards(partyIDHex, assetIDHex)
 
 	if pagination != nil {
 		orderCols := []string{"epoch_id", "party_id", "asset_id"}
@@ -106,21 +100,17 @@ func (rs *Rewards) GetByOffset(ctx context.Context,
 
 	rewards := []entities.Reward{}
 	defer metrics.StartSQLQuery("Rewards", "Get")()
-	err = pgxscan.Select(ctx, rs.Connection, &rewards, query, args...)
-	if err != nil {
+	if err := pgxscan.Select(ctx, rs.Connection, &rewards, query, args...); err != nil {
 		return nil, fmt.Errorf("querying rewards: %w", err)
 	}
 	return rewards, nil
 }
 
-func selectRewards(partyIDHex, assetIDHex *string) (string, []interface{}, error) {
+func selectRewards(partyIDHex, assetIDHex *string) (string, []interface{}) {
 	query := `SELECT * from rewards`
 	args := []interface{}{}
-	if err := addRewardWhereClause(&query, &args, partyIDHex, assetIDHex); err != nil {
-		return "", nil, err
-	}
-
-	return query, args, nil
+	addRewardWhereClause(&query, &args, partyIDHex, assetIDHex)
+	return query, args
 }
 
 func (rs *Rewards) GetSummaries(ctx context.Context,
@@ -128,10 +118,7 @@ func (rs *Rewards) GetSummaries(ctx context.Context,
 ) ([]entities.RewardSummary, error) {
 	query := `SELECT party_id, asset_id, sum(amount) as amount FROM rewards`
 	args := []interface{}{}
-	if err := addRewardWhereClause(&query, &args, partyIDHex, assetIDHex); err != nil {
-		return nil, err
-	}
-
+	addRewardWhereClause(&query, &args, partyIDHex, assetIDHex)
 	query = fmt.Sprintf("%s GROUP BY party_id, asset_id", query)
 
 	summaries := []entities.RewardSummary{}
@@ -145,7 +132,7 @@ func (rs *Rewards) GetSummaries(ctx context.Context,
 
 // -------------------------------------------- Utility Methods
 
-func addRewardWhereClause(queryPtr *string, args *[]interface{}, partyIDHex, assetIDHex *string) error {
+func addRewardWhereClause(queryPtr *string, args *[]interface{}, partyIDHex, assetIDHex *string) {
 	query := *queryPtr
 	if partyIDHex != nil && *partyIDHex != "" {
 		partyID := entities.PartyID(*partyIDHex)
@@ -162,5 +149,4 @@ func addRewardWhereClause(queryPtr *string, args *[]interface{}, partyIDHex, ass
 		query = fmt.Sprintf("%s %s asset_id=%s", query, clause, nextBindVar(args, assetID))
 	}
 	*queryPtr = query
-	return nil
 }

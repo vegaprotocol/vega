@@ -23,10 +23,10 @@ import (
 
 var marketsKey = (&types.PayloadExecutionMarkets{}).Key()
 
-func (e *Engine) marketsStates() ([]*types.ExecMarket, []types.StateProvider, error) {
+func (e *Engine) marketsStates() ([]*types.ExecMarket, []types.StateProvider) {
 	mkts := len(e.marketsCpy)
 	if mkts == 0 {
-		return nil, nil, nil
+		return nil, nil
 	}
 	mks := make([]*types.ExecMarket, 0, mkts)
 	if prev := len(e.generatedProviders); prev < mkts {
@@ -43,7 +43,7 @@ func (e *Engine) marketsStates() ([]*types.ExecMarket, []types.StateProvider, er
 		}
 	}
 
-	return mks, e.newGeneratedProviders, nil
+	return mks, e.newGeneratedProviders
 }
 
 func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*Market, error) {
@@ -138,10 +138,7 @@ func (e *Engine) serialise() (snapshot []byte, providers []types.StateProvider, 
 		return e.snapshotSerialised, e.newGeneratedProviders, nil
 	}
 
-	mkts, pvds, err := e.marketsStates()
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get market states: %w", err)
-	}
+	mkts, pvds := e.marketsStates()
 
 	pl := types.Payload{
 		Data: &types.PayloadExecutionMarkets{
