@@ -1428,16 +1428,9 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 		return nil, nil, m.unregisterAndReject(ctx, order, err)
 	}
 
-	// if order was FOK or IOC some or all of it may have not be consumed, so we need to
-	// remove them from the potential orders,
-	// then we should be able to process the rest of the order properly.
-	if ((order.TimeInForce == types.OrderTimeInForceFOK ||
-		order.TimeInForce == types.OrderTimeInForceIOC ||
-		order.Status == types.OrderStatusStopped) &&
-		confirmation.Order.Remaining != 0) ||
-		// Also do it if specifically we went against a wash trade
-		(order.Status == types.OrderStatusRejected &&
-			order.Reason == types.OrderErrorSelfTrading) {
+	// if the order is not staying in the book, then we remove it
+	// from the potential positions
+	if order.IsFinished() && order.Remaining > 0 {
 		_ = m.position.UnregisterOrder(ctx, order)
 	}
 
@@ -2661,12 +2654,7 @@ func (m *Market) amendOrder(
 			}
 			// we were parked, need to unpark
 			m.peggedOrders.Unpark(amendedOrder.ID)
-			orderConf, orderUpdts, err := m.submitValidatedOrder(ctx, amendedOrder)
-			if err != nil {
-				// If we cannot submit a new order then the amend has failed, return the error
-				return nil, orderUpdts, err
-			}
-			return orderConf, orderUpdts, err
+			return m.submitValidatedOrder(ctx, amendedOrder)
 		}
 	}
 
@@ -2694,11 +2682,9 @@ func (m *Market) amendOrder(
 
 	// If nothing changed, amend in place to update updatedAt and version number
 	if !priceShift && !sizeIncrease && !sizeDecrease && !expiryChange && !timeInForceChange {
-		ret, err := m.orderAmendInPlace(existingOrder, amendedOrder)
-		if err == nil {
-			m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
-		}
-		return ret, nil, err
+		ret := m.orderAmendInPlace(existingOrder, amendedOrder)
+		m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
+		return ret, nil, nil
 	}
 
 	// Update potential new position after the amend
@@ -2725,39 +2711,31 @@ func (m *Market) amendOrder(
 	// if increase in size or change in price
 	// ---> DO atomic cancel and submit
 	if priceShift || sizeIncrease {
-		confirmation, err := m.orderCancelReplace(ctx, existingOrder, amendedOrder)
-		var orders []*types.Order
-		if err != nil {
-			// if an error happen, the order never hit the book, so we can
-			// just rollback the position size
-			_ = m.position.AmendOrder(ctx, amendedOrder, existingOrder)
-		} else {
-			orders = m.handleConfirmation(ctx, confirmation)
-			m.broker.Send(events.NewOrderEvent(ctx, confirmation.Order))
-		}
-		return confirmation, orders, err
+		return m.orderCancelReplace(ctx, existingOrder, amendedOrder)
 	}
 
 	// if decrease in size or change in expiration date
 	// ---> DO amend in place in matching engine
 	if expiryChange || sizeDecrease || timeInForceChange {
-		// we not doing anything in case of error here as its
-		// pretty much impossible at this point for an order not to be
-		// amended in place. Maybe a panic would be better
-		ret, err := m.orderAmendInPlace(existingOrder, amendedOrder)
-		if err == nil {
-			if sizeDecrease {
-				// ensure we release excess if party reduced the size of their order
-				m.recheckMargin(ctx, m.position.GetPositionsByParty(amendedOrder.Party))
-			}
-			m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
+		ret := m.orderAmendInPlace(existingOrder, amendedOrder)
+		if sizeDecrease {
+			// ensure we release excess if party reduced the size of their order
+			m.recheckMargin(ctx, m.position.GetPositionsByParty(amendedOrder.Party))
 		}
-		return ret, nil, err
+		m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
+		return ret, nil, nil
 	}
 
 	if m.log.GetLevel() == logging.DebugLevel {
 		m.log.Debug("Order amendment not allowed", logging.Order(*existingOrder))
 	}
+
+	// for some reason, we got here without doing anything to the order,
+	// or we would have returned earlier.
+	// should we panic, as that doesn't seems right,
+	// or just update back the position?
+	_ = m.position.AmendOrder(ctx, amendedOrder, existingOrder)
+
 	return nil, nil, types.ErrEditNotAllowed
 }
 
@@ -2878,7 +2856,19 @@ func (m *Market) applyOrderAmendment(
 func (m *Market) orderCancelReplace(
 	ctx context.Context,
 	existingOrder, newOrder *types.Order,
-) (conf *types.OrderConfirmation, err error) {
+) (conf *types.OrderConfirmation, orders []*types.Order, err error) {
+	defer func() {
+		if err != nil {
+			// if an error happen, the order never hit the book, so we can
+			// just rollback the position size
+			_ = m.position.AmendOrder(ctx, newOrder, existingOrder)
+			return
+		}
+
+		orders = m.handleConfirmation(ctx, conf)
+		m.broker.Send(events.NewOrderEvent(ctx, conf.Order))
+	}()
+
 	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "orderCancelReplace")
 	defer timer.EngineTimeCounterAdd()
 
@@ -2899,17 +2889,17 @@ func (m *Market) orderCancelReplace(
 			m.log.Panic("should never reach this point")
 		}
 
-		return conf, nil
+		return conf, nil, nil
 	}
 	// first we call the order book to evaluate auction triggers and get the list of trades
 	trades, err := m.checkPriceAndGetTrades(ctx, newOrder)
 	if err != nil {
-		return nil, errors.New("couldn't insert order in book")
+		return nil, nil, errors.New("couldn't insert order in book")
 	}
 
 	// try to apply fees on the trade
 	if err := m.applyFees(ctx, newOrder, trades); err != nil {
-		return nil, errors.New("could not apply fees for order")
+		return nil, nil, errors.New("could not apply fees for order")
 	}
 
 	// "hot-swap" of the orders
@@ -2917,35 +2907,38 @@ func (m *Market) orderCancelReplace(
 	if err != nil {
 		m.log.Panic("unable to submit order", logging.Error(err))
 	}
+
 	// replace the trades in the confirmation to have
 	// the ones with the fees embedded
 	conf.Trades = trades
 
-	// pegged order might have been parked ??? NO?
-	if m.peggedOrders.IsParked(newOrder.ID) {
-		m.peggedOrders.Unpark(newOrder.ID)
+	// if the order is not staying in the book, then we remove it
+	// from the potential positions
+	if conf.Order.IsFinished() && conf.Order.Remaining > 0 {
+		_ = m.position.UnregisterOrder(ctx, conf.Order)
 	}
 
-	return conf, nil
+	return conf, orders, nil
 }
 
-func (m *Market) orderAmendInPlace(originalOrder, amendOrder *types.Order) (*types.OrderConfirmation, error) {
+func (m *Market) orderAmendInPlace(
+	originalOrder, amendOrder *types.Order,
+) *types.OrderConfirmation {
 	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "orderAmendInPlace")
 	defer timer.EngineTimeCounterAdd()
 
 	err := m.matching.AmendOrder(originalOrder, amendOrder)
 	if err != nil {
-		if m.log.GetLevel() == logging.DebugLevel {
-			m.log.Debug("Failure after amend order from matching engine (amend-in-place)",
-				logging.OrderWithTag(*amendOrder, "new-order"),
-				logging.Error(err))
-		}
-		return nil, err
+		// panic here, no good reason for a failure at this point
+		m.log.Panic("Failure after amend order from matching engine (amend-in-place)",
+			logging.OrderWithTag(*amendOrder, "new-order"),
+			logging.OrderWithTag(*originalOrder, "old-order"),
+			logging.Error(err))
 	}
 
 	return &types.OrderConfirmation{
 		Order: amendOrder,
-	}, nil
+	}
 }
 
 func (m *Market) orderAmendWhenParked(amendOrder *types.Order) *types.OrderConfirmation {
