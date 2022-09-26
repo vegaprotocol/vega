@@ -207,7 +207,7 @@ message Order {
   // to keep track of the auction batch this order falls under (required for fees calculation)
   uint64 batch_id = 17;
   // Pegged order details, used only if the order represents a pegged order.
-  PeggedOrder pegged_order = 18;
+  optional PeggedOrder pegged_order = 18;
   // Is this order created as part of a liquidity provision, will be empty if not.
   string liquidity_provision_id = 19;
 }

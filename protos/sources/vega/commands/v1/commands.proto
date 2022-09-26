@@ -51,7 +51,7 @@ message OrderSubmission {
   string reference = 8;
   // Used to specify the details for a pegged order
   // - See `PeggedOrder`
-  vega.PeggedOrder pegged_order = 9;
+  optional vega.PeggedOrder pegged_order = 9;
 }
 
 // An order cancellation is a request to cancel an existing order on Vega
