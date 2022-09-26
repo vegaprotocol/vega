@@ -151,10 +151,14 @@ func (w *Withdrawals) getByPartyCursor(ctx context.Context, partyID string, pagi
 func getWithdrawalsByPartyQuery(partyID string, dateRange entities.DateRange) (string, []interface{}) {
 	var args []interface{}
 
-	query := fmt.Sprintf(`SELECT
+	query := `SELECT
 		id, party_id, amount, asset, status, ref, expiry, foreign_tx_hash,
 		created_timestamp, withdrawn_timestamp, ext, tx_hash, vega_time
-		FROM withdrawals_current WHERE party_id = %s`, nextBindVar(&args, entities.PartyID(partyID)))
+		FROM withdrawals_current`
+
+	if partyID != "" {
+		query = fmt.Sprintf("%s WHERE party_id = %s", query, nextBindVar(&args, entities.PartyID(partyID)))
+	}
 
 	return filterDateRange(query, withdrawalsFilterDateColumn, dateRange, args...)
 }
