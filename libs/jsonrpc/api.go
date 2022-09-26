@@ -19,27 +19,35 @@ type API struct {
 	// isProcessingRequest tells if the API is processing a request or not.
 	// It enforces a sequential and non-concurrent processing.
 	isProcessingRequest uint32
+
+	// processOnlyOneRequest tells if the API should allow multiple requests
+	// in parallel.
+	// This is a hot-fix, as this should be handled by the pipeline itself.
+	processOnlyOneRequest bool
 }
 
-func New(log *zap.Logger) *API {
+func New(log *zap.Logger, processOnlyOneRequest bool) *API {
 	return &API{
-		log:                 log,
-		commands:            map[string]Command{},
-		isProcessingRequest: 0,
+		log:                   log,
+		commands:              map[string]Command{},
+		isProcessingRequest:   0,
+		processOnlyOneRequest: processOnlyOneRequest,
 	}
 }
 
 func (a *API) DispatchRequest(ctx context.Context, request *Request) *Response {
 	traceID := traceIDFromContext(ctx)
 
-	// We reject all incoming request as long as there is a request being
-	// processed.
-	if !atomic.CompareAndSwapUint32(&a.isProcessingRequest, 0, 1) {
-		a.log.Info("request rejected because another one is being processed",
-			zap.String("trace-id", traceID))
-		return requestAlreadyBeingProcessed(request)
+	if a.processOnlyOneRequest {
+		// We reject all incoming request as long as there is a request being
+		// processed.
+		if !atomic.CompareAndSwapUint32(&a.isProcessingRequest, 0, 1) {
+			a.log.Info("request rejected because another one is being processed",
+				zap.String("trace-id", traceID))
+			return requestAlreadyBeingProcessed(request)
+		}
+		defer atomic.SwapUint32(&a.isProcessingRequest, 0)
 	}
-	defer atomic.SwapUint32(&a.isProcessingRequest, 0)
 
 	if err := request.Check(); err != nil {
 		a.log.Info("invalid request",
