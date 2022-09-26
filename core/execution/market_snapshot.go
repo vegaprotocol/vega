@@ -161,6 +161,10 @@ func NewMarketFromSnapshot(
 	market.tradableInstrument.Instrument.Product.NotifyOnSettlementPrice(market.settlementPrice)
 	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
 
+	if mkt.State == types.MarketStateTradingTerminated {
+		market.tradableInstrument.Instrument.Product.UnsubscribeTradingTerminated(ctx)
+	}
+
 	if mkt.State == types.MarketStateSettled {
 		market.closed = true
 		stateVarEngine.UnregisterStateVariable(asset, mkt.ID)
@@ -169,7 +173,7 @@ func NewMarketFromSnapshot(
 }
 
 func (m *Market) getState() *types.ExecMarket {
-	rf, _ := m.risk.GetRiskFactors()
+	rf := m.risk.GetRiskFactors()
 	var sp *num.Uint
 	if m.settlementPriceInMarket != nil {
 		sp = m.settlementPriceInMarket.Clone()

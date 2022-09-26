@@ -8,7 +8,7 @@ import (
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	"code.vegaprotocol.io/vega/wallet/api"
-	"code.vegaprotocol.io/vega/wallet/api/mocks"
+	nodemocks "code.vegaprotocol.io/vega/wallet/api/node/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -27,7 +27,7 @@ func testGettingChainIDSucceeds(t *testing.T) {
 
 	// setup
 	handler := newGetChainIDHandler(t)
-	handler.nodeSelector.EXPECT().Node(ctx).Times(1).Return(handler.node, nil)
+	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
 	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(&apipb.LastBlockHeightResponse{
 		ChainId: expectedChainID,
 	}, nil)
@@ -47,7 +47,7 @@ func testNoHealthyNodeAvailableDoesNotReturnChainID(t *testing.T) {
 
 	// setup
 	handler := newGetChainIDHandler(t)
-	handler.nodeSelector.EXPECT().Node(ctx).Times(1).Return(nil, assert.AnError)
+	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(nil, assert.AnError)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx)
@@ -66,7 +66,7 @@ func testFailingToGetLastBlockDoesNotReturnChainID(t *testing.T) {
 
 	// setup
 	handler := newGetChainIDHandler(t)
-	handler.nodeSelector.EXPECT().Node(ctx).Times(1).Return(handler.node, nil)
+	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
 	handler.node.EXPECT().LastBlock(ctx).Times(1).Return(nil, assert.AnError)
 
 	// when
@@ -82,8 +82,8 @@ func testFailingToGetLastBlockDoesNotReturnChainID(t *testing.T) {
 
 type GetChainIDHandler struct {
 	*api.GetChainID
-	nodeSelector *mocks.MockNodeSelector
-	node         *mocks.MockNode
+	nodeSelector *nodemocks.MockSelector
+	node         *nodemocks.MockNode
 }
 
 func (h *GetChainIDHandler) handle(t *testing.T, ctx context.Context) (api.GetChainIDResult, *jsonrpc.ErrorDetails) {
@@ -104,8 +104,8 @@ func newGetChainIDHandler(t *testing.T) *GetChainIDHandler {
 	t.Helper()
 
 	ctrl := gomock.NewController(t)
-	nodeSelector := mocks.NewMockNodeSelector(ctrl)
-	node := mocks.NewMockNode(ctrl)
+	nodeSelector := nodemocks.NewMockSelector(ctrl)
+	node := nodemocks.NewMockNode(ctrl)
 
 	return &GetChainIDHandler{
 		GetChainID:   api.NewGetChainID(nodeSelector),

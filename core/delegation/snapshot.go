@@ -189,13 +189,13 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 	case *types.PayloadDelegationAuto:
 		return nil, e.restoreAuto(pl.DelegationAuto, p)
 	case *types.PayloadDelegationLastReconTime:
-		return nil, e.restoreLastReconTime(ctx, pl.LastReconcilicationTime, p)
+		return nil, e.restoreLastReconTime(pl.LastReconcilicationTime, p)
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
 }
 
-func (e *Engine) restoreLastReconTime(ctx context.Context, t time.Time, p *types.Payload) error {
+func (e *Engine) restoreLastReconTime(t time.Time, p *types.Payload) error {
 	var err error
 	e.lastReconciliation = t
 	e.dss.changedLastRecon = false

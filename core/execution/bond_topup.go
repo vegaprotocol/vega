@@ -25,7 +25,7 @@ func (m *Market) checkBondBalance(ctx context.Context) {
 	lps := m.liquidity.ProvisionsPerParty().Slice()
 	mID := m.GetID()
 	asset, _ := m.mkt.GetAsset()
-	transfers := make([]*types.TransferResponse, 0, len(lps))
+	transfers := make([]*types.LedgerMovement, 0, len(lps))
 	for _, lp := range lps {
 		party := lp.Party
 		bondAcc, err := m.collateral.GetPartyBondAccount(mID, party, asset)
@@ -60,11 +60,11 @@ func (m *Market) checkBondBalance(ctx context.Context) {
 				logging.String("party", party),
 				logging.Error(err))
 		}
-		if len(resp.Transfers) > 0 {
+		if len(resp.Entries) > 0 {
 			transfers = append(transfers, resp)
 		}
 	}
 	if len(transfers) > 0 {
-		m.broker.Send(events.NewTransferResponse(ctx, transfers))
+		m.broker.Send(events.NewLedgerMovements(ctx, transfers))
 	}
 }

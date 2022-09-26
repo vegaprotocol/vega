@@ -130,7 +130,7 @@ func (m *Market) SubmitLiquidityProvision(
 		m.log.Debug("bond update error", logging.Error(err))
 		return err
 	}
-	m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tresp}))
+	m.broker.Send(events.NewLedgerMovements(ctx, []*types.LedgerMovement{tresp}))
 
 	// if something happen, rollback the transfer
 	defer func() {
@@ -154,7 +154,7 @@ func (m *Market) SubmitLiquidityProvision(
 				logging.Error(err))
 			err = fmt.Errorf("%v, %w", err, newerr)
 		}
-		m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tresp}))
+		m.broker.Send(events.NewLedgerMovements(ctx, []*types.LedgerMovement{tresp}))
 	}()
 
 	defer func() {
@@ -347,12 +347,7 @@ func (m *Market) CancelLiquidityProvision(ctx context.Context, cancel *types.Liq
 // then place the new orders.
 // this is done this way just so we maximise the changes for the margin
 // calls to succeed.
-func (m *Market) updateAndCreateLPOrders(
-	ctx context.Context,
-	newOrders []*types.Order,
-	cancels []*liquidity.ToCancel,
-	distressed []*types.Order,
-) ([]*types.Order, error) {
+func (m *Market) updateAndCreateLPOrders(ctx context.Context, newOrders []*types.Order, cancels []*liquidity.ToCancel, distressed []*types.Order) []*types.Order {
 	market := m.GetID()
 
 	for _, cancel := range cancels {
@@ -499,7 +494,7 @@ func (m *Market) updateAndCreateLPOrders(
 		orderUpdates = nil
 	}
 
-	return orderUpdates, nil
+	return orderUpdates
 }
 
 func (m *Market) cancelPendingLiquidityProvision(
@@ -687,8 +682,8 @@ func (m *Market) rollBackMargin(
 	}
 
 	// then send the event for the transfer request
-	m.broker.Send(events.NewTransferResponse(
-		ctx, []*types.TransferResponse{resp}))
+	m.broker.Send(events.NewLedgerMovements(
+		ctx, []*types.LedgerMovement{resp}))
 	return nil
 }
 
@@ -956,7 +951,7 @@ func (m *Market) cancelLiquidityProvision(
 			m.log.Debug("bond update error", logging.Error(err))
 			return err
 		}
-		m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tresp}))
+		m.broker.Send(events.NewLedgerMovements(ctx, []*types.LedgerMovement{tresp}))
 	}
 
 	// now let's update the fee selection
@@ -998,8 +993,8 @@ func (m *Market) amendLiquidityProvision(
 				err = fmt.Errorf("%v: %w", err, newerr)
 			}
 			if tresp != nil {
-				m.broker.Send(events.NewTransferResponse(
-					ctx, []*types.TransferResponse{tresp}))
+				m.broker.Send(events.NewLedgerMovements(
+					ctx, []*types.LedgerMovement{tresp}))
 			}
 		}
 	}()
@@ -1267,8 +1262,8 @@ func (m *Market) ensureLiquidityProvisionBond(
 	if err != nil {
 		return nil, err
 	}
-	m.broker.Send(events.NewTransferResponse(
-		ctx, []*types.TransferResponse{tresp}))
+	m.broker.Send(events.NewLedgerMovements(
+		ctx, []*types.LedgerMovement{tresp}))
 
 	// now we will use the actuall transfer as a rollback later on eventually
 	// so let's just change from HIGH to LOW and inverse

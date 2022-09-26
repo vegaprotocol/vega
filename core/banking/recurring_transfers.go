@@ -121,13 +121,10 @@ func (e *Engine) getMarketScores(ds *vegapb.DispatchStrategy, payoutAsset, funde
 	return nil
 }
 
-func (e *Engine) distributeRecurringTransfers(
-	ctx context.Context,
-	newEpoch uint64,
-) error {
+func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint64) {
 	var (
 		transfersDone = []events.Event{}
-		tresps        = []*types.TransferResponse{}
+		tresps        = []*types.LedgerMovement{}
 		currentEpoch  = num.NewUint(newEpoch).ToDecimal()
 	)
 
@@ -167,7 +164,7 @@ func (e *Engine) distributeRecurringTransfers(
 
 		// NB: if no dispatch strategy is defined - the transfer is made to the account as defined in the transfer.
 		// If a dispatch strategy is defined but there are no relevant markets in scope or no fees in scope then no transfer is made!
-		var resps []*types.TransferResponse
+		var resps []*types.LedgerMovement
 		if v.DispatchStrategy == nil {
 			resps, err = e.processTransfer(
 				ctx, v.From, v.To, v.Asset, "", v.FromAccountType, v.ToAccountType, amount, v.Reference, nil, // last is eventual oneoff, which this is not
@@ -211,15 +208,13 @@ func (e *Engine) distributeRecurringTransfers(
 
 	// send events
 	if len(tresps) > 0 {
-		e.broker.Send(events.NewTransferResponse(ctx, tresps))
+		e.broker.Send(events.NewLedgerMovements(ctx, tresps))
 	}
 	if len(transfersDone) > 0 {
 		// also set the state change
 		e.bss.changedRecurringTransfers = true
 		e.broker.SendBatch(transfersDone)
 	}
-
-	return nil
 }
 
 func (e *Engine) deleteTransfer(ID string) {

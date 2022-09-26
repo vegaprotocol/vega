@@ -2,10 +2,14 @@
 version: v1
 plugins:
   - name: openapiv2
-    out: ./protos/generated/swagger
+    out: ./protos/generated/data-node/swagger
     opt:
       - logtostderr=true
       - grpc_api_configuration=protos/sources/data-node/grpc-rest-bindings.yml
+  - name: openapiv2
+    out: ./protos/generated/vega/swagger
+    opt:
+      - logtostderr=true
       - grpc_api_configuration=protos/sources/vega/grpc-rest-bindings.yml
   - name: doc
     out: ./protos/generated/grpc

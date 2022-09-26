@@ -257,7 +257,7 @@ func (e *Engine) preEnactProposal(ctx context.Context, p *proposal) (te *ToEnact
 	case types.ProposalTermsTypeNewFreeform:
 		te.f = &ToEnactFreeform{}
 	}
-	return // nolint:nakedret
+	return //nolint:nakedret
 }
 
 func (e *Engine) preVoteClosedProposal(p *proposal) *VoteClosed {
@@ -956,7 +956,7 @@ func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.Pr
 				OracleSpecForSettlementPrice:    product.Future.OracleSpecForSettlementPrice,
 				OracleSpecForTradingTermination: product.Future.OracleSpecForTradingTermination,
 				OracleSpecBinding:               product.Future.OracleSpecBinding,
-				SettlementPriceDecimalPlaces:    product.Future.SettlementPriceDecimals,
+				SettlementDataDecimalPlaces:     product.Future.SettlementDataDecimals,
 			},
 		}
 	default:

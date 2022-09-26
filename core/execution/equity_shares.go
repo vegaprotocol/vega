@@ -59,43 +59,33 @@ func (es *EquityShares) OpeningAuctionEnded() {
 		panic("market already left opening auction")
 	}
 	es.openingAuctionEnded = true
-	es.setOpeningAuctionAVG()
 	es.r = num.DecimalZero()
-}
-
-// we just the average entry valuation to the same value
-// for every LP during opening auction.
-func (es *EquityShares) setOpeningAuctionAVG() {
-	// now set average entry valuation for all of them.
-	factor := num.DecimalFromFloat(1.0)
-	if !es.totalVStake.IsZero() && !es.totalPStake.IsZero() {
-		factor = es.totalPStake.Div(es.totalVStake)
-	}
-	for _, v := range es.lps {
-		if v.stake.GreaterThan(v.vStake) {
-			v.vStake = v.stake
-		}
-		v.avg = v.vStake.Mul(factor) // perhaps we ought to move this to a separate loop once the totals have all been updated
-		// v.avg = es.mvp
-	}
 }
 
 func (es *EquityShares) UpdateVStake() {
 	if es.r.IsZero() {
-		for _, v := range es.lps {
-			v.vStake = v.stake
-		}
-		es.totalVStake = es.totalPStake
 		return
 	}
 	total := num.DecimalZero()
 	factor := num.DecimalFromFloat(1.0).Add(es.r)
+	recalc := false
 	for _, v := range es.lps {
 		vStake := num.MaxD(v.stake, v.vStake.Mul(factor))
 		v.vStake = vStake
 		total = total.Add(vStake)
 	}
+	// some vStake changed, force recalc of ELS values.
+	if !es.totalVStake.Equals(total) {
+		recalc = true
+	}
 	es.totalVStake = total
+	if recalc {
+		es.updateAllELS()
+	}
+}
+
+func (es *EquityShares) GetTotalVStake() num.Decimal {
+	return es.totalVStake
 }
 
 func (es *EquityShares) AvgTradeValue(avg num.Decimal) *EquityShares {
@@ -136,17 +126,10 @@ func (es *EquityShares) SetPartyStake(id string, newStakeU *num.Uint) {
 	}
 	// first time we set the newStake and mvp as avg.
 	if !found {
-		avg := es.mvp
-		es.lps[id] = &lp{
-			stake:  newStake,
-			avg:    avg,
-			vStake: newStake,
-		}
-		es.totalPStake = es.totalPStake.Add(newStake)
-		es.totalVStake = es.totalVStake.Add(newStake)
-		if es.openingAuctionEnded {
-			es.lps[id].avg = es.AvgEntryValuation(id)
-		}
+		// this is technically a delta == new stake -> calculate avg accordingly
+		v = &lp{}
+		es.lps[id] = v
+		es.updateAvgPosDelta(v, newStake, newStake) // delta == new stake
 		return
 	}
 
@@ -161,27 +144,27 @@ func (es *EquityShares) SetPartyStake(id string, newStakeU *num.Uint) {
 		v.stake = newStake
 		es.totalVStake = es.totalVStake.Add(v.vStake)
 		es.totalPStake = es.totalPStake.Add(v.stake)
-		v.avg = v.vStake.Mul(es.totalPStake.Div(es.totalVStake))
 		return
 	}
 
+	es.updateAvgPosDelta(v, delta, newStake)
+}
+
+func (es *EquityShares) updateAvgPosDelta(v *lp, delta, newStake num.Decimal) {
+	// entry valuation == total Virtual stake (before delta is applied)
+	// (average entry valuation) <- (average entry valuation) x S / (S + Delta S) + (entry valuation) x (Delta S) / (S + Delta S)
+	// S being the LP's physical stake, Delta S being the amount by which the stake is increased
 	es.totalVStake = es.totalVStake.Add(delta)
 	es.totalPStake = es.totalPStake.Sub(v.stake).Add(newStake)
-	// stakes were originally assigned _after_ the mustEquity call
-	// average was calculated in the if es.openingAuctionEnded bit
-	// v.avg = v.vStake.Mul(es.totalPStake.Div(es.totalVStake))
-	v.vStake = v.vStake.Add(delta) // increase
+	v.avg = v.avg.Mul(v.stake).Div(newStake).Add(es.totalVStake.Mul(delta).Div(newStake))
+	// this is the first LP -> no vStake yet
+	v.vStake = v.vStake.Add(delta)
 	v.stake = newStake
-	v.avg = v.vStake.Mul(es.totalPStake.Div(es.totalVStake))
 }
 
 // AvgEntryValuation returns the Average Entry Valuation for a given party.
 func (es *EquityShares) AvgEntryValuation(id string) num.Decimal {
 	if v, ok := es.lps[id]; ok {
-		avg := v.vStake.Mul(es.totalPStake.Div(es.totalVStake))
-		if !avg.Equal(v.avg) {
-			v.avg = avg
-		}
 		return v.avg
 	}
 	return num.DecimalZero()
@@ -264,4 +247,16 @@ func (es *EquityShares) SharesExcept(except map[string]struct{}) map[string]num.
 		es.totalVStake = allTotalV
 	}
 	return shares
+}
+
+func (es *EquityShares) updateAllELS() {
+	for id, v := range es.lps {
+		eq, err := es.equity(id)
+		if err != nil {
+			panic(err)
+		}
+		if !v.share.Equals(eq) {
+			v.share = eq
+		}
+	}
 }

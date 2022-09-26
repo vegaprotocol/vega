@@ -297,9 +297,8 @@ func getPopulatedTestSideWithOnlyPegs(side types.Side) *OrderBookSide {
 	return obs
 }
 
-func getEmptyTestSide(side types.Side) *OrderBookSide {
-	obs := getTestSide(types.SideSell)
-	return obs
+func getEmptyTestSide() *OrderBookSide {
+	return getTestSide(types.SideSell)
 }
 
 func TestExtractOrdersFullLevel(t *testing.T) {
@@ -347,7 +346,7 @@ func TestExtractOrdersWrongVolume(t *testing.T) {
 
 func TestBestStatic(t *testing.T) {
 	// Empty book
-	emptySide := getEmptyTestSide(types.SideSell)
+	emptySide := getEmptyTestSide()
 	_, err := emptySide.BestStaticPrice()
 	assert.Error(t, err)
 

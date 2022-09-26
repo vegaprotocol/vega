@@ -38,10 +38,15 @@ func handleCandleConnectionRequest(ctx context.Context, client TradingDataServic
 		return nil, fmt.Errorf("could not retrieve candles for market %s: %w", mkt, err)
 	}
 
+	requestInterval, err := toV2IntervalString(interval)
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve candles for market %s: %w", mkt, err)
+	}
+
 	candleID := ""
 
 	for _, c4m := range candlesForMktResp.IntervalToCandleId {
-		if c4m.Interval == string(interval) {
+		if c4m.Interval == requestInterval {
 			candleID = c4m.CandleId
 			break
 		}
@@ -53,8 +58,8 @@ func handleCandleConnectionRequest(ctx context.Context, client TradingDataServic
 
 	req := v2.ListCandleDataRequest{
 		CandleId:      candleID,
-		FromTimestamp: since.Unix(),
-		ToTimestamp:   to.Unix(),
+		FromTimestamp: since.UnixNano(),
+		ToTimestamp:   to.UnixNano(),
 		Interval:      interval,
 		Pagination:    pagination,
 	}
@@ -64,6 +69,25 @@ func handleCandleConnectionRequest(ctx context.Context, client TradingDataServic
 	}
 
 	return resp.Candles, nil
+}
+
+func toV2IntervalString(interval vega.Interval) (string, error) {
+	switch interval {
+	case vega.Interval_INTERVAL_I1M:
+		return "1 minute", nil
+	case vega.Interval_INTERVAL_I5M:
+		return "5 minutes", nil
+	case vega.Interval_INTERVAL_I15M:
+		return "15 minutes", nil
+	case vega.Interval_INTERVAL_I1H:
+		return "1 hour", nil
+	case vega.Interval_INTERVAL_I6H:
+		return "6 hours", nil
+	case vega.Interval_INTERVAL_I1D:
+		return "1 day", nil
+	default:
+		return "", fmt.Errorf("interval not support:%s", interval)
+	}
 }
 
 func handleWithdrawalsConnectionRequest(ctx context.Context, client TradingDataServiceClientV2, party *types.Party,

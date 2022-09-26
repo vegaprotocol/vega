@@ -560,7 +560,7 @@ func addAccount(t *testing.T, market *testMarket, party string) {
 	}
 }
 
-func addAccountWithAmount(market *testMarket, party string, amnt uint64) *types.TransferResponse {
+func addAccountWithAmount(market *testMarket, party string, amnt uint64) *types.LedgerMovement {
 	r, _ := market.collateralEngine.Deposit(context.Background(), party, market.asset, num.NewUint(amnt))
 	return r
 }
@@ -6195,19 +6195,19 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 	tm.market.OnTick(ctx, tm.now)
 
 	t.Run("Fee are distribute to party-2 only", func(t *testing.T) {
-		var found []*vegapb.TransferResponse
+		var found []*vegapb.LedgerMovement
 		for _, e := range tm.events {
 			switch evt := e.(type) {
-			case *events.TransferResponse:
-				found = append(found, evt.TransferResponses()...)
+			case *events.LedgerMovements:
+				found = append(found, evt.LedgerMovements()...)
 			}
 		}
 		// a single transfer response is required
 		require.Len(t, found, 1)
-		require.Len(t, found[0].Transfers, 1)
-		require.Equal(t, found[0].Transfers[0].Reference, types.TransferTypeLiquidityFeeDistribute.String())
+		require.Len(t, found[0].Entries, 1)
+		require.Equal(t, found[0].Entries[0].Type, types.TransferTypeLiquidityFeeDistribute)
 		require.Len(t, found[0].Balances, 1)
-		require.Equal(t, found[0].Balances[0].Account.Owner, "party-2")
+		require.Equal(t, *found[0].Balances[0].Account.Owner, "party-2")
 	})
 }
 
@@ -6623,11 +6623,11 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 	tm.market.OnTick(ctx, tm.now)
 
 	t.Run("Fee are distributed", func(t *testing.T) {
-		var found []*vegapb.TransferResponse
+		var found []*vegapb.LedgerMovement
 		for _, e := range tm.events {
 			switch evt := e.(type) {
-			case *events.TransferResponse:
-				found = append(found, evt.TransferResponses()...)
+			case *events.LedgerMovements:
+				found = append(found, evt.LedgerMovements()...)
 			}
 		}
 		// a single transfer response is required

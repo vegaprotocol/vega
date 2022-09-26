@@ -13,7 +13,6 @@
 package broker
 
 import (
-	"context"
 	"encoding/binary"
 	"fmt"
 	"os"
@@ -35,7 +34,7 @@ type fileClient struct {
 	mut  sync.RWMutex
 }
 
-func newFileClient(ctx context.Context, log *logging.Logger, config *FileConfig) (*fileClient, error) {
+func newFileClient(log *logging.Logger, config *FileConfig) (*fileClient, error) {
 	fc := &fileClient{
 		log:    log,
 		config: config,

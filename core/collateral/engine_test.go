@@ -125,7 +125,7 @@ func TestTransferRewards(t *testing.T) {
 }
 
 func testTransferRewardsEmptySlice(t *testing.T) {
-	eng := getTestEngine(t, "test-market")
+	eng := getTestEngine(t)
 	defer eng.Finish()
 
 	res, err := eng.TransferRewards(context.Background(), "reward", []*types.Transfer{})
@@ -134,7 +134,7 @@ func testTransferRewardsEmptySlice(t *testing.T) {
 }
 
 func testTransferRewardsNoRewardsAccount(t *testing.T) {
-	eng := getTestEngine(t, "test-market")
+	eng := getTestEngine(t)
 	defer eng.Finish()
 
 	transfers := []*types.Transfer{
@@ -155,7 +155,7 @@ func testTransferRewardsNoRewardsAccount(t *testing.T) {
 }
 
 func testTransferRewardsSuccess(t *testing.T) {
-	eng := getTestEngine(t, "test-market")
+	eng := getTestEngine(t)
 	defer eng.Finish()
 
 	rewardAcc, _ := eng.GetGlobalRewardAccount("ETH")
@@ -189,7 +189,7 @@ func testTransferRewardsSuccess(t *testing.T) {
 }
 
 func testPartyWithAccountHasABalance(t *testing.T) {
-	eng := getTestEngine(t, "test-market")
+	eng := getTestEngine(t)
 	defer eng.Finish()
 
 	party := "myparty"
@@ -210,7 +210,7 @@ func testPartyWithAccountHasABalance(t *testing.T) {
 }
 
 func testCreateBondAccountFailureNoGeneral(t *testing.T) {
-	eng := getTestEngine(t, "test-market")
+	eng := getTestEngine(t)
 	defer eng.Finish()
 
 	party := "myparty"
@@ -220,7 +220,7 @@ func testCreateBondAccountFailureNoGeneral(t *testing.T) {
 }
 
 func testCreateBondAccountSuccess(t *testing.T) {
-	eng := getTestEngine(t, "test-market")
+	eng := getTestEngine(t)
 	defer eng.Finish()
 
 	party := "myparty"
@@ -250,7 +250,7 @@ func testCreateBondAccountSuccess(t *testing.T) {
 }
 
 func testFeesTransferContinuousNoTransfer(t *testing.T) {
-	eng := getTestEngine(t, "test-market")
+	eng := getTestEngine(t)
 	defer eng.Finish()
 
 	transfers, err := eng.TransferFeesContinuousTrading(
@@ -260,7 +260,7 @@ func testFeesTransferContinuousNoTransfer(t *testing.T) {
 }
 
 func testReleasePartyMarginAccount(t *testing.T) {
-	eng := getTestEngine(t, "test-market")
+	eng := getTestEngine(t)
 	defer eng.Finish()
 
 	party := "myparty"
@@ -291,7 +291,7 @@ func testReleasePartyMarginAccount(t *testing.T) {
 }
 
 func testFeeTransferContinuousNoFunds(t *testing.T) {
-	eng := getTestEngine(t, "test-market")
+	eng := getTestEngine(t)
 	defer eng.Finish()
 
 	party := "myparty"
@@ -324,7 +324,7 @@ func testFeeTransferContinuousNoFunds(t *testing.T) {
 }
 
 func testFeeTransferContinuousNotEnoughFunds(t *testing.T) {
-	eng := getTestEngine(t, "test-market")
+	eng := getTestEngine(t)
 	defer eng.Finish()
 	party := "myparty"
 	// create party
@@ -361,7 +361,7 @@ func testFeeTransferContinuousNotEnoughFunds(t *testing.T) {
 }
 
 func testFeeTransferContinuousOKWithEnoughInGenral(t *testing.T) {
-	eng := getTestEngine(t, "test-market")
+	eng := getTestEngine(t)
 	defer eng.Finish()
 	party := "myparty"
 	// create party
@@ -400,7 +400,7 @@ func testFeeTransferContinuousOKWithEnoughInGenral(t *testing.T) {
 }
 
 func testFeeTransferContinuousOKWith0Amount(t *testing.T) {
-	eng := getTestEngine(t, "test-market")
+	eng := getTestEngine(t)
 	defer eng.Finish()
 	party := "myparty"
 	// create party
@@ -441,7 +441,7 @@ func testFeeTransferContinuousOKWith0Amount(t *testing.T) {
 }
 
 func testFeeTransferContinuousOKWithEnoughInMargin(t *testing.T) {
-	eng := getTestEngine(t, "test-market")
+	eng := getTestEngine(t)
 	defer eng.Finish()
 	party := "myparty"
 	// create party
@@ -480,7 +480,7 @@ func testFeeTransferContinuousOKWithEnoughInMargin(t *testing.T) {
 }
 
 func testFeeTransferContinuousOKCheckAccountEvents(t *testing.T) {
-	eng := getTestEngine(t, "test-market")
+	eng := getTestEngine(t)
 	defer eng.Finish()
 	party := "myparty"
 	// create party
@@ -547,7 +547,7 @@ func testFeeTransferContinuousOKCheckAccountEvents(t *testing.T) {
 }
 
 func testFeeTransferContinuousOKWithEnoughInGeneralAndMargin(t *testing.T) {
-	eng := getTestEngine(t, "test-market")
+	eng := getTestEngine(t)
 	defer eng.Finish()
 	party := "myparty"
 	// create party
@@ -596,7 +596,7 @@ func testFeeTransferContinuousOKWithEnoughInGeneralAndMargin(t *testing.T) {
 }
 
 func testEnableAssetSuccess(t *testing.T) {
-	eng := getTestEngine(t, "test-market")
+	eng := getTestEngine(t)
 	defer eng.Finish()
 	asset := types.Asset{
 		ID: "MYASSET",
@@ -613,7 +613,7 @@ func testEnableAssetSuccess(t *testing.T) {
 }
 
 func testEnableAssetFailureDuplicate(t *testing.T) {
-	eng := getTestEngine(t, "test-market")
+	eng := getTestEngine(t)
 	defer eng.Finish()
 	asset := types.Asset{
 		ID: "MYASSET",
@@ -631,7 +631,7 @@ func testEnableAssetFailureDuplicate(t *testing.T) {
 }
 
 func testCreateNewAccountForBadAsset(t *testing.T) {
-	eng := getTestEngine(t, "test-market")
+	eng := getTestEngine(t)
 	defer eng.Finish()
 
 	_, err := eng.CreatePartyGeneralAccount(context.Background(), "someparty", "notanasset")
@@ -643,12 +643,12 @@ func testCreateNewAccountForBadAsset(t *testing.T) {
 }
 
 func testNew(t *testing.T) {
-	eng := getTestEngine(t, "test-market")
+	eng := getTestEngine(t)
 	eng.Finish()
 }
 
 func testAddMarginAccount(t *testing.T) {
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 	party := "funkyparty"
 
@@ -664,7 +664,7 @@ func testAddMarginAccount(t *testing.T) {
 }
 
 func testAddMarginAccountFail(t *testing.T) {
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 	party := "funkyparty"
 
@@ -674,7 +674,7 @@ func testAddMarginAccountFail(t *testing.T) {
 }
 
 func testAddParty(t *testing.T) {
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 	party := "funkyparty"
 
@@ -707,7 +707,7 @@ func testTransferLoss(t *testing.T) {
 
 	price := num.NewUint(1000)
 
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(10)
@@ -757,7 +757,7 @@ func testTransferLoss(t *testing.T) {
 	// total balance of settlement account should be 2 times price
 	assert.Equal(t, num.Sum(price, price), num.Sum(resp.Balances[0].Balance, responses[1].Balances[0].Balance))
 	// there should be 1 ledger moves
-	assert.Equal(t, 1, len(resp.Transfers))
+	assert.Equal(t, 1, len(resp.Entries))
 }
 
 func testTransferComplexLoss(t *testing.T) {
@@ -766,7 +766,7 @@ func testTransferComplexLoss(t *testing.T) {
 	half := num.NewUint(500)
 	price := num.Sum(half, half)
 
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(10)
@@ -821,14 +821,14 @@ func testTransferComplexLoss(t *testing.T) {
 	// total balance should equal price (only 1 call after all)
 	assert.Equal(t, price, resp.Balances[0].Balance)
 	// there should be 2 ledger moves, one from party account, one from insurance acc
-	assert.Equal(t, 2, len(resp.Transfers))
+	assert.Equal(t, 2, len(resp.Entries))
 }
 
 func testTransferLossMissingPartyAccounts(t *testing.T) {
 	party := "test-party"
 	price := num.NewUint(1000)
 
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 
 	// now the positions
@@ -854,7 +854,7 @@ func testProcessBoth(t *testing.T) {
 	price := num.NewUint(1000)
 	priceX3 := num.Sum(price, price, price)
 
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
@@ -933,11 +933,11 @@ func testProcessBoth(t *testing.T) {
 	}
 	// resp = responses[1]
 	// there should be 3 ledger moves -> settle to party 1, settle to party 2, insurance to party 2
-	assert.Equal(t, 1, len(responses[1].Transfers))
+	assert.Equal(t, 1, len(responses[1].Entries))
 }
 
 func TestLossSocialization(t *testing.T) {
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 	lossParty1 := "lossparty1"
 	lossParty2 := "lossparty2"
@@ -1018,7 +1018,7 @@ func testSettleBalanceNotZero(t *testing.T) {
 	moneyParty := "money-party"
 	price := num.NewUint(1000)
 
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
@@ -1079,7 +1079,7 @@ func testProcessBothProRated(t *testing.T) {
 	moneyParty := "money-party"
 	price := num.NewUint(1000)
 
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
@@ -1144,7 +1144,7 @@ func testProcessBothProRated(t *testing.T) {
 	assert.NoError(t, err)
 
 	// there should be 3 ledger moves -> settle to party 1, settle to party 2, insurance to party 2
-	assert.Equal(t, 1, len(responses[1].Transfers))
+	assert.Equal(t, 1, len(responses[1].Entries))
 }
 
 func testProcessBothProRatedMTM(t *testing.T) {
@@ -1152,7 +1152,7 @@ func testProcessBothProRatedMTM(t *testing.T) {
 	moneyParty := "money-party"
 	price := num.NewUint(1000)
 
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
@@ -1220,14 +1220,14 @@ func testProcessBothProRatedMTM(t *testing.T) {
 	assert.NotEmpty(t, raw)
 
 	// there should be 3 ledger moves -> settle to party 1, settle to party 2, insurance to party 2
-	assert.Equal(t, 1, len(raw[1].Transfers))
+	assert.Equal(t, 1, len(raw[1].Entries))
 }
 
 func testRemoveDistressedBalance(t *testing.T) {
 	party := "test-party"
 
 	insBalance := num.NewUint(1000)
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
@@ -1266,7 +1266,7 @@ func testRemoveDistressedBalance(t *testing.T) {
 	})
 	resp, err := eng.RemoveDistressed(context.Background(), data, testMarketID, testMarketAsset)
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(resp.Transfers))
+	assert.Equal(t, 1, len(resp.Entries))
 
 	// check if account was deleted
 	_, err = eng.GetAccountByID(marginID)
@@ -1278,7 +1278,7 @@ func testRemoveDistressedNoBalance(t *testing.T) {
 	party := "test-party"
 
 	insBalance := num.NewUint(1000)
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
@@ -1302,7 +1302,7 @@ func testRemoveDistressedNoBalance(t *testing.T) {
 	}
 	resp, err := eng.RemoveDistressed(context.Background(), data, testMarketID, testMarketAsset)
 	assert.NoError(t, err)
-	assert.Equal(t, 0, len(resp.Transfers))
+	assert.Equal(t, 0, len(resp.Entries))
 
 	// check if account was deleted
 	_, err = eng.GetAccountByID(marginID)
@@ -1317,7 +1317,7 @@ func testMTMSuccess(t *testing.T) {
 	moneyParty := "money-party"
 	price := num.NewUint(1000)
 
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
@@ -1402,7 +1402,7 @@ func TestInvalidMarketID(t *testing.T) {
 	party := "test-party"
 	price := num.NewUint(1000)
 
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
@@ -1440,7 +1440,7 @@ func TestEmptyTransfer(t *testing.T) {
 	party := "test-party"
 	price := num.NewUint(1000)
 
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
@@ -1477,7 +1477,7 @@ func TestNoMarginAccount(t *testing.T) {
 	party := "test-party"
 	price := num.NewUint(1000)
 
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
@@ -1512,7 +1512,7 @@ func TestNoGeneralAccount(t *testing.T) {
 	party := "test-party"
 	price := num.NewUint(1000)
 
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
@@ -1542,7 +1542,7 @@ func TestNoGeneralAccount(t *testing.T) {
 func TestMTMNoTransfers(t *testing.T) {
 	price := num.NewUint(1000)
 
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
@@ -1575,7 +1575,7 @@ func TestMTMNoTransfers(t *testing.T) {
 func TestFinalSettlementNoTransfers(t *testing.T) {
 	price := num.NewUint(1000)
 
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
@@ -1594,7 +1594,7 @@ func TestFinalSettlementNoTransfers(t *testing.T) {
 func TestFinalSettlementNoSystemAccounts(t *testing.T) {
 	price := num.NewUint(1000)
 
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
@@ -1622,7 +1622,7 @@ func TestFinalSettlementNoSystemAccounts(t *testing.T) {
 func TestFinalSettlementNotEnoughMargin(t *testing.T) {
 	amount := num.NewUint(1000)
 
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
@@ -1665,7 +1665,7 @@ func TestFinalSettlementNotEnoughMargin(t *testing.T) {
 func TestGetPartyMarginNoAccounts(t *testing.T) {
 	price := num.NewUint(1000)
 
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
@@ -1686,7 +1686,7 @@ func TestGetPartyMarginNoAccounts(t *testing.T) {
 func TestGetPartyMarginNoMarginAccounts(t *testing.T) {
 	price := num.NewUint(1000)
 
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
@@ -1710,7 +1710,7 @@ func TestGetPartyMarginNoMarginAccounts(t *testing.T) {
 func TestGetPartyMarginEmpty(t *testing.T) {
 	price := num.NewUint(1000)
 
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
@@ -1736,7 +1736,7 @@ func TestGetPartyMarginEmpty(t *testing.T) {
 }
 
 func TestMTMLossSocialization(t *testing.T) {
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 	lossParty1 := "lossparty1"
 	lossParty2 := "lossparty2"
@@ -1817,7 +1817,7 @@ func TestMTMLossSocialization(t *testing.T) {
 }
 
 func testMarginUpdateOnOrderOK(t *testing.T) {
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 	party := "okparty"
 
@@ -1858,7 +1858,7 @@ func testMarginUpdateOnOrderOK(t *testing.T) {
 }
 
 func testMarginUpdateOnOrderOKNotShortFallWithBondAccount(t *testing.T) {
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 	party := "okparty"
 
@@ -1901,7 +1901,7 @@ func testMarginUpdateOnOrderOKNotShortFallWithBondAccount(t *testing.T) {
 }
 
 func testMarginUpdateOnOrderOKUseBondAccount(t *testing.T) {
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 	party := "okparty"
 
@@ -1953,7 +1953,7 @@ func testMarginUpdateOnOrderOKUseBondAccount(t *testing.T) {
 }
 
 func testMarginUpdateOnOrderOKUseBondAndGeneralAccounts(t *testing.T) {
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 	party := "okparty"
 
@@ -2015,7 +2015,7 @@ func testMarginUpdateOnOrderOKUseBondAndGeneralAccounts(t *testing.T) {
 }
 
 func testMarginUpdateOnOrderOKThenRollback(t *testing.T) {
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 	party := "okparty"
 
@@ -2084,7 +2084,7 @@ func testMarginUpdateOnOrderOKThenRollback(t *testing.T) {
 }
 
 func testMarginUpdateOnOrderFail(t *testing.T) {
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 	party := "okparty"
 
@@ -2116,7 +2116,7 @@ func testMarginUpdateOnOrderFail(t *testing.T) {
 }
 
 func TestMarginUpdates(t *testing.T) {
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 	party := "okparty"
 
@@ -2147,11 +2147,11 @@ func TestMarginUpdates(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, len(margin), 0)
 	assert.Equal(t, len(resp), 1)
-	assert.Equal(t, resp[0].Transfers[0].Amount, num.NewUint(100))
+	assert.Equal(t, resp[0].Entries[0].Amount, num.NewUint(100))
 }
 
 func TestClearMarket(t *testing.T) {
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 	party := "okparty"
 
@@ -2174,7 +2174,7 @@ func TestClearMarket(t *testing.T) {
 }
 
 func TestClearMarketNoMargin(t *testing.T) {
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 	party := "okparty"
 
@@ -2192,7 +2192,7 @@ func TestClearMarketNoMargin(t *testing.T) {
 }
 
 func TestRewardDepositOK(t *testing.T) {
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 	ctx := context.Background()
 
@@ -2216,7 +2216,7 @@ func TestRewardDepositOK(t *testing.T) {
 }
 
 func TestNonRewardDepositOK(t *testing.T) {
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 	ctx := context.Background()
 
@@ -2228,7 +2228,7 @@ func TestNonRewardDepositOK(t *testing.T) {
 }
 
 func TestRewardDepositBadAssetOK(t *testing.T) {
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 	ctx := context.Background()
 	testAsset2 := "VEGA"
@@ -2241,7 +2241,7 @@ func TestRewardDepositBadAssetOK(t *testing.T) {
 }
 
 func TestWithdrawalOK(t *testing.T) {
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 	party := "okparty"
 
@@ -2268,7 +2268,7 @@ func TestWithdrawalOK(t *testing.T) {
 }
 
 func TestWithdrawalExact(t *testing.T) {
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 	party := "okparty"
 
@@ -2288,7 +2288,7 @@ func TestWithdrawalExact(t *testing.T) {
 }
 
 func TestWithdrawalNotEnough(t *testing.T) {
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 	party := "okparty"
 
@@ -2304,7 +2304,7 @@ func TestWithdrawalNotEnough(t *testing.T) {
 }
 
 func TestWithdrawalInvalidAccount(t *testing.T) {
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 	party := "okparty"
 
@@ -2320,7 +2320,7 @@ func TestWithdrawalInvalidAccount(t *testing.T) {
 }
 
 func TestChangeBalance(t *testing.T) {
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 	party := "okparty"
 
@@ -2353,7 +2353,7 @@ func TestChangeBalance(t *testing.T) {
 }
 
 func TestReloadConfig(t *testing.T) {
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 
 	// Check that the log level is currently `debug`
@@ -2406,7 +2406,7 @@ func enableGovernanceAsset(t *testing.T, eng *collateral.Engine) {
 	assert.NoError(t, err)
 }
 
-func getTestEngine(t *testing.T, market string) *testEngine {
+func getTestEngine(t *testing.T) *testEngine {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 	timeSvc := mocks.NewMockTimeService(ctrl)
@@ -2570,7 +2570,7 @@ func (t transferFees) TotalFeesAmountPerParty() map[string]*num.Uint {
 }
 
 func TestHash(t *testing.T) {
-	eng := getTestEngine(t, testMarketID)
+	eng := getTestEngine(t)
 	defer eng.Finish()
 
 	// Create the accounts

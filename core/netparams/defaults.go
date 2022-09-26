@@ -148,10 +148,7 @@ func defaultNetParams() map[string]value {
 
 		ValidatorsVoteRequired: NewDecimal(DecimalGTE(num.MustDecimalFromString("0.67")), DecimalLTE(num.MustDecimalFromString("1.0"))).Mutable(true).MustUpdate("0.67"),
 
-		// @TODO add watcher for NetworkEOL > MarketFreezeDate
 		// network checkpoint parameters
-		NetworkCheckpointMarketFreezeDate:              NewTime().Mutable(true).MustUpdate("never"),
-		NetworkCheckpointNetworkEOLDate:                NewTime().Mutable(true).MustUpdate("never"),
 		NetworkCheckpointTimeElapsedBetweenCheckpoints: NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("1m"),
 		// take a snapshot every 1000 blocks, ~20 minutes
 		// if we assume a block time of anything between 1 to 2 seconds

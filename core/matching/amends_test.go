@@ -165,6 +165,43 @@ func TestOrderBookAmends_invalidSize(t *testing.T) {
 	assert.Equal(t, uint64(2), book.getVolumeAtLevel(100, types.SideBuy))
 }
 
+func TestOrderBookAmends_invalidSize2(t *testing.T) {
+	market := "market"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+	order := types.Order{
+		MarketID:      market,
+		Party:         "A",
+		Side:          types.SideBuy,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          48,
+		Remaining:     4,
+		TimeInForce:   types.OrderTimeInForceGTC,
+		Type:          types.OrderTypeLimit,
+	}
+	confirm, err := book.SubmitOrder(&order)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(confirm.Trades))
+	assert.Equal(t, uint64(4), book.getVolumeAtLevel(100, types.SideBuy))
+
+	amend := types.Order{
+		MarketID:      market,
+		Party:         "A",
+		Side:          types.SideBuy,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          45,
+		Remaining:     1,
+		TimeInForce:   types.OrderTimeInForceGTC,
+		Type:          types.OrderTypeLimit,
+	}
+
+	err = book.AmendOrder(&order, &amend)
+	assert.NoError(t, err)
+	assert.Equal(t, int(1), int(book.getVolumeAtLevel(100, types.SideBuy)))
+}
+
 func TestOrderBookAmends_reduceToZero(t *testing.T) {
 	market := "market"
 	book := getTestOrderBook(t, market)

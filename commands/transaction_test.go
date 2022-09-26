@@ -4,12 +4,15 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/commands"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 )
 
 func TestCheckTransaction(t *testing.T) {
+	t.Run("Submitting valid transaction succeeds", testSubmittingInvalidSignature)
 	t.Run("Submitting valid transaction succeeds", testSubmittingValidTransactionSucceeds)
 	t.Run("Submitting empty transaction fails", testSubmittingEmptyTransactionFails)
 	t.Run("Submitting nil transaction fails", testSubmittingNilTransactionFails)
@@ -23,6 +26,18 @@ func TestCheckTransaction(t *testing.T) {
 	t.Run("Submitting transaction without public key fails", testSubmittingTransactionWithoutPubKeyFromFails)
 	t.Run("Submitting transaction with invalid encoding of value fails", testSubmittingTransactionWithInvalidEncodingOfValueFails)
 	t.Run("Submitting transaction with invalid encoding of public key fails", testSubmittingTransactionWithInvalidEncodingOfPubKeyFails)
+}
+
+func testSubmittingInvalidSignature(t *testing.T) {
+	tx := newValidTransactionV2(t)
+	tx.Signature = &commandspb.Signature{
+		Value:   crypto.RandomHash(),
+		Algo:    "vega/ed25519",
+		Version: 1,
+	}
+	err := checkTransaction(tx)
+	require.Error(t, err)
+	require.Equal(t, commands.ErrInvalidSignature, err["tx.signature.value"][0])
 }
 
 func testSubmittingValidTransactionSucceeds(t *testing.T) {

@@ -1,13 +1,12 @@
 package cmd_test
 
 import (
-	"encoding/json"
 	"testing"
 
 	cmd "code.vegaprotocol.io/vega/cmd/vegawallet/commands"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
-	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	"code.vegaprotocol.io/vega/wallet/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -26,31 +25,21 @@ func testSendTxFlagsValidFlagsSucceeds(t *testing.T) {
 	// given
 	network := vgrand.RandomStr(10)
 
+	encodedTx := "ChwIxZXB58qn4K06EMC2BPI+CwoHc29tZS1pZBACEpMBCoABMTM1ZDdmN2Q4MjhkMjg3ZDMyNDQzYjQ2NGEyZDQwNTkyZjQ1OTgwMGQ0MGZmMzY5Y2VhMGFkZDUzZmZjNjYzYzlkZmU2YTI4MGIxZWI4MjdiOTJmYmY2NTY3NzI3MjgwYzMwODBiNjg5NGYyMjYzZmJlYmFkN2I2M2VhN2M4MGYSDHZlZ2EvZWQyNTUxORgBgH0B0j5AZjM4MTc5NjljZDMxNmQ1NmMzN2EzYzE5MjVjMDMyOWM5ZTMxMDQ0ODI5OGZmNzYyMjMwMTVjN2QyY2RiOTFiOQ=="
 	f := &cmd.SendTxFlags{
 		Network:     network,
 		NodeAddress: "",
 		Retries:     10,
 		LogLevel:    "debug",
-		RawTx:       "ChwIxZXB58qn4K06EMC2BPI+CwoHc29tZS1pZBACEpMBCoABMTM1ZDdmN2Q4MjhkMjg3ZDMyNDQzYjQ2NGEyZDQwNTkyZjQ1OTgwMGQ0MGZmMzY5Y2VhMGFkZDUzZmZjNjYzYzlkZmU2YTI4MGIxZWI4MjdiOTJmYmY2NTY3NzI3MjgwYzMwODBiNjg5NGYyMjYzZmJlYmFkN2I2M2VhN2M4MGYSDHZlZ2EvZWQyNTUxORgBgH0B0j5AZjM4MTc5NjljZDMxNmQ1NmMzN2EzYzE5MjVjMDMyOWM5ZTMxMDQ0ODI5OGZmNzYyMjMwMTVjN2QyY2RiOTFiOQ==",
+		RawTx:       encodedTx,
 	}
 
-	expectedReq := &cmd.SendTxRequest{
-		Network:     network,
-		NodeAddress: "",
-		Retries:     10,
-		LogLevel:    "debug",
-		Tx: &commandspb.Transaction{
-			InputData: []uint8{8, 197, 149, 193, 231, 202, 167, 224, 173, 58, 16, 192, 182, 4, 242, 62, 11, 10, 7, 115, 111, 109, 101, 45, 105, 100, 16, 2},
-			Signature: &commandspb.Signature{
-				Value:   "135d7f7d828d287d32443b464a2d40592f459800d40ff369cea0add53ffc663c9dfe6a280b1eb827b92fbf6567727280c3080b6894f2263fbebad7b63ea7c80f",
-				Algo:    "vega/ed25519",
-				Version: 1,
-			},
-			From: &commandspb.Transaction_PubKey{
-				PubKey: "f3817969cd316d56c37a3c1925c0329c9e310448298ff76223015c7d2cdb91b9",
-			},
-			Version: 1,
-		},
+	expectedReq := api.AdminSendTransactionParams{
+		Network:            network,
+		NodeAddress:        "",
+		Retries:            10,
+		EncodedTransaction: encodedTx,
+		SendingMode:        "TYPE_ASYNC",
 	}
 
 	// when
@@ -59,9 +48,7 @@ func testSendTxFlagsValidFlagsSucceeds(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	require.NotNil(t, req)
-	expectedJSON, _ := json.Marshal(expectedReq)
-	actualJSON, _ := json.Marshal(req)
-	assert.Equal(t, expectedJSON, actualJSON)
+	assert.Equal(t, expectedReq, req)
 }
 
 func testSendTxFlagsMissingLogLevelFails(t *testing.T) {
@@ -74,7 +61,7 @@ func testSendTxFlagsMissingLogLevelFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("level"))
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func testSendTxFlagsUnsupportedLogLevelFails(t *testing.T) {
@@ -87,7 +74,7 @@ func testSendTxFlagsUnsupportedLogLevelFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, cmd.NewUnsupportedFlagValueError(f.LogLevel))
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func testSendTxFlagsMissingNetworkAndNodeAddressFails(t *testing.T) {
@@ -101,7 +88,7 @@ func testSendTxFlagsMissingNetworkAndNodeAddressFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.OneOfFlagsMustBeSpecifiedError("network", "node-address"))
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func testSendTxFlagsBothNetworkAndNodeAddressSpecifiedFails(t *testing.T) {
@@ -115,7 +102,7 @@ func testSendTxFlagsBothNetworkAndNodeAddressSpecifiedFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.MutuallyExclusiveError("network", "node-address"))
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func testSendTxFlagsMissingTxFails(t *testing.T) {
@@ -128,7 +115,7 @@ func testSendTxFlagsMissingTxFails(t *testing.T) {
 
 	// then
 	assert.ErrorIs(t, err, flags.ArgMustBeSpecifiedError("transaction"))
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func testSendTxFlagsMalformedTxFails(t *testing.T) {
@@ -141,7 +128,7 @@ func testSendTxFlagsMalformedTxFails(t *testing.T) {
 
 	// then
 	assert.Error(t, err)
-	assert.Nil(t, req)
+	assert.Empty(t, req)
 }
 
 func newSendTxFlags(t *testing.T) *cmd.SendTxFlags {

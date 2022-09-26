@@ -18,6 +18,7 @@ import (
 	"errors"
 	"testing"
 
+	"code.vegaprotocol.io/vega/core/blockchain"
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
 	"code.vegaprotocol.io/vega/core/txn"
 	"github.com/stretchr/testify/require"
@@ -59,9 +60,8 @@ func newTestCodec() *testCodec {
 	}
 }
 
-func (c *testCodec) addTx(in []byte, tx abci.Tx) *testCodec {
+func (c *testCodec) addTx(in []byte, tx abci.Tx) {
 	c.txs[string(in)] = tx
-	return c
 }
 
 func (c *testCodec) Decode(in []byte, chainID string) (abci.Tx, error) {
@@ -119,7 +119,7 @@ func TestABCICheckTx(t *testing.T) {
 		req := types.RequestCheckTx{Tx: tx}
 		resp := app.CheckTx(req)
 		require.True(t, resp.IsErr())
-		require.Equal(t, abci.AbciTxnInternalError, resp.Code)
+		require.Equal(t, blockchain.AbciTxnInternalError, resp.Code)
 	})
 
 	t.Run("TxDecodingError", func(t *testing.T) {
@@ -128,6 +128,6 @@ func TestABCICheckTx(t *testing.T) {
 		req := types.RequestCheckTx{Tx: tx}
 		resp := app.CheckTx(req)
 		require.True(t, resp.IsErr())
-		require.Equal(t, abci.AbciTxnDecodingFailure, resp.Code)
+		require.Equal(t, blockchain.AbciTxnDecodingFailure, resp.Code)
 	})
 }

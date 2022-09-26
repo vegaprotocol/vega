@@ -82,7 +82,7 @@ func testStakeScore(t *testing.T) {
 	// node3 has 10000 / 60000 = 0.1666666667
 	// node4 has 15000 / 60000 = 0.25
 	// node5 has 20000 / 60000 = 0.3333333333
-	scores := getStakeScore(validatorData, num.NewUint(3000))
+	scores := getStakeScore(validatorData)
 	require.Equal(t, "0.1666666666666667", scores["node1"].String())
 	require.Equal(t, "0.0833333333333333", scores["node2"].String())
 	require.Equal(t, "0.1666666666666667", scores["node3"].String())

@@ -207,7 +207,7 @@ service TradingDataService {
   rpc TradesSubscribe(TradesSubscribeRequest) returns (stream TradesSubscribeResponse);
 
   // Subscribe to a stream of Transfer Responses
-  rpc TransferResponsesSubscribe(TransferResponsesSubscribeRequest) returns (stream TransferResponsesSubscribeResponse);
+  rpc LedgerMovementsSubscribe(LedgerMovementsSubscribeRequest) returns (stream LedgerMovementsSubscribeResponse);
 
   // Get an aggregate of signatures from all the nodes of the network
   rpc GetNodeSignaturesAggregate(GetNodeSignaturesAggregateRequest) returns (GetNodeSignaturesAggregateResponse);
@@ -977,10 +977,10 @@ message TradesSubscribeResponse {
   repeated vega.Trade trades = 1;
 }
 
-message TransferResponsesSubscribeRequest {}
+message LedgerMovementsSubscribeRequest {}
 
-message TransferResponsesSubscribeResponse {
-  vega.TransferResponse response = 1;
+message LedgerMovementsSubscribeResponse {
+  vega.LedgerMovement ledger_movement = 1;
 }
 
 // Request for a list of accounts for a party

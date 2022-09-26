@@ -84,19 +84,19 @@ func (f *Forwarder) GetState(k string) ([]byte, []types.StateProvider, error) {
 	return state, nil, err
 }
 
-func (f *Forwarder) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {
+func (f *Forwarder) LoadState(_ context.Context, p *types.Payload) ([]types.StateProvider, error) {
 	if f.Namespace() != p.Data.Namespace() {
 		return nil, types.ErrInvalidSnapshotNamespace
 	}
 	// see what we're reloading
 	if pl, ok := p.Data.(*types.PayloadEventForwarder); ok {
-		return nil, f.restore(ctx, pl.Events, p)
+		return nil, f.restore(pl.Events, p)
 	}
 
 	return nil, types.ErrUnknownSnapshotType
 }
 
-func (f *Forwarder) restore(ctx context.Context, events []*commandspb.ChainEvent, p *types.Payload) error {
+func (f *Forwarder) restore(events []*commandspb.ChainEvent, p *types.Payload) error {
 	f.ackedEvts = map[string]*commandspb.ChainEvent{}
 	for _, event := range events {
 		key, err := f.getEvtKey(event)

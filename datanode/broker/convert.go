@@ -23,7 +23,7 @@ func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {
 	switch be.Type {
 	case eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE:
 		return events.TimeEventFromStream(ctx, be)
-	case eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_LEDGER_MOVEMENTS:
 		return events.TransferResponseEventFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION:
 		return events.PositionResolutionEventFromStream(ctx, be)
@@ -115,6 +115,14 @@ func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {
 		return events.EthereumKeyRotationEventFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_PROTOCOL_UPGRADE_PROPOSAL:
 		return events.ProtocolUpgradeProposalEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_BEGIN_BLOCK:
+		return events.BeginBlockEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_END_BLOCK:
+		return events.EndBlockEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_PROTOCOL_UPGRADE_STARTED:
+		return events.ProtocolUpgradeStartedEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_SETTLE_MARKET:
+		return events.SettleMarketEventFromStream(ctx, be)
 	}
 
 	return nil

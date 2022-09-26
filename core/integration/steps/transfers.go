@@ -96,7 +96,7 @@ func PartiesSubmitRecurringTransfers(
 ) error {
 	errs := []error{}
 	for _, r := range parseRecurringTransferTable(table) {
-		transfer, _ := rowToRecurringTransfer(r)
+		transfer := rowToRecurringTransfer(r)
 		err := engine.TransferFunds(context.Background(), &types.TransferFunds{
 			Kind:      types.TransferCommandKindRecurring,
 			Recurring: transfer,
@@ -124,7 +124,7 @@ func parseRecurringTransferTable(table *godog.Table) []RowWrapper {
 	}, []string{"metric", "metric_asset", "markets", "error"})
 }
 
-func rowToRecurringTransfer(r RowWrapper) (*types.RecurringTransfer, error) {
+func rowToRecurringTransfer(r RowWrapper) *types.RecurringTransfer {
 	id := r.MustStr("id")
 	from := r.MustStr("from")
 	fromAccountType := r.MustStr("from_account_type")
@@ -173,7 +173,7 @@ func rowToRecurringTransfer(r RowWrapper) (*types.RecurringTransfer, error) {
 		Factor:           factor,
 		DispatchStrategy: dispatchStrategy,
 	}
-	return recurring, nil
+	return recurring
 }
 
 func PartiesCancelTransfers(

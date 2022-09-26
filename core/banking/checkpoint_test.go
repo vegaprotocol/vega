@@ -49,7 +49,7 @@ func testSimpledScheduledTransfer(t *testing.T) {
 			TransferBase: &types.TransferBase{
 				From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
 				FromAccountType: types.AccountTypeGeneral,
-				To:              "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0",
+				To:              "0000000000000000000000000000000000000000000000000000000000000000",
 				ToAccountType:   types.AccountTypeGlobalReward,
 				Asset:           "eth",
 				Amount:          num.NewUint(10),
@@ -75,7 +75,7 @@ func testSimpledScheduledTransfer(t *testing.T) {
 			references []string,
 			feeTransfers []*types.Transfer,
 			feeTransfersAccountTypes []types.AccountType,
-		) ([]*types.TransferResponse, error,
+		) ([]*types.LedgerMovement, error,
 		) {
 			t.Run("ensure transfers are correct", func(t *testing.T) {
 				// transfer is done fully instantly, we should have 2 transfer
@@ -131,11 +131,11 @@ func testSimpledScheduledTransfer(t *testing.T) {
 			references []string,
 			feeTransfers []*types.Transfer,
 			feeTransfersAccountTypes []types.AccountType,
-		) ([]*types.TransferResponse, error,
+		) ([]*types.LedgerMovement, error,
 		) {
 			t.Run("ensure transfers are correct", func(t *testing.T) {
 				// transfer is done fully instantly, we should have 2 transfer
-				assert.Equal(t, transfers[0].Owner, "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0")
+				assert.Equal(t, transfers[0].Owner, "0000000000000000000000000000000000000000000000000000000000000000")
 				assert.Equal(t, transfers[0].Amount.Amount, num.NewUint(10))
 				assert.Equal(t, transfers[0].Amount.Asset, "eth")
 

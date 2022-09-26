@@ -15,11 +15,11 @@ import (
 )
 
 func TestRetryingGRPCNode_HealthCheck(t *testing.T) {
-	t.Run("Retrying with one successful call succeeds", testRetryingGRPCNodeHealthCheckRetryingWithOneSuccessfulCallSucceeds)
-	t.Run("Retrying without successful calls fails", testRetryingGRPCNodeHealthCheckRetryingWithoutSuccessfulCallsFails)
+	t.Run("Checking health node does not retry", testRetryingGRPCNodeHealthCheckDoesNotRetry)
+	t.Run("Retrying without successful calls fails", testRetryingGRPCNodeHealthCheckSucceeds)
 }
 
-func testRetryingGRPCNodeHealthCheckRetryingWithOneSuccessfulCallSucceeds(t *testing.T) {
+func testRetryingGRPCNodeHealthCheckDoesNotRetry(t *testing.T) {
 	// given
 	ctx := context.Background()
 	log := newTestLogger(t)
@@ -28,37 +28,35 @@ func testRetryingGRPCNodeHealthCheckRetryingWithOneSuccessfulCallSucceeds(t *tes
 	client := newClientMock(t)
 	client.EXPECT().Host().AnyTimes().Return("test-client")
 	request := &apipb.GetVegaTimeRequest{}
-	unsuccessfulCalls := client.EXPECT().GetVegaTime(ctx, request).Times(2).Return(nil, assert.AnError)
-	successfulCall := client.EXPECT().GetVegaTime(ctx, request).Times(1).Return(&apipb.GetVegaTimeResponse{
-		Timestamp: 1234,
-	}, nil)
-	gomock.InOrder(unsuccessfulCalls, successfulCall)
+	client.EXPECT().GetVegaTime(ctx, request).Times(1).Return(nil, assert.AnError)
 
 	// when
-	grpcNode := node.BuildGRPCNode(log, client, 3)
+	grpcNode := node.BuildRetryingGRPCNode(log, client, 3)
 	err := grpcNode.HealthCheck(ctx)
 
 	// then
-	require.NoError(t, err)
+	require.ErrorIs(t, err, assert.AnError)
 }
 
-func testRetryingGRPCNodeHealthCheckRetryingWithoutSuccessfulCallsFails(t *testing.T) {
+func testRetryingGRPCNodeHealthCheckSucceeds(t *testing.T) {
 	// given
 	ctx := context.Background()
 	log := newTestLogger(t)
 
 	// setup
-	ctrl := gomock.NewController(t)
-	client := mocks.NewMockCoreClient(ctrl)
+	client := newClientMock(t)
 	client.EXPECT().Host().AnyTimes().Return("test-client")
-	client.EXPECT().GetVegaTime(ctx, &apipb.GetVegaTimeRequest{}).Times(4).Return(nil, assert.AnError)
+	request := &apipb.GetVegaTimeRequest{}
+	client.EXPECT().GetVegaTime(ctx, request).Times(1).Return(&apipb.GetVegaTimeResponse{
+		Timestamp: 1234,
+	}, nil)
 
 	// when
-	grpcNode := node.BuildGRPCNode(log, client, 3)
+	grpcNode := node.BuildRetryingGRPCNode(log, client, 3)
 	err := grpcNode.HealthCheck(ctx)
 
 	// then
-	require.Error(t, err, assert.AnError)
+	require.NoError(t, err)
 }
 
 func TestRetryingGRPCNode_LastBlock(t *testing.T) {
@@ -89,7 +87,7 @@ func testRetryingGRPCNodeLastBlockRetryingWithOneSuccessfulCallSucceeds(t *testi
 	gomock.InOrder(unsuccessfulCalls, successfulCall)
 
 	// when
-	grpcNode := node.BuildGRPCNode(log, client, 3)
+	grpcNode := node.BuildRetryingGRPCNode(log, client, 3)
 	response, err := grpcNode.LastBlock(ctx)
 
 	// then
@@ -108,7 +106,7 @@ func testRetryingGRPCNodeLastBlockRetryingWithoutSuccessfulCallsFails(t *testing
 	client.EXPECT().LastBlockHeight(ctx, &apipb.LastBlockHeightRequest{}).Times(4).Return(nil, assert.AnError)
 
 	// when
-	grpcNode := node.BuildGRPCNode(log, client, 3)
+	grpcNode := node.BuildRetryingGRPCNode(log, client, 3)
 	nodeID, err := grpcNode.LastBlock(ctx)
 
 	// then
@@ -159,7 +157,7 @@ func testRetryingGRPCNodeCheckTransactionRetryingWithOneSuccessfulCallSucceeds(t
 	gomock.InOrder(unsuccessfulCalls, successfulCall)
 
 	// when
-	grpcNode := node.BuildGRPCNode(log, client, 3)
+	grpcNode := node.BuildRetryingGRPCNode(log, client, 3)
 	response, err := grpcNode.CheckTransaction(ctx, tx)
 
 	// then
@@ -196,7 +194,7 @@ func testRetryingGRPCNodeCheckTransactionRetryingWithoutSuccessfulCallsFails(t *
 	}).Times(4).Return(nil, assert.AnError)
 
 	// when
-	grpcNode := node.BuildGRPCNode(log, client, 3)
+	grpcNode := node.BuildRetryingGRPCNode(log, client, 3)
 	nodeID, err := grpcNode.CheckTransaction(ctx, tx)
 
 	// then
@@ -246,7 +244,7 @@ func testRetryingGRPCNodeSendTransactionRetryingWithOneSuccessfulCallSucceeds(t 
 	gomock.InOrder(unsuccessfulCalls, successfulCall)
 
 	// when
-	grpcNode := node.BuildGRPCNode(log, client, 3)
+	grpcNode := node.BuildRetryingGRPCNode(log, client, 3)
 	response, err := grpcNode.SendTransaction(ctx, tx, apipb.SubmitTransactionRequest_TYPE_SYNC)
 
 	// then
@@ -284,7 +282,7 @@ func testRetryingGRPCNodeSendTransactionRetryingWithoutSuccessfulCallsFails(t *t
 	}).Times(4).Return(nil, assert.AnError)
 
 	// when
-	grpcNode := node.BuildGRPCNode(log, client, 3)
+	grpcNode := node.BuildRetryingGRPCNode(log, client, 3)
 	nodeID, err := grpcNode.SendTransaction(ctx, tx, apipb.SubmitTransactionRequest_TYPE_SYNC)
 
 	// then

@@ -384,7 +384,7 @@ func (f *LogFilterer) toCollateralChainEvent(log ethtypes.Log) *types.ChainEvent
 			f.log.Fatal("Couldn't parse BridgeStopped event", logging.Error(err))
 			return nil
 		}
-		f.debugBridgeStopped(event)
+		f.debugBridgeStopped()
 		return f.toERC20BridgeStopped(event)
 	case f.collateralBridgeABI.Events[eventBridgeResumed].ID:
 		event, err := f.collateralBridgeFilterer.ParseBridgeResumed(log)
@@ -392,7 +392,7 @@ func (f *LogFilterer) toCollateralChainEvent(log ethtypes.Log) *types.ChainEvent
 			f.log.Fatal("Couldn't parse BridgedResumed event", logging.Error(err))
 			return nil
 		}
-		f.debugBridgeResumed(event)
+		f.debugBridgeResumed()
 		return f.toERC20BridgeResumed(event)
 	default:
 		f.log.Fatal("Unsupported Ethereum log event", logging.String("event-id", log.Topics[0].String()))
@@ -542,7 +542,7 @@ func (f *LogFilterer) toERC20AssetLimitsUpdated(event *bridge.Erc20BridgeLogicRe
 	}
 }
 
-func (f *LogFilterer) debugBridgeStopped(event *bridge.Erc20BridgeLogicRestrictedBridgeStopped) {
+func (f *LogFilterer) debugBridgeStopped() {
 	if f.log.IsDebug() {
 		f.log.Debug("Found BridgeStopped event",
 			logging.String("bridge-address", f.collateralBridge.HexAddress()),
@@ -565,7 +565,7 @@ func (f *LogFilterer) toERC20BridgeStopped(event *bridge.Erc20BridgeLogicRestric
 	}
 }
 
-func (f *LogFilterer) debugBridgeResumed(event *bridge.Erc20BridgeLogicRestrictedBridgeResumed) {
+func (f *LogFilterer) debugBridgeResumed() {
 	if f.log.IsDebug() {
 		f.log.Debug("Found BridgeResumed event",
 			logging.String("bridge-address", f.collateralBridge.HexAddress()),

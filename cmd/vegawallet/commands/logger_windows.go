@@ -25,5 +25,5 @@ func toZapLogPath(logPath string) string {
 // the GitHub issue at https://github.com/uber-go/zap/issues/621.
 func newWinFileSink(u *url.URL) (zap.Sink, error) {
 	// Remove leading slash left by url.Parse().
-	return os.OpenFile(u.Path[1:], os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0o644) // nolint:gomnd
+	return os.OpenFile(u.Path[1:], os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0o644) //nolint:gomnd
 }

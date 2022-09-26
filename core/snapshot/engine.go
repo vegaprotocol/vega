@@ -471,7 +471,9 @@ func (e *Engine) RejectSnapshot() error {
 // tree from the data. This call does *not* restore the state into the providers.
 func (e *Engine) ApplySnapshot(ctx context.Context) error {
 	// remove all existing snapshot and create an initial empty tree
-	e.ClearAndInitialise()
+	if err := e.ClearAndInitialise(); err != nil {
+		return err
+	}
 
 	// Import the AVL tree from the snapshot data so we have a working copy
 	// that is consistent with the other nodes

@@ -8,6 +8,33 @@ import (
 	"time"
 )
 
+const (
+	systemOwner = "*"
+	noMarket    = "!"
+)
+
+func (ad *AccountDetails) ID() string {
+	idbuf := make([]byte, 256)
+	var marketID, partyID = noMarket, systemOwner
+	if ad.MarketId != nil {
+		marketID = *ad.MarketId
+	}
+
+	// market account
+	if ad.Owner != nil {
+		partyID = *ad.Owner
+	}
+
+	copy(idbuf, marketID)
+	ln := len(marketID)
+	copy(idbuf[ln:], partyID)
+	ln += len(partyID)
+	copy(idbuf[ln:], []byte(ad.AssetId))
+	ln += len(ad.AssetId)
+	idbuf[ln] = byte(ad.Type + 48)
+	return string(idbuf[:ln+1])
+}
+
 // Float64Fee tries to parse the Fee (string) into a float64.
 // If parsing fails 0 is returned.
 func (l *LiquidityProvision) Float64Fee() float64 {

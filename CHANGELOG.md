@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased 0.56.0
+## Unreleased 0.57.0
 
 ### 🚨 Breaking changes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -14,6 +14,57 @@
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
+
+## 0.56.0
+
+### 🚨 Breaking changes
+- [6196](https://github.com/vegaprotocol/vega/pull/6196) - Remove unused network parameters network end of life and market freeze date
+- [6155](https://github.com/vegaprotocol/vega/issues/6155) - Rename "Client" to "User" in wallet API version 2
+- [5641](https://github.com/vegaprotocol/vega/issues/5641) - Rename `SettlementPriceDecimals` to `SettlementDataDecimals`
+
+### 🛠 Improvements
+- [6103](hhttps://github.com/vegaprotocol/vega/issues/6103) - Verify that order amendment has the desired effect on opening auction
+- [6170](https://github.com/vegaprotocol/vega/pull/6170) - Order GraphQL schema (query and subscription types) alphabetically
+- [6153](https://github.com/vegaprotocol/vega/issues/6153) - Display UI friendly logs when calling `session.send_transaction`
+- [6063](https://github.com/vegaprotocol/vega/pull/6063) - Update average entry valuation calculation according to spec change.
+- [6191](https://github.com/vegaprotocol/vega/pull/6191) - Remove the retry on node health check in the wallet API version 2
+- [6221](https://github.com/vegaprotocol/vega/pull/6221) - Add documentation for new `GraphQL endpoints`
+- [5600](https://github.com/vegaprotocol/vega/issues/5600) - Migrate all wallet capabilities to V2 api
+- [6077](https://github.com/vegaprotocol/vega/issues/6077) - Add proof-of-work to transaction when using `vegawallet command sign`
+- [6203](https://github.com/vegaprotocol/vega/issues/6203) - Support automatic consent for transactions sent through the wallet API version 2
+- [6203](https://github.com/vegaprotocol/vega/issues/6203) - Log node selection process on the wallet CLI
+- [5925](https://github.com/vegaprotocol/vega/issues/5925) - Clean transfer response API, now ledger movements
+- [6254](https://github.com/vegaprotocol/vega/issues/6254) - Reject Ethereum configuration update via proposals
+
+### 🐛 Fixes
+- [6255](https://github.com/vegaprotocol/vega/issues/6255) - Fix `WebSocket` upgrading when setting headers in HTTP middleware.
+- [6101](https://github.com/vegaprotocol/vega/issues/6101) - Fix Nodes API not returning new `ethereumAdress` after `EthereumKeyRotation` event.
+- [6183](https://github.com/vegaprotocol/vega/issues/6183) - Shutdown blockchain before protocol services
+- [6148](https://github.com/vegaprotocol/vega/issues/6148) - Fix API descriptions for typos
+- [6187](https://github.com/vegaprotocol/vega/issues/6187) - Not hash message before signing if using clef for validator heartbeats
+- [6138](https://github.com/vegaprotocol/vega/issues/6138) - Return more useful information when a transaction submitted to a node contains validation errors
+- [6156](https://github.com/vegaprotocol/vega/issues/6156) - Return only delegations for the specific node in `graphql` node delegation query
+- [6233](https://github.com/vegaprotocol/vega/issues/6233) - Fix `GetNodeSignatures` GRPC api
+- [6175](https://github.com/vegaprotocol/vega/issues/6175) - Fix `datanode` updating node public key on key rotation
+- [5948](https://github.com/vegaprotocol/vega/issues/5948) - Shutdown node gracefully when panics or `sigterm` during chain-replay
+- [6109](https://github.com/vegaprotocol/vega/issues/6109) - Candle query returns unexpected data.
+- [5988](https://github.com/vegaprotocol/vega/issues/5988) - Exclude tainted keys from `session.list_keys` endpoint
+- [5164](https://github.com/vegaprotocol/vega/issues/5164) - Distribute LP fees on settlement
+- [6212](https://github.com/vegaprotocol/vega/issues/6212) - Change the error for protocol upgrade request for block 0
+- [6242](https://github.com/vegaprotocol/vega/issues/6242) - Allow migrate between wallet types during Ethereum key rotation reload
+- [6202](https://github.com/vegaprotocol/vega/issues/6202) - Always update margins for parties on amend
+- [6228](https://github.com/vegaprotocol/vega/issues/6228) - Reject protocol upgrade downgrades
+- [6245](https://github.com/vegaprotocol/vega/issues/6245) - Recalculate equity values when virtual stake changes
+- [6260](https://github.com/vegaprotocol/vega/issues/6260) - Prepend `chainID` to input data only when signing the transaction
+- [6036](https://github.com/vegaprotocol/vega/issues/6036) - Fix `protobuf<->swagger` generation
+- [6248](https://github.com/vegaprotocol/vega/issues/6245) - Candles connection is not returning any candle data
+- [6061](https://github.com/vegaprotocol/vega/issues/6061) - Attempt at stabilizing the tests on the broker in the core
+- [6178](https://github.com/vegaprotocol/vega/issues/6178) - Historical balances fails with `scany` error
+- [6193](https://github.com/vegaprotocol/vega/issues/6193) - Use Data field from transaction successfully sent but that were rejected
+- [6230](https://github.com/vegaprotocol/vega/issues/6230) - Node Signature Connection should return a list or an appropriate error message
+- [5998](https://github.com/vegaprotocol/vega/issues/5998) - Positions should be zero when markets are closed and settled
+- [6297](https://github.com/vegaprotocol/vega/issues/6297) - Historic Balances fails if `MarketId` is used in `groupBy`
+
 ## 0.55.0
 
 ### 🚨 Breaking changes
@@ -24,6 +75,7 @@
 - [6139](https://github.com/vegaprotocol/vega/issues/6139) - Return the key on `session.list_keys` endpoint on wallet API version 2
 
 ### 🛠 Improvements
+- [5971](https://github.com/vegaprotocol/vega/issues/5971) - Add headers `X-Block-Height`, `X-Block-Timestamp` and `X-Vega-Connection` to all API responses
 - [5694](https://github.com/vegaprotocol/vega/issues/5694) - Add field `settlementPriceDecimals` to GraphQL `Future` and `FutureProduct` types
 - [6048](https://github.com/vegaprotocol/vega/issues/6048) - Upgrade `golangci-lint` to `1.49.0` and implement its suggestions
 - [5807](https://github.com/vegaprotocol/vega/issues/5807) - Add Vega tools: `stream`, `snapshot` and `checkpoint`
@@ -60,6 +112,7 @@
 - [5934](https://github.com/vegaprotocol/vega/issues/5934) - Ensure wallet without permissions can be read
 - [5950](https://github.com/vegaprotocol/vega/issues/5934) - Fix documentation for new wallet command
 - [5687](https://github.com/vegaprotocol/vega/issues/5934) - Asset cache was returning stale data
+- [6032](https://github.com/vegaprotocol/vega/issues/6032) - Risk factors store errors after update to a market
 - [5986](https://github.com/vegaprotocol/vega/issues/5986) - Error string on failed transaction is sent in the plain, no need to decode
 - [5860](https://github.com/vegaprotocol/vega/issues/5860) - Enacted but unlisted new assets are now included in checkpoints
 - [6023](https://github.com/vegaprotocol/vega/issues/6023) - Tell the `datanode` when a genesis validator does not exist in a `checkpoint`
@@ -72,11 +125,13 @@
 - [6060](https://github.com/vegaprotocol/vega/issues/6060) - Fix connection results should not be declared as mandatory in GQL schema.
 - [6097](https://github.com/vegaprotocol/vega/issues/6067) - Fix incorrect asset (metric asset) used for checking market proposer eligibility
 - [6099](https://github.com/vegaprotocol/vega/issues/6099) - Allow recurring transfers with the same to and from but with different asset
+- [6067](https://github.com/vegaprotocol/vega/issues/6067) - Verify global reward is transferred to party address 0
 - [6131](https://github.com/vegaprotocol/vega/issues/6131) - `nullblockchain` should call Tendermint Info `abci` to match real flow
 - [6119](https://github.com/vegaprotocol/vega/issues/6119) - Correct order in which market event is emitted
 - [5890](https://github.com/vegaprotocol/vega/issues/5890) - Margin breach during amend doesn't cancel order
 - [6144](https://github.com/vegaprotocol/vega/issues/6144) - Price and Pegged Offset in orders are Decimals
 - [6111](https://github.com/vegaprotocol/vega/issues/5890) - Handle candles transient failure and prevent subscription blocking
+- [6204](https://github.com/vegaprotocol/vega/issues/6204) - Data Node add Ethereum Key Rotations subscriber and rest binding
 
 ## 0.54.0
 

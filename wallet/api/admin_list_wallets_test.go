@@ -26,11 +26,11 @@ func testListingWalletsSucceeds(t *testing.T) {
 	ctx := context.Background()
 	expectedWallet1, _, err := wallet.NewHDWallet(vgrand.RandomStr(5))
 	if err != nil {
-		t.Fatal(fmt.Errorf("could not create wallet for test: %w", err))
+		t.Fatalf("could not create wallet for test: %v", err)
 	}
 	expectedWallet2, _, err := wallet.NewHDWallet(vgrand.RandomStr(5))
 	if err != nil {
-		t.Fatal(fmt.Errorf("could not create wallet for test: %w", err))
+		t.Fatalf("could not create wallet for test: %v", err)
 	}
 
 	// setup

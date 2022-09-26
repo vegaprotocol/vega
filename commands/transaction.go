@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"bytes"
 	"encoding/hex"
 	"fmt"
 
@@ -25,6 +24,10 @@ func NewTransaction(pubKey string, data []byte, signature *commandspb.Signature)
 	}
 }
 
+func BundleInputDataForSigning(inputDataBytes []byte, chainID string) []byte {
+	return append([]byte(fmt.Sprintf("%s%c", chainID, ChainIDDelimiter)), inputDataBytes...)
+}
+
 func NewInputData(height uint64) *commandspb.InputData {
 	return &commandspb.InputData{
 		Nonce:       crypto.NewNonce(),
@@ -32,30 +35,16 @@ func NewInputData(height uint64) *commandspb.InputData {
 	}
 }
 
-func MarshalInputData(chainID string, inputData *commandspb.InputData) ([]byte, error) {
+func MarshalInputData(inputData *commandspb.InputData) ([]byte, error) {
 	data, err := proto.Marshal(inputData)
 	if err != nil {
 		return nil, err
 	}
 
-	dataWithChainID := append([]byte(fmt.Sprintf("%s%c", chainID, ChainIDDelimiter)), data...)
-
-	return dataWithChainID, nil
+	return data, nil
 }
 
-func UnmarshalInputData(txVersion commandspb.TxVersion, rawInputData []byte, expectedChainID string) (*commandspb.InputData, error) {
-	if txVersion == commandspb.TxVersion_TX_VERSION_V3 {
-		prefix := fmt.Sprintf("%s%c", expectedChainID, ChainIDDelimiter)
-		if !bytes.HasPrefix(rawInputData, []byte(prefix)) {
-			idx := bytes.IndexByte(rawInputData, ChainIDDelimiter)
-			if idx == -1 {
-				return nil, fmt.Errorf("the transaction is not bundled with a chain ID, whereas it was expecting to be %q", expectedChainID)
-			}
-			return nil, fmt.Errorf("the transaction as been bundled for the network %q, but the current connection is on the network %q", string(rawInputData[:idx]), expectedChainID)
-		}
-		rawInputData = rawInputData[len(prefix):]
-	}
-
+func UnmarshalInputData(rawInputData []byte) (*commandspb.InputData, error) {
 	inputData := &commandspb.InputData{}
 	if err := proto.Unmarshal(rawInputData, inputData); err != nil {
 		return nil, fmt.Errorf("couldn't unmarshall input data: %w", err)
@@ -98,13 +87,18 @@ func CheckTransaction(tx *commandspb.Transaction, chainID string) (*commandspb.I
 		return nil, errs.ErrorOrNil()
 	}
 
-	inputData, inputErrs := checkInputData(tx.Version, tx.InputData, chainID)
+	inputData, inputErrs := checkInputData(tx.InputData)
 	if !inputErrs.Empty() {
 		errs.Merge(inputErrs)
 		return nil, errs.ErrorOrNil()
 	}
 
-	errs.Merge(checkSignature(tx.Signature, tx.GetPubKey(), tx.InputData))
+	inputDataBytes := tx.InputData
+	if tx.Version == commandspb.TxVersion_TX_VERSION_V3 {
+		inputDataBytes = append([]byte(fmt.Sprintf("%s%c", chainID, ChainIDDelimiter)), inputDataBytes...)
+	}
+
+	errs.Merge(checkSignature(tx.Signature, tx.GetPubKey(), inputDataBytes))
 	if !errs.Empty() {
 		return nil, errs.ErrorOrNil()
 	}
@@ -155,19 +149,20 @@ func checkSignature(signature *commandspb.Signature, pubKey string, rawInputData
 
 	if !isValid {
 		errs.AddForProperty("tx.signature.value", ErrInvalidSignature)
+		return errs
 	}
 
 	return nil
 }
 
-func checkInputData(version commandspb.TxVersion, rawInputData []byte, expectedChainID string) (*commandspb.InputData, Errors) {
+func checkInputData(rawInputData []byte) (*commandspb.InputData, Errors) {
 	errs := NewErrors()
 
 	if len(rawInputData) == 0 {
 		return nil, errs.FinalAddForProperty("tx.input_data", ErrIsRequired)
 	}
 
-	inputData, err := UnmarshalInputData(version, rawInputData, expectedChainID)
+	inputData, err := UnmarshalInputData(rawInputData)
 	if err != nil {
 		return nil, errs.FinalAddForProperty("tx.input_data", err)
 	}

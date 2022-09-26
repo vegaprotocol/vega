@@ -128,23 +128,39 @@ func (n *Command) Run(
 		return err
 	}
 
-	if err := n.startBlockchain(tmHome, network, networkURL); err != nil {
-		return err
-	}
+	// if a chain is being replayed tendermint does this during the initial handshake with the
+	// app and does so synchronously. We to need to set this off in a goroutine so we can catch any
+	// SIGTERM during that replay and shutdown properly
+	errCh := make(chan error)
+	go func() {
+		defer func() {
+			// if a consensus failure happens during replay tendermint panics
+			// we need to catch it so we can call shutdown and then re-panic
+			if r := recover(); r != nil {
+				n.Stop()
+				panic(r)
+			}
+		}()
+		if err := n.startBlockchain(tmHome, network, networkURL); err != nil {
+			errCh <- err
+		}
+		// start the nullblockchain if we are in that mode, it *needs* to be after we've started the gRPC server
+		// otherwise it'll start calling init-chain and all the way before we're ready.
+		if n.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
+			n.nullBlockchain.StartServer()
+		}
+	}()
 
 	// at this point all is good, and we should be started, we can
 	// just wait for signals or whatever
 	n.Log.Info("Vega startup complete",
 		logging.String("node-mode", string(n.conf.NodeMode)))
 
-	// start the nullblockchain if we are in that mode, it *needs* to be after we've started the gRPC server
-	// otherwise it'll start calling init-chain and all the way before we're ready.
-	if n.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
-		n.nullBlockchain.StartServer()
-	}
-
 	// wait for possible protocol upgrade, or user exist
-	n.wait()
+
+	if err := n.wait(errCh); err != nil {
+		return err
+	}
 
 	// cleanup
 	n.Stop()
@@ -152,20 +168,22 @@ func (n *Command) Run(
 	return nil
 }
 
-func (n *Command) wait() {
+func (n *Command) wait(errCh <-chan error) error {
 	gracefulStop := make(chan os.Signal, 1)
 	signal.Notify(gracefulStop, syscall.SIGTERM, syscall.SIGINT)
-
 	for {
 		select {
 		case version := <-n.protocolUpgrade:
 			n.startProtocolUpgrade(version)
 		case sig := <-gracefulStop:
 			n.Log.Info("Caught signal", logging.String("name", fmt.Sprintf("%+v", sig)))
-			return
+			return nil
+		case e := <-errCh:
+			n.Log.Error("problem starting blockchain", logging.Error(e))
+			return e
 		case <-n.ctx.Done():
 			// nothing to do
-			return
+			return nil
 		}
 	}
 }
@@ -205,14 +223,14 @@ func (n *Command) startProtocolUpgrade(version string) {
 }
 
 func (n *Command) Stop() error {
+	if n.blockchainServer != nil {
+		n.blockchainServer.Stop()
+	}
 	if n.protocol != nil {
 		n.protocol.Stop()
 	}
 	if n.grpcServer != nil {
 		n.grpcServer.Stop()
-	}
-	if n.blockchainServer != nil {
-		n.blockchainServer.Stop()
 	}
 	if n.proxyServer != nil {
 		n.proxyServer.Stop()
@@ -312,11 +330,11 @@ func (n *Command) startBlockchain(tmHome, network, networkURL string) error {
 	case blockchain.ProviderTendermint:
 		var err error
 		// initialise the node
-		n.tmNode, err = n.startABCI(n.ctx, n.abciApp, tmHome, network, networkURL)
+		n.tmNode, err = n.startABCI(n.abciApp, tmHome, network, networkURL)
 		if err != nil {
 			return err
 		}
-		n.blockchainServer = blockchain.NewServer(n.tmNode)
+		n.blockchainServer = blockchain.NewServer(n.Log, n.tmNode)
 		// initialise the client
 		client, err := n.tmNode.GetClient()
 		if err != nil {
@@ -328,7 +346,7 @@ func (n *Command) startBlockchain(tmHome, network, networkURL string) error {
 		// nullchain acts as both the client and the server because its does everything
 		n.nullBlockchain = nullchain.NewClient(n.Log, n.conf.Blockchain.Null)
 		n.nullBlockchain.SetABCIApp(n.abciApp)
-		n.blockchainServer = blockchain.NewServer(n.nullBlockchain)
+		n.blockchainServer = blockchain.NewServer(n.Log, n.nullBlockchain)
 		// n.blockchainClient = blockchain.NewClient(n.nullBlockchain)
 		n.blockchainClient.Set(n.nullBlockchain)
 
@@ -407,13 +425,7 @@ func (n *Command) loadNodeWallets(_ []string) (err error) {
 	return n.nodeWallets.Verify()
 }
 
-func (n *Command) startABCI(
-	ctx context.Context,
-	app types.Application,
-	tmHome string,
-	network string,
-	networkURL string,
-) (*abci.TmNode, error) {
+func (n *Command) startABCI(app types.Application, tmHome string, network string, networkURL string) (*abci.TmNode, error) {
 	var (
 		genesisDoc *tmtypes.GenesisDoc
 		err        error

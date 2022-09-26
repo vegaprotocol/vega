@@ -26,6 +26,7 @@ import (
 
 	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/core/api"
+	"code.vegaprotocol.io/vega/core/blockchain"
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/genesis"
@@ -44,6 +45,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 	tmtypesint "github.com/tendermint/tendermint/types"
@@ -281,7 +283,8 @@ func NewApp(
 		HandleCheckTx(txn.RotateEthereumKeySubmissionCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.ProtocolUpgradeCommand, app.CheckProtocolUpgradeProposal).
 		HandleCheckTx(txn.IssueSignatures, app.RequireValidatorPubKey).
-		HandleCheckTx(txn.BatchMarketInstructions, app.CheckBatchMarketInstructions)
+		HandleCheckTx(txn.BatchMarketInstructions, app.CheckBatchMarketInstructions).
+		HandleCheckTx(txn.ProposeCommand, app.CheckPropose)
 
 	app.abci.
 		HandleDeliverTx(txn.IssueSignatures,
@@ -305,7 +308,12 @@ func NewApp(
 		HandleDeliverTx(txn.WithdrawCommand,
 			app.SendEventOnError(addDeterministicID(app.DeliverWithdraw))).
 		HandleDeliverTx(txn.ProposeCommand,
-			app.SendEventOnError(addDeterministicID(app.DeliverPropose))).
+			app.SendEventOnError(
+				app.CheckProposeW(
+					addDeterministicID(app.DeliverPropose),
+				),
+			),
+		).
 		HandleDeliverTx(txn.VoteCommand,
 			app.SendEventOnError(app.DeliverVote)).
 		HandleDeliverTx(txn.NodeSignatureCommand,
@@ -361,6 +369,17 @@ func addDeterministicID(
 ) func(context.Context, abci.Tx) error {
 	return func(ctx context.Context, tx abci.Tx) error {
 		return f(ctx, tx, hex.EncodeToString(vgcrypto.Hash(tx.Signature())))
+	}
+}
+
+func (app *App) CheckProposeW(
+	f func(context.Context, abci.Tx) error,
+) func(context.Context, abci.Tx) error {
+	return func(ctx context.Context, tx abci.Tx) error {
+		if err := app.CheckPropose(ctx, tx); err != nil {
+			return err
+		}
+		return f(ctx, tx)
 	}
 }
 
@@ -625,7 +644,7 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 		logging.String("previous-datetime", vegatime.Format(app.previousTimestamp)),
 	)
 
-	app.epoch.OnBlockEnd(ctx)
+	app.epoch.OnBlockEnd(app.blockCtx)
 	if !app.nilPow {
 		app.pow.EndOfBlock()
 	}
@@ -642,15 +661,32 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 			ValidatorUpdates: powerUpdates,
 		}
 	}
+
+	app.broker.Send(
+		events.NewEndBlock(app.blockCtx, eventspb.EndBlock{
+			Height: uint64(req.Height),
+		}),
+	)
+
 	return ctx, resp
 }
 
 // OnBeginBlock updates the internal lastBlockTime value with each new block.
-func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context, resp tmtypes.ResponseBeginBlock) {
+func (app *App) OnBeginBlock(
+	req tmtypes.RequestBeginBlock,
+) (ctx context.Context, resp tmtypes.ResponseBeginBlock) {
 	app.log.Debug("entering begin block", logging.Time("at", time.Now()), logging.Uint64("height", uint64(req.Header.Height)))
 	defer func() { app.log.Debug("leaving begin block", logging.Time("at", time.Now())) }()
 
+	hash := hex.EncodeToString(req.Hash)
+	ctx = vgcontext.WithBlockHeight(vgcontext.WithTraceID(app.chainCtx, hash), req.Header.Height)
+
 	if app.protocolUpgradeService.GetUpgradeStatus().ReadyToUpgrade {
+		app.broker.Send(
+			events.NewProtocolUpgradeStarted(ctx, eventspb.ProtocolUpgradeStarted{
+				LastBlockHeight: app.stats.Height(),
+			}),
+		)
 		// wait until killed
 		for {
 			time.Sleep(1 * time.Second)
@@ -658,7 +694,14 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 		}
 	}
 
-	hash := hex.EncodeToString(req.Hash)
+	app.broker.Send(
+		events.NewBeginBlock(ctx, eventspb.BeginBlock{
+			Height:    uint64(req.Header.Height),
+			Timestamp: req.Header.Time.UnixNano(),
+			Hash:      hash,
+		}),
+	)
+
 	app.cBlock = hash
 
 	// update pow engine on a new block
@@ -668,7 +711,6 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 
 	app.stats.SetHash(hash)
 	app.stats.SetHeight(uint64(req.Header.Height))
-	ctx = vgcontext.WithBlockHeight(vgcontext.WithTraceID(app.chainCtx, hash), req.Header.Height)
 	app.blockCtx = ctx
 
 	now := req.Header.Time
@@ -787,7 +829,7 @@ func (app *App) OnCheckTxSpam(tx abci.Tx) tmtypes.ResponseCheckTx {
 			if app.log.IsDebug() {
 				app.log.Debug(err.Error())
 			}
-			resp.Code = abci.AbciSpamError
+			resp.Code = blockchain.AbciSpamError
 			resp.Data = []byte(err.Error())
 			return resp
 		}
@@ -796,7 +838,7 @@ func (app *App) OnCheckTxSpam(tx abci.Tx) tmtypes.ResponseCheckTx {
 	if !app.nilSpam {
 		if _, err := app.spam.PreBlockAccept(tx); err != nil {
 			app.log.Error(err.Error())
-			resp.Code = abci.AbciSpamError
+			resp.Code = blockchain.AbciSpamError
 			resp.Data = []byte(err.Error())
 			return resp
 		}
@@ -813,7 +855,7 @@ func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci
 	}
 
 	if err := app.canSubmitTx(tx); err != nil {
-		resp.Code = abci.AbciTxnValidationFailure
+		resp.Code = blockchain.AbciTxnValidationFailure
 		resp.Data = []byte(err.Error())
 		return ctx, resp
 	}
@@ -897,7 +939,7 @@ func (app *App) OnDeliverTXSpam(ctx context.Context, tx abci.Tx) tmtypes.Respons
 	if !app.nilPow {
 		if err := app.pow.DeliverTx(tx); err != nil {
 			app.log.Error(err.Error())
-			resp.Code = abci.AbciSpamError
+			resp.Code = blockchain.AbciSpamError
 			resp.Data = []byte(err.Error())
 			app.broker.Send(events.NewTxErrEvent(ctxWithHash, err, tx.Party(), tx.GetCmd(), tx.Command().String()))
 			return resp
@@ -906,7 +948,7 @@ func (app *App) OnDeliverTXSpam(ctx context.Context, tx abci.Tx) tmtypes.Respons
 	if !app.nilSpam {
 		if _, err := app.spam.PostBlockAccept(tx); err != nil {
 			app.log.Error(err.Error())
-			resp.Code = abci.AbciSpamError
+			resp.Code = blockchain.AbciSpamError
 			resp.Data = []byte(err.Error())
 			evt := events.NewTxErrEvent(ctxWithHash, err, tx.Party(), tx.GetCmd(), tx.Command().String())
 			app.broker.Send(evt)
@@ -921,7 +963,7 @@ func (app *App) OnDeliverTx(ctx context.Context, req tmtypes.RequestDeliverTx, t
 	app.setTxStats(len(req.Tx))
 	var resp tmtypes.ResponseDeliverTx
 	if err := app.canSubmitTx(tx); err != nil {
-		resp.Code = abci.AbciTxnValidationFailure
+		resp.Code = blockchain.AbciTxnValidationFailure
 		resp.Data = []byte(err.Error())
 	}
 
@@ -1164,6 +1206,26 @@ func (app *App) DeliverWithdraw(
 		return err
 	}
 	return app.handleCheckpoint(snap)
+}
+
+func (app *App) CheckPropose(ctx context.Context, tx abci.Tx) error {
+	p := &commandspb.ProposalSubmission{}
+	if err := tx.Unmarshal(p); err != nil {
+		return err
+	}
+
+	propSubmission, err := types.NewProposalSubmissionFromProto(p)
+	if err != nil {
+		return err
+	}
+
+	terms := propSubmission.Terms
+	switch terms.Change.GetTermType() {
+	case types.ProposalTermsTypeUpdateNetworkParameter:
+		return app.netp.IsUpdateAllowed(terms.GetUpdateNetworkParameter().Changes.Key)
+	default:
+		return nil
+	}
 }
 
 func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, deterministicID string) error {

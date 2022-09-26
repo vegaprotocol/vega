@@ -20,20 +20,20 @@ import (
 	"strconv"
 
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
+	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/datanode/service"
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/vegatime"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
+	"code.vegaprotocol.io/vega/protos/vega"
 	pbtypes "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
-
-	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/datanode/metrics"
-	"code.vegaprotocol.io/vega/datanode/sqlstore"
-	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
-	"code.vegaprotocol.io/vega/protos/vega"
 	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
+
 	"google.golang.org/grpc/codes"
 )
 
@@ -58,7 +58,7 @@ type tradingDataService struct {
 	riskFactorService         *service.RiskFactor
 	riskService               *service.Risk
 	networkParameterService   *service.NetworkParameter
-	blockService              *service.Block
+	blockService              BlockService
 	checkpointService         *service.Checkpoint
 	partyService              *service.Party
 	candleService             *candlesv2.Svc
@@ -83,8 +83,8 @@ var defaultEntityPagination = entities.OffsetPagination{
 
 /****************************** Ledger **************************************/
 // TransferResponsesSubscribe opens a subscription to transfer response data provided by the transfer response service.
-func (t *tradingDataService) TransferResponsesSubscribe(
-	_ *protoapi.TransferResponsesSubscribeRequest, srv protoapi.TradingDataService_TransferResponsesSubscribeServer,
+func (t *tradingDataService) LedgerMovementsSubscribe(
+	_ *protoapi.LedgerMovementsSubscribeRequest, srv protoapi.TradingDataService_LedgerMovementsSubscribeServer,
 ) error {
 	// Wrap context from the request into cancellable. We can close internal chan in error.
 	ctx, cancel := context.WithCancel(srv.Context())
@@ -96,9 +96,9 @@ func (t *tradingDataService) TransferResponsesSubscribe(
 		t.log.Debug("TransferResponses subscriber - new rpc stream", logging.Uint64("ref", ref))
 	}
 
-	return observe(ctx, t.log, "TransferResponse", transferResponsesChan, ref, func(tr *vega.TransferResponse) error {
-		return srv.Send(&protoapi.TransferResponsesSubscribeResponse{
-			Response: tr,
+	return observe(ctx, t.log, "LedgerMovements", transferResponsesChan, ref, func(tr *vega.LedgerMovement) error {
+		return srv.Send(&protoapi.LedgerMovementsSubscribeResponse{
+			LedgerMovement: tr,
 		})
 	})
 }

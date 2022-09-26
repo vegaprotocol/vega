@@ -22,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
 
@@ -1067,7 +1068,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 
 // test for order validation.
 func TestOrderBook_SubmitOrder2WithValidation(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	timeStampOrder := types.Order{
@@ -1111,7 +1112,7 @@ func TestOrderBook_SubmitOrder2WithValidation(t *testing.T) {
 }
 
 func TestOrderBook_DeleteOrder(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -1142,7 +1143,7 @@ func TestOrderBook_DeleteOrder(t *testing.T) {
 }
 
 func TestOrderBook_RemoveOrder(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -1175,7 +1176,7 @@ func TestOrderBook_RemoveOrder(t *testing.T) {
 }
 
 func TestOrderBook_SubmitOrderInvalidMarket(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -1207,7 +1208,7 @@ func TestOrderBook_SubmitOrderInvalidMarket(t *testing.T) {
 }
 
 func TestOrderBook_CancelSellOrder(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	logger := logging.NewTestLogger()
@@ -1254,7 +1255,7 @@ func TestOrderBook_CancelSellOrder(t *testing.T) {
 }
 
 func TestOrderBook_CancelBuyOrder(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -1301,7 +1302,7 @@ func TestOrderBook_CancelBuyOrder(t *testing.T) {
 }
 
 func TestOrderBook_CancelOrderByID(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -1354,7 +1355,7 @@ func TestOrderBook_CancelOrderMarketMismatch(t *testing.T) {
 	defer logger.Sync()
 	logger.Debug("BEGIN CANCELLING MARKET MISMATCH ORDER")
 
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	newOrder := &types.Order{
@@ -1389,7 +1390,7 @@ func TestOrderBook_CancelOrderInvalidID(t *testing.T) {
 	defer logger.Sync()
 	logger.Debug("BEGIN CANCELLING INVALID ORDER")
 
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	newOrder := &types.Order{
@@ -1442,7 +1443,7 @@ func expectOrder(t *testing.T, expectedOrder, order *types.Order) {
 }
 
 func TestOrderBook_AmendOrder(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -1493,7 +1494,7 @@ func TestOrderBook_AmendOrder(t *testing.T) {
 }
 
 func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -1543,7 +1544,7 @@ func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
 }
 
 func TestOrderBook_AmendOrderInvalidAmend(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -1597,7 +1598,7 @@ func TestOrderBook_AmendOrderInvalidAmend1(t *testing.T) {
 	defer logger.Sync()
 	logger.Debug("BEGIN AMENDING ORDER")
 
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	newOrder := &types.Order{
@@ -1647,7 +1648,7 @@ func TestOrderBook_AmendOrderInvalidAmend1(t *testing.T) {
 }
 
 func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -1704,7 +1705,7 @@ func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
 }
 
 func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -1762,7 +1763,7 @@ func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
 
 // ProRata mode OFF which is a default config for vega ME.
 func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -2174,7 +2175,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 // Validate that an IOC order that is not fully filled
 // is not added to the order book.ob.
 func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -2241,12 +2242,12 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 
 func makeOrder(t *testing.T, orderbook *tstOB, market string, id string, side types.Side, price uint64, partyid string, size uint64) {
 	t.Helper()
-	order := getOrder(t, orderbook, market, id, side, price, partyid, size)
+	order := getOrder(t, market, id, side, price, partyid, size)
 	_, err := orderbook.ob.SubmitOrder(order)
 	assert.Equal(t, err, nil)
 }
 
-func getOrder(t *testing.T, orderbook *tstOB, market string, id string, side types.Side, price uint64, partyid string, size uint64) *types.Order {
+func getOrder(t *testing.T, market string, id string, side types.Side, price uint64, partyid string, size uint64) *types.Order {
 	t.Helper()
 	order := &types.Order{
 		Status:        types.OrderStatusActive,
@@ -2270,7 +2271,7 @@ func getOrder(t *testing.T, orderbook *tstOB, market string, id string, side typ
 /*****************************************************************************/
 
 func TestOrderBook_GFNMarketNoExpiry(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -2278,7 +2279,7 @@ func TestOrderBook_GFNMarketNoExpiry(t *testing.T) {
 	defer logger.Sync()
 
 	// Enter a GFN market order with no expiration time
-	buyOrder := getOrder(t, book, market, "BuyOrder01", types.SideBuy, 100, "party01", 10)
+	buyOrder := getOrder(t, market, "BuyOrder01", types.SideBuy, 100, "party01", 10)
 	buyOrder.TimeInForce = types.OrderTimeInForceGFN
 	buyOrder.Type = types.OrderTypeMarket
 	buyOrder.ExpiresAt = 0
@@ -2287,7 +2288,7 @@ func TestOrderBook_GFNMarketNoExpiry(t *testing.T) {
 	assert.NotNil(t, buyOrderConf)
 
 	// Enter a GFN market order with no expiration time
-	sellOrder := getOrder(t, book, market, "SellOrder01", types.SideSell, 100, "party01", 10)
+	sellOrder := getOrder(t, market, "SellOrder01", types.SideSell, 100, "party01", 10)
 	sellOrder.TimeInForce = types.OrderTimeInForceGFN
 	sellOrder.Type = types.OrderTypeMarket
 	sellOrder.ExpiresAt = 0
@@ -2297,7 +2298,7 @@ func TestOrderBook_GFNMarketNoExpiry(t *testing.T) {
 }
 
 func TestOrderBook_GFNMarketWithExpiry(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -2305,7 +2306,7 @@ func TestOrderBook_GFNMarketWithExpiry(t *testing.T) {
 	defer logger.Sync()
 
 	// Enter a GFN market order with an expiration time (which is invalid)
-	buyOrder := getOrder(t, book, market, "BuyOrder01", types.SideBuy, 100, "party01", 10)
+	buyOrder := getOrder(t, market, "BuyOrder01", types.SideBuy, 100, "party01", 10)
 	buyOrder.TimeInForce = types.OrderTimeInForceGFN
 	buyOrder.Type = types.OrderTypeMarket
 	buyOrder.ExpiresAt = 100
@@ -2314,7 +2315,7 @@ func TestOrderBook_GFNMarketWithExpiry(t *testing.T) {
 	assert.Nil(t, buyOrderConf)
 
 	// Enter a GFN market order with an expiration time (which is invalid)
-	sellOrder := getOrder(t, book, market, "SellOrder01", types.SideSell, 100, "party01", 10)
+	sellOrder := getOrder(t, market, "SellOrder01", types.SideSell, 100, "party01", 10)
 	sellOrder.TimeInForce = types.OrderTimeInForceGFN
 	sellOrder.Type = types.OrderTypeMarket
 	sellOrder.ExpiresAt = 100
@@ -2324,7 +2325,7 @@ func TestOrderBook_GFNMarketWithExpiry(t *testing.T) {
 }
 
 func TestOrderBook_GFNLimitInstantMatch(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -2332,13 +2333,13 @@ func TestOrderBook_GFNLimitInstantMatch(t *testing.T) {
 	defer logger.Sync()
 
 	// Normal limit buy order to match against
-	buyOrder := getOrder(t, book, market, "BuyOrder01", types.SideBuy, 100, "party01", 10)
+	buyOrder := getOrder(t, market, "BuyOrder01", types.SideBuy, 100, "party01", 10)
 	buyOrderConf, err := book.ob.SubmitOrder(buyOrder)
 	assert.NoError(t, err)
 	assert.NotNil(t, buyOrderConf)
 
 	// Enter a GFN market order with an expiration time (which is invalid)
-	sellOrder := getOrder(t, book, market, "SellOrder01", types.SideSell, 100, "party02", 10)
+	sellOrder := getOrder(t, market, "SellOrder01", types.SideSell, 100, "party02", 10)
 	sellOrder.TimeInForce = types.OrderTimeInForceGFN
 	sellOrder.Type = types.OrderTypeLimit
 	sellOrderConf, err := book.ob.SubmitOrder(sellOrder)
@@ -2348,7 +2349,7 @@ func TestOrderBook_GFNLimitInstantMatch(t *testing.T) {
 
 // AUCTION TESTING.
 func TestOrderBook_AuctionGFNAreRejected(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -2360,7 +2361,7 @@ func TestOrderBook_AuctionGFNAreRejected(t *testing.T) {
 	assert.True(t, book.ob.InAuction())
 
 	// Try to add an order of type GFN which should be rejected
-	order := getOrder(t, book, market, "BuyOrder01", types.SideBuy, 100, "party01", 10)
+	order := getOrder(t, market, "BuyOrder01", types.SideBuy, 100, "party01", 10)
 	order.TimeInForce = types.OrderTimeInForceGFN
 	orderConf, err := book.ob.SubmitOrder(order)
 	assert.Equal(t, err, types.OrderErrorInvalidTimeInForce)
@@ -2368,7 +2369,7 @@ func TestOrderBook_AuctionGFNAreRejected(t *testing.T) {
 }
 
 func TestOrderBook_ContinuousGFAAreRejected(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -2379,7 +2380,7 @@ func TestOrderBook_ContinuousGFAAreRejected(t *testing.T) {
 	assert.False(t, book.ob.InAuction())
 
 	// Try to add an order of type GFA which should be rejected
-	order := getOrder(t, book, market, "BuyOrder01", types.SideBuy, 100, "party01", 10)
+	order := getOrder(t, market, "BuyOrder01", types.SideBuy, 100, "party01", 10)
 	order.TimeInForce = types.OrderTimeInForceGFA
 	orderConf, err := book.ob.SubmitOrder(order)
 	assert.Equal(t, err, types.OrderErrorInvalidTimeInForce)
@@ -2387,7 +2388,7 @@ func TestOrderBook_ContinuousGFAAreRejected(t *testing.T) {
 }
 
 func TestOrderBook_GFNOrdersCancelledInAuction(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -2398,7 +2399,7 @@ func TestOrderBook_GFNOrdersCancelledInAuction(t *testing.T) {
 	assert.False(t, book.ob.InAuction())
 
 	// Add a GFN order
-	order := getOrder(t, book, market, "BuyOrder01", types.SideBuy, 100, "party01", 10)
+	order := getOrder(t, market, "BuyOrder01", types.SideBuy, 100, "party01", 10)
 	order.TimeInForce = types.OrderTimeInForceGFN
 	orderConf, err := book.ob.SubmitOrder(order)
 	assert.NoError(t, err)
@@ -2411,7 +2412,7 @@ func TestOrderBook_GFNOrdersCancelledInAuction(t *testing.T) {
 }
 
 func TestOrderBook_GFAOrdersCancelledInContinuous(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -2423,7 +2424,7 @@ func TestOrderBook_GFAOrdersCancelledInContinuous(t *testing.T) {
 	assert.True(t, book.ob.InAuction())
 
 	// Add a GFA order
-	order := getOrder(t, book, market, "BuyOrder01", types.SideBuy, 100, "party01", 10)
+	order := getOrder(t, market, "BuyOrder01", types.SideBuy, 100, "party01", 10)
 	order.TimeInForce = types.OrderTimeInForceGFA
 	orderConf, err := book.ob.SubmitOrder(order)
 	assert.NoError(t, err)
@@ -2438,7 +2439,7 @@ func TestOrderBook_GFAOrdersCancelledInContinuous(t *testing.T) {
 }
 
 func TestOrderBook_IndicativePriceAndVolumeState(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -2480,7 +2481,7 @@ func TestOrderBook_IndicativePriceAndVolumeState(t *testing.T) {
 }
 
 func TestOrderBook_IndicativePriceAndVolumeEmpty(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -2510,7 +2511,7 @@ func TestOrderBook_IndicativePriceAndVolumeEmpty(t *testing.T) {
 }
 
 func TestOrderBook_IndicativePriceAndVolumeOnlyBuySide(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -2544,7 +2545,7 @@ func TestOrderBook_IndicativePriceAndVolumeOnlyBuySide(t *testing.T) {
 }
 
 func TestOrderBook_IndicativePriceAndVolumeOnlySellSide(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -2578,7 +2579,7 @@ func TestOrderBook_IndicativePriceAndVolumeOnlySellSide(t *testing.T) {
 }
 
 func TestOrderBook_IndicativePriceAndVolume1(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -2628,7 +2629,7 @@ func TestOrderBook_IndicativePriceAndVolume1(t *testing.T) {
 }
 
 func TestOrderBook_IndicativePriceAndVolume2(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -2680,7 +2681,7 @@ func TestOrderBook_IndicativePriceAndVolume2(t *testing.T) {
 }
 
 func TestOrderBook_IndicativePriceAndVolume3(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -2729,7 +2730,7 @@ func TestOrderBook_IndicativePriceAndVolume3(t *testing.T) {
 }
 
 func TestOrderBook_IndicativePriceAndVolume4(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -2778,7 +2779,7 @@ func TestOrderBook_IndicativePriceAndVolume4(t *testing.T) {
 }
 
 func TestOrderBook_IndicativePriceAndVolume5(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -2842,7 +2843,7 @@ func TestOrderBook_IndicativePriceAndVolume5(t *testing.T) {
 
 // Set up an auction so that the sell side is processed when we uncross.
 func TestOrderBook_IndicativePriceAndVolume6(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -2894,7 +2895,7 @@ func TestOrderBook_IndicativePriceAndVolume6(t *testing.T) {
 
 // Check that multiple orders per price level work.
 func TestOrderBook_IndicativePriceAndVolume7(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -2949,7 +2950,7 @@ func TestOrderBook_IndicativePriceAndVolume7(t *testing.T) {
 }
 
 func TestOrderBook_IndicativePriceAndVolume8(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -3004,7 +3005,7 @@ func TestOrderBook_IndicativePriceAndVolume8(t *testing.T) {
 }
 
 func TestOrderBook_IndicativePriceAndVolume9(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -3057,7 +3058,7 @@ func TestOrderBook_IndicativePriceAndVolume9(t *testing.T) {
 
 // check behaviour consistent in the presence of wash trades.
 func TestOrderBook_IndicativePriceAndVolume10(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -3112,7 +3113,7 @@ func TestOrderBook_IndicativePriceAndVolume10(t *testing.T) {
 }
 
 func TestOrderBook_UncrossTest1(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -3122,19 +3123,19 @@ func TestOrderBook_UncrossTest1(t *testing.T) {
 	// Switch to auction mode
 	book.ob.EnterAuction()
 
-	bo1 := getOrder(t, book, market, "BuyOrder01", types.SideBuy, 100, "party01", 5)
+	bo1 := getOrder(t, market, "BuyOrder01", types.SideBuy, 100, "party01", 5)
 	bo1.TimeInForce = types.OrderTimeInForceGFA
 	book.ob.SubmitOrder(bo1)
 
-	so1 := getOrder(t, book, market, "SellOrder01", types.SideSell, 100, "party02", 5)
+	so1 := getOrder(t, market, "SellOrder01", types.SideSell, 100, "party02", 5)
 	so1.TimeInForce = types.OrderTimeInForceGFA
 	book.ob.SubmitOrder(so1)
 
-	bo2 := getOrder(t, book, market, "BuyOrder02", types.SideBuy, 100, "party01", 5)
+	bo2 := getOrder(t, market, "BuyOrder02", types.SideBuy, 100, "party01", 5)
 	bo2.TimeInForce = types.OrderTimeInForceGFA
 	book.ob.SubmitOrder(bo2)
 
-	so2 := getOrder(t, book, market, "SellOrder02", types.SideSell, 101, "party02", 5)
+	so2 := getOrder(t, market, "SellOrder02", types.SideSell, 101, "party02", 5)
 	so2.TimeInForce = types.OrderTimeInForceGFA
 	book.ob.SubmitOrder(so2)
 
@@ -3168,7 +3169,7 @@ func TestOrderBook_UncrossTest1(t *testing.T) {
 
 // this is a test for issue 2060 to ensure we process FOK orders properly.
 func TestOrderBook_NetworkOrderSuccess(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -3234,7 +3235,7 @@ func TestOrderBook_NetworkOrderSuccess(t *testing.T) {
 }
 
 func TestOrderBook_GetTradesInLineWithSubmitOrderDuringAuction(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 
 	orders := book.ob.EnterAuction()
@@ -3301,7 +3302,7 @@ func TestOrderBook_GetTradesInLineWithSubmitOrderDuringAuction(t *testing.T) {
 }
 
 func TestOrderBook_AuctionUncrossWashTrades(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -3311,11 +3312,11 @@ func TestOrderBook_AuctionUncrossWashTrades(t *testing.T) {
 	// Switch to auction mode
 	book.ob.EnterAuction()
 
-	bo1 := getOrder(t, book, market, "BuyOrder01", types.SideBuy, 100, "party01", 5)
+	bo1 := getOrder(t, market, "BuyOrder01", types.SideBuy, 100, "party01", 5)
 	bo1.TimeInForce = types.OrderTimeInForceGFA
 	book.ob.SubmitOrder(bo1)
 
-	so1 := getOrder(t, book, market, "SellOrder01", types.SideSell, 100, "party01", 5)
+	so1 := getOrder(t, market, "SellOrder01", types.SideSell, 100, "party01", 5)
 	so1.TimeInForce = types.OrderTimeInForceGFA
 	book.ob.SubmitOrder(so1)
 
@@ -3349,7 +3350,7 @@ func TestOrderBook_AuctionUncrossWashTrades(t *testing.T) {
 }
 
 func TestOrderBook_AuctionUncrossTamlyn(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -3359,55 +3360,55 @@ func TestOrderBook_AuctionUncrossTamlyn(t *testing.T) {
 	// Switch to auction mode
 	book.ob.EnterAuction()
 
-	order1 := getOrder(t, book, market, "Order1", types.SideBuy, 16, "Tamlyn", 100)
+	order1 := getOrder(t, market, "Order1", types.SideBuy, 16, "Tamlyn", 100)
 	order1.TimeInForce = types.OrderTimeInForceGFA
 	conf, err := book.ob.SubmitOrder(order1)
 	require.NoError(t, err)
 	assert.NotNil(t, conf)
 
-	order2 := getOrder(t, book, market, "Order2", types.SideSell, 20, "Tamlyn", 100)
+	order2 := getOrder(t, market, "Order2", types.SideSell, 20, "Tamlyn", 100)
 	order2.TimeInForce = types.OrderTimeInForceGFA
 	conf, err = book.ob.SubmitOrder(order2)
 	require.NoError(t, err)
 	assert.NotNil(t, conf)
 
-	order3 := getOrder(t, book, market, "Order3", types.SideSell, 3, "Tamlyn", 100)
+	order3 := getOrder(t, market, "Order3", types.SideSell, 3, "Tamlyn", 100)
 	order3.TimeInForce = types.OrderTimeInForceGFA
 	conf, err = book.ob.SubmitOrder(order3)
 	require.NoError(t, err)
 	assert.NotNil(t, conf)
 
-	order4 := getOrder(t, book, market, "Order4", types.SideSell, 18, "David", 100)
+	order4 := getOrder(t, market, "Order4", types.SideSell, 18, "David", 100)
 	order4.TimeInForce = types.OrderTimeInForceGFA
 	conf, err = book.ob.SubmitOrder(order4)
 	require.NoError(t, err)
 	assert.NotNil(t, conf)
 
-	order5 := getOrder(t, book, market, "Order5", types.SideBuy, 1000, "Tamlyn", 100)
+	order5 := getOrder(t, market, "Order5", types.SideBuy, 1000, "Tamlyn", 100)
 	order5.TimeInForce = types.OrderTimeInForceGFA
 	conf, err = book.ob.SubmitOrder(order5)
 	require.NoError(t, err)
 	assert.NotNil(t, conf)
 
-	order6 := getOrder(t, book, market, "Order6", types.SideBuy, 2000, "David", 100)
+	order6 := getOrder(t, market, "Order6", types.SideBuy, 2000, "David", 100)
 	order6.TimeInForce = types.OrderTimeInForceGFA
 	conf, err = book.ob.SubmitOrder(order6)
 	require.NoError(t, err)
 	assert.NotNil(t, conf)
 
-	order7 := getOrder(t, book, market, "Order7", types.SideSell, 14, "Tamlyn", 15)
+	order7 := getOrder(t, market, "Order7", types.SideSell, 14, "Tamlyn", 15)
 	order7.TimeInForce = types.OrderTimeInForceGFA
 	conf, err = book.ob.SubmitOrder(order7)
 	require.NoError(t, err)
 	assert.NotNil(t, conf)
 
-	order8 := getOrder(t, book, market, "Order8", types.SideBuy, 14, "Tamlyn", 2)
+	order8 := getOrder(t, market, "Order8", types.SideBuy, 14, "Tamlyn", 2)
 	order8.TimeInForce = types.OrderTimeInForceGFA
 	conf, err = book.ob.SubmitOrder(order8)
 	require.NoError(t, err)
 	assert.NotNil(t, conf)
 
-	order9 := getOrder(t, book, market, "Order9", types.SideSell, 1, "David", 10)
+	order9 := getOrder(t, market, "Order9", types.SideSell, 1, "David", 10)
 	order9.TimeInForce = types.OrderTimeInForceGFA
 	conf, err = book.ob.SubmitOrder(order9)
 	require.NoError(t, err)
@@ -3428,7 +3429,7 @@ func TestOrderBook_AuctionUncrossTamlyn(t *testing.T) {
 
 // Add some pegged orders to the order book and check they are parked when going into auction.
 func TestOrderBook_PeggedOrders(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -3446,14 +3447,14 @@ func TestOrderBook_PeggedOrders(t *testing.T) {
 	assert.Equal(t, bestask.Uint64(), uint64(101))
 	assert.Equal(t, bestbid.Uint64(), uint64(100))
 
-	bp1 := getOrder(t, book, market, "BuyPeg1", types.SideBuy, 100, "party01", 5)
+	bp1 := getOrder(t, market, "BuyPeg1", types.SideBuy, 100, "party01", 5)
 	bp1.PeggedOrder = &types.PeggedOrder{
 		Reference: types.PeggedReferenceMid,
 		Offset:    num.NewUint(3),
 	}
 	book.ob.SubmitOrder(bp1)
 
-	sp1 := getOrder(t, book, market, "SellPeg1", types.SideSell, 100, "party01", 5)
+	sp1 := getOrder(t, market, "SellPeg1", types.SideSell, 100, "party01", 5)
 	sp1.PeggedOrder = &types.PeggedOrder{
 		Reference: types.PeggedReferenceMid,
 		Offset:    num.NewUint(3),
@@ -3466,7 +3467,7 @@ func TestOrderBook_PeggedOrders(t *testing.T) {
 }
 
 func TestOrderBook_BidAndAskPresentAfterAuction(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -3522,7 +3523,7 @@ func TestOrderBook_BidAndAskPresentAfterAuction(t *testing.T) {
 }
 
 func TestOrderBook_AuctionUncrossWashTrades2(t *testing.T) {
-	market := "testOrderbook"
+	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
@@ -3532,20 +3533,20 @@ func TestOrderBook_AuctionUncrossWashTrades2(t *testing.T) {
 	// Switch to auction mode
 	book.ob.EnterAuction()
 
-	tt0_0 := getOrder(t, book, market, "tt_0_0", types.SideBuy, 90, "tt_0", 1000)
+	tt0_0 := getOrder(t, market, "tt_0_0", types.SideBuy, 90, "tt_0", 1000)
 	_, err := book.ob.SubmitOrder(tt0_0)
 	require.NoError(t, err)
-	tt0_1 := getOrder(t, book, market, "tt_0_1", types.SideSell, 200, "tt_0", 1000)
+	tt0_1 := getOrder(t, market, "tt_0_1", types.SideSell, 200, "tt_0", 1000)
 	_, err = book.ob.SubmitOrder(tt0_1)
 	require.NoError(t, err)
 
-	tt1_0 := getOrder(t, book, market, "tt_1_0", types.SideSell, 110, "tt_1", 50)
+	tt1_0 := getOrder(t, market, "tt_1_0", types.SideSell, 110, "tt_1", 50)
 	_, err = book.ob.SubmitOrder(tt1_0)
 	require.NoError(t, err)
-	tt2_0 := getOrder(t, book, market, "tt_2_0", types.SideBuy, 110, "tt_2", 20)
+	tt2_0 := getOrder(t, market, "tt_2_0", types.SideBuy, 110, "tt_2", 20)
 	_, err = book.ob.SubmitOrder(tt2_0)
 	require.NoError(t, err)
-	tt3_0 := getOrder(t, book, market, "tt_3_0", types.SideBuy, 110, "tt_3", 30)
+	tt3_0 := getOrder(t, market, "tt_3_0", types.SideBuy, 110, "tt_3", 30)
 	_, err = book.ob.SubmitOrder(tt3_0)
 	require.NoError(t, err)
 
@@ -3564,10 +3565,10 @@ func TestOrderBook_AuctionUncrossWashTrades2(t *testing.T) {
 	require.Equal(t, tt3_0.Price, indicativeTrades[1].Price)
 
 	// Add wash trades
-	tt4_0 := getOrder(t, book, market, "tt_4_0", types.SideSell, 110, "tt_4", 40)
+	tt4_0 := getOrder(t, market, "tt_4_0", types.SideSell, 110, "tt_4", 40)
 	_, err = book.ob.SubmitOrder(tt4_0)
 	require.NoError(t, err)
-	tt4_1 := getOrder(t, book, market, "tt_4_1", types.SideBuy, 110, "tt_4", 40)
+	tt4_1 := getOrder(t, market, "tt_4_1", types.SideBuy, 110, "tt_4", 40)
 	_, err = book.ob.SubmitOrder(tt4_1)
 	require.NoError(t, err)
 

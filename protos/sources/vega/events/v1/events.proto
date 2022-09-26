@@ -277,9 +277,9 @@ message EpochEvent {
 }
 
 // A transfer responses event contains a collection of transfer information
-message TransferResponses {
+message LedgerMovements {
   // One or more entries containing internal transfer information
-  repeated TransferResponse responses = 1;
+  repeated LedgerMovement ledger_movements = 1;
 }
 
 // A position resolution event contains information on distressed trades
@@ -326,6 +326,17 @@ message SettlePosition {
   repeated TradeSettlement trade_settlements = 4;
   // Position factor - 10 ^ number of position decimal places
   string position_factor = 5;
+}
+
+// A settle market event tp notify data-node that a market has been settled
+// so positions and PL can be updated accordingly
+message SettleMarket {
+  // Market identifier for the event
+  string market_id = 1;
+  // Price of settlement as a string
+  string price = 2;
+  // Position factor - 10 ^ number of position decimal places
+  string position_factor = 3;
 }
 
 // A position state event contains the current position state for a single party in a single market
@@ -487,6 +498,24 @@ message StateVar {
   string state = 3;
 }
 
+// BeginBlock
+message BeginBlock {
+  uint64 height = 1;
+  int64 timestamp = 2;
+  string hash = 3;
+}
+
+// EndBlock
+message EndBlock {
+  uint64 height = 1;
+}
+
+// The core is starting a protocol upgrade
+message ProtocolUpgradeStarted {
+  uint64 last_block_height = 1;
+}
+
+
 // An (event) bus event type is used to specify a type of event
 // It has 2 styles of event:
 // Single values (e.g. BUS_EVENT_TYPE_ORDER) where they represent one data item
@@ -499,7 +528,7 @@ enum BusEventType {
   // Event for blockchain time updates
   BUS_EVENT_TYPE_TIME_UPDATE = 2;
   // Event for when a transfer happens internally, contains the transfer information
-  BUS_EVENT_TYPE_TRANSFER_RESPONSES = 3;
+  BUS_EVENT_TYPE_LEDGER_MOVEMENTS = 3;
   // Event indicating position resolution has occurred
   BUS_EVENT_TYPE_POSITION_RESOLUTION = 4;
   // Event for order updates, both new and existing orders
@@ -590,6 +619,14 @@ enum BusEventType {
   BUS_EVENT_TYPE_ETHEREUM_KEY_ROTATION = 47;
   // Event indicating protocol upgrade proposal updates
   BUS_EVENT_TYPE_PROTOCOL_UPGRADE_PROPOSAL = 48;
+  // The core is starting to process a new block
+  BUS_EVENT_TYPE_BEGIN_BLOCK = 49;
+  // The core finished to process a block
+  BUS_EVENT_TYPE_END_BLOCK = 50;
+  // The core is starting a protocol upgrade
+  BUS_EVENT_TYPE_PROTOCOL_UPGRADE_STARTED = 51;
+  // The market has stopped and settled
+  BUS_EVENT_TYPE_SETTLE_MARKET = 52;
 
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
@@ -609,7 +646,7 @@ message BusEvent {
     // Time update events - See [TimeUpdate](#vega.TimeUpdate)
     TimeUpdate time_update = 101;
     // Transfer responses update events - See [TransferResponses](#vega.TransferResponses)
-    TransferResponses transfer_responses = 102;
+    LedgerMovements ledger_movements = 102;
     // Position resolution events - See [PositionResolution](#vega.PositionResolution)
     PositionResolution position_resolution = 103;
     // Order events
@@ -698,6 +735,14 @@ message BusEvent {
     EthereumKeyRotation ethereum_key_rotation = 146;
     // Protocol upgrade proposal updates
     ProtocolUpgradeEvent protocol_upgrade_event = 147;
+    // The core is starting to process a new block
+    BeginBlock begin_block= 148;
+    // The core finished to process a block
+    EndBlock end_block = 149;
+    // The core is starting a protocol upgrade
+    ProtocolUpgradeStarted protocol_upgrade_started = 150;
+    // Settle market event for data-node to update positions for settled markets
+    SettleMarket settle_market = 151;
 
     // Market tick events - See [MarketEvent](#vega.MarketEvent)
     MarketEvent market = 1001;

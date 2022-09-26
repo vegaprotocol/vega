@@ -95,7 +95,7 @@ func (e *Engine) oneOffTransfer(
 
 	// all was OK
 	transfer.Status = types.TransferStatusDone
-	e.broker.Send(events.NewTransferResponse(ctx, tresps))
+	e.broker.Send(events.NewLedgerMovements(ctx, tresps))
 
 	return nil
 }
@@ -151,7 +151,7 @@ func (e *Engine) distributeScheduledTransfers(ctx context.Context) error {
 		return err
 	}
 
-	e.broker.Send(events.NewTransferResponse(ctx, tresps))
+	e.broker.Send(events.NewLedgerMovements(ctx, tresps))
 	e.broker.SendBatch(evts)
 
 	return nil

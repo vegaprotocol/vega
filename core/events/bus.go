@@ -80,7 +80,7 @@ const (
 	All Type = iota
 	// other event types that DO have corresponding event types.
 	TimeUpdate
-	TransferResponses
+	LedgerMovementsEvent
 	PositionResolution
 	MarketEvent // this event is not used for any specific event, but by subscribers that aggregate all market events (e.g. for logging)
 	OrderEvent
@@ -127,6 +127,10 @@ const (
 	PositionStateEvent
 	EthereumKeyRotationEvent
 	ProtocolUpgradeEvent
+	BeginBlockEvent
+	EndBlockEvent
+	ProtocolUpgradeStartedEvent
+	SettleMarketEvent
 )
 
 var (
@@ -141,7 +145,7 @@ var (
 	protoMap = map[eventspb.BusEventType]Type{
 		eventspb.BusEventType_BUS_EVENT_TYPE_ALL:                            All,
 		eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE:                    TimeUpdate,
-		eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES:             TransferResponses,
+		eventspb.BusEventType_BUS_EVENT_TYPE_LEDGER_MOVEMENTS:               LedgerMovementsEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION:            PositionResolution,
 		eventspb.BusEventType_BUS_EVENT_TYPE_MARKET:                         MarketEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_ORDER:                          OrderEvent,
@@ -188,6 +192,10 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_STATE:                 PositionStateEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_ETHEREUM_KEY_ROTATION:          EthereumKeyRotationEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_PROTOCOL_UPGRADE_PROPOSAL:      ProtocolUpgradeEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_BEGIN_BLOCK:                    BeginBlockEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_END_BLOCK:                      EndBlockEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_PROTOCOL_UPGRADE_STARTED:       ProtocolUpgradeStartedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_SETTLE_MARKET:                  SettleMarketEvent,
 
 		// If adding a type here, please also add it to data-node/broker/convert.go
 	}
@@ -195,7 +203,7 @@ var (
 	toProto = map[Type]eventspb.BusEventType{
 		ValidatorRankingEvent:           eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_RANKING,
 		TimeUpdate:                      eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE,
-		TransferResponses:               eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES,
+		LedgerMovementsEvent:            eventspb.BusEventType_BUS_EVENT_TYPE_LEDGER_MOVEMENTS,
 		PositionResolution:              eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION,
 		MarketEvent:                     eventspb.BusEventType_BUS_EVENT_TYPE_MARKET,
 		OrderEvent:                      eventspb.BusEventType_BUS_EVENT_TYPE_ORDER,
@@ -241,12 +249,16 @@ var (
 		PositionStateEvent:              eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_STATE,
 		EthereumKeyRotationEvent:        eventspb.BusEventType_BUS_EVENT_TYPE_ETHEREUM_KEY_ROTATION,
 		ProtocolUpgradeEvent:            eventspb.BusEventType_BUS_EVENT_TYPE_PROTOCOL_UPGRADE_PROPOSAL,
+		BeginBlockEvent:                 eventspb.BusEventType_BUS_EVENT_TYPE_BEGIN_BLOCK,
+		EndBlockEvent:                   eventspb.BusEventType_BUS_EVENT_TYPE_END_BLOCK,
+		ProtocolUpgradeStartedEvent:     eventspb.BusEventType_BUS_EVENT_TYPE_PROTOCOL_UPGRADE_STARTED,
+		SettleMarketEvent:               eventspb.BusEventType_BUS_EVENT_TYPE_SETTLE_MARKET,
 	}
 
 	eventStrings = map[Type]string{
 		All:                             "ALL",
 		TimeUpdate:                      "TimeUpdate",
-		TransferResponses:               "TransferResponses",
+		LedgerMovementsEvent:            "LedgerMovements",
 		PositionResolution:              "PositionResolution",
 		MarketEvent:                     "MarketEvent",
 		OrderEvent:                      "OrderEvent",
@@ -293,6 +305,10 @@ var (
 		PositionStateEvent:              "PositionStateEvent",
 		EthereumKeyRotationEvent:        "EthereumKeyRotationEvent",
 		ProtocolUpgradeEvent:            "ProtocolUpgradeEvent",
+		BeginBlockEvent:                 "BeginBlockEvent",
+		EndBlockEvent:                   "EndBlockEvent",
+		ProtocolUpgradeStartedEvent:     "ProtocolUpgradeStartedEvent",
+		SettleMarketEvent:               "SettleMarketEvent",
 	}
 )
 

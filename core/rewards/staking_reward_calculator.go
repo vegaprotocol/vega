@@ -24,7 +24,7 @@ import (
 var minThresholdDelegatorReward, _ = num.DecimalFromString("0.001")
 
 // distribute rewards for a given asset account with the given settings of delegation and reward constraints.
-func calculateRewardsByStake(epochSeq, asset, accountID string, rewardBalance *num.Uint, valScore map[string]num.Decimal, validatorDelegation []*types.ValidatorData, delegatorShare num.Decimal, maxPayout, minStakePerValidator *num.Uint, rng *rand.Rand, log *logging.Logger) *payout {
+func calculateRewardsByStake(epochSeq, asset, accountID string, rewardBalance *num.Uint, valScore map[string]num.Decimal, validatorDelegation []*types.ValidatorData, delegatorShare num.Decimal, maxPayout *num.Uint, rng *rand.Rand, log *logging.Logger) *payout {
 	minLeftOverForDistribution := num.UintZero()
 	if !maxPayout.IsZero() {
 		minLeftOverForDistribution, _ = num.UintFromDecimal(minThresholdDelegatorReward.Mul(maxPayout.ToDecimal()))

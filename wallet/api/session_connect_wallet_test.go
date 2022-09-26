@@ -84,8 +84,8 @@ func testConnectingToWalletWithValidParamsSucceeds(t *testing.T) {
 		},
 	}
 	expectedHostname := "vega.xyz"
-	expectedSelectedWallet := walletWithPerms(t, expectedHostname, expectedPermissions)
-	nonSelectedWallet := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	expectedSelectedWallet, _ := walletWithPerms(t, expectedHostname, expectedPermissions)
+	nonSelectedWallet, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
 
 	passphrase := vgrand.RandomStr(5)
 	availableWallets := []string{
@@ -126,8 +126,8 @@ func testConnectingToConnectedWalletDisconnectsPreviousOneAndGeneratesNewToken(t
 		},
 	}
 	expectedHostname := "vega.xyz"
-	expectedSelectedWallet := walletWithPerms(t, expectedHostname, expectedPermissions)
-	nonSelectedWallet := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	expectedSelectedWallet, _ := walletWithPerms(t, expectedHostname, expectedPermissions)
+	nonSelectedWallet, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
 
 	passphrase := vgrand.RandomStr(5)
 	availableWallets := []string{
@@ -195,7 +195,7 @@ func testRefusingWalletConnectionDoesNotConnectToWallet(t *testing.T) {
 	})
 
 	// then
-	assertClientRejectionError(t, errorDetails)
+	assertUserRejectionError(t, errorDetails)
 	assert.Empty(t, result)
 }
 
@@ -207,7 +207,7 @@ func testCancelingTheReviewDoesNotConnectToWallet(t *testing.T) {
 	// setup
 	handler := newConnectWalletHandler(t)
 	// -- expected calls
-	handler.pipeline.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname).Times(1).Return(false, api.ErrConnectionClosed)
+	handler.pipeline.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname).Times(1).Return(false, api.ErrUserCloseTheConnection)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ConnectWalletParams{
@@ -287,15 +287,15 @@ func testCancellingTheWalletSelectionDoesNotConnectToWallet(t *testing.T) {
 	// given
 	ctx, traceID := contextWithTraceID()
 	expectedHostname := "vega.xyz"
-	wallet1 := walletWithPerms(t, expectedHostname, wallet.Permissions{})
-	wallet2 := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallet1, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallet2, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
 
 	// setup
 	handler := newConnectWalletHandler(t)
 	// -- expected calls
 	handler.pipeline.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return([]string{wallet1.Name(), wallet2.Name()}, nil)
-	handler.pipeline.EXPECT().RequestWalletSelection(ctx, traceID, expectedHostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(api.SelectedWallet{}, api.ErrConnectionClosed)
+	handler.pipeline.EXPECT().RequestWalletSelection(ctx, traceID, expectedHostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(api.SelectedWallet{}, api.ErrUserCloseTheConnection)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ConnectWalletParams{
@@ -311,8 +311,8 @@ func testInterruptingTheRequestDuringWalletSelectionDoesNotConnectToWallet(t *te
 	// given
 	ctx, traceID := contextWithTraceID()
 	expectedHostname := "vega.xyz"
-	wallet1 := walletWithPerms(t, expectedHostname, wallet.Permissions{})
-	wallet2 := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallet1, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallet2, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
 
 	// setup
 	handler := newConnectWalletHandler(t)
@@ -336,8 +336,8 @@ func testGettingInternalErrorDuringWalletSelectionDoesNotConnectToWallet(t *test
 	// given
 	ctx, traceID := contextWithTraceID()
 	expectedHostname := "vega.xyz"
-	wallet1 := walletWithPerms(t, expectedHostname, wallet.Permissions{})
-	wallet2 := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallet1, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallet2, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
 
 	// setup
 	handler := newConnectWalletHandler(t)
@@ -362,8 +362,8 @@ func testSelectingNonExistingWalletDoesNotConnectToWallet(t *testing.T) {
 	ctx, traceID := contextWithTraceID()
 	cancelCtx, cancelFn := context.WithCancel(ctx)
 	expectedHostname := "vega.xyz"
-	wallet1 := walletWithPerms(t, expectedHostname, wallet.Permissions{})
-	wallet2 := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallet1, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallet2, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
 	nonExistingWallet := vgrand.RandomStr(5)
 
 	// setup
@@ -376,7 +376,7 @@ func testSelectingNonExistingWalletDoesNotConnectToWallet(t *testing.T) {
 		Passphrase: vgrand.RandomStr(4),
 	}, nil)
 	handler.walletStore.EXPECT().WalletExists(cancelCtx, nonExistingWallet).Times(1).Return(false, nil)
-	handler.pipeline.EXPECT().NotifyError(cancelCtx, traceID, api.ClientError, api.ErrWalletDoesNotExist).Times(1).Do(func(_ context.Context, _ string, _ api.ErrorType, _ error) {
+	handler.pipeline.EXPECT().NotifyError(cancelCtx, traceID, api.UserError, api.ErrWalletDoesNotExist).Times(1).Do(func(_ context.Context, _ string, _ api.ErrorType, _ error) {
 		// Once everything has been called once, we cancel the handler to break the loop.
 		cancelFn()
 	})
@@ -395,8 +395,8 @@ func testGettingInternalErrorDuringWalletRetrievalDoesNotConnectToWallet(t *test
 	// given
 	ctx, traceID := contextWithTraceID()
 	expectedHostname := "vega.xyz"
-	wallet1 := walletWithPerms(t, expectedHostname, wallet.Permissions{})
-	wallet2 := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallet1, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallet2, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
 
 	// setup
 	handler := newConnectWalletHandler(t)
@@ -425,8 +425,8 @@ func testUsingWrongPassphraseDoesNotConnectToWallet(t *testing.T) {
 	ctx, traceID := contextWithTraceID()
 	cancelCtx, cancelFn := context.WithCancel(ctx)
 	expectedHostname := "vega.xyz"
-	wallet1 := walletWithPerms(t, expectedHostname, wallet.Permissions{})
-	wallet2 := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallet1, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallet2, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
 	passphrase := vgrand.RandomStr(4)
 
 	// setup
@@ -440,7 +440,7 @@ func testUsingWrongPassphraseDoesNotConnectToWallet(t *testing.T) {
 	}, nil)
 	handler.walletStore.EXPECT().WalletExists(cancelCtx, wallet1.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(cancelCtx, wallet1.Name(), passphrase).Times(1).Return(nil, wallet.ErrWrongPassphrase)
-	handler.pipeline.EXPECT().NotifyError(cancelCtx, traceID, api.ClientError, wallet.ErrWrongPassphrase).Times(1).Do(func(_ context.Context, _ string, _ api.ErrorType, _ error) {
+	handler.pipeline.EXPECT().NotifyError(cancelCtx, traceID, api.UserError, wallet.ErrWrongPassphrase).Times(1).Do(func(_ context.Context, _ string, _ api.ErrorType, _ error) {
 		// Once everything has been called once, we cancel the handler to break the loop.
 		cancelFn()
 	})
@@ -459,8 +459,8 @@ func testGettingInternalErrorDuringWalletVerificationDoesNotConnectToWallet(t *t
 	// given
 	ctx, traceID := contextWithTraceID()
 	expectedHostname := "vega.xyz"
-	wallet1 := walletWithPerms(t, expectedHostname, wallet.Permissions{})
-	wallet2 := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallet1, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallet2, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
 	passphrase := vgrand.RandomStr(5)
 
 	// setup

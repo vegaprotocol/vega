@@ -1297,14 +1297,14 @@ func (*PayloadBankingDeposits) Namespace() SnapshotNamespace {
 
 func PayloadBankingRecurringTransfersFromProto(pbd *snapshot.Payload_BankingRecurringTransfers) *PayloadBankingRecurringTransfers {
 	return &PayloadBankingRecurringTransfers{
-		BankingRecurringTransfers: pbd.BankingRecurringTransfers.RecurringTranfers,
+		BankingRecurringTransfers: pbd.BankingRecurringTransfers.RecurringTransfers,
 	}
 }
 
 func (p PayloadBankingRecurringTransfers) IntoProto() *snapshot.Payload_BankingRecurringTransfers {
 	return &snapshot.Payload_BankingRecurringTransfers{
 		BankingRecurringTransfers: &snapshot.BankingRecurringTransfers{
-			RecurringTranfers: p.BankingRecurringTransfers,
+			RecurringTransfers: p.BankingRecurringTransfers,
 		},
 	}
 }
@@ -2110,6 +2110,10 @@ func AssetActionFromProto(a *snapshot.AssetAction) *AssetAction {
 
 	if a.AssetList != nil {
 		aa.Erc20AL = NewERC20AssetListFromProto(a.AssetList)
+	}
+
+	if a.Erc20AssetLimitsUpdated != nil {
+		aa.ERC20AssetLimitsUpdated = NewERC20AssetLimitsUpdatedFromProto(a.Erc20AssetLimitsUpdated)
 	}
 
 	return aa

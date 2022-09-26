@@ -75,7 +75,7 @@ func assignProduct(
 				QuoteName:                       product.Future.QuoteName,
 				OracleSpecForSettlementPrice:    product.Future.OracleSpecForSettlementPrice.ToOracleSpec(),
 				OracleSpecForTradingTermination: product.Future.OracleSpecForTradingTermination.ToOracleSpec(),
-				SettlementPriceDecimals:         product.Future.SettlementPriceDecimalPlaces,
+				SettlementDataDecimals:          product.Future.SettlementDataDecimalPlaces,
 				OracleSpecBinding:               product.Future.OracleSpecBinding,
 			},
 		}

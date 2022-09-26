@@ -138,8 +138,8 @@ func testRequestingPermissionsWithValidParamsSucceeds(t *testing.T) {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
 			ctx, traceID := contextWithTraceID()
-			hostname := "vega.xyz"
-			wallet1 := walletWithPerms(tt, hostname, wallet.Permissions{})
+			hostname := vgrand.RandomStr(5)
+			wallet1, _ := walletWithPerms(tt, hostname, wallet.Permissions{})
 			passphrase := vgrand.RandomStr(5)
 
 			// setup
@@ -193,9 +193,9 @@ func testRequestingPermissionsWithInvalidTokenFails(t *testing.T) {
 func testRefusingPermissionsUpdateDoesNotUpdatePermissions(t *testing.T) {
 	// given
 	ctx, traceID := contextWithTraceID()
-	hostname := "vega.xyz"
+	hostname := vgrand.RandomStr(5)
 	originalPermissions := wallet.Permissions{}
-	wallet1 := walletWithPerms(t, hostname, originalPermissions)
+	wallet1, _ := walletWithPerms(t, hostname, originalPermissions)
 	requestedPermissions := map[string]string{
 		"public_keys": "read",
 	}
@@ -213,7 +213,7 @@ func testRefusingPermissionsUpdateDoesNotUpdatePermissions(t *testing.T) {
 	})
 
 	// then
-	assertClientRejectionError(t, errorDetails)
+	assertUserRejectionError(t, errorDetails)
 	assert.Empty(t, result)
 	// Verifying the connected wallet is updated.
 	connectedWallet, err := handler.sessions.GetConnectedWallet(token)
@@ -224,9 +224,9 @@ func testRefusingPermissionsUpdateDoesNotUpdatePermissions(t *testing.T) {
 func testCancellingTheReviewDoesNotUpdatePermissions(t *testing.T) {
 	// given
 	ctx, traceID := contextWithTraceID()
-	hostname := "vega.xyz"
+	hostname := vgrand.RandomStr(5)
 	originalPermissions := wallet.Permissions{}
-	wallet1 := walletWithPerms(t, hostname, originalPermissions)
+	wallet1, _ := walletWithPerms(t, hostname, originalPermissions)
 	requestedPermissions := map[string]string{
 		"public_keys": "read",
 	}
@@ -235,7 +235,7 @@ func testCancellingTheReviewDoesNotUpdatePermissions(t *testing.T) {
 	handler := newRequestPermissionsHandler(t)
 	token := connectWallet(t, handler.sessions, hostname, wallet1)
 	// -- expected calls
-	handler.pipeline.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(false, api.ErrConnectionClosed)
+	handler.pipeline.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(false, api.ErrUserCloseTheConnection)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.RequestPermissionsParams{
@@ -255,9 +255,9 @@ func testCancellingTheReviewDoesNotUpdatePermissions(t *testing.T) {
 func testInterruptingTheRequestDoesNotUpdatePermissions(t *testing.T) {
 	// given
 	ctx, traceID := contextWithTraceID()
-	hostname := "vega.xyz"
+	hostname := vgrand.RandomStr(5)
 	originalPermissions := wallet.Permissions{}
-	wallet1 := walletWithPerms(t, hostname, originalPermissions)
+	wallet1, _ := walletWithPerms(t, hostname, originalPermissions)
 	requestedPermissions := map[string]string{
 		"public_keys": "read",
 	}
@@ -287,9 +287,9 @@ func testInterruptingTheRequestDoesNotUpdatePermissions(t *testing.T) {
 func testGettingInternalErrorDuringReviewDoesNotUpdatePermissions(t *testing.T) {
 	// given
 	ctx, traceID := contextWithTraceID()
-	hostname := "vega.xyz"
+	hostname := vgrand.RandomStr(5)
 	originalPermissions := wallet.Permissions{}
-	wallet1 := walletWithPerms(t, hostname, originalPermissions)
+	wallet1, _ := walletWithPerms(t, hostname, originalPermissions)
 	requestedPermissions := map[string]string{
 		"public_keys": "read",
 	}
@@ -319,9 +319,9 @@ func testGettingInternalErrorDuringReviewDoesNotUpdatePermissions(t *testing.T) 
 func testCancellingThePassphraseRequestDoesNotUpdatePermissions(t *testing.T) {
 	// given
 	ctx, traceID := contextWithTraceID()
-	hostname := "vega.xyz"
+	hostname := vgrand.RandomStr(5)
 	originalPermissions := wallet.Permissions{}
-	wallet1 := walletWithPerms(t, hostname, originalPermissions)
+	wallet1, _ := walletWithPerms(t, hostname, originalPermissions)
 	requestedPermissions := map[string]string{
 		"public_keys": "read",
 	}
@@ -331,7 +331,7 @@ func testCancellingThePassphraseRequestDoesNotUpdatePermissions(t *testing.T) {
 	token := connectWallet(t, handler.sessions, hostname, wallet1)
 	// -- expected calls
 	handler.pipeline.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(true, nil)
-	handler.pipeline.EXPECT().RequestPassphrase(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return("", api.ErrConnectionClosed)
+	handler.pipeline.EXPECT().RequestPassphrase(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return("", api.ErrUserCloseTheConnection)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.RequestPermissionsParams{
@@ -351,9 +351,9 @@ func testCancellingThePassphraseRequestDoesNotUpdatePermissions(t *testing.T) {
 func testInterruptingTheRequestDuringPassphraseRequestDoesNotUpdatePermissions(t *testing.T) {
 	// given
 	ctx, traceID := contextWithTraceID()
-	hostname := "vega.xyz"
+	hostname := vgrand.RandomStr(5)
 	originalPermissions := wallet.Permissions{}
-	wallet1 := walletWithPerms(t, hostname, originalPermissions)
+	wallet1, _ := walletWithPerms(t, hostname, originalPermissions)
 	requestedPermissions := map[string]string{
 		"public_keys": "read",
 	}
@@ -384,9 +384,9 @@ func testInterruptingTheRequestDuringPassphraseRequestDoesNotUpdatePermissions(t
 func testGettingInternalErrorDuringPassphraseRequestDoesNotUpdatePermissions(t *testing.T) {
 	// given
 	ctx, traceID := contextWithTraceID()
-	hostname := "vega.xyz"
+	hostname := vgrand.RandomStr(5)
 	originalPermissions := wallet.Permissions{}
-	wallet1 := walletWithPerms(t, hostname, originalPermissions)
+	wallet1, _ := walletWithPerms(t, hostname, originalPermissions)
 	requestedPermissions := map[string]string{
 		"public_keys": "read",
 	}
@@ -418,9 +418,9 @@ func testUsingWrongPassphraseDoesNotUpdatePermissions(t *testing.T) {
 	// given
 	ctx, traceID := contextWithTraceID()
 	cancelCtx, cancelFn := context.WithCancel(ctx)
-	hostname := "vega.xyz"
+	hostname := vgrand.RandomStr(5)
 	originalPermissions := wallet.Permissions{}
-	wallet1 := walletWithPerms(t, hostname, originalPermissions)
+	wallet1, _ := walletWithPerms(t, hostname, originalPermissions)
 	requestedPermissions := map[string]string{
 		"public_keys": "read",
 	}
@@ -433,7 +433,7 @@ func testUsingWrongPassphraseDoesNotUpdatePermissions(t *testing.T) {
 	handler.pipeline.EXPECT().RequestPermissionsReview(cancelCtx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(true, nil)
 	handler.pipeline.EXPECT().RequestPassphrase(cancelCtx, traceID, wallet1.Name()).Times(1).Return(passphrase, nil)
 	handler.walletStore.EXPECT().GetWallet(cancelCtx, wallet1.Name(), passphrase).Times(1).Return(nil, wallet.ErrWrongPassphrase)
-	handler.pipeline.EXPECT().NotifyError(cancelCtx, traceID, api.ClientError, wallet.ErrWrongPassphrase).Times(1).Do(func(_ context.Context, _ string, _ api.ErrorType, _ error) {
+	handler.pipeline.EXPECT().NotifyError(cancelCtx, traceID, api.UserError, wallet.ErrWrongPassphrase).Times(1).Do(func(_ context.Context, _ string, _ api.ErrorType, _ error) {
 		// Once everything has been called once, we cancel the handler to break the loop.
 		cancelFn()
 	})
@@ -456,9 +456,9 @@ func testUsingWrongPassphraseDoesNotUpdatePermissions(t *testing.T) {
 func testGettingInternalErrorDuringWalletRetrievalDoesNotUpdatePermissions(t *testing.T) {
 	// given
 	ctx, traceID := contextWithTraceID()
-	hostname := "vega.xyz"
+	hostname := vgrand.RandomStr(5)
 	originalPermissions := wallet.Permissions{}
-	wallet1 := walletWithPerms(t, hostname, originalPermissions)
+	wallet1, _ := walletWithPerms(t, hostname, originalPermissions)
 	passphrase := vgrand.RandomStr(5)
 	requestedPermissions := map[string]string{
 		"public_keys": "read",
@@ -491,19 +491,25 @@ func testGettingInternalErrorDuringWalletRetrievalDoesNotUpdatePermissions(t *te
 func testGettingInternalErrorDuringWalletSavingDoesNotUpdatePermissions(t *testing.T) {
 	// given
 	ctx, traceID := contextWithTraceID()
-	hostname := "vega.xyz"
+	hostname := vgrand.RandomStr(5)
 	walletName := vgrand.RandomStr(5)
 	originalPermissions := wallet.Permissions{}
 	wallet1, recoveryPhrase, err := wallet.NewHDWallet(walletName)
 	if err != nil {
-		t.Fatal("could not create wallet for test: %w", err)
+		t.Fatalf("could not create wallet for test: %v", err)
+	}
+	if _, err := wallet1.GenerateKeyPair(nil); err != nil {
+		t.Fatalf("could not generate key for test: %v", err)
 	}
 
 	// Clone the wallet1, so we can emulate a different instance returned by
 	// the wallet store.
 	loadedWallet, err := wallet.ImportHDWallet(walletName, recoveryPhrase, 2)
 	if err != nil {
-		t.Fatal("could not import wallet for test: %w", err)
+		t.Fatalf("could not import wallet for test: %v", err)
+	}
+	if _, err := loadedWallet.GenerateKeyPair(nil); err != nil {
+		t.Fatalf("could not generate key for test: %v", err)
 	}
 	passphrase := vgrand.RandomStr(5)
 	requestedPermissions := map[string]string{
@@ -529,7 +535,7 @@ func testGettingInternalErrorDuringWalletSavingDoesNotUpdatePermissions(t *testi
 	// then
 	assertInternalError(t, errorDetails, api.ErrCouldNotRequestPermissions)
 	assert.Empty(t, result)
-	// Verifying the connected wallet is updated.
+	// Verifying the connected wallet is not updated.
 	connectedWallet, err := handler.sessions.GetConnectedWallet(token)
 	require.NoError(t, err)
 	assert.Equal(t, originalPermissions.Summary(), connectedWallet.Permissions().Summary())
@@ -538,17 +544,17 @@ func testGettingInternalErrorDuringWalletSavingDoesNotUpdatePermissions(t *testi
 func testUpdatingPermissionsDoesNotOverwriteUntrackedChanges(t *testing.T) {
 	// given
 	ctx, traceID := contextWithTraceID()
-	hostname := "vega.xyz"
+	hostname := vgrand.RandomStr(5)
 	walletName := vgrand.RandomStr(5)
 	wallet1, recoveryPhrase, err := wallet.NewHDWallet(walletName)
 	if err != nil {
-		t.Fatal("could not create wallet for test: %w", err)
+		t.Fatalf("could not create wallet for test: %v", err)
 	}
 
 	// Clone the wallet1, so we can modify the clone without tempering with wallet1.
 	modifiedWallet, err := wallet.ImportHDWallet(walletName, recoveryPhrase, 2)
 	if err != nil {
-		t.Fatal("could not import wallet for test: %w", err)
+		t.Fatalf("could not import wallet for test: %v", err)
 	}
 	kp, _ := modifiedWallet.GenerateKeyPair([]wallet.Metadata{{Key: "name", Value: "hello"}})
 

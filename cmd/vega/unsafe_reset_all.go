@@ -28,6 +28,7 @@ type UnsafeResetAllCmd struct {
 	config.VegaHomeFlag
 }
 
+//nolint:unparam
 func (cmd *UnsafeResetAllCmd) Execute(_ []string) error {
 	log := logging.NewLoggerFromConfig(
 		logging.NewDefaultConfig(),

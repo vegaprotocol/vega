@@ -1302,7 +1302,7 @@ func serveHTTP(t *testing.T, s *testService, req *http.Request) (int, []byte) {
 
 	s.ServeHTTP(w, req)
 
-	resp := w.Result() // nolint:bodyclose
+	resp := w.Result() //nolint:bodyclose
 	defer func() {
 		if err := w.Result().Body.Close(); err != nil {
 			t.Fatalf("couldn't close response body: %v", err)

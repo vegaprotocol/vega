@@ -35,7 +35,7 @@ func (e *Engine) Stopped() bool {
 }
 
 // get the serialised form and hash of the given key.
-func (e *Engine) serialise(k string) ([]byte, error) {
+func (e *Engine) serialise() ([]byte, error) {
 	events := make([]*eventspb.ProtocolUpgradeEvent, 0, len(e.activeProposals))
 	for _, evt := range e.events {
 		events = append(events, evt)
@@ -78,7 +78,7 @@ func (e *Engine) HasChanged(k string) bool {
 }
 
 func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
-	state, err := e.serialise(k)
+	state, err := e.serialise()
 	return state, nil, err
 }
 

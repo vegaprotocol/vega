@@ -70,7 +70,7 @@ func leaveAuction(tm *testMarket, ctx context.Context, now *time.Time) {
 	tm.market.LeaveAuctionWithIDGen(ctx, *now, newTestIDGenerator())
 }
 
-func processEventsWithCounter(t *testing.T, tm *testMarket, mdb *subscribers.MarketDepthBuilder, i int) {
+func processEventsWithCounter(t *testing.T, tm *testMarket, mdb *subscribers.MarketDepthBuilder) {
 	t.Helper()
 	for _, event := range tm.orderEvents {
 		mdb.Push(event)
@@ -101,7 +101,7 @@ func processEventsWithCounter(t *testing.T, tm *testMarket, mdb *subscribers.Mar
 
 func processEvents(t *testing.T, tm *testMarket, mdb *subscribers.MarketDepthBuilder) {
 	t.Helper()
-	processEventsWithCounter(t, tm, mdb, 0)
+	processEventsWithCounter(t, tm, mdb)
 }
 
 func clearEvents(tm *testMarket) {

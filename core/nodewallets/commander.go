@@ -99,19 +99,19 @@ func (c *Commander) command(ctx context.Context, cmd txn.Command, payload proto.
 
 		inputData := commands.NewInputData(c.bstats.Height())
 		wrapPayloadIntoInputData(inputData, cmd, payload)
-		marshalledData, err := commands.MarshalInputData(chainID, inputData)
+		marshalInputData, err := commands.MarshalInputData(inputData)
 		if err != nil {
 			// this should never be possible
 			c.log.Panic("could not marshal core transaction", logging.Error(err))
 		}
 
-		signature, err := c.sign(marshalledData)
+		signature, err := c.sign(commands.BundleInputDataForSigning(marshalInputData, chainID))
 		if err != nil {
 			// this should never be possible too
 			c.log.Panic("could not sign command", logging.Error(err))
 		}
 
-		tx := commands.NewTransaction(c.wallet.PubKey().Hex(), marshalledData, signature)
+		tx := commands.NewTransaction(c.wallet.PubKey().Hex(), marshalInputData, signature)
 		tx.Pow = pow
 
 		if ty == api.SubmitTransactionRequest_TYPE_SYNC {

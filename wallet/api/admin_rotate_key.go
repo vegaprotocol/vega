@@ -90,7 +90,7 @@ func (h *AdminRotateKey) Handle(ctx context.Context, rawParams jsonrpc.Params) (
 		},
 	}
 
-	data, err := commands.MarshalInputData(params.ChainID, inputData)
+	marshaledInputData, err := commands.MarshalInputData(inputData)
 	if err != nil {
 		return nil, internalError(fmt.Errorf("could not build the key rotation transaction: %w", err))
 	}
@@ -100,7 +100,7 @@ func (h *AdminRotateKey) Handle(ctx context.Context, rawParams jsonrpc.Params) (
 		return nil, internalError(fmt.Errorf("could not retrieve master key to sign the key rotation transaction: %w", err))
 	}
 
-	rotationSignature, err := masterKey.Sign(data)
+	rotationSignature, err := masterKey.Sign(commands.BundleInputDataForSigning(marshaledInputData, params.ChainID))
 	if err != nil {
 		return nil, internalError(fmt.Errorf("could not sign the key rotation transaction: %w", err))
 	}
@@ -111,7 +111,7 @@ func (h *AdminRotateKey) Handle(ctx context.Context, rawParams jsonrpc.Params) (
 		Version: rotationSignature.Version,
 	}
 
-	transaction := commands.NewTransaction(masterKey.PublicKey(), data, protoSignature)
+	transaction := commands.NewTransaction(masterKey.PublicKey(), marshaledInputData, protoSignature)
 	rawTransaction, err := proto.Marshal(transaction)
 	if err != nil {
 		return nil, internalError(fmt.Errorf("could not bundle the key rotation transaction: %w", err))

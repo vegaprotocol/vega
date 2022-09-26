@@ -180,7 +180,7 @@ func TestNewResolverRoot_Resolver(t *testing.T) {
 
 	name = "barney"
 	root.tradingDataClient.EXPECT().ListParties(gomock.Any(), gomock.Any()).Times(1).Return(&v2.ListPartiesResponse{
-		Party: &v2.PartyConnection{
+		Parties: &v2.PartyConnection{
 			Edges: []*v2.PartyEdge{
 				{
 					Node:   &types.Party{Id: name},
@@ -194,7 +194,7 @@ func TestNewResolverRoot_Resolver(t *testing.T) {
 	assert.NotNil(t, vParties)
 	assert.Len(t, vParties.Edges, 1)
 
-	root.tradingDataClient.EXPECT().ListParties(gomock.Any(), gomock.Any()).Times(1).Return(&v2.ListPartiesResponse{Party: &v2.PartyConnection{
+	root.tradingDataClient.EXPECT().ListParties(gomock.Any(), gomock.Any()).Times(1).Return(&v2.ListPartiesResponse{Parties: &v2.PartyConnection{
 		Edges:    nil,
 		PageInfo: &v2.PageInfo{},
 	}}, nil)

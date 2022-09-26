@@ -28,6 +28,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/vegatime"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
@@ -86,7 +87,7 @@ type tradingDataServiceV2 struct {
 	ledgerService              *service.Ledger
 	keyRotationService         *service.KeyRotations
 	ethereumKeyRotationService *service.EthereumKeyRotation
-	blockService               *service.Block
+	blockService               BlockService
 }
 
 func (t *tradingDataServiceV2) ListAccounts(ctx context.Context, req *v2.ListAccountsRequest) (*v2.ListAccountsResponse, error) {
@@ -543,8 +544,14 @@ func (t *tradingDataServiceV2) ListCandleData(ctx context.Context, req *v2.ListC
 		return nil, errors.New("sql candle service not available")
 	}
 
-	from := vegatime.UnixNano(req.FromTimestamp)
-	to := vegatime.UnixNano(req.ToTimestamp)
+	var from, to *time.Time
+	if req.FromTimestamp != 0 {
+		from = ptr.From(vegatime.UnixNano(req.FromTimestamp))
+	}
+
+	if req.ToTimestamp != 0 {
+		to = ptr.From(vegatime.UnixNano(req.ToTimestamp))
+	}
 
 	pagination := entities.CursorPagination{}
 	if req.Pagination != nil {
@@ -554,7 +561,7 @@ func (t *tradingDataServiceV2) ListCandleData(ctx context.Context, req *v2.ListC
 		}
 	}
 
-	candles, pageInfo, err := t.candleService.GetCandleDataForTimeSpan(ctx, req.CandleId, &from, &to, pagination)
+	candles, pageInfo, err := t.candleService.GetCandleDataForTimeSpan(ctx, req.CandleId, from, to, pagination)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrCandleServiceGetCandleData, err)
 	}
@@ -1288,7 +1295,7 @@ func (t *tradingDataServiceV2) ListParties(ctx context.Context, in *v2.ListParti
 	}
 
 	resp := &v2.ListPartiesResponse{
-		Party: partyConnection,
+		Parties: partyConnection,
 	}
 	return resp, nil
 }
@@ -2191,7 +2198,11 @@ func (t *tradingDataServiceV2) ListNodes(ctx context.Context, req *v2.ListNodesR
 
 func (t *tradingDataServiceV2) ListNodeSignatures(ctx context.Context, req *v2.ListNodeSignaturesRequest) (*v2.ListNodeSignaturesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListNodeSignatures")()
-	if req != nil || len(req.Id) <= 0 {
+	if req == nil {
+		return nil, apiError(codes.InvalidArgument, errors.New("request is nil"))
+	}
+
+	if len(req.Id) <= 0 {
 		return nil, apiError(codes.InvalidArgument, errors.New("missing ID"))
 	}
 
@@ -2207,7 +2218,7 @@ func (t *tradingDataServiceV2) ListNodeSignatures(ctx context.Context, req *v2.L
 
 	sigs, pageInfo, err := t.notaryService.GetByResourceID(ctx, req.Id, pagination)
 	if err != nil {
-		return nil, apiError(codes.NotFound, err)
+		return nil, fmt.Errorf("could not retrieve resource: %w", err)
 	}
 
 	edges, err := makeEdges[*v2.NodeSignatureEdge](sigs)
@@ -2661,7 +2672,7 @@ func (t *tradingDataServiceV2) ObserveEventBus(stream v2.TradingDataService_Obse
 }
 
 // Subscribe to a stream of Transfer Responses.
-func (t *tradingDataServiceV2) ObserveTransferResponses(_ *v2.ObserveTransferResponsesRequest, srv v2.TradingDataService_ObserveTransferResponsesServer) error {
+func (t *tradingDataServiceV2) ObserveLedgerMovements(_ *v2.ObserveLedgerMovementsRequest, srv v2.TradingDataService_ObserveLedgerMovementsServer) error {
 	// Wrap context from the request into cancellable. We can close internal chan in error.
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
@@ -2672,9 +2683,9 @@ func (t *tradingDataServiceV2) ObserveTransferResponses(_ *v2.ObserveTransferRes
 		t.log.Debug("TransferResponses subscriber - new rpc stream", logging.Uint64("ref", ref))
 	}
 
-	return observe(ctx, t.log, "TransferResponse", transferResponsesChan, ref, func(tr *vega.TransferResponse) error {
-		return srv.Send(&v2.ObserveTransferResponsesResponse{
-			Response: tr,
+	return observe(ctx, t.log, "TransferResponse", transferResponsesChan, ref, func(tr *vega.LedgerMovement) error {
+		return srv.Send(&v2.ObserveLedgerMovementsResponse{
+			LedgerMovement: tr,
 		})
 	})
 }

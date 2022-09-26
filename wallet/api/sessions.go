@@ -93,6 +93,21 @@ func (s *ConnectedWallet) Permissions() wallet.Permissions {
 	return s.Wallet.Permissions(s.Hostname)
 }
 
+// CanUseKey determines is the permissions allow the specified key to be used,
+// and ensure the key exist and is not tainted.
+func (s *ConnectedWallet) CanUseKey(pubKey string) bool {
+	if !s.Permissions().CanUseKey(pubKey) {
+		return false
+	}
+
+	kp, err := s.Wallet.DescribeKeyPair(pubKey)
+	if err != nil {
+		return false
+	}
+
+	return !kp.IsTainted()
+}
+
 func (s *ConnectedWallet) UpdatePermissions(perms wallet.Permissions) error {
 	if err := s.Wallet.UpdatePermissions(s.Hostname, perms); err != nil {
 		return fmt.Errorf("could not update permission on the wallet: %w", err)
@@ -135,9 +150,11 @@ func (s *ConnectedWallet) loadRestrictedKeys() error {
 		return nil
 	}
 
-	// If there is no restricted keys set, we load all existing keys.
+	// If there is no restricted keys set, we load all valid keys.
 	for _, keyPair := range s.Wallet.ListKeyPairs() {
-		s.RestrictedKeys[keyPair.PublicKey()] = keyPair
+		if !keyPair.IsTainted() {
+			s.RestrictedKeys[keyPair.PublicKey()] = keyPair
+		}
 	}
 
 	return nil

@@ -49,7 +49,7 @@ func TestCancelTransfer(t *testing.T) {
 				From: partyID,
 
 				FromAccountType: types.AccountTypeGeneral,
-				To:              "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0",
+				To:              "0000000000000000000000000000000000000000000000000000000000000000",
 				ToAccountType:   types.AccountTypeGlobalReward,
 				Asset:           "eth",
 				Amount:          num.NewUint(100),
@@ -99,7 +99,7 @@ func TestCancelTransfer(t *testing.T) {
 			references []string,
 			feeTransfers []*types.Transfer,
 			feeTransfersAccountTypes []types.AccountType,
-		) ([]*types.TransferResponse, error,
+		) ([]*types.LedgerMovement, error,
 		) {
 			t.Run("ensure transfers are correct", func(t *testing.T) {
 				// transfer is done fully instantly, we should have 2 transfer

@@ -280,19 +280,19 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 	// see what we're reloading
 	switch pl := p.Data.(type) {
 	case *types.PayloadBankingDeposits:
-		return nil, e.restoreDeposits(ctx, pl.BankingDeposits, p)
+		return nil, e.restoreDeposits(pl.BankingDeposits, p)
 	case *types.PayloadBankingWithdrawals:
-		return nil, e.restoreWithdrawals(ctx, pl.BankingWithdrawals, p)
+		return nil, e.restoreWithdrawals(pl.BankingWithdrawals, p)
 	case *types.PayloadBankingSeen:
-		return nil, e.restoreSeen(ctx, pl.BankingSeen, p)
+		return nil, e.restoreSeen(pl.BankingSeen, p)
 	case *types.PayloadBankingAssetActions:
-		return nil, e.restoreAssetActions(ctx, pl.BankingAssetActions, p)
+		return nil, e.restoreAssetActions(pl.BankingAssetActions, p)
 	case *types.PayloadBankingRecurringTransfers:
 		return nil, e.restoreRecurringTransfers(ctx, pl.BankingRecurringTransfers, p)
 	case *types.PayloadBankingScheduledTransfers:
 		return nil, e.restoreScheduledTransfers(ctx, pl.BankingScheduledTransfers, p)
 	case *types.PayloadBankingBridgeState:
-		return nil, e.restoreBridgeState(ctx, pl.BankingBridgeState, p)
+		return nil, e.restoreBridgeState(pl.BankingBridgeState, p)
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
@@ -321,7 +321,7 @@ func (e *Engine) restoreScheduledTransfers(ctx context.Context, transfers []*che
 	return err
 }
 
-func (e *Engine) restoreBridgeState(ctx context.Context, state *types.BankingBridgeState, p *types.Payload) (err error) {
+func (e *Engine) restoreBridgeState(state *types.BankingBridgeState, p *types.Payload) (err error) {
 	if state != nil {
 		e.bridgeState = &bridgeState{
 			active:   state.Active,
@@ -335,7 +335,7 @@ func (e *Engine) restoreBridgeState(ctx context.Context, state *types.BankingBri
 	return
 }
 
-func (e *Engine) restoreDeposits(ctx context.Context, deposits *types.BankingDeposits, p *types.Payload) error {
+func (e *Engine) restoreDeposits(deposits *types.BankingDeposits, p *types.Payload) error {
 	var err error
 
 	for _, d := range deposits.Deposit {
@@ -347,7 +347,7 @@ func (e *Engine) restoreDeposits(ctx context.Context, deposits *types.BankingDep
 	return err
 }
 
-func (e *Engine) restoreWithdrawals(ctx context.Context, withdrawals *types.BankingWithdrawals, p *types.Payload) error {
+func (e *Engine) restoreWithdrawals(withdrawals *types.BankingWithdrawals, p *types.Payload) error {
 	var err error
 	for _, w := range withdrawals.Withdrawals {
 		ref := new(big.Int)
@@ -365,7 +365,7 @@ func (e *Engine) restoreWithdrawals(ctx context.Context, withdrawals *types.Bank
 	return err
 }
 
-func (e *Engine) restoreSeen(ctx context.Context, seen *types.BankingSeen, p *types.Payload) error {
+func (e *Engine) restoreSeen(seen *types.BankingSeen, p *types.Payload) error {
 	var err error
 	e.log.Info("restoring seen", logging.Int("n", len(seen.Refs)))
 	for _, s := range seen.Refs {
@@ -377,7 +377,7 @@ func (e *Engine) restoreSeen(ctx context.Context, seen *types.BankingSeen, p *ty
 	return err
 }
 
-func (e *Engine) restoreAssetActions(ctx context.Context, aa *types.BankingAssetActions, p *types.Payload) error {
+func (e *Engine) restoreAssetActions(aa *types.BankingAssetActions, p *types.Payload) error {
 	var err error
 	for _, v := range aa.AssetAction {
 		var (

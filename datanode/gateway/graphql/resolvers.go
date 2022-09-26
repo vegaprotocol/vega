@@ -102,10 +102,6 @@ func (r *VegaResolverRoot) Candle() CandleResolver {
 	return (*myCandleResolver)(r)
 }
 
-func (r *VegaResolverRoot) CandleNode() CandleNodeResolver {
-	return (*myCandleNodeResolver)(r)
-}
-
 // MarginLevels returns the market levels resolver.
 func (r *VegaResolverRoot) MarginLevels() MarginLevelsResolver {
 	return (*myMarginLevelsResolver)(r)
@@ -146,6 +142,11 @@ func (r *VegaResolverRoot) Position() PositionResolver {
 	return (*myPositionResolver)(r)
 }
 
+// PositionUpdate returns the positionUpdate resolver.
+func (r *VegaResolverRoot) PositionUpdate() PositionUpdateResolver {
+	return (*positionUpdateResolver)(r)
+}
+
 // Party returns the parties resolver.
 func (r *VegaResolverRoot) Party() PartyResolver {
 	return (*myPartyResolver)(r)
@@ -159,6 +160,11 @@ func (r *VegaResolverRoot) Subscription() SubscriptionResolver {
 // Account returns the accounts resolver.
 func (r *VegaResolverRoot) Account() AccountResolver {
 	return (*myAccountResolver)(r)
+}
+
+// Account returns the accounts resolver.
+func (r *VegaResolverRoot) AccountDetails() AccountDetailsResolver {
+	return (*myAccountDetailsResolver)(r)
 }
 
 func (r *VegaResolverRoot) AccountEdge() AccountEdgeResolver {
@@ -2209,53 +2215,19 @@ func (r *myTradeResolver) SellerFee(ctx context.Context, obj *types.Trade) (*Tra
 
 type myCandleResolver VegaResolverRoot
 
-func (r *myCandleResolver) High(ctx context.Context, obj *types.Candle) (string, error) {
-	return obj.High, nil
+func (r *myCandleResolver) PeriodStart(_ context.Context, obj *v2.Candle) (string, error) {
+	return vegatime.Format(vegatime.UnixNano(obj.Start)), nil
 }
 
-func (r *myCandleResolver) Low(ctx context.Context, obj *types.Candle) (string, error) {
-	return obj.Low, nil
+func (r *myCandleResolver) LastUpdateInPeriod(_ context.Context, obj *v2.Candle) (string, error) {
+	return vegatime.Format(vegatime.UnixNano(obj.LastUpdate)), nil
 }
 
-func (r *myCandleResolver) Open(ctx context.Context, obj *types.Candle) (string, error) {
-	return obj.Open, nil
-}
-
-func (r *myCandleResolver) Close(ctx context.Context, obj *types.Candle) (string, error) {
-	return obj.Close, nil
-}
-
-func (r *myCandleResolver) Volume(ctx context.Context, obj *types.Candle) (string, error) {
+func (r *myCandleResolver) Volume(_ context.Context, obj *v2.Candle) (string, error) {
 	return strconv.FormatUint(obj.Volume, 10), nil
-}
-
-func (r *myCandleResolver) Datetime(ctx context.Context, obj *types.Candle) (string, error) {
-	return vegatime.Format(vegatime.UnixNano(obj.Timestamp)), nil
-}
-
-func (r *myCandleResolver) Timestamp(ctx context.Context, obj *types.Candle) (string, error) {
-	return strconv.FormatInt(obj.Timestamp, 10), nil
 }
 
 // END: Candle Resolver
-
-// BEGIN: CandleNode Resolver
-
-type myCandleNodeResolver VegaResolverRoot
-
-func (m *myCandleNodeResolver) Start(ctx context.Context, obj *v2.Candle) (string, error) {
-	return strconv.FormatInt(obj.Start, 10), nil
-}
-
-func (m *myCandleNodeResolver) LastUpdate(ctx context.Context, obj *v2.Candle) (string, error) {
-	return strconv.FormatInt(obj.LastUpdate, 10), nil
-}
-
-func (m *myCandleNodeResolver) Volume(ctx context.Context, obj *v2.Candle) (string, error) {
-	return strconv.FormatUint(obj.Volume, 10), nil
-}
-
-// END: CandleNode Resolver
 
 // BEGIN: Price Level Resolver
 
@@ -2274,6 +2246,21 @@ func (r *myPriceLevelResolver) NumberOfOrders(ctx context.Context, obj *types.Pr
 }
 
 // END: Price Level Resolver
+
+type positionUpdateResolver VegaResolverRoot
+
+func (r *positionUpdateResolver) OpenVolume(ctx context.Context, obj *types.Position) (string, error) {
+	return strconv.FormatInt(obj.OpenVolume, 10), nil
+}
+
+func (r *positionUpdateResolver) UpdatedAt(ctx context.Context, obj *types.Position) (*string, error) {
+	var updatedAt *string
+	if obj.UpdatedAt > 0 {
+		t := vegatime.Format(vegatime.UnixNano(obj.UpdatedAt))
+		updatedAt = &t
+	}
+	return updatedAt, nil
+}
 
 // BEGIN: Position Resolver
 
@@ -2627,7 +2614,7 @@ func (r *mySubscriptionResolver) Positions(ctx context.Context, party, market *s
 	return c, nil
 }
 
-func (r *mySubscriptionResolver) Candles(ctx context.Context, market string, interval vega.Interval) (<-chan *types.Candle, error) {
+func (r *mySubscriptionResolver) Candles(ctx context.Context, market string, interval vega.Interval) (<-chan *v2.Candle, error) {
 	intervalToCandleIDs, err := r.tradingDataClientV2.ListCandleIntervals(ctx, &v2.ListCandleIntervalsRequest{
 		MarketId: market,
 	})
@@ -2661,7 +2648,7 @@ func (r *mySubscriptionResolver) Candles(ctx context.Context, market string, int
 		return nil, customErrorFromStatus(err)
 	}
 
-	c := make(chan *types.Candle)
+	c := make(chan *v2.Candle)
 	go func() {
 		defer func() {
 			stream.CloseSend()
@@ -2678,20 +2665,7 @@ func (r *mySubscriptionResolver) Candles(ctx context.Context, market string, int
 				break
 			}
 
-			// TODO: Check with Matt P why the data-node v2 API defines a different Candle message
-			// and see if we need to do this, or if we have to update the ObserveCandleData API to
-			// deliver a v2 Candle which may be a breaking change.
-			vegaCandle := &types.Candle{
-				Timestamp: cdl.Candle.Start,
-				Datetime:  time.Unix(0, cdl.Candle.LastUpdate).Format(time.RFC3339Nano),
-				High:      cdl.Candle.High,
-				Low:       cdl.Candle.Low,
-				Open:      cdl.Candle.Open,
-				Close:     cdl.Candle.Close,
-				Volume:    cdl.Candle.Volume,
-				Interval:  candleInterval,
-			}
-			c <- vegaCandle
+			c <- cdl.Candle
 		}
 	}()
 	return c, nil
@@ -2858,20 +2832,16 @@ func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEvent
 		}()
 
 		if batchSize == 0 {
-			r.busEvents(ctx, stream, out)
+			r.busEvents(stream, out)
 		} else {
-			r.busEventsWithBatch(ctx, int64(batchSize), stream, out)
+			r.busEventsWithBatch(int64(batchSize), stream, out)
 		}
 	}()
 
 	return out, nil
 }
 
-func (r *mySubscriptionResolver) busEvents(
-	ctx context.Context,
-	stream v2.TradingDataService_ObserveEventBusClient,
-	out chan []*BusEvent,
-) {
+func (r *mySubscriptionResolver) busEvents(stream v2.TradingDataService_ObserveEventBusClient, out chan []*BusEvent) {
 	for {
 		// receive batch
 		data, err := stream.Recv()
@@ -2887,12 +2857,7 @@ func (r *mySubscriptionResolver) busEvents(
 	}
 }
 
-func (r *mySubscriptionResolver) busEventsWithBatch(
-	ctx context.Context,
-	batchSize int64, // always non-0 here
-	stream v2.TradingDataService_ObserveEventBusClient,
-	out chan []*BusEvent,
-) {
+func (r *mySubscriptionResolver) busEventsWithBatch(batchSize int64, stream v2.TradingDataService_ObserveEventBusClient, out chan []*BusEvent) {
 	poll := &protoapi.ObserveEventBusRequest{
 		BatchSize: batchSize,
 	}
@@ -2951,6 +2916,15 @@ func (r *mySubscriptionResolver) LiquidityProvisions(ctx context.Context, partyI
 	return c, nil
 }
 
+type myAccountDetailsResolver VegaResolverRoot
+
+func (r *myAccountDetailsResolver) PartyID(ctx context.Context, acc *types.AccountDetails) (*string, error) {
+	if acc.Owner != nil {
+		return acc.Owner, nil
+	}
+	return nil, nil
+}
+
 // START: Account Resolver
 
 type myAccountResolver VegaResolverRoot
@@ -2964,6 +2938,13 @@ func (r *myAccountResolver) Market(ctx context.Context, acc *types.Account) (*ty
 		return nil, nil
 	}
 	return r.r.getMarketByID(ctx, acc.MarketId)
+}
+
+func (r *myAccountResolver) Party(ctx context.Context, acc *types.Account) (*types.Party, error) {
+	if acc.Owner == "" {
+		return nil, nil
+	}
+	return getParty(ctx, r.log, r.r.clt2, acc.Owner)
 }
 
 func (r *myAccountResolver) Asset(ctx context.Context, obj *types.Account) (*types.Asset, error) {
@@ -3128,5 +3109,5 @@ func (r *myQueryResolver) PartiesConnection(ctx context.Context, id *string, pag
 		return nil, err
 	}
 
-	return resp.Party, nil
+	return resp.Parties, nil
 }

@@ -51,6 +51,11 @@ func checkTransfer(cmd *commandspb.Transfer) Errors {
 		errs.AddForProperty("transfer.to_account_type", ErrIsNotValid)
 	}
 
+	// if the transfer is to a reward account, it must have the to set to 0
+	if cmd.ToAccountType == vega.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD && cmd.To != "0000000000000000000000000000000000000000000000000000000000000000" {
+		errs.AddForProperty("transfer_to", ErrIsNotValid)
+	}
+
 	if cmd.FromAccountType == vega.AccountType_ACCOUNT_TYPE_UNSPECIFIED {
 		errs.AddForProperty("transfer.from_account_type", ErrIsNotValid)
 	} else if _, ok := vega.AccountType_name[int32(cmd.FromAccountType)]; !ok {
