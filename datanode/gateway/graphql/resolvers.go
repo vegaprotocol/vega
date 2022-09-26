@@ -739,6 +739,20 @@ func (r *myQueryResolver) Withdrawal(ctx context.Context, wid string) (*types.Wi
 	return res.Withdrawal, nil
 }
 
+func (r *myQueryResolver) Withdrawals(ctx context.Context, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.WithdrawalsConnection, error) {
+	res, err := r.tradingDataClientV2.ListWithdrawals(
+		ctx, &v2.ListWithdrawalsRequest{
+			DateRange:  dateRange,
+			Pagination: pagination,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return res.Withdrawals, nil
+}
+
 func (r *myQueryResolver) Deposit(ctx context.Context, did string) (*types.Deposit, error) {
 	res, err := r.tradingDataClientV2.GetDeposit(
 		ctx, &v2.GetDepositRequest{Id: did},
@@ -748,6 +762,17 @@ func (r *myQueryResolver) Deposit(ctx context.Context, did string) (*types.Depos
 	}
 
 	return res.Deposit, nil
+}
+
+func (r *myQueryResolver) Deposits(ctx context.Context, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.DepositsConnection, error) {
+	res, err := r.tradingDataClientV2.ListDeposits(
+		ctx, &v2.ListDepositsRequest{DateRange: dateRange, Pagination: pagination},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return res.Deposits, nil
 }
 
 func (r *myQueryResolver) EstimateOrder(ctx context.Context, market, party string, price *string, size string, side vega.Side,
