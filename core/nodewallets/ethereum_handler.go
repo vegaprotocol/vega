@@ -25,7 +25,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
-func GetEthereumWallet(config eth.Config, vegaPaths paths.Paths, registryPassphrase string) (*eth.Wallet, error) {
+func GetEthereumWallet(vegaPaths paths.Paths, registryPassphrase string) (*eth.Wallet, error) {
 	registryLoader, err := registry.NewLoader(vegaPaths, registryPassphrase)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialise node wallet registry: %v", err)
@@ -40,10 +40,10 @@ func GetEthereumWallet(config eth.Config, vegaPaths paths.Paths, registryPassphr
 		return nil, ErrEthereumWalletIsMissing
 	}
 
-	return GetEthereumWalletWithRegistry(config, vegaPaths, registry)
+	return GetEthereumWalletWithRegistry(vegaPaths, registry)
 }
 
-func GetEthereumWalletWithRegistry(config eth.Config, vegaPaths paths.Paths, reg *registry.Registry) (*eth.Wallet, error) {
+func GetEthereumWalletWithRegistry(vegaPaths paths.Paths, reg *registry.Registry) (*eth.Wallet, error) {
 	switch walletRegistry := reg.Ethereum.Details.(type) {
 	case registry.EthereumClefWallet:
 		ethAddress := ethcommon.HexToAddress(walletRegistry.AccountAddress)
@@ -77,10 +77,10 @@ func GetEthereumWalletWithRegistry(config eth.Config, vegaPaths paths.Paths, reg
 }
 
 func GenerateEthereumWallet(
-	config eth.Config,
 	vegaPaths paths.Paths,
 	registryPassphrase,
 	walletPassphrase string,
+	clefAddress string,
 	overwrite bool,
 ) (map[string]string, error) {
 	registryLoader, err := registry.NewLoader(vegaPaths, registryPassphrase)
@@ -99,19 +99,19 @@ func GenerateEthereumWallet(
 
 	var data map[string]string
 
-	if config.ClefAddress != "" {
-		client, err := rpc.Dial(config.ClefAddress)
+	if clefAddress != "" {
+		client, err := rpc.Dial(clefAddress)
 		if err != nil {
 			return nil, fmt.Errorf("failed to dial Clef daemon: %w", err)
 		}
 
-		w, err := clef.GenerateNewWallet(client, config.ClefAddress)
+		w, err := clef.GenerateNewWallet(client, clefAddress)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't generate Ethereum clef node wallet: %w", err)
 		}
 
 		data = map[string]string{
-			"clefAddress":    config.ClefAddress,
+			"clefAddress":    clefAddress,
 			"accountAddress": w.PubKey().Hex(),
 		}
 
@@ -120,7 +120,7 @@ func GenerateEthereumWallet(
 			Details: registry.EthereumClefWallet{
 				Name:           w.Name(),
 				AccountAddress: w.PubKey().Hex(),
-				ClefAddress:    config.ClefAddress,
+				ClefAddress:    clefAddress,
 			},
 		}
 	} else {
@@ -154,11 +154,11 @@ func GenerateEthereumWallet(
 }
 
 func ImportEthereumWallet(
-	config eth.Config,
 	vegaPaths paths.Paths,
 	registryPassphrase,
 	walletPassphrase,
-	accountAddress,
+	clefAccount,
+	clefAddress,
 	sourceFilePath string,
 	overwrite bool,
 ) (map[string]string, error) {
@@ -178,25 +178,25 @@ func ImportEthereumWallet(
 
 	var data map[string]string
 
-	if config.ClefAddress != "" {
-		if !ethcommon.IsHexAddress(accountAddress) {
-			return nil, fmt.Errorf("invalid Ethereum hex address %q", accountAddress)
+	if clefAddress != "" {
+		if !ethcommon.IsHexAddress(clefAccount) {
+			return nil, fmt.Errorf("invalid Ethereum hex address %q", clefAccount)
 		}
 
-		ethAddress := ethcommon.HexToAddress(accountAddress)
+		ethAddress := ethcommon.HexToAddress(clefAccount)
 
-		client, err := rpc.Dial(config.ClefAddress)
+		client, err := rpc.Dial(clefAddress)
 		if err != nil {
 			return nil, fmt.Errorf("failed to dial Clef daemon: %w", err)
 		}
 
-		w, err := clef.NewWallet(client, config.ClefAddress, ethAddress)
+		w, err := clef.NewWallet(client, clefAddress, ethAddress)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't initialise Ethereum Clef node wallet: %w", err)
 		}
 
 		data = map[string]string{
-			"clefAddress":    config.ClefAddress,
+			"clefAddress":    clefAddress,
 			"accountAddress": w.PubKey().Hex(),
 		}
 
@@ -205,7 +205,7 @@ func ImportEthereumWallet(
 			Details: registry.EthereumClefWallet{
 				Name:           w.Name(),
 				AccountAddress: w.PubKey().Hex(),
-				ClefAddress:    config.ClefAddress,
+				ClefAddress:    clefAddress,
 			},
 		}
 	} else {

@@ -96,9 +96,7 @@ func getNodeWallet() *nodewallets.NodeWallets {
 }
 
 func createTestNodeWallets(vegaPaths paths.Paths, registryPass, walletPass string) {
-	config := nodewallets.NewDefaultConfig()
-
-	if _, err := nodewallets.GenerateEthereumWallet(config.ETH, vegaPaths, registryPass, walletPass, false); err != nil {
+	if _, err := nodewallets.GenerateEthereumWallet(vegaPaths, registryPass, walletPass, "", false); err != nil {
 		panic("couldn't generate Ethereum node wallet for tests")
 	}
 
