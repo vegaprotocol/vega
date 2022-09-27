@@ -17,12 +17,13 @@ import (
 	"fmt"
 	"strings"
 
-	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/datanode/metrics"
-	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
+
+	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/datanode/metrics"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 )
 
 var ErrProposalNotFound = errors.New("proposal not found")
@@ -266,7 +267,7 @@ func (ps *Proposals) Get(ctx context.Context,
 	}
 
 	if proposalType != nil {
-		conditions = append(conditions, fmt.Sprintf("terms ? %s", nextBindVar(&args, *proposalType)))
+		conditions = append(conditions, fmt.Sprintf("terms ? %s", nextBindVar(&args, proposalType.String())))
 	}
 
 	var err error

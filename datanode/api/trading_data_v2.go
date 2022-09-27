@@ -1796,16 +1796,10 @@ func (t *tradingDataServiceV2) GetGovernanceData(ctx context.Context, req *v2.Ge
 
 func (t *tradingDataServiceV2) ListGovernanceData(ctx context.Context, req *v2.ListGovernanceDataRequest) (*v2.ListGovernanceDataResponse, error) {
 	var state *entities.ProposalState
-	var proposalType *entities.ProposalType
 
 	if req.ProposalState != nil {
 		s := entities.ProposalState(*req.ProposalState)
 		state = &s
-	}
-
-	if req.ProposalType != nil {
-		t := entities.ProposalType(*req.ProposalType)
-		proposalType = &t
 	}
 
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
@@ -1817,7 +1811,7 @@ func (t *tradingDataServiceV2) ListGovernanceData(ctx context.Context, req *v2.L
 		ctx,
 		state,
 		req.ProposerPartyId,
-		proposalType,
+		(*entities.ProposalType)(req.ProposalType),
 		pagination,
 	)
 	if err != nil {
