@@ -28,7 +28,6 @@ type SnapshotEngine struct {
 	*Engine
 	pl      types.Payload
 	data    []byte
-	changed bool
 	stopped bool
 }
 
@@ -38,13 +37,8 @@ func NewSnapshotEngine(
 	return &SnapshotEngine{
 		Engine:  New(log, config, marketID, broker),
 		pl:      types.Payload{},
-		changed: true,
 		stopped: false,
 	}
-}
-
-func (e *SnapshotEngine) Changed() bool {
-	return e.changed
 }
 
 // StopSnapshots is called when the engines respective market no longer exists. We need to stop
@@ -55,37 +49,30 @@ func (e *SnapshotEngine) StopSnapshots() {
 }
 
 func (e *SnapshotEngine) RegisterOrder(ctx context.Context, order *types.Order) *MarketPosition {
-	e.changed = true
 	return e.Engine.RegisterOrder(ctx, order)
 }
 
 func (e *SnapshotEngine) UnregisterOrder(ctx context.Context, order *types.Order) *MarketPosition {
-	e.changed = true
 	return e.Engine.UnregisterOrder(ctx, order)
 }
 
 func (e *SnapshotEngine) AmendOrder(ctx context.Context, originalOrder, newOrder *types.Order) *MarketPosition {
-	e.changed = true
 	return e.Engine.AmendOrder(ctx, originalOrder, newOrder)
 }
 
 func (e *SnapshotEngine) UpdateNetwork(ctx context.Context, trade *types.Trade) []events.MarketPosition {
-	e.changed = true
 	return e.Engine.UpdateNetwork(ctx, trade)
 }
 
 func (e *SnapshotEngine) Update(ctx context.Context, trade *types.Trade) []events.MarketPosition {
-	e.changed = true
 	return e.Engine.Update(ctx, trade)
 }
 
 func (e *SnapshotEngine) RemoveDistressed(parties []events.MarketPosition) []events.MarketPosition {
-	e.changed = true
 	return e.Engine.RemoveDistressed(parties)
 }
 
 func (e *SnapshotEngine) UpdateMarkPrice(markPrice *num.Uint) []events.MarketPosition {
-	e.changed = true
 	return e.Engine.UpdateMarkPrice(markPrice)
 }
 
@@ -99,11 +86,6 @@ func (e *SnapshotEngine) Keys() []string {
 
 func (e *SnapshotEngine) Stopped() bool {
 	return e.stopped
-}
-
-func (e *SnapshotEngine) HasChanged(k string) bool {
-	return true
-	// return e.changed
 }
 
 func (e *SnapshotEngine) GetState(k string) ([]byte, []types.StateProvider, error) {
@@ -142,7 +124,6 @@ func (e *SnapshotEngine) LoadState(_ context.Context, payload *types.Payload) ([
 			e.positions[p.PartyID] = pos
 		}
 		e.data, err = proto.Marshal(payload.IntoProto())
-		e.changed = false
 		return nil, err
 
 	default:
@@ -155,10 +136,6 @@ func (e *SnapshotEngine) LoadState(_ context.Context, payload *types.Payload) ([
 func (e *SnapshotEngine) serialise() ([]byte, error) {
 	if e.stopped {
 		return nil, nil
-	}
-
-	if !e.HasChanged(e.pl.Key()) {
-		return e.data, nil // we already have what we need
 	}
 
 	e.log.Debug("serilaising snapshot", logging.Int("positions", len(e.positionsCpy)))
@@ -188,8 +165,5 @@ func (e *SnapshotEngine) serialise() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	e.changed = false
-
 	return e.data, nil
 }

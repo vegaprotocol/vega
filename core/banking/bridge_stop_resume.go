@@ -23,7 +23,6 @@ func (e *Engine) BridgeStopped(
 		bridgeView:         e.bridgeView,
 	}
 	e.assetActs[aa.id] = aa
-	e.bss.changedAssetActions = true
 	return e.witness.StartCheck(aa, e.onCheckDone, e.timeService.GetTimeNow().Add(defaultValidationDuration))
 }
 
@@ -44,7 +43,6 @@ func (e *Engine) BridgeResumed(
 		bridgeView:         e.bridgeView,
 	}
 	e.assetActs[aa.id] = aa
-	e.bss.changedAssetActions = true
 	return e.witness.StartCheck(aa, e.onCheckDone, e.timeService.GetTimeNow().Add(defaultValidationDuration))
 }
 

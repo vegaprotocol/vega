@@ -218,7 +218,6 @@ func (t *Topology) RecalcValidatorSet(ctx context.Context, epochSeq string, dele
 			delete(t.validators, k)
 		}
 	}
-	t.tss.changed = true
 }
 
 func protoStatusToString(status proto.ValidatorNodeStatus) string {

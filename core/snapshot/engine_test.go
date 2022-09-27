@@ -119,7 +119,7 @@ func getPopulatedTree(t *testing.T) *iavl.MutableTree {
 func TestEngine(t *testing.T) {
 	t.Run("Adding a provider calls what we expect on the state provider", testAddProviders)
 	t.Run("Adding provider with duplicate key in same namespace: first come, first serve", testAddProvidersDuplicateKeys)
-	t.Run("Create a snapshot, if nothing changes, we don't get the data and the hash remains unchanged", testTakeSnapshot)
+	t.Run("Create a snapshot successfully", testTakeSnapshot)
 	t.Run("Rejecting a snapshot should return a Snapshot Retry Limit error if rejected too many times", testRejectSnapshot)
 	t.Run("Removing multiple keys within a single namespace", testRemovingMultipleKeysSingleNamespace)
 	t.Run("Closing the engine doesn't panic when not initialised", testClosingEngineDoesNotPanicWhenNotInitialised)
@@ -210,12 +210,10 @@ func testAddProvidersDuplicateKeys(t *testing.T) {
 	data2 := hash2
 	prov1.EXPECT().Stopped().Times(2).Return(false)
 	for i, k := range keys1 {
-		prov1.EXPECT().HasChanged(k).Times(1).Return(true)
 		prov1.EXPECT().GetState(k).Times(1).Return(data1[i], nil, nil)
 	}
 	// duplicate key is skipped
 	prov2.EXPECT().Stopped().Times(1).Return(false)
-	prov2.EXPECT().HasChanged(gomock.Any()).Times(1).Return(true)
 	prov2.EXPECT().GetState(keys2[1]).Times(1).Return(data2[0], nil, nil)
 
 	engine.time.EXPECT().GetTimeNow().Times(1).Return(time.Now())
@@ -236,7 +234,7 @@ func testTakeSnapshot(t *testing.T) {
 
 	// now take a snapshot
 	now := time.Now()
-	engine.time.EXPECT().GetTimeNow().Times(2).Return(now)
+	engine.time.EXPECT().GetTimeNow().Times(1).Return(now)
 	state := map[string]*types.Payload{
 		keys[0]: {
 			Data: &types.PayloadCheckpoint{
@@ -251,23 +249,14 @@ func testTakeSnapshot(t *testing.T) {
 		pl := state[k]
 		data, err := proto.Marshal(pl.IntoProto())
 		require.NoError(t, err)
-		prov.EXPECT().HasChanged(k).Times(1).Return(true)
 		prov.EXPECT().GetState(k).Times(1).Return(data, nil, nil)
 	}
 	prov.EXPECT().Stopped().Times(len(keys)).Return(false)
 
 	// take the snapshot knowing state has changed:
 	// we need the ctx that goes with the mock, because that has block height and hash set
-	hash, err := engine.Snapshot(engine.ctx)
+	_, err := engine.Snapshot(engine.ctx)
 	require.NoError(t, err)
-
-	for _, k := range keys {
-		prov.EXPECT().HasChanged(k).Times(1).Return(false)
-	}
-	prov.EXPECT().Stopped().Times(len(keys)).Return(false)
-	secondHash, err := engine.Snapshot(engine.ctx)
-	require.NoError(t, err)
-	require.EqualValues(t, hash, secondHash)
 }
 
 func testReloadSnapshot(t *testing.T) {
@@ -297,7 +286,6 @@ func testReloadSnapshot(t *testing.T) {
 		data, err := proto.Marshal(pl.IntoProto())
 		require.NoError(t, err)
 		prov.EXPECT().GetState(k).Times(1).Return(data, nil, nil)
-		prov.EXPECT().HasChanged(k).Times(1).Return(true)
 	}
 	prov.EXPECT().Stopped().Times(len(keys)).Return(false)
 	hash, err := engine.Snapshot(engine.ctx)
@@ -375,7 +363,6 @@ func testReloadRestore(t *testing.T) {
 		data, err := proto.Marshal(pl.IntoProto())
 		require.NoError(t, err)
 		prov.EXPECT().GetState(k).Times(1).Return(data, nil, nil)
-		prov.EXPECT().HasChanged(k).Times(1).Return(true)
 	}
 	prov.EXPECT().Stopped().Times(len(keys)).Return(false)
 	hash, err := engine.Snapshot(engine.ctx)
@@ -457,23 +444,21 @@ func testRemovingMultipleKeysSingleNamespace(t *testing.T) {
 	engine := getTestEngine(t)
 	defer engine.Finish()
 
-	engine.time.EXPECT().GetTimeNow().Times(5).Return(time.Now())
+	engine.time.EXPECT().GetTimeNow().AnyTimes().Return(time.Now())
 
 	// first provider
 	prov := engine.getNewProviderMock()
 	prov.EXPECT().Keys().AnyTimes().Return([]string{"key1"})
 	prov.EXPECT().Namespace().AnyTimes().Return(types.PositionsSnapshot)
-	prov.EXPECT().HasChanged(gomock.Any()).Times(1).Return(true)
 	prov.EXPECT().Stopped().Times(1).Return(false)
-	prov.EXPECT().GetState(gomock.Any()).Times(1).Return(someState, nil, nil)
+	prov.EXPECT().GetState(gomock.Any()).AnyTimes().Return(someState, nil, nil)
 	engine.AddProviders(prov)
 
 	// second provider in the same namespace but with a different key i.e two positions engines, in the same namespace but keyed to difference markets
 	prov2 := engine.getNewProviderMock()
 	prov2.EXPECT().Keys().AnyTimes().Return([]string{"key2"})
 	prov2.EXPECT().Namespace().AnyTimes().Return(types.PositionsSnapshot)
-	prov2.EXPECT().HasChanged(gomock.Any()).Times(1).Return(true)
-	prov2.EXPECT().GetState(gomock.Any()).Times(1).Return(someState, nil, nil)
+	prov2.EXPECT().GetState(gomock.Any()).AnyTimes().Return(someState, nil, nil)
 	prov2.EXPECT().Stopped().Times(1).Return(false)
 	engine.AddProviders(prov2)
 
@@ -482,21 +467,16 @@ func testRemovingMultipleKeysSingleNamespace(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, b1)
 
-	prov.EXPECT().HasChanged(gomock.Any()).Times(1).Return(false)
 	prov.EXPECT().Stopped().Times(1).Return(false)
-	prov2.EXPECT().HasChanged(gomock.Any()).Times(1).Return(false)
 	prov2.EXPECT().Stopped().Times(1).Return(false)
 
 	// call again to confirm no state changes
 	b2, err := engine.Snapshot(engine.ctx)
 	require.NoError(t, err)
 	require.NotNil(t, b2)
-	require.Equal(t, b1, b2)
 
 	// Now the only change is we signal remove of a single provider, check the snapshot changes
-	prov.EXPECT().HasChanged(gomock.Any()).Times(1).Return(true)
 	prov.EXPECT().Stopped().Times(1).Return(true)
-	prov2.EXPECT().HasChanged(gomock.Any()).Times(1).Return(false)
 	prov2.EXPECT().Stopped().Times(1).Return(false)
 	b3, err := engine.Snapshot(engine.ctx)
 	require.NoError(t, err)
@@ -504,18 +484,11 @@ func testRemovingMultipleKeysSingleNamespace(t *testing.T) {
 	require.NotEqual(t, b1, b3)
 
 	// remove the second provider
-	prov2.EXPECT().HasChanged(gomock.Any()).Times(1).Return(true)
 	prov2.EXPECT().Stopped().Times(1).Return(true)
 	b4, err := engine.Snapshot(engine.ctx)
 	require.NoError(t, err)
 	require.NotNil(t, b4)
 	require.NotEqual(t, b3, b4)
-
-	// give it another blast now its empty to make sure we don't try to call things again, and that the hash remains the same
-	b5, err := engine.Snapshot(engine.ctx)
-	require.NoError(t, err)
-	require.NotNil(t, b5)
-	require.Equal(t, b4, b5)
 }
 
 func testClosingEngineDoesNotPanicWhenNotInitialised(t *testing.T) {

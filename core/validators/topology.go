@@ -218,7 +218,7 @@ func NewTopology(
 		timeService:                   timeService,
 		validators:                    map[string]*valState{},
 		chainValidators:               []string{},
-		tss:                           &topologySnapshotState{changed: true},
+		tss:                           &topologySnapshotState{},
 		pendingPubKeyRotations:        pendingKeyRotationMapping{},
 		pendingEthKeyRotations:        pendingEthereumKeyRotationMapping{},
 		isValidatorSetup:              isValidatorSetup,
@@ -430,9 +430,6 @@ func (t *Topology) BeginBlock(ctx context.Context, req abcitypes.RequestBeginBlo
 	t.signatures.ClearStaleSignatures()
 	t.keyRotationBeginBlockLocked(ctx)
 	t.ethereumKeyRotationBeginBlockLocked(ctx)
-
-	// validator performance will have updated
-	t.tss.changed = true
 }
 
 func (t *Topology) AddNewNode(ctx context.Context, nr *commandspb.AnnounceNode, status ValidatorStatus) error {
@@ -482,8 +479,6 @@ func (t *Topology) AddNewNode(ctx context.Context, nr *commandspb.AnnounceNode, 
 		PreviousStatus:   statusToProtoStatus("pending"),
 		VotingPower:      uint32(t.validators[nr.Id].validatorPower),
 	}
-
-	t.tss.changed = true
 
 	// Send event to notify core about new validator
 	t.sendValidatorUpdateEvent(ctx, data, true)
