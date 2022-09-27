@@ -133,6 +133,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`the price monitoring named "([^"]*)":$`, func(name string, table *godog.Table) error {
 		return steps.ThePriceMonitoring(marketConfig, name, table)
 	})
+	s.Step(`the liquidity monitoring parameters:$`, func(table *godog.Table) error {
+		return steps.TheLiquidityMonitoring(marketConfig, table)
+	})
 	s.Step(`the margin calculator named "([^"]*)":$`, func(name string, table *godog.Table) error {
 		return steps.TheMarginCalculator(marketConfig, name, table)
 	})

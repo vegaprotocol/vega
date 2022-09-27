@@ -36,8 +36,9 @@ func TheMarketsUpdated(
 	rows := parseMarketsUpdateTable(table)
 	// existing markets to update
 	validByID := make(map[string]*types.Market, len(existing))
-	for _, m := range existing {
-		validByID[m.ID] = &m
+	for i := range existing {
+		m := existing[i]
+		validByID[m.ID] = &exisiing[i]
 	}
 	updates := make([]types.UpdateMarket, 0, len(rows))
 	updated := make([]*types.Market, 0, len(rows))
@@ -229,12 +230,11 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 	}
 	// risk model
 	if rm, ok := row.riskModel(); ok {
-		current := existing.TradableInstrument
 		tip := existing.TradableInstrument.IntoProto()
 		if err := config.RiskModels.LoadModel(rm, tip); err != nil {
 			panic(err)
 		}
-		current = types.TradableInstrumentFromProto(tip)
+		current := types.TradableInstrumentFromProto(tip)
 		// find the correct params:
 		switch {
 		case current.GetSimpleRiskModel() != nil:
