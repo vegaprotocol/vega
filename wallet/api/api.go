@@ -152,14 +152,14 @@ func SessionAPI(log *zap.Logger, walletStore WalletStore, pipeline Pipeline, nod
 	sessions := NewSessions()
 
 	walletAPI := jsonrpc.New(log, true)
-	walletAPI.RegisterMethod("session.connect_wallet", NewConnectWallet(walletStore, pipeline, sessions))
-	walletAPI.RegisterMethod("session.disconnect_wallet", NewDisconnectWallet(sessions))
-	walletAPI.RegisterMethod("session.get_chain_id", NewGetChainID(nodeSelector))
-	walletAPI.RegisterMethod("session.get_permissions", NewGetPermissions(sessions))
-	walletAPI.RegisterMethod("session.list_keys", NewListKeys(sessions))
-	walletAPI.RegisterMethod("session.request_permissions", NewRequestPermissions(walletStore, pipeline, sessions))
-	walletAPI.RegisterMethod("session.sign_transaction", NewSignTransaction(pipeline, nodeSelector, sessions))
-	walletAPI.RegisterMethod("session.send_transaction", NewSendTransaction(pipeline, nodeSelector, sessions))
+	walletAPI.RegisterMethod("client.connect_wallet", NewConnectWallet(walletStore, pipeline, sessions))
+	walletAPI.RegisterMethod("client.disconnect_wallet", NewDisconnectWallet(sessions))
+	walletAPI.RegisterMethod("client.get_chain_id", NewGetChainID(nodeSelector))
+	walletAPI.RegisterMethod("client.get_permissions", NewGetPermissions(sessions))
+	walletAPI.RegisterMethod("client.list_keys", NewListKeys(sessions))
+	walletAPI.RegisterMethod("client.request_permissions", NewRequestPermissions(walletStore, pipeline, sessions))
+	walletAPI.RegisterMethod("client.sign_transaction", NewSignTransaction(pipeline, nodeSelector, sessions))
+	walletAPI.RegisterMethod("client.send_transaction", NewSendTransaction(pipeline, nodeSelector, sessions))
 
 	log.Info("the restricted JSON-RPC API has been initialised")
 
