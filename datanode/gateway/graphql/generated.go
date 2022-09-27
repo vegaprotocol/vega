@@ -1211,6 +1211,7 @@ type ComplexityRoot struct {
 		Assets                             func(childComplexity int) int
 		AssetsConnection                   func(childComplexity int, id *string, pagination *v2.Pagination) int
 		Deposit                            func(childComplexity int, id string) int
+		Deposits                           func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination) int
 		Epoch                              func(childComplexity int, id *string) int
 		Erc20ListAssetBundle               func(childComplexity int, assetID string) int
 		Erc20MultiSigSignerAddedBundles    func(childComplexity int, nodeID string, submitter *string, epochSeq *string, pagination *v2.Pagination) int
@@ -1264,6 +1265,7 @@ type ComplexityRoot struct {
 		TransfersConnection                func(childComplexity int, partyID *string, direction *TransferDirection, pagination *v2.Pagination) int
 		UpdateMarketProposals              func(childComplexity int, marketID *string, inState *vega.Proposal_State) int
 		Withdrawal                         func(childComplexity int, id string) int
+		Withdrawals                        func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination) int
 	}
 
 	RankingScore struct {
@@ -2004,6 +2006,7 @@ type QueryResolver interface {
 	Assets(ctx context.Context) ([]*vega.Asset, error)
 	AssetsConnection(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.AssetsConnection, error)
 	Deposit(ctx context.Context, id string) (*vega.Deposit, error)
+	Deposits(ctx context.Context, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.DepositsConnection, error)
 	Epoch(ctx context.Context, id *string) (*vega.Epoch, error)
 	Erc20ListAssetBundle(ctx context.Context, assetID string) (*Erc20ListAssetBundle, error)
 	Erc20MultiSigSignerAddedBundles(ctx context.Context, nodeID string, submitter *string, epochSeq *string, pagination *v2.Pagination) (*ERC20MultiSigSignerAddedConnection, error)
@@ -2057,6 +2060,7 @@ type QueryResolver interface {
 	Transfers(ctx context.Context, pubkey string, isFrom *bool, isTo *bool) ([]*v1.Transfer, error)
 	TransfersConnection(ctx context.Context, partyID *string, direction *TransferDirection, pagination *v2.Pagination) (*v2.TransferConnection, error)
 	Withdrawal(ctx context.Context, id string) (*vega.Withdrawal, error)
+	Withdrawals(ctx context.Context, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.WithdrawalsConnection, error)
 }
 type RankingScoreResolver interface {
 	VotingPower(ctx context.Context, obj *vega.RankingScore) (string, error)
@@ -6980,6 +6984,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Deposit(childComplexity, args["id"].(string)), true
 
+	case "Query.deposits":
+		if e.complexity.Query.Deposits == nil {
+			break
+		}
+
+		args, err := ec.field_Query_deposits_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Deposits(childComplexity, args["dateRange"].(*v2.DateRange), args["pagination"].(*v2.Pagination)), true
+
 	case "Query.epoch":
 		if e.complexity.Query.Epoch == nil {
 			break
@@ -7585,6 +7601,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Withdrawal(childComplexity, args["id"].(string)), true
+
+	case "Query.withdrawals":
+		if e.complexity.Query.Withdrawals == nil {
+			break
+		}
+
+		args, err := ec.field_Query_withdrawals_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Withdrawals(childComplexity, args["dateRange"].(*v2.DateRange), args["pagination"].(*v2.Pagination)), true
 
 	case "RankingScore.performanceScore":
 		if e.complexity.RankingScore.PerformanceScore == nil {
@@ -9679,6 +9707,14 @@ type Query {
   "Find a deposit using its ID"
   deposit("ID of the Deposit" id: ID!): Deposit
 
+  "Fetch all deposits"
+  deposits(
+    "Date range to fetch deposits between"
+    dateRange: DateRange,
+    "Pagination options"
+    pagination: Pagination,
+  ): DepositsConnection
+
   "Get data for a specific epoch, if ID omitted it gets the current epoch. If the string is 'next', fetch the next epoch"
   epoch(id: ID): Epoch!
 
@@ -10027,6 +10063,14 @@ type Query {
 
   "Find a withdrawal using its ID"
   withdrawal("ID of the withdrawal" id: ID!): Withdrawal
+
+  "Fetch all withdrawals"
+  withdrawals(
+    "Date range to fetch withdrawals between"
+    dateRange: DateRange,
+    "Pagination options"
+    pagination: Pagination,
+  ): WithdrawalsConnection
 }
 
 "All the states a transfer can transition between"
@@ -14899,6 +14943,30 @@ func (ec *executionContext) field_Query_deposit_args(ctx context.Context, rawArg
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_deposits_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *v2.DateRange
+	if tmp, ok := rawArgs["dateRange"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dateRange"))
+		arg0, err = ec.unmarshalODateRange2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDateRange(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["dateRange"] = arg0
+	var arg1 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_epoch_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -15988,6 +16056,30 @@ func (ec *executionContext) field_Query_withdrawal_args(ctx context.Context, raw
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_withdrawals_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *v2.DateRange
+	if tmp, ok := rawArgs["dateRange"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dateRange"))
+		arg0, err = ec.unmarshalODateRange2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDateRange(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["dateRange"] = arg0
+	var arg1 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg1
 	return args, nil
 }
 
@@ -38870,6 +38962,45 @@ func (ec *executionContext) _Query_deposit(ctx context.Context, field graphql.Co
 	return ec.marshalODeposit2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDeposit(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_deposits(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_deposits_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Deposits(rctx, args["dateRange"].(*v2.DateRange), args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v2.DepositsConnection)
+	fc.Result = res
+	return ec.marshalODepositsConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDepositsConnection(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_epoch(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -40938,6 +41069,45 @@ func (ec *executionContext) _Query_withdrawal(ctx context.Context, field graphql
 	res := resTmp.(*vega.Withdrawal)
 	fc.Result = res
 	return ec.marshalOWithdrawal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐWithdrawal(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_withdrawals(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_withdrawals_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Withdrawals(rctx, args["dateRange"].(*v2.DateRange), args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v2.WithdrawalsConnection)
+	fc.Result = res
+	return ec.marshalOWithdrawalsConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐWithdrawalsConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -61907,6 +62077,26 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
+		case "deposits":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_deposits(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
 		case "epoch":
 			field := field
 
@@ -63002,6 +63192,26 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_withdrawal(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "withdrawals":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_withdrawals(ctx, field)
 				return res
 			}
 
