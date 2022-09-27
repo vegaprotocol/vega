@@ -56,7 +56,7 @@ func (ml *MarginLevels) Add(marginLevel entities.MarginLevels) error {
 
 func (ml *MarginLevels) Flush(ctx context.Context) ([]entities.MarginLevels, error) {
 	defer metrics.StartSQLQuery("MarginLevels", "Flush")()
-	return ml.batcher.Flush(ctx, ml.pool)
+	return ml.batcher.Flush(ctx, ml.Connection)
 }
 
 func (ml *MarginLevels) GetMarginLevelsByID(ctx context.Context, partyID, marketID string, pagination entities.OffsetPagination) ([]entities.MarginLevels, error) {
