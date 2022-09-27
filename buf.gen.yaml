@@ -21,3 +21,10 @@ plugins:
       - grpc_api_configuration=protos/sources/vega/grpc-rest-bindings.yml
       - paths=source_relative
     strategy: all
+  - name: grpc-gateway
+    out: ./protos
+    opt:
+      - logtostderr=true
+      - grpc_api_configuration=protos/sources/blockexplorer/grpc-rest-bindings.yml
+      - paths=source_relative
+    strategy: all
