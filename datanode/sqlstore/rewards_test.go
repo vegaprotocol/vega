@@ -34,6 +34,7 @@ func addTestReward(t *testing.T, rs *sqlstore.Rewards,
 	rewardType string,
 	timestamp time.Time,
 	block entities.Block,
+	seqNum uint64,
 ) entities.Reward {
 	t.Helper()
 	r := entities.Reward{
@@ -46,6 +47,7 @@ func addTestReward(t *testing.T, rs *sqlstore.Rewards,
 		PercentOfTotal: 0.2,
 		Timestamp:      timestamp.Truncate(time.Microsecond),
 		VegaTime:       block.VegaTime,
+		SeqNum:         seqNum,
 	}
 	err := rs.Add(context.Background(), r)
 	require.NoError(t, err)
@@ -92,11 +94,11 @@ func TestRewards(t *testing.T) {
 	asset2ID := asset2.ID.String()
 
 	now := time.Now()
-	reward1 := addTestReward(t, rs, party1, asset1, market1, 1, "RewardMakerPaidFees", now, block)
-	reward2 := addTestReward(t, rs, party1, asset2, market1, 2, "RewardMakerReceivedFees", now, block)
-	reward3 := addTestReward(t, rs, party2, asset1, market2, 3, "GlobalReward", now, block)
-	reward4 := addTestReward(t, rs, party2, asset2, market2, 4, "GlobalReward", now, block)
-	reward5 := addTestReward(t, rs, party2, asset2, market2, 5, "GlobalReward", now, block)
+	reward1 := addTestReward(t, rs, party1, asset1, market1, 1, "RewardMakerPaidFees", now, block, 1)
+	reward2 := addTestReward(t, rs, party1, asset2, market1, 2, "RewardMakerReceivedFees", now, block, 2)
+	reward3 := addTestReward(t, rs, party2, asset1, market2, 3, "GlobalReward", now, block, 3)
+	reward4 := addTestReward(t, rs, party2, asset2, market2, 4, "GlobalReward", now, block, 4)
+	reward5 := addTestReward(t, rs, party2, asset2, market2, 5, "GlobalReward", now, block, 5)
 
 	t.Run("GetAll", func(t *testing.T) {
 		expected := []entities.Reward{reward1, reward2, reward3, reward4, reward5}
@@ -175,6 +177,7 @@ func populateTestRewards(ctx context.Context, t *testing.T, bs *sqlstore.Blocks,
 			RewardType:     "ACCOUNT_TYPE_UNSPECIFIED",
 			Timestamp:      time.Date(2022, 3, 24, 15, 27, 28, 357155000, time.UTC),
 			VegaTime:       time.Date(2022, 3, 24, 15, 27, 28, 357155000, time.UTC),
+			SeqNum:         1,
 		},
 		{
 			PartyID:        partyID,
@@ -185,6 +188,7 @@ func populateTestRewards(ctx context.Context, t *testing.T, bs *sqlstore.Blocks,
 			RewardType:     "ACCOUNT_TYPE_UNSPECIFIED",
 			Timestamp:      time.Date(2022, 3, 24, 15, 28, 1, 508305000, time.UTC),
 			VegaTime:       time.Date(2022, 3, 24, 15, 28, 1, 508305000, time.UTC),
+			SeqNum:         1,
 		},
 		{
 			PartyID:        partyID,
@@ -195,6 +199,7 @@ func populateTestRewards(ctx context.Context, t *testing.T, bs *sqlstore.Blocks,
 			RewardType:     "ACCOUNT_TYPE_UNSPECIFIED",
 			Timestamp:      time.Date(2022, 3, 24, 15, 28, 8, 168980000, time.UTC),
 			VegaTime:       time.Date(2022, 3, 24, 15, 28, 8, 168980000, time.UTC),
+			SeqNum:         1,
 		},
 		{
 			PartyID:        partyID,
@@ -205,6 +210,7 @@ func populateTestRewards(ctx context.Context, t *testing.T, bs *sqlstore.Blocks,
 			RewardType:     "ACCOUNT_TYPE_UNSPECIFIED",
 			Timestamp:      time.Date(2022, 3, 24, 15, 38, 22, 855711000, time.UTC),
 			VegaTime:       time.Date(2022, 3, 24, 15, 38, 22, 855711000, time.UTC),
+			SeqNum:         1,
 		},
 		{
 			PartyID:        partyID,
@@ -215,6 +221,7 @@ func populateTestRewards(ctx context.Context, t *testing.T, bs *sqlstore.Blocks,
 			RewardType:     "ACCOUNT_TYPE_UNSPECIFIED",
 			Timestamp:      time.Date(2022, 3, 24, 15, 38, 49, 338318000, time.UTC),
 			VegaTime:       time.Date(2022, 3, 24, 15, 38, 49, 338318000, time.UTC),
+			SeqNum:         1,
 		},
 		{
 			PartyID:        partyID,
@@ -225,6 +232,7 @@ func populateTestRewards(ctx context.Context, t *testing.T, bs *sqlstore.Blocks,
 			RewardType:     "ACCOUNT_TYPE_UNSPECIFIED",
 			Timestamp:      time.Date(2022, 3, 24, 15, 39, 9, 595917000, time.UTC),
 			VegaTime:       time.Date(2022, 3, 24, 15, 39, 9, 595917000, time.UTC),
+			SeqNum:         1,
 		},
 		{
 			PartyID:        partyID,
@@ -235,6 +243,7 @@ func populateTestRewards(ctx context.Context, t *testing.T, bs *sqlstore.Blocks,
 			RewardType:     "ACCOUNT_TYPE_UNSPECIFIED",
 			Timestamp:      time.Date(2022, 3, 24, 15, 39, 29, 400906000, time.UTC),
 			VegaTime:       time.Date(2022, 3, 24, 15, 39, 29, 400906000, time.UTC),
+			SeqNum:         1,
 		},
 		{
 			PartyID:        partyID,
@@ -245,6 +254,7 @@ func populateTestRewards(ctx context.Context, t *testing.T, bs *sqlstore.Blocks,
 			RewardType:     "ACCOUNT_TYPE_UNSPECIFIED",
 			Timestamp:      time.Date(2022, 3, 24, 15, 40, 34, 750010000, time.UTC),
 			VegaTime:       time.Date(2022, 3, 24, 15, 40, 34, 750010000, time.UTC),
+			SeqNum:         1,
 		},
 		{
 			PartyID:        partyID,
@@ -255,6 +265,7 @@ func populateTestRewards(ctx context.Context, t *testing.T, bs *sqlstore.Blocks,
 			RewardType:     "ACCOUNT_TYPE_UNSPECIFIED",
 			Timestamp:      time.Date(2022, 3, 24, 16, 9, 52, 556102000, time.UTC),
 			VegaTime:       time.Date(2022, 3, 24, 16, 9, 52, 556102000, time.UTC),
+			SeqNum:         1,
 		},
 		{
 			PartyID:        partyID,
@@ -265,6 +276,7 @@ func populateTestRewards(ctx context.Context, t *testing.T, bs *sqlstore.Blocks,
 			RewardType:     "ACCOUNT_TYPE_UNSPECIFIED",
 			Timestamp:      time.Date(2022, 3, 24, 16, 10, 5, 602243000, time.UTC),
 			VegaTime:       time.Date(2022, 3, 24, 16, 10, 5, 602243000, time.UTC),
+			SeqNum:         1,
 		},
 	}
 

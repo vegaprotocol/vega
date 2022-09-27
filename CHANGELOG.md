@@ -1,14 +1,28 @@
 # Changelog
 
-## Unreleased 0.56.0
+## Unreleased 0.57.0
+
+### 🚨 Breaking changes
+- [6291](https://github.com/vegaprotocol/vega/issues/6291) - Remove `Nodewallet.ETH` configuration and add flags to supply `clef` addresses when importing or generating accounts
+- [6314](https://github.com/vegaprotocol/vega/issues/6314) - Rename session namespace to client in wallet API version 2
+
+### 🗑️ Deprecation
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🛠 Improvements
+- [6283](https://github.com/vegaprotocol/vega/issues/6283) - Add commit hash to version if is development version
+- [6321](https://github.com/vegaprotocol/vega/issues/6321) - Get rid of the `HasChanged` check in snapshot engines
+
+### 🐛 Fixes
+- [6307](https://github.com/vegaprotocol/vega/issues/6307) - Emit an event with status rejected if a protocol upgrade proposal has no validator behind it
+- [5305](https://github.com/vegaprotocol/vega/issues/5305) - Handle market updates changing price monitoring parameters correctly.
+
+## 0.56.0
 
 ### 🚨 Breaking changes
 - [6196](https://github.com/vegaprotocol/vega/pull/6196) - Remove unused network parameters network end of life and market freeze date
 - [6155](https://github.com/vegaprotocol/vega/issues/6155) - Rename "Client" to "User" in wallet API version 2
 - [5641](https://github.com/vegaprotocol/vega/issues/5641) - Rename `SettlementPriceDecimals` to `SettlementDataDecimals`
-
-### 🗑️ Deprecation
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
 - [6103](hhttps://github.com/vegaprotocol/vega/issues/6103) - Verify that order amendment has the desired effect on opening auction
@@ -23,6 +37,7 @@
 - [6203](https://github.com/vegaprotocol/vega/issues/6203) - Log node selection process on the wallet CLI
 - [5925](https://github.com/vegaprotocol/vega/issues/5925) - Clean transfer response API, now ledger movements
 - [6254](https://github.com/vegaprotocol/vega/issues/6254) - Reject Ethereum configuration update via proposals
+- [5706](https://github.com/vegaprotocol/vega/issues/5076) - Datanode snapshot create and restore support
 
 ### 🐛 Fixes
 - [6255](https://github.com/vegaprotocol/vega/issues/6255) - Fix `WebSocket` upgrading when setting headers in HTTP middleware.
@@ -47,6 +62,12 @@
 - [6036](https://github.com/vegaprotocol/vega/issues/6036) - Fix `protobuf<->swagger` generation
 - [6248](https://github.com/vegaprotocol/vega/issues/6245) - Candles connection is not returning any candle data
 - [6037](https://github.com/vegaprotocol/vega/issues/6037) - Fix auction events.
+- [6061](https://github.com/vegaprotocol/vega/issues/6061) - Attempt at stabilizing the tests on the broker in the core
+- [6178](https://github.com/vegaprotocol/vega/issues/6178) - Historical balances fails with `scany` error
+- [6193](https://github.com/vegaprotocol/vega/issues/6193) - Use Data field from transaction successfully sent but that were rejected
+- [6230](https://github.com/vegaprotocol/vega/issues/6230) - Node Signature Connection should return a list or an appropriate error message
+- [5998](https://github.com/vegaprotocol/vega/issues/5998) - Positions should be zero when markets are closed and settled
+- [6297](https://github.com/vegaprotocol/vega/issues/6297) - Historic Balances fails if `MarketId` is used in `groupBy`
 
 ## 0.55.0
 

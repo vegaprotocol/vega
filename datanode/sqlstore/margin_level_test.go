@@ -28,6 +28,8 @@ import (
 
 const testAssetID = "deadbeef"
 
+const testTimeout = time.Second * 30
+
 func TestMarginLevels(t *testing.T) {
 	t.Run("Add should insert margin levels that don't exist in the current block", testInsertMarginLevels)
 	t.Run("Add should insert margin levels that already exist in the same block", testDuplicateMarginLevelInSameBlock)
@@ -107,7 +109,6 @@ func setupMarginLevelTests(t *testing.T, ctx context.Context) (*testBlockSource,
 }
 
 func testInsertMarginLevels(t *testing.T) {
-	testTimeout := time.Second * 10
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
@@ -138,7 +139,6 @@ func testInsertMarginLevels(t *testing.T) {
 }
 
 func testDuplicateMarginLevelInSameBlock(t *testing.T) {
-	testTimeout := time.Second * 10
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
@@ -189,7 +189,6 @@ func getMarginLevelWithMaintenanceProto(maintenanceMargin, partyID, marketID str
 }
 
 func testGetMarginLevelsByPartyID(t *testing.T) {
-	testTimeout := time.Second * 10
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
@@ -273,7 +272,6 @@ func testGetMarginLevelsByPartyID(t *testing.T) {
 }
 
 func testGetMarginLevelsByMarketID(t *testing.T) {
-	testTimeout := time.Second * 10
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
@@ -359,7 +357,6 @@ func testGetMarginLevelsByMarketID(t *testing.T) {
 }
 
 func testGetMarginLevelsByID(t *testing.T) {
-	testTimeout := time.Second * 10
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
@@ -565,7 +562,6 @@ func populateMarginLevelPaginationTestData(t *testing.T, ctx context.Context) (*
 }
 
 func testGetMarginLevelsByIDPaginationWithPartyNoCursor(t *testing.T) {
-	testTimeout := time.Second * 5
 	testCtx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 	defer DeleteEverything()
@@ -605,7 +601,6 @@ func testGetMarginLevelsByIDPaginationWithPartyNoCursor(t *testing.T) {
 }
 
 func testGetMarginLevelsByIDPaginationWithPartyNoCursorNewestFirst(t *testing.T) {
-	testTimeout := time.Second * 5
 	testCtx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 	defer DeleteEverything()
@@ -643,7 +638,6 @@ func testGetMarginLevelsByIDPaginationWithPartyNoCursorNewestFirst(t *testing.T)
 }
 
 func testGetMarginLevelsByIDPaginationWithMarketNoCursor(t *testing.T) {
-	testTimeout := time.Second * 5
 	testCtx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 	defer DeleteEverything()
@@ -681,7 +675,6 @@ func testGetMarginLevelsByIDPaginationWithMarketNoCursor(t *testing.T) {
 }
 
 func testGetMarginLevelsByIDPaginationWithMarketNoCursorNewestFirst(t *testing.T) {
-	testTimeout := time.Second * 5
 	testCtx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 	defer DeleteEverything()
@@ -719,7 +712,6 @@ func testGetMarginLevelsByIDPaginationWithMarketNoCursorNewestFirst(t *testing.T
 }
 
 func testGetMarginLevelsByIDPaginationWithPartyFirstNoAfterCursor(t *testing.T) {
-	testTimeout := time.Second * 5
 	testCtx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 	defer DeleteEverything()
@@ -755,7 +747,6 @@ func testGetMarginLevelsByIDPaginationWithPartyFirstNoAfterCursor(t *testing.T) 
 }
 
 func testGetMarginLevelsByIDPaginationWithPartyFirstNoAfterCursorNewestFirst(t *testing.T) {
-	testTimeout := time.Second * 5
 	testCtx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 	defer DeleteEverything()
@@ -791,7 +782,6 @@ func testGetMarginLevelsByIDPaginationWithPartyFirstNoAfterCursorNewestFirst(t *
 }
 
 func testGetMarginLevelsByIDPaginationWithMarketFirstNoAfterCursor(t *testing.T) {
-	testTimeout := time.Second * 5
 	testCtx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 	defer DeleteEverything()
@@ -827,7 +817,6 @@ func testGetMarginLevelsByIDPaginationWithMarketFirstNoAfterCursor(t *testing.T)
 }
 
 func testGetMarginLevelsByIDPaginationWithMarketFirstNoAfterCursorNewestFirst(t *testing.T) {
-	testTimeout := time.Second * 5
 	testCtx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 	defer DeleteEverything()
@@ -863,7 +852,6 @@ func testGetMarginLevelsByIDPaginationWithMarketFirstNoAfterCursorNewestFirst(t 
 }
 
 func testGetMarginLevelsByIDPaginationWithPartyLastNoBeforeCursor(t *testing.T) {
-	testTimeout := time.Second * 5
 	testCtx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 	defer DeleteEverything()
@@ -899,7 +887,6 @@ func testGetMarginLevelsByIDPaginationWithPartyLastNoBeforeCursor(t *testing.T) 
 }
 
 func testGetMarginLevelsByIDPaginationWithPartyLastNoBeforeCursorNewestFirst(t *testing.T) {
-	testTimeout := time.Second * 5
 	testCtx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 	defer DeleteEverything()
@@ -935,7 +922,6 @@ func testGetMarginLevelsByIDPaginationWithPartyLastNoBeforeCursorNewestFirst(t *
 }
 
 func testGetMarginLevelsByIDPaginationWithMarketLastNoBeforeCursor(t *testing.T) {
-	testTimeout := time.Second * 5
 	testCtx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 	defer DeleteEverything()
@@ -971,7 +957,6 @@ func testGetMarginLevelsByIDPaginationWithMarketLastNoBeforeCursor(t *testing.T)
 }
 
 func testGetMarginLevelsByIDPaginationWithMarketLastNoBeforeCursorNewestFirst(t *testing.T) {
-	testTimeout := time.Second * 5
 	testCtx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 	defer DeleteEverything()
@@ -1007,7 +992,6 @@ func testGetMarginLevelsByIDPaginationWithMarketLastNoBeforeCursorNewestFirst(t 
 }
 
 func testGetMarginLevelsByIDPaginationWithPartyFirstAndAfterCursor(t *testing.T) {
-	testTimeout := time.Second * 5
 	testCtx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 	defer DeleteEverything()
@@ -1047,7 +1031,6 @@ func testGetMarginLevelsByIDPaginationWithPartyFirstAndAfterCursor(t *testing.T)
 }
 
 func testGetMarginLevelsByIDPaginationWithPartyFirstAndAfterCursorNewestFirst(t *testing.T) {
-	testTimeout := time.Second * 5
 	testCtx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 	defer DeleteEverything()
@@ -1087,7 +1070,6 @@ func testGetMarginLevelsByIDPaginationWithPartyFirstAndAfterCursorNewestFirst(t 
 }
 
 func testGetMarginLevelsByIDPaginationWithMarketFirstAndAfterCursor(t *testing.T) {
-	testTimeout := time.Second * 5
 	testCtx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 	defer DeleteEverything()
@@ -1127,7 +1109,6 @@ func testGetMarginLevelsByIDPaginationWithMarketFirstAndAfterCursor(t *testing.T
 }
 
 func testGetMarginLevelsByIDPaginationWithMarketFirstAndAfterCursorNewestFirst(t *testing.T) {
-	testTimeout := time.Second * 5
 	testCtx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 	defer DeleteEverything()
@@ -1167,7 +1148,6 @@ func testGetMarginLevelsByIDPaginationWithMarketFirstAndAfterCursorNewestFirst(t
 }
 
 func testGetMarginLevelsByIDPaginationWithPartyLastAndBeforeCursor(t *testing.T) {
-	testTimeout := time.Second * 5
 	testCtx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 	defer DeleteEverything()
@@ -1207,7 +1187,6 @@ func testGetMarginLevelsByIDPaginationWithPartyLastAndBeforeCursor(t *testing.T)
 }
 
 func testGetMarginLevelsByIDPaginationWithPartyLastAndBeforeCursorNewestFirst(t *testing.T) {
-	testTimeout := time.Second * 5
 	testCtx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 	defer DeleteEverything()
@@ -1247,7 +1226,6 @@ func testGetMarginLevelsByIDPaginationWithPartyLastAndBeforeCursorNewestFirst(t 
 }
 
 func testGetMarginLevelsByIDPaginationWithMarketLastAndBeforeCursor(t *testing.T) {
-	testTimeout := time.Second * 5
 	testCtx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 	defer DeleteEverything()
@@ -1287,7 +1265,6 @@ func testGetMarginLevelsByIDPaginationWithMarketLastAndBeforeCursor(t *testing.T
 }
 
 func testGetMarginLevelsByIDPaginationWithMarketLastAndBeforeCursorNewestFirst(t *testing.T) {
-	testTimeout := time.Second * 5
 	testCtx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 	defer DeleteEverything()

@@ -105,7 +105,7 @@ func TestDistressedPartyUpdate(t *testing.T) {
 
 	// now assume this party is distressed, and we've taken all their funds
 	sde := events.NewSettleDistressed(ctx, party, market, num.UintZero(), num.NewUint(100), 1)
-	position.UpdateWithSettleDestressed(sde)
+	position.UpdateWithSettleDistressed(sde)
 	pp = position.ToProto()
 	assert.Equal(t, "0", pp.UnrealisedPnl)
 	assert.Equal(t, "-1000", pp.RealisedPnl)

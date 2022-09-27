@@ -1295,7 +1295,7 @@ func (t *tradingDataServiceV2) ListParties(ctx context.Context, in *v2.ListParti
 	}
 
 	resp := &v2.ListPartiesResponse{
-		Party: partyConnection,
+		Parties: partyConnection,
 	}
 	return resp, nil
 }
@@ -2218,7 +2218,7 @@ func (t *tradingDataServiceV2) ListNodeSignatures(ctx context.Context, req *v2.L
 
 	sigs, pageInfo, err := t.notaryService.GetByResourceID(ctx, req.Id, pagination)
 	if err != nil {
-		return nil, apiError(codes.NotFound, err)
+		return nil, fmt.Errorf("could not retrieve resource: %w", err)
 	}
 
 	edges, err := makeEdges[*v2.NodeSignatureEdge](sigs)

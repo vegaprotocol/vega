@@ -30,7 +30,6 @@ import (
 
 func TestWithdrawals(t *testing.T) {
 	t.Run("Upsert should insert withdrawals if one doesn't exist for the block", testAddWithdrawalForNewBlock)
-	t.Run("Upsert should error if the vega block does not exist", testWithdrawalErrorIfBlockDoesNotExist)
 	t.Run("Upsert should update withdrawals if one already exists for the block", testUpdateWithdrawalForBlockIfExists)
 	t.Run("Upsert should insert withdrawal updates if the same withdrawal id is inserted in a different block", testInsertWithdrawalUpdatesIfNewBlock)
 	t.Run("GetByID should retrieve the latest state of the withdrawal with the given ID", testWithdrawalsGetByID)
@@ -102,29 +101,6 @@ func testAddWithdrawalForNewBlock(t *testing.T) {
 	err = conn.QueryRow(ctx, `select count(*) from withdrawals`).Scan(&rowCount)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, rowCount)
-}
-
-func testWithdrawalErrorIfBlockDoesNotExist(t *testing.T) {
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
-
-	bs, ws, conn := setupWithdrawalStoreTests(t, ctx)
-
-	var rowCount int
-
-	err := conn.QueryRow(ctx, `select count(*) from withdrawals`).Scan(&rowCount)
-	require.NoError(t, err)
-	assert.Equal(t, 0, rowCount)
-
-	block := addTestBlock(t, bs)
-	withdrawalProto := getTestWithdrawal(testID, testID, testID, testAmount, testID, block.VegaTime)
-
-	withdrawal, err := entities.WithdrawalFromProto(withdrawalProto, generateTxHash(), block.VegaTime.Add(time.Second))
-	require.NoError(t, err, "Converting withdrawal proto to database entity")
-
-	err = ws.Upsert(context.Background(), withdrawal)
-	require.Error(t, err, "Should error if the block does not exist")
 }
 
 func testUpdateWithdrawalForBlockIfExists(t *testing.T) {

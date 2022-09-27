@@ -51,20 +51,6 @@ func (mr *MockStateProviderMockRecorder) GetState(arg0 interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetState", reflect.TypeOf((*MockStateProvider)(nil).GetState), arg0)
 }
 
-// HasChanged mocks base method.
-func (m *MockStateProvider) HasChanged(arg0 string) bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HasChanged", arg0)
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// HasChanged indicates an expected call of HasChanged.
-func (mr *MockStateProviderMockRecorder) HasChanged(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasChanged", reflect.TypeOf((*MockStateProvider)(nil).HasChanged), arg0)
-}
-
 // Keys mocks base method.
 func (m *MockStateProvider) Keys() []string {
 	m.ctrl.T.Helper()

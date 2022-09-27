@@ -6,12 +6,12 @@
   },
   "methods": [
     {
-      "name": "session.connect_wallet",
+      "name": "client.connect_wallet",
       "summary": "Initiates a connection between a wallet and a third-party application.",
       "description": "This method initiates a connection between a wallet and a third-party application.\n\nThe user has to review the request, and, if they accept it, select the wallet they want to use for this connection.\n\nA connection token is generated and returned to the third-party application. This token is meant to be used in protected methods.\n\n**Supported connections:**\n- Multiple wallets connected for the same hostname. Each connection will have a different token.\n- A single wallet connected to multiple hostnames. Each connection will have a different token.\n- Combination of the above setups.\n\nHowever, it's not possible to have multiple connections on the same wallet for the same hostname. The previous connection will be terminated and a new token will be generated.\n\nThis method should be the entry point of every third-party application. Once connected, see the method `get_permissions`.",
       "tags": [
         {
-          "name": "session"
+          "name": "client"
         },
         {
           "name": "connection"
@@ -68,12 +68,12 @@
       ]
     },
     {
-      "name": "session.disconnect_wallet",
+      "name": "client.disconnect_wallet",
       "summary": "Ends the connection between the third-party application and the wallet.",
       "description": "This method ends the connection between the third-party application and the wallet. The token is, then, no longer valid.\n\nCalling this method with an invalid token doesn't fail.",
       "tags": [
         {
-          "name": "session"
+          "name": "client"
         },
         {
           "name": "connection"
@@ -114,12 +114,12 @@
       ]
     },
     {
-      "name": "session.get_permissions",
+      "name": "client.get_permissions",
       "summary": "Returns the permissions set on the wallet for the third-party application.",
       "description": "This method returns the permissions set on the wallet for the third-party application.\n\nThis method should be called, by the third-party application, right after it successfully connected to a wallet, to ensure it has sufficient permissions to call the method it relies on. If the third-party application doesn't have enough permissions, see the method `request_permissions`.",
       "tags": [
         {
-          "name": "session"
+          "name": "client"
         },
         {
           "name": "permissions"
@@ -161,12 +161,12 @@
       ]
     },
     {
-      "name": "session.request_permissions",
+      "name": "client.request_permissions",
       "summary": "Requests permissions update for the third-party application.",
       "description": "This method allows a third-party application to request new permissions to access the methods it requires.\n\nAll permissions the third-party relies on have to be specified. If a permission is omitted, it will be considered as no longer required and, as a result, be automatically revoked.\n\nThe user has to review the permissions.",
       "tags": [
         {
-          "name": "session"
+          "name": "client"
         },
         {
           "name": "permissions"
@@ -256,12 +256,12 @@
       ]
     },
     {
-      "name": "session.list_keys",
+      "name": "client.list_keys",
       "summary": "Returns the keys the user has allowed the third-party application to have access to.",
       "description": "This method returns the keys the user has allowed the third-party application to have access to.\n\nIt requires a `read` access on `public_keys`.",
       "tags": [
         {
-          "name": "session"
+          "name": "client"
         },
         {
           "name": "key"
@@ -322,12 +322,12 @@
       ]
     },
     {
-      "name": "session.sign_transaction",
+      "name": "client.sign_transaction",
       "summary": "Sign a transaction without sending it.",
       "description": "This method signs a transaction and returns it to the third-party application, without sending it to the network. What happens with the transaction is up to the third-party application.\n\nThe user has to review the transaction.",
       "tags": [
         {
-          "name": "session"
+          "name": "client"
         },
         {
           "name": "transaction"
@@ -422,12 +422,12 @@
       ]
     },
     {
-      "name": "session.send_transaction",
+      "name": "client.send_transaction",
       "summary": "Send a transaction to the network.",
       "description": "This method sends a transaction to the network.\n\nThe user has to review the transaction.",
       "tags": [
         {
-          "name": "session"
+          "name": "client"
         },
         {
           "name": "transaction"
@@ -550,12 +550,12 @@
       ]
     },
     {
-      "name": "session.get_chain_id",
+      "name": "client.get_chain_id",
       "summary": "Returns the chain ID of the network in use.",
       "description": "This method returns the chain ID of the network in use.\n\nIt should be called by every third-party application to know from which network it should fetch data.",
       "tags": [
         {
-          "name": "session"
+          "name": "client"
         }
       ],
       "paramStructure": "by-name",
@@ -948,50 +948,6 @@
       ]
     },
     {
-      "name": "admin.remove_network",
-      "summary": "Removes a network from the computer.",
-      "description": "This method removes a network from the computer.",
-      "tags": [
-        {
-          "name": "admin"
-        },
-        {
-          "name": "network"
-        }
-      ],
-      "paramStructure": "by-name",
-      "params": [
-        {
-          "name": "network",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "result": {
-        "name": "Success",
-        "schema": {
-          "type": "null"
-        }
-      },
-      "examples": [
-        {
-          "name": "Remove a network",
-          "params": [
-            {
-              "name": "network",
-              "value": "fairground"
-            }
-          ],
-          "result": {
-            "name": "Success",
-            "value": {}
-          }
-        }
-      ]
-    },
-    {
       "name": "admin.list_networks",
       "summary": "Returns the list of all registered networks.",
       "description": "This method returns the list of the registered networks.",
@@ -1060,8 +1016,8 @@
             "name": {
               "type": "string"
             },
-            "level": {
-              "type": "number"
+            "logLevel": {
+              "type": "string"
             },
             "tokenExpiry": {
               "type": "string"
@@ -1114,6 +1070,166 @@
                 }
               }
             }
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin.update_network",
+      "summary": "Update an existing network.",
+      "description": "This method updates the network configuration.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "network"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "name",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "logLevel",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "tokenExpiry",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "port",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          }
+        },
+        {
+          "name": "host",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "api",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/network_api_config"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "null"
+        }
+      },
+      "examples": [
+        {
+          "name": "Update a network",
+          "params": [
+            {
+              "name": "name",
+              "value": "local-network"
+            },
+            {
+              "name": "level",
+              "value": "info"
+            },
+            {
+              "name": "tokenExpiry",
+              "value": "168h0m0s"
+            },
+            {
+              "name": "port",
+              "value": "1789"
+            },
+            {
+              "name": "host",
+              "value": "localhost"
+            },
+            {
+              "name": "api",
+              "value": {
+                "grpcConfig": {
+                  "hosts": [
+                    "localhost:3028"
+                  ],
+                  "retries": 5
+                },
+                "graphQLConfig": {
+                  "hosts": [
+                    "localhost:3028"
+                  ]
+                },
+                "restConfig": {
+                  "hosts": [
+                    "localhost:3029"
+                  ]
+                }
+              }
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": {}
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin.remove_network",
+      "summary": "Removes a network from the computer.",
+      "description": "This method removes a network from the computer.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "network"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "network",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "schema": {
+          "type": "null"
+        }
+      },
+      "examples": [
+        {
+          "name": "Remove a network",
+          "params": [
+            {
+              "name": "network",
+              "value": "fairground"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": {}
           }
         }
       ]

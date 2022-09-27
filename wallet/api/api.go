@@ -151,15 +151,15 @@ type SelectedWallet struct {
 func SessionAPI(log *zap.Logger, walletStore WalletStore, pipeline Pipeline, nodeSelector node.Selector) (*jsonrpc.API, error) {
 	sessions := NewSessions()
 
-	walletAPI := jsonrpc.New(log)
-	walletAPI.RegisterMethod("session.connect_wallet", NewConnectWallet(walletStore, pipeline, sessions))
-	walletAPI.RegisterMethod("session.disconnect_wallet", NewDisconnectWallet(sessions))
-	walletAPI.RegisterMethod("session.get_chain_id", NewGetChainID(nodeSelector))
-	walletAPI.RegisterMethod("session.get_permissions", NewGetPermissions(sessions))
-	walletAPI.RegisterMethod("session.list_keys", NewListKeys(sessions))
-	walletAPI.RegisterMethod("session.request_permissions", NewRequestPermissions(walletStore, pipeline, sessions))
-	walletAPI.RegisterMethod("session.sign_transaction", NewSignTransaction(pipeline, nodeSelector, sessions))
-	walletAPI.RegisterMethod("session.send_transaction", NewSendTransaction(pipeline, nodeSelector, sessions))
+	walletAPI := jsonrpc.New(log, true)
+	walletAPI.RegisterMethod("client.connect_wallet", NewConnectWallet(walletStore, pipeline, sessions))
+	walletAPI.RegisterMethod("client.disconnect_wallet", NewDisconnectWallet(sessions))
+	walletAPI.RegisterMethod("client.get_chain_id", NewGetChainID(nodeSelector))
+	walletAPI.RegisterMethod("client.get_permissions", NewGetPermissions(sessions))
+	walletAPI.RegisterMethod("client.list_keys", NewListKeys(sessions))
+	walletAPI.RegisterMethod("client.request_permissions", NewRequestPermissions(walletStore, pipeline, sessions))
+	walletAPI.RegisterMethod("client.sign_transaction", NewSignTransaction(pipeline, nodeSelector, sessions))
+	walletAPI.RegisterMethod("client.send_transaction", NewSendTransaction(pipeline, nodeSelector, sessions))
 
 	log.Info("the restricted JSON-RPC API has been initialised")
 
@@ -170,7 +170,7 @@ func SessionAPI(log *zap.Logger, walletStore WalletStore, pipeline Pipeline, nod
 // This API exposes highly-sensitive methods, and, as a result, it should be
 // only exposed to highly-trustable applications.
 func AdminAPI(log *zap.Logger, walletStore WalletStore, netStore NetworkStore, nodeSelectorBuilder NodeSelectorBuilder) (*jsonrpc.API, error) {
-	walletAPI := jsonrpc.New(log)
+	walletAPI := jsonrpc.New(log, false)
 	walletAPI.RegisterMethod("admin.annotate_key", NewAdminAnnotateKey(walletStore))
 	walletAPI.RegisterMethod("admin.create_wallet", NewAdminCreateWallet(walletStore))
 	walletAPI.RegisterMethod("admin.describe_key", NewAdminDescribeKey(walletStore))

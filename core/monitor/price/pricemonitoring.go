@@ -150,6 +150,11 @@ func (e *Engine) UpdateSettings(riskModel risk.Model, settings *types.PriceMonit
 	e.riskModel = riskModel
 	e.fpHorizons, e.bounds = computeBoundsAndHorizons(settings)
 	e.boundFactorsInitialised = false
+	e.priceRangesCache = make(map[*bound]priceRange, len(e.bounds)) // clear the cache
+	// reset reference cache
+	e.refPriceCacheTime = time.Time{}
+	e.refPriceCache = map[int64]num.Decimal{}
+	_ = e.getCurrentPriceRanges(true) // force bound recalc
 }
 
 // Initialised returns true if the engine already saw at least one price.
@@ -442,7 +447,7 @@ func (e *Engine) checkBounds(trades []*types.Trade) []*types.PriceMonitoringTrig
 
 // getCurrentPriceRanges calculates price ranges from current reference prices and bound down/up factors.
 func (e *Engine) getCurrentPriceRanges(force bool) map[*bound]priceRange {
-	if e.priceRangeCacheTime == e.now && e.priceRangesCache != nil && len(e.priceRangesCache) > 0 && !force {
+	if !force && e.priceRangeCacheTime == e.now && len(e.priceRangesCache) > 0 {
 		return e.priceRangesCache
 	}
 	ranges := make(map[*bound]priceRange, len(e.priceRangesCache))

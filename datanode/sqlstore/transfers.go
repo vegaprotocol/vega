@@ -128,7 +128,7 @@ func (t *Transfers) GetTransfersToParty(ctx context.Context, partyID entities.Pa
 	return transfers, pageInfo, nil
 }
 
-func (t *Transfers) GetTransfersFromAccount(ctx context.Context, accountID int64, pagination entities.CursorPagination) ([]entities.Transfer,
+func (t *Transfers) GetTransfersFromAccount(ctx context.Context, accountID entities.AccountID, pagination entities.CursorPagination) ([]entities.Transfer,
 	entities.PageInfo, error,
 ) {
 	defer metrics.StartSQLQuery("Transfers", "GetTransfersFromAccount")()
@@ -140,7 +140,7 @@ func (t *Transfers) GetTransfersFromAccount(ctx context.Context, accountID int64
 	return transfers, pageInfo, nil
 }
 
-func (t *Transfers) GetTransfersToAccount(ctx context.Context, accountID int64, pagination entities.CursorPagination) ([]entities.Transfer,
+func (t *Transfers) GetTransfersToAccount(ctx context.Context, accountID entities.AccountID, pagination entities.CursorPagination) ([]entities.Transfer,
 	entities.PageInfo, error,
 ) {
 	defer metrics.StartSQLQuery("Transfers", "GetTransfersToAccount")()

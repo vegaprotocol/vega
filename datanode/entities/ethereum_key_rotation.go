@@ -28,9 +28,12 @@ type EthereumKeyRotation struct {
 	BlockHeight uint64
 	TxHash      TxHash
 	VegaTime    time.Time
+	SeqNum      uint64
 }
 
-func EthereumKeyRotationFromProto(kr *eventspb.EthereumKeyRotation, txHash TxHash, vegaTime time.Time) (EthereumKeyRotation, error) {
+func EthereumKeyRotationFromProto(kr *eventspb.EthereumKeyRotation, txHash TxHash, vegaTime time.Time,
+	seqNum uint64,
+) (EthereumKeyRotation, error) {
 	return EthereumKeyRotation{
 		NodeID:      NodeID(kr.NodeId),
 		OldAddress:  EthereumAddress(kr.OldAddress),
@@ -38,6 +41,7 @@ func EthereumKeyRotationFromProto(kr *eventspb.EthereumKeyRotation, txHash TxHas
 		BlockHeight: kr.BlockHeight,
 		TxHash:      txHash,
 		VegaTime:    vegaTime,
+		SeqNum:      seqNum,
 	}, nil
 }
 

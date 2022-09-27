@@ -58,7 +58,7 @@ type SocketClient interface {
 	SendBatch(events []events.Event) error
 }
 
-type FileClient interface {
+type FileClientSend interface {
 	SendBatch(events []events.Event) error
 }
 
@@ -87,7 +87,7 @@ type Broker struct {
 
 	config       Config
 	socketClient SocketClient
-	fileClient   FileClient
+	fileClient   FileClientSend
 	canStream    bool // whether not we should send events to the socketClient
 }
 
@@ -118,7 +118,7 @@ func New(ctx context.Context, log *logging.Logger, config Config) (*Broker, erro
 	}
 
 	if config.File.Enabled {
-		fc, err := newFileClient(log, &config.File)
+		fc, err := NewFileClient(log, &config.File)
 		if err != nil {
 			return nil, fmt.Errorf("failed to initialize file client: %w", err)
 		}

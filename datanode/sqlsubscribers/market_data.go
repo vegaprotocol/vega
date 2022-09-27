@@ -76,9 +76,9 @@ func (md *MarketData) convertMarketDataProto(data *types.MarketData, seqNum uint
 		return nil, err
 	}
 
-	record.SyntheticTime = md.vegaTime.Add(time.Duration(record.SeqNum) * time.Microsecond)
 	record.VegaTime = md.vegaTime
 	record.SeqNum = seqNum
+	record.SyntheticTime = md.vegaTime.Add(time.Duration(seqNum) * time.Microsecond)
 
 	return record, nil
 }

@@ -22,12 +22,13 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 )
 
 type positionEventBase interface {
 	events.Event
-	PartyID() string
 	MarketID() string
+	PartyID() string
 	Timestamp() int64
 }
 
@@ -46,6 +47,12 @@ type lossSocialization interface {
 type settleDistressed interface {
 	positionEventBase
 	Margin() *num.Uint
+}
+
+type settleMarket interface {
+	positionEventBase
+	SettledPrice() *num.Uint
+	PositionFactor() num.Decimal
 }
 
 type PositionStore interface {
@@ -78,6 +85,7 @@ func (p *Position) Types() []events.Type {
 		events.SettlePositionEvent,
 		events.SettleDistressedEvent,
 		events.LossSocializationEvent,
+		events.SettleMarketEvent,
 	}
 }
 
@@ -93,7 +101,9 @@ func (p *Position) Push(ctx context.Context, evt events.Event) error {
 	case lossSocialization:
 		return p.handleLossSocialization(ctx, event)
 	case settleDistressed:
-		return p.handleSettleDestressed(ctx, event)
+		return p.handleSettleDistressed(ctx, event)
+	case settleMarket:
+		return p.handleSettleMarket(ctx, event)
 	default:
 		return errors.Errorf("unknown event type %s", evt.Type().String())
 	}
@@ -115,12 +125,33 @@ func (p *Position) handleLossSocialization(ctx context.Context, event lossSocial
 	return p.updatePosition(ctx, pos)
 }
 
-func (p *Position) handleSettleDestressed(ctx context.Context, event settleDistressed) error {
+func (p *Position) handleSettleDistressed(ctx context.Context, event settleDistressed) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	pos := p.getPosition(ctx, event)
-	pos.UpdateWithSettleDestressed(event)
+	pos.UpdateWithSettleDistressed(event)
 	return p.updatePosition(ctx, pos)
+}
+
+func (p *Position) handleSettleMarket(ctx context.Context, event settleMarket) error {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+	p.log.Info("handling market settled event", zap.Any("market", event.MarketID()))
+	pos, err := p.store.GetByMarket(ctx, event.MarketID())
+	if err != nil {
+		return errors.Wrap(err, "error getting positions")
+	}
+	p.log.Info("got positions", zap.Any("positions", pos))
+	for i := range pos {
+		p.log.Info("updating position", zap.Int("index", i))
+		pos[i].UpdateWithSettleMarket(event)
+		err := p.updatePosition(ctx, pos[i])
+		if err != nil {
+			return errors.Wrap(err, "error updating position")
+		}
+	}
+
+	return nil
 }
 
 func (p *Position) getPosition(ctx context.Context, e positionEventBase) entities.Position {

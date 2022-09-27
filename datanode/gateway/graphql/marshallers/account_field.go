@@ -36,6 +36,8 @@ func UnmarshalAccountField(i interface{}) (*v2.AccountField, error) {
 		af = v2.AccountField_ACCOUNT_FIELD_ID
 	case v == "PartyId":
 		af = v2.AccountField_ACCOUNT_FIELD_PARTY_ID
+	case v == "MarketId":
+		af = v2.AccountField_ACCOUNT_FIELD_MARKET_ID
 	case v == "AssetId":
 		af = v2.AccountField_ACCOUNT_FIELD_ASSET_ID
 	case v == "AccountType":

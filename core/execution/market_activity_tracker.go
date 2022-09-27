@@ -61,7 +61,7 @@ type MarketActivityTracker struct {
 func NewMarketActivityTracker(log *logging.Logger, epochEngine EpochEngine) *MarketActivityTracker {
 	mat := &MarketActivityTracker{
 		marketToTracker: map[string]*marketTracker{},
-		ss:              &snapshotState{changed: true},
+		ss:              &snapshotState{},
 		log:             log,
 	}
 	epochEngine.NotifyOnEpoch(mat.onEpochEvent, mat.onEpochRestore)
@@ -100,7 +100,6 @@ func (mat *MarketActivityTracker) MarketProposed(asset, marketID, proposer strin
 		totalMakerFeesPaid:     num.UintZero(),
 		totalLPFees:            num.UintZero(),
 	}
-	mat.ss.changed = true
 }
 
 // AddValueTraded records the value of a trade done in the given market.
@@ -109,7 +108,6 @@ func (mat *MarketActivityTracker) AddValueTraded(marketID string, value *num.Uin
 		return
 	}
 	mat.marketToTracker[marketID].valueTraded.AddSum(value)
-	mat.ss.changed = true
 }
 
 // GetMarketsWithEligibleProposer gets all the markets within the given asset (or just all the markets in scope passed as a parameter) that
@@ -184,7 +182,6 @@ func (mat *MarketActivityTracker) MarkPaidProposer(market, payoutAsset string, m
 		if _, ok := t.proposersPaid[ID]; !ok {
 			t.proposersPaid[ID] = struct{}{}
 		}
-		mat.ss.changed = true
 	}
 }
 
@@ -241,7 +238,6 @@ func (mat *MarketActivityTracker) GetAllMarketIDs() []string {
 func (mat *MarketActivityTracker) RemoveMarket(marketID string) {
 	if m, ok := mat.marketToTracker[marketID]; ok {
 		m.readyToDelete = true
-		mat.ss.changed = true
 	}
 }
 
@@ -249,7 +245,6 @@ func (mat *MarketActivityTracker) RemoveMarket(marketID string) {
 func (mat *MarketActivityTracker) onEpochEvent(_ context.Context, epoch types.Epoch) {
 	if epoch.Action == proto.EpochAction_EPOCH_ACTION_START {
 		mat.clearFeeActivity()
-		mat.ss.changed = true
 	}
 	mat.currentEpoch = epoch.Seq
 }
@@ -386,7 +381,6 @@ func (mat *MarketActivityTracker) UpdateFeesFromTransfers(market string, transfe
 // addFees records fees paid/received in a given metric to a given party.
 func (mat *MarketActivityTracker) addFees(m map[string]*num.Uint, party string, amount, total *num.Uint) {
 	total.AddSum(amount)
-	mat.ss.changed = true
 	if _, ok := m[party]; !ok {
 		m[party] = amount.Clone()
 		return

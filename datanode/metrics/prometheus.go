@@ -65,6 +65,11 @@ var (
 	apiRequestCallCounter *prometheus.CounterVec
 	// Total time counters for each request type per API.
 	apiRequestTimeCounter *prometheus.CounterVec
+
+	lastSnapshotRowcount          prometheus.Gauge
+	lastSnapshotCurrentStateBytes prometheus.Gauge
+	lastSnapshotHistoryBytes      prometheus.Gauge
+	lastSnapshotSeconds           prometheus.Gauge
 )
 
 // abstract prometheus types.
@@ -518,6 +523,70 @@ func setupMetrics() error {
 	}
 	blockHeight = bh
 
+	h, err = addInstrument(
+		Gauge,
+		"last_snapshot_rowcount",
+		Namespace("datanode"),
+		Vectors(),
+		Help("Last Snapshot Row Count"),
+	)
+	if err != nil {
+		return err
+	}
+	lsr, err := h.Gauge()
+	if err != nil {
+		return err
+	}
+	lastSnapshotRowcount = lsr
+
+	h, err = addInstrument(
+		Gauge,
+		"last_snapshot_history_bytes",
+		Namespace("datanode"),
+		Vectors(),
+		Help("The compressed byte size of the last snapshots history data"),
+	)
+	if err != nil {
+		return err
+	}
+	lshb, err := h.Gauge()
+	if err != nil {
+		return err
+	}
+	lastSnapshotHistoryBytes = lshb
+
+	h, err = addInstrument(
+		Gauge,
+		"last_snapshot_current_state_bytes",
+		Namespace("datanode"),
+		Vectors(),
+		Help("The compressed byte size of the last snapshots current state data"),
+	)
+	if err != nil {
+		return err
+	}
+	lscs, err := h.Gauge()
+	if err != nil {
+		return err
+	}
+	lastSnapshotCurrentStateBytes = lscs
+
+	h, err = addInstrument(
+		Gauge,
+		"last_snapshot_seconds",
+		Namespace("datanode"),
+		Vectors(),
+		Help("Last Snapshot Time Taken in Seconds"),
+	)
+	if err != nil {
+		return err
+	}
+	lss, err := h.Gauge()
+	if err != nil {
+		return err
+	}
+	lastSnapshotSeconds = lss
+
 	//
 	// API usage metrics start here
 	//
@@ -642,6 +711,34 @@ func SetBlockHeight(height float64) {
 		return
 	}
 	blockHeight.Set(height)
+}
+
+func SetLastSnapshotRowcount(count float64) {
+	if lastSnapshotRowcount == nil {
+		return
+	}
+	lastSnapshotRowcount.Set(count)
+}
+
+func SetLastSnapshotCurrentStateBytes(bytes float64) {
+	if lastSnapshotCurrentStateBytes == nil {
+		return
+	}
+	lastSnapshotCurrentStateBytes.Set(bytes)
+}
+
+func SetLastSnapshotHistoryBytes(bytes float64) {
+	if lastSnapshotHistoryBytes == nil {
+		return
+	}
+	lastSnapshotHistoryBytes.Set(bytes)
+}
+
+func SetLastSnapshotSeconds(seconds float64) {
+	if lastSnapshotSeconds == nil {
+		return
+	}
+	lastSnapshotSeconds.Set(seconds)
 }
 
 // APIRequestAndTimeREST updates the metrics for REST API calls.

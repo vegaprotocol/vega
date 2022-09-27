@@ -162,7 +162,6 @@ func NewWitness(log *logging.Logger, cfg Config, top ValidatorTopology, cmd Comm
 		needResendRes:          map[string]struct{}{},
 		validatorVotesRequired: defaultValidatorsVoteRequired,
 		wss: &witnessSnapshotState{
-			changed:    true,
 			serialised: []byte{},
 		},
 	}
@@ -213,14 +212,7 @@ func (w *Witness) AddNodeCheck(_ context.Context, nv *commandspb.NodeVote, key c
 		return ErrVoteFromNonValidator
 	}
 
-	w.setChangedLocked(true)
 	return r.addVote(key.Hex())
-}
-
-func (w *Witness) setChangedLocked(changed bool) {
-	w.wss.mu.Lock()
-	w.wss.changed = changed
-	w.wss.mu.Unlock()
 }
 
 func (w *Witness) StartCheck(
@@ -248,7 +240,6 @@ func (w *Witness) StartCheck(
 	}
 
 	w.resources[id] = rs
-	w.setChangedLocked(true)
 
 	// if we are a validator, we just start the routine.
 	// so we can ensure the resources exists
@@ -365,7 +356,6 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 			v.cb(v.res, checkPass)
 			// we delete the resource from our map.
 			delete(w.resources, k)
-			w.setChangedLocked(true)
 			continue
 		}
 

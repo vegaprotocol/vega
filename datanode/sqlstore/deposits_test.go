@@ -36,7 +36,6 @@ var testID = hex.EncodeToString([]byte(vgrand.RandomStr(5)))
 
 func TestDeposits(t *testing.T) {
 	t.Run("Upsert should insert deposits if one doesn't exist for the block", testAddDepositForNewBlock)
-	t.Run("Upsert should error if the vega block does not exist", testErrorIfBlockDoesNotExist)
 	t.Run("Upsert should update deposits if one already exists for the block", testUpdateDepositForBlockIfExists)
 	t.Run("Upsert should insert deposit updates if the same deposit id is inserted in a different block", testInsertDepositUpdatesIfNewBlock)
 	t.Run("GetByID should retrieve the latest state of the deposit with the given ID", testDepositsGetByID)
@@ -109,29 +108,6 @@ func testAddDepositForNewBlock(t *testing.T) {
 	err = conn.QueryRow(ctx, `select count(*) from deposits`).Scan(&rowCount)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, rowCount)
-}
-
-func testErrorIfBlockDoesNotExist(t *testing.T) {
-	testTimeout := time.Second * 10
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
-
-	bs, ds, conn := setupDepositStoreTests(t, ctx)
-
-	var rowCount int
-
-	err := conn.QueryRow(ctx, `select count(*) from deposits`).Scan(&rowCount)
-	require.NoError(t, err)
-	assert.Equal(t, 0, rowCount)
-
-	block := addTestBlock(t, bs)
-	depositProto := getTestDeposit(testID, testID, testID, testAmount, testID, time.Now().UnixNano())
-
-	deposit, err := entities.DepositFromProto(depositProto, generateTxHash(), block.VegaTime.Add(time.Second))
-	require.NoError(t, err, "Converting market proto to database entity")
-
-	err = ds.Upsert(context.Background(), deposit)
-	require.Error(t, err, "Should error if the block does not exist")
 }
 
 func testUpdateDepositForBlockIfExists(t *testing.T) {

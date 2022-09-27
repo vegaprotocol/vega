@@ -84,12 +84,14 @@ func TestPosition(t *testing.T) {
 	pos2 := addTestPosition(t, ps, market1, party2, 300, block2)
 	pos3 := addTestPosition(t, ps, market2, party1, 400, block2)
 
-	ps.Flush(ctx)
+	_, err := ps.Flush(ctx)
+	require.NoError(t, err)
+
 	_, _ = pos1a, pos1b
 
 	// Conflate the data and add some new positions so all tests run against a mix of conflated and non-conflated data
 	now := time.Now()
-	_, err := connectionSource.Connection.Exec(context.Background(), fmt.Sprintf("CALL refresh_continuous_aggregate('conflated_positions', '%s', '%s');",
+	_, err = connectionSource.Connection.Exec(context.Background(), fmt.Sprintf("CALL refresh_continuous_aggregate('conflated_positions', '%s', '%s');",
 		now.Add(-48*time.Hour).Format("2006-01-02"),
 		time.Now().Format("2006-01-02")))
 

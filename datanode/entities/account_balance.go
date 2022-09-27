@@ -57,7 +57,7 @@ func (ab AccountBalance) ToProtoEdge(_ ...any) (*v2.AccountEdge, error) {
 }
 
 type AccountBalanceKey struct {
-	AccountID int64
+	AccountID AccountID
 	VegaTime  time.Time
 }
 
@@ -86,7 +86,7 @@ func (ab AccountBalance) Equal(other AccountBalance) bool {
 }
 
 type AccountCursor struct {
-	AccountID int64 `json:"account_id"`
+	AccountID AccountID `json:"account_id"`
 }
 
 func (ac AccountCursor) String() string {

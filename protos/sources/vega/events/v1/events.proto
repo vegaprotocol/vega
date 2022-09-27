@@ -328,6 +328,17 @@ message SettlePosition {
   string position_factor = 5;
 }
 
+// A settle market event tp notify data-node that a market has been settled
+// so positions and PL can be updated accordingly
+message SettleMarket {
+  // Market identifier for the event
+  string market_id = 1;
+  // Price of settlement as a string
+  string price = 2;
+  // Position factor - 10 ^ number of position decimal places
+  string position_factor = 3;
+}
+
 // A position state event contains the current position state for a single party in a single market
 message PositionStateEvent {
   // Party identifier for this position update
@@ -614,6 +625,8 @@ enum BusEventType {
   BUS_EVENT_TYPE_END_BLOCK = 50;
   // The core is starting a protocol upgrade
   BUS_EVENT_TYPE_PROTOCOL_UPGRADE_STARTED = 51;
+  // The market has stopped and settled
+  BUS_EVENT_TYPE_SETTLE_MARKET = 52;
 
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
@@ -728,6 +741,8 @@ message BusEvent {
     EndBlock end_block = 149;
     // The core is starting a protocol upgrade
     ProtocolUpgradeStarted protocol_upgrade_started = 150;
+    // Settle market event for data-node to update positions for settled markets
+    SettleMarket settle_market = 151;
 
     // Market tick events - See [MarketEvent](#vega.MarketEvent)
     MarketEvent market = 1001;
