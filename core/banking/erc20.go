@@ -56,7 +56,7 @@ func (e *Engine) EnableERC20(
 
 	aa := &assetAction{
 		id:          id,
-		state:       pendingState,
+		state:       newPendingState(),
 		erc20AL:     al,
 		asset:       asset,
 		blockHeight: blockNumber,
@@ -81,10 +81,9 @@ func (e *Engine) UpdateERC20(
 			logging.AssetID(event.VegaAssetID),
 		)
 	}
-
 	aa := &assetAction{
 		id:                      id,
-		state:                   pendingState,
+		state:                   newPendingState(),
 		erc20AssetLimitsUpdated: event,
 		asset:                   asset,
 		blockHeight:             blockNumber,
@@ -124,7 +123,7 @@ func (e *Engine) DepositERC20(
 
 	aa := &assetAction{
 		id:          dep.ID,
-		state:       pendingState,
+		state:       newPendingState(),
 		erc20D:      d,
 		asset:       asset,
 		blockHeight: blockNumber,

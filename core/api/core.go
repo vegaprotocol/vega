@@ -64,7 +64,7 @@ type coreService struct {
 
 	chainID                  string
 	genesisTime              time.Time
-	hasGenesisTimeAndChainID uint32
+	hasGenesisTimeAndChainID atomic.Bool
 	mu                       sync.Mutex
 
 	netInfo   *tmctypes.ResultNetInfo
@@ -100,7 +100,7 @@ func (s *coreService) LastBlockHeight(
 ) (*protoapi.LastBlockHeightResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("LastBlockHeight")()
 
-	if atomic.LoadUint32(&s.hasGenesisTimeAndChainID) == 0 {
+	if !s.hasGenesisTimeAndChainID.Load() {
 		if err := s.getGenesisTimeAndChainID(ctx); err != nil {
 			return nil, fmt.Errorf("failed to intialise chainID: %w", err)
 		}
@@ -367,7 +367,7 @@ func (s *coreService) getTendermintStats(
 		return 0, 0, nil, "", apiError(codes.Internal, ErrBlockchainBacklogLength, err)
 	}
 
-	if atomic.LoadUint32(&s.hasGenesisTimeAndChainID) == 0 {
+	if !s.hasGenesisTimeAndChainID.Load() {
 		if err = s.getGenesisTimeAndChainID(ctx); err != nil {
 			return 0, 0, nil, "", err
 		}
@@ -435,7 +435,7 @@ func (s *coreService) getGenesisTimeAndChainID(ctx context.Context) error {
 		return apiError(codes.Internal, ErrBlockchainChainID, err)
 	}
 
-	atomic.StoreUint32(&s.hasGenesisTimeAndChainID, 1)
+	s.hasGenesisTimeAndChainID.Store(true)
 	return nil
 }
 

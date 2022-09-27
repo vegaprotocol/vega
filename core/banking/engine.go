@@ -245,7 +245,7 @@ func (e *Engine) OnTick(ctx context.Context, _ time.Time) {
 	// iterate over asset actions deterministically
 	for _, k := range assetActionKeys {
 		v := e.assetActs[k]
-		state := atomic.LoadUint32(&v.state)
+		state := v.state.Load()
 		if state == pendingState {
 			continue
 		}
@@ -319,7 +319,7 @@ func (e *Engine) onCheckDone(i interface{}, valid bool) {
 	if valid {
 		newState = okState
 	}
-	atomic.StoreUint32(&aa.state, newState)
+	aa.state.Store(newState)
 }
 
 func (e *Engine) getWithdrawalFromRef(ref *big.Int) (*types.Withdrawal, error) {
@@ -485,4 +485,10 @@ func getRefKey(ref snapshot.TxRef) (string, error) {
 	}
 
 	return hex.EncodeToString(crypto.Hash(buf)), nil
+}
+
+func newPendingState() *atomic.Uint32 {
+	state := &atomic.Uint32{}
+	state.Store(pendingState)
+	return state
 }
