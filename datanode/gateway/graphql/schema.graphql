@@ -3313,6 +3313,9 @@ type UpdateAsset {
 
   "The source of the updated asset"
   source: UpdateAssetSource!
+
+  "The asset to update"
+  assetId: ID!
 }
 
 """

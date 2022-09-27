@@ -12,8 +12,8 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🐛 Fixes
+- [6296](https://github.com/vegaprotocol/vega/issues/6296) - Add `assetId` as a field to the `GraphQL UpdateAsset` type
 - [6273](https://github.com/vegaprotocol/vega/issues/6273) - Deposits return an empty list when no party is provided
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 
 ## 0.56.0
