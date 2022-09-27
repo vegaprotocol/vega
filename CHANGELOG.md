@@ -11,6 +11,7 @@
 
 ### 🛠 Improvements
 - [6348](https://github.com/vegaprotocol/vega/issues/6348) - Reduce pool size to leave more available `Postgres` connections
+- [6312](https://github.com/vegaprotocol/vega/issues/6312) - Add back amended balance tests and correct ordering
 
 ### 🐛 Fixes
 - [6266](https://github.com/vegaprotocol/vega/issues/6266) - Do not take a snapshot at block height 1 and handle increase of interval appropriately
