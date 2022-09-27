@@ -27,6 +27,7 @@ var (
 	defaultLiquidityMonitoring          embed.FS
 	defaultLiquidityMonitoringFileNames = []string{
 		"defaults/liquidity-monitoring/default-parameters.json",
+		"defaults/liquidity-monitoring/default-tenth.json",
 	}
 )
 

@@ -301,7 +301,7 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 	}
 
 	if tr, err := netparams.GetDecimal("market.liquidity.targetstake.triggering.ratio"); err == nil {
-		liqMon.TargetStakeParameters.ScalingFactor = tr
+		liqMon.TriggeringRatio = tr
 	}
 
 	m := types.Market{
@@ -375,7 +375,7 @@ func parseMarketsTable(table *godog.Table) []RowWrapper {
 	}, []string{
 		"decimal places",
 		"position decimal places",
-		"liquidity monitoring", // @TODO not implemented yet
+		"liquidity monitoring",
 	})
 }
 
@@ -386,7 +386,7 @@ func parseMarketsUpdateTable(table *godog.Table) []RowWrapper {
 		"oracle config",         // product update
 		"price monitoring",      // price monitoring update
 		"risk model",            // risk model update
-		"liquidity monitoring ", // @TODO not implemented yet
+		"liquidity monitoring ", // liquidity monitoring update
 	})
 }
 
