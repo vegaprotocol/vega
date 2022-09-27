@@ -15,8 +15,8 @@ package evtforward
 import (
 	"time"
 
-	"code.vegaprotocol.io/vega/core/config/encoding"
 	"code.vegaprotocol.io/vega/core/evtforward/ethereum"
+	"code.vegaprotocol.io/vega/libs/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
 )
 
