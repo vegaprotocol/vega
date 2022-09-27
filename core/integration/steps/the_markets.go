@@ -38,7 +38,7 @@ func TheMarketsUpdated(
 	validByID := make(map[string]*types.Market, len(existing))
 	for i := range existing {
 		m := existing[i]
-		validByID[m.ID] = &exisiing[i]
+		validByID[m.ID] = &existing[i]
 	}
 	updates := make([]types.UpdateMarket, 0, len(rows))
 	updated := make([]*types.Market, 0, len(rows))
