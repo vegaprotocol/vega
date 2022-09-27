@@ -68,44 +68,42 @@ func (b *Service) createSnapshot(ctx context.Context, chainID string, fromHeight
 		return Meta{}, fmt.Errorf("failed to begin copy table data transaction: %w", err)
 	}
 
-	_, err = copyDataTx.Exec(ctx, "SET TIME ZONE 'UTC'")
-	if err != nil {
+	if _, err = copyDataTx.Exec(ctx, "SET TIME ZONE 0"); err != nil {
+		copyDataTx.Rollback(ctx)
 		return Meta{}, fmt.Errorf("failed to set timezone to UTC:%w", err)
 	}
 
-	_, err = copyDataTx.Exec(ctx, "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE")
-	if err != nil {
+	if _, err = copyDataTx.Exec(ctx, "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE"); err != nil {
+		copyDataTx.Rollback(ctx)
 		return Meta{}, fmt.Errorf("failed to set transaction isolation level to serilizable:%w", err)
 	}
 
 	snapshotInProgressFile := filepath.Join(b.snapshotsPath, InProgressFileName(chainID, toHeight))
-	_, err = os.Create(snapshotInProgressFile)
-	if err != nil {
+	if _, err = os.Create(snapshotInProgressFile); err != nil {
+		copyDataTx.Rollback(ctx)
 		return Meta{}, fmt.Errorf("failed to create write lock file:%w", err)
 	}
 
 	if async {
 		go func() {
 			err = b.snapshotData(ctx, copyDataTx, dbMetaData, currentSnapshot, historySnapshot, chainID, toHeight)
-			b.snapshotInProgress.Store(false)
 			if err != nil {
-				b.log.Errorf("failed to snapshot data:%s", err)
-			} else {
-				err = os.Remove(snapshotInProgressFile)
-				if err != nil {
-					b.log.Errorf("failed to remove snapshot in progress file:%s", err)
-				}
+				b.log.Panic("failed to snapshot data", logging.Error(err))
+			}
+			b.snapshotInProgress.Store(false)
+
+			if err = os.Remove(snapshotInProgressFile); err != nil {
+				b.log.Errorf("failed to remove snapshot in progress file:%s", err)
 			}
 		}()
 	} else {
 		err = b.snapshotData(ctx, copyDataTx, dbMetaData, currentSnapshot, historySnapshot, chainID, toHeight)
-		b.snapshotInProgress.Store(false)
 		if err != nil {
-			return Meta{}, fmt.Errorf("failed to snapshot data:%w", err)
+			b.log.Panic("failed to snapshot data", logging.Error(err))
 		}
+		b.snapshotInProgress.Store(false)
 
-		err = os.Remove(snapshotInProgressFile)
-		if err != nil {
+		if err = os.Remove(snapshotInProgressFile); err != nil {
 			return Meta{}, fmt.Errorf("failed to remove snapshot in progress file:%w", err)
 		}
 	}
@@ -128,6 +126,7 @@ func (b *Service) snapshotData(ctx context.Context, copyDataTx pgx.Tx, dbMetaDat
 ) error {
 	uncompressedCurrentDataDir, err := b.createUncompressedDataDirectory(currentSnapshot.UncompressedDataDir())
 	if err != nil {
+		copyDataTx.Rollback(ctx)
 		return fmt.Errorf("failed to create uncompressed data directory for current snapshot:%w", err)
 	}
 	defer func() {
@@ -138,6 +137,7 @@ func (b *Service) snapshotData(ctx context.Context, copyDataTx pgx.Tx, dbMetaDat
 
 	uncompressedHistoryDataDir, err := b.createUncompressedDataDirectory(historySnapshot.UncompressedDataDir())
 	if err != nil {
+		copyDataTx.Rollback(ctx)
 		return fmt.Errorf("failed to create uncompressed data directory for history snapshot:%w", err)
 	}
 	defer func() {

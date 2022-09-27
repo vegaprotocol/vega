@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/utils/databasetest"
 	"code.vegaprotocol.io/vega/logging"
+
 	"github.com/jackc/pgx/v4/pgxpool"
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
@@ -94,7 +95,6 @@ func TestMain(t *testing.M) {
 
 					waitForSnapshotToCompleteUseMeta(lastSnapshot, snapshotsDir)
 					snapshots = append(snapshots, lastSnapshot)
-
 					md5Hash, err := snapshot.GetSnapshotMd5Hash(log, lastSnapshot.CurrentStateSnapshotFile, lastSnapshot.HistorySnapshotFile)
 					if err != nil {
 						panic(fmt.Errorf("failed to get snapshot hash:%w", err))
