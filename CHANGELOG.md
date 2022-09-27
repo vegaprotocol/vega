@@ -12,6 +12,7 @@
 ### 🛠 Improvements
 - [6283](https://github.com/vegaprotocol/vega/issues/6283) - Add commit hash to version if is development version
 - [6321](https://github.com/vegaprotocol/vega/issues/6321) - Get rid of the `HasChanged` check in snapshot engines
+- [6126](https://github.com/vegaprotocol/vega/issues/6126) - Don't generate market depth subscription messages if nothing has changed
 
 ### 🐛 Fixes
 - [6307](https://github.com/vegaprotocol/vega/issues/6307) - Emit an event with status rejected if a protocol upgrade proposal has no validator behind it
