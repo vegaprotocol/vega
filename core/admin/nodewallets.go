@@ -17,7 +17,6 @@ import (
 	"net/http"
 
 	"code.vegaprotocol.io/vega/core/nodewallets"
-	"code.vegaprotocol.io/vega/core/nodewallets/eth"
 	"code.vegaprotocol.io/vega/core/nodewallets/eth/clef"
 	"code.vegaprotocol.io/vega/core/nodewallets/eth/keystore"
 	"code.vegaprotocol.io/vega/core/nodewallets/registry"
@@ -118,10 +117,10 @@ func (nw *NodeWallet) Reload(r *http.Request, args *NodeWalletArgs, reply *NodeW
 
 		algoType := nw.nodeWallets.Ethereum.Algo()
 		_, isKeyStoreWallet := reg.Ethereum.Details.(registry.EthereumKeyStoreWallet)
-		clefWalletReg, isClefWallet := reg.Ethereum.Details.(registry.EthereumClefWallet)
+		_, isClefWallet := reg.Ethereum.Details.(registry.EthereumClefWallet)
 
 		if isKeyStoreWallet && algoType != keystore.KeyStoreAlgoType {
-			w, err := nodewallets.GetEthereumWalletWithRegistry(eth.Config{}, nw.vegaPaths, reg)
+			w, err := nodewallets.GetEthereumWalletWithRegistry(nw.vegaPaths, reg)
 			if err != nil {
 				return fmt.Errorf("failed reload key: %w", err)
 			}
@@ -129,7 +128,6 @@ func (nw *NodeWallet) Reload(r *http.Request, args *NodeWalletArgs, reply *NodeW
 			nw.nodeWallets.SetEthereumWallet(w)
 		} else if isClefWallet && algoType != clef.ClefAlgoType {
 			w, err := nodewallets.GetEthereumWalletWithRegistry(
-				eth.Config{ClefAddress: clefWalletReg.ClefAddress},
 				nw.vegaPaths,
 				reg,
 			)

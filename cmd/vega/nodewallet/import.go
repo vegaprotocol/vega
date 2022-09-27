@@ -32,6 +32,7 @@ import (
 var (
 	ErrOneOfTendermintFlagIsRequired       = errors.New("one of --tendermint-home or --tendermint-pubkey flag is required")
 	ErrTendermintFlagsAreMutuallyExclusive = errors.New("--tendermint-home and --tendermint-pubkey are mutually exclusive")
+	ErrClefOptionMissing                   = errors.New("--clef-account and --clef-address must both be set to import a clef wallet")
 )
 
 type importCmd struct {
@@ -39,12 +40,15 @@ type importCmd struct {
 
 	Config nodewallets.Config
 
-	WalletPassphrase   config.Passphrase   `long:"wallet-passphrase-file"`
-	ClefAccountAddress config.PromptString `long:"clef-account-address" description:"The Ethereum account address to be imported by Vega from Clef. In hex."`
+	WalletPassphrase config.Passphrase `long:"wallet-passphrase-file"`
 
 	Chain      string              `short:"c" long:"chain" required:"true" description:"The chain to be imported" choice:"vega" choice:"ethereum" choice:"tendermint"`
 	WalletPath config.PromptString `long:"wallet-path" description:"The path to the wallet file to import"`
 	Force      bool                `long:"force" description:"Should the command re-write an existing nodewallet file if it exists"`
+
+	// clef flags
+	EthereumClefAddress string `long:"ethereum-clef-address" description:"The URL to the clef instance that Vega will use."`
+	EthereumClefAccount string `long:"ethereum-clef-account" description:"The Ethereum account to be imported by Vega from Clef. In hex."`
 
 	// tendermint flags
 	TendermintPubkey string `long:"tendermint-pubkey" description:"The tendermint pubkey of the tendermint validator node"`
@@ -59,6 +63,10 @@ func (opts *importCmd) Execute(_ []string) error {
 
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer log.AtExit()
+
+	if (opts.EthereumClefAccount != "") != (opts.EthereumClefAddress != "") {
+		return ErrClefOptionMissing
+	}
 
 	registryPass, err := rootCmd.PassphraseFile.Get("node wallet", false)
 	if err != nil {
@@ -78,10 +86,8 @@ func (opts *importCmd) Execute(_ []string) error {
 		return err
 	}
 
-	clefEnabled := opts.Config.ETH.ClefAddress != ""
-
 	var walletPass, walletPath string
-	if opts.Chain == vegaChain || (opts.Chain == ethereumChain && !clefEnabled) {
+	if opts.Chain == vegaChain || (opts.Chain == ethereumChain && opts.EthereumClefAddress == "") {
 		walletPass, err = opts.WalletPassphrase.Get("blockchain wallet", false)
 		if err != nil {
 			return err
@@ -95,20 +101,12 @@ func (opts *importCmd) Execute(_ []string) error {
 	var data map[string]string
 	switch opts.Chain {
 	case ethereumChain:
-		var accountAddress string
-		if clefEnabled {
-			accountAddress, err = opts.ClefAccountAddress.Get("Clef account address", "clef-account-address")
-			if err != nil {
-				return err
-			}
-		}
-
 		data, err = nodewallets.ImportEthereumWallet(
-			opts.Config.ETH,
 			vegaPaths,
 			registryPass,
 			walletPass,
-			accountAddress,
+			opts.EthereumClefAccount,
+			opts.EthereumClefAddress,
 			walletPath,
 			opts.Force,
 		)

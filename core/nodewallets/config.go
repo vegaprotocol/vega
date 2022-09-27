@@ -14,13 +14,11 @@ package nodewallets
 
 import (
 	"code.vegaprotocol.io/vega/core/config/encoding"
-	"code.vegaprotocol.io/vega/core/nodewallets/eth"
 	"code.vegaprotocol.io/vega/logging"
 )
 
 type Config struct {
 	Level encoding.LogLevel `long:"log-level"`
-	ETH   eth.Config        `group:"ETH" namespace:"eth"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration,
@@ -29,6 +27,5 @@ type Config struct {
 func NewDefaultConfig() Config {
 	return Config{
 		Level: encoding.LogLevel{Level: logging.InfoLevel},
-		ETH:   eth.NewDefaultConfig(),
 	}
 }

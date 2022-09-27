@@ -70,7 +70,7 @@ func GetNodeWallets(config Config, vegaPaths paths.Paths, registryPassphrase str
 	}
 
 	if reg.Ethereum != nil {
-		w, err := GetEthereumWalletWithRegistry(config.ETH, vegaPaths, reg)
+		w, err := GetEthereumWalletWithRegistry(vegaPaths, reg)
 		if err != nil {
 			return nil, err
 		}

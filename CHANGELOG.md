@@ -3,7 +3,7 @@
 ## Unreleased 0.57.0
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [6291](https://github.com/vegaprotocol/vega/issues/6291) - Remove `Nodewallet.ETH` configuration and add flags to supply `clef` addresses when importing or generating accounts
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
