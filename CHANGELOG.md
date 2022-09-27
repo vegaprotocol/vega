@@ -15,7 +15,7 @@
 ### 🐛 Fixes
 - [6296](https://github.com/vegaprotocol/vega/issues/6296) - Add `assetId` as a field to the `GraphQL UpdateAsset` type
 - [6273](https://github.com/vegaprotocol/vega/issues/6273) - Deposits return an empty list when no party is provided
-- [6307](https://github.com/vegaprotocol/vega/issues/6307) - Emit an event with status rejected if a protocol upgrade proposal has no validator behind it anymore
+- [6307](https://github.com/vegaprotocol/vega/issues/6307) - Emit an event with status rejected if a protocol upgrade proposal has no validator behind it
 
 
 ## 0.56.0
