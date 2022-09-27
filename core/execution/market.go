@@ -1059,10 +1059,13 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 	}
 
 	// Send an event bus update
-	m.broker.Send(endEvt)
 	m.checkForReferenceMoves(ctx, updatedOrders, true)
 	m.checkLiquidity(ctx, nil, true)
 	m.commandLiquidityAuction(ctx)
+	// only send the auction-left event if we actually *left* the auction.
+	if !m.as.InAuction() {
+		m.broker.Send(endEvt)
+	}
 }
 
 func (m *Market) validatePeggedOrder(order *types.Order) types.OrderError {
