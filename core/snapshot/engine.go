@@ -47,8 +47,6 @@ type StateProviderT interface {
 	Namespace() types.SnapshotNamespace
 	// Keys gets all the nodes this provider populates
 	Keys() []string
-	// HasChanged should return true if state for a given key was updated
-	HasChanged(key string) bool
 	// GetState returns the new state as a payload type
 	// NB: GetState must be threadsafe as it may be called from multiple goroutines concurrently!
 	GetState(key string) *types.Payload
@@ -915,11 +913,10 @@ func worker(e *Engine, nsInputChan chan nsInput, resChan chan<- nsSnapResult, wg
 		p := e.providers[treeKeyStr] // get the specific provider for this key
 		providerKey := e.treeKeyProvider[treeKeyStr]
 		e.lock.RUnlock()
-		hasChanged := p.HasChanged(providerKey)
 		stopped := p.Stopped()
 		// nothing has changed (or both values were nil)
-		if !hasChanged || stopped {
-			resChan <- nsSnapResult{input: input, updated: hasChanged, toRemove: stopped}
+		if stopped {
+			resChan <- nsSnapResult{input: input, updated: true, toRemove: stopped}
 			if atomic.AddInt64(cnt, -1) <= 0 {
 				close(nsInputChan)
 				close(resChan)

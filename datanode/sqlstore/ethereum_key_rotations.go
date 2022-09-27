@@ -71,7 +71,7 @@ func (store *EthereumKeyRotations) List(ctx context.Context,
 
 	ethereumKeyRotations := []entities.EthereumKeyRotation{}
 
-	if err = pgxscan.Select(ctx, store.pool, &ethereumKeyRotations, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, store.Connection, &ethereumKeyRotations, query, args...); err != nil {
 		return nil, entities.PageInfo{}, err
 	}
 

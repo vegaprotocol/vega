@@ -268,7 +268,7 @@ func (store *Node) GetNodeData(ctx context.Context) (entities.NodeData, error) {
 
 	nodeData := entities.NodeData{}
 
-	err := pgxscan.Get(ctx, store.pool, &nodeData, query)
+	err := pgxscan.Get(ctx, store.Connection, &nodeData, query)
 	return nodeData, err
 }
 
@@ -361,7 +361,7 @@ func (store *Node) GetNodes(ctx context.Context, epochSeq uint64, pagination ent
 		return nil, pageInfo, err
 	}
 
-	if err = pgxscan.Select(ctx, store.pool, &nodes, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, store.Connection, &nodes, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("could not get nodes: %w", err)
 	}
 
@@ -450,7 +450,7 @@ func (store *Node) GetNodeByID(ctx context.Context, nodeID string, epochSeq uint
 		AND nodes.id=$2
 	`
 
-	err := pgxscan.Get(ctx, store.pool, &node, query, epochSeq, id)
+	err := pgxscan.Get(ctx, store.Connection, &node, query, epochSeq, id)
 	if pgxscan.NotFound(err) {
 		return node, fmt.Errorf("'%v': %w", nodeID, ErrNodeNotFound)
 	}

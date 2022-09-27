@@ -95,13 +95,10 @@ func New(
 		nodeWallets:         nw,
 		ethClient:           ethClient,
 		notary:              notary,
-		ass: &assetsSnapshotState{
-			changedActive:  true,
-			changedPending: true,
-		},
-		isValidator: isValidator,
-		ethToVega:   map[string]string{},
-		bridgeView:  bridgeView,
+		ass:                 &assetsSnapshotState{},
+		isValidator:         isValidator,
+		ethToVega:           map[string]string{},
+		bridgeView:          bridgeView,
 	}
 }
 
@@ -137,9 +134,6 @@ func (s *Service) Enable(ctx context.Context, assetID string) error {
 		s.ethToVega[eth.ProtoAsset().GetDetails().GetErc20().GetContractAddress()] = assetID
 	}
 	delete(s.pendingAssets, assetID)
-	s.ass.changedActive = true
-	s.ass.changedPending = true
-
 	s.broker.Send(events.NewAssetEvent(ctx, *asset.Type()))
 	return nil
 }
@@ -179,8 +173,6 @@ func (s *Service) SetPendingListing(ctx context.Context, assetID string) error {
 
 	asset.SetPendingListing()
 	s.broker.Send(events.NewAssetEvent(ctx, *asset.Type()))
-	s.ass.changedPending = true
-
 	return nil
 }
 
@@ -197,8 +189,6 @@ func (s *Service) SetRejected(ctx context.Context, assetID string) error {
 	asset.SetRejected()
 	s.broker.Send(events.NewAssetEvent(ctx, *asset.Type()))
 	delete(s.pendingAssets, assetID)
-	s.ass.changedPending = true
-
 	return nil
 }
 
@@ -280,7 +270,6 @@ func (s *Service) NewAsset(ctx context.Context, proposalID string, assetDetails 
 		return "", err
 	}
 	s.pendingAssets[proposalID] = asset
-	s.ass.changedPending = true
 	s.broker.Send(events.NewAssetEvent(ctx, *asset.Type()))
 
 	return proposalID, err
@@ -298,7 +287,6 @@ func (s *Service) StageAssetUpdate(updatedAssetProto *types.Asset) error {
 		return fmt.Errorf("couldn't update asset: %w", err)
 	}
 	s.pendingAssetUpdates[updatedAssetProto.ID] = updatedAsset
-	s.ass.changedPendingUpdates = true
 	return nil
 }
 
@@ -324,8 +312,6 @@ func (s *Service) ApplyAssetUpdate(ctx context.Context, assetID string) error {
 	}
 
 	delete(s.pendingAssetUpdates, assetID)
-	s.ass.changedActive = true
-	s.ass.changedPendingUpdates = true
 	s.broker.Send(events.NewAssetEvent(ctx, *updatedAsset.Type()))
 	return nil
 }

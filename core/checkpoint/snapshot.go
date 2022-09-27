@@ -43,10 +43,6 @@ func (e *Engine) setNextCP(t time.Time) {
 	e.updated = true
 }
 
-func (e *Engine) HasChanged(k string) bool {
-	return true
-}
-
 func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
 	if k != e.state.Key() {
 		return nil, nil, types.ErrSnapshotKeyDoesNotExist

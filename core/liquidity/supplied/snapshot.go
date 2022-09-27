@@ -17,14 +17,6 @@ import (
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
 
-func (e *Engine) HasUpdates() bool {
-	return e.changed
-}
-
-func (e *Engine) ResetUpdated() {
-	e.changed = false
-}
-
 func (e *Engine) Payload() *snapshotpb.Payload {
 	bidCache := make([]*snapshotpb.LiquidityPriceProbabilityPair, 0, len(e.pot.bidOffset))
 	for i := 0; i < len(e.pot.bidOffset); i++ {
@@ -68,6 +60,5 @@ func (e *Engine) Reload(ls *snapshotpb.LiquiditySupplied) error {
 		askProbability: askProbs,
 	}
 	e.potInitialised = ls.ConsensusReached
-	e.changed = true
 	return nil
 }

@@ -93,7 +93,6 @@ func TestGovernanceSnapshotProposalEnacted(t *testing.T) {
 
 	require.NoError(t, err)
 
-	require.True(t, eng.HasChanged(activeKey))
 	eng.GetState(activeKey) // we call get state to get change back to false
 
 	// vote for it
@@ -101,7 +100,6 @@ func TestGovernanceSnapshotProposalEnacted(t *testing.T) {
 	err = eng.addYesVote(t, voter1.Id, proposal.ID)
 	require.NoError(t, err)
 
-	require.True(t, eng.HasChanged(activeKey))
 	eng.GetState(activeKey) // we call get state to get change back to false
 
 	// chain update
@@ -112,13 +110,11 @@ func TestGovernanceSnapshotProposalEnacted(t *testing.T) {
 	eng.expectGetMarketState(t, proposal.ID)
 	eng.OnTick(context.Background(), afterClosing)
 
-	require.True(t, eng.HasChanged(activeKey))
 	eng.GetState(activeKey) // we call get state to get change back to false
 
 	afterEnactment := time.Unix(proposal.Terms.EnactmentTimestamp, 0).Add(time.Second)
 	eng.OnTick(context.Background(), afterEnactment)
 
-	require.True(t, eng.HasChanged(activeKey))
 	eng.GetState(activeKey) // we call get state to get change back to false
 
 	// check snapshot hashes (should have no active proposals and one enacted proposal)
@@ -215,8 +211,6 @@ func TestGovernanceSnapshotRoundTrip(t *testing.T) {
 	eng.expectVoteEvent(t, voter1, proposal.ID)
 	err = eng.addYesVote(t, voter1, proposal.ID)
 	require.NoError(t, err)
-	require.True(t, eng.HasChanged(activeKey))
-
 	s2, _, err := eng.GetState(activeKey)
 	require.Nil(t, err)
 	assert.False(t, bytes.Equal(s1, s2))

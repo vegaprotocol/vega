@@ -54,10 +54,6 @@ func (e *Engine) serialise() ([]byte, error) {
 	return data, nil
 }
 
-func (e *Engine) HasChanged(k string) bool {
-	return true
-}
-
 func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
 	state, err := e.serialise()
 	return state, nil, err

@@ -30,7 +30,6 @@ var (
 )
 
 type efSnapshotState struct {
-	changed    bool
 	serialised []byte
 }
 
@@ -61,22 +60,12 @@ func (f *Forwarder) getSerialised(k string) (data []byte, err error) {
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
-	if !f.HasChanged(k) {
-		return f.efss.serialised, nil
-	}
-
 	f.efss.serialised, err = f.serialise()
 	if err != nil {
 		return nil, err
 	}
 
-	f.efss.changed = false
 	return f.efss.serialised, nil
-}
-
-func (f *Forwarder) HasChanged(k string) bool {
-	// return f.efss.changed
-	return true
 }
 
 func (f *Forwarder) GetState(k string) ([]byte, []types.StateProvider, error) {
@@ -108,7 +97,6 @@ func (f *Forwarder) restore(events []*commandspb.ChainEvent, p *types.Payload) e
 	f.ackedEvtsSlice = events
 
 	var err error
-	f.efss.changed = false
 	f.efss.serialised, err = proto.Marshal(p.IntoProto())
 	return err
 }
