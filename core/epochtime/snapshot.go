@@ -49,10 +49,6 @@ func (s *Svc) Stopped() bool {
 	return false
 }
 
-func (s *Svc) HasChanged(k string) bool {
-	return true
-}
-
 func (s *Svc) GetState(k string) ([]byte, []types.StateProvider, error) {
 	if k != s.pl.Key() {
 		return nil, nil, types.ErrSnapshotKeyDoesNotExist

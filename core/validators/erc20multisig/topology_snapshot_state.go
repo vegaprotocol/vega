@@ -37,8 +37,6 @@ var (
 type topologySnapshotState struct {
 	serialisedVerifiedState []byte
 	serialisedPendingState  []byte
-	changedVerifiedState    bool
-	changedPendingState     bool
 }
 
 func (t *Topology) Namespace() types.SnapshotNamespace {
@@ -47,18 +45,6 @@ func (t *Topology) Namespace() types.SnapshotNamespace {
 
 func (t *Topology) Keys() []string {
 	return hashKeys
-}
-
-func (t *Topology) HasChanged(k string) bool {
-	// switch k {
-	// case verifiedStateKey:
-	// 	return s.tss.changedVerifiedState
-	// case pendingStateKey:
-	// 	return s.tss.changedPendingState
-	// default:
-	// 	return false
-	// }
-	return true
 }
 
 func (t *Topology) GetState(k string) ([]byte, []types.StateProvider, error) {
@@ -114,7 +100,6 @@ func (t *Topology) restoreVerifiedState(
 	}
 
 	var err error
-	t.tss.changedVerifiedState = false
 	t.tss.serialisedVerifiedState, err = proto.Marshal(p.IntoProto())
 	return err
 }
@@ -168,7 +153,6 @@ func (t *Topology) restorePendingState(
 	}
 
 	var err error
-	t.tss.changedPendingState = false
 	t.tss.serialisedPendingState, err = proto.Marshal(p.IntoProto())
 	return err
 }
@@ -270,19 +254,12 @@ func (t *Topology) serialisePendingState() ([]byte, error) {
 	}.IntoProto())
 }
 
-func (t *Topology) serialiseK(k string, serialFunc func() ([]byte, error), dataField *[]byte, changedField *bool) ([]byte, error) {
-	if !t.HasChanged(k) {
-		if dataField == nil {
-			return nil, nil
-		}
-		return *dataField, nil
-	}
+func (t *Topology) serialiseK(k string, serialFunc func() ([]byte, error), dataField *[]byte) ([]byte, error) {
 	data, err := serialFunc()
 	if err != nil {
 		return nil, err
 	}
 	*dataField = data
-	*changedField = false
 	return data, nil
 }
 
@@ -290,9 +267,9 @@ func (t *Topology) serialiseK(k string, serialFunc func() ([]byte, error), dataF
 func (t *Topology) serialise(k string) ([]byte, error) {
 	switch k {
 	case verifiedStateKey:
-		return t.serialiseK(k, t.serialiseVerifiedState, &t.tss.serialisedVerifiedState, &t.tss.changedVerifiedState)
+		return t.serialiseK(k, t.serialiseVerifiedState, &t.tss.serialisedVerifiedState)
 	case pendingStateKey:
-		return t.serialiseK(k, t.serialisePendingState, &t.tss.serialisedPendingState, &t.tss.changedPendingState)
+		return t.serialiseK(k, t.serialisePendingState, &t.tss.serialisedPendingState)
 	default:
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}

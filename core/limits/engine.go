@@ -60,7 +60,7 @@ func New(log *logging.Logger, cfg Config, tm TimeService, broker Broker) *Engine
 	return &Engine{
 		log:         log,
 		cfg:         cfg,
-		lss:         &limitsSnapshotState{changed: true},
+		lss:         &limitsSnapshotState{},
 		broker:      broker,
 		timeService: tm,
 	}
@@ -76,7 +76,6 @@ func (e *Engine) UponGenesis(ctx context.Context, rawState []byte) (err error) {
 			e.log.Debug("Leaving limits.Engine.UponGenesis without error")
 		}
 		e.genesisLoaded = true
-		e.lss.changed = true
 	}()
 
 	state, err := LoadGenesisState(rawState)

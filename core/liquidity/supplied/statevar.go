@@ -155,7 +155,6 @@ func (e *Engine) updateProbabilities(ctx context.Context, res statevar.StateVari
 	}
 
 	e.potInitialised = true
-	e.changed = true
 	return nil
 }
 

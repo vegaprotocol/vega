@@ -36,7 +36,6 @@ var (
 )
 
 type witnessSnapshotState struct {
-	changed    bool
 	serialised []byte
 	mu         sync.Mutex
 }
@@ -89,28 +88,16 @@ func (w *Witness) serialise(k string) ([]byte, error) {
 
 	w.wss.mu.Lock()
 	defer w.wss.mu.Unlock()
-	if !w.HasChanged(k) {
-		return w.wss.serialised, nil
-	}
-
 	data, err := w.serialiseWitness()
 	if err != nil {
 		return nil, err
 	}
 
 	w.wss.serialised = data
-	w.wss.changed = false
 	return data, nil
 }
 
 func (w *Witness) Stopped() bool { return false }
-
-func (w *Witness) HasChanged(k string) bool {
-	// w.wss.mu.Lock()
-	// defer w.wss.mu.Unlock()
-	// return w.wss.changed
-	return true
-}
 
 func (w *Witness) GetState(k string) ([]byte, []types.StateProvider, error) {
 	state, err := w.serialise(k)
@@ -160,7 +147,6 @@ func (w *Witness) restore(witness *types.Witness, p *types.Payload) error {
 
 	w.wss.mu.Lock()
 	var err error
-	w.wss.changed = false
 	w.wss.serialised, err = proto.Marshal(p.IntoProto())
 	w.wss.mu.Unlock()
 	return err
@@ -182,7 +168,6 @@ func (w *Witness) RestoreResource(r Resource, cb func(interface{}, bool)) error 
 		go w.start(ctx, res)
 	}
 	w.wss.mu.Lock()
-	w.wss.changed = false
 	w.wss.mu.Unlock()
 	return nil
 }

@@ -31,10 +31,6 @@ var hashKeys = []string{
 }
 
 type delegationSnapshotState struct {
-	changedActive       bool
-	changedPending      bool
-	changedAuto         bool
-	changedLastRecon    bool
 	serialisedActive    []byte
 	serialisedPending   []byte
 	serialisedAuto      []byte
@@ -123,19 +119,12 @@ func (e *Engine) serialiseAuto() ([]byte, error) {
 	return proto.Marshal(payload.IntoProto())
 }
 
-func (e *Engine) serialiseK(k string, serialFunc func() ([]byte, error), dataField *[]byte, changedField *bool) ([]byte, error) {
-	if !e.HasChanged(k) {
-		if dataField == nil {
-			return nil, nil
-		}
-		return *dataField, nil
-	}
+func (e *Engine) serialiseK(k string, serialFunc func() ([]byte, error), dataField *[]byte) ([]byte, error) {
 	data, err := serialFunc()
 	if err != nil {
 		return nil, err
 	}
 	*dataField = data
-	*changedField = false
 	return data, nil
 }
 
@@ -143,32 +132,16 @@ func (e *Engine) serialiseK(k string, serialFunc func() ([]byte, error), dataFie
 func (e *Engine) serialise(k string) ([]byte, error) {
 	switch k {
 	case activeKey:
-		return e.serialiseK(k, e.serialiseActive, &e.dss.serialisedActive, &e.dss.changedActive)
+		return e.serialiseK(k, e.serialiseActive, &e.dss.serialisedActive)
 	case pendingKey:
-		return e.serialiseK(k, e.serialisePending, &e.dss.serialisedPending, &e.dss.changedPending)
+		return e.serialiseK(k, e.serialisePending, &e.dss.serialisedPending)
 	case autoKey:
-		return e.serialiseK(k, e.serialiseAuto, &e.dss.serialisedAuto, &e.dss.changedAuto)
+		return e.serialiseK(k, e.serialiseAuto, &e.dss.serialisedAuto)
 	case lastReconKey:
-		return e.serialiseK(k, e.serialiseLastReconTime, &e.dss.serialisedLastRecon, &e.dss.changedLastRecon)
+		return e.serialiseK(k, e.serialiseLastReconTime, &e.dss.serialisedLastRecon)
 	default:
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
-}
-
-func (e *Engine) HasChanged(k string) bool {
-	// switch k {
-	// case activeKey:
-	// 	return e.dss.changedActive
-	// case pendingKey:
-	// 	return e.dss.changedPending
-	// case autoKey:
-	// 	return e.dss.changedAuto
-	// case lastReconKey:
-	// 	return e.dss.changedLastRecon
-	// default:
-	// 	return false
-	// }
-	return true
 }
 
 func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
@@ -198,7 +171,6 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 func (e *Engine) restoreLastReconTime(t time.Time, p *types.Payload) error {
 	var err error
 	e.lastReconciliation = t
-	e.dss.changedLastRecon = false
 	e.dss.serialisedLastRecon, err = proto.Marshal(p.IntoProto())
 
 	return err
@@ -218,7 +190,6 @@ func (e *Engine) restoreActive(ctx context.Context, delegations *types.Delegatio
 	}
 	e.setActive(ctx, entries)
 	var err error
-	e.dss.changedActive = false
 	e.dss.serialisedActive, err = proto.Marshal(p.IntoProto())
 	return err
 }
@@ -237,7 +208,6 @@ func (e *Engine) restorePending(ctx context.Context, delegations *types.Delegati
 	}
 	e.setPendingNew(ctx, entries)
 	var err error
-	e.dss.changedPending = false
 	e.dss.serialisedPending, err = proto.Marshal(p.IntoProto())
 	return err
 }
@@ -246,7 +216,6 @@ func (e *Engine) restoreAuto(delegations *types.DelegationAuto, p *types.Payload
 	e.autoDelegationMode = map[string]struct{}{}
 	e.setAuto(delegations.Parties)
 	var err error
-	e.dss.changedAuto = false
 	e.dss.serialisedAuto, err = proto.Marshal(p.IntoProto())
 	return err
 }
