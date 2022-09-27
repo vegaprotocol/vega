@@ -141,6 +141,14 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		execsetup.markets = markets
 		return err
 	})
+	s.Step(`^the markets are updated:$`, func(table *godog.Table) error {
+		markets, err := steps.TheMarketsUpdated(marketConfig, execsetup.executionEngine, execsetup.markets, execsetup.netParams, table)
+		if err != nil {
+			return err
+		}
+		execsetup.markets = markets
+		return nil
+	})
 
 	// Other steps
 	s.Step(`^the initial insurance pool balance is "([^"]*)" for the markets:$`, func(amountstr string) error {
