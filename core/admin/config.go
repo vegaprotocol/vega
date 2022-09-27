@@ -16,7 +16,7 @@ import (
 	"os"
 	"path"
 
-	"code.vegaprotocol.io/vega/core/config/encoding"
+	"code.vegaprotocol.io/vega/libs/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
 )
 
