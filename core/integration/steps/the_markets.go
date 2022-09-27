@@ -26,6 +26,39 @@ import (
 	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
+func TheMarketsUpdated(
+	config *market.Config,
+	executionEngine Execution,
+	existing []types.Market,
+	netparams *netparams.Store,
+	table *godog.Table,
+) ([]types.Market, error) {
+	rows := parseMarketsUpdateTable(table)
+	// existing markets to update
+	validByID := make(map[string]*types.Market, len(existing))
+	for i := range existing {
+		m := existing[i]
+		validByID[m.ID] = &existing[i]
+	}
+	updates := make([]types.UpdateMarket, 0, len(rows))
+	updated := make([]*types.Market, 0, len(rows))
+	for _, row := range rows {
+		upd := marketUpdateRow{row: row}
+		// check if market exists
+		current, ok := validByID[upd.id()]
+		if !ok {
+			return nil, fmt.Errorf("unknown market id %s", upd.id())
+		}
+		updates = append(updates, marketUpdate(config, current, upd))
+		updated = append(updated, current)
+	}
+	if err := updateMarkets(updated, updates, executionEngine); err != nil {
+		return nil, err
+	}
+	// we have been using pointers internally, so we should be returning the accurate state here.
+	return existing, nil
+}
+
 func TheMarkets(
 	config *market.Config,
 	executionEngine Execution,
@@ -63,6 +96,15 @@ func submitMarkets(markets []types.Market, executionEngine Execution) error {
 		}
 		if err := executionEngine.StartOpeningAuction(context.Background(), markets[i].ID); err != nil {
 			return fmt.Errorf("could not start opening auction for market %s: %v", markets[i].ID, err)
+		}
+	}
+	return nil
+}
+
+func updateMarkets(markets []*types.Market, updates []types.UpdateMarket, executionEngine Execution) error {
+	for i, mkt := range markets {
+		if err := executionEngine.UpdateMarket(context.Background(), mkt); err != nil {
+			return fmt.Errorf("couldn't update market(%s) - updates %#v: %+v", mkt.ID, updates[i], err)
 		}
 	}
 	return nil
@@ -111,6 +153,107 @@ func enableVoteAsset(collateralEngine *collateral.Engine) error {
 	return nil
 }
 
+// marketUpdate return the UpdateMarket type just for clear error reporting and sanity checks ATM.
+func marketUpdate(config *market.Config, existing *types.Market, row marketUpdateRow) types.UpdateMarket {
+	update := types.UpdateMarket{
+		MarketID: existing.ID,
+		Changes:  &types.UpdateMarketConfiguration{},
+	}
+	// product update
+	if oracle, ok := row.oracleConfig(); ok {
+		oracleSettlement, err := config.OracleConfigs.Get(oracle, "settlement price")
+		if err != nil {
+			panic(err)
+		}
+		oracleTermination, err := config.OracleConfigs.Get(oracle, "trading termination")
+		if err != nil {
+			panic(err)
+		}
+		// we probably want to X-check the current spec, and make sure only filters + pubkeys are changed
+		settleSpec := types.OracleSpecFromProto(oracleSettlement.Spec)
+		termSpec := types.OracleSpecFromProto(oracleTermination.Spec)
+		settlementDecimals := config.OracleConfigs.GetSettlementPriceDP(oracle)
+		// update product -> use type switch even though currently only futures exist
+		switch ti := existing.TradableInstrument.Instrument.Product.(type) {
+		case *types.InstrumentFuture:
+			futureUp := &types.UpdateFutureProduct{
+				QuoteName:              ti.Future.QuoteName,
+				SettlementDataDecimals: settlementDecimals,
+				OracleSpecForSettlementPrice: &types.OracleSpecConfiguration{
+					PubKeys: settleSpec.PubKeys,
+					Filters: settleSpec.Filters,
+				},
+				OracleSpecForTradingTermination: &types.OracleSpecConfiguration{
+					PubKeys: termSpec.PubKeys,
+					Filters: termSpec.Filters,
+				},
+				OracleSpecBinding: types.OracleSpecBindingForFutureFromProto(&proto.OracleSpecToFutureBinding{
+					SettlementPriceProperty:    oracleSettlement.Binding.SettlementPriceProperty,
+					TradingTerminationProperty: oracleTermination.Binding.TradingTerminationProperty,
+				}),
+			}
+			ti.Future.SettlementDataDecimals = settlementDecimals
+			ti.Future.OracleSpecForSettlementPrice = settleSpec
+			ti.Future.OracleSpecBinding = futureUp.OracleSpecBinding
+			ti.Future.OracleSpecForTradingTermination = termSpec
+			// ensure we update the existing market
+			existing.TradableInstrument.Instrument.Product = ti
+			update.Changes.Instrument = &types.UpdateInstrumentConfiguration{
+				Product: &types.UpdateInstrumentConfigurationFuture{
+					Future: futureUp,
+				},
+			}
+		default:
+			panic("unsuported product")
+		}
+		update.Changes.Instrument.Code = existing.TradableInstrument.Instrument.Code
+	}
+	// price monitoring
+	if pm, ok := row.priceMonitoring(); ok {
+		priceMonitoring, err := config.PriceMonitoring.Get(pm)
+		if err != nil {
+			panic(err)
+		}
+		pmt := types.PriceMonitoringSettingsFromProto(priceMonitoring)
+		// update existing
+		existing.PriceMonitoringSettings.Parameters = pmt.Parameters
+		update.Changes.PriceMonitoringParameters = pmt.Parameters
+	}
+	// liquidity monitoring
+	if lm, ok := row.liquidityMonitoring(); ok {
+		liqMon, err := config.LiquidityMonitoring.GetType(lm)
+		if err != nil {
+			panic(err)
+		}
+		existing.LiquidityMonitoringParameters = liqMon
+		update.Changes.LiquidityMonitoringParameters = liqMon
+	}
+	// risk model
+	if rm, ok := row.riskModel(); ok {
+		tip := existing.TradableInstrument.IntoProto()
+		if err := config.RiskModels.LoadModel(rm, tip); err != nil {
+			panic(err)
+		}
+		current := types.TradableInstrumentFromProto(tip)
+		// find the correct params:
+		switch {
+		case current.GetSimpleRiskModel() != nil:
+			update.Changes.RiskParameters = types.UpdateMarketConfigurationSimple{
+				Simple: current.GetSimpleRiskModel().Params,
+			}
+		case current.GetLogNormalRiskModel() != nil:
+			update.Changes.RiskParameters = types.UpdateMarketConfigurationLogNormal{
+				LogNormal: current.GetLogNormalRiskModel(),
+			}
+		default:
+			panic("Unsupported risk model parameters")
+		}
+		// update existing
+		existing.TradableInstrument = current
+	}
+	return update
+}
+
 func newMarket(config *market.Config, netparams *netparams.Store, row marketRow) types.Market {
 	fees, err := config.FeesConfig.Get(row.fees())
 	if err != nil {
@@ -142,22 +285,23 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 		panic(err)
 	}
 
-	// the governance engine would fill in the liquidity monitor parameters from the network parameters (unless set explicitly)
-	// so we need to do this here by hand. If the network parameters weren't set we use the below defaults
-	timeWindow := int64(3600)
-	scalingFactor := num.DecimalFromInt64(10)
-	triggeringRatio := num.DecimalFromInt64(0)
+	liqMon, err := config.LiquidityMonitoring.GetType(row.liquidityMonitoring())
+	if err != nil {
+		panic(err)
+	}
 
+	// the governance engine would fill in the liquidity monitor parameters from the network parameters (unless set explicitly)
+	// so we do this step here manually
 	if tw, err := netparams.GetDuration("market.stake.target.timeWindow"); err == nil {
-		timeWindow = int64(tw.Seconds())
+		liqMon.TargetStakeParameters.TimeWindow = int64(tw.Seconds())
 	}
 
 	if sf, err := netparams.GetDecimal("market.stake.target.scalingFactor"); err == nil {
-		scalingFactor = sf
+		liqMon.TargetStakeParameters.ScalingFactor = sf
 	}
 
 	if tr, err := netparams.GetDecimal("market.liquidity.targetstake.triggering.ratio"); err == nil {
-		triggeringRatio = tr
+		liqMon.TriggeringRatio = tr
 	}
 
 	m := types.Market{
@@ -191,15 +335,9 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 			},
 			MarginCalculator: types.MarginCalculatorFromProto(marginCalculator),
 		},
-		OpeningAuction:          openingAuction(row),
-		PriceMonitoringSettings: types.PriceMonitoringSettingsFromProto(priceMonitoring),
-		LiquidityMonitoringParameters: &types.LiquidityMonitoringParameters{
-			TargetStakeParameters: &types.TargetStakeParameters{
-				TimeWindow:    timeWindow,
-				ScalingFactor: scalingFactor,
-			},
-			TriggeringRatio: triggeringRatio,
-		},
+		OpeningAuction:                openingAuction(row),
+		PriceMonitoringSettings:       types.PriceMonitoringSettingsFromProto(priceMonitoring),
+		LiquidityMonitoringParameters: liqMon,
 	}
 
 	tip := m.TradableInstrument.IntoProto()
@@ -237,11 +375,63 @@ func parseMarketsTable(table *godog.Table) []RowWrapper {
 	}, []string{
 		"decimal places",
 		"position decimal places",
+		"liquidity monitoring",
+	})
+}
+
+func parseMarketsUpdateTable(table *godog.Table) []RowWrapper {
+	return StrictParseTable(table, []string{
+		"id",
+	}, []string{
+		"oracle config",         // product update
+		"price monitoring",      // price monitoring update
+		"risk model",            // risk model update
+		"liquidity monitoring ", // liquidity monitoring update
 	})
 }
 
 type marketRow struct {
 	row RowWrapper
+}
+
+type marketUpdateRow struct {
+	row RowWrapper
+}
+
+func (r marketUpdateRow) id() string {
+	return r.row.MustStr("id")
+}
+
+func (r marketUpdateRow) oracleConfig() (string, bool) {
+	if r.row.HasColumn("oracle config") {
+		oc := r.row.MustStr("oracle config")
+		return oc, true
+	}
+	return "", false
+}
+
+func (r marketUpdateRow) priceMonitoring() (string, bool) {
+	if r.row.HasColumn("price monitoring") {
+		pm := r.row.MustStr("price monitoring")
+		return pm, true
+	}
+	return "", false
+}
+
+func (r marketUpdateRow) riskModel() (string, bool) {
+	if r.row.HasColumn("risk model") {
+		rm := r.row.MustStr("risk model")
+		return rm, true
+	}
+	return "", false
+}
+
+func (r marketUpdateRow) liquidityMonitoring() (string, bool) {
+	if r.row.HasColumn("liquidity monitoring") {
+		lm := r.row.MustStr("liquidity monitoring")
+		return lm, true
+	}
+	return "", false
 }
 
 func (r marketRow) id() string {
@@ -292,4 +482,11 @@ func (r marketRow) marginCalculator() string {
 
 func (r marketRow) auctionDuration() int64 {
 	return r.row.MustI64("auction duration")
+}
+
+func (r marketRow) liquidityMonitoring() string {
+	if !r.row.HasColumn("liquidity monitoring") {
+		return "default-parameters"
+	}
+	return r.row.MustStr("liquidity monitoring")
 }

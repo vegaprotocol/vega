@@ -48,6 +48,14 @@ func (u *Unmarshaler) UnmarshalPriceMonitoring(r io.Reader) (*vegapb.PriceMonito
 	return proto, nil
 }
 
+func (u *Unmarshaler) UnmarshalLiquidityMonitoring(r io.Reader) (*vegapb.LiquidityMonitoringParameters, error) {
+	proto := &vegapb.LiquidityMonitoringParameters{}
+	if err := u.unmarshaler.Unmarshal(r, proto); err != nil {
+		return nil, err
+	}
+	return proto, nil
+}
+
 // UnmarshalOracleConfig unmarshal a future as this is a common parent.
 func (u *Unmarshaler) UnmarshalOracleConfig(r io.Reader) (*vegapb.Future, error) {
 	proto := &vegapb.Future{}

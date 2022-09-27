@@ -39,6 +39,7 @@ disable = [
     "gomoddirectives",
     "gosec",
     "ifshort",
+    "interfacebloat",
     "ireturn",
     "maintidx",
     "nestif",
