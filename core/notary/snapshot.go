@@ -43,8 +43,7 @@ func NewWithSnapshot(
 ) *SnapshotNotary {
 	log = log.Named(namedLogger)
 	return &SnapshotNotary{
-		Notary:  New(log, cfg, top, broker, cmd),
-		changed: true,
+		Notary: New(log, cfg, top, broker, cmd),
 	}
 }
 
@@ -53,7 +52,6 @@ type SnapshotNotary struct {
 
 	// snapshot bits
 	serialised []byte
-	changed    bool
 }
 
 // StartAggregate is a wrapper to Notary's StartAggregate which also manages the snapshot state.
@@ -63,7 +61,6 @@ func (n *SnapshotNotary) StartAggregate(
 	signature []byte,
 ) {
 	n.Notary.StartAggregate(resource, kind, signature)
-	n.changed = true
 }
 
 // RegisterSignature is a wrapper to Notary's RegisterSignature which also manages the snapshot state.
@@ -73,10 +70,6 @@ func (n *SnapshotNotary) RegisterSignature(
 	ns v1.NodeSignature,
 ) error {
 	err := n.Notary.RegisterSignature(ctx, pubKey, ns)
-	if err == nil {
-		n.changed = true
-	}
-
 	return err
 }
 
@@ -86,17 +79,12 @@ func (n *SnapshotNotary) serialise(k string) ([]byte, error) {
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
-	if !n.HasChanged(k) {
-		return n.serialised, nil
-	}
-
 	data, err := n.serialiseNotary()
 	if err != nil {
 		return nil, err
 	}
 
 	n.serialised = data
-	n.changed = false
 	return data, nil
 }
 
@@ -110,11 +98,6 @@ func (n *SnapshotNotary) Keys() []string {
 
 func (n *SnapshotNotary) Stopped() bool {
 	return false
-}
-
-func (n *SnapshotNotary) HasChanged(k string) bool {
-	return true
-	// return n.changed
 }
 
 func (n *SnapshotNotary) GetState(k string) ([]byte, []types.StateProvider, error) {
@@ -239,7 +222,6 @@ func (n *SnapshotNotary) restoreNotary(notary *types.Notary, p *types.Payload) e
 	n.sigs = sigs
 	n.retries = retries
 	var err error
-	n.changed = false
 	n.serialised, err = proto.Marshal(p.IntoProto())
 	return err
 }

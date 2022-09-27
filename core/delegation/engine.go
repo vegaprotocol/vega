@@ -127,13 +127,8 @@ func New(log *logging.Logger, config Config, broker Broker, topology ValidatorTo
 		partyDelegationState:     map[string]*partyDelegation{},
 		nextPartyDelegationState: map[string]*partyDelegation{},
 		autoDelegationMode:       map[string]struct{}{},
-		dss: &delegationSnapshotState{
-			changedActive:    true,
-			changedPending:   true,
-			changedAuto:      true,
-			changedLastRecon: true,
-		},
-		lastReconciliation: time.Time{},
+		dss:                      &delegationSnapshotState{},
+		lastReconciliation:       time.Time{},
 	}
 	// register for epoch notifications
 	epochEngine.NotifyOnEpoch(e.onEpochEvent, e.onEpochRestore)
@@ -171,7 +166,6 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 func (e *Engine) onEpochEvent(ctx context.Context, epoch types.Epoch) {
 	if (e.lastReconciliation == time.Time{}) {
 		e.lastReconciliation = epoch.StartTime
-		e.dss.changedLastRecon = true
 	}
 	if epoch.Seq != e.currentEpoch.Seq {
 		// emit an event for the next epoch's delegations
@@ -191,7 +185,6 @@ func (e *Engine) reconcileAssociationWithNomination(ctx context.Context, from, t
 	// for the next epoch we reconcile against the current balance
 	e.reconcile(ctx, e.nextPartyDelegationState, e.stakingAccounts.GetAvailableBalance, epochSeq+1)
 	e.lastReconciliation = to
-	e.dss.changedLastRecon = true
 }
 
 // reconcile checks if there is a mismatch between the amount associated with VEGA by a party and the amount nominated by this party. If a mismatch is found it is auto-adjusted.
@@ -321,9 +314,6 @@ func (e *Engine) Delegate(ctx context.Context, party string, nodeID string, amou
 	}
 	nextEpochState.nodeToAmount[nodeID].AddSum(amt)
 	e.sendDelegatedBalanceEvent(ctx, party, nodeID, e.currentEpoch.Seq+1, e.nextPartyDelegationState[party].nodeToAmount[nodeID])
-
-	e.dss.changedAuto = true
-	e.dss.changedPending = true
 	return nil
 }
 
@@ -360,8 +350,6 @@ func (e *Engine) UndelegateAtEndOfEpoch(ctx context.Context, party string, nodeI
 
 	// get out of auto delegation mode as the party made explicit undelegations
 	delete(e.autoDelegationMode, party)
-	e.dss.changedAuto = true
-	e.dss.changedPending = true
 	return nil
 }
 
@@ -415,8 +403,6 @@ func (e *Engine) UndelegateNow(ctx context.Context, party string, nodeID string,
 
 	// get out of auto delegation mode
 	delete(e.autoDelegationMode, party)
-	e.dss.changedAuto = true
-	e.dss.changedPending = true
 	return nil
 }
 
@@ -469,15 +455,10 @@ func (e *Engine) ProcessEpochDelegations(ctx context.Context, epoch types.Epoch)
 			if balance, err := e.stakingAccounts.GetAvailableBalance(p); err == nil {
 				if state.totalDelegated.ToDecimal().Div(balance.ToDecimal()).GreaterThanOrEqual(minRatioForAutoDelegation) {
 					e.autoDelegationMode[p] = struct{}{}
-					e.dss.changedAuto = true
 				}
 			}
 		}
 	}
-
-	// once in an epoch set changed to true
-	e.dss.changedActive = true
-	e.dss.changedPending = true
 	return stateForRewards
 }
 
@@ -512,7 +493,6 @@ func (e *Engine) decreaseBalanceAndFireEvent(ctx context.Context, party, nodeID 
 			e.sendDelegatedBalanceEvent(ctx, party, nodeID, epoch, partyState.nodeToAmount[nodeID])
 		}
 		if cleanup && partyState.nodeToAmount[nodeID].IsZero() {
-			e.dss.changedActive = true
 			delete(partyState.nodeToAmount, nodeID)
 		}
 	}
@@ -687,7 +667,6 @@ func (e *Engine) ValidatorKeyChanged(ctx context.Context, oldKey, newKey string)
 	if _, ok := e.autoDelegationMode[oldKey]; ok {
 		delete(e.autoDelegationMode, oldKey)
 		e.autoDelegationMode[newKey] = struct{}{}
-		e.dss.changedAuto = true
 	}
 }
 
@@ -708,6 +687,4 @@ func (e *Engine) updateParty(ctx context.Context, partyDelegationMap map[string]
 		e.sendDelegatedBalanceEvent(ctx, oldKey, node, epoch, num.UintZero())
 		e.sendDelegatedBalanceEvent(ctx, newKey, node, epoch, partyDelegationState.nodeToAmount[node])
 	}
-	e.dss.changedActive = true
-	e.dss.changedPending = true
 }

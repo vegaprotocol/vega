@@ -139,11 +139,9 @@ func TestCancelTransfer(t *testing.T) {
 		})
 	})
 
-	// Get the state of transfers so hasChanged flag is false
 	key := (&types.PayloadBankingRecurringTransfers{}).Key()
 	_, _, err := e.GetState(key)
 	require.NoError(t, err)
-	// require.False(t, e.HasChanged(key))
 
 	assert.NoError(t,
 		e.CancelTransferFunds(ctx, &types.CancelTransferFunds{
@@ -151,8 +149,6 @@ func TestCancelTransfer(t *testing.T) {
 			Party:      partyID,
 		}),
 	)
-	// require.True(t, e.HasChanged(key))
-
 	// now we move in time, the recurring transfer was suppose to go
 	// 'til epoch 11, but it's not cancelled, and nothing should happen
 	e.OnEpoch(context.Background(), types.Epoch{Seq: 11, Action: vega.EpochAction_EPOCH_ACTION_START})

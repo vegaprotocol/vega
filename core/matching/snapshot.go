@@ -38,10 +38,6 @@ func (b OrderBook) Namespace() types.SnapshotNamespace {
 	return types.MatchingSnapshot
 }
 
-func (b *OrderBook) HasChanged(k string) bool {
-	return true
-}
-
 func (b *OrderBook) GetState(key string) ([]byte, []types.StateProvider, error) {
 	if key != b.snapshot.Key() {
 		return nil, nil, types.ErrSnapshotKeyDoesNotExist

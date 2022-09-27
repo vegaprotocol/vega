@@ -32,9 +32,6 @@ var (
 )
 
 type assetsSnapshotState struct {
-	changedActive            bool
-	changedPending           bool
-	changedPendingUpdates    bool
 	serialisedActive         []byte
 	serialisedPending        []byte
 	serialisedPendingUpdates []byte
@@ -90,19 +87,12 @@ func (s *Service) serialisePendingUpdates() ([]byte, error) {
 	return proto.Marshal(payload.IntoProto())
 }
 
-func (s *Service) serialiseK(k string, serialFunc func() ([]byte, error), dataField *[]byte, changedField *bool) ([]byte, error) {
-	if !s.HasChanged(k) {
-		if dataField == nil {
-			return nil, nil
-		}
-		return *dataField, nil
-	}
+func (s *Service) serialiseK(serialFunc func() ([]byte, error), dataField *[]byte) ([]byte, error) {
 	data, err := serialFunc()
 	if err != nil {
 		return nil, err
 	}
 	*dataField = data
-	*changedField = false
 	return data, nil
 }
 
@@ -110,28 +100,14 @@ func (s *Service) serialiseK(k string, serialFunc func() ([]byte, error), dataFi
 func (s *Service) serialise(k string) ([]byte, error) {
 	switch k {
 	case activeKey:
-		return s.serialiseK(k, s.serialiseActive, &s.ass.serialisedActive, &s.ass.changedActive)
+		return s.serialiseK(s.serialiseActive, &s.ass.serialisedActive)
 	case pendingKey:
-		return s.serialiseK(k, s.serialisePending, &s.ass.serialisedPending, &s.ass.changedPending)
+		return s.serialiseK(s.serialisePending, &s.ass.serialisedPending)
 	case pendingUpdatesKey:
-		return s.serialiseK(k, s.serialisePendingUpdates, &s.ass.serialisedPendingUpdates, &s.ass.changedPendingUpdates)
+		return s.serialiseK(s.serialisePendingUpdates, &s.ass.serialisedPendingUpdates)
 	default:
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
-}
-
-func (s *Service) HasChanged(k string) bool {
-	// switch k {
-	// case activeKey:
-	// 	return s.ass.changedActive
-	// case pendingKey:
-	// 	return s.ass.changedPending
-	// case pendingUpdatesKey:
-	// 	return s.ass.changedPending
-	// default:
-	// 	return false
-	// }
-	return true
 }
 
 func (s *Service) GetState(k string) ([]byte, []types.StateProvider, error) {
@@ -177,7 +153,6 @@ func (s *Service) restoreActive(ctx context.Context, active *types.ActiveAssets,
 			return err
 		}
 	}
-	s.ass.changedActive = false
 	s.ass.serialisedActive, err = proto.Marshal(p.IntoProto())
 
 	return err
@@ -197,7 +172,6 @@ func (s *Service) restorePending(ctx context.Context, pending *types.PendingAsse
 		}
 	}
 
-	s.ass.changedPending = false
 	s.ass.serialisedPending, err = proto.Marshal(p.IntoProto())
 
 	return err
@@ -211,7 +185,6 @@ func (s *Service) restorePendingUpdates(_ context.Context, pending *types.Pendin
 			return err
 		}
 	}
-	s.ass.changedPendingUpdates = false
 	s.ass.serialisedPendingUpdates, err = proto.Marshal(p.IntoProto())
 
 	return err

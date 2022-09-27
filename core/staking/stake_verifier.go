@@ -123,10 +123,7 @@ func NewStakeVerifier(
 		ethEventSource: ethEventSource,
 		ids:            map[string]struct{}{},
 		hashes:         map[string]struct{}{},
-		svss: &stakeVerifierSnapshotState{
-			changedDeposited: true,
-			changedRemoved:   true,
-		},
+		svss:           &stakeVerifierSnapshotState{},
 	}
 	return s
 }
@@ -166,8 +163,6 @@ func (s *StakeVerifier) ProcessStakeRemoved(
 		StakeRemoved: event,
 		check:        func() error { return s.ocv.CheckStakeRemoved(event) },
 	}
-	s.svss.changedRemoved = true
-
 	s.pendingSRs = append(s.pendingSRs, pending)
 	evt := pending.IntoStakeLinking()
 	evt.Status = types.StakeLinkingStatusPending
@@ -195,7 +190,6 @@ func (s *StakeVerifier) ProcessStakeDeposited(
 	}
 
 	s.pendingSDs = append(s.pendingSDs, pending)
-	s.svss.changedDeposited = true
 
 	evt := pending.IntoStakeLinking()
 	evt.Status = types.StakeLinkingStatusPending
@@ -212,7 +206,6 @@ func (s *StakeVerifier) removePendingStakeDeposited(id string) error {
 	for i, v := range s.pendingSDs {
 		if v.ID == id {
 			s.pendingSDs = s.pendingSDs[:i+copy(s.pendingSDs[i:], s.pendingSDs[i+1:])]
-			s.svss.changedDeposited = true
 			return nil
 		}
 	}
@@ -223,7 +216,6 @@ func (s *StakeVerifier) removePendingStakeRemoved(id string) error {
 	for i, v := range s.pendingSRs {
 		if v.ID == id {
 			s.pendingSRs = s.pendingSRs[:i+copy(s.pendingSRs[i:], s.pendingSRs[i+1:])]
-			s.svss.changedRemoved = true
 			return nil
 		}
 	}

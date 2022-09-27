@@ -153,11 +153,7 @@ func NewEngine(
 		assets:                 assets,
 		markets:                markets,
 		netp:                   netp,
-		gss: &governanceSnapshotState{
-			changedActive:         true,
-			changedEnacted:        true,
-			changedNodeValidation: true,
-		},
+		gss:                    &governanceSnapshotState{},
 	}
 	return e
 }
@@ -273,7 +269,6 @@ func (e *Engine) preVoteClosedProposal(p *proposal) *VoteClosed {
 			// this proposal needs to be included in the checkpoint but we don't need to copy
 			// the proposal here, as it may reach the enacted state shortly
 			e.enactedProposals = append(e.enactedProposals, p)
-			e.gss.changedEnacted = true
 		}
 		vc.m = &NewMarketVoteClosed{
 			startAuction: startAuction,
@@ -297,8 +292,6 @@ func (e *Engine) removeProposal(ctx context.Context, id string) {
 					e.assets.SetRejected(ctx, p.ID)
 				}
 			}
-
-			e.gss.changedActive = true
 			return
 		}
 	}
@@ -360,10 +353,6 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteCl
 		}
 	}
 
-	if len(accepted) != 0 || len(rejected) != 0 {
-		e.gss.changedNodeValidation = true
-	}
-
 	toBeEnacted := []*ToEnact{}
 	for i, ep := range preparedToEnact {
 		// this is the new market proposal, and should already be in the slice
@@ -406,10 +395,6 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteCl
 	// now we iterate over all proposal ids to remove them from the list
 	for _, id := range toBeRemoved {
 		e.removeProposal(ctx, id)
-	}
-
-	if len(toBeEnacted) != 0 {
-		e.gss.changedEnacted = true
 	}
 
 	// flush here for now
@@ -562,17 +547,13 @@ func (e *Engine) startProposal(p *types.Proposal) {
 		no:           map[string]*types.Vote{},
 		invalidVotes: map[string]*types.Vote{},
 	})
-
-	e.gss.changedActive = true
 }
 
 func (e *Engine) startValidatedProposal(p *proposal) {
 	e.activeProposals = append(e.activeProposals, p)
-	e.gss.changedActive = true
 }
 
 func (e *Engine) startTwoStepsProposal(ctx context.Context, p *types.Proposal) error {
-	e.gss.changedNodeValidation = true
 	return e.nodeProposalValidation.Start(ctx, p)
 }
 
@@ -761,7 +742,6 @@ func (e *Engine) AddVote(ctx context.Context, cmd types.VoteSubmission, party st
 			logging.String("vote", cmd.String()),
 		)
 	}
-	e.gss.changedActive = true
 	e.broker.Send(events.NewVoteEvent(ctx, vote))
 	return nil
 }
@@ -862,8 +842,6 @@ func (e *Engine) closeProposal(ctx context.Context, proposal *proposal) {
 	}
 
 	proposal.Close(e.accs, e.markets)
-	e.gss.changedActive = true
-
 	if proposal.IsPassed() {
 		e.log.Debug("Proposal passed", logging.ProposalID(proposal.ID))
 	} else if proposal.IsDeclined() {

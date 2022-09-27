@@ -11,12 +11,13 @@
 
 ### 🛠 Improvements
 - [6283](https://github.com/vegaprotocol/vega/issues/6283) - Add commit hash to version if is development version
+- [6321](https://github.com/vegaprotocol/vega/issues/6321) - Get rid of the `HasChanged` check in snapshot engines
 
 ### 🐛 Fixes
 - [6296](https://github.com/vegaprotocol/vega/issues/6296) - Add `assetId` as a field to the `GraphQL UpdateAsset` type
+- [6324](https://github.com/vegaprotocol/vega/issues/6324) - Ensure all `datanode` insert points use dedicated connection
 - [6273](https://github.com/vegaprotocol/vega/issues/6273) - Deposits return an empty list when no party is provided
 - [6307](https://github.com/vegaprotocol/vega/issues/6307) - Emit an event with status rejected if a protocol upgrade proposal has no validator behind it
-
 
 ## 0.56.0
 

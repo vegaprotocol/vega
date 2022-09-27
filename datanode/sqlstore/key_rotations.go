@@ -69,7 +69,7 @@ func (store *KeyRotations) GetAllPubKeyRotations(ctx context.Context, pagination
 		return nil, pageInfo, err
 	}
 
-	if err = pgxscan.Select(ctx, store.pool, &keyRotations, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, store.Connection, &keyRotations, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("failed to retrieve key rotations: %w", err)
 	}
 
@@ -99,7 +99,7 @@ func (store *KeyRotations) GetPubKeyRotationsPerNode(ctx context.Context, nodeID
 	query := fmt.Sprintf(`SELECT * FROM key_rotations WHERE node_id = %s`, nextBindVar(&args, id))
 	query, args = orderAndPaginateWithCursor(query, pagination, cursorParams, args...)
 
-	if err := pgxscan.Select(ctx, store.pool, &keyRotations, query, args...); err != nil {
+	if err := pgxscan.Select(ctx, store.Connection, &keyRotations, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("failed to retrieve key rotations: %w", err)
 	}
 
