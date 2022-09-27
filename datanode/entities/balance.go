@@ -19,14 +19,14 @@ import (
 )
 
 type Balance struct {
-	AccountID int64
+	AccountID AccountID
 	TxHash    TxHash
 	VegaTime  time.Time
 	Balance   decimal.Decimal
 }
 
 type BalanceKey struct {
-	AccountID int64
+	AccountID AccountID
 	VegaTime  time.Time
 }
 

@@ -27,7 +27,7 @@ type OracleData struct {
 }
 
 const (
-	sqlOracleDataColumns = `public_keys, data, matched_spec_ids, broadcast_at, tx_hash, vega_time`
+	sqlOracleDataColumns = `public_keys, data, matched_spec_ids, broadcast_at, tx_hash, vega_time, seq_num`
 )
 
 var oracleDataOrdering = TableOrdering{
@@ -43,10 +43,10 @@ func NewOracleData(connectionSource *ConnectionSource) *OracleData {
 
 func (od *OracleData) Add(ctx context.Context, data *entities.OracleData) error {
 	defer metrics.StartSQLQuery("OracleData", "Add")()
-	query := fmt.Sprintf("insert into oracle_data(%s) values ($1, $2, $3, $4, $5, $6)", sqlOracleDataColumns)
+	query := fmt.Sprintf("insert into oracle_data(%s) values ($1, $2, $3, $4, $5, $6, $7)", sqlOracleDataColumns)
 
 	if _, err := od.Connection.Exec(ctx, query, data.PublicKeys, data.Data, data.MatchedSpecIds,
-		data.BroadcastAt, data.TxHash, data.VegaTime); err != nil {
+		data.BroadcastAt, data.TxHash, data.VegaTime, data.SeqNum); err != nil {
 		err = fmt.Errorf("could not insert oracle data into database: %w", err)
 		return err
 	}

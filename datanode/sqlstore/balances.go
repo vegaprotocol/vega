@@ -161,7 +161,7 @@ func (bs *Balances) Query(filter entities.AccountFilter, groupBy []entities.Acco
 	results := []struct {
 		VegaTime  time.Time
 		Balance   decimal.Decimal
-		AccountID int64
+		AccountID entities.AccountID
 		PartyID   entities.PartyID
 		AssetID   entities.AssetID
 		MarketID  entities.MarketID
@@ -179,24 +179,24 @@ func (bs *Balances) Query(filter entities.AccountFilter, groupBy []entities.Acco
 			Balance:  res.Balance,
 			Type:     res.Type,
 		}
-		if res.AccountID != 0 {
-			bal.AccountID = &res.AccountID
+		if res.AccountID != "" {
+			bal.AccountID = res.AccountID
 		}
 
 		if res.PartyID != "" {
-			bal.PartyID = &res.PartyID
+			bal.PartyID = res.PartyID
 		}
 
 		if res.AssetID != "" {
-			bal.AssetID = &res.AssetID
+			bal.AssetID = res.AssetID
 		}
 
 		if res.MarketID != "" {
-			bal.MarketID = &res.MarketID
+			bal.MarketID = res.MarketID
 		}
 
 		if res.AssetID != "" {
-			bal.AssetID = &res.AssetID
+			bal.AssetID = res.AssetID
 		}
 
 		balances = append(balances, bal)

@@ -13,121 +13,47 @@
 package sqlstore_test
 
 import (
-	"context"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
 	"math/rand"
-	"net"
 	"strconv"
 	"testing"
-	"time"
-
-	uuid "github.com/satori/go.uuid"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
-	"code.vegaprotocol.io/vega/logging"
-	"github.com/cenkalti/backoff/v4"
-	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
-	"github.com/jackc/pgx/v4"
+	"code.vegaprotocol.io/vega/datanode/utils/databasetest"
 )
 
 var (
-	embeddedPostgres *embeddedpostgres.EmbeddedPostgres
 	connectionSource *sqlstore.ConnectionSource
-	sqlTestsEnabled  = true
-	minPort          = 30000
-	maxPort          = 40000
 	testDBPort       int
-
-	tableNames = [...]string{
-		"ledger", "accounts", "parties", "assets", "blocks", "node_signatures",
-		"erc20_multisig_signer_events", "trades", "market_data", "orders_live", "orders_history",
-		"margin_levels", "current_margin_levels", "liquidity_provisions", "current_liquidity_provisions",
-		"nodes", "ranking_scores", "reward_scores", "delegations", "rewards", "nodes_announced",
-		"balances", "current_balances",
-	}
-
-	postgresServerTimeout = time.Second * 10
 )
 
 func TestMain(m *testing.M) {
-	testDBPort = getNextPort()
-	sqlConfig := NewTestConfig(testDBPort)
-
-	if sqlTestsEnabled {
-		log := logging.NewTestLogger()
-
-		testID := uuid.NewV4().String()
-		tempDir, err := ioutil.TempDir("", testID)
-		if err != nil {
-			panic(err)
-		}
-
-		embeddedPostgres, err = sqlstore.StartEmbeddedPostgres(log, sqlConfig, tempDir)
-		if err != nil {
-			panic(err)
-		}
-
-		log.Infof("Test DB Port: %d", testDBPort)
-
-		// Make sure the database has started before we run the tests.
-		ctx, cancel := context.WithTimeout(context.Background(), postgresServerTimeout)
-
-		op := func() error {
-			connStr := sqlConfig.ConnectionConfig.GetConnectionString()
-			conn, err := pgx.Connect(ctx, connStr)
-			if err != nil {
-				return err
-			}
-
-			return conn.Ping(ctx)
-		}
-
-		if err := backoff.Retry(op, backoff.NewExponentialBackOff()); err != nil {
-			cancel()
-			panic(err)
-		}
-
-		cancel()
-		connectionSource, err = sqlstore.NewTransactionalConnectionSource(log, sqlConfig.ConnectionConfig)
-		if err != nil {
-			panic(err)
-		}
-
-		defer embeddedPostgres.Stop()
-
-		if err = sqlstore.MigrateToLatestSchema(log, sqlConfig); err != nil {
-			panic(err)
-		}
-
-		if err = sqlstore.ApplyDataRetentionPolicies(sqlConfig); err != nil {
-			panic(err)
-		}
-
-		m.Run()
-	}
+	databasetest.TestMain(m, func(cfg sqlstore.Config, source *sqlstore.ConnectionSource, snapshotPath string) {
+		testDBPort = cfg.ConnectionConfig.Port
+		connectionSource = source
+	})
 }
 
 func DeleteEverything() {
-	ctx, cancelFn := context.WithTimeout(context.Background(), postgresServerTimeout)
-	defer cancelFn()
-	sqlConfig := NewTestConfig(testDBPort)
-	connStr := connectionString(sqlConfig.ConnectionConfig)
-	conn, err := pgx.Connect(ctx, connStr)
-	if err != nil {
-		panic(fmt.Errorf("failed to delete everything:%w", err))
-	}
-	defer conn.Close(context.Background())
+	databasetest.DeleteEverything()
+}
 
-	for _, table := range tableNames {
-		if _, err := conn.Exec(context.Background(), "truncate table "+table+" CASCADE"); err != nil {
-			panic(fmt.Errorf("error truncating table: %s %w", table, err))
-		}
-	}
+func NewTestConfig(port int) sqlstore.Config {
+	return databasetest.NewTestConfig(port)
+}
+
+func connectionString(config sqlstore.ConnectionConfig) string {
+	//nolint:nosprintfhostport
+	return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s",
+		config.Username,
+		config.Password,
+		config.Host,
+		config.Port,
+		config.Database)
 }
 
 // Generate a 256 bit pseudo-random hash ID.
@@ -151,28 +77,4 @@ func generateTendermintPublicKey() string {
 	randomString := strconv.FormatInt(rand.Int63(), 10)
 	hash := sha256.Sum256([]byte(randomString))
 	return base64.StdEncoding.EncodeToString(hash[:])
-}
-
-func NewTestConfig(port int) sqlstore.Config {
-	sqlConfig := sqlstore.NewDefaultConfig()
-	sqlConfig.UseEmbedded = true
-	sqlConfig.ConnectionConfig.Port = port
-
-	return sqlConfig
-}
-
-func getNextPort() int {
-	rand.Seed(time.Now().UnixNano())
-	for {
-		port := rand.Intn(maxPort-minPort+1) + minPort
-		timeout := time.Millisecond * 100
-		conn, err := net.DialTimeout("tcp", net.JoinHostPort("localhost", fmt.Sprintf("%d", port)), timeout)
-		if err != nil {
-			return port
-		}
-
-		if conn != nil {
-			conn.Close()
-		}
-	}
 }

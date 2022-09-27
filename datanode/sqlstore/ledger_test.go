@@ -64,26 +64,30 @@ func TestLedger(t *testing.T) {
 	party := addTestParty(t, partyStore, block)
 	accountFrom := addTestAccount(t, accountStore, party, asset, block)
 	accountTo := addTestAccount(t, accountStore, party, asset, block)
-	ledgerEntry := addTestLedgerEntry(t, ledgerStore, accountFrom, accountTo, block)
+	firstLedgerEntry := addTestLedgerEntry(t, ledgerStore, accountFrom, accountTo, block)
 
 	_, err = ledgerStore.Flush(ctx)
 	assert.NoError(t, err)
 
-	// Add it again; we're allowed multiple ledger entries with the same parameters
-	err = ledgerStore.Add(ledgerEntry)
-	assert.NoError(t, err)
+	// Add it again twice; we're allowed multiple ledger entries with the same parameters in the same block as well
+	// as acroos block
+	block2 := addTestBlock(t, blockStore)
+	addTestLedgerEntry(t, ledgerStore, accountFrom, accountTo, block2)
+	addTestLedgerEntry(t, ledgerStore, accountFrom, accountTo, block2)
 
 	_, err = ledgerStore.Flush(ctx)
 	assert.NoError(t, err)
 
 	// Query and check we've got back an asset the same as the one we put in, once we give it an ID
-	ledgerEntry.ID = 1
-	fetchedLedgerEntry, err := ledgerStore.GetByID(1)
-	assert.NoError(t, err)
-	assert.Equal(t, ledgerEntry, fetchedLedgerEntry)
+	ledgerEntryTime := entities.CreateLedgerEntryTime(block.VegaTime, 0)
 
-	// We should have added two entries in total
+	fetchedLedgerEntry, err := ledgerStore.GetByLedgerEntryTime(ledgerEntryTime)
+	assert.NoError(t, err)
+	firstLedgerEntry.LedgerEntryTime = ledgerEntryTime
+	assert.Equal(t, firstLedgerEntry, fetchedLedgerEntry)
+
+	// We should have added three entries in total
 	ledgerEntriesAfter, err := ledgerStore.GetAll()
 	assert.NoError(t, err)
-	assert.Len(t, ledgerEntriesAfter, 2)
+	assert.Len(t, ledgerEntriesAfter, 3)
 }

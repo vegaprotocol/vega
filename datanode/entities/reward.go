@@ -35,6 +35,7 @@ type Reward struct {
 	Timestamp      time.Time
 	TxHash         TxHash
 	VegaTime       time.Time
+	SeqNum         uint64
 }
 
 func (r Reward) String() string {
@@ -72,7 +73,7 @@ func (r Reward) ToProtoEdge(_ ...any) (*v2.RewardEdge, error) {
 	}, nil
 }
 
-func RewardFromProto(pr eventspb.RewardPayoutEvent, txHash TxHash, vegaTime time.Time) (Reward, error) {
+func RewardFromProto(pr eventspb.RewardPayoutEvent, txHash TxHash, vegaTime time.Time, seqNum uint64) (Reward, error) {
 	epochID, err := strconv.ParseInt(pr.EpochSeq, 10, 64)
 	if err != nil {
 		return Reward{}, fmt.Errorf("parsing epoch '%v': %w", pr.EpochSeq, err)
@@ -101,6 +102,7 @@ func RewardFromProto(pr eventspb.RewardPayoutEvent, txHash TxHash, vegaTime time
 		RewardType:     pr.RewardType,
 		TxHash:         txHash,
 		VegaTime:       vegaTime,
+		SeqNum:         seqNum,
 	}
 
 	return reward, nil

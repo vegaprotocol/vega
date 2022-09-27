@@ -54,7 +54,8 @@ func (kr *EthereumKeyRotation) Push(ctx context.Context, evt events.Event) error
 
 func (kr *EthereumKeyRotation) consume(ctx context.Context, event EthereumKeyRotationEvent) error {
 	keyRotation := event.EthereumKeyRotation()
-	record, err := entities.EthereumKeyRotationFromProto(&keyRotation, entities.TxHash(event.TxHash()), kr.vegaTime)
+	record, err := entities.EthereumKeyRotationFromProto(&keyRotation, entities.TxHash(event.TxHash()), kr.vegaTime,
+		event.Sequence())
 	if err != nil {
 		return errors.Wrap(err, "converting ethereum key rotation proto to database entity failed")
 	}

@@ -28,7 +28,7 @@ type MarginLevelsStore interface {
 }
 
 type AccountSource interface {
-	GetByID(id int64) (entities.Account, error)
+	GetByID(id entities.AccountID) (entities.Account, error)
 }
 
 type Risk struct {
