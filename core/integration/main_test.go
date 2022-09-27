@@ -133,6 +133,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`the price monitoring named "([^"]*)":$`, func(name string, table *godog.Table) error {
 		return steps.ThePriceMonitoring(marketConfig, name, table)
 	})
+	s.Step(`the liquidity monitoring parameters:$`, func(table *godog.Table) error {
+		return steps.TheLiquidityMonitoring(marketConfig, table)
+	})
 	s.Step(`the margin calculator named "([^"]*)":$`, func(name string, table *godog.Table) error {
 		return steps.TheMarginCalculator(marketConfig, name, table)
 	})
@@ -140,6 +143,14 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		markets, err := steps.TheMarkets(marketConfig, execsetup.executionEngine, execsetup.collateralEngine, execsetup.netParams, table)
 		execsetup.markets = markets
 		return err
+	})
+	s.Step(`^the markets are updated:$`, func(table *godog.Table) error {
+		markets, err := steps.TheMarketsUpdated(marketConfig, execsetup.executionEngine, execsetup.markets, execsetup.netParams, table)
+		if err != nil {
+			return err
+		}
+		execsetup.markets = markets
+		return nil
 	})
 
 	// Other steps
