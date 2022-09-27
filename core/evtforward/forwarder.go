@@ -104,7 +104,6 @@ func New(log *logging.Logger, cfg Config, cmd Commander, timeService TimeService
 		top:              top,
 		bcQueueAllowlist: allowlist,
 		efss: &efSnapshotState{
-			changed:    true,
 			serialised: []byte{},
 		},
 	}
@@ -171,7 +170,6 @@ func (f *Forwarder) Ack(evt *commandspb.ChainEvent) bool {
 	// now add it to the acknowledged evts
 	f.ackedEvts[key] = evt
 	f.ackedEvtsSlice = append(f.ackedEvtsSlice, evt)
-	f.efss.changed = true
 	f.log.Info("new event acknowledged", logging.String("event", evt.String()))
 	return true
 }

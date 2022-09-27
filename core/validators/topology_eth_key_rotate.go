@@ -198,6 +198,4 @@ func (t *Topology) ethereumKeyRotationBeginBlockLocked(ctx context.Context) {
 	}
 
 	delete(t.pendingPubKeyRotations, t.currentBlockHeight)
-
-	t.tss.changed = true
 }

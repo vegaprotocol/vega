@@ -33,7 +33,6 @@ var (
 )
 
 type snapshotState struct {
-	changed    bool
 	serialised []byte
 }
 
@@ -104,11 +103,6 @@ func (mat *MarketActivityTracker) serialise(k string) ([]byte, error) {
 	if k != key {
 		return nil, ErrSnapshotKeyDoesNotExist
 	}
-
-	if !mat.HasChanged(k) {
-		return mat.ss.serialised, nil
-	}
-
 	payload := types.Payload{
 		Data: &types.PayloadMarketActivityTracker{
 			MarketActivityData: mat.serialiseFeesTracker(),
@@ -121,13 +115,7 @@ func (mat *MarketActivityTracker) serialise(k string) ([]byte, error) {
 	}
 
 	mat.ss.serialised = data
-	mat.ss.changed = false
 	return data, nil
-}
-
-func (mat *MarketActivityTracker) HasChanged(k string) bool {
-	// return mat.ss.changed
-	return true
 }
 
 func (mat *MarketActivityTracker) GetState(k string) ([]byte, []types.StateProvider, error) {
@@ -144,7 +132,6 @@ func (mat *MarketActivityTracker) LoadState(ctx context.Context, p *types.Payloa
 	case *types.PayloadMarketActivityTracker:
 		mat.restore(pl.MarketActivityData)
 		var err error
-		mat.ss.changed = false
 		mat.ss.serialised, err = proto.Marshal(p.IntoProto())
 		return nil, err
 	default:

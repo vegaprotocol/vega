@@ -77,7 +77,7 @@ func testRevertProposal(t *testing.T) {
 	// validator1 proposed an upgrade to v1 at block height 100
 	require.NoError(t, e.UpgradeProposal(context.Background(), "pk1", 100, "0.54.0"))
 
-	require.Equal(t, eventspb.ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_PENDING, evts[1].StreamMessage().GetProtocolUpgradeEvent().Status)
+	require.Equal(t, eventspb.ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_REJECTED, evts[1].StreamMessage().GetProtocolUpgradeEvent().Status)
 
 	require.Equal(t, 0, len(evts[1].StreamMessage().GetProtocolUpgradeEvent().Approvers))
 }

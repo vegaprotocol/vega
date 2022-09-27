@@ -38,7 +38,7 @@ func (c *Chain) Get(ctx context.Context) (entities.Chain, error) {
 	chain := entities.Chain{}
 
 	query := `SELECT id from chain`
-	err := pgxscan.Get(ctx, c.pool, &chain, query)
+	err := pgxscan.Get(ctx, c.Connection, &chain, query)
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		return entities.Chain{}, entities.ErrChainNotFound

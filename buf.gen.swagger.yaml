@@ -11,6 +11,11 @@ plugins:
     opt:
       - logtostderr=true
       - grpc_api_configuration=protos/sources/vega/grpc-rest-bindings.yml
+  - name: openapiv2
+    out: ./protos/generated/blockexplorer/swagger
+    opt:
+      - logtostderr=true
+      - grpc_api_configuration=protos/sources/blockexplorer/grpc-rest-bindings.yml
   - name: doc
     out: ./protos/generated/grpc
     opt:

@@ -23,11 +23,10 @@ import (
 )
 
 type snapState struct {
-	updated bool
-	data    []byte
-	pl      *types.NetParams
-	index   map[string]int
-	t       *types.PayloadNetParams
+	data  []byte
+	pl    *types.NetParams
+	index map[string]int
+	t     *types.PayloadNetParams
 }
 
 func newSnapState(store map[string]value) *snapState {
@@ -72,11 +71,6 @@ func (s snapState) Namespace() types.SnapshotNamespace {
 	return s.t.Namespace()
 }
 
-func (s *snapState) HasChanged(k string) bool {
-	return true
-	// return s.updated
-}
-
 func (s *snapState) hashState() error {
 	// apparently the payload types can't me marshalled by themselves
 	pl := types.Payload{
@@ -87,14 +81,10 @@ func (s *snapState) hashState() error {
 		return err
 	}
 	s.data = data
-	s.updated = false
 	return nil
 }
 
 func (s *snapState) GetState(_ string) ([]byte, error) {
-	if !s.HasChanged(s.t.Key()) {
-		return s.data, nil
-	}
 	if err := s.hashState(); err != nil {
 		return nil, err
 	}
@@ -110,7 +100,6 @@ func (s *snapState) update(k, v string) {
 		})
 	}
 	s.pl.Params[i].Value = v
-	s.updated = true
 }
 
 // make Store implement/forward the dataprovider interface
@@ -125,10 +114,6 @@ func (s *Store) Keys() []string {
 
 func (s *Store) Stopped() bool {
 	return false
-}
-
-func (s *Store) HasChanged(k string) bool {
-	return s.state.updated
 }
 
 func (s *Store) GetState(k string) ([]byte, []types.StateProvider, error) {
@@ -157,7 +142,6 @@ func (s *Store) LoadState(ctx context.Context, pl *types.Payload) ([]types.State
 	}
 
 	var err error
-	s.state.updated = false
 	s.state.data, err = proto.Marshal(pl.IntoProto())
 	s.paramUpdates = map[string]struct{}{}
 	return nil, err

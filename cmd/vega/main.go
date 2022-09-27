@@ -56,6 +56,8 @@ func Main(ctx context.Context) error {
 			return (&walletCmd{}).Execute(nil)
 		case "datanode":
 			return (&datanodeCmd{}).Execute(nil)
+		case "blockexplorer":
+			return (&blockExplorerCmd{}).Execute(nil)
 		case "tools":
 			return (&toolsCmd{}).Execute(nil)
 		}
@@ -84,6 +86,7 @@ func Main(ctx context.Context) error {
 		ProposeProtocolUpgrade,
 		Start,
 		Node,
+		BlockExplorer,
 	); err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, err)
 		return err
