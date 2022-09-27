@@ -34,6 +34,9 @@ type generateCmd struct {
 
 	Chain string `short:"c" long:"chain" required:"true" description:"The chain to be imported" choice:"vega" choice:"ethereum"`
 	Force bool   `long:"force" description:"Should the command generate a new wallet on top of an existing one"`
+
+	// clef options
+	EthereumClefAddress string `long:"ethereum-clef-address" description:"The URL to the clef instance that Vega will use to generate a clef wallet."`
 }
 
 const (
@@ -46,6 +49,10 @@ func (opts *generateCmd) Execute(_ []string) error {
 	output, err := opts.GetOutput()
 	if err != nil {
 		return err
+	}
+
+	if output.IsHuman() && opts.EthereumClefAddress != "" {
+		fmt.Println(yellow("Warning: Generating a new account in Clef has to be manually approved, and only the Key Store backend is supported. \nPlease consider using the 'import' command instead."))
 	}
 
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
@@ -73,20 +80,18 @@ func (opts *generateCmd) Execute(_ []string) error {
 	switch opts.Chain {
 	case ethereumChain:
 		var walletPass string
-		if opts.Config.ETH.ClefAddress == "" {
+		if opts.EthereumClefAddress == "" {
 			walletPass, err = opts.WalletPassphrase.Get("blockchain wallet", true)
 			if err != nil {
 				return err
 			}
-		} else if output.IsHuman() {
-			fmt.Println(yellow("Warning: Generating a new account in Clef has to be manually approved, and only the Key Store backend is supported. \nPlease consider using the 'import' command instead."))
 		}
 
 		data, err = nodewallets.GenerateEthereumWallet(
-			opts.Config.ETH,
 			vegaPaths,
 			registryPass,
 			walletPass,
+			opts.EthereumClefAddress,
 			opts.Force,
 		)
 		if err != nil {

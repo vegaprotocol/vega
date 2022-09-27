@@ -25,7 +25,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-type fileClient struct {
+type FileClient struct {
 	log *logging.Logger
 
 	config *FileConfig
@@ -34,8 +34,8 @@ type fileClient struct {
 	mut  sync.RWMutex
 }
 
-func newFileClient(log *logging.Logger, config *FileConfig) (*fileClient, error) {
-	fc := &fileClient{
+func NewFileClient(log *logging.Logger, config *FileConfig) (*FileClient, error) {
+	fc := &FileClient{
 		log:    log,
 		config: config,
 	}
@@ -56,7 +56,7 @@ func newFileClient(log *logging.Logger, config *FileConfig) (*fileClient, error)
 	return fc, nil
 }
 
-func (fc *fileClient) SendBatch(evts []events.Event) error {
+func (fc *FileClient) SendBatch(evts []events.Event) error {
 	for _, evt := range evts {
 		if err := fc.Send(evt); err != nil {
 			return err
@@ -65,7 +65,7 @@ func (fc *fileClient) SendBatch(evts []events.Event) error {
 	return nil
 }
 
-func (fc *fileClient) Send(event events.Event) error {
+func (fc *FileClient) Send(event events.Event) error {
 	fc.mut.RLock()
 	defer fc.mut.RUnlock()
 
@@ -83,4 +83,8 @@ func (fc *fileClient) Send(event events.Event) error {
 	allBytes := append(sizeBytes, protoBytes...) // nozero
 	fc.file.Write(allBytes)
 	return nil
+}
+
+func (fc *FileClient) Close() error {
+	return fc.file.Close()
 }

@@ -20,6 +20,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
 	"code.vegaprotocol.io/vega/datanode/service"
+	"code.vegaprotocol.io/vega/datanode/snapshot"
 
 	"code.vegaprotocol.io/vega/datanode/api"
 	"code.vegaprotocol.io/vega/datanode/broker"
@@ -46,6 +47,8 @@ type Config struct {
 
 	Pprof          pprof.Config  `group:"Pprof" namespace:"pprof"`
 	GatewayEnabled encoding.Bool `long:"gateway-enabled" choice:"true" choice:"false" description:" "`
+
+	Snapshot snapshot.Config `group:"Snapshot" namespace:"snapshot"`
 }
 
 // NewDefaultConfig returns a set of default configs for all vega packages, as specified at the per package
@@ -62,6 +65,7 @@ func NewDefaultConfig() Config {
 		Broker:         broker.NewDefaultConfig(),
 		Service:        service.NewDefaultConfig(),
 		GatewayEnabled: true,
+		Snapshot:       snapshot.NewDefaultConfig(),
 	}
 }
 

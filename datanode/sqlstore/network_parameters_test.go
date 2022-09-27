@@ -58,6 +58,15 @@ func TestNetParams(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, expected, actual)
 	})
+
+	t.Run("GetByKey", func(t *testing.T) {
+		param, err := netParamStore.GetByKey(ctx, "foo")
+		require.NoError(t, err)
+		assert.Equal(t, "baz", param.Value)
+
+		_, err = netParamStore.GetByKey(ctx, "foo1")
+		assert.Equal(t, sqlstore.ErrNoParameterFound, err)
+	})
 }
 
 func TestNetworkParameterPagination(t *testing.T) {

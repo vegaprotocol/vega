@@ -3,17 +3,17 @@
 ## Unreleased 0.57.0
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [6291](https://github.com/vegaprotocol/vega/issues/6291) - Remove `Nodewallet.ETH` configuration and add flags to supply `clef` addresses when importing or generating accounts
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [6283](https://github.com/vegaprotocol/vega/issues/6283) - Add commit hash to version if is development version
 
 ### 🐛 Fixes
+- [6296](https://github.com/vegaprotocol/vega/issues/6296) - Add `assetId` as a field to the `GraphQL UpdateAsset` type
 - [6273](https://github.com/vegaprotocol/vega/issues/6273) - Deposits return an empty list when no party is provided
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 
 ## 0.56.0
@@ -37,6 +37,7 @@
 - [6203](https://github.com/vegaprotocol/vega/issues/6203) - Log node selection process on the wallet CLI
 - [5925](https://github.com/vegaprotocol/vega/issues/5925) - Clean transfer response API, now ledger movements
 - [6254](https://github.com/vegaprotocol/vega/issues/6254) - Reject Ethereum configuration update via proposals
+- [5706](https://github.com/vegaprotocol/vega/issues/5076) - Datanode snapshot create and restore support
 
 ### 🐛 Fixes
 - [6255](https://github.com/vegaprotocol/vega/issues/6255) - Fix `WebSocket` upgrading when setting headers in HTTP middleware.

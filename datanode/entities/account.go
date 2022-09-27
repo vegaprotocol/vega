@@ -26,8 +26,13 @@ const (
 	systemOwnerByte byte   = '*'
 )
 
+type (
+	_Account  struct{}
+	AccountID = ID[_Account]
+)
+
 type Account struct {
-	ID       int64
+	ID       AccountID
 	PartyID  PartyID
 	AssetID  AssetID
 	MarketID MarketID
@@ -37,7 +42,7 @@ type Account struct {
 }
 
 func (a Account) String() string {
-	return fmt.Sprintf("{ID: %s}", a.AssetID)
+	return fmt.Sprintf("{ID: %s}", a.ID)
 }
 
 func AccountFromProto(va *vega.Account, txHash TxHash) (Account, error) {

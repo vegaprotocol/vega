@@ -48,8 +48,8 @@ type BlockStore interface {
 	GetLastBlock(ctx context.Context) (entities.Block, error)
 }
 
-// sqlStoreBroker : push events to each subscriber with a single go routine across all types.
-type sqlStoreBroker struct {
+// SQLStoreBroker : push events to each subscriber with a single go routine across all types.
+type SQLStoreBroker struct {
 	config             Config
 	log                *logging.Logger
 	subscribers        []SQLBrokerSubscriber
@@ -57,15 +57,16 @@ type sqlStoreBroker struct {
 	eventSource        eventSource
 	transactionManager TransactionManager
 	blockStore         BlockStore
+	onBlockCommitted   func(ctx context.Context, chainId string, lastCommittedBlockHeight int64) bool
 	chainInfo          ChainInfoI
 	lastBlock          *entities.Block
 }
 
-//revive:disable:unexported-return
 func NewSQLStoreBroker(log *logging.Logger, config Config, chainInfo ChainInfoI,
-	eventsource eventSource, transactionManager TransactionManager, blockStore BlockStore, subs ...SQLBrokerSubscriber,
-) *sqlStoreBroker {
-	b := &sqlStoreBroker{
+	eventsource eventSource, transactionManager TransactionManager, blockStore BlockStore, onBlockCommitted func(ctx context.Context, chainId string, lastCommittedBlockHeight int64) bool,
+	subs []SQLBrokerSubscriber,
+) *SQLStoreBroker {
+	b := &SQLStoreBroker{
 		config:             config,
 		log:                log,
 		subscribers:        subs,
@@ -74,6 +75,7 @@ func NewSQLStoreBroker(log *logging.Logger, config Config, chainInfo ChainInfoI,
 		transactionManager: transactionManager,
 		blockStore:         blockStore,
 		chainInfo:          chainInfo,
+		onBlockCommitted:   onBlockCommitted,
 	}
 
 	for _, s := range subs {
@@ -85,7 +87,7 @@ func NewSQLStoreBroker(log *logging.Logger, config Config, chainInfo ChainInfoI,
 	return b
 }
 
-func (b *sqlStoreBroker) Receive(ctx context.Context) error {
+func (b *SQLStoreBroker) Receive(ctx context.Context) error {
 	if err := b.eventSource.Listen(); err != nil {
 		return err
 	}
@@ -106,16 +108,25 @@ func (b *sqlStoreBroker) Receive(ctx context.Context) error {
 		if nextBlock, err = b.processBlock(ctx, dbContext, nextBlock, receiveCh, errCh); err != nil {
 			return err
 		}
+
+		chainID, err := b.chainInfo.GetChainID()
+		if err != nil {
+			return fmt.Errorf("failed to receive events, unable to get chain id:%w", err)
+		}
+		lastCommittedBlockHeight := nextBlock.Height - 1
+		if b.onBlockCommitted(ctx, chainID, lastCommittedBlockHeight) {
+			return nil
+		}
 	}
 }
 
 // waitForFirstBlock processes all events until a new block is encountered and returns the new block. A 'new' block is one for which
 // events have not already been processed by this datanode.
-func (b *sqlStoreBroker) waitForFirstBlock(ctx context.Context, errCh <-chan error, receiveCh <-chan events.Event) (*entities.Block, error) {
+func (b *SQLStoreBroker) waitForFirstBlock(ctx context.Context, errCh <-chan error, receiveCh <-chan events.Event) (*entities.Block, error) {
 	lastProcessedBlock, err := b.blockStore.GetLastBlock(ctx)
 
 	if err == nil {
-		b.log.Infof("waiting for first unprocessed block, last processed block: %v", lastProcessedBlock)
+		b.log.Infof("waiting for first unprocessed block, last processed block height: %d", lastProcessedBlock.Height)
 	} else if errors.Is(err, sqlstore.ErrNoLastBlock) {
 		lastProcessedBlock = entities.Block{
 			VegaTime: time.Time{},
@@ -144,7 +155,7 @@ func (b *sqlStoreBroker) waitForFirstBlock(ctx context.Context, errCh <-chan err
 				}
 
 				if timeUpdate.BlockNr() > lastProcessedBlock.Height {
-					b.log.Info("first unprocessed block received, starting block processing")
+					b.log.Infof("first unprocessed block received, starting block processing at height %d", timeUpdate.BlockNr())
 					return entities.BlockFromTimeUpdate(timeUpdate)
 				}
 			}
@@ -153,7 +164,7 @@ func (b *sqlStoreBroker) waitForFirstBlock(ctx context.Context, errCh <-chan err
 }
 
 // processBlock processes all events in the current block up to the next time update.  The next time block is returned when processing of the block is done.
-func (b *sqlStoreBroker) processBlock(ctx context.Context, dbContext context.Context, block *entities.Block, eventsCh <-chan events.Event, errCh <-chan error) (*entities.Block, error) {
+func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Context, block *entities.Block, eventsCh <-chan events.Event, errCh <-chan error) (*entities.Block, error) {
 	metrics.BlockCounterInc()
 	metrics.SetBlockHeight(float64(block.Height))
 
@@ -231,7 +242,7 @@ func (b *sqlStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 	}
 }
 
-func (b *sqlStoreBroker) flushAllSubscribers(blockCtx context.Context) error {
+func (b *SQLStoreBroker) flushAllSubscribers(blockCtx context.Context) error {
 	for _, subscriber := range b.subscribers {
 		subName := reflect.TypeOf(subscriber).Elem().Name()
 		timer := metrics.NewTimeCounter(subName)
@@ -244,7 +255,7 @@ func (b *sqlStoreBroker) flushAllSubscribers(blockCtx context.Context) error {
 	return nil
 }
 
-func (b *sqlStoreBroker) addBlock(ctx context.Context, block *entities.Block) error {
+func (b *SQLStoreBroker) addBlock(ctx context.Context, block *entities.Block) error {
 	// At startup we get time updates that have the same time to microsecond precision which causes
 	// a primary key restraint failure, this code is to handle this scenario
 	if b.lastBlock == nil || !block.VegaTime.Equal(b.lastBlock.VegaTime) {
@@ -258,7 +269,7 @@ func (b *sqlStoreBroker) addBlock(ctx context.Context, block *entities.Block) er
 	return nil
 }
 
-func (b *sqlStoreBroker) handleEvent(ctx context.Context, e events.Event) error {
+func (b *SQLStoreBroker) handleEvent(ctx context.Context, e events.Event) error {
 	if err := checkChainID(b.chainInfo, e.ChainID()); err != nil {
 		return err
 	}
@@ -274,7 +285,7 @@ func (b *sqlStoreBroker) handleEvent(ctx context.Context, e events.Event) error 
 	return nil
 }
 
-func (b *sqlStoreBroker) push(ctx context.Context, sub SQLBrokerSubscriber, e events.Event) error {
+func (b *SQLStoreBroker) push(ctx context.Context, sub SQLBrokerSubscriber, e events.Event) error {
 	subName := reflect.TypeOf(sub).Elem().Name()
 	timer := metrics.NewTimeCounter("sql", subName, e.Type().String())
 	err := sub.Push(ctx, e)

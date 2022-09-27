@@ -69,7 +69,7 @@ func createTestNodeWallets(t *testing.T) *nodewallets.NodeWallets {
 	registryPass := vgrand.RandomStr(10)
 	walletsPass := vgrand.RandomStr(10)
 
-	if _, err := nodewallets.GenerateEthereumWallet(config.ETH, vegaPaths, registryPass, walletsPass, false); err != nil {
+	if _, err := nodewallets.GenerateEthereumWallet(vegaPaths, registryPass, walletsPass, "", false); err != nil {
 		panic("couldn't generate Ethereum node wallet for tests")
 	}
 

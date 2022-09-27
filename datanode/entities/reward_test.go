@@ -38,7 +38,7 @@ func TestRewardFromProto(t *testing.T) {
 
 	vegaTime := entities.NanosToPostgresTimestamp(now.UnixNano())
 
-	reward, err := entities.RewardFromProto(pbReward, generateTxHash(), vegaTime)
+	reward, err := entities.RewardFromProto(pbReward, generateTxHash(), vegaTime, 1)
 	require.NoError(t, err)
 	assert.Equal(t, "a0b1", reward.PartyID.String())
 	assert.Equal(t, "c2d3", reward.AssetID.String())
@@ -47,4 +47,5 @@ func TestRewardFromProto(t *testing.T) {
 	assert.InDelta(t, 3.14, reward.PercentOfTotal, 0.001)
 	fmt.Printf("%v - %v\n", now, reward.VegaTime)
 	assert.True(t, vegaTime.Equal(reward.VegaTime))
+	assert.Equal(t, uint64(1), reward.SeqNum)
 }

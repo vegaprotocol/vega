@@ -54,7 +54,7 @@ func (od *OracleData) Push(ctx context.Context, evt events.Event) error {
 
 func (od *OracleData) consume(ctx context.Context, event OracleDataEvent) error {
 	data := event.OracleData()
-	entity, err := entities.OracleDataFromProto(&data, entities.TxHash(event.TxHash()), od.vegaTime)
+	entity, err := entities.OracleDataFromProto(&data, entities.TxHash(event.TxHash()), od.vegaTime, event.Sequence())
 	if err != nil {
 		errors.Wrap(err, "converting oracle data proto to database entity failed")
 	}

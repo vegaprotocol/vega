@@ -15,7 +15,6 @@ package entities
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
@@ -30,10 +29,10 @@ import (
 type AggregatedBalance struct {
 	VegaTime  time.Time
 	Balance   decimal.Decimal
-	AccountID *int64
-	PartyID   *PartyID
-	AssetID   *AssetID
-	MarketID  *MarketID
+	AccountID AccountID
+	PartyID   PartyID
+	AssetID   AssetID
+	MarketID  MarketID
 	Type      *types.AccountType
 }
 
@@ -41,22 +40,22 @@ func (balance *AggregatedBalance) ToProto() *v2.AggregatedBalance {
 	var accountType vega.AccountType
 	var accountID, partyID, assetID, marketID *string
 
-	if balance.AccountID != nil {
-		aid := strconv.FormatInt(*balance.AccountID, 10)
+	if balance.AccountID != "" {
+		aid := balance.AccountID.String()
 		accountID = &aid
 	}
 
-	if balance.PartyID != nil {
+	if balance.PartyID != "" {
 		pid := balance.PartyID.String()
 		partyID = &pid
 	}
 
-	if balance.AssetID != nil {
+	if balance.AssetID != "" {
 		aid := balance.AssetID.String()
 		assetID = &aid
 	}
 
-	if balance.MarketID != nil {
+	if balance.MarketID != "" {
 		mid := balance.MarketID.String()
 		marketID = &mid
 	}

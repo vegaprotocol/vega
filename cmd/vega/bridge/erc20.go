@@ -65,7 +65,7 @@ func (e *ERC20Cmd) GetSigner() (bridges.Signer, error) {
 			return nil, err
 		}
 
-		s, err = nodewallets.GetEthereumWallet(e.Config.ETH, vegaPaths, pass)
+		s, err = nodewallets.GetEthereumWallet(vegaPaths, pass)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't get Ethereum node wallet: %w", err)
 		}

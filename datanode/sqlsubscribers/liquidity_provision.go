@@ -20,7 +20,6 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
 	"github.com/pkg/errors"
-	"google.golang.org/protobuf/proto"
 )
 
 type LiquidityProvisionEvent interface {
@@ -37,23 +36,12 @@ type LiquidityProvision struct {
 	subscriber
 	store LiquidityProvisionStore
 	log   *logging.Logger
-
-	eventDeduplicator *eventDeduplicator[string, LiquidityProvisionEvent]
 }
 
 func NewLiquidityProvision(store LiquidityProvisionStore, log *logging.Logger) *LiquidityProvision {
 	return &LiquidityProvision{
 		store: store,
 		log:   log,
-		eventDeduplicator: NewEventDeduplicator(func(ctx context.Context, lpe LiquidityProvisionEvent) string {
-			return lpe.LiquidityProvision().Id
-		},
-			func(lpe1 LiquidityProvisionEvent, lpe2 LiquidityProvisionEvent) bool {
-				lp1 := lpe1.LiquidityProvision()
-				lp2 := lpe2.LiquidityProvision()
-				return proto.Equal(lp1, lp2)
-			},
-		),
 	}
 }
 
@@ -75,22 +63,15 @@ func (lp *LiquidityProvision) Push(ctx context.Context, evt events.Event) error 
 }
 
 func (lp *LiquidityProvision) flush(ctx context.Context) error {
-	events := lp.eventDeduplicator.Flush()
-	for _, event := range events {
-		provision := event.LiquidityProvision()
-		entity, err := entities.LiquidityProvisionFromProto(provision, entities.TxHash(event.TxHash()), lp.vegaTime)
-		if err != nil {
-			return errors.Wrap(err, "converting liquidity provision to database entity failed")
-		}
-		lp.store.Upsert(ctx, entity)
-	}
-
-	err := lp.store.Flush(ctx)
-
-	return errors.Wrap(err, "flushing liquidity provisions")
+	return errors.Wrap(lp.store.Flush(ctx), "flushing liquidity provisions")
 }
 
 func (lp *LiquidityProvision) consume(ctx context.Context, event LiquidityProvisionEvent) error {
-	lp.eventDeduplicator.AddEvent(ctx, event)
-	return nil
+	entity, err := entities.LiquidityProvisionFromProto(event.LiquidityProvision(), entities.TxHash(event.TxHash()), lp.vegaTime)
+	if err != nil {
+		return errors.Wrap(err, "converting liquidity provision event to database entity failed")
+	}
+
+	err = lp.store.Upsert(ctx, entity)
+	return errors.Wrap(err, "adding liquidity provision to store")
 }

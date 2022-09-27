@@ -82,8 +82,6 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 	conf.API.IP = "127.0.0.1"
 	conf.API.Port = 64201
 
-	logger := logging.NewTestLogger()
-
 	// Mock BlockchainClient
 	mockCtrl := gomock.NewController(t)
 
@@ -91,7 +89,7 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 
 	mockCoreServiceClient.EXPECT().GetState().Return(connectivity.Ready).Times(2)
 
-	eventSource, err := broker.NewEventSource(conf.Broker, logger)
+	eventSource, err := broker.NewEventSource(conf.Broker, logging.NewTestLogger())
 	if err != nil {
 		t.Fatalf("failed to create event source: %v", err)
 	}
@@ -102,14 +100,15 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 		Connection: dummyConnection{},
 	}
 	sqlChainStore := sqlstore.NewChain(sqlConn)
-	sqlChainService := service.NewChain(sqlChainStore, logger)
+	sqlChainService := service.NewChain(sqlChainStore, logging.NewTestLogger())
 
-	bro, err := broker.New(ctx, logger, conf.Broker, sqlChainService, eventSource)
+	bro, err := broker.New(ctx, logging.NewTestLogger(), conf.Broker, sqlChainService, eventSource)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create broker")
 		return
 	}
 
+	logger := logging.NewTestLogger()
 	eventService := subscribers.NewService(bro)
 	sqlOrderStore := sqlstore.NewOrders(sqlConn, logger)
 	sqlOrderService := service.NewOrder(sqlOrderStore, logger)

@@ -269,6 +269,9 @@ var (
 	// data-node.
 	DataNodeStorageHome = StatePath(filepath.Join(DataNodeStateHome.String(), "storage"))
 
+	// DataNodeSnapshotHome is the folder containing the snapshots of the data-node.
+	DataNodeSnapshotHome = StatePath(filepath.Join(DataNodeStateHome.String(), "snapshots"))
+
 	// NodeStateHome is the folder containing the state of the node.
 	NodeStateHome = StatePath("node")
 
