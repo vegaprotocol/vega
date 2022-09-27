@@ -26,7 +26,6 @@ var accountsKey = (&types.PayloadStakingAccounts{}).Key()
 
 type accountingSnapshotState struct {
 	serialised  []byte
-	changed     bool
 	isRestoring bool
 }
 
@@ -60,17 +59,12 @@ func (a *Accounting) serialise(k string) ([]byte, error) {
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
-	if !a.HasChanged(k) {
-		return a.accState.serialised, nil
-	}
-
 	data, err := a.serialiseStakingAccounts()
 	if err != nil {
 		return nil, err
 	}
 
 	a.accState.serialised = data
-	a.accState.changed = false
 	return data, nil
 }
 
@@ -94,11 +88,6 @@ func (a *Accounting) Keys() []string {
 
 func (a *Accounting) Stopped() bool {
 	return false
-}
-
-func (a *Accounting) HasChanged(k string) bool {
-	return true
-	// return a.accState.changed
 }
 
 func (a *Accounting) GetState(k string) ([]byte, []types.StateProvider, error) {
@@ -142,7 +131,6 @@ func (a *Accounting) restoreStakingAccounts(ctx context.Context, accounts *types
 
 	a.stakingAssetTotalSupply = accounts.StakingAssetTotalSupply.Clone()
 	var err error
-	a.accState.changed = false
 	a.accState.serialised, err = proto.Marshal(p.IntoProto())
 	a.broker.SendBatch(evts)
 	a.broker.SendBatch(pevts)

@@ -29,8 +29,6 @@ type accState struct {
 	assPL              types.PayloadCollateralAssets
 	assets             map[string]types.Asset
 	assetIDs           []string
-	updatesAccounts    bool
-	updatesAssets      bool
 	serialisedAccounts []byte
 	serialisedAssets   []byte
 	hashKeys           []string
@@ -54,11 +52,6 @@ func (e *Engine) Keys() []string {
 
 func (e *Engine) Stopped() bool {
 	return false
-}
-
-func (e *Engine) HasChanged(k string) bool {
-	// return e.state.HasChanged(k)
-	return true
 }
 
 func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
@@ -110,7 +103,6 @@ func (e *Engine) restoreAccounts(ctx context.Context, accs *types.CollateralAcco
 	e.broker.SendBatch(evts)
 	e.broker.SendBatch(pevts)
 	var err error
-	e.state.updatesAccounts = false
 	e.state.serialisedAccounts, err = proto.Marshal(p.IntoProto())
 
 	return err
@@ -133,7 +125,6 @@ func (e *Engine) restoreAssets(assets *types.CollateralAssets, p *types.Payload)
 		e.state.enableAsset(ast)
 	}
 	var err error
-	e.state.updatesAssets = false
 	e.state.serialisedAssets, err = proto.Marshal(p.IntoProto())
 	return err
 }
@@ -146,10 +137,8 @@ func newAccState() *accState {
 		assPL: types.PayloadCollateralAssets{
 			CollateralAssets: &types.CollateralAssets{},
 		},
-		assets:          map[string]types.Asset{},
-		assetIDs:        []string{},
-		updatesAccounts: true,
-		updatesAssets:   true,
+		assets:   map[string]types.Asset{},
+		assetIDs: []string{},
 	}
 	state.accountsKey = state.accPL.Key()
 	state.assetsKey = state.assPL.Key()
@@ -165,16 +154,13 @@ func (a *accState) enableAsset(asset types.Asset) {
 	a.assets[asset.ID] = asset
 	a.assetIDs = append(a.assetIDs, asset.ID)
 	sort.Strings(a.assetIDs)
-	a.updatesAssets = true
 }
 
 func (a *accState) updateAsset(asset types.Asset) {
 	a.assets[asset.ID] = asset
-	a.updatesAssets = true
 }
 
 func (a *accState) updateAccs(accs []*types.Account) {
-	a.updatesAccounts = true
 	a.accPL.CollateralAccounts.Accounts = accs[:]
 }
 
@@ -192,7 +178,6 @@ func (a *accState) hashAssets() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	a.updatesAssets = false
 	a.serialisedAssets = data
 	return data, nil
 }
@@ -207,34 +192,15 @@ func (a *accState) hashAccounts() ([]byte, error) {
 		return nil, err
 	}
 	a.serialisedAccounts = data
-	a.updatesAccounts = false
 	return data, nil
 }
 
-func (a *accState) HasChanged(k string) bool {
-	switch k {
-	case a.accountsKey:
-		return a.updatesAccounts
-	case a.assetsKey:
-		return a.updatesAssets
-	default:
-		return false
-	}
-}
-
-func (a *accState) serialiseK(k string, serialFunc func() ([]byte, error), dataField *[]byte, changedField *bool) ([]byte, error) {
-	if !a.HasChanged(k) {
-		if dataField == nil {
-			return nil, nil
-		}
-		return *dataField, nil
-	}
+func (a *accState) serialiseK(serialFunc func() ([]byte, error), dataField *[]byte) ([]byte, error) {
 	data, err := serialFunc()
 	if err != nil {
 		return nil, err
 	}
 	*dataField = data
-	*changedField = false
 	return data, nil
 }
 
@@ -242,9 +208,9 @@ func (a *accState) serialiseK(k string, serialFunc func() ([]byte, error), dataF
 func (a *accState) getState(k string) ([]byte, error) {
 	switch k {
 	case a.accountsKey:
-		return a.serialiseK(k, a.hashAccounts, &a.serialisedAccounts, &a.updatesAccounts)
+		return a.serialiseK(a.hashAccounts, &a.serialisedAccounts)
 	case a.assetsKey:
-		return a.serialiseK(k, a.hashAssets, &a.serialisedAssets, &a.updatesAssets)
+		return a.serialiseK(a.hashAssets, &a.serialisedAssets)
 	default:
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}

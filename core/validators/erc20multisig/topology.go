@@ -130,10 +130,7 @@ func NewTopology(
 		seen:                map[string]struct{}{},
 		witnessedThresholds: map[string]struct{}{},
 		witnessedSigners:    map[string]struct{}{},
-		tss: &topologySnapshotState{
-			changedVerifiedState: true,
-			changedPendingState:  true,
-		},
+		tss:                 &topologySnapshotState{},
 	}
 	return t
 }
@@ -202,8 +199,6 @@ func (t *Topology) ProcessSignerEvent(event *types.SignerEvent) error {
 		check:       func() error { return t.ocv.CheckSignerEvent(event) },
 	}
 	t.pendingSigners[event.ID] = pending
-	t.tss.changedPendingState = true
-
 	t.log.Info("signer event received, starting validation",
 		logging.String("event", event.String()))
 
@@ -223,8 +218,6 @@ func (t *Topology) ProcessThresholdEvent(event *types.SignerThresholdSetEvent) e
 		check:                   func() error { return t.ocv.CheckThresholdSetEvent(event) },
 	}
 	t.pendingThresholds[event.ID] = pending
-	t.tss.changedPendingState = true
-
 	t.log.Info("signer threshold set event received, starting validation",
 		logging.String("event", event.String()))
 
@@ -240,8 +233,6 @@ func (t *Topology) ensureNotDuplicate(h string) bool {
 		return false
 	}
 	t.seen[h] = struct{}{}
-	t.tss.changedVerifiedState = true
-
 	return true
 }
 
@@ -281,10 +272,6 @@ func (t *Topology) updateThreshold(ctx context.Context) {
 		return
 	}
 
-	// from here we assume state have changed
-	t.tss.changedVerifiedState = true
-	t.tss.changedPendingState = true
-
 	// sort all IDs to access pendings events in order
 	ids := []string{}
 	for k := range t.witnessedThresholds {
@@ -322,11 +309,6 @@ func (t *Topology) updateSigners(ctx context.Context) {
 	if len(t.witnessedSigners) <= 0 {
 		return
 	}
-
-	// from here we assume state have changed
-	t.tss.changedVerifiedState = true
-	t.tss.changedPendingState = true
-
 	// sort all IDs to access pendings events in order
 	ids := []string{}
 	for k := range t.witnessedSigners {

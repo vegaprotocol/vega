@@ -132,7 +132,6 @@ type TargetStakeCalculator interface {
 	GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint, trades []*types.Trade) *num.Uint
 	UpdateScalingFactor(sFactor num.Decimal) error
 	UpdateTimeWindow(tWindow time.Duration)
-	Changed() bool
 	StopSnapshots()
 	UpdateParameters(types.TargetStakeParameters)
 }

@@ -106,7 +106,7 @@ func NewAccounting(
 		ethClient:               ethClient,
 		accounts:                map[string]*Account{},
 		stakingAssetTotalSupply: num.UintZero(),
-		accState:                accountingSnapshotState{changed: true},
+		accState:                accountingSnapshotState{},
 		evtFwd:                  evtForward,
 		witness:                 witness,
 		isValidator:             isValidator,
@@ -152,8 +152,6 @@ func (a *Accounting) AddEvent(ctx context.Context, evt *types.StakeLinking) {
 		a.accounts[evt.Party] = acc
 		a.hashableAccounts = append(a.hashableAccounts, acc)
 	}
-
-	a.accState.changed = true
 }
 
 // GetAllAvailableBalances returns the staking balance for all parties.
@@ -233,7 +231,6 @@ func (a *Accounting) getLastBlockSeen() uint64 {
 
 func (a *Accounting) onStakeTotalSupplyVerified(event interface{}, ok bool) {
 	if ok {
-		a.accState.changed = true
 		a.stakingAssetTotalSupply = a.pendingStakeTotalSupply.sts.TotalSupply
 		a.log.Info("stake total supply finalized",
 			logging.BigUint("total-supply", a.stakingAssetTotalSupply))
@@ -374,5 +371,4 @@ func (a *Accounting) ValidatorKeyChanged(ctx context.Context, oldKey, newKey str
 
 	// update the account with the new stake linking events
 	a.hashableAccounts[oldInd] = acc
-	a.accState.changed = true
 }

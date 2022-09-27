@@ -115,9 +115,6 @@ func (t *Topology) AddKeyRotate(ctx context.Context, nodeID string, currentBlock
 		newPubKey:   kr.NewPubKey,
 		newKeyIndex: kr.NewPubKeyIndex,
 	}
-
-	t.tss.changed = true
-
 	t.log.Debug("Successfully added key rotation to pending key rotations",
 		logging.String("nodeID", nodeID),
 		logging.Uint64("currentBlockHeight", currentBlockHeight),
@@ -217,8 +214,6 @@ func (t *Topology) keyRotationBeginBlockLocked(ctx context.Context) {
 	}
 
 	delete(t.pendingPubKeyRotations, t.currentBlockHeight)
-
-	t.tss.changed = true
 }
 
 func (t *Topology) NotifyOnKeyChange(fns ...func(ctx context.Context, oldPubKey, newPubKey string)) {
