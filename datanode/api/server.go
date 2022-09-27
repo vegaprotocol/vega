@@ -20,6 +20,8 @@ import (
 	"strconv"
 	"time"
 
+	"code.vegaprotocol.io/vega/datanode/dehistory/store"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
 	"code.vegaprotocol.io/vega/datanode/contextutil"
@@ -53,6 +55,16 @@ type EventService interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/block_service_mock.go -package mocks code.vegaprotocol.io/vega/datanode/api BlockService
 type BlockService interface {
 	GetLastBlock(ctx context.Context) (entities.Block, error)
+}
+
+// DeHistoryService ...
+//
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/block_service_mock.go -package mocks code.vegaprotocol.io/vega/datanode/api DeHistoryService
+type DeHistoryService interface {
+	GetHighestBlockHeightHistorySegment() (store.SegmentIndexEntry, error)
+	ListAllHistorySegments() ([]store.SegmentIndexEntry, error)
+	FetchHistorySegment(ctx context.Context, historySegmentID string) (store.SegmentIndexEntry, error)
+	GetActivePeerAddresses() []string
 }
 
 // GRPCServer represent the grpc api provided by the vega node.
@@ -99,6 +111,7 @@ type GRPCServer struct {
 	marketDepthService         *service.MarketDepth
 	ledgerService              *service.Ledger
 	protocolUpgradeService     *service.ProtocolUpgrade
+	deHistoryService           DeHistoryService
 
 	eventObserver *eventObserver
 
@@ -147,6 +160,7 @@ func NewGRPCServer(
 	marketDepthService *service.MarketDepth,
 	ledgerService *service.Ledger,
 	protocolUpgradeService *service.ProtocolUpgrade,
+	deHistoryService DeHistoryService,
 ) *GRPCServer {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -192,6 +206,7 @@ func NewGRPCServer(
 		marketDataService:          marketDataService,
 		ledgerService:              ledgerService,
 		protocolUpgradeService:     protocolUpgradeService,
+		deHistoryService:           deHistoryService,
 
 		eventObserver: &eventObserver{
 			log:          log,
@@ -431,6 +446,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		ethereumKeyRotationService: g.ethereumKeyRotationService,
 		blockService:               g.blockService,
 		protocolUpgradeService:     g.protocolUpgradeService,
+		deHistoryService:           g.deHistoryService,
 	}
 
 	protoapi2.RegisterTradingDataServiceServer(g.srv, tradingDataSvcV2)

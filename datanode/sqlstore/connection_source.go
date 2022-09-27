@@ -161,6 +161,10 @@ func (s *ConnectionSource) Commit(ctx context.Context) error {
 	return nil
 }
 
+func (s *ConnectionSource) Close() {
+	s.pool.Close()
+}
+
 func registerNumericType(poolConfig *pgxpool.Config) {
 	// Cause postgres numeric types to be loaded as shopspring decimals and vice-versa
 	poolConfig.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {

@@ -20,7 +20,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"code.vegaprotocol.io/vega/datanode/snapshot"
+	"code.vegaprotocol.io/vega/datanode/dehistory/snapshot"
+
+	"code.vegaprotocol.io/vega/datanode/dehistory"
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 
 	"code.vegaprotocol.io/vega/datanode/api"
@@ -46,8 +48,8 @@ type NodeCommand struct {
 	embeddedPostgres              *embeddedpostgres.EmbeddedPostgres
 	transactionalConnectionSource *sqlstore.ConnectionSource
 
-	snapshotService   *snapshot.Service
-	snapshotPublisher *snapshot.Publisher
+	deHistoryService *dehistory.Service
+	snapshotService  *snapshot.Service
 
 	vegaCoreServiceClient api.CoreServiceClient
 
@@ -188,6 +190,7 @@ func (l *NodeCommand) createGRPCServer(config api.Config) *api.GRPCServer {
 		l.marketDepthService,
 		l.ledgerService,
 		l.protocolUpgradeService,
+		l.deHistoryService,
 	)
 	return grpcServer
 }

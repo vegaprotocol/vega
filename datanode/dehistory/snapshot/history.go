@@ -10,7 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/fs"
 )
 
-type HistorySnapshot struct {
+type History struct {
 	ChainID    string
 	HeightFrom int64
 	HeightTo   int64
@@ -18,27 +18,27 @@ type HistorySnapshot struct {
 
 const historySnapshotTypeIdentifier = "historysnapshot"
 
-func NewHistorySnapshot(chainID string, heightFrom int64, heightTo int64) HistorySnapshot {
-	return HistorySnapshot{
+func NewHistorySnapshot(chainID string, heightFrom int64, heightTo int64) History {
+	return History{
 		ChainID:    chainID,
 		HeightFrom: heightFrom,
 		HeightTo:   heightTo,
 	}
 }
 
-func (h HistorySnapshot) String() string {
+func (h History) String() string {
 	return fmt.Sprintf("{History Snapshot for Chain ID:%s Height From:%d Height To:%d}", h.ChainID, h.HeightFrom, h.HeightTo)
 }
 
-func (h HistorySnapshot) UncompressedDataDir() string {
+func (h History) UncompressedDataDir() string {
 	return fmt.Sprintf("%s-%d-%d-%s", h.ChainID, h.HeightFrom, h.HeightTo, historySnapshotTypeIdentifier)
 }
 
-func (h HistorySnapshot) CompressedFileName() string {
+func (h History) CompressedFileName() string {
 	return fmt.Sprintf("%s-%d-%d-%s.tar.gz", h.ChainID, h.HeightFrom, h.HeightTo, historySnapshotTypeIdentifier)
 }
 
-func (h HistorySnapshot) GetCopySQL(dbMetaData DatabaseMetadata, databaseSnapshotsPath string) []string {
+func (h History) GetCopySQL(dbMetaData DatabaseMetadata, databaseSnapshotsPath string) []string {
 	var copySQL []string
 	for tableName, meta := range dbMetaData.TableNameToMetaData {
 		if dbMetaData.TableNameToMetaData[tableName].Hypertable {
@@ -53,14 +53,14 @@ func (h HistorySnapshot) GetCopySQL(dbMetaData DatabaseMetadata, databaseSnapsho
 	return copySQL
 }
 
-func GetHistorySnapshots(snapshotsDir string) (string, []HistorySnapshot, error) {
+func GetHistorySnapshots(snapshotsDir string) (string, []History, error) {
 	files, err := os.ReadDir(snapshotsDir)
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to get files in snapshot directory:%w", err)
 	}
 
 	chainID := ""
-	var histories []HistorySnapshot
+	var histories []History
 	for _, file := range files {
 		if !file.IsDir() {
 			history, err := fromHistoryFileName(file.Name())
@@ -96,7 +96,7 @@ func GetHistorySnapshots(snapshotsDir string) (string, []HistorySnapshot, error)
 	return chainID, histories, nil
 }
 
-func fromHistoryFileName(fileName string) (*HistorySnapshot, error) {
+func fromHistoryFileName(fileName string) (*History, error) {
 	re, err := regexp.Compile("(.*)-(\\d+)-(\\d+)-" + historySnapshotTypeIdentifier + ".tar.gz")
 	if err != nil {
 		return nil, fmt.Errorf("failed to compile reg exp:%w", err)

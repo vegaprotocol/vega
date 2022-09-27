@@ -41,14 +41,15 @@ func main() {
 
 	config := broker.NewDefaultConfig()
 
-	fileEventSource, err := broker.NewFileEventSource(sourceFile, 0, config.FileEventSourceConfig.SendChannelBufferSize)
+	fileEventSource, err := broker.NewFileEventSource(sourceFile, 0, config.FileEventSourceConfig.SendChannelBufferSize,
+		&chainInfo{})
 	if err != nil {
 		panic(err)
 	}
 
 	eventsCh, errCh := fileEventSource.Receive(ctx)
 
-	fileClient, err := broker2.NewFileClient(ctx, logging.NewTestLogger(), &broker2.FileConfig{
+	fileClient, err := broker2.NewFileClient(logging.NewTestLogger(), &broker2.FileConfig{
 		Enabled: true,
 		File:    EventFile,
 	})
@@ -107,4 +108,17 @@ func compressEventFile(source string, target string) {
 	if _, err := io.Copy(zw, sourceFile); err != nil {
 		panic(err)
 	}
+}
+
+type chainInfo struct {
+	chainID string
+}
+
+func (t *chainInfo) SetChainID(s string) error {
+	t.chainID = s
+	return nil
+}
+
+func (t *chainInfo) GetChainID() (string, error) {
+	return t.chainID, nil
 }

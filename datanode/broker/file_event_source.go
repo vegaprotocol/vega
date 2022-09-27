@@ -30,16 +30,18 @@ type fileEventSource struct {
 	eventsFile            string
 	timeBetweenBlocks     time.Duration
 	sendChannelBufferSize int
+	chainID               string
 }
 
 //revive:disable:unexported-return
 func NewFileEventSource(file string, timeBetweenBlocks time.Duration,
-	sendChannelBufferSize int) (*fileEventSource, error,
+	sendChannelBufferSize int, chainID string) (*fileEventSource, error,
 ) {
 	return &fileEventSource{
 		eventsFile:            file,
 		timeBetweenBlocks:     timeBetweenBlocks,
 		sendChannelBufferSize: sendChannelBufferSize,
+		chainID:               chainID,
 	}, nil
 }
 
@@ -51,17 +53,17 @@ func (e fileEventSource) Receive(ctx context.Context) (<-chan events.Event, <-ch
 	eventsCh := make(chan events.Event, e.sendChannelBufferSize)
 	errorCh := make(chan error, 1)
 
-	go sendAllEvents(ctx, eventsCh, e.eventsFile, e.timeBetweenBlocks, errorCh)
+	go sendAllEvents(ctx, eventsCh, e.eventsFile, e.timeBetweenBlocks, errorCh, e.chainID)
 
 	return eventsCh, errorCh
 }
 
 func sendAllEvents(ctx context.Context, out chan<- events.Event, file string,
-	timeBetweenBlocks time.Duration, errorCh chan<- error,
+	timeBetweenBlocks time.Duration, errorCh chan<- error, chainID string,
 ) {
 	eventFile, err := os.Open(file)
 	defer func() {
-		eventFile.Close()
+		_ = eventFile.Close()
 		close(out)
 		close(errorCh)
 	}()
@@ -88,7 +90,11 @@ func sendAllEvents(ctx context.Context, out chan<- events.Event, file string,
 				// Nothing more to read, send any pending messages. Do not immediately close our
 				// output channel, instead sit and wait for our context to be cancelled (e.g. by a
 				// shutdown), so as not to trigger a premature exit.
-				sendBlock(ctx, out, eventBlock)
+				err = sendBlock(ctx, out, eventBlock)
+				if err != nil {
+					errorCh <- fmt.Errorf("send block failed:%w", err)
+					return
+				}
 				<-ctx.Done()
 				return
 			}
@@ -113,6 +119,12 @@ func sendAllEvents(ctx context.Context, out chan<- events.Event, file string,
 			err = proto.Unmarshal(msgBytes, event)
 			if err != nil {
 				errorCh <- fmt.Errorf("failed to unmarshal bus event: %w", err)
+				return
+			}
+
+			err = checkChainID(chainID, event.ChainId)
+			if err != nil {
+				errorCh <- fmt.Errorf("check chain id failed: %w", err)
 				return
 			}
 
