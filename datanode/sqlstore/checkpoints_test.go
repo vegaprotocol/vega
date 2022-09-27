@@ -24,13 +24,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func addCheckpoint(t *testing.T, ns *sqlstore.Checkpoints, hash, blockHash string, blockHeight int64, block entities.Block) entities.Checkpoint {
+func addCheckpoint(t *testing.T, ns *sqlstore.Checkpoints, hash, blockHash string, blockHeight int64, block entities.Block,
+	seqNum uint64,
+) entities.Checkpoint {
 	t.Helper()
 	c := entities.Checkpoint{
 		Hash:        hash,
 		BlockHash:   blockHash,
 		BlockHeight: blockHeight,
 		VegaTime:    block.VegaTime,
+		SeqNum:      seqNum,
 	}
 	ns.Add(context.Background(), c)
 	return c
@@ -44,11 +47,30 @@ func TestCheckpoints(t *testing.T) {
 	block1 := addTestBlock(t, blockStore)
 	block2 := addTestBlock(t, blockStore)
 
-	checkpoint1 := addCheckpoint(t, checkpointStore, "myHash", "myBlockHash", 1, block1)
-	checkpoint2 := addCheckpoint(t, checkpointStore, "myOtherHash", "myOtherBlockHash", 2, block2)
+	checkpoint1 := addCheckpoint(t, checkpointStore, "myHash", "myBlockHash", 1, block1, 0)
+	checkpoint2 := addCheckpoint(t, checkpointStore, "myOtherHash", "myOtherBlockHash", 2, block2, 0)
 
 	t.Run("GetAll", func(t *testing.T) {
 		expected := []entities.Checkpoint{checkpoint2, checkpoint1}
+		pagination := entities.CursorPagination{NewestFirst: true}
+		actual, _, err := checkpointStore.GetAll(ctx, pagination)
+		require.NoError(t, err)
+		assert.Equal(t, expected, actual)
+	})
+}
+
+func TestCheckpointsSameHashAndBlock(t *testing.T) {
+	defer DeleteEverything()
+	ctx := context.Background()
+	checkpointStore := sqlstore.NewCheckpoints(connectionSource)
+	blockStore := sqlstore.NewBlocks(connectionSource)
+	block1 := addTestBlock(t, blockStore)
+
+	checkpoint1 := addCheckpoint(t, checkpointStore, "myHash", "myBlockHash", 1, block1, 0)
+	checkpoint2 := addCheckpoint(t, checkpointStore, "myHash", "myBlockHash", 1, block1, 1)
+
+	t.Run("GetAll", func(t *testing.T) {
+		expected := []entities.Checkpoint{checkpoint1, checkpoint2}
 		pagination := entities.CursorPagination{NewestFirst: true}
 		actual, _, err := checkpointStore.GetAll(ctx, pagination)
 		require.NoError(t, err)
@@ -304,7 +326,7 @@ func setupCheckpointPaginationTest(t *testing.T) (*sqlstore.Checkpoints, []entit
 		blockTime = blockTime.Add(time.Minute)
 		block := addTestBlockForTime(t, bs, blockTime)
 		hash := int64(i + 1)
-		checkPoints[i] = addCheckpoint(t, cs, fmt.Sprintf("TestHash%02d", hash), fmt.Sprintf("TestBlockHash%02d", hash), hash, block)
+		checkPoints[i] = addCheckpoint(t, cs, fmt.Sprintf("TestHash%02d", hash), fmt.Sprintf("TestBlockHash%02d", hash), hash, block, uint64(i))
 	}
 
 	return cs, checkPoints

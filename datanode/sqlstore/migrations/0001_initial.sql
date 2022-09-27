@@ -628,20 +628,52 @@ CREATE TABLE rewards(
 );
 
 CREATE TABLE delegations(
-  party_id         BYTEA NOT NULL, -- REFERENCES parties(id), TODO once parties table is populated
-  node_id          BYTEA NOT NULL REFERENCES nodes(id),
+  party_id         BYTEA NOT NULL,
+  node_id          BYTEA NOT NULL,
   epoch_id         BIGINT NOT NULL,
   amount           HUGEINT,
   tx_hash          BYTEA NOT NULL,
   vega_time        TIMESTAMP WITH TIME ZONE NOT NULL,
-  primary key (party_id, node_id, epoch_id, vega_time)
+  seq_num  BIGINT NOT NULL,
+  PRIMARY KEY(vega_time, seq_num)
 );
 
-CREATE VIEW delegations_current AS (
-    SELECT DISTINCT ON (party_id, node_id, epoch_id) *
-    FROM delegations
-    ORDER BY party_id, node_id, epoch_id, vega_time DESC
+select create_hypertable('delegations', 'vega_time', chunk_time_interval => INTERVAL '1 day');
+create index on delegations (party_id, node_id, epoch_id);
+
+
+create table delegations_current
+(
+    party_id         BYTEA NOT NULL,
+    node_id          BYTEA NOT NULL,
+    epoch_id         BIGINT NOT NULL,
+    amount           HUGEINT,
+    tx_hash          BYTEA NOT NULL,
+    vega_time        TIMESTAMP WITH TIME ZONE NOT NULL,
+    seq_num  BIGINT NOT NULL,
+    primary key (party_id, node_id, epoch_id)
 );
+
+-- +goose StatementBegin
+CREATE OR REPLACE FUNCTION update_current_delegations()
+    RETURNS TRIGGER
+    LANGUAGE PLPGSQL AS
+$$
+BEGIN
+    INSERT INTO delegations_current(party_id,node_id,epoch_id,amount,tx_hash,vega_time,seq_num)
+    VALUES(NEW.party_id,NEW.node_id,NEW.epoch_id,NEW.amount,NEW.tx_hash,NEW.vega_time,NEW.seq_num)
+    ON CONFLICT(party_id, node_id, epoch_id) DO UPDATE SET
+                                                           amount=EXCLUDED.amount,
+                                                           tx_hash=EXCLUDED.tx_hash,
+                                                           vega_time=EXCLUDED.vega_time,
+                                                           seq_num=EXCLUDED.seq_num;
+    RETURN NULL;
+END;
+$$;
+-- +goose StatementEnd
+
+CREATE TRIGGER update_current_delegations AFTER INSERT ON delegations FOR EACH ROW EXECUTE function update_current_delegations();
+
 
 create table if not exists markets (
     id bytea not null,
@@ -1327,8 +1359,12 @@ DROP TYPE IF EXISTS proposal_error;
 DROP TYPE IF EXISTS proposal_state;
 
 DROP TABLE IF EXISTS epochs;
-DROP VIEW IF EXISTS delegations_current;
+
+DROP TRIGGER IF EXISTS update_current_delegations ON delegations;
+DROP FUNCTION IF EXISTS update_current_delegations;
+DROP TABLE IF EXISTS delegations_current;
 DROP TABLE IF EXISTS delegations;
+
 DROP TABLE IF EXISTS rewards;
 
 DROP TABLE IF EXISTS network_limits;

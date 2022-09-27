@@ -64,6 +64,7 @@ func (ds *Delegation) consume(ctx context.Context, event DelegationBalanceEvent)
 	}
 
 	delegation.VegaTime = ds.vegaTime
+	delegation.SeqNum = event.Sequence()
 
 	if err := ds.store.Add(ctx, delegation); err != nil {
 		return errors.Wrap(err, "error adding delegation")

@@ -39,6 +39,7 @@ var (
 		"current_liquidity_provisions",
 		"current_margin_levels",
 		"delegations",
+		"delegations_current",
 		"deposits",
 		"epochs",
 		"erc20_multisig_signer_events",
