@@ -203,7 +203,7 @@ func (e *Engine) serialiseDeposits() ([]byte, error) {
 	return proto.Marshal(payload.IntoProto())
 }
 
-func (e *Engine) serialiseK(k string, serialFunc func() ([]byte, error), dataField *[]byte) ([]byte, error) {
+func (e *Engine) serialiseK(serialFunc func() ([]byte, error), dataField *[]byte) ([]byte, error) {
 	data, err := serialFunc()
 	if err != nil {
 		return nil, err
@@ -216,19 +216,19 @@ func (e *Engine) serialiseK(k string, serialFunc func() ([]byte, error), dataFie
 func (e *Engine) serialise(k string) ([]byte, error) {
 	switch k {
 	case depositsKey:
-		return e.serialiseK(k, e.serialiseDeposits, &e.bss.serialisedDeposits)
+		return e.serialiseK(e.serialiseDeposits, &e.bss.serialisedDeposits)
 	case withdrawalsKey:
-		return e.serialiseK(k, e.serialiseWithdrawals, &e.bss.serialisedWithdrawals)
+		return e.serialiseK(e.serialiseWithdrawals, &e.bss.serialisedWithdrawals)
 	case seenKey:
-		return e.serialiseK(k, e.serialiseSeen, &e.bss.serialisedSeen)
+		return e.serialiseK(e.serialiseSeen, &e.bss.serialisedSeen)
 	case assetActionsKey:
-		return e.serialiseK(k, e.serialiseAssetActions, &e.bss.serialisedAssetActions)
+		return e.serialiseK(e.serialiseAssetActions, &e.bss.serialisedAssetActions)
 	case recurringTransfersKey:
-		return e.serialiseK(k, e.serialiseRecurringTransfers, &e.bss.serialisedRecurringTransfers)
+		return e.serialiseK(e.serialiseRecurringTransfers, &e.bss.serialisedRecurringTransfers)
 	case scheduledTransfersKey:
-		return e.serialiseK(k, e.serialiseScheduledTransfers, &e.bss.serialisedScheduledTransfers)
+		return e.serialiseK(e.serialiseScheduledTransfers, &e.bss.serialisedScheduledTransfers)
 	case bridgeStateKey:
-		return e.serialiseK(k, e.serialiseBridgeState, &e.bss.serialisedBridgeState)
+		return e.serialiseK(e.serialiseBridgeState, &e.bss.serialisedBridgeState)
 	default:
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}

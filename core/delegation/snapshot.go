@@ -119,7 +119,7 @@ func (e *Engine) serialiseAuto() ([]byte, error) {
 	return proto.Marshal(payload.IntoProto())
 }
 
-func (e *Engine) serialiseK(k string, serialFunc func() ([]byte, error), dataField *[]byte) ([]byte, error) {
+func (e *Engine) serialiseK(serialFunc func() ([]byte, error), dataField *[]byte) ([]byte, error) {
 	data, err := serialFunc()
 	if err != nil {
 		return nil, err
@@ -132,13 +132,13 @@ func (e *Engine) serialiseK(k string, serialFunc func() ([]byte, error), dataFie
 func (e *Engine) serialise(k string) ([]byte, error) {
 	switch k {
 	case activeKey:
-		return e.serialiseK(k, e.serialiseActive, &e.dss.serialisedActive)
+		return e.serialiseK(e.serialiseActive, &e.dss.serialisedActive)
 	case pendingKey:
-		return e.serialiseK(k, e.serialisePending, &e.dss.serialisedPending)
+		return e.serialiseK(e.serialisePending, &e.dss.serialisedPending)
 	case autoKey:
-		return e.serialiseK(k, e.serialiseAuto, &e.dss.serialisedAuto)
+		return e.serialiseK(e.serialiseAuto, &e.dss.serialisedAuto)
 	case lastReconKey:
-		return e.serialiseK(k, e.serialiseLastReconTime, &e.dss.serialisedLastRecon)
+		return e.serialiseK(e.serialiseLastReconTime, &e.dss.serialisedLastRecon)
 	default:
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}

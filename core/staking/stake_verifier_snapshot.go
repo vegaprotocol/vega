@@ -70,7 +70,7 @@ func (s *StakeVerifier) serialisePendingSR() ([]byte, error) {
 	return proto.Marshal(pl.IntoProto())
 }
 
-func (s *StakeVerifier) serialiseK(k string, serialFunc func() ([]byte, error), dataField *[]byte) ([]byte, error) {
+func (s *StakeVerifier) serialiseK(serialFunc func() ([]byte, error), dataField *[]byte) ([]byte, error) {
 	data, err := serialFunc()
 	if err != nil {
 		return nil, err
@@ -83,9 +83,9 @@ func (s *StakeVerifier) serialiseK(k string, serialFunc func() ([]byte, error), 
 func (s *StakeVerifier) serialise(k string) ([]byte, error) {
 	switch k {
 	case depositedKey:
-		return s.serialiseK(k, s.serialisePendingSD, &s.svss.serialisedDeposited)
+		return s.serialiseK(s.serialisePendingSD, &s.svss.serialisedDeposited)
 	case removedKey:
-		return s.serialiseK(k, s.serialisePendingSR, &s.svss.serialisedRemoved)
+		return s.serialiseK(s.serialisePendingSR, &s.svss.serialisedRemoved)
 	default:
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}

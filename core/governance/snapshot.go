@@ -113,7 +113,7 @@ func (e *Engine) serialiseNodeProposals() ([]byte, error) {
 	return proto.Marshal(pl.IntoProto())
 }
 
-func (e *Engine) serialiseK(k string, serialFunc func() ([]byte, error), dataField *[]byte) ([]byte, error) {
+func (e *Engine) serialiseK(serialFunc func() ([]byte, error), dataField *[]byte) ([]byte, error) {
 	data, err := serialFunc()
 	if err != nil {
 		return nil, err
@@ -125,11 +125,11 @@ func (e *Engine) serialiseK(k string, serialFunc func() ([]byte, error), dataFie
 func (e *Engine) serialise(k string) ([]byte, error) {
 	switch k {
 	case activeKey:
-		return e.serialiseK(k, e.serialiseActiveProposals, &e.gss.serialisedActive)
+		return e.serialiseK(e.serialiseActiveProposals, &e.gss.serialisedActive)
 	case enactedKey:
-		return e.serialiseK(k, e.serialiseEnactedProposals, &e.gss.serialisedEnacted)
+		return e.serialiseK(e.serialiseEnactedProposals, &e.gss.serialisedEnacted)
 	case nodeValidationKey:
-		return e.serialiseK(k, e.serialiseNodeProposals, &e.gss.serialisedNodeValidation)
+		return e.serialiseK(e.serialiseNodeProposals, &e.gss.serialisedNodeValidation)
 	default:
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}

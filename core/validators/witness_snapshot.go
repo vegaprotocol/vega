@@ -167,7 +167,5 @@ func (w *Witness) RestoreResource(r Resource, cb func(interface{}, bool)) error 
 	if w.top.IsValidator() && state != voteSent {
 		go w.start(ctx, res)
 	}
-	w.wss.mu.Lock()
-	w.wss.mu.Unlock()
 	return nil
 }

@@ -254,7 +254,7 @@ func (t *Topology) serialisePendingState() ([]byte, error) {
 	}.IntoProto())
 }
 
-func (t *Topology) serialiseK(k string, serialFunc func() ([]byte, error), dataField *[]byte) ([]byte, error) {
+func (t *Topology) serialiseK(serialFunc func() ([]byte, error), dataField *[]byte) ([]byte, error) {
 	data, err := serialFunc()
 	if err != nil {
 		return nil, err
@@ -267,9 +267,9 @@ func (t *Topology) serialiseK(k string, serialFunc func() ([]byte, error), dataF
 func (t *Topology) serialise(k string) ([]byte, error) {
 	switch k {
 	case verifiedStateKey:
-		return t.serialiseK(k, t.serialiseVerifiedState, &t.tss.serialisedVerifiedState)
+		return t.serialiseK(t.serialiseVerifiedState, &t.tss.serialisedVerifiedState)
 	case pendingStateKey:
-		return t.serialiseK(k, t.serialisePendingState, &t.tss.serialisedPendingState)
+		return t.serialiseK(t.serialisePendingState, &t.tss.serialisedPendingState)
 	default:
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}

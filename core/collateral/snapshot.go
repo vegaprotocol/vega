@@ -195,7 +195,7 @@ func (a *accState) hashAccounts() ([]byte, error) {
 	return data, nil
 }
 
-func (a *accState) serialiseK(k string, serialFunc func() ([]byte, error), dataField *[]byte) ([]byte, error) {
+func (a *accState) serialiseK(serialFunc func() ([]byte, error), dataField *[]byte) ([]byte, error) {
 	data, err := serialFunc()
 	if err != nil {
 		return nil, err
@@ -208,9 +208,9 @@ func (a *accState) serialiseK(k string, serialFunc func() ([]byte, error), dataF
 func (a *accState) getState(k string) ([]byte, error) {
 	switch k {
 	case a.accountsKey:
-		return a.serialiseK(k, a.hashAccounts, &a.serialisedAccounts)
+		return a.serialiseK(a.hashAccounts, &a.serialisedAccounts)
 	case a.assetsKey:
-		return a.serialiseK(k, a.hashAssets, &a.serialisedAssets)
+		return a.serialiseK(a.hashAssets, &a.serialisedAssets)
 	default:
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}

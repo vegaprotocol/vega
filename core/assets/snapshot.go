@@ -87,7 +87,7 @@ func (s *Service) serialisePendingUpdates() ([]byte, error) {
 	return proto.Marshal(payload.IntoProto())
 }
 
-func (s *Service) serialiseK(k string, serialFunc func() ([]byte, error), dataField *[]byte) ([]byte, error) {
+func (s *Service) serialiseK(serialFunc func() ([]byte, error), dataField *[]byte) ([]byte, error) {
 	data, err := serialFunc()
 	if err != nil {
 		return nil, err
@@ -100,11 +100,11 @@ func (s *Service) serialiseK(k string, serialFunc func() ([]byte, error), dataFi
 func (s *Service) serialise(k string) ([]byte, error) {
 	switch k {
 	case activeKey:
-		return s.serialiseK(k, s.serialiseActive, &s.ass.serialisedActive)
+		return s.serialiseK(s.serialiseActive, &s.ass.serialisedActive)
 	case pendingKey:
-		return s.serialiseK(k, s.serialisePending, &s.ass.serialisedPending)
+		return s.serialiseK(s.serialisePending, &s.ass.serialisedPending)
 	case pendingUpdatesKey:
-		return s.serialiseK(k, s.serialisePendingUpdates, &s.ass.serialisedPendingUpdates)
+		return s.serialiseK(s.serialisePendingUpdates, &s.ass.serialisedPendingUpdates)
 	default:
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
