@@ -914,8 +914,11 @@ CREATE TABLE checkpoints(
     block_height BIGINT                   NOT NULL,
     tx_hash      BYTEA                    NOT NULL,
     vega_time    TIMESTAMP WITH TIME ZONE NOT NULL,
-    primary key (hash)
+    seq_num  BIGINT NOT NULL,
+    PRIMARY KEY(vega_time, seq_num)
 );
+
+SELECT create_hypertable('checkpoints', 'vega_time', chunk_time_interval => INTERVAL '1 day');
 
 CREATE TABLE positions(
   market_id           BYTEA NOT NULL,
