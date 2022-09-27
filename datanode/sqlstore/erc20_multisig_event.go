@@ -96,7 +96,7 @@ func (m *ERC20MultiSigSignerEvent) GetAddedEvents(ctx context.Context, validator
 	}
 
 	defer metrics.StartSQLQuery("ERC20MultiSigSignerEvent", "GetAddedEvents")()
-	if err = pgxscan.Select(ctx, m.pool, &out, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, m.Connection, &out, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("failed to retrieve multisig signer events: %w", err)
 	}
 
@@ -151,7 +151,7 @@ func (m *ERC20MultiSigSignerEvent) GetRemovedEvents(ctx context.Context, validat
 	}
 
 	defer metrics.StartSQLQuery("ERC20MultiSigSignerEvent", "GetRemovedEvents")()
-	if err = pgxscan.Select(ctx, m.pool, &out, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, m.Connection, &out, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("failed to retrieve multisig signer events: %w", err)
 	}
 

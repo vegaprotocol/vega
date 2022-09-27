@@ -15,8 +15,8 @@
 
 ### 🐛 Fixes
 - [6296](https://github.com/vegaprotocol/vega/issues/6296) - Add `assetId` as a field to the `GraphQL UpdateAsset` type
+- [6324](https://github.com/vegaprotocol/vega/issues/6324) - Ensure all `datanode` insert points use dedicated connection
 - [6273](https://github.com/vegaprotocol/vega/issues/6273) - Deposits return an empty list when no party is provided
-
 
 ## 0.56.0
 
