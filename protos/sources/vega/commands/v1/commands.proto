@@ -55,11 +55,12 @@ message OrderSubmission {
 }
 
 // An order cancellation is a request to cancel an existing order on Vega
+// Both of the fields are optionals
 message OrderCancellation {
-  // Unique identifier for the order (set by the system after consensus), required field
-  string order_id = 1;
-  // Market identifier for the order, required field
-  string market_id = 2;
+  // Unique identifier for the order
+  optional string order_id = 1;
+  // Market identifier for the order
+  optional string market_id = 2;
 }
 
 // An order amendment is a request to amend or update an existing order on Vega

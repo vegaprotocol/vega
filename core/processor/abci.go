@@ -1225,7 +1225,7 @@ func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx, deterministi
 	}
 
 	app.stats.IncTotalCancelOrder()
-	app.log.Debug("Blockchain service received a CANCEL ORDER request", logging.String("order-id", porder.OrderId))
+	app.log.Debug("Blockchain service received a CANCEL ORDER request")
 
 	order := types.OrderCancellationFromProto(porder)
 	// Submit the cancel new order request to the Vega trading core

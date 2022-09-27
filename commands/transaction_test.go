@@ -5,6 +5,7 @@ import (
 
 	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -190,8 +191,8 @@ func newValidTransactionV2(t *testing.T) *commandspb.Transaction {
 		BlockHeight: 1789,
 		Command: &commandspb.InputData_OrderCancellation{
 			OrderCancellation: &commandspb.OrderCancellation{
-				MarketId: "USD/BTC",
-				OrderId:  "7fa6d9f6a9dfa9f66fada",
+				MarketId: ptr.From("USD/BTC"),
+				OrderId:  ptr.From("7fa6d9f6a9dfa9f66fada"),
 			},
 		},
 	}

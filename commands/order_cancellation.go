@@ -15,11 +15,11 @@ func checkOrderCancellation(cmd *commandspb.OrderCancellation) Errors {
 		return errs.FinalAddForProperty("order_cancellation", ErrIsRequired)
 	}
 
-	if len(cmd.MarketId) > 0 && !IsVegaPubkey(cmd.MarketId) {
+	if cmd.MarketId != nil && len(*cmd.MarketId) > 0 && !IsVegaPubkey(*cmd.MarketId) {
 		errs.AddForProperty("order_cancellation.market_id", ErrShouldBeAValidVegaID)
 	}
 
-	if len(cmd.OrderId) > 0 && !IsVegaPubkey(cmd.OrderId) {
+	if cmd.OrderId != nil && len(*cmd.OrderId) > 0 && !IsVegaPubkey(*cmd.OrderId) {
 		errs.AddForProperty("order_cancellation.order_id", ErrShouldBeAValidVegaID)
 	}
 

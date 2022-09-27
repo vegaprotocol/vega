@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/core/processor"
 	"code.vegaprotocol.io/vega/core/processor/mocks"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
@@ -88,16 +89,16 @@ func TestBatchMarketInstructionsContinueProcessingOnError(t *testing.T) {
 	batch := commandspb.BatchMarketInstructions{
 		Cancellations: []*commandspb.OrderCancellation{
 			{
-				OrderId:  "926df3b689a5440fe21cad7069ebcedc46f75b2b23ce11002a1ee2254e339f23",
-				MarketId: "926df3b689a5440fe21cad7069ebcedc46f75b2b23ce11002a1ee2254e339f23",
+				OrderId:  ptr.From("926df3b689a5440fe21cad7069ebcedc46f75b2b23ce11002a1ee2254e339f23"),
+				MarketId: ptr.From("926df3b689a5440fe21cad7069ebcedc46f75b2b23ce11002a1ee2254e339f23"),
 			},
 			{
-				OrderId:  "47076f002ddd9bfeb7f4679fc75b4686f64446d5a5afcb84584e7c7166d13efa",
-				MarketId: "47076f002ddd9bfeb7f4679fc75b4686f64446d5a5afcb84584e7c7166d13efa",
+				OrderId:  ptr.From("47076f002ddd9bfeb7f4679fc75b4686f64446d5a5afcb84584e7c7166d13efa"),
+				MarketId: ptr.From("47076f002ddd9bfeb7f4679fc75b4686f64446d5a5afcb84584e7c7166d13efa"),
 			},
 			{
-				OrderId:  "926df3b689a5440fe21cad7069ebcedc46f75b2b23ce11002a1ee2254e339f23",
-				MarketId: "926df3b689a5440fe21cad7069ebcedc46f75b2b23ce11002a1ee2254e339f23",
+				OrderId:  ptr.From("926df3b689a5440fe21cad7069ebcedc46f75b2b23ce11002a1ee2254e339f23"),
+				MarketId: ptr.From("926df3b689a5440fe21cad7069ebcedc46f75b2b23ce11002a1ee2254e339f23"),
 			},
 		},
 		Amendments: []*commandspb.OrderAmendment{

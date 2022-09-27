@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
@@ -36,16 +37,32 @@ type OrderCancellation struct {
 }
 
 func OrderCancellationFromProto(p *commandspb.OrderCancellation) *OrderCancellation {
+	var market, order string
+	if p.MarketId != nil {
+		market = *p.MarketId
+	}
+	if p.OrderId != nil {
+		order = *p.OrderId
+	}
+
 	return &OrderCancellation{
-		OrderID:  p.OrderId,
-		MarketID: p.MarketId,
+		OrderID:  order,
+		MarketID: market,
 	}
 }
 
 func (o OrderCancellation) IntoProto() *commandspb.OrderCancellation {
+	var market, order *string
+	if len(o.MarketID) > 0 {
+		market = ptr.From(o.MarketID)
+	}
+	if len(o.OrderID) > 0 {
+		order = ptr.From(o.OrderID)
+	}
+
 	return &commandspb.OrderCancellation{
-		OrderId:  o.OrderID,
-		MarketId: o.MarketID,
+		OrderId:  order,
+		MarketId: market,
 	}
 }
 
