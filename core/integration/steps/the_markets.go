@@ -218,6 +218,16 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 		existing.PriceMonitoringSettings.Parameters = pmt.Parameters
 		update.Changes.PriceMonitoringParameters = pmt.Parameters
 	}
+	// liquidity monitoring
+	if lm, ok := row.liquidityMonitoring(); ok {
+		liqMon, err := config.LiquidityMonitoring.GetType(lm)
+		if err != nil {
+			panic(err)
+		}
+		existing.LiquidityMonitoringParameters = liqMon
+		update.Changes.LiquidityMonitoringParameters = liqMon
+	}
+	// risk model
 	if rm, ok := row.riskModel(); ok {
 		current := existing.TradableInstrument
 		tip := existing.TradableInstrument.IntoProto()
@@ -275,22 +285,23 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 		panic(err)
 	}
 
-	// the governance engine would fill in the liquidity monitor parameters from the network parameters (unless set explicitly)
-	// so we need to do this here by hand. If the network parameters weren't set we use the below defaults
-	timeWindow := int64(3600)
-	scalingFactor := num.DecimalFromInt64(10)
-	triggeringRatio := num.DecimalFromInt64(0)
+	liqMon, err := config.LiquidityMonitoring.GetType(row.liquidityMonitoring())
+	if err != nil {
+		panic(err)
+	}
 
+	// the governance engine would fill in the liquidity monitor parameters from the network parameters (unless set explicitly)
+	// so we do this step here manually
 	if tw, err := netparams.GetDuration("market.stake.target.timeWindow"); err == nil {
-		timeWindow = int64(tw.Seconds())
+		liqMon.TargetStakeParameters.TimeWindow = int64(tw.Seconds())
 	}
 
 	if sf, err := netparams.GetDecimal("market.stake.target.scalingFactor"); err == nil {
-		scalingFactor = sf
+		liqMon.TargetStakeParameters.ScalingFactor = sf
 	}
 
 	if tr, err := netparams.GetDecimal("market.liquidity.targetstake.triggering.ratio"); err == nil {
-		triggeringRatio = tr
+		liqMon.TargetStakeParameters.ScalingFactor = tr
 	}
 
 	m := types.Market{
@@ -324,15 +335,9 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 			},
 			MarginCalculator: types.MarginCalculatorFromProto(marginCalculator),
 		},
-		OpeningAuction:          openingAuction(row),
-		PriceMonitoringSettings: types.PriceMonitoringSettingsFromProto(priceMonitoring),
-		LiquidityMonitoringParameters: &types.LiquidityMonitoringParameters{
-			TargetStakeParameters: &types.TargetStakeParameters{
-				TimeWindow:    timeWindow,
-				ScalingFactor: scalingFactor,
-			},
-			TriggeringRatio: triggeringRatio,
-		},
+		OpeningAuction:                openingAuction(row),
+		PriceMonitoringSettings:       types.PriceMonitoringSettingsFromProto(priceMonitoring),
+		LiquidityMonitoringParameters: liqMon,
 	}
 
 	tip := m.TradableInstrument.IntoProto()
@@ -479,10 +484,9 @@ func (r marketRow) auctionDuration() int64 {
 	return r.row.MustI64("auction duration")
 }
 
-func (r marketRow) liquidityMonitoring() (string, bool) {
-	if r.row.HasColumn("liquidity monitoring") {
-		lm := r.row.MustStr("liquidity monitoring")
-		return lm, true
+func (r marketRow) liquidityMonitoring() string {
+	if !r.row.HasColumn("liquidity monitoring") {
+		return "default-parameters"
 	}
-	return "", false
+	return r.row.MustStr("liquidity monitoring")
 }
