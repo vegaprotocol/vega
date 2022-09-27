@@ -90,6 +90,11 @@ func (m *MarketDepth) publishChanges() {
 		buyPtr := []*types.PriceLevel{}
 		sellPtr := []*types.PriceLevel{}
 
+		// No need to notify anyone if nothing has changed
+		if len(md.Changes) == 0 {
+			continue
+		}
+
 		// Send out market depth updates to any listeners
 		for _, pl := range md.Changes {
 			if pl.Side == types.SideBuy {
