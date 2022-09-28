@@ -1345,7 +1345,11 @@ DROP TABLE IF EXISTS oracle_data;
 DROP TABLE IF EXISTS oracle_specs;
 DROP TYPE IF EXISTS oracle_spec_status;
 
-DROP TABLE IF EXISTS positions_current;
+IF EXISTS (SELECT relname FROM pg_class WHERE relname = 'positions_current' AND relking = 'v') THEN
+    DROP VIEW positions_current;
+ELSE IF EXISTS (SELECT relname FROM pg_class WHERE relname = 'positions_current' AND relking = 'r') THEN
+    DROP TABLE positions_current;
+END IF;
 DROP TABLE IF EXISTS positions cascade;
 DROP TRIGGER IF EXISTS update_current_positions ON positions;
 DROP FUNCTION IF EXISTS update_current_positions;
@@ -1362,7 +1366,11 @@ DROP TABLE IF EXISTS epochs;
 
 DROP TRIGGER IF EXISTS update_current_delegations ON delegations;
 DROP FUNCTION IF EXISTS update_current_delegations;
-DROP TABLE IF EXISTS delegations_current;
+IF EXISTS (SELECT relname FROM pg_class WHERE relname = 'delegations_current' AND relkind = 'v') THEN
+    DROP VIEW delegations_current;
+ELSE IF EXISTS (SELECT relname FROM pg_class WHERE relname = 'delegations_current' AND relkind = 'r') THEN
+    DROP TABLE delegations_current;
+END IF;
 DROP TABLE IF EXISTS delegations;
 
 DROP TABLE IF EXISTS rewards;
