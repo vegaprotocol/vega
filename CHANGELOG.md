@@ -1,13 +1,25 @@
 # Changelog
 
-## Unreleased 0.57.0
+## Unreleased 0.58.0
+
+### 🚨 Breaking changes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🗑️ Deprecation
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🛠 Improvements
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+
+## 0.57.0
 
 ### 🚨 Breaking changes
 - [6291](https://github.com/vegaprotocol/vega/issues/6291) - Remove `Nodewallet.ETH` configuration and add flags to supply `clef` addresses when importing or generating accounts
 - [6314](https://github.com/vegaprotocol/vega/issues/6314) - Rename session namespace to client in wallet API version 2
-
-### 🗑️ Deprecation
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
 - [6283](https://github.com/vegaprotocol/vega/issues/6283) - Add commit hash to version if is development version
