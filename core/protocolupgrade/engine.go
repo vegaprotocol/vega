@@ -223,7 +223,11 @@ func (e *Engine) UpgradeProposal(ctx context.Context, pk string, upgradeBlockHei
 }
 
 func (e *Engine) sendAndKeepEvent(ctx context.Context, ID string, activeProposal *protocolUpgradeProposal) {
-	evt := events.NewProtocolUpgradeProposalEvent(ctx, activeProposal.blockHeight, activeProposal.vegaReleaseTag, activeProposal.approvers(), eventspb.ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_PENDING)
+	status := eventspb.ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_PENDING
+	if len(activeProposal.approvers()) == 0 {
+		status = eventspb.ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_REJECTED
+	}
+	evt := events.NewProtocolUpgradeProposalEvent(ctx, activeProposal.blockHeight, activeProposal.vegaReleaseTag, activeProposal.approvers(), status)
 	evtProto := evt.Proto()
 	e.events[ID] = &evtProto
 	e.broker.Send(evt)

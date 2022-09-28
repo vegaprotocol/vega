@@ -26,7 +26,7 @@ import (
 
 type AccountSource interface {
 	Obtain(ctx context.Context, a *Account) error
-	GetByID(id int64) (Account, error)
+	GetByID(id AccountID) (Account, error)
 }
 
 type _Transfer struct{}
@@ -37,8 +37,8 @@ type Transfer struct {
 	ID                  TransferID
 	TxHash              TxHash
 	VegaTime            time.Time
-	FromAccountID       int64
-	ToAccountID         int64
+	FromAccountID       AccountID
+	ToAccountID         AccountID
 	AssetID             AssetID
 	Amount              decimal.Decimal
 	Reference           string
@@ -111,7 +111,7 @@ func (t *Transfer) ToProto(accountSource AccountSource) (*eventspb.Transfer, err
 
 func TransferFromProto(ctx context.Context, t *eventspb.Transfer, txHash TxHash, vegaTime time.Time, accountSource AccountSource) (*Transfer, error) {
 	fromAcc := Account{
-		ID:       0,
+		ID:       "",
 		PartyID:  PartyID(t.From),
 		AssetID:  AssetID(t.Asset),
 		Type:     t.FromAccountType,
@@ -125,7 +125,7 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, txHash TxHash,
 	}
 
 	toAcc := Account{
-		ID:       0,
+		ID:       "",
 		PartyID:  PartyID(t.To),
 		AssetID:  AssetID(t.Asset),
 		Type:     t.ToAccountType,

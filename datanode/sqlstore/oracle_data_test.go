@@ -58,8 +58,8 @@ func testAddOracleData(t *testing.T) {
 	block := addTestBlock(t, bs)
 	dataProtos := getTestOracleData()
 
-	for _, proto := range dataProtos {
-		data, err := entities.OracleDataFromProto(proto, generateTxHash(), block.VegaTime)
+	for i, proto := range dataProtos {
+		data, err := entities.OracleDataFromProto(proto, generateTxHash(), block.VegaTime, uint64(i))
 		require.NoError(t, err)
 		assert.NoError(t, od.Add(context.Background(), data))
 	}
@@ -83,9 +83,9 @@ func testGetOracleDataBySpecID(t *testing.T) {
 	testTime := time.Now()
 	dataProtos := getTestOracleData()
 
-	for _, proto := range dataProtos {
+	for i, proto := range dataProtos {
 		block := addTestBlockForTime(t, bs, testTime)
-		data, err := entities.OracleDataFromProto(proto, generateTxHash(), block.VegaTime)
+		data, err := entities.OracleDataFromProto(proto, generateTxHash(), block.VegaTime, uint64(i))
 		require.NoError(t, err)
 		err = od.Add(context.Background(), data)
 		require.NoError(t, err)
@@ -227,9 +227,9 @@ func getTestPaginationOracleData(t *testing.T, ctx context.Context, bs *sqlstore
 
 	blockTime := time.Now()
 
-	for _, item := range protoData {
+	for i, item := range protoData {
 		block := addTestBlockForTime(t, bs, blockTime)
-		odEntity, err := entities.OracleDataFromProto(item, generateTxHash(), block.VegaTime)
+		odEntity, err := entities.OracleDataFromProto(item, generateTxHash(), block.VegaTime, uint64(i))
 		require.NoError(t, err)
 
 		err = ds.Add(ctx, odEntity)

@@ -40,7 +40,6 @@ var (
 )
 
 type topologySnapshotState struct {
-	changed    bool
 	serialised []byte
 }
 
@@ -154,10 +153,6 @@ func (t *Topology) serialise(k string) ([]byte, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	if !t.HasChanged(k) {
-		return t.tss.serialised, nil
-	}
-
 	payload := types.Payload{
 		Data: &types.PayloadTopology{
 			Topology: &types.Topology{
@@ -176,15 +171,7 @@ func (t *Topology) serialise(k string) ([]byte, error) {
 	}
 
 	t.tss.serialised = data
-	t.tss.changed = false
 	return data, nil
-}
-
-func (t *Topology) HasChanged(k string) bool {
-	// t.mu.RLock()
-	// defer t.mu.RUnlock()
-	// return t.tss.changed
-	return true
 }
 
 func (t *Topology) GetState(k string) ([]byte, []types.StateProvider, error) {
@@ -309,7 +296,6 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology, p *typ
 	t.validatorPerformance.Deserialize(topology.ValidatorPerformance)
 	t.tss.serialised, err = proto.Marshal(p.IntoProto())
 	t.rng = rand.New(rand.NewSource(t.timeService.GetTimeNow().Unix()))
-	t.tss.changed = false
 	return err
 }
 

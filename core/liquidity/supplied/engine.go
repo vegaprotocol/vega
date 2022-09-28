@@ -68,11 +68,8 @@ type Engine struct {
 	horizon                        num.Decimal // projection horizon used in probability calculations
 	probabilityOfTradingTauScaling num.Decimal
 	minProbabilityOfTrading        num.Decimal
-
-	changed bool
-
-	pot            *probabilityOfTrading
-	potInitialised bool
+	pot                            *probabilityOfTrading
+	potInitialised                 bool
 
 	getBestStaticPrices func() (num.Decimal, num.Decimal, error)
 	log                 *logging.Logger
@@ -88,7 +85,6 @@ func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor, asset, marketID s
 		horizon:                        riskModel.GetProjectionHorizon(),
 		probabilityOfTradingTauScaling: num.DecimalFromInt64(1), // this is the same as the default in the netparams
 		minProbabilityOfTrading:        defaultMinimumProbabilityOfTrading,
-		changed:                        true,
 		pot:                            &probabilityOfTrading{},
 		potInitialised:                 false,
 		log:                            log,
@@ -104,7 +100,6 @@ func (e *Engine) UpdateMarketConfig(riskModel risk.Model, monitor PriceMonitor) 
 	e.pm = monitor
 	e.horizon = riskModel.GetProjectionHorizon()
 	e.potInitialised = false
-	e.changed = true
 }
 
 func (e *Engine) SetGetStaticPricesFunc(f func() (num.Decimal, num.Decimal, error)) {

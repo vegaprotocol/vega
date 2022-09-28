@@ -41,9 +41,9 @@ func NewEthereumKeyRotations(connectionSource *ConnectionSource) *EthereumKeyRot
 func (store *EthereumKeyRotations) Add(ctx context.Context, kr entities.EthereumKeyRotation) error {
 	defer metrics.StartSQLQuery("EthereumKeyRotations", "Add")()
 	_, err := store.Connection.Exec(ctx, `
-		INSERT INTO ethereum_key_rotations(node_id, old_address, new_address, block_height, tx_hash, vega_time)
-		VALUES ($1, $2, $3, $4, $5, $6)
-	`, kr.NodeID, kr.OldAddress, kr.NewAddress, kr.BlockHeight, kr.TxHash, kr.VegaTime)
+		INSERT INTO ethereum_key_rotations(node_id, old_address, new_address, block_height, tx_hash, vega_time, seq_num)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+	`, kr.NodeID, kr.OldAddress, kr.NewAddress, kr.BlockHeight, kr.TxHash, kr.VegaTime, kr.SeqNum)
 
 	return err
 }
@@ -71,7 +71,7 @@ func (store *EthereumKeyRotations) List(ctx context.Context,
 
 	ethereumKeyRotations := []entities.EthereumKeyRotation{}
 
-	if err = pgxscan.Select(ctx, store.pool, &ethereumKeyRotations, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, store.Connection, &ethereumKeyRotations, query, args...); err != nil {
 		return nil, entities.PageInfo{}, err
 	}
 

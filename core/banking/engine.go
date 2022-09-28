@@ -180,30 +180,22 @@ func New(
 	log.SetLevel(cfg.Level.Get())
 
 	return &Engine{
-		cfg:           cfg,
-		log:           log,
-		timeService:   tsvc,
-		broker:        broker,
-		col:           col,
-		witness:       witness,
-		assets:        assets,
-		notary:        notary,
-		top:           top,
-		assetActs:     map[string]*assetAction{},
-		seen:          map[*snapshot.TxRef]struct{}{},
-		seenSlice:     []*snapshot.TxRef{},
-		withdrawals:   map[string]withdrawalRef{},
-		deposits:      map[string]*types.Deposit{},
-		withdrawalCnt: big.NewInt(0),
-		bss: &bankingSnapshotState{
-			changedWithdrawals:        true,
-			changedDeposits:           true,
-			changedSeen:               true,
-			changedAssetActions:       true,
-			changedRecurringTransfers: true,
-			changedScheduledTransfers: true,
-			changedBridgeState:        true,
-		},
+		cfg:                        cfg,
+		log:                        log,
+		timeService:                tsvc,
+		broker:                     broker,
+		col:                        col,
+		witness:                    witness,
+		assets:                     assets,
+		notary:                     notary,
+		top:                        top,
+		assetActs:                  map[string]*assetAction{},
+		seen:                       map[*snapshot.TxRef]struct{}{},
+		seenSlice:                  []*snapshot.TxRef{},
+		withdrawals:                map[string]withdrawalRef{},
+		deposits:                   map[string]*types.Deposit{},
+		withdrawalCnt:              big.NewInt(0),
+		bss:                        &bankingSnapshotState{},
 		scheduledTransfers:         map[time.Time][]scheduledTransfer{},
 		recurringTransfers:         []*types.RecurringTransfer{},
 		recurringTransfersMap:      map[string]*types.RecurringTransfer{},
@@ -273,7 +265,6 @@ func (e *Engine) OnTick(ctx context.Context, _ time.Time) {
 				// first time we seen this transaction, let's add iter
 				e.seen[&ref] = struct{}{}
 				e.seenSlice = append(e.seenSlice, &ref)
-				e.bss.changedSeen = true
 				if err := e.finalizeAction(ctx, v); err != nil {
 					e.log.Error("unable to finalize action",
 						logging.String("action", v.String()),
@@ -294,7 +285,6 @@ func (e *Engine) OnTick(ctx context.Context, _ time.Time) {
 		// us to recover for this event, so we have no real reason to keep
 		// it in memory
 		delete(e.assetActs, k)
-		e.bss.changedAssetActions = true
 	}
 
 	// we may want a dedicated method on the snapshot engine at some
@@ -414,7 +404,6 @@ func (e *Engine) finalizeDeposit(ctx context.Context, d *types.Deposit) error {
 	d.Status = types.DepositStatusFinalized
 	d.CreditDate = e.timeService.GetTimeNow().UnixNano()
 	e.broker.Send(events.NewLedgerMovements(ctx, []*types.LedgerMovement{res}))
-	e.bss.changedDeposits = true
 	return nil
 }
 
@@ -434,7 +423,6 @@ func (e *Engine) finalizeWithdraw(
 	}
 
 	w.Status = types.WithdrawalStatusFinalized
-	e.bss.changedWithdrawals = true
 	e.broker.Send(events.NewLedgerMovements(ctx, []*types.LedgerMovement{res}))
 	return nil
 }
@@ -463,7 +451,6 @@ func (e *Engine) newWithdrawal(
 		CreationDate:   now.UnixNano(),
 		Ref:            ref.String(),
 	}
-	e.bss.changedWithdrawals = true
 	return
 }
 
@@ -474,8 +461,6 @@ func (e *Engine) newDeposit(
 ) *types.Deposit {
 	partyID = strings.TrimPrefix(partyID, "0x")
 	asset = strings.TrimPrefix(asset, "0x")
-	e.bss.changedDeposits = true
-	e.bss.changedAssetActions = true
 	return &types.Deposit{
 		ID:           id,
 		Status:       types.DepositStatusOpen,

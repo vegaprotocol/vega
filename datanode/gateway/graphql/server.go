@@ -56,6 +56,7 @@ type GraphServer struct {
 	tradingDataClient   protoapi.TradingDataServiceClient
 	tradingDataClientV2 v2.TradingDataServiceClient
 	srv                 *http.Server
+	rl                  *gateway.SubscriptionRateLimiter
 }
 
 // New returns a new instance of the grapqhl server.
@@ -91,6 +92,8 @@ func New(
 		coreProxyClient:     tradingClient,
 		tradingDataClient:   tradingDataClient,
 		tradingDataClientV2: tradingDataClientV2,
+		rl: gateway.NewSubscriptionRateLimiter(
+			log, config.MaxSubscriptionPerClient),
 	}, nil
 }
 
@@ -200,10 +203,13 @@ func (g *GraphServer) Start() error {
 	}
 
 	// FIXME(jeremy): to be removed once everyone has move to the new endpoint
-	middleware := corz.Handler(gateway.Chain(
-		gateway.RemoteAddrMiddleware(g.log, handler.GraphQL(NewExecutableSchema(config), options...)),
-		gateway.WithAddHeadersMiddleware,
-	))
+	middleware := corz.Handler(
+		gateway.Chain(
+			gateway.RemoteAddrMiddleware(g.log, handler.GraphQL(NewExecutableSchema(config), options...)),
+			gateway.WithAddHeadersMiddleware,
+			g.rl.WithSubscriptionRateLimiter,
+		),
+	)
 
 	handlr.Handle("/query", middleware)
 	handlr.Handle(g.GraphQL.Endpoint, middleware)

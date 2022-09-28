@@ -73,6 +73,14 @@ func JoinConfigPathStr(p ConfigPath, elem ...string) string {
 }
 
 var (
+	// BlockExplorerConfigHome is the folder containing the configuration files
+	// used by the block explorer.
+	BlockExplorerConfigHome = ConfigPath("blockexplorer")
+
+	// BlockExplorerDefaultConfigFile is the default configuration file for the
+	// block explorer.
+	BlockExplorerDefaultConfigFile = JoinConfigPath(DataNodeConfigHome, "config.toml")
+
 	// DataNodeConfigHome is the folder containing the configuration files
 	// used by the node.
 	DataNodeConfigHome = ConfigPath("data-node")
@@ -260,6 +268,9 @@ var (
 	// DataNodeStorageHome is the folder containing the data storage of the
 	// data-node.
 	DataNodeStorageHome = StatePath(filepath.Join(DataNodeStateHome.String(), "storage"))
+
+	// DataNodeSnapshotHome is the folder containing the snapshots of the data-node.
+	DataNodeSnapshotHome = StatePath(filepath.Join(DataNodeStateHome.String(), "snapshots"))
 
 	// NodeStateHome is the folder containing the state of the node.
 	NodeStateHome = StatePath("node")

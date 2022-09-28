@@ -38,25 +38,3 @@ func TestLiquidityProvision_Push(t *testing.T) {
 	subscriber.Push(context.Background(), events.NewLiquidityProvisionEvent(context.Background(), &types.LiquidityProvision{}))
 	subscriber.Flush(context.Background())
 }
-
-func TestLiquidityProvisionDuplicate_Push(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	store := mocks.NewMockLiquidityProvisionStore(ctrl)
-
-	store.EXPECT().Upsert(context.Background(), gomock.Any()).Times(2)
-	store.EXPECT().Flush(gomock.Any()).Times(4)
-
-	subscriber := sqlsubscribers.NewLiquidityProvision(store, logging.NewTestLogger())
-	subscriber.Flush(context.Background())
-	subscriber.Push(context.Background(), events.NewLiquidityProvisionEvent(context.Background(), &types.LiquidityProvision{}))
-	subscriber.Flush(context.Background())
-	subscriber.Push(context.Background(), events.NewLiquidityProvisionEvent(context.Background(), &types.LiquidityProvision{}))
-	subscriber.Flush(context.Background())
-
-	// Now push a non duplicate
-
-	subscriber.Push(context.Background(), events.NewLiquidityProvisionEvent(context.Background(), &types.LiquidityProvision{Version: 1}))
-	subscriber.Flush(context.Background())
-}

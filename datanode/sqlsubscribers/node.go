@@ -130,7 +130,8 @@ func (n *Node) consumeKeyRotation(ctx context.Context, event KeyRotationEvent) e
 
 func (n *Node) consumeEthereumKeyRotation(ctx context.Context, event EthereumKeyRotationEvent) error {
 	keyRotation := event.EthereumKeyRotation()
-	record, err := entities.EthereumKeyRotationFromProto(&keyRotation, entities.TxHash(event.TxHash()), n.vegaTime)
+	record, err := entities.EthereumKeyRotationFromProto(&keyRotation, entities.TxHash(event.TxHash()), n.vegaTime,
+		event.Sequence())
 	if err != nil {
 		return errors.Wrap(err, "converting ethereum key rotation proto to database entity failed")
 	}

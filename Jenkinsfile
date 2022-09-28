@@ -53,6 +53,17 @@ pipeline {
     }
 
     stages {
+    	stage('CI Config') {
+                steps {
+                    sh "printenv"
+                    echo "params=${params.inspect()}"
+                    script {
+                        publicIP = agent.getPublicIP()
+                        print("Jenkins Agent public IP is: " + publicIP)
+                    }
+                }
+            }
+    
         stage('Config') {
             steps {
                 cleanWs()

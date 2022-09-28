@@ -1,0 +1,7 @@
+{
+    "target_stake_parameters":{
+        "time_window":3600,
+        "scaling_factor":10
+    },
+    "triggering_ratio": 0
+}

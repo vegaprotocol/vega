@@ -40,7 +40,6 @@ type SnapshotEngine struct {
 	*Engine
 	data    []byte
 	stopped bool
-	changed bool
 	key     string
 	keys    []string
 }
@@ -56,10 +55,9 @@ func NewSnapshotEngine(
 	}).Key()
 
 	return &SnapshotEngine{
-		Engine:  NewEngine(parameters, oiCalc, marketID, positionFactor),
-		changed: true,
-		key:     key,
-		keys:    []string{key},
+		Engine: NewEngine(parameters, oiCalc, marketID, positionFactor),
+		key:    key,
+		keys:   []string{key},
 	}
 }
 
@@ -71,32 +69,22 @@ func (e *SnapshotEngine) StopSnapshots() {
 	e.stopped = true
 }
 
-func (e *SnapshotEngine) Changed() bool {
-	return e.changed
-}
-
 func (e *SnapshotEngine) RecordOpenInterest(oi uint64, now time.Time) error {
 	if err := e.Engine.RecordOpenInterest(oi, now); err != nil {
 		return err
 	}
 
-	e.changed = true
 	return nil
 }
 
 func (e *SnapshotEngine) GetTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint) *num.Uint {
-	ts, changed := e.Engine.GetTargetStake(rf, now, markPrice)
-	if changed {
-		e.changed = true
-	}
+	ts, _ := e.Engine.GetTargetStake(rf, now, markPrice)
+
 	return ts
 }
 
 func (e *SnapshotEngine) GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint, trades []*types.Trade) *num.Uint {
-	tts, changed := e.Engine.GetTheoreticalTargetStake(rf, now, markPrice, trades)
-	if changed {
-		e.changed = true
-	}
+	tts, _ := e.Engine.GetTheoreticalTargetStake(rf, now, markPrice, trades)
 	return tts
 }
 
@@ -110,11 +98,6 @@ func (e *SnapshotEngine) Keys() []string {
 
 func (e *SnapshotEngine) Stopped() bool {
 	return e.stopped
-}
-
-func (e *SnapshotEngine) HasChanged(k string) bool {
-	return true
-	// return e.changed
 }
 
 func (e *SnapshotEngine) GetState(k string) ([]byte, []types.StateProvider, error) {
@@ -151,7 +134,6 @@ func (e *SnapshotEngine) LoadState(_ context.Context, payload *types.Payload) ([
 
 		var err error
 		e.data, err = proto.Marshal(payload.IntoProto())
-		e.changed = false
 		return nil, err
 
 	default:
@@ -174,10 +156,6 @@ func (e *SnapshotEngine) serialise() ([]byte, error) {
 		return nil, nil
 	}
 
-	if !e.HasChanged(e.key) {
-		return e.data, nil // we already have what we need
-	}
-
 	p := &snapshot.Payload{
 		Data: &snapshot.Payload_LiquidityTarget{
 			LiquidityTarget: &snapshot.LiquidityTarget{
@@ -196,8 +174,5 @@ func (e *SnapshotEngine) serialise() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	e.changed = false
-
 	return e.data, nil
 }

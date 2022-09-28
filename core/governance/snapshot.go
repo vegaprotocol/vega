@@ -39,9 +39,6 @@ type governanceSnapshotState struct {
 	serialisedActive         []byte
 	serialisedEnacted        []byte
 	serialisedNodeValidation []byte
-	changedActive            bool
-	changedEnacted           bool
-	changedNodeValidation    bool
 }
 
 // serialiseActiveProposals returns the engine's active proposals as marshalled bytes.
@@ -116,30 +113,23 @@ func (e *Engine) serialiseNodeProposals() ([]byte, error) {
 	return proto.Marshal(pl.IntoProto())
 }
 
-func (e *Engine) serialiseK(k string, serialFunc func() ([]byte, error), dataField *[]byte, changedField *bool) ([]byte, error) {
-	if !e.HasChanged(k) {
-		if dataField == nil {
-			return nil, nil
-		}
-		return *dataField, nil
-	}
+func (e *Engine) serialiseK(serialFunc func() ([]byte, error), dataField *[]byte) ([]byte, error) {
 	data, err := serialFunc()
 	if err != nil {
 		return nil, err
 	}
 	*dataField = data
-	*changedField = false
 	return data, nil
 }
 
 func (e *Engine) serialise(k string) ([]byte, error) {
 	switch k {
 	case activeKey:
-		return e.serialiseK(k, e.serialiseActiveProposals, &e.gss.serialisedActive, &e.gss.changedActive)
+		return e.serialiseK(e.serialiseActiveProposals, &e.gss.serialisedActive)
 	case enactedKey:
-		return e.serialiseK(k, e.serialiseEnactedProposals, &e.gss.serialisedEnacted, &e.gss.changedEnacted)
+		return e.serialiseK(e.serialiseEnactedProposals, &e.gss.serialisedEnacted)
 	case nodeValidationKey:
-		return e.serialiseK(k, e.serialiseNodeProposals, &e.gss.serialisedNodeValidation, &e.gss.changedNodeValidation)
+		return e.serialiseK(e.serialiseNodeProposals, &e.gss.serialisedNodeValidation)
 	default:
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
@@ -155,20 +145,6 @@ func (e *Engine) Keys() []string {
 
 func (e *Engine) Stopped() bool {
 	return false
-}
-
-func (e *Engine) HasChanged(k string) bool {
-	// switch k {
-	// case activeKey:
-	// 	return e.gss.changedActive
-	// case enactedKey:
-	// 	return e.gss.changedEnacted
-	// case nodeValidationKey:
-	// 	return e.gss.changedNodeValidation
-	// default:
-	// 	return false
-	// }
-	return true
 }
 
 func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
@@ -228,7 +204,6 @@ func (e *Engine) restoreActiveProposals(ctx context.Context, active *types.Gover
 	}
 
 	var err error
-	e.gss.changedActive = false
 	e.gss.serialisedActive, err = proto.Marshal(p.IntoProto())
 	e.broker.SendBatch(evts)
 	e.broker.SendBatch(vevts)
@@ -266,7 +241,6 @@ func (e *Engine) restoreEnactedProposals(ctx context.Context, enacted *types.Gov
 			vevts = append(vevts, events.NewVoteEvent(ctx, *v))
 		}
 	}
-	e.gss.changedEnacted = false
 	e.gss.serialisedEnacted, _ = proto.Marshal(p.IntoProto())
 	e.broker.SendBatch(evts)
 	e.broker.SendBatch(vevts)
@@ -278,7 +252,6 @@ func (e *Engine) restoreNodeProposals(ctx context.Context, node *types.Governanc
 		e.broker.Send(events.NewProposalEvent(ctx, *p))
 	}
 	var err error
-	e.gss.changedNodeValidation = false
 	e.gss.serialisedNodeValidation, err = proto.Marshal(p.IntoProto())
 	return err
 }

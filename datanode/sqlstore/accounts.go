@@ -14,6 +14,8 @@ package sqlstore
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"sync"
 
@@ -71,9 +73,10 @@ func (as *Accounts) Add(ctx context.Context, a *entities.Account) error {
 	defer metrics.StartSQLQuery("Accounts", "Add")()
 
 	err := as.Connection.QueryRow(ctx,
-		`INSERT INTO accounts(party_id, asset_id, market_id, type, tx_hash, vega_time)
-		 VALUES ($1, $2, $3, $4, $5, $6)
+		`INSERT INTO accounts(id, party_id, asset_id, market_id, type, tx_hash, vega_time)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7)
 		 RETURNING id`,
+		deterministicAccountID(a),
 		a.PartyID,
 		a.AssetID,
 		a.MarketID,
@@ -83,7 +86,7 @@ func (as *Accounts) Add(ctx context.Context, a *entities.Account) error {
 	return err
 }
 
-func (as *Accounts) GetByID(id int64) (entities.Account, error) {
+func (as *Accounts) GetByID(id entities.AccountID) (entities.Account, error) {
 	a := entities.Account{}
 	ctx := context.Background()
 	defer metrics.StartSQLQuery("Accounts", "GetByID")()
@@ -115,8 +118,8 @@ func (as *Accounts) Obtain(ctx context.Context, a *entities.Account) error {
 		a.ID = account.ID
 		return nil
 	}
-	insertQuery := `INSERT INTO accounts(party_id, asset_id, market_id, type, tx_hash, vega_time)
-                           VALUES ($1, $2, $3, $4, $5, $6)
+	insertQuery := `INSERT INTO accounts(id, party_id, asset_id, market_id, type, tx_hash, vega_time)
+                           VALUES ($1, $2, $3, $4, $5, $6, $7)
                            ON CONFLICT (party_id, asset_id, market_id, type) DO NOTHING`
 
 	selectQuery := `SELECT id, party_id, asset_id, market_id, type, tx_hash, vega_time
@@ -124,7 +127,9 @@ func (as *Accounts) Obtain(ctx context.Context, a *entities.Account) error {
 	                WHERE party_id=$1 AND asset_id=$2 AND market_id=$3 AND type=$4`
 
 	batch := pgx.Batch{}
-	batch.Queue(insertQuery, a.PartyID, a.AssetID, a.MarketID, a.Type, a.TxHash, a.VegaTime)
+
+	accountID := deterministicAccountID(a)
+	batch.Queue(insertQuery, accountID, a.PartyID, a.AssetID, a.MarketID, a.Type, a.TxHash, a.VegaTime)
 	batch.Queue(selectQuery, a.PartyID, a.AssetID, a.MarketID, a.Type)
 	defer metrics.StartSQLQuery("Accounts", "Obtain")()
 	results := as.Connection.SendBatch(ctx, &batch)
@@ -145,6 +150,12 @@ func (as *Accounts) Obtain(ctx context.Context, a *entities.Account) error {
 
 	as.updateCache(*a)
 	return nil
+}
+
+func deterministicAccountID(a *entities.Account) string {
+	idAsBytes := sha256.Sum256([]byte(a.AssetID.String() + a.PartyID.String() + a.MarketID.String() + a.Type.String()))
+	accountID := hex.EncodeToString(idAsBytes[:])
+	return accountID
 }
 
 func (as *Accounts) Query(filter entities.AccountFilter) ([]entities.Account, error) {

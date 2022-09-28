@@ -30,7 +30,6 @@ var (
 
 type limitsSnapshotState struct {
 	serialised []byte
-	changed    bool
 }
 
 // serialiseLimits returns the engine's limit data as marshalled bytes.
@@ -57,17 +56,12 @@ func (e *Engine) serialise(k string) ([]byte, error) {
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
-	if !e.HasChanged(k) {
-		return e.lss.serialised, nil
-	}
-
 	data, err := e.serialiseLimits()
 	if err != nil {
 		return nil, err
 	}
 
 	e.lss.serialised = data
-	e.lss.changed = false
 	return data, nil
 }
 
@@ -81,11 +75,6 @@ func (e *Engine) Keys() []string {
 
 func (e *Engine) Stopped() bool {
 	return false
-}
-
-func (e *Engine) HasChanged(k string) bool {
-	// return e.lss.changed
-	return true
 }
 
 func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
@@ -117,7 +106,6 @@ func (e *Engine) restoreLimits(ctx context.Context, l *types.LimitState, p *type
 
 	e.sendEvent(ctx)
 	var err error
-	e.lss.changed = false
 	e.lss.serialised, err = proto.Marshal(p.IntoProto())
 	return err
 }

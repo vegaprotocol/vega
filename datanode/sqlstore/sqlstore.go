@@ -14,6 +14,7 @@ package sqlstore
 
 import (
 	"bytes"
+	"context"
 	"embed"
 	"fmt"
 	"io"
@@ -21,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
+	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/stdlib"
 	"github.com/pkg/errors"
 	"github.com/pressly/goose/v3"
@@ -29,10 +31,12 @@ import (
 var ErrBadID = errors.New("Bad ID (must be hex string)")
 
 //go:embed migrations/*.sql
-var embedMigrations embed.FS
+var EmbedMigrations embed.FS
+
+const SQLMigrationsDir = "migrations"
 
 func MigrateToLatestSchema(log *logging.Logger, config Config) error {
-	goose.SetBaseFS(embedMigrations)
+	goose.SetBaseFS(EmbedMigrations)
 	goose.SetLogger(log.Named("db migration").GooseLogger())
 
 	poolConfig, err := config.ConnectionConfig.GetPoolConfig()
@@ -49,13 +53,62 @@ func MigrateToLatestSchema(log *logging.Logger, config Config) error {
 	}
 
 	if currentVersion > 0 && config.WipeOnStartup {
-		if err := goose.Down(db, "migrations"); err != nil {
+		if err := goose.Down(db, SQLMigrationsDir); err != nil {
 			return fmt.Errorf("error clearing sql schema: %w", err)
 		}
 	}
 
-	if err := goose.Up(db, "migrations"); err != nil {
+	if err := goose.Up(db, SQLMigrationsDir); err != nil {
 		return fmt.Errorf("error migrating sql schema: %w", err)
+	}
+	return nil
+}
+
+func CreateVegaSchema(log *logging.Logger, connConfig ConnectionConfig) error {
+	goose.SetBaseFS(EmbedMigrations)
+	goose.SetLogger(log.Named("snapshot schema creation").GooseLogger())
+
+	poolConfig, err := connConfig.GetPoolConfig()
+	if err != nil {
+		return fmt.Errorf("failed to get connection configuration: %w", err)
+	}
+
+	db := stdlib.OpenDB(*poolConfig.ConnConfig)
+	defer func() {
+		err := db.Close()
+		if err != nil {
+			log.Errorf("error when closing connection used to create vega schema:%w", err)
+		}
+	}()
+
+	if err := goose.Up(db, SQLMigrationsDir); err != nil {
+		return fmt.Errorf("failed to create schema: %w", err)
+	}
+
+	return nil
+}
+
+func RecreateVegaDatabase(ctx context.Context, log *logging.Logger, connConfig ConnectionConfig) error {
+	postgresDbConn, err := pgx.Connect(context.Background(), connConfig.GetConnectionStringForPostgresDatabase())
+	if err != nil {
+		return fmt.Errorf("unable to connect to database:%w", err)
+	}
+
+	defer func() {
+		err := postgresDbConn.Close(ctx)
+		if err != nil {
+			log.Errorf("error closing database connection after loading snapshot:%v", err)
+		}
+	}()
+
+	_, err = postgresDbConn.Exec(ctx, fmt.Sprintf("DROP DATABASE IF EXISTS %s WITH ( FORCE )", connConfig.Database))
+	if err != nil {
+		return fmt.Errorf("unable to drop existing database:%w", err)
+	}
+
+	_, err = postgresDbConn.Exec(ctx, fmt.Sprintf("CREATE DATABASE %s TEMPLATE template0 LC_COLLATE 'C' LC_CTYPE 'C';", connConfig.Database))
+	if err != nil {
+		return fmt.Errorf("unable to create database:%w", err)
 	}
 	return nil
 }
@@ -68,7 +121,6 @@ func ApplyDataRetentionPolicies(config Config) error {
 
 	db := stdlib.OpenDB(*poolConfig.ConnConfig)
 	defer db.Close()
-
 	for _, policy := range config.RetentionPolicies {
 		if _, err := db.Exec(fmt.Sprintf("SELECT remove_retention_policy('%s', true);", policy.HypertableOrCaggName)); err != nil {
 			return errors.Wrapf(err, "removing retention policy from %s", policy.HypertableOrCaggName)
@@ -82,7 +134,7 @@ func ApplyDataRetentionPolicies(config Config) error {
 	return nil
 }
 
-func StartEmbeddedPostgres(log *logging.Logger, config Config, stateDir string) (*embeddedpostgres.EmbeddedPostgres, error) {
+func StartEmbeddedPostgres(log *logging.Logger, config Config, stateDir string) (*embeddedpostgres.EmbeddedPostgres, string, error) {
 	embeddedPostgresRuntimePath := paths.JoinStatePath(paths.StatePath(stateDir), "sqlstore")
 	embeddedPostgresDataPath := paths.JoinStatePath(paths.StatePath(stateDir), "sqlstore", "node-data")
 
@@ -93,10 +145,10 @@ func StartEmbeddedPostgres(log *logging.Logger, config Config, stateDir string) 
 
 	if err := embeddedPostgres.Start(); err != nil {
 		log.Errorf("postgres log: \n%s", postgresLog.String())
-		return nil, fmt.Errorf("use embedded database was true, but failed to start: %w", err)
+		return nil, "", fmt.Errorf("use embedded database was true, but failed to start: %w", err)
 	}
 
-	return embeddedPostgres, nil
+	return embeddedPostgres, embeddedPostgresRuntimePath.String(), nil
 }
 
 func createEmbeddedPostgres(runtimePath *paths.StatePath, dataPath *paths.StatePath, writer io.Writer, conf ConnectionConfig) *embeddedpostgres.EmbeddedPostgres {

@@ -50,7 +50,7 @@ func NewLiquidityProvision(connectionSource *ConnectionSource) *LiquidityProvisi
 
 func (lp *LiquidityProvision) Flush(ctx context.Context) error {
 	defer metrics.StartSQLQuery("LiquidityProvision", "Flush")()
-	flushed, err := lp.batcher.Flush(ctx, lp.pool)
+	flushed, err := lp.batcher.Flush(ctx, lp.Connection)
 	if err != nil {
 		return err
 	}

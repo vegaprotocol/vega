@@ -24,7 +24,7 @@ import (
 )
 
 type MarginLevels struct {
-	AccountID              int64
+	AccountID              AccountID
 	MaintenanceMargin      decimal.Decimal
 	SearchLevel            decimal.Decimal
 	InitialMargin          decimal.Decimal
@@ -75,7 +75,7 @@ func MarginLevelsFromProto(ctx context.Context, margin *vega.MarginLevels, accou
 
 func GetAccountFromMarginLevel(ctx context.Context, margin *vega.MarginLevels, accountSource AccountSource, txHash TxHash, vegaTime time.Time) (Account, error) {
 	marginAccount := Account{
-		ID:       0,
+		ID:       "",
 		PartyID:  PartyID(margin.PartyId),
 		AssetID:  AssetID(margin.Asset),
 		MarketID: MarketID(margin.MarketId),
@@ -135,7 +135,7 @@ func (ml MarginLevels) ToProtoEdge(input ...any) (*v2.MarginEdge, error) {
 }
 
 type MarginLevelsKey struct {
-	AccountID int64
+	AccountID AccountID
 	VegaTime  time.Time
 }
 
@@ -157,7 +157,7 @@ var MarginLevelsColumns = []string{
 
 type MarginCursor struct {
 	VegaTime  time.Time
-	AccountID int64
+	AccountID AccountID
 }
 
 func (mc MarginCursor) String() string {

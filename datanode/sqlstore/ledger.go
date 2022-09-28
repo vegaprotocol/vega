@@ -14,6 +14,7 @@ package sqlstore
 
 import (
 	"context"
+	"time"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
@@ -23,6 +24,7 @@ import (
 type Ledger struct {
 	*ConnectionSource
 	batcher ListBatcher[entities.LedgerEntry]
+	pending []entities.LedgerEntry
 }
 
 func NewLedger(connectionSource *ConnectionSource) *Ledger {
@@ -35,22 +37,33 @@ func NewLedger(connectionSource *ConnectionSource) *Ledger {
 
 func (ls *Ledger) Flush(ctx context.Context) ([]entities.LedgerEntry, error) {
 	defer metrics.StartSQLQuery("Ledger", "Flush")()
+
+	// This creates an entry time for the ledger entry that is guaranteed to be unique
+	// Block event sequence number cannot be used as multiple ledger entries can be created
+	// as the result of a single transfer event.
+	for i, le := range ls.pending {
+		le.LedgerEntryTime = entities.CreateLedgerEntryTime(le.VegaTime, i)
+		ls.batcher.Add(le)
+	}
+
+	ls.pending = nil
+
 	return ls.batcher.Flush(ctx, ls.Connection)
 }
 
 func (ls *Ledger) Add(le entities.LedgerEntry) error {
-	ls.batcher.Add(le)
+	ls.pending = append(ls.pending, le)
 	return nil
 }
 
-func (ls *Ledger) GetByID(id int64) (entities.LedgerEntry, error) {
+func (ls *Ledger) GetByLedgerEntryTime(ledgerEntryTime time.Time) (entities.LedgerEntry, error) {
 	defer metrics.StartSQLQuery("Ledger", "GetByID")()
 	le := entities.LedgerEntry{}
 	ctx := context.Background()
 	err := pgxscan.Get(ctx, ls.Connection, &le,
-		`SELECT id, account_from_id, account_to_id, quantity, tx_hash, vega_time, transfer_time, type
-		 FROM ledger WHERE id=$1`,
-		id)
+		`SELECT ledger_entry_time, account_from_id, account_to_id, quantity, tx_hash, vega_time, transfer_time, type
+		 FROM ledger WHERE ledger_entry_time =$1`,
+		ledgerEntryTime)
 	return le, err
 }
 
@@ -59,7 +72,7 @@ func (ls *Ledger) GetAll() ([]entities.LedgerEntry, error) {
 	ctx := context.Background()
 	ledgerEntries := []entities.LedgerEntry{}
 	err := pgxscan.Select(ctx, ls.Connection, &ledgerEntries, `
-		SELECT id, account_from_id, account_to_id, quantity, tx_hash, vega_time, transfer_time, type
+		SELECT ledger_entry_time, account_from_id, account_to_id, quantity, tx_hash, vega_time, transfer_time, type
 		FROM ledger`)
 	return ledgerEntries, err
 }

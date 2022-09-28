@@ -14,11 +14,12 @@ package version
 
 import (
 	"runtime/debug"
+	"strings"
 )
 
 var (
-	cLIVersionHash = ""
-	cLIVersion     = "v0.56.0"
+	cliVersionHash = ""
+	cliVersion     = "v0.57.0"
 )
 
 func init() {
@@ -27,21 +28,44 @@ func init() {
 
 	for _, v := range info.Settings {
 		if v.Key == "vcs.revision" {
-			cLIVersionHash = v.Value
+			cliVersionHash = v.Value
 		}
 		if v.Key == "vcs.modified" && v.Value == "true" {
 			modified = true
 		}
 	}
 	if modified {
-		cLIVersionHash += "-modified"
+		cliVersionHash += "-modified"
 	}
 }
 
+// Get returns the version of the software. When the version is a development
+// version, the first 8 characters of the git hash, is appended as a build tag.
+// Any dash separated addition to the hash is appended as a build tag as well.
 func Get() string {
-	return cLIVersion
+	finalVersion := cliVersion
+
+	if strings.HasSuffix(cliVersion, "+dev") {
+		splatHash := strings.Split(cliVersionHash, "-")
+
+		// Verifying if splitting the version hash gave results.
+		if len(splatHash) == 0 {
+			return finalVersion
+		}
+
+		// Verifying if there is a commit hash.
+		if splatHash[0] != "" {
+			finalVersion = finalVersion + "." + splatHash[0][:8]
+		}
+
+		// Anything left from the splitting is appended as build tags behind.
+		for i := 1; i < len(splatHash); i++ {
+			finalVersion = finalVersion + "." + splatHash[i]
+		}
+	}
+	return finalVersion
 }
 
 func GetCommitHash() string {
-	return cLIVersionHash
+	return cliVersionHash
 }

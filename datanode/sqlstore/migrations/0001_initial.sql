@@ -9,6 +9,38 @@ create table blocks
     height        BIGINT                   NOT NULL,
     hash          BYTEA                    NOT NULL
 );
+select create_hypertable('blocks', 'vega_time', chunk_time_interval => INTERVAL '1 day');
+create index on blocks (height);
+
+create table last_block
+(
+    onerow_check  bool PRIMARY KEY DEFAULT TRUE,
+    vega_time     TIMESTAMP WITH TIME ZONE NOT NULL,
+    height        BIGINT                   NOT NULL,
+    hash          BYTEA                    NOT NULL
+);
+
+-- +goose StatementBegin
+CREATE OR REPLACE FUNCTION update_last_block()
+    RETURNS TRIGGER
+    LANGUAGE PLPGSQL AS
+$$
+BEGIN
+    Insert into last_block (vega_time, height, hash) VALUES(NEW.vega_time, NEW.height, NEW.hash) on conflict(onerow_check) do update
+    set
+        vega_time=EXCLUDED.vega_time,
+        height=EXCLUDED.height,
+        hash=EXCLUDED.hash;
+    RETURN NULL;
+END;
+$$;
+-- +goose StatementEnd
+
+CREATE TRIGGER update_last_block AFTER INSERT ON blocks FOR EACH ROW EXECUTE function update_last_block();
+
+
+
+
 
 create table chain
 (
@@ -31,7 +63,7 @@ create table assets
     withdraw_threshold  HUGEINT NOT NULL,
     status		asset_status_type NOT NULL,
     tx_hash             BYTEA NOT NULL,
-    vega_time           TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
+    vega_time           TIMESTAMP WITH TIME ZONE NOT NULL,
     PRIMARY KEY (id, vega_time)
 );
 
@@ -43,24 +75,24 @@ create table parties
 (
     id        BYTEA NOT NULL PRIMARY KEY,
     tx_hash   BYTEA NOT NULL,
-    vega_time TIMESTAMP WITH TIME ZONE REFERENCES blocks(vega_time)
+    vega_time TIMESTAMP WITH TIME ZONE
 );
 
 create table accounts
 (
-    id        SERIAL PRIMARY KEY,
+    id        BYTEA PRIMARY KEY,
     party_id  BYTEA,
     asset_id  BYTEA  NOT NULL,
     market_id BYTEA,
     type      INT,
     tx_hash   BYTEA NOT NULL,
-    vega_time TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
+    vega_time TIMESTAMP WITH TIME ZONE NOT NULL,
     UNIQUE(party_id, asset_id, market_id, type)
 );
 
 create table balances
 (
-    account_id INT                      NOT NULL,
+    account_id bytea                      NOT NULL,
     vega_time  TIMESTAMP WITH TIME ZONE NOT NULL,
     tx_hash    BYTEA NOT NULL,
     balance    HUGEINT           NOT NULL,
@@ -72,7 +104,7 @@ create index on balances (vega_time, account_id);
 
 create table current_balances
 (
-    account_id INT                      NOT NULL,
+    account_id bytea                      NOT NULL,
     tx_hash    BYTEA                    NOT NULL,
     vega_time  TIMESTAMP WITH TIME ZONE NOT NULL,
     balance    HUGEINT           NOT NULL,
@@ -110,7 +142,7 @@ GROUP BY account_id, bucket WITH NO DATA;
 -- start_offset is set to a day, as data is append only this does not impact the processing time and ensures
 -- that the CAGG data will be correct on recovery in the event of a transient outage ( < 1 day )
 SELECT add_continuous_aggregate_policy('conflated_balances', start_offset => INTERVAL '1 day',
-                                       end_offset => INTERVAL '1 hour', schedule_interval => INTERVAL '1 hour');
+                                     end_offset => INTERVAL '1 hour', schedule_interval => INTERVAL '1 hour');
 
 CREATE VIEW all_balances AS
 (
@@ -129,19 +161,19 @@ SELECT
 FROM conflated_balances
 WHERE conflated_balances.vega_time < (SELECT coalesce(min(balances.vega_time), 'infinity') FROM balances));
 
-
 create table ledger
 (
-    id              SERIAL,
-    account_from_id INT                      NOT NULL,
-    account_to_id   INT                      NOT NULL,
+    ledger_entry_time       TIMESTAMP WITH TIME ZONE NOT NULL,
+    account_from_id bytea                      NOT NULL,
+    account_to_id   bytea                      NOT NULL,
     quantity        HUGEINT                  NOT NULL,
     tx_hash         BYTEA                    NOT NULL,
     vega_time       TIMESTAMP WITH TIME ZONE NOT NULL,
     transfer_time   TIMESTAMP WITH TIME ZONE NOT NULL,
-    type            TEXT
+    type            TEXT,
+    PRIMARY KEY(ledger_entry_time)
 );
-SELECT create_hypertable('ledger', 'vega_time', chunk_time_interval => INTERVAL '1 day');
+SELECT create_hypertable('ledger', 'ledger_entry_time', chunk_time_interval => INTERVAL '1 day');
 
 CREATE TABLE orders_history (
     id                BYTEA                     NOT NULL,
@@ -167,7 +199,8 @@ CREATE TABLE orders_history (
     tx_hash           BYTEA                    NOT NULL,
     vega_time         TIMESTAMP WITH TIME ZONE NOT NULL,
     seq_num           BIGINT NOT NULL,
-    vega_time_to      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT 'infinity'
+    vega_time_to      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT 'infinity',
+    PRIMARY KEY(vega_time, seq_num)
 );
 
 SELECT create_hypertable('orders_history', 'vega_time', chunk_time_interval => INTERVAL '1 day');
@@ -200,7 +233,8 @@ CREATE TABLE orders_live (
     tx_hash           BYTEA                    NOT NULL,
     vega_time         TIMESTAMP WITH TIME ZONE NOT NULL,
     seq_num           BIGINT NOT NULL, -- event sequence number in the block
-    vega_time_to      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT 'infinity'
+    vega_time_to      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT 'infinity',
+    PRIMARY KEY(id)
 );
 
 CREATE INDEX ON orders_live (market_id, vega_time DESC);
@@ -210,7 +244,7 @@ CREATE INDEX ON orders_live USING HASH (id);
 -- Orders is an updatable view (via the trigger below) which handles moving rows between orders_history and orders_live
 CREATE VIEW orders AS (
   SELECT * FROM orders_live
-  UNION ALL
+  UNION
   SELECT * FROM orders_history
 );
 
@@ -229,18 +263,7 @@ $$
      WHERE vega_time_to = 'infinity'
        AND id = NEW.id;
 
-    -- If we're 'updating' an order in orders_live (by adding a row with a matching id),
-    -- move the old one into order_history, updating it's vega_time_to from infinity to the new
-    -- row's vega_time
-    INSERT INTO orders_history
-         SELECT id, market_id, party_id, side, price,
-                size, remaining, time_in_force, type, status,
-                reference, reason, version, batch_id, pegged_offset,
-                pegged_reference, lp_id, created_at, updated_at, expires_at,
-                tx_hash, vega_time, seq_num, NEW.vega_time as vega_time_to
-           FROM orders_live
-        WHERE id = NEW.id;
-    DELETE from orders_live
+      DELETE from orders_live
         WHERE id = NEW.id;
 
     -- As per https://github.com/vegaprotocol/specs-internal/blob/master/protocol/0024-OSTA-order_status.md
@@ -255,16 +278,16 @@ $$
               new.reference, new.reason, new.version, new.batch_id, new.pegged_offset,
               new.pegged_reference, new.lp_id, new.created_at, new.updated_at, new.expires_at,
               new.tx_hash, new.vega_time, new.seq_num, 'infinity');
-       RETURN NULL;
-    ELSE
-       INSERT INTO orders_history
-       VALUES(new.id, new.market_id, new.party_id, new.side, new.price,
-              new.size, new.remaining, new.time_in_force, new.type, new.status,
-              new.reference, new.reason, new.version, new.batch_id, new.pegged_offset,
-              new.pegged_reference, new.lp_id, new.created_at, new.updated_at, new.expires_at,
-              new.tx_hash, new.vega_time, new.seq_num, 'infinity');
-       RETURN NULL;
     END IF;
+
+    INSERT INTO orders_history
+    VALUES(new.id, new.market_id, new.party_id, new.side, new.price,
+           new.size, new.remaining, new.time_in_force, new.type, new.status,
+           new.reference, new.reason, new.version, new.batch_id, new.pegged_offset,
+           new.pegged_reference, new.lp_id, new.created_at, new.updated_at, new.expires_at,
+           new.tx_hash, new.vega_time, new.seq_num, 'infinity');
+    RETURN NULL;
+
     END;
 $$;
 
@@ -278,7 +301,7 @@ CREATE TRIGGER archive_orders INSTEAD OF INSERT ON orders FOR EACH ROW EXECUTE f
 --  (e.g. it's unique on order ID)
 CREATE VIEW orders_current AS (
   SELECT * FROM orders_live WHERE vega_time_to = 'infinity'
-  UNION ALL
+  UNION
   SELECT * FROM orders_history WHERE vega_time_to = 'infinity'
 );
 
@@ -312,7 +335,8 @@ create table trades
     seller_infrastructure_fee HUGEINT,
     seller_liquidity_fee HUGEINT,
     buyer_auction_batch BIGINT,
-    seller_auction_batch BIGINT
+    seller_auction_batch BIGINT,
+    primary key (synthetic_time)
 );
 
 SELECT create_hypertable('trades', 'synthetic_time', chunk_time_interval => INTERVAL '1 day');
@@ -420,7 +444,7 @@ SELECT add_continuous_aggregate_policy('trades_candle_1_day', start_offset => IN
 
 
 CREATE TABLE network_limits (
-  vega_time                   TIMESTAMP WITH TIME ZONE NOT NULL PRIMARY KEY REFERENCES blocks(vega_time),
+  vega_time                   TIMESTAMP WITH TIME ZONE NOT NULL PRIMARY KEY,
   tx_hash                     BYTEA                    NOT NULL,
   can_propose_market          BOOLEAN NOT NULL,
   can_propose_asset           BOOLEAN NOT NULL,
@@ -493,7 +517,8 @@ create table market_data (
     price_monitoring_bounds jsonb,
     market_value_proxy text,
     liquidity_provider_fee_shares jsonb,
-    market_state market_state_type
+    market_state market_state_type,
+    PRIMARY KEY (synthetic_time)
 );
 
 select create_hypertable('market_data', 'synthetic_time', chunk_time_interval => INTERVAL '1 day');
@@ -597,7 +622,9 @@ CREATE TABLE rewards(
   percent_of_total FLOAT,
   timestamp        TIMESTAMP WITH TIME ZONE NOT NULL,
   tx_hash          BYTEA NOT NULL,
-  vega_time        TIMESTAMP WITH TIME ZONE NOT NULL
+  vega_time        TIMESTAMP WITH TIME ZONE NOT NULL,
+  seq_num           BIGINT NOT NULL,
+  primary key (vega_time, seq_num)
 );
 
 CREATE TABLE delegations(
@@ -606,7 +633,8 @@ CREATE TABLE delegations(
   epoch_id         BIGINT NOT NULL,
   amount           HUGEINT,
   tx_hash          BYTEA NOT NULL,
-  vega_time        TIMESTAMP WITH TIME ZONE NOT NULL
+  vega_time        TIMESTAMP WITH TIME ZONE NOT NULL,
+  primary key (party_id, node_id, epoch_id, vega_time)
 );
 
 CREATE VIEW delegations_current AS (
@@ -618,7 +646,7 @@ CREATE VIEW delegations_current AS (
 create table if not exists markets (
     id bytea not null,
     tx_hash bytea not null,
-    vega_time timestamp with time zone not null references blocks(vega_time),
+    vega_time timestamp with time zone not null,
     instrument_id text,
     tradable_instrument jsonb,
     decimal_places int,
@@ -648,7 +676,7 @@ CREATE TABLE epochs(
   expire_time  TIMESTAMP WITH TIME ZONE NOT NULL,
   end_time     TIMESTAMP WITH TIME ZONE,
   tx_hash      BYTEA                    NOT NULL,
-  vega_time    TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
+  vega_time    TIMESTAMP WITH TIME ZONE NOT NULL,
   PRIMARY KEY(id, vega_time)
 );
 
@@ -664,7 +692,7 @@ create table if not exists deposits (
     credited_timestamp timestamp with time zone not null,
     created_timestamp timestamp with time zone not null,
     tx_hash  bytea not null,
-    vega_time timestamp with time zone not null references blocks(vega_time),
+    vega_time timestamp with time zone not null,
     primary key (id, party_id, vega_time)
 );
 
@@ -690,7 +718,7 @@ create table if not exists withdrawals (
     withdrawn_timestamp timestamp with time zone not null,
     ext jsonb not null,
     tx_hash  bytea not null,
-    vega_time timestamp with time zone not null references blocks(vega_time),
+    vega_time timestamp with time zone not null,
     primary key (id, vega_time)
 );
 
@@ -715,7 +743,7 @@ CREATE TABLE proposals(
   rationale                 JSONB          NOT NULL,
   reason                    proposal_error,
   error_details             TEXT,
-  vega_time                 TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
+  vega_time                 TIMESTAMP WITH TIME ZONE NOT NULL,
   proposal_time             TIMESTAMP WITH TIME ZONE,
   required_majority         NUMERIC(1000, 16) NOT NULL,
   required_participation    NUMERIC(1000, 16) NOT NULL,
@@ -737,7 +765,7 @@ CREATE TABLE votes(
   total_governance_token_weight  NUMERIC(1000, 16)           NOT NULL,
   total_equity_like_share_weight NUMERIC(1000, 16)           NOT NULL,
   tx_hash                        BYTEA NOT NULL,
-  vega_time                      TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
+  vega_time                      TIMESTAMP WITH TIME ZONE NOT NULL,
   initial_time                   TIMESTAMP WITH TIME ZONE,
   PRIMARY KEY (proposal_id, party_id, vega_time)
 );
@@ -747,21 +775,22 @@ CREATE VIEW votes_current AS (
 );
 
 create table if not exists margin_levels (
-    account_id INT NOT NULL,
+    account_id bytea NOT NULL,
     timestamp timestamp with time zone not null,
     maintenance_margin HUGEINT,
     search_level HUGEINT,
     initial_margin HUGEINT,
     collateral_release_level HUGEINT,
     tx_hash BYTEA NOT NULL,
-    vega_time timestamp with time zone not null
+    vega_time timestamp with time zone not null,
+    PRIMARY KEY(vega_time, account_id)
 );
 
 select create_hypertable('margin_levels', 'vega_time', chunk_time_interval => INTERVAL '1 day');
 
 create table current_margin_levels
 (
-    account_id INT NOT NULL,
+    account_id bytea NOT NULL,
     timestamp timestamp with time zone not null,
     maintenance_margin HUGEINT,
     search_level HUGEINT,
@@ -857,7 +886,7 @@ create table if not exists risk_factors (
     short NUMERIC(1000, 16) not null,
     long NUMERIC(1000, 16) not null,
     tx_hash bytea not null,
-    vega_time timestamp with time zone not null references blocks(vega_time),
+    vega_time timestamp with time zone not null,
     primary key (market_id, vega_time)
 );
 
@@ -869,7 +898,7 @@ CREATE TABLE network_parameters (
     key          TEXT                     NOT NULL,
     value        TEXT                     NOT NULL,
     tx_hash      BYTEA                    NOT NULL,
-    vega_time    TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time),
+    vega_time    TIMESTAMP WITH TIME ZONE NOT NULL,
     PRIMARY KEY (key, vega_time)
 );
 
@@ -884,7 +913,8 @@ CREATE TABLE checkpoints(
     block_hash   TEXT                     NOT NULL,
     block_height BIGINT                   NOT NULL,
     tx_hash      BYTEA                    NOT NULL,
-    vega_time    TIMESTAMP WITH TIME ZONE NOT NULL REFERENCES blocks(vega_time)
+    vega_time    TIMESTAMP WITH TIME ZONE NOT NULL,
+    primary key (hash)
 );
 
 CREATE TABLE positions(
@@ -898,11 +928,11 @@ CREATE TABLE positions(
   loss                NUMERIC NOT NULL,
   adjustment          NUMERIC NOT NULL,
   tx_hash             BYTEA                    NOT NULL,
-  vega_time           TIMESTAMP WITH TIME ZONE NOT NULL
+  vega_time           TIMESTAMP WITH TIME ZONE NOT NULL,
+  primary key (party_id, market_id, vega_time)
 );
 
 select create_hypertable('positions', 'vega_time', chunk_time_interval => INTERVAL '1 day');
-create index on positions (party_id, market_id, vega_time);
 
 
 CREATE MATERIALIZED VIEW conflated_positions
@@ -956,9 +986,48 @@ SELECT
 FROM conflated_positions
 WHERE conflated_positions.vega_time < (SELECT coalesce(min(positions.vega_time), 'infinity') FROM positions));
 
-CREATE VIEW positions_current AS (
- SELECT DISTINCT ON (party_id, market_id) * FROM all_positions ORDER BY party_id, market_id, vega_time DESC
+
+create table positions_current
+(
+    market_id           BYTEA NOT NULL,
+    party_id            BYTEA NOT NULL,
+    open_volume         BIGINT NOT NULL,
+    realised_pnl        NUMERIC NOT NULL,
+    unrealised_pnl      NUMERIC NOT NULL,
+    average_entry_price NUMERIC NOT NULL,
+    average_entry_market_price NUMERIC NOT NULL,
+    loss                NUMERIC NOT NULL,
+    adjustment          NUMERIC NOT NULL,
+    tx_hash             BYTEA                    NOT NULL,
+    vega_time           TIMESTAMP WITH TIME ZONE NOT NULL,
+    primary key (party_id, market_id)
+
 );
+
+-- +goose StatementBegin
+CREATE OR REPLACE FUNCTION update_current_positions()
+    RETURNS TRIGGER
+    LANGUAGE PLPGSQL AS
+$$
+BEGIN
+    INSERT INTO positions_current(market_id,party_id,open_volume,realised_pnl,unrealised_pnl,average_entry_price,average_entry_market_price,loss,adjustment,tx_hash,vega_time)
+    VALUES(NEW.market_id,NEW.party_id,NEW.open_volume,NEW.realised_pnl,NEW.unrealised_pnl,NEW.average_entry_price,NEW.average_entry_market_price,NEW.loss,NEW.adjustment,NEW.tx_hash,NEW.vega_time)
+    ON CONFLICT(party_id, market_id) DO UPDATE SET
+                                                   open_volume=EXCLUDED.open_volume,
+                                                   realised_pnl=EXCLUDED.realised_pnl,
+                                                   unrealised_pnl=EXCLUDED.unrealised_pnl,
+                                                   average_entry_price=EXCLUDED.average_entry_price,
+                                                   average_entry_market_price=EXCLUDED.average_entry_market_price,
+                                                   loss=EXCLUDED.loss,
+                                                   adjustment=EXCLUDED.adjustment,
+                                                   tx_hash=EXCLUDED.tx_hash,
+                                                   vega_time=EXCLUDED.vega_time;
+    RETURN NULL;
+END;
+$$;
+-- +goose StatementEnd
+
+CREATE TRIGGER update_current_positions AFTER INSERT ON positions FOR EACH ROW EXECUTE function update_current_positions();
 
 create type oracle_spec_status as enum('STATUS_UNSPECIFIED', 'STATUS_ACTIVE', 'STATUS_DEACTIVATED');
 
@@ -970,7 +1039,7 @@ create table if not exists oracle_specs (
     filters jsonb,
     status oracle_spec_status not null,
     tx_hash  bytea not null,
-    vega_time timestamp with time zone not null references blocks(vega_time),
+    vega_time timestamp with time zone not null,
     primary key (id, vega_time)
 );
 
@@ -980,13 +1049,15 @@ create table if not exists oracle_data (
     matched_spec_ids bytea[],
     broadcast_at timestamp with time zone not null,
     tx_hash  bytea not null,
-    vega_time timestamp with time zone not null references blocks(vega_time)
+    vega_time timestamp with time zone not null,
+    seq_num  BIGINT NOT NULL,
+    PRIMARY KEY(vega_time, seq_num)
 );
 
 create index if not exists idx_oracle_data_matched_spec_ids on oracle_data(matched_spec_ids);
 
 create view oracle_data_current as (
-    select distinct on (matched_spec_ids, data) public_keys, data, matched_spec_ids, broadcast_at, tx_hash, vega_time
+    select distinct on (matched_spec_ids, data) public_keys, data, matched_spec_ids, broadcast_at, tx_hash, vega_time, seq_num
     from oracle_data
     order by matched_spec_ids, data, vega_time desc
 );
@@ -1097,9 +1168,9 @@ CREATE TYPE transfer_status AS enum('STATUS_UNSPECIFIED','STATUS_PENDING','STATU
 create table if not exists transfers (
          id bytea not null,
          tx_hash bytea not null,
-         vega_time timestamp with time zone not null references blocks(vega_time),
-         from_account_id INT NOT NULL REFERENCES accounts(id),
-         to_account_id INT NOT NULL REFERENCES accounts(id),
+         vega_time timestamp with time zone not null,
+         from_account_id bytea NOT NULL REFERENCES accounts(id),
+         to_account_id bytea NOT NULL REFERENCES accounts(id),
          asset_id bytea not null,
          amount        HUGEINT           NOT NULL,
          reference       TEXT,
@@ -1126,7 +1197,7 @@ create table if not exists key_rotations (
   new_pub_key bytea not null,
   block_height bigint not null,
   tx_hash bytea not null,
-  vega_time timestamp with time zone not null references blocks(vega_time),
+  vega_time timestamp with time zone not null,
 
   primary key (node_id, vega_time)
 );
@@ -1137,7 +1208,9 @@ create table if not exists ethereum_key_rotations (
   new_address bytea not null,
   block_height bigint not null,
   tx_hash bytea not null,
-  vega_time timestamp with time zone not null references blocks(vega_time)
+  vega_time timestamp with time zone not null,
+  seq_num           BIGINT NOT NULL,
+  primary key (seq_num, vega_time)
 );
 
 create type erc20_multisig_signer_event as enum('SIGNER_ADDED', 'SIGNER_REMOVED');
@@ -1172,7 +1245,7 @@ create table if not exists stake_linking(
     log_index bigint,
     ethereum_address text not null,
     tx_hash bytea not null,
-    vega_time timestamp with time zone not null references blocks(vega_time),
+    vega_time timestamp with time zone not null,
     primary key (id, vega_time)
 );
 
@@ -1191,7 +1264,7 @@ create table if not exists node_signatures(
     sig bytea not null,
     kind node_signature_kind,
     tx_hash bytea not null,
-    vega_time timestamp with time zone not null references blocks(vega_time),
+    vega_time timestamp with time zone not null,
     primary key (resource_id, sig)
 );
 
@@ -1237,8 +1310,10 @@ DROP TABLE IF EXISTS oracle_data;
 DROP TABLE IF EXISTS oracle_specs;
 DROP TYPE IF EXISTS oracle_spec_status;
 
-DROP VIEW IF EXISTS positions_current;
+DROP TABLE IF EXISTS positions_current;
 DROP TABLE IF EXISTS positions cascade;
+DROP TRIGGER IF EXISTS update_current_positions ON positions;
+DROP FUNCTION IF EXISTS update_current_positions;
 
 DROP VIEW IF EXISTS votes_current;
 DROP TABLE IF EXISTS votes;
@@ -1320,5 +1395,9 @@ DROP TYPE IF EXISTS asset_status_type;
 DROP TABLE IF EXISTS trades cascade;
 DROP TABLE IF EXISTS chain;
 DROP TABLE IF EXISTS blocks cascade;
+DROP TABLE IF EXISTS last_block cascade;
+DROP TRIGGER IF EXISTS update_last_block ON balances;
+DROP FUNCTION IF EXISTS update_last_block;
+
 
 DROP DOMAIN IF EXISTS HUGEINT;
