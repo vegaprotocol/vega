@@ -1,6 +1,7 @@
 package snapshot_test
 
 import (
+	"bytes"
 	"compress/gzip"
 	"context"
 	"errors"
@@ -48,6 +49,8 @@ var (
 
 	snapshotsBackupDir string
 	eventsFile         string
+
+	postgresLog *bytes.Buffer
 )
 
 func TestMain(t *testing.M) {
@@ -66,15 +69,16 @@ func TestMain(t *testing.M) {
 	}
 	defer os.RemoveAll(eventsDir)
 
+	log := logging.NewTestLogger()
+
 	eventsFile = filepath.Join(eventsDir, "smoketest_to_block_5000_or_above.evts")
 	decompressEventFile()
 
 	var snapshotsDir string
-	databasetest.TestMain(t, func(config sqlstore.Config, source *sqlstore.ConnectionSource, dir string) {
+	exitCode := databasetest.TestMain(t, func(config sqlstore.Config, source *sqlstore.ConnectionSource, dir string, pgLog *bytes.Buffer) {
 		sqlConfig = config
 		snapshotsDir = dir
-
-		log := logging.NewTestLogger()
+		postgresLog = pgLog
 
 		emptyDatabase()
 
@@ -157,6 +161,10 @@ func TestMain(t *testing.M) {
 			copyFile(filepath.Join(snapshotsDir, file.Name()), filepath.Join(snapshotsBackupDir, file.Name()))
 		}
 	})
+
+	if exitCode != 0 {
+		log.Errorf("One or more tests failed, dumping postgres log:\n%s", postgresLog.String())
+	}
 }
 
 func TestGetHistoryIncludingDatanodeStateWhenDatanodeHasData(t *testing.T) {
