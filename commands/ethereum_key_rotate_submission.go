@@ -25,5 +25,9 @@ func checkEthereumKeyRotateSubmission(cmd *commandspb.EthereumKeyRotateSubmissio
 		errs.AddForProperty("ethereum_key_rotate_submission.target_block", ErrIsRequired)
 	}
 
+	if cmd.EthereumSignature == nil {
+		errs.AddForProperty("ethereum_key_rotate_submission.signature", ErrIsRequired)
+	}
+
 	return errs
 }

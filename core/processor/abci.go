@@ -335,11 +335,17 @@ func NewApp(
 		HandleDeliverTx(txn.UndelegateCommand,
 			app.SendEventOnError(app.DeliverUndelegate)).
 		HandleDeliverTx(txn.RotateKeySubmissionCommand,
-			app.RequireValidatorMasterPubKeyW(app.DeliverKeyRotateSubmission)).
+			app.SendEventOnError(
+				app.RequireValidatorMasterPubKeyW(app.DeliverKeyRotateSubmission),
+			),
+		).
+		HandleDeliverTx(txn.RotateEthereumKeySubmissionCommand,
+			app.SendEventOnError(
+				app.RequireValidatorPubKeyW(app.DeliverEthereumKeyRotateSubmission),
+			),
+		).
 		HandleDeliverTx(txn.StateVariableProposalCommand,
 			app.RequireValidatorPubKeyW(app.DeliverStateVarProposal)).
-		HandleDeliverTx(txn.RotateEthereumKeySubmissionCommand,
-			app.RequireValidatorPubKeyW(app.DeliverEthereumKeyRotateSubmission)).
 		HandleDeliverTx(txn.BatchMarketInstructions,
 			app.SendEventOnError(
 				app.CheckBatchMarketInstructionsW(
@@ -1682,12 +1688,10 @@ func (app *App) DeliverEthereumKeyRotateSubmission(ctx context.Context, tx abci.
 		return err
 	}
 
-	currentBlockHeight, _ := vgcontext.BlockHeightFromContext(ctx)
-
-	return app.top.RotateEthereumKey(
+	return app.top.ProcessEthereumKeyRotation(
 		ctx,
 		tx.PubKeyHex(),
-		uint64(currentBlockHeight),
 		kr,
+		signatures.VerifyEthereumSignature,
 	)
 }

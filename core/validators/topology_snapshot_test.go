@@ -111,21 +111,12 @@ func TestTopologySnapshot(t *testing.T) {
 	}
 	err = top.AddKeyRotate(ctx, nr2.Id, 5, kr2)
 	assert.NoError(t, err)
-
-	ekr1 := &commandspb.EthereumKeyRotateSubmission{
-		TargetBlock:    10,
-		CurrentAddress: "0x6d53C489bbda35B8096C8b4Cb362e2889F82E19B",
-		NewAddress:     "0x69bA3B3e6B5b1226A2e26De9a9E2D9C98f2b144B",
-	}
-	err = top.RotateEthereumKey(ctx, hexEncode("vega-key"), 5, ekr1)
+	ekr1 := newEthereumKeyRotationSubmission("0x6d53C489bbda35B8096C8b4Cb362e2889F82E19B", "0x69bA3B3e6B5b1226A2e26De9a9E2D9C98f2b144B", 10, "")
+	err = top.ProcessEthereumKeyRotation(ctx, hexEncode("vega-key"), ekr1, MockVerify)
 	assert.NoError(t, err)
 
-	ekr2 := &commandspb.EthereumKeyRotateSubmission{
-		TargetBlock:    11,
-		CurrentAddress: "0x6d53C489bbda35B8096C8b4Cb362e2889F82E19B",
-		NewAddress:     "0xd6B6e9514f2793Af89745Fd69FDa0DAbC228d336",
-	}
-	err = top.RotateEthereumKey(ctx, hexEncode("vega-key-2"), 5, ekr2)
+	ekr2 := newEthereumKeyRotationSubmission("0x6d53C489bbda35B8096C8b4Cb362e2889F82E19B", "0xd6B6e9514f2793Af89745Fd69FDa0DAbC228d336", 11, "")
+	err = top.ProcessEthereumKeyRotation(ctx, hexEncode("vega-key-2"), ekr2, MockVerify)
 	assert.NoError(t, err)
 
 	// Check the hashes have changed after each state change

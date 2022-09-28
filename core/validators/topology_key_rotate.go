@@ -24,7 +24,7 @@ import (
 )
 
 var (
-	ErrTargetBlockHeightMustBeGraterThanCurrentHeight        = errors.New("target block height must be greater then current block")
+	ErrTargetBlockHeightMustBeGreaterThanCurrentHeight       = errors.New("target block height must be greater then current block")
 	ErrNewVegaPubKeyIndexMustBeGreaterThenCurrentPubKeyIndex = errors.New("a new vega public key index must be greather then current public key index")
 	ErrInvalidVegaPubKeyForNode                              = errors.New("current vega public key is invalid for node")
 	ErrNodeAlreadyHasPendingKeyRotation                      = errors.New("node already has a pending key rotation")
@@ -92,7 +92,7 @@ func (t *Topology) AddKeyRotate(ctx context.Context, nodeID string, currentBlock
 	}
 
 	if currentBlockHeight > kr.TargetBlock {
-		return ErrTargetBlockHeightMustBeGraterThanCurrentHeight
+		return ErrTargetBlockHeightMustBeGreaterThanCurrentHeight
 	}
 
 	if node.data.VegaPubKeyIndex >= kr.NewPubKeyIndex {

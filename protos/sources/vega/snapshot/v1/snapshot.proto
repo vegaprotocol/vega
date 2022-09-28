@@ -622,6 +622,7 @@ message PendingEthereumKeyRotation {
   string node_id = 2;
   string new_address = 3;
   string submitter = 4;
+  string old_address = 5;
 }
 
 message Topology {
@@ -631,6 +632,7 @@ message Topology {
   ValidatorPerformance validator_performance = 4;
   repeated PendingEthereumKeyRotation pending_ethereum_key_rotations = 5;
   ToplogySignatures signatures = 6;
+  repeated PendingEthereumKeyRotation unsolved_ethereum_key_rotations = 7;
 }
 
 

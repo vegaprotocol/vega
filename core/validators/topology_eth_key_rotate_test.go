@@ -29,17 +29,19 @@ import (
 
 func TestTopologyEthereumKeyRotate(t *testing.T) {
 	t.Run("rotate ethereum key - success", testRotateEthereumKeySuccess)
+	t.Run("rotate ethereum key - fails when rotating to the same key", testRotateEthereumKeyFailsRotatingToSameKey)
+	t.Run("rotate ethereum key - fails if pending rotation already exists", testRotateEthereumKeyFailsIfPendingRotationExists)
 	t.Run("rotate ethereum key - fails when node does not exists", testRotateEthereumKeyFailsOnNonExistingNode)
 	t.Run("rotate ethereum key - fails when target block height is less then current block height", testRotateEthereumKeyFailsWhenTargetBlockHeightIsLessThenCurrentBlockHeight)
 	t.Run("rotate ethereum key - fails when current address does not match", testRotateEthereumKeyFailsWhenCurrentAddressDoesNotMatch)
 	t.Run("ethereum key rotation begin block - success", testEthereumKeyRotationBeginBlock)
-	t.Run("ethereum key rotation begin block with submitter - success", testEthereumKeyRotationBeginBlockWithSubmitter)
+	t.Run("ethereum key rotation begin block with submitter - success", TestEthereumKeyRotationBeginBlockWithSubmitter)
+	t.Run("ethereum key rotation by pending or ersatz does not generate signatures", testNoSignaturesForNonTendermint)
 }
 
 func testRotateEthereumKeySuccess(t *testing.T) {
 	top := getTestTopWithMockedSignatures(t)
 	defer top.ctrl.Finish()
-	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	nr := commandspb.AnnounceNode{
 		Id:              "vega-master-pubkey",
@@ -51,11 +53,7 @@ func testRotateEthereumKeySuccess(t *testing.T) {
 	err := top.AddNewNode(ctx, &nr, validators.ValidatorStatusTendermint)
 	require.NoError(t, err)
 
-	ekr := &commandspb.EthereumKeyRotateSubmission{
-		TargetBlock:    15,
-		NewAddress:     "new-eth-address",
-		CurrentAddress: nr.EthereumAddress,
-	}
+	ekr := newEthereumKeyRotationSubmission(nr.EthereumAddress, "new-eth-address", 15, "")
 
 	toRemove := []validators.NodeIDAddress{{NodeID: nr.Id, EthAddress: nr.EthereumAddress}}
 
@@ -66,20 +64,70 @@ func testRotateEthereumKeySuccess(t *testing.T) {
 		gomock.Any(),
 	).Times(1)
 
-	err = top.RotateEthereumKey(ctx, nr.VegaPubKey, 10, ekr)
+	err = top.ProcessEthereumKeyRotation(ctx, nr.VegaPubKey, ekr, MockVerify)
 	require.NoError(t, err)
+}
+
+func testRotateEthereumKeyFailsIfPendingRotationExists(t *testing.T) {
+	top := getTestTopWithMockedSignatures(t)
+	defer top.ctrl.Finish()
+
+	nr := commandspb.AnnounceNode{
+		Id:              "vega-master-pubkey",
+		ChainPubKey:     tmPubKey,
+		VegaPubKey:      "vega-key",
+		EthereumAddress: "eth-address",
+	}
+	ctx := context.Background()
+	err := top.AddNewNode(ctx, &nr, validators.ValidatorStatusTendermint)
+	require.NoError(t, err)
+
+	ekr := newEthereumKeyRotationSubmission(nr.EthereumAddress, "new-eth-address", 15, "")
+
+	toRemove := []validators.NodeIDAddress{{NodeID: nr.Id, EthAddress: nr.EthereumAddress}}
+	top.signatures.EXPECT().PrepareValidatorSignatures(
+		gomock.Any(),
+		toRemove,
+		gomock.Any(),
+		gomock.Any(),
+	).Times(1)
+
+	err = top.ProcessEthereumKeyRotation(ctx, nr.VegaPubKey, ekr, MockVerify)
+	require.NoError(t, err)
+
+	// now push in another rotation submission
+	err = top.ProcessEthereumKeyRotation(ctx, nr.VegaPubKey, ekr, MockVerify)
+	require.Error(t, err, validators.ErrNodeAlreadyHasPendingKeyRotation)
+}
+
+func testRotateEthereumKeyFailsRotatingToSameKey(t *testing.T) {
+	top := getTestTopWithMockedSignatures(t)
+	defer top.ctrl.Finish()
+
+	nr := commandspb.AnnounceNode{
+		Id:              "vega-master-pubkey",
+		ChainPubKey:     tmPubKey,
+		VegaPubKey:      "vega-key",
+		EthereumAddress: "eth-address",
+	}
+	ctx := context.Background()
+	err := top.AddNewNode(ctx, &nr, validators.ValidatorStatusTendermint)
+	require.NoError(t, err)
+
+	ekr := newEthereumKeyRotationSubmission(nr.EthereumAddress, nr.EthereumAddress, 15, "")
+	err = top.ProcessEthereumKeyRotation(ctx, nr.VegaPubKey, ekr, MockVerify)
+	require.Error(t, err, validators.ErrCannotRotateToSameKey)
 }
 
 func testRotateEthereumKeyFailsOnNonExistingNode(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
-	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 
-	err := top.RotateEthereumKey(
+	err := top.ProcessEthereumKeyRotation(
 		context.Background(),
 		"vega-nonexisting-pubkey",
-		10,
 		newEthereumKeyRotationSubmission("", "new-eth-addr", 10, ""),
+		MockVerify,
 	)
 
 	assert.Error(t, err)
@@ -87,7 +135,7 @@ func testRotateEthereumKeyFailsOnNonExistingNode(t *testing.T) {
 }
 
 func testRotateEthereumKeyFailsWhenTargetBlockHeightIsLessThenCurrentBlockHeight(t *testing.T) {
-	top := getTestTopWithDefaultValidator(t)
+	top := getTestTopWithMockedSignatures(t)
 	defer top.ctrl.Finish()
 
 	nr := commandspb.AnnounceNode{
@@ -100,19 +148,18 @@ func testRotateEthereumKeyFailsWhenTargetBlockHeightIsLessThenCurrentBlockHeight
 	err := top.AddNewNode(context.Background(), &nr, validators.ValidatorStatusTendermint)
 	require.NoError(t, err)
 
-	err = top.RotateEthereumKey(
+	err = top.ProcessEthereumKeyRotation(
 		context.Background(),
 		nr.VegaPubKey,
-		10,
 		newEthereumKeyRotationSubmission("eth-address", "new-eth-addr", 5, ""),
+		MockVerify,
 	)
-	assert.ErrorIs(t, err, validators.ErrTargetBlockHeightMustBeGraterThanCurrentHeight)
+	assert.ErrorIs(t, err, validators.ErrTargetBlockHeightMustBeGreaterThanCurrentHeight)
 }
 
 func testRotateEthereumKeyFailsWhenCurrentAddressDoesNotMatch(t *testing.T) {
-	top := getTestTopWithDefaultValidator(t)
+	top := getTestTopWithMockedSignatures(t)
 	defer top.ctrl.Finish()
-	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	nr := commandspb.AnnounceNode{
 		Id:              "vega-master-pubkey",
@@ -124,11 +171,11 @@ func testRotateEthereumKeyFailsWhenCurrentAddressDoesNotMatch(t *testing.T) {
 	err := top.AddNewNode(context.Background(), &nr, validators.ValidatorStatusTendermint)
 	require.NoError(t, err)
 
-	err = top.RotateEthereumKey(
+	err = top.ProcessEthereumKeyRotation(
 		context.Background(),
 		nr.VegaPubKey,
-		10,
 		newEthereumKeyRotationSubmission("random-key", "new-eth-key", 20, ""),
+		MockVerify,
 	)
 	assert.ErrorIs(t, err, validators.ErrCurrentEthAddressDoesNotMatch)
 }
@@ -139,13 +186,15 @@ func newEthereumKeyRotationSubmission(currentAddr, newAddr string, targetBlock u
 		NewAddress:       newAddr,
 		TargetBlock:      targetBlock,
 		SubmitterAddress: submitter,
+		EthereumSignature: &commandspb.Signature{
+			Value: "deadbeef",
+		},
 	}
 }
 
 func testEthereumKeyRotationBeginBlock(t *testing.T) {
 	top := getTestTopWithMockedSignatures(t)
 	defer top.ctrl.Finish()
-	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	chainValidators := []string{"tm-pubkey-1", "tm-pubkey-2", "tm-pubkey-3", "tm-pubkey-4"}
 
@@ -164,6 +213,7 @@ func testEthereumKeyRotationBeginBlock(t *testing.T) {
 		require.NoErrorf(t, err, "failed to add node registation %s", id)
 	}
 
+	top.multisigTop.EXPECT().IsSigner(gomock.Any()).AnyTimes().Return(false)
 	top.signatures.EXPECT().ClearStaleSignatures().AnyTimes()
 	top.signatures.EXPECT().PrepareValidatorSignatures(
 		gomock.Any(),
@@ -173,13 +223,13 @@ func testEthereumKeyRotationBeginBlock(t *testing.T) {
 	).Times(2 * len(chainValidators))
 
 	// add ethereum key rotations
-	err := top.RotateEthereumKey(ctx, "vega-key-1", 10, newEthereumKeyRotationSubmission("eth-address-1", "new-eth-address-1", 11, ""))
+	err := top.ProcessEthereumKeyRotation(ctx, "vega-key-1", newEthereumKeyRotationSubmission("eth-address-1", "new-eth-address-1", 11, ""), MockVerify)
 	require.NoError(t, err)
-	err = top.RotateEthereumKey(ctx, "vega-key-2", 10, newEthereumKeyRotationSubmission("eth-address-2", "new-eth-address-2", 11, ""))
+	err = top.ProcessEthereumKeyRotation(ctx, "vega-key-2", newEthereumKeyRotationSubmission("eth-address-2", "new-eth-address-2", 11, ""), MockVerify)
 	require.NoError(t, err)
-	err = top.RotateEthereumKey(ctx, "vega-key-3", 10, newEthereumKeyRotationSubmission("eth-address-3", "new-eth-address-3", 13, ""))
+	err = top.ProcessEthereumKeyRotation(ctx, "vega-key-3", newEthereumKeyRotationSubmission("eth-address-3", "new-eth-address-3", 13, ""), MockVerify)
 	require.NoError(t, err)
-	err = top.RotateEthereumKey(ctx, "vega-key-4", 10, newEthereumKeyRotationSubmission("eth-address-4", "new-eth-address-4", 13, ""))
+	err = top.ProcessEthereumKeyRotation(ctx, "vega-key-4", newEthereumKeyRotationSubmission("eth-address-4", "new-eth-address-4", 13, ""), MockVerify)
 	require.NoError(t, err)
 
 	// when
@@ -209,10 +259,9 @@ func testEthereumKeyRotationBeginBlock(t *testing.T) {
 	assert.Equal(t, "new-eth-address-4", data4.EthereumAddress)
 }
 
-func testEthereumKeyRotationBeginBlockWithSubmitter(t *testing.T) {
+func TestEthereumKeyRotationBeginBlockWithSubmitter(t *testing.T) {
 	top := getTestTopWithMockedSignatures(t)
 	defer top.ctrl.Finish()
-	top.timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	chainValidators := []string{"tm-pubkey-1", "tm-pubkey-2", "tm-pubkey-3", "tm-pubkey-4"}
 
@@ -232,13 +281,14 @@ func testEthereumKeyRotationBeginBlockWithSubmitter(t *testing.T) {
 	}
 
 	submitter := "some-eth-address"
-	top.signatures.EXPECT().PrepareValidatorSignatures(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(2)
-	top.signatures.EXPECT().EmitValidatorRemovedSignatures(gomock.Any(), submitter, gomock.Any(), gomock.Any()).Times(1)
+
+	top.signatures.EXPECT().PrepareValidatorSignatures(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(3)
+	top.signatures.EXPECT().EmitValidatorRemovedSignatures(gomock.Any(), submitter, gomock.Any(), gomock.Any()).Times(2)
 	top.signatures.EXPECT().EmitValidatorAddedSignatures(gomock.Any(), submitter, gomock.Any(), gomock.Any()).Times(1)
 	top.signatures.EXPECT().ClearStaleSignatures().AnyTimes()
 
 	// add ethereum key rotations
-	err := top.RotateEthereumKey(ctx, "vega-key-1", 10, newEthereumKeyRotationSubmission("eth-address-1", "new-eth-address-1", 11, submitter))
+	err := top.ProcessEthereumKeyRotation(ctx, "vega-key-1", newEthereumKeyRotationSubmission("eth-address-1", "new-eth-address-1", 11, submitter), MockVerify)
 	require.NoError(t, err)
 
 	// when
@@ -247,6 +297,58 @@ func testEthereumKeyRotationBeginBlockWithSubmitter(t *testing.T) {
 	data1 := top.Get("vega-master-pubkey-1")
 	require.NotNil(t, data1)
 	assert.Equal(t, "new-eth-address-1", data1.EthereumAddress)
+
+	// now try to add a new rotation before resolving the contract
+	err = top.ProcessEthereumKeyRotation(ctx, "vega-key-1", newEthereumKeyRotationSubmission("eth-address-1", "new-eth-address-1", 13, submitter), MockVerify)
+	require.Error(t, err, validators.ErrNodeHasUnresolvedRotation)
+
+	// Now make it look like the old key is removed from the multisig contract
+	top.multisigTop.EXPECT().IsSigner(gomock.Any()).Return(false).Times(1)
+	top.multisigTop.EXPECT().IsSigner(gomock.Any()).Return(true).Times(1)
+	top.BeginBlock(ctx, abcitypes.RequestBeginBlock{Header: types1.Header{Height: 140}})
+
+	// try to submit again
+	err = top.ProcessEthereumKeyRotation(ctx, "vega-key-1", newEthereumKeyRotationSubmission("new-eth-address-1", "new-eth-address-2", 150, submitter), MockVerify)
+	require.NoError(t, err)
+}
+
+func testNoSignaturesForNonTendermint(t *testing.T) {
+	ctx := context.Background()
+
+	tcs := []struct {
+		name   string
+		status validators.ValidatorStatus
+	}{
+		{
+			name:   "no signatures when pending",
+			status: validators.ValidatorStatusPending,
+		},
+		{
+			name:   "no signatures when ersatz",
+			status: validators.ValidatorStatusErsatz,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(tt *testing.T) {
+			top := getTestTopWithMockedSignatures(t)
+			defer top.ctrl.Finish()
+
+			nr := &commandspb.AnnounceNode{
+				Id:              "vega-master-pubkey",
+				ChainPubKey:     tmPubKey,
+				VegaPubKey:      "vega-key",
+				EthereumAddress: "eth-address",
+			}
+
+			err := top.AddNewNode(ctx, nr, tc.status)
+			require.NoError(t, err)
+
+			ekr := newEthereumKeyRotationSubmission(nr.EthereumAddress, "new-eth-address", 150, "")
+			err = top.ProcessEthereumKeyRotation(ctx, nr.VegaPubKey, ekr, MockVerify)
+			require.NoError(t, err)
+		})
+	}
 }
 
 type testTopWithSignatures struct {
@@ -262,8 +364,17 @@ func getTestTopWithMockedSignatures(t *testing.T) *testTopWithSignatures {
 
 	top.SetSignatures(signatures)
 
+	// set a reasonable block height
+	top.timeService.EXPECT().GetTimeNow().AnyTimes()
+	signatures.EXPECT().ClearStaleSignatures().Times(1)
+	top.BeginBlock(context.Background(), abcitypes.RequestBeginBlock{Header: types1.Header{Height: 10}})
+
 	return &testTopWithSignatures{
 		testTop:    top,
 		signatures: signatures,
 	}
+}
+
+func MockVerify(message, signature []byte, hexAddress string) error {
+	return nil
 }

@@ -130,6 +130,7 @@ func (t *Topology) serialisePendingEthereumKeyRotation() []*snapshot.PendingEthe
 				NodeId:      r.NodeID,
 				NewAddress:  r.NewAddress,
 				Submitter:   r.SubmitterAddress,
+				OldAddress:  r.OldAddress,
 			})
 		}
 	}
@@ -144,6 +145,22 @@ func (t *Topology) serialisePendingEthereumKeyRotation() []*snapshot.PendingEthe
 	return pkrs
 }
 
+func (t *Topology) serialiseUnresolvedEthereumKeyRotations() []*snapshot.PendingEthereumKeyRotation {
+	ukrs := make([]*snapshot.PendingEthereumKeyRotation, 0, len(t.unresolvedEthKeyRotations))
+	for _, r := range t.unresolvedEthKeyRotations {
+		ukrs = append(ukrs, &snapshot.PendingEthereumKeyRotation{
+			NodeId:     r.NodeID,
+			NewAddress: r.NewAddress,
+			Submitter:  r.SubmitterAddress,
+			OldAddress: r.OldAddress,
+		})
+	}
+
+	sort.SliceStable(ukrs, func(i, j int) bool { return ukrs[i].GetNodeId() < ukrs[j].GetNodeId() })
+
+	return ukrs
+}
+
 // serialise gets the serialised form of the given key.
 func (t *Topology) serialise(k string) ([]byte, error) {
 	if k != topKey {
@@ -156,12 +173,13 @@ func (t *Topology) serialise(k string) ([]byte, error) {
 	payload := types.Payload{
 		Data: &types.PayloadTopology{
 			Topology: &types.Topology{
-				ChainValidators:             t.chainValidators[:],
-				ValidatorData:               t.serialiseNodes(),
-				PendingPubKeyRotations:      t.serialisePendingKeyRotation(),
-				PendingEthereumKeyRotations: t.serialisePendingEthereumKeyRotation(),
-				Signatures:                  t.signatures.SerialisePendingSignatures(),
-				ValidatorPerformance:        t.validatorPerformance.Serialize(),
+				ChainValidators:                t.chainValidators[:],
+				ValidatorData:                  t.serialiseNodes(),
+				PendingPubKeyRotations:         t.serialisePendingKeyRotation(),
+				PendingEthereumKeyRotations:    t.serialisePendingEthereumKeyRotation(),
+				UnresolvedEthereumKeyRotations: t.serialiseUnresolvedEthereumKeyRotations(),
+				Signatures:                     t.signatures.SerialisePendingSignatures(),
+				ValidatorPerformance:           t.validatorPerformance.Serialize(),
 			},
 		},
 	}
@@ -211,8 +229,20 @@ func (t *Topology) restorePendingEthereumKeyRotations(pkrs []*snapshot.PendingEt
 			PendingEthereumKeyRotation{
 				NodeID:           pkr.NodeId,
 				NewAddress:       pkr.NewAddress,
+				OldAddress:       pkr.OldAddress,
 				SubmitterAddress: pkr.Submitter,
 			})
+	}
+}
+
+func (t *Topology) restoreUnresolvedEthereumKeyRotations(ukrs []*snapshot.PendingEthereumKeyRotation) {
+	for _, u := range ukrs {
+		t.unresolvedEthKeyRotations[u.NodeId] = PendingEthereumKeyRotation{
+			NodeID:           u.NodeId,
+			NewAddress:       u.NewAddress,
+			OldAddress:       u.OldAddress,
+			SubmitterAddress: u.Submitter,
+		}
 	}
 }
 
@@ -292,6 +322,7 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology, p *typ
 	t.chainValidators = topology.ChainValidators[:]
 	t.restorePendingKeyRotations(topology.PendingPubKeyRotations)
 	t.restorePendingEthereumKeyRotations(topology.PendingEthereumKeyRotations)
+	t.restoreUnresolvedEthereumKeyRotations(topology.UnresolvedEthereumKeyRotations)
 	t.signatures.RestorePendingSignatures(topology.Signatures)
 	t.validatorPerformance.Deserialize(topology.ValidatorPerformance)
 	t.tss.serialised, err = proto.Marshal(p.IntoProto())

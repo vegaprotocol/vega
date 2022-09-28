@@ -3,7 +3,7 @@
 ## Unreleased 0.58.0
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [6271](https://github.com/vegaprotocol/vega/issues/6271) - Require signature from new Ethereum key to validate key rotation submission
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -

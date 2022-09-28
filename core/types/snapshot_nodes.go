@@ -218,12 +218,13 @@ type PayloadTopology struct {
 }
 
 type Topology struct {
-	ValidatorData               []*snapshot.ValidatorState
-	ChainValidators             []string
-	PendingPubKeyRotations      []*snapshot.PendingKeyRotation
-	PendingEthereumKeyRotations []*snapshot.PendingEthereumKeyRotation
-	Signatures                  *snapshot.ToplogySignatures
-	ValidatorPerformance        *snapshot.ValidatorPerformance
+	ValidatorData                  []*snapshot.ValidatorState
+	ChainValidators                []string
+	PendingPubKeyRotations         []*snapshot.PendingKeyRotation
+	PendingEthereumKeyRotations    []*snapshot.PendingEthereumKeyRotation
+	UnresolvedEthereumKeyRotations []*snapshot.PendingEthereumKeyRotation
+	Signatures                     *snapshot.ToplogySignatures
+	ValidatorPerformance           *snapshot.ValidatorPerformance
 }
 
 type PayloadFloatingPointConsensus struct {
@@ -3727,12 +3728,13 @@ func (*PayloadTopology) isPayload() {}
 func PayloadTopologyFromProto(t *snapshot.Payload_Topology) *PayloadTopology {
 	return &PayloadTopology{
 		Topology: &Topology{
-			ChainValidators:             t.Topology.ChainKeys,
-			ValidatorData:               t.Topology.ValidatorData,
-			PendingPubKeyRotations:      t.Topology.PendingPubKeyRotations,
-			PendingEthereumKeyRotations: t.Topology.PendingEthereumKeyRotations,
-			Signatures:                  t.Topology.Signatures,
-			ValidatorPerformance:        t.Topology.ValidatorPerformance,
+			ChainValidators:                t.Topology.ChainKeys,
+			ValidatorData:                  t.Topology.ValidatorData,
+			PendingPubKeyRotations:         t.Topology.PendingPubKeyRotations,
+			PendingEthereumKeyRotations:    t.Topology.PendingEthereumKeyRotations,
+			UnresolvedEthereumKeyRotations: t.Topology.UnsolvedEthereumKeyRotations,
+			Signatures:                     t.Topology.Signatures,
+			ValidatorPerformance:           t.Topology.ValidatorPerformance,
 		},
 	}
 }
@@ -3740,12 +3742,13 @@ func PayloadTopologyFromProto(t *snapshot.Payload_Topology) *PayloadTopology {
 func (p *PayloadTopology) IntoProto() *snapshot.Payload_Topology {
 	return &snapshot.Payload_Topology{
 		Topology: &snapshot.Topology{
-			ChainKeys:                   p.Topology.ChainValidators,
-			ValidatorData:               p.Topology.ValidatorData,
-			PendingPubKeyRotations:      p.Topology.PendingPubKeyRotations,
-			PendingEthereumKeyRotations: p.Topology.PendingEthereumKeyRotations,
-			Signatures:                  p.Topology.Signatures,
-			ValidatorPerformance:        p.Topology.ValidatorPerformance,
+			ChainKeys:                    p.Topology.ChainValidators,
+			ValidatorData:                p.Topology.ValidatorData,
+			PendingPubKeyRotations:       p.Topology.PendingPubKeyRotations,
+			PendingEthereumKeyRotations:  p.Topology.PendingEthereumKeyRotations,
+			UnsolvedEthereumKeyRotations: p.Topology.UnresolvedEthereumKeyRotations,
+			Signatures:                   p.Topology.Signatures,
+			ValidatorPerformance:         p.Topology.ValidatorPerformance,
 		},
 	}
 }
