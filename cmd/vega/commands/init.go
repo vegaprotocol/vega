@@ -149,7 +149,7 @@ func initTendermintConfiguration(
 	output config.Output,
 	logger *logging.Logger,
 	config *tmcfg.Config,
-	keyType string,
+	_ string,
 ) error {
 	// private validator
 	privValKeyFile := config.PrivValidatorKeyFile()

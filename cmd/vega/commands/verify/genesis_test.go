@@ -18,7 +18,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"code.vegaprotocol.io/vega/cmd/vega/verify"
+	"code.vegaprotocol.io/vega/cmd/vega/commands/verify"
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/genesis"
 	"code.vegaprotocol.io/vega/core/validators"

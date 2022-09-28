@@ -426,7 +426,7 @@ func (n *Command) loadNodeWallets(_ []string) (err error) {
 }
 
 func (n *Command) startABCI(
-	ctx context.Context,
+	_ context.Context,
 	app types.Application,
 	tmHome string,
 	network string,
