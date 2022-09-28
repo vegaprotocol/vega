@@ -10,29 +10,30 @@
 // of this software will be governed by version 3 or later of the GNU General
 // Public License.
 
-package main
+package commands
 
 import (
 	"context"
 	"os"
 
-	cmd "code.vegaprotocol.io/vega/cmd/blockexplorer/commands"
+	cmd "code.vegaprotocol.io/vega/cmd/vegatools/commands"
+
 	"github.com/jessevdk/go-flags"
 )
 
-type blockExplorerCmd struct{}
+type toolsCmd struct{}
 
-func (opts *blockExplorerCmd) Execute(_ []string) error {
+func (opts *toolsCmd) Execute(_ []string) error {
 	os.Args = os.Args[1:]
-	return cmd.Execute(context.Background())
+	return cmd.Execute()
 }
 
-func BlockExplorer(ctx context.Context, parser *flags.Parser) error {
+func VegaTools(ctx context.Context, parser *flags.Parser) error {
 	_, err := parser.AddCommand(
-		"blockexplorer",
-		"The vega block explorer backend",
-		"The vega block explorer backend",
-		&blockExplorerCmd{},
+		"tools",
+		"A set of tools to help debug a vega node",
+		"A set of tools to help debug a vega node",
+		&toolsCmd{},
 	)
 
 	return err

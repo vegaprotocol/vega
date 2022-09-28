@@ -10,29 +10,36 @@
 // of this software will be governed by version 3 or later of the GNU General
 // Public License.
 
-package main
+package commands
 
 import (
 	"context"
 	"os"
 
-	cmd "code.vegaprotocol.io/vega/cmd/data-node/commands"
+	walletcmd "code.vegaprotocol.io/vega/cmd/vegawallet/commands"
 	"github.com/jessevdk/go-flags"
 )
 
-type datanodeCmd struct{}
+type walletCmd struct{}
 
-func (opts *datanodeCmd) Execute(_ []string) error {
+func (opts *walletCmd) Execute(_ []string) error {
 	os.Args = os.Args[1:]
-	return cmd.Execute(context.Background())
+
+	writer := &walletcmd.Writer{
+		Out: os.Stdout,
+		Err: os.Stderr,
+	}
+	walletcmd.Execute(writer)
+
+	return nil
 }
 
-func Datanode(ctx context.Context, parser *flags.Parser) error {
+func Wallet(ctx context.Context, parser *flags.Parser) error {
 	_, err := parser.AddCommand(
-		"datanode",
-		"The vega data node",
-		"The vega data node",
-		&datanodeCmd{},
+		"wallet",
+		"Run vega wallet",
+		"Run the vega wallet",
+		&walletCmd{},
 	)
 
 	return err

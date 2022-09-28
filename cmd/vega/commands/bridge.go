@@ -10,30 +10,27 @@
 // of this software will be governed by version 3 or later of the GNU General
 // Public License.
 
-package main
+package commands
 
 import (
 	"context"
-	"os"
 
-	cmd "code.vegaprotocol.io/vega/cmd/vegatools/commands"
+	"code.vegaprotocol.io/vega/cmd/vega/commands/bridge"
+
 	"github.com/jessevdk/go-flags"
 )
 
-type toolsCmd struct{}
-
-func (opts *toolsCmd) Execute(_ []string) error {
-	os.Args = os.Args[1:]
-	return cmd.Execute()
+type BridgeCmd struct {
+	ERC20 *bridge.ERC20Cmd `command:"erc20" description:"Validator utilities to manage the erc20 bridge"`
 }
 
-func VegaTools(ctx context.Context, parser *flags.Parser) error {
-	_, err := parser.AddCommand(
-		"tools",
-		"A set of tools to help debug a vega node",
-		"A set of tools to help debug a vega node",
-		&toolsCmd{},
-	)
+var bridgeCmd BridgeCmd
 
+func Bridge(ctx context.Context, parser *flags.Parser) error {
+	bridgeCmd = BridgeCmd{
+		ERC20: bridge.ERC20(),
+	}
+
+	_, err := parser.AddCommand("bridge", "Utilities to control / manage vega bridges", "", &bridgeCmd)
 	return err
 }

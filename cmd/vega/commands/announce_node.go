@@ -10,7 +10,7 @@
 // of this software will be governed by version 3 or later of the GNU General
 // Public License.
 
-package main
+package commands
 
 import (
 	"context"
@@ -52,7 +52,7 @@ type AnnounceNodeCmd struct {
 
 var announceNodeCmd AnnounceNodeCmd
 
-func (opts *AnnounceNodeCmd) Execute(_ []string) error {
+func (opts *AnnounceNodeCmd) Execute(args []string) error {
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer log.AtExit()
 

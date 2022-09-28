@@ -10,7 +10,7 @@
 // of this software will be governed by version 3 or later of the GNU General
 // Public License.
 
-package main
+package commands
 
 import (
 	"context"
@@ -120,7 +120,7 @@ func (opts *InitCmd) Execute(args []string) error {
 		tmCfg := tmcfg.DefaultConfig()
 		tmCfg.SetRoot(os.ExpandEnv(initCmd.TendermintHome))
 		tmcfg.EnsureRoot(tmCfg.RootDir)
-		if err := initTendermintConfiguration(output, logger, tmCfg); err != nil {
+		if err := initTendermintConfiguration(output, logger, tmCfg, initCmd.TendermintKey); err != nil {
 			return fmt.Errorf("couldn't initialise tendermint %w", err)
 		}
 	}
@@ -145,7 +145,12 @@ func (opts *InitCmd) Execute(args []string) error {
 	return nil
 }
 
-func initTendermintConfiguration(output config.Output, logger *logging.Logger, config *tmcfg.Config) error {
+func initTendermintConfiguration(
+	output config.Output,
+	logger *logging.Logger,
+	config *tmcfg.Config,
+	keyType string,
+) error {
 	// private validator
 	privValKeyFile := config.PrivValidatorKeyFile()
 	privValStateFile := config.PrivValidatorStateFile()

@@ -10,7 +10,7 @@
 // of this software will be governed by version 3 or later of the GNU General
 // Public License.
 
-package main
+package commands
 
 import (
 	"context"
@@ -40,7 +40,7 @@ type ProposeUpgradeCmd struct {
 
 var proposeUpgradeCmd ProposeUpgradeCmd
 
-func (opts *ProposeUpgradeCmd) Execute(_ []string) error {
+func (opts *ProposeUpgradeCmd) Execute(args []string) error {
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer log.AtExit()
 

@@ -10,36 +10,30 @@
 // of this software will be governed by version 3 or later of the GNU General
 // Public License.
 
-package main
+package commands
 
 import (
 	"context"
 	"os"
 
-	cmd "code.vegaprotocol.io/vega/cmd/vegawallet/commands"
+	cmd "code.vegaprotocol.io/vega/cmd/blockexplorer/commands"
+
 	"github.com/jessevdk/go-flags"
 )
 
-type walletCmd struct{}
+type blockExplorerCmd struct{}
 
-func (opts *walletCmd) Execute(_ []string) error {
+func (opts *blockExplorerCmd) Execute(_ []string) error {
 	os.Args = os.Args[1:]
-
-	writer := &cmd.Writer{
-		Out: os.Stdout,
-		Err: os.Stderr,
-	}
-	cmd.Execute(writer)
-
-	return nil
+	return cmd.Execute(context.Background())
 }
 
-func Wallet(ctx context.Context, parser *flags.Parser) error {
+func BlockExplorer(ctx context.Context, parser *flags.Parser) error {
 	_, err := parser.AddCommand(
-		"wallet",
-		"Run vega wallet",
-		"Run the vega wallet",
-		&walletCmd{},
+		"blockexplorer",
+		"The vega block explorer backend",
+		"The vega block explorer backend",
+		&blockExplorerCmd{},
 	)
 
 	return err

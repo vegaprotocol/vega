@@ -330,7 +330,7 @@ func (n *Command) startBlockchain(tmHome, network, networkURL string) error {
 	case blockchain.ProviderTendermint:
 		var err error
 		// initialise the node
-		n.tmNode, err = n.startABCI(n.abciApp, tmHome, network, networkURL)
+		n.tmNode, err = n.startABCI(n.ctx, n.abciApp, tmHome, network, networkURL)
 		if err != nil {
 			return err
 		}
@@ -425,7 +425,13 @@ func (n *Command) loadNodeWallets(_ []string) (err error) {
 	return n.nodeWallets.Verify()
 }
 
-func (n *Command) startABCI(app types.Application, tmHome string, network string, networkURL string) (*abci.TmNode, error) {
+func (n *Command) startABCI(
+	ctx context.Context,
+	app types.Application,
+	tmHome string,
+	network string,
+	networkURL string,
+) (*abci.TmNode, error) {
 	var (
 		genesisDoc *tmtypes.GenesisDoc
 		err        error
