@@ -1345,11 +1345,16 @@ DROP TABLE IF EXISTS oracle_data;
 DROP TABLE IF EXISTS oracle_specs;
 DROP TYPE IF EXISTS oracle_spec_status;
 
+$$
+BEGIN
 IF EXISTS (SELECT relname FROM pg_class WHERE relname = 'positions_current' AND relking = 'v') THEN
     DROP VIEW positions_current;
 ELSE IF EXISTS (SELECT relname FROM pg_class WHERE relname = 'positions_current' AND relking = 'r') THEN
     DROP TABLE positions_current;
 END IF;
+END;
+$$;
+
 DROP TABLE IF EXISTS positions cascade;
 DROP TRIGGER IF EXISTS update_current_positions ON positions;
 DROP FUNCTION IF EXISTS update_current_positions;
