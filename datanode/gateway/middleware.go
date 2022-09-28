@@ -182,7 +182,8 @@ func (s *SubscriptionRateLimiter) WithSubscriptionRateLimiter(next http.Handler)
 			s.log.Debug("couldn't get client ip", logging.Error(err))
 		} else {
 			if err := s.Inc(ip); err != nil {
-				s.log.Error("couldn't client reached max sub", logging.Error(err))
+				s.log.Error("client reached max subscription allowed",
+					logging.Error(err))
 				w.WriteHeader(http.StatusTooManyRequests)
 				w.Write([]byte(err.Error()))
 				// write error
