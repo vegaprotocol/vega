@@ -23,6 +23,7 @@ func tarAndCompressSnapshot(snapshotsDir string, snapshot snapshot, databaseVers
 	tw := tar.NewWriter(zr)
 
 	sourceDir := filepath.Join(snapshotsDir, snapshot.UncompressedDataDir())
+
 	err = filepath.Walk(sourceDir, func(file string, fi os.FileInfo, err error) error {
 		if err != nil {
 			return fmt.Errorf("failed to walk files: %w", err)
