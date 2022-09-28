@@ -2593,7 +2593,7 @@
         "schema": {
           "type": "object",
           "properties": {
-            "encodedSignature": {
+            "base64Signature": {
               "type": "string"
             }
           }
