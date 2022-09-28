@@ -210,6 +210,14 @@ func wrapPayloadIntoInputData(data *commandspb.InputData, cmd txn.Command, paylo
 		} else {
 			panic("failed to wrap StateVariableProposal")
 		}
+	case txn.RotateEthereumKeySubmissionCommand:
+		if underlyingCmd, ok := payload.(*commandspb.EthereumKeyRotateSubmission); ok {
+			data.Command = &commandspb.InputData_EthereumKeyRotateSubmission{
+				EthereumKeyRotateSubmission: underlyingCmd,
+			}
+		} else {
+			panic("failed to wrap RotateEthereumKeySubmissionCommand")
+		}
 	default:
 		panic(fmt.Errorf("command %v is not supported", cmd))
 	}

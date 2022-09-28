@@ -125,6 +125,8 @@ message EthereumKeyRotateSubmission {
   string current_address = 3;
   // Ethereum public key to use as a submitter to allow automatic signature generation
   string submitter_address = 4;
+  // Signature that can be verified using the new ethereum address
+  Signature ethereum_signature = 5;
 }
 
 message StateVariableProposal {

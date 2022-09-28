@@ -13,6 +13,7 @@
 package sqlstore_test
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
@@ -32,7 +33,9 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	databasetest.TestMain(m, func(cfg sqlstore.Config, source *sqlstore.ConnectionSource, snapshotPath string) {
+	databasetest.TestMain(m, func(cfg sqlstore.Config, source *sqlstore.ConnectionSource, snapshotPath string,
+		postgresLog *bytes.Buffer,
+	) {
 		testDBPort = cfg.ConnectionConfig.Port
 		connectionSource = source
 	})

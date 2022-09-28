@@ -1,6 +1,7 @@
 package snapshot_test
 
 import (
+	"bytes"
 	"compress/gzip"
 	"context"
 	"errors"
@@ -48,6 +49,8 @@ var (
 
 	snapshotsBackupDir string
 	eventsFile         string
+
+	postgresLog *bytes.Buffer
 )
 
 func TestMain(t *testing.M) {
@@ -66,15 +69,16 @@ func TestMain(t *testing.M) {
 	}
 	defer os.RemoveAll(eventsDir)
 
+	log := logging.NewTestLogger()
+
 	eventsFile = filepath.Join(eventsDir, "smoketest_to_block_5000_or_above.evts")
 	decompressEventFile()
 
 	var snapshotsDir string
-	databasetest.TestMain(t, func(config sqlstore.Config, source *sqlstore.ConnectionSource, dir string) {
+	exitCode := databasetest.TestMain(t, func(config sqlstore.Config, source *sqlstore.ConnectionSource, dir string, pgLog *bytes.Buffer) {
 		sqlConfig = config
 		snapshotsDir = dir
-
-		log := logging.NewTestLogger()
+		postgresLog = pgLog
 
 		emptyDatabase()
 
@@ -135,11 +139,11 @@ func TestMain(t *testing.M) {
 		// For the same events file and block height this hash should be the same across all OS/Arch
 		// If the events file is updated, schema changes, or snapshot height changed this will need updating
 		// Easiest way to update is to put a breakpoint here and inspect fromEventsSnapshotHashes
-		panicIfSnapshotHashNotEqual(fromEventsSnapshotHashes[0], "c086833bf253dbb4dc7f92da20049f40", snapshots)
-		panicIfSnapshotHashNotEqual(fromEventsSnapshotHashes[1], "59f1d1ae246d62118042bfb6b305a829", snapshots)
-		panicIfSnapshotHashNotEqual(fromEventsSnapshotHashes[2], "9f029abbc29e31cf5538cd881f6b8da2", snapshots)
-		panicIfSnapshotHashNotEqual(fromEventsSnapshotHashes[3], "7b5ab1f669a007b49c36fab387200571", snapshots)
-		panicIfSnapshotHashNotEqual(fromEventsSnapshotHashes[4], "c9aa27c7587fb4496bb8884f146e950e", snapshots)
+		panicIfSnapshotHashNotEqual(fromEventsSnapshotHashes[0], "ecc54630bbc68d536c63231f07a96b28", snapshots)
+		panicIfSnapshotHashNotEqual(fromEventsSnapshotHashes[1], "ba7eca255540b83293178d9a14b79457", snapshots)
+		panicIfSnapshotHashNotEqual(fromEventsSnapshotHashes[2], "6c67a5f3d3c719edae61d218c69c479a", snapshots)
+		panicIfSnapshotHashNotEqual(fromEventsSnapshotHashes[3], "511a145aeca30ec64881fa8c67f3b3ba", snapshots)
+		panicIfSnapshotHashNotEqual(fromEventsSnapshotHashes[4], "5afc2c2aa109572672daa691fa691b7b", snapshots)
 
 		if len(fromEventsDatabaseSummaries) != numSnapshots {
 			panic(fmt.Errorf("expected %d database summaries, got %d", numSnapshots, len(fromEventsSnapshotHashes)))
@@ -157,6 +161,10 @@ func TestMain(t *testing.M) {
 			copyFile(filepath.Join(snapshotsDir, file.Name()), filepath.Join(snapshotsBackupDir, file.Name()))
 		}
 	})
+
+	if exitCode != 0 {
+		log.Errorf("One or more tests failed, dumping postgres log:\n%s", postgresLog.String())
+	}
 }
 
 func TestGetHistoryIncludingDatanodeStateWhenDatanodeHasData(t *testing.T) {
