@@ -1,6 +1,7 @@
 package databasetest
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io/ioutil"
@@ -39,6 +40,7 @@ var (
 		"current_liquidity_provisions",
 		"current_margin_levels",
 		"delegations",
+		"delegations_current",
 		"deposits",
 		"epochs",
 		"erc20_multisig_signer_events",
@@ -76,7 +78,7 @@ var (
 	postgresServerTimeout = time.Second * 10
 )
 
-func TestMain(m *testing.M, onSetupComplete func(sqlstore.Config, *sqlstore.ConnectionSource, string)) {
+func TestMain(m *testing.M, onSetupComplete func(sqlstore.Config, *sqlstore.ConnectionSource, string, *bytes.Buffer)) int {
 	testDBPort = getNextPort()
 	sqlConfig := NewTestConfig(testDBPort)
 
@@ -90,7 +92,8 @@ func TestMain(m *testing.M, onSetupComplete func(sqlstore.Config, *sqlstore.Conn
 		}
 
 		var postgresRuntimePath string
-		embeddedPostgres, postgresRuntimePath, err = sqlstore.StartEmbeddedPostgres(log, sqlConfig, tempDir)
+		var postgresLog *bytes.Buffer
+		embeddedPostgres, postgresRuntimePath, postgresLog, err = sqlstore.StartEmbeddedPostgres(log, sqlConfig, tempDir)
 		if err != nil {
 			panic(err)
 		}
@@ -137,10 +140,12 @@ func TestMain(m *testing.M, onSetupComplete func(sqlstore.Config, *sqlstore.Conn
 			panic(err)
 		}
 
-		onSetupComplete(sqlConfig, connectionSource, snapshotsDir)
+		onSetupComplete(sqlConfig, connectionSource, snapshotsDir, postgresLog)
 
-		m.Run()
+		return m.Run()
 	}
+
+	return 0
 }
 
 func DeleteEverything() {

@@ -45,10 +45,11 @@ func (c *Checkpoints) Add(ctx context.Context, r entities.Checkpoint) error {
 			block_hash,
 			block_height,
 			tx_hash,
-			vega_time)
-		 VALUES ($1, $2, $3, $4, $5)
+			vega_time,
+			seq_num)
+		 VALUES ($1, $2, $3, $4, $5, $6)
 		 `,
-		r.Hash, r.BlockHash, r.BlockHeight, r.TxHash, r.VegaTime)
+		r.Hash, r.BlockHash, r.BlockHeight, r.TxHash, r.VegaTime, r.SeqNum)
 	return err
 }
 
