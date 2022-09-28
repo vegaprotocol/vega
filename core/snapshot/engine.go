@@ -127,6 +127,7 @@ type Engine struct {
 // order in which snapshots are to be restored.
 var nodeOrder = []types.SnapshotNamespace{
 	types.AppSnapshot,
+	types.EpochSnapshot,
 	types.AssetsSnapshot,  // needs to happen before banking
 	types.WitnessSnapshot, // needs to happen before banking and governance
 	types.GovernanceSnapshot,
@@ -142,7 +143,6 @@ var nodeOrder = []types.SnapshotNamespace{
 	types.PositionsSnapshot,              // again, needs a market
 	types.LiquiditySnapshot,
 	types.LiquidityTargetSnapshot,
-	types.EpochSnapshot,
 	types.StakingSnapshot,
 	types.StakeVerifierSnapshot,
 	types.SpamSnapshot,

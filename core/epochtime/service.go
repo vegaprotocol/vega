@@ -84,9 +84,6 @@ func (s *Svc) OnBlockEnd(ctx context.Context) {
 	if s.readyToEndEpoch {
 		s.readyToStartNewEpoch = true
 		s.readyToEndEpoch = false
-
-		// take snapshot
-		s.serialise()
 	}
 }
 
@@ -124,9 +121,6 @@ func (s *Svc) OnTick(ctx context.Context, t time.Time) {
 
 		// Send out new epoch event
 		s.notify(ctx, s.epoch)
-
-		// take snapshot
-		s.serialise()
 		return
 	}
 
@@ -146,9 +140,6 @@ func (s *Svc) OnTick(ctx context.Context, t time.Time) {
 		s.epoch.EndTime = time.Time{}
 		s.epoch.Action = vega.EpochAction_EPOCH_ACTION_START
 		s.notify(ctx, s.epoch)
-
-		// take snapshot
-		s.serialise()
 		return
 	}
 
