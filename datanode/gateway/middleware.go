@@ -14,8 +14,12 @@ package gateway
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"net"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"code.vegaprotocol.io/vega/datanode/contextutil"
@@ -23,6 +27,10 @@ import (
 	vhttp "code.vegaprotocol.io/vega/libs/http"
 	"code.vegaprotocol.io/vega/logging"
 )
+
+var ErrMaxSubscriptionReached = func(ip string, max uint32) error {
+	return fmt.Errorf("max subscriptions count (%v) reached for ip (%s)", max, ip)
+}
 
 // RemoteAddrMiddleware is a middleware adding to the current request context the
 // address of the caller.
@@ -123,4 +131,94 @@ func (i *InjectableResponseWriter) Write(data []byte) (int, error) {
 
 func (i *InjectableResponseWriter) SetHeaders(headers http.Header) {
 	i.headers = headers
+}
+
+type SubscriptionRateLimiter struct {
+	log *logging.Logger
+	m   map[string]uint32
+	mu  sync.Mutex
+
+	MaxSubscriptions uint32
+}
+
+func NewSubscriptionRateLimiter(
+	log *logging.Logger,
+	maxSubscriptions uint32,
+) *SubscriptionRateLimiter {
+	return &SubscriptionRateLimiter{
+		log:              log,
+		MaxSubscriptions: maxSubscriptions,
+		m:                map[string]uint32{},
+	}
+}
+
+func (s *SubscriptionRateLimiter) Inc(ip string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	cnt := s.m[ip]
+	if cnt == s.MaxSubscriptions {
+		return ErrMaxSubscriptionReached(ip, s.MaxSubscriptions)
+	}
+	s.m[ip] = cnt + 1
+	return nil
+}
+
+func (s *SubscriptionRateLimiter) Dec(ip string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	cnt := s.m[ip]
+	s.m[ip] = cnt - 1
+}
+
+func (s *SubscriptionRateLimiter) WithSubscriptionRateLimiter(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// is that a subscription?
+		if _, ok := w.(http.Hijacker); !ok {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		if ip, err := getIP(r); err != nil {
+			s.log.Debug("couldn't get client ip", logging.Error(err))
+		} else {
+			if err := s.Inc(ip); err != nil {
+				s.log.Error("client reached max subscription allowed",
+					logging.Error(err))
+				w.WriteHeader(http.StatusTooManyRequests)
+				w.Write([]byte(err.Error()))
+				// write error
+				return
+			}
+			defer func() {
+				s.Dec(ip)
+			}()
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func getIP(r *http.Request) (string, error) {
+	ip := r.Header.Get("X-Real-IP")
+	if net.ParseIP(ip) != nil {
+		return ip, nil
+	}
+
+	ip = r.Header.Get("X-Forward-For")
+	for _, i := range strings.Split(ip, ",") {
+		if net.ParseIP(i) != nil {
+			return i, nil
+		}
+	}
+
+	ip, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return "", err
+	}
+
+	if net.ParseIP(ip) != nil {
+		return ip, nil
+	}
+
+	return "", errors.New("no valid ip found")
 }
