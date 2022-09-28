@@ -225,7 +225,7 @@ func (b *Service) loadSnapshotData(ctx context.Context, snapshotsData []snapshot
 		return 0, fmt.Errorf("unable to connect to vega database:%w", err)
 	}
 
-	_, err = vegaDbConn.Exec(ctx, "SET TIME ZONE 'UTC'")
+	_, err = vegaDbConn.Exec(ctx, "SET TIME ZONE 0")
 	if err != nil {
 		return 0, fmt.Errorf("failed to set timezone to UTC:%w", err)
 	}

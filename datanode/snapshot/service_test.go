@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/utils/databasetest"
 	"code.vegaprotocol.io/vega/logging"
+
 	"github.com/jackc/pgx/v4/pgxpool"
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
@@ -37,8 +38,7 @@ const (
 )
 
 var (
-	sqlConfig    sqlstore.Config
-	snapshotsDir string
+	sqlConfig sqlstore.Config
 
 	fromEventsSnapshotHashes    []string
 	fromEventsDatabaseSummaries []databaseSummary
@@ -69,13 +69,14 @@ func TestMain(t *testing.M) {
 	eventsFile = filepath.Join(eventsDir, "smoketest_to_block_5000_or_above.evts")
 	decompressEventFile()
 
+	var snapshotsDir string
 	databasetest.TestMain(t, func(config sqlstore.Config, source *sqlstore.ConnectionSource, dir string) {
 		sqlConfig = config
 		snapshotsDir = dir
 
 		log := logging.NewTestLogger()
 
-		emptyDatabaseAndSnapshotsDir()
+		emptyDatabase()
 
 		// Do initial run to get the expected state of the datanode from just event playback
 		ctx, cancel := context.WithCancel(context.Background())
@@ -94,7 +95,6 @@ func TestMain(t *testing.M) {
 
 					waitForSnapshotToCompleteUseMeta(lastSnapshot, snapshotsDir)
 					snapshots = append(snapshots, lastSnapshot)
-
 					md5Hash, err := snapshot.GetSnapshotMd5Hash(log, lastSnapshot.CurrentStateSnapshotFile, lastSnapshot.HistorySnapshotFile)
 					if err != nil {
 						panic(fmt.Errorf("failed to get snapshot hash:%w", err))
@@ -156,8 +156,6 @@ func TestMain(t *testing.M) {
 		for _, file := range files {
 			copyFile(filepath.Join(snapshotsDir, file.Name()), filepath.Join(snapshotsBackupDir, file.Name()))
 		}
-
-		emptySnapshotDirectory()
 	})
 }
 
@@ -364,6 +362,8 @@ func TestAlteringSnapshotIntervalBelowMinIntervalWithFileSource(t *testing.T) {
 	brokerCfg.UseEventFile = true
 	brokerCfg.FileEventSourceConfig.TimeBetweenBlocks = encoding.Duration{Duration: 0}
 
+	snapshotsDir := t.TempDir()
+
 	callcount := 0
 	inputSnapshotService := setupSnapshotServiceWithNetworkParamFunc(sqlConfig, snapshotsDir,
 		func(ctx context.Context, key string) (entities.NetworkParameter, error) {
@@ -384,28 +384,31 @@ func TestAlteringSnapshotIntervalBelowMinIntervalWithFileSource(t *testing.T) {
 			}, nil
 		}, brokerCfg)
 
-	for i := 0; i < 5001; i++ {
+	for i := 0; i <= 2000; i++ {
 		inputSnapshotService.OnBlockCommitted(context.Background(), chainID, int64(i))
 		if i == 1000 {
 			heightTo := int64(1000)
 			heightFrom := int64(0)
-			waitForSnapshotToCompleteForHeights(heightTo, heightFrom)
+			waitForSnapshotToCompleteForHeights(heightTo, heightFrom, snapshotsDir)
 		}
 
 		if i == 2000 {
 			heightTo := int64(2000)
 			heightFrom := int64(1001)
-			waitForSnapshotToCompleteForHeights(heightTo, heightFrom)
+			waitForSnapshotToCompleteForHeights(heightTo, heightFrom, snapshotsDir)
+			break
 		}
 	}
 }
 
 func TestAlteringSnapshotInterval(t *testing.T) {
-	emptyDatabaseAndSnapshotsDir()
+	emptyDatabase()
 
 	brokerCfg := broker.NewDefaultConfig()
 	brokerCfg.UseEventFile = false
 	brokerCfg.FileEventSourceConfig.TimeBetweenBlocks = encoding.Duration{Duration: 0}
+
+	snapshotsDir := t.TempDir()
 
 	callcount := 0
 	inputSnapshotService := setupSnapshotServiceWithNetworkParamFunc(sqlConfig, snapshotsDir,
@@ -427,22 +430,22 @@ func TestAlteringSnapshotInterval(t *testing.T) {
 			}, nil
 		}, brokerCfg)
 
-	for i := 0; i < 5001; i++ {
+	for i := 0; i <= 1500; i++ {
 		inputSnapshotService.OnBlockCommitted(context.Background(), chainID, int64(i))
 		if i == 1000 {
 			heightTo := int64(1000)
 			heightFrom := int64(0)
-			waitForSnapshotToCompleteForHeights(heightTo, heightFrom)
+			waitForSnapshotToCompleteForHeights(heightTo, heightFrom, snapshotsDir)
 		}
 		if i == 1500 {
 			heightTo := int64(1500)
 			heightFrom := int64(1001)
-			waitForSnapshotToCompleteForHeights(heightTo, heightFrom)
+			waitForSnapshotToCompleteForHeights(heightTo, heightFrom, snapshotsDir)
 		}
 	}
 }
 
-func waitForSnapshotToCompleteForHeights(heightTo int64, heightFrom int64) {
+func waitForSnapshotToCompleteForHeights(heightTo int64, heightFrom int64, snapshotsDir string) {
 	cs := snapshot.NewCurrentSnapshot(chainID, heightTo)
 	hist := snapshot.NewHistorySnapshot(chainID, heightFrom, heightTo)
 	csFile := filepath.Join(snapshotsDir, cs.CompressedFileName())
@@ -457,8 +460,9 @@ func TestLoadingAllAvailableHistoryWithNonEmptyDatanode(t *testing.T) {
 
 	log := logging.NewTestLogger()
 
-	emptyDatabaseAndSnapshotsDir()
-	copySnapshotDataIntoSnapshotDirectory(2001, 4000)
+	emptyDatabase()
+	snapshotsDir := t.TempDir()
+	copySnapshotDataIntoSnapshotDirectory(2001, 4000, snapshotsDir)
 
 	inputSnapshotService := setupSnapshotService(sqlConfig, snapshotsDir)
 
@@ -467,7 +471,7 @@ func TestLoadingAllAvailableHistoryWithNonEmptyDatanode(t *testing.T) {
 	assert.Equal(t, int64(2001), from)
 	assert.Equal(t, int64(4000), to)
 
-	copySnapshotDataIntoSnapshotDirectory(0, 3000)
+	copySnapshotDataIntoSnapshotDirectory(0, 3000, snapshotsDir)
 	inputSnapshotService = setupSnapshotService(sqlConfig, snapshotsDir)
 	from, to, err = inputSnapshotService.LoadAllAvailableHistory(ctx)
 	if err != nil {
@@ -522,10 +526,11 @@ func TestLoadingAllAvailableHistoryWithJustCurrentStateSnapshot(t *testing.T) {
 
 	var err error
 
-	emptyDatabaseAndSnapshotsDir()
+	snapshotsDir := t.TempDir()
+	emptyDatabase()
 
 	// Load database just from current snapshot state at height 3000
-	copySnapshotDataIntoSnapshotDirectory(3000, 3000)
+	copySnapshotDataIntoSnapshotDirectory(3000, 3000, snapshotsDir)
 
 	inputSnapshotService := setupSnapshotService(sqlConfig, snapshotsDir)
 
@@ -593,10 +598,11 @@ func TestRestoreFromPartialHistoryAndProcessEvents(t *testing.T) {
 
 	var err error
 
-	emptyDatabaseAndSnapshotsDir()
-	copySnapshotDataIntoSnapshotDirectory(2001, 3000)
+	emptyDatabase()
+	snapshotDir := t.TempDir()
+	copySnapshotDataIntoSnapshotDirectory(2001, 3000, snapshotDir)
 
-	inputSnapshotService := setupSnapshotService(sqlConfig, snapshotsDir)
+	inputSnapshotService := setupSnapshotService(sqlConfig, snapshotDir)
 
 	// Load database just from history 2001 to 3000
 	from, to, err := inputSnapshotService.LoadAllAvailableHistory(ctx)
@@ -650,10 +656,11 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	emptyDatabaseAndSnapshotsDir()
-	copySnapshotDataIntoSnapshotDirectory(0, 2000)
+	emptyDatabase()
+	snapshotDir := t.TempDir()
+	copySnapshotDataIntoSnapshotDirectory(0, 2000, snapshotDir)
 
-	inputSnapshotService := setupSnapshotService(sqlConfig, snapshotsDir)
+	inputSnapshotService := setupSnapshotService(sqlConfig, snapshotDir)
 
 	from, to, err := inputSnapshotService.LoadAllAvailableHistory(ctx)
 	require.NoError(t, err)
@@ -691,7 +698,7 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 	assertTableSummariesAreEqual(t, fromEventsDatabaseSummaries[2].historyTableSummaries, databaseSummaryAtBlock3000AfterSnapshotReloadFromBlock2000.historyTableSummaries)
 }
 
-func emptyDatabaseAndSnapshotsDir() {
+func emptyDatabase() {
 	err := sqlstore.RecreateVegaDatabase(context.Background(), logging.NewTestLogger(), sqlConfig.ConnectionConfig)
 	if err != nil {
 		panic(err)
@@ -701,18 +708,19 @@ func emptyDatabaseAndSnapshotsDir() {
 	if err != nil {
 		panic(err)
 	}
-	emptySnapshotDirectory()
 }
 
 func TestRestoringFromDifferentHeightsWithFullHistory(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	for i := int64(0); i < numSnapshots; i++ {
-		emptyDatabaseAndSnapshotsDir()
-		copySnapshotDataIntoSnapshotDirectory(0, snapshotInterval*(i+1))
+	snapshotDir := t.TempDir()
 
-		inputSnapshotService := setupSnapshotService(sqlConfig, snapshotsDir)
+	for i := int64(0); i < numSnapshots; i++ {
+		emptyDatabase()
+		copySnapshotDataIntoSnapshotDirectory(0, snapshotInterval*(i+1), snapshotDir)
+
+		inputSnapshotService := setupSnapshotService(sqlConfig, snapshotDir)
 		_, _, err := inputSnapshotService.LoadAllAvailableHistory(ctx)
 		require.NoError(t, err)
 
@@ -726,7 +734,7 @@ type sqlStoreBroker interface {
 	Receive(ctx context.Context) error
 }
 
-func copySnapshotDataIntoSnapshotDirectory(fromHeight int64, toHeight int64) {
+func copySnapshotDataIntoSnapshotDirectory(fromHeight int64, toHeight int64, snapshotsDir string) {
 	_, histories, err := snapshot.GetHistorySnapshots(snapshotsBackupDir)
 	if err != nil {
 		panic(err)
@@ -746,20 +754,6 @@ func copySnapshotDataIntoSnapshotDirectory(fromHeight int64, toHeight int64) {
 	for _, csSnapshot := range csSnapshots {
 		if csSnapshot.Height >= fromHeight && csSnapshot.Height <= toHeight {
 			copyFile(filepath.Join(snapshotsBackupDir, csSnapshot.CompressedFileName()), filepath.Join(snapshotsDir, csSnapshot.CompressedFileName()))
-		}
-	}
-}
-
-func emptySnapshotDirectory() {
-	files, err := os.ReadDir(snapshotsDir)
-	if err != nil {
-		panic(err)
-	}
-
-	for _, file := range files {
-		err = os.RemoveAll(filepath.Join(snapshotsDir, file.Name()))
-		if err != nil {
-			panic(err)
 		}
 	}
 }

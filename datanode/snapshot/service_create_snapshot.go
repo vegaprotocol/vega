@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"hash"
 	"io"
@@ -68,19 +69,14 @@ func (b *Service) createSnapshot(ctx context.Context, chainID string, fromHeight
 		return Meta{}, fmt.Errorf("failed to begin copy table data transaction: %w", err)
 	}
 
-	_, err = copyDataTx.Exec(ctx, "SET TIME ZONE 'UTC'")
-	if err != nil {
-		return Meta{}, fmt.Errorf("failed to set timezone to UTC:%w", err)
-	}
-
-	_, err = copyDataTx.Exec(ctx, "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE")
-	if err != nil {
+	if _, err := copyDataTx.Exec(ctx, "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE"); err != nil {
+		copyDataTx.Rollback(ctx)
 		return Meta{}, fmt.Errorf("failed to set transaction isolation level to serilizable:%w", err)
 	}
 
 	snapshotInProgressFile := filepath.Join(b.snapshotsPath, InProgressFileName(chainID, toHeight))
-	_, err = os.Create(snapshotInProgressFile)
-	if err != nil {
+	if _, err = os.Create(snapshotInProgressFile); err != nil {
+		copyDataTx.Rollback(ctx)
 		return Meta{}, fmt.Errorf("failed to create write lock file:%w", err)
 	}
 
@@ -89,23 +85,21 @@ func (b *Service) createSnapshot(ctx context.Context, chainID string, fromHeight
 			err = b.snapshotData(ctx, copyDataTx, dbMetaData, currentSnapshot, historySnapshot, chainID, toHeight)
 			b.snapshotInProgress.Store(false)
 			if err != nil {
-				b.log.Errorf("failed to snapshot data:%s", err)
-			} else {
-				err = os.Remove(snapshotInProgressFile)
-				if err != nil {
-					b.log.Errorf("failed to remove snapshot in progress file:%s", err)
-				}
+				b.log.Panic("failed to snapshot data", logging.Error(err))
+			}
+
+			if err = os.Remove(snapshotInProgressFile); err != nil {
+				b.log.Panic("failed to remove snapshot in progress file", logging.Error(err))
 			}
 		}()
 	} else {
 		err = b.snapshotData(ctx, copyDataTx, dbMetaData, currentSnapshot, historySnapshot, chainID, toHeight)
 		b.snapshotInProgress.Store(false)
 		if err != nil {
-			return Meta{}, fmt.Errorf("failed to snapshot data:%w", err)
+			return Meta{}, fmt.Errorf("failed to snapshot data: %w", err)
 		}
 
-		err = os.Remove(snapshotInProgressFile)
-		if err != nil {
+		if err = os.Remove(snapshotInProgressFile); err != nil {
 			return Meta{}, fmt.Errorf("failed to remove snapshot in progress file:%w", err)
 		}
 	}
@@ -126,6 +120,19 @@ func (b *Service) snapshotData(ctx context.Context, copyDataTx pgx.Tx, dbMetaDat
 	currentSnapshot CurrentStateSnapshot,
 	historySnapshot HistorySnapshot, chainID string, toHeight int64,
 ) error {
+	defer func() {
+		// Calling rollback on a committed transaction has no effect, hence we can rollback in defer to ensure
+		// always rolled back if needed
+		err := copyDataTx.Rollback(ctx)
+		if err != nil && !errors.Is(err, pgx.ErrTxClosed) {
+			b.log.Errorf("failed to rollback transaction:%s", err)
+		}
+	}()
+
+	if _, err := copyDataTx.Exec(ctx, "SET TIME ZONE 0"); err != nil {
+		return fmt.Errorf("failed to set timezone to UTC:%w", err)
+	}
+
 	uncompressedCurrentDataDir, err := b.createUncompressedDataDirectory(currentSnapshot.UncompressedDataDir())
 	if err != nil {
 		return fmt.Errorf("failed to create uncompressed data directory for current snapshot:%w", err)
@@ -152,10 +159,6 @@ func (b *Service) snapshotData(ctx context.Context, copyDataTx pgx.Tx, dbMetaDat
 		historySnapshot.GetCopySQL(dbMetaData, b.config.DatabaseSnapshotsPath)...)
 	rowsCopied, err := copyTableData(ctx, copyDataTx, allCopySQL)
 	if err != nil {
-		rollbackErr := copyDataTx.Rollback(ctx)
-		if rollbackErr != nil {
-			return fmt.Errorf("failed to rollback snapshot transaction:%s, rollback caused by:%w", rollbackErr, err)
-		}
 		return fmt.Errorf("failed to copy table data:%w", err)
 	}
 

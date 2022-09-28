@@ -1,0 +1,15 @@
+---
+type: google.api.Service
+config_version: 3
+
+name: api.v1.blockexplorer
+title: Vega Trading API
+
+apis:
+  - name: BlockExplorer
+
+
+http:
+  rules:
+    - selector: blockexplorer.api.v1.BlockExplorerService.ListTransactions
+      get: '/transactions'

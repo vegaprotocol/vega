@@ -112,7 +112,7 @@ func (s *ProxyServer) Start() error {
 	handler = healthCheckMiddleware(handler)
 	handler = gateway.RemoteAddrMiddleware(logger, handler)
 	// Gzip encoding support
-	handler = newGzipHandler(*logger, handler.(http.HandlerFunc))
+	handler = NewGzipHandler(*logger, handler.(http.HandlerFunc))
 	// Metric support
 	handler = gateway.MetricCollectionMiddleware(handler)
 	handler = wsproxy.WebsocketProxy(handler)

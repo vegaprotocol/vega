@@ -1,13 +1,25 @@
 # Changelog
 
-## Unreleased 0.57.0
+## Unreleased 0.58.0
+
+### 🚨 Breaking changes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🗑️ Deprecation
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🛠 Improvements
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+
+## 0.57.0
 
 ### 🚨 Breaking changes
 - [6291](https://github.com/vegaprotocol/vega/issues/6291) - Remove `Nodewallet.ETH` configuration and add flags to supply `clef` addresses when importing or generating accounts
 - [6314](https://github.com/vegaprotocol/vega/issues/6314) - Rename session namespace to client in wallet API version 2
-
-### 🗑️ Deprecation
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
 - [6283](https://github.com/vegaprotocol/vega/issues/6283) - Add commit hash to version if is development version
@@ -28,6 +40,7 @@
 ### 🛠 Improvements
 - [6103](hhttps://github.com/vegaprotocol/vega/issues/6103) - Verify that order amendment has the desired effect on opening auction
 - [6170](https://github.com/vegaprotocol/vega/pull/6170) - Order GraphQL schema (query and subscription types) alphabetically
+- [6163](https://github.com/vegaprotocol/vega/issues/6163) - Add block explorer back end
 - [6153](https://github.com/vegaprotocol/vega/issues/6153) - Display UI friendly logs when calling `session.send_transaction`
 - [6063](https://github.com/vegaprotocol/vega/pull/6063) - Update average entry valuation calculation according to spec change.
 - [6191](https://github.com/vegaprotocol/vega/pull/6191) - Remove the retry on node health check in the wallet API version 2
@@ -62,6 +75,7 @@
 - [6260](https://github.com/vegaprotocol/vega/issues/6260) - Prepend `chainID` to input data only when signing the transaction
 - [6036](https://github.com/vegaprotocol/vega/issues/6036) - Fix `protobuf<->swagger` generation
 - [6248](https://github.com/vegaprotocol/vega/issues/6245) - Candles connection is not returning any candle data
+- [6037](https://github.com/vegaprotocol/vega/issues/6037) - Fix auction events.
 - [6061](https://github.com/vegaprotocol/vega/issues/6061) - Attempt at stabilizing the tests on the broker in the core
 - [6178](https://github.com/vegaprotocol/vega/issues/6178) - Historical balances fails with `scany` error
 - [6193](https://github.com/vegaprotocol/vega/issues/6193) - Use Data field from transaction successfully sent but that were rejected
