@@ -186,10 +186,10 @@ func TestGetNodeData(t *testing.T) {
 	node1 := addTestNode(t, ns, block, generateID())
 	node2 := addTestNode(t, ns, block, generateID())
 
-	addTestDelegation(t, ds, party1, node1, 3, block)
-	addTestDelegation(t, ds, party1, node1, 4, block)
-	addTestDelegation(t, ds, party1, node2, 3, block)
-	addTestDelegation(t, ds, party1, node2, 4, block)
+	addTestDelegation(t, ds, party1, node1, 3, block, 0)
+	addTestDelegation(t, ds, party1, node1, 4, block, 1)
+	addTestDelegation(t, ds, party1, node2, 3, block, 2)
+	addTestDelegation(t, ds, party1, node2, 4, block, 3)
 
 	// The node1 will exist int the epochs [2,3]
 	addNodeAnnounced(t, ns, node1.ID, true, 2, time.Now())
