@@ -134,19 +134,22 @@ type Topology struct {
 	// is the node configured to be a validator
 	isValidatorSetup bool
 
-	// key rotations
+	// Vega key rotations
 	pendingPubKeyRotations pendingKeyRotationMapping
 	pubKeyChangeListeners  []func(ctx context.Context, oldPubKey, newPubKey string)
-	currentBlockHeight     uint64
 
-	// eth key rotations
-	pendingEthKeyRotations pendingEthereumKeyRotationMapping
+	// Ethereum key rotations
+	// pending are those lined up to happen in a future block, unresolved are ones
+	// that have happened but we are waiting to see the old key has been removed from the contract
+	pendingEthKeyRotations    pendingEthereumKeyRotationMapping
+	unresolvedEthKeyRotations map[string]PendingEthereumKeyRotation
 
 	mu sync.RWMutex
 
 	tss *topologySnapshotState
 
-	rng *rand.Rand // random generator seeded by block
+	rng                *rand.Rand // random generator seeded by block
+	currentBlockHeight uint64
 
 	// net params
 	numberOfTendermintValidators         int
@@ -167,6 +170,7 @@ type Topology struct {
 	notary           Notary
 	signatures       Signatures
 
+	// validator heartbeat parameters
 	blocksToKeepMalperforming int64
 	timeBetweenHeartbeats     time.Duration
 	timeToSendHeartbeat       time.Duration
@@ -221,6 +225,7 @@ func NewTopology(
 		tss:                           &topologySnapshotState{},
 		pendingPubKeyRotations:        pendingKeyRotationMapping{},
 		pendingEthKeyRotations:        pendingEthereumKeyRotationMapping{},
+		unresolvedEthKeyRotations:     map[string]PendingEthereumKeyRotation{},
 		isValidatorSetup:              isValidatorSetup,
 		validatorPerformance:          NewValidatorPerformance(log),
 		validatorIncumbentBonusFactor: num.DecimalZero(),
