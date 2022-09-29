@@ -58,7 +58,7 @@ func newOracleSpecs(unmarshaler *defaults.Unmarshaler) *oracleConfigs {
 		if err != nil {
 			panic(fmt.Errorf("couldn't unmarshal default oracle config %s: %v", name, err))
 		}
-		if err := specs.Add(name, "settlement price", future.OracleSpecForSettlementPrice, future.OracleSpecBinding); err != nil {
+		if err := specs.Add(name, "settlement price", future.OracleSpecForSettlementData, future.OracleSpecBinding); err != nil {
 			panic(fmt.Errorf("failed to add default oracle config %s: %v", name, err))
 		}
 		if err := specs.Add(name, "trading termination", future.OracleSpecForTradingTermination, future.OracleSpecBinding); err != nil {

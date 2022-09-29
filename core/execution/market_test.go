@@ -486,7 +486,7 @@ func getMarketWithDP(pMonitorSettings *types.PriceMonitoringSettings, openingAuc
 					Future: &types.Future{
 						SettlementAsset: "ETH",
 						QuoteName:       "USD",
-						OracleSpecForSettlementPrice: &types.OracleSpec{
+						OracleSpecForSettlementData: &types.OracleSpec{
 							ID:      "1",
 							PubKeys: []string{"0xDEADBEEF"},
 							Filters: []*types.OracleSpecFilter{
@@ -699,7 +699,7 @@ func TestMarketClosingAfterUpdate(t *testing.T) {
 
 	// given
 	updatedMkt := tm.mktCfg.DeepClone()
-	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecForSettlementPrice.Filters[0].Key.Name = "prices.ETHEREUM.value"
+	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecForSettlementData.Filters[0].Key.Name = "prices.ETHEREUM.value"
 	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecBinding.SettlementPriceProperty = "prices.ETHEREUM.value"
 
 	// when
@@ -817,7 +817,7 @@ func TestMarketLiquidityFeeAfterUpdate(t *testing.T) {
 	// given
 	previousLiqFee := tm.market.GetLiquidityFee()
 	updatedMkt := tm.mktCfg.DeepClone()
-	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecForSettlementPrice.Filters[0].Key.Name = "prices.ETHEREUM.value"
+	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecForSettlementData.Filters[0].Key.Name = "prices.ETHEREUM.value"
 	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecBinding.SettlementPriceProperty = "prices.ETHEREUM.value"
 
 	// when
@@ -1188,7 +1188,7 @@ func Test6056(t *testing.T) {
 	// now update the market
 	updatedMkt := tm.mktCfg.DeepClone()
 
-	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecForSettlementPrice.Filters = []*types.OracleSpecFilter{
+	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecForSettlementData.Filters = []*types.OracleSpecFilter{
 		{
 			Key: &types.OracleSpecPropertyKey{
 				Name: "prices.ETH.value",

@@ -1376,8 +1376,8 @@ type Future {
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
 
-  "The oracle spec describing the oracle data of interest for settlement price."
-  oracleSpecForSettlementPrice: OracleSpec!
+  "The oracle spec describing the oracle data of interest for settlement data."
+  oracleSpecForSettlementData: OracleSpec!
 
   "The oracle spec describing the oracle data of interest for trading termination."
   oracleSpecForTradingTermination: OracleSpec!
@@ -3194,9 +3194,9 @@ type FutureProduct {
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
   """
-  Describes the oracle data that an instrument wants to get from the oracle engine for settlement price.
+  Describes the oracle data that an instrument wants to get from the oracle engine for settlement data.
   """
-  oracleSpecForSettlementPrice: OracleSpecConfiguration!
+  oracleSpecForSettlementData: OracleSpecConfiguration!
   """
   Describes the oracle data that an instrument wants to get from the oracle engine for trading termination.
   """
@@ -3273,7 +3273,7 @@ type UpdateInstrumentConfiguration {
 
 type UpdateFutureProduct {
   quoteName: String!
-  oracleSpecForSettlementPrice: OracleSpecConfiguration!
+  oracleSpecForSettlementData: OracleSpecConfiguration!
   oracleSpecForTradingTermination: OracleSpecConfiguration!
   oracleSpecBinding: OracleSpecToFutureBinding!
 }

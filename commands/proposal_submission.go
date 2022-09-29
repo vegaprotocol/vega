@@ -516,7 +516,7 @@ func checkNewFuture(future *types.FutureProduct) Errors {
 		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.quote_name", ErrIsRequired)
 	}
 
-	errs.Merge(checkOracleSpec(future.OracleSpecForSettlementPrice, "oracle_spec_for_settlement_price", "proposal_submission.terms.change.new_market.changes.instrument.product.future"))
+	errs.Merge(checkOracleSpec(future.OracleSpecForSettlementData, "oracle_spec_for_settlement_data", "proposal_submission.terms.change.new_market.changes.instrument.product.future"))
 	errs.Merge(checkOracleSpec(future.OracleSpecForTradingTermination, "oracle_spec_for_trading_termination", "proposal_submission.terms.change.new_market.changes.instrument.product.future"))
 	errs.Merge(checkNewOracleBinding(future))
 
@@ -534,7 +534,7 @@ func checkUpdateFuture(future *types.UpdateFutureProduct) Errors {
 		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future.quote_name", ErrIsRequired)
 	}
 
-	errs.Merge(checkOracleSpec(future.OracleSpecForSettlementPrice, "oracle_spec_for_settlement_price", "proposal_submission.terms.change.update_market.changes.instrument.product.future"))
+	errs.Merge(checkOracleSpec(future.OracleSpecForSettlementData, "oracle_spec_for_settlement_data", "proposal_submission.terms.change.update_market.changes.instrument.product.future"))
 	errs.Merge(checkOracleSpec(future.OracleSpecForTradingTermination, "oracle_spec_for_trading_termination", "proposal_submission.terms.change.update_market.changes.instrument.product.future"))
 	errs.Merge(checkUpdateOracleBinding(future))
 
@@ -633,7 +633,7 @@ func checkNewOracleBinding(future *types.FutureProduct) Errors {
 		if len(future.OracleSpecBinding.SettlementPriceProperty) == 0 {
 			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_binding.settlement_price_property", ErrIsRequired)
 		} else {
-			if !isBindingMatchingSpec(future.OracleSpecForSettlementPrice, future.OracleSpecBinding.SettlementPriceProperty) {
+			if !isBindingMatchingSpec(future.OracleSpecForSettlementData, future.OracleSpecBinding.SettlementPriceProperty) {
 				errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_binding.settlement_price_property", ErrIsMismatching)
 			}
 		}
@@ -658,7 +658,7 @@ func checkUpdateOracleBinding(future *types.UpdateFutureProduct) Errors {
 		if len(future.OracleSpecBinding.SettlementPriceProperty) == 0 {
 			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_binding.settlement_price_property", ErrIsRequired)
 		} else {
-			if !isBindingMatchingSpec(future.OracleSpecForSettlementPrice, future.OracleSpecBinding.SettlementPriceProperty) {
+			if !isBindingMatchingSpec(future.OracleSpecForSettlementData, future.OracleSpecBinding.SettlementPriceProperty) {
 				errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_binding.settlement_price_property", ErrIsMismatching)
 			}
 		}

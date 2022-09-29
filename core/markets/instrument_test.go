@@ -53,7 +53,7 @@ func TestInstrument(t *testing.T) {
 		pinst.Product = &types.InstrumentFuture{
 			Future: &types.Future{
 				SettlementAsset:                 "Ethereum/Ether",
-				OracleSpecForSettlementPrice:    nil,
+				OracleSpecForSettlementData:     nil,
 				OracleSpecForTradingTermination: nil,
 				OracleSpecBinding: &types.OracleSpecBindingForFuture{
 					SettlementPriceProperty:    "prices.ETH.value",
@@ -72,7 +72,7 @@ func TestInstrument(t *testing.T) {
 		pinst.Product = &types.InstrumentFuture{
 			Future: &types.Future{
 				SettlementAsset: "Ethereum/Ether",
-				OracleSpecForSettlementPrice: &types.OracleSpec{
+				OracleSpecForSettlementData: &types.OracleSpec{
 					PubKeys: []string{"0xDEADBEEF"},
 					Filters: []*types.OracleSpecFilter{
 						{
@@ -138,7 +138,7 @@ func getValidInstrumentProto() *types.Instrument {
 			Future: &types.Future{
 				QuoteName:       "USD",
 				SettlementAsset: "Ethereum/Ether",
-				OracleSpecForSettlementPrice: &types.OracleSpec{
+				OracleSpecForSettlementData: &types.OracleSpec{
 					PubKeys: []string{"0xDEADBEEF"},
 					Filters: []*types.OracleSpecFilter{
 						{

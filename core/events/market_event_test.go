@@ -66,7 +66,7 @@ func TestMarketDeepClone(t *testing.T) {
 					Future: &vegapb.Future{
 						SettlementAsset: "Asset",
 						QuoteName:       "QuoteName",
-						OracleSpecForSettlementPrice: &oraclespb.OracleSpec{
+						OracleSpecForSettlementData: &oraclespb.OracleSpec{
 							Id:        "Id",
 							CreatedAt: 1000,
 							UpdatedAt: 2000,
@@ -191,7 +191,7 @@ func TestMarketDeepClone(t *testing.T) {
 	future := me.TradableInstrument.Instrument.Product.(*types.InstrumentFuture)
 	future.Future.SettlementAsset = "Changed"
 	future.Future.QuoteName = "Changed"
-	changeOracleSpec(future.Future.OracleSpecForSettlementPrice)
+	changeOracleSpec(future.Future.OracleSpecForSettlementData)
 	changeOracleSpec(future.Future.OracleSpecForTradingTermination)
 	future.Future.OracleSpecBinding.SettlementPriceProperty = "Changed"
 	future.Future.OracleSpecBinding.TradingTerminationProperty = "Changed"
@@ -243,7 +243,7 @@ func TestMarketDeepClone(t *testing.T) {
 
 	assert.NotEqual(t, future.Future.SettlementAsset, future2.Future.SettlementAsset)
 	assert.NotEqual(t, future.Future.QuoteName, future2.Future.QuoteName)
-	assertSpecsNotEqual(t, future.Future.OracleSpecForSettlementPrice, future2.Future.OracleSpecForSettlementPrice)
+	assertSpecsNotEqual(t, future.Future.OracleSpecForSettlementData, future2.Future.OracleSpecForSettlementData)
 	assertSpecsNotEqual(t, future.Future.OracleSpecForTradingTermination, future2.Future.OracleSpecForTradingTermination)
 	assert.NotEqual(t, future.Future.OracleSpecBinding.TradingTerminationProperty, future2.Future.OracleSpecBinding.TradingTerminationProperty)
 	assert.NotEqual(t, future.Future.OracleSpecBinding.SettlementPriceProperty, future2.Future.OracleSpecBinding.SettlementPriceProperty)

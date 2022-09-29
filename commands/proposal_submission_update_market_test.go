@@ -792,22 +792,22 @@ func testUpdateFutureMarketChangeSubmissionWithoutOracleSpecFails(t *testing.T) 
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_price"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_data"), commands.ErrIsRequired)
 	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_trading_termination"), commands.ErrIsRequired)
 }
 
 func testUpdateFutureMarketChangeSubmissionMissingSingleOracleSpecFails(t *testing.T) {
-	testUpdateFutureMarketChangeSubmissionWithoutEitherOracleSpecFails(t, "oracle_spec_for_settlement_price")
+	testUpdateFutureMarketChangeSubmissionWithoutEitherOracleSpecFails(t, "oracle_spec_for_settlement_data")
 	testUpdateFutureMarketChangeSubmissionWithoutEitherOracleSpecFails(t, "oracle_spec_for_trading_termination")
 }
 
 func testUpdateFutureMarketChangeSubmissionWithoutEitherOracleSpecFails(t *testing.T, oracleSpecName string) {
 	t.Helper()
 	future := &types.UpdateFutureProduct{}
-	if oracleSpecName == "oracle_spec_for_settlement_price" {
+	if oracleSpecName == "oracle_spec_for_settlement_data" {
 		future.OracleSpecForTradingTermination = &oraclespb.OracleSpecConfiguration{}
 	} else {
-		future.OracleSpecForSettlementPrice = &oraclespb.OracleSpecConfiguration{}
+		future.OracleSpecForSettlementData = &oraclespb.OracleSpecConfiguration{}
 	}
 
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
@@ -838,7 +838,7 @@ func testUpdateFutureMarketChangeSubmissionWithOracleSpecSucceeds(t *testing.T) 
 						Instrument: &types.UpdateInstrumentConfiguration{
 							Product: &types.UpdateInstrumentConfiguration_Future{
 								Future: &types.UpdateFutureProduct{
-									OracleSpecForSettlementPrice:    &oraclespb.OracleSpecConfiguration{},
+									OracleSpecForSettlementData:     &oraclespb.OracleSpecConfiguration{},
 									OracleSpecForTradingTermination: &oraclespb.OracleSpecConfiguration{},
 								},
 							},
@@ -849,7 +849,7 @@ func testUpdateFutureMarketChangeSubmissionWithOracleSpecSucceeds(t *testing.T) 
 		},
 	})
 
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_price"), commands.ErrIsRequired)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_data"), commands.ErrIsRequired)
 }
 
 func testUpdateFutureMarketChangeSubmissionWithoutPubKeysFails(t *testing.T) {
@@ -861,7 +861,7 @@ func testUpdateFutureMarketChangeSubmissionWithoutPubKeysFails(t *testing.T) {
 						Instrument: &types.UpdateInstrumentConfiguration{
 							Product: &types.UpdateInstrumentConfiguration_Future{
 								Future: &types.UpdateFutureProduct{
-									OracleSpecForSettlementPrice: &oraclespb.OracleSpecConfiguration{
+									OracleSpecForSettlementData: &oraclespb.OracleSpecConfiguration{
 										PubKeys: []string{},
 									},
 								},
@@ -873,7 +873,7 @@ func testUpdateFutureMarketChangeSubmissionWithoutPubKeysFails(t *testing.T) {
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_price.pub_keys"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_data.pub_keys"), commands.ErrIsRequired)
 }
 
 func testUpdateFutureMarketChangeSubmissionWithWrongPubKeysFails(t *testing.T) {
@@ -899,7 +899,7 @@ func testUpdateFutureMarketChangeSubmissionWithWrongPubKeysFails(t *testing.T) {
 								Instrument: &types.UpdateInstrumentConfiguration{
 									Product: &types.UpdateInstrumentConfiguration_Future{
 										Future: &types.UpdateFutureProduct{
-											OracleSpecForSettlementPrice: &oraclespb.OracleSpecConfiguration{
+											OracleSpecForSettlementData: &oraclespb.OracleSpecConfiguration{
 												PubKeys: tc.value,
 											},
 										},
@@ -911,7 +911,7 @@ func testUpdateFutureMarketChangeSubmissionWithWrongPubKeysFails(t *testing.T) {
 				},
 			})
 
-			assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_price.pub_keys.1"), commands.ErrIsNotValid)
+			assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_data.pub_keys.1"), commands.ErrIsNotValid)
 		})
 	}
 }
@@ -925,7 +925,7 @@ func testUpdateFutureMarketChangeSubmissionWithPubKeysSucceeds(t *testing.T) {
 						Instrument: &types.UpdateInstrumentConfiguration{
 							Product: &types.UpdateInstrumentConfiguration_Future{
 								Future: &types.UpdateFutureProduct{
-									OracleSpecForSettlementPrice: &oraclespb.OracleSpecConfiguration{
+									OracleSpecForSettlementData: &oraclespb.OracleSpecConfiguration{
 										PubKeys: []string{"0xDEADBEEF", "0xCAFEDUDE"},
 									},
 									OracleSpecForTradingTermination: &oraclespb.OracleSpecConfiguration{
@@ -940,9 +940,9 @@ func testUpdateFutureMarketChangeSubmissionWithPubKeysSucceeds(t *testing.T) {
 		},
 	})
 
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_price.pub_keys"), commands.ErrIsRequired)
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_price.pub_keys.0"), commands.ErrIsNotValid)
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_price.pub_keys.1"), commands.ErrIsNotValid)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_data.pub_keys"), commands.ErrIsRequired)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_data.pub_keys.0"), commands.ErrIsNotValid)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_data.pub_keys.1"), commands.ErrIsNotValid)
 }
 
 func testUpdateFutureMarketChangeSubmissionWithoutFiltersFails(t *testing.T) {
@@ -954,7 +954,7 @@ func testUpdateFutureMarketChangeSubmissionWithoutFiltersFails(t *testing.T) {
 						Instrument: &types.UpdateInstrumentConfiguration{
 							Product: &types.UpdateInstrumentConfiguration_Future{
 								Future: &types.UpdateFutureProduct{
-									OracleSpecForSettlementPrice: &oraclespb.OracleSpecConfiguration{
+									OracleSpecForSettlementData: &oraclespb.OracleSpecConfiguration{
 										Filters: []*oraclespb.Filter{},
 									},
 								},
@@ -966,7 +966,7 @@ func testUpdateFutureMarketChangeSubmissionWithoutFiltersFails(t *testing.T) {
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_price.filters"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_data.filters"), commands.ErrIsRequired)
 }
 
 func testUpdateFutureMarketChangeSubmissionWithFiltersSucceeds(t *testing.T) {
@@ -978,7 +978,7 @@ func testUpdateFutureMarketChangeSubmissionWithFiltersSucceeds(t *testing.T) {
 						Instrument: &types.UpdateInstrumentConfiguration{
 							Product: &types.UpdateInstrumentConfiguration_Future{
 								Future: &types.UpdateFutureProduct{
-									OracleSpecForSettlementPrice: &oraclespb.OracleSpecConfiguration{
+									OracleSpecForSettlementData: &oraclespb.OracleSpecConfiguration{
 										Filters: []*oraclespb.Filter{
 											{},
 										},
@@ -997,7 +997,7 @@ func testUpdateFutureMarketChangeSubmissionWithFiltersSucceeds(t *testing.T) {
 		},
 	})
 
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_price.filters"), commands.ErrIsRequired)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_data.filters"), commands.ErrIsRequired)
 }
 
 func testUpdateFutureMarketChangeSubmissionWithFilterWithoutKeyFails(t *testing.T) {
@@ -1009,7 +1009,7 @@ func testUpdateFutureMarketChangeSubmissionWithFilterWithoutKeyFails(t *testing.
 						Instrument: &types.UpdateInstrumentConfiguration{
 							Product: &types.UpdateInstrumentConfiguration_Future{
 								Future: &types.UpdateFutureProduct{
-									OracleSpecForSettlementPrice: &oraclespb.OracleSpecConfiguration{
+									OracleSpecForSettlementData: &oraclespb.OracleSpecConfiguration{
 										Filters: []*oraclespb.Filter{
 											{}, {},
 										},
@@ -1023,8 +1023,8 @@ func testUpdateFutureMarketChangeSubmissionWithFilterWithoutKeyFails(t *testing.
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_price.filters.0.key"), commands.ErrIsNotValid)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_price.filters.1.key"), commands.ErrIsNotValid)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_data.filters.0.key"), commands.ErrIsNotValid)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_data.filters.1.key"), commands.ErrIsNotValid)
 }
 
 func testUpdateFutureMarketChangeSubmissionWithFilterWithKeySucceeds(t *testing.T) {
@@ -1036,7 +1036,7 @@ func testUpdateFutureMarketChangeSubmissionWithFilterWithKeySucceeds(t *testing.
 						Instrument: &types.UpdateInstrumentConfiguration{
 							Product: &types.UpdateInstrumentConfiguration_Future{
 								Future: &types.UpdateFutureProduct{
-									OracleSpecForSettlementPrice: &oraclespb.OracleSpecConfiguration{
+									OracleSpecForSettlementData: &oraclespb.OracleSpecConfiguration{
 										Filters: []*oraclespb.Filter{
 											{
 												Key: &oraclespb.PropertyKey{},
@@ -1063,8 +1063,8 @@ func testUpdateFutureMarketChangeSubmissionWithFilterWithKeySucceeds(t *testing.
 		},
 	})
 
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_price.filters.0.key"), commands.ErrIsNotValid)
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_price.filters.1.key"), commands.ErrIsNotValid)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_data.filters.0.key"), commands.ErrIsNotValid)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_data.filters.1.key"), commands.ErrIsNotValid)
 }
 
 func testUpdateFutureMarketChangeSubmissionWithFilterWithoutKeyNameFails(t *testing.T) {
@@ -1076,7 +1076,7 @@ func testUpdateFutureMarketChangeSubmissionWithFilterWithoutKeyNameFails(t *test
 						Instrument: &types.UpdateInstrumentConfiguration{
 							Product: &types.UpdateInstrumentConfiguration_Future{
 								Future: &types.UpdateFutureProduct{
-									OracleSpecForSettlementPrice: &oraclespb.OracleSpecConfiguration{
+									OracleSpecForSettlementData: &oraclespb.OracleSpecConfiguration{
 										Filters: []*oraclespb.Filter{
 											{
 												Key: &oraclespb.PropertyKey{
@@ -1098,8 +1098,8 @@ func testUpdateFutureMarketChangeSubmissionWithFilterWithoutKeyNameFails(t *test
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_price.filters.0.key.name"), commands.ErrIsRequired)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_price.filters.1.key.name"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_data.filters.0.key.name"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_data.filters.1.key.name"), commands.ErrIsRequired)
 }
 
 func testUpdateFutureMarketChangeSubmissionWithFilterWithKeyNameSucceeds(t *testing.T) {
@@ -1111,7 +1111,7 @@ func testUpdateFutureMarketChangeSubmissionWithFilterWithKeyNameSucceeds(t *test
 						Instrument: &types.UpdateInstrumentConfiguration{
 							Product: &types.UpdateInstrumentConfiguration_Future{
 								Future: &types.UpdateFutureProduct{
-									OracleSpecForSettlementPrice: &oraclespb.OracleSpecConfiguration{
+									OracleSpecForSettlementData: &oraclespb.OracleSpecConfiguration{
 										Filters: []*oraclespb.Filter{
 											{
 												Key: &oraclespb.PropertyKey{
@@ -1146,8 +1146,8 @@ func testUpdateFutureMarketChangeSubmissionWithFilterWithKeyNameSucceeds(t *test
 		},
 	})
 
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_price.filters.0.key.name"), commands.ErrIsRequired)
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_price.filters.1.key.name"), commands.ErrIsRequired)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_data.filters.0.key.name"), commands.ErrIsRequired)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_data.filters.1.key.name"), commands.ErrIsRequired)
 }
 
 func testUpdateFutureMarketChangeSubmissionWithFilterWithoutKeyTypeFails(t *testing.T) {
@@ -1159,7 +1159,7 @@ func testUpdateFutureMarketChangeSubmissionWithFilterWithoutKeyTypeFails(t *test
 						Instrument: &types.UpdateInstrumentConfiguration{
 							Product: &types.UpdateInstrumentConfiguration_Future{
 								Future: &types.UpdateFutureProduct{
-									OracleSpecForSettlementPrice: &oraclespb.OracleSpecConfiguration{
+									OracleSpecForSettlementData: &oraclespb.OracleSpecConfiguration{
 										Filters: []*oraclespb.Filter{
 											{
 												Key: &oraclespb.PropertyKey{
@@ -1190,8 +1190,8 @@ func testUpdateFutureMarketChangeSubmissionWithFilterWithoutKeyTypeFails(t *test
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_price.filters.0.key.type"), commands.ErrIsRequired)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_price.filters.1.key.type"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_data.filters.0.key.type"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_data.filters.1.key.type"), commands.ErrIsRequired)
 }
 
 func testUpdateFutureMarketChangeSubmissionWithFilterWithKeyTypeSucceeds(t *testing.T) {
@@ -1229,7 +1229,7 @@ func testUpdateFutureMarketChangeSubmissionWithFilterWithKeyTypeSucceeds(t *test
 								Instrument: &types.UpdateInstrumentConfiguration{
 									Product: &types.UpdateInstrumentConfiguration_Future{
 										Future: &types.UpdateFutureProduct{
-											OracleSpecForSettlementPrice: &oraclespb.OracleSpecConfiguration{
+											OracleSpecForSettlementData: &oraclespb.OracleSpecConfiguration{
 												Filters: []*oraclespb.Filter{
 													{
 														Key: &oraclespb.PropertyKey{
@@ -1266,7 +1266,7 @@ func testUpdateFutureMarketChangeSubmissionWithFilterWithoutConditionsSucceeds(t
 						Instrument: &types.UpdateInstrumentConfiguration{
 							Product: &types.UpdateInstrumentConfiguration_Future{
 								Future: &types.UpdateFutureProduct{
-									OracleSpecForSettlementPrice: &oraclespb.OracleSpecConfiguration{
+									OracleSpecForSettlementData: &oraclespb.OracleSpecConfiguration{
 										Filters: []*oraclespb.Filter{
 											{
 												Conditions: []*oraclespb.Condition{},
@@ -1294,7 +1294,7 @@ func testUpdateFutureMarketChangeSubmissionWithFilterWithoutConditionOperatorFai
 						Instrument: &types.UpdateInstrumentConfiguration{
 							Product: &types.UpdateInstrumentConfiguration_Future{
 								Future: &types.UpdateFutureProduct{
-									OracleSpecForSettlementPrice: &oraclespb.OracleSpecConfiguration{
+									OracleSpecForSettlementData: &oraclespb.OracleSpecConfiguration{
 										Filters: []*oraclespb.Filter{
 											{
 												Conditions: []*oraclespb.Condition{
@@ -1315,8 +1315,8 @@ func testUpdateFutureMarketChangeSubmissionWithFilterWithoutConditionOperatorFai
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_price.filters.0.conditions.0.operator"), commands.ErrIsRequired)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_price.filters.0.conditions.1.operator"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_data.filters.0.conditions.0.operator"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_data.filters.0.conditions.1.operator"), commands.ErrIsRequired)
 }
 
 func testUpdateFutureMarketChangeSubmissionWithFilterWithConditionOperatorSucceeds(t *testing.T) {
@@ -1351,7 +1351,7 @@ func testUpdateFutureMarketChangeSubmissionWithFilterWithConditionOperatorSuccee
 								Instrument: &types.UpdateInstrumentConfiguration{
 									Product: &types.UpdateInstrumentConfiguration_Future{
 										Future: &types.UpdateFutureProduct{
-											OracleSpecForSettlementPrice: &oraclespb.OracleSpecConfiguration{
+											OracleSpecForSettlementData: &oraclespb.OracleSpecConfiguration{
 												Filters: []*oraclespb.Filter{
 													{
 														Conditions: []*oraclespb.Condition{
@@ -1389,7 +1389,7 @@ func testUpdateFutureMarketChangeSubmissionWithFilterWithoutConditionValueFails(
 						Instrument: &types.UpdateInstrumentConfiguration{
 							Product: &types.UpdateInstrumentConfiguration_Future{
 								Future: &types.UpdateFutureProduct{
-									OracleSpecForSettlementPrice: &oraclespb.OracleSpecConfiguration{
+									OracleSpecForSettlementData: &oraclespb.OracleSpecConfiguration{
 										Filters: []*oraclespb.Filter{
 											{
 												Conditions: []*oraclespb.Condition{
@@ -1412,8 +1412,8 @@ func testUpdateFutureMarketChangeSubmissionWithFilterWithoutConditionValueFails(
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_price.filters.0.conditions.0.value"), commands.ErrIsRequired)
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_price.filters.0.conditions.1.value"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_data.filters.0.conditions.0.value"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_for_settlement_data.filters.0.conditions.1.value"), commands.ErrIsRequired)
 }
 
 func testUpdateFutureMarketChangeSubmissionWithFilterWithConditionValueSucceeds(t *testing.T) {
@@ -1425,7 +1425,7 @@ func testUpdateFutureMarketChangeSubmissionWithFilterWithConditionValueSucceeds(
 						Instrument: &types.UpdateInstrumentConfiguration{
 							Product: &types.UpdateInstrumentConfiguration_Future{
 								Future: &types.UpdateFutureProduct{
-									OracleSpecForSettlementPrice: &oraclespb.OracleSpecConfiguration{
+									OracleSpecForSettlementData: &oraclespb.OracleSpecConfiguration{
 										Filters: []*oraclespb.Filter{
 											{
 												Conditions: []*oraclespb.Condition{
@@ -1551,7 +1551,7 @@ func testUpdateFutureMarketChangeSubmissionWithNoMismatchBetweenFilterAndBinding
 						Instrument: &types.UpdateInstrumentConfiguration{
 							Product: &types.UpdateInstrumentConfiguration_Future{
 								Future: &types.UpdateFutureProduct{
-									OracleSpecForSettlementPrice: &oraclespb.OracleSpecConfiguration{
+									OracleSpecForSettlementData: &oraclespb.OracleSpecConfiguration{
 										Filters: []*oraclespb.Filter{
 											{
 												Key: &oraclespb.PropertyKey{

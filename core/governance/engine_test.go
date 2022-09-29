@@ -911,7 +911,7 @@ func newMarketTerms(termFilter *types.OracleSpecFilter, termBinding *types.Oracl
 						Future: &types.FutureProduct{
 							SettlementAsset: "VUSD",
 							QuoteName:       "VUSD",
-							OracleSpecForSettlementPrice: &types.OracleSpecConfiguration{
+							OracleSpecForSettlementData: &types.OracleSpecConfiguration{
 								PubKeys: []string{"0xDEADBEEF"},
 								Filters: []*types.OracleSpecFilter{
 									{
@@ -981,7 +981,7 @@ func updateMarketTerms(termFilter *types.OracleSpecFilter, termBinding *types.Or
 					Product: &types.UpdateInstrumentConfigurationFuture{
 						Future: &types.UpdateFutureProduct{
 							QuoteName: "VUSD",
-							OracleSpecForSettlementPrice: &types.OracleSpecConfiguration{
+							OracleSpecForSettlementData: &types.OracleSpecConfiguration{
 								PubKeys: []string{"0xDEADBEEF"},
 								Filters: []*types.OracleSpecFilter{
 									{

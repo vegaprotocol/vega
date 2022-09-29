@@ -13,6 +13,7 @@
 
 ### 🐛 Fixes
 - [6266](https://github.com/vegaprotocol/vega/issues/6266) - Do not take a snapshot at block height 1 and handle increase of interval appropriately
+- [6364](https://github.com/vegaprotocol/vega/issues/6364) - Fix naming for oracle spec settlement data
 
 ## 0.57.0
 

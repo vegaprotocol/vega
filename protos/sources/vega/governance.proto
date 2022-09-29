@@ -14,8 +14,8 @@ message FutureProduct {
   string settlement_asset = 2 ;
   // Product quote name
   string quote_name = 3;
-  // The oracle spec describing the oracle data of settlement price
-  oracles.v1.OracleSpecConfiguration oracle_spec_for_settlement_price = 5;
+  // The oracle spec describing the oracle data of settlement data
+  oracles.v1.OracleSpecConfiguration oracle_spec_for_settlement_data = 5;
   // The oracle spec describing the oracle data of trading termination
   oracles.v1.OracleSpecConfiguration oracle_spec_for_trading_termination = 6;
   // The binding between the oracle spec and the settlement price
@@ -63,7 +63,7 @@ message NewMarketConfiguration {
 // New market on Vega
 message NewMarket {
   // The configuration of the new market
-  NewMarketConfiguration changes = 1;  
+  NewMarketConfiguration changes = 1;
 }
 
 // Update an existing market on Vega
@@ -108,8 +108,8 @@ message UpdateInstrumentConfiguration {
 message UpdateFutureProduct {
   // Human-readable name/abbreviation of the quote name
   string quote_name = 1;
-  // The oracle spec describing the oracle data of settlement price
-  oracles.v1.OracleSpecConfiguration oracle_spec_for_settlement_price = 2;
+  // The oracle spec describing the oracle data of settlement data
+  oracles.v1.OracleSpecConfiguration oracle_spec_for_settlement_data = 2;
   // The oracle spec describing the oracle data of trading termination
   oracles.v1.OracleSpecConfiguration oracle_spec_for_trading_termination = 3;
   // The binding between the oracle spec and the settlement price

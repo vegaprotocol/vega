@@ -225,7 +225,7 @@ func (f *Future) updateSettlementPrice(ctx context.Context, data oracles.OracleD
 }
 
 func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe OracleEngine) (*Future, error) {
-	if f.OracleSpecForSettlementPrice == nil || f.OracleSpecForTradingTermination == nil || f.OracleSpecBinding == nil {
+	if f.OracleSpecForSettlementData == nil || f.OracleSpecForTradingTermination == nil || f.OracleSpecBinding == nil {
 		return nil, ErrOracleSpecAndBindingAreRequired
 	}
 
@@ -245,7 +245,7 @@ func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 	}
 
 	// Oracle spec for settlement price.
-	oracleSpecForSettlementPrice, err := oracles.NewOracleSpec(*f.OracleSpecForSettlementPrice)
+	oracleSpecForSettlementPrice, err := oracles.NewOracleSpec(*f.OracleSpecForSettlementData)
 	if err != nil {
 		return nil, err
 	}

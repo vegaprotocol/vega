@@ -46,7 +46,7 @@ func MarketProposalTxn(now time.Time, oraclePubkey string) (*walletpb.SubmitTran
 									Future: &vega.FutureProduct{
 										SettlementAsset: asset,
 										QuoteName:       "BTCUSD",
-										OracleSpecForSettlementPrice: &oraclesv1.OracleSpecConfiguration{
+										OracleSpecForSettlementData: &oraclesv1.OracleSpecConfiguration{
 											PubKeys: []string{oraclePubkey},
 											Filters: []*oraclesv1.Filter{
 												{

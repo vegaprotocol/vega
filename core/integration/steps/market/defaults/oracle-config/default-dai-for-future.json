@@ -1,5 +1,5 @@
 {
-  "oracleSpecForSettlementPrice": {
+  "oracleSpecForSettlementData": {
     "id": "100",
     "pubKeys": ["0x0000"],
     "filters": [

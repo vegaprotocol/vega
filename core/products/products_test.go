@@ -45,7 +45,7 @@ func getValidInstrumentProto() *types.Instrument {
 			Future: &types.Future{
 				QuoteName:       "USD",
 				SettlementAsset: SettlementAssetStr,
-				OracleSpecForSettlementPrice: &types.OracleSpec{
+				OracleSpecForSettlementData: &types.OracleSpec{
 					PubKeys: []string{"0xDEADBEEF"},
 					Filters: []*types.OracleSpecFilter{
 						{

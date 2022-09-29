@@ -85,7 +85,7 @@ func testFuture(t *testing.T) *tstFuture {
 	f := &types.Future{
 		SettlementAsset: "ETH",
 		QuoteName:       "ETH",
-		OracleSpecForSettlementPrice: &types.OracleSpec{
+		OracleSpecForSettlementData: &types.OracleSpec{
 			PubKeys: []string{"0xDEADBEEF"},
 			Filters: []*types.OracleSpecFilter{
 				{

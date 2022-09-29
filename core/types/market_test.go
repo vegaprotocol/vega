@@ -49,7 +49,7 @@ func TestMarketFromIntoProto(t *testing.T) {
 					Future: &proto.Future{
 						SettlementAsset: "GBP",
 						QuoteName:       "USD",
-						OracleSpecForSettlementPrice: &v1.OracleSpec{
+						OracleSpecForSettlementData: &v1.OracleSpec{
 							Id:        "os1",
 							CreatedAt: 0,
 							UpdatedAt: 1,

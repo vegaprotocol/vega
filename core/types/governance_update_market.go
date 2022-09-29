@@ -304,7 +304,7 @@ func UpdateInstrumentConfigurationFromProto(p *vegapb.UpdateInstrumentConfigurat
 		r.Product = &UpdateInstrumentConfigurationFuture{
 			Future: &UpdateFutureProduct{
 				QuoteName:                       pr.Future.QuoteName,
-				OracleSpecForSettlementPrice:    OracleSpecConfigurationFromProto(pr.Future.OracleSpecForSettlementPrice),
+				OracleSpecForSettlementData:     OracleSpecConfigurationFromProto(pr.Future.OracleSpecForSettlementData),
 				OracleSpecForTradingTermination: OracleSpecConfigurationFromProto(pr.Future.OracleSpecForTradingTermination),
 				SettlementDataDecimals:          pr.Future.SettlementDataDecimals,
 				OracleSpecBinding:               OracleSpecBindingForFutureFromProto(pr.Future.OracleSpecBinding),
@@ -316,7 +316,7 @@ func UpdateInstrumentConfigurationFromProto(p *vegapb.UpdateInstrumentConfigurat
 
 type UpdateFutureProduct struct {
 	QuoteName                       string
-	OracleSpecForSettlementPrice    *OracleSpecConfiguration
+	OracleSpecForSettlementData     *OracleSpecConfiguration
 	OracleSpecForTradingTermination *OracleSpecConfiguration
 	OracleSpecBinding               *OracleSpecBindingForFuture
 	SettlementDataDecimals          uint32
@@ -325,7 +325,7 @@ type UpdateFutureProduct struct {
 func (f UpdateFutureProduct) IntoProto() *vegapb.UpdateFutureProduct {
 	return &vegapb.UpdateFutureProduct{
 		QuoteName:                       f.QuoteName,
-		OracleSpecForSettlementPrice:    f.OracleSpecForSettlementPrice.IntoProto(),
+		OracleSpecForSettlementData:     f.OracleSpecForSettlementData.IntoProto(),
 		OracleSpecForTradingTermination: f.OracleSpecForTradingTermination.IntoProto(),
 		OracleSpecBinding:               f.OracleSpecBinding.IntoProto(),
 		SettlementDataDecimals:          f.SettlementDataDecimals,
@@ -335,7 +335,7 @@ func (f UpdateFutureProduct) IntoProto() *vegapb.UpdateFutureProduct {
 func (f UpdateFutureProduct) DeepClone() *UpdateFutureProduct {
 	return &UpdateFutureProduct{
 		QuoteName:                       f.QuoteName,
-		OracleSpecForSettlementPrice:    f.OracleSpecForSettlementPrice.DeepClone(),
+		OracleSpecForSettlementData:     f.OracleSpecForSettlementData.DeepClone(),
 		OracleSpecForTradingTermination: f.OracleSpecForTradingTermination.DeepClone(),
 		OracleSpecBinding:               f.OracleSpecBinding.DeepClone(),
 		SettlementDataDecimals:          f.SettlementDataDecimals,
@@ -346,7 +346,7 @@ func (f UpdateFutureProduct) String() string {
 	return fmt.Sprintf(
 		"quoteName(%s) oracleSpec(settlementPrice(%s) tradingTermination(%s) binding(%s))",
 		f.QuoteName,
-		reflectPointerToString(f.OracleSpecForSettlementPrice),
+		reflectPointerToString(f.OracleSpecForSettlementData),
 		reflectPointerToString(f.OracleSpecForTradingTermination),
 		reflectPointerToString(f.OracleSpecBinding),
 	)

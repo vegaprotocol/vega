@@ -179,7 +179,7 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 			futureUp := &types.UpdateFutureProduct{
 				QuoteName:              ti.Future.QuoteName,
 				SettlementDataDecimals: settlementDecimals,
-				OracleSpecForSettlementPrice: &types.OracleSpecConfiguration{
+				OracleSpecForSettlementData: &types.OracleSpecConfiguration{
 					PubKeys: settleSpec.PubKeys,
 					Filters: settleSpec.Filters,
 				},
@@ -193,7 +193,7 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 				}),
 			}
 			ti.Future.SettlementDataDecimals = settlementDecimals
-			ti.Future.OracleSpecForSettlementPrice = settleSpec
+			ti.Future.OracleSpecForSettlementData = settleSpec
 			ti.Future.OracleSpecBinding = futureUp.OracleSpecBinding
 			ti.Future.OracleSpecForTradingTermination = termSpec
 			// ensure we update the existing market
@@ -326,7 +326,7 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 					Future: &types.Future{
 						SettlementAsset:                 row.asset(),
 						QuoteName:                       row.quoteName(),
-						OracleSpecForSettlementPrice:    types.OracleSpecFromProto(oracleConfigForSettlement.Spec),
+						OracleSpecForSettlementData:     types.OracleSpecFromProto(oracleConfigForSettlement.Spec),
 						OracleSpecForTradingTermination: types.OracleSpecFromProto(oracleConfigForTradingTermination.Spec),
 						OracleSpecBinding:               types.OracleSpecBindingForFutureFromProto(&binding),
 						SettlementDataDecimals:          settlementDataDecimals,

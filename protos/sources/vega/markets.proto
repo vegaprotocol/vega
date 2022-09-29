@@ -25,8 +25,8 @@ message Future {
   string settlement_asset = 2;
   // Quote name of the instrument
   string quote_name = 4;
-  // The oracle spec describing the settlement price oracle filter
-  oracles.v1.OracleSpec oracle_spec_for_settlement_price = 5;
+  // The oracle spec describing the settlement data oracle filter
+  oracles.v1.OracleSpec oracle_spec_for_settlement_data = 5;
 
   // the oracle spec describing the trading termination oracle filter
   oracles.v1.OracleSpec oracle_spec_for_trading_termination = 6;

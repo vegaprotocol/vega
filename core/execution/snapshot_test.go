@@ -312,7 +312,7 @@ func newMarket(ID, pubKey string) *types.Market {
 				Product: &types.InstrumentFuture{
 					Future: &types.Future{
 						SettlementAsset: "Ethereum/Ether",
-						OracleSpecForSettlementPrice: &types.OracleSpec{
+						OracleSpecForSettlementData: &types.OracleSpec{
 							ID:      hex.EncodeToString(crypto.Hash([]byte(ID + "price"))),
 							PubKeys: []string{pubKey},
 							Filters: []*types.OracleSpecFilter{
