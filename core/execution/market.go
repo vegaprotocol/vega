@@ -1737,12 +1737,8 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 		distressedParties = append(distressedParties, v.Party())
 	}
 	// cancel pending orders for parties
-	rmorders, err := m.matching.RemoveDistressedOrders(distressedPos)
-	if err != nil {
-		m.log.Panic("Failed to remove distressed parties from the orderbook",
-			logging.Error(err),
-		)
-	}
+	rmorders := m.matching.RemoveDistressedOrders(distressedPos)
+
 	mktID := m.GetID()
 	// push rm orders into buf
 	// and remove the orders from the positions engine

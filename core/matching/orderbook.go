@@ -913,7 +913,7 @@ func (b *OrderBook) GetOrderByID(orderID string) (*types.Order, error) {
 // RemoveDistressedOrders remove from the book all order holding distressed positions.
 func (b *OrderBook) RemoveDistressedOrders(
 	parties []events.MarketPosition,
-) ([]*types.Order, error) {
+) []*types.Order {
 	rmorders := []*types.Order{}
 
 	for _, party := range parties {
@@ -929,22 +929,18 @@ func (b *OrderBook) RemoveDistressedOrders(
 		for _, o := range orders {
 			confirm, err := b.CancelOrder(o)
 			if err != nil {
-				if b.log.GetLevel() == logging.DebugLevel {
-					b.log.Debug(
-						"Failed to cancel a given order for party",
-						logging.Order(*o),
-						logging.String("party", party.Party()),
-						logging.Error(err))
-				}
-				// let's see whether we need to handle this further down
-				continue
+				b.log.Panic(
+					"Failed to cancel a given order for party",
+					logging.Order(*o),
+					logging.String("party", party.Party()),
+					logging.Error(err))
 			}
 			// here we set the status of the order as stopped as the system triggered it as well.
 			confirm.Order.Status = types.OrderStatusStopped
 			rmorders = append(rmorders, confirm.Order)
 		}
 	}
-	return rmorders, nil
+	return rmorders
 }
 
 func (b OrderBook) getSide(orderSide types.Side) *OrderBookSide {

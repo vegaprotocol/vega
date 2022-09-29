@@ -284,8 +284,7 @@ func testGTCStoppedNotFilled(t *testing.T) {
 	assert.NoError(t, err)
 
 	// then stop the order
-	rmOrders, err := book.ob.RemoveDistressedOrders([]events.MarketPosition{marketPositionFake{partyID1}})
-	assert.NoError(t, err)
+	rmOrders := book.ob.RemoveDistressedOrders([]events.MarketPosition{marketPositionFake{partyID1}})
 	assert.Len(t, rmOrders, 1)
 	assert.Equal(t, types.OrderStatusStopped, rmOrders[0].Status)
 }
@@ -458,8 +457,7 @@ func testGTCStoppedPartiallyFilled(t *testing.T) {
 	assert.NoError(t, err)
 
 	// then stop the order
-	rmOrders, err := book.ob.RemoveDistressedOrders([]events.MarketPosition{marketPositionFake{partyID1}})
-	assert.NoError(t, err)
+	rmOrders := book.ob.RemoveDistressedOrders([]events.MarketPosition{marketPositionFake{partyID1}})
 	assert.Len(t, rmOrders, 1)
 	assert.Equal(t, types.OrderStatusStopped, rmOrders[0].Status)
 }
@@ -562,8 +560,7 @@ func testGTTStoppedNotFilled(t *testing.T) {
 	assert.NoError(t, err)
 
 	// then stop the order
-	rmOrders, err := book.ob.RemoveDistressedOrders([]events.MarketPosition{marketPositionFake{partyID1}})
-	assert.NoError(t, err)
+	rmOrders := book.ob.RemoveDistressedOrders([]events.MarketPosition{marketPositionFake{partyID1}})
 	assert.Len(t, rmOrders, 1)
 	assert.Equal(t, types.OrderStatusStopped, rmOrders[0].Status)
 }
@@ -745,8 +742,7 @@ func testGTTStoppedPartiallyFilled(t *testing.T) {
 	assert.NoError(t, err)
 
 	// then stop the order
-	rmOrders, err := book.ob.RemoveDistressedOrders([]events.MarketPosition{marketPositionFake{partyID1}})
-	assert.NoError(t, err)
+	rmOrders := book.ob.RemoveDistressedOrders([]events.MarketPosition{marketPositionFake{partyID1}})
 	assert.Len(t, rmOrders, 1)
 	assert.Equal(t, types.OrderStatusStopped, rmOrders[0].Status)
 }

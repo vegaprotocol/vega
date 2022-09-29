@@ -182,7 +182,7 @@ func (b *CachedOrderBook) DeleteOrder(
 
 func (b *CachedOrderBook) RemoveDistressedOrders(
 	parties []events.MarketPosition,
-) ([]*types.Order, error) {
+) []*types.Order {
 	b.cache.Invalidate()
 	return b.OrderBook.RemoveDistressedOrders(parties)
 }

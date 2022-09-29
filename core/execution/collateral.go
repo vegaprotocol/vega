@@ -33,12 +33,12 @@ func (m *Market) transferMarginsLiquidityProvisionAmendAuction(
 	market := m.GetID()
 	// This is ultimately the same behaviour than update on order
 	// all or nothing of margin needsto be transferred
-	tsfr, _, err := m.collateral.MarginUpdateOnOrder(ctx, market, risk)
+	ledgerMvts, _, err := m.collateral.MarginUpdateOnOrder(ctx, market, risk)
 	if err != nil {
 		return err
 	}
 
-	m.broker.Send(events.NewLedgerMovements(ctx, []*types.LedgerMovement{tsfr}))
+	m.broker.Send(events.NewLedgerMovements(ctx, []*types.LedgerMovement{ledgerMvts}))
 	return nil
 }
 
@@ -62,10 +62,7 @@ func (m *Market) transferMarginsAuction(ctx context.Context, risk []events.Risk,
 		evts = append(evts, events.NewLedgerMovements(ctx, []*types.LedgerMovement{tr}))
 	}
 	m.broker.SendBatch(evts)
-	rmorders, err := m.matching.RemoveDistressedOrders(distressed)
-	if err != nil {
-		return err
-	}
+	rmorders := m.matching.RemoveDistressedOrders(distressed)
 	evts = make([]events.Event, 0, len(rmorders))
 	for _, o := range rmorders {
 		// cancel order
@@ -115,7 +112,7 @@ func (m *Market) transferRecheckMargins(ctx context.Context, risk []events.Risk)
 
 func (m *Market) transferMarginsContinuous(ctx context.Context, risk []events.Risk) error {
 	if len(risk) > 1 {
-		return errors.New("transferMarginsContinuous should not be possible when len(risk) > 1")
+		m.log.Panic("transferMarginsContinuous should not be possible when len(risk) > 1", logging.Int("len", len(risk)))
 	}
 	if len(risk) == 0 {
 		return nil
@@ -126,23 +123,23 @@ func (m *Market) transferMarginsContinuous(ctx context.Context, risk []events.Ri
 		return err
 	}
 	// if LP shortfall is not empty, this party will have to pay the LP penalty
-	responses := make([]*types.LedgerMovement, 0, len(risk))
+	ledgerMvts := make([]*types.LedgerMovement, 0, len(risk))
 	if tr != nil {
-		responses = append(responses, tr)
+		ledgerMvts = append(ledgerMvts, tr)
 	}
 	// margin shortfall && liquidity provider -> bond slashing
 	if closed != nil && !closed.MarginShortFall().IsZero() {
 		// we pay the bond penalty if the order was not pending
 		if !m.liquidity.IsPending(closed.Party()) {
 			// get bond penalty
-			resp, err := m.bondSlashing(ctx, closed)
+			ledgerMvt, err := m.bondSlashing(ctx, closed)
 			if err != nil {
 				return err
 			}
-			responses = append(responses, resp...)
+			ledgerMvts = append(ledgerMvts, ledgerMvt...)
 		}
 	}
-	m.broker.Send(events.NewLedgerMovements(ctx, responses))
+	m.broker.Send(events.NewLedgerMovements(ctx, ledgerMvts))
 	return nil
 }
 
