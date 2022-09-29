@@ -33,7 +33,6 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	"github.com/cosmos/iavl"
-	"github.com/tendermint/tendermint/libs/strings"
 	db "github.com/tendermint/tm-db"
 )
 
@@ -147,7 +146,6 @@ var nodeOrder = []types.SnapshotNamespace{
 	types.StakeVerifierSnapshot,
 	types.SpamSnapshot,
 	types.LimitSnapshot,
-	types.ReplayProtectionSnapshot,
 	types.RewardSnapshot,
 	types.TopologySnapshot,
 	types.EventForwarderSnapshot,
@@ -1044,32 +1042,9 @@ func (e *Engine) AddProviders(provs ...types.StateProvider) {
 			e.nsKeys[ns] = keys
 			continue
 		}
-		// in this case, we are replacing the provider
-		if ns == types.ReplayProtectionSnapshot {
-			for _, k := range keys {
-				fullKey := types.GetNodeKey(ns, k)
-				// replace the old provider with the replacement
-				e.providers[fullKey] = p
-			}
-			rpl := false
-			// replace provider reference in the NS map, too
-			for i, oldP := range e.providersNS[ns] {
-				// both in same namespace, have same keys -> replace
-				if strings.StringSliceEqual(keys, oldP.Keys()) {
-					e.providersNS[ns][i] = p
-					rpl = true
-					break
-				}
-			}
-			// we found an exact match, and replaced the provider
-			if rpl {
-				continue
-			}
-			// no exact match was found, so we'll have to de-duplicate
-		}
+
 		dedup := uniqueSubset(haveKeys, keys)
-		// note that the replay protection provider can replace itself (Noop -> actual protector)
-		if len(dedup) == 0 && ns != types.ReplayProtectionSnapshot {
+		if len(dedup) == 0 {
 			continue // no new keys were added
 		}
 		e.nsKeys[ns] = append(e.nsKeys[ns], dedup...)
