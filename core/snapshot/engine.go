@@ -200,7 +200,7 @@ func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Lo
 		wrap:            appPL,
 		app:             appPL.AppState,
 		interval:        1, // default to every block
-		current:         1,
+		current:         -1,
 	}
 	return eng, nil
 }
@@ -1085,10 +1085,12 @@ func (e *Engine) Close() error {
 }
 
 func (e *Engine) OnSnapshotIntervalUpdate(ctx context.Context, interval int64) error {
-	e.interval = interval
-	if interval < e.current {
+	if interval < e.current || e.current < 0 {
 		e.current = interval
+	} else if interval > e.interval {
+		e.current += interval - e.interval
 	}
+	e.interval = interval
 	return nil
 }
 
