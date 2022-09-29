@@ -18,6 +18,7 @@ import (
 	"strconv"
 	"sync"
 
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/jackc/pgconn"
@@ -26,6 +27,11 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
+)
+
+var (
+	numSpareConnections = 15 // If possible, the pool size will be (max_connections - numSpareConnections).
+	poolSizeLowerBound  = 10 // But it will never be lower than this.
 )
 
 type Connection interface {
@@ -92,11 +98,7 @@ func setMaxPoolSize(ctx context.Context, poolConfig *pgxpool.Config) error {
 		return fmt.Errorf("max_connections was not an integer: %w", err)
 	}
 
-	if maxConnections < 6 {
-		maxConnections = 6
-	}
-
-	poolConfig.MaxConns = int32(maxConnections) - 5
+	poolConfig.MaxConns = int32(num.MaxV(maxConnections-numSpareConnections, poolSizeLowerBound))
 	return nil
 }
 
