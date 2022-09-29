@@ -13,6 +13,7 @@
 
 ### 🐛 Fixes
 - [6266](https://github.com/vegaprotocol/vega/issues/6266) - Do not take a snapshot at block height 1 and handle increase of interval appropriately
+- [6338](https://github.com/vegaprotocol/vega/issues/6338) - Fix validation for update an new asset proposals
 
 ## 0.57.0
 

@@ -288,6 +288,14 @@ func checkUpdateAssetChanges(change *types.ProposalTerms_UpdateAsset) Errors {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.update_asset.changes", ErrIsRequired)
 	}
 
+	if len(change.UpdateAsset.Changes.Quantum) <= 0 {
+		errs.AddForProperty("proposal_submission.terms.change.update_asset.changes.quantum", ErrIsRequired)
+	} else if quantum, err := num.DecimalFromString(change.UpdateAsset.Changes.Quantum); err != nil {
+		errs.AddForProperty("proposal_submission.terms.change.update_asset.changes.quantum", ErrIsNotValidNumber)
+	} else if quantum.LessThanOrEqual(num.DecimalZero()) {
+		errs.AddForProperty("proposal_submission.terms.change.update_asset.changes.quantum", ErrMustBePositive)
+	}
+
 	if change.UpdateAsset.Changes.Source == nil {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.update_asset.changes.source", ErrIsRequired)
 	}
