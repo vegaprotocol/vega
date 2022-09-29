@@ -19,6 +19,8 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/protos/vega"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
@@ -156,4 +158,36 @@ func TestEpochSnapshotCompare(t *testing.T) {
 	newData, _, err := service.GetState("all")
 	require.Nil(t, err)
 	require.Equal(t, data, newData)
+}
+
+func TestEpochSnapshotAfterCheckpoint(t *testing.T) {
+	ctx := context.Background()
+	service := getEpochServiceMT(t)
+	defer service.ctrl.Finish()
+
+	service.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// load from a checkpoint
+	pb := &eventspb.EpochEvent{
+		Seq:        10,
+		Action:     vega.EpochAction_EPOCH_ACTION_START,
+		ExpireTime: 1664369813556378344,
+		EndTime:    1664362613556378344,
+	}
+
+	cpt, err := proto.Marshal(pb)
+	require.NoError(t, err)
+	require.NoError(t, service.Load(ctx, cpt))
+
+	// Force creation of first epoch to trigger a snapshot of the first epoch
+	service.cb(ctx, time.Unix(0, 1664364245193844630))
+
+	d, _, err := service.GetState("all")
+	require.NoError(t, err)
+	snap := &snapshot.Payload{}
+	err = proto.Unmarshal(d, snap)
+	require.Nil(t, err)
+
+	require.NotNil(t, snap.GetEpoch())
+	require.Equal(t, uint64(10), snap.GetEpoch().Seq)
 }
