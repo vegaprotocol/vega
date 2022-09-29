@@ -625,14 +625,28 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 	// let's assume genesis block is block 0
 	app.abci.SetChainID(req.ChainId)
 	app.chainCtx = vgcontext.WithChainID(context.Background(), req.ChainId)
-	ctx := vgcontext.WithBlockHeight(app.chainCtx, 0)
+	ctx := vgcontext.WithBlockHeight(app.chainCtx, req.InitialHeight)
 	ctx = vgcontext.WithTraceID(ctx, hash)
 	app.blockCtx = ctx
+
+	app.broker.Send(
+		events.NewBeginBlock(ctx, eventspb.BeginBlock{
+			Height:    uint64(req.InitialHeight),
+			Timestamp: req.Time.UnixNano(),
+			Hash:      hash,
+		}),
+	)
 
 	if err := app.ghandler.OnGenesis(ctx, req.Time, req.AppStateBytes); err != nil {
 		app.cancel()
 		app.log.Fatal("couldn't initialise vega with the genesis block", logging.Error(err))
 	}
+
+	app.broker.Send(
+		events.NewEndBlock(ctx, eventspb.EndBlock{
+			Height: uint64(req.InitialHeight),
+		}),
+	)
 
 	return tmtypes.ResponseInitChain{
 		Validators: app.top.GetValidatorPowerUpdates(),
