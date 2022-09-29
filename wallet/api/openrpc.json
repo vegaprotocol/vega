@@ -641,7 +641,7 @@
                 "version": {
                   "type": "number"
                 },
-                "recoverPhrase": {
+                "recoveryPhrase": {
                   "type": "string"
                 },
                 "filePath": {
