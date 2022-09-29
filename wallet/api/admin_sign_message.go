@@ -17,7 +17,7 @@ type AdminSignMessageParams struct {
 }
 
 type AdminSignMessageResult struct {
-	Base64Signature string `json:"base64Signature"`
+	Base64Signature string `json:"encodedSignature"`
 }
 
 type AdminSignMessage struct {
