@@ -510,3 +510,64 @@ func testClosingEngineDoesNotPanicWhenNotInitialised(t *testing.T) {
 		require.NoError(t, engine.Close())
 	})
 }
+
+func TestUpdateInterval(t *testing.T) {
+	e := getTestEngine(t)
+	require.NoError(t, e.OnSnapshotIntervalUpdate(context.Background(), 10))
+	for i := 0; i < 9; i++ {
+		b, error := e.Snapshot(context.Background())
+		require.Nil(t, b)
+		require.Nil(t, error)
+	}
+	e.time.EXPECT().GetTimeNow().Times(1).Return(time.Now())
+	ctx := vegactx.WithChainID(context.Background(), "chain-id")
+	ctx = vegactx.WithTraceID(vegactx.WithBlockHeight(ctx, 10), "0xDEADBEEF")
+	b, error := e.Snapshot(ctx)
+	require.NotNil(t, b)
+	require.NoError(t, error)
+
+	// interval is now 10 and current will have been set to 10, lets change the interval to 5
+	// run 4 blocks, no snapshot should be taken
+	require.NoError(t, e.OnSnapshotIntervalUpdate(context.Background(), 5))
+	for i := 0; i < 4; i++ {
+		b, error := e.Snapshot(context.Background())
+		require.Nil(t, b)
+		require.Nil(t, error)
+	}
+	e.time.EXPECT().GetTimeNow().Times(1).Return(time.Now())
+	ctx = vegactx.WithChainID(context.Background(), "chain-id")
+	ctx = vegactx.WithTraceID(vegactx.WithBlockHeight(ctx, 15), "0xDEADBEEF")
+	b, error = e.Snapshot(ctx)
+	require.NotNil(t, b)
+	require.NoError(t, error)
+
+	// interval is now 5 and let it run for a couple of blocks so current is 3 then we change the interval to 15 and expect current to be 12
+	for i := 0; i < 2; i++ {
+		b, error := e.Snapshot(context.Background())
+		require.Nil(t, b)
+		require.Nil(t, error)
+	}
+	require.NoError(t, e.OnSnapshotIntervalUpdate(context.Background(), 15))
+	for i := 0; i < 12; i++ {
+		b, error := e.Snapshot(context.Background())
+		require.Nil(t, b)
+		require.Nil(t, error)
+	}
+	e.time.EXPECT().GetTimeNow().Times(1).Return(time.Now())
+	ctx = vegactx.WithChainID(context.Background(), "chain-id")
+	ctx = vegactx.WithTraceID(vegactx.WithBlockHeight(ctx, 30), "0xDEADBEEF")
+	b, error = e.Snapshot(ctx)
+	require.NotNil(t, b)
+	require.NoError(t, error)
+
+	// finally lets change the interval to 1 and expect snapshot to be taken every block
+	require.NoError(t, e.OnSnapshotIntervalUpdate(context.Background(), 1))
+	for i := 0; i < 5; i++ {
+		ctx = vegactx.WithChainID(context.Background(), "chain-id")
+		ctx = vegactx.WithTraceID(vegactx.WithBlockHeight(ctx, 31+int64(i)), "0xDEADBEEF")
+		e.time.EXPECT().GetTimeNow().Times(1).Return(time.Now())
+		b, error := e.Snapshot(ctx)
+		require.NotNil(t, b)
+		require.NoError(t, error)
+	}
+}
