@@ -27,6 +27,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	"code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -75,8 +76,8 @@ func TestVotes(t *testing.T) {
 
 	party1 := addTestParty(t, partyStore, block1)
 	party2 := addTestParty(t, partyStore, block1)
-	prop1 := addTestProposal(t, propStore, generateID(), party1, generateID(), block1, entities.ProposalStateEnacted, entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl1.com", Description: "desc"}}, entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewMarket{}}})
-	prop2 := addTestProposal(t, propStore, generateID(), party1, generateID(), block1, entities.ProposalStateEnacted, entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl2.com", Description: "desc"}}, entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewMarket{}}})
+	prop1 := addTestProposal(t, propStore, helpers.GenerateID(), party1, helpers.GenerateID(), block1, entities.ProposalStateEnacted, entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl1.com", Description: "desc"}}, entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewMarket{}}})
+	prop2 := addTestProposal(t, propStore, helpers.GenerateID(), party1, helpers.GenerateID(), block1, entities.ProposalStateEnacted, entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl2.com", Description: "desc"}}, entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewMarket{}}})
 
 	party1ID := party1.ID.String()
 	prop1ID := prop1.ID.String()
@@ -151,9 +152,9 @@ func setupPaginationTestVotes(t *testing.T) (*sqlstore.Votes, entities.Party, []
 		block = addTestBlockForTime(t, blockStore, blockTime)
 		prop := addTestProposal(t,
 			propStore,
-			generateID(),
+			helpers.GenerateID(),
 			party,
-			generateID(),
+			helpers.GenerateID(),
 			block,
 			entities.ProposalStateEnacted,
 			entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: fmt.Sprintf("myurl%02d.com", i+1), Description: "desc"}},

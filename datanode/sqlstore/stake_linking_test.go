@@ -20,6 +20,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	"code.vegaprotocol.io/vega/libs/num"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"github.com/jackc/pgx/v4"
@@ -441,7 +442,7 @@ func addStakeLinking(t *testing.T, ctx context.Context, ls *sqlstore.StakeLinkin
 		Amount:             decimal.NewFromFloat(1),
 		StakeLinkingStatus: entities.StakeLinkingStatusAccepted,
 		FinalizedAt:        block.VegaTime,
-		ForeignTxHash:      generateID(),
+		ForeignTxHash:      helpers.GenerateID(),
 		LogIndex:           logIndex,
 		EthereumAddress:    "0xfe179560b9d0cc44c5fea54c2167c1cee7ccfcabf294752a4f43fb64ddffda85",
 		VegaTime:           block.VegaTime,

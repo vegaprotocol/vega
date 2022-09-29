@@ -25,6 +25,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/protos/vega"
 )
@@ -90,11 +91,11 @@ func TestProposals(t *testing.T) {
 	rationale2 := entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl2.com", Description: "desc"}}
 	terms1 := entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewMarket{NewMarket: &vega.NewMarket{}}}}
 	terms2 := entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewAsset{NewAsset: &vega.NewAsset{}}}}
-	id1 := generateID()
-	id2 := generateID()
+	id1 := helpers.GenerateID()
+	id2 := helpers.GenerateID()
 
-	reference1 := generateID()
-	reference2 := generateID()
+	reference1 := helpers.GenerateID()
+	reference2 := helpers.GenerateID()
 	prop1 := addTestProposal(t, propStore, id1, party1, reference1, block1, entities.ProposalStateEnacted, rationale1, terms1)
 	prop2 := addTestProposal(t, propStore, id2, party2, reference2, block1, entities.ProposalStateEnacted, rationale2, terms2)
 

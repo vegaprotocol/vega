@@ -33,6 +33,7 @@
 - [6458](https://github.com/vegaprotocol/vega/issues/6458) - Return a context aware message in `RequestSuccessful` interaction
 - [6451](https://github.com/vegaprotocol/vega/issues/6451) - Improve interaction error message
 - [6432](https://github.com/vegaprotocol/vega/issues/6432) - Use optionals for order error and proposal error
+- [6368](https://github.com/vegaprotocol/vega/pull/6368) - Add Ledger Entry API
 
 ### 🐛 Fixes
 - [6444](https://github.com/vegaprotocol/vega/issues/6444) - Send a transaction error if the same node announces itself twice

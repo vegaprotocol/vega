@@ -19,30 +19,11 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-func addTestAccount(t *testing.T,
-	accountStore *sqlstore.Accounts,
-	party entities.Party,
-	asset entities.Asset,
-	block entities.Block,
-) entities.Account {
-	t.Helper()
-	account := entities.Account{
-		PartyID:  party.ID,
-		AssetID:  asset.ID,
-		MarketID: entities.MarketID(generateID()),
-		Type:     types.AccountTypeGeneral,
-		VegaTime: block.VegaTime,
-	}
-
-	err := accountStore.Add(context.Background(), &account)
-	require.NoError(t, err)
-	return account
-}
 
 func TestAccount(t *testing.T) {
 	defer DeleteEverything()
@@ -64,11 +45,11 @@ func TestAccount(t *testing.T) {
 	block := addTestBlock(t, blockStore)
 	asset := addTestAsset(t, assetStore, block)
 	party := addTestParty(t, partyStore, block)
-	account := addTestAccount(t, accountStore, party, asset, block)
+	account := helpers.AddTestAccount(t, accountStore, party, asset, types.AccountTypeInsurance, block)
 
 	// Add a second account, same asset - different party
 	party2 := addTestParty(t, partyStore, block)
-	account2 := addTestAccount(t, accountStore, party2, asset, block)
+	account2 := helpers.AddTestAccount(t, accountStore, party2, asset, types.AccountTypeInsurance, block)
 
 	// Add a couple of test balances
 	addTestBalance(t, balanceStore, block, account, 10)

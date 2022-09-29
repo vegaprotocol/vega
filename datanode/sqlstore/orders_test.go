@@ -21,6 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
@@ -95,7 +96,7 @@ func TestOrders(t *testing.T) {
 	version := int32(1)
 	for i := 0; i < numTestOrders; i++ {
 		order := addTestOrder(t, os,
-			entities.OrderID(generateID()),
+			entities.OrderID(helpers.GenerateID()),
 			block,
 			parties[i%3],
 			markets[i%2],
@@ -258,32 +259,11 @@ func generateParties(t *testing.T, numParties int, block entities.Block, ps *sql
 	return parties
 }
 
-func addTestMarket(t *testing.T, ms *sqlstore.Markets, block entities.Block) entities.Market {
-	t.Helper()
-	market := entities.Market{
-		ID:       entities.MarketID(generateID()),
-		VegaTime: block.VegaTime,
-	}
-
-	err := ms.Upsert(context.Background(), &market)
-	require.NoError(t, err)
-	return market
-}
-
-func generateMarkets(t *testing.T, numMarkets int, block entities.Block, ms *sqlstore.Markets) []entities.Market {
-	t.Helper()
-	markets := make([]entities.Market, numMarkets)
-	for i := 0; i < numMarkets; i++ {
-		markets[i] = addTestMarket(t, ms, block)
-	}
-	return markets
-}
-
 func generateOrderIDs(t *testing.T, numIDs int) []entities.OrderID {
 	t.Helper()
 	orderIDs := make([]entities.OrderID, numIDs)
 	for i := 0; i < numIDs; i++ {
-		orderIDs[i] = entities.OrderID(generateID())
+		orderIDs[i] = entities.OrderID(helpers.GenerateID())
 		time.Sleep(time.Millisecond)
 	}
 	return orderIDs
@@ -444,7 +424,7 @@ func TestOrders_GetLiveOrders(t *testing.T) {
 	// set up the blocks, parties and markets we need to generate the orders
 	blocks := generateTestBlocks(t, 3, bs)
 	parties := generateParties(t, 5, blocks[0], ps)
-	markets := generateMarkets(t, 3, blocks[0], ms)
+	markets := helpers.GenerateMarkets(t, 3, blocks[0], ms)
 	orderIDs := generateOrderIDs(t, 8)
 	testOrders := generateTestOrders(t, blocks, parties, markets, orderIDs, os)
 
@@ -555,7 +535,7 @@ func generateTestOrdersForCursorPagination(t *testing.T, stores *orderTestStores
 
 	blocks := generateTestBlocks(t, 10, stores.bs)
 	parties := generateParties(t, 2, blocks[0], stores.ps)
-	markets := generateMarkets(t, 2, blocks[0], stores.ms)
+	markets := helpers.GenerateMarkets(t, 2, blocks[0], stores.ms)
 	orderIDs := generateOrderIDs(t, 20)
 
 	// Order with multiple versions orderIDs[1]
