@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"code.vegaprotocol.io/vega/libs/num"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
@@ -175,6 +176,14 @@ func checkNewAssetChanges(change *types.ProposalTerms_NewAsset) Errors {
 	}
 	if change.NewAsset.Changes.Decimals == 0 {
 		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.decimals", ErrIsRequired)
+	}
+
+	if len(change.NewAsset.Changes.Quantum) <= 0 {
+		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.quantum", ErrIsRequired)
+	} else if quantum, err := num.DecimalFromString(change.NewAsset.Changes.Quantum); err != nil {
+		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.quantum", ErrIsNotValidNumber)
+	} else if quantum.LessThanOrEqual(num.DecimalZero()) {
+		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.quantum", ErrMustBePositive)
 	}
 
 	if change.NewAsset.Changes.Source == nil {
