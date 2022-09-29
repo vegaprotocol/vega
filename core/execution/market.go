@@ -682,13 +682,10 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 	}
 
 	// first we expire orders
-	expired, err := m.removeExpiredOrders(ctx, t.UnixNano())
-	if err != nil {
-		m.log.Error("unable to get remove expired orders",
-			logging.MarketID(m.GetID()),
-			logging.Error(err))
+	if !m.closed && m.canTrade() {
+		expired := m.removeExpiredOrders(ctx, t.UnixNano())
+		metrics.OrderGaugeAdd(-len(expired), m.GetID())
 	}
-	metrics.OrderGaugeAdd(-len(expired), m.GetID())
 
 	// some engines still needs to get updates:
 	m.pMonitor.OnTimeUpdate(t)
@@ -2957,18 +2954,9 @@ func (m *Market) orderAmendWhenParked(amendOrder *types.Order) *types.OrderConfi
 // RemoveExpiredOrders remove all expired orders from the order book
 // and also any pegged orders that are parked.
 func (m *Market) removeExpiredOrders(
-	ctx context.Context, timestamp int64,
-) ([]*types.Order, error) {
+	ctx context.Context, timestamp int64) []*types.Order {
 	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "RemoveExpiredOrders")
 	defer timer.EngineTimeCounterAdd()
-
-	if m.closed {
-		return nil, ErrMarketClosed
-	}
-
-	if !m.canTrade() {
-		return nil, ErrTradingNotAllowed
-	}
 
 	expired := []*types.Order{}
 	evts := []events.Event{}
@@ -3015,7 +3003,7 @@ func (m *Market) removeExpiredOrders(
 		m.checkForReferenceMoves(ctx, expired, false)
 	}
 
-	return expired, nil
+	return expired
 }
 
 func (m *Market) getBestStaticAskPrice() (*num.Uint, error) {
