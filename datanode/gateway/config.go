@@ -55,6 +55,7 @@ type Config struct {
 	REST                     RESTGatewayServiceConfig `group:"REST" namespace:"rest"`
 	SubscriptionRetries      int                      `long:"subscription-retries" description:" "`
 	GraphQLPlaygroundEnabled encoding.Bool            `long:"graphql-playground" description:"Enables the GraphQL playground"`
+	MaxSubscriptionPerClient uint32                   `long:"max-subscription-per-client" description:"Maximum of graphql subscribption allowed per client"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
@@ -86,5 +87,6 @@ func NewDefaultConfig() Config {
 		},
 		SubscriptionRetries:      3,
 		GraphQLPlaygroundEnabled: true,
+		MaxSubscriptionPerClient: 250,
 	}
 }

@@ -1169,6 +1169,20 @@ func (mr *MockValidatorTopologyMockRecorder) ProcessAnnounceNode(arg0, arg1 inte
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessAnnounceNode", reflect.TypeOf((*MockValidatorTopology)(nil).ProcessAnnounceNode), arg0, arg1)
 }
 
+// ProcessEthereumKeyRotation mocks base method.
+func (m *MockValidatorTopology) ProcessEthereumKeyRotation(arg0 context.Context, arg1 string, arg2 *v1.EthereumKeyRotateSubmission, arg3 func([]byte, []byte, string) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProcessEthereumKeyRotation", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ProcessEthereumKeyRotation indicates an expected call of ProcessEthereumKeyRotation.
+func (mr *MockValidatorTopologyMockRecorder) ProcessEthereumKeyRotation(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessEthereumKeyRotation", reflect.TypeOf((*MockValidatorTopology)(nil).ProcessEthereumKeyRotation), arg0, arg1, arg2, arg3)
+}
+
 // ProcessValidatorHeartbeat mocks base method.
 func (m *MockValidatorTopology) ProcessValidatorHeartbeat(arg0 context.Context, arg1 *v1.ValidatorHeartbeat, arg2 func([]byte, []byte, []byte) error, arg3 func([]byte, []byte, string) error) error {
 	m.ctrl.T.Helper()
@@ -1181,20 +1195,6 @@ func (m *MockValidatorTopology) ProcessValidatorHeartbeat(arg0 context.Context, 
 func (mr *MockValidatorTopologyMockRecorder) ProcessValidatorHeartbeat(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessValidatorHeartbeat", reflect.TypeOf((*MockValidatorTopology)(nil).ProcessValidatorHeartbeat), arg0, arg1, arg2, arg3)
-}
-
-// RotateEthereumKey mocks base method.
-func (m *MockValidatorTopology) RotateEthereumKey(arg0 context.Context, arg1 string, arg2 uint64, arg3 *v1.EthereumKeyRotateSubmission) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RotateEthereumKey", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RotateEthereumKey indicates an expected call of RotateEthereumKey.
-func (mr *MockValidatorTopologyMockRecorder) RotateEthereumKey(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RotateEthereumKey", reflect.TypeOf((*MockValidatorTopology)(nil).RotateEthereumKey), arg0, arg1, arg2, arg3)
 }
 
 // MockNotary is a mock of Notary interface.

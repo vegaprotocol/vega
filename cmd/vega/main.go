@@ -83,6 +83,7 @@ func Main(ctx context.Context) error {
 		paths.Paths,
 		UnsafeResetAll,
 		AnnounceNode,
+		RotateEthKey,
 		ProposeProtocolUpgrade,
 		Start,
 		Node,
