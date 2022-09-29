@@ -2954,7 +2954,8 @@ func (m *Market) orderAmendWhenParked(amendOrder *types.Order) *types.OrderConfi
 // RemoveExpiredOrders remove all expired orders from the order book
 // and also any pegged orders that are parked.
 func (m *Market) removeExpiredOrders(
-	ctx context.Context, timestamp int64) []*types.Order {
+	ctx context.Context, timestamp int64,
+) []*types.Order {
 	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "RemoveExpiredOrders")
 	defer timer.EngineTimeCounterAdd()
 
