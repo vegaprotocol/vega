@@ -1677,7 +1677,7 @@
           }
         },
         {
-          "name": "public_key",
+          "name": "publicKey",
           "required": true,
           "schema": {
             "$ref": "#/components/schemas/public_key"
