@@ -14,7 +14,7 @@ message FutureProduct {
   string settlement_asset = 2 ;
   // Product quote name
   string quote_name = 3;
-  // The oracle spec describing the oracle data of settlement data
+  // The oracle spec describing the oracle data for settlement
   oracles.v1.OracleSpecConfiguration oracle_spec_for_settlement_data = 5;
   // The oracle spec describing the oracle data of trading termination
   oracles.v1.OracleSpecConfiguration oracle_spec_for_trading_termination = 6;
