@@ -180,7 +180,7 @@ func getTestMarket() *vega.Market {
 					Future: &vega.Future{
 						SettlementAsset: "Test Asset",
 						QuoteName:       "Test Quote",
-						OracleSpecForSettlementPrice: &v1.OracleSpec{
+						OracleSpecForSettlementData: &v1.OracleSpec{
 							Id:        "",
 							CreatedAt: 0,
 							UpdatedAt: 0,
@@ -197,7 +197,7 @@ func getTestMarket() *vega.Market {
 							Status:    0,
 						},
 						OracleSpecBinding: &vega.OracleSpecToFutureBinding{
-							SettlementPriceProperty:    "",
+							SettlementDataProperty:     "",
 							TradingTerminationProperty: "",
 						},
 					},

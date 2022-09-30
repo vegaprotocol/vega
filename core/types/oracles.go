@@ -260,35 +260,35 @@ func OracleSpecPropertyKeyFromProto(protoKey *oraclespb.PropertyKey) *OracleSpec
 type OracleSpecPropertyKeyType = oraclespb.PropertyKey_Type
 
 type OracleSpecBindingForFuture struct {
-	SettlementPriceProperty    string
+	SettlementDataProperty     string
 	TradingTerminationProperty string
 }
 
 func (b OracleSpecBindingForFuture) String() string {
 	return fmt.Sprintf(
-		"settlementPrice(%s) tradingTermination(%s)",
-		b.SettlementPriceProperty,
+		"settlementData(%s) tradingTermination(%s)",
+		b.SettlementDataProperty,
 		b.TradingTerminationProperty,
 	)
 }
 
 func (b OracleSpecBindingForFuture) IntoProto() *vegapb.OracleSpecToFutureBinding {
 	return &vegapb.OracleSpecToFutureBinding{
-		SettlementPriceProperty:    b.SettlementPriceProperty,
+		SettlementDataProperty:     b.SettlementDataProperty,
 		TradingTerminationProperty: b.TradingTerminationProperty,
 	}
 }
 
 func (b *OracleSpecBindingForFuture) DeepClone() *OracleSpecBindingForFuture {
 	return &OracleSpecBindingForFuture{
-		SettlementPriceProperty:    b.SettlementPriceProperty,
+		SettlementDataProperty:     b.SettlementDataProperty,
 		TradingTerminationProperty: b.TradingTerminationProperty,
 	}
 }
 
 func OracleSpecBindingForFutureFromProto(o *vegapb.OracleSpecToFutureBinding) *OracleSpecBindingForFuture {
 	return &OracleSpecBindingForFuture{
-		SettlementPriceProperty:    o.SettlementPriceProperty,
+		SettlementDataProperty:     o.SettlementDataProperty,
 		TradingTerminationProperty: o.TradingTerminationProperty,
 	}
 }

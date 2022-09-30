@@ -1,5 +1,5 @@
 {
-  "oracleSpecForSettlementPrice": {
+  "oracleSpecForSettlementData": {
     "id": "100",
     "pubKeys": ["0x0000"],
     "filters": [
@@ -29,7 +29,7 @@
     "status": "STATUS_UNSPECIFIED"
   },
   "oracleSpecBinding": {
-    "settlementPriceProperty": "price.DAI.value",
+    "settlementDataProperty": "price.DAI.value",
     "tradingTerminationProperty": "price.DAI.value"
   },
   "quoteName": "DAI",

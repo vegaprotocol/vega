@@ -338,7 +338,7 @@ func (i InstrumentFuture) String() string {
 type Future struct {
 	SettlementAsset                 string
 	QuoteName                       string
-	OracleSpecForSettlementPrice    *OracleSpec
+	OracleSpecForSettlementData     *OracleSpec
 	OracleSpecForTradingTermination *OracleSpec
 	OracleSpecBinding               *OracleSpecBindingForFuture
 	SettlementDataDecimals          uint32
@@ -348,7 +348,7 @@ func FutureFromProto(f *proto.Future) *Future {
 	return &Future{
 		SettlementAsset:                 f.SettlementAsset,
 		QuoteName:                       f.QuoteName,
-		OracleSpecForSettlementPrice:    OracleSpecFromProto(f.OracleSpecForSettlementPrice),
+		OracleSpecForSettlementData:     OracleSpecFromProto(f.OracleSpecForSettlementData),
 		OracleSpecForTradingTermination: OracleSpecFromProto(f.OracleSpecForTradingTermination),
 		OracleSpecBinding:               OracleSpecBindingForFutureFromProto(f.OracleSpecBinding),
 		SettlementDataDecimals:          f.SettlementDataDecimals,
@@ -359,7 +359,7 @@ func (f Future) IntoProto() *proto.Future {
 	return &proto.Future{
 		SettlementAsset:                 f.SettlementAsset,
 		QuoteName:                       f.QuoteName,
-		OracleSpecForSettlementPrice:    f.OracleSpecForSettlementPrice.IntoProto(),
+		OracleSpecForSettlementData:     f.OracleSpecForSettlementData.IntoProto(),
 		OracleSpecForTradingTermination: f.OracleSpecForTradingTermination.IntoProto(),
 		OracleSpecBinding:               f.OracleSpecBinding.IntoProto(),
 		SettlementDataDecimals:          f.SettlementDataDecimals,
@@ -368,11 +368,11 @@ func (f Future) IntoProto() *proto.Future {
 
 func (f Future) String() string {
 	return fmt.Sprintf(
-		"quoteName(%s) settlementAsset(%s) SettlementDataDecimals(%v) oracleSpec(settlementPrice(%s) tradingTermination(%s) binding(%s))",
+		"quoteName(%s) settlementAsset(%s) SettlementDataDecimals(%v) oracleSpec(settlementData(%s) tradingTermination(%s) binding(%s))",
 		f.QuoteName,
 		f.SettlementAsset,
 		f.SettlementDataDecimals,
-		reflectPointerToString(f.OracleSpecForSettlementPrice),
+		reflectPointerToString(f.OracleSpecForSettlementData),
 		reflectPointerToString(f.OracleSpecForTradingTermination),
 		reflectPointerToString(f.OracleSpecBinding),
 	)
