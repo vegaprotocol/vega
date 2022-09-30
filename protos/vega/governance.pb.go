@@ -346,7 +346,7 @@ type FutureProduct struct {
 	SettlementAsset string `protobuf:"bytes,2,opt,name=settlement_asset,json=settlementAsset,proto3" json:"settlement_asset,omitempty"`
 	// Product quote name
 	QuoteName string `protobuf:"bytes,3,opt,name=quote_name,json=quoteName,proto3" json:"quote_name,omitempty"`
-	// The oracle spec describing the oracle data of settlement data
+	// The oracle spec describing the oracle data for settlement
 	OracleSpecForSettlementData *v1.OracleSpecConfiguration `protobuf:"bytes,5,opt,name=oracle_spec_for_settlement_data,json=oracleSpecForSettlementData,proto3" json:"oracle_spec_for_settlement_data,omitempty"`
 	// The oracle spec describing the oracle data of trading termination
 	OracleSpecForTradingTermination *v1.OracleSpecConfiguration `protobuf:"bytes,6,opt,name=oracle_spec_for_trading_termination,json=oracleSpecForTradingTermination,proto3" json:"oracle_spec_for_trading_termination,omitempty"`
