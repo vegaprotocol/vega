@@ -1376,7 +1376,7 @@ type Future {
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
 
-  "The oracle spec describing the oracle data of interest for settlement data."
+  "The oracle spec describing the oracle data of interest for settlement."
   oracleSpecForSettlementData: OracleSpec!
 
   "The oracle spec describing the oracle data of interest for trading termination."
