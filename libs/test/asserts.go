@@ -32,3 +32,9 @@ func AssertFileAccess(t *testing.T, filePath string) {
 		assert.Equal(t, fs.FileMode(0o600), stats.Mode().Perm())
 	}
 }
+
+func AssertNoFile(t *testing.T, filePath string) {
+	t.Helper()
+	_, err := os.Stat(filePath)
+	require.Error(t, err)
+}

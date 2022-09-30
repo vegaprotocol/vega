@@ -707,15 +707,7 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 }
 
 func emptyDatabase() {
-	err := sqlstore.RecreateVegaDatabase(context.Background(), logging.NewTestLogger(), sqlConfig.ConnectionConfig)
-	if err != nil {
-		panic(err)
-	}
-
-	err = sqlstore.CreateVegaSchema(logging.NewTestLogger(), sqlConfig.ConnectionConfig)
-	if err != nil {
-		panic(err)
-	}
+	databasetest.DeleteEverything()
 }
 
 func TestRestoringFromDifferentHeightsWithFullHistory(t *testing.T) {

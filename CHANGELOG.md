@@ -9,11 +9,13 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [6348](https://github.com/vegaprotocol/vega/issues/6348) - Reduce pool size to leave more available `Postgres` connections
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
-
+- [6266](https://github.com/vegaprotocol/vega/issues/6266) - Do not take a snapshot at block height 1 and handle increase of interval appropriately
+- [6338](https://github.com/vegaprotocol/vega/issues/6338) - Fix validation for update an new asset proposals
+- [6357](https://github.com/vegaprotocol/vega/issues/6357) - Fix potential panic in `gql` resolvers
+- [6358](https://github.com/vegaprotocol/vega/issues/6358) - Do not show hidden files nor directories as wallet
 
 ## 0.57.0
 
