@@ -260,7 +260,6 @@ func (a *AuctionState) AuctionStarted(ctx context.Context, now time.Time) *event
 
 // Left is called by execution to update internal state indicating this auction was closed.
 func (a *AuctionState) Left(ctx context.Context, now time.Time) *events.Auction {
-
 	// the end-of-auction event
 	var start int64
 	if a.begin != nil {

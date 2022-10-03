@@ -15,7 +15,7 @@ const (
 
 func (ad *AccountDetails) ID() string {
 	idbuf := make([]byte, 256)
-	var marketID, partyID = noMarket, systemOwner
+	marketID, partyID := noMarket, systemOwner
 	if ad.MarketId != nil {
 		marketID = *ad.MarketId
 	}
