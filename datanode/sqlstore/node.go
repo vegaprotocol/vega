@@ -22,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
+	"go.uber.org/zap"
 )
 
 var (
@@ -43,6 +44,7 @@ func NewNode(connectionSource *ConnectionSource) *Node {
 
 func (store *Node) UpsertNode(ctx context.Context, node *entities.Node) error {
 	defer metrics.StartSQLQuery("Node", "UpsertNode")()
+	store.log.Info("Upserting node", zap.String("node", node.ID.String()))
 
 	_, err := store.Connection.Exec(ctx, `
 		INSERT INTO nodes (

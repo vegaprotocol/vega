@@ -130,14 +130,16 @@ func (b *SQLStoreBroker) waitForFirstBlock(ctx context.Context, errCh <-chan err
 	} else if errors.Is(err, sqlstore.ErrNoLastBlock) {
 		lastProcessedBlock = entities.Block{
 			VegaTime: time.Time{},
-			Height:   -1,
-			Hash:     nil,
+			// TODO: This is making the assumption that the first block will be height 1. This is not necessarily true.
+			//       The node can start at any time given to Tendermint through the genesis file.
+			Height: 0,
+			Hash:   nil,
 		}
 	} else {
 		return nil, err
 	}
 
-	var timeUpdate entities.TimeUpdateEvent
+	var beginBlock entities.BeginBlockEvent
 	for {
 		select {
 		case <-ctx.Done():
@@ -145,18 +147,18 @@ func (b *SQLStoreBroker) waitForFirstBlock(ctx context.Context, errCh <-chan err
 		case err = <-errCh:
 			return nil, err
 		case e := <-receiveCh:
-			if e.Type() == events.TimeUpdate {
-				timeUpdate = e.(entities.TimeUpdateEvent)
-				metrics.EventCounterInc(timeUpdate.Type().String())
+			if e.Type() == events.BeginBlockEvent {
+				beginBlock = e.(entities.BeginBlockEvent)
+				metrics.EventCounterInc(beginBlock.Type().String())
 
-				if timeUpdate.BlockNr() > lastProcessedBlock.Height+1 {
-					return nil, fmt.Errorf("block height on time update, %d, is too high, the height of the last processed block is %d",
-						timeUpdate.BlockNr(), lastProcessedBlock.Height)
+				if beginBlock.BlockNr() > lastProcessedBlock.Height+1 {
+					return nil, fmt.Errorf("block height on begin block, %d, is too high, the height of the last processed block is %d",
+						beginBlock.BlockNr(), lastProcessedBlock.Height)
 				}
 
-				if timeUpdate.BlockNr() > lastProcessedBlock.Height {
-					b.log.Infof("first unprocessed block received, starting block processing at height %d", timeUpdate.BlockNr())
-					return entities.BlockFromTimeUpdate(timeUpdate)
+				if beginBlock.BlockNr() > lastProcessedBlock.Height {
+					b.log.Info("first unprocessed block received, starting block processing")
+					return entities.BlockFromBeginBlock(beginBlock)
 				}
 			}
 		}
@@ -220,9 +222,9 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 		case e := <-eventsCh:
 			metrics.EventCounterInc(e.Type().String())
 			blockTimer.startTimer()
-			if e.Type() == events.TimeUpdate {
-				timeUpdate := e.(entities.TimeUpdateEvent)
 
+			switch e.Type() {
+			case events.EndBlockEvent:
 				err = b.flushAllSubscribers(blockCtx)
 				if err != nil {
 					return nil, err
@@ -232,11 +234,13 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 				if err != nil {
 					return nil, fmt.Errorf("failed to commit transactional context:%w", err)
 				}
-
-				return entities.BlockFromTimeUpdate(timeUpdate)
-			}
-			if err = b.handleEvent(blockCtx, e); err != nil {
-				return nil, err
+			case events.BeginBlockEvent:
+				beginBlock := e.(entities.BeginBlockEvent)
+				return entities.BlockFromBeginBlock(beginBlock)
+			default:
+				if err = b.handleEvent(blockCtx, e); err != nil {
+					return nil, err
+				}
 			}
 		}
 	}
