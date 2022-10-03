@@ -32,6 +32,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
+
 	"github.com/cosmos/iavl"
 	db "github.com/tendermint/tm-db"
 )

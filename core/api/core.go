@@ -140,8 +140,7 @@ func (s *coreService) GetVegaTime(ctx context.Context, _ *protoapi.GetVegaTimeRe
 }
 
 func (s *coreService) SubmitTransaction(ctx context.Context, req *protoapi.SubmitTransactionRequest) (*protoapi.SubmitTransactionResponse, error) {
-	startTime := time.Now()
-	defer metrics.APIRequestAndTimeGRPC("SubmitTransaction", startTime)
+	defer metrics.StartAPIRequestAndTimeGRPC("SubmitTransaction")()
 
 	if req == nil {
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
@@ -163,8 +162,7 @@ func (s *coreService) SubmitTransaction(ctx context.Context, req *protoapi.Submi
 }
 
 func (s *coreService) CheckTransaction(ctx context.Context, req *protoapi.CheckTransactionRequest) (*protoapi.CheckTransactionResponse, error) {
-	startTime := time.Now()
-	defer metrics.APIRequestAndTimeGRPC("CheckTransaction", startTime)
+	defer metrics.StartAPIRequestAndTimeGRPC("CheckTransaction")()
 
 	if req == nil {
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
@@ -184,8 +182,7 @@ func (s *coreService) CheckTransaction(ctx context.Context, req *protoapi.CheckT
 }
 
 func (s *coreService) CheckRawTransaction(ctx context.Context, req *protoapi.CheckRawTransactionRequest) (*protoapi.CheckRawTransactionResponse, error) {
-	startTime := time.Now()
-	defer metrics.APIRequestAndTimeGRPC("CheckRawTransaction", startTime)
+	defer metrics.StartAPIRequestAndTimeGRPC("CheckRawTransaction")()
 
 	if req == nil {
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
@@ -596,8 +593,7 @@ func setResponseBasisContent(response *protoapi.SubmitRawTransactionResponse, co
 }
 
 func (s *coreService) SubmitRawTransaction(ctx context.Context, req *protoapi.SubmitRawTransactionRequest) (*protoapi.SubmitRawTransactionResponse, error) {
-	startTime := time.Now()
-	defer metrics.APIRequestAndTimeGRPC("SubmitTransaction", startTime)
+	defer metrics.StartAPIRequestAndTimeGRPC("SubmitRawTransaction")()
 
 	if req == nil {
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)

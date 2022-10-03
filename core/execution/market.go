@@ -1896,10 +1896,12 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 
 	tresps, err := m.collateral.TransferFees(ctx, m.GetID(), asset, fees)
 	if err != nil {
-		// FIXME(): we may figure a better error handling in here
-		m.log.Error("unable to transfer fees for positions resolutions",
-			logging.Error(err),
-			logging.String("market-id", m.GetID()))
+		// We should never get down to an error here,
+		// in collateral only panic would happen if the market wasn't
+		// setup with account properly.
+		m.log.Panic("unable to transfer fees for positions resolutions",
+			logging.String("market-id", m.GetID()),
+			logging.Error(err))
 		return orderUpdates, err
 	}
 	// send transfer to buffer

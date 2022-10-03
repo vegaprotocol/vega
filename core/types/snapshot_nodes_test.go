@@ -16,7 +16,6 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/core/snapshot"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
@@ -761,34 +760,6 @@ func TestSnapFromTree(t *testing.T) {
 	snap, err := types.SnapshotFromTree(immutable)
 	require.NoError(t, err)
 	require.NotNil(t, snap)
-}
-
-func TestListSnapFromTree(t *testing.T) {
-	t.Parallel()
-	tree := createTree(t)
-	data := getDummyData()
-	for _, n := range data.Data {
-		k := n.GetTreeKey()
-		serialised, err := proto.Marshal(n.IntoProto())
-		require.NoError(t, err)
-		_, _ = tree.Set([]byte(k), serialised)
-	}
-	// now get immutable tree
-	hash, v, err := tree.SaveVersion()
-	require.NoError(t, err)
-	require.NotEmpty(t, hash) // @TODO see if storing it again produces the same hash
-
-	snapshotsHeights, invalidVersions, err := snapshot.SnapshotsHeightsFromTree(tree)
-
-	require.NoError(t, err)
-	require.Empty(t, invalidVersions)
-
-	var expectedHeight uint64 = 2
-
-	require.Equal(t, 1, len(snapshotsHeights))
-	require.Equal(t, v, snapshotsHeights[0].Version)
-	require.Equal(t, hash, snapshotsHeights[0].Hash)
-	require.Equal(t, expectedHeight, snapshotsHeights[0].Height)
 }
 
 func createTree(t *testing.T) *iavl.MutableTree {

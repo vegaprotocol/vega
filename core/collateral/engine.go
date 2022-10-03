@@ -451,32 +451,35 @@ func (e *Engine) TransferFeesContinuousTrading(ctx context.Context, marketID str
 func (e *Engine) transferFees(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.LedgerMovement, error) {
 	makerFee, infraFee, liquiFee, err := e.getFeesAccounts(marketID, assetID)
 	if err != nil {
-		return nil, err
+		e.log.Panic("missing market fee accounts", logging.Error(err))
 	}
 
 	transfers := ft.Transfers()
 	responses := make([]*types.LedgerMovement, 0, len(transfers))
 
+	// we continue in errors here just to make sure as much funds are transfered at any time.
+	// all errors down the line would be most likely impossible here this is all about just
+	// incrementing balance.
 	for _, transfer := range transfers {
 		req, err := e.getFeeTransferRequest(
 			transfer, makerFee, infraFee, liquiFee, marketID, assetID)
 		if err != nil {
 			e.log.Error("Failed to build transfer request for event",
 				logging.Error(err))
-			return nil, err
+			continue
 		}
 
 		res, err := e.listLedgerEntries(ctx, req)
 		if err != nil {
 			e.log.Error("Failed to transfer funds", logging.Error(err))
-			return nil, err
+			continue
 		}
 		for _, bal := range res.Balances {
 			if err := e.IncrementBalance(ctx, bal.Account.ID, bal.Balance); err != nil {
 				e.log.Error("Could not update the target account in transfer",
 					logging.String("account-id", bal.Account.ID),
 					logging.Error(err))
-				return nil, err
+				continue
 			}
 		}
 		responses = append(responses, res)
@@ -534,6 +537,8 @@ func (e *Engine) getFeesAccounts(marketID, asset string) (maker, infra, liqui *t
 				logging.Error(err),
 			)
 		}
+		err = ErrFeeAccountsMissing
+		return
 	}
 
 	if liqui, err = e.GetAccountByID(liquiID); err != nil {
