@@ -100,8 +100,9 @@ func (e *Engine) RecordOpenInterest(oi uint64, now time.Time) error {
 	}
 
 	if now.After(e.now) {
-		e.now = now
+		// get max before updating timestamp
 		maxFromCurrent := e.getMaxFromCurrent()
+		e.now = now
 		e.previous = append(e.previous, maxFromCurrent)
 		e.current = make([]uint64, 0, len(e.current))
 	}
