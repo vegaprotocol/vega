@@ -110,17 +110,17 @@ func TestSnapshotOraclesTerminatingMarketFromSnapshot(t *testing.T) {
 	require.True(t, bytes.Equal(state, state2))
 }
 
-// TestSnapshotOraclesTerminatingMarketFromSnapshotAfterSettlementPrice sets up a market that gets the settlement price first.
+// TestSnapshotOraclesTerminatingMarketFromSnapshotAfterSettlementData sets up a market that gets the settlement data first.
 // Then a snapshot is taken and another node is restored from this snapshot. Finally trading termination data is received and both markets
 // are expected to get settled.
-func TestSnapshotOraclesTerminatingMarketFromSnapshotAfterSettlementPrice(t *testing.T) {
+func TestSnapshotOraclesTerminatingMarketFromSnapshotAfterSettlementData(t *testing.T) {
 	now := time.Now()
 	exec := getEngine(t, now)
 	mkt := newMarket("MarketID", "0xDEADBEEF")
 	err := exec.engine.SubmitMarket(context.Background(), mkt, "")
 	require.NoError(t, err)
 
-	// settlement price arrives first
+	// settlement data arrives first
 	exec.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
 		PubKeys: []string{"0xDEADBEEF"},
 		Data:    map[string]string{"prices.ETH.value": "100"},
@@ -312,7 +312,7 @@ func newMarket(ID, pubKey string) *types.Market {
 				Product: &types.InstrumentFuture{
 					Future: &types.Future{
 						SettlementAsset: "Ethereum/Ether",
-						OracleSpecForSettlementPrice: &types.OracleSpec{
+						OracleSpecForSettlementData: &types.OracleSpec{
 							ID:      hex.EncodeToString(crypto.Hash([]byte(ID + "price"))),
 							PubKeys: []string{pubKey},
 							Filters: []*types.OracleSpecFilter{
@@ -339,7 +339,7 @@ func newMarket(ID, pubKey string) *types.Market {
 							},
 						},
 						OracleSpecBinding: &types.OracleSpecBindingForFuture{
-							SettlementPriceProperty:    "prices.ETH.value",
+							SettlementDataProperty:     "prices.ETH.value",
 							TradingTerminationProperty: "trading.terminated",
 						},
 					},

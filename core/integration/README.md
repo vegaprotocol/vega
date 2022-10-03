@@ -349,7 +349,7 @@ of `Then`:
 Then the trader places an order
 Then the trader should have balance ...
 Then an oracle data is sent
-Then the settlement price should be updated
+Then the settlement data should be updated
 ```
 
 We are no longer be able to sort out the commands from the assertions at first glance.
