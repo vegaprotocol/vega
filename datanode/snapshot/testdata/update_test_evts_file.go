@@ -15,8 +15,10 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
-const toHeight = 5000
-const EventFile = "smoketest_to_block_5000.evts"
+const (
+	toHeight  = 5000
+	EventFile = "smoketest_to_block_5000.evts"
+)
 
 // reads in a source event file and write the events to target events file until the given block height is reached
 func main() {
@@ -78,7 +80,6 @@ func main() {
 			fileClient.Send(event)
 		}
 	}
-
 }
 
 func compressEventFile(source string, target string) {
