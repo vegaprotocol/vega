@@ -37,8 +37,8 @@ var (
 	ErrMissingRiskParameters = errors.New("missing risk parameters")
 	// ErrMissingOracleSpecBinding is returned when the oracle spec binding is absent.
 	ErrMissingOracleSpecBinding = errors.New("missing oracle spec binding")
-	// ErrMissingOracleSpecForSettlementPrice is returned when the oracle spec for settlement price is absent.
-	ErrMissingOracleSpecForSettlementPrice = errors.New("missing oracle spec for settlement price")
+	// ErrMissingOracleSpecForSettlementData is returned when the oracle spec for settlement data is absent.
+	ErrMissingOracleSpecForSettlementData = errors.New("missing oracle spec for settlement data")
 	// ErrMissingOracleSpecForTradingTermination is returned when the oracle spec for trading termination is absent.
 	ErrMissingOracleSpecForTradingTermination = errors.New("missing oracle spec for trading termination")
 	// ErrOracleSpecTerminationTimeBeforeEnactment is returned when termination time is before enactment
@@ -59,8 +59,8 @@ func assignProduct(
 		if product.Future == nil {
 			return types.ProposalErrorInvalidFutureProduct, ErrMissingFutureProduct
 		}
-		if product.Future.OracleSpecForSettlementPrice == nil {
-			return types.ProposalErrorInvalidFutureProduct, ErrMissingOracleSpecForSettlementPrice
+		if product.Future.OracleSpecForSettlementData == nil {
+			return types.ProposalErrorInvalidFutureProduct, ErrMissingOracleSpecForSettlementData
 		}
 		if product.Future.OracleSpecForTradingTermination == nil {
 			return types.ProposalErrorInvalidFutureProduct, ErrMissingOracleSpecForTradingTermination
@@ -73,7 +73,7 @@ func assignProduct(
 			Future: &types.Future{
 				SettlementAsset:                 product.Future.SettlementAsset,
 				QuoteName:                       product.Future.QuoteName,
-				OracleSpecForSettlementPrice:    product.Future.OracleSpecForSettlementPrice.ToOracleSpec(),
+				OracleSpecForSettlementData:     product.Future.OracleSpecForSettlementData.ToOracleSpec(),
 				OracleSpecForTradingTermination: product.Future.OracleSpecForTradingTermination.ToOracleSpec(),
 				SettlementDataDecimals:          product.Future.SettlementDataDecimalPlaces,
 				OracleSpecBinding:               product.Future.OracleSpecBinding,
@@ -227,8 +227,8 @@ func validateAsset(assetID string, decimals uint64, assets Assets, deepCheck boo
 }
 
 func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets, et *enactmentTime, deepCheck bool) (types.ProposalError, error) {
-	if future.OracleSpecForSettlementPrice == nil {
-		return types.ProposalErrorInvalidFutureProduct, ErrMissingOracleSpecForSettlementPrice
+	if future.OracleSpecForSettlementData == nil {
+		return types.ProposalErrorInvalidFutureProduct, ErrMissingOracleSpecForSettlementData
 	}
 
 	if future.OracleSpecForTradingTermination == nil {
@@ -257,13 +257,13 @@ func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets,
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingOracleSpecBinding
 	}
 
-	// ensure the oracle spec for settlement price can be constructed
-	ospec, err := oracles.NewOracleSpec(*future.OracleSpecForSettlementPrice.ToOracleSpec())
+	// ensure the oracle spec for settlement data can be constructed
+	ospec, err := oracles.NewOracleSpec(*future.OracleSpecForSettlementData.ToOracleSpec())
 	if err != nil {
 		return types.ProposalErrorInvalidFutureProduct, err
 	}
-	if err := ospec.EnsureBoundableProperty(future.OracleSpecBinding.SettlementPriceProperty, oraclespb.PropertyKey_TYPE_INTEGER); err != nil {
-		return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for settlement price: %w", err)
+	if err := ospec.EnsureBoundableProperty(future.OracleSpecBinding.SettlementDataProperty, oraclespb.PropertyKey_TYPE_INTEGER); err != nil {
+		return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for settlement data: %w", err)
 	}
 
 	ospec, err = oracles.NewOracleSpec(*future.OracleSpecForTradingTermination.ToOracleSpec())
@@ -385,8 +385,8 @@ func validateUpdateInstrument(instrument *types.UpdateInstrumentConfiguration, e
 }
 
 func validateUpdateFuture(future *types.UpdateFutureProduct, et *enactmentTime) (types.ProposalError, error) {
-	if future.OracleSpecForSettlementPrice == nil {
-		return types.ProposalErrorInvalidFutureProduct, ErrMissingOracleSpecForSettlementPrice
+	if future.OracleSpecForSettlementData == nil {
+		return types.ProposalErrorInvalidFutureProduct, ErrMissingOracleSpecForSettlementData
 	}
 
 	if future.OracleSpecForTradingTermination == nil {
@@ -415,13 +415,13 @@ func validateUpdateFuture(future *types.UpdateFutureProduct, et *enactmentTime) 
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingOracleSpecBinding
 	}
 
-	// ensure the oracle spec for settlement price can be constructed
-	ospec, err := oracles.NewOracleSpec(*future.OracleSpecForSettlementPrice.ToOracleSpec())
+	// ensure the oracle spec for settlement data can be constructed
+	ospec, err := oracles.NewOracleSpec(*future.OracleSpecForSettlementData.ToOracleSpec())
 	if err != nil {
 		return types.ProposalErrorInvalidFutureProduct, err
 	}
-	if err := ospec.EnsureBoundableProperty(future.OracleSpecBinding.SettlementPriceProperty, oraclespb.PropertyKey_TYPE_INTEGER); err != nil {
-		return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for settlement price: %w", err)
+	if err := ospec.EnsureBoundableProperty(future.OracleSpecBinding.SettlementDataProperty, oraclespb.PropertyKey_TYPE_INTEGER); err != nil {
+		return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for settlement data: %w", err)
 	}
 
 	ospec, err = oracles.NewOracleSpec(*future.OracleSpecForTradingTermination.ToOracleSpec())

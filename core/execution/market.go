@@ -265,7 +265,7 @@ type Market struct {
 	positionFactor        num.Decimal // 10^pdp
 	assetDP               uint32
 
-	settlementPriceInMarket *num.Uint
+	settlementDataInMarket *num.Uint
 }
 
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
@@ -407,7 +407,7 @@ func NewMarket(
 
 	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
 	market.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(market.tradingTerminated)
-	market.tradableInstrument.Instrument.Product.NotifyOnSettlementPrice(market.settlementPrice)
+	market.tradableInstrument.Instrument.Product.NotifyOnSettlementData(market.settlementData)
 	market.assetDP = uint32(assetDetails.DecimalPlaces())
 	return market, nil
 }
@@ -428,7 +428,7 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 	m.mkt = config
 
 	if m.mkt.State == types.MarketStateTradingTerminated {
-		m.tradableInstrument.Instrument.UnsubscribeSettlementPrice(ctx)
+		m.tradableInstrument.Instrument.UnsubscribeSettlementData(ctx)
 	} else {
 		m.tradableInstrument.Instrument.Unsubscribe(ctx)
 	}
@@ -443,7 +443,7 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 	m.liquidity.UpdateMarketConfig(m.tradableInstrument.RiskModel, m.pMonitor)
 
 	m.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(m.tradingTerminated)
-	m.tradableInstrument.Instrument.Product.NotifyOnSettlementPrice(m.settlementPrice)
+	m.tradableInstrument.Instrument.Product.NotifyOnSettlementData(m.settlementData)
 
 	m.updateLiquidityFee(ctx)
 	// risk model hasn't changed -> return
@@ -705,7 +705,7 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 	}
 
 	// if trading is terminated, we have nothing to do here.
-	// we just need to wait for the settlementPrice to arrive through oracle
+	// we just need to wait for the settlementData to arrive through oracle
 	if m.mkt.State == types.MarketStateTradingTerminated {
 		return false
 	}
@@ -787,7 +787,7 @@ func (m *Market) cleanMarketWithState(ctx context.Context, mktState types.Market
 
 func (m *Market) closeCancelledMarket(ctx context.Context) error {
 	// we got here because trading was terminated, so we've already unsubscribed that oracle data source.
-	m.tradableInstrument.Instrument.UnsubscribeSettlementPrice(ctx)
+	m.tradableInstrument.Instrument.UnsubscribeSettlementData(ctx)
 
 	if err := m.cleanMarketWithState(ctx, types.MarketStateCancelled); err != nil {
 		return err
@@ -823,7 +823,7 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 		return err
 	}
 
-	m.tradableInstrument.Instrument.UnsubscribeSettlementPrice(ctx)
+	m.tradableInstrument.Instrument.UnsubscribeSettlementData(ctx)
 	// @TODO pass in correct context -> Previous or next block?
 	// Which is most appropriate here?
 	// this will be next block
@@ -3174,11 +3174,11 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 		m.mkt.TradingMode = types.MarketTradingModeNoTrading
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 
-		if m.settlementPriceInMarket == nil {
-			m.log.Debug("no settlement price", logging.MarketID(m.GetID()))
+		if m.settlementDataInMarket == nil {
+			m.log.Debug("no settlement data", logging.MarketID(m.GetID()))
 			return
 		}
-		m.settlementPriceWithLock(ctx)
+		m.settlementDataWithLock(ctx)
 	} else {
 		for party := range m.parties {
 			_, err := m.CancelAllOrders(ctx, party)
@@ -3197,33 +3197,33 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 	}
 }
 
-func (m *Market) settlementPrice(ctx context.Context, settlementPrice *num.Uint) {
+func (m *Market) settlementData(ctx context.Context, settlementData *num.Uint) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	m.settlementPriceInMarket = settlementPrice
-	m.settlementPriceWithLock(ctx)
+	m.settlementDataInMarket = settlementData
+	m.settlementDataWithLock(ctx)
 }
 
 // NB this must be called with the lock already acquired.
-func (m *Market) settlementPriceWithLock(ctx context.Context) {
+func (m *Market) settlementDataWithLock(ctx context.Context) {
 	if m.closed {
 		return
 	}
 
-	if m.mkt.State == types.MarketStateTradingTerminated && m.settlementPriceInMarket != nil {
+	if m.mkt.State == types.MarketStateTradingTerminated && m.settlementDataInMarket != nil {
 		err := m.closeMarket(ctx, m.timeService.GetTimeNow())
 		if err != nil {
 			m.log.Error("could not close market", logging.Error(err))
 		}
 		m.closed = m.mkt.State == types.MarketStateSettled
-		settlementPriceInAsset, err := m.tradableInstrument.Instrument.Product.ScaleSettlementPriceToDecimalPlaces(m.settlementPriceInMarket, m.assetDP)
+		settlementDataInAsset, err := m.tradableInstrument.Instrument.Product.ScaleSettlementDataToDecimalPlaces(m.settlementDataInMarket, m.assetDP)
 		if err != nil {
 			m.log.Error(err.Error())
 			return
 		}
 
-		m.markPrice = settlementPriceInAsset.Clone()
+		m.markPrice = settlementDataInAsset.Clone()
 
 		// send the market data with all updated stuff
 		m.broker.Send(events.NewMarketDataEvent(ctx, m.GetMarketData()))

@@ -45,7 +45,7 @@ func getValidInstrumentProto() *types.Instrument {
 			Future: &types.Future{
 				QuoteName:       "USD",
 				SettlementAsset: SettlementAssetStr,
-				OracleSpecForSettlementPrice: &types.OracleSpec{
+				OracleSpecForSettlementData: &types.OracleSpec{
 					PubKeys: []string{"0xDEADBEEF"},
 					Filters: []*types.OracleSpecFilter{
 						{
@@ -70,7 +70,7 @@ func getValidInstrumentProto() *types.Instrument {
 					},
 				},
 				OracleSpecBinding: &types.OracleSpecBindingForFuture{
-					SettlementPriceProperty:    "prices.ETH.value",
+					SettlementDataProperty:     "prices.ETH.value",
 					TradingTerminationProperty: "trading.terminated",
 				},
 			},
@@ -114,10 +114,10 @@ func TestFutureSettlement(t *testing.T) {
 	assert.EqualValues(t, given.String(), value.String())
 
 	params := []struct {
-		entryPrice      uint64
-		settlementPrice uint64
-		position        int64
-		result          int64
+		entryPrice     uint64
+		settlementData uint64
+		position       int64
+		result         int64
 	}{
 		{100, 200, 10, 1000},  // (200-100)*10 == 1000
 		{200, 100, 10, 1000},  // (100-200)*10 == 1000
@@ -126,8 +126,8 @@ func TestFutureSettlement(t *testing.T) {
 	}
 
 	for _, param := range params {
-		// Use debug function to update the settlement price as if from a Oracle
-		f.SetSettlementPrice(ctx, "prices.ETH.value", param.settlementPrice)
+		// Use debug function to update the settlement data as if from a Oracle
+		f.SetSettlementData(ctx, "prices.ETH.value", param.settlementData)
 		ep := num.NewUint(param.entryPrice)
 		fa, _, err := prod.Settle(ep, 0, num.DecimalFromInt64(param.position))
 		assert.NoError(t, err)

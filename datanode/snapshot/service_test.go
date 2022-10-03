@@ -139,11 +139,11 @@ func TestMain(t *testing.M) {
 		// For the same events file and block height this hash should be the same across all OS/Arch
 		// If the events file is updated, schema changes, or snapshot height changed this will need updating
 		// Easiest way to update is to put a breakpoint here and inspect fromEventsSnapshotHashes
-		panicIfSnapshotHashNotEqual(fromEventsSnapshotHashes[0], "ecc54630bbc68d536c63231f07a96b28", snapshots)
-		panicIfSnapshotHashNotEqual(fromEventsSnapshotHashes[1], "ba7eca255540b83293178d9a14b79457", snapshots)
-		panicIfSnapshotHashNotEqual(fromEventsSnapshotHashes[2], "6c67a5f3d3c719edae61d218c69c479a", snapshots)
-		panicIfSnapshotHashNotEqual(fromEventsSnapshotHashes[3], "511a145aeca30ec64881fa8c67f3b3ba", snapshots)
-		panicIfSnapshotHashNotEqual(fromEventsSnapshotHashes[4], "5afc2c2aa109572672daa691fa691b7b", snapshots)
+		panicIfSnapshotHashNotEqual("e77e11d94e72be14f42e4bfe20ae58fe", fromEventsSnapshotHashes[0], snapshots)
+		panicIfSnapshotHashNotEqual("f0e3c28eb918dd51013b61b0a7f8fac7", fromEventsSnapshotHashes[1], snapshots)
+		panicIfSnapshotHashNotEqual("fdfa756c2fbc3e30f2084bd54bbebcb5", fromEventsSnapshotHashes[2], snapshots)
+		panicIfSnapshotHashNotEqual("f28d8f32bcfa4470c2347008c72e270e", fromEventsSnapshotHashes[3], snapshots)
+		panicIfSnapshotHashNotEqual("0af8301b1325969b4af8887a574b0f15", fromEventsSnapshotHashes[4], snapshots)
 
 		if len(fromEventsDatabaseSummaries) != numSnapshots {
 			panic(fmt.Errorf("expected %d database summaries, got %d", numSnapshots, len(fromEventsSnapshotHashes)))

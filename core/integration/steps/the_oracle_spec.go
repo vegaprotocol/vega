@@ -66,8 +66,8 @@ func TheOracleSpec(config *market.Config, name string, specType string, rawPubKe
 
 		filters = append(filters, filter)
 
-		if row.destination() == "settlement price" {
-			binding.SettlementPriceProperty = row.propertyName()
+		if row.destination() == "settlement data" {
+			binding.SettlementDataProperty = row.propertyName()
 		}
 		if row.destination() == "trading termination" {
 			binding.TradingTerminationProperty = row.propertyName()

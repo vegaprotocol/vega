@@ -4,6 +4,7 @@
 
 ### 🚨 Breaking changes
 - [6271](https://github.com/vegaprotocol/vega/issues/6271) - Require signature from new Ethereum key to validate key rotation submission
+- [6364](https://github.com/vegaprotocol/vega/issues/6364) - Rename `oracleSpecForSettlementPrice` to `oracleSpecForSettlementData`
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -16,6 +17,8 @@
 - [6338](https://github.com/vegaprotocol/vega/issues/6338) - Fix validation for update an new asset proposals
 - [6357](https://github.com/vegaprotocol/vega/issues/6357) - Fix potential panic in `gql` resolvers
 - [6358](https://github.com/vegaprotocol/vega/issues/6358) - Do not show hidden files nor directories as wallet
+- [6374](https://github.com/vegaprotocol/vega/issues/6374) - Fix panic with the metrics
+- [6373](https://github.com/vegaprotocol/vega/issues/6373) - Fix panic with the metrics as well
 
 ## 0.57.0
 

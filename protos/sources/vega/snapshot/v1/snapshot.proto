@@ -427,7 +427,7 @@ message Market {
   string risk_factor_long = 15;
   bool risk_factor_consensus_reached = 16;
   FeeSplitter fee_splitter = 17;
-  string settlement_price = 18;
+  string settlement_data = 18;
 }
 
 message PeggedOrders {

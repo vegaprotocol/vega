@@ -1,7 +1,7 @@
 {
   "settlementAsset": "",
   "quoteName": "",
-  "oracleSpecForSettlementPrice": {
+  "oracleSpecForSettlementData": {
     "id": "1",
     "createdAt": "0",
     "updatedAt": "0",
@@ -42,7 +42,7 @@
     "status": "STATUS_UNSPECIFIED"
   },
   "oracleSpecBinding": {
-    "settlementPriceProperty": "prices.ETH.value",
+    "settlementDataProperty": "prices.ETH.value",
     "tradingTerminationProperty": "trading.terminated"
   }
 }

@@ -23,6 +23,6 @@ func OracleSpecSettlementDataDecimals(config *market.Config, name string, settle
 	if err != nil {
 		return err
 	}
-	config.OracleConfigs.SetSettlementPriceDP(name, uint32(dp))
+	config.OracleConfigs.SetSettlementDataDP(name, uint32(dp))
 	return nil
 }
