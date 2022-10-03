@@ -367,31 +367,16 @@ func (mr *MockPipelineMockRecorder) RequestTransactionSigningReview(arg0, arg1, 
 }
 
 // RequestWalletConnectionReview mocks base method.
-func (m *MockPipeline) RequestWalletConnectionReview(arg0 context.Context, arg1, arg2 string) (bool, error) {
+func (m *MockPipeline) RequestWalletConnectionReview(arg0 context.Context, arg1, arg2 string, arg3 []string) (api.WalletConnectionDecision, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RequestWalletConnectionReview", arg0, arg1, arg2)
-	ret0, _ := ret[0].(bool)
+	ret := m.ctrl.Call(m, "RequestWalletConnectionReview", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(api.WalletConnectionDecision)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // RequestWalletConnectionReview indicates an expected call of RequestWalletConnectionReview.
-func (mr *MockPipelineMockRecorder) RequestWalletConnectionReview(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockPipelineMockRecorder) RequestWalletConnectionReview(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RequestWalletConnectionReview", reflect.TypeOf((*MockPipeline)(nil).RequestWalletConnectionReview), arg0, arg1, arg2)
-}
-
-// RequestWalletSelection mocks base method.
-func (m *MockPipeline) RequestWalletSelection(arg0 context.Context, arg1, arg2 string, arg3 []string) (api.SelectedWallet, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RequestWalletSelection", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(api.SelectedWallet)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// RequestWalletSelection indicates an expected call of RequestWalletSelection.
-func (mr *MockPipelineMockRecorder) RequestWalletSelection(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RequestWalletSelection", reflect.TypeOf((*MockPipeline)(nil).RequestWalletSelection), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RequestWalletConnectionReview", reflect.TypeOf((*MockPipeline)(nil).RequestWalletConnectionReview), arg0, arg1, arg2, arg3)
 }

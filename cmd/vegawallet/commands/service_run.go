@@ -411,14 +411,13 @@ func handleAPIv2Request(envelop pipeline.Envelope, responseChan chan<- pipeline.
 			p.Print(p.String().CheckMark().Text("Connection approved.").NextLine())
 		} else {
 			p.Print(p.String().CrossMark().Text("Connection rejected.").NextSection())
+			responseChan <- pipeline.Envelope{
+				TraceID: envelop.TraceID,
+				Content: walletapi.WalletConnectionDecision{
+					Approved: false,
+				},
+			}
 		}
-		responseChan <- pipeline.Envelope{
-			TraceID: envelop.TraceID,
-			Content: pipeline.Decision{
-				Approved: approved,
-			},
-		}
-	case pipeline.RequestWalletSelection:
 		str := p.String().BlueArrow().Text("Here are the available wallets:").NextLine()
 		for _, w := range content.AvailableWallets {
 			str.ListItem().Text("- ").InfoText(w).NextLine()
@@ -428,11 +427,13 @@ func handleAPIv2Request(envelop pipeline.Envelope, responseChan chan<- pipeline.
 		passphrase := readPassphrase(p.String().BlueArrow().Text("Enter the passphrase for the wallet \"").InfoText(selectedWallet).Text("\": "), p)
 		responseChan <- pipeline.Envelope{
 			TraceID: envelop.TraceID,
-			Content: walletapi.SelectedWallet{
+			Content: walletapi.WalletConnectionDecision{
+				Approved:   true,
 				Wallet:     selectedWallet,
 				Passphrase: passphrase,
 			},
 		}
+
 	case pipeline.RequestPassphrase:
 		passphrase := readPassphrase(p.String().BlueArrow().Text("Enter the passphrase for the wallet \"").InfoText(content.Wallet).Text("\": "), p)
 		responseChan <- pipeline.Envelope{

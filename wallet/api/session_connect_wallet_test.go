@@ -19,14 +19,11 @@ func TestConnectWallet(t *testing.T) {
 	t.Run("Connecting to a wallet with invalid params fails", testConnectingToWalletWithInvalidParamsFails)
 	t.Run("Connecting to a wallet with valid params succeeds", testConnectingToWalletWithValidParamsSucceeds)
 	t.Run("Connecting to a connected wallet disconnects the previous one and generates a new token", testConnectingToConnectedWalletDisconnectsPreviousOneAndGeneratesNewToken)
+	t.Run("Getting internal error during the wallet listing does not connect to a wallet", testGettingInternalErrorDuringWalletListingDoesNotConnectToWallet)
 	t.Run("Refusing a wallet connection does not connect to a wallet", testRefusingWalletConnectionDoesNotConnectToWallet)
 	t.Run("Canceling the review does not connect to a wallet", testCancelingTheReviewDoesNotConnectToWallet)
 	t.Run("Interrupting the request during the review does not connect to a wallet", testInterruptingTheRequestDuringReviewDoesNotConnectToWallet)
 	t.Run("Getting internal error during the review does not connect to a wallet", testGettingInternalErrorDuringReviewDoesNotConnectToWallet)
-	t.Run("Getting internal error during the wallet listing does not connect to a wallet", testGettingInternalErrorDuringWalletListingDoesNotConnectToWallet)
-	t.Run("Cancelling the wallet selection does not connect to a wallet", testCancellingTheWalletSelectionDoesNotConnectToWallet)
-	t.Run("Interrupting the request during the wallet selection does not connect to a wallet", testInterruptingTheRequestDuringWalletSelectionDoesNotConnectToWallet)
-	t.Run("Getting internal error during the wallet selection does not connect to a wallet", testGettingInternalErrorDuringWalletSelectionDoesNotConnectToWallet)
 	t.Run("Selecting a non-existing wallet does not connect to a wallet", testSelectingNonExistingWalletDoesNotConnectToWallet)
 	t.Run("Getting internal error during the wallet verification does not connect to a wallet", testGettingInternalErrorDuringWalletVerificationDoesNotConnectToWallet)
 	t.Run("Using the wrong passphrase does not connect to a wallet", testUsingWrongPassphraseDoesNotConnectToWallet)
@@ -86,12 +83,8 @@ func testConnectingToWalletWithValidParamsSucceeds(t *testing.T) {
 	expectedHostname := "vega.xyz"
 	expectedSelectedWallet, _ := walletWithPerms(t, expectedHostname, expectedPermissions)
 	nonSelectedWallet, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
-
+	availableWallets := []string{expectedSelectedWallet.Name(), nonSelectedWallet.Name()}
 	passphrase := vgrand.RandomStr(5)
-	availableWallets := []string{
-		expectedSelectedWallet.Name(),
-		nonSelectedWallet.Name(),
-	}
 
 	// setup
 	handler := newConnectWalletHandler(t)
@@ -99,8 +92,8 @@ func testConnectingToWalletWithValidParamsSucceeds(t *testing.T) {
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedSelectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return(availableWallets, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedSelectedWallet.Name(), passphrase).Times(1).Return(expectedSelectedWallet, nil)
-	handler.pipeline.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname).Times(1).Return(true, nil)
-	handler.pipeline.EXPECT().RequestWalletSelection(ctx, traceID, expectedHostname, availableWallets).Times(1).Return(api.SelectedWallet{
+	handler.pipeline.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname, availableWallets).Times(1).Return(api.WalletConnectionDecision{
+		Approved:   true,
 		Wallet:     expectedSelectedWallet.Name(),
 		Passphrase: passphrase,
 	}, nil)
@@ -128,12 +121,8 @@ func testConnectingToConnectedWalletDisconnectsPreviousOneAndGeneratesNewToken(t
 	expectedHostname := "vega.xyz"
 	expectedSelectedWallet, _ := walletWithPerms(t, expectedHostname, expectedPermissions)
 	nonSelectedWallet, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
-
+	availableWallets := []string{expectedSelectedWallet.Name(), nonSelectedWallet.Name()}
 	passphrase := vgrand.RandomStr(5)
-	availableWallets := []string{
-		expectedSelectedWallet.Name(),
-		nonSelectedWallet.Name(),
-	}
 
 	// setup
 	handler := newConnectWalletHandler(t)
@@ -141,8 +130,8 @@ func testConnectingToConnectedWalletDisconnectsPreviousOneAndGeneratesNewToken(t
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedSelectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return(availableWallets, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedSelectedWallet.Name(), passphrase).Times(1).Return(expectedSelectedWallet, nil)
-	handler.pipeline.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname).Times(1).Return(true, nil)
-	handler.pipeline.EXPECT().RequestWalletSelection(ctx, traceID, expectedHostname, availableWallets).Times(1).Return(api.SelectedWallet{
+	handler.pipeline.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname, availableWallets).Times(1).Return(api.WalletConnectionDecision{
+		Approved:   true,
 		Wallet:     expectedSelectedWallet.Name(),
 		Passphrase: passphrase,
 	}, nil)
@@ -162,8 +151,8 @@ func testConnectingToConnectedWalletDisconnectsPreviousOneAndGeneratesNewToken(t
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedSelectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return(availableWallets, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedSelectedWallet.Name(), passphrase).Times(1).Return(expectedSelectedWallet, nil)
-	handler.pipeline.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname).Times(1).Return(true, nil)
-	handler.pipeline.EXPECT().RequestWalletSelection(ctx, traceID, expectedHostname, availableWallets).Times(1).Return(api.SelectedWallet{
+	handler.pipeline.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname, availableWallets).Times(1).Return(api.WalletConnectionDecision{
+		Approved:   true,
 		Wallet:     expectedSelectedWallet.Name(),
 		Passphrase: passphrase,
 	}, nil)
@@ -179,7 +168,7 @@ func testConnectingToConnectedWalletDisconnectsPreviousOneAndGeneratesNewToken(t
 	assert.NotEqual(t, result2.Token, result1.Token)
 }
 
-func testRefusingWalletConnectionDoesNotConnectToWallet(t *testing.T) {
+func testGettingInternalErrorDuringWalletListingDoesNotConnectToWallet(t *testing.T) {
 	// given
 	ctx, traceID := contextWithTraceID()
 	expectedHostname := "vega.xyz"
@@ -187,7 +176,34 @@ func testRefusingWalletConnectionDoesNotConnectToWallet(t *testing.T) {
 	// setup
 	handler := newConnectWalletHandler(t)
 	// -- expected calls
-	handler.pipeline.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname).Times(1).Return(false, nil)
+	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return(nil, assert.AnError)
+	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("could not list available wallets: %w", assert.AnError)).Times(1)
+
+	// when
+	result, errorDetails := handler.handle(t, ctx, api.ConnectWalletParams{
+		Hostname: expectedHostname,
+	})
+
+	// then
+	assertInternalError(t, errorDetails, api.ErrCouldNotConnectToWallet)
+	assert.Empty(t, result)
+}
+
+func testRefusingWalletConnectionDoesNotConnectToWallet(t *testing.T) {
+	// given
+	ctx, traceID := contextWithTraceID()
+	expectedHostname := "vega.xyz"
+	wallet1, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallet2, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallets := []string{wallet1.Name(), wallet2.Name()}
+
+	// setup
+	handler := newConnectWalletHandler(t)
+	// -- expected calls
+	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return(wallets, nil)
+	handler.pipeline.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname, wallets).Times(1).Return(api.WalletConnectionDecision{
+		Approved: false,
+	}, nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ConnectWalletParams{
@@ -203,11 +219,15 @@ func testCancelingTheReviewDoesNotConnectToWallet(t *testing.T) {
 	// given
 	ctx, traceID := contextWithTraceID()
 	expectedHostname := "vega.xyz"
+	wallet1, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallet2, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallets := []string{wallet1.Name(), wallet2.Name()}
 
 	// setup
 	handler := newConnectWalletHandler(t)
 	// -- expected calls
-	handler.pipeline.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname).Times(1).Return(false, api.ErrUserCloseTheConnection)
+	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return(wallets, nil)
+	handler.pipeline.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname, wallets).Times(1).Return(api.WalletConnectionDecision{}, api.ErrUserCloseTheConnection)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ConnectWalletParams{
@@ -223,11 +243,15 @@ func testInterruptingTheRequestDuringReviewDoesNotConnectToWallet(t *testing.T) 
 	// given
 	ctx, traceID := contextWithTraceID()
 	expectedHostname := "vega.xyz"
+	wallet1, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallet2, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallets := []string{wallet1.Name(), wallet2.Name()}
 
 	// setup
 	handler := newConnectWalletHandler(t)
 	// -- expected calls
-	handler.pipeline.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname).Times(1).Return(false, api.ErrRequestInterrupted)
+	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return(wallets, nil)
+	handler.pipeline.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname, wallets).Times(1).Return(api.WalletConnectionDecision{}, api.ErrRequestInterrupted)
 	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.ServerError, api.ErrRequestInterrupted).Times(1)
 
 	// when
@@ -244,108 +268,16 @@ func testGettingInternalErrorDuringReviewDoesNotConnectToWallet(t *testing.T) {
 	// given
 	ctx, traceID := contextWithTraceID()
 	expectedHostname := "vega.xyz"
+	wallet1, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallet2, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallets := []string{wallet1.Name(), wallet2.Name()}
 
 	// setup
 	handler := newConnectWalletHandler(t)
 	// -- expected calls
-	handler.pipeline.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname).Times(1).Return(false, assert.AnError)
+	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return(wallets, nil)
+	handler.pipeline.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname, wallets).Times(1).Return(api.WalletConnectionDecision{}, assert.AnError)
 	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("reviewing the wallet connection failed: %w", assert.AnError)).Times(1)
-
-	// when
-	result, errorDetails := handler.handle(t, ctx, api.ConnectWalletParams{
-		Hostname: expectedHostname,
-	})
-
-	// then
-	assertInternalError(t, errorDetails, api.ErrCouldNotConnectToWallet)
-	assert.Empty(t, result)
-}
-
-func testGettingInternalErrorDuringWalletListingDoesNotConnectToWallet(t *testing.T) {
-	// given
-	ctx, traceID := contextWithTraceID()
-	expectedHostname := "vega.xyz"
-
-	// setup
-	handler := newConnectWalletHandler(t)
-	// -- expected calls
-	handler.pipeline.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return(nil, assert.AnError)
-	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("could not list available wallets: %w", assert.AnError)).Times(1)
-
-	// when
-	result, errorDetails := handler.handle(t, ctx, api.ConnectWalletParams{
-		Hostname: expectedHostname,
-	})
-
-	// then
-	assertInternalError(t, errorDetails, api.ErrCouldNotConnectToWallet)
-	assert.Empty(t, result)
-}
-
-func testCancellingTheWalletSelectionDoesNotConnectToWallet(t *testing.T) {
-	// given
-	ctx, traceID := contextWithTraceID()
-	expectedHostname := "vega.xyz"
-	wallet1, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
-	wallet2, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
-
-	// setup
-	handler := newConnectWalletHandler(t)
-	// -- expected calls
-	handler.pipeline.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return([]string{wallet1.Name(), wallet2.Name()}, nil)
-	handler.pipeline.EXPECT().RequestWalletSelection(ctx, traceID, expectedHostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(api.SelectedWallet{}, api.ErrUserCloseTheConnection)
-
-	// when
-	result, errorDetails := handler.handle(t, ctx, api.ConnectWalletParams{
-		Hostname: expectedHostname,
-	})
-
-	// then
-	assertConnectionClosedError(t, errorDetails)
-	assert.Empty(t, result)
-}
-
-func testInterruptingTheRequestDuringWalletSelectionDoesNotConnectToWallet(t *testing.T) {
-	// given
-	ctx, traceID := contextWithTraceID()
-	expectedHostname := "vega.xyz"
-	wallet1, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
-	wallet2, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
-
-	// setup
-	handler := newConnectWalletHandler(t)
-	// -- expected calls
-	handler.pipeline.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return([]string{wallet1.Name(), wallet2.Name()}, nil)
-	handler.pipeline.EXPECT().RequestWalletSelection(ctx, traceID, expectedHostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(api.SelectedWallet{}, api.ErrRequestInterrupted)
-	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.ServerError, api.ErrRequestInterrupted).Times(1)
-
-	// when
-	result, errorDetails := handler.handle(t, ctx, api.ConnectWalletParams{
-		Hostname: expectedHostname,
-	})
-
-	// then
-	assertRequestInterruptionError(t, errorDetails)
-	assert.Empty(t, result)
-}
-
-func testGettingInternalErrorDuringWalletSelectionDoesNotConnectToWallet(t *testing.T) {
-	// given
-	ctx, traceID := contextWithTraceID()
-	expectedHostname := "vega.xyz"
-	wallet1, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
-	wallet2, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
-
-	// setup
-	handler := newConnectWalletHandler(t)
-	// -- expected calls
-	handler.pipeline.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return([]string{wallet1.Name(), wallet2.Name()}, nil)
-	handler.pipeline.EXPECT().RequestWalletSelection(ctx, traceID, expectedHostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(api.SelectedWallet{}, assert.AnError)
-	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("requesting the wallet selection failed: %w", assert.AnError)).Times(1)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ConnectWalletParams{
@@ -364,17 +296,18 @@ func testSelectingNonExistingWalletDoesNotConnectToWallet(t *testing.T) {
 	expectedHostname := "vega.xyz"
 	wallet1, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
 	wallet2, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallets := []string{wallet1.Name(), wallet2.Name()}
 	nonExistingWallet := vgrand.RandomStr(5)
 
 	// setup
 	handler := newConnectWalletHandler(t)
 	// -- expected calls
-	handler.pipeline.EXPECT().RequestWalletConnectionReview(cancelCtx, traceID, expectedHostname).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().ListWallets(cancelCtx).Times(1).Return([]string{wallet1.Name(), wallet2.Name()}, nil)
-	handler.pipeline.EXPECT().RequestWalletSelection(cancelCtx, traceID, expectedHostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(api.SelectedWallet{
+	handler.pipeline.EXPECT().RequestWalletConnectionReview(cancelCtx, traceID, expectedHostname, wallets).Times(1).Return(api.WalletConnectionDecision{
+		Approved:   true,
 		Wallet:     nonExistingWallet,
 		Passphrase: vgrand.RandomStr(4),
 	}, nil)
+	handler.walletStore.EXPECT().ListWallets(cancelCtx).Times(1).Return(wallets, nil)
 	handler.walletStore.EXPECT().WalletExists(cancelCtx, nonExistingWallet).Times(1).Return(false, nil)
 	handler.pipeline.EXPECT().NotifyError(cancelCtx, traceID, api.UserError, api.ErrWalletDoesNotExist).Times(1).Do(func(_ context.Context, _ string, _ api.ErrorType, _ error) {
 		// Once everything has been called once, we cancel the handler to break the loop.
@@ -397,16 +330,17 @@ func testGettingInternalErrorDuringWalletRetrievalDoesNotConnectToWallet(t *test
 	expectedHostname := "vega.xyz"
 	wallet1, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
 	wallet2, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallets := []string{wallet1.Name(), wallet2.Name()}
 
 	// setup
 	handler := newConnectWalletHandler(t)
 	// -- expected calls
-	handler.pipeline.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return([]string{wallet1.Name(), wallet2.Name()}, nil)
-	handler.pipeline.EXPECT().RequestWalletSelection(ctx, traceID, expectedHostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(api.SelectedWallet{
+	handler.pipeline.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname, wallets).Times(1).Return(api.WalletConnectionDecision{
+		Approved:   true,
 		Wallet:     wallet1.Name(),
 		Passphrase: vgrand.RandomStr(5),
 	}, nil)
+	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return(wallets, nil)
 	handler.walletStore.EXPECT().WalletExists(ctx, wallet1.Name()).Times(1).Return(false, assert.AnError)
 	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("could not verify the wallet existence: %w", assert.AnError)).Times(1)
 
@@ -427,17 +361,18 @@ func testUsingWrongPassphraseDoesNotConnectToWallet(t *testing.T) {
 	expectedHostname := "vega.xyz"
 	wallet1, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
 	wallet2, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallets := []string{wallet1.Name(), wallet2.Name()}
 	passphrase := vgrand.RandomStr(4)
 
 	// setup
 	handler := newConnectWalletHandler(t)
 	// -- expected calls
-	handler.pipeline.EXPECT().RequestWalletConnectionReview(cancelCtx, traceID, expectedHostname).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().ListWallets(cancelCtx).Times(1).Return([]string{wallet1.Name(), wallet2.Name()}, nil)
-	handler.pipeline.EXPECT().RequestWalletSelection(cancelCtx, traceID, expectedHostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(api.SelectedWallet{
+	handler.pipeline.EXPECT().RequestWalletConnectionReview(cancelCtx, traceID, expectedHostname, wallets).Times(1).Return(api.WalletConnectionDecision{
+		Approved:   true,
 		Wallet:     wallet1.Name(),
 		Passphrase: passphrase,
 	}, nil)
+	handler.walletStore.EXPECT().ListWallets(cancelCtx).Times(1).Return(wallets, nil)
 	handler.walletStore.EXPECT().WalletExists(cancelCtx, wallet1.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(cancelCtx, wallet1.Name(), passphrase).Times(1).Return(nil, wallet.ErrWrongPassphrase)
 	handler.pipeline.EXPECT().NotifyError(cancelCtx, traceID, api.UserError, wallet.ErrWrongPassphrase).Times(1).Do(func(_ context.Context, _ string, _ api.ErrorType, _ error) {
@@ -461,17 +396,18 @@ func testGettingInternalErrorDuringWalletVerificationDoesNotConnectToWallet(t *t
 	expectedHostname := "vega.xyz"
 	wallet1, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
 	wallet2, _ := walletWithPerms(t, expectedHostname, wallet.Permissions{})
+	wallets := []string{wallet1.Name(), wallet2.Name()}
 	passphrase := vgrand.RandomStr(5)
 
 	// setup
 	handler := newConnectWalletHandler(t)
 	// -- expected calls
-	handler.pipeline.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return([]string{wallet1.Name(), wallet2.Name()}, nil)
-	handler.pipeline.EXPECT().RequestWalletSelection(ctx, traceID, expectedHostname, []string{wallet1.Name(), wallet2.Name()}).Times(1).Return(api.SelectedWallet{
+	handler.pipeline.EXPECT().RequestWalletConnectionReview(ctx, traceID, expectedHostname, wallets).Times(1).Return(api.WalletConnectionDecision{
+		Approved:   true,
 		Wallet:     wallet1.Name(),
 		Passphrase: passphrase,
 	}, nil)
+	handler.walletStore.EXPECT().ListWallets(ctx).Times(1).Return(wallets, nil)
 	handler.walletStore.EXPECT().WalletExists(ctx, wallet1.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name(), passphrase).Times(1).Return(nil, assert.AnError)
 	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("could not retrieve the wallet: %w", assert.AnError)).Times(1)

@@ -39,6 +39,10 @@ func (s *SequentialPipeline) NotifyError(ctx context.Context, traceID string, t 
 }
 
 func (s *SequentialPipeline) Log(ctx context.Context, traceID string, t api.LogType, msg string) {
+	if err := ctx.Err(); err != nil {
+		return
+	}
+
 	s.receptionChan <- Envelope{
 		TraceID: traceID,
 		Content: Log{
@@ -59,45 +63,14 @@ func (s *SequentialPipeline) NotifySuccessfulRequest(ctx context.Context, traceI
 	}
 }
 
-func (s *SequentialPipeline) RequestWalletConnectionReview(ctx context.Context, traceID, hostname string) (bool, error) {
+func (s *SequentialPipeline) RequestWalletConnectionReview(ctx context.Context, traceID, hostname string, availableWallets []string) (api.WalletConnectionDecision, error) {
 	if err := ctx.Err(); err != nil {
-		return false, api.ErrRequestInterrupted
+		return api.WalletConnectionDecision{}, api.ErrRequestInterrupted
 	}
 
 	s.receptionChan <- Envelope{
 		TraceID: traceID,
 		Content: RequestWalletConnectionReview{
-			Hostname: hostname,
-		},
-	}
-
-	for {
-		select {
-		case <-ctx.Done():
-			return false, api.ErrRequestInterrupted
-		case <-s.userCtx.Done():
-			return false, api.ErrUserCloseTheConnection
-		case response := <-s.responseChan:
-			if response.TraceID != traceID {
-				return false, ErrTraceIDMismatch
-			}
-			decision, ok := response.Content.(Decision)
-			if !ok {
-				return false, ErrWrongResponseType
-			}
-			return decision.Approved, nil
-		}
-	}
-}
-
-func (s *SequentialPipeline) RequestWalletSelection(ctx context.Context, traceID, hostname string, availableWallets []string) (api.SelectedWallet, error) {
-	if err := ctx.Err(); err != nil {
-		return api.SelectedWallet{}, api.ErrRequestInterrupted
-	}
-
-	s.receptionChan <- Envelope{
-		TraceID: traceID,
-		Content: RequestWalletSelection{
 			Hostname:         hostname,
 			AvailableWallets: availableWallets,
 		},
@@ -106,18 +79,18 @@ func (s *SequentialPipeline) RequestWalletSelection(ctx context.Context, traceID
 	for {
 		select {
 		case <-ctx.Done():
-			return api.SelectedWallet{}, api.ErrRequestInterrupted
+			return api.WalletConnectionDecision{}, api.ErrRequestInterrupted
 		case <-s.userCtx.Done():
-			return api.SelectedWallet{}, api.ErrUserCloseTheConnection
+			return api.WalletConnectionDecision{}, api.ErrUserCloseTheConnection
 		case response := <-s.responseChan:
 			if response.TraceID != traceID {
-				return api.SelectedWallet{}, ErrTraceIDMismatch
+				return api.WalletConnectionDecision{}, ErrTraceIDMismatch
 			}
-			selectedWallet, ok := response.Content.(api.SelectedWallet)
+			decision, ok := response.Content.(api.WalletConnectionDecision)
 			if !ok {
-				return api.SelectedWallet{}, ErrWrongResponseType
+				return api.WalletConnectionDecision{}, ErrWrongResponseType
 			}
-			return selectedWallet, nil
+			return decision, nil
 		}
 	}
 }
@@ -290,6 +263,8 @@ type Envelope struct {
 	Content interface{} `json:"content"`
 }
 
+// Events.
+
 type ErrorOccurred struct {
 	Type  string `json:"type"`
 	Error string `json:"error"`
@@ -300,11 +275,18 @@ type Log struct {
 	Message string `json:"message"`
 }
 
-type RequestWalletConnectionReview struct {
-	Hostname string `json:"hostname"`
+type TransactionStatus struct {
+	TxHash string    `json:"txHash"`
+	Tx     string    `json:"tx"`
+	Error  error     `json:"error"`
+	SentAt time.Time `json:"sentAt"`
 }
 
-type RequestWalletSelection struct {
+type RequestSucceeded struct{}
+
+// Requests.
+
+type RequestWalletConnectionReview struct {
 	Hostname         string   `json:"hostname"`
 	AvailableWallets []string `json:"availableWallets"`
 }
@@ -313,18 +295,10 @@ type RequestPassphrase struct {
 	Wallet string `json:"wallet"`
 }
 
-type EnteredPassphrase struct {
-	Passphrase string `json:"passphrase"`
-}
-
 type RequestPermissionsReview struct {
 	Hostname    string            `json:"hostname"`
 	Wallet      string            `json:"wallet"`
 	Permissions map[string]string `json:"permissions"`
-}
-
-type Decision struct {
-	Approved bool `json:"approved"`
 }
 
 type RequestTransactionSendingReview struct {
@@ -343,11 +317,12 @@ type RequestTransactionSigningReview struct {
 	ReceivedAt  time.Time `json:"receivedAt"`
 }
 
-type TransactionStatus struct {
-	TxHash string    `json:"txHash"`
-	Tx     string    `json:"tx"`
-	Error  error     `json:"error"`
-	SentAt time.Time `json:"sentAt"`
+// Responses.
+
+type Decision struct {
+	Approved bool `json:"approved"`
 }
 
-type RequestSucceeded struct{}
+type EnteredPassphrase struct {
+	Passphrase string `json:"passphrase"`
+}

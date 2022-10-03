@@ -43,33 +43,10 @@ type NetworkStore interface {
 //   - Notify* functions do not expect a response.
 //   - Request* functions are expecting a user intervention.
 type Pipeline interface {
-	// NotifyError is used to report errors to the user.
-	// This is a terminal message. Nothing should be expected on the request
-	// after receiving this.
-	NotifyError(ctx context.Context, traceID string, t ErrorType, err error)
-
-	// Log is used to report information of any kind to the user. This is just
-	// to log internal activity to provide feedback to the wallet front-end.
-	// The log should be displayed without triggering any actions.
-	// Receiving a success or an error log shouldn't be confused with the
-	// NotifyError and NotifySuccessfulRequest that send terminal messages.
-	Log(ctx context.Context, traceID string, t LogType, msg string)
-
 	// RequestWalletConnectionReview is used to trigger a user review of
-	// the wallet connection requested by the specified hostname.
-	// It returns true if the user approved the wallet connection, false
-	// otherwise.
-	RequestWalletConnectionReview(ctx context.Context, traceID, hostname string) (bool, error)
-
-	// NotifySuccessfulRequest is used to notify the user the request is
-	// successful.
-	// This is a terminal message. Nothing should be expected on the request
-	// after receiving this.
-	NotifySuccessfulRequest(ctx context.Context, traceID string)
-
-	// RequestWalletSelection is used to trigger selection of the wallet the
-	// user wants to use for the specified hostname.
-	RequestWalletSelection(ctx context.Context, traceID, hostname string, availableWallets []string) (SelectedWallet, error)
+	// the wallet connection requested by the specified hostname. If approved on
+	// the wallet front-end, the wallet selection should be triggered.
+	RequestWalletConnectionReview(ctx context.Context, traceID, hostname string, availableWallets []string) (WalletConnectionDecision, error)
 
 	// RequestPassphrase is used to request the user to enter the passphrase of
 	// the wallet. It's primarily used for request that requires saving changes
@@ -100,6 +77,24 @@ type Pipeline interface {
 	// This is a terminal message. Nothing should be expected on the request
 	// after receiving this.
 	NotifyTransactionStatus(ctx context.Context, traceID, txHash, tx string, err error, sentAt time.Time)
+
+	// NotifyError is used to report errors to the user.
+	// This is a terminal message. Nothing should be expected on the request
+	// after receiving this.
+	NotifyError(ctx context.Context, traceID string, t ErrorType, err error)
+
+	// NotifySuccessfulRequest is used to notify the user the request is
+	// successful.
+	// This is a terminal message. Nothing should be expected on the request
+	// after receiving this.
+	NotifySuccessfulRequest(ctx context.Context, traceID string)
+
+	// Log is used to report information of any kind to the user. This is just
+	// to log internal activity to provide feedback to the wallet front-end.
+	// The log should be displayed without triggering any actions.
+	// Receiving a success or an error log shouldn't be confused with the
+	// NotifyError and NotifySuccessfulRequest that send terminal messages.
+	Log(ctx context.Context, traceID string, t LogType, msg string)
 }
 
 // ErrorType defines the type of error that is sent to the user, for fine
@@ -135,8 +130,12 @@ var (
 	SuccessLog LogType = "Success"
 )
 
-// SelectedWallet holds the result of the wallet selection from the user.
-type SelectedWallet struct {
+// WalletConnectionDecision holds the result of connection approval and
+// the wallet selection from the user.
+// If the connection is approved, a wallet name and a passphrase is expected.
+// If the connection is denied, no wallet name and passphrase is expected.
+type WalletConnectionDecision struct {
+	Approved   bool   `json:"approved"`
 	Wallet     string `json:"wallet"`
 	Passphrase string `json:"passphrase"`
 }

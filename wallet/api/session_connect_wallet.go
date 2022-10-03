@@ -44,18 +44,6 @@ func (h *ConnectWallet) Handle(ctx context.Context, rawParams jsonrpc.Params) (j
 		return nil, invalidParams(err)
 	}
 
-	approved, err := h.pipeline.RequestWalletConnectionReview(ctx, traceID, params.Hostname)
-	if err != nil {
-		if errDetails := handleRequestFlowError(ctx, traceID, h.pipeline, err); errDetails != nil {
-			return nil, errDetails
-		}
-		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("reviewing the wallet connection failed: %w", err))
-		return nil, internalError(ErrCouldNotConnectToWallet)
-	}
-	if !approved {
-		return nil, userRejectionError()
-	}
-
 	availableWallets, err := h.walletStore.ListWallets(ctx)
 	if err != nil {
 		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not list available wallets: %w", err))
@@ -69,16 +57,19 @@ func (h *ConnectWallet) Handle(ctx context.Context, rawParams jsonrpc.Params) (j
 			return nil, requestInterruptedError(ErrRequestInterrupted)
 		}
 
-		selectedWallet, err := h.pipeline.RequestWalletSelection(ctx, traceID, params.Hostname, availableWallets)
+		decision, err := h.pipeline.RequestWalletConnectionReview(ctx, traceID, params.Hostname, availableWallets)
 		if err != nil {
 			if errDetails := handleRequestFlowError(ctx, traceID, h.pipeline, err); errDetails != nil {
 				return nil, errDetails
 			}
-			h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("requesting the wallet selection failed: %w", err))
+			h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("reviewing the wallet connection failed: %w", err))
 			return nil, internalError(ErrCouldNotConnectToWallet)
 		}
+		if !decision.Approved {
+			return nil, userRejectionError()
+		}
 
-		if exist, err := h.walletStore.WalletExists(ctx, selectedWallet.Wallet); err != nil {
+		if exist, err := h.walletStore.WalletExists(ctx, decision.Wallet); err != nil {
 			h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not verify the wallet existence: %w", err))
 			return nil, internalError(ErrCouldNotConnectToWallet)
 		} else if !exist {
@@ -86,7 +77,7 @@ func (h *ConnectWallet) Handle(ctx context.Context, rawParams jsonrpc.Params) (j
 			continue
 		}
 
-		w, err := h.walletStore.GetWallet(ctx, selectedWallet.Wallet, selectedWallet.Passphrase)
+		w, err := h.walletStore.GetWallet(ctx, decision.Wallet, decision.Passphrase)
 		if err != nil {
 			if errors.Is(err, wallet.ErrWrongPassphrase) {
 				h.pipeline.NotifyError(ctx, traceID, UserError, wallet.ErrWrongPassphrase)
