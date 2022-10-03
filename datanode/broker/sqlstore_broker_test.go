@@ -362,7 +362,6 @@ func TestSqlBrokerSubscriberCallbacks(t *testing.T) {
 	assert.Equal(t, true, <-transactionManager.commitCall)
 
 	beginEvent = beSource.NextBeginBlockEvent()
-	endEvent = beSource.NextEndBlockEvent()
 	tes.eventsCh <- beginEvent
 
 	assert.Equal(t, time.Unix(0, beginEvent.BeginBlock().Timestamp).Truncate(time.Microsecond), <-s1.vegaTimeCh)
@@ -555,27 +554,6 @@ func (t *testChainInfo) SetChainID(s string) error {
 
 func (t *testChainInfo) GetChainID() (string, error) {
 	return t.chainID, nil
-}
-
-type timeEventSource struct {
-	vegaTime    time.Time
-	blockHeight int64
-}
-
-func newTimeEventSource() *timeEventSource {
-	return &timeEventSource{
-		vegaTime: time.Now().Truncate(time.Millisecond),
-	}
-}
-
-func (tes *timeEventSource) NextTimeEvent() *events.Time {
-	ctx := vgcontext.WithTraceID(context.Background(), "DEADBEEF")
-	ctx = vgcontext.WithBlockHeight(ctx, tes.blockHeight)
-
-	event := events.NewTime(ctx, tes.vegaTime)
-	tes.vegaTime = tes.vegaTime.Add(1 * time.Second)
-	tes.blockHeight++
-	return event
 }
 
 type blockEventSource struct {

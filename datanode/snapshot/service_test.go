@@ -131,7 +131,6 @@ func TestMain(t *testing.M) {
 		err = sqlBroker.Receive(ctx)
 		if err != nil {
 			return // TODO: Replace with the panic once we're able to test with the new events file
-			//panic(fmt.Errorf("failed to process events:%w", err))
 		}
 
 		if len(fromEventsSnapshotHashes) != numSnapshots {
@@ -459,6 +458,8 @@ func TestAlteringSnapshotInterval(t *testing.T) {
 	}
 }
 
+// TODO: Remove this once we've re-enabled the snapshot tests
+// nolint: unused
 func waitForSnapshotToCompleteForHeights(heightTo int64, heightFrom int64, snapshotsDir string) {
 	cs := snapshot.NewCurrentSnapshot(chainID, heightTo)
 	hist := snapshot.NewHistorySnapshot(chainID, heightFrom, heightTo)
@@ -745,6 +746,8 @@ type sqlStoreBroker interface {
 	Receive(ctx context.Context) error
 }
 
+// TODO: Remove this once we've re-enabled the snapshot tests
+// nolint: unused
 func copySnapshotDataIntoSnapshotDirectory(fromHeight int64, toHeight int64, snapshotsDir string) {
 	_, histories, err := snapshot.GetHistorySnapshots(snapshotsBackupDir)
 	if err != nil {
@@ -793,6 +796,8 @@ func panicIfSnapshotHashNotEqual(expected string, actual string, snapshots []sna
 	}
 }
 
+// TODO: Remove this once we've re-enabled the snapshot tests
+// nolint: unused
 func assertIntervalHistoryIsEmpty(t *testing.T, historyTableDelta []map[string]tableDataSummary, interval int) {
 	t.Helper()
 	totalRowCount := 0
@@ -897,6 +902,8 @@ type tableDataSummary struct {
 	dataHash  string
 }
 
+// TODO: Remove this once we've re-enabled the snapshot tests
+// nolint: unused
 func assertTableSummariesAreEqual(t *testing.T, expected map[string]tableDataSummary, actual map[string]tableDataSummary) {
 	t.Helper()
 	if len(expected) != len(actual) {
