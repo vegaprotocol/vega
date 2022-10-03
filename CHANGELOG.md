@@ -16,6 +16,7 @@
 - [6266](https://github.com/vegaprotocol/vega/issues/6266) - Do not take a snapshot at block height 1 and handle increase of interval appropriately
 - [6338](https://github.com/vegaprotocol/vega/issues/6338) - Fix validation for update an new asset proposals
 - [6357](https://github.com/vegaprotocol/vega/issues/6357) - Fix potential panic in `gql` resolvers
+- [6391](https://github.com/vegaprotocol/vega/issues/6391) - Fix dropped connection between core and data node when large `(>1mb)` messages are sent.
 - [6358](https://github.com/vegaprotocol/vega/issues/6358) - Do not show hidden files nor directories as wallet
 - [6374](https://github.com/vegaprotocol/vega/issues/6374) - Fix panic with the metrics
 - [6373](https://github.com/vegaprotocol/vega/issues/6373) - Fix panic with the metrics as well
