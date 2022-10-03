@@ -57,4 +57,3 @@ func errEventNotEmitted(t events.Type) error {
 func errEventEmitted(t events.Type) error {
 	return fmt.Errorf("event of type %s has been emitted", t)
 }
-

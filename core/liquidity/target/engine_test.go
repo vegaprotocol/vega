@@ -187,7 +187,7 @@ func TestGetTargetStake_VerifyFormulaAfterParametersUpdate(t *testing.T) {
 }
 
 func TestGetTargetStake_VerifyMaxOI(t *testing.T) {
-	tWindow := 60*time.Minute
+	tWindow := 60 * time.Minute
 	scalingFactor := num.DecimalFromFloat(11.3)
 	params := types.TargetStakeParameters{TimeWindow: int64(tWindow.Seconds()), ScalingFactor: scalingFactor}
 	rfLong := num.DecimalFromFloat(0.3)
@@ -259,12 +259,12 @@ func TestGetTargetStake_VerifyMaxOI(t *testing.T) {
 	err = engine.RecordOpenInterest(penultimateValue, now)
 	require.NoError(t, err)
 	// Half a time window
-	now = now.Add(30*time.Minute)
-	lastRecordedValue = 5 
+	now = now.Add(30 * time.Minute)
+	lastRecordedValue = 5
 	err = engine.RecordOpenInterest(lastRecordedValue, now)
 	require.NoError(t, err)
 	// Move entire time window and a bit
-	now = now.Add(61*time.Minute)
+	now = now.Add(61 * time.Minute)
 	markPrice = num.NewUint(7777777)
 	actualTargetStake1, _ = engine.GetTargetStake(rf, now, markPrice)
 	actualTargetStake2, _ = engine.GetTargetStake(rf, now.Add(time.Minute), markPrice)
