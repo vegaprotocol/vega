@@ -33,7 +33,6 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	"github.com/cosmos/iavl"
-	"github.com/tendermint/tendermint/libs/strings"
 	db "github.com/tendermint/tm-db"
 )
 
@@ -127,6 +126,7 @@ type Engine struct {
 // order in which snapshots are to be restored.
 var nodeOrder = []types.SnapshotNamespace{
 	types.AppSnapshot,
+	types.EpochSnapshot,
 	types.AssetsSnapshot,  // needs to happen before banking
 	types.WitnessSnapshot, // needs to happen before banking and governance
 	types.GovernanceSnapshot,
@@ -142,12 +142,10 @@ var nodeOrder = []types.SnapshotNamespace{
 	types.PositionsSnapshot,              // again, needs a market
 	types.LiquiditySnapshot,
 	types.LiquidityTargetSnapshot,
-	types.EpochSnapshot,
 	types.StakingSnapshot,
 	types.StakeVerifierSnapshot,
 	types.SpamSnapshot,
 	types.LimitSnapshot,
-	types.ReplayProtectionSnapshot,
 	types.RewardSnapshot,
 	types.TopologySnapshot,
 	types.EventForwarderSnapshot,
@@ -202,7 +200,7 @@ func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Lo
 		wrap:            appPL,
 		app:             appPL.AppState,
 		interval:        1, // default to every block
-		current:         1,
+		current:         -1,
 	}
 	return eng, nil
 }
@@ -1044,32 +1042,9 @@ func (e *Engine) AddProviders(provs ...types.StateProvider) {
 			e.nsKeys[ns] = keys
 			continue
 		}
-		// in this case, we are replacing the provider
-		if ns == types.ReplayProtectionSnapshot {
-			for _, k := range keys {
-				fullKey := types.GetNodeKey(ns, k)
-				// replace the old provider with the replacement
-				e.providers[fullKey] = p
-			}
-			rpl := false
-			// replace provider reference in the NS map, too
-			for i, oldP := range e.providersNS[ns] {
-				// both in same namespace, have same keys -> replace
-				if strings.StringSliceEqual(keys, oldP.Keys()) {
-					e.providersNS[ns][i] = p
-					rpl = true
-					break
-				}
-			}
-			// we found an exact match, and replaced the provider
-			if rpl {
-				continue
-			}
-			// no exact match was found, so we'll have to de-duplicate
-		}
+
 		dedup := uniqueSubset(haveKeys, keys)
-		// note that the replay protection provider can replace itself (Noop -> actual protector)
-		if len(dedup) == 0 && ns != types.ReplayProtectionSnapshot {
+		if len(dedup) == 0 {
 			continue // no new keys were added
 		}
 		e.nsKeys[ns] = append(e.nsKeys[ns], dedup...)
@@ -1110,10 +1085,12 @@ func (e *Engine) Close() error {
 }
 
 func (e *Engine) OnSnapshotIntervalUpdate(ctx context.Context, interval int64) error {
-	e.interval = interval
-	if interval < e.current {
+	if interval < e.current || e.current < 0 {
 		e.current = interval
+	} else if interval > e.interval {
+		e.current += interval - e.interval
 	}
+	e.interval = interval
 	return nil
 }
 

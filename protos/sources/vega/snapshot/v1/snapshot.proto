@@ -89,8 +89,6 @@ message Payload {
     VoteSpamPolicy vote_spam_policy = 26;
     SimpleSpamPolicy simple_spam_policy = 27;
     Notary notary = 28;
-    ReplayProtection replay_protection = 29;
-    FutureState  future_state = 30;
     EventForwarder event_forwarder = 31;
     StakeVerifierDeposited stake_verifier_deposited = 32;
     StakeVerifierRemoved stake_verifier_removed = 33;
@@ -160,7 +158,6 @@ message OracleDataPair {
 
 message Witness {
   repeated Resource resources = 1;
-  repeated string need_resend_resources = 2;
 }
 
 message Resource {
@@ -430,7 +427,7 @@ message Market {
   string risk_factor_long = 15;
   bool risk_factor_consensus_reached = 16;
   FeeSplitter fee_splitter = 17;
-  string settlement_price = 18;
+  string settlement_data = 18;
 }
 
 message PeggedOrders {
@@ -572,23 +569,6 @@ message NotarySigs {
 
 message Notary {
   repeated NotarySigs notary_sigs = 1;
-}
-
-message ReplayProtection {
-  repeated TransactionAtHeight transactions = 1;
-  uint64 back_tol = 2;
-  uint64 forward_tol = 3;
-}
-
-message TransactionAtHeight {
-  string tx = 1;
-  uint64 height = 2;
-}
-
-message FutureState {
-  string market_id = 1;
-  string settlement_price = 2;
-  bool trading_terminated = 3;
 }
 
 message StakeVerifierDeposited {

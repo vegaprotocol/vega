@@ -98,11 +98,11 @@ func (i *Instrument) UnsubscribeTradingTerminated(ctx context.Context) {
 	i.Product.UnsubscribeTradingTerminated(ctx)
 }
 
-func (i *Instrument) UnsubscribeSettlementPrice(ctx context.Context) {
-	i.Product.UnsubscribeSettlementPrice(ctx)
+func (i *Instrument) UnsubscribeSettlementData(ctx context.Context) {
+	i.Product.UnsubscribeSettlementData(ctx)
 }
 
 func (i *Instrument) Unsubscribe(ctx context.Context) {
 	i.UnsubscribeTradingTerminated(ctx)
-	i.UnsubscribeSettlementPrice(ctx)
+	i.UnsubscribeSettlementData(ctx)
 }

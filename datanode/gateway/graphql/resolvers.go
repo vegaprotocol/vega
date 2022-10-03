@@ -1317,6 +1317,9 @@ func (r *myPartyResolver) RewardDetails(
 		PartyId: party.Id,
 	}
 	resp, err := r.tradingDataClient.GetRewardSummaries(ctx, req)
+	if err != nil {
+		return nil, err
+	}
 	return resp.Summaries, err
 }
 
@@ -1340,6 +1343,9 @@ func (r *myPartyResolver) Rewards(
 		Pagination: p,
 	}
 	resp, err := r.tradingDataClient.GetRewards(ctx, req)
+	if err != nil {
+		return nil, err
+	}
 	return resp.Rewards, err
 }
 
@@ -1382,6 +1388,9 @@ func (r *myPartyResolver) RewardSummaries(
 	}
 
 	resp, err := r.tradingDataClientV2.ListRewardSummaries(ctx, req)
+	if err != nil {
+		return nil, err
+	}
 	return resp.Summaries, err
 }
 

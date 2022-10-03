@@ -237,8 +237,7 @@ type PayloadMarketActivityTracker struct {
 }
 
 type Witness struct {
-	NeedResendResources []string
-	Resources           []*Resource
+	Resources []*Resource
 }
 
 type Resource struct {
@@ -283,10 +282,6 @@ type PayloadLiquidityTarget struct {
 	Target *snapshot.LiquidityTarget
 }
 
-type PayloadFutureState struct {
-	FutureState *FutureState
-}
-
 type PayloadProtocolUpgradeProposals struct {
 	Proposals *snapshot.ProtocolUpgradeProposals
 }
@@ -322,7 +317,7 @@ type ExecMarket struct {
 	LongRiskFactor             num.Decimal
 	RiskFactorConsensusReached bool
 	FeeSplitter                *FeeSplitter
-	SettlementPrice            *num.Uint
+	SettlementData             *num.Uint
 }
 
 type PriceMonitor struct {
@@ -579,12 +574,6 @@ type Notary struct {
 	Sigs []*NotarySigs
 }
 
-type FutureState struct {
-	MarketID          string
-	SettlementPrice   *num.Uint
-	TradingTerminated bool
-}
-
 type PayloadLiquiditySupplied struct {
 	LiquiditySupplied *snapshot.LiquiditySupplied
 }
@@ -759,8 +748,6 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadLiquiditySuppliedFromProto(dt)
 	case *snapshot.Payload_LiquidityTarget:
 		ret.Data = PayloadLiquidityTargetFromProto(dt)
-	case *snapshot.Payload_FutureState:
-		ret.Data = PayloadFutureStateFromProto(dt)
 	case *snapshot.Payload_FloatingPointConsensus:
 		ret.Data = PayloadFloatingPointConsensusFromProto(dt)
 	case *snapshot.Payload_MarketTracker:
@@ -866,8 +853,6 @@ func (p Payload) IntoProto() *snapshot.Payload {
 		ret.Data = dt
 	case *snapshot.Payload_Notary:
 		ret.Data = dt
-	case *snapshot.Payload_ReplayProtection:
-		ret.Data = dt
 	case *snapshot.Payload_EventForwarder:
 		ret.Data = dt
 	case *snapshot.Payload_Witness:
@@ -891,8 +876,6 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_LiquidityProvisions:
 		ret.Data = dt
 	case *snapshot.Payload_LiquiditySupplied:
-		ret.Data = dt
-	case *snapshot.Payload_FutureState:
 		ret.Data = dt
 	case *snapshot.Payload_NetworkParameters:
 		ret.Data = dt
@@ -2859,8 +2842,8 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 	}
 
 	var sp *num.Uint
-	if em.SettlementPrice != "" {
-		sp, _ = num.UintFromString(em.SettlementPrice, 10)
+	if em.SettlementData != "" {
+		sp, _ = num.UintFromString(em.SettlementData, 10)
 	}
 
 	ret := ExecMarket{
@@ -2881,7 +2864,7 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 		LongRiskFactor:             longRF,
 		RiskFactorConsensusReached: em.RiskFactorConsensusReached,
 		FeeSplitter:                FeeSplitterFromProto(em.FeeSplitter),
-		SettlementPrice:            sp,
+		SettlementData:             sp,
 	}
 	for _, o := range em.ExpiringOrders {
 		or, _ := OrderFromProto(o)
@@ -2892,8 +2875,8 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 
 func (e ExecMarket) IntoProto() *snapshot.Market {
 	sp := ""
-	if e.SettlementPrice != nil {
-		sp = e.SettlementPrice.String()
+	if e.SettlementData != nil {
+		sp = e.SettlementData.String()
 	}
 
 	ret := snapshot.Market{
@@ -2914,7 +2897,7 @@ func (e ExecMarket) IntoProto() *snapshot.Market {
 		RiskFactorLong:             e.LongRiskFactor.String(),
 		RiskFactorConsensusReached: e.RiskFactorConsensusReached,
 		FeeSplitter:                e.FeeSplitter.IntoProto(),
-		SettlementPrice:            sp,
+		SettlementData:             sp,
 	}
 	for _, o := range e.ExpiringOrders {
 		ret.ExpiringOrders = append(ret.ExpiringOrders, o.IntoProto())
@@ -3618,8 +3601,7 @@ func PayloadWitnessFromProto(w *snapshot.Payload_Witness) *PayloadWitness {
 	}
 	return &PayloadWitness{
 		Witness: &Witness{
-			NeedResendResources: w.Witness.NeedResendResources,
-			Resources:           resources,
+			Resources: resources,
 		},
 	}
 }
@@ -3639,8 +3621,7 @@ func (p *PayloadWitness) IntoProto() *snapshot.Payload_Witness {
 	}
 	return &snapshot.Payload_Witness{
 		Witness: &snapshot.Witness{
-			NeedResendResources: p.Witness.NeedResendResources,
-			Resources:           resources,
+			Resources: resources,
 		},
 	}
 }
@@ -3789,49 +3770,6 @@ func (p *PayloadLiquiditySupplied) Key() string {
 
 func (*PayloadLiquiditySupplied) Namespace() SnapshotNamespace {
 	return LiquiditySnapshot
-}
-
-func PayloadFutureStateFromProto(pf *snapshot.Payload_FutureState) *PayloadFutureState {
-	return &PayloadFutureState{
-		FutureState: FutureStateFromProto(pf.FutureState),
-	}
-}
-
-func (p *PayloadFutureState) IntoProto() *snapshot.Payload_FutureState {
-	return &snapshot.Payload_FutureState{
-		FutureState: p.FutureState.IntoProto(),
-	}
-}
-
-func (p *PayloadFutureState) plToProto() interface{} {
-	return p.IntoProto()
-}
-
-func (p *PayloadFutureState) Key() string {
-	return p.FutureState.MarketID
-}
-
-func (*PayloadFutureState) isPayload() {}
-
-func (*PayloadFutureState) Namespace() SnapshotNamespace {
-	return FutureStateSnapshot
-}
-
-func FutureStateFromProto(fs *snapshot.FutureState) *FutureState {
-	sp, _ := num.UintFromString(fs.SettlementPrice, 10)
-	return &FutureState{
-		MarketID:          fs.MarketId,
-		SettlementPrice:   sp,
-		TradingTerminated: fs.TradingTerminated,
-	}
-}
-
-func (f *FutureState) IntoProto() *snapshot.FutureState {
-	return &snapshot.FutureState{
-		MarketId:          f.MarketID,
-		SettlementPrice:   f.SettlementPrice.String(),
-		TradingTerminated: f.TradingTerminated,
-	}
 }
 
 func (*PayloadProofOfWork) isPayload() {}

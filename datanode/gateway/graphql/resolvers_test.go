@@ -28,6 +28,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewResolverRoot_ConstructAndResolve(t *testing.T) {
@@ -92,7 +93,7 @@ func getTestMarket() *types.Market {
 				Product: &types.Instrument_Future{
 					Future: &types.Future{
 						SettlementAsset: "Ethereum/Ether",
-						OracleSpecForSettlementPrice: &oraclesv1.OracleSpec{
+						OracleSpecForSettlementData: &oraclesv1.OracleSpec{
 							PubKeys: []string{"0xDEADBEEF"},
 							Filters: []*oraclesv1.Filter{
 								{
@@ -117,7 +118,7 @@ func getTestMarket() *types.Market {
 							},
 						},
 						OracleSpecBinding: &types.OracleSpecToFutureBinding{
-							SettlementPriceProperty:    "prices.ETH.value",
+							SettlementDataProperty:     "prices.ETH.value",
 							TradingTerminationProperty: "trading.terminated",
 						},
 					},
@@ -242,6 +243,18 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 	assert.NotNil(t, orders)
 	assert.Nil(t, err)
 	assert.Len(t, orders.Edges, 2)
+}
+
+func TestRewardsRresolver(t *testing.T) {
+	root := buildTestResolverRoot(t)
+	defer root.Finish()
+	ctx := context.Background()
+	partyResolver := root.Party()
+	root.tradingDataClient.EXPECT().ListRewardSummaries(gomock.Any(), gomock.Any()).Times(1).Return(nil, errors.New("some error"))
+	assetID := "asset"
+	r, e := partyResolver.RewardSummaries(ctx, &types.Party{Id: "some"}, &assetID)
+	require.Nil(t, r)
+	require.NotNil(t, e)
 }
 
 //nolint:interfacebloat

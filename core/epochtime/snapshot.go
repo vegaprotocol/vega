@@ -53,7 +53,7 @@ func (s *Svc) GetState(k string) ([]byte, []types.StateProvider, error) {
 	if k != s.pl.Key() {
 		return nil, nil, types.ErrSnapshotKeyDoesNotExist
 	}
-
+	s.serialise()
 	return s.data, nil, nil
 }
 
@@ -61,7 +61,6 @@ func (s *Svc) LoadState(ctx context.Context, payload *types.Payload) ([]types.St
 	if s.Namespace() != payload.Data.Namespace() {
 		return nil, types.ErrInvalidSnapshotNamespace
 	}
-
 	switch pl := payload.Data.(type) {
 	case *types.PayloadEpoch:
 		snap := pl.EpochState
