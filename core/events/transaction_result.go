@@ -63,88 +63,87 @@ func NewTransactionResultEventFailure(
 	}
 
 	return evt.setTx(tx)
-
 }
 
-func (e *TransactionResult) setTx(tx interface{}) *TransactionResult {
+func (t *TransactionResult) setTx(tx interface{}) *TransactionResult {
 	switch tv := tx.(type) {
 	case *commandspb.OrderSubmission:
-		e.evt.Transaction = &eventspb.TransactionResult_OrderSubmission{
+		t.evt.Transaction = &eventspb.TransactionResult_OrderSubmission{
 			OrderSubmission: tv,
 		}
 	case *commandspb.OrderCancellation:
-		e.evt.Transaction = &eventspb.TransactionResult_OrderCancellation{
+		t.evt.Transaction = &eventspb.TransactionResult_OrderCancellation{
 			OrderCancellation: tv,
 		}
 	case *commandspb.OrderAmendment:
-		e.evt.Transaction = &eventspb.TransactionResult_OrderAmendment{
+		t.evt.Transaction = &eventspb.TransactionResult_OrderAmendment{
 			OrderAmendment: tv,
 		}
 	case *commandspb.VoteSubmission:
-		e.evt.Transaction = &eventspb.TransactionResult_VoteSubmission{
+		t.evt.Transaction = &eventspb.TransactionResult_VoteSubmission{
 			VoteSubmission: tv,
 		}
 	case *commandspb.WithdrawSubmission:
-		e.evt.Transaction = &eventspb.TransactionResult_WithdrawSubmission{
+		t.evt.Transaction = &eventspb.TransactionResult_WithdrawSubmission{
 			WithdrawSubmission: tv,
 		}
 	case *commandspb.LiquidityProvisionSubmission:
-		e.evt.Transaction = &eventspb.TransactionResult_LiquidityProvisionSubmission{
+		t.evt.Transaction = &eventspb.TransactionResult_LiquidityProvisionSubmission{
 			LiquidityProvisionSubmission: tv,
 		}
 	case *commandspb.LiquidityProvisionCancellation:
-		e.evt.Transaction = &eventspb.TransactionResult_LiquidityProvisionCancellation{
+		t.evt.Transaction = &eventspb.TransactionResult_LiquidityProvisionCancellation{
 			LiquidityProvisionCancellation: tv,
 		}
 	case *commandspb.LiquidityProvisionAmendment:
-		e.evt.Transaction = &eventspb.TransactionResult_LiquidityProvisionAmendment{
+		t.evt.Transaction = &eventspb.TransactionResult_LiquidityProvisionAmendment{
 			LiquidityProvisionAmendment: tv,
 		}
 	case *commandspb.ProposalSubmission:
-		e.evt.Transaction = &eventspb.TransactionResult_Proposal{
+		t.evt.Transaction = &eventspb.TransactionResult_Proposal{
 			Proposal: tv,
 		}
 	case *commandspb.DelegateSubmission:
-		e.evt.Transaction = &eventspb.TransactionResult_DelegateSubmission{
+		t.evt.Transaction = &eventspb.TransactionResult_DelegateSubmission{
 			DelegateSubmission: tv,
 		}
 	case *commandspb.UndelegateSubmission:
-		e.evt.Transaction = &eventspb.TransactionResult_UndelegateSubmission{
+		t.evt.Transaction = &eventspb.TransactionResult_UndelegateSubmission{
 			UndelegateSubmission: tv,
 		}
 	case *commandspb.Transfer:
-		e.evt.Transaction = &eventspb.TransactionResult_Transfer{
+		t.evt.Transaction = &eventspb.TransactionResult_Transfer{
 			Transfer: tv,
 		}
 	case *commandspb.CancelTransfer:
-		e.evt.Transaction = &eventspb.TransactionResult_CancelTransfer{
+		t.evt.Transaction = &eventspb.TransactionResult_CancelTransfer{
 			CancelTransfer: tv,
 		}
 	case *commandspb.AnnounceNode:
-		e.evt.Transaction = &eventspb.TransactionResult_AnnounceNode{
+		t.evt.Transaction = &eventspb.TransactionResult_AnnounceNode{
 			AnnounceNode: tv,
 		}
 	case *commandspb.OracleDataSubmission:
-		e.evt.Transaction = &eventspb.TransactionResult_OracleDataSubmission{
+		t.evt.Transaction = &eventspb.TransactionResult_OracleDataSubmission{
 			OracleDataSubmission: tv,
 		}
 	case *commandspb.ProtocolUpgradeProposal:
-		e.evt.Transaction = &eventspb.TransactionResult_ProtocolUpgradeProposal{
+		t.evt.Transaction = &eventspb.TransactionResult_ProtocolUpgradeProposal{
 			ProtocolUpgradeProposal: tv,
 		}
 	case *commandspb.IssueSignatures:
-		e.evt.Transaction = &eventspb.TransactionResult_IssueSignatures{
+		t.evt.Transaction = &eventspb.TransactionResult_IssueSignatures{
 			IssueSignatures: tv,
 		}
 	case *commandspb.BatchMarketInstructions:
-		e.evt.Transaction = &eventspb.TransactionResult_BatchMarketInstructions{
+		t.evt.Transaction = &eventspb.TransactionResult_BatchMarketInstructions{
 			BatchMarketInstructions: tv,
 		}
 	default:
 		panic(fmt.Sprintf("unsupported command: %v", tv))
 	}
 
-	return e
+	return t
 }
 
 func (t TransactionResult) IsParty(id string) bool {
