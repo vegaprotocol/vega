@@ -1,5 +1,5 @@
 Feature: Target stake
-  Background: 
+  Background:
     Given the simple risk model named "simple-risk-model-1":
       | long | short | max move up | min move down | probability of trading |
       | 0.1  | 0.1   | 10          | -10           | 0.1                    |
@@ -30,11 +30,11 @@ Feature: Target stake
       | tt_2  | BTC   | 100000000 |
       | tt_3  | BTC   | 100000000 |
       | tt_4  | BTC   | 100000000 |
-    
+
   Scenario: Max open interest changes over time (0041-TSTK-002, 0041-TSTK-003)
     Given the following network parameters are set:
       | name                              | value |
-      | market.stake.target.timeWindow    | 10s  |
+      | market.stake.target.timeWindow    | 10s   |
       | market.stake.target.scalingFactor | 1.5   |
 
     # put some volume on the book so that others can increase their
@@ -55,12 +55,12 @@ Feature: Target stake
       | tt_3  | ETH/DEC21 | buy  | 30     | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_2_0    |
 
     Then the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | tt_0   | ETH/DEC21 | 2000              | 0.001 | buy  | BID              | 1          | 10     | submission |
-      | lp1 | tt_0   | ETH/DEC21 | 2000              | 0.001 | sell | ASK              | 1          | 10     | amendment  |
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | tt_0  | ETH/DEC21 | 2000              | 0.001 | buy  | BID              | 1          | 10     | submission |
+      | lp1 | tt_0  | ETH/DEC21 | 2000              | 0.001 | sell | ASK              | 1          | 10     | amendment  |
 
     Then the opening auction period ends for market "ETH/DEC21"
-    
+
     # Now parties 1,2,3 are long so open intereset = 10+20+30 = 60.
     # Target stake is mark_price x max_oi x target_stake_scaling_factor x rf_short
     # rf_short should have been set above to 0.1
@@ -77,39 +77,56 @@ Feature: Target stake
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | tt_3  | ETH/DEC21 | sell | 20     | 90    | 1                | TYPE_LIMIT | TIF_GTC | tt_2_1    |
 
-    Then the mark price should be "90" for the market "ETH/DEC21"
-
     # the maximum oi over the last 10s is still unchanged
-    # target_stake = 90 x 60 x 1.5 x 0.1
-    And the target stake should be "810" for the market "ETH/DEC21"
+    # target_stake = 90 x 60 x 1.5 x 0.1 = 810
+    Then the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | 90         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 810          | 2000           | 40            |
 
-    # T0 + 11s
-    Then the network moves ahead "11" blocks
-    And the mark price should be "90" for the market "ETH/DEC21"
+    # T0 + 10s
+    Then the network moves ahead "10" blocks
     # now the peak of 60 should have passed from window
     # target_stake = 90 x 40 x 1.5 x 0.1 = 540
     And the target stake should be "540" for the market "ETH/DEC21"
 
-    Then the network moves ahead "1" blocks
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | tt_3  | ETH/DEC21 | sell | 10     | 90    | 1                | TYPE_LIMIT | TIF_GTC | tt_2_1    |
 
     # target stake should be: 90 x 40 x 1.5 x 0.1 = 540
+    Then the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | 90         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 540          | 2000           | 30            |
+
+    # target stake should be: 90 x 40 x 1.5 x 0.1 = 540
     And the target stake should be "540" for the market "ETH/DEC21"
 
-    # Move time 4x the window
-    Then the network moves ahead "40" blocks
-    When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | tt_1  | ETH/DEC21 | sell | 10     | 90    | 1                | TYPE_LIMIT | TIF_GTC | tt_1_2    |
-      | tt_2  | ETH/DEC21 | sell | 20     | 90    | 1                | TYPE_LIMIT | TIF_GTC | tt_2_2    |
-
-    # target stake is: 90 x 30 x 1.5 x 0.1 = 405
+    Then the network moves ahead "1" blocks
+    # target stake should be: 90 x 30 x 1.5 x 0.1 = 405
     And the target stake should be "405" for the market "ETH/DEC21"
 
+    # Move time 4x the window, the target stake remain unchanged as we rely on last value even if it drops outside the window (that's still what OI is)
+    Then the network moves ahead "40" blocks
+    And the target stake should be "405" for the market "ETH/DEC21"
+
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | tt_1  | ETH/DEC21 | sell | 10     | 90    | 1                | TYPE_LIMIT | TIF_GTC |
+    # target stake is: 90 x 20 x 1.5 x 0.1 = 270 as now the max OI within the window is 20
+    Then the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | 90         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 270          | 2000           | 20            |
+    
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | tt_2  | ETH/DEC21 | sell | 20     | 90    | 1                | TYPE_LIMIT | TIF_GTC |
+    # OI is now 0, but target stake remains unchanged as max OI of 20 is still within the window 
+    Then the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | 90         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 270          | 2000           | 0             |
+
   Scenario: Max open interest changes over time, testing change of timewindow (0041-TSTK-001; 0041-TSTK-004; 0041-TSTK-005)
-      Given the following network parameters are set:
+    Given the following network parameters are set:
       | name                              | value |
       | market.stake.target.timeWindow    | 20s   |
       | market.stake.target.scalingFactor | 1.5   |
@@ -123,8 +140,8 @@ Feature: Target stake
 
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | tt_0  | ETH/DEC21 | 990               | 0.001 | sell | ASK              | 1          | 20     | submission |
-      | lp1 | tt_0  | ETH/DEC21 | 990               | 0.001 | buy  | BID              | 1          | -20    | submission |
+      | lp1 | tt_0  | ETH/DEC21 | 2000              | 0.001 | sell | ASK              | 1          | 20     | submission |
+      | lp1 | tt_0  | ETH/DEC21 | 2000              | 0.001 | buy  | BID              | 1          | -20    | submission |
 
     # nothing should have traded, we have mark price set apriori or
     # due to auction closing.
@@ -136,7 +153,7 @@ Feature: Target stake
       | tt_1  | ETH/DEC21 | buy  | 10     | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_1_0    |
       | tt_2  | ETH/DEC21 | buy  | 20     | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_2_0    |
       | tt_3  | ETH/DEC21 | buy  | 30     | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_2_0    |
- 
+
     Then the opening auction period ends for market "ETH/DEC21"
 
     # So now parties 1,2,3 are long 10+20+30 = 60 open interest.
@@ -145,7 +162,7 @@ Feature: Target stake
     # target_stake = 110 x 60 x 1.5 x 0.1
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest |
-      | 110        | TRADING_MODE_CONTINUOUS | 990         | 990             | 60            |
+      | 110        | TRADING_MODE_CONTINUOUS | 990          | 2000           | 60            |
 
     # T0 + 1s
     Then the network moves ahead "1" blocks
@@ -155,20 +172,20 @@ Feature: Target stake
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | tt_3  | ETH/DEC21 | sell | 20     | 90    | 1                | TYPE_LIMIT | TIF_GTC | tt_2_1    |
 
-    Then the mark price should be "90" for the market "ETH/DEC21"
-
     # the maximum oi over the last 20s is still unchanged
     # target_stake = 90 x 60 x 1.5 x 0.1 = 810
-    And the target stake should be "810" for the market "ETH/DEC21"
+    Then the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | 90         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 810          | 2000           | 40            |
 
-    # T0 + 11s
-    Then the network moves ahead "11" blocks
+    # T0 + 10s
+    Then the network moves ahead "10" blocks
     # the max_io stays the same as previous timestep as the timeWindow is bigger in this scenario (20s days instead of 10s)
     # target_stake = 90 x 60 x 1.5 x 0.1 = 810
     And the target stake should be "810" for the market "ETH/DEC21"
 
     Then the network moves ahead "10" blocks
-     # target_stake = 90 x 40 x 1.5 x 0.1 = 540
+    # target_stake = 90 x 40 x 1.5 x 0.1 = 540
     And the target stake should be "540" for the market "ETH/DEC21"
 
     When the parties place the following orders:
@@ -195,7 +212,7 @@ Feature: Target stake
     # target_stake = 110 x (140+30) x 170 x 1 x 0.1=1870
     And the target stake should be "1870" for the market "ETH/DEC21"
 
- Scenario: Target stake is calculate correctly during auction in presence of wash trades
+  Scenario: Target stake is calculate correctly during auction in presence of wash trades
     Given the following network parameters are set:
       | name                              | value |
       | market.stake.target.timeWindow    | 10s   |
@@ -219,9 +236,9 @@ Feature: Target stake
       | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | 550          | 0              | 0             |
 
     Then the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | tt_0   | ETH/DEC21 | 2000              | 0.001 | buy  | BID              | 1          | 10     | submission |
-      | lp1 | tt_0   | ETH/DEC21 | 2000              | 0.001 | sell | ASK              | 1          | 10     | amendment  |
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | tt_0  | ETH/DEC21 | 2000              | 0.001 | buy  | BID              | 1          | 10     | submission |
+      | lp1 | tt_0  | ETH/DEC21 | 2000              | 0.001 | sell | ASK              | 1          | 10     | amendment  |
 
     # Add wash trades
     When the parties place the following orders:
