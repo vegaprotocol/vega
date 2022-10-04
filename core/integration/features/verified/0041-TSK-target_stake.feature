@@ -1,16 +1,10 @@
 Feature: Target stake
-
-# Market risk parameters and assets don't really matter.
-# We need to track open interest i.e. sum of all long positions across the parties and how they change over time
- Scenario: Max open interest changes over time (0041-TSTK-002, 0041-TSTK-003)
-  Background:
-    Given the following network parameters are set:
-      | name                              | value |
-      | market.stake.target.timeWindow    | 168h  |
-      | market.stake.target.scalingFactor | 1.5   |
-    And the simple risk model named "simple-risk-model-1":
+  Background: 
+    Given the simple risk model named "simple-risk-model-1":
       | long | short | max move up | min move down | probability of trading |
       | 0.1  | 0.1   | 10          | -10           | 0.1                    |
+    # Market risk parameters and assets don't really matter.
+    # We need to track open interest i.e. sum of all long positions across the parties and how they change over time
     And the log normal risk model named "log-normal-risk-model-1":
       | risk aversion | tau                    | mu | r  | sigma |
       | 0.000001      | 0.00011407711613050422 | -1 | -1 | -1    |
@@ -23,14 +17,9 @@ Feature: Target stake
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | oracle config          |
       | ETH/DEC21 | BTC        | BTC   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | default-none     | default-eth-for-future |
+    And the average block duration is "1"
 
-    # Above, it says mark price but really I don't mind if we start
-    # with an opening auction as long as at start of the scenario
-    # no-one has any open positions in the market.
-    # So if we want to start with an auction, trade volume 1, then close out the position.
-
-    # T0 + 8 days so whatever open interest was there after the auction
-    # this is now out of the time window.
+    # T0
     And time is updated to "2021-03-08T00:00:00Z"
 
     # setup accounts
@@ -40,6 +29,13 @@ Feature: Target stake
       | tt_1  | BTC   | 100000000 |
       | tt_2  | BTC   | 100000000 |
       | tt_3  | BTC   | 100000000 |
+      | tt_4  | BTC   | 100000000 |
+    
+  Scenario: Max open interest changes over time (0041-TSTK-002, 0041-TSTK-003)
+    Given the following network parameters are set:
+      | name                              | value |
+      | market.stake.target.timeWindow    | 10s  |
+      | market.stake.target.scalingFactor | 1.5   |
 
     # put some volume on the book so that others can increase their
     # positions and close out if needed too
@@ -48,8 +44,7 @@ Feature: Target stake
       | tt_0  | ETH/DEC21 | buy  | 1000   | 90    | 0                | TYPE_LIMIT | TIF_GTC | tt_0_0    |
       | tt_0  | ETH/DEC21 | sell | 1000   | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_0_1    |
 
-    # nothing should have traded, we have mark price set apriori or
-    # due to auction closing.
+    # nothing should have traded yet
     Then the mark price should be "0" for the market "ETH/DEC21"
 
     # Traders 1, 2, 3 go long
@@ -65,21 +60,17 @@ Feature: Target stake
       | lp1 | tt_0   | ETH/DEC21 | 2000              | 0.001 | sell | ASK              | 1          | 10     | amendment  |
 
     Then the opening auction period ends for market "ETH/DEC21"
-
+    
+    # Now parties 1,2,3 are long so open intereset = 10+20+30 = 60.
+    # Target stake is mark_price x max_oi x target_stake_scaling_factor x rf_short
+    # rf_short should have been set above to 0.1
+    # target_stake = 110 x 60 x 1.5 x 0.1
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
       | 110        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 990          | 2000           | 60            |
 
-    # So now parties 1,2,3 are long 10+20+30 = 60.
-    Then the mark price should be "110" for the market "ETH/DEC21"
-
-    # Target stake is mark_price x max_oi x target_stake_scaling_factor x rf_short
-    # rf_short should have been set above to 0.1
-    # target_stake = 110 x 60 x 1.5 x 0.1
-    And the target stake should be "990" for the market "ETH/DEC21"
-
-    # T0 + 8 days + 1 hour
-    When time is updated to "2021-03-08T01:00:00Z"
+    # T0 + 1s
+    Then the network moves ahead "1" blocks
 
     # Trader 3 closes out 20
     When the parties place the following orders:
@@ -88,19 +79,18 @@ Feature: Target stake
 
     Then the mark price should be "90" for the market "ETH/DEC21"
 
-    # the maximum oi over the last 7 days is still unchanged
+    # the maximum oi over the last 10s is still unchanged
     # target_stake = 90 x 60 x 1.5 x 0.1
     And the target stake should be "810" for the market "ETH/DEC21"
 
-    # T0 + 15 days + 2 hour
-    # so now the peak of 60 should have passed from window
-    When time is updated to "2021-03-15T02:00:00Z"
-    Then the mark price should be "90" for the market "ETH/DEC21"
-
-    # target_stake = 90 x 40 x 1.5 x 0.1
+    # T0 + 11s
+    Then the network moves ahead "11" blocks
+    And the mark price should be "90" for the market "ETH/DEC21"
+    # now the peak of 60 should have passed from window
+    # target_stake = 90 x 40 x 1.5 x 0.1 = 540
     And the target stake should be "540" for the market "ETH/DEC21"
 
-    When time is updated to "2021-03-15T03:00:00Z"
+    Then the network moves ahead "1" blocks
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | tt_3  | ETH/DEC21 | sell | 10     | 90    | 1                | TYPE_LIMIT | TIF_GTC | tt_2_1    |
@@ -108,7 +98,8 @@ Feature: Target stake
     # target stake should be: 90 x 40 x 1.5 x 0.1 = 540
     And the target stake should be "540" for the market "ETH/DEC21"
 
-    When time is updated to "2021-04-15T03:00:00Z"
+    # Move time 4x the window
+    Then the network moves ahead "40" blocks
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | tt_1  | ETH/DEC21 | sell | 10     | 90    | 1                | TYPE_LIMIT | TIF_GTC | tt_1_2    |
@@ -117,37 +108,11 @@ Feature: Target stake
     # target stake is: 90 x 30 x 1.5 x 0.1 = 405
     And the target stake should be "405" for the market "ETH/DEC21"
 
-Scenario: Max open interest changes over time, testing change of timewindow (0041-TSTK-001; 0041-TSTK-004; 0041-TSTK-005)
-  Background:
-    Given the following network parameters are set:
+  Scenario: Max open interest changes over time, testing change of timewindow (0041-TSTK-001; 0041-TSTK-004; 0041-TSTK-005)
+      Given the following network parameters are set:
       | name                              | value |
-      | market.stake.target.timeWindow    | 336h  |
+      | market.stake.target.timeWindow    | 20s   |
       | market.stake.target.scalingFactor | 1.5   |
-    And the simple risk model named "simple-risk-model-1":
-      | long | short | max move up | min move down | probability of trading |
-      | 0.1  | 0.1   | 10          | -10           | 0.1                    |
-    And the log normal risk model named "log-normal-risk-model-1":
-      | risk aversion | tau                    | mu | r  | sigma |
-      | 0.000001      | 0.00011407711613050422 | -1 | -1 | -1    |
-    And the fees configuration named "fees-config-1":
-      | maker fee | infrastructure fee |
-      | 0.00025   | 0.0005             |
-    And the margin calculator named "margin-calculator-1":
-      | search factor | initial factor | release factor |
-      | 1.1           | 1.2            | 1.4            |
-    And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | oracle config          |
-      | ETH/DEC21 | BTC        | BTC   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | default-none     | default-eth-for-future |
-
-    And time is updated to "2021-03-08T00:00:00Z"
-
-    # setup accounts
-    Given the parties deposit on asset's general account the following amount:
-      | party | asset | amount    |
-      | tt_0  | BTC   | 100000000 |
-      | tt_1  | BTC   | 100000000 |
-      | tt_2  | BTC   | 100000000 |
-      | tt_3  | BTC   | 100000000 |
 
     # put some volume on the book so that others can increase their
     # positions and close out if needed too
@@ -171,7 +136,7 @@ Scenario: Max open interest changes over time, testing change of timewindow (004
       | tt_1  | ETH/DEC21 | buy  | 10     | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_1_0    |
       | tt_2  | ETH/DEC21 | buy  | 20     | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_2_0    |
       | tt_3  | ETH/DEC21 | buy  | 30     | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_2_0    |
-
+ 
     Then the opening auction period ends for market "ETH/DEC21"
 
     # So now parties 1,2,3 are long 10+20+30 = 60 open interest.
@@ -182,8 +147,8 @@ Scenario: Max open interest changes over time, testing change of timewindow (004
       | mark price | trading mode            | target stake | supplied stake | open interest |
       | 110        | TRADING_MODE_CONTINUOUS | 990         | 990             | 60            |
 
-    # T0 + 8 days + 1 hour
-    When time is updated to "2021-03-08T01:00:00Z"
+    # T0 + 1s
+    Then the network moves ahead "1" blocks
 
     # Trader 3 closes out 20
     When the parties place the following orders:
@@ -192,17 +157,17 @@ Scenario: Max open interest changes over time, testing change of timewindow (004
 
     Then the mark price should be "90" for the market "ETH/DEC21"
 
-    # the maximum oi over the last 14 days is still unchanged
+    # the maximum oi over the last 20s is still unchanged
     # target_stake = 90 x 60 x 1.5 x 0.1 = 810
     And the target stake should be "810" for the market "ETH/DEC21"
 
-    # T0 + 15 days + 2 hour
-    # the max_io stays the same as previous timestep as the timeWindow is bigger in this scenario (14 days instead of 7 days)
-    When time is updated to "2021-03-15T02:00:00Z"
+    # T0 + 11s
+    Then the network moves ahead "11" blocks
+    # the max_io stays the same as previous timestep as the timeWindow is bigger in this scenario (20s days instead of 10s)
     # target_stake = 90 x 60 x 1.5 x 0.1 = 810
     And the target stake should be "810" for the market "ETH/DEC21"
 
-    When time is updated to "2021-03-25T02:00:00Z"
+    Then the network moves ahead "10" blocks
      # target_stake = 90 x 40 x 1.5 x 0.1 = 540
     And the target stake should be "540" for the market "ETH/DEC21"
 
@@ -217,10 +182,10 @@ Scenario: Max open interest changes over time, testing change of timewindow (004
 
     When the following network parameters are set:
       | name                              | value |
-      | market.stake.target.timeWindow    | 168h  |
+      | market.stake.target.timeWindow    | 10s   |
       | market.stake.target.scalingFactor | 1     |
 
-   # target_stake = 110 x 140 x 1 x 0.1=1540
+    # target_stake = 110 x 140 x 1 x 0.1 =1540
     And the target stake should be "1540" for the market "ETH/DEC21"
 
     When the parties place the following orders:
@@ -231,36 +196,10 @@ Scenario: Max open interest changes over time, testing change of timewindow (004
     And the target stake should be "1870" for the market "ETH/DEC21"
 
  Scenario: Target stake is calculate correctly during auction in presence of wash trades
-  Background:
     Given the following network parameters are set:
       | name                              | value |
-      | market.stake.target.timeWindow    | 168h  |
+      | market.stake.target.timeWindow    | 10s   |
       | market.stake.target.scalingFactor | 1     |
-    And the simple risk model named "simple-risk-model-1":
-      | long | short | max move up | min move down | probability of trading |
-      | 0.1  | 0.1   | 10          | -10           | 0.1                    |
-    And the log normal risk model named "log-normal-risk-model-1":
-      | risk aversion | tau                    | mu | r  | sigma |
-      | 0.000001      | 0.00011407711613050422 | -1 | -1 | -1    |
-    And the fees configuration named "fees-config-1":
-      | maker fee | infrastructure fee |
-      | 0.00025   | 0.0005             |
-    And the margin calculator named "margin-calculator-1":
-      | search factor | initial factor | release factor |
-      | 1.1           | 1.2            | 1.4            |
-    And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | oracle config          |
-      | ETH/DEC21 | BTC        | BTC   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | default-none     | default-eth-for-future |
-
-    And time is updated to "2021-03-08T00:00:00Z"
-
-    Given the parties deposit on asset's general account the following amount:
-      | party | asset | amount    |
-      | tt_0  | BTC   | 100000000 |
-      | tt_1  | BTC   | 100000000 |
-      | tt_2  | BTC   | 100000000 |
-      | tt_3  | BTC   | 100000000 |
-      | tt_4  | BTC   | 100000000 |
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -290,7 +229,7 @@ Scenario: Max open interest changes over time, testing change of timewindow (004
       | tt_4  | ETH/DEC21 | sell | 40     | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_4_0    |
       | tt_4  | ETH/DEC21 | buy  | 40     | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_4_1    |
 
-    # # Check that target stake is unchanged
+    # Check that target stake is unchanged
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode                 | auction trigger         | target stake | supplied stake | open interest |
       | 0          | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | 550          | 2000           | 0             |
