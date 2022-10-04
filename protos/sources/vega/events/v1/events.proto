@@ -225,6 +225,53 @@ message MarketEvent {
   string payload = 2;
 }
 
+message TransactionResult {
+  // Unique party identifier for the related party
+  string party_id = 1;
+  // The status of the transaction, did it succeed or an error was raised.
+  bool status = 2;
+  // The hash of the transaction
+  string hash = 3;
+  // The transaction itself as received by the network
+
+  oneof transaction {
+    commands.v1.OrderSubmission order_submission = 101;
+    commands.v1.OrderAmendment order_amendment = 102;
+    commands.v1.OrderCancellation order_cancellation = 103;
+    commands.v1.ProposalSubmission proposal = 104;
+    commands.v1.VoteSubmission vote_submission = 105;
+    commands.v1.LiquidityProvisionSubmission liquidity_provision_submission = 106;
+    commands.v1.WithdrawSubmission withdraw_submission = 107;
+    commands.v1.DelegateSubmission delegate_submission = 108;
+    commands.v1.UndelegateSubmission undelegate_submission = 109;
+    commands.v1.LiquidityProvisionCancellation liquidity_provision_cancellation = 111;
+    commands.v1.LiquidityProvisionAmendment liquidity_provision_amendment = 112;
+    commands.v1.Transfer transfer = 113;
+    commands.v1.CancelTransfer cancel_transfer = 114;
+    commands.v1.AnnounceNode announce_node = 115;
+    commands.v1.OracleDataSubmission oracle_data_submission = 116;
+    commands.v1.ProtocolUpgradeProposal protocol_upgrade_proposal = 117;
+    commands.v1.IssueSignatures issue_signatures = 118;
+    commands.v1.BatchMarketInstructions batch_market_instructions = 119;
+  }
+
+  // extra details about the transaction processing
+  oneof extra {
+    SuccessDetails success = 1001;
+    FailureDetails failure = 1002;
+  }
+
+  message SuccessDetails {
+    // TBD
+
+  }
+
+  message FailureDetails {
+    // An error message explaining the reason for the transaction failing processing
+    string error = 1;
+  }
+}
+
 message TxErrorEvent {
   // this was the old restore checkpoint command
   reserved 110;
@@ -627,6 +674,8 @@ enum BusEventType {
   BUS_EVENT_TYPE_PROTOCOL_UPGRADE_STARTED = 51;
   // The market has stopped and settled
   BUS_EVENT_TYPE_SETTLE_MARKET = 52;
+  // The result of a transaction processed by the network
+  BUS_EVENT_TYPE_TRANSACTION_RESULT = 53;
 
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
@@ -743,6 +792,8 @@ message BusEvent {
     ProtocolUpgradeStarted protocol_upgrade_started = 150;
     // Settle market event for data-node to update positions for settled markets
     SettleMarket settle_market = 151;
+    // The result of a transaction processed by the network
+    TransactionResult transaction_result = 152;
 
     // Market tick events - See [MarketEvent](#vega.MarketEvent)
     MarketEvent market = 1001;

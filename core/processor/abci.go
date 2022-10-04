@@ -287,67 +287,96 @@ func NewApp(
 		HandleCheckTx(txn.ProposeCommand, app.CheckPropose)
 
 	app.abci.
+		// node commands
+		HandleDeliverTx(txn.NodeSignatureCommand,
+			app.RequireValidatorPubKeyW(app.DeliverNodeSignature)).
+		HandleDeliverTx(txn.NodeVoteCommand,
+			app.RequireValidatorPubKeyW(app.DeliverNodeVote)).
+		HandleDeliverTx(txn.ChainEventCommand,
+			app.RequireValidatorPubKeyW(addDeterministicID(app.DeliverChainEvent))).
+		HandleDeliverTx(txn.StateVariableProposalCommand,
+			app.RequireValidatorPubKeyW(app.DeliverStateVarProposal)).
+		// validators commands
 		HandleDeliverTx(txn.IssueSignatures,
-			app.SendEventOnError(app.DeliverIssueSignatures)).
+			app.SendTransactionResult(app.DeliverIssueSignatures)).
 		HandleDeliverTx(txn.ProtocolUpgradeCommand,
-			app.SendEventOnError(app.DeliverProtocolUpgradeCommand)).
-		HandleDeliverTx(txn.AnnounceNodeCommand,
-			app.SendEventOnError(app.DeliverAnnounceNode)).
+			app.SendTransactionResult(app.DeliverProtocolUpgradeCommand)).
 		HandleDeliverTx(txn.ValidatorHeartbeatCommand,
-			app.SendEventOnError(app.DeliverValidatorHeartbeat)).
-		HandleDeliverTx(txn.TransferFundsCommand,
-			app.SendEventOnError(addDeterministicID(app.DeliverTransferFunds))).
+			app.SendTransactionResult(app.DeliverValidatorHeartbeat)).
+		HandleDeliverTx(txn.RotateKeySubmissionCommand,
+			app.SendTransactionResult(
+				app.RequireValidatorMasterPubKeyW(app.DeliverKeyRotateSubmission),
+			),
+		).
+		HandleDeliverTx(txn.RotateEthereumKeySubmissionCommand,
+			app.SendTransactionResult(
+				app.RequireValidatorPubKeyW(app.DeliverEthereumKeyRotateSubmission),
+			),
+		).
+		// user commands
+		HandleDeliverTx(txn.AnnounceNodeCommand,
+			app.SendTransactionResult(app.DeliverAnnounceNode),
+		).
 		HandleDeliverTx(txn.CancelTransferFundsCommand,
-			app.SendEventOnError(app.DeliverCancelTransferFunds)).
+			app.SendTransactionResult(app.DeliverCancelTransferFunds),
+		).
+		HandleDeliverTx(txn.TransferFundsCommand,
+			app.SendTransactionResult(
+				addDeterministicID(app.DeliverTransferFunds),
+			),
+		).
 		HandleDeliverTx(txn.SubmitOrderCommand,
-			app.SendEventOnError(addDeterministicID(app.DeliverSubmitOrder))).
+			app.SendTransactionResult(
+				addDeterministicID(app.DeliverSubmitOrder),
+			),
+		).
 		HandleDeliverTx(txn.CancelOrderCommand,
-			app.SendEventOnError(addDeterministicID(app.DeliverCancelOrder))).
+			app.SendTransactionResult(
+				addDeterministicID(app.DeliverCancelOrder),
+			),
+		).
 		HandleDeliverTx(txn.AmendOrderCommand,
-			app.SendEventOnError(addDeterministicID(app.DeliverAmendOrder))).
+			app.SendTransactionResult(
+				addDeterministicID(app.DeliverAmendOrder),
+			),
+		).
 		HandleDeliverTx(txn.WithdrawCommand,
-			app.SendEventOnError(addDeterministicID(app.DeliverWithdraw))).
+			app.SendTransactionResult(
+				addDeterministicID(app.DeliverWithdraw))).
 		HandleDeliverTx(txn.ProposeCommand,
-			app.SendEventOnError(
+			app.SendTransactionResult(
 				app.CheckProposeW(
 					addDeterministicID(app.DeliverPropose),
 				),
 			),
 		).
 		HandleDeliverTx(txn.VoteCommand,
-			app.SendEventOnError(app.DeliverVote)).
-		HandleDeliverTx(txn.NodeSignatureCommand,
-			app.RequireValidatorPubKeyW(app.DeliverNodeSignature)).
+			app.SendTransactionResult(app.DeliverVote),
+		).
 		HandleDeliverTx(txn.LiquidityProvisionCommand,
-			app.SendEventOnError(addDeterministicID(app.DeliverLiquidityProvision))).
+			app.SendTransactionResult(
+				addDeterministicID(app.DeliverLiquidityProvision),
+			),
+		).
 		HandleDeliverTx(txn.CancelLiquidityProvisionCommand,
-			app.SendEventOnError(app.DeliverCancelLiquidityProvision)).
+			app.SendTransactionResult(app.DeliverCancelLiquidityProvision),
+		).
 		HandleDeliverTx(txn.AmendLiquidityProvisionCommand,
-			app.SendEventOnError(
-				addDeterministicID(app.DeliverAmendLiquidityProvision))).
-		HandleDeliverTx(txn.NodeVoteCommand,
-			app.RequireValidatorPubKeyW(app.DeliverNodeVote)).
-		HandleDeliverTx(txn.ChainEventCommand,
-			app.RequireValidatorPubKeyW(addDeterministicID(app.DeliverChainEvent))).
-		HandleDeliverTx(txn.SubmitOracleDataCommand, app.DeliverSubmitOracleData).
+			app.SendTransactionResult(
+				addDeterministicID(app.DeliverAmendLiquidityProvision),
+			),
+		).
+		HandleDeliverTx(txn.SubmitOracleDataCommand,
+			app.SendTransactionResult(app.DeliverSubmitOracleData),
+		).
 		HandleDeliverTx(txn.DelegateCommand,
-			app.SendEventOnError(app.DeliverDelegate)).
+			app.SendTransactionResult(app.DeliverDelegate),
+		).
 		HandleDeliverTx(txn.UndelegateCommand,
-			app.SendEventOnError(app.DeliverUndelegate)).
-		HandleDeliverTx(txn.RotateKeySubmissionCommand,
-			app.SendEventOnError(
-				app.RequireValidatorMasterPubKeyW(app.DeliverKeyRotateSubmission),
-			),
+			app.SendTransactionResult(app.DeliverUndelegate),
 		).
-		HandleDeliverTx(txn.RotateEthereumKeySubmissionCommand,
-			app.SendEventOnError(
-				app.RequireValidatorPubKeyW(app.DeliverEthereumKeyRotateSubmission),
-			),
-		).
-		HandleDeliverTx(txn.StateVariableProposalCommand,
-			app.RequireValidatorPubKeyW(app.DeliverStateVarProposal)).
 		HandleDeliverTx(txn.BatchMarketInstructions,
-			app.SendEventOnError(
+			app.SendTransactionResult(
 				app.CheckBatchMarketInstructionsW(
 					addDeterministicID(app.DeliverBatchMarketInstructions),
 				),
@@ -422,14 +451,27 @@ func (app *App) RequireValidatorMasterPubKeyW(
 	}
 }
 
-func (app *App) SendEventOnError(
+func (app *App) SendTransactionResult(
 	f func(context.Context, abci.Tx) error,
 ) func(context.Context, abci.Tx) error {
 	return func(ctx context.Context, tx abci.Tx) error {
 		if err := f(ctx, tx); err != nil {
+			// Send and error event
+			app.broker.Send(events.NewTransactionResultEventFailure(
+				ctx, hex.EncodeToString(tx.Hash()), tx.Party(), err, tx.GetCmd(),
+			))
+
+			// FIXME(j): remove this once anyone have stopped using the event
 			app.broker.Send(events.NewTxErrEvent(ctx, err, tx.Party(), tx.GetCmd(), tx.Command().String()))
+
 			return err
 		}
+
+		// Send and error event
+		app.broker.Send(events.NewTransactionResultEventSuccess(
+			ctx, hex.EncodeToString(tx.Hash()), tx.Party(), tx.GetCmd(),
+		))
+
 		return nil
 	}
 }
