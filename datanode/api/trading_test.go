@@ -135,7 +135,7 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 	sqlPartyService := service.NewParty(sqlstore.NewParties(sqlConn), logger)
 	sqlOracleSpecService := service.NewOracleSpec(sqlstore.NewOracleSpec(sqlConn), logger)
 	sqlOracleDataService := service.NewOracleData(sqlstore.NewOracleData(sqlConn), logger)
-	sqlLPDataService := service.NewLiquidityProvision(sqlstore.NewLiquidityProvision(sqlConn), logger)
+	sqlLPDataService := service.NewLiquidityProvision(sqlstore.NewLiquidityProvision(sqlConn, logger), logger)
 	sqlTransferService := service.NewTransfer(sqlstore.NewTransfers(sqlConn), logger)
 	sqlStakeLinkingService := service.NewStakeLinking(sqlstore.NewStakeLinking(sqlConn), logger)
 	sqlNotaryService := service.NewNotary(sqlstore.NewNotary(sqlConn), logger)
