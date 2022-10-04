@@ -296,13 +296,13 @@ func NewApp(
 			app.RequireValidatorPubKeyW(addDeterministicID(app.DeliverChainEvent))).
 		HandleDeliverTx(txn.StateVariableProposalCommand,
 			app.RequireValidatorPubKeyW(app.DeliverStateVarProposal)).
+		HandleDeliverTx(txn.ValidatorHeartbeatCommand,
+			app.DeliverValidatorHeartbeat).
 		// validators commands
 		HandleDeliverTx(txn.IssueSignatures,
 			app.SendTransactionResult(app.DeliverIssueSignatures)).
 		HandleDeliverTx(txn.ProtocolUpgradeCommand,
 			app.SendTransactionResult(app.DeliverProtocolUpgradeCommand)).
-		HandleDeliverTx(txn.ValidatorHeartbeatCommand,
-			app.SendTransactionResult(app.DeliverValidatorHeartbeat)).
 		HandleDeliverTx(txn.RotateKeySubmissionCommand,
 			app.SendTransactionResult(
 				app.RequireValidatorMasterPubKeyW(app.DeliverKeyRotateSubmission),

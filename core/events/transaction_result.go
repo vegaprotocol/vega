@@ -139,6 +139,14 @@ func (t *TransactionResult) setTx(tx interface{}) *TransactionResult {
 		t.evt.Transaction = &eventspb.TransactionResult_BatchMarketInstructions{
 			BatchMarketInstructions: tv,
 		}
+	case *commandspb.KeyRotateSubmission:
+		t.evt.Transaction = &eventspb.TransactionResult_KeyRotateSubmission{
+			KeyRotateSubmission: tv,
+		}
+	case *commandspb.EthereumKeyRotateSubmission:
+		t.evt.Transaction = &eventspb.TransactionResult_EthereumKeyRotateSubmission{
+			EthereumKeyRotateSubmission: tv,
+		}
 	default:
 		panic(fmt.Sprintf("unsupported command: %v", tv))
 	}

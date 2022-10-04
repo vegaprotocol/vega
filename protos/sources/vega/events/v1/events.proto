@@ -253,6 +253,8 @@ message TransactionResult {
     commands.v1.ProtocolUpgradeProposal protocol_upgrade_proposal = 117;
     commands.v1.IssueSignatures issue_signatures = 118;
     commands.v1.BatchMarketInstructions batch_market_instructions = 119;
+    commands.v1.KeyRotateSubmission key_rotate_submission = 120;
+    commands.v1.EthereumKeyRotateSubmission ethereum_key_rotate_submission = 121;
   }
 
   // extra details about the transaction processing
