@@ -2287,11 +2287,8 @@ func (t *tradingDataServiceV2) GetEpoch(ctx context.Context, req *v2.GetEpochReq
 
 func (t *tradingDataServiceV2) EstimateFee(ctx context.Context, req *v2.EstimateFeeRequest) (*v2.EstimateFeeResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("EstimateFee SQL")()
-	if req.Order == nil {
-		return nil, apiError(codes.InvalidArgument, errors.New("missing order"))
-	}
 
-	fee, err := t.estimateFee(ctx, req.Order)
+	fee, err := t.estimateFee(ctx, req.MarketId, req.Price, req.Size)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -2301,24 +2298,21 @@ func (t *tradingDataServiceV2) EstimateFee(ctx context.Context, req *v2.Estimate
 	}, nil
 }
 
-func (t *tradingDataServiceV2) estimateFee(ctx context.Context, order *vega.Order) (*vega.Fee, error) {
-	mkt, err := t.marketService.GetByID(ctx, order.MarketId)
+func (t *tradingDataServiceV2) estimateFee(
+	ctx context.Context,
+	market, priceS string,
+	size uint64,
+) (*vega.Fee, error) {
+	mkt, err := t.marketService.GetByID(ctx, market)
 	if err != nil {
 		return nil, err
 	}
-	price, overflowed := num.UintFromString(order.Price, 10)
+	price, overflowed := num.UintFromString(priceS, 10)
 	if overflowed {
 		return nil, errors.New("invalid order price")
 	}
-	if order.PeggedOrder != nil {
-		return &vega.Fee{
-			MakerFee:          "0",
-			InfrastructureFee: "0",
-			LiquidityFee:      "0",
-		}, nil
-	}
 
-	base := num.DecimalFromUint(price.Mul(price, num.NewUint(order.Size)))
+	base := num.DecimalFromUint(price.Mul(price, num.NewUint(size)))
 	maker, infra, liquidity, err := t.feeFactors(mkt)
 	if err != nil {
 		return nil, err
@@ -2349,11 +2343,9 @@ func (t *tradingDataServiceV2) feeFactors(mkt entities.Market) (maker, infra, li
 
 func (t *tradingDataServiceV2) EstimateMargin(ctx context.Context, req *v2.EstimateMarginRequest) (*v2.EstimateMarginResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("EstimateMargin SQL")()
-	if req.Order == nil {
-		return nil, apiError(codes.InvalidArgument, errors.New("missing order"))
-	}
 
-	margin, err := t.estimateMargin(ctx, req.Order)
+	margin, err := t.estimateMargin(
+		ctx, req.Side, req.Type, req.MarketId, req.PartyId, req.Price, req.Size)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -2363,24 +2355,30 @@ func (t *tradingDataServiceV2) EstimateMargin(ctx context.Context, req *v2.Estim
 	}, nil
 }
 
-func (t *tradingDataServiceV2) estimateMargin(ctx context.Context, order *vega.Order) (*vega.MarginLevels, error) {
-	if order.Side == vega.Side_SIDE_UNSPECIFIED {
+func (t *tradingDataServiceV2) estimateMargin(
+	ctx context.Context,
+	rSide vega.Side,
+	rType vega.Order_Type,
+	rMarket, rParty, rPrice string,
+	rSize uint64,
+) (*vega.MarginLevels, error) {
+	if rSide == vega.Side_SIDE_UNSPECIFIED {
 		return nil, ErrInvalidOrderSide
 	}
 
 	// first get the risk factors and market data (marketdata->markprice)
-	rf, err := t.riskFactorService.GetMarketRiskFactors(ctx, order.MarketId)
+	rf, err := t.riskFactorService.GetMarketRiskFactors(ctx, rMarket)
 	if err != nil {
 		return nil, err
 	}
-	mkt, err := t.marketService.GetByID(ctx, order.MarketId)
+	mkt, err := t.marketService.GetByID(ctx, rMarket)
 	if err != nil {
 		return nil, err
 	}
 
 	mktProto := mkt.ToProto()
 
-	mktData, err := t.marketDataService.GetMarketDataByID(ctx, order.MarketId)
+	mktData, err := t.marketDataService.GetMarketDataByID(ctx, rMarket)
 	if err != nil {
 		return nil, err
 	}
@@ -2389,7 +2387,7 @@ func (t *tradingDataServiceV2) estimateMargin(ctx context.Context, order *vega.O
 	if err != nil {
 		return nil, err
 	}
-	if order.Side == vega.Side_SIDE_BUY {
+	if rSide == vega.Side_SIDE_BUY {
 		f, err = num.DecimalFromString(rf.Long.String())
 		if err != nil {
 			return nil, err
@@ -2405,14 +2403,14 @@ func (t *tradingDataServiceV2) estimateMargin(ctx context.Context, order *vega.O
 	markPrice, _ := num.DecimalFromString(mktData.MarkPrice.String())
 
 	// if the order is a limit order, use the limit price to calculate the margin maintenance
-	if order.Type == vega.Order_TYPE_LIMIT {
-		markPrice, _ = num.DecimalFromString(order.Price)
+	if rType == vega.Order_TYPE_LIMIT {
+		markPrice, _ = num.DecimalFromString(rPrice)
 	}
 
-	maintenanceMargin := num.DecimalFromFloat(float64(order.Size)).Mul(f).Mul(markPrice)
+	maintenanceMargin := num.DecimalFromFloat(float64(rSize)).Mul(f).Mul(markPrice)
 	// now we use the risk factors
 	return &vega.MarginLevels{
-		PartyId:                order.PartyId,
+		PartyId:                rParty,
 		MarketId:               mktProto.GetId(),
 		Asset:                  asset,
 		Timestamp:              0,
