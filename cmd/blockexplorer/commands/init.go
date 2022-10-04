@@ -49,14 +49,14 @@ func (opts *InitCmd) Execute(_ []string) error {
 	return nil
 }
 
-var runCmc InitCmd
+var initCmd InitCmd
 
 func Init(ctx context.Context, parser *flags.Parser) error {
-	runCmc = InitCmd{}
+	initCmd = InitCmd{}
 
-	short := "Initializes a block explorer"
+	short := "Create a default config file"
 	long := "Generate the minimal configuration required for a block explorer to start"
 
-	_, err := parser.AddCommand("init", short, long, &runCmc)
+	_, err := parser.AddCommand("init", short, long, &initCmd)
 	return err
 }

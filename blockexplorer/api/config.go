@@ -22,8 +22,8 @@ import (
 var (
 	portalNamedLogger  = "api.portal"
 	gatewayNamedLogger = "api.gateway"
-	restNamedLogger    = "api.gateway.rest"
-	grpcUINamedLogger  = "api.gateway.grpc-ui"
+	restNamedLogger    = "api.rest"
+	grpcUINamedLogger  = "api.grpc-ui"
 )
 
 type Config struct {
