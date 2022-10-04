@@ -14,37 +14,43 @@ package commands
 
 import (
 	"context"
+	"fmt"
 
-	"code.vegaprotocol.io/vega/blockexplorer"
 	"code.vegaprotocol.io/vega/blockexplorer/config"
+	"code.vegaprotocol.io/vega/blockexplorer/store"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/jessevdk/go-flags"
 )
 
-type Start struct {
+type InitDBCmd struct {
 	config.VegaHomeFlag
-	config.Config
 }
 
-func (opts *Start) Execute(_ []string) error {
+func (opts *InitDBCmd) Execute(_ []string) error {
 	logger := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer logger.AtExit()
 
-	cfg, err := loadConfig(logger, opts.VegaHome)
+	config, err := loadConfig(logger, opts.VegaHome)
 	if err != nil {
 		return err
 	}
 
-	be := blockexplorer.NewFromConfig(*cfg)
-	return be.Run(context.Background())
+	err = store.MigrateToLatestSchema(logger, config.Store)
+	if err != nil {
+		return fmt.Errorf("creating db schema: %w", err)
+	}
+
+	return nil
 }
 
-func Run(ctx context.Context, parser *flags.Parser) error {
-	runCmd := Start{}
+var initDBCmd InitDBCmd
 
-	short := "Start block explorer backend"
-	long := "Start the various API grpc/rest APIs to query the tendermint postgres transaction index"
+func InitDB(ctx context.Context, parser *flags.Parser) error {
+	initDBCmd = InitDBCmd{}
 
-	_, err := parser.AddCommand("start", short, long, &runCmd)
+	short := "Initialize / update database schema"
+	long := "Creates, (or updates) database tables and views according to the schema required for the tendermint psql indexer"
+
+	_, err := parser.AddCommand("init-db", short, long, &initDBCmd)
 	return err
 }

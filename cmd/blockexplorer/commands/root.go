@@ -41,6 +41,8 @@ func Execute(ctx context.Context) error {
 	if err := Register(ctx, parser,
 		Init,
 		Run,
+		InitDB,
+		UnsafeResetAll,
 	); err != nil {
 		fmt.Printf("%+v\n", err)
 		return err
