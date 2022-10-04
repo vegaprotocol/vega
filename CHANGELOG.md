@@ -14,6 +14,7 @@
 - [6348](https://github.com/vegaprotocol/vega/issues/6348) - Reduce pool size to leave more available `Postgres` connections
 
 ### 🐛 Fixes
+- [6388](https://github.com/vegaprotocol/vega/issues/6388) - Do not transfer stake and delegations after a key rotation
 - [6266](https://github.com/vegaprotocol/vega/issues/6266) - Do not take a snapshot at block height 1 and handle increase of interval appropriately
 - [6338](https://github.com/vegaprotocol/vega/issues/6338) - Fix validation for update an new asset proposals
 - [6357](https://github.com/vegaprotocol/vega/issues/6357) - Fix potential panic in `gql` resolvers
@@ -21,6 +22,7 @@
 - [6358](https://github.com/vegaprotocol/vega/issues/6358) - Do not show hidden files nor directories as wallet
 - [6374](https://github.com/vegaprotocol/vega/issues/6374) - Fix panic with the metrics
 - [6373](https://github.com/vegaprotocol/vega/issues/6373) - Fix panic with the metrics as well
+- [6395](https://github.com/vegaprotocol/vega/issues/6395) - Wallet selection doesn't lower case the wallet name during input verification
 
 ## 0.57.0
 
