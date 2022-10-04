@@ -24,6 +24,7 @@
 - [6374](https://github.com/vegaprotocol/vega/issues/6374) - Fix panic with the metrics
 - [6373](https://github.com/vegaprotocol/vega/issues/6373) - Fix panic with the metrics as well
 - [6395](https://github.com/vegaprotocol/vega/issues/6395) - Wallet selection doesn't lower case the wallet name during input verification
+- [6408](https://github.com/vegaprotocol/vega/issues/6408) - Initialise observer in liquidity provision `sql` store
 
 ## 0.57.0
 

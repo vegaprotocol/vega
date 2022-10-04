@@ -20,6 +20,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
 	"github.com/jackc/pgx/v4"
 	"github.com/stretchr/testify/assert"
@@ -50,7 +51,7 @@ func setupLPTests(t *testing.T, ctx context.Context) (*sqlstore.Blocks, *sqlstor
 	DeleteEverything()
 
 	bs := sqlstore.NewBlocks(connectionSource)
-	lp := sqlstore.NewLiquidityProvision(connectionSource)
+	lp := sqlstore.NewLiquidityProvision(connectionSource, logging.NewTestLogger())
 
 	config := NewTestConfig(testDBPort)
 	conn, err := pgx.Connect(ctx, config.ConnectionConfig.GetConnectionString())
