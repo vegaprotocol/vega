@@ -5,6 +5,7 @@
 ### 🚨 Breaking changes
 - [6271](https://github.com/vegaprotocol/vega/issues/6271) - Require signature from new Ethereum key to validate key rotation submission
 - [6364](https://github.com/vegaprotocol/vega/issues/6364) - Rename `oracleSpecForSettlementPrice` to `oracleSpecForSettlementData`
+- [6401](https://github.com/vegaprotocol/vega/issues/6401) - Fix estimate fees and margin `APis`
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
