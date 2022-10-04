@@ -58,7 +58,8 @@ func (l *WalletLoader) Generate(passphrase string) (*Wallet, map[string]string, 
 	}
 
 	data := map[string]string{
-		"walletFilePath": acc.URL.Path,
+		"walletFilePath":  acc.URL.Path,
+		"ethereumAddress": w.address.Hex(),
 	}
 
 	return w, data, nil
@@ -98,7 +99,8 @@ func (l *WalletLoader) Import(sourceFilePath, passphrase string) (*Wallet, map[s
 	}
 
 	data := map[string]string{
-		"walletFilePath": walletFilePath,
+		"walletFilePath":  walletFilePath,
+		"ethereumAddress": w.address.Hex(),
 	}
 
 	return w, data, nil

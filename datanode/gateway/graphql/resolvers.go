@@ -775,8 +775,14 @@ func (r *myQueryResolver) Deposits(ctx context.Context, dateRange *v2.DateRange,
 	return res.Deposits, nil
 }
 
-func (r *myQueryResolver) EstimateOrder(ctx context.Context, market, party string, price *string, size string, side vega.Side,
-	timeInForce vega.Order_TimeInForce, expiration *string, ty vega.Order_Type,
+func (r *myQueryResolver) EstimateOrder(
+	ctx context.Context,
+	market, party string,
+	price *string,
+	size string,
+	side vega.Side,
+	timeInForce vega.Order_TimeInForce,
+	expiration *string, ty vega.Order_Type,
 ) (*OrderEstimate, error) {
 	order := &types.Order{}
 
@@ -817,7 +823,9 @@ func (r *myQueryResolver) EstimateOrder(ctx context.Context, market, party strin
 	}
 
 	req := v2.EstimateFeeRequest{
-		Order: order,
+		MarketId: order.MarketId,
+		Price:    order.Price,
+		Size:     order.Size,
 	}
 
 	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
@@ -838,7 +846,12 @@ func (r *myQueryResolver) EstimateOrder(ctx context.Context, market, party strin
 
 	// now we calculate the margins
 	reqm := v2.EstimateMarginRequest{
-		Order: order,
+		MarketId: order.MarketId,
+		PartyId:  order.PartyId,
+		Price:    order.Price,
+		Size:     order.Size,
+		Side:     order.Side,
+		Type:     order.Type,
 	}
 
 	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
