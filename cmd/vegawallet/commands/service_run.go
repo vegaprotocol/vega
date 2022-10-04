@@ -557,7 +557,7 @@ func readInput(question *printer.FormattedString, p *printer.InteractivePrinter,
 			panic(fmt.Errorf("couldn't read input: %w", err))
 		}
 
-		answer = strings.ToLower(strings.Trim(answer, " \r\n\t"))
+		answer = strings.Trim(answer, " \r\n\t")
 
 		if len(options) == 0 {
 			return answer
