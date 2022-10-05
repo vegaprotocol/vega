@@ -5,6 +5,18 @@ schema {
   subscription: Subscription
 }
 
+"The result from processing a transaction"
+type TransactionResult {
+  "The party which submitted this transaction"
+  partyId: String!
+  "The hash of the transaction"
+  hash: String!
+  "Was the transaction successful or not?"
+  status: Boolean!
+  "The error emitted by the transaction, will be null if the transaction succeeded"
+  error: String
+}
+
 "Create an order linked to an index rather than a price"
 type PeggedOrder {
   "Index to link this order to"
@@ -3698,6 +3710,8 @@ enum BusEventType {
   OracleSpec
   "Constant for market events - mainly used for logging"
   Market
+  "The results from processing at transaction"
+  TransactionResult
 }
 
 "Union type for wrapped events in stream PROPOSAL is mapped to governance data, something to keep in mind"
@@ -3727,6 +3741,7 @@ union Event =
   | Withdrawal
   | OracleSpec
   | LiquidityProvision
+  | TransactionResult
 
 type BusEvent {
   "The ID for this event"
