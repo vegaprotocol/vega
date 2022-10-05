@@ -1,6 +1,6 @@
 # Vega
 
-A decentralised trading platform that allows pseudo-anonymous trading of derivatives on a blockchain.
+A decentralised trading platform that allows pseudo-anonymous trading of derivatives on a blockchain..
 
 **Vega** provides the following core features:
 - The vega core protocol Go implementation in the [core](./core) directory
