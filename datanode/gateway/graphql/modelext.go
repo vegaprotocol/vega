@@ -271,6 +271,8 @@ func eventFromProto(e *eventspb.BusEvent) Event {
 		return e.GetOracleSpec()
 	case eventspb.BusEventType_BUS_EVENT_TYPE_LIQUIDITY_PROVISION:
 		return e.GetLiquidityProvision()
+	case eventspb.BusEventType_BUS_EVENT_TYPE_TRANSACTION_RESULT:
+		return e.GetTransactionResult()
 	}
 	return nil
 }
@@ -333,6 +335,8 @@ func eventTypeToProto(btypes ...BusEventType) []eventspb.BusEventType {
 			r = append(r, eventspb.BusEventType_BUS_EVENT_TYPE_WITHDRAWAL)
 		case BusEventTypeOracleSpec:
 			r = append(r, eventspb.BusEventType_BUS_EVENT_TYPE_ORACLE_SPEC)
+		case BusEventTypeTransactionResult:
+			r = append(r, eventspb.BusEventType_BUS_EVENT_TYPE_TRANSACTION_RESULT)
 		}
 	}
 	return r
@@ -392,6 +396,8 @@ func eventTypeFromProto(t eventspb.BusEventType) (BusEventType, error) {
 		return BusEventTypeWithdrawal, nil
 	case eventspb.BusEventType_BUS_EVENT_TYPE_ORACLE_SPEC:
 		return BusEventTypeOracleSpec, nil
+	case eventspb.BusEventType_BUS_EVENT_TYPE_TRANSACTION_RESULT:
+		return BusEventTypeTransactionResult, nil
 	}
 	return "", errors.New("unsupported proto event type")
 }

@@ -123,6 +123,8 @@ func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {
 		return events.ProtocolUpgradeStartedEventFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_SETTLE_MARKET:
 		return events.SettleMarketEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_TRANSACTION_RESULT:
+		return events.TransactionResultEventFromStream(ctx, be)
 	}
 
 	return nil
