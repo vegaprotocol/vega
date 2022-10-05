@@ -125,6 +125,34 @@ Feature: Target stake
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
       | 90         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 270          | 2000           | 0             |
 
+    # target stake remain unchanged as open interest of 20 and 0 where both recorded with the same timestamp
+    Then the network moves ahead "10" blocks
+    And the target stake should be "270" for the market "ETH/DEC21"
+
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type        | tif     |
+      | tt_2  | ETH/DEC21 | sell | 5      | 0     | 1                | TYPE_MARKET | TIF_FOK |
+      | tt_2  | ETH/DEC21 | sell | 5      | 0     | 1                | TYPE_MARKET | TIF_FOK |
+
+    Then the network moves ahead "1" blocks
+    And the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | 90         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 135          | 2000           | 10            |
+
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type        | tif     |
+      | tt_2  | ETH/DEC21 | buy  | 10     | 0     | 1                | TYPE_MARKET | TIF_FOK |
+
+    Then the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | 110        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 165          | 2000           | 0             |
+
+    # O is now the last recorded open interest so target stake should drop to 0
+    Then the network moves ahead "10" blocks
+    And the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | 110        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 0            | 2000           | 0             |
+
   Scenario: Max open interest changes over time, testing change of timewindow (0041-TSTK-001; 0041-TSTK-004; 0041-TSTK-005)
     Given the following network parameters are set:
       | name                              | value |
