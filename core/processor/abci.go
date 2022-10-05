@@ -84,6 +84,7 @@ type PoWEngine interface {
 	EndOfBlock()
 	CheckTx(tx abci.Tx) error
 	DeliverTx(tx abci.Tx) error
+	Commit()
 }
 
 //nolint:interfacebloat
@@ -785,6 +786,10 @@ func (app *App) OnBeginBlock(
 func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	app.log.Debug("entering commit", logging.Time("at", time.Now()))
 	defer func() { app.log.Debug("leaving commit", logging.Time("at", time.Now())) }()
+
+	if !app.nilPow {
+		app.pow.Commit()
+	}
 
 	// call checkpoint _first_ so the snapshot contains the correct checkpoint state.
 	cpt, _ := app.checkpoint.Checkpoint(app.blockCtx, app.currentTimestamp)

@@ -72,6 +72,8 @@ type Engine struct {
 	seenTid      map[string]struct{} // seen tid in scope set
 	heightToTid  map[uint64][]string // height to slice of seen tid in scope ring buffer
 
+	mempoolSeenTid map[string]struct{} // tids seen already in this node's mempool, cleared at the end of the block
+
 	// snapshot key
 	hashKeys []string
 	log      *logging.Logger
@@ -83,15 +85,16 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 	e := &Engine{
-		bannedParties: map[string]uint64{},
-		log:           log,
-		hashKeys:      []string{(&types.PayloadProofOfWork{}).Key()},
-		activeParams:  []*params{},
-		activeStates:  []*state{},
-		seenTx:        map[string]struct{}{},
-		heightToTx:    map[uint64][]string{},
-		seenTid:       map[string]struct{}{},
-		heightToTid:   map[uint64][]string{},
+		bannedParties:  map[string]uint64{},
+		log:            log,
+		hashKeys:       []string{(&types.PayloadProofOfWork{}).Key()},
+		activeParams:   []*params{},
+		activeStates:   []*state{},
+		seenTx:         map[string]struct{}{},
+		heightToTx:     map[uint64][]string{},
+		seenTid:        map[string]struct{}{},
+		mempoolSeenTid: map[string]struct{}{},
+		heightToTid:    map[uint64][]string{},
 	}
 	epochEngine.NotifyOnEpoch(e.OnEpochEvent, e.OnEpochRestore)
 
@@ -181,12 +184,28 @@ func (e *Engine) EndOfBlock() {
 	}
 }
 
+func (e *Engine) Commit() {
+	e.lock.Lock()
+	e.mempoolSeenTid = map[string]struct{}{}
+	e.lock.Unlock()
+}
+
 // CheckTx is called by checkTx in the abci and verifies the proof of work, it doesn't update any state.
 func (e *Engine) CheckTx(tx abci.Tx) error {
 	if e.log.IsDebug() {
 		e.lock.RLock()
 		e.log.Debug("checktx got tx", logging.String("command", tx.Command().String()), logging.Uint64("height", tx.BlockHeight()), logging.String("tid", tx.GetPoWTID()), logging.Uint64("current-block", e.currentBlock))
 		e.lock.RUnlock()
+	}
+	if !tx.Command().IsValidatorCommand() {
+		e.lock.Lock()
+		if _, ok := e.mempoolSeenTid[tx.GetPoWTID()]; ok {
+			e.log.Error("tid already seen", logging.String("tid", tx.GetPoWTID()), logging.String("party", tx.Party()))
+			e.lock.Unlock()
+			return errors.New("proof of work tid already seen")
+		}
+		e.mempoolSeenTid[tx.GetPoWTID()] = struct{}{}
+		e.lock.Unlock()
 	}
 
 	_, err := e.verify(tx)
@@ -344,7 +363,7 @@ func (e *Engine) verify(tx abci.Tx) (byte, error) {
 		if e.log.IsDebug() {
 			e.log.Debug("tid already used", logging.String("tid", tx.GetPoWTID()), logging.String("party", tx.Party()))
 		}
-		return h, errors.New("Proof of work tid already used")
+		return h, errors.New("proof of work tid already used")
 	}
 
 	// verify the proof of work
