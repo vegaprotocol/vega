@@ -637,6 +637,8 @@ const (
 	BusEventTypeOracleSpec BusEventType = "OracleSpec"
 	// Constant for market events - mainly used for logging
 	BusEventTypeMarket BusEventType = "Market"
+	// The results from processing at transaction
+	BusEventTypeTransactionResult BusEventType = "TransactionResult"
 )
 
 var AllBusEventType = []BusEventType{
@@ -666,11 +668,12 @@ var AllBusEventType = []BusEventType{
 	BusEventTypeWithdrawal,
 	BusEventTypeOracleSpec,
 	BusEventTypeMarket,
+	BusEventTypeTransactionResult,
 }
 
 func (e BusEventType) IsValid() bool {
 	switch e {
-	case BusEventTypeTimeUpdate, BusEventTypeTransferResponses, BusEventTypePositionResolution, BusEventTypeOrder, BusEventTypeAccount, BusEventTypeParty, BusEventTypeTrade, BusEventTypeMarginLevels, BusEventTypeProposal, BusEventTypeVote, BusEventTypeMarketData, BusEventTypeNodeSignature, BusEventTypeLossSocialization, BusEventTypeSettlePosition, BusEventTypeSettleDistressed, BusEventTypeMarketCreated, BusEventTypeMarketUpdated, BusEventTypeAsset, BusEventTypeMarketTick, BusEventTypeAuction, BusEventTypeRiskFactor, BusEventTypeLiquidityProvision, BusEventTypeDeposit, BusEventTypeWithdrawal, BusEventTypeOracleSpec, BusEventTypeMarket:
+	case BusEventTypeTimeUpdate, BusEventTypeTransferResponses, BusEventTypePositionResolution, BusEventTypeOrder, BusEventTypeAccount, BusEventTypeParty, BusEventTypeTrade, BusEventTypeMarginLevels, BusEventTypeProposal, BusEventTypeVote, BusEventTypeMarketData, BusEventTypeNodeSignature, BusEventTypeLossSocialization, BusEventTypeSettlePosition, BusEventTypeSettleDistressed, BusEventTypeMarketCreated, BusEventTypeMarketUpdated, BusEventTypeAsset, BusEventTypeMarketTick, BusEventTypeAuction, BusEventTypeRiskFactor, BusEventTypeLiquidityProvision, BusEventTypeDeposit, BusEventTypeWithdrawal, BusEventTypeOracleSpec, BusEventTypeMarket, BusEventTypeTransactionResult:
 		return true
 	}
 	return false

@@ -361,6 +361,20 @@ func (r *VegaResolverRoot) LiquidityProvisionUpdate() LiquidityProvisionUpdateRe
 	return (*liquidityProvisionUpdateResolver)(r)
 }
 
+func (r *VegaResolverRoot) TransactionResult() TransactionResultResolver {
+	return (*transactionResultResolver)(r)
+}
+
+type transactionResultResolver VegaResolverRoot
+
+func (r *transactionResultResolver) Error(ctx context.Context, tr *eventspb.TransactionResult) (*string, error) {
+	if tr == nil || tr.Status {
+		return nil, nil
+	}
+
+	return &tr.GetFailure().Error, nil
+}
+
 type accountUpdateResolver VegaResolverRoot
 
 func (r *accountUpdateResolver) AssetID(ctx context.Context, obj *types.Account) (string, error) {
