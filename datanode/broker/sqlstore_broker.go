@@ -48,18 +48,23 @@ type BlockStore interface {
 	GetLastBlock(ctx context.Context) (entities.Block, error)
 }
 
+const (
+	slowTimeUpdateThreshold = 2 * time.Second
+)
+
 // SQLStoreBroker : push events to each subscriber with a single go routine across all types.
 type SQLStoreBroker struct {
-	config             Config
-	log                *logging.Logger
-	subscribers        []SQLBrokerSubscriber
-	typeToSubs         map[events.Type][]SQLBrokerSubscriber
-	eventSource        eventSource
-	transactionManager TransactionManager
-	blockStore         BlockStore
-	onBlockCommitted   func(ctx context.Context, chainId string, lastCommittedBlockHeight int64) bool
-	chainInfo          ChainInfoI
-	lastBlock          *entities.Block
+	config               Config
+	log                  *logging.Logger
+	subscribers          []SQLBrokerSubscriber
+	typeToSubs           map[events.Type][]SQLBrokerSubscriber
+	eventSource          eventSource
+	transactionManager   TransactionManager
+	blockStore           BlockStore
+	onBlockCommitted     func(ctx context.Context, chainId string, lastCommittedBlockHeight int64) bool
+	chainInfo            ChainInfoI
+	lastBlock            *entities.Block
+	slowTimeUpdateTicker *time.Ticker
 }
 
 func NewSQLStoreBroker(log *logging.Logger, config Config, chainInfo ChainInfoI,
@@ -67,15 +72,16 @@ func NewSQLStoreBroker(log *logging.Logger, config Config, chainInfo ChainInfoI,
 	subs []SQLBrokerSubscriber,
 ) *SQLStoreBroker {
 	b := &SQLStoreBroker{
-		config:             config,
-		log:                log,
-		subscribers:        subs,
-		typeToSubs:         map[events.Type][]SQLBrokerSubscriber{},
-		eventSource:        eventsource,
-		transactionManager: transactionManager,
-		blockStore:         blockStore,
-		chainInfo:          chainInfo,
-		onBlockCommitted:   onBlockCommitted,
+		config:               config,
+		log:                  log,
+		subscribers:          subs,
+		typeToSubs:           map[events.Type][]SQLBrokerSubscriber{},
+		eventSource:          eventsource,
+		transactionManager:   transactionManager,
+		blockStore:           blockStore,
+		chainInfo:            chainInfo,
+		onBlockCommitted:     onBlockCommitted,
+		slowTimeUpdateTicker: time.NewTicker(slowTimeUpdateThreshold),
 	}
 
 	for _, s := range subs {
@@ -197,9 +203,7 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 		return nil, fmt.Errorf("failed to add block:%w", err)
 	}
 
-	slowTimeUpdateThreshold := 2 * time.Second
-	slowTimeUpdateTicker := time.NewTicker(slowTimeUpdateThreshold)
-	defer slowTimeUpdateTicker.Stop()
+	defer b.slowTimeUpdateTicker.Stop()
 
 	for {
 		// Do a pre-check on ctx.Done() since select() cases are randomized, this reduces
@@ -216,7 +220,7 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 			return nil, ctx.Err()
 		case err = <-errCh:
 			return nil, err
-		case <-slowTimeUpdateTicker.C:
+		case <-b.slowTimeUpdateTicker.C:
 			b.log.Warningf("slow time update detected, time between checks %v, block height: %d, total block processing time: %v", slowTimeUpdateThreshold,
 				block.Height, blockTimer.duration)
 		case e := <-eventsCh:
@@ -234,6 +238,7 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 				if err != nil {
 					return nil, fmt.Errorf("failed to commit transactional context:%w", err)
 				}
+				b.slowTimeUpdateTicker.Reset(slowTimeUpdateThreshold)
 			case events.BeginBlockEvent:
 				beginBlock := e.(entities.BeginBlockEvent)
 				return entities.BlockFromBeginBlock(beginBlock)
