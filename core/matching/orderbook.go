@@ -610,12 +610,9 @@ func (b *OrderBook) CancelAllOrders(party string) ([]*types.OrderCancellationCon
 func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error) {
 	// Validate Market
 	if order.MarketID != b.marketID {
-		if b.log.GetLevel() == logging.DebugLevel {
-			b.log.Debug("Market ID mismatch",
-				logging.Order(*order),
-				logging.String("order-book", b.marketID))
-		}
-		return nil, types.OrderErrorInvalidMarketID
+		b.log.Panic("Market ID mismatch",
+			logging.Order(*order),
+			logging.String("order-book", b.marketID))
 	}
 
 	// Validate Order ID must be present
@@ -763,10 +760,6 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 		b.latestTimestamp = order.CreatedAt
 	}
 
-	if b.LogPriceLevelsDebug {
-		b.PrintState("Entry state:")
-	}
-
 	var (
 		trades          []*types.Trade
 		impactedOrders  []*types.Order
@@ -781,10 +774,6 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 		if !lastTradedPrice.IsZero() {
 			b.lastTradedPrice = lastTradedPrice
 		}
-		// if state of the book changed show state
-		if b.LogPriceLevelsDebug && len(trades) != 0 {
-			b.PrintState("After uncross state:")
-		}
 	}
 
 	// if order is persistent type add to order book to the correct side
@@ -798,10 +787,6 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 		if b.auction {
 			b.indicativePriceAndVolume.AddVolumeAtPrice(
 				order.Price, order.Remaining, order.Side)
-		}
-
-		if b.LogPriceLevelsDebug {
-			b.PrintState("After addOrder state:")
 		}
 	}
 
@@ -882,13 +867,21 @@ func (b *OrderBook) DeleteOrder(
 		}
 		return nil, types.ErrOrderRemovalFailure
 	}
+
 	delete(b.ordersByID, order.ID)
 	delete(b.ordersPerParty[order.Party], order.ID)
 	delete(b.peggedOrders, order.ID)
-	// also add it to the indicative price and volume if in auction
+
+	// also remove it to the indicative price and volume if in auction
+	// here we use specifically the order which was in the book, just in case
+	// the order passed in would be wrong
+	// TODO: refactor this better, we should never need to pass in more that IDs there
+	// because by using the order passed in remain and price, we could use
+	// values which have been amended previously... (e.g: amending an order which
+	// cancel the order if it expires it
 	if b.auction {
 		b.indicativePriceAndVolume.RemoveVolumeAtPrice(
-			order.Price, order.Remaining, order.Side)
+			dorder.Price, dorder.Remaining, dorder.Side)
 	}
 	return dorder, err
 }

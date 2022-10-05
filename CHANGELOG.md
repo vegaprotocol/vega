@@ -13,6 +13,8 @@
 ### 🛠 Improvements
 - [6399](https://github.com/vegaprotocol/vega/issues/6399) - Add `init-db` and `unsafe-reset-all` commands to block explorer
 - [6348](https://github.com/vegaprotocol/vega/issues/6348) - Reduce pool size to leave more available `Postgres` connections
+- [6211](https://github.com/vegaprotocol/vega/issues/6211) - Handle `BeginBlock` and `EndBlock` events
+- [6361](https://github.com/vegaprotocol/vega/issues/6361) - Remove unnecessary logging in market
 
 ### 🐛 Fixes
 - [6388](https://github.com/vegaprotocol/vega/issues/6388) - Do not transfer stake and delegations after a key rotation
@@ -25,6 +27,7 @@
 - [6373](https://github.com/vegaprotocol/vega/issues/6373) - Fix panic with the metrics as well
 - [6395](https://github.com/vegaprotocol/vega/issues/6395) - Wallet selection doesn't lower case the wallet name during input verification
 - [6408](https://github.com/vegaprotocol/vega/issues/6408) - Initialise observer in liquidity provision `sql` store
+- [6406](https://github.com/vegaprotocol/vega/issues/6406) - Fix invalid tracking of cumulative volume and price
 
 ## 0.57.0
 

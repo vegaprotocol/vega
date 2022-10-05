@@ -84,6 +84,7 @@ type PoWEngine interface {
 	EndOfBlock()
 	CheckTx(tx abci.Tx) error
 	DeliverTx(tx abci.Tx) error
+	Commit()
 }
 
 //nolint:interfacebloat
@@ -664,17 +665,30 @@ func (app *App) LoadSnapshotChunk(req tmtypes.RequestLoadSnapshotChunk) tmtypes.
 func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitChain {
 	app.log.Debug("ABCI service InitChain start")
 	hash := hex.EncodeToString(vgcrypto.Hash(req.AppStateBytes))
-	// let's assume genesis block is block 0
 	app.abci.SetChainID(req.ChainId)
 	app.chainCtx = vgcontext.WithChainID(context.Background(), req.ChainId)
-	ctx := vgcontext.WithBlockHeight(app.chainCtx, 0)
+	ctx := vgcontext.WithBlockHeight(app.chainCtx, req.InitialHeight)
 	ctx = vgcontext.WithTraceID(ctx, hash)
 	app.blockCtx = ctx
+
+	app.broker.Send(
+		events.NewBeginBlock(ctx, eventspb.BeginBlock{
+			Height:    uint64(req.InitialHeight),
+			Timestamp: req.Time.UnixNano(),
+			Hash:      hash,
+		}),
+	)
 
 	if err := app.ghandler.OnGenesis(ctx, req.Time, req.AppStateBytes); err != nil {
 		app.cancel()
 		app.log.Fatal("couldn't initialise vega with the genesis block", logging.Error(err))
 	}
+
+	app.broker.Send(
+		events.NewEndBlock(ctx, eventspb.EndBlock{
+			Height: uint64(req.InitialHeight),
+		}),
+	)
 
 	return tmtypes.ResponseInitChain{
 		Validators: app.top.GetValidatorPowerUpdates(),
@@ -709,12 +723,6 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 			ValidatorUpdates: powerUpdates,
 		}
 	}
-
-	app.broker.Send(
-		events.NewEndBlock(app.blockCtx, eventspb.EndBlock{
-			Height: uint64(req.Height),
-		}),
-	)
 
 	return ctx, resp
 }
@@ -786,6 +794,10 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	app.log.Debug("entering commit", logging.Time("at", time.Now()))
 	defer func() { app.log.Debug("leaving commit", logging.Time("at", time.Now())) }()
 
+	if !app.nilPow {
+		app.pow.Commit()
+	}
+
 	// call checkpoint _first_ so the snapshot contains the correct checkpoint state.
 	cpt, _ := app.checkpoint.Checkpoint(app.blockCtx, app.currentTimestamp)
 	t0 := time.Now()
@@ -846,6 +858,13 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	app.log.Debug("apphash calculated", logging.String("response-data", hex.EncodeToString(resp.Data)))
 	app.updateStats()
 	app.setBatchStats()
+
+	app.broker.Send(
+		events.NewEndBlock(app.blockCtx, eventspb.EndBlock{
+			Height: uint64(resp.RetainHeight),
+		}),
+	)
+
 	return resp
 }
 
