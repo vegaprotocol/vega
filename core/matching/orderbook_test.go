@@ -1377,12 +1377,7 @@ func TestOrderBook_CancelOrderMarketMismatch(t *testing.T) {
 
 	orderAdded.MarketID = "invalid" // Bad market, malformed?
 
-	_, err = book.ob.CancelOrder(orderAdded)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	assert.Equal(t, types.OrderErrorInvalidMarketID, err)
+	assert.Panics(t, func() { _, err = book.ob.CancelOrder(orderAdded) })
 }
 
 func TestOrderBook_CancelOrderInvalidID(t *testing.T) {
