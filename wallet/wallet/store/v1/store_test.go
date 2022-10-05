@@ -3,7 +3,6 @@ package v1_test
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -22,13 +21,16 @@ import (
 func TestFileStoreV1(t *testing.T) {
 	t.Run("Initialising store succeeds", testInitialisingStoreSucceeds)
 	t.Run("Listing wallets succeeds", testFileStoreV1ListWalletsSucceeds)
+	t.Run("Listing wallets does not show hidden files", testFileStoreV1ListWalletsDoesNotShowHiddenFiles)
+	t.Run("Listing wallets does not show directories", testFileStoreV1ListWalletsDoesNotShowDirectories)
 	t.Run("Getting wallet succeeds", testFileStoreV1GetWalletSucceeds)
 	t.Run("Getting wallet without wrong passphrase fails", testFileStoreV1GetWalletWithWrongPassphraseFails)
 	t.Run("Getting non-existing wallet fails", testFileStoreV1GetNonExistingWalletFails)
 	t.Run("Getting wallet path succeeds", testFileStoreV1GetWalletPathSucceeds)
 	t.Run("Verifying non-existing wallet fails", testFileStoreV1NonExistingWalletFails)
 	t.Run("Verifying existing wallet succeeds", testFileStoreV1ExistingWalletSucceeds)
-	t.Run("Saving HD wallet succeeds", testFileStoreV1SaveHDWalletSucceeds)
+	t.Run("Saving wallet succeeds", testFileStoreV1SaveWalletSucceeds)
+	t.Run("Saving wallet with invalid name fails ", testFileStoreV1SaveWalletWithInvalidNameFails)
 }
 
 func testInitialisingStoreSucceeds(t *testing.T) {
@@ -61,6 +63,80 @@ func testFileStoreV1ListWalletsSucceeds(t *testing.T) {
 		expectedWallets = append(expectedWallets, w.Name())
 	}
 	sort.Strings(expectedWallets)
+
+	// when
+	returnedWallets, err := s.ListWallets(context.Background())
+
+	// then
+	require.NoError(t, err)
+	assert.Equal(t, expectedWallets, returnedWallets)
+}
+
+func testFileStoreV1ListWalletsDoesNotShowHiddenFiles(t *testing.T) {
+	walletsDir := newWalletsDir(t)
+
+	// given
+	s := initialiseStore(t, walletsDir)
+	passphrase := vgrand.RandomStr(5)
+
+	var expectedWallets []string
+	for i := 0; i < 3; i++ {
+		w := newHDWalletWithKeys(t)
+
+		// when
+		err := s.SaveWallet(context.Background(), w, passphrase)
+
+		// then
+		require.NoError(t, err)
+
+		expectedWallets = append(expectedWallets, w.Name())
+	}
+	sort.Strings(expectedWallets)
+
+	for i := 0; i < 3; i++ {
+		hiddenFileName := "." + vgrand.RandomStr(4)
+		hiddenFilePath := filepath.Join(walletsDir, hiddenFileName)
+		if err := os.WriteFile(hiddenFilePath, []byte(""), 0o0600); err != nil {
+			t.Fatalf("could not write hidden file: %v", err)
+		}
+	}
+
+	// when
+	returnedWallets, err := s.ListWallets(context.Background())
+
+	// then
+	require.NoError(t, err)
+	assert.Equal(t, expectedWallets, returnedWallets)
+}
+
+func testFileStoreV1ListWalletsDoesNotShowDirectories(t *testing.T) {
+	walletsDir := newWalletsDir(t)
+
+	// given
+	s := initialiseStore(t, walletsDir)
+	passphrase := vgrand.RandomStr(5)
+
+	var expectedWallets []string
+	for i := 0; i < 3; i++ {
+		w := newHDWalletWithKeys(t)
+
+		// when
+		err := s.SaveWallet(context.Background(), w, passphrase)
+
+		// then
+		require.NoError(t, err)
+
+		expectedWallets = append(expectedWallets, w.Name())
+	}
+	sort.Strings(expectedWallets)
+
+	for i := 0; i < 3; i++ {
+		dirName := "." + vgrand.RandomStr(4)
+		dirPath := filepath.Join(walletsDir, dirName)
+		if err := os.Mkdir(dirPath, 0o0600); err != nil {
+			t.Fatalf("could not create directory: %v", err)
+		}
+	}
 
 	// when
 	returnedWallets, err := s.ListWallets(context.Background())
@@ -182,7 +258,7 @@ func testFileStoreV1ExistingWalletSucceeds(t *testing.T) {
 	assert.True(t, exists)
 }
 
-func testFileStoreV1SaveHDWalletSucceeds(t *testing.T) {
+func testFileStoreV1SaveWalletSucceeds(t *testing.T) {
 	walletsDir := newWalletsDir(t)
 
 	// given
@@ -197,11 +273,53 @@ func testFileStoreV1SaveHDWalletSucceeds(t *testing.T) {
 	require.NoError(t, err)
 	vgtest.AssertFileAccess(t, filepath.Join(walletsDir, w.Name()))
 
-	buf, err := ioutil.ReadFile(filepath.Join(walletsDir, w.Name()))
+	buf, err := os.ReadFile(filepath.Join(walletsDir, w.Name()))
 	if err != nil {
 		t.Fatalf("couldn't read wallet file: %v", w.Name())
 	}
 	assert.NotEmpty(t, buf)
+}
+
+func testFileStoreV1SaveWalletWithInvalidNameFails(t *testing.T) {
+	walletsDir := newWalletsDir(t)
+
+	// given
+	passphrase := vgrand.RandomStr(5)
+	s := initialiseStore(t, walletsDir)
+	w := newHDWalletWithKeys(t)
+
+	tcs := []struct {
+		name   string
+		wallet string
+		err    error
+	}{
+		{
+			name:   "starting with a dot",
+			wallet: ".start-with-dot",
+			err:    storev1.ErrWalletNameCannotStartWithDot,
+		}, {
+			name:   "containing slashes",
+			wallet: "contains/multiple/slashes/",
+			err:    storev1.ErrWalletNameCannotContainSlashCharacters,
+		}, {
+			name:   "containing back-slashes",
+			wallet: "contains\\multiple\\slashes\\",
+			err:    storev1.ErrWalletNameCannotContainSlashCharacters,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(tt *testing.T) {
+			w.SetName(tc.wallet)
+
+			// when
+			err := s.SaveWallet(context.Background(), w, passphrase)
+
+			// then
+			require.ErrorIs(tt, err, tc.err)
+			vgtest.AssertNoFile(tt, filepath.Join(walletsDir, w.Name()))
+		})
+	}
 }
 
 func initialiseStore(t *testing.T, walletsDir string) *storev1.Store {

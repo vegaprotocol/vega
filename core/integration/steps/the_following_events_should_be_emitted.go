@@ -32,6 +32,18 @@ func TheFollowingEventsShouldBeEmitted(broker *stubs.BrokerStub, table *godog.Ta
 	return nil
 }
 
+func TheFollowingEventsShouldNotBeEmitted(broker *stubs.BrokerStub, table *godog.Table) error {
+	for _, row := range parseEmittedEventsTable(table) {
+		eventType := row.MustEventType("type")
+
+		if len(broker.GetBatch(eventType)) > 0 {
+			return errEventEmitted(eventType)
+		}
+	}
+
+	return nil
+}
+
 func parseEmittedEventsTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"type",
@@ -40,4 +52,8 @@ func parseEmittedEventsTable(table *godog.Table) []RowWrapper {
 
 func errEventNotEmitted(t events.Type) error {
 	return fmt.Errorf("event of type %s has not been emitted", t)
+}
+
+func errEventEmitted(t events.Type) error {
+	return fmt.Errorf("event of type %s has been emitted", t)
 }

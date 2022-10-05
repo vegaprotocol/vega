@@ -14,12 +14,10 @@ package commands
 
 import (
 	"context"
-	"fmt"
 
 	"code.vegaprotocol.io/vega/blockexplorer"
 	"code.vegaprotocol.io/vega/blockexplorer/config"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/paths"
 	"github.com/jessevdk/go-flags"
 )
 
@@ -32,34 +30,11 @@ func (opts *Start) Execute(_ []string) error {
 	logger := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer logger.AtExit()
 
-	paths := paths.New(opts.VegaHome)
-
-	loader, err := config.NewLoader(paths)
+	cfg, err := loadConfig(logger, opts.VegaHome)
 	if err != nil {
-		return fmt.Errorf("error creating config loader: %w", err)
+		return err
 	}
 
-	exists, err := loader.ConfigExists()
-	if err != nil {
-		return fmt.Errorf("unable to determine if config file exists: %w", err)
-	}
-
-	var cfg *config.Config
-	if exists {
-		cfg, err = loader.Get()
-		if err != nil {
-			return fmt.Errorf("error loading config: %w", err)
-		}
-	} else {
-		logger.Warn("No config file found; using defaults. Create one with with 'blockexplorer init'")
-		defaultCfg := config.NewDefaultConfig()
-		cfg = &defaultCfg
-	}
-
-	// Apply any command line overrides
-	flags.NewParser(cfg, flags.Default|flags.IgnoreUnknown).Parse()
-
-	// And off we go
 	be := blockexplorer.NewFromConfig(*cfg)
 	return be.Run(context.Background())
 }

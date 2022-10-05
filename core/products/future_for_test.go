@@ -19,8 +19,8 @@ import (
 	"code.vegaprotocol.io/vega/core/oracles"
 )
 
-func (f *Future) SetSettlementPrice(ctx context.Context, priceName string, settlementPrice uint64) {
+func (f *Future) SetSettlementData(ctx context.Context, priceName string, settlementData uint64) {
 	od := oracles.OracleData{Data: map[string]string{}}
-	od.Data[priceName] = strconv.FormatUint(settlementPrice, 10)
-	f.updateSettlementPrice(ctx, od)
+	od.Data[priceName] = strconv.FormatUint(settlementData, 10)
+	f.updateSettlementData(ctx, od)
 }

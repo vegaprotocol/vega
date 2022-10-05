@@ -31,7 +31,7 @@ type GatewayHandler interface {
 }
 
 func NewGateway(log *logging.Logger, config GatewayConfig) *Gateway {
-	log.Named(gatewayNamedLogger)
+	log = log.Named(gatewayNamedLogger)
 	return &Gateway{
 		GatewayConfig: config,
 		httpServerMux: http.NewServeMux(),

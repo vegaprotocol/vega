@@ -8,17 +8,17 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | id  | decimal places |
       | ETH | 5              |
       
-    And the oracle spec for settlement price filtering data from "0xCAFECAFE" named "ethDec20Oracle":
+    And the oracle spec for settlement data filtering data from "0xCAFECAFE" named "ethDec20Oracle":
       | property         | type         | binding          |
-      | prices.ETH.value | TYPE_INTEGER | settlement price |
+      | prices.ETH.value | TYPE_INTEGER | settlement data |
 
     And the oracle spec for trading termination filtering data from "0xCAFECAFE" named "ethDec20Oracle":
       | property           | type         | binding             |
       | trading.terminated | TYPE_BOOLEAN | trading termination |
 
-    And the oracle spec for settlement price filtering data from "0xCAFECAFE1" named "ethDec21Oracle": 
+    And the oracle spec for settlement data filtering data from "0xCAFECAFE1" named "ethDec21Oracle": 
       | property         | type         | binding          |
-      | prices.ETH.value | TYPE_INTEGER | settlement price |
+      | prices.ETH.value | TYPE_INTEGER | settlement data |
 
     And the oracle spec for trading termination filtering data from "0xCAFECAFE1" named "ethDec21Oracle":
       | property           | type         | binding             |

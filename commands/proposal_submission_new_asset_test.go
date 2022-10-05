@@ -35,6 +35,8 @@ func TestCheckProposalSubmissionForNewAsset(t *testing.T) {
 	t.Run("Submitting an ERC20 asset change with validation timestamp succeed", testNewAssetERC20ChangeSubmissionWithValidationTimestampSucceeds)
 	t.Run("Submitting an ERC20 asset change with validation after closing timestamp fails", testNewAssetERC20ChangeSubmissionValidationAfterClosingTimestampsFails)
 	t.Run("Submitting an ERC20 asset change other proposals should omit validation timestamp", testNewAssetERC20ChangeOtherProposalShouldOmitValidationTimestamp)
+	t.Run("Submitting an ERC20 asset change with invalid quantum fails", testNewERC20AssetChangeSubmissionWithInvalidQuantumFails)
+	t.Run("Submitting an ERC20 asset change with valid quantum succeeds", testNewERC20AssetChangeSubmissionWithValidQuantumSucceeds)
 }
 
 func testNewAssetERC20ChangeOtherProposalShouldOmitValidationTimestamp(t *testing.T) {
@@ -513,4 +515,70 @@ func testNewERC20AssetChangeSubmissionWithValidWithdrawalThresholdSucceeds(t *te
 	})
 
 	assert.Empty(t, err.Get("proposal_submission.terms.change.new_asset.changes.source.erc20.withdraw_threshold"))
+}
+
+func testNewERC20AssetChangeSubmissionWithInvalidQuantumFails(t *testing.T) {
+	tcs := []struct {
+		name  string
+		err   error
+		value string
+	}{
+		{
+			name:  "Without withdraw quantum",
+			value: "",
+			err:   commands.ErrIsRequired,
+		}, {
+			name:  "With not-a-number quantum",
+			value: "forty-two",
+			err:   commands.ErrIsNotValidNumber,
+		}, {
+			name:  "With zero withdraw quantum",
+			value: "0",
+			err:   commands.ErrMustBePositive,
+		}, {
+			name:  "With negative withdraw quantum",
+			value: "-10",
+			err:   commands.ErrMustBePositive,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(tt *testing.T) {
+			err := checkProposalSubmission(&commandspb.ProposalSubmission{
+				Terms: &types.ProposalTerms{
+					Change: &types.ProposalTerms_NewAsset{
+						NewAsset: &types.NewAsset{
+							Changes: &types.AssetDetails{
+								Quantum: tc.value,
+								Source: &types.AssetDetails_Erc20{
+									Erc20: &types.ERC20{},
+								},
+							},
+						},
+					},
+				},
+			})
+
+			assert.Contains(tt, err.Get("proposal_submission.terms.change.new_asset.changes.quantum"), tc.err)
+		})
+	}
+}
+
+func testNewERC20AssetChangeSubmissionWithValidQuantumSucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			Change: &types.ProposalTerms_NewAsset{
+				NewAsset: &types.NewAsset{
+					Changes: &types.AssetDetails{
+						Quantum: "0.1",
+						Source: &types.AssetDetails_Erc20{
+							Erc20: &types.ERC20{},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Empty(t, err.Get("proposal_submission.terms.change.new_asset.changes.quantum"))
 }

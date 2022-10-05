@@ -161,7 +161,7 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 	}
 	// product update
 	if oracle, ok := row.oracleConfig(); ok {
-		oracleSettlement, err := config.OracleConfigs.Get(oracle, "settlement price")
+		oracleSettlement, err := config.OracleConfigs.Get(oracle, "settlement data")
 		if err != nil {
 			panic(err)
 		}
@@ -172,14 +172,14 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 		// we probably want to X-check the current spec, and make sure only filters + pubkeys are changed
 		settleSpec := types.OracleSpecFromProto(oracleSettlement.Spec)
 		termSpec := types.OracleSpecFromProto(oracleTermination.Spec)
-		settlementDecimals := config.OracleConfigs.GetSettlementPriceDP(oracle)
+		settlementDecimals := config.OracleConfigs.GetSettlementDataDP(oracle)
 		// update product -> use type switch even though currently only futures exist
 		switch ti := existing.TradableInstrument.Instrument.Product.(type) {
 		case *types.InstrumentFuture:
 			futureUp := &types.UpdateFutureProduct{
 				QuoteName:              ti.Future.QuoteName,
 				SettlementDataDecimals: settlementDecimals,
-				OracleSpecForSettlementPrice: &types.OracleSpecConfiguration{
+				OracleSpecForSettlementData: &types.OracleSpecConfiguration{
 					PubKeys: settleSpec.PubKeys,
 					Filters: settleSpec.Filters,
 				},
@@ -188,12 +188,12 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 					Filters: termSpec.Filters,
 				},
 				OracleSpecBinding: types.OracleSpecBindingForFutureFromProto(&proto.OracleSpecToFutureBinding{
-					SettlementPriceProperty:    oracleSettlement.Binding.SettlementPriceProperty,
+					SettlementDataProperty:     oracleSettlement.Binding.SettlementDataProperty,
 					TradingTerminationProperty: oracleTermination.Binding.TradingTerminationProperty,
 				}),
 			}
 			ti.Future.SettlementDataDecimals = settlementDecimals
-			ti.Future.OracleSpecForSettlementPrice = settleSpec
+			ti.Future.OracleSpecForSettlementData = settleSpec
 			ti.Future.OracleSpecBinding = futureUp.OracleSpecBinding
 			ti.Future.OracleSpecForTradingTermination = termSpec
 			// ensure we update the existing market
@@ -260,7 +260,7 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 		panic(err)
 	}
 
-	oracleConfigForSettlement, err := config.OracleConfigs.Get(row.oracleConfig(), "settlement price")
+	oracleConfigForSettlement, err := config.OracleConfigs.Get(row.oracleConfig(), "settlement data")
 	if err != nil {
 		panic(err)
 	}
@@ -270,9 +270,9 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 		panic(err)
 	}
 
-	settlementDataDecimals := config.OracleConfigs.GetSettlementPriceDP(row.oracleConfig())
+	settlementDataDecimals := config.OracleConfigs.GetSettlementDataDP(row.oracleConfig())
 	var binding proto.OracleSpecToFutureBinding
-	binding.SettlementPriceProperty = oracleConfigForSettlement.Binding.SettlementPriceProperty
+	binding.SettlementDataProperty = oracleConfigForSettlement.Binding.SettlementDataProperty
 	binding.TradingTerminationProperty = oracleConfigForTradingTermination.Binding.TradingTerminationProperty
 
 	priceMonitoring, err := config.PriceMonitoring.Get(row.priceMonitoring())
@@ -326,7 +326,7 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 					Future: &types.Future{
 						SettlementAsset:                 row.asset(),
 						QuoteName:                       row.quoteName(),
-						OracleSpecForSettlementPrice:    types.OracleSpecFromProto(oracleConfigForSettlement.Spec),
+						OracleSpecForSettlementData:     types.OracleSpecFromProto(oracleConfigForSettlement.Spec),
 						OracleSpecForTradingTermination: types.OracleSpecFromProto(oracleConfigForTradingTermination.Spec),
 						OracleSpecBinding:               types.OracleSpecBindingForFutureFromProto(&binding),
 						SettlementDataDecimals:          settlementDataDecimals,

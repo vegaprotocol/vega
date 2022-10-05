@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"code.vegaprotocol.io/vega/libs/num"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
@@ -177,6 +178,14 @@ func checkNewAssetChanges(change *types.ProposalTerms_NewAsset) Errors {
 		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.decimals", ErrIsRequired)
 	}
 
+	if len(change.NewAsset.Changes.Quantum) <= 0 {
+		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.quantum", ErrIsRequired)
+	} else if quantum, err := num.DecimalFromString(change.NewAsset.Changes.Quantum); err != nil {
+		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.quantum", ErrIsNotValidNumber)
+	} else if quantum.LessThanOrEqual(num.DecimalZero()) {
+		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.quantum", ErrMustBePositive)
+	}
+
 	if change.NewAsset.Changes.Source == nil {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_asset.changes.source", ErrIsRequired)
 	}
@@ -277,6 +286,14 @@ func checkUpdateAssetChanges(change *types.ProposalTerms_UpdateAsset) Errors {
 
 	if change.UpdateAsset.Changes == nil {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.update_asset.changes", ErrIsRequired)
+	}
+
+	if len(change.UpdateAsset.Changes.Quantum) <= 0 {
+		errs.AddForProperty("proposal_submission.terms.change.update_asset.changes.quantum", ErrIsRequired)
+	} else if quantum, err := num.DecimalFromString(change.UpdateAsset.Changes.Quantum); err != nil {
+		errs.AddForProperty("proposal_submission.terms.change.update_asset.changes.quantum", ErrIsNotValidNumber)
+	} else if quantum.LessThanOrEqual(num.DecimalZero()) {
+		errs.AddForProperty("proposal_submission.terms.change.update_asset.changes.quantum", ErrMustBePositive)
 	}
 
 	if change.UpdateAsset.Changes.Source == nil {
@@ -516,7 +533,7 @@ func checkNewFuture(future *types.FutureProduct) Errors {
 		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.quote_name", ErrIsRequired)
 	}
 
-	errs.Merge(checkOracleSpec(future.OracleSpecForSettlementPrice, "oracle_spec_for_settlement_price", "proposal_submission.terms.change.new_market.changes.instrument.product.future"))
+	errs.Merge(checkOracleSpec(future.OracleSpecForSettlementData, "oracle_spec_for_settlement_data", "proposal_submission.terms.change.new_market.changes.instrument.product.future"))
 	errs.Merge(checkOracleSpec(future.OracleSpecForTradingTermination, "oracle_spec_for_trading_termination", "proposal_submission.terms.change.new_market.changes.instrument.product.future"))
 	errs.Merge(checkNewOracleBinding(future))
 
@@ -534,7 +551,7 @@ func checkUpdateFuture(future *types.UpdateFutureProduct) Errors {
 		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future.quote_name", ErrIsRequired)
 	}
 
-	errs.Merge(checkOracleSpec(future.OracleSpecForSettlementPrice, "oracle_spec_for_settlement_price", "proposal_submission.terms.change.update_market.changes.instrument.product.future"))
+	errs.Merge(checkOracleSpec(future.OracleSpecForSettlementData, "oracle_spec_for_settlement_data", "proposal_submission.terms.change.update_market.changes.instrument.product.future"))
 	errs.Merge(checkOracleSpec(future.OracleSpecForTradingTermination, "oracle_spec_for_trading_termination", "proposal_submission.terms.change.update_market.changes.instrument.product.future"))
 	errs.Merge(checkUpdateOracleBinding(future))
 
@@ -630,11 +647,11 @@ func isBindingMatchingSpec(spec *oraclespb.OracleSpecConfiguration, bindingPrope
 func checkNewOracleBinding(future *types.FutureProduct) Errors {
 	errs := NewErrors()
 	if future.OracleSpecBinding != nil {
-		if len(future.OracleSpecBinding.SettlementPriceProperty) == 0 {
-			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_binding.settlement_price_property", ErrIsRequired)
+		if len(future.OracleSpecBinding.SettlementDataProperty) == 0 {
+			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_binding.settlement_data_property", ErrIsRequired)
 		} else {
-			if !isBindingMatchingSpec(future.OracleSpecForSettlementPrice, future.OracleSpecBinding.SettlementPriceProperty) {
-				errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_binding.settlement_price_property", ErrIsMismatching)
+			if !isBindingMatchingSpec(future.OracleSpecForSettlementData, future.OracleSpecBinding.SettlementDataProperty) {
+				errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_binding.settlement_data_property", ErrIsMismatching)
 			}
 		}
 
@@ -655,11 +672,11 @@ func checkNewOracleBinding(future *types.FutureProduct) Errors {
 func checkUpdateOracleBinding(future *types.UpdateFutureProduct) Errors {
 	errs := NewErrors()
 	if future.OracleSpecBinding != nil {
-		if len(future.OracleSpecBinding.SettlementPriceProperty) == 0 {
-			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_binding.settlement_price_property", ErrIsRequired)
+		if len(future.OracleSpecBinding.SettlementDataProperty) == 0 {
+			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_binding.settlement_data_property", ErrIsRequired)
 		} else {
-			if !isBindingMatchingSpec(future.OracleSpecForSettlementPrice, future.OracleSpecBinding.SettlementPriceProperty) {
-				errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_binding.settlement_price_property", ErrIsMismatching)
+			if !isBindingMatchingSpec(future.OracleSpecForSettlementData, future.OracleSpecBinding.SettlementDataProperty) {
+				errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future.oracle_spec_binding.settlement_data_property", ErrIsMismatching)
 			}
 		}
 

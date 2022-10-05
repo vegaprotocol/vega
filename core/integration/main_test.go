@@ -121,8 +121,8 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`the fees configuration named "([^"]*)":$`, func(name string, table *godog.Table) error {
 		return steps.TheFeesConfiguration(marketConfig, name, table)
 	})
-	s.Step(`^the oracle spec for settlement price filtering data from "([^"]*)" named "([^"]*)":$`, func(pubKeys string, name string, table *godog.Table) error {
-		return steps.TheOracleSpec(marketConfig, name, "settlement price", pubKeys, table)
+	s.Step(`^the oracle spec for settlement data filtering data from "([^"]*)" named "([^"]*)":$`, func(pubKeys string, name string, table *godog.Table) error {
+		return steps.TheOracleSpec(marketConfig, name, "settlement data", pubKeys, table)
 	})
 	s.Step(`^the oracle spec for trading termination filtering data from "([^"]*)" named "([^"]*)":$`, func(pubKeys string, name string, table *godog.Table) error {
 		return steps.TheOracleSpec(marketConfig, name, "trading termination", pubKeys, table)
@@ -424,6 +424,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 	s.Step(`^the following events should be emitted:$`, func(table *godog.Table) error {
 		return steps.TheFollowingEventsShouldBeEmitted(execsetup.broker, table)
+	})
+	s.Step(`^the following events should NOT be emitted:$`, func(table *godog.Table) error {
+		return steps.TheFollowingEventsShouldNotBeEmitted(execsetup.broker, table)
 	})
 	s.Step(`^a total of "([0-9]+)" events should be emitted$`, func(eventCounter int) error {
 		return steps.TotalOfEventsShouldBeEmitted(execsetup.broker, eventCounter)

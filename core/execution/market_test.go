@@ -486,7 +486,7 @@ func getMarketWithDP(pMonitorSettings *types.PriceMonitoringSettings, openingAuc
 					Future: &types.Future{
 						SettlementAsset: "ETH",
 						QuoteName:       "USD",
-						OracleSpecForSettlementPrice: &types.OracleSpec{
+						OracleSpecForSettlementData: &types.OracleSpec{
 							ID:      "1",
 							PubKeys: []string{"0xDEADBEEF"},
 							Filters: []*types.OracleSpecFilter{
@@ -513,7 +513,7 @@ func getMarketWithDP(pMonitorSettings *types.PriceMonitoringSettings, openingAuc
 							},
 						},
 						OracleSpecBinding: &types.OracleSpecBindingForFuture{
-							SettlementPriceProperty:    "prices.ETH.value",
+							SettlementDataProperty:     "prices.ETH.value",
 							TradingTerminationProperty: "trading.terminated",
 						},
 					},
@@ -631,18 +631,18 @@ func TestMarketClosing(t *testing.T) {
 	tm.now = closingAt
 	closed := tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), closingAt)
 
-	// there's no settlement price yet
+	// there's no settlement data yet
 	assert.False(t, closed)
 	assert.Equal(t, types.MarketStateTradingTerminated, tm.market.State())
 
-	// let time pass still no settlement price
+	// let time pass still no settlement data
 	closingAt = closingAt.Add(time.Second)
 	tm.now = closingAt
 	closed = tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), closingAt)
 	assert.False(t, closed)
 	assert.Equal(t, types.MarketStateTradingTerminated, tm.market.State())
 
-	// let the oracle update settlement price
+	// let the oracle update settlement data
 	delete(properties, "trading.terminated")
 	properties["prices.ETH.value"] = "100"
 	err = tm.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
@@ -695,12 +695,12 @@ func TestMarketClosingAfterUpdate(t *testing.T) {
 	require.False(t, closed)
 	assert.Equal(t, types.MarketStateTradingTerminated.String(), tm.market.State().String())
 
-	// Update the market's oracle spec for settlement price.
+	// Update the market's oracle spec for settlement data.
 
 	// given
 	updatedMkt := tm.mktCfg.DeepClone()
-	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecForSettlementPrice.Filters[0].Key.Name = "prices.ETHEREUM.value"
-	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecBinding.SettlementPriceProperty = "prices.ETHEREUM.value"
+	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecForSettlementData.Filters[0].Key.Name = "prices.ETHEREUM.value"
+	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecBinding.SettlementDataProperty = "prices.ETHEREUM.value"
 
 	// when
 	err = tm.market.Update(context.Background(), updatedMkt, tm.oracleEngine)
@@ -817,8 +817,8 @@ func TestMarketLiquidityFeeAfterUpdate(t *testing.T) {
 	// given
 	previousLiqFee := tm.market.GetLiquidityFee()
 	updatedMkt := tm.mktCfg.DeepClone()
-	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecForSettlementPrice.Filters[0].Key.Name = "prices.ETHEREUM.value"
-	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecBinding.SettlementPriceProperty = "prices.ETHEREUM.value"
+	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecForSettlementData.Filters[0].Key.Name = "prices.ETHEREUM.value"
+	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecBinding.SettlementDataProperty = "prices.ETHEREUM.value"
 
 	// when
 	err := tm.market.Update(context.Background(), updatedMkt, tm.oracleEngine)
@@ -1188,7 +1188,7 @@ func Test6056(t *testing.T) {
 	// now update the market
 	updatedMkt := tm.mktCfg.DeepClone()
 
-	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecForSettlementPrice.Filters = []*types.OracleSpecFilter{
+	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecForSettlementData.Filters = []*types.OracleSpecFilter{
 		{
 			Key: &types.OracleSpecPropertyKey{
 				Name: "prices.ETH.value",

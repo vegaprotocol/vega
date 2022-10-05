@@ -84,6 +84,7 @@ type PoWEngine interface {
 	EndOfBlock()
 	CheckTx(tx abci.Tx) error
 	DeliverTx(tx abci.Tx) error
+	Commit()
 }
 
 //nolint:interfacebloat
@@ -287,67 +288,96 @@ func NewApp(
 		HandleCheckTx(txn.ProposeCommand, app.CheckPropose)
 
 	app.abci.
-		HandleDeliverTx(txn.IssueSignatures,
-			app.SendEventOnError(app.DeliverIssueSignatures)).
-		HandleDeliverTx(txn.ProtocolUpgradeCommand,
-			app.SendEventOnError(app.DeliverProtocolUpgradeCommand)).
-		HandleDeliverTx(txn.AnnounceNodeCommand,
-			app.SendEventOnError(app.DeliverAnnounceNode)).
+		// node commands
+		HandleDeliverTx(txn.NodeSignatureCommand,
+			app.RequireValidatorPubKeyW(app.DeliverNodeSignature)).
+		HandleDeliverTx(txn.NodeVoteCommand,
+			app.RequireValidatorPubKeyW(app.DeliverNodeVote)).
+		HandleDeliverTx(txn.ChainEventCommand,
+			app.RequireValidatorPubKeyW(addDeterministicID(app.DeliverChainEvent))).
+		HandleDeliverTx(txn.StateVariableProposalCommand,
+			app.RequireValidatorPubKeyW(app.DeliverStateVarProposal)).
 		HandleDeliverTx(txn.ValidatorHeartbeatCommand,
-			app.SendEventOnError(app.DeliverValidatorHeartbeat)).
-		HandleDeliverTx(txn.TransferFundsCommand,
-			app.SendEventOnError(addDeterministicID(app.DeliverTransferFunds))).
+			app.DeliverValidatorHeartbeat).
+		// validators commands
+		HandleDeliverTx(txn.IssueSignatures,
+			app.SendTransactionResult(app.DeliverIssueSignatures)).
+		HandleDeliverTx(txn.ProtocolUpgradeCommand,
+			app.SendTransactionResult(app.DeliverProtocolUpgradeCommand)).
+		HandleDeliverTx(txn.RotateKeySubmissionCommand,
+			app.SendTransactionResult(
+				app.RequireValidatorMasterPubKeyW(app.DeliverKeyRotateSubmission),
+			),
+		).
+		HandleDeliverTx(txn.RotateEthereumKeySubmissionCommand,
+			app.SendTransactionResult(
+				app.RequireValidatorPubKeyW(app.DeliverEthereumKeyRotateSubmission),
+			),
+		).
+		// user commands
+		HandleDeliverTx(txn.AnnounceNodeCommand,
+			app.SendTransactionResult(app.DeliverAnnounceNode),
+		).
 		HandleDeliverTx(txn.CancelTransferFundsCommand,
-			app.SendEventOnError(app.DeliverCancelTransferFunds)).
+			app.SendTransactionResult(app.DeliverCancelTransferFunds),
+		).
+		HandleDeliverTx(txn.TransferFundsCommand,
+			app.SendTransactionResult(
+				addDeterministicID(app.DeliverTransferFunds),
+			),
+		).
 		HandleDeliverTx(txn.SubmitOrderCommand,
-			app.SendEventOnError(addDeterministicID(app.DeliverSubmitOrder))).
+			app.SendTransactionResult(
+				addDeterministicID(app.DeliverSubmitOrder),
+			),
+		).
 		HandleDeliverTx(txn.CancelOrderCommand,
-			app.SendEventOnError(addDeterministicID(app.DeliverCancelOrder))).
+			app.SendTransactionResult(
+				addDeterministicID(app.DeliverCancelOrder),
+			),
+		).
 		HandleDeliverTx(txn.AmendOrderCommand,
-			app.SendEventOnError(addDeterministicID(app.DeliverAmendOrder))).
+			app.SendTransactionResult(
+				addDeterministicID(app.DeliverAmendOrder),
+			),
+		).
 		HandleDeliverTx(txn.WithdrawCommand,
-			app.SendEventOnError(addDeterministicID(app.DeliverWithdraw))).
+			app.SendTransactionResult(
+				addDeterministicID(app.DeliverWithdraw))).
 		HandleDeliverTx(txn.ProposeCommand,
-			app.SendEventOnError(
+			app.SendTransactionResult(
 				app.CheckProposeW(
 					addDeterministicID(app.DeliverPropose),
 				),
 			),
 		).
 		HandleDeliverTx(txn.VoteCommand,
-			app.SendEventOnError(app.DeliverVote)).
-		HandleDeliverTx(txn.NodeSignatureCommand,
-			app.RequireValidatorPubKeyW(app.DeliverNodeSignature)).
+			app.SendTransactionResult(app.DeliverVote),
+		).
 		HandleDeliverTx(txn.LiquidityProvisionCommand,
-			app.SendEventOnError(addDeterministicID(app.DeliverLiquidityProvision))).
+			app.SendTransactionResult(
+				addDeterministicID(app.DeliverLiquidityProvision),
+			),
+		).
 		HandleDeliverTx(txn.CancelLiquidityProvisionCommand,
-			app.SendEventOnError(app.DeliverCancelLiquidityProvision)).
+			app.SendTransactionResult(app.DeliverCancelLiquidityProvision),
+		).
 		HandleDeliverTx(txn.AmendLiquidityProvisionCommand,
-			app.SendEventOnError(
-				addDeterministicID(app.DeliverAmendLiquidityProvision))).
-		HandleDeliverTx(txn.NodeVoteCommand,
-			app.RequireValidatorPubKeyW(app.DeliverNodeVote)).
-		HandleDeliverTx(txn.ChainEventCommand,
-			app.RequireValidatorPubKeyW(addDeterministicID(app.DeliverChainEvent))).
-		HandleDeliverTx(txn.SubmitOracleDataCommand, app.DeliverSubmitOracleData).
+			app.SendTransactionResult(
+				addDeterministicID(app.DeliverAmendLiquidityProvision),
+			),
+		).
+		HandleDeliverTx(txn.SubmitOracleDataCommand,
+			app.SendTransactionResult(app.DeliverSubmitOracleData),
+		).
 		HandleDeliverTx(txn.DelegateCommand,
-			app.SendEventOnError(app.DeliverDelegate)).
+			app.SendTransactionResult(app.DeliverDelegate),
+		).
 		HandleDeliverTx(txn.UndelegateCommand,
-			app.SendEventOnError(app.DeliverUndelegate)).
-		HandleDeliverTx(txn.RotateKeySubmissionCommand,
-			app.SendEventOnError(
-				app.RequireValidatorMasterPubKeyW(app.DeliverKeyRotateSubmission),
-			),
+			app.SendTransactionResult(app.DeliverUndelegate),
 		).
-		HandleDeliverTx(txn.RotateEthereumKeySubmissionCommand,
-			app.SendEventOnError(
-				app.RequireValidatorPubKeyW(app.DeliverEthereumKeyRotateSubmission),
-			),
-		).
-		HandleDeliverTx(txn.StateVariableProposalCommand,
-			app.RequireValidatorPubKeyW(app.DeliverStateVarProposal)).
 		HandleDeliverTx(txn.BatchMarketInstructions,
-			app.SendEventOnError(
+			app.SendTransactionResult(
 				app.CheckBatchMarketInstructionsW(
 					addDeterministicID(app.DeliverBatchMarketInstructions),
 				),
@@ -422,14 +452,27 @@ func (app *App) RequireValidatorMasterPubKeyW(
 	}
 }
 
-func (app *App) SendEventOnError(
+func (app *App) SendTransactionResult(
 	f func(context.Context, abci.Tx) error,
 ) func(context.Context, abci.Tx) error {
 	return func(ctx context.Context, tx abci.Tx) error {
 		if err := f(ctx, tx); err != nil {
+			// Send and error event
+			app.broker.Send(events.NewTransactionResultEventFailure(
+				ctx, hex.EncodeToString(tx.Hash()), tx.Party(), err, tx.GetCmd(),
+			))
+
+			// FIXME(j): remove this once anyone have stopped using the event
 			app.broker.Send(events.NewTxErrEvent(ctx, err, tx.Party(), tx.GetCmd(), tx.Command().String()))
+
 			return err
 		}
+
+		// Send and error event
+		app.broker.Send(events.NewTransactionResultEventSuccess(
+			ctx, hex.EncodeToString(tx.Hash()), tx.Party(), tx.GetCmd(),
+		))
+
 		return nil
 	}
 }
@@ -622,17 +665,30 @@ func (app *App) LoadSnapshotChunk(req tmtypes.RequestLoadSnapshotChunk) tmtypes.
 func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitChain {
 	app.log.Debug("ABCI service InitChain start")
 	hash := hex.EncodeToString(vgcrypto.Hash(req.AppStateBytes))
-	// let's assume genesis block is block 0
 	app.abci.SetChainID(req.ChainId)
 	app.chainCtx = vgcontext.WithChainID(context.Background(), req.ChainId)
-	ctx := vgcontext.WithBlockHeight(app.chainCtx, 0)
+	ctx := vgcontext.WithBlockHeight(app.chainCtx, req.InitialHeight)
 	ctx = vgcontext.WithTraceID(ctx, hash)
 	app.blockCtx = ctx
+
+	app.broker.Send(
+		events.NewBeginBlock(ctx, eventspb.BeginBlock{
+			Height:    uint64(req.InitialHeight),
+			Timestamp: req.Time.UnixNano(),
+			Hash:      hash,
+		}),
+	)
 
 	if err := app.ghandler.OnGenesis(ctx, req.Time, req.AppStateBytes); err != nil {
 		app.cancel()
 		app.log.Fatal("couldn't initialise vega with the genesis block", logging.Error(err))
 	}
+
+	app.broker.Send(
+		events.NewEndBlock(ctx, eventspb.EndBlock{
+			Height: uint64(req.InitialHeight),
+		}),
+	)
 
 	return tmtypes.ResponseInitChain{
 		Validators: app.top.GetValidatorPowerUpdates(),
@@ -667,12 +723,6 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 			ValidatorUpdates: powerUpdates,
 		}
 	}
-
-	app.broker.Send(
-		events.NewEndBlock(app.blockCtx, eventspb.EndBlock{
-			Height: uint64(req.Height),
-		}),
-	)
 
 	return ctx, resp
 }
@@ -744,6 +794,10 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	app.log.Debug("entering commit", logging.Time("at", time.Now()))
 	defer func() { app.log.Debug("leaving commit", logging.Time("at", time.Now())) }()
 
+	if !app.nilPow {
+		app.pow.Commit()
+	}
+
 	// call checkpoint _first_ so the snapshot contains the correct checkpoint state.
 	cpt, _ := app.checkpoint.Checkpoint(app.blockCtx, app.currentTimestamp)
 	t0 := time.Now()
@@ -804,6 +858,13 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	app.log.Debug("apphash calculated", logging.String("response-data", hex.EncodeToString(resp.Data)))
 	app.updateStats()
 	app.setBatchStats()
+
+	app.broker.Send(
+		events.NewEndBlock(app.blockCtx, eventspb.EndBlock{
+			Height: uint64(resp.RetainHeight),
+		}),
+	)
+
 	return resp
 }
 

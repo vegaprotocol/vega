@@ -153,12 +153,12 @@ func NewMarketFromSnapshot(
 		marketActivityTracker:      marketActivityTracker,
 		positionFactor:             positionFactor,
 		stateVarEngine:             stateVarEngine,
-		settlementPriceInMarket:    em.SettlementPrice,
+		settlementDataInMarket:     em.SettlementData,
 	}
 
 	market.assetDP = uint32(assetDetails.DecimalPlaces())
 	market.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(market.tradingTerminated)
-	market.tradableInstrument.Instrument.Product.NotifyOnSettlementPrice(market.settlementPrice)
+	market.tradableInstrument.Instrument.Product.NotifyOnSettlementData(market.settlementData)
 	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
 
 	if mkt.State == types.MarketStateTradingTerminated {
@@ -175,8 +175,8 @@ func NewMarketFromSnapshot(
 func (m *Market) getState() *types.ExecMarket {
 	rf := m.risk.GetRiskFactors()
 	var sp *num.Uint
-	if m.settlementPriceInMarket != nil {
-		sp = m.settlementPriceInMarket.Clone()
+	if m.settlementDataInMarket != nil {
+		sp = m.settlementDataInMarket.Clone()
 	}
 	em := &types.ExecMarket{
 		Market:                     m.mkt.DeepClone(),
@@ -196,7 +196,7 @@ func (m *Market) getState() *types.ExecMarket {
 		ShortRiskFactor:            rf.Short,
 		LongRiskFactor:             rf.Long,
 		FeeSplitter:                m.feeSplitter.GetState(),
-		SettlementPrice:            sp,
+		SettlementData:             sp,
 	}
 
 	return em

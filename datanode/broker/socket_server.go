@@ -72,7 +72,14 @@ func (s socketServer) Listen() error {
 		net.JoinHostPort(s.config.SocketConfig.IP, fmt.Sprintf("%d", s.config.SocketConfig.Port)),
 	)
 
-	if err := s.sock.Listen(addr); err != nil {
+	listenOptions := map[string]interface{}{mangos.OptionMaxRecvSize: 0}
+
+	listener, err := s.sock.NewListener(addr, listenOptions)
+	if err != nil {
+		return fmt.Errorf("failed to make listener %w", err)
+	}
+
+	if err := listener.Listen(); err != nil {
 		return fmt.Errorf("failed to listen on %v: %w", addr, err)
 	}
 
