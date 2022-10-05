@@ -1,4 +1,4 @@
-Feature: Replicate LP getting distressed during continuous trading, check if penalty is implemented correctly
+Feature: check if the realised PnL and unreaslied PnL is calculated according to spec in glossaries: https://github.com/vegaprotocol/specs/blob/master/glossaries/trading-and-protocol-glossary.md
 
   Background:
 
@@ -21,7 +21,7 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | party2 | USD   | 100000000 |
       | party3 | USD   | 100000000 |
 
-  Scenario: 001, LP gets distressed during continuous trading, 0044-LIME-002, No DPD setting
+  Scenario: 001, check PnL when reduce positions
 
     Given the following network parameters are set:
       | name                                          | value |
