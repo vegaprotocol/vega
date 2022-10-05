@@ -1,6 +1,22 @@
 # Changelog
 
-## Unreleased 0.58.0
+
+## Unreleased 0.59.0
+
+### 🚨 Breaking changes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🗑️ Deprecation
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🛠 Improvements
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+
+## 0.58.0
 
 ### 🚨 Breaking changes
 - [6271](https://github.com/vegaprotocol/vega/issues/6271) - Require signature from new Ethereum key to validate key rotation submission
@@ -9,9 +25,6 @@
 - [6428](https://github.com/vegaprotocol/vega/issues/6428) - Update the wallet connection decision for future work
 - [6429](https://github.com/vegaprotocol/vega/issues/6429) - Rename pipeline to interactor for better understanding
 - [6430](https://github.com/vegaprotocol/vega/issues/6430) - Split the transaction status interaction depending on success and failure
-
-### 🗑️ Deprecation
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
 - [6399](https://github.com/vegaprotocol/vega/issues/6399) - Add `init-db` and `unsafe-reset-all` commands to block explorer
