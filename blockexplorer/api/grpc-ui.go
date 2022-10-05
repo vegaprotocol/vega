@@ -49,6 +49,10 @@ func (g *GRPCUIHandler) Name() string {
 	return "grpc-ui"
 }
 
+func (g *GRPCUIHandler) Description() string {
+	return "Interactive front-end for GRPC API"
+}
+
 func (g *GRPCUIHandler) Start() error {
 	defaultCallOptions := []grpc.CallOption{
 		grpc.MaxCallRecvMsgSize(int(g.MaxPayloadSize)),

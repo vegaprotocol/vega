@@ -44,7 +44,11 @@ func NewRESTHandler(log *logging.Logger, dialer grpcDialer, config RESTConfig) *
 	}
 }
 
-func (r *RESTHandler) Name() string { return "REST" }
+func (r *RESTHandler) Name() string { return "rest" }
+
+func (r *RESTHandler) Description() string {
+	return "REST API endpoint"
+}
 
 func (r *RESTHandler) Start() error {
 	r.log.Info("Starting REST<>GRPC based API", logging.String("endpoint", r.Endpoint))

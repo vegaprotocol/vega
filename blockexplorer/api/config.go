@@ -31,6 +31,7 @@ type Config struct {
 	GRPCUI        GRPCUIConfig  `group:"grpc web ui" namespace:"grpcui"`
 	REST          RESTConfig    `group:"rest api" namespace:"rest"`
 	Gateway       GatewayConfig `group:"gateway" namespace:"grpcui"`
+	Swagger       SwaggerConfig `group:"swagger" namespace:"swagger"`
 	ListenAddress string        `long:"listen-address" description:"the IP address that our sever will listen on"`
 	ListenPort    uint16        `long:"listen-port" description:"the port that our sever will listen on"`
 }
@@ -41,6 +42,7 @@ func NewDefaultConfig() Config {
 		GRPCUI:        NewDefaultGRPCUIConfig(),
 		REST:          NewDefaultRESTConfig(),
 		Gateway:       NewDefaultGatewayConfig(),
+		Swagger:       NewDefaultSwaggerConfig(),
 		ListenAddress: "0.0.0.0",
 		ListenPort:    1515,
 	}
@@ -79,5 +81,19 @@ func NewDefaultRESTConfig() RESTConfig {
 		Level:    encoding.LogLevel{Level: logging.InfoLevel},
 		Enabled:  encoding.Bool(true),
 		Endpoint: "/rest",
+	}
+}
+
+type SwaggerConfig struct {
+	Level    encoding.LogLevel `long:"log-level" choice:"debug" choice:"info" choice:"warning"`
+	Enabled  encoding.Bool     `long:"enabled"`
+	Endpoint string            `long:"endpoint"`
+}
+
+func NewDefaultSwaggerConfig() SwaggerConfig {
+	return SwaggerConfig{
+		Level:    encoding.LogLevel{Level: logging.InfoLevel},
+		Enabled:  encoding.Bool(true),
+		Endpoint: "/swagger",
 	}
 }
