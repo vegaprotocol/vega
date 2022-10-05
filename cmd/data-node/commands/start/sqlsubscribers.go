@@ -190,7 +190,7 @@ func (s *SQLSubscribers) CreateAllStores(ctx context.Context, Log *logging.Logge
 	s.positionStore = sqlstore.NewPositions(transactionalConnectionSource)
 	s.oracleSpecStore = sqlstore.NewOracleSpec(transactionalConnectionSource)
 	s.oracleDataStore = sqlstore.NewOracleData(transactionalConnectionSource)
-	s.liquidityProvisionStore = sqlstore.NewLiquidityProvision(transactionalConnectionSource)
+	s.liquidityProvisionStore = sqlstore.NewLiquidityProvision(transactionalConnectionSource, Log)
 	s.transfersStore = sqlstore.NewTransfers(transactionalConnectionSource)
 	s.stakeLinkingStore = sqlstore.NewStakeLinking(transactionalConnectionSource)
 	s.notaryStore = sqlstore.NewNotary(transactionalConnectionSource)

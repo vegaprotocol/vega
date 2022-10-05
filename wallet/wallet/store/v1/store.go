@@ -56,7 +56,7 @@ func (s *Store) WalletExists(ctx context.Context, name string) (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("couldn't verify path: %w", err)
 	}
-	return exists, err
+	return exists, nil
 }
 
 func (s *Store) ListWallets(ctx context.Context) ([]string, error) {
