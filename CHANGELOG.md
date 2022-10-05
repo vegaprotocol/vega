@@ -15,6 +15,7 @@
 - [6348](https://github.com/vegaprotocol/vega/issues/6348) - Reduce pool size to leave more available `Postgres` connections
 - [6312](https://github.com/vegaprotocol/vega/issues/6312) - Add back amended balance tests and correct ordering
 - [6211](https://github.com/vegaprotocol/vega/issues/6211) - Handle `BeginBlock` and `EndBlock` events
+- [6361](https://github.com/vegaprotocol/vega/issues/6361) - Remove unnecessary logging in market
 
 
 ### 🐛 Fixes
