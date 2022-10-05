@@ -31,7 +31,7 @@ func (e *NoopEngine) BeginBlock(blockHeight uint64, blockHash string) {
 }
 
 func (e *NoopEngine) EndOfBlock() {}
-
+func (e *NoopEngine) Commit()     {}
 func (e *NoopEngine) CheckTx(tx abci.Tx) error {
 	return nil
 }
