@@ -10717,7 +10717,7 @@ type Future {
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
 
-  "The oracle spec describing the oracle data of interest for settlement data."
+  "The oracle spec describing the oracle data of interest for settlement."
   oracleSpecForSettlementData: OracleSpec!
 
   "The oracle spec describing the oracle data of interest for trading termination."
@@ -11589,7 +11589,7 @@ type Position {
   "The party holding this position"
   party: Party!
 
-  "Open volume (uint64)"
+  "Open volume (int64)"
   openVolume: String!
 
   "Realised Profit and Loss (int64)"
@@ -11624,7 +11624,7 @@ type PositionUpdate {
   "The party holding this position"
   partyId: ID!
 
-  "Open volume (uint64)"
+  "Open volume (int64)"
   openVolume: String!
 
   "Realised Profit and Loss (int64)"

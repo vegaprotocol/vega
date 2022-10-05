@@ -15,12 +15,8 @@ package store
 import (
 	"context"
 	"fmt"
-	"strings"
 
-	"code.vegaprotocol.io/vega/blockexplorer/entities"
 	"code.vegaprotocol.io/vega/logging"
-	pb "code.vegaprotocol.io/vega/protos/blockexplorer"
-	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
@@ -55,61 +51,4 @@ func MustNewStore(config Config, log *logging.Logger) *Store {
 		log.Fatal("creating store", logging.Error(err))
 	}
 	return store
-}
-
-func (s *Store) ListTransactions(ctx context.Context,
-	filters map[string]string,
-	limit uint32,
-	before *entities.TxCursor,
-	after *entities.TxCursor,
-) ([]*pb.Transaction, error) {
-	query := `SELECT * FROM tx_results`
-
-	args := []interface{}{}
-	predicates := []string{}
-	if before != nil {
-		block := nextBindVar(&args, before.BlockNumber)
-		index := nextBindVar(&args, before.TxIndex)
-		predicate := fmt.Sprintf("(block_id < %s OR (block_id = %s AND index < %s))", block, block, index)
-		predicates = append(predicates, predicate)
-	}
-
-	if after != nil {
-		block := nextBindVar(&args, after.BlockNumber)
-		index := nextBindVar(&args, after.TxIndex)
-		predicate := fmt.Sprintf("(block_id > %s OR (block_id = %s AND index ? %s))", block, block, index)
-		predicates = append(predicates, predicate)
-	}
-
-	for key, value := range filters {
-		predicate := fmt.Sprintf(`
-			EXISTS (SELECT 1 FROM events e JOIN attributes a ON e.rowid = a.event_id
-			        WHERE e.tx_id = tx_results.rowid
-			        AND a.composite_key = %s
-		 	        AND a.value = %s)`, nextBindVar(&args, key), nextBindVar(&args, value))
-		predicates = append(predicates, predicate)
-	}
-
-	if len(predicates) > 0 {
-		query = fmt.Sprintf("%s WHERE %s", query, strings.Join(predicates, " AND "))
-	}
-
-	query = fmt.Sprintf("%s ORDER BY block_id desc, index desc", query)
-	query = fmt.Sprintf("%s LIMIT %d", query, limit)
-
-	var rows []entities.TxResultRow
-	if err := pgxscan.Select(ctx, s.pool, &rows, query, args...); err != nil {
-		return nil, fmt.Errorf("querying tx_results:%w", err)
-	}
-
-	txs := make([]*pb.Transaction, 0, len(rows))
-	for _, row := range rows {
-		tx, err := row.ToProto()
-		if err != nil {
-			return nil, err
-		}
-		txs = append(txs, tx)
-	}
-
-	return txs, nil
 }

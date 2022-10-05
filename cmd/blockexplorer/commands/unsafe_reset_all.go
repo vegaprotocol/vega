@@ -15,36 +15,40 @@ package commands
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/blockexplorer"
 	"code.vegaprotocol.io/vega/blockexplorer/config"
+	"code.vegaprotocol.io/vega/blockexplorer/store"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/jessevdk/go-flags"
 )
 
-type Start struct {
+type UnsafeResetAllCmd struct {
 	config.VegaHomeFlag
-	config.Config
 }
 
-func (opts *Start) Execute(_ []string) error {
+func (opts *UnsafeResetAllCmd) Execute(_ []string) error {
 	logger := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer logger.AtExit()
 
-	cfg, err := loadConfig(logger, opts.VegaHome)
+	config, err := loadConfig(logger, opts.VegaHome)
 	if err != nil {
 		return err
 	}
 
-	be := blockexplorer.NewFromConfig(*cfg)
-	return be.Run(context.Background())
+	err = store.DropAllTablesAndViews(logger, config.Store)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-func Run(ctx context.Context, parser *flags.Parser) error {
-	runCmd := Start{}
+var unsafeResetAllCmd UnsafeResetAllCmd
 
-	short := "Start block explorer backend"
-	long := "Start the various API grpc/rest APIs to query the tendermint postgres transaction index"
+func UnsafeResetAll(ctx context.Context, parser *flags.Parser) error {
+	unsafeResetAllCmd = UnsafeResetAllCmd{}
 
-	_, err := parser.AddCommand("start", short, long, &runCmd)
+	short := "Drop all data & schema from the database"
+	long := "Delete all tables & views from the database (but not the database itself)"
+
+	_, err := parser.AddCommand("unsafe-reset-all", short, long, &unsafeResetAllCmd)
 	return err
 }
