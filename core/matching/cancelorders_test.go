@@ -88,8 +88,12 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectMarketID(t *testing.T) {
 		Type:        types.OrderTypeLimit,
 		ID:          "v0000000000000-0000001",
 	}
-	_, err = book.CancelOrder(&order2)
-	assert.Error(t, err, types.ErrOrderRemovalFailure)
+
+	assert.Panics(t, func() {
+		_, err = book.CancelOrder(&order2)
+	},
+	)
+
 	assert.Equal(t, book.getNumberOfBuyLevels(), 1)
 	assert.Equal(t, book.getNumberOfSellLevels(), 0)
 }
