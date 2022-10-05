@@ -104,6 +104,7 @@ type ResolverRoot interface {
 	TradableInstrument() TradableInstrumentResolver
 	Trade() TradeResolver
 	TradeUpdate() TradeUpdateResolver
+	TransactionResult() TransactionResultResolver
 	Transfer() TransferResolver
 	UpdateAsset() UpdateAssetResolver
 	UpdateMarket() UpdateMarketResolver
@@ -1517,6 +1518,13 @@ type ComplexityRoot struct {
 		Type               func(childComplexity int) int
 	}
 
+	TransactionResult struct {
+		Error   func(childComplexity int) int
+		Hash    func(childComplexity int) int
+		PartyId func(childComplexity int) int
+		Status  func(childComplexity int) int
+	}
+
 	TransactionSubmitted struct {
 		Success func(childComplexity int) int
 	}
@@ -2164,6 +2172,9 @@ type TradeUpdateResolver interface {
 	SellerFee(ctx context.Context, obj *vega.Trade) (*TradeFee, error)
 	BuyerAuctionBatch(ctx context.Context, obj *vega.Trade) (*int, error)
 	SellerAuctionBatch(ctx context.Context, obj *vega.Trade) (*int, error)
+}
+type TransactionResultResolver interface {
+	Error(ctx context.Context, obj *v1.TransactionResult) (*string, error)
 }
 type TransferResolver interface {
 	Asset(ctx context.Context, obj *v1.Transfer) (*vega.Asset, error)
@@ -8796,6 +8807,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TradeUpdate.Type(childComplexity), true
 
+	case "TransactionResult.error":
+		if e.complexity.TransactionResult.Error == nil {
+			break
+		}
+
+		return e.complexity.TransactionResult.Error(childComplexity), true
+
+	case "TransactionResult.hash":
+		if e.complexity.TransactionResult.Hash == nil {
+			break
+		}
+
+		return e.complexity.TransactionResult.Hash(childComplexity), true
+
+	case "TransactionResult.partyId":
+		if e.complexity.TransactionResult.PartyId == nil {
+			break
+		}
+
+		return e.complexity.TransactionResult.PartyId(childComplexity), true
+
+	case "TransactionResult.status":
+		if e.complexity.TransactionResult.Status == nil {
+			break
+		}
+
+		return e.complexity.TransactionResult.Status(childComplexity), true
+
 	case "TransactionSubmitted.success":
 		if e.complexity.TransactionSubmitted.Success == nil {
 			break
@@ -9344,6 +9383,18 @@ var sources = []*ast.Source{
 schema {
   query: Query
   subscription: Subscription
+}
+
+"The result from processing a transaction"
+type TransactionResult {
+  "The party which submitted this transaction"
+  partyId: String!
+  "The hash of the transaction"
+  hash: String!
+  "Was the transaction successful or not?"
+  status: Boolean!
+  "The error emitted by the transaction, will be null if the transaction succeeded"
+  error: String
 }
 
 "Create an order linked to an index rather than a price"
@@ -13039,6 +13090,8 @@ enum BusEventType {
   OracleSpec
   "Constant for market events - mainly used for logging"
   Market
+  "The results from processing at transaction"
+  TransactionResult
 }
 
 "Union type for wrapped events in stream PROPOSAL is mapped to governance data, something to keep in mind"
@@ -13068,6 +13121,7 @@ union Event =
   | Withdrawal
   | OracleSpec
   | LiquidityProvision
+  | TransactionResult
 
 type BusEvent {
   "The ID for this event"
@@ -46857,6 +46911,143 @@ func (ec *executionContext) _TradeUpdate_sellerAuctionBatch(ctx context.Context,
 	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _TransactionResult_partyId(ctx context.Context, field graphql.CollectedField, obj *v1.TransactionResult) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "TransactionResult",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PartyId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TransactionResult_hash(ctx context.Context, field graphql.CollectedField, obj *v1.TransactionResult) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "TransactionResult",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Hash, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TransactionResult_status(ctx context.Context, field graphql.CollectedField, obj *v1.TransactionResult) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "TransactionResult",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TransactionResult_error(ctx context.Context, field graphql.CollectedField, obj *v1.TransactionResult) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "TransactionResult",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.TransactionResult().Error(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _TransactionSubmitted_success(ctx context.Context, field graphql.CollectedField, obj *TransactionSubmitted) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -50684,6 +50875,13 @@ func (ec *executionContext) _Event(ctx context.Context, sel ast.SelectionSet, ob
 			return graphql.Null
 		}
 		return ec._LiquidityProvision(ctx, sel, obj)
+	case v1.TransactionResult:
+		return ec._TransactionResult(ctx, sel, &obj)
+	case *v1.TransactionResult:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._TransactionResult(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -65789,6 +65987,74 @@ func (ec *executionContext) _TradeUpdate(ctx context.Context, sel ast.SelectionS
 					}
 				}()
 				res = ec._TradeUpdate_sellerAuctionBatch(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var transactionResultImplementors = []string{"TransactionResult", "Event"}
+
+func (ec *executionContext) _TransactionResult(ctx context.Context, sel ast.SelectionSet, obj *v1.TransactionResult) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, transactionResultImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TransactionResult")
+		case "partyId":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._TransactionResult_partyId(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "hash":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._TransactionResult_hash(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "status":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._TransactionResult_status(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "error":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._TransactionResult_error(ctx, field, obj)
 				return res
 			}
 
