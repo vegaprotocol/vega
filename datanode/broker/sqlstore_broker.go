@@ -48,18 +48,23 @@ type BlockStore interface {
 	GetLastBlock(ctx context.Context) (entities.Block, error)
 }
 
+const (
+	slowTimeUpdateThreshold = 2 * time.Second
+)
+
 // SQLStoreBroker : push events to each subscriber with a single go routine across all types.
 type SQLStoreBroker struct {
-	config             Config
-	log                *logging.Logger
-	subscribers        []SQLBrokerSubscriber
-	typeToSubs         map[events.Type][]SQLBrokerSubscriber
-	eventSource        eventSource
-	transactionManager TransactionManager
-	blockStore         BlockStore
-	onBlockCommitted   func(ctx context.Context, chainId string, lastCommittedBlockHeight int64) bool
-	chainInfo          ChainInfoI
-	lastBlock          *entities.Block
+	config               Config
+	log                  *logging.Logger
+	subscribers          []SQLBrokerSubscriber
+	typeToSubs           map[events.Type][]SQLBrokerSubscriber
+	eventSource          eventSource
+	transactionManager   TransactionManager
+	blockStore           BlockStore
+	onBlockCommitted     func(ctx context.Context, chainId string, lastCommittedBlockHeight int64) bool
+	chainInfo            ChainInfoI
+	lastBlock            *entities.Block
+	slowTimeUpdateTicker *time.Ticker
 }
 
 func NewSQLStoreBroker(log *logging.Logger, config Config, chainInfo ChainInfoI,
@@ -67,15 +72,16 @@ func NewSQLStoreBroker(log *logging.Logger, config Config, chainInfo ChainInfoI,
 	subs []SQLBrokerSubscriber,
 ) *SQLStoreBroker {
 	b := &SQLStoreBroker{
-		config:             config,
-		log:                log,
-		subscribers:        subs,
-		typeToSubs:         map[events.Type][]SQLBrokerSubscriber{},
-		eventSource:        eventsource,
-		transactionManager: transactionManager,
-		blockStore:         blockStore,
-		chainInfo:          chainInfo,
-		onBlockCommitted:   onBlockCommitted,
+		config:               config,
+		log:                  log,
+		subscribers:          subs,
+		typeToSubs:           map[events.Type][]SQLBrokerSubscriber{},
+		eventSource:          eventsource,
+		transactionManager:   transactionManager,
+		blockStore:           blockStore,
+		chainInfo:            chainInfo,
+		onBlockCommitted:     onBlockCommitted,
+		slowTimeUpdateTicker: time.NewTicker(slowTimeUpdateThreshold),
 	}
 
 	for _, s := range subs {
@@ -130,14 +136,16 @@ func (b *SQLStoreBroker) waitForFirstBlock(ctx context.Context, errCh <-chan err
 	} else if errors.Is(err, sqlstore.ErrNoLastBlock) {
 		lastProcessedBlock = entities.Block{
 			VegaTime: time.Time{},
-			Height:   -1,
-			Hash:     nil,
+			// TODO: This is making the assumption that the first block will be height 1. This is not necessarily true.
+			//       The node can start at any time given to Tendermint through the genesis file.
+			Height: 0,
+			Hash:   nil,
 		}
 	} else {
 		return nil, err
 	}
 
-	var timeUpdate entities.TimeUpdateEvent
+	var beginBlock entities.BeginBlockEvent
 	for {
 		select {
 		case <-ctx.Done():
@@ -145,18 +153,18 @@ func (b *SQLStoreBroker) waitForFirstBlock(ctx context.Context, errCh <-chan err
 		case err = <-errCh:
 			return nil, err
 		case e := <-receiveCh:
-			if e.Type() == events.TimeUpdate {
-				timeUpdate = e.(entities.TimeUpdateEvent)
-				metrics.EventCounterInc(timeUpdate.Type().String())
+			if e.Type() == events.BeginBlockEvent {
+				beginBlock = e.(entities.BeginBlockEvent)
+				metrics.EventCounterInc(beginBlock.Type().String())
 
-				if timeUpdate.BlockNr() > lastProcessedBlock.Height+1 {
-					return nil, fmt.Errorf("block height on time update, %d, is too high, the height of the last processed block is %d",
-						timeUpdate.BlockNr(), lastProcessedBlock.Height)
+				if beginBlock.BlockNr() > lastProcessedBlock.Height+1 {
+					return nil, fmt.Errorf("block height on begin block, %d, is too high, the height of the last processed block is %d",
+						beginBlock.BlockNr(), lastProcessedBlock.Height)
 				}
 
-				if timeUpdate.BlockNr() > lastProcessedBlock.Height {
-					b.log.Infof("first unprocessed block received, starting block processing at height %d", timeUpdate.BlockNr())
-					return entities.BlockFromTimeUpdate(timeUpdate)
+				if beginBlock.BlockNr() > lastProcessedBlock.Height {
+					b.log.Info("first unprocessed block received, starting block processing")
+					return entities.BlockFromBeginBlock(beginBlock)
 				}
 			}
 		}
@@ -195,10 +203,9 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 		return nil, fmt.Errorf("failed to add block:%w", err)
 	}
 
-	slowTimeUpdateThreshold := 2 * time.Second
-	slowTimeUpdateTicker := time.NewTicker(slowTimeUpdateThreshold)
-	defer slowTimeUpdateTicker.Stop()
+	defer b.slowTimeUpdateTicker.Stop()
 
+	betweenBlocks := false
 	for {
 		// Do a pre-check on ctx.Done() since select() cases are randomized, this reduces
 		// the number of things we'll keep trying to handle after we are cancelled.
@@ -214,15 +221,18 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 			return nil, ctx.Err()
 		case err = <-errCh:
 			return nil, err
-		case <-slowTimeUpdateTicker.C:
+		case <-b.slowTimeUpdateTicker.C:
 			b.log.Warningf("slow time update detected, time between checks %v, block height: %d, total block processing time: %v", slowTimeUpdateThreshold,
 				block.Height, blockTimer.duration)
 		case e := <-eventsCh:
+			if b.config.Level.Level == logging.DebugLevel {
+				b.log.Debug("received event", logging.String("type", e.Type().String()), logging.String("trace-id", e.TraceID()))
+			}
 			metrics.EventCounterInc(e.Type().String())
 			blockTimer.startTimer()
-			if e.Type() == events.TimeUpdate {
-				timeUpdate := e.(entities.TimeUpdateEvent)
 
+			switch e.Type() {
+			case events.EndBlockEvent:
 				err = b.flushAllSubscribers(blockCtx)
 				if err != nil {
 					return nil, err
@@ -232,11 +242,19 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 				if err != nil {
 					return nil, fmt.Errorf("failed to commit transactional context:%w", err)
 				}
-
-				return entities.BlockFromTimeUpdate(timeUpdate)
-			}
-			if err = b.handleEvent(blockCtx, e); err != nil {
-				return nil, err
+				b.slowTimeUpdateTicker.Reset(slowTimeUpdateThreshold)
+				betweenBlocks = true
+			case events.BeginBlockEvent:
+				beginBlock := e.(entities.BeginBlockEvent)
+				return entities.BlockFromBeginBlock(beginBlock)
+			default:
+				if betweenBlocks {
+					// we should only be receiving a BeginBlockEvent immediately after an EndBlockEvent
+					panic(fmt.Errorf("received event %s between end block and begin block", e.Type().String()))
+				}
+				if err = b.handleEvent(blockCtx, e); err != nil {
+					return nil, err
+				}
 			}
 		}
 	}

@@ -14,6 +14,7 @@
 - [6399](https://github.com/vegaprotocol/vega/issues/6399) - Add `init-db` and `unsafe-reset-all` commands to block explorer
 - [6411](https://github.com/vegaprotocol/vega/issues/6411) - Add built in `swagger-ui` interface to the `REST api` on block explorer
 - [6348](https://github.com/vegaprotocol/vega/issues/6348) - Reduce pool size to leave more available `Postgres` connections
+- [6211](https://github.com/vegaprotocol/vega/issues/6211) - Handle `BeginBlock` and `EndBlock` events
 
 ### 🐛 Fixes
 - [6388](https://github.com/vegaprotocol/vega/issues/6388) - Do not transfer stake and delegations after a key rotation
