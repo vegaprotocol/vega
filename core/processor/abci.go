@@ -681,12 +681,6 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 		}
 	}
 
-	app.broker.Send(
-		events.NewEndBlock(app.blockCtx, eventspb.EndBlock{
-			Height: uint64(req.Height),
-		}),
-	)
-
 	return ctx, resp
 }
 
@@ -817,6 +811,13 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	app.log.Debug("apphash calculated", logging.String("response-data", hex.EncodeToString(resp.Data)))
 	app.updateStats()
 	app.setBatchStats()
+
+	app.broker.Send(
+		events.NewEndBlock(app.blockCtx, eventspb.EndBlock{
+			Height: uint64(resp.RetainHeight),
+		}),
+	)
+
 	return resp
 }
 

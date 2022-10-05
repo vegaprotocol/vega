@@ -205,6 +205,7 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 
 	defer b.slowTimeUpdateTicker.Stop()
 
+	betweenBlocks := false
 	for {
 		// Do a pre-check on ctx.Done() since select() cases are randomized, this reduces
 		// the number of things we'll keep trying to handle after we are cancelled.
@@ -224,6 +225,9 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 			b.log.Warningf("slow time update detected, time between checks %v, block height: %d, total block processing time: %v", slowTimeUpdateThreshold,
 				block.Height, blockTimer.duration)
 		case e := <-eventsCh:
+			if b.config.Level.Level == logging.DebugLevel {
+				b.log.Debug("received event", logging.String("type", e.Type().String()), logging.String("trace-id", e.TraceID()))
+			}
 			metrics.EventCounterInc(e.Type().String())
 			blockTimer.startTimer()
 
@@ -239,10 +243,15 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 					return nil, fmt.Errorf("failed to commit transactional context:%w", err)
 				}
 				b.slowTimeUpdateTicker.Reset(slowTimeUpdateThreshold)
+				betweenBlocks = true
 			case events.BeginBlockEvent:
 				beginBlock := e.(entities.BeginBlockEvent)
 				return entities.BlockFromBeginBlock(beginBlock)
 			default:
+				if betweenBlocks {
+					// we should only be receiving a BeginBlockEvent immediately after an EndBlockEvent
+					panic(fmt.Errorf("received event %s between end block and begin block", e.Type().String()))
+				}
 				if err = b.handleEvent(blockCtx, e); err != nil {
 					return nil, err
 				}
