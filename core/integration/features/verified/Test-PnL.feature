@@ -47,7 +47,7 @@ Feature: check if the realised PnL and unreaslied PnL is calculated according to
       | party2 | ETH/MAR22 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2 |
 
     Then the opening auction period ends for market "ETH/MAR22"
-    # Then the auction ends with a traded volume of "10" at a price of "1000"
+    Then the auction ends with a traded volume of "50" at a price of "1000"
     # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000 x 10 x 1 x 0.1
     And the insurance pool balance should be "0" for the market "ETH/MAR22"
     And the market data for the market "ETH/MAR22" should be:
