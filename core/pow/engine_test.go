@@ -86,7 +86,7 @@ func TestCheckTx(t *testing.T) {
 	e.heightToTid[96] = []string{"49B0DF0954A8C048554B1C65F4F5883C38640D101A11959EB651AE2065A80BBB"}
 
 	// seen transction
-	require.Equal(t, errors.New("Proof of work tid already used"), e.CheckTx(&testTx{blockHeight: 100, powTxID: "49B0DF0954A8C048554B1C65F4F5883C38640D101A11959EB651AE2065A80BBB"}))
+	require.Equal(t, errors.New("proof of work tid already used"), e.CheckTx(&testTx{blockHeight: 100, powTxID: "49B0DF0954A8C048554B1C65F4F5883C38640D101A11959EB651AE2065A80BBB"}))
 
 	// party is banned
 	e.bannedParties["C692100485479CE9E1815B9E0A66D3596295A04DB42170CB4B61CFAE7332ADD8"] = 6
@@ -117,6 +117,35 @@ func TestDeliverTx(t *testing.T) {
 	require.Equal(t, 1, len(e.seenTid))
 	require.Equal(t, 1, len(e.heightToTid))
 	require.Equal(t, "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4", e.heightToTid[100][0])
+}
+
+func TestMempoolTidRejection(t *testing.T) {
+	e := New(logging.NewTestLogger(), NewDefaultConfig(), &TestEpochEngine{})
+	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(5))
+	e.UpdateSpamPoWDifficulty(context.Background(), num.NewUint(20))
+	e.UpdateSpamPoWHashFunction(context.Background(), crypto.Sha3)
+	e.UpdateSpamPoWNumberOfTxPerBlock(context.Background(), num.NewUint(1))
+
+	party := crypto.RandomHash()
+	e.currentBlock = 100
+	e.blockHeight[100] = 100
+	e.blockHash[100] = "113EB390CBEB921433BDBA832CCDFD81AC4C77C3748A41B1AF08C96BC6C7BCD9"
+
+	tx1 := &testTx{party: party, blockHeight: 100, powTxID: "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4", powNonce: 596}
+	require.NoError(t, e.CheckTx(tx1))
+	require.Equal(t, 1, len(e.mempoolSeenTid))
+
+	require.Error(t, e.CheckTx(tx1))
+	e.DeliverTx(tx1)
+
+	require.Equal(t, 1, len(e.seenTid))
+	_, ok := e.seenTid["2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4"]
+	require.True(t, ok)
+
+	e.Commit()
+	require.Equal(t, 0, len(e.mempoolSeenTid))
+
+	require.Error(t, e.CheckTx(tx1))
 }
 
 func TestExpectedDifficulty(t *testing.T) {
