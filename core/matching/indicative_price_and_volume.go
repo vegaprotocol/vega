@@ -72,7 +72,7 @@ func NewIndicativePriceAndVolume(log *logging.Logger, buy, sell *OrderBookSide) 
 	return &ipv
 }
 
-// this will be user to build the initial set of price levels, when the auction is being started.
+// this will be used to build the initial set of price levels, when the auction is being started.
 func (ipv *IndicativePriceAndVolume) buildInitialCumulativeLevels(buy, sell *OrderBookSide) {
 	// we'll keep track of all the pl we encounter
 	mplm := map[num.Uint]ipvPriceLevel{}
@@ -271,6 +271,8 @@ func (ipv *IndicativePriceAndVolume) GetCumulativePriceLevels(maxPrice, minPrice
 
 	// reset those fields
 	ipv.needsUpdate = false
+	ipv.lastMinPrice = minPrice.Clone()
+	ipv.lastMaxPrice = maxPrice.Clone()
 	ipv.lastMaxTradable = maxTradable
 	ipv.lastCumulativeVolumes = cumulativeVolumes
 	return cumulativeVolumes, maxTradable
