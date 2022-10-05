@@ -331,6 +331,84 @@ func testOnEpochEventNoPayoutDelay(t *testing.T) {
 	require.Equal(t, num.NewUint(25000), node4Acc.Balance)
 }
 
+func TestErsatzTendermintRewardSplit(t *testing.T) {
+	testEngine := getEngine(t)
+	now := time.Now()
+	testEngine.timeService.EXPECT().GetTimeNow().DoAndReturn(
+		func() time.Time {
+			return now
+		}).AnyTimes()
+
+	engine := testEngine.engine
+	engine.UpdateAssetForStakingAndDelegation(context.Background(), "VEGA")
+	engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), num.DecimalFromFloat(0.3))
+	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(0))
+	engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), num.DecimalFromFloat(1.1))
+	engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 5)
+	engine.UpdateOptimalStakeMultiplierStakingRewardScheme(context.Background(), num.DecimalFromFloat(5))
+	engine.UpdateMaxPayoutPerParticipantForStakingRewardScheme(context.Background(), num.DecimalZero())
+	engine.UpdateErsatzRewardFactor(context.Background(), num.DecimalFromFloat(0.5))
+
+	testEngine.delegation.EXPECT().GetValidatorData().AnyTimes()
+	testEngine.topology.EXPECT().RecalcValidatorSet(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	testEngine.topology.EXPECT().GetRewardsScores(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, epochSeq string, delegationState []*types.ValidatorData, stakeScoreParams types.StakeScoreParams) (*types.ScoreData, *types.ScoreData) {
+		return &types.ScoreData{
+				NodeIDSlice: []string{"node1", "node2"},
+				NormalisedScores: map[string]num.Decimal{
+					"node1": num.DecimalFromFloat(0.2),
+					"node2": num.DecimalFromFloat(0.8),
+				},
+			}, &types.ScoreData{
+				NodeIDSlice: []string{"node3", "node4"},
+				NormalisedScores: map[string]num.Decimal{
+					"node3": num.DecimalFromFloat(0.6),
+					"node4": num.DecimalFromFloat(0.4),
+				},
+			}
+	}).AnyTimes()
+
+	// setup reward account balance
+	rewardAccount := testEngine.collateral.GetInfraFeeAccountIDs()[0]
+	err := testEngine.collateral.IncrementBalance(context.Background(), rewardAccount, num.NewUint(1000000))
+	require.Nil(t, err)
+
+	// there is remaining 1000000 to distribute as payout
+	epoch := types.Epoch{StartTime: now, EndTime: now}
+
+	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
+	engine.OnEpochEvent(context.Background(), epoch)
+	engine.OnTick(context.Background(), epoch.EndTime.Add(120*time.Second))
+
+	// given the delegation breakdown we expect
+	// tendermint validators to get 0.9375 x 1000000 => 937500
+	// ersatzh validators to get => 0.0625 x 1000000 => 62500
+	// in the tendermint validators node1 gets 0.2 x 937500 => 187500 and node2 gets 0.8 x 937500 => 750000
+	// in the tendermint validators node3 gets 0.6 x 62500 => 37500 and node4 gets 0.4 x 62500 => 25000
+	// from tendermint validators reward balance:
+	// party1 gets 172500
+	// party2 gets 15000
+	// node1 gets 150000
+	// node2 gets 600000
+	// from ersatz validators reward balance:
+	// node3 gets 37500
+	// node 4 gets 25000
+
+	// get party account balances
+	party1Acc, _ := testEngine.collateral.GetPartyGeneralAccount("party1", "VEGA")
+	party2Acc, _ := testEngine.collateral.GetPartyGeneralAccount("party2", "VEGA")
+	node1Acc, _ := testEngine.collateral.GetPartyGeneralAccount("node1", "VEGA")
+	node2Acc, _ := testEngine.collateral.GetPartyGeneralAccount("node2", "VEGA")
+	node3Acc, _ := testEngine.collateral.GetPartyGeneralAccount("node3", "VEGA")
+	node4Acc, _ := testEngine.collateral.GetPartyGeneralAccount("node4", "VEGA")
+
+	require.Equal(t, num.NewUint(172500), party1Acc.Balance)
+	require.Equal(t, num.NewUint(15000), party2Acc.Balance)
+	require.Equal(t, num.NewUint(150000), node1Acc.Balance)
+	require.Equal(t, num.NewUint(600000), node2Acc.Balance)
+	require.Equal(t, num.NewUint(37500), node3Acc.Balance)
+	require.Equal(t, num.NewUint(25000), node4Acc.Balance)
+}
+
 type testEngine struct {
 	engine        *Engine
 	ctrl          *gomock.Controller

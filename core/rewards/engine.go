@@ -331,7 +331,9 @@ func (e *Engine) calculateRewardTypeForAsset(epochSeq, asset string, rewardType 
 		}
 		return nil
 	case types.AccountTypeFeesInfrastructure: // given to delegator based on stake
-		return calculateRewardsByStake(epochSeq, account.Asset, account.ID, account.Balance.Clone(), validatorNormalisedScores, validatorData, e.global.delegatorShare, num.UintZero(), e.rng, e.log)
+		balance, _ := num.UintFromDecimal(account.Balance.ToDecimal().Mul(factor))
+		e.log.Info("reward balance", logging.String("epoch", epochSeq), logging.String("reward-type", rewardType.String()), logging.String("account-balance", account.Balance.String()), logging.String("factor", factor.String()), logging.String("effective-balance", balance.String()))
+		return calculateRewardsByStake(epochSeq, account.Asset, account.ID, balance, validatorNormalisedScores, validatorData, e.global.delegatorShare, num.UintZero(), e.rng, e.log)
 	case types.AccountTypeMakerReceivedFeeReward: // given to receivers of maker fee in the asset based on their total received fee proportion
 		if !e.isValidAccountForMarket(account) {
 			return nil
