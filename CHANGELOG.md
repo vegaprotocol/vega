@@ -16,6 +16,7 @@
 - [6312](https://github.com/vegaprotocol/vega/issues/6312) - Add back amended balance tests and correct ordering
 - [6211](https://github.com/vegaprotocol/vega/issues/6211) - Handle `BeginBlock` and `EndBlock` events
 - [6361](https://github.com/vegaprotocol/vega/issues/6361) - Remove unnecessary logging in market
+- [6378](https://github.com/vegaprotocol/vega/issues/6378) - Migrate remaining views of current data to tables with current data
 
 
 ### 🐛 Fixes
