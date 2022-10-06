@@ -40,6 +40,19 @@ func NewBlockExplorerAPI(store *store.Store, config Config, log *logging.Logger)
 	return &be
 }
 
+func (b *blockExplorerAPI) GetTransaction(ctx context.Context, req *pb.GetTransactionRequest) (*pb.GetTransactionResponse, error) {
+	transaction, err := b.store.GetTransaction(ctx, req.Hash)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := pb.GetTransactionResponse{
+		Transaction: transaction,
+	}
+
+	return &resp, nil
+}
+
 func (b *blockExplorerAPI) ListTransactions(ctx context.Context, req *pb.ListTransactionsRequest) (*pb.ListTransactionsResponse, error) {
 	var before, after *entities.TxCursor
 

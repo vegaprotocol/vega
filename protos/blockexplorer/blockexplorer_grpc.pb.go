@@ -22,6 +22,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type BlockExplorerServiceClient interface {
+	GetTransaction(ctx context.Context, in *GetTransactionRequest, opts ...grpc.CallOption) (*GetTransactionResponse, error)
 	ListTransactions(ctx context.Context, in *ListTransactionsRequest, opts ...grpc.CallOption) (*ListTransactionsResponse, error)
 }
 
@@ -31,6 +32,15 @@ type blockExplorerServiceClient struct {
 
 func NewBlockExplorerServiceClient(cc grpc.ClientConnInterface) BlockExplorerServiceClient {
 	return &blockExplorerServiceClient{cc}
+}
+
+func (c *blockExplorerServiceClient) GetTransaction(ctx context.Context, in *GetTransactionRequest, opts ...grpc.CallOption) (*GetTransactionResponse, error) {
+	out := new(GetTransactionResponse)
+	err := c.cc.Invoke(ctx, "/blockexplorer.api.v1.BlockExplorerService/GetTransaction", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *blockExplorerServiceClient) ListTransactions(ctx context.Context, in *ListTransactionsRequest, opts ...grpc.CallOption) (*ListTransactionsResponse, error) {
@@ -46,6 +56,7 @@ func (c *blockExplorerServiceClient) ListTransactions(ctx context.Context, in *L
 // All implementations must embed UnimplementedBlockExplorerServiceServer
 // for forward compatibility
 type BlockExplorerServiceServer interface {
+	GetTransaction(context.Context, *GetTransactionRequest) (*GetTransactionResponse, error)
 	ListTransactions(context.Context, *ListTransactionsRequest) (*ListTransactionsResponse, error)
 	mustEmbedUnimplementedBlockExplorerServiceServer()
 }
@@ -54,6 +65,9 @@ type BlockExplorerServiceServer interface {
 type UnimplementedBlockExplorerServiceServer struct {
 }
 
+func (UnimplementedBlockExplorerServiceServer) GetTransaction(context.Context, *GetTransactionRequest) (*GetTransactionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTransaction not implemented")
+}
 func (UnimplementedBlockExplorerServiceServer) ListTransactions(context.Context, *ListTransactionsRequest) (*ListTransactionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListTransactions not implemented")
 }
@@ -68,6 +82,24 @@ type UnsafeBlockExplorerServiceServer interface {
 
 func RegisterBlockExplorerServiceServer(s grpc.ServiceRegistrar, srv BlockExplorerServiceServer) {
 	s.RegisterService(&BlockExplorerService_ServiceDesc, srv)
+}
+
+func _BlockExplorerService_GetTransaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTransactionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BlockExplorerServiceServer).GetTransaction(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/blockexplorer.api.v1.BlockExplorerService/GetTransaction",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BlockExplorerServiceServer).GetTransaction(ctx, req.(*GetTransactionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _BlockExplorerService_ListTransactions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -95,6 +127,10 @@ var BlockExplorerService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "blockexplorer.api.v1.BlockExplorerService",
 	HandlerType: (*BlockExplorerServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetTransaction",
+			Handler:    _BlockExplorerService_GetTransaction_Handler,
+		},
 		{
 			MethodName: "ListTransactions",
 			Handler:    _BlockExplorerService_ListTransactions_Handler,
