@@ -6,6 +6,9 @@
 - [6271](https://github.com/vegaprotocol/vega/issues/6271) - Require signature from new Ethereum key to validate key rotation submission
 - [6364](https://github.com/vegaprotocol/vega/issues/6364) - Rename `oracleSpecForSettlementPrice` to `oracleSpecForSettlementData`
 - [6401](https://github.com/vegaprotocol/vega/issues/6401) - Fix estimate fees and margin `APis`
+- [6428](https://github.com/vegaprotocol/vega/issues/6428) - Update the wallet connection decision for future work
+- [6429](https://github.com/vegaprotocol/vega/issues/6429) - Rename pipeline to interactor for better understanding
+- [6430](https://github.com/vegaprotocol/vega/issues/6430) - Split the transaction status interaction depending on success and failure
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -18,7 +21,11 @@
 - [6211](https://github.com/vegaprotocol/vega/issues/6211) - Handle `BeginBlock` and `EndBlock` events
 - [6361](https://github.com/vegaprotocol/vega/issues/6361) - Remove unnecessary logging in market
 - [6378](https://github.com/vegaprotocol/vega/issues/6378) - Migrate remaining views of current data to tables with current data
-
+- [6425](https://github.com/vegaprotocol/vega/issues/6425) - Introduce interaction for beginning and ending of request
+- [6308](https://github.com/vegaprotocol/vega/issues/6308) - Support parallel requests in wallet API version 2
+- [6426](https://github.com/vegaprotocol/vega/issues/6426) - Add a name field on interaction to know what they are when JSON
+- [6427](https://github.com/vegaprotocol/vega/issues/6427) - Improve interactions documentation
+- [6431](https://github.com/vegaprotocol/vega/issues/6431) - Pass a human-readable input data in Transaction Succeeded and Failed notifications
 
 ### 🐛 Fixes
 - [6388](https://github.com/vegaprotocol/vega/issues/6388) - Do not transfer stake and delegations after a key rotation

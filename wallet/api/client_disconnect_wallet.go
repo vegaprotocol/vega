@@ -7,11 +7,11 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-type DisconnectWallet struct {
+type ClientDisconnectWallet struct {
 	sessions *Sessions
 }
 
-type DisconnectWalletParams struct {
+type ClientDisconnectWalletParams struct {
 	Token string `json:"hostname"`
 }
 
@@ -21,7 +21,7 @@ type DisconnectWalletParams struct {
 // happens.
 //
 // The wallet resources are unloaded.
-func (h *DisconnectWallet) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *ClientDisconnectWallet) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateDisconnectWalletParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
@@ -32,25 +32,25 @@ func (h *DisconnectWallet) Handle(_ context.Context, rawParams jsonrpc.Params) (
 	return nil, nil
 }
 
-func validateDisconnectWalletParams(rawParams jsonrpc.Params) (DisconnectWalletParams, error) {
+func validateDisconnectWalletParams(rawParams jsonrpc.Params) (ClientDisconnectWalletParams, error) {
 	if rawParams == nil {
-		return DisconnectWalletParams{}, ErrParamsRequired
+		return ClientDisconnectWalletParams{}, ErrParamsRequired
 	}
 
-	params := DisconnectWalletParams{}
+	params := ClientDisconnectWalletParams{}
 	if err := mapstructure.Decode(rawParams, &params); err != nil {
-		return DisconnectWalletParams{}, ErrParamsDoNotMatch
+		return ClientDisconnectWalletParams{}, ErrParamsDoNotMatch
 	}
 
 	if params.Token == "" {
-		return DisconnectWalletParams{}, ErrConnectionTokenIsRequired
+		return ClientDisconnectWalletParams{}, ErrConnectionTokenIsRequired
 	}
 
 	return params, nil
 }
 
-func NewDisconnectWallet(sessions *Sessions) *DisconnectWallet {
-	return &DisconnectWallet{
+func NewDisconnectWallet(sessions *Sessions) *ClientDisconnectWallet {
+	return &ClientDisconnectWallet{
 		sessions: sessions,
 	}
 }

@@ -46,7 +46,7 @@ func NewReaders() Readers {
 }
 
 // Handle creates a wallet and generates its first key.
-func (h *AdminImportNetwork) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminImportNetwork) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateImportNetworkParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
@@ -64,7 +64,6 @@ func (h *AdminImportNetwork) Handle(ctx context.Context, rawParams jsonrpc.Param
 		net.Name = params.Name
 	}
 
-	// check if the network exists and if it matches the overwrite params
 	if exist, err := h.networkStore.NetworkExists(net.Name); err != nil {
 		return nil, internalError(fmt.Errorf("could not verify the network existence: %w", err))
 	} else if exist && !params.Overwrite {
