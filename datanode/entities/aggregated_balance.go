@@ -29,33 +29,107 @@ import (
 type AggregatedBalance struct {
 	VegaTime  time.Time
 	Balance   decimal.Decimal
-	AccountID AccountID
-	PartyID   PartyID
-	AssetID   AssetID
-	MarketID  MarketID
+	AccountID *AccountID
+	PartyID   *PartyID
+	AssetID   *AssetID
+	MarketID  *MarketID
 	Type      *types.AccountType
+}
+
+// NewAggregatedBalanceFromValues returns a new AggregatedBalance from a list of values as returned
+// from pgx.rows.values().
+// - vegaTime is assumed to be first
+// - then any extra fields listed in 'fields' in order (usually as as result of grouping)
+// - then finally the balance itself.
+func AggregatedBalanceScan(fields []AccountField, rows interface {
+	Next() bool
+	Values() ([]any, error)
+},
+) ([]AggregatedBalance, error) {
+	// Iterate through the result set
+	balances := []AggregatedBalance{}
+	for rows.Next() {
+		var ok bool
+		bal := AggregatedBalance{}
+		values, err := rows.Values()
+		if err != nil {
+			return nil, err
+		}
+
+		bal.VegaTime, ok = values[0].(time.Time)
+		if !ok {
+			return nil, fmt.Errorf("unable to cast to time.Time: %v", values[0])
+		}
+
+		for i, field := range fields {
+			if field == AccountFieldType {
+				intAccountType, ok := values[i+1].(int32)
+				if !ok {
+					return nil, fmt.Errorf("unable to cast to integer account type: %v", values[i])
+				}
+				accountType := types.AccountType(intAccountType)
+				bal.Type = &accountType
+				continue
+			}
+
+			idBytes, ok := values[i+1].([]byte)
+			if !ok {
+				return nil, fmt.Errorf("unable to cast to []byte: %v", values[i])
+			}
+
+			switch field {
+			case AccountFieldID:
+				var id AccountID
+				id.SetBytes(idBytes)
+				bal.AccountID = &id
+			case AccountFieldPartyID:
+				var id PartyID
+				id.SetBytes(idBytes)
+				bal.PartyID = &id
+			case AccountFieldAssetID:
+				var id AssetID
+				id.SetBytes(idBytes)
+				bal.AssetID = &id
+			case AccountFieldMarketID:
+				var id MarketID
+				id.SetBytes(idBytes)
+				bal.MarketID = &id
+			default:
+				return nil, fmt.Errorf("invalid field: %v", field)
+			}
+		}
+		lastValue := values[len(values)-1]
+
+		if bal.Balance, ok = lastValue.(decimal.Decimal); !ok {
+			return nil, fmt.Errorf("unable to cast to decimal %v", lastValue)
+		}
+
+		balances = append(balances, bal)
+	}
+
+	return balances, nil
 }
 
 func (balance *AggregatedBalance) ToProto() *v2.AggregatedBalance {
 	var accountType vega.AccountType
 	var accountID, partyID, assetID, marketID *string
 
-	if balance.AccountID != "" {
+	if balance.AccountID != nil {
 		aid := balance.AccountID.String()
 		accountID = &aid
 	}
 
-	if balance.PartyID != "" {
+	if balance.PartyID != nil {
 		pid := balance.PartyID.String()
 		partyID = &pid
 	}
 
-	if balance.AssetID != "" {
+	if balance.AssetID != nil {
 		aid := balance.AssetID.String()
 		assetID = &aid
 	}
 
-	if balance.MarketID != "" {
+	if balance.MarketID != nil {
 		mid := balance.MarketID.String()
 		marketID = &mid
 	}
@@ -77,7 +151,12 @@ func (balance *AggregatedBalance) ToProto() *v2.AggregatedBalance {
 
 func (balance AggregatedBalance) Cursor() *Cursor {
 	return NewCursor(AggregatedBalanceCursor{
-		VegaTime: balance.VegaTime,
+		VegaTime:  balance.VegaTime,
+		AccountID: balance.AccountID,
+		PartyID:   balance.PartyID,
+		AssetID:   balance.AssetID,
+		MarketID:  balance.MarketID,
+		Type:      balance.Type,
 	}.String())
 }
 
@@ -89,7 +168,12 @@ func (balance AggregatedBalance) ToProtoEdge(_ ...any) (*v2.AggregatedBalanceEdg
 }
 
 type AggregatedBalanceCursor struct {
-	VegaTime time.Time `json:"vega_time"`
+	VegaTime  time.Time `json:"vega_time"`
+	AccountID *AccountID
+	PartyID   *PartyID
+	AssetID   *AssetID
+	MarketID  *MarketID
+	Type      *types.AccountType
 }
 
 func (c AggregatedBalanceCursor) String() string {
