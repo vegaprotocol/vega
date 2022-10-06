@@ -861,7 +861,7 @@ func (e *Engine) validateNewAssetProposal(newAsset *types.NewAsset) (types.Propo
 		}
 		if source := p.Changes.GetERC20(); source != nil {
 			if strings.EqualFold(source.ContractAddress, erc20.ContractAddress) {
-				return types.ProposalErrorInvalidAssetDetails, ErrErc20AddressAlreadyInUse
+				return types.ProposalErrorERC20AddressAlreadyInUse, ErrErc20AddressAlreadyInUse
 			}
 		}
 	}
@@ -873,13 +873,13 @@ func (e *Engine) validateNewAssetProposal(newAsset *types.NewAsset) (types.Propo
 		}
 		if source := p.Changes.GetERC20(); source != nil {
 			if strings.EqualFold(source.ContractAddress, erc20.ContractAddress) {
-				return types.ProposalErrorInvalidAssetDetails, ErrErc20AddressAlreadyInUse
+				return types.ProposalErrorERC20AddressAlreadyInUse, ErrErc20AddressAlreadyInUse
 			}
 		}
 	}
 
 	if e.assets.ExistsForEthereumAddress(erc20.ContractAddress) {
-		return types.ProposalErrorInvalidAssetDetails, ErrErc20AddressAlreadyInUse
+		return types.ProposalErrorERC20AddressAlreadyInUse, ErrErc20AddressAlreadyInUse
 	}
 
 	return types.ProposalErrorUnspecified, nil

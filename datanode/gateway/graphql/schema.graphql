@@ -2930,6 +2930,8 @@ enum ProposalRejectionReason {
   PROPOSAL_ERROR_UNKNOWN_RISK_PARAMETER_TYPE
   "Freeform proposal is invalid"
   PROPOSAL_ERROR_INVALID_FREEFORM
+  "The erc20 address specified by this proposal is alread in use by another asset"
+  PROPOSAL_ERROR_ERC20_ADDRESS_ALREADY_IN_USE
 }
 
 "Why the order was rejected by the core node"

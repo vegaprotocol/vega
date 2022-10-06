@@ -63,7 +63,7 @@ message NewMarketConfiguration {
 // New market on Vega
 message NewMarket {
   // The configuration of the new market
-  NewMarketConfiguration changes = 1;  
+  NewMarketConfiguration changes = 1;
 }
 
 // Update an existing market on Vega
@@ -337,6 +337,8 @@ enum ProposalError {
   PROPOSAL_ERROR_TOO_MANY_MARKET_DECIMAL_PLACES = 39;
   // The market proposal contains too many price monitoring triggers
   PROPOSAL_ERROR_TOO_MANY_PRICE_MONITORING_TRIGGERS = 40;
+  // The market proposal contains too many price monitoring triggers
+  PROPOSAL_ERROR_ERC20_ADDRESS_ALREADY_IN_USE = 41;
 }
 
 // Governance vote
