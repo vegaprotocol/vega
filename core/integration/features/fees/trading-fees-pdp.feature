@@ -257,7 +257,7 @@ Feature: Fees calculations
       | trader3a | ETH   | ETH/DEC21 | 480    | 9531    |
       | trader3b | ETH   | ETH/DEC21 | 240    | 9766    |
 
-    And the liquidity fee factor should "0.001" for the market "ETH/DEC21"
+    And the liquidity fee factor should be "0.001" for the market "ETH/DEC21"
     And the accumulated liquidity fees should be "5" for the market "ETH/DEC21"
 
     Then the market data for the market "ETH/DEC21" should be:
@@ -710,7 +710,7 @@ Feature: Fees calculations
       | trader3 | ETH   | ETH/DEC21 | 240    | 9999766 |
       | trader4 | ETH   | ETH/DEC21 | 0      | 0       |
 
-    And the liquidity fee factor should "0.001" for the market "ETH/DEC21"
+    And the liquidity fee factor should be "0.001" for the market "ETH/DEC21"
     And the accumulated liquidity fees should be "4" for the market "ETH/DEC21"
 
     When the network moves ahead "11" blocks
@@ -1660,7 +1660,7 @@ Feature: Fees calculations
       | trader3a | ETH   | ETH/DEC21 | 3216   | 96834   |
       | trader4  | ETH   | ETH/DEC21 | 5506   | 94934   |
 
-    And the liquidity fee factor should "0.001" for the market "ETH/DEC21"
+    And the liquidity fee factor should be "0.001" for the market "ETH/DEC21"
     And the accumulated liquidity fees should be "30" for the market "ETH/DEC21"
 
     Then the following trades should be executed:

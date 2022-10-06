@@ -464,4 +464,4 @@ Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
       | min bound | max bound |
       | 864       | 1154      |
 
-    And the liquidity fee factor should "0.001" for the market "ETH/MAR22"
+    And the liquidity fee factor should be "0.001" for the market "ETH/MAR22"

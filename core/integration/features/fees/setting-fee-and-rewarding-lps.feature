@@ -70,7 +70,7 @@ Feature: Test liquidity provider reward distribution
       | min bound | max bound |
       | 500       | 1500      | 
 
-    And the liquidity fee factor should "0.001" for the market "ETH/DEC21"
+    And the liquidity fee factor should be "0.001" for the market "ETH/DEC21"
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
@@ -169,7 +169,7 @@ Feature: Test liquidity provider reward distribution
       | min bound | max bound |
       | 500       | 1500      |
 
-    And the liquidity fee factor should "0.002" for the market "ETH/DEC21"
+    And the liquidity fee factor should be "0.002" for the market "ETH/DEC21"
 
     # no fees in auction
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
@@ -268,7 +268,7 @@ Feature: Test liquidity provider reward distribution
       | min bound | max bound |
       | 500       | 1500      |
 
-    And the liquidity fee factor should "0.001" for the market "ETH/DEC21"
+    And the liquidity fee factor should be "0.001" for the market "ETH/DEC21"
 
     # no fees in auction
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
@@ -374,7 +374,7 @@ Feature: Test liquidity provider reward distribution
       | min bound | max bound |
       | 500       | 1500      |
 
-    And the liquidity fee factor should "0.001" for the market "ETH/DEC21"
+    And the liquidity fee factor should be "0.001" for the market "ETH/DEC21"
 
     # no fees in auction
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
