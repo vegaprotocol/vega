@@ -2437,6 +2437,7 @@ func (m *Market) AmendOrderWithIDGenerator(
 	if m.liquidity.IsLiquidityOrder(party, orderAmendment.OrderID) {
 		return nil, types.ErrEditNotAllowed
 	}
+
 	conf, updatedOrders, err := m.amendOrder(ctx, orderAmendment, party)
 	if err != nil {
 		return nil, err
@@ -2450,10 +2451,52 @@ func (m *Market) AmendOrderWithIDGenerator(
 		allUpdatedOrders,
 		updatedOrders...,
 	)
+
 	if !m.as.InAuction() {
 		m.checkForReferenceMoves(ctx, allUpdatedOrders, false)
 	}
 	return conf, nil
+}
+
+func (m *Market) findOrderAndEnsureOwnership(
+	orderID, partyID, marketID string,
+) (exitingOrder *types.Order, foundOnBook bool, err error) {
+	// Try and locate the existing order specified on the
+	// order book in the matching engine for this market
+	existingOrder, foundOnBook, err := m.getOrderByID(orderID)
+	if err != nil {
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Invalid order ID",
+				logging.OrderID(orderID),
+				logging.PartyID(partyID),
+				logging.MarketID(marketID),
+				logging.Error(err))
+		}
+		return nil, false, types.ErrInvalidOrderID
+	}
+
+	// We can only amend this order if we created it
+	if existingOrder.Party != partyID {
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Invalid party ID",
+				logging.String("original party id:", existingOrder.Party),
+				logging.PartyID(partyID),
+			)
+		}
+		return nil, false, types.ErrInvalidPartyID
+	}
+
+	// Validate Market
+	if existingOrder.MarketID != marketID {
+		// we should never reach this point
+		m.log.Panic("Market ID mismatch",
+			logging.MarketID(m.mkt.ID),
+			logging.Order(*existingOrder),
+			logging.Error(types.ErrInvalidMarketID),
+		)
+	}
+
+	return existingOrder, foundOnBook, err
 }
 
 func (m *Market) amendOrder(
@@ -2469,37 +2512,10 @@ func (m *Market) amendOrder(
 		return nil, nil, ErrMarketClosed
 	}
 
-	// Try and locate the existing order specified on the
-	// order book in the matching engine for this market
-	existingOrder, foundOnBook, err := m.getOrderByID(orderAmendment.OrderID)
+	existingOrder, foundOnBook, err := m.findOrderAndEnsureOwnership(
+		orderAmendment.OrderID, party, m.GetID())
 	if err != nil {
-		if m.log.GetLevel() == logging.DebugLevel {
-			m.log.Debug("Invalid order ID",
-				logging.OrderID(orderAmendment.GetOrderID()),
-				logging.PartyID(party),
-				logging.MarketID(orderAmendment.GetMarketID()),
-				logging.Error(err))
-		}
-		return nil, nil, types.ErrInvalidOrderID
-	}
-
-	// We can only amend this order if we created it
-	if existingOrder.Party != party {
-		if m.log.GetLevel() == logging.DebugLevel {
-			m.log.Debug("Invalid party ID",
-				logging.String("original party id:", existingOrder.Party),
-				logging.PartyID(party))
-		}
-		return nil, nil, types.ErrInvalidPartyID
-	}
-
-	// Validate Market
-	if existingOrder.MarketID != m.mkt.ID {
-		m.log.Panic("Market ID mismatch",
-			logging.MarketID(m.mkt.ID),
-			logging.Order(*existingOrder),
-			logging.Error(types.ErrInvalidMarketID),
-		)
+		return nil, nil, err
 	}
 
 	if err := m.validateOrderAmendment(existingOrder, orderAmendment); err != nil {
@@ -2529,10 +2545,10 @@ func (m *Market) amendOrder(
 
 	// If we have a pegged order that is no longer expiring, we need to remove it
 	var (
-		needToRemoveExpiry = false
-		needToAddExpiry    = false
-		expiresAt          int64
+		needToRemoveExpiry, needToAddExpiry bool
+		expiresAt                           int64
 	)
+
 	defer func() {
 		// no errors, amend most likely happened properly
 		if returnedErr == nil {
@@ -2549,26 +2565,24 @@ func (m *Market) amendOrder(
 	}()
 
 	// if we are amending from GTT to GTC, flag ready to remove from expiry list
-	if existingOrder.IsExpireable() &&
-		!amendedOrder.IsExpireable() {
+	if existingOrder.IsExpireable() && !amendedOrder.IsExpireable() {
 		// We no longer need to handle the expiry
 		needToRemoveExpiry = true
 		expiresAt = existingOrder.ExpiresAt
 	}
 
 	// if we are amending from GTC to GTT, flag ready to add to expiry list
-	if !existingOrder.IsExpireable() &&
-		amendedOrder.IsExpireable() {
+	if !existingOrder.IsExpireable() && amendedOrder.IsExpireable() {
 		// We need to handle the expiry
 		needToAddExpiry = true
 	}
 
 	// if both where expireable but we changed the duration
 	// then we need to remove, then reinsert...
-	if existingOrder.IsExpireable() &&
-		amendedOrder.IsExpireable() &&
+	if existingOrder.IsExpireable() && amendedOrder.IsExpireable() &&
 		existingOrder.ExpiresAt != amendedOrder.ExpiresAt {
-		// We no longer need to handle the expiry
+		// Still expiring but needs to be updated in the expiring
+		// orders pool
 		needToRemoveExpiry = true
 		needToAddExpiry = true
 		expiresAt = existingOrder.ExpiresAt
@@ -2578,8 +2592,8 @@ func (m *Market) amendOrder(
 	if amendedOrder.ExpiresAt != 0 && amendedOrder.ExpiresAt < existingOrder.CreatedAt {
 		if m.log.GetLevel() == logging.DebugLevel {
 			m.log.Debug("Amended expiry before original creation time",
-				logging.Int64("original order created at ts:", existingOrder.CreatedAt),
-				logging.Int64("amended expiry ts:", amendedOrder.ExpiresAt),
+				logging.Int64("existing-created-at", existingOrder.CreatedAt),
+				logging.Int64("amended-expires-at", amendedOrder.ExpiresAt),
 				logging.Order(*existingOrder))
 		}
 		return nil, nil, types.ErrInvalidExpirationDatetime
@@ -2624,9 +2638,6 @@ func (m *Market) amendOrder(
 		}, nil, nil
 	}
 
-	// TODO: This can be simplified by:
-	// - amending the order in the peggedList first
-	// - applying the changed based on auction / repricing
 	if existingOrder.PeggedOrder != nil {
 		// Amend in place during an auction
 		if m.as.InAuction() {
@@ -2657,27 +2668,11 @@ func (m *Market) amendOrder(
 		}
 	}
 
-	// from here these are the normal amendment
-	var priceShift, sizeIncrease, sizeDecrease, expiryChange, timeInForceChange bool
-
-	if amendedOrder.Price.NEQ(existingOrder.Price) {
-		priceShift = true
-	}
-
-	if amendedOrder.Size > existingOrder.Size {
-		sizeIncrease = true
-	}
-	if amendedOrder.Size < existingOrder.Size {
-		sizeDecrease = true
-	}
-
-	if amendedOrder.ExpiresAt != existingOrder.ExpiresAt {
-		expiryChange = true
-	}
-
-	if amendedOrder.TimeInForce != existingOrder.TimeInForce {
-		timeInForceChange = true
-	}
+	priceShift := amendedOrder.Price.NEQ(existingOrder.Price)
+	sizeIncrease := amendedOrder.Size > existingOrder.Size
+	sizeDecrease := amendedOrder.Size < existingOrder.Size
+	expiryChange := amendedOrder.ExpiresAt != existingOrder.ExpiresAt
+	timeInForceChange := amendedOrder.TimeInForce != existingOrder.TimeInForce
 
 	// If nothing changed, amend in place to update updatedAt and version number
 	if !priceShift && !sizeIncrease && !sizeDecrease && !expiryChange && !timeInForceChange {
@@ -2725,15 +2720,13 @@ func (m *Market) amendOrder(
 		return ret, nil, nil
 	}
 
-	if m.log.GetLevel() == logging.DebugLevel {
-		m.log.Debug("Order amendment not allowed", logging.Order(*existingOrder))
-	}
-
-	// for some reason, we got here without doing anything to the order,
-	// or we would have returned earlier.
-	// should we panic, as that doesn't seems right,
-	// or just update back the position?
-	_ = m.position.AmendOrder(ctx, amendedOrder, existingOrder)
+	// we should never reach this point as amendment was validated before
+	// and every kind should have been handled down here.
+	m.log.Panic(
+		"invalid amend did not match any amendment combination",
+		logging.String("amended-order", amendedOrder.String()),
+		logging.String("existing-order", amendedOrder.String()),
+	)
 
 	return nil, nil, types.ErrEditNotAllowed
 }
