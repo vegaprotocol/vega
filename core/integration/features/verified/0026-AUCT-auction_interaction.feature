@@ -215,7 +215,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1000         | 1000           | 10            |
 
-  Scenario: Once market is in continuous trading mode: post a persistent order that should trigger liquidity auction (not enough target stake), appropriate event is sent and market in TRADING_MODE_MONITORING_AUCTION (0026-AUCT-001, 0026-AUCT-005)
+  Scenario: Once market is in continuous trading mode: post a persistent order that should trigger liquidity auction (not enough target stake), appropriate event is sent and market in TRADING_MODE_MONITORING_AUCTION (0026-AUCT-001, 0026-AUCT-005, 0035-LIQM-003)
     Given the following network parameters are set:
       | name                                          | value |
       | market.liquidity.targetstake.triggering.ratio | 0.8   |
@@ -249,6 +249,12 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party2 | ETH/DEC21 | sell | 20     | 1010  | 0                | TYPE_LIMIT | TIF_GTC |
       | party1 | ETH/DEC21 | buy  | 20     | 1010  | 3                | TYPE_LIMIT | TIF_GTC |
+    
+    # verify that we don't enter liquidity auction immediately, but at the end of block as per 0035-LIQM-003
+    And the market data for the market "ETH/DEC21" should be:
+      | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 3030         | 1000           | 30            |
+
     # move to the next block to perform liquidity check
     Then the network moves ahead "1" blocks
     # open interest updates to include buy order of size 20

@@ -30,6 +30,8 @@
 - [6395](https://github.com/vegaprotocol/vega/issues/6395) - Wallet selection doesn't lower case the wallet name during input verification
 - [6408](https://github.com/vegaprotocol/vega/issues/6408) - Initialise observer in liquidity provision `sql` store
 - [6406](https://github.com/vegaprotocol/vega/issues/6406) - Fix invalid tracking of cumulative volume and price
+- [6387](https://github.com/vegaprotocol/vega/issues/6387) - Fix max open interest calculation
+- [6416](https://github.com/vegaprotocol/vega/issues/6416) - Prevent submission of `erc20` address already used by another asset
 
 ## 0.57.0
 
