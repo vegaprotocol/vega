@@ -15,6 +15,7 @@
 - [6348](https://github.com/vegaprotocol/vega/issues/6348) - Reduce pool size to leave more available `Postgres` connections
 - [6211](https://github.com/vegaprotocol/vega/issues/6211) - Handle `BeginBlock` and `EndBlock` events
 - [6361](https://github.com/vegaprotocol/vega/issues/6361) - Remove unnecessary logging in market
+- [6378](https://github.com/vegaprotocol/vega/issues/6378) - Migrate remaining views of current data to tables with current data
 
 ### 🐛 Fixes
 - [6388](https://github.com/vegaprotocol/vega/issues/6388) - Do not transfer stake and delegations after a key rotation
