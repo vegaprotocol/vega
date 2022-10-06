@@ -70,6 +70,17 @@ func (id *ID[T]) Bytes() ([]byte, error) {
 	return bytes, nil
 }
 
+func (id *ID[T]) SetBytes(src []byte) error {
+	strID := hex.EncodeToString(src)
+
+	sub, ok := wellKnownIdsReversed[strID]
+	if ok {
+		strID = sub
+	}
+	*id = ID[T](strID)
+	return nil
+}
+
 func (id *ID[T]) Error() error {
 	_, err := id.Bytes()
 	return err
@@ -88,12 +99,5 @@ func (id ID[T]) EncodeBinary(ci *pgtype.ConnInfo, buf []byte) ([]byte, error) {
 }
 
 func (id *ID[T]) DecodeBinary(ci *pgtype.ConnInfo, src []byte) error {
-	strID := hex.EncodeToString(src)
-
-	sub, ok := wellKnownIdsReversed[strID]
-	if ok {
-		strID = sub
-	}
-	*id = ID[T](strID)
-	return nil
+	return id.SetBytes(src)
 }

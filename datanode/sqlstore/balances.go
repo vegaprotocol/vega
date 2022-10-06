@@ -15,19 +15,11 @@ package sqlstore
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
-	"code.vegaprotocol.io/vega/protos/vega"
-	"github.com/georgysavva/scany/pgxscan"
-	"github.com/shopspring/decimal"
 )
-
-var aggregateBalancesOrdering = TableOrdering{
-	ColumnOrdering{Name: "vega_time", Sorting: ASC},
-}
 
 type Balances struct {
 	*ConnectionSource
@@ -138,10 +130,18 @@ func (bs *Balances) Query(filter entities.AccountFilter, groupBy []entities.Acco
 	// to the PaginateQuery function because the WHERE clause in the query above will cause an incorrect SQL statement
 	// to be generated
 	pageQuery := fmt.Sprintf(`SELECT vega_time %s, balance
-		FROM balances 
+		FROM balances
 		%s`, groups, whereDate)
 
-	pageQuery, args, err = PaginateQuery[entities.AggregatedBalanceCursor](pageQuery, args, aggregateBalancesOrdering, pagination)
+	ordering := TableOrdering{
+		ColumnOrdering{Name: "vega_time", Sorting: ASC},
+	}
+
+	for _, group := range groupBy {
+		ordering = append(ordering, ColumnOrdering{Name: group.String(), Sorting: ASC})
+	}
+
+	pageQuery, args, err = PaginateQuery[entities.AggregatedBalanceCursor](pageQuery, args, ordering, pagination)
 	if err != nil {
 		return nil, pageInfo, err
 	}
@@ -156,50 +156,9 @@ func (bs *Balances) Query(filter entities.AccountFilter, groupBy []entities.Acco
 	}
 	defer rows.Close()
 
-	// Scany won't let us scan strings to a pointer field, so we use an anonymous struct
-	// here to work around that.
-	results := []struct {
-		VegaTime  time.Time
-		Balance   decimal.Decimal
-		AccountID entities.AccountID
-		PartyID   entities.PartyID
-		AssetID   entities.AssetID
-		MarketID  entities.MarketID
-		Type      *vega.AccountType
-	}{}
-
-	if err = pgxscan.ScanAll(&results, rows); err != nil {
-		return nil, pageInfo, fmt.Errorf("scanning balances: %w", err)
-	}
-
-	balances := []entities.AggregatedBalance{}
-	for _, res := range results {
-		bal := entities.AggregatedBalance{
-			VegaTime: res.VegaTime,
-			Balance:  res.Balance,
-			Type:     res.Type,
-		}
-		if res.AccountID != "" {
-			bal.AccountID = res.AccountID
-		}
-
-		if res.PartyID != "" {
-			bal.PartyID = res.PartyID
-		}
-
-		if res.AssetID != "" {
-			bal.AssetID = res.AssetID
-		}
-
-		if res.MarketID != "" {
-			bal.MarketID = res.MarketID
-		}
-
-		if res.AssetID != "" {
-			bal.AssetID = res.AssetID
-		}
-
-		balances = append(balances, bal)
+	balances, err := entities.AggregatedBalanceScan(groupBy, rows)
+	if err != nil {
+		return nil, pageInfo, err
 	}
 
 	balances, pageInfo = entities.PageEntities[*v2.AggregatedBalanceEdge](balances, pagination)

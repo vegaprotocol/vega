@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
 	"sync"
 
 	"code.vegaprotocol.io/vega/core/assets/builtin"
@@ -159,6 +160,25 @@ func (s *Service) EnactPendingAsset(id string) {
 	}
 
 	s.notary.StartAggregate(id, types.NodeSignatureKindAssetNew, signature)
+}
+
+func (s *Service) ExistsForEthereumAddress(address string) bool {
+	for _, a := range s.assets {
+		if source, ok := a.ERC20(); ok {
+			if strings.EqualFold(source.Address(), address) {
+				return true
+			}
+		}
+	}
+	for _, a := range s.pendingAssets {
+		if source, ok := a.ERC20(); ok {
+			if strings.EqualFold(source.Address(), address) {
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 // SetPendingListing update the state of an asset from proposed

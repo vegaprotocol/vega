@@ -22,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/core/governance"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/validators"
+	"code.vegaprotocol.io/vega/libs/num"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -31,8 +32,39 @@ import (
 func TestProposalForNewAsset(t *testing.T) {
 	t.Run("Submitting a proposal for new asset succeeds", testSubmittingProposalForNewAssetSucceeds)
 	t.Run("Submitting a proposal for new asset with closing time before validation time fails", testSubmittingProposalForNewAssetWithClosingTimeBeforeValidationTimeFails)
-
 	t.Run("Voting during validation of proposal for new asset succeeds", testVotingDuringValidationOfProposalForNewAssetSucceeds)
+	t.Run("rejects erc20 proposals for address already used", testRejectsERC20ProposalForAddressAlreadyUsed)
+}
+
+func testRejectsERC20ProposalForAddressAlreadyUsed(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// given
+	party := eng.newValidParty("a-valid-party", 123456789)
+	proposal := eng.newProposalForNewAsset(party.Id, eng.tsvc.GetTimeNow())
+
+	newAssetERC20 := newAssetTerms()
+	newAssetERC20.NewAsset.Changes.Source = &types.AssetDetailsErc20{
+		ERC20: &types.ERC20{
+			ContractAddress:   "0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990",
+			LifetimeLimit:     num.NewUint(1),
+			WithdrawThreshold: num.NewUint(1),
+		},
+	}
+	proposal.Terms.Change = newAssetERC20
+
+	// setup
+	eng.assets.EXPECT().ExistsForEthereumAddress("0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990").Times(1).Return(true)
+
+	// setup
+	eng.expectRejectedProposalEvent(t, party.Id, proposal.ID, types.ProposalErrorERC20AddressAlreadyInUse)
+
+	// when
+	toSubmit, err := eng.submitProposal(t, proposal)
+
+	require.EqualError(t, err, governance.ErrErc20AddressAlreadyInUse.Error())
+	require.Nil(t, toSubmit)
 }
 
 func testSubmittingProposalForNewAssetSucceeds(t *testing.T) {
