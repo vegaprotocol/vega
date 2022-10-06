@@ -14,6 +14,7 @@ package store
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -21,6 +22,34 @@ import (
 	pb "code.vegaprotocol.io/vega/protos/blockexplorer"
 	"github.com/georgysavva/scany/pgxscan"
 )
+
+var (
+	ErrTxNotFound      = errors.New("Transaction not found")
+	ErrMultipleTxFound = errors.New("Multiple transactions found")
+)
+
+func (s *Store) GetTransaction(ctx context.Context, txID string) (*pb.Transaction, error) {
+	query := `SELECT * FROM tx_results where tx_hash=$1`
+	var rows []entities.TxResultRow
+
+	if err := pgxscan.Select(ctx, s.pool, &rows, query, txID); err != nil {
+		return nil, fmt.Errorf("querying tx_results:%w", err)
+	}
+
+	if len(rows) == 0 {
+		return nil, ErrTxNotFound
+	}
+
+	if len(rows) > 1 {
+		return nil, ErrMultipleTxFound
+	}
+
+	tx, err := rows[0].ToProto()
+	if err != nil {
+		return nil, err
+	}
+	return tx, nil
+}
 
 func (s *Store) ListTransactions(ctx context.Context,
 	filters map[string]string,
