@@ -249,11 +249,6 @@ Feature: check if the realised PnL and unreaslied PnL is calculated according to
 
     And then the network moves ahead "10" blocks
 
-    # The parties' account balances before settlement is:
-    #   | party  | asset | market id | margin | general  |
-    #   | party1 | USD   | ETH/MAR22 | 21534  | 99978826 |
-    #   | party2 | USD   | ETH/MAR22 | 4921   | 99994719 |
-
     # MTM with the settlement price 800, will add (1003-800)*5=1015 into general account of party1, so new general account will be 99978826+1015=99979841
     # MTM with the settlement price 800, will reduce (1003-800)*5=1015 from general account of party2, so new general account will be 99994719-1015=99993704
 
