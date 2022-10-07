@@ -49,7 +49,7 @@ func testRequestingPermissionsWithInvalidParamsFails(t *testing.T) {
 			expectedError: api.ErrParamsDoNotMatch,
 		}, {
 			name: "with empty token",
-			params: api.RequestPermissionsParams{
+			params: api.ClientRequestPermissionsParams{
 				Token: "",
 				RequestedPermissions: map[string]string{
 					"public_keys": "read",
@@ -58,14 +58,14 @@ func testRequestingPermissionsWithInvalidParamsFails(t *testing.T) {
 			expectedError: api.ErrConnectionTokenIsRequired,
 		}, {
 			name: "without requested permissions",
-			params: api.RequestPermissionsParams{
+			params: api.ClientRequestPermissionsParams{
 				Token:                vgrand.RandomStr(10),
 				RequestedPermissions: map[string]string{},
 			},
 			expectedError: api.ErrRequestedPermissionsAreRequired,
 		}, {
 			name: "with unsupported access mode",
-			params: api.RequestPermissionsParams{
+			params: api.ClientRequestPermissionsParams{
 				Token: vgrand.RandomStr(10),
 				RequestedPermissions: map[string]string{
 					"public_keys": "read",
@@ -75,7 +75,7 @@ func testRequestingPermissionsWithInvalidParamsFails(t *testing.T) {
 			expectedError: errors.New("permission \"everything\" is not supported"),
 		}, {
 			name: "with unsupported access mode",
-			params: api.RequestPermissionsParams{
+			params: api.ClientRequestPermissionsParams{
 				Token: vgrand.RandomStr(10),
 				RequestedPermissions: map[string]string{
 					"public_keys": "full-access",
@@ -92,6 +92,9 @@ func testRequestingPermissionsWithInvalidParamsFails(t *testing.T) {
 
 			// setup
 			handler := newRequestPermissionsHandler(tt)
+			// -- expected calls
+			handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
+			handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
 
 			// when
 			result, errorDetails := handler.handle(t, ctx, tc.params)
@@ -146,14 +149,16 @@ func testRequestingPermissionsWithValidParamsSucceeds(t *testing.T) {
 			handler := newRequestPermissionsHandler(tt)
 			token := connectWallet(tt, handler.sessions, hostname, wallet1)
 			// -- expected calls
-			handler.pipeline.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), tc.askedPermissions).Times(1).Return(true, nil)
-			handler.pipeline.EXPECT().RequestPassphrase(ctx, traceID, wallet1.Name()).Times(1).Return(passphrase, nil)
+			handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
+			handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
+			handler.interactor.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), tc.askedPermissions).Times(1).Return(true, nil)
+			handler.interactor.EXPECT().RequestPassphrase(ctx, traceID, wallet1.Name()).Times(1).Return(passphrase, nil)
 			handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name(), passphrase).Times(1).Return(wallet1, nil)
 			handler.walletStore.EXPECT().SaveWallet(ctx, wallet1, passphrase).Times(1).Return(nil)
-			handler.pipeline.EXPECT().NotifySuccessfulRequest(ctx, traceID).Times(1)
+			handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, traceID).Times(1)
 
 			// when
-			result, errorDetails := handler.handle(tt, ctx, api.RequestPermissionsParams{
+			result, errorDetails := handler.handle(tt, ctx, api.ClientRequestPermissionsParams{
 				Token:                token,
 				RequestedPermissions: tc.askedPermissions,
 			})
@@ -176,9 +181,12 @@ func testRequestingPermissionsWithInvalidTokenFails(t *testing.T) {
 
 	// setup
 	handler := newRequestPermissionsHandler(t)
+	// -- expected calls
+	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.RequestPermissionsParams{
+	result, errorDetails := handler.handle(t, ctx, api.ClientRequestPermissionsParams{
 		Token: vgrand.RandomStr(5),
 		RequestedPermissions: map[string]string{
 			"public_keys": "read",
@@ -204,10 +212,12 @@ func testRefusingPermissionsUpdateDoesNotUpdatePermissions(t *testing.T) {
 	handler := newRequestPermissionsHandler(t)
 	token := connectWallet(t, handler.sessions, hostname, wallet1)
 	// -- expected calls
-	handler.pipeline.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(false, nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
+	handler.interactor.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(false, nil)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.RequestPermissionsParams{
+	result, errorDetails := handler.handle(t, ctx, api.ClientRequestPermissionsParams{
 		Token:                token,
 		RequestedPermissions: requestedPermissions,
 	})
@@ -235,10 +245,12 @@ func testCancellingTheReviewDoesNotUpdatePermissions(t *testing.T) {
 	handler := newRequestPermissionsHandler(t)
 	token := connectWallet(t, handler.sessions, hostname, wallet1)
 	// -- expected calls
-	handler.pipeline.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(false, api.ErrUserCloseTheConnection)
+	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
+	handler.interactor.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(false, api.ErrUserCloseTheConnection)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.RequestPermissionsParams{
+	result, errorDetails := handler.handle(t, ctx, api.ClientRequestPermissionsParams{
 		Token:                token,
 		RequestedPermissions: requestedPermissions,
 	})
@@ -266,11 +278,13 @@ func testInterruptingTheRequestDoesNotUpdatePermissions(t *testing.T) {
 	handler := newRequestPermissionsHandler(t)
 	token := connectWallet(t, handler.sessions, hostname, wallet1)
 	// -- expected calls
-	handler.pipeline.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(false, api.ErrRequestInterrupted)
-	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.ServerError, api.ErrRequestInterrupted).Times(1)
+	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
+	handler.interactor.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(false, api.ErrRequestInterrupted)
+	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.ServerError, api.ErrRequestInterrupted).Times(1)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.RequestPermissionsParams{
+	result, errorDetails := handler.handle(t, ctx, api.ClientRequestPermissionsParams{
 		Token:                token,
 		RequestedPermissions: requestedPermissions,
 	})
@@ -298,11 +312,13 @@ func testGettingInternalErrorDuringReviewDoesNotUpdatePermissions(t *testing.T) 
 	handler := newRequestPermissionsHandler(t)
 	token := connectWallet(t, handler.sessions, hostname, wallet1)
 	// -- expected calls
-	handler.pipeline.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(false, assert.AnError)
-	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("requesting the permissions review failed: %w", assert.AnError)).Times(1)
+	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
+	handler.interactor.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(false, assert.AnError)
+	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("requesting the permissions review failed: %w", assert.AnError)).Times(1)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.RequestPermissionsParams{
+	result, errorDetails := handler.handle(t, ctx, api.ClientRequestPermissionsParams{
 		Token:                token,
 		RequestedPermissions: requestedPermissions,
 	})
@@ -330,11 +346,13 @@ func testCancellingThePassphraseRequestDoesNotUpdatePermissions(t *testing.T) {
 	handler := newRequestPermissionsHandler(t)
 	token := connectWallet(t, handler.sessions, hostname, wallet1)
 	// -- expected calls
-	handler.pipeline.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(true, nil)
-	handler.pipeline.EXPECT().RequestPassphrase(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return("", api.ErrUserCloseTheConnection)
+	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
+	handler.interactor.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(true, nil)
+	handler.interactor.EXPECT().RequestPassphrase(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return("", api.ErrUserCloseTheConnection)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.RequestPermissionsParams{
+	result, errorDetails := handler.handle(t, ctx, api.ClientRequestPermissionsParams{
 		Token:                token,
 		RequestedPermissions: requestedPermissions,
 	})
@@ -362,12 +380,14 @@ func testInterruptingTheRequestDuringPassphraseRequestDoesNotUpdatePermissions(t
 	handler := newRequestPermissionsHandler(t)
 	token := connectWallet(t, handler.sessions, hostname, wallet1)
 	// -- expected calls
-	handler.pipeline.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(true, nil)
-	handler.pipeline.EXPECT().RequestPassphrase(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return("", api.ErrRequestInterrupted)
-	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.ServerError, api.ErrRequestInterrupted).Times(1)
+	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
+	handler.interactor.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(true, nil)
+	handler.interactor.EXPECT().RequestPassphrase(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return("", api.ErrRequestInterrupted)
+	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.ServerError, api.ErrRequestInterrupted).Times(1)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.RequestPermissionsParams{
+	result, errorDetails := handler.handle(t, ctx, api.ClientRequestPermissionsParams{
 		Token:                token,
 		RequestedPermissions: requestedPermissions,
 	})
@@ -395,12 +415,14 @@ func testGettingInternalErrorDuringPassphraseRequestDoesNotUpdatePermissions(t *
 	handler := newRequestPermissionsHandler(t)
 	token := connectWallet(t, handler.sessions, hostname, wallet1)
 	// -- expected calls
-	handler.pipeline.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(true, nil)
-	handler.pipeline.EXPECT().RequestPassphrase(ctx, traceID, wallet1.Name()).Times(1).Return("", assert.AnError)
-	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("requesting the passphrase failed: %w", assert.AnError)).Times(1)
+	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
+	handler.interactor.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(true, nil)
+	handler.interactor.EXPECT().RequestPassphrase(ctx, traceID, wallet1.Name()).Times(1).Return("", assert.AnError)
+	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("requesting the passphrase failed: %w", assert.AnError)).Times(1)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.RequestPermissionsParams{
+	result, errorDetails := handler.handle(t, ctx, api.ClientRequestPermissionsParams{
 		Token:                token,
 		RequestedPermissions: requestedPermissions,
 	})
@@ -430,16 +452,18 @@ func testUsingWrongPassphraseDoesNotUpdatePermissions(t *testing.T) {
 	handler := newRequestPermissionsHandler(t)
 	token := connectWallet(t, handler.sessions, hostname, wallet1)
 	// -- expected calls
-	handler.pipeline.EXPECT().RequestPermissionsReview(cancelCtx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(true, nil)
-	handler.pipeline.EXPECT().RequestPassphrase(cancelCtx, traceID, wallet1.Name()).Times(1).Return(passphrase, nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionBegan(cancelCtx, gomock.Any()).Times(1).Return(nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionEnded(cancelCtx, gomock.Any()).Times(1)
+	handler.interactor.EXPECT().RequestPermissionsReview(cancelCtx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(true, nil)
+	handler.interactor.EXPECT().RequestPassphrase(cancelCtx, traceID, wallet1.Name()).Times(1).Return(passphrase, nil)
 	handler.walletStore.EXPECT().GetWallet(cancelCtx, wallet1.Name(), passphrase).Times(1).Return(nil, wallet.ErrWrongPassphrase)
-	handler.pipeline.EXPECT().NotifyError(cancelCtx, traceID, api.UserError, wallet.ErrWrongPassphrase).Times(1).Do(func(_ context.Context, _ string, _ api.ErrorType, _ error) {
+	handler.interactor.EXPECT().NotifyError(cancelCtx, traceID, api.UserError, wallet.ErrWrongPassphrase).Times(1).Do(func(_ context.Context, _ string, _ api.ErrorType, _ error) {
 		// Once everything has been called once, we cancel the handler to break the loop.
 		cancelFn()
 	})
 
 	// when
-	result, errorDetails := handler.handle(t, cancelCtx, api.RequestPermissionsParams{
+	result, errorDetails := handler.handle(t, cancelCtx, api.ClientRequestPermissionsParams{
 		Token:                token,
 		RequestedPermissions: requestedPermissions,
 	})
@@ -468,13 +492,15 @@ func testGettingInternalErrorDuringWalletRetrievalDoesNotUpdatePermissions(t *te
 	handler := newRequestPermissionsHandler(t)
 	token := connectWallet(t, handler.sessions, hostname, wallet1)
 	// -- expected calls
-	handler.pipeline.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(true, nil)
-	handler.pipeline.EXPECT().RequestPassphrase(ctx, traceID, wallet1.Name()).Times(1).Return(passphrase, nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
+	handler.interactor.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(true, nil)
+	handler.interactor.EXPECT().RequestPassphrase(ctx, traceID, wallet1.Name()).Times(1).Return(passphrase, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name(), passphrase).Times(1).Return(nil, assert.AnError)
-	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("could not retrieve the wallet: %w", assert.AnError)).Times(1)
+	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("could not retrieve the wallet: %w", assert.AnError)).Times(1)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.RequestPermissionsParams{
+	result, errorDetails := handler.handle(t, ctx, api.ClientRequestPermissionsParams{
 		Token:                token,
 		RequestedPermissions: requestedPermissions,
 	})
@@ -520,14 +546,16 @@ func testGettingInternalErrorDuringWalletSavingDoesNotUpdatePermissions(t *testi
 	handler := newRequestPermissionsHandler(t)
 	token := connectWallet(t, handler.sessions, hostname, wallet1)
 	// -- expected calls
-	handler.pipeline.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(true, nil)
-	handler.pipeline.EXPECT().RequestPassphrase(ctx, traceID, wallet1.Name()).Times(1).Return(passphrase, nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
+	handler.interactor.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), requestedPermissions).Times(1).Return(true, nil)
+	handler.interactor.EXPECT().RequestPassphrase(ctx, traceID, wallet1.Name()).Times(1).Return(passphrase, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name(), passphrase).Times(1).Return(loadedWallet, nil)
 	handler.walletStore.EXPECT().SaveWallet(ctx, loadedWallet, passphrase).Times(1).Return(assert.AnError)
-	handler.pipeline.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("could not save the wallet: %w", assert.AnError)).Times(1)
+	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("could not save the wallet: %w", assert.AnError)).Times(1)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.RequestPermissionsParams{
+	result, errorDetails := handler.handle(t, ctx, api.ClientRequestPermissionsParams{
 		Token:                token,
 		RequestedPermissions: requestedPermissions,
 	})
@@ -567,8 +595,10 @@ func testUpdatingPermissionsDoesNotOverwriteUntrackedChanges(t *testing.T) {
 	handler := newRequestPermissionsHandler(t)
 	token := connectWallet(t, handler.sessions, hostname, wallet1)
 	// -- expected calls
-	handler.pipeline.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), askedPermissions).Times(1).Return(true, nil)
-	handler.pipeline.EXPECT().RequestPassphrase(ctx, traceID, wallet1.Name()).Times(1).Return(passphrase, nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
+	handler.interactor.EXPECT().RequestPermissionsReview(ctx, traceID, hostname, wallet1.Name(), askedPermissions).Times(1).Return(true, nil)
+	handler.interactor.EXPECT().RequestPassphrase(ctx, traceID, wallet1.Name()).Times(1).Return(passphrase, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name(), passphrase).Times(1).Return(modifiedWallet, nil)
 	handler.walletStore.EXPECT().SaveWallet(ctx, gomock.Any(), passphrase).Times(1).DoAndReturn(func(_ context.Context, w wallet.Wallet, _ string) error {
 		// We verify that the saved wallet contains the modification from the modified wallet and the permissions update from wallet1.
@@ -580,10 +610,10 @@ func testUpdatingPermissionsDoesNotOverwriteUntrackedChanges(t *testing.T) {
 		}, w.Permissions(hostname))
 		return nil
 	})
-	handler.pipeline.EXPECT().NotifySuccessfulRequest(ctx, traceID).Times(1)
+	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, traceID).Times(1)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.RequestPermissionsParams{
+	result, errorDetails := handler.handle(t, ctx, api.ClientRequestPermissionsParams{
 		Token:                token,
 		RequestedPermissions: askedPermissions,
 	})
@@ -599,25 +629,25 @@ func testUpdatingPermissionsDoesNotOverwriteUntrackedChanges(t *testing.T) {
 }
 
 type requestPermissionsHandler struct {
-	*api.RequestPermissions
+	*api.ClientRequestPermissions
 	ctrl        *gomock.Controller
 	walletStore *mocks.MockWalletStore
-	pipeline    *mocks.MockPipeline
+	interactor  *mocks.MockInteractor
 	sessions    *api.Sessions
 }
 
-func (h *requestPermissionsHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.RequestPermissionsResult, *jsonrpc.ErrorDetails) {
+func (h *requestPermissionsHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.ClientRequestPermissionsResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
 	rawResult, err := h.Handle(ctx, params)
 	if rawResult != nil {
-		result, ok := rawResult.(api.RequestPermissionsResult)
+		result, ok := rawResult.(api.ClientRequestPermissionsResult)
 		if !ok {
-			t.Fatal("RequestPermissions handler result is not a RequestPermissionsResult")
+			t.Fatal("ClientRequestPermissions handler result is not a ClientRequestPermissionsResult")
 		}
 		return result, err
 	}
-	return api.RequestPermissionsResult{}, err
+	return api.ClientRequestPermissionsResult{}, err
 }
 
 func newRequestPermissionsHandler(t *testing.T) *requestPermissionsHandler {
@@ -625,15 +655,15 @@ func newRequestPermissionsHandler(t *testing.T) *requestPermissionsHandler {
 
 	ctrl := gomock.NewController(t)
 	walletStore := mocks.NewMockWalletStore(ctrl)
-	pipeline := mocks.NewMockPipeline(ctrl)
+	interactor := mocks.NewMockInteractor(ctrl)
 
 	sessions := api.NewSessions()
 
 	return &requestPermissionsHandler{
-		RequestPermissions: api.NewRequestPermissions(walletStore, pipeline, sessions),
-		ctrl:               ctrl,
-		walletStore:        walletStore,
-		pipeline:           pipeline,
-		sessions:           sessions,
+		ClientRequestPermissions: api.NewRequestPermissions(walletStore, interactor, sessions),
+		ctrl:                     ctrl,
+		walletStore:              walletStore,
+		interactor:               interactor,
+		sessions:                 sessions,
 	}
 }

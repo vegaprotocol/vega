@@ -5,9 +5,8 @@ import (
 )
 
 var (
-	ErrOnlySupportJSONRPC2          = errors.New("the API only supports JSON-RPC 2.0")
-	ErrMethodIsRequired             = errors.New("the method is required")
-	ErrRequestAlreadyBeingProcessed = errors.New("a request is already being processed")
+	ErrOnlySupportJSONRPC2 = errors.New("the API only supports JSON-RPC 2.0")
+	ErrMethodIsRequired    = errors.New("the method is required")
 )
 
 // Params is just a nicer way to describe what's passed to the handlers.

@@ -12,7 +12,7 @@ import (
 )
 
 // Generates mocks
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/wallet/api WalletStore,NetworkStore,Pipeline
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/wallet/api WalletStore,NetworkStore,Interactor
 
 type NodeSelectorBuilder func(hosts []string, retries uint64) (node.Selector, error)
 
@@ -38,42 +38,56 @@ type NetworkStore interface {
 	DeleteNetwork(string) error
 }
 
-// Pipeline is the component connecting the wallet front-end and the JSON-RPC API.
+// Interactor is the component in charge of delegating the JSON-RPC API
+// requests, notifications and logs to the wallet front-end.
 // Convention:
-//   - Notify* functions do not expect a response.
-//   - Request* functions are expecting a user intervention.
-type Pipeline interface {
+//   - Notify* calls do not expect a response from the user.
+//   - Request* calls are expecting a response from the user.
+//   - Log function is just information logging and does not expect a response.
+//
+//nolint:interfacebloat
+type Interactor interface {
+	// NotifyInteractionSessionBegan notifies the beginning of an interaction
+	// session.
+	// A session is scoped to a request.
+	NotifyInteractionSessionBegan(ctx context.Context, traceID string) error
+
+	// NotifyInteractionSessionEnded notifies the end of an interaction
+	// session.
+	// A session is scoped to a request.
+	NotifyInteractionSessionEnded(ctx context.Context, traceID string)
+
+	// NotifySuccessfulTransaction is used to report a successful transaction.
+	NotifySuccessfulTransaction(ctx context.Context, traceID, txHash, deserializedInputData, tx string, sentAt time.Time)
+
+	// NotifyFailedTransaction is used to report a failed transaction.
+	NotifyFailedTransaction(ctx context.Context, traceID, deserializedInputData, tx string, err error, sentAt time.Time)
+
+	// NotifySuccessfulRequest is used to notify the user the request is
+	// successful.
+	NotifySuccessfulRequest(ctx context.Context, traceID string)
+
 	// NotifyError is used to report errors to the user.
-	// This is a terminal message. Nothing should be expected on the request
-	// after receiving this.
 	NotifyError(ctx context.Context, traceID string, t ErrorType, err error)
 
-	// Log is used to report information of any kind to the user. This is just
-	// to log internal activity to provide feedback to the wallet front-end.
-	// The log should be displayed without triggering any actions.
-	// Receiving a success or an error log shouldn't be confused with the
-	// NotifyError and NotifySuccessfulRequest that send terminal messages.
+	// Log is used to report information of any kind to the user. This is used
+	// to log internal activities and provide feedback to the wallet front-ends.
+	// It's purely for informational purpose.
+	// Receiving logs should be expected at any point during an interaction
+	// session.
 	Log(ctx context.Context, traceID string, t LogType, msg string)
 
 	// RequestWalletConnectionReview is used to trigger a user review of
 	// the wallet connection requested by the specified hostname.
-	// It returns true if the user approved the wallet connection, false
-	// otherwise.
-	RequestWalletConnectionReview(ctx context.Context, traceID, hostname string) (bool, error)
+	// It returns the type of connection approval chosen by the user.
+	RequestWalletConnectionReview(ctx context.Context, traceID, hostname string) (string, error)
 
-	// NotifySuccessfulRequest is used to notify the user the request is
-	// successful.
-	// This is a terminal message. Nothing should be expected on the request
-	// after receiving this.
-	NotifySuccessfulRequest(ctx context.Context, traceID string)
-
-	// RequestWalletSelection is used to trigger selection of the wallet the
+	// RequestWalletSelection is used to trigger the selection of the wallet the
 	// user wants to use for the specified hostname.
 	RequestWalletSelection(ctx context.Context, traceID, hostname string, availableWallets []string) (SelectedWallet, error)
 
-	// RequestPassphrase is used to request the user to enter the passphrase of
-	// the wallet. It's primarily used for request that requires saving changes
-	// on it.
+	// RequestPassphrase is used to request to the user the passphrase of a wallet.
+	// It's primarily used by requests that update the wallet.
 	RequestPassphrase(ctx context.Context, traceID, wallet string) (string, error)
 
 	// RequestPermissionsReview is used to trigger a user review of the permissions
@@ -82,24 +96,18 @@ type Pipeline interface {
 	// otherwise.
 	RequestPermissionsReview(ctx context.Context, traceID, hostname, wallet string, perms map[string]string) (bool, error)
 
-	// RequestTransactionSendingReview is used to trigger a user review of the
+	// RequestTransactionReviewForSending is used to trigger a user review of the
 	// transaction a third-party application wants to send.
 	// It returns true if the user approved the sending of the transaction,
 	// false otherwise.
-	RequestTransactionSendingReview(ctx context.Context, traceID, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error)
+	RequestTransactionReviewForSending(ctx context.Context, traceID, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error)
 
-	// RequestTransactionSigningReview is used to trigger a user review of the
+	// RequestTransactionReviewForSigning is used to trigger a user review of the
 	// transaction a third-party application wants to sign. The wallet doesn't
 	// send the transaction.
 	// It returns true if the user approved the signing of the transaction,
 	// false otherwise.
-	RequestTransactionSigningReview(ctx context.Context, traceID, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error)
-
-	// NotifyTransactionStatus is used to report the transaction status once
-	// sent.
-	// This is a terminal message. Nothing should be expected on the request
-	// after receiving this.
-	NotifyTransactionStatus(ctx context.Context, traceID, txHash, tx string, err error, sentAt time.Time)
+	RequestTransactionReviewForSigning(ctx context.Context, traceID, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error)
 }
 
 // ErrorType defines the type of error that is sent to the user, for fine
@@ -141,25 +149,25 @@ type SelectedWallet struct {
 	Passphrase string `json:"passphrase"`
 }
 
-// SessionAPI builds the wallet JSON-RPC API with specific methods that are
+// ClientAPI builds the wallet JSON-RPC API with specific methods that are
 // intended to be publicly exposed to third-party applications in a
 // non-trustable environment.
 // Because of the nature of the environment from where these methods are called,
 // no administration methods are exposed. We don't want malicious third-party
 // applications to leverage administration capabilities that could expose to the
 // user and compromise his wallets.
-func SessionAPI(log *zap.Logger, walletStore WalletStore, pipeline Pipeline, nodeSelector node.Selector) (*jsonrpc.API, error) {
+func ClientAPI(log *zap.Logger, walletStore WalletStore, interactor Interactor, nodeSelector node.Selector) (*jsonrpc.API, error) {
 	sessions := NewSessions()
 
-	walletAPI := jsonrpc.New(log, true)
-	walletAPI.RegisterMethod("client.connect_wallet", NewConnectWallet(walletStore, pipeline, sessions))
+	walletAPI := jsonrpc.New(log)
+	walletAPI.RegisterMethod("client.connect_wallet", NewConnectWallet(walletStore, interactor, sessions))
 	walletAPI.RegisterMethod("client.disconnect_wallet", NewDisconnectWallet(sessions))
 	walletAPI.RegisterMethod("client.get_chain_id", NewGetChainID(nodeSelector))
 	walletAPI.RegisterMethod("client.get_permissions", NewGetPermissions(sessions))
 	walletAPI.RegisterMethod("client.list_keys", NewListKeys(sessions))
-	walletAPI.RegisterMethod("client.request_permissions", NewRequestPermissions(walletStore, pipeline, sessions))
-	walletAPI.RegisterMethod("client.sign_transaction", NewSignTransaction(pipeline, nodeSelector, sessions))
-	walletAPI.RegisterMethod("client.send_transaction", NewSendTransaction(pipeline, nodeSelector, sessions))
+	walletAPI.RegisterMethod("client.request_permissions", NewRequestPermissions(walletStore, interactor, sessions))
+	walletAPI.RegisterMethod("client.sign_transaction", NewSignTransaction(interactor, nodeSelector, sessions))
+	walletAPI.RegisterMethod("client.send_transaction", NewSendTransaction(interactor, nodeSelector, sessions))
 
 	log.Info("the restricted JSON-RPC API has been initialised")
 
@@ -170,7 +178,7 @@ func SessionAPI(log *zap.Logger, walletStore WalletStore, pipeline Pipeline, nod
 // This API exposes highly-sensitive methods, and, as a result, it should be
 // only exposed to highly-trustable applications.
 func AdminAPI(log *zap.Logger, walletStore WalletStore, netStore NetworkStore, nodeSelectorBuilder NodeSelectorBuilder) (*jsonrpc.API, error) {
-	walletAPI := jsonrpc.New(log, false)
+	walletAPI := jsonrpc.New(log)
 	walletAPI.RegisterMethod("admin.annotate_key", NewAdminAnnotateKey(walletStore))
 	walletAPI.RegisterMethod("admin.create_wallet", NewAdminCreateWallet(walletStore))
 	walletAPI.RegisterMethod("admin.describe_key", NewAdminDescribeKey(walletStore))

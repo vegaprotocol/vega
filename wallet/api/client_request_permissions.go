@@ -10,18 +10,18 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-type RequestPermissionsParams struct {
+type ClientRequestPermissionsParams struct {
 	Token                string                    `json:"token"`
 	RequestedPermissions wallet.PermissionsSummary `json:"requestedPermissions"`
 }
 
-type RequestPermissionsResult struct {
+type ClientRequestPermissionsResult struct {
 	Permissions wallet.PermissionsSummary `json:"permissions"`
 }
 
-type RequestPermissions struct {
+type ClientRequestPermissions struct {
 	walletStore WalletStore
-	pipeline    Pipeline
+	interactor  Interactor
 	sessions    *Sessions
 }
 
@@ -41,10 +41,20 @@ type RequestPermissions struct {
 // updated.
 //
 // Using this handler does not require permissions.
-func (h *RequestPermissions) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *ClientRequestPermissions) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	traceID := TraceIDFromContext(ctx)
 
+	if err := h.interactor.NotifyInteractionSessionBegan(ctx, traceID); err != nil {
+		return nil, internalError(err)
+	}
+	defer h.interactor.NotifyInteractionSessionEnded(ctx, traceID)
+
 	params, err := validateRequestPermissionsParams(rawParams)
+	if err != nil {
+		return nil, invalidParams(err)
+	}
+
+	perms, err := parsePermissions(params.RequestedPermissions)
 	if err != nil {
 		return nil, invalidParams(err)
 	}
@@ -54,21 +64,16 @@ func (h *RequestPermissions) Handle(ctx context.Context, rawParams jsonrpc.Param
 		return nil, invalidParams(err)
 	}
 
-	approved, err := h.pipeline.RequestPermissionsReview(ctx, traceID, connectedWallet.Hostname, connectedWallet.Wallet.Name(), params.RequestedPermissions)
+	approved, err := h.interactor.RequestPermissionsReview(ctx, traceID, connectedWallet.Hostname, connectedWallet.Wallet.Name(), perms.Summary())
 	if err != nil {
-		if errDetails := handleRequestFlowError(ctx, traceID, h.pipeline, err); errDetails != nil {
+		if errDetails := handleRequestFlowError(ctx, traceID, h.interactor, err); errDetails != nil {
 			return nil, errDetails
 		}
-		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("requesting the permissions review failed: %w", err))
+		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("requesting the permissions review failed: %w", err))
 		return nil, internalError(ErrCouldNotRequestPermissions)
 	}
 	if !approved {
 		return nil, userRejectionError()
-	}
-
-	perms, err := h.parsePermissions(params)
-	if err != nil {
-		return nil, invalidParams(err)
 	}
 
 	var passphrase string
@@ -78,22 +83,22 @@ func (h *RequestPermissions) Handle(ctx context.Context, rawParams jsonrpc.Param
 			return nil, requestInterruptedError(ErrRequestInterrupted)
 		}
 
-		enteredPassphrase, err := h.pipeline.RequestPassphrase(ctx, traceID, connectedWallet.Wallet.Name())
+		enteredPassphrase, err := h.interactor.RequestPassphrase(ctx, traceID, connectedWallet.Wallet.Name())
 		if err != nil {
-			if errDetails := handleRequestFlowError(ctx, traceID, h.pipeline, err); errDetails != nil {
+			if errDetails := handleRequestFlowError(ctx, traceID, h.interactor, err); errDetails != nil {
 				return nil, errDetails
 			}
-			h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("requesting the passphrase failed: %w", err))
+			h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("requesting the passphrase failed: %w", err))
 			return nil, internalError(ErrCouldNotRequestPermissions)
 		}
 
 		w, err := h.walletStore.GetWallet(ctx, connectedWallet.Wallet.Name(), enteredPassphrase)
 		if err != nil {
 			if errors.Is(err, wallet.ErrWrongPassphrase) {
-				h.pipeline.NotifyError(ctx, traceID, UserError, wallet.ErrWrongPassphrase)
+				h.interactor.NotifyError(ctx, traceID, UserError, wallet.ErrWrongPassphrase)
 				continue
 			}
-			h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not retrieve the wallet: %w", err))
+			h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not retrieve the wallet: %w", err))
 			return nil, internalError(ErrCouldNotRequestPermissions)
 		}
 		passphrase = enteredPassphrase
@@ -107,14 +112,14 @@ func (h *RequestPermissions) Handle(ctx context.Context, rawParams jsonrpc.Param
 	// We update the wallet we just loaded from the wallet store to ensure
 	// we don't overwrite changes that could have been done outside the API.
 	if err := walletFromStore.UpdatePermissions(connectedWallet.Hostname, perms); err != nil {
-		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not update the permissions: %w", err))
+		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not update the permissions: %w", err))
 		return nil, internalError(ErrCouldNotRequestPermissions)
 	}
 
 	// Then, we update the in-memory wallet with the updated wallet, before
 	// saving it, to ensure there is no problem with the resources reloading.
 	if err := connectedWallet.ReloadWithWallet(walletFromStore); err != nil {
-		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not reload wallet's resources: %w", err))
+		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not reload wallet's resources: %w", err))
 		return nil, internalError(ErrCouldNotRequestPermissions)
 	}
 
@@ -124,29 +129,71 @@ func (h *RequestPermissions) Handle(ctx context.Context, rawParams jsonrpc.Param
 		// There is no sane reason it fails out of the blue.
 		_ = connectedWallet.ReloadWithWallet(previousWallet)
 
-		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not save the wallet: %w", err))
+		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not save the wallet: %w", err))
 		return nil, internalError(ErrCouldNotRequestPermissions)
 	}
 
-	h.pipeline.NotifySuccessfulRequest(ctx, traceID)
+	h.interactor.NotifySuccessfulRequest(ctx, traceID)
 
-	return RequestPermissionsResult{
+	return ClientRequestPermissionsResult{
 		Permissions: perms.Summary(),
 	}, nil
 }
 
-func (h *RequestPermissions) parsePermissions(params RequestPermissionsParams) (wallet.Permissions, error) {
+func validateRequestPermissionsParams(rawParams jsonrpc.Params) (ClientRequestPermissionsParams, error) {
+	if rawParams == nil {
+		return ClientRequestPermissionsParams{}, ErrParamsRequired
+	}
+
+	params := ClientRequestPermissionsParams{}
+	if err := mapstructure.Decode(rawParams, &params); err != nil {
+		return ClientRequestPermissionsParams{}, ErrParamsDoNotMatch
+	}
+
+	if params.Token == "" {
+		return ClientRequestPermissionsParams{}, ErrConnectionTokenIsRequired
+	}
+
+	if len(params.RequestedPermissions) == 0 {
+		return ClientRequestPermissionsParams{}, ErrRequestedPermissionsAreRequired
+	}
+
+	return params, nil
+}
+
+func NewRequestPermissions(
+	walletStore WalletStore,
+	interactor Interactor,
+	sessions *Sessions,
+) *ClientRequestPermissions {
+	return &ClientRequestPermissions{
+		walletStore: walletStore,
+		interactor:  interactor,
+		sessions:    sessions,
+	}
+}
+
+func parsePermissions(permsSummary wallet.PermissionsSummary) (wallet.Permissions, error) {
+	for permission, mode := range permsSummary {
+		if !isSupportedPermissions(permission) {
+			return wallet.Permissions{}, fmt.Errorf("permission %q is not supported", permission)
+		}
+		if !isSupportedAccessMode(mode) {
+			return wallet.Permissions{}, fmt.Errorf("access mode %q is not supported", mode)
+		}
+	}
+
 	perms := wallet.Permissions{}
 
-	if err := h.extractPublicKeysPermission(&perms, params); err != nil {
+	if err := extractPublicKeysPermission(&perms, permsSummary); err != nil {
 		return wallet.Permissions{}, err
 	}
 
 	return perms, nil
 }
 
-func (h *RequestPermissions) extractPublicKeysPermission(detailedPerms *wallet.Permissions, params RequestPermissionsParams) error {
-	access, ok := params.RequestedPermissions[wallet.PublicKeysPermissionLabel]
+func extractPublicKeysPermission(detailedPerms *wallet.Permissions, permsSummary wallet.PermissionsSummary) error {
+	access, ok := permsSummary[wallet.PublicKeysPermissionLabel]
 	if !ok {
 		// If the public keys permissions is omitted, we revoke it.
 		detailedPerms.PublicKeys = wallet.NoPublicKeysPermission()
@@ -174,49 +221,8 @@ func (h *RequestPermissions) extractPublicKeysPermission(detailedPerms *wallet.P
 		// will have access to. Nil means access to all keys.
 		RestrictedKeys: nil,
 	}
+
 	return nil
-}
-
-func validateRequestPermissionsParams(rawParams jsonrpc.Params) (RequestPermissionsParams, error) {
-	if rawParams == nil {
-		return RequestPermissionsParams{}, ErrParamsRequired
-	}
-
-	params := RequestPermissionsParams{}
-	if err := mapstructure.Decode(rawParams, &params); err != nil {
-		return RequestPermissionsParams{}, ErrParamsDoNotMatch
-	}
-
-	if params.Token == "" {
-		return RequestPermissionsParams{}, ErrConnectionTokenIsRequired
-	}
-
-	if len(params.RequestedPermissions) == 0 {
-		return RequestPermissionsParams{}, ErrRequestedPermissionsAreRequired
-	}
-
-	for permission, mode := range params.RequestedPermissions {
-		if !isSupportedPermissions(permission) {
-			return RequestPermissionsParams{}, fmt.Errorf("permission %q is not supported", permission)
-		}
-		if !isSupportedAccessMode(mode) {
-			return RequestPermissionsParams{}, fmt.Errorf("access mode %q is not supported", mode)
-		}
-	}
-
-	return params, nil
-}
-
-func NewRequestPermissions(
-	walletStore WalletStore,
-	pipeline Pipeline,
-	sessions *Sessions,
-) *RequestPermissions {
-	return &RequestPermissions{
-		walletStore: walletStore,
-		pipeline:    pipeline,
-		sessions:    sessions,
-	}
 }
 
 var supportedPermissions = []string{

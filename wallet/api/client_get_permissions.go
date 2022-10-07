@@ -8,15 +8,15 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-type GetPermissionsParams struct {
+type ClientGetPermissionsParams struct {
 	Token string `json:"token"`
 }
 
-type GetPermissionsResult struct {
+type ClientGetPermissionsResult struct {
 	Permissions wallet.PermissionsSummary `json:"permissions"`
 }
 
-type GetPermissions struct {
+type ClientGetPermissions struct {
 	sessions *Sessions
 }
 
@@ -26,7 +26,7 @@ type GetPermissions struct {
 // request them using `request_permissions` handler.
 //
 // Using this handler does not require permissions.
-func (h *GetPermissions) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *ClientGetPermissions) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateGetPermissionsParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
@@ -37,30 +37,30 @@ func (h *GetPermissions) Handle(_ context.Context, rawParams jsonrpc.Params) (js
 		return nil, invalidParams(err)
 	}
 
-	return GetPermissionsResult{
+	return ClientGetPermissionsResult{
 		Permissions: connectedWallet.Permissions().Summary(),
 	}, nil
 }
 
-func validateGetPermissionsParams(rawParams jsonrpc.Params) (GetPermissionsParams, error) {
+func validateGetPermissionsParams(rawParams jsonrpc.Params) (ClientGetPermissionsParams, error) {
 	if rawParams == nil {
-		return GetPermissionsParams{}, ErrParamsRequired
+		return ClientGetPermissionsParams{}, ErrParamsRequired
 	}
 
-	params := GetPermissionsParams{}
+	params := ClientGetPermissionsParams{}
 	if err := mapstructure.Decode(rawParams, &params); err != nil {
-		return GetPermissionsParams{}, ErrParamsDoNotMatch
+		return ClientGetPermissionsParams{}, ErrParamsDoNotMatch
 	}
 
 	if params.Token == "" {
-		return GetPermissionsParams{}, ErrConnectionTokenIsRequired
+		return ClientGetPermissionsParams{}, ErrConnectionTokenIsRequired
 	}
 
 	return params, nil
 }
 
-func NewGetPermissions(sessions *Sessions) *GetPermissions {
-	return &GetPermissions{
+func NewGetPermissions(sessions *Sessions) *ClientGetPermissions {
+	return &ClientGetPermissions{
 		sessions: sessions,
 	}
 }
