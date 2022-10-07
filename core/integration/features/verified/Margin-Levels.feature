@@ -22,7 +22,7 @@ Feature: Check the margin scaling levels (maintenance, search, initial, release)
       | name                           | value |
       | market.auction.minimumDuration | 1     |
 
-  Scenario: 0010-MARG-017
+  Scenario: 0010-MARG-015,0010-MARG-016,0010-MARG-017
     Given the parties deposit on asset's general account the following amount:
       | party       | asset | amount        |
       | auxiliary1  | USD   | 1000000000000 |
@@ -87,6 +87,7 @@ Feature: Check the margin scaling levels (maintenance, search, initial, release)
       | trader2  | 40     | 0              | 0            |
       | trader20 | 40     | 0              | 0            |
 
+    # check margin initial level
     # trader2 and trader20 have open position of 40 now
     And the parties should have the following margin levels:
       | party    | market id | maintenance | search | initial | release |
@@ -121,6 +122,59 @@ Feature: Check the margin scaling levels (maintenance, search, initial, release)
       | trader2  | USD   | ETH/DEC19 | 1282   | 6518    |
       | trader20 | USD   | ETH/DEC20 | 1203   | 6597    |
 
-# MTM process will reduce (50-20)*40=1200 from general account
-# for trader2: current general account (before MTM) is 9000-1282=7718. and after MTM is 7718-1200=6518
-# ??? for trader20: current general account (before MTM) is 9000-961=8039. and after MTM is 8039-1200=6839
+    # check margin release level
+    # MTM process will reduce (50-20)*40=1200 from general account
+    # for trader2: MTM brings margin account from 3204 to 2204 which is above release level, so margin account has been set to initial level: 1282
+    # for trader 20: MTM brings margin account from 2403 to 1203 which is below release level, so margin account is kept at 1203
+
+    When the parties place the following orders:
+      | party       | market id | side | volume | price | resulting trades | type       | tif     | reference    |
+      | trader2     | ETH/DEC19 | sell | 40     | 50    | 0                | TYPE_LIMIT | TIF_GTC | sell-order-6 |
+      | trader20    | ETH/DEC20 | sell | 40     | 50    | 0                | TYPE_LIMIT | TIF_GTC | sell-order-6 |
+      | auxiliary1  | ETH/DEC19 | buy  | 40     | 50    | 1                | TYPE_LIMIT | TIF_GTC | buy-order-6  |
+      | auxiliary10 | ETH/DEC20 | buy  | 40     | 50    | 1                | TYPE_LIMIT | TIF_GTC | buy-order-6  |
+
+    Then the parties should have the following profit and loss:
+      | party    | volume | unrealised pnl | realised pnl |
+      | trader2  | 0      | 0              | 0            |
+      | trader20 | 0      | 0              | 0            |
+
+    And the parties should have the following margin levels:
+      | party    | market id | maintenance | search | initial | release |
+      | trader2  | ETH/DEC19 | 0           | 0      | 0       | 0       |
+      | trader20 | ETH/DEC20 | 0           | 0      | 0       | 0       |
+
+    Then the parties should have the following account balances:
+      | party    | asset | market id | margin | general |
+      | trader2  | USD   | ETH/DEC19 | 0      | 9000    |
+      | trader20 | USD   | ETH/DEC20 | 0      | 9000    |
+
+    When the parties place the following orders:
+      | party       | market id | side | volume | price | resulting trades | type       | tif     | reference    |
+      | trader2     | ETH/DEC19 | sell | 20     | 50    | 0                | TYPE_LIMIT | TIF_GTC | sell-order-6 |
+      | trader20    | ETH/DEC20 | sell | 20     | 50    | 0                | TYPE_LIMIT | TIF_GTC | sell-order-6 |
+      | auxiliary1  | ETH/DEC19 | buy  | 20     | 50    | 1                | TYPE_LIMIT | TIF_GTC | buy-order-6  |
+      | auxiliary10 | ETH/DEC20 | buy  | 20     | 50    | 1                | TYPE_LIMIT | TIF_GTC | buy-order-6  |
+
+    Then the parties should have the following profit and loss:
+      | party    | volume | unrealised pnl | realised pnl |
+      | trader2  | -20    | 0              | 0            |
+      | trader20 | -20    | 0              | 0            |
+
+    And the parties should have the following margin levels:
+      | party    | market id | maintenance | search | initial | release |
+      | trader2  | ETH/DEC19 | 4657        | 6985   | 9314    | 13971   |
+      | trader20 | ETH/DEC20 | 4657        | 5588   | 6985    | 9314    |
+
+    # check margin search level
+    #mentainance level before new open position: margin_trader2 = 20*50*3.55690359157934000=3557
+    #initial level: margin_trader2 = 20*50*3.55690359157934000*2=7114 which is more than search level, so margin account is set at 7114
+    #mentainance level before new open position: margin_trader20 = 20*50*3.55690359157934000=3557
+    #initial level: margin_trader20 = 20*50*3.55690359157934000*1.5=5336 which is less than search level and higher than maintenance
+
+    Then the parties should have the following account balances:
+      | party    | asset | market id | margin | general |
+      | trader2  | USD   | ETH/DEC19 | 7114   | 1886    |
+      | trader20 | USD   | ETH/DEC20 | 6985   | 2015    |
+
+
