@@ -230,7 +230,7 @@ func newAPI(t *testing.T) *testAPI {
 	command2 := mocks.NewMockCommand(ctrl)
 
 	// setup
-	jsonrpcAPI := jsonrpc.New(log, true)
+	jsonrpcAPI := jsonrpc.New(log)
 	jsonrpcAPI.RegisterMethod(method1, command1)
 	jsonrpcAPI.RegisterMethod(method2, command2)
 

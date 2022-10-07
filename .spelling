@@ -58,6 +58,8 @@ IDGenerator
 Ilya
 int
 init
+Interactor
+interactor
 istake
 Jenkinsfile
 JSON-RPC

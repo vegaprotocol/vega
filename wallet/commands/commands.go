@@ -79,13 +79,17 @@ func CheckSubmitTransactionRequest(req *walletpb.SubmitTransactionRequest) comma
 	return errs
 }
 
-func ToMarshaledInputData(req *walletpb.SubmitTransactionRequest, height uint64) ([]byte, error) {
-	data := commands.NewInputData(height)
-	wrapRequestCommandIntoInputData(data, req)
-	return commands.MarshalInputData(data)
+func ToInputData(req *walletpb.SubmitTransactionRequest, height uint64) *commandspb.InputData {
+	inputData := commands.NewInputData(height)
+	WrapRequestCommandIntoInputData(inputData, req)
+	return inputData
 }
 
-func wrapRequestCommandIntoInputData(data *commandspb.InputData, req *walletpb.SubmitTransactionRequest) {
+func ToMarshaledInputData(req *walletpb.SubmitTransactionRequest, height uint64) ([]byte, error) {
+	return commands.MarshalInputData(ToInputData(req, height))
+}
+
+func WrapRequestCommandIntoInputData(data *commandspb.InputData, req *walletpb.SubmitTransactionRequest) {
 	switch cmd := req.Command.(type) {
 	case *walletpb.SubmitTransactionRequest_OrderSubmission:
 		data.Command = &commandspb.InputData_OrderSubmission{
