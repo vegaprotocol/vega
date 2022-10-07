@@ -393,7 +393,7 @@ type Query {
   erc20ListAssetBundle(
     "ID of the asset"
     assetId: ID!
-  ): Erc20ListAssetBundle!
+  ): Erc20ListAssetBundle
 
   "Get the signature bundle to add a particular validator to the signer list of the multisig contract"
   erc20MultiSigSignerAddedBundles(
