@@ -982,12 +982,12 @@ func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.Pr
 		asset, _ := existingMarket.GetAsset()
 		newMarket.Changes.Instrument.Product = &types.InstrumentConfigurationFuture{
 			Future: &types.FutureProduct{
-				SettlementAsset:                 asset,
-				QuoteName:                       product.Future.QuoteName,
-				OracleSpecForSettlementData:     product.Future.OracleSpecForSettlementData,
-				OracleSpecForTradingTermination: product.Future.OracleSpecForTradingTermination,
-				OracleSpecBinding:               product.Future.OracleSpecBinding,
-				SettlementDataDecimalPlaces:     product.Future.SettlementDataDecimals,
+				SettlementAsset:                     asset,
+				QuoteName:                           product.Future.QuoteName,
+				DataSourceSpecForSettlementData:     product.Future.DataSourceSpecForSettlementData,
+				DataSourceSpecForTradingTermination: product.Future.DataSourceSpecForTradingTermination,
+				DataSourceSpecBinding:               product.Future.DataSourceSpecBinding,
+				SettlementDataDecimalPlaces:         product.Future.SettlementDataDecimals,
 			},
 		}
 	default:

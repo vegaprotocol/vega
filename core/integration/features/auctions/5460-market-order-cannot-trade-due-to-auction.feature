@@ -22,7 +22,7 @@ Feature: Test for issue 5460
       | horizon | probability | auction extension |
       | 43200   | 0.9999999   | 60                |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | oracle config          |decimal places | position decimal places |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config          |decimal places | position decimal places |
       | ETH/DEC21 | ETH        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 10               | fees-config-1 | price-monitoring-1 | default-eth-for-future |       5       |           5             |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |

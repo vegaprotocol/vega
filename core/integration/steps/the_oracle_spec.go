@@ -20,25 +20,32 @@ import (
 	"github.com/cucumber/godog"
 
 	"code.vegaprotocol.io/vega/core/integration/steps/market"
+	"code.vegaprotocol.io/vega/core/types"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
-	types "code.vegaprotocol.io/vega/protos/vega"
-	oraclesv1 "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
+	protoTypes "code.vegaprotocol.io/vega/protos/vega"
+	datav1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
 
 func TheOracleSpec(config *market.Config, name string, specType string, rawPubKeys string, table *godog.Table) error {
 	pubKeys := StrSlice(rawPubKeys, ",")
-	binding := &types.OracleSpecToFutureBinding{}
+	pubKeysSigners := make([]*datav1.Signer, len(pubKeys))
+	for i, s := range pubKeys {
+		pks := types.CreateSignerFromString(s, types.DataSignerTypePubKey)
+		pubKeysSigners[i] = pks.IntoProto()
+	}
+
+	binding := &protoTypes.DataSourceSpecToFutureBinding{}
 
 	rows := parseOracleSpecTable(table)
-	filters := make([]*oraclesv1.Filter, 0, len(rows))
+	filters := make([]*datav1.Filter, 0, len(rows))
 	for _, r := range rows {
 		row := oracleSpecRow{row: r}
-		filter := &oraclesv1.Filter{
-			Key: &oraclesv1.PropertyKey{
+		filter := &datav1.Filter{
+			Key: &datav1.PropertyKey{
 				Name: row.propertyName(),
 				Type: row.propertyType(),
 			},
-			Conditions: []*oraclesv1.Condition{},
+			Conditions: []*datav1.Condition{},
 		}
 
 		if r.HasColumn("condition") != r.HasColumn("value") {
@@ -48,7 +55,7 @@ func TheOracleSpec(config *market.Config, name string, specType string, rawPubKe
 		if r.HasColumn("condition") {
 			value := row.value()
 
-			if row.propertyType() == oraclesv1.PropertyKey_TYPE_TIMESTAMP {
+			if row.propertyType() == datav1.PropertyKey_TYPE_TIMESTAMP {
 				expiry, err := time.Parse(time.RFC3339, value)
 				if err != nil {
 					panic(fmt.Errorf("cannot parse expiry condition: %w", err))
@@ -57,7 +64,7 @@ func TheOracleSpec(config *market.Config, name string, specType string, rawPubKe
 			}
 
 			filter.Conditions = append(filter.Conditions,
-				&oraclesv1.Condition{
+				&datav1.Condition{
 					Operator: row.condition(),
 					Value:    value,
 				},
@@ -77,10 +84,12 @@ func TheOracleSpec(config *market.Config, name string, specType string, rawPubKe
 	return config.OracleConfigs.Add(
 		name,
 		specType,
-		&oraclesv1.OracleSpec{
-			Id:      vgrand.RandomStr(10),
-			PubKeys: pubKeys,
-			Filters: filters,
+		&datav1.DataSourceSpec{
+			Id: vgrand.RandomStr(10),
+			Config: &datav1.DataSourceSpecConfiguration{
+				Signers: pubKeysSigners,
+				Filters: filters,
+			},
 		},
 		binding,
 	)
@@ -105,7 +114,7 @@ func (r oracleSpecRow) propertyName() string {
 	return r.row.MustStr("property")
 }
 
-func (r oracleSpecRow) propertyType() oraclesv1.PropertyKey_Type {
+func (r oracleSpecRow) propertyType() datav1.PropertyKey_Type {
 	return r.row.MustOracleSpecPropertyType("type")
 }
 
@@ -113,7 +122,7 @@ func (r oracleSpecRow) destination() string {
 	return r.row.MustStr("binding")
 }
 
-func (r oracleSpecRow) condition() oraclesv1.Condition_Operator {
+func (r oracleSpecRow) condition() datav1.Condition_Operator {
 	return r.row.MustOracleSpecConditionOperator("condition")
 }
 

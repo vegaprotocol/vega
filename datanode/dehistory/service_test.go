@@ -38,7 +38,7 @@ import (
 
 const (
 	snapshotInterval     = int64(1000)
-	chainID              = "test-chain-clbOFm"
+	chainID              = "testnet"
 	compressedEventsFile = "testdata/smoketest_to_block_5000.evts.gz"
 	numSnapshots         = 5
 )
@@ -249,11 +249,11 @@ func TestMain(t *testing.M) {
 		log.Infof("%s", goldenSourceHistorySegment[4000].HistorySegmentID)
 		log.Infof("%s", goldenSourceHistorySegment[5000].HistorySegmentID)
 
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmS5NFz33835wKDBP3yxDGpcj9vYH5eoTvuHBgCaS1JSPB", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmahUZNwr48764Qu8VLGuWfRJYjMHqFw7d4gEYWFssY83g", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmR6k9LbrXBjMx6x2Y3FGwWA3EAwN23CjijVceFaLuXPqk", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmQqo9hGUVCdEUhEGwDqACywjfn9iRdERBxW3WNuLJfAag", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmPp7Mfdnjt6xynxV7SQx4GUVNRPjyAzwhdrELx8g2awHU", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmdcCuXsFAbbAHY7tiwERASvWDqr95LSrR3sn4YiPmc4Uo", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmdkfhVLtLbE7AAgMPJ6WFuF9fx9qNyFqcG4khyX8NQfT3", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmPcjG67sTbPYo9GdqkfDRiuf5dsH7BLRPT7rxoC7T9288", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "Qmcj9Q8m3ggLwXMwpPzT56Di7zmoPUZtzNFNbL3uzzkZ2P", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmQ5B7Es6ac79d3kxRDwjrjrAXbVkQDXQK56vxS8DLfZDr", snapshots)
 	}, postgresRuntimePath)
 
 	if exitCode != 0 {

@@ -42,7 +42,7 @@ func main() {
 	config := broker.NewDefaultConfig()
 
 	fileEventSource, err := broker.NewFileEventSource(sourceFile, 0, config.FileEventSourceConfig.SendChannelBufferSize,
-		&chainInfo{})
+		"testnet")
 	if err != nil {
 		panic(err)
 	}

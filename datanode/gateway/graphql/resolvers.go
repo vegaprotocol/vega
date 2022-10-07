@@ -34,8 +34,9 @@ import (
 	types "code.vegaprotocol.io/vega/protos/vega"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
+	v1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
-	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 )
 
 var (
@@ -102,6 +103,10 @@ func (r *VegaResolverRoot) Query() QueryResolver {
 // Candle returns the candles resolver.
 func (r *VegaResolverRoot) Candle() CandleResolver {
 	return (*myCandleResolver)(r)
+}
+
+func (r *VegaResolverRoot) DataSourceSpecConfiguration() DataSourceSpecConfigurationResolver {
+	return (*myDataSourceSpecConfigurationResolver)(r)
 }
 
 // MarginLevels returns the market levels resolver.
@@ -492,7 +497,7 @@ func (r *myQueryResolver) LastBlockHeight(ctx context.Context) (string, error) {
 }
 
 // Deprecated: Use OracleSpecsConnection.
-func (r *myQueryResolver) OracleSpecs(ctx context.Context, pagination *OffsetPagination) ([]*oraclespb.OracleSpec, error) {
+func (r *myQueryResolver) OracleSpecs(ctx context.Context, pagination *OffsetPagination) ([]*datapb.OracleSpec, error) {
 	paginationProto, err := pagination.ToProto()
 	if err != nil {
 		return nil, fmt.Errorf("invalid pagination object: %w", err)
@@ -521,7 +526,7 @@ func (r *myQueryResolver) OracleSpecsConnection(ctx context.Context, pagination 
 	return res.OracleSpecs, nil
 }
 
-func (r *myQueryResolver) OracleSpec(ctx context.Context, id string) (*oraclespb.OracleSpec, error) {
+func (r *myQueryResolver) OracleSpec(ctx context.Context, id string) (*datapb.OracleSpec, error) {
 	res, err := r.tradingDataClientV2.GetOracleSpec(
 		ctx, &v2.GetOracleSpecRequest{OracleSpecId: id},
 	)
@@ -535,7 +540,7 @@ func (r *myQueryResolver) OracleSpec(ctx context.Context, id string) (*oraclespb
 // Deprecated: Use OracleDataBySpecConnection instead.
 func (r *myQueryResolver) OracleDataBySpec(ctx context.Context, id string,
 	pagination *OffsetPagination,
-) ([]*oraclespb.OracleData, error) {
+) ([]*datapb.OracleData, error) {
 	paginationProto, err := pagination.ToProto()
 	if err != nil {
 		return nil, fmt.Errorf("invalid pagination object: %w", err)
@@ -575,7 +580,7 @@ func (r *myQueryResolver) OracleDataBySpecConnection(ctx context.Context, oracle
 }
 
 // Deprecated: Use OracleDataConnection instead.
-func (r *myQueryResolver) OracleData(ctx context.Context, pagination *OffsetPagination) ([]*oraclespb.OracleData, error) {
+func (r *myQueryResolver) OracleData(ctx context.Context, pagination *OffsetPagination) ([]*datapb.OracleData, error) {
 	paginationProto, err := pagination.ToProto()
 	if err != nil {
 		return nil, fmt.Errorf("invalid pagination object: %w", err)
@@ -2375,6 +2380,26 @@ func (r *myCandleResolver) Volume(_ context.Context, obj *v2.Candle) (string, er
 }
 
 // END: Candle Resolver
+
+// BEGIN: DataSourceSpecConfiguration Resolver.
+type myDataSourceSpecConfigurationResolver VegaResolverRoot
+
+func (m *myDataSourceSpecConfigurationResolver) Signers(ctx context.Context, obj *v1.DataSourceSpecConfiguration) ([]*Signer, error) {
+	if len(obj.Signers) > 0 {
+		signers := make([]*Signer, len(obj.Signers))
+
+		for i, signer := range obj.Signers {
+			signers[i] = &Signer{
+				Signer: signer.GetSigner().(SignerKind),
+			}
+		}
+
+		return signers, nil
+	}
+	return nil, nil
+}
+
+// END: DataSourceSpecConfiguration Resolver
 
 // BEGIN: Price Level Resolver
 

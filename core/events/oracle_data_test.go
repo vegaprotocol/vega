@@ -17,47 +17,61 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/core/events"
-	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
+	"code.vegaprotocol.io/vega/core/types"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestOracleDataDeepClone(t *testing.T) {
 	ctx := context.Background()
-
-	od := &oraclespb.OracleData{
-		PubKeys: []string{"PK1", "PK2", "PK3"},
-		Data: []*oraclespb.Property{
-			{
-				Name:  "Name",
-				Value: "Value",
-			},
-		},
-		MatchedSpecIds: []string{
-			"MS1", "MS2",
-		},
-		BroadcastAt: 10000,
+	pubKeys := []*types.Signer{
+		types.CreateSignerFromString("PK1", types.DataSignerTypePubKey),
+		types.CreateSignerFromString("PK2", types.DataSignerTypePubKey),
+		types.CreateSignerFromString("PK3", types.DataSignerTypePubKey),
 	}
 
-	odEvent := events.NewOracleDataEvent(ctx, *od)
+	od := datapb.ExternalData{
+		Data: &datapb.Data{
+			Signers: types.SignersIntoProto(pubKeys),
+			Data: []*datapb.Property{
+				{
+					Name:  "Name",
+					Value: "Value",
+				},
+			},
+			MatchedSpecIds: []string{
+				"MS1", "MS2",
+			},
+			BroadcastAt: 10000,
+		},
+	}
+
+	odEvent := events.NewOracleDataEvent(ctx, datapb.OracleData{ExternalData: &od})
+
 	od2 := odEvent.OracleData()
 
 	// Change the original values
-	od.PubKeys[0] = "Changed1"
-	od.PubKeys[1] = "Changed2"
-	od.PubKeys[2] = "Changed3"
-	od.Data[0].Name = "Changed"
-	od.Data[0].Value = "Changed"
-	od.MatchedSpecIds[0] = "Changed1"
-	od.MatchedSpecIds[1] = "Changed2"
-	od.BroadcastAt = 999
+	pk1 := types.CreateSignerFromString("Changed1", types.DataSignerTypePubKey)
+	pk2 := types.CreateSignerFromString("Changed2", types.DataSignerTypePubKey)
+	pk3 := types.CreateSignerFromString("Changed3", types.DataSignerTypePubKey)
+
+	od.Data.Signers[0] = pk1.IntoProto()
+	od.Data.Signers[1] = pk2.IntoProto()
+	od.Data.Signers[2] = pk3.IntoProto()
+	od.Data.Data[0].Name = "Changed"
+	od.Data.Data[0].Value = "Changed"
+	od.Data.MatchedSpecIds[0] = "Changed1"
+	od.Data.MatchedSpecIds[1] = "Changed2"
+	od.Data.BroadcastAt = 999
 
 	// Check things have changed
-	assert.NotEqual(t, od.PubKeys[0], od2.PubKeys[0])
-	assert.NotEqual(t, od.PubKeys[1], od2.PubKeys[1])
-	assert.NotEqual(t, od.PubKeys[2], od2.PubKeys[2])
-	assert.NotEqual(t, od.Data[0].Name, od2.Data[0].Name)
-	assert.NotEqual(t, od.Data[0].Value, od2.Data[0].Value)
-	assert.NotEqual(t, od.MatchedSpecIds[0], od2.MatchedSpecIds[0])
-	assert.NotEqual(t, od.MatchedSpecIds[1], od2.MatchedSpecIds[1])
-	assert.NotEqual(t, od.BroadcastAt, od2.BroadcastAt)
+	assert.NotEqual(t, od.Data.Signers[0], od2.ExternalData.Data.Signers[0])
+
+	assert.NotEqual(t, od.Data.Signers[1], od2.ExternalData.Data.Signers[1])
+	assert.NotEqual(t, od.Data.Signers[2], od2.ExternalData.Data.Signers[2])
+	assert.NotEqual(t, od.Data.Data[0].Name, od2.ExternalData.Data.Data[0].Name)
+	assert.NotEqual(t, od.Data.Data[0].Value, od2.ExternalData.Data.Data[0].Value)
+	assert.NotEqual(t, od.Data.MatchedSpecIds[0], od2.ExternalData.Data.MatchedSpecIds[0])
+	assert.NotEqual(t, od.Data.MatchedSpecIds[1], od2.ExternalData.Data.MatchedSpecIds[1])
+	assert.NotEqual(t, od.Data.BroadcastAt, od2.ExternalData.Data.BroadcastAt)
 }

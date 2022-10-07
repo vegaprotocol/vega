@@ -18,7 +18,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/types"
-	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -47,15 +47,19 @@ func TestOracleSpec(t *testing.T) {
 
 func testOracleSpecCreatingWithoutPubKeysFails(t *testing.T) {
 	// given
-	spec := types.OracleSpec{
-		PubKeys: []string{},
-		Filters: []*types.OracleSpecFilter{
-			{
-				Key: &types.OracleSpecPropertyKey{
-					Name: "price",
-					Type: oraclespb.PropertyKey_TYPE_INTEGER,
+	spec := types.ExternalDataSourceSpec{
+		Spec: &types.DataSourceSpec{
+			Config: &types.DataSourceSpecConfiguration{
+				Signers: []*types.Signer{},
+				Filters: []*types.DataSourceSpecFilter{
+					{
+						Key: &types.DataSourceSpecPropertyKey{
+							Name: "price",
+							Type: datapb.PropertyKey_TYPE_INTEGER,
+						},
+						Conditions: []*types.DataSourceSpecCondition{},
+					},
 				},
-				Conditions: []*types.OracleSpecCondition{},
 			},
 		},
 	}
@@ -65,17 +69,21 @@ func testOracleSpecCreatingWithoutPubKeysFails(t *testing.T) {
 
 	// then
 	require.Error(t, err)
-	assert.Equal(t, "public keys are required", err.Error())
+	assert.Equal(t, "signers are required", err.Error())
 	assert.Nil(t, oracleSpec)
 }
 
 func testOracleSpecCreatingWithoutFiltersFails(t *testing.T) {
 	// given
-	spec := types.OracleSpec{
-		PubKeys: []string{
-			"0xCAFED00D",
+	spec := types.ExternalDataSourceSpec{
+		Spec: &types.DataSourceSpec{
+			Config: &types.DataSourceSpecConfiguration{
+				Signers: []*types.Signer{
+					types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
+				},
+				Filters: []*types.DataSourceSpecFilter{},
+			},
 		},
-		Filters: []*types.OracleSpecFilter{},
 	}
 
 	// when
@@ -89,14 +97,18 @@ func testOracleSpecCreatingWithoutFiltersFails(t *testing.T) {
 
 func testOracleSpecCreatingWithFiltersWithoutKeyFails(t *testing.T) {
 	// given
-	spec := types.OracleSpec{
-		PubKeys: []string{
-			"0xCAFED00D",
-		},
-		Filters: []*types.OracleSpecFilter{
-			{
-				Key:        nil,
-				Conditions: nil,
+	spec := types.ExternalDataSourceSpec{
+		Spec: &types.DataSourceSpec{
+			Config: &types.DataSourceSpecConfiguration{
+				Signers: []*types.Signer{
+					types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
+				},
+				Filters: []*types.DataSourceSpecFilter{
+					{
+						Key:        nil,
+						Conditions: nil,
+					},
+				},
 			},
 		},
 	}
@@ -112,17 +124,21 @@ func testOracleSpecCreatingWithFiltersWithoutKeyFails(t *testing.T) {
 
 func testOracleSpecCreatingWithFiltersWithoutPropertyNameFails(t *testing.T) {
 	// given
-	spec := types.OracleSpec{
-		PubKeys: []string{
-			"0xCAFED00D",
-		},
-		Filters: []*types.OracleSpecFilter{
-			{
-				Key: &types.OracleSpecPropertyKey{
-					Name: "",
-					Type: oraclespb.PropertyKey_TYPE_INTEGER,
+	spec := types.ExternalDataSourceSpec{
+		Spec: &types.DataSourceSpec{
+			Config: &types.DataSourceSpecConfiguration{
+				Signers: []*types.Signer{
+					types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
 				},
-				Conditions: nil,
+				Filters: []*types.DataSourceSpecFilter{
+					{
+						Key: &types.DataSourceSpecPropertyKey{
+							Name: "",
+							Type: datapb.PropertyKey_TYPE_INTEGER,
+						},
+						Conditions: nil,
+					},
+				},
 			},
 		},
 	}
@@ -138,32 +154,36 @@ func testOracleSpecCreatingWithFiltersWithoutPropertyNameFails(t *testing.T) {
 
 func testOracleSpecCreatingWithSplitFiltersWithSameTypeWorks(t *testing.T) {
 	// given
-	spec, _ := oracles.NewOracleSpec(types.OracleSpec{
-		PubKeys: []string{
-			"0xDEADBEEF",
-			"0xCAFED00D",
-		},
-		Filters: []*types.OracleSpecFilter{
-			{
-				Key: &types.OracleSpecPropertyKey{
-					Name: "prices.BTC.value",
-					Type: oraclespb.PropertyKey_TYPE_INTEGER,
+	spec, _ := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
+		Spec: &types.DataSourceSpec{
+			Config: &types.DataSourceSpecConfiguration{
+				Signers: []*types.Signer{
+					types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+					types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
 				},
-				Conditions: []*types.OracleSpecCondition{
+				Filters: []*types.DataSourceSpecFilter{
 					{
-						Value:    "42",
-						Operator: oraclespb.Condition_OPERATOR_GREATER_THAN,
-					},
-				},
-			}, {
-				Key: &types.OracleSpecPropertyKey{
-					Name: "prices.BTC.value",
-					Type: oraclespb.PropertyKey_TYPE_INTEGER,
-				},
-				Conditions: []*types.OracleSpecCondition{
-					{
-						Value:    "84",
-						Operator: oraclespb.Condition_OPERATOR_LESS_THAN,
+						Key: &types.DataSourceSpecPropertyKey{
+							Name: "prices.BTC.value",
+							Type: datapb.PropertyKey_TYPE_INTEGER,
+						},
+						Conditions: []*types.DataSourceSpecCondition{
+							{
+								Value:    "42",
+								Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+							},
+						},
+					}, {
+						Key: &types.DataSourceSpecPropertyKey{
+							Name: "prices.BTC.value",
+							Type: datapb.PropertyKey_TYPE_INTEGER,
+						},
+						Conditions: []*types.DataSourceSpecCondition{
+							{
+								Value:    "84",
+								Operator: datapb.Condition_OPERATOR_LESS_THAN,
+							},
+						},
 					},
 				},
 			},
@@ -171,9 +191,9 @@ func testOracleSpecCreatingWithSplitFiltersWithSameTypeWorks(t *testing.T) {
 	})
 
 	matchedData := oracles.OracleData{
-		PubKeys: []string{
-			"0xDEADBEEF",
-			"0xCAFED00D",
+		Signers: []*types.Signer{
+			types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+			types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
 		},
 		Data: map[string]string{
 			"prices.BTC.value": "50",
@@ -181,9 +201,9 @@ func testOracleSpecCreatingWithSplitFiltersWithSameTypeWorks(t *testing.T) {
 	}
 
 	unmatchedData := oracles.OracleData{
-		PubKeys: []string{
-			"0xDEADBEEF",
-			"0xCAFED00D",
+		Signers: []*types.Signer{
+			types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+			types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
 		},
 		Data: map[string]string{
 			"prices.BTC.value": "100",
@@ -207,32 +227,36 @@ func testOracleSpecCreatingWithSplitFiltersWithSameTypeWorks(t *testing.T) {
 
 func testOracleSpecCreatingWithSplitFiltersWithDifferentTypeWorks(t *testing.T) {
 	// given
-	originalSpec := types.OracleSpec{
-		PubKeys: []string{
-			"0xDEADBEEF",
-			"0xCAFED00D",
-		},
-		Filters: []*types.OracleSpecFilter{
-			{
-				Key: &types.OracleSpecPropertyKey{
-					Name: "prices.BTC.value",
-					Type: oraclespb.PropertyKey_TYPE_INTEGER,
+	originalSpec := types.ExternalDataSourceSpec{
+		Spec: &types.DataSourceSpec{
+			Config: &types.DataSourceSpecConfiguration{
+				Signers: []*types.Signer{
+					types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+					types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
 				},
-				Conditions: []*types.OracleSpecCondition{
+				Filters: []*types.DataSourceSpecFilter{
 					{
-						Value:    "42",
-						Operator: oraclespb.Condition_OPERATOR_GREATER_THAN,
-					},
-				},
-			}, {
-				Key: &types.OracleSpecPropertyKey{
-					Name: "prices.BTC.value",
-					Type: oraclespb.PropertyKey_TYPE_TIMESTAMP,
-				},
-				Conditions: []*types.OracleSpecCondition{
-					{
-						Value:    "84",
-						Operator: oraclespb.Condition_OPERATOR_LESS_THAN,
+						Key: &types.DataSourceSpecPropertyKey{
+							Name: "prices.BTC.value",
+							Type: datapb.PropertyKey_TYPE_INTEGER,
+						},
+						Conditions: []*types.DataSourceSpecCondition{
+							{
+								Value:    "42",
+								Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+							},
+						},
+					}, {
+						Key: &types.DataSourceSpecPropertyKey{
+							Name: "prices.BTC.value",
+							Type: datapb.PropertyKey_TYPE_TIMESTAMP,
+						},
+						Conditions: []*types.DataSourceSpecCondition{
+							{
+								Value:    "84",
+								Operator: datapb.Condition_OPERATOR_LESS_THAN,
+							},
+						},
 					},
 				},
 			},
@@ -251,24 +275,24 @@ func testOracleSpecCreatingWithSplitFiltersWithDifferentTypeWorks(t *testing.T) 
 func testOracleSpecCreatingWithFiltersWithInconvertibleTypeFails(t *testing.T) {
 	cases := []struct {
 		msg   string
-		typ   oraclespb.PropertyKey_Type
+		typ   datapb.PropertyKey_Type
 		value string
 	}{
 		{
 			msg:   "not an integer",
-			typ:   oraclespb.PropertyKey_TYPE_INTEGER,
+			typ:   datapb.PropertyKey_TYPE_INTEGER,
 			value: "not an integer",
 		}, {
 			msg:   "not a boolean",
-			typ:   oraclespb.PropertyKey_TYPE_BOOLEAN,
+			typ:   datapb.PropertyKey_TYPE_BOOLEAN,
 			value: "42",
 		}, {
 			msg:   "not a decimal",
-			typ:   oraclespb.PropertyKey_TYPE_DECIMAL,
+			typ:   datapb.PropertyKey_TYPE_DECIMAL,
 			value: "not a decimal",
 		}, {
 			msg:   "not a timestamp",
-			typ:   oraclespb.PropertyKey_TYPE_TIMESTAMP,
+			typ:   datapb.PropertyKey_TYPE_TIMESTAMP,
 			value: "not a timestamp",
 		},
 	}
@@ -276,20 +300,24 @@ func testOracleSpecCreatingWithFiltersWithInconvertibleTypeFails(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.msg, func(t *testing.T) {
 			// given
-			originalSpec := types.OracleSpec{
-				PubKeys: []string{
-					"0xCAFED00D",
-				},
-				Filters: []*types.OracleSpecFilter{
-					{
-						Key: &types.OracleSpecPropertyKey{
-							Name: "prices.BTC.value",
-							Type: c.typ,
+			originalSpec := types.ExternalDataSourceSpec{
+				Spec: &types.DataSourceSpec{
+					Config: &types.DataSourceSpecConfiguration{
+						Signers: []*types.Signer{
+							types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
 						},
-						Conditions: []*types.OracleSpecCondition{
+						Filters: []*types.DataSourceSpecFilter{
 							{
-								Value:    c.value,
-								Operator: oraclespb.Condition_OPERATOR_EQUALS,
+								Key: &types.DataSourceSpecPropertyKey{
+									Name: "prices.BTC.value",
+									Type: c.typ,
+								},
+								Conditions: []*types.DataSourceSpecCondition{
+									{
+										Value:    c.value,
+										Operator: datapb.Condition_OPERATOR_EQUALS,
+									},
+								},
 							},
 						},
 					},
@@ -308,21 +336,25 @@ func testOracleSpecCreatingWithFiltersWithInconvertibleTypeFails(t *testing.T) {
 
 func testOracleSpecMatchingUnauthorizedPubKeysFails(t *testing.T) {
 	// given
-	spec, _ := oracles.NewOracleSpec(types.OracleSpec{
-		PubKeys: []string{
-			"0xDEADBEEF",
-			"0xCAFED00D",
-		},
-		Filters: []*types.OracleSpecFilter{
-			{
-				Key: &types.OracleSpecPropertyKey{
-					Name: "prices.BTC.value",
-					Type: oraclespb.PropertyKey_TYPE_INTEGER,
+	spec, _ := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
+		Spec: &types.DataSourceSpec{
+			Config: &types.DataSourceSpecConfiguration{
+				Signers: []*types.Signer{
+					types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+					types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
 				},
-				Conditions: []*types.OracleSpecCondition{
+				Filters: []*types.DataSourceSpecFilter{
 					{
-						Value:    "42",
-						Operator: oraclespb.Condition_OPERATOR_EQUALS,
+						Key: &types.DataSourceSpecPropertyKey{
+							Name: "prices.BTC.value",
+							Type: datapb.PropertyKey_TYPE_INTEGER,
+						},
+						Conditions: []*types.DataSourceSpecCondition{
+							{
+								Value:    "42",
+								Operator: datapb.Condition_OPERATOR_EQUALS,
+							},
+						},
 					},
 				},
 			},
@@ -330,9 +362,9 @@ func testOracleSpecMatchingUnauthorizedPubKeysFails(t *testing.T) {
 	})
 
 	data := oracles.OracleData{
-		PubKeys: []string{
-			"0xDEADBEEF",
-			"0xBADDCAFE",
+		Signers: []*types.Signer{
+			types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+			types.CreateSignerFromString("0xBADDCAFE", types.DataSignerTypePubKey),
 		},
 		Data: map[string]string{
 			"prices.BTC.value": "42",
@@ -349,22 +381,26 @@ func testOracleSpecMatchingUnauthorizedPubKeysFails(t *testing.T) {
 
 func testOracleSpecMatchingAuthorizedPubKeysSucceeds(t *testing.T) {
 	// given
-	spec, _ := oracles.NewOracleSpec(types.OracleSpec{
-		PubKeys: []string{
-			"0xDEADBEEF",
-			"0xCAFED00D",
-			"0xBADDCAFE",
-		},
-		Filters: []*types.OracleSpecFilter{
-			{
-				Key: &types.OracleSpecPropertyKey{
-					Name: "prices.BTC.value",
-					Type: oraclespb.PropertyKey_TYPE_INTEGER,
+	spec, _ := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
+		Spec: &types.DataSourceSpec{
+			Config: &types.DataSourceSpecConfiguration{
+				Signers: []*types.Signer{
+					types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+					types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
+					types.CreateSignerFromString("0xBADDCAFE", types.DataSignerTypePubKey),
 				},
-				Conditions: []*types.OracleSpecCondition{
+				Filters: []*types.DataSourceSpecFilter{
 					{
-						Value:    "42",
-						Operator: oraclespb.Condition_OPERATOR_EQUALS,
+						Key: &types.DataSourceSpecPropertyKey{
+							Name: "prices.BTC.value",
+							Type: datapb.PropertyKey_TYPE_INTEGER,
+						},
+						Conditions: []*types.DataSourceSpecCondition{
+							{
+								Value:    "42",
+								Operator: datapb.Condition_OPERATOR_EQUALS,
+							},
+						},
 					},
 				},
 			},
@@ -372,9 +408,9 @@ func testOracleSpecMatchingAuthorizedPubKeysSucceeds(t *testing.T) {
 	})
 
 	data := oracles.OracleData{
-		PubKeys: []string{
-			"0xDEADBEEF",
-			"0xBADDCAFE",
+		Signers: []*types.Signer{
+			types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+			types.CreateSignerFromString("0xBADDCAFE", types.DataSignerTypePubKey),
 		},
 		Data: map[string]string{
 			"prices.BTC.value": "42",
@@ -392,68 +428,68 @@ func testOracleSpecMatchingAuthorizedPubKeysSucceeds(t *testing.T) {
 func testOracleSpecMatchingEqualPropertiesWorks(t *testing.T) {
 	cases := []struct {
 		msg       string
-		keyType   oraclespb.PropertyKey_Type
+		keyType   datapb.PropertyKey_Type
 		specValue string
 		dataValue string
 		matched   bool
 	}{
 		{
 			msg:       "integer values should be equal",
-			keyType:   oraclespb.PropertyKey_TYPE_INTEGER,
+			keyType:   datapb.PropertyKey_TYPE_INTEGER,
 			specValue: "42",
 			dataValue: "42",
 			matched:   true,
 		}, {
 			msg:       "integer values should not be equal",
-			keyType:   oraclespb.PropertyKey_TYPE_INTEGER,
+			keyType:   datapb.PropertyKey_TYPE_INTEGER,
 			specValue: "84",
 			dataValue: "42",
 			matched:   false,
 		}, {
 			msg:       "boolean values should be equal",
-			keyType:   oraclespb.PropertyKey_TYPE_BOOLEAN,
+			keyType:   datapb.PropertyKey_TYPE_BOOLEAN,
 			specValue: "true",
 			dataValue: "true",
 			matched:   true,
 		}, {
 			msg:       "boolean values should not be equal",
-			keyType:   oraclespb.PropertyKey_TYPE_BOOLEAN,
+			keyType:   datapb.PropertyKey_TYPE_BOOLEAN,
 			specValue: "true",
 			dataValue: "false",
 			matched:   false,
 		}, {
 			msg:       "decimal values should be equal",
-			keyType:   oraclespb.PropertyKey_TYPE_DECIMAL,
+			keyType:   datapb.PropertyKey_TYPE_DECIMAL,
 			specValue: "1.2",
 			dataValue: "1.2",
 			matched:   true,
 		}, {
 			msg:       "decimal values should not be equal",
-			keyType:   oraclespb.PropertyKey_TYPE_DECIMAL,
+			keyType:   datapb.PropertyKey_TYPE_DECIMAL,
 			specValue: "3.4",
 			dataValue: "1.2",
 			matched:   false,
 		}, {
 			msg:       "string values should be equal",
-			keyType:   oraclespb.PropertyKey_TYPE_STRING,
+			keyType:   datapb.PropertyKey_TYPE_STRING,
 			specValue: "hello, world!",
 			dataValue: "hello, world!",
 			matched:   true,
 		}, {
 			msg:       "string values should not be equal",
-			keyType:   oraclespb.PropertyKey_TYPE_STRING,
+			keyType:   datapb.PropertyKey_TYPE_STRING,
 			specValue: "hello, world!",
 			dataValue: "hello, galaxy!",
 			matched:   false,
 		}, {
 			msg:       "timestamp values should be equal",
-			keyType:   oraclespb.PropertyKey_TYPE_TIMESTAMP,
+			keyType:   datapb.PropertyKey_TYPE_TIMESTAMP,
 			specValue: "1612279145",
 			dataValue: "1612279145",
 			matched:   true,
 		}, {
 			msg:       "timestamp values should not be equal",
-			keyType:   oraclespb.PropertyKey_TYPE_TIMESTAMP,
+			keyType:   datapb.PropertyKey_TYPE_TIMESTAMP,
 			specValue: "1111111111",
 			dataValue: "2222222222",
 			matched:   false,
@@ -463,31 +499,35 @@ func testOracleSpecMatchingEqualPropertiesWorks(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.msg, func(t *testing.T) {
 			// given
-			spec, _ := oracles.NewOracleSpec(types.OracleSpec{
-				PubKeys: []string{
-					"0xCAFED00D",
-				},
-				Filters: []*types.OracleSpecFilter{
-					{
-						Key: &types.OracleSpecPropertyKey{
-							Name: "prices.BTC.value",
-							Type: c.keyType,
+			spec, _ := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
+				Spec: &types.DataSourceSpec{
+					Config: &types.DataSourceSpecConfiguration{
+						Signers: []*types.Signer{
+							types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
 						},
-						Conditions: []*types.OracleSpecCondition{
+						Filters: []*types.DataSourceSpecFilter{
 							{
-								Value:    c.specValue,
-								Operator: oraclespb.Condition_OPERATOR_EQUALS,
-							},
-						},
-					}, {
-						Key: &types.OracleSpecPropertyKey{
-							Name: "prices.ETH.value",
-							Type: oraclespb.PropertyKey_TYPE_INTEGER,
-						},
-						Conditions: []*types.OracleSpecCondition{
-							{
-								Value:    "42",
-								Operator: oraclespb.Condition_OPERATOR_EQUALS,
+								Key: &types.DataSourceSpecPropertyKey{
+									Name: "prices.BTC.value",
+									Type: c.keyType,
+								},
+								Conditions: []*types.DataSourceSpecCondition{
+									{
+										Value:    c.specValue,
+										Operator: datapb.Condition_OPERATOR_EQUALS,
+									},
+								},
+							}, {
+								Key: &types.DataSourceSpecPropertyKey{
+									Name: "prices.ETH.value",
+									Type: datapb.PropertyKey_TYPE_INTEGER,
+								},
+								Conditions: []*types.DataSourceSpecCondition{
+									{
+										Value:    "42",
+										Operator: datapb.Condition_OPERATOR_EQUALS,
+									},
+								},
 							},
 						},
 					},
@@ -495,8 +535,8 @@ func testOracleSpecMatchingEqualPropertiesWorks(t *testing.T) {
 			})
 
 			data := oracles.OracleData{
-				PubKeys: []string{
-					"0xCAFED00D",
+				Signers: []*types.Signer{
+					types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
 				},
 				Data: map[string]string{
 					"prices.BTC.value": c.dataValue,
@@ -517,44 +557,44 @@ func testOracleSpecMatchingEqualPropertiesWorks(t *testing.T) {
 func testOracleSpecMatchingGreaterThanPropertiesWorks(t *testing.T) {
 	cases := []struct {
 		msg       string
-		keyType   oraclespb.PropertyKey_Type
+		keyType   datapb.PropertyKey_Type
 		specValue string
 		dataValue string
 		matched   bool
 	}{
 		{
 			msg:       "integer: data value should be greater than spec value",
-			keyType:   oraclespb.PropertyKey_TYPE_INTEGER,
+			keyType:   datapb.PropertyKey_TYPE_INTEGER,
 			specValue: "42",
 			dataValue: "84",
 			matched:   true,
 		}, {
 			msg:       "integer: data value should not be greater than spec value",
-			keyType:   oraclespb.PropertyKey_TYPE_INTEGER,
+			keyType:   datapb.PropertyKey_TYPE_INTEGER,
 			specValue: "84",
 			dataValue: "42",
 			matched:   false,
 		}, {
 			msg:       "decimal: data value should be greater than spec value",
-			keyType:   oraclespb.PropertyKey_TYPE_DECIMAL,
+			keyType:   datapb.PropertyKey_TYPE_DECIMAL,
 			specValue: "1.2",
 			dataValue: "3.4",
 			matched:   true,
 		}, {
 			msg:       "decimal: data value should not be greater than spec value",
-			keyType:   oraclespb.PropertyKey_TYPE_DECIMAL,
+			keyType:   datapb.PropertyKey_TYPE_DECIMAL,
 			specValue: "3.4",
 			dataValue: "1.2",
 			matched:   false,
 		}, {
 			msg:       "timestamp: data value should be greater than spec value",
-			keyType:   oraclespb.PropertyKey_TYPE_TIMESTAMP,
+			keyType:   datapb.PropertyKey_TYPE_TIMESTAMP,
 			specValue: "1111111111",
 			dataValue: "2222222222",
 			matched:   true,
 		}, {
 			msg:       "timestamp: data value should not be greater than spec value",
-			keyType:   oraclespb.PropertyKey_TYPE_TIMESTAMP,
+			keyType:   datapb.PropertyKey_TYPE_TIMESTAMP,
 			specValue: "2222222222",
 			dataValue: "1111111111",
 			matched:   false,
@@ -564,31 +604,35 @@ func testOracleSpecMatchingGreaterThanPropertiesWorks(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.msg, func(t *testing.T) {
 			// given
-			spec, _ := oracles.NewOracleSpec(types.OracleSpec{
-				PubKeys: []string{
-					"0xCAFED00D",
-				},
-				Filters: []*types.OracleSpecFilter{
-					{
-						Key: &types.OracleSpecPropertyKey{
-							Name: "prices.BTC.value",
-							Type: c.keyType,
+			spec, _ := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
+				Spec: &types.DataSourceSpec{
+					Config: &types.DataSourceSpecConfiguration{
+						Signers: []*types.Signer{
+							types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
 						},
-						Conditions: []*types.OracleSpecCondition{
+						Filters: []*types.DataSourceSpecFilter{
 							{
-								Value:    c.specValue,
-								Operator: oraclespb.Condition_OPERATOR_GREATER_THAN,
-							},
-						},
-					}, {
-						Key: &types.OracleSpecPropertyKey{
-							Name: "prices.ETH.value",
-							Type: oraclespb.PropertyKey_TYPE_INTEGER,
-						},
-						Conditions: []*types.OracleSpecCondition{
-							{
-								Value:    "42",
-								Operator: oraclespb.Condition_OPERATOR_GREATER_THAN,
+								Key: &types.DataSourceSpecPropertyKey{
+									Name: "prices.BTC.value",
+									Type: c.keyType,
+								},
+								Conditions: []*types.DataSourceSpecCondition{
+									{
+										Value:    c.specValue,
+										Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+									},
+								},
+							}, {
+								Key: &types.DataSourceSpecPropertyKey{
+									Name: "prices.ETH.value",
+									Type: datapb.PropertyKey_TYPE_INTEGER,
+								},
+								Conditions: []*types.DataSourceSpecCondition{
+									{
+										Value:    "42",
+										Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+									},
+								},
 							},
 						},
 					},
@@ -596,8 +640,8 @@ func testOracleSpecMatchingGreaterThanPropertiesWorks(t *testing.T) {
 			})
 
 			data := oracles.OracleData{
-				PubKeys: []string{
-					"0xCAFED00D",
+				Signers: []*types.Signer{
+					types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
 				},
 				Data: map[string]string{
 					"prices.BTC.value": c.dataValue,
@@ -618,62 +662,62 @@ func testOracleSpecMatchingGreaterThanPropertiesWorks(t *testing.T) {
 func testOracleSpecMatchingGreaterThanOrEqualPropertiesWorks(t *testing.T) {
 	cases := []struct {
 		msg       string
-		keyType   oraclespb.PropertyKey_Type
+		keyType   datapb.PropertyKey_Type
 		specValue string
 		dataValue string
 		matched   bool
 	}{
 		{
 			msg:       "integer: data value should be equal to spec value",
-			keyType:   oraclespb.PropertyKey_TYPE_INTEGER,
+			keyType:   datapb.PropertyKey_TYPE_INTEGER,
 			specValue: "42",
 			dataValue: "42",
 			matched:   true,
 		}, {
 			msg:       "integer: data value should be greater than spec value",
-			keyType:   oraclespb.PropertyKey_TYPE_INTEGER,
+			keyType:   datapb.PropertyKey_TYPE_INTEGER,
 			specValue: "42",
 			dataValue: "84",
 			matched:   true,
 		}, {
 			msg:       "integer: data value should not be greater than spec value",
-			keyType:   oraclespb.PropertyKey_TYPE_INTEGER,
+			keyType:   datapb.PropertyKey_TYPE_INTEGER,
 			specValue: "84",
 			dataValue: "42",
 			matched:   false,
 		}, {
 			msg:       "decimal: data value should be equal to spec value",
-			keyType:   oraclespb.PropertyKey_TYPE_DECIMAL,
+			keyType:   datapb.PropertyKey_TYPE_DECIMAL,
 			specValue: "1.2",
 			dataValue: "1.2",
 			matched:   true,
 		}, {
 			msg:       "decimal: data value should be greater than spec value",
-			keyType:   oraclespb.PropertyKey_TYPE_DECIMAL,
+			keyType:   datapb.PropertyKey_TYPE_DECIMAL,
 			specValue: "1.2",
 			dataValue: "3.4",
 			matched:   true,
 		}, {
 			msg:       "decimal: data value should not be greater than spec value",
-			keyType:   oraclespb.PropertyKey_TYPE_DECIMAL,
+			keyType:   datapb.PropertyKey_TYPE_DECIMAL,
 			specValue: "3.4",
 			dataValue: "1.2",
 			matched:   false,
 		}, {
 			msg:       "timestamp: data value should be equal to spec value",
-			keyType:   oraclespb.PropertyKey_TYPE_TIMESTAMP,
+			keyType:   datapb.PropertyKey_TYPE_TIMESTAMP,
 			specValue: "1111111111",
 			dataValue: "1111111111",
 			matched:   true,
 		}, {
 			msg:       "timestamp: data value should be greater than spec value",
-			keyType:   oraclespb.PropertyKey_TYPE_TIMESTAMP,
+			keyType:   datapb.PropertyKey_TYPE_TIMESTAMP,
 			specValue: "1111111111",
 			dataValue: "2222222222",
 			matched:   true,
 		}, {
 			msg:       "timestamp: data value should not be greater than spec value",
-			keyType:   oraclespb.PropertyKey_TYPE_TIMESTAMP,
+			keyType:   datapb.PropertyKey_TYPE_TIMESTAMP,
 			specValue: "2222222222",
 			dataValue: "1111111111",
 			matched:   false,
@@ -683,31 +727,35 @@ func testOracleSpecMatchingGreaterThanOrEqualPropertiesWorks(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.msg, func(t *testing.T) {
 			// given
-			spec, _ := oracles.NewOracleSpec(types.OracleSpec{
-				PubKeys: []string{
-					"0xCAFED00D",
-				},
-				Filters: []*types.OracleSpecFilter{
-					{
-						Key: &types.OracleSpecPropertyKey{
-							Name: "prices.BTC.value",
-							Type: c.keyType,
+			spec, _ := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
+				Spec: &types.DataSourceSpec{
+					Config: &types.DataSourceSpecConfiguration{
+						Signers: []*types.Signer{
+							types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
 						},
-						Conditions: []*types.OracleSpecCondition{
+						Filters: []*types.DataSourceSpecFilter{
 							{
-								Value:    c.specValue,
-								Operator: oraclespb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
-							},
-						},
-					}, {
-						Key: &types.OracleSpecPropertyKey{
-							Name: "prices.ETH.value",
-							Type: oraclespb.PropertyKey_TYPE_INTEGER,
-						},
-						Conditions: []*types.OracleSpecCondition{
-							{
-								Value:    "42",
-								Operator: oraclespb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+								Key: &types.DataSourceSpecPropertyKey{
+									Name: "prices.BTC.value",
+									Type: c.keyType,
+								},
+								Conditions: []*types.DataSourceSpecCondition{
+									{
+										Value:    c.specValue,
+										Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+									},
+								},
+							}, {
+								Key: &types.DataSourceSpecPropertyKey{
+									Name: "prices.ETH.value",
+									Type: datapb.PropertyKey_TYPE_INTEGER,
+								},
+								Conditions: []*types.DataSourceSpecCondition{
+									{
+										Value:    "42",
+										Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+									},
+								},
 							},
 						},
 					},
@@ -715,8 +763,8 @@ func testOracleSpecMatchingGreaterThanOrEqualPropertiesWorks(t *testing.T) {
 			})
 
 			data := oracles.OracleData{
-				PubKeys: []string{
-					"0xCAFED00D",
+				Signers: []*types.Signer{
+					types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
 				},
 				Data: map[string]string{
 					"prices.BTC.value": c.dataValue,
@@ -737,44 +785,44 @@ func testOracleSpecMatchingGreaterThanOrEqualPropertiesWorks(t *testing.T) {
 func testOracleSpecMatchingLessThanPropertiesWorks(t *testing.T) {
 	cases := []struct {
 		msg       string
-		keyType   oraclespb.PropertyKey_Type
+		keyType   datapb.PropertyKey_Type
 		specValue string
 		dataValue string
 		matched   bool
 	}{
 		{
 			msg:       "integer: data value should be less than spec value",
-			keyType:   oraclespb.PropertyKey_TYPE_INTEGER,
+			keyType:   datapb.PropertyKey_TYPE_INTEGER,
 			specValue: "84",
 			dataValue: "42",
 			matched:   true,
 		}, {
 			msg:       "integer: data value should not be less than spec value",
-			keyType:   oraclespb.PropertyKey_TYPE_INTEGER,
+			keyType:   datapb.PropertyKey_TYPE_INTEGER,
 			specValue: "42",
 			dataValue: "84",
 			matched:   false,
 		}, {
 			msg:       "decimal: data value should be less than spec value",
-			keyType:   oraclespb.PropertyKey_TYPE_DECIMAL,
+			keyType:   datapb.PropertyKey_TYPE_DECIMAL,
 			specValue: "3.4",
 			dataValue: "1.2",
 			matched:   true,
 		}, {
 			msg:       "decimal: data value should not be less than spec value",
-			keyType:   oraclespb.PropertyKey_TYPE_DECIMAL,
+			keyType:   datapb.PropertyKey_TYPE_DECIMAL,
 			specValue: "1.2",
 			dataValue: "3.4",
 			matched:   false,
 		}, {
 			msg:       "timestamp: data value should be less than spec value",
-			keyType:   oraclespb.PropertyKey_TYPE_TIMESTAMP,
+			keyType:   datapb.PropertyKey_TYPE_TIMESTAMP,
 			specValue: "2222222222",
 			dataValue: "1111111111",
 			matched:   true,
 		}, {
 			msg:       "timestamp: data value should not be less than spec value",
-			keyType:   oraclespb.PropertyKey_TYPE_TIMESTAMP,
+			keyType:   datapb.PropertyKey_TYPE_TIMESTAMP,
 			specValue: "1111111111",
 			dataValue: "2222222222",
 			matched:   false,
@@ -784,31 +832,35 @@ func testOracleSpecMatchingLessThanPropertiesWorks(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.msg, func(t *testing.T) {
 			// given
-			spec, _ := oracles.NewOracleSpec(types.OracleSpec{
-				PubKeys: []string{
-					"0xCAFED00D",
-				},
-				Filters: []*types.OracleSpecFilter{
-					{
-						Key: &types.OracleSpecPropertyKey{
-							Name: "prices.BTC.value",
-							Type: c.keyType,
+			spec, _ := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
+				Spec: &types.DataSourceSpec{
+					Config: &types.DataSourceSpecConfiguration{
+						Signers: []*types.Signer{
+							types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
 						},
-						Conditions: []*types.OracleSpecCondition{
+						Filters: []*types.DataSourceSpecFilter{
 							{
-								Value:    c.specValue,
-								Operator: oraclespb.Condition_OPERATOR_LESS_THAN,
-							},
-						},
-					}, {
-						Key: &types.OracleSpecPropertyKey{
-							Name: "prices.ETH.value",
-							Type: oraclespb.PropertyKey_TYPE_INTEGER,
-						},
-						Conditions: []*types.OracleSpecCondition{
-							{
-								Value:    "42",
-								Operator: oraclespb.Condition_OPERATOR_LESS_THAN,
+								Key: &types.DataSourceSpecPropertyKey{
+									Name: "prices.BTC.value",
+									Type: c.keyType,
+								},
+								Conditions: []*types.DataSourceSpecCondition{
+									{
+										Value:    c.specValue,
+										Operator: datapb.Condition_OPERATOR_LESS_THAN,
+									},
+								},
+							}, {
+								Key: &types.DataSourceSpecPropertyKey{
+									Name: "prices.ETH.value",
+									Type: datapb.PropertyKey_TYPE_INTEGER,
+								},
+								Conditions: []*types.DataSourceSpecCondition{
+									{
+										Value:    "42",
+										Operator: datapb.Condition_OPERATOR_LESS_THAN,
+									},
+								},
 							},
 						},
 					},
@@ -816,8 +868,8 @@ func testOracleSpecMatchingLessThanPropertiesWorks(t *testing.T) {
 			})
 
 			data := oracles.OracleData{
-				PubKeys: []string{
-					"0xCAFED00D",
+				Signers: []*types.Signer{
+					types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
 				},
 				Data: map[string]string{
 					"prices.BTC.value": c.dataValue,
@@ -838,62 +890,62 @@ func testOracleSpecMatchingLessThanPropertiesWorks(t *testing.T) {
 func testOracleSpecMatchingLessThanOrEqualPropertiesWorks(t *testing.T) {
 	cases := []struct {
 		msg       string
-		keyType   oraclespb.PropertyKey_Type
+		keyType   datapb.PropertyKey_Type
 		specValue string
 		dataValue string
 		matched   bool
 	}{
 		{
 			msg:       "integer: data value should be equal to spec value",
-			keyType:   oraclespb.PropertyKey_TYPE_INTEGER,
+			keyType:   datapb.PropertyKey_TYPE_INTEGER,
 			specValue: "42",
 			dataValue: "42",
 			matched:   true,
 		}, {
 			msg:       "integer: data value should be less than spec value",
-			keyType:   oraclespb.PropertyKey_TYPE_INTEGER,
+			keyType:   datapb.PropertyKey_TYPE_INTEGER,
 			specValue: "84",
 			dataValue: "42",
 			matched:   true,
 		}, {
 			msg:       "integer: data value should not be less than spec value",
-			keyType:   oraclespb.PropertyKey_TYPE_INTEGER,
+			keyType:   datapb.PropertyKey_TYPE_INTEGER,
 			specValue: "42",
 			dataValue: "84",
 			matched:   false,
 		}, {
 			msg:       "decimal: data value should be equal to spec value",
-			keyType:   oraclespb.PropertyKey_TYPE_DECIMAL,
+			keyType:   datapb.PropertyKey_TYPE_DECIMAL,
 			specValue: "1.2",
 			dataValue: "1.2",
 			matched:   true,
 		}, {
 			msg:       "decimal: data value should be less than spec value",
-			keyType:   oraclespb.PropertyKey_TYPE_DECIMAL,
+			keyType:   datapb.PropertyKey_TYPE_DECIMAL,
 			specValue: "3.4",
 			dataValue: "1.2",
 			matched:   true,
 		}, {
 			msg:       "decimal: data value should not be less than spec value",
-			keyType:   oraclespb.PropertyKey_TYPE_DECIMAL,
+			keyType:   datapb.PropertyKey_TYPE_DECIMAL,
 			specValue: "1.2",
 			dataValue: "3.4",
 			matched:   false,
 		}, {
 			msg:       "timestamp: data value should be equal to spec value",
-			keyType:   oraclespb.PropertyKey_TYPE_TIMESTAMP,
+			keyType:   datapb.PropertyKey_TYPE_TIMESTAMP,
 			specValue: "1111111111",
 			dataValue: "1111111111",
 			matched:   true,
 		}, {
 			msg:       "timestamp: data value should be less than spec value",
-			keyType:   oraclespb.PropertyKey_TYPE_TIMESTAMP,
+			keyType:   datapb.PropertyKey_TYPE_TIMESTAMP,
 			specValue: "2222222222",
 			dataValue: "1111111111",
 			matched:   true,
 		}, {
 			msg:       "timestamp: data value should not be less than spec value",
-			keyType:   oraclespb.PropertyKey_TYPE_TIMESTAMP,
+			keyType:   datapb.PropertyKey_TYPE_TIMESTAMP,
 			specValue: "1111111111",
 			dataValue: "2222222222",
 			matched:   false,
@@ -903,31 +955,35 @@ func testOracleSpecMatchingLessThanOrEqualPropertiesWorks(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.msg, func(t *testing.T) {
 			// given
-			spec, _ := oracles.NewOracleSpec(types.OracleSpec{
-				PubKeys: []string{
-					"0xCAFED00D",
-				},
-				Filters: []*types.OracleSpecFilter{
-					{
-						Key: &types.OracleSpecPropertyKey{
-							Name: "prices.BTC.value",
-							Type: c.keyType,
+			spec, _ := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
+				Spec: &types.DataSourceSpec{
+					Config: &types.DataSourceSpecConfiguration{
+						Signers: []*types.Signer{
+							types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
 						},
-						Conditions: []*types.OracleSpecCondition{
+						Filters: []*types.DataSourceSpecFilter{
 							{
-								Value:    c.specValue,
-								Operator: oraclespb.Condition_OPERATOR_LESS_THAN_OR_EQUAL,
-							},
-						},
-					}, {
-						Key: &types.OracleSpecPropertyKey{
-							Name: "prices.ETH.value",
-							Type: oraclespb.PropertyKey_TYPE_INTEGER,
-						},
-						Conditions: []*types.OracleSpecCondition{
-							{
-								Value:    "42",
-								Operator: oraclespb.Condition_OPERATOR_LESS_THAN_OR_EQUAL,
+								Key: &types.DataSourceSpecPropertyKey{
+									Name: "prices.BTC.value",
+									Type: c.keyType,
+								},
+								Conditions: []*types.DataSourceSpecCondition{
+									{
+										Value:    c.specValue,
+										Operator: datapb.Condition_OPERATOR_LESS_THAN_OR_EQUAL,
+									},
+								},
+							}, {
+								Key: &types.DataSourceSpecPropertyKey{
+									Name: "prices.ETH.value",
+									Type: datapb.PropertyKey_TYPE_INTEGER,
+								},
+								Conditions: []*types.DataSourceSpecCondition{
+									{
+										Value:    "42",
+										Operator: datapb.Condition_OPERATOR_LESS_THAN_OR_EQUAL,
+									},
+								},
 							},
 						},
 					},
@@ -935,8 +991,8 @@ func testOracleSpecMatchingLessThanOrEqualPropertiesWorks(t *testing.T) {
 			})
 
 			data := oracles.OracleData{
-				PubKeys: []string{
-					"0xCAFED00D",
+				Signers: []*types.Signer{
+					types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
 				},
 				Data: map[string]string{
 					"prices.BTC.value": c.dataValue,
@@ -957,54 +1013,58 @@ func testOracleSpecMatchingLessThanOrEqualPropertiesWorks(t *testing.T) {
 func testOracleSpecMatchingPropertiesPresenceSucceeds(t *testing.T) {
 	cases := []struct {
 		msg     string
-		keyType oraclespb.PropertyKey_Type
+		keyType datapb.PropertyKey_Type
 	}{
 		{
 			msg:     "integer values is present",
-			keyType: oraclespb.PropertyKey_TYPE_INTEGER,
+			keyType: datapb.PropertyKey_TYPE_INTEGER,
 		}, {
 			msg:     "boolean values is present",
-			keyType: oraclespb.PropertyKey_TYPE_BOOLEAN,
+			keyType: datapb.PropertyKey_TYPE_BOOLEAN,
 		}, {
 			msg:     "decimal values is present",
-			keyType: oraclespb.PropertyKey_TYPE_DECIMAL,
+			keyType: datapb.PropertyKey_TYPE_DECIMAL,
 		}, {
 			msg:     "string values is present",
-			keyType: oraclespb.PropertyKey_TYPE_STRING,
+			keyType: datapb.PropertyKey_TYPE_STRING,
 		}, {
 			msg:     "timestamp values is present",
-			keyType: oraclespb.PropertyKey_TYPE_TIMESTAMP,
+			keyType: datapb.PropertyKey_TYPE_TIMESTAMP,
 		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.msg, func(t *testing.T) {
 			// given
-			spec, _ := oracles.NewOracleSpec(types.OracleSpec{
-				PubKeys: []string{
-					"0xCAFED00D",
-				},
-				Filters: []*types.OracleSpecFilter{
-					{
-						Key: &types.OracleSpecPropertyKey{
-							Name: "prices.BTC.value",
-							Type: c.keyType,
+			spec, _ := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
+				Spec: &types.DataSourceSpec{
+					Config: &types.DataSourceSpecConfiguration{
+						Signers: []*types.Signer{
+							types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
 						},
-						Conditions: []*types.OracleSpecCondition{},
-					},
-					{
-						Key: &types.OracleSpecPropertyKey{
-							Name: "prices.ETH.value",
-							Type: oraclespb.PropertyKey_TYPE_INTEGER,
+						Filters: []*types.DataSourceSpecFilter{
+							{
+								Key: &types.DataSourceSpecPropertyKey{
+									Name: "prices.BTC.value",
+									Type: c.keyType,
+								},
+								Conditions: []*types.DataSourceSpecCondition{},
+							},
+							{
+								Key: &types.DataSourceSpecPropertyKey{
+									Name: "prices.ETH.value",
+									Type: datapb.PropertyKey_TYPE_INTEGER,
+								},
+								Conditions: []*types.DataSourceSpecCondition{},
+							},
 						},
-						Conditions: []*types.OracleSpecCondition{},
 					},
 				},
 			})
 
 			data := oracles.OracleData{
-				PubKeys: []string{
-					"0xCAFED00D",
+				Signers: []*types.Signer{
+					types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
 				},
 				Data: map[string]string{
 					"prices.BTC.value": "42",
@@ -1025,54 +1085,58 @@ func testOracleSpecMatchingPropertiesPresenceSucceeds(t *testing.T) {
 func testOracleSpecMatchingPropertiesPresenceFails(t *testing.T) {
 	cases := []struct {
 		msg     string
-		keyType oraclespb.PropertyKey_Type
+		keyType datapb.PropertyKey_Type
 	}{
 		{
 			msg:     "integer values is absent",
-			keyType: oraclespb.PropertyKey_TYPE_INTEGER,
+			keyType: datapb.PropertyKey_TYPE_INTEGER,
 		}, {
 			msg:     "boolean values is absent",
-			keyType: oraclespb.PropertyKey_TYPE_BOOLEAN,
+			keyType: datapb.PropertyKey_TYPE_BOOLEAN,
 		}, {
 			msg:     "decimal values is absent",
-			keyType: oraclespb.PropertyKey_TYPE_DECIMAL,
+			keyType: datapb.PropertyKey_TYPE_DECIMAL,
 		}, {
 			msg:     "string values is absent",
-			keyType: oraclespb.PropertyKey_TYPE_STRING,
+			keyType: datapb.PropertyKey_TYPE_STRING,
 		}, {
 			msg:     "timestamp values is absent",
-			keyType: oraclespb.PropertyKey_TYPE_TIMESTAMP,
+			keyType: datapb.PropertyKey_TYPE_TIMESTAMP,
 		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.msg, func(t *testing.T) {
 			// given
-			spec, _ := oracles.NewOracleSpec(types.OracleSpec{
-				PubKeys: []string{
-					"0xCAFED00D",
-				},
-				Filters: []*types.OracleSpecFilter{
-					{
-						Key: &types.OracleSpecPropertyKey{
-							Name: "prices.BTC.value",
-							Type: c.keyType,
+			spec, _ := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
+				Spec: &types.DataSourceSpec{
+					Config: &types.DataSourceSpecConfiguration{
+						Signers: []*types.Signer{
+							types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
 						},
-						Conditions: []*types.OracleSpecCondition{},
-					},
-					{
-						Key: &types.OracleSpecPropertyKey{
-							Name: "prices.ETH.value",
-							Type: oraclespb.PropertyKey_TYPE_INTEGER,
+						Filters: []*types.DataSourceSpecFilter{
+							{
+								Key: &types.DataSourceSpecPropertyKey{
+									Name: "prices.BTC.value",
+									Type: c.keyType,
+								},
+								Conditions: []*types.DataSourceSpecCondition{},
+							},
+							{
+								Key: &types.DataSourceSpecPropertyKey{
+									Name: "prices.ETH.value",
+									Type: datapb.PropertyKey_TYPE_INTEGER,
+								},
+								Conditions: []*types.DataSourceSpecCondition{},
+							},
 						},
-						Conditions: []*types.OracleSpecCondition{},
 					},
 				},
 			})
 
 			data := oracles.OracleData{
-				PubKeys: []string{
-					"0xCAFED00D",
+				Signers: []*types.Signer{
+					types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
 				},
 				Data: map[string]string{
 					"prices.ETH.value": "42",
@@ -1092,28 +1156,28 @@ func testOracleSpecMatchingPropertiesPresenceFails(t *testing.T) {
 func testOracleSpecMatchingWithInconvertibleTypeFails(t *testing.T) {
 	cases := []struct {
 		msg       string
-		keyType   oraclespb.PropertyKey_Type
+		keyType   datapb.PropertyKey_Type
 		specValue string
 		dataValue string
 	}{
 		{
 			msg:       "not an integer",
-			keyType:   oraclespb.PropertyKey_TYPE_INTEGER,
+			keyType:   datapb.PropertyKey_TYPE_INTEGER,
 			specValue: "42",
 			dataValue: "not an integer",
 		}, {
 			msg:       "not a boolean",
-			keyType:   oraclespb.PropertyKey_TYPE_BOOLEAN,
+			keyType:   datapb.PropertyKey_TYPE_BOOLEAN,
 			specValue: "true",
 			dataValue: "not a boolean",
 		}, {
 			msg:       "not a decimal",
-			keyType:   oraclespb.PropertyKey_TYPE_DECIMAL,
+			keyType:   datapb.PropertyKey_TYPE_DECIMAL,
 			specValue: "1.2",
 			dataValue: "not a decimal",
 		}, {
 			msg:       "not a timestamp",
-			keyType:   oraclespb.PropertyKey_TYPE_TIMESTAMP,
+			keyType:   datapb.PropertyKey_TYPE_TIMESTAMP,
 			specValue: "1111111111",
 			dataValue: "not a timestamp",
 		},
@@ -1122,20 +1186,24 @@ func testOracleSpecMatchingWithInconvertibleTypeFails(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.msg, func(t *testing.T) {
 			// given
-			spec, _ := oracles.NewOracleSpec(types.OracleSpec{
-				PubKeys: []string{
-					"0xCAFED00D",
-				},
-				Filters: []*types.OracleSpecFilter{
-					{
-						Key: &types.OracleSpecPropertyKey{
-							Name: "prices.BTC.value",
-							Type: c.keyType,
+			spec, _ := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
+				Spec: &types.DataSourceSpec{
+					Config: &types.DataSourceSpecConfiguration{
+						Signers: []*types.Signer{
+							types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
 						},
-						Conditions: []*types.OracleSpecCondition{
+						Filters: []*types.DataSourceSpecFilter{
 							{
-								Value:    c.specValue,
-								Operator: oraclespb.Condition_OPERATOR_EQUALS,
+								Key: &types.DataSourceSpecPropertyKey{
+									Name: "prices.BTC.value",
+									Type: c.keyType,
+								},
+								Conditions: []*types.DataSourceSpecCondition{
+									{
+										Value:    c.specValue,
+										Operator: datapb.Condition_OPERATOR_EQUALS,
+									},
+								},
 							},
 						},
 					},
@@ -1143,8 +1211,8 @@ func testOracleSpecMatchingWithInconvertibleTypeFails(t *testing.T) {
 			})
 
 			data := oracles.OracleData{
-				PubKeys: []string{
-					"0xCAFED00D",
+				Signers: []*types.Signer{
+					types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
 				},
 				Data: map[string]string{
 					"prices.BTC.value": c.dataValue,
@@ -1164,87 +1232,87 @@ func testOracleSpecMatchingWithInconvertibleTypeFails(t *testing.T) {
 func testOracleSpecVerifyingBindingWorks(t *testing.T) {
 	cases := []struct {
 		msg              string
-		declaredType     oraclespb.PropertyKey_Type
+		declaredType     datapb.PropertyKey_Type
 		declaredProperty string
-		boundType        oraclespb.PropertyKey_Type
+		boundType        datapb.PropertyKey_Type
 		boundProperty    string
 		expectedError    error
 	}{
 		{
 			msg:              "same integer properties can be bound",
-			declaredType:     oraclespb.PropertyKey_TYPE_INTEGER,
+			declaredType:     datapb.PropertyKey_TYPE_INTEGER,
 			declaredProperty: "price.ETH.value",
-			boundType:        oraclespb.PropertyKey_TYPE_INTEGER,
+			boundType:        datapb.PropertyKey_TYPE_INTEGER,
 			boundProperty:    "price.ETH.value",
 			expectedError:    nil,
 		}, {
 			msg:              "different integer properties cannot be bound",
-			declaredType:     oraclespb.PropertyKey_TYPE_INTEGER,
+			declaredType:     datapb.PropertyKey_TYPE_INTEGER,
 			declaredProperty: "price.USD.value",
-			boundType:        oraclespb.PropertyKey_TYPE_INTEGER,
+			boundType:        datapb.PropertyKey_TYPE_INTEGER,
 			boundProperty:    "price.BTC.value",
 			expectedError:    errors.New("bound property \"price.BTC.value\" not filtered by oracle spec"),
 		}, {
 			msg:              "same integer properties can be bound",
-			declaredType:     oraclespb.PropertyKey_TYPE_BOOLEAN,
+			declaredType:     datapb.PropertyKey_TYPE_BOOLEAN,
 			declaredProperty: "price.ETH.value",
-			boundType:        oraclespb.PropertyKey_TYPE_BOOLEAN,
+			boundType:        datapb.PropertyKey_TYPE_BOOLEAN,
 			boundProperty:    "price.ETH.value",
 			expectedError:    nil,
 		}, {
 			msg:              "different integer properties can be bound",
-			declaredType:     oraclespb.PropertyKey_TYPE_BOOLEAN,
+			declaredType:     datapb.PropertyKey_TYPE_BOOLEAN,
 			declaredProperty: "price.USD.value",
-			boundType:        oraclespb.PropertyKey_TYPE_BOOLEAN,
+			boundType:        datapb.PropertyKey_TYPE_BOOLEAN,
 			boundProperty:    "price.BTC.value",
 			expectedError:    errors.New("bound property \"price.BTC.value\" not filtered by oracle spec"),
 		}, {
 			msg:              "same integer properties can be bound",
-			declaredType:     oraclespb.PropertyKey_TYPE_DECIMAL,
+			declaredType:     datapb.PropertyKey_TYPE_DECIMAL,
 			declaredProperty: "price.ETH.value",
-			boundType:        oraclespb.PropertyKey_TYPE_DECIMAL,
+			boundType:        datapb.PropertyKey_TYPE_DECIMAL,
 			boundProperty:    "price.ETH.value",
 			expectedError:    nil,
 		}, {
 			msg:              "different integer properties can be bound",
-			declaredType:     oraclespb.PropertyKey_TYPE_DECIMAL,
+			declaredType:     datapb.PropertyKey_TYPE_DECIMAL,
 			declaredProperty: "price.USD.value",
-			boundType:        oraclespb.PropertyKey_TYPE_DECIMAL,
+			boundType:        datapb.PropertyKey_TYPE_DECIMAL,
 			boundProperty:    "price.BTC.value",
 			expectedError:    errors.New("bound property \"price.BTC.value\" not filtered by oracle spec"),
 		}, {
 			msg:              "same integer properties can be bound",
-			declaredType:     oraclespb.PropertyKey_TYPE_STRING,
+			declaredType:     datapb.PropertyKey_TYPE_STRING,
 			declaredProperty: "price.ETH.value",
-			boundType:        oraclespb.PropertyKey_TYPE_STRING,
+			boundType:        datapb.PropertyKey_TYPE_STRING,
 			boundProperty:    "price.ETH.value",
 			expectedError:    nil,
 		}, {
 			msg:              "different integer properties can be bound",
-			declaredType:     oraclespb.PropertyKey_TYPE_STRING,
+			declaredType:     datapb.PropertyKey_TYPE_STRING,
 			declaredProperty: "price.USD.value",
-			boundType:        oraclespb.PropertyKey_TYPE_STRING,
+			boundType:        datapb.PropertyKey_TYPE_STRING,
 			boundProperty:    "price.BTC.value",
 			expectedError:    errors.New("bound property \"price.BTC.value\" not filtered by oracle spec"),
 		}, {
 			msg:              "same integer properties can be bound",
-			declaredType:     oraclespb.PropertyKey_TYPE_TIMESTAMP,
+			declaredType:     datapb.PropertyKey_TYPE_TIMESTAMP,
 			declaredProperty: "price.ETH.value",
-			boundType:        oraclespb.PropertyKey_TYPE_TIMESTAMP,
+			boundType:        datapb.PropertyKey_TYPE_TIMESTAMP,
 			boundProperty:    "price.ETH.value",
 			expectedError:    nil,
 		}, {
 			msg:              "different integer properties can be bound",
-			declaredType:     oraclespb.PropertyKey_TYPE_TIMESTAMP,
+			declaredType:     datapb.PropertyKey_TYPE_TIMESTAMP,
 			declaredProperty: "price.USD.value",
-			boundType:        oraclespb.PropertyKey_TYPE_TIMESTAMP,
+			boundType:        datapb.PropertyKey_TYPE_TIMESTAMP,
 			boundProperty:    "price.BTC.value",
 			expectedError:    errors.New("bound property \"price.BTC.value\" not filtered by oracle spec"),
 		}, {
 			msg:              "same properties but different type can't be bound",
-			declaredType:     oraclespb.PropertyKey_TYPE_TIMESTAMP,
+			declaredType:     datapb.PropertyKey_TYPE_TIMESTAMP,
 			declaredProperty: "price.USD.value",
-			boundType:        oraclespb.PropertyKey_TYPE_STRING,
+			boundType:        datapb.PropertyKey_TYPE_STRING,
 			boundProperty:    "price.USD.value",
 			expectedError:    errors.New("bound type \"TYPE_STRING\" doesn't match filtered property type \"TYPE_TIMESTAMP\""),
 		},
@@ -1253,17 +1321,21 @@ func testOracleSpecVerifyingBindingWorks(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.msg, func(t *testing.T) {
 			// given
-			spec, _ := oracles.NewOracleSpec(types.OracleSpec{
-				PubKeys: []string{
-					"0xCAFED00D",
-				},
-				Filters: []*types.OracleSpecFilter{
-					{
-						Key: &types.OracleSpecPropertyKey{
-							Name: c.declaredProperty,
-							Type: c.declaredType,
+			spec, _ := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
+				Spec: &types.DataSourceSpec{
+					Config: &types.DataSourceSpecConfiguration{
+						Signers: []*types.Signer{
+							types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
 						},
-						Conditions: []*types.OracleSpecCondition{},
+						Filters: []*types.DataSourceSpecFilter{
+							{
+								Key: &types.DataSourceSpecPropertyKey{
+									Name: c.declaredProperty,
+									Type: c.declaredType,
+								},
+								Conditions: []*types.DataSourceSpecCondition{},
+							},
+						},
 					},
 				},
 			})

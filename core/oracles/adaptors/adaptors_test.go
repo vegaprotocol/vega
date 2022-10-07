@@ -21,6 +21,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/oracles/adaptors"
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
@@ -139,8 +140,10 @@ func (d *dummyOracleAdaptor) Normalise(pk crypto.PublicKey, payload []byte) (*or
 	}
 
 	return &oracles.OracleData{
-		PubKeys: []string{pk.Hex()},
-		Data:    data,
+		Signers: []*types.Signer{
+			types.CreateSignerFromString(pk.Hex(), types.DataSignerTypePubKey),
+		},
+		Data: data,
 	}, nil
 }
 

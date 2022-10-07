@@ -21,7 +21,7 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
       | horizon | probability | auction extension |
       | 1000    | 0.99        | 300               |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | oracle config  |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config  |
       | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
@@ -123,7 +123,7 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
       | horizon | probability | auction extension |
       | 1000    | 0.99        | 300               |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | oracle config  |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config  |
       | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |

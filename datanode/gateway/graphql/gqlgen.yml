@@ -260,25 +260,25 @@ models:
         resolver: true
   PeggedOrder:
     model: code.vegaprotocol.io/vega/protos/vega.PeggedOrder
-  OracleSpecToFutureBinding:
-    model: code.vegaprotocol.io/vega/protos/vega.OracleSpecToFutureBinding
-  OracleSpecConfiguration:
-    model: code.vegaprotocol.io/vega/protos/vega/oracles/v1.OracleSpecConfiguration
+  DataSourceSpecToFutureBinding:
+    model: code.vegaprotocol.io/vega/protos/vega.DataSourceSpecToFutureBinding
+  DataSourceSpecConfiguration:
+    model: code.vegaprotocol.io/vega/protos/vega/data/v1.DataSourceSpecConfiguration
   OracleSpec:
-    model: code.vegaprotocol.io/vega/protos/vega/oracles/v1.OracleSpec
+    model: code.vegaprotocol.io/vega/protos/vega/data/v1.OracleSpec
   Filter:
-    model: code.vegaprotocol.io/vega/protos/vega/oracles/v1.Filter
+    model: code.vegaprotocol.io/vega/protos/vega/data/v1.Filter
   PropertyKey:
-    model: code.vegaprotocol.io/vega/protos/vega/oracles/v1.PropertyKey
+    model: code.vegaprotocol.io/vega/protos/vega/data/v1.PropertyKey
   Condition:
-    model: code.vegaprotocol.io/vega/protos/vega/oracles/v1.Condition
+    model: code.vegaprotocol.io/vega/protos/vega/data/v1.Condition
   OracleData:
-    model: code.vegaprotocol.io/vega/protos/vega/oracles/v1.OracleData
+    model: code.vegaprotocol.io/vega/protos/vega/data/v1.OracleData
     fields:
       broadcastAt:
         resolver: true
   Property:
-    model: code.vegaprotocol.io/vega/protos/vega/oracles/v1.Property
+    model: code.vegaprotocol.io/vega/protos/vega/data/v1.Property
   AuctionEvent:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.AuctionEvent
   FeeFactors:
