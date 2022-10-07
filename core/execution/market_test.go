@@ -829,6 +829,109 @@ func TestMarketLiquidityFeeAfterUpdate(t *testing.T) {
 	assert.Equal(t, previousLiqFee, tm.market.GetLiquidityFee())
 }
 
+func TestLiquidityFeeWhenTargetStakeDropsDueToFlowOfTime(t *testing.T) {
+	party1 := "party1"
+	party2 := "party2"
+	lp1 := "lp1"
+	lp2 := "lp2"
+	maxOI := uint64(124)
+	matchingPrice := uint64(111)
+	now := time.Unix(10, 0)
+	tm := getTestMarket(t, now, nil, &types.AuctionDuration{
+		Duration: 1,
+	})
+	tm.market.OnMarketTargetStakeTimeWindowUpdate(5 * time.Second)
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	addAccount(t, tm, party1)
+	addAccount(t, tm, party2)
+	addAccountWithAmount(tm, lp1, 100000000000)
+	addAccountWithAmount(tm, lp2, 100000000000)
+
+	// Assure liquidity auction won't be triggered
+	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), num.DecimalFromFloat(0))
+	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Second)
+	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, lp1, 1, 10)
+	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
+	require.NotNil(t, conf)
+	require.NoError(t, err)
+	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
+
+	alwaysOnAsk := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnAsk", types.SideSell, lp2, 1, 100000)
+	conf, err = tm.market.SubmitOrder(context.Background(), alwaysOnAsk)
+	require.NotNil(t, conf)
+	require.NoError(t, err)
+	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
+
+	orders := []*types.Order{
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "ord1", types.SideSell, party1, maxOI, matchingPrice),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "ord2", types.SideBuy, party2, maxOI, matchingPrice),
+	}
+	for _, o := range orders {
+		conf, err := tm.market.SubmitOrder(context.Background(), o)
+		require.NoError(t, err)
+		require.NotNil(t, conf)
+	}
+
+	// submit liquidity with varying fee levels
+	commitment1 := num.NewUint(30000)
+	fee1 := num.DecimalFromFloat(0.01)
+	commitment2 := num.NewUint(20000)
+	fee2 := num.DecimalFromFloat(0.02)
+	lps := &types.LiquidityProvisionSubmission{
+		MarketID:         tm.market.GetID(),
+		CommitmentAmount: commitment1,
+		Fee:              fee1,
+		Sells: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
+		},
+		Buys: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
+		},
+	}
+	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lps, lp1, vgcrypto.RandomHash()))
+	lps.Fee = fee2
+	lps.CommitmentAmount = commitment2
+	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lps, lp2, vgcrypto.RandomHash()))
+
+	// leave opening auction
+	now = now.Add(2 * time.Second)
+	tm.now = now
+	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
+	md := tm.market.GetMarketData()
+	require.Equal(t, types.MarketTradingModeContinuous, md.MarketTradingMode)
+
+	now = now.Add(2 * time.Second)
+	tm.now = now
+	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
+	// move time and decrase open interest
+	orders = []*types.Order{
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "ord1", types.SideBuy, party1, maxOI-100, matchingPrice),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "ord2", types.SideSell, party2, maxOI-100, matchingPrice),
+	}
+	for _, o := range orders {
+		conf, err := tm.market.SubmitOrder(context.Background(), o)
+		require.NoError(t, err)
+		require.NotNil(t, conf)
+	}
+	md = tm.market.GetMarketData()
+	require.Equal(t, types.MarketTradingModeContinuous, md.MarketTradingMode)
+	targetStake1 := md.TargetStake
+	require.Equal(t, fee2, tm.market.GetLiquidityFee())
+
+	// move time beyond taret stake window (so max OI drops and hence target stake)
+	now = now.Add(6 * time.Second)
+	tm.now = now
+	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
+
+	md = tm.market.GetMarketData()
+	require.Equal(t, types.MarketTradingModeContinuous, md.MarketTradingMode)
+	targetStake2 := md.TargetStake
+
+	require.Less(t, targetStake2, targetStake1)
+	require.Equal(t, fee1, tm.market.GetLiquidityFee())
+}
+
 func TestMarketNotActive(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(20, 0)
