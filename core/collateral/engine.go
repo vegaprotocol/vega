@@ -554,6 +554,48 @@ func (e *Engine) getFeesAccounts(marketID, asset string) (maker, infra, liqui *t
 	return maker, infra, liqui, err
 }
 
+func (e *Engine) CheckLeftOverBalance(ctx context.Context, settle *types.Account, transfers []*types.Transfer, asset string) (*types.LedgerMovement, error) {
+	if settle.Balance.IsZero() {
+		return nil, nil
+	}
+
+	e.log.Error("final settlement left asset unit in the settlement, transferring to the asset reward account", logging.String("remaining-settle-balance", settle.Balance.String()))
+	for _, t := range transfers {
+		e.log.Error("final settlement transfer", logging.String("amount", t.Amount.String()), logging.Int32("type", int32(t.Type)))
+	}
+	// if there's just one asset unit left over from some weird rounding issue, transfer it to the global reward account
+	if settle.Balance.EQ(num.UintOne()) {
+		e.log.Warn("final settlement left 1 asset unit in the settlement, transferring to the asset reward account")
+		req := &types.TransferRequest{
+			FromAccount: make([]*types.Account, 1),
+			ToAccount:   make([]*types.Account, 1),
+			Asset:       asset,
+			Type:        types.TransferTypeClearAccount,
+		}
+		globalRewardPool, _ := e.GetGlobalRewardAccount(asset)
+		req.FromAccount[0] = settle
+		req.ToAccount = []*types.Account{globalRewardPool}
+		req.Amount = num.UintOne()
+		ledgerEntries, err := e.getLedgerEntries(ctx, req)
+		if err != nil {
+			e.log.Panic("unable to redistribute settlement leftover funds", logging.Error(err))
+		}
+		for _, bal := range ledgerEntries.Balances {
+			if err := e.IncrementBalance(ctx, bal.Account.ID, bal.Balance); err != nil {
+				e.log.Error("Could not update the target account in transfer",
+					logging.String("account-id", bal.Account.ID),
+					logging.Error(err))
+				return nil, err
+			}
+		}
+		return ledgerEntries, nil
+	}
+
+	// if there's more than one, panic
+	e.log.Panic("settlement balance is not zero", logging.BigUint("balance", settle.Balance))
+	return nil, nil
+}
+
 // FinalSettlement will process the list of transfer instructed by other engines
 // This func currently only expects TransferType_{LOSS,WIN} transfers
 // other transfer types have dedicated funcs (MartToMarket, MarginUpdate).
@@ -733,42 +775,14 @@ func (e *Engine) FinalSettlement(ctx context.Context, marketID string, transfers
 		responses = append(responses, res)
 	}
 
-	if !settle.Balance.IsZero() {
-		e.log.Error("final settlement left asset unit in the settlement, transferring to the asset reward account", logging.String("remaining-settle-balance", settle.Balance.String()))
-		for _, t := range transfers {
-			e.log.Error("final settlement transfer", logging.String("amount", t.Amount.String()), logging.Int32("type", int32(t.Type)))
-		}
-		// if there's just one asset unit left over from some weird rounding issue, transfer it to the global reward account
-		if settle.Balance.EQ(num.UintOne()) {
-			e.log.Warn("final settlement left 1 asset unit in the settlement, transferring to the asset reward account")
-			req := &types.TransferRequest{
-				FromAccount: make([]*types.Account, 1),
-				ToAccount:   make([]*types.Account, 1),
-				Asset:       asset,
-				Type:        types.TransferTypeClearAccount,
-			}
-			globalRewardPool, _ := e.GetGlobalRewardAccount(asset)
-			req.FromAccount[0] = settle
-			req.ToAccount = []*types.Account{globalRewardPool}
-			req.Amount = num.UintOne()
-			ledgerEntries, err := e.getLedgerEntries(ctx, req)
-			if err != nil {
-				e.log.Panic("unable to redistribute settlement leftover funds", logging.Error(err))
-			}
-			for _, bal := range ledgerEntries.Balances {
-				if err := e.IncrementBalance(ctx, bal.Account.ID, bal.Balance); err != nil {
-					e.log.Error("Could not update the target account in transfer",
-						logging.String("account-id", bal.Account.ID),
-						logging.Error(err))
-					return nil, err
-				}
-			}
-			responses = append(responses, ledgerEntries)
-		} else {
-			// if there's more than one, panic
-			e.log.Panic("settlement balance is not zero", logging.BigUint("balance", settle.Balance))
-		}
+	leftoverLedgerEntry, err := e.CheckLeftOverBalance(ctx, settle, transfers, asset)
+	if err != nil {
+		return nil, err
 	}
+	if leftoverLedgerEntry != nil {
+		responses = append(responses, leftoverLedgerEntry)
+	}
+
 	return responses, nil
 }
 
