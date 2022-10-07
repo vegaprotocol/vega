@@ -721,6 +721,7 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 	timer.EngineTimeCounterAdd()
 
 	m.updateMarketValueProxy()
+	m.updateLiquidityFee(ctx)
 	m.broker.Send(events.NewMarketTick(ctx, m.mkt.ID, t))
 	return m.closed
 }
