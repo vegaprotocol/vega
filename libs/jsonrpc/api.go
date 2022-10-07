@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"sync/atomic"
 
 	"go.uber.org/zap"
 )
@@ -16,38 +15,17 @@ type API struct {
 	log *zap.Logger
 	// commands maps a method to a command.
 	commands map[string]Command
-	// isProcessingRequest tells if the API is processing a request or not.
-	// It enforces a sequential and non-concurrent processing.
-	isProcessingRequest uint32
-
-	// processOnlyOneRequest tells if the API should allow multiple requests
-	// in parallel.
-	// This is a hot-fix, as this should be handled by the pipeline itself.
-	processOnlyOneRequest bool
 }
 
-func New(log *zap.Logger, processOnlyOneRequest bool) *API {
+func New(log *zap.Logger) *API {
 	return &API{
-		log:                   log,
-		commands:              map[string]Command{},
-		isProcessingRequest:   0,
-		processOnlyOneRequest: processOnlyOneRequest,
+		log:      log,
+		commands: map[string]Command{},
 	}
 }
 
 func (a *API) DispatchRequest(ctx context.Context, request *Request) *Response {
 	traceID := traceIDFromContext(ctx)
-
-	if a.processOnlyOneRequest {
-		// We reject all incoming request as long as there is a request being
-		// processed.
-		if !atomic.CompareAndSwapUint32(&a.isProcessingRequest, 0, 1) {
-			a.log.Info("request rejected because another one is being processed",
-				zap.String("trace-id", traceID))
-			return requestAlreadyBeingProcessed(request)
-		}
-		defer atomic.SwapUint32(&a.isProcessingRequest, 0)
-	}
 
 	if err := request.Check(); err != nil {
 		a.log.Info("invalid request",
@@ -100,10 +78,6 @@ func (a *API) RegisteredMethods() []string {
 	}
 	sort.Strings(methods)
 	return methods
-}
-
-func requestAlreadyBeingProcessed(request *Request) *Response {
-	return NewErrorResponse(request.ID, NewServerError(ErrorCodeRequestAlreadyBeingProcessed, ErrRequestAlreadyBeingProcessed))
 }
 
 func invalidRequestResponse(request *Request, err error) *Response {

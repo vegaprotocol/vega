@@ -81,23 +81,23 @@ func testFailingToGetLastBlockDoesNotReturnChainID(t *testing.T) {
 }
 
 type GetChainIDHandler struct {
-	*api.GetChainID
+	*api.ClientGetChainID
 	nodeSelector *nodemocks.MockSelector
 	node         *nodemocks.MockNode
 }
 
-func (h *GetChainIDHandler) handle(t *testing.T, ctx context.Context) (api.GetChainIDResult, *jsonrpc.ErrorDetails) {
+func (h *GetChainIDHandler) handle(t *testing.T, ctx context.Context) (api.ClientGetChainIDResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
 	rawResult, err := h.Handle(ctx, nil)
 	if rawResult != nil {
-		result, ok := rawResult.(api.GetChainIDResult)
+		result, ok := rawResult.(api.ClientGetChainIDResult)
 		if !ok {
-			t.Fatal("GetChainID handler result is not a GetChainIDResult")
+			t.Fatal("ClientGetChainID handler result is not a ClientGetChainIDResult")
 		}
 		return result, err
 	}
-	return api.GetChainIDResult{}, err
+	return api.ClientGetChainIDResult{}, err
 }
 
 func newGetChainIDHandler(t *testing.T) *GetChainIDHandler {
@@ -108,8 +108,8 @@ func newGetChainIDHandler(t *testing.T) *GetChainIDHandler {
 	node := nodemocks.NewMockNode(ctrl)
 
 	return &GetChainIDHandler{
-		GetChainID:   api.NewGetChainID(nodeSelector),
-		nodeSelector: nodeSelector,
-		node:         node,
+		ClientGetChainID: api.NewGetChainID(nodeSelector),
+		nodeSelector:     nodeSelector,
+		node:             node,
 	}
 }

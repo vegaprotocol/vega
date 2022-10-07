@@ -18,30 +18,35 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-type SignTransactionParams struct {
+type ClientSignTransactionParams struct {
 	Token              string `json:"token"`
 	PublicKey          string `json:"publicKey"`
 	EncodedTransaction string `json:"encodedTransaction"`
 }
 
-type ParsedSignTransactionParams struct {
+type ClientParsedSignTransactionParams struct {
 	Token          string
 	PublicKey      string
 	RawTransaction string
 }
 
-type SignTransactionResult struct {
+type ClientSignTransactionResult struct {
 	Tx *commandspb.Transaction `json:"transaction"`
 }
 
-type SignTransaction struct {
-	pipeline     Pipeline
+type ClientSignTransaction struct {
+	interactor   Interactor
 	nodeSelector node.Selector
 	sessions     *Sessions
 }
 
-func (h *SignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *ClientSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	traceID := TraceIDFromContext(ctx)
+
+	if err := h.interactor.NotifyInteractionSessionBegan(ctx, traceID); err != nil {
+		return nil, internalError(err)
+	}
+	defer h.interactor.NotifyInteractionSessionEnded(ctx, traceID)
 
 	params, err := validateSignTransactionParams(rawParams)
 	if err != nil {
@@ -68,55 +73,55 @@ func (h *SignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) 
 	}
 
 	receivedAt := time.Now()
-	approved, err := h.pipeline.RequestTransactionSigningReview(ctx, traceID, connectedWallet.Hostname, connectedWallet.Wallet.Name(), params.PublicKey, params.RawTransaction, receivedAt)
+	approved, err := h.interactor.RequestTransactionReviewForSigning(ctx, traceID, connectedWallet.Hostname, connectedWallet.Wallet.Name(), params.PublicKey, params.RawTransaction, receivedAt)
 	if err != nil {
-		if errDetails := handleRequestFlowError(ctx, traceID, h.pipeline, err); errDetails != nil {
+		if errDetails := handleRequestFlowError(ctx, traceID, h.interactor, err); errDetails != nil {
 			return nil, errDetails
 		}
-		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("requesting the transaction review failed: %w", err))
+		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("requesting the transaction review failed: %w", err))
 		return nil, internalError(ErrCouldNotSignTransaction)
 	}
 	if !approved {
 		return nil, userRejectionError()
 	}
 
-	h.pipeline.Log(ctx, traceID, InfoLog, "Looking for a healthy node...")
+	h.interactor.Log(ctx, traceID, InfoLog, "Looking for a healthy node...")
 	currentNode, err := h.nodeSelector.Node(ctx, func(reportType node.ReportType, msg string) {
-		h.pipeline.Log(ctx, traceID, LogType(reportType), msg)
+		h.interactor.Log(ctx, traceID, LogType(reportType), msg)
 	})
 	if err != nil {
-		h.pipeline.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not find a healthy node: %w", err))
+		h.interactor.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not find a healthy node: %w", err))
 		return nil, networkError(ErrNoHealthyNodeAvailable)
 	}
-	h.pipeline.Log(ctx, traceID, SuccessLog, "A healthy node has been found.")
+	h.interactor.Log(ctx, traceID, SuccessLog, "A healthy node has been found.")
 
-	h.pipeline.Log(ctx, traceID, InfoLog, "Retrieving latest block information...")
+	h.interactor.Log(ctx, traceID, InfoLog, "Retrieving latest block information...")
 	lastBlockData, err := currentNode.LastBlock(ctx)
 	if err != nil {
-		h.pipeline.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not get the latest block from the node: %w", err))
+		h.interactor.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not get the latest block from the node: %w", err))
 		return nil, networkError(ErrCouldNotGetLastBlockInformation)
 	}
-	h.pipeline.Log(ctx, traceID, SuccessLog, "Latest block information has been retrieved.")
+	h.interactor.Log(ctx, traceID, SuccessLog, "Latest block information has been retrieved.")
 
 	if lastBlockData.ChainId == "" {
-		h.pipeline.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not get chainID from node: %w", err))
+		h.interactor.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not get chainID from node: %w", err))
 		return nil, networkError(ErrCouldNotGetChainIDFromNode)
 	}
 
 	// Sign the payload.
 	inputData, err := wcommands.ToMarshaledInputData(request, lastBlockData.Height)
 	if err != nil {
-		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not marshal input data: %w", err))
+		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not marshal input data: %w", err))
 		return nil, internalError(ErrCouldNotSignTransaction)
 	}
 
-	h.pipeline.Log(ctx, traceID, InfoLog, "Signing the transaction...")
+	h.interactor.Log(ctx, traceID, InfoLog, "Signing the transaction...")
 	signature, err := connectedWallet.Wallet.SignTx(params.PublicKey, commands.BundleInputDataForSigning(inputData, lastBlockData.ChainId))
 	if err != nil {
-		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not sign command: %w", err))
+		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not sign command: %w", err))
 		return nil, internalError(ErrCouldNotSignTransaction)
 	}
-	h.pipeline.Log(ctx, traceID, SuccessLog, "The transaction has been signed.")
+	h.interactor.Log(ctx, traceID, SuccessLog, "The transaction has been signed.")
 
 	// Build the transaction.
 	tx := commands.NewTransaction(params.PublicKey, inputData, &commandspb.Signature{
@@ -126,62 +131,62 @@ func (h *SignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) 
 	})
 
 	// Generate the proof of work for the transaction.
-	h.pipeline.Log(ctx, traceID, InfoLog, "Computing proof-of-work...")
+	h.interactor.Log(ctx, traceID, InfoLog, "Computing proof-of-work...")
 	txID := vgcrypto.RandomHash()
 	powNonce, _, err := vgcrypto.PoW(lastBlockData.Hash, txID, uint(lastBlockData.SpamPowDifficulty), lastBlockData.SpamPowHashFunction)
 	if err != nil {
-		h.pipeline.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not compute the proof-of-work: %w", err))
+		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not compute the proof-of-work: %w", err))
 		return nil, internalError(ErrCouldNotSignTransaction)
 	}
 	tx.Pow = &commandspb.ProofOfWork{
 		Tid:   txID,
 		Nonce: powNonce,
 	}
-	h.pipeline.Log(ctx, traceID, SuccessLog, "The proof-of-work has been computed.")
+	h.interactor.Log(ctx, traceID, SuccessLog, "The proof-of-work has been computed.")
 
-	h.pipeline.NotifySuccessfulRequest(ctx, traceID)
+	h.interactor.NotifySuccessfulRequest(ctx, traceID)
 
-	return SignTransactionResult{
+	return ClientSignTransactionResult{
 		Tx: tx,
 	}, nil
 }
 
-func NewSignTransaction(pipeline Pipeline, nodeSelector node.Selector, sessions *Sessions) *SignTransaction {
-	return &SignTransaction{
-		pipeline:     pipeline,
+func NewSignTransaction(interactor Interactor, nodeSelector node.Selector, sessions *Sessions) *ClientSignTransaction {
+	return &ClientSignTransaction{
+		interactor:   interactor,
 		nodeSelector: nodeSelector,
 		sessions:     sessions,
 	}
 }
 
-func validateSignTransactionParams(rawParams jsonrpc.Params) (ParsedSignTransactionParams, error) {
+func validateSignTransactionParams(rawParams jsonrpc.Params) (ClientParsedSignTransactionParams, error) {
 	if rawParams == nil {
-		return ParsedSignTransactionParams{}, ErrParamsRequired
+		return ClientParsedSignTransactionParams{}, ErrParamsRequired
 	}
 
-	params := SignTransactionParams{}
+	params := ClientSignTransactionParams{}
 	if err := mapstructure.Decode(rawParams, &params); err != nil {
-		return ParsedSignTransactionParams{}, ErrParamsDoNotMatch
+		return ClientParsedSignTransactionParams{}, ErrParamsDoNotMatch
 	}
 
 	if params.Token == "" {
-		return ParsedSignTransactionParams{}, ErrConnectionTokenIsRequired
+		return ClientParsedSignTransactionParams{}, ErrConnectionTokenIsRequired
 	}
 
 	if params.PublicKey == "" {
-		return ParsedSignTransactionParams{}, ErrPublicKeyIsRequired
+		return ClientParsedSignTransactionParams{}, ErrPublicKeyIsRequired
 	}
 
 	if params.EncodedTransaction == "" {
-		return ParsedSignTransactionParams{}, ErrEncodedTransactionIsRequired
+		return ClientParsedSignTransactionParams{}, ErrEncodedTransactionIsRequired
 	}
 
 	tx, err := base64.StdEncoding.DecodeString(params.EncodedTransaction)
 	if err != nil {
-		return ParsedSignTransactionParams{}, ErrEncodedTransactionIsNotValidBase64String
+		return ClientParsedSignTransactionParams{}, ErrEncodedTransactionIsNotValidBase64String
 	}
 
-	return ParsedSignTransactionParams{
+	return ClientParsedSignTransactionParams{
 		Token:          params.Token,
 		PublicKey:      params.PublicKey,
 		RawTransaction: string(tx),

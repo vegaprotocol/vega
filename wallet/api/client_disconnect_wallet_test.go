@@ -33,7 +33,7 @@ func testDisconnectingWalletWithInvalidParamsFails(t *testing.T) {
 			expectedError: api.ErrParamsDoNotMatch,
 		}, {
 			name: "with empty connection token",
-			params: api.DisconnectWalletParams{
+			params: api.ClientDisconnectWalletParams{
 				Token: "",
 			},
 			expectedError: api.ErrConnectionTokenIsRequired,
@@ -74,7 +74,7 @@ func testDisconnectingWalletWithValidParamsSucceeds(t *testing.T) {
 	token := connectWallet(t, handler.sessions, hostname, w)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.DisconnectWalletParams{
+	result, errorDetails := handler.handle(t, ctx, api.ClientDisconnectWalletParams{
 		Token: token,
 	})
 
@@ -94,7 +94,7 @@ func testDisconnectingWalletWithInvalidTokenSucceeds(t *testing.T) {
 	handler := newDisconnectWalletHandler(t)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.DisconnectWalletParams{
+	result, errorDetails := handler.handle(t, ctx, api.ClientDisconnectWalletParams{
 		Token: vgrand.RandomStr(5),
 	})
 
@@ -104,7 +104,7 @@ func testDisconnectingWalletWithInvalidTokenSucceeds(t *testing.T) {
 }
 
 type disconnectWalletHandler struct {
-	*api.DisconnectWallet
+	*api.ClientDisconnectWallet
 	sessions *api.Sessions
 }
 
@@ -120,7 +120,7 @@ func newDisconnectWalletHandler(t *testing.T) *disconnectWalletHandler {
 	sessions := api.NewSessions()
 
 	return &disconnectWalletHandler{
-		DisconnectWallet: api.NewDisconnectWallet(sessions),
-		sessions:         sessions,
+		ClientDisconnectWallet: api.NewDisconnectWallet(sessions),
+		sessions:               sessions,
 	}
 }
