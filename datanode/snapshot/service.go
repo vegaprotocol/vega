@@ -128,9 +128,9 @@ func (b *Service) Types() []events.Type {
 
 func GetFromHeight(toHeight int64, snapshotInterval int64) int64 {
 	fromHeight := int64(0)
-	if toHeight-snapshotInterval != 0 {
-		fromHeight = toHeight - (snapshotInterval - 1)
-	}
+	// if toHeight-snapshotInterval != 0 {
+	fromHeight = toHeight - (snapshotInterval - 1)
+	//}
 	return fromHeight
 }
 

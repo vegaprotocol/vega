@@ -33,7 +33,7 @@ import (
 
 const (
 	snapshotInterval     = int64(1000)
-	chainID              = "test-chain-7cevW2"
+	chainID              = "test-chain-clbOFm"
 	compressedEventsFile = "testdata/smoketest_to_block_5000.evts.gz"
 	numSnapshots         = 5
 )
@@ -130,7 +130,7 @@ func TestMain(t *testing.M) {
 
 		err = sqlBroker.Receive(ctx)
 		if err != nil {
-			return // TODO: Replace with the panic once we're able to test with the new events file
+			panic(fmt.Errorf("failed to receive events:%w", err))
 		}
 
 		if len(fromEventsSnapshotHashes) != numSnapshots {
@@ -139,11 +139,11 @@ func TestMain(t *testing.M) {
 		// For the same events file and block height this hash should be the same across all OS/Arch
 		// If the events file is updated, schema changes, or snapshot height changed this will need updating
 		// Easiest way to update is to put a breakpoint here and inspect fromEventsSnapshotHashes
-		panicIfSnapshotHashNotEqual("e77e11d94e72be14f42e4bfe20ae58fe", fromEventsSnapshotHashes[0], snapshots)
-		panicIfSnapshotHashNotEqual("f0e3c28eb918dd51013b61b0a7f8fac7", fromEventsSnapshotHashes[1], snapshots)
-		panicIfSnapshotHashNotEqual("fdfa756c2fbc3e30f2084bd54bbebcb5", fromEventsSnapshotHashes[2], snapshots)
-		panicIfSnapshotHashNotEqual("f28d8f32bcfa4470c2347008c72e270e", fromEventsSnapshotHashes[3], snapshots)
-		panicIfSnapshotHashNotEqual("0af8301b1325969b4af8887a574b0f15", fromEventsSnapshotHashes[4], snapshots)
+		panicIfSnapshotHashNotEqual("bc1e136d0cd35222e41186fd8ca91834", fromEventsSnapshotHashes[0], snapshots)
+		panicIfSnapshotHashNotEqual("39b0e21248e689b5f1027b94caf697c8", fromEventsSnapshotHashes[1], snapshots)
+		panicIfSnapshotHashNotEqual("c32758416c0aacbf9aa8e6f5fa70cc88", fromEventsSnapshotHashes[2], snapshots)
+		panicIfSnapshotHashNotEqual("ed373e0055fe02a31866018a747a7991", fromEventsSnapshotHashes[3], snapshots)
+		panicIfSnapshotHashNotEqual("81ae5ff76a44041b416351b7ca0ca517", fromEventsSnapshotHashes[4], snapshots)
 
 		if len(fromEventsDatabaseSummaries) != numSnapshots {
 			panic(fmt.Errorf("expected %d database summaries, got %d", numSnapshots, len(fromEventsSnapshotHashes)))
@@ -168,8 +168,6 @@ func TestMain(t *testing.M) {
 }
 
 func TestGetHistoryIncludingDatanodeStateWhenDatanodeHasData(t *testing.T) {
-	t.Skip("Skipping as we need an updated event file with at least 5000 blocks")
-
 	var datanodeOldestHistoryBlock *entities.Block
 	var datanodeLastBlock *entities.Block
 
@@ -289,7 +287,6 @@ func TestGetHistoryIncludingDatanodeStateWhenDatanodeHasData(t *testing.T) {
 }
 
 func TestGetHistoryIncludingDatanodeStatWhenDatanodeIsEmpty(t *testing.T) {
-	t.Skip("Skipping as we need an updated event file with at least 5000 blocks")
 	var datanodeOldestHistoryBlock *entities.Block
 	var datanodeLastBlock *entities.Block
 
@@ -369,7 +366,6 @@ func TestGetHistoryIncludingDatanodeStatWhenDatanodeIsEmpty(t *testing.T) {
 }
 
 func TestAlteringSnapshotIntervalBelowMinIntervalWithFileSource(t *testing.T) {
-	t.Skip("Skipping as we need an updated event file with at least 5000 blocks")
 	brokerCfg := broker.NewDefaultConfig()
 	brokerCfg.UseEventFile = true
 	brokerCfg.FileEventSourceConfig.TimeBetweenBlocks = encoding.Duration{Duration: 0}
@@ -396,11 +392,11 @@ func TestAlteringSnapshotIntervalBelowMinIntervalWithFileSource(t *testing.T) {
 			}, nil
 		}, brokerCfg)
 
-	for i := 0; i <= 2000; i++ {
+	for i := 1; i <= 2000; i++ {
 		inputSnapshotService.OnBlockCommitted(context.Background(), chainID, int64(i))
 		if i == 1000 {
 			heightTo := int64(1000)
-			heightFrom := int64(0)
+			heightFrom := int64(1)
 			waitForSnapshotToCompleteForHeights(heightTo, heightFrom, snapshotsDir)
 		}
 
@@ -414,7 +410,6 @@ func TestAlteringSnapshotIntervalBelowMinIntervalWithFileSource(t *testing.T) {
 }
 
 func TestAlteringSnapshotInterval(t *testing.T) {
-	t.Skip("Skipping as we need an updated event file with at least 5000 blocks")
 	emptyDatabase()
 
 	brokerCfg := broker.NewDefaultConfig()
@@ -443,11 +438,11 @@ func TestAlteringSnapshotInterval(t *testing.T) {
 			}, nil
 		}, brokerCfg)
 
-	for i := 0; i <= 1500; i++ {
+	for i := 1; i <= 1500; i++ {
 		inputSnapshotService.OnBlockCommitted(context.Background(), chainID, int64(i))
 		if i == 1000 {
 			heightTo := int64(1000)
-			heightFrom := int64(0)
+			heightFrom := int64(1)
 			waitForSnapshotToCompleteForHeights(heightTo, heightFrom, snapshotsDir)
 		}
 		if i == 1500 {
@@ -458,8 +453,6 @@ func TestAlteringSnapshotInterval(t *testing.T) {
 	}
 }
 
-// TODO: Remove this once we've re-enabled the snapshot tests
-// nolint: unused
 func waitForSnapshotToCompleteForHeights(heightTo int64, heightFrom int64, snapshotsDir string) {
 	cs := snapshot.NewCurrentSnapshot(chainID, heightTo)
 	hist := snapshot.NewHistorySnapshot(chainID, heightFrom, heightTo)
@@ -470,7 +463,6 @@ func waitForSnapshotToCompleteForHeights(heightTo int64, heightFrom int64, snaps
 }
 
 func TestLoadingAllAvailableHistoryWithNonEmptyDatanode(t *testing.T) {
-	t.Skip("Skipping as we need an updated event file with at least 5000 blocks")
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -495,7 +487,7 @@ func TestLoadingAllAvailableHistoryWithNonEmptyDatanode(t *testing.T) {
 		fmt.Printf("failed to load available history:%s", err)
 	}
 	require.NoError(t, err)
-	assert.Equal(t, int64(0), from)
+	assert.Equal(t, int64(1), from)
 	assert.Equal(t, int64(4000), to)
 
 	summary := getDatabaseDataSummary(ctx, sqlConfig.ConnectionConfig)
@@ -537,7 +529,6 @@ func TestLoadingAllAvailableHistoryWithNonEmptyDatanode(t *testing.T) {
 }
 
 func TestLoadingAllAvailableHistoryWithJustCurrentStateSnapshot(t *testing.T) {
-	t.Skip("Skipping as we need an updated event file with at least 5000 blocks")
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -610,7 +601,6 @@ func TestLoadingAllAvailableHistoryWithJustCurrentStateSnapshot(t *testing.T) {
 }
 
 func TestRestoreFromPartialHistoryAndProcessEvents(t *testing.T) {
-	t.Skip("Skipping as we need an updated event file with at least 5000 blocks")
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -671,7 +661,6 @@ func TestRestoreFromPartialHistoryAndProcessEvents(t *testing.T) {
 }
 
 func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
-	t.Skip("Skipping as we need an updated event file with at least 5000 blocks")
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -683,7 +672,7 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 
 	from, to, err := inputSnapshotService.LoadAllAvailableHistory(ctx)
 	require.NoError(t, err)
-	assert.Equal(t, int64(0), from)
+	assert.Equal(t, int64(1), from)
 	assert.Equal(t, int64(2000), to)
 
 	var snapshotFileHashAfterReloadAt2000AndEventReplayTo3000 string
@@ -722,7 +711,6 @@ func emptyDatabase() {
 }
 
 func TestRestoringFromDifferentHeightsWithFullHistory(t *testing.T) {
-	t.Skip("Skipping as we need an updated event file with at least 5000 blocks")
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -746,8 +734,6 @@ type sqlStoreBroker interface {
 	Receive(ctx context.Context) error
 }
 
-// TODO: Remove this once we've re-enabled the snapshot tests
-// nolint: unused
 func copySnapshotDataIntoSnapshotDirectory(fromHeight int64, toHeight int64, snapshotsDir string) {
 	_, histories, err := snapshot.GetHistorySnapshots(snapshotsBackupDir)
 	if err != nil {
@@ -796,8 +782,6 @@ func panicIfSnapshotHashNotEqual(expected string, actual string, snapshots []sna
 	}
 }
 
-// TODO: Remove this once we've re-enabled the snapshot tests
-// nolint: unused
 func assertIntervalHistoryIsEmpty(t *testing.T, historyTableDelta []map[string]tableDataSummary, interval int) {
 	t.Helper()
 	totalRowCount := 0
@@ -902,8 +886,6 @@ type tableDataSummary struct {
 	dataHash  string
 }
 
-// TODO: Remove this once we've re-enabled the snapshot tests
-// nolint: unused
 func assertTableSummariesAreEqual(t *testing.T, expected map[string]tableDataSummary, actual map[string]tableDataSummary) {
 	t.Helper()
 	if len(expected) != len(actual) {
