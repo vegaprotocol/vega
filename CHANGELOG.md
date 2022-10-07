@@ -10,6 +10,7 @@
 
 ### 🛠 Improvements
 - [6608](https://github.com/vegaprotocol/vega/issues/6608) - Put embedded `postgres` files in proper state directory
+- [6552](https://github.com/vegaprotocol/vega/issues/6552) - Add `datanode` `API` for querying protocol upgrade proposals
 - [6613](https://github.com/vegaprotocol/vega/issues/6613) - Add file buffering to datanode
 - [6602](https://github.com/vegaprotocol/vega/issues/6602) - Panic if data node receives events in unexpected order
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -

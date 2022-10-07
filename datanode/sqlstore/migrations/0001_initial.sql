@@ -1529,12 +1529,36 @@ create table if not exists node_signatures(
     primary key (resource_id, sig)
 );
 
+CREATE TYPE protocol_upgrade_proposal_status AS enum(
+    'PROTOCOL_UPGRADE_PROPOSAL_STATUS_UNSPECIFIED',
+    'PROTOCOL_UPGRADE_PROPOSAL_STATUS_PENDING',
+    'PROTOCOL_UPGRADE_PROPOSAL_STATUS_APPROVED',
+    'PROTOCOL_UPGRADE_PROPOSAL_STATUS_REJECTED');
+
+CREATE TABLE IF NOT EXISTS protocol_upgrade_proposals(
+    upgrade_block_height BIGINT NOT NULL,
+    vega_release_tag TEXT NOT NULL,
+    approvers TEXT[] NOT NULL,
+    status protocol_upgrade_proposal_status NOT NULL,
+    tx_hash bytea not null,
+    vega_time TIMESTAMP WITH TIME ZONE NOT NULL,
+    PRIMARY KEY(vega_time, upgrade_block_height, vega_release_tag)
+);
+
+CREATE VIEW protocol_upgrade_proposals_current AS (
+    SELECT DISTINCT ON (upgrade_block_height, vega_release_tag) *
+      FROM protocol_upgrade_proposals
+  ORDER BY upgrade_block_height, vega_release_tag, vega_time DESC);
 
 -- +goose Down
 DROP AGGREGATE IF EXISTS public.first(anyelement);
 DROP AGGREGATE IF EXISTS public.last(anyelement);
 DROP FUNCTION IF EXISTS public.first_agg(anyelement, anyelement);
 DROP FUNCTION IF EXISTS public.last_agg(anyelement, anyelement);
+
+DROP VIEW IF EXISTS protocol_upgrade_proposals_current;
+DROP TABLE IF EXISTS protocol_upgrade_proposals;
+DROP TYPE IF EXISTS protocol_upgrade_proposal_status;
 
 DROP TABLE IF EXISTS ethereum_key_rotations;
 

@@ -65,6 +65,7 @@ var (
 		"parties",
 		"positions",
 		"proposals",
+		"protocol_upgrade_proposals",
 		"ranking_scores",
 		"reward_scores",
 		"rewards",

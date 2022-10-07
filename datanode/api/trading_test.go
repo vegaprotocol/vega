@@ -145,7 +145,7 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 	sqlNodeService := service.NewNode(sqlstore.NewNode(sqlConn), logger)
 	sqlMarketDepthService := service.NewMarketDepth(sqlOrderService, logger)
 	sqlLedgerService := service.NewLedger(sqlstore.NewLedger(sqlConn), logger)
-	sqlProtocolUpgradeService := service.NewProtocolUpgrade()
+	sqlProtocolUpgradeService := service.NewProtocolUpgrade(sqlstore.NewProtocolUpgradeProposals(sqlConn), logger)
 
 	g := api.NewGRPCServer(
 		logger,
