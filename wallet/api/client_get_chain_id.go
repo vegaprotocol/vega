@@ -7,15 +7,15 @@ import (
 	walletnode "code.vegaprotocol.io/vega/wallet/api/node"
 )
 
-type GetChainIDResult struct {
+type ClientGetChainIDResult struct {
 	ChainID string `json:"chainID"`
 }
 
-type GetChainID struct {
+type ClientGetChainID struct {
 	nodeSelector walletnode.Selector
 }
 
-func (h *GetChainID) Handle(ctx context.Context, _ jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *ClientGetChainID) Handle(ctx context.Context, _ jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	currentNode, err := h.nodeSelector.Node(ctx, noNodeSelectionReporting)
 	if err != nil {
 		return nil, networkError(ErrNoHealthyNodeAvailable)
@@ -26,13 +26,13 @@ func (h *GetChainID) Handle(ctx context.Context, _ jsonrpc.Params) (jsonrpc.Resu
 		return nil, networkError(ErrCouldNotGetLastBlockInformation)
 	}
 
-	return GetChainIDResult{
+	return ClientGetChainIDResult{
 		ChainID: lastBlockData.ChainId,
 	}, nil
 }
 
-func NewGetChainID(nodeSelector walletnode.Selector) *GetChainID {
-	return &GetChainID{
+func NewGetChainID(nodeSelector walletnode.Selector) *ClientGetChainID {
+	return &ClientGetChainID{
 		nodeSelector: nodeSelector,
 	}
 }

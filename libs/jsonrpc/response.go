@@ -44,10 +44,6 @@ const (
 	// -32000 to -32099 codes are reserved for implementation-defined server-errors.
 	// See https://www.jsonrpc.org/specification#error_object for more information.
 
-	// ErrorCodeRequestAlreadyBeingProcessed is a custom server implementation
-	// error indicating that a request is already being processed. The server
-	// doesn't accept concurrent requests.
-	ErrorCodeRequestAlreadyBeingProcessed ErrorCode = -32000
 	// ErrorCodeRequestHasBeenInterrupted refers to a request that has been
 	// interrupted by the server or the third-party application. It could
 	// originate from a timeout or an explicit cancellation.
