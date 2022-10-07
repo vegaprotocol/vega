@@ -739,7 +739,7 @@ func (e *Engine) FinalSettlement(ctx context.Context, marketID string, transfers
 			e.log.Error("final settlement transfer", logging.String("amount", t.Amount.String()), logging.Int32("type", int32(t.Type)))
 		}
 		// if there's just one asset unit left over from some weird rounding issue, transfer it to the global reward account
-		if settle.Balance == num.UintOne() {
+		if settle.Balance.EQ(num.UintOne()) {
 			e.log.Warn("final settlement left 1 asset unit in the settlement, transferring to the asset reward account")
 			req := &types.TransferRequest{
 				FromAccount: make([]*types.Account, 1),
