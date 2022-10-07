@@ -1,6 +1,11 @@
 package interactor
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+
+	"github.com/mitchellh/mapstructure"
+)
 
 const (
 	RequestWalletConnectionReviewName      InteractionName = "REQUEST_WALLET_CONNECTION_REVIEW"
@@ -40,6 +45,128 @@ type Interaction struct {
 
 	// Data is the generic field that hold the data of the specific interaction.
 	Data interface{} `json:"data"`
+}
+
+func (f *Interaction) UnmarshalJSON(data []byte) error {
+	input := &struct {
+		TraceID string                 `json:"traceID"`
+		Name    InteractionName        `json:"name"`
+		Data    map[string]interface{} `json:"data"`
+	}{}
+
+	if err := json.Unmarshal(data, &input); err != nil {
+		return err
+	}
+
+	f.TraceID = input.TraceID
+	f.Name = input.Name
+
+	switch input.Name {
+	case RequestWalletConnectionReviewName:
+		data := RequestWalletConnectionReview{}
+		if err := mapstructure.Decode(input.Data, &data); err != nil {
+			return err
+		}
+		f.Data = data
+	case RequestWalletSelectionName:
+		data := RequestWalletSelection{}
+		if err := mapstructure.Decode(input.Data, &data); err != nil {
+			return err
+		}
+		f.Data = data
+	case RequestPassphraseName:
+		data := RequestPassphrase{}
+		if err := mapstructure.Decode(input.Data, &data); err != nil {
+			return err
+		}
+		f.Data = data
+	case RequestPermissionsReviewName:
+		data := RequestPermissionsReview{}
+		if err := mapstructure.Decode(input.Data, &data); err != nil {
+			return err
+		}
+		f.Data = data
+	case RequestTransactionReviewForSendingName:
+		data := RequestTransactionReviewForSending{}
+		if err := mapstructure.Decode(input.Data, &data); err != nil {
+			return err
+		}
+		f.Data = data
+	case RequestTransactionReviewForSigningName:
+		data := RequestTransactionReviewForSigning{}
+		if err := mapstructure.Decode(input.Data, &data); err != nil {
+			return err
+		}
+		f.Data = data
+	case WalletConnectionDecisionName:
+		data := WalletConnectionDecision{}
+		if err := mapstructure.Decode(input.Data, &data); err != nil {
+			return err
+		}
+		f.Data = data
+	case DecisionName:
+		data := Decision{}
+		if err := mapstructure.Decode(input.Data, &data); err != nil {
+			return err
+		}
+		f.Data = data
+	case EnteredPassphraseName:
+		data := EnteredPassphrase{}
+		if err := mapstructure.Decode(input.Data, &data); err != nil {
+			return err
+		}
+		f.Data = data
+	case SelectedWalletName:
+		data := SelectedWallet{}
+		if err := mapstructure.Decode(input.Data, &data); err != nil {
+			return err
+		}
+		f.Data = data
+	case InteractionSessionBeganName:
+		data := InteractionSessionBegan{}
+		if err := mapstructure.Decode(input.Data, &data); err != nil {
+			return err
+		}
+		f.Data = data
+	case InteractionSessionEndedName:
+		data := InteractionSessionEnded{}
+		if err := mapstructure.Decode(input.Data, &data); err != nil {
+			return err
+		}
+		f.Data = data
+	case RequestSucceededName:
+		data := RequestSucceeded{}
+		if err := mapstructure.Decode(input.Data, &data); err != nil {
+			return err
+		}
+		f.Data = data
+	case ErrorOccurredName:
+		data := ErrorOccurred{}
+		if err := mapstructure.Decode(input.Data, &data); err != nil {
+			return err
+		}
+		f.Data = data
+	case TransactionSucceededName:
+		data := TransactionSucceeded{}
+		if err := mapstructure.Decode(input.Data, &data); err != nil {
+			return err
+		}
+		f.Data = data
+	case TransactionFailedName:
+		data := TransactionFailed{}
+		if err := mapstructure.Decode(input.Data, &data); err != nil {
+			return err
+		}
+		f.Data = data
+	case LogName:
+		data := Log{}
+		if err := mapstructure.Decode(input.Data, &data); err != nil {
+			return err
+		}
+		f.Data = data
+	}
+
+	return nil
 }
 
 // RequestWalletConnectionReview is a request emitted when a third-party
