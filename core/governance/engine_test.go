@@ -1194,7 +1194,15 @@ func (e *tstEngine) expectOpenProposalEvent(t *testing.T, party, proposal string
 		pe, ok := ev.(*events.Proposal)
 		require.True(t, ok)
 		p := pe.Proposal()
-		assert.Equal(t, types.ProposalStateOpen.String(), p.State.String(), fmt.Sprintf("reason: %s, details: %s", p.Reason, p.ErrorDetails))
+		reason := types.ProposalErrorUnspecified
+		if p.Reason != nil {
+			reason = *p.Reason
+		}
+		errDetails := ""
+		if p.ErrorDetails != nil {
+			errDetails = *p.ErrorDetails
+		}
+		assert.Equal(t, types.ProposalStateOpen.String(), p.State.String(), fmt.Sprintf("reason: %v, details: %s", reason, errDetails))
 		assert.Equal(t, party, p.PartyId)
 		assert.Equal(t, proposal, p.Id)
 	})

@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
 	"github.com/shopspring/decimal"
@@ -64,6 +65,11 @@ func (o Order) ToProto() *vega.Order {
 		}
 	}
 
+	var reason *OrderError
+	if o.Reason != OrderErrorUnspecified {
+		reason = ptr.From(o.Reason)
+	}
+
 	vo := vega.Order{
 		Id:                   o.ID.String(),
 		MarketId:             o.MarketID.String(),
@@ -78,7 +84,7 @@ func (o Order) ToProto() *vega.Order {
 		Status:               o.Status,
 		ExpiresAt:            o.ExpiresAt.UnixNano(),
 		Reference:            o.Reference,
-		Reason:               o.Reason,
+		Reason:               reason,
 		UpdatedAt:            o.UpdatedAt.UnixNano(),
 		Version:              uint64(o.Version),
 		BatchId:              uint64(o.BatchID),
@@ -136,6 +142,11 @@ func OrderFromProto(po *vega.Order, seqNum uint64, txHash TxHash) (Order, error)
 		peggedReference = po.PeggedOrder.Reference
 	}
 
+	reason := OrderErrorUnspecified
+	if po.Reason != nil {
+		reason = *po.Reason
+	}
+
 	o := Order{
 		ID:              OrderID(po.Id),
 		MarketID:        MarketID(po.MarketId),
@@ -148,7 +159,7 @@ func OrderFromProto(po *vega.Order, seqNum uint64, txHash TxHash) (Order, error)
 		Type:            po.Type,
 		Status:          po.Status,
 		Reference:       po.Reference,
-		Reason:          po.Reason,
+		Reason:          reason,
 		Version:         version,
 		PeggedOffset:    peggedOffset,
 		BatchID:         batchID,

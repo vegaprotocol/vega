@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -127,6 +128,11 @@ func (o *Order) IntoProto() *proto.Order {
 	if o.PeggedOrder != nil {
 		pegged = o.PeggedOrder.IntoProto()
 	}
+	var reason *OrderError
+	if o.Reason != OrderErrorUnspecified {
+		reason = ptr.From(o.Reason)
+	}
+
 	return &proto.Order{
 		Id:                   o.ID,
 		MarketId:             o.MarketID,
@@ -141,7 +147,7 @@ func (o *Order) IntoProto() *proto.Order {
 		Status:               o.Status,
 		ExpiresAt:            o.ExpiresAt,
 		Reference:            o.Reference,
-		Reason:               o.Reason,
+		Reason:               reason,
 		UpdatedAt:            o.UpdatedAt,
 		Version:              o.Version,
 		BatchId:              o.BatchID,
@@ -167,6 +173,10 @@ func OrderFromProto(o *proto.Order) (*Order, error) {
 			return nil, errors.New("invalid price")
 		}
 	}
+	reason := OrderErrorUnspecified
+	if o.Reason != nil {
+		reason = *o.Reason
+	}
 	return &Order{
 		ID:                   o.Id,
 		MarketID:             o.MarketId,
@@ -182,7 +192,7 @@ func OrderFromProto(o *proto.Order) (*Order, error) {
 		Status:               o.Status,
 		ExpiresAt:            o.ExpiresAt,
 		Reference:            o.Reference,
-		Reason:               o.Reason,
+		Reason:               reason,
 		UpdatedAt:            o.UpdatedAt,
 		Version:              o.Version,
 		BatchID:              o.BatchId,

@@ -16,6 +16,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
@@ -288,14 +289,17 @@ func (p Proposal) IntoProto() *vegapb.Proposal {
 		State:                                  p.State,
 		Timestamp:                              p.Timestamp,
 		Terms:                                  terms,
-		Reason:                                 p.Reason,
-		ErrorDetails:                           p.ErrorDetails,
 		RequiredMajority:                       p.RequiredMajority.String(),
 		RequiredParticipation:                  p.RequiredParticipation.String(),
 		RequiredLiquidityProviderMajority:      lpMajority,
 		RequiredLiquidityProviderParticipation: lpParticipation,
 	}
-
+	if p.Reason != ProposalErrorUnspecified {
+		proposal.Reason = ptr.From(p.Reason)
+	}
+	if len(p.ErrorDetails) > 0 {
+		proposal.ErrorDetails = ptr.From(p.ErrorDetails)
+	}
 	if p.Rationale != nil {
 		proposal.Rationale = &vegapb.ProposalRationale{
 			Description: p.Rationale.Description,
@@ -342,6 +346,15 @@ func ProposalFromProto(pp *vegapb.Proposal) (*Proposal, error) {
 			return nil, err
 		}
 	}
+	reason := ProposalErrorUnspecified
+	if pp.Reason != nil {
+		reason = *pp.Reason
+	}
+	errDetails := ""
+	if pp.ErrorDetails != nil {
+		errDetails = *pp.ErrorDetails
+	}
+
 	return &Proposal{
 		ID:                      pp.Id,
 		Reference:               pp.Reference,
@@ -349,9 +362,9 @@ func ProposalFromProto(pp *vegapb.Proposal) (*Proposal, error) {
 		State:                   pp.State,
 		Timestamp:               pp.Timestamp,
 		Terms:                   terms,
-		Reason:                  pp.Reason,
+		Reason:                  reason,
 		Rationale:               ProposalRationaleFromProto(pp.Rationale),
-		ErrorDetails:            pp.ErrorDetails,
+		ErrorDetails:            errDetails,
 		RequiredMajority:        majority,
 		RequiredParticipation:   participation,
 		RequiredLPMajority:      lpMajority,

@@ -922,15 +922,11 @@ func (b *OrderBook) RemoveDistressedOrders(
 		for _, o := range orders {
 			confirm, err := b.CancelOrder(o)
 			if err != nil {
-				if b.log.GetLevel() == logging.DebugLevel {
-					b.log.Debug(
-						"Failed to cancel a given order for party",
-						logging.Order(*o),
-						logging.String("party", party.Party()),
-						logging.Error(err))
-				}
-				// let's see whether we need to handle this further down
-				continue
+				b.log.Panic(
+					"Failed to cancel a given order for party",
+					logging.Order(*o),
+					logging.String("party", party.Party()),
+					logging.Error(err))
 			}
 			// here we set the status of the order as stopped as the system triggered it as well.
 			confirm.Order.Status = types.OrderStatusStopped
@@ -1049,7 +1045,8 @@ func (b *OrderBook) GetActivePeggedOrderIDs() []string {
 	for ID := range b.peggedOrders {
 		if o, ok := b.ordersByID[ID]; ok {
 			if o.Status == vega.Order_STATUS_PARKED {
-				panic("unexpected parked pegged order in order book")
+				b.log.Panic("unexpected parked pegged order in order book",
+					logging.Order(o))
 			}
 			pegged = append(pegged, o.ID)
 		}
