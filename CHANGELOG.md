@@ -26,6 +26,7 @@
 - [6426](https://github.com/vegaprotocol/vega/issues/6426) - Add a name field on interaction to know what they are when JSON
 - [6427](https://github.com/vegaprotocol/vega/issues/6427) - Improve interactions documentation
 - [6431](https://github.com/vegaprotocol/vega/issues/6431) - Pass a human-readable input data in Transaction Succeeded and Failed notifications
+- [6448](https://github.com/vegaprotocol/vega/issues/6448) - Improve wallet interaction JSON conversion
 
 ### 🐛 Fixes
 - [6388](https://github.com/vegaprotocol/vega/issues/6388) - Do not transfer stake and delegations after a key rotation
