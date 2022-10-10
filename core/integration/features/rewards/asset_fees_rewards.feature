@@ -348,7 +348,7 @@ Feature: Fees reward calculations for a single asset, single market
       | trader3a | ETH   | ETH/DEC21 | 480    | 9531    |
       | trader3b | ETH   | ETH/DEC21 | 240    | 9766    |
 
-    And the liquidity fee factor should "0.001" for the market "ETH/DEC21"
+    And the liquidity fee factor should be "0.001" for the market "ETH/DEC21"
     And the accumulated liquidity fees should be "5" for the market "ETH/DEC21"
 
     Then the market data for the market "ETH/DEC21" should be:
