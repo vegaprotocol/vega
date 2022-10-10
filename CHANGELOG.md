@@ -29,6 +29,7 @@
 - [6448](https://github.com/vegaprotocol/vega/issues/6448) - Improve wallet interaction JSON conversion
 - [6454](https://github.com/vegaprotocol/vega/issues/6454) - Improve test coverage for setting fees and rewarding LPs
 - [6458](https://github.com/vegaprotocol/vega/issues/6458) - Return a context aware message in `RequestSuccessful` interaction
+- [6451](https://github.com/vegaprotocol/vega/issues/6451) - Improve interaction error message
 
 ### 🐛 Fixes
 - [6444](https://github.com/vegaprotocol/vega/issues/6444) - Send a transaction error if the same node announces itself twice

@@ -189,14 +189,14 @@ func (i *ParallelInteractor) RequestWalletConnectionReview(ctx context.Context, 
 		},
 	}
 
-	interaction, err := i.waitForResponse(ctx, session.userResponseChan, traceID)
+	interaction, err := i.waitForResponse(ctx, session.userResponseChan, traceID, WalletConnectionDecisionName)
 	if err != nil {
 		return "", err
 	}
 
 	decision, ok := interaction.Data.(WalletConnectionDecision)
 	if !ok {
-		return "", ErrWrongResponseType
+		return "", InvalidResponsePayloadError(WalletConnectionDecisionName)
 	}
 
 	return decision.ConnectionApproval, nil
@@ -221,14 +221,14 @@ func (i *ParallelInteractor) RequestWalletSelection(ctx context.Context, traceID
 		},
 	}
 
-	interaction, err := i.waitForResponse(ctx, session.userResponseChan, traceID)
+	interaction, err := i.waitForResponse(ctx, session.userResponseChan, traceID, SelectedWalletName)
 	if err != nil {
 		return api.SelectedWallet{}, err
 	}
 
 	selectedWallet, ok := interaction.Data.(SelectedWallet)
 	if !ok {
-		return api.SelectedWallet{}, ErrWrongResponseType
+		return api.SelectedWallet{}, InvalidResponsePayloadError(SelectedWalletName)
 	}
 
 	return api.SelectedWallet{
@@ -255,14 +255,14 @@ func (i *ParallelInteractor) RequestPassphrase(ctx context.Context, traceID, wal
 		},
 	}
 
-	interaction, err := i.waitForResponse(ctx, session.userResponseChan, traceID)
+	interaction, err := i.waitForResponse(ctx, session.userResponseChan, traceID, EnteredPassphraseName)
 	if err != nil {
 		return "", err
 	}
 
 	enteredPassphrase, ok := interaction.Data.(EnteredPassphrase)
 	if !ok {
-		return "", ErrWrongResponseType
+		return "", InvalidResponsePayloadError(EnteredPassphraseName)
 	}
 
 	return enteredPassphrase.Passphrase, nil
@@ -288,14 +288,14 @@ func (i *ParallelInteractor) RequestPermissionsReview(ctx context.Context, trace
 		},
 	}
 
-	interaction, err := i.waitForResponse(ctx, session.userResponseChan, traceID)
+	interaction, err := i.waitForResponse(ctx, session.userResponseChan, traceID, DecisionName)
 	if err != nil {
 		return false, err
 	}
 
 	decision, ok := interaction.Data.(Decision)
 	if !ok {
-		return false, ErrWrongResponseType
+		return false, InvalidResponsePayloadError(DecisionName)
 	}
 
 	return decision.Approved, nil
@@ -323,14 +323,14 @@ func (i *ParallelInteractor) RequestTransactionReviewForSending(ctx context.Cont
 		},
 	}
 
-	interaction, err := i.waitForResponse(ctx, session.userResponseChan, traceID)
+	interaction, err := i.waitForResponse(ctx, session.userResponseChan, traceID, DecisionName)
 	if err != nil {
 		return false, err
 	}
 
 	decision, ok := interaction.Data.(Decision)
 	if !ok {
-		return false, ErrWrongResponseType
+		return false, InvalidResponsePayloadError(DecisionName)
 	}
 
 	return decision.Approved, nil
@@ -358,14 +358,14 @@ func (i *ParallelInteractor) RequestTransactionReviewForSigning(ctx context.Cont
 		},
 	}
 
-	interaction, err := i.waitForResponse(ctx, session.userResponseChan, traceID)
+	interaction, err := i.waitForResponse(ctx, session.userResponseChan, traceID, DecisionName)
 	if err != nil {
 		return false, err
 	}
 
 	decision, ok := interaction.Data.(Decision)
 	if !ok {
-		return false, ErrWrongResponseType
+		return false, InvalidResponsePayloadError(DecisionName)
 	}
 
 	return decision.Approved, nil
@@ -392,20 +392,29 @@ func (i *ParallelInteractor) ensureCanProceed(ctx context.Context) error {
 	return nil
 }
 
-func (i *ParallelInteractor) waitForResponse(ctx context.Context, userResponseChan <-chan Interaction, traceID string) (Interaction, error) {
-	for {
+func (i *ParallelInteractor) waitForResponse(ctx context.Context, userResponseChan <-chan Interaction, traceID string, name InteractionName) (Interaction, error) {
+	var response Interaction
+	running := true
+	for running {
 		select {
 		case <-ctx.Done():
 			return Interaction{}, api.ErrRequestInterrupted
 		case <-i.userCtx.Done():
 			return Interaction{}, api.ErrUserCloseTheConnection
-		case response := <-userResponseChan:
-			if response.TraceID != traceID {
-				return Interaction{}, ErrTraceIDMismatch
-			}
-			return response, nil
+		case r := <-userResponseChan:
+			response = r
+			running = false
 		}
 	}
+
+	if response.TraceID != traceID {
+		return Interaction{}, TraceIDMismatchError(traceID, response.TraceID)
+	}
+	if response.Name != name {
+		return Interaction{}, WrongResponseTypeError(name, response.Name)
+	}
+
+	return response, nil
 }
 
 func NewParallelInteractor(userCtx context.Context, startSessionChan chan<- *OngoingSession) *ParallelInteractor {
