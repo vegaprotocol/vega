@@ -404,13 +404,13 @@ func handleAPIv1Request(consentRequest service.ConsentRequest, log *zap.Logger, 
 }
 
 func handleAPIv2Request(interaction interactor.Interaction, responseChan chan<- interactor.Interaction, enableAutomaticConsent bool, p *printer.InteractivePrinter) error {
-	switch content := interaction.Data.(type) {
+	switch data := interaction.Data.(type) {
 	case interactor.InteractionSessionBegan:
 		p.Print(p.String().NextLine())
 	case interactor.InteractionSessionEnded:
 		p.Print(p.String().NextLine())
 	case interactor.RequestWalletConnectionReview:
-		p.Print(p.String().BlueArrow().Text("The application \"").InfoText(content.Hostname).Text("\" wants to connect to your wallet.").NextLine())
+		p.Print(p.String().BlueArrow().Text("The application \"").InfoText(data.Hostname).Text("\" wants to connect to your wallet.").NextLine())
 		var connectionApproval string
 		approved := yesOrNo(p.String().QuestionMark().Text("Do you approve connecting your wallet to this application?"), p)
 		if approved {
@@ -429,11 +429,11 @@ func handleAPIv2Request(interaction interactor.Interaction, responseChan chan<- 
 		}
 	case interactor.RequestWalletSelection:
 		str := p.String().BlueArrow().Text("Here are the available wallets:").NextLine()
-		for _, w := range content.AvailableWallets {
+		for _, w := range data.AvailableWallets {
 			str.ListItem().Text("- ").InfoText(w).NextLine()
 		}
 		p.Print(str)
-		selectedWallet := readInput(p.String().QuestionMark().Text("Which wallet do you want to use? "), p, content.AvailableWallets)
+		selectedWallet := readInput(p.String().QuestionMark().Text("Which wallet do you want to use? "), p, data.AvailableWallets)
 		passphrase := readPassphrase(p.String().BlueArrow().Text("Enter the passphrase for the wallet \"").InfoText(selectedWallet).Text("\": "), p)
 		responseChan <- interactor.Interaction{
 			TraceID: interaction.TraceID,
@@ -444,7 +444,7 @@ func handleAPIv2Request(interaction interactor.Interaction, responseChan chan<- 
 			},
 		}
 	case interactor.RequestPassphrase:
-		passphrase := readPassphrase(p.String().BlueArrow().Text("Enter the passphrase for the wallet \"").InfoText(content.Wallet).Text("\": "), p)
+		passphrase := readPassphrase(p.String().BlueArrow().Text("Enter the passphrase for the wallet \"").InfoText(data.Wallet).Text("\": "), p)
 		responseChan <- interactor.Interaction{
 			TraceID: interaction.TraceID,
 			Name:    interactor.EnteredPassphraseName,
@@ -453,18 +453,18 @@ func handleAPIv2Request(interaction interactor.Interaction, responseChan chan<- 
 			},
 		}
 	case interactor.ErrorOccurred:
-		if content.Type == string(walletapi.InternalError) {
-			str := p.String().DangerBangMark().DangerText("An internal error occurred: ").DangerText(content.Error).NextLine()
+		if data.Type == string(walletapi.InternalError) {
+			str := p.String().DangerBangMark().DangerText("An internal error occurred: ").DangerText(data.Error).NextLine()
 			str.DangerBangMark().DangerText("The request has been canceled.").NextLine()
 			p.Print(str)
-		} else if content.Type == string(walletapi.UserError) {
-			p.Print(p.String().DangerBangMark().DangerText(content.Error).NextLine())
+		} else if data.Type == string(walletapi.UserError) {
+			p.Print(p.String().DangerBangMark().DangerText(data.Error).NextLine())
 		} else {
-			p.Print(p.String().DangerBangMark().DangerText(fmt.Sprintf("Error: %s (%s)", content.Error, content.Type)).NextLine())
+			p.Print(p.String().DangerBangMark().DangerText(fmt.Sprintf("Error: %s (%s)", data.Error, data.Type)).NextLine())
 		}
 	case interactor.Log:
 		str := p.String()
-		switch content.Type {
+		switch data.Type {
 		case string(walletapi.InfoLog):
 			str.BlueArrow()
 		case string(walletapi.ErrorLog):
@@ -476,12 +476,16 @@ func handleAPIv2Request(interaction interactor.Interaction, responseChan chan<- 
 		default:
 			str.Text("- ")
 		}
-		p.Print(str.Text(content.Message).NextLine())
+		p.Print(str.Text(data.Message).NextLine())
 	case interactor.RequestSucceeded:
-		p.Print(p.String().CheckMark().SuccessText("Request succeeded").NextLine())
+		if data.Message == "" {
+			p.Print(p.String().CheckMark().SuccessText("Request succeeded").NextLine())
+		} else {
+			p.Print(p.String().CheckMark().SuccessText(data.Message).NextLine())
+		}
 	case interactor.RequestPermissionsReview:
-		str := p.String().BlueArrow().Text("The application \"").InfoText(content.Hostname).Text("\" want to update the permissions for the wallet \"").InfoText(content.Wallet).Text("\":").NextLine()
-		for perm, access := range content.Permissions {
+		str := p.String().BlueArrow().Text("The application \"").InfoText(data.Hostname).Text("\" want to update the permissions for the wallet \"").InfoText(data.Wallet).Text("\":").NextLine()
+		for perm, access := range data.Permissions {
 			str.ListItem().Text("- ").InfoText(perm).Text(": ").InfoText(access).NextLine()
 		}
 		p.Print(str)
@@ -499,10 +503,10 @@ func handleAPIv2Request(interaction interactor.Interaction, responseChan chan<- 
 			},
 		}
 	case interactor.RequestTransactionReviewForSending:
-		str := p.String().BlueArrow().Text("The application \"").InfoText(content.Hostname).Text("\" wants to send the following transaction:").NextLine()
-		str.Pad().Text("Using the key: ").InfoText(content.PublicKey).NextLine()
-		str.Pad().Text("From the wallet: ").InfoText(content.Wallet).NextLine()
-		fmtCmd := strings.Replace("  "+content.Transaction, "\n", "\n  ", -1)
+		str := p.String().BlueArrow().Text("The application \"").InfoText(data.Hostname).Text("\" wants to send the following transaction:").NextLine()
+		str.Pad().Text("Using the key: ").InfoText(data.PublicKey).NextLine()
+		str.Pad().Text("From the wallet: ").InfoText(data.Wallet).NextLine()
+		fmtCmd := strings.Replace("  "+data.Transaction, "\n", "\n  ", -1)
 		str.InfoText(fmtCmd).NextLine()
 		p.Print(str)
 		approved := true
@@ -522,10 +526,10 @@ func handleAPIv2Request(interaction interactor.Interaction, responseChan chan<- 
 			},
 		}
 	case interactor.RequestTransactionReviewForSigning:
-		str := p.String().BlueArrow().Text("The application \"").InfoText(content.Hostname).Text("\" wants to sign the following transaction:").NextLine()
-		str.Pad().Text("Using the key: ").InfoText(content.PublicKey).NextLine()
-		str.Pad().Text("From the wallet: ").InfoText(content.Wallet).NextLine()
-		fmtCmd := strings.Replace("  "+content.Transaction, "\n", "\n  ", -1)
+		str := p.String().BlueArrow().Text("The application \"").InfoText(data.Hostname).Text("\" wants to sign the following transaction:").NextLine()
+		str.Pad().Text("Using the key: ").InfoText(data.PublicKey).NextLine()
+		str.Pad().Text("From the wallet: ").InfoText(data.Wallet).NextLine()
+		fmtCmd := strings.Replace("  "+data.Transaction, "\n", "\n  ", -1)
 		str.InfoText(fmtCmd).NextLine()
 		p.Print(str)
 		approved := true
@@ -547,17 +551,17 @@ func handleAPIv2Request(interaction interactor.Interaction, responseChan chan<- 
 	case interactor.TransactionFailed:
 		str := p.String()
 		str.DangerBangMark().DangerText("The transaction failed.").NextLine()
-		str.Pad().DangerText(content.Error.Error()).NextLine()
-		str.Pad().Text("Sent at: ").Text(content.SentAt.Format(time.ANSIC)).NextLine()
+		str.Pad().DangerText(data.Error.Error()).NextLine()
+		str.Pad().Text("Sent at: ").Text(data.SentAt.Format(time.ANSIC)).NextLine()
 		p.Print(str)
 	case interactor.TransactionSucceeded:
 		str := p.String()
 		str.CheckMark().SuccessText("The transaction has been delivered.").NextLine()
-		str.Pad().Text("Transaction hash: ").SuccessText(content.TxHash).NextLine()
-		str.Pad().Text("Sent at: ").Text(content.SentAt.Format(time.ANSIC)).NextLine()
+		str.Pad().Text("Transaction hash: ").SuccessText(data.TxHash).NextLine()
+		str.Pad().Text("Sent at: ").Text(data.SentAt.Format(time.ANSIC)).NextLine()
 		p.Print(str)
 	default:
-		panic(fmt.Sprintf("unhandled interaction: %v", content))
+		panic(fmt.Sprintf("unhandled interaction: %v", data))
 	}
 	return nil
 }

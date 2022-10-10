@@ -321,15 +321,15 @@ func (mr *MockInteractorMockRecorder) NotifyInteractionSessionEnded(arg0, arg1 i
 }
 
 // NotifySuccessfulRequest mocks base method.
-func (m *MockInteractor) NotifySuccessfulRequest(arg0 context.Context, arg1 string) {
+func (m *MockInteractor) NotifySuccessfulRequest(arg0 context.Context, arg1, arg2 string) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "NotifySuccessfulRequest", arg0, arg1)
+	m.ctrl.Call(m, "NotifySuccessfulRequest", arg0, arg1, arg2)
 }
 
 // NotifySuccessfulRequest indicates an expected call of NotifySuccessfulRequest.
-func (mr *MockInteractorMockRecorder) NotifySuccessfulRequest(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockInteractorMockRecorder) NotifySuccessfulRequest(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifySuccessfulRequest", reflect.TypeOf((*MockInteractor)(nil).NotifySuccessfulRequest), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifySuccessfulRequest", reflect.TypeOf((*MockInteractor)(nil).NotifySuccessfulRequest), arg0, arg1, arg2)
 }
 
 // NotifySuccessfulTransaction mocks base method.
