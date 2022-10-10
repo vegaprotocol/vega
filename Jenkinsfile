@@ -63,7 +63,7 @@ pipeline {
                     }
                 }
             }
-    
+
         stage('Config') {
             steps {
                 cleanWs()
@@ -576,24 +576,6 @@ pipeline {
         //
         // End PUBLISH
         //
-
-        //
-        // Begin DEVNET deploy
-        //
-        stage('Deploy to Devnet') {
-            when {
-                branch 'develop'
-            }
-            steps {
-                devnetDeploy vegaVersion: versionHash,
-                    wait: false,
-                    jenkinsSharedLib: params.JENKINS_SHARED_LIB_BRANCH
-            }
-        }
-        //
-        // End DEVNET deploy
-        //
-
     }
     post {
         success {
