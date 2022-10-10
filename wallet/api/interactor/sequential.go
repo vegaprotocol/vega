@@ -9,11 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/wallet/api"
 )
 
-var (
-	ErrTraceIDMismatch              = errors.New("the trace IDs between request and response mismatch")
-	ErrWrongResponseType            = errors.New("the received response does not match the expected response type")
-	ErrRequestAlreadyBeingProcessed = errors.New("a request is already being processed")
-)
+var ErrRequestAlreadyBeingProcessed = errors.New("a request is already being processed")
 
 // SequentialInteractor is built to handle one request at a time.
 // Concurrent requests are not supported and will result in errors.
@@ -145,23 +141,17 @@ func (i *SequentialInteractor) RequestWalletConnectionReview(ctx context.Context
 		},
 	}
 
-	for {
-		select {
-		case <-ctx.Done():
-			return "", api.ErrRequestInterrupted
-		case <-i.userCtx.Done():
-			return "", api.ErrUserCloseTheConnection
-		case response := <-i.responseChan:
-			if response.TraceID != traceID {
-				return "", ErrTraceIDMismatch
-			}
-			decision, ok := response.Data.(WalletConnectionDecision)
-			if !ok {
-				return "", ErrWrongResponseType
-			}
-			return decision.ConnectionApproval, nil
-		}
+	interaction, err := i.waitForResponse(ctx, traceID, WalletConnectionDecisionName)
+	if err != nil {
+		return "", err
 	}
+
+	decision, ok := interaction.Data.(WalletConnectionDecision)
+	if !ok {
+		return "", InvalidResponsePayloadError(WalletConnectionDecisionName)
+	}
+
+	return decision.ConnectionApproval, nil
 }
 
 func (i *SequentialInteractor) RequestWalletSelection(ctx context.Context, traceID, hostname string, availableWallets []string) (api.SelectedWallet, error) {
@@ -178,27 +168,20 @@ func (i *SequentialInteractor) RequestWalletSelection(ctx context.Context, trace
 		},
 	}
 
-	for {
-		select {
-		case <-ctx.Done():
-			return api.SelectedWallet{}, api.ErrRequestInterrupted
-		case <-i.userCtx.Done():
-			return api.SelectedWallet{}, api.ErrUserCloseTheConnection
-		case response := <-i.responseChan:
-			if response.TraceID != traceID {
-				return api.SelectedWallet{}, ErrTraceIDMismatch
-			}
-			selectedWallet, ok := response.Data.(SelectedWallet)
-			if !ok {
-				return api.SelectedWallet{}, ErrWrongResponseType
-			}
-
-			return api.SelectedWallet{
-				Wallet:     selectedWallet.Wallet,
-				Passphrase: selectedWallet.Passphrase,
-			}, nil
-		}
+	interaction, err := i.waitForResponse(ctx, traceID, SelectedWalletName)
+	if err != nil {
+		return api.SelectedWallet{}, err
 	}
+
+	selectedWallet, ok := interaction.Data.(SelectedWallet)
+	if !ok {
+		return api.SelectedWallet{}, InvalidResponsePayloadError(SelectedWalletName)
+	}
+
+	return api.SelectedWallet{
+		Wallet:     selectedWallet.Wallet,
+		Passphrase: selectedWallet.Passphrase,
+	}, nil
 }
 
 func (i *SequentialInteractor) RequestPassphrase(ctx context.Context, traceID, wallet string) (string, error) {
@@ -214,23 +197,16 @@ func (i *SequentialInteractor) RequestPassphrase(ctx context.Context, traceID, w
 		},
 	}
 
-	for {
-		select {
-		case <-ctx.Done():
-			return "", api.ErrRequestInterrupted
-		case <-i.userCtx.Done():
-			return "", api.ErrUserCloseTheConnection
-		case response := <-i.responseChan:
-			if response.TraceID != traceID {
-				return "", ErrTraceIDMismatch
-			}
-			enteredPassphrase, ok := response.Data.(EnteredPassphrase)
-			if !ok {
-				return "", ErrWrongResponseType
-			}
-			return enteredPassphrase.Passphrase, nil
-		}
+	interaction, err := i.waitForResponse(ctx, traceID, EnteredPassphraseName)
+	if err != nil {
+		return "", err
 	}
+
+	enteredPassphrase, ok := interaction.Data.(EnteredPassphrase)
+	if !ok {
+		return "", InvalidResponsePayloadError(EnteredPassphraseName)
+	}
+	return enteredPassphrase.Passphrase, nil
 }
 
 func (i *SequentialInteractor) RequestPermissionsReview(ctx context.Context, traceID, hostname, wallet string, perms map[string]string) (bool, error) {
@@ -248,23 +224,16 @@ func (i *SequentialInteractor) RequestPermissionsReview(ctx context.Context, tra
 		},
 	}
 
-	for {
-		select {
-		case <-ctx.Done():
-			return false, api.ErrRequestInterrupted
-		case <-i.userCtx.Done():
-			return false, api.ErrUserCloseTheConnection
-		case response := <-i.responseChan:
-			if response.TraceID != traceID {
-				return false, ErrTraceIDMismatch
-			}
-			decision, ok := response.Data.(Decision)
-			if !ok {
-				return false, ErrWrongResponseType
-			}
-			return decision.Approved, nil
-		}
+	interaction, err := i.waitForResponse(ctx, traceID, DecisionName)
+	if err != nil {
+		return false, err
 	}
+
+	approval, ok := interaction.Data.(Decision)
+	if !ok {
+		return false, InvalidResponsePayloadError(DecisionName)
+	}
+	return approval.Approved, nil
 }
 
 func (i *SequentialInteractor) RequestTransactionReviewForSending(ctx context.Context, traceID, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error) {
@@ -284,23 +253,16 @@ func (i *SequentialInteractor) RequestTransactionReviewForSending(ctx context.Co
 		},
 	}
 
-	for {
-		select {
-		case <-ctx.Done():
-			return false, api.ErrRequestInterrupted
-		case <-i.userCtx.Done():
-			return false, api.ErrUserCloseTheConnection
-		case response := <-i.responseChan:
-			if response.TraceID != traceID {
-				return false, ErrTraceIDMismatch
-			}
-			approval, ok := response.Data.(Decision)
-			if !ok {
-				return false, ErrWrongResponseType
-			}
-			return approval.Approved, nil
-		}
+	interaction, err := i.waitForResponse(ctx, traceID, DecisionName)
+	if err != nil {
+		return false, err
 	}
+
+	approval, ok := interaction.Data.(Decision)
+	if !ok {
+		return false, InvalidResponsePayloadError(DecisionName)
+	}
+	return approval.Approved, nil
 }
 
 func (i *SequentialInteractor) RequestTransactionReviewForSigning(ctx context.Context, traceID, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error) {
@@ -320,23 +282,41 @@ func (i *SequentialInteractor) RequestTransactionReviewForSigning(ctx context.Co
 		},
 	}
 
-	for {
+	interaction, err := i.waitForResponse(ctx, traceID, DecisionName)
+	if err != nil {
+		return false, err
+	}
+
+	approval, ok := interaction.Data.(Decision)
+	if !ok {
+		return false, InvalidResponsePayloadError(DecisionName)
+	}
+	return approval.Approved, nil
+}
+
+func (i *SequentialInteractor) waitForResponse(ctx context.Context, traceID string, name InteractionName) (Interaction, error) {
+	var response Interaction
+	running := true
+	for running {
 		select {
 		case <-ctx.Done():
-			return false, api.ErrRequestInterrupted
+			return Interaction{}, api.ErrRequestInterrupted
 		case <-i.userCtx.Done():
-			return false, api.ErrUserCloseTheConnection
-		case response := <-i.responseChan:
-			if response.TraceID != traceID {
-				return false, ErrTraceIDMismatch
-			}
-			approval, ok := response.Data.(Decision)
-			if !ok {
-				return false, ErrWrongResponseType
-			}
-			return approval.Approved, nil
+			return Interaction{}, api.ErrUserCloseTheConnection
+		case r := <-i.responseChan:
+			response = r
+			running = false
 		}
 	}
+
+	if response.TraceID != traceID {
+		return Interaction{}, TraceIDMismatchError(traceID, response.TraceID)
+	}
+	if response.Name != name {
+		return Interaction{}, WrongResponseTypeError(name, response.Name)
+	}
+
+	return response, nil
 }
 
 func NewSequentialInteractor(userCtx context.Context, receptionChan chan<- Interaction, responseChan <-chan Interaction) *SequentialInteractor {
