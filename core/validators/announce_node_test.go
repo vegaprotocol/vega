@@ -13,6 +13,7 @@
 package validators_test
 
 import (
+	"context"
 	"encoding/hex"
 	"fmt"
 	"testing"
@@ -27,6 +28,24 @@ import (
 )
 
 func TestSignVerifyAnnounceNode(t *testing.T) {
+	cmd := createSignedAnnounceCommand(t)
+	require.NoError(t, validators.VerifyAnnounceNode(cmd))
+}
+
+func TestDoubleAnnounce(t *testing.T) {
+	tt := getTestTopology(t)
+	cmd := createSignedAnnounceCommand(t)
+	ctx := context.Background()
+
+	// Add it once
+	require.NoError(t, tt.Topology.ProcessAnnounceNode(ctx, cmd))
+
+	// Add it again
+	require.ErrorIs(t, tt.Topology.ProcessAnnounceNode(ctx, cmd), validators.ErrVegaNodeAlreadyRegisterForChain)
+}
+
+func createSignedAnnounceCommand(t *testing.T) *commandspb.AnnounceNode {
+	t.Helper()
 	nodeWallets := createTestNodeWallets(t)
 	cmd := commandspb.AnnounceNode{
 		Id:              nodeWallets.Vega.ID().Hex(),
@@ -56,9 +75,7 @@ func TestSignVerifyAnnounceNode(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, ethSigHex, cmd.EthereumSignature.Value)
 
-	// test verification
-	err = validators.VerifyAnnounceNode(&cmd)
-	require.NoError(t, err)
+	return &cmd
 }
 
 func createTestNodeWallets(t *testing.T) *nodewallets.NodeWallets {
@@ -79,7 +96,4 @@ func createTestNodeWallets(t *testing.T) *nodewallets.NodeWallets {
 	nw, err := nodewallets.GetNodeWallets(config, vegaPaths, registryPass)
 	require.NoError(t, err)
 	return nw
-}
-
-func TestVerifyAnnounceNode(t *testing.T) {
 }

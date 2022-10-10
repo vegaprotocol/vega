@@ -29,6 +29,7 @@
 - [6448](https://github.com/vegaprotocol/vega/issues/6448) - Improve wallet interaction JSON conversion
 
 ### 🐛 Fixes
+- [6444](https://github.com/vegaprotocol/vega/issues/6444) - Send a transaction error if the same node announces itself twice
 - [6388](https://github.com/vegaprotocol/vega/issues/6388) - Do not transfer stake and delegations after a key rotation
 - [6266](https://github.com/vegaprotocol/vega/issues/6266) - Do not take a snapshot at block height 1 and handle increase of interval appropriately
 - [6338](https://github.com/vegaprotocol/vega/issues/6338) - Fix validation for update an new asset proposals

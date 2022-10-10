@@ -35,7 +35,9 @@ func (t *Topology) ProcessAnnounceNode(
 		return err
 	}
 
-	t.AddNewNode(ctx, an, ValidatorStatusPending)
+	if err := t.AddNewNode(ctx, an, ValidatorStatusPending); err != nil {
+		return err
+	}
 
 	// if it is use that has annouce, we can now set our flag to be a validator. How exciting.
 	if an.Id == t.SelfNodeID() {
