@@ -64,9 +64,6 @@ func testConnectingToWalletWithInvalidParamsFails(t *testing.T) {
 
 			// setup
 			handler := newConnectWalletHandler(tt)
-			// -- expected calls
-			handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
-			handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
 
 			// when
 			result, errorDetails := handler.handle(t, ctx, tc.params)

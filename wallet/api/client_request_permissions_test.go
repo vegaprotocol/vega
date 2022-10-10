@@ -92,9 +92,6 @@ func testRequestingPermissionsWithInvalidParamsFails(t *testing.T) {
 
 			// setup
 			handler := newRequestPermissionsHandler(tt)
-			// -- expected calls
-			handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
-			handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
 
 			// when
 			result, errorDetails := handler.handle(t, ctx, tc.params)
@@ -181,9 +178,6 @@ func testRequestingPermissionsWithInvalidTokenFails(t *testing.T) {
 
 	// setup
 	handler := newRequestPermissionsHandler(t)
-	// -- expected calls
-	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
-	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientRequestPermissionsParams{

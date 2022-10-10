@@ -45,11 +45,6 @@ type ClientSignTransaction struct {
 func (h *ClientSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	traceID := TraceIDFromContext(ctx)
 
-	if err := h.interactor.NotifyInteractionSessionBegan(ctx, traceID); err != nil {
-		return nil, internalError(err)
-	}
-	defer h.interactor.NotifyInteractionSessionEnded(ctx, traceID)
-
 	params, err := validateSignTransactionParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
@@ -73,6 +68,11 @@ func (h *ClientSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 	if errs := wcommands.CheckSubmitTransactionRequest(request); !errs.Empty() {
 		return nil, invalidParams(errs)
 	}
+
+	if err := h.interactor.NotifyInteractionSessionBegan(ctx, traceID); err != nil {
+		return nil, internalError(err)
+	}
+	defer h.interactor.NotifyInteractionSessionEnded(ctx, traceID)
 
 	receivedAt := time.Now()
 	approved, err := h.interactor.RequestTransactionReviewForSigning(ctx, traceID, connectedWallet.Hostname, connectedWallet.Wallet.Name(), params.PublicKey, params.RawTransaction, receivedAt)
