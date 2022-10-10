@@ -46,11 +46,6 @@ type ClientRequestPermissions struct {
 func (h *ClientRequestPermissions) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	traceID := TraceIDFromContext(ctx)
 
-	if err := h.interactor.NotifyInteractionSessionBegan(ctx, traceID); err != nil {
-		return nil, internalError(err)
-	}
-	defer h.interactor.NotifyInteractionSessionEnded(ctx, traceID)
-
 	params, err := validateRequestPermissionsParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
@@ -65,6 +60,11 @@ func (h *ClientRequestPermissions) Handle(ctx context.Context, rawParams jsonrpc
 	if err != nil {
 		return nil, invalidParams(err)
 	}
+
+	if err := h.interactor.NotifyInteractionSessionBegan(ctx, traceID); err != nil {
+		return nil, internalError(err)
+	}
+	defer h.interactor.NotifyInteractionSessionEnded(ctx, traceID)
 
 	approved, err := h.interactor.RequestPermissionsReview(ctx, traceID, connectedWallet.Hostname, connectedWallet.Wallet.Name(), perms.Summary())
 	if err != nil {

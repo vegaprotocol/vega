@@ -120,9 +120,6 @@ func testSendingTransactionWithInvalidParamsFails(t *testing.T) {
 
 			// setup
 			handler := newSendTransactionHandler(tt)
-			// -- expected calls
-			handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
-			handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
 
 			// when
 			result, errorDetails := handler.handle(t, ctx, tc.params)
@@ -194,9 +191,6 @@ func testSendingTransactionWithInvalidTokenFails(t *testing.T) {
 
 	// setup
 	handler := newSendTransactionHandler(t)
-	// -- expected calls
-	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
-	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientSendTransactionParams{
@@ -223,9 +217,6 @@ func testSendingTransactionWithoutNeededPermissionsDoesNotSendTransaction(t *tes
 	// setup
 	handler := newSendTransactionHandler(t)
 	token := connectWallet(t, handler.sessions, hostname, wallet1)
-	// -- expected calls
-	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
-	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientSendTransactionParams{

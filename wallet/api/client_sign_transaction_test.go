@@ -87,9 +87,6 @@ func testSigningTransactionWithInvalidParamsFails(t *testing.T) {
 
 			// setup
 			handler := newSignTransactionHandler(tt)
-			// -- expected calls
-			handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
-			handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
 
 			// when
 			result, errorDetails := handler.handle(t, ctx, tc.params)
@@ -158,9 +155,6 @@ func testSigningTransactionWithInvalidTokenFails(t *testing.T) {
 
 	// setup
 	handler := newSignTransactionHandler(t)
-	// -- expected calls
-	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
-	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientSignTransactionParams{
@@ -186,9 +180,6 @@ func testSigningTransactionWithoutNeededPermissionsDoesNotSignTransaction(t *tes
 	// setup
 	handler := newSignTransactionHandler(t)
 	token := connectWallet(t, handler.sessions, hostname, wallet1)
-	// -- expected calls
-	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
-	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientSignTransactionParams{
