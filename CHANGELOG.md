@@ -27,6 +27,7 @@
 - [6427](https://github.com/vegaprotocol/vega/issues/6427) - Improve interactions documentation
 - [6431](https://github.com/vegaprotocol/vega/issues/6431) - Pass a human-readable input data in Transaction Succeeded and Failed notifications
 - [6448](https://github.com/vegaprotocol/vega/issues/6448) - Improve wallet interaction JSON conversion
+- [6454](https://github.com/vegaprotocol/vega/issues/6454) - Improve test coverage for setting fees and rewarding LPs
 
 ### 🐛 Fixes
 - [6444](https://github.com/vegaprotocol/vega/issues/6444) - Send a transaction error if the same node announces itself twice
