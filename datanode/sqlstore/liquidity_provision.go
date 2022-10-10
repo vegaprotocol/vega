@@ -20,6 +20,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/datanode/utils"
+	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
 )
@@ -40,11 +41,12 @@ const (
 		commitment_amount, fee, sells, buys, version, status, reference, tx_hash, vega_time`
 )
 
-func NewLiquidityProvision(connectionSource *ConnectionSource) *LiquidityProvision {
+func NewLiquidityProvision(connectionSource *ConnectionSource, log *logging.Logger) *LiquidityProvision {
 	return &LiquidityProvision{
 		ConnectionSource: connectionSource,
 		batcher: NewMapBatcher[entities.LiquidityProvisionKey, entities.LiquidityProvision](
 			"liquidity_provisions", entities.LiquidityProvisionColumns),
+		observer: utils.NewObserver[entities.LiquidityProvision]("liquidity_provisions", log, 10, 10),
 	}
 }
 

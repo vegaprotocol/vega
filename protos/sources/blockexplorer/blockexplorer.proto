@@ -6,8 +6,17 @@ option go_package = "code.vegaprotocol.io/vega/protos/blockexplorer/api/v1";
 import "vega/commands/v1/transaction.proto";
 
 service BlockExplorerService {
+    rpc GetTransaction(GetTransactionRequest) returns (GetTransactionResponse) {}
     rpc ListTransactions(ListTransactionsRequest) returns (ListTransactionsResponse) {}
  }
+
+message GetTransactionRequest {
+  string hash = 1;
+}
+
+message GetTransactionResponse{
+  Transaction transaction = 1;
+}
 
 message ListTransactionsRequest {
     uint32 limit = 1;

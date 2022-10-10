@@ -145,7 +145,7 @@ func internalError(err error) *jsonrpc.ErrorDetails {
 // handleRequestFlowError is a generic function that build the appropriate
 // API error response based on the underlying error.
 // If none of them matches, the error handling is delegating to the caller.
-func handleRequestFlowError(ctx context.Context, traceID string, pipeline Pipeline, err error) *jsonrpc.ErrorDetails {
+func handleRequestFlowError(ctx context.Context, traceID string, interactor Interactor, err error) *jsonrpc.ErrorDetails {
 	if errors.Is(err, ErrUserCloseTheConnection) {
 		// This error means the user closed the connection by stopping the
 		// wallet front-end application. As a result, there is no notification
@@ -153,7 +153,7 @@ func handleRequestFlowError(ctx context.Context, traceID string, pipeline Pipeli
 		return connectionClosedError(err)
 	}
 	if errors.Is(err, ErrRequestInterrupted) {
-		pipeline.NotifyError(ctx, traceID, ServerError, err)
+		interactor.NotifyError(ctx, traceID, ServerError, err)
 		return requestInterruptedError(err)
 	}
 	return nil

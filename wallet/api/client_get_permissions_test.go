@@ -34,7 +34,7 @@ func testGettingPermissionsWithInvalidParamsFails(t *testing.T) {
 			expectedError: api.ErrParamsDoNotMatch,
 		}, {
 			name: "with empty connection token",
-			params: api.GetPermissionsParams{
+			params: api.ClientGetPermissionsParams{
 				Token: "",
 			},
 			expectedError: api.ErrConnectionTokenIsRequired,
@@ -76,7 +76,7 @@ func testGettingPermissionsWithValidParamsSucceeds(t *testing.T) {
 	token := connectWallet(t, handler.sessions, hostname, w)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.GetPermissionsParams{
+	result, errorDetails := handler.handle(t, ctx, api.ClientGetPermissionsParams{
 		Token: token,
 	})
 
@@ -94,7 +94,7 @@ func testGettingPermissionsWithInvalidTokenFails(t *testing.T) {
 	handler := newGetPermissionsHandler(t)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.GetPermissionsParams{
+	result, errorDetails := handler.handle(t, ctx, api.ClientGetPermissionsParams{
 		Token: vgrand.RandomStr(5),
 	})
 
@@ -104,22 +104,22 @@ func testGettingPermissionsWithInvalidTokenFails(t *testing.T) {
 }
 
 type GetPermissionsHandler struct {
-	*api.GetPermissions
+	*api.ClientGetPermissions
 	sessions *api.Sessions
 }
 
-func (h *GetPermissionsHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.GetPermissionsResult, *jsonrpc.ErrorDetails) {
+func (h *GetPermissionsHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.ClientGetPermissionsResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
 	rawResult, err := h.Handle(ctx, params)
 	if rawResult != nil {
-		result, ok := rawResult.(api.GetPermissionsResult)
+		result, ok := rawResult.(api.ClientGetPermissionsResult)
 		if !ok {
-			t.Fatal("GetPermissions handler result is not a GetPermissionsResult")
+			t.Fatal("ClientGetPermissions handler result is not a ClientGetPermissionsResult")
 		}
 		return result, err
 	}
-	return api.GetPermissionsResult{}, err
+	return api.ClientGetPermissionsResult{}, err
 }
 
 func newGetPermissionsHandler(t *testing.T) *GetPermissionsHandler {
@@ -128,7 +128,7 @@ func newGetPermissionsHandler(t *testing.T) *GetPermissionsHandler {
 	sessions := api.NewSessions()
 
 	return &GetPermissionsHandler{
-		GetPermissions: api.NewGetPermissions(sessions),
-		sessions:       sessions,
+		ClientGetPermissions: api.NewGetPermissions(sessions),
+		sessions:             sessions,
 	}
 }

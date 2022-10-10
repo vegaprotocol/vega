@@ -90,6 +90,8 @@ const (
 	ProposalErrorTooManyMarketDecimalPlaces ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_TOO_MANY_MARKET_DECIMAL_PLACES
 	// ProposalErrorTooManyPriceMonitoringTriggers the market price monitoring setting uses too many triggers.
 	ProposalErrorTooManyPriceMonitoringTriggers ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_TOO_MANY_PRICE_MONITORING_TRIGGERS
+	// ProposalErrorERC20AddressAlreadyInUse the proposal uses a erc20 address already used by another asset.
+	ProposalErrorERC20AddressAlreadyInUse ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_ERC20_ADDRESS_ALREADY_IN_USE
 )
 
 type ProposalState = vegapb.Proposal_State

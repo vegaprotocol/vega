@@ -26,7 +26,9 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/logging"
+	eventsv1 "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"github.com/pkg/errors"
+	"github.com/stretchr/testify/require"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -38,18 +40,22 @@ func TestBrokerShutsDownOnErrorFromErrorChannelWhenInRecovery(t *testing.T) {
 
 	tes, sb := createTestBroker(newTestTransactionManager(), newTestBlockStore(), []broker.SQLBrokerSubscriber{s1})
 
-	timeEventSource := newTimeEventSource()
-	timeEvent1 := timeEventSource.NextTimeEvent()
-	timeEvent2 := timeEventSource.NextTimeEvent()
+	beSource := newBlockEventSource()
+	blockEvent1 := beSource.NextBeginBlockEvent()
+	// make sure we move forward by ending the block, but discard as we're not going to use it
+	_ = beSource.NextEndBlockEvent()
+	blockEvent2 := beSource.NextBeginBlockEvent()
+	// make sure we move forward by ending the block, but discard as we're not going to use it
+	_ = beSource.NextEndBlockEvent()
 
-	block1, _ := entities.BlockFromTimeUpdate(timeEvent1)
-	block2, _ := entities.BlockFromTimeUpdate(timeEvent2)
+	block1, _ := entities.BlockFromBeginBlock(blockEvent1)
+	block2, _ := entities.BlockFromBeginBlock(blockEvent2)
 
 	blockStore := newTestBlockStore()
 
 	// Set the block store to have already processed the first 2 blocks
-	blockStore.Add(context.Background(), *block1)
-	blockStore.Add(context.Background(), *block2)
+	require.NoError(t, blockStore.Add(context.Background(), *block1))
+	require.NoError(t, blockStore.Add(context.Background(), *block2))
 
 	closedChan := make(chan bool)
 	go func() {
@@ -58,7 +64,7 @@ func TestBrokerShutsDownOnErrorFromErrorChannelWhenInRecovery(t *testing.T) {
 		closedChan <- true
 	}()
 
-	tes.eventsCh <- timeEvent1
+	tes.eventsCh <- blockEvent1
 
 	tes.errorsCh <- errors.New("Test error")
 }
@@ -75,8 +81,8 @@ func TestBrokerShutsDownOnErrorFromErrorChannel(t *testing.T) {
 		closedChan <- true
 	}()
 
-	timeEventSource := newTimeEventSource()
-	tes.eventsCh <- timeEventSource.NextTimeEvent()
+	beSource := newBlockEventSource()
+	tes.eventsCh <- beSource.NextBeginBlockEvent()
 
 	tes.eventsCh <- events.NewAssetEvent(context.Background(), types.Asset{ID: "a1"})
 
@@ -92,14 +98,17 @@ func TestBrokerShutsDownOnErrorWhenInRecovery(t *testing.T) {
 
 	tes, sb := createTestBroker(newTestTransactionManager(), newTestBlockStore(), []broker.SQLBrokerSubscriber{s1})
 
-	timeEventSource := newTimeEventSource()
-	timeEvent1 := timeEventSource.NextTimeEvent()
-	timeEvent2 := timeEventSource.NextTimeEvent()
-	timeEventSource.NextTimeEvent()
-	timeEvent4 := timeEventSource.NextTimeEvent()
+	beSource := newBlockEventSource()
+	blockEvent1 := beSource.NextBeginBlockEvent()
+	_ = beSource.NextEndBlockEvent()
+	blockEvent2 := beSource.NextBeginBlockEvent()
+	_ = beSource.NextEndBlockEvent()
+	_ = beSource.NextBeginBlockEvent()
+	_ = beSource.NextEndBlockEvent()
+	blockEvent4 := beSource.NextBeginBlockEvent()
 
-	block1, _ := entities.BlockFromTimeUpdate(timeEvent1)
-	block2, _ := entities.BlockFromTimeUpdate(timeEvent2)
+	block1, _ := entities.BlockFromBeginBlock(blockEvent1)
+	block2, _ := entities.BlockFromBeginBlock(blockEvent2)
 
 	blockStore := newTestBlockStore()
 
@@ -114,7 +123,7 @@ func TestBrokerShutsDownOnErrorWhenInRecovery(t *testing.T) {
 		closedChan <- true
 	}()
 
-	tes.eventsCh <- timeEvent4
+	tes.eventsCh <- blockEvent4
 
 	assert.Equal(t, true, <-closedChan)
 }
@@ -132,14 +141,13 @@ func TestBrokerShutsDownOnError(t *testing.T) {
 		closedChan <- true
 	}()
 
-	timeEventSource := newTimeEventSource()
-	tes.eventsCh <- timeEventSource.NextTimeEvent()
+	beSource := newBlockEventSource()
+	tes.eventsCh <- beSource.NextBeginBlockEvent()
 
 	tes.eventsCh <- events.NewAssetEvent(context.Background(), types.Asset{ID: "a1"})
 
 	assert.Equal(t, events.NewAssetEvent(context.Background(), types.Asset{ID: "a1"}), <-s1.receivedCh)
-
-	tes.eventsCh <- timeEventSource.NextTimeEvent()
+	tes.eventsCh <- beSource.NextEndBlockEvent()
 
 	assert.Equal(t, true, <-closedChan)
 }
@@ -147,12 +155,14 @@ func TestBrokerShutsDownOnError(t *testing.T) {
 func TestBrokerShutsDownWhenContextCancelledWhenInRecovery(t *testing.T) {
 	s1 := newTestSQLBrokerSubscriber(events.AssetEvent)
 
-	timeEventSource := newTimeEventSource()
-	timeEvent1 := timeEventSource.NextTimeEvent()
-	timeEvent2 := timeEventSource.NextTimeEvent()
+	beSource := newBlockEventSource()
+	blockEvent1 := beSource.NextBeginBlockEvent()
+	_ = beSource.NextEndBlockEvent()
+	blockEvent2 := beSource.NextBeginBlockEvent()
+	_ = beSource.NextEndBlockEvent()
 
-	block1, _ := entities.BlockFromTimeUpdate(timeEvent1)
-	block2, _ := entities.BlockFromTimeUpdate(timeEvent2)
+	block1, _ := entities.BlockFromBeginBlock(blockEvent1)
+	block2, _ := entities.BlockFromBeginBlock(blockEvent2)
 
 	blockStore := newTestBlockStore()
 
@@ -170,7 +180,7 @@ func TestBrokerShutsDownWhenContextCancelledWhenInRecovery(t *testing.T) {
 		closedChan <- true
 	}()
 
-	tes.eventsCh <- timeEvent1
+	tes.eventsCh <- blockEvent1
 
 	cancel()
 
@@ -188,8 +198,8 @@ func TestBrokerShutsDownWhenContextCancelled(t *testing.T) {
 		closedChan <- true
 	}()
 
-	timeEventSource := newTimeEventSource()
-	tes.eventsCh <- timeEventSource.NextTimeEvent()
+	beSource := newBlockEventSource()
+	tes.eventsCh <- beSource.NextBeginBlockEvent()
 
 	tes.eventsCh <- events.NewAssetEvent(context.Background(), types.Asset{ID: "a1"})
 
@@ -207,8 +217,8 @@ func TestAnyEventsSentAheadOfFirstTimeEventAreIgnored(t *testing.T) {
 
 	tes.eventsCh <- events.NewAssetEvent(context.Background(), types.Asset{ID: "a1"})
 
-	timeEventSource := newTimeEventSource()
-	tes.eventsCh <- timeEventSource.NextTimeEvent()
+	beSource := newBlockEventSource()
+	tes.eventsCh <- beSource.NextBeginBlockEvent()
 
 	tes.eventsCh <- events.NewAssetEvent(context.Background(), types.Asset{ID: "a2"})
 
@@ -218,13 +228,15 @@ func TestAnyEventsSentAheadOfFirstTimeEventAreIgnored(t *testing.T) {
 func TestBlocksSentBeforeStartedAtBlockAreIgnored(t *testing.T) {
 	s1 := newTestSQLBrokerSubscriber(events.AssetEvent)
 
-	timeEventSource := newTimeEventSource()
-	timeEvent1 := timeEventSource.NextTimeEvent()
-	timeEvent2 := timeEventSource.NextTimeEvent()
-	timeEvent3 := timeEventSource.NextTimeEvent()
+	beSource := newBlockEventSource()
+	blockBeginEvent1 := beSource.NextBeginBlockEvent()
+	blockEndEvent1 := beSource.NextEndBlockEvent()
+	blockBeginEvent2 := beSource.NextBeginBlockEvent()
+	blockEndEvent2 := beSource.NextEndBlockEvent()
+	blockBeginEvent3 := beSource.NextBeginBlockEvent()
 
-	block1, _ := entities.BlockFromTimeUpdate(timeEvent1)
-	block2, _ := entities.BlockFromTimeUpdate(timeEvent2)
+	block1, _ := entities.BlockFromBeginBlock(blockBeginEvent1)
+	block2, _ := entities.BlockFromBeginBlock(blockBeginEvent2)
 
 	blockStore := newTestBlockStore()
 
@@ -235,16 +247,13 @@ func TestBlocksSentBeforeStartedAtBlockAreIgnored(t *testing.T) {
 	tes, sb := createTestBroker(newTestTransactionManager(), blockStore, []broker.SQLBrokerSubscriber{s1})
 	go sb.Receive(context.Background())
 
-	tes.eventsCh <- timeEvent1
-
+	tes.eventsCh <- blockBeginEvent1
 	tes.eventsCh <- events.NewAssetEvent(context.Background(), types.Asset{ID: "a1"})
-
-	tes.eventsCh <- timeEvent2
-
+	tes.eventsCh <- blockEndEvent1
+	tes.eventsCh <- blockBeginEvent2
 	tes.eventsCh <- events.NewAssetEvent(context.Background(), types.Asset{ID: "a2"})
-
-	tes.eventsCh <- timeEvent3
-
+	tes.eventsCh <- blockEndEvent2
+	tes.eventsCh <- blockBeginEvent3
 	tes.eventsCh <- events.NewAssetEvent(context.Background(), types.Asset{ID: "a3"})
 
 	assert.Equal(t, events.NewAssetEvent(context.Background(), types.Asset{ID: "a3"}), <-s1.receivedCh)
@@ -253,14 +262,17 @@ func TestBlocksSentBeforeStartedAtBlockAreIgnored(t *testing.T) {
 func TestTimeUpdateWithTooHighHeightCauseFailure(t *testing.T) {
 	s1 := newTestSQLBrokerSubscriber(events.AssetEvent)
 
-	timeEventSource := newTimeEventSource()
-	timeEvent1 := timeEventSource.NextTimeEvent()
-	timeEvent2 := timeEventSource.NextTimeEvent()
-	timeEventSource.NextTimeEvent()
-	timeEvent4 := timeEventSource.NextTimeEvent()
+	beSource := newBlockEventSource()
+	blockEvent1 := beSource.NextBeginBlockEvent()
+	_ = beSource.NextEndBlockEvent()
+	blockEvent2 := beSource.NextBeginBlockEvent()
+	_ = beSource.NextEndBlockEvent()
+	_ = beSource.NextBeginBlockEvent()
+	_ = beSource.NextEndBlockEvent()
+	blockEvent4 := beSource.NextBeginBlockEvent()
 
-	block1, _ := entities.BlockFromTimeUpdate(timeEvent1)
-	block2, _ := entities.BlockFromTimeUpdate(timeEvent2)
+	block1, _ := entities.BlockFromBeginBlock(blockEvent1)
+	block2, _ := entities.BlockFromBeginBlock(blockEvent2)
 
 	blockStore := newTestBlockStore()
 
@@ -276,15 +288,17 @@ func TestTimeUpdateWithTooHighHeightCauseFailure(t *testing.T) {
 		errCh <- err
 	}()
 
-	tes.eventsCh <- timeEvent4
+	tes.eventsCh <- blockEvent4
 
 	assert.NotNil(t, <-errCh)
 }
 
 func TestSqlBrokerSubscriberCallbacks(t *testing.T) {
 	s1 := testSQLBrokerSubscriber{
-		eventType: events.AssetEvent, receivedCh: make(chan events.Event, 1),
-		vegaTimeCh: make(chan time.Time), flushCh: make(chan bool),
+		eventType:  events.AssetEvent,
+		receivedCh: make(chan events.Event, 1),
+		vegaTimeCh: make(chan time.Time),
+		flushCh:    make(chan bool),
 	}
 
 	transactionManager := newTestTransactionManager()
@@ -298,40 +312,43 @@ func TestSqlBrokerSubscriberCallbacks(t *testing.T) {
 
 	go sb.Receive(context.Background())
 
-	timeEventSource := newTimeEventSource()
+	beSource := newBlockEventSource()
 
-	// Time event should cause a flush of subscribers, followed by commit and then an update to subscribers vegatime,
+	// BlockEnd event should cause a flush of subscribers, followed by commit and then an update to subscribers vegatime,
 	// followed by initiating a new transaction and adding a block for the new time
-	timeEvent := timeEventSource.NextTimeEvent()
-	tes.eventsCh <- timeEvent
+	beginEvent := beSource.NextBeginBlockEvent()
+	endEvent := beSource.NextEndBlockEvent()
+	tes.eventsCh <- beginEvent
 
-	assert.Equal(t, timeEvent.Time(), <-s1.vegaTimeCh)
+	assert.Equal(t, time.Unix(0, beginEvent.BeginBlock().Timestamp), <-s1.vegaTimeCh)
 	assert.Equal(t, true, <-transactionManager.withTransactionCalls)
 	assert.Equal(t, true, <-transactionManager.withConnectionCalls)
 
-	hash, _ := hex.DecodeString(timeEvent.TraceID())
+	hash, _ := hex.DecodeString(beginEvent.TraceID())
 	expectedBlock := entities.Block{
-		VegaTime: timeEvent.Time().Truncate(time.Microsecond),
+		VegaTime: time.Unix(0, beginEvent.BeginBlock().Timestamp).Truncate(time.Microsecond),
 		Hash:     hash,
-		Height:   timeEvent.BlockNr(),
+		Height:   beginEvent.BlockNr(),
 	}
 
 	assert.Equal(t, expectedBlock, <-blockStore.blocks)
 
-	timeEvent = timeEventSource.NextTimeEvent()
-	tes.eventsCh <- timeEvent
-
+	tes.eventsCh <- endEvent
 	assert.Equal(t, true, <-s1.flushCh)
 	assert.Equal(t, true, <-transactionManager.commitCall)
 
-	assert.Equal(t, timeEvent.Time(), <-s1.vegaTimeCh)
+	beginEvent = beSource.NextBeginBlockEvent()
+	endEvent = beSource.NextEndBlockEvent()
+	tes.eventsCh <- beginEvent
+
+	assert.Equal(t, time.Unix(0, beginEvent.BeginBlock().Timestamp).Truncate(time.Microsecond), <-s1.vegaTimeCh)
 	assert.Equal(t, true, <-transactionManager.withTransactionCalls)
 
-	hash, _ = hex.DecodeString(timeEvent.TraceID())
+	hash, _ = hex.DecodeString(beginEvent.TraceID())
 	expectedBlock = entities.Block{
-		VegaTime: timeEvent.Time().Truncate(time.Microsecond),
+		VegaTime: time.Unix(0, beginEvent.BeginBlock().Timestamp).Truncate(time.Microsecond),
 		Hash:     hash,
-		Height:   timeEvent.BlockNr(),
+		Height:   beginEvent.BlockNr(),
 	}
 
 	assert.Equal(t, expectedBlock, <-blockStore.blocks)
@@ -339,20 +356,22 @@ func TestSqlBrokerSubscriberCallbacks(t *testing.T) {
 	tes.eventsCh <- events.NewAssetEvent(context.Background(), types.Asset{ID: "a1"})
 	assert.Equal(t, events.NewAssetEvent(context.Background(), types.Asset{ID: "a1"}), <-s1.receivedCh)
 
-	timeEvent = timeEventSource.NextTimeEvent()
-	tes.eventsCh <- timeEvent
+	tes.eventsCh <- endEvent
 
 	assert.Equal(t, true, <-s1.flushCh)
 	assert.Equal(t, true, <-transactionManager.commitCall)
 
-	assert.Equal(t, timeEvent.Time(), <-s1.vegaTimeCh)
+	beginEvent = beSource.NextBeginBlockEvent()
+	tes.eventsCh <- beginEvent
+
+	assert.Equal(t, time.Unix(0, beginEvent.BeginBlock().Timestamp).Truncate(time.Microsecond), <-s1.vegaTimeCh)
 	assert.Equal(t, true, <-transactionManager.withTransactionCalls)
 
-	hash, _ = hex.DecodeString(timeEvent.TraceID())
+	hash, _ = hex.DecodeString(beginEvent.TraceID())
 	expectedBlock = entities.Block{
-		VegaTime: timeEvent.Time().Truncate(time.Microsecond),
+		VegaTime: time.Unix(0, beginEvent.BeginBlock().Timestamp).Truncate(time.Microsecond),
 		Hash:     hash,
-		Height:   timeEvent.BlockNr(),
+		Height:   beginEvent.BlockNr(),
 	}
 
 	assert.Equal(t, expectedBlock, <-blockStore.blocks)
@@ -365,8 +384,8 @@ func TestSqlBrokerEventDistribution(t *testing.T) {
 	tes, sb := createTestBroker(newTestTransactionManager(), newTestBlockStore(), []broker.SQLBrokerSubscriber{s1, s2, s3})
 	go sb.Receive(context.Background())
 
-	timeEventSource := newTimeEventSource()
-	tes.eventsCh <- timeEventSource.NextTimeEvent()
+	beSource := newBlockEventSource()
+	tes.eventsCh <- beSource.NextBeginBlockEvent()
 
 	tes.eventsCh <- events.NewAssetEvent(context.Background(), types.Asset{ID: "a1"})
 
@@ -390,12 +409,14 @@ func TestSqlBrokerTimeEventSentToAllSubscribers(t *testing.T) {
 
 	go sb.Receive(context.Background())
 
-	timeEventSource := newTimeEventSource()
-	timeEvent := timeEventSource.NextTimeEvent()
-	tes.eventsCh <- timeEvent
+	beSource := newBlockEventSource()
+	blockEvent := beSource.NextBeginBlockEvent()
+	tes.eventsCh <- blockEvent
 
-	assert.Equal(t, timeEvent.Time(), <-s1.vegaTimeCh)
-	assert.Equal(t, timeEvent.Time(), <-s2.vegaTimeCh)
+	assert.Equal(t, time.Unix(0, blockEvent.BeginBlock().Timestamp).
+		Truncate(time.Microsecond), <-s1.vegaTimeCh)
+	assert.Equal(t, time.Unix(0, blockEvent.BeginBlock().Timestamp).
+		Truncate(time.Microsecond), <-s2.vegaTimeCh)
 }
 
 func createTestBroker(transactionManager broker.TransactionManager, blockStore broker.BlockStore, subs []broker.SQLBrokerSubscriber) (*testEventSource, broker.SQLStoreEventBroker) {
@@ -535,23 +556,40 @@ func (t *testChainInfo) GetChainID() (string, error) {
 	return t.chainID, nil
 }
 
-type timeEventSource struct {
+type blockEventSource struct {
 	vegaTime    time.Time
 	blockHeight int64
 }
 
-func newTimeEventSource() *timeEventSource {
-	return &timeEventSource{
-		vegaTime: time.Now().Truncate(time.Millisecond),
+func newBlockEventSource() *blockEventSource {
+	return &blockEventSource{
+		vegaTime:    time.Now().Truncate(time.Millisecond),
+		blockHeight: 1,
 	}
 }
 
-func (tes *timeEventSource) NextTimeEvent() *events.Time {
+func (s *blockEventSource) NextBeginBlockEvent() *events.BeginBlock {
 	ctx := vgcontext.WithTraceID(context.Background(), "DEADBEEF")
-	ctx = vgcontext.WithBlockHeight(ctx, tes.blockHeight)
+	ctx = vgcontext.WithBlockHeight(ctx, s.blockHeight)
 
-	event := events.NewTime(ctx, tes.vegaTime)
-	tes.vegaTime = tes.vegaTime.Add(1 * time.Second)
-	tes.blockHeight++
+	event := events.NewBeginBlock(ctx, eventsv1.BeginBlock{
+		Height:    uint64(s.blockHeight),
+		Timestamp: s.vegaTime.UnixNano(),
+	})
+
+	return event
+}
+
+func (s *blockEventSource) NextEndBlockEvent() *events.EndBlock {
+	ctx := vgcontext.WithTraceID(context.Background(), "DEADBEEF")
+	ctx = vgcontext.WithBlockHeight(ctx, s.blockHeight)
+
+	event := events.NewEndBlock(ctx, eventsv1.EndBlock{
+		Height: uint64(s.blockHeight),
+	})
+
+	s.vegaTime = s.vegaTime.Add(1 * time.Second)
+	s.blockHeight++
+
 	return event
 }

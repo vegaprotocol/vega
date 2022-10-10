@@ -31,6 +31,7 @@ type Delegation struct {
 	Amount   decimal.Decimal `json:"amount"`
 	TxHash   TxHash
 	VegaTime time.Time
+	SeqNum   uint64
 }
 
 func (d Delegation) String() string {

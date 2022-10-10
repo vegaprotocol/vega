@@ -28,6 +28,7 @@ type Checkpoint struct {
 	BlockHeight int64
 	TxHash      TxHash
 	VegaTime    time.Time
+	SeqNum      uint64
 }
 
 func (cp *Checkpoint) ToV1Proto() *protoapi.Checkpoint {

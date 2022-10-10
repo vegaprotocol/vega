@@ -30,7 +30,7 @@ func addTestDelegation(t *testing.T, ds *sqlstore.Delegations,
 	party entities.Party,
 	node entities.Node,
 	epochID int64,
-	block entities.Block,
+	block entities.Block, seqNum uint64,
 ) entities.Delegation {
 	t.Helper()
 	r := entities.Delegation{
@@ -39,6 +39,7 @@ func addTestDelegation(t *testing.T, ds *sqlstore.Delegations,
 		EpochID:  epochID,
 		Amount:   decimal.NewFromInt(100),
 		VegaTime: block.VegaTime,
+		SeqNum:   seqNum,
 	}
 	err := ds.Add(context.Background(), r)
 	require.NoError(t, err)
@@ -83,11 +84,11 @@ func TestDelegations(t *testing.T) {
 	party1ID := party1.ID.String()
 	party2ID := party2.ID.String()
 
-	delegation1 := addTestDelegation(t, ds, party1, node1, 1, block)
-	delegation2 := addTestDelegation(t, ds, party1, node2, 2, block)
-	delegation3 := addTestDelegation(t, ds, party2, node1, 3, block)
-	delegation4 := addTestDelegation(t, ds, party2, node2, 4, block)
-	delegation5 := addTestDelegation(t, ds, party2, node2, 5, block)
+	delegation1 := addTestDelegation(t, ds, party1, node1, 1, block, 0)
+	delegation2 := addTestDelegation(t, ds, party1, node2, 2, block, 1)
+	delegation3 := addTestDelegation(t, ds, party2, node1, 3, block, 2)
+	delegation4 := addTestDelegation(t, ds, party2, node2, 4, block, 3)
+	delegation5 := addTestDelegation(t, ds, party2, node2, 5, block, 4)
 
 	t.Run("GetAll", func(t *testing.T) {
 		expected := []entities.Delegation{delegation1, delegation2, delegation3, delegation4, delegation5}
@@ -651,7 +652,7 @@ func setupPaginatedDelegationsTests(t *testing.T) (*sqlstore.Delegations,
 		for j := 0; j < 10; j++ {
 			blockTime = blockTime.Add(time.Minute)
 			block = addTestBlockForTime(t, bs, blockTime)
-			delegations = append(delegations, addTestDelegation(t, ds, parties[i], nodes[i], int64((i*10)+j), block))
+			delegations = append(delegations, addTestDelegation(t, ds, parties[i], nodes[i], int64((i*10)+j), block, 0))
 		}
 	}
 

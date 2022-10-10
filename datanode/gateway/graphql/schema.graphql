@@ -5,6 +5,18 @@ schema {
   subscription: Subscription
 }
 
+"The result from processing a transaction"
+type TransactionResult {
+  "The party which submitted this transaction"
+  partyId: String!
+  "The hash of the transaction"
+  hash: String!
+  "Was the transaction successful or not?"
+  status: Boolean!
+  "The error emitted by the transaction, will be null if the transaction succeeded"
+  error: String
+}
+
 "Create an order linked to an index rather than a price"
 type PeggedOrder {
   "Index to link this order to"
@@ -1376,13 +1388,13 @@ type Future {
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
 
-  "The oracle spec describing the oracle data of interest for settlement price."
-  oracleSpecForSettlementPrice: OracleSpec!
+  "The oracle spec describing the oracle data of interest for settlement."
+  oracleSpecForSettlementData: OracleSpec!
 
   "The oracle spec describing the oracle data of interest for trading termination."
   oracleSpecForTradingTermination: OracleSpec!
 
-  "The binding between the oracle spec and the settlement price"
+  "The binding between the oracle spec and the settlement data"
   oracleSpecBinding: OracleSpecToFutureBinding!
 
   "The number of decimal places implied by the settlement data (such as price) emitted by the settlement oracle"
@@ -1391,10 +1403,10 @@ type Future {
 
 """
 OracleSpecToFutureBinding tells on which property oracle data should be
-used as settlement price and trading termination.
+used as settlement data and trading termination.
 """
 type OracleSpecToFutureBinding {
-  settlementPriceProperty: String!
+  settlementDataProperty: String!
   tradingTerminationProperty: String!
 }
 
@@ -2248,7 +2260,7 @@ type Position {
   "The party holding this position"
   party: Party!
 
-  "Open volume (uint64)"
+  "Open volume (int64)"
   openVolume: String!
 
   "Realised Profit and Loss (int64)"
@@ -2283,7 +2295,7 @@ type PositionUpdate {
   "The party holding this position"
   partyId: ID!
 
-  "Open volume (uint64)"
+  "Open volume (int64)"
   openVolume: String!
 
   "Realised Profit and Loss (int64)"
@@ -2918,6 +2930,8 @@ enum ProposalRejectionReason {
   PROPOSAL_ERROR_UNKNOWN_RISK_PARAMETER_TYPE
   "Freeform proposal is invalid"
   PROPOSAL_ERROR_INVALID_FREEFORM
+  "The erc20 address specified by this proposal is alread in use by another asset"
+  PROPOSAL_ERROR_ERC20_ADDRESS_ALREADY_IN_USE
 }
 
 "Why the order was rejected by the core node"
@@ -3194,16 +3208,16 @@ type FutureProduct {
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
   """
-  Describes the oracle data that an instrument wants to get from the oracle engine for settlement price.
+  Describes the oracle data that an instrument wants to get from the oracle engine for settlement data.
   """
-  oracleSpecForSettlementPrice: OracleSpecConfiguration!
+  oracleSpecForSettlementData: OracleSpecConfiguration!
   """
   Describes the oracle data that an instrument wants to get from the oracle engine for trading termination.
   """
   oracleSpecForTradingTermination: OracleSpecConfiguration!
   """
   OracleSpecToFutureBinding tells on which property oracle data should be
-  used as settlement price.
+  used as settlement data.
   """
   oracleSpecBinding: OracleSpecToFutureBinding!
 
@@ -3273,7 +3287,7 @@ type UpdateInstrumentConfiguration {
 
 type UpdateFutureProduct {
   quoteName: String!
-  oracleSpecForSettlementPrice: OracleSpecConfiguration!
+  oracleSpecForSettlementData: OracleSpecConfiguration!
   oracleSpecForTradingTermination: OracleSpecConfiguration!
   oracleSpecBinding: OracleSpecToFutureBinding!
 }
@@ -3698,6 +3712,8 @@ enum BusEventType {
   OracleSpec
   "Constant for market events - mainly used for logging"
   Market
+  "The results from processing at transaction"
+  TransactionResult
 }
 
 "Union type for wrapped events in stream PROPOSAL is mapped to governance data, something to keep in mind"
@@ -3727,6 +3743,7 @@ union Event =
   | Withdrawal
   | OracleSpec
   | LiquidityProvision
+  | TransactionResult
 
 type BusEvent {
   "The ID for this event"

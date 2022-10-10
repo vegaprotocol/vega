@@ -30,8 +30,8 @@ var (
 	// oracle spec or its binding is missing from the future definition.
 	ErrOracleSpecAndBindingAreRequired = errors.New("an oracle spec and an oracle spec binding are required")
 
-	// ErrOracleSettlementPriceNotSet is returned when the oracle has not set the settlement price.
-	ErrOracleSettlementPriceNotSet = errors.New("settlement price is not set")
+	// ErrOracleSettlementDataeNotSet is returned when the oracle has not set the settlement data.
+	ErrOracleSettlementDataNotSet = errors.New("settlement data is not set")
 )
 
 // Future represent a Future as describe by the market framework.
@@ -41,7 +41,7 @@ type Future struct {
 	QuoteName                  string
 	oracle                     oracle
 	tradingTerminationListener func(context.Context, bool)
-	settlementPriceListener    func(context.Context, *num.Uint)
+	settlementDataListener     func(context.Context, *num.Uint)
 }
 
 func (f *Future) UnsubscribeTradingTerminated(ctx context.Context) {
@@ -49,18 +49,18 @@ func (f *Future) UnsubscribeTradingTerminated(ctx context.Context) {
 	f.oracle.unsubscribe(ctx, f.oracle.tradingTerminatedSubscriptionID)
 }
 
-func (f *Future) UnsubscribeSettlementPrice(ctx context.Context) {
-	f.log.Info("unsubscribed trading settlement price for", logging.String("quote-name", f.QuoteName))
-	f.oracle.unsubscribe(ctx, f.oracle.settlementPriceSubscriptionID)
+func (f *Future) UnsubscribeSettlementData(ctx context.Context) {
+	f.log.Info("unsubscribed trading settlement data for", logging.String("quote-name", f.QuoteName))
+	f.oracle.unsubscribe(ctx, f.oracle.settlementDataSubscriptionID)
 }
 
 func (f *Future) Unsubscribe(ctx context.Context) {
 	f.UnsubscribeTradingTerminated(ctx)
-	f.UnsubscribeSettlementPrice(ctx)
+	f.UnsubscribeSettlementData(ctx)
 }
 
 type oracle struct {
-	settlementPriceSubscriptionID   oracles.SubscriptionID
+	settlementDataSubscriptionID    oracles.SubscriptionID
 	tradingTerminatedSubscriptionID oracles.SubscriptionID
 	unsubscribe                     oracles.Unsubscriber
 	binding                         oracleBinding
@@ -69,15 +69,15 @@ type oracle struct {
 }
 
 type oracleData struct {
-	settlementPrice   *num.Uint
+	settlementData    *num.Uint
 	tradingTerminated bool
 }
 
-func (d *oracleData) SettlementPrice() (*num.Uint, error) {
-	if d.settlementPrice == nil {
-		return nil, ErrOracleSettlementPriceNotSet
+func (d *oracleData) SettlementData() (*num.Uint, error) {
+	if d.settlementData == nil {
+		return nil, ErrOracleSettlementDataNotSet
 	}
-	return d.settlementPrice.Clone(), nil
+	return d.settlementData.Clone(), nil
 }
 
 // IsTradingTerminated returns true when oracle has signalled termination of trading.
@@ -86,50 +86,59 @@ func (d *oracleData) IsTradingTerminated() bool {
 }
 
 type oracleBinding struct {
-	settlementPriceProperty    string
+	settlementDataProperty     string
 	tradingTerminationProperty string
 }
 
-func (f *Future) NotifyOnSettlementPrice(listener func(context.Context, *num.Uint)) {
-	f.settlementPriceListener = listener
+func (f *Future) NotifyOnSettlementData(listener func(context.Context, *num.Uint)) {
+	f.settlementDataListener = listener
 }
 
 func (f *Future) NotifyOnTradingTerminated(listener func(context.Context, bool)) {
 	f.tradingTerminationListener = listener
 }
 
-func (f *Future) ScaleSettlementPriceToDecimalPlaces(price *num.Uint, dp uint32) (*num.Uint, error) {
+func (f *Future) ScaleSettlementDataToDecimalPlaces(price *num.Uint, dp uint32) (*num.Uint, error) {
 	// scale to asset decimals by multiplying by 10^(assetDP - oracleDP)
-	// if assetDP > oracleDP - this scales up the decimals of settlement price
-	// if assetDP < oracleDP - this scaled down the decimals of settlement price and can lead to loss of accuracy
+	// if assetDP > oracleDP - this scales up the decimals of settlement data
+	// if assetDP < oracleDP - this scaled down the decimals of settlement data and can lead to loss of accuracy
 	// if there're equal - no scaling happens
 	scalingFactor := num.DecimalFromInt64(10).Pow(num.DecimalFromInt64(int64(dp) - int64(f.oracle.settlementDataDecimals)))
 	r, overflow := num.UintFromDecimal(price.ToDecimal().Mul(scalingFactor))
 	if overflow {
-		return nil, errors.New("failed to scale settlement price, overflow occurred")
+		return nil, errors.New("failed to scale settlement data, overflow occurred")
 	}
 	return r, nil
 }
 
 // Settle a position against the future.
 func (f *Future) Settle(entryPriceInAsset *num.Uint, assetDecimals uint32, netFractionalPosition num.Decimal) (amt *types.FinancialAmount, neg bool, err error) {
-	settlementPrice, err := f.oracle.data.SettlementPrice()
+	settlementData, err := f.oracle.data.SettlementData()
 	if err != nil {
 		return nil, false, err
 	}
 
-	settlementPriceInAsset, err := f.ScaleSettlementPriceToDecimalPlaces(settlementPrice, assetDecimals)
+	settlementDataInAsset, err := f.ScaleSettlementDataToDecimalPlaces(settlementData, assetDecimals)
 	if err != nil {
 		return nil, false, err
 	}
 
-	amount, neg := settlementPrice.Delta(settlementPriceInAsset, entryPriceInAsset)
+	amount, neg := settlementData.Delta(settlementDataInAsset, entryPriceInAsset)
 	// Make sure net position is positive
 	if netFractionalPosition.IsNegative() {
 		netFractionalPosition = netFractionalPosition.Neg()
 		neg = !neg
 	}
 
+	if f.log.IsDebug() {
+		f.log.Debug("settlement",
+			logging.String("entry-price-in-asset", entryPriceInAsset.String()),
+			logging.String("settlement-data-in-asset", settlementDataInAsset.String()),
+			logging.String("net-fractional-position", netFractionalPosition.String()),
+			logging.String("amount-in-decimal", netFractionalPosition.Mul(amount.ToDecimal()).String()),
+			logging.String("amount-in-uint", amount.String()),
+		)
+	}
 	amount, _ = num.UintFromDecimal(netFractionalPosition.Mul(amount.ToDecimal()))
 
 	return &types.FinancialAmount{
@@ -195,29 +204,29 @@ func (f *Future) setTradingTerminated(ctx context.Context, tradingTerminated boo
 	return nil
 }
 
-func (f *Future) updateSettlementPrice(ctx context.Context, data oracles.OracleData) error {
+func (f *Future) updateSettlementData(ctx context.Context, data oracles.OracleData) error {
 	if f.log.GetLevel() == logging.DebugLevel {
 		f.log.Debug("new oracle data received", data.Debug()...)
 	}
 
-	settlementPrice, err := data.GetUint(f.oracle.binding.settlementPriceProperty)
+	settlementData, err := data.GetUint(f.oracle.binding.settlementDataProperty)
 	if err != nil {
 		f.log.Error(
-			"could not parse the property acting as settlement price",
+			"could not parse the property acting as settlement data",
 			logging.Error(err),
 		)
 		return err
 	}
 
-	f.oracle.data.settlementPrice = settlementPrice
-	if f.settlementPriceListener != nil {
-		f.settlementPriceListener(ctx, settlementPrice)
+	f.oracle.data.settlementData = settlementData
+	if f.settlementDataListener != nil {
+		f.settlementDataListener(ctx, settlementData)
 	}
 
 	if f.log.GetLevel() == logging.DebugLevel {
 		f.log.Debug(
-			"future settlement price updated",
-			logging.BigUint("settlementPrice", settlementPrice),
+			"future settlement data updated",
+			logging.BigUint("settlementData", settlementData),
 		)
 	}
 
@@ -225,7 +234,7 @@ func (f *Future) updateSettlementPrice(ctx context.Context, data oracles.OracleD
 }
 
 func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe OracleEngine) (*Future, error) {
-	if f.OracleSpecForSettlementPrice == nil || f.OracleSpecForTradingTermination == nil || f.OracleSpecBinding == nil {
+	if f.OracleSpecForSettlementData == nil || f.OracleSpecForTradingTermination == nil || f.OracleSpecBinding == nil {
 		return nil, ErrOracleSpecAndBindingAreRequired
 	}
 
@@ -244,24 +253,24 @@ func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 		},
 	}
 
-	// Oracle spec for settlement price.
-	oracleSpecForSettlementPrice, err := oracles.NewOracleSpec(*f.OracleSpecForSettlementPrice)
+	// Oracle spec for settlement data.
+	OracleSpecForSettlementData, err := oracles.NewOracleSpec(*f.OracleSpecForSettlementData)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := oracleSpecForSettlementPrice.EnsureBoundableProperty(
-		oracleBinding.settlementPriceProperty,
+	if err := OracleSpecForSettlementData.EnsureBoundableProperty(
+		oracleBinding.settlementDataProperty,
 		oraclespb.PropertyKey_TYPE_INTEGER,
 	); err != nil {
-		return nil, fmt.Errorf("invalid oracle spec binding for settlement price: %w", err)
+		return nil, fmt.Errorf("invalid oracle spec binding for settlement data: %w", err)
 	}
 
-	future.oracle.settlementPriceSubscriptionID, future.oracle.unsubscribe = oe.Subscribe(ctx, *oracleSpecForSettlementPrice, future.updateSettlementPrice)
+	future.oracle.settlementDataSubscriptionID, future.oracle.unsubscribe = oe.Subscribe(ctx, *OracleSpecForSettlementData, future.updateSettlementData)
 
 	if log.IsDebug() {
-		log.Debug("future subscribed to oracle engine for settlement price",
-			logging.Uint64("subscription ID", uint64(future.oracle.settlementPriceSubscriptionID)),
+		log.Debug("future subscribed to oracle engine for settlement data",
+			logging.Uint64("subscription ID", uint64(future.oracle.settlementDataSubscriptionID)),
 		)
 	}
 
@@ -300,9 +309,9 @@ func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 }
 
 func newOracleBinding(f *types.Future) (oracleBinding, error) {
-	settlementPriceProperty := strings.TrimSpace(f.OracleSpecBinding.SettlementPriceProperty)
-	if len(settlementPriceProperty) == 0 {
-		return oracleBinding{}, errors.New("binding for settlement price cannot be blank")
+	settlementDataProperty := strings.TrimSpace(f.OracleSpecBinding.SettlementDataProperty)
+	if len(settlementDataProperty) == 0 {
+		return oracleBinding{}, errors.New("binding for settlement data cannot be blank")
 	}
 	tradingTerminationProperty := strings.TrimSpace(f.OracleSpecBinding.TradingTerminationProperty)
 	if len(tradingTerminationProperty) == 0 {
@@ -310,7 +319,7 @@ func newOracleBinding(f *types.Future) (oracleBinding, error) {
 	}
 
 	return oracleBinding{
-		settlementPriceProperty:    settlementPriceProperty,
+		settlementDataProperty:     settlementDataProperty,
 		tradingTerminationProperty: tradingTerminationProperty,
 	}, nil
 }

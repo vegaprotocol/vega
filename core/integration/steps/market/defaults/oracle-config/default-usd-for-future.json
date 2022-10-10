@@ -1,7 +1,7 @@
 {
   "settlementAsset": "",
   "quoteName": "",
-  "oracleSpecForSettlementPrice": {
+  "oracleSpecForSettlementData": {
     "id": "1",
     "createdAt": "0",
     "updatedAt": "0",
@@ -40,7 +40,7 @@
     "status": "STATUS_UNSPECIFIED"
   },
   "oracleSpecBinding": {
-    "settlementPriceProperty": "prices.USD.value",
+    "settlementDataProperty": "prices.USD.value",
     "tradingTerminationProperty": "trading.terminated"
   }
 }

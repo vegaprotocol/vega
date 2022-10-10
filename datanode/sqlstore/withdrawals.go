@@ -46,9 +46,8 @@ func (w *Withdrawals) Upsert(ctx context.Context, withdrawal *entities.Withdrawa
 		created_timestamp, withdrawn_timestamp, ext, tx_hash, vega_time
 	)
 		values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-		on conflict (id, vega_time) do update
+		on conflict (id, party_id, vega_time) do update
 		set
-			party_id=EXCLUDED.party_id,
 			amount=EXCLUDED.amount,
 			asset=EXCLUDED.asset,
 			status=EXCLUDED.status,
@@ -74,7 +73,7 @@ func (w *Withdrawals) Upsert(ctx context.Context, withdrawal *entities.Withdrawa
 		withdrawal.Ext,
 		withdrawal.TxHash,
 		withdrawal.VegaTime); err != nil {
-		err = fmt.Errorf("could not insert deposit into database: %w", err)
+		err = fmt.Errorf("could not insert withdrawal into database: %w", err)
 		return err
 	}
 

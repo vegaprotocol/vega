@@ -80,6 +80,7 @@ type testTop struct {
 	wallet      *mocks.MockWallet
 	broker      *bmocks.MockBroker
 	timeService *mocks.MockTimeService
+	multisigTop *mocks.MockMultiSigTopology
 }
 
 func getTestTopologyWithNodeWallet(
@@ -90,16 +91,18 @@ func getTestTopologyWithNodeWallet(
 	broker := bmocks.NewMockBroker(ctrl)
 	timeService := mocks.NewMockTimeService(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	multisigTop := mocks.NewMockMultiSigTopology(ctrl)
 
 	commander := mocks.NewMockCommander(gomock.NewController(t))
 
-	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), nw, broker, true, commander, &DummyMultiSigTopology{}, timeService)
+	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), nw, broker, true, commander, multisigTop, timeService)
 	return &testTop{
 		Topology:    top,
 		ctrl:        ctrl,
 		wallet:      wallet,
 		broker:      broker,
 		timeService: timeService,
+		multisigTop: multisigTop,
 	}
 }
 
@@ -558,7 +561,7 @@ func testAddKeyRotateSuccessFailsWhenTargetBlockHeightIsLessThenCurrentBlockHeig
 	assert.NoError(t, err)
 
 	err = top.AddKeyRotate(ctx, id, 15, newKeyRotationSubmission(vegaPubKey, newVegaPubKey, 1, 10))
-	assert.ErrorIs(t, err, validators.ErrTargetBlockHeightMustBeGraterThanCurrentHeight)
+	assert.ErrorIs(t, err, validators.ErrTargetBlockHeightMustBeGreaterThanCurrentHeight)
 }
 
 func testAddKeyRotateSuccessFailsWhenNewKeyIndexIsLessThenCurrentKeyIndex(t *testing.T) {

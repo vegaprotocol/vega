@@ -102,20 +102,12 @@ func testTopologyCheckpointSuccess(t *testing.T) {
 	err = top.AddKeyRotate(ctx, "vega-master-pubkey-1", 5, kr2)
 	assert.NoError(t, err)
 
-	ekr1 := &commandspb.EthereumKeyRotateSubmission{
-		TargetBlock:    10,
-		NewAddress:     "new-eth-address-0",
-		CurrentAddress: "eth-address-0",
-	}
-	err = top.RotateEthereumKey(ctx, hexEncode("vega-key-0"), 5, ekr1)
+	ekr1 := newEthereumKeyRotationSubmission("eth-address-0", "new-eth-address-0", 10, "")
+	err = top.ProcessEthereumKeyRotation(ctx, hexEncode("vega-key-0"), ekr1, MockVerify)
 	assert.NoError(t, err)
 
-	ekr2 := &commandspb.EthereumKeyRotateSubmission{
-		TargetBlock:    11,
-		NewAddress:     "new-eth-address-1",
-		CurrentAddress: "eth-address-1",
-	}
-	err = top.RotateEthereumKey(ctx, hexEncode("vega-key-1"), 5, ekr2)
+	ekr2 := newEthereumKeyRotationSubmission("eth-address-1", "new-eth-address-1", 11, "")
+	err = top.ProcessEthereumKeyRotation(ctx, hexEncode("vega-key-1"), ekr2, MockVerify)
 	assert.NoError(t, err)
 
 	pkrs := top.GetAllPendingKeyRotations()
@@ -165,20 +157,12 @@ func testTopologyCheckpointUsesRelativeBlockHeight(t *testing.T) {
 	err = top.AddKeyRotate(ctx, "vega-master-pubkey-1", 5, kr2)
 	assert.NoError(t, err)
 
-	ekr1 := &commandspb.EthereumKeyRotateSubmission{
-		TargetBlock:    105,
-		NewAddress:     "new-eth-address-0",
-		CurrentAddress: "eth-address-0",
-	}
-	err = top.RotateEthereumKey(ctx, hexEncode("vega-key-0"), 5, ekr1)
+	ekr1 := newEthereumKeyRotationSubmission("eth-address-0", "new-eth-address-0", 105, "")
+	err = top.ProcessEthereumKeyRotation(ctx, hexEncode("vega-key-0"), ekr1, MockVerify)
 	assert.NoError(t, err)
 
-	ekr2 := &commandspb.EthereumKeyRotateSubmission{
-		TargetBlock:    115,
-		NewAddress:     "new-eth-address-1",
-		CurrentAddress: "eth-address-1",
-	}
-	err = top.RotateEthereumKey(ctx, hexEncode("vega-key-1"), 5, ekr2)
+	ekr2 := newEthereumKeyRotationSubmission("eth-address-1", "new-eth-address-1", 115, "")
+	err = top.ProcessEthereumKeyRotation(ctx, hexEncode("vega-key-1"), ekr2, MockVerify)
 	assert.NoError(t, err)
 
 	pkrs := top.GetAllPendingKeyRotations()

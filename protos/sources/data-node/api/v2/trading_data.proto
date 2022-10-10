@@ -17,7 +17,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/data-node/api/v2";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Vega data node APIs";
-    version: "0.56.0";
+    version: "0.57.0";
   }
   schemes: [HTTP, HTTPS]
   host: "lb.testnet.vega.xyz/datanode/rest"
@@ -1674,12 +1674,12 @@ message GetEpochResponse {
 // -- Estimates --
 // Request to fetch the estimated fee if an order were to trade immediately
 message EstimateFeeRequest {
-    // Order to estimate fees for
-    // the following fields in the order are required:
     // MarketID (used to specify the fee factors)
-    // Price (the price at which the order could trade)
+  string market_id = 1;
+  // Price (the price at which the order could trade)
+  string price = 2;
     // Size (the size at which the order could eventually trade)
-    vega.Order order = 1;
+  uint64 size = 3;
 }
 
 // Response to a EstimateFeeRequest, containing the estimated fees for a given order
@@ -1690,8 +1690,12 @@ message EstimateFeeResponse {
 
 // Request to fetch the estimated MarginLevels if an order were to trade immediately
 message EstimateMarginRequest {
-    // Order to estimate fees for
-    vega.Order order = 1;
+  string market_id = 1;
+  string party_id = 2;
+  vega.Side side = 3;
+  vega.Order.Type type = 4;
+  uint64 size = 5;
+  string price = 6;
 }
 
 // Response to a EstimateMarginRequest, containing the estimated marginLevels for a given order

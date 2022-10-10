@@ -1,13 +1,54 @@
 # Changelog
 
-## Unreleased 0.57.0
+## Unreleased 0.58.0
+
+### 🚨 Breaking changes
+- [6271](https://github.com/vegaprotocol/vega/issues/6271) - Require signature from new Ethereum key to validate key rotation submission
+- [6364](https://github.com/vegaprotocol/vega/issues/6364) - Rename `oracleSpecForSettlementPrice` to `oracleSpecForSettlementData`
+- [6401](https://github.com/vegaprotocol/vega/issues/6401) - Fix estimate fees and margin `APis`
+- [6428](https://github.com/vegaprotocol/vega/issues/6428) - Update the wallet connection decision for future work
+- [6429](https://github.com/vegaprotocol/vega/issues/6429) - Rename pipeline to interactor for better understanding
+- [6430](https://github.com/vegaprotocol/vega/issues/6430) - Split the transaction status interaction depending on success and failure
+
+### 🗑️ Deprecation
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🛠 Improvements
+- [6399](https://github.com/vegaprotocol/vega/issues/6399) - Add `init-db` and `unsafe-reset-all` commands to block explorer
+- [6348](https://github.com/vegaprotocol/vega/issues/6348) - Reduce pool size to leave more available `Postgres` connections
+- [6312](https://github.com/vegaprotocol/vega/issues/6312) - Add back amended balance tests and correct ordering
+- [6435](https://github.com/vegaprotocol/vega/issues/6435) - Add `GetTransaction` `API` call for block explorer
+- [6211](https://github.com/vegaprotocol/vega/issues/6211) - Handle `BeginBlock` and `EndBlock` events
+- [6361](https://github.com/vegaprotocol/vega/issues/6361) - Remove unnecessary logging in market
+- [6378](https://github.com/vegaprotocol/vega/issues/6378) - Migrate remaining views of current data to tables with current data
+- [6425](https://github.com/vegaprotocol/vega/issues/6425) - Introduce interaction for beginning and ending of request
+- [6308](https://github.com/vegaprotocol/vega/issues/6308) - Support parallel requests in wallet API version 2
+- [6426](https://github.com/vegaprotocol/vega/issues/6426) - Add a name field on interaction to know what they are when JSON
+- [6427](https://github.com/vegaprotocol/vega/issues/6427) - Improve interactions documentation
+- [6431](https://github.com/vegaprotocol/vega/issues/6431) - Pass a human-readable input data in Transaction Succeeded and Failed notifications
+- [6448](https://github.com/vegaprotocol/vega/issues/6448) - Improve wallet interaction JSON conversion
+
+### 🐛 Fixes
+- [6388](https://github.com/vegaprotocol/vega/issues/6388) - Do not transfer stake and delegations after a key rotation
+- [6266](https://github.com/vegaprotocol/vega/issues/6266) - Do not take a snapshot at block height 1 and handle increase of interval appropriately
+- [6338](https://github.com/vegaprotocol/vega/issues/6338) - Fix validation for update an new asset proposals
+- [6357](https://github.com/vegaprotocol/vega/issues/6357) - Fix potential panic in `gql` resolvers
+- [6391](https://github.com/vegaprotocol/vega/issues/6391) - Fix dropped connection between core and data node when large `(>1mb)` messages are sent.
+- [6358](https://github.com/vegaprotocol/vega/issues/6358) - Do not show hidden files nor directories as wallet
+- [6374](https://github.com/vegaprotocol/vega/issues/6374) - Fix panic with the metrics
+- [6373](https://github.com/vegaprotocol/vega/issues/6373) - Fix panic with the metrics as well
+- [6395](https://github.com/vegaprotocol/vega/issues/6395) - Wallet selection doesn't lower case the wallet name during input verification
+- [6408](https://github.com/vegaprotocol/vega/issues/6408) - Initialise observer in liquidity provision `sql` store
+- [6406](https://github.com/vegaprotocol/vega/issues/6406) - Fix invalid tracking of cumulative volume and price
+- [6387](https://github.com/vegaprotocol/vega/issues/6387) - Fix max open interest calculation
+- [6416](https://github.com/vegaprotocol/vega/issues/6416) - Prevent submission of `erc20` address already used by another asset
+- [6375](https://github.com/vegaprotocol/vega/issues/6375) - If there is one unit left over at the end of final market settlement - transfer it to the network treasury. if there is more than one, log all transfers and panic. 
+
+## 0.57.0
 
 ### 🚨 Breaking changes
 - [6291](https://github.com/vegaprotocol/vega/issues/6291) - Remove `Nodewallet.ETH` configuration and add flags to supply `clef` addresses when importing or generating accounts
 - [6314](https://github.com/vegaprotocol/vega/issues/6314) - Rename session namespace to client in wallet API version 2
-
-### 🗑️ Deprecation
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
 - [6283](https://github.com/vegaprotocol/vega/issues/6283) - Add commit hash to version if is development version
@@ -64,6 +105,7 @@
 - [6260](https://github.com/vegaprotocol/vega/issues/6260) - Prepend `chainID` to input data only when signing the transaction
 - [6036](https://github.com/vegaprotocol/vega/issues/6036) - Fix `protobuf<->swagger` generation
 - [6248](https://github.com/vegaprotocol/vega/issues/6245) - Candles connection is not returning any candle data
+- [6037](https://github.com/vegaprotocol/vega/issues/6037) - Fix auction events.
 - [6061](https://github.com/vegaprotocol/vega/issues/6061) - Attempt at stabilizing the tests on the broker in the core
 - [6178](https://github.com/vegaprotocol/vega/issues/6178) - Historical balances fails with `scany` error
 - [6193](https://github.com/vegaprotocol/vega/issues/6193) - Use Data field from transaction successfully sent but that were rejected

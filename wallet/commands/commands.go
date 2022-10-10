@@ -66,6 +66,8 @@ func CheckSubmitTransactionRequest(req *walletpb.SubmitTransactionRequest) comma
 		cmdErr = commands.CheckProtocolUpgradeProposal(cmd.ProtocolUpgradeProposal)
 	case *walletpb.SubmitTransactionRequest_IssueSignatures:
 		cmdErr = commands.CheckIssueSignatures(cmd.IssueSignatures)
+	case *walletpb.SubmitTransactionRequest_BatchMarketInstructions:
+		cmdErr = commands.CheckBatchMarketInstructions(cmd.BatchMarketInstructions)
 	default:
 		errs.AddForProperty("input_data.command", commands.ErrIsNotSupported)
 	}
@@ -77,13 +79,17 @@ func CheckSubmitTransactionRequest(req *walletpb.SubmitTransactionRequest) comma
 	return errs
 }
 
-func ToMarshaledInputData(req *walletpb.SubmitTransactionRequest, height uint64) ([]byte, error) {
-	data := commands.NewInputData(height)
-	wrapRequestCommandIntoInputData(data, req)
-	return commands.MarshalInputData(data)
+func ToInputData(req *walletpb.SubmitTransactionRequest, height uint64) *commandspb.InputData {
+	inputData := commands.NewInputData(height)
+	WrapRequestCommandIntoInputData(inputData, req)
+	return inputData
 }
 
-func wrapRequestCommandIntoInputData(data *commandspb.InputData, req *walletpb.SubmitTransactionRequest) {
+func ToMarshaledInputData(req *walletpb.SubmitTransactionRequest, height uint64) ([]byte, error) {
+	return commands.MarshalInputData(ToInputData(req, height))
+}
+
+func WrapRequestCommandIntoInputData(data *commandspb.InputData, req *walletpb.SubmitTransactionRequest) {
 	switch cmd := req.Command.(type) {
 	case *walletpb.SubmitTransactionRequest_OrderSubmission:
 		data.Command = &commandspb.InputData_OrderSubmission{
@@ -172,6 +178,10 @@ func wrapRequestCommandIntoInputData(data *commandspb.InputData, req *walletpb.S
 	case *walletpb.SubmitTransactionRequest_IssueSignatures:
 		data.Command = &commandspb.InputData_IssueSignatures{
 			IssueSignatures: req.GetIssueSignatures(),
+		}
+	case *walletpb.SubmitTransactionRequest_BatchMarketInstructions:
+		data.Command = &commandspb.InputData_BatchMarketInstructions{
+			BatchMarketInstructions: req.GetBatchMarketInstructions(),
 		}
 	default:
 		panic(fmt.Sprintf("command %v is not supported", cmd))

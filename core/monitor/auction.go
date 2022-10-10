@@ -17,7 +17,6 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
-	"code.vegaprotocol.io/vega/core/metrics"
 	"code.vegaprotocol.io/vega/core/types"
 )
 
@@ -31,8 +30,6 @@ type AuctionState struct {
 	m                  *types.Market           // keep market definition handy, useful to end auctions when default is FBA
 	extension          *types.AuctionTrigger   // Set if the current auction was extended, reset after the event was created
 	extensionEventSent bool
-	// timer tracks the elapsed time spend in opening auction.
-	timer *metrics.TimeCounter
 
 	stateChanged bool
 }
@@ -249,7 +246,6 @@ func (a *AuctionState) AuctionExtended(ctx context.Context, now time.Time) *even
 
 // AuctionStarted is called by the execution package to set flags indicating the market has started the auction.
 func (a *AuctionState) AuctionStarted(ctx context.Context, now time.Time) *events.Auction {
-	a.timer = metrics.NewTimeCounter(a.m.ID, "Auction duration", a.trigger.String())
 	a.start = false
 	end := int64(0)
 	if a.begin == nil {
@@ -264,8 +260,6 @@ func (a *AuctionState) AuctionStarted(ctx context.Context, now time.Time) *event
 
 // Left is called by execution to update internal state indicating this auction was closed.
 func (a *AuctionState) Left(ctx context.Context, now time.Time) *events.Auction {
-	a.timer.EngineTimeCounterAdd()
-
 	// the end-of-auction event
 	var start int64
 	if a.begin != nil {
@@ -295,7 +289,9 @@ func (a *AuctionState) UpdateMinDuration(ctx context.Context, d time.Duration) *
 		// no need to check for nil, we already have
 		if newMin.After(*oldExp) {
 			a.stateChanged = true
-			a.end.Duration += int64(newMin.Sub(*oldExp) / time.Second) // we have to divide by seconds as we're using seconds in AuctionDuration type
+			a.end.Duration = int64(d / time.Second)
+			// this would increase the duration by delta new - old, effectively setting duration == new min. Instead, we can just assign new min duraiton.
+			// a.end.Duration += int64(newMin.Sub(*oldExp) / time.Second) // we have to divide by seconds as we're using seconds in AuctionDuration type
 			return events.NewAuctionEvent(ctx, a.m.ID, false, a.begin.UnixNano(), newMin.UnixNano(), a.trigger)
 		}
 	}
