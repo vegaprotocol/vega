@@ -130,6 +130,15 @@ func (f *Future) Settle(entryPriceInAsset *num.Uint, assetDecimals uint32, netFr
 		neg = !neg
 	}
 
+	if f.log.IsDebug() {
+		f.log.Debug("settlement",
+			logging.String("entry-price-in-asset", entryPriceInAsset.String()),
+			logging.String("settlement-data-in-asset", settlementDataInAsset.String()),
+			logging.String("net-fractional-position", netFractionalPosition.String()),
+			logging.String("amount-in-decimal", netFractionalPosition.Mul(amount.ToDecimal()).String()),
+			logging.String("amount-in-uint", amount.String()),
+		)
+	}
 	amount, _ = num.UintFromDecimal(netFractionalPosition.Mul(amount.ToDecimal()))
 
 	return &types.FinancialAmount{

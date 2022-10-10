@@ -24,6 +24,7 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/config/encoding"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	ptypes "code.vegaprotocol.io/vega/protos/vega"
@@ -2475,6 +2476,38 @@ func getTestEngine(t *testing.T) *testEngine {
 		marketSettlementID: setID,
 		// systemAccs: accounts,
 	}
+}
+
+func TestCheckLeftOverBalance(t *testing.T) {
+	e := getTestEngine(t)
+	defer e.Finish()
+
+	e.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	ctx := context.Background()
+	marketID := crypto.RandomHash()
+	asset := "ETH"
+	settleAccountID, _, err := e.CreateMarketAccounts(ctx, marketID, asset)
+	require.NoError(t, err)
+
+	// settle account is empty, all good, no error, no leftover ledger entry
+	settle := &types.Account{
+		ID:      settleAccountID,
+		Balance: num.UintZero(),
+	}
+	leftoverTransfer, err := e.CheckLeftOverBalance(ctx, settle, []*types.Transfer{}, asset)
+	require.NoError(t, err)
+	require.Nil(t, leftoverTransfer)
+
+	// settle has balance greater than 1, panic
+	settle.Balance = num.NewUint(100)
+	require.Panics(t, func() { e.CheckLeftOverBalance(ctx, settle, []*types.Transfer{}, asset) })
+
+	// settle has balance of exactly 1, transfer balance to the reward account
+	settle.Balance = num.NewUint(1)
+	leftoverTransfer, err = e.CheckLeftOverBalance(ctx, settle, []*types.Transfer{}, asset)
+	require.NoError(t, err)
+	require.NotNil(t, leftoverTransfer)
 }
 
 func (e *testEngine) Finish() {
