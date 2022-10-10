@@ -131,7 +131,7 @@ func testSigningTransactionWithValidParamsSucceeds(t *testing.T) {
 		SpamPowDifficulty:   1,
 		ChainId:             vgrand.RandomStr(5),
 	}, nil)
-	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, traceID).Times(1)
+	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, traceID, api.TransactionSuccessfullySigned).Times(1)
 	handler.interactor.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
 
 	// when

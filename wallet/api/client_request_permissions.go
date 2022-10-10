@@ -10,6 +10,8 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+const PermissionsSuccessfullyUpdated = "The permissions have been successfully updated."
+
 type ClientRequestPermissionsParams struct {
 	Token                string                    `json:"token"`
 	RequestedPermissions wallet.PermissionsSummary `json:"requestedPermissions"`
@@ -133,7 +135,7 @@ func (h *ClientRequestPermissions) Handle(ctx context.Context, rawParams jsonrpc
 		return nil, internalError(ErrCouldNotRequestPermissions)
 	}
 
-	h.interactor.NotifySuccessfulRequest(ctx, traceID)
+	h.interactor.NotifySuccessfulRequest(ctx, traceID, PermissionsSuccessfullyUpdated)
 
 	return ClientRequestPermissionsResult{
 		Permissions: perms.Summary(),

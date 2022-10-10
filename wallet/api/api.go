@@ -65,7 +65,7 @@ type Interactor interface {
 
 	// NotifySuccessfulRequest is used to notify the user the request is
 	// successful.
-	NotifySuccessfulRequest(ctx context.Context, traceID string)
+	NotifySuccessfulRequest(ctx context.Context, traceID string, message string)
 
 	// NotifyError is used to report errors to the user.
 	NotifyError(ctx context.Context, traceID string, t ErrorType, err error)
