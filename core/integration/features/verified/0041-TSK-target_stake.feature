@@ -25,13 +25,20 @@ Feature: Target stake
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party | asset | amount    |
-      | tt_0  | BTC   | 100000000 |
+      | lp_1  | BTC   | 100000000 |
+      | lp_2  | BTC   | 100000000 |
+      | lp_3  | BTC   | 100000000 |
+      | lp_4  | BTC   | 100000000 |
+      | lp_5  | BTC   | 100000000 |
+      | lp_6  | BTC   | 100000000 |
+      | lp_7  | BTC   | 100000000 |
+      | lp_8  | BTC   | 100000000 |
       | tt_1  | BTC   | 100000000 |
       | tt_2  | BTC   | 100000000 |
       | tt_3  | BTC   | 100000000 |
       | tt_4  | BTC   | 100000000 |
 
-  Scenario: Max open interest changes over time (0041-TSTK-002, 0041-TSTK-003)
+  Scenario: Max open interest changes over time (0041-TSTK-002, 0041-TSTK-003, 0042-LIQF-007)
     Given the following network parameters are set:
       | name                              | value |
       | market.stake.target.timeWindow    | 10s   |
@@ -41,8 +48,8 @@ Feature: Target stake
     # positions and close out if needed too
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | tt_0  | ETH/DEC21 | buy  | 1000   | 90    | 0                | TYPE_LIMIT | TIF_GTC | tt_0_0    |
-      | tt_0  | ETH/DEC21 | sell | 1000   | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_0_1    |
+      | lp_1  | ETH/DEC21 | buy  | 1000   | 90    | 0                | TYPE_LIMIT | TIF_GTC | lp_1_0    |
+      | lp_1  | ETH/DEC21 | sell | 1000   | 110   | 0                | TYPE_LIMIT | TIF_GTC | lp_1_1    |
 
     # nothing should have traded yet
     Then the mark price should be "0" for the market "ETH/DEC21"
@@ -56,8 +63,22 @@ Feature: Target stake
 
     Then the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | tt_0  | ETH/DEC21 | 2000              | 0.001 | buy  | BID              | 1          | 10     | submission |
-      | lp1 | tt_0  | ETH/DEC21 | 2000              | 0.001 | sell | ASK              | 1          | 10     | amendment  |
+      | lp1 | lp_1  | ETH/DEC21 |  135              | 0.001 | buy  | BID              | 1          | 10     | submission |
+      | lp1 | lp_1  | ETH/DEC21 |  135              | 0.001 | sell | ASK              | 1          | 10     | amendment  |
+      | lp2 | lp_2  | ETH/DEC21 |  165              | 0.002 | buy  | BID              | 1          | 10     | submission |
+      | lp2 | lp_2  | ETH/DEC21 |  165              | 0.002 | sell | ASK              | 1          | 10     | amendment  |
+      | lp3 | lp_3  | ETH/DEC21 |  300              | 0.003 | buy  | BID              | 1          | 10     | submission |
+      | lp3 | lp_3  | ETH/DEC21 |  300              | 0.003 | sell | ASK              | 1          | 10     | amendment  |
+      | lp4 | lp_4  | ETH/DEC21 |  300              | 0.004 | buy  | BID              | 1          | 10     | submission |
+      | lp4 | lp_4  | ETH/DEC21 |  300              | 0.004 | sell | ASK              | 1          | 10     | amendment  |
+      | lp5 | lp_5  | ETH/DEC21 |  500              | 0.005 | buy  | BID              | 1          | 10     | submission |
+      | lp5 | lp_5  | ETH/DEC21 |  500              | 0.005 | sell | ASK              | 1          | 10     | amendment  |
+      | lp6 | lp_6  | ETH/DEC21 |  300              | 0.006 | buy  | BID              | 1          | 10     | submission |
+      | lp6 | lp_6  | ETH/DEC21 |  300              | 0.006 | sell | ASK              | 1          | 10     | amendment  |
+      | lp7 | lp_7  | ETH/DEC21 |  200              | 0.007 | buy  | BID              | 1          | 10     | submission |
+      | lp7 | lp_7  | ETH/DEC21 |  200              | 0.007 | sell | ASK              | 1          | 10     | amendment  |
+      | lp8 | lp_8  | ETH/DEC21 |  100              | 0.008 | buy  | BID              | 1          | 10     | submission |
+      | lp8 | lp_8  | ETH/DEC21 |  100              | 0.008 | sell | ASK              | 1          | 10     | amendment  |
 
     Then the opening auction period ends for market "ETH/DEC21"
 
@@ -68,7 +89,7 @@ Feature: Target stake
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
       | 110        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 990          | 2000           | 60            |
-
+    And the liquidity fee factor should be "0.005" for the market "ETH/DEC21"
     # T0 + 1s
     Then the network moves ahead "1" blocks
 
@@ -82,6 +103,7 @@ Feature: Target stake
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
       | 90         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 810          | 2000           | 40            |
+    And the liquidity fee factor should be "0.004" for the market "ETH/DEC21"
 
     # T0 + 10s
     Then the network moves ahead "10" blocks
@@ -97,17 +119,21 @@ Feature: Target stake
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
       | 90         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 540          | 2000           | 30            |
+    And the liquidity fee factor should be "0.003" for the market "ETH/DEC21"
 
     # target stake should be: 90 x 40 x 1.5 x 0.1 = 540
     And the target stake should be "540" for the market "ETH/DEC21"
+    And the liquidity fee factor should be "0.003" for the market "ETH/DEC21"
 
     Then the network moves ahead "1" blocks
     # target stake should be: 90 x 30 x 1.5 x 0.1 = 405
     And the target stake should be "405" for the market "ETH/DEC21"
+    And the liquidity fee factor should be "0.003" for the market "ETH/DEC21"
 
     # Move time 4x the window, the target stake remain unchanged as we rely on last value even if it drops outside the window (that's still what OI is)
     Then the network moves ahead "40" blocks
     And the target stake should be "405" for the market "ETH/DEC21"
+    And the liquidity fee factor should be "0.003" for the market "ETH/DEC21"
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -116,6 +142,7 @@ Feature: Target stake
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
       | 90         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 270          | 2000           | 20            |
+    And the liquidity fee factor should be "0.002" for the market "ETH/DEC21"
     
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -124,10 +151,12 @@ Feature: Target stake
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
       | 90         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 270          | 2000           | 0             |
+    And the liquidity fee factor should be "0.002" for the market "ETH/DEC21"
 
     # target stake remain unchanged as open interest of 20 and 0 where both recorded with the same timestamp
     Then the network moves ahead "10" blocks
     And the target stake should be "270" for the market "ETH/DEC21"
+    And the liquidity fee factor should be "0.002" for the market "ETH/DEC21"
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type        | tif     |
@@ -138,6 +167,7 @@ Feature: Target stake
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
       | 90         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 135          | 2000           | 10            |
+    And the liquidity fee factor should be "0.001" for the market "ETH/DEC21"
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type        | tif     |
@@ -146,12 +176,14 @@ Feature: Target stake
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
       | 110        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 165          | 2000           | 0             |
-
+    And the liquidity fee factor should be "0.002" for the market "ETH/DEC21"
+    
     # O is now the last recorded open interest so target stake should drop to 0
     Then the network moves ahead "10" blocks
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
       | 110        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 0            | 2000           | 0             |
+    And the liquidity fee factor should be "0.001" for the market "ETH/DEC21"
 
   Scenario: Max open interest changes over time, testing change of timewindow (0041-TSTK-001; 0041-TSTK-004; 0041-TSTK-005)
     Given the following network parameters are set:
@@ -163,13 +195,13 @@ Feature: Target stake
     # positions and close out if needed too
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | tt_0  | ETH/DEC21 | buy  | 1000   | 90    | 0                | TYPE_LIMIT | TIF_GTC | tt_0_0    |
-      | tt_0  | ETH/DEC21 | sell | 1000   | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_0_1    |
+      | lp_1  | ETH/DEC21 | buy  | 1000   | 90    | 0                | TYPE_LIMIT | TIF_GTC | lp_1_0    |
+      | lp_1  | ETH/DEC21 | sell | 1000   | 110   | 0                | TYPE_LIMIT | TIF_GTC | lp_1_1    |
 
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | tt_0  | ETH/DEC21 | 2000              | 0.001 | sell | ASK              | 1          | 20     | submission |
-      | lp1 | tt_0  | ETH/DEC21 | 2000              | 0.001 | buy  | BID              | 1          | -20    | submission |
+      | lp1 | lp_1  | ETH/DEC21 | 2000              | 0.001 | sell | ASK              | 1          | 20     | submission |
+      | lp1 | lp_1  | ETH/DEC21 | 2000              | 0.001 | buy  | BID              | 1          | -20    | submission |
 
     # nothing should have traded, we have mark price set apriori or
     # due to auction closing.
@@ -218,7 +250,7 @@ Feature: Target stake
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | tt_1  | ETH/DEC21 | buy  | 100    | 110   | 1                | TYPE_LIMIT | TIF_GTC | tt_0_0    |
+      | tt_1  | ETH/DEC21 | buy  | 100    | 110   | 1                | TYPE_LIMIT | TIF_GTC | lp_1_0    |
     Then the mark price should be "110" for the market "ETH/DEC21"
 
     # max_io=10+20+30-20+100=140
@@ -248,8 +280,8 @@ Feature: Target stake
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | tt_0  | ETH/DEC21 | buy  | 1000   | 90    | 0                | TYPE_LIMIT | TIF_GTC | tt_0_0    |
-      | tt_0  | ETH/DEC21 | sell | 1000   | 200   | 0                | TYPE_LIMIT | TIF_GTC | tt_0_1    |
+      | lp_1  | ETH/DEC21 | buy  | 1000   | 90    | 0                | TYPE_LIMIT | TIF_GTC | lp_1_0    |
+      | lp_1  | ETH/DEC21 | sell | 1000   | 200   | 0                | TYPE_LIMIT | TIF_GTC | lp_1_1    |
 
     Then the mark price should be "0" for the market "ETH/DEC21"
 
@@ -265,8 +297,8 @@ Feature: Target stake
 
     Then the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | tt_0  | ETH/DEC21 | 2000              | 0.001 | buy  | BID              | 1          | 10     | submission |
-      | lp1 | tt_0  | ETH/DEC21 | 2000              | 0.001 | sell | ASK              | 1          | 10     | amendment  |
+      | lp1 | lp_1  | ETH/DEC21 | 2000              | 0.001 | buy  | BID              | 1          | 10     | submission |
+      | lp1 | lp_1  | ETH/DEC21 | 2000              | 0.001 | sell | ASK              | 1          | 10     | amendment  |
 
     # Add wash trades
     When the parties place the following orders:
