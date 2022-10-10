@@ -64,9 +64,6 @@ func testConnectingToWalletWithInvalidParamsFails(t *testing.T) {
 
 			// setup
 			handler := newConnectWalletHandler(tt)
-			// -- expected calls
-			handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
-			handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
 
 			// when
 			result, errorDetails := handler.handle(t, ctx, tc.params)
@@ -110,7 +107,7 @@ func testConnectingToWalletWithValidParamsSucceeds(t *testing.T) {
 		Wallet:     expectedSelectedWallet.Name(),
 		Passphrase: passphrase,
 	}, nil)
-	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, traceID).Times(1)
+	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, traceID, api.WalletConnectionSuccessfullyEstablished).Times(1)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientConnectWalletParams{
@@ -154,7 +151,7 @@ func testConnectingToConnectedWalletDisconnectsPreviousOneAndGeneratesNewToken(t
 		Wallet:     expectedSelectedWallet.Name(),
 		Passphrase: passphrase,
 	}, nil)
-	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, traceID).Times(1)
+	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, traceID, api.WalletConnectionSuccessfullyEstablished).Times(1)
 
 	// when
 	result1, errorDetails := handler.handle(t, ctx, api.ClientConnectWalletParams{
@@ -177,7 +174,7 @@ func testConnectingToConnectedWalletDisconnectsPreviousOneAndGeneratesNewToken(t
 		Wallet:     expectedSelectedWallet.Name(),
 		Passphrase: passphrase,
 	}, nil)
-	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, traceID).Times(1)
+	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, traceID, api.WalletConnectionSuccessfullyEstablished).Times(1)
 
 	// when
 	result2, errorDetails := handler.handle(t, ctx, api.ClientConnectWalletParams{

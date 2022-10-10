@@ -92,9 +92,6 @@ func testRequestingPermissionsWithInvalidParamsFails(t *testing.T) {
 
 			// setup
 			handler := newRequestPermissionsHandler(tt)
-			// -- expected calls
-			handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
-			handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
 
 			// when
 			result, errorDetails := handler.handle(t, ctx, tc.params)
@@ -155,7 +152,7 @@ func testRequestingPermissionsWithValidParamsSucceeds(t *testing.T) {
 			handler.interactor.EXPECT().RequestPassphrase(ctx, traceID, wallet1.Name()).Times(1).Return(passphrase, nil)
 			handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name(), passphrase).Times(1).Return(wallet1, nil)
 			handler.walletStore.EXPECT().SaveWallet(ctx, wallet1, passphrase).Times(1).Return(nil)
-			handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, traceID).Times(1)
+			handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, traceID, api.PermissionsSuccessfullyUpdated).Times(1)
 
 			// when
 			result, errorDetails := handler.handle(tt, ctx, api.ClientRequestPermissionsParams{
@@ -181,9 +178,6 @@ func testRequestingPermissionsWithInvalidTokenFails(t *testing.T) {
 
 	// setup
 	handler := newRequestPermissionsHandler(t)
-	// -- expected calls
-	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, gomock.Any()).Times(1).Return(nil)
-	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, gomock.Any()).Times(1)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientRequestPermissionsParams{
@@ -610,7 +604,7 @@ func testUpdatingPermissionsDoesNotOverwriteUntrackedChanges(t *testing.T) {
 		}, w.Permissions(hostname))
 		return nil
 	})
-	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, traceID).Times(1)
+	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, traceID, api.PermissionsSuccessfullyUpdated).Times(1)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientRequestPermissionsParams{

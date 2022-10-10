@@ -280,10 +280,12 @@ type ErrorOccurred struct {
 }
 
 // RequestSucceeded is a generic notification emitted when the request succeeded,
-// meaning no error has been encountered. This notification is used to carry a
-// success that doesn't have any additional data to share.
+// meaning no error has been encountered.
 // This notification is emitted only once.
-type RequestSucceeded struct{}
+type RequestSucceeded struct {
+	// Message can contain a custom success message.
+	Message string `json:"message"`
+}
 
 // TransactionSucceeded is a notification sent when the sending of a
 // transaction succeeded. It replaces the RequestSucceeded notification as it
