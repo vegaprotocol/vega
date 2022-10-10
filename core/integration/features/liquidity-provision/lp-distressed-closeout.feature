@@ -2,11 +2,12 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
 
   Background:
     Given the following network parameters are set:
-      | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
-      | market.liquidity.bondPenaltyParameter         | 1     |
-      | market.liquidity.targetstake.triggering.ratio | 0.1   |
+      | name                                                | value |
+      | market.stake.target.timeWindow                      | 24h   |
+      | market.stake.target.scalingFactor                   | 1     |
+      | market.liquidity.bondPenaltyParameter               | 1     |
+      | market.liquidity.targetstake.triggering.ratio       | 0.1   |
+      | market.liquidity.providers.fee.distributionTimeStep | 10s   |
     And the average block duration is "1"
     And the simple risk model named "simple-risk-model-1":
       | long | short | max move up | min move down | probability of trading |
@@ -32,7 +33,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | party4 | ETH   | 1000000000 |
       | party5 | ETH   | 1000000000 |
 
-  Scenario: LP gets distressed during continuous trading
+  Scenario: LP gets distressed during continuous trading (0042-LIQF-014)
 
     Given the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -73,6 +74,8 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | party  | asset | market id | margin | general | bond |
       | party0 | ETH   | ETH/DEC21 | 1670   | 0       | 4478 |
 
+    And the accumulated liquidity fees should be "5" for the market "ETH/DEC21"
+
     # progress time a bit, so the price bounds get updated
     When the network moves ahead "2" blocks
     And the parties place the following orders:
@@ -82,8 +85,8 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | party2 | ETH/DEC21 | sell | 5      | 1030  | 0                | TYPE_LIMIT | TIF_GTC | party2-sell-2 |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
-      | party0 | ETH   | ETH/DEC21 | 2816      | 0       | 0    |
-    And the insurance pool balance should be "3619" for the market "ETH/DEC21"
+      | party0 | ETH   | ETH/DEC21 | 2816   | 0       | 0    |
+    And the insurance pool balance should be "3614" for the market "ETH/DEC21"
 
     Then the liquidity provisions should have the following states:
       | id  | party  | market    | commitment amount | status           |
@@ -93,9 +96,6 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
       | party0 | -7     | 0              | 0            |
-
-    Then debug detailed orderbook volumes for market "ETH/DEC21"
-
     And the order book should have the following volumes for market "ETH/DEC21":
       | side | price | volume |
       | sell | 1100  | 1      |
@@ -103,6 +103,11 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | buy  | 1020  | 3      |
       | buy  | 990   | 1      |
       | buy  | 900   | 1      |
+    And the accumulated liquidity fees should be "17" for the market "ETH/DEC21"
+
+    # Make sure that at no point fees get distributed since the LP has been closed out
+    Then the network moves ahead "12" blocks
+    And the accumulated liquidity fees should be "17" for the market "ETH/DEC21"
 
   Scenario: LP gets distressed after auction
 
@@ -161,7 +166,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
       | party0 | ETH   | ETH/DEC21 | 2816   | 0       | 0    |
-    And the insurance pool balance should be "3616" for the market "ETH/DEC21"
+    And the insurance pool balance should be "3614" for the market "ETH/DEC21"
 
     # Move price out of bounds
     When the network moves ahead "2" blocks
@@ -184,4 +189,4 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | party  | asset | market id | margin | general | bond |
       | party0 | ETH   | ETH/DEC21 | 928    | 1573    | 0    |
 
-    And the insurance pool balance should be "3616" for the market "ETH/DEC21"
+    And the insurance pool balance should be "3614" for the market "ETH/DEC21"
