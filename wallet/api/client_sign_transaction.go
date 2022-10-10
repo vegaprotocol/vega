@@ -18,6 +18,8 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+const TransactionSuccessfullySigned = "The transaction has been successfully signed."
+
 type ClientSignTransactionParams struct {
 	Token              string `json:"token"`
 	PublicKey          string `json:"publicKey"`
@@ -144,7 +146,7 @@ func (h *ClientSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 	}
 	h.interactor.Log(ctx, traceID, SuccessLog, "The proof-of-work has been computed.")
 
-	h.interactor.NotifySuccessfulRequest(ctx, traceID)
+	h.interactor.NotifySuccessfulRequest(ctx, traceID, TransactionSuccessfullySigned)
 
 	return ClientSignTransactionResult{
 		Tx: tx,

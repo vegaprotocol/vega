@@ -69,21 +69,6 @@ func (i *SequentialInteractor) NotifyError(ctx context.Context, traceID string, 
 	}
 }
 
-func (i *SequentialInteractor) Log(ctx context.Context, traceID string, t api.LogType, msg string) {
-	if err := ctx.Err(); err != nil {
-		return
-	}
-
-	i.receptionChan <- Interaction{
-		TraceID: traceID,
-		Name:    LogName,
-		Data: Log{
-			Type:    string(t),
-			Message: msg,
-		},
-	}
-}
-
 func (i *SequentialInteractor) NotifySuccessfulTransaction(ctx context.Context, traceID, txHash, deserializedInputData, tx string, sentAt time.Time) {
 	if err := ctx.Err(); err != nil {
 		return
@@ -118,7 +103,7 @@ func (i *SequentialInteractor) NotifyFailedTransaction(ctx context.Context, trac
 	}
 }
 
-func (i *SequentialInteractor) NotifySuccessfulRequest(ctx context.Context, traceID string) {
+func (i *SequentialInteractor) NotifySuccessfulRequest(ctx context.Context, traceID string, message string) {
 	if err := ctx.Err(); err != nil {
 		return
 	}
@@ -126,7 +111,24 @@ func (i *SequentialInteractor) NotifySuccessfulRequest(ctx context.Context, trac
 	i.receptionChan <- Interaction{
 		TraceID: traceID,
 		Name:    RequestSucceededName,
-		Data:    RequestSucceeded{},
+		Data: RequestSucceeded{
+			Message: message,
+		},
+	}
+}
+
+func (i *SequentialInteractor) Log(ctx context.Context, traceID string, t api.LogType, msg string) {
+	if err := ctx.Err(); err != nil {
+		return
+	}
+
+	i.receptionChan <- Interaction{
+		TraceID: traceID,
+		Name:    LogName,
+		Data: Log{
+			Type:    string(t),
+			Message: msg,
+		},
 	}
 }
 

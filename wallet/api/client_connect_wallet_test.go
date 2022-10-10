@@ -110,7 +110,7 @@ func testConnectingToWalletWithValidParamsSucceeds(t *testing.T) {
 		Wallet:     expectedSelectedWallet.Name(),
 		Passphrase: passphrase,
 	}, nil)
-	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, traceID).Times(1)
+	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, traceID, api.WalletConnectionSuccessfullyEstablished).Times(1)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.ClientConnectWalletParams{
@@ -154,7 +154,7 @@ func testConnectingToConnectedWalletDisconnectsPreviousOneAndGeneratesNewToken(t
 		Wallet:     expectedSelectedWallet.Name(),
 		Passphrase: passphrase,
 	}, nil)
-	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, traceID).Times(1)
+	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, traceID, api.WalletConnectionSuccessfullyEstablished).Times(1)
 
 	// when
 	result1, errorDetails := handler.handle(t, ctx, api.ClientConnectWalletParams{
@@ -177,7 +177,7 @@ func testConnectingToConnectedWalletDisconnectsPreviousOneAndGeneratesNewToken(t
 		Wallet:     expectedSelectedWallet.Name(),
 		Passphrase: passphrase,
 	}, nil)
-	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, traceID).Times(1)
+	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, traceID, api.WalletConnectionSuccessfullyEstablished).Times(1)
 
 	// when
 	result2, errorDetails := handler.handle(t, ctx, api.ClientConnectWalletParams{

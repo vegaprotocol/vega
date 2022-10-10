@@ -11,6 +11,8 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+const WalletConnectionSuccessfullyEstablished = "The connection to the wallet has been successfully established."
+
 type ClientConnectWallet struct {
 	walletStore WalletStore
 	interactor  Interactor
@@ -123,7 +125,7 @@ func (h *ClientConnectWallet) Handle(ctx context.Context, rawParams jsonrpc.Para
 		return nil, internalError(ErrCouldNotConnectToWallet)
 	}
 
-	h.interactor.NotifySuccessfulRequest(ctx, traceID)
+	h.interactor.NotifySuccessfulRequest(ctx, traceID, WalletConnectionSuccessfullyEstablished)
 
 	return ClientConnectWalletResult{
 		Token: token,

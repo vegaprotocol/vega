@@ -92,7 +92,7 @@ func (i *ParallelInteractor) NotifyError(ctx context.Context, traceID string, t 
 	}
 }
 
-func (i *ParallelInteractor) NotifySuccessfulRequest(ctx context.Context, traceID string) {
+func (i *ParallelInteractor) NotifySuccessfulRequest(ctx context.Context, traceID string, message string) {
 	if err := i.ensureCanProceed(ctx); err != nil {
 		return
 	}
@@ -103,7 +103,9 @@ func (i *ParallelInteractor) NotifySuccessfulRequest(ctx context.Context, traceI
 	i.mustGetSession(traceID).userReceptionChan <- Interaction{
 		TraceID: traceID,
 		Name:    RequestSucceededName,
-		Data:    RequestSucceeded{},
+		Data: RequestSucceeded{
+			Message: message,
+		},
 	}
 }
 
