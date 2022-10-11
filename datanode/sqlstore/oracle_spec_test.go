@@ -21,6 +21,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	oraclespb "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
 	"github.com/jackc/pgx/v4"
 	"github.com/stretchr/testify/assert"
@@ -256,7 +257,7 @@ func createOracleSpecPaginationTestData(t *testing.T, ctx context.Context, bs *s
 	block := addTestBlockForTime(t, bs, time.Now().Truncate(time.Second))
 
 	for i := 0; i < 10; i++ {
-		pubKey, err := hex.DecodeString(generateID())
+		pubKey, err := hex.DecodeString(helpers.GenerateID())
 		require.NoError(t, err)
 		spec := entities.OracleSpec{
 			ID:         entities.SpecID(fmt.Sprintf("deadbeef%02d", i+1)),

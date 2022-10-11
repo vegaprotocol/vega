@@ -20,6 +20,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	"code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"github.com/shopspring/decimal"
@@ -486,7 +487,7 @@ func getTestAccounts(t *testing.T, accounts *sqlstore.Accounts, block entities.B
 	t.Helper()
 	assets := sqlstore.NewAssets(connectionSource)
 
-	testAssetID := entities.AssetID(generateID())
+	testAssetID := entities.AssetID(helpers.GenerateID())
 	testAsset := entities.Asset{
 		ID:            testAssetID,
 		Name:          "testAssetName",
@@ -504,7 +505,7 @@ func getTestAccounts(t *testing.T, accounts *sqlstore.Accounts, block entities.B
 	}
 
 	accountFrom = entities.Account{
-		PartyID:  entities.PartyID(generateID()),
+		PartyID:  entities.PartyID(helpers.GenerateID()),
 		AssetID:  testAssetID,
 		Type:     vega.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
 		VegaTime: block.VegaTime,
@@ -515,7 +516,7 @@ func getTestAccounts(t *testing.T, accounts *sqlstore.Accounts, block entities.B
 	}
 
 	accountTo = entities.Account{
-		PartyID: entities.PartyID(generateID()),
+		PartyID: entities.PartyID(helpers.GenerateID()),
 		AssetID: testAssetID,
 
 		Type:     vega.AccountType_ACCOUNT_TYPE_GENERAL,

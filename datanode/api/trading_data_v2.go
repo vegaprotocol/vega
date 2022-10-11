@@ -209,6 +209,67 @@ func (t *tradingDataServiceV2) Info(ctx context.Context, _ *v2.InfoRequest) (*v2
 	}, nil
 }
 
+func (t *tradingDataServiceV2) ListLedgerEntries(ctx context.Context, req *v2.ListLedgerEntriesRequest) (*v2.ListLedgerEntriesResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListLedgerEntriesV2")()
+	if t.accountService == nil {
+		return nil, apiError(codes.Internal, ErrAccountServiceSQLStoreNotAvailable, nil)
+	}
+
+	leFilter, err := entities.LedgerEntryFilterFromProto(req.Filter)
+	if err != nil {
+		return nil, fmt.Errorf("could not parse ledger entry filter: %w", err)
+	}
+
+	groupOptions := &sqlstore.GroupOptions{}
+	if req.GroupOptions != nil {
+		groupByAccountField := []entities.AccountField{}
+		for _, field := range req.GroupOptions.ByAccountField {
+			field, err := entities.AccountFieldFromProto(field)
+			if err != nil {
+				return nil, fmt.Errorf("could not parse account from group options: %w", err)
+			}
+			groupByAccountField = append(groupByAccountField, field)
+		}
+
+		groupByLedgerEntryField := []entities.LedgerEntryField{}
+		for _, field := range req.GroupOptions.ByLedgerEntryField {
+			field, err := entities.LedgerEntryFieldFromProto(field)
+			if err != nil {
+				return nil, fmt.Errorf("could not parse ledger entry from group options: %w", err)
+			}
+			groupByLedgerEntryField = append(groupByLedgerEntryField, field)
+		}
+
+		groupOptions = &sqlstore.GroupOptions{
+			ByAccountField:     groupByAccountField,
+			ByLedgerEntryField: groupByLedgerEntryField,
+		}
+	}
+
+	dateRange := entities.DateRangeFromProto(req.DateRange)
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, apiError(codes.InvalidArgument, fmt.Errorf("invalid cursor: %w", err))
+	}
+
+	entries, pageInfo, err := t.ledgerService.Query(leFilter, groupOptions, dateRange, pagination)
+	if err != nil {
+		return nil, fmt.Errorf("could not query ledger entries: %w", err)
+	}
+
+	edges, err := makeEdges[*v2.AggregatedLedgerEntriesEdge](*entries)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrAccountServiceListAccounts, err)
+	}
+
+	return &v2.ListLedgerEntriesResponse{
+		LedgerEntries: &v2.AggregatedLedgerEntriesConnection{
+			Edges:    edges,
+			PageInfo: pageInfo.ToProto(),
+		},
+	}, nil
+}
+
 func (t *tradingDataServiceV2) GetBalanceHistory(ctx context.Context, req *v2.GetBalanceHistoryRequest) (*v2.GetBalanceHistoryResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetBalanceHistoryV2")()
 	if t.accountService == nil {

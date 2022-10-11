@@ -53,6 +53,8 @@ type TradingDataServiceClient interface {
 	ListPositions(ctx context.Context, in *ListPositionsRequest, opts ...grpc.CallOption) (*ListPositionsResponse, error)
 	// Subscribe to a stream of Positions
 	ObservePositions(ctx context.Context, in *ObservePositionsRequest, opts ...grpc.CallOption) (TradingDataService_ObservePositionsClient, error)
+	// LedgerEntries
+	ListLedgerEntries(ctx context.Context, in *ListLedgerEntriesRequest, opts ...grpc.CallOption) (*ListLedgerEntriesResponse, error)
 	// Balances
 	//
 	// Get an aggregated list of the changes in balances in a set of accounts over time
@@ -445,6 +447,15 @@ func (x *tradingDataServiceObservePositionsClient) Recv() (*ObservePositionsResp
 		return nil, err
 	}
 	return m, nil
+}
+
+func (c *tradingDataServiceClient) ListLedgerEntries(ctx context.Context, in *ListLedgerEntriesRequest, opts ...grpc.CallOption) (*ListLedgerEntriesResponse, error) {
+	out := new(ListLedgerEntriesResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListLedgerEntries", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *tradingDataServiceClient) GetBalanceHistory(ctx context.Context, in *GetBalanceHistoryRequest, opts ...grpc.CallOption) (*GetBalanceHistoryResponse, error) {
@@ -1365,6 +1376,8 @@ type TradingDataServiceServer interface {
 	ListPositions(context.Context, *ListPositionsRequest) (*ListPositionsResponse, error)
 	// Subscribe to a stream of Positions
 	ObservePositions(*ObservePositionsRequest, TradingDataService_ObservePositionsServer) error
+	// LedgerEntries
+	ListLedgerEntries(context.Context, *ListLedgerEntriesRequest) (*ListLedgerEntriesResponse, error)
 	// Balances
 	//
 	// Get an aggregated list of the changes in balances in a set of accounts over time
@@ -1632,6 +1645,9 @@ func (UnimplementedTradingDataServiceServer) ListPositions(context.Context, *Lis
 }
 func (UnimplementedTradingDataServiceServer) ObservePositions(*ObservePositionsRequest, TradingDataService_ObservePositionsServer) error {
 	return status.Errorf(codes.Unimplemented, "method ObservePositions not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ListLedgerEntries(context.Context, *ListLedgerEntriesRequest) (*ListLedgerEntriesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListLedgerEntries not implemented")
 }
 func (UnimplementedTradingDataServiceServer) GetBalanceHistory(context.Context, *GetBalanceHistoryRequest) (*GetBalanceHistoryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetBalanceHistory not implemented")
@@ -2010,6 +2026,24 @@ type tradingDataServiceObservePositionsServer struct {
 
 func (x *tradingDataServiceObservePositionsServer) Send(m *ObservePositionsResponse) error {
 	return x.ServerStream.SendMsg(m)
+}
+
+func _TradingDataService_ListLedgerEntries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListLedgerEntriesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListLedgerEntries(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListLedgerEntries",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListLedgerEntries(ctx, req.(*ListLedgerEntriesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _TradingDataService_GetBalanceHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -3256,6 +3290,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListPositions",
 			Handler:    _TradingDataService_ListPositions_Handler,
+		},
+		{
+			MethodName: "ListLedgerEntries",
+			Handler:    _TradingDataService_ListLedgerEntries_Handler,
 		},
 		{
 			MethodName: "GetBalanceHistory",

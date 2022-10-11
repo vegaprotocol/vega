@@ -22,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/shopspring/decimal"
@@ -76,7 +77,7 @@ func TestBalances(t *testing.T) {
 	for i := 0; i < 5; i++ {
 		blocks = append(blocks, addTestBlock(t, blockStore))
 		parties = append(parties, addTestParty(t, partyStore, blocks[0]))
-		accounts = append(accounts, addTestAccount(t, accountStore, parties[i], asset, blocks[0]))
+		accounts = append(accounts, helpers.AddTestAccount(t, accountStore, parties[i], asset, types.AccountTypeGeneral, blocks[0]))
 	}
 
 	// And add some dummy balances
@@ -267,7 +268,7 @@ func TestBalancesDataRetention(t *testing.T) {
 	for i := 0; i < 5; i++ {
 		blocks = append(blocks, addTestBlockForTime(t, blockStore, time.Now().Add((-26*time.Hour)-(time.Duration(5-i)*time.Second))))
 		parties = append(parties, addTestParty(t, partyStore, blocks[0]))
-		accounts = append(accounts, addTestAccount(t, accountStore, parties[i], asset, blocks[0]))
+		accounts = append(accounts, helpers.AddTestAccount(t, accountStore, parties[i], asset, types.AccountTypeInsurance, blocks[0]))
 	}
 
 	// And add some dummy balances

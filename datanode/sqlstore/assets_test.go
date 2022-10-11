@@ -20,6 +20,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -32,7 +33,7 @@ func addTestAsset(t *testing.T, as *sqlstore.Assets, block entities.Block, idPre
 	// Make an asset
 	testAssetCount++
 	quantum, _ := decimal.NewFromString("10")
-	assetID := generateID()
+	assetID := helpers.GenerateID()
 
 	if len(idPrefix) > 0 && idPrefix[0] != "" {
 		assetID = fmt.Sprintf("%s%02d", idPrefix[0], testAssetCount)
