@@ -17,22 +17,45 @@ import (
 	"fmt"
 	"time"
 
+	"google.golang.org/protobuf/encoding/protojson"
+
 	"code.vegaprotocol.io/vega/libs/num"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
-	"google.golang.org/protobuf/encoding/protojson"
 )
 
-type ProposalType string
+type ProposalType v2.ListGovernanceDataRequest_Type
 
 var (
-	ProposalTypeNewMarket              = ProposalType("newMarket")
-	ProposalTypeNewAsset               = ProposalType("newAsset")
-	ProposalTypeUpdateAsset            = ProposalType("updateAsset")
-	ProposalTypeUpdateMarket           = ProposalType("updateMarket")
-	ProposalTypeUpdateNetworkParameter = ProposalType("updateNetworkParameter")
-	ProposalTypeNewFreeform            = ProposalType("newFreeform")
+	ProposalTypeNewMarket              = ProposalType(v2.ListGovernanceDataRequest_TYPE_NEW_MARKET)
+	ProposalTypeNewAsset               = ProposalType(v2.ListGovernanceDataRequest_TYPE_NEW_ASSET)
+	ProposalTypeUpdateAsset            = ProposalType(v2.ListGovernanceDataRequest_TYPE_UPDATE_ASSET)
+	ProposalTypeUpdateMarket           = ProposalType(v2.ListGovernanceDataRequest_TYPE_UPDATE_MARKET)
+	ProposalTypeUpdateNetworkParameter = ProposalType(v2.ListGovernanceDataRequest_TYPE_NETWORK_PARAMETERS)
+	ProposalTypeNewFreeform            = ProposalType(v2.ListGovernanceDataRequest_TYPE_NEW_FREE_FORM)
 )
+
+func (p *ProposalType) String() string {
+	if p == nil {
+		return ""
+	}
+	switch *p {
+	case ProposalTypeNewMarket:
+		return "newMarket"
+	case ProposalTypeNewAsset:
+		return "newAsset"
+	case ProposalTypeUpdateAsset:
+		return "updateAsset"
+	case ProposalTypeUpdateMarket:
+		return "updateMarket"
+	case ProposalTypeUpdateNetworkParameter:
+		return "updateNetworkParameter"
+	case ProposalTypeNewFreeform:
+		return "newFreeform"
+	default:
+		return "unknown"
+	}
+}
 
 type _Proposal struct{}
 
