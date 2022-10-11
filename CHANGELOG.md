@@ -67,6 +67,7 @@
 - [6126](https://github.com/vegaprotocol/vega/issues/6126) - Don't generate market depth subscription messages if nothing has changed
 
 ### 🐛 Fixes
+- [6287](https://github.com/vegaprotocol/vega/issues/6287) - Fix GraphQL `proposals` API `proposalType` filter
 - [6307](https://github.com/vegaprotocol/vega/issues/6307) - Emit an event with status rejected if a protocol upgrade proposal has no validator behind it
 - [5305](https://github.com/vegaprotocol/vega/issues/5305) - Handle market updates changing price monitoring parameters correctly.
 
