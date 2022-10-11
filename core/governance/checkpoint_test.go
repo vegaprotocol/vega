@@ -25,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	checkpointpb "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
@@ -251,8 +252,8 @@ func testCheckpointLoadingWithMissingRationaleShouldNotBeProblem(t *testing.T) {
 			ValidationTimestamp: 0,
 			Change:              &vegapb.ProposalTerms_NewFreeform{},
 		},
-		Reason:       0,
-		ErrorDetails: "",
+		Reason:       ptr.From(vegapb.ProposalError_PROPOSAL_ERROR_UNSPECIFIED),
+		ErrorDetails: ptr.From(""),
 		Rationale:    nil,
 	}
 	data := marshalProposal(t, proposalWithoutRationale)

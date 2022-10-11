@@ -20,6 +20,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
 )
@@ -89,6 +90,16 @@ func (p *Proposal) ToProto() *vega.Proposal {
 		lpParticipation = toPtr(p.RequiredLPParticipation.String())
 	}
 
+	var reason *vega.ProposalError
+	if p.Reason != ProposalErrorUnspecified {
+		reason = ptr.From(vega.ProposalError(p.Reason))
+	}
+
+	var errDetails *string
+	if len(p.ErrorDetails) > 0 {
+		errDetails = ptr.From(p.ErrorDetails)
+	}
+
 	pp := vega.Proposal{
 		Id:                                     p.ID.String(),
 		Reference:                              p.Reference,
@@ -97,8 +108,8 @@ func (p *Proposal) ToProto() *vega.Proposal {
 		Rationale:                              p.Rationale.ProposalRationale,
 		Timestamp:                              p.ProposalTime.UnixNano(),
 		Terms:                                  p.Terms.ProposalTerms,
-		Reason:                                 vega.ProposalError(p.Reason),
-		ErrorDetails:                           p.ErrorDetails,
+		Reason:                                 reason,
+		ErrorDetails:                           errDetails,
 		RequiredMajority:                       p.RequiredMajority.String(),
 		RequiredParticipation:                  p.RequiredParticipation.String(),
 		RequiredLiquidityProviderMajority:      lpMajority,
@@ -154,6 +165,16 @@ func ProposalFromProto(pp *vega.Proposal, txHash TxHash) (Proposal, error) {
 		}
 	}
 
+	reason := ProposalErrorUnspecified
+	if pp.Reason != nil {
+		reason = ProposalError(*pp.Reason)
+	}
+
+	var errDetails string
+	if pp.ErrorDetails != nil {
+		errDetails = *pp.ErrorDetails
+	}
+
 	p := Proposal{
 		ID:                      ProposalID(pp.Id),
 		Reference:               pp.Reference,
@@ -161,8 +182,8 @@ func ProposalFromProto(pp *vega.Proposal, txHash TxHash) (Proposal, error) {
 		State:                   ProposalState(pp.State),
 		Rationale:               ProposalRationale{pp.Rationale},
 		Terms:                   ProposalTerms{pp.Terms},
-		Reason:                  ProposalError(pp.Reason),
-		ErrorDetails:            pp.ErrorDetails,
+		Reason:                  reason,
+		ErrorDetails:            errDetails,
 		ProposalTime:            time.Unix(0, pp.Timestamp),
 		RequiredMajority:        majority,
 		RequiredParticipation:   participation,

@@ -24,15 +24,7 @@ import (
 type proposalResolver VegaResolverRoot
 
 func (r *proposalResolver) RejectionReason(_ context.Context, data *types.GovernanceData) (*vega.ProposalError, error) {
-	if data == nil || data.Proposal == nil {
-		return nil, ErrInvalidProposal
-	}
-	p := data.Proposal
-	if p.Reason == types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED {
-		return nil, nil
-	}
-
-	return &p.Reason, nil
+	return data.Proposal.Reason, nil
 }
 
 func (r *proposalResolver) ID(_ context.Context, data *types.GovernanceData) (*string, error) {
@@ -163,10 +155,7 @@ func (r *proposalResolver) Votes(_ context.Context, obj *types.GovernanceData) (
 }
 
 func (r *proposalResolver) ErrorDetails(_ context.Context, data *types.GovernanceData) (*string, error) {
-	if len(data.Proposal.ErrorDetails) == 0 {
-		return nil, nil
-	}
-	return &data.Proposal.ErrorDetails, nil
+	return data.Proposal.ErrorDetails, nil
 }
 
 func (r *proposalResolver) RequiredMajority(_ context.Context, data *types.GovernanceData) (string, error) {
