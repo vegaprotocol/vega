@@ -43,6 +43,8 @@
 - [6358](https://github.com/vegaprotocol/vega/issues/6358) - Do not show hidden files nor directories as wallet
 - [6374](https://github.com/vegaprotocol/vega/issues/6374) - Fix panic with the metrics
 - [6373](https://github.com/vegaprotocol/vega/issues/6373) - Fix panic with the metrics as well
+- [6238](https://github.com/vegaprotocol/vega/issues/6238) - Return empty string for `multisig` bundle, not `0x` when asset doesn't have one
+- [6236](https://github.com/vegaprotocol/vega/issues/6236) - Make `erc20ListAssetBundle` `nullable` in `GraphQL`
 - [6395](https://github.com/vegaprotocol/vega/issues/6395) - Wallet selection doesn't lower case the wallet name during input verification
 - [6408](https://github.com/vegaprotocol/vega/issues/6408) - Initialise observer in liquidity provision `sql` store
 - [6406](https://github.com/vegaprotocol/vega/issues/6406) - Fix invalid tracking of cumulative volume and price
