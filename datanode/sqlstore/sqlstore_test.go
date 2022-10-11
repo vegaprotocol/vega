@@ -13,6 +13,7 @@
 package sqlstore_test
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
@@ -23,6 +24,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	"code.vegaprotocol.io/vega/datanode/utils/databasetest"
 )
 
@@ -32,7 +34,9 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	databasetest.TestMain(m, func(cfg sqlstore.Config, source *sqlstore.ConnectionSource, snapshotPath string) {
+	databasetest.TestMain(m, func(cfg sqlstore.Config, source *sqlstore.ConnectionSource, snapshotPath string,
+		postgresLog *bytes.Buffer,
+	) {
 		testDBPort = cfg.ConnectionConfig.Port
 		connectionSource = source
 	})
@@ -56,15 +60,8 @@ func connectionString(config sqlstore.ConnectionConfig) string {
 		config.Database)
 }
 
-// Generate a 256 bit pseudo-random hash ID.
-func generateID() string {
-	randomString := strconv.FormatInt(rand.Int63(), 10)
-	hash := sha256.Sum256([]byte(randomString))
-	return hex.EncodeToString(hash[:])
-}
-
 func generateTxHash() entities.TxHash {
-	return entities.TxHash(generateID())
+	return entities.TxHash(helpers.GenerateID())
 }
 
 func generateEthereumAddress() string {

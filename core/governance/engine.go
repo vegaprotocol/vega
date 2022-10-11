@@ -18,6 +18,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/assets"
@@ -43,6 +44,7 @@ var (
 	ErrUnsupportedProposalType                   = errors.New("unsupported proposal type")
 	ErrUnsupportedAssetSourceType                = errors.New("unsupported asset source type")
 	ErrExpectedERC20Asset                        = errors.New("expected an ERC20 asset but was not")
+	ErrErc20AddressAlreadyInUse                  = errors.New("erc20 address already in use")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/governance Markets,StakingAccounts,Assets,TimeService,Witness,NetParams
@@ -80,6 +82,7 @@ type Assets interface {
 	SetRejected(ctx context.Context, assetID string) error
 	SetPendingListing(ctx context.Context, assetID string) error
 	ValidateAsset(assetID string) error
+	ExistsForEthereumAddress(address string) bool
 }
 
 // TimeService ...
@@ -826,7 +829,7 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 		enct.shouldNotVerify = true
 		return validateUpdateMarketChange(terms.GetUpdateMarket(), enct)
 	case types.ProposalTermsTypeNewAsset:
-		return terms.GetNewAsset().Validate()
+		return e.validateNewAssetProposal(terms.GetNewAsset())
 	case types.ProposalTermsTypeUpdateAsset:
 		return terms.GetUpdateAsset().Validate()
 	case types.ProposalTermsTypeUpdateNetworkParameter:
@@ -834,6 +837,52 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 	default:
 		return types.ProposalErrorUnspecified, nil
 	}
+}
+
+func (e *Engine) validateNewAssetProposal(newAsset *types.NewAsset) (types.ProposalError, error) {
+	if perr, err := newAsset.Validate(); err != nil {
+		return perr, err
+	}
+
+	erc20 := newAsset.GetChanges().GetERC20()
+	if erc20 == nil {
+		// not and erc20 asset, nothing todo
+		return types.ProposalErrorUnspecified, nil
+	}
+
+	// if we are an erc20 proposal
+	// now we ensure no other proposal is ongoing for this asset, or that
+	// any asset already exists for this address
+
+	for _, p := range e.activeProposals {
+		p := p.Terms.GetNewAsset()
+		if p == nil {
+			continue
+		}
+		if source := p.Changes.GetERC20(); source != nil {
+			if strings.EqualFold(source.ContractAddress, erc20.ContractAddress) {
+				return types.ProposalErrorERC20AddressAlreadyInUse, ErrErc20AddressAlreadyInUse
+			}
+		}
+	}
+
+	for _, p := range e.enactedProposals {
+		p := p.Terms.GetNewAsset()
+		if p == nil {
+			continue
+		}
+		if source := p.Changes.GetERC20(); source != nil {
+			if strings.EqualFold(source.ContractAddress, erc20.ContractAddress) {
+				return types.ProposalErrorERC20AddressAlreadyInUse, ErrErc20AddressAlreadyInUse
+			}
+		}
+	}
+
+	if e.assets.ExistsForEthereumAddress(erc20.ContractAddress) {
+		return types.ProposalErrorERC20AddressAlreadyInUse, ErrErc20AddressAlreadyInUse
+	}
+
+	return types.ProposalErrorUnspecified, nil
 }
 
 func (e *Engine) closeProposal(ctx context.Context, proposal *proposal) {
@@ -931,7 +980,7 @@ func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.Pr
 			Future: &types.FutureProduct{
 				SettlementAsset:                 asset,
 				QuoteName:                       product.Future.QuoteName,
-				OracleSpecForSettlementPrice:    product.Future.OracleSpecForSettlementPrice,
+				OracleSpecForSettlementData:     product.Future.OracleSpecForSettlementData,
 				OracleSpecForTradingTermination: product.Future.OracleSpecForTradingTermination,
 				OracleSpecBinding:               product.Future.OracleSpecBinding,
 				SettlementDataDecimalPlaces:     product.Future.SettlementDataDecimals,

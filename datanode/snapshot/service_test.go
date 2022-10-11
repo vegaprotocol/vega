@@ -1,6 +1,7 @@
 package snapshot_test
 
 import (
+	"bytes"
 	"compress/gzip"
 	"context"
 	"errors"
@@ -23,16 +24,16 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/utils/databasetest"
 	"code.vegaprotocol.io/vega/logging"
+	uuid "github.com/satori/go.uuid"
 
 	"github.com/jackc/pgx/v4/pgxpool"
-	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 const (
 	snapshotInterval     = int64(1000)
-	chainID              = "test-chain-7cevW2"
+	chainID              = "test-chain-clbOFm"
 	compressedEventsFile = "testdata/smoketest_to_block_5000.evts.gz"
 	numSnapshots         = 5
 )
@@ -48,6 +49,8 @@ var (
 
 	snapshotsBackupDir string
 	eventsFile         string
+
+	postgresLog *bytes.Buffer
 )
 
 func TestMain(t *testing.M) {
@@ -66,15 +69,16 @@ func TestMain(t *testing.M) {
 	}
 	defer os.RemoveAll(eventsDir)
 
+	log := logging.NewTestLogger()
+
 	eventsFile = filepath.Join(eventsDir, "smoketest_to_block_5000_or_above.evts")
 	decompressEventFile()
 
 	var snapshotsDir string
-	databasetest.TestMain(t, func(config sqlstore.Config, source *sqlstore.ConnectionSource, dir string) {
+	exitCode := databasetest.TestMain(t, func(config sqlstore.Config, source *sqlstore.ConnectionSource, dir string, pgLog *bytes.Buffer) {
 		sqlConfig = config
 		snapshotsDir = dir
-
-		log := logging.NewTestLogger()
+		postgresLog = pgLog
 
 		emptyDatabase()
 
@@ -126,7 +130,7 @@ func TestMain(t *testing.M) {
 
 		err = sqlBroker.Receive(ctx)
 		if err != nil {
-			panic(fmt.Errorf("failed to process events:%w", err))
+			panic(fmt.Errorf("failed to receive events:%w", err))
 		}
 
 		if len(fromEventsSnapshotHashes) != numSnapshots {
@@ -135,11 +139,11 @@ func TestMain(t *testing.M) {
 		// For the same events file and block height this hash should be the same across all OS/Arch
 		// If the events file is updated, schema changes, or snapshot height changed this will need updating
 		// Easiest way to update is to put a breakpoint here and inspect fromEventsSnapshotHashes
-		panicIfSnapshotHashNotEqual(fromEventsSnapshotHashes[0], "c086833bf253dbb4dc7f92da20049f40", snapshots)
-		panicIfSnapshotHashNotEqual(fromEventsSnapshotHashes[1], "59f1d1ae246d62118042bfb6b305a829", snapshots)
-		panicIfSnapshotHashNotEqual(fromEventsSnapshotHashes[2], "9f029abbc29e31cf5538cd881f6b8da2", snapshots)
-		panicIfSnapshotHashNotEqual(fromEventsSnapshotHashes[3], "7b5ab1f669a007b49c36fab387200571", snapshots)
-		panicIfSnapshotHashNotEqual(fromEventsSnapshotHashes[4], "c9aa27c7587fb4496bb8884f146e950e", snapshots)
+		panicIfSnapshotHashNotEqual("bc1e136d0cd35222e41186fd8ca91834", fromEventsSnapshotHashes[0], snapshots)
+		panicIfSnapshotHashNotEqual("39b0e21248e689b5f1027b94caf697c8", fromEventsSnapshotHashes[1], snapshots)
+		panicIfSnapshotHashNotEqual("c32758416c0aacbf9aa8e6f5fa70cc88", fromEventsSnapshotHashes[2], snapshots)
+		panicIfSnapshotHashNotEqual("ed373e0055fe02a31866018a747a7991", fromEventsSnapshotHashes[3], snapshots)
+		panicIfSnapshotHashNotEqual("81ae5ff76a44041b416351b7ca0ca517", fromEventsSnapshotHashes[4], snapshots)
 
 		if len(fromEventsDatabaseSummaries) != numSnapshots {
 			panic(fmt.Errorf("expected %d database summaries, got %d", numSnapshots, len(fromEventsSnapshotHashes)))
@@ -157,6 +161,10 @@ func TestMain(t *testing.M) {
 			copyFile(filepath.Join(snapshotsDir, file.Name()), filepath.Join(snapshotsBackupDir, file.Name()))
 		}
 	})
+
+	if exitCode != 0 {
+		log.Errorf("One or more tests failed, dumping postgres log:\n%s", postgresLog.String())
+	}
 }
 
 func TestGetHistoryIncludingDatanodeStateWhenDatanodeHasData(t *testing.T) {
@@ -384,11 +392,11 @@ func TestAlteringSnapshotIntervalBelowMinIntervalWithFileSource(t *testing.T) {
 			}, nil
 		}, brokerCfg)
 
-	for i := 0; i <= 2000; i++ {
+	for i := 1; i <= 2000; i++ {
 		inputSnapshotService.OnBlockCommitted(context.Background(), chainID, int64(i))
 		if i == 1000 {
 			heightTo := int64(1000)
-			heightFrom := int64(0)
+			heightFrom := int64(1)
 			waitForSnapshotToCompleteForHeights(heightTo, heightFrom, snapshotsDir)
 		}
 
@@ -430,11 +438,11 @@ func TestAlteringSnapshotInterval(t *testing.T) {
 			}, nil
 		}, brokerCfg)
 
-	for i := 0; i <= 1500; i++ {
+	for i := 1; i <= 1500; i++ {
 		inputSnapshotService.OnBlockCommitted(context.Background(), chainID, int64(i))
 		if i == 1000 {
 			heightTo := int64(1000)
-			heightFrom := int64(0)
+			heightFrom := int64(1)
 			waitForSnapshotToCompleteForHeights(heightTo, heightFrom, snapshotsDir)
 		}
 		if i == 1500 {
@@ -479,7 +487,7 @@ func TestLoadingAllAvailableHistoryWithNonEmptyDatanode(t *testing.T) {
 		fmt.Printf("failed to load available history:%s", err)
 	}
 	require.NoError(t, err)
-	assert.Equal(t, int64(0), from)
+	assert.Equal(t, int64(1), from)
 	assert.Equal(t, int64(4000), to)
 
 	summary := getDatabaseDataSummary(ctx, sqlConfig.ConnectionConfig)
@@ -664,7 +672,7 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 
 	from, to, err := inputSnapshotService.LoadAllAvailableHistory(ctx)
 	require.NoError(t, err)
-	assert.Equal(t, int64(0), from)
+	assert.Equal(t, int64(1), from)
 	assert.Equal(t, int64(2000), to)
 
 	var snapshotFileHashAfterReloadAt2000AndEventReplayTo3000 string
@@ -699,15 +707,7 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 }
 
 func emptyDatabase() {
-	err := sqlstore.RecreateVegaDatabase(context.Background(), logging.NewTestLogger(), sqlConfig.ConnectionConfig)
-	if err != nil {
-		panic(err)
-	}
-
-	err = sqlstore.CreateVegaSchema(logging.NewTestLogger(), sqlConfig.ConnectionConfig)
-	if err != nil {
-		panic(err)
-	}
+	databasetest.DeleteEverything()
 }
 
 func TestRestoringFromDifferentHeightsWithFullHistory(t *testing.T) {

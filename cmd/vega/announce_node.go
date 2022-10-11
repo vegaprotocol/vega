@@ -26,7 +26,6 @@ import (
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	"code.vegaprotocol.io/vega/core/txn"
 	"code.vegaprotocol.io/vega/core/validators"
-	"code.vegaprotocol.io/vega/libs/crypto"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	vgjson "code.vegaprotocol.io/vega/libs/json"
 	"code.vegaprotocol.io/vega/logging"
@@ -88,7 +87,7 @@ func (opts *AnnounceNodeCmd) Execute(_ []string) error {
 		VegaPubKey:       nodeWallets.Vega.PubKey().Hex(),
 		VegaPubKeyIndex:  nodeWallets.Vega.Index(),
 		ChainPubKey:      nodeWallets.Tendermint.Pubkey,
-		EthereumAddress:  crypto.EthereumChecksumAddress(nodeWallets.Ethereum.PubKey().Hex()),
+		EthereumAddress:  vgcrypto.EthereumChecksumAddress(nodeWallets.Ethereum.PubKey().Hex()),
 		FromEpoch:        opts.FromEpoch,
 		InfoUrl:          opts.InfoURL,
 		Name:             opts.Name,
@@ -98,7 +97,7 @@ func (opts *AnnounceNodeCmd) Execute(_ []string) error {
 	}
 
 	if len(cmd.SubmitterAddress) != 0 {
-		cmd.SubmitterAddress = crypto.EthereumChecksumAddress(cmd.SubmitterAddress)
+		cmd.SubmitterAddress = vgcrypto.EthereumChecksumAddress(cmd.SubmitterAddress)
 	}
 
 	if err := validators.SignAnnounceNode(

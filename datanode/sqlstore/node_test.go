@@ -19,6 +19,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -28,7 +29,7 @@ func addTestNode(t *testing.T, ps *sqlstore.Node, block entities.Block, id strin
 	t.Helper()
 	node := entities.Node{
 		ID:              entities.NodeID(id),
-		PubKey:          entities.VegaPublicKey(generateID()),
+		PubKey:          entities.VegaPublicKey(helpers.GenerateID()),
 		TmPubKey:        entities.TendermintPublicKey(generateTendermintPublicKey()),
 		EthereumAddress: entities.EthereumAddress(generateEthereumAddress()),
 		VegaTime:        block.VegaTime,
@@ -80,13 +81,13 @@ func TestUpdateNodePubKey(t *testing.T) {
 	block := addTestBlock(t, bs)
 
 	now := time.Now()
-	node1 := addTestNode(t, ns, block, generateID())
+	node1 := addTestNode(t, ns, block, helpers.GenerateID())
 	addNodeAnnounced(t, ns, node1.ID, true, 0, now)
 
 	kr := entities.KeyRotation{
 		NodeID:    node1.ID,
 		OldPubKey: node1.PubKey,
-		NewPubKey: entities.VegaPublicKey(generateID()),
+		NewPubKey: entities.VegaPublicKey(helpers.GenerateID()),
 		VegaTime:  block.VegaTime,
 	}
 
@@ -106,7 +107,7 @@ func TestGetNodes(t *testing.T) {
 	block := addTestBlock(t, bs)
 
 	now := time.Now()
-	node1 := addTestNode(t, ns, block, generateID())
+	node1 := addTestNode(t, ns, block, helpers.GenerateID())
 	addNodeAnnounced(t, ns, node1.ID, true, 0, now)
 	addNodeAnnounced(t, ns, node1.ID, false, 7, now)
 	addRankingScore(t, ns, block, node1, 3)
@@ -147,8 +148,8 @@ func TestGetNodesJoiningAndLeaving(t *testing.T) {
 	ns := sqlstore.NewNode(connectionSource)
 	block := addTestBlock(t, bs)
 
-	node1 := addTestNode(t, ns, block, generateID())
-	node2 := addTestNode(t, ns, block, generateID())
+	node1 := addTestNode(t, ns, block, helpers.GenerateID())
+	node2 := addTestNode(t, ns, block, helpers.GenerateID())
 
 	// The node1 will exist int the epochs [2,3] and [6,7]
 	exists := map[int]bool{2: true, 3: true, 6: true, 7: true}
@@ -183,13 +184,13 @@ func TestGetNodeData(t *testing.T) {
 
 	block := addTestBlock(t, bs)
 	party1 := addTestParty(t, ps, block)
-	node1 := addTestNode(t, ns, block, generateID())
-	node2 := addTestNode(t, ns, block, generateID())
+	node1 := addTestNode(t, ns, block, helpers.GenerateID())
+	node2 := addTestNode(t, ns, block, helpers.GenerateID())
 
-	addTestDelegation(t, ds, party1, node1, 3, block)
-	addTestDelegation(t, ds, party1, node1, 4, block)
-	addTestDelegation(t, ds, party1, node2, 3, block)
-	addTestDelegation(t, ds, party1, node2, 4, block)
+	addTestDelegation(t, ds, party1, node1, 3, block, 0)
+	addTestDelegation(t, ds, party1, node1, 4, block, 1)
+	addTestDelegation(t, ds, party1, node2, 3, block, 2)
+	addTestDelegation(t, ds, party1, node2, 4, block, 3)
 
 	// The node1 will exist int the epochs [2,3]
 	addNodeAnnounced(t, ns, node1.ID, true, 2, time.Now())

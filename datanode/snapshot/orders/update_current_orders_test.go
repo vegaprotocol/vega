@@ -1,6 +1,7 @@
 package orders
 
 import (
+	"bytes"
 	"context"
 	"testing"
 	"time"
@@ -23,7 +24,9 @@ var (
 )
 
 func TestMain(t *testing.M) {
-	databasetest.TestMain(t, func(config sqlstore.Config, source *sqlstore.ConnectionSource, dir string) {
+	databasetest.TestMain(t, func(config sqlstore.Config, source *sqlstore.ConnectionSource, dir string,
+		postgresLog *bytes.Buffer,
+	) {
 		sqlConfig = config
 		connectionSource = source
 		snapshotsDir = dir

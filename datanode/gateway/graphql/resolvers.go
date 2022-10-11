@@ -361,13 +361,54 @@ func (r *VegaResolverRoot) LiquidityProvisionUpdate() LiquidityProvisionUpdateRe
 	return (*liquidityProvisionUpdateResolver)(r)
 }
 
+func (r *VegaResolverRoot) TransactionResult() TransactionResultResolver {
+	return (*transactionResultResolver)(r)
+}
+
+type transactionResultResolver VegaResolverRoot
+
+func (r *transactionResultResolver) Error(ctx context.Context, tr *eventspb.TransactionResult) (*string, error) {
+	if tr == nil || tr.Status {
+		return nil, nil
+	}
+
+	return &tr.GetFailure().Error, nil
+}
+
 type accountUpdateResolver VegaResolverRoot
 
 func (r *accountUpdateResolver) AssetID(ctx context.Context, obj *types.Account) (string, error) {
 	return obj.Asset, nil
 }
 
-// LiquidityOrderReference resolver
+// AggregatedLedgerEntriesResolver resolver.
+type aggregatedLedgerEntriesResolver VegaResolverRoot
+
+func (r *VegaResolverRoot) AggregatedLedgerEntries() AggregatedLedgerEntriesResolver {
+	return (*aggregatedLedgerEntriesResolver)(r)
+}
+
+func (r *aggregatedLedgerEntriesResolver) VegaTime(ctx context.Context, obj *v2.AggregatedLedgerEntries) (string, error) {
+	return strconv.FormatInt(obj.Timestamp, 10), nil
+}
+
+func (r *aggregatedLedgerEntriesResolver) TransferType(ctx context.Context, obj *v2.AggregatedLedgerEntries) (*string, error) {
+	tt := obj.TransferType.String()
+	return &tt, nil
+}
+
+// LedgerEntryFilterResolver resolver.
+type ledgerEntryFilterResolver VegaResolverRoot
+
+func (r *VegaResolverRoot) LedgerEntryFilter() LedgerEntryFilterResolver {
+	return (*ledgerEntryFilterResolver)(r)
+}
+
+func (r *ledgerEntryFilterResolver) TransferTypes(ctx context.Context, obj *v2.LedgerEntryFilter, data []*TransferType) error {
+	return nil
+}
+
+// LiquidityOrderReference resolver.
 
 type myLiquidityOrderReferenceResolver VegaResolverRoot
 
@@ -775,8 +816,14 @@ func (r *myQueryResolver) Deposits(ctx context.Context, dateRange *v2.DateRange,
 	return res.Deposits, nil
 }
 
-func (r *myQueryResolver) EstimateOrder(ctx context.Context, market, party string, price *string, size string, side vega.Side,
-	timeInForce vega.Order_TimeInForce, expiration *string, ty vega.Order_Type,
+func (r *myQueryResolver) EstimateOrder(
+	ctx context.Context,
+	market, party string,
+	price *string,
+	size string,
+	side vega.Side,
+	timeInForce vega.Order_TimeInForce,
+	expiration *string, ty vega.Order_Type,
 ) (*OrderEstimate, error) {
 	order := &types.Order{}
 
@@ -817,7 +864,9 @@ func (r *myQueryResolver) EstimateOrder(ctx context.Context, market, party strin
 	}
 
 	req := v2.EstimateFeeRequest{
-		Order: order,
+		MarketId: order.MarketId,
+		Price:    order.Price,
+		Size:     order.Size,
 	}
 
 	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
@@ -838,7 +887,12 @@ func (r *myQueryResolver) EstimateOrder(ctx context.Context, market, party strin
 
 	// now we calculate the margins
 	reqm := v2.EstimateMarginRequest{
-		Order: order,
+		MarketId: order.MarketId,
+		PartyId:  order.PartyId,
+		Price:    order.Price,
+		Size:     order.Size,
+		Side:     order.Side,
+		Type:     order.Type,
 	}
 
 	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
@@ -1243,6 +1297,47 @@ func (r *myQueryResolver) HistoricBalances(ctx context.Context, filter *v2.Accou
 	return resp.GetBalances(), nil
 }
 
+func (r *myQueryResolver) LedgerEntries(
+	ctx context.Context,
+	filter *v2.LedgerEntryFilter,
+	groupOptions *GroupOptions,
+	dateRange *v2.DateRange,
+	pagination *v2.Pagination,
+) (*v2.AggregatedLedgerEntriesConnection, error) {
+	req := &v2.ListLedgerEntriesRequest{}
+	req.Filter = filter
+
+	groupByAccountField := []v2.AccountField{}
+	groupByLedgerEntryField := []v2.LedgerEntryField{}
+	if groupOptions != nil {
+		if groupOptions.ByAccountField != nil {
+			for _, af := range groupOptions.ByAccountField {
+				groupByAccountField = append(groupByAccountField, *af)
+			}
+		}
+
+		if groupOptions.ByLedgerEntryField != nil {
+			for _, lf := range groupOptions.ByLedgerEntryField {
+				groupByLedgerEntryField = append(groupByLedgerEntryField, *lf)
+			}
+		}
+
+		req.GroupOptions = &v2.GroupOptions{
+			ByAccountField:     groupByAccountField,
+			ByLedgerEntryField: groupByLedgerEntryField,
+		}
+	}
+
+	req.DateRange = dateRange
+	req.Pagination = pagination
+
+	resp, err := r.tradingDataClientV2.ListLedgerEntries(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.GetLedgerEntries(), nil
+}
+
 func (r *myQueryResolver) NetworkLimits(ctx context.Context) (*types.NetworkLimits, error) {
 	req := &v2.GetNetworkLimitsRequest{}
 	resp, err := r.tradingDataClientV2.GetNetworkLimits(ctx, req)
@@ -1317,6 +1412,9 @@ func (r *myPartyResolver) RewardDetails(
 		PartyId: party.Id,
 	}
 	resp, err := r.tradingDataClient.GetRewardSummaries(ctx, req)
+	if err != nil {
+		return nil, err
+	}
 	return resp.Summaries, err
 }
 
@@ -1340,6 +1438,9 @@ func (r *myPartyResolver) Rewards(
 		Pagination: p,
 	}
 	resp, err := r.tradingDataClient.GetRewards(ctx, req)
+	if err != nil {
+		return nil, err
+	}
 	return resp.Rewards, err
 }
 
@@ -1382,6 +1483,9 @@ func (r *myPartyResolver) RewardSummaries(
 	}
 
 	resp, err := r.tradingDataClientV2.ListRewardSummaries(ctx, req)
+	if err != nil {
+		return nil, err
+	}
 	return resp.Summaries, err
 }
 
@@ -2021,10 +2125,7 @@ func (r *myOrderUpdateResolver) ExpiresAt(ctx context.Context, obj *types.Order)
 }
 
 func (r *myOrderUpdateResolver) RejectionReason(_ context.Context, o *types.Order) (*vega.OrderError, error) {
-	if o.Reason == types.OrderError_ORDER_ERROR_UNSPECIFIED {
-		return nil, nil
-	}
-	return &o.Reason, nil
+	return o.Reason, nil
 }
 
 // BEGIN: Order Resolver
@@ -2032,10 +2133,7 @@ func (r *myOrderUpdateResolver) RejectionReason(_ context.Context, o *types.Orde
 type myOrderResolver VegaResolverRoot
 
 func (r *myOrderResolver) RejectionReason(_ context.Context, o *types.Order) (*vega.OrderError, error) {
-	if o.Reason == types.OrderError_ORDER_ERROR_UNSPECIFIED {
-		return nil, nil
-	}
-	return &o.Reason, nil
+	return o.Reason, nil
 }
 
 func (r *myOrderResolver) Price(ctx context.Context, obj *types.Order) (string, error) {

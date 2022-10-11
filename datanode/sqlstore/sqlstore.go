@@ -134,7 +134,7 @@ func ApplyDataRetentionPolicies(config Config) error {
 	return nil
 }
 
-func StartEmbeddedPostgres(log *logging.Logger, config Config, stateDir string) (*embeddedpostgres.EmbeddedPostgres, string, error) {
+func StartEmbeddedPostgres(log *logging.Logger, config Config, stateDir string) (*embeddedpostgres.EmbeddedPostgres, string, *bytes.Buffer, error) {
 	embeddedPostgresRuntimePath := paths.JoinStatePath(paths.StatePath(stateDir), "sqlstore")
 	embeddedPostgresDataPath := paths.JoinStatePath(paths.StatePath(stateDir), "sqlstore", "node-data")
 
@@ -145,10 +145,10 @@ func StartEmbeddedPostgres(log *logging.Logger, config Config, stateDir string) 
 
 	if err := embeddedPostgres.Start(); err != nil {
 		log.Errorf("postgres log: \n%s", postgresLog.String())
-		return nil, "", fmt.Errorf("use embedded database was true, but failed to start: %w", err)
+		return nil, "", postgresLog, fmt.Errorf("use embedded database was true, but failed to start: %w", err)
 	}
 
-	return embeddedPostgres, embeddedPostgresRuntimePath.String(), nil
+	return embeddedPostgres, embeddedPostgresRuntimePath.String(), postgresLog, nil
 }
 
 func createEmbeddedPostgres(runtimePath *paths.StatePath, dataPath *paths.StatePath, writer io.Writer, conf ConnectionConfig) *embeddedpostgres.EmbeddedPostgres {

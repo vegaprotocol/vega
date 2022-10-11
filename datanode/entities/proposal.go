@@ -17,22 +17,46 @@ import (
 	"fmt"
 	"time"
 
+	"google.golang.org/protobuf/encoding/protojson"
+
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
-	"google.golang.org/protobuf/encoding/protojson"
 )
 
-type ProposalType string
+type ProposalType v2.ListGovernanceDataRequest_Type
 
 var (
-	ProposalTypeNewMarket              = ProposalType("newMarket")
-	ProposalTypeNewAsset               = ProposalType("newAsset")
-	ProposalTypeUpdateAsset            = ProposalType("updateAsset")
-	ProposalTypeUpdateMarket           = ProposalType("updateMarket")
-	ProposalTypeUpdateNetworkParameter = ProposalType("updateNetworkParameter")
-	ProposalTypeNewFreeform            = ProposalType("newFreeform")
+	ProposalTypeNewMarket              = ProposalType(v2.ListGovernanceDataRequest_TYPE_NEW_MARKET)
+	ProposalTypeNewAsset               = ProposalType(v2.ListGovernanceDataRequest_TYPE_NEW_ASSET)
+	ProposalTypeUpdateAsset            = ProposalType(v2.ListGovernanceDataRequest_TYPE_UPDATE_ASSET)
+	ProposalTypeUpdateMarket           = ProposalType(v2.ListGovernanceDataRequest_TYPE_UPDATE_MARKET)
+	ProposalTypeUpdateNetworkParameter = ProposalType(v2.ListGovernanceDataRequest_TYPE_NETWORK_PARAMETERS)
+	ProposalTypeNewFreeform            = ProposalType(v2.ListGovernanceDataRequest_TYPE_NEW_FREE_FORM)
 )
+
+func (p *ProposalType) String() string {
+	if p == nil {
+		return ""
+	}
+	switch *p {
+	case ProposalTypeNewMarket:
+		return "newMarket"
+	case ProposalTypeNewAsset:
+		return "newAsset"
+	case ProposalTypeUpdateAsset:
+		return "updateAsset"
+	case ProposalTypeUpdateMarket:
+		return "updateMarket"
+	case ProposalTypeUpdateNetworkParameter:
+		return "updateNetworkParameter"
+	case ProposalTypeNewFreeform:
+		return "newFreeform"
+	default:
+		return "unknown"
+	}
+}
 
 type _Proposal struct{}
 
@@ -66,6 +90,16 @@ func (p *Proposal) ToProto() *vega.Proposal {
 		lpParticipation = toPtr(p.RequiredLPParticipation.String())
 	}
 
+	var reason *vega.ProposalError
+	if p.Reason != ProposalErrorUnspecified {
+		reason = ptr.From(vega.ProposalError(p.Reason))
+	}
+
+	var errDetails *string
+	if len(p.ErrorDetails) > 0 {
+		errDetails = ptr.From(p.ErrorDetails)
+	}
+
 	pp := vega.Proposal{
 		Id:                                     p.ID.String(),
 		Reference:                              p.Reference,
@@ -74,8 +108,8 @@ func (p *Proposal) ToProto() *vega.Proposal {
 		Rationale:                              p.Rationale.ProposalRationale,
 		Timestamp:                              p.ProposalTime.UnixNano(),
 		Terms:                                  p.Terms.ProposalTerms,
-		Reason:                                 vega.ProposalError(p.Reason),
-		ErrorDetails:                           p.ErrorDetails,
+		Reason:                                 reason,
+		ErrorDetails:                           errDetails,
 		RequiredMajority:                       p.RequiredMajority.String(),
 		RequiredParticipation:                  p.RequiredParticipation.String(),
 		RequiredLiquidityProviderMajority:      lpMajority,
@@ -131,6 +165,16 @@ func ProposalFromProto(pp *vega.Proposal, txHash TxHash) (Proposal, error) {
 		}
 	}
 
+	reason := ProposalErrorUnspecified
+	if pp.Reason != nil {
+		reason = ProposalError(*pp.Reason)
+	}
+
+	var errDetails string
+	if pp.ErrorDetails != nil {
+		errDetails = *pp.ErrorDetails
+	}
+
 	p := Proposal{
 		ID:                      ProposalID(pp.Id),
 		Reference:               pp.Reference,
@@ -138,8 +182,8 @@ func ProposalFromProto(pp *vega.Proposal, txHash TxHash) (Proposal, error) {
 		State:                   ProposalState(pp.State),
 		Rationale:               ProposalRationale{pp.Rationale},
 		Terms:                   ProposalTerms{pp.Terms},
-		Reason:                  ProposalError(pp.Reason),
-		ErrorDetails:            pp.ErrorDetails,
+		Reason:                  reason,
+		ErrorDetails:            errDetails,
 		ProposalTime:            time.Unix(0, pp.Timestamp),
 		RequiredMajority:        majority,
 		RequiredParticipation:   participation,

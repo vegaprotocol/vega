@@ -14,6 +14,7 @@ package sqlstore
 
 import (
 	"fmt"
+	"time"
 
 	"code.vegaprotocol.io/vega/datanode/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
@@ -30,11 +31,13 @@ type Config struct {
 }
 
 type ConnectionConfig struct {
-	Host     string `long:"host"`
-	Port     int    `long:"port"`
-	Username string `long:"username"`
-	Password string `long:"password"`
-	Database string `long:"database"`
+	Host                  string            `long:"host"`
+	Port                  int               `long:"port"`
+	Username              string            `long:"username"`
+	Password              string            `long:"password"`
+	Database              string            `long:"database"`
+	MaxConnLifetime       encoding.Duration `long:"max-conn-lifetime"`
+	MaxConnLifetimeJitter encoding.Duration `long:"max-conn-lifetime-jitter"`
 }
 
 type RetentionPolicy struct {
@@ -62,6 +65,8 @@ func (conf ConnectionConfig) GetConnectionStringForPostgresDatabase() string {
 
 func (conf ConnectionConfig) GetPoolConfig() (*pgxpool.Config, error) {
 	cfg, err := pgxpool.ParseConfig(conf.GetConnectionString())
+	cfg.MaxConnLifetime = conf.MaxConnLifetime.Duration
+	cfg.MaxConnLifetimeJitter = conf.MaxConnLifetimeJitter.Duration
 	if err != nil {
 		return nil, err
 	}
@@ -72,11 +77,13 @@ func (conf ConnectionConfig) GetPoolConfig() (*pgxpool.Config, error) {
 func NewDefaultConfig() Config {
 	return Config{
 		ConnectionConfig: ConnectionConfig{
-			Host:     "localhost",
-			Port:     5432,
-			Username: "vega",
-			Password: "vega",
-			Database: "vega",
+			Host:                  "localhost",
+			Port:                  5432,
+			Username:              "vega",
+			Password:              "vega",
+			Database:              "vega",
+			MaxConnLifetime:       encoding.Duration{Duration: time.Minute * 30},
+			MaxConnLifetimeJitter: encoding.Duration{Duration: time.Minute * 5},
 		},
 		WipeOnStartup:    true,
 		Level:            encoding.LogLevel{Level: logging.InfoLevel},

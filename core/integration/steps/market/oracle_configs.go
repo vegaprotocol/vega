@@ -35,7 +35,7 @@ var (
 )
 
 type oracleConfigs struct {
-	configForSettlementPrice   map[string]*OracleConfig
+	configForSettlementData    map[string]*OracleConfig
 	configFoTradingTermination map[string]*OracleConfig
 	settlementDataDecimals     map[string]uint32
 }
@@ -47,7 +47,7 @@ type OracleConfig struct {
 
 func newOracleSpecs(unmarshaler *defaults.Unmarshaler) *oracleConfigs {
 	specs := &oracleConfigs{
-		configForSettlementPrice:   map[string]*OracleConfig{},
+		configForSettlementData:    map[string]*OracleConfig{},
 		configFoTradingTermination: map[string]*OracleConfig{},
 		settlementDataDecimals:     map[string]uint32{},
 	}
@@ -58,7 +58,7 @@ func newOracleSpecs(unmarshaler *defaults.Unmarshaler) *oracleConfigs {
 		if err != nil {
 			panic(fmt.Errorf("couldn't unmarshal default oracle config %s: %v", name, err))
 		}
-		if err := specs.Add(name, "settlement price", future.OracleSpecForSettlementPrice, future.OracleSpecBinding); err != nil {
+		if err := specs.Add(name, "settlement data", future.OracleSpecForSettlementData, future.OracleSpecBinding); err != nil {
 			panic(fmt.Errorf("failed to add default oracle config %s: %v", name, err))
 		}
 		if err := specs.Add(name, "trading termination", future.OracleSpecForTradingTermination, future.OracleSpecBinding); err != nil {
@@ -69,11 +69,11 @@ func newOracleSpecs(unmarshaler *defaults.Unmarshaler) *oracleConfigs {
 	return specs
 }
 
-func (f *oracleConfigs) SetSettlementPriceDP(name string, decimals uint32) {
+func (f *oracleConfigs) SetSettlementDataDP(name string, decimals uint32) {
 	f.settlementDataDecimals[name] = decimals
 }
 
-func (f *oracleConfigs) GetSettlementPriceDP(name string) uint32 {
+func (f *oracleConfigs) GetSettlementDataDP(name string) uint32 {
 	dp, ok := f.settlementDataDecimals[name]
 	if ok {
 		return dp
@@ -87,8 +87,8 @@ func (f *oracleConfigs) Add(
 	spec *oraclesv1.OracleSpec,
 	binding *types.OracleSpecToFutureBinding,
 ) error {
-	if specType == "settlement price" {
-		f.configForSettlementPrice[name] = &OracleConfig{
+	if specType == "settlement data" {
+		f.configForSettlementData[name] = &OracleConfig{
 			Spec:    spec,
 			Binding: binding,
 		}
@@ -98,7 +98,7 @@ func (f *oracleConfigs) Add(
 			Binding: binding,
 		}
 	} else {
-		return errors.New("unknown oracle spec type definition - expecting settlement price or trading termination")
+		return errors.New("unknown oracle spec type definition - expecting settlement data or trading termination")
 	}
 
 	return nil
@@ -107,12 +107,12 @@ func (f *oracleConfigs) Add(
 func (f *oracleConfigs) Get(name string, specType string) (*OracleConfig, error) {
 	var cfg map[string]*OracleConfig
 
-	if specType == "settlement price" {
-		cfg = f.configForSettlementPrice
+	if specType == "settlement data" {
+		cfg = f.configForSettlementData
 	} else if specType == "trading termination" {
 		cfg = f.configFoTradingTermination
 	} else {
-		return nil, errors.New("unknown oracle spec type definition - expecting settlement price or trading termination")
+		return nil, errors.New("unknown oracle spec type definition - expecting settlement data or trading termination")
 	}
 
 	config, ok := cfg[name]

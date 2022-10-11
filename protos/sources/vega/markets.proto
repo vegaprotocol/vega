@@ -25,8 +25,8 @@ message Future {
   string settlement_asset = 2;
   // Quote name of the instrument
   string quote_name = 4;
-  // The oracle spec describing the settlement price oracle filter
-  oracles.v1.OracleSpec oracle_spec_for_settlement_price = 5;
+  // The oracle spec describing the settlement data oracle filter
+  oracles.v1.OracleSpec oracle_spec_for_settlement_data = 5;
 
   // the oracle spec describing the trading termination oracle filter
   oracles.v1.OracleSpec oracle_spec_for_trading_termination = 6;
@@ -39,13 +39,13 @@ message Future {
 }
 
 // OracleSpecToFutureBinding tells on which property oracle data should be
-// used as settlement price and which to use the trading terminated trigger
+// used as settlement data and which to use the trading terminated trigger
 message OracleSpecToFutureBinding {
-  // settlement_price_property holds the name of the property in the oracle data
-  // that should be used as settlement price.
+  // settlement_data_property holds the name of the property in the oracle data
+  // that should be used as settlement data.
   // If it is set to "prices.BTC.value", then the Future will use the value of
-  // this property as settlement price.
-  string settlement_price_property = 1;
+  // this property as settlement data.
+  string settlement_data_property = 1;
   // the name of the property in the oracle data that signals termination of trading
   string trading_termination_property = 2;
 }

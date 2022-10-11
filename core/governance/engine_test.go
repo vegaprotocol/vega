@@ -872,7 +872,7 @@ func produceNonTimeTriggeredOracleSpec() (*types.OracleSpecFilter, *types.Oracle
 			Conditions: []*types.OracleSpecCondition{},
 		},
 		&types.OracleSpecBindingForFuture{
-			SettlementPriceProperty:    "prices.ETH.value",
+			SettlementDataProperty:     "prices.ETH.value",
 			TradingTerminationProperty: "trading.terminated",
 		}
 }
@@ -891,7 +891,7 @@ func produceTimeTriggeredOracleSpec(termTimestamp time.Time) (*types.OracleSpecF
 			},
 		},
 		&types.OracleSpecBindingForFuture{
-			SettlementPriceProperty:    "prices.ETH.value",
+			SettlementDataProperty:     "prices.ETH.value",
 			TradingTerminationProperty: "vegaprotocol.builtin.timestamp",
 		}
 }
@@ -911,7 +911,7 @@ func newMarketTerms(termFilter *types.OracleSpecFilter, termBinding *types.Oracl
 						Future: &types.FutureProduct{
 							SettlementAsset: "VUSD",
 							QuoteName:       "VUSD",
-							OracleSpecForSettlementPrice: &types.OracleSpecConfiguration{
+							OracleSpecForSettlementData: &types.OracleSpecConfiguration{
 								PubKeys: []string{"0xDEADBEEF"},
 								Filters: []*types.OracleSpecFilter{
 									{
@@ -967,7 +967,7 @@ func updateMarketTerms(termFilter *types.OracleSpecFilter, termBinding *types.Or
 		}
 
 		termBinding = &types.OracleSpecBindingForFuture{
-			SettlementPriceProperty:    "prices.ETH.value",
+			SettlementDataProperty:     "prices.ETH.value",
 			TradingTerminationProperty: "trading.terminated",
 		}
 	}
@@ -981,7 +981,7 @@ func updateMarketTerms(termFilter *types.OracleSpecFilter, termBinding *types.Or
 					Product: &types.UpdateInstrumentConfigurationFuture{
 						Future: &types.UpdateFutureProduct{
 							QuoteName: "VUSD",
-							OracleSpecForSettlementPrice: &types.OracleSpecConfiguration{
+							OracleSpecForSettlementData: &types.OracleSpecConfiguration{
 								PubKeys: []string{"0xDEADBEEF"},
 								Filters: []*types.OracleSpecFilter{
 									{
@@ -1194,7 +1194,15 @@ func (e *tstEngine) expectOpenProposalEvent(t *testing.T, party, proposal string
 		pe, ok := ev.(*events.Proposal)
 		require.True(t, ok)
 		p := pe.Proposal()
-		assert.Equal(t, types.ProposalStateOpen.String(), p.State.String(), fmt.Sprintf("reason: %s, details: %s", p.Reason, p.ErrorDetails))
+		reason := types.ProposalErrorUnspecified
+		if p.Reason != nil {
+			reason = *p.Reason
+		}
+		errDetails := ""
+		if p.ErrorDetails != nil {
+			errDetails = *p.ErrorDetails
+		}
+		assert.Equal(t, types.ProposalStateOpen.String(), p.State.String(), fmt.Sprintf("reason: %v, details: %s", reason, errDetails))
 		assert.Equal(t, party, p.PartyId)
 		assert.Equal(t, proposal, p.Id)
 	})

@@ -257,11 +257,16 @@ type EthereumEvent struct {
 
 func (EthereumEvent) IsOracle() {}
 
+type GroupOptions struct {
+	ByAccountField     []*v2.AccountField     `json:"ByAccountField"`
+	ByLedgerEntryField []*v2.LedgerEntryField `json:"ByLedgerEntryField"`
+}
+
 type LedgerEntry struct {
 	// Account from which the asset was taken
-	FromAccount *vega.AccountDetails `json:"fromAccount"`
+	AccountFromID *vega.AccountDetails `json:"accountFromId"`
 	// Account to which the balance was transferred
-	ToAccount *vega.AccountDetails `json:"toAccount"`
+	AccountToID *vega.AccountDetails `json:"accountToId"`
 	// The amount transferred
 	Amount string `json:"amount"`
 	// Type of ledger entry
@@ -637,6 +642,8 @@ const (
 	BusEventTypeOracleSpec BusEventType = "OracleSpec"
 	// Constant for market events - mainly used for logging
 	BusEventTypeMarket BusEventType = "Market"
+	// The results from processing at transaction
+	BusEventTypeTransactionResult BusEventType = "TransactionResult"
 )
 
 var AllBusEventType = []BusEventType{
@@ -666,11 +673,12 @@ var AllBusEventType = []BusEventType{
 	BusEventTypeWithdrawal,
 	BusEventTypeOracleSpec,
 	BusEventTypeMarket,
+	BusEventTypeTransactionResult,
 }
 
 func (e BusEventType) IsValid() bool {
 	switch e {
-	case BusEventTypeTimeUpdate, BusEventTypeTransferResponses, BusEventTypePositionResolution, BusEventTypeOrder, BusEventTypeAccount, BusEventTypeParty, BusEventTypeTrade, BusEventTypeMarginLevels, BusEventTypeProposal, BusEventTypeVote, BusEventTypeMarketData, BusEventTypeNodeSignature, BusEventTypeLossSocialization, BusEventTypeSettlePosition, BusEventTypeSettleDistressed, BusEventTypeMarketCreated, BusEventTypeMarketUpdated, BusEventTypeAsset, BusEventTypeMarketTick, BusEventTypeAuction, BusEventTypeRiskFactor, BusEventTypeLiquidityProvision, BusEventTypeDeposit, BusEventTypeWithdrawal, BusEventTypeOracleSpec, BusEventTypeMarket:
+	case BusEventTypeTimeUpdate, BusEventTypeTransferResponses, BusEventTypePositionResolution, BusEventTypeOrder, BusEventTypeAccount, BusEventTypeParty, BusEventTypeTrade, BusEventTypeMarginLevels, BusEventTypeProposal, BusEventTypeVote, BusEventTypeMarketData, BusEventTypeNodeSignature, BusEventTypeLossSocialization, BusEventTypeSettlePosition, BusEventTypeSettleDistressed, BusEventTypeMarketCreated, BusEventTypeMarketUpdated, BusEventTypeAsset, BusEventTypeMarketTick, BusEventTypeAuction, BusEventTypeRiskFactor, BusEventTypeLiquidityProvision, BusEventTypeDeposit, BusEventTypeWithdrawal, BusEventTypeOracleSpec, BusEventTypeMarket, BusEventTypeTransactionResult:
 		return true
 	}
 	return false
@@ -738,5 +746,92 @@ func (e *TransferDirection) UnmarshalGQL(v interface{}) error {
 }
 
 func (e TransferDirection) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type TransferType string
+
+const (
+	TransferTypeTransferTypeUnspecified                 TransferType = "TRANSFER_TYPE_UNSPECIFIED"
+	TransferTypeTransferTypeLoss                        TransferType = "TRANSFER_TYPE_LOSS"
+	TransferTypeTransferTypeWin                         TransferType = "TRANSFER_TYPE_WIN"
+	TransferTypeTransferTypeClose                       TransferType = "TRANSFER_TYPE_CLOSE"
+	TransferTypeTransferTypeMtmLoss                     TransferType = "TRANSFER_TYPE_MTM_LOSS"
+	TransferTypeTransferTypeMtmWin                      TransferType = "TRANSFER_TYPE_MTM_WIN"
+	TransferTypeTransferTypeMarginLow                   TransferType = "TRANSFER_TYPE_MARGIN_LOW"
+	TransferTypeTransferTypeMarginHigh                  TransferType = "TRANSFER_TYPE_MARGIN_HIGH"
+	TransferTypeTransferTypeMarginConfiscated           TransferType = "TRANSFER_TYPE_MARGIN_CONFISCATED"
+	TransferTypeTransferTypeMakerFeePay                 TransferType = "TRANSFER_TYPE_MAKER_FEE_PAY"
+	TransferTypeTransferTypeMakerFeeReceive             TransferType = "TRANSFER_TYPE_MAKER_FEE_RECEIVE"
+	TransferTypeTransferTypeInfrastructureFeePay        TransferType = "TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY"
+	TransferTypeTransferTypeInfrastructureFeeDistribute TransferType = "TRANSFER_TYPE_INFRASTRUCTURE_FEE_DISTRIBUTE"
+	TransferTypeTransferTypeLiquidityFeePay             TransferType = "TRANSFER_TYPE_LIQUIDITY_FEE_PAY"
+	TransferTypeTransferTypeLiquidityFeeDistribute      TransferType = "TRANSFER_TYPE_LIQUIDITY_FEE_DISTRIBUTE"
+	TransferTypeTransferTypeBondLow                     TransferType = "TRANSFER_TYPE_BOND_LOW"
+	TransferTypeTransferTypeBondHigh                    TransferType = "TRANSFER_TYPE_BOND_HIGH"
+	TransferTypeTransferTypeWithdrawLock                TransferType = "TRANSFER_TYPE_WITHDRAW_LOCK"
+	TransferTypeTransferTypeWithdraw                    TransferType = "TRANSFER_TYPE_WITHDRAW"
+	TransferTypeTransferTypeDeposit                     TransferType = "TRANSFER_TYPE_DEPOSIT"
+	TransferTypeTransferTypeBondSLAShing                TransferType = "TRANSFER_TYPE_BOND_SLASHING"
+	TransferTypeTransferTypeStakeReward                 TransferType = "TRANSFER_TYPE_STAKE_REWARD"
+	TransferTypeTransferTypeTransferFundsSend           TransferType = "TRANSFER_TYPE_TRANSFER_FUNDS_SEND"
+	TransferTypeTransferTypeTransferFundsDistribute     TransferType = "TRANSFER_TYPE_TRANSFER_FUNDS_DISTRIBUTE"
+	TransferTypeTransferTypeClearAccount                TransferType = "TRANSFER_TYPE_CLEAR_ACCOUNT"
+)
+
+var AllTransferType = []TransferType{
+	TransferTypeTransferTypeUnspecified,
+	TransferTypeTransferTypeLoss,
+	TransferTypeTransferTypeWin,
+	TransferTypeTransferTypeClose,
+	TransferTypeTransferTypeMtmLoss,
+	TransferTypeTransferTypeMtmWin,
+	TransferTypeTransferTypeMarginLow,
+	TransferTypeTransferTypeMarginHigh,
+	TransferTypeTransferTypeMarginConfiscated,
+	TransferTypeTransferTypeMakerFeePay,
+	TransferTypeTransferTypeMakerFeeReceive,
+	TransferTypeTransferTypeInfrastructureFeePay,
+	TransferTypeTransferTypeInfrastructureFeeDistribute,
+	TransferTypeTransferTypeLiquidityFeePay,
+	TransferTypeTransferTypeLiquidityFeeDistribute,
+	TransferTypeTransferTypeBondLow,
+	TransferTypeTransferTypeBondHigh,
+	TransferTypeTransferTypeWithdrawLock,
+	TransferTypeTransferTypeWithdraw,
+	TransferTypeTransferTypeDeposit,
+	TransferTypeTransferTypeBondSLAShing,
+	TransferTypeTransferTypeStakeReward,
+	TransferTypeTransferTypeTransferFundsSend,
+	TransferTypeTransferTypeTransferFundsDistribute,
+	TransferTypeTransferTypeClearAccount,
+}
+
+func (e TransferType) IsValid() bool {
+	switch e {
+	case TransferTypeTransferTypeUnspecified, TransferTypeTransferTypeLoss, TransferTypeTransferTypeWin, TransferTypeTransferTypeClose, TransferTypeTransferTypeMtmLoss, TransferTypeTransferTypeMtmWin, TransferTypeTransferTypeMarginLow, TransferTypeTransferTypeMarginHigh, TransferTypeTransferTypeMarginConfiscated, TransferTypeTransferTypeMakerFeePay, TransferTypeTransferTypeMakerFeeReceive, TransferTypeTransferTypeInfrastructureFeePay, TransferTypeTransferTypeInfrastructureFeeDistribute, TransferTypeTransferTypeLiquidityFeePay, TransferTypeTransferTypeLiquidityFeeDistribute, TransferTypeTransferTypeBondLow, TransferTypeTransferTypeBondHigh, TransferTypeTransferTypeWithdrawLock, TransferTypeTransferTypeWithdraw, TransferTypeTransferTypeDeposit, TransferTypeTransferTypeBondSLAShing, TransferTypeTransferTypeStakeReward, TransferTypeTransferTypeTransferFundsSend, TransferTypeTransferTypeTransferFundsDistribute, TransferTypeTransferTypeClearAccount:
+		return true
+	}
+	return false
+}
+
+func (e TransferType) String() string {
+	return string(e)
+}
+
+func (e *TransferType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = TransferType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid TransferType", str)
+	}
+	return nil
+}
+
+func (e TransferType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }

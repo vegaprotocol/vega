@@ -36,7 +36,7 @@ func (r *updateMarketConfigurationResolver) Instrument(ctx context.Context,
 	case *vega.UpdateInstrumentConfiguration_Future:
 		product = &vega.UpdateFutureProduct{
 			QuoteName:                       p.Future.QuoteName,
-			OracleSpecForSettlementPrice:    p.Future.OracleSpecForSettlementPrice,
+			OracleSpecForSettlementData:     p.Future.OracleSpecForSettlementData,
 			OracleSpecForTradingTermination: p.Future.OracleSpecForTradingTermination,
 			OracleSpecBinding:               p.Future.OracleSpecBinding,
 		}

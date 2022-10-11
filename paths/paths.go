@@ -79,7 +79,7 @@ var (
 
 	// BlockExplorerDefaultConfigFile is the default configuration file for the
 	// block explorer.
-	BlockExplorerDefaultConfigFile = JoinConfigPath(DataNodeConfigHome, "config.toml")
+	BlockExplorerDefaultConfigFile = JoinConfigPath(BlockExplorerConfigHome, "config.toml")
 
 	// DataNodeConfigHome is the folder containing the configuration files
 	// used by the node.

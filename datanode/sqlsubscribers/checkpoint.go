@@ -63,6 +63,7 @@ func (n *Checkpoint) consume(ctx context.Context, event CheckpointEvent) error {
 		return errors.Wrap(err, "unable to parse checkpoint")
 	}
 	np.VegaTime = n.vegaTime
+	np.SeqNum = event.Sequence()
 
 	if err := n.store.Add(ctx, np); err != nil {
 		return errors.Wrap(err, "error adding checkpoint")

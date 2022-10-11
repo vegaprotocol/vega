@@ -395,7 +395,7 @@ func (e *Engine) TransferRewards(ctx context.Context, rewardAccountID string, tr
 	}
 
 	for _, req := range transferReqs {
-		res, err := e.getLedgerEntries(ctx, req)
+		res, err := e.listLedgerEntries(ctx, req)
 		if err != nil {
 			e.log.Error("Failed to transfer funds", logging.Error(err))
 			return nil, err
@@ -466,7 +466,7 @@ func (e *Engine) transferFees(ctx context.Context, marketID string, assetID stri
 			return nil, err
 		}
 
-		res, err := e.getLedgerEntries(ctx, req)
+		res, err := e.listLedgerEntries(ctx, req)
 		if err != nil {
 			e.log.Error("Failed to transfer funds", logging.Error(err))
 			return nil, err
@@ -554,6 +554,48 @@ func (e *Engine) getFeesAccounts(marketID, asset string) (maker, infra, liqui *t
 	return maker, infra, liqui, err
 }
 
+func (e *Engine) CheckLeftOverBalance(ctx context.Context, settle *types.Account, transfers []*types.Transfer, asset string) (*types.LedgerMovement, error) {
+	if settle.Balance.IsZero() {
+		return nil, nil
+	}
+
+	e.log.Error("final settlement left asset unit in the settlement, transferring to the asset reward account", logging.String("remaining-settle-balance", settle.Balance.String()))
+	for _, t := range transfers {
+		e.log.Error("final settlement transfer", logging.String("amount", t.Amount.String()), logging.Int32("type", int32(t.Type)))
+	}
+	// if there's just one asset unit left over from some weird rounding issue, transfer it to the global reward account
+	if settle.Balance.EQ(num.UintOne()) {
+		e.log.Warn("final settlement left 1 asset unit in the settlement, transferring to the asset reward account")
+		req := &types.TransferRequest{
+			FromAccount: make([]*types.Account, 1),
+			ToAccount:   make([]*types.Account, 1),
+			Asset:       asset,
+			Type:        types.TransferTypeClearAccount,
+		}
+		globalRewardPool, _ := e.GetGlobalRewardAccount(asset)
+		req.FromAccount[0] = settle
+		req.ToAccount = []*types.Account{globalRewardPool}
+		req.Amount = num.UintOne()
+		ledgerEntries, err := e.listLedgerEntries(ctx, req)
+		if err != nil {
+			e.log.Panic("unable to redistribute settlement leftover funds", logging.Error(err))
+		}
+		for _, bal := range ledgerEntries.Balances {
+			if err := e.IncrementBalance(ctx, bal.Account.ID, bal.Balance); err != nil {
+				e.log.Error("Could not update the target account in transfer",
+					logging.String("account-id", bal.Account.ID),
+					logging.Error(err))
+				return nil, err
+			}
+		}
+		return ledgerEntries, nil
+	}
+
+	// if there's more than one, panic
+	e.log.Panic("settlement balance is not zero", logging.BigUint("balance", settle.Balance))
+	return nil, nil
+}
+
 // FinalSettlement will process the list of transfer instructed by other engines
 // This func currently only expects TransferType_{LOSS,WIN} transfers
 // other transfer types have dedicated funcs (MartToMarket, MarginUpdate).
@@ -607,12 +649,12 @@ func (e *Engine) FinalSettlement(ctx context.Context, marketID string, transfers
 		// accumulate the expected transfer size
 		expCollected.AddSum(req.Amount)
 		expectCollected = expectCollected.Add(num.DecimalFromUint(req.Amount))
-		// doing a copy of the amount here, as the request is send to getLedgerEntries, which actually
+		// doing a copy of the amount here, as the request is send to listLedgerEntries, which actually
 		// modifies it
 		requestAmount := req.Amount.Clone()
 
 		// set the amount (this can change the req.Amount value if we entered loss socialisation
-		res, err := e.getLedgerEntries(ctx, req)
+		res, err := e.listLedgerEntries(ctx, req)
 		if err != nil {
 			e.log.Error(
 				"Failed to transfer funds",
@@ -710,7 +752,7 @@ func (e *Engine) FinalSettlement(ctx context.Context, marketID string, transfers
 		}
 
 		// set the amount (this can change the req.Amount value if we entered loss socialisation
-		res, err := e.getLedgerEntries(ctx, req)
+		res, err := e.listLedgerEntries(ctx, req)
 		if err != nil {
 			e.log.Error(
 				"Failed to transfer funds",
@@ -733,8 +775,12 @@ func (e *Engine) FinalSettlement(ctx context.Context, marketID string, transfers
 		responses = append(responses, res)
 	}
 
-	if !settle.Balance.IsZero() {
-		e.log.Panic("settlement balance is not zero", logging.BigUint("balance", settle.Balance))
+	leftoverLedgerEntry, err := e.CheckLeftOverBalance(ctx, settle, transfers, asset)
+	if err != nil {
+		return nil, err
+	}
+	if leftoverLedgerEntry != nil {
+		responses = append(responses, leftoverLedgerEntry)
 	}
 
 	return responses, nil
@@ -833,12 +879,12 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 		// accumulate the expected transfer size
 		expCollected.AddSum(req.Amount)
 		expectCollected = expectCollected.Add(num.DecimalFromUint(req.Amount))
-		// doing a copy of the amount here, as the request is send to getLedgerEntries, which actually
+		// doing a copy of the amount here, as the request is send to listLedgerEntries, which actually
 		// modifies it
 		requestAmount := req.Amount.Clone()
 
 		// set the amount (this can change the req.Amount value if we entered loss socialisation
-		res, err := e.getLedgerEntries(ctx, req)
+		res, err := e.listLedgerEntries(ctx, req)
 		if err != nil {
 			e.log.Error(
 				"Failed to transfer funds",
@@ -969,7 +1015,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 		}
 
 		// set the amount (this can change the req.Amount value if we entered loss socialisation
-		res, err := e.getLedgerEntries(ctx, req)
+		res, err := e.listLedgerEntries(ctx, req)
 		if err != nil {
 			e.log.Error(
 				"Failed to transfer funds",
@@ -1074,7 +1120,7 @@ func (e *Engine) MarginUpdate(ctx context.Context, marketID string, updates []ev
 			mevt.marginShortFall.Sub(transfer.Amount.Amount, mevt.general.Balance)
 		}
 
-		res, err := e.getLedgerEntries(ctx, req)
+		res, err := e.listLedgerEntries(ctx, req)
 		if err != nil {
 			return nil, nil, nil, err
 		}
@@ -1157,7 +1203,7 @@ func (e *Engine) RollbackMarginUpdateOnOrder(ctx context.Context, marketID strin
 		req.MinAmount.Set(transfer.MinAmount)
 	}
 
-	res, err := e.getLedgerEntries(ctx, req)
+	res, err := e.listLedgerEntries(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -1228,7 +1274,7 @@ func (e *Engine) TransferFunds(
 			return nil, err
 		}
 
-		res, err := e.getLedgerEntries(ctx, req)
+		res, err := e.listLedgerEntries(ctx, req)
 		if err != nil {
 			return nil, err
 		}
@@ -1262,7 +1308,7 @@ func (e *Engine) BondUpdate(ctx context.Context, market string, transfer *types.
 		return nil, err
 	}
 
-	res, err := e.getLedgerEntries(ctx, req)
+	res, err := e.listLedgerEntries(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -1320,7 +1366,7 @@ func (e *Engine) MarginUpdateOnOrder(ctx context.Context, marketID string, updat
 	// from here we know there's enough money,
 	// let get the ledger entries, return the transfers
 
-	res, err := e.getLedgerEntries(ctx, req)
+	res, err := e.listLedgerEntries(ctx, req)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1813,7 +1859,7 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 }
 
 // this builds a TransferResponse for a specific request, we collect all of them and aggregate.
-func (e *Engine) getLedgerEntries(ctx context.Context, req *types.TransferRequest) (*types.LedgerMovement, error) {
+func (e *Engine) listLedgerEntries(ctx context.Context, req *types.TransferRequest) (*types.LedgerMovement, error) {
 	ret := types.LedgerMovement{
 		Entries:  []*types.LedgerEntry{},
 		Balances: make([]*types.PostTransferBalance, 0, len(req.ToAccount)),
@@ -1905,7 +1951,7 @@ func (e *Engine) clearAccount(
 	ctx context.Context, req *types.TransferRequest,
 	party, asset, market string,
 ) (*types.LedgerMovement, error) {
-	ledgerEntries, err := e.getLedgerEntries(ctx, req)
+	ledgerEntries, err := e.listLedgerEntries(ctx, req)
 	if err != nil {
 		e.log.Error(
 			"Failed to move monies from margin to general account",
@@ -2056,7 +2102,7 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 	req.FromAccount[0] = marketInsuranceAcc
 	req.ToAccount = insuranceAccounts
 	req.Amount = marketInsuranceAcc.Balance.Clone()
-	insuranceLedgerEntries, err := e.getLedgerEntries(ctx, req)
+	insuranceLedgerEntries, err := e.listLedgerEntries(ctx, req)
 	if err != nil {
 		e.log.Panic("unable to redistribute market insurance funds", logging.Error(err))
 	}
@@ -2463,7 +2509,7 @@ func (e *Engine) Withdraw(ctx context.Context, partyID, asset string, amount *nu
 		return nil, err
 	}
 
-	res, err := e.getLedgerEntries(ctx, req)
+	res, err := e.listLedgerEntries(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -2513,7 +2559,7 @@ func (e *Engine) RestoreCheckpointBalance(
 		acc,
 	}
 
-	lms, err := e.getLedgerEntries(ctx, treq)
+	lms, err := e.listLedgerEntries(ctx, treq)
 	if err != nil {
 		return nil, err
 	}
@@ -2566,7 +2612,7 @@ func (e *Engine) Deposit(ctx context.Context, partyID, asset string, amount *num
 	if err != nil {
 		return nil, err
 	}
-	res, err := e.getLedgerEntries(ctx, req)
+	res, err := e.listLedgerEntries(ctx, req)
 	if err != nil {
 		return nil, err
 	}

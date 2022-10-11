@@ -1,6 +1,7 @@
 # Changelog
 
-## Unreleased 0.58.0
+
+## Unreleased 0.59.0
 
 ### 🚨 Breaking changes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -15,6 +16,60 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 
+## 0.58.0
+
+### 🚨 Breaking changes
+- [6271](https://github.com/vegaprotocol/vega/issues/6271) - Require signature from new Ethereum key to validate key rotation submission
+- [6364](https://github.com/vegaprotocol/vega/issues/6364) - Rename `oracleSpecForSettlementPrice` to `oracleSpecForSettlementData`
+- [6401](https://github.com/vegaprotocol/vega/issues/6401) - Fix estimate fees and margin `APis`
+- [6428](https://github.com/vegaprotocol/vega/issues/6428) - Update the wallet connection decision for future work
+- [6429](https://github.com/vegaprotocol/vega/issues/6429) - Rename pipeline to interactor for better understanding
+- [6430](https://github.com/vegaprotocol/vega/issues/6430) - Split the transaction status interaction depending on success and failure
+
+### 🛠 Improvements
+- [6399](https://github.com/vegaprotocol/vega/issues/6399) - Add `init-db` and `unsafe-reset-all` commands to block explorer
+- [6348](https://github.com/vegaprotocol/vega/issues/6348) - Reduce pool size to leave more available `Postgres` connections
+- [6453](https://github.com/vegaprotocol/vega/issues/6453) - Add ability to write `pprofs` at intervals to core
+- [6312](https://github.com/vegaprotocol/vega/issues/6312) - Add back amended balance tests and correct ordering
+- [6461](https://github.com/vegaprotocol/vega/issues/6461) - Occasionally close `postgres` pool connections
+- [6435](https://github.com/vegaprotocol/vega/issues/6435) - Add `GetTransaction` `API` call for block explorer
+- [6464](https://github.com/vegaprotocol/vega/issues/6464) - Improve block explorer performance when filtering by submitter
+- [6211](https://github.com/vegaprotocol/vega/issues/6211) - Handle `BeginBlock` and `EndBlock` events
+- [6361](https://github.com/vegaprotocol/vega/issues/6361) - Remove unnecessary logging in market
+- [6378](https://github.com/vegaprotocol/vega/issues/6378) - Migrate remaining views of current data to tables with current data
+- [6425](https://github.com/vegaprotocol/vega/issues/6425) - Introduce interaction for beginning and ending of request
+- [6308](https://github.com/vegaprotocol/vega/issues/6308) - Support parallel requests in wallet API version 2
+- [6426](https://github.com/vegaprotocol/vega/issues/6426) - Add a name field on interaction to know what they are when JSON
+- [6427](https://github.com/vegaprotocol/vega/issues/6427) - Improve interactions documentation
+- [6431](https://github.com/vegaprotocol/vega/issues/6431) - Pass a human-readable input data in Transaction Succeeded and Failed notifications
+- [6448](https://github.com/vegaprotocol/vega/issues/6448) - Improve wallet interaction JSON conversion
+- [6454](https://github.com/vegaprotocol/vega/issues/6454) - Improve test coverage for setting fees and rewarding LPs
+- [6458](https://github.com/vegaprotocol/vega/issues/6458) - Return a context aware message in `RequestSuccessful` interaction
+- [6451](https://github.com/vegaprotocol/vega/issues/6451) - Improve interaction error message
+- [6432](https://github.com/vegaprotocol/vega/issues/6432) - Use optionals for order error and proposal error
+- [6368](https://github.com/vegaprotocol/vega/pull/6368) - Add Ledger Entry API
+
+### 🐛 Fixes
+- [6444](https://github.com/vegaprotocol/vega/issues/6444) - Send a transaction error if the same node announces itself twice
+- [6388](https://github.com/vegaprotocol/vega/issues/6388) - Do not transfer stake and delegations after a key rotation
+- [6266](https://github.com/vegaprotocol/vega/issues/6266) - Do not take a snapshot at block height 1 and handle increase of interval appropriately
+- [6338](https://github.com/vegaprotocol/vega/issues/6338) - Fix validation for update an new asset proposals
+- [6357](https://github.com/vegaprotocol/vega/issues/6357) - Fix potential panic in `gql` resolvers
+- [6391](https://github.com/vegaprotocol/vega/issues/6391) - Fix dropped connection between core and data node when large `(>1mb)` messages are sent.
+- [6358](https://github.com/vegaprotocol/vega/issues/6358) - Do not show hidden files nor directories as wallet
+- [6374](https://github.com/vegaprotocol/vega/issues/6374) - Fix panic with the metrics
+- [6373](https://github.com/vegaprotocol/vega/issues/6373) - Fix panic with the metrics as well
+- [6238](https://github.com/vegaprotocol/vega/issues/6238) - Return empty string for `multisig` bundle, not `0x` when asset doesn't have one
+- [6236](https://github.com/vegaprotocol/vega/issues/6236) - Make `erc20ListAssetBundle` `nullable` in `GraphQL`
+- [6395](https://github.com/vegaprotocol/vega/issues/6395) - Wallet selection doesn't lower case the wallet name during input verification
+- [6408](https://github.com/vegaprotocol/vega/issues/6408) - Initialise observer in liquidity provision `sql` store
+- [6406](https://github.com/vegaprotocol/vega/issues/6406) - Fix invalid tracking of cumulative volume and price
+- [6387](https://github.com/vegaprotocol/vega/issues/6387) - Fix max open interest calculation
+- [6416](https://github.com/vegaprotocol/vega/issues/6416) - Prevent submission of `erc20` address already used by another asset
+- [6375](https://github.com/vegaprotocol/vega/issues/6375) - If there is one unit left over at the end of final market settlement - transfer it to the network treasury. if there is more than one, log all transfers and panic.
+- [6456](https://github.com/vegaprotocol/vega/issues/6456) - Assure liquidity fee gets update when target stake drops (even in the absence of trades)
+- [6459](https://github.com/vegaprotocol/vega/issues/6459) - Send lifecycle notifications after parameters validation
+
 ## 0.57.0
 
 ### 🚨 Breaking changes
@@ -27,6 +82,7 @@
 - [6126](https://github.com/vegaprotocol/vega/issues/6126) - Don't generate market depth subscription messages if nothing has changed
 
 ### 🐛 Fixes
+- [6287](https://github.com/vegaprotocol/vega/issues/6287) - Fix GraphQL `proposals` API `proposalType` filter
 - [6307](https://github.com/vegaprotocol/vega/issues/6307) - Emit an event with status rejected if a protocol upgrade proposal has no validator behind it
 - [5305](https://github.com/vegaprotocol/vega/issues/5305) - Handle market updates changing price monitoring parameters correctly.
 

@@ -23,7 +23,7 @@ Feature: test margin during amending orders
       | party4 | USD   | 100000000 |
 
    @ExcessAmend
-   Scenario: 001, reduce order size 
+   Scenario: 001, reduce order size, 0011-MARA-004
 
    Given the following network parameters are set:
       | name                                          | value |

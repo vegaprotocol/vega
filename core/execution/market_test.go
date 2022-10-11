@@ -486,7 +486,7 @@ func getMarketWithDP(pMonitorSettings *types.PriceMonitoringSettings, openingAuc
 					Future: &types.Future{
 						SettlementAsset: "ETH",
 						QuoteName:       "USD",
-						OracleSpecForSettlementPrice: &types.OracleSpec{
+						OracleSpecForSettlementData: &types.OracleSpec{
 							ID:      "1",
 							PubKeys: []string{"0xDEADBEEF"},
 							Filters: []*types.OracleSpecFilter{
@@ -513,7 +513,7 @@ func getMarketWithDP(pMonitorSettings *types.PriceMonitoringSettings, openingAuc
 							},
 						},
 						OracleSpecBinding: &types.OracleSpecBindingForFuture{
-							SettlementPriceProperty:    "prices.ETH.value",
+							SettlementDataProperty:     "prices.ETH.value",
 							TradingTerminationProperty: "trading.terminated",
 						},
 					},
@@ -631,18 +631,18 @@ func TestMarketClosing(t *testing.T) {
 	tm.now = closingAt
 	closed := tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), closingAt)
 
-	// there's no settlement price yet
+	// there's no settlement data yet
 	assert.False(t, closed)
 	assert.Equal(t, types.MarketStateTradingTerminated, tm.market.State())
 
-	// let time pass still no settlement price
+	// let time pass still no settlement data
 	closingAt = closingAt.Add(time.Second)
 	tm.now = closingAt
 	closed = tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), closingAt)
 	assert.False(t, closed)
 	assert.Equal(t, types.MarketStateTradingTerminated, tm.market.State())
 
-	// let the oracle update settlement price
+	// let the oracle update settlement data
 	delete(properties, "trading.terminated")
 	properties["prices.ETH.value"] = "100"
 	err = tm.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
@@ -695,12 +695,12 @@ func TestMarketClosingAfterUpdate(t *testing.T) {
 	require.False(t, closed)
 	assert.Equal(t, types.MarketStateTradingTerminated.String(), tm.market.State().String())
 
-	// Update the market's oracle spec for settlement price.
+	// Update the market's oracle spec for settlement data.
 
 	// given
 	updatedMkt := tm.mktCfg.DeepClone()
-	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecForSettlementPrice.Filters[0].Key.Name = "prices.ETHEREUM.value"
-	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecBinding.SettlementPriceProperty = "prices.ETHEREUM.value"
+	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecForSettlementData.Filters[0].Key.Name = "prices.ETHEREUM.value"
+	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecBinding.SettlementDataProperty = "prices.ETHEREUM.value"
 
 	// when
 	err = tm.market.Update(context.Background(), updatedMkt, tm.oracleEngine)
@@ -817,8 +817,8 @@ func TestMarketLiquidityFeeAfterUpdate(t *testing.T) {
 	// given
 	previousLiqFee := tm.market.GetLiquidityFee()
 	updatedMkt := tm.mktCfg.DeepClone()
-	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecForSettlementPrice.Filters[0].Key.Name = "prices.ETHEREUM.value"
-	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecBinding.SettlementPriceProperty = "prices.ETHEREUM.value"
+	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecForSettlementData.Filters[0].Key.Name = "prices.ETHEREUM.value"
+	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecBinding.SettlementDataProperty = "prices.ETHEREUM.value"
 
 	// when
 	err := tm.market.Update(context.Background(), updatedMkt, tm.oracleEngine)
@@ -827,6 +827,109 @@ func TestMarketLiquidityFeeAfterUpdate(t *testing.T) {
 	require.NoError(t, err)
 	fmt.Println(previousLiqFee, tm.market.GetLiquidityFee())
 	assert.Equal(t, previousLiqFee, tm.market.GetLiquidityFee())
+}
+
+func TestLiquidityFeeWhenTargetStakeDropsDueToFlowOfTime(t *testing.T) {
+	party1 := "party1"
+	party2 := "party2"
+	lp1 := "lp1"
+	lp2 := "lp2"
+	maxOI := uint64(124)
+	matchingPrice := uint64(111)
+	now := time.Unix(10, 0)
+	tm := getTestMarket(t, now, nil, &types.AuctionDuration{
+		Duration: 1,
+	})
+	tm.market.OnMarketTargetStakeTimeWindowUpdate(5 * time.Second)
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	addAccount(t, tm, party1)
+	addAccount(t, tm, party2)
+	addAccountWithAmount(tm, lp1, 100000000000)
+	addAccountWithAmount(tm, lp2, 100000000000)
+
+	// Assure liquidity auction won't be triggered
+	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), num.DecimalFromFloat(0))
+	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Second)
+	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, lp1, 1, 10)
+	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
+	require.NotNil(t, conf)
+	require.NoError(t, err)
+	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
+
+	alwaysOnAsk := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnAsk", types.SideSell, lp2, 1, 100000)
+	conf, err = tm.market.SubmitOrder(context.Background(), alwaysOnAsk)
+	require.NotNil(t, conf)
+	require.NoError(t, err)
+	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
+
+	orders := []*types.Order{
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "ord1", types.SideSell, party1, maxOI, matchingPrice),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "ord2", types.SideBuy, party2, maxOI, matchingPrice),
+	}
+	for _, o := range orders {
+		conf, err := tm.market.SubmitOrder(context.Background(), o)
+		require.NoError(t, err)
+		require.NotNil(t, conf)
+	}
+
+	// submit liquidity with varying fee levels
+	commitment1 := num.NewUint(30000)
+	fee1 := num.DecimalFromFloat(0.01)
+	commitment2 := num.NewUint(20000)
+	fee2 := num.DecimalFromFloat(0.02)
+	lps := &types.LiquidityProvisionSubmission{
+		MarketID:         tm.market.GetID(),
+		CommitmentAmount: commitment1,
+		Fee:              fee1,
+		Sells: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
+		},
+		Buys: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
+		},
+	}
+	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lps, lp1, vgcrypto.RandomHash()))
+	lps.Fee = fee2
+	lps.CommitmentAmount = commitment2
+	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lps, lp2, vgcrypto.RandomHash()))
+
+	// leave opening auction
+	now = now.Add(2 * time.Second)
+	tm.now = now
+	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
+	md := tm.market.GetMarketData()
+	require.Equal(t, types.MarketTradingModeContinuous, md.MarketTradingMode)
+
+	now = now.Add(2 * time.Second)
+	tm.now = now
+	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
+	// move time and decrase open interest
+	orders = []*types.Order{
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "ord1", types.SideBuy, party1, maxOI-100, matchingPrice),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "ord2", types.SideSell, party2, maxOI-100, matchingPrice),
+	}
+	for _, o := range orders {
+		conf, err := tm.market.SubmitOrder(context.Background(), o)
+		require.NoError(t, err)
+		require.NotNil(t, conf)
+	}
+	md = tm.market.GetMarketData()
+	require.Equal(t, types.MarketTradingModeContinuous, md.MarketTradingMode)
+	targetStake1 := md.TargetStake
+	require.Equal(t, fee2, tm.market.GetLiquidityFee())
+
+	// move time beyond taret stake window (so max OI drops and hence target stake)
+	now = now.Add(6 * time.Second)
+	tm.now = now
+	tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now)
+
+	md = tm.market.GetMarketData()
+	require.Equal(t, types.MarketTradingModeContinuous, md.MarketTradingMode)
+	targetStake2 := md.TargetStake
+
+	require.Less(t, targetStake2, targetStake1)
+	require.Equal(t, fee1, tm.market.GetLiquidityFee())
 }
 
 func TestMarketNotActive(t *testing.T) {
@@ -1188,7 +1291,7 @@ func Test6056(t *testing.T) {
 	// now update the market
 	updatedMkt := tm.mktCfg.DeepClone()
 
-	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecForSettlementPrice.Filters = []*types.OracleSpecFilter{
+	updatedMkt.TradableInstrument.Instrument.GetFuture().OracleSpecForSettlementData.Filters = []*types.OracleSpecFilter{
 		{
 			Key: &types.OracleSpecPropertyKey{
 				Name: "prices.ETH.value",

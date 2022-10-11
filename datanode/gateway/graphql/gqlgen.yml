@@ -339,6 +339,16 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AccountFilter
   AggregatedBalance:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AggregatedBalance
+  LedgerEntryField:
+    model: code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.LedgerEntryField
+  LedgerEntryFilter:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.LedgerEntryFilter
+  AggregatedLedgerEntries:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AggregatedLedgerEntries
+  AggregatedLedgerEntriesEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AggregatedLedgerEntriesEdge
+  AggregatedLedgerEntriesConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AggregatedLedgerEntriesConnection
   Timestamp:
     model: code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.Timestamp
   NetworkLimits:
@@ -461,3 +471,5 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AggregatedBalanceEdge
   AggregatedBalanceConnection:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AggregatedBalanceConnection
+  TransactionResult:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.TransactionResult

@@ -204,7 +204,10 @@ func (s *OrderBookSide) ExtractOrders(price *num.Uint, volume uint64, removeOrde
 				// We should never get to here unless the passed in price
 				// and volume are not correct
 				s.log.Panic("Failed to extract orders as not enough volume within price limits",
-					logging.BigUint("Price", price), logging.Uint64("volume", volume))
+					logging.BigUint("price", price),
+					logging.Uint64("required-volume", volume),
+					logging.Uint64("found-volume", totalVolume),
+					logging.Bool("remove-orders", removeOrders))
 			}
 
 			// If we have the right amount, stop processing

@@ -4,17 +4,17 @@ Feature: Test settlement at expiry time from internal oracle
     Given time is updated to "2019-11-30T00:00:00Z"
     And the average block duration is "1"
 
-    And the oracle spec for settlement price filtering data from "0xCAFECAFE" named "ethDec20Oracle":
+    And the oracle spec for settlement data filtering data from "0xCAFECAFE" named "ethDec20Oracle":
       | property         | type         | binding          |
-      | prices.ETH.value | TYPE_INTEGER | settlement price |
+      | prices.ETH.value | TYPE_INTEGER | settlement data |
 
     And the oracle spec for trading termination filtering data from "vegaprotocol.builtin" named "ethDec20Oracle":
       | property                       | type           | binding             | condition                      | value                |
       | vegaprotocol.builtin.timestamp | TYPE_TIMESTAMP | trading termination | OPERATOR_GREATER_THAN_OR_EQUAL | 2019-12-31T23:59:59Z |
 
-    And the oracle spec for settlement price filtering data from "0xCAFECAFE1" named "ethDec21Oracle":
+    And the oracle spec for settlement data filtering data from "0xCAFECAFE1" named "ethDec21Oracle":
       | property         | type         | binding          |
-      | prices.ETH.value | TYPE_INTEGER | settlement price |
+      | prices.ETH.value | TYPE_INTEGER | settlement data |
 
     And the oracle spec for trading termination filtering data from "0xCAFECAFE1" named "ethDec21Oracle":
       | property           | type         | binding             |

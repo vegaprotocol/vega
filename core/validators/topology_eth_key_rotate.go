@@ -14,20 +14,28 @@ package validators
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"sort"
 
 	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/nodewallets/eth/clef"
 	"code.vegaprotocol.io/vega/logging"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
-var ErrCurrentEthAddressDoesNotMatch = errors.New("current Ethereum address does not match")
+var (
+	ErrCurrentEthAddressDoesNotMatch = errors.New("current Ethereum address does not match")
+	ErrCannotRotateToSameKey         = errors.New("new Ethereum address cannot be the same as the previous Ethereum address")
+	ErrNodeHasUnresolvedRotation     = errors.New("ethereum keys from a previous rotation have not been resolved on the multisig control contract")
+)
 
 type PendingEthereumKeyRotation struct {
 	NodeID           string
 	NewAddress       string
+	OldAddress       string
 	SubmitterAddress string
 }
 
@@ -52,20 +60,31 @@ func (pm pendingEthereumKeyRotationMapping) get(height uint64) []PendingEthereum
 	return rotations
 }
 
-func (t *Topology) RotateEthereumKey(
+func (t *Topology) hasPendingEthKeyRotation(nodeID string) bool {
+	for _, rotations := range t.pendingEthKeyRotations {
+		for _, r := range rotations {
+			if r.NodeID == nodeID {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (t *Topology) ProcessEthereumKeyRotation(
 	ctx context.Context,
 	publicKey string,
-	currentBlockHeight uint64,
 	kr *commandspb.EthereumKeyRotateSubmission,
+	verify func(message, signature []byte, hexAddress string) error,
 ) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	t.log.Debug("Adding Ethereum key rotation",
-		logging.String("publicKey", publicKey),
-		logging.Uint64("currentBlockHeight", currentBlockHeight),
-		logging.Uint64("targetBlock", kr.TargetBlock),
+	t.log.Debug("Received ethereum key rotation",
+		logging.String("vega-pub-key", publicKey),
 		logging.String("newAddress", kr.NewAddress),
+		logging.Uint64("currentBlockHeight", t.currentBlockHeight),
+		logging.Uint64("targetBlock", kr.TargetBlock),
 	)
 
 	var node *valState
@@ -79,47 +98,39 @@ func (t *Topology) RotateEthereumKey(
 	if node == nil {
 		err := fmt.Errorf("failed to rotate ethereum key for non existing validator %q", publicKey)
 		t.log.Debug("Failed to add Eth key rotation", logging.Error(err))
-
 		return err
 	}
 
-	if currentBlockHeight >= kr.TargetBlock {
-		t.log.Debug("Failed to add Eth key rotation",
-			logging.Error(ErrTargetBlockHeightMustBeGraterThanCurrentHeight),
-		)
-		return ErrTargetBlockHeightMustBeGraterThanCurrentHeight
+	if err := t.validateRotation(kr, node.data, verify); err != nil {
+		return err
 	}
 
-	if node.data.EthereumAddress != kr.CurrentAddress {
-		t.log.Debug("Failed to add Eth key rotation",
-			logging.Error(ErrCurrentEthAddressDoesNotMatch),
-		)
-		return ErrCurrentEthAddressDoesNotMatch
+	// schedule the key rotation to a future block
+	t.pendingEthKeyRotations.add(kr.TargetBlock,
+		PendingEthereumKeyRotation{
+			NodeID:           node.data.ID,
+			NewAddress:       kr.NewAddress,
+			OldAddress:       kr.CurrentAddress,
+			SubmitterAddress: kr.SubmitterAddress,
+		})
+
+	t.log.Debug("Successfully added Ethereum key rotation to pending key rotations",
+		logging.String("vega-pub-key", publicKey),
+		logging.Uint64("currentBlockHeight", t.currentBlockHeight),
+		logging.Uint64("targetBlock", kr.TargetBlock),
+		logging.String("newAddress", kr.NewAddress),
+	)
+
+	if node.status != ValidatorStatusTendermint {
+		return nil
 	}
 
 	toRemove := []NodeIDAddress{{NodeID: node.data.ID, EthAddress: node.data.EthereumAddress}}
-
 	t.signatures.PrepareValidatorSignatures(ctx, toRemove, t.epochSeq, false)
-
 	if len(kr.SubmitterAddress) != 0 {
 		// we were given an address that will be submitting the multisig changes, we can emit a remove signature for it right now
 		t.signatures.EmitValidatorRemovedSignatures(ctx, kr.SubmitterAddress, node.data.ID, t.timeService.GetTimeNow())
 	}
-
-	// schedule signature collection to future block
-	// those signature should be emitted after validator has rotated is key in node wallet
-	t.pendingEthKeyRotations.add(kr.TargetBlock, PendingEthereumKeyRotation{
-		NodeID:           node.data.ID,
-		NewAddress:       kr.NewAddress,
-		SubmitterAddress: kr.SubmitterAddress,
-	})
-
-	t.log.Debug("Successfully added Ethereum key rotation to pending key rotations",
-		logging.String("publicKey", publicKey),
-		logging.Uint64("currentBlockHeight", currentBlockHeight),
-		logging.Uint64("targetBlock", kr.TargetBlock),
-		logging.String("newAddress", kr.NewAddress),
-	)
 
 	return nil
 }
@@ -146,7 +157,18 @@ func (t *Topology) GetPendingEthereumKeyRotation(blockHeight uint64, nodeID stri
 }
 
 func (t *Topology) ethereumKeyRotationBeginBlockLocked(ctx context.Context) {
-	t.log.Debug("Trying to apply pending Ethereum key rotations", logging.Uint64("currentBlockHeight", t.currentBlockHeight))
+	// check any unfinalised key rotations
+	remove := []string{}
+	for _, r := range t.unresolvedEthKeyRotations {
+		if !t.multiSigTopology.IsSigner(r.OldAddress) && t.multiSigTopology.IsSigner(r.NewAddress) {
+			t.log.Info("ethereum key rotations have been resolved on the multisig contract", logging.String("nodeID", r.NodeID), logging.String("old-address", r.OldAddress))
+			remove = append(remove, r.NodeID)
+		}
+	}
+
+	for _, nodeID := range remove {
+		delete(t.unresolvedEthKeyRotations, nodeID)
+	}
 
 	// key swaps should run in deterministic order
 	rotations := t.pendingEthKeyRotations.get(t.currentBlockHeight)
@@ -154,8 +176,7 @@ func (t *Topology) ethereumKeyRotationBeginBlockLocked(ctx context.Context) {
 		return
 	}
 
-	t.log.Debug("Applying pending Ethereum key rotations", logging.Int("count", len(rotations)))
-
+	t.log.Debug("Applying ethereum key-rotations", logging.Uint64("currentBlockHeight", t.currentBlockHeight), logging.Int("n-rotations", len(rotations)))
 	for _, r := range rotations {
 		t.log.Debug("Applying Ethereum key rotation",
 			logging.String("nodeID", r.NodeID),
@@ -174,14 +195,6 @@ func (t *Topology) ethereumKeyRotationBeginBlockLocked(ctx context.Context) {
 		data.data.EthereumAddress = r.NewAddress
 		t.validators[r.NodeID] = data
 
-		toAdd := []NodeIDAddress{{NodeID: r.NodeID, EthAddress: r.NewAddress}}
-		t.signatures.PrepareValidatorSignatures(ctx, toAdd, t.epochSeq, true)
-
-		if len(r.SubmitterAddress) != 0 {
-			// we were given an address that will be submitting the multisig changes, we can emit signatures for it right now
-			t.signatures.EmitValidatorAddedSignatures(ctx, r.SubmitterAddress, r.NodeID, t.timeService.GetTimeNow())
-		}
-
 		t.broker.Send(events.NewEthereumKeyRotationEvent(
 			ctx,
 			r.NodeID,
@@ -195,7 +208,106 @@ func (t *Topology) ethereumKeyRotationBeginBlockLocked(ctx context.Context) {
 			logging.String("oldAddress", oldAddress),
 			logging.String("newAddress", r.NewAddress),
 		)
+
+		if data.status != ValidatorStatusTendermint {
+			continue
+		}
+
+		toAdd := []NodeIDAddress{{NodeID: r.NodeID, EthAddress: r.NewAddress}}
+		t.signatures.PrepareValidatorSignatures(ctx, toAdd, t.epochSeq, true)
+
+		if len(r.SubmitterAddress) != 0 {
+			// we were given an address that will be submitting the multisig changes, we can emit signatures for it right now
+			t.signatures.EmitValidatorAddedSignatures(ctx, r.SubmitterAddress, r.NodeID, t.timeService.GetTimeNow())
+		}
+
+		// add to unfinalised map so we can wait to see the changes on the contract
+		t.unresolvedEthKeyRotations[data.data.ID] = r
 	}
 
-	delete(t.pendingPubKeyRotations, t.currentBlockHeight)
+	delete(t.pendingEthKeyRotations, t.currentBlockHeight)
+}
+
+func (t *Topology) validateRotation(kr *commandspb.EthereumKeyRotateSubmission, data ValidatorData, verify func(message, signature []byte, hexAddress string) error) error {
+	if t.hasPendingEthKeyRotation(data.ID) {
+		return ErrNodeAlreadyHasPendingKeyRotation
+	}
+
+	if _, ok := t.unresolvedEthKeyRotations[data.ID]; ok {
+		return ErrNodeHasUnresolvedRotation
+	}
+
+	if t.currentBlockHeight >= kr.TargetBlock {
+		t.log.Debug("target block height is not above current block height", logging.Uint64("target", kr.TargetBlock), logging.Uint64("current", t.currentBlockHeight))
+		return ErrTargetBlockHeightMustBeGreaterThanCurrentHeight
+	}
+
+	if data.EthereumAddress != kr.CurrentAddress {
+		t.log.Debug("current addresses do not match", logging.String("current", data.EthereumAddress), logging.String("submitted", kr.CurrentAddress))
+		return ErrCurrentEthAddressDoesNotMatch
+	}
+
+	if data.EthereumAddress == kr.NewAddress {
+		t.log.Debug("trying to rotate to the same key", logging.String("current", data.EthereumAddress), logging.String("new-address", kr.NewAddress))
+		return ErrCannotRotateToSameKey
+	}
+
+	if err := VerifyEthereumKeyRotation(kr, verify); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func SignEthereumKeyRotation(
+	kr *commandspb.EthereumKeyRotateSubmission,
+	ethSigner Signer,
+) error {
+	buf, err := makeEthKeyRotationSignableMessage(kr)
+	if err != nil {
+		return err
+	}
+
+	if ethSigner.Algo() != clef.ClefAlgoType {
+		buf = crypto.Keccak256(buf)
+	}
+	ethereumSignature, err := ethSigner.Sign(buf)
+	if err != nil {
+		return err
+	}
+
+	kr.EthereumSignature = &commandspb.Signature{
+		Value: hex.EncodeToString(ethereumSignature),
+		Algo:  ethSigner.Algo(),
+	}
+
+	return nil
+}
+
+func VerifyEthereumKeyRotation(kr *commandspb.EthereumKeyRotateSubmission, verify func(message, signature []byte, hexAddress string) error) error {
+	buf, err := makeEthKeyRotationSignableMessage(kr)
+	if err != nil {
+		return err
+	}
+
+	eths, err := hex.DecodeString(kr.GetEthereumSignature().Value)
+	if err != nil {
+		return err
+	}
+
+	if err := verify(buf, eths, kr.NewAddress); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func makeEthKeyRotationSignableMessage(kr *commandspb.EthereumKeyRotateSubmission) ([]byte, error) {
+	if len(kr.CurrentAddress) <= 0 || len(kr.NewAddress) <= 0 || kr.TargetBlock == 0 {
+		return nil, ErrMissingRequiredAnnounceNodeFields
+	}
+
+	msg := kr.CurrentAddress + kr.NewAddress + fmt.Sprintf("%d", kr.TargetBlock)
+
+	return []byte(msg), nil
 }

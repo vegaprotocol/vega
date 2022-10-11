@@ -209,6 +209,67 @@ func (t *tradingDataServiceV2) Info(ctx context.Context, _ *v2.InfoRequest) (*v2
 	}, nil
 }
 
+func (t *tradingDataServiceV2) ListLedgerEntries(ctx context.Context, req *v2.ListLedgerEntriesRequest) (*v2.ListLedgerEntriesResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListLedgerEntriesV2")()
+	if t.accountService == nil {
+		return nil, apiError(codes.Internal, ErrAccountServiceSQLStoreNotAvailable, nil)
+	}
+
+	leFilter, err := entities.LedgerEntryFilterFromProto(req.Filter)
+	if err != nil {
+		return nil, fmt.Errorf("could not parse ledger entry filter: %w", err)
+	}
+
+	groupOptions := &sqlstore.GroupOptions{}
+	if req.GroupOptions != nil {
+		groupByAccountField := []entities.AccountField{}
+		for _, field := range req.GroupOptions.ByAccountField {
+			field, err := entities.AccountFieldFromProto(field)
+			if err != nil {
+				return nil, fmt.Errorf("could not parse account from group options: %w", err)
+			}
+			groupByAccountField = append(groupByAccountField, field)
+		}
+
+		groupByLedgerEntryField := []entities.LedgerEntryField{}
+		for _, field := range req.GroupOptions.ByLedgerEntryField {
+			field, err := entities.LedgerEntryFieldFromProto(field)
+			if err != nil {
+				return nil, fmt.Errorf("could not parse ledger entry from group options: %w", err)
+			}
+			groupByLedgerEntryField = append(groupByLedgerEntryField, field)
+		}
+
+		groupOptions = &sqlstore.GroupOptions{
+			ByAccountField:     groupByAccountField,
+			ByLedgerEntryField: groupByLedgerEntryField,
+		}
+	}
+
+	dateRange := entities.DateRangeFromProto(req.DateRange)
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, apiError(codes.InvalidArgument, fmt.Errorf("invalid cursor: %w", err))
+	}
+
+	entries, pageInfo, err := t.ledgerService.Query(leFilter, groupOptions, dateRange, pagination)
+	if err != nil {
+		return nil, fmt.Errorf("could not query ledger entries: %w", err)
+	}
+
+	edges, err := makeEdges[*v2.AggregatedLedgerEntriesEdge](*entries)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrAccountServiceListAccounts, err)
+	}
+
+	return &v2.ListLedgerEntriesResponse{
+		LedgerEntries: &v2.AggregatedLedgerEntriesConnection{
+			Edges:    edges,
+			PageInfo: pageInfo.ToProto(),
+		},
+	}, nil
+}
+
 func (t *tradingDataServiceV2) GetBalanceHistory(ctx context.Context, req *v2.GetBalanceHistoryRequest) (*v2.GetBalanceHistoryResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetBalanceHistoryV2")()
 	if t.accountService == nil {
@@ -700,11 +761,6 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerAddedBundles(ctx context.Co
 			return nil, apiError(codes.Internal, err)
 		}
 
-		pack := "0x"
-		for _, v := range signatures {
-			pack = fmt.Sprintf("%v%v", pack, hex.EncodeToString(v.Sig))
-		}
-
 		edges = append(edges,
 			&v2.ERC20MultiSigSignerAddedBundleEdge{
 				Node: &v2.ERC20MultiSigSignerAddedBundle{
@@ -712,7 +768,7 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerAddedBundles(ctx context.Co
 					Submitter:  b.Submitter.String(),
 					Nonce:      b.Nonce,
 					Timestamp:  b.VegaTime.UnixNano(),
-					Signatures: pack,
+					Signatures: packNodeSignatures(signatures),
 					EpochSeq:   strconv.FormatInt(b.EpochID, 10),
 				},
 				Cursor: b.Cursor().Encode(),
@@ -776,18 +832,13 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerRemovedBundles(ctx context.
 			return nil, apiError(codes.Internal, err)
 		}
 
-		pack := "0x"
-		for _, v := range signatures {
-			pack = fmt.Sprintf("%v%v", pack, hex.EncodeToString(v.Sig))
-		}
-
 		edges = append(edges, &v2.ERC20MultiSigSignerRemovedBundleEdge{
 			Node: &v2.ERC20MultiSigSignerRemovedBundle{
 				OldSigner:  b.SignerChange.String(),
 				Submitter:  b.Submitter.String(),
 				Nonce:      b.Nonce,
 				Timestamp:  b.VegaTime.UnixNano(),
-				Signatures: pack,
+				Signatures: packNodeSignatures(signatures),
 				EpochSeq:   strconv.FormatInt(b.EpochID, 10),
 			},
 			Cursor: b.Cursor().Encode(),
@@ -837,12 +888,6 @@ func (t *tradingDataServiceV2) GetERC20SetAssetLimitsBundle(ctx context.Context,
 		return nil, apiError(codes.Internal, err)
 	}
 
-	// now we pack them
-	pack := "0x"
-	for _, v := range signatures {
-		pack = fmt.Sprintf("%v%v", pack, hex.EncodeToString(v.Sig))
-	}
-
 	if t.assetService == nil {
 		return nil, errors.New("sql asset store not available")
 	}
@@ -873,10 +918,26 @@ func (t *tradingDataServiceV2) GetERC20SetAssetLimitsBundle(ctx context.Context,
 		AssetSource:   address,
 		Nonce:         nonce.String(),
 		VegaAssetId:   asset.ID.String(),
-		Signatures:    pack,
+		Signatures:    packNodeSignatures(signatures),
 		LifetimeLimit: proposal.Terms.GetUpdateAsset().GetChanges().GetErc20().LifetimeLimit,
 		Threshold:     proposal.Terms.GetUpdateAsset().GetChanges().GetErc20().WithdrawThreshold,
 	}, nil
+}
+
+// packNodeSignatures packs a list signatures into the form form:
+// 0x + sig1 + sig2 + ... + sigN in hex encoded form
+// If the list is empty, return an empty string instead.
+func packNodeSignatures(signatures []entities.NodeSignature) string {
+	pack := ""
+	if len(signatures) > 0 {
+		pack = "0x"
+	}
+
+	for _, v := range signatures {
+		pack = fmt.Sprintf("%v%v", pack, hex.EncodeToString(v.Sig))
+	}
+
+	return pack
 }
 
 func (t *tradingDataServiceV2) GetERC20ListAssetBundle(ctx context.Context, req *v2.GetERC20ListAssetBundleRequest) (*v2.GetERC20ListAssetBundleResponse, error) {
@@ -906,12 +967,6 @@ func (t *tradingDataServiceV2) GetERC20ListAssetBundle(ctx context.Context, req 
 		return nil, apiError(codes.Internal, err)
 	}
 
-	// now we pack them
-	pack := "0x"
-	for _, v := range signatures {
-		pack = fmt.Sprintf("%v%v", pack, hex.EncodeToString(v.Sig))
-	}
-
 	var address string
 	if asset.ERC20Contract != "" {
 		address = asset.ERC20Contract
@@ -932,7 +987,7 @@ func (t *tradingDataServiceV2) GetERC20ListAssetBundle(ctx context.Context, req 
 		AssetSource: address,
 		Nonce:       nonce.String(),
 		VegaAssetId: asset.ID.String(),
-		Signatures:  pack,
+		Signatures:  packNodeSignatures(signatures),
 	}, nil
 }
 
@@ -960,13 +1015,6 @@ func (t *tradingDataServiceV2) GetERC20WithdrawalApproval(ctx context.Context, r
 		return nil, apiError(codes.Internal, err)
 	}
 
-	// get the signature into the form form:
-	// 0x + sig1 + sig2 + ... + sigN in hex encoded form
-	pack := "0x"
-	for _, v := range signatures {
-		pack = fmt.Sprintf("%v%v", pack, hex.EncodeToString(v.Sig))
-	}
-
 	var address string
 	for _, v := range assets {
 		if v.ID == w.Asset {
@@ -984,7 +1032,7 @@ func (t *tradingDataServiceV2) GetERC20WithdrawalApproval(ctx context.Context, r
 		Expiry:        w.Expiry.UnixMicro(),
 		Nonce:         w.Ref,
 		TargetAddress: w.Ext.GetErc20().ReceiverAddress,
-		Signatures:    pack,
+		Signatures:    packNodeSignatures(signatures),
 		// timestamps is unix nano, contract needs unix. So load if first, and cut nanos
 		Creation: w.CreatedTimestamp.Unix(),
 	}, nil
@@ -1796,16 +1844,10 @@ func (t *tradingDataServiceV2) GetGovernanceData(ctx context.Context, req *v2.Ge
 
 func (t *tradingDataServiceV2) ListGovernanceData(ctx context.Context, req *v2.ListGovernanceDataRequest) (*v2.ListGovernanceDataResponse, error) {
 	var state *entities.ProposalState
-	var proposalType *entities.ProposalType
 
 	if req.ProposalState != nil {
 		s := entities.ProposalState(*req.ProposalState)
 		state = &s
-	}
-
-	if req.ProposalType != nil {
-		t := entities.ProposalType(*req.ProposalType)
-		proposalType = &t
 	}
 
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
@@ -1817,7 +1859,7 @@ func (t *tradingDataServiceV2) ListGovernanceData(ctx context.Context, req *v2.L
 		ctx,
 		state,
 		req.ProposerPartyId,
-		proposalType,
+		(*entities.ProposalType)(req.ProposalType),
 		pagination,
 	)
 	if err != nil {
@@ -2287,11 +2329,8 @@ func (t *tradingDataServiceV2) GetEpoch(ctx context.Context, req *v2.GetEpochReq
 
 func (t *tradingDataServiceV2) EstimateFee(ctx context.Context, req *v2.EstimateFeeRequest) (*v2.EstimateFeeResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("EstimateFee SQL")()
-	if req.Order == nil {
-		return nil, apiError(codes.InvalidArgument, errors.New("missing order"))
-	}
 
-	fee, err := t.estimateFee(ctx, req.Order)
+	fee, err := t.estimateFee(ctx, req.MarketId, req.Price, req.Size)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -2301,24 +2340,21 @@ func (t *tradingDataServiceV2) EstimateFee(ctx context.Context, req *v2.Estimate
 	}, nil
 }
 
-func (t *tradingDataServiceV2) estimateFee(ctx context.Context, order *vega.Order) (*vega.Fee, error) {
-	mkt, err := t.marketService.GetByID(ctx, order.MarketId)
+func (t *tradingDataServiceV2) estimateFee(
+	ctx context.Context,
+	market, priceS string,
+	size uint64,
+) (*vega.Fee, error) {
+	mkt, err := t.marketService.GetByID(ctx, market)
 	if err != nil {
 		return nil, err
 	}
-	price, overflowed := num.UintFromString(order.Price, 10)
+	price, overflowed := num.UintFromString(priceS, 10)
 	if overflowed {
 		return nil, errors.New("invalid order price")
 	}
-	if order.PeggedOrder != nil {
-		return &vega.Fee{
-			MakerFee:          "0",
-			InfrastructureFee: "0",
-			LiquidityFee:      "0",
-		}, nil
-	}
 
-	base := num.DecimalFromUint(price.Mul(price, num.NewUint(order.Size)))
+	base := num.DecimalFromUint(price.Mul(price, num.NewUint(size)))
 	maker, infra, liquidity, err := t.feeFactors(mkt)
 	if err != nil {
 		return nil, err
@@ -2349,11 +2385,9 @@ func (t *tradingDataServiceV2) feeFactors(mkt entities.Market) (maker, infra, li
 
 func (t *tradingDataServiceV2) EstimateMargin(ctx context.Context, req *v2.EstimateMarginRequest) (*v2.EstimateMarginResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("EstimateMargin SQL")()
-	if req.Order == nil {
-		return nil, apiError(codes.InvalidArgument, errors.New("missing order"))
-	}
 
-	margin, err := t.estimateMargin(ctx, req.Order)
+	margin, err := t.estimateMargin(
+		ctx, req.Side, req.Type, req.MarketId, req.PartyId, req.Price, req.Size)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
@@ -2363,24 +2397,30 @@ func (t *tradingDataServiceV2) EstimateMargin(ctx context.Context, req *v2.Estim
 	}, nil
 }
 
-func (t *tradingDataServiceV2) estimateMargin(ctx context.Context, order *vega.Order) (*vega.MarginLevels, error) {
-	if order.Side == vega.Side_SIDE_UNSPECIFIED {
+func (t *tradingDataServiceV2) estimateMargin(
+	ctx context.Context,
+	rSide vega.Side,
+	rType vega.Order_Type,
+	rMarket, rParty, rPrice string,
+	rSize uint64,
+) (*vega.MarginLevels, error) {
+	if rSide == vega.Side_SIDE_UNSPECIFIED {
 		return nil, ErrInvalidOrderSide
 	}
 
 	// first get the risk factors and market data (marketdata->markprice)
-	rf, err := t.riskFactorService.GetMarketRiskFactors(ctx, order.MarketId)
+	rf, err := t.riskFactorService.GetMarketRiskFactors(ctx, rMarket)
 	if err != nil {
 		return nil, err
 	}
-	mkt, err := t.marketService.GetByID(ctx, order.MarketId)
+	mkt, err := t.marketService.GetByID(ctx, rMarket)
 	if err != nil {
 		return nil, err
 	}
 
 	mktProto := mkt.ToProto()
 
-	mktData, err := t.marketDataService.GetMarketDataByID(ctx, order.MarketId)
+	mktData, err := t.marketDataService.GetMarketDataByID(ctx, rMarket)
 	if err != nil {
 		return nil, err
 	}
@@ -2389,7 +2429,7 @@ func (t *tradingDataServiceV2) estimateMargin(ctx context.Context, order *vega.O
 	if err != nil {
 		return nil, err
 	}
-	if order.Side == vega.Side_SIDE_BUY {
+	if rSide == vega.Side_SIDE_BUY {
 		f, err = num.DecimalFromString(rf.Long.String())
 		if err != nil {
 			return nil, err
@@ -2405,14 +2445,14 @@ func (t *tradingDataServiceV2) estimateMargin(ctx context.Context, order *vega.O
 	markPrice, _ := num.DecimalFromString(mktData.MarkPrice.String())
 
 	// if the order is a limit order, use the limit price to calculate the margin maintenance
-	if order.Type == vega.Order_TYPE_LIMIT {
-		markPrice, _ = num.DecimalFromString(order.Price)
+	if rType == vega.Order_TYPE_LIMIT {
+		markPrice, _ = num.DecimalFromString(rPrice)
 	}
 
-	maintenanceMargin := num.DecimalFromFloat(float64(order.Size)).Mul(f).Mul(markPrice)
+	maintenanceMargin := num.DecimalFromFloat(float64(rSize)).Mul(f).Mul(markPrice)
 	// now we use the risk factors
 	return &vega.MarginLevels{
-		PartyId:                order.PartyId,
+		PartyId:                rParty,
 		MarketId:               mktProto.GetId(),
 		Asset:                  asset,
 		Timestamp:              0,

@@ -92,7 +92,7 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
       | min bound | max bound |
       | 500       | 1500      |
 
-    And the liquidity fee factor should "0.001" for the market "ETH/MAR22"
+    And the liquidity fee factor should be "0.001" for the market "ETH/MAR22"
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |

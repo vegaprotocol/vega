@@ -48,6 +48,7 @@ type ResolverRoot interface {
 	AccountDetails() AccountDetailsResolver
 	AccountEdge() AccountEdgeResolver
 	AccountUpdate() AccountUpdateResolver
+	AggregatedLedgerEntries() AggregatedLedgerEntriesResolver
 	Asset() AssetResolver
 	AuctionEvent() AuctionEventResolver
 	Candle() CandleResolver
@@ -104,6 +105,7 @@ type ResolverRoot interface {
 	TradableInstrument() TradableInstrumentResolver
 	Trade() TradeResolver
 	TradeUpdate() TradeUpdateResolver
+	TransactionResult() TransactionResultResolver
 	Transfer() TransferResolver
 	UpdateAsset() UpdateAssetResolver
 	UpdateMarket() UpdateMarketResolver
@@ -112,6 +114,7 @@ type ResolverRoot interface {
 	Vote() VoteResolver
 	Withdrawal() WithdrawalResolver
 	DateRange() DateRangeResolver
+	LedgerEntryFilter() LedgerEntryFilterResolver
 }
 
 type DirectiveRoot struct {
@@ -166,6 +169,27 @@ type ComplexityRoot struct {
 	}
 
 	AggregatedBalanceEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
+	AggregatedLedgerEntries struct {
+		AccountType  func(childComplexity int) int
+		AssetId      func(childComplexity int) int
+		Id           func(childComplexity int) int
+		MarketId     func(childComplexity int) int
+		PartyId      func(childComplexity int) int
+		Quantity     func(childComplexity int) int
+		TransferType func(childComplexity int) int
+		VegaTime     func(childComplexity int) int
+	}
+
+	AggregatedLedgerEntriesConnection struct {
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
+	}
+
+	AggregatedLedgerEntriesEdge struct {
 		Cursor func(childComplexity int) int
 		Node   func(childComplexity int) int
 	}
@@ -441,7 +465,7 @@ type ComplexityRoot struct {
 
 	Future struct {
 		OracleSpecBinding               func(childComplexity int) int
-		OracleSpecForSettlementPrice    func(childComplexity int) int
+		OracleSpecForSettlementData     func(childComplexity int) int
 		OracleSpecForTradingTermination func(childComplexity int) int
 		QuoteName                       func(childComplexity int) int
 		SettlementAsset                 func(childComplexity int) int
@@ -450,7 +474,7 @@ type ComplexityRoot struct {
 
 	FutureProduct struct {
 		OracleSpecBinding               func(childComplexity int) int
-		OracleSpecForSettlementPrice    func(childComplexity int) int
+		OracleSpecForSettlementData     func(childComplexity int) int
 		OracleSpecForTradingTermination func(childComplexity int) int
 		QuoteName                       func(childComplexity int) int
 		SettlementAsset                 func(childComplexity int) int
@@ -493,11 +517,11 @@ type ComplexityRoot struct {
 	}
 
 	LedgerEntry struct {
-		Amount      func(childComplexity int) int
-		FromAccount func(childComplexity int) int
-		Timestamp   func(childComplexity int) int
-		ToAccount   func(childComplexity int) int
-		Type        func(childComplexity int) int
+		AccountFromID func(childComplexity int) int
+		AccountToID   func(childComplexity int) int
+		Amount        func(childComplexity int) int
+		Timestamp     func(childComplexity int) int
+		Type          func(childComplexity int) int
 	}
 
 	LiquidityMonitoringParameters struct {
@@ -934,7 +958,7 @@ type ComplexityRoot struct {
 	}
 
 	OracleSpecToFutureBinding struct {
-		SettlementPriceProperty    func(childComplexity int) int
+		SettlementDataProperty     func(childComplexity int) int
 		TradingTerminationProperty func(childComplexity int) int
 	}
 
@@ -1226,6 +1250,7 @@ type ComplexityRoot struct {
 		KeyRotations                       func(childComplexity int, id *string) int
 		KeyRotationsConnection             func(childComplexity int, id *string, pagination *v2.Pagination) int
 		LastBlockHeight                    func(childComplexity int) int
+		LedgerEntries                      func(childComplexity int, filter *v2.LedgerEntryFilter, groupOptions *GroupOptions, dateRange *v2.DateRange, pagination *v2.Pagination) int
 		Market                             func(childComplexity int, id string) int
 		Markets                            func(childComplexity int, id *string) int
 		MarketsConnection                  func(childComplexity int, id *string, pagination *v2.Pagination) int
@@ -1517,6 +1542,13 @@ type ComplexityRoot struct {
 		Type               func(childComplexity int) int
 	}
 
+	TransactionResult struct {
+		Error   func(childComplexity int) int
+		Hash    func(childComplexity int) int
+		PartyId func(childComplexity int) int
+		Status  func(childComplexity int) int
+	}
+
 	TransactionSubmitted struct {
 		Success func(childComplexity int) int
 	}
@@ -1572,7 +1604,7 @@ type ComplexityRoot struct {
 
 	UpdateFutureProduct struct {
 		OracleSpecBinding               func(childComplexity int) int
-		OracleSpecForSettlementPrice    func(childComplexity int) int
+		OracleSpecForSettlementData     func(childComplexity int) int
 		OracleSpecForTradingTermination func(childComplexity int) int
 		QuoteName                       func(childComplexity int) int
 	}
@@ -1666,6 +1698,11 @@ type AccountEdgeResolver interface {
 }
 type AccountUpdateResolver interface {
 	AssetID(ctx context.Context, obj *vega.Account) (string, error)
+}
+type AggregatedLedgerEntriesResolver interface {
+	VegaTime(ctx context.Context, obj *v2.AggregatedLedgerEntries) (string, error)
+
+	TransferType(ctx context.Context, obj *v2.AggregatedLedgerEntries) (*string, error)
 }
 type AssetResolver interface {
 	Name(ctx context.Context, obj *vega.Asset) (string, error)
@@ -2018,6 +2055,7 @@ type QueryResolver interface {
 	GetMarketDataHistoryByID(ctx context.Context, id string, start *int, end *int, skip *int, first *int, last *int) ([]*vega.MarketData, error)
 	GetMarketDataHistoryConnectionByID(ctx context.Context, id string, start *int, end *int, pagination *v2.Pagination) (*v2.MarketDataConnection, error)
 	HistoricBalances(ctx context.Context, filter *v2.AccountFilter, groupBy []*v2.AccountField, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.AggregatedBalanceConnection, error)
+	LedgerEntries(ctx context.Context, filter *v2.LedgerEntryFilter, groupOptions *GroupOptions, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.AggregatedLedgerEntriesConnection, error)
 	KeyRotations(ctx context.Context, id *string) ([]*v1.KeyRotation, error)
 	KeyRotationsConnection(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.KeyRotationConnection, error)
 	LastBlockHeight(ctx context.Context) (string, error)
@@ -2165,6 +2203,9 @@ type TradeUpdateResolver interface {
 	BuyerAuctionBatch(ctx context.Context, obj *vega.Trade) (*int, error)
 	SellerAuctionBatch(ctx context.Context, obj *vega.Trade) (*int, error)
 }
+type TransactionResultResolver interface {
+	Error(ctx context.Context, obj *v1.TransactionResult) (*string, error)
+}
 type TransferResolver interface {
 	Asset(ctx context.Context, obj *v1.Transfer) (*vega.Asset, error)
 
@@ -2211,6 +2252,9 @@ type WithdrawalResolver interface {
 type DateRangeResolver interface {
 	Start(ctx context.Context, obj *v2.DateRange, data *int64) error
 	End(ctx context.Context, obj *v2.DateRange, data *int64) error
+}
+type LedgerEntryFilterResolver interface {
+	TransferTypes(ctx context.Context, obj *v2.LedgerEntryFilter, data []*TransferType) error
 }
 
 type executableSchema struct {
@@ -2423,6 +2467,90 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.AggregatedBalanceEdge.Node(childComplexity), true
+
+	case "AggregatedLedgerEntries.accountType":
+		if e.complexity.AggregatedLedgerEntries.AccountType == nil {
+			break
+		}
+
+		return e.complexity.AggregatedLedgerEntries.AccountType(childComplexity), true
+
+	case "AggregatedLedgerEntries.assetId":
+		if e.complexity.AggregatedLedgerEntries.AssetId == nil {
+			break
+		}
+
+		return e.complexity.AggregatedLedgerEntries.AssetId(childComplexity), true
+
+	case "AggregatedLedgerEntries.id":
+		if e.complexity.AggregatedLedgerEntries.Id == nil {
+			break
+		}
+
+		return e.complexity.AggregatedLedgerEntries.Id(childComplexity), true
+
+	case "AggregatedLedgerEntries.marketId":
+		if e.complexity.AggregatedLedgerEntries.MarketId == nil {
+			break
+		}
+
+		return e.complexity.AggregatedLedgerEntries.MarketId(childComplexity), true
+
+	case "AggregatedLedgerEntries.partyId":
+		if e.complexity.AggregatedLedgerEntries.PartyId == nil {
+			break
+		}
+
+		return e.complexity.AggregatedLedgerEntries.PartyId(childComplexity), true
+
+	case "AggregatedLedgerEntries.quantity":
+		if e.complexity.AggregatedLedgerEntries.Quantity == nil {
+			break
+		}
+
+		return e.complexity.AggregatedLedgerEntries.Quantity(childComplexity), true
+
+	case "AggregatedLedgerEntries.transferType":
+		if e.complexity.AggregatedLedgerEntries.TransferType == nil {
+			break
+		}
+
+		return e.complexity.AggregatedLedgerEntries.TransferType(childComplexity), true
+
+	case "AggregatedLedgerEntries.vegaTime":
+		if e.complexity.AggregatedLedgerEntries.VegaTime == nil {
+			break
+		}
+
+		return e.complexity.AggregatedLedgerEntries.VegaTime(childComplexity), true
+
+	case "AggregatedLedgerEntriesConnection.edges":
+		if e.complexity.AggregatedLedgerEntriesConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.AggregatedLedgerEntriesConnection.Edges(childComplexity), true
+
+	case "AggregatedLedgerEntriesConnection.pageInfo":
+		if e.complexity.AggregatedLedgerEntriesConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.AggregatedLedgerEntriesConnection.PageInfo(childComplexity), true
+
+	case "AggregatedLedgerEntriesEdge.cursor":
+		if e.complexity.AggregatedLedgerEntriesEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.AggregatedLedgerEntriesEdge.Cursor(childComplexity), true
+
+	case "AggregatedLedgerEntriesEdge.node":
+		if e.complexity.AggregatedLedgerEntriesEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.AggregatedLedgerEntriesEdge.Node(childComplexity), true
 
 	case "Asset.decimals":
 		if e.complexity.Asset.Decimals == nil {
@@ -3447,12 +3575,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Future.OracleSpecBinding(childComplexity), true
 
-	case "Future.oracleSpecForSettlementPrice":
-		if e.complexity.Future.OracleSpecForSettlementPrice == nil {
+	case "Future.oracleSpecForSettlementData":
+		if e.complexity.Future.OracleSpecForSettlementData == nil {
 			break
 		}
 
-		return e.complexity.Future.OracleSpecForSettlementPrice(childComplexity), true
+		return e.complexity.Future.OracleSpecForSettlementData(childComplexity), true
 
 	case "Future.oracleSpecForTradingTermination":
 		if e.complexity.Future.OracleSpecForTradingTermination == nil {
@@ -3489,12 +3617,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.FutureProduct.OracleSpecBinding(childComplexity), true
 
-	case "FutureProduct.oracleSpecForSettlementPrice":
-		if e.complexity.FutureProduct.OracleSpecForSettlementPrice == nil {
+	case "FutureProduct.oracleSpecForSettlementData":
+		if e.complexity.FutureProduct.OracleSpecForSettlementData == nil {
 			break
 		}
 
-		return e.complexity.FutureProduct.OracleSpecForSettlementPrice(childComplexity), true
+		return e.complexity.FutureProduct.OracleSpecForSettlementData(childComplexity), true
 
 	case "FutureProduct.oracleSpecForTradingTermination":
 		if e.complexity.FutureProduct.OracleSpecForTradingTermination == nil {
@@ -3643,6 +3771,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.KeyRotationEdge.Node(childComplexity), true
 
+	case "LedgerEntry.accountFromId":
+		if e.complexity.LedgerEntry.AccountFromID == nil {
+			break
+		}
+
+		return e.complexity.LedgerEntry.AccountFromID(childComplexity), true
+
+	case "LedgerEntry.accountToId":
+		if e.complexity.LedgerEntry.AccountToID == nil {
+			break
+		}
+
+		return e.complexity.LedgerEntry.AccountToID(childComplexity), true
+
 	case "LedgerEntry.amount":
 		if e.complexity.LedgerEntry.Amount == nil {
 			break
@@ -3650,26 +3792,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.LedgerEntry.Amount(childComplexity), true
 
-	case "LedgerEntry.fromAccount":
-		if e.complexity.LedgerEntry.FromAccount == nil {
-			break
-		}
-
-		return e.complexity.LedgerEntry.FromAccount(childComplexity), true
-
 	case "LedgerEntry.timestamp":
 		if e.complexity.LedgerEntry.Timestamp == nil {
 			break
 		}
 
 		return e.complexity.LedgerEntry.Timestamp(childComplexity), true
-
-	case "LedgerEntry.toAccount":
-		if e.complexity.LedgerEntry.ToAccount == nil {
-			break
-		}
-
-		return e.complexity.LedgerEntry.ToAccount(childComplexity), true
 
 	case "LedgerEntry.type":
 		if e.complexity.LedgerEntry.Type == nil {
@@ -5640,12 +5768,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.OracleSpecEdge.Node(childComplexity), true
 
-	case "OracleSpecToFutureBinding.settlementPriceProperty":
-		if e.complexity.OracleSpecToFutureBinding.SettlementPriceProperty == nil {
+	case "OracleSpecToFutureBinding.settlementDataProperty":
+		if e.complexity.OracleSpecToFutureBinding.SettlementDataProperty == nil {
 			break
 		}
 
-		return e.complexity.OracleSpecToFutureBinding.SettlementPriceProperty(childComplexity), true
+		return e.complexity.OracleSpecToFutureBinding.SettlementDataProperty(childComplexity), true
 
 	case "OracleSpecToFutureBinding.tradingTerminationProperty":
 		if e.complexity.OracleSpecToFutureBinding.TradingTerminationProperty == nil {
@@ -7158,6 +7286,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.LastBlockHeight(childComplexity), true
+
+	case "Query.ledgerEntries":
+		if e.complexity.Query.LedgerEntries == nil {
+			break
+		}
+
+		args, err := ec.field_Query_ledgerEntries_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.LedgerEntries(childComplexity, args["filter"].(*v2.LedgerEntryFilter), args["groupOptions"].(*GroupOptions), args["dateRange"].(*v2.DateRange), args["pagination"].(*v2.Pagination)), true
 
 	case "Query.market":
 		if e.complexity.Query.Market == nil {
@@ -8796,6 +8936,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TradeUpdate.Type(childComplexity), true
 
+	case "TransactionResult.error":
+		if e.complexity.TransactionResult.Error == nil {
+			break
+		}
+
+		return e.complexity.TransactionResult.Error(childComplexity), true
+
+	case "TransactionResult.hash":
+		if e.complexity.TransactionResult.Hash == nil {
+			break
+		}
+
+		return e.complexity.TransactionResult.Hash(childComplexity), true
+
+	case "TransactionResult.partyId":
+		if e.complexity.TransactionResult.PartyId == nil {
+			break
+		}
+
+		return e.complexity.TransactionResult.PartyId(childComplexity), true
+
+	case "TransactionResult.status":
+		if e.complexity.TransactionResult.Status == nil {
+			break
+		}
+
+		return e.complexity.TransactionResult.Status(childComplexity), true
+
 	case "TransactionSubmitted.success":
 		if e.complexity.TransactionSubmitted.Success == nil {
 			break
@@ -8985,12 +9153,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.UpdateFutureProduct.OracleSpecBinding(childComplexity), true
 
-	case "UpdateFutureProduct.oracleSpecForSettlementPrice":
-		if e.complexity.UpdateFutureProduct.OracleSpecForSettlementPrice == nil {
+	case "UpdateFutureProduct.oracleSpecForSettlementData":
+		if e.complexity.UpdateFutureProduct.OracleSpecForSettlementData == nil {
 			break
 		}
 
-		return e.complexity.UpdateFutureProduct.OracleSpecForSettlementPrice(childComplexity), true
+		return e.complexity.UpdateFutureProduct.OracleSpecForSettlementData(childComplexity), true
 
 	case "UpdateFutureProduct.oracleSpecForTradingTermination":
 		if e.complexity.UpdateFutureProduct.OracleSpecForTradingTermination == nil {
@@ -9346,6 +9514,18 @@ schema {
   subscription: Subscription
 }
 
+"The result from processing a transaction"
+type TransactionResult {
+  "The party which submitted this transaction"
+  partyId: String!
+  "The hash of the transaction"
+  hash: String!
+  "Was the transaction successful or not?"
+  status: Boolean!
+  "The error emitted by the transaction, will be null if the transaction succeeded"
+  error: String
+}
+
 "Create an order linked to an index rather than a price"
 type PeggedOrder {
   "Index to link this order to"
@@ -9693,6 +9873,20 @@ input AccountFilter {
   accountTypes: [AccountType!]
 }
 
+"Filter for historical entry ledger queries"
+input LedgerEntryFilter {
+  CloseOnAccountFilters: Boolean
+  AccountFromFilters: [AccountFilter]
+  AccountToFilters: [AccountFilter]
+
+  TransferTypes: [TransferType]
+}
+
+input GroupOptions{
+  ByAccountField: [AccountField]
+  ByLedgerEntryField: [LedgerEntryField]
+}
+
 "Queries allow a caller to read data and filter data via GraphQL."
 type Query {
   "An asset which is used in the vega network"
@@ -9722,7 +9916,7 @@ type Query {
   erc20ListAssetBundle(
     "ID of the asset"
     assetId: ID!
-  ): Erc20ListAssetBundle!
+  ): Erc20ListAssetBundle
 
   "Get the signature bundle to add a particular validator to the signer list of the multisig contract"
   erc20MultiSigSignerAddedBundles(
@@ -9835,6 +10029,14 @@ type Query {
     "Optional pagination information"
     pagination: Pagination
   ) : AggregatedBalanceConnection!
+
+  "Get ledger entries by asset, market, party, account type, transfer type within the given date range."
+  ledgerEntries(
+    filter: LedgerEntryFilter,
+    groupOptions: GroupOptions
+    dateRange: DateRange,
+    pagination: Pagination
+  ) : AggregatedLedgerEntriesConnection!
 
   "Query for historic key rotations"
   keyRotations(id: ID): [KeyRotation!] @deprecated(reason: "use keyRotationsConnection instead")
@@ -10717,13 +10919,13 @@ type Future {
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
 
-  "The oracle spec describing the oracle data of interest for settlement price."
-  oracleSpecForSettlementPrice: OracleSpec!
+  "The oracle spec describing the oracle data of interest for settlement."
+  oracleSpecForSettlementData: OracleSpec!
 
   "The oracle spec describing the oracle data of interest for trading termination."
   oracleSpecForTradingTermination: OracleSpec!
 
-  "The binding between the oracle spec and the settlement price"
+  "The binding between the oracle spec and the settlement data"
   oracleSpecBinding: OracleSpecToFutureBinding!
 
   "The number of decimal places implied by the settlement data (such as price) emitted by the settlement oracle"
@@ -10732,10 +10934,10 @@ type Future {
 
 """
 OracleSpecToFutureBinding tells on which property oracle data should be
-used as settlement price and trading termination.
+used as settlement data and trading termination.
 """
 type OracleSpecToFutureBinding {
-  settlementPriceProperty: String!
+  settlementDataProperty: String!
   tradingTerminationProperty: String!
 }
 
@@ -11589,7 +11791,7 @@ type Position {
   "The party holding this position"
   party: Party!
 
-  "Open volume (uint64)"
+  "Open volume (int64)"
   openVolume: String!
 
   "Realised Profit and Loss (int64)"
@@ -11624,7 +11826,7 @@ type PositionUpdate {
   "The party holding this position"
   partyId: ID!
 
-  "Open volume (uint64)"
+  "Open volume (int64)"
   openVolume: String!
 
   "Realised Profit and Loss (int64)"
@@ -12259,6 +12461,8 @@ enum ProposalRejectionReason {
   PROPOSAL_ERROR_UNKNOWN_RISK_PARAMETER_TYPE
   "Freeform proposal is invalid"
   PROPOSAL_ERROR_INVALID_FREEFORM
+  "The erc20 address specified by this proposal is alread in use by another asset"
+  PROPOSAL_ERROR_ERC20_ADDRESS_ALREADY_IN_USE
 }
 
 "Why the order was rejected by the core node"
@@ -12529,22 +12733,50 @@ enum AccountType {
   ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS
 }
 
+enum TransferType {
+  TRANSFER_TYPE_UNSPECIFIED
+  TRANSFER_TYPE_LOSS
+  TRANSFER_TYPE_WIN
+  TRANSFER_TYPE_CLOSE
+  TRANSFER_TYPE_MTM_LOSS
+  TRANSFER_TYPE_MTM_WIN
+  TRANSFER_TYPE_MARGIN_LOW
+  TRANSFER_TYPE_MARGIN_HIGH
+  TRANSFER_TYPE_MARGIN_CONFISCATED
+  TRANSFER_TYPE_MAKER_FEE_PAY
+  TRANSFER_TYPE_MAKER_FEE_RECEIVE
+  TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY
+  TRANSFER_TYPE_INFRASTRUCTURE_FEE_DISTRIBUTE
+  TRANSFER_TYPE_LIQUIDITY_FEE_PAY
+  TRANSFER_TYPE_LIQUIDITY_FEE_DISTRIBUTE
+  TRANSFER_TYPE_BOND_LOW
+  TRANSFER_TYPE_BOND_HIGH
+  TRANSFER_TYPE_WITHDRAW_LOCK
+  TRANSFER_TYPE_WITHDRAW
+  TRANSFER_TYPE_DEPOSIT
+  TRANSFER_TYPE_BOND_SLASHING
+  TRANSFER_TYPE_STAKE_REWARD
+  TRANSFER_TYPE_TRANSFER_FUNDS_SEND
+  TRANSFER_TYPE_TRANSFER_FUNDS_DISTRIBUTE
+  TRANSFER_TYPE_CLEAR_ACCOUNT
+}
+
 type FutureProduct {
   "Product asset"
   settlementAsset: Asset!
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
   """
-  Describes the oracle data that an instrument wants to get from the oracle engine for settlement price.
+  Describes the oracle data that an instrument wants to get from the oracle engine for settlement data.
   """
-  oracleSpecForSettlementPrice: OracleSpecConfiguration!
+  oracleSpecForSettlementData: OracleSpecConfiguration!
   """
   Describes the oracle data that an instrument wants to get from the oracle engine for trading termination.
   """
   oracleSpecForTradingTermination: OracleSpecConfiguration!
   """
   OracleSpecToFutureBinding tells on which property oracle data should be
-  used as settlement price.
+  used as settlement data.
   """
   oracleSpecBinding: OracleSpecToFutureBinding!
 
@@ -12614,7 +12846,7 @@ type UpdateInstrumentConfiguration {
 
 type UpdateFutureProduct {
   quoteName: String!
-  oracleSpecForSettlementPrice: OracleSpecConfiguration!
+  oracleSpecForSettlementData: OracleSpecConfiguration!
   oracleSpecForTradingTermination: OracleSpecConfiguration!
   oracleSpecBinding: OracleSpecToFutureBinding!
 }
@@ -12877,9 +13109,9 @@ type TransferBalance {
 
 type LedgerEntry {
   "Account from which the asset was taken"
-  fromAccount: AccountDetails!
+  accountFromId: AccountDetails!
   "Account to which the balance was transferred"
-  toAccount: AccountDetails!
+  accountToId: AccountDetails!
   "The amount transferred"
   amount: String!
   "Type of ledger entry"
@@ -13039,6 +13271,8 @@ enum BusEventType {
   OracleSpec
   "Constant for market events - mainly used for logging"
   Market
+  "The results from processing at transaction"
+  TransactionResult
 }
 
 "Union type for wrapped events in stream PROPOSAL is mapped to governance data, something to keep in mind"
@@ -13068,6 +13302,7 @@ union Event =
   | Withdrawal
   | OracleSpec
   | LiquidityProvision
+  | TransactionResult
 
 type BusEvent {
   "The ID for this event"
@@ -13240,6 +13475,37 @@ type RewardPerAssetDetail {
 
 "RFC3339Nano value for time"
 scalar Timestamp
+
+type AggregatedLedgerEntries {
+  id: ID
+  "RFC3339Nano time from at which this ledger entries records were relevant"
+  vegaTime: String!
+  "Net amount of ledger entries for the accounts specified in the filter at this time"
+  quantity: String!
+  "Party identifier, if query was grouped by party - else null"
+  partyId: ID
+  "Asset identifier, if query was grouped by asset - else null"
+  assetId: ID
+  "Market identifier, if query was grouped by market - else null"
+  marketId: ID
+  "Account type, if query was grouped by account type - else null"
+  accountType: AccountType
+  transferType: String
+}
+
+type AggregatedLedgerEntriesEdge {
+  node: AggregatedLedgerEntries!
+  cursor: String!
+}
+
+type AggregatedLedgerEntriesConnection {
+  edges: [AggregatedLedgerEntriesEdge]!
+  pageInfo: PageInfo!
+}
+
+enum LedgerEntryField {
+  TransferType
+}
 
 type AggregatedBalance {
   "RFC3339Nano time from at which this balance was relevant"
@@ -15387,6 +15653,48 @@ func (ec *executionContext) field_Query_keyRotations_args(ctx context.Context, r
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_ledgerEntries_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *v2.LedgerEntryFilter
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalOLedgerEntryFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLedgerEntryFilter(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg0
+	var arg1 *GroupOptions
+	if tmp, ok := rawArgs["groupOptions"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("groupOptions"))
+		arg1, err = ec.unmarshalOGroupOptions2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐGroupOptions(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["groupOptions"] = arg1
+	var arg2 *v2.DateRange
+	if tmp, ok := rawArgs["dateRange"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dateRange"))
+		arg2, err = ec.unmarshalODateRange2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDateRange(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["dateRange"] = arg2
+	var arg3 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg3, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg3
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_market_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -17474,6 +17782,408 @@ func (ec *executionContext) _AggregatedBalanceEdge_cursor(ctx context.Context, f
 	}()
 	fc := &graphql.FieldContext{
 		Object:     "AggregatedBalanceEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AggregatedLedgerEntries_id(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedLedgerEntries) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AggregatedLedgerEntries",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Id, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AggregatedLedgerEntries_vegaTime(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedLedgerEntries) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AggregatedLedgerEntries",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.AggregatedLedgerEntries().VegaTime(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AggregatedLedgerEntries_quantity(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedLedgerEntries) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AggregatedLedgerEntries",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Quantity, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AggregatedLedgerEntries_partyId(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedLedgerEntries) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AggregatedLedgerEntries",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PartyId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AggregatedLedgerEntries_assetId(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedLedgerEntries) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AggregatedLedgerEntries",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AssetId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AggregatedLedgerEntries_marketId(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedLedgerEntries) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AggregatedLedgerEntries",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MarketId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AggregatedLedgerEntries_accountType(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedLedgerEntries) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AggregatedLedgerEntries",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AccountType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(vega.AccountType)
+	fc.Result = res
+	return ec.marshalOAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AggregatedLedgerEntries_transferType(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedLedgerEntries) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AggregatedLedgerEntries",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.AggregatedLedgerEntries().TransferType(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AggregatedLedgerEntriesConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedLedgerEntriesConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AggregatedLedgerEntriesConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*v2.AggregatedLedgerEntriesEdge)
+	fc.Result = res
+	return ec.marshalNAggregatedLedgerEntriesEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAggregatedLedgerEntriesEdge(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AggregatedLedgerEntriesConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedLedgerEntriesConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AggregatedLedgerEntriesConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.PageInfo)
+	fc.Result = res
+	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AggregatedLedgerEntriesEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedLedgerEntriesEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AggregatedLedgerEntriesEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.AggregatedLedgerEntries)
+	fc.Result = res
+	return ec.marshalNAggregatedLedgerEntries2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAggregatedLedgerEntries(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AggregatedLedgerEntriesEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedLedgerEntriesEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AggregatedLedgerEntriesEdge",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -22497,7 +23207,7 @@ func (ec *executionContext) _Future_quoteName(ctx context.Context, field graphql
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Future_oracleSpecForSettlementPrice(ctx context.Context, field graphql.CollectedField, obj *vega.Future) (ret graphql.Marshaler) {
+func (ec *executionContext) _Future_oracleSpecForSettlementData(ctx context.Context, field graphql.CollectedField, obj *vega.Future) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -22515,7 +23225,7 @@ func (ec *executionContext) _Future_oracleSpecForSettlementPrice(ctx context.Con
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.OracleSpecForSettlementPrice, nil
+		return obj.OracleSpecForSettlementData, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -22707,7 +23417,7 @@ func (ec *executionContext) _FutureProduct_quoteName(ctx context.Context, field 
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _FutureProduct_oracleSpecForSettlementPrice(ctx context.Context, field graphql.CollectedField, obj *vega.FutureProduct) (ret graphql.Marshaler) {
+func (ec *executionContext) _FutureProduct_oracleSpecForSettlementData(ctx context.Context, field graphql.CollectedField, obj *vega.FutureProduct) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -22725,7 +23435,7 @@ func (ec *executionContext) _FutureProduct_oracleSpecForSettlementPrice(ctx cont
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.OracleSpecForSettlementPrice, nil
+		return obj.OracleSpecForSettlementData, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -23433,7 +24143,7 @@ func (ec *executionContext) _KeyRotationEdge_cursor(ctx context.Context, field g
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _LedgerEntry_fromAccount(ctx context.Context, field graphql.CollectedField, obj *LedgerEntry) (ret graphql.Marshaler) {
+func (ec *executionContext) _LedgerEntry_accountFromId(ctx context.Context, field graphql.CollectedField, obj *LedgerEntry) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -23451,7 +24161,7 @@ func (ec *executionContext) _LedgerEntry_fromAccount(ctx context.Context, field 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.FromAccount, nil
+		return obj.AccountFromID, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -23468,7 +24178,7 @@ func (ec *executionContext) _LedgerEntry_fromAccount(ctx context.Context, field 
 	return ec.marshalNAccountDetails2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountDetails(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _LedgerEntry_toAccount(ctx context.Context, field graphql.CollectedField, obj *LedgerEntry) (ret graphql.Marshaler) {
+func (ec *executionContext) _LedgerEntry_accountToId(ctx context.Context, field graphql.CollectedField, obj *LedgerEntry) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -23486,7 +24196,7 @@ func (ec *executionContext) _LedgerEntry_toAccount(ctx context.Context, field gr
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ToAccount, nil
+		return obj.AccountToID, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -32962,7 +33672,7 @@ func (ec *executionContext) _OracleSpecEdge_cursor(ctx context.Context, field gr
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OracleSpecToFutureBinding_settlementPriceProperty(ctx context.Context, field graphql.CollectedField, obj *vega.OracleSpecToFutureBinding) (ret graphql.Marshaler) {
+func (ec *executionContext) _OracleSpecToFutureBinding_settlementDataProperty(ctx context.Context, field graphql.CollectedField, obj *vega.OracleSpecToFutureBinding) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -32980,7 +33690,7 @@ func (ec *executionContext) _OracleSpecToFutureBinding_settlementPriceProperty(c
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.SettlementPriceProperty, nil
+		return obj.SettlementDataProperty, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -39075,14 +39785,11 @@ func (ec *executionContext) _Query_erc20ListAssetBundle(ctx context.Context, fie
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*Erc20ListAssetBundle)
 	fc.Result = res
-	return ec.marshalNErc20ListAssetBundle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐErc20ListAssetBundle(ctx, field.Selections, res)
+	return ec.marshalOErc20ListAssetBundle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐErc20ListAssetBundle(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_erc20MultiSigSignerAddedBundles(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -39452,6 +40159,48 @@ func (ec *executionContext) _Query_historicBalances(ctx context.Context, field g
 	res := resTmp.(*v2.AggregatedBalanceConnection)
 	fc.Result = res
 	return ec.marshalNAggregatedBalanceConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAggregatedBalanceConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_ledgerEntries(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_ledgerEntries_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().LedgerEntries(rctx, args["filter"].(*v2.LedgerEntryFilter), args["groupOptions"].(*GroupOptions), args["dateRange"].(*v2.DateRange), args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.AggregatedLedgerEntriesConnection)
+	fc.Result = res
+	return ec.marshalNAggregatedLedgerEntriesConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAggregatedLedgerEntriesConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_keyRotations(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -46857,6 +47606,143 @@ func (ec *executionContext) _TradeUpdate_sellerAuctionBatch(ctx context.Context,
 	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _TransactionResult_partyId(ctx context.Context, field graphql.CollectedField, obj *v1.TransactionResult) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "TransactionResult",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PartyId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TransactionResult_hash(ctx context.Context, field graphql.CollectedField, obj *v1.TransactionResult) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "TransactionResult",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Hash, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TransactionResult_status(ctx context.Context, field graphql.CollectedField, obj *v1.TransactionResult) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "TransactionResult",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TransactionResult_error(ctx context.Context, field graphql.CollectedField, obj *v1.TransactionResult) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "TransactionResult",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.TransactionResult().Error(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _TransactionSubmitted_success(ctx context.Context, field graphql.CollectedField, obj *TransactionSubmitted) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -47784,7 +48670,7 @@ func (ec *executionContext) _UpdateFutureProduct_quoteName(ctx context.Context, 
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UpdateFutureProduct_oracleSpecForSettlementPrice(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateFutureProduct) (ret graphql.Marshaler) {
+func (ec *executionContext) _UpdateFutureProduct_oracleSpecForSettlementData(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateFutureProduct) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -47802,7 +48688,7 @@ func (ec *executionContext) _UpdateFutureProduct_oracleSpecForSettlementPrice(ct
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.OracleSpecForSettlementPrice, nil
+		return obj.OracleSpecForSettlementData, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -50392,6 +51278,87 @@ func (ec *executionContext) unmarshalInputDateRange(ctx context.Context, obj int
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputGroupOptions(ctx context.Context, obj interface{}) (GroupOptions, error) {
+	var it GroupOptions
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	for k, v := range asMap {
+		switch k {
+		case "ByAccountField":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ByAccountField"))
+			it.ByAccountField, err = ec.unmarshalOAccountField2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountField(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "ByLedgerEntryField":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ByLedgerEntryField"))
+			it.ByLedgerEntryField, err = ec.unmarshalOLedgerEntryField2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLedgerEntryField(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputLedgerEntryFilter(ctx context.Context, obj interface{}) (v2.LedgerEntryFilter, error) {
+	var it v2.LedgerEntryFilter
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	for k, v := range asMap {
+		switch k {
+		case "CloseOnAccountFilters":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("CloseOnAccountFilters"))
+			it.CloseOnAccountFilters, err = ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "AccountFromFilters":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AccountFromFilters"))
+			it.AccountFromFilters, err = ec.unmarshalOAccountFilter2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountFilter(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "AccountToFilters":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AccountToFilters"))
+			it.AccountToFilters, err = ec.unmarshalOAccountFilter2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountFilter(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "TransferTypes":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("TransferTypes"))
+			data, err := ec.unmarshalOTransferType2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferType(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.resolvers.LedgerEntryFilter().TransferTypes(ctx, &it, data); err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputOffsetPagination(ctx context.Context, obj interface{}) (OffsetPagination, error) {
 	var it OffsetPagination
 	asMap := map[string]interface{}{}
@@ -50684,6 +51651,13 @@ func (ec *executionContext) _Event(ctx context.Context, sel ast.SelectionSet, ob
 			return graphql.Null
 		}
 		return ec._LiquidityProvision(ctx, sel, obj)
+	case v1.TransactionResult:
+		return ec._TransactionResult(ctx, sel, &obj)
+	case *v1.TransactionResult:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._TransactionResult(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -51334,6 +52308,191 @@ func (ec *executionContext) _AggregatedBalanceEdge(ctx context.Context, sel ast.
 		case "cursor":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._AggregatedBalanceEdge_cursor(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var aggregatedLedgerEntriesImplementors = []string{"AggregatedLedgerEntries"}
+
+func (ec *executionContext) _AggregatedLedgerEntries(ctx context.Context, sel ast.SelectionSet, obj *v2.AggregatedLedgerEntries) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, aggregatedLedgerEntriesImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AggregatedLedgerEntries")
+		case "id":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._AggregatedLedgerEntries_id(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "vegaTime":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._AggregatedLedgerEntries_vegaTime(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "quantity":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._AggregatedLedgerEntries_quantity(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "partyId":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._AggregatedLedgerEntries_partyId(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "assetId":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._AggregatedLedgerEntries_assetId(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "marketId":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._AggregatedLedgerEntries_marketId(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "accountType":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._AggregatedLedgerEntries_accountType(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "transferType":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._AggregatedLedgerEntries_transferType(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var aggregatedLedgerEntriesConnectionImplementors = []string{"AggregatedLedgerEntriesConnection"}
+
+func (ec *executionContext) _AggregatedLedgerEntriesConnection(ctx context.Context, sel ast.SelectionSet, obj *v2.AggregatedLedgerEntriesConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, aggregatedLedgerEntriesConnectionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AggregatedLedgerEntriesConnection")
+		case "edges":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._AggregatedLedgerEntriesConnection_edges(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "pageInfo":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._AggregatedLedgerEntriesConnection_pageInfo(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var aggregatedLedgerEntriesEdgeImplementors = []string{"AggregatedLedgerEntriesEdge"}
+
+func (ec *executionContext) _AggregatedLedgerEntriesEdge(ctx context.Context, sel ast.SelectionSet, obj *v2.AggregatedLedgerEntriesEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, aggregatedLedgerEntriesEdgeImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AggregatedLedgerEntriesEdge")
+		case "node":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._AggregatedLedgerEntriesEdge_node(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cursor":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._AggregatedLedgerEntriesEdge_cursor(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -53905,9 +55064,9 @@ func (ec *executionContext) _Future(ctx context.Context, sel ast.SelectionSet, o
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "oracleSpecForSettlementPrice":
+		case "oracleSpecForSettlementData":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Future_oracleSpecForSettlementPrice(ctx, field, obj)
+				return ec._Future_oracleSpecForSettlementData(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -53996,9 +55155,9 @@ func (ec *executionContext) _FutureProduct(ctx context.Context, sel ast.Selectio
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "oracleSpecForSettlementPrice":
+		case "oracleSpecForSettlementData":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._FutureProduct_oracleSpecForSettlementPrice(ctx, field, obj)
+				return ec._FutureProduct_oracleSpecForSettlementData(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -54374,9 +55533,9 @@ func (ec *executionContext) _LedgerEntry(ctx context.Context, sel ast.SelectionS
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("LedgerEntry")
-		case "fromAccount":
+		case "accountFromId":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._LedgerEntry_fromAccount(ctx, field, obj)
+				return ec._LedgerEntry_accountFromId(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -54384,9 +55543,9 @@ func (ec *executionContext) _LedgerEntry(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "toAccount":
+		case "accountToId":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._LedgerEntry_toAccount(ctx, field, obj)
+				return ec._LedgerEntry_accountToId(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -59007,9 +60166,9 @@ func (ec *executionContext) _OracleSpecToFutureBinding(ctx context.Context, sel 
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("OracleSpecToFutureBinding")
-		case "settlementPriceProperty":
+		case "settlementDataProperty":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._OracleSpecToFutureBinding_settlementPriceProperty(ctx, field, obj)
+				return ec._OracleSpecToFutureBinding_settlementDataProperty(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -62130,9 +63289,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_erc20ListAssetBundle(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			}
 
@@ -62328,6 +63484,29 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_historicBalances(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "ledgerEntries":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_ledgerEntries(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -65807,6 +66986,74 @@ func (ec *executionContext) _TradeUpdate(ctx context.Context, sel ast.SelectionS
 	return out
 }
 
+var transactionResultImplementors = []string{"TransactionResult", "Event"}
+
+func (ec *executionContext) _TransactionResult(ctx context.Context, sel ast.SelectionSet, obj *v1.TransactionResult) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, transactionResultImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TransactionResult")
+		case "partyId":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._TransactionResult_partyId(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "hash":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._TransactionResult_hash(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "status":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._TransactionResult_status(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "error":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._TransactionResult_error(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var transactionSubmittedImplementors = []string{"TransactionSubmitted"}
 
 func (ec *executionContext) _TransactionSubmitted(ctx context.Context, sel ast.SelectionSet, obj *TransactionSubmitted) graphql.Marshaler {
@@ -66308,9 +67555,9 @@ func (ec *executionContext) _UpdateFutureProduct(ctx context.Context, sel ast.Se
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "oracleSpecForSettlementPrice":
+		case "oracleSpecForSettlementData":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._UpdateFutureProduct_oracleSpecForSettlementPrice(ctx, field, obj)
+				return ec._UpdateFutureProduct_oracleSpecForSettlementData(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -67692,6 +68939,68 @@ func (ec *executionContext) marshalNAggregatedBalanceEdge2ᚕᚖcodeᚗvegaproto
 	return ret
 }
 
+func (ec *executionContext) marshalNAggregatedLedgerEntries2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAggregatedLedgerEntries(ctx context.Context, sel ast.SelectionSet, v *v2.AggregatedLedgerEntries) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._AggregatedLedgerEntries(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNAggregatedLedgerEntriesConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAggregatedLedgerEntriesConnection(ctx context.Context, sel ast.SelectionSet, v v2.AggregatedLedgerEntriesConnection) graphql.Marshaler {
+	return ec._AggregatedLedgerEntriesConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNAggregatedLedgerEntriesConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAggregatedLedgerEntriesConnection(ctx context.Context, sel ast.SelectionSet, v *v2.AggregatedLedgerEntriesConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._AggregatedLedgerEntriesConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNAggregatedLedgerEntriesEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAggregatedLedgerEntriesEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.AggregatedLedgerEntriesEdge) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOAggregatedLedgerEntriesEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAggregatedLedgerEntriesEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
 func (ec *executionContext) marshalNAsset2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAsset(ctx context.Context, sel ast.SelectionSet, v vega.Asset) graphql.Marshaler {
 	return ec._Asset(ctx, sel, &v)
 }
@@ -68077,20 +69386,6 @@ func (ec *executionContext) marshalNEpochTimestamps2ᚖcodeᚗvegaprotocolᚗio�
 		return graphql.Null
 	}
 	return ec._EpochTimestamps(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNErc20ListAssetBundle2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐErc20ListAssetBundle(ctx context.Context, sel ast.SelectionSet, v Erc20ListAssetBundle) graphql.Marshaler {
-	return ec._Erc20ListAssetBundle(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNErc20ListAssetBundle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐErc20ListAssetBundle(ctx context.Context, sel ast.SelectionSet, v *Erc20ListAssetBundle) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._Erc20ListAssetBundle(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNEthereumKeyRotation2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐEthereumKeyRotation(ctx context.Context, sel ast.SelectionSet, v *v1.EthereumKeyRotation) graphql.Marshaler {
@@ -70624,6 +71919,26 @@ func (ec *executionContext) marshalOAccountField2ᚖcodeᚗvegaprotocolᚗioᚋv
 	return res
 }
 
+func (ec *executionContext) unmarshalOAccountFilter2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountFilter(ctx context.Context, v interface{}) ([]*v2.AccountFilter, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*v2.AccountFilter, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOAccountFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountFilter(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
 func (ec *executionContext) unmarshalOAccountFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountFilter(ctx context.Context, v interface{}) (*v2.AccountFilter, error) {
 	if v == nil {
 		return nil, nil
@@ -70737,6 +72052,13 @@ func (ec *executionContext) marshalOAggregatedBalanceEdge2ᚖcodeᚗvegaprotocol
 		return graphql.Null
 	}
 	return ec._AggregatedBalanceEdge(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOAggregatedLedgerEntriesEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAggregatedLedgerEntriesEdge(ctx context.Context, sel ast.SelectionSet, v *v2.AggregatedLedgerEntriesEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._AggregatedLedgerEntriesEdge(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOAsset2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAssetᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Asset) graphql.Marshaler {
@@ -71369,6 +72691,13 @@ func (ec *executionContext) marshalOEpochData2ᚖcodeᚗvegaprotocolᚗioᚋvega
 	return ec._EpochData(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalOErc20ListAssetBundle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐErc20ListAssetBundle(ctx context.Context, sel ast.SelectionSet, v *Erc20ListAssetBundle) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Erc20ListAssetBundle(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalOErc20WithdrawalApproval2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐErc20WithdrawalApproval(ctx context.Context, sel ast.SelectionSet, v *Erc20WithdrawalApproval) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -71444,6 +72773,14 @@ func (ec *executionContext) marshalOFutureProduct2ᚖcodeᚗvegaprotocolᚗioᚋ
 		return graphql.Null
 	}
 	return ec._FutureProduct(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOGroupOptions2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐGroupOptions(ctx context.Context, v interface{}) (*GroupOptions, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputGroupOptions(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOID2string(ctx context.Context, v interface{}) (string, error) {
@@ -71682,6 +73019,91 @@ func (ec *executionContext) marshalOLedgerEntry2ᚕᚖcodeᚗvegaprotocolᚗio�
 	}
 
 	return ret
+}
+
+func (ec *executionContext) unmarshalOLedgerEntryField2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLedgerEntryField(ctx context.Context, v interface{}) ([]*v2.LedgerEntryField, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*v2.LedgerEntryField, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOLedgerEntryField2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLedgerEntryField(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOLedgerEntryField2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLedgerEntryField(ctx context.Context, sel ast.SelectionSet, v []*v2.LedgerEntryField) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOLedgerEntryField2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLedgerEntryField(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOLedgerEntryField2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLedgerEntryField(ctx context.Context, v interface{}) (*v2.LedgerEntryField, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := marshallers.UnmarshalLedgerEntryField(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOLedgerEntryField2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLedgerEntryField(ctx context.Context, sel ast.SelectionSet, v *v2.LedgerEntryField) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	res := marshallers.MarshalLedgerEntryField(v)
+	return res
+}
+
+func (ec *executionContext) unmarshalOLedgerEntryFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLedgerEntryFilter(ctx context.Context, v interface{}) (*v2.LedgerEntryFilter, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputLedgerEntryFilter(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOLiquidityOrderReference2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityOrderReferenceᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.LiquidityOrderReference) graphql.Marshaler {
@@ -74468,6 +75890,83 @@ func (ec *executionContext) marshalOTransferResponse2ᚕᚖcodeᚗvegaprotocol�
 	}
 
 	return ret
+}
+
+func (ec *executionContext) unmarshalOTransferType2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferType(ctx context.Context, v interface{}) ([]*TransferType, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*TransferType, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOTransferType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferType(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOTransferType2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferType(ctx context.Context, sel ast.SelectionSet, v []*TransferType) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOTransferType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferType(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOTransferType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferType(ctx context.Context, v interface{}) (*TransferType, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(TransferType)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOTransferType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferType(ctx context.Context, sel ast.SelectionSet, v *TransferType) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) marshalOVote2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐVoteᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Vote) graphql.Marshaler {

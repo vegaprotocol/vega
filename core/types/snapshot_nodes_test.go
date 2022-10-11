@@ -396,7 +396,7 @@ func getDummyData() *types.Chunk {
 										Future: &types.Future{
 											SettlementAsset: "AST",
 											QuoteName:       "AST",
-											OracleSpecForSettlementPrice: &types.OracleSpec{
+											OracleSpecForSettlementData: &types.OracleSpec{
 												ID:      "o1",
 												PubKeys: []string{},
 												Filters: []*types.OracleSpecFilter{},

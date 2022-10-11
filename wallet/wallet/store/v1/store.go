@@ -3,15 +3,22 @@ package v1
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/wallet/wallet"
+)
+
+var (
+	ErrWalletNameCannotStartWithDot           = errors.New("the name cannot start with a dot (\".\") character")
+	ErrWalletNameCannotContainSlashCharacters = errors.New("the name cannot contain slash (\"/\", \"\\\") characters")
 )
 
 type Store struct {
@@ -49,7 +56,7 @@ func (s *Store) WalletExists(ctx context.Context, name string) (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("couldn't verify path: %w", err)
 	}
-	return exists, err
+	return exists, nil
 }
 
 func (s *Store) ListWallets(ctx context.Context) ([]string, error) {
@@ -62,9 +69,14 @@ func (s *Store) ListWallets(ctx context.Context) ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("couldn't read directory at %s: %w", s.walletsHome, err)
 	}
-	wallets := make([]string, len(entries))
-	for i, entry := range entries {
-		wallets[i] = entry.Name()
+	wallets := []string{}
+	for _, entry := range entries {
+		info, err := entry.Info()
+		if err != nil || info.IsDir() || strings.HasPrefix(info.Name(), ".") {
+			continue
+		}
+
+		wallets = append(wallets, entry.Name())
 	}
 	sort.Strings(wallets)
 	return wallets, nil
@@ -115,6 +127,16 @@ func (s *Store) GetWallet(ctx context.Context, name, passphrase string) (wallet.
 func (s *Store) SaveWallet(ctx context.Context, w wallet.Wallet, passphrase string) error {
 	if err := checkContextStatus(ctx); err != nil {
 		return err
+	}
+
+	// Reject hidden files.
+	if strings.HasPrefix(w.Name(), ".") {
+		return ErrWalletNameCannotStartWithDot
+	}
+
+	// Reject slash and back-slash to avoid path resolution.
+	if strings.ContainsAny(w.Name(), "/\\") {
+		return ErrWalletNameCannotContainSlashCharacters
 	}
 
 	buf, err := json.Marshal(w)
