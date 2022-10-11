@@ -381,7 +381,34 @@ func (r *accountUpdateResolver) AssetID(ctx context.Context, obj *types.Account)
 	return obj.Asset, nil
 }
 
-// LiquidityOrderReference resolver
+// AggregatedLedgerEntriesResolver resolver.
+type aggregatedLedgerEntriesResolver VegaResolverRoot
+
+func (r *VegaResolverRoot) AggregatedLedgerEntries() AggregatedLedgerEntriesResolver {
+	return (*aggregatedLedgerEntriesResolver)(r)
+}
+
+func (r *aggregatedLedgerEntriesResolver) VegaTime(ctx context.Context, obj *v2.AggregatedLedgerEntries) (string, error) {
+	return strconv.FormatInt(obj.Timestamp, 10), nil
+}
+
+func (r *aggregatedLedgerEntriesResolver) TransferType(ctx context.Context, obj *v2.AggregatedLedgerEntries) (*string, error) {
+	tt := obj.TransferType.String()
+	return &tt, nil
+}
+
+// LedgerEntryFilterResolver resolver.
+type ledgerEntryFilterResolver VegaResolverRoot
+
+func (r *VegaResolverRoot) LedgerEntryFilter() LedgerEntryFilterResolver {
+	return (*ledgerEntryFilterResolver)(r)
+}
+
+func (r *ledgerEntryFilterResolver) TransferTypes(ctx context.Context, obj *v2.LedgerEntryFilter, data []*TransferType) error {
+	return nil
+}
+
+// LiquidityOrderReference resolver.
 
 type myLiquidityOrderReferenceResolver VegaResolverRoot
 
@@ -1268,6 +1295,47 @@ func (r *myQueryResolver) HistoricBalances(ctx context.Context, filter *v2.Accou
 		return nil, err
 	}
 	return resp.GetBalances(), nil
+}
+
+func (r *myQueryResolver) LedgerEntries(
+	ctx context.Context,
+	filter *v2.LedgerEntryFilter,
+	groupOptions *GroupOptions,
+	dateRange *v2.DateRange,
+	pagination *v2.Pagination,
+) (*v2.AggregatedLedgerEntriesConnection, error) {
+	req := &v2.ListLedgerEntriesRequest{}
+	req.Filter = filter
+
+	groupByAccountField := []v2.AccountField{}
+	groupByLedgerEntryField := []v2.LedgerEntryField{}
+	if groupOptions != nil {
+		if groupOptions.ByAccountField != nil {
+			for _, af := range groupOptions.ByAccountField {
+				groupByAccountField = append(groupByAccountField, *af)
+			}
+		}
+
+		if groupOptions.ByLedgerEntryField != nil {
+			for _, lf := range groupOptions.ByLedgerEntryField {
+				groupByLedgerEntryField = append(groupByLedgerEntryField, *lf)
+			}
+		}
+
+		req.GroupOptions = &v2.GroupOptions{
+			ByAccountField:     groupByAccountField,
+			ByLedgerEntryField: groupByLedgerEntryField,
+		}
+	}
+
+	req.DateRange = dateRange
+	req.Pagination = pagination
+
+	resp, err := r.tradingDataClientV2.ListLedgerEntries(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.GetLedgerEntries(), nil
 }
 
 func (r *myQueryResolver) NetworkLimits(ctx context.Context) (*types.NetworkLimits, error) {

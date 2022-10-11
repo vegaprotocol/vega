@@ -64,6 +64,11 @@ service TradingDataService {
     // Subscribe to a stream of Positions
     rpc ObservePositions(ObservePositionsRequest) returns (stream ObservePositionsResponse);
 
+    // LedgerEntries
+    //
+    //
+    rpc ListLedgerEntries(ListLedgerEntriesRequest) returns (ListLedgerEntriesResponse) {}
+
     // Balances
     //
     // Get an aggregated list of the changes in balances in a set of accounts over time
@@ -596,6 +601,72 @@ message PositionSnapshotPage{
 // A list of position updates in the last block
 message PositionUpdates{
     repeated vega.Position positions = 1;
+}
+
+// LedgerEntryFilter sets filters on returned set of ledger entries.
+// LedgerEntry objects can be filtered by asset_id, market_id, party_id for sending and receiving account, as well as on transfer types.
+message LedgerEntryFilter {
+    // close_on_account_filters is used to open/close the output set of entries under the AccountFrom/AccountTo values.
+    // If true -> the output set will contain entries which sending and receiving accounts
+    // all match the criteria given in the `AccountFilter` type.
+    // Otherwise will contain entries that have a match the settings in both accounts (sending or receiving) or in one of them.
+    bool close_on_account_filters = 1;
+    repeated AccountFilter account_from_filters = 2;
+    repeated AccountFilter account_to_filters = 3;
+    repeated vega.TransferType transfer_types = 5;
+}
+
+enum LedgerEntryField {
+    LEDGER_ENTRY_FIELD_UNSPECIFIED = 0;
+    LEDGER_ENTRY_FIELD_ACCOUNT_FROM_ID = 1;
+    LEDGER_ENTRY_FIELD_ACCOUNT_TO_ID = 2;
+    LEDGER_ENTRY_FIELD_TRANSFER_TYPE = 3;
+}
+
+message AggregatedLedgerEntries {
+    string id = 1;
+    // Timestamp to of block the result is referring to, in nanoseconds since the epoch
+    int64 timestamp = 2;
+    // The amount of ledger entries for the set of requested accounts at the time above
+    string quantity = 3;
+    // If grouping by party, the party ID
+    optional string party_id = 4;
+    // If grouping by asset, the asset ID
+    optional string asset_id = 5;
+    // If grouping by market, the market ID
+    optional string market_id = 6;
+    // If grouping by transfer type, the transfer type
+    vega.TransferType transfer_type = 7;
+    // If grouping by account type, the acount type
+    vega.AccountType account_type = 8;
+}
+
+message GroupOptions {
+    repeated AccountField by_account_field = 1;
+    repeated LedgerEntryField by_ledger_entry_field = 2;
+}
+
+// -- LedgerEntries --
+message ListLedgerEntriesRequest {
+    // Limit the ledger entries considered according to the filter supplied
+    LedgerEntryFilter filter = 1;
+    GroupOptions group_options = 2;
+    optional Pagination pagination = 3;
+    optional DateRange date_range = 4;
+}
+
+message ListLedgerEntriesResponse {
+    AggregatedLedgerEntriesConnection ledger_entries = 1;
+}
+
+message AggregatedLedgerEntriesEdge {
+    AggregatedLedgerEntries node = 1;
+    string cursor = 2;
+}
+
+message AggregatedLedgerEntriesConnection {
+    repeated AggregatedLedgerEntriesEdge edges = 1;
+    PageInfo page_info = 2;
 }
 
 // -- Balances --

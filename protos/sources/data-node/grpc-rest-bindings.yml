@@ -184,6 +184,8 @@ http:
       get: "/api/v2/positions"
     - selector: datanode.api.v2.TradingDataService.GetBalanceHistory
       get: "/api/v2/balance/history"
+    - selector: datanode.api.v2.TradingDataService.ListLedgerEntries
+      get: "/api/v2/ledgerentry/history"
     - selector: datanode.api.v2.TradingDataService.GetLatestMarketData
       get: "/api/v2/market/data/{market_id}/latest"
     - selector: datanode.api.v2.TradingDataService.ListLatestMarketData
