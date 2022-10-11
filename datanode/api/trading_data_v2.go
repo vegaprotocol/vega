@@ -700,11 +700,6 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerAddedBundles(ctx context.Co
 			return nil, apiError(codes.Internal, err)
 		}
 
-		pack := "0x"
-		for _, v := range signatures {
-			pack = fmt.Sprintf("%v%v", pack, hex.EncodeToString(v.Sig))
-		}
-
 		edges = append(edges,
 			&v2.ERC20MultiSigSignerAddedBundleEdge{
 				Node: &v2.ERC20MultiSigSignerAddedBundle{
@@ -712,7 +707,7 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerAddedBundles(ctx context.Co
 					Submitter:  b.Submitter.String(),
 					Nonce:      b.Nonce,
 					Timestamp:  b.VegaTime.UnixNano(),
-					Signatures: pack,
+					Signatures: packNodeSignatures(signatures),
 					EpochSeq:   strconv.FormatInt(b.EpochID, 10),
 				},
 				Cursor: b.Cursor().Encode(),
@@ -776,18 +771,13 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerRemovedBundles(ctx context.
 			return nil, apiError(codes.Internal, err)
 		}
 
-		pack := "0x"
-		for _, v := range signatures {
-			pack = fmt.Sprintf("%v%v", pack, hex.EncodeToString(v.Sig))
-		}
-
 		edges = append(edges, &v2.ERC20MultiSigSignerRemovedBundleEdge{
 			Node: &v2.ERC20MultiSigSignerRemovedBundle{
 				OldSigner:  b.SignerChange.String(),
 				Submitter:  b.Submitter.String(),
 				Nonce:      b.Nonce,
 				Timestamp:  b.VegaTime.UnixNano(),
-				Signatures: pack,
+				Signatures: packNodeSignatures(signatures),
 				EpochSeq:   strconv.FormatInt(b.EpochID, 10),
 			},
 			Cursor: b.Cursor().Encode(),
@@ -837,12 +827,6 @@ func (t *tradingDataServiceV2) GetERC20SetAssetLimitsBundle(ctx context.Context,
 		return nil, apiError(codes.Internal, err)
 	}
 
-	// now we pack them
-	pack := "0x"
-	for _, v := range signatures {
-		pack = fmt.Sprintf("%v%v", pack, hex.EncodeToString(v.Sig))
-	}
-
 	if t.assetService == nil {
 		return nil, errors.New("sql asset store not available")
 	}
@@ -873,10 +857,26 @@ func (t *tradingDataServiceV2) GetERC20SetAssetLimitsBundle(ctx context.Context,
 		AssetSource:   address,
 		Nonce:         nonce.String(),
 		VegaAssetId:   asset.ID.String(),
-		Signatures:    pack,
+		Signatures:    packNodeSignatures(signatures),
 		LifetimeLimit: proposal.Terms.GetUpdateAsset().GetChanges().GetErc20().LifetimeLimit,
 		Threshold:     proposal.Terms.GetUpdateAsset().GetChanges().GetErc20().WithdrawThreshold,
 	}, nil
+}
+
+// packNodeSignatures packs a list signatures into the form form:
+// 0x + sig1 + sig2 + ... + sigN in hex encoded form
+// If the list is empty, return an empty string instead.
+func packNodeSignatures(signatures []entities.NodeSignature) string {
+	pack := ""
+	if len(signatures) > 0 {
+		pack = "0x"
+	}
+
+	for _, v := range signatures {
+		pack = fmt.Sprintf("%v%v", pack, hex.EncodeToString(v.Sig))
+	}
+
+	return pack
 }
 
 func (t *tradingDataServiceV2) GetERC20ListAssetBundle(ctx context.Context, req *v2.GetERC20ListAssetBundleRequest) (*v2.GetERC20ListAssetBundleResponse, error) {
@@ -906,12 +906,6 @@ func (t *tradingDataServiceV2) GetERC20ListAssetBundle(ctx context.Context, req 
 		return nil, apiError(codes.Internal, err)
 	}
 
-	// now we pack them
-	pack := "0x"
-	for _, v := range signatures {
-		pack = fmt.Sprintf("%v%v", pack, hex.EncodeToString(v.Sig))
-	}
-
 	var address string
 	if asset.ERC20Contract != "" {
 		address = asset.ERC20Contract
@@ -932,7 +926,7 @@ func (t *tradingDataServiceV2) GetERC20ListAssetBundle(ctx context.Context, req 
 		AssetSource: address,
 		Nonce:       nonce.String(),
 		VegaAssetId: asset.ID.String(),
-		Signatures:  pack,
+		Signatures:  packNodeSignatures(signatures),
 	}, nil
 }
 
@@ -960,13 +954,6 @@ func (t *tradingDataServiceV2) GetERC20WithdrawalApproval(ctx context.Context, r
 		return nil, apiError(codes.Internal, err)
 	}
 
-	// get the signature into the form form:
-	// 0x + sig1 + sig2 + ... + sigN in hex encoded form
-	pack := "0x"
-	for _, v := range signatures {
-		pack = fmt.Sprintf("%v%v", pack, hex.EncodeToString(v.Sig))
-	}
-
 	var address string
 	for _, v := range assets {
 		if v.ID == w.Asset {
@@ -984,7 +971,7 @@ func (t *tradingDataServiceV2) GetERC20WithdrawalApproval(ctx context.Context, r
 		Expiry:        w.Expiry.UnixMicro(),
 		Nonce:         w.Ref,
 		TargetAddress: w.Ext.GetErc20().ReceiverAddress,
-		Signatures:    pack,
+		Signatures:    packNodeSignatures(signatures),
 		// timestamps is unix nano, contract needs unix. So load if first, and cut nanos
 		Creation: w.CreatedTimestamp.Unix(),
 	}, nil
