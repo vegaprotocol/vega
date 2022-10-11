@@ -19,6 +19,7 @@
 - [6312](https://github.com/vegaprotocol/vega/issues/6312) - Add back amended balance tests and correct ordering
 - [6461](https://github.com/vegaprotocol/vega/issues/6461) - Occasionally close `postgres` pool connections
 - [6435](https://github.com/vegaprotocol/vega/issues/6435) - Add `GetTransaction` `API` call for block explorer
+- [6464](https://github.com/vegaprotocol/vega/issues/6464) - Improve block explorer performance when filtering by submitter
 - [6211](https://github.com/vegaprotocol/vega/issues/6211) - Handle `BeginBlock` and `EndBlock` events
 - [6361](https://github.com/vegaprotocol/vega/issues/6361) - Remove unnecessary logging in market
 - [6378](https://github.com/vegaprotocol/vega/issues/6378) - Migrate remaining views of current data to tables with current data
@@ -28,6 +29,9 @@
 - [6427](https://github.com/vegaprotocol/vega/issues/6427) - Improve interactions documentation
 - [6431](https://github.com/vegaprotocol/vega/issues/6431) - Pass a human-readable input data in Transaction Succeeded and Failed notifications
 - [6448](https://github.com/vegaprotocol/vega/issues/6448) - Improve wallet interaction JSON conversion
+- [6454](https://github.com/vegaprotocol/vega/issues/6454) - Improve test coverage for setting fees and rewarding LPs
+- [6458](https://github.com/vegaprotocol/vega/issues/6458) - Return a context aware message in `RequestSuccessful` interaction
+- [6451](https://github.com/vegaprotocol/vega/issues/6451) - Improve interaction error message
 
 ### 🐛 Fixes
 - [6444](https://github.com/vegaprotocol/vega/issues/6444) - Send a transaction error if the same node announces itself twice
@@ -45,6 +49,8 @@
 - [6387](https://github.com/vegaprotocol/vega/issues/6387) - Fix max open interest calculation
 - [6416](https://github.com/vegaprotocol/vega/issues/6416) - Prevent submission of `erc20` address already used by another asset
 - [6375](https://github.com/vegaprotocol/vega/issues/6375) - If there is one unit left over at the end of final market settlement - transfer it to the network treasury. if there is more than one, log all transfers and panic. 
+- [6456](https://github.com/vegaprotocol/vega/issues/6456) - Assure liquidity fee gets update when target stake drops (even in the absence of trades) 
+- [6459](https://github.com/vegaprotocol/vega/issues/6459) - Send lifecycle notifications after parameters validation
 
 ## 0.57.0
 

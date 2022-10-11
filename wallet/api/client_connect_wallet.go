@@ -11,6 +11,8 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+const WalletConnectionSuccessfullyEstablished = "The connection to the wallet has been successfully established."
+
 type ClientConnectWallet struct {
 	walletStore WalletStore
 	interactor  Interactor
@@ -40,15 +42,15 @@ type ClientConnectWalletResult struct {
 func (h *ClientConnectWallet) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	traceID := TraceIDFromContext(ctx)
 
-	if err := h.interactor.NotifyInteractionSessionBegan(ctx, traceID); err != nil {
-		return nil, internalError(err)
-	}
-	defer h.interactor.NotifyInteractionSessionEnded(ctx, traceID)
-
 	params, err := validateConnectWalletParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
 	}
+
+	if err := h.interactor.NotifyInteractionSessionBegan(ctx, traceID); err != nil {
+		return nil, internalError(err)
+	}
+	defer h.interactor.NotifyInteractionSessionEnded(ctx, traceID)
 
 	var approval preferences.ConnectionApproval
 	for {
@@ -123,7 +125,7 @@ func (h *ClientConnectWallet) Handle(ctx context.Context, rawParams jsonrpc.Para
 		return nil, internalError(ErrCouldNotConnectToWallet)
 	}
 
-	h.interactor.NotifySuccessfulRequest(ctx, traceID)
+	h.interactor.NotifySuccessfulRequest(ctx, traceID, WalletConnectionSuccessfullyEstablished)
 
 	return ClientConnectWalletResult{
 		Token: token,

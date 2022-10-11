@@ -18,6 +18,8 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+const TransactionSuccessfullySigned = "The transaction has been successfully signed."
+
 type ClientSignTransactionParams struct {
 	Token              string `json:"token"`
 	PublicKey          string `json:"publicKey"`
@@ -43,11 +45,6 @@ type ClientSignTransaction struct {
 func (h *ClientSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	traceID := TraceIDFromContext(ctx)
 
-	if err := h.interactor.NotifyInteractionSessionBegan(ctx, traceID); err != nil {
-		return nil, internalError(err)
-	}
-	defer h.interactor.NotifyInteractionSessionEnded(ctx, traceID)
-
 	params, err := validateSignTransactionParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
@@ -71,6 +68,11 @@ func (h *ClientSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 	if errs := wcommands.CheckSubmitTransactionRequest(request); !errs.Empty() {
 		return nil, invalidParams(errs)
 	}
+
+	if err := h.interactor.NotifyInteractionSessionBegan(ctx, traceID); err != nil {
+		return nil, internalError(err)
+	}
+	defer h.interactor.NotifyInteractionSessionEnded(ctx, traceID)
 
 	receivedAt := time.Now()
 	approved, err := h.interactor.RequestTransactionReviewForSigning(ctx, traceID, connectedWallet.Hostname, connectedWallet.Wallet.Name(), params.PublicKey, params.RawTransaction, receivedAt)
@@ -144,7 +146,7 @@ func (h *ClientSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 	}
 	h.interactor.Log(ctx, traceID, SuccessLog, "The proof-of-work has been computed.")
 
-	h.interactor.NotifySuccessfulRequest(ctx, traceID)
+	h.interactor.NotifySuccessfulRequest(ctx, traceID, TransactionSuccessfullySigned)
 
 	return ClientSignTransactionResult{
 		Tx: tx,
