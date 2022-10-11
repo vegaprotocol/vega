@@ -158,7 +158,12 @@ func (r *VegaResolverRoot) Subscription() SubscriptionResolver {
 }
 
 // Account returns the accounts resolver.
-func (r *VegaResolverRoot) Account() AccountResolver {
+func (r *VegaResolverRoot) AccountEvent() AccountEventResolver {
+	return (*myAccountEventResolver)(r)
+}
+
+// Account returns the accounts resolver.
+func (r *VegaResolverRoot) AccountBalance() AccountBalanceResolver {
 	return (*myAccountResolver)(r)
 }
 
@@ -377,7 +382,7 @@ func (r *transactionResultResolver) Error(ctx context.Context, tr *eventspb.Tran
 
 type accountUpdateResolver VegaResolverRoot
 
-func (r *accountUpdateResolver) AssetID(ctx context.Context, obj *types.Account) (string, error) {
+func (r *accountUpdateResolver) AssetID(ctx context.Context, obj *v2.AccountBalance) (string, error) {
 	return obj.Asset, nil
 }
 
@@ -1773,7 +1778,7 @@ func (r *myPartyResolver) PositionsConnection(ctx context.Context, party *types.
 // Deprecated: use accountConnection instead.
 func (r *myPartyResolver) Accounts(ctx context.Context, party *types.Party,
 	marketID *string, asset *string, accType *types.AccountType,
-) ([]*types.Account, error) {
+) ([]*v2.AccountBalance, error) {
 	if party == nil {
 		return nil, errors.New("a party must be specified when querying accounts")
 	}
@@ -1825,10 +1830,10 @@ func (r *myPartyResolver) Accounts(ctx context.Context, party *types.Party,
 
 	if len(res.Accounts.Edges) == 0 {
 		// mandatory return field in schema
-		return []*types.Account{}, nil
+		return []*v2.AccountBalance{}, nil
 	}
 
-	accounts := make([]*types.Account, len(res.Accounts.Edges))
+	accounts := make([]*v2.AccountBalance, len(res.Accounts.Edges))
 	for i, edge := range res.Accounts.Edges {
 		accounts[i] = edge.Account
 	}
@@ -2563,7 +2568,7 @@ func (r *mySubscriptionResolver) Margins(ctx context.Context, partyID string, ma
 	return ch, nil
 }
 
-func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string, partyID *string, asset *string, typeArg *types.AccountType) (<-chan []*types.Account, error) {
+func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string, partyID *string, asset *string, typeArg *types.AccountType) (<-chan []*v2.AccountBalance, error) {
 	var (
 		mkt, pty, ast string
 		ty            types.AccountType
@@ -2597,7 +2602,7 @@ func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 		return nil, customErrorFromStatus(err)
 	}
 
-	c := make(chan []*types.Account)
+	c := make(chan []*v2.AccountBalance)
 	go func() {
 		defer func() {
 			stream.CloseSend()
@@ -3052,25 +3057,51 @@ func (r *myAccountDetailsResolver) PartyID(ctx context.Context, acc *types.Accou
 
 type myAccountResolver VegaResolverRoot
 
-func (r *myAccountResolver) Balance(ctx context.Context, acc *types.Account) (string, error) {
+func (r *myAccountResolver) Balance(ctx context.Context, acc *v2.AccountBalance) (string, error) {
 	return acc.Balance, nil
 }
 
-func (r *myAccountResolver) Market(ctx context.Context, acc *types.Account) (*types.Market, error) {
+func (r *myAccountResolver) Market(ctx context.Context, acc *v2.AccountBalance) (*types.Market, error) {
 	if acc.MarketId == "" {
 		return nil, nil
 	}
 	return r.r.getMarketByID(ctx, acc.MarketId)
 }
 
-func (r *myAccountResolver) Party(ctx context.Context, acc *types.Account) (*types.Party, error) {
+func (r *myAccountResolver) Party(ctx context.Context, acc *v2.AccountBalance) (*types.Party, error) {
 	if acc.Owner == "" {
 		return nil, nil
 	}
 	return getParty(ctx, r.log, r.r.clt2, acc.Owner)
 }
 
-func (r *myAccountResolver) Asset(ctx context.Context, obj *types.Account) (*types.Asset, error) {
+func (r *myAccountResolver) Asset(ctx context.Context, obj *v2.AccountBalance) (*types.Asset, error) {
+	return r.r.getAssetByID(ctx, obj.Asset)
+}
+
+// START: Account Resolver
+
+type myAccountEventResolver VegaResolverRoot
+
+func (r *myAccountEventResolver) Balance(ctx context.Context, acc *vega.Account) (string, error) {
+	return acc.Balance, nil
+}
+
+func (r *myAccountEventResolver) Market(ctx context.Context, acc *vega.Account) (*types.Market, error) {
+	if acc.MarketId == "" {
+		return nil, nil
+	}
+	return r.r.getMarketByID(ctx, acc.MarketId)
+}
+
+func (r *myAccountEventResolver) Party(ctx context.Context, acc *vega.Account) (*types.Party, error) {
+	if acc.Owner == "" {
+		return nil, nil
+	}
+	return getParty(ctx, r.log, r.r.clt2, acc.Owner)
+}
+
+func (r *myAccountEventResolver) Asset(ctx context.Context, obj *vega.Account) (*types.Asset, error) {
 	return r.r.getAssetByID(ctx, obj.Asset)
 }
 

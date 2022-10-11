@@ -147,7 +147,7 @@ func (t *tradingDataServiceV2) ObserveAccounts(req *v2.ObserveAccountsRequest,
 	}
 
 	return observeBatch(ctx, t.log, "Accounts", accountsChan, ref, func(accounts []entities.AccountBalance) error {
-		protos := make([]*vega.Account, len(accounts))
+		protos := make([]*v2.AccountBalance, len(accounts))
 		for i := 0; i < len(accounts); i++ {
 			protos[i] = accounts[i].ToProto()
 		}
@@ -184,7 +184,7 @@ func (t *tradingDataServiceV2) sendAccountsSnapshot(ctx context.Context, req *v2
 		return fmt.Errorf("initial image spans multiple pages")
 	}
 
-	protos := make([]*vega.Account, len(accounts))
+	protos := make([]*v2.AccountBalance, len(accounts))
 	for i := 0; i < len(accounts); i++ {
 		protos[i] = accounts[i].ToProto()
 	}

@@ -395,6 +395,25 @@ message PageInfo {
 }
 
 // -- Accounts --
+// Represents an account for an asset on Vega for a particular owner or party
+message AccountBalance {
+    // Unique account identifier (used internally by Vega)
+    // string id = 1;
+    // The party that the account belongs to, special values include `network`, which represents the Vega network and is
+    // most commonly seen during liquidation of distressed trading positions
+    string owner = 2;
+    // Balance of the asset, the balance is an integer, for example `123456` is a correctly
+    // formatted price of `1.23456` assuming market configured to 5 decimal places
+    // and importantly balances cannot be negative
+    string balance = 3;
+    // Asset identifier for the account
+    string asset = 4;
+    // Market identifier for the account, if [`AccountType`](#vega.AccountType).`ACCOUNT_TYPE_GENERAL` this will be empty
+    string market_id = 5;
+    // The account type related to this account
+    vega.AccountType type = 6;
+}
+
 message ListAccountsRequest {
     // Limit the accounts considered according to the filter supplied
     AccountFilter filter = 1;
@@ -416,12 +435,12 @@ message AccountsConnection {
 
 message AccountEdge {
     // The actual account object
-    vega.Account account = 1;
+    AccountBalance account = 1;
     // A cursor which can be used to fetch further pages with reference to this account
     string cursor = 2;
 }
 
-// Request to subscribe to a stream of (Accounts)[#vega.Account]
+// Request to subscribe to a stream of (Accounts)[#AccountBalance]
 message ObserveAccountsRequest {
     // Market identifier
     string market_id = 1;
@@ -444,13 +463,13 @@ message ObserveAccountsResponse {
 
 // An 'initial image' snapshot containing current account balances - may be sent over several response messages
 message AccountSnapshotPage{
-    repeated vega.Account accounts = 1;
+    repeated AccountBalance accounts = 1;
     bool last_page = 2;
 }
 
 // A list of account updates in the last block
 message AccountUpdates{
-    repeated vega.Account accounts = 1;
+    repeated AccountBalance accounts = 1;
 }
 
 // -- Info --
