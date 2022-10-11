@@ -27,9 +27,9 @@ import (
 	"code.vegaprotocol.io/vega/datanode/config/encoding"
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	"code.vegaprotocol.io/vega/datanode/metrics"
-	"code.vegaprotocol.io/vega/datanode/pprof"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
+	"code.vegaprotocol.io/vega/libs/pprof"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 )

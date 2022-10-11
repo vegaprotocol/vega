@@ -32,7 +32,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/data-node/commands/start"
 	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/datanode/config/encoding"
-	"code.vegaprotocol.io/vega/datanode/fsutil"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 
@@ -70,7 +70,7 @@ func TestMain(m *testing.M) {
 	}
 
 	goldenDir = filepath.Join(cwd, "testdata", "golden")
-	err = fsutil.EnsureDir(goldenDir)
+	err = vgfs.EnsureDir(goldenDir)
 	if err != nil {
 		panic("couldn't ensure golden data dir")
 	}

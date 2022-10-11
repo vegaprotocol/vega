@@ -16,6 +16,7 @@
 ### 🛠 Improvements
 - [6399](https://github.com/vegaprotocol/vega/issues/6399) - Add `init-db` and `unsafe-reset-all` commands to block explorer
 - [6348](https://github.com/vegaprotocol/vega/issues/6348) - Reduce pool size to leave more available `Postgres` connections
+- [6453](https://github.com/vegaprotocol/vega/issues/6453) - Add ability to write `pprofs` at intervals to core
 - [6312](https://github.com/vegaprotocol/vega/issues/6312) - Add back amended balance tests and correct ordering
 - [6461](https://github.com/vegaprotocol/vega/issues/6461) - Occasionally close `postgres` pool connections
 - [6435](https://github.com/vegaprotocol/vega/issues/6435) - Add `GetTransaction` `API` call for block explorer

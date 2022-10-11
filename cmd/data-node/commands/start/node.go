@@ -28,9 +28,9 @@ import (
 	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/datanode/gateway/server"
 	"code.vegaprotocol.io/vega/datanode/metrics"
-	"code.vegaprotocol.io/vega/datanode/pprof"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/subscribers"
+	"code.vegaprotocol.io/vega/libs/pprof"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 
