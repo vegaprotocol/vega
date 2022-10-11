@@ -76,11 +76,17 @@ func (s *Store) ListTransactions(ctx context.Context,
 	}
 
 	for key, value := range filters {
-		predicate := fmt.Sprintf(`
-			EXISTS (SELECT 1 FROM events e JOIN attributes a ON e.rowid = a.event_id
-			        WHERE e.tx_id = tx_results.rowid
-			        AND a.composite_key = %s
-		 	        AND a.value = %s)`, nextBindVar(&args, key), nextBindVar(&args, value))
+		var predicate string
+		// tx.submitter is lifted out of attributes and into tx_results by a trigger for faster access
+		if key == "tx.submitter" {
+			predicate = fmt.Sprintf("tx_results.submitter=%s", nextBindVar(&args, value))
+		} else {
+			predicate = fmt.Sprintf(`
+				EXISTS (SELECT 1 FROM events e JOIN attributes a ON e.rowid = a.event_id
+						WHERE e.tx_id = tx_results.rowid
+						AND a.composite_key = %s
+						AND a.value = %s)`, nextBindVar(&args, key), nextBindVar(&args, value))
+		}
 		predicates = append(predicates, predicate)
 	}
 
