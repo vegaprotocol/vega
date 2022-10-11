@@ -29,11 +29,18 @@ import (
 	"code.vegaprotocol.io/vega/protos/vega"
 )
 
-func addTestProposal(t *testing.T, ps *sqlstore.Proposals, id string, party entities.Party, reference string, block entities.Block, state entities.ProposalState, rationale entities.ProposalRationale) entities.Proposal {
+func addTestProposal(
+	t *testing.T,
+	ps *sqlstore.Proposals,
+	id string,
+	party entities.Party,
+	reference string,
+	block entities.Block,
+	state entities.ProposalState,
+	rationale entities.ProposalRationale,
+	terms entities.ProposalTerms,
+) entities.Proposal {
 	t.Helper()
-	terms := entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{
-		Change: &vega.ProposalTerms_NewMarket{},
-	}}
 	p := entities.Proposal{
 		ID:                      entities.ProposalID(id),
 		PartyID:                 party.ID,
@@ -81,13 +88,15 @@ func TestProposals(t *testing.T) {
 	party2 := addTestParty(t, partyStore, block1)
 	rationale1 := entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl1.com", Description: "desc"}}
 	rationale2 := entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl2.com", Description: "desc"}}
+	terms1 := entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewMarket{}}}
+	terms2 := entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewAsset{}}}
 	id1 := generateID()
 	id2 := generateID()
 
 	reference1 := generateID()
 	reference2 := generateID()
-	prop1 := addTestProposal(t, propStore, id1, party1, reference1, block1, entities.ProposalStateEnacted, rationale1)
-	prop2 := addTestProposal(t, propStore, id2, party2, reference2, block1, entities.ProposalStateEnacted, rationale2)
+	prop1 := addTestProposal(t, propStore, id1, party1, reference1, block1, entities.ProposalStateEnacted, rationale1, terms1)
+	prop2 := addTestProposal(t, propStore, id2, party2, reference2, block1, entities.ProposalStateEnacted, rationale2, terms2)
 
 	party1ID := party1.ID.String()
 	prop1ID := prop1.ID.String()
@@ -123,7 +132,7 @@ func TestProposals(t *testing.T) {
 	})
 
 	t.Run("GetByType", func(t *testing.T) {
-		expected := []entities.Proposal{prop1, prop2}
+		expected := []entities.Proposal{prop1}
 		actual, _, err := propStore.Get(ctx, nil, nil, propType, entities.CursorPagination{})
 		require.NoError(t, err)
 		assertProposalsMatch(t, expected, actual)
@@ -914,9 +923,11 @@ func createPaginationTestProposals(t *testing.T, pps *sqlstore.Proposals) ([]ent
 		ref2 := fmt.Sprintf("cafed00d%02d", i+10)
 		rationale1 := entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: fmt.Sprintf("https://rationale1-%02d.com", i), Description: "desc"}}
 		rationale2 := entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: fmt.Sprintf("https://rationale1-%02d.com", i+10), Description: "desc"}}
+		terms1 := entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewMarket{}}}
+		terms2 := entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewAsset{}}}
 
-		proposals[i] = addTestProposal(t, pps, id1, parties[0], ref1, block, states[i], rationale1)
-		proposals[i+10] = addTestProposal(t, pps, id2, parties[1], ref2, block2, states[i], rationale2)
+		proposals[i] = addTestProposal(t, pps, id1, parties[0], ref1, block, states[i], rationale1, terms1)
+		proposals[i+10] = addTestProposal(t, pps, id2, parties[1], ref2, block2, states[i], rationale2, terms2)
 		i++
 	}
 
