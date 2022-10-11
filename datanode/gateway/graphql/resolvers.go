@@ -2057,10 +2057,7 @@ func (r *myOrderUpdateResolver) ExpiresAt(ctx context.Context, obj *types.Order)
 }
 
 func (r *myOrderUpdateResolver) RejectionReason(_ context.Context, o *types.Order) (*vega.OrderError, error) {
-	if o.Reason == types.OrderError_ORDER_ERROR_UNSPECIFIED {
-		return nil, nil
-	}
-	return &o.Reason, nil
+	return o.Reason, nil
 }
 
 // BEGIN: Order Resolver
@@ -2068,10 +2065,7 @@ func (r *myOrderUpdateResolver) RejectionReason(_ context.Context, o *types.Orde
 type myOrderResolver VegaResolverRoot
 
 func (r *myOrderResolver) RejectionReason(_ context.Context, o *types.Order) (*vega.OrderError, error) {
-	if o.Reason == types.OrderError_ORDER_ERROR_UNSPECIFIED {
-		return nil, nil
-	}
-	return &o.Reason, nil
+	return o.Reason, nil
 }
 
 func (r *myOrderResolver) Price(ctx context.Context, obj *types.Order) (string, error) {

@@ -248,9 +248,9 @@ message Proposal {
   // Proposal configuration and the actual change that is meant to be executed when proposal is enacted
   ProposalTerms terms = 6;
   // A reason for the current state of the proposal, this may be set in case of REJECTED and FAILED statuses
-  ProposalError reason = 7;
+  optional ProposalError reason = 7;
   // The detailed error associated to the reason
-  string error_details = 8;
+  optional string error_details = 8;
   // The rationale behind a proposal
   ProposalRationale rationale = 9;
   // The required vote participation for this proposal

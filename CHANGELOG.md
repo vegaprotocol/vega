@@ -33,6 +33,7 @@
 - [6454](https://github.com/vegaprotocol/vega/issues/6454) - Improve test coverage for setting fees and rewarding LPs
 - [6458](https://github.com/vegaprotocol/vega/issues/6458) - Return a context aware message in `RequestSuccessful` interaction
 - [6451](https://github.com/vegaprotocol/vega/issues/6451) - Improve interaction error message
+- [6432](https://github.com/vegaprotocol/vega/issues/6432) - Use optionals for order error and proposal error
 
 ### 🐛 Fixes
 - [6444](https://github.com/vegaprotocol/vega/issues/6444) - Send a transaction error if the same node announces itself twice
@@ -51,8 +52,8 @@
 - [6406](https://github.com/vegaprotocol/vega/issues/6406) - Fix invalid tracking of cumulative volume and price
 - [6387](https://github.com/vegaprotocol/vega/issues/6387) - Fix max open interest calculation
 - [6416](https://github.com/vegaprotocol/vega/issues/6416) - Prevent submission of `erc20` address already used by another asset
-- [6375](https://github.com/vegaprotocol/vega/issues/6375) - If there is one unit left over at the end of final market settlement - transfer it to the network treasury. if there is more than one, log all transfers and panic. 
-- [6456](https://github.com/vegaprotocol/vega/issues/6456) - Assure liquidity fee gets update when target stake drops (even in the absence of trades) 
+- [6375](https://github.com/vegaprotocol/vega/issues/6375) - If there is one unit left over at the end of final market settlement - transfer it to the network treasury. if there is more than one, log all transfers and panic.
+- [6456](https://github.com/vegaprotocol/vega/issues/6456) - Assure liquidity fee gets update when target stake drops (even in the absence of trades)
 - [6459](https://github.com/vegaprotocol/vega/issues/6459) - Send lifecycle notifications after parameters validation
 
 ## 0.57.0

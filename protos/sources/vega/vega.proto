@@ -197,7 +197,7 @@ message Order {
   string reference = 13;
   // If the Order `status` is `STATUS_REJECTED` then an OrderError reason will be specified
   // - The default for this field is `ORDER_ERROR_NONE` which signifies that there were no errors
-  OrderError reason = 14;
+  optional OrderError reason = 14;
   // Timestamp for when the order was last updated, in nanoseconds since the epoch
   // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
   int64 updated_at = 15;
