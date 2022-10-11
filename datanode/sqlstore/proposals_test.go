@@ -18,19 +18,22 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/datanode/sqlstore"
-	"code.vegaprotocol.io/vega/libs/num"
-	"code.vegaprotocol.io/vega/protos/vega"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/protos/vega"
 )
 
 func addTestProposal(t *testing.T, ps *sqlstore.Proposals, id string, party entities.Party, reference string, block entities.Block, state entities.ProposalState, rationale entities.ProposalRationale) entities.Proposal {
 	t.Helper()
-	terms := entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{}}
+	terms := entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{
+		Change: &vega.ProposalTerms_NewMarket{},
+	}}
 	p := entities.Proposal{
 		ID:                      entities.ProposalID(id),
 		PartyID:                 party.ID,
@@ -88,6 +91,7 @@ func TestProposals(t *testing.T) {
 
 	party1ID := party1.ID.String()
 	prop1ID := prop1.ID.String()
+	propType := &entities.ProposalTypeNewMarket
 
 	t.Run("GetById", func(t *testing.T) {
 		expected := prop1
@@ -114,6 +118,13 @@ func TestProposals(t *testing.T) {
 	t.Run("GetByParty", func(t *testing.T) {
 		expected := []entities.Proposal{prop1}
 		actual, _, err := propStore.Get(ctx, nil, &party1ID, nil, entities.CursorPagination{})
+		require.NoError(t, err)
+		assertProposalsMatch(t, expected, actual)
+	})
+
+	t.Run("GetByType", func(t *testing.T) {
+		expected := []entities.Proposal{prop1, prop2}
+		actual, _, err := propStore.Get(ctx, nil, nil, propType, entities.CursorPagination{})
 		require.NoError(t, err)
 		assertProposalsMatch(t, expected, actual)
 	})
