@@ -13,7 +13,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [6480](https://github.com/vegaprotocol/vega/issues/6480) - Wallet `openrpc.json` is now a valid OpenRPC file
 
 
 ## 0.58.0

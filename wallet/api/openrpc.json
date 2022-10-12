@@ -1404,10 +1404,12 @@
         {
           "name": "metadata",
           "required": true,
-          "type": "array",
-          "items": {
-            "schema": {
-              "$ref": "#/components/schemas/metadata"
+          "schema": {
+            "type": "array",
+            "items": {
+              "schema": {
+                "$ref": "#/components/schemas/metadata"
+              }
             }
           }
         }
@@ -1686,9 +1688,11 @@
         {
           "name": "metadata",
           "required": true,
-          "type": "array",
-          "items": {
-            "$ref": "#/components/schemas/metadata"
+          "schema": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/metadata"
+            }
           }
         }
       ],
@@ -1719,7 +1723,7 @@
               "value": "this-is-not-a-good-passphrase"
             },
             {
-              "name": "public_key",
+              "name": "publicKey",
               "value": "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0"
             },
             {
@@ -1779,7 +1783,7 @@
           }
         },
         {
-          "name": "public_key",
+          "name": "publicKey",
           "required": true,
           "schema": {
             "$ref": "#/components/schemas/public_key"
