@@ -88,6 +88,7 @@ type tradingDataServiceV2 struct {
 	keyRotationService         *service.KeyRotations
 	ethereumKeyRotationService *service.EthereumKeyRotation
 	blockService               BlockService
+	protocolUpgradeService     *service.ProtocolUpgrade
 }
 
 func (t *tradingDataServiceV2) ListAccounts(ctx context.Context, req *v2.ListAccountsRequest) (*v2.ListAccountsResponse, error) {
@@ -2683,6 +2684,13 @@ func (t *tradingDataServiceV2) observeProposalVotes(proposalID string, stream v2
 			Vote: p.ToProto(),
 		})
 	})
+}
+
+func (t *tradingDataServiceV2) GetProtocolUpgradeStatus(context.Context, *v2.GetProtocolUpgradeStatusRequest) (*v2.GetProtocolUpgradeStatusResponse, error) {
+	ready := t.protocolUpgradeService.GetProtocolUpgradeStarted()
+	return &v2.GetProtocolUpgradeStatusResponse{
+		Ready: ready,
+	}, nil
 }
 
 type tradingDataEventBusServerV2 struct {

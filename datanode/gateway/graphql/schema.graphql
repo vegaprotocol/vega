@@ -723,6 +723,9 @@ type Query {
     pagination: Pagination
   ): ProposalsConnection
 
+  "Flag indicating whether the data-node is ready to begin the protocol upgrade"
+  protocolUpgradeStatus: ProtocolUpgradeStatus
+
   "Governance proposals that aim to update existing markets"
   updateMarketProposals(
     "Optionally, select proposals for a specific market. Leave out for all"
@@ -4530,4 +4533,9 @@ input DateRange {
   start: Timestamp
   "The end timestamp for the date range (exclusive). RFC3339Nano format"
   end: Timestamp
+}
+
+"Indicator showing whether the data-node is ready for the protocol upgrade to begin."
+type ProtocolUpgradeStatus {
+  ready: Boolean!
 }

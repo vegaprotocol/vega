@@ -20,6 +20,7 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/broker"
+	"code.vegaprotocol.io/vega/datanode/service"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -106,9 +107,10 @@ func TestListenOnlyCalledOnceOnSource(t *testing.T) {
 }
 
 type testEventSource struct {
-	eventsCh    chan events.Event
-	errorsCh    chan error
-	listenCount int
+	eventsCh           chan events.Event
+	errorsCh           chan error
+	listenCount        int
+	protocolUpgradeSvc *service.ProtocolUpgrade
 }
 
 func (te *testEventSource) Listen() error {

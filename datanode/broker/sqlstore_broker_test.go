@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/broker"
 	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/datanode/service"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/logging"
@@ -38,7 +39,7 @@ var logger = logging.NewTestLogger()
 func TestBrokerShutsDownOnErrorFromErrorChannelWhenInRecovery(t *testing.T) {
 	s1 := newTestSQLBrokerSubscriber(events.AssetEvent)
 
-	tes, sb := createTestBroker(newTestTransactionManager(), newTestBlockStore(), []broker.SQLBrokerSubscriber{s1})
+	tes, sb := createTestBroker(newTestTransactionManager(), newTestBlockStore(), []broker.SQLBrokerSubscriber{s1}, false)
 
 	beSource := newBlockEventSource()
 	blockEvent1 := beSource.NextBeginBlockEvent()
@@ -72,7 +73,7 @@ func TestBrokerShutsDownOnErrorFromErrorChannelWhenInRecovery(t *testing.T) {
 func TestBrokerShutsDownOnErrorFromErrorChannel(t *testing.T) {
 	s1 := newTestSQLBrokerSubscriber(events.AssetEvent)
 
-	tes, sb := createTestBroker(newTestTransactionManager(), newTestBlockStore(), []broker.SQLBrokerSubscriber{s1})
+	tes, sb := createTestBroker(newTestTransactionManager(), newTestBlockStore(), []broker.SQLBrokerSubscriber{s1}, false)
 
 	closedChan := make(chan bool)
 	go func() {
@@ -96,7 +97,7 @@ func TestBrokerShutsDownOnErrorFromErrorChannel(t *testing.T) {
 func TestBrokerShutsDownOnErrorWhenInRecovery(t *testing.T) {
 	s1 := newTestSQLBrokerSubscriber(events.AssetEvent)
 
-	tes, sb := createTestBroker(newTestTransactionManager(), newTestBlockStore(), []broker.SQLBrokerSubscriber{s1})
+	tes, sb := createTestBroker(newTestTransactionManager(), newTestBlockStore(), []broker.SQLBrokerSubscriber{s1}, false)
 
 	beSource := newBlockEventSource()
 	blockEvent1 := beSource.NextBeginBlockEvent()
@@ -132,7 +133,7 @@ func TestBrokerShutsDownOnError(t *testing.T) {
 	s1 := newTestSQLBrokerSubscriber(events.AssetEvent)
 	errorSubscriber := &errorTestSQLBrokerSubscriber{s1}
 
-	tes, sb := createTestBroker(newTestTransactionManager(), newTestBlockStore(), []broker.SQLBrokerSubscriber{errorSubscriber})
+	tes, sb := createTestBroker(newTestTransactionManager(), newTestBlockStore(), []broker.SQLBrokerSubscriber{errorSubscriber}, false)
 
 	closedChan := make(chan bool)
 	go func() {
@@ -170,7 +171,7 @@ func TestBrokerShutsDownWhenContextCancelledWhenInRecovery(t *testing.T) {
 	blockStore.Add(context.Background(), *block1)
 	blockStore.Add(context.Background(), *block2)
 
-	tes, sb := createTestBroker(newTestTransactionManager(), blockStore, []broker.SQLBrokerSubscriber{s1})
+	tes, sb := createTestBroker(newTestTransactionManager(), blockStore, []broker.SQLBrokerSubscriber{s1}, false)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -189,7 +190,7 @@ func TestBrokerShutsDownWhenContextCancelledWhenInRecovery(t *testing.T) {
 
 func TestBrokerShutsDownWhenContextCancelled(t *testing.T) {
 	s1 := newTestSQLBrokerSubscriber(events.AssetEvent)
-	tes, sb := createTestBroker(newTestTransactionManager(), newTestBlockStore(), []broker.SQLBrokerSubscriber{s1})
+	tes, sb := createTestBroker(newTestTransactionManager(), newTestBlockStore(), []broker.SQLBrokerSubscriber{s1}, false)
 	ctx, cancel := context.WithCancel(context.Background())
 
 	closedChan := make(chan bool)
@@ -212,7 +213,7 @@ func TestBrokerShutsDownWhenContextCancelled(t *testing.T) {
 
 func TestAnyEventsSentAheadOfFirstTimeEventAreIgnored(t *testing.T) {
 	s1 := newTestSQLBrokerSubscriber(events.AssetEvent)
-	tes, sb := createTestBroker(newTestTransactionManager(), newTestBlockStore(), []broker.SQLBrokerSubscriber{s1})
+	tes, sb := createTestBroker(newTestTransactionManager(), newTestBlockStore(), []broker.SQLBrokerSubscriber{s1}, false)
 	go sb.Receive(context.Background())
 
 	tes.eventsCh <- events.NewAssetEvent(context.Background(), types.Asset{ID: "a1"})
@@ -244,7 +245,7 @@ func TestBlocksSentBeforeStartedAtBlockAreIgnored(t *testing.T) {
 	blockStore.Add(context.Background(), *block1)
 	blockStore.Add(context.Background(), *block2)
 
-	tes, sb := createTestBroker(newTestTransactionManager(), blockStore, []broker.SQLBrokerSubscriber{s1})
+	tes, sb := createTestBroker(newTestTransactionManager(), blockStore, []broker.SQLBrokerSubscriber{s1}, false)
 	go sb.Receive(context.Background())
 
 	tes.eventsCh <- blockBeginEvent1
@@ -280,7 +281,7 @@ func TestTimeUpdateWithTooHighHeightCauseFailure(t *testing.T) {
 	blockStore.Add(context.Background(), *block1)
 	blockStore.Add(context.Background(), *block2)
 
-	tes, sb := createTestBroker(newTestTransactionManager(), blockStore, []broker.SQLBrokerSubscriber{s1})
+	tes, sb := createTestBroker(newTestTransactionManager(), blockStore, []broker.SQLBrokerSubscriber{s1}, false)
 
 	errCh := make(chan error)
 	go func() {
@@ -308,7 +309,7 @@ func TestSqlBrokerSubscriberCallbacks(t *testing.T) {
 
 	blockStore := newTestBlockStore()
 
-	tes, sb := createTestBroker(transactionManager, blockStore, []broker.SQLBrokerSubscriber{&s1})
+	tes, sb := createTestBroker(transactionManager, blockStore, []broker.SQLBrokerSubscriber{&s1}, false)
 
 	go sb.Receive(context.Background())
 
@@ -381,7 +382,7 @@ func TestSqlBrokerEventDistribution(t *testing.T) {
 	s1 := newTestSQLBrokerSubscriber(events.AssetEvent)
 	s2 := newTestSQLBrokerSubscriber(events.AssetEvent)
 	s3 := newTestSQLBrokerSubscriber(events.AccountEvent)
-	tes, sb := createTestBroker(newTestTransactionManager(), newTestBlockStore(), []broker.SQLBrokerSubscriber{s1, s2, s3})
+	tes, sb := createTestBroker(newTestTransactionManager(), newTestBlockStore(), []broker.SQLBrokerSubscriber{s1, s2, s3}, false)
 	go sb.Receive(context.Background())
 
 	beSource := newBlockEventSource()
@@ -405,7 +406,7 @@ func TestSqlBrokerEventDistribution(t *testing.T) {
 func TestSqlBrokerTimeEventSentToAllSubscribers(t *testing.T) {
 	s1 := newTestSQLBrokerSubscriber(events.AssetEvent)
 	s2 := newTestSQLBrokerSubscriber(events.AssetEvent)
-	tes, sb := createTestBroker(newTestTransactionManager(), newTestBlockStore(), []broker.SQLBrokerSubscriber{s1, s2})
+	tes, sb := createTestBroker(newTestTransactionManager(), newTestBlockStore(), []broker.SQLBrokerSubscriber{s1, s2}, false)
 
 	go sb.Receive(context.Background())
 
@@ -419,25 +420,45 @@ func TestSqlBrokerTimeEventSentToAllSubscribers(t *testing.T) {
 		Truncate(time.Microsecond), <-s2.vegaTimeCh)
 }
 
-func createTestBroker(transactionManager broker.TransactionManager, blockStore broker.BlockStore, subs []broker.SQLBrokerSubscriber) (*testEventSource, broker.SQLStoreEventBroker) {
+func TestSqlBrokerUpgradeBlock(t *testing.T) {
+	tes, sb := createTestBroker(newTestTransactionManager(), newTestBlockStore(), []broker.SQLBrokerSubscriber{}, true)
+
+	errCh := make(chan error)
+	go func() {
+		err := sb.Receive(context.Background())
+		errCh <- err
+	}()
+
+	beSource := newBlockEventSource()
+	blockEvent := beSource.NextBeginBlockEvent()
+	tes.eventsCh <- blockEvent
+
+	tes.eventsCh <- events.NewProtocolUpgradeStarted(context.Background(), eventsv1.ProtocolUpgradeStarted{
+		LastBlockHeight: blockEvent.BeginBlock().Height,
+	})
+
+	assert.False(t, tes.protocolUpgradeSvc.GetProtocolUpgradeStarted())
+	tes.eventsCh <- beSource.NextEndBlockEvent()
+	assert.Nil(t, <-errCh)
+	assert.True(t, tes.protocolUpgradeSvc.GetProtocolUpgradeStarted())
+}
+
+func createTestBroker(transactionManager broker.TransactionManager, blockStore broker.BlockStore, subs []broker.SQLBrokerSubscriber, commitBlock bool) (*testEventSource, broker.SQLStoreEventBroker) {
 	conf := broker.NewDefaultConfig()
 	testChainInfo := &testChainInfo{chainID: ""}
 	tes := &testEventSource{
-		eventsCh: make(chan events.Event),
-		errorsCh: make(chan error, 1),
+		eventsCh:           make(chan events.Event),
+		errorsCh:           make(chan error, 1),
+		protocolUpgradeSvc: service.NewProtocolUpgrade(),
 	}
 
-	ss := &testSnapshotService{}
-	sb := broker.NewSQLStoreBroker(logger, conf, testChainInfo, tes, transactionManager, blockStore, ss.OnBlockCommitted,
-		subs)
+	blockCommitedFunc := func(context.Context, string, int64) bool {
+		return commitBlock
+	}
+
+	sb := broker.NewSQLStoreBroker(logger, conf, testChainInfo, tes, transactionManager, blockStore, tes.protocolUpgradeSvc, blockCommitedFunc, subs)
 
 	return tes, sb
-}
-
-type testSnapshotService struct{}
-
-func (t testSnapshotService) OnBlockCommitted(ctx context.Context, chainID string, lastCommittedBlockHeight int64) bool {
-	return false
 }
 
 type testBlockStore struct {

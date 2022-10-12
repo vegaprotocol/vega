@@ -361,6 +361,9 @@ service TradingDataService {
     //
     // Get the current time of the network
     rpc GetVegaTime(GetVegaTimeRequest) returns (GetVegaTimeResponse);
+
+    // Protocol Upgrade status
+    rpc GetProtocolUpgradeStatus(GetProtocolUpgradeStatusRequest) returns (GetProtocolUpgradeStatusResponse);
 }
 
 // -- Pagination --
@@ -1960,4 +1963,10 @@ message DateRange {
     optional int64 start_timestamp = 1;
     // Optional end timestamp in nanoseconds past the epoch
     optional int64 end_timestamp = 2;
+}
+
+message GetProtocolUpgradeStatusRequest {}
+
+message GetProtocolUpgradeStatusResponse {
+    bool ready = 1;
 }

@@ -461,6 +461,11 @@ type ProposalVotes struct {
 	No *ProposalVoteSide `json:"no"`
 }
 
+// Indicator showing whether the data-node is ready for the protocol upgrade to begin.
+type ProtocolUpgradeStatus struct {
+	Ready bool `json:"ready"`
+}
+
 // Connection type for retrieving cursor-based paginated reward summary information
 type RewardSummaryConnection struct {
 	// List of reward summaries available for the connection

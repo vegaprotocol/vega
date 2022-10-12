@@ -721,6 +721,26 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) GetParty(arg0, arg1 interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetParty", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetParty), varargs...)
 }
 
+// GetProtocolUpgradeStatus mocks base method.
+func (m *MockTradingDataServiceClientV2) GetProtocolUpgradeStatus(arg0 context.Context, arg1 *v2.GetProtocolUpgradeStatusRequest, arg2 ...grpc.CallOption) (*v2.GetProtocolUpgradeStatusResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetProtocolUpgradeStatus", varargs...)
+	ret0, _ := ret[0].(*v2.GetProtocolUpgradeStatusResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetProtocolUpgradeStatus indicates an expected call of GetProtocolUpgradeStatus.
+func (mr *MockTradingDataServiceClientV2MockRecorder) GetProtocolUpgradeStatus(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProtocolUpgradeStatus", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetProtocolUpgradeStatus), varargs...)
+}
+
 // GetRiskFactors mocks base method.
 func (m *MockTradingDataServiceClientV2) GetRiskFactors(arg0 context.Context, arg1 *v2.GetRiskFactorsRequest, arg2 ...grpc.CallOption) (*v2.GetRiskFactorsResponse, error) {
 	m.ctrl.T.Helper()
