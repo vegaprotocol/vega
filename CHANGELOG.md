@@ -13,8 +13,8 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
-
+- [6473](https://github.com/vegaprotocol/vega/issues/6473) - Infrastructure Fee Account returns error when asset is pending listing
+-
 
 ## 0.58.0
 

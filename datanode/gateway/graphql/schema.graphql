@@ -1170,7 +1170,7 @@ type Asset {
   status: AssetStatus!
 
   "The infrastructure fee account for this asset"
-  infrastructureFeeAccount: Account!
+  infrastructureFeeAccount: Account
 
   "The global reward pool account for this asset"
   globalRewardPoolAccount: Account
