@@ -22,19 +22,22 @@ func testIsolateKeyFlagsValidFlagsSucceeds(t *testing.T) {
 
 	// given
 	passphrase, passphraseFilePath := NewPassphraseFile(t, testDir)
+	isolatedPassphrase, isolatedPassphraseFilePath := NewPassphraseFile(t, testDir)
 	walletName := vgrand.RandomStr(10)
 	pubKey := vgrand.RandomStr(20)
 
 	f := &cmd.IsolateKeyFlags{
-		Wallet:         walletName,
-		PubKey:         pubKey,
-		PassphraseFile: passphraseFilePath,
+		Wallet:                       walletName,
+		PubKey:                       pubKey,
+		PassphraseFile:               passphraseFilePath,
+		IsolatedWalletPassphraseFile: isolatedPassphraseFilePath,
 	}
 
 	expectedReq := api.AdminIsolateKeyParams{
-		Wallet:     walletName,
-		PublicKey:  pubKey,
-		Passphrase: passphrase,
+		Wallet:                   walletName,
+		PublicKey:                pubKey,
+		Passphrase:               passphrase,
+		IsolatedWalletPassphrase: isolatedPassphrase,
 	}
 
 	// when

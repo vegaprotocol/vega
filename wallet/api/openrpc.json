@@ -1783,6 +1783,13 @@
           }
         },
         {
+          "name": "isolatedWalletPassphrase",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
           "name": "publicKey",
           "required": true,
           "schema": {
@@ -1821,6 +1828,10 @@
             {
               "name": "passphrase",
               "value": "this-is-not-a-good-passphrase"
+            },
+            {
+              "name": "isolatedWalletPassphrase",
+              "value": "this-is-also-not-a-good-passphrase"
             },
             {
               "name": "publicKey",

@@ -80,6 +80,7 @@ var (
 	ErrParamsDoNotMatch                                   = errors.New("the params do not match expected ones")
 	ErrParamsRequired                                     = errors.New("the params are required")
 	ErrPassphraseIsRequired                               = errors.New("the passphrase is required")
+	ErrIsolatedWalletPassphraseIsRequired                 = errors.New("the isolated wallet passphrase is required")
 	ErrProofOfWorkDifficultyRequired                      = errors.New("the proof-of-work difficulty is required")
 	ErrProofOfWorkHashFunctionRequired                    = errors.New("the proof-of-work hash function is required")
 	ErrPublicKeyDoesNotExist                              = errors.New("the public key does not exist")

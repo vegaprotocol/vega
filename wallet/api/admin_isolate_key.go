@@ -9,9 +9,10 @@ import (
 )
 
 type AdminIsolateKeyParams struct {
-	Wallet     string `json:"wallet"`
-	PublicKey  string `json:"publicKey"`
-	Passphrase string `json:"passphrase"`
+	Wallet                   string `json:"wallet"`
+	PublicKey                string `json:"publicKey"`
+	Passphrase               string `json:"passphrase"`
+	IsolatedWalletPassphrase string `json:"isolatedWalletPassphrase"`
 }
 
 type AdminIsolateKeyResult struct {
@@ -50,7 +51,7 @@ func (h *AdminIsolateKey) Handle(ctx context.Context, rawParams jsonrpc.Params) 
 		return nil, internalError(fmt.Errorf("could not isolate the key: %w", err))
 	}
 
-	if err := h.walletStore.SaveWallet(ctx, isolatedWallet, params.Passphrase); err != nil {
+	if err := h.walletStore.SaveWallet(ctx, isolatedWallet, params.IsolatedWalletPassphrase); err != nil {
 		return nil, internalError(fmt.Errorf("could not save the wallet with isolated key: %w", err))
 	}
 
@@ -79,6 +80,10 @@ func validateAdminIsolateKeyParams(rawParams jsonrpc.Params) (AdminIsolateKeyPar
 	}
 
 	if params.Passphrase == "" {
+		return AdminIsolateKeyParams{}, ErrPassphraseIsRequired
+	}
+
+	if params.IsolatedWalletPassphrase == "" {
 		return AdminIsolateKeyParams{}, ErrPassphraseIsRequired
 	}
 

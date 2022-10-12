@@ -4,7 +4,8 @@
 ## Unreleased 0.59.0
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [6477](https://github.com/vegaprotocol/vega/issues/6477) - Allow the user to specify a different passphrase when isolating a key
+
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
