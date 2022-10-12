@@ -329,7 +329,8 @@ type ERC20 struct {
 	// The lifetime limits deposit per address
 	// note: this is a temporary measure that can be changed by governance
 	LifetimeLimit string `protobuf:"bytes,2,opt,name=lifetime_limit,json=lifetimeLimit,proto3" json:"lifetime_limit,omitempty"`
-	// The maximum allowed per withdraw
+	// The maximum you can withdraw instantly. All withdrawals over the threshold will be delayed by the withdrawal delay.
+	// There’s no limit on the size of a withdrawal
 	// note: this is a temporary measure that can be changed by governance
 	WithdrawThreshold string `protobuf:"bytes,3,opt,name=withdraw_threshold,json=withdrawThreshold,proto3" json:"withdraw_threshold,omitempty"`
 }
@@ -476,8 +477,8 @@ type ERC20Update struct {
 	// This is will be interpreted against the asset decimals.
 	// note: this is a temporary measure that can be changed by governance
 	LifetimeLimit string `protobuf:"bytes,1,opt,name=lifetime_limit,json=lifetimeLimit,proto3" json:"lifetime_limit,omitempty"`
-	// The maximum allowed per withdraw.
-	// This is will be interpreted against the asset decimals.
+	// The maximum you can withdraw instantly. All withdrawals over the threshold will be delayed by the withdrawal delay.
+	// There’s no limit on the size of a withdrawal
 	// note: this is a temporary measure that can be changed by governance
 	WithdrawThreshold string `protobuf:"bytes,2,opt,name=withdraw_threshold,json=withdrawThreshold,proto3" json:"withdraw_threshold,omitempty"`
 }

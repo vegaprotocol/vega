@@ -116,10 +116,11 @@ type Erc20 struct {
 	// The address of the ERC20 contract
 	ContractAddress string `json:"contractAddress"`
 	// The lifetime limits deposit per address
-	// Note: this is a temporary measure for alpha mainnet
+	// Note: this is a temporary measure that can be changed by governance
 	LifetimeLimit string `json:"lifetimeLimit"`
-	// The maximum allowed per withdrawal
-	// Note: this is a temporary measure for alpha mainnet
+	// The maximum you can withdraw instantly. All withdrawals over the threshold will be delayed by the withdrawal delay.
+	// There’s no limit on the size of a withdrawal
+	// Note: this is a temporary measure that can be changed by governance
 	WithdrawThreshold string `json:"withdrawThreshold"`
 }
 
@@ -578,10 +579,11 @@ func (TransferResponses) IsEvent() {}
 // An asset originated from an Ethereum ERC20 Token
 type UpdateErc20 struct {
 	// The lifetime limits deposit per address
-	// Note: this is a temporary measure for alpha mainnet
+	// Note: this is a temporary measure that can be changed by governance
 	LifetimeLimit string `json:"lifetimeLimit"`
-	// The maximum allowed per withdrawal
-	// Note: this is a temporary measure for alpha mainnet
+	// The maximum you can withdraw instantly. All withdrawals over the threshold will be delayed by the withdrawal delay.
+	// There’s no limit on the size of a withdrawal
+	// Note: this is a temporary measure that can be changed by governance
 	WithdrawThreshold string `json:"withdrawThreshold"`
 }
 

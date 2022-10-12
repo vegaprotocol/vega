@@ -61,7 +61,8 @@ message ERC20 {
   // The lifetime limits deposit per address
   // note: this is a temporary measure that can be changed by governance
   string lifetime_limit = 2;
-  // The maximum allowed per withdraw
+  // The maximum you can withdraw instantly. All withdrawals over the threshold will be delayed by the withdrawal delay.
+  // There’s no limit on the size of a withdrawal
   // note: this is a temporary measure that can be changed by governance
   string withdraw_threshold = 3;
 }
@@ -84,8 +85,8 @@ message ERC20Update {
   // This is will be interpreted against the asset decimals.
   // note: this is a temporary measure that can be changed by governance
   string lifetime_limit = 1;
-  // The maximum allowed per withdraw.
-  // This is will be interpreted against the asset decimals.
+  // The maximum you can withdraw instantly. All withdrawals over the threshold will be delayed by the withdrawal delay.
+  // There’s no limit on the size of a withdrawal
   // note: this is a temporary measure that can be changed by governance
   string withdraw_threshold = 2;
 }
