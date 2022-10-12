@@ -16,7 +16,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/core/types"
-	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	"github.com/emirpasic/gods/sets/treeset"
 
 	"code.vegaprotocol.io/vega/libs/proto"
 )
@@ -46,9 +46,14 @@ func (f *Forwarder) Stopped() bool {
 }
 
 func (f *Forwarder) serialise() ([]byte, error) {
+	slice := make([]string, 0, f.ackedEvts.Size())
+	iter := f.ackedEvts.Iterator()
+	for iter.Next() {
+		slice = append(slice, (iter.Value().(string)))
+	}
 	payload := types.Payload{
 		Data: &types.PayloadEventForwarder{
-			Events: f.ackedEvtsSlice,
+			Keys: slice,
 		},
 	}
 	return proto.Marshal(payload.IntoProto())
@@ -79,23 +84,17 @@ func (f *Forwarder) LoadState(_ context.Context, p *types.Payload) ([]types.Stat
 	}
 	// see what we're reloading
 	if pl, ok := p.Data.(*types.PayloadEventForwarder); ok {
-		return nil, f.restore(pl.Events, p)
+		return nil, f.restore(pl.Keys, p)
 	}
 
 	return nil, types.ErrUnknownSnapshotType
 }
 
-func (f *Forwarder) restore(events []*commandspb.ChainEvent, p *types.Payload) error {
-	f.ackedEvts = map[string]*commandspb.ChainEvent{}
-	for _, event := range events {
-		key, err := f.getEvtKey(event)
-		if err != nil {
-			return err
-		}
-		f.ackedEvts[key] = event
+func (f *Forwarder) restore(keys []string, p *types.Payload) error {
+	f.ackedEvts = treeset.NewWithStringComparator()
+	for _, v := range keys {
+		f.ackedEvts.Add(v)
 	}
-	f.ackedEvtsSlice = events
-
 	var err error
 	f.efss.serialised, err = proto.Marshal(p.IntoProto())
 	return err
