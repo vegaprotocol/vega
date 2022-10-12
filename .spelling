@@ -78,6 +78,7 @@ mutex
 mutexes
 nodewallet
 notarising
+OpenRPC
 phish
 Prometheus
 proto

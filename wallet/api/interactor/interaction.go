@@ -8,23 +8,24 @@ import (
 )
 
 const (
-	RequestWalletConnectionReviewName      InteractionName = "REQUEST_WALLET_CONNECTION_REVIEW"
-	RequestWalletSelectionName             InteractionName = "REQUEST_WALLET_SELECTION"
-	RequestPassphraseName                  InteractionName = "REQUEST_PASSPHRASE"
-	RequestPermissionsReviewName           InteractionName = "REQUEST_PERMISSIONS_REVIEW"
-	RequestTransactionReviewForSendingName InteractionName = "REQUEST_TRANSACTION_REVIEW_FOR_SENDING"
-	RequestTransactionReviewForSigningName InteractionName = "REQUEST_TRANSACTION_REVIEW_FOR_SIGNING"
-	WalletConnectionDecisionName           InteractionName = "WALLET_CONNECTION_DECISION"
+	CancelRequestName                      InteractionName = "CANCEL_REQUEST"
 	DecisionName                           InteractionName = "DECISION"
 	EnteredPassphraseName                  InteractionName = "ENTERED_PASSPHRASE"
-	SelectedWalletName                     InteractionName = "SELECTED_WALLET"
+	ErrorOccurredName                      InteractionName = "ERROR_OCCURRED"
 	InteractionSessionBeganName            InteractionName = "INTERACTION_SESSION_BEGAN"
 	InteractionSessionEndedName            InteractionName = "INTERACTION_SESSION_ENDED"
-	RequestSucceededName                   InteractionName = "REQUEST_SUCCEEDED"
-	ErrorOccurredName                      InteractionName = "ERROR_OCCURRED"
-	TransactionSucceededName               InteractionName = "TRANSACTION_SUCCEEDED"
-	TransactionFailedName                  InteractionName = "TRANSACTION_FAILED"
 	LogName                                InteractionName = "LOG"
+	RequestPassphraseName                  InteractionName = "REQUEST_PASSPHRASE"
+	RequestPermissionsReviewName           InteractionName = "REQUEST_PERMISSIONS_REVIEW"
+	RequestSucceededName                   InteractionName = "REQUEST_SUCCEEDED"
+	RequestTransactionReviewForSendingName InteractionName = "REQUEST_TRANSACTION_REVIEW_FOR_SENDING"
+	RequestTransactionReviewForSigningName InteractionName = "REQUEST_TRANSACTION_REVIEW_FOR_SIGNING"
+	RequestWalletConnectionReviewName      InteractionName = "REQUEST_WALLET_CONNECTION_REVIEW"
+	RequestWalletSelectionName             InteractionName = "REQUEST_WALLET_SELECTION"
+	SelectedWalletName                     InteractionName = "SELECTED_WALLET"
+	TransactionFailedName                  InteractionName = "TRANSACTION_FAILED"
+	TransactionSucceededName               InteractionName = "TRANSACTION_SUCCEEDED"
+	WalletConnectionDecisionName           InteractionName = "WALLET_CONNECTION_DECISION"
 )
 
 type InteractionName string
@@ -62,6 +63,12 @@ func (f *Interaction) UnmarshalJSON(data []byte) error {
 	f.Name = input.Name
 
 	switch input.Name {
+	case CancelRequestName:
+		data := CancelRequest{}
+		if err := mapstructure.Decode(input.Data, &data); err != nil {
+			return err
+		}
+		f.Data = data
 	case RequestWalletConnectionReviewName:
 		data := RequestWalletConnectionReview{}
 		if err := mapstructure.Decode(input.Data, &data); err != nil {
@@ -168,6 +175,10 @@ func (f *Interaction) UnmarshalJSON(data []byte) error {
 
 	return nil
 }
+
+// CancelRequest cancels a request that is waiting for user inputs.
+// It can't cancel a request when there is no response awaited.
+type CancelRequest struct{}
 
 // RequestWalletConnectionReview is a request emitted when a third-party
 // application wants to connect to a wallet.

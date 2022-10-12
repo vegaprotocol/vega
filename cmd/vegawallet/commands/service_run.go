@@ -260,7 +260,7 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 			cliLog.Error("Explicit consent can't be used when no TTY is attached to the process")
 			return ErrEnableAutomaticConsentFlagIsRequiredWithoutTTY
 		}
-		cliLog.Info("Automatic consent enabled")
+		cliLog.Info("Automatic consent enabled.")
 		policy = service.NewAutomaticConsentPolicy()
 	}
 
@@ -301,7 +301,7 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 			return
 		}
 		cliLog.Info("HTTP server stopped with success")
-		p.Print(p.String().CheckMark().Text("HTTP service stopped").NextLine())
+		p.Print(p.String().CheckMark().Text("HTTP service stopped.").NextLine())
 	}()
 
 	waitSig(ctx, cancel, cliLog, consentRequests, sentTransactions, receptionChan, responseChan, f.EnableAutomaticConsent, p)
@@ -338,7 +338,7 @@ func waitSig(
 		select {
 		case sig := <-gracefulStop:
 			log.Info("caught signal", zap.String("signal", fmt.Sprintf("%+v", sig)))
-			p.Print(p.String().NextSection())
+			p.Print(p.String().NextSection().WarningBangMark().WarningText(fmt.Sprintf("Signal \"%+v\" received.", sig)).NextSection())
 			cancelFunc()
 			return
 		case <-ctx.Done():
