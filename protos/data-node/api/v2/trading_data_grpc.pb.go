@@ -54,10 +54,21 @@ type TradingDataServiceClient interface {
 	// Subscribe to a stream of Positions
 	ObservePositions(ctx context.Context, in *ObservePositionsRequest, opts ...grpc.CallOption) (TradingDataService_ObservePositionsClient, error)
 	// LedgerEntries
+	//
+	// Get ledger entries by asset, market, party, account type, transfer type within the given date range.
 	ListLedgerEntries(ctx context.Context, in *ListLedgerEntriesRequest, opts ...grpc.CallOption) (*ListLedgerEntriesResponse, error)
 	// Balances
 	//
-	// Get an aggregated list of the changes in balances in a set of accounts over time
+	// This query requests and sums number of the ledger entries of a given subset of accounts, specified via the 'filter' argument.
+	// It returns a timeseries (implemented as a list of AggregateLedgerEntry structs), with a row for every time
+	// the summed ledger entries of the set of specified accounts changes.
+	//
+	// Entries can be queried by:
+	//   - lising all ledger entries without filtering
+	//   - listing ledger entries with filtering on the sending account (party_id, market_id, asset_id, account_type)
+	//   - listing ledger entries with filtering on the receiving account (party_id, market_id, asset_id, account_type)
+	//   - listing ledger entries with filtering on the sending AND receiving account
+	//   - listing ledger entries with filtering on the transfer type (on top of above filters or as a standalone option)
 	GetBalanceHistory(ctx context.Context, in *GetBalanceHistoryRequest, opts ...grpc.CallOption) (*GetBalanceHistoryResponse, error)
 	// Market Data
 	//
@@ -1388,10 +1399,21 @@ type TradingDataServiceServer interface {
 	// Subscribe to a stream of Positions
 	ObservePositions(*ObservePositionsRequest, TradingDataService_ObservePositionsServer) error
 	// LedgerEntries
+	//
+	// Get ledger entries by asset, market, party, account type, transfer type within the given date range.
 	ListLedgerEntries(context.Context, *ListLedgerEntriesRequest) (*ListLedgerEntriesResponse, error)
 	// Balances
 	//
-	// Get an aggregated list of the changes in balances in a set of accounts over time
+	// This query requests and sums number of the ledger entries of a given subset of accounts, specified via the 'filter' argument.
+	// It returns a timeseries (implemented as a list of AggregateLedgerEntry structs), with a row for every time
+	// the summed ledger entries of the set of specified accounts changes.
+	//
+	// Entries can be queried by:
+	//   - lising all ledger entries without filtering
+	//   - listing ledger entries with filtering on the sending account (party_id, market_id, asset_id, account_type)
+	//   - listing ledger entries with filtering on the receiving account (party_id, market_id, asset_id, account_type)
+	//   - listing ledger entries with filtering on the sending AND receiving account
+	//   - listing ledger entries with filtering on the transfer type (on top of above filters or as a standalone option)
 	GetBalanceHistory(context.Context, *GetBalanceHistoryRequest) (*GetBalanceHistoryResponse, error)
 	// Market Data
 	//
