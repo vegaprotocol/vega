@@ -22,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
+	"github.com/emirpasic/gods/sets/treeset"
 )
 
 var (
@@ -166,14 +167,15 @@ func (e *Engine) serialiseWithdrawals() ([]byte, error) {
 }
 
 func (e *Engine) serialiseSeen() ([]byte, error) {
-	payload := types.Payload{
-		Data: &types.PayloadBankingSeen{
-			BankingSeen: &types.BankingSeen{
-				Refs: e.seenSlice,
-			},
-		},
+	seen := &types.PayloadBankingSeen{
+		BankingSeen: &types.BankingSeen{},
 	}
-
+	seen.BankingSeen.Refs = make([]string, 0, e.seen.Size())
+	iter := e.seen.Iterator()
+	for iter.Next() {
+		seen.BankingSeen.Refs = append(seen.BankingSeen.Refs, iter.Value().(string))
+	}
+	payload := types.Payload{Data: seen}
 	return proto.Marshal(payload.IntoProto())
 }
 
@@ -329,10 +331,10 @@ func (e *Engine) restoreWithdrawals(withdrawals *types.BankingWithdrawals, p *ty
 func (e *Engine) restoreSeen(seen *types.BankingSeen, p *types.Payload) error {
 	var err error
 	e.log.Info("restoring seen", logging.Int("n", len(seen.Refs)))
-	for _, s := range seen.Refs {
-		e.seen[s] = struct{}{}
+	e.seen = treeset.NewWithStringComparator()
+	for _, v := range seen.Refs {
+		e.seen.Add(v)
 	}
-	e.seenSlice = seen.Refs
 	e.bss.serialisedSeen, err = proto.Marshal(p.IntoProto())
 	return err
 }
