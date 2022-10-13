@@ -859,9 +859,10 @@ func setupSQLBroker(ctx context.Context, eventsFile string, testDbConfig sqlstor
 	blockStore := sqlstore.NewBlocks(transactionalConnectionSource)
 
 	config := broker.NewDefaultConfig()
+	protocolUpgradeService := service.NewProtocolUpgrade()
 
 	sqlBroker := broker.NewSQLStoreBroker(logging.NewTestLogger(), config, testChainInfo{chainID: chainID}, evtSource,
-		transactionalConnectionSource, blockStore, func(ctx context.Context, chainId string, lastCommittedBlockHeight int64) bool {
+		transactionalConnectionSource, blockStore, protocolUpgradeService, func(ctx context.Context, chainId string, lastCommittedBlockHeight int64) bool {
 			return onBlockCommitted(ctx, snapshotService, chainId, lastCommittedBlockHeight)
 		}, subscribers.GetSQLSubscribers(),
 	)
