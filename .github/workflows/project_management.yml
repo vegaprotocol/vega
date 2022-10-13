@@ -45,7 +45,7 @@ jobs:
       - name: 'Get linked issue id and state'
         id: linked-issue
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_NEW_CARD_TO_PROJECT }}
         run: |
           gh api graphql -f query='
             query($pr_url: URI!) {
@@ -326,23 +326,27 @@ jobs:
               $iteration_field: ID!
               $iteration_value: String!
             ) {
-              set_status: updateProjectNextItemField(input: {
+              set_status: updateProjectV2ItemFieldValue(input: {
                 projectId: $project
                 itemId: $item
                 fieldId: $status_field
-                value: $status_value
+                value: { 
+                  singleSelectOptionId: $status_value
+                  }
               }) {
-                projectNextItem {
+                projectV2Item {
                   id
                   }
               }
-              set_iteration: updateProjectNextItemField(input: {
+              set_iteration: updateProjectV2ItemFieldValue(input: {
                 projectId: $project
                 itemId: $item
                 fieldId: $iteration_field
-                value: $iteration_value
+                value: { 
+                  iterationId: $iteration_value
+                  }
               }) {
-                projectNextItem {
+                projectV2Item {
                   id
                 }
               }
