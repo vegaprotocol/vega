@@ -22,7 +22,6 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/protos/vega"
 	checkpointpb "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
-	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
@@ -247,7 +246,7 @@ type Resource struct {
 }
 
 type PayloadEventForwarder struct {
-	Events []*commandspb.ChainEvent
+	Keys []string
 }
 
 type PayloadERC20MultiSigTopologyVerified struct {
@@ -463,7 +462,7 @@ type BDeposit struct {
 }
 
 type BankingSeen struct {
-	Refs []*snapshot.TxRef
+	Refs []string
 }
 
 type BankingAssetActions struct {
@@ -3570,13 +3569,13 @@ func (*PayloadStakeVerifierDeposited) Namespace() SnapshotNamespace {
 
 func PayloadEventForwarderFromProto(ef *snapshot.Payload_EventForwarder) *PayloadEventForwarder {
 	return &PayloadEventForwarder{
-		Events: ef.EventForwarder.AckedEvents,
+		Keys: ef.EventForwarder.AckedEvents,
 	}
 }
 
 func (p *PayloadEventForwarder) IntoProto() *snapshot.Payload_EventForwarder {
 	return &snapshot.Payload_EventForwarder{
-		EventForwarder: &snapshot.EventForwarder{AckedEvents: p.Events},
+		EventForwarder: &snapshot.EventForwarder{AckedEvents: p.Keys},
 	}
 }
 
