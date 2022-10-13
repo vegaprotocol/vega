@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"sort"
 
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
@@ -12,7 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/paths"
 	coreversion "code.vegaprotocol.io/vega/version"
 	netv1 "code.vegaprotocol.io/vega/wallet/network/store/v1"
-	"code.vegaprotocol.io/vega/wallet/version"
+	wversion "code.vegaprotocol.io/vega/wallet/version"
 	"github.com/spf13/cobra"
 )
 
@@ -31,16 +30,16 @@ var (
 	`)
 )
 
-type GetVersionHandler func() (*version.GetVersionResponse, error)
+type GetVersionHandler func() (*wversion.GetVersionResponse, error)
 
 func NewCmdVersion(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func() (*version.GetVersionResponse, error) {
+	h := func() (*wversion.GetVersionResponse, error) {
 		s, err := netv1.InitialiseStore(paths.New(rf.Home))
 		if err != nil {
 			return nil, fmt.Errorf("couldn't initialise network store: %w", err)
 		}
 
-		return version.GetVersionInfo(s, getNetworkVersion)
+		return wversion.GetVersionInfo(s, wversion.GetNetworkVersionThroughGRPC), nil
 	}
 
 	return BuildCmdGetVersion(w, h, rf)
@@ -72,13 +71,13 @@ func BuildCmdGetVersion(w io.Writer, handler GetVersionHandler, rf *RootFlags) *
 	return cmd
 }
 
-func PrintGetVersionResponse(w io.Writer, resp *version.GetVersionResponse) {
+func PrintGetVersionResponse(w io.Writer, resp *wversion.GetVersionResponse) {
 	p := printer.NewInteractivePrinter(w)
 
 	str := p.String()
 	defer p.Print(str)
 
-	if version.IsUnreleased() {
+	if wversion.IsUnreleased() {
 		str.CrossMark().DangerText("You are running an unreleased version of the Vega wallet (").DangerText(coreversion.Get()).DangerText(").").NextLine()
 		str.Pad().DangerText("Use it at your own risk!").NextSection()
 	}
@@ -86,29 +85,41 @@ func PrintGetVersionResponse(w io.Writer, resp *version.GetVersionResponse) {
 	str.Text("Software version:").NextLine().WarningText(resp.Version).NextSection()
 	str.Text("Git hash:").NextLine().WarningText(resp.GitHash).NextSection()
 	str.Text("Network compatibility:").NextLine()
-	nets := make([]string, 0, len(resp.NetworksCompatibility))
-	for net := range resp.NetworksCompatibility {
-		nets = append(nets, net)
-	}
-	sort.Strings(nets)
+
 	hasIncompatibilities := false
-	for _, net := range nets {
-		msg := resp.NetworksCompatibility[net]
-		str.Pad().Text("- ").Text(net).Text(": ")
-		if msg == "compatible" {
-			str.SuccessText(msg)
+
+	for _, networkCompatibility := range resp.NetworksCompatibility {
+		str.Text("- ").Bold(networkCompatibility.Network).Text(":").NextLine()
+		if networkCompatibility.Error != nil {
+			str.Pad().WarningText("Unable to determine this network version:").NextLine()
+			str.Pad().WarningText(networkCompatibility.Error.Error())
 		} else {
-			hasIncompatibilities = true
-			str.DangerText(msg)
+			str.Pad().Text("This network is running the version ").InfoText(networkCompatibility.RetrievedVersion).NextLine()
+			if !networkCompatibility.IsCompatible {
+				hasIncompatibilities = true
+				str.Pad().DangerBold("Incompatible.")
+			} else {
+				str.Pad().SuccessBold("Compatible.")
+			}
 		}
 		str.NextLine()
 	}
 	str.NextLine()
 
 	if len(resp.NetworksCompatibility) > 0 && hasIncompatibilities {
-		str.BlueArrow().InfoText("Note").NextLine()
-		str.Text("If you connect to different networks, such as mainnet and testnet, it's normal to have incompatibilities as they may run on different versions, and, may have breaking changes between those versions.").NextLine()
-		str.Text("And, because we can't ensure backward or forward compatibility yet, the best option is to download the wallet software for each network, and to switch when you change the network.").NextSection()
+		str.BlueArrow().InfoText("What are these incompatibilities?").NextLine()
+		str.Text("Breaking changes may be introduced between software versions deployed on the networks. And, because the wallet software is deeply tied to the network APIs, when it is run against a different version of the network, some requests may fail.").NextLine()
+		str.Text("Currently there's no guarantee of backward or forward compatibility, but that will change when the network is officially defined as stable.").NextSection()
+
+		str.BlueArrow().InfoText("What can I do then?").NextLine()
+		str.Text("The best option is to:").NextLine()
+		str.Text("1. Download the version of the wallet software matching the version running on the network at:").NextLine()
+		str.Text("   ").Underline("https://github.com/vegaprotocol/vega/releases").NextLine()
+		str.Text("   Example: If the network is running 0.57.1, download the wallet software with the version 0.57.1.").NextLine()
+		str.Text("2. Then, switch to the wallet software matching the network version.").NextSection()
+
+		str.BlueArrow().InfoText("Will I have to do that forever?").NextLine()
+		str.Text("No. This will not be a problem once the network is officially defined as stable.").NextSection()
 	}
 
 	str.RedArrow().DangerText("Important").NextLine()

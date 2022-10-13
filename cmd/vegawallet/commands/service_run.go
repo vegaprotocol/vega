@@ -30,6 +30,7 @@ import (
 	"code.vegaprotocol.io/vega/wallet/service"
 	svcstore "code.vegaprotocol.io/vega/wallet/service/store/v1"
 	"code.vegaprotocol.io/vega/wallet/version"
+	walletversion "code.vegaprotocol.io/vega/wallet/version"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 	"github.com/golang/protobuf/jsonpb"
 	"golang.org/x/term"
@@ -183,7 +184,7 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 	}
 
 	if !f.NoVersionCheck {
-		networkVersion, err := getNetworkVersion(cfg.API.GRPC.Hosts)
+		networkVersion, err := walletversion.GetNetworkVersionThroughGRPC(cfg.API.GRPC.Hosts)
 		if err != nil {
 			return err
 		}
