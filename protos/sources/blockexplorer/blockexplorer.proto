@@ -3,6 +3,7 @@ syntax = "proto3";
 package blockexplorer.api.v1;
 
 import "vega/commands/v1/transaction.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 option go_package = "code.vegaprotocol.io/vega/protos/blockexplorer/api/v1";
 
@@ -18,12 +19,12 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 service BlockExplorerService {
   // Get transaction
   //
-  // Get a transaction from the vega blockchain
+  // Get a transaction from the Vega blockchain
   rpc GetTransaction(GetTransactionRequest) returns (GetTransactionResponse) {}
 
   // List transactions
   //
-  // List transactions from the vega blockchain
+  // List transactions from the Vega blockchain
   rpc ListTransactions(ListTransactionsRequest) returns (ListTransactionsResponse) {}
  }
 
@@ -33,18 +34,18 @@ message GetTransactionRequest {
 }
 
 message GetTransactionResponse{
-  // The transaction corresponding to the hash.
+  // The transaction corresponding to the hash
   Transaction transaction = 1;
 }
 
 message ListTransactionsRequest {
-  // The amount of transaction to be returned from the blockchain
+  // The number of transactions to be returned from the blockchain
   uint32 limit = 1;
   // An optional cursor to paginate the request
   optional string before = 2;
   // An optional cursor to paginate the request
   optional string after = 3;
-  // Filters to apply to the request.
+  // Filters to apply to the request
   map<string, string> filters =4;
 }
 
@@ -54,13 +55,13 @@ message ListTransactionsResponse{
 }
 
 message Transaction {
-  // The height of the block the transaction was found
+  // The height of the block the transaction was found in
   uint64 block = 1;
   // The index of the transaction in the block
   uint32 index = 2;
   // The hash of the transaction
   string hash = 3;
-  // The submitter of the transaction (vega public key)
+  // The submitter of the transaction (Vega public key)
   string submitter = 4;
   // The type of transaction
   string type = 5;
