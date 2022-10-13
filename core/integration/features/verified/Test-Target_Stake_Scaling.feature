@@ -173,6 +173,10 @@ Feature: test the implementation of market.stake.target.scalingFactor
     Then the market state should be "STATE_PENDING" for the market "ETH/MAR22"
     # target stake after applying the scaling factor: 35569*1.5=53353 which is less than supplied stake 5000
 
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin | general | bond  |
+      | party0 | USD   | ETH/MAR22 | 0      | 4950000 | 50000 |
+
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
       | lp1 | party0 | ETH/MAR22 | 55000             | 0.001 | sell | ASK              | 500        | 20     | amendment |
