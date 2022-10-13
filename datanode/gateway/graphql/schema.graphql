@@ -1173,19 +1173,19 @@ type Asset {
   status: AssetStatus!
 
   "The infrastructure fee account for this asset"
-  infrastructureFeeAccount: Account
+  infrastructureFeeAccount: AccountBalance
 
   "The global reward pool account for this asset"
-  globalRewardPoolAccount: Account
+  globalRewardPoolAccount: AccountBalance
 
   "The taker fee reward account for this asset"
-  takerFeeRewardAccount: Account
+  takerFeeRewardAccount: AccountBalance
   "The maker fee reward account for this asset"
-  makerFeeRewardAccount: Account
+  makerFeeRewardAccount: AccountBalance
   "The liquidity provision reward account for this asset"
-  lpFeeRewardAccount: Account
+  lpFeeRewardAccount: AccountBalance
   "The market proposer reward account for this asset"
-  marketProposerRewardAccount: Account
+  marketProposerRewardAccount: AccountBalance
 }
 
 "One of the possible asset sources"
@@ -1796,7 +1796,7 @@ type Market {
   accounts(
     "ID of the party to get the margin account for"
     partyId: ID
-  ): [Account!] @deprecated(reason: "Use the accountsConnection instead")
+  ): [AccountBalance!] @deprecated(reason: "Use the accountsConnection instead")
 
   "Get account for a party or market"
   accountsConnection(
@@ -2049,7 +2049,7 @@ type Party {
     assetId: ID
     "Filter accounts by type (General account, margin account, etc...)"
     type: AccountType
-  ): [Account!] @deprecated(reason: "Use accountsConnection instead")
+  ): [AccountBalance!] @deprecated(reason: "Use accountsConnection instead")
 
   "Collateral accounts relating to a party"
   accountsConnection(
@@ -2595,7 +2595,7 @@ enum TradeType {
 }
 
 "An account record"
-type Account {
+type AccountBalance {
   "Balance as string - current account balance (approx. as balances can be updated several times per second)"
   balance: String!
   "Asset, the 'currency'"
@@ -2607,6 +2607,21 @@ type Account {
   "Owner of the account"
   party: Party
 }
+
+"An account record"
+type AccountEvent {
+  "Balance as string - current account balance (approx. as balances can be updated several times per second)"
+  balance: String!
+  "Asset, the 'currency'"
+  asset: Asset!
+  "Account type (General, Margin, etc)"
+  type: AccountType!
+  "Market (only relevant to margin accounts)"
+  market: Market
+  "Owner of the account"
+  party: Party
+}
+
 
 "An account record"
 type AccountDetails {
@@ -3779,7 +3794,7 @@ union Event =
   | PositionResolution
   | Order
   | Trade
-  | Account
+  | AccountEvent
   | Party
   | MarginLevels
   | Proposal
@@ -4511,7 +4526,7 @@ type StakesConnection {
 "Edge type containing the account and cursor information returned by an AccountsConnection"
 type AccountEdge {
   "The account"
-  node: Account!
+  node: AccountBalance!
   "Cursor identifying the account"
   cursor: String!
 }
