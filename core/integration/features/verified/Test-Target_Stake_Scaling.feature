@@ -16,7 +16,7 @@ Feature: test the implementation of market.stake.target.scalingFactor
       | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
-      | party0 | USD   | 5000000   |
+      | party0 | USD   | 500000000 |
       | party1 | USD   | 100000000 |
       | party2 | USD   | 100000000 |
       | party3 | USD   | 100000000 |
@@ -67,10 +67,10 @@ Feature: test the implementation of market.stake.target.scalingFactor
 
     # check the requried balances
     And the parties should have the following account balances:
-      | party  | asset | market id | margin | general  | bond  |
-      | party0 | USD   | ETH/MAR22 | 426829 | 4523171  | 50000 |
-      | party1 | USD   | ETH/MAR22 | 12190  | 99987810 | 0     |
-      | party2 | USD   | ETH/MAR22 | 51879  | 99948121 | 0     |
+      | party  | asset | market id | margin | general   | bond  |
+      | party0 | USD   | ETH/MAR22 | 426829 | 499523171 | 50000 |
+      | party1 | USD   | ETH/MAR22 | 12190  | 99987810  | 0     |
+      | party2 | USD   | ETH/MAR22 | 51879  | 99948121  | 0     |
     #check the margin levels
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
@@ -130,10 +130,10 @@ Feature: test the implementation of market.stake.target.scalingFactor
 
     # check the requried balances
     And the parties should have the following account balances:
-      | party  | asset | market id | margin | general  | bond  |
-      | party0 | USD   | ETH/MAR22 | 426829 | 4523171  | 50000 |
-      | party1 | USD   | ETH/MAR22 | 12190  | 99987810 | 0     |
-      | party2 | USD   | ETH/MAR22 | 51879  | 99948121 | 0     |
+      | party  | asset | market id | margin | general   | bond  |
+      | party0 | USD   | ETH/MAR22 | 426829 | 499523171 | 50000 |
+      | party1 | USD   | ETH/MAR22 | 12190  | 99987810  | 0     |
+      | party2 | USD   | ETH/MAR22 | 51879  | 99948121  | 0     |
     #check the margin levels
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
@@ -174,8 +174,8 @@ Feature: test the implementation of market.stake.target.scalingFactor
     # target stake after applying the scaling factor: 35569*1.5=53353 which is less than supplied stake 5000
 
     And the parties should have the following account balances:
-      | party  | asset | market id | margin | general | bond  |
-      | party0 | USD   | ETH/MAR22 | 0      | 4950000 | 50000 |
+      | party  | asset | market id | margin | general   | bond  |
+      | party0 | USD   | ETH/MAR22 | 0      | 499950000 | 50000 |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
@@ -183,5 +183,13 @@ Feature: test the implementation of market.stake.target.scalingFactor
       | lp1 | party0 | ETH/MAR22 | 55000             | 0.001 | buy  | BID              | 500        | 20     | amendment |
 
     Then the market state should be "STATE_PENDING" for the market "ETH/MAR22"
+
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin  | general   | bond  |
+      | party0 | USD   | ETH/MAR22 | 9303066 | 490641934 | 55000 |
+
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode                 | target stake | supplied stake | open interest |
+      | 0          | TRADING_MODE_OPENING_AUCTION | 53353        | 55000          | 0             |
 
 
