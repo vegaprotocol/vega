@@ -21,6 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	"code.vegaprotocol.io/vega/datanode/service"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/pkg/errors"
@@ -54,34 +55,44 @@ const (
 
 // SQLStoreBroker : push events to each subscriber with a single go routine across all types.
 type SQLStoreBroker struct {
-	config               Config
-	log                  *logging.Logger
-	subscribers          []SQLBrokerSubscriber
-	typeToSubs           map[events.Type][]SQLBrokerSubscriber
-	eventSource          eventSource
-	transactionManager   TransactionManager
-	blockStore           BlockStore
-	onBlockCommitted     func(ctx context.Context, chainId string, lastCommittedBlockHeight int64) bool
-	chainInfo            ChainInfoI
-	lastBlock            *entities.Block
-	slowTimeUpdateTicker *time.Ticker
+	config                       Config
+	log                          *logging.Logger
+	subscribers                  []SQLBrokerSubscriber
+	typeToSubs                   map[events.Type][]SQLBrokerSubscriber
+	eventSource                  eventSource
+	transactionManager           TransactionManager
+	blockStore                   BlockStore
+	onBlockCommitted             func(ctx context.Context, chainId string, lastCommittedBlockHeight int64) bool
+	chainInfo                    ChainInfoI
+	lastBlock                    *entities.Block
+	slowTimeUpdateTicker         *time.Ticker
+	receivedProtocolUpgradeEvent bool
+	protocolUpgradeService       *service.ProtocolUpgrade
 }
 
-func NewSQLStoreBroker(log *logging.Logger, config Config, chainInfo ChainInfoI,
-	eventsource eventSource, transactionManager TransactionManager, blockStore BlockStore, onBlockCommitted func(ctx context.Context, chainId string, lastCommittedBlockHeight int64) bool,
+func NewSQLStoreBroker(
+	log *logging.Logger,
+	config Config,
+	chainInfo ChainInfoI,
+	eventsource eventSource,
+	transactionManager TransactionManager,
+	blockStore BlockStore,
+	protocolUpgradeService *service.ProtocolUpgrade,
+	onBlockCommitted func(ctx context.Context, chainId string, lastCommittedBlockHeight int64) bool,
 	subs []SQLBrokerSubscriber,
 ) *SQLStoreBroker {
 	b := &SQLStoreBroker{
-		config:               config,
-		log:                  log,
-		subscribers:          subs,
-		typeToSubs:           map[events.Type][]SQLBrokerSubscriber{},
-		eventSource:          eventsource,
-		transactionManager:   transactionManager,
-		blockStore:           blockStore,
-		chainInfo:            chainInfo,
-		onBlockCommitted:     onBlockCommitted,
-		slowTimeUpdateTicker: time.NewTicker(slowTimeUpdateThreshold),
+		config:                 config,
+		log:                    log,
+		subscribers:            subs,
+		typeToSubs:             map[events.Type][]SQLBrokerSubscriber{},
+		eventSource:            eventsource,
+		transactionManager:     transactionManager,
+		blockStore:             blockStore,
+		chainInfo:              chainInfo,
+		onBlockCommitted:       onBlockCommitted,
+		slowTimeUpdateTicker:   time.NewTicker(slowTimeUpdateThreshold),
+		protocolUpgradeService: protocolUpgradeService,
 	}
 
 	for _, s := range subs {
@@ -119,8 +130,16 @@ func (b *SQLStoreBroker) Receive(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("failed to receive events, unable to get chain id:%w", err)
 		}
-		lastCommittedBlockHeight := nextBlock.Height - 1
-		if b.onBlockCommitted(ctx, chainID, lastCommittedBlockHeight) {
+
+		if b.onBlockCommitted(ctx, chainID, b.lastBlock.Height) {
+			if b.receivedProtocolUpgradeEvent {
+				b.protocolUpgradeService.SetProtocolUpgradeStarted()
+			}
+			return nil
+		}
+
+		if b.receivedProtocolUpgradeEvent {
+			b.protocolUpgradeService.SetProtocolUpgradeStarted()
 			return nil
 		}
 	}
@@ -225,6 +244,10 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 			b.log.Warningf("slow time update detected, time between checks %v, block height: %d, total block processing time: %v", slowTimeUpdateThreshold,
 				block.Height, blockTimer.duration)
 		case e := <-eventsCh:
+			if b.protocolUpgradeService.GetProtocolUpgradeStarted() {
+				return nil, errors.New("received event after protocol upgrade started")
+			}
+
 			if b.config.Level.Level == logging.DebugLevel {
 				b.log.Debug("received event", logging.String("type", e.Type().String()), logging.String("trace-id", e.TraceID()))
 			}
@@ -244,9 +267,16 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 				}
 				b.slowTimeUpdateTicker.Reset(slowTimeUpdateThreshold)
 				betweenBlocks = true
+				if b.receivedProtocolUpgradeEvent {
+					// we've received a protocol upgrade event so now that we've got the end block event
+					// we should exit the loop
+					return nil, nil
+				}
 			case events.BeginBlockEvent:
 				beginBlock := e.(entities.BeginBlockEvent)
 				return entities.BlockFromBeginBlock(beginBlock)
+			case events.ProtocolUpgradeStartedEvent:
+				b.receivedProtocolUpgradeEvent = true
 			default:
 				if betweenBlocks {
 					// we should only be receiving a BeginBlockEvent immediately after an EndBlockEvent

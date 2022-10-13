@@ -90,9 +90,9 @@ func (err OrderError) Error() string {
 		return "OrderError: Cannot amend TIF from GFA or GFN"
 	case OrderError_ORDER_ERROR_INCORRECT_MARKET_TYPE:
 		return "OrderError: Invalid Market Type"
-	case OrderError_ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION:
+	case OrderError_ORDER_ERROR_CANNOT_SEND_GFN_ORDER_DURING_AN_AUCTION:
 		return "OrderError: GFN Order Received During An Auction"
-	case OrderError_ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING:
+	case OrderError_ORDER_ERROR_CANNOT_SEND_GFA_ORDER_DURING_CONTINUOUS_TRADING:
 		return "OrderError: GFA Order Received During Continuous Trading"
 	case OrderError_ORDER_ERROR_CANNOT_SEND_IOC_ORDER_DURING_AUCTION:
 		return "OrderError: IOC orders are not allowed during auction"

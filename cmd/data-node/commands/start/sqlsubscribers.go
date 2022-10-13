@@ -84,6 +84,7 @@ type SQLSubscribers struct {
 	ethereumKeyRotationsService *service.EthereumKeyRotation
 	nodeService                 *service.Node
 	chainService                *service.Chain
+	protocolUpgradeService      *service.ProtocolUpgrade
 
 	// Subscribers
 	accountSub              *sqlsubscribers.Account
@@ -237,6 +238,7 @@ func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger,
 	s.transferService = service.NewTransfer(s.transfersStore, log)
 	s.withdrawalService = service.NewWithdrawal(s.withdrawalsStore, log)
 	s.chainService = service.NewChain(s.chainStore, log)
+	s.protocolUpgradeService = service.NewProtocolUpgrade()
 
 	toInit := []interface{ Initialise(context.Context) error }{
 		s.marketDepthService,

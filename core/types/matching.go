@@ -556,9 +556,9 @@ const (
 	// Order was submitted with invalid time in force.
 	OrderErrorInvalidTimeInForce OrderError = proto.OrderError_ORDER_ERROR_INVALID_TIME_IN_FORCE
 	// A GFN order has got to the market when it is in auction mode.
-	OrderErrorGFNOrderDuringAnAuction OrderError = proto.OrderError_ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION
+	OrderErrorCannotSendGFNOrderDuringAnAuction OrderError = proto.OrderError_ORDER_ERROR_CANNOT_SEND_GFN_ORDER_DURING_AN_AUCTION
 	// A GFA order has got to the market when it is in continuous trading mode.
-	OrderErrorGFAOrderDuringContinuousTrading OrderError = proto.OrderError_ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING
+	OrderErrorGFAOrderDuringContinuousTrading OrderError = proto.OrderError_ORDER_ERROR_CANNOT_SEND_GFA_ORDER_DURING_CONTINUOUS_TRADING
 	// Attempt to amend order to GTT without ExpiryAt.
 	OrderErrorCannotAmendToGTTWithoutExpiryAt OrderError = proto.OrderError_ORDER_ERROR_CANNOT_AMEND_TO_GTT_WITHOUT_EXPIRYAT
 	// Attempt to amend ExpiryAt to a value before CreatedAt.

@@ -130,12 +130,14 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.Position
   PositionUpdate:
     model: code.vegaprotocol.io/vega/protos/vega.Position
-  Account:
+  AccountEvent:
     model: code.vegaprotocol.io/vega/protos/vega.Account
+  AccountBalance:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AccountBalance
   AccountDetails:
     model: code.vegaprotocol.io/vega/protos/vega.AccountDetails
   AccountUpdate:
-    model: code.vegaprotocol.io/vega/protos/vega.Account
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AccountBalance
   MarketData:
     model: code.vegaprotocol.io/vega/protos/vega.MarketData
   ObservableMarketData:

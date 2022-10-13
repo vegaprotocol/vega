@@ -111,6 +111,7 @@ func (m *Markets) GetAll(ctx context.Context, pagination entities.OffsetPaginati
 	var markets []entities.Market
 	query := fmt.Sprintf(`select distinct on (id) %s
 from markets
+where state != 'STATE_REJECTED'
 order by id, vega_time desc
 `, sqlMarketsColumns)
 
@@ -141,7 +142,8 @@ func (m *Markets) GetAllPaged(ctx context.Context, marketID string, pagination e
 	args := make([]interface{}, 0)
 
 	query := fmt.Sprintf(`select %s
-		from markets_current`, sqlMarketsColumns)
+		from markets_current
+		where state != 'STATE_REJECTED'`, sqlMarketsColumns)
 
 	var (
 		pageInfo entities.PageInfo

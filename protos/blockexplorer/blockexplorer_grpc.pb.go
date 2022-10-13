@@ -22,7 +22,13 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type BlockExplorerServiceClient interface {
+	// Get transaction
+	//
+	// Get a transaction from the Vega blockchain
 	GetTransaction(ctx context.Context, in *GetTransactionRequest, opts ...grpc.CallOption) (*GetTransactionResponse, error)
+	// List transactions
+	//
+	// List transactions from the Vega blockchain
 	ListTransactions(ctx context.Context, in *ListTransactionsRequest, opts ...grpc.CallOption) (*ListTransactionsResponse, error)
 }
 
@@ -56,7 +62,13 @@ func (c *blockExplorerServiceClient) ListTransactions(ctx context.Context, in *L
 // All implementations must embed UnimplementedBlockExplorerServiceServer
 // for forward compatibility
 type BlockExplorerServiceServer interface {
+	// Get transaction
+	//
+	// Get a transaction from the Vega blockchain
 	GetTransaction(context.Context, *GetTransactionRequest) (*GetTransactionResponse, error)
+	// List transactions
+	//
+	// List transactions from the Vega blockchain
 	ListTransactions(context.Context, *ListTransactionsRequest) (*ListTransactionsResponse, error)
 	mustEmbedUnimplementedBlockExplorerServiceServer()
 }
