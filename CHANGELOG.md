@@ -15,6 +15,7 @@
 ### 🐛 Fixes
 - [6480](https://github.com/vegaprotocol/vega/issues/6480) - Wallet `openrpc.json` is now a valid OpenRPC file
 - [6473](https://github.com/vegaprotocol/vega/issues/6473) - Infrastructure Fee Account returns error when asset is pending listing
+- [5690](https://github.com/vegaprotocol/vega/issues/5690) - Markets query now excludes rejected markets
 -
 
 ## 0.58.0

@@ -32,6 +32,139 @@ func TestMarkets_Add(t *testing.T) {
 	t.Run("Add should update a valid market record if the block number already exists", shouldUpdateAValidMarketRecord)
 }
 
+func TestMarkets_Get(t *testing.T) {
+	t.Run("GetByID should return the request market if it exists", getByIDShouldReturnTheRequestedMarketIfItExists)
+	t.Run("GetByID should return error if the market does not exist", getByIDShouldReturnErrorIfTheMarketDoesNotExist)
+	t.Run("GetAll should not include rejected markets", getAllShouldNotIncludeRejectedMarkets)
+	t.Run("GetAllPaged should not include rejected markets", getAllPagedShouldNotIncludeRejectedMarkets)
+}
+
+func getByIDShouldReturnTheRequestedMarketIfItExists(t *testing.T) {
+	bs, md, _ := setupMarketsTest(t)
+
+	testTimeout := time.Second * 10
+	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
+	defer cancel()
+
+	block := addTestBlock(t, bs)
+
+	market := entities.Market{
+		ID:       "deadbeef",
+		TxHash:   generateTxHash(),
+		VegaTime: block.VegaTime,
+		State:    entities.MarketStateActive,
+	}
+	err := md.Upsert(ctx, &market)
+	require.NoError(t, err, "Saving market entity to database")
+
+	marketFromDB, err := md.GetByID(ctx, market.ID.String())
+	require.NoError(t, err)
+	assert.Equal(t, market.ID, marketFromDB.ID)
+	assert.Equal(t, market.TxHash, marketFromDB.TxHash)
+	assert.Equal(t, market.VegaTime, marketFromDB.VegaTime)
+	assert.Equal(t, market.State, marketFromDB.State)
+}
+
+func getByIDShouldReturnErrorIfTheMarketDoesNotExist(t *testing.T) {
+	bs, md, _ := setupMarketsTest(t)
+
+	testTimeout := time.Second * 10
+	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
+	defer cancel()
+
+	block := addTestBlock(t, bs)
+
+	market := entities.Market{
+		ID:       "deadbeef",
+		TxHash:   generateTxHash(),
+		VegaTime: block.VegaTime,
+		State:    entities.MarketStateActive,
+	}
+	err := md.Upsert(ctx, &market)
+	require.NoError(t, err, "Saving market entity to database")
+
+	_, err = md.GetByID(ctx, "not-a-market")
+	require.Error(t, err)
+}
+
+func getAllShouldNotIncludeRejectedMarkets(t *testing.T) {
+	bs, md, _ := setupMarketsTest(t)
+
+	testTimeout := time.Second * 10
+	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
+	defer cancel()
+
+	block := addTestBlock(t, bs)
+
+	market := entities.Market{
+		ID:       "deadbeef",
+		TxHash:   generateTxHash(),
+		VegaTime: block.VegaTime,
+		State:    entities.MarketStateActive,
+	}
+	err := md.Upsert(ctx, &market)
+	require.NoError(t, err, "Saving market entity to database")
+
+	rejected := entities.Market{
+		ID:       "DEADBAAD",
+		TxHash:   generateTxHash(),
+		VegaTime: block.VegaTime,
+		State:    entities.MarketStateRejected,
+	}
+	err = md.Upsert(ctx, &rejected)
+	require.NoError(t, err, "Saving market entity to database")
+
+	markets, err := md.GetAll(ctx, entities.OffsetPagination{})
+	require.NoError(t, err)
+	assert.Len(t, markets, 1)
+	assert.Equal(t, market.ID, markets[0].ID)
+	assert.Equal(t, market.TxHash, markets[0].TxHash)
+	assert.Equal(t, market.VegaTime, markets[0].VegaTime)
+	assert.Equal(t, market.State, markets[0].State)
+}
+
+func getAllPagedShouldNotIncludeRejectedMarkets(t *testing.T) {
+	bs, md, _ := setupMarketsTest(t)
+
+	testTimeout := time.Second * 10
+	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
+	defer cancel()
+
+	block := addTestBlock(t, bs)
+
+	market := entities.Market{
+		ID:       "deadbeef",
+		TxHash:   generateTxHash(),
+		VegaTime: block.VegaTime,
+		State:    entities.MarketStateActive,
+	}
+	err := md.Upsert(ctx, &market)
+	require.NoError(t, err, "Saving market entity to database")
+
+	rejected := entities.Market{
+		ID:       "DEADBAAD",
+		TxHash:   generateTxHash(),
+		VegaTime: block.VegaTime,
+		State:    entities.MarketStateRejected,
+	}
+	err = md.Upsert(ctx, &rejected)
+	require.NoError(t, err, "Saving market entity to database")
+
+	markets, pageInfo, err := md.GetAllPaged(ctx, "", entities.CursorPagination{})
+	require.NoError(t, err)
+	assert.Len(t, markets, 1)
+	assert.Equal(t, market.ID, markets[0].ID)
+	assert.Equal(t, market.TxHash, markets[0].TxHash)
+	assert.Equal(t, market.VegaTime, markets[0].VegaTime)
+	assert.Equal(t, market.State, markets[0].State)
+	assert.Equal(t, entities.PageInfo{
+		HasNextPage:     false,
+		HasPreviousPage: false,
+		StartCursor:     market.Cursor().Encode(),
+		EndCursor:       market.Cursor().Encode(),
+	}, pageInfo)
+}
+
 func shouldInsertAValidMarketRecord(t *testing.T) {
 	bs, md, config := setupMarketsTest(t)
 	connStr := config.ConnectionConfig.GetConnectionString()
