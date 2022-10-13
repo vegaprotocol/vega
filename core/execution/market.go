@@ -1115,7 +1115,8 @@ func (m *Market) validateOrder(ctx context.Context, order *types.Order) (err err
 	// Check we are allowed to handle this order type with the current market status
 	isAuction := m.as.InAuction()
 	if isAuction && order.TimeInForce == types.OrderTimeInForceGFN {
-		order.Reason = types.OrderErrorGFNOrderDuringAnAuction
+		order.Status = types.OrderStatusRejected
+		order.Reason = types.OrderErrorCannotSendGFNOrderDuringAnAuction
 		return ErrGFNOrderReceivedAuctionTrading
 	}
 
