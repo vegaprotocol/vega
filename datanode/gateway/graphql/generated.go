@@ -1239,6 +1239,10 @@ type ComplexityRoot struct {
 		PageInfo func(childComplexity int) int
 	}
 
+	ProtocolUpgradeStatus struct {
+		Ready func(childComplexity int) int
+	}
+
 	Query struct {
 		Asset                              func(childComplexity int, id string) int
 		Assets                             func(childComplexity int) int
@@ -1294,6 +1298,7 @@ type ComplexityRoot struct {
 		Proposal                           func(childComplexity int, id *string, reference *string) int
 		Proposals                          func(childComplexity int, inState *vega.Proposal_State) int
 		ProposalsConnection                func(childComplexity int, proposalType *v2.ListGovernanceDataRequest_Type, inState *vega.Proposal_State, pagination *v2.Pagination) int
+		ProtocolUpgradeStatus              func(childComplexity int) int
 		Statistics                         func(childComplexity int) int
 		Transfers                          func(childComplexity int, pubkey string, isFrom *bool, isTo *bool) int
 		TransfersConnection                func(childComplexity int, partyID *string, direction *TransferDirection, pagination *v2.Pagination) int
@@ -2108,6 +2113,7 @@ type QueryResolver interface {
 	Proposal(ctx context.Context, id *string, reference *string) (*vega.GovernanceData, error)
 	Proposals(ctx context.Context, inState *vega.Proposal_State) ([]*vega.GovernanceData, error)
 	ProposalsConnection(ctx context.Context, proposalType *v2.ListGovernanceDataRequest_Type, inState *vega.Proposal_State, pagination *v2.Pagination) (*v2.GovernanceDataConnection, error)
+	ProtocolUpgradeStatus(ctx context.Context) (*ProtocolUpgradeStatus, error)
 	UpdateMarketProposals(ctx context.Context, marketID *string, inState *vega.Proposal_State) ([]*vega.GovernanceData, error)
 	Statistics(ctx context.Context) (*v14.Statistics, error)
 	Transfers(ctx context.Context, pubkey string, isFrom *bool, isTo *bool) ([]*v1.Transfer, error)
@@ -7119,6 +7125,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ProposalsConnection.PageInfo(childComplexity), true
 
+	case "ProtocolUpgradeStatus.ready":
+		if e.complexity.ProtocolUpgradeStatus.Ready == nil {
+			break
+		}
+
+		return e.complexity.ProtocolUpgradeStatus.Ready(childComplexity), true
+
 	case "Query.asset":
 		if e.complexity.Query.Asset == nil {
 			break
@@ -7736,6 +7749,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.ProposalsConnection(childComplexity, args["proposalType"].(*v2.ListGovernanceDataRequest_Type), args["inState"].(*vega.Proposal_State), args["pagination"].(*v2.Pagination)), true
+
+	case "Query.protocolUpgradeStatus":
+		if e.complexity.Query.ProtocolUpgradeStatus == nil {
+			break
+		}
+
+		return e.complexity.Query.ProtocolUpgradeStatus(childComplexity), true
 
 	case "Query.statistics":
 		if e.complexity.Query.Statistics == nil {
@@ -10282,6 +10302,9 @@ type Query {
     pagination: Pagination
   ): ProposalsConnection
 
+  "Flag indicating whether the data-node is ready to begin the protocol upgrade"
+  protocolUpgradeStatus: ProtocolUpgradeStatus
+
   "Governance proposals that aim to update existing markets"
   updateMarketProposals(
     "Optionally, select proposals for a specific market. Leave out for all"
@@ -10756,12 +10779,13 @@ type ERC20 {
   contractAddress: String!
   """
   The lifetime limits deposit per address
-  Note: this is a temporary measure for alpha mainnet
+  Note: this is a temporary measure that can be changed by governance
   """
   lifetimeLimit: String!
   """
-  The maximum allowed per withdrawal
-  Note: this is a temporary measure for alpha mainnet
+  The maximum you can withdraw instantly. All withdrawals over the threshold will be delayed by the withdrawal delay.
+  There’s no limit on the size of a withdrawal
+  Note: this is a temporary measure that can be changed by governance
   """
   withdrawThreshold: String!
 }
@@ -10770,12 +10794,13 @@ type ERC20 {
 type UpdateERC20 {
   """
   The lifetime limits deposit per address
-  Note: this is a temporary measure for alpha mainnet
+  Note: this is a temporary measure that can be changed by governance
   """
   lifetimeLimit: String!
   """
-  The maximum allowed per withdrawal
-  Note: this is a temporary measure for alpha mainnet
+  The maximum you can withdraw instantly. All withdrawals over the threshold will be delayed by the withdrawal delay.
+  There’s no limit on the size of a withdrawal
+  Note: this is a temporary measure that can be changed by governance
   """
   withdrawThreshold: String!
 }
@@ -14104,6 +14129,11 @@ input DateRange {
   start: Timestamp
   "The end timestamp for the date range (exclusive). RFC3339Nano format"
   end: Timestamp
+}
+
+"Indicator showing whether the data-node is ready for the protocol upgrade to begin."
+type ProtocolUpgradeStatus {
+  ready: Boolean!
 }
 `, BuiltIn: false},
 }
@@ -39754,6 +39784,41 @@ func (ec *executionContext) _ProposalsConnection_pageInfo(ctx context.Context, f
 	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _ProtocolUpgradeStatus_ready(ctx context.Context, field graphql.CollectedField, obj *ProtocolUpgradeStatus) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ProtocolUpgradeStatus",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Ready, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_asset(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -41858,6 +41923,38 @@ func (ec *executionContext) _Query_proposalsConnection(ctx context.Context, fiel
 	res := resTmp.(*v2.GovernanceDataConnection)
 	fc.Result = res
 	return ec.marshalOProposalsConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐGovernanceDataConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_protocolUpgradeStatus(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().ProtocolUpgradeStatus(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*ProtocolUpgradeStatus)
+	fc.Result = res
+	return ec.marshalOProtocolUpgradeStatus2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProtocolUpgradeStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_updateMarketProposals(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -63460,6 +63557,37 @@ func (ec *executionContext) _ProposalsConnection(ctx context.Context, sel ast.Se
 	return out
 }
 
+var protocolUpgradeStatusImplementors = []string{"ProtocolUpgradeStatus"}
+
+func (ec *executionContext) _ProtocolUpgradeStatus(ctx context.Context, sel ast.SelectionSet, obj *ProtocolUpgradeStatus) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, protocolUpgradeStatusImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ProtocolUpgradeStatus")
+		case "ready":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ProtocolUpgradeStatus_ready(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var queryImplementors = []string{"Query"}
 
 func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -64591,6 +64719,26 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_proposalsConnection(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "protocolUpgradeStatus":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_protocolUpgradeStatus(ctx, field)
 				return res
 			}
 
@@ -75371,6 +75519,13 @@ func (ec *executionContext) marshalOProposalsConnection2ᚖcodeᚗvegaprotocol�
 		return graphql.Null
 	}
 	return ec._ProposalsConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOProtocolUpgradeStatus2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐProtocolUpgradeStatus(ctx context.Context, sel ast.SelectionSet, v *ProtocolUpgradeStatus) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ProtocolUpgradeStatus(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOReward2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐReward(ctx context.Context, sel ast.SelectionSet, v []*vega.Reward) graphql.Marshaler {

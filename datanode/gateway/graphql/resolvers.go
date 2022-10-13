@@ -1100,6 +1100,17 @@ func (r *myQueryResolver) Proposal(ctx context.Context, id *string, reference *s
 	return nil, ErrMissingIDOrReference
 }
 
+func (r *myQueryResolver) ProtocolUpgradeStatus(ctx context.Context) (*ProtocolUpgradeStatus, error) {
+	status, err := r.tradingDataClientV2.GetProtocolUpgradeStatus(ctx, &v2.GetProtocolUpgradeStatusRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	return &ProtocolUpgradeStatus{
+		Ready: status.Ready,
+	}, nil
+}
+
 // Deprecated: Use ProposalsConnection instead.
 func (r *myQueryResolver) NewMarketProposals(ctx context.Context, inState *vega.Proposal_State) ([]*types.GovernanceData, error) {
 	resp, err := r.tradingDataClient.GetNewMarketProposals(ctx, &protoapi.GetNewMarketProposalsRequest{

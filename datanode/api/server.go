@@ -98,6 +98,7 @@ type GRPCServer struct {
 	nodeService                *service.Node
 	marketDepthService         *service.MarketDepth
 	ledgerService              *service.Ledger
+	protocolUpgradeService     *service.ProtocolUpgrade
 
 	eventObserver *eventObserver
 
@@ -145,6 +146,7 @@ func NewGRPCServer(
 	nodeService *service.Node,
 	marketDepthService *service.MarketDepth,
 	ledgerService *service.Ledger,
+	protocolUpgradeService *service.ProtocolUpgrade,
 ) *GRPCServer {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -189,6 +191,7 @@ func NewGRPCServer(
 		riskService:                riskService,
 		marketDataService:          marketDataService,
 		ledgerService:              ledgerService,
+		protocolUpgradeService:     protocolUpgradeService,
 
 		eventObserver: &eventObserver{
 			log:          log,
@@ -427,6 +430,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		keyRotationService:         g.keyRotationService,
 		ethereumKeyRotationService: g.ethereumKeyRotationService,
 		blockService:               g.blockService,
+		protocolUpgradeService:     g.protocolUpgradeService,
 	}
 
 	protoapi2.RegisterTradingDataServiceServer(g.srv, tradingDataSvcV2)

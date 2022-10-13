@@ -300,6 +300,8 @@ type TradingDataServiceClient interface {
 	//
 	// Get the current time of the network
 	GetVegaTime(ctx context.Context, in *GetVegaTimeRequest, opts ...grpc.CallOption) (*GetVegaTimeResponse, error)
+	// Protocol Upgrade status
+	GetProtocolUpgradeStatus(ctx context.Context, in *GetProtocolUpgradeStatusRequest, opts ...grpc.CallOption) (*GetProtocolUpgradeStatusResponse, error)
 }
 
 type tradingDataServiceClient struct {
@@ -1352,6 +1354,15 @@ func (c *tradingDataServiceClient) GetVegaTime(ctx context.Context, in *GetVegaT
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) GetProtocolUpgradeStatus(ctx context.Context, in *GetProtocolUpgradeStatusRequest, opts ...grpc.CallOption) (*GetProtocolUpgradeStatusResponse, error) {
+	out := new(GetProtocolUpgradeStatusResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetProtocolUpgradeStatus", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TradingDataServiceServer is the server API for TradingDataService service.
 // All implementations must embed UnimplementedTradingDataServiceServer
 // for forward compatibility
@@ -1634,6 +1645,8 @@ type TradingDataServiceServer interface {
 	//
 	// Get the current time of the network
 	GetVegaTime(context.Context, *GetVegaTimeRequest) (*GetVegaTimeResponse, error)
+	// Protocol Upgrade status
+	GetProtocolUpgradeStatus(context.Context, *GetProtocolUpgradeStatusRequest) (*GetProtocolUpgradeStatusResponse, error)
 	mustEmbedUnimplementedTradingDataServiceServer()
 }
 
@@ -1865,6 +1878,9 @@ func (UnimplementedTradingDataServiceServer) ListEthereumKeyRotations(context.Co
 }
 func (UnimplementedTradingDataServiceServer) GetVegaTime(context.Context, *GetVegaTimeRequest) (*GetVegaTimeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetVegaTime not implemented")
+}
+func (UnimplementedTradingDataServiceServer) GetProtocolUpgradeStatus(context.Context, *GetProtocolUpgradeStatusRequest) (*GetProtocolUpgradeStatusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetProtocolUpgradeStatus not implemented")
 }
 func (UnimplementedTradingDataServiceServer) mustEmbedUnimplementedTradingDataServiceServer() {}
 
@@ -3282,6 +3298,24 @@ func _TradingDataService_GetVegaTime_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_GetProtocolUpgradeStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProtocolUpgradeStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).GetProtocolUpgradeStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/GetProtocolUpgradeStatus",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).GetProtocolUpgradeStatus(ctx, req.(*GetProtocolUpgradeStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TradingDataService_ServiceDesc is the grpc.ServiceDesc for TradingDataService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -3524,6 +3558,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetVegaTime",
 			Handler:    _TradingDataService_GetVegaTime_Handler,
+		},
+		{
+			MethodName: "GetProtocolUpgradeStatus",
+			Handler:    _TradingDataService_GetProtocolUpgradeStatus_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
