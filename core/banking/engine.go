@@ -14,6 +14,7 @@ package banking
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"math/big"
 	"sort"
@@ -26,10 +27,13 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/validators"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
+	vgproto "code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+	"github.com/emirpasic/gods/sets/treeset"
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/banking Assets,Notary,Collateral,Witness,TimeService,EpochService,Topology,MarketActivityTracker,ERC20BridgeView
@@ -129,8 +133,7 @@ type Engine struct {
 	top         Topology
 
 	assetActs     map[string]*assetAction
-	seen          map[*snapshot.TxRef]struct{}
-	seenSlice     []*snapshot.TxRef
+	seen          *treeset.Set
 	withdrawals   map[string]withdrawalRef
 	withdrawalCnt *big.Int
 	deposits      map[string]*types.Deposit
@@ -190,8 +193,7 @@ func New(
 		notary:                     notary,
 		top:                        top,
 		assetActs:                  map[string]*assetAction{},
-		seen:                       map[*snapshot.TxRef]struct{}{},
-		seenSlice:                  []*snapshot.TxRef{},
+		seen:                       treeset.NewWithStringComparator(),
 		withdrawals:                map[string]withdrawalRef{},
 		deposits:                   map[string]*types.Deposit{},
 		withdrawalCnt:              big.NewInt(0),
@@ -251,11 +253,19 @@ func (e *Engine) OnTick(ctx context.Context, _ time.Time) {
 
 		// get the action reference to ensure it's not a duplicate
 		ref := v.getRef()
+		refKey, err := getRefKey(ref)
+		if err != nil {
+			e.log.Error("failed to serialise ref",
+				logging.String("asset-class", ref.Asset),
+				logging.String("tx-hash", ref.Hash),
+				logging.String("action", v.String()))
+			continue
+		}
 
 		switch state {
 		case okState:
 			// check if this transaction have been seen before then
-			if _, ok := e.seen[&ref]; ok {
+			if e.seen.Contains(refKey) {
 				// do nothing of this transaction, just display an error
 				e.log.Error("chain event reference a transaction already processed",
 					logging.String("asset-class", ref.Asset),
@@ -263,8 +273,7 @@ func (e *Engine) OnTick(ctx context.Context, _ time.Time) {
 					logging.String("action", v.String()))
 			} else {
 				// first time we seen this transaction, let's add iter
-				e.seen[&ref] = struct{}{}
-				e.seenSlice = append(e.seenSlice, &ref)
+				e.seen.Add(refKey)
 				if err := e.finalizeAction(ctx, v); err != nil {
 					e.log.Error("unable to finalize action",
 						logging.String("action", v.String()),
@@ -470,4 +479,13 @@ func (e *Engine) newDeposit(
 		CreationDate: e.timeService.GetTimeNow().UnixNano(),
 		TxHash:       txHash,
 	}
+}
+
+func getRefKey(ref snapshot.TxRef) (string, error) {
+	buf, err := vgproto.Marshal(&ref)
+	if err != nil {
+		return "", err
+	}
+
+	return hex.EncodeToString(crypto.Hash(buf)), nil
 }

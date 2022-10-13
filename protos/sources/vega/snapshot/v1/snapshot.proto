@@ -9,7 +9,6 @@ import "vega/assets.proto";
 import "vega/chain_events.proto";
 import "vega/governance.proto";
 import "vega/events/v1/events.proto";
-import "vega/commands/v1/validator_commands.proto";
 import "vega/checkpoint/v1/checkpoint.proto";
 
 enum Format {
@@ -168,7 +167,7 @@ message Resource {
 }
 
 message EventForwarder {
-  repeated vega.commands.v1.ChainEvent acked_events = 1;
+  repeated string acked_events = 1;
 }
 
 message CollateralAccounts {
@@ -233,7 +232,7 @@ message BankingDeposits {
 }
 
 message BankingSeen {
-  repeated TxRef refs = 1;
+  repeated string refs = 1;
 }
 
 message BankingAssetActions {
