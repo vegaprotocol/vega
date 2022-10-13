@@ -20,6 +20,7 @@ import (
 	"time"
 
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	tmTypes "github.com/tendermint/tendermint/abci/types"
 	"google.golang.org/protobuf/proto"
 
 	pb "code.vegaprotocol.io/vega/protos/blockexplorer"
@@ -36,10 +37,8 @@ type TxResultRow struct {
 }
 
 func (t *TxResultRow) ToProto() (*pb.Transaction, error) {
-	txResult := pb.TxResult{}
-	if err := proto.Unmarshal(t.TxResult, &txResult); err != nil {
-		return nil, fmt.Errorf("unmarshalling tx_result: %w", err)
-	}
+	txResult := tmTypes.TxResult{}
+	txResult.Unmarshal(t.TxResult)
 
 	cTx := commandspb.Transaction{}
 	if err := proto.Unmarshal(txResult.Tx, &cTx); err != nil {
@@ -77,12 +76,12 @@ func (t *TxResultRow) Cursor() TxCursor {
 	}
 }
 
-func extractAttribute(r *pb.TxResult, eType, key string) string {
+func extractAttribute(r *tmTypes.TxResult, eType, key string) string {
 	for _, e := range r.Result.Events {
 		if e.Type == eType {
 			for _, a := range e.Attributes {
-				if a.Key == key {
-					return a.Value
+				if string(a.Key) == key {
+					return string(a.Value)
 				}
 			}
 		}
