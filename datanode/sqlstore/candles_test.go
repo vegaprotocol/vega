@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
+	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	"github.com/stretchr/testify/require"
 
 	types "code.vegaprotocol.io/vega/protos/vega"
@@ -318,15 +319,15 @@ func createTestTrade(t *testing.T, price int, size int, block entities.Block, se
 	t.Helper()
 	proto := &types.Trade{
 		Type:      types.Trade_TYPE_DEFAULT,
-		Id:        generateID(),
+		Id:        helpers.GenerateID(),
 		Price:     strconv.Itoa(price),
 		Size:      uint64(size),
 		MarketId:  testMarket,
-		Buyer:     generateID(),
-		Seller:    generateID(),
+		Buyer:     helpers.GenerateID(),
+		Seller:    helpers.GenerateID(),
 		Aggressor: types.Side_SIDE_SELL,
-		BuyOrder:  generateID(),
-		SellOrder: generateID(),
+		BuyOrder:  helpers.GenerateID(),
+		SellOrder: helpers.GenerateID(),
 	}
 
 	trade, err := entities.TradeFromProto(proto, generateTxHash(), block.VegaTime, uint64(seqNum))

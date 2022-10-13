@@ -19,6 +19,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/shopspring/decimal"
@@ -72,8 +73,8 @@ func TestDelegations(t *testing.T) {
 	ns := sqlstore.NewNode(connectionSource)
 	block := addTestBlock(t, bs)
 
-	node1 := addTestNode(t, ns, block, generateID())
-	node2 := addTestNode(t, ns, block, generateID())
+	node1 := addTestNode(t, ns, block, helpers.GenerateID())
+	node2 := addTestNode(t, ns, block, helpers.GenerateID())
 
 	node1ID := node1.ID.String()
 	node2ID := node2.ID.String()
@@ -639,8 +640,8 @@ func setupPaginatedDelegationsTests(t *testing.T) (*sqlstore.Delegations,
 	block := addTestBlockForTime(t, bs, blockTime)
 
 	nodes := []entities.Node{
-		addTestNode(t, ns, block, generateID()),
-		addTestNode(t, ns, block, generateID()),
+		addTestNode(t, ns, block, helpers.GenerateID()),
+		addTestNode(t, ns, block, helpers.GenerateID()),
 	}
 
 	parties := []entities.Party{

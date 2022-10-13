@@ -364,6 +364,20 @@ input AccountFilter {
   accountTypes: [AccountType!]
 }
 
+"Filter for historical entry ledger queries"
+input LedgerEntryFilter {
+  CloseOnAccountFilters: Boolean
+  AccountFromFilters: [AccountFilter]
+  AccountToFilters: [AccountFilter]
+
+  TransferTypes: [TransferType]
+}
+
+input GroupOptions{
+  ByAccountField: [AccountField]
+  ByLedgerEntryField: [LedgerEntryField]
+}
+
 "Queries allow a caller to read data and filter data via GraphQL."
 type Query {
   "An asset which is used in the vega network"
@@ -506,6 +520,14 @@ type Query {
     "Optional pagination information"
     pagination: Pagination
   ) : AggregatedBalanceConnection!
+
+  "Get ledger entries by asset, market, party, account type, transfer type within the given date range."
+  ledgerEntries(
+    filter: LedgerEntryFilter,
+    groupOptions: GroupOptions
+    dateRange: DateRange,
+    pagination: Pagination
+  ) : AggregatedLedgerEntriesConnection!
 
   "Query for historic key rotations"
   keyRotations(id: ID): [KeyRotation!] @deprecated(reason: "use keyRotationsConnection instead")
@@ -1148,7 +1170,7 @@ type Asset {
   status: AssetStatus!
 
   "The infrastructure fee account for this asset"
-  infrastructureFeeAccount: Account!
+  infrastructureFeeAccount: Account
 
   "The global reward pool account for this asset"
   globalRewardPoolAccount: Account
@@ -3202,6 +3224,34 @@ enum AccountType {
   ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS
 }
 
+enum TransferType {
+  TRANSFER_TYPE_UNSPECIFIED
+  TRANSFER_TYPE_LOSS
+  TRANSFER_TYPE_WIN
+  TRANSFER_TYPE_CLOSE
+  TRANSFER_TYPE_MTM_LOSS
+  TRANSFER_TYPE_MTM_WIN
+  TRANSFER_TYPE_MARGIN_LOW
+  TRANSFER_TYPE_MARGIN_HIGH
+  TRANSFER_TYPE_MARGIN_CONFISCATED
+  TRANSFER_TYPE_MAKER_FEE_PAY
+  TRANSFER_TYPE_MAKER_FEE_RECEIVE
+  TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY
+  TRANSFER_TYPE_INFRASTRUCTURE_FEE_DISTRIBUTE
+  TRANSFER_TYPE_LIQUIDITY_FEE_PAY
+  TRANSFER_TYPE_LIQUIDITY_FEE_DISTRIBUTE
+  TRANSFER_TYPE_BOND_LOW
+  TRANSFER_TYPE_BOND_HIGH
+  TRANSFER_TYPE_WITHDRAW_LOCK
+  TRANSFER_TYPE_WITHDRAW
+  TRANSFER_TYPE_DEPOSIT
+  TRANSFER_TYPE_BOND_SLASHING
+  TRANSFER_TYPE_STAKE_REWARD
+  TRANSFER_TYPE_TRANSFER_FUNDS_SEND
+  TRANSFER_TYPE_TRANSFER_FUNDS_DISTRIBUTE
+  TRANSFER_TYPE_CLEAR_ACCOUNT
+}
+
 type FutureProduct {
   "Product asset"
   settlementAsset: Asset!
@@ -3550,9 +3600,9 @@ type TransferBalance {
 
 type LedgerEntry {
   "Account from which the asset was taken"
-  fromAccount: AccountDetails!
+  accountFromId: AccountDetails!
   "Account to which the balance was transferred"
-  toAccount: AccountDetails!
+  accountToId: AccountDetails!
   "The amount transferred"
   amount: String!
   "Type of ledger entry"
@@ -3916,6 +3966,37 @@ type RewardPerAssetDetail {
 
 "RFC3339Nano value for time"
 scalar Timestamp
+
+type AggregatedLedgerEntries {
+  id: ID
+  "RFC3339Nano time from at which this ledger entries records were relevant"
+  vegaTime: String!
+  "Net amount of ledger entries for the accounts specified in the filter at this time"
+  quantity: String!
+  "Party identifier, if query was grouped by party - else null"
+  partyId: ID
+  "Asset identifier, if query was grouped by asset - else null"
+  assetId: ID
+  "Market identifier, if query was grouped by market - else null"
+  marketId: ID
+  "Account type, if query was grouped by account type - else null"
+  accountType: AccountType
+  transferType: String
+}
+
+type AggregatedLedgerEntriesEdge {
+  node: AggregatedLedgerEntries!
+  cursor: String!
+}
+
+type AggregatedLedgerEntriesConnection {
+  edges: [AggregatedLedgerEntriesEdge]!
+  pageInfo: PageInfo!
+}
+
+enum LedgerEntryField {
+  TransferType
+}
 
 type AggregatedBalance {
   "RFC3339Nano time from at which this balance was relevant"

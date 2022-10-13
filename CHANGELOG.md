@@ -1,6 +1,23 @@
 # Changelog
 
-## Unreleased 0.58.0
+
+## Unreleased 0.59.0
+
+### 🚨 Breaking changes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🗑️ Deprecation
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🛠 Improvements
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
+- [6480](https://github.com/vegaprotocol/vega/issues/6480) - Wallet `openrpc.json` is now a valid OpenRPC file
+- [6473](https://github.com/vegaprotocol/vega/issues/6473) - Infrastructure Fee Account returns error when asset is pending listing
+-
+
+## 0.58.0
 
 ### 🚨 Breaking changes
 - [6271](https://github.com/vegaprotocol/vega/issues/6271) - Require signature from new Ethereum key to validate key rotation submission
@@ -10,12 +27,10 @@
 - [6429](https://github.com/vegaprotocol/vega/issues/6429) - Rename pipeline to interactor for better understanding
 - [6430](https://github.com/vegaprotocol/vega/issues/6430) - Split the transaction status interaction depending on success and failure
 
-### 🗑️ Deprecation
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
-
 ### 🛠 Improvements
 - [6399](https://github.com/vegaprotocol/vega/issues/6399) - Add `init-db` and `unsafe-reset-all` commands to block explorer
 - [6348](https://github.com/vegaprotocol/vega/issues/6348) - Reduce pool size to leave more available `Postgres` connections
+- [6453](https://github.com/vegaprotocol/vega/issues/6453) - Add ability to write `pprofs` at intervals to core
 - [6312](https://github.com/vegaprotocol/vega/issues/6312) - Add back amended balance tests and correct ordering
 - [6461](https://github.com/vegaprotocol/vega/issues/6461) - Occasionally close `postgres` pool connections
 - [6435](https://github.com/vegaprotocol/vega/issues/6435) - Add `GetTransaction` `API` call for block explorer
@@ -33,6 +48,7 @@
 - [6458](https://github.com/vegaprotocol/vega/issues/6458) - Return a context aware message in `RequestSuccessful` interaction
 - [6451](https://github.com/vegaprotocol/vega/issues/6451) - Improve interaction error message
 - [6432](https://github.com/vegaprotocol/vega/issues/6432) - Use optionals for order error and proposal error
+- [6368](https://github.com/vegaprotocol/vega/pull/6368) - Add Ledger Entry API
 
 ### 🐛 Fixes
 - [6444](https://github.com/vegaprotocol/vega/issues/6444) - Send a transaction error if the same node announces itself twice
@@ -54,6 +70,7 @@
 - [6375](https://github.com/vegaprotocol/vega/issues/6375) - If there is one unit left over at the end of final market settlement - transfer it to the network treasury. if there is more than one, log all transfers and panic.
 - [6456](https://github.com/vegaprotocol/vega/issues/6456) - Assure liquidity fee gets update when target stake drops (even in the absence of trades)
 - [6459](https://github.com/vegaprotocol/vega/issues/6459) - Send lifecycle notifications after parameters validation
+- [6420](https://github.com/vegaprotocol/vega/issues/6420) - Support cancellation of a request during a wallet interaction
 
 ## 0.57.0
 

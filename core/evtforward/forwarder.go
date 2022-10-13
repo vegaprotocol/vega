@@ -14,6 +14,7 @@ package evtforward
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"hash/fnv"
@@ -27,6 +28,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	"github.com/emirpasic/gods/sets/treeset"
 
 	vgproto "code.vegaprotocol.io/vega/libs/proto"
 	"github.com/cenkalti/backoff"
@@ -66,10 +68,9 @@ type Forwarder struct {
 	cmd  Commander
 	self string
 
-	evtsmu         sync.Mutex
-	ackedEvts      map[string]*commandspb.ChainEvent
-	ackedEvtsSlice []*commandspb.ChainEvent
-	evts           map[string]tsEvt
+	evtsmu    sync.Mutex
+	ackedEvts *treeset.Set // we only care about the key
+	evts      map[string]tsEvt
 
 	mu               sync.RWMutex
 	bcQueueAllowlist atomic.Value // this is actually an map[string]struct{}
@@ -98,8 +99,7 @@ func New(log *logging.Logger, cfg Config, cmd Commander, timeService TimeService
 		timeService:      timeService,
 		nodes:            []string{},
 		self:             top.SelfNodeID(),
-		ackedEvts:        map[string]*commandspb.ChainEvent{},
-		ackedEvtsSlice:   []*commandspb.ChainEvent{},
+		ackedEvts:        treeset.NewWithStringComparator(),
 		evts:             map[string]tsEvt{},
 		top:              top,
 		bcQueueAllowlist: allowlist,
@@ -168,8 +168,7 @@ func (f *Forwarder) Ack(evt *commandspb.ChainEvent) bool {
 	}
 
 	// now add it to the acknowledged evts
-	f.ackedEvts[key] = evt
-	f.ackedEvtsSlice = append(f.ackedEvtsSlice, evt)
+	f.ackedEvts.Add(key)
 	f.log.Info("new event acknowledged", logging.String("event", evt.String()))
 	return true
 }
@@ -268,7 +267,7 @@ func (f *Forwarder) updateValidatorsList() {
 
 // getEvt assumes the lock is acquired before being called.
 func (f *Forwarder) getEvt(key string) (ok bool, acked bool) {
-	if _, ok = f.ackedEvts[key]; ok {
+	if f.ackedEvts.Contains(key) {
 		return true, true
 	}
 
@@ -344,7 +343,7 @@ func (f *Forwarder) getEvtKey(evt *commandspb.ChainEvent) (string, error) {
 		return "", fmt.Errorf("invalid event: %w", err)
 	}
 
-	return string(crypto.Hash(mevt)), nil
+	return hex.EncodeToString(crypto.Hash(mevt)), nil
 }
 
 func (f *Forwarder) marshalEvt(evt *commandspb.ChainEvent) ([]byte, error) {

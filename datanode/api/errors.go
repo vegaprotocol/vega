@@ -85,8 +85,9 @@ var (
 	ErrMarketServiceGetDepth      = errors.New("failed to get market depth")
 	ErrMarketServiceGetMarketData = errors.New("failed to get market data")
 	// AccountService...
-	ErrAccountServiceListAccounts      = errors.New("failed to get accounts")
-	ErrAccountServiceGetMarketAccounts = errors.New("failed to get market accounts")
+	ErrAccountServiceListAccounts         = errors.New("failed to get accounts")
+	ErrAccountServiceSQLStoreNotAvailable = errors.New("sql balance store for accounts not available")
+	ErrAccountServiceGetMarketAccounts    = errors.New("failed to get market accounts")
 	// AccountService...
 	ErrAccountServiceGetFeeInfrastructureAccounts = errors.New("failed to get fee infrastructure accounts")
 	ErrAccountServiceGetGlobalRewardPoolAccounts  = errors.New("failed to get global reward pool accounts")
@@ -173,12 +174,13 @@ var errorMap = map[string]int32{
 	// Risk
 	ErrRiskServiceGetMarginLevelsByID.Error(): 70001,
 	// Accounts
-	ErrAccountServiceGetMarketAccounts.Error(): 80001,
-	ErrAccountServiceGetPartyAccounts.Error():  80002,
-	ErrMissingWithdrawalID.Error():             80003,
-	ErrMissingDepositID.Error():                80004,
-	ErrMissingAssetID.Error():                  80005,
-	ErrAccountServiceListAccounts.Error():      80006,
+	ErrAccountServiceGetMarketAccounts.Error():    80001,
+	ErrAccountServiceGetPartyAccounts.Error():     80002,
+	ErrMissingWithdrawalID.Error():                80003,
+	ErrMissingDepositID.Error():                   80004,
+	ErrMissingAssetID.Error():                     80005,
+	ErrAccountServiceListAccounts.Error():         80006,
+	ErrAccountServiceSQLStoreNotAvailable.Error(): 80007,
 	// Blockchain client
 	ErrBlockchainBacklogLength.Error(): 90001,
 	ErrBlockchainNetworkInfo.Error():   90002,

@@ -21,6 +21,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	"code.vegaprotocol.io/vega/protos/vega"
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgx/v4"
@@ -337,7 +338,7 @@ func addWithdrawals(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, ws *
 		addTestBlockForTime(t, bs, vegaTime)
 
 		withdrawalProto := getTestWithdrawal(fmt.Sprintf("deadbeef%02d", i+1), testID, testID,
-			strconv.FormatInt(amount, 10), generateID(), vegaTime)
+			strconv.FormatInt(amount, 10), helpers.GenerateID(), vegaTime)
 		withdrawal, err := entities.WithdrawalFromProto(withdrawalProto, generateTxHash(), vegaTime)
 		require.NoError(t, err, "Converting withdrawal proto to database entity")
 		err = ws.Upsert(ctx, withdrawal)
