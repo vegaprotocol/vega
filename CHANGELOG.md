@@ -17,6 +17,7 @@
 - [6473](https://github.com/vegaprotocol/vega/issues/6473) - Infrastructure Fee Account returns error when asset is pending listing
 - [5690](https://github.com/vegaprotocol/vega/issues/5690) - Markets query now excludes rejected markets
 - [5479](https://github.com/vegaprotocol/vega/issues/5479) - Fix inconsistent naming in API error
+- [6011](https://github.com/vegaprotocol/vega/issues/6011) - Fix data node fails when postgres starts slowly
 
 ## 0.58.0
 
