@@ -43,7 +43,7 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | lpprov | ETH   | 100000000 |
             | lpprov | USD   | 100000000 |
 
-    Scenario: Markets with different precisions trade at the same price
+    Scenario: 001, Markets with different precisions trade at the same price
 
         Given  the parties submit the following liquidity provision:
             | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -123,7 +123,7 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | party2 | ETH   | USD/DEC22 | 85368  | 99901468 | 0    |
 
 
-    Scenario: Users engage in a USD market auction, (0070-MKTD-003, 0070-MKTD-008)
+    Scenario: 002, Users engage in a USD market auction, (0070-MKTD-003, 0070-MKTD-008)
         Given the parties submit the following liquidity provision:
             | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
             | lp1 | party0 | USD/DEC22 | 35569             | 0.001 | sell | ASK              | 500        | 20     | submission |
