@@ -4,6 +4,7 @@
 ## Unreleased 0.59.0
 
 ### 🚨 Breaking changes
+- [6505](https://github.com/vegaprotocol/vega/issues/6505) - Allow negative position decimal places for market
 - [6477](https://github.com/vegaprotocol/vega/issues/6477) - Allow the user to specify a different passphrase when isolating a key
 - [6458](https://github.com/vegaprotocol/vega/issues/6458) - Rename `GetMultiSigSigner...Bundles API` functions to `ListMultiSigSigner...Bundles` to be consistent with `v2 APIs`
 

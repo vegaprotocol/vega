@@ -106,7 +106,7 @@ func (n NewMarket) String() string {
 type NewMarketConfiguration struct {
 	Instrument                    *InstrumentConfiguration
 	DecimalPlaces                 uint64
-	PositionDecimalPlaces         uint64
+	PositionDecimalPlaces         int64
 	Metadata                      []string
 	PriceMonitoringParameters     *PriceMonitoringParameters
 	LiquidityMonitoringParameters *LiquidityMonitoringParameters
