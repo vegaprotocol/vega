@@ -509,12 +509,16 @@ type Query {
     "Optional Pagination"
     pagination: Pagination): MarketDataConnection
 
-  "Get historical balances for an account or specific asset within the given date range."
-  historicBalances(
-    "Optional filter to restrict the result to a specific account or asset"
+  "Get historical balances for an account within the given date range, with optional netting over party, market and account type"
+  balanceChanges(
+    "Optional filter to restrict queried accounts to those of a specific asset, party, market or type"
     filter: AccountFilter,
-    "Optional grouping clause for the results"
-    groupBy: [AccountField],
+    "Whether balances for different parties should be netted together. If so, party_id of results will be null"
+    sumAcrossParties: Boolean,
+    "Whether balances for different markets should be netted together. If so, market_id of results will be null"
+    sumAcrossMarkets: Boolean,
+    "Whether balances for different account types should be netted together. If so, account_type of will be null"
+    sumAcrossTypes: Boolean,
     "Date range to retrieve historical balances from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
     dateRange: DateRange,
     "Optional pagination information"
@@ -4026,8 +4030,6 @@ type AggregatedBalance {
   "Net balance of the accounts specified in the filter at this time"
   balance: String!
   "Account identifier, if query was grouped by account - else null"
-  accountId: ID
-  "Party identifier, if query was grouped by party - else null"
   partyId: ID
   "Asset identifier, if query was grouped by asset - else null"
   assetId: ID

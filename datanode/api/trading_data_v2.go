@@ -271,8 +271,8 @@ func (t *tradingDataServiceV2) ListLedgerEntries(ctx context.Context, req *v2.Li
 	}, nil
 }
 
-func (t *tradingDataServiceV2) GetBalanceHistory(ctx context.Context, req *v2.GetBalanceHistoryRequest) (*v2.GetBalanceHistoryResponse, error) {
-	defer metrics.StartAPIRequestAndTimeGRPC("GetBalanceHistoryV2")()
+func (t *tradingDataServiceV2) ListBalanceChanges(ctx context.Context, req *v2.ListBalanceChangesRequest) (*v2.ListBalanceChangesResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListBalanceChangesV2")()
 	if t.accountService == nil {
 		return nil, fmt.Errorf("sql balance store not available")
 	}
@@ -282,13 +282,21 @@ func (t *tradingDataServiceV2) GetBalanceHistory(ctx context.Context, req *v2.Ge
 		return nil, fmt.Errorf("parsing filter: %w", err)
 	}
 
-	groupBy := []entities.AccountField{}
-	for _, field := range req.GroupBy {
-		field, err := entities.AccountFieldFromProto(field)
-		if err != nil {
-			return nil, fmt.Errorf("parsing group by list: %w", err)
-		}
-		groupBy = append(groupBy, field)
+	// Always group by asset; it doesn't make sense to add up quantities of different things
+	groupBy := []entities.AccountField{
+		entities.AccountFieldAssetID,
+	}
+
+	if !req.SumAcrossParties {
+		groupBy = append(groupBy, entities.AccountFieldPartyID)
+	}
+
+	if !req.SumAcrossMarkets {
+		groupBy = append(groupBy, entities.AccountFieldMarketID)
+	}
+
+	if !req.SumAcrossTypes {
+		groupBy = append(groupBy, entities.AccountFieldType)
 	}
 
 	dateRange := entities.DateRangeFromProto(req.DateRange)
@@ -307,7 +315,7 @@ func (t *tradingDataServiceV2) GetBalanceHistory(ctx context.Context, req *v2.Ge
 		return nil, apiError(codes.Internal, ErrAccountServiceListAccounts, err)
 	}
 
-	return &v2.GetBalanceHistoryResponse{
+	return &v2.ListBalanceChangesResponse{
 		Balances: &v2.AggregatedBalanceConnection{
 			Edges:    edges,
 			PageInfo: pageInfo.ToProto(),
