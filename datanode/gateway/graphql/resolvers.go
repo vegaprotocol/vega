@@ -700,8 +700,8 @@ func (r *myQueryResolver) Erc20SetAssetLimitsBundle(ctx context.Context, proposa
 }
 
 func (r *myQueryResolver) Erc20MultiSigSignerAddedBundles(ctx context.Context, nodeID string, submitter, epochSeq *string, pagination *v2.Pagination) (*ERC20MultiSigSignerAddedConnection, error) {
-	res, err := r.tradingDataClientV2.GetERC20MultiSigSignerAddedBundles(
-		ctx, &v2.GetERC20MultiSigSignerAddedBundlesRequest{
+	res, err := r.tradingDataClientV2.ListERC20MultiSigSignerAddedBundles(
+		ctx, &v2.ListERC20MultiSigSignerAddedBundlesRequest{
 			NodeId:     nodeID,
 			Submitter:  fromPtr(submitter),
 			EpochSeq:   fromPtr(epochSeq),
@@ -734,8 +734,8 @@ func (r *myQueryResolver) Erc20MultiSigSignerAddedBundles(ctx context.Context, n
 }
 
 func (r *myQueryResolver) Erc20MultiSigSignerRemovedBundles(ctx context.Context, nodeID string, submitter, epochSeq *string, pagination *v2.Pagination) (*ERC20MultiSigSignerRemovedConnection, error) {
-	res, err := r.tradingDataClientV2.GetERC20MultiSigSignerRemovedBundles(
-		ctx, &v2.GetERC20MultiSigSignerRemovedBundlesRequest{
+	res, err := r.tradingDataClientV2.ListERC20MultiSigSignerRemovedBundles(
+		ctx, &v2.ListERC20MultiSigSignerRemovedBundlesRequest{
 			NodeId:     nodeID,
 			Submitter:  fromPtr(submitter),
 			EpochSeq:   fromPtr(epochSeq),
