@@ -235,12 +235,12 @@ jobs:
         run: |
           issue_item_id="$( gh api graphql -f query='
             mutation($project:ID!, $issue:ID!) {
-              addProjectNextItem(input: {projectId: $project, contentId: $issue}) {
+              addProjectV2ItemById(input: {projectId: $project, contentId: $issue}) {
                 item {
                   id
                 }
               }
-            }' -f project=$PROJECT_ID -f issue=$LINKED_ISSUE_ID --jq '.data.addProjectNextItem.projectNextItem.id')"
+            }' -f project=$PROJECT_ID -f issue=$LINKED_ISSUE_ID --jq '.data.addProjectV2ItemById.item.id')"
           echo 'BOARD_ITEM_ID='$issue_item_id >> $GITHUB_ENV
       - name: 'Add exclusion labeled PR to the project'
         id: pr-to-project
@@ -250,12 +250,12 @@ jobs:
         run: |
           pr_item_id="$( gh api graphql -f query='
             mutation($project:ID!, $pr:ID!) {
-              addProjectNextItem(input: {projectId: $project, contentId: $pr}) {
+              addProjectV2ItemById(input: {projectId: $project, contentId: $pr}) {
                 item {
                   id
                 }
               }
-            }' -f project=$PROJECT_ID -f pr=$PR_ID --jq '.data.addProjectNextItem.projectNextItem.id')"
+            }' -f project=$PROJECT_ID -f pr=$PR_ID --jq '.data.addProjectV2ItemById.item.id')"
           echo 'BOARD_ITEM_ID='$pr_item_id >> $GITHUB_ENV
       - name: 'Add BOT PR to the project'
         id: bot-pr-to-project
@@ -263,12 +263,12 @@ jobs:
         run: |
           pr_item_id="$( gh api graphql -f query='
             mutation($project:ID!, $pr:ID!) {
-              addProjectNextItem(input: {projectId: $project, contentId: $pr}) {
+              addProjectV2ItemById(input: {projectId: $project, contentId: $pr}) {
                 item {
                   id
                 }
               }
-            }' -f project=$PROJECT_ID -f pr=$PR_ID --jq '.data.addProjectNextItem.projectNextItem.id')"
+            }' -f project=$PROJECT_ID -f pr=$PR_ID --jq '.data.addProjectV2ItemById.item.id')"
           echo 'BOARD_ITEM_ID='$pr_item_id >> $GITHUB_ENV
       - name: 'Reopen if the linked issue closed'
         id: reopen-issue
