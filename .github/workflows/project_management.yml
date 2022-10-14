@@ -157,9 +157,12 @@ jobs:
           echo 'APPROVED_COLUMN='$(jq --arg approved ${{ env.APPROVED_COLUMN_NAME }} '.data.organization.projectV2.fields.nodes[] | select(.name== "Status") | .options[] | select(.name==$approved) | .id' data.json) >> $GITHUB_ENV
           echo 'MERGED_COLUMN='$(jq --arg merged ${{ env.MERGED_COLUMN_NAME }} '.data.organization.projectV2.fields.nodes[] | select(.name== "Status") | .options[] | select(.name==$merged) | .id' data.json) >> $GITHUB_ENV
           echo 'DONE_COLUMN='$(jq --arg done ${{ env.DONE_COLUMN_NAME }} '.data.organization.projectV2.fields.nodes[] | select(.name== "Status") | .options[] | select(.name==$done) | .id' data.json) >> $GITHUB_ENV
-          echo 'ITERATION_FIELD_ID='$(jq --arg iteration_field_name $ITERATION_FIELD_NAME '.data.organization.projectV2.fields.nodes[] | select(.name==$iteration_field_name) | .id' data.json) >> $GITHUB_ENV
+          echo 'ITERATION_FIELD_ID='$(jq --arg iteration_field_name $ITERATION_FIELD_NAME '.data.organization.projectNext.fields.nodes[] | select(.name==$iteration_field_name) | .id' data.json) >> $GITHUB_ENV
           echo 'CURRENT_ITERATION='$(jq --arg iteration_field_name $ITERATION_FIELD_NAME '.data.organization.projectV2.fields.nodes[] | select(.name==$iteration_field_name) | .configuration.iterations[0] | .id' data.json) >> $GITHUB_ENV
   
+# when Github updates line 160 should be updated to:
+# echo 'ITERATION_FIELD_ID='$(jq --arg iteration_field_name $ITERATION_FIELD_NAME '.data.organization.projectV2.fields.nodes[] | select(.name==$iteration_field_name) | .id' data.json) >> $GITHUB_ENV
+
       - name: 'Get PR state, review decision and author'
         id: pr-status
         run: |
@@ -380,34 +383,44 @@ jobs:
               -f status_value=$CURRENT_STATUS \
               -f iteration_field=$ITERATION_FIELD_ID \
               -f iteration_value=$CURRENT_ITERATION
-  verify-changelog-updated:
-    name: Verify CHANGELOG Updated
+  verify-changelog-updated2:
+    name: "Verify CHANGELOG Updated 2"
     needs: project-board-automation
     runs-on: ubuntu-latest
     env:
       IS_BOT: ${{needs.project-board-automation.outputs.bot-pr-output}}
     steps:
       - run: env
-      - name: Check bot
-        id: check-bot
+      - name: "Check bot 2"
+        id: check-bot-2
         if: env.IS_BOT == '1'
-        run: echo "Pull request opened by bot - no changelog required"
-      - name: No changelog required
-        id: changelog-excluded
+        run: echo "pull request opened by bot"
+      - name: "No changelog required 2"
+        id: changelog-excluded-2
         if: github.event.pull_request.draft == true || contains(github.event.pull_request.labels.*.name, 'no-changelog') == true
-        run: echo "Changelog requirment excluded"
-      - name: Checkout
-        id: checkout
-        if: steps.check-bot.outcome == 'skipped' && steps.changelog-excluded.outcome == 'skipped'
+        run: echo "changelog requirment excluded"
+      - name: "Checkout 2"
+        id: checkout-2
+        if: steps.check-bot-2.outcome == 'skipped' && steps.changelog-excluded-2.outcome == 'skipped'
         uses: actions/checkout@v3
-      # yamllint enable rule:line-length
-      - name: Check changelog entry
-        id: changelog-check
-        if: steps.checkout.outcome == 'success'
-        uses: Zomzog/changelog-checker@v1.2.0
         with:
-          fileName: CHANGELOG.md
-          noChangelogLabel: "no-changelog"
-          checkNotification: Simple
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      - name: "Check changelog entry 2"
+        shell: pwsh
+        id: check_file_changed
+        if: steps.checkout-2.outcome == 'success'
+        run: |
+          $diff = git diff --name-only HEAD^ HEAD
+          $SourceDiff = $diff | Where-Object { $_ -match 'CHANGELOG.md' }
+          $HasDiff = $SourceDiff.Length -gt 0
+          Write-Host "::set-output name=changelog_changed::$HasDiff"
+          echo "{changelog_changed}={$HasDiff}" >> $GITHUB_ENV
+      - name: "Report fail"
+        if: steps.check_file_changed.outputs.changelog_changed != 'True' && steps.check_file_changed.outcome == 'success'
+        uses: actions/github-script@v6.1.0
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            console.log("Changelog should be updated, or if a small fix the 'no-changelog label used!");
+            core.setFailed("Changelog should be updated, or if a small fix the 'no-changelog label used!");
+        # yamllint enable rule:line-length
