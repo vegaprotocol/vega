@@ -225,14 +225,23 @@ func testNewMarketChangeSubmissionWithPositionDecimalPlacesEqualTo0Succeeds(t *t
 func testNewMarketChangeSubmissionWithPositionDecimalPlacesAboveOrEqualTo7Fails(t *testing.T) {
 	testCases := []struct {
 		msg   string
-		value uint64
+		value int64
 	}{
 		{
 			msg:   "equal to 7",
 			value: 7,
-		}, {
-			msg:   "above 7",
-			value: 1000,
+		},
+		{
+			msg:   "greater than 7",
+			value: 8,
+		},
+		{
+			msg:   "equal to -7",
+			value: -7,
+		},
+		{
+			msg:   "less than -7",
+			value: -8,
 		},
 	}
 	for _, tc := range testCases {
@@ -249,7 +258,7 @@ func testNewMarketChangeSubmissionWithPositionDecimalPlacesAboveOrEqualTo7Fails(
 				},
 			})
 
-			assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.position_decimal_places"), commands.ErrMustBeLessThan7)
+			assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.position_decimal_places"), commands.ErrMustBeWithinRange7)
 		})
 	}
 }
@@ -260,15 +269,14 @@ func testNewMarketChangeSubmissionWithPositionDecimalPlacesBelow7Succeeds(t *tes
 			Change: &types.ProposalTerms_NewMarket{
 				NewMarket: &types.NewMarket{
 					Changes: &types.NewMarketConfiguration{
-						PositionDecimalPlaces: RandomPositiveU64Before(7),
+						PositionDecimalPlaces: RandomPositiveI64Before(7),
 					},
 				},
 			},
 		},
 	})
 
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.position_decimal_places"), commands.ErrMustBePositive)
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.position_decimal_places"), commands.ErrMustBeLessThan7)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.position_decimal_places"), commands.ErrMustBeWithinRange7)
 }
 
 func testNewMarketChangeSubmissionWithoutLiquidityMonitoringSucceeds(t *testing.T) {
