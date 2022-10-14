@@ -22,12 +22,13 @@ import (
 )
 
 type Config struct {
-	ConnectionConfig  ConnectionConfig  `group:"ConnectionConfig" namespace:"ConnectionConfig"`
-	WipeOnStartup     encoding.Bool     `long:"wipe-on-startup"`
-	Level             encoding.LogLevel `long:"log-level"`
-	UseEmbedded       encoding.Bool     `long:"use-embedded" description:"Use an embedded version of Postgresql for the SQL data store"`
-	FanOutBufferSize  int               `long:"fan-out-buffer-size" description:"buffer size used by the fan out event source"`
-	RetentionPolicies []RetentionPolicy `group:"RetentionPolicies" namespace:"RetentionPolicies"`
+	ConnectionConfig      ConnectionConfig      `group:"ConnectionConfig" namespace:"ConnectionConfig"`
+	WipeOnStartup         encoding.Bool         `long:"wipe-on-startup"`
+	Level                 encoding.LogLevel     `long:"log-level"`
+	UseEmbedded           encoding.Bool         `long:"use-embedded" description:"Use an embedded version of Postgresql for the SQL data store"`
+	FanOutBufferSize      int                   `long:"fan-out-buffer-size" description:"buffer size used by the fan out event source"`
+	RetentionPolicies     []RetentionPolicy     `group:"RetentionPolicies" namespace:"RetentionPolicies"`
+	ConnectionRetryConfig ConnectionRetryConfig `group:"ConnectionRetryConfig" namespace:"ConnectionRetryConfig"`
 }
 
 type ConnectionConfig struct {
@@ -43,6 +44,13 @@ type ConnectionConfig struct {
 type RetentionPolicy struct {
 	HypertableOrCaggName string `string:"hypertable-or-cagg-name" description:"the name of the hyper table of continuous aggregate (cagg) to which this policy applies"`
 	DataRetentionPeriod  string `string:"interval" description:"the period to retain data, e.g '3 days', '3 months', '1 year' etc"`
+}
+
+type ConnectionRetryConfig struct {
+	MaxRetries      uint64        `long:"max-retries" description:"the maximum number of times to retry connecting to the database"`
+	InitialInterval time.Duration `long:"initial-interval" description:"the initial interval to wait before retrying"`
+	MaxInterval     time.Duration `long:"max-interval" description:"the maximum interval to wait before retrying"`
+	MaxElapsedTime  time.Duration `long:"max-elapsed-time" description:"the maximum elapsed time to wait before giving up"`
 }
 
 func (conf ConnectionConfig) GetConnectionString() string {
@@ -106,6 +114,12 @@ func NewDefaultConfig() Config {
 			{HypertableOrCaggName: "positions", DataRetentionPeriod: "7 days"},
 			{HypertableOrCaggName: "conflated_positions", DataRetentionPeriod: "1 year"},
 			{HypertableOrCaggName: "liquidity_provisions", DataRetentionPeriod: "1 year"},
+		},
+		ConnectionRetryConfig: ConnectionRetryConfig{
+			MaxRetries:      10,
+			InitialInterval: time.Second,
+			MaxInterval:     time.Second * 10,
+			MaxElapsedTime:  time.Minute,
 		},
 	}
 }
