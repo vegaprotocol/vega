@@ -153,7 +153,7 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | party1 | USD/DEC22 | 1061        | 1167   | 1273    | 1485    |
             | party2 | USD/DEC22 | 4269        | 4695   | 5122    | 5976    |
 
-        #margin for party0 = 712*10*10*3.5569036+791*9*10*0.801225765=310291
+        #margin for party0 = 712*10*10*3.5569036+791*10*10*0.801225765=316629
         And the following trades should be executed:
             | buyer  | price | size | seller |
             | party1 | 10    | 10   | party2 |
