@@ -115,12 +115,12 @@ type TradingDataServiceClient interface {
 	ObserveVotes(ctx context.Context, in *ObserveVotesRequest, opts ...grpc.CallOption) (TradingDataService_ObserveVotesClient, error)
 	// ERC20 add signer bundle
 	//
-	// Get the signature bundle to add a particular validator to the signer list of the multisig contract
-	GetERC20MultiSigSignerAddedBundles(ctx context.Context, in *GetERC20MultiSigSignerAddedBundlesRequest, opts ...grpc.CallOption) (*GetERC20MultiSigSignerAddedBundlesResponse, error)
+	// List the signature bundle to add a particular validator to the signer list of the multisig contract
+	ListERC20MultiSigSignerAddedBundles(ctx context.Context, in *ListERC20MultiSigSignerAddedBundlesRequest, opts ...grpc.CallOption) (*ListERC20MultiSigSignerAddedBundlesResponse, error)
 	// ERC20 remove signer bundle
 	//
-	// Get the signatures bundle to remove a particular validator from signer list of the multisig contract
-	GetERC20MultiSigSignerRemovedBundles(ctx context.Context, in *GetERC20MultiSigSignerRemovedBundlesRequest, opts ...grpc.CallOption) (*GetERC20MultiSigSignerRemovedBundlesResponse, error)
+	// List the signatures bundle to remove a particular validator from signer list of the multisig contract
+	ListERC20MultiSigSignerRemovedBundles(ctx context.Context, in *ListERC20MultiSigSignerRemovedBundlesRequest, opts ...grpc.CallOption) (*ListERC20MultiSigSignerRemovedBundlesResponse, error)
 	// ERC20 list asset bundle
 	//
 	// Get the signatures bundle to allowlist an ERC20 token in the collateral bridge
@@ -721,18 +721,18 @@ func (x *tradingDataServiceObserveVotesClient) Recv() (*ObserveVotesResponse, er
 	return m, nil
 }
 
-func (c *tradingDataServiceClient) GetERC20MultiSigSignerAddedBundles(ctx context.Context, in *GetERC20MultiSigSignerAddedBundlesRequest, opts ...grpc.CallOption) (*GetERC20MultiSigSignerAddedBundlesResponse, error) {
-	out := new(GetERC20MultiSigSignerAddedBundlesResponse)
-	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetERC20MultiSigSignerAddedBundles", in, out, opts...)
+func (c *tradingDataServiceClient) ListERC20MultiSigSignerAddedBundles(ctx context.Context, in *ListERC20MultiSigSignerAddedBundlesRequest, opts ...grpc.CallOption) (*ListERC20MultiSigSignerAddedBundlesResponse, error) {
+	out := new(ListERC20MultiSigSignerAddedBundlesResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListERC20MultiSigSignerAddedBundles", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *tradingDataServiceClient) GetERC20MultiSigSignerRemovedBundles(ctx context.Context, in *GetERC20MultiSigSignerRemovedBundlesRequest, opts ...grpc.CallOption) (*GetERC20MultiSigSignerRemovedBundlesResponse, error) {
-	out := new(GetERC20MultiSigSignerRemovedBundlesResponse)
-	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetERC20MultiSigSignerRemovedBundles", in, out, opts...)
+func (c *tradingDataServiceClient) ListERC20MultiSigSignerRemovedBundles(ctx context.Context, in *ListERC20MultiSigSignerRemovedBundlesRequest, opts ...grpc.CallOption) (*ListERC20MultiSigSignerRemovedBundlesResponse, error) {
+	out := new(ListERC20MultiSigSignerRemovedBundlesResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListERC20MultiSigSignerRemovedBundles", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1460,12 +1460,12 @@ type TradingDataServiceServer interface {
 	ObserveVotes(*ObserveVotesRequest, TradingDataService_ObserveVotesServer) error
 	// ERC20 add signer bundle
 	//
-	// Get the signature bundle to add a particular validator to the signer list of the multisig contract
-	GetERC20MultiSigSignerAddedBundles(context.Context, *GetERC20MultiSigSignerAddedBundlesRequest) (*GetERC20MultiSigSignerAddedBundlesResponse, error)
+	// List the signature bundle to add a particular validator to the signer list of the multisig contract
+	ListERC20MultiSigSignerAddedBundles(context.Context, *ListERC20MultiSigSignerAddedBundlesRequest) (*ListERC20MultiSigSignerAddedBundlesResponse, error)
 	// ERC20 remove signer bundle
 	//
-	// Get the signatures bundle to remove a particular validator from signer list of the multisig contract
-	GetERC20MultiSigSignerRemovedBundles(context.Context, *GetERC20MultiSigSignerRemovedBundlesRequest) (*GetERC20MultiSigSignerRemovedBundlesResponse, error)
+	// List the signatures bundle to remove a particular validator from signer list of the multisig contract
+	ListERC20MultiSigSignerRemovedBundles(context.Context, *ListERC20MultiSigSignerRemovedBundlesRequest) (*ListERC20MultiSigSignerRemovedBundlesResponse, error)
 	// ERC20 list asset bundle
 	//
 	// Get the signatures bundle to allowlist an ERC20 token in the collateral bridge
@@ -1729,11 +1729,11 @@ func (UnimplementedTradingDataServiceServer) ListVotes(context.Context, *ListVot
 func (UnimplementedTradingDataServiceServer) ObserveVotes(*ObserveVotesRequest, TradingDataService_ObserveVotesServer) error {
 	return status.Errorf(codes.Unimplemented, "method ObserveVotes not implemented")
 }
-func (UnimplementedTradingDataServiceServer) GetERC20MultiSigSignerAddedBundles(context.Context, *GetERC20MultiSigSignerAddedBundlesRequest) (*GetERC20MultiSigSignerAddedBundlesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetERC20MultiSigSignerAddedBundles not implemented")
+func (UnimplementedTradingDataServiceServer) ListERC20MultiSigSignerAddedBundles(context.Context, *ListERC20MultiSigSignerAddedBundlesRequest) (*ListERC20MultiSigSignerAddedBundlesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListERC20MultiSigSignerAddedBundles not implemented")
 }
-func (UnimplementedTradingDataServiceServer) GetERC20MultiSigSignerRemovedBundles(context.Context, *GetERC20MultiSigSignerRemovedBundlesRequest) (*GetERC20MultiSigSignerRemovedBundlesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetERC20MultiSigSignerRemovedBundles not implemented")
+func (UnimplementedTradingDataServiceServer) ListERC20MultiSigSignerRemovedBundles(context.Context, *ListERC20MultiSigSignerRemovedBundlesRequest) (*ListERC20MultiSigSignerRemovedBundlesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListERC20MultiSigSignerRemovedBundles not implemented")
 }
 func (UnimplementedTradingDataServiceServer) GetERC20ListAssetBundle(context.Context, *GetERC20ListAssetBundleRequest) (*GetERC20ListAssetBundleResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetERC20ListAssetBundle not implemented")
@@ -2369,38 +2369,38 @@ func (x *tradingDataServiceObserveVotesServer) Send(m *ObserveVotesResponse) err
 	return x.ServerStream.SendMsg(m)
 }
 
-func _TradingDataService_GetERC20MultiSigSignerAddedBundles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetERC20MultiSigSignerAddedBundlesRequest)
+func _TradingDataService_ListERC20MultiSigSignerAddedBundles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListERC20MultiSigSignerAddedBundlesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TradingDataServiceServer).GetERC20MultiSigSignerAddedBundles(ctx, in)
+		return srv.(TradingDataServiceServer).ListERC20MultiSigSignerAddedBundles(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/datanode.api.v2.TradingDataService/GetERC20MultiSigSignerAddedBundles",
+		FullMethod: "/datanode.api.v2.TradingDataService/ListERC20MultiSigSignerAddedBundles",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingDataServiceServer).GetERC20MultiSigSignerAddedBundles(ctx, req.(*GetERC20MultiSigSignerAddedBundlesRequest))
+		return srv.(TradingDataServiceServer).ListERC20MultiSigSignerAddedBundles(ctx, req.(*ListERC20MultiSigSignerAddedBundlesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TradingDataService_GetERC20MultiSigSignerRemovedBundles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetERC20MultiSigSignerRemovedBundlesRequest)
+func _TradingDataService_ListERC20MultiSigSignerRemovedBundles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListERC20MultiSigSignerRemovedBundlesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TradingDataServiceServer).GetERC20MultiSigSignerRemovedBundles(ctx, in)
+		return srv.(TradingDataServiceServer).ListERC20MultiSigSignerRemovedBundles(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/datanode.api.v2.TradingDataService/GetERC20MultiSigSignerRemovedBundles",
+		FullMethod: "/datanode.api.v2.TradingDataService/ListERC20MultiSigSignerRemovedBundles",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingDataServiceServer).GetERC20MultiSigSignerRemovedBundles(ctx, req.(*GetERC20MultiSigSignerRemovedBundlesRequest))
+		return srv.(TradingDataServiceServer).ListERC20MultiSigSignerRemovedBundles(ctx, req.(*ListERC20MultiSigSignerRemovedBundlesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -3392,12 +3392,12 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TradingDataService_ListVotes_Handler,
 		},
 		{
-			MethodName: "GetERC20MultiSigSignerAddedBundles",
-			Handler:    _TradingDataService_GetERC20MultiSigSignerAddedBundles_Handler,
+			MethodName: "ListERC20MultiSigSignerAddedBundles",
+			Handler:    _TradingDataService_ListERC20MultiSigSignerAddedBundles_Handler,
 		},
 		{
-			MethodName: "GetERC20MultiSigSignerRemovedBundles",
-			Handler:    _TradingDataService_GetERC20MultiSigSignerRemovedBundles_Handler,
+			MethodName: "ListERC20MultiSigSignerRemovedBundles",
+			Handler:    _TradingDataService_ListERC20MultiSigSignerRemovedBundles_Handler,
 		},
 		{
 			MethodName: "GetERC20ListAssetBundle",
