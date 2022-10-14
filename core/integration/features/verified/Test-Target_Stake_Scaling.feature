@@ -24,7 +24,7 @@ Feature: test the implementation of market.stake.target.scalingFactor
       | party3 | USD   | 100000000 |
 
 
-  Scenario: 001
+  Scenario: 001 LP commit 55,000 which is enough to end auction immediately
     Given the following network parameters are set:
       | name                                          | value |
       | market.stake.target.timeWindow                | 24h   |
@@ -88,7 +88,7 @@ Feature: test the implementation of market.stake.target.scalingFactor
       | party2 | -10    | 0              | 0            |
 
 
-  Scenario: 002
+  Scenario: 002, LP first commit 50,000 which is less than required to end auction, LP then amend commit to 55,000
     Given the following network parameters are set:
       | name                                          | value |
       | market.stake.target.timeWindow                | 24h   |
