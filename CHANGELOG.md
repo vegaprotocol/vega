@@ -19,7 +19,7 @@
 - [5690](https://github.com/vegaprotocol/vega/issues/5690) - Markets query now excludes rejected markets
 - [5479](https://github.com/vegaprotocol/vega/issues/5479) - Fix inconsistent naming in API error
 - [6011](https://github.com/vegaprotocol/vega/issues/6011) - Fix data node fails when `Postgres` starts slowly
-- [6341](https://github.com/vegaprotocol/vega/issues/6341) - Embedded Postgres should only capture logs during testing
+- [6341](https://github.com/vegaprotocol/vega/issues/6341) - Embedded `Postgres` should only capture logs during testing
 
 ## 0.58.0
 
