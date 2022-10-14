@@ -129,6 +129,7 @@ func TestRotateKeyFailsInIsolatedWallet(t *testing.T) {
 	// given
 	home := t.TempDir()
 	_, passphraseFilePath := NewPassphraseFile(t, home)
+	_, isolatedWalletPassphraseFilePath := NewPassphraseFile(t, home)
 	walletName := vgrand.RandomStr(5)
 
 	// when
@@ -152,6 +153,7 @@ func TestRotateKeyFailsInIsolatedWallet(t *testing.T) {
 		"--wallet", walletName,
 		"--pubkey", createWalletResp.Key.PublicKey,
 		"--passphrase-file", passphraseFilePath,
+		"--isolated-wallet-passphrase-file", isolatedWalletPassphraseFilePath,
 	})
 
 	// then

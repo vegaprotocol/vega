@@ -182,6 +182,7 @@ func (l *NodeCommand) preRun([]string) (err error) {
 	l.sqlBroker = broker.NewSQLStoreBroker(l.Log, l.conf.Broker, l.chainService, eventSource,
 		l.transactionalConnectionSource,
 		l.blockStore,
+		l.protocolUpgradeService,
 		l.snapshotService.OnBlockCommitted,
 		l.GetSQLSubscribers(),
 	)

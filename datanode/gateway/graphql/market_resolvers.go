@@ -189,7 +189,7 @@ func (r *myMarketResolver) Depth(ctx context.Context, market *types.Market, maxD
 // if partyID specified get margin account for the given market
 // if nil return the insurance pool & Fee Liquidty accounts for the market.
 // Deprecated: use AccountsConnection instead.
-func (r *myMarketResolver) Accounts(ctx context.Context, market *types.Market, partyID *string) ([]*types.Account, error) {
+func (r *myMarketResolver) Accounts(ctx context.Context, market *types.Market, partyID *string) ([]*v2.AccountBalance, error) {
 	filter := v2.AccountFilter{MarketIds: []string{market.Id}}
 	ptyID := ""
 
@@ -213,14 +213,14 @@ func (r *myMarketResolver) Accounts(ctx context.Context, market *types.Market, p
 			logging.Error(err),
 			logging.String("market-id", market.Id),
 			logging.String("party-id", ptyID))
-		return []*types.Account{}, customErrorFromStatus(err)
+		return []*v2.AccountBalance{}, customErrorFromStatus(err)
 	}
 
 	if len(res.Accounts.Edges) == 0 {
-		return []*types.Account{}, nil
+		return []*v2.AccountBalance{}, nil
 	}
 
-	accounts := make([]*types.Account, len(res.Accounts.Edges))
+	accounts := make([]*v2.AccountBalance, len(res.Accounts.Edges))
 	for i, edge := range res.Accounts.Edges {
 		accounts[i] = edge.Account
 	}

@@ -1441,7 +1441,15 @@ func accountBalancesToProtoAccountList(accounts []entities.AccountBalance) []*ve
 	accountsProto := make([]*vega.Account, 0, len(accounts))
 
 	for _, acc := range accounts {
-		accountsProto = append(accountsProto, acc.ToProto())
+		ab := acc.ToProto()
+		ap := &vega.Account{
+			Balance:  ab.Balance,
+			Owner:    ab.Owner,
+			Asset:    ab.Asset,
+			MarketId: ab.MarketId,
+			Type:     ab.Type,
+		}
+		accountsProto = append(accountsProto, ap)
 	}
 
 	return accountsProto
@@ -1561,8 +1569,16 @@ func (t *tradingDataService) AccountsSubscribe(req *protoapi.AccountsSubscribeRe
 	}
 
 	return observe(ctx, t.log, "Accounts", accountsChan, ref, func(account entities.AccountBalance) error {
+		a := account.ToProto()
+		va := &vega.Account{
+			Balance:  a.Balance,
+			Owner:    a.Owner,
+			MarketId: a.MarketId,
+			Type:     a.Type,
+			Asset:    a.Asset,
+		}
 		return srv.Send(&protoapi.AccountsSubscribeResponse{
-			Account: account.ToProto(),
+			Account: va,
 		})
 	})
 }

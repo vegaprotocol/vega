@@ -21,7 +21,7 @@ import (
 
 type myAssetResolver VegaResolverRoot
 
-func listAssetAccounts(ctx context.Context, client TradingDataServiceClientV2, asset *types.Asset, accountType types.AccountType) (*types.Account, error) {
+func listAssetAccounts(ctx context.Context, client TradingDataServiceClientV2, asset *types.Asset, accountType types.AccountType) (*v2.AccountBalance, error) {
 	if asset == nil || len(asset.Id) <= 0 {
 		return nil, ErrMissingIDOrReference
 	}
@@ -38,7 +38,7 @@ func listAssetAccounts(ctx context.Context, client TradingDataServiceClientV2, a
 		return nil, err
 	}
 
-	var acc *types.Account
+	var acc *v2.AccountBalance
 	if len(res.Accounts.Edges) > 0 {
 		acc = res.Accounts.Edges[0].Account
 	}
@@ -46,27 +46,27 @@ func listAssetAccounts(ctx context.Context, client TradingDataServiceClientV2, a
 	return acc, nil
 }
 
-func (r *myAssetResolver) InfrastructureFeeAccount(ctx context.Context, asset *types.Asset) (*types.Account, error) {
+func (r *myAssetResolver) InfrastructureFeeAccount(ctx context.Context, asset *types.Asset) (*v2.AccountBalance, error) {
 	return listAssetAccounts(ctx, r.tradingDataClientV2, asset, types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE)
 }
 
-func (r *myAssetResolver) GlobalRewardPoolAccount(ctx context.Context, asset *types.Asset) (*types.Account, error) {
+func (r *myAssetResolver) GlobalRewardPoolAccount(ctx context.Context, asset *types.Asset) (*v2.AccountBalance, error) {
 	return listAssetAccounts(ctx, r.tradingDataClientV2, asset, types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD)
 }
 
-func (r *myAssetResolver) TakerFeeRewardAccount(ctx context.Context, asset *types.Asset) (*types.Account, error) {
+func (r *myAssetResolver) TakerFeeRewardAccount(ctx context.Context, asset *types.Asset) (*v2.AccountBalance, error) {
 	return listAssetAccounts(ctx, r.tradingDataClientV2, asset, types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES)
 }
 
-func (r *myAssetResolver) MakerFeeRewardAccount(ctx context.Context, asset *types.Asset) (*types.Account, error) {
+func (r *myAssetResolver) MakerFeeRewardAccount(ctx context.Context, asset *types.Asset) (*v2.AccountBalance, error) {
 	return listAssetAccounts(ctx, r.tradingDataClientV2, asset, types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES)
 }
 
-func (r *myAssetResolver) LpFeeRewardAccount(ctx context.Context, asset *types.Asset) (*types.Account, error) {
+func (r *myAssetResolver) LpFeeRewardAccount(ctx context.Context, asset *types.Asset) (*v2.AccountBalance, error) {
 	return listAssetAccounts(ctx, r.tradingDataClientV2, asset, types.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES)
 }
 
-func (r *myAssetResolver) MarketProposerRewardAccount(ctx context.Context, asset *types.Asset) (*types.Account, error) {
+func (r *myAssetResolver) MarketProposerRewardAccount(ctx context.Context, asset *types.Asset) (*v2.AccountBalance, error) {
 	return listAssetAccounts(ctx, r.tradingDataClientV2, asset, types.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS)
 }
 

@@ -19,6 +19,7 @@ import (
 	"code.vegaprotocol.io/vega/wallet/network"
 	"code.vegaprotocol.io/vega/wallet/node"
 	"code.vegaprotocol.io/vega/wallet/version"
+	walletversion "code.vegaprotocol.io/vega/wallet/version"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
 	"github.com/golang/protobuf/jsonpb"
@@ -261,7 +262,7 @@ func SendCommand(w io.Writer, f *SendCommandFlags, rf *RootFlags, req *SendComma
 	}
 
 	if !f.NoVersionCheck {
-		networkVersion, err := getNetworkVersion(hosts)
+		networkVersion, err := walletversion.GetNetworkVersionThroughGRPC(hosts)
 		if err != nil {
 			return err
 		}
