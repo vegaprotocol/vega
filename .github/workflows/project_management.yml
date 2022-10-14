@@ -73,7 +73,7 @@ jobs:
            || (github.actor == 'dependabot[bot]' || github.actor == 'renovate[bot]'))
         run: |
           echo 'BOT_PR=true' >> $GITHUB_ENV
-          echo "{is-bot}={1}" >> $GITHUB_ENV
+          echo "is-bot=1" >> $GITHUB_ENV
       - name: 'Check for linked issue'
         id: linked
         if: |
@@ -410,7 +410,7 @@ jobs:
           $diff = git diff --name-only HEAD^ HEAD
           $SourceDiff = $diff | Where-Object { $_ -match 'CHANGELOG.md' }
           $HasDiff = $SourceDiff.Length -gt 0
-          echo "{changelog_changed}={$HasDiff}" >> $GITHUB_ENV
+          echo "changelog_changed=$HasDiff" >> $GITHUB_ENV
       - name: "Report fail"
         if: steps.check_file_changed.outputs.changelog_changed != 'True' && steps.check_file_changed.outcome == 'success'
         uses: actions/github-script@v6.1.0
