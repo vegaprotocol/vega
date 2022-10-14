@@ -118,6 +118,15 @@ jobs:
           gh api graphql -f query='
             query($org: String!, $number: Int!) {
               organization(login: $org){
+                projectNext(number: 106) {
+                  id
+                  fields(first: 20) {
+                    nodes {
+                      id
+                      name
+                    }
+                  }
+                }
                 projectV2(number: $number) {
                   id
                   fields(first:20) {
@@ -226,7 +235,7 @@ jobs:
         run: |
           issue_item_id="$( gh api graphql -f query='
             mutation($project:ID!, $issue:ID!) {
-              addProjectV2ItemById(input: {projectId: $project, contentId: $issue}) {
+              addProjectNextItem(input: {projectId: $project, contentId: $issue}) {
                 item {
                   id
                 }
@@ -241,7 +250,7 @@ jobs:
         run: |
           pr_item_id="$( gh api graphql -f query='
             mutation($project:ID!, $pr:ID!) {
-              addProjectV2ItemById(input: {projectId: $project, contentId: $pr}) {
+              addProjectNextItem(input: {projectId: $project, contentId: $pr}) {
                 item {
                   id
                 }
@@ -254,7 +263,7 @@ jobs:
         run: |
           pr_item_id="$( gh api graphql -f query='
             mutation($project:ID!, $pr:ID!) {
-              addProjectV2ItemById(input: {projectId: $project, contentId: $pr}) {
+              addProjectNextItem(input: {projectId: $project, contentId: $pr}) {
                 item {
                   id
                 }
@@ -380,9 +389,9 @@ jobs:
             }' -f project=$PROJECT_ID \
               -f item=$ITEM_ID \
               -f status_field=$STATUS_FIELD_ID \
-              -f status_value=$CURRENT_STATUS \
+              -f status_value=${{ env.CURRENT_STATUS }} \
               -f iteration_field=$ITERATION_FIELD_ID \
-              -f iteration_value=$CURRENT_ITERATION
+              -f iteration_value=${{ env.CURRENT_ITERATION }}
   verify-changelog-updated2:
     name: "Verify CHANGELOG Updated 2"
     needs: project-board-automation
