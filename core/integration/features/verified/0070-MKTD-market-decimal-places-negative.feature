@@ -126,8 +126,8 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
     Scenario: 002, Users engage in a USD market auction, (0070-MKTD-003, 0070-MKTD-008)
         Given the parties submit the following liquidity provision:
             | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-            | lp1 | party0 | USD/DEC22 | 35569             | 0.001 | sell | ASK              | 500        | 20     | submission |
-            | lp1 | party0 | USD/DEC22 | 35569             | 0.001 | buy  | BID              | 500        | 20     | amendment  |
+            | lp2 | party0 | USD/DEC22 | 35569             | 0.001 | sell | ASK              | 500        | 20     | submission |
+            | lp2 | party0 | USD/DEC22 | 35569             | 0.001 | buy  | BID              | 500        | 20     | amendment  |
 
         And the parties place the following orders:
             | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
@@ -141,6 +141,12 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
         When the opening auction period ends for market "USD/DEC22"
         Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "USD/DEC22"
         And the auction ends with a traded volume of "10" at a price of "10"
+
+        And the market data for the market "USD/DEC22" should be:
+            | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+            | 10         | TRADING_MODE_CONTINUOUS | 3600    | 10        | 10        | 3556         | 35569          | 10            |
+        # target stake = 10*10*10*3.5569036=3556
+
         And the parties should have the following account balances:
             | party  | asset | market id | margin | general   | bond  |
             | party0 | USD   | USD/DEC22 | 303902 | 5000000   | 35569 |
