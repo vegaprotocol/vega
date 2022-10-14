@@ -248,3 +248,74 @@ Feature: test the implementation of market.stake.target.scalingFactor
       | party1 | 10     | 0              | 0            |
       | party2 | -10    | 0              | 0            |
 
+  Scenario: 004, market.stake.target.scalingFactor =1.5
+    Given the following network parameters are set:
+      | name                                          | value |
+      | market.stake.target.timeWindow                | 24h   |
+      | market.stake.target.scalingFactor             | 1.5   |
+      | market.liquidity.bondPenaltyParameter         | 0.2   |
+      | market.liquidity.targetstake.triggering.ratio | 0.24  |
+
+    And the average block duration is "1"
+
+    And the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | sell | ASK              | 500        | 20     | submission |
+      | lp1 | party0 | ETH/MAR22 | 50000             | 0.001 | buy  | BID              | 500        | 20     | amendment  |
+
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
+      | party1 | ETH/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
+      | party1 | ETH/MAR22 | buy  | 1      | 990   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
+      | party1 | ETH/MAR22 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-2  |
+      | party2 | ETH/MAR22 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-3 |
+      | party2 | ETH/MAR22 | sell | 1      | 1010  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-1 |
+      | party2 | ETH/MAR22 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2 |
+
+    Then the market state should be "STATE_PENDING" for the market "ETH/MAR22"
+    # target stake after applying the scaling factor: 35569*1.5=53353 which is less than supplied stake 5000
+
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin | general   | bond  |
+      | party0 | USD   | ETH/MAR22 | 0      | 499950000 | 50000 |
+
+    And the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
+      | lp1 | party0 | ETH/MAR22 | 55000             | 0.001 | sell | ASK              | 500        | 20     | amendment |
+      | lp1 | party0 | ETH/MAR22 | 55000             | 0.001 | buy  | BID              | 500        | 20     | amendment |
+    Then the opening auction period ends for market "ETH/MAR22"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR22"
+
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 1000      | 1000      | 53353        | 55000          | 10            |
+
+    Then the order book should have the following volumes for market "ETH/MAR22":
+      | side | price | volume |
+      | sell | 1100  | 1      |
+      | sell | 1020  | 0      |
+      | sell | 1010  | 110    |
+      | sell | 1000  | 0      |
+      | buy  | 1000  | 0      |
+      | buy  | 990   | 113    |
+      | buy  | 980   | 0      |
+      | buy  | 900   | 1      |
+
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin  | general   | bond  |
+      | party0 | USD   | ETH/MAR22 | 9303066 | 490641934 | 55000 |
+      | party1 | USD   | ETH/MAR22 | 12190   | 99987810  | 0     |
+      | party2 | USD   | ETH/MAR22 | 51879   | 99948121  | 0     |
+    #check the margin levels
+    Then the parties should have the following margin levels:
+      | party  | market id | maintenance | search | initial | release |
+      | party0 | ETH/MAR22 | 387703      | 426473 | 465243  | 542784  |
+      | party1 | ETH/MAR22 | 10159       | 11174  | 12190   | 14222   |
+      | party2 | ETH/MAR22 | 43233       | 47556  | 51879   | 60526   |
+
+    #check position
+    Then the parties should have the following profit and loss:
+      | party  | volume | unrealised pnl | realised pnl |
+      | party1 | 10     | 0              | 0            |
+      | party2 | -10    | 0              | 0            |
+
