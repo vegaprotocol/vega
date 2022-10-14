@@ -204,9 +204,9 @@ http:
       get: "/api/v2/candle/intervals"
     - selector: datanode.api.v2.TradingDataService.ListVotes
       get: "/api/v2/votes"
-    - selector: datanode.api.v2.TradingDataService.GetERC20MultiSigSignerAddedBundles
+    - selector: datanode.api.v2.TradingDataService.ListERC20MultiSigSignerAddedBundles
       get: "/api/v2/erc20/multisigcontrol/signer/added/bundles"
-    - selector: datanode.api.v2.TradingDataService.GetERC20MultiSigSignerRemovedBundles
+    - selector: datanode.api.v2.TradingDataService.ListERC20MultiSigSignerRemovedBundles
       get: "/api/v2/erc20/multisigcontrol/signer/removed/bundles"
     - selector: datanode.api.v2.TradingDataService.GetERC20ListAssetBundle
       get: "/api/v2/erc20/asset/list/bundle"
