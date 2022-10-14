@@ -112,8 +112,8 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 func (l *NodeCommand) initialiseDatabase() (*sqlstore.ConnectionSource, error) {
 	var err error
 	if l.conf.SQLStore.UseEmbedded {
-		l.embeddedPostgres, _, _, err = sqlstore.StartEmbeddedPostgres(l.Log, l.conf.SQLStore,
-			l.vegaPaths.StatePathFor(paths.DataNodeStorageHome))
+		l.embeddedPostgres, _, err = sqlstore.StartEmbeddedPostgres(l.Log, l.conf.SQLStore,
+			l.vegaPaths.StatePathFor(paths.DataNodeStorageHome), nil)
 		if err != nil {
 			return nil, fmt.Errorf("failed to start embedded postgres: %w", err)
 		}
