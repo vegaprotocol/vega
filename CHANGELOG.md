@@ -34,6 +34,7 @@
 - [6451](https://github.com/vegaprotocol/vega/issues/6451) - Improve interaction error message
 
 ### 🐛 Fixes
+- [6471](https://github.com/vegaprotocol/vega/issues/6471) - Fix potential `nil` pointer dereference in `ledger_movements`
 - [6444](https://github.com/vegaprotocol/vega/issues/6444) - Send a transaction error if the same node announces itself twice
 - [6388](https://github.com/vegaprotocol/vega/issues/6388) - Do not transfer stake and delegations after a key rotation
 - [6266](https://github.com/vegaprotocol/vega/issues/6266) - Do not take a snapshot at block height 1 and handle increase of interval appropriately
