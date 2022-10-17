@@ -16,11 +16,13 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	proto "code.vegaprotocol.io/vega/protos/vega"
-	"github.com/stretchr/testify/assert"
+	v1 "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
 func TestTransferResponseDeepClone(t *testing.T) {
@@ -82,4 +84,102 @@ func TestTransferResponseDeepClone(t *testing.T) {
 	assert.NotEqual(t, tr[0].Balances[0].Account.Owner, tr2[0].Balances[0].Account.Owner)
 	assert.NotEqual(t, tr[0].Balances[0].Account.Type, tr2[0].Balances[0].Account.Type)
 	assert.NotEqual(t, tr[0].Balances[0].Balance, tr2[0].Balances[0].Balance)
+}
+
+func TestLedgerMovements_IsParty(t1 *testing.T) {
+	type fields struct {
+		ledgerMovements []*proto.LedgerMovement
+	}
+	type args struct {
+		id string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   bool
+	}{
+		{
+			name: "is party",
+			fields: fields{
+				ledgerMovements: []*proto.LedgerMovement{
+					{
+						Entries: []*proto.LedgerEntry{
+							{
+								FromAccount: &proto.AccountDetails{Owner: toPtr("party")},
+								ToAccount:   &proto.AccountDetails{Owner: toPtr("dest")},
+								Timestamp:   2000,
+								Amount:      "1000",
+								Type:        types.TransferTypeBondLow,
+							},
+						},
+					},
+				},
+			},
+			args: args{
+				id: "party",
+			},
+			want: true,
+		}, {
+			name: "is not party",
+			fields: fields{
+				ledgerMovements: []*proto.LedgerMovement{
+					{
+						Entries: []*proto.LedgerEntry{
+							{
+								FromAccount: &proto.AccountDetails{Owner: toPtr("not-party")},
+								ToAccount:   &proto.AccountDetails{Owner: toPtr("dest")},
+								Amount:      "1000",
+								Type:        types.TransferTypeBondLow,
+								Timestamp:   2000,
+							},
+						},
+					},
+				},
+			},
+			args: args{
+				id: "party",
+			},
+			want: false,
+		}, {
+			name: "is not party: missing FromAccount owner",
+			fields: fields{
+				ledgerMovements: []*proto.LedgerMovement{
+					{
+						Entries: []*proto.LedgerEntry{
+							{
+								FromAccount: &proto.AccountDetails{Owner: nil},
+								ToAccount:   &proto.AccountDetails{Owner: toPtr("dest")},
+								Amount:      "1000",
+								Type:        types.TransferTypeBondLow,
+								Timestamp:   2000,
+							},
+						},
+					},
+				},
+			},
+			args: args{
+				id: "party",
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t1.Run(tt.name, func(t1 *testing.T) {
+			be := &v1.BusEvent{
+				Id: "id-1",
+				Event: &v1.BusEvent_LedgerMovements{
+					LedgerMovements: &v1.LedgerMovements{
+						LedgerMovements: tt.fields.ledgerMovements,
+					},
+				},
+			}
+			t := events.TransferResponseEventFromStream(context.Background(), be)
+			assert.Equalf(t1, tt.want, t.IsParty(tt.args.id), "IsParty(%v)", tt.args.id)
+		})
+	}
+}
+
+func toPtr(s string) *string {
+	return &s
 }
