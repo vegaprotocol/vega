@@ -24,6 +24,7 @@
 - [6341](https://github.com/vegaprotocol/vega/issues/6341) - Embedded `Postgres` should only capture logs during testing
 - [6510](https://github.com/vegaprotocol/vega/issues/6510) - Filter parties with 0 reward from reward payout event
 - [6471](https://github.com/vegaprotocol/vega/issues/6471) - Fix potential nil reference when owner is system for ledger entries
+- [6519](https://github.com/vegaprotocol/vega/issues/6519) - Fix errors in the ledger entries `GraphQL` query.
 
 ## 0.58.0
 
