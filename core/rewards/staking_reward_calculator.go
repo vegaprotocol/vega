@@ -105,15 +105,16 @@ func calculateRewardsByStake(epochSeq, asset, accountID string, rewardBalance *n
 		delegatorWeights := make(map[string]num.Decimal, len(vd.Delegators))
 		weightSums := num.DecimalZero()
 		decimalOne := num.DecimalFromInt64(1)
+		sortedParties := make([]string, 0, len(vd.Delegators))
+
 		for party, delegatorAmt := range vd.Delegators {
 			delegatorWeight := delegatorAmt.ToDecimal().Div(vd.StakeByDelegators.ToDecimal()) // this is not entered if there are no delegators
 			weightSums = weightSums.Add(delegatorWeight)
-			delegatorWeights[party] = delegatorWeight
-		}
-
-		sortedParties := make([]string, 0, len(vd.Delegators))
-		for party := range vd.Delegators {
-			sortedParties = append(sortedParties, party)
+			// if the party has 0 delegation, ignore it
+			if !delegatorAmt.IsZero() {
+				delegatorWeights[party] = delegatorWeight
+				sortedParties = append(sortedParties, party)
+			}
 		}
 		sort.Strings(sortedParties)
 
