@@ -655,7 +655,8 @@ enum LedgerEntryField {
 }
 
 message AggregatedLedgerEntries {
-    string id = 1;
+    // Removing ID field as it is not used, there is no id for an aggregated ledger entry.
+    reserved 1;
     // Timestamp to of block the result is referring to, in nanoseconds since the epoch
     int64 timestamp = 2;
     // The amount of ledger entries for the set of requested accounts at the time above
