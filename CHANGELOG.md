@@ -19,6 +19,7 @@
 - [6473](https://github.com/vegaprotocol/vega/issues/6473) - Infrastructure Fee Account returns error when asset is pending listing
 - [5690](https://github.com/vegaprotocol/vega/issues/5690) - Markets query now excludes rejected markets
 - [5479](https://github.com/vegaprotocol/vega/issues/5479) - Fix inconsistent naming in API error
+- [6525](https://github.com/vegaprotocol/vega/issues/6525) - Round the right way when restoring the integer representation of cached price ranges from a snapshot
 - [6011](https://github.com/vegaprotocol/vega/issues/6011) - Fix data node fails when `Postgres` starts slowly
 - [6341](https://github.com/vegaprotocol/vega/issues/6341) - Embedded `Postgres` should only capture logs during testing
 - [6510](https://github.com/vegaprotocol/vega/issues/6510) - Filter parties with 0 reward from reward payout event

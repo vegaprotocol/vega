@@ -484,12 +484,9 @@ func (e *Engine) getCurrentPriceRanges(force bool) map[*bound]priceRange {
 			max = ref.Mul(defaultUpFactor)
 		}
 
-		minUint, _ := num.UintFromDecimal(min.Ceil())
-		maxUint, _ := num.UintFromDecimal(max.Floor())
-
 		ranges[b] = priceRange{
-			MinPrice:       num.NewWrappedDecimal(minUint, min),
-			MaxPrice:       num.NewWrappedDecimal(maxUint, max),
+			MinPrice:       wrapPriceRange(min, true),
+			MaxPrice:       wrapPriceRange(max, false),
 			ReferencePrice: ref,
 		}
 	}
@@ -595,4 +592,14 @@ func computeBoundsAndHorizons(settings *types.PriceMonitoringSettings) (map[int6
 		}
 	}
 	return horizons, bounds
+}
+
+func wrapPriceRange(b num.Decimal, isMin bool) num.WrappedDecimal {
+	var r *num.Uint
+	if isMin {
+		r, _ = num.UintFromDecimal(b.Ceil())
+	} else {
+		r, _ = num.UintFromDecimal(b.Floor())
+	}
+	return num.NewWrappedDecimal(r, b)
 }
