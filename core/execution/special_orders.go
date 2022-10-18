@@ -95,6 +95,7 @@ func (m *Market) repricePeggedOrders(
 
 	return parked, toSubmit
 }
+
 func (m *Market) reSubmitPeggedOrders(
 	ctx context.Context,
 	toSubmitOrders []*types.Order,
@@ -190,42 +191,39 @@ func (m *Market) repriceAllSpecialOrders(
 func (m *Market) enterAuctionSpecialOrders(
 	ctx context.Context,
 	updatedOrders []*types.Order,
-) []*types.Order {
+) {
+	m.stopAllSpecialOrders(ctx, updatedOrders)
+}
+
+func (m *Market) stopAllSpecialOrders(
+	ctx context.Context,
+	updatedOrders []*types.Order,
+) {
 	// Park all pegged orders
 	updatedOrders = append(
 		updatedOrders,
 		m.parkAllPeggedOrders(ctx)...,
 	)
 
-	// we know we enter an auction here,
-	// so let's just get the list of all orders, and cancel them
-	bestBidPrice, bestAskPrice, err := m.getBestStaticPricesDecimal()
-	if err != nil {
-		m.log.Debug("could not get one of the static mid prices",
-			logging.Error(err))
-		// we do not return here, we could not get one of the prices eventually
-	}
-	newOrders, cancels, err := m.liquidity.Update(
-		ctx, bestBidPrice, bestAskPrice, m.repriceLiquidityOrder, updatedOrders)
-	if err != nil {
-		// TODO: figure out if error are really possible there,
-		// But I'd think not.
-		m.log.Error("could not update liquidity", logging.Error(err))
-	}
+	// now we just get the list of all LPs to be cancelled
+	cancels := m.liquidity.UndeployLPs(ctx, updatedOrders)
+	market := m.GetID()
 
-	// we are entering an auction, the liquidity engine should always instruct
-	// to cancel all orders, and recreating none
-	if len(newOrders) > 0 {
-		m.log.Panic("liquidity engine instructed to create orders when entering auction",
-			logging.MarketID(m.GetID()),
-			logging.Int("new-order-count", len(newOrders)))
+	for _, cancel := range cancels {
+		for _, orderID := range cancel.OrderIDs {
+			if _, err := m.cancelOrder(ctx, cancel.Party, orderID); err != nil {
+				// here we panic, an order which should be in a the market
+				// appears not to be. there's either an issue in the liquidity
+				// engine and we are trying to remove a non-existing order
+				// or the market lost track of the order
+				m.log.Panic("unable to amend a liquidity order",
+					logging.OrderID(orderID),
+					logging.PartyID(cancel.Party),
+					logging.MarketID(market),
+					logging.Error(err))
+			}
+		}
 	}
-
-	// method always return nil anyway
-	// TODO: API to be changed someday as we don't need to cancel anything
-	// now, we assume that all that were required to be cancelled already are.
-	orderUpdates := m.updateAndCreateLPOrders(ctx, []*types.Order{}, cancels, []*types.Order{})
-	return orderUpdates
 }
 
 func (m *Market) updateLPOrders(
@@ -351,7 +349,6 @@ func (m *Market) applyBondPenaltiesAndLiquidationExcludingPending(
 	closed []events.Margin,
 	initialMargins map[string]*num.Uint,
 ) map[string]struct{} {
-
 	var (
 		cancelled    = map[string]struct{}{}
 		reallyClosed = []events.Margin{}

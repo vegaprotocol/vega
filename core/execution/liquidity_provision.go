@@ -16,12 +16,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sort"
 
 	"code.vegaprotocol.io/vega/core/idgeneration"
 
 	"code.vegaprotocol.io/vega/core/events"
-	"code.vegaprotocol.io/vega/core/liquidity"
 	"code.vegaprotocol.io/vega/core/positions"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -340,162 +338,6 @@ func (m *Market) CancelLiquidityProvision(ctx context.Context, cancel *types.Liq
 	}
 
 	return m.cancelLiquidityProvision(ctx, party, false)
-}
-
-// this is a function to be called when orders already exists
-// submitted by the liquidity provider.
-// We will first update orders, which basically will trigger cancellation
-// then place the new orders.
-// this is done this way just so we maximise the changes for the margin
-// calls to succeed.
-func (m *Market) updateAndCreateLPOrders(ctx context.Context, newOrders []*types.Order, cancels []*liquidity.ToCancel, distressed []*types.Order) []*types.Order {
-	market := m.GetID()
-
-	for _, cancel := range cancels {
-		for _, orderID := range cancel.OrderIDs {
-			if _, err := m.cancelOrder(ctx, cancel.Party, orderID); err != nil {
-				// here we panic, an order which should be in a the market
-				// appears not to be. there's either an issue in the liquidity
-				// engine and we are trying to remove a non-existing order
-				// or the market lost track of the order
-				m.log.Debug("unable to amend a liquidity order",
-					logging.OrderID(orderID),
-					logging.PartyID(cancel.Party),
-					logging.MarketID(market),
-					logging.Error(err))
-			}
-		}
-	}
-
-	// this is set of all liquidity provider which
-	// at after trying to cancel and replace their orders
-	// cannot fullfil their margins anymore.
-	faultyLPs := map[string]bool{}
-	faultyLPOrders := map[string]*types.Order{}
-	initialMargins := map[string]*num.Uint{}
-	var orderUpdates []*types.Order
-
-	// first add all party which are already distressed here
-	for _, v := range distressed {
-		faultyLPOrders[v.Party] = v
-		faultyLPs[v.Party] = true
-	}
-
-	mktID := m.GetID()
-	asset, _ := m.mkt.GetAsset()
-	var enteredAuction bool
-	for _, order := range newOrders {
-		// before we submit orders, we check if the party was pending
-		// and save the amount of the margin balance.
-		// so we can roll back to this state later on
-		if m.liquidity.IsPending(order.Party) {
-			if _, ok := initialMargins[order.Party]; !ok {
-				marginAcc, _ := m.collateral.GetPartyMarginAccount(
-					mktID, order.Party, asset)
-				initialMargins[order.Party] = marginAcc.Balance // no need to clone
-			}
-		}
-
-		if faulty, ok := faultyLPs[order.Party]; ok && faulty {
-			// we already tried to submit an lp order which failed
-			// for this party. we'll cancel them just in a bit
-			// be patient...
-			continue
-		}
-		if order.OriginalPrice == nil {
-			order.OriginalPrice = order.Price.Clone()
-			order.Price.Mul(order.Price, m.priceFactor)
-		}
-		conf, orderUpdts, err := m.submitOrder(ctx, order)
-		if err != nil {
-			m.log.Debug("could not submit liquidity provision order, scheduling for closeout",
-				logging.OrderID(order.ID),
-				logging.PartyID(order.Party),
-				logging.MarketID(order.MarketID),
-				logging.Error(err))
-			// set the party as faulty
-			faultyLPs[order.Party] = true
-			faultyLPOrders[order.Party] = order
-			continue
-		}
-		if len(conf.Trades) > 0 {
-			m.log.Panic("submitting liquidity orders after a reprice should never trade",
-				logging.Order(*order))
-		}
-
-		// did we enter auction
-		if m.as.InAuction() {
-			enteredAuction = true
-			break
-		}
-
-		orderUpdates = append(orderUpdates, orderUpdts...)
-		faultyLPs[order.Party] = false
-	}
-
-	// now get all non faulty parties, and get them not pending
-	// if they were
-	parties := make([]struct {
-		Party  string
-		Faulty bool
-	}, 0, len(faultyLPs))
-	for k, v := range faultyLPs {
-		parties = append(parties, struct {
-			Party  string
-			Faulty bool
-		}{k, v})
-	}
-
-	// now just sort them to deterministically send them
-	sort.Slice(parties, func(i, j int) bool {
-		return parties[i].Party < parties[j].Party
-	})
-
-	var updateShares bool
-	for _, v := range parties {
-		if !v.Faulty {
-			// update shares to add this party to the shares
-			updateShares = true
-			m.liquidity.RemovePending(v.Party)
-			continue
-		}
-
-		// now if the party was pending, which means the
-		// order was never submitted, which also means that the
-		// margin were never calculated on submission
-		if m.liquidity.IsPending(v.Party) {
-			_ = m.cancelPendingLiquidityProvision(
-				ctx, v.Party, initialMargins[v.Party])
-			continue
-		}
-
-		// now the party had not enough enough funds to pay the margin
-		orders, err := m.cancelDistressedLiquidityProvision(
-			ctx, v.Party, faultyLPOrders[v.Party])
-		if err != nil {
-			m.log.Debug("issue cancelling liquidity provision",
-				logging.Error(err),
-				logging.MarketID(m.GetID()),
-				logging.PartyID(v.Party))
-		}
-		orderUpdates = append(orderUpdates, orders...)
-
-		// update shares to remove this party from the shares
-		updateShares = true
-	}
-
-	if updateShares {
-		// force update of shares so they are updated for all
-		_ = m.equityShares.SharesExcept(m.liquidity.GetInactiveParties())
-	}
-
-	// if we are in an option, there's nothing to be done with these
-	// updates specifically, let's just return
-	if enteredAuction {
-		orderUpdates = nil
-	}
-
-	return orderUpdates
 }
 
 func (m *Market) cancelPendingLiquidityProvision(
