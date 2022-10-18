@@ -101,6 +101,7 @@ func TestMain(m *testing.M, onSetupComplete func(sqlstore.Config, *sqlstore.Conn
 		postgresLog := &bytes.Buffer{}
 		embeddedPostgres, postgresRuntimePath, err = sqlstore.StartEmbeddedPostgres(log, sqlConfig, tempDir, postgresLog)
 		if err != nil {
+			log.Errorf("failed to start postgres: %s", postgresLog.String())
 			panic(err)
 		}
 

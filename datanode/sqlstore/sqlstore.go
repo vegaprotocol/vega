@@ -13,10 +13,10 @@
 package sqlstore
 
 import (
-	"bytes"
 	"context"
 	"embed"
 	"fmt"
+	"io"
 
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
@@ -133,31 +133,28 @@ func ApplyDataRetentionPolicies(config Config) error {
 	return nil
 }
 
-func StartEmbeddedPostgres(log *logging.Logger, config Config, stateDir string, postgresLog *bytes.Buffer) (*embeddedpostgres.EmbeddedPostgres, string, error) {
+func StartEmbeddedPostgres(log *logging.Logger, config Config, stateDir string, writer io.Writer) (*embeddedpostgres.EmbeddedPostgres, string, error) {
 	embeddedPostgresRuntimePath := paths.JoinStatePath(paths.StatePath(stateDir), "sqlstore")
 	embeddedPostgresDataPath := paths.JoinStatePath(paths.StatePath(stateDir), "sqlstore", "node-data")
 
 	embeddedPostgres := createEmbeddedPostgres(&embeddedPostgresRuntimePath, &embeddedPostgresDataPath,
-		postgresLog, config.ConnectionConfig)
+		writer, config.ConnectionConfig)
 
 	if err := embeddedPostgres.Start(); err != nil {
-		log.Errorf("postgres log: \n%s", postgresLog.String())
 		return nil, "", fmt.Errorf("use embedded database was true, but failed to start: %w", err)
 	}
 
 	return embeddedPostgres, embeddedPostgresRuntimePath.String(), nil
 }
 
-func createEmbeddedPostgres(runtimePath *paths.StatePath, dataPath *paths.StatePath, postgresLog *bytes.Buffer, conf ConnectionConfig) *embeddedpostgres.EmbeddedPostgres {
+func createEmbeddedPostgres(runtimePath *paths.StatePath, dataPath *paths.StatePath, writer io.Writer, conf ConnectionConfig) *embeddedpostgres.EmbeddedPostgres {
 	dbConfig := embeddedpostgres.DefaultConfig().
 		Username(conf.Username).
 		Password(conf.Password).
 		Database(conf.Database).
 		Port(uint32(conf.Port))
 
-	if postgresLog != nil {
-		dbConfig = dbConfig.Logger(postgresLog)
-	}
+	dbConfig = dbConfig.Logger(writer)
 
 	if runtimePath != nil {
 		dbConfig = dbConfig.RuntimePath(runtimePath.String()).BinariesPath(runtimePath.String())

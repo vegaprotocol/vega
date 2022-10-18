@@ -15,6 +15,7 @@ package start
 import (
 	"context"
 	"fmt"
+	"io"
 
 	"code.vegaprotocol.io/vega/datanode/api"
 	"code.vegaprotocol.io/vega/datanode/broker"
@@ -113,7 +114,7 @@ func (l *NodeCommand) initialiseDatabase() (*sqlstore.ConnectionSource, error) {
 	var err error
 	if l.conf.SQLStore.UseEmbedded {
 		l.embeddedPostgres, _, err = sqlstore.StartEmbeddedPostgres(l.Log, l.conf.SQLStore,
-			l.vegaPaths.StatePathFor(paths.DataNodeStorageHome), nil)
+			l.vegaPaths.StatePathFor(paths.DataNodeStorageHome), io.Discard)
 		if err != nil {
 			return nil, fmt.Errorf("failed to start embedded postgres: %w", err)
 		}
