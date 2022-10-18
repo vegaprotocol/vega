@@ -14,6 +14,7 @@ package execution_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -233,32 +234,33 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 		// not have enough funds
 		expectedStatus := []struct {
 			status    types.OrderStatus
-			remaining uint64
+			remaining int
 		}{
 			{
 				// this is the first update indicating the order
 				// was matched
 				types.OrderStatusActive,
-				0x32d, // size - 20
+				813, // size - 20
 			},
 			{
 				// this is the replacement order created
 				// by engine.
 				types.OrderStatusCancelled,
-				0x32d, // size
+				813, // size
 			},
 			{
 				// this is the cancellation
 				types.OrderStatusActive,
-				0x341, // cancelled
+				833, // cancelled
 			},
 		}
 
 		require.Len(t, found, len(expectedStatus))
 
 		for i, expect := range expectedStatus {
+			fmt.Printf("FOUND: %s\n\n", found[i].String())
 			got := found[i].Status
-			remaining := found[i].Remaining
+			remaining := int(found[i].Remaining)
 			assert.Equal(t, expect.status.String(), got.String())
 			assert.Equal(t, expect.remaining, remaining)
 		}

@@ -25,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/core/positions"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -540,7 +541,7 @@ func (m *Market) cancelDistressedLiquidityProvision(
 		return nil, perr
 	}
 	orderUpdates, err := m.resolveClosedOutParties(
-		ctx, []events.Margin{margin}, order)
+		ctx, []events.Margin{margin}, ptr.From(order.ID))
 	if err != nil {
 		m.log.Error("could not resolve out parties",
 			logging.MarketID(mktID),
