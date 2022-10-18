@@ -17,7 +17,6 @@ import (
 	"context"
 	"embed"
 	"fmt"
-	"io"
 
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
@@ -149,15 +148,15 @@ func StartEmbeddedPostgres(log *logging.Logger, config Config, stateDir string, 
 	return embeddedPostgres, embeddedPostgresRuntimePath.String(), nil
 }
 
-func createEmbeddedPostgres(runtimePath *paths.StatePath, dataPath *paths.StatePath, writer io.Writer, conf ConnectionConfig) *embeddedpostgres.EmbeddedPostgres {
+func createEmbeddedPostgres(runtimePath *paths.StatePath, dataPath *paths.StatePath, postgresLog *bytes.Buffer, conf ConnectionConfig) *embeddedpostgres.EmbeddedPostgres {
 	dbConfig := embeddedpostgres.DefaultConfig().
 		Username(conf.Username).
 		Password(conf.Password).
 		Database(conf.Database).
 		Port(uint32(conf.Port))
 
-	if writer != nil {
-		dbConfig = dbConfig.Logger(writer)
+	if postgresLog != nil {
+		dbConfig = dbConfig.Logger(postgresLog)
 	}
 
 	if runtimePath != nil {
