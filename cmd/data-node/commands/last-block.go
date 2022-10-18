@@ -38,6 +38,11 @@ func (cmd *LastBlockCmd) Execute(_ []string) error {
 	}
 
 	cmd.Config, err = cfgLoader.Get()
+	if err != nil {
+		handleErr(log, cmd.Output.IsJSON(), "couldn't load configuration", err)
+		os.Exit(1)
+	}
+
 	connectionString := cmd.Config.SQLStore.ConnectionConfig.GetConnectionString()
 
 	ctx, cancel := context.WithTimeout(context.Background(), cmd.Timeout)
@@ -87,8 +92,8 @@ func LastBlock(ctx context.Context, parser *flags.Parser) error {
 	return err
 }
 
-func handleErr(log *logging.Logger, outputJson bool, msg string, err error) {
-	if outputJson {
+func handleErr(log *logging.Logger, outputJSON bool, msg string, err error) {
+	if outputJSON {
 		_ = vgjson.Print(struct {
 			Error string `json:"error"`
 		}{
