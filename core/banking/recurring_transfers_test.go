@@ -239,12 +239,16 @@ func testForeverTransferCancelledNotEnoughFunds(t *testing.T) {
 				Amount:          num.NewUint(100),
 				Reference:       "someref",
 			},
-			StartEpoch: 10,
-			EndEpoch:   nil, // forever
-			Factor:     num.MustDecimalFromString("0.9"),
+			DispatchStrategy: &vega.DispatchStrategy{Metric: vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED},
+			StartEpoch:       10,
+			EndEpoch:         nil, // forever
+			Factor:           num.MustDecimalFromString("0.9"),
 		},
 	}
 
+	e.marketActivityTracker.EXPECT().GetMarketScores(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return([]*types.MarketContributionScore{
+		{Asset: "asset1", Market: "market1", Metric: vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED, Score: num.DecimalFromFloat(1)},
+	})
 	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{quantum: num.DecimalFromFloat(10)}), nil)
 	e.tsvc.EXPECT().GetTimeNow().Times(2)
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
@@ -263,7 +267,7 @@ func testForeverTransferCancelledNotEnoughFunds(t *testing.T) {
 	}
 
 	// asset exists
-	e.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).Times(1).Return(&fromAcc, nil)
+	e.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).Times(2).Return(&fromAcc, nil)
 
 	// assert the calculation of fees and transfer request are correct
 	e.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(

@@ -173,8 +173,7 @@ func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint
 			)
 		} else {
 			// check if the amount + fees can be covered by the party issuing the transfer
-			_, err = e.ensureFeeForTransferFunds(amount, v.From, v.Asset, v.FromAccountType)
-			if err == nil {
+			if _, err = e.ensureFeeForTransferFunds(amount, v.From, v.Asset, v.FromAccountType); err == nil {
 				marketScores := e.getMarketScores(v.DispatchStrategy, v.Asset, v.From)
 				// first we make sure that there's sufficient funds to cover the transfer
 				for _, fms := range marketScores {
@@ -194,6 +193,8 @@ func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint
 					}
 					resps = append(resps, r...)
 				}
+			} else {
+				err = fmt.Errorf("could not pay the fee for transfer: %w", err)
 			}
 		}
 		if err != nil {
