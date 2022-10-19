@@ -31,7 +31,18 @@ func NewOneOffTransferFundsEvent(
 ) *TransferFunds {
 	return &TransferFunds{
 		Base:     newBase(ctx, TransferEvent),
-		transfer: t.IntoEvent(),
+		transfer: t.IntoEvent(nil),
+	}
+}
+
+func NewOneOffTransferFundsEventWithReason(
+	ctx context.Context,
+	t *types.OneOffTransfer,
+	reason string,
+) *TransferFunds {
+	return &TransferFunds{
+		Base:     newBase(ctx, TransferEvent),
+		transfer: t.IntoEvent(&reason),
 	}
 }
 
@@ -41,7 +52,18 @@ func NewRecurringTransferFundsEvent(
 ) *TransferFunds {
 	return &TransferFunds{
 		Base:     newBase(ctx, TransferEvent),
-		transfer: t.IntoEvent(),
+		transfer: t.IntoEvent(nil),
+	}
+}
+
+func NewRecurringTransferFundsEventWithReason(
+	ctx context.Context,
+	t *types.RecurringTransfer,
+	reason string,
+) *TransferFunds {
+	return &TransferFunds{
+		Base:     newBase(ctx, TransferEvent),
+		transfer: t.IntoEvent(&reason),
 	}
 }
 

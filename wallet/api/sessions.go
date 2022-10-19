@@ -21,7 +21,7 @@ type Sessions struct {
 	connectedWallets map[string]*ConnectedWallet
 }
 
-// ClientConnectWallet initiates a wallet connection and load associated resources in
+// ConnectWallet initiates a wallet connection and load associated resources in
 // it. If a connection already exists, it's disconnected and a new token is
 // generated.
 func (s *Sessions) ConnectWallet(hostname string, w wallet.Wallet) (string, error) {
@@ -45,7 +45,7 @@ func (s *Sessions) ConnectWallet(hostname string, w wallet.Wallet) (string, erro
 	return token, nil
 }
 
-// ClientDisconnectWallet unloads the connected wallet resources and revokes the token.
+// DisconnectWallet unloads the connected wallet resources and revokes the token.
 // It does not fail. Non-existing token does nothing.
 func (s *Sessions) DisconnectWallet(token string) {
 	connectedWallet, ok := s.connectedWallets[token]

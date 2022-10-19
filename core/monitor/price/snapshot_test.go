@@ -14,6 +14,7 @@ package price_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -24,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -151,4 +153,56 @@ func TestChangedState(t *testing.T) {
 	assert.Equal(t, state2.Now.UnixNano(), state3.Now.UnixNano())
 	assert.Equal(t, state2.Update.UnixNano(), state3.Update.UnixNano())
 	assert.Equal(t, state2.PricesPast[0].Time.UnixNano(), state3.PricesPast[0].Time.UnixNano())
+}
+
+func TestRestorePriceBoundRepresentation(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	riskModel := mocks.NewMockRangeProvider(ctrl)
+	auctionStateMock := mocks.NewMockAuctionState(ctrl)
+	currentPrice := num.NewUint(123)
+	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
+
+	settings := types.PriceMonitoringSettingsFromProto(&vegapb.PriceMonitoringSettings{
+		Parameters: &vegapb.PriceMonitoringParameters{
+			Triggers: []*vegapb.PriceMonitoringTrigger{
+				{Horizon: 3600, Probability: "0.99", AuctionExtension: 60},
+				{Horizon: 7200, Probability: "0.95", AuctionExtension: 300},
+			},
+		},
+	})
+
+	_, pMin1, pMax1, _, _ := getPriceBounds(currentPrice, 1, 2)
+	_, pMin2, pMax2, _, _ := getPriceBounds(currentPrice, 3, 4)
+	currentPriceD := currentPrice.ToDecimal()
+	auctionStateMock.EXPECT().IsFBA().Return(false).AnyTimes()
+	auctionStateMock.EXPECT().InAuction().Return(false).AnyTimes()
+	auctionStateMock.EXPECT().IsPriceAuction().Return(false).AnyTimes()
+	auctionStateMock.EXPECT().IsLiquidityAuction().Return(false).AnyTimes()
+	statevar := mocks.NewMockStateVarEngine(ctrl)
+	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+
+	pm, err := price.NewMonitor("asset", "market", riskModel, auctionStateMock, settings, statevar, logging.NewTestLogger())
+	require.NoError(t, err)
+	require.NotNil(t, pm)
+	downFactors := []num.Decimal{pMin1.Div(currentPriceD), pMin2.Div(currentPriceD)}
+	upFactors := []num.Decimal{pMax1.Div(currentPriceD), pMax2.Div(currentPriceD)}
+
+	pm.UpdateTestFactors(downFactors, upFactors)
+
+	pm.OnTimeUpdate(now)
+	b := pm.CheckPrice(context.Background(), auctionStateMock, []*types.Trade{{Price: currentPrice, Size: 1}}, true)
+	require.False(t, b)
+
+	state := pm.GetState()
+	snap, err := price.NewMonitorFromSnapshot("market", "asset", state, settings, riskModel, auctionStateMock, statevar, logging.NewTestLogger())
+	require.NoError(t, err)
+
+	min, max := pm.GetValidPriceRange()
+	sMin, sMax := snap.GetValidPriceRange()
+	fmt.Println(min.Original().String(), max.Original().String())
+	fmt.Println(min.Representation().String(), max.Representation().String())
+	// check the values of the wrapped decimal are the same
+	require.Equal(t, min, sMin)
+	require.Equal(t, max, sMax)
 }

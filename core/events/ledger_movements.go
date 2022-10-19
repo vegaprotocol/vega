@@ -39,9 +39,11 @@ func (t *LedgerMovements) LedgerMovements() []*ptypes.LedgerMovement {
 }
 
 func (t LedgerMovements) IsParty(id string) bool {
+	isParty := func(owner *string) bool { return owner != nil && *owner == id }
+
 	for _, r := range t.ledgerMovements {
 		for _, e := range r.Entries {
-			if *e.FromAccount.Owner == id || *e.ToAccount.Owner == id {
+			if isParty(e.FromAccount.Owner) || isParty(e.ToAccount.Owner) {
 				return true
 			}
 		}

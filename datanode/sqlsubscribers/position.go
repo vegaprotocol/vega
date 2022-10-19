@@ -22,7 +22,6 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/pkg/errors"
-	"go.uber.org/zap"
 )
 
 type positionEventBase interface {
@@ -136,14 +135,11 @@ func (p *Position) handleSettleDistressed(ctx context.Context, event settleDistr
 func (p *Position) handleSettleMarket(ctx context.Context, event settleMarket) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
-	p.log.Info("handling market settled event", zap.Any("market", event.MarketID()))
 	pos, err := p.store.GetByMarket(ctx, event.MarketID())
 	if err != nil {
 		return errors.Wrap(err, "error getting positions")
 	}
-	p.log.Info("got positions", zap.Any("positions", pos))
 	for i := range pos {
-		p.log.Info("updating position", zap.Int("index", i))
 		pos[i].UpdateWithSettleMarket(event)
 		err := p.updatePosition(ctx, pos[i])
 		if err != nil {

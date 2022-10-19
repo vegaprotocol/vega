@@ -820,6 +820,9 @@ type Transfer {
 
   "The type of transfer being made, i.e. a one-off or recurring transfer"
   kind: TransferKind!
+
+  "An optional reason explaining the status of the transfer"
+  reason: String
 }
 
 union TransferKind = OneOffTransfer | RecurringTransfer
@@ -3988,7 +3991,6 @@ type RewardPerAssetDetail {
 scalar Timestamp
 
 type AggregatedLedgerEntries {
-  id: ID
   "RFC3339Nano time from at which this ledger entries records were relevant"
   vegaTime: String!
   "Net amount of ledger entries for the accounts specified in the filter at this time"
@@ -4047,7 +4049,6 @@ type AggregatedBalanceConnection {
 }
 
 enum AccountField {
-  AccountId
   PartyId
   AssetId
   MarketId

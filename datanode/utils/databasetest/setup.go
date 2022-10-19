@@ -98,8 +98,8 @@ func TestMain(m *testing.M, onSetupComplete func(sqlstore.Config, *sqlstore.Conn
 		}
 
 		var postgresRuntimePath string
-		var postgresLog *bytes.Buffer
-		embeddedPostgres, postgresRuntimePath, postgresLog, err = sqlstore.StartEmbeddedPostgres(log, sqlConfig, tempDir)
+		postgresLog := &bytes.Buffer{}
+		embeddedPostgres, postgresRuntimePath, err = sqlstore.StartEmbeddedPostgres(log, sqlConfig, tempDir, postgresLog)
 		if err != nil {
 			panic(err)
 		}
