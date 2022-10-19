@@ -28,6 +28,7 @@
 - [6471](https://github.com/vegaprotocol/vega/issues/6471) - Fix potential nil reference when owner is system for ledger entries
 - [6519](https://github.com/vegaprotocol/vega/issues/6519) - Fix errors in the ledger entries `GraphQL` query.
 - [6515](https://github.com/vegaprotocol/vega/issues/6515) - Required properties in OpenRPC documentation are marked as such
+- [6234](https://github.com/vegaprotocol/vega/issues/6234) - Fix response in query for oracle data spec by id
 
 ## 0.58.0
 
