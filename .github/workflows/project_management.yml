@@ -30,6 +30,10 @@ env:
   DONE_COLUMN_NAME: '"Done"'
   ITERATION_FIELD_NAME: 'Sprint'   # See project settings (default is `Iteration`)
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   project-board-automation:
     name: 'Linked Issues & Project Board Automation'
@@ -45,7 +49,7 @@ jobs:
       - name: 'Get linked issue id and state'
         id: linked-issue
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_NEW_CARD_TO_PROJECT }}
         run: |
           gh api graphql -f query='
             query($pr_url: URI!) {
@@ -69,7 +73,7 @@ jobs:
            || (github.actor == 'dependabot[bot]' || github.actor == 'renovate[bot]'))
         run: |
           echo 'BOT_PR=true' >> $GITHUB_ENV
-          echo "::set-output name=is-bot::1"
+          echo "is-bot=1" >> $GITHUB_ENV
       - name: 'Check for linked issue'
         id: linked
         if: |
@@ -114,28 +118,48 @@ jobs:
           gh api graphql -f query='
             query($org: String!, $number: Int!) {
               organization(login: $org){
-                projectNext(number: $number) {
+                projectV2(number: $number) {
                   id
                   fields(first:20) {
                     nodes {
-                      id
-                      name
-                      settings
+                      ... on ProjectV2Field {
+                        id
+                        name
+                      }
+                      ... on ProjectV2SingleSelectField {
+                        id
+                        name
+                        options {
+                          id
+                          name
+                        }
+                      }
+                      ... on ProjectV2IterationField {
+                        name
+                        id
+                        configuration {
+                          iterations {
+                            id
+                            title
+                          }
+                        }
+                      }
                     }
                   }
                 }
               }
             }' -f org=$ORGANIZATION -F number=$PROJECT_NUMBER > data.json
-          echo 'PROJECT_ID='$(jq '.data.organization.projectNext.id' data.json) >> $GITHUB_ENV
-          echo 'STATUS_FIELD_ID='$(jq '.data.organization.projectNext.fields.nodes[] | select(.name== "Status") | .id' data.json) >> $GITHUB_ENV
-          echo 'IN_PROGRESS_COLUMN='$(jq --arg in_progress ${{ env.IN_PROGRESS_COLUMN_NAME }} '.data.organization.projectNext.fields.nodes[] | select(.name== "Status") |.settings | fromjson.options[] | select(.name==$in_progress) |.id' data.json) >> $GITHUB_ENV
-          echo 'REVIEW_REQUIRED_COLUMN='$(jq --arg review_required ${{ env.REVIEW_REQUIRED_COLUMN_NAME }} '.data.organization.projectNext.fields.nodes[] | select(.name== "Status") |.settings | fromjson.options[] | select(.name==$review_required) |.id' data.json) >> $GITHUB_ENV
-          echo 'IN_REVIEW_COLUMN='$(jq --arg in_review ${{ env.IN_REVIEW_COLUMN_NAME }} '.data.organization.projectNext.fields.nodes[] | select(.name== "Status") |.settings | fromjson.options[] | select(.name==$in_review) |.id' data.json) >> $GITHUB_ENV
-          echo 'APPROVED_COLUMN='$(jq --arg approved ${{ env.APPROVED_COLUMN_NAME }} '.data.organization.projectNext.fields.nodes[] | select(.name== "Status") |.settings | fromjson.options[] | select(.name==$approved) |.id' data.json) >> $GITHUB_ENV
-          echo 'MERGED_COLUMN='$(jq --arg merged ${{ env.MERGED_COLUMN_NAME }} '.data.organization.projectNext.fields.nodes[] | select(.name== "Status") |.settings | fromjson.options[] | select(.name==$merged) |.id' data.json) >> $GITHUB_ENV
-          echo 'DONE_COLUMN='$(jq --arg merged ${{ env.DONE_COLUMN_NAME }} '.data.organization.projectNext.fields.nodes[] | select(.name== "Status") |.settings | fromjson.options[] | select(.name==$merged) |.id' data.json) >> $GITHUB_ENV
-          echo 'ITERATION_FIELD_ID='$(jq --arg iteration_field_name $ITERATION_FIELD_NAME '.data.organization.projectNext.fields.nodes[] | select(.name==$iteration_field_name) | .id' data.json) >> $GITHUB_ENV
-          echo 'CURRENT_ITERATION='$(jq --arg iteration_field_name $ITERATION_FIELD_NAME '.data.organization.projectNext.fields.nodes[] | select(.name==$iteration_field_name) |.settings | fromjson.configuration.iterations[0] | .id' data.json) >> $GITHUB_ENV
+          echo 'PROJECT_ID='$(jq '.data.organization.projectV2.id' data.json) >> $GITHUB_ENV
+          echo 'STATUS_FIELD_ID='$(jq '.data.organization.projectV2.fields.nodes[] | select(.name== "Status") | .id' data.json) >> $GITHUB_ENV
+          echo 'IN_PROGRESS_COLUMN='$(jq --arg in_progress ${{ env.IN_PROGRESS_COLUMN_NAME }} '.data.organization.projectV2.fields.nodes[] | select(.name== "Status") | .options[] | select(.name==$in_progress) | .id' data.json) >> $GITHUB_ENV
+          echo 'REVIEW_REQUIRED_COLUMN='$(jq --arg review_required ${{ env.REVIEW_REQUIRED_COLUMN_NAME }} '.data.organization.projectV2.fields.nodes[] | select(.name== "Status") | .options[] | select(.name==$review_required) | .id' data.json) >> $GITHUB_ENV
+          echo 'IN_REVIEW_COLUMN='$(jq --arg in_review ${{ env.IN_REVIEW_COLUMN_NAME }} '.data.organization.projectV2.fields.nodes[] | select(.name== "Status") | .options[] | select(.name==$in_review) | .id' data.json) >> $GITHUB_ENV
+          echo 'APPROVED_COLUMN='$(jq --arg approved ${{ env.APPROVED_COLUMN_NAME }} '.data.organization.projectV2.fields.nodes[] | select(.name== "Status") | .options[] | select(.name==$approved) | .id' data.json) >> $GITHUB_ENV
+          echo 'MERGED_COLUMN='$(jq --arg merged ${{ env.MERGED_COLUMN_NAME }} '.data.organization.projectV2.fields.nodes[] | select(.name== "Status") | .options[] | select(.name==$merged) | .id' data.json) >> $GITHUB_ENV
+          echo 'DONE_COLUMN='$(jq --arg done ${{ env.DONE_COLUMN_NAME }} '.data.organization.projectV2.fields.nodes[] | select(.name== "Status") | .options[] | select(.name==$done) | .id' data.json) >> $GITHUB_ENV
+          echo 'ITERATION_FIELD_ID='$(jq --arg iteration_field_name $ITERATION_FIELD_NAME '.data.organization.projectV2.fields.nodes[] | select(.name==$iteration_field_name) | .id' data.json) >> $GITHUB_ENV
+          echo 'CURRENT_ITERATION='$(jq --arg iteration_field_name $ITERATION_FIELD_NAME '.data.organization.projectV2.fields.nodes[] | select(.name==$iteration_field_name) | .configuration.iterations[0] | .id' data.json) >> $GITHUB_ENV
+
       - name: 'Get PR state, review decision and author'
         id: pr-status
         run: |
@@ -199,12 +223,12 @@ jobs:
         run: |
           issue_item_id="$( gh api graphql -f query='
             mutation($project:ID!, $issue:ID!) {
-              addProjectNextItem(input: {projectId: $project, contentId: $issue}) {
-                projectNextItem {
+              addProjectV2ItemById(input: {projectId: $project, contentId: $issue}) {
+                item {
                   id
                 }
               }
-            }' -f project=$PROJECT_ID -f issue=$LINKED_ISSUE_ID --jq '.data.addProjectNextItem.projectNextItem.id')"
+            }' -f project=$PROJECT_ID -f issue=$LINKED_ISSUE_ID --jq '.data.addProjectV2ItemById.item.id')"
           echo 'BOARD_ITEM_ID='$issue_item_id >> $GITHUB_ENV
       - name: 'Add exclusion labeled PR to the project'
         id: pr-to-project
@@ -214,12 +238,12 @@ jobs:
         run: |
           pr_item_id="$( gh api graphql -f query='
             mutation($project:ID!, $pr:ID!) {
-              addProjectNextItem(input: {projectId: $project, contentId: $pr}) {
-                projectNextItem {
+              addProjectV2ItemById(input: {projectId: $project, contentId: $pr}) {
+                item {
                   id
                 }
               }
-            }' -f project=$PROJECT_ID -f pr=$PR_ID --jq '.data.addProjectNextItem.projectNextItem.id')"
+            }' -f project=$PROJECT_ID -f pr=$PR_ID --jq '.data.addProjectV2ItemById.item.id')"
           echo 'BOARD_ITEM_ID='$pr_item_id >> $GITHUB_ENV
       - name: 'Add BOT PR to the project'
         id: bot-pr-to-project
@@ -227,12 +251,12 @@ jobs:
         run: |
           pr_item_id="$( gh api graphql -f query='
             mutation($project:ID!, $pr:ID!) {
-              addProjectNextItem(input: {projectId: $project, contentId: $pr}) {
-                projectNextItem {
+              addProjectV2ItemById(input: {projectId: $project, contentId: $pr}) {
+                item {
                   id
                 }
               }
-            }' -f project=$PROJECT_ID -f pr=$PR_ID --jq '.data.addProjectNextItem.projectNextItem.id')"
+            }' -f project=$PROJECT_ID -f pr=$PR_ID --jq '.data.addProjectV2ItemById.item.id')"
           echo 'BOARD_ITEM_ID='$pr_item_id >> $GITHUB_ENV
       - name: 'Reopen if the linked issue closed'
         id: reopen-issue
@@ -326,23 +350,27 @@ jobs:
               $iteration_field: ID!
               $iteration_value: String!
             ) {
-              set_status: updateProjectNextItemField(input: {
+              set_status: updateProjectV2ItemFieldValue(input: {
                 projectId: $project
                 itemId: $item
                 fieldId: $status_field
-                value: $status_value
+                value: {
+                  singleSelectOptionId: $status_value
+                  }
               }) {
-                projectNextItem {
+                projectV2Item {
                   id
                   }
               }
-              set_iteration: updateProjectNextItemField(input: {
+              set_iteration: updateProjectV2ItemFieldValue(input: {
                 projectId: $project
                 itemId: $item
                 fieldId: $iteration_field
-                value: $iteration_value
+                value: {
+                  iterationId: $iteration_value
+                  }
               }) {
-                projectNextItem {
+                projectV2Item {
                   id
                 }
               }
@@ -352,34 +380,43 @@ jobs:
               -f status_value=${{ env.CURRENT_STATUS }} \
               -f iteration_field=$ITERATION_FIELD_ID \
               -f iteration_value=${{ env.CURRENT_ITERATION }}
-  verify-changelog-updated:
-    name: Verify CHANGELOG Updated
+  verify-changelog-updated2:
+    name: "Verify CHANGELOG Updated 2"
     needs: project-board-automation
     runs-on: ubuntu-latest
     env:
       IS_BOT: ${{needs.project-board-automation.outputs.bot-pr-output}}
     steps:
       - run: env
-      - name: Check bot
-        id: check-bot
+      - name: "Check bot 2"
+        id: check-bot-2
         if: env.IS_BOT == '1'
-        run: echo "Pull request opened by bot - no changelog required"
-      - name: No changelog required
-        id: changelog-excluded
+        run: echo "pull request opened by bot"
+      - name: "No changelog required 2"
+        id: changelog-excluded-2
         if: github.event.pull_request.draft == true || contains(github.event.pull_request.labels.*.name, 'no-changelog') == true
-        run: echo "Changelog requirment excluded"
-      - name: Checkout
-        id: checkout
-        if: steps.check-bot.outcome == 'skipped' && steps.changelog-excluded.outcome == 'skipped'
+        run: echo "changelog requirment excluded"
+      - name: "Checkout 2"
+        id: checkout-2
+        if: steps.check-bot-2.outcome == 'skipped' && steps.changelog-excluded-2.outcome == 'skipped'
         uses: actions/checkout@v3
-      # yamllint enable rule:line-length
-      - name: Check changelog entry
-        id: changelog-check
-        if: steps.checkout.outcome == 'success'
-        uses: Zomzog/changelog-checker@v1.2.0
         with:
-          fileName: CHANGELOG.md
-          noChangelogLabel: "no-changelog"
-          checkNotification: Simple
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      - name: "Check changelog entry 2"
+        shell: pwsh
+        id: check_file_changed
+        if: steps.checkout-2.outcome == 'success'
+        run: |
+          $diff = git diff --name-only HEAD^ HEAD
+          $SourceDiff = $diff | Where-Object { $_ -match 'CHANGELOG.md' }
+          $HasDiff = $SourceDiff.Length -gt 0
+          echo "changelog_changed=$HasDiff" >> $GITHUB_ENV
+      - name: "Report fail"
+        if: steps.check_file_changed.outputs.changelog_changed != 'True' && steps.check_file_changed.outcome == 'success'
+        uses: actions/github-script@v6.1.0
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            console.log("Changelog should be updated, or if a small fix the 'no-changelog label used!");
+            core.setFailed("Changelog should be updated, or if a small fix the 'no-changelog label used!");
+        # yamllint enable rule:line-length
