@@ -328,6 +328,9 @@ func (s *coreService) Statistics(ctx context.Context, _ *protoapi.StatisticsRequ
 		TotalOrders:           s.stats.Blockchain.TotalOrders(),
 		TotalTrades:           s.stats.Blockchain.TotalTrades(),
 		BlockDuration:         s.stats.Blockchain.BlockDuration(),
+		EpochSeq:              s.stats.GetEpochSeq(),
+		EpochStartTime:        s.stats.GetEpochExpireTime().Unix(),
+		EpochExpiryTime:       s.stats.GetEpochExpireTime().Unix(),
 		ChainId:               chainID,
 	}
 	return &protoapi.StatisticsResponse{
