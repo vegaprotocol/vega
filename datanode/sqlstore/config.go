@@ -100,7 +100,6 @@ func NewDefaultConfig() Config {
 		RetentionPolicies: []RetentionPolicy{
 			{HypertableOrCaggName: "balances", DataRetentionPeriod: "7 days"},
 			{HypertableOrCaggName: "checkpoints", DataRetentionPeriod: "7 days"},
-			{HypertableOrCaggName: "conflated_balances", DataRetentionPeriod: "1 year"},
 			{HypertableOrCaggName: "delegations", DataRetentionPeriod: "7 days"},
 			{HypertableOrCaggName: "ledger", DataRetentionPeriod: "7 days"},
 			{HypertableOrCaggName: "orders_history", DataRetentionPeriod: "7 days"},
@@ -112,9 +111,7 @@ func NewDefaultConfig() Config {
 			{HypertableOrCaggName: "trades_candle_6_hours", DataRetentionPeriod: "1 year"},
 			{HypertableOrCaggName: "market_data", DataRetentionPeriod: "7 days"},
 			{HypertableOrCaggName: "margin_levels", DataRetentionPeriod: "7 days"},
-			{HypertableOrCaggName: "conflated_margin_levels", DataRetentionPeriod: "1 year"},
 			{HypertableOrCaggName: "positions", DataRetentionPeriod: "7 days"},
-			{HypertableOrCaggName: "conflated_positions", DataRetentionPeriod: "1 year"},
 			{HypertableOrCaggName: "liquidity_provisions", DataRetentionPeriod: "7 days"},
 		},
 		ConnectionRetryConfig: ConnectionRetryConfig{

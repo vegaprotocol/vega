@@ -14,15 +14,14 @@ package sqlstore_test
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"testing"
-	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/shopspring/decimal"
@@ -247,84 +246,4 @@ func TestBalances(t *testing.T) {
 		expected := expectedGroupedByAccount[1:4]
 		assertBalanceCorrect(t, &expected, actual)
 	})
-}
-
-func TestBalancesDataRetention(t *testing.T) {
-	defer DeleteEverything()
-	ctx := context.Background()
-
-	blockStore := sqlstore.NewBlocks(connectionSource)
-	assetStore := sqlstore.NewAssets(connectionSource)
-	accountStore := sqlstore.NewAccounts(connectionSource)
-	balanceStore := sqlstore.NewBalances(connectionSource)
-	partyStore := sqlstore.NewParties(connectionSource)
-
-	// Set up a test environment with a bunch of blocks/parties/accounts
-	asset := addTestAsset(t, assetStore, addTestBlock(t, blockStore))
-
-	var blocks []entities.Block
-	var parties []entities.Party
-	var accounts []entities.Account
-	for i := 0; i < 5; i++ {
-		blocks = append(blocks, addTestBlockForTime(t, blockStore, time.Now().Add((-26*time.Hour)-(time.Duration(5-i)*time.Second))))
-		parties = append(parties, addTestParty(t, partyStore, blocks[0]))
-		accounts = append(accounts, helpers.AddTestAccount(t, accountStore, parties[i], asset, types.AccountTypeInsurance, blocks[0]))
-	}
-
-	// And add some dummy balances
-	addTestBalance(t, balanceStore, blocks[0], accounts[0], 1)
-	addTestBalance(t, balanceStore, blocks[0], accounts[0], 2) // Second balance on same acc/block should override first
-	addTestBalance(t, balanceStore, blocks[1], accounts[0], 5)
-	addTestBalance(t, balanceStore, blocks[2], accounts[1], 10)
-	addTestBalance(t, balanceStore, blocks[3], accounts[2], 100)
-	balanceStore.Flush(ctx)
-
-	// Conflate the data and add some new positions so all tests run against a mix of conflated and non-conflated data
-	now := time.Now()
-	refreshQuery := fmt.Sprintf("CALL refresh_continuous_aggregate('conflated_balances', '%s', '%s');",
-		now.Add(-48*time.Hour).Format("2006-01-02"),
-		time.Now().Format("2006-01-02"))
-	_, err := connectionSource.Connection.Exec(context.Background(), refreshQuery)
-
-	assert.NoError(t, err)
-
-	// The refresh of the continuous aggregate completes asynchronously so the following loop is necessary to ensure the data has been materialized
-	// before the test continues
-	for {
-		var counter int
-		connectionSource.Connection.QueryRow(context.Background(), "SELECT count(*) FROM conflated_balances").Scan(&counter)
-		if counter == 3 {
-			break
-		}
-	}
-
-	_, err = connectionSource.Connection.Exec(context.Background(), "delete from balances")
-	assert.NoError(t, err)
-
-	addTestBalance(t, balanceStore, blocks[4], accounts[0], 30)
-	balanceStore.Flush(ctx)
-
-	dateRange := entities.DateRange{}
-	pagination := entities.CursorPagination{}
-
-	// Query all the balances (they're all for the same asset)
-	actual, _, err := balanceStore.Query(entities.AccountFilter{AssetID: asset.ID}, []entities.AccountField{}, dateRange, pagination)
-	require.NoError(t, err)
-
-	// Helper function to make an aggregated balance that isn't grouped by anything
-	mkAggBal := func(blockI, bal int64) entities.AggregatedBalance {
-		return entities.AggregatedBalance{
-			VegaTime: blocks[blockI].VegaTime,
-			Balance:  decimal.NewFromInt(bal),
-		}
-	}
-	expected := []entities.AggregatedBalance{
-		// mkAggBal(0, 2),         // accounts[0] -> 2
-		mkAggBal(1, 5),         // accounts[0] -> 5
-		mkAggBal(2, 5+10),      // accounts[1] -> 10;  want accounts[0] + accounts[1]
-		mkAggBal(3, 5+10+100),  // accounts[2] -> 100; want accounts[0] + accounts[1] + accounts[2]
-		mkAggBal(4, 30+10+100), // accounts[0] -> 30;  want accounts[0] + accounts[1] + accounts[2]
-	}
-
-	assertBalanceCorrect(t, &expected, actual)
 }

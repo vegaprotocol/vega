@@ -89,28 +89,6 @@ func TestPosition(t *testing.T) {
 
 	_, _ = pos1a, pos1b
 
-	// Conflate the data and add some new positions so all tests run against a mix of conflated and non-conflated data
-	now := time.Now()
-	_, err = connectionSource.Connection.Exec(context.Background(), fmt.Sprintf("CALL refresh_continuous_aggregate('conflated_positions', '%s', '%s');",
-		now.Add(-48*time.Hour).Format("2006-01-02"),
-		time.Now().Format("2006-01-02")))
-
-	assert.NoError(t, err)
-
-	// The refresh of the continuous aggregate completes asynchronously so the following loop is necessary to ensure the data has been materialized
-	// before the test continues
-	for {
-		var counter int
-		connectionSource.Connection.QueryRow(context.Background(), "SELECT count(*) FROM conflated_positions").Scan(&counter)
-		if counter == 3 {
-			break
-		}
-	}
-
-	_, err = connectionSource.Connection.Exec(context.Background(), "delete from positions")
-	assert.NoError(t, err)
-
-	// Add some new positions to the non-conflated data
 	pos1c := addTestPosition(t, ps, market1, party1, 200, block3)
 	pos4 := addTestPosition(t, ps, market2, party2, 500, block3)
 	ps.Flush(ctx)

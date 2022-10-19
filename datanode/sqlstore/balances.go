@@ -100,14 +100,14 @@ func (bs *Balances) Query(filter entities.AccountFilter, groupBy []entities.Acco
 	// This query is the one that gives us our results
 	query := `
         WITH our_accounts AS (%s),
-             timestamps AS (SELECT DISTINCT all_balances.vega_time
-                            FROM all_balances JOIN our_accounts ON all_balances.account_id=our_accounts.id),
+             timestamps AS (SELECT DISTINCT balances.vega_time
+                            FROM balances JOIN our_accounts ON balances.account_id=our_accounts.id),
              keys AS (SELECT id AS account_id, timestamps.vega_time
                       FROM our_accounts CROSS JOIN timestamps),
              balances_with_nulls AS (SELECT keys.vega_time, keys.account_id, balance
-                                     FROM keys LEFT JOIN all_balances
-                                                      ON keys.account_id = all_balances.account_id
-                                                     AND keys.vega_time=all_balances.vega_time),
+                                     FROM keys LEFT JOIN balances
+                                                      ON keys.account_id = balances.account_id
+                                                     AND keys.vega_time=balances.vega_time),
              forward_filled_balances AS (SELECT vega_time, account_id, last(balance)
                                          OVER (partition by account_id order by vega_time) AS balance
                                          FROM balances_with_nulls),

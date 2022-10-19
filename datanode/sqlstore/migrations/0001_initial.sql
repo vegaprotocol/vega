@@ -130,37 +130,6 @@ $$;
 
 CREATE TRIGGER update_current_balances AFTER INSERT ON balances FOR EACH ROW EXECUTE function update_current_balances();
 
-CREATE MATERIALIZED VIEW conflated_balances
-            WITH (timescaledb.continuous, timescaledb.materialized_only = true) AS
-SELECT account_id, time_bucket('1 hour', vega_time) AS bucket,
-       last(balance, vega_time) AS balance,
-       last(tx_hash, vega_time) AS tx_hash,
-       last(vega_time, vega_time) AS vega_time
-FROM balances
-GROUP BY account_id, bucket WITH NO DATA;
-
--- start_offset is set to a day, as data is append only this does not impact the processing time and ensures
--- that the CAGG data will be correct on recovery in the event of a transient outage ( < 1 day )
-SELECT add_continuous_aggregate_policy('conflated_balances', start_offset => INTERVAL '1 day',
-                                     end_offset => INTERVAL '1 hour', schedule_interval => INTERVAL '1 hour');
-
-CREATE VIEW all_balances AS
-(
-SELECT
-    balances.account_id,
-    balances.tx_hash,
-    balances.vega_time,
-    balances.balance
-FROM balances
-UNION ALL
-SELECT
-    conflated_balances.account_id,
-    conflated_balances.tx_hash,
-    conflated_balances.vega_time,
-    conflated_balances.balance
-FROM conflated_balances
-WHERE conflated_balances.vega_time < (SELECT coalesce(min(balances.vega_time), 'infinity') FROM balances));
-
 create table ledger
 (
     ledger_entry_time       TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -988,49 +957,6 @@ $$;
 
 CREATE TRIGGER update_current_margin_levels AFTER INSERT ON margin_levels FOR EACH ROW EXECUTE function update_current_margin_levels();
 
-
-
-CREATE MATERIALIZED VIEW conflated_margin_levels
-            WITH (timescaledb.continuous, timescaledb.materialized_only = true) AS
-SELECT account_id, time_bucket('1 minute', vega_time) AS bucket,
-       last(maintenance_margin, vega_time) AS maintenance_margin,
-       last(search_level, vega_time) AS search_level,
-       last(initial_margin, vega_time) AS initial_margin,
-       last(collateral_release_level, vega_time) AS collateral_release_level,
-       last(timestamp, vega_time) AS timestamp,
-       last(tx_hash, vega_time) AS tx_hash,
-       last(vega_time, vega_time) AS vega_time
-FROM margin_levels
-GROUP BY account_id, bucket WITH NO DATA;
-
--- start_offset is set to a day, as data is append only this does not impact the processing time and ensures
--- that the CAGG data will be correct on recovery in the event of a transient outage ( < 1 day )
-SELECT add_continuous_aggregate_policy('conflated_margin_levels', start_offset => INTERVAL '1 day',
-    end_offset => INTERVAL '1 minute', schedule_interval => INTERVAL '1 minute');
-
-CREATE VIEW all_margin_levels AS
-(
-SELECT margin_levels.account_id,
-       margin_levels."timestamp",
-       margin_levels.maintenance_margin,
-       margin_levels.search_level,
-       margin_levels.initial_margin,
-       margin_levels.collateral_release_level,
-       margin_levels.tx_hash,
-       margin_levels.vega_time
-FROM margin_levels
-UNION ALL
-SELECT conflated_margin_levels.account_id,
-       conflated_margin_levels."timestamp",
-       conflated_margin_levels.maintenance_margin,
-       conflated_margin_levels.search_level,
-       conflated_margin_levels.initial_margin,
-       conflated_margin_levels.collateral_release_level,
-       conflated_margin_levels.tx_hash,
-       conflated_margin_levels.vega_time
-FROM conflated_margin_levels
-WHERE conflated_margin_levels.vega_time < (SELECT coalesce(min(margin_levels.vega_time), 'infinity') FROM margin_levels));
-
 create table if not exists risk_factors (
     market_id bytea not null,
     short NUMERIC(1000, 16) not null,
@@ -1107,58 +1033,6 @@ CREATE TABLE positions(
 );
 
 select create_hypertable('positions', 'vega_time', chunk_time_interval => INTERVAL '1 day');
-
-
-CREATE MATERIALIZED VIEW conflated_positions
-            WITH (timescaledb.continuous, timescaledb.materialized_only = true) AS
-SELECT market_id, party_id, time_bucket('1 hour', vega_time) AS bucket,
- last(open_volume, vega_time) AS open_volume,
- last(realised_pnl, vega_time) AS realised_pnl,
- last(unrealised_pnl, vega_time) AS unrealised_pnl,
- last(average_entry_price, vega_time) AS average_entry_price,
- last(average_entry_market_price, vega_time) AS average_entry_market_price,
- last(loss, vega_time) AS loss,
- last(adjustment, vega_time) AS adjustment,
- last(tx_hash, vega_time) AS tx_hash,
- last(vega_time, vega_time) AS vega_time
-FROM positions
-GROUP BY market_id, party_id, bucket WITH NO DATA;
-
--- start_offset is set to a day, as data is append only this does not impact the processing time and ensures
--- that the CAGG data will be correct on recovery in the event of a transient outage ( < 1 day )
-SELECT add_continuous_aggregate_policy('conflated_positions', start_offset => INTERVAL '1 day',
-                                       end_offset => INTERVAL '1 hour', schedule_interval => INTERVAL '1 hour');
-
-CREATE VIEW all_positions AS
-(
-SELECT
-  positions.market_id,
-  positions.party_id,
-  positions.open_volume,
-  positions.realised_pnl,
-  positions.unrealised_pnl,
-  positions.average_entry_price,
-  positions.average_entry_market_price,
-  positions.loss,
-  positions.adjustment,
-  positions.tx_hash,
-  positions.vega_time
-FROM positions
-UNION ALL
-SELECT
-    conflated_positions.market_id,
-    conflated_positions.party_id,
-    conflated_positions.open_volume,
-    conflated_positions.realised_pnl,
-    conflated_positions.unrealised_pnl,
-    conflated_positions.average_entry_price,
-    conflated_positions.average_entry_market_price,
-    conflated_positions.loss,
-    conflated_positions.adjustment,
-    conflated_positions.tx_hash,
-    conflated_positions.vega_time
-FROM conflated_positions
-WHERE conflated_positions.vega_time < (SELECT coalesce(min(positions.vega_time), 'infinity') FROM positions));
 
 drop view if exists positions_current;
 
