@@ -316,7 +316,8 @@ func testForeverTransferCancelledNotEnoughFunds(t *testing.T) {
 			assert.Len(t, evts, 1)
 			e, ok := evts[0].(*events.TransferFunds)
 			assert.True(t, ok, "unexpected event from the bus")
-			assert.Equal(t, e.Proto().Status, types.TransferStatusStopped)
+			assert.Equal(t, types.TransferStatusStopped, e.Proto().Status)
+			assert.Equal(t, "could not pay the fee for transfer: not enough funds to transfer", e.Proto().Reason)
 		})
 	})
 

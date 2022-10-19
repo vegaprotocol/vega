@@ -37,7 +37,7 @@ type scheduledTransfer struct {
 
 func (s *scheduledTransfer) ToProto() *checkpoint.ScheduledTransfer {
 	return &checkpoint.ScheduledTransfer{
-		OneoffTransfer: s.oneoff.IntoEvent(),
+		OneoffTransfer: s.oneoff.IntoEvent(""),
 		Transfer:       s.transfer.IntoProto(),
 		AccountType:    s.accountType,
 		Reference:      s.reference,
@@ -61,9 +61,13 @@ func scheduledTransferFromProto(p *checkpoint.ScheduledTransfer) (scheduledTrans
 func (e *Engine) oneOffTransfer(
 	ctx context.Context,
 	transfer *types.OneOffTransfer,
-) error {
+) (err error) {
 	defer func() {
-		e.broker.Send(events.NewOneOffTransferFundsEvent(ctx, transfer))
+		reason := ""
+		if err != nil {
+			reason = err.Error()
+		}
+		e.broker.Send(events.NewOneOffTransferFundsEvent(ctx, transfer, reason))
 	}()
 
 	// ensure asset exists
@@ -130,7 +134,7 @@ func (e *Engine) distributeScheduledTransfers(ctx context.Context) error {
 	for _, v := range ttfs {
 		for _, t := range v.transfer {
 			t.oneoff.Status = types.TransferStatusDone
-			evts = append(evts, events.NewOneOffTransferFundsEvent(ctx, t.oneoff))
+			evts = append(evts, events.NewOneOffTransferFundsEvent(ctx, t.oneoff, ""))
 			transfers = append(transfers, t.transfer)
 			accountTypes = append(accountTypes, t.accountType)
 			references = append(references, t.reference)

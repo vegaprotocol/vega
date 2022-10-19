@@ -28,20 +28,22 @@ type TransferFunds struct {
 func NewOneOffTransferFundsEvent(
 	ctx context.Context,
 	t *types.OneOffTransfer,
+	reason string,
 ) *TransferFunds {
 	return &TransferFunds{
 		Base:     newBase(ctx, TransferEvent),
-		transfer: t.IntoEvent(),
+		transfer: t.IntoEvent(reason),
 	}
 }
 
 func NewRecurringTransferFundsEvent(
 	ctx context.Context,
 	t *types.RecurringTransfer,
+	reason string,
 ) *TransferFunds {
 	return &TransferFunds{
 		Base:     newBase(ctx, TransferEvent),
-		transfer: t.IntoEvent(),
+		transfer: t.IntoEvent(reason),
 	}
 }
 

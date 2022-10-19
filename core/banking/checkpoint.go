@@ -92,7 +92,7 @@ func (e *Engine) loadScheduledTransfers(
 			if err != nil {
 				return nil, err
 			}
-			evts = append(evts, events.NewOneOffTransferFundsEvent(ctx, transfer.oneoff))
+			evts = append(evts, events.NewOneOffTransferFundsEvent(ctx, transfer.oneoff, ""))
 			transfers = append(transfers, transfer)
 		}
 		e.scheduledTransfers[time.Unix(v.DeliverOn, 0)] = transfers
@@ -109,7 +109,7 @@ func (e *Engine) loadRecurringTransfers(
 		transfer := types.RecurringTransferFromEvent(v)
 		e.recurringTransfers = append(e.recurringTransfers, transfer)
 		e.recurringTransfersMap[transfer.ID] = transfer
-		evts = append(evts, events.NewRecurringTransferFundsEvent(ctx, transfer))
+		evts = append(evts, events.NewRecurringTransferFundsEvent(ctx, transfer, ""))
 	}
 	return evts
 }
@@ -128,7 +128,7 @@ func (e *Engine) getRecurringTransfers() *checkpoint.RecurringTransfers {
 	}
 
 	for _, v := range e.recurringTransfers {
-		out.RecurringTransfers = append(out.RecurringTransfers, v.IntoEvent())
+		out.RecurringTransfers = append(out.RecurringTransfers, v.IntoEvent(""))
 	}
 
 	return out

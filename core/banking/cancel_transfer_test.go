@@ -136,6 +136,7 @@ func TestCancelTransfer(t *testing.T) {
 			e, ok := evt.(*events.TransferFunds)
 			assert.True(t, ok, "unexpected event from the bus")
 			assert.Equal(t, e.Proto().Status, types.TransferStatusCancelled)
+			assert.Equal(t, "transfer cancelled", e.Proto().Reason)
 		})
 	})
 
