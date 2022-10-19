@@ -304,9 +304,9 @@ message Statistics {
   // Current epoch
   uint64 epoch_seq = 36; 
   // Epoch start time 
-  int64 epoch_start_time = 37;
-  // Epoch expirty time
-  int64 epoch_expiry_time = 38;
+  string epoch_start_time = 37;
+  // Epoch expected end time
+  string epoch_expiry_time = 38;
 }
 
 // A request to get the height of the very last block processed
