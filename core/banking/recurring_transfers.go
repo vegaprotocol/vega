@@ -34,11 +34,11 @@ func (e *Engine) recurringTransfer(
 	transfer *types.RecurringTransfer,
 ) (err error) {
 	defer func() {
-		reason := ""
 		if err != nil {
-			reason = err.Error()
+			e.broker.Send(events.NewRecurringTransferFundsEventWithReason(ctx, transfer, err.Error()))
+		} else {
+			e.broker.Send(events.NewRecurringTransferFundsEvent(ctx, transfer))
 		}
-		e.broker.Send(events.NewRecurringTransferFundsEvent(ctx, transfer, reason))
 	}()
 
 	// ensure asset exists
@@ -158,7 +158,7 @@ func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint
 		if err = e.ensureMinimalTransferAmount(a, amount); err != nil {
 			v.Status = types.TransferStatusStopped
 			transfersDone = append(transfersDone,
-				events.NewRecurringTransferFundsEvent(ctx, v, err.Error()))
+				events.NewRecurringTransferFundsEventWithReason(ctx, v, err.Error()))
 			e.deleteTransfer(v.ID)
 			continue
 		}
@@ -201,7 +201,7 @@ func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint
 			e.log.Info("transferred stopped", logging.Error(err))
 			v.Status = types.TransferStatusStopped
 			transfersDone = append(transfersDone,
-				events.NewRecurringTransferFundsEvent(ctx, v, err.Error()))
+				events.NewRecurringTransferFundsEventWithReason(ctx, v, err.Error()))
 			e.deleteTransfer(v.ID)
 			continue
 		}
@@ -211,7 +211,7 @@ func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint
 		// if we don't have anymore
 		if v.EndEpoch != nil && *v.EndEpoch == e.currentEpoch {
 			v.Status = types.TransferStatusDone
-			transfersDone = append(transfersDone, events.NewRecurringTransferFundsEvent(ctx, v, ""))
+			transfersDone = append(transfersDone, events.NewRecurringTransferFundsEvent(ctx, v))
 			e.deleteTransfer(v.ID)
 		}
 	}

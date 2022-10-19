@@ -1573,6 +1573,7 @@ type ComplexityRoot struct {
 		FromAccountType func(childComplexity int) int
 		Id              func(childComplexity int) int
 		Kind            func(childComplexity int) int
+		Reason          func(childComplexity int) int
 		Reference       func(childComplexity int) int
 		Status          func(childComplexity int) int
 		Timestamp       func(childComplexity int) int
@@ -9075,6 +9076,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Transfer.Kind(childComplexity), true
 
+	case "Transfer.reason":
+		if e.complexity.Transfer.Reason == nil {
+			break
+		}
+
+		return e.complexity.Transfer.Reason(childComplexity), true
+
 	case "Transfer.reference":
 		if e.complexity.Transfer.Reference == nil {
 			break
@@ -10391,6 +10399,9 @@ type Transfer {
 
   "The type of transfer being made, i.e. a one-off or recurring transfer"
   kind: TransferKind!
+
+  "An optional reason explaining the status of the transfer"
+  reason: String
 }
 
 union TransferKind = OneOffTransfer | RecurringTransfer
@@ -48443,6 +48454,38 @@ func (ec *executionContext) _Transfer_kind(ctx context.Context, field graphql.Co
 	return ec.marshalNTransferKind2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTransferKind(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Transfer_reason(ctx context.Context, field graphql.CollectedField, obj *v1.Transfer) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Transfer",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Reason, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _TransferBalance_account(ctx context.Context, field graphql.CollectedField, obj *TransferBalance) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -67641,6 +67684,13 @@ func (ec *executionContext) _Transfer(ctx context.Context, sel ast.SelectionSet,
 				return innerFunc(ctx)
 
 			})
+		case "reason":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Transfer_reason(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

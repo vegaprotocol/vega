@@ -81,7 +81,7 @@ message Transfer {
   string reference = 8;
   Status status = 9;
   int64 timestamp = 10;
-  string reason = 11;
+  optional string reason = 11;
 
   oneof kind {
     OneOffTransfer one_off = 101;

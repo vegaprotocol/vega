@@ -153,7 +153,7 @@ func OneOffTransferFromEvent(p *eventspb.Transfer) *OneOffTransfer {
 	}
 }
 
-func (o *OneOffTransfer) IntoEvent(reason string) *eventspb.Transfer {
+func (o *OneOffTransfer) IntoEvent(reason *string) *eventspb.Transfer {
 	out := &eventspb.Transfer{
 		Id:              o.ID,
 		From:            o.From,
@@ -210,7 +210,7 @@ func (r *RecurringTransfer) IsValid() error {
 	return nil
 }
 
-func (r *RecurringTransfer) IntoEvent(reason string) *eventspb.Transfer {
+func (r *RecurringTransfer) IntoEvent(reason *string) *eventspb.Transfer {
 	var endEpoch *uint64
 	if r.EndEpoch != nil {
 		endEpoch = toPtr(*r.EndEpoch)
@@ -262,7 +262,7 @@ func NewTransferFromProto(id, from string, tf *commandspb.Transfer) (*TransferFu
 	}
 }
 
-func (t *TransferFunds) IntoEvent(reason string) *eventspb.Transfer {
+func (t *TransferFunds) IntoEvent(reason *string) *eventspb.Transfer {
 	switch t.Kind {
 	case TransferCommandKindOneOff:
 		return t.OneOff.IntoEvent(reason)

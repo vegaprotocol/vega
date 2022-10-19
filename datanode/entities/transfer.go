@@ -51,6 +51,7 @@ type Transfer struct {
 	DispatchMetric      *vega.DispatchMetric
 	DispatchMetricAsset *string
 	DispatchMarkets     []string
+	Reason              *string
 }
 
 func (t *Transfer) ToProto(accountSource AccountSource) (*eventspb.Transfer, error) {
@@ -76,6 +77,7 @@ func (t *Transfer) ToProto(accountSource AccountSource) (*eventspb.Transfer, err
 		Status:          eventspb.Transfer_Status(t.Status),
 		Timestamp:       t.VegaTime.UnixNano(),
 		Kind:            nil,
+		Reason:          t.Reason,
 	}
 
 	switch t.TransferType {
@@ -159,6 +161,7 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, txHash TxHash,
 		StartEpoch:    nil,
 		EndEpoch:      nil,
 		Factor:        nil,
+		Reason:        t.Reason,
 	}
 
 	switch v := t.Kind.(type) {
