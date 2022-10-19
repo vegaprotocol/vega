@@ -13,9 +13,12 @@
 package stats
 
 import (
+	"context"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
+	proto "code.vegaprotocol.io/vega/protos/vega"
 	"code.vegaprotocol.io/vega/version"
 	tmversion "github.com/tendermint/tendermint/version"
 )
@@ -29,6 +32,7 @@ type Stats struct {
 	versionHash  string
 	chainVersion string
 	uptime       time.Time
+	currentEpoch types.Epoch
 }
 
 // New instantiates a new Stats.
@@ -58,6 +62,28 @@ func (s *Stats) ReloadConf(cfg Config) {
 	}
 
 	s.cfg = cfg
+}
+
+func (s *Stats) OnEpochRestore(_ context.Context, epoch types.Epoch) {
+	s.currentEpoch = epoch
+}
+
+func (s *Stats) OnEpochEvent(_ context.Context, epoch types.Epoch) {
+	if epoch.Action == proto.EpochAction_EPOCH_ACTION_START {
+		s.currentEpoch = epoch
+	}
+}
+
+func (s *Stats) GetEpochSeq() uint64 {
+	return s.currentEpoch.Seq
+}
+
+func (s *Stats) GetEpochStartTime() time.Time {
+	return s.currentEpoch.StartTime
+}
+
+func (s *Stats) GetEpochExpireTime() time.Time {
+	return s.currentEpoch.ExpireTime
 }
 
 // GetChainVersion returns the version of the chain in use by vega.
