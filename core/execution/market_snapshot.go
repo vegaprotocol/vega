@@ -54,7 +54,7 @@ func NewMarketFromSnapshot(
 	marketActivityTracker *MarketActivityTracker,
 ) (*Market, error) {
 	mkt := em.Market
-	positionFactor := num.DecimalFromFloat(10).Pow(num.DecimalFromInt64(int64(mkt.PositionDecimalPlaces)))
+	positionFactor := num.DecimalFromFloat(10).Pow(num.DecimalFromInt64(mkt.PositionDecimalPlaces))
 	if len(em.Market.ID) == 0 {
 		return nil, ErrEmptyMarketID
 	}

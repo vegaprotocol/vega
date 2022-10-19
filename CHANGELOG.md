@@ -4,21 +4,28 @@
 ## Unreleased 0.59.0
 
 ### 🚨 Breaking changes
+- [6505](https://github.com/vegaprotocol/vega/issues/6505) - Allow negative position decimal places for market
 - [6477](https://github.com/vegaprotocol/vega/issues/6477) - Allow the user to specify a different passphrase when isolating a key
-
+- [6458](https://github.com/vegaprotocol/vega/issues/6458) - Rename `GetMultiSigSigner...Bundles API` functions to `ListMultiSigSigner...Bundles` to be consistent with `v2 APIs`
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
 - [6080](https://github.com/vegaprotocol/vega/issues/6080) - Data-node handles upgrade block and ensures data is persisted before upgrade
+- [6527](https://github.com/vegaprotocol/vega/issues/6527) - Add `last-block` sub-command to `datanode CLI`
 
 ### 🐛 Fixes
 - [6480](https://github.com/vegaprotocol/vega/issues/6480) - Wallet `openrpc.json` is now a valid OpenRPC file
 - [6473](https://github.com/vegaprotocol/vega/issues/6473) - Infrastructure Fee Account returns error when asset is pending listing
 - [5690](https://github.com/vegaprotocol/vega/issues/5690) - Markets query now excludes rejected markets
 - [5479](https://github.com/vegaprotocol/vega/issues/5479) - Fix inconsistent naming in API error
+- [6525](https://github.com/vegaprotocol/vega/issues/6525) - Round the right way when restoring the integer representation of cached price ranges from a snapshot
 - [6011](https://github.com/vegaprotocol/vega/issues/6011) - Fix data node fails when `Postgres` starts slowly
+- [6341](https://github.com/vegaprotocol/vega/issues/6341) - Embedded `Postgres` should only capture logs during testing
+- [6510](https://github.com/vegaprotocol/vega/issues/6510) - Filter parties with 0 reward from reward payout event
+- [6471](https://github.com/vegaprotocol/vega/issues/6471) - Fix potential nil reference when owner is system for ledger entries
+- [6519](https://github.com/vegaprotocol/vega/issues/6519) - Fix errors in the ledger entries `GraphQL` query.
 
 ## 0.58.0
 
@@ -107,6 +114,7 @@
 - [6063](https://github.com/vegaprotocol/vega/pull/6063) - Update average entry valuation calculation according to spec change.
 - [6191](https://github.com/vegaprotocol/vega/pull/6191) - Remove the retry on node health check in the wallet API version 2
 - [6221](https://github.com/vegaprotocol/vega/pull/6221) - Add documentation for new `GraphQL endpoints`
+- [6498](https://github.com/vegaprotocol/vega/pull/6498) - Fix incorrectly encoded account id
 - [5600](https://github.com/vegaprotocol/vega/issues/5600) - Migrate all wallet capabilities to V2 api
 - [6077](https://github.com/vegaprotocol/vega/issues/6077) - Add proof-of-work to transaction when using `vegawallet command sign`
 - [6203](https://github.com/vegaprotocol/vega/issues/6203) - Support automatic consent for transactions sent through the wallet API version 2

@@ -140,13 +140,13 @@ service TradingDataService {
 
     // ERC20 add signer bundle
     //
-    // Get the signature bundle to add a particular validator to the signer list of the multisig contract
-    rpc GetERC20MultiSigSignerAddedBundles(GetERC20MultiSigSignerAddedBundlesRequest) returns (GetERC20MultiSigSignerAddedBundlesResponse);
+    // List the signature bundle to add a particular validator to the signer list of the multisig contract
+    rpc ListERC20MultiSigSignerAddedBundles(ListERC20MultiSigSignerAddedBundlesRequest) returns (ListERC20MultiSigSignerAddedBundlesResponse);
 
     // ERC20 remove signer bundle
     //
-    // Get the signatures bundle to remove a particular validator from signer list of the multisig contract
-    rpc GetERC20MultiSigSignerRemovedBundles(GetERC20MultiSigSignerRemovedBundlesRequest) returns (GetERC20MultiSigSignerRemovedBundlesResponse);
+    // List the signatures bundle to remove a particular validator from signer list of the multisig contract
+    rpc ListERC20MultiSigSignerRemovedBundles(ListERC20MultiSigSignerRemovedBundlesRequest) returns (ListERC20MultiSigSignerRemovedBundlesResponse);
 
     // ERC20 list asset bundle
     //
@@ -655,7 +655,8 @@ enum LedgerEntryField {
 }
 
 message AggregatedLedgerEntries {
-    string id = 1;
+    // Removing ID field as it is not used, there is no id for an aggregated ledger entry.
+    reserved 1;
     // Timestamp to of block the result is referring to, in nanoseconds since the epoch
     int64 timestamp = 2;
     // The amount of ledger entries for the set of requested accounts at the time above
@@ -1039,7 +1040,7 @@ message ObserveVotesResponse {
 }
 
 // Request for the signature bundle to add a particular validator to the signer list of the multisig contract
-message GetERC20MultiSigSignerAddedBundlesRequest {
+message ListERC20MultiSigSignerAddedBundlesRequest {
 
     // The node id of the validator of which a signature bundle is required
     string node_id = 1;
@@ -1055,7 +1056,7 @@ message GetERC20MultiSigSignerAddedBundlesRequest {
 }
 
 // Response for the signature bundle to add a particular validator to the signer list of the multisig contract
-message GetERC20MultiSigSignerAddedBundlesResponse {
+message ListERC20MultiSigSignerAddedBundlesResponse {
 
     // list of bundles for that validator, it may have been added multiple times if removed in between
     ERC20MultiSigSignerAddedConnection bundles = 1;
@@ -1099,7 +1100,7 @@ message ERC20MultiSigSignerAddedBundle {
 }
 
 // Request for the signature bundle to remove a particular validator from the signer list of the multisig contract
-message GetERC20MultiSigSignerRemovedBundlesRequest {
+message ListERC20MultiSigSignerRemovedBundlesRequest {
     // The node id of the validator of which a signature bundle is required
     string node_id = 1;
 
@@ -1114,7 +1115,7 @@ message GetERC20MultiSigSignerRemovedBundlesRequest {
 }
 
 // Response for the signature bundle to remove a particular validator from the signer list of the multisig contract
-message GetERC20MultiSigSignerRemovedBundlesResponse {
+message ListERC20MultiSigSignerRemovedBundlesResponse {
     // list of signer bundles for that validator
     ERC20MultiSigSignerRemovedConnection bundles = 1;
 }

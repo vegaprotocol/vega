@@ -50,6 +50,9 @@ func (ledgerEntries *AggregatedLedgerEntries) ToProto() *v2.AggregatedLedgerEntr
 		lep.TransferType = vega.TransferType(*ledgerEntries.TransferType)
 	}
 
+	lep.Quantity = ledgerEntries.Quantity.String()
+	lep.Timestamp = ledgerEntries.VegaTime.UnixNano()
+
 	return lep
 }
 

@@ -445,11 +445,11 @@ func (r marketRow) decimalPlaces() uint64 {
 	return r.row.MustU64("decimal places")
 }
 
-func (r marketRow) positionDecimalPlaces() uint64 {
+func (r marketRow) positionDecimalPlaces() int64 {
 	if !r.row.HasColumn("position decimal places") {
 		return 0
 	}
-	return r.row.MustU64("position decimal places")
+	return r.row.MustI64("position decimal places")
 }
 
 func (r marketRow) quoteName() string {

@@ -185,7 +185,6 @@ type ComplexityRoot struct {
 	AggregatedLedgerEntries struct {
 		AccountType  func(childComplexity int) int
 		AssetId      func(childComplexity int) int
-		Id           func(childComplexity int) int
 		MarketId     func(childComplexity int) int
 		PartyId      func(childComplexity int) int
 		Quantity     func(childComplexity int) int
@@ -1827,7 +1826,7 @@ type MarginLevelsUpdateResolver interface {
 }
 type MarketResolver interface {
 	DecimalPlaces(ctx context.Context, obj *vega.Market) (int, error)
-	PositionDecimalPlaces(ctx context.Context, obj *vega.Market) (int, error)
+
 	OpeningAuction(ctx context.Context, obj *vega.Market) (*AuctionDuration, error)
 	PriceMonitoringSettings(ctx context.Context, obj *vega.Market) (*PriceMonitoringSettings, error)
 	LiquidityMonitoringParameters(ctx context.Context, obj *vega.Market) (*LiquidityMonitoringParameters, error)
@@ -2537,13 +2536,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.AggregatedLedgerEntries.AssetId(childComplexity), true
-
-	case "AggregatedLedgerEntries.id":
-		if e.complexity.AggregatedLedgerEntries.Id == nil {
-			break
-		}
-
-		return e.complexity.AggregatedLedgerEntries.Id(childComplexity), true
 
 	case "AggregatedLedgerEntries.marketId":
 		if e.complexity.AggregatedLedgerEntries.MarketId == nil {
@@ -13567,7 +13559,6 @@ type RewardPerAssetDetail {
 scalar Timestamp
 
 type AggregatedLedgerEntries {
-  id: ID
   "RFC3339Nano time from at which this ledger entries records were relevant"
   vegaTime: String!
   "Net amount of ledger entries for the accounts specified in the filter at this time"
@@ -13626,7 +13617,6 @@ type AggregatedBalanceConnection {
 }
 
 enum AccountField {
-  AccountId
   PartyId
   AssetId
   MarketId
@@ -18070,38 +18060,6 @@ func (ec *executionContext) _AggregatedBalanceEdge_cursor(ctx context.Context, f
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _AggregatedLedgerEntries_id(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedLedgerEntries) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "AggregatedLedgerEntries",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Id, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalOID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _AggregatedLedgerEntries_vegaTime(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedLedgerEntries) (ret graphql.Marshaler) {
@@ -27077,14 +27035,14 @@ func (ec *executionContext) _Market_positionDecimalPlaces(ctx context.Context, f
 		Object:     "Market",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Market().PositionDecimalPlaces(rctx, obj)
+		return obj.PositionDecimalPlaces, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -27096,9 +27054,9 @@ func (ec *executionContext) _Market_positionDecimalPlaces(ctx context.Context, f
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Market_openingAuction(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
@@ -52759,13 +52717,6 @@ func (ec *executionContext) _AggregatedLedgerEntries(ctx context.Context, sel as
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("AggregatedLedgerEntries")
-		case "id":
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._AggregatedLedgerEntries_id(ctx, field, obj)
-			}
-
-			out.Values[i] = innerFunc(ctx)
-
 		case "vegaTime":
 			field := field
 
@@ -57238,25 +57189,15 @@ func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, o
 
 			})
 		case "positionDecimalPlaces":
-			field := field
-
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Market_positionDecimalPlaces(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+				return ec._Market_positionDecimalPlaces(ctx, field, obj)
 			}
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
+			out.Values[i] = innerFunc(ctx)
 
-			})
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "openingAuction":
 			field := field
 
@@ -70095,6 +70036,21 @@ func (ec *executionContext) unmarshalNInt2int32(ctx context.Context, v interface
 
 func (ec *executionContext) marshalNInt2int32(ctx context.Context, sel ast.SelectionSet, v int32) graphql.Marshaler {
 	res := graphql.MarshalInt32(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNInt2int64(ctx context.Context, v interface{}) (int64, error) {
+	res, err := graphql.UnmarshalInt64(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInt2int64(ctx context.Context, sel ast.SelectionSet, v int64) graphql.Marshaler {
+	res := graphql.MarshalInt64(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")

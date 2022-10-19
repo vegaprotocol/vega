@@ -715,8 +715,8 @@ func (t *tradingDataServiceV2) ListCandleIntervals(ctx context.Context, req *v2.
 	}, nil
 }
 
-// GetERC20MutlsigSignerAddedBundles return the signature bundles needed to add a new validator to the multisig control ERC20 contract.
-func (t *tradingDataServiceV2) GetERC20MultiSigSignerAddedBundles(ctx context.Context, req *v2.GetERC20MultiSigSignerAddedBundlesRequest) (*v2.GetERC20MultiSigSignerAddedBundlesResponse, error) {
+// ListERC20MutlsigSignerAddedBundles return the signature bundles needed to add a new validator to the multisig control ERC20 contract.
+func (t *tradingDataServiceV2) ListERC20MultiSigSignerAddedBundles(ctx context.Context, req *v2.ListERC20MultiSigSignerAddedBundlesRequest) (*v2.ListERC20MultiSigSignerAddedBundlesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetERC20MultiSigSignerAddedBundlesV2")()
 	if t.notaryService == nil {
 		return nil, errors.New("sql notary service not available")
@@ -782,13 +782,13 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerAddedBundles(ctx context.Co
 		PageInfo: pageInfo.ToProto(),
 	}
 
-	return &v2.GetERC20MultiSigSignerAddedBundlesResponse{
+	return &v2.ListERC20MultiSigSignerAddedBundlesResponse{
 		Bundles: connection,
 	}, nil
 }
 
-// GetERC20MutlsigSignerAddedBundles return the signature bundles needed to add a new validator to the multisig control ERC20 contract.
-func (t *tradingDataServiceV2) GetERC20MultiSigSignerRemovedBundles(ctx context.Context, req *v2.GetERC20MultiSigSignerRemovedBundlesRequest) (*v2.GetERC20MultiSigSignerRemovedBundlesResponse, error) {
+// ListERC20MutlsigSignerAddedBundles return the signature bundles needed to add a new validator to the multisig control ERC20 contract.
+func (t *tradingDataServiceV2) ListERC20MultiSigSignerRemovedBundles(ctx context.Context, req *v2.ListERC20MultiSigSignerRemovedBundlesRequest) (*v2.ListERC20MultiSigSignerRemovedBundlesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetERC20MultiSigSignerRemovedBundlesV2")()
 	if t.notaryService == nil {
 		return nil, errors.New("sql notary store not available")
@@ -851,7 +851,7 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerRemovedBundles(ctx context.
 		PageInfo: pageInfo.ToProto(),
 	}
 
-	return &v2.GetERC20MultiSigSignerRemovedBundlesResponse{
+	return &v2.ListERC20MultiSigSignerRemovedBundlesResponse{
 		Bundles: connection,
 	}, nil
 }

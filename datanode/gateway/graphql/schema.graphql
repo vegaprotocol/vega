@@ -3988,7 +3988,6 @@ type RewardPerAssetDetail {
 scalar Timestamp
 
 type AggregatedLedgerEntries {
-  id: ID
   "RFC3339Nano time from at which this ledger entries records were relevant"
   vegaTime: String!
   "Net amount of ledger entries for the accounts specified in the filter at this time"
@@ -4047,7 +4046,6 @@ type AggregatedBalanceConnection {
 }
 
 enum AccountField {
-  AccountId
   PartyId
   AssetId
   MarketId

@@ -139,7 +139,7 @@ func (m Market) ToProto() *vega.Market {
 		TradingMode:                   vega.Market_TradingMode(m.TradingMode),
 		State:                         vega.Market_State(m.State),
 		MarketTimestamps:              m.MarketTimestamps.ToProto(),
-		PositionDecimalPlaces:         uint64(m.PositionDecimalPlaces),
+		PositionDecimalPlaces:         int64(m.PositionDecimalPlaces),
 	}
 }
 
