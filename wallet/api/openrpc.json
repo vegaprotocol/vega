@@ -32,9 +32,18 @@
         }
       ],
       "result": {
-        "name": "token",
+        "name": "Success",
+        "required": true,
         "schema": {
-          "$ref": "#/components/schemas/token"
+          "type": "object",
+          "required": [
+            "token"
+          ],
+          "properties": {
+            "token": {
+              "$ref": "#/components/schemas/token"
+            }
+          }
         }
       },
       "errors": [
@@ -94,7 +103,7 @@
       ],
       "result": {
         "name": "No result",
-        "schema": {}
+        "schema": false
       },
       "examples": [
         {
@@ -137,8 +146,17 @@
       ],
       "result": {
         "name": "Success",
+        "required": true,
         "schema": {
-          "$ref": "#/components/schemas/permissions_summary"
+          "type": "object",
+          "required": [
+            "permissions"
+          ],
+          "properties": {
+            "permissions": {
+              "$ref": "#/components/schemas/permissions_summary"
+            }
+          }
         }
       },
       "examples": [
@@ -191,8 +209,17 @@
       ],
       "result": {
         "name": "Success",
+        "required": true,
         "schema": {
-          "$ref": "#/components/schemas/permissions_summary"
+          "type": "object",
+          "required": [
+            "permissions"
+          ],
+          "properties": {
+            "permissions": {
+              "$ref": "#/components/schemas/permissions_summary"
+            }
+          }
         }
       },
       "errors": [
@@ -279,11 +306,18 @@
       ],
       "result": {
         "name": "Success",
+        "required": true,
         "schema": {
-          "keys": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/named_public_key"
+          "type": "object",
+          "required": [
+            "keys"
+          ],
+          "properties": {
+            "keys": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/named_public_key"
+              }
             }
           }
         }
@@ -359,8 +393,12 @@
       ],
       "result": {
         "name": "Success",
+        "required": true,
         "schema": {
           "type": "object",
+          "required": [
+            "transaction"
+          ],
           "properties": {
             "transaction": {
               "$ref": "#/components/schemas/signed_transaction"
@@ -466,8 +504,15 @@
       ],
       "result": {
         "name": "Success",
+        "required": true,
         "schema": {
           "type": "object",
+          "required": [
+            "receivedAt",
+            "sentAt",
+            "transactionHash",
+            "transaction"
+          ],
           "properties": {
             "receivedAt": {
               "type": "string",
@@ -562,8 +607,12 @@
       "params": [],
       "result": {
         "name": "Success",
+        "required": true,
         "schema": {
           "type": "object",
+          "required": [
+            "chainID"
+          ],
           "properties": {
             "chainID": {
               "type": "string",
@@ -628,12 +677,23 @@
       ],
       "result": {
         "name": "Success",
+        "required": true,
         "schema": {
           "type": "object",
+          "required": [
+            "wallet",
+            "key"
+          ],
           "properties": {
             "wallet": {
               "type": "object",
               "description": "the newly generated wallet",
+              "required": [
+                "name",
+                "version",
+                "recoveryPhrase",
+                "filePath"
+              ],
               "properties": {
                 "name": {
                   "type": "string"
@@ -652,6 +712,11 @@
             "key": {
               "type": "object",
               "description": "the first public key generated",
+              "required": [
+                "publicKey",
+                "algorithm",
+                "metadata"
+              ],
               "properties": {
                 "publicKey": {
                   "$ref": "#/components/schemas/public_key"
@@ -755,12 +820,22 @@
       ],
       "result": {
         "name": "Success",
+        "required": true,
         "schema": {
           "type": "object",
+          "required": [
+            "wallet",
+            "key"
+          ],
           "properties": {
             "wallet": {
               "type": "object",
               "description": "the imported wallet",
+              "required": [
+                "name",
+                "version",
+                "filePath"
+              ],
               "properties": {
                 "name": {
                   "type": "string"
@@ -776,6 +851,11 @@
             "key": {
               "type": "object",
               "description": "the first public key generated",
+              "required": [
+                "publicKey",
+                "algorithm",
+                "metadata"
+              ],
               "properties": {
                 "publicKey": {
                   "$ref": "#/components/schemas/public_key"
@@ -872,8 +952,15 @@
       ],
       "result": {
         "name": "Success",
+        "required": true,
         "schema": {
           "type": "object",
+          "required": [
+            "name",
+            "version",
+            "id",
+            "type"
+          ],
           "properties": {
             "name": {
               "type": "string"
@@ -930,8 +1017,12 @@
       "params": [],
       "result": {
         "name": "Success",
+        "required": true,
         "schema": {
           "type": "object",
+          "required": [
+            "wallets"
+          ],
           "properties": {
             "wallets": {
               "type": "array",
@@ -973,8 +1064,12 @@
       "params": [],
       "result": {
         "name": "Success",
+        "required": true,
         "schema": {
           "type": "object",
+          "required": [
+            "networks"
+          ],
           "properties": {
             "networks": {
               "type": "array",
@@ -1026,8 +1121,17 @@
       ],
       "result": {
         "name": "Success",
+        "required": true,
         "schema": {
           "type": "object",
+          "required": [
+            "name",
+            "logLevel",
+            "tokenExpiry",
+            "port",
+            "host",
+            "api"
+          ],
           "properties": {
             "name": {
               "type": "string"
@@ -1149,6 +1253,7 @@
       ],
       "result": {
         "name": "Success",
+        "required": true,
         "schema": {
           "type": "null"
         }
@@ -1230,6 +1335,7 @@
       ],
       "result": {
         "name": "Success",
+        "required": true,
         "schema": {
           "type": "null"
         }
@@ -1294,8 +1400,13 @@
       ],
       "result": {
         "name": "Success",
+        "required": true,
         "schema": {
           "type": "object",
+          "required": [
+            "name",
+            "filePath"
+          ],
           "properties": {
             "name": {
               "type": "string"
@@ -1353,6 +1464,7 @@
       ],
       "result": {
         "name": "Success",
+        "required": true,
         "schema": {
           "type": "null"
         }
@@ -1416,8 +1528,14 @@
       ],
       "result": {
         "name": "Success",
+        "required": true,
         "schema": {
           "type": "object",
+          "required": [
+            "publicKey",
+            "algorithm",
+            "metadata"
+          ],
           "properties": {
             "publicKey": {
               "$ref": "#/components/schemas/public_key"
@@ -1517,8 +1635,15 @@
       ],
       "result": {
         "name": "Success",
+        "required": true,
         "schema": {
           "type": "object",
+          "required": [
+            "publicKey",
+            "algorithm",
+            "metadata",
+            "isTainted"
+          ],
           "properties": {
             "publicKey": {
               "$ref": "#/components/schemas/public_key"
@@ -1611,8 +1736,12 @@
       ],
       "result": {
         "name": "Success",
+        "required": true,
         "schema": {
           "type": "object",
+          "required": [
+            "keys"
+          ],
           "properties": {
             "keys": {
               "type": "array",
@@ -1698,8 +1827,12 @@
       ],
       "result": {
         "name": "Success",
+        "required": true,
         "schema": {
           "type": "object",
+          "required": [
+            "metadata"
+          ],
           "properties": {
             "metadata": {
               "type": "array",
@@ -1799,8 +1932,13 @@
       ],
       "result": {
         "name": "Success",
+        "required": true,
         "schema": {
           "type": "object",
+          "required": [
+            "wallet",
+            "filePath"
+          ],
           "properties": {
             "wallet": {
               "description": "Name of the generated isolated wallet",
@@ -1919,8 +2057,13 @@
       ],
       "result": {
         "name": "Success",
+        "required": true,
         "schema": {
           "type": "object",
+          "required": [
+            "masterPublicKey",
+            "encodedTransaction"
+          ],
           "properties": {
             "masterPublicKey": {
               "description": "The master public key of the wallet used to sign the transaction",
@@ -2018,6 +2161,7 @@
       ],
       "result": {
         "name": "Success",
+        "required": true,
         "schema": {
           "type": "null"
         }
@@ -2084,6 +2228,7 @@
       ],
       "result": {
         "name": "Success",
+        "required": true,
         "schema": {
           "type": "null"
         }
@@ -2150,8 +2295,12 @@
       ],
       "result": {
         "name": "Success",
+        "required": true,
         "schema": {
           "type": "object",
+          "required": [
+            "permissions"
+          ],
           "properties": {
             "permissions": {
               "$ref": "#/components/schemas/permissions"
@@ -2221,18 +2370,17 @@
       ],
       "result": {
         "name": "Success",
+        "required": true,
         "schema": {
           "type": "object",
+          "required": [
+            "permissions"
+          ],
           "properties": {
             "permissions": {
               "type": "object",
-              "properties": {
-                "hostname1": {
-                  "$ref": "#/components/schemas/permissions_summary"
-                },
-                "hostname2": {
-                  "$ref": "#/components/schemas/permissions_summary"
-                }
+              "additionalProperties": {
+                "type": "string"
               }
             }
           }
@@ -2312,8 +2460,12 @@
       ],
       "result": {
         "name": "Success",
+        "required": true,
         "schema": {
           "type": "object",
+          "required": [
+            "permissions"
+          ],
           "properties": {
             "permissions": {
               "$ref": "#/components/schemas/permissions"
@@ -2401,6 +2553,7 @@
       ],
       "result": {
         "name": "Success",
+        "required": true,
         "schema": {
           "type": "null"
         }
@@ -2460,6 +2613,7 @@
       ],
       "result": {
         "name": "Success",
+        "required": true,
         "schema": {
           "type": "null"
         }
@@ -2549,8 +2703,12 @@
       ],
       "result": {
         "name": "Success",
+        "required": true,
         "schema": {
           "type": "object",
+          "required": [
+            "encodedTransaction"
+          ],
           "properties": {
             "encodedTransaction": {
               "type": "string"
@@ -2605,8 +2763,12 @@
       ],
       "result": {
         "name": "Success",
+        "required": true,
         "schema": {
           "type": "object",
+          "required": [
+            "encodedSignature"
+          ],
           "properties": {
             "encodedSignature": {
               "type": "string"
@@ -2655,8 +2817,12 @@
       ],
       "result": {
         "name": "Success",
+        "required": true,
         "schema": {
           "type": "object",
+          "required": [
+            "isValid"
+          ],
           "properties": {
             "isValid": {
               "type": "string"
@@ -2721,8 +2887,15 @@
       ],
       "result": {
         "name": "Success",
+        "required": true,
         "schema": {
           "type": "object",
+          "required": [
+            "receivedAt",
+            "sentAt",
+            "transactionHash",
+            "transaction"
+          ],
           "properties": {
             "receivedAt": {
               "type": "string",
@@ -2755,12 +2928,24 @@
       "signed_transaction": {
         "type": "object",
         "description": "A transaction that has been signed by the wallet.",
+        "required": [
+          "inputData",
+          "signature",
+          "from",
+          "version",
+          "pow"
+        ],
         "properties": {
           "inputData": {
             "type": "string"
           },
           "signature": {
             "type": "object",
+            "required": [
+              "value",
+              "algo",
+              "version"
+            ],
             "properties": {
               "value": {
                 "type": "string"
@@ -2789,6 +2974,10 @@
           },
           "pow": {
             "type": "object",
+            "required": [
+              "tid",
+              "nonce"
+            ],
             "properties": {
               "tid": {
                 "type": "string"
@@ -2811,6 +3000,10 @@
       "algorithm": {
         "type": "object",
         "description": "The algorithm used to generate the key.",
+        "required": [
+          "name",
+          "version"
+        ],
         "properties": {
           "name": {
             "type": "string"
@@ -2823,6 +3016,10 @@
       "metadata": {
         "type": "object",
         "description": "The key's metadata.",
+        "required": [
+          "key",
+          "value"
+        ],
         "properties": {
           "key": {
             "type": "string"
@@ -2835,6 +3032,10 @@
       "named_public_key": {
         "type": "object",
         "description": "The public key with its name.",
+        "required": [
+          "name",
+          "publicKey"
+        ],
         "properties": {
           "name": {
             "type": "string"
@@ -2859,6 +3060,9 @@
       "permissions_summary": {
         "type": "object",
         "description": "The description of the permissions a third-party application has.",
+        "required": [
+          "public_keys"
+        ],
         "properties": {
           "public_keys": {
             "$ref": "#/components/schemas/access_mode"
@@ -2868,10 +3072,17 @@
       "permissions": {
         "type": "object",
         "description": "The full description of the permissions a third-party application has.",
+        "required": [
+          "publicKeys"
+        ],
         "properties": {
           "publicKeys": {
-            "description": "The permissions related to public keys.",
             "type": "object",
+            "description": "The permissions related to public keys.",
+            "required": [
+              "access",
+              "restrictedKeys"
+            ],
             "properties": {
               "access": {
                 "$ref": "#/components/schemas/access_mode"
@@ -2890,9 +3101,18 @@
       "network_api_config": {
         "type": "object",
         "description": "The API configuration for the network.",
+        "required": [
+          "grpcConfig",
+          "graphQLConfig",
+          "restConfig"
+        ],
         "properties": {
           "grpcConfig": {
             "type": "object",
+            "required": [
+              "hosts",
+              "retries"
+            ],
             "properties": {
               "hosts": {
                 "type": "array",
@@ -2907,20 +3127,23 @@
           },
           "graphQLConfig": {
             "type": "object",
+            "required": [
+              "hosts"
+            ],
             "properties": {
               "hosts": {
                 "type": "array",
                 "items": {
                   "type": "string"
                 }
-              },
-              "retries": {
-                "type": "integer"
               }
             }
           },
           "restConfig": {
             "type": "object",
+            "required": [
+              "hosts"
+            ],
             "properties": {
               "hosts": {
                 "type": "array",
@@ -2935,6 +3158,12 @@
       "last_block_data": {
         "type": "object",
         "description": "The data related to the last block forged on the network.",
+        "required": [
+          "blockHeight",
+          "blockHash",
+          "chainID",
+          "proofOfWorkDifficulty"
+        ],
         "properties": {
           "blockHeight": {
             "type": "integer"

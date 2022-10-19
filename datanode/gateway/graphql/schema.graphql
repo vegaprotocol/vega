@@ -820,6 +820,9 @@ type Transfer {
 
   "The type of transfer being made, i.e. a one-off or recurring transfer"
   kind: TransferKind!
+
+  "An optional reason explaining the status of the transfer"
+  reason: String
 }
 
 union TransferKind = OneOffTransfer | RecurringTransfer
