@@ -34,7 +34,11 @@ func (e *Engine) recurringTransfer(
 	transfer *types.RecurringTransfer,
 ) (err error) {
 	defer func() {
-		e.broker.Send(events.NewRecurringTransferFundsEvent(ctx, transfer))
+		if err != nil {
+			e.broker.Send(events.NewRecurringTransferFundsEventWithReason(ctx, transfer, err.Error()))
+		} else {
+			e.broker.Send(events.NewRecurringTransferFundsEvent(ctx, transfer))
+		}
 	}()
 
 	// ensure asset exists
@@ -151,10 +155,10 @@ func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint
 			e.log.Panic("this should never happen", logging.Error(err))
 		}
 
-		if err := e.ensureMinimalTransferAmount(a, amount); err != nil {
+		if err = e.ensureMinimalTransferAmount(a, amount); err != nil {
 			v.Status = types.TransferStatusStopped
 			transfersDone = append(transfersDone,
-				events.NewRecurringTransferFundsEvent(ctx, v))
+				events.NewRecurringTransferFundsEventWithReason(ctx, v, err.Error()))
 			e.deleteTransfer(v.ID)
 			continue
 		}
@@ -162,33 +166,42 @@ func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint
 		// NB: if no dispatch strategy is defined - the transfer is made to the account as defined in the transfer.
 		// If a dispatch strategy is defined but there are no relevant markets in scope or no fees in scope then no transfer is made!
 		var resps []*types.LedgerMovement
+		var r []*types.LedgerMovement
 		if v.DispatchStrategy == nil {
 			resps, err = e.processTransfer(
 				ctx, v.From, v.To, v.Asset, "", v.FromAccountType, v.ToAccountType, amount, v.Reference, nil, // last is eventual oneoff, which this is not
 			)
 		} else {
-			marketScores := e.getMarketScores(v.DispatchStrategy, v.Asset, v.From)
-			for _, fms := range marketScores {
-				amt, _ := num.UintFromDecimal(amount.ToDecimal().Mul(fms.Score))
-				if amt.IsZero() {
-					continue
+			// check if the amount + fees can be covered by the party issuing the transfer
+			if _, err = e.ensureFeeForTransferFunds(amount, v.From, v.Asset, v.FromAccountType); err == nil {
+				marketScores := e.getMarketScores(v.DispatchStrategy, v.Asset, v.From)
+				// first we make sure that there's sufficient funds to cover the transfer
+				for _, fms := range marketScores {
+					amt, _ := num.UintFromDecimal(amount.ToDecimal().Mul(fms.Score))
+					if amt.IsZero() {
+						continue
+					}
+					r, err = e.processTransfer(
+						ctx, v.From, v.To, v.Asset, fms.Market, v.FromAccountType, v.ToAccountType, amt, v.Reference, nil, // last is eventual oneoff, which this is not
+					)
+					if err != nil {
+						e.log.Error("failed to process transfer", logging.Error(err))
+						break
+					}
+					if v.DispatchStrategy.Metric == vegapb.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE && fms.Score.IsPositive() {
+						e.marketActivityTracker.MarkPaidProposer(fms.Market, v.Asset, v.DispatchStrategy.Markets, v.From)
+					}
+					resps = append(resps, r...)
 				}
-				r, err := e.processTransfer(
-					ctx, v.From, v.To, v.Asset, fms.Market, v.FromAccountType, v.ToAccountType, amt, v.Reference, nil, // last is eventual oneoff, which this is not
-				)
-				if err != nil {
-					break
-				}
-				if v.DispatchStrategy.Metric == vegapb.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE && fms.Score.IsPositive() {
-					e.marketActivityTracker.MarkPaidProposer(fms.Market, v.Asset, v.DispatchStrategy.Markets, v.From)
-				}
-				resps = append(resps, r...)
+			} else {
+				err = fmt.Errorf("could not pay the fee for transfer: %w", err)
 			}
 		}
 		if err != nil {
+			e.log.Info("transferred stopped", logging.Error(err))
 			v.Status = types.TransferStatusStopped
 			transfersDone = append(transfersDone,
-				events.NewRecurringTransferFundsEvent(ctx, v))
+				events.NewRecurringTransferFundsEventWithReason(ctx, v, err.Error()))
 			e.deleteTransfer(v.ID)
 			continue
 		}
