@@ -85,8 +85,9 @@ func TestTransferResponseDeepClone(t *testing.T) {
 	assert.NotEqual(t, tr[0].Balances[0].Balance, tr2[0].Balances[0].Balance)
 }
 
-func TestNilOwnder(t *testing.T) {
+func TestNilOwner(t *testing.T) {
 	ctx := context.Background()
+	systemOwner := "*"
 	tr1 := []*types.LedgerMovement{
 		{
 			Entries: []*types.LedgerEntry{
@@ -104,7 +105,7 @@ func TestNilOwnder(t *testing.T) {
 		{
 			Entries: []*types.LedgerEntry{
 				{
-					FromAccount: &types.AccountDetails{},
+					FromAccount: &types.AccountDetails{Owner: systemOwner},
 					ToAccount:   &types.AccountDetails{Owner: "ToZohar"},
 					Amount:      num.NewUint(1000),
 					Type:        types.TransferTypeBondLow,
@@ -118,7 +119,7 @@ func TestNilOwnder(t *testing.T) {
 			Entries: []*types.LedgerEntry{
 				{
 					FromAccount: &types.AccountDetails{Owner: "FromZohar"},
-					ToAccount:   &types.AccountDetails{},
+					ToAccount:   &types.AccountDetails{Owner: systemOwner},
 					Amount:      num.NewUint(1000),
 					Type:        types.TransferTypeBondLow,
 					Timestamp:   2000,
@@ -131,8 +132,8 @@ func TestNilOwnder(t *testing.T) {
 		{
 			Entries: []*types.LedgerEntry{
 				{
-					FromAccount: &types.AccountDetails{},
-					ToAccount:   &types.AccountDetails{},
+					FromAccount: &types.AccountDetails{Owner: systemOwner},
+					ToAccount:   &types.AccountDetails{Owner: systemOwner},
 					Amount:      num.NewUint(1000),
 					Type:        types.TransferTypeBondLow,
 					Timestamp:   2000,
@@ -147,4 +148,10 @@ func TestNilOwnder(t *testing.T) {
 	require.True(t, events.NewLedgerMovements(ctx, trNilFrom).IsParty("ToZohar"))
 	require.False(t, events.NewLedgerMovements(ctx, trNilFromTo).IsParty("FromZohar"))
 	require.False(t, events.NewLedgerMovements(ctx, trNilFromTo).IsParty("ToZohar"))
+	require.True(t, events.TransferResponseEventFromStream(ctx, events.NewLedgerMovements(ctx, tr1).StreamMessage()).IsParty("FromZohar"))
+	require.True(t, events.TransferResponseEventFromStream(ctx, events.NewLedgerMovements(ctx, tr1).StreamMessage()).IsParty("ToZohar"))
+	require.True(t, events.TransferResponseEventFromStream(ctx, events.NewLedgerMovements(ctx, trNilTo).StreamMessage()).IsParty("FromZohar"))
+	require.True(t, events.TransferResponseEventFromStream(ctx, events.NewLedgerMovements(ctx, trNilFrom).StreamMessage()).IsParty("ToZohar"))
+	require.False(t, events.TransferResponseEventFromStream(ctx, events.NewLedgerMovements(ctx, trNilFromTo).StreamMessage()).IsParty("FromZohar"))
+	require.False(t, events.TransferResponseEventFromStream(ctx, events.NewLedgerMovements(ctx, trNilFromTo).StreamMessage()).IsParty("ToZohar"))
 }
