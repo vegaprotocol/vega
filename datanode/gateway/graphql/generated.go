@@ -163,7 +163,6 @@ type ComplexityRoot struct {
 	}
 
 	AggregatedBalance struct {
-		AccountId   func(childComplexity int) int
 		AccountType func(childComplexity int) int
 		AssetId     func(childComplexity int) int
 		Balance     func(childComplexity int) int
@@ -1246,6 +1245,7 @@ type ComplexityRoot struct {
 		Asset                              func(childComplexity int, id string) int
 		Assets                             func(childComplexity int) int
 		AssetsConnection                   func(childComplexity int, id *string, pagination *v2.Pagination) int
+		BalanceChanges                     func(childComplexity int, filter *v2.AccountFilter, sumAcrossParties *bool, sumAcrossMarkets *bool, sumAcrossTypes *bool, dateRange *v2.DateRange, pagination *v2.Pagination) int
 		Deposit                            func(childComplexity int, id string) int
 		Deposits                           func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination) int
 		Epoch                              func(childComplexity int, id *string) int
@@ -1258,7 +1258,6 @@ type ComplexityRoot struct {
 		EthereumKeyRotations               func(childComplexity int, nodeID *string) int
 		GetMarketDataHistoryByID           func(childComplexity int, id string, start *int, end *int, skip *int, first *int, last *int) int
 		GetMarketDataHistoryConnectionByID func(childComplexity int, id string, start *int, end *int, pagination *v2.Pagination) int
-		HistoricBalances                   func(childComplexity int, filter *v2.AccountFilter, groupBy []*v2.AccountField, dateRange *v2.DateRange, pagination *v2.Pagination) int
 		KeyRotations                       func(childComplexity int, id *string) int
 		KeyRotationsConnection             func(childComplexity int, id *string, pagination *v2.Pagination) int
 		LastBlockHeight                    func(childComplexity int) int
@@ -2074,7 +2073,7 @@ type QueryResolver interface {
 	EthereumKeyRotations(ctx context.Context, nodeID *string) (*v2.EthereumKeyRotationsConnection, error)
 	GetMarketDataHistoryByID(ctx context.Context, id string, start *int, end *int, skip *int, first *int, last *int) ([]*vega.MarketData, error)
 	GetMarketDataHistoryConnectionByID(ctx context.Context, id string, start *int, end *int, pagination *v2.Pagination) (*v2.MarketDataConnection, error)
-	HistoricBalances(ctx context.Context, filter *v2.AccountFilter, groupBy []*v2.AccountField, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.AggregatedBalanceConnection, error)
+	BalanceChanges(ctx context.Context, filter *v2.AccountFilter, sumAcrossParties *bool, sumAcrossMarkets *bool, sumAcrossTypes *bool, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.AggregatedBalanceConnection, error)
 	LedgerEntries(ctx context.Context, filter *v2.LedgerEntryFilter, groupOptions *GroupOptions, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.AggregatedLedgerEntriesConnection, error)
 	KeyRotations(ctx context.Context, id *string) ([]*v1.KeyRotation, error)
 	KeyRotationsConnection(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.KeyRotationConnection, error)
@@ -2446,13 +2445,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.AccountsConnection.PageInfo(childComplexity), true
-
-	case "AggregatedBalance.accountId":
-		if e.complexity.AggregatedBalance.AccountId == nil {
-			break
-		}
-
-		return e.complexity.AggregatedBalance.AccountId(childComplexity), true
 
 	case "AggregatedBalance.accountType":
 		if e.complexity.AggregatedBalance.AccountType == nil {
@@ -7156,6 +7148,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.AssetsConnection(childComplexity, args["id"].(*string), args["pagination"].(*v2.Pagination)), true
 
+	case "Query.balanceChanges":
+		if e.complexity.Query.BalanceChanges == nil {
+			break
+		}
+
+		args, err := ec.field_Query_balanceChanges_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.BalanceChanges(childComplexity, args["filter"].(*v2.AccountFilter), args["sumAcrossParties"].(*bool), args["sumAcrossMarkets"].(*bool), args["sumAcrossTypes"].(*bool), args["dateRange"].(*v2.DateRange), args["pagination"].(*v2.Pagination)), true
+
 	case "Query.deposit":
 		if e.complexity.Query.Deposit == nil {
 			break
@@ -7299,18 +7303,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.GetMarketDataHistoryConnectionByID(childComplexity, args["id"].(string), args["start"].(*int), args["end"].(*int), args["pagination"].(*v2.Pagination)), true
-
-	case "Query.historicBalances":
-		if e.complexity.Query.HistoricBalances == nil {
-			break
-		}
-
-		args, err := ec.field_Query_historicBalances_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.HistoricBalances(childComplexity, args["filter"].(*v2.AccountFilter), args["groupBy"].([]*v2.AccountField), args["dateRange"].(*v2.DateRange), args["pagination"].(*v2.Pagination)), true
 
 	case "Query.keyRotations":
 		if e.complexity.Query.KeyRotations == nil {
@@ -10088,12 +10080,16 @@ type Query {
     "Optional Pagination"
     pagination: Pagination): MarketDataConnection
 
-  "Get historical balances for an account or specific asset within the given date range."
-  historicBalances(
-    "Optional filter to restrict the result to a specific account or asset"
+  "Get historical balances for an account within the given date range, with optional netting over party, market and account type"
+  balanceChanges(
+    "Optional filter to restrict queried accounts to those of a specific asset, party, market or type"
     filter: AccountFilter,
-    "Optional grouping clause for the results"
-    groupBy: [AccountField],
+    "Whether balances for different parties should be netted together. If so, party_id of results will be null"
+    sumAcrossParties: Boolean,
+    "Whether balances for different markets should be netted together. If so, market_id of results will be null"
+    sumAcrossMarkets: Boolean,
+    "Whether balances for different account types should be netted together. If so, account_type of will be null"
+    sumAcrossTypes: Boolean,
     "Date range to retrieve historical balances from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
     dateRange: DateRange,
     "Optional pagination information"
@@ -13605,8 +13601,6 @@ type AggregatedBalance {
   "Net balance of the accounts specified in the filter at this time"
   balance: String!
   "Account identifier, if query was grouped by account - else null"
-  accountId: ID
-  "Party identifier, if query was grouped by party - else null"
   partyId: ID
   "Asset identifier, if query was grouped by asset - else null"
   assetId: ID
@@ -15290,6 +15284,66 @@ func (ec *executionContext) field_Query_assetsConnection_args(ctx context.Contex
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_balanceChanges_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *v2.AccountFilter
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalOAccountFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountFilter(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg0
+	var arg1 *bool
+	if tmp, ok := rawArgs["sumAcrossParties"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sumAcrossParties"))
+		arg1, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["sumAcrossParties"] = arg1
+	var arg2 *bool
+	if tmp, ok := rawArgs["sumAcrossMarkets"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sumAcrossMarkets"))
+		arg2, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["sumAcrossMarkets"] = arg2
+	var arg3 *bool
+	if tmp, ok := rawArgs["sumAcrossTypes"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sumAcrossTypes"))
+		arg3, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["sumAcrossTypes"] = arg3
+	var arg4 *v2.DateRange
+	if tmp, ok := rawArgs["dateRange"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dateRange"))
+		arg4, err = ec.unmarshalODateRange2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDateRange(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["dateRange"] = arg4
+	var arg5 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg5, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg5
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_deposit_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -15656,48 +15710,6 @@ func (ec *executionContext) field_Query_getMarketDataHistoryConnectionByID_args(
 		}
 	}
 	args["end"] = arg2
-	var arg3 *v2.Pagination
-	if tmp, ok := rawArgs["pagination"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg3, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["pagination"] = arg3
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_historicBalances_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *v2.AccountFilter
-	if tmp, ok := rawArgs["filter"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
-		arg0, err = ec.unmarshalOAccountFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountFilter(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["filter"] = arg0
-	var arg1 []*v2.AccountField
-	if tmp, ok := rawArgs["groupBy"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("groupBy"))
-		arg1, err = ec.unmarshalOAccountField2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountField(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["groupBy"] = arg1
-	var arg2 *v2.DateRange
-	if tmp, ok := rawArgs["dateRange"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dateRange"))
-		arg2, err = ec.unmarshalODateRange2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDateRange(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["dateRange"] = arg2
 	var arg3 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
@@ -17773,38 +17785,6 @@ func (ec *executionContext) _AggregatedBalance_balance(ctx context.Context, fiel
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _AggregatedBalance_accountId(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedBalance) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "AggregatedBalance",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.AccountId, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _AggregatedBalance_partyId(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedBalance) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -17928,9 +17908,9 @@ func (ec *executionContext) _AggregatedBalance_accountType(ctx context.Context, 
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(vega.AccountType)
+	res := resTmp.(*vega.AccountType)
 	fc.Result = res
-	return ec.marshalOAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountType(ctx, field.Selections, res)
+	return ec.marshalOAccountType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _AggregatedBalanceConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.AggregatedBalanceConnection) (ret graphql.Marshaler) {
@@ -40384,7 +40364,7 @@ func (ec *executionContext) _Query_getMarketDataHistoryConnectionByID(ctx contex
 	return ec.marshalOMarketDataConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐMarketDataConnection(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_historicBalances(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_balanceChanges(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -40401,7 +40381,7 @@ func (ec *executionContext) _Query_historicBalances(ctx context.Context, field g
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_historicBalances_args(ctx, rawArgs)
+	args, err := ec.field_Query_balanceChanges_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -40409,7 +40389,7 @@ func (ec *executionContext) _Query_historicBalances(ctx context.Context, field g
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().HistoricBalances(rctx, args["filter"].(*v2.AccountFilter), args["groupBy"].([]*v2.AccountField), args["dateRange"].(*v2.DateRange), args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Query().BalanceChanges(rctx, args["filter"].(*v2.AccountFilter), args["sumAcrossParties"].(*bool), args["sumAcrossMarkets"].(*bool), args["sumAcrossTypes"].(*bool), args["dateRange"].(*v2.DateRange), args["pagination"].(*v2.Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -52622,13 +52602,6 @@ func (ec *executionContext) _AggregatedBalance(ctx context.Context, sel ast.Sele
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "accountId":
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._AggregatedBalance_accountId(ctx, field, obj)
-			}
-
-			out.Values[i] = innerFunc(ctx)
-
 		case "partyId":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._AggregatedBalance_partyId(ctx, field, obj)
@@ -63909,7 +63882,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
-		case "historicBalances":
+		case "balanceChanges":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -63918,7 +63891,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_historicBalances(ctx, field)
+				res = ec._Query_balanceChanges(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}

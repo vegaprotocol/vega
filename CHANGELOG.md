@@ -16,6 +16,7 @@
 - [6080](https://github.com/vegaprotocol/vega/issues/6080) - Data-node handles upgrade block and ensures data is persisted before upgrade
 - [6527](https://github.com/vegaprotocol/vega/issues/6527) - Add `last-block` sub-command to `datanode CLI`
 - [6529](https://github.com/vegaprotocol/vega/issues/6529) - Added reason to transfer to explain why it was stopped or rejected
+- [6513](https://github.com/vegaprotocol/vega/issues/6513) - Refactor `datanode` `api` for getting balance history
 
 ### 🐛 Fixes
 - [6480](https://github.com/vegaprotocol/vega/issues/6480) - Wallet `openrpc.json` is now a valid OpenRPC file

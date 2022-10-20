@@ -67,10 +67,6 @@ service TradingDataService {
     // LedgerEntries
     //
     // Get ledger entries by asset, market, party, account type, transfer type within the given date range.
-    rpc ListLedgerEntries(ListLedgerEntriesRequest) returns (ListLedgerEntriesResponse) {}
-
-    // Balances
-    //
     // This query requests and sums number of the ledger entries of a given subset of accounts, specified via the 'filter' argument.
     // It returns a timeseries (implemented as a list of AggregateLedgerEntry structs), with a row for every time
     // the summed ledger entries of the set of specified accounts changes.
@@ -81,7 +77,66 @@ service TradingDataService {
     //   - listing ledger entries with filtering on the receiving account (party_id, market_id, asset_id, account_type)
     //   - listing ledger entries with filtering on the sending AND receiving account
     //   - listing ledger entries with filtering on the transfer type (on top of above filters or as a standalone option)
-    rpc GetBalanceHistory(GetBalanceHistoryRequest) returns (GetBalanceHistoryResponse) {}
+    rpc ListLedgerEntries(ListLedgerEntriesRequest) returns (ListLedgerEntriesResponse) {}
+
+    //  Balances
+    //
+    // `ListBalanceChanges` is for querying the change in account balances over a period of time.
+    //
+    // An account is defined a 4-tuple of (asset_id, type, party_id, market_id).
+    // - Every account has associated asset and type.
+    // - Certain account types (for example, the global reward pool) do not have an associated party.  
+    //   These are denoted by the special party identifier '*'
+    // - Certain account types do not have an associated market (for example general party accounts)  
+    //   These are denoted by the special market identifier '!'
+    //
+    // In its default usage, `ListBalanceChangesRequest` will return a list of
+    // `(vega_time, asset_id, account_type, party_id, market_id, balance)`
+    // with a set of entries for each block in which the balance of any account changes.
+    //
+    // Balances are 'filled forward', so for a given a set of results from `ListBalanceChanges`, looking
+    // at rows for a given vega_time will give you the complete set of balances at that time.
+    //
+    // For example, suppose that stored in the database was the following balance history:
+    //
+    // | vega_time | party_id | asset_id | market_id |  account_type | balance  |
+    // | --------- | -------- | -------- | --------- | ------------- | -------- |
+    // | 1         | dave     | eth      | !         | general       | 1        |
+    // | 2         | dave     | eth      | ethusd    | margin        | 10       |
+    // | 2         | jim      | eth      | !         | general       | 100      |
+    // | 3         | dave     | eth      | !         | general       | 2        |
+    //
+    // For clarity this uses example names for party, market and asset id; they are actually 256bit hex encoded hashes.
+    //
+    // Calling ListBalanceChanges with default arguments would just 'forward fill' balances:
+    //
+    // | vega_time | party_id | asset_id | market_id |  account_type | balance |
+    // | --------- | -------- | -------- | --------- | ------------- | --------|
+    // | 1         | dave     | eth      | !         |  general      | 1       |
+    // | 2         | dave     | eth      | !         |  general      | 1       |
+    // | 2         | dave     | eth      | ethusd    |  margin       | 10      |
+    // | 2         | jim      | eth      | !         |  general      | 100     |
+    // | 3         | dave     | eth      | !         |  general      | 2       |
+    // | 3         | dave     | eth      | ethusd    |  general      | 10      |
+    // | 3         | jim      | eth      | !         |  general      | 100     |
+    //
+    // You may optionally filter which accounts are queried using the `filter` argument.
+    //
+    // You may also optionally aggregate balances using the `sum_across_party`, `sum_across_markets`,
+    // and `sum_across_types` parameters. For example, let's say you want to see the balances of
+    // each party across all account types and markets.
+    //
+    // You can query that by passing `sum_accross_markets=true` and `sum_across_types=true` which would
+    // return
+    //
+    // | vega_time | party_id | asset_id | market_id | account_type | balance |
+    // | --------- | -------- | -------- | --------- | ------------ | ------- |
+    // | 1         | dave     | eth      |           |              | 1       |
+    // | 2         | dave     | eth      |           |              | 11      |
+    // | 2         | jim      | eth      |           |              | 100     |
+    // | 3         | dave     | eth      |           |              | 12      |
+    // | 3         | jim      | eth      |           |              | 100     |
+    rpc ListBalanceChanges(ListBalanceChangesRequest) returns (ListBalanceChangesResponse) {}
 
     // Market Data
     //
@@ -93,7 +148,7 @@ service TradingDataService {
     // Lists the latest market data for every market
     rpc ListLatestMarketData(ListLatestMarketDataRequest) returns (ListLatestMarketDataResponse);
 
-    // Market Detph
+    // Market Depth
     //
     // Get the latest market depth for a given market
     rpc GetLatestMarketDepth(GetLatestMarketDepthRequest) returns (GetLatestMarketDepthResponse);
@@ -701,6 +756,26 @@ message AggregatedLedgerEntriesConnection {
     PageInfo page_info = 2;
 }
 
+message ListBalanceChangesRequest{
+    // Limit the accounts considered according to the filter supplied
+    AccountFilter filter = 1;
+    // Whether balances for different parties should be netted together. If so, party_id of results will be null
+    bool sum_across_parties = 2;
+    // Whether balances for different markets should be netted together. If so, market_id of results will be null
+    bool sum_across_markets= 3;
+    // Whether balances for different account types should be netted together. If so, account_type of results will be null
+    bool sum_across_types = 4;
+    // Pagination controls
+    optional Pagination pagination = 5;
+    // Date range over which to query
+    optional DateRange date_range = 6;
+}
+
+message ListBalanceChangesResponse {
+    AggregatedBalanceConnection balances = 1;
+}
+
+
 // -- Balances --
 message GetBalanceHistoryRequest {
     // Limit the accounts considered according to the filter supplied
@@ -752,8 +827,6 @@ message AggregatedBalance {
     int64 timestamp = 1;
     // The balance of the set of requested accounts at the time above
     string balance = 2;
-    // If grouping by account ID, the account ID
-    optional string account_id = 3;
     // If grouping by party, the party ID
     optional string party_id = 4;
     // If grouping by asset, the asset ID
@@ -761,7 +834,7 @@ message AggregatedBalance {
     // If grouping by market, the market ID
     optional string market_id = 6;
     // If grouping by account type, the account type
-    vega.AccountType account_type = 7;
+    optional vega.AccountType account_type = 7;
 }
 
 // -- Market Data --
