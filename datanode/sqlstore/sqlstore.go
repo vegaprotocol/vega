@@ -13,7 +13,6 @@
 package sqlstore
 
 import (
-	"bytes"
 	"context"
 	"embed"
 	"fmt"
@@ -134,15 +133,14 @@ func ApplyDataRetentionPolicies(config Config) error {
 	return nil
 }
 
-func StartEmbeddedPostgres(log *logging.Logger, config Config, stateDir string, postgresLog *bytes.Buffer) (*embeddedpostgres.EmbeddedPostgres, string, error) {
+func StartEmbeddedPostgres(log *logging.Logger, config Config, stateDir string, writer io.Writer) (*embeddedpostgres.EmbeddedPostgres, string, error) {
 	embeddedPostgresRuntimePath := paths.JoinStatePath(paths.StatePath(stateDir), "sqlstore")
 	embeddedPostgresDataPath := paths.JoinStatePath(paths.StatePath(stateDir), "sqlstore", "node-data")
 
 	embeddedPostgres := createEmbeddedPostgres(&embeddedPostgresRuntimePath, &embeddedPostgresDataPath,
-		postgresLog, config.ConnectionConfig)
+		writer, config.ConnectionConfig)
 
 	if err := embeddedPostgres.Start(); err != nil {
-		log.Errorf("postgres log: \n%s", postgresLog.String())
 		return nil, "", fmt.Errorf("use embedded database was true, but failed to start: %w", err)
 	}
 
@@ -156,9 +154,7 @@ func createEmbeddedPostgres(runtimePath *paths.StatePath, dataPath *paths.StateP
 		Database(conf.Database).
 		Port(uint32(conf.Port))
 
-	if writer != nil {
-		dbConfig = dbConfig.Logger(writer)
-	}
+	dbConfig = dbConfig.Logger(writer)
 
 	if runtimePath != nil {
 		dbConfig = dbConfig.RuntimePath(runtimePath.String()).BinariesPath(runtimePath.String())
