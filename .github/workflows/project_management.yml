@@ -384,11 +384,9 @@ jobs:
     steps:
       - name: "Checkout"
         id: checkout
-        if: steps.bot-no-changelog.outcome == 'skipped'
         uses: actions/checkout@v3
       - name: "Check changelog entry"
         id: check-changelog
-        if: steps.checkout.outcome == 'success'
         uses: Zomzog/changelog-checker@v1.2.0
         with:
           fileName: CHANGELOG.md
