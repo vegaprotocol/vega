@@ -153,7 +153,7 @@ func OneOffTransferFromEvent(p *eventspb.Transfer) *OneOffTransfer {
 	}
 }
 
-func (o *OneOffTransfer) IntoEvent() *eventspb.Transfer {
+func (o *OneOffTransfer) IntoEvent(reason *string) *eventspb.Transfer {
 	out := &eventspb.Transfer{
 		Id:              o.ID,
 		From:            o.From,
@@ -165,6 +165,7 @@ func (o *OneOffTransfer) IntoEvent() *eventspb.Transfer {
 		Reference:       o.Reference,
 		Status:          o.Status,
 		Timestamp:       o.Timestamp.UnixNano(),
+		Reason:          reason,
 	}
 
 	if o.DeliverOn != nil {
@@ -209,7 +210,7 @@ func (r *RecurringTransfer) IsValid() error {
 	return nil
 }
 
-func (r *RecurringTransfer) IntoEvent() *eventspb.Transfer {
+func (r *RecurringTransfer) IntoEvent(reason *string) *eventspb.Transfer {
 	var endEpoch *uint64
 	if r.EndEpoch != nil {
 		endEpoch = toPtr(*r.EndEpoch)
@@ -226,6 +227,7 @@ func (r *RecurringTransfer) IntoEvent() *eventspb.Transfer {
 		Reference:       r.Reference,
 		Status:          r.Status,
 		Timestamp:       r.Timestamp.UnixNano(),
+		Reason:          reason,
 		Kind: &eventspb.Transfer_Recurring{
 			Recurring: &eventspb.RecurringTransfer{
 				StartEpoch:       r.StartEpoch,
@@ -260,12 +262,12 @@ func NewTransferFromProto(id, from string, tf *commandspb.Transfer) (*TransferFu
 	}
 }
 
-func (t *TransferFunds) IntoEvent() *eventspb.Transfer {
+func (t *TransferFunds) IntoEvent(reason *string) *eventspb.Transfer {
 	switch t.Kind {
 	case TransferCommandKindOneOff:
-		return t.OneOff.IntoEvent()
+		return t.OneOff.IntoEvent(reason)
 	case TransferCommandKindRecurring:
-		return t.Recurring.IntoEvent()
+		return t.Recurring.IntoEvent(reason)
 	default:
 		panic("invalid transfer kind")
 	}

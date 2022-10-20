@@ -38,7 +38,7 @@ func (t *LedgerMovements) LedgerMovements() []*ptypes.LedgerMovement {
 	return t.ledgerMovements
 }
 
-func (t LedgerMovements) IsParty(id string) bool {
+func (t *LedgerMovements) IsParty(id string) bool {
 	isParty := func(owner *string) bool { return owner != nil && *owner == id }
 
 	for _, r := range t.ledgerMovements {
@@ -57,7 +57,7 @@ func (t *LedgerMovements) Proto() eventspb.LedgerMovements {
 	}
 }
 
-func (t LedgerMovements) StreamMessage() *eventspb.BusEvent {
+func (t *LedgerMovements) StreamMessage() *eventspb.BusEvent {
 	p := t.Proto()
 	busEvent := newBusEventFromBase(t.Base)
 	busEvent.Event = &eventspb.BusEvent_LedgerMovements{

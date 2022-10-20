@@ -128,7 +128,7 @@ func (e *Engine) getRecurringTransfers() *checkpoint.RecurringTransfers {
 	}
 
 	for _, v := range e.recurringTransfers {
-		out.RecurringTransfers = append(out.RecurringTransfers, v.IntoEvent())
+		out.RecurringTransfers = append(out.RecurringTransfers, v.IntoEvent(nil))
 	}
 
 	return out
