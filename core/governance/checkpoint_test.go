@@ -148,8 +148,8 @@ func testCheckpointSuccess(t *testing.T) {
 
 func enactNewProposal(t *testing.T, eng *tstEngine) types.Proposal {
 	t.Helper()
-	proposer := eng.newValidParty("proposer", 1)
-	voter1 := eng.newValidPartyTimes("voter-1", 7, 2)
+	proposer := eng.newValidPartyTimes("proposer", 1, 0)
+	voter1 := eng.newValidPartyTimes("voter-1", 7, 0)
 	now := eng.tsvc.GetTimeNow()
 	termTimeAfterEnact := now.Add(4 * 48 * time.Hour).Add(1 * time.Second)
 	filter, binding := produceTimeTriggeredOracleSpec(termTimeAfterEnact)
@@ -184,6 +184,7 @@ func TestCheckpointSavingAndLoadingWithDroppedMarkets(t *testing.T) {
 
 	// enact a proposal for market 1,2,3
 	proposals := make([]types.Proposal, 0, 3)
+	// balance itself shouldn't matter, just make sure it's a non-nil value
 	for i := 0; i < 3; i++ {
 		proposals = append(proposals, enactNewProposal(t, eng))
 	}
@@ -227,6 +228,7 @@ func TestCheckpointSavingAndLoadingWithDroppedMarkets(t *testing.T) {
 	eng2.assets.EXPECT().IsEnabled(gomock.Any()).Return(true).AnyTimes()
 	eng2.markets.EXPECT().RestoreMarket(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	eng2.markets.EXPECT().StartOpeningAuction(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	eng2.accounts.EXPECT().GetAvailableBalance(gomock.Any()).AnyTimes().Return(nil, nil)
 
 	// Load checkpoint
 	require.NoError(t, eng2.Load(context.Background(), data))
@@ -284,8 +286,8 @@ func marshalProposal(t *testing.T, proposal *vegapb.Proposal) []byte {
 
 func enactUpdateProposal(t *testing.T, eng *tstEngine, marketID string) string {
 	t.Helper()
-	proposer := eng.newValidParty("proposer", 1)
-	voter1 := eng.newValidPartyTimes("voter-1", 7, 2)
+	proposer := eng.newValidPartyTimes("proposer", 1, 0)
+	voter1 := eng.newValidPartyTimes("voter-1", 7, 0)
 	now := eng.tsvc.GetTimeNow()
 	termTimeAfterEnact := now.Add(4 * 48 * time.Hour).Add(1 * time.Second)
 	filter, binding := produceTimeTriggeredOracleSpec(termTimeAfterEnact)
