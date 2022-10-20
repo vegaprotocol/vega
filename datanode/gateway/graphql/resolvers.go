@@ -25,6 +25,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	"code.vegaprotocol.io/vega/datanode/vegatime"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
@@ -1291,22 +1292,23 @@ func (r *myQueryResolver) Statistics(ctx context.Context) (*vegaprotoapi.Statist
 	return resp.GetStatistics(), nil
 }
 
-func (r *myQueryResolver) HistoricBalances(ctx context.Context, filter *v2.AccountFilter, groupBy []*v2.AccountField, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.AggregatedBalanceConnection, error) {
-	gb := make([]v2.AccountField, len(groupBy))
-	for i, g := range groupBy {
-		if g == nil {
-			return nil, errors.New("nil group by")
-		}
-		gb[i] = *g
+func (r *myQueryResolver) BalanceChanges(
+	ctx context.Context,
+	filter *v2.AccountFilter,
+	sumParties, sumMarkets, sumTypes *bool,
+	dateRange *v2.DateRange,
+	pagination *v2.Pagination,
+) (*v2.AggregatedBalanceConnection, error) {
+	req := &v2.ListBalanceChangesRequest{
+		Filter:           filter,
+		SumAcrossParties: ptr.UnBox(sumParties),
+		SumAcrossMarkets: ptr.UnBox(sumMarkets),
+		SumAcrossTypes:   ptr.UnBox(sumTypes),
+		DateRange:        dateRange,
+		Pagination:       pagination,
 	}
 
-	req := &v2.GetBalanceHistoryRequest{}
-	req.GroupBy = gb
-	req.Filter = filter
-	req.DateRange = dateRange
-	req.Pagination = pagination
-
-	resp, err := r.tradingDataClientV2.GetBalanceHistory(ctx, req)
+	resp, err := r.tradingDataClientV2.ListBalanceChanges(ctx, req)
 	if err != nil {
 		return nil, err
 	}
