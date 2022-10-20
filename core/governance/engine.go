@@ -730,13 +730,13 @@ func (e *Engine) AddVote(ctx context.Context, cmd types.VoteSubmission, party st
 		ProposalID:                  cmd.ProposalID,
 		Value:                       cmd.Value,
 		Timestamp:                   e.timeService.GetTimeNow().UnixNano(),
-		TotalGovernanceTokenBalance: getTokenBalance(e.accs, party),
+		TotalGovernanceTokenBalance: getTokensBalance(e.accs, party),
 		TotalGovernanceTokenWeight:  num.DecimalZero(),
 		TotalEquityLikeShareWeight:  num.DecimalZero(),
 	}
 	if proposal.IsMarketUpdate() {
 		mID := proposal.MarketUpdate().MarketID
-		v.TotalEquityLikeShareWeight, _ = markets.GetEquityLikeShareForMarketAndParty(mID, party)
+		vote.TotalEquityLikeShareWeight, _ = e.markets.GetEquityLikeShareForMarketAndParty(mID, party)
 	}
 
 	if err := proposal.AddVote(vote); err != nil {
