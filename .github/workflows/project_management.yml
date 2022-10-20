@@ -382,16 +382,6 @@ jobs:
       github.event.pull_request.draft != true
        && contains(github.event.pull_request.labels.*.name, 'no-changelog') != true
     steps:
-      - name: "Check if PR raised by bot"
-        id: bot-no-changelog
-        if: |
-          ((startsWith(github.head_ref, 'renovate/') == true || startsWith(github.head_ref, 'dependabot/') == true)
-           || (github.actor == 'dependabot[bot]' || github.actor == 'renovate[bot]'))
-        uses: actions/github-script@v6.3.3
-        with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
-          script: |
-            console.log("A bot-PR so excluded from changelog!");
       - name: "Checkout"
         id: checkout
         if: steps.bot-no-changelog.outcome == 'skipped'
