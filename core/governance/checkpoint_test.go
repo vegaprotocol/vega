@@ -23,7 +23,6 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/governance"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
@@ -228,7 +227,6 @@ func TestCheckpointSavingAndLoadingWithDroppedMarkets(t *testing.T) {
 	eng2.assets.EXPECT().IsEnabled(gomock.Any()).Return(true).AnyTimes()
 	eng2.markets.EXPECT().RestoreMarket(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	eng2.markets.EXPECT().StartOpeningAuction(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
-	eng2.accounts.EXPECT().GetAvailableBalance(gomock.Any()).AnyTimes().Return(nil, nil)
 
 	// Load checkpoint
 	require.NoError(t, eng2.Load(context.Background(), data))
@@ -300,7 +298,6 @@ func enactUpdateProposal(t *testing.T, eng *tstEngine, marketID string) string {
 	eng.expectOpenProposalEvent(t, proposer.Id, proposal.ID)
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer.Id, 0.1)
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voter1.Id, 0.1)
-	eng.accounts.EXPECT().GetAvailableBalance(gomock.Any()).AnyTimes().Return(num.NewUint(200), nil)
 
 	// when
 	_, err := eng.submitProposal(t, proposal)

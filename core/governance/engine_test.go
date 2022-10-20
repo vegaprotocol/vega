@@ -549,8 +549,8 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 	// setup
 	eng.ensureAllAssetEnabled(t)
 	eng.accounts.EXPECT().GetStakingAssetTotalSupply().AnyTimes().Return(num.NewUint(300))
-	eng.accounts.EXPECT().GetAvailableBalance(partyA).AnyTimes().Return(num.NewUint(200), nil)
-	eng.accounts.EXPECT().GetAvailableBalance(partyB).AnyTimes().Return(num.NewUint(100), nil)
+	eng.tokenBal[partyA] = 200
+	eng.tokenBal[partyB] = 100
 
 	const howMany = 100
 	passed := map[string]*types.Proposal{}
@@ -683,14 +683,8 @@ func testWithdrawingVoteAssetRemovesVoteFromProposalStateCalculation(t *testing.
 	// given
 	afterClosing := time.Unix(proposal.Terms.ClosingTimestamp, 0).Add(time.Second)
 
-	// bit of a clunky fix, but it'll do for now
-	eng.accounts = mocks.NewMockStakingAccounts(eng.ctrl)
 	// setup
 	eng.ensureTokenBalanceForParty(t, voter, 0)
-	eng.accounts.EXPECT().GetAvailableBalance(gomock.Any()).AnyTimes().DoAndReturn(func(p string) *num.Uint {
-		b := eng.tokenBal[p]
-		return num.NewUint(b)
-	})
 
 	// expect
 	eng.expectDeclinedProposalEvent(t, proposal.ID, types.ProposalErrorParticipationThresholdNotReached)
@@ -834,7 +828,7 @@ func getTestEngine(t *testing.T) *tstEngine {
 	eng := governance.NewEngine(log, cfg, accounts, ts, broker, assets, witness, markets, netp)
 	require.NotNil(t, eng)
 
-	return &tstEngine{
+	tEng := &tstEngine{
 		Engine:   eng,
 		ctrl:     ctrl,
 		accounts: accounts,
@@ -847,6 +841,15 @@ func getTestEngine(t *testing.T) *tstEngine {
 		tokenBal: map[string]uint64{},
 		els:      map[string]map[string]float64{},
 	}
+	// ensure the balance is always returned as expected
+	tEng.accounts.EXPECT().GetAvailableBalance(gomock.Any()).AnyTimes().DoAndReturn(func(p string) (*num.Uint, error) {
+		b, ok := tEng.tokenBal[p]
+		if !ok {
+			return nil, errNoBalanceForParty
+		}
+		return num.NewUint(b), nil
+	})
+	return tEng
 }
 
 func newFreeformTerms() *types.ProposalTermsNewFreeform {
@@ -1042,12 +1045,6 @@ func (e *tstEngine) submitProposal(t *testing.T, proposal types.Proposal) (*gove
 
 func (e *tstEngine) addYesVote(t *testing.T, party, proposal string) error {
 	t.Helper()
-	// we don't check the balance values returned just yet, so just ensuring this call is made is enough
-	if b, ok := e.tokenBal[party]; ok {
-		e.accounts.EXPECT().GetAvailableBalance(party).AnyTimes().Return(num.NewUint(b), nil)
-	}
-	// just in case this is an update proposal
-	// e.markets.EXPECT().GetEquityLikeShareForMarketAndParty(gomock.Any(), party).AnyTimes().Return(num.DecimalZero(), true)
 	return e.AddVote(context.Background(), types.VoteSubmission{
 		ProposalID: proposal,
 		Value:      types.VoteValueYes,
@@ -1056,27 +1053,15 @@ func (e *tstEngine) addYesVote(t *testing.T, party, proposal string) error {
 
 func (e *tstEngine) addNoVote(t *testing.T, party, proposal string) error {
 	t.Helper()
-	// we don't check the balance values returned just yet, so just ensuring this call is made is enough
-	if b, ok := e.tokenBal[party]; ok {
-		e.accounts.EXPECT().GetAvailableBalance(party).AnyTimes().Return(num.NewUint(b), nil)
-	}
-	// just in case this is an update proposal
-	// e.markets.EXPECT().GetEquityLikeShareForMarketAndParty(gomock.Any(), party).AnyTimes().Return(num.DecimalZero(), true)
 	return e.AddVote(context.Background(), types.VoteSubmission{
 		ProposalID: proposal,
 		Value:      types.VoteValueNo,
 	}, party)
 }
 
-func (e *tstEngine) newValidPartyTimes(partyID string, balance uint64, times int) *types.Party {
-	account := types.Account{
-		ID:      partyID + "-account",
-		Owner:   partyID,
-		Balance: num.NewUint(balance),
-		Asset:   "VOTE",
-	}
+func (e *tstEngine) newValidPartyTimes(partyID string, balance uint64, _ int) *types.Party {
 	// is called with 0 times, which messes up the expected calls when adding votes
-	e.accounts.EXPECT().GetAvailableBalance(partyID).MinTimes(times).Return(account.Balance, nil)
+	e.tokenBal[partyID] = balance
 	return &types.Party{Id: partyID}
 }
 
@@ -1290,9 +1275,6 @@ func (e *tstEngine) ensureStakingAssetTotalSupply(t *testing.T, supply uint64) {
 func (e *tstEngine) ensureTokenBalanceForParty(t *testing.T, party string, balance uint64) {
 	t.Helper()
 	e.tokenBal[party] = balance
-	e.accounts.EXPECT().GetAvailableBalance(party).AnyTimes().Return(num.NewUint(balance), nil).Do(func(p string) {
-		t.Logf("GetAvailableBalance for party %s called\n", party)
-	})
 }
 
 func (e *tstEngine) ensureAllAssetEnabled(t *testing.T) {
@@ -1344,7 +1326,7 @@ func (e *tstEngine) ensureExistingMarket(t *testing.T, market string) {
 
 func (e *tstEngine) ensureNoAccountForParty(t *testing.T, partyID string) {
 	t.Helper()
-	e.accounts.EXPECT().GetAvailableBalance(partyID).Times(1).Return(nil, errNoBalanceForParty)
+	delete(e.tokenBal, partyID)
 }
 
 func (e *tstEngine) ensureNetworkParameter(t *testing.T, key, value string) {
