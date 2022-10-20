@@ -141,7 +141,7 @@ func (os *Orders) GetAllVersionsByOrderID(ctx context.Context, id string, p enti
 // from the orders data in the database.
 func (os *Orders) GetLiveOrders(ctx context.Context) ([]entities.Order, error) {
 	defer metrics.StartSQLQuery("Orders", "GetLiveOrders")()
-	query := fmt.Sprintf(`select %s from orders_current
+	query := fmt.Sprintf(`select %s from orders_live
 where type = 1
 and time_in_force not in (3, 4)
 and status in (1, 7)
