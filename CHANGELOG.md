@@ -35,6 +35,7 @@
 - [6234](https://github.com/vegaprotocol/vega/issues/6234) - Fix response in query for oracle data spec by id
 - [6294](https://github.com/vegaprotocol/vega/issues/6294) - Fix response for query for non-existing market
 - [6508](https://github.com/vegaprotocol/vega/issues/6508) - Fix data node starts slowly when the database is not empty
+- [6532](https://github.com/vegaprotocol/vega/issues/6532) - Add current totals to the vote events
 
 ## 0.58.0
 
