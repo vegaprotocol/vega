@@ -410,6 +410,11 @@ func (i *ParallelInteractor) waitForResponse(ctx context.Context, userResponseCh
 	if response.TraceID != traceID {
 		return Interaction{}, TraceIDMismatchError(traceID, response.TraceID)
 	}
+
+	if response.Name == CancelRequestName {
+		return Interaction{}, api.ErrUserCanceledTheRequest
+	}
+
 	if response.Name != name {
 		return Interaction{}, WrongResponseTypeError(name, response.Name)
 	}

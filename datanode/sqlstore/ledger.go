@@ -90,7 +90,7 @@ func (ls *Ledger) GetAll() ([]entities.LedgerEntry, error) {
 	return ledgerEntries, err
 }
 
-// Query queries and sums quanity of the ledger entries of a given subset of accounts, specified via the 'filter' argument.
+// This query requests and sums number of the ledger entries of a given subset of accounts, specified via the 'filter' argument.
 // It returns a timeseries (implemented as a list of AggregateLedgerEntry structs), with a row for every time
 // the summed ledger entries of the set of specified accounts changes.
 //
@@ -190,31 +190,32 @@ type ledgerEntriesScanned struct {
 	VegaTime time.Time
 
 	Quantity     decimal.Decimal
-	AccountType  *types.AccountType
+	AccountType  types.AccountType
 	TransferType entities.LedgerMovementType
 
-	PartyID  *entities.PartyID
-	AssetID  *entities.AssetID
-	MarketID *entities.MarketID
+	PartyID   entities.PartyID
+	AssetID   entities.AssetID
+	MarketID  entities.MarketID
+	AccountID entities.AccountID
 }
 
 func parseScanned(scanned []ledgerEntriesScanned) []entities.AggregatedLedgerEntries {
 	ledgerEntries := []entities.AggregatedLedgerEntries{}
 	if len(scanned) > 0 {
-		for i, s := range scanned {
+		for i := range scanned {
 			ledgerEntries = append(ledgerEntries, entities.AggregatedLedgerEntries{
-				VegaTime: s.VegaTime,
-				Quantity: s.Quantity,
-				PartyID:  s.PartyID,
-				AssetID:  s.AssetID,
-				MarketID: s.MarketID,
+				VegaTime: scanned[i].VegaTime,
+				Quantity: scanned[i].Quantity,
+				PartyID:  &scanned[i].PartyID,
+				AssetID:  &scanned[i].AssetID,
+				MarketID: &scanned[i].MarketID,
 			})
 
-			if s.AccountType != nil {
-				ledgerEntries[i].AccountType = s.AccountType
+			if scanned[i].AccountType != types.AccountTypeUnspecified {
+				ledgerEntries[i].AccountType = &scanned[i].AccountType
 			}
 
-			tt := s.TransferType
+			tt := scanned[i].TransferType
 			ledgerEntries[i].TransferType = &tt
 		}
 	}

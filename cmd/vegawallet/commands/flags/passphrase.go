@@ -18,7 +18,7 @@ var (
 	ErrMsysPasswordInput            = errors.New("password input is not supported on msys (use --passphrase-file or a standard windows terminal)")
 )
 
-type PassphraseGetterWithOps func(bool) (string, error)
+type PassphraseGetterWithOps func(string, bool) (string, error)
 
 // BuildPassphraseGetterWithOps builds a function that returns a passphrase.
 // If passphraseFile is set, the returned function is built to read a file. If
@@ -27,7 +27,7 @@ type PassphraseGetterWithOps func(bool) (string, error)
 // asks for passphrase confirmation base on its value.
 func BuildPassphraseGetterWithOps(passphraseFile string) PassphraseGetterWithOps {
 	if len(passphraseFile) != 0 {
-		return func(_ bool) (string, error) {
+		return func(_ string, _ bool) (string, error) {
 			return ReadPassphraseFile(passphraseFile)
 		}
 	}
@@ -48,7 +48,15 @@ func GetConfirmedPassphrase(passphraseFile string) (string, error) {
 		return ReadPassphraseFile(passphraseFile)
 	}
 
-	return ReadConfirmedPassphraseInput()
+	return ReadConfirmedPassphraseInput("")
+}
+
+func GetConfirmedPassphraseWithContext(passphraseContext, passphraseFile string) (string, error) {
+	if len(passphraseFile) != 0 {
+		return ReadPassphraseFile(passphraseFile)
+	}
+
+	return ReadConfirmedPassphraseInput(passphraseContext)
 }
 
 func ReadPassphraseFile(passphraseFilePath string) (string, error) {
@@ -68,19 +76,22 @@ func ReadPassphraseFile(passphraseFilePath string) (string, error) {
 }
 
 func ReadPassphraseInput() (string, error) {
-	return ReadPassphraseInputWithOpts(false)
+	return ReadPassphraseInputWithOpts("", false)
 }
 
-func ReadConfirmedPassphraseInput() (string, error) {
-	return ReadPassphraseInputWithOpts(true)
+func ReadConfirmedPassphraseInput(passphraseContext string) (string, error) {
+	return ReadPassphraseInputWithOpts(passphraseContext, true)
 }
 
-func ReadPassphraseInputWithOpts(withConfirmation bool) (string, error) {
+func ReadPassphraseInputWithOpts(passphraseContext string, withConfirmation bool) (string, error) {
 	if vgterm.HasNoTTY() {
 		return "", ErrPassphraseRequiredWithoutTTY
 	}
 
-	passphrase, err := promptForPassphrase("Enter passphrase: ")
+	if passphraseContext != "" {
+		passphraseContext += " "
+	}
+	passphrase, err := promptForPassphrase("Enter " + passphraseContext + "passphrase: ")
 	if err != nil {
 		return "", fmt.Errorf("couldn't get passphrase: %w", err)
 	}

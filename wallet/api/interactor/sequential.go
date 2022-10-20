@@ -312,6 +312,11 @@ func (i *SequentialInteractor) waitForResponse(ctx context.Context, traceID stri
 	if response.TraceID != traceID {
 		return Interaction{}, TraceIDMismatchError(traceID, response.TraceID)
 	}
+
+	if response.Name == CancelRequestName {
+		return Interaction{}, api.ErrUserCanceledTheRequest
+	}
+
 	if response.Name != name {
 		return Interaction{}, WrongResponseTypeError(name, response.Name)
 	}

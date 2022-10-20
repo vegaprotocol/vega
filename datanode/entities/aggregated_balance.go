@@ -19,7 +19,6 @@ import (
 
 	"code.vegaprotocol.io/vega/core/types"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
-	"code.vegaprotocol.io/vega/protos/vega"
 	"github.com/shopspring/decimal"
 )
 
@@ -111,13 +110,7 @@ func AggregatedBalanceScan(fields []AccountField, rows interface {
 }
 
 func (balance *AggregatedBalance) ToProto() *v2.AggregatedBalance {
-	var accountType vega.AccountType
-	var accountID, partyID, assetID, marketID *string
-
-	if balance.AccountID != nil {
-		aid := balance.AccountID.String()
-		accountID = &aid
-	}
+	var partyID, assetID, marketID *string
 
 	if balance.PartyID != nil {
 		pid := balance.PartyID.String()
@@ -134,18 +127,13 @@ func (balance *AggregatedBalance) ToProto() *v2.AggregatedBalance {
 		marketID = &mid
 	}
 
-	if balance.Type != nil {
-		accountType = *balance.Type
-	}
-
 	return &v2.AggregatedBalance{
 		Timestamp:   balance.VegaTime.UnixNano(),
 		Balance:     balance.Balance.String(),
-		AccountId:   accountID,
 		PartyId:     partyID,
 		AssetId:     assetID,
 		MarketId:    marketID,
-		AccountType: accountType,
+		AccountType: balance.Type,
 	}
 }
 

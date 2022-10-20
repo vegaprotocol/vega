@@ -139,11 +139,11 @@ func TestMain(t *testing.M) {
 		// For the same events file and block height this hash should be the same across all OS/Arch
 		// If the events file is updated, schema changes, or snapshot height changed this will need updating
 		// Easiest way to update is to put a breakpoint here and inspect fromEventsSnapshotHashes
-		panicIfSnapshotHashNotEqual("bc1e136d0cd35222e41186fd8ca91834", fromEventsSnapshotHashes[0], snapshots)
-		panicIfSnapshotHashNotEqual("39b0e21248e689b5f1027b94caf697c8", fromEventsSnapshotHashes[1], snapshots)
-		panicIfSnapshotHashNotEqual("c32758416c0aacbf9aa8e6f5fa70cc88", fromEventsSnapshotHashes[2], snapshots)
-		panicIfSnapshotHashNotEqual("ed373e0055fe02a31866018a747a7991", fromEventsSnapshotHashes[3], snapshots)
-		panicIfSnapshotHashNotEqual("81ae5ff76a44041b416351b7ca0ca517", fromEventsSnapshotHashes[4], snapshots)
+		panicIfSnapshotHashNotEqual("40cb47ab6bf8ffef9140eef7f054acf5", fromEventsSnapshotHashes[0], snapshots)
+		panicIfSnapshotHashNotEqual("b32ee00f20004571790d413168b2ca3d", fromEventsSnapshotHashes[1], snapshots)
+		panicIfSnapshotHashNotEqual("f82fff67fb8f9f12c88ade56c7771086", fromEventsSnapshotHashes[2], snapshots)
+		panicIfSnapshotHashNotEqual("d3a748757e35402ec4f86fd93c37769f", fromEventsSnapshotHashes[3], snapshots)
+		panicIfSnapshotHashNotEqual("44a49b5e03a95cb824f2717d74afef0a", fromEventsSnapshotHashes[4], snapshots)
 
 		if len(fromEventsDatabaseSummaries) != numSnapshots {
 			panic(fmt.Errorf("expected %d database summaries, got %d", numSnapshots, len(fromEventsSnapshotHashes)))
@@ -859,9 +859,10 @@ func setupSQLBroker(ctx context.Context, eventsFile string, testDbConfig sqlstor
 	blockStore := sqlstore.NewBlocks(transactionalConnectionSource)
 
 	config := broker.NewDefaultConfig()
+	protocolUpgradeService := service.NewProtocolUpgrade()
 
 	sqlBroker := broker.NewSQLStoreBroker(logging.NewTestLogger(), config, testChainInfo{chainID: chainID}, evtSource,
-		transactionalConnectionSource, blockStore, func(ctx context.Context, chainId string, lastCommittedBlockHeight int64) bool {
+		transactionalConnectionSource, blockStore, protocolUpgradeService, func(ctx context.Context, chainId string, lastCommittedBlockHeight int64) bool {
 			return onBlockCommitted(ctx, snapshotService, chainId, lastCommittedBlockHeight)
 		}, subscribers.GetSQLSubscribers(),
 	)

@@ -30,8 +30,15 @@ const (
 	ErrorCodeConnectionHasBeenClosed jsonrpc.ErrorCode = 3000
 
 	// ErrorCodeRequestHasBeenRejected refers to an explicit rejection of a request by the
-	// user.
+	// user. When received, the third-party application should consider the user
+	// has withdrawn from the action, and thus, abort the action.
 	ErrorCodeRequestHasBeenRejected jsonrpc.ErrorCode = 3001
+
+	// ErrorCodeRequestHasBeenCanceled refers to a cancellation of a request by the
+	// user. It's conceptually different from a rejection. Contrary to a rejection,
+	// when a cancellation is received, the third-party application should temporarily
+	// back off, maintain its state, and wait for the user to be ready to continue.
+	ErrorCodeRequestHasBeenCanceled jsonrpc.ErrorCode = 3002
 )
 
 var (
@@ -73,6 +80,7 @@ var (
 	ErrParamsDoNotMatch                                   = errors.New("the params do not match expected ones")
 	ErrParamsRequired                                     = errors.New("the params are required")
 	ErrPassphraseIsRequired                               = errors.New("the passphrase is required")
+	ErrIsolatedWalletPassphraseIsRequired                 = errors.New("the isolated wallet passphrase is required")
 	ErrProofOfWorkDifficultyRequired                      = errors.New("the proof-of-work difficulty is required")
 	ErrProofOfWorkHashFunctionRequired                    = errors.New("the proof-of-work hash function is required")
 	ErrPublicKeyDoesNotExist                              = errors.New("the public key does not exist")
@@ -93,6 +101,7 @@ var (
 	ErrTransactionFailed                                  = errors.New("the transaction failed")
 	ErrTransactionIsMalformed                             = errors.New("the transaction is malformed")
 	ErrUserCloseTheConnection                             = errors.New("the user closed the connection")
+	ErrUserCanceledTheRequest                             = errors.New("the user canceled the request")
 	ErrUserRejectedTheRequest                             = errors.New("the user rejected the request")
 	ErrWalletAlreadyExists                                = errors.New("a wallet with the same name already exists")
 	ErrWalletDoesNotExist                                 = errors.New("the wallet does not exist")
@@ -134,6 +143,10 @@ func requestInterruptedError(err error) *jsonrpc.ErrorDetails {
 	return jsonrpc.NewServerError(jsonrpc.ErrorCodeRequestHasBeenInterrupted, err)
 }
 
+func userCancellationError(err error) *jsonrpc.ErrorDetails {
+	return userError(ErrorCodeRequestHasBeenCanceled, err)
+}
+
 func userRejectionError() *jsonrpc.ErrorDetails {
 	return userError(ErrorCodeRequestHasBeenRejected, ErrUserRejectedTheRequest)
 }
@@ -155,6 +168,9 @@ func handleRequestFlowError(ctx context.Context, traceID string, interactor Inte
 	if errors.Is(err, ErrRequestInterrupted) {
 		interactor.NotifyError(ctx, traceID, ServerError, err)
 		return requestInterruptedError(err)
+	}
+	if errors.Is(err, ErrUserCanceledTheRequest) {
+		return userCancellationError(err)
 	}
 	return nil
 }

@@ -509,12 +509,16 @@ type Query {
     "Optional Pagination"
     pagination: Pagination): MarketDataConnection
 
-  "Get historical balances for an account or specific asset within the given date range."
-  historicBalances(
-    "Optional filter to restrict the result to a specific account or asset"
+  "Get historical balances for an account within the given date range, with optional netting over party, market and account type"
+  balanceChanges(
+    "Optional filter to restrict queried accounts to those of a specific asset, party, market or type"
     filter: AccountFilter,
-    "Optional grouping clause for the results"
-    groupBy: [AccountField],
+    "Whether balances for different parties should be netted together. If so, party_id of results will be null"
+    sumAcrossParties: Boolean,
+    "Whether balances for different markets should be netted together. If so, market_id of results will be null"
+    sumAcrossMarkets: Boolean,
+    "Whether balances for different account types should be netted together. If so, account_type of will be null"
+    sumAcrossTypes: Boolean,
     "Date range to retrieve historical balances from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
     dateRange: DateRange,
     "Optional pagination information"
@@ -723,6 +727,9 @@ type Query {
     pagination: Pagination
   ): ProposalsConnection
 
+  "Flag indicating whether the data-node is ready to begin the protocol upgrade"
+  protocolUpgradeStatus: ProtocolUpgradeStatus
+
   "Governance proposals that aim to update existing markets"
   updateMarketProposals(
     "Optionally, select proposals for a specific market. Leave out for all"
@@ -817,6 +824,9 @@ type Transfer {
 
   "The type of transfer being made, i.e. a one-off or recurring transfer"
   kind: TransferKind!
+
+  "An optional reason explaining the status of the transfer"
+  reason: String
 }
 
 union TransferKind = OneOffTransfer | RecurringTransfer
@@ -1170,19 +1180,19 @@ type Asset {
   status: AssetStatus!
 
   "The infrastructure fee account for this asset"
-  infrastructureFeeAccount: Account!
+  infrastructureFeeAccount: AccountBalance
 
   "The global reward pool account for this asset"
-  globalRewardPoolAccount: Account
+  globalRewardPoolAccount: AccountBalance
 
   "The taker fee reward account for this asset"
-  takerFeeRewardAccount: Account
+  takerFeeRewardAccount: AccountBalance
   "The maker fee reward account for this asset"
-  makerFeeRewardAccount: Account
+  makerFeeRewardAccount: AccountBalance
   "The liquidity provision reward account for this asset"
-  lpFeeRewardAccount: Account
+  lpFeeRewardAccount: AccountBalance
   "The market proposer reward account for this asset"
-  marketProposerRewardAccount: Account
+  marketProposerRewardAccount: AccountBalance
 }
 
 "One of the possible asset sources"
@@ -1197,12 +1207,13 @@ type ERC20 {
   contractAddress: String!
   """
   The lifetime limits deposit per address
-  Note: this is a temporary measure for alpha mainnet
+  Note: this is a temporary measure that can be changed by governance
   """
   lifetimeLimit: String!
   """
-  The maximum allowed per withdrawal
-  Note: this is a temporary measure for alpha mainnet
+  The maximum you can withdraw instantly. All withdrawals over the threshold will be delayed by the withdrawal delay.
+  There’s no limit on the size of a withdrawal
+  Note: this is a temporary measure that can be changed by governance
   """
   withdrawThreshold: String!
 }
@@ -1211,12 +1222,13 @@ type ERC20 {
 type UpdateERC20 {
   """
   The lifetime limits deposit per address
-  Note: this is a temporary measure for alpha mainnet
+  Note: this is a temporary measure that can be changed by governance
   """
   lifetimeLimit: String!
   """
-  The maximum allowed per withdrawal
-  Note: this is a temporary measure for alpha mainnet
+  The maximum you can withdraw instantly. All withdrawals over the threshold will be delayed by the withdrawal delay.
+  There’s no limit on the size of a withdrawal
+  Note: this is a temporary measure that can be changed by governance
   """
   withdrawThreshold: String!
 }
@@ -1791,7 +1803,7 @@ type Market {
   accounts(
     "ID of the party to get the margin account for"
     partyId: ID
-  ): [Account!] @deprecated(reason: "Use the accountsConnection instead")
+  ): [AccountBalance!] @deprecated(reason: "Use the accountsConnection instead")
 
   "Get account for a party or market"
   accountsConnection(
@@ -2044,7 +2056,7 @@ type Party {
     assetId: ID
     "Filter accounts by type (General account, margin account, etc...)"
     type: AccountType
-  ): [Account!] @deprecated(reason: "Use accountsConnection instead")
+  ): [AccountBalance!] @deprecated(reason: "Use accountsConnection instead")
 
   "Collateral accounts relating to a party"
   accountsConnection(
@@ -2590,7 +2602,7 @@ enum TradeType {
 }
 
 "An account record"
-type Account {
+type AccountBalance {
   "Balance as string - current account balance (approx. as balances can be updated several times per second)"
   balance: String!
   "Asset, the 'currency'"
@@ -2602,6 +2614,21 @@ type Account {
   "Owner of the account"
   party: Party
 }
+
+"An account record"
+type AccountEvent {
+  "Balance as string - current account balance (approx. as balances can be updated several times per second)"
+  balance: String!
+  "Asset, the 'currency'"
+  asset: Asset!
+  "Account type (General, Margin, etc)"
+  type: AccountType!
+  "Market (only relevant to margin accounts)"
+  market: Market
+  "Owner of the account"
+  party: Party
+}
+
 
 "An account record"
 type AccountDetails {
@@ -3043,10 +3070,10 @@ enum OrderRejectionReason {
   ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN
 
   "Good for Normal order received during an auction"
-  ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION
+  ORDER_ERROR_CANNOT_SEND_GFN_ORDER_DURING_AN_AUCTION
 
   "Good for Auction order received during continuous trading"
-  ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING
+  ORDER_ERROR_GFA_CANNOT_SEND_ORDER_DURING_CONTINUOUS_TRADING
 
   "Cannot send IOC orders during an auction"
   ORDER_ERROR_CANNOT_SEND_IOC_ORDER_DURING_AUCTION
@@ -3774,7 +3801,7 @@ union Event =
   | PositionResolution
   | Order
   | Trade
-  | Account
+  | AccountEvent
   | Party
   | MarginLevels
   | Proposal
@@ -3968,7 +3995,6 @@ type RewardPerAssetDetail {
 scalar Timestamp
 
 type AggregatedLedgerEntries {
-  id: ID
   "RFC3339Nano time from at which this ledger entries records were relevant"
   vegaTime: String!
   "Net amount of ledger entries for the accounts specified in the filter at this time"
@@ -4004,8 +4030,6 @@ type AggregatedBalance {
   "Net balance of the accounts specified in the filter at this time"
   balance: String!
   "Account identifier, if query was grouped by account - else null"
-  accountId: ID
-  "Party identifier, if query was grouped by party - else null"
   partyId: ID
   "Asset identifier, if query was grouped by asset - else null"
   assetId: ID
@@ -4027,7 +4051,6 @@ type AggregatedBalanceConnection {
 }
 
 enum AccountField {
-  AccountId
   PartyId
   AssetId
   MarketId
@@ -4506,7 +4529,7 @@ type StakesConnection {
 "Edge type containing the account and cursor information returned by an AccountsConnection"
 type AccountEdge {
   "The account"
-  node: Account!
+  node: AccountBalance!
   "Cursor identifying the account"
   cursor: String!
 }
@@ -4530,4 +4553,9 @@ input DateRange {
   start: Timestamp
   "The end timestamp for the date range (exclusive). RFC3339Nano format"
   end: Timestamp
+}
+
+"Indicator showing whether the data-node is ready for the protocol upgrade to begin."
+type ProtocolUpgradeStatus {
+  ready: Boolean!
 }

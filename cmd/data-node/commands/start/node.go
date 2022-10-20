@@ -187,6 +187,7 @@ func (l *NodeCommand) createGRPCServer(config api.Config) *api.GRPCServer {
 		l.nodeService,
 		l.marketDepthService,
 		l.ledgerService,
+		l.protocolUpgradeService,
 	)
 	return grpcServer
 }

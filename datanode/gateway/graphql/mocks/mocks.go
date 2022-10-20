@@ -301,26 +301,6 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) GetAsset(arg0, arg1 interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAsset", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetAsset), varargs...)
 }
 
-// GetBalanceHistory mocks base method.
-func (m *MockTradingDataServiceClientV2) GetBalanceHistory(arg0 context.Context, arg1 *v2.GetBalanceHistoryRequest, arg2 ...grpc.CallOption) (*v2.GetBalanceHistoryResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "GetBalanceHistory", varargs...)
-	ret0, _ := ret[0].(*v2.GetBalanceHistoryResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetBalanceHistory indicates an expected call of GetBalanceHistory.
-func (mr *MockTradingDataServiceClientV2MockRecorder) GetBalanceHistory(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBalanceHistory", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetBalanceHistory), varargs...)
-}
-
 // GetDeposit mocks base method.
 func (m *MockTradingDataServiceClientV2) GetDeposit(arg0 context.Context, arg1 *v2.GetDepositRequest, arg2 ...grpc.CallOption) (*v2.GetDepositResponse, error) {
 	m.ctrl.T.Helper()
@@ -359,46 +339,6 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) GetERC20ListAssetBundle(ar
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetERC20ListAssetBundle", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetERC20ListAssetBundle), varargs...)
-}
-
-// GetERC20MultiSigSignerAddedBundles mocks base method.
-func (m *MockTradingDataServiceClientV2) GetERC20MultiSigSignerAddedBundles(arg0 context.Context, arg1 *v2.GetERC20MultiSigSignerAddedBundlesRequest, arg2 ...grpc.CallOption) (*v2.GetERC20MultiSigSignerAddedBundlesResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "GetERC20MultiSigSignerAddedBundles", varargs...)
-	ret0, _ := ret[0].(*v2.GetERC20MultiSigSignerAddedBundlesResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetERC20MultiSigSignerAddedBundles indicates an expected call of GetERC20MultiSigSignerAddedBundles.
-func (mr *MockTradingDataServiceClientV2MockRecorder) GetERC20MultiSigSignerAddedBundles(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetERC20MultiSigSignerAddedBundles", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetERC20MultiSigSignerAddedBundles), varargs...)
-}
-
-// GetERC20MultiSigSignerRemovedBundles mocks base method.
-func (m *MockTradingDataServiceClientV2) GetERC20MultiSigSignerRemovedBundles(arg0 context.Context, arg1 *v2.GetERC20MultiSigSignerRemovedBundlesRequest, arg2 ...grpc.CallOption) (*v2.GetERC20MultiSigSignerRemovedBundlesResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "GetERC20MultiSigSignerRemovedBundles", varargs...)
-	ret0, _ := ret[0].(*v2.GetERC20MultiSigSignerRemovedBundlesResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetERC20MultiSigSignerRemovedBundles indicates an expected call of GetERC20MultiSigSignerRemovedBundles.
-func (mr *MockTradingDataServiceClientV2MockRecorder) GetERC20MultiSigSignerRemovedBundles(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetERC20MultiSigSignerRemovedBundles", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetERC20MultiSigSignerRemovedBundles), varargs...)
 }
 
 // GetERC20SetAssetLimitsBundle mocks base method.
@@ -721,6 +661,26 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) GetParty(arg0, arg1 interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetParty", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetParty), varargs...)
 }
 
+// GetProtocolUpgradeStatus mocks base method.
+func (m *MockTradingDataServiceClientV2) GetProtocolUpgradeStatus(arg0 context.Context, arg1 *v2.GetProtocolUpgradeStatusRequest, arg2 ...grpc.CallOption) (*v2.GetProtocolUpgradeStatusResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetProtocolUpgradeStatus", varargs...)
+	ret0, _ := ret[0].(*v2.GetProtocolUpgradeStatusResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetProtocolUpgradeStatus indicates an expected call of GetProtocolUpgradeStatus.
+func (mr *MockTradingDataServiceClientV2MockRecorder) GetProtocolUpgradeStatus(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProtocolUpgradeStatus", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetProtocolUpgradeStatus), varargs...)
+}
+
 // GetRiskFactors mocks base method.
 func (m *MockTradingDataServiceClientV2) GetRiskFactors(arg0 context.Context, arg1 *v2.GetRiskFactorsRequest, arg2 ...grpc.CallOption) (*v2.GetRiskFactorsResponse, error) {
 	m.ctrl.T.Helper()
@@ -861,6 +821,26 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) ListAssets(arg0, arg1 inte
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAssets", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ListAssets), varargs...)
 }
 
+// ListBalanceChanges mocks base method.
+func (m *MockTradingDataServiceClientV2) ListBalanceChanges(arg0 context.Context, arg1 *v2.ListBalanceChangesRequest, arg2 ...grpc.CallOption) (*v2.ListBalanceChangesResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListBalanceChanges", varargs...)
+	ret0, _ := ret[0].(*v2.ListBalanceChangesResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListBalanceChanges indicates an expected call of ListBalanceChanges.
+func (mr *MockTradingDataServiceClientV2MockRecorder) ListBalanceChanges(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListBalanceChanges", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ListBalanceChanges), varargs...)
+}
+
 // ListCandleData mocks base method.
 func (m *MockTradingDataServiceClientV2) ListCandleData(arg0 context.Context, arg1 *v2.ListCandleDataRequest, arg2 ...grpc.CallOption) (*v2.ListCandleDataResponse, error) {
 	m.ctrl.T.Helper()
@@ -959,6 +939,46 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) ListDeposits(arg0, arg1 in
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListDeposits", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ListDeposits), varargs...)
+}
+
+// ListERC20MultiSigSignerAddedBundles mocks base method.
+func (m *MockTradingDataServiceClientV2) ListERC20MultiSigSignerAddedBundles(arg0 context.Context, arg1 *v2.ListERC20MultiSigSignerAddedBundlesRequest, arg2 ...grpc.CallOption) (*v2.ListERC20MultiSigSignerAddedBundlesResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListERC20MultiSigSignerAddedBundles", varargs...)
+	ret0, _ := ret[0].(*v2.ListERC20MultiSigSignerAddedBundlesResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListERC20MultiSigSignerAddedBundles indicates an expected call of ListERC20MultiSigSignerAddedBundles.
+func (mr *MockTradingDataServiceClientV2MockRecorder) ListERC20MultiSigSignerAddedBundles(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListERC20MultiSigSignerAddedBundles", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ListERC20MultiSigSignerAddedBundles), varargs...)
+}
+
+// ListERC20MultiSigSignerRemovedBundles mocks base method.
+func (m *MockTradingDataServiceClientV2) ListERC20MultiSigSignerRemovedBundles(arg0 context.Context, arg1 *v2.ListERC20MultiSigSignerRemovedBundlesRequest, arg2 ...grpc.CallOption) (*v2.ListERC20MultiSigSignerRemovedBundlesResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListERC20MultiSigSignerRemovedBundles", varargs...)
+	ret0, _ := ret[0].(*v2.ListERC20MultiSigSignerRemovedBundlesResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListERC20MultiSigSignerRemovedBundles indicates an expected call of ListERC20MultiSigSignerRemovedBundles.
+func (mr *MockTradingDataServiceClientV2MockRecorder) ListERC20MultiSigSignerRemovedBundles(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListERC20MultiSigSignerRemovedBundles", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ListERC20MultiSigSignerRemovedBundles), varargs...)
 }
 
 // ListEthereumKeyRotations mocks base method.

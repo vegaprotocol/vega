@@ -22,7 +22,6 @@ import (
 
 	"code.vegaprotocol.io/vega/core/admin"
 	"code.vegaprotocol.io/vega/core/config"
-	vgfmt "code.vegaprotocol.io/vega/libs/fmt"
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/jessevdk/go-flags"
@@ -63,27 +62,22 @@ func (opts *reloadCmd) Execute(_ []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	var data map[string]string
+	var resp *admin.NodeWalletReloadReply
 	switch opts.Chain {
 	case vegaChain, ethereumChain:
-		resp, err := sc.NodeWalletReload(ctx, opts.Chain)
+		resp, err = sc.NodeWalletReload(ctx, opts.Chain)
 		if err != nil {
 			return fmt.Errorf("failed to reload node wallet: %w", err)
-		}
-
-		data = map[string]string{
-			"OldWallet": resp.OldWallet.String(),
-			"NewWallet": resp.NewWallet.String(),
 		}
 	default:
 		return fmt.Errorf("chain %q is not supported", opts.Chain)
 	}
-
 	if output.IsHuman() {
 		fmt.Println(green("reload successful:"))
-		vgfmt.PrettyPrint(data)
+
+		vgjson.PrettyPrint(resp)
 	} else if output.IsJSON() {
-		if err := vgjson.Print(data); err != nil {
+		if err := vgjson.Print(resp); err != nil {
 			return err
 		}
 	}

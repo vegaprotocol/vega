@@ -102,6 +102,11 @@ func BuildCmdIsolateKey(w io.Writer, handler IsolateKeyHandler, rf *RootFlags) *
 		"",
 		"Path to the file containing the wallet's passphrase",
 	)
+	cmd.Flags().StringVar(&f.IsolatedWalletPassphraseFile,
+		"isolated-wallet-passphrase-file",
+		"",
+		"Path to the file containing the new isolated wallet's passphrase",
+	)
 
 	autoCompleteWallet(cmd, rf.Home)
 
@@ -109,9 +114,10 @@ func BuildCmdIsolateKey(w io.Writer, handler IsolateKeyHandler, rf *RootFlags) *
 }
 
 type IsolateKeyFlags struct {
-	Wallet         string
-	PubKey         string
-	PassphraseFile string
+	Wallet                       string
+	PubKey                       string
+	PassphraseFile               string
+	IsolatedWalletPassphraseFile string
 }
 
 func (f *IsolateKeyFlags) Validate() (api.AdminIsolateKeyParams, error) {
@@ -128,10 +134,16 @@ func (f *IsolateKeyFlags) Validate() (api.AdminIsolateKeyParams, error) {
 		return api.AdminIsolateKeyParams{}, err
 	}
 
+	newPassphrase, err := flags.GetConfirmedPassphraseWithContext("isolated wallet", f.IsolatedWalletPassphraseFile)
+	if err != nil {
+		return api.AdminIsolateKeyParams{}, err
+	}
+
 	return api.AdminIsolateKeyParams{
-		Wallet:     f.Wallet,
-		PublicKey:  f.PubKey,
-		Passphrase: passphrase,
+		Wallet:                   f.Wallet,
+		PublicKey:                f.PubKey,
+		Passphrase:               passphrase,
+		IsolatedWalletPassphrase: newPassphrase,
 	}, nil
 }
 

@@ -39,15 +39,16 @@ var testAsset = assets.NewAsset(builtin.New("VGT", &types.AssetDetails{
 
 type testEngine struct {
 	*banking.Engine
-	ctrl       *gomock.Controller
-	erc        *fakeERC
-	col        *mocks.MockCollateral
-	assets     *mocks.MockAssets
-	tsvc       *mocks.MockTimeService
-	top        *mocks.MockTopology
-	broker     *bmocks.MockBroker
-	epoch      *mocks.MockEpochService
-	bridgeView *mocks.MockERC20BridgeView
+	ctrl                  *gomock.Controller
+	erc                   *fakeERC
+	col                   *mocks.MockCollateral
+	assets                *mocks.MockAssets
+	tsvc                  *mocks.MockTimeService
+	top                   *mocks.MockTopology
+	broker                *bmocks.MockBroker
+	epoch                 *mocks.MockEpochService
+	bridgeView            *mocks.MockERC20BridgeView
+	marketActivityTracker *mocks.MockMarketActivityTracker
 }
 
 func getTestEngine(t *testing.T) *testEngine {
@@ -69,16 +70,17 @@ func getTestEngine(t *testing.T) *testEngine {
 	eng := banking.New(logging.NewTestLogger(), banking.NewDefaultConfig(), col, erc, tsvc, assets, notary, broker, top, epoch, marketActivityTracker, bridgeView)
 
 	return &testEngine{
-		Engine:     eng,
-		ctrl:       ctrl,
-		erc:        erc,
-		col:        col,
-		assets:     assets,
-		tsvc:       tsvc,
-		broker:     broker,
-		top:        top,
-		epoch:      epoch,
-		bridgeView: bridgeView,
+		Engine:                eng,
+		ctrl:                  ctrl,
+		erc:                   erc,
+		col:                   col,
+		assets:                assets,
+		tsvc:                  tsvc,
+		broker:                broker,
+		top:                   top,
+		epoch:                 epoch,
+		bridgeView:            bridgeView,
+		marketActivityTracker: marketActivityTracker,
 	}
 }
 

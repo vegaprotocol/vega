@@ -18,7 +18,6 @@ import (
 	"time"
 
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
-	"code.vegaprotocol.io/vega/protos/vega"
 	"github.com/shopspring/decimal"
 )
 
@@ -29,7 +28,7 @@ type AccountBalance struct {
 	VegaTime time.Time
 }
 
-func (ab *AccountBalance) ToProto() *vega.Account {
+func (ab *AccountBalance) ToProto() *v2.AccountBalance {
 	marketID := ab.MarketID.String()
 	if marketID == noMarketStr {
 		marketID = ""
@@ -40,7 +39,7 @@ func (ab *AccountBalance) ToProto() *vega.Account {
 		ownerID = ""
 	}
 
-	return &vega.Account{
+	return &v2.AccountBalance{
 		Owner:    ownerID,
 		Balance:  ab.Balance.String(),
 		Asset:    ab.AssetID.String(),

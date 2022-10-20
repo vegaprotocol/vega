@@ -21,6 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestTransferResponseDeepClone(t *testing.T) {
@@ -82,4 +83,75 @@ func TestTransferResponseDeepClone(t *testing.T) {
 	assert.NotEqual(t, tr[0].Balances[0].Account.Owner, tr2[0].Balances[0].Account.Owner)
 	assert.NotEqual(t, tr[0].Balances[0].Account.Type, tr2[0].Balances[0].Account.Type)
 	assert.NotEqual(t, tr[0].Balances[0].Balance, tr2[0].Balances[0].Balance)
+}
+
+func TestNilOwner(t *testing.T) {
+	ctx := context.Background()
+	systemOwner := "*"
+	tr1 := []*types.LedgerMovement{
+		{
+			Entries: []*types.LedgerEntry{
+				{
+					FromAccount: &types.AccountDetails{Owner: "FromZohar"},
+					ToAccount:   &types.AccountDetails{Owner: "ToZohar"},
+					Amount:      num.NewUint(1000),
+					Type:        types.TransferTypeBondLow,
+					Timestamp:   2000,
+				},
+			},
+		},
+	}
+	trNilFrom := []*types.LedgerMovement{
+		{
+			Entries: []*types.LedgerEntry{
+				{
+					FromAccount: &types.AccountDetails{Owner: systemOwner},
+					ToAccount:   &types.AccountDetails{Owner: "ToZohar"},
+					Amount:      num.NewUint(1000),
+					Type:        types.TransferTypeBondLow,
+					Timestamp:   2000,
+				},
+			},
+		},
+	}
+	trNilTo := []*types.LedgerMovement{
+		{
+			Entries: []*types.LedgerEntry{
+				{
+					FromAccount: &types.AccountDetails{Owner: "FromZohar"},
+					ToAccount:   &types.AccountDetails{Owner: systemOwner},
+					Amount:      num.NewUint(1000),
+					Type:        types.TransferTypeBondLow,
+					Timestamp:   2000,
+				},
+			},
+		},
+	}
+
+	trNilFromTo := []*types.LedgerMovement{
+		{
+			Entries: []*types.LedgerEntry{
+				{
+					FromAccount: &types.AccountDetails{Owner: systemOwner},
+					ToAccount:   &types.AccountDetails{Owner: systemOwner},
+					Amount:      num.NewUint(1000),
+					Type:        types.TransferTypeBondLow,
+					Timestamp:   2000,
+				},
+			},
+		},
+	}
+
+	require.True(t, events.NewLedgerMovements(ctx, tr1).IsParty("FromZohar"))
+	require.True(t, events.NewLedgerMovements(ctx, tr1).IsParty("ToZohar"))
+	require.True(t, events.NewLedgerMovements(ctx, trNilTo).IsParty("FromZohar"))
+	require.True(t, events.NewLedgerMovements(ctx, trNilFrom).IsParty("ToZohar"))
+	require.False(t, events.NewLedgerMovements(ctx, trNilFromTo).IsParty("FromZohar"))
+	require.False(t, events.NewLedgerMovements(ctx, trNilFromTo).IsParty("ToZohar"))
+	require.True(t, events.TransferResponseEventFromStream(ctx, events.NewLedgerMovements(ctx, tr1).StreamMessage()).IsParty("FromZohar"))
+	require.True(t, events.TransferResponseEventFromStream(ctx, events.NewLedgerMovements(ctx, tr1).StreamMessage()).IsParty("ToZohar"))
+	require.True(t, events.TransferResponseEventFromStream(ctx, events.NewLedgerMovements(ctx, trNilTo).StreamMessage()).IsParty("FromZohar"))
+	require.True(t, events.TransferResponseEventFromStream(ctx, events.NewLedgerMovements(ctx, trNilFrom).StreamMessage()).IsParty("ToZohar"))
+	require.False(t, events.TransferResponseEventFromStream(ctx, events.NewLedgerMovements(ctx, trNilFromTo).StreamMessage()).IsParty("FromZohar"))
+	require.False(t, events.TransferResponseEventFromStream(ctx, events.NewLedgerMovements(ctx, trNilFromTo).StreamMessage()).IsParty("ToZohar"))
 }

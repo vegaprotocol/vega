@@ -15,6 +15,7 @@ package start
 import (
 	"context"
 	"fmt"
+	"io"
 
 	"code.vegaprotocol.io/vega/datanode/api"
 	"code.vegaprotocol.io/vega/datanode/broker"
@@ -26,6 +27,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
+	"github.com/cenkalti/backoff"
 	"google.golang.org/grpc"
 )
 
@@ -64,9 +66,26 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 
 	l.Log.Info("Enabling SQL stores")
 
-	transactionalConnectionSource, err := l.initialiseDatabase()
+	var transactionalConnectionSource *sqlstore.ConnectionSource
+	operation := func() (opErr error) {
+		l.Log.Info("Attempting to connect to SQL stores...")
+		transactionalConnectionSource, opErr = l.initialiseDatabase()
+		if opErr != nil {
+			l.Log.Error("Failed to connect to SQL stores, retrying...", logging.Error(opErr))
+		}
+		return opErr
+	}
+
+	retryConfig := l.conf.SQLStore.ConnectionRetryConfig
+
+	expBackoff := backoff.NewExponentialBackOff()
+	expBackoff.InitialInterval = retryConfig.InitialInterval
+	expBackoff.MaxInterval = retryConfig.MaxInterval
+	expBackoff.MaxElapsedTime = retryConfig.MaxElapsedTime
+
+	err = backoff.Retry(operation, backoff.WithMaxRetries(expBackoff, retryConfig.MaxRetries))
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 
 	l.CreateAllStores(l.ctx, l.Log, transactionalConnectionSource, l.conf.CandlesV2.CandleStore)
@@ -94,8 +113,8 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 func (l *NodeCommand) initialiseDatabase() (*sqlstore.ConnectionSource, error) {
 	var err error
 	if l.conf.SQLStore.UseEmbedded {
-		l.embeddedPostgres, _, _, err = sqlstore.StartEmbeddedPostgres(l.Log, l.conf.SQLStore,
-			l.vegaPaths.StatePathFor(paths.DataNodeStorageHome))
+		l.embeddedPostgres, _, err = sqlstore.StartEmbeddedPostgres(l.Log, l.conf.SQLStore,
+			l.vegaPaths.StatePathFor(paths.DataNodeStorageHome), io.Discard)
 		if err != nil {
 			return nil, fmt.Errorf("failed to start embedded postgres: %w", err)
 		}
@@ -164,6 +183,7 @@ func (l *NodeCommand) preRun([]string) (err error) {
 	l.sqlBroker = broker.NewSQLStoreBroker(l.Log, l.conf.Broker, l.chainService, eventSource,
 		l.transactionalConnectionSource,
 		l.blockStore,
+		l.protocolUpgradeService,
 		l.snapshotService.OnBlockCommitted,
 		l.GetSQLSubscribers(),
 	)

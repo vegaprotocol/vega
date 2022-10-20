@@ -292,7 +292,7 @@ func NewMarket(
 		return nil, ErrEmptyMarketID
 	}
 
-	positionFactor := num.DecimalFromFloat(10).Pow(num.DecimalFromInt64(int64(mkt.PositionDecimalPlaces)))
+	positionFactor := num.DecimalFromFloat(10).Pow(num.DecimalFromInt64(mkt.PositionDecimalPlaces))
 
 	tradableInstrument, err := markets.NewTradableInstrument(ctx, log, mkt.TradableInstrument, oracleEngine)
 	if err != nil {
@@ -1115,7 +1115,8 @@ func (m *Market) validateOrder(ctx context.Context, order *types.Order) (err err
 	// Check we are allowed to handle this order type with the current market status
 	isAuction := m.as.InAuction()
 	if isAuction && order.TimeInForce == types.OrderTimeInForceGFN {
-		order.Reason = types.OrderErrorGFNOrderDuringAnAuction
+		order.Status = types.OrderStatusRejected
+		order.Reason = types.OrderErrorCannotSendGFNOrderDuringAnAuction
 		return ErrGFNOrderReceivedAuctionTrading
 	}
 

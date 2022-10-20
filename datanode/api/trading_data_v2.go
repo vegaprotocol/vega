@@ -88,6 +88,7 @@ type tradingDataServiceV2 struct {
 	keyRotationService         *service.KeyRotations
 	ethereumKeyRotationService *service.EthereumKeyRotation
 	blockService               BlockService
+	protocolUpgradeService     *service.ProtocolUpgrade
 }
 
 func (t *tradingDataServiceV2) ListAccounts(ctx context.Context, req *v2.ListAccountsRequest) (*v2.ListAccountsResponse, error) {
@@ -147,7 +148,7 @@ func (t *tradingDataServiceV2) ObserveAccounts(req *v2.ObserveAccountsRequest,
 	}
 
 	return observeBatch(ctx, t.log, "Accounts", accountsChan, ref, func(accounts []entities.AccountBalance) error {
-		protos := make([]*vega.Account, len(accounts))
+		protos := make([]*v2.AccountBalance, len(accounts))
 		for i := 0; i < len(accounts); i++ {
 			protos[i] = accounts[i].ToProto()
 		}
@@ -184,7 +185,7 @@ func (t *tradingDataServiceV2) sendAccountsSnapshot(ctx context.Context, req *v2
 		return fmt.Errorf("initial image spans multiple pages")
 	}
 
-	protos := make([]*vega.Account, len(accounts))
+	protos := make([]*v2.AccountBalance, len(accounts))
 	for i := 0; i < len(accounts); i++ {
 		protos[i] = accounts[i].ToProto()
 	}
@@ -270,8 +271,8 @@ func (t *tradingDataServiceV2) ListLedgerEntries(ctx context.Context, req *v2.Li
 	}, nil
 }
 
-func (t *tradingDataServiceV2) GetBalanceHistory(ctx context.Context, req *v2.GetBalanceHistoryRequest) (*v2.GetBalanceHistoryResponse, error) {
-	defer metrics.StartAPIRequestAndTimeGRPC("GetBalanceHistoryV2")()
+func (t *tradingDataServiceV2) ListBalanceChanges(ctx context.Context, req *v2.ListBalanceChangesRequest) (*v2.ListBalanceChangesResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListBalanceChangesV2")()
 	if t.accountService == nil {
 		return nil, fmt.Errorf("sql balance store not available")
 	}
@@ -281,13 +282,21 @@ func (t *tradingDataServiceV2) GetBalanceHistory(ctx context.Context, req *v2.Ge
 		return nil, fmt.Errorf("parsing filter: %w", err)
 	}
 
-	groupBy := []entities.AccountField{}
-	for _, field := range req.GroupBy {
-		field, err := entities.AccountFieldFromProto(field)
-		if err != nil {
-			return nil, fmt.Errorf("parsing group by list: %w", err)
-		}
-		groupBy = append(groupBy, field)
+	// Always group by asset; it doesn't make sense to add up quantities of different things
+	groupBy := []entities.AccountField{
+		entities.AccountFieldAssetID,
+	}
+
+	if !req.SumAcrossParties {
+		groupBy = append(groupBy, entities.AccountFieldPartyID)
+	}
+
+	if !req.SumAcrossMarkets {
+		groupBy = append(groupBy, entities.AccountFieldMarketID)
+	}
+
+	if !req.SumAcrossTypes {
+		groupBy = append(groupBy, entities.AccountFieldType)
 	}
 
 	dateRange := entities.DateRangeFromProto(req.DateRange)
@@ -306,7 +315,7 @@ func (t *tradingDataServiceV2) GetBalanceHistory(ctx context.Context, req *v2.Ge
 		return nil, apiError(codes.Internal, ErrAccountServiceListAccounts, err)
 	}
 
-	return &v2.GetBalanceHistoryResponse{
+	return &v2.ListBalanceChangesResponse{
 		Balances: &v2.AggregatedBalanceConnection{
 			Edges:    edges,
 			PageInfo: pageInfo.ToProto(),
@@ -714,8 +723,8 @@ func (t *tradingDataServiceV2) ListCandleIntervals(ctx context.Context, req *v2.
 	}, nil
 }
 
-// GetERC20MutlsigSignerAddedBundles return the signature bundles needed to add a new validator to the multisig control ERC20 contract.
-func (t *tradingDataServiceV2) GetERC20MultiSigSignerAddedBundles(ctx context.Context, req *v2.GetERC20MultiSigSignerAddedBundlesRequest) (*v2.GetERC20MultiSigSignerAddedBundlesResponse, error) {
+// ListERC20MutlsigSignerAddedBundles return the signature bundles needed to add a new validator to the multisig control ERC20 contract.
+func (t *tradingDataServiceV2) ListERC20MultiSigSignerAddedBundles(ctx context.Context, req *v2.ListERC20MultiSigSignerAddedBundlesRequest) (*v2.ListERC20MultiSigSignerAddedBundlesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetERC20MultiSigSignerAddedBundlesV2")()
 	if t.notaryService == nil {
 		return nil, errors.New("sql notary service not available")
@@ -781,13 +790,13 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerAddedBundles(ctx context.Co
 		PageInfo: pageInfo.ToProto(),
 	}
 
-	return &v2.GetERC20MultiSigSignerAddedBundlesResponse{
+	return &v2.ListERC20MultiSigSignerAddedBundlesResponse{
 		Bundles: connection,
 	}, nil
 }
 
-// GetERC20MutlsigSignerAddedBundles return the signature bundles needed to add a new validator to the multisig control ERC20 contract.
-func (t *tradingDataServiceV2) GetERC20MultiSigSignerRemovedBundles(ctx context.Context, req *v2.GetERC20MultiSigSignerRemovedBundlesRequest) (*v2.GetERC20MultiSigSignerRemovedBundlesResponse, error) {
+// ListERC20MutlsigSignerAddedBundles return the signature bundles needed to add a new validator to the multisig control ERC20 contract.
+func (t *tradingDataServiceV2) ListERC20MultiSigSignerRemovedBundles(ctx context.Context, req *v2.ListERC20MultiSigSignerRemovedBundlesRequest) (*v2.ListERC20MultiSigSignerRemovedBundlesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetERC20MultiSigSignerRemovedBundlesV2")()
 	if t.notaryService == nil {
 		return nil, errors.New("sql notary store not available")
@@ -850,7 +859,7 @@ func (t *tradingDataServiceV2) GetERC20MultiSigSignerRemovedBundles(ctx context.
 		PageInfo: pageInfo.ToProto(),
 	}
 
-	return &v2.GetERC20MultiSigSignerRemovedBundlesResponse{
+	return &v2.ListERC20MultiSigSignerRemovedBundlesResponse{
 		Bundles: connection,
 	}, nil
 }
@@ -1137,7 +1146,8 @@ func (t *tradingDataServiceV2) GetMarket(ctx context.Context, req *v2.GetMarketR
 
 	market, err := t.marketService.GetByID(ctx, req.MarketId)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		// Show a relevant error here -> no such market exists.
+		return nil, apiError(codes.NotFound, err)
 	}
 
 	return &v2.GetMarketResponse{
@@ -1727,7 +1737,7 @@ func (t *tradingDataServiceV2) ListOracleData(ctx context.Context, req *v2.ListO
 	}
 
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		apiError(codes.Internal, ErrOracleServiceGetSpec, fmt.Errorf("could not retrieve data for OracleSpecID: %s %w", *req.OracleSpecId, err))
 	}
 
 	edges, err := makeEdges[*v2.OracleDataEdge](data)
@@ -2683,6 +2693,13 @@ func (t *tradingDataServiceV2) observeProposalVotes(proposalID string, stream v2
 			Vote: p.ToProto(),
 		})
 	})
+}
+
+func (t *tradingDataServiceV2) GetProtocolUpgradeStatus(context.Context, *v2.GetProtocolUpgradeStatusRequest) (*v2.GetProtocolUpgradeStatusResponse, error) {
+	ready := t.protocolUpgradeService.GetProtocolUpgradeStarted()
+	return &v2.GetProtocolUpgradeStatusResponse{
+		Ready: ready,
+	}, nil
 }
 
 type tradingDataEventBusServerV2 struct {

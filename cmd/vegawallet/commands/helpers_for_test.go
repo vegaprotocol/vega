@@ -16,7 +16,9 @@ func NewTempDir(t *testing.T) string {
 func NewPassphraseFile(t *testing.T, path string) (string, string) {
 	t.Helper()
 	passphrase := vgrand.RandomStr(10)
-	passphraseFilePath := NewFile(t, path, "passphrase.txt", passphrase)
+	fuzz := vgrand.RandomStr(5)
+
+	passphraseFilePath := NewFile(t, path, fuzz+"passphrase.txt", passphrase)
 	return passphrase, passphraseFilePath
 }
 

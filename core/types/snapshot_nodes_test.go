@@ -117,7 +117,7 @@ func getDummyData() *types.Chunk {
 	}, &types.Payload{
 		Data: &types.PayloadBankingSeen{
 			BankingSeen: &types.BankingSeen{
-				Refs: []*v1.TxRef{}, // nothing needed
+				Refs: []string{}, // nothing needed
 			},
 		},
 	}, &types.Payload{
