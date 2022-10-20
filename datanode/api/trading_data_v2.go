@@ -1146,7 +1146,8 @@ func (t *tradingDataServiceV2) GetMarket(ctx context.Context, req *v2.GetMarketR
 
 	market, err := t.marketService.GetByID(ctx, req.MarketId)
 	if err != nil {
-		return nil, apiError(codes.Internal, err)
+		// Show a relevant error here -> no such market exists.
+		return nil, apiError(codes.NotFound, err)
 	}
 
 	return &v2.GetMarketResponse{

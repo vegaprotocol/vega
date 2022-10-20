@@ -33,6 +33,7 @@
 - [6519](https://github.com/vegaprotocol/vega/issues/6519) - Fix errors in the ledger entries `GraphQL` query.
 - [6515](https://github.com/vegaprotocol/vega/issues/6515) - Required properties in OpenRPC documentation are marked as such
 - [6234](https://github.com/vegaprotocol/vega/issues/6234) - Fix response in query for oracle data spec by id
+- [6294](https://github.com/vegaprotocol/vega/issues/6294) - Fix response for query for non-existing market
 
 ## 0.58.0
 
