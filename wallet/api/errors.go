@@ -75,6 +75,7 @@ var (
 	ErrNetworkNameIsRequired                              = errors.New("the network name is required")
 	ErrNetworkOrNodeAddressIsRequired                     = errors.New("a network or a node address is required")
 	ErrNetworkSourceIsRequired                            = errors.New("a network source is required")
+	ErrNewNameIsRequired                                  = errors.New("the new name is required")
 	ErrNextAndCurrentPublicKeysCannotBeTheSame            = errors.New("the next and current public keys cannot be the same")
 	ErrNextPublicKeyDoesNotExist                          = errors.New("the next public key does not exist")
 	ErrNextPublicKeyIsRequired                            = errors.New("the next public key is required")

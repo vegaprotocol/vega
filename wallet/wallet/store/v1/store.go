@@ -45,6 +45,17 @@ func (s *Store) DeleteWallet(ctx context.Context, name string) error {
 	return os.Remove(walletPath)
 }
 
+func (s *Store) RenameWallet(ctx context.Context, currentName, newName string) error {
+	if err := checkContextStatus(ctx); err != nil {
+		return err
+	}
+
+	currentWalletPath := s.walletPath(currentName)
+	newWalletPath := s.walletPath(newName)
+
+	return os.Rename(currentWalletPath, newWalletPath)
+}
+
 func (s *Store) WalletExists(ctx context.Context, name string) (bool, error) {
 	if err := checkContextStatus(ctx); err != nil {
 		return false, err
