@@ -8,6 +8,7 @@
 - [6477](https://github.com/vegaprotocol/vega/issues/6477) - Allow the user to specify a different passphrase when isolating a key
 - [6549](https://github.com/vegaprotocol/vega/issues/6549) - Output from `nodewallet reload` is now more useful `json`
 - [6458](https://github.com/vegaprotocol/vega/issues/6458) - Rename `GetMultiSigSigner...Bundles API` functions to `ListMultiSigSigner...Bundles` to be consistent with `v2 APIs`
+- [6506](https://github.com/vegaprotocol/vega/issues/6506) - Swap places of PID and date in log files in the wallet service
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
