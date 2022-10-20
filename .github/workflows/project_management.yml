@@ -1,26 +1,21 @@
 ---
 
 
-name: 'Project Board Automation'
+name: "Project Board Automation"
 
 "on":
-  pull_request:
-    branches: [develop, master]
-    types: [synchronize, opened, reopened, labeled, unlabeled, ready_for_review, review_requested, converted_to_draft, closed]
   pull_request_target:
     branches: [develop, master]
     types: [synchronize, opened, reopened, labeled, unlabeled, ready_for_review, review_requested, converted_to_draft, closed]
   pull_request_review:
     types: [submitted]
-  pull_request_review_comment:
-    types: [created]
 
 # Configure the project specific variables
 env:
   ORGANIZATION: vegaprotocol
   PROJECT_NUMBER: 106
   PR_URL: ${{ github.event.pull_request.html_url }}
-  GITHUB_TOKEN: ${{ secrets.GH_NEW_CARD_TO_PROJECT }}
+  GH_TOKEN: ${{ secrets.GH_NEW_CARD_TO_PROJECT }}
   EXCLUDE_LABEL: 'no-issue'
   IN_PROGRESS_COLUMN_NAME: '"In Progress"'
   REVIEW_REQUIRED_COLUMN_NAME: '"Waiting Review"'
@@ -36,7 +31,7 @@ concurrency:
 
 jobs:
   project-board-automation:
-    name: 'Linked Issues & Project Board Automation'
+    name: "Linked Issues & Project Board Automation"
     runs-on: ubuntu-latest
     permissions: write-all
     outputs:
@@ -46,10 +41,10 @@ jobs:
       ## Gather data, reopen closed issues and ensure work item is on the board
       #######
       # yamllint disable rule:line-length
-      - name: 'Get linked issue id and state'
+      - name: "Get linked issue id and state"
         id: linked-issue
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_NEW_CARD_TO_PROJECT }}
+          GH_TOKEN: ${{ secrets.GH_NEW_CARD_TO_PROJECT }}
         run: |
           gh api graphql -f query='
             query($pr_url: URI!) {
@@ -66,15 +61,15 @@ jobs:
             }'  -f pr_url=$PR_URL > data.json
           echo 'LINKED_ISSUE_STATE='$(jq '.data.resource.closingIssuesReferences.nodes[] | .state' data.json) >> $GITHUB_ENV
           echo 'LINKED_ISSUE_ID='$(jq '.data.resource.closingIssuesReferences.nodes[] | .id' data.json) >> $GITHUB_ENV
-      - name: 'Check if PR raised by bot'
+      - name: "Check if PR raised by bot"
         id: bot-pr
         if: |
           ((startsWith(github.head_ref, 'renovate/') == true || startsWith(github.head_ref, 'dependabot/') == true)
            || (github.actor == 'dependabot[bot]' || github.actor == 'renovate[bot]'))
         run: |
           echo 'BOT_PR=true' >> $GITHUB_ENV
-          echo "is-bot=1" >> $GITHUB_ENV
-      - name: 'Check for linked issue'
+          echo "is-bot=true" >> $GITHUB_OUTPUT
+      - name: "Check for linked issue"
         id: linked
         if: |
           env.LINKED_ISSUE_ID != '' &&
@@ -84,7 +79,7 @@ jobs:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
             console.log("Linked Issue Found!");
-      - name: 'Check for linked issue exclusion label'
+      - name: "Check for linked issue exclusion label"
         id: exclude-linked
         if: |
           steps.bot-pr.outcome == 'success' || env.LINKED_ISSUE_ID == '' &&
@@ -94,7 +89,7 @@ jobs:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
             console.log("Exclusion label added, or a bot-PR no linked issue required!");
-      - name: 'Fail if no linked issue or exclusion label'
+      - name: "Fail if no linked issue or exclusion label"
         id: exclude-linked-error
         if: steps.linked.outcome == 'skipped' && steps.exclude-linked.outcome == 'skipped'
         uses: actions/github-script@v6.1.1
@@ -103,7 +98,7 @@ jobs:
           script: |
             console.log("No linked issue or exclusion label!");
             core.setFailed("Link an issue and rerun, or, add the exclusion label!");
-      - name: 'Fail if linked issue AND exclusion label'
+      - name: "Fail if linked issue AND exclusion label"
         id: linked-and-nochangelog
         if: steps.linked.outcome == 'success' && steps.exclude-linked.outcome == 'success'
         uses: actions/github-script@v6.1.1
@@ -112,7 +107,7 @@ jobs:
           script: |
             console.log("Remove exclusion label, linked issue found!");
             core.setFailed("Remove exclusion label, linked issue found!");
-      - name: 'Get project related data'
+      - name: "Get project related data"
         id: project-data
         run: |
           gh api graphql -f query='
@@ -159,8 +154,7 @@ jobs:
           echo 'DONE_COLUMN='$(jq --arg done ${{ env.DONE_COLUMN_NAME }} '.data.organization.projectV2.fields.nodes[] | select(.name== "Status") | .options[] | select(.name==$done) | .id' data.json) >> $GITHUB_ENV
           echo 'ITERATION_FIELD_ID='$(jq --arg iteration_field_name $ITERATION_FIELD_NAME '.data.organization.projectV2.fields.nodes[] | select(.name==$iteration_field_name) | .id' data.json) >> $GITHUB_ENV
           echo 'CURRENT_ITERATION='$(jq --arg iteration_field_name $ITERATION_FIELD_NAME '.data.organization.projectV2.fields.nodes[] | select(.name==$iteration_field_name) | .configuration.iterations[0] | .id' data.json) >> $GITHUB_ENV
-
-      - name: 'Get PR state, review decision and author'
+      - name: "Get PR state, review decision and author"
         id: pr-status
         run: |
           gh api graphql -f query='
@@ -189,16 +183,14 @@ jobs:
                 }
               }
             }'  -f pr_url=$PR_URL > data.json
-          echo 'REVIEWS_COUNT='$(jq '[.data.resource.reviewThreads.edges[] | .node | select(.isResolved != null) | length] | add' data.json) >> $GITHUB_ENV
-          echo 'OPEN_REVIEW_COUNT='$(jq '[.data.resource.reviewThreads.edges[] | .node | select(.isResolved == false) | length] | add' data.json) >> $GITHUB_ENV
           echo 'REVIEW_DECISION='$(jq '.data.resource | .reviewDecision' data.json) >> $GITHUB_ENV
-          echo 'NUM_REVIEWS='$(jq '.data.resource.reviews | .totalCount' data.json) >> $GITHUB_ENV
+          echo 'NUM_REVIEWS='$(jq '.data.resource.reviews.nodes | length' data.json) >> $GITHUB_ENV
           echo 'LATEST_REVIEW_STATE='$(jq '.data.resource.reviews.nodes[] | .state' data.json) >> $GITHUB_ENV
           echo 'IS_PR_DRAFT='$(jq '.data.resource | .isDraft' data.json) >> $GITHUB_ENV
           echo 'PR_STATE='$(jq '.data.resource | .state' data.json) >> $GITHUB_ENV
           echo 'PR_ID='$(jq '.data.resource | .id' data.json) >> $GITHUB_ENV
           echo 'AUTHOR_NAME='$(jq '.data.resource.author | .login' data.json) >> $GITHUB_ENV
-      - name: 'Get PR author id'
+      - name: "Get PR author id"
         id: pr-author
         if: steps.pr-status.outcome == 'success'
         run: |
@@ -215,7 +207,7 @@ jobs:
               }
             }'  -f author_name=$AUTHOR_NAME > data.json
           echo 'AUTHOR_ID='$(jq '.data.search.edges[] | .node | .id' data.json) >> $GITHUB_ENV
-      - name: 'Add linked issue to the project'
+      - name: "Add linked issue to the project"
         id: issue-to-project
         if: |
           env.LINKED_ISSUE_ID != '' &&
@@ -230,7 +222,7 @@ jobs:
               }
             }' -f project=$PROJECT_ID -f issue=$LINKED_ISSUE_ID --jq '.data.addProjectV2ItemById.item.id')"
           echo 'BOARD_ITEM_ID='$issue_item_id >> $GITHUB_ENV
-      - name: 'Add exclusion labeled PR to the project'
+      - name: "Add exclusion labeled PR to the project"
         id: pr-to-project
         if: |
           steps.issue-to-project.outcome == 'skipped' &&
@@ -245,7 +237,7 @@ jobs:
               }
             }' -f project=$PROJECT_ID -f pr=$PR_ID --jq '.data.addProjectV2ItemById.item.id')"
           echo 'BOARD_ITEM_ID='$pr_item_id >> $GITHUB_ENV
-      - name: 'Add BOT PR to the project'
+      - name: "Add BOT PR to the project"
         id: bot-pr-to-project
         if: steps.bot-pr.outcome == 'success'
         run: |
@@ -258,7 +250,7 @@ jobs:
               }
             }' -f project=$PROJECT_ID -f pr=$PR_ID --jq '.data.addProjectV2ItemById.item.id')"
           echo 'BOARD_ITEM_ID='$pr_item_id >> $GITHUB_ENV
-      - name: 'Reopen if the linked issue closed'
+      - name: "Reopen if the linked issue closed"
         id: reopen-issue
         if: steps.issue-to-project.outcome == 'success' && env.LINKED_ISSUE_STATE == '"CLOSED"' && env.PR_STATE != '"MERGED"'
         run: |
@@ -276,43 +268,45 @@ jobs:
       #######
       ## Set the variables ready to update work item on project board
       #######
-      - name: 'Set draft work item for progress column'
+      - name: "Set draft work item for progress column"
         id: draft-pr
         if: github.event.pull_request.draft == 'true' || env.IS_PR_DRAFT == 'true'
         run: |
           echo 'ITEM_ID='${{  env.BOARD_ITEM_ID }} >> $GITHUB_ENV
           echo 'CURRENT_ITERATION='$CURRENT_ITERATION >> $GITHUB_ENV
           echo 'CURRENT_STATUS='${{ env.IN_PROGRESS_COLUMN }} >> $GITHUB_ENV
-      - name: 'Set work item for review required column'
+      - name: "Set work item for review required column"
         id: review-required
         if: |
           github.event.action == 'ready_for_review' ||
-           env.IS_PR_DRAFT != 'true' && env.REVIEWS_COUNT == 'null'
+           env.IS_PR_DRAFT != 'true' && env.NUM_REVIEWS == 0 && env.REVIEW_DECISION == '"REVIEW_REQUIRED"'
         run: |
           echo 'ITEM_ID='${{  env.BOARD_ITEM_ID }} >> $GITHUB_ENV
           echo 'CURRENT_STATUS='${{ env.REVIEW_REQUIRED_COLUMN }} >> $GITHUB_ENV
-      - name: 'Set work item for in review column'
+      - name: "Set work item for in review column"
         id: changes-requested
         if: |
-          (steps.draft-pr.outcome == 'skipped' && env.REVIEWS_COUNT != 'null' &&
+          (steps.draft-pr.outcome == 'skipped' && env.NUM_REVIEWS > 0 &&
            (env.REVIEW_DECISION == '"CHANGES_REQUESTED"' || env.LATEST_REVIEW_STATE == '"COMMENTED"'
            || env.LATEST_REVIEW_STATE == '"DISMISSED"'))
         run: |
           echo 'ITEM_ID='${{  env.BOARD_ITEM_ID }} >> $GITHUB_ENV
           echo 'CURRENT_STATUS='${{ env.IN_REVIEW_COLUMN }} >> $GITHUB_ENV
-      - name: 'Set work item for approved column'
+      - name: "Set work item for approved column"
         id: approved
-        if: steps.draft-pr.outcome == 'skipped' && env.REVIEW_DECISION == '"APPROVED"'
+        if: |
+          (steps.draft-pr.outcome == 'skipped' && (env.REVIEW_DECISION == '"APPROVED"'
+           || env.LATEST_REVIEW_STATE == '"APPROVED"'))
         run: |
           echo 'ITEM_ID='${{  env.BOARD_ITEM_ID }} >> $GITHUB_ENV
           echo 'CURRENT_STATUS='${{ env.APPROVED_COLUMN }} >> $GITHUB_ENV
-      - name: 'Set work item for merged column'
+      - name: "Set work item for merged column"
         id: merged
         if: env.PR_STATE == '"MERGED"' || github.event.pull_request.merged == true
         run: |
           echo 'ITEM_ID='${{  env.BOARD_ITEM_ID }} >> $GITHUB_ENV
           echo 'CURRENT_STATUS='${{ env.MERGED_COLUMN }} >> $GITHUB_ENV
-      - name: 'Close linked issue when PR mergd'
+      - name: "Close linked issue when PR merged"
         id: close-issue
         if: steps.merged.outcome == 'success' && steps.linked.outcome == 'success'
         run: |
@@ -324,13 +318,13 @@ jobs:
                 }
               }
             }' -f clientMutationId=$AUTHOR_ID -f issueId=$LINKED_ISSUE_ID
-      - name: 'Set closed PR for done column'
+      - name: "Set closed PR for done column"
         id: closed-pr
         if: steps.exclude-linked.outcome == 'success' && github.event.pull_request.closed == true
         run: |
           echo 'ITEM_ID='${{  env.BOARD_ITEM_ID }} >> $GITHUB_ENV
           echo 'CURRENT_STATUS='${{ env.DONE_COLUMN }} >> $GITHUB_ENV
-      - name: 'Set closed PR issue to in progress column'
+      - name: "Set closed PR issue to in progress column"
         id: closed-pr-with-issue
         if: steps.linked.outcome == 'success' && github.event.pull_request.merged == true && env.PR_STATE != '"MERGED"'
         run: |
@@ -380,43 +374,36 @@ jobs:
               -f status_value=${{ env.CURRENT_STATUS }} \
               -f iteration_field=$ITERATION_FIELD_ID \
               -f iteration_value=${{ env.CURRENT_ITERATION }}
-  verify-changelog-updated2:
-    name: "Verify CHANGELOG Updated 2"
+  verify-changelog-updated:
+    name: "Verify CHANGELOG Updated"
     needs: project-board-automation
     runs-on: ubuntu-latest
-    env:
-      IS_BOT: ${{needs.project-board-automation.outputs.bot-pr-output}}
+    if: |
+      github.event.pull_request.draft != true
+       && contains(github.event.pull_request.labels.*.name, 'no-changelog') != true
     steps:
-      - run: env
-      - name: "Check bot 2"
-        id: check-bot-2
-        if: env.IS_BOT == '1'
-        run: echo "pull request opened by bot"
-      - name: "No changelog required 2"
-        id: changelog-excluded-2
-        if: github.event.pull_request.draft == true || contains(github.event.pull_request.labels.*.name, 'no-changelog') == true
-        run: echo "changelog requirment excluded"
-      - name: "Checkout 2"
-        id: checkout-2
-        if: steps.check-bot-2.outcome == 'skipped' && steps.changelog-excluded-2.outcome == 'skipped'
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - name: "Check changelog entry 2"
-        shell: pwsh
-        id: check_file_changed
-        if: steps.checkout-2.outcome == 'success'
-        run: |
-          $diff = git diff --name-only HEAD^ HEAD
-          $SourceDiff = $diff | Where-Object { $_ -match 'CHANGELOG.md' }
-          $HasDiff = $SourceDiff.Length -gt 0
-          echo "changelog_changed=$HasDiff" >> $GITHUB_ENV
-      - name: "Report fail"
-        if: steps.check_file_changed.outputs.changelog_changed != 'True' && steps.check_file_changed.outcome == 'success'
-        uses: actions/github-script@v6.1.0
+      - name: "Check if PR raised by bot"
+        id: bot-no-changelog
+        if: |
+          ((startsWith(github.head_ref, 'renovate/') == true || startsWith(github.head_ref, 'dependabot/') == true)
+           || (github.actor == 'dependabot[bot]' || github.actor == 'renovate[bot]'))
+        uses: actions/github-script@v6.3.3
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
-            console.log("Changelog should be updated, or if a small fix the 'no-changelog label used!");
-            core.setFailed("Changelog should be updated, or if a small fix the 'no-changelog label used!");
+            console.log("A bot-PR so excluded from changelog!");
+      - name: "Checkout"
+        id: checkout
+        if: steps.bot-no-changelog.outcome == 'skipped'
+        uses: actions/checkout@v3
+      - name: "Check changelog entry"
+        id: check-changelog
+        if: steps.checkout.outcome == 'success'
+        uses: Zomzog/changelog-checker@v1.2.0
+        with:
+          fileName: CHANGELOG.md
+          noChangelogLabel: "no-changelog"
+          checkNotification: Simple
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         # yamllint enable rule:line-length
