@@ -1,7 +1,21 @@
 # Changelog
 
+## Unreleased 0.60.0
 
-## Unreleased 0.59.0
+### 🚨 Breaking changes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🗑️ Deprecation
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🛠 Improvements
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+
+## 0.59.0
 
 ### 🚨 Breaking changes
 - [6505](https://github.com/vegaprotocol/vega/issues/6505) - Allow negative position decimal places for market
@@ -9,9 +23,6 @@
 - [6549](https://github.com/vegaprotocol/vega/issues/6549) - Output from `nodewallet reload` is now more useful `json`
 - [6458](https://github.com/vegaprotocol/vega/issues/6458) - Rename `GetMultiSigSigner...Bundles API` functions to `ListMultiSigSigner...Bundles` to be consistent with `v2 APIs`
 - [6506](https://github.com/vegaprotocol/vega/issues/6506) - Swap places of PID and date in log files in the wallet service
-
-### 🗑️ Deprecation
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
 - [6080](https://github.com/vegaprotocol/vega/issues/6080) - Data-node handles upgrade block and ensures data is persisted before upgrade

@@ -10,7 +10,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/blockexplorer/api/v1";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Vega block explorer APIs";
-    version: "v0.59.0+dev";
+    version: "v0.59.0";
   }
   schemes: [HTTP, HTTPS]
   host: "lb.testnet.vega.xyz"
@@ -72,4 +72,3 @@ message Transaction {
   // The actual command of the transaction
   vega.commands.v1.InputData command = 8;
 }
-
