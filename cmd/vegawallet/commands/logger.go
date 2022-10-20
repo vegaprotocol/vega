@@ -68,7 +68,7 @@ func BuildJSONLogger(level string, vegaPaths paths.Paths, logsDir paths.StatePat
 
 	pid := os.Getpid()
 	date := time.Now().UTC().Format("2006-01-02-15-04-05")
-	pathSuffix := fmt.Sprintf("%d-%s.log", pid, date)
+	pathSuffix := fmt.Sprintf("%s-%d.log", date, pid)
 
 	logFile := paths.JoinStatePath(logsDir, pathSuffix)
 	appLogPath, err := vegaPaths.CreateStatePathFor(logFile)
