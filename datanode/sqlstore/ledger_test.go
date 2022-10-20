@@ -198,8 +198,8 @@ func TestLedger(t *testing.T) {
 	t.Run("ledger entries with no filters", func(t *testing.T) {
 		// Set filters for AccountFrom and AcountTo IDs
 		filter := &entities.LedgerEntryFilter{
-			AccountFromFilters: []entities.AccountFilter{},
-			AccountToFilters:   []entities.AccountFilter{},
+			AccountFromFilter: entities.AccountFilter{},
+			AccountToFilter:   entities.AccountFilter{},
 		}
 
 		entries, _, err := ledgerStore.Query(
@@ -209,24 +209,20 @@ func TestLedger(t *testing.T) {
 			entities.CursorPagination{},
 		)
 
-		assert.NoError(t, err)
+		assert.ErrorIs(t, err, sqlstore.ErrLedgerEntryFilterForParty)
 		// Output entries for accounts positions:
-		// *
-		assert.Equal(t, 13, len(*entries))
+		// None
+		assert.Nil(t, entries)
 	})
 
 	t.Run("query ledger entries with filters", func(t *testing.T) {
 		t.Run("by accountFrom filter", func(t *testing.T) {
 			// Set filters for AccountFrom and AcountTo IDs
 			filter := &entities.LedgerEntryFilter{
-				AccountFromFilters: []entities.AccountFilter{
-					{AssetID: asset1.ID},
-					{
-						AssetID:  asset2.ID,
-						PartyIDs: []entities.PartyID{parties[3].ID},
-					},
+				AccountFromFilter: entities.AccountFilter{
+					AssetID: asset1.ID,
 				},
-				AccountToFilters: []entities.AccountFilter{},
+				AccountToFilter: entities.AccountFilter{},
 			}
 
 			entries, _, err := ledgerStore.Query(
@@ -236,28 +232,38 @@ func TestLedger(t *testing.T) {
 				entities.CursorPagination{},
 			)
 
+			assert.ErrorIs(t, err, sqlstore.ErrLedgerEntryFilterForParty)
+			// Output entries for accounts positions:
+			// None
+			assert.Nil(t, entries)
+
+			filter.AccountFromFilter.PartyIDs = []entities.PartyID{parties[3].ID}
+			entries, _, err = ledgerStore.Query(
+				filter,
+				&sqlstore.GroupOptions{},
+				entities.DateRange{Start: &tStart, End: &tEnd},
+				entities.CursorPagination{},
+			)
+
 			assert.NoError(t, err)
 			// Output entries for accounts positions:
-			// 0->1, 2->3
+			// 0
+			assert.Equal(t, 0, len(*entries))
+
+			filter.AccountFromFilter.AssetID = asset2.ID
+			entries, _, err = ledgerStore.Query(
+				filter,
+				&sqlstore.GroupOptions{},
+				entities.DateRange{Start: &tStart, End: &tEnd},
+				entities.CursorPagination{},
+			)
+
+			assert.NoError(t, err)
+			// Output entries for accounts positions:
 			// 6->7, 6->7, 6->7
-			assert.Equal(t, 5, len(*entries))
+			assert.Equal(t, 3, len(*entries))
 
-			filter.AccountFromFilters[1].PartyIDs = append(filter.AccountFromFilters[1].PartyIDs, parties[4].ID)
-
-			entries, _, err = ledgerStore.Query(
-				filter,
-				&sqlstore.GroupOptions{},
-				entities.DateRange{Start: &tStart, End: &tEnd},
-				entities.CursorPagination{},
-			)
-
-			assert.NoError(t, err)
-			// Output entries for accounts positions:
-			// 0->1, 2->3
-			// 6->7, 6->7, 6->7, 8->9
-			assert.Equal(t, 6, len(*entries))
-
-			filter.AccountFromFilters[1].AccountTypes = []vega.AccountType{vega.AccountType_ACCOUNT_TYPE_GENERAL}
+			filter.AccountFromFilter.PartyIDs = append(filter.AccountFromFilter.PartyIDs, parties[4].ID)
 
 			entries, _, err = ledgerStore.Query(
 				filter,
@@ -266,22 +272,34 @@ func TestLedger(t *testing.T) {
 				entities.CursorPagination{},
 			)
 
-			assert.NoError(t, err)
+			assert.ErrorIs(t, err, sqlstore.ErrLedgerEntryFilterForParty)
 			// Output entries for accounts positions:
-			// 0->1, 2->3
-			assert.Equal(t, 2, len(*entries))
+			// None
+			assert.Nil(t, entries)
+
+			filter.AccountFromFilter.PartyIDs = []entities.PartyID{}
+			filter.AccountFromFilter.AccountTypes = []vega.AccountType{vega.AccountType_ACCOUNT_TYPE_GENERAL}
+
+			entries, _, err = ledgerStore.Query(
+				filter,
+				&sqlstore.GroupOptions{},
+				entities.DateRange{Start: &tStart, End: &tEnd},
+				entities.CursorPagination{},
+			)
+
+			assert.ErrorIs(t, err, sqlstore.ErrLedgerEntryFilterForParty)
+			// Output entries for accounts positions:
+			// None
+			assert.Nil(t, entries)
 		})
 
 		t.Run("by accountTo filter", func(t *testing.T) {
 			// Set filters for AccountFrom and AcountTo IDs
 			filter := &entities.LedgerEntryFilter{
-				AccountFromFilters: []entities.AccountFilter{},
-				AccountToFilters: []entities.AccountFilter{
-					{AssetID: asset1.ID},
-					{
-						AssetID:  asset2.ID,
-						PartyIDs: []entities.PartyID{parties[3].ID},
-					},
+				AccountFromFilter: entities.AccountFilter{},
+				AccountToFilter: entities.AccountFilter{
+					AssetID:  asset2.ID,
+					PartyIDs: []entities.PartyID{parties[3].ID},
 				},
 			}
 
@@ -294,26 +312,10 @@ func TestLedger(t *testing.T) {
 
 			assert.NoError(t, err)
 			// Output entries for accounts positions:
-			// 0->1, 2->3
 			// 6->7, 6->7, 6->7
-			assert.Equal(t, 5, len(*entries))
+			assert.Equal(t, 3, len(*entries))
 
-			filter.AccountToFilters[1].PartyIDs = append(filter.AccountToFilters[1].PartyIDs, parties[4].ID)
-
-			entries, _, err = ledgerStore.Query(
-				filter,
-				&sqlstore.GroupOptions{},
-				entities.DateRange{Start: &tStart, End: &tEnd},
-				entities.CursorPagination{},
-			)
-
-			assert.NoError(t, err)
-			// Output entries for accounts positions:
-			// 0->1, 2->3
-			// 6->7, 6->7, 6->7, 8->9
-			assert.Equal(t, 6, len(*entries))
-
-			filter.AccountToFilters[1].AccountTypes = []vega.AccountType{vega.AccountType_ACCOUNT_TYPE_GENERAL, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY}
+			filter.AccountToFilter.AccountTypes = []vega.AccountType{vega.AccountType_ACCOUNT_TYPE_GENERAL, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY}
 
 			entries, _, err = ledgerStore.Query(
 				filter,
@@ -324,21 +326,19 @@ func TestLedger(t *testing.T) {
 
 			assert.NoError(t, err)
 			// Output entries for accounts positions:
-			// 0->1, 2->3
-			assert.Equal(t, 2, len(*entries))
+			// None
+			assert.Equal(t, 0, len(*entries))
 		})
 
 		t.Run("by accountFrom+accountTo filters", func(t *testing.T) {
 			t.Run("open", func(t *testing.T) {
 				// Set filters for AccountFrom and AcountTo IDs
 				filter := &entities.LedgerEntryFilter{
-					AccountFromFilters: []entities.AccountFilter{
-						{AssetID: asset1.ID},
-						{AssetID: asset2.ID},
+					AccountFromFilter: entities.AccountFilter{
+						AssetID: asset1.ID,
 					},
-					AccountToFilters: []entities.AccountFilter{
-						{AssetID: asset2.ID},
-						{AssetID: asset3.ID},
+					AccountToFilter: entities.AccountFilter{
+						AssetID: asset3.ID,
 					},
 				}
 
@@ -349,14 +349,12 @@ func TestLedger(t *testing.T) {
 					entities.CursorPagination{},
 				)
 
-				assert.NoError(t, err)
+				assert.ErrorIs(t, err, sqlstore.ErrLedgerEntryFilterForParty)
 				// Output entries for accounts positions:
-				// 0->1, 2->3
-				// 4->5, 6->7, 6->7, 6->7, 8->9, 5->10, 5->11, 10->11
-				// 14->16, 17->15, 21->15
-				assert.Equal(t, 13, len(*entries))
+				// None
+				assert.Nil(t, entries)
 
-				filter.AccountToFilters[1].PartyIDs = append(filter.AccountToFilters[1].PartyIDs, []entities.PartyID{parties[3].ID, parties[4].ID}...)
+				filter.AccountToFilter.PartyIDs = append(filter.AccountToFilter.PartyIDs, []entities.PartyID{parties[4].ID}...)
 				entries, _, err = ledgerStore.Query(
 					filter,
 					&sqlstore.GroupOptions{},
@@ -367,12 +365,9 @@ func TestLedger(t *testing.T) {
 				assert.NoError(t, err)
 				// Output entries for accounts positions:
 				// 0->1, 2->3
-				// 4->5, 6->7, 6->7, 6->7, 8->9
-				// 14->16, 17->15, 21->15
-				assert.Equal(t, 10, len(*entries))
+				assert.Equal(t, 2, len(*entries))
 
-				filter.AccountToFilters[1].AccountTypes = []vega.AccountType{vega.AccountType_ACCOUNT_TYPE_GENERAL, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY}
-
+				filter.AccountToFilter.AccountTypes = []vega.AccountType{vega.AccountType_ACCOUNT_TYPE_GENERAL, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY}
 				entries, _, err = ledgerStore.Query(
 					filter,
 					&sqlstore.GroupOptions{},
@@ -383,22 +378,16 @@ func TestLedger(t *testing.T) {
 				assert.NoError(t, err)
 				// Output entries for accounts positions:
 				// 0->1, 2->3
-				// 4->5, 6->7, 6->7, 6->7, 8->9
-				// 14->16, 17->15, 21->15
-				assert.Equal(t, 10, len(*entries))
+				assert.Equal(t, 2, len(*entries))
 			})
 
 			t.Run("closed", func(t *testing.T) {
 				// Set filters for AccountFrom and AcountTo IDs
 				filter := &entities.LedgerEntryFilter{
-					AccountFromFilters: []entities.AccountFilter{
-						{AssetID: asset1.ID},
-						{AssetID: asset2.ID},
+					AccountFromFilter: entities.AccountFilter{
+						AssetID: asset2.ID,
 					},
-					AccountToFilters: []entities.AccountFilter{
-						{AssetID: asset2.ID},
-						{AssetID: asset3.ID},
-					},
+					AccountToFilter: entities.AccountFilter{},
 				}
 
 				filter.CloseOnAccountFilters = true
@@ -409,13 +398,26 @@ func TestLedger(t *testing.T) {
 					entities.CursorPagination{},
 				)
 
+				assert.ErrorIs(t, err, sqlstore.ErrLedgerEntryFilterForParty)
+				// Output entries for accounts positions:
+				// None
+				assert.Nil(t, entries)
+
+				filter.AccountFromFilter.PartyIDs = []entities.PartyID{parties[5].ID}
+				entries, _, err = ledgerStore.Query(
+					filter,
+					&sqlstore.GroupOptions{},
+					entities.DateRange{Start: &tStart, End: &tEnd},
+					entities.CursorPagination{},
+				)
+
 				assert.NoError(t, err)
 				// Output entries for accounts positions -> should output transfers for asset2 only:
-				// 4->5, 6->7, 6->7, 6->7, 8->9, 5->10, 5->11, 10->11
-				assert.Equal(t, 8, len(*entries))
+				// 10->11
+				assert.Equal(t, 1, len(*entries))
 
 				// Add some grouping options
-				filter.AccountToFilters = append(filter.AccountToFilters, []entities.AccountFilter{{AssetID: asset3.ID}}...)
+				filter.AccountToFilter = entities.AccountFilter{AssetID: asset3.ID}
 				entries, _, err = ledgerStore.Query(
 					filter,
 					&sqlstore.GroupOptions{
@@ -427,11 +429,12 @@ func TestLedger(t *testing.T) {
 
 				assert.NoError(t, err)
 				// Output entries for accounts positions:
-				// 4->5, 6->7, 6->7, 6->7, 8->9, 10->11, 5->10, 5->11 - ACCOUNT_TYPE_INSURANCE
-				assert.Equal(t, 8, len(*entries))
+				// None
+				assert.Equal(t, 0, len(*entries))
 
-				filter.AccountToFilters[1].AccountTypes = []vega.AccountType{vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY}
-
+				filter.AccountFromFilter = entities.AccountFilter{AssetID: asset3.ID}
+				filter.AccountFromFilter.PartyIDs = []entities.PartyID{parties[7].ID}
+				filter.AccountToFilter.AccountTypes = []vega.AccountType{vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY}
 				entries, _, err = ledgerStore.Query(
 					filter,
 					&sqlstore.GroupOptions{},
@@ -441,8 +444,8 @@ func TestLedger(t *testing.T) {
 
 				assert.NoError(t, err)
 				// Output entries for accounts positions:
-				// 4->5, 6->7, 6->7, 6->7, 8->9, 10->11, 5->10, 5->11
-				assert.Equal(t, 8, len(*entries))
+				// 14->16
+				assert.Equal(t, 1, len(*entries))
 			})
 		})
 
@@ -450,13 +453,12 @@ func TestLedger(t *testing.T) {
 			// open on account filters
 			// Set filters for AccountFrom and AcountTo IDs
 			filter := &entities.LedgerEntryFilter{
-				AccountFromFilters: []entities.AccountFilter{
-					{AssetID: asset1.ID},
-					{AssetID: asset2.ID},
+				AccountFromFilter: entities.AccountFilter{
+					AssetID:  asset2.ID,
+					PartyIDs: []entities.PartyID{parties[8].ID},
 				},
-				AccountToFilters: []entities.AccountFilter{
-					{AssetID: asset2.ID},
-					{AssetID: asset3.ID},
+				AccountToFilter: entities.AccountFilter{
+					AssetID: asset3.ID,
 				},
 				TransferTypes: []entities.LedgerMovementType{
 					entities.LedgerMovementTypeDeposit,
@@ -471,9 +473,9 @@ func TestLedger(t *testing.T) {
 			)
 
 			assert.NoError(t, err)
-			// Output entries for accounts positions -> should output transfers for asset2 only:
-			// 8->9, 10->11, 14->16, 17->15, 21->15
-			assert.Equal(t, 5, len(*entries))
+			// Output entries for accounts positions -> should output transfers for asset3 only:
+			// 14->16, 17->15, 21->15
+			assert.Equal(t, 3, len(*entries))
 
 			// closed on account filters
 			filter.CloseOnAccountFilters = true
@@ -485,15 +487,13 @@ func TestLedger(t *testing.T) {
 			)
 
 			assert.NoError(t, err)
-			// Output entries for accounts positions -> should output transfers for asset2 only:
-			// 8->9, 10->11
-			assert.Equal(t, 2, len(*entries))
+			// Output entries for accounts positions:
+			// None
+			assert.Equal(t, 0, len(*entries))
 
-			filter.AccountToFilters = []entities.AccountFilter{
-				{
-					AssetID:      asset3.ID,
-					AccountTypes: []vega.AccountType{vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY},
-				},
+			filter.AccountToFilter = entities.AccountFilter{
+				AssetID:      asset3.ID,
+				AccountTypes: []vega.AccountType{vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY},
 			}
 
 			entries, _, err = ledgerStore.Query(
@@ -504,7 +504,7 @@ func TestLedger(t *testing.T) {
 			)
 
 			assert.NoError(t, err)
-			// Output entries for accounts positions -> should output transfers for asset2 only:
+			// Output entries for accounts positions:
 			// 0
 			assert.Equal(t, 0, len(*entries))
 		})

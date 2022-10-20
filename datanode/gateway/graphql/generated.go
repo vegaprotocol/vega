@@ -9938,8 +9938,8 @@ input AccountFilter {
 "Filter for historical entry ledger queries"
 input LedgerEntryFilter {
   CloseOnAccountFilters: Boolean
-  AccountFromFilters: [AccountFilter]
-  AccountToFilters: [AccountFilter]
+  AccountFromFilter: AccountFilter
+  AccountToFilter: AccountFilter
 
   TransferTypes: [TransferType]
 }
@@ -51635,19 +51635,19 @@ func (ec *executionContext) unmarshalInputLedgerEntryFilter(ctx context.Context,
 			if err != nil {
 				return it, err
 			}
-		case "AccountFromFilters":
+		case "AccountFromFilter":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AccountFromFilters"))
-			it.AccountFromFilters, err = ec.unmarshalOAccountFilter2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountFilter(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AccountFromFilter"))
+			it.AccountFromFilter, err = ec.unmarshalOAccountFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountFilter(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "AccountToFilters":
+		case "AccountToFilter":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AccountToFilters"))
-			it.AccountToFilters, err = ec.unmarshalOAccountFilter2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountFilter(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("AccountToFilter"))
+			it.AccountToFilter, err = ec.unmarshalOAccountFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountFilter(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -72367,26 +72367,6 @@ func (ec *executionContext) marshalOAccountField2ᚖcodeᚗvegaprotocolᚗioᚋv
 	}
 	res := marshallers.MarshalAccountField(v)
 	return res
-}
-
-func (ec *executionContext) unmarshalOAccountFilter2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountFilter(ctx context.Context, v interface{}) ([]*v2.AccountFilter, error) {
-	if v == nil {
-		return nil, nil
-	}
-	var vSlice []interface{}
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
-	var err error
-	res := make([]*v2.AccountFilter, len(vSlice))
-	for i := range vSlice {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalOAccountFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountFilter(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
 }
 
 func (ec *executionContext) unmarshalOAccountFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountFilter(ctx context.Context, v interface{}) (*v2.AccountFilter, error) {

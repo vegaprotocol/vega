@@ -367,8 +367,8 @@ input AccountFilter {
 "Filter for historical entry ledger queries"
 input LedgerEntryFilter {
   CloseOnAccountFilters: Boolean
-  AccountFromFilters: [AccountFilter]
-  AccountToFilters: [AccountFilter]
+  AccountFromFilter: AccountFilter
+  AccountToFilter: AccountFilter
 
   TransferTypes: [TransferType]
 }
