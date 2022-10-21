@@ -46,11 +46,16 @@ Feature: test the implementation of market.stake.target.scalingFactor
       | party2 | ETH/MAR22 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-3 |
       | party2 | ETH/MAR22 | sell | 1      | 1010  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-1 |
       | party2 | ETH/MAR22 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2 |
+      | party3 | ETH/MAR22 | sell | 100    | 1010  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-4 |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
       | lp1 | party0 | ETH/MAR22 | 55000             | 0.001 | sell | ASK              | 500        | 17     | amendment |
       | lp1 | party0 | ETH/MAR22 | 55000             | 0.001 | buy  | BID              | 500        | 17     | amendment |
+
+    And the parties cancel the following orders:
+      | party  | reference  |
+      | party3 | sell-ref-4 |
 
     Then the opening auction period ends for market "ETH/MAR22"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR22"
@@ -64,9 +69,11 @@ Feature: test the implementation of market.stake.target.scalingFactor
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
       | party0 | ETH/MAR22 | 79043       | 86947  | 94851   | 110660  |
+      | party3 | ETH/MAR22 | 0           | 0      | 0       | 0       |
     And the parties should have the following account balances:
       | party  | asset | market id | margin  | general   | bond  |
       | party0 | USD   | ETH/MAR22 | 1656013 | 498288987 | 55000 |
+      | party3 | USD   | ETH/MAR22 |       0 | 100000000 |     0 |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
