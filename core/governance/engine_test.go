@@ -50,7 +50,9 @@ type tstEngine struct {
 	markets         *mocks.MockMarkets
 	assets          *mocks.MockAssets
 	netp            *netparams.Store
-	proposalCounter uint // to streamline proposal generation
+	proposalCounter uint                          // to streamline proposal generation
+	tokenBal        map[string]uint64             // party > balance
+	els             map[string]map[string]float64 // market > party > ELS
 }
 
 func TestSubmitProposals(t *testing.T) {
@@ -547,8 +549,8 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 	// setup
 	eng.ensureAllAssetEnabled(t)
 	eng.accounts.EXPECT().GetStakingAssetTotalSupply().AnyTimes().Return(num.NewUint(300))
-	eng.accounts.EXPECT().GetAvailableBalance(partyA).AnyTimes().Return(num.NewUint(200), nil)
-	eng.accounts.EXPECT().GetAvailableBalance(partyB).AnyTimes().Return(num.NewUint(100), nil)
+	eng.tokenBal[partyA] = 200
+	eng.tokenBal[partyB] = 100
 
 	const howMany = 100
 	passed := map[string]*types.Proposal{}
@@ -826,7 +828,7 @@ func getTestEngine(t *testing.T) *tstEngine {
 	eng := governance.NewEngine(log, cfg, accounts, ts, broker, assets, witness, markets, netp)
 	require.NotNil(t, eng)
 
-	return &tstEngine{
+	tEng := &tstEngine{
 		Engine:   eng,
 		ctrl:     ctrl,
 		accounts: accounts,
@@ -836,7 +838,18 @@ func getTestEngine(t *testing.T) *tstEngine {
 		assets:   assets,
 		witness:  witness,
 		netp:     netp,
+		tokenBal: map[string]uint64{},
+		els:      map[string]map[string]float64{},
 	}
+	// ensure the balance is always returned as expected
+	tEng.accounts.EXPECT().GetAvailableBalance(gomock.Any()).AnyTimes().DoAndReturn(func(p string) (*num.Uint, error) {
+		b, ok := tEng.tokenBal[p]
+		if !ok {
+			return nil, errNoBalanceForParty
+		}
+		return num.NewUint(b), nil
+	})
+	return tEng
 }
 
 func newFreeformTerms() *types.ProposalTermsNewFreeform {
@@ -1046,14 +1059,9 @@ func (e *tstEngine) addNoVote(t *testing.T, party, proposal string) error {
 	}, party)
 }
 
-func (e *tstEngine) newValidPartyTimes(partyID string, balance uint64, times int) *types.Party {
-	account := types.Account{
-		ID:      partyID + "-account",
-		Owner:   partyID,
-		Balance: num.NewUint(balance),
-		Asset:   "VOTE",
-	}
-	e.accounts.EXPECT().GetAvailableBalance(partyID).Times(times).Return(account.Balance, nil)
+func (e *tstEngine) newValidPartyTimes(partyID string, balance uint64, _ int) *types.Party {
+	// is called with 0 times, which messes up the expected calls when adding votes
+	e.tokenBal[partyID] = balance
 	return &types.Party{Id: partyID}
 }
 
@@ -1266,7 +1274,7 @@ func (e *tstEngine) ensureStakingAssetTotalSupply(t *testing.T, supply uint64) {
 
 func (e *tstEngine) ensureTokenBalanceForParty(t *testing.T, party string, balance uint64) {
 	t.Helper()
-	e.accounts.EXPECT().GetAvailableBalance(party).Times(1).Return(num.NewUint(balance), nil)
+	e.tokenBal[party] = balance
 }
 
 func (e *tstEngine) ensureAllAssetEnabled(t *testing.T) {
@@ -1281,9 +1289,15 @@ func (e *tstEngine) ensureAllAssetEnabled(t *testing.T) {
 
 func (e *tstEngine) ensureEquityLikeShareForMarketAndParty(t *testing.T, market, party string, share float64) {
 	t.Helper()
+	mels, ok := e.els[market]
+	if !ok {
+		mels = map[string]float64{}
+	}
+	mels[party] = share
+	e.els[market] = mels
 	e.markets.EXPECT().
 		GetEquityLikeShareForMarketAndParty(market, party).
-		Times(1).
+		AnyTimes().
 		Return(num.DecimalFromFloat(share), true)
 }
 
@@ -1312,7 +1326,7 @@ func (e *tstEngine) ensureExistingMarket(t *testing.T, market string) {
 
 func (e *tstEngine) ensureNoAccountForParty(t *testing.T, partyID string) {
 	t.Helper()
-	e.accounts.EXPECT().GetAvailableBalance(partyID).Times(1).Return(nil, errNoBalanceForParty)
+	delete(e.tokenBal, partyID)
 }
 
 func (e *tstEngine) ensureNetworkParameter(t *testing.T, key, value string) {
