@@ -269,8 +269,11 @@ var (
 	// data-node.
 	DataNodeStorageHome = StatePath(filepath.Join(DataNodeStateHome.String(), "storage"))
 
-	// DataNodeSnapshotHome is the folder containing the snapshots of the data-node.
-	DataNodeSnapshotHome = StatePath(filepath.Join(DataNodeStateHome.String(), "snapshots"))
+	// DataNodeEmbeddedPostgresRuntimeDir is the runtime directory for embedded postgres.
+	DataNodeEmbeddedPostgresRuntimeDir = StatePath(filepath.Join(DataNodeStorageHome.String(), "postgres"))
+
+	// DataNodeDeHistoryHome is the folder containing the decentralised history data.
+	DataNodeDeHistoryHome = StatePath(filepath.Join(DataNodeStateHome.String(), "dehistory"))
 
 	// NodeStateHome is the folder containing the state of the node.
 	NodeStateHome = StatePath("node")

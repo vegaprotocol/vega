@@ -62,8 +62,8 @@ type SQLStoreBroker struct {
 	eventSource                  eventSource
 	transactionManager           TransactionManager
 	blockStore                   BlockStore
-	onBlockCommitted             func(ctx context.Context, chainId string, lastCommittedBlockHeight int64) bool
-	chainInfo                    ChainInfoI
+	onBlockCommitted             func(ctx context.Context, chainId string, lastCommittedBlockHeight int64)
+	chainID                      string
 	lastBlock                    *entities.Block
 	slowTimeUpdateTicker         *time.Ticker
 	receivedProtocolUpgradeEvent bool
@@ -73,12 +73,12 @@ type SQLStoreBroker struct {
 func NewSQLStoreBroker(
 	log *logging.Logger,
 	config Config,
-	chainInfo ChainInfoI,
+	chainID string,
 	eventsource eventSource,
 	transactionManager TransactionManager,
 	blockStore BlockStore,
 	protocolUpgradeService *service.ProtocolUpgrade,
-	onBlockCommitted func(ctx context.Context, chainId string, lastCommittedBlockHeight int64) bool,
+	onBlockCommitted func(ctx context.Context, chainId string, lastCommittedBlockHeight int64),
 	subs []SQLBrokerSubscriber,
 ) *SQLStoreBroker {
 	b := &SQLStoreBroker{
@@ -89,7 +89,7 @@ func NewSQLStoreBroker(
 		eventSource:            eventsource,
 		transactionManager:     transactionManager,
 		blockStore:             blockStore,
-		chainInfo:              chainInfo,
+		chainID:                chainID,
 		onBlockCommitted:       onBlockCommitted,
 		slowTimeUpdateTicker:   time.NewTicker(slowTimeUpdateThreshold),
 		protocolUpgradeService: protocolUpgradeService,
@@ -126,17 +126,7 @@ func (b *SQLStoreBroker) Receive(ctx context.Context) error {
 			return err
 		}
 
-		chainID, err := b.chainInfo.GetChainID()
-		if err != nil {
-			return fmt.Errorf("failed to receive events, unable to get chain id:%w", err)
-		}
-
-		if b.onBlockCommitted(ctx, chainID, b.lastBlock.Height) {
-			if b.receivedProtocolUpgradeEvent {
-				b.protocolUpgradeService.SetProtocolUpgradeStarted()
-			}
-			return nil
-		}
+		b.onBlockCommitted(ctx, b.chainID, b.lastBlock.Height)
 
 		if b.receivedProtocolUpgradeEvent {
 			b.protocolUpgradeService.SetProtocolUpgradeStarted()
@@ -318,7 +308,7 @@ func (b *SQLStoreBroker) addBlock(ctx context.Context, block *entities.Block) er
 }
 
 func (b *SQLStoreBroker) handleEvent(ctx context.Context, e events.Event) error {
-	if err := checkChainID(b.chainInfo, e.ChainID()); err != nil {
+	if err := checkChainID(b.chainID, e.ChainID()); err != nil {
 		return err
 	}
 

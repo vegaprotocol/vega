@@ -10,33 +10,33 @@ import (
 	"code.vegaprotocol.io/vega/libs/fs"
 )
 
-type CurrentStateSnapshot struct {
+type CurrentState struct {
 	ChainID string
 	Height  int64
 }
 
 const currentStateSnapshotIdentifier = "currentstatesnapshot"
 
-func NewCurrentSnapshot(chainID string, height int64) CurrentStateSnapshot {
-	return CurrentStateSnapshot{
+func NewCurrentSnapshot(chainID string, height int64) CurrentState {
+	return CurrentState{
 		ChainID: chainID,
 		Height:  height,
 	}
 }
 
-func (s CurrentStateSnapshot) UncompressedDataDir() string {
+func (s CurrentState) UncompressedDataDir() string {
 	return fmt.Sprintf("%s-%d-%s", s.ChainID, s.Height, currentStateSnapshotIdentifier)
 }
 
-func (s CurrentStateSnapshot) CompressedFileName() string {
+func (s CurrentState) CompressedFileName() string {
 	return fmt.Sprintf("%s-%d-%s.tar.gz", s.ChainID, s.Height, currentStateSnapshotIdentifier)
 }
 
-func (s CurrentStateSnapshot) String() string {
+func (s CurrentState) String() string {
 	return fmt.Sprintf("{Current State Snapshot Chain ID:%s Height:%d}", s.ChainID, s.Height)
 }
 
-func (s CurrentStateSnapshot) GetCopySQL(dbMetaData DatabaseMetadata, databaseSnapshotsPath string) []string {
+func (s CurrentState) GetCopySQL(dbMetaData DatabaseMetadata, databaseSnapshotsPath string) []string {
 	var copySQL []string
 	for tableName, meta := range dbMetaData.TableNameToMetaData {
 		if !dbMetaData.TableNameToMetaData[tableName].Hypertable {
@@ -50,13 +50,13 @@ func (s CurrentStateSnapshot) GetCopySQL(dbMetaData DatabaseMetadata, databaseSn
 	return copySQL
 }
 
-func GetCurrentStateSnapshots(snapshotsDir string) (string, map[int64]CurrentStateSnapshot, error) {
-	files, err := os.ReadDir(snapshotsDir)
+func GetCurrentStateSnapshots(dir string) (string, map[int64]CurrentState, error) {
+	files, err := os.ReadDir(dir)
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to get files in snapshot directory:%w", err)
 	}
 
-	currentStateSnapshots := map[int64]CurrentStateSnapshot{}
+	currentStateSnapshots := map[int64]CurrentState{}
 	chainID := ""
 	for _, file := range files {
 		if !file.IsDir() {
@@ -74,10 +74,10 @@ func GetCurrentStateSnapshots(snapshotsDir string) (string, map[int64]CurrentSta
 			}
 
 			if csSnapshot.ChainID != chainID {
-				return "", nil, fmt.Errorf("current state snapshots for multiple chain ids exist in snapshots directory %s", snapshotsDir)
+				return "", nil, fmt.Errorf("current state snapshots for multiple chain ids exist in snapshots directory %s", dir)
 			}
 
-			lockFileExists, err := fs.FileExists(filepath.Join(snapshotsDir,
+			lockFileExists, err := fs.FileExists(filepath.Join(dir,
 				InProgressFileName(csSnapshot.ChainID, csSnapshot.Height)))
 			if err != nil {
 				return "", nil, fmt.Errorf("failed to check for lock file:%w", err)
@@ -93,7 +93,7 @@ func GetCurrentStateSnapshots(snapshotsDir string) (string, map[int64]CurrentSta
 	return chainID, currentStateSnapshots, nil
 }
 
-func fromCurrentStateSnapshotFileName(fileName string) (*CurrentStateSnapshot, error) {
+func fromCurrentStateSnapshotFileName(fileName string) (*CurrentState, error) {
 	re, err := regexp.Compile("(.*)-(\\d+)-" + currentStateSnapshotIdentifier + ".tar.gz")
 	if err != nil {
 		return nil, fmt.Errorf("failed to compile reg exp:%w", err)
@@ -109,13 +109,13 @@ func fromCurrentStateSnapshotFileName(fileName string) (*CurrentStateSnapshot, e
 		return nil, err
 	}
 
-	return &CurrentStateSnapshot{
+	return &CurrentState{
 		ChainID: matches[1],
 		Height:  height,
 	}, nil
 }
 
-func snapshotExists(snapshotsDir string, snapshot CurrentStateSnapshot) (bool, error) {
+func snapshotExists(snapshotsDir string, snapshot CurrentState) (bool, error) {
 	lockFileExists, err := fs.FileExists(filepath.Join(snapshotsDir, InProgressFileName(snapshot.ChainID, snapshot.Height)))
 	if err != nil {
 		return false, fmt.Errorf("failed to check if lock file exists:%w", err)

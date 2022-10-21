@@ -92,23 +92,15 @@ func (bs *Blocks) GetLastBlock(ctx context.Context) (entities.Block, error) {
 	if bs.lastBlock != nil {
 		return *bs.lastBlock, nil
 	}
-
-	block := &entities.Block{}
 	defer metrics.StartSQLQuery("Blocks", "GetLastBlock")()
-	err := pgxscan.Get(ctx, bs.Connection, block,
-		`SELECT vega_time, height, hash
-		FROM last_block`)
 
-	if errors.Is(err, pgx.ErrNoRows) {
-		return entities.Block{}, ErrNoLastBlock
-	}
-
+	lastBlock, err := GetLastBlockUsingConnection(ctx, bs.Connection)
+	bs.lastBlock = lastBlock
 	if err != nil {
 		return entities.Block{}, err
 	}
 
-	bs.lastBlock = block
-	return *block, nil
+	return *lastBlock, err
 }
 
 func (bs *Blocks) setLastBlock(b entities.Block) {
@@ -118,10 +110,14 @@ func (bs *Blocks) setLastBlock(b entities.Block) {
 }
 
 func (bs *Blocks) GetOldestHistoryBlock(ctx context.Context) (entities.Block, error) {
-	block := &entities.Block{}
 	defer metrics.StartSQLQuery("Blocks", "GetOldestHistoryBlock")()
 
-	err := pgxscan.Get(ctx, bs.Connection, block, `SELECT vega_time, height, hash
+	return GetOldestHistoryBlockUsingConnection(ctx, bs.Connection)
+}
+
+func GetOldestHistoryBlockUsingConnection(ctx context.Context, connection Connection) (entities.Block, error) {
+	block := &entities.Block{}
+	err := pgxscan.Get(ctx, connection, block, `SELECT vega_time, height, hash
 		FROM blocks order by height asc limit 1`)
 
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -133,4 +129,17 @@ func (bs *Blocks) GetOldestHistoryBlock(ctx context.Context) (entities.Block, er
 	}
 
 	return *block, nil
+}
+
+func GetLastBlockUsingConnection(ctx context.Context, connection Connection) (*entities.Block, error) {
+	block := &entities.Block{}
+	err := pgxscan.Get(ctx, connection, block,
+		`SELECT vega_time, height, hash
+		FROM last_block`)
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrNoLastBlock
+	}
+
+	return block, err
 }
