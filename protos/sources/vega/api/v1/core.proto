@@ -13,7 +13,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/vega/api/v1";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Vega core APIs";
-    version: "v0.59.0+dev";
+    version: "v0.59.0";
   }
   schemes: [HTTP, HTTPS]
   host: "lb.testnet.vega.xyz"
@@ -302,8 +302,8 @@ message Statistics {
   // Current block hash
   string block_hash = 35;
   // Current epoch
-  uint64 epoch_seq = 36; 
-  // Epoch start time 
+  uint64 epoch_seq = 36;
+  // Epoch start time
   string epoch_start_time = 37;
   // Epoch expected end time
   string epoch_expiry_time = 38;

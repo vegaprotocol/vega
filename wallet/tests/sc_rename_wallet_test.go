@@ -1,8 +1,6 @@
 package tests_test
 
 import (
-	"os"
-	"path/filepath"
 	"testing"
 
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
@@ -32,11 +30,14 @@ func TestRenameWallet(t *testing.T) {
 
 	// given
 	newWalletName := vgrand.RandomStr(5)
-	currentDir := filepath.Dir(createWalletResp.Wallet.FilePath)
-	newPath := filepath.Join(currentDir, newWalletName)
 
 	// when
-	err = os.Rename(createWalletResp.Wallet.FilePath, newPath)
+	err = WalletRename(t, []string{
+		"--home", home,
+		"--output", "json",
+		"--wallet", walletName,
+		"--new-name", newWalletName,
+	})
 
 	// then
 	require.NoError(t, err)
