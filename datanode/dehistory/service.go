@@ -5,14 +5,11 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
-	"path/filepath"
 	"sort"
 	"time"
 
 	"code.vegaprotocol.io/vega/datanode/dehistory/aggregation"
 	"code.vegaprotocol.io/vega/datanode/dehistory/fsutil"
-	"code.vegaprotocol.io/vega/datanode/dehistory/initialise"
-
 	"github.com/multiformats/go-multiaddr"
 
 	"code.vegaprotocol.io/vega/datanode/dehistory/snapshot"
@@ -228,7 +225,7 @@ func (d *Service) addAllSnapshotDataToStore(ctx context.Context) error {
 func (d *Service) copyAllAvailableHistoryIntoDir(ctx context.Context, targetDir string) (snapshot.CurrentState, []snapshot.History,
 	error,
 ) {
-	contiguousHistory, err := d.GetContiguousHistory(ctx)
+	contiguousHistory, err := d.GetContiguousHistory()
 	if err != nil {
 		return snapshot.CurrentState{}, nil, fmt.Errorf("failed to get contiguous history data")
 	}
@@ -257,21 +254,14 @@ func (d *Service) copyAllAvailableHistoryIntoDir(ctx context.Context, targetDir 
 
 // GetContiguousHistory returns all available contiguous (no gaps) history from the current datanode height, or if
 // the datanode has no data it will return the contiguous history from the highest decentralized history segment.
-func (d *Service) GetContiguousHistory(ctx context.Context) ([]aggregation.AggregatedHistorySegment, error) {
-	oldestHistoryBlock, lastBlock, err := initialise.GetOldestHistoryBlockAndLastBlock(ctx, d.connConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get oldest history block and last block:%w", err)
-	}
-
+func (d *Service) GetContiguousHistory() ([]aggregation.AggregatedHistorySegment, error) {
 	allHistorySegments, err := d.store.ListAllHistorySegments()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all history segments:%w", err)
 	}
 
-	contiguousHistory, err := aggregation.GetContiguousHistoryIncludingDataNodeExistingData(allHistorySegments, oldestHistoryBlock, lastBlock)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get contiguous history including existing data: %w", err)
-	}
+	contiguousHistory := aggregation.GetHighestContiguousHistoryFromSegmentIndexEntry(allHistorySegments)
+
 	return contiguousHistory, nil
 }
 
@@ -280,47 +270,9 @@ func (d *Service) extractSnapshotDataFromHistory(ctx context.Context, history ag
 	var currentStateSnaphot snapshot.CurrentState
 	var historySnapshot snapshot.History
 
-	if history.FromCurrentDatanodeData {
-		currentStateSnaphot, historySnapshot, err = d.snapshotExistingDatanodeData(ctx, targetDir, history.HeightFrom, history.HeightTo)
-		if err != nil {
-			return snapshot.CurrentState{}, snapshot.History{}, fmt.Errorf("failed to snapshot datanodes data from height %d to height %d:%w",
-				history.HeightFrom, history.HeightTo, err)
-		}
-	} else {
-		currentStateSnaphot, historySnapshot, err = d.store.CopySnapshotDataIntoDir(ctx, history.HeightTo, targetDir)
-		if err != nil {
-			return snapshot.CurrentState{}, snapshot.History{}, fmt.Errorf("failed to extract history segment for height: %d: %w", history.HeightTo, err)
-		}
-	}
-	return currentStateSnaphot, historySnapshot, nil
-}
-
-// snapshotExistingDatanodeData creates a current state snapshot and history snapshot for the given block span from the datanode's existing data.
-func (d *Service) snapshotExistingDatanodeData(ctx context.Context, stagingDir string, heightFrom int64, heightTo int64) (snapshot.CurrentState, snapshot.History, error) {
-	var currentStateSnaphot snapshot.CurrentState
-	var historySnapshot snapshot.History
-
-	d.log.Infof("creating snapshot of all datanode's current data into dir:%s", stagingDir)
-
-	meta, err := d.snapshotService.CreateSnapshotSynchronously(ctx, d.chainID, heightFrom, heightTo)
+	currentStateSnaphot, historySnapshot, err = d.store.CopySnapshotDataIntoDir(ctx, history.HeightTo, targetDir)
 	if err != nil {
-		return snapshot.CurrentState{}, snapshot.History{}, fmt.Errorf("failed to snapshot all datanode data: %w", err)
-	}
-
-	currentStateSnaphot = meta.CurrentStateSnapshot
-	historySnapshot = meta.HistorySnapshot
-
-	d.log.Info("created snapshot of all datanode's current data:%s", logging.Int64("from height", meta.HistorySnapshot.HeightFrom),
-		logging.Int64("from to", meta.HistorySnapshot.HeightTo))
-
-	if err = os.Rename(meta.CurrentStateSnapshotPath,
-		filepath.Join(stagingDir, currentStateSnaphot.CompressedFileName())); err != nil {
-		return snapshot.CurrentState{}, snapshot.History{}, fmt.Errorf("failed to move datanode current state snapshot:%w", err)
-	}
-
-	if err = os.Rename(meta.HistorySnapshotPath,
-		filepath.Join(stagingDir, historySnapshot.CompressedFileName())); err != nil {
-		return snapshot.CurrentState{}, snapshot.History{}, fmt.Errorf("failed to move datanode history snapshot:%w", err)
+		return snapshot.CurrentState{}, snapshot.History{}, fmt.Errorf("failed to extract history segment for height: %d: %w", history.HeightTo, err)
 	}
 
 	return currentStateSnaphot, historySnapshot, nil

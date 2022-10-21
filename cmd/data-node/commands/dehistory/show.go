@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"sort"
 
+	"code.vegaprotocol.io/vega/datanode/dehistory/aggregation"
+
 	"code.vegaprotocol.io/vega/datanode/dehistory/initialise"
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
@@ -65,6 +67,15 @@ func (cmd *showCmd) Execute(_ []string) error {
 		fmt.Printf("%s\n", segment)
 	}
 
+	contiguousHistory := GetHighestContiguousHistoryFromHistorySegments(segments)
+
+	if contiguousHistory != nil {
+		fmt.Printf("\nAvailable contiguous decentralized history spans block %d to %d\n", contiguousHistory[0].HeightFrom,
+			contiguousHistory[len(contiguousHistory)-1].HeightTo)
+	} else {
+		fmt.Printf("\nNo decentralized history available.  Use the fetch command to fetch decentralised history\n")
+	}
+
 	datanodeFromHeight, datanodeToHeight, err := initialise.GetDatanodeBlockSpan(context.Background(), cmd.Config.SQLStore.ConnectionConfig)
 	if err != nil {
 		return fmt.Errorf("failed to get datanode block span:%w", err)
@@ -73,8 +84,21 @@ func (cmd *showCmd) Execute(_ []string) error {
 	if datanodeFromHeight == datanodeToHeight {
 		fmt.Printf("\nDatanode contains no data\n")
 	} else {
-		fmt.Printf("\nDatanode has data from block height %d to %d\n", datanodeFromHeight, datanodeToHeight)
+		fmt.Printf("\nDatanode currently has data from block height %d to %d\n", datanodeFromHeight, datanodeToHeight)
 	}
 
 	return nil
+}
+
+func GetHighestContiguousHistoryFromHistorySegments(histories []*v2.HistorySegment) []aggregation.AggregatedHistorySegment {
+	aggHistory := make([]aggregation.AggregatedHistorySegment, 0, 10)
+	for _, history := range histories {
+		aggHistory = append(aggHistory, aggregation.AggregatedHistorySegment{
+			HeightFrom: history.FromHeight,
+			HeightTo:   history.ToHeight,
+			ChainID:    history.ChainId,
+		})
+	}
+
+	return aggregation.GetHighestContiguousHistory(aggHistory)
 }
