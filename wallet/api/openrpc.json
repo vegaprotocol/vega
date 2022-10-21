@@ -1050,6 +1050,118 @@
       ]
     },
     {
+      "name": "admin.rename_wallet",
+      "summary": "Renames a wallet",
+      "description": "This method renames a wallet in-place.\n\nIf the new name matches an existing wallet, it fails.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "wallet"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "wallet",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "newName",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "passphrase",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "required": true,
+        "schema": {
+          "type": "null"
+        }
+      },
+      "examples": [
+        {
+          "name": "Rename a wallet",
+          "params": [
+            {
+              "name": "wallet",
+              "value": "my-wallet"
+            },
+            {
+              "name": "newWallet",
+              "value": "my-new-wallet-name"
+            },
+            {
+              "name": "passphrase",
+              "value": "this-is-not-a-good-passphrase"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": {}
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin.remove_wallet",
+      "summary": "Removes a wallet from the computer.",
+      "description": "This method removes a wallet from the computer.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "wallet"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "wallet",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "required": true,
+        "schema": {
+          "type": "null"
+        }
+      },
+      "examples": [
+        {
+          "name": "Remove a wallet",
+          "params": [
+            {
+              "name": "wallet",
+              "value": "my-wallet"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": {}
+          }
+        }
+      ]
+    },
+    {
       "name": "admin.list_networks",
       "summary": "Returns the list of all registered networks.",
       "description": "This method returns the list of the registered networks.",
@@ -1436,51 +1548,6 @@
               "name": "local-network",
               "filePath": "/Users/username/vega-home/wallet-service/networks/local-network.toml"
             }
-          }
-        }
-      ]
-    },
-    {
-      "name": "admin.remove_wallet",
-      "summary": "Removes a wallet from the computer.",
-      "description": "This method removes a wallet from the computer.",
-      "tags": [
-        {
-          "name": "admin"
-        },
-        {
-          "name": "wallet"
-        }
-      ],
-      "paramStructure": "by-name",
-      "params": [
-        {
-          "name": "wallet",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "result": {
-        "name": "Success",
-        "required": true,
-        "schema": {
-          "type": "null"
-        }
-      },
-      "examples": [
-        {
-          "name": "Remove a wallet",
-          "params": [
-            {
-              "name": "wallet",
-              "value": "my-wallet"
-            }
-          ],
-          "result": {
-            "name": "Success",
-            "value": {}
           }
         }
       ]

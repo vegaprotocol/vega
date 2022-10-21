@@ -43,17 +43,19 @@ func testIsolatingKeyWithInvalidParamsFails(t *testing.T) {
 		}, {
 			name: "with empty name",
 			params: api.AdminIsolateKeyParams{
-				Wallet:     "",
-				Passphrase: vgrand.RandomStr(5),
-				PublicKey:  "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
+				Wallet:                   "",
+				Passphrase:               vgrand.RandomStr(5),
+				PublicKey:                "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
+				IsolatedWalletPassphrase: vgrand.RandomStr(5),
 			},
 			expectedError: api.ErrWalletIsRequired,
 		}, {
 			name: "with empty passphrase",
 			params: api.AdminIsolateKeyParams{
-				Wallet:     vgrand.RandomStr(5),
-				Passphrase: "",
-				PublicKey:  "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
+				Wallet:                   vgrand.RandomStr(5),
+				Passphrase:               "",
+				PublicKey:                "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
+				IsolatedWalletPassphrase: vgrand.RandomStr(5),
 			},
 			expectedError: api.ErrPassphraseIsRequired,
 		}, {
@@ -64,13 +66,14 @@ func testIsolatingKeyWithInvalidParamsFails(t *testing.T) {
 				IsolatedWalletPassphrase: "",
 				PublicKey:                "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
 			},
-			expectedError: api.ErrPassphraseIsRequired,
+			expectedError: api.ErrIsolatedWalletPassphraseIsRequired,
 		}, {
 			name: "with empty public key",
 			params: api.AdminIsolateKeyParams{
-				Wallet:     vgrand.RandomStr(5),
-				Passphrase: vgrand.RandomStr(5),
-				PublicKey:  "",
+				Wallet:                   vgrand.RandomStr(5),
+				Passphrase:               vgrand.RandomStr(5),
+				PublicKey:                "",
+				IsolatedWalletPassphrase: vgrand.RandomStr(5),
 			},
 			expectedError: api.ErrPublicKeyIsRequired,
 		},
