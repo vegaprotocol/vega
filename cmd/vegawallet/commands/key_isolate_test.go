@@ -82,12 +82,14 @@ func newIsolateKeyFlags(t *testing.T, testDir string) *cmd.IsolateKeyFlags {
 	t.Helper()
 
 	_, passphraseFilePath := NewPassphraseFile(t, testDir)
+	_, isolatedWalletPassphraseFilePath := NewPassphraseFile(t, testDir)
 	walletName := vgrand.RandomStr(10)
 	pubKey := vgrand.RandomStr(20)
 
 	return &cmd.IsolateKeyFlags{
-		Wallet:         walletName,
-		PubKey:         pubKey,
-		PassphraseFile: passphraseFilePath,
+		Wallet:                       walletName,
+		PubKey:                       pubKey,
+		PassphraseFile:               passphraseFilePath,
+		IsolatedWalletPassphraseFile: isolatedWalletPassphraseFilePath,
 	}
 }

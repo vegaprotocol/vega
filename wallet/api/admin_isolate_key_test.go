@@ -218,7 +218,7 @@ func testIsolatingKeyGettingInternalErrorDuringIsolatedWalletSavingFails(t *test
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(expectedWallet, nil)
-	handler.walletStore.EXPECT().SaveWallet(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(assert.AnError)
+	handler.walletStore.EXPECT().SaveWallet(ctx, gomock.Any(), isolatedPassphrase).Times(1).Return(assert.AnError)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminIsolateKeyParams{

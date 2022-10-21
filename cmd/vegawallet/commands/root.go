@@ -81,6 +81,7 @@ func BuildCmdRoot(w io.Writer) *cobra.Command {
 	cmd.AddCommand(NewCmdService(w, f))
 	cmd.AddCommand(NewCmdTx(w, f))
 	cmd.AddCommand(NewCmdMessage(w, f))
+	cmd.AddCommand(NewCmdPassphrase(w, f))
 	cmd.AddCommand(NewCmdPermissions(w, f))
 
 	// Wallet commands
