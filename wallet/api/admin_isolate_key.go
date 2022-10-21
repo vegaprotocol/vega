@@ -84,7 +84,7 @@ func validateAdminIsolateKeyParams(rawParams jsonrpc.Params) (AdminIsolateKeyPar
 	}
 
 	if params.IsolatedWalletPassphrase == "" {
-		return AdminIsolateKeyParams{}, ErrPassphraseIsRequired
+		return AdminIsolateKeyParams{}, ErrIsolatedWalletPassphraseIsRequired
 	}
 
 	return params, nil

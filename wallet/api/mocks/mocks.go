@@ -96,6 +96,20 @@ func (mr *MockWalletStoreMockRecorder) ListWallets(arg0 interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListWallets", reflect.TypeOf((*MockWalletStore)(nil).ListWallets), arg0)
 }
 
+// RenameWallet mocks base method.
+func (m *MockWalletStore) RenameWallet(arg0 context.Context, arg1, arg2 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RenameWallet", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RenameWallet indicates an expected call of RenameWallet.
+func (mr *MockWalletStoreMockRecorder) RenameWallet(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RenameWallet", reflect.TypeOf((*MockWalletStore)(nil).RenameWallet), arg0, arg1, arg2)
+}
+
 // SaveWallet mocks base method.
 func (m *MockWalletStore) SaveWallet(arg0 context.Context, arg1 wallet.Wallet, arg2 string) error {
 	m.ctrl.T.Helper()
