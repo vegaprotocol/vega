@@ -253,6 +253,7 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 		// included in the snapshot.
 		// see https://github.com/vegaprotocol/vega/pull/2745 for more information
 		e.addAccountToHashableSlice(externalAcc)
+		e.broker.Send(events.NewAccountEvent(ctx, *externalAcc))
 	}
 
 	// when an asset is enabled a global reward account (aka network treasury) is created for it along with the other 4 types of rewards
