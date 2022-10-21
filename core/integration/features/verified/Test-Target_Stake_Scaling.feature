@@ -59,13 +59,8 @@ Feature: test the implementation of market.stake.target.scalingFactor
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 3600    | 973       | 1027      | 9484         | 55000          | 10            |
 
-    Then the parties should have the following account balances:
-      | party   | asset | market id | margin  | general   |
-      | party0  | USD   | ETH/MAR22 | 1656013 | 498288987 |
-
     Then debug detailed orderbook volumes for market "ETH/MAR22"
 
-    #LP margin(maintanance level)= 1000*125*0.6323374+1000*131*0.393276818=130562
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
       | party0 | ETH/MAR22 | 79043       | 86947  | 94851   | 110660  |
