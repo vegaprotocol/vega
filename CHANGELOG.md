@@ -10,6 +10,7 @@
 
 ### 🛠 Improvements
 - [6530](https://github.com/vegaprotocol/vega/issues/6530) - Add command to rename a wallet
+- [6531](https://github.com/vegaprotocol/vega/issues/6531) - Add command to update the passphrase of a wallet
 
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
