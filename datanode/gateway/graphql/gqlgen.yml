@@ -475,3 +475,5 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AggregatedBalanceConnection
   TransactionResult:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.TransactionResult
+  HistorySegment:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.HistorySegment

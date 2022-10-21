@@ -18,15 +18,14 @@ import (
 	"fmt"
 	"os"
 
-	"code.vegaprotocol.io/vega/datanode/candlesv2"
-	"code.vegaprotocol.io/vega/datanode/service"
-	"code.vegaprotocol.io/vega/datanode/snapshot"
-
 	"code.vegaprotocol.io/vega/datanode/api"
 	"code.vegaprotocol.io/vega/datanode/broker"
+	"code.vegaprotocol.io/vega/datanode/candlesv2"
 	"code.vegaprotocol.io/vega/datanode/config/encoding"
+	"code.vegaprotocol.io/vega/datanode/dehistory"
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	"code.vegaprotocol.io/vega/datanode/service"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/libs/pprof"
@@ -48,24 +47,28 @@ type Config struct {
 	Pprof          pprof.Config  `group:"Pprof" namespace:"pprof"`
 	GatewayEnabled encoding.Bool `long:"gateway-enabled" choice:"true" choice:"false" description:" "`
 
-	Snapshot snapshot.Config `group:"Snapshot" namespace:"snapshot"`
+	DeHistory                   dehistory.Config `group:"DeHistory" namespace:"dehistory"`
+	AutoInitialiseFromDeHistory encoding.Bool    `long:"auto-initialise" choice:"true" choice:"false" description:"if true the node will attempt to load the latest history segment(s) from decentralised history if the node is empty"`
+
+	ChainID string `long:"chainID"`
 }
 
 // NewDefaultConfig returns a set of default configs for all vega packages, as specified at the per package
 // config level, if there is an error initialising any of the configs then this is returned.
 func NewDefaultConfig() Config {
 	return Config{
-		API:            api.NewDefaultConfig(),
-		CandlesV2:      candlesv2.NewDefaultConfig(),
-		SQLStore:       sqlstore.NewDefaultConfig(),
-		Pprof:          pprof.NewDefaultConfig(),
-		Logging:        logging.NewDefaultConfig(),
-		Gateway:        gateway.NewDefaultConfig(),
-		Metrics:        metrics.NewDefaultConfig(),
-		Broker:         broker.NewDefaultConfig(),
-		Service:        service.NewDefaultConfig(),
-		GatewayEnabled: true,
-		Snapshot:       snapshot.NewDefaultConfig(),
+		API:                         api.NewDefaultConfig(),
+		CandlesV2:                   candlesv2.NewDefaultConfig(),
+		SQLStore:                    sqlstore.NewDefaultConfig(),
+		Pprof:                       pprof.NewDefaultConfig(),
+		Logging:                     logging.NewDefaultConfig(),
+		Gateway:                     gateway.NewDefaultConfig(),
+		Metrics:                     metrics.NewDefaultConfig(),
+		Broker:                      broker.NewDefaultConfig(),
+		Service:                     service.NewDefaultConfig(),
+		GatewayEnabled:              true,
+		DeHistory:                   dehistory.NewDefaultConfig(),
+		AutoInitialiseFromDeHistory: false,
 	}
 }
 

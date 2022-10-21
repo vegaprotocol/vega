@@ -3,7 +3,7 @@
 ## Unreleased 0.60.0
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [6227](https://github.com/vegaprotocol/vega/issues/6227) - Datanode Decentralized History - datanode init command now requires the chain id as a parameter
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -

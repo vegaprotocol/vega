@@ -113,21 +113,6 @@ func GetAllTableNames(ctx context.Context, conn *pgxpool.Pool) ([]string, error)
 	return tableNames, nil
 }
 
-func HasVegaSchema(ctx context.Context, conf sqlstore.ConnectionConfig) (bool, error) {
-	conn, err := pgxpool.Connect(ctx, conf.GetConnectionString())
-	if err != nil {
-		return false, fmt.Errorf("unable to connect to database: %w", err)
-	}
-	defer conn.Close()
-
-	tableNames, err := GetAllTableNames(ctx, conn)
-	if err != nil {
-		return false, fmt.Errorf("failed to get all table names:%w", err)
-	}
-
-	return len(tableNames) != 0, nil
-}
-
 func getTableSortOrders(ctx context.Context, conn *pgxpool.Pool) (map[string]string, error) {
 	var primaryKeyIndexes []IndexInfo
 	err := pgxscan.Select(ctx, conn, &primaryKeyIndexes,
