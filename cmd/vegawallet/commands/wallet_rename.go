@@ -52,7 +52,7 @@ func BuildCmdRenameWallet(w io.Writer, handler RenameWalletHandler, rf *RootFlag
 
 	cmd := &cobra.Command{
 		Use:     "rename",
-		Short:   "Rename the specified wallet and its keys",
+		Short:   "Rename the specified wallet",
 		Long:    renameWalletLong,
 		Example: renameWalletExample,
 		RunE: func(_ *cobra.Command, _ []string) error {
