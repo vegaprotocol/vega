@@ -17,7 +17,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/data-node/api/v2";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Vega data node APIs";
-    version: "v0.59.0+dev";
+    version: "v0.60.0";
   }
   schemes: [HTTP, HTTPS]
   host: "lb.testnet.vega.xyz/datanode/rest"
@@ -85,9 +85,9 @@ service TradingDataService {
     //
     // An account is defined a 4-tuple of (asset_id, type, party_id, market_id).
     // - Every account has associated asset and type.
-    // - Certain account types (for example, the global reward pool) do not have an associated party.  
+    // - Certain account types (for example, the global reward pool) do not have an associated party.
     //   These are denoted by the special party identifier '*'
-    // - Certain account types do not have an associated market (for example general party accounts)  
+    // - Certain account types do not have an associated market (for example general party accounts)
     //   These are denoted by the special market identifier '!'
     //
     // In its default usage, `ListBalanceChangesRequest` will return a list of
